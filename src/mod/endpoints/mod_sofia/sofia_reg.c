@@ -748,7 +748,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	const char *a1_hash = NULL;
 	char *sql;
 	char *mailbox = NULL;
-	switch_xml_t domain, xml = NULL, user, param, xparams;	
+	switch_xml_t domain, xml = NULL, user, param, uparams, dparams;	
 	char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1] = "";
 	char *pbuf = NULL;
 	char *domain_name = NULL;
@@ -834,31 +834,51 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		goto end;
 	}
 
-	if (!(xparams = switch_xml_child(user, "params"))) {
-		ret = AUTH_OK;
-		goto end;
-	}
-	
 	if (!(mailbox = (char *)switch_xml_attr(user, "mailbox"))) {
 		mailbox = username;
 	}
 
-	for (param = switch_xml_child(xparams, "param"); param; param = param->next) {
-		const char *var = switch_xml_attr_soft(param, "name");
-		const char *val = switch_xml_attr_soft(param, "value");
-				
-		if (!strcasecmp(var, "password")) {
-			passwd = val;
+	dparams = switch_xml_child(domain, "params");
+	uparams = switch_xml_child(user, "params");
+
+	if (!(dparams && uparams)) {
+		ret = AUTH_OK;
+		goto skip_auth;
+	}
+
+	if (dparams) {
+		for (param = switch_xml_child(dparams, "param"); param; param = param->next) {
+			const char *var = switch_xml_attr_soft(param, "name");
+			const char *val = switch_xml_attr_soft(param, "value");
+			
+			if (!strcasecmp(var, "password")) {
+				passwd = val;
+			}
+			
+			if (!strcasecmp(var, "a1-hash")) {
+				a1_hash = val;
+			}
 		}
-		
-		if (!strcasecmp(var, "a1-hash")) {
-			a1_hash = val;
+	}
+
+	if (uparams) {
+		for (param = switch_xml_child(uparams, "param"); param; param = param->next) {
+			const char *var = switch_xml_attr_soft(param, "name");
+			const char *val = switch_xml_attr_soft(param, "value");
+			
+			if (!strcasecmp(var, "password")) {
+				passwd = val;
+			}
+			
+			if (!strcasecmp(var, "a1-hash")) {
+				a1_hash = val;
+			}
 		}
 	}
 
 	if (switch_strlen_zero(passwd) && switch_strlen_zero(a1_hash)) {
 		ret = AUTH_OK;
-		goto end;
+		goto skip_auth;
 	}
 
 	if (!a1_hash) {
@@ -908,11 +928,16 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		}
 	}
 
+ skip_auth:
+
 	if (first && ret == AUTH_OK) {
 		if (v_event) {
 			switch_event_create(v_event, SWITCH_EVENT_MESSAGE);
 		}
 		if (v_event && *v_event) {
+			switch_xml_t xparams[2];
+			int i = 0;
+
 			switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, "sip_mailbox", "%s", mailbox);
 			switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, "sip_auth_username", "%s", username);
 			switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, "sip_auth_realm", "%s", realm);
@@ -920,26 +945,59 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 			switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, "user_name", "%s", username);
 			switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, "domain_name", "%s", realm);
 			
-			if ((xparams = switch_xml_child(user, "variables"))) {
-				for (param = switch_xml_child(xparams, "variable"); param; param = param->next) {
-					const char *var = switch_xml_attr_soft(param, "name");
-					const char *val = switch_xml_attr_soft(param, "value");
-					sofia_gateway_t *gateway_ptr = NULL;
+			if ((dparams = switch_xml_child(domain, "variables"))) {
+				xparams[i++] = dparams;
+			}
 
-					if (!switch_strlen_zero(var) && !switch_strlen_zero(val)) {
-						switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, var, "%s", val);
+			if ((uparams = switch_xml_child(user, "variables"))) {
+				xparams[i++] = uparams;
+			}
+
+			if (dparams || uparams) {
+				int j = 0;
+
+				for (j = 0; j < i; j++) {
+					for (param = switch_xml_child(xparams[j], "variable"); param; param = param->next) {
+						const char *var = switch_xml_attr_soft(param, "name");
+						const char *val = switch_xml_attr_soft(param, "value");
+						sofia_gateway_t *gateway_ptr = NULL;
+
+						if (!switch_strlen_zero(var) && !switch_strlen_zero(val)) {
+							switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, var, "%s", val);
 						
-						if (!strcasecmp(var, "register-gateway")) {
-							if (!strcasecmp(val, "all")) {
-								switch_xml_t gateways_tag, gateway_tag;
-								if ((gateways_tag = switch_xml_child(user, "gateways"))) {
-									for (gateway_tag = switch_xml_child(gateways_tag, "gateway"); gateway_tag; gateway_tag = gateway_tag->next) {
-										char *name = (char *) switch_xml_attr_soft(gateway_tag, "name");
-										if (switch_strlen_zero(name)) {
-											name = "anonymous";
-										}
+							if (!strcasecmp(var, "register-gateway")) {
+								if (!strcasecmp(val, "all")) {
+									switch_xml_t gateways_tag, gateway_tag;
+									if ((gateways_tag = switch_xml_child(user, "gateways"))) {
+										for (gateway_tag = switch_xml_child(gateways_tag, "gateway"); gateway_tag; gateway_tag = gateway_tag->next) {
+											char *name = (char *) switch_xml_attr_soft(gateway_tag, "name");
+											if (switch_strlen_zero(name)) {
+												name = "anonymous";
+											}
 									
-										if ((gateway_ptr = sofia_reg_find_gateway(name))) {
+											if ((gateway_ptr = sofia_reg_find_gateway(name))) {
+												gateway_ptr->retry = 0;
+												if (exptime) {
+													gateway_ptr->state = REG_STATE_UNREGED;
+												} else {
+													gateway_ptr->state = REG_STATE_UNREGISTER;
+												}
+												sofia_reg_release_gateway(gateway_ptr);
+											}
+	
+										}
+									}
+								} else {
+									int x, argc;
+									char *mydata, *argv[50];
+
+									mydata = strdup(val);
+									assert(mydata != NULL);
+								
+									argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+
+									for (x = 0; x < argc; x++) {
+										if ((gateway_ptr = sofia_reg_find_gateway((char *)argv[x]))) {
 											gateway_ptr->retry = 0;
 											if (exptime) {
 												gateway_ptr->state = REG_STATE_UNREGED;
@@ -947,34 +1005,13 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 												gateway_ptr->state = REG_STATE_UNREGISTER;
 											}
 											sofia_reg_release_gateway(gateway_ptr);
-										}
-	
-									}
-								}
-							} else {
-								int x, argc;
-								char *mydata, *argv[50];
-
-								mydata = strdup(val);
-								assert(mydata != NULL);
-								
-								argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
-
-								for (x = 0; x < argc; x++) {
-									if ((gateway_ptr = sofia_reg_find_gateway((char *)argv[x]))) {
-										gateway_ptr->retry = 0;
-										if (exptime) {
-											gateway_ptr->state = REG_STATE_UNREGED;
 										} else {
-											gateway_ptr->state = REG_STATE_UNREGISTER;
+											switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Gateway '%s' not found.\n", argv[x]);
 										}
-										sofia_reg_release_gateway(gateway_ptr);
-									} else {
-										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Gateway '%s' not found.\n", argv[x]);
 									}
-								}
 
-								free(mydata);
+									free(mydata);
+								}
 							}
 						}
 					}
@@ -982,7 +1019,6 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 			}
 		}
 	}
-
   end:
 	if (xml) {
 		switch_xml_free(xml);
