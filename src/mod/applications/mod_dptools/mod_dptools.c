@@ -1201,7 +1201,7 @@ SWITCH_STANDARD_APP(displace_session_function)
 	if (data && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		path = argv[0];
-		for(x = 0; x < argc; x++) {
+		for(x = 1; x < argc; x++) {
 			if (strchr(argv[x], '+')) {
 				limit = atoi(argv[x]);
 			} else if (!switch_strlen_zero(argv[x])) {

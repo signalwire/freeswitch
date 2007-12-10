@@ -131,6 +131,7 @@ static switch_bool_t displace_callback(switch_media_bug_t *bug, void *user_data,
 		if (dh) {
 			switch_frame_t *frame = NULL;
 			switch_size_t len;
+			switch_status_t st;
 
 			frame = switch_core_media_bug_get_write_replace_frame(bug);
 			len = frame->samples;
@@ -139,8 +140,8 @@ static switch_bool_t displace_callback(switch_media_bug_t *bug, void *user_data,
 				int16_t buf[1024];
 				int16_t *fp = frame->data;
 				uint32_t x;
-				
-				switch_core_file_read(&dh->fh, buf, &len);
+
+				st = switch_core_file_read(&dh->fh, buf, &len);
 				
 				for(x = 0; x < (uint32_t) len; x++) {
 					int32_t mixed = fp[x] + buf[x];
@@ -148,10 +149,15 @@ static switch_bool_t displace_callback(switch_media_bug_t *bug, void *user_data,
 					fp[x] = (int16_t) mixed;
 				}
 			} else {
-				switch_core_file_read(&dh->fh, frame->data, &len);
+				st = switch_core_file_read(&dh->fh, frame->data, &len);
 				frame->samples = (uint32_t) len;
 				frame->datalen = frame->samples * 2;
 			}
+
+			if (st != SWITCH_STATUS_SUCCESS || len == 0) {
+				return SWITCH_FALSE;
+			}
+
 			switch_core_media_bug_set_write_replace_frame(bug, frame);
 		}
 		break;
