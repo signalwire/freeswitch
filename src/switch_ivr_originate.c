@@ -283,15 +283,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	while (data && *data && *data == ' ') {
 		data++;
 	}
-
+	
 	if (*data == '{') {
-		vars = data + 1;
-		if (!(data = strchr(data, '}'))) {
+		char *e = switch_find_end_paren(data, '{', '}');
+		
+		if (e) {
+			vars = data + 1;
+			*e++ = '\0';
+			data = e;
+		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 			status = SWITCH_STATUS_GENERR;
 			goto done;
 		}
-		*data++ = '\0';
 	}
 
 	/* strip leading spaces (again) */
@@ -463,8 +467,25 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 
 			for (i = 0; i < and_argc; i++) {
-
+				char *vdata;
+				char *e = NULL;
 				chan_type = peer_names[i];
+
+				while (chan_type && *chan_type && *chan_type == ' ') {
+					chan_type++;
+				}
+
+				vdata = chan_type;
+				e = switch_find_end_paren(vdata, '[', ']');
+				
+				if (e) {
+					vdata++;
+					*e++ = '\0';
+					chan_type = e;
+				} else {
+					vdata = NULL;
+				}
+				
 				if ((chan_data = strchr(chan_type, '/')) != 0) {
 					*chan_data = '\0';
 					chan_data++;
@@ -537,6 +558,27 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				peer_channels[i] = switch_core_session_get_channel(new_session);
 				assert(peer_channels[i] != NULL);
 
+
+				if (vdata) {
+					char *var_array[1024] = { 0 };
+					int var_count = 0;
+					if ((var_count = switch_separate_string(vdata, ',', var_array, (sizeof(var_array) / sizeof(var_array[0]))))) {
+						int x = 0;
+						for (x = 0; x < var_count; x++) {
+							char *inner_var_array[2];
+							int inner_var_count;
+							if ((inner_var_count =
+								 switch_separate_string(var_array[x], '=', 
+														inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
+								
+								switch_channel_set_variable(peer_channels[i], inner_var_array[0], inner_var_array[1]);
+								
+							}
+						}
+					}
+				}
+
+				
 				if (var_event) {
 					switch_event_t *event;
 					switch_event_header_t *header;
