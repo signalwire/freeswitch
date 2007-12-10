@@ -1,0 +1,7 @@
+<include>
+  <extension name="ideasip.com">
+    <condition field="destination_number" expression="^1101(.*)$">
+      <action application="bridge" data="sofia/gateway/proxy.ideasip.com/$1"/>
+    </condition>
+  </extension>
+</include>
