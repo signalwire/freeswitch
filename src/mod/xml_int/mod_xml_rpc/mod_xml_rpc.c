@@ -165,7 +165,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
         NextToken(&p);
         x = GetToken(&p);
         if (x) {
-            if (!strcasecmp(x,"basic")) {
+            if (!strcasecmp(x, "basic")) {
 
 
                 NextToken(&p);
@@ -187,12 +187,18 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 				}
 
 				if (!domain_name) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s] no domain!\n", user);
 					goto fail;
+				}
+				
+				snprintf(z, sizeof(z), "%s:%s", globals.user, globals.pass);
+				Base64Encode(z, t);
+				
+				if (!strcmp(p, t)) {
+					r->user=strdup(user);
+					goto authed;
 				}
 
 				if (switch_xml_locate_user("id", user, domain_name, NULL, &x_domain_root, &x_domain, &x_user, "mailbox=check") != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain_name);
 					goto fail;
 				}
 				
@@ -315,7 +321,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 		switch_xml_free(x_domain_root);
 	}
 
-    snprintf(z, sizeof(z), "Basic realm=\"%s\"", domain_name);
+    snprintf(z, sizeof(z), "Basic realm=\"%s\"", domain_name ? domain_name : globals.realm);
     ResponseAddField(r, "WWW-Authenticate", z);
     ResponseStatus(r, 401);
     return FALSE;
@@ -389,9 +395,6 @@ abyss_bool auth_hook(TSession * r)
 		} else {
 			if (globals.realm && strncmp(r->uri, "/pub", 4)) {
 				ret = !http_directory_auth(r, NULL);
-				if (ret) {
-					ret = !RequestAuth(r, globals.realm, globals.user, globals.pass);
-				}
 			}
 		}
 
@@ -460,8 +463,12 @@ abyss_bool handler_hook(TSession * r)
 		}
 	}
 
-	if (fs_user && fs_domain && !j) {
-		auth = 0;
+	if (!fs_user || !strcmp(fs_user, globals.user)) {
+		auth = 1;
+	} else {
+		if (!j) {
+			auth = 0;
+		} 
 	}
 	
 	if (auth) {
