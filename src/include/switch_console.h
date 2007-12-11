@@ -44,7 +44,7 @@
 SWITCH_BEGIN_EXTERN_C
 #define SWITCH_CMD_CHUNK_LEN 1024
 #define SWITCH_STANDARD_STREAM(s) memset(&s, 0, sizeof(s)); s.data = malloc(SWITCH_CMD_CHUNK_LEN); \
-	assert(s.data);														\
+	switch_assert(s.data);												\
 	memset(s.data, 0, SWITCH_CMD_CHUNK_LEN);							\
 	s.end = s.data;														\
 	s.data_size = SWITCH_CMD_CHUNK_LEN;									\
