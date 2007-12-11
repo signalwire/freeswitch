@@ -270,13 +270,13 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 					int x;
 
 					for (x = 0; x < argc; x++) {
-						const char *val;
-						if ((val = switch_channel_get_variable(channel, argv[x]))) {
-							char *var = argv[x];
-							if (!strncasecmp(var, "nolocal:", 8)) {
-								var += 8;
+						const char *vval;
+						if ((vval = switch_channel_get_variable(channel, argv[x]))) {
+							char *vvar = argv[x];
+							if (!strncasecmp(vvar, "nolocal:", 8)) {
+								vvar += 8;
 							}
-							switch_channel_set_variable(peer_channel, var, val);
+							switch_channel_set_variable(peer_channel, vvar, vval);
 						}
 					}
 				}

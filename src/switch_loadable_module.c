@@ -1030,7 +1030,6 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 
 		while (apr_dir_read(&finfo, finfo_flags, module_dir_handle) == APR_SUCCESS) {
 			const char *fname = finfo.fname;
-			const char *err;
 
 			if (finfo.filetype != APR_REG) {
 				continue;

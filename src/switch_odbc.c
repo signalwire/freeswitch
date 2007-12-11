@@ -407,9 +407,10 @@ SWITCH_DECLARE(void) switch_odbc_handle_destroy(switch_odbc_handle_t **handlep)
 {
 	switch_odbc_handle_t *handle = NULL;
 
-	if (handlep) {
-		handle = *handlep;
+	if (!handlep) {
+		return;
 	}
+	handle = *handlep;
 
 	if (handle) {
 		switch_odbc_handle_disconnect(handle);

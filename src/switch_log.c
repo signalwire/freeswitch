@@ -80,7 +80,7 @@ SWITCH_DECLARE(uint32_t) switch_log_str2mask(const char *str)
 	switch_assert(p);
 
 	if ((argc = switch_separate_string(p, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-		for (x = 0; x < argc; x++) {
+		for (x = 0; x < argc && argv[x]; x++) {
 			if (!strcasecmp(argv[x], "all")) {
 				mask = 0xFF;
 				break;
@@ -221,6 +221,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 
 		len = (uint32_t) (strlen(extra_fmt) + strlen(date) + strlen(filep) + 32 + strlen(funcp) + strlen(fmt));
 		new_fmt = malloc(len + 1);
+		switch_assert(new_fmt);
 		snprintf(new_fmt, len, extra_fmt, date, switch_log_level2str(level), filep, line, funcp, 128, fmt);
 		fmt = new_fmt;
 	}

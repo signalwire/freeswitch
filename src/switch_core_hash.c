@@ -145,9 +145,9 @@ SWITCH_DECLARE(void) switch_hash_this(switch_hash_index_t *hi, const void **key,
 {
 	if (key) {
 		*key = sqliteHashKey((HashElem *) hi);
-	}
-	if (klen) {
-		*klen = strlen((char *) *key) + 1;
+		if (klen) {
+			*klen = strlen((char *) *key) + 1;
+		}
 	}
 	if (val) {
 		*val = sqliteHashData((HashElem *) hi);

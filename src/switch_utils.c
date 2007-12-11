@@ -45,7 +45,7 @@ SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char clos
 		s++;
 	}
 
-	if (*s == open) {
+	if (s && *s == open) {
 		depth++;
 		for (e = s + 1; e && *e; e++) {
 			if (*e == open) {
@@ -266,11 +266,11 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
         }
 
         if (file) {
-			const char *filename = switch_cut_path(file);
+			const char *stipped_file = switch_cut_path(file);
 			const char *new_type;
 			char *ext;
 
-			if ((ext = strrchr(filename, '.'))) {
+			if ((ext = strrchr(stipped_file, '.'))) {
 				ext++;
 				if ((new_type = switch_core_mime_ext2type(ext))) {
 					mime_type = new_type;
@@ -283,7 +283,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 					 "Content-Transfer-Encoding: base64\n"
 					 "Content-Description: Sound attachment.\n"
 					 "Content-Disposition: attachment; filename=\"%s\"\n\n",
-					 bound, mime_type, filename, filename);
+					 bound, mime_type, stipped_file, stipped_file);
             if (!write_buf(fd, buf))
                 return SWITCH_FALSE;
 
@@ -379,6 +379,11 @@ SWITCH_DECLARE(switch_bool_t) switch_is_lan_addr(const char *ip)
 SWITCH_DECLARE(switch_bool_t) switch_ast2regex(char *pat, char *rbuf, size_t len)
 {
 	char *p = pat;
+
+	if (!pat) {
+		return SWITCH_FALSE;
+	}
+
 	memset(rbuf, 0, len);
 	
 	*(rbuf + strlen(rbuf)) = '^';
@@ -1101,6 +1106,7 @@ SWITCH_DECLARE(char *) switch_string_replace(const char *string, const char *sea
 	char *dest, *tmp;
 
 	dest = (char *) malloc(sizeof(char));
+	switch_assert(dest);
 
 	for (i = 0; i < string_len; i++) {
 		if (switch_string_match(string + i, string_len - i, search, search_len) == SWITCH_STATUS_SUCCESS) {
