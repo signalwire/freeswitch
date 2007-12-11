@@ -53,6 +53,7 @@ typedef void (*switch_rtp_invalid_handler_t) (switch_rtp_t *rtp_session,
   \note Generally called by the core_init
 */
 SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool);
+SWITCH_DECLARE(void) switch_rtp_shutdown(void);
 
 /*!
   \brief Set/Get RTP start port
@@ -70,9 +71,10 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_set_end_port(switch_port_t port);
 
 /*! 
   \brief Request a new port to be used for media
+  \param ip the ip to request a port from
   \return the new port to use
 */
-SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void);
+SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(const char *ip);
 
 /*! 
   \brief create a new RTP session handle

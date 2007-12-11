@@ -137,6 +137,12 @@ SWITCH_BEGIN_EXTERN_C
 typedef uint8_t switch_byte_t;
 
 typedef enum {
+	SPF_NONE = 0,
+	SPF_ODD = (1 << 0),
+	SPF_EVEN = (1 << 1)
+} switch_port_flag_t;
+
+typedef enum {
 	ED_MUX_READ = (1 << 0),
 	ED_MUX_WRITE = (1 << 1),
 	ED_DTMF = (1 << 2)

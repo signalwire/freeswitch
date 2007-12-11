@@ -153,7 +153,10 @@ SWITCH_STANDARD_APP(bcast_function)
 	}
 
 	if (ready == SEND_TYPE_RTP) {
-		rtp_port = switch_rtp_request_port();
+		if (!(rtp_port = switch_rtp_request_port(guess_ip))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP Port Error\n");
+			goto fail;
+		}
 		switch_find_local_ip(guess_ip, sizeof(guess_ip), AF_INET);
 		rtp_session = switch_rtp_new(guess_ip,
 									 rtp_port,

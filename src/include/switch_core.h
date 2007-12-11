@@ -216,14 +216,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
   \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
 SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t start,
-															   switch_port_t end, uint8_t inc, switch_core_port_allocator_t **new_allocator);
+															   switch_port_t end, switch_port_flag_t flags, switch_core_port_allocator_t **new_allocator);
 
 /*!
   \brief Get a port from the port allocator
   \param alloc the allocator object
-  \return the port
+  \param port a pointer to the port
+  \return SUCCESS
 */
-SWITCH_DECLARE(switch_port_t) switch_core_port_allocator_request_port(switch_core_port_allocator_t *alloc);
+SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_core_port_allocator_t *alloc, switch_port_t *port_ptr);
+SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_free_port(switch_core_port_allocator_t *alloc, switch_port_t port);
 
 /*!
   \brief destroythe port allocator

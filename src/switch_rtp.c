@@ -67,7 +67,7 @@ typedef srtp_hdr_t rtp_hdr_t;
 #pragma pack()
 #endif
 
-
+static switch_hash_t *alloc_hash = NULL;
 
 typedef struct {
 	srtp_hdr_t header;
@@ -147,7 +147,8 @@ struct switch_rtp {
 	uint32_t flags;
 	switch_memory_pool_t *pool;
 	switch_sockaddr_t *from_addr;
-
+	char *rx_host;
+	switch_port_t rx_port;
 	char *ice_user;
 	char *user_ice;
 	char *timer_name;
@@ -261,10 +262,15 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 	if (global_init) {
 		return;
 	}
-
+	switch_core_hash_init(&alloc_hash, pool);
 	srtp_init();
 	switch_mutex_init(&port_lock, SWITCH_MUTEX_NESTED, pool);
 	global_init = 1;
+}
+
+SWITCH_DECLARE(void) switch_rtp_shutdown(void)
+{
+	switch_core_hash_destroy(&alloc_hash);
 }
 
 SWITCH_DECLARE(switch_port_t) switch_rtp_set_start_port(switch_port_t port)
@@ -304,16 +310,43 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_set_end_port(switch_port_t port)
         return END_PORT;
 }
 
-SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void)
+static void release_port(switch_rtp_t *rtp_session)
 {
-	switch_port_t port;
+	switch_core_port_allocator_t *alloc = NULL;
 
-	switch_mutex_lock(port_lock);
-	port = NEXT_PORT;
-	NEXT_PORT += 2;
-	if (NEXT_PORT > END_PORT) {
-		NEXT_PORT = START_PORT;
+	if (!rtp_session->rx_host) {
+		return;
 	}
+
+    switch_mutex_lock(port_lock);
+    if ((alloc = switch_core_hash_find(alloc_hash, rtp_session->rx_host))) {
+		switch_core_port_allocator_free_port(alloc, rtp_session->rx_port);
+	}
+	switch_mutex_unlock(port_lock);
+
+}
+
+SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(const char *ip)
+{
+	switch_port_t port = 0;
+	switch_core_port_allocator_t *alloc = NULL;
+	
+	switch_mutex_lock(port_lock);
+	alloc = switch_core_hash_find(alloc_hash, ip);
+	if (!alloc) {
+		if (switch_core_port_allocator_new(START_PORT, END_PORT, SPF_EVEN, &alloc) != SWITCH_STATUS_SUCCESS) {
+			port = 0;
+			goto end;
+		}
+
+		switch_core_hash_insert(alloc_hash, ip, alloc);
+	}
+	
+	if (switch_core_port_allocator_request_port(alloc, &port) != SWITCH_STATUS_SUCCESS) {
+		port = 0;
+	}
+
+ end:
 	switch_mutex_unlock(port_lock);
 	return port;
 }
@@ -379,7 +412,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 		*err = "Send myself a packet failed!";
 		goto done;
 	}
-
+	release_port(rtp_session);
+	
 	old_sock = rtp_session->sock;
 	rtp_session->sock = new_sock;
 	new_sock = NULL;
@@ -395,7 +429,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 
   done:
 
-	if (status != SWITCH_STATUS_SUCCESS) {
+	if (status == SWITCH_STATUS_SUCCESS) {
+		rtp_session->rx_host = switch_core_strdup(rtp_session->pool, host);
+		rtp_session->rx_port = port;
 		rtp_session->ready = 1;
 	}
 
@@ -653,6 +689,7 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 		return;
 	}
 
+
 	(*rtp_session)->ready = 0;
 
 	switch_mutex_lock((*rtp_session)->flag_mutex);
@@ -682,6 +719,8 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 	if ((*rtp_session)->timer.timer_interface) {
 		switch_core_timer_destroy(&(*rtp_session)->timer);
 	}
+
+	release_port(*rtp_session);
 
 	switch_mutex_unlock((*rtp_session)->flag_mutex);
 	return;

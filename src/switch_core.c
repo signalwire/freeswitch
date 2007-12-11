@@ -994,12 +994,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	}
 	switch_scheduler_task_thread_stop();
 
+	switch_rtp_shutdown();
 	switch_xml_destroy();
 	switch_core_memory_stop();
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Finalizing Shutdown.\n");
 	switch_log_shutdown();
-
-
 
 	if (runtime.console && runtime.console != stdout && runtime.console != stderr) {
 		fclose(runtime.console);
@@ -1026,6 +1025,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	}
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_management_exec(char *relative_oid, switch_management_action_t action, char *data, switch_size_t datalen)
+{
+	const switch_management_interface_t *ptr;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if ((ptr = switch_loadable_module_get_management_interface(relative_oid))) {
+		status = ptr->management_function(relative_oid, action, data, datalen);
+	}
+
+	return status;
 }
 
 SWITCH_DECLARE(void) switch_core_memory_reclaim_all(void)

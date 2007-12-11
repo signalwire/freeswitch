@@ -1697,7 +1697,11 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			switch_core_session_set_private(*new_session, tech_pvt);
 			tech_pvt->session = *new_session;
 			tech_pvt->codec_index = -1;
-			tech_pvt->local_port = switch_rtp_request_port();
+			if (!(tech_pvt->local_port = switch_rtp_request_port(tech_pvt->profile->ip))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No RTP port available!\n");
+				terminate_session(new_session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+			}
 			tech_pvt->recip = switch_core_session_strdup(*new_session, full_id);
 			tech_pvt->dnis = switch_core_session_strdup(*new_session, dnis);
 		} else {
@@ -2584,7 +2588,12 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 				tech_pvt->session = session;
 				tech_pvt->codec_index = -1;
 				tech_pvt->profile = profile;
-				tech_pvt->local_port = switch_rtp_request_port();
+				if (!(tech_pvt->local_port = switch_rtp_request_port(profile->ip))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No RTP port available!\n");
+					terminate_session(&session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					status = LDL_STATUS_FALSE;
+					goto done;
+				}
 				switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
 				tech_pvt->recip = switch_core_session_strdup(session, from);
 				if (!(exten = ldl_session_get_value(dlsession, "dnis"))) {

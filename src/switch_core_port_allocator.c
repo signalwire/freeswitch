@@ -38,18 +38,21 @@ struct switch_core_port_allocator {
 	switch_port_t start;
 	switch_port_t end;
 	switch_port_t next;
-	uint8_t inc;
+	switch_byte_t *track;
+	uint32_t track_len;
+	uint32_t track_used;
+	switch_port_flag_t flags;
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
 };
 
 SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t start,
-															   switch_port_t end, uint8_t inc, switch_core_port_allocator_t **new_allocator)
+															   switch_port_t end, switch_port_flag_t flags, switch_core_port_allocator_t **new_allocator)
 {
 	switch_status_t status;
 	switch_memory_pool_t *pool;
 	switch_core_port_allocator_t *alloc;
-
+	
 	if ((status = switch_core_new_memory_pool(&pool)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
@@ -58,13 +61,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t sta
 		switch_core_destroy_memory_pool(&pool);
 		return SWITCH_STATUS_MEMERR;
 	}
+	
+	alloc->track_len = (end - start) + 2;
+	alloc->flags = flags;
+
+	if (!(switch_test_flag(alloc, SPF_EVEN) && switch_test_flag(alloc, SPF_ODD))) {
+		alloc->track_len /= 2;
+	}
+
+	alloc->track = switch_core_alloc(pool, (alloc->track_len + 2) * sizeof(switch_byte_t));
 
 	alloc->start = start;
 	alloc->next = start;
 	alloc->end = end;
-	if (!(alloc->inc = inc)) {
-		alloc->inc = 2;
-	}
+
+
 	switch_mutex_init(&alloc->mutex, SWITCH_MUTEX_NESTED, pool);
 	alloc->pool = pool;
 	*new_allocator = alloc;
@@ -72,33 +83,88 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t sta
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_management_exec(char *relative_oid, switch_management_action_t action, char *data, switch_size_t datalen)
-{
-	const switch_management_interface_t *ptr;
-	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if ((ptr = switch_loadable_module_get_management_interface(relative_oid))) {
-		status = ptr->management_function(relative_oid, action, data, datalen);
+SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_core_port_allocator_t *alloc, switch_port_t *port_ptr)
+{
+	switch_port_t port = 0;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	int even = switch_test_flag(alloc, SPF_EVEN);
+	int odd = switch_test_flag(alloc, SPF_ODD);
+
+	switch_mutex_lock(alloc->mutex);
+	srand(getpid() + time(NULL));
+	
+	while(alloc->track_used < alloc->track_len) {
+		double r;
+		int index;
+		int tries = 0;
+
+		do {
+			r = ((double)rand() / ((double)(RAND_MAX)+(double)(1)));
+			index = (int) (r * alloc->track_len);
+			tries++;
+		} while((alloc->track[index] || index >= alloc->track_len) && tries < 10000);
+		
+		while(alloc->track[index]) {
+			if (++index >= alloc->track_len) {
+				index = 0;
+			}
+		}
+
+		if (index < alloc->track_len) {
+			alloc->track[index] = 1;
+			alloc->track_used++;
+			status = SWITCH_STATUS_SUCCESS;
+
+			if ((even && odd)) {
+				port = index + alloc->start;
+			} else {
+				port = index + (alloc->start / 2);
+				port *= 2;
+			} 
+			goto end;
+		}
 	}
+	
+	
+ end:
+
+	switch_mutex_unlock(alloc->mutex);
+	
+	if (status == SWITCH_STATUS_SUCCESS) {
+		*port_ptr = port;
+	} else {
+		*port_ptr = 0;
+	}
+
+	
+	return status;
+	
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_free_port(switch_core_port_allocator_t *alloc, switch_port_t port)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	int even = switch_test_flag(alloc, SPF_EVEN);
+	int odd = switch_test_flag(alloc, SPF_ODD);
+	int index = port - alloc->start;
+	
+	if (!(even && odd)) {
+		index /= 2;
+	}
+
+	switch_mutex_lock(alloc->mutex);
+	if (alloc->track[index]) {
+		alloc->track[index] = 0;
+		alloc->track_used--;
+		status = SWITCH_STATUS_SUCCESS;
+	}
+	switch_mutex_unlock(alloc->mutex);
 
 	return status;
 }
 
-
-
-SWITCH_DECLARE(switch_port_t) switch_core_port_allocator_request_port(switch_core_port_allocator_t *alloc)
-{
-	switch_port_t port;
-
-	switch_mutex_lock(alloc->mutex);
-	port = alloc->next;
-	alloc->next = alloc->next + alloc->inc;
-	if (alloc->next > alloc->end) {
-		alloc->next = alloc->start;
-	}
-	switch_mutex_unlock(alloc->mutex);
-	return port;
-}
 
 SWITCH_DECLARE(void) switch_core_port_allocator_destroy(switch_core_port_allocator_t **alloc)
 {
