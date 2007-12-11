@@ -706,7 +706,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, char **str)
+SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, char **str, switch_bool_t encode)
 {
 	switch_size_t len = 0;
 	switch_event_header_t *hp;
@@ -758,7 +758,11 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 		}
 
 		/* handle any bad things in the string like newlines : etc that screw up the serialized format */
-		switch_url_encode(hp->value, encode_buf, encode_len - 1);
+		if (encode) {
+			switch_url_encode(hp->value, encode_buf, encode_len - 1);
+		} else {
+			snprintf(encode_buf, encode_len, "[%s]", hp->value);
+		}
 
 		llen = strlen(hp->name) + strlen(encode_buf) + 8;
 

@@ -471,7 +471,7 @@ static switch_status_t read_packet(listener_t * listener, switch_event_t **event
 					do_sleep = 0;
 					if (listener->format == EVENT_FORMAT_PLAIN) {
 						etype = "plain";
-						switch_event_serialize(event, &listener->ebuf);
+						switch_event_serialize(event, &listener->ebuf, SWITCH_TRUE);
 					} else {
 						switch_xml_t xml;
 						etype = "xml";
@@ -1049,7 +1049,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj
 		switch_event_add_header(call_event, SWITCH_STACK_BOTTOM, "Socket-Mode", switch_test_flag(listener, LFLAG_ASYNC) ? "async" : "static");
 		switch_event_add_header(call_event, SWITCH_STACK_BOTTOM, "Control", switch_test_flag(listener, LFLAG_FULL) ? "full" : "single-channel");
 
-		switch_event_serialize(call_event, &event_str);
+		switch_event_serialize(call_event, &event_str, SWITCH_TRUE);
 		if (!event_str) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);

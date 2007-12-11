@@ -49,6 +49,7 @@ static struct {
 	char *default_template;
 	int shutdown;
 	int rotate;
+	int debug;
 } globals;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_csv_load);
@@ -163,8 +164,10 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	
 	switch_app_log_t *app_log, *ap;
 	char *last_app = NULL, *last_arg = NULL;
-	char start[80] = "", answer[80] = "", end[80] = "", tmp[30] = "";
-	int32_t duration = 0, billsec = 0;
+	char start[80] = "", answer[80] = "", end[80] = "", tmp[80] = "";
+	int32_t duration = 0, billsec = 0, mduration = 0, billmsec = 0;
+	switch_time_t uduration = 0, billusec = 0;
+	time_t tt_created = 0, tt_answered = 0, tt_hungup = 0, mtt_created = 0, mtt_answered = 0, mtt_hungup = 0;
 
 	if (switch_channel_get_originator_caller_profile(channel)) {
 		return SWITCH_STATUS_SUCCESS;
@@ -202,28 +205,50 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 
 		switch_time_exp_lt(&tm, caller_profile->times->created);
 		switch_strftime(start, &retsize, sizeof(start), fmt, &tm);
+		switch_channel_set_variable(channel, "start_stamp", start);
 
 		switch_time_exp_lt(&tm, caller_profile->times->answered);
 		switch_strftime(answer, &retsize, sizeof(answer), fmt, &tm);
+		switch_channel_set_variable(channel, "answer_stamp", answer);
 
 		switch_time_exp_lt(&tm, caller_profile->times->hungup);
 		switch_strftime(end, &retsize, sizeof(end), fmt, &tm);
-	
-		duration = ((int32_t) caller_profile->times->hungup / 1000000) - ((int32_t) caller_profile->times->created / 1000000);
-		if (duration < 0) {
-			duration = 0;
-		}
+		switch_channel_set_variable(channel, "end_stamp", end);
 
-		billsec = ((int32_t) caller_profile->times->hungup / 1000000) - ((int32_t) caller_profile->times->answered / 1000000);
-		if (billsec < 0) {
-			billsec = 0;
-		}
+		tt_created = (time_t) (caller_profile->times->created / 1000000);
+		mtt_created = (time_t) (caller_profile->times->created / 1000);
+		snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_created);
+		switch_channel_set_variable(channel, "start_epoch", tmp);
+		snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->created);
+		switch_channel_set_variable(channel, "start_uepoch", tmp);
 		
+		tt_answered = (time_t) (caller_profile->times->answered / 1000000);
+		mtt_answered = (time_t) (caller_profile->times->answered / 1000);
+		snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_answered);
+		switch_channel_set_variable(channel, "answer_epoch", tmp);
+		snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);
+		switch_channel_set_variable(channel, "answer_uepoch", tmp);		
+
+
+		tt_hungup = (time_t) (caller_profile->times->hungup / 1000000);
+		mtt_hungup = (time_t) (caller_profile->times->hungup / 1000);
+		snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_hungup);
+		switch_channel_set_variable(channel, "end_epoch", tmp);
+		snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->hungup);
+		switch_channel_set_variable(channel, "end_uepoch", tmp);
+
+		uduration = caller_profile->times->hungup - caller_profile->times->created;
+		duration = tt_hungup - tt_created;
+		mduration = mtt_hungup - mtt_created;
+		
+		if (caller_profile->times->answered) {
+			billsec = tt_hungup - tt_answered;
+			billmsec = mtt_hungup - mtt_answered;
+			billusec = caller_profile->times->hungup - caller_profile->times->answered;
+		}
 	}
 	
-	switch_channel_set_variable(channel, "start_stamp", start);
-	switch_channel_set_variable(channel, "answer_stamp", answer);
-	switch_channel_set_variable(channel, "end_stamp", end);
+	
 	switch_channel_set_variable(channel, "last_app", last_app);
 	switch_channel_set_variable(channel, "last_arg", last_arg);
 	switch_channel_set_variable(channel, "caller_id", cid_buf);
@@ -233,6 +258,31 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 
 	snprintf(tmp, sizeof(tmp), "%d", billsec);
 	switch_channel_set_variable(channel, "billsec", tmp);
+	
+	snprintf(tmp, sizeof(tmp), "%d", mduration);
+	switch_channel_set_variable(channel, "mduration", tmp);
+
+	snprintf(tmp, sizeof(tmp), "%d", billmsec);
+	switch_channel_set_variable(channel, "billmsec", tmp);
+
+	snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, uduration);
+	switch_channel_set_variable(channel, "uduration", tmp);
+
+	snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, billusec);
+	switch_channel_set_variable(channel, "billusec", tmp);
+
+	if (globals.debug) {
+		switch_event_t *event;
+		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+			char *buf;
+			switch_channel_event_set_data(channel, event);
+			switch_event_serialize(event, &buf, SWITCH_FALSE);
+			switch_assert(buf);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "CHANNEL_DATA:\n%s\n", buf);
+			switch_event_destroy(&event);
+			free(buf);
+		}
+	}
 
 	g_template_str = (const char *) switch_core_hash_find(globals.template_hash, globals.default_template);
 	
@@ -325,8 +375,9 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
-			
-				if (!strcasecmp(var, "log-base")) {
+				if (!strcasecmp(var, "debug")) {
+					globals.debug = switch_true(val);
+				} else if (!strcasecmp(var, "log-base")) {
 					globals.log_dir = switch_core_sprintf(pool, "%s%scdr-csv", val, SWITCH_PATH_SEPARATOR);
 				} else if (!strcasecmp(var, "rotate-on-hup")) {
 					globals.rotate = switch_true(val);

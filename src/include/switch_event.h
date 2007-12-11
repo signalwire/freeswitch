@@ -242,10 +242,11 @@ SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(char *own
   \brief Render a string representation of an event sutable for printing or network transport 
   \param event the event to render
   \param str a string pointer to point at the allocated data
+  \param encode url encode the headers
   \return SWITCH_STATUS_SUCCESS if the operation was successful
   \note you must free the resulting string when you are finished with it
 */
-SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, char **str);
+SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, char **str, switch_bool_t encode);
 
 /*!
   \brief Render a XML representation of an event sutable for printing or network transport

@@ -48,7 +48,7 @@ static void event_handler(switch_event_t *event)
 	case SWITCH_EVENT_LOG:
 		return;
 	default:
-		switch_event_serialize(event, &buf);
+		switch_event_serialize(event, &buf, SWITCH_TRUE);
 		if ((xml = switch_event_xmlize(event, NULL))) {
 			xmlstr = switch_xml_toxml(xml, SWITCH_FALSE);
 			dofree++;

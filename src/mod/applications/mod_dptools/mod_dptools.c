@@ -656,9 +656,11 @@ SWITCH_STANDARD_APP(info_function)
 
 	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
-		switch_event_serialize(event, &buf);
+		switch_event_serialize(event, &buf, SWITCH_FALSE);
+		switch_assert(buf);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "CHANNEL_DATA:\n%s\n", buf);
 		switch_event_destroy(&event);
+		free(buf);
 	}
 
 }

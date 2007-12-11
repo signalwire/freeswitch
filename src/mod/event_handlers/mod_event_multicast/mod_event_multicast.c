@@ -162,7 +162,7 @@ static void event_handler(switch_event_t *event)
 			return;
 		default:
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Multicast-Sender", "%s", globals.hostname);
-			if (switch_event_serialize(event, &packet) == SWITCH_STATUS_SUCCESS) {
+			if (switch_event_serialize(event, &packet, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 				memcpy(buf, &globals.host_hash, sizeof(globals.host_hash));
 				switch_copy_string(buf + sizeof(globals.host_hash), packet, sizeof(buf) - sizeof(globals.host_hash));
 				len = strlen(packet) + sizeof(globals.host_hash);;

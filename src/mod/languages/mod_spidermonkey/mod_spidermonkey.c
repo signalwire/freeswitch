@@ -243,7 +243,7 @@ static JSBool request_dump_env(JSContext *cx, JSObject *obj, uintN argc, jsval *
         } 
 	} else {
 		char *buf;
-		switch_event_serialize(ro->stream->event, &buf);
+		switch_event_serialize(ro->stream->event, &buf, SWITCH_TRUE);
 		if (buf) {
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, buf));
 			free(buf);
@@ -654,7 +654,7 @@ static JSBool event_serialize(JSContext * cx, JSObject * obj, uintN argc, jsval 
 			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 		}
 	} else {
-		if (switch_event_serialize(eo->event, &buf) == SWITCH_STATUS_SUCCESS) {
+		if (switch_event_serialize(eo->event, &buf, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, buf));
 			switch_safe_free(buf);
 		}
