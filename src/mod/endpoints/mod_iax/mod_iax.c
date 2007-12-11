@@ -915,10 +915,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_iax_load)
 #define PHONE_ANSWERED		3
 #define PHONE_CONNECTED		4
 
-#define UNREGISTERED		0
-#define REGISTERED		1
-
-
 static switch_status_t load_config(void)
 {
 	char *cf = "iax.conf";
