@@ -102,6 +102,25 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 			uint8_t *abuf[SWITCH_RECOMMENDED_BUFFER_SIZE] =  {0};
 
 			snprintf(path_buf, sizeof(path_buf), "%s%s%s", source->location, SWITCH_PATH_SEPARATOR, fname);
+			if (switch_stristr(".loc", path_buf)) {
+				int fd;
+				ssize_t bytes;
+				char *p;
+
+				if ((fd = open(path_buf, O_RDONLY)) < 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open %s\n", fname);
+					switch_yield(1000000);
+					continue;
+				}
+				
+				bytes = read(fd, path_buf, sizeof(path_buf));
+				if ((p = strchr(path_buf, '\r')) ||
+					(p = strchr(path_buf, '\n'))) {
+					*p = '\0';
+				}
+				close(fd);
+			}
+
 			fname = path_buf;
 			if (switch_core_file_open(&fh,
 									  (char *)fname,
