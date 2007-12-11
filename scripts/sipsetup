@@ -115,7 +115,7 @@ sub configure_sip_provider($) {
     $check = &are_you_sure;
   };
 
-  if ($template->{type} eq "network") {
+  if ($template->{type} eq "network" || $template->{type} eq "pstn") {
     do_config($provider, $config);
   }
   if ($template->{dialprefix}) {
