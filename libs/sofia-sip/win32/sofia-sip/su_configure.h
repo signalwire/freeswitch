@@ -104,7 +104,12 @@
 #define snprintf    _snprintf
 #endif
 #ifndef vsnprintf
-#define vsnprintf   _vsnprintf
+#ifndef _MSC_VER 
+#define vsnprintf _vsnprintf
+#endif
+#if _MSC_VER < 1500
+#define vsnprintf _vsnprintf
+#endif
 #endif
 
 #define srandom(x)    srand((x))

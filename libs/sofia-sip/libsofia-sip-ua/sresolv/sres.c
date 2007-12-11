@@ -141,7 +141,7 @@ int sres_close(sres_socket_t s)
   return closesocket(s);
 }
 
-#if !defined(IPPROTO_IPV6)
+#if !defined(IPPROTO_IPV6) && (_WIN32_WINNT < 0x0600)
 #if HAVE_SIN6
 #include <tpipv6.h>
 #else

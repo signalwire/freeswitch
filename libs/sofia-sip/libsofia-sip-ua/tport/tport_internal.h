@@ -67,6 +67,12 @@
 #define MSG_NOSIGNAL (0)
 #endif
 
+#if (_WIN32_WINNT >= 0x0600)
+#ifndef HAVE_MSG_TRUNC
+#define HAVE_MSG_TRUNC 1
+#endif
+#endif
+
 #if !HAVE_MSG_TRUNC
 #define MSG_TRUNC (0)
 #endif

@@ -67,7 +67,7 @@
 #  include <winsock2.h>
 #  include <ws2tcpip.h>
 #  if SU_HAVE_IN6
-#    if defined(IPPROTO_IPV6)
+#    if defined(IPPROTO_IPV6) || (_WIN32_WINNT >= 0x0600)
 /*     case 1: IPv6 defined in winsock2.h/ws2tcpip.h */
 #    else
 /*     case 2: try to use "IPv6 Tech Preview" */

@@ -196,7 +196,7 @@ static void tport_check_trunc(tport_t *tp, su_addrinfo_t *ai)
 
   n = su_sendto(tp->tp_socket,
 		"TEST", 4, 0,
-		(void *)ai->ai_addr, ai->ai_addrlen);
+		(void *)ai->ai_addr, (socklen_t)ai->ai_addrlen);
 
   if (n != 4)
     return;
