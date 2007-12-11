@@ -175,7 +175,9 @@ install-data-local:
 		dir=`echo $$conffile | sed -e 's|/[^/]*$$||'`; \
 		filename=`echo $$conffile | sed -e 's|^.*/||'`; \
 		test -d $(DESTDIR)$(PREFIX)/$$dir || $(mkinstalldirs) $(DESTDIR)$(prefix)/$$dir ; \
-		test -f $(DESTDIR)$(PREFIX)/$$dir/$$filename || $(INSTALL) $$dir/$$filename $(DESTDIR)$(PREFIX)/$$dir; \
+		test -f $(DESTDIR)$(PREFIX)/$$dir/$$filename || \
+		test -f $(DESTDIR)$(PREFIX)/$$dir/$$filename.noload || \
+			$(INSTALL) $$dir/$$filename $(DESTDIR)$(PREFIX)/$$dir; \
 	done ; 
 	for htdocsfile in `find htdocs -name \* | grep -v .svn` ; do \
 		dir=`echo $$htdocsfile | sed -e 's|/[^/]*$$||'`; \
