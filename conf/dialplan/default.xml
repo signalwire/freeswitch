@@ -105,7 +105,7 @@
 	<anti-action application="set" data="continue_on_fail=true"/>
 	<anti-action application="db" data="insert/call_return/${dialed_ext}/${caller_id_number}"/>
 	<anti-action application="db" data="insert/last_dial_ext/${dialed_ext}/${uuid}"/>
-	<anti-action application="bridge" data="sofia/$${domain}/${dialed_ext}"/>
+	<anti-action application="bridge" data="USER/${dialed_ext}@$${domain}"/>
 	<anti-action application="voicemail" data="default $${domain} ${dialed_ext}"/>
       </condition>
     </extension>

@@ -5,7 +5,6 @@
       <param name="vm-password" value="1234"/>
       <!--<param name="vm-mailto" value="me@mydomain.com"/>-->
       <!--<param name="vm-email-all-messages" value="true"/>-->
-      <param name="dial-string" value="sofia/${use_profile}/888@conference.freeswitch.org"/>
     </params>
     <variables>
       <variable name="user_context" value="default"/>

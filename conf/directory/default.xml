@@ -1,6 +1,10 @@
 <include>
   <!--the domain or ip (the right hand side of the @ in the addr-->
   <domain name="$${domain}">
+    <params>
+      <param name="dial-string" value="sofia/${dialed_domain}/${dialed_user}"/>
+    </params>
+
     <X-PRE-PROCESS cmd="include" data="default/*.xml"/>
   </domain>
 </include>
