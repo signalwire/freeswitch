@@ -63,6 +63,7 @@ struct local_stream_source {
 	int rate;
 	int interval;
 	int samples;
+	uint32_t prebuf;
 	char *timer_name;
 	local_stream_context_t *context_list;
 	switch_dir_t *dir_handle;
@@ -122,6 +123,8 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 			}
 
 			fname = path_buf;
+			fh.prebuf = source->prebuf;
+			
 			if (switch_core_file_open(&fh,
 									  (char *)fname,
 									  source->channels,
@@ -329,6 +332,11 @@ static void launch_threads(void)
 				int tmp = atoi(val);
 				if (tmp == 8000 || tmp == 16000) {
 					source->rate = tmp;
+				}
+			} else if (!strcasecmp(var, "prebuf")) {
+				int tmp = atoi(val);
+				if (tmp > 0) {
+					source->prebuf = (uint32_t) tmp;
 				}
 			} else if (!strcasecmp(var, "channels")) {
 				int tmp = atoi(val);
