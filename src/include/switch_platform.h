@@ -69,6 +69,10 @@ SWITCH_BEGIN_EXTERN_C
 #pragma include_alias(<libteletone_generate.h>,		<../../libs/libteletone/src/libteletone_generate.h>)
 #pragma include_alias(<libteletone_detect.h>,		<../../libs/libteletone/src/libteletone_detect.h>)
 
+#if (_MSC_VER >= 1500)			// VC8+
+#define switch_assert(expr) assert(expr);__analysis_assume( expr )
+#endif
+
 #if (_MSC_VER >= 1400)			// VC8+
 #ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE
@@ -284,6 +288,9 @@ SWITCH_END_EXTERN_C
 #endif
 #ifndef TRUE
 #define TRUE (!FALSE)
+#endif
+#ifndef switch_assert
+#define switch_assert(expr) assert(expr)
 #endif
 /* For Emacs:
  * Local Variables:
