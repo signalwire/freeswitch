@@ -216,6 +216,10 @@ static inline switch_bool_t switch_strstr(char *s, char *q)
 	char *p, *S = NULL, *Q = NULL;
 	switch_bool_t tf = SWITCH_FALSE;
 
+	if (!s || !q) {
+		return SWITCH_FALSE;
+	}
+
 	if (strstr(s, q)) {
 		return SWITCH_TRUE;
 	}
