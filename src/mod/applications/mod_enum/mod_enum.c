@@ -55,6 +55,7 @@ struct query {
 	unsigned char dn[DNS_MAXDN];
 	enum dns_type qtyp;			/* type of the query */
 	enum_record_t *results;
+	int errs;
 };
 typedef struct query enum_query_t;
 
@@ -203,9 +204,10 @@ static char *reverse_number(char *in, char *root)
 
 static void dnserror(enum_query_t * q, int errnum)
 {
-
+	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "unable to lookup %s record for %s: %s\n",
 					  dns_typename(q->qtyp), dns_dntosp(q->dn), dns_strerror(errnum));
+	q->errs++;
 }
 
 
@@ -501,7 +503,7 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t ** result
 
 		j += i;
 
-		if (j > globals.timeout || query.results) {
+		if (j > globals.timeout || query.results || query.errs) {
 			break;
 		}
 
@@ -509,8 +511,9 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t ** result
 		tv.tv_usec = 0;
 		i = select((int) (fd + 1), &fds, 0, 0, &tv);
 		now = time(NULL);
-		if (i > 0)
+		if (i > 0) {
 			dns_ioevent(nctx, now);
+		}
 	}
 
 	if (!query.results) {
