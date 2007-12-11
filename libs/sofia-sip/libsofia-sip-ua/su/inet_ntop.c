@@ -45,7 +45,7 @@ static const char *inet_ntop6(const unsigned char *src, char *dst, size_t size);
  *	Paul Vixie, 1996.
  */
 const char *
-inet_ntop(int af, void const *src, char *dst, size_t size)
+su_inet_ntop(int af, void const *src, char *dst, size_t size)
 {
 
 	switch (af) {

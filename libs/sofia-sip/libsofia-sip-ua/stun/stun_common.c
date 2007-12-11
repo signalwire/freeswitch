@@ -223,7 +223,7 @@ int stun_parse_attr_address(stun_attr_t *attr,
   memcpy(&addr->su_sin.sin_addr.s_addr, p + 4, 4);
 
   SU_DEBUG_5(("%s: address attribute: %s:%d\n", __func__,
-	      inet_ntop(addr->su_family, SU_ADDR(addr), ipaddr, sizeof(ipaddr)),
+	      su_inet_ntop(addr->su_family, SU_ADDR(addr), ipaddr, sizeof(ipaddr)),
 	      (unsigned) ntohs(addr->su_sin.sin_port)));
 
   attr->pattr = addr;
@@ -640,7 +640,7 @@ int stun_send_message(su_socket_t s, su_sockaddr_t *to_addr,
   }
 
   if (err > 0) {
-    inet_ntop(to_addr->su_family, SU_ADDR(to_addr), ipaddr, sizeof(ipaddr));
+    su_inet_ntop(to_addr->su_family, SU_ADDR(to_addr), ipaddr, sizeof(ipaddr));
     SU_DEBUG_5(("%s: message sent to %s:%u\n", __func__,
 		ipaddr, ntohs(to_addr->su_port)));
 

@@ -154,7 +154,7 @@ void tport_stamp(tport_t const *self, msg_t *msg,
   if (msg_addrinfo(msg)->ai_flags & TP_AI_COMPRESSED)
     comp = ";comp=sigcomp";
 
-  inet_ntop(su->su_family, SU_ADDR(su), name, sizeof(name));
+  su_inet_ntop(su->su_family, SU_ADDR(su), name, sizeof(name));
 
   snprintf(stamp, 128,
 	   "%s "MOD_ZU" bytes %s %s/[%s]:%u%s%s at %02u:%02u:%02u.%06lu:\n",

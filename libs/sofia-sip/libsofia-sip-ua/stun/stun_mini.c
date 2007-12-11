@@ -184,7 +184,7 @@ void stun_mini_request(stun_mini_t *mini,
     struct sockaddr_in const *sin = from;
 
     if (sin->sin_family == AF_INET)
-      inet_ntop(sin->sin_family, &sin->sin_addr, buffer, sizeof buffer);
+      su_inet_ntop(sin->sin_family, &sin->sin_addr, buffer, sizeof buffer);
     else
       sprintf(buffer, "<af=%u>", (unsigned)sin->sin_family);
 

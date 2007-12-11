@@ -1596,7 +1596,7 @@ int li_name(su_localinfo_t const *hints,
       if ((flags & LI_NAMEREQD) == LI_NAMEREQD)
 	return 1;
       SU_DEBUG_7(("li_name: getnameinfo() failed\n"));
-      if (!inet_ntop(su->su_family, SU_ADDR(su), name, sizeof name))
+      if (!su_inet_ntop(su->su_family, SU_ADDR(su), name, sizeof name))
 	return ELI_RESOLVER;
     }
 

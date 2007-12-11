@@ -1795,7 +1795,7 @@ int agent_init_via(nta_agent_t *self, tport_t *primaries, int use_maddr)
       int port;
 
       if (su) {
-	inet_ntop(su->su_family, SU_ADDR(su), host, sizeof host);
+	su_inet_ntop(su->su_family, SU_ADDR(su), host, sizeof host);
 	maddr = use_maddr && strcasecmp(canon, host) != 0;
 	port = ntohs(su->su_port);
       }
@@ -7524,7 +7524,7 @@ outgoing_print_tport_error(nta_outgoing_t *orq, int level, char *todo,
 	  orq->orq_method_name, orq->orq_cseq->cs_seq,
 	  todo, su_strerror(error), error, 
 	  tpn->tpn_proto, 
-	  inet_ntop(su->su_family, SU_ADDR(su), addr, sizeof(addr)),
+	  su_inet_ntop(su->su_family, SU_ADDR(su), addr, sizeof(addr)),
 	  htons(su->su_port));
 }
 
@@ -9582,7 +9582,7 @@ void outgoing_answer_aaaa(sres_context_t *orq, sres_query_t *q,
         aaaa->aaaa_record->r_type != sres_type_aaaa)
       continue;			      /* There was an error */
 
-    inet_ntop(AF_INET6, &aaaa->aaaa_addr, addr, sizeof(addr));
+    su_inet_ntop(AF_INET6, &aaaa->aaaa_addr, addr, sizeof(addr));
 
     if (j == 0)
       SU_DEBUG_5(("nta(%p): %s IN AAAA %s\n", (void *)orq, 
@@ -9665,7 +9665,7 @@ void outgoing_answer_a(sres_context_t *orq, sres_query_t *q,
 	a->a_record->r_type != sres_type_a)
       continue;			      /* There was an error */
 
-    inet_ntop(AF_INET, &a->a_addr, addr, sizeof(addr));
+    su_inet_ntop(AF_INET, &a->a_addr, addr, sizeof(addr));
 
     if (j == 0)
       SU_DEBUG_5(("nta: %s IN A %s\n", a->a_record->r_name, addr));

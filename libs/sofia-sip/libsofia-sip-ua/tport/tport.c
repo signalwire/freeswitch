@@ -2954,14 +2954,14 @@ void tport_deliver(tport_t *self,
 #if SU_HAVE_IN6
     if (su->su_family == AF_INET6) {
       ipaddr[0] = '[';
-      inet_ntop(su->su_family, SU_ADDR(su), ipaddr + 1, sizeof(ipaddr) - 1);
+      su_inet_ntop(su->su_family, SU_ADDR(su), ipaddr + 1, sizeof(ipaddr) - 1);
       strcat(ipaddr, "]");
     }
     else {
-      inet_ntop(su->su_family, SU_ADDR(su), ipaddr, sizeof(ipaddr));
+      su_inet_ntop(su->su_family, SU_ADDR(su), ipaddr, sizeof(ipaddr));
     }
 #else
-    inet_ntop(su->su_family, SU_ADDR(su), ipaddr, sizeof(ipaddr));
+    su_inet_ntop(su->su_family, SU_ADDR(su), ipaddr, sizeof(ipaddr));
 #endif
 
     d->d_from->tpn_canon = ipaddr;
@@ -3949,7 +3949,7 @@ tport_resolve(tport_t *self, msg_t *msg, tp_name_t const *tpn)
 #if SU_HAVE_IN6
   SU_DEBUG_9(("tport_resolve addrinfo = %s%s%s:%d\n", 
 	      su->su_family == AF_INET6 ? "[" : "",
-              inet_ntop(su->su_family, SU_ADDR(su), ipaddr, sizeof(ipaddr)),
+              su_inet_ntop(su->su_family, SU_ADDR(su), ipaddr, sizeof(ipaddr)),
 	      su->su_family == AF_INET6 ? "]" : "",
               htons(su->su_port)));
 #else
@@ -4433,7 +4433,7 @@ tport_t *tport_by_name(tport_t const *self, tp_name_t const *tpn)
 
     su->su_port = htons(strtoul(port, NULL, 10));
     
-    if (inet_pton(su->su_family, host, SU_ADDR(su)) > 0) {
+    if (su_inet_pton(su->su_family, host, SU_ADDR(su)) > 0) {
       resolved = 1;
       next = NULL;
 
@@ -4710,7 +4710,7 @@ char *tport_hostport(char buf[], isize_t bufsize,
   }
 #endif
 
-  if (inet_ntop(su->su_family, SU_ADDR(su), b, bufsize) == NULL)
+  if (su_inet_ntop(su->su_family, SU_ADDR(su), b, bufsize) == NULL)
     return NULL;
   n = strlen(b); 
   if (bufsize < n + 2)

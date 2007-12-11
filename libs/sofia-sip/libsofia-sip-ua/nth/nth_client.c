@@ -1075,7 +1075,7 @@ void hc_tport_error(nth_engine_t * he, nth_client_t * hc,
 	 hc->hc_method_name,
 	 errmsg, error,
 	 tpn->tpn_proto,
-	 inet_ntop(su->su_family, SU_ADDR(su), addr, sizeof(addr)),
+	 su_inet_ntop(su->su_family, SU_ADDR(su), addr, sizeof(addr)),
 	 htons(su->su_port));
 
   he->he_stats->st_tp_errors++;

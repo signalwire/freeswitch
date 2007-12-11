@@ -166,10 +166,14 @@ struct sockaddr_storage {
 #define SRES_TIME_MAX ((time_t)LONG_MAX)
 
 #if !HAVE_INET_PTON
-int inet_pton(int af, char const *src, void *dst);
+int su_inet_pton(int af, char const *src, void *dst);
+#else
+#define su_inet_pton inet_pton
 #endif
 #if !HAVE_INET_NTOP
-const char *inet_ntop(int af, void const *src, char *dst, size_t size);
+const char *su_inet_ntop(int af, void const *src, char *dst, size_t size);
+#else
+#define su_inet_ntop inet_ntop
 #endif
 
 #if defined(va_copy)
@@ -2374,14 +2378,14 @@ int sres_parse_nameserver(sres_config_t *c, char const *server)
   if (strchr(server, ':')) {
     struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)sa;
     memset(sa, 0, ns->ns_addrlen = sizeof *sin6);
-    err = inet_pton(sa->sa_family = AF_INET6, server, &sin6->sin6_addr);
+    err = su_inet_pton(sa->sa_family = AF_INET6, server, &sin6->sin6_addr);
   } 
   else 
 #endif
     {
       struct sockaddr_in *sin = (struct sockaddr_in *)sa;
       memset(sa, 0, ns->ns_addrlen = sizeof *sin);
-      err = inet_pton(sa->sa_family = AF_INET, server, &sin->sin_addr);
+      err = su_inet_pton(sa->sa_family = AF_INET, server, &sin->sin_addr);
     }
 
   if (err <= 0) {
@@ -2469,7 +2473,7 @@ sres_server_t **sres_servers_new(sres_resolver_t *res,
     dns->dns_socket = INVALID_SOCKET;
     ns = c->c_nameservers[i];
     memcpy(dns->dns_addr, ns->ns_addr, dns->dns_addrlen = ns->ns_addrlen);
-    inet_ntop(dns->dns_addr->ss_family, SS_ADDR(dns->dns_addr), 
+    su_inet_ntop(dns->dns_addr->ss_family, SS_ADDR(dns->dns_addr), 
 	      dns->dns_name, sizeof dns->dns_name);
     dns->dns_edns = c->c_opt.edns;
     servers[i] = dns++;
@@ -2554,12 +2558,12 @@ sres_socket_t sres_server_socket(sres_resolver_t *res, sres_server_t *dns)
 
     if (family == AF_INET) {
       void *addr = &((struct sockaddr_in *)dns->dns_addr)->sin_addr;
-      inet_ntop(family, addr, ipaddr, sizeof ipaddr);
+      su_inet_ntop(family, addr, ipaddr, sizeof ipaddr);
     }
 #if HAVE_SIN6
     else if (family == AF_INET6) {
       void *addr = &((struct sockaddr_in6 *)dns->dns_addr)->sin6_addr;
-      inet_ntop(family, addr, ipaddr, sizeof ipaddr);
+      su_inet_ntop(family, addr, ipaddr, sizeof ipaddr);
       lb = "[", rb = "]";
     }
 #endif
@@ -3168,7 +3172,7 @@ int sres_resolver_error(sres_resolver_t *res, int socket)
 
 	snprintf(info + strlen(info), sizeof(info) - strlen(info), 
 		 " reported by ");
-	inet_ntop(from->ss_family, SS_ADDR(from), 
+	su_inet_ntop(from->ss_family, SS_ADDR(from), 
 		  info + strlen(info), sizeof(info) - strlen(info));
       }
 
@@ -3232,13 +3236,13 @@ sres_resolver_report_error(sres_resolver_t *res,
     if (remote->ss_family == AF_INET) {
       struct sockaddr_in const *sin = (struct sockaddr_in *)remote;
       uint8_t const *in_addr = (uint8_t*)&sin->sin_addr;
-      inet_ntop(AF_INET, in_addr, buf, sizeof(buf));
+      su_inet_ntop(AF_INET, in_addr, buf, sizeof(buf));
     } 
 #if HAVE_SIN6
     else if (remote->ss_family == AF_INET6) {
       struct sockaddr_in6 const *sin6 = (struct sockaddr_in6 *)remote;
       uint8_t const *in_addr = (uint8_t*)&sin6->sin6_addr;
-      inet_ntop(AF_INET6, in_addr, buf, sizeof(buf));
+      su_inet_ntop(AF_INET6, in_addr, buf, sizeof(buf));
     }
 #endif
   }
@@ -3365,12 +3369,12 @@ void sres_log_response(sres_resolver_t const *res,
       ;
     else if (from->ss_family == AF_INET) {
       struct sockaddr_in const *sin = (void *)from;
-      inet_ntop(AF_INET, &sin->sin_addr, host, sizeof host);
+      su_inet_ntop(AF_INET, &sin->sin_addr, host, sizeof host);
     } 
 #if HAVE_SIN6
     else if (from->ss_family == AF_INET6) {
       struct sockaddr_in6 const *sin6 = (void *)from;
-      inet_ntop(AF_INET6, &sin6->sin6_addr, host, sizeof host);
+      su_inet_ntop(AF_INET6, &sin6->sin6_addr, host, sizeof host);
     }
 #endif
 

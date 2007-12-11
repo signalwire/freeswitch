@@ -321,8 +321,8 @@ SOFIAPUBFUN int su_getlocalip(su_sockaddr_t *sin);
 #endif
 
 #if SU_HAVE_WINSOCK
-SOFIAPUBFUN int inet_pton(int af, char const *src, void *dst);
-SOFIAPUBFUN const char *inet_ntop(int af, void const *src,
+SOFIAPUBFUN int su_inet_pton(int af, char const *src, void *dst);
+SOFIAPUBFUN const char *su_inet_ntop(int af, void const *src,
 				  char *dst, size_t size);
 SOFIAPUBFUN ssize_t 
   su_send(su_socket_t s, void *buffer, size_t length, int flags),
@@ -351,6 +351,8 @@ uint32_t su_ntohl(uint32_t l)
 #define htonl su_ntohl
 
 #else
+#define su_inet_pton inet_pton
+#define su_inet_ntop inet_ntop
 #define su_send(s,b,l,f) send((s),(b),(l),(f))
 #define su_sendto(s,b,l,f,a,L) sendto((s),(b),(l),(f),(void const*)(a),(L))
 #define su_recv(s,b,l,f) recv((s),(b),(l),(f))

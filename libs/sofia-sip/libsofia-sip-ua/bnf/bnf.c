@@ -849,7 +849,7 @@ static size_t convert_ip_address(char const *s,
     len = span_ip6_address(s);
 
   if (len) {
-    if (s[len] == '\0' && inet_pton(AF_INET6, s, addr) == 1) {
+    if (s[len] == '\0' && su_inet_pton(AF_INET6, s, addr) == 1) {
       if (SU_IN6_IS_ADDR_V4MAPPED(addr) ||
 	  SU_IN6_IS_ADDR_V4COMPAT(addr)) {
 	memcpy(addr, addr + 12, 4);
@@ -868,7 +868,7 @@ static size_t convert_ip_address(char const *s,
       s = memcpy(tmp, s, len + 1);
       scan_ip4_address(&tmp);      
     }
-    if (s[len] == '\0' && inet_pton(AF_INET, s, addr) == 1)
+    if (s[len] == '\0' && su_inet_pton(AF_INET, s, addr) == 1)
       return (void)(*return_addrlen = 4), len;
   }
 
