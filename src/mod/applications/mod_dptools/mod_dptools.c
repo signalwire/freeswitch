@@ -1446,6 +1446,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	const char *dest = NULL;
 	static switch_call_cause_t cause;
 	unsigned int timelimit = 60;
+	switch_channel_t *new_channel = NULL;
 
 	user = switch_core_session_strdup(session, outbound_profile->destination_number);
 
@@ -1458,6 +1459,19 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, "as_channel=true") != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain);
 		goto done;
+	}
+
+	if ((x_params = switch_xml_child(x_domain, "params"))) {
+		for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
+			const char *var = switch_xml_attr(x_param, "name");
+			const char *val = switch_xml_attr(x_param, "value");
+			
+			if (!strcasecmp(var, "dial-string")) {
+				dest = val;
+				break;
+			}
+
+		}
 	}
 
 	if ((x_params = switch_xml_child(x_user, "params"))) {
@@ -1486,11 +1500,12 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		}
 		
 		d_dest = switch_channel_expand_variables(channel, dest);
-
+		
 		if (switch_ivr_originate(session, new_session, &cause, d_dest, timelimit, NULL, NULL, NULL, NULL) == SWITCH_STATUS_SUCCESS) {
 			const char *context;
 			switch_caller_profile_t *cp;
-			switch_channel_t *new_channel = switch_core_session_get_channel(*new_session);
+
+			new_channel = switch_core_session_get_channel(*new_session);
 			
 			if ((context = switch_channel_get_variable(new_channel, "inbound_context"))) {
 				if ((cp = switch_channel_get_caller_profile(new_channel))) {
@@ -1504,6 +1519,25 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		if (d_dest != dest) {
 			switch_safe_free(d_dest);
 		}
+	}
+
+	if (new_channel && xml) {
+		if ((x_params = switch_xml_child(x_domain, "variables"))) {
+			for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
+				const char *var = switch_xml_attr(x_param, "name");
+				const char *val = switch_xml_attr(x_param, "value");
+				switch_channel_set_variable(new_channel, var, val);
+			}
+		}
+
+		if ((x_params = switch_xml_child(x_user, "variables"))) {
+			for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
+				const char *var = switch_xml_attr(x_param, "name");
+				const char *val = switch_xml_attr(x_param, "value");
+				switch_channel_set_variable(new_channel, var, val);
+			}
+		}
+		
 	}
 
 	if (xml) {
