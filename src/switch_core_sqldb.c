@@ -154,9 +154,11 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t * thread,
 	uint8_t trans = 0, nothing_in_queue = 0;
 	uint32_t target = 1000;
 	switch_size_t len = 0, sql_len = SQLLEN;
-	char *sqlbuf = (char *) malloc(sql_len);
+	char *tmp, *sqlbuf = (char *) malloc(sql_len);
 	char *sql;
 	switch_size_t newlen;
+
+	switch_assert(sqlbuf);
 
 	if (!sql_manager.event_db) {
 		sql_manager.event_db = switch_core_db_handle();
@@ -180,10 +182,12 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t * thread,
 					itterations++;
 					if (len + newlen > sql_len) {
 						sql_len = len + SQLLEN;
-						if (!(sqlbuf = realloc(sqlbuf, sql_len))) {
+						if (!(tmp = realloc(sqlbuf, sql_len))) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL thread ending on mem err\n");
+							abort();
 							break;
 						}
+						sqlbuf = tmp;
 					}
 					sprintf(sqlbuf + len, "%s;\n", sql);
 					len += newlen;
