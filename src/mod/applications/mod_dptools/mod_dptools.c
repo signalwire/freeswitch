@@ -1502,6 +1502,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		}
 		
 		switch_channel_set_variable(channel, "dialed_user", user);
+		switch_channel_set_variable(channel, "dialed_domain", domain);
 
 		d_dest = switch_channel_expand_variables(channel, dest);
 		
