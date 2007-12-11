@@ -2053,7 +2053,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	}
 
 	if (!context) {
-		context = switch_channel_get_variable(channel, "inbound_context");
+		context = switch_channel_get_variable(channel, "user_context");
 	}
 
 	if (!context) {

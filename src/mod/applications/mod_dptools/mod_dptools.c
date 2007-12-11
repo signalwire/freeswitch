@@ -1507,7 +1507,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 			new_channel = switch_core_session_get_channel(*new_session);
 			
-			if ((context = switch_channel_get_variable(new_channel, "inbound_context"))) {
+			if ((context = switch_channel_get_variable(new_channel, "user_context"))) {
 				if ((cp = switch_channel_get_caller_profile(new_channel))) {
 					cp->context = switch_core_strdup(cp->pool, context);
 				}
