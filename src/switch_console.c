@@ -146,44 +146,48 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const 
 	char *data = NULL;
 	int ret = 0;
 	va_list ap;
-	FILE *handle;
+	FILE *handle = switch_core_data_channel(channel);
 	const char *filep = switch_cut_path(file);
+	char date[80] = "";
+	switch_size_t retsize;
+	switch_time_exp_t tm;
+	switch_event_t *event;
 
 	va_start(ap, fmt);
-
-	handle = switch_core_data_channel(channel);
-
 	ret = switch_vasprintf(&data, fmt, ap);
 	va_end(ap);
+
 	if (ret == -1) {
 		fprintf(stderr, "Memory Error\n");
-	} else {
-		char date[80] = "";
+		goto done;
+	} 
 
-		if (channel == SWITCH_CHANNEL_ID_LOG_CLEAN) {
-			fprintf(handle, "%s", data);
-		} else {
-			switch_size_t retsize;
-			switch_time_exp_t tm;
-			switch_event_t *event;
-			switch_time_exp_lt(&tm, switch_timestamp_now());
-			switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
-
-			if (channel == SWITCH_CHANNEL_ID_LOG) {
-				fprintf(handle, "[%d] %s %s:%d %s() %s", (int) getpid(), date, filep, line, func, data);
-			}
-
-			else if (channel == SWITCH_CHANNEL_ID_EVENT &&
-					 switch_event_running() == SWITCH_STATUS_SUCCESS && switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
-
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Data", "%s", data);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-File", "%s", filep);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Function", "%s", func);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Line", "%d", line);
-				switch_event_fire(&event);
-			}
-		}
+	if (channel == SWITCH_CHANNEL_ID_LOG_CLEAN) {
+		fprintf(handle, "%s", data);
+		goto done;
 	}
+
+	switch_time_exp_lt(&tm, switch_timestamp_now());
+	switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
+
+	if (channel == SWITCH_CHANNEL_ID_LOG) {
+		fprintf(handle, "[%d] %s %s:%d %s() %s", (int) getpid(), date, filep, line, func, data);
+		goto done;
+	} 
+
+	if (channel == SWITCH_CHANNEL_ID_EVENT &&
+		switch_event_running() == SWITCH_STATUS_SUCCESS && 
+		switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
+
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Data", "%s", data);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-File", "%s", filep);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Function", "%s", func);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Line", "%d", line);
+		switch_event_fire(&event);
+	}
+
+
+done:
 	if (data) {
 		free(data);
 	}
