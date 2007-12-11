@@ -1,0 +1,170 @@
+#!/usr/bin/perl
+#
+# FreeSWITCH SIP Setup Assistant v1.0
+# Brian K. West <brian.west@mac.com>
+#
+#
+
+use Data::Dumper;
+use File::Copy;
+
+
+my $PREFIX = "/usr/local/freeswitch";
+
+my $providers = {
+		 "1" => "FWD",
+		 "2" => "SP",
+		 "3" => "IS",
+		 "4" => "AL",
+		 "5" => "SB"
+		};
+
+
+my $FWD = {
+	   "type" => "network",
+	   "register" => "true",
+	   "fields" => [number, password, extension],
+	   "domain" => "pulver.com",
+	   "dialprefix" => "1-393"
+	  };
+
+my $SP = {
+	  "type" => "network",
+	  "register" => "true",
+	  "fields" => [username, password, extension],
+	  "domain" => "sipphone.com",
+	  "dialprefix" => "1-747, 1-222"
+	 };
+
+my $IS = {
+	  "type" => "network",
+	  "register" => "true",
+	  "fields" => [username, password, extension],
+	  "domain" => "ideasip.com",
+	  "dialprefix" => "1-101"
+	 };
+
+my $AL = {
+	  "type" => "pstn",
+	  "register" => "true",
+	  "fields" => [username, password, extension],
+	  "domain" => "asterlink.com",
+	 };
+
+my $SB = {
+	  "type" => "peer",
+	  "domain" => "sipbroker.com",
+	  "dialprefix" => "*XXX"
+	 };
+
+my $TEMPLATES = {
+		 "FWD" => $FWD,
+		 "SP" => $SP,
+		 "IS" => $IS,
+		 "AL" => $AL,
+		 "SB" => $SB
+		};
+
+print "\n" x 60;
+&welcome;
+
+sub welcome {
+  print <<WELCOME
+
+  Welcome to the FreeSWITCH setup assistant.
+
+  1. Configure Free World Dialup
+  2. Configure SIPPhone.com
+  3. Configure ideaSIP.com
+  4. Configure Asterlink.com
+  5. Configure SIPBroker.com
+
+  X. Exit
+
+WELCOME
+    ;
+  print "Which provider do you wish to setup? ";
+  my $i = <STDIN>;
+  chomp($i);
+  if ($i =~ m/X|x/) {
+    print "Thanks you!\n"; exit;
+  } elsif ($i > 5) {
+    print "Invalid Choice\n"; &welcome;
+  } else {
+    if (exists($providers->{$i})) {
+      configure_sip_provider($providers->{$i});
+    }
+  };
+  &welcome;
+}
+
+sub configure_sip_provider($) {
+  my $provider = shift;
+  my $template = $TEMPLATES->{$provider};
+  my $config;
+  my $check = 1;
+  foreach $field (@{$template->{fields}}) {
+    print "\nPlease your $template->{domain} $field: ";
+    $tmp = "$provider" . uc($field);
+    $i = <STDIN>;
+    chomp($i);
+    $config->{$tmp} = $i;
+  }
+
+  while($check) {
+    $check = &are_you_sure;
+  };
+
+  if ($template->{type} eq "network") {
+    do_config($provider, $config);
+  }
+  if ($template->{dialprefix}) {
+    enable_extension($provider, $config);
+  }
+  print "\n\n\nConfiguration Complete!!!\n\n\n\n\n";
+  sleep(2);
+  &welcome;
+}
+
+sub enable_extension($$) {
+  my $provider = shift;
+  my $config = shift;
+
+  my $todo = $TEMPLATES->{$provider};
+
+  copy("$PREFIX/conf/dialplan/extensions/$todo->{domain}.noload", "$PREFIX/conf/dialplan/extensions/$todo->{domain}.xml");
+  print "\nExtension prefix $todo->{dialprefix} enabled for dialing $todo->{domain}...\n";
+}
+
+sub do_config($$) {
+  my $provider = shift;
+  my $config = shift;
+  my $todo = $TEMPLATES->{$provider};
+
+  open(TEMPLATE, "<$PREFIX/conf/directory/default/$todo->{domain}.noload");
+  @lines = <TEMPLATE>;
+  close(TEMPLATE);
+  open(CONFIG, ">$PREFIX/conf/directory/default/$todo->{domain}.xml");
+  foreach $line (@lines) {
+    foreach $key (sort keys %{$config}) {
+      $line =~ s/%$key%/$config->{$key}/g;
+    }
+    print CONFIG $line;
+  }
+  close(CONFIG);
+  print "Config Created...\n";
+}
+
+sub are_you_sure {
+  my $sure = 1;
+  while($sure) {
+    print "Are you sure? (yes/no)";
+    $i = <STDIN>;
+    chomp($i);
+    if($i =~ m/No|no|NO|n/) {
+      &welcome;
+    } elsif ($i =~ m/Yes|yes|YES|y/) {
+      return 0;
+    }
+  }
+}
