@@ -69,7 +69,7 @@ static int      inet_pton6(const char *src, unsigned char *dst);
  *      Paul Vixie, 1996.
  */
 int
-inet_pton(int af, const char *src, void *dst)
+udns_inet_pton(int af, const char *src, void *dst)
 {
   switch (af) {
   case AF_INET:

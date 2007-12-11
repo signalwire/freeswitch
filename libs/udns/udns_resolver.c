@@ -34,8 +34,10 @@
 #define _CRT_NONSTDC_NO_DEPRECATE
 #endif
 #endif // VC8+
-#include "inet_pton.h"
+int udns_inet_pton(int, const char *, void *);
 #include "process.h"
+#else
+#define udns_inet_pton inet_pton
 #endif
 # include <winsock2.h>          /* includes <windows.h> */
 # include <ws2tcpip.h>          /* needed for struct in6_addr */
@@ -282,12 +284,12 @@ static int dns_add_serv_internal(struct dns_ctx *ctx, const char *serv) {
 #if HAVE_INET6
   { struct in_addr addr;
     struct in6_addr addr6;
-    if (inet_pton(AF_INET, serv, &addr) > 0) {
+    if (udns_inet_pton(AF_INET, serv, &addr) > 0) {
       sns->sin.sin_family = AF_INET;
       sns->sin.sin_addr = addr;
       return ++ctx->dnsc_nserv;
     }
-    if (inet_pton(AF_INET6, serv, &addr6) > 0) {
+    if (udns_inet_pton(AF_INET6, serv, &addr6) > 0) {
       sns->sin6.sin6_family = AF_INET6;
       sns->sin6.sin6_addr = addr6;
       return ++ctx->dnsc_nserv;

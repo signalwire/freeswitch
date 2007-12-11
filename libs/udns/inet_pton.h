@@ -23,6 +23,6 @@
  * $Id: inet_pton.h,v 1.7 2005/11/28 20:21:36 bagder Exp $
  ***************************************************************************/
 
-int inet_pton(int, const char *, void *);
+int udns_inet_pton(int, const char *, void *);
 
 #endif /* __INET_PTON_H */
