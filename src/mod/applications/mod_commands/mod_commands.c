@@ -58,7 +58,7 @@ SWITCH_STANDARD_API(user_data_function)
     }
 
     mydata = strdup(cmd);
-    assert(mydata);
+    switch_assert(mydata);
 	
     argc = switch_separate_string(mydata, delim, argv, (sizeof(argv) / sizeof(argv[0])));
 
@@ -145,7 +145,7 @@ SWITCH_STANDARD_API(find_user_function)
     }
 
     mydata = strdup(cmd);
-    assert(mydata);
+    switch_assert(mydata);
 	
     argc = switch_separate_string(mydata, delim, argv, (sizeof(argv) / sizeof(argv[0])));
 
@@ -181,7 +181,7 @@ SWITCH_STANDARD_API(find_user_function)
 
 	if (xml && x_user) {
 		xmlstr = switch_xml_toxml(x_user, SWITCH_FALSE);
-		assert(xmlstr);
+		switch_assert(xmlstr);
 
 		stream->write_function(stream,  "%s", xmlstr);
 		free(xmlstr);
@@ -221,13 +221,13 @@ SWITCH_STANDARD_API(xml_locate_function)
 
 
     mydata = strdup(cmd);
-    assert(mydata);
+    switch_assert(mydata);
 	
     argc = switch_separate_string(mydata, delim, argv, (sizeof(argv) / sizeof(argv[0])));
 
     if (argc == 1 && !strcasecmp(argv[0], "root")) {
-		const char *err;
-		xml = switch_xml_open_root(0, &err);
+		const char *error;
+		xml = switch_xml_open_root(0, &error);
 		obj = xml;
         goto end;
     }
@@ -243,7 +243,7 @@ SWITCH_STANDARD_API(xml_locate_function)
 	tag_attr_val = argv[3];
 	
 	params = switch_mprintf("section=%s&tag=%s&tag_attr_name=%s&tag_attr_val=%s", section, tag, tag_attr_name, tag_attr_val);
-	assert(params);
+	switch_assert(params);
 	if (switch_xml_locate(section, tag, tag_attr_name, tag_attr_val, &xml, &obj, params) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream,  "can't find anything\n");
 		goto end;
@@ -264,7 +264,7 @@ SWITCH_STANDARD_API(xml_locate_function)
 
 	if (xml && obj) {
 		xmlstr = switch_xml_toxml(obj, SWITCH_FALSE);
-		assert(xmlstr);
+		switch_assert(xmlstr);
 
 		stream->write_function(stream,  "%s", xmlstr);
 		free(xmlstr);
@@ -292,7 +292,7 @@ SWITCH_STANDARD_API(regex_function)
     }
 
     mydata = strdup(cmd);
-    assert(mydata);
+    switch_assert(mydata);
 	
     argc = switch_separate_string(mydata, '|', argv, (sizeof(argv) / sizeof(argv[0])));
 
@@ -305,7 +305,7 @@ SWITCH_STANDARD_API(regex_function)
 		if (argc > 2) {
 			len = strlen(argv[0]) * 3;
 			substituted = malloc(len);
-			assert(substituted);
+			switch_assert(substituted);
 			memset(substituted, 0, len);
 			switch_replace_char(argv[2], '%','$', SWITCH_FALSE);
 			switch_perform_substitution(re, proceed, argv[2], argv[0], substituted, len, ovector);
@@ -358,7 +358,7 @@ SWITCH_STANDARD_API(cond_function)
     }
 
     mydata = strdup(cmd);
-    assert(mydata);
+    switch_assert(mydata);
 
     if ((p = strchr(mydata, '?'))) {
         *p = ':';
@@ -699,13 +699,13 @@ SWITCH_STANDARD_API(transfer_function)
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 		if (argc >= 2 && argc <= 5) {
-			char *uuid = argv[0];
+			char *tuuid = argv[0];
 			char *dest = argv[1];
 			char *dp = argv[2];
 			char *context = argv[3];
 			char *arg = NULL;
 
-			if ((tsession = switch_core_session_locate(uuid))) {
+			if ((tsession = switch_core_session_locate(tuuid))) {
 
 				if (*dest == '-') {
 					arg = dest;
@@ -727,7 +727,6 @@ SWITCH_STANDARD_API(transfer_function)
 						}
 					} else if (!strcasecmp(arg, "both")) {
 						const char *uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE);
-						switch_core_session_t *other_session;
 						if (uuid && (other_session = switch_core_session_locate(uuid))) {
 							switch_ivr_session_transfer(other_session, dest, dp, context);
 							switch_core_session_rwunlock(other_session);
@@ -773,7 +772,7 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 	}
 
 	mydata = strdup(cmd);
-	assert(mydata != NULL);
+	switch_assert(mydata != NULL);
 
 	if ((argc = switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0]))) < 3) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "-ERR INVALID ARGS!\n");
@@ -1354,7 +1353,7 @@ SWITCH_STANDARD_API(originate_function)
 	}
 
 	mycmd = strdup(cmd);
-	assert(mycmd);
+	switch_assert(mycmd);
 	argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	
 	if (argc < 2 || argc > 7) {
@@ -1363,13 +1362,13 @@ SWITCH_STANDARD_API(originate_function)
 	}
 	
 
-	for (x = 0; x < argc; x++) {
+	for (x = 0; x < argc && argv[x]; x++) {
 		if (!strcasecmp(argv[x], "undef")) {
 			argv[x] = NULL;
 		}
 	}
 
-	if (!strcasecmp(argv[0], "machine")) {
+	if (argv[0] && !strcasecmp(argv[0], "machine")) {
 		machine = 1;
 		i++;
 	}
@@ -1403,7 +1402,7 @@ SWITCH_STANDARD_API(originate_function)
 	}
 
 	caller_channel = switch_core_session_get_channel(caller_session);
-	assert(caller_channel != NULL);
+	switch_assert(caller_channel != NULL);
 	switch_channel_clear_state_handler(caller_channel, NULL);
 	
 	if (*exten == '&' && *(exten + 1)) {
@@ -1450,7 +1449,7 @@ static void sch_api_callback(switch_scheduler_task_t *task)
 	char *cmd, *arg = NULL;
 	switch_stream_handle_t stream = { 0 };
 
-	assert(task);
+	switch_assert(task);
 
 	cmd = (char *) task->cmd_arg;
 
@@ -1517,7 +1516,7 @@ SWITCH_STANDARD_API(xml_wrap_api_function)
 			if (encoded) {
 				elen = (int) strlen(mystream.data) * 3;
 				edata = malloc(elen);
-				assert(edata != NULL);
+				switch_assert(edata != NULL);
 				memset(edata, 0, elen);
 				switch_url_encode(mystream.data, edata, elen);
 				send = edata;
@@ -1552,7 +1551,7 @@ SWITCH_STANDARD_API(sched_api_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 	tm = strdup(cmd);
-	assert(tm != NULL);
+	switch_assert(tm != NULL);
 
 	if ((group = strchr(tm, ' '))) {
 		uint32_t id;
@@ -1717,7 +1716,7 @@ SWITCH_STANDARD_API(show_function)
 
 	holder.print_title = 1;
 
-	if (!(cflags & SCF_USE_SQL) && !strcasecmp(command, "channels")) {
+	if (!(cflags & SCF_USE_SQL) && command && !strcasecmp(command, "channels")) {
 		stream->write_function(stream, "-ERR SQL DISABLED NO CHANNEL DATA AVAILABLE!\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1866,7 +1865,7 @@ SWITCH_STANDARD_API(uuid_setvar_function)
 				switch_channel_t *channel;
 				channel = switch_core_session_get_channel(psession);
 
-				assert(channel != NULL);
+				switch_assert(channel != NULL);
 
 				if (switch_strlen_zero(var_name)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
@@ -1914,7 +1913,7 @@ SWITCH_STANDARD_API(uuid_getvar_function)
 				switch_channel_t *channel;
 				channel = switch_core_session_get_channel(psession);
 				
-				assert(channel != NULL);
+				switch_assert(channel != NULL);
 
 				if (switch_strlen_zero(var_name)) {
 					stream->write_function(stream, "-ERR No variable name specified!\n");
