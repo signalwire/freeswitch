@@ -92,11 +92,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 	int odd = switch_test_flag(alloc, SPF_ODD);
 
 	switch_mutex_lock(alloc->mutex);
-	srand(getpid() + time(NULL));
+	srand(getpid() + (unsigned)time(NULL));
 	
 	while(alloc->track_used < alloc->track_len) {
 		double r;
-		int index;
+		uint32_t index;
 		int tries = 0;
 
 		do {
@@ -117,9 +117,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 			status = SWITCH_STATUS_SUCCESS;
 
 			if ((even && odd)) {
-				port = index + alloc->start;
+				port = (switch_port_t)(index + alloc->start);
 			} else {
-				port = index + (alloc->start / 2);
+				port = (switch_port_t)(index + (alloc->start / 2));
 				port *= 2;
 			} 
 			goto end;
