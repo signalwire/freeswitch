@@ -13,7 +13,6 @@
 		PreprocessorDefinitions="WIN32;_WINDOWS;_USRDLL;MOD_EXPORTS"
 		WarningLevel="4"
 		WarnAsError="true"
-		Detect64BitPortabilityProblems="true"
 	/>
 	<Tool
 		Name="VCLinkerTool"
