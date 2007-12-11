@@ -1098,7 +1098,7 @@ SWITCH_DECLARE(char *) switch_string_replace(const char *string, const char *sea
 	size_t replace_len = strlen(replace);
 	size_t i, n;
 	size_t dest_len = 0;
-	char *dest;
+	char *dest, *tmp;
 
 	dest = (char *) malloc(sizeof(char));
 
@@ -1107,13 +1107,17 @@ SWITCH_DECLARE(char *) switch_string_replace(const char *string, const char *sea
 			for (n = 0; n < replace_len; n++) {
 				dest[dest_len] = replace[n];
 				dest_len++;
-				dest = (char *) realloc(dest, sizeof(char) * (dest_len + 1));
+				tmp = (char *) realloc(dest, sizeof(char) * (dest_len + 1));
+				switch_assert(tmp);
+				dest = tmp;
 			}
 			i += search_len - 1;
 		} else {
 			dest[dest_len] = string[i];
 			dest_len++;
-			dest = (char *) realloc(dest, sizeof(char) * (dest_len + 1));
+			tmp = (char *) realloc(dest, sizeof(char) * (dest_len + 1));
+			switch_assert(tmp);
+			dest = tmp;
 		}
 	}
 
