@@ -10,7 +10,7 @@
   </domains>
 
   <settings>
-    <param name="debug" value="1"/>
+    <param name="debug" value="0"/>
     <param name="rfc2833-pt" value="101"/>
     <param name="sip-port" value="5080"/>
     <param name="dialplan" value="XML"/>
