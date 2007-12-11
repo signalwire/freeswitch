@@ -1488,6 +1488,16 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		d_dest = switch_channel_expand_variables(channel, dest);
 
 		if (switch_ivr_originate(session, new_session, &cause, d_dest, timelimit, NULL, NULL, NULL, NULL) == SWITCH_STATUS_SUCCESS) {
+			const char *context;
+			switch_caller_profile_t *cp;
+			switch_channel_t *new_channel = switch_core_session_get_channel(*new_session);
+			
+			if ((context = switch_channel_get_variable(new_channel, "inbound_context"))) {
+				if ((cp = switch_channel_get_caller_profile(new_channel))) {
+					cp->context = switch_core_strdup(cp->pool, context);
+				}
+			}
+			
 			switch_core_session_rwunlock(*new_session);
 		}
 
