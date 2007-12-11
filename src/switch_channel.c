@@ -937,6 +937,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_caller_profile(swit
 SWITCH_DECLARE(void) switch_channel_set_originator_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile)
 {
 	switch_assert(channel != NULL);
+	switch_assert(channel->caller_profile != NULL);
 	switch_mutex_lock(channel->profile_mutex);
 	if (channel->caller_profile) {
 		caller_profile->next = channel->caller_profile->originator_caller_profile;
@@ -949,6 +950,7 @@ SWITCH_DECLARE(void) switch_channel_set_originator_caller_profile(switch_channel
 SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile)
 {
 	switch_assert(channel != NULL);
+	switch_assert(channel->caller_profile != NULL);
 
 	switch_mutex_lock(channel->profile_mutex);
 	if (channel->caller_profile) {
