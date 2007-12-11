@@ -716,8 +716,8 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 	uint8_t *file_frame;
 	uint8_t *async_file_frame;
 
-	file_frame = switch_core_alloc(conference->pool, CONF_BUFFER_SIZE);
-	async_file_frame = switch_core_alloc(conference->pool, CONF_BUFFER_SIZE);
+	file_frame = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
+	async_file_frame = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
 
 
 	if (switch_core_timer_init(&timer, conference->timer_name, conference->interval, samples, conference->pool) == SWITCH_STATUS_SUCCESS) {
@@ -1586,7 +1586,7 @@ static void conference_loop_output(conference_member_t * member)
 	while (switch_test_flag(member, MFLAG_RUNNING) && switch_test_flag(member, MFLAG_ITHREAD)
 		   && switch_channel_ready(channel)) {
 		char dtmf[128] = "";
-		uint8_t file_frame[CONF_BUFFER_SIZE] = { 0 };
+		uint8_t file_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 		switch_size_t file_data_len = csamples * 2;
 		switch_size_t file_sample_len = csamples;
 		char *digit;
