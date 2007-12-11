@@ -1,3 +1,4 @@
+<!-- http://wiki.freeswitch.org/wiki/Sofia -->
 <profile name="nat">
   <gateways>
     <X-PRE-PROCESS cmd="include" data="nat/*.xml"/>

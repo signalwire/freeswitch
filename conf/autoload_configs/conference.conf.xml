@@ -1,3 +1,4 @@
+<!-- http://wiki.freeswitch.org/wiki/Mod_conference --> 
 <!-- None of these paths are real if you want any of these options you need to really set them up -->
 <configuration name="conference.conf" description="Audio Conference">
   <!-- Advertise certain presence on startup . -->

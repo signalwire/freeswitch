@@ -1,3 +1,4 @@
+<!-- http://wiki.freeswitch.org/wiki/Sofia --> 
 <profile name="outbound">
   <!-- This profile is only for outbound registrations to providers -->
   <gateways>
