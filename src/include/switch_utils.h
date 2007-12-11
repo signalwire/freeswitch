@@ -352,8 +352,13 @@ SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char clos
 #define switch_malloc(ptr, len) (void)( (!!(ptr = malloc(len))) || (fprintf(stderr,"ABORT! Malloc failure at: %s:%s", __FILE__, __LINE__),abort(), 0), ptr )
 #define switch_zmalloc(ptr, len) (void)( (!!(ptr = malloc(len))) || (fprintf(stderr,"ABORT! Malloc failure at: %s:%s", __FILE__, __LINE__),abort(), 0), memset(ptr, 0, len))
 #else
+#if (_MSC_VER >= 1500)			// VC9+
+#define switch_malloc(ptr, len) (void)(assert(((ptr) = malloc((len)))),ptr);__analysis_assume( ptr )
+#define switch_zmalloc(ptr, len) (void)(assert((ptr = malloc(len))),memset(ptr, 0, len));__analysis_assume( ptr )
+#else
 #define switch_malloc(ptr, len) (void)(assert(((ptr) = malloc((len)))),ptr)
 #define switch_zmalloc(ptr, len) (void)(assert((ptr = malloc(len))),memset(ptr, 0, len))
+#endif
 #endif
 
 SWITCH_END_EXTERN_C

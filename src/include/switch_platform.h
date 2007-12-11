@@ -69,7 +69,7 @@ SWITCH_BEGIN_EXTERN_C
 #pragma include_alias(<libteletone_generate.h>,		<../../libs/libteletone/src/libteletone_generate.h>)
 #pragma include_alias(<libteletone_detect.h>,		<../../libs/libteletone/src/libteletone_detect.h>)
 
-#if (_MSC_VER >= 1500)			// VC8+
+#if (_MSC_VER >= 1500)			// VC9+
 #define switch_assert(expr) assert(expr);__analysis_assume( expr )
 #endif
 
