@@ -16,6 +16,7 @@
     <param name="context" value="public"/>
     <param name="dtmf-duration" value="100"/>
     <param name="codec-prefs" value="$${global_codec_prefs}"/>
+    <param name="hold-music" value="local_stream://demo_moh"/>
     <param name="use-rtp-timer" value="true"/>
     <param name="rtp-timer-name" value="soft"/>
     <param name="manage-presence" value="true"/>
