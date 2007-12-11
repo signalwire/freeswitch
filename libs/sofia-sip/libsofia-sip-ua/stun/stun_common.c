@@ -44,6 +44,7 @@
 #include "stun_internal.h"
 
 #include <string.h>
+#include <stdlib.h>
 #include <assert.h>
 
 #if HAVE_FUNC

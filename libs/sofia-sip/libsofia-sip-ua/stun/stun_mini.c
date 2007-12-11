@@ -40,6 +40,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <stdlib.h>
 
 typedef struct stun_bound_s stun_bound_t;
 
