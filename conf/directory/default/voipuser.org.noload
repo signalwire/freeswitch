@@ -1,0 +1,21 @@
+<!-- Working FWD dialup in and outbound -->
+
+<include>
+  <user id="%VUUSERNAME%">
+    <gateways>
+      <gateway name="sip.voipuser.org">
+	<param name="username" value="%VUUSERNAME%"/>
+	<param name="password" value="%VUPASSWORD%"/>
+	<param name="expire-seconds" value="600"/>
+	<param name="register" value="true"/>
+	<param name="retry_seconds" value="30"/>
+	<param name="extension" value="%VUEXTENSION%"/>
+	<param name="context" value="public"/>
+      </gateway>
+    </gateways>
+    <params>
+      <param name="password" value="%VUPASSWORD%"/>
+    </params>
+  </user>
+</include>
+
