@@ -147,19 +147,6 @@
       </condition>
     </extension>
     
-    <!--
-	if the number starts with a *393 then strip the *393 
-	and dial the remainder of the number out our "fwd" gateway
-    -->
-    <extension name="FWD">
-      <condition field="destination_number" expression="^\*393([\*\d]+)$">
-	<!-- Just incase they are using Asterisk let's disable VAD and only use G.711 -->
-	<action application="export" data="rtp_disable_vad_out=true"/>
-	<action application="export" data="absolute_codec_string=PCMU@20i,PCMA@20i"/>
-	<action application="bridge" data="sofia/gateway/fwd/$1"/>
-      </condition>
-    </extension> 
-    
     <!-- a sample IVR  -->
     <extension name="IVR_Demo">
       <condition field="destination_number" expression="5000">
@@ -194,6 +181,12 @@
     </extension>
     -->
 
+    <extension name="hold_music">
+      <condition field="destination_number" expression="^9999$">
+	<action application="answer"/>
+	<action application="playback" data="local_stream://moh_${read_rate}"/>
+      </condition>
+    </extension>
 
     <X-PRE-PROCESS cmd="include" data="extensions/*.xml"/>
 
