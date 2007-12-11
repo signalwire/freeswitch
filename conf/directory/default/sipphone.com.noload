@@ -4,7 +4,7 @@
   <user id="%SPUSERNAME%">
     <gateways>
       <gateway name="proxy01.sipphone.com">
-	<param name="username" value="%SPUERNAME%"/>
+	<param name="username" value="%SPUSERNAME%"/>
 	<param name="password" value="%SPPASSWORD%"/>
 	<param name="from-domain" value="proxy01.sipphone.com"/>
 	<param name="caller-id-in-from" value="true"/>
