@@ -126,7 +126,7 @@ SWITCH_DECLARE(void) switch_buffer_unlock(switch_buffer_t *buffer)
 SWITCH_DECLARE(switch_size_t) switch_buffer_len(switch_buffer_t *buffer)
 {
 
-	assert(buffer != NULL);
+	switch_assert(buffer != NULL);
 
 	return buffer->datalen;
 
@@ -135,7 +135,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_len(switch_buffer_t *buffer)
 
 SWITCH_DECLARE(switch_size_t) switch_buffer_freespace(switch_buffer_t *buffer)
 {
-	assert(buffer != NULL);
+	switch_assert(buffer != NULL);
 
 	if (switch_test_flag(buffer, SWITCH_BUFFER_FLAG_DYNAMIC)) {
 		if (buffer->max_len) {
@@ -150,7 +150,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_freespace(switch_buffer_t *buffer)
 
 SWITCH_DECLARE(switch_size_t) switch_buffer_inuse(switch_buffer_t *buffer)
 {
-	assert(buffer != NULL);
+	switch_assert(buffer != NULL);
 
 	return buffer->used;
 }
@@ -159,7 +159,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_toss(switch_buffer_t *buffer, switch
 {
 	switch_size_t reading = 0;
 
-	assert(buffer != NULL);
+	switch_assert(buffer != NULL);
 
 	if (buffer->used < 1) {
 		buffer->used = 0;
@@ -202,8 +202,8 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_read(switch_buffer_t *buffer, void *
 {
 	switch_size_t reading = 0;
 
-	assert(buffer != NULL);
-	assert(data != NULL);
+	switch_assert(buffer != NULL);
+	switch_assert(data != NULL);
 
 
 	if (buffer->used < 1) {
@@ -227,9 +227,9 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, const
 {
 	switch_size_t freespace, actual_freespace;
 
-	assert(buffer != NULL);
-	assert(data != NULL);
-	assert(buffer->data != NULL);
+	switch_assert(buffer != NULL);
+	switch_assert(data != NULL);
+	switch_assert(buffer->data != NULL);
 
 	if (!datalen) {
 		return buffer->used;
@@ -286,8 +286,8 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, const
 
 SWITCH_DECLARE(void) switch_buffer_zero(switch_buffer_t *buffer)
 {
-	assert(buffer != NULL);
-	assert(buffer->data != NULL);
+	switch_assert(buffer != NULL);
+	switch_assert(buffer->data != NULL);
 
 	buffer->used = 0;
 	buffer->actually_used = 0;

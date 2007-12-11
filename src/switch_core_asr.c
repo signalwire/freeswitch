@@ -54,7 +54,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
 		}
 	}
 
-	assert(ah != NULL);
+	switch_assert(ah != NULL);
 
 	if ((ah->asr_interface = switch_loadable_module_get_asr_interface(module_name)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid asr module [%s]!\n", module_name);
@@ -86,7 +86,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t
 	char *epath = NULL;
 	switch_status_t status;
 
-	assert(ah != NULL);
+	switch_assert(ah != NULL);
 
 	if (!switch_is_file_path(path)) {
 		epath = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, path);
@@ -103,7 +103,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_unload_grammar(switch_asr_handle
 {
 	switch_status_t status;
 
-	assert(ah != NULL);
+	switch_assert(ah != NULL);
 	status = ah->asr_interface->asr_unload_grammar(ah, grammar);
 
 	return status;
@@ -111,42 +111,42 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_unload_grammar(switch_asr_handle
 
 SWITCH_DECLARE(switch_status_t) switch_core_asr_pause(switch_asr_handle_t *ah)
 {
-	assert(ah != NULL);
+	switch_assert(ah != NULL);
 
 	return ah->asr_interface->asr_pause(ah);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_asr_resume(switch_asr_handle_t *ah)
 {
-	assert(ah != NULL);
+	switch_assert(ah != NULL);
 
 	return ah->asr_interface->asr_resume(ah);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_asr_close(switch_asr_handle_t *ah, switch_asr_flag_t *flags)
 {
-	assert(ah != NULL);
+	switch_assert(ah != NULL);
 
 	return ah->asr_interface->asr_close(ah, flags);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len, switch_asr_flag_t *flags)
 {
-	assert(ah != NULL);
+	switch_assert(ah != NULL);
 
 	return ah->asr_interface->asr_feed(ah, data, len, flags);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_asr_check_results(switch_asr_handle_t *ah, switch_asr_flag_t *flags)
 {
-	assert(ah != NULL);
+	switch_assert(ah != NULL);
 
 	return ah->asr_interface->asr_check_results(ah, flags);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_asr_get_results(switch_asr_handle_t *ah, char **xmlstr, switch_asr_flag_t *flags)
 {
-	assert(ah != NULL);
+	switch_assert(ah != NULL);
 
 	return ah->asr_interface->asr_get_results(ah, xmlstr, flags);
 }

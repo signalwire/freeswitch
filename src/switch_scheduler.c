@@ -158,7 +158,7 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,
 
 	switch_mutex_lock(globals.task_mutex);
 	switch_zmalloc(container, sizeof(*container));
-	assert(func);
+	switch_assert(func);
 	container->func = func;
 	container->task.created = time(NULL);
 	container->task.runtime = task_runtime;

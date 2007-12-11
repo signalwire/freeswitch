@@ -40,7 +40,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 	switch_channel_t *channel;
 	char tmp[30];
 
-	assert(session != NULL);
+	switch_assert(session != NULL);
 	channel = switch_core_session_get_channel(session);
 
 	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
@@ -77,7 +77,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 	switch_channel_t *channel;
 	char tmp[30];
 
-	assert(session != NULL);
+	switch_assert(session != NULL);
 	channel = switch_core_session_get_channel(session);
 
 
@@ -112,8 +112,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, ch
 	const switch_codec_implementation_t *iptr, *implementation = NULL;
 	char *mode = fmtp;
 
-	assert(codec != NULL);
-	assert(codec_name != NULL);
+	switch_assert(codec != NULL);
+	switch_assert(codec_name != NULL);
 
 	memset(codec, 0, sizeof(*codec));
 
@@ -199,9 +199,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode(switch_codec_t *codec,
 														 uint32_t decoded_rate,
 														 void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
 {
-	assert(codec != NULL);
-	assert(encoded_data != NULL);
-	assert(decoded_data != NULL);
+	switch_assert(codec != NULL);
+	switch_assert(encoded_data != NULL);
+	switch_assert(decoded_data != NULL);
 
 	if (!codec->implementation) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec is not initilized!\n");
@@ -227,9 +227,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 														 void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
 {
 
-	assert(codec != NULL);
-	assert(encoded_data != NULL);
-	assert(decoded_data != NULL);
+	switch_assert(codec != NULL);
+	switch_assert(encoded_data != NULL);
+	switch_assert(decoded_data != NULL);
 
 
 
@@ -251,7 +251,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 
 SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 {
-	assert(codec != NULL);
+	switch_assert(codec != NULL);
 
 	if (!codec->implementation) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec is not initilized!\n");

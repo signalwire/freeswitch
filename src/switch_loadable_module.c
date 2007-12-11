@@ -83,8 +83,8 @@ static void *switch_loadable_module_exec(switch_thread_t * thread, void *obj)
 	switch_loadable_module_t *module = ts->objs[0];
 	int restarts;
 
-	assert(thread != NULL);
-	assert(module != NULL);
+	switch_assert(thread != NULL);
+	switch_assert(module != NULL);
 
 	for (restarts = 0; status != SWITCH_STATUS_TERM; restarts++) {
 		status = module->switch_module_runtime();
@@ -653,7 +653,7 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 	char derr[512] = "";
 	switch_memory_pool_t *pool;
 
-	assert(path != NULL);
+	switch_assert(path != NULL);
 
 	switch_core_new_memory_pool(&pool);
 	*new_module = NULL;
@@ -1060,7 +1060,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 
 static void do_shutdown(switch_loadable_module_t *module)
 {
-	assert(module != NULL);
+	switch_assert(module != NULL);
 
 	switch_loadable_module_unprocess(module);
 	if (module->switch_module_shutdown) {
@@ -1328,9 +1328,9 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 	switch_api_interface_t *api;
 	switch_status_t status;
 
-	assert(stream != NULL);
-	assert(stream->data != NULL);
-	assert(stream->write_function != NULL);
+	switch_assert(stream != NULL);
+	switch_assert(stream->data != NULL);
+	switch_assert(stream->write_function != NULL);
 
 	if (!stream->event) {
 		switch_event_create(&stream->event, SWITCH_EVENT_API);
@@ -1366,7 +1366,7 @@ SWITCH_DECLARE(switch_loadable_module_interface_t *) switch_loadable_module_crea
 	switch_loadable_module_interface_t *mod;
 
 	mod = switch_core_alloc(pool, sizeof(switch_loadable_module_interface_t));
-	assert(mod != NULL);
+	switch_assert(mod != NULL);
 
 	mod->pool = pool;
 
@@ -1378,7 +1378,7 @@ SWITCH_DECLARE(switch_loadable_module_interface_t *) switch_loadable_module_crea
 #define ALLOC_INTERFACE(_TYPE_)	{									\
 		switch_##_TYPE_##_interface_t *i, *ptr;							\
 		i = switch_core_alloc(mod->pool, sizeof(switch_##_TYPE_##_interface_t)); \
-		assert(i != NULL);												\
+		switch_assert(i != NULL);												\
 		for (ptr = mod->_TYPE_##_interface; ptr && ptr->next; ptr = ptr->next); \
 		if (ptr) {														\
 			ptr->next = i;												\

@@ -86,7 +86,7 @@ SWITCH_DECLARE(char *) switch_amp_encode(char *s, char *buf, switch_size_t len)
 {
 	char *p, *q;
 	switch_size_t x = 0;
-	assert(s);
+	switch_assert(s);
 
 	q = buf;
 
@@ -408,7 +408,7 @@ SWITCH_DECLARE(char *) switch_replace_char(char *str, char from, char to, switch
 
 	if (dup) {
 		p = strdup(str);
-		assert(p);
+		switch_assert(p);
 	} else {
 		p = str;
 	}
@@ -926,7 +926,7 @@ switch_inet_ntop6(unsigned char const *src, char *dst, size_t size)
 
 SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct in_addr *in)
 {
-	assert(buf);
+	switch_assert(buf);
 	*buf = '\0';
 	if (in) {
 		switch_inet_ntop(AF_INET, in, buf, len);

@@ -76,8 +76,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 		goto done;
 	}
 
-	assert(session != NULL);
-	assert(*frame != NULL);
+	switch_assert(session != NULL);
+	switch_assert(*frame != NULL);
 
 	if (switch_test_flag(*frame, SFF_CNG)) {
 		status = SWITCH_STATUS_SUCCESS;
@@ -101,7 +101,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	status = SWITCH_STATUS_FALSE;
 	need_codec = perfect = 0;
 
-	assert(session != NULL);
+	switch_assert(session != NULL);
 	*frame = NULL;
 
 	if (switch_channel_test_flag(session->channel, CF_HOLD)) {
@@ -128,8 +128,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		goto done;
 	}
 
-	assert(session != NULL);
-	assert(*frame != NULL);
+	switch_assert(session != NULL);
+	switch_assert(*frame != NULL);
 
 	
 	if (switch_test_flag(*frame, SFF_CNG)) {
@@ -137,7 +137,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		goto done;
 	}
 
-	assert((*frame)->codec != NULL);
+	switch_assert((*frame)->codec != NULL);
 	if ((session->read_codec && (*frame)->codec && session->read_codec->implementation != (*frame)->codec->implementation)) {
 		need_codec = TRUE;
 	}
@@ -313,9 +313,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				}
 				session->enc_read_frame.datalen = session->enc_read_frame.buflen;
 
-				assert(session->read_codec != NULL);
-				assert(enc_frame != NULL);
-				assert(enc_frame->data != NULL);
+				switch_assert(session->read_codec != NULL);
+				switch_assert(enc_frame != NULL);
+				switch_assert(enc_frame->data != NULL);
 
 				status = switch_core_codec_encode(session->read_codec,
 												  enc_frame->codec,
@@ -433,8 +433,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	unsigned int flag = 0, need_codec = 0, perfect = 0, do_bugs = 0, do_write = 0, do_resample = 0;
 	switch_io_flag_t io_flag = SWITCH_IO_FLAG_NOOP;
 
-	assert(session != NULL);
-	assert(frame != NULL);
+	switch_assert(session != NULL);
+	switch_assert(frame != NULL);
 
 
 	if (switch_channel_test_flag(session->channel, CF_HOLD)) {
@@ -450,7 +450,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	assert(frame->codec != NULL);
+	switch_assert(frame->codec != NULL);
 
 	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
 		need_codec = TRUE;

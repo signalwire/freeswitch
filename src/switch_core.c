@@ -182,10 +182,10 @@ static void *switch_core_service_thread(switch_thread_t * thread, void *obj)
 	switch_frame_t *read_frame;
 	int stream_id = *stream_id_p;
 
-	assert(thread != NULL);
-	assert(session != NULL);
+	switch_assert(thread != NULL);
+	switch_assert(session != NULL);
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	switch_channel_set_flag(channel, CF_SERVICE);
 	while (data->running > 0) {
@@ -568,8 +568,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_mime_add_type(const char *type, cons
 	const char *check = (const char *) switch_core_hash_find(runtime.mime_types, ext);
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	assert(type);
-	assert(ext);
+	switch_assert(type);
+	switch_assert(ext);
 
 	if (!check) {
 		char *ptype = switch_core_permanent_strdup(type);
@@ -578,7 +578,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_mime_add_type(const char *type, cons
 		char *argv[20] = { 0 };
 		int x;
 
-		assert(ext_list);
+		switch_assert(ext_list);
 
 		if ((argc = switch_separate_string(ext_list, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 
@@ -603,7 +603,7 @@ static void load_mime_types(void)
 	char *mime_path = NULL;
 
 	mime_path = switch_mprintf("%s/%s", SWITCH_GLOBAL_dirs.conf_dir, cf);
-	assert(mime_path);
+	switch_assert(mime_path);
 
 	fd = open(mime_path, O_RDONLY);
 	if (fd <= 0) {
@@ -664,7 +664,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		*err = "FATAL ERROR! Could noat allocate memory pool\n";
 		return SWITCH_STATUS_MEMERR;
 	}
-	assert(runtime.memory_pool != NULL);
+	switch_assert(runtime.memory_pool != NULL);
 	switch_mutex_init(&runtime.throttle_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
 	switch_core_set_globals();
 	switch_core_session_init(runtime.memory_pool);
@@ -750,7 +750,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		runtime.console = stdout;
 	}
 
-	assert(runtime.memory_pool != NULL);
+	switch_assert(runtime.memory_pool != NULL);
 	switch_log_init(runtime.memory_pool);
 	switch_event_init(runtime.memory_pool);
 

@@ -201,19 +201,19 @@ static void switch_core_standard_on_loopback(switch_core_session_t *session)
 
 static void switch_core_standard_on_transmit(switch_core_session_t *session)
 {
-	assert(session != NULL);
+	switch_assert(session != NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard TRANSMIT\n");
 }
 
 static void switch_core_standard_on_hold(switch_core_session_t *session)
 {
-	assert(session != NULL);
+	switch_assert(session != NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard HOLD\n");
 }
 
 static void switch_core_standard_on_hibernate(switch_core_session_t *session)
 {
-	assert(session != NULL);
+	switch_assert(session != NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard HIBERNATE\n");
 }
 
@@ -368,14 +368,14 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 
 
 	 */
-	assert(session != NULL);
+	switch_assert(session != NULL);
 
 	session->thread_running = 1;
 	endpoint_interface = session->endpoint_interface;
-	assert(endpoint_interface != NULL);
+	switch_assert(endpoint_interface != NULL);
 
 	driver_state_handler = endpoint_interface->state_handler;
-	assert(driver_state_handler != NULL);
+	switch_assert(driver_state_handler != NULL);
 
 	switch_mutex_lock(session->mutex);
 

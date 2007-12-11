@@ -144,14 +144,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(char *uuid_str, s
 
 SWITCH_DECLARE(void *) switch_core_session_get_private(switch_core_session_t *session)
 {
-	assert(session != NULL);
+	switch_assert(session != NULL);
 	return session->private_info;
 }
 
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_private(switch_core_session_t *session, void *private_info)
 {
-	assert(session != NULL);
+	switch_assert(session != NULL);
 	session->private_info = private_info;
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -231,7 +231,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		return SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED;
 	}
 
-	assert(*new_session != NULL);
+	switch_assert(*new_session != NULL);
 	
 	if (*new_session) {
 		switch_caller_profile_t *profile = NULL, *peer_profile = NULL, *cloned_profile = NULL;
@@ -321,7 +321,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_
 	switch_io_event_hook_receive_message_t *ptr;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	assert(session != NULL);
+	switch_assert(session != NULL);
 
 	if (session->endpoint_interface->io_routines->receive_message) {
 		status = session->endpoint_interface->io_routines->receive_message(session, message);
@@ -348,10 +348,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_pass_indication(switch_core_
 	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	assert(session != NULL);
+	switch_assert(session != NULL);
 	
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
 		msg.message_id = indication;
@@ -385,7 +385,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_message(switch_core_se
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	assert(session != NULL);
+	switch_assert(session != NULL);
 
 	if (session->message_queue) {
 		if (switch_queue_trypush(session->message_queue, message) == SWITCH_STATUS_SUCCESS) {
@@ -401,7 +401,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_message(switch_core_
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	void *pop;
 
-	assert(session != NULL);
+	switch_assert(session != NULL);
 
 	if (session->message_queue) {
 		if ((status = (switch_status_t) switch_queue_trypop(session->message_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
@@ -433,7 +433,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_event(switch_core_se
 	switch_io_event_hook_receive_event_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	assert(session != NULL);
+	switch_assert(session != NULL);
 
 	/* Acquire a read lock on the session or forget it the channel is dead */
 	if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
@@ -470,7 +470,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_sess
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	assert(session != NULL);
+	switch_assert(session != NULL);
 
 	if (session->event_queue) {
 		if (switch_queue_trypush(session->event_queue, *event) == SWITCH_STATUS_SUCCESS) {
@@ -496,7 +496,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_event(switch_core_se
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	void *pop;
 
-	assert(session != NULL);
+	switch_assert(session != NULL);
 
 	if (session->event_queue) {
 		if ((status = (switch_status_t) switch_queue_trypop(session->event_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
@@ -511,7 +511,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_c
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	assert(session != NULL);
+	switch_assert(session != NULL);
 
 	if (session->private_event_queue) {
 		(*event)->event_id = SWITCH_EVENT_PRIVATE_COMMAND;
@@ -540,10 +540,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch
 	void *pop;
 	switch_channel_t *channel;
 
-	assert(session != NULL);
+	switch_assert(session != NULL);
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	
 	if (switch_channel_test_flag(channel, CF_EVENT_LOCK)) {
@@ -849,8 +849,8 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(char
 
 SWITCH_DECLARE(uint8_t) switch_core_session_compare(switch_core_session_t *a, switch_core_session_t *b)
 {
-	assert(a != NULL);
-	assert(b != NULL);
+	switch_assert(a != NULL);
+	switch_assert(b != NULL);
 
 	return (uint8_t) (a->endpoint_interface == b->endpoint_interface);
 }
@@ -911,7 +911,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 
 	log = switch_core_session_alloc(session, sizeof(*log));
 
-	assert(log != NULL);
+	switch_assert(log != NULL);
 
 	log->app = switch_core_session_strdup(session, application_interface->interface_name);
 	log->arg = switch_core_session_strdup(session, arg);

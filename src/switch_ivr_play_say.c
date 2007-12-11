@@ -103,7 +103,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	int matches = 0;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	if (!macro_name) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No phrase macro specified.\n");
@@ -356,10 +356,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	}
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	read_codec = switch_core_session_get_read_codec(session);
-	assert(read_codec != NULL);
+	switch_assert(read_codec != NULL);
 
 	fh->channels = read_codec->implementation->number_of_channels;
 
@@ -602,10 +602,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 	switch_byte_t data[1024];
 	switch_channel_t *channel;
 
-	assert(session != NULL);
+	switch_assert(session != NULL);
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	switch_channel_pre_answer(channel);
 	read_codec = switch_core_session_get_read_codec(session);
@@ -711,7 +711,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	const char *prebuf;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	prefix = switch_channel_get_variable(channel, "sound_prefix");
 	timer_name = switch_channel_get_variable(channel, "timer_name");
@@ -819,7 +819,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					  "ARTIST=%s\n" "COMMENT=%s\n" "DATE=%s\n", file, fh->samplerate, fh->channels, title, copyright, software, artist, comment, date);
 #endif
 
-	assert(read_codec != NULL);
+	switch_assert(read_codec != NULL);
 	interval = read_codec->implementation->microseconds_per_frame / 1000;
 
 	if (!fh->audio_buffer) {
@@ -1137,7 +1137,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 	channel = switch_core_session_get_channel(session);
 
 	//Make sure somebody is home
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	//Answer the channel if it hasn't already been answered
 	switch_channel_answer(channel);
@@ -1254,7 +1254,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	switch_size_t starlen, poundlen;
 	
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	if (!sh) {
 		return SWITCH_STATUS_FALSE;
@@ -1320,7 +1320,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	write_frame.samples = len / 2;
 	write_frame.codec = codec;
 
-	assert(codec->implementation != NULL);
+	switch_assert(codec->implementation != NULL);
 
 	for (x = 0; !done && x < lead_in_out; x++) {
 		switch_yield(codec->implementation->microseconds_per_frame);
@@ -1502,7 +1502,7 @@ SWITCH_DECLARE(void) switch_ivr_clear_speech_cache(switch_core_session_t *sessio
 	switch_channel_t *channel;
 
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+    switch_assert(channel != NULL);
 
 	if ((cache_obj = switch_channel_get_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME))) {
 		switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
@@ -1539,7 +1539,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	int need_create = 1, need_alloc = 1;
 	
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	sh = &lsh;
 	codec = &lcodec;

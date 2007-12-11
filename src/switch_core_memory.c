@@ -45,8 +45,8 @@ static struct {
 
 SWITCH_DECLARE(switch_memory_pool_t *) switch_core_session_get_pool(switch_core_session_t *session)
 {
-	assert(session != NULL);
-	assert(session->pool != NULL);
+	switch_assert(session != NULL);
+	switch_assert(session->pool != NULL);
 	return session->pool;
 }
 
@@ -55,8 +55,8 @@ SWITCH_DECLARE(switch_memory_pool_t *) switch_core_session_get_pool(switch_core_
 SWITCH_DECLARE(void *) switch_core_session_alloc(switch_core_session_t *session, switch_size_t memory)
 {
 	void *ptr = NULL;
-	assert(session != NULL);
-	assert(session->pool != NULL);
+	switch_assert(session != NULL);
+	switch_assert(session->pool != NULL);
 
 #ifdef LOCK_MORE
 	switch_mutex_lock(memory_manager.mem_lock);
@@ -67,7 +67,7 @@ SWITCH_DECLARE(void *) switch_core_session_alloc(switch_core_session_t *session,
 #endif
 
 	ptr = apr_palloc(session->pool, memory);
-	assert(ptr != NULL);
+	switch_assert(ptr != NULL);
 
 	memset(ptr, 0, memory);
 	
@@ -84,7 +84,7 @@ SWITCH_DECLARE(void *) switch_core_session_alloc(switch_core_session_t *session,
 SWITCH_DECLARE(void *) switch_core_permanent_alloc(switch_size_t memory)
 {
 	void *ptr = NULL;
-	assert(memory_manager.memory_pool != NULL);
+	switch_assert(memory_manager.memory_pool != NULL);
 
 #ifdef LOCK_MORE
 	switch_mutex_lock(memory_manager.mem_lock);
@@ -96,7 +96,7 @@ SWITCH_DECLARE(void *) switch_core_permanent_alloc(switch_size_t memory)
 
 	ptr = apr_palloc(memory_manager.memory_pool, memory);
 
-	assert(ptr != NULL);
+	switch_assert(ptr != NULL);
 	memset(ptr, 0, memory);
 
 #ifdef LOCK_MORE
@@ -110,7 +110,7 @@ SWITCH_DECLARE(char *) switch_core_permanent_strdup(const char *todup)
 {
 	char *duped = NULL;
 	switch_size_t len;
-	assert(memory_manager.memory_pool != NULL);
+	switch_assert(memory_manager.memory_pool != NULL);
 
 	if (!todup)
 		return NULL;
@@ -121,7 +121,7 @@ SWITCH_DECLARE(char *) switch_core_permanent_strdup(const char *todup)
 
 	len = strlen(todup) + 1;
 	duped = apr_pstrmemdup(memory_manager.memory_pool, todup, len);
-	assert(duped != NULL);
+	switch_assert(duped != NULL);
 
 #ifdef DEBUG_ALLOC
 	printf("Perm Allocate %d\n", (int)len);
@@ -143,12 +143,12 @@ SWITCH_DECLARE(char *) switch_core_session_sprintf(switch_core_session_t *sessio
 	switch_mutex_lock(memory_manager.mem_lock);
 #endif
 
-	assert(session != NULL);
-	assert(session->pool != NULL);
+	switch_assert(session != NULL);
+	switch_assert(session->pool != NULL);
 	va_start(ap, fmt);
 	
 	result = apr_pvsprintf(session->pool, fmt, ap);
-	assert(result != NULL);
+	switch_assert(result != NULL);
 	va_end(ap);
 
 
@@ -164,7 +164,7 @@ SWITCH_DECLARE(char *) switch_core_sprintf(switch_memory_pool_t *pool, const cha
 	va_list ap;
 	char *result = NULL;
 
-	assert(pool != NULL);
+	switch_assert(pool != NULL);
 
 #ifdef LOCK_MORE
 	switch_mutex_lock(memory_manager.mem_lock);
@@ -173,7 +173,7 @@ SWITCH_DECLARE(char *) switch_core_sprintf(switch_memory_pool_t *pool, const cha
 	va_start(ap, fmt);
 
 	result = apr_pvsprintf(pool, fmt, ap);
-	assert(result != NULL);
+	switch_assert(result != NULL);
 	va_end(ap);
 
 #ifdef LOCK_MORE
@@ -188,8 +188,8 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session_t *session
 {
 	char *duped = NULL;
 	switch_size_t len;
-	assert(session != NULL);
-	assert(session->pool != NULL);
+	switch_assert(session != NULL);
+	switch_assert(session->pool != NULL);
 
 	if (!todup) {
 		return NULL;
@@ -206,7 +206,7 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session_t *session
 #endif
 
 	duped = apr_pstrmemdup(session->pool, todup, len);
-	assert(duped != NULL);
+	switch_assert(duped != NULL);
 
 
 #ifdef LOCK_MORE
@@ -221,7 +221,7 @@ SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool_t *pool, const char
 {
 	char *duped = NULL;
 	switch_size_t len;
-	assert(pool != NULL);
+	switch_assert(pool != NULL);
 
 	if (!todup) {
 		return NULL;
@@ -238,7 +238,7 @@ SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool_t *pool, const char
 #endif
 
 	duped = apr_pstrmemdup(pool, todup, len);
-	assert(duped != NULL);
+	switch_assert(duped != NULL);
 
 #ifdef LOCK_MORE
 	switch_mutex_unlock(memory_manager.mem_lock);
@@ -253,13 +253,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memor
 	void *pop;
 
 	switch_mutex_lock(memory_manager.mem_lock);
-	assert(pool != NULL);
+	switch_assert(pool != NULL);
 
 	if (switch_queue_trypop(memory_manager.pool_recycle_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 		*pool = (switch_memory_pool_t *) pop;
 	} else {
 		apr_pool_create(pool, NULL);
-		assert(*pool != NULL);
+		switch_assert(*pool != NULL);
 	}
 
 #ifdef DEBUG_ALLOC2
@@ -276,7 +276,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(switch_m
 	//char tmp[128] = "";
 
 
-	assert(pool != NULL);
+	switch_assert(pool != NULL);
 
 #ifdef DEBUG_ALLOC2
 	printf("Free Pool %s %s:%d\n", file, func, line);
@@ -296,7 +296,7 @@ SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool_t *pool, switch_size
 {
 	void *ptr = NULL;
 
-	assert(pool != NULL);
+	switch_assert(pool != NULL);
 
 #ifdef LOCK_MORE
 	switch_mutex_lock(memory_manager.mem_lock);
@@ -304,11 +304,11 @@ SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool_t *pool, switch_size
 
 #ifdef DEBUG_ALLOC
 	printf("Allocate %d\n", (int)memory);
-	/*assert(memory < 20000);*/
+	/*switch_assert(memory < 20000);*/
 #endif
 
 	ptr = apr_palloc(pool, memory);
-	assert(ptr != NULL);
+	switch_assert(ptr != NULL);
 	memset(ptr, 0, memory);
 	
 
@@ -413,7 +413,7 @@ switch_memory_pool_t *switch_core_memory_init(void)
 	memset(&memory_manager, 0, sizeof(memory_manager));
 
 	apr_pool_create(&memory_manager.memory_pool, NULL);
-	assert(memory_manager.memory_pool != NULL);
+	switch_assert(memory_manager.memory_pool != NULL);
 	switch_mutex_init(&memory_manager.mem_lock, SWITCH_MUTEX_NESTED, memory_manager.memory_pool);
 	switch_queue_create(&memory_manager.pool_queue, 50000, memory_manager.memory_pool);
 	switch_queue_create(&memory_manager.pool_recycle_queue, 50000, memory_manager.memory_pool);

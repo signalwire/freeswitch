@@ -87,14 +87,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 
 SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags)
 {
-	assert(sh != NULL);
+	switch_assert(sh != NULL);
 
 	return sh->speech_interface->speech_feed_tts(sh, text, flags);
 }
 
 SWITCH_DECLARE(void) switch_core_speech_flush_tts(switch_speech_handle_t *sh)
 {
-	assert(sh != NULL);
+	switch_assert(sh != NULL);
 
 	if (sh->speech_interface->speech_flush_tts) {
 		sh->speech_interface->speech_flush_tts(sh);
@@ -103,7 +103,7 @@ SWITCH_DECLARE(void) switch_core_speech_flush_tts(switch_speech_handle_t *sh)
 
 SWITCH_DECLARE(void) switch_core_speech_text_param_tts(switch_speech_handle_t *sh, char *param, const char *val)
 {
-	assert(sh != NULL);
+	switch_assert(sh != NULL);
 
 	if (sh->speech_interface->speech_text_param_tts) {
 		sh->speech_interface->speech_text_param_tts(sh, param, val);
@@ -112,7 +112,7 @@ SWITCH_DECLARE(void) switch_core_speech_text_param_tts(switch_speech_handle_t *s
 
 SWITCH_DECLARE(void) switch_core_speech_numeric_param_tts(switch_speech_handle_t *sh, char *param, int val)
 {
-	assert(sh != NULL);
+	switch_assert(sh != NULL);
 
 	if (sh->speech_interface->speech_numeric_param_tts) {
 		sh->speech_interface->speech_numeric_param_tts(sh, param, val);
@@ -121,7 +121,7 @@ SWITCH_DECLARE(void) switch_core_speech_numeric_param_tts(switch_speech_handle_t
 
 SWITCH_DECLARE(void) switch_core_speech_float_param_tts(switch_speech_handle_t *sh, char *param, double val)
 {
-	assert(sh != NULL);
+	switch_assert(sh != NULL);
 
 	if (sh->speech_interface->speech_float_param_tts) {
 		sh->speech_interface->speech_float_param_tts(sh, param, val);
@@ -131,7 +131,7 @@ SWITCH_DECLARE(void) switch_core_speech_float_param_tts(switch_speech_handle_t *
 SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle_t *sh,
 															void *data, switch_size_t *datalen, uint32_t * rate, switch_speech_flag_t *flags)
 {
-	assert(sh != NULL);
+	switch_assert(sh != NULL);
 
 	return sh->speech_interface->speech_read_tts(sh, data, datalen, rate, flags);
 }

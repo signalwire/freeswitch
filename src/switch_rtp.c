@@ -183,8 +183,8 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session)
 	unsigned int elapsed;
 	switch_size_t bytes;
 
-	assert(rtp_session != NULL);
-	assert(rtp_session->ice_user != NULL);
+	switch_assert(rtp_session != NULL);
+	switch_assert(rtp_session->ice_user != NULL);
 
 	if (rtp_session->stuncount != 0) {
 		rtp_session->stuncount--;
@@ -668,10 +668,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 
 SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp_t *rtp_session)
 {
-	assert(rtp_session != NULL);
+	switch_assert(rtp_session != NULL);
 	switch_mutex_lock(rtp_session->flag_mutex);
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
-		assert(rtp_session->sock != NULL);
+		switch_assert(rtp_session->sock != NULL);
 		switch_socket_shutdown(rtp_session->sock, SWITCH_SHUTDOWN_READWRITE);
 		switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_IO);
 	}
@@ -1592,7 +1592,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		return -1;
 	}
 
-	assert(frame != NULL);
+	switch_assert(frame != NULL);
 
 	if (switch_test_flag(frame, SFF_CNG)) {
 		payload = rtp_session->cng_pt;

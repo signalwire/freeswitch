@@ -38,7 +38,7 @@ static switch_status_t originate_on_ring(switch_core_session_t *session)
 	switch_channel_t *channel = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	/* put the channel in a passive state so we can loop audio to it */
 
@@ -323,7 +323,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		switch_event_header_t *hi;
 
 		caller_channel = switch_core_session_get_channel(session);
-		assert(caller_channel != NULL);
+		switch_assert(caller_channel != NULL);
 
 		/* Copy all the applicable channel variables into the event */
 		if ((hi = switch_channel_variable_first(caller_channel))) {
@@ -444,7 +444,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	for (try = 0; try < retries; try++) {
 		switch_safe_free(loop_data);
 		loop_data = strdup(data);
-		assert(loop_data);
+		switch_assert(loop_data);
 		or_argc = switch_separate_string(loop_data, '|', pipe_names, (sizeof(pipe_names) / sizeof(pipe_names[0])));
 
 		if (caller_channel && or_argc > 1 && !ringback_data) {
@@ -574,7 +574,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				caller_profiles[i] = new_profile;
 				peer_sessions[i] = new_session;
 				peer_channels[i] = switch_core_session_get_channel(new_session);
-				assert(peer_channels[i] != NULL);
+				switch_assert(peer_channels[i] != NULL);
 
 
 				if (var_event) {
@@ -585,7 +585,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						switch_channel_set_variable(peer_channels[i], header->name, header->value);
 					}
 					switch_event_create(&event, SWITCH_EVENT_CHANNEL_ORIGINATE);
-					assert(event);
+					switch_assert(event);
 					switch_channel_event_set_data(peer_channels[i], event);
 					switch_event_fire(&event);
 				}

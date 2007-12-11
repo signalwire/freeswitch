@@ -77,7 +77,7 @@ SWITCH_DECLARE(uint32_t) switch_log_str2mask(const char *str)
 	char *p = strdup(str);
 	switch_log_level_t level;
 
-	assert(p);
+	switch_assert(p);
 
 	if ((argc = switch_separate_string(p, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		for (x = 0; x < argc; x++) {
@@ -121,7 +121,7 @@ SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(const char *str)
 SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(switch_log_function_t function, switch_log_level_t level)
 {
 	switch_log_binding_t *binding = NULL, *ptr = NULL;
-	assert(function != NULL);
+	switch_assert(function != NULL);
 
 	if (!(binding = switch_core_alloc(LOG_POOL, sizeof(*binding)))) {
 		return SWITCH_STATUS_MEMERR;
@@ -263,7 +263,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 					node = (switch_log_node_t *) pop;
 				} else {
 					node = malloc(sizeof(*node));
-					assert(node);			
+					switch_assert(node);			
 				}
 
 				node->data = data;
@@ -292,7 +292,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool)
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;
 
-	assert(pool != NULL);
+	switch_assert(pool != NULL);
 
 	LOG_POOL = pool;
 

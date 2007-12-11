@@ -320,7 +320,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odb
 	SQLLEN m = 0, t = 0;
 	int result;
 
-	assert(callback != NULL);
+	switch_assert(callback != NULL);
 
 	if (!db_is_up(handle)) {
 		goto error;
@@ -358,7 +358,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odb
 			names = calloc(c, sizeof(*names));
 			vals = calloc(c, sizeof(*vals));
 		
-			assert(names && vals);
+			switch_assert(names && vals);
 
 			for (x = 1; x <= c; x++) {
 				SQLSMALLINT NameLength, DataType, DecimalDigits, Nullable;

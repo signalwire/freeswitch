@@ -45,7 +45,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	int32_t left, elapsed;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	start = switch_time_now();
 
@@ -125,7 +125,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_deactivate_unicast(switch_core_sessio
 	int sanity = 0;
 	
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+    switch_assert(channel != NULL);
 
 	if (!switch_channel_test_flag(channel, CF_UNICAST)) {
 			return SWITCH_STATUS_FALSE;
@@ -163,10 +163,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_
 	switch_codec_t *read_codec;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	conninfo = switch_core_session_alloc(session, sizeof(*conninfo));
-	assert(conninfo != NULL);
+	switch_assert(conninfo != NULL);
 
 	conninfo->local_ip = switch_core_session_strdup(session, local_ip);
 	conninfo->local_port = local_port;
@@ -269,8 +269,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	char *event_lock = switch_event_get_header(event, "event-lock");
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	assert(channel != NULL);
-	assert(event != NULL);
+	switch_assert(channel != NULL);
+	switch_assert(event != NULL);
 
 	if (switch_strlen_zero(cmd)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Command!\n");
@@ -382,7 +382,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_events(switch_core_session_
 	switch_channel_t *channel;
 
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+    switch_assert(channel != NULL);
 
 	while (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
 		switch_ivr_parse_event(session, event);
@@ -404,7 +404,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Careful, Channel is unaswered. Pre-answering...\n");
@@ -539,7 +539,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 	uint32_t elapsed;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	if (!args->input_callback) {
 		return SWITCH_STATUS_GENERR;
@@ -606,7 +606,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 	uint32_t elapsed;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	if (terminator != NULL)
 		*terminator = '\0';
@@ -680,7 +680,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session)
 	msg.from = __FILE__;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	switch_channel_set_flag(channel, CF_HOLD);
 	switch_channel_set_flag(channel, CF_SUSPEND);
@@ -711,7 +711,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unhold(switch_core_session_t *session
 	msg.from = __FILE__;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	switch_channel_clear_flag(channel, CF_HOLD);
 	switch_channel_clear_flag(channel, CF_SUSPEND);
@@ -747,7 +747,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 
 	if ((session = switch_core_session_locate(uuid))) {
 		channel = switch_core_session_get_channel(session);
-		assert(channel != NULL);
+		switch_assert(channel != NULL);
 		if ((flags & SMF_REBRIDGE) && !switch_channel_test_flag(channel, CF_ORIGINATOR)) {
 			swap = 1;
 		}
@@ -760,7 +760,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 				&& (other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE))
 				&& (other_session = switch_core_session_locate(other_uuid))) {
 				other_channel = switch_core_session_get_channel(other_session);
-				assert(other_channel != NULL);
+				switch_assert(other_channel != NULL);
 				switch_core_session_receive_message(other_session, &msg);
 				switch_channel_clear_state_handler(other_channel, NULL);
 				switch_core_session_rwunlock(other_session);
@@ -800,7 +800,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 	if ((session = switch_core_session_locate(uuid))) {
 		status = SWITCH_STATUS_SUCCESS;
 		channel = switch_core_session_get_channel(session);
-		assert(channel != NULL);
+		switch_assert(channel != NULL);
 
 		if ((flags & SMF_REBRIDGE) && !switch_channel_test_flag(channel, CF_ORIGINATOR)) {
 			swap = 1;
@@ -812,7 +812,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 			if ((flags & SMF_REBRIDGE) && (other_uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) &&
 				(other_session = switch_core_session_locate(other_uuid))) {
 				other_channel = switch_core_session_get_channel(other_session);
-				assert(other_channel != NULL);
+				switch_assert(other_channel != NULL);
 
 				switch_core_session_receive_message(other_session, &msg);
 				switch_channel_clear_state_handler(other_channel, NULL);
@@ -843,11 +843,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	switch_channel_t *other_channel = NULL;
 	const char *uuid = NULL;
 
-	assert(session != NULL);
+	switch_assert(session != NULL);
 	switch_core_session_reset(session);
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	/* clear all state handlers */
 	switch_channel_clear_state_handler(channel, NULL);
@@ -893,7 +893,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		
 		if (uuid && (other_session = switch_core_session_locate(uuid))) {
 			other_channel = switch_core_session_get_channel(other_session);
-			assert(other_channel != NULL);
+			switch_assert(other_channel != NULL);
 			switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BOND_VARIABLE, NULL);
 			switch_core_session_rwunlock(other_session);
 		}
@@ -901,7 +901,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE))
 			&& (other_session = switch_core_session_locate(uuid))) {
 			other_channel = switch_core_session_get_channel(other_session);
-			assert(other_channel != NULL);
+			switch_assert(other_channel != NULL);
 
 			switch_channel_set_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
 			switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
@@ -1309,7 +1309,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 	int cdr_off = 0, v_off = 0;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	if (!(cdr = switch_xml_new("cdr"))) {
 		return SWITCH_STATUS_SUCCESS;

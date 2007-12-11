@@ -89,7 +89,7 @@ static char *my_dup (const char *s)
 {
     size_t len = strlen (s) + 1;
     void *new = malloc (len);
-	assert(new);
+	switch_assert(new);
 
     return (char *) memcpy (new, s, len);
 }
@@ -207,13 +207,13 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t * thread, vo
 	void *pop;
 	int i, len[3] = { 0, 0, 0 };
 
-	assert(thread != NULL);
-	assert(obj == NULL);
-	assert(POOL_LOCK != NULL);
-	assert(RUNTIME_POOL != NULL);
-	assert(EVENT_QUEUE_MUTEX != NULL);
-	assert(EVENT_QUEUE_HAVEMORE_MUTEX != NULL);
-	assert(EVENT_QUEUE_CONDITIONAL != NULL);
+	switch_assert(thread != NULL);
+	switch_assert(obj == NULL);
+	switch_assert(POOL_LOCK != NULL);
+	switch_assert(RUNTIME_POOL != NULL);
+	switch_assert(EVENT_QUEUE_MUTEX != NULL);
+	switch_assert(EVENT_QUEUE_HAVEMORE_MUTEX != NULL);
+	switch_assert(EVENT_QUEUE_CONDITIONAL != NULL);
 	THREAD_RUNNING = 1;
 
 	queues[0] = EVENT_QUEUE[SWITCH_PRIORITY_HIGH];
@@ -319,8 +319,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_running(void)
 
 SWITCH_DECLARE(char *) switch_event_name(switch_event_types_t event)
 {
-	assert(BLOCK != NULL);
-	assert(RUNTIME_POOL != NULL);
+	switch_assert(BLOCK != NULL);
+	switch_assert(RUNTIME_POOL != NULL);
 
 	return EVENT_NAMES[event];
 }
@@ -328,8 +328,8 @@ SWITCH_DECLARE(char *) switch_event_name(switch_event_types_t event)
 SWITCH_DECLARE(switch_status_t) switch_name_event(char *name, switch_event_types_t *type)
 {
 	switch_event_types_t x;
-	assert(BLOCK != NULL);
-	assert(RUNTIME_POOL != NULL);
+	switch_assert(BLOCK != NULL);
+	switch_assert(RUNTIME_POOL != NULL);
 
 	for (x = 0; x <= SWITCH_EVENT_ALL; x++) {
 		if ((strlen(name) > 13 && !strcasecmp(name + 13, EVENT_NAMES[x])) || !strcasecmp(name, EVENT_NAMES[x])) {
@@ -347,8 +347,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(char *own
 
 	switch_event_subclass_t *subclass;
 
-	assert(RUNTIME_POOL != NULL);
-	assert(CUSTOM_HASH != NULL);
+	switch_assert(RUNTIME_POOL != NULL);
+	switch_assert(CUSTOM_HASH != NULL);
 
 	if (switch_core_hash_find(CUSTOM_HASH, subclass_name)) {
 		return SWITCH_STATUS_INUSE;
@@ -448,7 +448,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	switch_find_local_ip(guess_ip_v4, sizeof(guess_ip_v4), AF_INET);
 	switch_find_local_ip(guess_ip_v6, sizeof(guess_ip_v6), AF_INET6);
 
-	assert(pool != NULL);
+	switch_assert(pool != NULL);
 	THRUNTIME_POOL = RUNTIME_POOL = pool;
 
 	/*
@@ -501,7 +501,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass(switch_event_t **ev
 		*event = (switch_event_t *) pop;
 	} else {
 		*event = ALLOC(sizeof(switch_event_t));
-		assert(*event);
+		switch_assert(*event);
 	}
 
 	memset(*event, 0, sizeof(switch_event_t));
@@ -594,7 +594,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, s
 			header = (switch_event_header_t *) pop;
 		} else {
 			header = ALLOC(sizeof(*header));
-			assert(header);
+			switch_assert(header);
 		}
 
 		memset(header, 0, sizeof(*header));
@@ -899,12 +899,12 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
 	switch_size_t retsize;
 	switch_time_t ts = switch_timestamp_now();
 
-	assert(BLOCK != NULL);
-	assert(RUNTIME_POOL != NULL);
-	assert(EVENT_QUEUE_HAVEMORE_MUTEX != NULL);
-	assert(EVENT_QUEUE_MUTEX != NULL);
-	assert(EVENT_QUEUE_CONDITIONAL != NULL);
-	assert(RUNTIME_POOL != NULL);
+	switch_assert(BLOCK != NULL);
+	switch_assert(RUNTIME_POOL != NULL);
+	switch_assert(EVENT_QUEUE_HAVEMORE_MUTEX != NULL);
+	switch_assert(EVENT_QUEUE_MUTEX != NULL);
+	switch_assert(EVENT_QUEUE_CONDITIONAL != NULL);
+	switch_assert(RUNTIME_POOL != NULL);
 
 	if (THREAD_RUNNING <= 0) {
 		/* sorry we're closed */
@@ -976,8 +976,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_bind(const char *id, switch_event_t
 	switch_event_node_t *event_node;
 	switch_event_subclass_t *subclass = NULL;
 
-	assert(BLOCK != NULL);
-	assert(RUNTIME_POOL != NULL);
+	switch_assert(BLOCK != NULL);
+	switch_assert(RUNTIME_POOL != NULL);
 
 	if (subclass_name) {
 		if ((subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name)) == 0) {

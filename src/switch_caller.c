@@ -54,7 +54,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 	switch_caller_profile_t *profile = NULL;
 
 	profile = switch_core_alloc(pool, sizeof(*profile));
-	assert(profile != NULL);
+	switch_assert(profile != NULL);
 		
 	if (!context) {
 		context = "default";
@@ -85,7 +85,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_dup(switch_memor
 	switch_caller_profile_t *profile = NULL;
 
 	profile = switch_core_alloc(pool, sizeof(*profile));
-	assert(profile != NULL);
+	switch_assert(profile != NULL);
 
 	profile_dup(tocopy->username, profile->username, pool);
 	profile_dup(tocopy->dialplan, profile->dialplan, pool);
@@ -294,7 +294,7 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session
 {
 	switch_caller_application_t *caller_application = NULL;
 
-	assert(session != NULL);
+	switch_assert(session != NULL);
 
 	if ((caller_application = switch_core_session_alloc(session, sizeof(switch_caller_application_t))) != 0) {
 		caller_application->application_name = switch_core_session_strdup(session, application_name);
