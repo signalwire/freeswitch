@@ -1441,7 +1441,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 												 switch_caller_profile_t *outbound_profile,
 												 switch_core_session_t **new_session, switch_memory_pool_t **pool)
 {
-	switch_xml_t x_domain, xml = NULL, x_user, x_param, x_params;	
+	switch_xml_t x_domain = NULL, xml = NULL, x_user = NULL, x_param, x_params;	
 	char *user = NULL, *domain = NULL;
 	const char *dest = NULL;
 	static switch_call_cause_t cause;
