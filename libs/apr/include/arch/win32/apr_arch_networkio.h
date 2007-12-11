@@ -20,6 +20,9 @@
 #include "apr_network_io.h"
 #include "apr_general.h"
 #include "apr_poll.h"
+#ifdef _MSC_VER
+#undef MCAST_JOIN_SOURCE_GROUP
+#endif
 
 typedef struct sock_userdata_t sock_userdata_t;
 struct sock_userdata_t {
