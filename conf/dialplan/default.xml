@@ -43,7 +43,7 @@
 
 
     <extension name="eavesdrop">
-      <condition field="destination_number" expression="^88(.*)$|^*0(.*)$">
+      <condition field="destination_number" expression="^88(.*)$|^\*0(.*)$">
 	<action application="answer"/>
 	<action application="eavesdrop" data="${db(select/spymap/$1)}"/>
       </condition>
