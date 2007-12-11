@@ -4,7 +4,7 @@
       <param name="password" value="1234"/>
     </params>
     <variables>
-      <variable name="inbound_context" value="default"/>
+      <variable name="user_context" value="default"/>
     </variables>
   </user>
 </include>
