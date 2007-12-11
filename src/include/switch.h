@@ -71,7 +71,10 @@
 #include <setjmp.h>
 #include <ctype.h>
 #include <fcntl.h>
-#ifndef _MSC_VER
+#ifdef _MSC_VER
+#include <Winsock2.h>
+#include <Ws2tcpip.h>
+#else
 #include <strings.h>
 #endif
 #include <string.h>

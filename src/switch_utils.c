@@ -742,7 +742,9 @@ SWITCH_DECLARE(const char *) switch_priority_name(switch_priority_t priority)
 
 static char RFC2833_CHARS[] = "0123456789*#ABCDF";
 
-#ifdef _MSC_VER
+#ifndef _MSC_VER
+#define switch_inet_ntop inet_ntop
+#else
 /* Copyright (c) 1996 by Internet Software Consortium.
  *
  * Permission to use, copy, modify, and distribute this software for any
@@ -772,9 +774,9 @@ static char RFC2833_CHARS[] = "0123456789*#ABCDF";
  * sizeof(int) < 4.  sizeof(int) > 4 is fine; all the world's not a VAX.
  */
 
-static const char *inet_ntop4(const unsigned char *src, char *dst, size_t size);
+static const char *switch_inet_ntop4(const unsigned char *src, char *dst, size_t size);
 #if HAVE_SIN6
-static const char *inet_ntop6(const unsigned char *src, char *dst, size_t size);
+static const char *switch_inet_ntop6(const unsigned char *src, char *dst, size_t size);
 #endif
 
 /* char *
@@ -786,15 +788,15 @@ static const char *inet_ntop6(const unsigned char *src, char *dst, size_t size);
  *	Paul Vixie, 1996.
  */
 const char *
-inet_ntop(int af, void const *src, char *dst, size_t size)
+switch_inet_ntop(int af, void const *src, char *dst, size_t size)
 {
 
 	switch (af) {
 	case AF_INET:
-		return inet_ntop4(src, dst, size);
+		return switch_inet_ntop4(src, dst, size);
 #if HAVE_SIN6
 	case AF_INET6:
-		return inet_ntop6(src, dst, size);
+		return switch_inet_ntop6(src, dst, size);
 #endif
 	default:
 		return NULL;
@@ -814,7 +816,7 @@ inet_ntop(int af, void const *src, char *dst, size_t size)
  *	Paul Vixie, 1996.
  */
 static const char *
-inet_ntop4(const unsigned char *src, char *dst, size_t size)
+switch_inet_ntop4(const unsigned char *src, char *dst, size_t size)
 {
 	static const char fmt[] = "%u.%u.%u.%u";
 	char tmp[sizeof "255.255.255.255"];
@@ -835,7 +837,7 @@ inet_ntop4(const unsigned char *src, char *dst, size_t size)
  *	Paul Vixie, 1996.
  */
 static const char *
-inet_ntop6(unsigned char const *src, char *dst, size_t size)
+switch_inet_ntop6(unsigned char const *src, char *dst, size_t size)
 {
 	/*
 	 * Note that int32_t and int16_t need only be "at least" large enough
@@ -927,7 +929,7 @@ SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct in_addr *in
 	assert(buf);
 	*buf = '\0';
 	if (in) {
-		inet_ntop(AF_INET, in, buf, len);
+		switch_inet_ntop(AF_INET, in, buf, len);
 	}
 	return buf;
 }
