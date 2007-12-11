@@ -325,10 +325,31 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		caller_channel = switch_core_session_get_channel(session);
 		assert(caller_channel != NULL);
 
-		/* Copy all the channel variables into the event */
+		/* Copy all the applicable channel variables into the event */
 		if ((hi = switch_channel_variable_first(caller_channel))) {
 			for (; hi; hi = hi->next) {
-				switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, (char *)hi->name, "%s", (char *) hi->value);
+				int ok = 0;
+				if (!strcasecmp((char *)hi->name, "group_confirm_key")) {
+					ok = 1;
+				} else if (!strcasecmp((char *)hi->name, "group_confirm_file")) {
+					ok = 1;
+				} else if (!strcasecmp((char *)hi->name, "fail_on_single_reject")) {
+					ok = 1;
+				} else if (!strcasecmp((char *)hi->name, "ignore_early_media")) {
+					ok = 1;
+				} else if (!strcasecmp((char *)hi->name, "originate_retries")) {
+					ok = 1;
+				} else if (!strcasecmp((char *)hi->name, "originate_retry_sleep_ms")) {
+					ok = 1;
+				} else if (!strcasecmp((char *)hi->name, "origination_caller_id_name")) {
+					ok = 1;
+				} else if (!strcasecmp((char *)hi->name, "origination_caller_id_number")) {
+					ok = 1;
+				}
+
+				if (ok) {
+					switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, (char *)hi->name, "%s", (char *) hi->value);
+				}
 			}
 			switch_channel_variable_last(caller_channel);
 		}
