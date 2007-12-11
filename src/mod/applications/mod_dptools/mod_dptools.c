@@ -1501,6 +1501,8 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 			timelimit = atoi(var);
 		}
 		
+		switch_channel_set_variable(channel, "dialed_user", user);
+
 		d_dest = switch_channel_expand_variables(channel, dest);
 		
 		if (switch_ivr_originate(session, new_session, &cause, d_dest, timelimit, NULL, NULL, NULL, NULL) == SWITCH_STATUS_SUCCESS) {
