@@ -378,9 +378,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					 switch_separate_string(var_array[x], '=', inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
 
 					switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, inner_var_array[0], "%s", inner_var_array[1]);
-					if (caller_channel) {
-						switch_channel_set_variable(caller_channel, inner_var_array[0], inner_var_array[1]);
-					}
 				}
 			}
 		}
