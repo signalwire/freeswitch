@@ -44,6 +44,7 @@ int udns_inet_pton(int, const char *, void *);
 # include <iphlpapi.h>		/* for dns server addresses etc */
 # undef HAVE_POLL
 #else
+#define udns_inet_pton inet_pton
 # include <sys/types.h>
 # include <sys/socket.h>
 # include <netinet/in.h>
