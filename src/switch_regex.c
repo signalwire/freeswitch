@@ -146,12 +146,7 @@ SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_c
 			}
 			index[z++] = '\0';
 			z = 0;
-			if (match_count > 1) {
-				int offset = match_count - 2;
-				num = atoi(index) + offset;
-			} else {
-				num = atoi(index);
-			}
+			num = atoi(index);
 
 			if (pcre_copy_substring(field_data, ovector, match_count, num, replace, sizeof(replace)) > 0) {
 				switch_size_t r;
