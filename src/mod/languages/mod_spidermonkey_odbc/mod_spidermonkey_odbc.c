@@ -357,10 +357,8 @@ static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval *a
 	if (odbc_obj->stmt) {
 		SQLSMALLINT c = 0, x = 0;
 		SQLLEN m = 0;
-		char code[66560];
 
-		switch_snprintf(code, sizeof(code), "~var _oDbC_dB_RoW_DaTa_ = {}");
-		eval_some_js(code, cx, obj, rval);
+		eval_some_js("~var _oDbC_dB_RoW_DaTa_ = {}", cx, obj, rval);
 		if (*rval == JS_FALSE) {
 			return JS_TRUE;
 		}
