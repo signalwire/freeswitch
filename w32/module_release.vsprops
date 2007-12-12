@@ -14,7 +14,7 @@
 	/>
 	<Tool
 		Name="VCLinkerTool"
-		OutputFile="$(SolutionDir)Release/mod/$(InputName).dll"
+		OutputFile="$(SolutionDir)Release/mod/$(ProjectName).dll"
 		LinkIncremental="1"
 		OptimizeReferences="2"
 		EnableCOMDATFolding="2"

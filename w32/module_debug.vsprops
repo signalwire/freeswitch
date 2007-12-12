@@ -15,7 +15,7 @@
 	/>
 	<Tool
 		Name="VCLinkerTool"
-		OutputFile="$(SolutionDir)Debug/mod/$(InputName).dll"
+		OutputFile="$(SolutionDir)Debug/mod/$(ProjectName).dll"
 		LinkIncremental="1"
 	/>
 </VisualStudioPropertySheet>
