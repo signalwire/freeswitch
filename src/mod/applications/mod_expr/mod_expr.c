@@ -61,7 +61,7 @@ SWITCH_STANDARD_API(expr_function)
 
 
     m_cmd = malloc(len);
-    assert(m_cmd);
+    switch_assert(m_cmd);
     switch_copy_string(m_cmd, cmd, len);
     
     for (p = m_cmd; p && *p; p++) {

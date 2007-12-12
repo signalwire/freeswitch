@@ -124,7 +124,7 @@ SWITCH_STANDARD_APP(fifo_function)
     }
 
     mydata = switch_core_session_strdup(session, data);
-    assert(mydata);
+    switch_assert(mydata);
     if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "USAGE %s\n", FIFO_USAGE);
         return;
@@ -137,7 +137,7 @@ SWITCH_STANDARD_APP(fifo_function)
         switch_queue_create(&node->fifo, SWITCH_CORE_QUEUE_LEN, globals.pool);
         switch_core_hash_init(&node->caller_hash, globals.pool);
         switch_core_hash_init(&node->consumer_hash, globals.pool);
-        assert(node->fifo);
+        switch_assert(node->fifo);
         switch_mutex_init(&node->mutex, SWITCH_MUTEX_NESTED, globals.pool);
         switch_core_hash_insert(globals.fifo_hash, argv[0], node);
     }
@@ -337,12 +337,12 @@ SWITCH_STANDARD_APP(fifo_function)
 
                 switch_channel_answer(channel);
 				cloned_profile = switch_caller_profile_clone(other_session, switch_channel_get_caller_profile(channel));
-                assert(cloned_profile);
+                switch_assert(cloned_profile);
                 switch_channel_set_originator_caller_profile(other_channel, cloned_profile);
 
 				cloned_profile = switch_caller_profile_clone(session, switch_channel_get_caller_profile(other_channel));
-                assert(cloned_profile);
-                assert(cloned_profile->next == NULL);
+                switch_assert(cloned_profile);
+                switch_assert(cloned_profile->next == NULL);
                 switch_channel_set_originatee_caller_profile(channel, cloned_profile);
 				
                 ts = switch_timestamp_now();
@@ -414,7 +414,7 @@ static int xml_hash(switch_xml_t xml, switch_hash_t *hash, char *container, char
     const void *var;
 
     x_tmp = switch_xml_add_child_d(xml, container, cc_off++);
-    assert(x_tmp);
+    switch_assert(x_tmp);
 
     for (hi = switch_hash_first(NULL, hash); hi; hi = switch_hash_next(hi)) {
         int c_off = 0, d_off = 0;
@@ -425,7 +425,7 @@ static int xml_hash(switch_xml_t xml, switch_hash_t *hash, char *container, char
         session = (switch_core_session_t *) val;
         channel = switch_core_session_get_channel(session);
         x_caller = switch_xml_add_child_d(x_tmp, tag, c_off++);
-        assert(x_caller);
+        switch_assert(x_caller);
         
         switch_xml_set_attr_d(x_caller, "uuid", switch_core_session_get_uuid(session));
 
@@ -468,7 +468,7 @@ static void list_node(fifo_node_t *node, switch_xml_t x_report, int *off, int ve
 	char *tmp = buffer;
 
     x_fifo = switch_xml_add_child_d(x_report, "fifo", (*off)++);;
-    assert(x_fifo);
+    switch_assert(x_fifo);
 
     switch_xml_set_attr_d(x_fifo, "name", node->name);
     snprintf(tmp, sizeof(buffer), "%d", node->consumer_count);
@@ -496,10 +496,10 @@ SWITCH_STANDARD_API(fifo_api_function)
 
     if (!switch_strlen_zero(cmd)) {
         data = strdup(cmd);
-        assert(data);
+        switch_assert(data);
     }
     
-    if (switch_strlen_zero(cmd) || (argc = switch_separate_string(data, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 1) {
+    if (switch_strlen_zero(cmd) || (argc = switch_separate_string(data, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 1 || !argv[0]) {
         stream->write_function(stream, "%s\n", FIFO_API_SYNTAX);
         return SWITCH_STATUS_SUCCESS;
     }
@@ -510,7 +510,7 @@ SWITCH_STANDARD_API(fifo_api_function)
     if (!strcasecmp(argv[0], "list") || verbose) {    
         char *xml_text = NULL;
         switch_xml_t x_report = switch_xml_new("fifo_report");
-        assert(x_report);
+        switch_assert(x_report);
 
         if (argc < 2) {
             for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
@@ -528,7 +528,7 @@ SWITCH_STANDARD_API(fifo_api_function)
             }
         }
         xml_text = switch_xml_toxml(x_report, SWITCH_FALSE);
-        assert(xml_text);
+        switch_assert(xml_text);
         stream->write_function(stream, "%s\n", xml_text);
         switch_xml_free(x_report);
         switch_safe_free(xml_text);

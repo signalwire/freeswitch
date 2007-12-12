@@ -345,7 +345,7 @@ SWITCH_STANDARD_API(db_api_function)
         argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0])));
     }
 
-    if (argc < 1) {
+    if (argc < 1 || !argv[0]) {
         goto error;
     }
 
@@ -419,7 +419,7 @@ SWITCH_STANDARD_APP(db_function)
         argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0])));
     }
 
-    if (argc < 4) {
+    if (argc < 4 || !argv[0]) {
         goto error;
     }
     
@@ -460,7 +460,7 @@ SWITCH_STANDARD_API(group_api_function)
         argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])));
     }
 
-    if (argc < 2) {
+    if (argc < 2 || !argv[0]) {
         goto error;
     }
 
@@ -544,7 +544,7 @@ SWITCH_STANDARD_APP(group_function)
         argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])));
     }
 
-    if (argc < 3) {
+    if (argc < 3 || !argv[0]) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: group %s\n", DB_USAGE);
         return;
     }

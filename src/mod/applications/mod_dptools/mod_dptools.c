@@ -456,7 +456,7 @@ SWITCH_STANDARD_APP(set_global_function)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
 	} else {
 		var = strdup(data);
-		assert(var);
+		switch_assert(var);
 		val = strchr(var, '=');
 
 		if (val) {
