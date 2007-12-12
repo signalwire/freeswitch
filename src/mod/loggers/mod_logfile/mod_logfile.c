@@ -137,7 +137,7 @@ static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 
 
 	p = malloc(strlen(profile->logfile)+WARM_FUZZY_OFFSET);
-	assert(p);
+	switch_assert(p);
 
 	memset(p, '\0', strlen(profile->logfile)+WARM_FUZZY_OFFSET);
 
