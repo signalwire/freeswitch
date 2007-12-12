@@ -338,7 +338,7 @@ static switch_status_t iax_set_codec(private_t * tech_pvt, struct iax_session *i
 	}
 
 	channel = switch_core_session_get_channel(tech_pvt->session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 
 	if (tech_pvt->samprate || *samprate) {
@@ -459,10 +459,10 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	private_t *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 
 	iax_set_private(tech_pvt->iax_session, tech_pvt);
@@ -488,10 +488,10 @@ static switch_status_t channel_on_ring(switch_core_session_t *session)
 	private_t *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL RING\n", switch_channel_get_name(channel));
 
@@ -505,10 +505,10 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 	private_t *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL EXECUTE\n", switch_channel_get_name(channel));
 
@@ -522,10 +522,10 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	private_t *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
@@ -564,10 +564,10 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	private_t *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch (sig) {
 	case SWITCH_SIG_KILL:
@@ -603,7 +603,7 @@ static switch_status_t channel_waitfor_read(switch_core_session_t *session, int 
 	private_t *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -613,7 +613,7 @@ static switch_status_t channel_waitfor_write(switch_core_session_t *session, int
 	private_t *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -625,7 +625,7 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, char *d
 	char *digit;
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 	if (tech_pvt->iax_session) {
 		for (digit = dtmf; *digit; digit++) {
 			iax_send_dtmf(tech_pvt->iax_session, *digit);
@@ -644,10 +644,10 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	switch_byte_t *data;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 	tech_pvt->read_frame.flags = SFF_NONE;
 	*frame = NULL;
 
@@ -713,10 +713,10 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	//switch_frame_t *pframe;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 		return SWITCH_STATUS_FALSE;
@@ -739,10 +739,10 @@ static switch_status_t channel_answer_channel(switch_core_session_t *session)
 	switch_channel_t *channel = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 		iax_answer(tech_pvt->iax_session);
@@ -757,10 +757,10 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	private_t *tech_pvt;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 			
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_REJECT:
@@ -857,10 +857,10 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
 	char *body;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 
 	if (!(body = switch_event_get_body(event))) {

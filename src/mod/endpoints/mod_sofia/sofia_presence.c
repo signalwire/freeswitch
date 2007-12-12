@@ -53,7 +53,7 @@ switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char
 	}
 
 	user = strdup(to);
-	assert(user);
+	switch_assert(user);
 
 	if ((host = strchr(user, '@'))) {
 		*host++ = '\0';
@@ -183,7 +183,7 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 	switch_stream_handle_t stream = { 0 };
 	switch_event_header_t *hp;
 
-	assert(event != NULL);
+	switch_assert(event != NULL);
 
 	if (!(account = switch_event_get_header(event, "mwi-message-account"))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing required Header 'MWI-Message-Account'\n");
@@ -196,7 +196,7 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 	}
 
 	dup_account = strdup(account);
-	assert(dup_account != NULL);
+	switch_assert(dup_account != NULL);
 	sofia_glue_get_user_host(dup_account, &user, &host);
 
 	if (!host || !(profile = sofia_glue_find_profile(host))) {
@@ -226,7 +226,7 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 	
 	switch_safe_free(stream.data);
 
-	assert (sql != NULL);
+	switch_assert (sql != NULL);
 	sofia_glue_execute_sql_callback(profile,
 									SWITCH_FALSE,
 									profile->ireg_mutex,
@@ -292,7 +292,7 @@ void sofia_presence_event_handler(switch_event_t *event)
 			sql = switch_mprintf("select *,1,'%q','%q' from sip_subscriptions where event='presence'", status, rpid);
 		}
 
-		assert(sql != NULL);
+		switch_assert(sql != NULL);
 		switch_mutex_lock(mod_sofia_globals.hash_mutex);
 		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
@@ -792,7 +792,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 							 to_host, event
 							 );
 
-		assert(sql != NULL);
+		switch_assert(sql != NULL);
 		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
 		free(sql);
 
@@ -803,7 +803,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			sql = switch_mprintf("insert into sip_subscriptions values ('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld)",
 								 proto, from_user, from_host, to_user, to_host, event, contact_str, call_id, full_from, full_via, exp);
 			
-			assert(sql != NULL);
+			switch_assert(sql != NULL);
 			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
 			free(sql);
 
@@ -1081,7 +1081,7 @@ void sofia_presence_set_chat_hash(private_object_t *tech_pvt, sip_t const *sip)
 
 	if (sofia_reg_find_reg_url(tech_pvt->profile, sip->sip_from->a_url->url_user, sip->sip_from->a_url->url_host, buf, sizeof(buf))) {
 		home = su_home_new(sizeof(*home));
-		assert(home != NULL);		
+		switch_assert(home != NULL);		
 		tech_pvt->chat_from = sip_header_as_string(home, (const sip_header_t *) sip->sip_to);
 		tech_pvt->chat_to = switch_core_session_strdup(tech_pvt->session, buf);
 		sofia_presence_set_hash_key(hash_key, sizeof(hash_key), sip);

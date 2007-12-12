@@ -174,10 +174,10 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	int16_t abuf[2048];
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 
 	last = switch_timestamp_now() - waitsec;
@@ -306,10 +306,10 @@ static switch_status_t channel_on_ring(switch_core_session_t *session)
 	private_t *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL RING\n", switch_channel_get_name(channel));
 
@@ -323,10 +323,10 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 	private_t *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL EXECUTE\n", switch_channel_get_name(channel));
 
@@ -433,10 +433,10 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	private_t *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	remove_pvt(tech_pvt);
 
@@ -461,10 +461,10 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	private_t *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch (sig) {
 	case SWITCH_SIG_KILL:
@@ -492,10 +492,10 @@ static switch_status_t channel_on_loopback(switch_core_session_t *session)
 	private_t *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CHANNEL LOOPBACK\n");
 
@@ -508,7 +508,7 @@ static switch_status_t channel_waitfor_read(switch_core_session_t *session, int 
 	private_t *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -518,7 +518,7 @@ static switch_status_t channel_waitfor_write(switch_core_session_t *session, int
 	private_t *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -529,7 +529,7 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, char *d
 	private_t *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF ON CALL %s [%s]\n", tech_pvt->call_id, dtmf);
 
@@ -544,10 +544,10 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	if (!globals.audio_stream) {
 		return SWITCH_STATUS_FALSE;
@@ -646,10 +646,10 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	private_t *tech_pvt = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	if (!globals.audio_stream) {
 		return SWITCH_STATUS_FALSE;
@@ -681,10 +681,10 @@ static switch_status_t channel_answer_channel(switch_core_session_t *session)
 	switch_channel_t *channel = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -695,10 +695,10 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	private_t *tech_pvt;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 
 	switch (msg->message_id) {

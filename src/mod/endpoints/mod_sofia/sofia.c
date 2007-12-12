@@ -66,7 +66,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	}
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 	if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
 		switch_channel_answer(channel);
 		switch_channel_set_variable(channel, "auto_answer_destination", switch_channel_get_variable(channel, "destination_number"));
@@ -709,7 +709,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 		}
 
 	skip:
-		assert(gateway_tag);
+		switch_assert(gateway_tag);
 	}
 
 }
@@ -1135,11 +1135,11 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 	if (session) {
 		channel = switch_core_session_get_channel(session);
-		assert(channel != NULL);
+		switch_assert(channel != NULL);
 
 		tech_pvt = switch_core_session_get_private(session);
-		assert(tech_pvt != NULL);
-		assert(tech_pvt->nh != NULL);
+		switch_assert(tech_pvt != NULL);
+		switch_assert(tech_pvt->nh != NULL);
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel %s entering state [%s]\n",
 						  switch_channel_get_name(channel), nua_callstate_name(ss_state));
@@ -1256,7 +1256,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 						if (replaces_str) {
 							home = su_home_new(sizeof(*home));
-							assert(home != NULL);
+							switch_assert(home != NULL);
 							if ((replaces = sip_replaces_make(home, replaces_str))
 								&& (bnh = nua_handle_by_replaces(nua, replaces))) {
 								sofia_private_t *b_private;
@@ -1547,7 +1547,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 				}
 				
 				home = su_home_new(sizeof(*home));
-				assert(home != NULL);
+				switch_assert(home != NULL);
 
 				if ((replaces = sip_replaces_make(home, rep))
 					&& (bnh = nua_handle_by_replaces(nua, replaces))) {
@@ -1764,13 +1764,13 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 	channel = switch_core_session_get_channel(session);
 
 	/* Barf if we didn't get it */
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	/* make sure we have our privates */
 	tech_pvt = switch_core_session_get_private(session);
 
 	/* Barf if we didn't get it */
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	/* move signal_ptr where we need it (right past Signal=) */
 	signal_ptr = signal_ptr + 7;

@@ -205,10 +205,10 @@ static switch_status_t woomera_on_init(switch_core_session_t *session)
 	int rate = 8000;
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt->frame.data = tech_pvt->databuf;
 
@@ -248,10 +248,10 @@ static switch_status_t woomera_on_ring(switch_core_session_t *session)
 	struct private_object *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERA RING\n", switch_channel_get_name(channel));
 
@@ -265,10 +265,10 @@ static switch_status_t woomera_on_execute(switch_core_session_t *session)
 	struct private_object *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERA EXECUTE\n", switch_channel_get_name(channel));
 
@@ -282,10 +282,10 @@ static switch_status_t woomera_on_hangup(switch_core_session_t *session)
 	struct private_object *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch_core_codec_destroy(&tech_pvt->read_codec);
 	switch_core_codec_destroy(&tech_pvt->write_codec);
@@ -320,10 +320,10 @@ static switch_status_t woomera_kill_channel(switch_core_session_t *session, int 
 	struct private_object *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	if (!tech_pvt->udp_socket) {
 		return SWITCH_STATUS_FALSE;
@@ -366,7 +366,7 @@ static switch_status_t woomera_waitfor_read(switch_core_session_t *session, int 
 	struct private_object *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	return switch_socket_waitfor(tech_pvt->read_poll, ms) ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 }
@@ -376,7 +376,7 @@ static switch_status_t woomera_waitfor_write(switch_core_session_t *session, int
 	struct private_object *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	return SWITCH_STATUS_SUCCESS;
 //  return switch_socket_waitfor(tech_pvt->write_poll, ms);
@@ -390,10 +390,10 @@ static switch_status_t woomera_read_frame(switch_core_session_t *session, switch
 	switch_size_t len;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	for(;;) {
 		if (switch_test_flag(tech_pvt, TFLAG_ABORT) || !tech_pvt->udp_socket) {
@@ -436,10 +436,10 @@ static switch_status_t woomera_write_frame(switch_core_session_t *session, switc
 	//switch_frame_t *pframe;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 	
 	if (switch_test_flag(tech_pvt, TFLAG_ABORT) || !tech_pvt->udp_socket) {
 		return SWITCH_STATUS_GENERR;
@@ -953,13 +953,13 @@ static void *woomera_channel_thread_run(switch_thread_t * thread, void *obj)
 	woomera_message wmsg;
 	int res = 0;
 
-	assert(session != NULL);
+	switch_assert(session != NULL);
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	if (!tech_pvt->udp_socket) {
 		tech_create_read_socket(tech_pvt);

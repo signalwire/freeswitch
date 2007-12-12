@@ -303,7 +303,7 @@ void sofia_reg_auth_challange(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	switch_mutex_lock(profile->ireg_mutex);
 	sql = switch_mprintf("insert into sip_authentication (nonce, expires) values('%q', %ld)",
 						 uuid_str, time(NULL) + profile->nonce_ttl);
-	assert(sql != NULL);
+	switch_assert(sql != NULL);
 	sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
 	switch_safe_free(sql);
 	switch_mutex_unlock(profile->ireg_mutex);
@@ -346,7 +346,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	const char *call_id = NULL;
 
 	/* all callers must confirm that sip, sip->sip_request and sip->sip_contact are not NULL */
-	assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
+	switch_assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
 
 	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_addr);
 	network_port = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
@@ -475,7 +475,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	}
 
 	call_id = sip->sip_call_id->i_id; //sip_header_as_string(profile->home, (void *) sip->sip_call_id);
-	assert(call_id);
+	switch_assert(call_id);
 
 	
 	if (exptime) {
@@ -810,7 +810,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	if (switch_strlen_zero(np)) {
 		first = 1;
 		sql = switch_mprintf("select nonce from sip_authentication where nonce='%q'", nonce);
-		assert(sql != NULL);
+		switch_assert(sql != NULL);
 		if (!sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, np, nplen)) {
 			free(sql);
 			ret = AUTH_STALE;
@@ -992,7 +992,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 									char *mydata, *argv[50];
 
 									mydata = strdup(val);
-									assert(mydata != NULL);
+									switch_assert(mydata != NULL);
 								
 									argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
 

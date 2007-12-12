@@ -505,7 +505,7 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 	char *user, *host, *f_user = NULL, *ffrom = NULL, *f_host = NULL, *f_resource = NULL;
 	mdl_profile_t *profile = NULL;
 
-	assert(proto != NULL);
+	switch_assert(proto != NULL);
 
 	if (from && (f_user = strdup(from))) {
 		if ((f_host = strchr(f_user, '@'))) {
@@ -749,8 +749,8 @@ static void dl_logger(char *file, const char *func, int line, int level, char *f
 
 static int get_codecs(struct private_object *tech_pvt)
 {
-	assert(tech_pvt != NULL);
-	assert(tech_pvt->session != NULL);
+	switch_assert(tech_pvt != NULL);
+	switch_assert(tech_pvt->session != NULL);
 
 	if (!tech_pvt->num_codecs) {
 		if (globals.codec_string) {
@@ -901,7 +901,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 static int do_candidates(struct private_object *tech_pvt, int force)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	if (switch_test_flag(tech_pvt, TFLAG_DO_CAND)) {
 		return 1;
@@ -1054,10 +1054,10 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 	unsigned int elapsed;
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	switch_set_flag_locked(tech_pvt, TFLAG_IO);
 
@@ -1147,10 +1147,10 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	struct private_object *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt->read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
 
@@ -1170,10 +1170,10 @@ static switch_status_t channel_on_ring(switch_core_session_t *session)
 	struct private_object *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL RING\n", switch_channel_get_name(channel));
 
@@ -1187,10 +1187,10 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 	struct private_object *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL EXECUTE\n", switch_channel_get_name(channel));
 
@@ -1204,10 +1204,10 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	struct private_object *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
@@ -1310,7 +1310,7 @@ static switch_status_t channel_waitfor_read(switch_core_session_t *session, int 
 	struct private_object *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1320,7 +1320,7 @@ static switch_status_t channel_waitfor_write(switch_core_session_t *session, int
 	struct private_object *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -1331,7 +1331,7 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, char *d
 	struct private_object *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF [%s]\n", dtmf);
 
@@ -1346,10 +1346,10 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	int payload = 0;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = (struct private_object *) switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	while (!(tech_pvt->read_codec.implementation && switch_rtp_ready(tech_pvt->rtp_session))) {
 		if (switch_channel_ready(channel)) {
@@ -1376,7 +1376,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	if (switch_test_flag(tech_pvt, TFLAG_IO)) {
 		switch_status_t status;
 
-		assert(tech_pvt->rtp_session != NULL);
+		switch_assert(tech_pvt->rtp_session != NULL);
 		tech_pvt->read_frame.datalen = 0;
 
 
@@ -1448,10 +1448,10 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	int bytes = 0, samples = 0, frames = 0;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = (struct private_object *) switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	while (!(tech_pvt->read_codec.implementation && switch_rtp_ready(tech_pvt->rtp_session))) {
 		if (switch_channel_ready(channel)) {
@@ -1496,10 +1496,10 @@ static switch_status_t channel_answer_channel(switch_core_session_t *session)
 	switch_channel_t *channel = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 		switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
@@ -1515,10 +1515,10 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	struct private_object *tech_pvt;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
@@ -1556,10 +1556,10 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
 	char *subject, *body;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 
 	if (!(body = switch_event_get_body(event))) {
@@ -2340,7 +2340,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 	ldl_status status = LDL_STATUS_SUCCESS;
 	char *sql;
 
-	assert(handle != NULL);
+	switch_assert(handle != NULL);
 
 	if (!(profile = ldl_handle_get_private(handle))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR NO PROFILE!\n");
@@ -2549,10 +2549,10 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 
 	if ((session = ldl_session_get_private(dlsession))) {
 		tech_pvt = switch_core_session_get_private(session);
-		assert(tech_pvt != NULL);
+		switch_assert(tech_pvt != NULL);
 
 		channel = switch_core_session_get_channel(session);
-		assert(channel != NULL);
+		switch_assert(channel != NULL);
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "using Existing session for %s\n", ldl_session_get_id(dlsession));
 

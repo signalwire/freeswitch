@@ -269,7 +269,7 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 		goto end;
 	}
 
-	assert(tech_pvt->session != NULL);
+	switch_assert(tech_pvt->session != NULL);
 
 	if ((abs = switch_channel_get_variable(tech_pvt->channel, "absolute_codec_string"))) {
 		codec_string = abs;
@@ -327,9 +327,9 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 {
 	char name[256];
 
-	assert(session != NULL);
-	assert(profile != NULL);
-	assert(tech_pvt != NULL);
+	switch_assert(session != NULL);
+	switch_assert(profile != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch_core_session_add_stream(session, NULL);
 
@@ -502,12 +502,12 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	const char *rep;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
 
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_SDP);
 
@@ -654,7 +654,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		char hash_key[256] = "";
 
 		e_dest = strdup(tech_pvt->e_dest);
-		assert(e_dest != NULL);
+		switch_assert(e_dest != NULL);
 		user = e_dest;
 		
 		if ((host = strchr(user, '@'))) {
@@ -722,10 +722,10 @@ void sofia_glue_do_xfer_invite(switch_core_session_t *session)
 	switch_caller_profile_t *caller_profile;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	caller_profile = switch_channel_get_caller_profile(channel);
 
@@ -940,7 +940,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	char tmp[50];
 	uint32_t rtp_timeout_sec = tech_pvt->profile->rtp_timeout_sec;
 	
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 
 	if (switch_channel_test_flag(tech_pvt->channel, CF_BYPASS_MEDIA)) {
@@ -1134,8 +1134,8 @@ switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, const char *r_
 	sdp_session_t *sdp;
 	uint8_t match = 0;
 
-	assert(tech_pvt != NULL);
-	assert(r_sdp != NULL);
+	switch_assert(tech_pvt != NULL);
+	switch_assert(r_sdp != NULL);
 
 	parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0);
 
@@ -1184,10 +1184,10 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 	const char *val;
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 	
 	greedy = !!(tech_pvt->profile->pflags & PFLAG_GREEDY);
 	
@@ -1556,7 +1556,7 @@ void sofia_glue_pass_sdp(private_object_t *tech_pvt, char *sdp)
 	if ((val = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE))
 		&& (other_session = switch_core_session_locate(val))) {
 		other_channel = switch_core_session_get_channel(other_session);
-		assert(other_channel != NULL);
+		switch_assert(other_channel != NULL);
 		switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, sdp);
 
 		if (!switch_test_flag(tech_pvt, TFLAG_CHANGE_MEDIA) && (switch_channel_test_flag(other_channel, CF_OUTBOUND) &&
