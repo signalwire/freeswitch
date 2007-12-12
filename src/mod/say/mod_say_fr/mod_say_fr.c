@@ -53,18 +53,18 @@ SWITCH_MODULE_DEFINITION(mod_say_fr, mod_say_fr_load, NULL, NULL);
 
 #define say_num(num, t) {							\
 		char tmp[80];\
-		switch_status_t status;\
-		snprintf(tmp, sizeof(tmp), "%u", (unsigned)num);				\
-	if ((status = fr_say_general_count(session, tmp, SST_ITEMS, t, args)) != SWITCH_STATUS_SUCCESS) {\
-		return status;\
+		switch_status_t tstatus;\
+		switch_snprintf(tmp, sizeof(tmp), "%u", (unsigned)num);				\
+	if ((tstatus = fr_say_general_count(session, tmp, SST_ITEMS, t, args)) != SWITCH_STATUS_SUCCESS) {\
+		return tstatus;\
 	}}\
 
 #define say_file(...) {\
 		char tmp[80];\
-		switch_status_t status;\
-		snprintf(tmp, sizeof(tmp), __VA_ARGS__);\
-		if ((status = switch_ivr_play_file(session, NULL, tmp, args)) != SWITCH_STATUS_SUCCESS){ \
-			return status;\
+		switch_status_t tstatus;\
+		switch_snprintf(tmp, sizeof(tmp), __VA_ARGS__);\
+		if ((tstatus = switch_ivr_play_file(session, NULL, tmp, args)) != SWITCH_STATUS_SUCCESS){ \
+			return tstatus;\
 		}\
 		if (!switch_channel_ready(switch_core_session_get_channel(session))) {\
 			return SWITCH_STATUS_FALSE;\
