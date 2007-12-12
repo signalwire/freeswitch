@@ -272,8 +272,10 @@ rm -rf $RPM_BUILD_ROOT
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/dialplan
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/directory
+%dir %attr(750,freeswitch.daemon) /opt/freeswitch/conf/directory/default
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/sip_profiles
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/jingle_profiles
 %config(noreplace) %attr(644,freeswitch,daemon) /etc/monit.d/freeswitch.monitrc
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/mime.types
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/*.tpl
@@ -312,7 +314,9 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/zeroconf.conf.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/dialplan/*.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/directory/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/directory/default/*
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/sip_profiles/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/jingle_profiles/*.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/htdocs/*
 /etc/ld.so.conf.d/*
 /opt/freeswitch/bin/freeswitch
