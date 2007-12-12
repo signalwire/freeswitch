@@ -433,7 +433,7 @@ static void pres_event_handler(switch_event_t *event)
 	switch (event->event_id) {
 	case SWITCH_EVENT_PRESENCE_PROBE:
 		if (proto) {
-			char *sql;
+			char *subsql;
 			char *to = switch_event_get_header(event, "to");
 			char *f_host = NULL;
 			if (to) {
@@ -443,9 +443,9 @@ static void pres_event_handler(switch_event_t *event)
 			}
 
 			if (f_host && (profile = switch_core_hash_find(globals.profile_hash, f_host))) {
-				if (to && (sql = switch_mprintf("select * from jabber_subscriptions where sub_to='%q' and sub_from='%q'", to, from))) {
-					mdl_execute_sql_callback(profile, profile->mutex, sql, sin_callback, profile);
-					switch_safe_free(sql);
+				if (to && (subsql = switch_mprintf("select * from jabber_subscriptions where sub_to='%q' and sub_from='%q'", to, from))) {
+					mdl_execute_sql_callback(profile, profile->mutex, subsql, sin_callback, profile);
+					switch_safe_free(subsql);
 				}
 			}
 		}
@@ -1461,6 +1461,10 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		}
 	}
 
+	if (!tech_pvt->read_codec.implementation) {
+		return SWITCH_STATUS_GENERR;
+	}
+
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1747,9 +1751,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			char *them;
 			them = strdup(tech_pvt->them);
 			if (them) {
-				char *p;
-				if ((p = strchr(them, '/'))) {
-					*p = '\0';
+				char *ptr;
+				if ((ptr = strchr(them, '/'))) {
+					*ptr = '\0';
 				}
 				ldl_handle_send_msg(mdl_profile->handle, tech_pvt->us, them, "", cid_msg);
 			}
@@ -1853,41 +1857,41 @@ static ldl_status handle_loop(ldl_handle_t * handle)
 
 static switch_status_t init_profile(mdl_profile_t *profile, uint8_t login)
 {
-	if (profile && profile->login && profile->password && profile->dialplan && profile->message && profile->ip && profile->name && profile->exten) {
-		ldl_handle_t *handle;
+	ldl_handle_t *handle;
 
-		if (switch_test_flag(profile, TFLAG_TIMER) && !profile->timer_name) {
-			profile->timer_name = switch_core_strdup(module_pool, "soft");
-		}
+	if (!profile) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid Profile\n");
+		return SWITCH_STATUS_FALSE;
+	}
 
-		if (login) {
-			if (ldl_handle_init(&handle,
-								profile->login,
-								profile->password,
-								profile->server,
-								profile->user_flags, profile->message, handle_loop, handle_signalling, handle_response, profile) == LDL_STATUS_SUCCESS) {
-				profile->handle = handle;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Started Thread for %s@%s\n", profile->login, profile->dialplan);
-				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
-				handle_thread_launch(handle);
-			}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created Profile for %s@%s\n", profile->login, profile->dialplan);
-			switch_core_hash_insert(globals.profile_hash, profile->name, profile);
-		}
-	} else {
+	if (!(profile->login && profile->password && profile->dialplan && profile->message && profile->ip && profile->name && profile->exten)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-						  "Invalid Profile\n"
-						  "login[%s]\n"
-						  "pass[%s]\n"
-						  "dialplan[%s]\n"
-						  "message[%s]\n"
-						  "rtp-ip[%s]\n"
-						  "name[%s]\n"
-						  "exten[%s]\n", profile->login, profile->password, profile->dialplan, profile->message, profile->ip, profile->name,
-						  profile->exten);
+						  "Invalid Profile\n" "login[%s]\n" "pass[%s]\n" "dialplan[%s]\n" 
+						  "message[%s]\n" "rtp-ip[%s]\n" "name[%s]\n" "exten[%s]\n",
+						  profile->login, profile->password, profile->dialplan, profile->message, profile->ip, profile->name, profile->exten);
 
 		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_test_flag(profile, TFLAG_TIMER) && !profile->timer_name) {
+		profile->timer_name = switch_core_strdup(module_pool, "soft");
+	}
+
+	if (!login) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created Profile for %s@%s\n", profile->login, profile->dialplan);
+		switch_core_hash_insert(globals.profile_hash, profile->name, profile);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (ldl_handle_init(&handle,
+						profile->login,
+						profile->password,
+						profile->server,
+						profile->user_flags, profile->message, handle_loop, handle_signalling, handle_response, profile) == LDL_STATUS_SUCCESS) {
+		profile->handle = handle;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Started Thread for %s@%s\n", profile->login, profile->dialplan);
+		switch_core_hash_insert(globals.profile_hash, profile->name, profile);
+		handle_thread_launch(handle);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1919,6 +1923,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dingaling_shutdown)
 
 static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 {
+	if (!var) return;
 
 	if (!strcasecmp(var, "login")) {
 		profile->login = switch_core_strdup(module_pool, val);
@@ -1953,9 +1958,9 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 	} else if (!strcasecmp(var, "message")) {
 		profile->message = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "rtp-ip")) {
-		profile->ip = switch_core_strdup(module_pool, strcasecmp(val, "auto") ? val : globals.guess_ip);
+		profile->ip = switch_core_strdup(module_pool, strcasecmp(switch_str_nil(val), "auto") ? switch_str_nil(val) : globals.guess_ip);
 	} else if (!strcasecmp(var, "ext-rtp-ip")) {
-		profile->extip = switch_core_strdup(module_pool, strcasecmp(val, "auto") ? val : globals.guess_ip);
+		profile->extip = switch_core_strdup(module_pool, strcasecmp(switch_str_nil(val), "auto") ? switch_str_nil(val) : globals.guess_ip);
 	} else if (!strcasecmp(var, "server")) {
 		profile->server = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "rtp-timer-name")) {
@@ -1967,9 +1972,9 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 			profile->user_flags |= LDL_FLAG_TLS;
 		}
 	} else if (!strcasecmp(var, "sasl")) {
-		if (!strcasecmp(val, "plain")) {
+		if (val && !strcasecmp(val, "plain")) {
 			profile->user_flags |= LDL_FLAG_SASL_PLAIN;
-		} else if (!strcasecmp(val, "md5")) {
+		} else if (val && !strcasecmp(val, "md5")) {
 			profile->user_flags |= LDL_FLAG_SASL_MD5;
 		}
 	} else if (!strcasecmp(var, "exten")) {
@@ -1980,7 +1985,7 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 		if (switch_true(val)) {
 			switch_set_flag(profile, TFLAG_AUTO);
 		}
-	} else if (!strcasecmp(var, "vad")) {
+	} else if (!strcasecmp(var, "vad") && val) {
 		if (!strcasecmp(val, "in")) {
 			switch_set_flag(profile, TFLAG_VAD_IN);
 		} else if (!strcasecmp(val, "out")) {
@@ -2091,7 +2096,7 @@ SWITCH_STANDARD_API(dl_login)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!strncasecmp(argv[0], "profile=", 8)) {
+	if (argv[0] && !strncasecmp(argv[0], "profile=", 8)) {
 		char *profile_name = argv[0] + 8;
 		profile = switch_core_hash_find(globals.profile_hash, profile_name);
 
@@ -2108,7 +2113,7 @@ SWITCH_STANDARD_API(dl_login)
 
 		for (x = 0; x < argc; x++) {
 			var = argv[x];
-			if ((val = strchr(var, '='))) {
+			if (var && (val = strchr(var, '='))) {
 				*val++ = '\0';
 				set_profile_val(profile, var, val);
 			}
@@ -2182,11 +2187,12 @@ static switch_status_t load_config(void)
 			if (!profile) {
 				profile = switch_core_alloc(module_pool, sizeof(*profile));
 			}
+
 			set_profile_val(profile, var, val);
 		}
 
 
-		if (type && !strcasecmp(type, "component")) {
+		if (profile && type && !strcasecmp(type, "component")) {
 			char dbname[256];
 			switch_core_db_t *db;
 
