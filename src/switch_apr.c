@@ -502,9 +502,11 @@ SWITCH_DECLARE(const char *) switch_dir_next_file(switch_dir_t *thedir, char *bu
 	const char *name;
 	
 	while (apr_dir_read(&(thedir->finfo), finfo_flags, thedir->dir_handle) == SWITCH_STATUS_SUCCESS) {
+
 		if (thedir->finfo.filetype != APR_REG) {
 			continue;
 		}
+
 		if (!(name = thedir->finfo.fname)) {
 			name = thedir->finfo.name;
 		}
@@ -516,6 +518,7 @@ SWITCH_DECLARE(const char *) switch_dir_next_file(switch_dir_t *thedir, char *bu
 		if (name) {
 			switch_copy_string(buf, name, len);
 			fname = buf;
+			break;
 		} else {
 			continue;
 		}
