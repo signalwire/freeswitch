@@ -54,7 +54,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 	}
 
 	switch_channel_set_variable(channel, "read_codec", codec->implementation->iananame);
-	snprintf(tmp, sizeof(tmp), "%d", codec->implementation->actual_samples_per_second);
+	switch_snprintf(tmp, sizeof(tmp), "%d", codec->implementation->actual_samples_per_second);
 	switch_channel_set_variable(channel, "read_rate", tmp);
 
 	session->read_codec = codec;
@@ -92,7 +92,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 	}
 
 	switch_channel_set_variable(channel, "write_codec", codec->implementation->iananame);
-	snprintf(tmp, sizeof(tmp), "%d", codec->implementation->actual_samples_per_second);
+	switch_snprintf(tmp, sizeof(tmp), "%d", codec->implementation->actual_samples_per_second);
 	switch_channel_set_variable(channel, "write_rate", tmp);
 
 	session->write_codec = codec;

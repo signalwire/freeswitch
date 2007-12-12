@@ -560,19 +560,19 @@ static switch_status_t conference_add_member(conference_obj_t * conference, conf
 			
 		if (call_list) {
 			char saymsg[1024];
-			snprintf(saymsg, sizeof(saymsg), "Auto Calling %d parties", call_list->itteration);
+			switch_snprintf(saymsg, sizeof(saymsg), "Auto Calling %d parties", call_list->itteration);
 			conference_member_say(member, saymsg, 0);
 		} else {
 			if (switch_strlen_zero(conference->special_announce)) {
 				/* anounce the total number of members in the conference */
 				if (conference->count >= conference->anounce_count && conference->anounce_count > 1) {
-					snprintf(msg, sizeof(msg), "There are %d callers", conference->count);
+					switch_snprintf(msg, sizeof(msg), "There are %d callers", conference->count);
 					conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
 				} else if (conference->count == 1 && !conference->perpetual_sound) {
 					if (conference->alone_sound) {
 						conference_play_file(conference, conference->alone_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 0);
 					} else {
-						snprintf(msg, sizeof(msg), "You are currently the only person in this conference.");
+						switch_snprintf(msg, sizeof(msg), "You are currently the only person in this conference.");
 						conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
 					}
 				}
@@ -1093,7 +1093,7 @@ static void conference_loop_fn_energy_up(conference_member_t * member, caller_co
 		}
 		switch_mutex_unlock(member->flag_mutex);
 
-		snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
+		switch_snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
 		conference_member_say(member, msg, 0);
 
 
@@ -1117,7 +1117,7 @@ static void conference_loop_fn_energy_equ_conf(conference_member_t * member, cal
 		}
 		switch_mutex_unlock(member->flag_mutex);
 
-		snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
+		switch_snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
 		conference_member_say(member, msg, 0);
 
 	}
@@ -1143,7 +1143,7 @@ static void conference_loop_fn_energy_dn(conference_member_t * member, caller_co
 		}
 		switch_mutex_unlock(member->flag_mutex);
 
-		snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
+		switch_snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
 		conference_member_say(member, msg, 0);
 
 
@@ -1171,7 +1171,7 @@ static void conference_loop_fn_volume_talk_up(conference_member_t * member, call
 		switch_mutex_unlock(member->flag_mutex);
 
 
-		snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
+		switch_snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
 		conference_member_say(member, msg, 0);
 
 	}
@@ -1196,7 +1196,7 @@ static void conference_loop_fn_volume_talk_zero(conference_member_t * member, ca
 		switch_mutex_unlock(member->flag_mutex);
 
 
-		snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
+		switch_snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
 		conference_member_say(member, msg, 0);
 
 
@@ -1221,7 +1221,7 @@ static void conference_loop_fn_volume_talk_dn(conference_member_t * member, call
 		}
 		switch_mutex_unlock(member->flag_mutex);
 
-		snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
+		switch_snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
 		conference_member_say(member, msg, 0);
 
 
@@ -1248,7 +1248,7 @@ static void conference_loop_fn_volume_listen_up(conference_member_t * member, ca
 		switch_mutex_unlock(member->flag_mutex);
 
 
-		snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
+		switch_snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
 		conference_member_say(member, msg, 0);
 
 
@@ -1273,7 +1273,7 @@ static void conference_loop_fn_volume_listen_zero(conference_member_t * member, 
 		}
 		switch_mutex_unlock(member->flag_mutex);
 
-		snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
+		switch_snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
 		conference_member_say(member, msg, 0);
 
 
@@ -1301,7 +1301,7 @@ static void conference_loop_fn_volume_listen_dn(conference_member_t * member, ca
 		switch_mutex_unlock(member->flag_mutex);
 
 
-		snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
+		switch_snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
 		conference_member_say(member, msg, 0);
 
 
@@ -2493,7 +2493,7 @@ static switch_status_t conf_api_sub_mute(conference_member_t * member, switch_st
 		} else {
 			char msg[512];
 
-			snprintf(msg, sizeof(msg), "Muted");
+			switch_snprintf(msg, sizeof(msg), "Muted");
 			conference_member_say(member, msg, 0);
 		}
 		if (stream != NULL) {
@@ -2527,7 +2527,7 @@ static switch_status_t conf_api_sub_unmute(conference_member_t * member, switch_
 		} else {
 			char msg[512];
 
-			snprintf(msg, sizeof(msg), "Un-Muted");
+			switch_snprintf(msg, sizeof(msg), "Un-Muted");
 			conference_member_say(member, msg, 0);
 		}
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
@@ -3692,7 +3692,7 @@ static switch_status_t conference_outcall(conference_obj_t * conference,
 		}
 		/* add them to the conference */
 		if (flags && !strcasecmp(flags, "none")) {
-			snprintf(appdata, sizeof(appdata), "%s+flags{%s}", conference_name, flags);
+			switch_snprintf(appdata, sizeof(appdata), "%s+flags{%s}", conference_name, flags);
 			switch_caller_extension_add_application(peer_session, extension, (char *) global_app_name, appdata);
 		} else {
 			switch_caller_extension_add_application(peer_session, extension, (char *) global_app_name, conference_name);

@@ -806,7 +806,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 	switch_queue_create(&session->event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
 	switch_queue_create(&session->private_event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
 
-	snprintf(session->name, sizeof(session->name), "%"SWITCH_SIZE_T_FMT, session->id);
+	switch_snprintf(session->name, sizeof(session->name), "%"SWITCH_SIZE_T_FMT, session->id);
 	switch_mutex_lock(runtime.throttle_mutex);
 	session->id = session_manager.session_id++;
 	switch_core_hash_insert(session_manager.session_table, session->uuid_str, session);

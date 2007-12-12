@@ -54,7 +54,7 @@ SWITCH_MODULE_DEFINITION(mod_say_en, mod_say_en_load, NULL, NULL);
 #define say_num(num, t) {							\
 		char tmp[80];\
 		switch_status_t status;\
-		snprintf(tmp, sizeof(tmp), "%u", (unsigned)num);				\
+		switch_snprintf(tmp, sizeof(tmp), "%u", (unsigned)num);				\
 	if ((status = en_say_general_count(session, tmp, SST_ITEMS, t, args)) != SWITCH_STATUS_SUCCESS) {\
 		return status;\
 	}}\
@@ -62,7 +62,7 @@ SWITCH_MODULE_DEFINITION(mod_say_en, mod_say_en_load, NULL, NULL);
 #define say_file(...) {\
 		char tmp[80];\
 		switch_status_t status;\
-		snprintf(tmp, sizeof(tmp), __VA_ARGS__);\
+		switch_snprintf(tmp, sizeof(tmp), __VA_ARGS__);\
 		if ((status = switch_ivr_play_file(session, NULL, tmp, args)) != SWITCH_STATUS_SUCCESS){ \
 			return status;\
 		}\

@@ -138,7 +138,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
 
-	snprintf(filename, sizeof(filename), "%s%s.tmp.xml", SWITCH_GLOBAL_dirs.temp_dir, uuid_str);
+	switch_snprintf(filename, sizeof(filename), "%s%s.tmp.xml", SWITCH_GLOBAL_dirs.temp_dir, uuid_str);
 	curl_handle = curl_easy_init();
 	headers = curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
 

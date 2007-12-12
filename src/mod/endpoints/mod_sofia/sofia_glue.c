@@ -81,7 +81,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 
 	tech_pvt->session_id++;
 	
-	snprintf(buf, sizeof(buf),
+	switch_snprintf(buf, sizeof(buf),
 			 "v=0\n"
 			 "o=FreeSWITCH %010u %010u IN IP4 %s\n"
 			 "s=FreeSWITCH\n" 
@@ -90,7 +90,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 			 "m=audio %d RTP/AVP", tech_pvt->owner_id, tech_pvt->session_id, ip, ip, sr, port);
 	
 	if (tech_pvt->rm_encoding) {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->pt);
+		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->pt);
 	} else if (tech_pvt->num_codecs) {
 		int i;
 		int already_did[128] = { 0 };
@@ -109,7 +109,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 				already_did[imp->ianacode] = 1;
 			}
 
-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", imp->ianacode);
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", imp->ianacode);
 			if (!ptime) {
 				ptime = imp->microseconds_per_frame / 1000;
 			}
@@ -117,20 +117,20 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	}
 
 	if (tech_pvt->te > 95) {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->te);
+		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->te);
 	}
 	
 	if (tech_pvt->cng_pt && use_cng) {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->cng_pt);
+		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->cng_pt);
 	}
 
-	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "\n");
+	switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "\n");
 
 	if (tech_pvt->rm_encoding) {
 		rate = tech_pvt->rm_rate;
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", tech_pvt->pt, tech_pvt->rm_encoding, rate);
+		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", tech_pvt->pt, tech_pvt->rm_encoding, rate);
 		if (tech_pvt->fmtp_out) {
-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->pt, tech_pvt->fmtp_out);
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->pt, tech_pvt->fmtp_out);
 		}
 		if (tech_pvt->read_codec.implementation && !ptime) {
 			ptime = tech_pvt->read_codec.implementation->microseconds_per_frame / 1000;
@@ -159,38 +159,38 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 			if (ptime && ptime != imp->microseconds_per_frame / 1000) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ptime %u != advertised ptime %u\n", imp->microseconds_per_frame / 1000, ptime);
 			}
-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", imp->ianacode, imp->iananame, rate);
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", imp->ianacode, imp->iananame, rate);
 			if (imp->fmtp) {
-				snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, imp->fmtp);
+				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, imp->fmtp);
 			}
 		}
 	}
 
 	if (tech_pvt->te > 95) {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
+		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
 	}
 	if (tech_pvt->cng_pt && use_cng) {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d CN/8000\n", tech_pvt->cng_pt);
+		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d CN/8000\n", tech_pvt->cng_pt);
 		if (!tech_pvt->rm_encoding) {
 			tech_pvt->cng_pt = 0;
 		}
 	} else {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=silenceSupp:off - - - -\n");
+		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=silenceSupp:off - - - -\n");
 	}
 	if (ptime) {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=ptime:%d\n", ptime);
+		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=ptime:%d\n", ptime);
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_VIDEO) && tech_pvt->video_rm_encoding) {
 		sofia_glue_tech_choose_video_port(tech_pvt);
 		if ((v_port = tech_pvt->adv_sdp_video_port)) {
-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "m=video %d RTP/AVP", v_port);
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "m=video %d RTP/AVP", v_port);
 			
 			sofia_glue_tech_set_video_codec(tech_pvt, 0);	
 
 			/*****************************/
 			if (tech_pvt->video_rm_encoding) {
-				snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->video_pt);
+				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->video_pt);
 			} else if (tech_pvt->num_codecs) {
 				int i;
 				int already_did[128] = { 0 };
@@ -208,20 +208,20 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 						already_did[imp->ianacode] = 1;
 					}
 					
-					snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", imp->ianacode);
+					switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", imp->ianacode);
 					if (!ptime) {
 						ptime = imp->microseconds_per_frame / 1000;
 					}
 				}
 			}
 
-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "\n");
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "\n");
 
 			if (tech_pvt->rm_encoding) {
 				rate = tech_pvt->video_rm_rate;
-				snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%ld\n", tech_pvt->video_pt, tech_pvt->video_rm_encoding, tech_pvt->video_rm_rate);
+				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%ld\n", tech_pvt->video_pt, tech_pvt->video_rm_encoding, tech_pvt->video_rm_rate);
 				if (tech_pvt->video_fmtp_out) {
-					snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->video_pt, tech_pvt->video_fmtp_out);
+					switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->video_pt, tech_pvt->video_fmtp_out);
 				}
 			} else if (tech_pvt->num_codecs) {
 				int i;
@@ -244,9 +244,9 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 						rate = imp->samples_per_second;
 					}
 
-					snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", imp->ianacode, imp->iananame, imp->samples_per_second);
+					switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", imp->ianacode, imp->iananame, imp->samples_per_second);
 					if (imp->fmtp) {
-						snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, imp->fmtp);
+						switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, imp->fmtp);
 					}
 				}
 			}
@@ -358,7 +358,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	switch_core_session_set_private(session, tech_pvt);
 
 
-	snprintf(name, sizeof(name), "sofia/%s/%s", profile->name, channame);
+	switch_snprintf(name, sizeof(name), "sofia/%s/%s", profile->name, channame);
 	switch_channel_set_name(tech_pvt->channel, name);
 }
 
@@ -414,7 +414,7 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt)
 	tech_pvt->adv_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, ip);
 	tech_pvt->adv_sdp_audio_port = sdp_port;
 
-	snprintf(tmp, sizeof(tmp), "%d", sdp_port);
+	switch_snprintf(tmp, sizeof(tmp), "%d", sdp_port);
 	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
 	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE, tmp);
 
@@ -446,7 +446,7 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt)
 
 	tech_pvt->adv_sdp_video_port = sdp_port;
 
-	snprintf(tmp, sizeof(tmp), "%d", sdp_port);
+	switch_snprintf(tmp, sizeof(tmp), "%d", sdp_port);
 	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_VIDEO_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
 	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_VIDEO_PORT_VARIABLE, tmp);
 
@@ -660,7 +660,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		if ((host = strchr(user, '@'))) {
 			*host++ = '\0';
 		}
-		snprintf(hash_key, sizeof(hash_key), "%s%s%s", user, host, cid_num);
+		switch_snprintf(hash_key, sizeof(hash_key), "%s%s%s", user, host, cid_num);
 
 		tech_pvt->chat_from = tech_pvt->from_str;
 		tech_pvt->chat_to = tech_pvt->dest;
@@ -991,7 +991,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 					  tech_pvt->agreed_pt,
 					  tech_pvt->read_codec.implementation->microseconds_per_frame / 1000);
 
-	snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
+	switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
 	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
 	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE, tmp);
 
@@ -1358,7 +1358,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					char tmp[80];
 					int num;
 
-					snprintf(tmp, sizeof(tmp), "%s@%uk@%ui", near_match->iananame, near_match->samples_per_second, ptime);
+					switch_snprintf(tmp, sizeof(tmp), "%s@%uk@%ui", near_match->iananame, near_match->samples_per_second, ptime);
 					
 					prefs[0] = tmp;
 					num = switch_loadable_module_get_codecs_sorted(search, 1, prefs, 1);
@@ -1385,7 +1385,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					tech_pvt->rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
 					tech_pvt->remote_sdp_audio_port = (switch_port_t) m->m_port;
 					tech_pvt->agreed_pt = (switch_payload_t) map->rm_pt;
-					snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
+					switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
 					switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
 					switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
 
@@ -1467,7 +1467,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						tech_pvt->video_rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
 						tech_pvt->remote_sdp_video_port = (switch_port_t) m->m_port;
 						tech_pvt->video_agreed_pt = (switch_payload_t) map->rm_pt;
-						snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_video_port);
+						switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_video_port);
 						switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_VIDEO_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
 						switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_VIDEO_PORT_VARIABLE, tmp);
 					} else {

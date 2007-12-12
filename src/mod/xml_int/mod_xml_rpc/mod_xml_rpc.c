@@ -190,7 +190,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 					goto fail;
 				}
 				
-				snprintf(z, sizeof(z), "%s:%s", globals.user, globals.pass);
+				switch_snprintf(z, sizeof(z), "%s:%s", globals.user, globals.pass);
 				Base64Encode(z, t);
 				
 				if (!strcmp(p, t)) {
@@ -241,9 +241,9 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 				} else {
 					if (mypass1) {
 						if (at) {
-							snprintf(z, sizeof(z), "%s@%s:%s", user, domain_name, mypass1);
+							switch_snprintf(z, sizeof(z), "%s@%s:%s", user, domain_name, mypass1);
 						} else {
-							snprintf(z, sizeof(z), "%s:%s", user, mypass1);
+							switch_snprintf(z, sizeof(z), "%s:%s", user, mypass1);
 						}
 						Base64Encode(z, t);
 				
@@ -255,9 +255,9 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 
 					if (mypass2) {
 						if (at) {
-							snprintf(z, sizeof(z), "%s@%s:%s", user, domain_name, mypass2);
+							switch_snprintf(z, sizeof(z), "%s@%s:%s", user, domain_name, mypass2);
 						} else {
-							snprintf(z, sizeof(z), "%s:%s", user, mypass2);
+							switch_snprintf(z, sizeof(z), "%s:%s", user, mypass2);
 						}
 						Base64Encode(z, t);
 				
@@ -270,9 +270,9 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 					if (box) {
 						if (mypass1) {
 							if (at) {
-								snprintf(z, sizeof(z), "%s@%s:%s", box, domain_name, mypass1);
+								switch_snprintf(z, sizeof(z), "%s@%s:%s", box, domain_name, mypass1);
 							} else {
-								snprintf(z, sizeof(z), "%s:%s", box, mypass1);
+								switch_snprintf(z, sizeof(z), "%s:%s", box, mypass1);
 							}
 							Base64Encode(z, t);
 					
@@ -284,9 +284,9 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 					
 						if (mypass2) {
 							if (at) {
-								snprintf(z, sizeof(z), "%s@%s:%s", box, domain_name, mypass2);
+								switch_snprintf(z, sizeof(z), "%s@%s:%s", box, domain_name, mypass2);
 							} else {
-								snprintf(z, sizeof(z), "%s:%s", box, mypass2);
+								switch_snprintf(z, sizeof(z), "%s:%s", box, mypass2);
 							}
 
 							Base64Encode(z, t);
@@ -321,7 +321,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 		switch_xml_free(x_domain_root);
 	}
 
-    snprintf(z, sizeof(z), "Basic realm=\"%s\"", domain_name ? domain_name : globals.realm);
+    switch_snprintf(z, sizeof(z), "Basic realm=\"%s\"", domain_name ? domain_name : globals.realm);
     ResponseAddField(r, "WWW-Authenticate", z);
     ResponseStatus(r, 401);
     return FALSE;
@@ -362,7 +362,7 @@ abyss_bool auth_hook(TSession * r)
 				new_uri = "/";
 			}
 
-			snprintf(tmp, sizeof(tmp), "%s%s", 
+			switch_snprintf(tmp, sizeof(tmp), "%s%s", 
 					 SWITCH_GLOBAL_dirs.htdocs_dir, 
 					 new_uri
 					 );
@@ -370,7 +370,7 @@ abyss_bool auth_hook(TSession * r)
 
 			if (switch_directory_exists(tmp, NULL) == SWITCH_STATUS_SUCCESS) {
 				for (x = 0; x < 2; x++) {
-					snprintf(tmp, sizeof(tmp), "%s%s%s%s", 
+					switch_snprintf(tmp, sizeof(tmp), "%s%s%s%s", 
 							 SWITCH_GLOBAL_dirs.htdocs_dir, 
 							 new_uri,
 							 end_of(new_uri) == *SWITCH_PATH_SEPARATOR ? "" : SWITCH_PATH_SEPARATOR,
@@ -378,7 +378,7 @@ abyss_bool auth_hook(TSession * r)
 							 );
 				
 					if (switch_file_exists(tmp, NULL) == SWITCH_STATUS_SUCCESS) {
-						snprintf(tmp, sizeof(tmp), "%s%s%s", 
+						switch_snprintf(tmp, sizeof(tmp), "%s%s%s", 
 								 new_uri,
 								 end_of(new_uri) == '/' ? "" : "/",
 								 list[x]
@@ -624,7 +624,7 @@ abyss_bool handler_hook(TSession * r)
 	}
 
 	
-	snprintf(buf, sizeof(buf), "Connection: close\r\n");
+	switch_snprintf(buf, sizeof(buf), "Connection: close\r\n");
 	ConnWrite(r->conn, buf, (uint32_t) strlen(buf));
 	
 	if (html) {
@@ -712,16 +712,16 @@ static xmlrpc_value *freeswitch_man(xmlrpc_env * const envP, xmlrpc_value * cons
 		if (switch_core_management_exec(relative_oid, action, buf, sizeof(buf)) == SWITCH_STATUS_SUCCESS) {
 			if (action == SMA_SET) {
 				if (*buf != '\0') {
-					snprintf(buf, sizeof(buf), "OK\n");
+					switch_snprintf(buf, sizeof(buf), "OK\n");
 				}
 			}
 		} else {
 			if (*buf != '\0') {
-				snprintf(buf, sizeof(buf), "ERROR\n");
+				switch_snprintf(buf, sizeof(buf), "ERROR\n");
 			}
 		}
 	} else {
-		snprintf(buf, sizeof(buf), "Invalid Action %s\n", s_action);
+		switch_snprintf(buf, sizeof(buf), "Invalid Action %s\n", s_action);
 	}
 
 	/* Return our result. */
@@ -765,7 +765,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 		}
 	}
 
-	snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "freeswitch_http.log");
+	switch_snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "freeswitch_http.log");
 	ServerCreate(&globals.abyssServer, "XmlRpcServer", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir, logfile);
 
 	xmlrpc_server_abyss_set_handler(&env, &globals.abyssServer, "/RPC2", registryP);

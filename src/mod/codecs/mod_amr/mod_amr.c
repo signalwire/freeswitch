@@ -203,7 +203,7 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 			context->enc_mode = globals.default_bitrate;
 		}
 
-		snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d", switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0, context->enc_mode);
+		switch_snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d", switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0, context->enc_mode);
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, fmtptmp);
 
 		context->enc_mode = AMR_DEFAULT_BITRATE;

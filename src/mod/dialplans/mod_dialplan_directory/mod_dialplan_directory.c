@@ -113,9 +113,9 @@ SWITCH_STANDARD_DIALPLAN(directory_dialplan_hunt)
 		return NULL;
 	}
 
-	snprintf(filter, sizeof(filter), "exten=%s", caller_profile->destination_number);
+	switch_snprintf(filter, sizeof(filter), "exten=%s", caller_profile->destination_number);
 	if (caller_profile->context) {
-		snprintf(filter + strlen(filter), sizeof(filter) - strlen(filter), "context=%s", caller_profile->context);
+		switch_snprintf(filter + strlen(filter), sizeof(filter) - strlen(filter), "context=%s", caller_profile->context);
 	}
 
 

@@ -652,8 +652,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	char ice_user[80];
 	char user_ice[80];
 
-	snprintf(ice_user, sizeof(ice_user), "%s%s", login, rlogin);
-	snprintf(user_ice, sizeof(user_ice), "%s%s", rlogin, login);
+	switch_snprintf(ice_user, sizeof(ice_user), "%s%s", login, rlogin);
+	switch_snprintf(user_ice, sizeof(user_ice), "%s%s", rlogin, login);
 	rtp_session->ice_user = switch_core_strdup(rtp_session->pool, ice_user);
 	rtp_session->user_ice = switch_core_strdup(rtp_session->pool, user_ice);
 

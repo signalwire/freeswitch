@@ -127,7 +127,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	}
 
 	switch_url_encode(data, enc_hint, sizeof(enc_hint));
-	snprintf(hint_data, sizeof(hint_data), "macro_name=%s&lang=%s&data=%s&destination_number=%s", macro_name, chan_lang, enc_hint, switch_channel_get_variable(channel,"destination_number"));
+	switch_snprintf(hint_data, sizeof(hint_data), "macro_name=%s&lang=%s&data=%s&destination_number=%s", macro_name, chan_lang, enc_hint, switch_channel_get_variable(channel,"destination_number"));
 
 	if (switch_xml_locate("phrases", NULL, NULL, NULL, &xml, &cfg, hint_data) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of phrases failed.\n");

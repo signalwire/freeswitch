@@ -761,7 +761,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 		if (encode) {
 			switch_url_encode(hp->value, encode_buf, encode_len - 1);
 		} else {
-			snprintf(encode_buf, encode_len, "[%s]", hp->value);
+			switch_snprintf(encode_buf, encode_len, "[%s]", hp->value);
 		}
 
 		llen = strlen(hp->name) + strlen(encode_buf) + 8;
@@ -779,7 +779,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 			}
 		}
 
-		snprintf(buf + len, dlen - len, "%s: %s\n", hp->name, switch_strlen_zero(encode_buf) ? "_undef_" : encode_buf);
+		switch_snprintf(buf + len, dlen - len, "%s: %s\n", hp->name, switch_strlen_zero(encode_buf) ? "_undef_" : encode_buf);
 		len = strlen(buf);
 
 	}
@@ -809,12 +809,12 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 		}
 
 		if (blen) {
-			snprintf(buf + len, dlen - len, "Content-Length: %d\n\n%s", blen, event->body);
+			switch_snprintf(buf + len, dlen - len, "Content-Length: %d\n\n%s", blen, event->body);
 		} else {
-			snprintf(buf + len, dlen - len, "\n");
+			switch_snprintf(buf + len, dlen - len, "\n");
 		}
 	} else {
-		snprintf(buf + len, dlen - len, "\n");
+		switch_snprintf(buf + len, dlen - len, "\n");
 	}
 
 	*str = buf;
@@ -877,7 +877,7 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 	if (body) {
 		int blen = (int) strlen(body);
 		char blena[25];
-		snprintf(blena, sizeof(blena), "%d", blen);
+		switch_snprintf(blena, sizeof(blena), "%d", blen);
 		if (blen) {
 			switch_xml_t xbody = NULL;
 

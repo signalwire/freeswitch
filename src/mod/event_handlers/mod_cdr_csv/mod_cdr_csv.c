@@ -217,24 +217,24 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 
 		tt_created = (time_t) (caller_profile->times->created / 1000000);
 		mtt_created = (time_t) (caller_profile->times->created / 1000);
-		snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_created);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_created);
 		switch_channel_set_variable(channel, "start_epoch", tmp);
-		snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->created);
+		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->created);
 		switch_channel_set_variable(channel, "start_uepoch", tmp);
 		
 		tt_answered = (time_t) (caller_profile->times->answered / 1000000);
 		mtt_answered = (time_t) (caller_profile->times->answered / 1000);
-		snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_answered);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_answered);
 		switch_channel_set_variable(channel, "answer_epoch", tmp);
-		snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);
+		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);
 		switch_channel_set_variable(channel, "answer_uepoch", tmp);		
 
 
 		tt_hungup = (time_t) (caller_profile->times->hungup / 1000000);
 		mtt_hungup = (time_t) (caller_profile->times->hungup / 1000);
-		snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_hungup);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_hungup);
 		switch_channel_set_variable(channel, "end_epoch", tmp);
-		snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->hungup);
+		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->hungup);
 		switch_channel_set_variable(channel, "end_uepoch", tmp);
 
 		uduration = caller_profile->times->hungup - caller_profile->times->created;
@@ -253,22 +253,22 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	switch_channel_set_variable(channel, "last_arg", last_arg);
 	switch_channel_set_variable(channel, "caller_id", cid_buf);
 
-	snprintf(tmp, sizeof(tmp), "%d", duration);
+	switch_snprintf(tmp, sizeof(tmp), "%d", duration);
 	switch_channel_set_variable(channel, "duration", tmp);
 
-	snprintf(tmp, sizeof(tmp), "%d", billsec);
+	switch_snprintf(tmp, sizeof(tmp), "%d", billsec);
 	switch_channel_set_variable(channel, "billsec", tmp);
 	
-	snprintf(tmp, sizeof(tmp), "%d", mduration);
+	switch_snprintf(tmp, sizeof(tmp), "%d", mduration);
 	switch_channel_set_variable(channel, "mduration", tmp);
 
-	snprintf(tmp, sizeof(tmp), "%d", billmsec);
+	switch_snprintf(tmp, sizeof(tmp), "%d", billmsec);
 	switch_channel_set_variable(channel, "billmsec", tmp);
 
-	snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, uduration);
+	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, uduration);
 	switch_channel_set_variable(channel, "uduration", tmp);
 
-	snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, billusec);
+	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, billusec);
 	switch_channel_set_variable(channel, "billusec", tmp);
 
 	if (globals.debug) {
@@ -395,7 +395,7 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 					size_t len = strlen(param->txt) + 2;
 					if (end_of(param->txt) != '\n') {
 						tpl = switch_core_alloc(pool, len);
-						snprintf(tpl, len, "%s\n", param->txt);
+						switch_snprintf(tpl, len, "%s\n", param->txt);
 					} else {
 						tpl = switch_core_strdup(pool, param->txt);
 					}

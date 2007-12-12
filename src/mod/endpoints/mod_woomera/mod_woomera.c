@@ -506,7 +506,7 @@ static switch_call_cause_t woomera_outgoing_channel(switch_core_session_t *sessi
 			char name[128];
 			switch_caller_profile_t *caller_profile;
 
-			snprintf(name, sizeof(name), "Woomera/%s-%04x", outbound_profile->destination_number, rand() & 0xffff);
+			switch_snprintf(name, sizeof(name), "Woomera/%s-%04x", outbound_profile->destination_number, rand() & 0xffff);
 			switch_channel_set_name(channel, name);
 
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
@@ -1089,7 +1089,7 @@ static void *woomera_channel_thread_run(switch_thread_t * thread, void *obj)
 																		  NULL,
 																		  exten)) != 0) {
 					char name[128];
-					snprintf(name, sizeof(name), "Woomera/%s-%04x", tech_pvt->caller_profile->destination_number, rand() & 0xffff);
+					switch_snprintf(name, sizeof(name), "Woomera/%s-%04x", tech_pvt->caller_profile->destination_number, rand() & 0xffff);
 					switch_channel_set_name(channel, name);
 					switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 

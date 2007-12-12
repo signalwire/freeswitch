@@ -73,7 +73,7 @@ static uint32_t match_count(char *str, uint32_t max)
 	uint32_t len = (uint32_t) strlen(str);
 
 	for (x = 0; x < max; x++) {
-		snprintf(tstr, sizeof(tstr), "%u", x);
+		switch_snprintf(tstr, sizeof(tstr), "%u", x);
 		if (!strncasecmp(str, tstr, len)) {
 			matches++;
 		}
@@ -316,28 +316,28 @@ SWITCH_STANDARD_APP(rss_function)
 		title_txt = description_txt = rights_txt = "";
 
 		if (jumpto > -1) {
-			snprintf(cmd, sizeof(cmd), "%d", jumpto);
+			switch_snprintf(cmd, sizeof(cmd), "%d", jumpto);
 			jumpto = -1;
 		} else {
 			switch_core_speech_flush_tts(&sh);
 #ifdef MATCH_COUNT
-			snprintf(buf + len, sizeof(buf) - len,
+			switch_snprintf(buf + len, sizeof(buf) - len,
 					 ",<break time=\"500ms\"/>Main Menu. <break time=\"600ms\"/> "
 					 "Select one of the following news sources, or press 0 to exit. " ",<break time=\"600ms\"/>");
 #else
-			snprintf(buf + len, sizeof(buf) - len,
+			switch_snprintf(buf + len, sizeof(buf) - len,
 					 ",<break time=\"500ms\"/>Main Menu. <break time=\"600ms\"/> "
 					 "Select one of the following news sources, followed by the pound key or press 0 to exit. " ",<break time=\"600ms\"/>");
 #endif
 			len = (int32_t) strlen(buf);
 
 			for (idx = 0; idx < feed_index; idx++) {
-				snprintf(buf + len, sizeof(buf) - len, "%d: %s. <break time=\"600ms\"/>", idx + 1, feed_names[idx]);
+				switch_snprintf(buf + len, sizeof(buf) - len, "%d: %s. <break time=\"600ms\"/>", idx + 1, feed_names[idx]);
 				len = (int32_t) strlen(buf);
 			}
 
 
-			snprintf(buf + len, sizeof(buf) - len, "<break time=\"2000ms\"/>");
+			switch_snprintf(buf + len, sizeof(buf) - len, "<break time=\"2000ms\"/>");
 			len = (int32_t) strlen(buf);
 
 			args.input_callback = NULL;
@@ -497,7 +497,7 @@ SWITCH_STANDARD_APP(rss_function)
 			switch_strftime(date, &retsize, sizeof(date), "%I:%M %p", &tm);
 
 
-			snprintf(buf, sizeof(buf),
+			switch_snprintf(buf, sizeof(buf),
 					 ",<break time=\"500ms\"/>%s. %s. %s. local time: %s, Press 0 for options, 5 to change voice, or pound to return to the main menu. ",
 					 title_txt, description_txt, rights_txt, date);
 			args.input_callback = NULL;
@@ -555,14 +555,14 @@ SWITCH_STANDARD_APP(rss_function)
 					}
 					if (switch_test_flag(&dtb, SFLAG_INFO)) {
 						switch_clear_flag(&dtb, SFLAG_INFO);
-						snprintf(buf + len, sizeof(buf) - len, "%s %s. I am speaking at %u words per minute. ", sh.engine, sh.voice, dtb.speed);
+						switch_snprintf(buf + len, sizeof(buf) - len, "%s %s. I am speaking at %u words per minute. ", sh.engine, sh.voice, dtb.speed);
 						len = (uint32_t) strlen(buf);
 					}
 
 					if (switch_test_flag(&dtb, SFLAG_INSTRUCT)) {
 						switch_clear_flag(&dtb, SFLAG_INSTRUCT);
 						cont = 1;
-						snprintf(buf + len, sizeof(buf) - len,
+						switch_snprintf(buf + len, sizeof(buf) - len,
 								 "Press star to pause or resume speech. "
 								 "To go to the next item, press six. "
 								 "To go back, press 4. "
@@ -570,21 +570,21 @@ SWITCH_STANDARD_APP(rss_function)
 								 "To change voices, press five. To restore the original voice press 9. "
 								 "To hear these options again, press zero or press pound to return to the main menu. ");
 					} else {
-						snprintf(buf + len, sizeof(buf) - len, "Story %d. ", dtb.index + 1);
+						switch_snprintf(buf + len, sizeof(buf) - len, "Story %d. ", dtb.index + 1);
 						len = (uint32_t) strlen(buf);
 
 						if (entries[dtb.index].subject_txt) {
-							snprintf(buf + len, sizeof(buf) - len, "Subject: %s. ", entries[dtb.index].subject_txt);
+							switch_snprintf(buf + len, sizeof(buf) - len, "Subject: %s. ", entries[dtb.index].subject_txt);
 							len = (uint32_t) strlen(buf);
 						}
 
 						if (entries[dtb.index].dept_txt) {
-							snprintf(buf + len, sizeof(buf) - len, "From the %s department. ", entries[dtb.index].dept_txt);
+							switch_snprintf(buf + len, sizeof(buf) - len, "From the %s department. ", entries[dtb.index].dept_txt);
 							len = (uint32_t) strlen(buf);
 						}
 
 						if (entries[dtb.index].title_txt) {
-							snprintf(buf + len, sizeof(buf) - len, "%s", entries[dtb.index].title_txt);
+							switch_snprintf(buf + len, sizeof(buf) - len, "%s", entries[dtb.index].title_txt);
 							len = (uint32_t) strlen(buf);
 						}
 					}

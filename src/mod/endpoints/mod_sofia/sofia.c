@@ -741,7 +741,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 		return status;
 	}
 
-	snprintf(url, sizeof(url), "profile=%s", switch_str_nil(profile_name));
+	switch_snprintf(url, sizeof(url), "profile=%s", switch_str_nil(profile_name));
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, url))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
@@ -796,7 +796,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				profile->user_agent = SOFIA_USER_AGENT;
 
 				profile->name = switch_core_strdup(profile->pool, xprofilename);
-				snprintf(url, sizeof(url), "sofia_reg_%s", xprofilename);
+				switch_snprintf(url, sizeof(url), "sofia_reg_%s", xprofilename);
 				
 				profile->dbname = switch_core_strdup(profile->pool, url);
 				switch_core_hash_init(&profile->chat_hash, profile->pool);
@@ -1457,7 +1457,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				if (switch_test_flag(tech_pvt, TFLAG_NOHUP)) {
 					switch_clear_flag_locked(tech_pvt, TFLAG_NOHUP);
 				} else {
-					snprintf(st, sizeof(st), "%d", status);
+					switch_snprintf(st, sizeof(st), "%d", status);
 					switch_channel_set_variable(channel, "sip_term_status", st);
 					switch_channel_hangup(channel, sofia_glue_sip_cause_to_freeswitch(status));
 				}
@@ -2034,7 +2034,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if (sip->sip_max_forwards) {
 		char max_forwards[32];
-		snprintf(max_forwards, sizeof(max_forwards), "%lu", sip->sip_max_forwards->mf_count);
+		switch_snprintf(max_forwards, sizeof(max_forwards), "%lu", sip->sip_max_forwards->mf_count);
 		switch_channel_set_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE, max_forwards);
 	}
 

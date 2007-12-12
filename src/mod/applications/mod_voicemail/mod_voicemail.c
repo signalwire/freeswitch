@@ -893,7 +893,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 
     while(switch_channel_ready(channel)) {
         
-        snprintf(key_buf, sizeof(key_buf), "%s:%s:%s", 
+        switch_snprintf(key_buf, sizeof(key_buf), "%s:%s:%s", 
                  profile->listen_file_key,
                  profile->save_file_key,
                  profile->record_file_key);
@@ -1007,7 +1007,7 @@ static void message_count(vm_profile_t *profile, const char *myid, const char *d
     cbt.len = sizeof(msg_count);
                 
 
-    snprintf(sql, sizeof(sql), 
+    switch_snprintf(sql, sizeof(sql), 
              "select count(*) from voicemail_data where user='%s' and domain='%s' and in_folder='%s' and read_epoch=0", 
              myid,
              domain_name,
@@ -1015,7 +1015,7 @@ static void message_count(vm_profile_t *profile, const char *myid, const char *d
     vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &cbt);
     *total_new_messages = atoi(msg_count);
 
-    snprintf(sql, sizeof(sql), 
+    switch_snprintf(sql, sizeof(sql), 
              "select count(*) from voicemail_data where user='%s' and domain='%s' and in_folder='%s' and read_epoch=0 and read_flags='%s'", 
              myid,
              domain_name,
@@ -1024,7 +1024,7 @@ static void message_count(vm_profile_t *profile, const char *myid, const char *d
     vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &cbt);
     *total_new_urgent_messages = atoi(msg_count);
 
-    snprintf(sql, sizeof(sql), 
+    switch_snprintf(sql, sizeof(sql), 
              "select count(*) from voicemail_data where user='%s' and domain='%s' and in_folder='%s' and read_epoch!=0", 
              myid,
              domain_name,
@@ -1033,7 +1033,7 @@ static void message_count(vm_profile_t *profile, const char *myid, const char *d
     *total_saved_messages = atoi(msg_count);
 
 
-    snprintf(sql, sizeof(sql), 
+    switch_snprintf(sql, sizeof(sql), 
              "select count(*) from voicemail_data where user='%s' and domain='%s' and in_folder='%s' and read_epoch!=0 and read_flags='%s'", 
              myid,
              domain_name,
@@ -1063,7 +1063,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
         args.input_callback = cancel_on_dtmf;
 
 
-        snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s:%s", 
+        switch_snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s:%s", 
                  profile->listen_file_key,
                  profile->save_file_key,
                  profile->delete_file_key,
@@ -1071,7 +1071,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
                  profile->callback_key);
 
 
-        snprintf(input, sizeof(input), "%s:%d", cbt->type == MSG_NEW ? "new" : "saved", cbt->want+1);
+        switch_snprintf(input, sizeof(input), "%s:%d", cbt->type == MSG_NEW ? "new" : "saved", cbt->want+1);
         memset(&cc, 0, sizeof(cc));
         cc.profile = profile;
         args.buf = &cc;
@@ -1141,13 +1141,13 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
                     switch_time_exp_lt(&tm, atoi(cbt->created_epoch) * 1000000);
                     switch_strftime(date, &retsize, sizeof(date), profile->date_fmt, &tm);
 
-                    snprintf(tmp,sizeof(tmp), "%d", total_new_messages);
+                    switch_snprintf(tmp,sizeof(tmp), "%d", total_new_messages);
                     switch_channel_set_variable(channel, "voicemail_total_new_messages", tmp);
-                    snprintf(tmp,sizeof(tmp), "%d", total_saved_messages);
+                    switch_snprintf(tmp,sizeof(tmp), "%d", total_saved_messages);
                     switch_channel_set_variable(channel, "voicemail_total_saved_messages", tmp);
-                    snprintf(tmp,sizeof(tmp), "%d", total_new_urgent_messages);
+                    switch_snprintf(tmp,sizeof(tmp), "%d", total_new_urgent_messages);
                     switch_channel_set_variable(channel, "voicemail_urgent_new_messages", tmp);
-                    snprintf(tmp,sizeof(tmp), "%d", total_saved_urgent_messages);
+                    switch_snprintf(tmp,sizeof(tmp), "%d", total_saved_urgent_messages);
                     switch_channel_set_variable(channel, "voicemail_urgent_saved_messages", tmp);
                     switch_channel_set_variable(channel, "voicemail_current_folder", cbt->in_folder);
                     switch_channel_set_variable(channel, "voicemail_account", cbt->user);
@@ -1157,7 +1157,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
                     switch_channel_set_variable(channel, "voicemail_file_path", cbt->file_path);
                     switch_channel_set_variable(channel, "voicemail_read_flags", cbt->read_flags);
                     switch_channel_set_variable(channel, "voicemail_time", date);
-                    snprintf(tmp,sizeof(tmp), "%d", priority);
+                    switch_snprintf(tmp,sizeof(tmp), "%d", priority);
                     switch_channel_set_variable(channel, "voicemail_priority", tmp);
                     message_len = atoi(cbt->message_len);
 
@@ -1166,7 +1166,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
                     duration.day += duration.yr * 365;
                     duration.hr += duration.day * 24;
                     
-                    snprintf(duration_str, sizeof(duration_str), "%.2u:%.2u:%.2u", 
+                    switch_snprintf(duration_str, sizeof(duration_str), "%.2u:%.2u:%.2u", 
                              duration.hr,
                              duration.min,
                              duration.sec
@@ -1310,12 +1310,12 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 
 
                 if (total_new_urgent_messages > 0) {
-                    snprintf(msg_count, sizeof(msg_count), "%d:urgent-new", total_new_urgent_messages);
+                    switch_snprintf(msg_count, sizeof(msg_count), "%d:urgent-new", total_new_urgent_messages);
                     TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL));
                     informed++;
                 }
                 if (total_new_messages > 0 && total_new_messages != total_new_urgent_messages) {
-                    snprintf(msg_count, sizeof(msg_count), "%d:new", total_new_messages);
+                    switch_snprintf(msg_count, sizeof(msg_count), "%d:new", total_new_messages);
                     TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL));
                     informed++;
                 }
@@ -1328,13 +1328,13 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
                 }
                 
                 if (total_saved_urgent_messages > 0) {
-                    snprintf(msg_count, sizeof(msg_count), "%d:urgent-saved", total_saved_urgent_messages);
+                    switch_snprintf(msg_count, sizeof(msg_count), "%d:urgent-saved", total_saved_urgent_messages);
                     TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL));
                     informed++;
                 }
 
                 if (total_saved_messages > 0 && total_saved_messages != total_saved_urgent_messages) {
-                    snprintf(msg_count, sizeof(msg_count), "%d:saved", total_saved_messages);
+                    switch_snprintf(msg_count, sizeof(msg_count), "%d:saved", total_saved_messages);
                     TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL));
                     informed++;
                 }
@@ -1347,7 +1347,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
                 }
                 
                 if (!informed) {
-                    snprintf(msg_count, sizeof(msg_count), "0:new");
+                    switch_snprintf(msg_count, sizeof(msg_count), "0:new");
                     TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL));
                     informed++;
                 }
@@ -1368,7 +1368,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
                 switch(play_msg_type) {
                 case MSG_NEW:
                     {
-                        snprintf(sql, sizeof(sql),
+                        switch_snprintf(sql, sizeof(sql),
                                  "select * from voicemail_data where user='%s' and domain='%s' and read_epoch=0 order by read_flags", myid, domain_name);
                         total_messages = total_new_messages;
                         heard_auto_new = heard_auto_saved = 1;
@@ -1377,7 +1377,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
                 case MSG_SAVED:
                 default:
                     {
-                        snprintf(sql, sizeof(sql),
+                        switch_snprintf(sql, sizeof(sql),
                                  "select * from voicemail_data where user='%s' and domain='%s' and read_epoch !=0 order by read_flags", myid, domain_name);
                         total_messages = total_saved_messages;
                         heard_auto_new = heard_auto_saved = 1;                        
@@ -1394,12 +1394,12 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
                         break;
                     }
                 }
-                snprintf(sql, sizeof(sql), "update voicemail_data set read_epoch=%ld where user='%s' and domain='%s' and flags='save'", 
+                switch_snprintf(sql, sizeof(sql), "update voicemail_data set read_epoch=%ld where user='%s' and domain='%s' and flags='save'", 
                          (long)time(NULL), myid, domain_name);
                 vm_execute_sql(profile, sql, profile->mutex);
-                snprintf(sql, sizeof(sql), "select file_path from voicemail_data where user='%s' and domain='%s' and flags='delete'", myid, domain_name);
+                switch_snprintf(sql, sizeof(sql), "select file_path from voicemail_data where user='%s' and domain='%s' and flags='delete'", myid, domain_name);
                 vm_execute_sql_callback(profile, profile->mutex, sql, unlink_callback, NULL);
-                snprintf(sql, sizeof(sql), "delete from voicemail_data where user='%s' and domain='%s' and flags='delete'", myid, domain_name);
+                switch_snprintf(sql, sizeof(sql), "delete from voicemail_data where user='%s' and domain='%s' and flags='delete'", myid, domain_name);
                 vm_execute_sql(profile, sql, profile->mutex);
                 vm_check_state = VM_CHECK_FOLDER_SUMMARY;
             }
@@ -1425,7 +1425,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
                     switch_safe_free(sql);
                 }
 
-                snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s", 
+                switch_snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s", 
                          profile->record_greeting_key, 
                          profile->choose_greeting_key, 
                          profile->record_name_key,
@@ -1506,7 +1506,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
                 char key_buf[80] = "";
                 play_msg_type = MSG_NONE;
                 
-                snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s", 
+                switch_snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s", 
                          profile->play_new_messages_key, 
                          profile->play_saved_messages_key,
                          profile->config_menu_key,
@@ -1789,7 +1789,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
         }
     }
 
-    snprintf(sql, sizeof(sql), 
+    switch_snprintf(sql, sizeof(sql), 
              "select * from voicemail_prefs where user='%s' and domain='%s'", 
              id,
              domain_name);
@@ -1874,7 +1874,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
     if ((status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) && switch_channel_ready(channel)) {
         char input[10] = "", key_buf[80] = "", term = 0;
 
-        snprintf(key_buf, sizeof(key_buf), "%s:%s", 
+        switch_snprintf(key_buf, sizeof(key_buf), "%s:%s", 
                  profile->urgent_key,
                  profile->terminator_key);
 
@@ -1946,13 +1946,13 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
         switch_strftime(date, &retsize, sizeof(date), profile->date_fmt, &tm);
 
         switch_channel_set_variable(channel, "voicemail_current_folder", myfolder);
-        snprintf(tmp,sizeof(tmp), "%d", total_new_messages);
+        switch_snprintf(tmp,sizeof(tmp), "%d", total_new_messages);
         switch_channel_set_variable(channel, "voicemail_total_new_messages", tmp);
-        snprintf(tmp,sizeof(tmp), "%d", total_saved_messages);
+        switch_snprintf(tmp,sizeof(tmp), "%d", total_saved_messages);
         switch_channel_set_variable(channel, "voicemail_total_saved_messages", tmp);
-        snprintf(tmp,sizeof(tmp), "%d", total_new_urgent_messages);
+        switch_snprintf(tmp,sizeof(tmp), "%d", total_new_urgent_messages);
         switch_channel_set_variable(channel, "voicemail_urgent_new_messages", tmp);
-        snprintf(tmp,sizeof(tmp), "%d", total_saved_urgent_messages);
+        switch_snprintf(tmp,sizeof(tmp), "%d", total_saved_urgent_messages);
         switch_channel_set_variable(channel, "voicemail_urgent_saved_messages", tmp);
         switch_channel_set_variable(channel, "voicemail_account", id);
         switch_channel_set_variable(channel, "voicemail_domain", domain_name);
@@ -1961,7 +1961,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
         switch_channel_set_variable(channel, "voicemail_file_path", file_path);
         switch_channel_set_variable(channel, "voicemail_read_flags", read_flags);
         switch_channel_set_variable(channel, "voicemail_time", date);
-        snprintf(tmp,sizeof(tmp), "%d", priority);
+        switch_snprintf(tmp,sizeof(tmp), "%d", priority);
         switch_channel_set_variable(channel, "voicemail_priority", tmp);
         switch_channel_set_variable(channel, "voicemail_email", email_vm);
 
@@ -1971,7 +1971,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
         switch_core_measure_time(l_duration, &duration);
         duration.day += duration.yr * 365;
         duration.hr += duration.day * 24;
-        snprintf(duration_str, sizeof(duration_str), "%.2u:%.2u:%.2u",
+        switch_snprintf(duration_str, sizeof(duration_str), "%.2u:%.2u:%.2u",
                  duration.hr,
                  duration.min,
                  duration.sec
@@ -2366,7 +2366,7 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
     duration.day += duration.yr * 365;
     duration.hr += duration.day * 24;
 
-    snprintf(duration_str, sizeof(duration_str), "%.2u:%.2u:%.2u", 
+    switch_snprintf(duration_str, sizeof(duration_str), "%.2u:%.2u:%.2u", 
              duration.hr,
              duration.min,
              duration.sec
@@ -2383,7 +2383,7 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
         switch_strftime(read_date, &retsize, sizeof(read_date), fmt, &tm);
     }
 
-    snprintf(heard, sizeof(heard), *read_date == '\0' ? "never" : read_date);
+    switch_snprintf(heard, sizeof(heard), *read_date == '\0' ? "never" : read_date);
 
     get = switch_mprintf("http://%s:%s%s/get/%s", holder->host, holder->port, holder->uri, fname);
     del = switch_mprintf("http://%s:%s%s/del/%s", holder->host, holder->port, holder->uri, fname);
@@ -2397,7 +2397,7 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
                                    //"<a href=%s>Delete This Message</a><br><hr noshade size=1>", 
                                    strcmp(argv[10], URGENT_FLAG_STRING) ? "normal" : "urgent", create_date, heard, duration_str);
 
-    snprintf(title_b4, sizeof(title_b4), "%s <%s> %s", argv[5], argv[6], rss_date);
+    switch_snprintf(title_b4, sizeof(title_b4), "%s <%s> %s", argv[5], argv[6], rss_date);
     switch_url_encode(title_b4, title_aft, sizeof(title_aft)-1);
 
 
@@ -2455,7 +2455,7 @@ static int rss_callback(void *pArg, int argc, char **argv, char **columnNames)
     duration.day += duration.yr * 365;
     duration.hr += duration.day * 24;
 
-    snprintf(duration_str, sizeof(duration_str), "%.2u:%.2u:%.2u", 
+    switch_snprintf(duration_str, sizeof(duration_str), "%.2u:%.2u:%.2u", 
              duration.hr,
              duration.min,
              duration.sec
@@ -2481,7 +2481,7 @@ static int rss_callback(void *pArg, int argc, char **argv, char **columnNames)
 
     x_tmp = switch_xml_add_child_d(holder->x_item, "description", 0);
 
-    snprintf(heard, sizeof(heard), *read_date == '\0' ? "never" : read_date);
+    switch_snprintf(heard, sizeof(heard), *read_date == '\0' ? "never" : read_date);
     
     if ((fname = strrchr(argv[8], '/'))) {
         fname++;

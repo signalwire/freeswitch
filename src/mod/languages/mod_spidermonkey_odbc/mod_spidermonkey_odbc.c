@@ -359,7 +359,7 @@ static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval *a
 		SQLLEN m = 0;
 		char code[66560];
 
-		snprintf(code, sizeof(code), "~var _oDbC_dB_RoW_DaTa_ = {}");
+		switch_snprintf(code, sizeof(code), "~var _oDbC_dB_RoW_DaTa_ = {}");
 		eval_some_js(code, cx, obj, rval);
 		if (*rval == JS_FALSE) {
 			return JS_TRUE;
@@ -383,7 +383,7 @@ static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval *a
 					data = esc;
 				}
 
-				snprintf((char *) odbc_obj->code, odbc_obj->codelen, "~_oDbC_dB_RoW_DaTa_[\"%s\"] = \"%s\"", name, data);
+				switch_snprintf((char *) odbc_obj->code, odbc_obj->codelen, "~_oDbC_dB_RoW_DaTa_[\"%s\"] = \"%s\"", name, data);
 				switch_safe_free(esc);
 
 				eval_some_js((char *) odbc_obj->code, cx, obj, rval);

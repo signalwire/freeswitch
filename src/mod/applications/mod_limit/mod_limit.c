@@ -325,7 +325,7 @@ static int sql2str_callback(void *pArg, int argc, char **argv, char **columnName
 static int group_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	callback_t *cbt = (callback_t *) pArg;
-    snprintf(cbt->buf + strlen(cbt->buf), cbt->len - strlen(cbt->buf), "%s%c", argv[0], *argv[1]);
+    switch_snprintf(cbt->buf + strlen(cbt->buf), cbt->len - strlen(cbt->buf), "%s%c", argv[0], *argv[1]);
 	cbt->matches++;
 	return 0;
 }

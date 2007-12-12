@@ -595,7 +595,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 				switch_channel_event_set_data(channel, event);
 			} else {
 				char state_num[25];
-				snprintf(state_num, sizeof(state_num), "%d", channel->state);
+				switch_snprintf(state_num, sizeof(state_num), "%d", channel->state);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State", "%s", (char *) switch_channel_state_name(channel->state));
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", "%s", (char *) state_num);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", "%s", channel->name);
@@ -830,7 +830,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 	}
 
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State", "%s", switch_channel_state_name(channel->state));
-	snprintf(state_num, sizeof(state_num), "%d", channel->state);
+	switch_snprintf(state_num, sizeof(state_num), "%d", channel->state);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", "%s", state_num);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", "%s", switch_channel_get_name(channel));
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", "%s", switch_core_session_get_uuid(channel->session));
@@ -870,7 +870,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 		x++;
 		
 		switch_assert(vvar && vval);
-		snprintf(buf, sizeof(buf), "variable_%s", vvar);
+		switch_snprintf(buf, sizeof(buf), "variable_%s", vvar);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, buf, "%s", vval);
 
 	}

@@ -229,7 +229,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 	unsigned char in[B64BUFFLEN];
 	unsigned char out[B64BUFFLEN + 512];
 
-    snprintf(filename, 80, "%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, (int)time(NULL), rand() & 0xffff);
+    switch_snprintf(filename, 80, "%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, (int)time(NULL), rand() & 0xffff);
     
     if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644))) {
         if (file) {
@@ -237,7 +237,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
                 return SWITCH_FALSE;
             }
 
-            snprintf(buf, B64BUFFLEN, "MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"%s\"\n", bound);
+            switch_snprintf(buf, B64BUFFLEN, "MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"%s\"\n", bound);
             if (!write_buf(fd, buf)) {
                 return SWITCH_FALSE;
             }
@@ -251,9 +251,9 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 
         if (file) {
 			if (body && switch_stristr("content-type", body)) {
-				snprintf(buf, B64BUFFLEN, "--%s\n", bound);
+				switch_snprintf(buf, B64BUFFLEN, "--%s\n", bound);
 			} else {
-				snprintf(buf, B64BUFFLEN, "--%s\nContent-Type: text/plain\n\n", bound);
+				switch_snprintf(buf, B64BUFFLEN, "--%s\nContent-Type: text/plain\n\n", bound);
 			}
             if (!write_buf(fd, buf))
                 return SWITCH_FALSE;
@@ -277,7 +277,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 				}
 			}
 
-			snprintf(buf, B64BUFFLEN,
+			switch_snprintf(buf, B64BUFFLEN,
 					 "\n\n--%s\nContent-Type: %s; name=\"%s\"\n"
 					 "Content-ID: <ATTACHED@freeswitch.org>\n"
 					 "Content-Transfer-Encoding: base64\n"
@@ -322,7 +322,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 
 
         if (file) {
-            snprintf(buf, B64BUFFLEN, "\n\n--%s--\n.\n", bound);
+            switch_snprintf(buf, B64BUFFLEN, "\n\n--%s--\n.\n", bound);
             if (!write_buf(fd, buf))
                 return SWITCH_FALSE;
         }
@@ -334,7 +334,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
     if (ifd) {
         close(ifd);
     }
-    snprintf(buf, B64BUFFLEN, "/bin/cat %s | %s %s %s", filename, runtime.mailer_app, runtime.mailer_app_args, to);
+    switch_snprintf(buf, B64BUFFLEN, "/bin/cat %s | %s %s %s", filename, runtime.mailer_app, runtime.mailer_app_args, to);
     if(system(buf)) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to execute command: %s\n", buf);
     }
@@ -826,7 +826,7 @@ switch_inet_ntop4(const unsigned char *src, char *dst, size_t size)
 	static const char fmt[] = "%u.%u.%u.%u";
 	char tmp[sizeof "255.255.255.255"];
 
-	if (snprintf(tmp, sizeof tmp, fmt,
+	if (switch_snprintf(tmp, sizeof tmp, fmt,
 		     src[0], src[1], src[2], src[3]) >= (int)size) {
 		return NULL;
 	}

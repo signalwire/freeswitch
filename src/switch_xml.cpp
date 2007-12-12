@@ -294,7 +294,7 @@ static switch_xml_t switch_xml_err(switch_xml_root_t root, char *s, const char *
 	for (t = root->s; t && t < s; t++)
 		if (*t == '\n')
 			line++;
-	snprintf(fmt, SWITCH_XML_ERRL, "[error near line %d]: %s", line, err);
+	switch_snprintf(fmt, SWITCH_XML_ERRL, "[error near line %d]: %s", line, err);
 
 	va_start(ap, err);
 	vsnprintf(root->err, SWITCH_XML_ERRL, fmt, ap);
@@ -1288,7 +1288,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name
 	*domain = NULL;
 
 	if (!params) {
-		snprintf(my_params, sizeof(my_params), "domain=%s", domain_name);
+		switch_snprintf(my_params, sizeof(my_params), "domain=%s", domain_name);
 		params = my_params;
 	}
 
@@ -1312,10 +1312,10 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 	*domain = NULL;
 	
 	if (!switch_strlen_zero(xtra_params)) {
-		snprintf(params, sizeof(params), "key=%s&user=%s&domain=%s&ip=%s&%s", key,
+		switch_snprintf(params, sizeof(params), "key=%s&user=%s&domain=%s&ip=%s&%s", key,
 				 switch_str_nil(user_name), switch_str_nil(domain_name), switch_str_nil(ip), xtra_params);
 	} else {
-		snprintf(params, sizeof(params), "key=%s&user=%s&domain=%s&ip=%s", key,
+		switch_snprintf(params, sizeof(params), "key=%s&user=%s&domain=%s&ip=%s", key,
 				 switch_str_nil(user_name), switch_str_nil(domain_name), switch_str_nil(ip));
 		xtra_params = "";
 	}
@@ -1374,7 +1374,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 		switch_thread_rwlock_wrlock(RWLOCK);
 	}
 
-	snprintf(path_buf, sizeof(path_buf), "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "freeswitch.xml");
+	switch_snprintf(path_buf, sizeof(path_buf), "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "freeswitch.xml");
 	if ((new_main = switch_xml_parse_file(path_buf))) {
 		*err = switch_xml_error(new_main);
 		switch_copy_string(not_so_threadsafe_error_buffer, *err, sizeof(not_so_threadsafe_error_buffer));

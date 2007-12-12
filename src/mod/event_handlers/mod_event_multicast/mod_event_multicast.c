@@ -290,7 +290,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 								term++;
 							}
 						}
-						snprintf(tmpname, sizeof(tmpname), "Orig-%s", var);
+						switch_snprintf(tmpname, sizeof(tmpname), "Orig-%s", var);
 						switch_event_add_header(local_event, SWITCH_STACK_BOTTOM, tmpname, "%s", val);
 						var = term + 1;
 					} else {

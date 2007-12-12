@@ -159,7 +159,7 @@ int sofia_reg_nat_callback(void *pArg, int argc, char **argv, char **columnNames
 	char *contact = NULL;
 	char to[128] = "";
 
-	snprintf(to, sizeof(to), "%s@%s", argv[1], argv[2]);
+	switch_snprintf(to, sizeof(to), "%s@%s", argv[1], argv[2]);
 	contact = sofia_glue_get_url_from_contact(argv[3], 1);
 
 	nh = nua_handle(profile->nua, NULL, SIPTAG_FROM_STR(profile->url), SIPTAG_TO_STR(to), NUTAG_URL(contact), SIPTAG_CONTACT_STR(profile->url), TAG_END());
@@ -211,9 +211,9 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
 #endif
 
 	if (now) {
-		snprintf(sql, sizeof(sql), "select '%s',* from sip_registrations where expires > 0 and expires <= %ld", profile->name, (long) now);
+		switch_snprintf(sql, sizeof(sql), "select '%s',* from sip_registrations where expires > 0 and expires <= %ld", profile->name, (long) now);
 	} else {
-		snprintf(sql, sizeof(sql), "select '%s',* from sip_registrations where expires > 0", profile->name);
+		switch_snprintf(sql, sizeof(sql), "select '%s',* from sip_registrations where expires > 0", profile->name);
 	}
 
 	switch_mutex_lock(profile->ireg_mutex);
@@ -224,26 +224,26 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
 									sofia_reg_del_callback,
 									NULL);
 	if (now) {
-		snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and expires <= %ld", (long) now);
+		switch_snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and expires <= %ld", (long) now);
 	} else {
-		snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0");
+		switch_snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0");
 	}
 	sofia_glue_execute_sql(profile, SWITCH_TRUE, sql, NULL);
 	if (now) {
-		snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and expires <= %ld", (long) now);
+		switch_snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and expires <= %ld", (long) now);
 	} else {
-		snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0");
+		switch_snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0");
 	}
 	sofia_glue_execute_sql(profile, SWITCH_TRUE, sql, NULL);
 	if (now) {
-		snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0 and expires <= %ld", (long) now);
+		switch_snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0 and expires <= %ld", (long) now);
 	} else {
-		snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0");
+		switch_snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0");
 	}
 	sofia_glue_execute_sql(profile, SWITCH_TRUE, sql, NULL);
 
 	if (now) {
-		snprintf(sql, sizeof(sql), "select * from sip_registrations where status like '%%NATHACK%%'");
+		switch_snprintf(sql, sizeof(sql), "select * from sip_registrations where status like '%%NATHACK%%'");
 		sofia_glue_execute_sql_callback(profile,
 										SWITCH_TRUE,
 										NULL,
@@ -269,9 +269,9 @@ char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const c
 	cbt.len = len;
 
 	if (host) {
-		snprintf(val, len, "select contact from sip_registrations where sip_user='%s' and sip_host='%s'", user, host);
+		switch_snprintf(val, len, "select contact from sip_registrations where sip_user='%s' and sip_host='%s'", user, host);
 	} else {
-		snprintf(val, len, "select contact from sip_registrations where sip_user='%s'", user);
+		switch_snprintf(val, len, "select contact from sip_registrations where sip_user='%s'", user);
 	}
 
 
@@ -385,10 +385,10 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		}
 
 		if (contact->m_url->url_params) {
-			snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%s;%s>",
+			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%s;%s>",
 					 display, contact->m_url->url_user, contact->m_url->url_host, port, contact->m_url->url_params);
 		} else {
-			snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%s>", display, contact->m_url->url_user, contact->m_url->url_host, port);
+			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%s>", display, contact->m_url->url_user, contact->m_url->url_host, port);
 		}
 	}
 
@@ -423,10 +423,10 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			if ((v_contact_str = switch_event_get_header(*v_event, "sip-force-contact"))) {
 				if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction") || !strcasecmp(v_contact_str, "NDLB-connectile-dysfunction")) {
 					if (contact->m_url->url_params) {
-						snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s>",
+						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s>",
 								 display, contact->m_url->url_user, network_ip, network_port, contact->m_url->url_params);
 					} else {
-						snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d>", display, contact->m_url->url_user, network_ip, network_port);
+						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d>", display, contact->m_url->url_user, network_ip, network_port);
 					}
 					cd = 1;
 					exptime = 20;
@@ -709,7 +709,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 		goto cancel;
 	}
 
-	snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->register_username, gateway->register_password);
+	switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->register_username, gateway->register_password);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n", profile->username, authentication);
 

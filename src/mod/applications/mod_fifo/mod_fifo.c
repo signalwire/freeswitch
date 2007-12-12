@@ -471,9 +471,9 @@ static void list_node(fifo_node_t *node, switch_xml_t x_report, int *off, int ve
     switch_assert(x_fifo);
 
     switch_xml_set_attr_d(x_fifo, "name", node->name);
-    snprintf(tmp, sizeof(buffer), "%d", node->consumer_count);
+    switch_snprintf(tmp, sizeof(buffer), "%d", node->consumer_count);
     switch_xml_set_attr_d(x_fifo, "consumer_count", tmp);
-    snprintf(tmp, sizeof(buffer), "%d", node->caller_count);
+    switch_snprintf(tmp, sizeof(buffer), "%d", node->caller_count);
     switch_xml_set_attr_d(x_fifo, "caller_count", tmp);
     
     cc_off = xml_hash(x_fifo, node->caller_hash, "callers", "caller", cc_off, verbose);

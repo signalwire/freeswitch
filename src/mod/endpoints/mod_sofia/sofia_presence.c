@@ -958,7 +958,7 @@ void sofia_presence_set_hash_key(char *hash_key, int32_t len, sip_t const *sip)
 {
 	url_t *to = sip->sip_to->a_url;
 	url_t *from = sip->sip_from->a_url;
-	snprintf(hash_key, len, "%s%s%s", from->url_user, from->url_host, to->url_user);
+	switch_snprintf(hash_key, len, "%s%s%s", from->url_user, from->url_host, to->url_user);
 }
 
 void sofia_presence_handle_sip_i_message(int status,

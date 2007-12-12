@@ -810,7 +810,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (outbound_profile) {
 			char name[128];
 
-			snprintf(name, sizeof(name), "IAX/%s-%04x", outbound_profile->destination_number, rand() & 0xffff);
+			switch_snprintf(name, sizeof(name), "IAX/%s-%04x", outbound_profile->destination_number, rand() & 0xffff);
 			switch_channel_set_name(channel, name);
 
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
@@ -1131,7 +1131,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 																				  iaxevent->ies.called_context,
 																				  iaxevent->ies.called_number)) != 0) {
 							char name[128];
-							snprintf(name, sizeof(name), "IAX/%s-%04x", tech_pvt->caller_profile->destination_number, rand() & 0xffff);
+							switch_snprintf(name, sizeof(name), "IAX/%s-%04x", tech_pvt->caller_profile->destination_number, rand() & 0xffff);
 							switch_channel_set_name(channel, name);
 							switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 

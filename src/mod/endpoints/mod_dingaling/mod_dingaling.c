@@ -1643,7 +1643,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			*p++ = '\0';
 			u = profile_name;
 			profile_name = p;
-			snprintf(ubuf, sizeof(ubuf), "%s@%s/talk", u, profile_name);
+			switch_snprintf(ubuf, sizeof(ubuf), "%s@%s/talk", u, profile_name);
 			user = ubuf;
 		}
 
@@ -1661,10 +1661,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 					}
 
 					if (strchr(id_num, '@')) {
-						snprintf(ubuf, sizeof(ubuf), "%s/talk", id_num);
+						switch_snprintf(ubuf, sizeof(ubuf), "%s/talk", id_num);
 						user = ubuf;
 					} else {
-						snprintf(ubuf, sizeof(ubuf), "%s@%s/talk", id_num, profile_name);
+						switch_snprintf(ubuf, sizeof(ubuf), "%s@%s/talk", id_num, profile_name);
 						user = ubuf;
 					}
 				}
@@ -1713,7 +1713,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (outbound_profile) {
 			char name[128];
 
-			snprintf(name, sizeof(name), "DingaLing/%s", outbound_profile->destination_number);
+			switch_snprintf(name, sizeof(name), "DingaLing/%s", outbound_profile->destination_number);
 			switch_channel_set_name(channel, name);
 
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
@@ -2198,7 +2198,7 @@ static switch_status_t load_config(void)
 			profile->message = "";
 			profile->user_flags |= LDL_FLAG_COMPONENT;
 			switch_mutex_init(&profile->mutex, SWITCH_MUTEX_NESTED, module_pool);
-			snprintf(dbname, sizeof(dbname), "dingaling_%s", profile->name);
+			switch_snprintf(dbname, sizeof(dbname), "dingaling_%s", profile->name);
 			profile->dbname = switch_core_strdup(module_pool, dbname);
 
 
@@ -2670,7 +2670,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 																			  context,
 																			  exten)) != 0) {
 						char name[128];
-						snprintf(name, sizeof(name), "DingaLing/%s", tech_pvt->caller_profile->destination_number);
+						switch_snprintf(name, sizeof(name), "DingaLing/%s", tech_pvt->caller_profile->destination_number);
 						switch_channel_set_name(channel, name);
 						switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 					}

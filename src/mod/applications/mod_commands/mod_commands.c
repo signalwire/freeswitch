@@ -1610,7 +1610,7 @@ static int show_as_xml_callback(void *pArg, int argc, char **argv, char **column
 		return -1;
 	}
 
-	snprintf(id, sizeof(id), "%d", holder->rows);
+	switch_snprintf(id, sizeof(id), "%d", holder->rows);
 
 	switch_xml_set_attr(switch_xml_set_flag(row, SWITCH_XML_DUP), strdup("row_id"), strdup(id));
 
@@ -1743,9 +1743,9 @@ SWITCH_STANDARD_API(show_function)
 		holder.print_title = 0;
 		if ((cmdname = strchr(command, ' ')) != 0) {
 			*cmdname++ = '\0';
-			snprintf(sql, sizeof(sql) - 1, "select name, syntax, description from interfaces where type = 'api' and name = '%s'", cmdname);
+			switch_snprintf(sql, sizeof(sql) - 1, "select name, syntax, description from interfaces where type = 'api' and name = '%s'", cmdname);
 		} else {
-			snprintf(sql, sizeof(sql) - 1, "select name, syntax, description from interfaces where type = 'api'");
+			switch_snprintf(sql, sizeof(sql) - 1, "select name, syntax, description from interfaces where type = 'api'");
 		}
 	} else {
 		stream->write_function(stream, "-USAGE: %s\n", SHOW_SYNTAX);
@@ -1791,7 +1791,7 @@ SWITCH_STANDARD_API(show_function)
 		if (holder.xml) {
 			char count[50];
 			char *xmlstr;
-			snprintf(count, sizeof(count), "%d", holder.count);
+			switch_snprintf(count, sizeof(count), "%d", holder.count);
 
 			switch_xml_set_attr(switch_xml_set_flag(holder.xml, SWITCH_XML_DUP), strdup("row_count"), strdup(count));
 			xmlstr = switch_xml_toxml(holder.xml, SWITCH_FALSE);
@@ -1817,7 +1817,7 @@ SWITCH_STANDARD_API(show_function)
 SWITCH_STANDARD_API(version_function)
 {
 	char version_string[1024];
-	snprintf(version_string, sizeof(version_string) - 1, "FreeSwitch Version %s\n", SWITCH_VERSION_FULL);
+	switch_snprintf(version_string, sizeof(version_string) - 1, "FreeSwitch Version %s\n", SWITCH_VERSION_FULL);
 
 	stream->write_function(stream, version_string);
 	return SWITCH_STATUS_SUCCESS;
@@ -1831,7 +1831,7 @@ SWITCH_STANDARD_API(help_function)
 		sprintf(showcmd, "help");
 		all = 1;
 	} else {
-		snprintf(showcmd, sizeof(showcmd) - 1, "help %s", cmd);
+		switch_snprintf(showcmd, sizeof(showcmd) - 1, "help %s", cmd);
 	}
 
 	if (all) {

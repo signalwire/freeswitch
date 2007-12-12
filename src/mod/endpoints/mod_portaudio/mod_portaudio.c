@@ -249,7 +249,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 				char buf[512];
 				switch_event_t *event;
 
-				snprintf(buf, sizeof(buf), "BRRRRING! BRRRRING! call %s\n", tech_pvt->call_id);
+				switch_snprintf(buf, sizeof(buf), "BRRRRING! BRRRRING! call %s\n", tech_pvt->call_id);
 
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_RINGING) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_info", "%s", buf);
@@ -365,7 +365,7 @@ static void add_pvt(private_t * tech_pvt, int master)
 	switch_mutex_lock(globals.pvt_lock);
 
 	if (switch_strlen_zero(tech_pvt->call_id)) {
-		snprintf(tech_pvt->call_id, sizeof(tech_pvt->call_id), "%d", ++globals.call_id);
+		switch_snprintf(tech_pvt->call_id, sizeof(tech_pvt->call_id), "%d", ++globals.call_id);
 		switch_core_hash_insert(globals.call_hash, tech_pvt->call_id, tech_pvt);
 		switch_core_session_set_read_codec(tech_pvt->session, &globals.read_codec);
 		switch_core_session_set_write_codec(tech_pvt->session, &globals.write_codec);
@@ -766,7 +766,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (outbound_profile) {
 			char name[128];
 			const char *id = !switch_strlen_zero(outbound_profile->caller_id_number) ? outbound_profile->caller_id_number : "na";
-			snprintf(name, sizeof(name), "PortAudio/%s", id);
+			switch_snprintf(name, sizeof(name), "PortAudio/%s", id);
 
 			switch_channel_set_name(channel, name);
 
@@ -1611,7 +1611,7 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 																  ip, NULL, NULL, NULL, modname, NULL,
 																  dest)) != 0) {
 			char name[128];
-			snprintf(name, sizeof(name), "PortAudio/%s",
+			switch_snprintf(name, sizeof(name), "PortAudio/%s",
 					 tech_pvt->caller_profile->destination_number ? tech_pvt->caller_profile->destination_number : modname);
 			switch_channel_set_name(channel, name);
 
@@ -1689,19 +1689,19 @@ SWITCH_STANDARD_API(pa_cmd)
 
 		if (action) {
 			if (strlen(action) == 1) {
-				snprintf(cmd_buf, sizeof(cmd_buf), "dtmf %s", action);
+				switch_snprintf(cmd_buf, sizeof(cmd_buf), "dtmf %s", action);
 				cmd = cmd_buf;
 			} else if (!strcmp(action, "mute")) {
-				snprintf(cmd_buf, sizeof(cmd_buf), "flags off mouth");
+				switch_snprintf(cmd_buf, sizeof(cmd_buf), "flags off mouth");
 				cmd = cmd_buf;
 			} else if (!strcmp(action, "unmute")) {
-				snprintf(cmd_buf, sizeof(cmd_buf), "flags on mouth");
+				switch_snprintf(cmd_buf, sizeof(cmd_buf), "flags on mouth");
 				cmd = cmd_buf;
 			} else if (!strcmp(action, "switch")) {
-				snprintf(cmd_buf, sizeof(cmd_buf), "switch %s", wcmd);
+				switch_snprintf(cmd_buf, sizeof(cmd_buf), "switch %s", wcmd);
 				cmd = cmd_buf;
 			} else if (!strcmp(action, "call")) {
-				snprintf(cmd_buf, sizeof(cmd_buf), "call %s", wcmd);
+				switch_snprintf(cmd_buf, sizeof(cmd_buf), "call %s", wcmd);
 				cmd = cmd_buf;
 			} else if (!strcmp(action, "hangup") || !strcmp(action, "list") || !strcmp(action, "answer")) {
 				cmd = action;

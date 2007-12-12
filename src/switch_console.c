@@ -94,7 +94,7 @@ SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_write(switch_stream
 			ret = -1;
 		} else {
 			ret = 0;
-			snprintf(end, remaining, "%s", data);
+			switch_snprintf(end, remaining, "%s", data);
 			handle->data_len = strlen(buf);
 			handle->end = (uint8_t *) (handle->data) + handle->data_len;
 		}
@@ -204,7 +204,7 @@ static char prompt_str[512] = "";
 char * prompt(EditLine *e) {
 	if (*prompt_str == '\0') {
 		gethostname(hostname, sizeof(hostname));
-		snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", hostname);
+		switch_snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", hostname);
 	}	
 
 	return prompt_str;

@@ -113,18 +113,18 @@ static int db_callback(void *pArg, int argc, char **argv, char **columnNames)
 	jsval rval;
 	int x = 0;
 
-	snprintf(code, sizeof(code), "~var _Db_RoW_ = {}");
+	switch_snprintf(code, sizeof(code), "~var _Db_RoW_ = {}");
 	eval_some_js(code, dbo->cx, dbo->obj, &rval);
 
 	for (x = 0; x < argc; x++) {
-		snprintf(code, sizeof(code), "~_Db_RoW_[\"%s\"] = \"%s\"", columnNames[x], argv[x]);
+		switch_snprintf(code, sizeof(code), "~_Db_RoW_[\"%s\"] = \"%s\"", columnNames[x], argv[x]);
 		eval_some_js(code, dbo->cx, dbo->obj, &rval);
 	}
 
-	snprintf(code, sizeof(code), "~%s(_Db_RoW_)", dbo->code_buffer);
+	switch_snprintf(code, sizeof(code), "~%s(_Db_RoW_)", dbo->code_buffer);
 	eval_some_js(code, dbo->cx, dbo->obj, &rval);
 
-	snprintf(code, sizeof(code), "~delete _Db_RoW_");
+	switch_snprintf(code, sizeof(code), "~delete _Db_RoW_");
 	eval_some_js(code, dbo->cx, dbo->obj, &rval);
 
 	return 0;
@@ -208,13 +208,13 @@ static JSBool db_fetch(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 		return JS_FALSE;
 	}
 
-	snprintf(code, sizeof(code), "~var _dB_RoW_DaTa_ = {}");
+	switch_snprintf(code, sizeof(code), "~var _dB_RoW_DaTa_ = {}");
 	eval_some_js(code, dbo->cx, dbo->obj, rval);
 	if (*rval == JS_FALSE) {
 		return JS_TRUE;
 	}
 	for (x = 0; x < colcount; x++) {
-		snprintf(code, sizeof(code), "~_dB_RoW_DaTa_[\"%s\"] = \"%s\"",
+		switch_snprintf(code, sizeof(code), "~_dB_RoW_DaTa_[\"%s\"] = \"%s\"",
 				 (char *) switch_core_db_column_name(dbo->stmt, x), (char *) switch_core_db_column_text(dbo->stmt, x));
 
 		eval_some_js(code, dbo->cx, dbo->obj, rval);

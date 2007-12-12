@@ -128,7 +128,7 @@ SWITCH_STANDARD_API(expr_function)
 		err = exprEval(e, &last_expr);
 	} while (err);
 
-    snprintf(val, sizeof(val), "%0.10f", last_expr);
+    switch_snprintf(val, sizeof(val), "%0.10f", last_expr);
     for (p = (val + strlen(val) - 1); p != val; p--) {
         if (*p != '0') {
             *(p+1) = '\0';

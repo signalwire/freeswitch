@@ -534,7 +534,7 @@ SWITCH_DECLARE(void) switch_core_runtime_loop(int bg)
 	if (bg) {
 		bg = 0;
 #ifdef WIN32
-		snprintf(path, sizeof(path), "Global\\Freeswitch.%d", getpid());
+		switch_snprintf(path, sizeof(path), "Global\\Freeswitch.%d", getpid());
 		shutdown_event = CreateEvent(NULL, FALSE, FALSE, path);
 		if (shutdown_event) {
 			WaitForSingleObject(shutdown_event, INFINITE);

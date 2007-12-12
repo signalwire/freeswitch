@@ -119,7 +119,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					break;
 				}
 
-				snprintf(path_buf, sizeof(path_buf), "%s%s%s", source->location, SWITCH_PATH_SEPARATOR, fname);
+				switch_snprintf(path_buf, sizeof(path_buf), "%s%s%s", source->location, SWITCH_PATH_SEPARATOR, fname);
 
 				if (switch_stristr(".loc", path_buf)) {
 					if ((fd = open(path_buf, O_RDONLY)) < 0) {

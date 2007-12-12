@@ -450,7 +450,7 @@ static switch_status_t read_packet(listener_t * listener, switch_event_t **event
 
 
 					if (data) {
-						snprintf(buf, sizeof(buf), "Content-Type: log/data\nContent-Length: %" SWITCH_SSIZE_T_FMT "\n\n", strlen(data));
+						switch_snprintf(buf, sizeof(buf), "Content-Type: log/data\nContent-Length: %" SWITCH_SSIZE_T_FMT "\n\n", strlen(data));
 						len = strlen(buf);
 						switch_socket_send(listener->sock, buf, &len);
 						len = strlen(data);
@@ -487,7 +487,7 @@ static switch_status_t read_packet(listener_t * listener, switch_event_t **event
 
 					len = strlen(listener->ebuf);
 
-					snprintf(hbuf, sizeof(hbuf), "Content-Length: %" SWITCH_SSIZE_T_FMT "\n" "Content-Type: text/event-%s\n" "\n", len, etype);
+					switch_snprintf(hbuf, sizeof(hbuf), "Content-Length: %" SWITCH_SSIZE_T_FMT "\n" "Content-Type: text/event-%s\n" "\n", len, etype);
 
 					len = strlen(hbuf);
 					switch_socket_send(listener->sock, hbuf, &len);
@@ -558,7 +558,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t * thread, void *obj)
 		switch_size_t rlen, blen;
 		char buf[1024] = "";
 		rlen = strlen(reply);
-		snprintf(buf, sizeof(buf), "Content-Type: api/response\nContent-Length: %" SWITCH_SSIZE_T_FMT "\n\n", rlen);
+		switch_snprintf(buf, sizeof(buf), "Content-Type: api/response\nContent-Length: %" SWITCH_SSIZE_T_FMT "\n\n", rlen);
 		blen = strlen(buf);
 		switch_socket_send(acs->listener->sock, buf, &blen);
 		switch_socket_send(acs->listener->sock, reply, &rlen);
@@ -590,7 +590,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 
 	if (!strncasecmp(cmd, "exit", 4)) {
 		switch_clear_flag_locked(listener, LFLAG_RUNNING);
-		snprintf(reply, reply_len, "+OK bye");
+		switch_snprintf(reply, reply_len, "+OK bye");
 		goto done;
 	}
 
@@ -603,9 +603,9 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 
 			if (!strcmp(prefs.password, pass)) {
 				switch_set_flag_locked(listener, LFLAG_AUTHED);
-				snprintf(reply, reply_len, "+OK accepted");
+				switch_snprintf(reply, reply_len, "+OK accepted");
 			} else {
-				snprintf(reply, reply_len, "-ERR invalid");
+				switch_snprintf(reply, reply_len, "-ERR invalid");
 				switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			}
 
@@ -621,18 +621,18 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 		assert(channel != NULL);
 
 		if (!strncasecmp(cmd, "connect", 7)) {
-			snprintf(reply, reply_len, "+OK");
+			switch_snprintf(reply, reply_len, "+OK");
 			goto done;
 		} else if (!strncasecmp(cmd, "sendmsg", 7)) {
 			if (switch_test_flag(listener, LFLAG_ASYNC)) {
 				if ((status = switch_core_session_queue_private_event(listener->session, &event)) == SWITCH_STATUS_SUCCESS) {
-					snprintf(reply, reply_len, "+OK");
+					switch_snprintf(reply, reply_len, "+OK");
 				} else {
-					snprintf(reply, reply_len, "-ERR memory error");
+					switch_snprintf(reply, reply_len, "-ERR memory error");
 				}
 			} else {
 				switch_ivr_parse_event(listener->session, event);
-				snprintf(reply, reply_len, "+OK");
+				switch_snprintf(reply, reply_len, "+OK");
 			}
 			goto done;
 		} else if (!strncasecmp(cmd, "getvar", 6)) {
@@ -648,7 +648,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 				}
 
 			}
-			snprintf(reply, reply_len, "%s", val);
+			switch_snprintf(reply, reply_len, "%s", val);
 			goto done;
 		} else if (!strncasecmp(cmd, "myevents", 8)) {
 			listener->event_list[SWITCH_EVENT_CHANNEL_CREATE] = 1;
@@ -674,7 +674,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 			if (strstr(cmd, "xml") || strstr(cmd, "XML")) {
 				listener->format = EVENT_FORMAT_XML;
 			}
-			snprintf(reply, reply_len, "+OK Events Enabled");
+			switch_snprintf(reply, reply_len, "+OK Events Enabled");
 			goto done;
 		}
 
@@ -705,7 +705,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 		}
 
 		switch_event_fire(&event);
-		snprintf(reply, reply_len, "+OK");
+		switch_snprintf(reply, reply_len, "+OK");
 		goto done;
 	} else if (!strncasecmp(cmd, "sendmsg", 7)) {
 		switch_core_session_t *session;
@@ -737,13 +737,13 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 
 		if (session) {
 			if ((status = switch_core_session_queue_private_event(session, &event)) == SWITCH_STATUS_SUCCESS) {
-				snprintf(reply, reply_len, "+OK");
+				switch_snprintf(reply, reply_len, "+OK");
 			} else {
-				snprintf(reply, reply_len, "-ERR memory error");
+				switch_snprintf(reply, reply_len, "-ERR memory error");
 			}
 			switch_core_session_rwunlock(session);
 		} else {
-			snprintf(reply, reply_len, "-ERR invalid session id [%s]", uuid);
+			switch_snprintf(reply, reply_len, "-ERR invalid session id [%s]", uuid);
 		}
 
 		goto done;
@@ -764,7 +764,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 		acs.bg = 0;
 
 		api_exec(NULL, (void *) &acs);
-		//snprintf(reply, reply_len, "+OK");
+		//switch_snprintf(reply, reply_len, "+OK");
 
 		return SWITCH_STATUS_SUCCESS;
 	} else if (!strncasecmp(cmd, "bgapi ", 6)) {
@@ -805,7 +805,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 			switch_uuid_get(&uuid);
 			switch_uuid_format(acs->uuid_str, &uuid);
 		}
-		snprintf(reply, reply_len, "+OK Job-UUID: %s", acs->uuid_str);
+		switch_snprintf(reply, reply_len, "+OK Job-UUID: %s", acs->uuid_str);
 		
 		return SWITCH_STATUS_SUCCESS;
 	} else if (!strncasecmp(cmd, "log", 3)) {
@@ -832,9 +832,9 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 		if (ltype && ltype != SWITCH_LOG_INVALID) {
 			listener->level = ltype;
 			switch_set_flag(listener, LFLAG_LOG);
-			snprintf(reply, reply_len, "+OK log level %s [%d]", level_s, listener->level);
+			switch_snprintf(reply, reply_len, "+OK log level %s [%d]", level_s, listener->level);
 		} else {
-			snprintf(reply, reply_len, "-ERR invalid log level");
+			switch_snprintf(reply, reply_len, "-ERR invalid log level");
 		}
 	} else if (!strncasecmp(cmd, "nolog", 5)) {
 		void *pop;
@@ -842,9 +842,9 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 
 		if (switch_test_flag(listener, LFLAG_LOG)) {
 			switch_clear_flag_locked(listener, LFLAG_LOG);
-			snprintf(reply, reply_len, "+OK no longer logging");
+			switch_snprintf(reply, reply_len, "+OK no longer logging");
 		} else {
-			snprintf(reply, reply_len, "-ERR not loging");
+			switch_snprintf(reply, reply_len, "-ERR not loging");
 		}
 	} else if (!strncasecmp(cmd, "event", 5)) {
 		char *next, *cur;
@@ -894,7 +894,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 		}
 
 		if (!key_count) {
-			snprintf(reply, reply_len, "-ERR no keywords supplied");
+			switch_snprintf(reply, reply_len, "-ERR no keywords supplied");
 			goto done;
 		}
 
@@ -902,7 +902,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 			switch_set_flag_locked(listener, LFLAG_EVENTS);
 		}
 
-		snprintf(reply, reply_len, "+OK event listener enabled %s", listener->format == EVENT_FORMAT_XML ? "xml" : "plain");
+		switch_snprintf(reply, reply_len, "+OK event listener enabled %s", listener->format == EVENT_FORMAT_XML ? "xml" : "plain");
 
 	} else if (!strncasecmp(cmd, "nixevent", 8)) {
 		char *next, *cur;
@@ -948,7 +948,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 		}
 
 		if (!key_count) {
-			snprintf(reply, reply_len, "-ERR no keywords supplied");
+			switch_snprintf(reply, reply_len, "-ERR no keywords supplied");
 			goto done;
 		}
 
@@ -956,7 +956,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 			switch_set_flag_locked(listener, LFLAG_EVENTS);
 		}
 
-		snprintf(reply, reply_len, "+OK events nixed");
+		switch_snprintf(reply, reply_len, "+OK events nixed");
 
 	} else if (!strncasecmp(cmd, "noevents", 8)) {
 		void *pop;
@@ -971,9 +971,9 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 			/* wipe the hash */
 			switch_core_hash_destroy(&listener->event_hash);
 			switch_core_hash_init(&listener->event_hash, listener->pool);
-			snprintf(reply, reply_len, "+OK no longer listening for events");
+			switch_snprintf(reply, reply_len, "+OK no longer listening for events");
 		} else {
-			snprintf(reply, reply_len, "-ERR not listening for events");
+			switch_snprintf(reply, reply_len, "-ERR not listening for events");
 		}
 	}
 
@@ -983,7 +983,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 	}
 
 	if (switch_strlen_zero(reply)) {
-		snprintf(reply, reply_len, "-ERR command not found");
+		switch_snprintf(reply, reply_len, "-ERR command not found");
 	}
 
 	return status;
@@ -1060,7 +1060,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj
 
 		switch_safe_free(event_str);
 	} else {
-		snprintf(buf, sizeof(buf), "Content-Type: auth/request\n\n");
+		switch_snprintf(buf, sizeof(buf), "Content-Type: auth/request\n\n");
 
 		len = strlen(buf);
 		switch_socket_send(listener->sock, buf, &len);
@@ -1079,7 +1079,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj
 				goto done;
 			}
 			if (*reply != '\0') {
-				snprintf(buf, sizeof(buf), "Content-Type: command/reply\nReply-Text: %s\n\n", reply);
+				switch_snprintf(buf, sizeof(buf), "Content-Type: command/reply\nReply-Text: %s\n\n", reply);
 				len = strlen(buf);
 				switch_socket_send(listener->sock, buf, &len);
 			}
@@ -1108,7 +1108,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj
 		}
 
 		if (*reply != '\0') {
-			snprintf(buf, sizeof(buf), "Content-Type: command/reply\nReply-Text: %s\n\n", reply);
+			switch_snprintf(buf, sizeof(buf), "Content-Type: command/reply\nReply-Text: %s\n\n", reply);
 			len = strlen(buf);
 			switch_socket_send(listener->sock, buf, &len);
 		}

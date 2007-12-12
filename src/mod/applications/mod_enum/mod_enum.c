@@ -624,17 +624,17 @@ SWITCH_STANDARD_APP(enum_app_function)
 			for (rtp = globals.route_order; rtp; rtp = rtp->next) {
 				for (rp = results; rp; rp = rp->next) {
 					if (!strcasecmp(rtp->service, rp->service)) {
-						snprintf(vbuf, sizeof(vbuf), "enum_route_%d", cnt++);
+						switch_snprintf(vbuf, sizeof(vbuf), "enum_route_%d", cnt++);
 						switch_channel_set_variable(channel, vbuf, rp->route);
 
-						snprintf(rbp, rbl, "%s|", rp->route);
+						switch_snprintf(rbp, rbl, "%s|", rp->route);
 						l = strlen(rp->route) + 1;
 						rbp += l;
 						rbl -= l;
 					}
 				}
 			}
-			snprintf(vbuf, sizeof(vbuf), "%d", cnt);
+			switch_snprintf(vbuf, sizeof(vbuf), "%d", cnt);
 			switch_channel_set_variable(channel, "enum_route_count", vbuf);
 			*(rbuf + strlen(rbuf) - 1) = '\0';
 			switch_channel_set_variable(channel, "enum_auto_route", rbuf);

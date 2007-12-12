@@ -784,7 +784,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
 		len += strlen(file);
 		len += 8;
 		path = (char *) switch_core_alloc(loadable_modules.pool, len);
-		snprintf(path, len, "%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
+		switch_snprintf(path, len, "%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
 	}
 
 	switch_mutex_lock(loadable_modules.mutex);

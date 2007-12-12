@@ -200,75 +200,75 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 
 
 	if (!switch_strlen_zero(caller_profile->username)) {
-		snprintf(header_name, sizeof(header_name), "%s-Username", prefix);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Username", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->username);
 	}
 	if (!switch_strlen_zero(caller_profile->dialplan)) {
-		snprintf(header_name, sizeof(header_name), "%s-Dialplan", prefix);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Dialplan", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->dialplan);
 	}
 	if (!switch_strlen_zero(caller_profile->caller_id_name)) {
-		snprintf(header_name, sizeof(header_name), "%s-Caller-ID-Name", prefix);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Caller-ID-Name", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->caller_id_name);
 	}
 	if (!switch_strlen_zero(caller_profile->caller_id_number)) {
-		snprintf(header_name, sizeof(header_name), "%s-Caller-ID-Number", prefix);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Caller-ID-Number", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->caller_id_number);
 	}
 	if (!switch_strlen_zero(caller_profile->network_addr)) {
-		snprintf(header_name, sizeof(header_name), "%s-Network-Addr", prefix);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Network-Addr", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->network_addr);
 	}
 	if (!switch_strlen_zero(caller_profile->ani)) {
-		snprintf(header_name, sizeof(header_name), "%s-ANI", prefix);
+		switch_snprintf(header_name, sizeof(header_name), "%s-ANI", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->ani);
 	}
 	if (!switch_strlen_zero(caller_profile->aniii)) {
-		snprintf(header_name, sizeof(header_name), "%s-ANI-II", prefix);
+		switch_snprintf(header_name, sizeof(header_name), "%s-ANI-II", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->aniii);
 	}
 	if (!switch_strlen_zero(caller_profile->destination_number)) {
-		snprintf(header_name, sizeof(header_name), "%s-Destination-Number", prefix);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Destination-Number", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->destination_number);
 	}
 	if (!switch_strlen_zero(caller_profile->uuid)) {
-		snprintf(header_name, sizeof(header_name), "%s-Unique-ID", prefix);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Unique-ID", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->uuid);
 	}
 	if (!switch_strlen_zero(caller_profile->source)) {
-		snprintf(header_name, sizeof(header_name), "%s-Source", prefix);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Source", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->source);
 	}
 	if (!switch_strlen_zero(caller_profile->context)) {
-		snprintf(header_name, sizeof(header_name), "%s-Context", prefix);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Context", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->context);
 	}
 	if (!switch_strlen_zero(caller_profile->rdnis)) {
-		snprintf(header_name, sizeof(header_name), "%s-RDNIS", prefix);
+		switch_snprintf(header_name, sizeof(header_name), "%s-RDNIS", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->rdnis);
 	}
 	if (!switch_strlen_zero(caller_profile->chan_name)) {
-		snprintf(header_name, sizeof(header_name), "%s-Channel-Name", prefix);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Name", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->chan_name);
 	}
 	if (caller_profile->times) {
-		snprintf(header_name, sizeof(header_name), "%s-Channel-Created-Time", prefix);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Created-Time", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->created);
-		snprintf(header_name, sizeof(header_name), "%s-Channel-Answered-Time", prefix);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Answered-Time", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);
-		snprintf(header_name, sizeof(header_name), "%s-Channel-Hangup-Time", prefix);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Hangup-Time", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->hungup);
-		snprintf(header_name, sizeof(header_name), "%s-Channel-Transfer-Time", prefix);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Transfer-Time", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->transferred);
 	}
 
-	snprintf(header_name, sizeof(header_name), "%s-Screen-Bit", prefix);
+	switch_snprintf(header_name, sizeof(header_name), "%s-Screen-Bit", prefix);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_SCREEN) ? "yes" : "no");
 
-	snprintf(header_name, sizeof(header_name), "%s-Privacy-Hide-Name", prefix);
+	switch_snprintf(header_name, sizeof(header_name), "%s-Privacy-Hide-Name", prefix);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME) ? "yes" : "no");
 
-	snprintf(header_name, sizeof(header_name), "%s-Privacy-Hide-Number", prefix);
+	switch_snprintf(header_name, sizeof(header_name), "%s-Privacy-Hide-Number", prefix);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER) ? "yes" : "no");
 
 	

@@ -145,7 +145,7 @@ static void event_handler(switch_event_t *event)
 					return;
 				}
 
-				snprintf(data, len, "%s=%s", hp->name, hp->value);
+				switch_snprintf(data, len, "%s=%s", hp->name, hp->value);
 				if (sw_text_record_add_string(text_record, data) != SW_OKAY) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unable to add service text: %s\n", data);
 					free(data);

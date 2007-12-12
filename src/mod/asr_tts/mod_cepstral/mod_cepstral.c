@@ -134,7 +134,7 @@ static switch_status_t cepstral_speech_open(switch_speech_handle_t *sh, char *vo
 
 	cepstral->params = swift_params_new(NULL);
 	swift_params_set_string(cepstral->params, "audio/encoding", "pcm16");
-	snprintf(srate, sizeof(srate), "%d", rate);
+	switch_snprintf(srate, sizeof(srate), "%d", rate);
 	swift_params_set_string(cepstral->params, "audio/sampling-rate", srate);
 
 

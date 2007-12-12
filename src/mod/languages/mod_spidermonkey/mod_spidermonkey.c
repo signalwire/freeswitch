@@ -880,13 +880,13 @@ static switch_status_t sm_load_module(const char *dir, const char *fname)
 			len += strlen(file);
 			len += 4;
 			path = (char *) switch_core_alloc(module_manager.pool, len);
-			snprintf(path, len, "%s%s%s", dir, SWITCH_PATH_SEPARATOR, file);
+			switch_snprintf(path, len, "%s%s%s", dir, SWITCH_PATH_SEPARATOR, file);
 		} else {
 			len = strlen(dir);
 			len += strlen(file);
 			len += 8;
 			path = (char *) switch_core_alloc(module_manager.pool, len);
-			snprintf(path, len, "%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
+			switch_snprintf(path, len, "%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
 		}
 	}
 
@@ -1592,7 +1592,7 @@ static JSBool session_streamfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	JS_ResumeRequest(cx, cb_state.saveDepth);
 	*rval = cb_state.ret;
 
-	snprintf(posbuf, sizeof(posbuf), "%u", fh.offset_pos);
+	switch_snprintf(posbuf, sizeof(posbuf), "%u", fh.offset_pos);
 	switch_channel_set_variable(channel, "last_file_position", posbuf);
 
 	return JS_TRUE;
@@ -2175,7 +2175,7 @@ static size_t hash_callback(void *ptr, size_t size, size_t nmemb, void *data)
 				for (p = val + strlen(val) - 1; *p == ' '; p--)
 					*p = '\0';
 
-				snprintf(code, sizeof(code), "~%s[\"%s\"] = \"%s\"", config_data->name, line, val);
+				switch_snprintf(code, sizeof(code), "~%s[\"%s\"] = \"%s\"", config_data->name, line, val);
 				eval_some_js(code, config_data->cx, config_data->obj, &rval);
 
 			}
@@ -2374,7 +2374,7 @@ static JSBool js_fetchurl(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, config_data.buffer));
 		} else {
 			char errmsg[256];
-			snprintf(errmsg, 256, "~throw new Error(\"Curl returned error %u.\");", (unsigned)code);
+			switch_snprintf(errmsg, 256, "~throw new Error(\"Curl returned error %u.\");", (unsigned)code);
 			eval_some_js(errmsg, cx, obj, rval);
 		}
 
@@ -2974,7 +2974,7 @@ static JSBool js_exit(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, 
 	char *supplied_error, code_buf[256] = "";
 	
 	if (argc > 0 && (supplied_error = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
-		snprintf(code_buf, sizeof(code_buf), "~throw new Error(\"%s\");", supplied_error);
+		switch_snprintf(code_buf, sizeof(code_buf), "~throw new Error(\"%s\");", supplied_error);
 		eval_some_js(code_buf, cx, obj, rval);
 	}
 
@@ -3271,7 +3271,7 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 
 		/* Emaculent conception of session object into the script if one is available */
 		if (!(session && new_js_session(cx, javascript_global_object, session, &jss, "session", flags))) {
-			snprintf(buf, sizeof(buf), "~var session = false;");
+			switch_snprintf(buf, sizeof(buf), "~var session = false;");
 			eval_some_js(buf, cx, javascript_global_object, &rval);
 		}
 		if (ro) {
@@ -3291,17 +3291,17 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 	}
 
 	if (!argc) {
-		snprintf(buf, sizeof(buf), "~var argv = new Array();");
+		switch_snprintf(buf, sizeof(buf), "~var argv = new Array();");
 		eval_some_js(buf, cx, javascript_global_object, &rval);
 	} else {
 		/* create a js doppleganger of this argc/argv */
-		snprintf(buf, sizeof(buf), "~var argv = new Array(%d);", argc);
+		switch_snprintf(buf, sizeof(buf), "~var argv = new Array(%d);", argc);
 		eval_some_js(buf, cx, javascript_global_object, &rval);
-		snprintf(buf, sizeof(buf), "~var argc = %d", argc);
+		switch_snprintf(buf, sizeof(buf), "~var argc = %d", argc);
 		eval_some_js(buf, cx, javascript_global_object, &rval);
 
 		for (y = 0; y < argc; y++) {
-			snprintf(buf, sizeof(buf), "~argv[%d] = \"%s\";", x++, argv[y]);
+			switch_snprintf(buf, sizeof(buf), "~argv[%d] = \"%s\";", x++, argv[y]);
 			eval_some_js(buf, cx, javascript_global_object, &rval);
 		}
 	}
