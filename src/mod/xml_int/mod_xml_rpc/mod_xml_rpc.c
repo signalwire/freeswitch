@@ -336,7 +336,7 @@ abyss_bool auth_hook(TSession * r)
 
 	if (!strncmp(r->uri, "/domains/", 9)) {
 		domain_name = strdup(r->uri + 9);
-		assert(domain_name);
+		switch_assert(domain_name);
 		
 		if ((e = strchr(domain_name, '/'))) {
 			*e++ = '\0';
@@ -556,7 +556,7 @@ abyss_bool handler_hook(TSession * r)
 				switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-QUERY", "%s", query);
 
 				qd = strdup(query);
-				assert(qd != NULL);
+				switch_assert(qd != NULL);
 
 				q = qd;
 				next = q;
