@@ -327,9 +327,7 @@ static switch_status_t setup_formats(void)
 		if (!skip) {
 			char *p;
 			struct format_map *map = switch_core_permanent_alloc(sizeof(*map));
-			if (!map) {
-				abort();
-			}
+			switch_assert(map);
 
 			map->ext = switch_core_permanent_strdup(info.extension);
 			map->uext = switch_core_permanent_strdup(info.extension);
