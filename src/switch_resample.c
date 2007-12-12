@@ -111,11 +111,17 @@ SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resam
 #endif
 }
 
-SWITCH_DECLARE(void) switch_resample_destroy(switch_audio_resampler_t *resampler)
+SWITCH_DECLARE(void) switch_resample_destroy(switch_audio_resampler_t **resampler)
 {
+
+	if (resampler && *resampler) {
 #ifndef DISABLE_RESAMPLE
-	resample_close(resampler->resampler);
+		if ((*resampler)->resampler) {
+			resample_close((*resampler)->resampler);
+		}
 #endif
+		*resampler = NULL;
+	}
 }
 
 

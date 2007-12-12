@@ -566,11 +566,9 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session)
 	char buf[256];
 	switch_size_t has;
 
-	/* sweep theese under the rug, they wont be leaked they will be reclaimed
-	   when the session ends.
-	 */
-	session->read_resampler = NULL;
-	session->write_resampler = NULL;
+	/* clear resamplers*/
+	switch_resample_destroy(&session->read_resampler);
+	switch_resample_destroy(&session->write_resampler);
 
 	/* clear indications */
 	switch_core_session_flush_message(session);

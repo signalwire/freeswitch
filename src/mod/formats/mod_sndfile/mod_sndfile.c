@@ -61,6 +61,9 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	int mode = 0;
 	char *ext;
 	struct format_map *map = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	char *alt_path = NULL, *next, *last, *ldup = NULL;
+	size_t alt_len = 0;
 
 	if ((ext = strrchr(path, '.')) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
@@ -141,11 +144,28 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	if ((mode & SFM_WRITE) && sf_format_check(&context->sfinfo) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error : file format is invalid (0x%08X).\n", context->sfinfo.format);
 		return SWITCH_STATUS_GENERR;
-	};
+	}
 
-	if ((context->handle = sf_open(path, mode, &context->sfinfo)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s] [%s]\n", path, sf_strerror(context->handle));
-		return SWITCH_STATUS_GENERR;
+	alt_len = strlen(path) + 10;
+	switch_zmalloc(alt_path, alt_len);
+	
+	switch_copy_string(alt_path, path, alt_len);
+	if ((last = strrchr(alt_path, *SWITCH_PATH_SEPARATOR))) {
+		next = ++last;
+		ldup = strdup(last);
+		switch_assert(ldup);
+		switch_snprintf(next, alt_len - (last - alt_path), "%d%s%s", handle->samplerate, SWITCH_PATH_SEPARATOR, ldup);
+		if ((context->handle = sf_open(alt_path, mode, &context->sfinfo))) {
+			path = alt_path;
+		}
+	}
+	
+	if (!context->handle) {
+		if ((context->handle = sf_open(path, mode, &context->sfinfo)) == 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s] [%s]\n", path, sf_strerror(context->handle));
+			status = SWITCH_STATUS_GENERR;
+			goto end;
+		}
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opening File [%s] %dhz\n", path, context->sfinfo.samplerate);
@@ -157,8 +177,15 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	handle->seekable = context->sfinfo.seekable;
 	handle->speed = 0;
 	handle->private_info = context;
+		
 
-	return SWITCH_STATUS_SUCCESS;
+ end:
+	
+	switch_safe_free(alt_path);
+	switch_safe_free(ldup);
+	
+
+	return status;
 }
 
 static switch_status_t sndfile_file_close(switch_file_handle_t *handle)

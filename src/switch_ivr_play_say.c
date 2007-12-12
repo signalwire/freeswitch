@@ -348,8 +348,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	const char *vval;
 	time_t start = 0;
 	uint32_t org_silence_hits = 0;
-	switch_audio_resampler_t *resampler = NULL;
-	int16_t resamp_out[2048];
 
 	if (!fh) {
 		fh = &lfh;
@@ -362,27 +360,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	switch_assert(read_codec != NULL);
 
 	fh->channels = read_codec->implementation->number_of_channels;
+	fh->native_rate = read_codec->implementation->actual_samples_per_second;
 
-	if (fh->samplerate) {
-		if (fh->samplerate != read_codec->implementation->actual_samples_per_second) {
-			if (switch_resample_create(&resampler,
-									   read_codec->implementation->actual_samples_per_second,
-									   read_codec->implementation->actual_samples_per_second * 20,
-									   fh->samplerate,
-									   fh->samplerate * 20,
-									   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to create resampler!\n");
-				return SWITCH_STATUS_GENERR;
-			}
-		}
-	} else {
-		fh->samplerate = read_codec->implementation->actual_samples_per_second;
-	}
 
 	if (switch_core_file_open(fh,
 							  file,
 							  fh->channels,
-							  fh->samplerate,
+							  read_codec->implementation->actual_samples_per_second,
 							  SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_core_session_reset(session);
@@ -553,17 +537,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			}
 		}
 
-		if (!switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
+		if (!switch_test_flag(fh, SWITCH_FILE_PAUSE) && !switch_test_flag(read_frame, SFF_CNG)) {
 			int16_t *data = read_frame->data;
 			len = (switch_size_t) read_frame->datalen / 2;
-			
-			if (resampler) {
-				resampler->from_len = switch_short_to_float(read_frame->data, resampler->from, (int) len);
-				resampler->to_len = switch_resample_process(resampler, resampler->from, resampler->from_len, resampler->to, resampler->to_size, 0);
-				switch_float_to_short(resampler->to, resamp_out, read_frame->datalen);
-				len = resampler->to_len;
-				data = resamp_out;
-			}
 			
 			if (switch_core_file_write(fh, data, &len) != SWITCH_STATUS_SUCCESS) {
 				break;

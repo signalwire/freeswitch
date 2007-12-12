@@ -1465,6 +1465,9 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, 
 		}
 	}
 
+	switch_resample_destroy(&member->read_resampler);
+	switch_resample_destroy(&member->mux_resampler);
+
 	switch_clear_flag_locked(member, MFLAG_ITHREAD);
 
 	return NULL;

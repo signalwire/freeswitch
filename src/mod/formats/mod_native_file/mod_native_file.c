@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  *
  *
- * mod_native_file.c -- Framework Demo Module
+ * mod_native_file.c -- Native Files
  *
  */
 #include <switch.h>

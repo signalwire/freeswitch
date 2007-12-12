@@ -1239,7 +1239,9 @@ SWITCH_STANDARD_APP(record_function)
 	int argc;
     char *mydata, *argv[4] = { 0 };
 	char *l = NULL;
-	
+	const char *tmp;
+	int rate;
+
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 	
@@ -1277,6 +1279,13 @@ SWITCH_STANDARD_APP(record_function)
 		fh.silence_hits = atoi(argv[3]);
 		if (fh.silence_hits < 0) {
 			fh.silence_hits = 0;
+		}
+	}
+
+	if ((tmp = switch_channel_get_variable(channel, "record_rate"))) {
+		rate = atoi(tmp);
+		if (rate > 0) {
+			fh.samplerate = rate;
 		}
 	}
 

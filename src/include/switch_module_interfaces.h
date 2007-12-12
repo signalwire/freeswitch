@@ -40,6 +40,7 @@
 #define SWITCH_MODULE_INTERFACES_H
 
 #include <switch.h>
+#include "switch_resample.h"
 
 SWITCH_BEGIN_EXTERN_C
 /*! \brief A table of functions to execute at various states 
@@ -262,6 +263,8 @@ struct switch_file_handle {
 	unsigned int samples;
 	/*! the current samplerate */
 	uint32_t samplerate;
+	/*! the current native samplerate */
+	uint32_t native_rate;
 	/*! the number of channels */
 	uint8_t channels;
 	/*! integer representation of the format */
@@ -289,6 +292,10 @@ struct switch_file_handle {
 	uint32_t offset_pos;
 	uint32_t last_pos;
 	int32_t vol;
+	switch_audio_resampler_t *resampler;
+	switch_buffer_t *buffer;
+	switch_byte_t *dbuf;
+	switch_size_t dbuflen;
 };
 
 /*! \brief Abstract interface to an asr module */

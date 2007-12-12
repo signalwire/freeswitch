@@ -91,7 +91,7 @@ SWITCH_DECLARE(switch_status_t) switch_resample_create(switch_audio_resampler_t 
   \brief Destroy an existing resampler handle
   \param resampler the resampler handle to destroy
  */
-SWITCH_DECLARE(void) switch_resample_destroy(switch_audio_resampler_t *resampler);
+SWITCH_DECLARE(void) switch_resample_destroy(switch_audio_resampler_t **resampler);
 
 /*!
   \brief Resample one float buffer into another using specifications of a given handle

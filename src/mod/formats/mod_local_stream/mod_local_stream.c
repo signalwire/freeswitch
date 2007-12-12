@@ -79,7 +79,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	local_stream_context_t *cp;
 	char file_buf[128] = "", path_buf[512] = "";
 	switch_timer_t timer = {0};
-
+	int fd = -1;
 
 	if (switch_core_timer_init(&timer, source->timer_name, source->interval, source->samples, source->pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't start timer.\n");
@@ -89,7 +89,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 	while(RUNNING) {
 		const char *fname;
-		
+
 		if (switch_dir_open(&source->dir_handle, source->location, source->pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't open directory: %s\n", source->location);
 			return NULL;
@@ -98,27 +98,37 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "open directory: %s\n", source->location);
 		switch_yield(1000000);
 
-		while(RUNNING && (fname = switch_dir_next_file(source->dir_handle, file_buf, sizeof(file_buf)))) {
+		while(RUNNING) {
 			switch_size_t olen;
 			uint8_t abuf[SWITCH_RECOMMENDED_BUFFER_SIZE] =  {0};
 
-			snprintf(path_buf, sizeof(path_buf), "%s%s%s", source->location, SWITCH_PATH_SEPARATOR, fname);
-			if (switch_stristr(".loc", path_buf)) {
-				int fd, bytes;
+			if (fd > -1) {
 				char *p;
+				if (switch_fd_read_line(fd, path_buf, sizeof(path_buf))) {
+					if ((p = strchr(path_buf, '\r')) ||
+						(p = strchr(path_buf, '\n'))) {
+						*p = '\0';
+					}
+				} else {
+					close(fd);
+					fd = -1;
+					continue;
+				}
+			} else {
+				if (!(fname = switch_dir_next_file(source->dir_handle, file_buf, sizeof(file_buf)))) {
+					break;
+				}
 
-				if ((fd = open(path_buf, O_RDONLY)) < 0) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open %s\n", fname);
-					switch_yield(1000000);
+				snprintf(path_buf, sizeof(path_buf), "%s%s%s", source->location, SWITCH_PATH_SEPARATOR, fname);
+
+				if (switch_stristr(".loc", path_buf)) {
+					if ((fd = open(path_buf, O_RDONLY)) < 0) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open %s\n", fname);
+						switch_yield(1000000);
+					}
 					continue;
 				}
 				
-				bytes = read(fd, path_buf, sizeof(path_buf));
-				if ((p = strchr(path_buf, '\r')) ||
-					(p = strchr(path_buf, '\n'))) {
-					*p = '\0';
-				}
-				close(fd);
 			}
 
 			fname = path_buf;
@@ -139,6 +149,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 			while (RUNNING) {
 				switch_core_timer_next(&timer);
 				olen = source->samples;
+
 				if (switch_core_file_read(&fh, abuf, &olen) != SWITCH_STATUS_SUCCESS || !olen) {
 					switch_core_file_close(&fh);
 					break;
@@ -156,7 +167,12 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 		}
 
 		switch_dir_close(source->dir_handle);
+		source->dir_handle = NULL;
 
+	}
+
+	if (fd > -1) {
+		close(fd);
 	}
 	
 	switch_core_destroy_memory_pool(&source->pool);
@@ -168,24 +184,36 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 {
 	local_stream_context_t *context;
 	local_stream_source_t *source;
+	char *alt_path = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This format does not support writing!\n");
 		return SWITCH_STATUS_FALSE;
 	}
 	
+	alt_path = switch_mprintf("%s/%d", path, handle->samplerate);
+
 	switch_mutex_lock(globals.mutex);
-	source = switch_core_hash_find(globals.source_hash, path);
+	if ((source = switch_core_hash_find(globals.source_hash, alt_path))) {
+		path = alt_path;
+	} else {
+		source = switch_core_hash_find(globals.source_hash, path);
+	}
 	switch_mutex_unlock(globals.mutex);
 
 	if (!source) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unknown source %s\n", path);
-		return SWITCH_STATUS_FALSE;
+		status = SWITCH_STATUS_FALSE;
+		goto end;
 	}
 
 	if ((context = switch_core_alloc(handle->memory_pool, sizeof(*context))) == 0) {
-		return SWITCH_STATUS_MEMERR;
+		status = SWITCH_STATUS_MEMERR;
+		goto end;
 	}	
+
+	
 
 	handle->samples = 0;
 	handle->samplerate = source->rate;
@@ -201,7 +229,8 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 	switch_mutex_init(&context->audio_mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
 	if (switch_buffer_create_dynamic(&context->audio_buffer, 512, 1024, 0) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
-		return SWITCH_STATUS_MEMERR;
+		status = SWITCH_STATUS_MEMERR;
+		goto end;
 	}
 	
 	context->source = source;
@@ -211,8 +240,9 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 	source->context_list = context;
 	switch_mutex_unlock(source->mutex);
 
-
-	return SWITCH_STATUS_SUCCESS;
+ end:
+	switch_safe_free(alt_path);
+	return status;
 }
 
 static switch_status_t local_stream_file_close(switch_file_handle_t *handle)
@@ -350,6 +380,7 @@ static void launch_threads(void)
 		}
 		
 		source->samples = switch_bytes_per_frame(source->rate, source->interval);
+
 		switch_core_hash_insert(globals.source_hash, source->name, source);
 		
 		switch_mutex_init(&source->mutex, SWITCH_MUTEX_NESTED, source->pool);

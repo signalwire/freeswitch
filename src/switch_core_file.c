@@ -73,10 +73,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh,
 		fh->handler = switch_core_strdup(fh->memory_pool, rhs);
 	}
 
-	if (rate) {
-		fh->samplerate = rate;
-	} else {
-		rate = 8000;
+	if (!fh->samplerate) {
+		if (!(fh->samplerate = rate)) {
+			fh->samplerate = 8000;
+		}
 	}
 
 	if (channels) {
@@ -85,25 +85,130 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh,
 		fh->channels = 1;
 	}
 
-	if ((status = fh->file_interface->file_open(fh, file_path)) == SWITCH_STATUS_SUCCESS) {
-		switch_set_flag(fh, SWITCH_FILE_OPEN);
+	if ((status = fh->file_interface->file_open(fh, file_path)) != SWITCH_STATUS_SUCCESS) {
+		return status;
 	}
+
+	if ((flags & SWITCH_FILE_FLAG_READ)) {
+		fh->native_rate = fh->samplerate;
+	} else {
+		fh->native_rate = rate;
+	}
+	
+	if (fh->samplerate != rate) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Sample rate doesn't match\n");
+		if ((flags & SWITCH_FILE_FLAG_READ)) {
+			fh->samplerate = rate;
+		}
+	}
+
+	switch_set_flag(fh, SWITCH_FILE_OPEN);
 
 	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, void *data, switch_size_t *len)
 {
+	switch_status_t status;
+	switch_size_t orig_len = *len;
+	
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
 
-	return fh->file_interface->file_read(fh, data, len);
+	if (fh->buffer && switch_buffer_inuse(fh->buffer)) {
+		*len = switch_buffer_read(fh->buffer, data, orig_len);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if ((status = fh->file_interface->file_read(fh, data, len)) != SWITCH_STATUS_SUCCESS) {
+		goto done;
+	}
+
+	if (!switch_test_flag(fh, SWITCH_FILE_NATIVE) && fh->native_rate != fh->samplerate) {
+		if (!fh->resampler) {
+			if (switch_resample_create(&fh->resampler,
+									   fh->native_rate,
+									   orig_len * 10,
+									   fh->samplerate,
+									   orig_len * 10,
+									   fh->memory_pool) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to create resampler!\n");
+				return SWITCH_STATUS_GENERR;
+			}
+		}
+		
+		fh->resampler->from_len = switch_short_to_float(data, fh->resampler->from, (int) *len);
+		fh->resampler->to_len = 
+			switch_resample_process(fh->resampler, fh->resampler->from, fh->resampler->from_len, fh->resampler->to, fh->resampler->to_size, 0);
+
+		if (fh->resampler->to_len > orig_len) {
+			if (!fh->buffer) {
+				switch_buffer_create_dynamic(&fh->buffer, fh->resampler->to_len * 2, fh->resampler->to_len * 4, fh->resampler->to_len * 8);
+				switch_assert(fh->buffer);
+			}
+			if (!fh->dbuf) {
+				fh->dbuflen = fh->resampler->to_len * 2;
+				fh->dbuf = switch_core_alloc(fh->memory_pool, fh->dbuflen);
+			}
+			switch_assert(fh->resampler->to_len <= fh->dbuflen);
+			
+			switch_float_to_short(fh->resampler->to, (int16_t *) fh->dbuf, fh->resampler->to_len);
+			switch_buffer_write(fh->buffer, fh->dbuf, fh->resampler->to_len * 2);
+			*len = switch_buffer_read(fh->buffer, data, orig_len);
+		} else {
+			switch_float_to_short(fh->resampler->to, data, fh->resampler->to_len);
+			*len = fh->resampler->to_len;
+		}
+		
+	}
+
+ done:
+
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh, void *data, switch_size_t *len)
 {
+	switch_size_t orig_len = *len;
+
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
+	
+	if (!switch_test_flag(fh, SWITCH_FILE_NATIVE) && fh->native_rate != fh->samplerate) {
+		if (!fh->resampler) {
+			if (switch_resample_create(&fh->resampler,
+									   fh->native_rate,
+									   orig_len * 10,
+									   fh->samplerate,
+									   orig_len * 10,
+									   fh->memory_pool) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to create resampler!\n");
+				return SWITCH_STATUS_GENERR;
+			}
+		}
+		
+		fh->resampler->from_len = switch_short_to_float(data, fh->resampler->from, (int) *len);
+		fh->resampler->to_len = 
+			switch_resample_process(fh->resampler, fh->resampler->from, fh->resampler->from_len, fh->resampler->to, fh->resampler->to_size, 0);
+		if (fh->resampler->to_len > orig_len) {
+			if (!fh->dbuf) {
+				fh->dbuflen = fh->resampler->to_len * 2;
+				fh->dbuf = switch_core_alloc(fh->memory_pool, fh->dbuflen);
+			}
+			switch_assert(fh->resampler->to_len <= fh->dbuflen);
+			switch_float_to_short(fh->resampler->to, (int16_t *) fh->dbuf, fh->resampler->to_len);
+			data = fh->dbuf;
+		} else {
+			switch_float_to_short(fh->resampler->to, data, fh->resampler->to_len);
+		}
+
+		*len = fh->resampler->to_len;
+		
+	}
+
+	if (!*len) {
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	return fh->file_interface->file_write(fh, data, len);
 }
@@ -150,6 +255,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 
 	switch_clear_flag(fh, SWITCH_FILE_OPEN);
 	status = fh->file_interface->file_close(fh);
+
+	if (fh->buffer) {
+		switch_buffer_destroy(&fh->buffer);
+	}
+
+	switch_resample_destroy(&fh->resampler);
+
 
 	if (switch_test_flag(fh, SWITCH_FILE_FLAG_FREE_POOL)) {
 		switch_core_destroy_memory_pool(&fh->memory_pool);
