@@ -104,8 +104,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 			snprintf(path_buf, sizeof(path_buf), "%s%s%s", source->location, SWITCH_PATH_SEPARATOR, fname);
 			if (switch_stristr(".loc", path_buf)) {
-				int fd;
-				ssize_t bytes;
+				int fd, bytes;
 				char *p;
 
 				if ((fd = open(path_buf, O_RDONLY)) < 0) {

@@ -45,6 +45,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libresample\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\stfu"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;PCRE_STATIC"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -501,11 +502,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\include\private\switch_core.h"
+				RelativePath="..\..\src\include\switch_core.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\include\switch_core.h"
+				RelativePath="..\..\src\include\private\switch_core.h"
 				>
 			</File>
 			<File

@@ -238,12 +238,12 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 		switch_channel_set_variable(channel, "end_uepoch", tmp);
 
 		uduration = caller_profile->times->hungup - caller_profile->times->created;
-		duration = tt_hungup - tt_created;
-		mduration = mtt_hungup - mtt_created;
+		duration = (int32_t)(tt_hungup - tt_created);
+		mduration = (int32_t)(mtt_hungup - mtt_created);
 		
 		if (caller_profile->times->answered) {
-			billsec = tt_hungup - tt_answered;
-			billmsec = mtt_hungup - mtt_answered;
+			billsec = (int32_t)(tt_hungup - tt_answered);
+			billmsec = (int32_t)(mtt_hungup - mtt_answered);
 			billusec = caller_profile->times->hungup - caller_profile->times->answered;
 		}
 	}

@@ -215,6 +215,10 @@ typedef intptr_t switch_ssize_t;
 #define SWITCH_INT64_T_FMT          "I64d"
 #define SWITCH_UINT64_T_FMT         "I64u"
 
+#ifndef TIME_T_FMT
+#define TIME_T_FMT "ld"
+#endif
+
 #else
 #ifndef SWITCH_SSIZE_T_FMT
 #define SWITCH_SSIZE_T_FMT          (sizeof (switch_ssize_t) == sizeof (long) ? "ld" : sizeof (switch_ssize_t) == sizeof (int) ? "d" : "lld")
