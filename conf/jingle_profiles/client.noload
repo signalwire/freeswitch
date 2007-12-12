@@ -1,0 +1,29 @@
+<include>
+  <!-- Client Profile (Original mode) -->
+  <profile type="client">
+    <param name="name" value="%JABBERCLIENTNAME%"/>
+    <param name="login" value="%JABBERLOGIN%/%JABBERRESOURCE%"/>
+    <param name="password" value="%JABBERPASSWORD%"/>
+    <param name="dialplan" value="XML"/>
+    <param name="context" value="public"/>
+    <param name="message" value="Jingle all the way"/>
+    <param name="rtp-ip" value="$${bind_server_ip}"/>
+    <!-- <param name="ext-rtp-ip" value="$${external_rtp_ip"/> -->
+    <param name="auto-login" value="true"/>
+    <!-- SASL "plain" or "md5" -->
+    <param name="sasl" value="plain"/>
+    <!-- if the server where the jabber is hosted is not the same as the one in the jid -->
+    <!--<param name="server" value="alternate.server.com"/>-->
+    <!-- Enable TLS or not -->
+    <param name="tls" value="true"/>
+    <!-- disable to trade async for more calls -->
+    <param name="use-rtp-timer" value="true"/>
+    <!-- default extension (if one cannot be determined) -->
+    <param name="exten" value="888"/>
+    <!-- VAD choose one -->
+    <!-- <param name="vad" value="in"/> -->
+    <!-- <param name="vad" value="out"/> -->
+    <param name="vad" value="both"/>
+    <!--<param name="avatar" value="%JABBERAVATAR%"/>-->
+  </profile>
+</include>

@@ -1,0 +1,19 @@
+<include>
+  <!-- Component (Server to Server Login) -->
+  <profile type="component">
+    <param name="name" value="%JABBERPROFILENAME%"/>
+    <param name="password" value="secret"/>
+    <param name="dialplan" value="XML"/>
+    <param name="context" value="public"/>
+    <param name="rtp-ip" value="$${bind_server_ip}"/>
+    <param name="server" value="%JABBERSERVER%:%JABBERPORT%"/>
+    <!-- disable to trade async for more calls -->
+    <param name="use-rtp-timer" value="true"/>
+    <!-- "_auto_" means the extension will be automaticly set to the called jid -->
+    <param name="exten" value="_auto_"/>
+    <!--<param name="vad" value="both"/>-->
+    <!--<param name="avatar" value="%JABBERAVATAR%%"/>-->
+    <!--If you have ODBC support and a working dsn you can use it instead of SQLite-->
+    <!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
+  </profile>
+</include>
