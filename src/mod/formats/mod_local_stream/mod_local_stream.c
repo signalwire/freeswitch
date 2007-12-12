@@ -100,7 +100,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 		while(RUNNING && (fname = switch_dir_next_file(source->dir_handle, file_buf, sizeof(file_buf)))) {
 			switch_size_t olen;
-			uint8_t *abuf[SWITCH_RECOMMENDED_BUFFER_SIZE] =  {0};
+			uint8_t abuf[SWITCH_RECOMMENDED_BUFFER_SIZE] =  {0};
 
 			snprintf(path_buf, sizeof(path_buf), "%s%s%s", source->location, SWITCH_PATH_SEPARATOR, fname);
 			if (switch_stristr(".loc", path_buf)) {
