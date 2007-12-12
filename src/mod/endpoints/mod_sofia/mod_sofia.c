@@ -847,7 +847,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					reason = "Call Refused";
 				}
 
-				if (!(code > 400 && code < 600)) {
+				if (!(code > 400 && code < 700)) {
 					code = 488;
 				}
 
