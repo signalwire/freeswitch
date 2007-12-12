@@ -52,6 +52,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t sta
 	switch_status_t status;
 	switch_memory_pool_t *pool;
 	switch_core_port_allocator_t *alloc;
+	int even, odd;
 	
 	if ((status = switch_core_new_memory_pool(&pool)) != SWITCH_STATUS_SUCCESS) {
 		return status;
@@ -62,15 +63,40 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t sta
 		return SWITCH_STATUS_MEMERR;
 	}
 	
-	alloc->track_len = (end - start) + 2;
 	alloc->flags = flags;
+	even = switch_test_flag(alloc, SPF_EVEN);
+	odd = switch_test_flag(alloc, SPF_ODD);
 
-	if (!(switch_test_flag(alloc, SPF_EVEN) && switch_test_flag(alloc, SPF_ODD))) {
-		alloc->track_len /= 2;
+	if (!(even && odd)) {
+		if (even) {
+			if ((start % 2) != 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Rounding odd start port %d to %d\n", start, start + 1);
+				start++;
+			}
+			if ((end % 2) != 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Rounding odd end port %d to %d\n", end, end - 1);
+				end--;
+			}
+		} else if (odd) {
+			if ((start % 2) == 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Rounding even start port %d to %d\n", start, start + 1);
+				start++;
+			}
+			if ((end % 2) == 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Rounding even end port %d to %d\n", end, end - 1);
+				end--;
+			}
+		}
 	}
 
-	alloc->track = switch_core_alloc(pool, (alloc->track_len + 2) * sizeof(switch_byte_t));
+	alloc->track_len = (end - start) + 2;	
 
+	if (!(even && odd)) {
+		alloc->track_len /= 2;
+	}
+	
+	alloc->track = switch_core_alloc(pool, (alloc->track_len + 2) * sizeof(switch_byte_t));
+	
 	alloc->start = start;
 	alloc->next = start;
 	alloc->end = end;
