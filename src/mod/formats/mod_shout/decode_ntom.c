@@ -20,12 +20,12 @@
   else if( (sum) < -32768.0) { *(samples) = -0x8000; (clip)++; } \
   else { *(samples) = sum; }
 
-#define NTOM_MUL (32768)
-static unsigned long ntom_val[2] = { NTOM_MUL >> 1, NTOM_MUL >> 1 };
-static unsigned long ntom_step = NTOM_MUL;
+
+//static unsigned long ntom_val[2] = { NTOM_MUL >> 1, NTOM_MUL >> 1 };
+//static unsigned long ntom_step = NTOM_MUL;
 
 
-int synth_ntom_set_step(long m, long n)
+int synth_ntom_set_step(struct mpstr *mp, long m, long n)
 {
 	if (param.verbose > 1)
 		debug_printf("Init rate converter: %ld->%ld\n", m, n);
@@ -36,14 +36,14 @@ int synth_ntom_set_step(long m, long n)
 	}
 
 	n *= NTOM_MUL;
-	ntom_step = n / m;
+	mp->ntom_step = n / m;
 
-	if (ntom_step > 8 * NTOM_MUL) {
+	if (mp->ntom_step > 8 * NTOM_MUL) {
 		debug_printf("%d max. 1:8 conversion allowed!\n", __LINE__);
 		return (1);
 	}
 
-	ntom_val[0] = ntom_val[1] = NTOM_MUL >> 1;
+	mp->ntom_val[0] = mp->ntom_val[1] = NTOM_MUL >> 1;
 
 	return (0);
 
@@ -89,12 +89,12 @@ int synth_ntom(struct mpstr *mp, real * bandPtr, int channel, unsigned char *out
 		bo--;
 		bo &= 0xf;
 		buf = mp->synth_buffs[0];
-		ntom = ntom_val[1] = ntom_val[0];
+		ntom = mp->ntom_val[1] = mp->ntom_val[0];
 	} else {
 		samples++;
 		out += 2;				/* to compute the right *pnt value */
 		buf = mp->synth_buffs[1];
-		ntom = ntom_val[1];
+		ntom = mp->ntom_val[1];
 	}
 
 	if (bo & 0x1) {
@@ -116,7 +116,7 @@ int synth_ntom(struct mpstr *mp, real * bandPtr, int channel, unsigned char *out
 		for (j = 16; j; j--, window += 0x10) {
 			real sum;
 
-			ntom += ntom_step;
+			ntom += mp->ntom_step;
 			if (ntom < NTOM_MUL) {
 				window += 16;
 				b0 += 16;
@@ -147,7 +147,7 @@ int synth_ntom(struct mpstr *mp, real * bandPtr, int channel, unsigned char *out
 			}
 		}
 
-		ntom += ntom_step;
+		ntom += mp->ntom_step;
 		if (ntom >= NTOM_MUL) {
 			real sum;
 			sum = window[0x0] * b0[0x0];
@@ -172,7 +172,7 @@ int synth_ntom(struct mpstr *mp, real * bandPtr, int channel, unsigned char *out
 		for (j = 15; j; j--, b0 -= 0x20, window -= 0x10) {
 			real sum;
 
-			ntom += ntom_step;
+			ntom += mp->ntom_step;
 			if (ntom < NTOM_MUL) {
 				window -= 16;
 				b0 += 16;
@@ -204,7 +204,7 @@ int synth_ntom(struct mpstr *mp, real * bandPtr, int channel, unsigned char *out
 		}
 	}
 
-	ntom_val[channel] = ntom;
+	mp->ntom_val[channel] = ntom;
 	*pnt = ((unsigned char *) samples - out);
 
 	return clip;

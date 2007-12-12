@@ -3,6 +3,7 @@
 #else
 #define debug_printf(fmt,...)
 #endif
+#define NTOM_MUL (32768)
 
 struct buf {
 	unsigned char *pnt;
@@ -39,7 +40,8 @@ struct mpstr {
 	int longLimit[9][23];		/*sample limits re setting volume */
 	int shortLimit[9][14];
 	real decwin[512 + 32];		/* scale table */
-
+	unsigned long ntom_val[2];
+	unsigned long ntom_step;
 };
 
 #define BOOL int
@@ -54,7 +56,7 @@ BOOL InitMP3(struct mpstr *mp, long outscale, int samplerate);
 int decodeMP3(struct mpstr *mp, char *inmemory, int inmemsize, char *outmemory, int outmemsize, int *done);
 void ExitMP3(struct mpstr *mp);
 
-extern int synth_ntom_set_step(long, long);
+extern int synth_ntom_set_step(struct mpstr *mp, long, long);
 extern int synth_ntom(struct mpstr *mp, real * bandPtr, int channel, unsigned char *out, int *pnt);
 extern int synth_ntom_mono(struct mpstr *mp, real * bandPtr, unsigned char *samples, int *pnt);
 extern int synth_ntom_8bit(real *, int, unsigned char *, int *);

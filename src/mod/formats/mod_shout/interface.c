@@ -27,6 +27,9 @@ BOOL InitMP3(struct mpstr *mp, long outscale, int samplerate)
 	mp->bsnum = 0;
 	mp->synth_bo = 1;
 	mp->outsamplerate = samplerate;
+	mp->ntom_val[0] = NTOM_MUL >> 1;
+	mp->ntom_val[1] = NTOM_MUL >> 1;
+	mp->ntom_step = NTOM_MUL;
 
 	make_decode_tables_scale(mp, outscale);
 
@@ -241,7 +244,7 @@ int decodeMP3(struct mpstr *mp, char *in, int isize, char *out, int osize, int *
 				m = n;
 			}
 
-			if (synth_ntom_set_step(n, m))
+			if (synth_ntom_set_step(mp, n, m))
 				return MP3_ERR;
 
 
