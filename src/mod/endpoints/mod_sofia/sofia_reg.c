@@ -404,7 +404,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		authorization = sip->sip_proxy_authorization;
 	}
 
-	if ((profile->pflags & PFLAG_BLIND_REG)) {
+	if (regtype == REG_REGISTER && (profile->pflags & PFLAG_BLIND_REG)) {
 		goto reg;
 	}
 
@@ -462,7 +462,6 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 
 	if (!authorization || stale) {
 		sofia_reg_auth_challange(nua, profile, nh, regtype, to_host, stale);
-
 		if (regtype == REG_REGISTER) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Requesting Registration from: [%s@%s]\n", to_user, to_host);
 		}
@@ -841,7 +840,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	dparams = switch_xml_child(domain, "params");
 	uparams = switch_xml_child(user, "params");
 
-	if (!(dparams && uparams)) {
+	if (!(dparams || uparams)) {
 		ret = AUTH_OK;
 		goto skip_auth;
 	}
