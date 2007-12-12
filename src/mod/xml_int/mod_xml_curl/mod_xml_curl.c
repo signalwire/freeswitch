@@ -194,7 +194,9 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	if(keep_files_around) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "XML response is in %s\n", filename);
 	} else {
-		unlink(filename);
+		if (unlink(filename) != 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "XML response file [%s] delete failed\n", filename);
+		}
 	}
 
 	return xml;

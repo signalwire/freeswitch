@@ -74,132 +74,134 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
-		/* build the XML */
-		if (!(xml_text = switch_xml_toxml(cdr, SWITCH_TRUE))) {
+	if (switch_ivr_generate_xml_cdr(session, &cdr) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Generating Data!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	/* build the XML */
+	xml_text = switch_xml_toxml(cdr, SWITCH_TRUE);
+	if (!xml_text) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+		goto error;
+	}
+
+	if (!(logdir = switch_channel_get_variable(channel, "xml_cdr_base"))) {
+		logdir = globals.log_dir;
+	}
+
+	if (!switch_strlen_zero(logdir)) {
+		if ((path = switch_mprintf("%s%s%s.cdr.xml", 
+								   logdir, 
+								   SWITCH_PATH_SEPARATOR,
+								   switch_core_session_get_uuid(session)))) {
+			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+				int wrote;
+				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
+				close(fd);
+				fd = -1;
+			} else {
+				char ebuf[512] = { 0 };
+#ifdef WIN32
+				strerror_s(ebuf, sizeof(ebuf), errno);
+#else
+				strerror_r(errno, ebuf, sizeof(ebuf));
+#endif
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s][%s]\n", path, ebuf);
+			}
+			switch_safe_free(path);
+		}
+	}
+
+	/* try to post it to the web server */
+	if (!switch_strlen_zero(globals.url)) {
+		struct curl_slist *headers = NULL;
+		curl_handle = curl_easy_init();
+		
+		if (globals.encode) {
+			switch_size_t need_bytes = strlen(xml_text) * 3;
+
+			xml_text_escaped = malloc(need_bytes);
+			switch_assert(xml_text_escaped);
+			memset(xml_text_escaped, 0, sizeof(xml_text_escaped));
+			if (globals.encode == 1) {
+				headers = curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
+				switch_url_encode(xml_text, xml_text_escaped, need_bytes - 1);
+			} else {
+				headers = curl_slist_append(headers, "Content-Type: application/x-www-form-base64-encoded");
+				switch_b64_encode((unsigned char *)xml_text, need_bytes / 3, (unsigned char *)xml_text_escaped, need_bytes);
+			}
+			switch_safe_free(xml_text);
+			xml_text = xml_text_escaped;
+		} else {
+			headers = curl_slist_append(headers, "Content-Type: application/x-www-form-plaintext");
+		}
+		
+		if (!(curl_xml_text = switch_mprintf("cdr=%s", xml_text))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 			goto error;
 		}
 
-		if (!(logdir = switch_channel_get_variable(channel, "xml_cdr_base"))) {
-			logdir = globals.log_dir;
+		if (!switch_strlen_zero(globals.cred)) {
+			curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+			curl_easy_setopt(curl_handle, CURLOPT_USERPWD, globals.cred);
 		}
 
-		if (!switch_strlen_zero(logdir)) {
-			if ((path = switch_mprintf("%s%s%s.cdr.xml", 
-									   logdir, 
-									   SWITCH_PATH_SEPARATOR,
-									   switch_core_session_get_uuid(session)))) {
-				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
-					int wrote;
-					wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
-					close(fd);
-					fd = -1;
-				} else {
-					char ebuf[512] = { 0 };
-#ifdef WIN32
-					strerror_s(ebuf, sizeof(ebuf), errno);
-#else
-					strerror_r(errno, ebuf, sizeof(ebuf));
-#endif
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s][%s]\n", path, ebuf);
-				}
-				switch_safe_free(path);
+		curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+		curl_easy_setopt(curl_handle, CURLOPT_POST, 1);
+		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, curl_xml_text);
+		curl_easy_setopt(curl_handle, CURLOPT_URL, globals.url);
+		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
+		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, httpCallBack);
+		
+		if (globals.ignore_cacert_check) {
+			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
+		}
+
+		/* these were used for testing, optionally they may be enabled if someone desires
+		curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 120); // tcp timeout
+		curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1); // 302 recursion level
+		*/
+
+		for (cur_try = 0; cur_try < globals.retries; cur_try++) {
+			if (cur_try > 0) {
+				switch_yield(globals.delay * 1000000);
 			}
-		}
-
-		/* try to post it to the web server */
-		if (!switch_strlen_zero(globals.url)) {
-			struct curl_slist *headers = NULL;
-			curl_handle = curl_easy_init();
-			
-			if (globals.encode) {
-				switch_size_t need_bytes = strlen(xml_text) * 3;
-
-				xml_text_escaped = malloc(need_bytes);
-				assert(xml_text_escaped);
-				memset(xml_text_escaped, 0, sizeof(xml_text_escaped));
-				if (globals.encode == 1) {
-					headers = curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
-					switch_url_encode(xml_text, xml_text_escaped, need_bytes - 1);
-				} else {
-					headers = curl_slist_append(headers, "Content-Type: application/x-www-form-base64-encoded");
-					switch_b64_encode((unsigned char *)xml_text, need_bytes / 3, (unsigned char *)xml_text_escaped, need_bytes);
-				}
-				switch_safe_free(xml_text);
-				xml_text = xml_text_escaped;
+			curl_easy_perform(curl_handle);
+			curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
+			if (httpRes == 200) {
+				goto success;
 			} else {
-				headers = curl_slist_append(headers, "Content-Type: application/x-www-form-plaintext");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got error [%ld] posting to web server [%s]\n",httpRes, globals.url);
 			}
 			
-			if (!(curl_xml_text = switch_mprintf("cdr=%s", xml_text))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-				goto error;
-			}
+		}
+		curl_easy_cleanup(curl_handle);
+		curl_slist_free_all(headers);
+		curl_handle = NULL;
 
-			if (!switch_strlen_zero(globals.cred)) {
-				curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
-				curl_easy_setopt(curl_handle, CURLOPT_USERPWD, globals.cred);
-			}
+		/* if we are here the web post failed for some reason */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to post to web server, writing to file\n");
 
-			curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
- 			curl_easy_setopt(curl_handle, CURLOPT_POST, 1);
-			curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, curl_xml_text);
-			curl_easy_setopt(curl_handle, CURLOPT_URL, globals.url);
-			curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
-			curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, httpCallBack);
-			
-			if (globals.ignore_cacert_check) {
-				curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
-			}
-
-			/* these were used for testing, optionally they may be enabled if someone desires
-			curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 120); // tcp timeout
-			curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1); // 302 recursion level
-			*/
-
-			for (cur_try = 0; cur_try < globals.retries; cur_try++) {
-				if (cur_try > 0) {
-					switch_yield(globals.delay * 1000000);
-				}
-				curl_easy_perform(curl_handle);
-				curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
-				if (httpRes == 200) {
-					goto success;
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got error [%ld] posting to web server [%s]\n",httpRes, globals.url);
-				}
-				
-			}
-			curl_easy_cleanup(curl_handle);
-			curl_slist_free_all(headers);
-			curl_handle = NULL;
-
-			/* if we are here the web post failed for some reason */
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to post to web server, writing to file\n");
-
-			if ((path = switch_mprintf("%s%s%s.cdr.xml", 
-									   globals.err_log_dir, 
-									   SWITCH_PATH_SEPARATOR,
-									   switch_core_session_get_uuid(session)))) {
-				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
-					int wrote;
-					wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
-					close(fd);
-					fd = -1;
-				} else {
-					char ebuf[512] = { 0 };
+		if ((path = switch_mprintf("%s%s%s.cdr.xml", 
+								   globals.err_log_dir, 
+								   SWITCH_PATH_SEPARATOR,
+								   switch_core_session_get_uuid(session)))) {
+			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+				int wrote;
+				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
+				close(fd);
+				fd = -1;
+			} else {
+				char ebuf[512] = { 0 };
 #ifdef WIN32
-					strerror_s(ebuf, sizeof(ebuf), errno);
+				strerror_s(ebuf, sizeof(ebuf), errno);
 #else
-					strerror_r(errno, ebuf, sizeof(ebuf));
+				strerror_r(errno, ebuf, sizeof(ebuf));
 #endif
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error![%s]\n", ebuf);
-				}
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error![%s]\n", ebuf);
 			}
 		}
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Generating Data!\n");
 	}
 
 
