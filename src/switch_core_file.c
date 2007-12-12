@@ -143,10 +143,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(switch_file_handle_t
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 {
+	switch_status_t status;
+
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
 
 	switch_clear_flag(fh, SWITCH_FILE_OPEN);
-	return fh->file_interface->file_close(fh);
+	status = fh->file_interface->file_close(fh);
 
+	if (switch_test_flag(fh, SWITCH_FILE_FLAG_FREE_POOL)) {
+		switch_core_destroy_memory_pool(&fh->memory_pool);
+	}
+
+	return status;
 }

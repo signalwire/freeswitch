@@ -125,9 +125,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_resume(switch_asr_handle_t *ah)
 
 SWITCH_DECLARE(switch_status_t) switch_core_asr_close(switch_asr_handle_t *ah, switch_asr_flag_t *flags)
 {
+	switch_status_t status;
+
 	switch_assert(ah != NULL);
 
-	return ah->asr_interface->asr_close(ah, flags);
+	status = ah->asr_interface->asr_close(ah, flags);
+
+	if (switch_test_flag(ah, SWITCH_ASR_FLAG_FREE_POOL)) {
+		switch_core_destroy_memory_pool(&ah->memory_pool);
+	}
+
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len, switch_asr_flag_t *flags)

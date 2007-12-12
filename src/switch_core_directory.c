@@ -73,6 +73,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_directory_next_pair(switch_directory
 
 SWITCH_DECLARE(switch_status_t) switch_core_directory_close(switch_directory_handle_t *dh)
 {
-	return dh->directory_interface->directory_close(dh);
+	switch_status_t status;
+
+	status = dh->directory_interface->directory_close(dh);
+
+	if (switch_test_flag(dh, SWITCH_DIRECTORY_FLAG_FREE_POOL)) {
+		switch_core_destroy_memory_pool(&dh->memory_pool);
+	}
+
+	return status;
 }
 
