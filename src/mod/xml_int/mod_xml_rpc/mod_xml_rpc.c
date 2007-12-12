@@ -780,21 +780,22 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 	ServerAddHandler(&globals.abyssServer, handler_hook);
 	ServerAddHandler(&globals.abyssServer, auth_hook);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Starting HTTP Port %d, DocRoot [%s]\n", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir);
-	while (globals.running) {
-		//ServerRunOnce2(&globals.abyssServer, ABYSS_FOREGROUND);
-		ServerRun(&globals.abyssServer);
-	}
+	ServerRun(&globals.abyssServer);
+	globals.running = 0;
 
-
-	return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_TERM;
 }
 
 
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown)
 {
+
 	globals.abyssServer.running = 0;
-	globals.running = 0;
+	shutdown(globals.abyssServer.listensock, 2);
+	while(globals.running) {
+		switch_yield(100000);
+	}
 	
 	return SWITCH_STATUS_SUCCESS;
 }
