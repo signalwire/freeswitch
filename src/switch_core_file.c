@@ -95,7 +95,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh,
 		fh->native_rate = rate;
 	}
 	
-	if (fh->samplerate != rate) {
+	if (fh->samplerate && rate &&  fh->samplerate != rate) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Sample rate doesn't match\n");
 		if ((flags & SWITCH_FILE_FLAG_READ)) {
 			fh->samplerate = rate;
