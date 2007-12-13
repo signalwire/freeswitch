@@ -54,7 +54,7 @@
       <match>
 	<action function="play-file" data="voicemail/vm-you_have.wav"/>
 	<action function="say" data="1" method="pronounced" type="items"/>
-	<action function="play-file" data="voicemail/vm-$2.wav"/> 
+	<action function="play-file" data="voicemail/vm-new.wav"/> 
 	<action function="play-file" data="voicemail/vm-message.wav"/>
 	<action function="play-file" data="voicemail/vm-in_folder.wav"/>
       </match>
@@ -147,23 +147,23 @@
   </macro>
 
   <macro name="voicemail_listen_file_check">
-    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
+    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
-	<action function="play-file" data="voicemail/vm-press.wav"/>
-	<action function="say" data="$1" method="pronounced" type="name_spelled"/>
 	<action function="play-file" data="voicemail/vm-listen_to_recording.wav"/>
 	<action function="play-file" data="voicemail/vm-press.wav"/>
-	<action function="say" data="$2" method="pronounced" type="name_spelled"/>
+	<action function="say" data="$1" method="pronounced" type="name_spelled"/>
 	<action function="play-file" data="voicemail/vm-save_recording.wav"/>
 	<action function="play-file" data="voicemail/vm-press.wav"/>
-	<action function="say" data="$3" method="pronounced" type="name_spelled"/>
+	<action function="say" data="$2" method="pronounced" type="name_spelled"/>
 	<action function="play-file" data="voicemail/vm-delete_recording.wav"/>
 	<action function="play-file" data="voicemail/vm-press.wav"/>
-	<action function="say" data="$4" method="pronounced" type="name_spelled"/>
+	<action function="say" data="$3" method="pronounced" type="name_spelled"/>
 	<action function="play-file" data="voicemail/vm-forward_to_email.wav"/>
 	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$4" method="pronounced" type="name_spelled"/>
 	<action function="play-file" data="voicemail/vm-return_call.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
+	<action function="say" data="$5" method="pronounced" type="name_spelled"/>
       </match>
     </input>
   </macro>
@@ -196,23 +196,6 @@
     <input pattern="^(.*)$">
       <match>
 	<action function="play-file" data="voicemail/vm-record_message.wav"/>
-      </match>
-    </input>
-  </macro>
-
-  <macro name="marked-urgent">
-    <input pattern="^(.*)$">
-      <match>
-	<action function="play-file" data="voicemail/vm-urgent.wav"/>
-	<action function="play-file" data="voicemail/vm-message.wav"/>
-      </match>
-    </input>
-  </macro>
-
-  <macro name="saved">
-    <input pattern="^(.*)$">
-      <match>
-	<action function="play-file" data="voicemail/vm-saved.wav"/>
       </match>
     </input>
   </macro>
@@ -269,12 +252,30 @@
       </match>
     </input>
   </macro>
-
-  <macro name="voicemail_ack">
-    <input pattern="^(.*)$">
+  <!-- Note: Update this to marked-urgent,emailed and saved once new sound files are recorded -->
+  <macro name="voicemail_ack"> 
+    <input pattern="^(deleted)$">
       <match>
 	<action function="play-file" data="voicemail/vm-message.wav"/>
 	<action function="play-file" data="voicemail/vm-$1.wav"/>
+      </match>
+    </input>
+    <input pattern="^(saved)$">
+      <match>
+	<action function="play-file" data="voicemail/vm-message.wav"/>
+	<action function="play-file" data="voicemail/vm-$1.wav"/>
+      </match>
+    </input>
+    <input pattern="^(emailed)$">
+      <match>
+	<action function="play-file" data="voicemail/vm-message.wav"/>
+	<action function="play-file" data="voicemail/vm-saved.wav"/>
+      </match>
+    </input>
+    <input pattern="^(marked-urgent)$">
+      <match>
+	<action function="play-file" data="voicemail/vm-message.wav"/>
+	<action function="play-file" data="voicemail/vm-saved.wav"/>
       </match>
     </input>
   </macro>
@@ -282,7 +283,7 @@
   <macro name="voicemail_say_date">
     <input pattern="^(.*)$">
       <match>
-	<action function="say" data="$strftime($1|%A, %B %d %Y, %I %M %p)" method="pronounced" type="current_date_time"/>
+	<action function="say" data="$1" method="pronounced" type="current_date_time"/>
       </match>
     </input>
   </macro>
