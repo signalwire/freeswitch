@@ -55,7 +55,7 @@ typedef enum {
 	SWITCH_SHN_ON_TRANSMIT,
 	SWITCH_SHN_ON_HOLD,
 	SWITCH_SHN_ON_HIBERNATE,
-	SWITCH_SHN_ON_RESET,
+	SWITCH_SHN_ON_RESET
 } switch_state_handler_name_t;
 
 struct switch_state_handler_table {
