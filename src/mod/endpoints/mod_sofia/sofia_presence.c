@@ -35,6 +35,7 @@
 #include "mod_sofia.h"
 
 static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char **columnNames);
+static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char **columnNames);
 static int sofia_presence_sub_reg_callback(void *pArg, int argc, char **argv, char **columnNames);
 static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char **columnNames);
 static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char **columnNames);
@@ -182,7 +183,8 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 	sofia_profile_t *profile = NULL;
 	switch_stream_handle_t stream = { 0 };
 	switch_event_header_t *hp;
-
+	int count = 0;
+	
 	switch_assert(event != NULL);
 
 	if (!(account = switch_event_get_header(event, "mwi-message-account"))) {
@@ -224,7 +226,7 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 	sql = switch_mprintf("select *,'%q' from sip_subscriptions where event='message-summary' and sub_to_user='%q' and sub_to_host='%q'", 
 						 stream.data, user, host);
 	
-	switch_safe_free(stream.data);
+
 
 	switch_assert (sql != NULL);
 	sofia_glue_execute_sql_callback(profile,
@@ -232,9 +234,31 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 									profile->ireg_mutex,
 									sql,
 									sofia_presence_mwi_callback,
-									profile);
+									&count);
 
 	switch_safe_free(sql);
+
+	
+	if (!count) {
+		sql = switch_mprintf("select *,'%q' from sip_registrations where sip_user='%q' and sip_host='%q'", 
+							 stream.data, user, host);
+	
+
+		
+		switch_assert (sql != NULL);
+		sofia_glue_execute_sql_callback(profile,
+										SWITCH_FALSE,
+										profile->ireg_mutex,
+										sql,
+										sofia_presence_mwi_callback2,
+										profile);
+		
+		switch_safe_free(sql);
+	}
+
+
+	switch_safe_free(stream.data);
+
 	switch_safe_free(dup_account);
 	if (profile) {
 		sofia_glue_release_profile(profile);
@@ -622,6 +646,7 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	char *id = NULL;
 	nua_handle_t *nh;
 	int expire_sec = atoi(expires);
+	int *total = (int *) pArg;
 
 	if (!(profile = sofia_glue_find_profile(sub_to_host))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile for host %s\n", sub_to_host);
@@ -643,9 +668,45 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	nua_notify(nh,
 			   SIPTAG_SUBSCRIPTION_STATE_STR(exp),
 			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"), SIPTAG_PAYLOAD_STR(body), TAG_END());
-
+	
 	switch_safe_free(id);
 	switch_safe_free(exp);
+
+	sofia_glue_release_profile(profile);
+	*total++;
+	return 0;
+}
+
+
+
+
+static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char **columnNames)
+{
+	char *sub_to_user = argv[1];
+	char *sub_to_host = argv[2];
+	char *event = "message-summary";
+	char *body = argv[7];
+	sofia_profile_t *profile = NULL;
+	char *id = NULL;
+	nua_handle_t *nh;
+
+	if (!(profile = sofia_glue_find_profile(sub_to_host))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile for host %s\n", sub_to_host);
+		return 0;
+	}
+
+	id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
+	
+	nh = nua_handle(profile->nua, NULL,
+					SIPTAG_FROM_STR(id),
+					SIPTAG_TO_STR(id), SIPTAG_CONTACT_STR(profile->url), TAG_END());
+	
+	
+	nua_notify(nh,
+			   NUTAG_NEWSUB(1),
+			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"), SIPTAG_PAYLOAD_STR(body), TAG_END());
+
+	switch_safe_free(id);
 
 	sofia_glue_release_profile(profile);
 
