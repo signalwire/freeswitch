@@ -108,6 +108,8 @@
       </condition>
       <condition field="destination_number" expression="^${caller_id_number}$">
 	<action application="set" data="voicemail_authorized=${sip_authorized}"/>
+	<action application="answer"/>
+	<action application="sleep" data="1000"/>
 	<action application="voicemail" data="check default $${domain} ${dialed_ext}"/>
 	<anti-action application="set" data="call_timeout=30000"/>
 	<anti-action application="set" data="hangup_after_bridge=true"/>
@@ -115,6 +117,8 @@
 	<anti-action application="db" data="insert/call_return/${dialed_ext}/${caller_id_number}"/>
 	<anti-action application="db" data="insert/last_dial_ext/${dialed_ext}/${uuid}"/>
 	<anti-action application="bridge" data="USER/${dialed_ext}@$${domain}"/>
+	<anti-action application="answer"/>
+	<anti-action application="sleep" data="1000"/>
 	<anti-action application="voicemail" data="default $${domain} ${dialed_ext}"/>
       </condition>
     </extension>
