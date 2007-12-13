@@ -211,16 +211,17 @@
       <prompt phrase="deleted" filename="vm-deleted.wav"/>
       <prompt phrase="in folder inbox" filename="vm-in_folder.wav"/>
       <prompt phrase="to return the call now" filename="vm-return_call.wav"/>
+      <prompt phrase="urgent" filename="vm-urgent.wav"/>
     </voicemail>
     <conference>
-      <prompt phrase="'TONE'" filename="ack.wav" type="tone"/>
-      <prompt phrase="'TONE'" filename="nack.wav" type="tone"/>
-      <prompt phrase="The conference is muted." filename="mute.wav"/>
-      <prompt phrase="The conference is unmuted." filename="unmuted.wav"/>
+      <prompt phrase="NULL" filename="ack.wav" type="tone"/>
+      <prompt phrase="NULL" filename="nack.wav" type="tone"/>
+      <prompt phrase="You are now muted." filename="mute.wav"/>
+      <prompt phrase="You are now unmuted." filename="unmuted.wav"/>
       <prompt phrase="You are currently the only person in this conference." filename="alone.wav"/>
-      <prompt phrase="'NONE'" filename="perpetual.wav" type="music"/>
-      <prompt phrase="'NONE'" filename="enter.wav" type="tone"/>
-      <prompt phrase="'NONE'" filename="exit.wav" type="tone"/>
+      <prompt phrase="NULL" filename="perpetual.wav" type="music"/>
+      <prompt phrase="NULL" filename="enter.wav" type="tone"/>
+      <prompt phrase="NULL" filename="exit.wav" type="tone"/>
       <prompt phrase="You have been kicked from this conference." filename="kicked.wav"/>
       <prompt phrase="This conference is locked." filename="locked.wav"/>
       <prompt phrase="The conference is now locked." filename="is-locked.wav"/>
