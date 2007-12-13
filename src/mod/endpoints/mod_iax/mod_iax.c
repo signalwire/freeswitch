@@ -150,7 +150,7 @@ static struct ast_iana AST_IANA[] = { {AST_FORMAT_G723_1, 4, "g723.1"},
 static char *ast2str(int ast)
 {
 	int x;
-	for (x = 0; x < 32; x++) {
+	for (x = 0; x < 19; x++) {
 		if ((1 << x) == ast) {
 			return AST_IANA[x].name;
 		}
@@ -216,8 +216,6 @@ static switch_status_t iax_set_codec(private_t * tech_pvt, struct iax_session *i
 									 unsigned int *format, unsigned int *cababilities, unsigned short *samprate, iax_io_t io)
 {
 	char *dname = NULL;
-	//int rate = 8000;
-	//int codec_ms = 20;
 	switch_channel_t *channel;
 	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];
 	int num_codecs = 0;
@@ -226,11 +224,12 @@ static switch_status_t iax_set_codec(private_t * tech_pvt, struct iax_session *i
 	uint32_t interval = 0;
 
 	if (globals.codec_string) {
-		if ((num_codecs = switch_loadable_module_get_codecs_sorted(codecs, SWITCH_MAX_CODECS, globals.codec_order, globals.codec_order_last)) <= 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO codecs?\n");
-			return SWITCH_STATUS_GENERR;
-		}
-	} else if (((num_codecs = switch_loadable_module_get_codecs(codecs, SWITCH_MAX_CODECS))) <= 0) {
+		num_codecs = switch_loadable_module_get_codecs_sorted(codecs, SWITCH_MAX_CODECS, globals.codec_order, globals.codec_order_last);
+	} else {
+		num_codecs = switch_loadable_module_get_codecs(codecs, SWITCH_MAX_CODECS);
+	}
+
+	if (num_codecs <= 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO codecs?\n");
 		return SWITCH_STATUS_GENERR;
 	}
@@ -245,6 +244,8 @@ static switch_status_t iax_set_codec(private_t * tech_pvt, struct iax_session *i
 			local_cap |= codec;
 		}
 	}
+
+	switch_assert(codecs[0]);
 
 	if (io == IAX_SET) {
 		mixed_cap = (local_cap & *cababilities);
@@ -1104,9 +1105,6 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New Inbound Channel %s!\n", iaxevent->ies.calling_name);
 					if ((session = switch_core_session_request(iax_endpoint_interface, NULL)) != 0) {
-						private_t *tech_pvt;
-						switch_channel_t *channel;
-
 						switch_core_session_add_stream(session, NULL);
 						if ((tech_pvt = (private_t *) switch_core_session_alloc(session, sizeof(private_t))) != 0) {
 							channel = switch_core_session_get_channel(session);
