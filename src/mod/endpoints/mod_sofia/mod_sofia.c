@@ -832,7 +832,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			char *reason = NULL;
 			
 			if (switch_channel_test_flag(channel, CF_ANSWERED)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Call is already answered, Rejecting with hangup\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call is already answered, Rejecting with hangup\n");
 				switch_channel_hangup(channel, SWITCH_CAUSE_CALL_REJECTED);
 			} else {
 
@@ -858,11 +858,11 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					if (switch_strlen_zero(to_host)) {
 						to_host = switch_channel_get_variable(channel, "sip_to_host");
 					}
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Challanging call %s\n", to_uri);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Challanging call %s\n", to_uri);
 					sofia_reg_auth_challange(NULL, tech_pvt->profile, tech_pvt->nh, REG_INVITE, to_host, 0); 
 					switch_channel_hangup(channel, SWITCH_CAUSE_USER_CHALLENGE);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Rejecting with %d %s\n", code, reason);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Rejecting with %d %s\n", code, reason);
 					nua_respond(tech_pvt->nh, code, reason, TAG_END());
 				}
 			}

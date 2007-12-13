@@ -200,6 +200,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				read_frame = &session->raw_read_frame;
 				break;
 			case SWITCH_STATUS_NOOP:
+				if (session->read_resampler) {
+					switch_resample_destroy(&session->read_resampler);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deactivating read resampler\n");
+				}
+
 				status = SWITCH_STATUS_SUCCESS;
 				break;
 			case SWITCH_STATUS_BREAK:
@@ -220,7 +225,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				goto done;
 			}
 		}
-		if (session->read_resampler) {
+		if (session->read_resampler && 0) {
 			short *data = read_frame->data;
 
 			session->read_resampler->from_len = switch_short_to_float(data, session->read_resampler->from, (int) read_frame->datalen / 2);
@@ -518,6 +523,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			case SWITCH_STATUS_BREAK:
 				return SWITCH_STATUS_SUCCESS;
 			case SWITCH_STATUS_NOOP:
+				if (session->write_resampler) {
+					switch_resample_destroy(&session->write_resampler);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deactivating write resampler\n");
+				}
 				write_frame = frame;
 				status = SWITCH_STATUS_SUCCESS;
 				break;
@@ -742,6 +751,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								write_frame = &session->enc_write_frame;
 								break;
 							case SWITCH_STATUS_NOOP:
+								if (session->read_resampler) {
+									switch_resample_destroy(&session->read_resampler);
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deactivating read resampler\n");
+								}
 								enc_frame->codec = session->write_codec;
 								enc_frame->samples = enc_frame->datalen / sizeof(int16_t);
 								enc_frame->timestamp = frame->timestamp;

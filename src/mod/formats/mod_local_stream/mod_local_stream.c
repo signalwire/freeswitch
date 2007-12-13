@@ -224,7 +224,7 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 	handle->speed = 0;
 	handle->private_info = context;
 	handle->interval = source->interval;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening Stream [%s] %dhz\n", path, handle->samplerate);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opening Stream [%s] %dhz\n", path, handle->samplerate);
 	
 	switch_mutex_init(&context->audio_mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
 	if (switch_buffer_create_dynamic(&context->audio_buffer, 512, 1024, 0) != SWITCH_STATUS_SUCCESS) {

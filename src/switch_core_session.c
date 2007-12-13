@@ -684,7 +684,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t * thr
 	switch_set_flag(session, SSF_DESTROYED);
 	switch_core_session_rwunlock(session);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Session %"SWITCH_SIZE_T_FMT" (%s) Ended\n",
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Session %"SWITCH_SIZE_T_FMT" (%s) Ended\n",
 					  session->id, switch_channel_get_name(session->channel));
 	switch_core_session_destroy(&session);
 	return NULL;
