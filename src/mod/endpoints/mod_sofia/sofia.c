@@ -827,7 +827,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->debug = atoi(val);
 					} else if (!strcasecmp(var, "use-rtp-timer") && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_TIMER);
-					} else if (!strcasecmp(var, "sip_trace") && switch_true(val)) {
+					} else if (!strcasecmp(var, "sip-trace") && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_TPORT_LOG);
 					} else if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
 #ifdef SWITCH_HAVE_ODBC
