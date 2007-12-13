@@ -85,6 +85,15 @@
       </condition>
     </extension>
 
+    <extension name="extension-intercom">
+      <condition field="destination_number" expression="^8(10[01][0-9])$">
+	<action application="set" data="dialed_ext=$1"/>
+	<action application="set" data="sip_h_Call-Info=<sip:$${local_ip_v4}>;answer-after=0"/>
+	<action application="set" data="sip_auto_answer=true"/>
+	<action application="set" data="export_vars=sip_h_Call-Info,sip_auto_answer"/>
+	<action application="bridge" data="USER/${dialed_ext}@$${domain}"/>
+      </condition>
+    </extension>
 
     <!-- 
 	 if the calling party is the called party, go to their VM
