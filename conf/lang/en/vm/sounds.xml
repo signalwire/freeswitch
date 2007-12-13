@@ -200,6 +200,23 @@
     </input>
   </macro>
 
+  <macro name="marked-urgent">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="play-file" data="voicemail/vm-urgent.wav"/>
+	<action function="play-file" data="voicemail/vm-message.wav"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="saved">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="play-file" data="voicemail/vm-saved.wav"/>
+      </match>
+    </input>
+  </macro>
+
   <macro name="voicemail_greeting_selected">
     <input pattern="^(.*)$">
       <match>
