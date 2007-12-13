@@ -82,7 +82,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "autoload_configs", "autoload_configs", "{3C90CCF0-2CDD-4A7A-ACFF-208C1E271692}"
 	ProjectSection(SolutionItems) = preProject
 		conf\autoload_configs\alsa.conf.xml = conf\autoload_configs\alsa.conf.xml
-		conf\autoload_configs\cdr.conf.xml = conf\autoload_configs\cdr.conf.xml
 		conf\autoload_configs\conference.conf.xml = conf\autoload_configs\conference.conf.xml
 		conf\autoload_configs\console.conf.xml = conf\autoload_configs\console.conf.xml
 		conf\autoload_configs\dialplan_directory.conf.xml = conf\autoload_configs\dialplan_directory.conf.xml
@@ -185,7 +184,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "autoload_configs", "autoload_configs", "{4833F8E3-ABBF-4260-9DB1-B34015676CFC}"
 	ProjectSection(SolutionItems) = preProject
 		debug\conf\autoload_configs\alsa.conf.xml = debug\conf\autoload_configs\alsa.conf.xml
-		debug\conf\autoload_configs\cdr.conf.xml = debug\conf\autoload_configs\cdr.conf.xml
 		debug\conf\autoload_configs\conference.conf.xml = debug\conf\autoload_configs\conference.conf.xml
 		debug\conf\autoload_configs\console.conf.xml = debug\conf\autoload_configs\console.conf.xml
 		debug\conf\autoload_configs\dialplan_directory.conf.xml = debug\conf\autoload_configs\dialplan_directory.conf.xml
@@ -284,7 +282,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "autoload_configs", "autoload_configs", "{8D29085B-952D-4594-9BB9-5781CE552D0A}"
 	ProjectSection(SolutionItems) = preProject
 		release\conf\autoload_configs\alsa.conf.xml = release\conf\autoload_configs\alsa.conf.xml
-		release\conf\autoload_configs\cdr.conf.xml = release\conf\autoload_configs\cdr.conf.xml
 		release\conf\autoload_configs\conference.conf.xml = release\conf\autoload_configs\conference.conf.xml
 		release\conf\autoload_configs\console.conf.xml = release\conf\autoload_configs\console.conf.xml
 		release\conf\autoload_configs\dialplan_directory.conf.xml = release\conf\autoload_configs\dialplan_directory.conf.xml
