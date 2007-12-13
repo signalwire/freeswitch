@@ -42,6 +42,7 @@
 
 #include "token.h"
 
+#define safe_free(it) if (it) {free(it);it=NULL;}
 /*********************************************************************
 ** List
 *********************************************************************/
@@ -69,10 +70,10 @@ ListFree(TList * const sl) {
         if (sl->autofree) {
             unsigned int i;
             for (i = sl->size; i > 0; --i)
-                free(sl->item[i-1]);
+                safe_free(sl->item[i-1]);
             
         }
-        free(sl->item);
+        safe_free(sl->item);
     }
     sl->item = NULL;
     sl->size = 0;
@@ -87,7 +88,7 @@ ListFreeItems(TList * const sl) {
     if (sl->item) {
         unsigned int i;
         for (i = sl->size; i > 0; --i)
-            free(sl->item[i-1]);
+            safe_free(sl->item[i-1]);
     }
 }
 
@@ -215,7 +216,7 @@ void BufferFree(TBuffer *buf)
         /* ************** Implement the static buffers ***/
     }
     else
-        free(buf->data);
+        safe_free(buf->data);
 
     buf->size=0;
     buf->staticid=0;
@@ -348,11 +349,11 @@ void TableFree(TTable *t)
         if (t->size)
             for (i=t->size;i>0;i--)
             {
-                free(t->item[i-1].name);
-                free(t->item[i-1].value);
+                safe_free(t->item[i-1].name);
+                safe_free(t->item[i-1].value);
             };
             
-        free(t->item);
+        safe_free(t->item);
     }
 
     TableInit(t);
@@ -382,12 +383,12 @@ abyss_bool TableAddReplace(TTable *t,char *name,char *value)
 
     if (TableFindIndex(t,name,&i))
     {
-        free(t->item[i].value);
+        safe_free(t->item[i].value);
         if (value)
             t->item[i].value=strdup(value);
         else
         {
-            free(t->item[i].name);
+            safe_free(t->item[i].name);
             if (--t->size>0)
                 t->item[i]=t->item[t->size];
         };
@@ -521,7 +522,7 @@ void PoolFree(TPool *p)
     while (pz)
     {
         npz=pz->next;
-        free(pz);
+        safe_free(pz);
         pz=npz;
     };
 }
