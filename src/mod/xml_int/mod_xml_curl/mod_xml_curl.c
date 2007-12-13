@@ -110,6 +110,9 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	struct curl_slist *slist = NULL;
 	long httpRes = 0;
 	struct curl_slist *headers = NULL;
+	char hostname[256] = "";
+
+	gethostname(hostname, sizeof(hostname));
 
 	if (!binding) {
 		return NULL;
@@ -125,7 +128,8 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		return xml;
 	}
 
-	if (!(data = switch_mprintf("section=%s&tag_name=%s&key_name=%s&key_value=%s%s%s",
+	if (!(data = switch_mprintf("hostname=%s&section=%s&tag_name=%s&key_name=%s&key_value=%s%s%s",
+								hostname,
 								section,
 								tag_name ? tag_name : "",
 								key_name ? key_name : "",
