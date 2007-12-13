@@ -74,8 +74,12 @@
 static char const __func__[] = "stun";
 #endif
 
+#ifndef SU_DEBUG
+#define SU_DEBUG 3
+#endif
+
 /** STUN log. */
-su_log_t stun_log[] = { SU_LOG_INIT("stun", "STUN_DEBUG", 3) }; 
+su_log_t stun_log[] = { SU_LOG_INIT("stun", "STUN_DEBUG", SU_DEBUG) }; 
 
 /**@var STUN_DEBUG
  *

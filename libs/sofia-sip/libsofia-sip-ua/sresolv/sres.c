@@ -567,12 +567,16 @@ static int m_get_domain(char *d, int n, sres_message_t *m, uint16_t offset);
 extern char const SRESOLV_DEBUG[]; /* dummy declaration for Doxygen */
 #endif
 
+#ifndef SU_DEBUG
+#define SU_DEBUG 3
+#endif
+
 /**Debug log for @b sresolv module. 
  * 
  * The sresolv_log is the log object used by @b sresolv module. The level of
  * #sresolv_log is set using #SRESOLV_DEBUG environment variable.
  */
-su_log_t sresolv_log[] = { SU_LOG_INIT("sresolv", "SRESOLV_DEBUG", 3) };
+su_log_t sresolv_log[] = { SU_LOG_INIT("sresolv", "SRESOLV_DEBUG", SU_DEBUG) };
 
 /** Internal errors */
 enum {
