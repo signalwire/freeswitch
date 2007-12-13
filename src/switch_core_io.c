@@ -225,7 +225,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				goto done;
 			}
 		}
-		if (session->read_resampler && 0) {
+#if 0
+		if (session->read_resampler) {
 			short *data = read_frame->data;
 
 			session->read_resampler->from_len = switch_short_to_float(data, session->read_resampler->from, (int) read_frame->datalen / 2);
@@ -237,6 +238,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			read_frame->datalen = session->read_resampler->to_len * 2;
 			read_frame->rate = session->read_resampler->to_rate;
 		}
+#endif
 
 		if (session->bugs) {
 			switch_media_bug_t *bp, *dp, *last = NULL;
