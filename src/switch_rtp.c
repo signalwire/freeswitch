@@ -335,8 +335,7 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(const char *ip)
 	alloc = switch_core_hash_find(alloc_hash, ip);
 	if (!alloc) {
 		if (switch_core_port_allocator_new(START_PORT, END_PORT, SPF_EVEN, &alloc) != SWITCH_STATUS_SUCCESS) {
-			port = 0;
-			goto end;
+			abort();
 		}
 
 		switch_core_hash_insert(alloc_hash, ip, alloc);
@@ -346,7 +345,6 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(const char *ip)
 		port = 0;
 	}
 
- end:
 	switch_mutex_unlock(port_lock);
 	return port;
 }
