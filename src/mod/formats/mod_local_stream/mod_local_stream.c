@@ -31,7 +31,7 @@
  */
 #include <switch.h>
 /* for apr_pstrcat */
-
+#define DEFAULT_PREBUFFER_SIZE 1024 * 64
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load);
 SWITCH_MODULE_DEFINITION(mod_local_stream, mod_local_stream_load, NULL, NULL);
@@ -66,6 +66,7 @@ struct local_stream_source {
 	uint32_t prebuf;
 	char *timer_name;
 	local_stream_context_t *context_list;
+	int total;
 	switch_dir_t *dir_handle;
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
@@ -80,13 +81,22 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	char file_buf[128] = "", path_buf[512] = "";
 	switch_timer_t timer = {0};
 	int fd = -1;
-
+	switch_buffer_t *audio_buffer;
+	switch_byte_t *dist_buf;
+	switch_size_t used;
+	
 	if (switch_core_timer_init(&timer, source->timer_name, source->interval, source->samples, source->pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't start timer.\n");
 		return NULL;
 	}
 
+	if (!source->prebuf) {
+		source->prebuf = DEFAULT_PREBUFFER_SIZE;
+	}
 
+	switch_buffer_create_dynamic(&audio_buffer, 1024, source->prebuf + 10, 0);
+	dist_buf = switch_core_alloc(source->pool, source->prebuf + 10);
+	
 	while(RUNNING) {
 		const char *fname;
 
@@ -155,13 +165,27 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					break;
 				}
 				
-				switch_mutex_lock(source->mutex);
-				for (cp = source->context_list; cp; cp = cp->next) {
-					switch_mutex_lock(cp->audio_mutex);
-					switch_buffer_write(cp->audio_buffer, abuf, olen * 2);
-					switch_mutex_unlock(cp->audio_mutex);
+				switch_buffer_write(audio_buffer, abuf, olen * 2);
+				used = switch_buffer_inuse(audio_buffer);
+				
+				if (!source->total) {
+					if (used >= source->prebuf) {
+						switch_buffer_read(audio_buffer, abuf, olen * 2);
+					}
+				} else {
+					int dist_len = ((source->prebuf * 95) / 100);
+					
+					if (used >= dist_len) {
+						switch_buffer_read(audio_buffer, dist_buf, used);
+						switch_mutex_lock(source->mutex);
+						for (cp = source->context_list; cp; cp = cp->next) {
+							switch_mutex_lock(cp->audio_mutex);
+							switch_buffer_write(cp->audio_buffer, dist_buf, used);
+							switch_mutex_unlock(cp->audio_mutex);
+						}
+						switch_mutex_unlock(source->mutex);
+					}
 				}
-				switch_mutex_unlock(source->mutex);
 			}
 
 		}
@@ -238,6 +262,7 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 	switch_mutex_lock(source->mutex);
 	context->next = source->context_list;
 	source->context_list = context;
+	source->total++;
 	switch_mutex_unlock(source->mutex);
 
  end:
@@ -261,6 +286,7 @@ static switch_status_t local_stream_file_close(switch_file_handle_t *handle)
 		}
 		last = cp;
 	}
+	context->source->total--;
 	switch_mutex_unlock(context->source->mutex);
 	switch_buffer_destroy(&context->audio_buffer);
 	
@@ -278,17 +304,20 @@ static switch_status_t local_stream_file_read(switch_file_handle_t *handle, void
 	switch_size_t bytes = 0;
 	size_t need = *len * 2;
 
+
 	switch_mutex_lock(context->audio_mutex);
 	if ((bytes = switch_buffer_read(context->audio_buffer, data, need))) {
 		*len = bytes / 2;
 	} else {
-		if (need > 2560) {
-			need = 2560;
+		if (need > context->source->samples * 2) {
+			need = context->source->samples * 2;
 		}
-		memset(data, 255, need);
-		*len = need / 2;
+
+		memset(data, 0, need);
+		*len = need / 2;		
 	}
 	switch_mutex_unlock(context->audio_mutex);
+
 	handle->sample_count += *len;
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -351,7 +380,7 @@ static void launch_threads(void)
 		source->interval = 20;
 		source->channels = 1;
 		source->timer_name = "soft";
-
+		source->prebuf = DEFAULT_PREBUFFER_SIZE;
 		
 		for (param = switch_xml_child(directory, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
