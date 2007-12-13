@@ -401,8 +401,6 @@ if test "$enable_core_libedit_support" = "yes" ; then
           [AC_MSG_ERROR([libtermcap, libcurses or libncurses are required!])] )] )
 fi
 
-#AX_LIB_MYSQL([MINIMUM-VERSION]) 
-AX_LIB_MYSQL
 AX_CHECK_JAVA
 
 AM_CONDITIONAL([ADD_ODBC],[test "x$enable_core_odbc_support" != "xno"])
