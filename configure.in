@@ -446,6 +446,9 @@ AC_SUBST(AM_MAKEFLAGS)
 AC_CONFIG_SUBDIRS(libs/srtp)
 AC_CONFIG_SUBDIRS(libs/sqlite)
 AC_CONFIG_SUBDIRS(libs/libresample)
+if test "$enable_core_libedit_support" = "yes" ; then
+    AC_CONFIG_SUBDIRS(libs/libedit)
+fi
 AC_CONFIG_SUBDIRS(libs/pcre)
 AC_CONFIG_SUBDIRS(libs/apr)
 AC_CONFIG_SUBDIRS(libs/apr-util)

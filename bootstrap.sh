@@ -4,7 +4,7 @@ echo "bootstrap: checking installation..."
 BASEDIR=`pwd`;
 LIBDIR=${BASEDIR}/libs;
 SUBDIRS="codec/g7xx codec/g726 codec/gsm codec/ilbc codec/lpc10 curl iax iksemel  \
-        js js/nsprpub libdingaling libresample libsndfile pcre sofia-sip \
+        js js/nsprpub libdingaling libedit libresample libsndfile pcre sofia-sip \
         speex sqlite srtp xmlrpc-c";
 
 
