@@ -867,6 +867,7 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 
 switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 {
+	int ms;
 
 	if (tech_pvt->read_codec.implementation) {
 		if (!force) {
@@ -901,32 +902,38 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 		return SWITCH_STATUS_FALSE;
-	} else {
-		if (switch_core_codec_init(&tech_pvt->write_codec,
-								   tech_pvt->iananame,
-								   tech_pvt->rm_fmtp,
-								   tech_pvt->rm_rate,
-								   tech_pvt->codec_ms,
-								   1,
-								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE | tech_pvt->profile->codec_flags,
-								   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
-			return SWITCH_STATUS_FALSE;
-		} else {
-			int ms;
-			tech_pvt->read_frame.rate = tech_pvt->rm_rate;
-			ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Codec %s %s/%ld %d ms %d samples\n",
-							  switch_channel_get_name(tech_pvt->channel), tech_pvt->iananame, tech_pvt->rm_rate, tech_pvt->codec_ms,
-							  tech_pvt->read_codec.implementation->samples_per_frame
-							  );
-			tech_pvt->read_frame.codec = &tech_pvt->read_codec;
-			
-			switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
-			switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
-			tech_pvt->fmtp_out = switch_core_session_strdup(tech_pvt->session, tech_pvt->write_codec.fmtp_out);
-		}
+	} 
+
+	if (switch_core_codec_init(&tech_pvt->write_codec,
+							   tech_pvt->iananame,
+							   tech_pvt->rm_fmtp,
+							   tech_pvt->rm_rate,
+							   tech_pvt->codec_ms,
+							   1,
+							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE | tech_pvt->profile->codec_flags,
+							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
+		return SWITCH_STATUS_FALSE;
+	} 
+
+	tech_pvt->read_frame.rate = tech_pvt->rm_rate;
+	ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
+
+	if (!tech_pvt->read_codec.implementation) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
+		return SWITCH_STATUS_FALSE;
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Codec %s %s/%ld %d ms %d samples\n",
+					  switch_channel_get_name(tech_pvt->channel), tech_pvt->iananame, tech_pvt->rm_rate, tech_pvt->codec_ms,
+					  tech_pvt->read_codec.implementation->samples_per_frame
+					  );
+	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
+	
+	switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
+	switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
+	tech_pvt->fmtp_out = switch_core_session_strdup(tech_pvt->session, tech_pvt->write_codec.fmtp_out);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

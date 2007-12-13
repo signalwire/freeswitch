@@ -89,9 +89,8 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 											  NUTAG_CALLSTATE_REF(ss_state), SIPTAG_FROM_STR(gateway_ptr->register_from), TAG_END()))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "registering %s\n", gateway_ptr->name);
 
-				if (!(gateway_ptr->sofia_private = malloc(sizeof(*gateway_ptr->sofia_private)))) {
-					abort();
-				}
+				gateway_ptr->sofia_private = malloc(sizeof(*gateway_ptr->sofia_private));
+				switch_assert(gateway_ptr->sofia_private);
 				memset(gateway_ptr->sofia_private, 0, sizeof(*gateway_ptr->sofia_private));
 
 				gateway_ptr->sofia_private->gateway = gateway_ptr;
@@ -881,9 +880,6 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	}
 
 	if (!a1_hash) {
-		su_md5_t ctx;
-		char *input;
-
 		input = switch_mprintf("%s:%s:%s", username, realm, passwd);
 		su_md5_init(&ctx);
 		su_md5_strupdate(&ctx, input);

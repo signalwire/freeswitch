@@ -554,6 +554,10 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 		}
 	}
 
+	if (!tech_pvt->read_codec.implementation) {
+		return SWITCH_STATUS_GENERR;
+	}
+
 	if (switch_test_flag(tech_pvt, TFLAG_HUP)) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1371,7 +1375,7 @@ SWITCH_STANDARD_API(sofia_function)
 		goto done;
 	}
 
-	if (!(argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+	if (!(argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) || !argv[0]) {
 		stream->write_function(stream, "%s", usage_string);
 		goto done;
 	}

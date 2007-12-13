@@ -345,7 +345,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	uint32_t ireg_loops = 0;
 	uint32_t gateway_loops = 0;
 	switch_event_t *s_event;
-	int tport_log = 0;
+	int tportlog = 0;
 	
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.threads++;
@@ -363,13 +363,13 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	}
 
 	if (switch_test_flag(profile, TFLAG_TPORT_LOG)) {
-		tport_log = 1;
+		tportlog = 1;
 	}
 
 	profile->nua = nua_create(profile->s_root,	/* Event loop */
 							  sofia_event_callback,	/* Callback for processing events */
 							  profile,	/* Additional data to pass to callback */
-							  NUTAG_URL(profile->bindurl), NTATAG_UDP_MTU(65536), TAG_IF(tport_log,TPTAG_LOG(1)), TAG_END());	/* Last tag should always finish the sequence */
+							  NUTAG_URL(profile->bindurl), NTATAG_UDP_MTU(65536), TAG_IF(tportlog,TPTAG_LOG(1)), TAG_END());	/* Last tag should always finish the sequence */
 
 	if (!profile->nua) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s\n", profile->name);
@@ -1046,8 +1046,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				}
 
 				if (profile->bind_params) {
-					char *url = profile->bindurl;
-					profile->bindurl = switch_core_sprintf(profile->pool, "%s;%s", url, profile->bind_params);
+					char *bindurl = profile->bindurl;
+					profile->bindurl = switch_core_sprintf(profile->pool, "%s;%s", bindurl, profile->bind_params);
 				}
 				
 			}

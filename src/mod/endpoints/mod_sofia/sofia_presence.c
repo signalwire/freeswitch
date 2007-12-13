@@ -341,23 +341,23 @@ void sofia_presence_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_PRESENCE_PROBE:
 		if (proto) {
 			char *to = switch_event_get_header(event, "to");
-			char *user, *euser, *host, *p;
+			char *probe_user, *probe_euser, *probe_host, *p;
 
-			if (!to || !(user = strdup(to))) {
+			if (!to || !(probe_user = strdup(to))) {
 				return;
 			}
 
-			if ((host = strchr(user, '@'))) {
-				*host++ = '\0';
+			if ((probe_host = strchr(probe_user, '@'))) {
+				*probe_host++ = '\0';
 			}
-			euser = user;
-			if ((p = strchr(euser, '+'))) {
-				euser = (p + 1);
+			probe_euser = probe_user;
+			if ((p = strchr(probe_euser, '+'))) {
+				probe_euser = (p + 1);
 			}
 
-			if (euser && host &&
+			if (probe_euser && probe_host &&
 				(sql = switch_mprintf("select sip_user,sip_host,status,rpid,'' from sip_registrations where sip_user='%q' and sip_host='%q'",
-									  euser, host)) && (profile = sofia_glue_find_profile(host))) {
+									  probe_euser, probe_host)) && (profile = sofia_glue_find_profile(probe_host))) {
 				
 				sofia_glue_execute_sql_callback(profile,
 												SWITCH_FALSE,
@@ -725,17 +725,17 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			from_host = "n/a";
 		}
 
-		if (strstr(to_user, "ext+") || strstr(to_user, "user+")) {
-			char proto[80];
+		if (to_user && (strstr(to_user, "ext+") || strstr(to_user, "user+"))) {
+			char protocol[80];
 			char *p;
 
-			switch_copy_string(proto, to_user, sizeof(proto));
-			if ((p = strchr(proto, '+'))) {
+			switch_copy_string(protocol, to_user, sizeof(protocol));
+			if ((p = strchr(protocol, '+'))) {
 				*p = '\0';
 			}
 			
 			if (switch_event_create(&sevent, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "proto", proto);
+				switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "proto", protocol);
 				switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "login", "%s", profile->name);
 				switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, to_host);
 				switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "rpid", "active");
@@ -754,7 +754,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 		}
 
-		if (strchr(to_user, '+')) {
+		if (to_user && strchr(to_user, '+')) {
 			char *h;
 			if ((proto = (d_user = strdup(to_user)))) {
 				if ((my_to_user = strchr(d_user, '+'))) {
