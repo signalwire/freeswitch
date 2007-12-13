@@ -1,11 +1,11 @@
 <configuration name="local_stream.conf" description="stream files from local dir">
-<directory name="moh_8000" path="$${base_dir}/sounds/music/8000">
+<directory name="moh/8000" path="$${base_dir}/sounds/music/8000">
   <param name="rate" value="8000"/>
   <param name="channels" value="1"/>
   <param name="interval" value="2"/>
   <param name="timer_name" value="soft"/>
 </directory>
-<directory name="moh_16000" path="$${base_dir}/sounds/music/16000">
+<directory name="moh/16000" path="$${base_dir}/sounds/music/16000">
   <param name="rate" value="16000"/>
   <param name="channels" value="1"/>
   <param name="interval" value="2"/>

@@ -26,7 +26,7 @@
     <param name="rtp-timer-name" value="soft"/>
     <param name="rtp-ip" value="$${local_ip_v4}"/>
     <param name="sip-ip" value="$${local_ip_v4}"/>
-    <param name="hold-music" value="local_stream://moh_8000"/>
+    <param name="hold-music" value="local_stream://moh"/>
     <!--enable to use presense and mwi -->
     <param name="manage-presence" value="true"/>
     <!--max number of open dialogs in proceeding -->
