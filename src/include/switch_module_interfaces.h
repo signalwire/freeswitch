@@ -53,6 +53,7 @@ typedef enum {
 	SWITCH_SHN_ON_HANGUP,
 	SWITCH_SHN_ON_LOOPBACK,
 	SWITCH_SHN_ON_TRANSMIT,
+	SWITCH_SHN_ON_PARK,
 	SWITCH_SHN_ON_HOLD,
 	SWITCH_SHN_ON_HIBERNATE,
 	SWITCH_SHN_ON_RESET
@@ -71,6 +72,8 @@ struct switch_state_handler_table {
 	switch_state_handler_t on_loopback;
 	/*! executed when the state changes to transmit */
 	switch_state_handler_t on_transmit;
+	/*! executed when the state changes to park */
+	switch_state_handler_t on_park;
 	/*! executed when the state changes to hold */
 	switch_state_handler_t on_hold;
 	/*! executed when the state changes to hibernate */

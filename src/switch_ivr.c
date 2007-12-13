@@ -1494,6 +1494,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 	return SWITCH_STATUS_FALSE;
 }
 
+SWITCH_DECLARE(void) switch_ivr_park_session(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_set_state_flag(channel, CF_TRANSFER);
+	switch_channel_set_state(channel, CS_PARK);
+}
+
 SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint32_t delay_ms)
 {
 	stfu_instance_t *jb;

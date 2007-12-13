@@ -719,6 +719,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 														switch_input_args_t *args);
 SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint32_t delay_ms);
 SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session, const char *uuid);
+SWITCH_DECLARE(void) switch_ivr_park_session(switch_core_session_t *session);
 
 /** @} */
 

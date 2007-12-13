@@ -560,6 +560,7 @@ CS_RING      - Channel is looking for a dialplan
 CS_TRANSMIT  - Channel is in a passive transmit state
 CS_EXECUTE   - Channel is executing it's dialplan 
 CS_LOOPBACK  - Channel is in loopback
+CS_PARK      - Channel is parked
 CS_HOLD		 - Channel is on hold
 CS_HIBERNATE - Channel is in a sleep state
 CS_RESET 	 - Channel is in a reset state
@@ -574,6 +575,7 @@ typedef enum {
 	CS_TRANSMIT,
 	CS_EXECUTE,
 	CS_LOOPBACK,
+	CS_PARK,
 	CS_HOLD,
 	CS_HIBERNATE,
 	CS_RESET,

@@ -205,6 +205,15 @@ static void switch_core_standard_on_transmit(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard TRANSMIT\n");
 }
 
+static void switch_core_standard_on_park(switch_core_session_t *session)
+{
+	switch_assert(session != NULL);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard PARK\n");
+	switch_channel_clear_flag(session->channel, CF_TRANSFER);
+	switch_core_session_reset(session);
+	switch_ivr_park(session, NULL);
+}
+
 static void switch_core_standard_on_hold(switch_core_session_t *session)
 {
 	switch_assert(session != NULL);
@@ -418,6 +427,9 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				break;
 			case CS_TRANSMIT:	/* send/recieve data to/from another channel */
 				STATE_MACRO(transmit, "TRANSMIT");
+				break;
+			case CS_PARK:		/* wait in limbo */
+				STATE_MACRO(park, "PARK");
 				break;
 			case CS_HOLD:		/* wait in limbo */
 				STATE_MACRO(hold, "HOLD");
