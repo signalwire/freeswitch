@@ -6,8 +6,8 @@
 
   <settings>
     <param name="debug" value="0"/>
-    <!--<param name="sip-trace" value="yes"/>-->
-    <!--<param name="log-level" value="0"/>-->
+    <param name="sip-trace" value="no"/>
+    <param name="log-level" value="0"/>
     <param name="rfc2833-pt" value="101"/>
     <param name="sip-port" value="5070"/>
     <param name="dialplan" value="XML"/>
