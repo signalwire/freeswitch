@@ -310,7 +310,7 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_set_end_port(switch_port_t port)
         return END_PORT;
 }
 
-static void release_port(const char *host, int port)
+static void release_port(const char *host, switch_port_t port)
 {
 	switch_core_port_allocator_t *alloc = NULL;
 
