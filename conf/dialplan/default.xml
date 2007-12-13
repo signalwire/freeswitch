@@ -184,7 +184,7 @@
     <extension name="hold_music">
       <condition field="destination_number" expression="^9999$">
 	<action application="answer"/>
-	<action application="playback" data="local_stream://moh_${read_rate}"/>
+	<action application="playback" data="local_stream://moh"/>
       </condition>
     </extension>
 
