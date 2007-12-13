@@ -858,7 +858,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					if (switch_strlen_zero(to_host)) {
 						to_host = switch_channel_get_variable(channel, "sip_to_host");
 					}
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Challanging call %s\n", to_uri);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Challenging call %s\n", to_uri);
 					sofia_reg_auth_challange(NULL, tech_pvt->profile, tech_pvt->nh, REG_INVITE, to_host, 0); 
 					switch_channel_hangup(channel, SWITCH_CAUSE_USER_CHALLENGE);
 				} else {
