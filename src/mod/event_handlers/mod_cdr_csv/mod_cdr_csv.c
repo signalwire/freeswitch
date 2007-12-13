@@ -278,7 +278,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			switch_channel_event_set_data(channel, event);
 			switch_event_serialize(event, &buf, SWITCH_FALSE);
 			switch_assert(buf);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "CHANNEL_DATA:\n%s\n", buf);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "CHANNEL_DATA:\n%s\n", buf);
 			switch_event_destroy(&event);
 			free(buf);
 		}

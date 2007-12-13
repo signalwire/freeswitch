@@ -310,17 +310,17 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_set_end_port(switch_port_t port)
         return END_PORT;
 }
 
-static void release_port(switch_rtp_t *rtp_session)
+static void release_port(const char *host, int port)
 {
 	switch_core_port_allocator_t *alloc = NULL;
 
-	if (!rtp_session->rx_host) {
+	if (!host) {
 		return;
 	}
 
     switch_mutex_lock(port_lock);
-    if ((alloc = switch_core_hash_find(alloc_hash, rtp_session->rx_host))) {
-		switch_core_port_allocator_free_port(alloc, rtp_session->rx_port);
+    if ((alloc = switch_core_hash_find(alloc_hash, host))) {
+		switch_core_port_allocator_free_port(alloc, port);
 	}
 	switch_mutex_unlock(port_lock);
 
@@ -412,7 +412,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 		*err = "Send myself a packet failed!";
 		goto done;
 	}
-	release_port(rtp_session);
 	
 	old_sock = rtp_session->sock;
 	rtp_session->sock = new_sock;
@@ -428,12 +427,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 	switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_IO);
 
   done:
-
-	if (status == SWITCH_STATUS_SUCCESS) {
-		rtp_session->rx_host = switch_core_strdup(rtp_session->pool, host);
-		rtp_session->rx_port = port;
-		rtp_session->ready = 1;
-	}
 
 	if (new_sock) {
 		switch_socket_close(new_sock);
@@ -611,21 +604,31 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 											  uint32_t ms_per_packet,
 											  switch_rtp_flag_t flags, char *crypto_key, char *timer_name, const char **err, switch_memory_pool_t *pool)
 {
-	switch_rtp_t *rtp_session;
-
+	switch_rtp_t *rtp_session = NULL;
+	
 	if (switch_rtp_create(&rtp_session, payload, samples_per_interval, ms_per_packet, flags, crypto_key, timer_name, err, pool) != SWITCH_STATUS_SUCCESS) {
-		return NULL;
+		goto end;
 	}
-
+	
 	if (switch_rtp_set_remote_address(rtp_session, tx_host, tx_port, err) != SWITCH_STATUS_SUCCESS) {
-		return NULL;
+		rtp_session = NULL;
+		goto end;
 	}
 
 	if (switch_rtp_set_local_address(rtp_session, rx_host, rx_port, err) != SWITCH_STATUS_SUCCESS) {
-		return NULL;
+		rtp_session = NULL;
 	}
 
-	rtp_session->ready = 1;
+ end:
+
+	if (rtp_session) {
+		rtp_session->ready = 1;
+		rtp_session->rx_host = switch_core_strdup(rtp_session->pool, rx_host);
+		rtp_session->rx_port = rx_port;
+	} else {
+		release_port(rx_host, rx_port);
+	}
+
 	return rtp_session;
 }
 
@@ -720,7 +723,7 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 		switch_core_timer_destroy(&(*rtp_session)->timer);
 	}
 
-	release_port(*rtp_session);
+	release_port((*rtp_session)->rx_host, (*rtp_session)->rx_port);
 
 	switch_mutex_unlock((*rtp_session)->flag_mutex);
 	return;
