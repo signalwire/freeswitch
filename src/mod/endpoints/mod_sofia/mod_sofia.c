@@ -1354,6 +1354,7 @@ SWITCH_STANDARD_API(sofia_function)
 		"sofia help\n"
 		"sofia profile <profile_name> [start|stop|restart|flush_inbound_reg|[register|unregister] [<gateway name>|all]] [reloadxml]\n"
 		"sofia status [[profile | gateway] <name>]\n"
+		"sofia loglevel [0-9]\n"
 		"--------------------------------------------------------------------------------\n";
 		
 	if (session) {
@@ -1379,6 +1380,20 @@ SWITCH_STANDARD_API(sofia_function)
 		func = cmd_profile;
 	} else if (!strcasecmp(argv[0], "status")) {
 		func = cmd_status;
+	} else if (!strcasecmp(argv[0], "loglevel")) {
+		if (argc > 1 && argv[1]) {
+			int level;
+			level = atoi(argv[1]);
+			if (level >= 0 && level <= 9) {
+				su_log_set_level(NULL, atoi(argv[1]));
+				stream->write_function(stream, "Sofia-sip log level set to [%d]", level);
+			} else {
+				stream->write_function(stream, "%s", usage_string);
+			}
+		} else {
+			stream->write_function(stream, "%s", usage_string);
+		}
+		goto done;
 	} else if (!strcasecmp(argv[0], "help")) {
 		stream->write_function(stream, "%s", usage_string);
 		goto done;

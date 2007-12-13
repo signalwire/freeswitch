@@ -36,8 +36,19 @@
 #include "mod_sofia.h"
 #include "sofia-sip/msg_parser.h"
 #include "sofia-sip/sip_extra.h"
+#include "sofia-sip/tport_tag.h"
 
 extern su_log_t tport_log[];
+extern su_log_t iptsec_log[];
+extern su_log_t nea_log[];
+extern su_log_t nta_log[];
+extern su_log_t nth_client_log[];
+extern su_log_t nth_server_log[];
+extern su_log_t nua_log[];
+extern su_log_t soa_log[];
+extern su_log_t sresolv_log[];
+extern su_log_t stun_log[];
+
 
 static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									 char const *phrase,
@@ -334,6 +345,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	uint32_t ireg_loops = 0;
 	uint32_t gateway_loops = 0;
 	switch_event_t *s_event;
+	int tport_log = 0;
 	
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.threads++;
@@ -350,10 +362,14 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		goto end;
 	}
 
+	if (switch_test_flag(profile, TFLAG_TPORT_LOG)) {
+		tport_log = 1;
+	}
+
 	profile->nua = nua_create(profile->s_root,	/* Event loop */
 							  sofia_event_callback,	/* Callback for processing events */
 							  profile,	/* Additional data to pass to callback */
-							  NUTAG_URL(profile->bindurl), NTATAG_UDP_MTU(65536), TAG_END());	/* Last tag should always finish the sequence */
+							  NUTAG_URL(profile->bindurl), NTATAG_UDP_MTU(65536), TAG_IF(tport_log,TPTAG_LOG(1)), TAG_END());	/* Last tag should always finish the sequence */
 
 	if (!profile->nua) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s\n", profile->name);
@@ -755,8 +771,6 @@ switch_status_t config_sofia(int reload, char *profile_name)
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 			if (!strcasecmp(var, "log-level")) {
 				su_log_set_level(NULL, atoi(val));
-			} else if (!strcasecmp(var, "log-level-trace")) {
-				su_log_set_level(tport_log, atoi(val));
 			}
 		}
 	}
@@ -813,7 +827,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->debug = atoi(val);
 					} else if (!strcasecmp(var, "use-rtp-timer") && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_TIMER);
-
+					} else if (!strcasecmp(var, "sip_trace") && switch_true(val)) {
+						switch_set_flag(profile, TFLAG_TPORT_LOG);
 					} else if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
 #ifdef SWITCH_HAVE_ODBC
 						profile->odbc_dsn = switch_core_strdup(profile->pool, val);

@@ -6,6 +6,7 @@
 
   <settings>
     <param name="debug" value="0"/>
+    <!--<param name="sip_trace" value="yes"/>-->
     <param name="rfc2833-pt" value="101"/>
     <param name="sip-port" value="5070"/>
     <param name="dialplan" value="XML"/>

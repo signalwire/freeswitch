@@ -16,6 +16,8 @@
   
   <settings>
     <param name="debug" value="0"/>
+    <!--<param name="sip_trace" value="yes"/>-->
+    sip_trace
     <param name="context" value="public"/>
     <param name="rfc2833-pt" value="101"/>
     <param name="sip-port" value="5060"/>
