@@ -61,7 +61,7 @@
     <!--Uncomment if you want to force the outbound leg of a bridge to only offer the codec 
 	that the originator is using-->
     <!--<param name="disable-transcoding" value="true"/>-->
-    <param name="auth-calls" value="false"/>
+    <param name="auth-calls" value="true"/>
     <!-- on authed calls, authenticate *all* the packets not just invite -->
     <!-- <param name="auth-all-packets" value="true"/> -->
     
