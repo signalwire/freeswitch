@@ -1730,6 +1730,11 @@ SWITCH_STANDARD_API(pa_cmd)
 		goto done;
 	}
 
+	if (!argv[0]) {
+		stream->write_function(stream, "Unknown Command\n");
+		goto done;
+	}
+
 	if (!strcasecmp(argv[0], "call")) {
 		func = place_call;
 	} else if (!strcasecmp(argv[0], "help")) {
