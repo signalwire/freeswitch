@@ -56,19 +56,19 @@
       </condition>
     </extension>
 
-    <extension name="add-group">
-      <condition field="destination_number" expression="^81(\d{2})$">
-	<action application="answer"/>
-	<action application="group" data="insert:$1:${sofia_contact(${sip_from_user}@${domain})}"/>
-	<action application="gentones" data="%(1000, 0, 640)"/>
-      </condition>
-    </extension>
-
     <extension name="del-group">
       <condition field="destination_number" expression="^80(\d{2})$">
 	<action application="answer"/>
 	<action application="group" data="delete:$1:${sofia_contact(${sip_from_user}@${domain})}"/>
 	<action application="gentones" data="%(1000, 0, 320)"/>
+      </condition>
+    </extension>
+
+    <extension name="add-group">
+      <condition field="destination_number" expression="^81(\d{2})$">
+	<action application="answer"/>
+	<action application="group" data="insert:$1:${sofia_contact(${sip_from_user}@${domain})}"/>
+	<action application="gentones" data="%(1000, 0, 640)"/>
       </condition>
     </extension>
 
