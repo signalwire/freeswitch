@@ -78,6 +78,7 @@
 
     <!-- ASR /TTS -->
     <!-- <load module="mod_cepstral"/> -->
+    <!-- <load module="mod_openmrcp"/> -->
     <!-- <load module="mod_rss"/> -->
     
     <!-- Say -->
