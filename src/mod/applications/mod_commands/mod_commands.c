@@ -83,8 +83,8 @@ SWITCH_STANDARD_API(user_data_function)
 		err = "can't find user";
 		goto end;
 	}
-
-
+	
+	
  end:
 
 	if (xml) {
@@ -119,7 +119,8 @@ SWITCH_STANDARD_API(user_data_function)
 
 }
 
-SWITCH_STANDARD_API(find_user_function)
+
+static switch_status_t _find_user(const char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream, switch_bool_t tf)
 {
 	switch_xml_t x_domain = NULL, x_user = NULL, xml = NULL;
 	int argc;
@@ -171,28 +172,44 @@ SWITCH_STANDARD_API(find_user_function)
 
  end:
 
-	if (err) {
-		if (host) {
-			stream->write_function(stream,  "<error>%s</error>\n", err);
-		} else {
-			stream->write_function(stream,  "-Error %s\n", err);
-		}
-	}
-
-	if (xml && x_user) {
-		xmlstr = switch_xml_toxml(x_user, SWITCH_FALSE);
-		switch_assert(xmlstr);
-
-		stream->write_function(stream,  "%s", xmlstr);
-		free(xmlstr);
+	if (session || tf) {
+		stream->write_function(stream, err ? "false" : "true");
 		switch_xml_free(xml);
-		
+	} else {
+		if (err) {
+			if (host) {
+				stream->write_function(stream,  "<error>%s</error>\n", err);
+			} else {
+				stream->write_function(stream,  "-Error %s\n", err);
+			}
+		}
+
+		if (xml && x_user) {
+			xmlstr = switch_xml_toxml(x_user, SWITCH_FALSE);
+			switch_assert(xmlstr);
+			
+			stream->write_function(stream,  "%s", xmlstr);
+			free(xmlstr);
+			switch_xml_free(xml);
+		}
 	}
 
 	free(mydata);
 	return SWITCH_STATUS_SUCCESS;
 
 }
+
+SWITCH_STANDARD_API(user_exists_function)
+{
+	return _find_user(cmd, session, stream, SWITCH_TRUE);
+}
+
+SWITCH_STANDARD_API(find_user_function)
+{
+	return _find_user(cmd, session, stream, SWITCH_FALSE);
+}
+
+
 
 
 SWITCH_STANDARD_API(xml_locate_function)
@@ -2062,6 +2079,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "regex", "Eval a regex", regex_function, "<data>|<pattern>[|<subst string>]");
 	SWITCH_ADD_API(commands_api_interface, "uuid_chat", "Send a chat message", uuid_chat, UUID_CHAT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "find_user_xml", "find a user", find_user_function, "<key> <user>@<domain>");
+	SWITCH_ADD_API(commands_api_interface, "user_exists", "find a user", user_exists_function, "<key> <user>@<domain>");
 	SWITCH_ADD_API(commands_api_interface, "xml_locate", "find some xml", xml_locate_function, "[root | <section> <tag> <tag_attr_name> <tag_attr_val>]");
 	SWITCH_ADD_API(commands_api_interface, "user_data", "find user data", user_data_function, "<user>@<domain> [var|param] <name>");
 
