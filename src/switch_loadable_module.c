@@ -169,7 +169,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 						}
 					}
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "codec");
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "codec");
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 						switch_event_fire(&event);
 					}
@@ -187,7 +187,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Dialplan '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "dialplan");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "dialplan");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
@@ -205,7 +205,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Timer '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "timer");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "timer");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
@@ -223,7 +223,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Application '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "application");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "application");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "description", "%s", switch_str_nil(ptr->short_desc));
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "syntax", "%s", switch_str_nil(ptr->syntax));
@@ -243,7 +243,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding API Function '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "api");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "api");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "description", "%s", switch_str_nil(ptr->desc));
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "syntax", "%s", switch_str_nil(ptr->syntax));
@@ -265,7 +265,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 				for (i = 0; ptr->extens[i]; i++) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding File Format '%s'\n", ptr->extens[i]);
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "file");
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "file");
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->extens[i]);
 						switch_event_fire(&event);
 					}
@@ -284,7 +284,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Speech interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "speech");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "speech");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
@@ -302,7 +302,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Asr interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "asr");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "asr");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
@@ -320,7 +320,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Directory interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "directory");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "directory");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
@@ -338,7 +338,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Chat interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "chat");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "chat");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
@@ -356,7 +356,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Say interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "say");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "say");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
@@ -380,7 +380,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 									  "Adding Management interface '%s' OID[%s.%s]\n", key, FREESWITCH_OID_PREFIX, ptr->relative_oid);
 					switch_core_hash_insert(loadable_modules.management_hash, ptr->relative_oid, (const void *) ptr);
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "management");
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "management");
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->relative_oid);
 						switch_event_fire(&event);
 					}
@@ -435,7 +435,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 						}
 					}
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "codec");
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "codec");
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 						switch_event_fire(&event);
 					}
@@ -451,7 +451,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 			if (ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Dialplan '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "dialplan");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "dialplan");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
@@ -467,7 +467,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 			if (ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Timer '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "timer");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "timer");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
@@ -483,7 +483,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 			if (ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Application '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "application");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "application");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "description", "%s", switch_str_nil(ptr->short_desc));
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "syntax", "%s", switch_str_nil(ptr->syntax));
@@ -501,7 +501,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 			if (ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting API Function '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "api");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "api");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "description", "%s", switch_str_nil(ptr->desc));
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "syntax", "%s", switch_str_nil(ptr->syntax));
@@ -521,7 +521,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				for (i = 0; ptr->extens[i]; i++) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting File Format '%s'\n", ptr->extens[i]);
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "file");
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "file");
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->extens[i]);
 						switch_event_fire(&event);
 					}
@@ -538,7 +538,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 			if (ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Speech interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "speech");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "speech");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
@@ -554,7 +554,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 			if (ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Asr interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "asr");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "asr");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
@@ -570,7 +570,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 			if (ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Directory interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "directory");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "directory");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
@@ -587,7 +587,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 			if (ptr->interface_name) {				
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Chat interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "chat");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "chat");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
@@ -603,7 +603,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 			if (ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Say interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "say");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "say");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
@@ -621,7 +621,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 								  "Deleting Management interface '%s' OID[%s.%s]\n", old_module->key, FREESWITCH_OID_PREFIX, ptr->relative_oid);
 				switch_core_hash_delete(loadable_modules.management_hash, ptr->relative_oid);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "management");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "management");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->relative_oid);
 					switch_event_fire(&event);
 				}
