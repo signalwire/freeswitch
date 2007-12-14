@@ -240,7 +240,7 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 
 	
 	if (!count) {
-		sql = switch_mprintf("select *,'%q' from sip_registrations where sip_user='%q' and sip_host='%q'", 
+		sql = switch_mprintf("select sip_user,sip_host,contact,'%q' from sip_registrations where sip_user='%q' and sip_host='%q'", 
 							 stream.data, user, host);
 	
 
@@ -682,14 +682,15 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 
 static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char **columnNames)
 {
-	char *sub_to_user = argv[1];
-	char *sub_to_host = argv[2];
+	char *sub_to_user = argv[0];
+	char *sub_to_host = argv[1];
 	char *event = "message-summary";
-	char *body = argv[7];
+	char *contact = argv[2];
+	char *body = argv[3];
 	sofia_profile_t *profile = NULL;
 	char *id = NULL;
 	nua_handle_t *nh;
-	char *contact;
+
 	
 	if (!(profile = sofia_glue_find_profile(sub_to_host))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile for host %s\n", sub_to_host);
@@ -698,7 +699,7 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 
 	id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
 
-	contact = sofia_glue_get_url_from_contact(argv[3], 0);
+	contact = sofia_glue_get_url_from_contact(contact, 0);
 	
 	nh = nua_handle(profile->nua, NULL,
 					NUTAG_URL(contact),

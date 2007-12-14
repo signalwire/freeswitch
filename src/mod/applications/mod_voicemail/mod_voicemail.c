@@ -693,7 +693,7 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
                 return SWITCH_STATUS_BREAK;
             }
 
-            if (!fh) {
+            if (!(fh && fh->file_interface && switch_test_flag(fh, SWITCH_FILE_OPEN))) {
                 return SWITCH_STATUS_SUCCESS;
             }
 
