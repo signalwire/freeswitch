@@ -130,7 +130,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 									   fh->native_rate,
 									   orig_len * 10,
 									   fh->samplerate,
-									   orig_len * 10,
+									   (uint32_t)orig_len * 10,
 									   fh->memory_pool) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to create resampler!\n");
 				return SWITCH_STATUS_GENERR;
@@ -180,7 +180,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 									   fh->native_rate,
 									   orig_len * 10,
 									   fh->samplerate,
-									   orig_len * 10,
+									   (uint32_t)orig_len * 10,
 									   fh->memory_pool) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to create resampler!\n");
 				return SWITCH_STATUS_GENERR;
