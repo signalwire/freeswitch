@@ -53,7 +53,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="&quot;..\..\..\..\libs\win32\js\debug\js32.lib&quot; &quot;..\..\..\..\libs\win32\apr\debug\libapr-1.lib&quot; &quot;..\..\..\..\w32\library\debug\freeswitchcore.lib&quot; &quot;..\..\..\..\libs\win32\debug\libetpan.lib&quot; &quot;..\mod_spidermonkey\debug\mod_spidermonkey.lib&quot;"
 				AdditionalLibraryDirectories=""
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
