@@ -5,6 +5,8 @@
     </params>
     <variables>
       <variable name="user_context" value="default"/>
+      <variable name="effective_caller_id_name" value="Extension 1011"/>
+      <variable name="effective_caller_id_number" value="1011"/>
     </variables>
   </user>
 </include>

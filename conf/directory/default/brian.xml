@@ -50,6 +50,8 @@
     <variables>
       <!--all variables here will be set on all inbound calls that originate from this user -->
       <variable name="user_context" value="default"/>
+      <variable name="effective_caller_id_name" value="Brian West"/>
+      <variable name="effective_caller_id_number" value="1000"/>
 
       <!-- limit the max number of outgoing calls for this user -->
       <!--<variable name="max_calls" value="2"/>-->
