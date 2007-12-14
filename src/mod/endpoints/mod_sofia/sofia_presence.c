@@ -647,7 +647,7 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	nua_handle_t *nh;
 	int expire_sec = atoi(expires);
 	int *total = (int *) pArg;
-
+	
 	if (!(profile = sofia_glue_find_profile(sub_to_host))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile for host %s\n", sub_to_host);
 		return 0;
@@ -673,7 +673,7 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	switch_safe_free(exp);
 
 	sofia_glue_release_profile(profile);
-	*total++;
+	(*total)++;
 	return 0;
 }
 
@@ -689,27 +689,32 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 	sofia_profile_t *profile = NULL;
 	char *id = NULL;
 	nua_handle_t *nh;
-
+	char *contact;
+	
 	if (!(profile = sofia_glue_find_profile(sub_to_host))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile for host %s\n", sub_to_host);
 		return 0;
 	}
 
 	id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
+
+	contact = sofia_glue_get_url_from_contact(argv[3], 0);
 	
 	nh = nua_handle(profile->nua, NULL,
+					NUTAG_URL(contact),
 					SIPTAG_FROM_STR(id),
-					SIPTAG_TO_STR(id), SIPTAG_CONTACT_STR(profile->url), TAG_END());
-	
+					SIPTAG_TO_STR(id),
+					SIPTAG_CONTACT_STR(profile->url),
+					TAG_END());
 	
 	nua_notify(nh,
 			   NUTAG_NEWSUB(1),
 			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"), SIPTAG_PAYLOAD_STR(body), TAG_END());
 
 	switch_safe_free(id);
-
+	
 	sofia_glue_release_profile(profile);
-
+	
 	return 0;
 }
 
