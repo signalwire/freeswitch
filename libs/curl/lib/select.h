@@ -28,7 +28,8 @@
 #elif defined(_WIN32_WINNT) && (_WIN32_WINNT >= 0x0600)
 /* for Vista, use WSAPoll(). */
 #include <winsock2.h>
-#define CURL_HAVE_WSAPOLL
+/* we can't test like this, as it assumes that it will be there at runtime, which it is not when building with msvc 2008 on xp */
+//#define CURL_HAVE_WSAPOLL
 #else
 
 #define POLLIN      0x01
