@@ -1985,6 +1985,71 @@ SWITCH_STANDARD_API(uuid_getvar_function)
 
 
 
+#define DUMP_SYNTAX "<uuid> [format]"
+SWITCH_STANDARD_API(uuid_dump_function)
+{
+	switch_core_session_t *psession = NULL;
+	char *mycmd = NULL, *argv[4] = { 0 };
+	int argc = 0;
+
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		if (argc >= 0) {
+			char *uuid = argv[0];
+			char *format = argv[1];
+			
+			if ((psession = switch_core_session_locate(uuid))) {
+				switch_channel_t *channel;
+				switch_event_t *event;
+				char *buf;
+
+				channel = switch_core_session_get_channel(psession);
+				switch_assert(channel != NULL);
+
+				if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_event_set_data(channel, event);
+					if (format && !strcasecmp(format, "xml")) {
+						switch_xml_t xml;
+						if ((xml = switch_event_xmlize(event, "%s", ""))) {
+                            buf = switch_xml_toxml(xml, SWITCH_FALSE);
+                            switch_xml_free(xml);
+						}
+					} else {
+						switch_event_serialize(event, &buf, SWITCH_TRUE);
+					}
+					
+					switch_assert(buf);
+					stream->write_function(stream, buf);
+					switch_event_destroy(&event);
+					free(buf);
+				} else {
+					abort();
+				}
+
+				switch_core_session_rwunlock(psession);
+
+			} else {
+				stream->write_function(stream, "-ERR No Such Channel!\n");
+			}
+			goto done;
+		}
+	}
+
+	stream->write_function(stream, "-USAGE: %s\n", DUMP_SYNTAX);
+
+ done:
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+
+
+
 #define GLOBAL_SETVAR_SYNTAX "<var> <value>"
 SWITCH_STANDARD_API(global_setvar_function)
 {
@@ -2049,6 +2114,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_bridge", "uuid_bridge", uuid_bridge_function, "");
 	SWITCH_ADD_API(commands_api_interface, "uuid_setvar", "uuid_setvar", uuid_setvar_function, SETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_getvar", "uuid_getvar", uuid_getvar_function, GETVAR_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_dump", "uuid_dump", uuid_dump_function, DUMP_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "global_setvar", "global_setvar", global_setvar_function, GLOBAL_SETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "global_getvar", "global_getvar", global_getvar_function, GLOBAL_GETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "session_displace", "session displace (depricated)", 
