@@ -185,7 +185,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				char *pattern = NULL;
 				char *pri = NULL;
 				char *app = NULL;
-				char *arg = NULL;
+				char *argument = NULL;
 				char *expression = NULL, expression_buf[1024] = "";
 				char substituted[2048] = "";
 				char *field_data = caller_profile->destination_number;
@@ -206,7 +206,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				
 				if (!strcasecmp(var, "exten")) {
 					char *p;
-					if ((p = strchr(pattern, '/'))) {
+					if (pattern && (p = strchr(pattern, '/'))) {
 						*p++ = '\0';
 						cid = pattern;
 						pattern = p;
@@ -224,7 +224,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 					}
 				}
 				
-				if (*pattern == '_' || *pattern == '~') {
+				if (pattern && (*pattern == '_' || *pattern == '~')) {
 					if (*pattern == '_') {
 						pattern++;
 						if (switch_ast2regex(pattern, expression_buf, sizeof(expression_buf))) {
@@ -242,7 +242,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 						continue;
 					}
 				} else {
-					if (strcasecmp(pattern, field_data)) {
+					if (pattern && strcasecmp(pattern, field_data)) {
 						continue;
 					}
 				}
@@ -260,24 +260,24 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				pri = argv[1];
 				app = argv[2];
 				
-				if ((arg = strchr(app, '('))) {
+				if ((argument = strchr(app, '('))) {
 					char *p;
-					*arg++ = '\0';
-					p = strrchr(arg, ')');
+					*argument++ = '\0';
+					p = strrchr(argument, ')');
 					if (p) {
 							*p = '\0';
 					}
-				} else if ((arg = strchr(app, ','))) {
-					*arg++ = '\0';
+				} else if ((argument = strchr(app, ','))) {
+					*argument++ = '\0';
 				}
 				
-				if (!arg) {
-					arg = "";
+				if (!argument) {
+					argument = "";
 				}
 
 				if (strchr(expression, '(')) {
-					switch_perform_substitution(re, proceed, arg, field_data, substituted, sizeof(substituted), ovector);
-					arg = substituted;
+					switch_perform_substitution(re, proceed, argument, field_data, substituted, sizeof(substituted), ovector);
+					argument = substituted;
 				}
 				switch_regex_safe_free(re);
 
@@ -288,7 +288,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 					}
 				}
 				
-				switch_caller_extension_add_application(session, extension, app, arg);
+				switch_caller_extension_add_application(session, extension, app, argument);
 			}
 			
 			switch_safe_free(field_expanded);
