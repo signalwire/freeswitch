@@ -56,7 +56,6 @@
 				WarningLevel="4"
 				WarnAsError="true"
 				SuppressStartupBanner="true"
-				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -135,7 +134,6 @@
 				WarningLevel="4"
 				WarnAsError="true"
 				SuppressStartupBanner="true"
-				Detect64BitPortabilityProblems="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
