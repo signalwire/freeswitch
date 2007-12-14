@@ -5,29 +5,6 @@
     <param name="tts_default_profile" value="openmrcp-v2"/>
   </settings>
   <profiles>
-    <profile name="openmrcp-v1" description="OpenMRCPv1 Server">
-      <param name="proto_version" value="1"/>
-      
-      <param name="client_ip" value="127.0.0.1"/>
-      <param name="client_port" value="8062"/>
-
-      <param name="server_ip" value="127.0.0.1"/>
-      <param name="server_port" value="1554"/>
-      
-      <param name="rtp_port_min" value="10000"/>
-      <param name="rtp_port_max" value="11000"/>
-    </profile>
-    <profile name="openmrcp-v2" description="OpenMRCPv2 Server">
-      <param name="proto_version" value="2"/>
-
-      <param name="client_ip" value="127.0.0.1"/>
-      <param name="client_port" value="8062"/>
-
-      <param name="server_ip" value="127.0.0.1"/>
-      <param name="server_port" value="8060"/>
-
-      <param name="rtp_port_min" value="11000"/>
-      <param name="rtp_port_max" value="12000"/>
-    </profile>
+    <X-PRE-PROCESS cmd="include" data="../mrcp_profiles/*.xml"/>
   </profiles>
 </configuration>
