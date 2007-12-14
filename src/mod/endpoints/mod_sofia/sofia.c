@@ -295,6 +295,7 @@ void event_handler(switch_event_t *event)
 		char *exp_str = switch_event_get_header(event, "orig-expires");
 		char *rpid = switch_event_get_header(event, "orig-rpid");
 		char *call_id = switch_event_get_header(event, "orig-call-id");
+		char *user_agent = switch_event_get_header(event, "user-agent");
 		long expires = (long) time(NULL) + atol(exp_str);
 		char *profile_name = switch_event_get_header(event, "orig-profile-name");
 		sofia_profile_t *profile = NULL;
@@ -317,8 +318,8 @@ void event_handler(switch_event_t *event)
 		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
 		switch_safe_free(sql);
 		
-		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','Regestered', '%q', %ld)",
-							 call_id, from_user, from_host, contact_str, rpid, expires);
+		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','Regestered', '%q', %ld, '%q')",
+							 call_id, from_user, from_host, contact_str, rpid, expires, user_agent);
 
 		if (sql) {
 			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
@@ -396,6 +397,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("SUBSCRIBE")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ENABLEMESSAGE(1)),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence")),
+				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("dialog")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence.winfo")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("message-summary")),
 				   SIPTAG_SUPPORTED_STR("100rel, precondition, timer"), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());

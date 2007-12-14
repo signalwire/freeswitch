@@ -176,12 +176,13 @@ int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames
 
 	if (argc >= 3) {
 		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_EXPIRE) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile-name", "%s", argv[0]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "call-id", "%s", argv[1]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "user", "%s", argv[2]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "host", "%s", argv[3]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s", argv[4]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%s", argv[5]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile-name", "%s", argv[6]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "call-id", "%s", argv[0]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "user", "%s", argv[1]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "host", "%s", argv[2]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s", argv[3]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%s", argv[4]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "user-agent", "%s", argv[5]);
 			switch_event_fire(&s_event);
 		}
 	}
@@ -210,9 +211,9 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
 #endif
 
 	if (now) {
-		switch_snprintf(sql, sizeof(sql), "select '%s',* from sip_registrations where expires > 0 and expires <= %ld", profile->name, (long) now);
+		switch_snprintf(sql, sizeof(sql), "select *,'%s' from sip_registrations where expires > 0 and expires <= %ld", profile->name, (long) now);
 	} else {
-		switch_snprintf(sql, sizeof(sql), "select '%s',* from sip_registrations where expires > 0", profile->name);
+		switch_snprintf(sql, sizeof(sql), "select *,'%s' from sip_registrations where expires > 0", profile->name);
 	}
 
 	switch_mutex_lock(profile->ireg_mutex);
@@ -477,6 +478,11 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 
 	
 	if (exptime) {
+		const char *agent = "dunno";
+
+		if (sip->sip_user_agent) {
+			agent = sip->sip_user_agent->g_string;
+		}
 
 		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
 			sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
@@ -487,8 +493,9 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
 		switch_safe_free(sql);
 		
-		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','%q', '%q', %ld)", call_id,
-							 to_user, to_host, contact_str, cd ? "Registered(NATHACK)" : "Registered", rpid, (long) time(NULL) + (long) exptime * 2);
+		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','%q', '%q', %ld, '%q')", call_id,
+							 to_user, to_host, contact_str, cd ? "Registered(NATHACK)" : "Registered", 
+							 rpid, (long) time(NULL) + (long) exptime * 2, agent);
 
 		
 		if (sql) {
@@ -591,6 +598,10 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			new_contact = switch_mprintf("%s;expires=%ld", contact_str, (long)exptime);
 			nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT_STR(new_contact), NUTAG_WITH_THIS(nua), TAG_END());
 			switch_safe_free(new_contact);
+			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", to_user, to_host);
+				switch_event_fire(&event);
+			}
 		} else {
 			nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT(contact), NUTAG_WITH_THIS(nua), TAG_END());
 		}

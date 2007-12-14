@@ -532,9 +532,9 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	sofia_profile_t *profile = (sofia_profile_t *) pArg;
 	char *pl;
 	char *id, *note;
-	uint32_t in = atoi(argv[11]);
-	char *status = argv[12];
-	char *rpid = argv[13];
+	uint32_t in = atoi(argv[13]);
+	char *status = argv[14];
+	char *rpid = argv[15];
 
 	char *proto = argv[0];
 	char *user = argv[1];
@@ -640,7 +640,7 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	//char *full_from = argv[8];
 	//char *full_via = argv[9];
 	char *expires = argv[10];
-	char *body = argv[11];
+	char *body = argv[13];
 	char *exp;
 	sofia_profile_t *profile = NULL;
 	char *id = NULL;
@@ -738,6 +738,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		char *to_str = NULL;
 		char *full_from = NULL;
 		char *full_via = NULL;
+		char *full_agent = NULL;
+		char *full_accept = NULL;
 		char *sstr;
 		const char *display = "\"user\"";
 		switch_event_t *sevent;
@@ -866,8 +868,11 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			sstr = switch_mprintf("terminated");
 			switch_core_hash_delete(profile->sub_hash, call_id);
 		} else {
-			sql = switch_mprintf("insert into sip_subscriptions values ('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld)",
-								 proto, from_user, from_host, to_user, to_host, event, contact_str, call_id, full_from, full_via, exp);
+			full_agent = sip_header_as_string(profile->home, (void *) sip->sip_user_agent);
+			full_accept = sip_header_as_string(profile->home, (void *) sip->sip_accept);
+			sql = switch_mprintf("insert into sip_subscriptions values ('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld,'%q','%q')",
+								 proto, from_user, from_host, to_user, to_host, event, 
+								 contact_str, call_id, full_from, full_via, exp, full_agent, full_accept);
 			
 			switch_assert(sql != NULL);
 			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
@@ -886,7 +891,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 					SIPTAG_CONTACT_STR(contact_str),
 					TAG_END());
 
-		nua_notify(nh, SIPTAG_SUBSCRIPTION_STATE_STR(sstr), SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR("text/html"),
+		nua_notify(nh, SIPTAG_SUBSCRIPTION_STATE_STR(sstr), SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR("application/octet-stream"),
 				   SIPTAG_PAYLOAD_STR("Come to ClueCon http://www.cluecon.com\n\n"),
 				   TAG_END());
 
@@ -913,6 +918,12 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		}
 		if (full_via) {
 			su_free(profile->home, full_via);
+		}
+		if (full_agent) {
+			su_free(profile->home, full_agent);
+		}
+		if (full_accept) {
+			su_free(profile->home, full_accept);
 		}
 
 		switch_safe_free(d_user);

@@ -2178,7 +2178,7 @@ static void  message_query_handler(switch_event_t *event)
             id = strdup(account);
         }
         assert(id);
-
+            
         if ((domain = strchr(id, '@'))) {
             *domain++ = '\0';
             for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
