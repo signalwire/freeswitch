@@ -62,7 +62,7 @@ struct local_stream_source {
 	uint8_t channels;
 	int rate;
 	int interval;
-	int samples;
+	switch_size_t samples;
 	uint32_t prebuf;
 	char *timer_name;
 	local_stream_context_t *context_list;
