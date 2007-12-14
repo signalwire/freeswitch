@@ -297,6 +297,9 @@ eclean: clean
 megaclean: eclean modclean
 	rm -f `find ./libs -name \*.la`
 
+libclean:
+	@for file in `ls ./libs`; do pushd "./libs/"$$file; make clean; popd; done
+
 modules.conf:
 	if test -f $@; then touch $@; else cp build/modules.conf.in $@ ;fi
 
