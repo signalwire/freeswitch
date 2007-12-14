@@ -99,12 +99,17 @@ static inline void pack_check_over(switch_bitpack_t *pack)
 		pack->bits_cur = pack->over;
 
 		if (pack->mode == SWITCH_BITPACK_MODE_RFC3551) {
+			while (pack->over > 8) {
+				pack->over -= 8;
+			}
+			if (pack->over > 8) return;
 			this_byte &= SWITCH_BITPACKED_MASKS[pack->over];
 			this_byte <<= pack->under;
 			*pack->cur |= this_byte;
 			pack->cur++;
 		} else {
 			switch_byte_t mask = SWITCH_BITS_PER_BYTE - pack->over;
+			switch_assert(mask < 8); /* if pack->over this will allways be true */
 			this_byte &= SWITCH_REVERSE_BITPACKED_MASKS[mask];
 			this_byte >>= mask;
 
