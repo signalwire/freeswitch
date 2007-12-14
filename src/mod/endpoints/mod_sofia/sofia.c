@@ -1654,15 +1654,19 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 							uint32_t timeout = 60;
 							char *tuuid_str;
+							const char *port = refer_to->r_url->url_port;
 
+							if (switch_strlen_zero(port)) {
+								port = "5060";
+							}
 							channel = switch_core_session_get_channel(a_session);
-
+							
 							exten = switch_mprintf("sofia/%s/%s@%s:%s",
 												   profile->name,
 												   refer_to->r_url->url_user,
 												   refer_to->r_url->url_host,
-												   refer_to->r_url->url_port);
-
+												   port);
+							
 							switch_channel_set_variable(channel, SOFIA_REPLACES_HEADER, rep);
 
 							if (switch_ivr_originate(a_session,
