@@ -620,7 +620,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		//const char *direction = switch_str_nil(switch_event_get_header(helper->event, "call-direction"));
 		const char *uuid = switch_str_nil(switch_event_get_header(helper->event, "unique-id"));
 		const char *state = switch_str_nil(switch_event_get_header(helper->event, "channel-state"));
-		const char *status = switch_str_nil(switch_event_get_header(helper->event, "status"));
+		const char *event_status = switch_str_nil(switch_event_get_header(helper->event, "status"));
 		const char *astate = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
 
 		SWITCH_STANDARD_STREAM(stream);
@@ -648,7 +648,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 		stream.write_function(&stream, "<state>%s</state>\n", astate);
 
-		if (!strcasecmp(status, "hold")) {
+		if (!strcasecmp(event_status, "hold")) {
 			stream.write_function(&stream, "<local>\n<target uri=\"%s\">\n"
 								  "<param pname=\"+sip.rendering\" pvalue=\"no\">\n"
 								  "</target>\n</local>\n", clean_id);
