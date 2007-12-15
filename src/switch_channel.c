@@ -610,7 +610,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", "%s", switch_core_session_get_uuid(channel->session));
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Call-Direction", "%s", switch_channel_test_flag(channel, CF_OUTBOUND) ? "outbound" : "inbound");
 				if (switch_channel_test_flag(channel, CF_ANSWERED)) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Answer-State", "confirmed");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Answer-State", "answered");
 				} else if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Answer-State", "early");
 				} else {

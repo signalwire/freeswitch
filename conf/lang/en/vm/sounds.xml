@@ -201,7 +201,7 @@
   </macro>
 
   <macro name="voicemail_greeting_selected">
-    <input pattern="^(.*)$">
+    <input pattern="^(\d+)$">
       <match>
 	<action function="play-file" data="voicemail/vm-greeting.wav"/>
 	<action function="say" data="$1" method="pronounced" type="items"/>
@@ -220,7 +220,7 @@
   </macro>
 
   <macro name="voicemail_say_number">
-    <input pattern="^(.*)$">
+    <input pattern="^(\d+)$">
       <match>
 	<action function="say" data="$1" method="pronounced" type="items"/>
       </match>
@@ -228,7 +228,7 @@
   </macro>
 
   <macro name="voicemail_say_message_number">
-    <input pattern="^([a-z]+):(.*)$">
+    <input pattern="^([a-z]+):(\d+)$">
       <match>
 	<action function="play-file" data="voicemail/vm-$1.wav"/> 
 	<action function="play-file" data="voicemail/vm-message_number.wav"/>
