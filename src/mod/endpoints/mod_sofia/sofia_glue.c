@@ -470,10 +470,6 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 			}
 		}
 	} else {
-		char *p;
-		if ((p = strrchr(stripped, ';'))) {
-			*p = '\0';
-		}
 		new_uri = stripped;
 	}
 
