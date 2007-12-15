@@ -557,9 +557,11 @@ static void woomera_printf(woomera_profile * profile, switch_socket_t * socket, 
 	va_start(ap, fmt);
 #ifndef vasprintf
 	stuff = (char *) malloc(10240);
+	switch_assert(stuff);
 	vsnprintf(stuff, 10240, fmt, ap);
 #else
 	res = vasprintf(&stuff, fmt, ap);
+	switch_assert(stuff);
 #endif
 	va_end(ap);
 	if (res == -1) {
@@ -693,6 +695,9 @@ static int woomera_message_parse(switch_socket_t * fd, woomera_message * wmsg, i
 			if (!strcmp(next, WOOMERA_RECORD_SEPERATOR)) {
 				break;
 			}
+		}
+		if (wmsg->last > WOOMERA_ARRAY_LEN) {
+			break;
 		}
 
 		if (!cur || !cur[0]) {
