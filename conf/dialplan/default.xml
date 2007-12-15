@@ -141,20 +141,20 @@
     </extension>           
     
     <!-- dial the freeswitch conference via SIP-->
-    <extension name="FS_Conf_SIP">
+    <extension name="freeswitch_public_conf_via_sip">
       <condition field="destination_number" expression="^888$">
 	<action application="bridge" data="sofia/${use_profile}/888@conference.freeswitch.org"/>
       </condition>
     </extension>
 
     <extension name="static-park">
-      <condition field="destination_number" expression="^8192$">
-	<action application="fifo" data="default in undef /ram/swimp.raw"/>
+      <condition field="destination_number" expression="^8792$">
+	<action application="fifo" data="default in undef local_stream://moh"/>
       </condition>
     </extension>
     
     <extension name="unpark">
-      <condition field="destination_number" expression="^8193$">
+      <condition field="destination_number" expression="^8793$">
 	<action application="answer"/>
 	<action application="fifo" data="default out nowait"/>
       </condition>
