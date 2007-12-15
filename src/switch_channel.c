@@ -120,6 +120,7 @@ struct switch_channel {
 	switch_hash_t *private_hash;
 	switch_call_cause_t hangup_cause;
 	int vi;
+	int event_count;
 };
 
 
@@ -305,6 +306,7 @@ SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const ch
 	}
 
 	if (switch_event_create(&event, type) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "%s", __FILE__);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", __FILE__);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", id);
@@ -316,6 +318,8 @@ SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const ch
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "%s", status);
 		}
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", channel->event_count++);
 		switch_event_fire(&event);
 	}
 
@@ -587,8 +591,11 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "%s Running State Change %s\n",
 					  channel->name, state_names[channel->state]);
 	channel->running_state = channel->state;
-	
 
+	if (channel->state >= CS_RING) {
+		switch_channel_presence(channel, "unknown", (char *) state_names[channel->state]);
+	}
+	
 	if (channel->state < CS_HANGUP) {
 		switch_event_t *event;
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
@@ -601,6 +608,14 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", "%s", (char *) state_num);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", "%s", channel->name);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", "%s", switch_core_session_get_uuid(channel->session));
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Call-Direction", "%s", switch_channel_test_flag(channel, CF_OUTBOUND) ? "outbound" : "inbound");
+				if (switch_channel_test_flag(channel, CF_ANSWERED)) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Answer-State", "confirmed");
+				} else if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Answer-State", "early");
+				} else {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Answer-State", "ringing");
+				}
 			}
 			switch_event_fire(&event);
 		}
@@ -799,9 +814,6 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 
 
 	if (ok) {
-		if (state > CS_RING) {
-			switch_channel_presence(channel, "unknown", (char *) state_names[state]);
-		}
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "%s State Change %s -> %s\n",
 						  channel->name, state_names[last_state], state_names[state]);
 		switch_mutex_lock(channel->flag_mutex);
@@ -857,6 +869,15 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", "%s", state_num);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", "%s", switch_channel_get_name(channel));
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", "%s", switch_core_session_get_uuid(channel->session));
+
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Call-Direction", "%s", switch_channel_test_flag(channel, CF_OUTBOUND) ? "outbound" : "inbound");
+	if (switch_channel_test_flag(channel, CF_ANSWERED)) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Answer-State", "answered");
+	} else if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Answer-State", "early");
+	} else {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Answer-State", "ringing");
+	}
 
 	if ((codec = switch_core_session_get_read_codec(channel->session)) && codec->implementation) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Name", "%s", switch_str_nil(codec->implementation->iananame));

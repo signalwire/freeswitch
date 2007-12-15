@@ -58,6 +58,17 @@ void sofia_handle_sip_r_notify(switch_core_session_t *session, int status,
 							   char const *phrase,
 							   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
+	if (status == 481 && sip) {
+		const char *call_id = sip->sip_call_id->i_id;
+		char *sql;
+		switch_core_hash_delete(profile->sub_hash, call_id);
+		
+		sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", call_id);
+		switch_assert(sql != NULL);
+		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
+		free(sql);
+		nua_handle_destroy(nh);
+	}
 }
 
 void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
@@ -318,7 +329,7 @@ void event_handler(switch_event_t *event)
 		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
 		switch_safe_free(sql);
 		
-		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','Regestered', '%q', %ld, '%q')",
+		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','Registered', '%q', %ld, '%q')",
 							 call_id, from_user, from_host, contact_str, rpid, expires, user_agent);
 
 		if (sql) {
@@ -398,6 +409,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ENABLEMESSAGE(1)),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("dialog")),
+				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("call-info")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence.winfo")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("message-summary")),
 				   SIPTAG_SUPPORTED_STR("100rel, precondition, timer"), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());

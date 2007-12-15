@@ -998,9 +998,13 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 							   "Call-ID \t%s\n"
 							   "User    \t%s@%s\n"
 							   "Contact \t%s\n"
+							   "Agent   \t%s\n"
 							   "Status  \t%s(%s) EXP(%s)\n\n", 
 							   switch_str_nil(argv[0]), switch_str_nil(argv[1]), switch_str_nil(argv[2]), switch_str_nil(argv[3]), 
-							   switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf);
+							   switch_str_nil(argv[7]), 
+							   switch_str_nil(argv[4]), 
+							   switch_str_nil(argv[5]), 
+							   exp_buf);
 	return 0;
 }
 
