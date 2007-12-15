@@ -211,7 +211,7 @@ int teletone_multi_tone_detect (teletone_multi_tone_t *mt,
 								int16_t sample_buffer[],
 								int samples)
 {
-	int sample, limit, j, x = 0;
+	int sample, limit = 0, j, x = 0;
 	float v1, famp;
 	float eng_sum = 0, eng_all[TELETONE_MAX_TONES];
 	int gtest = 0, see_hit = 0;
@@ -222,6 +222,9 @@ int teletone_multi_tone_detect (teletone_multi_tone_t *mt,
 		if ((samples - sample) >= (mt->min_samples - mt->current_sample)) {
 			limit = sample + (mt->min_samples - mt->current_sample);
 		} else {
+			limit = samples;
+		}
+		if (limit < 0 || limit > samples) {
 			limit = samples;
 		}
 
