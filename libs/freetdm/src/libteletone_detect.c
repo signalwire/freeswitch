@@ -129,7 +129,6 @@ void teletone_goertzel_update(teletone_goertzel_state_t *goertzel_state,
 		goertzel_state->v3 = (float)(goertzel_state->fac*goertzel_state->v2 - v1 + sample_buffer[i]);
 	}
 }
-
 #ifdef _MSC_VER
 #pragma warning(disable:4244)
 #endif
@@ -212,17 +211,20 @@ int teletone_multi_tone_detect (teletone_multi_tone_t *mt,
 								int16_t sample_buffer[],
 								int samples)
 {
-	int sample, limit, j, x = 0;
+	int sample, limit = 0, j, x = 0;
 	float v1, famp;
 	float eng_sum = 0, eng_all[TELETONE_MAX_TONES];
 	int gtest = 0, see_hit = 0;
 
-	for (sample = 0; sample <= 0 && sample < samples; sample = limit) {
+	for (sample = 0;  sample >= 0 && sample < samples; sample = limit) {
 		mt->total_samples++;
 
 		if ((samples - sample) >= (mt->min_samples - mt->current_sample)) {
 			limit = sample + (mt->min_samples - mt->current_sample);
 		} else {
+			limit = samples;
+		}
+		if (limit < 0 || limit > samples) {
 			limit = samples;
 		}
 
