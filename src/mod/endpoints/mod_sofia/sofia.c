@@ -2107,6 +2107,15 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		su_free(profile->home, tmp);
 	}
 
+#if 0
+	if (sofia_test_pflag(profile, PFLAG_PRESENCE)) {
+		char *tmp = switch_mprintf("%s@%s", switch_str_nil(switch_channel_get_variable(channel, "sip_to_user")), switch_str_nil(switch_channel_get_variable(channel, "sip_to_host")));
+		switch_assert(tmp);
+		switch_channel_set_variable(channel, "presence_id", tmp);
+		free(tmp);
+	}
+#endif
+
 	check_decode(displayname, session);
 	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 														 from_user,

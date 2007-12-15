@@ -413,14 +413,14 @@ void sofia_presence_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_PRESENCE_IN:
 		sql =
 			switch_mprintf
-			("select *,1,'%q','%q' from sip_subscriptions where proto='%q' and (event='%q' or event='%q') and sub_to_user='%q' and sub_to_host='%q'",
-			 status, rpid, proto, event_type, alt_event_type, euser, host);
+			("select *,1,'%q','%q' from sip_subscriptions where (event='%q' or event='%q') and sub_to_user='%q' and sub_to_host='%q'",
+			 status, rpid, event_type, alt_event_type, euser, host);
 		break;
 	case SWITCH_EVENT_PRESENCE_OUT:
 		sql =
 			switch_mprintf
-			("select *,0,'%q','%q' from sip_subscriptions where proto='%q' and (event='%q' or event='%q') and sub_to_user='%q' and sub_to_host='%q'",
-			 status, rpid, proto, event_type, alt_event_type, euser, host);
+			("select *,0,'%q','%q' from sip_subscriptions where (event='%q' or event='%q') and sub_to_user='%q' and sub_to_host='%q'",
+			 status, rpid, event_type, alt_event_type, euser, host);
 		break;
 	default:
 		break;
@@ -436,6 +436,7 @@ void sofia_presence_event_handler(switch_event_t *event)
 
 		if (sql) {
 			struct presence_helper helper;
+
 			helper.profile = profile;
             helper.event = event;
 			sofia_glue_execute_sql_callback(profile,
@@ -507,6 +508,12 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "%s", status);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "%s", rpid);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		//switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+		//switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", 0);
+		//switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", SOFIA_CHAT_PROTO);
+		//switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_HANGUP");
+		//switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", "void");
+		
 		switch_event_fire(&event);
 	}
 
@@ -550,7 +557,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	struct presence_helper *helper = (struct presence_helper *) pArg;
 	sofia_profile_t *profile = helper->profile;
 	char *pl;
-	char *id, *note;
+	char *clean_id = NULL, *id = NULL, *note;
 	uint32_t in = atoi(argv[13]);
 	char *status = argv[14];
 	char *rpid = argv[15];
@@ -567,6 +574,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char *open;
 	char *prpid;
 	int done = 0;
+	const char *ct;
+
 
 	if (!(nh = (nua_handle_t *) switch_core_hash_find(profile->sub_hash, call_id))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find handle for %s\n", call_id);
@@ -592,6 +601,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		open = "closed";
 	}
 
+	clean_id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
+
 	if (!strcasecmp(sub_to_host, host)) {
 		/* same host */
 		id = switch_mprintf("sip:%s+%s@%s", proto, sub_to_user, sub_to_host);
@@ -610,15 +621,23 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		const char *uuid = switch_str_nil(switch_event_get_header(helper->event, "unique-id"));
 		const char *state = switch_str_nil(switch_event_get_header(helper->event, "channel-state"));
 		const char *status = switch_str_nil(switch_event_get_header(helper->event, "status"));
-		
-		SWITCH_STANDARD_STREAM(stream);
+		const char *astate = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
 
+		SWITCH_STANDARD_STREAM(stream);
+		
+		if (!strcasecmp(state, "cs_hangup")) {
+			astate = "terminated";
+		} else if (!strcasecmp(astate, "answered")) {
+			astate = "confirmed";
+		} else if (!strcasecmp(astate, "ringing")) {
+			astate = "early";
+		}
 							  
 		stream.write_function(&stream, 
 							  "<?xml version=\"1.0\"?>\n"
 							  "<dialog-info xmlns=\"urn:ietf:params:xml:ns:dialog-info\" "
 							  "version=\"%s\" state=\"full\" entity=\"%s\">\n", 
-							  switch_str_nil(switch_event_get_header(helper->event, "event_count")), to);
+							  switch_str_nil(switch_event_get_header(helper->event, "event_count")), clean_id);
 		
 		if (!strcasecmp(state, "RING")) {
 			stream.write_function(&stream, "<dialog id=\"%s\" direction=\"recipient\">\n", uuid);
@@ -626,14 +645,18 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			stream.write_function(&stream, "<dialog id=\"%s\">\n", uuid);
 		}
 		
-		stream.write_function(&stream, "<state>%s</state>\n", switch_str_nil(switch_event_get_header(helper->event, "answer-state")));
+
+		stream.write_function(&stream, "<state>%s</state>\n", astate);
+
 		if (!strcasecmp(status, "hold")) {
 			stream.write_function(&stream, "<local>\n<target uri=\"%s\">\n"
-						   "<param pname=\"+sip.rendering\" pvalue=\"no\">\n"
-								  "</target>\n</local>\n", to);
+								  "<param pname=\"+sip.rendering\" pvalue=\"no\">\n"
+								  "</target>\n</local>\n", clean_id);
 		}
 		stream.write_function(&stream, "</dialog>\n</dialog-info>\n");
 		pl = stream.data;
+		ct = "application/dialog-info+xml";
+		printf("%s\n", pl);
 	} else {
 		pl = switch_mprintf("<?xml version='1.0' encoding='UTF-8'?>\r\n"
 							"<presence xmlns='urn:ietf:params:xml:ns:pidf'\r\n"
@@ -661,18 +684,20 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 							"</presence>", id, 
 							id, profile->url, open, status, prpid,
 							open, rpid, note);
+		ct = "application/pidf+xml";
 	}
 
 	nua_notify(nh,
 			   NUTAG_NEWSUB(1),
 			   SIPTAG_SUBSCRIPTION_STATE_STR("active;expires=3600"),
-			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR("application/pidf+xml"), SIPTAG_PAYLOAD_STR(pl), TAG_END());
+			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR(ct), SIPTAG_PAYLOAD_STR(pl), TAG_END());
 
 	if (done) {
 		switch_core_hash_delete(profile->sub_hash, call_id);
 	}
 
 	switch_safe_free(id);
+	switch_safe_free(clean_id);
 	switch_safe_free(note);
 	switch_safe_free(pl);
 	switch_safe_free(to);
