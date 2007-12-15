@@ -83,7 +83,7 @@ static int freeswitch_kill_background()
 	switch_core_set_globals();
 
 	/* get the full path of the pid file. */
-	snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
+	switch_snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
 
 	/* open the pid file */
 	if ((f = fopen(path, "r")) == 0) {
@@ -116,9 +116,9 @@ static int freeswitch_kill_background()
 		} else {
 			/* signal the event to shutdown */
 			SetEvent(shutdown_event);
+			/* cleanup */
+			CloseHandle(shutdown_event);
 		}
-		/* cleanup */
-		CloseHandle(shutdown_event);
 #else
 		/* for unix, send the signal to kill. */
 		kill(pid, SIGTERM);
@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
 	int known_opt;
  	int high_prio = 0;
 	switch_core_flag_t flags = SCF_USE_SQL;
-	int status;
+	int ret;
     switch_file_t *fd;
 	switch_memory_pool_t *pool = NULL;
 
@@ -265,11 +265,13 @@ int main(int argc, char *argv[])
 				known_opt++;
 				GetModuleFileName(NULL, exePath, 1024);
 				snprintf(servicePath, sizeof(servicePath), "%s -service", exePath);
-				CreateService(handle,
+				if (!CreateService(handle,
 							  SERVICENAME,
 							  SERVICENAME,
 							  GENERIC_READ | GENERIC_EXECUTE,
-							  SERVICE_WIN32_OWN_PROCESS, SERVICE_AUTO_START, SERVICE_ERROR_IGNORE, servicePath, NULL, NULL, NULL, NULL, NULL);
+							  SERVICE_WIN32_OWN_PROCESS, SERVICE_AUTO_START, SERVICE_ERROR_IGNORE, servicePath, NULL, NULL, NULL, NULL, NULL)) {
+					fprintf(stderr, "Error installing freeswitch as a service.\n");
+				}
 				exit(0);
 			}
 			if (argv[x] && !strcmp(argv[x], "-uninstall")) {
@@ -377,11 +379,15 @@ int main(int argc, char *argv[])
 			known_opt++;
 		}
 
-		if ((!known_opt || argv[x]) && (!strcmp(argv[x], "-help") || !strcmp(argv[x], "-h") || !strcmp(argv[x], "-?"))) {
+		if (!known_opt || (argv[x] && (!strcmp(argv[x], "-help") || !strcmp(argv[x], "-h") || !strcmp(argv[x], "-?")))) {
 			printf("%s\n", usageDesc);
 			exit(0);
 		}
+	}
 
+	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
+		fprintf(stderr, "FATAL ERROR! Could not initilize APR\n");
+		return 255;
 	}
 
 	if (die) {
@@ -419,17 +425,12 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
-		fprintf(stderr, "FATAL ERROR! Could not initilize APR\n");
-		return 255;
-	}
-
 	switch_core_set_globals();
 
 	pid = getpid();
 
-	snprintf(pid_path, sizeof(pid_path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
-	snprintf(pid_buffer, sizeof(pid_buffer), "%d", pid);
+	switch_snprintf(pid_path, sizeof(pid_path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
+	switch_snprintf(pid_buffer, sizeof(pid_buffer), "%d", pid);
 	pid_len = strlen(pid_buffer);
 
 	apr_pool_create(&pool, NULL);
@@ -456,12 +457,15 @@ int main(int argc, char *argv[])
 
 	switch_core_runtime_loop(nc);
 
-	status = switch_core_destroy();
+	ret = switch_core_destroy();
 
 	switch_file_close(fd);
-	unlink(pid_path);
 
-	return status;
+	if (unlink(pid_path) != 0) {
+		fprintf(stderr, "Failed to delete pid file [%s]\n", pid_path);
+	}
+
+	return ret;
 }
 
 /* For Emacs:
