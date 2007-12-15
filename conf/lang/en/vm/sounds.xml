@@ -3,7 +3,7 @@
     <input pattern="(.*)">
       <match>
 	<action function="play-file" data="voicemail/vm-enter_id.wav"/>
-	<action function="say" data="$1" method="pronounced" type="items"/>
+	<action function="say" data="$1" method="pronounced" type="name_spelled"/>
       </match>
     </input>
   </macro>
@@ -12,7 +12,7 @@
     <input pattern="(.*)">
       <match>
 	<action function="play-file" data="voicemail/vm-enter_pass.wav"/>
-	<action function="say" data="$1" method="pronounced" type="items"/>
+	<action function="say" data="$1" method="pronounced" type="name_spelled"/>
       </match>
     </input>
   </macro>
