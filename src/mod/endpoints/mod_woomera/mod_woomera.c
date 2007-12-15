@@ -1056,7 +1056,7 @@ static void *woomera_channel_thread_run(switch_thread_t * thread, void *obj)
 				switch_channel_mark_ring_ready(channel);
 			} else if (switch_test_flag(tech_pvt, TFLAG_PARSE_INCOMING) && !strcasecmp(wmsg.command, "INCOMING")) {
 				char *exten;
-				char cid_name[512];
+				char cid_name[512] = "";
 				char *cid_num;
 				char *ip;
 				char *p;
