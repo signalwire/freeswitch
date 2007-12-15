@@ -81,7 +81,6 @@ static switch_status_t mod_ldap_open(switch_directory_handle_t *dh, char *source
 		return SWITCH_STATUS_FALSE;
 	}
 
-
 	dh->private_info = context;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -92,7 +91,7 @@ static switch_status_t mod_ldap_close(switch_directory_handle_t *dh)
 	struct ldap_context *context;
 
 	context = dh->private_info;
-	assert(context != NULL);
+	switch_assert(context != NULL);
 
 	ldap_unbind_s(context->ld);
 
@@ -102,11 +101,17 @@ static switch_status_t mod_ldap_close(switch_directory_handle_t *dh)
 static switch_status_t mod_ldap_query(switch_directory_handle_t *dh, char *base, char *query)
 {
 	struct ldap_context *context;
+	char **attrs = NULL;
 
 	context = dh->private_info;
-	assert(context != NULL);
+	switch_assert(context != NULL);
+#if _MSC_VER >= 1500
+	/* Silence warning from incorrect code analysis signature.  attrs == NULL indicates to return all attrs */
+	/* http://msdn2.microsoft.com/en-us/library/aa908101.aspx */
+	__analysis_assume(attrs);
+#endif
 
-	if (ldap_search_s(context->ld, base, LDAP_SCOPE_SUBTREE, query, NULL, 0, &context->msg) != LDAP_SUCCESS) {
+	if (ldap_search_s(context->ld, base, LDAP_SCOPE_SUBTREE, query, attrs, 0, &context->msg) != LDAP_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -122,7 +127,7 @@ static switch_status_t mod_ldap_next(switch_directory_handle_t *dh)
 	struct ldap_context *context;
 
 	context = dh->private_info;
-	assert(context != NULL);
+	switch_assert(context != NULL);
 
 	context->vitt = 0;
 
@@ -146,7 +151,7 @@ static switch_status_t mod_ldap_next_pair(switch_directory_handle_t *dh, char **
 	struct ldap_context *context;
 
 	context = dh->private_info;
-	assert(context != NULL);
+	switch_assert(context != NULL);
 
 	*var = *val = NULL;
 
