@@ -15,6 +15,7 @@
   </domains>
   
   <settings>
+    <!-- <param name="user-agent-string" value="FreeSWITCH Rocks!"/> -->
     <param name="debug" value="0"/>
     <param name="sip-trace" value="no"/>
     <param name="context" value="public"/>
