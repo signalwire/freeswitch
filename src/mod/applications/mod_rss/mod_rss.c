@@ -176,12 +176,11 @@ SWITCH_STANDARD_APP(rss_function)
 	uint32_t last;
 	char *mydata = NULL;
 	char *filename = NULL;
-	char *argv[3], *feed_list[TTS_MAX_ENTRIES] = { 0 }, *feed_names[TTS_MAX_ENTRIES] = {
-	0};
+	char *argv[3], *feed_list[TTS_MAX_ENTRIES] = { 0 }, *feed_names[TTS_MAX_ENTRIES] = {0};
 	int argc, feed_index = 0;
 	const char *cf = "rss.conf";
 	switch_xml_t cfg, cxml, feeds, feed;
-	char buf[1024];
+	char buf[1024] = "";
 	int32_t jumpto = -1;
 	uint32_t matches = 0;
 	switch_input_args_t args = { 0 };
@@ -236,8 +235,6 @@ SWITCH_STANDARD_APP(rss_function)
 	switch_xml_free(cxml);
 
 	switch_channel_answer(channel);
-
-
 
 	if (!switch_strlen_zero(data)) {
 		if ((mydata = switch_core_session_strdup(session, data))) {
@@ -305,7 +302,6 @@ SWITCH_STANDARD_APP(rss_function)
 		timerp = &timer;
 	}
 
-
 	while (switch_channel_ready(channel)) {
 		int32_t len = 0, idx = 0;
 		char cmd[3];
@@ -321,11 +317,11 @@ SWITCH_STANDARD_APP(rss_function)
 		} else {
 			switch_core_speech_flush_tts(&sh);
 #ifdef MATCH_COUNT
-			switch_snprintf(buf + len, sizeof(buf) - len,
+			switch_snprintf(buf + len, sizeof(buf) - len, "%s",
 					 ",<break time=\"500ms\"/>Main Menu. <break time=\"600ms\"/> "
 					 "Select one of the following news sources, or press 0 to exit. " ",<break time=\"600ms\"/>");
 #else
-			switch_snprintf(buf + len, sizeof(buf) - len,
+			switch_snprintf(buf + len, sizeof(buf) - len, "%s",
 					 ",<break time=\"500ms\"/>Main Menu. <break time=\"600ms\"/> "
 					 "Select one of the following news sources, followed by the pound key or press 0 to exit. " ",<break time=\"600ms\"/>");
 #endif
@@ -336,8 +332,7 @@ SWITCH_STANDARD_APP(rss_function)
 				len = (int32_t) strlen(buf);
 			}
 
-
-			switch_snprintf(buf + len, sizeof(buf) - len, "<break time=\"2000ms\"/>");
+			switch_snprintf(buf + len, sizeof(buf) - len, "%s", "<break time=\"2000ms\"/>");
 			len = (int32_t) strlen(buf);
 
 			args.input_callback = NULL;
@@ -349,7 +344,7 @@ SWITCH_STANDARD_APP(rss_function)
 			}
 		}
 		if (*cmd != '\0') {
-			int32_t i;
+			int32_t x;
 			char *p;
 
 			if (strchr(cmd, '0')) {
@@ -375,9 +370,9 @@ SWITCH_STANDARD_APP(rss_function)
 				switch_ivr_collect_digits_count(session, cp, blen, blen, "#", &term, 5000);
 			}
 
-			i = atoi(cmd) - 1;
+			x = atoi(cmd) - 1;
 
-			if (i > -1 && i < feed_index) {
+			if (x > -1 && x < feed_index) {
 				filename = feed_list[i];
 			} else if (matches > 1) {
 
@@ -395,8 +390,6 @@ SWITCH_STANDARD_APP(rss_function)
 		if (!filename) {
 			continue;
 		}
-
-
 
 		if (!(xml = switch_xml_parse_file(filename))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", filename);
@@ -445,7 +438,6 @@ SWITCH_STANDARD_APP(rss_function)
 			entries[i].subject_txt = NULL;
 			entries[i].dept_txt = NULL;
 
-
 			if ((title = switch_xml_child(item, "title"))) {
 				entries[i].title_txt = title->txt;
 			}
@@ -483,7 +475,6 @@ SWITCH_STANDARD_APP(rss_function)
 				}
 			}
 #endif
-
 			i++;
 		}
 
@@ -491,7 +482,7 @@ SWITCH_STANDARD_APP(rss_function)
 			switch_time_exp_t tm;
 			char date[80] = "";
 			switch_size_t retsize;
-			char cmd[5] = "";
+			char dtmf[5] = "";
 
 			switch_time_exp_lt(&tm, switch_time_now());
 			switch_strftime(date, &retsize, sizeof(date), "%I:%M %p", &tm);
@@ -501,14 +492,14 @@ SWITCH_STANDARD_APP(rss_function)
 					 ",<break time=\"500ms\"/>%s. %s. %s. local time: %s, Press 0 for options, 5 to change voice, or pound to return to the main menu. ",
 					 title_txt, description_txt, rights_txt, date);
 			args.input_callback = NULL;
-			args.buf = cmd;
-			args.buflen = sizeof(cmd);
+			args.buf = dtmf;
+			args.buflen = sizeof(dtmf);
 			status = switch_ivr_speak_text_handle(session, &sh, &speech_codec, timerp, buf, &args);
 			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 				goto finished;
 			}
-			if (*cmd != '\0') {
-				switch (*cmd) {
+			if (*dtmf != '\0') {
+				switch (*dtmf) {
 				case '0':
 					switch_set_flag(&dtb, SFLAG_INSTRUCT);
 					break;
@@ -546,8 +537,8 @@ SWITCH_STANDARD_APP(rss_function)
 					continue;
 				}
 				if (switch_channel_ready(channel)) {
-					char buf[1024] = "";
-					uint32_t len = 0;
+					char tmpbuf[1024] = "";
+					uint32_t tmplen = 0;
 
 					if (switch_test_flag(&dtb, SFLAG_MAIN)) {
 						switch_clear_flag(&dtb, SFLAG_MAIN);
@@ -555,14 +546,14 @@ SWITCH_STANDARD_APP(rss_function)
 					}
 					if (switch_test_flag(&dtb, SFLAG_INFO)) {
 						switch_clear_flag(&dtb, SFLAG_INFO);
-						switch_snprintf(buf + len, sizeof(buf) - len, "%s %s. I am speaking at %u words per minute. ", sh.engine, sh.voice, dtb.speed);
-						len = (uint32_t) strlen(buf);
+						switch_snprintf(tmpbuf + tmplen, sizeof(tmpbuf) - tmplen, "%s %s. I am speaking at %u words per minute. ", sh.engine, sh.voice, dtb.speed);
+						tmplen = (uint32_t) strlen(tmpbuf);
 					}
 
 					if (switch_test_flag(&dtb, SFLAG_INSTRUCT)) {
 						switch_clear_flag(&dtb, SFLAG_INSTRUCT);
 						cont = 1;
-						switch_snprintf(buf + len, sizeof(buf) - len,
+						switch_snprintf(tmpbuf + tmplen, sizeof(tmpbuf) - tmplen, "%s",
 								 "Press star to pause or resume speech. "
 								 "To go to the next item, press six. "
 								 "To go back, press 4. "
@@ -570,29 +561,29 @@ SWITCH_STANDARD_APP(rss_function)
 								 "To change voices, press five. To restore the original voice press 9. "
 								 "To hear these options again, press zero or press pound to return to the main menu. ");
 					} else {
-						switch_snprintf(buf + len, sizeof(buf) - len, "Story %d. ", dtb.index + 1);
-						len = (uint32_t) strlen(buf);
+						switch_snprintf(tmpbuf + tmplen, sizeof(tmpbuf) - tmplen, "Story %d. ", dtb.index + 1);
+						tmplen = (uint32_t) strlen(tmpbuf);
 
 						if (entries[dtb.index].subject_txt) {
-							switch_snprintf(buf + len, sizeof(buf) - len, "Subject: %s. ", entries[dtb.index].subject_txt);
-							len = (uint32_t) strlen(buf);
+							switch_snprintf(tmpbuf + tmplen, sizeof(tmpbuf) - tmplen, "Subject: %s. ", entries[dtb.index].subject_txt);
+							tmplen = (uint32_t) strlen(tmpbuf);
 						}
 
 						if (entries[dtb.index].dept_txt) {
-							switch_snprintf(buf + len, sizeof(buf) - len, "From the %s department. ", entries[dtb.index].dept_txt);
-							len = (uint32_t) strlen(buf);
+							switch_snprintf(tmpbuf + tmplen, sizeof(tmpbuf) - tmplen, "From the %s department. ", entries[dtb.index].dept_txt);
+							tmplen = (uint32_t) strlen(tmpbuf);
 						}
 
 						if (entries[dtb.index].title_txt) {
-							switch_snprintf(buf + len, sizeof(buf) - len, "%s", entries[dtb.index].title_txt);
-							len = (uint32_t) strlen(buf);
+							switch_snprintf(tmpbuf + tmplen, sizeof(tmpbuf) - tmplen, "%s", entries[dtb.index].title_txt);
+							tmplen = (uint32_t) strlen(tmpbuf);
 						}
 					}
 					switch_core_speech_flush_tts(&sh);
 					args.input_callback = on_dtmf;
 					args.buf = &dtb;
 					args.buflen = sizeof(dtb);
-					status = switch_ivr_speak_text_handle(session, &sh, &speech_codec, timerp, buf, &args);
+					status = switch_ivr_speak_text_handle(session, &sh, &speech_codec, timerp, tmpbuf, &args);
 					if (status == SWITCH_STATUS_BREAK) {
 						continue;
 					} else if (status != SWITCH_STATUS_SUCCESS) {
@@ -632,9 +623,7 @@ SWITCH_STANDARD_APP(rss_function)
 		switch_core_timer_destroy(&timer);
 	}
 
-
 	switch_xml_free(xml);
-
 	switch_core_session_reset(session);
 }
 
