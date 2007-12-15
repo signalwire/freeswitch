@@ -719,10 +719,10 @@ static int woomera_message_parse(switch_socket_t * fd, woomera_message * wmsg, i
 					if (cr && (cr = strchr(cr, ' ')) != 0) {
 						*cr = '\0';
 						cr++;
-						strncpy(wmsg->command_args, cr, WOOMERA_STRLEN);
+						switch_copy_string(wmsg->command_args, cr, WOOMERA_STRLEN);
 					}
 					if (id) {
-						strncpy(wmsg->callid, id, sizeof(wmsg->callid) - 1);
+						switch_copy_string(wmsg->callid, id, sizeof(wmsg->callid) - 1);
 					}
 				}
 			} else {
@@ -736,7 +736,7 @@ static int woomera_message_parse(switch_socket_t * fd, woomera_message * wmsg, i
 				}
 			}
 			if (cur) {
-				strncpy(wmsg->command, cur, WOOMERA_STRLEN);
+				switch_copy_string(wmsg->command, cur, WOOMERA_STRLEN);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Malformed Message!\n");
 				break;
@@ -751,9 +751,9 @@ static int woomera_message_parse(switch_socket_t * fd, woomera_message * wmsg, i
 					*val = '\0';
 					val++;
 				}
-				strncpy(wmsg->values[wmsg->last - 1], val, WOOMERA_STRLEN);
+				switch_copy_string(wmsg->values[wmsg->last - 1], val, WOOMERA_STRLEN);
 			}
-			strncpy(wmsg->names[wmsg->last - 1], name, WOOMERA_STRLEN);
+			switch_copy_string(wmsg->names[wmsg->last - 1], name, WOOMERA_STRLEN);
 			if (name && val && !strcasecmp(name, "content-type")) {
 				switch_set_flag(wmsg, WFLAG_CONTENT);
 				bytes = atoi(val);
@@ -1070,7 +1070,7 @@ static void *woomera_channel_thread_run(switch_thread_t * thread, void *obj)
 				}
 
 				if ((p = woomera_message_header(&wmsg, "Remote-Name")) != 0) {
-					strncpy(cid_name, p, sizeof(cid_name));
+					switch_copy_string(cid_name, p, sizeof(cid_name));
 				}
 
 				if ((cid_num = strchr(cid_name, '!')) != 0) {
@@ -1122,7 +1122,7 @@ static void *woomera_channel_thread_run(switch_thread_t * thread, void *obj)
 					char *ptr;
 					switch_port_t port = 0;
 
-					strncpy(ip, raw_audio_header, sizeof(ip) - 1);
+					switch_copy_string(ip, raw_audio_header, sizeof(ip) - 1);
 					if ((ptr = strchr(ip, '/')) != 0) {
 						*ptr = '\0';
 						ptr++;
@@ -1327,9 +1327,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_woomera_load)
 
 	switch_set_flag(profile, PFLAG_INBOUND | PFLAG_OUTBOUND);
 	profile->name = "main";
-	strncpy(profile->dialplan, "default", sizeof(profile->dialplan) - 1);
-	strncpy(profile->audio_ip, "127.0.0.1", sizeof(profile->audio_ip) - 1);
-	strncpy(profile->woomera_host, "127.0.0.1", sizeof(profile->woomera_host) - 1);
+	switch_copy_string(profile->dialplan, "default", sizeof(profile->dialplan) - 1);
+	switch_copy_string(profile->audio_ip, "127.0.0.1", sizeof(profile->audio_ip) - 1);
+	switch_copy_string(profile->woomera_host, "127.0.0.1", sizeof(profile->woomera_host) - 1);
 	profile->woomera_port = (switch_port_t) 42420;
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
@@ -1351,9 +1351,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_woomera_load)
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 			if (!strcmp(var, "audio-ip")) {
-				strncpy(profile->audio_ip, val, sizeof(profile->audio_ip) - 1);
+				switch_copy_string(profile->audio_ip, val, sizeof(profile->audio_ip) - 1);
 			} else if (!strcmp(var, "host")) {
-				strncpy(profile->woomera_host, val, sizeof(profile->woomera_host) - 1);
+				switch_copy_string(profile->woomera_host, val, sizeof(profile->woomera_host) - 1);
 			} else if (!strcmp(var, "port")) {
 				profile->woomera_port = (switch_port_t) atoi(val);
 			} else if (!strcmp(var, "disabled")) {
@@ -1369,7 +1369,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_woomera_load)
 					switch_clear_flag(profile, PFLAG_OUTBOUND);
 				}
 			} else if (!strcmp(var, "dialplan")) {
-				strncpy(profile->dialplan, val, sizeof(profile->dialplan) - 1);
+				switch_copy_string(profile->dialplan, val, sizeof(profile->dialplan) - 1);
 			}
 		}
 	}
