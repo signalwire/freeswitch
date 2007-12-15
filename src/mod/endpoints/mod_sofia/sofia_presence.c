@@ -656,7 +656,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		stream.write_function(&stream, "</dialog>\n</dialog-info>\n");
 		pl = stream.data;
 		ct = "application/dialog-info+xml";
-		printf("%s\n", pl);
+		//printf("%s\n", pl);
 	} else {
 		pl = switch_mprintf("<?xml version='1.0' encoding='UTF-8'?>\r\n"
 							"<presence xmlns='urn:ietf:params:xml:ns:pidf'\r\n"
