@@ -35,6 +35,7 @@
 	<action application="set_user" data="default@${domain}"/>
       </condition>
       <condition>
+	<action application="info"/>
 	<action application="db" data="insert/spymap/${caller_id_number}/${uuid}"/>
 	<action application="db" data="insert/last_dial/${caller_id_number}/${destination_number}"/>
 	<action application="db" data="insert/last_dial/global/${uuid}"/>
@@ -141,8 +142,8 @@
     
     <!-- dial the freeswitch conference via SIP-->
     <extension name="freeswitch_public_conf_via_sip">
-      <condition field="destination_number" expression="^888$">
-	<action application="bridge" data="sofia/${use_profile}/888@conference.freeswitch.org"/>
+      <condition field="destination_number" expression="^9(888|1616)$">
+	<action application="bridge" data="sofia/${use_profile}/$1@conference.freeswitch.org"/>
       </condition>
     </extension>
 
