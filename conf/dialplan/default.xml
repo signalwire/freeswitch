@@ -50,7 +50,7 @@
       </condition>
     </extension>
 
-    <extension name="star-69">
+    <extension name="call_return">
       <condition field="destination_number" expression="^\*69$|^869$">
 	<action application="transfer" data="${db(select/call_return/${caller_id_number})}"/>
       </condition>
@@ -124,7 +124,7 @@
     </extension>
 
     <!-- dial via SIP uri -->
-    <extension name="SIP_URI">
+    <extension name="sip_uri">
       <condition field="destination_number" expression="^sip:(.*)$">
 	<action application="bridge" data="sofia/${use_profile}/$1"/>
       </condition>
@@ -134,7 +134,7 @@
 	start a dynamic conference with the settings of the 
 	"default" conference profile in conference.conf.xml
     -->                                                                                                                                                       
-    <extension name="Conferences">                                                                                                                           
+    <extension name="conferences">                                                                                                                           
       <condition field="destination_number" expression="^(3\d{3})$">
 	<action application="conference" data="$1@default"/>
       </condition>
@@ -161,7 +161,7 @@
     </extension>
     
     <!-- a sample IVR  -->
-    <extension name="IVR_Demo">
+    <extension name="ivr_demo">
       <condition field="destination_number" expression="5000">
 	<action application="ivr" data="demo"/>
       </condition>
