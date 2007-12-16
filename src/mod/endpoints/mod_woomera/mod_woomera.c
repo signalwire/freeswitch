@@ -32,7 +32,7 @@
 #include <switch.h>
 
 #define WOOMERA_STRLEN 256
-#define WOOMERA_ARRAY_LEN 50
+#define WOOMERA_ARRAY_LEN 25
 #define WOOMERA_MIN_PORT 9900
 #define WOOMERA_MAX_PORT 9999
 #define WOOMERA_BODYLEN 2048
