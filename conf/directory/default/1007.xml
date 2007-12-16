@@ -4,6 +4,8 @@
       <param name="password" value="1234"/>
     </params>
     <variables>
+      <variable name="accountcode" value="1007"/>
+      <variable name="presence_id" value="1007@$${domain}"/>
       <variable name="user_context" value="default"/>
       <variable name="effective_caller_id_name" value="Extension 1007"/>
       <variable name="effective_caller_id_number" value="1007"/>
