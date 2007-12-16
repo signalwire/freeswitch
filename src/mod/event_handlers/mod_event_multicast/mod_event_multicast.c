@@ -30,6 +30,9 @@
  *
  */
 #include <switch.h>
+
+#define MULTICAST_BUFFSIZE 65536
+
 static char *MARKER = "1";
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load);
@@ -116,7 +119,9 @@ static switch_status_t load_config(void)
 						globals.event_list[x] = 0;
 					}
 				}
-				globals.event_list[type] = 1;
+				if (type <= SWITCH_EVENT_ALL) {
+					globals.event_list[type] = 1;
+				}
 				if (type == SWITCH_EVENT_CUSTOM) {
 					custom++;
 				}
@@ -136,10 +141,12 @@ static switch_status_t load_config(void)
 
 static void event_handler(switch_event_t *event)
 {
-	char buf[65536];
+	char *buf;
 	size_t len;
 	uint8_t send = 0;
 
+	buf = (char *) malloc(MULTICAST_BUFFSIZE);
+	switch_assert(buf);
 
 	if (event->subclass && !strcmp(event->subclass->name, MULTICAST_EVENT)) {
 		/* ignore our own events to avoid ping pong */
@@ -251,9 +258,11 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown)
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 {
 	switch_event_t *local_event;
-	char buf[65536] = { 0 };
+	char *buf;
 	switch_sockaddr_t *addr;
 
+	buf = (char *) malloc(MULTICAST_BUFFSIZE);
+	switch_assert(buf);
 	switch_sockaddr_info_get(&addr, NULL, SWITCH_UNSPEC, 0, 0, module_pool);
 	globals.running = 1;
 	while (globals.running == 1) {

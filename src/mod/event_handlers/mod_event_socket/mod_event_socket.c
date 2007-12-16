@@ -122,7 +122,7 @@ static void event_handler(switch_event_t *event)
 	switch_event_t *clone = NULL;
 	listener_t *l;
 
-	assert(event != NULL);
+	switch_assert(event != NULL);
 
 	if (!listen_list.ready) {
 		return;
@@ -465,18 +465,18 @@ static switch_status_t read_packet(listener_t * listener, switch_event_t **event
 			if (switch_test_flag(listener, LFLAG_EVENTS)) {
 				if (switch_queue_trypop(listener->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 					char hbuf[512];
-					switch_event_t *event = (switch_event_t *) pop;
+					switch_event_t *pevent = (switch_event_t *) pop;
 					char *etype;
 
 					do_sleep = 0;
 					if (listener->format == EVENT_FORMAT_PLAIN) {
 						etype = "plain";
-						switch_event_serialize(event, &listener->ebuf, SWITCH_TRUE);
+						switch_event_serialize(pevent, &listener->ebuf, SWITCH_TRUE);
 					} else {
 						switch_xml_t xml;
 						etype = "xml";
 
-						if ((xml = switch_event_xmlize(event, "%s", ""))) {
+						if ((xml = switch_event_xmlize(pevent, "%s", ""))) {
 							listener->ebuf = switch_xml_toxml(xml, SWITCH_FALSE);
 							switch_xml_free(xml);
 						} else {
@@ -618,7 +618,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 
 	if (listener->session) {
 		switch_channel_t *channel = switch_core_session_get_channel(listener->session);
-		assert(channel != NULL);
+		switch_assert(channel != NULL);
 
 		if (!strncasecmp(cmd, "connect", 7)) {
 			switch_snprintf(reply, reply_len, "+OK");
@@ -785,7 +785,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 
 		switch_core_new_memory_pool(&pool);
 		acs = switch_core_alloc(pool, sizeof(*acs));
-		assert(acs);
+		switch_assert(acs);
 		acs->pool = pool;
 		acs->listener = listener;
 		if (api_cmd) {
@@ -882,7 +882,9 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 							listener->event_list[x] = 1;
 						}
 					}
-					listener->event_list[type] = 1;
+					if (type <= SWITCH_EVENT_ALL) {
+						listener->event_list[type] = 1;
+					}
 					if (type == SWITCH_EVENT_CUSTOM) {
 						custom++;
 					}
@@ -1004,7 +1006,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj
 	prefs.threads++;
 	switch_mutex_unlock(listen_list.mutex);
 
-	assert(listener != NULL);
+	switch_assert(listener != NULL);
 
 	if ((session = listener->session)) {
 		channel = switch_core_session_get_channel(session);
@@ -1018,14 +1020,14 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj
 	add_listener(listener);
 
 	if (session && switch_test_flag(listener, LFLAG_AUTHED)) {
-		switch_event_t *event = NULL, *call_event;
+		switch_event_t *ievent = NULL, *call_event;
 		char *event_str;
 
 
 		switch_set_flag_locked(listener, LFLAG_SESSION);
-		status = read_packet(listener, &event, 25);
+		status = read_packet(listener, &ievent, 25);
 
-		if (status != SWITCH_STATUS_SUCCESS || !event) {
+		if (status != SWITCH_STATUS_SUCCESS || !ievent) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Socket Error!\n");
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			goto done;
@@ -1037,7 +1039,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj
 			goto done;
 		}
 
-		if (parse_command(listener, event, reply, sizeof(reply)) != SWITCH_STATUS_SUCCESS) {
+		if (parse_command(listener, ievent, reply, sizeof(reply)) != SWITCH_STATUS_SUCCESS) {
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			goto done;
 		}
@@ -1088,21 +1090,21 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj
 	}
 
 	while (switch_test_flag(listener, LFLAG_RUNNING) && listen_list.ready) {
-		switch_event_t *event;
+		switch_event_t *revent;
 
 		len = sizeof(buf);
 		memset(buf, 0, len);
-		status = read_packet(listener, &event, 0);
+		status = read_packet(listener, &revent, 0);
 
 		if (status != SWITCH_STATUS_SUCCESS) {
 			break;
 		}
 
-		if (!event) {
+		if (!revent) {
 			continue;
 		}
 
-		if (parse_command(listener, event, reply, sizeof(reply)) != SWITCH_STATUS_SUCCESS) {
+		if (parse_command(listener, revent, reply, sizeof(reply)) != SWITCH_STATUS_SUCCESS) {
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			break;
 		}
