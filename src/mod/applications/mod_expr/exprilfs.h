@@ -138,15 +138,15 @@ case EXPR_NODEFUNC_MIN:
 /* max */
 case EXPR_NODEFUNC_MAX:
     {
-    int pos;
+    int tmppos;
 
     err = exprEvalNode(obj, nodes->data.function.nodes, 0, &d1);
 
     if(!err)
         {
-        for(pos = 1; pos < nodes->data.function.nodecount; pos++)
+        for(tmppos = 1; tmppos < nodes->data.function.nodecount; tmppos++)
             {
-            err = exprEvalNode(obj, nodes->data.function.nodes, pos, &d2);
+            err = exprEvalNode(obj, nodes->data.function.nodes, tmppos, &d2);
             if(!err)
                 {
                 if(d2 > d1)
@@ -1015,7 +1015,7 @@ case EXPR_NODEFUNC_NOT:
 /* for */
 case EXPR_NODEFUNC_FOR:
     {
-    int pos;
+    int tmppos;
     EXPRTYPE test;
 
     err = exprEvalNode(obj, nodes->data.function.nodes, 0, &d1);
@@ -1027,9 +1027,9 @@ case EXPR_NODEFUNC_FOR:
         {
         while(test != 0.0)
             {
-            for(pos = 3; pos < nodes->data.function.nodecount; pos++)
+            for(tmppos = 3; tmppos < nodes->data.function.nodecount; tmppos++)
                 {
-                err = exprEvalNode(obj, nodes->data.function.nodes, pos, val);
+                err = exprEvalNode(obj, nodes->data.function.nodes, tmppos, val);
                 if(err)
                     return err;
                 }
