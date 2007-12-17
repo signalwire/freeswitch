@@ -111,7 +111,7 @@
 	<action application="answer"/>
 	<action application="sleep" data="1000"/>
 	<action application="voicemail" data="check default $${domain} ${dialed_ext}"/>
-	<anti-action application="set" data="call_timeout=30000"/>
+	<anti-action application="set" data="call_timeout=30"/>
 	<anti-action application="set" data="hangup_after_bridge=true"/>
 	<anti-action application="set" data="continue_on_fail=true"/>
 	<anti-action application="db" data="insert/call_return/${dialed_ext}/${caller_id_number}"/>
