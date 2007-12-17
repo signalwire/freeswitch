@@ -476,6 +476,7 @@ SWITCH_DECLARE(switch_status_t) switch_dir_open(switch_dir_t **new_dir, const ch
 	switch_status_t status;
 	switch_dir_t *dir = malloc(sizeof(*dir));
 
+	switch_assert(dir);
 	memset(dir, 0, sizeof(*dir));
 	if ((status = apr_dir_open(&(dir->dir_handle), dirname, pool)) == APR_SUCCESS) {
 		*new_dir = dir;
