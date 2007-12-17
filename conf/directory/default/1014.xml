@@ -2,6 +2,7 @@
   <user id="1014" mailbox="1014">
     <params>
       <param name="password" value="1234"/>
+      <param name="vm-password" value="1014"/>
     </params>
     <variables>
       <variable name="accountcode" value="1014"/>
