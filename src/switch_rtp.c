@@ -240,14 +240,14 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 	} while (switch_stun_packet_next_attribute(attr));
 
 	if ((packet->header.type == SWITCH_STUN_BINDING_REQUEST) && !strcmp(rtp_session->user_ice, username)) {
-		uint8_t buf[512];
+		uint8_t stunbuf[512];
 		switch_stun_packet_t *rpacket;
 		const char *remote_ip;
 		switch_size_t bytes;
 		char ipbuf[25];
 
-		memset(buf, 0, sizeof(buf));
-		rpacket = switch_stun_packet_build_header(SWITCH_STUN_BINDING_RESPONSE, packet->header.id, buf);
+		memset(stunbuf, 0, sizeof(stunbuf));
+		rpacket = switch_stun_packet_build_header(SWITCH_STUN_BINDING_RESPONSE, packet->header.id, stunbuf);
 		switch_stun_packet_attribute_add_username(rpacket, username, 32);
 		remote_ip = switch_get_addr(ipbuf, sizeof(ipbuf), rtp_session->from_addr);
 		switch_stun_packet_attribute_add_binded_address(rpacket, (char *)remote_ip, switch_sockaddr_get_port(rtp_session->from_addr));
@@ -931,10 +931,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTO_CNG) &&
 				rtp_session->timer.samplecount >= (rtp_session->last_write_samplecount + (rtp_session->samples_per_interval * 50))) {
 				uint8_t data[2] = { 0 };
-				switch_frame_flag_t flags = SFF_NONE;
+				switch_frame_flag_t frame_flags = SFF_NONE;
 				data[0] = 65;
 				rtp_session->cn++;
-				rtp_common_write(rtp_session, (void *) data, sizeof(data), rtp_session->cng_pt, &flags);
+				rtp_common_write(rtp_session, (void *) data, sizeof(data), rtp_session->cng_pt, &frame_flags);
 			}
 		}
 
@@ -1315,7 +1315,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 	if (fwd) {
 		bytes = datalen;
 		send_msg = (rtp_msg_t *) data;
-		if (*flags & SFF_RFC2833) {
+		if (flags && *flags & SFF_RFC2833) {
 			send_msg->header.pt = rtp_session->te;
 		}
 	} else {
@@ -1367,7 +1367,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 		
 		int16_t decoded[SWITCH_RECOMMENDED_BUFFER_SIZE / sizeof(int16_t)] = {0};
 		uint32_t rate = 0;
-		uint32_t flags = 0;
+		uint32_t codec_flags = 0;
 		uint32_t len = sizeof(decoded);
 		time_t now = time(NULL);
 		send = 0;
@@ -1383,7 +1383,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 									 data,
 									 datalen,
 									 rtp_session->vad_data.read_codec->implementation->actual_samples_per_second,
-									 decoded, &len, &rate, &flags) == SWITCH_STATUS_SUCCESS) {
+									 decoded, &len, &rate, &codec_flags) == SWITCH_STATUS_SUCCESS) {
 			
 
 			uint32_t energy = 0;

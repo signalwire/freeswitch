@@ -1063,7 +1063,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_destroy(switch_ivr_digit
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (stream == NULL && stream->digits != NULL) {
+	if (stream && stream->digits != NULL) {
 		free(stream->digits);
 		stream->digits = NULL;
 		status = SWITCH_STATUS_SUCCESS;
@@ -1379,8 +1379,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 				switch_caller_profile_t *cp = NULL;
 				int i_off = 0;
 				for (cp = caller_profile->caller_extension->children; cp; cp = cp->next) {
-					switch_caller_application_t *ap;
-					int app_off = 0;
+					app_off = 0;
 					
 					if (!cp->caller_extension) {
 						continue;
