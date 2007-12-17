@@ -6,7 +6,6 @@
     </params>
     <variables>
       <variable name="accountcode" value="1004"/>
-      <variable name="presence_id" value="1004@$${domain}"/>
       <variable name="user_context" value="default"/>
       <variable name="effective_caller_id_name" value="Extension 1004"/>
       <variable name="effective_caller_id_number" value="1004"/>
