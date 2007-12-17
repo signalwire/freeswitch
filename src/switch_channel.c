@@ -1073,7 +1073,7 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_channel_get_state_ha
 
 	switch_assert(channel != NULL);
 
-	if (index > SWITCH_MAX_STATE_HANDLERS || index > channel->state_handler_index) {
+	if (index >= SWITCH_MAX_STATE_HANDLERS || index > channel->state_handler_index) {
 		return NULL;
 	}
 

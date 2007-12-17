@@ -131,7 +131,7 @@ SWITCH_DECLARE(int) switch_core_add_state_handler(const switch_state_handler_tab
 SWITCH_DECLARE(const switch_state_handler_table_t *) switch_core_get_state_handler(int index)
 {
 
-	if (index > SWITCH_MAX_STATE_HANDLERS || index > runtime.state_handler_index) {
+	if (index >= SWITCH_MAX_STATE_HANDLERS || index > runtime.state_handler_index) {
 		return NULL;
 	}
 
