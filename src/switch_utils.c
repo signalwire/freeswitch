@@ -339,7 +339,9 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to execute command: %s\n", buf);
     }
 
-    unlink(filename);
+	if (unlink(filename) != 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "failed to delete file [%s]\n", filename);
+	}
 
 
     if (file) {

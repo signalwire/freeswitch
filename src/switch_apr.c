@@ -476,7 +476,11 @@ SWITCH_DECLARE(switch_status_t) switch_dir_open(switch_dir_t **new_dir, const ch
 	switch_status_t status;
 	switch_dir_t *dir = malloc(sizeof(*dir));
 
-	switch_assert(dir);
+	if (!dir) {
+		*new_dir = NULL;
+		return SWITCH_STATUS_FALSE;
+	}
+
 	memset(dir, 0, sizeof(*dir));
 	if ((status = apr_dir_open(&(dir->dir_handle), dirname, pool)) == APR_SUCCESS) {
 		*new_dir = dir;
@@ -813,14 +817,19 @@ SWITCH_DECLARE(int) switch_vasprintf(char **ret, const char *fmt, va_list ap)
 	int len;
 	size_t buflen;
 	va_list ap2;
+	char *tmp = NULL;
 
 #ifdef _MSC_VER
+#if _MSC_VER >= 1500
+	/* hack for incorrect assumption in msvc header files for code analysis */
+	__analysis_assume(tmp);
+#endif
 	ap2 = ap;
 #else
 	va_copy(ap2, ap);
 #endif
 
-	len = vsnprintf(NULL, 0, fmt, ap2);
+	len = vsnprintf(tmp, 0, fmt, ap2);
 
 	if (len > 0 && (buf = malloc((buflen = (size_t) (len + 1)))) != NULL) {
 		len = vsnprintf(buf, buflen, fmt, ap);

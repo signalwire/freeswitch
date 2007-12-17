@@ -120,25 +120,25 @@ static switch_bool_t displace_callback(switch_media_bug_t *bug, void *user_data,
 		break;
 	case SWITCH_ABC_TYPE_READ_REPLACE:
 		{
-			switch_frame_t *frame = switch_core_media_bug_get_read_replace_frame(bug);
+			switch_frame_t *rframe = switch_core_media_bug_get_read_replace_frame(bug);
 			if (dh && !dh->mux) {
-				memset(frame->data, 255, frame->datalen);
+				memset(rframe->data, 255, rframe->datalen);
 			}
-			switch_core_media_bug_set_read_replace_frame(bug, frame);
+			switch_core_media_bug_set_read_replace_frame(bug, rframe);
 		}
 		break;
 	case SWITCH_ABC_TYPE_WRITE_REPLACE:
 		if (dh) {
-			switch_frame_t *frame = NULL;
+			switch_frame_t *rframe = NULL;
 			switch_size_t len;
 			switch_status_t st;
 
-			frame = switch_core_media_bug_get_write_replace_frame(bug);
-			len = frame->samples;
+			rframe = switch_core_media_bug_get_write_replace_frame(bug);
+			len = rframe->samples;
 
 			if (dh->mux) {
 				int16_t buf[1024];
-				int16_t *fp = frame->data;
+				int16_t *fp = rframe->data;
 				uint32_t x;
 
 				st = switch_core_file_read(&dh->fh, buf, &len);
@@ -149,16 +149,16 @@ static switch_bool_t displace_callback(switch_media_bug_t *bug, void *user_data,
 					fp[x] = (int16_t) mixed;
 				}
 			} else {
-				st = switch_core_file_read(&dh->fh, frame->data, &len);
-				frame->samples = (uint32_t) len;
-				frame->datalen = frame->samples * 2;
+				st = switch_core_file_read(&dh->fh, rframe->data, &len);
+				rframe->samples = (uint32_t) len;
+				rframe->datalen = rframe->samples * 2;
 			}
 
 			if (st != SWITCH_STATUS_SUCCESS || len == 0) {
 				return SWITCH_FALSE;
 			}
 
-			switch_core_media_bug_set_write_replace_frame(bug, frame);
+			switch_core_media_bug_set_write_replace_frame(bug, rframe);
 		}
 		break;
 	case SWITCH_ABC_TYPE_WRITE:
@@ -358,18 +358,18 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 	case SWITCH_ABC_TYPE_READ_REPLACE:
 		{
 			if (switch_test_flag(ep, ED_MUX_READ)) {
-				switch_frame_t *frame = switch_core_media_bug_get_read_replace_frame(bug);
+				switch_frame_t *rframe = switch_core_media_bug_get_read_replace_frame(bug);
 			
-				if (switch_buffer_inuse(ep->r_buffer) >= frame->datalen) {
+				if (switch_buffer_inuse(ep->r_buffer) >= rframe->datalen) {
 					uint32_t bytes;
 					switch_buffer_lock(ep->r_buffer);
-					bytes = (uint32_t) switch_buffer_read(ep->r_buffer, data, frame->datalen);
+					bytes = (uint32_t) switch_buffer_read(ep->r_buffer, data, rframe->datalen);
 			
-					frame->datalen = switch_merge_sln(frame->data, frame->samples, (int16_t *)data, bytes / 2) * 2;
-					frame->samples = frame->datalen / 2;
+					rframe->datalen = switch_merge_sln(rframe->data, rframe->samples, (int16_t *)data, bytes / 2) * 2;
+					rframe->samples = rframe->datalen / 2;
 				
 					switch_buffer_unlock(ep->r_buffer);
-					switch_core_media_bug_set_read_replace_frame(bug, frame);
+					switch_core_media_bug_set_read_replace_frame(bug, rframe);
 				}
 			}
 		}
@@ -378,18 +378,18 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 	case SWITCH_ABC_TYPE_WRITE_REPLACE:
 		{
 			if (switch_test_flag(ep, ED_MUX_WRITE)) {
-				switch_frame_t *frame = switch_core_media_bug_get_write_replace_frame(bug);
+				switch_frame_t *rframe = switch_core_media_bug_get_write_replace_frame(bug);
 			
-				if (switch_buffer_inuse(ep->w_buffer) >= frame->datalen) {
+				if (switch_buffer_inuse(ep->w_buffer) >= rframe->datalen) {
 					uint32_t bytes;
 					switch_buffer_lock(ep->w_buffer);
-					bytes = (uint32_t) switch_buffer_read(ep->w_buffer, data, frame->datalen);
+					bytes = (uint32_t) switch_buffer_read(ep->w_buffer, data, rframe->datalen);
 			
-					frame->datalen = switch_merge_sln(frame->data, frame->samples, (int16_t *)data, bytes / 2) * 2;
-					frame->samples = frame->datalen / 2;
+					rframe->datalen = switch_merge_sln(rframe->data, rframe->samples, (int16_t *)data, bytes / 2) * 2;
+					rframe->samples = rframe->datalen / 2;
 				
 					switch_buffer_unlock(ep->w_buffer);
-					switch_core_media_bug_set_write_replace_frame(bug, frame);
+					switch_core_media_bug_set_write_replace_frame(bug, rframe);
 				}
 			}
 		}
