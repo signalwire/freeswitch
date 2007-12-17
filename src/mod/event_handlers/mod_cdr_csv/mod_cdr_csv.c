@@ -146,7 +146,7 @@ static void write_cdr(const char *path, const char *log_line)
 		}
 		
 		if ((bytes_in = write(fd->fd, log_line, bytes_out)) != bytes_out) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write error to file %s\n", path);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write error to file %s %d/%d\n", path, (int)bytes_in, (int)bytes_out);
 		}
 		fd->bytes += bytes_in;
 		switch_mutex_unlock(fd->mutex);
@@ -337,7 +337,9 @@ static void event_handler(switch_event_t *event)
 		for (hi = switch_hash_first(NULL, globals.fd_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
 			fd = (cdr_fd_t *) val;
+			switch_mutex_lock(fd->mutex);
 			do_rotate(fd);
+			switch_mutex_unlock(fd->mutex);
 		}
 	}
 }
