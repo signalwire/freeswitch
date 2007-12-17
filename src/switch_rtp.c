@@ -215,8 +215,13 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 	switch_stun_packet_attribute_t *attr;
 	char username[33] = { 0 };
 	unsigned char buf[512] = { 0 };
+	switch_size_t cpylen = len;
+	
+	if (cpylen > 512) {
+		cpylen = 512;
+	}
 
-	memcpy(buf, data, len);
+	memcpy(buf, data, cpylen);
 	packet = switch_stun_packet_parse(buf, sizeof(buf));
 	rtp_session->last_stun = switch_time_now();
 
@@ -1648,6 +1653,10 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 	}
 
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) || !rtp_session->remote_addr) {
+		return -1;
+	}
+
+	if (datalen > SWITCH_RTP_MAX_BUF_LEN) {
 		return -1;
 	}
 
