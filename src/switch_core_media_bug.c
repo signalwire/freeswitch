@@ -128,9 +128,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 
 
 	bytes = (datalen > frame->datalen) ? datalen : frame->datalen;
+	switch_assert( bytes <= maxlen );
 	
 	if (bytes) {
-		int16_t tmp[960], *tp = tmp;
+		int16_t tmp[SWITCH_RECOMMENDED_BUFFER_SIZE], *tp = tmp;
 		
 		dp = (int16_t *) data;
 		fp = (int16_t *) frame->data;

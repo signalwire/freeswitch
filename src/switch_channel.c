@@ -635,9 +635,11 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 
 
 	switch_assert(channel != NULL);
+	switch_assert(state <= CS_DONE);
 	switch_mutex_lock(channel->flag_mutex);
 
 	last_state = channel->state;
+	switch_assert(last_state <= CS_DONE);
 
 	if (last_state == state) {
 		goto done;
@@ -1498,19 +1500,19 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 					char *expanded = NULL;
 					int offset = 0;
 					int ooffset = 0;
-					char *p;
+					char *ptr;
 
 					if ((expanded = switch_channel_expand_variables(channel, (char *)vname)) == vname) {
 						expanded = NULL;
 					} else {
 						vname = expanded;
 					}
-					if ((p = strchr(vname, ':'))) {
-						*p++ = '\0';
-						offset = atoi(p);
-						if ((p = strchr(p, ':'))) {
-							p++;
-							ooffset = atoi(p);
+					if ((ptr = strchr(vname, ':'))) {
+						*ptr++ = '\0';
+						offset = atoi(ptr);
+						if ((ptr = strchr(ptr, ':'))) {
+							ptr++;
+							ooffset = atoi(ptr);
 						}
 					}
 					
@@ -1528,8 +1530,8 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 					}
 
 					if (ooffset > 0 && (size_t)ooffset < strlen(sub_val)) {
-						if ((p = (char *)sub_val + ooffset)) {
-							*p = '\0';
+						if ((ptr = (char *)sub_val + ooffset)) {
+							*ptr = '\0';
 						}
 					}
 

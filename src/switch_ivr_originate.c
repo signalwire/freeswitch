@@ -277,6 +277,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	*bleg = NULL;
 	odata = strdup(bridgeto);
+
+	if (!odata) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+		status = SWITCH_STATUS_MEMERR;
+		goto done;
+	}
+
 	data = odata;
 
 	/* strip leading spaces */
