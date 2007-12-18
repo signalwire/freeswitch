@@ -686,7 +686,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	const char *timer_name;
 	const char *prebuf;
 
-	switch_zmalloc(abuf, FILE_STARTSAMPLES);
+	switch_zmalloc(abuf, FILE_STARTSAMPLES * sizeof(*abuf));
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -925,6 +925,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		}
 
 		if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
+			if (framelen > FILE_STARTSAMPLES) {
+				framelen = FILE_STARTSAMPLES;
+			}
 			memset(abuf, 0, framelen);
 			olen = ilen;
 			do_speed = 0;
