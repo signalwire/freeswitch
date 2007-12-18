@@ -1150,9 +1150,20 @@ void sofia_event_callback(nua_event_t event,
  {
 
 
-	 if (session && (status == 180 || status == 183 || status == 200)) {
+	 if (sip && session && (status == 180 || status == 183 || status == 200)) {
 		 switch_channel_t *channel = switch_core_session_get_channel(session);
 		 const char *astate = "early";
+		 url_t *from = NULL, *to = NULL, *contact = NULL;
+
+		 if (sip->sip_to) {
+			 to = sip->sip_to->a_url;
+		 }
+		 if (sip->sip_from) {
+			 from = sip->sip_from->a_url;
+		 }
+		 if (sip->sip_contact) {
+			 contact = sip->sip_contact->m_url;
+		 }
 
 		 if (status == 200) {
 			 astate = "confirmed";
@@ -1160,15 +1171,32 @@ void sofia_event_callback(nua_event_t event,
 
 		 if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED) && 
 			 !switch_channel_test_flag(channel, CF_RING_READY)) {
-			 const char *from_user = switch_str_nil(sip->sip_to->a_url->url_user);
-			 const char *from_host = switch_str_nil(sip->sip_from->a_url->url_host);
-			 const char *to_user = switch_str_nil(sip->sip_from->a_url->url_user);
-			 const char *to_host = switch_str_nil(sip->sip_from->a_url->url_host);
-			 const char *contact_user = switch_str_nil(sip->sip_contact->m_url->url_user);
-			 const char *contact_host = switch_str_nil(sip->sip_contact->m_url->url_host);
-			 const char *user_agent = switch_str_nil(sip->sip_user_agent->g_string);
-			 const char *call_id = switch_str_nil(sip->sip_call_id->i_id);
-			 char *sql = NULL;
+			const char *from_user = "", *from_host = "", *to_user = "", *to_host = "", *contact_user = "", *contact_host = "";
+			const char *user_agent = "", *call_id = "";
+			char *sql = NULL;
+
+			if (sip->sip_user_agent) {
+				user_agent = switch_str_nil(sip->sip_user_agent->g_string);
+			}
+
+			if (sip->sip_call_id) {
+				call_id = switch_str_nil(sip->sip_call_id->i_id);
+			}
+
+			if (to) {
+				from_user = switch_str_nil(to->url_user);
+			}
+
+			if (from) {
+				from_host = switch_str_nil(from->url_host);
+				to_user = switch_str_nil(from->url_user);
+				to_host = switch_str_nil(from->url_host);
+			}
+
+			if (contact) {
+				contact_user = switch_str_nil(contact->url_user);
+				contact_host = switch_str_nil(contact->url_host);
+			}
 
 			sql = switch_mprintf(
 								 "insert into sip_dialogs values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
