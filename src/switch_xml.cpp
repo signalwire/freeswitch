@@ -431,9 +431,21 @@ static void switch_xml_char_content(switch_xml_root_t root, char *s, switch_size
 	if (!*(xml->txt))
 		xml->txt = s;			// initial character content
 	else {						// allocate our own memory and make a copy
-		xml->txt = (xml->flags & SWITCH_XML_TXTM)	// allocate some space
-			? (char *)realloc(xml->txt, (l = strlen(xml->txt)) + len)
-			: strcpy((char *)malloc((l = strlen(xml->txt)) + len), xml->txt);
+		if ((xml->flags & SWITCH_XML_TXTM)) { // allocate some space
+			char *tmp = (char *)realloc(xml->txt, (l = strlen(xml->txt)) + len);
+			if (tmp) {
+				xml->txt = tmp;
+			} else {
+				return;
+			}
+		} else {
+			char *tmp = (char *)malloc((l = strlen(xml->txt)) + len);
+			if (tmp) {
+				xml->txt = strcpy(tmp, xml->txt);
+			} else {
+				return;
+			}
+		}
 		strcpy(xml->txt + l, s);	// add new char content
 		if (s != m)
 			free(s);			// free s if it was malloced by switch_xml_decode()
