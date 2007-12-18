@@ -701,16 +701,17 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			rpid_domain = "cluecon.com";
 		}
 
-		if (switch_stristr("port=tcp", url)) {
-			transport = SOFIA_TRANSPORT_TCP;
+		if ((p = (char *)switch_stristr("port=", url))) {
+			p += 5;
+			transport = sofia_glue_str2transport( p );
 		} else {
 			if ((t_var = switch_channel_get_variable(channel, "sip_transport"))) {
-				sofia_transport_t t_val;
-
-				if ((t_val = sofia_glue_str2transport(t_var)) != SOFIA_TRANSPORT_UNKNOWN) {
-					transport = t_val;
-				}
+				transport = sofia_glue_str2transport(t_var);
 			}
+		}
+
+		if (transport == SOFIA_TRANSPORT_UNKNOWN) {
+			transport = SOFIA_TRANSPORT_UDP;
 		}
 
 		if (switch_strlen_zero(tech_pvt->invite_contact)) {
