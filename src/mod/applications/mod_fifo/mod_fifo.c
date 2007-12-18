@@ -93,10 +93,86 @@ struct fifo_node {
     switch_hash_t *caller_hash;
     switch_hash_t *consumer_hash;
     int caller_count;
+    int waiting_count;
     int consumer_count;
 };
 
 typedef struct fifo_node fifo_node_t;
+
+
+static fifo_node_t *create_node(const char *name)
+{
+    fifo_node_t *node;
+
+    node = switch_core_alloc(globals.pool, sizeof(*node));
+    node->name = switch_core_strdup(globals.pool, name);
+
+    switch_queue_create(&node->fifo, SWITCH_CORE_QUEUE_LEN, globals.pool);
+    switch_core_hash_init(&node->caller_hash, globals.pool);
+    switch_core_hash_init(&node->consumer_hash, globals.pool);
+    switch_assert(node->fifo);
+    switch_mutex_init(&node->mutex, SWITCH_MUTEX_NESTED, globals.pool);
+    switch_core_hash_insert(globals.fifo_hash, name, node);
+
+    return node;
+}
+
+static void send_presence(fifo_node_t *node)
+{
+    switch_event_t *event;
+
+	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "%s", "park");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", node->name);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", node->name);
+        if (node->waiting_count > 0) {
+            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Active (%d waiting)", node->waiting_count);
+        } else {
+            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Idle");
+        }
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "%s", "unknown");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", 0);
+
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", node->waiting_count > 0 ? "CS_RING" : "CS_HANGUP");
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", node->name);
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", node->waiting_count > 0 ? "early" : "terminated");
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "astate", "%s", node->waiting_count > 0 ? "early" : "terminated");
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", "outbound");
+		switch_event_fire(&event);
+	}
+}
+
+
+static void pres_event_handler(switch_event_t *event)
+{
+	char *to = switch_event_get_header(event, "to");
+	char *dup_to = NULL, *node_name;
+    fifo_node_t *node;
+    
+	if (!to || strncasecmp(to, "park+", 5)) {
+		return;
+	}
+
+	dup_to = strdup(to);
+    switch_assert(dup_to);
+
+	node_name = dup_to + 5;
+
+    switch_mutex_lock(globals.mutex);
+    if (!(node = switch_core_hash_find(globals.fifo_hash, node_name))) {
+        node = create_node(node_name);
+    }
+
+    switch_mutex_lock(node->mutex);
+    send_presence(node);
+    switch_mutex_unlock(node->mutex);
+
+    switch_mutex_unlock(globals.mutex);
+
+	switch_safe_free(dup_to);
+}
 
 #define FIFO_DESC "Fifo for stacking parked calls."
 #define FIFO_USAGE "<fifo name> [in [<announce file>|undef] [<music file>|undef] | out [wait|nowait] [<announce file>|undef] [<music file>|undef]]"
@@ -130,21 +206,16 @@ SWITCH_STANDARD_APP(fifo_function)
         return;
     }
 
+    channel = switch_core_session_get_channel(session);
+
     switch_mutex_lock(globals.mutex);
     if (!(node = switch_core_hash_find(globals.fifo_hash, argv[0]))) {
-        node = switch_core_alloc(globals.pool, sizeof(*node));
-        node->name = switch_core_strdup(globals.pool, argv[0]);
-        switch_queue_create(&node->fifo, SWITCH_CORE_QUEUE_LEN, globals.pool);
-        switch_core_hash_init(&node->caller_hash, globals.pool);
-        switch_core_hash_init(&node->consumer_hash, globals.pool);
-        switch_assert(node->fifo);
-        switch_mutex_init(&node->mutex, SWITCH_MUTEX_NESTED, globals.pool);
-        switch_core_hash_insert(globals.fifo_hash, argv[0], node);
+        node = create_node(argv[0]);
     }
     switch_mutex_unlock(globals.mutex);
 
 
-    channel = switch_core_session_get_channel(session);
+
     moh = switch_channel_get_variable(channel, "fifo_music");
     announce = switch_channel_get_variable(channel, "fifo_announce");
 
@@ -177,6 +248,8 @@ SWITCH_STANDARD_APP(fifo_function)
 
         switch_mutex_lock(node->mutex);
         node->caller_count++;
+        node->waiting_count++;
+        send_presence(node);
         switch_core_hash_insert(node->caller_hash, uuid, session);
         switch_queue_push(node->fifo, (void *)uuid);
         switch_mutex_unlock(node->mutex);
@@ -223,6 +296,8 @@ SWITCH_STANDARD_APP(fifo_function)
             }
             switch_mutex_lock(node->mutex);
             node->caller_count--;
+            node->waiting_count--;
+            send_presence(node);
             switch_core_hash_delete(node->caller_hash, uuid);
             switch_mutex_unlock(node->mutex);
         }
@@ -355,6 +430,10 @@ SWITCH_STANDARD_APP(fifo_function)
                 switch_channel_set_variable(other_channel, "fifo_status", "TALKING");
                 switch_channel_set_variable(other_channel, "fifo_timestamp", date);
                 switch_channel_set_variable(other_channel, "fifo_target", switch_core_session_get_uuid(session));
+                switch_mutex_lock(node->mutex);
+                node->waiting_count--;
+                send_presence(node);
+                switch_mutex_unlock(node->mutex);
                 switch_ivr_multi_threaded_bridge(session, other_session, on_dtmf, other_session, session);
 
                 ts = switch_timestamp_now();
@@ -368,6 +447,7 @@ SWITCH_STANDARD_APP(fifo_function)
                 
                 switch_mutex_lock(node->mutex);
                 node->caller_count--;
+                send_presence(node);
                 switch_core_hash_delete(node->caller_hash, uuid);
                 switch_mutex_unlock(node->mutex);
                 switch_core_session_rwunlock(other_session);
@@ -475,6 +555,8 @@ static void list_node(fifo_node_t *node, switch_xml_t x_report, int *off, int ve
     switch_xml_set_attr_d(x_fifo, "consumer_count", tmp);
     switch_snprintf(tmp, sizeof(buffer), "%d", node->caller_count);
     switch_xml_set_attr_d(x_fifo, "caller_count", tmp);
+    switch_snprintf(tmp, sizeof(buffer), "%d", node->waiting_count);
+    switch_xml_set_attr_d(x_fifo, "waiting_count", tmp);
     
     cc_off = xml_hash(x_fifo, node->caller_hash, "callers", "caller", cc_off, verbose);
     cc_off = xml_hash(x_fifo, node->consumer_hash, "consumers", "consumer", cc_off, verbose);
@@ -573,6 +655,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load)
 	if (switch_event_reserve_subclass(FIFO_EVENT) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!", FIFO_EVENT);
 		return SWITCH_STATUS_TERM;
+	}
+
+	/* Subscribe to presence request events */
+	if (switch_event_bind((char *) modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY, pres_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't subscribe to presence request events!\n");
+		return SWITCH_STATUS_GENERR;
 	}
 
     switch_core_new_memory_pool(&globals.pool);
