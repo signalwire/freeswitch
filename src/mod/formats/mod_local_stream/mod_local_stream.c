@@ -55,7 +55,6 @@ struct local_stream_context {
 };
 typedef struct local_stream_context local_stream_context_t;
 
-
 struct local_stream_source {
 	char *name;
 	char *location;
@@ -70,8 +69,20 @@ struct local_stream_source {
 	switch_dir_t *dir_handle;
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
+	int shuffle;
 };
 typedef struct local_stream_source local_stream_source_t;
+
+static unsigned int S = 0;
+
+static int do_rand(void)
+{
+	srand(getpid() + ++S);
+	double r = ((double)rand() / ((double)(RAND_MAX)+(double)(1)));
+	int index = (r * 9) + 1;
+	return index;
+}
+
 
 static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void *obj)
 {
@@ -84,7 +95,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	switch_buffer_t *audio_buffer;
 	switch_byte_t *dist_buf;
 	switch_size_t used;
-	
+	int skip = 0;
 
 	if (!source->prebuf) {
 		source->prebuf = DEFAULT_PREBUFFER_SIZE;
@@ -93,6 +104,10 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	switch_buffer_create_dynamic(&audio_buffer, 1024, source->prebuf + 10, 0);
 	dist_buf = switch_core_alloc(source->pool, source->prebuf + 10);
 	
+	if (source->shuffle) {
+		skip = do_rand();
+	}
+
 	while(RUNNING) {
 		const char *fname;
 
@@ -101,7 +116,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 			return NULL;
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "open directory: %s\n", source->location);
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "open directory: %s\n", source->location);
 		switch_yield(1000000);
 
 		while(RUNNING) {
@@ -135,6 +150,11 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					continue;
 				}
 				
+			}
+
+			if (skip > 0) {
+				skip--;
+				continue;
 			}
 
 			fname = path_buf;
@@ -188,7 +208,9 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 			}
 
 			switch_core_timer_destroy(&timer);
-			
+			if (source->shuffle) {
+				skip = do_rand();
+			}
 		}
 
 		switch_dir_close(source->dir_handle);
@@ -318,28 +340,6 @@ static switch_status_t local_stream_file_read(switch_file_handle_t *handle, void
     switch_mutex_unlock(context->audio_mutex);
     handle->sample_count += *len;
     return SWITCH_STATUS_SUCCESS;
-#if 0
-	local_stream_context_t *context = handle->private_info;
-	switch_size_t bytes = 0;
-	size_t need = *len * 2;
-
-
-	switch_mutex_lock(context->audio_mutex);
-	if ((bytes = switch_buffer_read(context->audio_buffer, data, need))) {
-		*len = bytes / 2;
-	} else {
-		if (need > context->source->samples * 2) {
-			need = context->source->samples * 2;
-		}
-
-		memset(data, 0, need);
-		*len = need / 2;		
-	}
-	switch_mutex_unlock(context->audio_mutex);
-
-	handle->sample_count += *len;
-	return SWITCH_STATUS_SUCCESS;
-#endif
 }
 
 static switch_status_t local_stream_file_write(switch_file_handle_t *handle, void *data, size_t *len)
@@ -411,6 +411,8 @@ static void launch_threads(void)
 				if (tmp == 8000 || tmp == 16000) {
 					source->rate = tmp;
 				}
+			} else if (!strcasecmp(var, "shuffle")) {
+				source->shuffle = switch_true(val);
 			} else if (!strcasecmp(var, "prebuf")) {
 				int tmp = atoi(val);
 				if (tmp > 0) {
