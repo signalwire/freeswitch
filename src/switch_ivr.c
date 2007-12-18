@@ -449,7 +449,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 						sendlen = read_codec->implementation->bytes_per_frame;
 						memset(decoded, 255, sendlen);
 						sendbuf = decoded;
-						status = SWITCH_STATUS_SUCCESS;
+						tstatus = SWITCH_STATUS_SUCCESS;
 					} else {
 						if (switch_test_flag(conninfo, SUF_NATIVE)) {
 							tstatus = SWITCH_STATUS_NOOP;
