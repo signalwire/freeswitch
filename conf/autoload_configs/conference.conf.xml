@@ -64,7 +64,7 @@
       <!-- File to play if you are alone in the conference -->
       <!--<param name="alone-sound" value="yactopitc.wav"/>-->
       <!-- File to play endlessly (nobody will ever be able to talk) -->
-      <!--<param name="perpetual-sound" value="music.wav"/>-->
+      <param name="perpetual-sound" value="local_stream://moh"/>
       <!-- File to play when you join the conference -->
       <!--<param name="enter-sound" value="welcome.wav"/>-->
       <!-- File to play when you leave the conference -->

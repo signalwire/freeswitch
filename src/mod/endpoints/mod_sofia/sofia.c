@@ -1160,10 +1160,10 @@ void sofia_event_callback(nua_event_t event,
 
 		 if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED) && 
 			 !switch_channel_test_flag(channel, CF_RING_READY)) {
-			 const char *to_user = switch_str_nil(sip->sip_to->a_url->url_user);
-			 const char *to_host = switch_str_nil(sip->sip_to->a_url->url_host);
-			 const char *from_user = switch_str_nil(sip->sip_from->a_url->url_user);
+			 const char *from_user = switch_str_nil(sip->sip_to->a_url->url_user);
 			 const char *from_host = switch_str_nil(sip->sip_from->a_url->url_host);
+			 const char *to_user = switch_str_nil(sip->sip_from->a_url->url_user);
+			 const char *to_host = switch_str_nil(sip->sip_from->a_url->url_host);
 			 const char *contact_user = switch_str_nil(sip->sip_contact->m_url->url_user);
 			 const char *contact_host = switch_str_nil(sip->sip_contact->m_url->url_host);
 			 const char *user_agent = switch_str_nil(sip->sip_user_agent->g_string);

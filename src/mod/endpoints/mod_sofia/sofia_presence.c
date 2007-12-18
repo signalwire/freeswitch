@@ -398,10 +398,8 @@ void sofia_presence_event_handler(switch_event_t *event)
 				sql = switch_mprintf("select sip_registrations.sip_user, sip_registrations.sip_host, sip_registrations.status, "
 									 "sip_registrations.rpid,'', sip_dialogs.uuid, sip_dialogs.state, sip_dialogs.direction "
 									 "from sip_registrations left join sip_dialogs on "
-									 "(sip_dialogs.contact_user = sip_registrations.sip_user or "
-									 "sip_dialogs.sip_from_user = sip_registrations.sip_user or "
-									 "sip_dialogs.sip_to_user = sip_registrations.sip_user) "
-									 "and sip_dialogs.sip_to_host = sip_registrations.sip_host "
+									 "(sip_dialogs.sip_from_user = sip_registrations.sip_user) "
+									 "and sip_dialogs.sip_from_host = sip_registrations.sip_host "
 									 "where sip_registrations.sip_user='%q' and sip_registrations.sip_host='%q'",
 									 probe_euser, probe_host);
 				switch_assert(sql);
@@ -536,7 +534,6 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", 0);
 
-
 		if (switch_strlen_zero(state)) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", SOFIA_CHAT_PROTO);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_HANGUP");
@@ -545,6 +542,7 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_RING");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", uuid);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", state);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "astate", "%s", state);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", direction);
 		}
 		
@@ -659,11 +657,11 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		const char *uuid = switch_str_nil(switch_event_get_header(helper->event, "unique-id"));
 		const char *state = switch_str_nil(switch_event_get_header(helper->event, "channel-state"));
 		const char *event_status = switch_str_nil(switch_event_get_header(helper->event, "status"));
-		const char *astate = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
+		const char *astate = switch_str_nil(switch_event_get_header(helper->event, "astate"));
 		const char *dft_state;
 		
 		SWITCH_STANDARD_STREAM(stream);
-		
+
 		if (!strcasecmp(direction, "outbound")) {
 			direction = "recipient";
 			dft_state = "early";
@@ -671,21 +669,35 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			direction = "initiator";
 			dft_state = "confirmed";
 		}
-
+		
 		if (!strcasecmp(state, "cs_execute")) {
 			goto end;
-		} if (!strcasecmp(state, "cs_hangup")) {
+		} else if (!strcasecmp(state, "cs_hangup")) {
 			astate = "terminated";
-		} else if (!strcasecmp(astate, "answered")) {
-			astate = "confirmed";
-		} else {
-			astate = dft_state;
-		}
+		} else if (switch_strlen_zero(astate))  {
+			astate = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
+			if (switch_strlen_zero(astate))  {
+				astate = dft_state;
+			}
+		} 
 		
 		if (!strcasecmp(event_status, "hold")) {
 			astate = "early";
 		}
 
+		if (!strcasecmp(astate, "answered")) {
+			astate = "confirmed";
+		}
+
+		if (!strcasecmp(astate, "ringing")) {
+			if (!strcasecmp(direction, "recipient")) {
+				astate = "early";
+			} else {
+				astate = "confirmed";
+			}
+		}
+
+		
 		stream.write_function(&stream, 
 							  "<?xml version=\"1.0\"?>\n"
 							  "<dialog-info xmlns=\"urn:ietf:params:xml:ns:dialog-info\" "
