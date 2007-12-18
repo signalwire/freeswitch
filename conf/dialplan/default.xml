@@ -147,19 +147,6 @@
       </condition>
     </extension>
 
-    <extension name="static-park">
-      <condition field="destination_number" expression="^8792$">
-	<action application="fifo" data="default in undef local_stream://moh"/>
-      </condition>
-    </extension>
-    
-    <extension name="unpark">
-      <condition field="destination_number" expression="^8793$">
-	<action application="answer"/>
-	<action application="fifo" data="default out nowait"/>
-      </condition>
-    </extension>
-    
     <!-- a sample IVR  -->
     <extension name="ivr_demo">
       <condition field="destination_number" expression="5000">
@@ -174,7 +161,7 @@
     -->
     <extension name="park">
       <condition field="destination_number" expression="^5900$">
-	<action application="fifo" data="default in undef soundfiles/swimp.raw"/>
+	<action application="fifo" data="default in undef $${moh_uri}"/>
       </condition>
     </extension>
     
@@ -184,15 +171,6 @@
 	<action application="fifo" data="default out nowait"/>
       </condition>
     </extension> 
-    <!--
-    <extension name="Localized_Dialplan">
-      <condition field="${numbering_plan}" expression="^[[:alnum:]]+$"/>
-      <condition field="${default_gateway}" expression="[[:alnum:]]"/>
-      <condition field="destination_number" expression="^([[:alnum:]]+)$">
-	<action application="transfer" data="$1 XML ${numbering_plan}-Numbering-Plan"/>
-      </condition>
-    </extension>
-    -->
 
     <extension name="hold_music">
       <condition field="destination_number" expression="^9999$">
