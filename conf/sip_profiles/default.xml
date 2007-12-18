@@ -28,7 +28,7 @@
     <param name="rtp-timer-name" value="soft"/>
     <param name="rtp-ip" value="$${local_ip_v4}"/>
     <param name="sip-ip" value="$${local_ip_v4}"/>
-    <param name="hold-music" value="local_stream://moh"/>
+    <param name="hold-music" value="$${moh_uri}"/>
     <!--enable to use presense and mwi -->
     <param name="manage-presence" value="true"/>
     <!-- This setting is for AAL2 bitpacking on G726 -->

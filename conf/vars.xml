@@ -2,6 +2,7 @@
        These are introduced when configuration strings must be consistent across modules. 
    -->
   <X-PRE-PROCESS cmd="set" data="domain=$${local_ip_v4}"/>
+  <X-PRE-PROCESS cmd="set" data="moh_uri=local_stream://moh"/>
   <!-- sip_profile 
        Must be a domain name if you are being a registry server; otherwise
        can be any string.
