@@ -1120,8 +1120,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					}
 
 					if (profile->tls_bind_params) {
-						char *url = profile->tls_bindurl;
-						profile->tls_bindurl = switch_core_sprintf(profile->pool, "%s;%s", url, profile->tls_bind_params);
+						char *tls_bindurl = profile->tls_bindurl;
+						profile->tls_bindurl = switch_core_sprintf(profile->pool, "%s;%s", tls_bindurl, profile->tls_bind_params);
 					}
 
 					if (!profile->tls_cert_dir) {
@@ -2346,16 +2346,44 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	nua_handle_bind(nh, tech_pvt->sofia_private);
 	tech_pvt->nh = nh;
 
-	if (switch_core_session_thread_launch(session) == SWITCH_STATUS_SUCCESS) {
-		const char *to_user = switch_str_nil(sip->sip_to->a_url->url_user);
-		const char *to_host = switch_str_nil(sip->sip_to->a_url->url_host);
-		const char *dialog_from_user = switch_str_nil(sip->sip_from->a_url->url_user);
-		const char *dialog_from_host = switch_str_nil(sip->sip_from->a_url->url_host);
-		const char *contact_user = switch_str_nil(sip->sip_contact->m_url->url_user);
-		const char *contact_host = switch_str_nil(sip->sip_contact->m_url->url_host);
-		const char *user_agent = switch_str_nil(sip->sip_user_agent->g_string);
-		const char *call_id = switch_str_nil(sip->sip_call_id->i_id);
+	if (sip && switch_core_session_thread_launch(session) == SWITCH_STATUS_SUCCESS) {
+		const char *dialog_from_user = "", *dialog_from_host = "", *to_user = "", *to_host = "", *contact_user = "", *contact_host = "";
+		const char *user_agent = "", *call_id = "";
+		url_t *from = NULL, *to = NULL, *contact = NULL;
 		char *sql = NULL;
+
+		if (sip->sip_to) {
+			to = sip->sip_to->a_url;
+		}
+		if (sip->sip_from) {
+			from = sip->sip_from->a_url;
+		}
+		if (sip->sip_contact) {
+			contact = sip->sip_contact->m_url;
+		}
+
+		if (sip->sip_user_agent) {
+			user_agent = switch_str_nil(sip->sip_user_agent->g_string);
+		}
+
+		if (sip->sip_call_id) {
+			call_id = switch_str_nil(sip->sip_call_id->i_id);
+		}
+
+		if (to) {
+			to_user = switch_str_nil(to->url_user);
+			to_host = switch_str_nil(to->url_host);
+		}
+
+		if (from) {
+			dialog_from_user = switch_str_nil(from->url_user);
+			dialog_from_host = switch_str_nil(from->url_host);
+		}
+
+		if (contact) {
+			contact_user = switch_str_nil(contact->url_user);
+			contact_host = switch_str_nil(contact->url_host);
+		}
 
 		sql = switch_mprintf(
 							 "insert into sip_dialogs values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
