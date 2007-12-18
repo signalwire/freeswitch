@@ -326,7 +326,7 @@ int CoreSession::originate(CoreSession *a_leg_session,
 	// no valid channel.  since the threadstate is stored in the channel, and there 
 	// is none, if we try to call begin_alllow_threads it will fail miserably.
 	// use the 'a leg session' to do the thread swapping stuff.
-    a_leg_session->begin_allow_threads();
+    if (a_leg_session) a_leg_session->begin_allow_threads();
 
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
@@ -347,11 +347,11 @@ int CoreSession::originate(CoreSession *a_leg_session,
 
 	}
 
-    a_leg_session->end_allow_threads();
+    if (a_leg_session) a_leg_session->end_allow_threads();
 	return SWITCH_STATUS_SUCCESS;
 
  failed:
-    a_leg_session->end_allow_threads();
+    if (a_leg_session) a_leg_session->end_allow_threads();
 	return SWITCH_STATUS_FALSE;
 }
 
