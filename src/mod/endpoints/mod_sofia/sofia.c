@@ -2245,8 +2245,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	if (switch_core_session_thread_launch(session) == SWITCH_STATUS_SUCCESS) {
 		const char *to_user = switch_str_nil(sip->sip_to->a_url->url_user);
 		const char *to_host = switch_str_nil(sip->sip_to->a_url->url_host);
-		const char *from_user = switch_str_nil(sip->sip_from->a_url->url_user);
-		const char *from_host = switch_str_nil(sip->sip_from->a_url->url_host);
+		const char *dialog_from_user = switch_str_nil(sip->sip_from->a_url->url_user);
+		const char *dialog_from_host = switch_str_nil(sip->sip_from->a_url->url_host);
 		const char *contact_user = switch_str_nil(sip->sip_contact->m_url->url_user);
 		const char *contact_host = switch_str_nil(sip->sip_contact->m_url->url_host);
 		const char *user_agent = switch_str_nil(sip->sip_user_agent->g_string);
@@ -2259,8 +2259,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 							 tech_pvt->sofia_private->uuid,
 							 to_user,
 							 to_host,
-							 from_user,
-							 from_host,
+							 dialog_from_user,
+							 dialog_from_host,
 							 contact_user,
 							 contact_host,
 							 "confirmed",
