@@ -1700,7 +1700,9 @@ SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 
 	if (xml->free_path) {
 		if (!switch_stristr("freeswitch.xml.fsxml", xml->free_path)) {
-			unlink(xml->free_path);
+			if (unlink(xml->free_path) != 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "failed to delete file [%s]\n", xml->free_path);
+			}
 		}
 		switch_safe_free(xml->free_path);
 	}
