@@ -4,7 +4,7 @@
  If the destination starts with 011, then check enum and route the call accordingly
  -->
  <extension name="US_International">
-   <condition field="destination_number" expression="^011(\d*)$">
+   <condition field="destination_number" expression="^011(\d+)$">
      <action application="set" data="continue_on_fail=true"/>
      <action application="set" data="hangup_after_bridge=true"/>
      <action application="enum" data="1$1"/>
