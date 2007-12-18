@@ -489,6 +489,8 @@ static void switch_xml_proc_inst(switch_xml_root_t root, char *s, switch_size_t 
 {
 	int i = 0, j = 1;
 	char *target = s;
+	char **sstmp;
+	char *stmp;
 
 	s[len] = '\0';				// null terminate instruction
 	if (*(s += strcspn(s, SWITCH_XML_WS))) {
@@ -513,7 +515,9 @@ static void switch_xml_proc_inst(switch_xml_root_t root, char *s, switch_size_t 
 	while (root->pi[i] && strcmp(target, root->pi[i][0]))
 		i++;					// find target
 	if (!root->pi[i]) {			// new target
-		root->pi = (char ***)realloc(root->pi, sizeof(char **) * (i + 2));
+		char ***ssstmp = (char ***)realloc(root->pi, sizeof(char **) * (i + 2));
+		if (!ssstmp) return;
+		root->pi = ssstmp; 
 		if (!root->pi) return;
 		root->pi[i] = (char **)malloc(sizeof(char *) * 3);
 		if (!root->pi[i]) return;
@@ -524,8 +528,12 @@ static void switch_xml_proc_inst(switch_xml_root_t root, char *s, switch_size_t 
 
 	while (root->pi[i][j])
 		j++;					// find end of instruction list for this target
-	root->pi[i] = (char **)realloc(root->pi[i], sizeof(char *) * (j + 3));
-	root->pi[i][j + 2] = (char *)realloc(root->pi[i][j + 1], j + 1);
+	sstmp = (char **)realloc(root->pi[i], sizeof(char *) * (j + 3));
+	if (!sstmp) return;
+	root->pi[i] = sstmp;
+	stmp = (char *)realloc(root->pi[i][j + 1], j + 1);
+	if (!stmp) return;
+	root->pi[i][j + 2] = stmp; 
 	strcpy(root->pi[i][j + 2] + j - 1, (root->xml.name) ? ">" : "<");
 	root->pi[i][j + 1] = NULL;	// null terminate pi list for this target
 	root->pi[i][j] = s;			// set instruction
@@ -536,6 +544,7 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 {
 	char q, *c, *t, *n = NULL, *v, **ent, **pe;
 	int i, j;
+	char **sstmp;
 
 	pe = (char **)memcpy(malloc(sizeof(SWITCH_XML_NIL)), SWITCH_XML_NIL, sizeof(SWITCH_XML_NIL));
 	
@@ -557,7 +566,12 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 			}
 
 			for (i = 0, ent = (*c == '%') ? pe : root->ent; ent[i]; i++);
-			ent = (char **)realloc(ent, (i + 3) * sizeof(char *));	// space for next ent
+			sstmp = (char **)realloc(ent, (i + 3) * sizeof(char *));	// space for next ent
+			if (!sstmp) {
+				switch_xml_err(root, v, "Allocation Error!");
+				break;
+			}
+			ent = sstmp;
 			if (*c == '%')
 				pe = ent;
 			else
@@ -630,8 +644,14 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 				}
 
 				for (j = 1; root->attr[i][j]; j += 3);	// find end of list
-				root->attr[i] = (char **)realloc(root->attr[i], (j + 4) * sizeof(char *));
+				sstmp = (char **)realloc(root->attr[i], (j + 4) * sizeof(char *));
 
+				if (!sstmp) {
+					switch_xml_err(root, t, "Allocation Error!");
+					break;
+				}
+
+				root->attr[i] = sstmp;
 				root->attr[i][j + 3] = NULL;	// null terminate list
 				root->attr[i][j + 2] = c;	// is it cdata?
 				root->attr[i][j + 1] = (v) ? switch_xml_decode(v, root->ent, *c)
@@ -675,8 +695,12 @@ static char *switch_xml_str2utf8(char **s, switch_size_t *len)
 			c = (((c & 0x3FF) << 10) | (d & 0x3FF)) + 0x10000;
 		}
 
-		while (l + 6 > max)
-			u = (char *)realloc(u, max += SWITCH_XML_BUFSIZE);
+		while (l + 6 > max) {
+			char *tmp;
+			tmp = (char *)realloc(u, max += SWITCH_XML_BUFSIZE);
+			if (!tmp) return NULL;
+			u = tmp;
+		}
 		if (c < 0x80)
 			u[l++] = (char) c;	// US-ASCII subset
 		else {					// multi-byte UTF-8 sequence
@@ -873,8 +897,14 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fp(FILE * fp)
 		return NULL;
 	do {
 		len += (l = fread((s + len), 1, SWITCH_XML_BUFSIZE, fp));
-		if (l == SWITCH_XML_BUFSIZE)
-			s = (char *)realloc(s, len + SWITCH_XML_BUFSIZE);
+		if (l == SWITCH_XML_BUFSIZE) {
+			char *tmp = (char *)realloc(s, len + SWITCH_XML_BUFSIZE);
+			if (!tmp) {
+				free(s);
+				return NULL;
+			}
+			s = tmp;
+		}
 	} while (s && l == SWITCH_XML_BUFSIZE);
 
 	if (!s)
