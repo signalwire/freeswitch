@@ -156,19 +156,20 @@
     
     
     <!-- 
-	 Parking extensions... transferring calls to 5900 will park them in a 
-	 queue. dialing 5901 will let you pull them out of the queue.
+	 Parking extensions... transferring calls to 5900-5909 will park them in a queue.
     -->
     <extension name="park">
-      <condition field="destination_number" expression="^5900$">
-	<action application="fifo" data="default in undef $${moh_uri}"/>
+      <condition field="destination_number" expression="^(590[0-9])$">
+	<action application="fifo" data="$1@$${domain} in undef $${moh_uri}"/>
       </condition>
     </extension>
-    
+    <!-- 
+	 The grandstream phone will subscribe to park+number and call **park+number to pickup.
+    -->
     <extension name="unpark">
-      <condition field="destination_number" expression="^5901$">
+      <condition field="destination_number" expression="^\*{0,2}park\+(590[0-9])$">
 	<action application="answer"/>
-	<action application="fifo" data="default out nowait"/>
+	<action application="fifo" data="$1@$${domain} out nowait"/>
       </condition>
     </extension> 
 
