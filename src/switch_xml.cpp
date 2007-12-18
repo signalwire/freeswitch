@@ -356,7 +356,25 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 			if (ent[b++]) {		// found a match
 				if ((c = (long) strlen(ent[b])) - 1 > (e = strchr(s, ';')) - s) {
 					l = (d = (long) (s - r)) + c + (long) strlen(e);	// new length
-					r = (r == m) ? strcpy((char *)malloc(l), r) : (char *)realloc(r, l);
+					if (l) {
+						if (r == m) {
+							char *tmp = (char *)malloc(l);
+							if (tmp) {
+								r = strcpy(tmp, r);
+							} else {
+								if (r) free(r);
+								return NULL;
+							}
+						} else {
+							char *tmp = (char *)realloc(r, l);
+							if (tmp) {
+								r = tmp;
+							} else {
+								if (r) free(r);
+								return NULL;
+							}
+						}
+					}
 					e = strchr((s = r + d), ';');	// fix up pointers
 				}
 
