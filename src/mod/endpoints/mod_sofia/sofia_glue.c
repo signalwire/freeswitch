@@ -1696,6 +1696,21 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   user_agent      VARCHAR(255)\n"
 		");\n";
 
+	char dialog_sql[] =
+		"CREATE TABLE sip_dialogs (\n"
+		"   call_id         VARCHAR(255),\n"
+		"   uuid            VARCHAR(255),\n"
+		"   sip_to_user     VARCHAR(255),\n"
+		"   sip_to_host     VARCHAR(255),\n"
+		"   sip_from_user   VARCHAR(255),\n"
+		"   sip_from_host   VARCHAR(255),\n"
+		"   contact_user    VARCHAR(255),\n" 
+		"   contact_host    VARCHAR(255),\n" 
+		"   state           VARCHAR(255),\n" 
+		"   direction       VARCHAR(255),\n" 
+		"   user_agent      VARCHAR(255)\n"
+		");\n";
+
 	char sub_sql[] =
 		"CREATE TABLE sip_subscriptions (\n"
 		"   proto           VARCHAR(255),\n"
@@ -1742,6 +1757,11 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 			switch_odbc_handle_exec(profile->master_odbc, sub_sql, NULL);
 		}
 
+		if (switch_odbc_handle_exec(profile->master_odbc, "delete from sip_dialogs", NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_dialogs", NULL);
+			switch_odbc_handle_exec(profile->master_odbc, dialog_sql, NULL);
+		}
+
 		if (switch_odbc_handle_exec(profile->master_odbc, "select nonce from sip_authentication", NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_authentication", NULL);
 			switch_odbc_handle_exec(profile->master_odbc, auth_sql, NULL);
@@ -1756,6 +1776,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 		switch_core_db_test_reactive(profile->master_db, "select sip_user,user_agent from sip_registrations", "DROP TABLE sip_registrations", reg_sql);
 		switch_core_db_test_reactive(profile->master_db, "delete from sip_subscriptions where sip_user != '' or accept != ''", "DROP TABLE sip_subscriptions", sub_sql);
+		switch_core_db_test_reactive(profile->master_db, "delete from sip_dialogs", "DROP TABLE sip_dialogs", dialog_sql);
 		switch_core_db_test_reactive(profile->master_db, "select * from sip_authentication", "DROP TABLE sip_authentication", auth_sql);
 
 	}
@@ -1813,7 +1834,8 @@ void sofia_glue_execute_sql(sofia_profile_t *profile, switch_bool_t master, char
 				goto end;
 			}
 		}
-		switch_core_db_persistant_execute(db, sql, 25);
+		switch_core_db_persistant_execute(db, sql, 1);
+
 		if (!master) {
 			switch_core_db_close(db);
 		}

@@ -105,7 +105,7 @@ static switch_status_t limit_execute_sql(char *sql, switch_mutex_t *mutex)
 			goto end;
 		}
 
-		status = switch_core_db_persistant_execute(db, sql, 25);
+		status = switch_core_db_persistant_execute(db, sql, 1);
 		switch_core_db_close(db);
 
 #ifdef SWITCH_HAVE_ODBC

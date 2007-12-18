@@ -214,6 +214,15 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->hash_key);
 	}
 
+	if (session) {
+		const char *call_id = tech_pvt->call_id;
+		char *sql;
+		sql = switch_mprintf("delete from sip_dialogs where call_id='%q'", call_id);
+		switch_assert(sql);
+        sofia_glue_execute_sql(tech_pvt->profile, SWITCH_FALSE, sql, tech_pvt->profile->ireg_mutex);
+		free(sql);
+	}
+
 	if (tech_pvt->kick && (a_session = switch_core_session_locate(tech_pvt->kick))) {
 		switch_channel_t *a_channel = switch_core_session_get_channel(a_session);
 		switch_channel_hangup(a_channel, switch_channel_get_cause(channel));
@@ -1593,6 +1602,9 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 	if (tech_pvt->local_url) {
 		switch_channel_set_variable(nchannel, "sip_local_url", tech_pvt->local_url);
+		if (sofia_test_pflag(profile, PFLAG_PRESENCE)) {
+			switch_channel_set_variable(nchannel, "presence_id", tech_pvt->local_url);
+		}
 	}
 	switch_channel_set_variable(nchannel, "sip_destination_url", tech_pvt->dest);
 	
@@ -1605,6 +1617,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	tech_pvt->caller_profile = caller_profile;
 	*new_session = nsession;
 	cause = SWITCH_CAUSE_SUCCESS;
+
 	if (session) {
 		switch_ivr_transfer_variable(session, nsession, SOFIA_REPLACES_HEADER);
 		switch_ivr_transfer_variable(session, nsession, SOFIA_SIP_HEADER_PREFIX_T);

@@ -54,6 +54,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									 char const *phrase,
 									 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 
+static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status,
+									 char const *phrase,
+									  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 void sofia_handle_sip_r_notify(switch_core_session_t *session, int status,
 							   char const *phrase,
 							   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
@@ -210,6 +213,8 @@ void sofia_event_callback(nua_event_t event,
 		break;
 
 	case nua_r_invite:
+		sofia_handle_sip_r_invite(session, status, phrase, nua, profile, nh, sofia_private, sip, tags);
+		break;
 	case nua_r_get_params:
 	case nua_r_unregister:
 	case nua_r_options:
@@ -261,882 +266,931 @@ void sofia_event_callback(nua_event_t event,
 		sofia_handle_sip_i_info(nua, profile, nh, session, sip, tags);
 		break;
 	case nua_r_refer:
-		break;
-	case nua_i_refer:
-		if (session) {
-			sofia_handle_sip_i_refer(nua, profile, nh, session, sip, tags);
-		}
-		break;
-	case nua_r_subscribe:
-		sofia_presence_handle_sip_r_subscribe(status, phrase, nua, profile, nh, sofia_private, sip, tags);
-		break;
-	case nua_i_subscribe:
-		sofia_presence_handle_sip_i_subscribe(status, phrase, nua, profile, nh, sofia_private, sip, tags);
-		break;
-	default:
-		if (status > 100) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: unknown event %d: %03d %s\n", nua_event_name(event), event, status, phrase);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: unknown event %d\n", nua_event_name(event), event);
-		}
-		break;
-	}
+		 break;
+	 case nua_i_refer:
+		 if (session) {
+			 sofia_handle_sip_i_refer(nua, profile, nh, session, sip, tags);
+		 }
+		 break;
+	 case nua_r_subscribe:
+		 sofia_presence_handle_sip_r_subscribe(status, phrase, nua, profile, nh, sofia_private, sip, tags);
+		 break;
+	 case nua_i_subscribe:
+		 sofia_presence_handle_sip_i_subscribe(status, phrase, nua, profile, nh, sofia_private, sip, tags);
+		 break;
+	 default:
+		 if (status > 100) {
+			 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: unknown event %d: %03d %s\n", nua_event_name(event), event, status, phrase);
+		 } else {
+			 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: unknown event %d\n", nua_event_name(event), event);
+		 }
+		 break;
+	 }
 
-  done:
+   done:
 
-	if (gateway) {
-		sofia_reg_release_gateway(gateway);
-	}
+	 if (gateway) {
+		 sofia_reg_release_gateway(gateway);
+	 }
 
-	if (session) {
-		switch_core_session_rwunlock(session);
+	 if (session) {
+		 switch_core_session_rwunlock(session);
 
-	}
-}
-
-
-void event_handler(switch_event_t *event)
-{
-	char *subclass, *sql;
-
-	if ((subclass = switch_event_get_header(event, "orig-event-subclass")) && !strcasecmp(subclass, MY_EVENT_REGISTER)) {
-		char *from_user = switch_event_get_header(event, "orig-from-user");
-		char *from_host = switch_event_get_header(event, "orig-from-host");
-		char *contact_str = switch_event_get_header(event, "orig-contact");
-		char *exp_str = switch_event_get_header(event, "orig-expires");
-		char *rpid = switch_event_get_header(event, "orig-rpid");
-		char *call_id = switch_event_get_header(event, "orig-call-id");
-		char *user_agent = switch_event_get_header(event, "user-agent");
-		long expires = (long) time(NULL) + atol(exp_str);
-		char *profile_name = switch_event_get_header(event, "orig-profile-name");
-		sofia_profile_t *profile = NULL;
-		
-		if (!rpid) {
-			rpid = "unknown";
-		}
-
-		if (!profile_name || !(profile = sofia_glue_find_profile(profile_name))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile\n");
-			return;
-		}
-		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
-			sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
-		} else {
-			sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", from_user, from_host);
-		}
-
-		switch_mutex_lock(profile->ireg_mutex);
-		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
-		switch_safe_free(sql);
-		
-		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','Registered', '%q', %ld, '%q')",
-							 call_id, from_user, from_host, contact_str, rpid, expires, user_agent);
-
-		if (sql) {
-			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
-			switch_safe_free(sql);
-			sql = NULL;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Propagating registration for %s@%s->%s\n", from_user, from_host, contact_str);
-		}
-		switch_mutex_unlock(profile->ireg_mutex);
-		
-
-		if (profile) {
-			sofia_glue_release_profile(profile);
-		}
-	}
-}
+	 }
+ }
 
 
+ void event_handler(switch_event_t *event)
+ {
+	 char *subclass, *sql;
 
-void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void *obj)
-{
-	sofia_profile_t *profile = (sofia_profile_t *) obj;
-	switch_memory_pool_t *pool;
-	sip_alias_node_t *node;
-	uint32_t ireg_loops = 0;
-	uint32_t gateway_loops = 0;
-	switch_event_t *s_event;
-	int tportlog = 0;
-	
-	switch_mutex_lock(mod_sofia_globals.mutex);
-	mod_sofia_globals.threads++;
-	switch_mutex_unlock(mod_sofia_globals.mutex);
+	 if ((subclass = switch_event_get_header(event, "orig-event-subclass")) && !strcasecmp(subclass, MY_EVENT_REGISTER)) {
+		 char *from_user = switch_event_get_header(event, "orig-from-user");
+		 char *from_host = switch_event_get_header(event, "orig-from-host");
+		 char *contact_str = switch_event_get_header(event, "orig-contact");
+		 char *exp_str = switch_event_get_header(event, "orig-expires");
+		 char *rpid = switch_event_get_header(event, "orig-rpid");
+		 char *call_id = switch_event_get_header(event, "orig-call-id");
+		 char *user_agent = switch_event_get_header(event, "user-agent");
+		 long expires = (long) time(NULL) + atol(exp_str);
+		 char *profile_name = switch_event_get_header(event, "orig-profile-name");
+		 sofia_profile_t *profile = NULL;
 
-	profile->s_root = su_root_create(NULL);
-	profile->home = su_home_new(sizeof(*profile->home));
+		 if (!rpid) {
+			 rpid = "unknown";
+		 }
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating agent for %s\n", profile->name);
+		 if (!profile_name || !(profile = sofia_glue_find_profile(profile_name))) {
+			 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile\n");
+			 return;
+		 }
+		 if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
+			 sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
+		 } else {
+			 sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", from_user, from_host);
+		 }
 
-	if (!sofia_glue_init_sql(profile)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database [%s]!\n", profile->name);
-		sofia_glue_del_profile(profile);
-		goto end;
-	}
+		 switch_mutex_lock(profile->ireg_mutex);
+		 sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
+		 switch_safe_free(sql);
 
-	if (switch_test_flag(profile, TFLAG_TPORT_LOG)) {
-		tportlog = 1;
-	}
+		 sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','Registered', '%q', %ld, '%q')",
+							  call_id, from_user, from_host, contact_str, rpid, expires, user_agent);
 
-	profile->nua = nua_create(profile->s_root,	/* Event loop */
-							  sofia_event_callback,	/* Callback for processing events */
-							  profile,	/* Additional data to pass to callback */
-							  NUTAG_URL(profile->bindurl), NTATAG_UDP_MTU(65536), TAG_IF(tportlog,TPTAG_LOG(1)), TAG_END());	/* Last tag should always finish the sequence */
+		 if (sql) {
+			 sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
+			 switch_safe_free(sql);
+			 sql = NULL;
+			 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Propagating registration for %s@%s->%s\n", from_user, from_host, contact_str);
+		 }
+		 switch_mutex_unlock(profile->ireg_mutex);
 
-	if (!profile->nua) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s\n", profile->name);
-		sofia_glue_del_profile(profile);
-		goto end;
-	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created agent for %s\n", profile->name);
+		 if (profile) {
+			 sofia_glue_release_profile(profile);
+		 }
+	 }
+ }
 
-	nua_set_params(profile->nua,
-				   NUTAG_APPL_METHOD("OPTIONS"),
-				   NUTAG_APPL_METHOD("NOTIFY"),
-				   NUTAG_APPL_METHOD("INFO"),
-				   NUTAG_AUTOANSWER(0),
-				   NUTAG_AUTOALERT(0),
-				   NUTAG_ALLOW("REGISTER"),
-				   NUTAG_ALLOW("REFER"),
-				   NUTAG_ALLOW("INFO"),
-				   NUTAG_ALLOW("NOTIFY"),
-				   NUTAG_ALLOW_EVENTS("talk"),
-				   NUTAG_SESSION_TIMER(profile->session_timeout),
-				   NTATAG_MAX_PROCEEDING(profile->max_proceeding),
-				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("PUBLISH")),
-				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("SUBSCRIBE")),
-				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ENABLEMESSAGE(1)),
-				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence")),
-				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("dialog")),
-				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("call-info")),
-				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence.winfo")),
-				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("message-summary")),
-				   SIPTAG_SUPPORTED_STR("100rel, precondition, timer"), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set params for %s\n", profile->name);
 
-	for (node = profile->aliases; node; node = node->next) {
-		node->nua = nua_create(profile->s_root,	/* Event loop */
+ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void *obj)
+ {
+	 sofia_profile_t *profile = (sofia_profile_t *) obj;
+	 switch_memory_pool_t *pool;
+	 sip_alias_node_t *node;
+	 uint32_t ireg_loops = 0;
+	 uint32_t gateway_loops = 0;
+	 switch_event_t *s_event;
+	 int tportlog = 0;
+
+	 switch_mutex_lock(mod_sofia_globals.mutex);
+	 mod_sofia_globals.threads++;
+	 switch_mutex_unlock(mod_sofia_globals.mutex);
+
+	 profile->s_root = su_root_create(NULL);
+	 profile->home = su_home_new(sizeof(*profile->home));
+
+	 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating agent for %s\n", profile->name);
+
+	 if (!sofia_glue_init_sql(profile)) {
+		 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database [%s]!\n", profile->name);
+		 sofia_glue_del_profile(profile);
+		 goto end;
+	 }
+
+	 if (switch_test_flag(profile, TFLAG_TPORT_LOG)) {
+		 tportlog = 1;
+	 }
+
+	 profile->nua = nua_create(profile->s_root,	/* Event loop */
 							   sofia_event_callback,	/* Callback for processing events */
 							   profile,	/* Additional data to pass to callback */
-							   NUTAG_URL(node->url), TAG_END());	/* Last tag should always finish the sequence */
+							   NUTAG_URL(profile->bindurl), NTATAG_UDP_MTU(65536), TAG_IF(tportlog,TPTAG_LOG(1)), TAG_END());	/* Last tag should always finish the sequence */
 
-		nua_set_params(node->nua,
-					   NUTAG_APPL_METHOD("OPTIONS"),
-					   NUTAG_EARLY_MEDIA(1),
-					   NUTAG_AUTOANSWER(0),
-					   NUTAG_AUTOALERT(0),
-					   NUTAG_ALLOW("REGISTER"),
-					   NUTAG_ALLOW("REFER"),
-					   NUTAG_ALLOW("INFO"),
-					   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("PUBLISH")),
-					   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ENABLEMESSAGE(1)),
-					   SIPTAG_SUPPORTED_STR("100rel, precondition"), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
+	 if (!profile->nua) {
+		 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s\n", profile->name);
+		 sofia_glue_del_profile(profile);
+		 goto end;
+	 }
 
-	}
+	 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created agent for %s\n", profile->name);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "activated db for %s\n", profile->name);
+	 nua_set_params(profile->nua,
+					NUTAG_APPL_METHOD("OPTIONS"),
+					NUTAG_APPL_METHOD("NOTIFY"),
+					NUTAG_APPL_METHOD("INFO"),
+					NUTAG_AUTOANSWER(0),
+					NUTAG_AUTOALERT(0),
+					NUTAG_ALLOW("REGISTER"),
+					NUTAG_ALLOW("REFER"),
+					NUTAG_ALLOW("INFO"),
+					NUTAG_ALLOW("NOTIFY"),
+					NUTAG_ALLOW_EVENTS("talk"),
+					NUTAG_SESSION_TIMER(profile->session_timeout),
+					NTATAG_MAX_PROCEEDING(profile->max_proceeding),
+					TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("PUBLISH")),
+					TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("SUBSCRIBE")),
+					TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ENABLEMESSAGE(1)),
+					TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence")),
+					TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("dialog")),
+					TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("call-info")),
+					TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence.winfo")),
+					TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("message-summary")),
+					SIPTAG_SUPPORTED_STR("100rel, precondition, timer"), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
 
-	switch_mutex_init(&profile->ireg_mutex, SWITCH_MUTEX_NESTED, profile->pool);
-	switch_mutex_init(&profile->gateway_mutex, SWITCH_MUTEX_NESTED, profile->pool);
+	 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set params for %s\n", profile->name);
 
-	ireg_loops = IREG_SECONDS;
-	gateway_loops = GATEWAY_SECONDS;
+	 for (node = profile->aliases; node; node = node->next) {
+		 node->nua = nua_create(profile->s_root,	/* Event loop */
+								sofia_event_callback,	/* Callback for processing events */
+								profile,	/* Additional data to pass to callback */
+								NUTAG_URL(node->url), TAG_END());	/* Last tag should always finish the sequence */
 
-	if (switch_event_create(&s_event, SWITCH_EVENT_PUBLISH) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp,_sip._tcp,_sip._sctp");
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", profile->sip_port);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "module_name", "%s", "mod_sofia");
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_name", "%s", profile->name);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_uri", "%s", profile->url);
-		switch_event_fire(&s_event);
-	}
+		 nua_set_params(node->nua,
+						NUTAG_APPL_METHOD("OPTIONS"),
+						NUTAG_EARLY_MEDIA(1),
+						NUTAG_AUTOANSWER(0),
+						NUTAG_AUTOALERT(0),
+						NUTAG_ALLOW("REGISTER"),
+						NUTAG_ALLOW("REFER"),
+						NUTAG_ALLOW("INFO"),
+						TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("PUBLISH")),
+						TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ENABLEMESSAGE(1)),
+						SIPTAG_SUPPORTED_STR("100rel, precondition"), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
 
-	sofia_glue_add_profile(profile->name, profile);
+	 }
 
-	if (profile->pflags & PFLAG_PRESENCE) {
-		sofia_presence_establish_presence(profile);
-	}
+	 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "activated db for %s\n", profile->name);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting thread for %s\n", profile->name);
+	 switch_mutex_init(&profile->ireg_mutex, SWITCH_MUTEX_NESTED, profile->pool);
+	 switch_mutex_init(&profile->gateway_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 
-	profile->started = time(NULL);
-	switch_yield(1000000);
+	 ireg_loops = IREG_SECONDS;
+	 gateway_loops = GATEWAY_SECONDS;
 
-	sofia_set_pflag_locked(profile, PFLAG_RUNNING);
-	
-	while (mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING)) {
-		if (++ireg_loops >= IREG_SECONDS) {
-			sofia_reg_check_expire(profile, time(NULL));
-			ireg_loops = 0;
+	 if (switch_event_create(&s_event, SWITCH_EVENT_PUBLISH) == SWITCH_STATUS_SUCCESS) {
+		 switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp,_sip._tcp,_sip._sctp");
+		 switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", profile->sip_port);
+		 switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "module_name", "%s", "mod_sofia");
+		 switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_name", "%s", profile->name);
+		 switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_uri", "%s", profile->url);
+		 switch_event_fire(&s_event);
+	 }
+
+	 sofia_glue_add_profile(profile->name, profile);
+
+	 if (profile->pflags & PFLAG_PRESENCE) {
+		 sofia_presence_establish_presence(profile);
+	 }
+
+	 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting thread for %s\n", profile->name);
+
+	 profile->started = time(NULL);
+	 switch_yield(1000000);
+
+	 sofia_set_pflag_locked(profile, PFLAG_RUNNING);
+
+	 while (mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING)) {
+		 if (++ireg_loops >= IREG_SECONDS) {
+			 sofia_reg_check_expire(profile, time(NULL));
+			 ireg_loops = 0;
+		 }
+
+		 if (++gateway_loops >= GATEWAY_SECONDS) {
+			 sofia_reg_check_gateway(profile, time(NULL));
+			 gateway_loops = 0;
+		 }
+
+		 su_root_step(profile->s_root, 1000);
+	 }
+
+	 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock %s\n", profile->name);
+	 switch_thread_rwlock_wrlock(profile->rwlock);
+	 sofia_reg_unregister(profile);
+	 nua_shutdown(profile->nua);
+
+	 su_root_run(profile->s_root);
+	 nua_destroy(profile->nua);
+
+	 switch_mutex_lock(profile->ireg_mutex);
+	 switch_mutex_unlock(profile->ireg_mutex);
+
+	 if (switch_event_create(&s_event, SWITCH_EVENT_UNPUBLISH) == SWITCH_STATUS_SUCCESS) {
+		 switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp,_sip._tcp,_sip._sctp");
+		 switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", profile->sip_port);
+		 switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "module_name", "%s", "mod_sofia");
+		 switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_name", "%s", profile->name);
+		 switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_uri", "%s", profile->url);
+		 switch_event_fire(&s_event);
+	 }
+
+	 sofia_glue_sql_close(profile);
+	 su_home_unref(profile->home);
+	 su_root_destroy(profile->s_root);
+	 pool = profile->pool;
+
+	 sofia_glue_del_profile(profile);
+	 switch_core_hash_destroy(&profile->chat_hash);
+	 switch_core_hash_destroy(&profile->sub_hash);
+
+	 switch_thread_rwlock_unlock(profile->rwlock);
+	 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write unlock %s\n", profile->name);
+
+	 if (sofia_test_pflag(profile, PFLAG_RESPAWN)) {
+		 config_sofia(1, profile->name);
+	 }
+
+	 switch_core_destroy_memory_pool(&pool);
+
+  end:
+	 switch_mutex_lock(mod_sofia_globals.mutex);
+	 mod_sofia_globals.threads--;
+	 switch_mutex_unlock(mod_sofia_globals.mutex);
+
+	 return NULL;
+ }
+
+ void launch_sofia_profile_thread(sofia_profile_t *profile)
+ {
+	 switch_thread_t *thread;
+	 switch_threadattr_t *thd_attr = NULL;
+
+	 switch_threadattr_create(&thd_attr, profile->pool);
+	 switch_threadattr_detach_set(thd_attr, 1);
+	 switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	 switch_thread_create(&thread, thd_attr, sofia_profile_thread_run, profile, profile->pool);
+ }
+
+ static void logger(void *logarg, char const *fmt, va_list ap)
+ {
+	 char *data = NULL;
+
+	 if (fmt) {
+ #ifdef HAVE_VASPRINTF
+		 int ret;
+		 ret = vasprintf(&data, fmt, ap);
+		 if ((ret == -1) || !data) {
+			 return;
+		 }
+ #else
+		 data = (char *) malloc(2048);
+		 if (data) {
+			 vsnprintf(data, 2048, fmt, ap);
+		 } else {
+			 return;
+		 }
+ #endif
+	 }
+	 if (data) {
+		 switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, (char *) "%s", data);
+		 free(data);
+	 }
+ }
+
+
+ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
+ {
+	 switch_xml_t gateway_tag, param;
+	 sofia_gateway_t *gp;
+
+	 for (gateway_tag = switch_xml_child(gateways_tag, "gateway"); gateway_tag; gateway_tag = gateway_tag->next) {
+		 char *name = (char *) switch_xml_attr_soft(gateway_tag, "name");
+		 sofia_gateway_t *gateway;
+
+		 if (switch_strlen_zero(name)) {
+			 name = "anonymous";
+		 }
+
+		 if ((gateway = switch_core_alloc(profile->pool, sizeof(*gateway)))) {
+			 char *register_str = "true", *scheme = "Digest",
+				 *realm = NULL,
+				 *username = NULL,
+				 *password = NULL,
+				 *caller_id_in_from = "false",
+				 *extension = NULL,
+				 *proxy = NULL,
+				 *context = "default",
+				 *expire_seconds = "3600",
+				 *retry_seconds = "30",
+				 *from_user = "",
+				 *from_domain = "",
+				 *register_proxy = NULL,
+				 *contact_params = NULL,
+				 *params = NULL,
+				 *register_transport = "udp";
+
+			 gateway->pool = profile->pool;
+			 gateway->profile = profile;
+			 gateway->name = switch_core_strdup(gateway->pool, name);
+			 gateway->freq = 0;
+			 gateway->next = NULL;
+
+			 for (param = switch_xml_child(gateway_tag, "param"); param; param = param->next) {
+				 char *var = (char *) switch_xml_attr_soft(param, "name");
+				 char *val = (char *) switch_xml_attr_soft(param, "value");
+
+				 if (!strcmp(var, "register")) {
+					 register_str = val;
+				 } else if (!strcmp(var, "scheme")) {
+					 scheme = val;
+				 } else if (!strcmp(var, "realm")) {
+					 realm = val;
+				 } else if (!strcmp(var, "username")) {
+					 username = val;
+				 } else if (!strcmp(var, "password")) {
+					 password = val;
+				 } else if (!strcmp(var, "caller-id-in-from")) {
+					 caller_id_in_from = val;
+				 } else if (!strcmp(var, "extension")) {
+					 extension = val;
+				 } else if (!strcmp(var, "proxy")) {
+					 proxy = val;
+				 } else if (!strcmp(var, "context")) {
+					 context = val;
+				 } else if (!strcmp(var, "expire-seconds")) {
+					 expire_seconds = val;
+				 } else if (!strcmp(var, "retry-seconds")) {
+					 retry_seconds = val;
+				 } else if (!strcmp(var, "from-user")) {
+					 from_user = val;
+				 } else if (!strcmp(var, "from-domain")) {
+					 from_domain = val;
+				 } else if (!strcmp(var, "register-proxy")) {
+					 register_proxy = val;
+				 } else if (!strcmp(var, "contact-params")) {
+					 contact_params = val;
+				 } else if (!strcmp(var, "register-transport")) {
+					 if (!strcasecmp(val, "udp") || !strcasecmp(val, "tcp")) {
+						 register_transport = val;
+					 } else {
+						 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: unsupported transport\n");
+						 goto skip;
+					 }
+				 }
+			 }
+
+			 if (switch_strlen_zero(realm)) {
+				 realm = name;
+			 }
+
+			 if (switch_strlen_zero(username)) {
+				 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: username param is REQUIRED!\n");
+				 goto skip;
+			 }
+
+			 if (switch_strlen_zero(password)) {
+				 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: password param is REQUIRED!\n");
+				 goto skip;
+			 }
+
+			 if (switch_strlen_zero(from_user)) {
+				 from_user = username;
+			 }
+
+			 if (switch_strlen_zero(extension)) {
+				 extension = username;
+			 }
+
+			 if (switch_strlen_zero(proxy)) {
+				 proxy = realm;
+			 }
+
+			 if (!switch_true(register_str)) {
+				 gateway->state = REG_STATE_NOREG;
+			 }
+
+			 if (switch_strlen_zero(from_domain)) {
+				 from_domain = realm;
+			 }
+
+			 if (switch_strlen_zero(register_proxy)) {
+				 register_proxy = proxy;
+			 }
+
+			 gateway->retry_seconds = atoi(retry_seconds);
+			 if (gateway->retry_seconds < 10) {
+				 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "INVALID: retry_seconds correcting the value to 30\n");
+				 gateway->retry_seconds = 30;
+			 }
+			 gateway->register_scheme = switch_core_strdup(gateway->pool, scheme);
+			 gateway->register_context = switch_core_strdup(gateway->pool, context);
+			 gateway->register_realm = switch_core_strdup(gateway->pool, realm);
+			 gateway->register_username = switch_core_strdup(gateway->pool, username);
+			 gateway->register_password = switch_core_strdup(gateway->pool, password);
+			 if (switch_true(caller_id_in_from)) {
+				 switch_set_flag(gateway, REG_FLAG_CALLERID);
+			 }
+			 if (contact_params) {
+				 if (*contact_params == ';') {
+					 params = switch_core_sprintf(gateway->pool, "%s&transport=%s", contact_params, register_transport);
+				 } else {
+					 params = switch_core_sprintf(gateway->pool, ";%s&transport=%s", contact_params, register_transport);
+				 }
+			 } else {
+				 params = switch_core_sprintf(gateway->pool, ";transport=%s", register_transport);
+			 }
+
+			 gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s;transport=%s", register_proxy,register_transport);
+			 gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>", from_user, from_domain, register_transport);
+			 gateway->register_contact = switch_core_sprintf(gateway->pool, "<sip:%s@%s:%d%s>", extension,
+															 profile->extsipip ? profile->extsipip : profile->sipip, profile->sip_port, params);
+
+			 if (!strncasecmp(proxy, "sip:", 4)) {
+				 gateway->register_proxy = switch_core_strdup(gateway->pool, proxy);
+				 gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy + 4);
+			 } else {
+				 gateway->register_proxy = switch_core_sprintf(gateway->pool, "sip:%s", proxy);
+				 gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy);
+			 }
+
+			 gateway->expires_str = switch_core_strdup(gateway->pool, expire_seconds);
+
+			 if ((gateway->freq = atoi(gateway->expires_str)) < 5) {
+				 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+								   "Invalid Freq: %d.  Setting Register-Frequency to 3600\n", gateway->freq);
+				 gateway->freq = 3600;
+			 }
+			 gateway->freq -= 2;
+
+			 if ((gp = sofia_reg_find_gateway(gateway->name))) {
+				 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate gateway '%s'\n", gateway->name);
+				 sofia_reg_release_gateway(gp);
+			 } else {
+				 gateway->next = profile->gateways;
+				 profile->gateways = gateway;
+				 sofia_reg_add_gateway(gateway->name, gateway);
+			 }
+		 }
+
+	 skip:
+		 switch_assert(gateway_tag);
+	 }
+
+ }
+
+ switch_status_t config_sofia(int reload, char *profile_name)
+ {
+	 char *cf = "sofia.conf";
+	 switch_xml_t cfg, xml = NULL, xprofile, param, settings, profiles, gateways_tag, domain_tag, domains_tag;
+	 switch_status_t status = SWITCH_STATUS_SUCCESS;
+	 sofia_profile_t *profile = NULL;
+	 char url[512] = "";
+	 int profile_found = 0;
+
+	 if (!reload) {
+		 su_init();
+		 if (sip_update_default_mclass(sip_extend_mclass(NULL)) < 0) {
+			 su_deinit();
+			 return SWITCH_STATUS_FALSE;
+		 }
+
+		 su_log_redirect(NULL, logger, NULL);
+		 su_log_redirect(tport_log, logger, NULL);
+	 }
+
+	 if (!switch_strlen_zero(profile_name) && (profile = sofia_glue_find_profile(profile_name))) {
+		 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile [%s] Already exists.\n", switch_str_nil(profile_name));
+		 status = SWITCH_STATUS_FALSE;
+		 sofia_glue_release_profile(profile);
+		 return status;
+	 }
+
+	 switch_snprintf(url, sizeof(url), "profile=%s", switch_str_nil(profile_name));
+
+	 if (!(xml = switch_xml_open_cfg(cf, &cfg, url))) {
+		 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		 status = SWITCH_STATUS_FALSE;
+		 goto done;
+	 }
+
+	 if ((settings = switch_xml_child(cfg, "global_settings"))) {
+		 for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			 char *var = (char *) switch_xml_attr_soft(param, "name");
+			 char *val = (char *) switch_xml_attr_soft(param, "value");
+			 if (!strcasecmp(var, "log-level")) {
+				 su_log_set_level(NULL, atoi(val));
+			 }
+		 }
+	 }
+
+	 if ((profiles = switch_xml_child(cfg, "profiles"))) {
+		 for (xprofile = switch_xml_child(profiles, "profile"); xprofile; xprofile = xprofile->next) {
+			 if (!(settings = switch_xml_child(xprofile, "settings"))) {
+				 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Settings, check the new config!\n");
+			 } else {
+				 char *xprofilename = (char *) switch_xml_attr_soft(xprofile, "name");
+				 switch_memory_pool_t *pool = NULL;
+
+				 if (!xprofilename) {
+					 xprofilename = "unnamed";
+				 }
+
+				 if (profile_name) {
+					 if (strcasecmp(profile_name, xprofilename)) {
+						 continue;
+					 } else {
+						 profile_found = 1;
+					 }
+				 }
+
+				 /* Setup the pool */
+				 if ((status = switch_core_new_memory_pool(&pool)) != SWITCH_STATUS_SUCCESS) {
+					 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+					 goto done;
+				 }
+
+				 if (!(profile = (sofia_profile_t *) switch_core_alloc(pool, sizeof(*profile)))) {
+					 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+					 goto done;
+				 }
+
+				 profile->pool = pool;
+				 profile->user_agent = SOFIA_USER_AGENT;
+
+				 profile->name = switch_core_strdup(profile->pool, xprofilename);
+				 switch_snprintf(url, sizeof(url), "sofia_reg_%s", xprofilename);
+
+				 profile->dbname = switch_core_strdup(profile->pool, url);
+				 switch_core_hash_init(&profile->chat_hash, profile->pool);
+				 switch_core_hash_init(&profile->sub_hash, profile->pool);
+				 switch_thread_rwlock_create(&profile->rwlock, profile->pool);
+				 switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
+				 profile->dtmf_duration = 100;
+
+				 for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+					 char *var = (char *) switch_xml_attr_soft(param, "name");
+					 char *val = (char *) switch_xml_attr_soft(param, "value");
+
+					 if (!strcasecmp(var, "debug")) {
+						 profile->debug = atoi(val);
+					 } else if (!strcasecmp(var, "use-rtp-timer") && switch_true(val)) {
+						 switch_set_flag(profile, TFLAG_TIMER);
+					 } else if (!strcasecmp(var, "sip-trace") && switch_true(val)) {
+						 switch_set_flag(profile, TFLAG_TPORT_LOG);
+					 } else if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
+ #ifdef SWITCH_HAVE_ODBC
+						 profile->odbc_dsn = switch_core_strdup(profile->pool, val);
+						 if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
+							 *profile->odbc_user++ = '\0';
+							 if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
+								 *profile->odbc_pass++ = '\0';
+							 }
+						 }
+
+ #else
+						 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
+ #endif
+
+					 } else if (!strcasecmp(var, "user-agent-string")) {
+						 profile->user_agent = switch_core_strdup(profile->pool, val);;
+					 } else if (!strcasecmp(var, "inbound-no-media") && switch_true(val)) {
+						 switch_set_flag(profile, TFLAG_INB_NOMEDIA);
+					 } else if (!strcasecmp(var, "inbound-late-negotiation") && switch_true(val)) {
+						 switch_set_flag(profile, TFLAG_LATE_NEGOTIATION);
+					 } else if (!strcasecmp(var, "rfc2833-pt")) {
+						 profile->te = (switch_payload_t) atoi(val);
+					 } else if (!strcasecmp(var, "cng-pt")) {
+						 profile->cng_pt = (switch_payload_t) atoi(val);
+					 } else if (!strcasecmp(var, "sip-port")) {
+						 profile->sip_port = atoi(val);
+					 } else if (!strcasecmp(var, "vad")) {
+						 if (!strcasecmp(val, "in")) {
+							 switch_set_flag(profile, TFLAG_VAD_IN);
+						 } else if (!strcasecmp(val, "out")) {
+							 switch_set_flag(profile, TFLAG_VAD_OUT);
+						 } else if (!strcasecmp(val, "both")) {
+							 switch_set_flag(profile, TFLAG_VAD_IN);
+							 switch_set_flag(profile, TFLAG_VAD_OUT);
+						 } else {
+							 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invald option %s for VAD\n", val);
+						 }
+					 } else if (!strcasecmp(var, "ext-rtp-ip")) {
+						 profile->extrtpip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip);
+					 } else if (!strcasecmp(var, "rtp-ip")) {
+						 profile->rtpip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip);
+					 } else if (!strcasecmp(var, "sip-ip")) {
+						 profile->sipip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip);
+					 } else if (!strcasecmp(var, "ext-sip-ip")) {
+						 if (!strcasecmp(val, "auto")) {
+							 profile->extsipip = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
+						 } else {
+							 char *ip = mod_sofia_globals.guess_ip;
+							 switch_port_t port = 0;
+							 if (sofia_glue_ext_address_lookup(&ip, &port, val, profile->pool) == SWITCH_STATUS_SUCCESS) {
+
+								 if (ip) {
+									 profile->extsipip = switch_core_strdup(profile->pool, ip);
+								 }
+							 }
+						 }
+					 } else if (!strcasecmp(var, "force-register-domain")) {
+						 profile->reg_domain = switch_core_strdup(profile->pool, val);
+					 } else if (!strcasecmp(var, "bind-params")) {
+						 profile->bind_params = switch_core_strdup(profile->pool, val);
+					 } else if (!strcasecmp(var, "sip-domain")) {
+						 profile->sipdomain = switch_core_strdup(profile->pool, val);
+					 } else if (!strcasecmp(var, "rtp-timer-name")) {
+						 profile->timer_name = switch_core_strdup(profile->pool, val);
+					 } else if (!strcasecmp(var, "hold-music")) {
+						 profile->hold_music = switch_core_strdup(profile->pool, val);
+					 } else if (!strcasecmp(var, "session-timeout")) {
+						 int v_session_timeout = atoi(val);
+						 if (v_session_timeout >= 0) {
+							 profile->session_timeout = v_session_timeout;
+						 }
+					 } else if (!strcasecmp(var, "max-proceeding")) {
+						 int v_max_proceeding = atoi(val);
+						 if (v_max_proceeding >= 0) {
+							 profile->max_proceeding = v_max_proceeding;
+						 }
+					 } else if (!strcasecmp(var, "rtp-timeout-sec")) {
+						 int v = atoi(val);
+						 if (v >= 0) {
+							 profile->rtp_timeout_sec = v;
+						 }
+					 } else if (!strcasecmp(var, "manage-presence")) {
+						 if (switch_true(val)) {
+							 profile->pflags |= PFLAG_PRESENCE;
+						 }
+					 } else if (!strcasecmp(var, "multiple-registrations")) {
+						 if (switch_true(val)) {
+							 profile->pflags |= PFLAG_MULTIREG;
+						 }
+					 } else if (!strcasecmp(var, "supress-cng")) {
+						 if (switch_true(val)) {
+							 profile->pflags |= PFLAG_SUPRESS_CNG;
+						 }
+					 } else if (!strcasecmp(var, "NDLB-to-in-200-contact")) {
+						 if (switch_true(val)) {
+							 profile->ndlb |= PFLAG_NDLB_TO_IN_200_CONTACT;
+						 }
+					 } else if (!strcasecmp(var, "NDLB-broken-auth-hash")) {
+						 if (switch_true(val)) {
+							 profile->ndlb |= PFLAG_NDLB_BROKEN_AUTH_HASH;
+						 }
+					 } else if (!strcasecmp(var, "pass-rfc2833")) {
+						 if (switch_true(val)) {
+							 profile->pflags |= PFLAG_PASS_RFC2833;
+						 }
+					 } else if (!strcasecmp(var, "inbound-codec-negotiation")) {
+						 if (!strcasecmp(val, "greedy")) {
+							 profile->pflags |= PFLAG_GREEDY;
+						 }
+					 } else if (!strcasecmp(var, "disable-transcoding")) {
+						 if (switch_true(val)) {
+							 profile->pflags |= PFLAG_DISABLE_TRANSCODING;
+						 }
+					 } else if (!strcasecmp(var, "rtp-rewrite-timestamps")) {
+						 if (switch_true(val)) {
+							 profile->pflags |= PFLAG_REWRITE_TIMESTAMPS;
+						 }
+					 } else if (!strcasecmp(var, "auth-calls")) {
+						 if (switch_true(val)) {
+							 profile->pflags |= PFLAG_AUTH_CALLS;
+						 }
+					 } else if (!strcasecmp(var, "nonce-ttl")) {
+						 profile->nonce_ttl = atoi(val);
+					 } else if (!strcasecmp(var, "accept-blind-reg")) {
+						 if (switch_true(val)) {
+							 profile->pflags |= PFLAG_BLIND_REG;
+						 }
+					 } else if (!strcasecmp(var, "auth-all-packets")) {
+						 if (switch_true(val)) {
+							 profile->pflags |= PFLAG_AUTH_ALL;
+						 }
+					 } else if (!strcasecmp(var, "full-id-in-dialplan")) {
+						 if (switch_true(val)) {
+							 profile->pflags |= PFLAG_FULL_ID;
+						 }
+					 } else if (!strcasecmp(var, "bitpacking")) {
+						 if (!strcasecmp(val, "aal2")) {
+							 profile->codec_flags = SWITCH_CODEC_FLAG_AAL2;
+						 }
+					 } else if (!strcasecmp(var, "username")) {
+						 profile->username = switch_core_strdup(profile->pool, val);
+					 } else if (!strcasecmp(var, "context")) {
+						 profile->context = switch_core_strdup(profile->pool, val);
+					 } else if (!strcasecmp(var, "alias")) {
+						 sip_alias_node_t *node;
+						 if ((node = switch_core_alloc(profile->pool, sizeof(*node)))) {
+							 if ((node->url = switch_core_strdup(profile->pool, val))) {
+								 node->next = profile->aliases;
+								 profile->aliases = node;
+							 }
+						 }
+					 } else if (!strcasecmp(var, "dialplan")) {
+						 profile->dialplan = switch_core_strdup(profile->pool, val);
+					 } else if (!strcasecmp(var, "max-calls")) {
+						 profile->max_calls = atoi(val);
+					 } else if (!strcasecmp(var, "codec-prefs")) {
+						 profile->codec_string = switch_core_strdup(profile->pool, val);
+					 } else if (!strcasecmp(var, "dtmf-duration")) {
+						 int dur = atoi(val);
+						 if (dur > 10 && dur < 8000) {
+							 profile->dtmf_duration = dur;
+						 } else {
+							 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Duration out of bounds!\n");
+						 }
+					 }
+				 }
+
+				 if (!profile->cng_pt) {
+					 profile->cng_pt = SWITCH_RTP_CNG_PAYLOAD;
+				 }
+
+				 if (!profile->sipip) {
+					 profile->sipip = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
+				 }
+
+				 if (!profile->rtpip) {
+					 profile->rtpip = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
+				 }
+
+				 if (profile->nonce_ttl < 60) {
+					 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting nonce TTL to 60 seconds\n");
+					 profile->nonce_ttl = 60;
+				 }
+
+				 if (switch_test_flag(profile, TFLAG_TIMER) && !profile->timer_name) {
+					 profile->timer_name = switch_core_strdup(profile->pool, "soft");
+				 }
+
+				 if (!profile->username) {
+					 profile->username = switch_core_strdup(profile->pool, "FreeSWITCH");
+				 }
+
+				 if (!profile->rtpip) {
+					 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Setting ip to '127.0.0.1'\n");
+					 profile->rtpip = switch_core_strdup(profile->pool, "127.0.0.1");
+				 }
+
+				 if (!profile->sip_port) {
+					 profile->sip_port = atoi(SOFIA_DEFAULT_PORT);
+				 }
+
+				 if (!profile->dialplan) {
+					 profile->dialplan = switch_core_strdup(profile->pool, "XML");
+				 }
+
+				 if (!profile->sipdomain) {
+					 profile->sipdomain = switch_core_strdup(profile->pool, profile->sipip);
+				 }
+				 if (profile->extsipip) {
+					 profile->url = switch_core_sprintf(profile->pool, "sip:mod_sofia@%s:%d", profile->extsipip, profile->sip_port);
+					 profile->bindurl = switch_core_sprintf(profile->pool, "%s;maddr=%s", profile->url, profile->sipip);
+				 } else {
+					 profile->url = switch_core_sprintf(profile->pool, "sip:mod_sofia@%s:%d", profile->sipip, profile->sip_port);
+					 profile->bindurl = profile->url;
+				 }
+
+				 if (profile->bind_params) {
+					 char *bindurl = profile->bindurl;
+					 profile->bindurl = switch_core_sprintf(profile->pool, "%s;%s", bindurl, profile->bind_params);
+				 }
+
+			 }
+			 if (profile) {
+				 switch_xml_t aliases_tag, alias_tag;
+
+				 if ((gateways_tag = switch_xml_child(xprofile, "registrations"))) {
+					 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
+									   "The <registrations> syntax has been discontinued, please see the new syntax in the default configuration examples\n");
+				 } else if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
+					 parse_gateways(profile, gateways_tag);
+				 }
+
+				 if ((domains_tag = switch_xml_child(xprofile, "domains"))) {
+					 for (domain_tag = switch_xml_child(domains_tag, "domain"); domain_tag; domain_tag = domain_tag->next) {
+						 switch_xml_t droot, actual_domain_tag, ut;
+						 char *dname = (char *) switch_xml_attr_soft(domain_tag, "name");
+						 char *parse = (char *) switch_xml_attr_soft(domain_tag, "parse");
+
+						 if (!switch_strlen_zero(dname)) { 
+							 if (switch_true(parse)) {
+								 if (switch_xml_locate_domain(dname, NULL, &droot, &actual_domain_tag) == SWITCH_STATUS_SUCCESS) {
+									 for (ut = switch_xml_child(actual_domain_tag, "user"); ut; ut = ut->next) {
+										 if (((gateways_tag = switch_xml_child(ut, "gateways")))) {
+											 parse_gateways(profile, gateways_tag);
+										 }
+									 }
+									 switch_xml_free(droot);
+								 }
+							 }
+							 sofia_glue_add_profile(switch_core_strdup(profile->pool, dname), profile);
+						 }
+					 }
+				 }
+
+				 if ((aliases_tag = switch_xml_child(xprofile, "aliases"))) {
+					 for (alias_tag = switch_xml_child(aliases_tag, "alias"); alias_tag; alias_tag = alias_tag->next) {
+						 char *aname = (char *) switch_xml_attr_soft(alias_tag, "name");
+						 if (!switch_strlen_zero(aname)) {
+
+							 if (sofia_glue_add_profile(switch_core_strdup(profile->pool, aname), profile) == SWITCH_STATUS_SUCCESS) {
+								 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Alias [%s] for profile [%s]\n", aname, profile->name);
+							 } else {
+								 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Adding Alias [%s] for profile [%s] (name in use)\n", 
+												   aname, profile->name);
+							 }
+						 }
+					 }
+				 }
+
+				 if (profile->sipip) {
+					 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Started Profile %s [%s]\n", profile->name, url);
+					 launch_sofia_profile_thread(profile);
+				 } else {
+					 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Unable to start Profile %s due to no configured sip-ip\n", profile->name);
+				 }
+				 profile = NULL;
+			 }
+			 if (profile_found) {
+				 break;
+			 }
+		 }
+	 }
+   done:
+	 if (xml) {
+		 switch_xml_free(xml);
+	 }
+
+	 if (profile_name && !profile_found) {
+		 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No Such Profile '%s'\n", profile_name);
+		 status = SWITCH_STATUS_FALSE;
+	 }
+
+	 return status;
+
+ }
+
+ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status,
+									  char const *phrase,
+									  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
+ {
+
+
+	 if (session && (status == 180 || status == 183 || status == 200)) {
+		 switch_channel_t *channel = switch_core_session_get_channel(session);
+		 const char *astate = "early";
+
+		 if (status == 200) {
+			 astate = "confirmed";
+		 }
+
+		 if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED) && 
+			 !switch_channel_test_flag(channel, CF_RING_READY)) {
+			 const char *to_user = switch_str_nil(sip->sip_to->a_url->url_user);
+			 const char *to_host = switch_str_nil(sip->sip_to->a_url->url_host);
+			 const char *from_user = switch_str_nil(sip->sip_from->a_url->url_user);
+			 const char *from_host = switch_str_nil(sip->sip_from->a_url->url_host);
+			 const char *contact_user = switch_str_nil(sip->sip_contact->m_url->url_user);
+			 const char *contact_host = switch_str_nil(sip->sip_contact->m_url->url_host);
+			 const char *user_agent = switch_str_nil(sip->sip_user_agent->g_string);
+			 const char *call_id = switch_str_nil(sip->sip_call_id->i_id);
+			 char *sql = NULL;
+
+			sql = switch_mprintf(
+								 "insert into sip_dialogs values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
+								 call_id,
+								 switch_core_session_get_uuid(session),
+								 to_user,
+								 to_host,
+								 from_user,
+								 from_host,
+								 contact_user,
+								 contact_host,
+								 astate,
+								 "outbound",
+								 user_agent
+								 );
+
+			switch_assert(sql);
+
+			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
+			free(sql);
 		}
-
-		if (++gateway_loops >= GATEWAY_SECONDS) {
-			sofia_reg_check_gateway(profile, time(NULL));
-			gateway_loops = 0;
-		}
-
-		su_root_step(profile->s_root, 1000);
 	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock %s\n", profile->name);
-	switch_thread_rwlock_wrlock(profile->rwlock);
-	sofia_reg_unregister(profile);
-	nua_shutdown(profile->nua);
-
-	su_root_run(profile->s_root);
-	nua_destroy(profile->nua);
-
-	switch_mutex_lock(profile->ireg_mutex);
-	switch_mutex_unlock(profile->ireg_mutex);
-
-	if (switch_event_create(&s_event, SWITCH_EVENT_UNPUBLISH) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp,_sip._tcp,_sip._sctp");
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", profile->sip_port);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "module_name", "%s", "mod_sofia");
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_name", "%s", profile->name);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_uri", "%s", profile->url);
-		switch_event_fire(&s_event);
-	}
-
-	sofia_glue_sql_close(profile);
-	su_home_unref(profile->home);
-	su_root_destroy(profile->s_root);
-	pool = profile->pool;
-
-	sofia_glue_del_profile(profile);
-	switch_core_hash_destroy(&profile->chat_hash);
-	switch_core_hash_destroy(&profile->sub_hash);
-
-	switch_thread_rwlock_unlock(profile->rwlock);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write unlock %s\n", profile->name);
-
-	if (sofia_test_pflag(profile, PFLAG_RESPAWN)) {
-		config_sofia(1, profile->name);
-	}
-	
-	switch_core_destroy_memory_pool(&pool);
-
- end:
-	switch_mutex_lock(mod_sofia_globals.mutex);
-	mod_sofia_globals.threads--;
-	switch_mutex_unlock(mod_sofia_globals.mutex);
-
-	return NULL;
-}
-
-void launch_sofia_profile_thread(sofia_profile_t *profile)
-{
-	switch_thread_t *thread;
-	switch_threadattr_t *thd_attr = NULL;
-
-	switch_threadattr_create(&thd_attr, profile->pool);
-	switch_threadattr_detach_set(thd_attr, 1);
-	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_thread_create(&thread, thd_attr, sofia_profile_thread_run, profile, profile->pool);
-}
-
-static void logger(void *logarg, char const *fmt, va_list ap)
-{
-	char *data = NULL;
-
-	if (fmt) {
-#ifdef HAVE_VASPRINTF
-		int ret;
-		ret = vasprintf(&data, fmt, ap);
-		if ((ret == -1) || !data) {
-			return;
-		}
-#else
-		data = (char *) malloc(2048);
-		if (data) {
-			vsnprintf(data, 2048, fmt, ap);
-		} else {
-			return;
-		}
-#endif
-	}
-	if (data) {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, (char *) "%s", data);
-		free(data);
-	}
-}
-
-
-static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
-{
-	switch_xml_t gateway_tag, param;
-	sofia_gateway_t *gp;
-
-	for (gateway_tag = switch_xml_child(gateways_tag, "gateway"); gateway_tag; gateway_tag = gateway_tag->next) {
-		char *name = (char *) switch_xml_attr_soft(gateway_tag, "name");
-		sofia_gateway_t *gateway;
-
-		if (switch_strlen_zero(name)) {
-			name = "anonymous";
-		}
-
-		if ((gateway = switch_core_alloc(profile->pool, sizeof(*gateway)))) {
-			char *register_str = "true", *scheme = "Digest",
-				*realm = NULL,
-				*username = NULL,
-				*password = NULL,
-				*caller_id_in_from = "false",
-				*extension = NULL,
-				*proxy = NULL,
-				*context = "default",
-				*expire_seconds = "3600",
-				*retry_seconds = "30",
-				*from_user = "",
-				*from_domain = "",
-				*register_proxy = NULL,
-				*contact_params = NULL,
-				*params = NULL,
-				*register_transport = "udp";
-			
-			gateway->pool = profile->pool;
-			gateway->profile = profile;
-			gateway->name = switch_core_strdup(gateway->pool, name);
-			gateway->freq = 0;
-			gateway->next = NULL;
-
-			for (param = switch_xml_child(gateway_tag, "param"); param; param = param->next) {
-				char *var = (char *) switch_xml_attr_soft(param, "name");
-				char *val = (char *) switch_xml_attr_soft(param, "value");
-
-				if (!strcmp(var, "register")) {
-					register_str = val;
-				} else if (!strcmp(var, "scheme")) {
-					scheme = val;
-				} else if (!strcmp(var, "realm")) {
-					realm = val;
-				} else if (!strcmp(var, "username")) {
-					username = val;
-				} else if (!strcmp(var, "password")) {
-					password = val;
-				} else if (!strcmp(var, "caller-id-in-from")) {
-					caller_id_in_from = val;
-				} else if (!strcmp(var, "extension")) {
-					extension = val;
-				} else if (!strcmp(var, "proxy")) {
-					proxy = val;
-				} else if (!strcmp(var, "context")) {
-					context = val;
-				} else if (!strcmp(var, "expire-seconds")) {
-					expire_seconds = val;
-				} else if (!strcmp(var, "retry-seconds")) {
-					retry_seconds = val;
-				} else if (!strcmp(var, "from-user")) {
-					from_user = val;
-				} else if (!strcmp(var, "from-domain")) {
-					from_domain = val;
-				} else if (!strcmp(var, "register-proxy")) {
-					register_proxy = val;
-				} else if (!strcmp(var, "contact-params")) {
-					contact_params = val;
-				} else if (!strcmp(var, "register-transport")) {
-					if (!strcasecmp(val, "udp") || !strcasecmp(val, "tcp")) {
-						register_transport = val;
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: unsupported transport\n");
-						goto skip;
-					}
-				}
-			}
-			
-			if (switch_strlen_zero(realm)) {
-				realm = name;
-			}
-
-			if (switch_strlen_zero(username)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: username param is REQUIRED!\n");
-				goto skip;
-			}
-
-			if (switch_strlen_zero(password)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: password param is REQUIRED!\n");
-				goto skip;
-			}
-
-			if (switch_strlen_zero(from_user)) {
-				from_user = username;
-			}
-
-			if (switch_strlen_zero(extension)) {
-				extension = username;
-			}
-			
-			if (switch_strlen_zero(proxy)) {
-				proxy = realm;
-			}
-
-			if (!switch_true(register_str)) {
-				gateway->state = REG_STATE_NOREG;
-			}
-
-			if (switch_strlen_zero(from_domain)) {
-				from_domain = realm;
-			}
-
-			if (switch_strlen_zero(register_proxy)) {
-				register_proxy = proxy;
-			}
-
-			gateway->retry_seconds = atoi(retry_seconds);
-			if (gateway->retry_seconds < 10) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "INVALID: retry_seconds correcting the value to 30\n");
-				gateway->retry_seconds = 30;
-			}
-			gateway->register_scheme = switch_core_strdup(gateway->pool, scheme);
-			gateway->register_context = switch_core_strdup(gateway->pool, context);
-			gateway->register_realm = switch_core_strdup(gateway->pool, realm);
-			gateway->register_username = switch_core_strdup(gateway->pool, username);
-			gateway->register_password = switch_core_strdup(gateway->pool, password);
-			if (switch_true(caller_id_in_from)) {
-				switch_set_flag(gateway, REG_FLAG_CALLERID);
-			}
-			if (contact_params) {
-				if (*contact_params == ';') {
-					params = switch_core_sprintf(gateway->pool, "%s&transport=%s", contact_params, register_transport);
-				} else {
-					params = switch_core_sprintf(gateway->pool, ";%s&transport=%s", contact_params, register_transport);
-				}
-			} else {
-				params = switch_core_sprintf(gateway->pool, ";transport=%s", register_transport);
-			}
-			
-			gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s;transport=%s", register_proxy,register_transport);
-			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>", from_user, from_domain, register_transport);
-			gateway->register_contact = switch_core_sprintf(gateway->pool, "<sip:%s@%s:%d%s>", extension,
-															profile->extsipip ? profile->extsipip : profile->sipip, profile->sip_port, params);
-
-			if (!strncasecmp(proxy, "sip:", 4)) {
-                gateway->register_proxy = switch_core_strdup(gateway->pool, proxy);
-                gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy + 4);
-            } else {
-                gateway->register_proxy = switch_core_sprintf(gateway->pool, "sip:%s", proxy);
-                gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy);
-            }
-
-			gateway->expires_str = switch_core_strdup(gateway->pool, expire_seconds);
-
-			if ((gateway->freq = atoi(gateway->expires_str)) < 5) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-								  "Invalid Freq: %d.  Setting Register-Frequency to 3600\n", gateway->freq);
-				gateway->freq = 3600;
-			}
-			gateway->freq -= 2;
-
-			if ((gp = sofia_reg_find_gateway(gateway->name))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate gateway '%s'\n", gateway->name);
-				sofia_reg_release_gateway(gp);
-			} else {
-				gateway->next = profile->gateways;
-				profile->gateways = gateway;
-				sofia_reg_add_gateway(gateway->name, gateway);
-			}
-		}
-
-	skip:
-		switch_assert(gateway_tag);
-	}
-
-}
-
-switch_status_t config_sofia(int reload, char *profile_name)
-{
-	char *cf = "sofia.conf";
-	switch_xml_t cfg, xml = NULL, xprofile, param, settings, profiles, gateways_tag, domain_tag, domains_tag;
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	sofia_profile_t *profile = NULL;
-	char url[512] = "";
-	int profile_found = 0;
-
-	if (!reload) {
-		su_init();
-		if (sip_update_default_mclass(sip_extend_mclass(NULL)) < 0) {
-			su_deinit();
-			return SWITCH_STATUS_FALSE;
-		}
-
-		su_log_redirect(NULL, logger, NULL);
-		su_log_redirect(tport_log, logger, NULL);
-	}
-
-	if (!switch_strlen_zero(profile_name) && (profile = sofia_glue_find_profile(profile_name))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile [%s] Already exists.\n", switch_str_nil(profile_name));
-		status = SWITCH_STATUS_FALSE;
-		sofia_glue_release_profile(profile);
-		return status;
-	}
-
-	switch_snprintf(url, sizeof(url), "profile=%s", switch_str_nil(profile_name));
-
-	if (!(xml = switch_xml_open_cfg(cf, &cfg, url))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
-		status = SWITCH_STATUS_FALSE;
-		goto done;
-	}
-
-	if ((settings = switch_xml_child(cfg, "global_settings"))) {
-		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
-			char *var = (char *) switch_xml_attr_soft(param, "name");
-			char *val = (char *) switch_xml_attr_soft(param, "value");
-			if (!strcasecmp(var, "log-level")) {
-				su_log_set_level(NULL, atoi(val));
-			}
-		}
-	}
-
-	if ((profiles = switch_xml_child(cfg, "profiles"))) {
-		for (xprofile = switch_xml_child(profiles, "profile"); xprofile; xprofile = xprofile->next) {
-			if (!(settings = switch_xml_child(xprofile, "settings"))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Settings, check the new config!\n");
-			} else {
-				char *xprofilename = (char *) switch_xml_attr_soft(xprofile, "name");
-				switch_memory_pool_t *pool = NULL;
-
-				if (!xprofilename) {
-					xprofilename = "unnamed";
-				}
-				
-				if (profile_name) {
-					if (strcasecmp(profile_name, xprofilename)) {
-						continue;
-					} else {
-						profile_found = 1;
-					}
-				}
-				
-				/* Setup the pool */
-				if ((status = switch_core_new_memory_pool(&pool)) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-					goto done;
-				}
-
-				if (!(profile = (sofia_profile_t *) switch_core_alloc(pool, sizeof(*profile)))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
-					goto done;
-				}
-
-				profile->pool = pool;
-				profile->user_agent = SOFIA_USER_AGENT;
-
-				profile->name = switch_core_strdup(profile->pool, xprofilename);
-				switch_snprintf(url, sizeof(url), "sofia_reg_%s", xprofilename);
-				
-				profile->dbname = switch_core_strdup(profile->pool, url);
-				switch_core_hash_init(&profile->chat_hash, profile->pool);
-				switch_core_hash_init(&profile->sub_hash, profile->pool);
-				switch_thread_rwlock_create(&profile->rwlock, profile->pool);
-				switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
-				profile->dtmf_duration = 100;
-
-				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
-					char *var = (char *) switch_xml_attr_soft(param, "name");
-					char *val = (char *) switch_xml_attr_soft(param, "value");
-
-					if (!strcasecmp(var, "debug")) {
-						profile->debug = atoi(val);
-					} else if (!strcasecmp(var, "use-rtp-timer") && switch_true(val)) {
-						switch_set_flag(profile, TFLAG_TIMER);
-					} else if (!strcasecmp(var, "sip-trace") && switch_true(val)) {
-						switch_set_flag(profile, TFLAG_TPORT_LOG);
-					} else if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
-#ifdef SWITCH_HAVE_ODBC
-						profile->odbc_dsn = switch_core_strdup(profile->pool, val);
-						if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
-							*profile->odbc_user++ = '\0';
-							if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
-								*profile->odbc_pass++ = '\0';
-							}
-						}
-				
-#else
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
-#endif
-						
-					} else if (!strcasecmp(var, "user-agent-string")) {
-						profile->user_agent = switch_core_strdup(profile->pool, val);;
-					} else if (!strcasecmp(var, "inbound-no-media") && switch_true(val)) {
-						switch_set_flag(profile, TFLAG_INB_NOMEDIA);
-					} else if (!strcasecmp(var, "inbound-late-negotiation") && switch_true(val)) {
-						switch_set_flag(profile, TFLAG_LATE_NEGOTIATION);
-					} else if (!strcasecmp(var, "rfc2833-pt")) {
-						profile->te = (switch_payload_t) atoi(val);
-					} else if (!strcasecmp(var, "cng-pt")) {
-						profile->cng_pt = (switch_payload_t) atoi(val);
-					} else if (!strcasecmp(var, "sip-port")) {
-						profile->sip_port = atoi(val);
-					} else if (!strcasecmp(var, "vad")) {
-						if (!strcasecmp(val, "in")) {
-							switch_set_flag(profile, TFLAG_VAD_IN);
-						} else if (!strcasecmp(val, "out")) {
-							switch_set_flag(profile, TFLAG_VAD_OUT);
-						} else if (!strcasecmp(val, "both")) {
-							switch_set_flag(profile, TFLAG_VAD_IN);
-							switch_set_flag(profile, TFLAG_VAD_OUT);
-						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invald option %s for VAD\n", val);
-						}
-					} else if (!strcasecmp(var, "ext-rtp-ip")) {
-						profile->extrtpip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip);
-					} else if (!strcasecmp(var, "rtp-ip")) {
-						profile->rtpip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip);
-					} else if (!strcasecmp(var, "sip-ip")) {
-						profile->sipip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip);
-					} else if (!strcasecmp(var, "ext-sip-ip")) {
-						if (!strcasecmp(val, "auto")) {
-							profile->extsipip = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
-						} else {
-							char *ip = mod_sofia_globals.guess_ip;
-							switch_port_t port = 0;
-							if (sofia_glue_ext_address_lookup(&ip, &port, val, profile->pool) == SWITCH_STATUS_SUCCESS) {
-
-								if (ip) {
-									profile->extsipip = switch_core_strdup(profile->pool, ip);
-								}
-							}
-						}
-					} else if (!strcasecmp(var, "force-register-domain")) {
-						profile->reg_domain = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "bind-params")) {
-						profile->bind_params = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "sip-domain")) {
-						profile->sipdomain = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "rtp-timer-name")) {
-						profile->timer_name = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "hold-music")) {
-						profile->hold_music = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "session-timeout")) {
-						int v_session_timeout = atoi(val);
-						if (v_session_timeout >= 0) {
-							profile->session_timeout = v_session_timeout;
-						}
-					} else if (!strcasecmp(var, "max-proceeding")) {
-						int v_max_proceeding = atoi(val);
-						if (v_max_proceeding >= 0) {
-							profile->max_proceeding = v_max_proceeding;
-						}
-					} else if (!strcasecmp(var, "rtp-timeout-sec")) {
-						int v = atoi(val);
-						if (v >= 0) {
-							profile->rtp_timeout_sec = v;
-						}
-					} else if (!strcasecmp(var, "manage-presence")) {
-						if (switch_true(val)) {
-							profile->pflags |= PFLAG_PRESENCE;
-						}
-					} else if (!strcasecmp(var, "multiple-registrations")) {
-						if (switch_true(val)) {
-							profile->pflags |= PFLAG_MULTIREG;
-						}
-					} else if (!strcasecmp(var, "supress-cng")) {
-						if (switch_true(val)) {
-							profile->pflags |= PFLAG_SUPRESS_CNG;
-						}
-					} else if (!strcasecmp(var, "NDLB-to-in-200-contact")) {
-						if (switch_true(val)) {
-							profile->ndlb |= PFLAG_NDLB_TO_IN_200_CONTACT;
-						}
-					} else if (!strcasecmp(var, "NDLB-broken-auth-hash")) {
-						if (switch_true(val)) {
-							profile->ndlb |= PFLAG_NDLB_BROKEN_AUTH_HASH;
-						}
-					} else if (!strcasecmp(var, "pass-rfc2833")) {
-						if (switch_true(val)) {
-							profile->pflags |= PFLAG_PASS_RFC2833;
-						}
-					} else if (!strcasecmp(var, "inbound-codec-negotiation")) {
-						if (!strcasecmp(val, "greedy")) {
-							profile->pflags |= PFLAG_GREEDY;
-						}
-					} else if (!strcasecmp(var, "disable-transcoding")) {
-						if (switch_true(val)) {
-							profile->pflags |= PFLAG_DISABLE_TRANSCODING;
-						}
-					} else if (!strcasecmp(var, "rtp-rewrite-timestamps")) {
-						if (switch_true(val)) {
-							profile->pflags |= PFLAG_REWRITE_TIMESTAMPS;
-						}
-					} else if (!strcasecmp(var, "auth-calls")) {
-						if (switch_true(val)) {
-							profile->pflags |= PFLAG_AUTH_CALLS;
-						}
-					} else if (!strcasecmp(var, "nonce-ttl")) {
-						profile->nonce_ttl = atoi(val);
-					} else if (!strcasecmp(var, "accept-blind-reg")) {
-						if (switch_true(val)) {
-							profile->pflags |= PFLAG_BLIND_REG;
-						}
-					} else if (!strcasecmp(var, "auth-all-packets")) {
-						if (switch_true(val)) {
-							profile->pflags |= PFLAG_AUTH_ALL;
-						}
-					} else if (!strcasecmp(var, "full-id-in-dialplan")) {
-						if (switch_true(val)) {
-							profile->pflags |= PFLAG_FULL_ID;
-						}
-					} else if (!strcasecmp(var, "bitpacking")) {
-						if (!strcasecmp(val, "aal2")) {
-							profile->codec_flags = SWITCH_CODEC_FLAG_AAL2;
-						}
-					} else if (!strcasecmp(var, "username")) {
-						profile->username = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "context")) {
-						profile->context = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "alias")) {
-						sip_alias_node_t *node;
-						if ((node = switch_core_alloc(profile->pool, sizeof(*node)))) {
-							if ((node->url = switch_core_strdup(profile->pool, val))) {
-								node->next = profile->aliases;
-								profile->aliases = node;
-							}
-						}
-					} else if (!strcasecmp(var, "dialplan")) {
-						profile->dialplan = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "max-calls")) {
-						profile->max_calls = atoi(val);
-					} else if (!strcasecmp(var, "codec-prefs")) {
-						profile->codec_string = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "dtmf-duration")) {
-						int dur = atoi(val);
-						if (dur > 10 && dur < 8000) {
-							profile->dtmf_duration = dur;
-						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Duration out of bounds!\n");
-						}
-					}
-				}
-
-				if (!profile->cng_pt) {
-					profile->cng_pt = SWITCH_RTP_CNG_PAYLOAD;
-				}
-
-				if (!profile->sipip) {
-					profile->sipip = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
-				}
-
-				if (!profile->rtpip) {
-					profile->rtpip = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
-				}
-
-				if (profile->nonce_ttl < 60) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting nonce TTL to 60 seconds\n");
-					profile->nonce_ttl = 60;
-				}
-
-				if (switch_test_flag(profile, TFLAG_TIMER) && !profile->timer_name) {
-					profile->timer_name = switch_core_strdup(profile->pool, "soft");
-				}
-
-				if (!profile->username) {
-					profile->username = switch_core_strdup(profile->pool, "FreeSWITCH");
-				}
-
-				if (!profile->rtpip) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Setting ip to '127.0.0.1'\n");
-					profile->rtpip = switch_core_strdup(profile->pool, "127.0.0.1");
-				}
-
-				if (!profile->sip_port) {
-					profile->sip_port = atoi(SOFIA_DEFAULT_PORT);
-				}
-
-				if (!profile->dialplan) {
-					profile->dialplan = switch_core_strdup(profile->pool, "XML");
-				}
-
-				if (!profile->sipdomain) {
-					profile->sipdomain = switch_core_strdup(profile->pool, profile->sipip);
-				}
-				if (profile->extsipip) {
-					profile->url = switch_core_sprintf(profile->pool, "sip:mod_sofia@%s:%d", profile->extsipip, profile->sip_port);
-					profile->bindurl = switch_core_sprintf(profile->pool, "%s;maddr=%s", profile->url, profile->sipip);
-				} else {
-					profile->url = switch_core_sprintf(profile->pool, "sip:mod_sofia@%s:%d", profile->sipip, profile->sip_port);
-					profile->bindurl = profile->url;
-				}
-
-				if (profile->bind_params) {
-					char *bindurl = profile->bindurl;
-					profile->bindurl = switch_core_sprintf(profile->pool, "%s;%s", bindurl, profile->bind_params);
-				}
-				
-			}
-			if (profile) {
-				switch_xml_t aliases_tag, alias_tag;
-
-				if ((gateways_tag = switch_xml_child(xprofile, "registrations"))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
-									  "The <registrations> syntax has been discontinued, please see the new syntax in the default configuration examples\n");
-				} else if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
-					parse_gateways(profile, gateways_tag);
-				}
-
-				if ((domains_tag = switch_xml_child(xprofile, "domains"))) {
-					for (domain_tag = switch_xml_child(domains_tag, "domain"); domain_tag; domain_tag = domain_tag->next) {
-						switch_xml_t droot, actual_domain_tag, ut;
-						char *dname = (char *) switch_xml_attr_soft(domain_tag, "name");
-						char *parse = (char *) switch_xml_attr_soft(domain_tag, "parse");
-
-						if (!switch_strlen_zero(dname)) { 
-							if (switch_true(parse)) {
-								if (switch_xml_locate_domain(dname, NULL, &droot, &actual_domain_tag) == SWITCH_STATUS_SUCCESS) {
-									for (ut = switch_xml_child(actual_domain_tag, "user"); ut; ut = ut->next) {
-										if (((gateways_tag = switch_xml_child(ut, "gateways")))) {
-											parse_gateways(profile, gateways_tag);
-										}
-									}
-									switch_xml_free(droot);
-								}
-							}
-							sofia_glue_add_profile(switch_core_strdup(profile->pool, dname), profile);
-						}
-					}
-				}
-				
-				if ((aliases_tag = switch_xml_child(xprofile, "aliases"))) {
-					for (alias_tag = switch_xml_child(aliases_tag, "alias"); alias_tag; alias_tag = alias_tag->next) {
-						char *aname = (char *) switch_xml_attr_soft(alias_tag, "name");
-						if (!switch_strlen_zero(aname)) {
-
-							if (sofia_glue_add_profile(switch_core_strdup(profile->pool, aname), profile) == SWITCH_STATUS_SUCCESS) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Alias [%s] for profile [%s]\n", aname, profile->name);
-							} else {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Adding Alias [%s] for profile [%s] (name in use)\n", 
-												  aname, profile->name);
-							}
-						}
-					}
-				}
-
-				if (profile->sipip) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Started Profile %s [%s]\n", profile->name, url);
-					launch_sofia_profile_thread(profile);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Unable to start Profile %s due to no configured sip-ip\n", profile->name);
-				}
-				profile = NULL;
-			}
-			if (profile_found) {
-				break;
-			}
-		}
-	}
-  done:
-	if (xml) {
-		switch_xml_free(xml);
-	}
-
-	if (profile_name && !profile_found) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No Such Profile '%s'\n", profile_name);
-		status = SWITCH_STATUS_FALSE;
-	}
-
-	return status;
-
 }
 
 static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
@@ -2107,14 +2161,15 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		su_free(profile->home, tmp);
 	}
 
-#if 0
 	if (sofia_test_pflag(profile, PFLAG_PRESENCE)) {
-		char *tmp = switch_mprintf("%s@%s", switch_str_nil(switch_channel_get_variable(channel, "sip_to_user")), switch_str_nil(switch_channel_get_variable(channel, "sip_to_host")));
+		const char *user = switch_str_nil(sip->sip_from->a_url->url_user);
+		const char *host = switch_str_nil(sip->sip_from->a_url->url_host);
+
+		char *tmp = switch_mprintf("%s@%s", user, host);
 		switch_assert(tmp);
 		switch_channel_set_variable(channel, "presence_id", tmp);
 		free(tmp);
 	}
-#endif
 
 	check_decode(displayname, session);
 	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
@@ -2188,6 +2243,35 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	tech_pvt->nh = nh;
 
 	if (switch_core_session_thread_launch(session) == SWITCH_STATUS_SUCCESS) {
+		const char *to_user = switch_str_nil(sip->sip_to->a_url->url_user);
+		const char *to_host = switch_str_nil(sip->sip_to->a_url->url_host);
+		const char *from_user = switch_str_nil(sip->sip_from->a_url->url_user);
+		const char *from_host = switch_str_nil(sip->sip_from->a_url->url_host);
+		const char *contact_user = switch_str_nil(sip->sip_contact->m_url->url_user);
+		const char *contact_host = switch_str_nil(sip->sip_contact->m_url->url_host);
+		const char *user_agent = switch_str_nil(sip->sip_user_agent->g_string);
+		const char *call_id = switch_str_nil(sip->sip_call_id->i_id);
+		char *sql = NULL;
+
+		sql = switch_mprintf(
+							 "insert into sip_dialogs values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
+							 call_id,
+							 tech_pvt->sofia_private->uuid,
+							 to_user,
+							 to_host,
+							 from_user,
+							 from_host,
+							 contact_user,
+							 contact_host,
+							 "confirmed",
+							 "inbound",
+							 user_agent
+							 );
+
+		switch_assert(sql);
+
+		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
+		free(sql);
 		return;
 	}
 

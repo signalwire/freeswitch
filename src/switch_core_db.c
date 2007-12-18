@@ -84,11 +84,12 @@ SWITCH_DECLARE(int) switch_core_db_exec(switch_core_db_t *db, const char *sql, s
 
 	while(--sane > 0) {
 		ret = sqlite3_exec(db, sql, callback, data, errmsg);
-
 		if (ret == SQLITE_BUSY || ret == SQLITE_LOCKED) {
-			switch_safe_free(*errmsg);
-			switch_yield(1000);
-			continue;
+			if (sane > 1) {
+				switch_safe_free(*errmsg);
+				switch_yield(1000);
+				continue;
+			}
 		} else {
 			break;
 		}

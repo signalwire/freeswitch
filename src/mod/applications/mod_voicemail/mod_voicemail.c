@@ -129,7 +129,7 @@ static switch_status_t vm_execute_sql(vm_profile_t *profile, char *sql, switch_m
             status = SWITCH_STATUS_FALSE;
 			goto end;
 		}
-		status = switch_core_db_persistant_execute(db, sql, 25);
+		status = switch_core_db_persistant_execute(db, sql, 1);
 		switch_core_db_close(db);
     }
 

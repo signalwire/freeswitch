@@ -284,7 +284,7 @@ static void mdl_execute_sql(mdl_profile_t *profile, char *sql, switch_mutex_t *m
 			goto end;
 		}
 
-		switch_core_db_persistant_execute(db, sql, 25);
+		switch_core_db_persistant_execute(db, sql, 1);
 		switch_core_db_close(db);
 
 #ifdef SWITCH_HAVE_ODBC

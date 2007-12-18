@@ -40,6 +40,7 @@ SWITCH_MODULE_DEFINITION(mod_conference, mod_conference_load, mod_conference_shu
 static const char global_app_name[] = "conference";
 static char *global_cf_name = "conference.conf";
 static char *api_syntax;
+static int EC = 0;
 
 /* Size to allocate for audio buffers */
 #define CONF_BUFFER_SIZE 1024 * 128
@@ -542,6 +543,11 @@ static switch_status_t conference_add_member(conference_obj_t * conference, conf
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Active (%d caller%s)", conference->count, conference->count == 1 ? "" : "s");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", conference->name);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_RING");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", "confirmed");
 			switch_event_fire(&event);
 		}
 
@@ -670,6 +676,11 @@ static switch_status_t conference_del_member(conference_obj_t * conference, conf
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Active (%d caller%s)", conference->count, conference->count == 1 ? "" : "s");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", conference->name);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_RING");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", "confirmed");
 			switch_event_fire(&event);
 		}
 
@@ -957,7 +968,11 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Inactive");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", conference->name);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_HANGUP");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", "terminated");
 		switch_event_fire(&event);
 	}
 
@@ -4866,6 +4881,11 @@ static void pres_event_handler(switch_event_t *event)
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Active (%d caller%s)", conference->count, conference->count == 1 ? "" : "s");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", conf_name);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_RING");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", "confirmed");
 			switch_event_fire(&event);
 		}
 	} else if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
@@ -4875,6 +4895,11 @@ static void pres_event_handler(switch_event_t *event)
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Idle");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", conf_name);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_HANGUP");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", "terminated");
 		switch_event_fire(&event);
 	}
 

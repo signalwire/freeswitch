@@ -3,7 +3,7 @@
 <configuration name="conference.conf" description="Audio Conference">
   <!-- Advertise certain presence on startup . -->
   <advertise>
-    <room name="888@$${server_name}" status="FreeSWITCH"/>
+    <room name="3001@$${domain}" status="FreeSWITCH"/>
   </advertise>
 
   <!-- These are the default keys that map when you do not specify a caller control group -->	
@@ -30,7 +30,7 @@
     <!--If no profile is specified it will default to "default"-->
     <profile name="default">
       <!-- Domain (for presence) -->
-      <param name="domain" value="$${server_name}"/>
+      <param name="domain" value="$${domain}"/>
       <!-- Sample Rate-->
       <param name="rate" value="8000"/>
       <!-- Number of milliseconds per frame -->
