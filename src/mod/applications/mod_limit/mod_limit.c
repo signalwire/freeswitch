@@ -425,17 +425,21 @@ SWITCH_STANDARD_APP(db_function)
     
     
     if (!strcasecmp(argv[0], "insert")) {
+        sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
+        switch_assert(sql);
+        limit_execute_sql(sql, globals.mutex);
+        switch_safe_free(sql);
+        
         sql = switch_mprintf("insert into db_data values('%q','%q','%q','%q');", globals.hostname, argv[1], argv[2], argv[3]);
     } else if (!strcasecmp(argv[0], "delete")) {
         sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
     }
 
+    switch_assert(sql);
+    limit_execute_sql(sql, globals.mutex);
+    switch_safe_free(sql);
+    return;
 
-    if (sql) {
-        limit_execute_sql(sql, globals.mutex);
-        switch_safe_free(sql);
-        return;
-    }
     
  error:
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: db %s\n", DB_USAGE);
@@ -470,6 +474,7 @@ SWITCH_STANDARD_API(group_api_function)
         }
         sql = switch_mprintf("delete from group_data where groupname='%q' and url='%q';", argv[1], argv[2]);
         assert(sql);
+
         limit_execute_sql(sql, NULL);
         switch_safe_free(sql);
         sql = switch_mprintf("insert into group_data values('%q','%q','%q');", globals.hostname, argv[1], argv[2]);
