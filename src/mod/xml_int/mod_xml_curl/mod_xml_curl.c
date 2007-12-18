@@ -128,16 +128,14 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		return xml;
 	}
 
-	if (!(data = switch_mprintf("hostname=%s&section=%s&tag_name=%s&key_name=%s&key_value=%s%s%s",
-								hostname,
-								section,
-								tag_name ? tag_name : "",
-								key_name ? key_name : "",
-								key_value ? key_value : "", params ? strchr(params, '=') ? "&" : "&params=" : "", params ? params : ""))) {
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-		return NULL;
-	}
+	data = switch_mprintf("hostname=%s&section=%s&tag_name=%s&key_name=%s&key_value=%s%s%s",
+						  hostname,
+						  section,
+						  switch_str_nil(tag_name),
+						  switch_str_nil(key_name),
+						  switch_str_nil(key_value), 
+						  params ? strchr(params, '=') ? "&" : "&params=" : "", params ? params : "");
+	switch_assert(data);
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
@@ -166,7 +164,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
 
 		if (binding->disable100continue) {
-			slist = curl_slist_append(slist,"Expect:"); 
+			slist = curl_slist_append(slist, "Expect:"); 
 			curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, slist); 
 		}
 
@@ -175,7 +173,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		}
 
 		curl_easy_perform(curl_handle);
-		curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE,&httpRes);
+		curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
 		curl_easy_cleanup(curl_handle);
 		curl_slist_free_all(headers);
 		close(config_data.fd);
@@ -183,25 +181,25 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening temp file!\n");
 	}
 
-	switch_safe_free(data);
-
-	if(httpRes==200) {
+	if (httpRes == 200) {
 		if (!(xml = switch_xml_parse_file(filename))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing Result!\n");
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received HTTP error %ld trying to fetch %s\n",httpRes,key_value);
-		xml=NULL;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received HTTP error %ld trying to fetch %s\ndata: [%s]\n", httpRes, binding->url, data);
+		xml = NULL;
 	}
 
 	/* Debug by leaving the file behind for review */
-	if(keep_files_around) {
+	if (keep_files_around) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "XML response is in %s\n", filename);
 	} else {
 		if (unlink(filename) != 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "XML response file [%s] delete failed\n", filename);
 		}
 	}
+
+	switch_safe_free(data);
 
 	return xml;
 }
