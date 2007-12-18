@@ -682,21 +682,18 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			astate = dft_state;
 		}
 		
+		if (!strcasecmp(event_status, "hold")) {
+			astate = "early";
+		}
+
 		stream.write_function(&stream, 
 							  "<?xml version=\"1.0\"?>\n"
 							  "<dialog-info xmlns=\"urn:ietf:params:xml:ns:dialog-info\" "
 							  "version=\"%s\" state=\"full\" entity=\"%s\">\n", 
 							  switch_str_nil(switch_event_get_header(helper->event, "event_count")), clean_id);
-		/* astate of aleg/outbound should start @ confirmed not early. direction is recipient or initiator */
+
 		stream.write_function(&stream, "<dialog id=\"%s\" direction=\"%s\">\n", uuid, direction);
-
 		stream.write_function(&stream, "<state>%s</state>\n", astate);
-
-		if (!strcasecmp(event_status, "hold")) {
-			stream.write_function(&stream, "<local>\n<target uri=\"%s\">\n"
-								  "<param pname=\"+sip.rendering\" pvalue=\"no\">\n"
-								  "</target>\n</local>\n", clean_id);
-		}
 		stream.write_function(&stream, "</dialog>\n</dialog-info>\n");
 		pl = stream.data;
 		ct = "application/dialog-info+xml";
@@ -704,7 +701,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		if (astate && uuid && helper->stream.data) {
 			stream.write_function(&helper->stream, "update sip_dialogs set state='%s' where uuid='%s';\n", astate, uuid);
 		}
-
+		
 	} else {
 		pl = switch_mprintf("<?xml version='1.0' encoding='UTF-8'?>\r\n"
 							"<presence xmlns='urn:ietf:params:xml:ns:pidf'\r\n"
