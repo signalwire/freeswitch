@@ -496,20 +496,27 @@ static void switch_xml_proc_inst(switch_xml_root_t root, char *s, switch_size_t 
 		s += strspn(s + 1, SWITCH_XML_WS) + 1;	// skip whitespace after target
 	}
 
+	if (!root) return;
+
 	if (!strcmp(target, "xml")) {	// <?xml ... ?>
 		if ((s = strstr(s, "standalone")) && !strncmp(s + strspn(s + 10, SWITCH_XML_WS "='\"") + 10, "yes", 3))
 			root->standalone = 1;
 		return;
 	}
 
-	if (!root->pi[0])
-		*(root->pi = (char ***)malloc(sizeof(char **))) = NULL;	//first pi
+	if (!root->pi[0]) {
+		root->pi = (char ***)malloc(sizeof(char **));
+		if (!root->pi) return;
+		*(root->pi) = NULL;	//first pi
+	}
 
 	while (root->pi[i] && strcmp(target, root->pi[i][0]))
 		i++;					// find target
 	if (!root->pi[i]) {			// new target
 		root->pi = (char ***)realloc(root->pi, sizeof(char **) * (i + 2));
+		if (!root->pi) return;
 		root->pi[i] = (char **)malloc(sizeof(char *) * 3);
+		if (!root->pi[i]) return;
 		root->pi[i][0] = target;
 		root->pi[i][1] = (char *) (root->pi[i + 1] = NULL);	// terminate pi list
 		root->pi[i][2] = strdup("");	// empty document position list
