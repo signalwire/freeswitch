@@ -163,11 +163,8 @@ $(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool modul
 $(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
 	@cat libtool | sed -e 's|$$show "$$command"|if test -z "$$suppress_output" ; then $$show "Compiling $$srcfile ..." ; fi|' > quiet_libtool
 
-install-data-local:
-	@echo Installing $(NAME)
-	@for x in conf conf/dialplan conf/directory conf/sip_profiles mod db log log/xml_cdr bin scripts htdocs grammar ; do \
-		$(mkinstalldirs) $(DESTDIR)$(prefix)/$$x ; \
-	 done
+samples-conf:
+	test -d $(DESTDIR)$(prefix)/conf || $(mkinstalldirs) $(DESTDIR)$(prefix)/conf
 	for conffile in `find conf -name \*.xml && find conf -name \*.conf && find conf -name \*.tpl && find conf -name mime.types` ; do \
 		dir=`echo $$conffile | sed -e 's|/[^/]*$$||'`; \
 		filename=`echo $$conffile | sed -e 's|^.*/||'`; \
@@ -175,13 +172,26 @@ install-data-local:
 		test -f $(DESTDIR)$(PREFIX)/$$dir/$$filename || \
 		test -f $(DESTDIR)$(PREFIX)/$$dir/$$filename.noload || \
 			$(INSTALL) $$dir/$$filename $(DESTDIR)$(PREFIX)/$$dir; \
-	done ; 
+	done
+
+samples-htdocs: 
+	test -d $(DESTDIR)$(prefix)/htdocs || $(mkinstalldirs) $(DESTDIR)$(prefix)/htdocs
 	for htdocsfile in `find htdocs -name \* | grep -v .svn` ; do \
 		dir=`echo $$htdocsfile | sed -e 's|/[^/]*$$||'`; \
 		filename=`echo $$htdocsfile | sed -e 's|^.*/||'`; \
 		test -d $(DESTDIR)$(PREFIX)/$$dir || $(mkinstalldirs) $(DESTDIR)$(prefix)/$$dir ; \
 		test -f $(DESTDIR)$(PREFIX)/$$dir/$$filename || $(INSTALL) $$dir/$$filename $(DESTDIR)$(PREFIX)/$$dir; \
-	done ; 
+	done
+
+samples: samples-conf samples-htdocs
+
+install-data-local:
+	@echo Installing $(NAME)
+	@for x in mod db log log/xml_cdr bin scripts grammar ; do \
+		$(mkinstalldirs) $(DESTDIR)$(prefix)/$$x ; \
+	 done
+	test -d $(DESTDIR)$(prefix)/conf || $(MAKE) samples-conf
+	test -d $(DESTDIR)$(prefix)/htdocs || $(MAKE) samples-htdocs
 
 .version:
 	touch .version
