@@ -785,9 +785,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				/* read from the channel while we wait if the audio is up on it */
 				if (session && (ringback_data || !switch_channel_test_flag(caller_channel, CF_BYPASS_MEDIA)) &&
 					(switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA))) {
-					switch_status_t status = switch_core_session_read_frame(session, &read_frame, 1000, 0);
+					switch_status_t tstatus = switch_core_session_read_frame(session, &read_frame, 1000, 0);
 					
-					if (!SWITCH_READ_ACCEPTABLE(status)) {
+					if (!SWITCH_READ_ACCEPTABLE(tstatus)) {
 						break;
 					}
 					

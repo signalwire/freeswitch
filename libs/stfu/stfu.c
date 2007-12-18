@@ -81,7 +81,9 @@ stfu_instance_t *stfu_n_init(uint32_t qlen)
 	struct stfu_instance *i;
 
 	i = malloc(sizeof(*i));
-	assert(i != NULL);
+	if (!i) {
+		return NULL;
+	}
 	memset(i, 0, sizeof(*i));
 	stfu_n_init_aqueue(&i->a_queue, qlen);
 	stfu_n_init_aqueue(&i->b_queue, qlen);

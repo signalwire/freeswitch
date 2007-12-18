@@ -1063,13 +1063,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			}
 		} else {				/* time off the channel (if you must) */
 			switch_frame_t *read_frame;
-			switch_status_t status;
+			switch_status_t tstatus;
 			while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_HOLD)) {
 				switch_yield(10000);
 			}
-			status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+			tstatus = switch_core_session_read_frame(session, &read_frame, -1, 0);
 
-			if (!SWITCH_READ_ACCEPTABLE(status)) {
+			if (!SWITCH_READ_ACCEPTABLE(tstatus)) {
 				break;
 			}
 
@@ -1387,13 +1387,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 				}
 			} else {
 				switch_frame_t *read_frame;
-				switch_status_t status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+				switch_status_t tstatus = switch_core_session_read_frame(session, &read_frame, -1, 0);
 
 				while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_HOLD)) {
 					switch_yield(10000);
 				}
 
-				if (!SWITCH_READ_ACCEPTABLE(status)) {
+				if (!SWITCH_READ_ACCEPTABLE(tstatus)) {
 					break;
 				}
 
@@ -1450,13 +1450,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 			}
 		} else {				/* time off the channel (if you must) */
 			switch_frame_t *read_frame;
-			switch_status_t status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+			switch_status_t tstatus = switch_core_session_read_frame(session, &read_frame, -1, 0);
 
 			while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_HOLD)) {
 				switch_yield(10000);
 			}
 
-			if (!SWITCH_READ_ACCEPTABLE(status)) {
+			if (!SWITCH_READ_ACCEPTABLE(tstatus)) {
 				break;
 			}
 

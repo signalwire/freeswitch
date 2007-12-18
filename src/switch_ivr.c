@@ -441,7 +441,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 					switch_byte_t decoded[SWITCH_RECOMMENDED_BUFFER_SIZE];
 					uint32_t rate = read_codec->implementation->actual_samples_per_second;
 					uint32_t dlen = sizeof(decoded);
-					switch_status_t status;
+					switch_status_t tstatus;
 					switch_byte_t *sendbuf = NULL;
 					uint32_t sendlen = 0;
 
@@ -452,9 +452,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 						status = SWITCH_STATUS_SUCCESS;
 					} else {
 						if (switch_test_flag(conninfo, SUF_NATIVE)) {
-							status = SWITCH_STATUS_NOOP;
+							tstatus = SWITCH_STATUS_NOOP;
 						} else {
-							status = switch_core_codec_decode(
+							tstatus = switch_core_codec_decode(
 															  read_codec,
 															  &conninfo->read_codec,
 															  read_frame->data,
@@ -462,17 +462,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 															  read_codec->implementation->actual_samples_per_second,
 															  decoded, &dlen, &rate, &flags);
 						}
-						switch (status) {
+						switch (tstatus) {
 						case SWITCH_STATUS_NOOP:
 						case SWITCH_STATUS_BREAK:
 							sendbuf = read_frame->data;
 							sendlen = read_frame->datalen;
-							status = SWITCH_STATUS_SUCCESS;
+							tstatus = SWITCH_STATUS_SUCCESS;
 							break;
 						case SWITCH_STATUS_SUCCESS:
 							sendbuf = decoded;
 							sendlen = dlen;
-							status = SWITCH_STATUS_SUCCESS;
+							tstatus = SWITCH_STATUS_SUCCESS;
 							break;
 						default:
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Codec Error\n");
@@ -481,7 +481,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 						}
 					}
 
-					if (status == SWITCH_STATUS_SUCCESS) {
+					if (tstatus == SWITCH_STATUS_SUCCESS) {
 						len = sendlen;
 						if (switch_socket_sendto(conninfo->socket, conninfo->remote_addr, 0, (void *)sendbuf, &len) != SWITCH_STATUS_SUCCESS) {
 							switch_ivr_deactivate_unicast(session);
