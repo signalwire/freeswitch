@@ -663,7 +663,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *session, switch_file_handle_t *fh, const char *file, switch_input_args_t *args)
 {
 	switch_channel_t *channel;
-	int16_t abuf[FILE_STARTSAMPLES];
+	int16_t *abuf;
 	char dtmf[128];
 	uint32_t interval = 0, samples = 0, framelen, sample_start = 0;
 	uint32_t ilen = 0;
@@ -686,6 +686,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	const char *timer_name;
 	const char *prebuf;
 
+	switch_zmalloc(abuf, FILE_STARTSAMPLES);
+
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 
@@ -694,7 +696,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 
 	if (!file) {
-		return SWITCH_STATUS_FALSE;
+		status = SWITCH_STATUS_FALSE;
+		goto end;
 	}
 
 	if (!prefix) {
@@ -741,7 +744,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 							  read_codec->implementation->actual_samples_per_second,
 							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_core_session_reset(session);
-		return SWITCH_STATUS_NOTFOUND;
+		status = SWITCH_STATUS_NOTFOUND;
+		goto end;
 	}
 	if (switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 		asis = 1;
@@ -749,7 +753,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 
 	write_frame.data = abuf;
-	write_frame.buflen = sizeof(abuf);
+	write_frame.buflen = FILE_STARTSAMPLES;
 
 	if (sample_start > 0) {
 		uint32_t pos = 0;
@@ -806,7 +810,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			switch_core_file_close(fh);
 			switch_core_session_reset(session);
 
-			return SWITCH_STATUS_GENERR;
+			status = SWITCH_STATUS_GENERR;
+			goto end;
 		}
 	}
 
@@ -831,7 +836,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 							  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate, fh->channels, interval);
 			switch_core_file_close(fh);
 			switch_core_session_reset(session);
-			return SWITCH_STATUS_GENERR;
+			status = SWITCH_STATUS_GENERR;
+			goto end;
 		}
 		samples = codec.implementation->samples_per_frame;
 		framelen = codec.implementation->bytes_per_frame;
@@ -847,7 +853,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			switch_core_codec_destroy(&codec);
 			switch_core_file_close(fh);
 			switch_core_session_reset(session);
-			return SWITCH_STATUS_GENERR;
+			status = SWITCH_STATUS_GENERR;
+			goto end;
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer success %u bytes per %d ms!\n", len, interval);
 	}
@@ -926,7 +933,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			olen = asis ? framelen : ilen;
 			do_speed = 0;
 		} else {
-			olen = sizeof(abuf);
+			olen = FILE_STARTSAMPLES;
 			if (!asis) {
 				olen /= 2;
 			}
@@ -1084,6 +1091,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_core_thread_session_end(&thread_session);
 		switch_core_timer_destroy(&timer);
 	}
+
+
+ end:
+	free(abuf);
 
 	switch_core_session_reset(session);
 	return status;

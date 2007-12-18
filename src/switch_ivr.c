@@ -1146,7 +1146,9 @@ SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stre
 					}
 					*dst = digit;
 				} else {
-					stream->digits = realloc(stream->digits, len + 2);
+					char *tmp = realloc(stream->digits, len + 2);
+					switch_assert(tmp);
+					stream->digits = tmp;
 					*(stream->digits + (len++)) = digit;
 					*(stream->digits + len) = '\0';
 					stream->last_digit_time = switch_time_now() / 1000;

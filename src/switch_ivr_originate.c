@@ -233,7 +233,7 @@ static int teletone_handler(teletone_generation_session_t * ts, teletone_tone_ma
 	return 0;
 }
 
-#define MAX_PEERS 256
+#define MAX_PEERS 128
 SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *session,
 													 switch_core_session_t **bleg,
 													 switch_call_cause_t *cause,

@@ -171,6 +171,7 @@ struct switch_rtp {
 	stfu_instance_t *jb;
 	uint32_t max_missed_packets;
 	uint32_t missed_count;
+	rtp_msg_t write_msg;
 };
 
 static int global_init = 0;
@@ -1645,7 +1646,6 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 											uint32_t datalen,
 											uint8_t m, switch_payload_t payload, uint32_t ts, uint16_t mseq, uint32_t ssrc, switch_frame_flag_t *flags)
 {
-	rtp_msg_t send_msg = { {0} };
 	switch_size_t bytes;
 
 	if (!switch_rtp_ready(rtp_session)) {
@@ -1660,13 +1660,13 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 		return -1;
 	}
 
-	send_msg = rtp_session->send_msg;
-	send_msg.header.seq = htons(mseq);
-	send_msg.header.ts = htonl(ts);
-	send_msg.header.ssrc = htonl(ssrc);
-	send_msg.header.pt = payload;
-	send_msg.header.m = m ? 1 : 0;
-	memcpy(send_msg.body, data, datalen);
+	rtp_session->write_msg = rtp_session->send_msg;
+	rtp_session->write_msg.header.seq = htons(mseq);
+	rtp_session->write_msg.header.ts = htonl(ts);
+	rtp_session->write_msg.header.ssrc = htonl(ssrc);
+	rtp_session->write_msg.header.pt = payload;
+	rtp_session->write_msg.header.m = m ? 1 : 0;
+	memcpy(rtp_session->write_msg.body, data, datalen);
 
 	bytes = rtp_header_len + datalen;
 
@@ -1675,7 +1675,7 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 		int sbytes = (int) bytes;
 		err_status_t stat;
 
-		stat = srtp_protect(rtp_session->send_ctx, &send_msg.header, &sbytes);
+		stat = srtp_protect(rtp_session->send_ctx, &rtp_session->write_msg.header, &sbytes);
 		if (stat) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error: srtp protection failed with code %d\n", stat);
 		}
@@ -1683,7 +1683,7 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 		bytes = sbytes;
 	}
 
-	if (switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void *) &send_msg, &bytes) != SWITCH_STATUS_SUCCESS) {
+	if (switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void *) &rtp_session->write_msg, &bytes) != SWITCH_STATUS_SUCCESS) {
 		return -1;
 	}
 	return (int) bytes;
