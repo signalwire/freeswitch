@@ -62,7 +62,7 @@ void sofia_handle_sip_r_notify(switch_core_session_t *session, int status,
 							   char const *phrase,
 							   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
-	if (status == 481 && sip) {
+	if (status >= 300 && sip) {
 		const char *call_id = sip->sip_call_id->i_id;
 		char *sql;
 		switch_core_hash_delete(profile->sub_hash, call_id);
