@@ -36,7 +36,9 @@
 #include <switch.h>
 #include <switch_version.h>
 #include "private/switch_core_pvt.h"
+#ifndef WIN32
 #include <switch_private.h>
+#endif
 
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs = { 0 };
 
