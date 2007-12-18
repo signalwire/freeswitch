@@ -235,6 +235,9 @@ int main(int argc, char *argv[])
 		"\t-g [group]       -- specify group to switch to\n"
 #endif
 		"\t-help            -- this message\n"
+#ifdef HAVE_SETRLIMIT
+		"\t-core            -- dump cores\n"
+#endif
 		"\t-hp              -- enable high priority settings\n"
 		"\t-nosql           -- disable internal sql scoreboard\n"
 		"\t-stop            -- stop freeswitch\n"
@@ -307,6 +310,17 @@ int main(int argc, char *argv[])
 			known_opt++;
 		}
 #endif
+#ifdef HAVE_SETRLIMIT
+		if (argv[x] && !strcmp(argv[x], "-core")) {
+			struct rlimit rlp;
+			memset(&rlp, 0, sizeof(rlp));
+			rlp.rlim_cur = RLIM_INFINITY;
+			rlp.rlim_max = RLIM_INFINITY;
+			setrlimit(RLIMIT_CORE, &rlp);
+			known_opt++;
+		}
+#endif
+
 		if (argv[x] && !strcmp(argv[x], "-hp")) {
 			high_prio++;
 			known_opt++;

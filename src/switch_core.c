@@ -36,6 +36,7 @@
 #include <switch.h>
 #include <switch_version.h>
 #include "private/switch_core_pvt.h"
+#include <switch_private.h>
 
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs = { 0 };
 
@@ -683,6 +684,33 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_core_set_variable("base_dir", SWITCH_GLOBAL_dirs.base_dir);
 	
 
+#ifdef HAVE_SETRLIMIT
+	{
+		struct rlimit rlp;
+
+		memset(&rlp, 0, sizeof(rlp));
+		rlp.rlim_cur = SWITCH_THREAD_STACKSIZE;
+		rlp.rlim_max = SWITCH_THREAD_STACKSIZE;
+		setrlimit(RLIMIT_STACK, &rlp);
+
+		memset(&rlp, 0, sizeof(rlp));
+		rlp.rlim_cur = 999999;
+		rlp.rlim_max = 999999;
+		setrlimit(RLIMIT_NOFILE, &rlp);
+
+		memset(&rlp, 0, sizeof(rlp));
+		rlp.rlim_cur = RLIM_INFINITY;
+		rlp.rlim_max = RLIM_INFINITY;
+
+		setrlimit(RLIMIT_CPU, &rlp);
+		setrlimit(RLIMIT_DATA, &rlp);
+		setrlimit(RLIMIT_FSIZE, &rlp);
+		setrlimit(RLIMIT_AS, &rlp);
+	}
+	
+#endif
+
+
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
 		apr_terminate();
 		return SWITCH_STATUS_MEMERR;
@@ -712,6 +740,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	                    switch_core_session_ctl(SCSC_LOGLEVEL, &level);
 					}
 					
+#ifdef HAVE_SETRLIMIT
+				} else if (!strcasecmp(var, "dump-cores")) {
+					struct rlimit rlp;
+					memset(&rlp, 0, sizeof(rlp));
+					rlp.rlim_cur = RLIM_INFINITY;
+					rlp.rlim_max = RLIM_INFINITY;
+					setrlimit(RLIMIT_CORE, &rlp);
+#endif
+
 				} else if (!strcasecmp(var, "mailer-app")) {
 					runtime.mailer_app = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "mailer-app-args")) {
