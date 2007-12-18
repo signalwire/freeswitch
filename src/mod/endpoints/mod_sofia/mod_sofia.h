@@ -71,6 +71,7 @@ typedef struct private_object private_object_t;
 #define SOFIA_SIP_HEADER_PREFIX "sip_h_"
 #define SOFIA_SIP_HEADER_PREFIX_T "~sip_h_"
 #define SOFIA_DEFAULT_PORT "5060"
+#define SOFIA_DEFAULT_TLS_PORT "5061"
 
 #include <sofia-sip/nua.h>
 #include <sofia-sip/sip_status.h>
@@ -113,7 +114,8 @@ typedef enum {
 	PFLAG_RESPAWN = (1 << 9),
 	PFLAG_GREEDY = (1 << 10),
 	PFLAG_MULTIREG = (1 << 11),
-	PFLAG_SUPRESS_CNG = (1 << 12)
+	PFLAG_SUPRESS_CNG = (1 << 12),
+	PFLAG_TLS = (1 << 13)
 } PFLAGS;
 
 typedef enum {
@@ -220,13 +222,18 @@ struct sofia_profile {
 	char *username;
 	char *url;
 	char *bindurl;
+	char *tls_url;
+	char *tls_bindurl;
 	char *sipdomain;
 	char *timer_name;
 	char *hold_music;
 	char *bind_params;
+	char *tls_bind_params;
+	char *tls_cert_dir;
 	char *reg_domain;
 	char *user_agent;
 	int sip_port;
+	int tls_sip_port;
 	char *codec_string;
 	int running;
 	int dtmf_duration;
@@ -369,6 +376,14 @@ typedef enum {
 	AUTH_STALE,
 } auth_res_t;
 
+typedef enum {
+	SOFIA_TRANSPORT_UNKNOWN = 0,
+	SOFIA_TRANSPORT_UDP,
+	SOFIA_TRANSPORT_TCP,
+	SOFIA_TRANSPORT_TCP_TLS,
+	SOFIA_TRANSPORT_SCTP,
+} sofia_transport_t;
+
 #define sofia_test_pflag(obj, flag) ((obj)->pflags & flag)
 #define sofia_set_pflag(obj, flag) (obj)->pflags |= (flag)
 #define sofia_set_pflag_locked(obj, flag) assert(obj->flag_mutex != NULL);\
@@ -469,7 +484,7 @@ char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup);
 void sofia_presence_set_hash_key(char *hash_key, int32_t len, sip_t const *sip);
 void sofia_glue_sql_close(sofia_profile_t *profile);
 int sofia_glue_init_sql(sofia_profile_t *profile);
-char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char *uri, const char *transport, switch_bool_t uri_only);
+char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char *uri, const sofia_transport_t transport, switch_bool_t uri_only);
 switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,
 											  switch_bool_t master,
 											  switch_mutex_t *mutex,
@@ -521,4 +536,14 @@ void sofia_reg_release_gateway__(const char *file, const char *func, int line, s
 																		\
 		if(_session) break;												\
 	} while(!_session)
-	   
+
+
+/*
+ * Transport handling helper functions
+ */
+sofia_transport_t sofia_glue_via2transport(const sip_via_t *via);
+sofia_transport_t sofia_glue_url2transport(const url_t *url);
+
+const char *sofia_glue_transport2str(const sofia_transport_t tp);
+
+int sofia_glue_transport_has_tls(const sofia_transport_t tp);

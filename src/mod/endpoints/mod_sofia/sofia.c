@@ -385,9 +385,14 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	}
 
 	profile->nua = nua_create(profile->s_root,	/* Event loop */
-							  sofia_event_callback,	/* Callback for processing events */
-							  profile,	/* Additional data to pass to callback */
-							  NUTAG_URL(profile->bindurl), NTATAG_UDP_MTU(65536), TAG_IF(tportlog,TPTAG_LOG(1)), TAG_END());	/* Last tag should always finish the sequence */
+							sofia_event_callback,	/* Callback for processing events */
+							profile,	/* Additional data to pass to callback */
+							NUTAG_URL(profile->bindurl),
+							TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), NUTAG_SIPS_URL(profile->tls_bindurl)),
+							TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), NUTAG_CERTIFICATE_DIR(profile->tls_cert_dir)),
+							NTATAG_UDP_MTU(65536),
+							TAG_IF(tportlog, TPTAG_LOG(1)),
+							TAG_END());	/* Last tag should always finish the sequence */
 
 	if (!profile->nua) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s\n", profile->name);
@@ -451,11 +456,18 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	gateway_loops = GATEWAY_SECONDS;
 
 	if (switch_event_create(&s_event, SWITCH_EVENT_PUBLISH) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp,_sip._tcp,_sip._sctp");
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp,_sip._tcp,_sip._sctp%s",
+							 (sofia_test_pflag(profile, PFLAG_TLS)) ? ",_sips._tcp" : ""));
+
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", profile->sip_port);
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "module_name", "%s", "mod_sofia");
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_name", "%s", profile->name);
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_uri", "%s", profile->url);
+
+		if (sofia_test_pflag(profile, PFLAG_TLS)) {
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "tls_port", "%d", profile->tls_sip_port);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_tls_uri", "%s", profile->tls_url);
+		}
 		switch_event_fire(&s_event);
 	}
 
@@ -498,11 +510,18 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_mutex_unlock(profile->ireg_mutex);
 
 	if (switch_event_create(&s_event, SWITCH_EVENT_UNPUBLISH) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp,_sip._tcp,_sip._sctp");
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp,_sip._tcp,_sip._sctp%s",
+							(sofia_test_pflag(profile, PFLAG_TLS)) ? ",_sips._tcp" : "");
+
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", profile->sip_port);
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "module_name", "%s", "mod_sofia");
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_name", "%s", profile->name);
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_uri", "%s", profile->url);
+
+		if (sofia_test_pflag(profile, PFLAG_TLS)) {
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "tls_port", "%d", profile->tls_sip_port);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_tls_uri", "%s", profile->tls_url);
+		}
 		switch_event_fire(&s_event);
 	}
 
@@ -1013,7 +1032,21 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Duration out of bounds!\n");
 						}
-					}
+
+					/*
+					 * handle TLS params #1
+					 */
+					} else if (!strcasecmp(var, "tls")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_TLS);
+						}
+					} else if (!strcasecmp(var, "tls-bind-params")) {
+						profile->tls_bind_params = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "tls-sip-port")) {
+						profile->tls_sip_port = atoi(val);
+					} else if (!strcasecmp(var, "tls-cert-dir")) {
+						profile->tls_cert_dir = switch_core_strdup(profile->pool, val);
+ 					}
 				}
 
 				if (!profile->cng_pt) {
@@ -1070,13 +1103,38 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					profile->bindurl = switch_core_sprintf(profile->pool, "%s;%s", bindurl, profile->bind_params);
 				}
 
+				/*
+				 * handle TLS params #2
+				 */
+				if (sofia_test_pflag(profile, PFLAG_TLS)) {
+					if (!profile->tls_sip_port) {
+						profile->tls_sip_port = atoi(SOFIA_DEFAULT_TLS_PORT);
+					}
+
+					if (profile->extsipip) {
+						profile->tls_url = switch_core_sprintf(profile->pool, "sip:mod_sofia@%s:%d", profile->extsipip, profile->tls_sip_port);
+						profile->tls_bindurl = switch_core_sprintf(profile->pool, "sips:mod_sofia@%s:%d;maddr=%s", profile->extsipip, profile->tls_sip_port, profile->sipip);
+					} else {
+						profile->tls_url = switch_core_sprintf(profile->pool, "sip:mod_sofia@%s:%d", profile->sipip, profile->tls_sip_port);
+						profile->tls_bindurl = switch_core_sprintf(profile->pool, "sips:mod_sofia@%s:%d", profile->sipip, profile->tls_sip_port);
+					}
+
+					if (profile->tls_bind_params) {
+						char *url = profile->tls_bindurl;
+						profile->tls_bindurl = switch_core_sprintf(profile->pool, "%s;%s", url, profile->tls_bind_params);
+					}
+
+					if (!profile->tls_cert_dir) {
+						profile->tls_cert_dir = switch_core_sprintf(profile->pool, "%s/ssl", SWITCH_GLOBAL_dirs.conf_dir);
+					}
+				}
 			}
 			if (profile) {
 				switch_xml_t aliases_tag, alias_tag;
 
 				if ((gateways_tag = switch_xml_child(xprofile, "registrations"))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
-									   "The <registrations> syntax has been discontinued, please see the new syntax in the default configuration examples\n");
+									  "The <registrations> syntax has been discontinued, please see the new syntax in the default configuration examples\n");
 				} else if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
 					parse_gateways(profile, gateways_tag);
 				}
@@ -2083,12 +2141,25 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	}
 
 	if (sip->sip_to && sip->sip_to->a_url) {
-		const char *val;
-		char *transport = (my_addrinfo->ai_socktype == SOCK_STREAM) ? "tcp" : "udp";
-		
+		const char *host, *user;
+		int port;
+		sofia_transport_t transport = sofia_glue_url2transport(sip->sip_contact->m_url);
+
 		url_set_chanvars(session, sip->sip_to->a_url, sip_to);
-		if ((val = switch_channel_get_variable(channel, "sip_to_uri"))) {
-			tech_pvt->to_uri = switch_core_session_sprintf(session, "sip:%s;transport=%s", val, transport);
+		if (switch_channel_get_variable(channel, "sip_to_uri")) {
+
+			host = switch_channel_get_variable(channel, "sip_to_host");
+			user = switch_channel_get_variable(channel, "sip_to_user");
+
+			if (sip->sip_contact->m_url->url_port) {
+				port = atoi(sip->sip_contact->m_url->url_port);
+			} else {
+				port = sofia_glue_transport_has_tls(transport) ? profile->tls_sip_port : profile->sip_port;
+			}
+
+			tech_pvt->to_uri = switch_core_session_sprintf(session, "sip:%s@%s:%d;transport=%s",
+						 user, host, port, sofia_glue_transport2str(transport));
+
 			if (profile->ndlb & PFLAG_NDLB_TO_IN_200_CONTACT) {
 				if (strchr(tech_pvt->to_uri, '>')) {
 					tech_pvt->reply_contact = tech_pvt->to_uri;
@@ -2096,17 +2167,21 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 					tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s>", tech_pvt->to_uri);
 				}
 			} else {
-				if (strchr(profile->url, '>')) {
-					tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;transport=%s", profile->url, transport);
+				const char *url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_url : profile->url;
+
+				if (strchr(url, '>')) {
+					tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;transport=%s", url, sofia_glue_transport2str(transport));
 				} else {
-					tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", profile->url, transport);
+					tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", url, sofia_glue_transport2str(transport));
 				}
 			}
 		} else {
-			if (strchr(profile->url, '>')) {
-				tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;transport=%s", profile->url, transport);
+			const char *url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_url : profile->url;
+
+			if (strchr(url, '>')) {
+				tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;transport=%s", url, sofia_glue_transport2str(transport));
 			} else {
-				tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", profile->url, transport);
+				tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", url, sofia_glue_transport2str(transport));
 			}
 		}
 	}

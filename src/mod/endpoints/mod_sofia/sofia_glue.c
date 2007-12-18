@@ -453,20 +453,139 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char *uri, const char *transport, switch_bool_t uri_only)
+static sofia_transport_t sofia_glue_str2transport(const char *str)
+{
+	if (!strcasecmp(str, "udp")) {
+		return SOFIA_TRANSPORT_UDP;
+	}
+	else if (!strcasecmp(str, "tcp")) {
+		return SOFIA_TRANSPORT_TCP;
+	}
+	else if (!strcasecmp(str, "sctp")) {
+		return SOFIA_TRANSPORT_SCTP;
+	}
+	else if (!strcasecmp(str, "tls")) {
+		return SOFIA_TRANSPORT_TCP_TLS;
+	}
+
+	return SOFIA_TRANSPORT_UNKNOWN;
+}
+
+sofia_transport_t sofia_glue_url2transport(const url_t *url)
+{
+	char *ptr = NULL;
+	int tls = 0;
+
+	if(!url)
+		return SOFIA_TRANSPORT_UNKNOWN;
+
+	if (url->url_scheme && !strcasecmp(url->url_scheme, "sips")) {
+		tls++;
+	}
+
+	ptr = (char *)url->url_params;
+	while(ptr) {
+
+		if (!strncasecmp(ptr, "transport=", 10)) {
+			ptr += 10;
+
+			if (!strncasecmp(ptr, "udp", 3)) {
+				return SOFIA_TRANSPORT_UDP;
+			}
+			else if (!strncasecmp(ptr, "tcp", 3)) {
+				return SOFIA_TRANSPORT_TCP;
+			}
+			else if (!strncasecmp(ptr, "tls", 3)) {
+				return SOFIA_TRANSPORT_TCP_TLS;
+			}
+			else if (!strncasecmp(ptr, "sctp", 4)) {
+				return SOFIA_TRANSPORT_SCTP;
+			}
+			break;
+		}
+
+		if ((ptr = strchr(ptr, ';')))
+			ptr++;
+	}
+
+	return (tls) ? SOFIA_TRANSPORT_TCP_TLS : SOFIA_TRANSPORT_UDP;
+}
+
+sofia_transport_t sofia_glue_via2transport(const sip_via_t *via)
+{
+	char *ptr = NULL;
+	int tls = 0;
+
+	if (!via || !via->v_protocol)
+		return SOFIA_TRANSPORT_UNKNOWN;
+
+	if (!strncasecmp(via->v_protocol, "sips", 4)) {
+		tls++;
+	}
+
+	if ((ptr = strrchr(via->v_protocol, '/'))) {
+		ptr++;
+
+		if (!strncasecmp(ptr, "udp", 3)) {
+			return SOFIA_TRANSPORT_UDP;
+		}
+		else if(!strncasecmp(ptr, "tcp", 3)) {
+			return SOFIA_TRANSPORT_TCP;
+		}
+		else if(!strncasecmp(ptr, "tls", 3)) {
+			return SOFIA_TRANSPORT_TCP_TLS;
+		}
+		else if(!strncasecmp(ptr, "sctp", 4)) {
+			return SOFIA_TRANSPORT_SCTP;
+		}
+	}
+
+	return SOFIA_TRANSPORT_UNKNOWN;
+}
+
+const char *sofia_glue_transport2str(const sofia_transport_t tp)
+{
+	switch(tp) {
+	case SOFIA_TRANSPORT_TCP:
+		return "tcp";
+
+	case SOFIA_TRANSPORT_TCP_TLS:
+		return "tls";
+
+	case SOFIA_TRANSPORT_SCTP:
+		return "sctp";
+
+	default:
+		return "udp";
+	}
+}
+
+int sofia_glue_transport_has_tls(const sofia_transport_t tp)
+{
+	switch(tp) {
+	case SOFIA_TRANSPORT_TCP_TLS:
+		return 1;
+
+	default:
+		return 0;
+	}
+}
+
+char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char *uri, const sofia_transport_t transport, switch_bool_t uri_only)
 {
 	char *stripped = switch_core_session_strdup(session, uri);
 	char *new_uri = NULL;
 
 	stripped = sofia_glue_get_url_from_contact(stripped, 0);
-	if (transport && strcasecmp(transport, "udp")) {
+	if (transport && transport != SOFIA_TRANSPORT_UDP) {
+
 		if (switch_stristr("port=", stripped)) {
 			new_uri = switch_core_session_sprintf(session, "%s%s%s", uri_only ? "" : "<", stripped, uri_only ? "" : ">");
 		} else {
 			if (strchr(stripped, ';')) {
-				new_uri = switch_core_session_sprintf(session, "%s%s&transport=%s%s", uri_only ? "" : "<", stripped, transport, uri_only ? "" : ">");
+				new_uri = switch_core_session_sprintf(session, "%s%s&transport=%s%s", uri_only ? "" : "<", stripped, sofia_glue_transport2str(transport), uri_only ? "" : ">");
 			} else {
-				new_uri = switch_core_session_sprintf(session, "%s%s;transport=%s%s", uri_only ? "" : "<", stripped, transport, uri_only ? "" : ">");
+				new_uri = switch_core_session_sprintf(session, "%s%s;transport=%s%s", uri_only ? "" : "<", stripped, sofia_glue_transport2str(transport), uri_only ? "" : ">");
 			}
 		}
 	} else {
@@ -543,8 +662,9 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	if (!tech_pvt->nh) {
 		char *d_url = NULL, *url = NULL;
 		sofia_private_t *sofia_private;
+		sofia_transport_t transport = SOFIA_TRANSPORT_UDP;
 		char *invite_contact = NULL, *to_str, *use_from_str, *from_str, *url_str;
-		const char *transport = "udp", *t_var;
+		const char *t_var;
 		char *rpid_domain = "cluecon.com", *p;
 		const char *priv = "off";
 		const char *screen = "no";
@@ -553,7 +673,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "URL Error! [%s]\n", tech_pvt->dest);
 			return SWITCH_STATUS_FALSE;
 		}
-		
+
 		if ((d_url = sofia_glue_get_url_from_contact(tech_pvt->dest, 1))) {
 			url = d_url;
 		} else {
@@ -562,16 +682,12 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		url_str = url;
 
-		if (switch_strlen_zero(tech_pvt->invite_contact)) {
-			tech_pvt->invite_contact = tech_pvt->profile->url;
-		}
-		
 		if (!switch_strlen_zero(tech_pvt->gateway_from_str)) {
 			use_from_str = tech_pvt->gateway_from_str;
 		} else {
 			use_from_str = tech_pvt->from_str;
 		}
-		
+
 		rpid_domain = switch_core_session_strdup(session, use_from_str);
 		sofia_glue_get_url_from_contact(rpid_domain, 0);
 		if ((rpid_domain = strchr(rpid_domain, '@'))) {
@@ -586,21 +702,30 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		}
 
 		if (switch_stristr("port=tcp", url)) {
-			transport = "tcp";
+			transport = SOFIA_TRANSPORT_TCP;
 		} else {
 			if ((t_var = switch_channel_get_variable(channel, "sip_transport"))) {
-				if (!strcasecmp(t_var, "tcp") || !strcasecmp(t_var, "udp")) {
-					transport = t_var;
+				sofia_transport_t t_val;
+
+				if ((t_val = sofia_glue_str2transport(t_var)) != SOFIA_TRANSPORT_UNKNOWN) {
+					transport = t_val;
 				}
 			}
 		}
 
+		if (switch_strlen_zero(tech_pvt->invite_contact)) {
+			if (sofia_glue_transport_has_tls(transport))
+				tech_pvt->invite_contact = tech_pvt->profile->tls_url;
+			else
+				tech_pvt->invite_contact = tech_pvt->profile->url;
+		}
+
 		url_str = sofia_overcome_sip_uri_weakness(session, url, transport, SWITCH_TRUE);
 		invite_contact = sofia_overcome_sip_uri_weakness(session, tech_pvt->invite_contact, transport, SWITCH_FALSE);
-		from_str = sofia_overcome_sip_uri_weakness(session, use_from_str, NULL, SWITCH_FALSE);
-		to_str = sofia_overcome_sip_uri_weakness(session, tech_pvt->dest_to, NULL, SWITCH_FALSE);
-		
-		/* 
+		from_str = sofia_overcome_sip_uri_weakness(session, use_from_str, 0, SWITCH_FALSE);
+		to_str = sofia_overcome_sip_uri_weakness(session, tech_pvt->dest_to, 0, SWITCH_FALSE);
+
+		/*
 		   Does the "genius" who wanted SIP to be "text-based" so it was "easier to read" even use it now,
 		   or did he just suggest it to make our lives miserable?
 		*/

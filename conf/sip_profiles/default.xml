@@ -42,6 +42,15 @@
     <param name="inbound-codec-negotiation" value="generous"/>
     <!-- if you want to send any special bind params of your own -->
     <!--<param name="bind-params" value="transport=udp"/>-->
+
+    <!-- TLS: disabled by default, set to "true" to enable -->
+    <!--<param name="tls" value="false"/>-->
+    <!-- additional bind parameters for TLS -->
+    <!--<param name="tls-bind-params" value="transport=tls"/>-->
+    <!-- Port to listen on for TLS requests. (5061 will be used if unspecified) -->
+    <!--<param name="tls-sip-port" value="5061"/>-->
+    <!-- Location of the agent.pem and cafile.pem ssl certificates (needed for TLS server) -->
+    <!--<param name="tls-cert-dir" value="$${base_dir}/conf/ssl"/>-->
     
     <!--If you don't want to pass through timestampes from 1 RTP call to another (on a per call basis with rtp_rewrite_timestamps chanvar)-->
     <!--<param name="rtp-rewrite-timestamps" value="true"/>-->
