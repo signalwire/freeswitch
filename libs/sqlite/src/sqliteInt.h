@@ -269,9 +269,18 @@ extern int sqlite3_iLine;            /* Line number for debug info */
 
 #else
 
+static inline void *zmalloc(size_t x)
+{
+	void *z = malloc(x);
+	assert(z);
+	memset(z, 0, x);
+	return z;
+}
+
+
 #define ENTER_MALLOC 0
-#define sqliteMalloc(x)          sqlite3Malloc(x,1)
-#define sqliteMallocRaw(x)       sqlite3MallocRaw(x,1)
+#define sqliteMalloc(x)          zmalloc(x)//sqlite3Malloc(x,1)
+#define sqliteMallocRaw(x)       malloc(x)//sqlite3MallocRaw(x,1)
 #define sqliteRealloc(x,y)       sqlite3Realloc(x,y)
 #define sqliteStrDup(x)          sqlite3StrDup(x)
 #define sqliteStrNDup(x,y)       sqlite3StrNDup(x,y)

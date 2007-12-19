@@ -239,7 +239,7 @@ libs/apr-util/libaprutil-1.la: libs/apr-util libs/apr-util/.update libs/apr/liba
 	@$(TOUCH_TARGET)
 
 libs/sqlite/libsqlite3.la: libs/sqlite libs/sqlite/.update
-	@cd libs/sqlite && $(MAKE)
+	@cd libs/sqlite && $(MAKE) CFLAGS="$(SWITCH_AM_CFLAGS)"
 	@$(TOUCH_TARGET)
 
 libs/pcre/libpcre.la: libs/pcre libs/pcre/.update
