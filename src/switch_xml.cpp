@@ -936,7 +936,9 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 		madvise(m, root->len = l, MADV_NORMAL);	// put it back to normal
 	} else {					// mmap failed, read file into memory
 #endif // HAVE_MMAP
-		l = read(fd, m = malloc(st.st_size), st.st_size);
+		m = malloc(st.st_size);
+		if (!m) return NULL;
+		l = read(fd, m, st.st_size);
 		root = (switch_xml_root_t) switch_xml_parse_str((char *)m, l);
 		root->dynamic = 1;		// so we know to free s in switch_xml_free()
 #ifdef HAVE_MMAP
@@ -1011,7 +1013,7 @@ static int preprocess_glob(const char *cwd, const char *pattern, int write_fd, i
 
 	for (int n = 0; n < glob.FileCount(); ++n) {
 		dir_path = strdup(glob.File(n));
-		assert(dir_path);
+		switch_assert(dir_path);
 		if ((e = strrchr(dir_path, *SWITCH_PATH_SEPARATOR))) {
 			*e = '\0';
 		}
@@ -1218,7 +1220,9 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file_simple(const char *file)
 
 	if ((fd = open(file, O_RDONLY, 0)) > -1) {
 		fstat(fd, &st);
-		l = read(fd, m = malloc(st.st_size), st.st_size);
+		m = malloc(st.st_size);
+		switch_assert(m);
+		l = read(fd, m, st.st_size);
 		root = (switch_xml_root_t) switch_xml_parse_str((char *)m, l);
 		root->dynamic = 1;
 		close(fd);
@@ -1532,8 +1536,11 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 	}
 
 	while (s != e) {
-		while (*dlen + 10 > *max)
-			*dst = (char *)realloc(*dst, *max += SWITCH_XML_BUFSIZE);
+		while (*dlen + 10 > *max) {
+			char *tmp = (char *)realloc(*dst, *max += SWITCH_XML_BUFSIZE);
+			if (!tmp) return *dst;
+			*dst = tmp;
+		}
 
 		if (immune) {
 			if (*s == '\0') {
@@ -1592,8 +1599,11 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 	// parent character content up to this tag
 	*s = switch_xml_ampencode(txt + start, xml->off - start, s, len, max, 0);
 
-	while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) + 1 > *max)	// reallocate s
-		*s = (char *)realloc(*s, *max += SWITCH_XML_BUFSIZE);
+	while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) + 1 > *max) {	// reallocate s
+		char *tmp = (char *)realloc(*s, *max += SWITCH_XML_BUFSIZE);
+		if (!tmp) return *s;
+		*s = tmp;
+	}
 
 	if (*(*s + (*len) - 1) == '>') {
 		*len += sprintf(*s + *len, "\n");	// indent
@@ -1606,8 +1616,11 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 	for (i = 0; xml->attr[i]; i += 2) {	// tag attributes
 		if (switch_xml_attr(xml, xml->attr[i]) != xml->attr[i + 1])
 			continue;
-		while (*len + strlen(xml->attr[i]) + 7 + (strlen(XML_INDENT) * (*count)) > *max)	// reallocate s
-			*s = (char *)realloc(*s, *max += SWITCH_XML_BUFSIZE);
+		while (*len + strlen(xml->attr[i]) + 7 + (strlen(XML_INDENT) * (*count)) > *max) {	// reallocate s
+			char *tmp = (char *)realloc(*s, *max += SWITCH_XML_BUFSIZE);
+			if (!tmp) return *s;
+			*s = tmp;
+		}
 
 		*len += sprintf(*s + *len, " %s=\"", xml->attr[i]);
 		switch_xml_ampencode(xml->attr[i + 1], 0, s, len, max, 1);
@@ -1618,8 +1631,11 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 	for (j = 1; attr[i] && attr[i][j]; j += 3) {	// default attributes
 		if (!attr[i][j + 1] || switch_xml_attr(xml, attr[i][j]) != attr[i][j + 1])
 			continue;			// skip duplicates and non-values
-		while (*len + strlen(attr[i][j]) + 8 + (strlen(XML_INDENT) * (*count)) > *max)	// reallocate s
-			*s = (char *)realloc(*s, *max += SWITCH_XML_BUFSIZE);
+		while (*len + strlen(attr[i][j]) + 8 + (strlen(XML_INDENT) * (*count)) > *max) {	// reallocate s
+			char *tmp = (char *)realloc(*s, *max += SWITCH_XML_BUFSIZE);
+			if (!tmp) return *s;
+			*s = tmp;
+		}
 
 		*len += sprintf(*s + *len, " %s=\"", attr[i][j]);
 		switch_xml_ampencode(attr[i][j + 1], 0, s, len, max, 1);
@@ -1636,9 +1652,11 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 		*s = switch_xml_ampencode(xml->txt, 0, s, len, max, 0);	//data
 	}
 
-	while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) > *max)	// reallocate s
-		*s = (char *)realloc(*s, *max += SWITCH_XML_BUFSIZE);
-
+	while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) > *max) {	// reallocate s
+			char *tmp = (char *)realloc(*s, *max += SWITCH_XML_BUFSIZE);
+			if (!tmp) return *s;
+			*s = tmp;
+		}
 
 	if (xml->child || xml->txt) {
 		if (*(*s + (*len) - 1) == '\n') {
@@ -1927,9 +1945,13 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *n
 			return xml;			// nothing to do
 		if (xml->attr == SWITCH_XML_NIL) {	// first attribute
 			xml->attr = (char **)malloc(4 * sizeof(char *));
+			if (!xml->attr) return NULL;
 			xml->attr[1] = strdup("");	// empty list of malloced names/vals
-		} else
-			xml->attr = (char **)realloc(xml->attr, (l + 4) * sizeof(char *));
+		} else {
+			char **tmp = (char **)realloc(xml->attr, (l + 4) * sizeof(char *));
+			if (!tmp) return xml;
+			xml->attr = tmp;
+		}
 
 		xml->attr[l] = (char *) name;	// set attribute name
 		xml->attr[l + 2] = NULL;	// null terminate attribute list
@@ -1951,10 +1973,13 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *n
 	if (value)
 		xml->attr[l + 1] = (char *) value;	// set attribute value
 	else {						// remove attribute
+		char **tmp;
 		if (xml->attr[c + 1][l / 2] & SWITCH_XML_NAMEM)
 			free(xml->attr[l]);
 		memmove(xml->attr + l, xml->attr + l + 2, (c - l + 2) * sizeof(char *));
-		xml->attr = (char **)realloc(xml->attr, (c + 2) * sizeof(char *));
+		tmp =(char **)realloc(xml->attr, (c + 2) * sizeof(char *));
+		if (!tmp) return xml;
+		xml->attr = tmp;
 		memmove(xml->attr[c + 1] + (l / 2), xml->attr[c + 1] + (l / 2) + 1, (c / 2) - (l / 2));	// fix list of which name/vals are malloced
 	}
 	xml->flags &= ~SWITCH_XML_DUP;	// clear strdup() flag
