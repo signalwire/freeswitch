@@ -296,6 +296,20 @@ SWITCH_END_EXTERN_C
 #ifndef switch_assert
 #define switch_assert(expr) assert(expr)
 #endif
+
+#ifndef __ATTR_SAL
+ /* used for msvc code analysis */
+ /* http://msdn2.microsoft.com/en-us/library/ms235402.aspx */
+#define _In_
+#define _In_z_
+#define _In_opt_z_
+#define _Printf_format_string_
+#define _Ret_opt_z_
+#define _Ret_z_
+#define _Check_return_
+#endif
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c

@@ -74,7 +74,7 @@ typedef switch_status_t (*switch_log_function_t) (const switch_log_node_t *node,
   \param pool the memory pool to use
   \note to be called at application startup by the core
 */
-SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_log_init(_In_ switch_memory_pool_t *pool);
 
 /*! 
   \brief Shut down the logging engine
@@ -94,30 +94,32 @@ SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void);
   \param ... variable args
   \note there are channel macros to supply the first 4 parameters
 */
-SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char *file, const char *func, int line,
-									   const char *userdata, switch_log_level_t level, const char *fmt, ...) PRINTF_FUNCTION(7, 8);
+SWITCH_DECLARE(void) switch_log_printf(_In_ switch_text_channel_t channel, _In_z_ const char *file,
+									   _In_z_ const char *func, _In_ int line,
+									   _In_opt_z_ const char *userdata, _In_ switch_log_level_t level,
+									   _In_z_ _Printf_format_string_ const char *fmt, ...) PRINTF_FUNCTION(7, 8);
 
 /*! 
   \brief Shut down  the logging engine
   \note to be called at application termination by the core
 */
-SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(switch_log_function_t function, switch_log_level_t level);
+SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(_In_ switch_log_function_t function, _In_ switch_log_level_t level);
 
 /*! 
   \brief Return the name of the specified log level
   \param level the level
   \return the name of the log level
 */
-SWITCH_DECLARE(const char *) switch_log_level2str(switch_log_level_t level);
+_Ret_z_  SWITCH_DECLARE(const char *) switch_log_level2str(_In_ switch_log_level_t level);
 
 /*! 
   \brief Return the level number of the specified log level name
   \param str the name of the level
   \return the log level
 */
-SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(const char *str);
+SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(_In_z_ const char *str);
 
-SWITCH_DECLARE(uint32_t) switch_log_str2mask(const char *str);
+SWITCH_DECLARE(uint32_t) switch_log_str2mask(_In_z_ const char *str);
 #define switch_log_check_mask(_mask, _level) (_mask & (1 << _level))
 
 ///\}
