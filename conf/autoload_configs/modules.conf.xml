@@ -33,6 +33,7 @@
     <load module="mod_sofia"/>
     <!-- <load module="mod_wanpipe"/> -->
     <!-- <load module="mod_woomera"/> -->
+    <!-- <load module="mod_openzap"/> -->
 
     <!-- Applications -->
     <load module="mod_commands"/>
