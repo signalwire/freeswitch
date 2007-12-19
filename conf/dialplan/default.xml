@@ -10,7 +10,7 @@
     </extension>
 
     <extension name="intercept-ext">
-      <condition field="destination_number" expression="^886(\d+)$">
+      <condition field="destination_number" expression="^\*\*(\d+)$">
 	<action application="answer"/>
 	<action application="intercept" data="${db(select/last_dial_ext/$1)}"/>
 	<action application="sleep" data="2000"/>
