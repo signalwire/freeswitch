@@ -77,9 +77,11 @@ static unsigned int S = 0;
 
 static int do_rand(void)
 {
+	double r;
+	int index;
 	srand(getpid() + ++S);
-	double r = ((double)rand() / ((double)(RAND_MAX)+(double)(1)));
-	int index = (r * 9) + 1;
+	r = ((double)rand() / ((double)(RAND_MAX)+(double)(1)));
+	index = (int)(r * 9) + 1;
 	return index;
 }
 
