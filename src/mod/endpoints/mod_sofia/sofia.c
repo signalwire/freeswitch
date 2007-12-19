@@ -1872,7 +1872,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 			if ((b_session = switch_core_session_locate(br))) {
 				switch_channel_set_variable(channel, "TRANSFER_FALLBACK", from->a_user);
-				switch_ivr_session_transfer(b_session, exten, profile->dialplan, profile->context);
+				switch_ivr_session_transfer(b_session, exten, NULL, NULL);
 				switch_core_session_rwunlock(b_session);
 			}
 
