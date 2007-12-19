@@ -166,7 +166,7 @@ static void event_handler(switch_event_t *event)
 
 		switch (event->event_id) {
 		case SWITCH_EVENT_LOG:
-			return;
+			goto end;
 		default:
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Multicast-Sender", "%s", globals.hostname);
 			if (switch_event_serialize(event, &packet, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
@@ -180,6 +180,9 @@ static void event_handler(switch_event_t *event)
 			break;
 		}
 	}
+end:
+	free(buf);
+	return;
 }
 
 
@@ -318,6 +321,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 	}
 
 	globals.running = 0;
+	free(buf);
 	return SWITCH_STATUS_TERM;
 }
 
