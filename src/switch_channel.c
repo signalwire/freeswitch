@@ -288,6 +288,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel, s
 	channel->state = state;
 	channel->flags = flags;
 	channel->session = session;
+	channel->running_state = CS_NONE;
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -592,7 +593,13 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 					  channel->name, state_names[channel->state]);
 	channel->running_state = channel->state;
 
+	if (channel->state_flags) {
+		channel->flags |= channel->state_flags;
+		channel->state_flags = 0;
+	}
+	
 	if (channel->state >= CS_RING) {
+		switch_clear_flag(channel, CF_TRANSFER);
 		switch_channel_presence(channel, "unknown", (char *) state_names[channel->state]);
 	}
 	
@@ -770,7 +777,6 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		break;
 
 	case CS_RING:
-		switch_clear_flag(channel, CF_TRANSFER);
 		switch (state) {
 		case CS_LOOPBACK:
 		case CS_EXECUTE:
@@ -841,12 +847,6 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		}
 	}
   done:
-
-	if (channel->state_flags) {
-		channel->flags |= channel->state_flags;
-		channel->state_flags = 0;
-
-	}
 
 	switch_mutex_unlock(channel->flag_mutex);
 	return channel->state;

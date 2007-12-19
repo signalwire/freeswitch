@@ -330,7 +330,7 @@ void switch_core_state_machine_init(switch_memory_pool_t *pool)
 
 SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 {
-	switch_channel_state_t state = CS_NEW, laststate = CS_HANGUP, midstate = CS_DONE, endstate;
+	switch_channel_state_t state = CS_NEW, midstate = CS_DONE, endstate;
 	const switch_endpoint_interface_t *endpoint_interface;
 	const switch_state_handler_table_t *driver_state_handler = NULL;
 	const switch_state_handler_table_t *application_state_handler = NULL;
@@ -395,7 +395,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			switch_channel_clear_flag(session->channel, CF_REPEAT_STATE);
 			exception = 1;
 		}
-		if (state != laststate || state == CS_HANGUP || exception) {
+		if (state != switch_channel_get_running_state(session->channel) || state == CS_HANGUP || exception) {
 			int index = 0;
 			int proceed = 1;
 			
@@ -437,20 +437,22 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			case CS_HIBERNATE:	/* sleep */
 				STATE_MACRO(hibernate, "HIBERNATE");
 				break;
+			case CS_NONE:
+				abort();
+				break;
 			}
 			
 			if (midstate == CS_DONE) {
 				break;
 			}
 
-			laststate = midstate;
 		}
 
 
 		endstate = switch_channel_get_state(session->channel);
 
-
-		if (midstate == endstate) {
+		
+		if (endstate == switch_channel_get_running_state(session->channel)) {
 			if (endstate == CS_NEW) {
 				switch_yield(1000);
 			} else {

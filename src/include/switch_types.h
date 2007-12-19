@@ -580,7 +580,8 @@ typedef enum {
 	CS_HIBERNATE,
 	CS_RESET,
 	CS_HANGUP,
-	CS_DONE
+	CS_DONE,
+	CS_NONE
 } switch_channel_state_t;
 
 

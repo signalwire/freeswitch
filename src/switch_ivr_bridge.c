@@ -447,6 +447,8 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 		switch_channel_set_variable(channel, SWITCH_BRIDGE_VARIABLE, NULL);
 		switch_channel_set_variable(other_channel, SWITCH_BRIDGE_VARIABLE, NULL);
 
+		assert (!switch_channel_test_flag(other_channel, CF_TRANSFER));
+
 		if (!switch_channel_test_flag(other_channel, CF_TRANSFER)) {
 			if (switch_channel_test_flag(other_channel, CF_ANSWERED) && 
 				switch_channel_get_state(other_channel) < CS_HANGUP &&
@@ -455,7 +457,7 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 			} else {
 				switch_channel_set_state(other_channel, CS_EXECUTE);
 			}
-		}
+		} 
 		switch_core_session_rwunlock(other_session);
 	}
 
