@@ -1807,7 +1807,11 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 							uint32_t timeout = 60;
 							char *tuuid_str;
-							const char *port = refer_to->r_url->url_port;
+							const char *port = NULL;
+							
+							if (refer_to && refer_to->r_url && refer_to->r_url->url_port) {
+								port = refer_to->r_url->url_port;
+							}
 
 							if (switch_strlen_zero(port)) {
 								port = "5060";
