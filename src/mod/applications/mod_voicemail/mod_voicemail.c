@@ -547,7 +547,7 @@ static switch_status_t load_config(void)
 			} else {
 				if ((db = switch_core_db_open_file(profile->dbname))) {
 					switch_core_db_test_reactive(db, "select count(message_len) from voicemail_data", "drop table voicemail_data", vm_sql);
-					switch_core_db_test_reactive(db, "select count(user) from voicemail_prefs", "drop table voicemail_data", vm_pref_sql);
+					switch_core_db_test_reactive(db, "select count(user) from voicemail_prefs", "drop table voicemail_prefs", vm_pref_sql);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
 					continue;
