@@ -201,7 +201,10 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
-
+	
+	if (tech_pvt->profile->rtpip && tech_pvt->local_sdp_audio_port) {
+		switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_audio_port);
+	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
 		const char *buuid;

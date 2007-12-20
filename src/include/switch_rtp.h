@@ -75,7 +75,7 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_set_end_port(switch_port_t port);
   \return the new port to use
 */
 SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(const char *ip);
-
+SWITCH_DECLARE(void) switch_rtp_release_port(const char *ip, switch_port_t port);
 /*! 
   \brief create a new RTP session handle
   \param new_rtp_session a poiter to aim at the new session

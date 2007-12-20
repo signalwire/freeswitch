@@ -316,16 +316,16 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_set_end_port(switch_port_t port)
         return END_PORT;
 }
 
-static void release_port(const char *host, switch_port_t port)
+SWITCH_DECLARE(void) switch_rtp_release_port(const char *ip, switch_port_t port)
 {
 	switch_core_port_allocator_t *alloc = NULL;
 
-	if (!host) {
+	if (!ip) {
 		return;
 	}
 
     switch_mutex_lock(port_lock);
-    if ((alloc = switch_core_hash_find(alloc_hash, host))) {
+    if ((alloc = switch_core_hash_find(alloc_hash, ip))) {
 		switch_core_port_allocator_free_port(alloc, port);
 	}
 	switch_mutex_unlock(port_lock);
@@ -634,7 +634,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 		rtp_session->rx_host = switch_core_strdup(rtp_session->pool, rx_host);
 		rtp_session->rx_port = rx_port;
 	} else {
-		release_port(rx_host, rx_port);
+		switch_rtp_release_port(rx_host, rx_port);
 	}
 
 	return rtp_session;
@@ -731,7 +731,7 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 		switch_core_timer_destroy(&(*rtp_session)->timer);
 	}
 
-	release_port((*rtp_session)->rx_host, (*rtp_session)->rx_port);
+	switch_rtp_release_port((*rtp_session)->rx_host, (*rtp_session)->rx_port);
 
 	switch_mutex_unlock((*rtp_session)->flag_mutex);
 	return;
