@@ -282,6 +282,10 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				switch_regex_safe_free(re);
 
 				if (!extension) {
+					if (switch_strlen_zero(field_data)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No extension!\n");
+						break;
+					}
 					if ((extension = switch_caller_extension_new(session, field_data, field_data)) == 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
 						break;

@@ -303,10 +303,14 @@ SWITCH_END_EXTERN_C
 #define _In_
 #define _In_z_
 #define _In_opt_z_
+#define _In_opt_
 #define _Printf_format_string_
 #define _Ret_opt_z_
 #define _Ret_z_
+#define _Out_opt_
+#define _Out_
 #define _Check_return_
+#define _Inout_
 #endif
 
 

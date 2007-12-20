@@ -128,49 +128,52 @@ struct switch_core_port_allocator;
   \param new_bug pointer to assign new bug to
   \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
-SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t *session,
-														  switch_media_bug_callback_t callback,
-														  void *user_data, time_t stop_time, switch_media_bug_flag_t flags, switch_media_bug_t **new_bug);
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(_In_ switch_core_session_t *session,
+														  _In_ switch_media_bug_callback_t callback,
+														  _In_opt_ void *user_data,
+														  _In_ time_t stop_time,
+														  _In_ switch_media_bug_flag_t flags,
+														  _Out_ switch_media_bug_t **new_bug);
 /*!
   \brief Obtain private data from a media bug
   \param bug the bug to get the data from
   \return the private data
 */
-SWITCH_DECLARE(void *) switch_core_media_bug_get_user_data(switch_media_bug_t *bug);
+SWITCH_DECLARE(void *) switch_core_media_bug_get_user_data(_In_ switch_media_bug_t *bug);
 
 /*!
   \brief Obtain a replace frame from a media bug
   \param bug the bug to get the data from
 */
-SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_write_replace_frame(switch_media_bug_t *bug);
+SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_write_replace_frame(_In_ switch_media_bug_t *bug);
 
 /*!
   \brief Set a return replace frame
   \param bug the bug to set the frame on
   \param frame the frame to set
 */
-SWITCH_DECLARE(void) switch_core_media_bug_set_write_replace_frame(switch_media_bug_t *bug, switch_frame_t *frame);
+SWITCH_DECLARE(void) switch_core_media_bug_set_write_replace_frame(_In_ switch_media_bug_t *bug, _In_ switch_frame_t *frame);
 
 /*!
   \brief Obtain a replace frame from a media bug
   \param bug the bug to get the data from
 */
-SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_read_replace_frame(switch_media_bug_t *bug);
+SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_read_replace_frame(_In_ switch_media_bug_t *bug);
 
 /*!
   \brief Obtain the session from a media bug
   \param bug the bug to get the data from
 */
-SWITCH_DECLARE(switch_core_session_t *) switch_core_media_bug_get_session(switch_media_bug_t *bug);
+SWITCH_DECLARE(switch_core_session_t *) switch_core_media_bug_get_session(_In_ switch_media_bug_t *bug);
 
-SWITCH_DECLARE(uint32_t) switch_core_media_bug_test_flag(switch_media_bug_t *bug, uint32_t flag);
+SWITCH_DECLARE(uint32_t) switch_core_media_bug_test_flag(_In_ switch_media_bug_t *bug, _In_ uint32_t flag);
 
 /*!
   \brief Set a return replace frame
   \param bug the bug to set the frame on
   \param frame the frame to set
 */
-SWITCH_DECLARE(void) switch_core_media_bug_set_read_replace_frame(switch_media_bug_t *bug, switch_frame_t *frame);
+SWITCH_DECLARE(void) switch_core_media_bug_set_read_replace_frame(_In_ switch_media_bug_t *bug, _In_ switch_frame_t *frame);
 
 /*!
   \brief Remove a media bug from the session
@@ -178,20 +181,20 @@ SWITCH_DECLARE(void) switch_core_media_bug_set_read_replace_frame(switch_media_b
   \param bug bug to remove
   \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
-SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session_t *session, switch_media_bug_t **bug);
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(_In_ switch_core_session_t *session, _Inout_ switch_media_bug_t **bug);
 
 /*!
   \brief Close and destroy a media bug
   \param bug bug to remove
   \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
-SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(switch_media_bug_t **bug);
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(_Inout_ switch_media_bug_t **bug);
 /*!
   \brief Remove all media bugs from the session
   \param session the session to remove the bugs from
   \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
-SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(_In_ switch_core_session_t *session);
 
 /*!
   \brief Read a frame from the bug
@@ -199,7 +202,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_ses
   \param frame the frame to write the data to
   \return the amount of data 
 */
-SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *bug, switch_frame_t *frame);
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(_In_ switch_media_bug_t *bug, _In_ switch_frame_t *frame);
 
 ///\}
 
