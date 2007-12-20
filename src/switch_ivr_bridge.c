@@ -653,7 +653,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 			switch_channel_clear_flag(caller_channel, CF_ORIGINATOR);
 			//make sure this doesnt break anything
-			switch_channel_set_state(peer_channel, CS_RESET);
+
+			if (!switch_channel_test_flag(peer_channel, CF_TRANSFER) && switch_channel_get_state(peer_channel) == CS_LOOPBACK) {
+				switch_channel_set_state(peer_channel, CS_RESET);
+			}
 			while (switch_channel_get_state(peer_channel) == CS_LOOPBACK) {
 				switch_yield(1000);
 			}
