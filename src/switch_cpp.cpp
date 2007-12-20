@@ -341,7 +341,8 @@ int CoreSession::originate(CoreSession *a_leg_session,
 							 NULL, 
 							 NULL, 
 							 NULL, 
-							 &caller_profile) != SWITCH_STATUS_SUCCESS) {
+							 &caller_profile,
+							 SOF_NONE) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error Creating Outgoing Channel! [%s]\n", dest);
 		goto failed;
 

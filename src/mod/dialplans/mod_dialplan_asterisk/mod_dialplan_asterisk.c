@@ -312,15 +312,19 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 /* fake chan_sip */
 switch_endpoint_interface_t *sip_endpoint_interface;
 static switch_call_cause_t sip_outgoing_channel(switch_core_session_t *session,
-													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t **pool);
+												switch_caller_profile_t *outbound_profile,
+												switch_core_session_t **new_session, 
+												switch_memory_pool_t **pool,
+												switch_originate_flag_t flags);
 switch_io_routines_t sip_io_routines = {
 	/*.outgoing_channel */ sip_outgoing_channel
 };
 
 static switch_call_cause_t sip_outgoing_channel(switch_core_session_t *session,
-													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t **pool)
+												switch_caller_profile_t *outbound_profile,
+												switch_core_session_t **new_session, 
+												switch_memory_pool_t **pool,
+												switch_originate_flag_t flags)
 {
 	const char *profile;
 
@@ -334,7 +338,7 @@ static switch_call_cause_t sip_outgoing_channel(switch_core_session_t *session,
 	}
 
 	outbound_profile->destination_number = switch_core_sprintf(outbound_profile->pool, "%s/%s", profile, outbound_profile->destination_number);
-	return switch_core_session_outgoing_channel(session, "sofia", outbound_profile, new_session, pool);
+	return switch_core_session_outgoing_channel(session, "sofia", outbound_profile, new_session, pool, SOF_NONE);
 }
 
 
@@ -343,17 +347,21 @@ static switch_call_cause_t sip_outgoing_channel(switch_core_session_t *session,
 /* fake chan_iax2 */
 switch_endpoint_interface_t *iax2_endpoint_interface;
 static switch_call_cause_t iax2_outgoing_channel(switch_core_session_t *session,
-													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t **pool);
+												 switch_caller_profile_t *outbound_profile,
+												 switch_core_session_t **new_session, 
+												 switch_memory_pool_t **pool,
+												 switch_originate_flag_t flags);
 switch_io_routines_t iax2_io_routines = {
 	/*.outgoing_channel */ iax2_outgoing_channel
 };
 
 static switch_call_cause_t iax2_outgoing_channel(switch_core_session_t *session,
-													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t **pool)
+												 switch_caller_profile_t *outbound_profile,
+												 switch_core_session_t **new_session, 
+												 switch_memory_pool_t **pool,
+												 switch_originate_flag_t flags)
 {
-	return switch_core_session_outgoing_channel(session, "iax", outbound_profile, new_session, pool);
+	return switch_core_session_outgoing_channel(session, "iax", outbound_profile, new_session, pool, SOF_NONE);
 }
 
 

@@ -175,7 +175,7 @@ static switch_status_t woomera_on_loopback(switch_core_session_t *session);
 static switch_status_t woomera_on_transmit(switch_core_session_t *session);
 static switch_call_cause_t woomera_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t **pool);
+													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags);
 static switch_status_t woomera_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
 static switch_status_t woomera_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id);
 static switch_status_t woomera_kill_channel(switch_core_session_t *session, int sig);
@@ -482,7 +482,7 @@ static switch_io_routines_t woomera_io_routines = {
 */
 static switch_call_cause_t woomera_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t **pool)
+													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
 {
 	if ((*new_session = switch_core_session_request(woomera_endpoint_interface, pool)) != 0) {
 		struct private_object *tech_pvt;

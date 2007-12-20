@@ -240,8 +240,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 													 const char *bridgeto,
 													 uint32_t timelimit_sec,
 													 const switch_state_handler_table_t *table,
-													 const char *cid_name_override, const char *cid_num_override, switch_caller_profile_t *caller_profile_override)
+													 const char *cid_name_override, 
+													 const char *cid_num_override, 
+													 switch_caller_profile_t *caller_profile_override,
+													 switch_originate_flag_t flags)
 {
+	switch_originate_flag_t myflags = SOF_NONE;
 	char *pipe_names[MAX_PEERS] = { 0 };
 	char *data = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -392,7 +396,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 
 	if (caller_channel) {		/* ringback is only useful when there is an originator */
-		ringback_data = switch_channel_get_variable(caller_channel, "ringback");
+		ringback_data = NULL;
+
+		if (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
+			ringback_data = switch_channel_get_variable(caller_channel, "transfer_ringback");
+		} 
+			
+		if (!ringback_data) {
+			ringback_data = switch_channel_get_variable(caller_channel, "ringback");
+		}
+		
 		switch_channel_set_variable(caller_channel, "originate_disposition", "failure");
 	}
 
@@ -454,6 +467,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		switch_assert(loop_data);
 		or_argc = switch_separate_string(loop_data, '|', pipe_names, (sizeof(pipe_names) / sizeof(pipe_names[0])));
 
+		if ((flags & SOF_NOBLOCK) && or_argc > 1) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Only calling the first element in the list in this mode.\n");
+			or_argc = 1;
+		}
+
 		if (caller_channel && or_argc > 1 && !ringback_data) {
 			switch_channel_ring_ready(caller_channel);
 			sent_ring = 1;
@@ -486,6 +504,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			and_argc = switch_separate_string(pipe_names[r], ',', peer_names, (sizeof(peer_names) / sizeof(peer_names[0])));
 
+			if ((flags & SOF_NOBLOCK) && and_argc > 1) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Only calling the first elemnent in the list in this mode.\n");
+				and_argc = 1;
+			}
+			
 			if (caller_channel && !sent_ring && and_argc > 1 && !ringback_data) {
 				switch_channel_ring_ready(caller_channel);
 				sent_ring = 1;
@@ -566,8 +589,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				peer_channels[i] = NULL;
 				peer_sessions[i] = NULL;
 				new_session = NULL;
-
-				if ((reason = switch_core_session_outgoing_channel(session, chan_type, new_profile, &new_session, &pool)) != SWITCH_CAUSE_SUCCESS) {
+				
+				if (and_argc > 1 || or_argc > 1) {
+					myflags |= SOF_FORKED_DIAL;
+				}
+				if ((reason = switch_core_session_outgoing_channel(session, chan_type, new_profile, &new_session, &pool, myflags)) != SWITCH_CAUSE_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! cause: %s\n", switch_channel_cause2str(reason));
 					if (pool) {
 						switch_core_destroy_memory_pool(&pool);
@@ -623,12 +649,25 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_channel_add_state_handler(peer_channels[i], table);
 				}
 
+
+				if ((flags & SOF_NOBLOCK) && peer_sessions[i]) {
+					status = SWITCH_STATUS_SUCCESS;
+					*bleg = peer_sessions[i];
+					*cause = SWITCH_CAUSE_SUCCESS;
+					goto outer_for;
+				}
+
+				
 				if (switch_core_session_running(peer_sessions[i])) {
-					switch_channel_set_state(peer_channels[i], CS_RING);
+					if (!(flags & SOF_NOBLOCK)) {
+						switch_channel_set_state(peer_channels[i], CS_RING);
+					}
 				} else {
 					switch_core_session_thread_launch(peer_sessions[i]);
 				}
-			}
+
+
+			}			
 
 			time(&start);
 
@@ -704,7 +743,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							if (switch_is_file_path(ringback_data)) {
 								char *ext;
 								
-								if ((ext = strrchr(ringback_data, '.'))) {
+								if (strrchr(ringback_data, '.') || strstr(ringback_data, SWITCH_URL_SEPARATOR)) {
 									switch_core_session_set_read_codec(session, &write_codec);
 									ext++;
 								} else {

@@ -98,8 +98,8 @@ struct switch_stream_handle {
 struct switch_io_event_hooks;
 
 
-typedef switch_call_cause_t 
-(*switch_io_outgoing_channel_t)(switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t **, switch_memory_pool_t **);
+typedef switch_call_cause_t (*switch_io_outgoing_channel_t)
+(switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t **, switch_memory_pool_t **, switch_originate_flag_t);
 typedef switch_status_t (*switch_io_read_frame_t) (switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
 typedef switch_status_t (*switch_io_write_frame_t) (switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int);
 typedef switch_status_t (*switch_io_kill_channel_t) (switch_core_session_t *, int);

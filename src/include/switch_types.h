@@ -137,6 +137,12 @@ SWITCH_BEGIN_EXTERN_C
 typedef uint8_t switch_byte_t;
 
 typedef enum {
+	SOF_NONE = 0,
+	SOF_NOBLOCK = (1 << 0),
+	SOF_FORKED_DIAL = (1 << 1) 
+} switch_originate_flag_t;
+
+typedef enum {
 	SPF_NONE = 0,
 	SPF_ODD = (1 << 0),
 	SPF_EVEN = (1 << 1)

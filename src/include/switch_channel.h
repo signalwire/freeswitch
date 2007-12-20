@@ -210,6 +210,8 @@ SWITCH_DECLARE(char *) switch_channel_get_uuid(switch_channel_t *channel);
 */
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *channel, const char *varname, const char *value);
 
+SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_partner(switch_channel_t *channel, const char *varname, const char *value);
+
 /*!
   \brief Retrieve a variable from a given channel
   \param channel channel to retrieve variable from

@@ -1827,7 +1827,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							switch_channel_set_variable(channel, SOFIA_REPLACES_HEADER, rep);
 
 							if (switch_ivr_originate(a_session,
-													 &tsession, &cause, exten, timeout, &noop_state_handler, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+													 &tsession, &cause, exten, timeout, &noop_state_handler, NULL, NULL, NULL, SOF_NONE) 
+								!= SWITCH_STATUS_SUCCESS) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! [%s]\n", exten);
 								nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 										   NUTAG_SUBSTATE(nua_substate_terminated),

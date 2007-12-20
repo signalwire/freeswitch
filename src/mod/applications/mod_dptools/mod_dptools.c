@@ -1374,7 +1374,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 		}
 	}
 
-	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n", switch_channel_cause2str(cause));
 
 		/* no answer is *always* a reason to continue */
@@ -1449,19 +1449,23 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 switch_endpoint_interface_t *user_endpoint_interface;
 static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 												 switch_caller_profile_t *outbound_profile,
-												 switch_core_session_t **new_session, switch_memory_pool_t **pool);
+												 switch_core_session_t **new_session, 
+												 switch_memory_pool_t **pool,
+												 switch_originate_flag_t flags);
 switch_io_routines_t user_io_routines = {
 	/*.outgoing_channel */ user_outgoing_channel
 };
 
 static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 												 switch_caller_profile_t *outbound_profile,
-												 switch_core_session_t **new_session, switch_memory_pool_t **pool)
+												 switch_core_session_t **new_session, 
+												 switch_memory_pool_t **pool,
+												 switch_originate_flag_t flags)
 {
 	switch_xml_t x_domain = NULL, xml = NULL, x_user = NULL, x_param, x_params;	
 	char *user = NULL, *domain = NULL;
 	const char *dest = NULL;
-	static switch_call_cause_t cause;
+	static switch_call_cause_t cause = SWITCH_CAUSE_SUCCESS;
 	unsigned int timelimit = 60;
 	switch_channel_t *new_channel = NULL;
 
@@ -1472,7 +1476,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	}
 
 	*domain++ = '\0';
-	
+
 	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, "as_channel=true") != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain);
 		goto done;
@@ -1510,7 +1514,8 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		const char *var;
 		char *d_dest = NULL;
 		switch_channel_t *channel;
-		
+		switch_originate_flag_t myflags = SOF_NONE;
+
 		channel = switch_core_session_get_channel(session);
 		if ((var = switch_channel_get_variable(channel, "call_timeout"))) {
 			timelimit = atoi(var);
@@ -1521,7 +1526,11 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 		d_dest = switch_channel_expand_variables(channel, dest);
 		
-		if (switch_ivr_originate(session, new_session, &cause, d_dest, timelimit, NULL, NULL, NULL, NULL) == SWITCH_STATUS_SUCCESS) {
+		if ((flags & SOF_FORKED_DIAL)) {
+			myflags |= SOF_NOBLOCK;
+		}
+
+		if (switch_ivr_originate(session, new_session, &cause, d_dest, timelimit, NULL, NULL, NULL, NULL, myflags) == SWITCH_STATUS_SUCCESS) {
 			const char *context;
 			switch_caller_profile_t *cp;
 
