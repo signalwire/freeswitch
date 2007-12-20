@@ -160,7 +160,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 		caller_profile = switch_channel_get_caller_profile(channel);
 	}
 	
-	if (caller_profile) {
+	if (caller_profile && !switch_strlen_zero(caller_profile->destination_number)) {
 		context = caller_profile->context ? caller_profile->context : "default";
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Obtaining Profile!\n");
