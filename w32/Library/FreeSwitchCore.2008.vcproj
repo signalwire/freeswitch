@@ -503,10 +503,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\include\private\switch_core.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\include\switch_core.h"
 				>
 			</File>
