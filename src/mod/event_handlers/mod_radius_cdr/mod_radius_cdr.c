@@ -183,7 +183,7 @@ static switch_status_t my_on_ring(switch_core_session_t *session)
 
 		if(profile) {
 			if(profile->caller_id_number) {
-				if (rc_avpair_add(rad_config, &send, PW_FS_SRC, profile->caller_id_number, -1, PW_FS_PEC) == NULL) {
+				if (rc_avpair_add(rad_config, &send, PW_FS_SRC, (void *)profile->caller_id_number, -1, PW_FS_PEC) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
 							"failed adding Freeswitch-Src: %s\n", profile->caller_id_number);
 					rc_destroy(rad_config);
@@ -191,7 +191,7 @@ static switch_status_t my_on_ring(switch_core_session_t *session)
 				}
 			} 
 			if(profile->caller_id_name) {
-				if (rc_avpair_add(rad_config, &send, PW_FS_CLID, profile->caller_id_name, -1, PW_FS_PEC) == NULL) {
+				if (rc_avpair_add(rad_config, &send, PW_FS_CLID, (void *)profile->caller_id_name, -1, PW_FS_PEC) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
 							"failed adding Freeswitch-CLID: %s\n", profile->caller_id_name);
 					rc_destroy(rad_config);
@@ -199,7 +199,7 @@ static switch_status_t my_on_ring(switch_core_session_t *session)
 				}
 			} 
 			if(profile->destination_number) {
-				if (rc_avpair_add(rad_config, &send, PW_FS_DST, profile->destination_number, -1, PW_FS_PEC) == NULL) {
+				if (rc_avpair_add(rad_config, &send, PW_FS_DST, (void *)profile->destination_number, -1, PW_FS_PEC) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
 							"failed adding Freeswitch-Dst: %s\n", profile->destination_number);
 					rc_destroy(rad_config);
@@ -207,7 +207,7 @@ static switch_status_t my_on_ring(switch_core_session_t *session)
 				}
 			} 
 			if(profile->dialplan) {
-				if (rc_avpair_add(rad_config, &send, PW_FS_DIALPLAN, profile->dialplan, -1, PW_FS_PEC) == NULL) {
+				if (rc_avpair_add(rad_config, &send, PW_FS_DIALPLAN, (void *)profile->dialplan, -1, PW_FS_PEC) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
 							"failed adding Freeswitch-Dialplan: %s\n", profile->dialplan);
 					rc_destroy(rad_config);
@@ -216,7 +216,7 @@ static switch_status_t my_on_ring(switch_core_session_t *session)
 			} 
 			if(profile->caller_extension && profile->caller_extension->last_application->application_name) {
 				if (rc_avpair_add(rad_config, &send, PW_FS_LASTAPP, 
-					profile->caller_extension->last_application->application_name, -1, PW_FS_PEC) == NULL) {
+					(void *)profile->caller_extension->last_application->application_name, -1, PW_FS_PEC) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
 							"failed adding Freeswitch-Lastapp: %s\n", profile->source);
 					rc_destroy(rad_config);
@@ -331,7 +331,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[mod_radius_cdr] Finished calculating billable time\n");
 
 			if(profile->caller_id_number) {
-				if (rc_avpair_add(rad_config, &send, PW_FS_SRC, profile->caller_id_number, -1, PW_FS_PEC) == NULL) {
+				if (rc_avpair_add(rad_config, &send, PW_FS_SRC, (void *)profile->caller_id_number, -1, PW_FS_PEC) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
 							"failed adding Freeswitch-Src: %s\n", profile->caller_id_number);
 					rc_destroy(rad_config);
@@ -339,7 +339,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 				}
 			} 
 			if(profile->caller_id_name) {
-				if (rc_avpair_add(rad_config, &send, PW_FS_CLID, profile->caller_id_name, -1, PW_FS_PEC) == NULL) {
+				if (rc_avpair_add(rad_config, &send, PW_FS_CLID, (void *)profile->caller_id_name, -1, PW_FS_PEC) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
 							"failed adding Freeswitch-CLID: %s\n", profile->caller_id_name);
 					rc_destroy(rad_config);
@@ -347,7 +347,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 				}
 			} 
 			if(profile->destination_number) {
-				if (rc_avpair_add(rad_config, &send, PW_FS_DST, profile->destination_number, -1, PW_FS_PEC) == NULL) {
+				if (rc_avpair_add(rad_config, &send, PW_FS_DST, (void *)profile->destination_number, -1, PW_FS_PEC) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
 							"failed adding Freeswitch-Dst: %s\n", profile->destination_number);
 					rc_destroy(rad_config);
@@ -355,7 +355,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 				}
 			} 
 			if(profile->dialplan) {
-				if (rc_avpair_add(rad_config, &send, PW_FS_DIALPLAN, profile->dialplan, -1, PW_FS_PEC) == NULL) {
+				if (rc_avpair_add(rad_config, &send, PW_FS_DIALPLAN, (void *)profile->dialplan, -1, PW_FS_PEC) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
 							"failed adding Freeswitch-Dialplan: %s\n", profile->dialplan);
 					rc_destroy(rad_config);
@@ -364,7 +364,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			} 
 			if(profile->caller_extension && profile->caller_extension->last_application->application_name) {
 				if (rc_avpair_add(rad_config, &send, PW_FS_LASTAPP, 
-					profile->caller_extension->last_application->application_name, -1, PW_FS_PEC) == NULL) {
+					(void *)profile->caller_extension->last_application->application_name, -1, PW_FS_PEC) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
 							"failed adding Freeswitch-Lastapp: %s\n", profile->source);
 					rc_destroy(rad_config);
