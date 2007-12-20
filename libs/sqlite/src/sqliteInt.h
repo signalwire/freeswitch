@@ -269,6 +269,10 @@ extern int sqlite3_iLine;            /* Line number for debug info */
 
 #else
 
+#ifdef _MSC_VER
+#define inline __inline
+#endif
+
 static inline void *zmalloc(size_t x)
 {
 	void *z = malloc(x);
