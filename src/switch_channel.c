@@ -964,6 +964,8 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel
 		caller_profile->times->answered = channel->caller_profile->times->answered;
 		caller_profile->times->created = channel->caller_profile->times->created;
 		caller_profile->times->hungup = channel->caller_profile->times->hungup;
+	} else {
+		caller_profile->times->created = switch_time_now();
 	}
 
 	caller_profile->next = channel->caller_profile;
@@ -1160,6 +1162,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 	if (channel->state < CS_HANGUP) {
 		switch_event_t *event;
 		switch_channel_state_t last_state = channel->state;
+
 		channel->state = CS_HANGUP;
 		channel->hangup_cause = hangup_cause;
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n",
@@ -1175,6 +1178,8 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 
 		switch_core_session_kill_channel(channel->session, SWITCH_SIG_KILL);
 		switch_core_session_signal_state_change(channel->session);
+
+		switch_channel_set_timestamps(channel);
 	}
 
 	switch_mutex_unlock(channel->flag_mutex);
@@ -1719,6 +1724,136 @@ SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *chann
 	return stream.data;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *channel)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	const char *cid_buf = NULL;
+	switch_caller_profile_t *caller_profile, *ocp;
+	switch_app_log_t *app_log, *ap;
+	char *last_app = NULL, *last_arg = NULL;
+	char start[80] = "", answer[80] = "", end[80] = "", tmp[80] = "", profile_start[80] = "";
+	int32_t duration = 0, legbillsec = 0, billsec = 0, mduration = 0, billmsec = 0, legbillmsec = 0;
+	switch_time_t uduration = 0, legbillusec = 0, billusec = 0;
+	time_t tt_created = 0, tt_answered = 0, tt_hungup = 0, mtt_created = 0, mtt_answered = 0, mtt_hungup = 0, tt_prof_created, mtt_prof_created;
+
+
+	caller_profile = switch_channel_get_caller_profile(channel);
+	if (!(ocp = switch_channel_get_originatee_caller_profile(channel))) {
+		ocp = switch_channel_get_originator_caller_profile(channel);
+	}
+
+	if (!switch_strlen_zero(caller_profile->caller_id_name)) {
+		cid_buf = switch_core_session_sprintf(channel->session, "\"%s\" <%s>", caller_profile->caller_id_name, 
+											  switch_str_nil(caller_profile->caller_id_number));
+	} else {
+		cid_buf = caller_profile->caller_id_number;
+	}
+
+	if ((app_log = switch_core_session_get_app_log(channel->session))) {
+		for (ap = app_log; ap && ap->next; ap = ap->next);
+		last_app = ap->app;
+		last_arg = ap->arg;
+	}
+	
+	if (caller_profile->times) {
+		switch_time_exp_t tm;
+		switch_size_t retsize;
+		const char *fmt = "%Y-%m-%d %T";
+
+		switch_time_exp_lt(&tm, caller_profile->times->created);
+		switch_strftime(start, &retsize, sizeof(start), fmt, &tm);
+		switch_channel_set_variable(channel, "start_stamp", start);
+
+		switch_time_exp_lt(&tm, caller_profile->times->profile_created);
+		switch_strftime(profile_start, &retsize, sizeof(profile_start), fmt, &tm);
+		switch_channel_set_variable(channel, "profile_start_stamp", profile_start);
+
+		switch_time_exp_lt(&tm, caller_profile->times->answered);
+		switch_strftime(answer, &retsize, sizeof(answer), fmt, &tm);
+		switch_channel_set_variable(channel, "answer_stamp", answer);
+
+		switch_time_exp_lt(&tm, caller_profile->times->hungup);
+		switch_strftime(end, &retsize, sizeof(end), fmt, &tm);
+		switch_channel_set_variable(channel, "end_stamp", end);
+
+		tt_created = (time_t) (caller_profile->times->created / 1000000);
+		mtt_created = (time_t) (caller_profile->times->created / 1000);
+		tt_prof_created = (time_t) (caller_profile->times->profile_created / 1000000);
+		mtt_prof_created = (time_t) (caller_profile->times->profile_created / 1000);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_created);
+		switch_channel_set_variable(channel, "start_epoch", tmp);
+		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->created);
+		switch_channel_set_variable(channel, "start_uepoch", tmp);
+
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_prof_created);
+		switch_channel_set_variable(channel, "profile_start_epoch", tmp);
+		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->profile_created);
+		switch_channel_set_variable(channel, "profile_start_uepoch", tmp);
+		
+		tt_answered = (time_t) (caller_profile->times->answered / 1000000);
+		mtt_answered = (time_t) (caller_profile->times->answered / 1000);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_answered);
+		switch_channel_set_variable(channel, "answer_epoch", tmp);
+		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);
+		switch_channel_set_variable(channel, "answer_uepoch", tmp);		
+
+
+		tt_hungup = (time_t) (caller_profile->times->hungup / 1000000);
+		mtt_hungup = (time_t) (caller_profile->times->hungup / 1000);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_hungup);
+		switch_channel_set_variable(channel, "end_epoch", tmp);
+		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->hungup);
+		switch_channel_set_variable(channel, "end_uepoch", tmp);
+
+		uduration = caller_profile->times->hungup - caller_profile->times->created;
+		duration = (int32_t)(tt_hungup - tt_created);
+		mduration = (int32_t)(mtt_hungup - mtt_created);
+		
+		if (caller_profile->times->answered) {
+			billsec = (int32_t)(tt_hungup - tt_answered);
+			billmsec = (int32_t)(mtt_hungup - mtt_answered);
+			billusec = caller_profile->times->hungup - caller_profile->times->answered;
+
+			legbillsec = (int32_t)(tt_hungup - tt_prof_created);
+			legbillmsec = (int32_t)(mtt_hungup - mtt_prof_created);
+			legbillusec = caller_profile->times->hungup - caller_profile->times->profile_created;
+		}
+	}
+	
+	
+	switch_channel_set_variable(channel, "last_app", last_app);
+	switch_channel_set_variable(channel, "last_arg", last_arg);
+	switch_channel_set_variable(channel, "caller_id", cid_buf);
+
+	switch_snprintf(tmp, sizeof(tmp), "%d", duration);
+	switch_channel_set_variable(channel, "duration", tmp);
+
+	switch_snprintf(tmp, sizeof(tmp), "%d", billsec);
+	switch_channel_set_variable(channel, "billsec", tmp);
+
+	switch_snprintf(tmp, sizeof(tmp), "%d", legbillsec);
+	switch_channel_set_variable(channel, "flow_billsec", tmp);
+	
+	switch_snprintf(tmp, sizeof(tmp), "%d", mduration);
+	switch_channel_set_variable(channel, "mduration", tmp);
+
+	switch_snprintf(tmp, sizeof(tmp), "%d", billmsec);
+	switch_channel_set_variable(channel, "billmsec", tmp);
+
+	switch_snprintf(tmp, sizeof(tmp), "%d", legbillmsec);
+	switch_channel_set_variable(channel, "flow_billmsec", tmp);
+
+	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, uduration);
+	switch_channel_set_variable(channel, "uduration", tmp);
+
+	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, billusec);
+	switch_channel_set_variable(channel, "billusec", tmp);
+
+	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, legbillusec);
+	switch_channel_set_variable(channel, "flow_billusec", tmp);
+
+	return status;
+}
 
 /* For Emacs:
  * Local Variables:

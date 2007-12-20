@@ -464,6 +464,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 */
 SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel, const char *in);
 SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *channel, switch_caller_profile_t *caller_profile, const char *prefix);
+SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *channel);
 
 /** @} */
 
