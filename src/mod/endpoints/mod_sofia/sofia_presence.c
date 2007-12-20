@@ -670,9 +670,11 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			dft_state = "confirmed";
 		}
 		
-		if (!strcasecmp(state, "cs_execute") && !strcasecmp(direction, "inbound") && !strcasecmp(event_status, "hold")) {
+		if (!strcasecmp(state, "cs_execute") && !strstr(event_status, "hold")) {
 			goto end;
-		} else if (!strcasecmp(state, "cs_hangup")) {
+		} 
+
+		if (!strcasecmp(state, "cs_hangup")) {
 			astate = "terminated";
 		} else if (switch_strlen_zero(astate))  {
 			astate = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
