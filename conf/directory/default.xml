@@ -2,7 +2,7 @@
   <!--the domain or ip (the right hand side of the @ in the addr-->
   <domain name="$${domain}">
     <params>
-      <param name="dial-string" value="sofia/${dialed_domain}/${dialed_user}"/>
+      <param name="dial-string" value="{left_hanging_extension=5900,transfer_fallback_extension=${dialed_user}}sofia/${dialed_domain}/${dialed_user}"/>
     </params>
 
     <X-PRE-PROCESS cmd="include" data="default/*.xml"/>
