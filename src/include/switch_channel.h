@@ -41,6 +41,7 @@
 #include <switch.h>
 
 SWITCH_BEGIN_EXTERN_C struct switch_channel_timetable {
+	switch_time_t profile_created;
 	switch_time_t created;
 	switch_time_t answered;
 	switch_time_t hungup;

@@ -164,10 +164,10 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	
 	switch_app_log_t *app_log, *ap;
 	char *last_app = NULL, *last_arg = NULL;
-	char start[80] = "", answer[80] = "", end[80] = "", tmp[80] = "";
+	char start[80] = "", answer[80] = "", end[80] = "", tmp[80] = "", profile_start[80] = "";
 	int32_t duration = 0, billsec = 0, mduration = 0, billmsec = 0;
 	switch_time_t uduration = 0, billusec = 0;
-	time_t tt_created = 0, tt_answered = 0, tt_hungup = 0, mtt_created = 0, mtt_answered = 0, mtt_hungup = 0;
+	time_t tt_created = 0, tt_answered = 0, tt_hungup = 0, mtt_created = 0, mtt_answered = 0, mtt_hungup = 0, tt_prof_created, mtt_prof_created;
 
 	if (switch_channel_get_originator_caller_profile(channel)) {
 		return SWITCH_STATUS_SUCCESS;
@@ -207,6 +207,10 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 		switch_strftime(start, &retsize, sizeof(start), fmt, &tm);
 		switch_channel_set_variable(channel, "start_stamp", start);
 
+		switch_time_exp_lt(&tm, caller_profile->times->profile_created);
+		switch_strftime(profile_start, &retsize, sizeof(profile_start), fmt, &tm);
+		switch_channel_set_variable(channel, "profile_start_stamp", profile_start);
+
 		switch_time_exp_lt(&tm, caller_profile->times->answered);
 		switch_strftime(answer, &retsize, sizeof(answer), fmt, &tm);
 		switch_channel_set_variable(channel, "answer_stamp", answer);
@@ -217,10 +221,17 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 
 		tt_created = (time_t) (caller_profile->times->created / 1000000);
 		mtt_created = (time_t) (caller_profile->times->created / 1000);
+		tt_prof_created = (time_t) (caller_profile->times->profile_created / 1000000);
+		mtt_prof_created = (time_t) (caller_profile->times->profile_created / 1000);
 		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_created);
 		switch_channel_set_variable(channel, "start_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->created);
 		switch_channel_set_variable(channel, "start_uepoch", tmp);
+
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_prof_created);
+		switch_channel_set_variable(channel, "profile_start_epoch", tmp);
+		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->profile_created);
+		switch_channel_set_variable(channel, "profile_start_uepoch", tmp);
 		
 		tt_answered = (time_t) (caller_profile->times->answered / 1000000);
 		mtt_answered = (time_t) (caller_profile->times->answered / 1000);

@@ -957,11 +957,13 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel
 	}
 
 	caller_profile->times = (switch_channel_timetable_t *) switch_core_session_alloc(channel->session, sizeof(*caller_profile->times));
-	caller_profile->times->created = switch_time_now();
+	caller_profile->times->profile_created = switch_time_now();
 
 	if (channel->caller_profile && channel->caller_profile->times) {
-		channel->caller_profile->times->transferred = caller_profile->times->created;
+		channel->caller_profile->times->transferred = caller_profile->times->profile_created;
 		caller_profile->times->answered = channel->caller_profile->times->answered;
+		caller_profile->times->created = channel->caller_profile->times->created;
+		caller_profile->times->hungup = channel->caller_profile->times->hungup;
 	}
 
 	caller_profile->next = channel->caller_profile;
