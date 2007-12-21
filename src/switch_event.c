@@ -552,8 +552,10 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, c
 {
 	switch_event_header_t *hp, *lp = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	
+	int x = 0;
 	for (hp = event->headers; hp; hp = hp->next) {
+		x++;
+		switch_assert(x < 1000);
 		if (!strcmp(header_name, hp->name)) {
 			if (lp) {
 				lp->next = hp->next;
@@ -562,6 +564,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, c
 			}
 			FREE(hp->name);
 			FREE(hp->value);
+			memset(hp, 0, sizeof(*hp));
 			if (switch_queue_trypush(EVENT_HEADER_RECYCLE_QUEUE, hp) != SWITCH_STATUS_SUCCESS) {
 				FREE(hp);
 			}
@@ -606,11 +609,12 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, s
 			event->headers = header;
 		} else {
 			for (hp = event->headers; hp && hp->next; hp = hp->next);
-
+			
 			if (hp) {
 				hp->next = header;
 			} else {
 				event->headers = header;
+				header->next = NULL;
 			}
 		}
 		return SWITCH_STATUS_SUCCESS;
@@ -652,11 +656,13 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event)
 			hp = hp->next;
 			FREE(this->name);
 			FREE(this->value);
+			memset(this, 0, sizeof(*this));
 			if (switch_queue_trypush(EVENT_HEADER_RECYCLE_QUEUE, this) != SWITCH_STATUS_SUCCESS) {
 				FREE(this);
 			}
 		}
 		FREE(ep->body);
+		memset(ep, 0, sizeof(*ep));
 		if (switch_queue_trypush(EVENT_RECYCLE_QUEUE, ep) != SWITCH_STATUS_SUCCESS) {
 			FREE(ep);
 		}
