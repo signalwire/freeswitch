@@ -24,16 +24,22 @@
     </extension>
 
     <extension name="global" continue="true">
-      <condition field="${network_addr}" expression="^">
+      <condition field="${network_addr}" expression="false">
 	<action application="set" data="use_profile=${cond(${is_lan_addr($${local_ip_v4})} == yes ? nat : default)}"/>
 	<anti-action application="set" data="use_profile=${cond(${is_lan_addr(${network_addr})} == yes ? nat : default)}"/>
       </condition>
+    </extension>
+    
+    <extension name="defaults" continue="true">
       <!-- This will setup some variables if the user isn't authenticated.
 	   numbering_plan is required for the demo to function properly. 
       -->
-      <condition field="${numbering_plan}" expression="^">
+      <condition field="${numbering_plan}" expression="false">
 	<action application="set_user" data="default@${domain}"/>
       </condition>
+    </extension>
+    
+    <extension name="info" continue="true">
       <condition>
 	<action application="info"/>
 	<action application="db" data="insert/spymap/${caller_id_number}/${uuid}"/>
@@ -133,8 +139,7 @@
     </extension>
 
     <!--
-	start a dynamic conference with the settings of the 
-	"default" conference profile in conference.conf.xml
+	start a dynamic conference with the settings of th	"default" conference profile in conference.conf.xml
     -->                                                                                                                                                       
     <extension name="conferences">                                                                                                                           
       <condition field="destination_number" expression="^(3\d{3})$">
