@@ -77,7 +77,7 @@
     <param name="NDLB-broken-auth-hash" value="true"/>
     <param name="auth-calls" value="true"/>
     <!-- on authed calls, authenticate *all* the packets not just invite -->
-    <param name="auth-all-packets" value="true"/>
+    <param name="auth-all-packets" value="false"/>
     <!-- <param name="ext-rtp-ip" value="$${external_rtp_ip}"/> -->
     <!-- <param name="ext-sip-ip" value="$${external_sip_ip}"/> -->
     <!-- rtp inactivity timeout -->
