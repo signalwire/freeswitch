@@ -42,7 +42,6 @@
       </condition>
     </extension>
 
-
     <extension name="eavesdrop">
       <condition field="destination_number" expression="^88(.*)$|^\*0(.*)$">
 	<action application="answer"/>
@@ -133,7 +132,7 @@
     </extension>
 
     <!--
-	start a dynamic conference with the settings of th	"default" conference profile in conference.conf.xml
+	start a dynamic conference with the settings of the "default" conference profile in conference.conf.xml
     -->                                                                                                                                                       
     <extension name="conferences">                                                                                                                           
       <condition field="destination_number" expression="^(3\d{3})$">
