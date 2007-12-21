@@ -33,7 +33,7 @@
  -->
  <extension name="US_Local">
    <condition field="${default_area_code}" expression="\d{3}" continue="on-true">
-     <anti-action application="say" data="you must dial the area code to call this destination"/>
+     <anti-action application="speak" data="you must dial the area code to call this destination"/>
    </condition>
    <condition field="destination_number" expression="^([2-9]\d{6})$">
      <action application="set" data="continue_on_fail=true"/>
