@@ -1493,7 +1493,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 												  switch_memory_pool_t **pool, switch_originate_flag_t flags)
 {
 	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-	switch_core_session_t *nsession;
+	switch_core_session_t *nsession = NULL;
 	char *data, *profile_name, *dest;
 	sofia_profile_t *profile = NULL;
 	switch_caller_profile_t *caller_profile = NULL;
@@ -1505,14 +1505,12 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 	if (!(nsession = switch_core_session_request(sofia_endpoint_interface, pool))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
-		goto done;
+		goto error;
 	}
 
 	if (!(tech_pvt = (struct private_object *) switch_core_session_alloc(nsession, sizeof(*tech_pvt)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
-		switch_core_session_destroy(&nsession);
-		*pool = NULL;
-		goto done;
+		goto error;
 	}
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(nsession));
 
@@ -1527,30 +1525,24 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 		if (!(gw = strchr(profile_name, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
-			switch_core_session_destroy(&nsession);
 			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
-			*pool = NULL;
-			goto done;
+			goto error;
 		}
 
 		*gw++ = '\0';
 
 		if (!(dest = strchr(gw, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
-			switch_core_session_destroy(&nsession);
 			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
-			*pool = NULL;
-			goto done;
+			goto error;
 		}
 
 		*dest++ = '\0';
 
 		if (!(gateway_ptr = sofia_reg_find_gateway(gw))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Gateway\n");
-			switch_core_session_destroy(&nsession);
 			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
-			*pool = NULL;
-			goto done;
+			goto error;
 		}
 
 		profile = gateway_ptr->profile;
@@ -1569,19 +1561,15 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	} else {
 		if (!(dest = strchr(profile_name, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
-			switch_core_session_destroy(&nsession);
 			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
-			*pool = NULL;
-			goto done;
+			goto error;
 		}
 		*dest++ = '\0';
 
 		if (!(profile = sofia_glue_find_profile(profile_name))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile\n");
-			switch_core_session_destroy(&nsession);
 			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-			*pool = NULL;
-			goto done;
+			goto error;
 		}
 
 		if ((dest_to = strchr(dest, '^'))) {
@@ -1601,9 +1589,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", dest, host);
 				cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
-				switch_core_session_destroy(&nsession);
-				*pool = NULL;
-				goto done;
+				goto error;
 			}
 		} else if (!strchr(dest, '@')) {
 			char buf[128];
@@ -1614,9 +1600,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", dest, profile_name);
 				cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
-				switch_core_session_destroy(&nsession);
-				*pool = NULL;
-				goto done;
+				goto error;
 			}
 		} else {
 			tech_pvt->dest = switch_core_session_alloc(nsession, strlen(dest) + 5);
@@ -1629,7 +1613,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	}
 
 	sofia_glue_attach_private(nsession, profile, tech_pvt, dest);
-	
 
 	if (tech_pvt->local_url) {
 		switch_channel_set_variable(nchannel, "sip_local_url", tech_pvt->local_url);
@@ -1663,6 +1646,14 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			tech_pvt->bcng_pt = ctech_pvt->cng_pt;
 		}
 	}
+
+	goto done;
+
+  error:
+	if (nsession) {
+		switch_core_session_destroy(&nsession);
+	}
+	*pool = NULL;
 
   done:
 	if (profile) {
