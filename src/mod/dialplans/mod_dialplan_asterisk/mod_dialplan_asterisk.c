@@ -154,18 +154,18 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 	}
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	if (!caller_profile) {
 		caller_profile = switch_channel_get_caller_profile(channel);
 	}
 	
-	if (caller_profile && !switch_strlen_zero(caller_profile->destination_number)) {
-		context = caller_profile->context ? caller_profile->context : "default";
-	} else {
+	if (!caller_profile || switch_strlen_zero(caller_profile->destination_number)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Obtaining Profile!\n");
 		return NULL;
 	}
+
+	context = caller_profile->context ? caller_profile->context : "default";
 	
 	if (!switch_config_open_file(&cfg, cf)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
@@ -188,7 +188,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				char *argument = NULL;
 				char *expression = NULL, expression_buf[1024] = "";
 				char substituted[2048] = "";
-				char *field_data = caller_profile->destination_number;
+				const char *field_data = caller_profile->destination_number;
 				int proceed = 0;
 				switch_regex_t *re = NULL;
 				int ovector[30] = {0};
@@ -220,7 +220,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 							field_data = field_expanded;
 						}
 					} else {
-						field_data = (char *)switch_caller_get_field_by_name(caller_profile, var);
+						field_data = switch_caller_get_field_by_name(caller_profile, var);
 					}
 				}
 				
@@ -236,6 +236,10 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 						expression = pattern;
 					}
 					
+					if (!field_data) {
+						field_data = "";
+					}
+
 					if (!(proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 						switch_regex_safe_free(re);
 						switch_safe_free(field_expanded);
@@ -273,6 +277,10 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				
 				if (!argument) {
 					argument = "";
+				}
+
+				if (!field_data) {
+					field_data = "";
 				}
 
 				if (strchr(expression, '(')) {
