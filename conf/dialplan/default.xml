@@ -24,7 +24,7 @@
     </extension>
 
     <extension name="global" continue="true">
-      <condition field="${network_addr}" condition="^$">
+      <condition field="${network_addr}" expression="^$">
 	<action application="set" data="use_profile=${cond(${is_lan_addr($${local_ip_v4})} == yes ? nat : default)}"/>
 	<anti-action application="set" data="use_profile=${cond(${is_lan_addr(${network_addr})} == yes ? nat : default)}"/>
       </condition>
