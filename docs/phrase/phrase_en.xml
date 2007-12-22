@@ -168,6 +168,9 @@
       <prompt phrase="Yesterday" filename="yesterday.wav"/>
     </time>
     <voicemail>
+      <prompt phrase="The person at extension" filename="vm-person.wav"/>
+      <prompt phrase="marked urgent" filename="vm-marked_urgent.wav"/>
+      <prompt phrase="emailed" filename="vm-emailed.wav"/>
       <prompt phrase="you have" filename="vm-you_have.wav"/>
       <prompt phrase="please enter your i d, followed by" filename="vm-enter_id.wav"/>
       <prompt phrase="please enter your password, followed by" filename="vm-enter_pass.wav"/>
