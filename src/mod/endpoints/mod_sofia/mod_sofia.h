@@ -243,6 +243,7 @@ struct sofia_profile {
 	sofia_dtmf_t dtmf_type;
 	int sip_port;
 	int tls_sip_port;
+	int tls_version;
 	char *codec_string;
 	int running;
 	int dtmf_duration;

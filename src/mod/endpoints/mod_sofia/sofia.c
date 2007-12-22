@@ -390,6 +390,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 							NUTAG_URL(profile->bindurl),
 							TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), NUTAG_SIPS_URL(profile->tls_bindurl)),
 							TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), NUTAG_CERTIFICATE_DIR(profile->tls_cert_dir)),
+							TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), TPTAG_TLS_VERSION(profile->tls_version)),
 							NTATAG_UDP_MTU(65536),
 							TAG_IF(tportlog, TPTAG_LOG(1)),
 							TAG_END());	/* Last tag should always finish the sequence */
@@ -857,6 +858,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				switch_thread_rwlock_create(&profile->rwlock, profile->pool);
 				switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				profile->dtmf_duration = 100;
+				profile->tls_version = 0;
 
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -1056,6 +1058,13 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->tls_sip_port = atoi(val);
 					} else if (!strcasecmp(var, "tls-cert-dir")) {
 						profile->tls_cert_dir = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "tls-version")) {
+
+						if (!strcasecmp(val, "tlsv1")) {
+							profile->tls_version = 1;
+						} else {
+							profile->tls_version = 0;
+						}
  					}
 				}
 
