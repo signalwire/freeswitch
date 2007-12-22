@@ -2276,6 +2276,10 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	if (sip->sip_subject && sip->sip_subject->g_string) {
 		switch_channel_set_variable(channel, "sip_subject", sip->sip_subject->g_string);
 	}
+	
+	if (sip->sip_user_agent && !switch_strlen_zero(sip->sip_user_agent->g_string)){
+		switch_channel_set_variable(channel, "sip_user_agent", sip->sip_user_agent->g_string);
+	}
 
 	if (sip->sip_via) {
 		if (sip->sip_via->v_host) {
