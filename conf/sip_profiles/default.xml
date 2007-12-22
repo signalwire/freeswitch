@@ -29,6 +29,8 @@
     <param name="rtp-ip" value="$${local_ip_v4}"/>
     <param name="sip-ip" value="$${local_ip_v4}"/>
     <param name="hold-music" value="$${moh_uri}"/>
+    <!--<param name="dtmf-type" value="info"/>-->
+    <param name="record-template" value="$${base_dir}/recordings/${caller_id_number}.${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
     <!--enable to use presense and mwi -->
     <param name="manage-presence" value="true"/>
     <!-- This setting is for AAL2 bitpacking on G726 -->
@@ -44,13 +46,13 @@
     <!--<param name="bind-params" value="transport=udp"/>-->
 
     <!-- TLS: disabled by default, set to "true" to enable -->
-    <!--<param name="tls" value="false"/>-->
+    <param name="tls" value="true"/>
     <!-- additional bind parameters for TLS -->
-    <!--<param name="tls-bind-params" value="transport=tls"/>-->
+    <param name="tls-bind-params" value="transport=tls"/>
     <!-- Port to listen on for TLS requests. (5061 will be used if unspecified) -->
-    <!--<param name="tls-sip-port" value="5061"/>-->
+    <param name="tls-sip-port" value="5061"/>
     <!-- Location of the agent.pem and cafile.pem ssl certificates (needed for TLS server) -->
-    <!--<param name="tls-cert-dir" value="$${base_dir}/conf/ssl"/>-->
+    <param name="tls-cert-dir" value="$${base_dir}/conf/ssl"/>
     
     <!--If you don't want to pass through timestampes from 1 RTP call to another (on a per call basis with rtp_rewrite_timestamps chanvar)-->
     <!--<param name="rtp-rewrite-timestamps" value="true"/>-->
@@ -74,7 +76,7 @@
 	that the originator is using-->
     <!--<param name="disable-transcoding" value="true"/>-->
     <!-- Used for when phones respond to a challenged ACK with method INVITE in the hash -->
-    <param name="NDLB-broken-auth-hash" value="true"/>
+    <!--<param name="NDLB-broken-auth-hash" value="true"/>-->
     <param name="auth-calls" value="true"/>
     <!-- on authed calls, authenticate *all* the packets not just invite -->
     <param name="auth-all-packets" value="false"/>
