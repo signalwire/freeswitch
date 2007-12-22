@@ -193,10 +193,17 @@ SWITCH_STANDARD_APP(break_function)
 SWITCH_STANDARD_APP(queue_dtmf_function)
 {
 	switch_channel_t *channel;
+	char *p;
+	switch_dtmf_t dtmf = {0, SWITCH_DEFAULT_DTMF_DURATION};
+
 	if (!switch_strlen_zero(data)) {
 		channel = switch_core_session_get_channel(session);
 		assert(channel != NULL);
-		switch_channel_queue_dtmf(channel, data);
+		for (p = (char *)data; p && *p; p++) {
+			dtmf.digit = *p;
+			switch_channel_queue_dtmf(channel, &dtmf);
+			p++;
+		}
 	}
 }
 
@@ -1048,7 +1055,7 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 	switch (itype) {
 	case SWITCH_INPUT_TYPE_DTMF:
 		{
-			char *dtmf = (char *) input;
+			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
 			const char *terminators;
 			switch_channel_t *channel = switch_core_session_get_channel(session);
 			const char *p;
@@ -1061,14 +1068,11 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 			if (!strcasecmp(terminators, "none")) {
 				terminators = NULL;
 			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digit %c\n", dtmf->digit);
 			
 			for (p = terminators; p && *p; p++) {
-				char *d;
-				for (d = dtmf; d && *d; d++) {
-					if (*p == *d) {
-						return SWITCH_STATUS_BREAK;
-					}
+				if (*p == dtmf->digit) {
+					return SWITCH_STATUS_BREAK;
 				}
 			}
 		}

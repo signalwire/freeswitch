@@ -116,17 +116,20 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 		}
 
 		/* if 1 channel has DTMF pass it to the other */
-		if (switch_channel_has_dtmf(chan_a)) {
-			char dtmf[128];
-			switch_channel_dequeue_dtmf(chan_a, dtmf, sizeof(dtmf));
-			if (input_callback) {
-				if (input_callback(session_a, dtmf, SWITCH_INPUT_TYPE_DTMF, user_data, 0) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s ended call via DTMF\n", switch_channel_get_name(chan_a));
-					switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
-					break;
+		while (switch_channel_has_dtmf(chan_a)) {
+			switch_dtmf_t dtmf = { 0, 0 };
+			if (switch_channel_dequeue_dtmf(chan_a, &dtmf) == SWITCH_STATUS_SUCCESS) {
+				if (input_callback) {
+					if (input_callback(session_a, (void *)&dtmf, SWITCH_INPUT_TYPE_DTMF, user_data, 0) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s ended call via DTMF\n", switch_channel_get_name(chan_a));
+						switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
+						break;
+					}
 				}
+				
+
+				switch_core_session_send_dtmf(session_b, &dtmf);
 			}
-			switch_core_session_send_dtmf(session_b, dtmf);
 		}
 
 		if (switch_core_session_dequeue_event(session_a, &event) == SWITCH_STATUS_SUCCESS) {

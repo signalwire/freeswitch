@@ -540,9 +540,9 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 			payload = tech_pvt->read_frame.payload;
 
 			if (switch_rtp_has_dtmf(tech_pvt->rtp_session)) {
-				char dtmf[128];
-				switch_rtp_dequeue_dtmf(tech_pvt->rtp_session, dtmf, sizeof(dtmf));
-				switch_channel_queue_dtmf(channel, dtmf);
+				switch_dtmf_t dtmf = {0};
+				switch_rtp_dequeue_dtmf(tech_pvt->rtp_session, &dtmf);
+				switch_channel_queue_dtmf(channel, &dtmf);
 			}
 
 
@@ -696,15 +696,31 @@ static switch_status_t sofia_waitfor_write(switch_core_session_t *session, int m
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t sofia_send_dtmf(switch_core_session_t *session, char *digits)
+static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
 	private_object_t *tech_pvt;
+	char message[128] = "";
 
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
-	return switch_rtp_queue_rfc2833(tech_pvt->rtp_session,
-									digits, tech_pvt->profile->dtmf_duration * (tech_pvt->read_codec.implementation->samples_per_second / 1000));
+	switch (tech_pvt->dtmf_type) {
+	case DTMF_2833:
+		return switch_rtp_queue_rfc2833(tech_pvt->rtp_session, dtmf);
+
+	case DTMF_INFO:
+		snprintf(message, sizeof(message), "Signal=%c\r\nDuration=%d\r\n", dtmf->digit, dtmf->duration);
+		nua_info(tech_pvt->nh,
+				 //NUTAG_WITH_THIS(tech_pvt->profile->nua),
+				 SIPTAG_CONTENT_TYPE_STR("application/dtmf-relay"),
+				 SIPTAG_PAYLOAD_STR(message),
+				 TAG_END());
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t sofia_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)

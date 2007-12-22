@@ -104,7 +104,7 @@ static struct switch_cause_table CAUSE_CHART[] = {
 
 struct switch_channel {
 	char *name;
-	switch_buffer_t *dtmf_buffer;
+	switch_queue_t *dtmf_queue;
 	switch_mutex_t *dtmf_mutex;
 	switch_mutex_t *flag_mutex;
 	switch_mutex_t *profile_mutex;
@@ -186,7 +186,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
 	switch_event_create(&(*channel)->variables, SWITCH_EVENT_MESSAGE);
 	
 	switch_core_hash_init(&(*channel)->private_hash, pool);
-	switch_buffer_create_dynamic(&(*channel)->dtmf_buffer, 128, 128, 0);
+	switch_queue_create(&(*channel)->dtmf_queue, 128, pool);
 
 	switch_mutex_init(&(*channel)->dtmf_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&(*channel)->flag_mutex, SWITCH_MUTEX_NESTED, pool);
@@ -203,18 +203,16 @@ SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(switch_channel_t *channel)
 
 	switch_assert(channel != NULL);
 	switch_mutex_lock(channel->dtmf_mutex);
-	has = switch_buffer_inuse(channel->dtmf_buffer);
+	has = switch_queue_size(channel->dtmf_queue);
 	switch_mutex_unlock(channel->dtmf_mutex);
 
 	return has;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *channel, const char *dtmf)
+SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *channel, const switch_dtmf_t *dtmf)
 {
 	switch_status_t status;
-	register switch_size_t len, inuse;
-	switch_size_t wr = 0;
-	const char *p;
+	void *pop;
 
 	switch_assert(channel != NULL);
 
@@ -224,23 +222,24 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 		goto done;
 	}
 
-	inuse = switch_buffer_inuse(channel->dtmf_buffer);
-	len = strlen(dtmf);
+	if (is_dtmf(dtmf->digit)) {
+		switch_dtmf_t *dt;
+		int x = 0;
 
-	if (len + inuse > switch_buffer_len(channel->dtmf_buffer)) {
-		switch_buffer_toss(channel->dtmf_buffer, strlen(dtmf));
-	}
-
-	p = dtmf;
-	while (wr < len && p) {
-		if (is_dtmf(*p)) {
-			wr++;
-		} else {
-			break;
+		switch_zmalloc(dt, sizeof(*dt));
+		*dt = *dtmf;
+		while (switch_queue_trypush(channel->dtmf_queue, dt) != SWITCH_STATUS_SUCCESS) {
+			switch_queue_trypop(channel->dtmf_queue, &pop);
+			if (++x > 100) {
+				status = SWITCH_STATUS_FALSE;
+				free(dt);
+					goto done;
+			}
 		}
-		p++;
 	}
-	status = switch_buffer_write(channel->dtmf_buffer, dtmf, wr) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_MEMERR;
+	
+
+	status = SWITCH_STATUS_SUCCESS;
 
  done:
 
@@ -250,33 +249,64 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 }
 
 
-SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf(switch_channel_t *channel, char *dtmf, switch_size_t len)
+SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(switch_channel_t *channel, switch_dtmf_t *dtmf)
 {
-	switch_size_t bytes;
 	switch_event_t *event;
+	void *pop;
+	switch_dtmf_t *dt;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	switch_assert(channel != NULL);
 
 	switch_mutex_lock(channel->dtmf_mutex);
-	if ((bytes = switch_buffer_read(channel->dtmf_buffer, dtmf, len)) > 0) {
-		*(dtmf + bytes) = '\0';
+
+	if (switch_queue_trypop(channel->dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		dt = (switch_dtmf_t *) pop;
+		*dtmf = *dt;
+		free(dt);
+		status = SWITCH_STATUS_SUCCESS;
 	}
 	switch_mutex_unlock(channel->dtmf_mutex);
-
-	if (bytes && switch_event_create(&event, SWITCH_EVENT_DTMF) == SWITCH_STATUS_SUCCESS) {
+	
+	if (status == SWITCH_STATUS_SUCCESS && switch_event_create(&event, SWITCH_EVENT_DTMF) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-String", "%s", dtmf);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Digit", "%c", dtmf->digit);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Duration", "%u", dtmf->duration);
 		switch_event_fire(&event);
 	}
 
-	return bytes;
+	return status;
 
+}
+
+SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf_string(switch_channel_t *channel, char *dtmf_str, switch_size_t len)
+{
+	switch_size_t x = 0;
+	switch_dtmf_t dtmf = {0};
+
+	memset(dtmf_str, 0, len);
+
+	while(x < len - 1 && switch_channel_dequeue_dtmf(channel, &dtmf) == SWITCH_STATUS_SUCCESS) {
+		dtmf_str[x++] = dtmf.digit;
+	}
+
+	return x;
+
+}
+
+SWITCH_DECLARE(void) switch_channel_flush_dtmf(switch_channel_t *channel)
+{
+	void *pop;
+	switch_mutex_lock(channel->dtmf_mutex);
+	while(switch_queue_trypop(channel->dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		free(pop);
+	}
+	switch_mutex_unlock(channel->dtmf_mutex);
 }
 
 SWITCH_DECLARE(void) switch_channel_uninit(switch_channel_t *channel)
 {
 
-	switch_buffer_destroy(&channel->dtmf_buffer);
 	switch_core_hash_destroy(&channel->private_hash);
 	switch_event_destroy(&channel->variables);
 }

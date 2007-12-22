@@ -810,7 +810,13 @@ static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch
 		teletone_dtmf_get(&tech_pvt->dtmf_detect, digit_str, sizeof(digit_str));
 	
 		if(digit_str[0]) {
-			switch_channel_queue_dtmf(channel, digit_str);
+			char *p = digit_str;
+			switch_dtmf_t dtmf = {0, globals.dtmf_on};
+			while(p && *p) {
+				dtmf.digit = *p;
+				switch_channel_queue_dtmf(channel, &dtmf);
+				p++;
+			}
 			if (globals.debug) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF DETECTED: [%s]\n", digit_str);
 			}
@@ -876,13 +882,12 @@ static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switc
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t wanpipe_send_dtmf(switch_core_session_t *session, char *digits)
+static switch_status_t wanpipe_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
 	private_object_t *tech_pvt;
 	switch_channel_t *channel = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int wrote = 0;
-	char *cur = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -903,11 +908,12 @@ static switch_status_t wanpipe_send_dtmf(switch_core_session_t *session, char *d
 			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "SUCCESS!\n");
 		}
 	}
-	for (cur = digits; *cur; cur++) {
-		if ((wrote = teletone_mux_tones(&tech_pvt->tone_session, &tech_pvt->tone_session.TONES[(int)*cur]))) {
-			switch_buffer_write(tech_pvt->dtmf_buffer, tech_pvt->tone_session.buffer, wrote * 2);
-		}
+
+	tech_pvt->tone_session.duration = dtmf.duration * (tech_pvt->tone_session.rate / 1000);
+	if ((wrote = teletone_mux_tones(&tech_pvt->tone_session, &tech_pvt->tone_session.TONES[(int)dtmf->digit]))) {
+		switch_buffer_write(tech_pvt->dtmf_buffer, tech_pvt->tone_session.buffer, wrote * 2);
 	}
+
 
 	tech_pvt->skip_read_frames = 200;
 	

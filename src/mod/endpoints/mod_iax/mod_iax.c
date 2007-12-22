@@ -620,17 +620,14 @@ static switch_status_t channel_waitfor_write(switch_core_session_t *session, int
 
 }
 
-static switch_status_t channel_send_dtmf(switch_core_session_t *session, char *dtmf)
+static switch_status_t channel_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
 	private_t *tech_pvt = NULL;
-	char *digit;
-
+	
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 	if (tech_pvt->iax_session) {
-		for (digit = dtmf; *digit; digit++) {
-			iax_send_dtmf(tech_pvt->iax_session, *digit);
-		}
+		iax_send_dtmf(tech_pvt->iax_session, dtmf->digit);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1206,11 +1203,12 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 				break;
 			case IAX_EVENT_DTMF:
 				if (channel) {
-					char str[2] = { (char) iaxevent->subclass };
+					switch_dtmf_t dtmf = { (char) iaxevent->subclass , SWITCH_DEFAULT_DTMF_DURATION };
 					if (globals.debug) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s DTMF %s\n", str, switch_channel_get_name(channel));
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%c DTMF %s\n", dtmf.digit, switch_channel_get_name(channel));
 					}
-					switch_channel_queue_dtmf(channel, str);
+					
+					switch_channel_queue_dtmf(channel, &dtmf);
 				}
 
 				break;

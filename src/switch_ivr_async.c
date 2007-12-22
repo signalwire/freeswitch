@@ -481,9 +481,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			}
 
 			if ((flags & ED_DTMF) && switch_channel_has_dtmf(channel)) {
-				char dtmf[128] = "";
-				switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-				fcommand = dtmf;
+				switch_dtmf_t dtmf = {0};
+				switch_channel_dequeue_dtmf(channel, &dtmf);
+				*fcommand = dtmf.digit;
 			}
 
 			if (fcommand) {
@@ -717,7 +717,14 @@ static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_da
 			teletone_dtmf_detect(&pvt->dtmf_detect, frame.data, frame.samples);
 			teletone_dtmf_get(&pvt->dtmf_detect, digit_str, sizeof(digit_str));
 			if (digit_str[0]) {
-				switch_channel_queue_dtmf(channel, digit_str);
+				char *p = digit_str;
+				while(p && *p) {
+					switch_dtmf_t dtmf;
+					dtmf.digit = *p;
+					dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
+					switch_channel_queue_dtmf(channel, &dtmf);
+					p++;
+				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF DETECTED: [%s]\n", digit_str);
 			}
 		}
@@ -804,7 +811,7 @@ static int teletone_dtmf_generate_handler(teletone_generation_session_t * ts, te
 }
 
 
-static switch_status_t generate_on_dtmf(switch_core_session_t *session, const char *dtmf)
+static switch_status_t generate_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
 
     switch_media_bug_t *bug;
@@ -815,7 +822,9 @@ static switch_status_t generate_on_dtmf(switch_core_session_t *session, const ch
         
         if (pvt) {
 			switch_mutex_lock(pvt->mutex);
-			teletone_run(&pvt->ts, (char *)dtmf);
+			char buf[2] = "";
+			buf[0] = dtmf->digit;
+			teletone_run(&pvt->ts, buf);
 			switch_mutex_unlock(pvt->mutex);
 			return SWITCH_STATUS_FALSE;
 		}

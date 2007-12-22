@@ -91,11 +91,11 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 {
 	switch (itype) {
 	case SWITCH_INPUT_TYPE_DTMF:{
-			char *dtmf = (char *) input;
+		switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
 			struct dtmf_buffer *dtb;
 			dtb = (struct dtmf_buffer *) buf;
 
-			switch (*dtmf) {
+			switch (dtmf->digit) {
 			case '#':
 				switch_set_flag(dtb, SFLAG_MAIN);
 				return SWITCH_STATUS_BREAK;

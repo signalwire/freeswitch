@@ -422,19 +422,20 @@ SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(switch_channel_t *channel)
 /*!
   \brief Queue DTMF on a given channel
   \param channel channel to queue DTMF to
-  \param dtmf string of digits to queue
+  \param dtmf digit
   \return SWITCH_STATUS_SUCCESS if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *channel, const char *dtmf);
+SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *channel, const switch_dtmf_t *dtmf);
 
 /*!
   \brief Retrieve DTMF digits from a given channel
   \param channel channel to retrieve digits from
-  \param dtmf buffer to write dtmf to
-  \param len max size in bytes of the buffer
+  \param dtmf digit
   \return number of bytes read into the buffer
 */
-SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf(switch_channel_t *channel, char *dtmf, switch_size_t len);
+SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(switch_channel_t *channel, switch_dtmf_t *dtmf);
+SWITCH_DECLARE(void) switch_channel_flush_dtmf(switch_channel_t *channel);
+SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf_string(switch_channel_t *channel, char *dtmf_str, switch_size_t len);
 
 /*!
   \brief Render the name of the provided state enum

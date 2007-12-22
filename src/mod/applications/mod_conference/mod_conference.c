@@ -1648,7 +1648,7 @@ static void conference_loop_output(conference_member_t * member)
 
 		/* if we have caller digits, feed them to the parser to find an action */
 		if (switch_channel_has_dtmf(channel)) {
-			switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
+			switch_channel_dequeue_dtmf_string(channel, dtmf, sizeof(dtmf));
 
 			if (member->conference->dtmf_parser != NULL) {
 
@@ -2637,6 +2637,8 @@ static switch_status_t conf_api_sub_dtmf(conference_member_t * member, switch_st
 {
 	switch_event_t *event;
 	char *dtmf = (char *) data;
+	char *p = dtmf;
+	switch_dtmf_t _dtmf = { 0, SWITCH_DEFAULT_DTMF_DURATION };
 
 	if (member == NULL) {
 		stream->write_function(stream, "Invalid member!\n");
@@ -2651,9 +2653,15 @@ static switch_status_t conf_api_sub_dtmf(conference_member_t * member, switch_st
 
 	switch_mutex_lock(member->flag_mutex);
 	switch_core_session_kill_channel(member->session, SWITCH_SIG_BREAK);
-	switch_core_session_send_dtmf(member->session, dtmf);
-	switch_mutex_unlock(member->flag_mutex);
 
+	while(p && *p) {
+		_dtmf.digit = *p;
+		switch_core_session_send_dtmf(member->session, &_dtmf);
+		p++;
+	}
+
+	switch_mutex_unlock(member->flag_mutex);
+	
 
 	if (stream != NULL) {
 		stream->write_function(stream, "OK sent %s to %u\n", (char *) data, member->id);

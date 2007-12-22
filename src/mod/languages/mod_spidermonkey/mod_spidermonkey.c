@@ -1010,10 +1010,14 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 			return SWITCH_STATUS_FALSE;
 		}
 		break;
-	case SWITCH_INPUT_TYPE_DTMF:
-		dtmf = (char *) input;
-		argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(cb_state->cx, "dtmf"));
-		argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(cb_state->cx, dtmf));
+	case SWITCH_INPUT_TYPE_DTMF: 
+		{
+			switch_dtmf_t *_dtmf = (switch_dtmf_t *) input;
+			dtmf[0] = _dtmf->digit;
+			dtmf[1] = '\0';
+			argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(cb_state->cx, "dtmf"));
+			argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(cb_state->cx, dtmf));
+		}
 		break;
 	}
 
@@ -1208,8 +1212,6 @@ static switch_status_t js_collect_input_callback(switch_core_session_t *session,
 static JSBool session_flush_digits(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
-	char buf[256];
-	switch_size_t has;
 	switch_channel_t *channel;
 
 	METHOD_SANITY_CHECK();
@@ -1217,9 +1219,7 @@ static JSBool session_flush_digits(JSContext * cx, JSObject * obj, uintN argc, j
 	channel = switch_core_session_get_channel(jss->session);
 	switch_assert(channel != NULL);
 
-	while ((has = switch_channel_has_dtmf(channel))) {
-		switch_channel_dequeue_dtmf(channel, buf, sizeof(buf));
-	}
+	switch_channel_flush_dtmf(channel);
 
 	*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
 	return JS_TRUE;

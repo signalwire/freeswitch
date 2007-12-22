@@ -495,10 +495,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 			}
 
 			if (switch_channel_has_dtmf(channel)) {
-				char dtmf[128];
-				switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
+				switch_dtmf_t dtmf = {0};
+				switch_channel_dequeue_dtmf(channel, &dtmf);
 				if (args && args->input_callback) {
-					if ((status = args->input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen)) != SWITCH_STATUS_SUCCESS) {
+					if ((status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen)) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
 				}
@@ -552,7 +552,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 	while (switch_channel_ready(channel)) {
 		switch_frame_t *read_frame;
 		switch_event_t *event;
-		char dtmf[128];
+		switch_dtmf_t dtmf = {0};
 
 		if (timeout) {
 			elapsed = (uint32_t) ((switch_time_now() - started) / 1000);
@@ -566,8 +566,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
         }
 
 		if (switch_channel_has_dtmf(channel)) {
-			switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-			status = args->input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
+			switch_channel_dequeue_dtmf(channel, &dtmf);
+			status = args->input_callback(session, (void *)&dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 		}
 
 		if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
@@ -639,17 +639,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
         }
 
 		if (switch_channel_has_dtmf(channel)) {
-			char dtmf[128];
+			switch_dtmf_t dtmf = {0};
+			int y;
+			
+			for (y = 0; y < maxdigits; y++) {
+				if (switch_channel_dequeue_dtmf(channel, &dtmf) != SWITCH_STATUS_SUCCESS) {
+					break;
+				}
 
-			switch_channel_dequeue_dtmf(channel, dtmf, maxdigits);
-			for (i = 0; i < strlen(dtmf); i++) {
-
-				if (!switch_strlen_zero(terminators) && strchr(terminators, dtmf[i]) && terminator != NULL) {
-					*terminator = dtmf[i];
+				if (!switch_strlen_zero(terminators) && strchr(terminators, dtmf.digit) && terminator != NULL) {
+					*terminator = dtmf.digit;
 					return SWITCH_STATUS_SUCCESS;
 				}
 
-				buf[x++] = dtmf[i];
+				buf[x++] = dtmf.digit;
 				buf[x] = '\0';
 				if (x >= buflen || x >= maxdigits) {
 					return SWITCH_STATUS_SUCCESS;

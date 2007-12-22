@@ -524,14 +524,14 @@ static switch_status_t channel_waitfor_write(switch_core_session_t *session, int
 
 }
 
-static switch_status_t channel_send_dtmf(switch_core_session_t *session, char *dtmf)
+static switch_status_t channel_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
 	private_t *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF ON CALL %s [%s]\n", tech_pvt->call_id, dtmf);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF ON CALL %s [%c]\n", tech_pvt->call_id, dtmf->digit);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1314,18 +1314,23 @@ static switch_status_t engage_ring_device(int sample_rate, int channels)
 
 
 
-
 static switch_status_t dtmf_call(char **argv, int argc, switch_stream_handle_t *stream)
 {
-	char *dtmf = argv[0];
-
-	if (switch_strlen_zero(dtmf)) {
+	char *dtmf_str = argv[0];
+	switch_dtmf_t dtmf = {0, SWITCH_DEFAULT_DTMF_DURATION};
+	
+	if (switch_strlen_zero(dtmf_str)) {
 		stream->write_function(stream, "No DTMF Supplied!\n");
 	} else {
 		switch_mutex_lock(globals.pvt_lock);
 		if (globals.call_list) {
 			switch_channel_t *channel = switch_core_session_get_channel(globals.call_list->session);
-			switch_channel_queue_dtmf(channel, dtmf);
+			char *p = dtmf_str;
+			while(p && *p) {
+				dtmf.digit = *p;
+				switch_channel_queue_dtmf(channel, &dtmf);
+				p++;
+			}
 		}
 		switch_mutex_unlock(globals.pvt_lock);
 	}

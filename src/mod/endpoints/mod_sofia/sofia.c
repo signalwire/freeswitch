@@ -884,6 +884,16 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 					} else if (!strcasecmp(var, "user-agent-string")) {
 						profile->user_agent = switch_core_strdup(profile->pool, val);;
+					} else if (!strcasecmp(var, "dtmf-type")) {
+						if (!strcasecmp(val, "rfc2833")) {
+							profile->dtmf_type = DTMF_2833;
+						} else if (!strcasecmp(val, "info")) {
+							profile->dtmf_type = DTMF_INFO;
+						} else {
+							profile->dtmf_type = DTMF_NONE;
+						}
+					} else if (!strcasecmp(var, "record-template")) {
+						profile->record_template = switch_core_strdup(profile->pool, val);;
 					} else if (!strcasecmp(var, "inbound-no-media") && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_INB_NOMEDIA);
 					} else if (!strcasecmp(var, "inbound-late-negotiation") && switch_true(val)) {
@@ -1916,57 +1926,108 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 {
 	struct private_object *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
-	char dtmf_digit[2] = { 0, 0 };
-
 	/* placeholder for string searching */
 	char *signal_ptr;
+	const char *rec_header;
 
-	/* Try and find signal information in the payload */
-	signal_ptr = strstr(sip->sip_payload->pl_data, "Signal=");
+	if (session) {
+		/* Get the channel */
+		channel = switch_core_session_get_channel(session);
 
-	/* unknown info type */
-	if (!signal_ptr) {
-		sip_from_t const *from = sip->sip_from;
+		/* Barf if we didn't get it */
+		switch_assert(channel != NULL);
+		
+		/* make sure we have our privates */
+		tech_pvt = switch_core_session_get_private(session);
+	
+		/* Barf if we didn't get it */
+		switch_assert(tech_pvt != NULL);
 
-		/* print in the logs if something comes through we don't understand */
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unknown INFO Recieved: %s%s" URL_PRINT_FORMAT "[%s]\n",
-			from->a_display ? from->a_display : "",
-			from->a_display ? " " : "",
-			URL_PRINT_ARGS(from->a_url),
-			sip->sip_payload->pl_data);
-		/* Send 415 Unsupported Media response */
-		nua_respond(nh, SIP_415_UNSUPPORTED_MEDIA, NUTAG_WITH_THIS(nua), TAG_END());
-		return;
+
+		if (sip && sip->sip_payload && sip->sip_payload->pl_data) {
+			switch_dtmf_t dtmf = { 0, SWITCH_DEFAULT_DTMF_DURATION };
+
+			/* Try and find signal information in the payload */
+			if ((signal_ptr = strstr(sip->sip_payload->pl_data, "Signal="))) {
+				/* move signal_ptr where we need it (right past Signal=) */
+				signal_ptr = signal_ptr + 7;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Bad signal\n");
+				return;
+			}
+
+			/* unknown info type */
+			if (!signal_ptr) {
+				sip_from_t const *from = sip->sip_from;
+
+				/* print in the logs if something comes through we don't understand */
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unknown INFO Recieved: %s%s" URL_PRINT_FORMAT "[%s]\n",
+								  from->a_display ? from->a_display : "",
+								  from->a_display ? " " : "",
+								  URL_PRINT_ARGS(from->a_url),
+								  sip->sip_payload->pl_data);
+				/* Send 415 Unsupported Media response */
+				nua_respond(nh, SIP_415_UNSUPPORTED_MEDIA, NUTAG_WITH_THIS(nua), TAG_END());
+				return;
+			}
+
+			
+			dtmf.digit = *signal_ptr;
+			if ((signal_ptr = strstr(sip->sip_payload->pl_data, "Duration="))) {
+				int tmp;
+				signal_ptr += 8;
+				if ((tmp = atoi(signal_ptr)) < 0) {
+					tmp = SWITCH_DEFAULT_DTMF_DURATION;
+				} 
+				dtmf.duration = tmp;
+			}
+
+			/* queue it up */
+			switch_channel_queue_dtmf(channel, &dtmf);
+
+			/* print debug info */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "INFO DTMF(%c)\n", dtmf.digit);
+
+			/* Send 200 OK response */
+			nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
+	
+			return;
+		}
+
+		if ((rec_header = sofia_glue_get_unknown_header(sip, "record"))) {
+			if (switch_strlen_zero(profile->record_template)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Record attempted but no template defined.\n");
+				nua_respond(nh, 488, "Recording not enabled", NUTAG_WITH_THIS(nua), TAG_END());
+			} else {
+				if (!strcasecmp(rec_header, "on")) {
+					char *file;
+
+					file = switch_channel_expand_variables(channel, profile->record_template);
+					switch_ivr_record_session(session, file, 0, NULL);
+					switch_channel_set_variable(channel, "sofia_record_file", file);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Recording %s to %s\n", switch_channel_get_name(channel), file);
+					nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
+					if (file != profile->record_template) {
+						free(file);
+						file = NULL;
+					}
+				} else {
+					const char *file;
+
+					if ((file = switch_channel_get_variable(channel, "sofia_record_file"))) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Done recording %s to %s\n", switch_channel_get_name(channel), file);
+						switch_ivr_stop_record_session(session, file);
+						nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
+					} else {
+						nua_respond(nh, 488, "Nothing to stop", NUTAG_WITH_THIS(nua), TAG_END());
+					}
+				}
+			}
+
+			return;
+		}
 	}
 
-	/* Get the channel */
-	channel = switch_core_session_get_channel(session);
-
-	/* Barf if we didn't get it */
-	switch_assert(channel != NULL);
-
-	/* make sure we have our privates */
-	tech_pvt = switch_core_session_get_private(session);
-
-	/* Barf if we didn't get it */
-	switch_assert(tech_pvt != NULL);
-
-	/* move signal_ptr where we need it (right past Signal=) */
-	signal_ptr = signal_ptr + 7;
-
-	/* put the digit somewhere we can muck with */
-	strncpy(dtmf_digit, signal_ptr, 1);
-
-	/* queue it up */
-	switch_channel_queue_dtmf(channel, dtmf_digit);
-
-	/* print debug info */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "INFO DTMF(%s)\n", dtmf_digit);
-
-	/* Send 200 OK response */
-	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
-
-	return;
 }
 
 

@@ -398,9 +398,8 @@ int CoreSession::flushDigits()
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
-	while ((has = switch_channel_has_dtmf(channel))) {
-		switch_channel_dequeue_dtmf(channel, buf, sizeof(buf));
-	}
+	switch_channel_flush_dtmf(channel);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

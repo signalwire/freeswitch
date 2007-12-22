@@ -1344,7 +1344,7 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, char *d
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF [%s]\n", dtmf);
 
-	return switch_rtp_queue_rfc2833(tech_pvt->rtp_session, dtmf, 100 * (tech_pvt->read_codec.implementation->samples_per_second / 1000));
+	return switch_rtp_queue_rfc2833(tech_pvt->rtp_session, dtmf);
 
 }
 
@@ -1416,9 +1416,9 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			}
 #endif
 			if (switch_rtp_has_dtmf(tech_pvt->rtp_session)) {
-				char dtmf[128];
-				switch_rtp_dequeue_dtmf(tech_pvt->rtp_session, dtmf, sizeof(dtmf));
-				switch_channel_queue_dtmf(channel, dtmf);
+				switch_dtmf_t dtmf = { 0 };
+				switch_rtp_dequeue_dtmf(tech_pvt->rtp_session, &dtmf);
+				switch_channel_queue_dtmf(channel, &dtmf);
 			}
 
 
@@ -2722,7 +2722,13 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 	case LDL_SIGNAL_MSG:
 		if (msg) {
 			if (*msg == '+') {
-				switch_channel_queue_dtmf(channel, msg + 1);
+				char *p = msg + 1;
+				switch_dtmf_t dtmf = { 0, SWITCH_DEFAULT_DTMF_DURATION };
+				while (p && *p) {
+					dtmf.digit = *p;
+					switch_channel_queue_dtmf(channel, &dtmf);
+					p++;
+				}
 				switch_set_flag_locked(tech_pvt, TFLAG_DTMF);
 				if (switch_rtp_ready(tech_pvt->rtp_session)) {
 					switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_BREAK);

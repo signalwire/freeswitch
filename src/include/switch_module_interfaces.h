@@ -105,7 +105,7 @@ typedef switch_status_t (*switch_io_write_frame_t) (switch_core_session_t *, swi
 typedef switch_status_t (*switch_io_kill_channel_t) (switch_core_session_t *, int);
 typedef switch_status_t (*switch_io_waitfor_read_t) (switch_core_session_t *, int, int);
 typedef switch_status_t (*switch_io_waitfor_write_t) (switch_core_session_t *, int, int);
-typedef switch_status_t (*switch_io_send_dtmf_t) (switch_core_session_t *, char *);
+typedef switch_status_t (*switch_io_send_dtmf_t) (switch_core_session_t *, const switch_dtmf_t *);
 typedef switch_status_t (*switch_io_receive_message_t) (switch_core_session_t *, switch_core_session_message_t *);
 typedef switch_status_t (*switch_io_receive_event_t) (switch_core_session_t *, switch_event_t *);
 typedef switch_status_t (*switch_io_state_change_t) (switch_core_session_t *);

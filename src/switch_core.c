@@ -145,9 +145,9 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_core_get_state_handl
 SWITCH_DECLARE(char *) switch_core_get_variable(const char *varname)
 {
 	char *val;
-	switch_mutex_lock(runtime.throttle_mutex);
+	switch_mutex_lock(runtime.global_mutex);
 	val = (char *) switch_core_hash_find(runtime.global_vars, varname);
-	switch_mutex_unlock(runtime.throttle_mutex);
+	switch_mutex_unlock(runtime.global_mutex);
 	return val;
 }
 
@@ -156,7 +156,7 @@ SWITCH_DECLARE(void) switch_core_set_variable(const char *varname, const char *v
 	char *val;
 
 	if (varname) {
-		switch_mutex_lock(runtime.throttle_mutex);
+		switch_mutex_lock(runtime.global_mutex);
 		val = (char *) switch_core_hash_find(runtime.global_vars, varname);
 		if (val) {
 			free(val);
@@ -166,7 +166,7 @@ SWITCH_DECLARE(void) switch_core_set_variable(const char *varname, const char *v
 		} else {
 			switch_core_hash_delete(runtime.global_vars, varname);
 		}
-		switch_mutex_unlock(runtime.throttle_mutex);
+		switch_mutex_unlock(runtime.global_mutex);
 	}
 }
 
@@ -671,6 +671,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	}
 	switch_assert(runtime.memory_pool != NULL);
 	switch_mutex_init(&runtime.throttle_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
+	switch_mutex_init(&runtime.global_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
 	switch_core_set_globals();
 	switch_core_session_init(runtime.memory_pool);
 	switch_core_hash_init(&runtime.global_vars, runtime.memory_pool);

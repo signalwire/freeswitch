@@ -261,7 +261,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void 
   \param digits the digit string to queue
   \param duration the duration of the dtmf
 */
-SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833(switch_rtp_t *rtp_session, char *digits, uint32_t duration);
+SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833(switch_rtp_t *rtp_session, const switch_dtmf_t *dtmf);
+SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833_in(switch_rtp_t *rtp_session, const switch_dtmf_t *dtmf);
 
 /*!
   \brief Test for presence of DTMF on a given RTP session
@@ -271,21 +272,12 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833(switch_rtp_t *rtp_sessi
 SWITCH_DECLARE(switch_size_t) switch_rtp_has_dtmf(switch_rtp_t *rtp_session);
 
 /*!
-  \brief Queue DTMF on a given RTP session
-  \param rtp_session RTP session to queue DTMF to
-  \param dtmf string of digits to queue
-  \return SWITCH_STATUS_SUCCESS if successful
-*/
-SWITCH_DECLARE(switch_status_t) switch_rtp_queue_dtmf(switch_rtp_t *rtp_session, char *dtmf);
-
-/*!
   \brief Retrieve DTMF digits from a given RTP session
   \param rtp_session RTP session to retrieve digits from
-  \param dtmf buffer to write dtmf to
-  \param len max size in bytes of the buffer
+  \param dtmf the dtmf
   \return number of bytes read into the buffer
 */
-SWITCH_DECLARE(switch_size_t) switch_rtp_dequeue_dtmf(switch_rtp_t *rtp_session, char *dtmf, switch_size_t len);
+SWITCH_DECLARE(switch_size_t) switch_rtp_dequeue_dtmf(switch_rtp_t *rtp_session, switch_dtmf_t *dtmf);
 
 /*! 
   \brief Read data from a given RTP session without copying

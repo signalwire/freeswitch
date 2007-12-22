@@ -75,11 +75,6 @@ typedef struct {
 } rtp_msg_t;
 
 
-struct rfc2833_digit {
-	char digit;
-	int duration;
-};
-
 struct switch_rtp_vad_data {
 	switch_core_session_t *session;
 	switch_codec_t vad_codec;
@@ -115,7 +110,7 @@ struct switch_rtp_rfc2833_data {
 	char last_digit;
 	unsigned int dc;
 	time_t last_digit_time;
-	switch_buffer_t *dtmf_buffer;
+	switch_queue_t *dtmf_inqueue;
 	switch_mutex_t *dtmf_mutex;
 };
 
@@ -497,7 +492,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 
 	switch_mutex_init(&rtp_session->flag_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&rtp_session->dtmf_data.dtmf_mutex, SWITCH_MUTEX_NESTED, pool);
-	switch_buffer_create_dynamic(&rtp_session->dtmf_data.dtmf_buffer, 128, 128, 0);
+	switch_queue_create(&rtp_session->dtmf_data.dtmf_queue, 100, rtp_session->pool);
+	switch_queue_create(&rtp_session->dtmf_data.dtmf_inqueue, 100, rtp_session->pool);
+
 	switch_rtp_set_flag(rtp_session, flags);
 
 	/* for from address on recvfrom calls */
@@ -696,21 +693,26 @@ SWITCH_DECLARE(uint8_t) switch_rtp_ready(switch_rtp_t *rtp_session)
 
 SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 {
+	void *pop;
+
 	if (!switch_rtp_ready(*rtp_session)) {
 		return;
 	}
 
-
+	while(switch_queue_trypop((*rtp_session)->dtmf_data.dtmf_inqueue, &pop) == SWITCH_STATUS_SUCCESS) {
+		free(pop);
+	}
+	
+	while(switch_queue_trypop((*rtp_session)->dtmf_data.dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		free(pop);
+	}
+	
 	(*rtp_session)->ready = 0;
 
 	switch_mutex_lock((*rtp_session)->flag_mutex);
 
 	if ((*rtp_session)->jb) {
 		stfu_n_destroy(&(*rtp_session)->jb);
-	}
-
-	if ((*rtp_session)->dtmf_data.dtmf_buffer) {
-		switch_buffer_destroy(&(*rtp_session)->dtmf_data.dtmf_buffer);
 	}
 
 	switch_rtp_kill_socket(*rtp_session);
@@ -834,7 +836,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 
 		if (switch_queue_trypop(rtp_session->dtmf_data.dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			int x;
-			struct rfc2833_digit *rdigit = pop;
+			switch_dtmf_t *rdigit = pop;
 
 			memset(rtp_session->dtmf_data.out_digit_packet, 0, 4);
 			rtp_session->dtmf_data.out_digit_sofar = 0;
@@ -1078,9 +1080,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				rtp_session->dtmf_data.in_digit_seq = in_digit_seq;
 				if (duration && end) {
 					if (key != rtp_session->dtmf_data.last_digit) {
-						char digit_str[] = { key, 0 };
+						switch_dtmf_t dtmf = { key, duration };
 						time(&rtp_session->dtmf_data.last_digit_time);
-						switch_rtp_queue_dtmf(rtp_session, digit_str);
+						switch_rtp_queue_rfc2833_in(rtp_session, &dtmf);
 						switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
 					}
 					if (++rtp_session->dtmf_data.dc >= 3) {
@@ -1126,61 +1128,29 @@ SWITCH_DECLARE(switch_size_t) switch_rtp_has_dtmf(switch_rtp_t *rtp_session)
 
 	if (switch_rtp_ready(rtp_session)) {
 		switch_mutex_lock(rtp_session->dtmf_data.dtmf_mutex);
-		has = switch_buffer_inuse(rtp_session->dtmf_data.dtmf_buffer);
+		has = switch_queue_size(rtp_session->dtmf_data.dtmf_inqueue);
 		switch_mutex_unlock(rtp_session->dtmf_data.dtmf_mutex);
 	}
 
 	return has;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_rtp_queue_dtmf(switch_rtp_t *rtp_session, char *dtmf)
-{
-	switch_status_t status;
-	register switch_size_t len, inuse;
-	switch_size_t wr = 0;
-	char *p;
 
-	if (!switch_rtp_ready(rtp_session)) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	switch_mutex_lock(rtp_session->dtmf_data.dtmf_mutex);
-
-	inuse = switch_buffer_inuse(rtp_session->dtmf_data.dtmf_buffer);
-	len = strlen(dtmf);
-
-	if (len + inuse > switch_buffer_len(rtp_session->dtmf_data.dtmf_buffer)) {
-		switch_buffer_toss(rtp_session->dtmf_data.dtmf_buffer, strlen(dtmf));
-	}
-
-	p = dtmf;
-	while (wr < len && p) {
-		if (is_dtmf(*p)) {
-			wr++;
-		} else {
-			break;
-		}
-		p++;
-	}
-
-	status = switch_buffer_write(rtp_session->dtmf_data.dtmf_buffer, dtmf, wr) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_MEMERR;
-	switch_mutex_unlock(rtp_session->dtmf_data.dtmf_mutex);
-
-	return status;
-}
-
-
-SWITCH_DECLARE(switch_size_t) switch_rtp_dequeue_dtmf(switch_rtp_t *rtp_session, char *dtmf, switch_size_t len)
+SWITCH_DECLARE(switch_size_t) switch_rtp_dequeue_dtmf(switch_rtp_t *rtp_session, switch_dtmf_t *dtmf)
 {
 	switch_size_t bytes = 0;
-
+	switch_dtmf_t *_dtmf = NULL;
+	void *pop;
+	
 	if (!switch_rtp_ready(rtp_session)) {
 		return bytes;
 	}
 
 	switch_mutex_lock(rtp_session->dtmf_data.dtmf_mutex);
-	if ((bytes = switch_buffer_read(rtp_session->dtmf_data.dtmf_buffer, dtmf, len)) > 0) {
-		*(dtmf + bytes) = '\0';
+	if (switch_queue_trypop(rtp_session->dtmf_data.dtmf_inqueue, &pop) == SWITCH_STATUS_SUCCESS) {
+		_dtmf = (switch_dtmf_t *) pop;
+		*dtmf = *_dtmf;
+		bytes++;
 	}
 	switch_mutex_unlock(rtp_session->dtmf_data.dtmf_mutex);
 
@@ -1188,30 +1158,42 @@ SWITCH_DECLARE(switch_size_t) switch_rtp_dequeue_dtmf(switch_rtp_t *rtp_session,
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833(switch_rtp_t *rtp_session, char *digits, uint32_t duration)
+SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833(switch_rtp_t *rtp_session, const switch_dtmf_t *dtmf)
 {
-	char *c;
+
+	switch_dtmf_t *rdigit;
 
 	if (!switch_rtp_ready(rtp_session)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!rtp_session->dtmf_data.dtmf_queue) {
-		switch_queue_create(&rtp_session->dtmf_data.dtmf_queue, 100, rtp_session->pool);
+	if ((rdigit = malloc(sizeof(*rdigit))) != 0) {
+		*rdigit = *dtmf;
+		switch_queue_push(rtp_session->dtmf_data.dtmf_queue, rdigit);
+	} else {
+		abort();
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833_in(switch_rtp_t *rtp_session, const switch_dtmf_t *dtmf)
+{
+
+	switch_dtmf_t *rdigit;
+
+	if (!switch_rtp_ready(rtp_session)) {
+		return SWITCH_STATUS_FALSE;
 	}
 
-	for (c = digits; *c; c++) {
-		struct rfc2833_digit *rdigit;
-
-		if ((rdigit = malloc(sizeof(*rdigit))) != 0) {
-			memset(rdigit, 0, sizeof(*rdigit));
-			rdigit->digit = *c;
-			rdigit->duration = duration;
-			switch_queue_push(rtp_session->dtmf_data.dtmf_queue, rdigit);
-		} else {
-			return SWITCH_STATUS_MEMERR;
-		}
+	if ((rdigit = malloc(sizeof(*rdigit))) != 0) {
+		*rdigit = *dtmf;
+		switch_queue_push(rtp_session->dtmf_data.dtmf_inqueue, rdigit);
+	} else {
+		abort();
 	}
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 

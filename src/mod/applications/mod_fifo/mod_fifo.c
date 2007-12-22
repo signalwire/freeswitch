@@ -48,8 +48,9 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 	switch (itype) {
 	case SWITCH_INPUT_TYPE_DTMF:
         {
-            char *dtmf = (char *) input;
-            if (*dtmf == '*') {
+            switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
+
+            if (dtmf->digit == '*') {
                 channel = switch_core_session_get_channel(session);
                 if (switch_channel_test_flag(channel, CF_ORIGINATOR)) {
                     channel = switch_core_session_get_channel(bleg);

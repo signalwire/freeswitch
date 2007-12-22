@@ -347,6 +347,10 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 		tech_pvt->te = profile->te;
 	}
 
+	
+	tech_pvt->dtmf_type = profile->dtmf_type;
+
+
 	if (tech_pvt->bcng_pt) {
 		tech_pvt->cng_pt = tech_pvt->bcng_pt;
 	} else if (!tech_pvt->cng_pt) {
@@ -385,6 +389,20 @@ switch_status_t sofia_glue_ext_address_lookup(char **ip, switch_port_t *port, ch
 		*ip = sourceip;
 	}
 	return SWITCH_STATUS_SUCCESS;
+}
+
+
+const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name)
+{
+	sip_unknown_t *un;
+	for (un = sip->sip_unknown; un; un = un->un_next) {
+		if (!strcasecmp(un->un_name, name)) {
+			if (!switch_strlen_zero(un->un_value)) {
+				return un->un_value;
+			}
+		}
+	}
+	return NULL;
 }
 
 switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt)
@@ -1095,6 +1113,16 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 	if (switch_test_flag(tech_pvt, TFLAG_BUGGY_2833)) {
 		flags |= SWITCH_RTP_FLAG_BUGGY_2833;
+	}
+
+	if ((val = switch_channel_get_variable(tech_pvt->channel, "dtmf_type"))) {
+		if (!strcasecmp(val, "rfc2833")) {
+			tech_pvt->dtmf_type = DTMF_2833;
+		} else if (!strcasecmp(val, "info")) {
+			tech_pvt->dtmf_type = DTMF_INFO;
+		} else {
+			tech_pvt->dtmf_type = tech_pvt->profile->dtmf_type;
+		}
 	}
 
 	if ((tech_pvt->profile->pflags & PFLAG_PASS_RFC2833)

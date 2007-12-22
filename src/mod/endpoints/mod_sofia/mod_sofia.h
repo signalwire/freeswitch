@@ -83,6 +83,13 @@ typedef struct private_object private_object_t;
 #include <sofia-sip/nea.h>
 #include <sofia-sip/msg_addr.h>
 
+
+typedef enum {
+	DTMF_2833,
+	DTMF_INFO,
+	DTMF_NONE
+} sofia_dtmf_t;
+
 struct sofia_private {
 	char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	sofia_gateway_t *gateway;
@@ -232,6 +239,8 @@ struct sofia_profile {
 	char *tls_cert_dir;
 	char *reg_domain;
 	char *user_agent;
+	char *record_template;
+	sofia_dtmf_t dtmf_type;
 	int sip_port;
 	int tls_sip_port;
 	char *codec_string;
@@ -357,6 +366,7 @@ struct private_object {
 	switch_payload_t video_agreed_pt;
 	char *video_fmtp_out;
 	uint32_t video_count;
+	sofia_dtmf_t dtmf_type;
 };
 
 struct callback_t {
@@ -547,3 +557,4 @@ sofia_transport_t sofia_glue_url2transport(const url_t *url);
 const char *sofia_glue_transport2str(const sofia_transport_t tp);
 
 int sofia_glue_transport_has_tls(const sofia_transport_t tp);
+const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name);

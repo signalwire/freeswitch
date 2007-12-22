@@ -881,7 +881,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_write(switch_core_se
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_session_t *session, const char *dtmf)
+SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
 	switch_io_event_hook_recv_dtmf_t *ptr;	
 	switch_status_t status;
@@ -894,7 +894,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_session_t *session, const char *dtmf)
+SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
 	switch_io_event_hook_send_dtmf_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -907,28 +907,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 	}
 	
 	if (session->endpoint_interface->io_routines->send_dtmf) {
-		if (strchr(dtmf, 'w') || strchr(dtmf, 'W')) {
-			const char *d;
-			for (d = dtmf; d && *d; d++) {
-				char digit[2] = { 0 };
-
-				if (*d == 'w') {
-					switch_yield(500000);
-					continue;
-				} else if (*d == 'W') {
-					switch_yield(1000000);
-					continue;
-				}
-
-				digit[0] = *d;
-				if ((status = session->endpoint_interface->io_routines->send_dtmf(session, digit)) != SWITCH_STATUS_SUCCESS) {
-					return status;
-				}
-			}
+		if (dtmf->digit == 'w') {
+			switch_yield(500000);
+		} else if (dtmf->digit == 'W') {
+			switch_yield(1000000);
 		} else {
-			status = session->endpoint_interface->io_routines->send_dtmf(session, (char *)dtmf);
+			status = session->endpoint_interface->io_routines->send_dtmf(session, dtmf);
 		}
-
 	}
 
 	return status;

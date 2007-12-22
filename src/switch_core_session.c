@@ -565,7 +565,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch
 SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session)
 {
 	switch_channel_t *channel;
-	char buf[256];
 	switch_size_t has;
 
 	/* clear resamplers*/
@@ -583,7 +582,7 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session)
 	channel = switch_core_session_get_channel(session);
 
 	while ((has = switch_channel_has_dtmf(channel))) {
-		switch_channel_dequeue_dtmf(channel, buf, sizeof(buf));
+		switch_channel_flush_dtmf(channel);
 	}
 
 	switch_ivr_deactivate_unicast(session);

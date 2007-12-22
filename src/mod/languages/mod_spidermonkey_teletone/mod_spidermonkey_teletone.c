@@ -257,7 +257,7 @@ static JSBool teletone_generate(JSContext * cx, JSObject * obj, uintN argc, jsva
 					uintN aargc = 0;
 					jsval aargv[4];
 
-					switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
+					switch_channel_dequeue_dtmf_string(channel, dtmf, sizeof(dtmf));
 					aargv[aargc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, dtmf));
 					JS_CallFunction(cx, obj, tto->function, aargc, aargv, &tto->ret);
 					ret = JS_GetStringBytes(JS_ValueToString(cx, tto->ret));

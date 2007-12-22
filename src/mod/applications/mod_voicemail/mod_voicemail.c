@@ -615,9 +615,11 @@ static switch_status_t cancel_on_dtmf(switch_core_session_t *session, void *inpu
 	switch (itype) {
 	case SWITCH_INPUT_TYPE_DTMF:
         {
-            char *dtmf = (char *) input;
+            switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
             if (buf && buflen) {
-                switch_copy_string(buf, dtmf, buflen);
+                char *bp = (char *) buf;
+                bp[0] = dtmf->digit;
+                bp[1] = '\0';
             }
             return SWITCH_STATUS_BREAK;
         }
@@ -643,13 +645,13 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
 	switch (itype) {
 	case SWITCH_INPUT_TYPE_DTMF:
         {
-            char *dtmf = (char *) input;
+            switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
             cc_t *cc = (cc_t *) buf;
             switch_file_handle_t *fh = cc->fh;
             uint32_t pos = 0;
 
-            if (!cc->noexit && (*dtmf == *cc->profile->delete_file_key || *dtmf == *cc->profile->save_file_key || *dtmf == *cc->profile->terminator_key)) {
-                *cc->buf = *dtmf;
+            if (!cc->noexit && (dtmf->digit == *cc->profile->delete_file_key || dtmf->digit == *cc->profile->save_file_key || dtmf->digit == *cc->profile->terminator_key)) {
+                *cc->buf = dtmf->digit;
                 return SWITCH_STATUS_BREAK;
             }
 
@@ -657,7 +659,7 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
                 return SWITCH_STATUS_SUCCESS;
             }
 
-            if (*dtmf == *cc->profile->pause_key) {
+            if (dtmf->digit == *cc->profile->pause_key) {
                 if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
                     switch_clear_flag(fh, SWITCH_FILE_PAUSE);
                 } else {
@@ -666,20 +668,20 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
                 return SWITCH_STATUS_SUCCESS;
             }
 
-            if (*dtmf == *cc->profile->restart_key) {
+            if (dtmf->digit == *cc->profile->restart_key) {
                 unsigned int seekpos = 0;
                 fh->speed = 0;
                 switch_core_file_seek(fh, &seekpos, 0, SEEK_SET);
                 return SWITCH_STATUS_SUCCESS;
             }
 
-            if (*dtmf == *cc->profile->ff_key) {
+            if (dtmf->digit == *cc->profile->ff_key) {
                 int samps = 24000;
                 switch_core_file_seek(fh, &pos, samps, SEEK_CUR);
                 return SWITCH_STATUS_SUCCESS;
             }
 
-            if (*dtmf == *cc->profile->rew_key) {
+            if (dtmf->digit == *cc->profile->rew_key) {
                 int samps = 24000;
                 switch_core_file_seek(fh, &pos, fh->pos - samps, SEEK_SET);
                 return SWITCH_STATUS_SUCCESS;

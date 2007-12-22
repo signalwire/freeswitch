@@ -338,7 +338,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 													   switch_file_handle_t *fh, char *file, switch_input_args_t *args, uint32_t limit)
 {
 	switch_channel_t *channel;
-	char dtmf[128];
+	switch_dtmf_t dtmf = {0};
 	switch_file_handle_t lfh = { 0 };
 	switch_frame_t *read_frame;
 	switch_codec_t codec, *read_codec;
@@ -476,11 +476,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 					status = SWITCH_STATUS_BREAK;
 					break;
 				}
-				switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
+				switch_channel_dequeue_dtmf(channel, &dtmf);
 				if (args->input_callback) {
-					status = args->input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
+					status = args->input_callback(session, (void *)&dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 				} else {
-					switch_copy_string((char *) args->buf, dtmf, args->buflen);
+					switch_copy_string((char *) args->buf, (void *)&dtmf, args->buflen);
 					status = SWITCH_STATUS_BREAK;
 				}
 			}
@@ -664,7 +664,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 {
 	switch_channel_t *channel;
 	int16_t *abuf;
-	char dtmf[128];
+	switch_dtmf_t dtmf = {0};
 	uint32_t interval = 0, samples = 0, framelen, sample_start = 0;
 	uint32_t ilen = 0;
 	switch_size_t olen = 0, llen = 0;
@@ -900,11 +900,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					done = 1;
 					break;
 				}
-				switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
+				switch_channel_dequeue_dtmf(channel, &dtmf);
 				if (args->input_callback) {
-					status = args->input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
+					status = args->input_callback(session, (void *)&dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 				} else {
-					switch_copy_string((char *) args->buf, dtmf, args->buflen);
+					switch_copy_string((char *) args->buf, (void *)&dtmf, args->buflen);
 					status = SWITCH_STATUS_BREAK;
 				}
 			}
@@ -1227,7 +1227,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 {
 	switch_channel_t *channel;
 	short abuf[960];
-	char dtmf[128];
+	switch_dtmf_t dtmf = {0};
 	uint32_t len = 0;
 	switch_size_t ilen = 0;
 	switch_frame_t write_frame = { 0 };
@@ -1357,11 +1357,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 				if (args->buf && !strcasecmp(args->buf, "_break_")) {
 					status = SWITCH_STATUS_BREAK;
 				} else {
-					switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
+					switch_channel_dequeue_dtmf(channel, &dtmf);
 					if (args->input_callback) {
-						status = args->input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
+						status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 					} else {
-						switch_copy_string((char *) args->buf, dtmf, args->buflen);
+						switch_copy_string((char *) args->buf, (void *) &dtmf, args->buflen);
 						status = SWITCH_STATUS_BREAK;
 					}
 				}
