@@ -666,7 +666,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	if ((forwardbuf = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE))) {
 		forwardval = atoi(forwardbuf) - 1;
-		switch_core_session_sprintf(tech_pvt->session, "%d", forwardval);
+		max_forwards = switch_core_session_sprintf(tech_pvt->session, "%d", forwardval);
 	}
 
 	if ((status = sofia_glue_tech_choose_port(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
