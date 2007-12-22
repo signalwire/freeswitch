@@ -461,7 +461,7 @@ static switch_status_t load_config(void)
                 } else {
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid threshold value [%s] must be between 0 and 1000 ms\n", val);
                 }
-            } else if (!strcasecmp(var, "tone-spec")) {
+            } else if (!strcasecmp(var, "tone-spec") && !switch_strlen_zero(val)) {
                 tone_spec = val;
             } else if (!strcasecmp(var, "digit-timeout")) {
                 int tmp = 0;

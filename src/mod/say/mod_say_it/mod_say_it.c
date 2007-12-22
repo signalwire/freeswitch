@@ -176,9 +176,9 @@ static switch_status_t it_say_general_count(switch_core_session_t *session,
 	char sbuf[13] = "";
 	switch_status_t status;
 
-	assert(session != NULL);
+	switch_assert(session != NULL);
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	if (!(tosay = strip_commas(tosay, sbuf, sizeof(sbuf))) || strlen(tosay) > 9) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
@@ -426,9 +426,9 @@ static switch_status_t it_say_money(switch_core_session_t *session, char *tosay,
 	char *dollars = NULL;
 	char *cents = NULL;
 
-	assert(session != NULL);
+	switch_assert(session != NULL);
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	if (strlen(tosay) > 15 || !(tosay = strip_nonnumerics(tosay, sbuf, sizeof(sbuf)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");

@@ -4599,63 +4599,63 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 			var = buf;
 		}
 
-		if (!strcasecmp(var, "rate")) {
+		if (!strcasecmp(var, "rate") && !switch_strlen_zero(val)) {
 			rate_name = val;
-		} else if (!strcasecmp(var, "domain")) {
+		} else if (!strcasecmp(var, "domain") && !switch_strlen_zero(val)) {
 			domain = val;
-		} else if (!strcasecmp(var, "interval")) {
+		} else if (!strcasecmp(var, "interval") && !switch_strlen_zero(val)) {
 			interval_name = val;
-		} else if (!strcasecmp(var, "timer-name")) {
+		} else if (!strcasecmp(var, "timer-name") && !switch_strlen_zero(val)) {
 			timer_name = val;
-		} else if (!strcasecmp(var, "tts-engine")) {
+		} else if (!strcasecmp(var, "tts-engine") && !switch_strlen_zero(val)) {
 			tts_engine = val;
-		} else if (!strcasecmp(var, "tts-voice")) {
+		} else if (!strcasecmp(var, "tts-voice") && !switch_strlen_zero(val)) {
 			tts_voice = val;
-		} else if (!strcasecmp(var, "enter-sound")) {
+		} else if (!strcasecmp(var, "enter-sound") && !switch_strlen_zero(val)) {
 			enter_sound = val;
-		} else if (!strcasecmp(var, "exit-sound")) {
+		} else if (!strcasecmp(var, "exit-sound") && !switch_strlen_zero(val)) {
 			exit_sound = val;
-		} else if (!strcasecmp(var, "alone-sound")) {
+		} else if (!strcasecmp(var, "alone-sound") && !switch_strlen_zero(val)) {
 			alone_sound = val;
-		} else if (!strcasecmp(var, "perpetual-sound")) {
+		} else if (!strcasecmp(var, "perpetual-sound") && !switch_strlen_zero(val)) {
 			perpetual_sound = val;
-		} else if (!strcasecmp(var, "moh-sound")) {
+		} else if (!strcasecmp(var, "moh-sound") && !switch_strlen_zero(val)) {
 			moh_sound = val;
-		} else if (!strcasecmp(var, "ack-sound")) {
+		} else if (!strcasecmp(var, "ack-sound") && !switch_strlen_zero(val)) {
 			ack_sound = val;
-		} else if (!strcasecmp(var, "nack-sound")) {
+		} else if (!strcasecmp(var, "nack-sound") && !switch_strlen_zero(val)) {
 			nack_sound = val;
-		} else if (!strcasecmp(var, "muted-sound")) {
+		} else if (!strcasecmp(var, "muted-sound") && !switch_strlen_zero(val)) {
 			muted_sound = val;
-		} else if (!strcasecmp(var, "unmuted-sound")) {
+		} else if (!strcasecmp(var, "unmuted-sound") && !switch_strlen_zero(val)) {
 			unmuted_sound = val;
-		} else if (!strcasecmp(var, "locked-sound")) {
+		} else if (!strcasecmp(var, "locked-sound") && !switch_strlen_zero(val)) {
 			locked_sound = val;
-		} else if (!strcasecmp(var, "is-locked-sound")) {
+		} else if (!strcasecmp(var, "is-locked-sound") && !switch_strlen_zero(val)) {
 			is_locked_sound = val;
-		} else if (!strcasecmp(var, "is-unlocked-sound")) {
+		} else if (!strcasecmp(var, "is-unlocked-sound") && !switch_strlen_zero(val)) {
 			is_unlocked_sound = val;
-		} else if (!strcasecmp(var, "member-flags")) {
+		} else if (!strcasecmp(var, "member-flags") && !switch_strlen_zero(val)) {
 			member_flags = val;
-		} else if (!strcasecmp(var, "kicked-sound")) {
+		} else if (!strcasecmp(var, "kicked-sound") && !switch_strlen_zero(val)) {
 			kicked_sound = val;
-		} else if (!strcasecmp(var, "pin")) {
+		} else if (!strcasecmp(var, "pin") && !switch_strlen_zero(val)) {
 			pin = val;
-		} else if (!strcasecmp(var, "pin-sound")) {
+		} else if (!strcasecmp(var, "pin-sound") && !switch_strlen_zero(val)) {
 			pin_sound = val;
-		} else if (!strcasecmp(var, "bad-pin-sound")) {
+		} else if (!strcasecmp(var, "bad-pin-sound") && !switch_strlen_zero(val)) {
 			bad_pin_sound = val;
-		} else if (!strcasecmp(var, "energy-level")) {
+		} else if (!strcasecmp(var, "energy-level") && !switch_strlen_zero(val)) {
 			energy_level = val;
-		} else if (!strcasecmp(var, "caller-id-name")) {
+		} else if (!strcasecmp(var, "caller-id-name") && !switch_strlen_zero(val)) {
 			caller_id_name = val;
-		} else if (!strcasecmp(var, "caller-id-number")) {
+		} else if (!strcasecmp(var, "caller-id-number") && !switch_strlen_zero(val)) {
 			caller_id_number = val;
-		} else if (!strcasecmp(var, "caller-controls")) {
+		} else if (!strcasecmp(var, "caller-controls") && !switch_strlen_zero(val)) {
 			caller_controls = val;
-		} else if (!strcasecmp(var, "sound-prefix")) {
+		} else if (!strcasecmp(var, "sound-prefix") && !switch_strlen_zero(val)) {
 			sound_prefix = val;
-		} else if (!strcasecmp(var, "max-members")) {
+		} else if (!strcasecmp(var, "max-members") && !switch_strlen_zero(val)) {
 			errno = 0;			// sanity first
 			max_members = strtol(val, NULL, 0);	// base 0 lets 0x... for hex 0... for octal and base 10 otherwise through
 			if (errno == ERANGE || errno == EINVAL || max_members < 0 || max_members == 1) {
@@ -4664,9 +4664,9 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 				max_members = 0;	// set to 0 to disable max counts
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "max-members %s is invalid, not setting a limit\n", val);
 			}
-		} else if (!strcasecmp(var, "max-members-sound")) {
+		} else if (!strcasecmp(var, "max-members-sound") && !switch_strlen_zero(val)) {
 			maxmember_sound = val;
-		} else if (!strcasecmp(var, "anounce-count")) {
+		} else if (!strcasecmp(var, "anounce-count") && !switch_strlen_zero(val)) {
 			errno = 0;			// safety first
 			anounce_count = strtol(val, NULL, 0);
 			if (errno == ERANGE || errno == EINVAL) {
@@ -4728,9 +4728,15 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	/* initialize the conference object with settings from the specified profile */
 	conference->pool = pool;
 	conference->profile_name = switch_core_strdup(conference->pool, switch_xml_attr_soft(cfg.profile, "name"));
-	conference->timer_name = switch_core_strdup(conference->pool, timer_name);
-	conference->tts_engine = switch_core_strdup(conference->pool, tts_engine);
-	conference->tts_voice = switch_core_strdup(conference->pool, tts_voice);
+	if (timer_name) {
+		conference->timer_name = switch_core_strdup(conference->pool, timer_name);
+	}
+	if (tts_engine) {
+		conference->tts_engine = switch_core_strdup(conference->pool, tts_engine);
+	}
+	if (tts_voice) {
+		conference->tts_voice = switch_core_strdup(conference->pool, tts_voice);
+	}
 
 	conference->caller_id_name = switch_core_strdup(conference->pool, caller_id_name);
 	conference->caller_id_number = switch_core_strdup(conference->pool, caller_id_number);

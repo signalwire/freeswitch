@@ -814,8 +814,9 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 	mydata = strdup(cmd);
 	switch_assert(mydata != NULL);
 
-	if ((argc = switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0]))) < 3) {
+	if ((argc = switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0]))) < 3 || !argv[0]) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "-ERR INVALID ARGS!\n");
+		return SWITCH_STATUS_SUCCESS;
 	}
 
 
@@ -1206,15 +1207,15 @@ SWITCH_STANDARD_API(session_record_function)
 	path = argv[2];
 	limit = argv[3] ? atoi(argv[3]) : 0;
 	
+	if (switch_strlen_zero(uuid) || switch_strlen_zero(action) || switch_strlen_zero(path)) {
+		goto usage;
+	}
+
 	if (!(rsession = switch_core_session_locate(uuid))) {
 		stream->write_function(stream, "-ERR Cannot locate session!\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 	
-	if (switch_strlen_zero(action) || switch_strlen_zero(path)) {
-		goto usage;
-	}
-
 	if (!strcasecmp(action, "start")) {
 		switch_ivr_record_session(rsession, path, limit, NULL);
 	} else if (!strcasecmp(action, "stop")) {
@@ -1273,15 +1274,15 @@ SWITCH_STANDARD_API(session_displace_function)
 	limit = argv[3] ? atoi(argv[3]) : 0;
 	flags = argv[4];
 
+	if (switch_strlen_zero(uuid) || switch_strlen_zero(action) || switch_strlen_zero(path)) {
+		goto usage;
+	}
+
 	if (!(rsession = switch_core_session_locate(uuid))) {
 		stream->write_function(stream, "-ERR Cannot locate session!\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 	
-	if (switch_strlen_zero(action) || switch_strlen_zero(path)) {
-		goto usage;
-	}
-
 	if (!strcasecmp(action, "start")) {
 		switch_ivr_displace_session(rsession, path, limit, flags);
 	} else if (!strcasecmp(action, "stop")) {

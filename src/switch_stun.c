@@ -279,7 +279,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 	switch_stun_packet_attribute_t *attr;
 	switch_size_t bytes = 0;
 	char username[33] = { 0 };
-	char rip[16];
+	char rip[16] = { 0 };
 	uint16_t rport = 0;
 	switch_time_t started = 0;
 	unsigned int elapsed = 0;

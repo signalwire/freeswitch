@@ -1335,14 +1335,14 @@ static switch_status_t channel_waitfor_write(switch_core_session_t *session, int
 
 }
 
-static switch_status_t channel_send_dtmf(switch_core_session_t *session, char *dtmf)
+static switch_status_t channel_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
 	struct private_object *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF [%s]\n", dtmf);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF [%c]\n", dtmf->digit);
 
 	return switch_rtp_queue_rfc2833(tech_pvt->rtp_session, dtmf);
 
@@ -1627,7 +1627,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		char *profile_name;
 		char *callto;
 		char idbuf[1024];
-		char *full_id;
+		char *full_id = NULL;
 		char sess_id[11] = "";
 		char *dnis = NULL;
 		char workspace[1024] = "";
@@ -1716,7 +1716,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 			}
 			tech_pvt->recip = switch_core_session_strdup(*new_session, full_id);
-			tech_pvt->dnis = switch_core_session_strdup(*new_session, dnis);
+			if (dnis) {
+				tech_pvt->dnis = switch_core_session_strdup(*new_session, dnis);
+			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 			terminate_session(new_session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -1956,25 +1958,25 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 #endif
 	} else if (!strcasecmp(var, "use-rtp-timer") && switch_true(val)) {
 		switch_set_flag(profile, TFLAG_TIMER);
-	} else if (!strcasecmp(var, "dialplan")) {
+	} else if (!strcasecmp(var, "dialplan") && !switch_strlen_zero(val)) {
 		profile->dialplan = switch_core_strdup(module_pool, val);
 #ifdef AUTO_REPLY // gotta fix looping on this
 	} else if (!strcasecmp(var, "auto-reply")) {
 		profile->auto_reply = switch_core_strdup(module_pool, val);
 #endif
-	} else if (!strcasecmp(var, "name")) {
+	} else if (!strcasecmp(var, "name") && !switch_strlen_zero(val)) {
 		profile->name = switch_core_strdup(module_pool, val);
-	} else if (!strcasecmp(var, "message")) {
+	} else if (!strcasecmp(var, "message") && !switch_strlen_zero(val)) {
 		profile->message = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "rtp-ip")) {
 		profile->ip = switch_core_strdup(module_pool, strcasecmp(switch_str_nil(val), "auto") ? switch_str_nil(val) : globals.guess_ip);
 	} else if (!strcasecmp(var, "ext-rtp-ip")) {
 		profile->extip = switch_core_strdup(module_pool, strcasecmp(switch_str_nil(val), "auto") ? switch_str_nil(val) : globals.guess_ip);
-	} else if (!strcasecmp(var, "server")) {
+	} else if (!strcasecmp(var, "server") && !switch_strlen_zero(val)) {
 		profile->server = switch_core_strdup(module_pool, val);
-	} else if (!strcasecmp(var, "rtp-timer-name")) {
+	} else if (!strcasecmp(var, "rtp-timer-name") && !switch_strlen_zero(val)) {
 		profile->timer_name = switch_core_strdup(module_pool, val);
-	} else if (!strcasecmp(var, "lanaddr")) {
+	} else if (!strcasecmp(var, "lanaddr") && !switch_strlen_zero(val)) {
 		profile->lanaddr = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "tls")) {
 		if (switch_true(val)) {
@@ -1986,11 +1988,11 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 		} else if (val && !strcasecmp(val, "md5")) {
 			profile->user_flags |= LDL_FLAG_SASL_MD5;
 		}
-	} else if (!strcasecmp(var, "exten")) {
+	} else if (!strcasecmp(var, "exten") && !switch_strlen_zero(val)) {
 		profile->exten = switch_core_strdup(module_pool, val);
-	} else if (!strcasecmp(var, "context")) {
+	} else if (!strcasecmp(var, "context") && !switch_strlen_zero(val)) {
 		profile->context = switch_core_strdup(module_pool, val);
-	} else if (!strcasecmp(var, "auto-login")) {
+	} else if (!strcasecmp(var, "auto-login") && !switch_strlen_zero(val)) {
 		if (switch_true(val)) {
 			switch_set_flag(profile, TFLAG_AUTO);
 		}
