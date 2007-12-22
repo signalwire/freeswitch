@@ -390,8 +390,6 @@ int CoreSession::flushEvents()
 
 int CoreSession::flushDigits() 
 {
-	char buf[256];
-	switch_size_t has;
 	switch_channel_t *channel;
 
 

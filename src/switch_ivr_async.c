@@ -821,8 +821,8 @@ static switch_status_t generate_on_dtmf(switch_core_session_t *session, const sw
         switch_inband_dtmf_generate_t *pvt = (switch_inband_dtmf_generate_t *) switch_core_media_bug_get_user_data(bug);
         
         if (pvt) {
-			switch_mutex_lock(pvt->mutex);
 			char buf[2] = "";
+			switch_mutex_lock(pvt->mutex);
 			buf[0] = dtmf->digit;
 			teletone_run(&pvt->ts, buf);
 			switch_mutex_unlock(pvt->mutex);

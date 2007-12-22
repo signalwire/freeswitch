@@ -640,7 +640,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 
 		if (switch_channel_has_dtmf(channel)) {
 			switch_dtmf_t dtmf = {0};
-			int y;
+			switch_size_t y;
 			
 			for (y = 0; y < maxdigits; y++) {
 				if (switch_channel_dequeue_dtmf(channel, &dtmf) != SWITCH_STATUS_SUCCESS) {
