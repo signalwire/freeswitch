@@ -306,7 +306,7 @@ SWITCH_DECLARE(void) switch_channel_flush_dtmf(switch_channel_t *channel)
 
 SWITCH_DECLARE(void) switch_channel_uninit(switch_channel_t *channel)
 {
-
+	switch_channel_flush_dtmf(channel);
 	switch_core_hash_destroy(&channel->private_hash);
 	switch_event_destroy(&channel->variables);
 }
