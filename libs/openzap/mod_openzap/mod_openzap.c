@@ -418,14 +418,16 @@ static switch_status_t channel_waitfor_write(switch_core_session_t *session, int
 
 }
 
-static switch_status_t channel_send_dtmf(switch_core_session_t *session, char *dtmf)
+static switch_status_t channel_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
 	private_t *tech_pvt = NULL;
+	char tmp[2] = "";
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	zap_channel_command(tech_pvt->zchan, ZAP_COMMAND_SEND_DTMF, dtmf);
+	tmp[0] = dtmf->digit;
+	zap_channel_command(tech_pvt->zchan, ZAP_COMMAND_SEND_DTMF, tmp);
 		
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -509,7 +511,8 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 	if (zap_channel_dequeue_dtmf(tech_pvt->zchan, dtmf, sizeof(dtmf))) {
-		switch_channel_queue_dtmf(channel, dtmf);
+		switch_dtmf_t _dtmf = { 0, SWITCH_DEFAULT_DTMF_DURATION };
+		switch_channel_queue_dtmf(channel, &_dtmf);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
