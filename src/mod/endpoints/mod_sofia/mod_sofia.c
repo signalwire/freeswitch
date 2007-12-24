@@ -224,6 +224,8 @@ static int hangup_cause_to_sip(switch_call_cause_t cause)
 		return 504;
 	case SWITCH_CAUSE_ORIGINATOR_CANCEL:
 		return 487;
+	case SWITCH_CAUSE_EXCHANGE_ROUTING_ERROR:
+		return 483;
 	default:
 		return 480;
 	}

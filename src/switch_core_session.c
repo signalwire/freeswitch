@@ -186,51 +186,61 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 	switch_channel_t *channel = NULL;
 	switch_caller_profile_t *outgoing_profile = caller_profile;
 	switch_call_cause_t cause = SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL;
+	const char *forwardvar;
+	int forwardval = 70;
 
 	if ((endpoint_interface = switch_loadable_module_get_endpoint_interface(endpoint_name)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not locate channel type %s\n", endpoint_name);
 		return SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED;
 	}
 
-	if (endpoint_interface->io_routines->outgoing_channel) {
-		if (session) {
-			channel = switch_core_session_get_channel(session);
-			if (caller_profile) {
-				const char *ecaller_id_name = NULL, *ecaller_id_number = NULL;
-
-				ecaller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name");
-				ecaller_id_number = switch_channel_get_variable(channel, "effective_caller_id_number");
-
-				if (ecaller_id_name || ecaller_id_number) {
-					outgoing_profile = switch_caller_profile_clone(session, caller_profile);
-
-					if (ecaller_id_name) {
-						outgoing_profile->caller_id_name = ecaller_id_name;
-					}
-					if (ecaller_id_number) {
-						outgoing_profile->caller_id_number = ecaller_id_number;
-					}
-				}
-			}
-			if (!outgoing_profile) {
-				outgoing_profile = switch_channel_get_caller_profile(channel);
-			}
-		}
-
-		if ((cause = endpoint_interface->io_routines->outgoing_channel(session, outgoing_profile, new_session, pool, flags)) != SWITCH_CAUSE_SUCCESS) {
-			return cause;
-		}
-
-		if (session) {
-			for (ptr = session->event_hooks.outgoing_channel; ptr; ptr = ptr->next) {
-				if ((status = ptr->outgoing_channel(session, caller_profile, *new_session, flags)) != SWITCH_STATUS_SUCCESS) {
-					break;
-				}
-			}
-		}
-	} else {
+	if (!endpoint_interface->io_routines->outgoing_channel) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not locate outgoing channel interface for %s\n", endpoint_name);
 		return SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED;
+	}
+
+	forwardvar = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
+	if (!switch_strlen_zero(forwardvar)) {
+		forwardval =  atoi(forwardvar) - 1;
+	}
+	if (forwardval <= 0) {
+		return SWITCH_CAUSE_EXCHANGE_ROUTING_ERROR;
+	}
+
+	if (session) {
+		channel = switch_core_session_get_channel(session);
+		if (caller_profile) {
+			const char *ecaller_id_name = NULL, *ecaller_id_number = NULL;
+
+			ecaller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name");
+			ecaller_id_number = switch_channel_get_variable(channel, "effective_caller_id_number");
+
+			if (ecaller_id_name || ecaller_id_number) {
+				outgoing_profile = switch_caller_profile_clone(session, caller_profile);
+
+				if (ecaller_id_name) {
+					outgoing_profile->caller_id_name = ecaller_id_name;
+				}
+				if (ecaller_id_number) {
+					outgoing_profile->caller_id_number = ecaller_id_number;
+				}
+			}
+		}
+		if (!outgoing_profile) {
+			outgoing_profile = switch_channel_get_caller_profile(channel);
+		}
+	}
+
+	if ((cause = endpoint_interface->io_routines->outgoing_channel(session, outgoing_profile, new_session, pool, flags)) != SWITCH_CAUSE_SUCCESS) {
+		return cause;
+	}
+
+	if (session) {
+		for (ptr = session->event_hooks.outgoing_channel; ptr; ptr = ptr->next) {
+			if ((status = ptr->outgoing_channel(session, caller_profile, *new_session, flags)) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
+		}
 	}
 
 	switch_assert(*new_session != NULL);
@@ -251,6 +261,8 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		if (channel && peer_channel) {
 			const char *export_vars, *val;
 			switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
+			const char *max_forwards = switch_core_session_sprintf(session, "%d", forwardval);
+			switch_channel_set_variable(peer_channel, SWITCH_MAX_FORWARDS_VARIABLE, max_forwards);
 
 			if (read_codec) {
 				char tmp[80];
@@ -286,16 +298,6 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 
 			if ((val = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE))) {
 				switch_channel_set_variable(peer_channel, SWITCH_B_SDP_VARIABLE, val);
-			}
-
-			val = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
-
-			if (!switch_strlen_zero(val)) {
-				int forwardval =  atoi(val) - 1;
-				const char *max_forwards = switch_core_session_sprintf(session, "%d", forwardval);
-				switch_channel_set_variable(peer_channel, SWITCH_MAX_FORWARDS_VARIABLE, max_forwards);
-			} else {
-				switch_channel_set_variable(peer_channel, SWITCH_MAX_FORWARDS_VARIABLE, "70");
 			}
 
 			if (switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
