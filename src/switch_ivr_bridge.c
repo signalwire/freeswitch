@@ -222,8 +222,8 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
  end:
 
 	switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
-	//switch_channel_clear_flag(chan_b, CF_BROADCAST);
-	//switch_channel_set_flag(chan_b, CF_BREAK);
+	switch_channel_clear_flag(chan_b, CF_BROADCAST);
+	switch_channel_set_flag(chan_b, CF_BREAK);
 	switch_core_session_reset(session_a);
 	switch_channel_set_variable(chan_a, SWITCH_BRIDGE_VARIABLE, NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BRIDGE THREAD DONE [%s]\n", switch_channel_get_name(chan_a));
