@@ -616,10 +616,8 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 {
 	char *alert_info = NULL;
-	char *max_forwards = NULL;
+	const char *max_forwards = NULL;
 	const char *alertbuf;
-	const char *forwardbuf;
-	int forwardval;
 	private_object_t *tech_pvt;
 	switch_channel_t *channel = NULL;
 	switch_caller_profile_t *caller_profile;
@@ -664,10 +662,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		alert_info = switch_core_session_sprintf(tech_pvt->session, "Alert-Info: %s", alertbuf);
 	}
 
-	if ((forwardbuf = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE))) {
-		forwardval = atoi(forwardbuf) - 1;
-		max_forwards = switch_core_session_sprintf(tech_pvt->session, "%d", forwardval);
-	}
+	max_forwards = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
 
 	if ((status = sofia_glue_tech_choose_port(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
 		return status;

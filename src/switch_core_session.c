@@ -288,8 +288,14 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 				switch_channel_set_variable(peer_channel, SWITCH_B_SDP_VARIABLE, val);
 			}
 
-			if ((val = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE))) {
-				switch_channel_set_variable(peer_channel, SWITCH_MAX_FORWARDS_VARIABLE, val);
+			val = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
+
+			if (!switch_strlen_zero(val)) {
+				int forwardval =  atoi(val) - 1;
+				const char *max_forwards = switch_core_session_sprintf(session, "%d", forwardval);
+				switch_channel_set_variable(peer_channel, SWITCH_MAX_FORWARDS_VARIABLE, max_forwards);
+			} else {
+				switch_channel_set_variable(peer_channel, SWITCH_MAX_FORWARDS_VARIABLE, "70");
 			}
 
 			if (switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
