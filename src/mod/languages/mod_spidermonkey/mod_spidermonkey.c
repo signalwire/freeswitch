@@ -981,7 +981,7 @@ JSObject *new_js_event(switch_event_t *event, char *name, JSContext * cx, JSObje
 
 static switch_status_t js_common_callback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
-	char *dtmf = NULL;
+	char dtmf[2] = "";
 	switch_event_t *event = NULL;
 	struct input_callback_state *cb_state = buf;
 	struct js_session *jss = cb_state->session_state;
