@@ -199,16 +199,17 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		return SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED;
 	}
 
-	forwardvar = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
-	if (!switch_strlen_zero(forwardvar)) {
-		forwardval =  atoi(forwardvar) - 1;
-	}
-	if (forwardval <= 0) {
-		return SWITCH_CAUSE_EXCHANGE_ROUTING_ERROR;
-	}
-
 	if (session) {
 		channel = switch_core_session_get_channel(session);
+
+		forwardvar = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
+		if (!switch_strlen_zero(forwardvar)) {
+			forwardval =  atoi(forwardvar) - 1;
+		}
+		if (forwardval <= 0) {
+			return SWITCH_CAUSE_EXCHANGE_ROUTING_ERROR;
+		}
+
 		if (caller_profile) {
 			const char *ecaller_id_name = NULL, *ecaller_id_number = NULL;
 
