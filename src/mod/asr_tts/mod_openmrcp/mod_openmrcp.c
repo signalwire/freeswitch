@@ -836,8 +836,13 @@ static switch_status_t do_config()
 			
 			/* add profile */
 			if (!switch_core_hash_find(openmrcp_module.profile_hash, mrcp_profile->name)) {
-				switch_core_hash_insert(openmrcp_module.profile_hash, mrcp_profile->name, mrcp_profile);
-				openmrcp_profile_run(mrcp_profile);
+				if(openmrcp_profile_run(mrcp_profile) == SWITCH_STATUS_SUCCESS) {
+					switch_core_hash_insert(openmrcp_module.profile_hash, mrcp_profile->name, mrcp_profile);
+				}
+			}
+			else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+					"profile with the name [%s] already exists\n", mrcp_profile->name);
 			}
 		}
 	}
