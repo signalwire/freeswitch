@@ -1462,6 +1462,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									if (br_b) {
 										switch_ivr_uuid_bridge(br_a, br_b);
 										switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
+										switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 										switch_channel_hangup(channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
 									} else {
 										switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
@@ -1763,6 +1764,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 									   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(etmp), TAG_END());
 
+							switch_clear_flag_locked(b_tech_pvt, TFLAG_SIP_HOLD);
 							switch_channel_hangup(channel_b, SWITCH_CAUSE_ATTENDED_TRANSFER);
 						} else {
 							if (!br_a && !br_b) {
@@ -1786,8 +1788,11 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 									t_session = switch_core_session_locate(br_a);
 									hup_channel = channel_b;
 								} else {
+									private_object_t *h_tech_pvt = (private_object_t *) switch_core_session_get_private(b_session);
 									t_session = switch_core_session_locate(br_b);
 									hup_channel = channel_a;
+									switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+									switch_clear_flag_locked(h_tech_pvt, TFLAG_SIP_HOLD);
 									switch_channel_hangup(channel_b, SWITCH_CAUSE_ATTENDED_TRANSFER);
 								}
 
@@ -1936,9 +1941,10 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 	struct private_object *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
 	/* placeholder for string searching */
-	char *signal_ptr;
+	const char *signal_ptr;
 	const char *rec_header;
-
+	switch_dtmf_t dtmf = { 0, SWITCH_DEFAULT_DTMF_DURATION };
+	
 	if (session) {
 		/* Get the channel */
 		channel = switch_core_session_get_channel(session);
@@ -1952,55 +1958,47 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 		/* Barf if we didn't get it */
 		switch_assert(tech_pvt != NULL);
 
+		if (sip && sip->sip_content_type && sip->sip_content_type->c_type && sip->sip_content_type->c_subtype && 
+			sip->sip_payload && sip->sip_payload->pl_data) {
+			if (!strcasecmp(sip->sip_content_type->c_type, "dtmf") && !strcasecmp(sip->sip_content_type->c_subtype, "relay")) {
+				/* Try and find signal information in the payload */
+				if ((signal_ptr = switch_stristr("Signal=", sip->sip_payload->pl_data))) {
+					/* move signal_ptr where we need it (right past Signal=) */
+					signal_ptr = signal_ptr + 7;
+					dtmf.digit = *signal_ptr;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Bad signal\n");
+					goto fail;
+				}
 
-		if (sip && sip->sip_payload && sip->sip_payload->pl_data) {
-			switch_dtmf_t dtmf = { 0, SWITCH_DEFAULT_DTMF_DURATION };
-
-			/* Try and find signal information in the payload */
-			if ((signal_ptr = strstr(sip->sip_payload->pl_data, "Signal="))) {
-				/* move signal_ptr where we need it (right past Signal=) */
-				signal_ptr = signal_ptr + 7;
+				if ((signal_ptr = switch_stristr("Duration=", sip->sip_payload->pl_data))) {
+					int tmp;
+					signal_ptr += 8;
+					if ((tmp = atoi(signal_ptr)) < 0) {
+						tmp = SWITCH_DEFAULT_DTMF_DURATION;
+					} 
+					dtmf.duration = tmp;
+				}
+			} else if (!strcasecmp(sip->sip_content_type->c_type, "application") && !strcasecmp(sip->sip_content_type->c_subtype, "dtmf")) {
+				dtmf.digit = *sip->sip_payload->pl_data;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Bad signal\n");
-				return;
+				goto fail;
 			}
+		
+			if (dtmf.digit) {
+				/* queue it up */
+				switch_channel_queue_dtmf(channel, &dtmf);
 
-			/* unknown info type */
-			if (!signal_ptr) {
-				sip_from_t const *from = sip->sip_from;
+				/* print debug info */
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "INFO DTMF(%c)\n", dtmf.digit);
 
-				/* print in the logs if something comes through we don't understand */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unknown INFO Recieved: %s%s" URL_PRINT_FORMAT "[%s]\n",
-								  from->a_display ? from->a_display : "",
-								  from->a_display ? " " : "",
-								  URL_PRINT_ARGS(from->a_url),
-								  sip->sip_payload->pl_data);
-				/* Send 415 Unsupported Media response */
-				nua_respond(nh, SIP_415_UNSUPPORTED_MEDIA, NUTAG_WITH_THIS(nua), TAG_END());
-				return;
-			}
-
-			
-			dtmf.digit = *signal_ptr;
-			if ((signal_ptr = strstr(sip->sip_payload->pl_data, "Duration="))) {
-				int tmp;
-				signal_ptr += 8;
-				if ((tmp = atoi(signal_ptr)) < 0) {
-					tmp = SWITCH_DEFAULT_DTMF_DURATION;
-				} 
-				dtmf.duration = tmp;
-			}
-
-			/* queue it up */
-			switch_channel_queue_dtmf(channel, &dtmf);
-
-			/* print debug info */
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "INFO DTMF(%c)\n", dtmf.digit);
-
-			/* Send 200 OK response */
-			nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
+				/* Send 200 OK response */
+				nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
 	
-			return;
+				return;
+			} else {
+				goto fail;
+			}
 		}
 
 		if ((rec_header = sofia_glue_get_unknown_header(sip, "record"))) {
@@ -2037,6 +2035,13 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 		}
 	}
 
+
+	return;
+
+ fail:
+
+	nua_respond(nh, 488, "Unsupported Request", NUTAG_WITH_THIS(nua), TAG_END());
+	
 }
 
 
