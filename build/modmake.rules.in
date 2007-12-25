@@ -80,7 +80,7 @@ distclean: Makefile
 extraclean: Makefile
 	@$(RECURSE_MAKE) extraclean-modules || exit 1
 
-all-modules: local_depend local_all $(MODNAME).$(DYNAMIC_LIB_EXTEN) Makefile
+all-modules: local_depend $(MODNAME).$(DYNAMIC_LIB_EXTEN) local_all Makefile
 depend-modules: local_depend
 clean-modules: local_clean mod_clean
 install-modules: all-modules depend_install local_install mod_install
