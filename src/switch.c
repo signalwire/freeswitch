@@ -443,9 +443,10 @@ int main(int argc, char *argv[])
 
 	pid = getpid();
 
+	memset(pid_buffer, 0, sizeof(pid_buffer));
 	switch_snprintf(pid_path, sizeof(pid_path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
 	switch_snprintf(pid_buffer, sizeof(pid_buffer), "%d", pid);
-	pid_len = strlen(pid_buffer);
+	pid_len = sizeof(pid_buffer);
 
 	apr_pool_create(&pool, NULL);
     if (switch_file_open(&fd,
