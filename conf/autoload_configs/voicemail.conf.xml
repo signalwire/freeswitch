@@ -47,6 +47,9 @@
       </email>
       <!--<param name="storage-dir" value="/tmp"/>-->
       <!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
+      <!--<param name="record-comment" value="Your Comment"/>-->
+      <!--<param name="record-title" value="Your Title"/>-->
+      <!--<param name="record-copyright" value="Your Copyright"/>-->
     </profile>
   </profiles>
 </configuration> 

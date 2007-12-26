@@ -80,6 +80,9 @@ struct vm_profile {
     char urgent_key[2];
     char operator_key[2];
     char file_ext[10];
+    char *record_title;
+    char *record_comment;
+    char *record_copyright;
     char *operator_ext;
     char *tone_spec;
     char *storage_dir;
@@ -281,6 +284,10 @@ static switch_status_t load_config(void)
         uint32_t record_silence_hits = 2;
         uint32_t record_sample_rate = 0;
 
+		char *record_title = "FreeSWITCH Voicemail";
+		char *record_comment = "FreeSWITCH Voicemail";
+		char *record_copyright = "http://www.freeswitch.org";
+
         switch_core_db_t *db;
         uint32_t timeout = 10000, max_login_attempts = 3, max_record_len = 300;
         
@@ -431,7 +438,13 @@ static switch_status_t load_config(void)
                 callback_context = val;
             } else if (!strcasecmp(var, "file-extension")) {
                 file_ext = val;
-            } else if (!strcasecmp(var, "record-silence-threshold")) {
+            } else if (!strcasecmp(var, "record-title") && !switch_strlen_zero(val)) {
+                record_title = val;
+            } else if (!strcasecmp(var, "record-comment") && !switch_strlen_zero(val)) {
+                record_comment = val;
+            } else if (!strcasecmp(var, "record-copyright") && !switch_strlen_zero(val)) {
+	        record_copyright = val;
+	    } else if (!strcasecmp(var, "record-silence-threshold")) {
                 int tmp = 0;
                 if (!switch_strlen_zero(val)) {
                     tmp = atoi(val);
@@ -596,6 +609,11 @@ static switch_status_t load_config(void)
             profile->tone_spec = switch_core_strdup(globals.pool, tone_spec);
             profile->callback_dialplan = switch_core_strdup(globals.pool, callback_dialplan);
             profile->callback_context = switch_core_strdup(globals.pool, callback_context);
+
+	    profile->record_title = switch_core_strdup(globals.pool, record_title);
+	    profile->record_comment = switch_core_strdup(globals.pool, record_comment);
+	    profile->record_copyright = switch_core_strdup(globals.pool, record_copyright);
+
             switch_copy_string(profile->file_ext, file_ext, sizeof(profile->file_ext));
             switch_mutex_init(&profile->mutex, SWITCH_MUTEX_NESTED, globals.pool);
             
@@ -1821,9 +1839,9 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
     switch_channel_set_variable(channel, "RECORD_DATE", date);
     switch_channel_set_variable(channel, "RECORD_SOFTWARE", "FreeSWITCH");
-    switch_channel_set_variable(channel, "RECORD_TITLE", "FreeSWITCH Voicemail");
-    switch_channel_set_variable(channel, "RECORD_COMMENT", "FreeSWITCH Voicemail");
-    switch_channel_set_variable(channel, "RECORD_COPYRIGHT", "http://www.freeswitch.org");
+    switch_channel_set_variable(channel, "RECORD_TITLE", profile->record_title);
+    switch_channel_set_variable(channel, "RECORD_COMMENT", profile->record_comment);
+    switch_channel_set_variable(channel, "RECORD_COPYRIGHT", profile->record_copyright);
 
     status = create_file(session, profile, VM_RECORD_MESSAGE_MACRO, file_path, &message_len);
 
