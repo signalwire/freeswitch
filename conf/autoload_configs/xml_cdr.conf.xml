@@ -15,7 +15,12 @@
     <!-- optional: if not present we do not log every record to disk -->
     <!-- either an absolute path, a relative path assuming ${prefix}/logs or a blank value will default to ${prefix}/logs/xml_cdr -->
     <param name="log-dir" value=""/>
+
+    <!-- optional: if not present we do log the b leg -->
+    <!-- true or false if we should create a cdr for the b leg of a call-->
+    <param name="log-b-leg" value="false"/>
     
+
     <!-- encode the post data may be 'true' for url encoding, 'false' for no encoding or 'base64' for base64 encoding -->
     <param name="encode" value="true"/>
     

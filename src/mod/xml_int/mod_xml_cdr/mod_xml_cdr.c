@@ -44,6 +44,7 @@ static struct {
 	uint32_t shutdown;
 	uint32_t ignore_cacert_check;
 	int encode;
+	int log_b;
 } globals;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load);
@@ -73,6 +74,10 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	CURL *curl_handle = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (!globals.log_b && channel && switch_channel_get_originator_caller_profile(channel)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	if (switch_ivr_generate_xml_cdr(session, &cdr) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Generating Data!\n");
@@ -242,6 +247,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	memset(&globals,0,sizeof(globals));
+	globals.log_b = 1;
 
 	/* parse the config */
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -260,6 +266,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				globals.url = strdup(val);
 			} else if (!strcasecmp(var, "delay")) {
 				globals.delay = (uint32_t) atoi(val);
+			} else if (!strcasecmp(var, "log-b-leg")) {
+				globals.log_b = switch_true(val);
 			} else if (!strcasecmp(var, "encode")) {
 				if (!strcasecmp(val, "base64")) {
 					globals.encode = 2;
