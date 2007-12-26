@@ -251,7 +251,6 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 	cause = switch_channel_get_cause(channel);
 
-#if 0
 	if (switch_test_flag(tech_pvt, TFLAG_SIP_HOLD) && cause != SWITCH_CAUSE_ATTENDED_TRANSFER) {
 		const char *buuid;
 		switch_core_session_t *bsession;
@@ -266,11 +265,13 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		if ((buuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 			if ((bsession = switch_core_session_locate(buuid))) {
 				bchannel = switch_core_session_get_channel(bsession);
-				if ((lost_ext = switch_channel_get_variable(bchannel, "left_hanging_extension"))) {
-					switch_ivr_session_transfer(bsession, lost_ext, NULL, NULL);
+				if (switch_channel_test_flag(bchannel, CF_BROADCAST)) {
+					if ((lost_ext = switch_channel_get_variable(bchannel, "left_hanging_extension"))) {
+						switch_ivr_session_transfer(bsession, lost_ext, NULL, NULL);
+					}
+					switch_channel_clear_flag(bchannel, CF_BROADCAST);
+					switch_channel_set_flag(bchannel, CF_BREAK);
 				}
-				switch_channel_clear_flag(bchannel, CF_BROADCAST);
-				switch_channel_set_flag(bchannel, CF_BREAK);
 				switch_core_session_rwunlock(bsession);
 			}
 		} 
@@ -278,7 +279,6 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 		
 	}
-#endif	
 
 	sip_cause = hangup_cause_to_sip(cause);
 

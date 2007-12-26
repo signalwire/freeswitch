@@ -1765,7 +1765,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 									   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(etmp), TAG_END());
 
 							switch_clear_flag_locked(b_tech_pvt, TFLAG_SIP_HOLD);
-							switch_channel_hangup(channel_b, SWITCH_CAUSE_ATTENDED_TRANSFER);
+							switch_ivr_park_session(b_session);
+							//switch_channel_hangup(channel_b, SWITCH_CAUSE_ATTENDED_TRANSFER);
 						} else {
 							if (!br_a && !br_b) {
 								switch_set_flag_locked(tech_pvt, TFLAG_NOHUP);
@@ -1943,6 +1944,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 	/* placeholder for string searching */
 	const char *signal_ptr;
 	const char *rec_header;
+	const char *clientcode_header;
 	switch_dtmf_t dtmf = { 0, SWITCH_DEFAULT_DTMF_DURATION };
 	
 	if (session) {
@@ -1999,6 +2001,17 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 			} else {
 				goto fail;
 			}
+		}
+
+		if ((clientcode_header = sofia_glue_get_unknown_header(sip, "x-clientcode"))) {
+			if(!switch_strlen_zero(clientcode_header)) {
+				switch_channel_set_variable(channel, "call_clientcode", clientcode_header);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Setting CMC to %s\n", clientcode_header);
+				nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
+			} else {
+				goto fail;
+			}
+			return;
 		}
 
 		if ((rec_header = sofia_glue_get_unknown_header(sip, "record"))) {

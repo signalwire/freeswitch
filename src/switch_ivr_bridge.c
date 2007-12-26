@@ -222,8 +222,8 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
  end:
 
 	switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
-	switch_channel_clear_flag(chan_b, CF_BROADCAST);
-	switch_channel_set_flag(chan_b, CF_BREAK);
+	//switch_channel_clear_flag(chan_b, CF_BROADCAST);
+	//switch_channel_set_flag(chan_b, CF_BREAK);
 	switch_core_session_reset(session_a);
 	switch_channel_set_variable(chan_a, SWITCH_BRIDGE_VARIABLE, NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BRIDGE THREAD DONE [%s]\n", switch_channel_get_name(chan_a));
@@ -252,7 +252,7 @@ static switch_status_t audio_bridge_on_loopback(switch_core_session_t *session)
 	}
 	switch_channel_clear_state_handler(channel, &audio_bridge_peer_state_handlers);
 
-	if (!switch_channel_test_flag(channel, CF_TRANSFER)) {
+	if (!switch_channel_test_flag(channel, CF_TRANSFER) && switch_channel_get_state(channel) == CS_LOOPBACK) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 	} 
 
