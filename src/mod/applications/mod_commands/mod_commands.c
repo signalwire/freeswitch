@@ -601,7 +601,7 @@ SWITCH_STANDARD_API(ctl_function)
 			switch_core_session_ctl(SCSC_SPS, &arg);
 			stream->write_function(stream, "+OK sessions per second: %d\n", arg);
 		} else {
-			stream->write_function(stream, "-ERR INVALID COMMAND\nUSAGE: fsctl [hupall|pause|resume|shutdown]\n");
+			stream->write_function(stream, "-ERR INVALID COMMAND\nUSAGE: fsctl [hupall|pause|resume|shutdown|reclaim_mem|max_sessions [num]|loglevel [level]]\n");
 			goto end;
 		}
 
