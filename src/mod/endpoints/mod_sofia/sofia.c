@@ -106,6 +106,33 @@ error:
 	return;
 }
 
+void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
+							  char const *phrase,
+							  nua_t *nua,
+							  sofia_profile_t *profile,
+							  nua_handle_t *nh,
+							  sofia_private_t *sofia_private,
+							  sip_t const *sip,
+							  tagi_t tags[])
+{
+	switch_channel_t *channel = NULL;
+	const char *rtp_txstat_header;
+	const char *rtp_rxstat_header;
+	if (session) {
+		channel = switch_core_session_get_channel(session); 
+		if (sip->sip_user_agent && !switch_strlen_zero(sip->sip_user_agent->g_string)){
+			switch_channel_set_variable(channel, "sip_user_agent", sip->sip_user_agent->g_string);
+		}
+		if ((rtp_txstat_header = sofia_glue_get_unknown_header(sip, "rtp-txstat"))) {
+			switch_channel_set_variable(channel, "sip_rtp_txstat", rtp_txstat_header);
+		}
+		if ((rtp_rxstat_header = sofia_glue_get_unknown_header(sip, "rtp-rxstat"))) {
+			switch_channel_set_variable(channel, "sip_rtp_rxstat", rtp_rxstat_header);
+		}
+		
+	}
+	return;
+}
 
 void sofia_event_callback(nua_event_t event,
 						  int status,
@@ -222,7 +249,10 @@ void sofia_event_callback(nua_event_t event,
 	case nua_i_fork:
 	case nua_r_info:
 	case nua_r_bye:
+		break;
 	case nua_i_bye:
+		sofia_handle_sip_i_bye(session, status, phrase, nua, profile, nh, sofia_private, sip, tags);
+		break;
 	case nua_r_unsubscribe:
 	case nua_r_publish:
 	case nua_i_cancel:
