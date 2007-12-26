@@ -1469,7 +1469,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	switch_xml_t x_domain = NULL, xml = NULL, x_user = NULL, x_param, x_params;	
 	char *user = NULL, *domain = NULL;
 	const char *dest = NULL;
-	static switch_call_cause_t cause = SWITCH_CAUSE_SUCCESS;
+	static switch_call_cause_t cause = SWITCH_CAUSE_UNALLOCATED;
 	unsigned int timelimit = 60;
 	switch_channel_t *new_channel = NULL;
 
