@@ -760,6 +760,111 @@ JSClass event_class = {
 };
 
 
+/* Dtmf Object */
+/*********************************************************************************/
+static JSBool dtmf_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	if (argc > 0) {
+		switch_dtmf_t *dtmf;
+		int32_t duration = SWITCH_DEFAULT_DTMF_DURATION;
+		char *ename;
+
+		if (argc > 0) {
+			ename = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		} else {
+			eval_some_js("~throw new Error(\"Invalid Args\");", cx, obj, rval);
+			return JS_FALSE;
+		}
+
+		if (argc > 1) {
+			JS_ValueToInt32(cx, argv[1], &duration);
+			if (duration <= 0) {
+				duration = SWITCH_DEFAULT_DTMF_DURATION;
+			}
+		}
+
+		if ((dtmf = malloc(sizeof(*dtmf)))) {
+			JS_SetPrivate(cx, obj, dtmf);
+			return JS_TRUE;
+		}
+	}
+
+	return JS_FALSE;
+}
+
+static void dtmf_destroy(JSContext * cx, JSObject * obj)
+{
+	switch_dtmf_t *dtmf = JS_GetPrivate(cx, obj);
+
+	if (dtmf) {
+		switch_safe_free(dtmf);
+		JS_SetPrivate(cx, obj, NULL);
+	}
+}
+
+enum dtmf_tinyid {
+	DTMF_DIGIT, DTMF_DURATION
+};
+
+static JSFunctionSpec dtmf_methods[] = {
+	{0}
+};
+
+
+static JSPropertySpec dtmf_props[] = {
+	{"digit", DTMF_DIGIT, JSPROP_READONLY | JSPROP_PERMANENT},
+	{"duration", DTMF_DURATION, JSPROP_READONLY | JSPROP_PERMANENT},
+	{0}
+};
+
+
+static JSBool dtmf_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
+{
+	JSBool res = JS_TRUE;
+	switch_dtmf_t *dtmf = JS_GetPrivate(cx, obj);
+	char *name;
+	int param = 0;
+
+	if (!dtmf) {
+		*vp = BOOLEAN_TO_JSVAL(JS_FALSE);
+		return JS_TRUE;
+	}
+
+
+	name = JS_GetStringBytes(JS_ValueToString(cx, id));
+	/* numbers are our props anything else is a method */
+	if (name[0] >= 48 && name[0] <= 57) {
+		param = atoi(name);
+	} else {
+		return JS_TRUE;
+	}
+
+	switch (param) {
+	case DTMF_DIGIT:
+		{
+			char tmp[2] = { dtmf->digit, '\0' };
+			*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, tmp));
+		}
+		break;
+
+	case DTMF_DURATION:
+		{
+			*vp = INT_TO_JSVAL((int)dtmf->duration);
+		}
+		break;
+	}
+
+	return res;
+}
+
+JSClass dtmf_class = {
+	"DTMF", JSCLASS_HAS_PRIVATE,
+	JS_PropertyStub, JS_PropertyStub, dtmf_getProperty, DEFAULT_SET_PROPERTY,
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, dtmf_destroy, NULL, NULL, NULL,
+	dtmf_construct
+};
+
+
 static void js_error(JSContext * cx, const char *message, JSErrorReport * report)
 {
 	const char *filename = __FILE__;
@@ -977,11 +1082,29 @@ JSObject *new_js_event(switch_event_t *event, char *name, JSContext * cx, JSObje
 	return Event;
 }
 
+
+JSObject *new_js_dtmf(switch_dtmf_t *dtmf, char *name, JSContext * cx, JSObject * obj)
+{
+	JSObject *DTMF = NULL;
+	switch_dtmf_t *ddtmf;
+
+	if ((ddtmf = malloc(sizeof(*ddtmf)))) {
+		*ddtmf = *dtmf;
+		if ((DTMF = JS_DefineObject(cx, obj, name, &dtmf_class, NULL, 0))) {
+			JS_SetPrivate(cx, DTMF, ddtmf);
+			JS_DefineProperties(cx, DTMF, dtmf_props);
+			JS_DefineFunctions(cx, DTMF, dtmf_methods);
+		} else {
+			abort();
+		}
+	}
+	return DTMF;
+}
+
 #define MAX_STACK_DEPTH 2
 
 static switch_status_t js_common_callback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
-	char dtmf[2] = "";
 	switch_event_t *event = NULL;
 	struct input_callback_state *cb_state = buf;
 	struct js_session *jss = cb_state->session_state;
@@ -996,6 +1119,15 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 	METHOD_SANITY_CHECK();
 
 	jss->stack_depth++;
+
+
+	if (cb_state->jss_a && cb_state->jss_a->session && cb_state->jss_a->session == session) {
+		argv[argc++] = OBJECT_TO_JSVAL(cb_state->session_obj_a);
+	} else if (cb_state->jss_b && cb_state->jss_b->session && cb_state->jss_b->session == session) {
+		argv[argc++] = OBJECT_TO_JSVAL(cb_state->session_obj_b);
+	} else {
+		argv[argc++] = OBJECT_TO_JSVAL(cb_state->session_state);
+	}
 
 	switch (itype) {
 	case SWITCH_INPUT_TYPE_EVENT:
@@ -1012,11 +1144,14 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 		break;
 	case SWITCH_INPUT_TYPE_DTMF: 
 		{
-			switch_dtmf_t *_dtmf = (switch_dtmf_t *) input;
-			dtmf[0] = _dtmf->digit;
-			dtmf[1] = '\0';
-			argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(cb_state->cx, "dtmf"));
-			argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(cb_state->cx, dtmf));
+			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
+			
+			if (dtmf) {
+				if ((Event = new_js_dtmf(dtmf, "_XX_DTMF_XX_", cb_state->cx, cb_state->obj))) {
+					argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(cb_state->cx, "dtmf"));
+					argv[argc++] = OBJECT_TO_JSVAL(Event);
+				}
+			}
 		}
 		break;
 	}
@@ -1025,11 +1160,7 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 		argv[argc++] = cb_state->arg;
 	}
 
-	if (cb_state->jss_a && cb_state->jss_a->session && cb_state->jss_a->session == session) {
-		argv[argc++] = OBJECT_TO_JSVAL(cb_state->session_obj_a);
-	} else if (cb_state->jss_b && cb_state->jss_b->session && cb_state->jss_b->session == session) {
-		argv[argc++] = OBJECT_TO_JSVAL(cb_state->session_obj_b);
-	}
+
 
 	if (jss->stack_depth > MAX_STACK_DEPTH) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Maximum recursive callback limit %d reached.\n", MAX_STACK_DEPTH);
@@ -3246,6 +3377,8 @@ static int env_init(JSContext * cx, JSObject * javascript_object)
 	JS_InitClass(cx, javascript_object, NULL, &fileio_class, fileio_construct, 3, fileio_props, fileio_methods, fileio_props, fileio_methods);
 
 	JS_InitClass(cx, javascript_object, NULL, &event_class, event_construct, 3, event_props, event_methods, event_props, event_methods);
+
+	JS_InitClass(cx, javascript_object, NULL, &dtmf_class, dtmf_construct, 3, dtmf_props, dtmf_methods, dtmf_props, dtmf_methods);
 
 	JS_InitClass(cx, javascript_object, NULL, &pcre_class, pcre_construct, 3, pcre_props, pcre_methods, pcre_props, pcre_methods);
 

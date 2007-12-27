@@ -147,7 +147,7 @@ function SpeechDetect(session, mod, ip) {
 	}
 
 	/* Callback function for streaming,TTS or bridged calls */
-	this.onInput = function(type, inputEvent, _this) {
+	this.onInput = function(s, type, inputEvent, _this) {
 		if (type == "event") {
 			var speech_type = inputEvent.getHeader("Speech-Type");
 			var rv = new Array();
