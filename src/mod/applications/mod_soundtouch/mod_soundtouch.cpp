@@ -55,7 +55,7 @@ struct soundtouch_helper {
     int literal;
 };
 
-static switch_status_t on_dtmf(switch_core_session_t *session, const char *dtmf)
+static switch_status_t on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
 
     switch_media_bug_t *bug;
@@ -65,88 +65,81 @@ static switch_status_t on_dtmf(switch_core_session_t *session, const char *dtmf)
         struct soundtouch_helper *sth = (struct soundtouch_helper *) switch_core_media_bug_get_user_data(bug);
         
         if (sth) {
-            const char *p;
-
             if (sth->literal) {
                 sth->literal = 0;
                 return SWITCH_STATUS_SUCCESS;
             }
 
-            for (p = dtmf; p && *p; p++) {
-                if (sth->literal) {
-                    sth->literal = 0;
-                    return SWITCH_STATUS_SUCCESS;
+            
+            switch(dtmf->digit) {
+            case '*':
+                sth->literal++;
+                break;
+            case '3':
+                sth->semi += .5;
+                sth->st->setPitchSemiTones(sth->semi);
+                sth->st->flush();
+                break;
+            case '2':
+                sth->semi = 0;
+                sth->st->setPitchSemiTones(sth->semi);
+                sth->st->flush();
+                break;
+            case '1':
+                sth->semi -= .5;
+                sth->st->setPitchSemiTones(sth->semi);
+                sth->st->flush();
+                break;
+
+            case '6':
+                sth->pitch += .2;
+                sth->st->setPitch(sth->pitch);
+                sth->st->flush();
+                break;
+            case '5':
+                sth->pitch = 1;
+                sth->st->setPitch(sth->pitch);
+                sth->st->flush();
+                break;
+            case '4':
+                sth->pitch -= .2;
+                if (sth->pitch <= 0) {
+                    sth->pitch = .2;
                 }
+                sth->st->setPitch(sth->pitch);
+                sth->st->flush();
+                break;
 
-                switch(*p) {
-                case '*':
-                    sth->literal++;
-                    break;
-                case '3':
-                    sth->semi += .5;
-                    sth->st->setPitchSemiTones(sth->semi);
-                    sth->st->flush();
-                    break;
-                case '2':
-                    sth->semi = 0;
-                    sth->st->setPitchSemiTones(sth->semi);
-                    sth->st->flush();
-                    break;
-                case '1':
-                    sth->semi -= .5;
-                    sth->st->setPitchSemiTones(sth->semi);
-                    sth->st->flush();
-                    break;
-
-                case '6':
-                    sth->pitch += .2;
-                    sth->st->setPitch(sth->pitch);
-                    sth->st->flush();
-                    break;
-                case '5':
-                    sth->pitch = 1;
-                    sth->st->setPitch(sth->pitch);
-                    sth->st->flush();
-                    break;
-                case '4':
-                    sth->pitch -= .2;
-                    if (sth->pitch <= 0) {
-                        sth->pitch = .2;
-                    }
-                    sth->st->setPitch(sth->pitch);
-                    sth->st->flush();
-                    break;
-
-                case '9':
-                    sth->octaves += .2;
-                    sth->st->setPitchOctaves(sth->octaves);
-                    sth->st->flush();
-                    break;
-                case '8':
-                    sth->octaves = 0;
-                    sth->st->setPitchOctaves(sth->octaves);
-                    sth->st->flush();
-                    break;
-                case '7':
-                    sth->octaves -= .2;
-                    sth->st->setPitchOctaves(sth->octaves);
-                    sth->st->flush();
-                    break;
+            case '9':
+                sth->octaves += .2;
+                sth->st->setPitchOctaves(sth->octaves);
+                sth->st->flush();
+                break;
+            case '8':
+                sth->octaves = 0;
+                sth->st->setPitchOctaves(sth->octaves);
+                sth->st->flush();
+                break;
+            case '7':
+                sth->octaves -= .2;
+                sth->st->setPitchOctaves(sth->octaves);
+                sth->st->flush();
+                break;
 
 
-                case '0':
-                    sth->octaves = 0;
-                    sth->st->setPitchOctaves(sth->octaves);
-                    sth->pitch = 1;
-                    sth->st->setPitch(sth->pitch);
-                    sth->semi = 0;
-                    sth->st->setPitchSemiTones(sth->semi);
-                    sth->st->flush();
+            case '0':
+                sth->octaves = 0;
+                sth->st->setPitchOctaves(sth->octaves);
+                sth->pitch = 1;
+                sth->st->setPitch(sth->pitch);
+                sth->semi = 0;
+                sth->st->setPitchSemiTones(sth->semi);
+                sth->st->flush();
                     
-                }
-
             }
+
         }
+        
 
         return SWITCH_STATUS_FALSE;
     }
