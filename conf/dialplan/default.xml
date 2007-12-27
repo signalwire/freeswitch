@@ -176,7 +176,6 @@
     <extension name="hold_music">
       <condition field="destination_number" expression="^9999$">
 	<action application="answer"/>
-	<action application="record" data=""/>
 	<action application="playback" data="$${moh_uri}"/>
       </condition>
     </extension>
