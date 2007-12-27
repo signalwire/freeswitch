@@ -88,9 +88,8 @@
     <extension name="extension-intercom">
       <condition field="destination_number" expression="^8(10[01][0-9])$">
 	<action application="set" data="dialed_ext=$1"/>
-	<action application="set" data="sip_h_Call-Info=<sip:$${local_ip_v4}>;answer-after=0"/>
-	<action application="set" data="sip_auto_answer=true"/>
-	<action application="set" data="export_vars=sip_h_Call-Info,sip_auto_answer"/>
+	<action application="export" data="sip_h_Call-Info=<sip:$${domain}>;answer-after=0"/>
+	<action application="export" data="sip_auto_answer=true"/>
 	<action application="bridge" data="user/${dialed_ext}@$${domain}"/>
       </condition>
     </extension>
@@ -114,6 +113,7 @@
 	<anti-action application="set" data="transfer_ringback=${us-ring}"/>
 	<anti-action application="set" data="call_timeout=30"/>
 	<anti-action application="set" data="hangup_after_bridge=true"/>
+	<anti-action application="set" data="left_hanging_extension=5900"/>
 	<anti-action application="set" data="continue_on_fail=NORMAL_TEMPORARY_FAILURE,BUSY,USER_BUSY,NO_ANSWER,TIMEOUT,NO_ROUTE_DESTINATION"/>
 	<anti-action application="db" data="insert/call_return/${dialed_ext}/${caller_id_number}"/>
 	<anti-action application="db" data="insert/last_dial_ext/${dialed_ext}/${uuid}"/>
@@ -176,6 +176,7 @@
     <extension name="hold_music">
       <condition field="destination_number" expression="^9999$">
 	<action application="answer"/>
+	<action application="record" data=""/>
 	<action application="playback" data="$${moh_uri}"/>
       </condition>
     </extension>
@@ -184,7 +185,7 @@
 
     <extension name="enum">
       <condition field="destination_number" expression="^(.*)$">
-	<action application="transfer" data="$1 enum"/>
+	<action application="reject" data="484 Address Incomplete"/>
       </condition>
     </extension>
     
