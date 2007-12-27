@@ -5,6 +5,10 @@
       <param name="dial-string" value="{transfer_fallback_extension=${dialed_user}}sofia/${dialed_domain}/${dialed_user}"/>
     </params>
 
+    <variables>
+      <variable name="record_stereo" value="true"/>
+    </variables>
+
     <X-PRE-PROCESS cmd="include" data="default/*.xml"/>
   </domain>
 </include>
