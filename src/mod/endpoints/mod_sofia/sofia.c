@@ -1720,6 +1720,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	switch_channel_t *channel_a = NULL, *channel_b = NULL;
 	su_home_t *home = NULL;
 	char *full_ref_by = NULL;
+	char *full_ref_to = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
 	channel_a = switch_core_session_get_channel(session);
@@ -1739,14 +1740,16 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	from = sip->sip_from;
 	to = sip->sip_to;
 	
+	home = su_home_new(sizeof(*home));
+	switch_assert(home != NULL);
 
-	if (sip->sip_referred_by) {
-		home = su_home_new(sizeof(*home));
-		switch_assert(home != NULL);
+	if (sip->sip_referred_by) {		
 		full_ref_by = sip_header_as_string(home, (void *) sip->sip_referred_by);
 	}
 
 	if ((refer_to = sip->sip_refer_to)) {
+		full_ref_to = sip_header_as_string(home, (void *) sip->sip_refer_to);
+
 		if (profile->pflags & PFLAG_FULL_ID) {
 			exten = switch_mprintf("%s@%s", (char *) refer_to->r_url->url_user, (char *) refer_to->r_url->url_host);
 		} else {
@@ -1772,11 +1775,6 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
 					goto done;
-				}
-
-				if (!home) {
-					home = su_home_new(sizeof(*home));
-					switch_assert(home != NULL);
 				}
 
 				if ((replaces = sip_replaces_make(home, rep))
@@ -1845,6 +1843,10 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 										switch_channel_set_variable(t_channel, SOFIA_SIP_HEADER_PREFIX "Referred-By", full_ref_by);
 									}
 
+									if (!switch_strlen_zero(full_ref_to)) {
+										switch_channel_set_variable(t_channel, SOFIA_REFER_TO_VARIABLE, full_ref_to);
+									}
+									
 									switch_ivr_session_transfer(t_session, ext, NULL, NULL);
 									nua_notify(tech_pvt->nh,
 												NUTAG_NEWSUB(1),
@@ -1898,7 +1900,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							if (!switch_strlen_zero(full_ref_by)) {
 								switch_channel_set_variable(channel, SOFIA_SIP_HEADER_PREFIX "Referred-By", full_ref_by);
 							}
-
+							if (!switch_strlen_zero(full_ref_to)) {
+								switch_channel_set_variable(channel, SOFIA_REFER_TO_VARIABLE, full_ref_to);
+							}
 							if (switch_ivr_originate(a_session,
 													 &tsession, &cause, exten, timeout, &noop_state_handler, NULL, NULL, NULL, SOF_NONE) 
 								!= SWITCH_STATUS_SUCCESS) {
@@ -1954,7 +1958,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 				if (!switch_strlen_zero(full_ref_by)) {
 					switch_channel_set_variable(b_channel, SOFIA_SIP_HEADER_PREFIX "Referred-By", full_ref_by);
 				}
-				
+				if (!switch_strlen_zero(full_ref_to)) {
+					switch_channel_set_variable(b_channel, SOFIA_REFER_TO_VARIABLE, full_ref_to);
+				}
 				switch_ivr_session_transfer(b_session, exten, NULL, NULL);
 				switch_core_session_rwunlock(b_session);
 			}

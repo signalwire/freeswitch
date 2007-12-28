@@ -72,6 +72,7 @@ typedef struct private_object private_object_t;
 #define SOFIA_SIP_HEADER_PREFIX_T "~sip_h_"
 #define SOFIA_DEFAULT_PORT "5060"
 #define SOFIA_DEFAULT_TLS_PORT "5061"
+#define SOFIA_REFER_TO_VARIABLE "sip_refer_to"
 
 #include <sofia-sip/nua.h>
 #include <sofia-sip/sip_status.h>
