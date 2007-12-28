@@ -745,7 +745,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								
 								if (strrchr(ringback_data, '.') || strstr(ringback_data, SWITCH_URL_SEPARATOR)) {
 									switch_core_session_set_read_codec(session, &write_codec);
-									ext++;
 								} else {
 									ringback.asis++;
 									write_frame.codec = read_codec;
