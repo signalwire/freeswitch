@@ -73,7 +73,15 @@
 #include <fcntl.h>
 #ifdef _MSC_VER
 #include <Winsock2.h>
+#if _MSC_VER < 1500
+/* work around bug in msvc 2005 code analysis http://connect.microsoft.com/VisualStudio/feedback/ViewFeedback.aspx?FeedbackID=99397 */
+#pragma warning(push)
+#pragma warning(disable:6011)
 #include <Ws2tcpip.h>
+#pragma warning(pop)
+#else
+#include <Ws2tcpip.h>
+#endif
 #else
 #include <strings.h>
 #endif
