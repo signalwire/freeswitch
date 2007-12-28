@@ -764,30 +764,30 @@ JSClass event_class = {
 /*********************************************************************************/
 static JSBool dtmf_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
+
+	switch_dtmf_t *dtmf;
+	int32 duration = SWITCH_DEFAULT_DTMF_DURATION;
+	char *ename;
+
 	if (argc > 0) {
-		switch_dtmf_t *dtmf;
-		int32 duration = SWITCH_DEFAULT_DTMF_DURATION;
-		char *ename;
+		ename = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+	} else {
+		eval_some_js("~throw new Error(\"Invalid Args\");", cx, obj, rval);
+		return JS_FALSE;
+	}
 
-		if (argc > 0) {
-			ename = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-		} else {
-			eval_some_js("~throw new Error(\"Invalid Args\");", cx, obj, rval);
-			return JS_FALSE;
-		}
-
-		if (argc > 1) {
-			JS_ValueToInt32(cx, argv[1], &duration);
-			if (duration <= 0) {
-				duration = SWITCH_DEFAULT_DTMF_DURATION;
-			}
-		}
-
-		if ((dtmf = malloc(sizeof(*dtmf)))) {
-			JS_SetPrivate(cx, obj, dtmf);
-			return JS_TRUE;
+	if (argc > 1) {
+		JS_ValueToInt32(cx, argv[1], &duration);
+		if (duration <= 0) {
+			duration = SWITCH_DEFAULT_DTMF_DURATION;
 		}
 	}
+
+	if ((dtmf = malloc(sizeof(*dtmf)))) {
+		JS_SetPrivate(cx, obj, dtmf);
+		return JS_TRUE;
+	}
+	
 
 	return JS_FALSE;
 }
