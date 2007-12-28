@@ -954,14 +954,20 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 		switch_caller_profile_event_set_data(caller_profile, "Caller", event);
 	}
 
-	/* Index Originator's Profile */
-	if (originator_caller_profile) {
+	
+	if (originator_caller_profile && originatee_caller_profile) {
+		/* Index Originator's Profile */
 		switch_caller_profile_event_set_data(originator_caller_profile, "Originator", event);
-	}
 
-	/* Index Originatee's Profile */
-	if (originatee_caller_profile) {
+		/* Index Originatee's Profile */
 		switch_caller_profile_event_set_data(originatee_caller_profile, "Originatee", event);
+	} else {
+		/* Index Originator's Profile */
+		if (originator_caller_profile) {
+			switch_caller_profile_event_set_data(originator_caller_profile, "Other-Leg", event);
+		} else if (originatee_caller_profile) { /* Index Originatee's Profile */
+			switch_caller_profile_event_set_data(originatee_caller_profile, "Other-Leg", event);
+		}
 	}
 	x = 0;
 	/* Index Variables */
