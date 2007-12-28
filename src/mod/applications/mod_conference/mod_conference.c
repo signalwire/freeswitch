@@ -1909,8 +1909,9 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t * t
 	switch_core_file_set_string(&fh, SWITCH_AUDIO_COL_STR_ARTIST, "FreeSWITCH mod_conference Software Conference Module");
 
 	while (switch_test_flag(member, MFLAG_RUNNING) && switch_test_flag(conference, CFLAG_RUNNING) && conference->count) {
+		switch_size_t len;
 		mux_used = (uint32_t) switch_buffer_inuse(member->mux_buffer);
-
+		
 		if (switch_test_flag(member, MFLAG_FLUSH_BUFFER)) {
 			if (mux_used) {
 				switch_mutex_lock(member->audio_out_mutex);
@@ -1928,18 +1929,26 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t * t
 
 			if ((rlen = (uint32_t) switch_buffer_read(member->mux_buffer, data, sizeof(data)))) {
 				if (!switch_test_flag((&fh), SWITCH_FILE_PAUSE)) {
-					switch_size_t len = (switch_size_t) rlen / sizeof(int16_t);
-					if (switch_core_file_write(&fh, data, &len) != SWITCH_STATUS_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Failed\n");
-						switch_clear_flag_locked(member, MFLAG_RUNNING);
-					}
+					len = (switch_size_t) rlen / sizeof(int16_t);
 				}
 			}
 			switch_mutex_unlock(member->audio_out_mutex);
 		} else {
-			switch_core_timer_next(&timer);
+			if (!switch_test_flag((&fh), SWITCH_FILE_PAUSE)) {
+				len = (switch_size_t) samples;
+				memset(data, 0, len);
+			}
 		}
-	}							/* Rinse ... Repeat */
+
+		if (!switch_test_flag((&fh), SWITCH_FILE_PAUSE)) {
+			if (switch_core_file_write(&fh, data, &len) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Failed\n");
+				switch_clear_flag_locked(member, MFLAG_RUNNING);
+			}
+		}
+
+		switch_core_timer_next(&timer);
+	} /* Rinse ... Repeat */
 
   end:
 
