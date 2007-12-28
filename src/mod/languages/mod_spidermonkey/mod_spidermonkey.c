@@ -1120,13 +1120,12 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 
 	jss->stack_depth++;
 
-
 	if (cb_state->jss_a && cb_state->jss_a->session && cb_state->jss_a->session == session) {
 		argv[argc++] = OBJECT_TO_JSVAL(cb_state->session_obj_a);
 	} else if (cb_state->jss_b && cb_state->jss_b->session && cb_state->jss_b->session == session) {
 		argv[argc++] = OBJECT_TO_JSVAL(cb_state->session_obj_b);
 	} else {
-		argv[argc++] = OBJECT_TO_JSVAL(cb_state->session_state);
+		argv[argc++] = OBJECT_TO_JSVAL(cb_state->session_state->obj);
 	}
 
 	switch (itype) {

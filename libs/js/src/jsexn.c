@@ -425,6 +425,7 @@ InitExceptionObject(JSContext *cx, JSObject *obj, JSString *message,
 
             APPEND_CHAR_TO_STACK('(');
             for (i = 0; i < fp->argc; i++) {
+
                 /* Avoid toSource bloat and fallibility for object types. */
                 v = fp->argv[i];
                 if (JSVAL_IS_PRIMITIVE(v)) {
