@@ -766,7 +766,7 @@ static JSBool dtmf_construct(JSContext * cx, JSObject * obj, uintN argc, jsval *
 {
 	if (argc > 0) {
 		switch_dtmf_t *dtmf;
-		int32_t duration = SWITCH_DEFAULT_DTMF_DURATION;
+		int32 duration = SWITCH_DEFAULT_DTMF_DURATION;
 		char *ename;
 
 		if (argc > 0) {
