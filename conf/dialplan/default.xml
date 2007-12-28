@@ -1,4 +1,4 @@
-<!-- http://wiki.freeswitch.org/wiki/Dialplan_XML --> 
+<!-- http://wiki.freeswitch.org/wiki/Dialplan_XML -->
 <include>
   <context name="default">
     <extension name="intercept">
@@ -40,6 +40,16 @@
 	<action application="db" data="insert/spymap/${caller_id_number}/${uuid}"/>
 	<action application="db" data="insert/last_dial/${caller_id_number}/${destination_number}"/>
 	<action application="db" data="insert/last_dial/global/${uuid}"/>
+      </condition>
+    </extension>
+    
+    <extension name="refer">
+      <condition field="${sip_refer_to}" expression="<sip:${destination_number}@$${domain}>" continue="on_false">
+      <condition field="${sip_refer_to}" expression="<sip:(.*)@(.*)>">
+        <action application="set" data="refer_user=$1"/>
+        <action application="set" data="refer_domain=$2"/>
+        <action application="info"/>
+        <action application="bridge" data="sofia/outbound/${refer_user}@${refer_domain}"/>
       </condition>
     </extension>
 
