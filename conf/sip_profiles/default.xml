@@ -58,7 +58,7 @@
     
     <!--If you don't want to pass through timestampes from 1 RTP call to another (on a per call basis with rtp_rewrite_timestamps chanvar)-->
     <!--<param name="rtp-rewrite-timestamps" value="true"/>-->
-    
+    <!--<param name="pass-rfc2833" value="true"/>-->
     <!--If you have ODBC support and a working dsn you can use it instead of SQLite-->
     <!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
     
