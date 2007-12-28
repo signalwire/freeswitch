@@ -2012,12 +2012,16 @@ SWITCH_STANDARD_API(uuid_dump_function)
 				switch_assert(channel != NULL);
 
 				if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+					switch_xml_t xml;
 					switch_channel_event_set_data(channel, event);
 					if (format && !strcasecmp(format, "xml")) {
-						switch_xml_t xml;
 						if ((xml = switch_event_xmlize(event, "%s", ""))) {
                             buf = switch_xml_toxml(xml, SWITCH_FALSE);
                             switch_xml_free(xml);
+						} else {
+							stream->write_function(stream, "-ERR Unable to create xml!\n");
+							switch_core_session_rwunlock(psession);
+							goto done;
 						}
 					} else {
 						switch_event_serialize(event, &buf, SWITCH_TRUE);
