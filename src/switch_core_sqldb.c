@@ -358,6 +358,7 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 	/* Activate SQL database */
 	if ((sql_manager.db = switch_core_db_handle()) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
+		switch_clear_flag((&runtime), SCF_USE_SQL);
 	} else {
 		char create_channels_sql[] =
 			"CREATE TABLE channels (\n"
