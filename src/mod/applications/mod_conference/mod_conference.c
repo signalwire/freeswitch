@@ -682,6 +682,7 @@ static switch_status_t conference_del_member(conference_obj_t * conference, conf
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", conference->name);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_RING");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", "confirmed");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", "inbound");
 			switch_event_fire(&event);
 		}
 
@@ -974,6 +975,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", conference->name);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_HANGUP");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", "terminated");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", "inbound");
 		switch_event_fire(&event);
 	}
 
@@ -4910,6 +4912,7 @@ static void pres_event_handler(switch_event_t *event)
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", conf_name);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_RING");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", "confirmed");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", "inbound");
 			switch_event_fire(&event);
 		}
 	} else if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
@@ -4924,6 +4927,7 @@ static void pres_event_handler(switch_event_t *event)
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", conf_name);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_HANGUP");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", "terminated");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", "inbound");
 		switch_event_fire(&event);
 	}
 
