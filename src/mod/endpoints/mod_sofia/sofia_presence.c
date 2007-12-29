@@ -683,7 +683,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		if (!strcasecmp(state, "cs_execute") && !strstr(event_status, "hold")) {
 			goto end;
 		} 
-		printf("WTF %s, %s, %s, %s\n", state, event_status, answer_state, astate);
 		
 		if (!strcasecmp(event_status, "Registered")) {
 			answer_state = "resubscribe";
@@ -758,7 +757,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 		pl = stream.data;
 		ct = "application/dialog-info+xml";
-			printf("%s\n", pl);
 		if (astate && uuid && helper->stream.data) {
 			stream.write_function(&helper->stream, "update sip_dialogs set state='%s' where uuid='%s';\n", astate, uuid);
 		}
