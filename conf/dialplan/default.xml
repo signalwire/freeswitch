@@ -44,7 +44,7 @@
     </extension>
     
     <extension name="refer">
-      <condition field="${sip_refer_to}" expression="<sip:${destination_number}@$${domain}>" continue="on_false">
+      <condition field="${sip_refer_to}" expression="<sip:${destination_number}@$${domain}>" continue="on_false"/>
       <condition field="${sip_refer_to}" expression="<sip:(.*)@(.*)>">
         <action application="set" data="refer_user=$1"/>
         <action application="set" data="refer_domain=$2"/>
