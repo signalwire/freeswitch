@@ -667,7 +667,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		const char *state = switch_str_nil(switch_event_get_header(helper->event, "channel-state"));
 		const char *event_status = switch_str_nil(switch_event_get_header(helper->event, "status"));
 		const char *astate = switch_str_nil(switch_event_get_header(helper->event, "astate"));
-		char *answer_state = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
+		const char *answer_state = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
 		const char *dft_state;
 		
 		SWITCH_STANDARD_STREAM(stream);
@@ -753,6 +753,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		stream.write_function(&stream, "</dialog-info>\n");
 
 		pl = stream.data;
+
 		ct = "application/dialog-info+xml";
 		if (astate && uuid && helper->stream.data) {
 			stream.write_function(&helper->stream, "update sip_dialogs set state='%s' where uuid='%s';\n", astate, uuid);
