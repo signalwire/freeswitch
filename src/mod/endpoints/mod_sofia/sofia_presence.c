@@ -601,13 +601,22 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char *sub_to_host = argv[4];
 	char *event = argv[5];
 	char *call_id = argv[7];
+	char *expires = argv[10];
 	nua_handle_t *nh;
 	char *to = NULL;
 	char *open;
 	char *prpid;
 	int done = 0;
 	const char *ct;
-
+	time_t exptime = time(NULL) + 3600; 
+	char exp[80] = "";   
+	
+	if (expires) { 
+		long tmp = atol(expires); 
+		if (tmp > 0) { 
+			exptime = tmp - time(NULL); 
+		}
+	}
 
 	if (!(nh = (nua_handle_t *) switch_core_hash_find(profile->sub_hash, call_id))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find handle for %s\n", call_id);
@@ -746,9 +755,11 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		ct = "application/pidf+xml";
 	}
 
+	switch_snprintf(exp, sizeof(exp), "active;expires=%ld", (long) exptime); 
+
 	nua_notify(nh,
 			   NUTAG_NEWSUB(1),
-			   SIPTAG_SUBSCRIPTION_STATE_STR("active;expires=3600"),
+			   SIPTAG_SUBSCRIPTION_STATE_STR(exp),
 			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR(ct), SIPTAG_PAYLOAD_STR(pl), TAG_END());
 
 	if (done) {
