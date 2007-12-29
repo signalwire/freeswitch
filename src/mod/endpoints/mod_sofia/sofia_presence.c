@@ -749,11 +749,9 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			}
 			stream.write_function(&stream, "</dialog>\n");			
 			
-		} else {
-			printf("resubscribe\n");
 		}
-		
-			stream.write_function(&stream, "</dialog-info>\n");
+
+		stream.write_function(&stream, "</dialog-info>\n");
 
 		pl = stream.data;
 		ct = "application/dialog-info+xml";
