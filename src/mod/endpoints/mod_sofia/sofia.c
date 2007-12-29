@@ -1325,6 +1325,12 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 			free(sql);
+		} else if (status == 200) { 
+			char *sql = NULL;
+			sql = switch_mprintf("update sip_dialogs set state='%s' where uuid='%s';\n", astate, switch_core_session_get_uuid(session));
+			switch_assert(sql); 
+			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex); 
+			free(sql);
 		}
 	}
 }
