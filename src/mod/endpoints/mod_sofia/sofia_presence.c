@@ -740,12 +740,27 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 					stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"%s\"/>\n", !strcasecmp(event_status, "hold") ? "no" : "yes" );
 					stream.write_function(&stream, "</target>\n</local>\n");  
 					stream.write_function(&stream, "<remote>\n<identity display=\"%s\">sip:%s@%s</identity>\n", clean_from_user, clean_from_user, host);
-					stream.write_function(&stream, "<target uri=\"sip:**%s%s@%s\"/>\n", !strcasecmp(proto, "park") ? "park+" : "", clean_to_user, host);
+					stream.write_function(&stream, "<target uri=\"sip:**%s@%s\"/>\n", clean_to_user, host);
 					stream.write_function(&stream, "</remote>\n");
-					
+				} else if (!strcasecmp(proto, "park")) {
+					stream.write_function(&stream, "<local>\n<identity display=\"parking\">sip:parking@%s;fifo=%s</identity>\n", 
+										  host, !switch_strlen_zero(clean_to_user) ? clean_to_user : "unknown");
+					stream.write_function(&stream, "<target uri=\"sip:parking@%s\">\n", host);
+					stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"no\"/>\n</target>\n</local>\n");  
+					stream.write_function(&stream, "<remote>\n<identity display=\"parking\">sip:%s</identity>\n", uuid);
+					stream.write_function(&stream, "<target uri=\"sip:park+%s\"/>\n", uuid);
+					stream.write_function(&stream, "</remote>\n");
+				} else if (!strcasecmp(proto, "conf")) {
+					stream.write_function(&stream, "<local>\n<identity display=\"conference\">sip:conference@%s;conference=%s</identity>\n", 
+										  host, !switch_strlen_zero(clean_to_user) ? clean_to_user : "unknown");
+					stream.write_function(&stream, "<target uri=\"sip:conference@%s\">\n", host);
+					stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"yes\"/>\n</target>\n</local>\n");  
+					stream.write_function(&stream, "<remote>\n<identity display=\"conference\">sip:%s@%s</identity>\n", uuid, host);
+					stream.write_function(&stream, "<target uri=\"sip:conf+%s@%s\"/>\n", uuid, host);
+					stream.write_function(&stream, "</remote>\n");
 				}
-				
 			}
+
 			stream.write_function(&stream, "</dialog>\n");			
 			
 		}
