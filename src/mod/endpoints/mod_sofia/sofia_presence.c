@@ -1032,9 +1032,9 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			nua_respond(nh, SIP_202_ACCEPTED,
 						NUTAG_WITH_THIS(nua),
 						SIPTAG_SUBSCRIPTION_STATE_STR(sstr), 
-						SIPTAG_FROM(sip->sip_to),
-						SIPTAG_TO(sip->sip_from),
-						SIPTAG_CONTACT_STR(contact_str),
+						//SIPTAG_FROM(sip->sip_to),
+						//SIPTAG_TO(sip->sip_from),
+						//SIPTAG_CONTACT_STR(contact_str),
 						TAG_END());
 		}
 		
