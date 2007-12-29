@@ -1223,10 +1223,13 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		switch_mutex_unlock(channel->profile_mutex);
 	}
 
+	switch_set_flag(channel, CF_BREAK);
+	switch_clear_flag(channel, CF_BROADCAST);
+	
 	if (channel->state < CS_HANGUP) {
 		switch_event_t *event;
 		switch_channel_state_t last_state = channel->state;
-
+		
 		channel->state = CS_HANGUP;
 		channel->hangup_cause = hangup_cause;
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n",
