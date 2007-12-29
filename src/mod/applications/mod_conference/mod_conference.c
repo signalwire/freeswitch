@@ -548,6 +548,7 @@ static switch_status_t conference_add_member(conference_obj_t * conference, conf
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", conference->name);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_RING");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", "confirmed");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", "inbound");
 			switch_event_fire(&event);
 		}
 

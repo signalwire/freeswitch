@@ -140,7 +140,7 @@ static void send_presence(fifo_node_t *node)
         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", node->name);
         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", node->waiting_count > 0 ? "early" : "terminated");
         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "astate", "%s", node->waiting_count > 0 ? "early" : "terminated");
-        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", "outbound");
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", "inbound");
 		switch_event_fire(&event);
 	}
 }
