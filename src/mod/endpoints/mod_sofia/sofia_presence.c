@@ -537,7 +537,7 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 		if (switch_strlen_zero(state)) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", SOFIA_CHAT_PROTO);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_HANGUP");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", "terminated");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", "resubscribe");
 		} else {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_RING");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", uuid);
@@ -667,6 +667,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		const char *state = switch_str_nil(switch_event_get_header(helper->event, "channel-state"));
 		const char *event_status = switch_str_nil(switch_event_get_header(helper->event, "status"));
 		const char *astate = switch_str_nil(switch_event_get_header(helper->event, "astate"));
+		char *answer_state = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
 		const char *dft_state;
 		
 		SWITCH_STANDARD_STREAM(stream);
@@ -682,6 +683,20 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		if (!strcasecmp(state, "cs_execute") && !strstr(event_status, "hold")) {
 			goto end;
 		} 
+		printf("WTF %s, %s, %s, %s\n", state, event_status, answer_state, astate);
+		
+		if (!strcasecmp(event_status, "Registered")) {
+			answer_state = "resubscribe";
+		}
+
+		stream.write_function(&stream, 
+							  "<?xml version=\"1.0\"?>\n"
+							  "<dialog-info xmlns=\"urn:ietf:params:xml:ns:dialog-info\" "
+							  "version=\"%s\" state=\"%s\" entity=\"%s\">\n", 
+							  switch_str_nil(switch_event_get_header(helper->event, "event_count")),
+							  !strcasecmp(answer_state, "resubscribe") ? "partial" : "full", clean_id);
+
+		if (strcasecmp(answer_state, "resubscribe")) {
 
 		if (!strcasecmp(state, "cs_hangup")) {
 			astate = "terminated";
@@ -707,20 +722,43 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				astate = "confirmed";
 			}
 		}
+			stream.write_function(&stream, "<dialog id=\"%s\" direction=\"%s\">\n", uuid, direction);
+			stream.write_function(&stream, "<state>%s</state>\n", astate);
 
+			if (!strcasecmp(astate, "early") | !strcasecmp(astate, "confirmed")) {
+				const char *from_id = switch_str_nil(switch_event_get_header(helper->event, "Other-Leg-Caller-ID-Number"));
+				const char *to_user = switch_str_nil(switch_event_get_header(helper->event, "variable_sip_to_user"));
+				const char *from_user = switch_str_nil(switch_event_get_header(helper->event, "variable_sip_from_user"));
+				const char *clean_to_user;
+				const char *clean_from_user;
 		
-		stream.write_function(&stream, 
-							  "<?xml version=\"1.0\"?>\n"
-							  "<dialog-info xmlns=\"urn:ietf:params:xml:ns:dialog-info\" "
-							  "version=\"%s\" state=\"full\" entity=\"%s\">\n", 
-							  switch_str_nil(switch_event_get_header(helper->event, "event_count")), clean_id);
+				printf("from:%s -> to:%s\n", from_id ? from_id : from_user, sub_to_user ? sub_to_user : to_user );
+				clean_to_user = switch_mprintf("%s", sub_to_user ? sub_to_user : to_user, host);
+				clean_from_user = switch_mprintf("%s", from_id ? from_id : from_user, host);
+				
+				if(!switch_strlen_zero(clean_to_user) && !switch_strlen_zero(clean_from_user)) {
+					stream.write_function(&stream, "<local>\n<identity display=\"%s\">sip:%s@%s</identity>\n", clean_to_user, clean_to_user, host);
+					stream.write_function(&stream, "<target uri=\"sip:%s@%s\">\n", clean_to_user, host);
+					stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"%s\"/>\n", !strcasecmp(event_status, "hold") ? "no" : "yes" );
+					stream.write_function(&stream, "</target>\n</local>\n");  
+					stream.write_function(&stream, "<remote>\n<identity display=\"%s\">sip:%s@%s</identity>\n", clean_from_user, clean_from_user, host);
+					stream.write_function(&stream, "<target uri=\"sip:**%s%s@%s\"/>\n", !strcasecmp(proto, "park") ? "park+" : "", clean_to_user, host);
+					stream.write_function(&stream, "</remote>\n");
+					
+				}
+				
+			}
+			stream.write_function(&stream, "</dialog>\n");			
+			
+		} else {
+			printf("resubscribe\n");
+		}
+		
+			stream.write_function(&stream, "</dialog-info>\n");
 
-		stream.write_function(&stream, "<dialog id=\"%s\" direction=\"%s\">\n", uuid, direction);
-		stream.write_function(&stream, "<state>%s</state>\n", astate);
-		stream.write_function(&stream, "</dialog>\n</dialog-info>\n");
 		pl = stream.data;
 		ct = "application/dialog-info+xml";
-		
+			printf("%s\n", pl);
 		if (astate && uuid && helper->stream.data) {
 			stream.write_function(&helper->stream, "update sip_dialogs set state='%s' where uuid='%s';\n", astate, uuid);
 		}
