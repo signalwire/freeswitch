@@ -42,6 +42,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh,
 	char stream_name[128] = "";
 	char *rhs = NULL;
 
+	if (switch_strlen_zero(file_path)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Filename\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if ((rhs = strstr(file_path, SWITCH_URL_SEPARATOR))) {
 		switch_copy_string(stream_name, file_path, (rhs + 1) - file_path);
 		ext = stream_name;

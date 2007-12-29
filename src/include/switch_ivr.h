@@ -298,8 +298,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
   \param limit max limit to record for (0 for infinite)
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *session,
-													   switch_file_handle_t *fh, char *file, switch_input_args_t *args, uint32_t limit);
+SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(_In_ switch_core_session_t *session,
+													   _In_ switch_file_handle_t *fh,
+													   _In_z_ const char *file,
+													   _In_opt_ switch_input_args_t *args,
+													   _In_ uint32_t limit);
 
 
 /*!

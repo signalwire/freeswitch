@@ -115,6 +115,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dialplan", "dialplan", "{C7E2382E-2C22-4D18-BF93-80C6A1FFA7AC}"
 	ProjectSection(SolutionItems) = preProject
 		conf\dialplan\default.xml = conf\dialplan\default.xml
+		conf\dialplan\public.xml = conf\dialplan\public.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "directory", "directory", "{FC71C66E-E268-4EAD-B1F5-F008DC382E83}"

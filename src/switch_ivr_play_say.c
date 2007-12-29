@@ -335,7 +335,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *session,
-													   switch_file_handle_t *fh, char *file, switch_input_args_t *args, uint32_t limit)
+													   switch_file_handle_t *fh, const char *file, switch_input_args_t *args, uint32_t limit)
 {
 	switch_channel_t *channel;
 	switch_dtmf_t dtmf = {0};
