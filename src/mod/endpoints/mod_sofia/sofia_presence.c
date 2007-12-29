@@ -731,7 +731,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				const char *clean_to_user;
 				const char *clean_from_user;
 		
-				printf("from:%s -> to:%s\n", from_id ? from_id : from_user, sub_to_user ? sub_to_user : to_user );
 				clean_to_user = switch_mprintf("%s", sub_to_user ? sub_to_user : to_user, host);
 				clean_from_user = switch_mprintf("%s", from_id ? from_id : from_user, host);
 				
