@@ -1081,13 +1081,14 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
 			free(sql);
 
-			switch_mutex_unlock(profile->ireg_mutex);
 			sstr = switch_mprintf("active;expires=%ld", exp_raw);
 			if (status < 200) {
 				switch_core_hash_insert(profile->sub_hash, call_id, nh);
 			}
 		}
 	
+		switch_mutex_unlock(profile->ireg_mutex);
+
 		if (status < 200) {
 			nua_respond(nh, SIP_202_ACCEPTED,
 						NUTAG_WITH_THIS(nua),
