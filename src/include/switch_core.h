@@ -1117,16 +1117,20 @@ SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *te
 /*! 
   \brief Open a media file using file format modules
   \param fh a file handle to use
+  \param file_path the path to the file
   \param channels the number of channels
   \param rate the sample rate
-  \param file_path the path to the file
   \param flags read/write flags
   \param pool the pool to use (NULL for new pool)
   \return SWITCH_STATUS_SUCCESS if the file is opened
   \note the loadable module used is chosen based on the file extension
 */
-SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh,
-													  _In_z_ const char *file_path, uint8_t channels, uint32_t rate, unsigned int flags, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_core_file_open(_In_ switch_file_handle_t *fh,
+													  _In_z_ const char *file_path,
+													  _In_ uint8_t channels,
+													  _In_ uint32_t rate,
+													  _In_ unsigned int flags,
+													  _In_opt_ switch_memory_pool_t *pool);
 /*! 
   \brief Read media from a file handle
   \param fh the file handle to read from (must be initilized by you memset all 0 for read, fill in channels and rate for write)
