@@ -31,7 +31,8 @@
  * switch_core_session.c -- Main Core Library (session routines)
  *
  */
-#include <switch.h>
+#include "switch.h"
+#include "switch_core.h"
 #include "private/switch_core_pvt.h"
 
 static struct {
@@ -104,7 +105,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 	}
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(char *uuid_str, switch_core_session_message_t *message)
+SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(const char *uuid_str, switch_core_session_message_t *message)
 {
 	switch_core_session_t *session = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -124,7 +125,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(char *uuid_str,
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(char *uuid_str, switch_event_t **event)
+SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(const char *uuid_str, switch_event_t **event)
 {
 	switch_core_session_t *session = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -177,7 +178,7 @@ SWITCH_DECLARE(int) switch_core_session_get_stream_count(switch_core_session_t *
 }
 
 SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_core_session_t *session,
-																		 char *endpoint_name,
+																		 const char *endpoint_name,
 																		 switch_caller_profile_t *caller_profile,
 																		 switch_core_session_t **new_session, 
 																		 switch_memory_pool_t **pool,
@@ -840,7 +841,7 @@ SWITCH_DECLARE(switch_size_t) switch_core_session_id(void)
 }
 
 
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(char *endpoint_name, switch_memory_pool_t **pool)
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(const char *endpoint_name, switch_memory_pool_t **pool)
 {
 	const switch_endpoint_interface_t *endpoint_interface;
 
@@ -956,7 +957,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_session_t *session, char *exten, char *dialplan, char *context)
+SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_session_t *session, const char *exten, const char *dialplan, const char *context)
 {
 	char *dp[25];
 	char *dpstr;
