@@ -68,7 +68,7 @@ SWITCH_DECLARE(int) switch_config_open_file(switch_config_t * cfg, char *file_pa
 			cfg->path = path;
 
 			while (switch_config_next_pair(cfg, &var, &val)) {
-				if ((cfg->sectno != last) && !strcmp(cfg->section, file_path)) {
+				if (file_path && (cfg->sectno != last) && !strcmp(cfg->section, file_path)) {
 					cfg->lockto = cfg->sectno;
 					return 1;
 				}

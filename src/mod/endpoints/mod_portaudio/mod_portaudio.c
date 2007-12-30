@@ -1016,7 +1016,7 @@ static int get_dev_by_name(char *name, int in)
 
 		if (switch_strlen_zero(name)) {
 			match = 1;
-		} else if (strstr(pdi->name, name)) {
+		} else if (pdi && pdi->name && strstr(pdi->name, name)) {
 			match = 1;
 		}
 

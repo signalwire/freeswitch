@@ -695,7 +695,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	timer_name = switch_channel_get_variable(channel, "timer_name");
 
 
-	if (!file) {
+	if (switch_strlen_zero(file)) {
 		status = SWITCH_STATUS_FALSE;
 		goto end;
 	}

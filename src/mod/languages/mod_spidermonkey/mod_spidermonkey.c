@@ -1027,7 +1027,7 @@ static switch_status_t load_modules(void)
 		if ((mods = switch_xml_child(cfg, "modules"))) {
 			for (ld = switch_xml_child(mods, "load"); ld; ld = ld->next) {
 				const char *val = switch_xml_attr_soft(ld, "module");
-				if (strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT)) {
+				if (!switch_strlen_zero(val) && strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
 					continue;
 				}

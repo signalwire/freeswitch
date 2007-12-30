@@ -1402,7 +1402,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 
 	if (user_name) {
 		
-		if (strstr(xtra_params, "mailbox")) {
+		if (!switch_strlen_zero(xtra_params) && strstr(xtra_params, "mailbox")) {
 			if ((*user = switch_xml_find_child(*domain, "user", "mailbox", user_name))) {
 				return SWITCH_STATUS_SUCCESS;
 			}

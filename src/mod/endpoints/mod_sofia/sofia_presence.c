@@ -1275,7 +1275,7 @@ void sofia_presence_handle_sip_i_message(int status,
 		const char *subject = "n/a";
 		char *msg = NULL;
 
-		if (sip->sip_content_type) {
+		if (sip->sip_content_type && !switch_strlen_zero(sip->sip_content_type->c_subtype)) {
 			if (strstr(sip->sip_content_type->c_subtype, "composing")) {
 				return;
 			}

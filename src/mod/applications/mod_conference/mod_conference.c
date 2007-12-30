@@ -3498,9 +3498,9 @@ switch_status_t conf_api_dispatch(conference_obj_t * conference, switch_stream_h
 					const char *modified_cmdline = cmdline;
 					const char *cmd = conf_api_sub_commands[i].pname;
 
-					if ((start_text = strstr(modified_cmdline, cmd))) {
+					if (!switch_strlen_zero(modified_cmdline) && (start_text = strstr(modified_cmdline, cmd))) {
 						modified_cmdline = start_text + strlen(cmd);
-						while (modified_cmdline && *modified_cmdline && (*modified_cmdline == ' ' || *modified_cmdline == '\t')) {
+						while (modified_cmdline && (*modified_cmdline == ' ' || *modified_cmdline == '\t')) {
 							modified_cmdline++;
 						}
 					}
