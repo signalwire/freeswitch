@@ -663,7 +663,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_private(_In_ switch_core
   \param private_info an optional pointer to private data for the new stream
   \return the stream id of the new stream
 */
-SWITCH_DECLARE(int) switch_core_session_add_stream(_In_ switch_core_session_t *session, _In_ void *private_info);
+SWITCH_DECLARE(int) switch_core_session_add_stream(_In_ switch_core_session_t *session, _In_opt_ void *private_info);
 
 /*!
   \brief Retreive a logical stream from a session
