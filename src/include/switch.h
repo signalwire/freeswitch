@@ -93,30 +93,30 @@
 #include <signal.h>
 #include <errno.h>
 
-#include <switch_platform.h>
-#include <switch_types.h>
-#include <switch_apr.h>
+#include "switch_platform.h"
+#include "switch_types.h"
+#include "switch_apr.h"
 
-#include <switch_core_db.h>
-#include <switch_regex.h>
-#include <switch_core.h>
-#include <switch_loadable_module.h>
-#include <switch_console.h>
-#include <switch_utils.h>
-#include <switch_caller.h>
-#include <switch_frame.h>
-#include <switch_module_interfaces.h>
-#include <switch_channel.h>
-#include <switch_buffer.h>
-#include <switch_event.h>
-#include <switch_resample.h>
-#include <switch_ivr.h>
-#include <switch_rtp.h>
-#include <switch_log.h>
-#include <switch_xml.h>
-#include <switch_core_event_hook.h>
-#include <switch_scheduler.h>
-#include <switch_config.h>
+#include "switch_core_db.h"
+#include "switch_regex.h"
+#include "switch_core.h"
+#include "switch_loadable_module.h"
+#include "switch_console.h"
+#include "switch_utils.h"
+#include "switch_caller.h"
+#include "switch_frame.h"
+#include "switch_module_interfaces.h"
+#include "switch_channel.h"
+#include "switch_buffer.h"
+#include "switch_event.h"
+#include "switch_resample.h"
+#include "switch_ivr.h"
+#include "switch_rtp.h"
+#include "switch_log.h"
+#include "switch_xml.h"
+#include "switch_core_event_hook.h"
+#include "switch_scheduler.h"
+#include "switch_config.h"
 #include <libteletone.h>
 
 /** \mainpage FreeSWITCH
