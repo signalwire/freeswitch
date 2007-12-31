@@ -1,3 +1,4 @@
+#!/usr/bin/perl
 use FreeSWITCH::Client;
 use Data::Dumper;
 use Term::ReadLine;
