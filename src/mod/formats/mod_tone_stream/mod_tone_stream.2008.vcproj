@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="mod_tone_stream"
-	ProjectGUID="{2CA40887-1622-46A1-A7F9-17FD7E7E545B}"
+	ProjectGUID="{6FF941AC-82C5-429F-AA4C-AD2FB9E5DA52}"
 	RootNamespace="mod_tone_stream"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
