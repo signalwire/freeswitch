@@ -42,7 +42,8 @@
 	<action application="db" data="insert/last_dial/global/${uuid}"/>
       </condition>
     </extension>
-    
+    <!-- This kinda breaks blind transfers back to ourself. -->
+    <!--
     <extension name="refer">
       <condition field="${sip_refer_to}" expression="<sip:${destination_number}@$${domain}>" continue="on_false"/>
       <condition field="${sip_refer_to}" expression="<sip:(.*)@(.*)>">
@@ -52,6 +53,7 @@
         <action application="bridge" data="sofia/outbound/${refer_user}@${refer_domain}"/>
       </condition>
     </extension>
+    -->
 
     <extension name="eavesdrop">
       <condition field="destination_number" expression="^88(.*)$|^\*0(.*)$">
@@ -126,7 +128,6 @@
 	<anti-action application="set" data="continue_on_fail=NORMAL_TEMPORARY_FAILURE,BUSY,USER_BUSY,NO_ANSWER,TIMEOUT,NO_ROUTE_DESTINATION"/>
 	<anti-action application="db" data="insert/call_return/${dialed_ext}/${caller_id_number}"/>
 	<anti-action application="db" data="insert/last_dial_ext/${dialed_ext}/${uuid}"/>
-	<!--<anti-action application="bridge" data="sofia/$${domain}/${dialed_ext}"/>-->
 	<anti-action application="bridge" data="user/${dialed_ext}@$${domain}"/>
 	<anti-action application="answer"/>
 	<anti-action application="sleep" data="1000"/>
@@ -182,6 +183,29 @@
 	<action application="fifo" data="$1@$${domain} out nowait"/>
       </condition>
     </extension> 
+
+    <!--
+	This extension is used with snom phones.  
+	
+	You can subscribe to park+lot and you'll get status of the parking lot
+	this is 100% dynamic.  ie park+5000 would be fifo 5000
+
+    -->
+    <!--
+    <extension name="park">
+      <condition field="${sip_refer_to}" expression="<sip:park\+(.*)@(.*)>" continue="on-true">
+	<action application="fifo" data="$1@$${domain} in undef $${moh_uri}"/>
+      </condition>
+    </extension> 
+
+    <extension name="unpark">
+      <condition field="destination_number" expression="^parking$" continue="on-true"/>
+      <condition field="${sip_to_params}" expression="fifo\=(\d+)">
+	<action application="answer"/>
+	<action application="fifo" data="$1@$${domain} out nowait"/>
+      </condition>
+    </extension>
+    -->
 
     <extension name="hold_music">
       <condition field="destination_number" expression="^9999$">
