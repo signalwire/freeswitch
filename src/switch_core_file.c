@@ -178,6 +178,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
+
+	if (!fh->file_interface->file_write) {
+		return SWITCH_STATUS_FALSE;
+	}
 	
 	if (!switch_test_flag(fh, SWITCH_FILE_NATIVE) && fh->native_rate != fh->samplerate) {
 		if (!fh->resampler) {
@@ -225,6 +229,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, 
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
 
+	if (!fh->file_interface->file_seek) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_set_flag(fh, SWITCH_FILE_SEEK);
 	status = fh->file_interface->file_seek(fh, cur_pos, samples, whence);
 	if (samples) {
@@ -238,6 +246,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_set_string(switch_file_handle_t
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
 
+	if (!fh->file_interface->file_set_string) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	return fh->file_interface->file_set_string(fh, col, string);
 }
 
@@ -245,6 +257,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(switch_file_handle_t
 {
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
+
+	if (!fh->file_interface->file_get_string) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	return fh->file_interface->file_get_string(fh, col, string);
 

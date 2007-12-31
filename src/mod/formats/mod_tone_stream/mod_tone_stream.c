@@ -30,13 +30,10 @@
  *
  */
 #include <switch.h>
-/* for apr_pstrcat */
-#define DEFAULT_PREBUFFER_SIZE 1024 * 16
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_tone_stream_load);
 SWITCH_MODULE_DEFINITION(mod_tone_stream, mod_tone_stream_load, NULL, NULL);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_tone_stream_shutdown);
-
 
 static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map_t *map)
 {
@@ -113,13 +110,7 @@ static switch_status_t tone_stream_file_close(switch_file_handle_t *handle)
 	switch_buffer_t *audio_buffer = handle->private_info;
 	
 	switch_buffer_destroy(&audio_buffer);
-	
 	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t tone_stream_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
-{
-	return SWITCH_STATUS_FALSE;
 }
 
 static switch_status_t tone_stream_file_read(switch_file_handle_t *handle, void *data, size_t *len)
@@ -127,30 +118,13 @@ static switch_status_t tone_stream_file_read(switch_file_handle_t *handle, void 
 	switch_buffer_t *audio_buffer = handle->private_info;
 	switch_size_t bytes;
 	
-	if ((bytes = (uint32_t) switch_buffer_read_loop(audio_buffer, data, *len * 2)) <= 0) {
+	if ((bytes = switch_buffer_read_loop(audio_buffer, data, *len * 2)) <= 0) {
 		*len = 0;
 		return SWITCH_STATUS_FALSE;
-	} else {
-		*len = bytes / 2;
 	}
 
-
-    return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t tone_stream_file_write(switch_file_handle_t *handle, void *data, size_t *len)
-{
-	return SWITCH_STATUS_FALSE;
-}
-
-static switch_status_t tone_stream_file_set_string(switch_file_handle_t *handle, switch_audio_col_t col, const char *string)
-{
-	return SWITCH_STATUS_FALSE;
-}
-
-static switch_status_t tone_stream_file_get_string(switch_file_handle_t *handle, switch_audio_col_t col, const char **string)
-{
-	return SWITCH_STATUS_FALSE;
+	*len = bytes / 2;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 /* Registration */
@@ -169,10 +143,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_tone_stream_load)
 	file_interface->file_open = tone_stream_file_open;
 	file_interface->file_close = tone_stream_file_close;
 	file_interface->file_read = tone_stream_file_read;
-	file_interface->file_write = tone_stream_file_write;
-	file_interface->file_seek = tone_stream_file_seek;
-	file_interface->file_set_string = tone_stream_file_set_string;
-	file_interface->file_get_string = tone_stream_file_get_string;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

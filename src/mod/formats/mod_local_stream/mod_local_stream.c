@@ -85,7 +85,6 @@ static int do_rand(void)
 	return index;
 }
 
-
 static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void *obj)
 {
 	local_stream_source_t *source = obj;
@@ -151,7 +150,6 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					}
 					continue;
 				}
-				
 			}
 
 			if (skip > 0) {
@@ -179,7 +177,6 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't start timer.\n");
 				return NULL;
 			}
-
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Playing %s rate: %d\n", fname, source->rate);
 
@@ -217,7 +214,6 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 		switch_dir_close(source->dir_handle);
 		source->dir_handle = NULL;
-
 	}
 
 	if (fd > -1) {
@@ -261,8 +257,6 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 		status = SWITCH_STATUS_MEMERR;
 		goto end;
 	}	
-
-	
 
 	handle->samples = 0;
 	handle->samplerate = source->rate;
@@ -318,11 +312,6 @@ static switch_status_t local_stream_file_close(switch_file_handle_t *handle)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t local_stream_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
-{
-	return SWITCH_STATUS_FALSE;
-}
-
 static switch_status_t local_stream_file_read(switch_file_handle_t *handle, void *data, size_t *len)
 {
     local_stream_context_t *context = handle->private_info;
@@ -344,21 +333,6 @@ static switch_status_t local_stream_file_read(switch_file_handle_t *handle, void
     return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t local_stream_file_write(switch_file_handle_t *handle, void *data, size_t *len)
-{
-	return SWITCH_STATUS_FALSE;
-}
-
-static switch_status_t local_stream_file_set_string(switch_file_handle_t *handle, switch_audio_col_t col, const char *string)
-{
-	return SWITCH_STATUS_FALSE;
-}
-
-static switch_status_t local_stream_file_get_string(switch_file_handle_t *handle, switch_audio_col_t col, const char **string)
-{
-	return SWITCH_STATUS_FALSE;
-}
-
 /* Registration */
 
 static char *supported_formats[SWITCH_MAX_CODECS] = { 0 };
@@ -371,7 +345,6 @@ static void launch_threads(void)
 	local_stream_source_t *source;
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
-
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
@@ -442,13 +415,10 @@ static void launch_threads(void)
 		switch_threadattr_detach_set(thd_attr, 1);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 		switch_thread_create(&thread, thd_attr, read_stream_thread, source, source->pool);
-		
 	}
 
 	switch_xml_free(xml);
-
 }
-
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load)
 {
@@ -462,10 +432,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load)
 	file_interface->file_open = local_stream_file_open;
 	file_interface->file_close = local_stream_file_close;
 	file_interface->file_read = local_stream_file_read;
-	file_interface->file_write = local_stream_file_write;
-	file_interface->file_seek = local_stream_file_seek;
-	file_interface->file_set_string = local_stream_file_set_string;
-	file_interface->file_get_string = local_stream_file_get_string;
 
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, pool);
