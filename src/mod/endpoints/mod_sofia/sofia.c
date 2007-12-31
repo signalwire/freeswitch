@@ -2123,9 +2123,9 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 }
 
 
-#define url_set_chanvars(session, url, varprefix) _url_set_chanvars(session, url, #varprefix "_user", #varprefix "_host", #varprefix "_port", #varprefix "_uri")
+#define url_set_chanvars(session, url, varprefix) _url_set_chanvars(session, url, #varprefix "_user", #varprefix "_host", #varprefix "_port", #varprefix "_uri", #varprefix "_params")
 const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const char *user_var,
-									 const char *host_var, const char *port_var, const char *uri_var)
+							  const char *host_var, const char *port_var, const char *uri_var, const char *params_var)
 {
 	const char *user = NULL, *host = NULL, *port = NULL;
 	char *uri = NULL;
@@ -2135,6 +2135,9 @@ const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const 
 		user = url->url_user;
 		host = url->url_host;
 		port = url->url_port;
+		if(!switch_strlen_zero(url->url_params)) {
+			switch_channel_set_variable(channel, params_var, url->url_params);
+		}
 	}
 
 	if (switch_strlen_zero(user)) {
