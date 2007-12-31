@@ -68,6 +68,7 @@
     <!--<load module="mod_shout"/>-->
     <!--For local streams (play all the files in a directory)-->
     <load module="mod_local_stream"/>
+    <load module="mod_tone_stream"/>
 
     <!-- Timers -->
 
