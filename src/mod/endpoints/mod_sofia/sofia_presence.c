@@ -746,7 +746,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 					stream.write_function(&stream, "<local>\n<identity display=\"%s\">sip:%s@%s;%s=%s</identity>\n", 
 										  proto, proto, host, proto, !switch_strlen_zero(clean_to_user) ? clean_to_user : "unknown");
 					stream.write_function(&stream, "<target uri=\"sip:%s@%s\">\n", proto, host);
-					stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"no\"/>\n</target>\n</local>\n");  
+					stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"%s\"/>\n</target>\n</local>\n",
+										  !strcasecmp(proto, "park") ? "no" : "yes");  
 					stream.write_function(&stream, "<remote>\n<identity display=\"%s\">sip:%s@%s</identity>\n", proto, uuid, host);
 					stream.write_function(&stream, "<target uri=\"sip:%s+%s@%s;%s=%s\"/>\n", proto, uuid, host, proto, uuid);
 					stream.write_function(&stream, "</remote>\n");
