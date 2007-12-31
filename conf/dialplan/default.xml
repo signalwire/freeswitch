@@ -33,7 +33,6 @@
       -->
       <condition field="${numbering_plan}" expression="^$" break="never">
 	<action application="set_user" data="default@${domain}"/>
-	<anti-action application="set" data="blank_numbering_plan=NO"/> 
       </condition>
       <condition>
 	<action application="info"/>
@@ -194,13 +193,13 @@
     <!--
     <extension name="park">
       <condition field="${sip_refer_to}" expression="<sip:park\+(.*)@(.*)>" continue="on-true">
-	<action application="fifo" data="$1@$${domain} in undef $${moh_uri}"/>
+	<action application="fifo" data="$1 in undef $${moh_uri}"/>
       </condition>
     </extension> 
 
     <extension name="unpark">
-      <condition field="destination_number" expression="^parking$" continue="on-true"/>
-      <condition field="${sip_to_params}" expression="fifo\=(\d+)">
+      <condition field="destination_number" expression="^park$" continue="on-true"/>
+      <condition field="${sip_to_params}" expression="park\=(\d+)">
 	<action application="answer"/>
 	<action application="fifo" data="$1@$${domain} out nowait"/>
       </condition>
