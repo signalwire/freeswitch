@@ -697,40 +697,40 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 		if (strcasecmp(answer_state, "resubscribe")) {
 
-		if (!strcasecmp(state, "cs_hangup")) {
-			astate = "terminated";
-		} else if (switch_strlen_zero(astate))  {
-			astate = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
-			if (switch_strlen_zero(astate))  {
-				astate = dft_state;
-			}
-		} 
-		
-		if (!strcasecmp(event_status, "hold")) {
-			astate = "early";
-		}
-
-		if (!strcasecmp(astate, "answered")) {
-			astate = "confirmed";
-		}
-
-		if (!strcasecmp(astate, "ringing")) {
-			if (!strcasecmp(direction, "recipient")) {
+			if (!strcasecmp(state, "cs_hangup")) {
+				astate = "terminated";
+			} else if (switch_strlen_zero(astate))  {
+				astate = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
+				if (switch_strlen_zero(astate))  {
+					astate = dft_state;
+				}
+			} 
+			
+			if (!strcasecmp(event_status, "hold")) {
 				astate = "early";
-			} else {
+			}
+			
+			if (!strcasecmp(astate, "answered")) {
 				astate = "confirmed";
 			}
-		}
+			
+			if (!strcasecmp(astate, "ringing")) {
+				if (!strcasecmp(direction, "recipient")) {
+					astate = "early";
+				} else {
+					astate = "confirmed";
+				}
+			}
 			stream.write_function(&stream, "<dialog id=\"%s\" direction=\"%s\">\n", uuid, direction);
 			stream.write_function(&stream, "<state>%s</state>\n", astate);
-
+			
 			if (!strcasecmp(astate, "early") | !strcasecmp(astate, "confirmed")) {
 				const char *from_id = switch_str_nil(switch_event_get_header(helper->event, "Other-Leg-Caller-ID-Number"));
 				const char *to_user = switch_str_nil(switch_event_get_header(helper->event, "variable_sip_to_user"));
 				const char *from_user = switch_str_nil(switch_event_get_header(helper->event, "variable_sip_from_user"));
 				const char *clean_to_user;
 				const char *clean_from_user;
-		
+				
 				clean_to_user = switch_mprintf("%s", sub_to_user ? sub_to_user : to_user, host);
 				clean_from_user = switch_mprintf("%s", from_id ? from_id : from_user, host);
 				
@@ -760,9 +760,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 					stream.write_function(&stream, "</remote>\n");
 				}
 			}
-
 			stream.write_function(&stream, "</dialog>\n");			
-			
 		}
 
 		stream.write_function(&stream, "</dialog-info>\n");
@@ -773,7 +771,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		if (astate && uuid && helper->stream.data) {
 			stream.write_function(&helper->stream, "update sip_dialogs set state='%s' where uuid='%s';\n", astate, uuid);
 		}
-		
 	} else {
 		pl = switch_mprintf("<?xml version='1.0' encoding='UTF-8'?>\r\n"
 							"<presence xmlns='urn:ietf:params:xml:ns:pidf'\r\n"
