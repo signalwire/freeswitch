@@ -50,7 +50,7 @@
         <action application="set" data="refer_user=$1"/>
         <action application="set" data="refer_domain=$2"/>
         <action application="info"/>
-        <action application="bridge" data="sofia/outbound/${refer_user}@${refer_domain}"/>
+        <action application="bridge" data="sofia/${use_profile}/${refer_user}@${refer_domain}"/>
       </condition>
     </extension>
     -->
@@ -188,6 +188,7 @@
 	This extension is used with snom phones.  
 	
     -->
+    <!--
     <extension name="park">
       <condition field="source" expression="mod_sofia" continue="on-true"/>
       <condition field="${sip_refer_to}" expression="park\+(.*)@(.*)>" continue="on-true">
@@ -206,7 +207,7 @@
 	<action application="hangup"/>
       </condition>
     </extension>
-
+    -->
     <extension name="hold_music">
       <condition field="destination_number" expression="^9999$">
 	<action application="answer"/>
