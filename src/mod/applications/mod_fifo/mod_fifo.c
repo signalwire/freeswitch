@@ -131,6 +131,7 @@ static void send_presence(fifo_node_t *node)
         } else {
             switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Idle");
         }
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "%s", "unknown");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", 0);
@@ -138,6 +139,7 @@ static void send_presence(fifo_node_t *node)
         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", node->waiting_count > 0 ? "CS_RING" : "CS_HANGUP");
         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", node->name);
         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", node->waiting_count > 0 ? "early" : "terminated");
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "astate", "%s", node->waiting_count > 0 ? "early" : "terminated");
         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", "inbound");
 		switch_event_fire(&event);
 	}
