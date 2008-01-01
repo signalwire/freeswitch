@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <!-- http://wiki.freeswitch.org/wiki/Dialplan_XML -->
 <include>
   <context name="default">
@@ -166,45 +167,45 @@
     
     
     <!-- 
-	 Parking extensions... transferring calls to 5900-5909 will park them in a queue.
+	 Parking extensions... transferring calls to 5900 will park them in a queue.
     -->
     <extension name="park">
-      <condition field="destination_number" expression="^(590[0-9])$">
-	<action application="fifo" data="$1@$${domain} in undef $${moh_uri}"/>
+      <condition field="destination_number" expression="^5900$">
+	<action application="fifo" data="5900@$${domain} in undef $${moh_uri}"/>
       </condition>
     </extension>
+
     <!-- 
-	 The grandstream phone will subscribe to park+number and call **park+number to pickup.
+	 Parking pickup extension.  Calling 5901 will pickup the call.
     -->
-    <extension name="unpark">
-      <condition field="destination_number" expression="^\*{0,2}park\+(590[0-9])$">
-	<action application="answer"/>
-	<action application="fifo" data="$1@$${domain} out nowait"/>
+    <extension name="park">
+      <condition field="destination_number" expression="^5901$">
+	<action application="fifo" data="5900@$${domain} out undef"/>
       </condition>
-    </extension> 
+    </extension>
 
     <!--
 	This extension is used with snom phones.  
 	
-	You can subscribe to park+lot and you'll get status of the parking lot
-	this is 100% dynamic.  ie park+5000 would be fifo 5000
-
     -->
-    <!--
     <extension name="park">
-      <condition field="${sip_refer_to}" expression="<sip:park\+(.*)@(.*)>" continue="on-true">
-	<action application="fifo" data="$1 in undef $${moh_uri}"/>
+      <condition field="source" expression="mod_sofia" continue="on-true"/>
+      <condition field="${sip_refer_to}" expression="park\+(.*)@(.*)>" continue="on-true">
+	<action application="gentones" data="%(1000, 0, 320)"/>
+	<action application="fifo" data="$1@$${domain} in undef $${moh_uri}"/>
       </condition>
     </extension> 
 
     <extension name="unpark">
-      <condition field="destination_number" expression="^park$" continue="on-true"/>
-      <condition field="${sip_to_params}" expression="park\=(\d+)">
+      <condition field="source" expression="mod_sofia" continue="on-true"/>
+      <condition field="destination_number" expression="^parking$" continue="on-true"/>
+      <condition field="${sip_to_params}" expression="fifo\=(\d+)">
 	<action application="answer"/>
-	<action application="fifo" data="$1@$${domain} out nowait"/>
+	<action application="gentones" data="%(1000, 0, 320)"/>
+	<action application="fifo" data="$1@10.0.1.250 out nowait"/>
+	<action application="hangup"/>
       </condition>
     </extension>
-    -->
 
     <extension name="hold_music">
       <condition field="destination_number" expression="^9999$">
@@ -217,6 +218,7 @@
 
     <extension name="enum">
       <condition field="destination_number" expression="^(.*)$">
+	<action application="answer"/>
 	<action application="transfer" data="$1 enum"/>
       </condition>
     </extension>
