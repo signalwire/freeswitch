@@ -1023,9 +1023,9 @@ SWITCH_STANDARD_APP(echo_function)
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
-	switch_channel_answer(channel);
+	switch_channel_pre_answer(channel);
 
-	switch_channel_set_state(channel, CS_LOOPBACK);
+	switch_ivr_session_echo(session);
 }
 
 SWITCH_STANDARD_APP(park_function)
