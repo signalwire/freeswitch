@@ -178,7 +178,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				return NULL;
 			}
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Playing %s rate: %d\n", fname, source->rate);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Playing %s rate: %dhz\n", fname, source->rate);
 
 			while (RUNNING) {
 				switch_core_timer_next(&timer);
