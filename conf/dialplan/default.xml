@@ -209,6 +209,13 @@
       </condition>
     </extension>
 
+    <extension name="tone_stream">
+      <condition field="destination_number" expression="^9998$">
+	<action application="answer"/>
+	<action application="playback" data="tone_stream://path=${base_dir}/conf/tetris.ttml;loops=10"/>
+      </condition>
+    </extension>
+
     <extension name="hold_music">
       <condition field="destination_number" expression="^9999$">
 	<action application="answer"/>
