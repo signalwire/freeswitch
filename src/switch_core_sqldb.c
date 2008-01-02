@@ -309,10 +309,10 @@ static void core_event_handler(switch_event_t *event)
 							 switch_event_get_header(event, "caller-destination-number"),
 							 switch_event_get_header(event, "caller-channel-name"),
 							 switch_event_get_header(event, "caller-unique-id"),
-							 switch_event_get_header(event, "originatee-caller-id-name"),
-							 switch_event_get_header(event, "originatee-caller-id-number"),
-							 switch_event_get_header(event, "originatee-destination-number"),
-							 switch_event_get_header(event, "originatee-channel-name"), switch_event_get_header(event, "originatee-unique-id")
+							 switch_event_get_header(event, "Other-Leg-caller-id-name"),
+							 switch_event_get_header(event, "Other-Leg-caller-id-number"),
+							 switch_event_get_header(event, "Other-Leg-destination-number"),
+							 switch_event_get_header(event, "Other-Leg-channel-name"), switch_event_get_header(event, "Other-Leg-unique-id")
 			);
 		break;
 	case SWITCH_EVENT_CHANNEL_UNBRIDGE:
