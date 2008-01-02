@@ -688,7 +688,7 @@ static void terminate_session(switch_core_session_t **session, int line, switch_
 		tech_pvt = switch_core_session_get_private(*session);
 
 		
-		if (tech_pvt->profile->ip && tech_pvt->local_port) {
+		if (tech_pvt && tech_pvt->profile && tech_pvt->profile->ip && tech_pvt->local_port) {
 			switch_rtp_release_port(tech_pvt->profile->ip, tech_pvt->local_port);
 		}
 
@@ -697,7 +697,7 @@ static void terminate_session(switch_core_session_t **session, int line, switch_
 			return;
 		}
 
-		if (switch_test_flag(tech_pvt, TFLAG_TERM)) {
+		if (!tech_pvt || switch_test_flag(tech_pvt, TFLAG_TERM)) {
 			/*once is enough */
 			return;
 		}
