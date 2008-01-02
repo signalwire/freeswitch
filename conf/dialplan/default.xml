@@ -164,8 +164,7 @@
 	<action application="ivr" data="demo"/>
       </condition>
     </extension>
-    
-    
+
     <!-- 
 	 Parking extensions... transferring calls to 5900 will park them in a queue.
     -->
@@ -178,36 +177,38 @@
     <!-- 
 	 Parking pickup extension.  Calling 5901 will pickup the call.
     -->
-    <extension name="park">
+    <extension name="unpark">
       <condition field="destination_number" expression="^5901$">
-	<action application="fifo" data="5900@$${domain} out undef"/>
+	<action application="fifo" data="5900@$${domain} out nowait"/>
       </condition>
     </extension>
 
     <!--
 	This extension is used with snom phones.  
 	
+	Set a function key to park+lot (lot being a number or name.)
+	Set type to Park+Orbit.  You can then park and pickup using 
+	the softkey on the phone.  Should work with other phones.
     -->
-    <!--
     <extension name="park">
       <condition field="source" expression="mod_sofia" continue="on-true"/>
       <condition field="${sip_refer_to}" expression="park\+(.*)@(.*)>" continue="on-true">
-	<action application="gentones" data="%(1000, 0, 320)"/>
 	<action application="fifo" data="$1@$${domain} in undef $${moh_uri}"/>
       </condition>
     </extension> 
-
+    <!--
+	The extension is parking pickup with a to param of the fifo we are calling 
+	Some phones send things like orbit= and you can extract that info.
+    -->
     <extension name="unpark">
       <condition field="source" expression="mod_sofia" continue="on-true"/>
       <condition field="destination_number" expression="^parking$" continue="on-true"/>
       <condition field="${sip_to_params}" expression="fifo\=(\d+)">
 	<action application="answer"/>
-	<action application="gentones" data="%(1000, 0, 320)"/>
-	<action application="fifo" data="$1@10.0.1.250 out nowait"/>
-	<action application="hangup"/>
+	<action application="fifo" data="$1@$${domain} out undef"/>
       </condition>
     </extension>
-    -->
+
     <extension name="hold_music">
       <condition field="destination_number" expression="^9999$">
 	<action application="answer"/>
