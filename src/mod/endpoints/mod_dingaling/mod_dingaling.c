@@ -1710,7 +1710,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			switch_core_session_set_private(*new_session, tech_pvt);
 			tech_pvt->session = *new_session;
 			tech_pvt->codec_index = -1;
-			if (!(tech_pvt->local_port = switch_rtp_request_port(tech_pvt->profile->ip))) {
+			if (!(tech_pvt->local_port = switch_rtp_request_port(mdl_profile->ip))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No RTP port available!\n");
 				terminate_session(new_session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
