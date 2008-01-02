@@ -1018,13 +1018,6 @@ SWITCH_STANDARD_APP(stop_fax_detect_session_function)
 
 SWITCH_STANDARD_APP(echo_function)
 {
-	switch_channel_t *channel;
-
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
-
-	switch_channel_pre_answer(channel);
-
 	switch_ivr_session_echo(session);
 }
 

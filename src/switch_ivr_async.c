@@ -68,7 +68,6 @@ SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
-	
 
 	switch_channel_pre_answer(channel);
 
@@ -80,7 +79,7 @@ SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session)
 		switch_thread_create(&thread, thd_attr, echo_video_thread, &eh, switch_core_session_get_pool(session));
 	}
 
-	while(switch_channel_ready(channel) && switch_channel_get_state(channel) == CS_LOOPBACK) {
+	while(switch_channel_ready(channel)) {
 		status = switch_core_session_read_frame(session, &read_frame, -1, 0);
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
