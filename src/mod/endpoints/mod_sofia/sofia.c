@@ -50,6 +50,8 @@ extern su_log_t sresolv_log[];
 extern su_log_t stun_log[];
 
 
+static void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_session_t *bleg);
+
 static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									 char const *phrase,
 									 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
@@ -1803,6 +1805,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Attended Transfer [%s][%s]\n", switch_str_nil(br_a), switch_str_nil(br_b));
 
 						if (br_a && br_b) {
+							switch_core_session_t *new_b_session = NULL, *a_session = NULL;
+								
 							switch_ivr_uuid_bridge(br_b, br_a);
 							switch_channel_set_variable(channel_b, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
 							nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
@@ -1810,6 +1814,15 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 							switch_clear_flag_locked(b_tech_pvt, TFLAG_SIP_HOLD);
 							switch_ivr_park_session(b_session);
+							new_b_session = switch_core_session_locate(br_b);
+							a_session = switch_core_session_locate(br_a);
+							sofia_info_send_sipfrag(a_session, new_b_session);
+							if(new_b_session) {
+								switch_core_session_rwunlock(new_b_session);
+							}
+							if(a_session) {
+								switch_core_session_rwunlock(a_session);
+							}
 							//switch_channel_hangup(channel_b, SWITCH_CAUSE_ATTENDED_TRANSFER);
 						} else {
 							if (!br_a && !br_b) {
@@ -2368,6 +2381,14 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		switch_channel_set_variable(channel, "sip_call_id", tech_pvt->call_id);
 	}
 
+	if (!switch_strlen_zero(sip->sip_to->a_tag)) { 
+		switch_channel_set_variable(channel, "sip_to_tag", sip->sip_to->a_tag);
+	}
+
+	if (!switch_strlen_zero(sip->sip_from->a_tag)) { 
+		switch_channel_set_variable(channel, "sip_from_tag", sip->sip_from->a_tag);
+	}
+
 	if (sip->sip_subject && sip->sip_subject->g_string) {
 		switch_channel_set_variable(channel, "sip_subject", sip->sip_subject->g_string);
 	}
@@ -2603,4 +2624,26 @@ void sofia_handle_sip_i_options(int status,
 				NUTAG_WITH_THIS(nua),
 				TAG_END());
 	nua_handle_destroy(nh);
+}
+
+static void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_session_t *bleg)
+{
+	private_object_t *b_tech_pvt = NULL, *a_tech_pvt = NULL;
+	char message[256] = "";
+
+	if (aleg && bleg) {
+		a_tech_pvt = (private_object_t *) switch_core_session_get_private(aleg);
+		b_tech_pvt = (private_object_t *) switch_core_session_get_private(bleg);
+		
+		if (b_tech_pvt && a_tech_pvt && a_tech_pvt->caller_profile) {
+			switch_caller_profile_t *acp = a_tech_pvt->caller_profile;
+
+			if(switch_strlen_zero(acp->caller_id_name)) {
+				snprintf(message, sizeof(message), "From:\r\nTo: %s\r\n", acp->caller_id_number);
+			} else {
+				snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", acp->caller_id_name, acp->caller_id_number);
+			}
+			nua_info(b_tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"), SIPTAG_PAYLOAD_STR(message), TAG_END());
+		}
+	}
 }
