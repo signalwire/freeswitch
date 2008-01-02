@@ -210,7 +210,7 @@ static JSBool teletone_generate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		unsigned char *fdata[1024];
 		switch_frame_t *read_frame;
 		int stream_id;
-		switch_core_thread_session_t thread_session;
+		switch_core_thread_session_t thread_session = { 0 };
 		switch_channel_t *channel;
 
 		if (argc > 1) {
