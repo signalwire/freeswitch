@@ -2381,14 +2381,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		switch_channel_set_variable(channel, "sip_call_id", tech_pvt->call_id);
 	}
 
-	if (!switch_strlen_zero(sip->sip_to->a_tag)) { 
-		switch_channel_set_variable(channel, "sip_to_tag", sip->sip_to->a_tag);
-	}
-
-	if (!switch_strlen_zero(sip->sip_from->a_tag)) { 
-		switch_channel_set_variable(channel, "sip_from_tag", sip->sip_from->a_tag);
-	}
-
 	if (sip->sip_subject && sip->sip_subject->g_string) {
 		switch_channel_set_variable(channel, "sip_subject", sip->sip_subject->g_string);
 	}
