@@ -2028,7 +2028,7 @@ SWITCH_STANDARD_API(uuid_dump_function)
 					}
 					
 					switch_assert(buf);
-					stream->write_function(stream, buf);
+					stream->raw_write_function(stream, (unsigned char *)buf, strlen(buf));
 					switch_event_destroy(&event);
 					free(buf);
 				} else {

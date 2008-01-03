@@ -98,6 +98,7 @@
     </extension>
 
     <extension name="extension-intercom">
+      <condition field="${sip_to_params}" expression="intercom\=true" continue="on-true"/>
       <condition field="destination_number" expression="^8(10[01][0-9])$">
 	<action application="set" data="dialed_ext=$1"/>
 	<action application="export" data="sip_h_Call-Info=<sip:$${domain}>;answer-after=0"/>
@@ -166,7 +167,7 @@
     </extension>
 
     <extension name="rtp_multicast_page">
-      <condition field="destination_number" expression="^pagegroup$">
+      <condition field="destination_number" expression="^pagegroup$|^7243">
 	<action application="esf_page_group"/>
       </condition>
     </extension>
@@ -212,6 +213,13 @@
       <condition field="${sip_to_params}" expression="fifo\=(\d+)">
 	<action application="answer"/>
 	<action application="fifo" data="$1@$${domain} out undef"/>
+      </condition>
+    </extension>
+
+    <extension name="milliwatt">
+      <condition field="destination_number" expression="^9997$">
+	<action application="answer"/>
+	<action application="playback" data="tone_stream://%(10000,0,1004);loops=-1"/>
       </condition>
     </extension>
 

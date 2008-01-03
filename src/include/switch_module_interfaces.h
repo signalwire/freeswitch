@@ -195,6 +195,8 @@ struct switch_timer {
 	switch_memory_pool_t *memory_pool;
 	/*! private data for loadable modules to store information */
 	void *private_info;
+	/*! remaining time from last call to _check()*/
+	switch_size_t diff;
 };
 
 typedef enum {

@@ -98,9 +98,10 @@ SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session)
 typedef struct {
 	switch_file_handle_t fh;
 	int mux;
+	int loop;
 } displace_helper_t;
 
-static switch_bool_t displace_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
 	displace_helper_t *dh = (displace_helper_t *) user_data;
 	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
@@ -154,10 +155,89 @@ static switch_bool_t displace_callback(switch_media_bug_t *bug, void *user_data,
 			}
 
 			if (st != SWITCH_STATUS_SUCCESS || len == 0) {
-				return SWITCH_FALSE;
+				if (dh->loop) {
+					uint32_t pos = 0;
+					switch_core_file_seek(&dh->fh, &pos, 0, SEEK_SET);
+				} else {
+					return SWITCH_FALSE;
+				}
 			}
 
 			switch_core_media_bug_set_write_replace_frame(bug, rframe);
+		}
+		break;
+	case SWITCH_ABC_TYPE_WRITE:
+	default:
+		break;
+	}
+
+	return SWITCH_TRUE;
+}
+
+
+
+static switch_bool_t read_displace_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+{
+	displace_helper_t *dh = (displace_helper_t *) user_data;
+	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	switch_frame_t frame = { 0 };
+
+	frame.data = data;
+	frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+
+	switch (type) {
+	case SWITCH_ABC_TYPE_INIT:
+		break;
+	case SWITCH_ABC_TYPE_CLOSE:
+		if (dh) {
+			switch_core_file_close(&dh->fh);
+		}
+		break;
+	case SWITCH_ABC_TYPE_WRITE_REPLACE:
+		{
+			switch_frame_t *rframe = switch_core_media_bug_get_write_replace_frame(bug);
+			if (dh && !dh->mux) {
+				memset(rframe->data, 255, rframe->datalen);
+			}
+			switch_core_media_bug_set_write_replace_frame(bug, rframe);
+		}
+		break;
+	case SWITCH_ABC_TYPE_READ_REPLACE:
+		if (dh) {
+			switch_frame_t *rframe = NULL;
+			switch_size_t len;
+			switch_status_t st;
+			rframe = switch_core_media_bug_get_read_replace_frame(bug);
+			len = rframe->samples;
+
+			if (dh->mux) {
+				int16_t buf[1024];
+				int16_t *fp = rframe->data;
+				uint32_t x;
+
+				st = switch_core_file_read(&dh->fh, buf, &len);
+				
+				for(x = 0; x < (uint32_t) len; x++) {
+					int32_t mixed = fp[x] + buf[x];
+					switch_normalize_to_16bit(mixed);
+					fp[x] = (int16_t) mixed;
+				}
+			} else {
+				st = switch_core_file_read(&dh->fh, rframe->data, &len);
+				rframe->samples = (uint32_t) len;
+				rframe->datalen = rframe->samples * 2;
+			}
+
+			if (st != SWITCH_STATUS_SUCCESS || len == 0) {
+				if (dh->loop) {
+					uint32_t pos = 0;
+					switch_core_file_seek(&dh->fh, &pos, 0, SEEK_SET);
+				} else {
+					return SWITCH_FALSE;
+				}
+			}
+
+			switch_core_media_bug_set_read_replace_frame(bug, rframe);
 		}
 		break;
 	case SWITCH_ABC_TYPE_WRITE:
@@ -184,7 +264,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_displace_session(switch_core_ses
 
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_t *session, char *file, uint32_t limit, const char *flags)
+SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_t *session, const char *file, uint32_t limit, const char *flags)
 {
 	switch_channel_t *channel;
 	switch_codec_t *read_codec;
@@ -206,15 +286,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 		return SWITCH_STATUS_MEMERR;
 	}
 
-
-
+	
 	read_codec = switch_core_session_get_read_codec(session);
 	switch_assert(read_codec != NULL);
 
 	dh->fh.channels = read_codec->implementation->number_of_channels;
 	dh->fh.samplerate = read_codec->implementation->actual_samples_per_second;
-
-
+	
 	if (switch_core_file_open(&dh->fh,
 							  file,
 							  read_codec->implementation->number_of_channels,
@@ -236,7 +314,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 		dh->mux++;
 	}
 
-	if ((status = switch_core_media_bug_add(session, displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
+	if (flags && strchr(flags, 'l')) {
+		dh->loop++;
+	}
+	
+	if (flags && strchr(flags, 'r')) {
+		status = switch_core_media_bug_add(session, read_displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE, &bug);
+	} else {
+		status = switch_core_media_bug_add(session, write_displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE, &bug);
+	}
+	
+	if (status != SWITCH_STATUS_SUCCESS) {
 		switch_core_file_close(&dh->fh);
 		return status;
 	}
@@ -1600,104 +1688,107 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 	switch_core_session_t *other_session = NULL;
 	const char *other_uuid = NULL;
 	char *app = "playback";
+	char *cause = NULL;
+	char *mypath;
+	char *p;
 
 	switch_assert(path);
 
-	if ((session = switch_core_session_locate(uuid))) {
-		char *cause = NULL;
-		char *mypath;
-		char *p;
-
-		master = session;
-
-		channel = switch_core_session_get_channel(session);
-		switch_assert(channel != NULL);
-
-		if ((switch_channel_test_flag(channel, CF_EVENT_PARSE))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Channel [%s] already broadcasting...broadcast aborted\n", 
-							  switch_channel_get_name(channel));
-			switch_core_session_rwunlock(session);
-			return SWITCH_STATUS_FALSE;
-		}
-
-		mypath = strdup(path);
-
-
-		if ((nomedia = switch_channel_test_flag(channel, CF_BYPASS_MEDIA))) {
-			switch_ivr_media(uuid, SMF_REBRIDGE);
-		}
-		
-		if ((p = strchr(mypath, ':')) && *(p+1) == ':') {
-			app = mypath;
-			*p++ = '\0';
-			*p++ = '\0';
-			path = p;
-		}
-
-		if ((cause = strchr(app, '!'))) {
-			*cause++ = '\0';
-			if (!cause) {
-				cause = "normal_clearing";
-			}
-		}
-
-		if ((flags & SMF_ECHO_BLEG) && (other_uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE))
-			&& (other_session = switch_core_session_locate(other_uuid))) {
-			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-name", "%s", app);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-arg", "%s", path);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event-lock", "%s", "true");
-				if ((flags & SMF_LOOP)) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "loops", "%d", -1);
-				}
-				
-				switch_core_session_queue_private_event(other_session, &event);
-			}
-			
-			switch_core_session_rwunlock(other_session);
-			master = other_session;
-			other_session = NULL;
-		}
-
-		if ((flags & SMF_ECHO_ALEG)) {
-			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-name", "%s", app);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-arg", "%s", path);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event-lock", "%s", "true");
-				if ((flags & SMF_LOOP)) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "loops", "%d", -1);
-				}
-				switch_core_session_queue_private_event(session, &event);
-			}
-			master = session;
-		}
-
-		if (nomedia) {
-			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-command", "nomedia");
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "nomedia-uuid", "%s", uuid);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event-lock", "%s", "true");
-				switch_core_session_queue_private_event(master, &event);
-			}
-		}
-
-		if (cause) {
-			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-name", "hangup");
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-arg", "%s", cause);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event-lock", "%s", "true");
-				switch_core_session_queue_private_event(session, &event);
-			}
-		}
-
-		switch_core_session_rwunlock(session);
-		switch_safe_free(mypath);
+	if (!(session = switch_core_session_locate(uuid))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "uuid [%s] does not match an existing session.\n", switch_str_nil(uuid));
+		return SWITCH_STATUS_FALSE;
 	}
+
+	master = session;
+
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel != NULL);
+
+	if ((switch_channel_test_flag(channel, CF_EVENT_PARSE))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Channel [%s] already broadcasting...broadcast aborted\n", 
+						  switch_channel_get_name(channel));
+		switch_core_session_rwunlock(session);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	mypath = strdup(path);
+
+
+	if ((nomedia = switch_channel_test_flag(channel, CF_BYPASS_MEDIA))) {
+		switch_ivr_media(uuid, SMF_REBRIDGE);
+	}
+		
+	if ((p = strchr(mypath, ':')) && *(p+1) == ':') {
+		app = mypath;
+		*p++ = '\0';
+		*p++ = '\0';
+		path = p;
+	}
+
+	if ((cause = strchr(app, '!'))) {
+		*cause++ = '\0';
+		if (!cause) {
+			cause = "normal_clearing";
+		}
+	}
+
+	if ((flags & SMF_ECHO_BLEG) && (other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
+		&& (other_session = switch_core_session_locate(other_uuid))) {
+		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-name", "%s", app);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-arg", "%s", path);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event-lock", "%s", "true");
+			if ((flags & SMF_LOOP)) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "loops", "%d", -1);
+			}
+				
+			switch_core_session_queue_private_event(other_session, &event);
+		}
+			
+		switch_core_session_rwunlock(other_session);
+		master = other_session;
+		other_session = NULL;
+	}
+
+	if ((flags & SMF_ECHO_ALEG)) {
+		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-name", "%s", app);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-arg", "%s", path);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event-lock", "%s", "true");
+			if ((flags & SMF_LOOP)) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "loops", "%d", -1);
+			}
+			switch_core_session_queue_private_event(session, &event);
+		}
+		master = session;
+	}
+
+	if (nomedia) {
+		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-command", "nomedia");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "nomedia-uuid", "%s", uuid);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event-lock", "%s", "true");
+			switch_core_session_queue_private_event(master, &event);
+		}
+	}
+
+	if (cause) {
+		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-name", "hangup");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-arg", "%s", cause);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event-lock", "%s", "true");
+			switch_core_session_queue_private_event(session, &event);
+		}
+	}
+
+	switch_core_session_rwunlock(session);
+	switch_safe_free(mypath);
+	
 
 
 	return SWITCH_STATUS_SUCCESS;

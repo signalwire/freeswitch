@@ -420,7 +420,7 @@ SHELL=${CONFIG_SHELL-/bin/sh}
 
 # Identity of this package.
 PACKAGE_NAME='libedit'
-PACKAGE_TARNAME='libedit-20071219'
+PACKAGE_TARNAME='libedit-20071230'
 PACKAGE_VERSION='2.10'
 PACKAGE_STRING='libedit 2.10'
 PACKAGE_BUGREPORT=''
@@ -1816,7 +1816,7 @@ fi
 
 
 # Define the identity of the package.
- PACKAGE='libedit-20071219'
+ PACKAGE='libedit-20071230'
  VERSION='2.10'
 
 

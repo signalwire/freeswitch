@@ -558,7 +558,7 @@ static switch_status_t conference_add_member(conference_obj_t * conference, conf
 				conference_stop_file(conference, FILE_STOP_ASYNC);
 			}
 			if(conference->enter_sound) {
-				conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 0);
+				conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 1);
 			}
 		}
 
@@ -808,7 +808,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 			/* Lead in time */
 			if (conference->fnode->leadin) {
 				conference->fnode->leadin--;
-			} else {
+			} else if (!conference->fnode->done) {
 				file_sample_len = samples;
 				if (conference->fnode->type == NODE_TYPE_SPEECH) {
 					switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_BLOCKING;
@@ -837,7 +837,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 			/* Lead in time */
 			if (conference->async_fnode->leadin) {
 				conference->async_fnode->leadin--;
-			} else {
+			} else if (!conference->async_fnode->done) {
 				file_sample_len = samples;
 				switch_core_file_read(&conference->async_fnode->fh, async_file_frame, &file_sample_len);
 				if (file_sample_len <= 0) {

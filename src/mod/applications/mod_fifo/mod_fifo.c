@@ -84,6 +84,7 @@ static struct {
     switch_hash_t *fifo_hash;
     switch_mutex_t *mutex;
     switch_memory_pool_t *pool;
+    int running;
 } globals;
 
 
@@ -105,6 +106,10 @@ static fifo_node_t *create_node(const char *name)
 {
     fifo_node_t *node;
 
+    if (!globals.running) {
+        return NULL;
+    }
+
     node = switch_core_alloc(globals.pool, sizeof(*node));
     node->name = switch_core_strdup(globals.pool, name);
 
@@ -121,6 +126,10 @@ static fifo_node_t *create_node(const char *name)
 static void send_presence(fifo_node_t *node)
 {
     switch_event_t *event;
+
+    if (!globals.running) {
+        return;
+    }
 
 	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "%s", "park");
@@ -139,7 +148,6 @@ static void send_presence(fifo_node_t *node)
         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", node->waiting_count > 0 ? "CS_RING" : "CS_HANGUP");
         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", node->name);
         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", node->waiting_count > 0 ? "early" : "terminated");
-        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "astate", "%s", node->waiting_count > 0 ? "early" : "terminated");
         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", "inbound");
 		switch_event_fire(&event);
 	}
@@ -151,6 +159,10 @@ static void pres_event_handler(switch_event_t *event)
 	char *to = switch_event_get_header(event, "to");
 	char *dup_to = NULL, *node_name;
     fifo_node_t *node;
+
+    if (!globals.running) {
+        return;
+    }
     
 	if (!to || strncasecmp(to, "park+", 5)) {
 		return;
@@ -192,7 +204,9 @@ SWITCH_STANDARD_APP(fifo_function)
     switch_time_t ts = switch_timestamp_now();
     switch_size_t retsize;
 
-
+    if (!globals.running) {
+        return;
+    }
 
 
     if (switch_strlen_zero(data)) {
@@ -577,6 +591,11 @@ SWITCH_STANDARD_API(fifo_api_function)
     const void *var;
     int x = 0, verbose = 0;
 
+
+    if (!globals.running) {
+        return SWITCH_STATUS_FALSE;
+    }
+
     if (!switch_strlen_zero(cmd)) {
         data = strdup(cmd);
         switch_assert(data);
@@ -672,6 +691,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_APP(app_interface, "fifo", "Park with FIFO", FIFO_DESC, fifo_function, FIFO_USAGE, SAF_NONE);
     SWITCH_ADD_API(commands_api_interface, "fifo", "Return data about a fifo", fifo_api_function, FIFO_API_SYNTAX);
+    globals.running = 1;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -684,7 +704,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fifo_shutdown)
     switch_hash_index_t *hi;
     void *val, *pop;
     fifo_node_t *node;
+    switch_memory_pool_t *pool = globals.pool;
     switch_mutex_lock(globals.mutex);
+
+    globals.running = 0;
     /* Cleanup*/
     for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
         switch_hash_this(hi, NULL, NULL, &val);
@@ -695,9 +718,11 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fifo_shutdown)
         switch_core_hash_destroy(&node->caller_hash);
         switch_core_hash_destroy(&node->consumer_hash);
     }
-    switch_mutex_unlock(globals.mutex);
     switch_core_hash_destroy(&globals.fifo_hash);
-    switch_core_destroy_memory_pool(&globals.pool);
+    memset(&globals, 0, sizeof(globals));
+    switch_mutex_unlock(globals.mutex);
+    
+    switch_core_destroy_memory_pool(&pool);
 	return SWITCH_STATUS_SUCCESS;
 }
 

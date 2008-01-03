@@ -94,7 +94,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 {
 	switch_io_event_hook_read_frame_t *ptr;
 	switch_status_t status;
-	int need_codec, perfect, do_bugs = 0, do_resample = 0;
+	int need_codec, perfect, do_bugs = 0, do_resample = 0, is_cng = 0;
 	unsigned int flag = 0;
   top:
 
@@ -131,11 +131,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	switch_assert(session != NULL);
 	switch_assert(*frame != NULL);
 
-	
 	if (switch_test_flag(*frame, SFF_CNG)) {
 		status = SWITCH_STATUS_SUCCESS;
-		goto done;
-	}
+		if (!session->bugs) {
+			goto done;
+		}
+		is_cng = 1;
+
+	} 
 
 	switch_assert((*frame)->codec != NULL);
 	if ((session->read_codec && (*frame)->codec && session->read_codec->implementation != (*frame)->codec->implementation)) {
@@ -163,16 +166,25 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	if (status == SWITCH_STATUS_SUCCESS && need_codec) {
 		switch_frame_t *enc_frame, *read_frame = *frame;
 
-		if (read_frame->codec) {
+		if (read_frame->codec || is_cng) {
 			session->raw_read_frame.datalen = session->raw_read_frame.buflen;
-			status = switch_core_codec_decode(read_frame->codec,
-											  session->read_codec,
-											  read_frame->data,
-											  read_frame->datalen,
-											  session->read_codec->implementation->actual_samples_per_second,
-											  session->raw_read_frame.data, &session->raw_read_frame.datalen, &session->raw_read_frame.rate, &flag);
 
-			if (do_resample && status == SWITCH_STATUS_SUCCESS) {
+			if (is_cng) {
+				memset(session->raw_read_frame.data, 255, read_frame->codec->implementation->bytes_per_frame);
+				session->raw_read_frame.datalen = read_frame->codec->implementation->bytes_per_frame;
+				session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t);
+				read_frame = &session->raw_read_frame;
+				status = SWITCH_STATUS_SUCCESS;
+			} else {
+				status = switch_core_codec_decode(read_frame->codec,
+												  session->read_codec,
+												  read_frame->data,
+												  read_frame->datalen,
+												  session->read_codec->implementation->actual_samples_per_second,
+												  session->raw_read_frame.data, &session->raw_read_frame.datalen, &session->raw_read_frame.rate, &flag);
+			}
+
+			if (do_resample && ((status == SWITCH_STATUS_SUCCESS) || is_cng)) {
 				status = SWITCH_STATUS_RESAMPLE;
 			}
 

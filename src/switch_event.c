@@ -506,6 +506,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, c
 			} else {
 				event->headers = hp->next;
 			}
+			if (hp == event->last_header || !hp->next) {
+				event->last_header = lp;
+			}
 			FREE(hp->name);
 			FREE(hp->value);
 			memset(hp, 0, sizeof(*hp));

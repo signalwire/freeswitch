@@ -187,7 +187,7 @@ static switch_status_t timer_check(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_size_t diff;
+
 
 	if (globals.RUNNING != 1 || !private_info->ready) {
 		return SWITCH_STATUS_SUCCESS;
@@ -196,12 +196,12 @@ static switch_status_t timer_check(switch_timer_t *timer)
 	check_roll();
 
 	if (TIMER_MATRIX[timer->interval].tick < private_info->reference) {
-		diff = private_info->reference - TIMER_MATRIX[timer->interval].tick;
+		timer->diff = private_info->reference - TIMER_MATRIX[timer->interval].tick;
 	} else {
-		diff = 0;
+		timer->diff = 0;
 	}
 
-	if (diff) {
+	if (timer->diff) {
 		status = SWITCH_STATUS_FALSE;
 	} else {
 		timer_step(timer);

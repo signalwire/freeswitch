@@ -68,7 +68,7 @@
       <!-- File to play when you're alone (music on hold)-->
       <param name="moh-sound" value="$${moh_uri}"/>
       <!-- File to play when you join the conference -->
-      <!--<param name="enter-sound" value="welcome.wav"/>-->
+      <param name="enter-sound" value="tone_stream://%(1000,0,500)"/>
       <!-- File to play when you leave the conference -->
       <!--<param name="exit-sound" value="exit.wav"/>-->
       <!-- File to play when you ae ejected from the conference -->

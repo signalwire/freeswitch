@@ -1101,12 +1101,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		break;
 
 	do_continue:
-
-		if (rtp_session->ms_per_packet) {
-			switch_yield((rtp_session->ms_per_packet / 1000) * 750);
-		} else {
-			switch_yield(1000);
-		}
+		
+		switch_yield(1000);
 	}
 
 	*payload_type = (switch_payload_t) rtp_session->recv_msg.header.pt;
