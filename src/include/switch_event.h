@@ -90,6 +90,8 @@ struct switch_event {
 	switch_event_subclass_t *subclass;
 	/*! the event headers */
 	switch_event_header_t *headers;
+	/*! the event headers tail pointer */
+	switch_event_header_t *last_header;
 	/*! the body of the event */
 	char *body;
 	/*! user data from the subclass provider */
@@ -173,6 +175,16 @@ SWITCH_DECLARE(char *) switch_event_get_body(switch_event_t *event);
 */
 SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, switch_stack_t stack,
 														const char *header_name, const char *fmt, ...) PRINTF_FUNCTION(4, 5);
+
+/*!
+  \brief Add a string header to an event
+  \param event the event to add the header to
+  \param stack the stack sense (stack it on the top or on the bottom)
+  \param header_name the name of the header to add
+  \param data the value of the header
+  \return SWITCH_STATUS_SUCCESS if the header was added
+*/
+SWITCH_DECLARE(switch_status_t) switch_event_add_header_string(switch_event_t *event, switch_stack_t stack, const char *header_name, const char *data);
 
 SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, const char *header_name);
 
@@ -271,6 +283,17 @@ SWITCH_DECLARE(switch_status_t) switch_event_running(void);
   \note the body parameter can be shadowed by the switch_event_reserve_subclass_detailed function
 */
 SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, const char *fmt, ...) PRINTF_FUNCTION(2, 3);
+
+SWITCH_DECLARE(switch_status_t) switch_event_create_pres_in_detailed(_In_z_ char *file, _In_z_ char *func, _In_ int line, 
+																	 _In_z_ const char *proto, _In_z_ const char *login,
+																	 _In_z_ const char *from, _In_z_ const char *from_domain,
+																	 _In_z_ const char *status, _In_z_ const char *event_type,
+																	 _In_z_ const char *alt_event_type, _In_ int event_count,
+																	 _In_z_ const char *unique_id, _In_z_ const char *channel_state,
+																	 _In_z_ const char *answer_state, _In_z_ const char *call_direction);
+#define switch_event_create_pres_in(event) switch_event_create_pres_in_detailed(__FILE__, (char * )__SWITCH_FUNC__, __LINE__, \
+											proto, login, from, from_domain, status, event_type, alt_event_type, event_count, \
+											unique_id, channel_state, answer_state, call_direction)
 
 
 /*!

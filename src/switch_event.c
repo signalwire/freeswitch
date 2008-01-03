@@ -44,8 +44,6 @@ static switch_mutex_t *EVENT_QUEUE_MUTEX = NULL;
 static switch_mutex_t *EVENT_QUEUE_HAVEMORE_MUTEX = NULL;
 static switch_thread_cond_t *EVENT_QUEUE_CONDITIONAL = NULL;
 static switch_memory_pool_t *RUNTIME_POOL = NULL;
-/* static switch_memory_pool_t *APOOL = NULL; */
-/* static switch_memory_pool_t *BPOOL = NULL; */
 static switch_memory_pool_t *THRUNTIME_POOL = NULL;
 static switch_queue_t *EVENT_QUEUE[3] = { 0, 0, 0 };
 static int POOL_COUNT_MAX = SWITCH_CORE_QUEUE_LEN;
@@ -55,35 +53,6 @@ static int THREAD_RUNNING = 0;
 static int EVENT_QUEUE_HAVEMORE = 0;
 static switch_queue_t *EVENT_RECYCLE_QUEUE = NULL;
 static switch_queue_t *EVENT_HEADER_RECYCLE_QUEUE = NULL;
-#if 0
-static void *locked_alloc(switch_size_t len)
-{
-	void *mem;
-
-	switch_mutex_lock(POOL_LOCK);
-	/* <LOCKED> ----------------------------------------------- */
-	mem = switch_core_alloc(THRUNTIME_POOL, len);
-	switch_mutex_unlock(POOL_LOCK);
-	/* </LOCKED> ---------------------------------------------- */
-
-	return mem;
-}
-
-static void *locked_dup(char *str)
-{
-	char *dup;
-
-	switch_mutex_lock(POOL_LOCK);
-	/* <LOCKED> ----------------------------------------------- */
-	dup = switch_core_strdup(THRUNTIME_POOL, str);
-	switch_mutex_unlock(POOL_LOCK);
-	/* </LOCKED> ---------------------------------------------- */
-
-	return dup;
-}
-#define ALLOC(size) locked_alloc(size)
-#define DUP(str) locked_dup(str)
-#endif
 
 static char *my_dup (const char *s)
 {
@@ -159,11 +128,9 @@ static char *EVENT_NAMES[] = {
 	"ALL"
 };
 
-
 static int switch_events_match(switch_event_t *event, switch_event_node_t *node)
 {
 	int match = 0;
-
 
 	if (node->event_id == SWITCH_EVENT_ALL) {
 		match++;
@@ -225,7 +192,6 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t * thread, vo
 	for (;;) {
 		int any;
 
-
 		len[1] = switch_queue_size(EVENT_QUEUE[SWITCH_PRIORITY_NORMAL]);
 		len[2] = switch_queue_size(EVENT_QUEUE[SWITCH_PRIORITY_LOW]);
 		len[0] = switch_queue_size(EVENT_QUEUE[SWITCH_PRIORITY_HIGH]);
@@ -285,7 +251,6 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t * thread, vo
 		}
 	}
 
-
 	THREAD_RUNNING = 0;
 	return NULL;
 }
@@ -310,7 +275,6 @@ SWITCH_DECLARE(void) switch_event_deliver(switch_event_t **event)
 
 	switch_event_destroy(event);
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_event_running(void)
 {
@@ -339,12 +303,10 @@ SWITCH_DECLARE(switch_status_t) switch_name_event(char *name, switch_event_types
 	}
 
 	return SWITCH_STATUS_FALSE;
-
 }
 
 SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(char *owner, char *subclass_name)
 {
-
 	switch_event_subclass_t *subclass;
 
 	switch_assert(RUNTIME_POOL != NULL);
@@ -378,20 +340,17 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim_events(void)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled event header(s) %d bytes\n", 
 					  size, (int) sizeof(switch_event_header_t) * size);
 
-					  
 	while (switch_queue_trypop(EVENT_HEADER_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
 		free(pop);
 	}
 	while (switch_queue_trypop(EVENT_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
 		free(pop);
 	}
-
 }
 
 SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 {
 	int x = 0, last = 0;
-
 
 	if (THREAD_RUNNING > 0) {
 		THREAD_RUNNING = -1;
@@ -436,8 +395,6 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
-
 SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 {
 	switch_thread_t *thread;
@@ -451,19 +408,6 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	switch_assert(pool != NULL);
 	THRUNTIME_POOL = RUNTIME_POOL = pool;
 
-	/*
-	  if (switch_core_new_memory_pool(&THRUNTIME_POOL) != SWITCH_STATUS_SUCCESS) {
-	  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate memory pool\n");
-	  return SWITCH_STATUS_MEMERR;
-	  }
-	*/
-	/*
-	  if (switch_core_new_memory_pool(&BPOOL) != SWITCH_STATUS_SUCCESS) {
-	  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not allocate memory pool\n");
-	  return SWITCH_STATUS_MEMERR;
-	  }
-	*/
-	/* THRUNTIME_POOL = APOOL; */
 	switch_queue_create(&EVENT_QUEUE[0], POOL_COUNT_MAX + 10, THRUNTIME_POOL);
 	switch_queue_create(&EVENT_QUEUE[1], POOL_COUNT_MAX + 10, THRUNTIME_POOL);
 	switch_queue_create(&EVENT_QUEUE[2], POOL_COUNT_MAX + 10, THRUNTIME_POOL);
@@ -513,7 +457,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass(switch_event_t **ev
 			switch_event_reserve_subclass((char *)subclass_name);
 			(*event)->subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name);
 		}
-		switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Subclass", "%s", subclass_name);
+		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Subclass", subclass_name);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -577,6 +521,42 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, c
 	return status;
 }
 
+static switch_status_t switch_event_base_add_header(switch_event_t *event, switch_stack_t stack, const char *header_name, char *data)
+{
+	switch_event_header_t *header;
+	void *pop;
+
+	if (switch_queue_trypop(EVENT_HEADER_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
+		header = (switch_event_header_t *) pop;
+	} else {
+		header = ALLOC(sizeof(*header));
+		switch_assert(header);
+	}
+
+	memset(header, 0, sizeof(*header));
+
+	header->name = DUP(header_name);
+	header->value = data;
+
+	if (stack == SWITCH_STACK_TOP) {
+		header->next = event->headers;
+		event->headers = header;
+		if (!event->last_header) {
+			event->last_header = header;
+		}
+	} else {
+		if (event->last_header) {
+			event->last_header->next = header;
+		} else {
+			event->headers = header;
+			header->next = NULL;
+		}
+		event->last_header = header;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, switch_stack_t stack, const char *header_name, const char *fmt, ...)
 {
 	int ret = 0;
@@ -589,39 +569,18 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, s
 
 	if (ret == -1) {
 		return SWITCH_STATUS_MEMERR;
-	} else {
-		switch_event_header_t *header, *hp;
-		void *pop;
-
-		if (switch_queue_trypop(EVENT_HEADER_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
-			header = (switch_event_header_t *) pop;
-		} else {
-			header = ALLOC(sizeof(*header));
-			switch_assert(header);
-		}
-
-		memset(header, 0, sizeof(*header));
-
-		header->name = DUP(header_name);
-		header->value = data;
-		if (stack == SWITCH_STACK_TOP) {
-			header->next = event->headers;
-			event->headers = header;
-		} else {
-			for (hp = event->headers; hp && hp->next; hp = hp->next);
-			
-			if (hp) {
-				hp->next = header;
-			} else {
-				event->headers = header;
-				header->next = NULL;
-			}
-		}
-		return SWITCH_STATUS_SUCCESS;
-
 	}
+
+	return switch_event_base_add_header(event, stack, header_name, data);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_event_add_header_string(switch_event_t *event, switch_stack_t stack, const char *header_name, const char *data)
+{
+	if (data) {
+		return switch_event_base_add_header(event, stack, header_name, DUP(data));
+	}
+	return SWITCH_STATUS_GENERR;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, const char *fmt, ...)
 {
@@ -787,7 +746,6 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 
 		switch_snprintf(buf + len, dlen - len, "%s: %s\n", hp->name, switch_strlen_zero(encode_buf) ? "_undef_" : encode_buf);
 		len = strlen(buf);
-
 	}
 
 	/* we are done with the memory we used for encoding, give it back */
@@ -869,7 +827,6 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 		}
 	}
 
-
 	for (hp = event->headers; hp; hp = hp->next) {
 		add_xml_header(xml, hp->name, hp->value, off++);
 	}
@@ -901,10 +858,8 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 	return xml;
 }
 
-
 SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *func, int line, switch_event_t **event, void *user_data)
 {
-
 	switch_time_exp_t tm;
 	char date[80] = "";
 	switch_size_t retsize;
@@ -923,26 +878,25 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Name", "%s", switch_event_name((*event)->event_id));
-	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Core-UUID", "%s", switch_core_get_uuid());
-	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Hostname", "%s", hostname);
-	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv4", "%s", guess_ip_v4);
-	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv6", "%s", guess_ip_v6);
-
+	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Name", switch_event_name((*event)->event_id));
+	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Core-UUID", switch_core_get_uuid());
+	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Hostname", hostname);
+	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv4", guess_ip_v4);
+	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv6", guess_ip_v6);
 
 	switch_time_exp_lt(&tm, ts);
 	switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
-	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Date-Local", "%s", date);
+	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Date-Local", date);
 	switch_rfc822_date(date, ts);
-	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Date-GMT", "%s", date);
+	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Date-GMT", date);
 	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Date-timestamp", "%"SWITCH_UINT64_T_FMT, (uint64_t)ts);
-	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Calling-File", "%s", switch_cut_path(file));
-	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Calling-Function", "%s", func);
+	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Calling-File", switch_cut_path(file));
+	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Calling-Function", func);
 	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Calling-Line-Number", "%d", line);
 
 	if ((*event)->subclass) {
-		switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Subclass", "%s", (*event)->subclass->name);
-		switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Subclass-Owner", "%s", (*event)->subclass->owner);
+		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Subclass", (*event)->subclass->name);
+		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Subclass-Owner", (*event)->subclass->owner);
 	}
 
 	if (user_data) {
@@ -974,7 +928,6 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
 		/* variable updated, give up the mutex */
 		switch_mutex_unlock(EVENT_QUEUE_HAVEMORE_MUTEX);
 	}
-
 
 	*event = NULL;
 
@@ -1020,6 +973,34 @@ SWITCH_DECLARE(switch_status_t) switch_event_bind(const char *id, switch_event_t
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	return SWITCH_STATUS_MEMERR;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_event_create_pres_in_detailed(char *file, char *func, int line, 
+																	 const char *proto, const char *login,
+																	 const char *from, const char *from_domain,
+																	 const char *status, const char *event_type, 
+																	 const char *alt_event_type, int event_count,
+																	 const char *unique_id, const char *channel_state,
+																	 const char *answer_state, const char *call_direction)
+{
+    switch_event_t *pres_event;
+
+	if (switch_event_create_subclass(&pres_event, SWITCH_EVENT_PRESENCE_IN, SWITCH_EVENT_SUBCLASS_ANY) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "proto", proto);
+		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "login", login);
+		switch_event_add_header(pres_event, SWITCH_STACK_TOP, "from", "%s@%s", from, from_domain);
+		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "status", status);
+		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "event_type", event_type);
+		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "alt_event_type", alt_event_type);
+		switch_event_add_header(pres_event, SWITCH_STACK_TOP, "event_count", "%d", event_count);
+		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "unique-id", alt_event_type);
+		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "channel-state", channel_state);
+		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "answer-state", answer_state);
+		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "call-direction", call_direction);
+		switch_event_fire_detailed(file, func, line, &pres_event, NULL);
+		return SWITCH_STATUS_SUCCESS;
+	}
 	return SWITCH_STATUS_MEMERR;
 }
 
