@@ -105,7 +105,7 @@ static char *my_dup (const char *s)
 #endif
 
 /* make sure this is synced with the switch_event_types_t enum in switch_types.h
-also never put any new ones before EVENT_ALL
+   also never put any new ones before EVENT_ALL
 */
 static char *EVENT_NAMES[] = {
 	"CUSTOM",
@@ -452,17 +452,17 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	THRUNTIME_POOL = RUNTIME_POOL = pool;
 
 	/*
-	if (switch_core_new_memory_pool(&THRUNTIME_POOL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate memory pool\n");
-		return SWITCH_STATUS_MEMERR;
-	}
+	  if (switch_core_new_memory_pool(&THRUNTIME_POOL) != SWITCH_STATUS_SUCCESS) {
+	  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate memory pool\n");
+	  return SWITCH_STATUS_MEMERR;
+	  }
 	*/
 	/*
-	   if (switch_core_new_memory_pool(&BPOOL) != SWITCH_STATUS_SUCCESS) {
-	   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not allocate memory pool\n");
-	   return SWITCH_STATUS_MEMERR;
-	   }
-	 */
+	  if (switch_core_new_memory_pool(&BPOOL) != SWITCH_STATUS_SUCCESS) {
+	  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not allocate memory pool\n");
+	  return SWITCH_STATUS_MEMERR;
+	  }
+	*/
 	/* THRUNTIME_POOL = APOOL; */
 	switch_queue_create(&EVENT_QUEUE[0], POOL_COUNT_MAX + 10, THRUNTIME_POOL);
 	switch_queue_create(&EVENT_QUEUE[1], POOL_COUNT_MAX + 10, THRUNTIME_POOL);
