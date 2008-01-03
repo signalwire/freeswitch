@@ -1283,7 +1283,6 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		}
 
 		if ((status == 180 || status == 183 || status == 200)) {
-			switch_channel_t *channel = switch_core_session_get_channel(session);
 			const char *astate = "early";
 			url_t *from = NULL, *to = NULL, *contact = NULL;
 
