@@ -9,6 +9,7 @@ applications/mod_fifo
 applications/mod_voicemail
 applications/mod_limit
 applications/mod_expr
+applications/mod_esf
 #applications/mod_soundtouch
 #applications/mod_rss
 #asr_tts/mod_cepstral
