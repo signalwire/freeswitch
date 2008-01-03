@@ -761,7 +761,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	switch_assert(tech_pvt != NULL);
 
 	switch (msg->message_id) {
-	case SWITCH_MESSAGE_INDICATE_REJECT:
+	case SWITCH_MESSAGE_INDICATE_RESPOND:
 		{
 			if (tech_pvt->iax_session) {
 				iax_reject(tech_pvt->iax_session, msg->string_arg ? msg->string_arg : "Call Rejected");

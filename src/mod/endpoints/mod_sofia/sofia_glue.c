@@ -836,6 +836,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	}
 
 	nua_invite(tech_pvt->nh,
+			   NUTAG_AUTOANSWER(0),
 			   NUTAG_SESSION_TIMER(session_timeout),
 			   TAG_IF(!switch_strlen_zero(tech_pvt->rpid), SIPTAG_HEADER_STR(tech_pvt->rpid)),
 			   TAG_IF(!switch_strlen_zero(alert_info), SIPTAG_HEADER_STR(alert_info)),
@@ -1068,6 +1069,10 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 	switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
 	switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
 	tech_pvt->fmtp_out = switch_core_session_strdup(tech_pvt->session, tech_pvt->write_codec.fmtp_out);
+
+	if (switch_rtp_ready(tech_pvt->rtp_session)) {
+		switch_rtp_set_default_payload(tech_pvt->rtp_session, tech_pvt->pt);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1428,20 +1433,39 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 			
 		greed:
 			x = 0;
+
+			//xxxxxx
+			if (tech_pvt->rm_encoding) {
+				for (map = m->m_rtpmaps; map; map = map->rm_next) {
+					if (map->rm_pt < 96) {
+						match = (map->rm_pt == tech_pvt->pt) ? 1 : 0;
+					} else {
+						match = strcasecmp(switch_str_nil(map->rm_encoding), tech_pvt->iananame) ? 0 : 1;
+					}
+				
+					if (match) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Our existing codec is still good, let's keep it\n");
+						goto end;
+					}
+				}
+			}
+
+
+
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 				int32_t i;
 				const switch_codec_implementation_t *mimp = NULL, *near_match = NULL;
 				const char *rm_encoding;
 				
 				if (x++ < skip) {
-					printf("skip %s\n", map->rm_encoding);
+					//printf("skip %s\n", map->rm_encoding);
 					continue;
 				}
 
 				if (!(rm_encoding = map->rm_encoding)) {
 					rm_encoding = "";
 				}
-
+				
 				if (!te && !strcasecmp(rm_encoding, "telephone-event")) {
 					te = tech_pvt->te = (switch_payload_t) map->rm_pt;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set 2833 dtmf payload to %u\n", te);
@@ -1631,6 +1655,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 			}
 		}
 	}
+
+ end:
 
 	switch_set_flag_locked(tech_pvt, TFLAG_SDP);
 

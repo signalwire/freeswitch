@@ -436,27 +436,27 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created agent for %s\n", profile->name);
 
 	nua_set_params(profile->nua,
-					NUTAG_APPL_METHOD("OPTIONS"),
-					NUTAG_APPL_METHOD("NOTIFY"),
-					NUTAG_APPL_METHOD("INFO"),
-					NUTAG_AUTOANSWER(0),
-					NUTAG_AUTOALERT(0),
-					NUTAG_ALLOW("REGISTER"),
-					NUTAG_ALLOW("REFER"),
-					NUTAG_ALLOW("INFO"),
-					NUTAG_ALLOW("NOTIFY"),
-					NUTAG_ALLOW_EVENTS("talk"),
-					NUTAG_SESSION_TIMER(profile->session_timeout),
-					NTATAG_MAX_PROCEEDING(profile->max_proceeding),
-					TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("PUBLISH")),
-					TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("SUBSCRIBE")),
-					TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ENABLEMESSAGE(1)),
-					TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence")),
-					TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("dialog")),
-					TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("call-info")),
-					TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence.winfo")),
-					TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("message-summary")),
-					SIPTAG_SUPPORTED_STR("100rel, precondition, timer"), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
+				   NUTAG_APPL_METHOD("OPTIONS"),
+				   NUTAG_APPL_METHOD("NOTIFY"),
+				   NUTAG_APPL_METHOD("INFO"),
+				   NUTAG_AUTOANSWER(0),
+				   NUTAG_AUTOALERT(0),
+				   NUTAG_ALLOW("REGISTER"),
+				   NUTAG_ALLOW("REFER"),
+				   NUTAG_ALLOW("INFO"),
+				   NUTAG_ALLOW("NOTIFY"),
+				   NUTAG_ALLOW_EVENTS("talk"),
+				   NUTAG_SESSION_TIMER(profile->session_timeout),
+				   NTATAG_MAX_PROCEEDING(profile->max_proceeding),
+				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("PUBLISH")),
+				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("SUBSCRIBE")),
+				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ENABLEMESSAGE(1)),
+				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence")),
+				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("dialog")),
+				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("call-info")),
+				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence.winfo")),
+				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("message-summary")),
+				   SIPTAG_SUPPORTED_STR("100rel, precondition, timer"), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set params for %s\n", profile->name);
 
@@ -1260,79 +1260,102 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 {
 
 
-	if (sip && session && (status == 180 || status == 183 || status == 200)) {
+	if (sip && session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
-		const char *astate = "early";
-		url_t *from = NULL, *to = NULL, *contact = NULL;
+		const char *uuid;
+		switch_core_session_t *other_session;
+		
+		if (switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
+			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+				switch_core_session_message_t msg;
 
-		if (sip->sip_to) {
-			to = sip->sip_to->a_url;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n", status, phrase);
+
+				msg.message_id = SWITCH_MESSAGE_INDICATE_RESPOND;
+				msg.from = __FILE__;
+				msg.numeric_arg = status;
+				msg.string_arg = phrase;
+				switch_core_session_receive_message(other_session, &msg);
+				switch_core_session_rwunlock(other_session);
+			}
+			
+			return;
 		}
-		if (sip->sip_from) {
-			from = sip->sip_from->a_url;
-		}
-		if (sip->sip_contact) {
-			contact = sip->sip_contact->m_url;
-		}
 
-		if (status == 200) {
-			astate = "confirmed";
-		}
+		if ((status == 180 || status == 183 || status == 200)) {
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			const char *astate = "early";
+			url_t *from = NULL, *to = NULL, *contact = NULL;
 
-		if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED) && 
-			!switch_channel_test_flag(channel, CF_RING_READY)) {
-			const char *from_user = "", *from_host = "", *to_user = "", *to_host = "", *contact_user = "", *contact_host = "";
-			const char *user_agent = "", *call_id = "";
-			char *sql = NULL;
-
-			if (sip->sip_user_agent) {
-				user_agent = switch_str_nil(sip->sip_user_agent->g_string);
+			if (sip->sip_to) {
+				to = sip->sip_to->a_url;
+			}
+			if (sip->sip_from) {
+				from = sip->sip_from->a_url;
+			}
+			if (sip->sip_contact) {
+				contact = sip->sip_contact->m_url;
 			}
 
-			if (sip->sip_call_id) {
-				call_id = switch_str_nil(sip->sip_call_id->i_id);
+			if (status == 200) {
+				astate = "confirmed";
 			}
 
-			if (to) {
-				from_user = switch_str_nil(to->url_user);
+			if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED) && 
+				!switch_channel_test_flag(channel, CF_RING_READY)) {
+				const char *from_user = "", *from_host = "", *to_user = "", *to_host = "", *contact_user = "", *contact_host = "";
+				const char *user_agent = "", *call_id = "";
+				char *sql = NULL;
+
+				if (sip->sip_user_agent) {
+					user_agent = switch_str_nil(sip->sip_user_agent->g_string);
+				}
+
+				if (sip->sip_call_id) {
+					call_id = switch_str_nil(sip->sip_call_id->i_id);
+				}
+
+				if (to) {
+					from_user = switch_str_nil(to->url_user);
+				}
+
+				if (from) {
+					from_host = switch_str_nil(from->url_host);
+					to_user = switch_str_nil(from->url_user);
+					to_host = switch_str_nil(from->url_host);
+				}
+
+				if (contact) {
+					contact_user = switch_str_nil(contact->url_user);
+					contact_host = switch_str_nil(contact->url_host);
+				}
+
+				sql = switch_mprintf(
+									 "insert into sip_dialogs values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
+									 call_id,
+									 switch_core_session_get_uuid(session),
+									 to_user,
+									 to_host,
+									 from_user,
+									 from_host,
+									 contact_user,
+									 contact_host,
+									 astate,
+									 "outbound",
+									 user_agent
+									 );
+
+				switch_assert(sql);
+
+				sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
+				free(sql);
+			} else if (status == 200) { 
+				char *sql = NULL;
+				sql = switch_mprintf("update sip_dialogs set state='%s' where uuid='%s';\n", astate, switch_core_session_get_uuid(session));
+				switch_assert(sql); 
+				sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex); 
+				free(sql);
 			}
-
-			if (from) {
-				from_host = switch_str_nil(from->url_host);
-				to_user = switch_str_nil(from->url_user);
-				to_host = switch_str_nil(from->url_host);
-			}
-
-			if (contact) {
-				contact_user = switch_str_nil(contact->url_user);
-				contact_host = switch_str_nil(contact->url_host);
-			}
-
-			sql = switch_mprintf(
-								 "insert into sip_dialogs values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
-								 call_id,
-								 switch_core_session_get_uuid(session),
-								 to_user,
-								 to_host,
-								 from_user,
-								 from_host,
-								 contact_user,
-								 contact_host,
-								 astate,
-								 "outbound",
-								 user_agent
-								 );
-
-			switch_assert(sql);
-
-			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
-			free(sql);
-		} else if (status == 200) { 
-			char *sql = NULL;
-			sql = switch_mprintf("update sip_dialogs set state='%s' where uuid='%s';\n", astate, switch_core_session_get_uuid(session));
-			switch_assert(sql); 
-			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex); 
-			free(sql);
 		}
 	}
 }
@@ -1390,6 +1413,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		}
 	}
 
+ state_process:
+	
 	switch ((enum nua_callstate) ss_state) {
 	case nua_callstate_init:
 		break;
@@ -1537,6 +1562,10 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					goto done;
 				}
 			}
+
+		} else {
+			ss_state = nua_callstate_completed;
+			goto state_process;
 		}
 
 		break;
@@ -1589,6 +1618,14 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					}
 				}
+
+
+				nua_respond(tech_pvt->nh, SIP_200_OK,
+							SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+							SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+							SOATAG_AUDIO_AUX("cn telephone-event"),
+							NUTAG_INCLUDE_EXTRA_SDP(1),
+							TAG_END());
 			}
 		}
 		break;

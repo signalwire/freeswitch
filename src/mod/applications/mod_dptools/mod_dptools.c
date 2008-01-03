@@ -416,14 +416,14 @@ SWITCH_STANDARD_APP(redirect_function)
 
 }
 
-SWITCH_STANDARD_APP(reject_function)
+SWITCH_STANDARD_APP(respond_function)
 {
 	switch_core_session_message_t msg = { 0 };
 
-	/* Tell the channel to reject the call */
+	/* Tell the channel to respond the call */
 	msg.from = __FILE__;
 	msg.string_arg = data;
-	msg.message_id = SWITCH_MESSAGE_INDICATE_REJECT;
+	msg.message_id = SWITCH_MESSAGE_INDICATE_RESPOND;
 	switch_core_session_receive_message(session, &msg);
 
 }
@@ -1631,7 +1631,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "detect_speech", "Detect speech", "Detect speech on a channel.", detect_speech_function, DETECT_SPEECH_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "ivr", "Run an ivr menu", "Run an ivr menu.", ivr_application_function, "<menu_name>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "redirect", "Send session redirect", "Send a redirect message to a session.", redirect_function, "<redirect_data>", SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_APP(app_interface, "reject", "Send session reject", "Send a reject message to a session.", reject_function, "<reject_data>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "respond", "Send session respond", "Send a respond message to a session.", respond_function, "<respond_data>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "reject", "Send session reject (depricated)", "Send a respond message to a session.", respond_function, "<respond_data>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "queue_dtmf", "Queue dtmf to be sent", "Queue dtmf to be sent from a session", queue_dtmf_function, "<dtmf_data>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "sched_hangup", SCHED_HANGUP_DESCR, SCHED_HANGUP_DESCR, sched_hangup_function, "[+]<time> [<cause>]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "sched_broadcast", SCHED_BROADCAST_DESCR, SCHED_BROADCAST_DESCR, sched_broadcast_function, "[+]<time> <path> [aleg|bleg|both]", SAF_SUPPORT_NOMEDIA);

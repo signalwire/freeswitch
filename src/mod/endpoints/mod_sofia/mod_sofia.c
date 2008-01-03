@@ -415,6 +415,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	}
 
 	nua_respond(tech_pvt->nh, SIP_200_OK,
+				NUTAG_AUTOANSWER(0),
 				NUTAG_SESSION_TIMER(session_timeout),
 				SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 				SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
@@ -932,46 +933,45 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			nua_respond(tech_pvt->nh, SIP_302_MOVED_TEMPORARILY, SIPTAG_CONTACT_STR(msg->string_arg), TAG_END());
 		}
 		break;
-	case SWITCH_MESSAGE_INDICATE_REJECT:
-		if (msg->string_arg) {
-			int code = 0;
-			char *reason = NULL;
-			
-			if (switch_channel_test_flag(channel, CF_ANSWERED)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call is already answered, Rejecting with hangup\n");
-				switch_channel_hangup(channel, SWITCH_CAUSE_CALL_REJECTED);
-			} else {
+	case SWITCH_MESSAGE_INDICATE_RESPOND:
+		if (msg->numeric_arg || msg->string_arg) {
+			int code = msg->numeric_arg;
+			const char *reason = NULL;
 
+			if (code) {
+				reason = msg->string_arg;
+			} else {
 				if (!switch_strlen_zero(msg->string_arg)){
 					code = atoi(msg->string_arg);
 					if ((reason = strchr(msg->string_arg, ' '))) {
 						reason++;
-					}			
-				}
-
-				if (!reason && code != 407) {
-					reason = "Call Refused";
-				}
-
-				if (!(code > 400 && code < 700)) {
-					code = 488;
-				}
-
-				if (code == 407) {
-					const char *to_uri = switch_channel_get_variable(channel, "sip_to_uri");
-					const char *to_host = reason;
-					
-					if (switch_strlen_zero(to_host)) {
-						to_host = switch_channel_get_variable(channel, "sip_to_host");
 					}
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Challenging call %s\n", to_uri);
-					sofia_reg_auth_challange(NULL, tech_pvt->profile, tech_pvt->nh, REG_INVITE, to_host, 0); 
-					switch_channel_hangup(channel, SWITCH_CAUSE_USER_CHALLENGE);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Rejecting with %d %s\n", code, reason);
-					nua_respond(tech_pvt->nh, code, reason, TAG_END());
 				}
 			}
+
+			if (!reason && code != 407) {
+				reason = "Call Refused";
+			}
+
+			if (!(code > 400 && code < 700)) {
+				code = 488;
+			}
+
+			if (code == 407) {
+				const char *to_uri = switch_channel_get_variable(channel, "sip_to_uri");
+				const char *to_host = reason;
+					
+				if (switch_strlen_zero(to_host)) {
+					to_host = switch_channel_get_variable(channel, "sip_to_host");
+				}
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Challenging call %s\n", to_uri);
+				sofia_reg_auth_challange(NULL, tech_pvt->profile, tech_pvt->nh, REG_INVITE, to_host, 0); 
+				switch_channel_hangup(channel, SWITCH_CAUSE_USER_CHALLENGE);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Rejecting with %d %s\n", code, reason);
+				nua_respond(tech_pvt->nh, code, reason, TAG_END());
+			}
+			
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_RINGING:
@@ -1023,6 +1023,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				switch_channel_mark_pre_answered(channel);
 				nua_respond(tech_pvt->nh,
 							SIP_183_SESSION_PROGRESS,
+							NUTAG_AUTOANSWER(0),
 							SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 							SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), SOATAG_AUDIO_AUX("cn telephone-event"), TAG_END());
 			}
