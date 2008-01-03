@@ -238,7 +238,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_esf_load)
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	SWITCH_ADD_APP(app_interface, "esf_ls_page_group", NULL, NULL, bcast_function, NULL, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "esf_page_group", NULL, NULL, bcast_function, NULL, SAF_NONE);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
