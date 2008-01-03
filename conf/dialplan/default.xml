@@ -2,6 +2,14 @@
 <!-- http://wiki.freeswitch.org/wiki/Dialplan_XML -->
 <include>
   <context name="default">
+
+    <extension name="unloop">
+      <condition field="${unroll_loops}" expression="^true$" continue="on-true"/>
+      <condition field="${sip_looped_call}" expression="^true$">
+	<action application="deflect" data="${destination_number}"/>
+      </condition>
+    </extension>
+
     <extension name="intercept">
       <condition field="destination_number" expression="^886$">
 	<action application="answer"/>
@@ -35,8 +43,10 @@
       <condition field="${numbering_plan}" expression="^$" break="never">
 	<action application="set_user" data="default@${domain}"/>
       </condition>
-      <condition>
+      <condition field="${call_debug}" expression="^true$" break="never">
 	<action application="info"/>
+      </condition>
+      <condition>
 	<action application="db" data="insert/spymap/${caller_id_number}/${uuid}"/>
 	<action application="db" data="insert/last_dial/${caller_id_number}/${destination_number}"/>
 	<action application="db" data="insert/last_dial/global/${uuid}"/>

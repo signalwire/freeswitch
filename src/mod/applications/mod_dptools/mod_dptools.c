@@ -428,6 +428,18 @@ SWITCH_STANDARD_APP(respond_function)
 
 }
 
+SWITCH_STANDARD_APP(deflect_function)
+{
+	switch_core_session_message_t msg = { 0 };
+
+	/* Tell the channel to respond the call */
+	msg.from = __FILE__;
+	msg.string_arg = data;
+	msg.message_id = SWITCH_MESSAGE_INDICATE_DEFLECT;
+	switch_core_session_receive_message(session, &msg);
+
+}
+
 
 SWITCH_STANDARD_APP(set_function)
 {
@@ -1398,8 +1410,9 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 			}
 
 		}
-
-		switch_channel_hangup(caller_channel, cause);
+		if (!switch_channel_test_flag(caller_channel, CF_TRANSFER) && switch_channel_get_state(caller_channel) != CS_RING) {
+			switch_channel_hangup(caller_channel, cause);
+		}
 		return;
 	} else {
 		if (no_media_bridge) {
@@ -1632,6 +1645,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "ivr", "Run an ivr menu", "Run an ivr menu.", ivr_application_function, "<menu_name>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "redirect", "Send session redirect", "Send a redirect message to a session.", redirect_function, "<redirect_data>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "respond", "Send session respond", "Send a respond message to a session.", respond_function, "<respond_data>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "deflect", "Send call deflect", "Send a call deflect.", deflect_function, "<deflect_data>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "reject", "Send session reject (depricated)", "Send a respond message to a session.", respond_function, "<respond_data>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "queue_dtmf", "Queue dtmf to be sent", "Queue dtmf to be sent from a session", queue_dtmf_function, "<dtmf_data>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "sched_hangup", SCHED_HANGUP_DESCR, SCHED_HANGUP_DESCR, sched_hangup_function, "[+]<time> [<cause>]", SAF_SUPPORT_NOMEDIA);

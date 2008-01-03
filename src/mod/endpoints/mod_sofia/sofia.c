@@ -2241,7 +2241,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	switch_event_t *v_event = NULL;
 	uint32_t sess_count = switch_core_session_count();
 	uint32_t sess_max = switch_core_session_limit(0);
-	int is_auth = 0;
+	int is_auth = 0, calling_myself = 0;
 	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
 	
 	if (sess_count >= sess_max) {
@@ -2261,12 +2261,19 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		return;
 	}
 	
+
+	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
+
 	if ((profile->pflags & PFLAG_AUTH_CALLS) || sip->sip_proxy_authorization || sip->sip_authorization) {
-		if (sofia_reg_handle_register(nua, profile, nh, sip, REG_INVITE, key, sizeof(key), &v_event)) {
-			if (v_event) {
-				switch_event_destroy(&v_event);
+		if (strcmp(network_ip, profile->sipip)) {
+			if (sofia_reg_handle_register(nua, profile, nh, sip, REG_INVITE, key, sizeof(key), &v_event)) {
+				if (v_event) {
+					switch_event_destroy(&v_event);
+				}
+				return;
 			}
-			return;
+		} else {
+			calling_myself++;
 		}
 		is_auth++;
 	}
@@ -2288,11 +2295,14 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		tech_pvt->key = switch_core_session_strdup(session, key);
 	}
 
-	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
-
 	channel = switch_core_session_get_channel(session);
+
 	if (is_auth) {
 		switch_channel_set_variable(channel, "sip_authorized", "true");
+	}
+
+	if (calling_myself) {
+		switch_channel_set_variable(channel, "sip_looped_call", "true");
 	}
 
 	if (v_event) {

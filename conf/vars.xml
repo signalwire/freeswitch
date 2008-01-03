@@ -41,15 +41,14 @@
        Used by: sofia.conf.xml dingaling.conf.xml
   -->
   <X-PRE-PROCESS cmd="set" data="external_sip_ip=stun:stun.fwdnet.net"/>
-  <!-- server_name
-       A public ip address or DNS name that is used when advertising conference
-       presence or registering sip.
-       Used by: conference.conf.xml
+  <!-- unroll-loops
+       Used to turn on sip loopback unrolling.
   --> 
+  <X-PRE-PROCESS cmd="set" data="unroll_loops=true"/>
   <!-- outbound_caller_id and outbound_caller_name
        The caller ID telephone number we should use when calling out.
        Used by: conference.conf.xml
   -->
   <X-PRE-PROCESS cmd="set" data="outbound_caller_name=FreeSWITCH"/>
   <X-PRE-PROCESS cmd="set" data="outbound_caller_id=8777423583"/>
-
+  <X-PRE-PROCESS cmd="set" data="call_debug=false"/>

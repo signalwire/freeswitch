@@ -914,6 +914,21 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			nua_respond(tech_pvt->nh, SIP_302_MOVED_TEMPORARILY, SIPTAG_CONTACT_STR(msg->string_arg), TAG_END());
 		}
 		break;
+
+	case SWITCH_MESSAGE_INDICATE_DEFLECT:
+		{
+			char ref_to[128] = "";
+
+			if (!strstr(msg->string_arg, "sip:")) {
+				switch_snprintf(ref_to, sizeof(ref_to), "sip:%s@%s", msg->string_arg, tech_pvt->profile->sipip);
+			} else {
+				switch_set_string(ref_to, msg->string_arg);
+			}
+
+			nua_refer(tech_pvt->nh, SIPTAG_REFER_TO_STR(ref_to), SIPTAG_REFERRED_BY_STR(tech_pvt->contact_url), TAG_END());
+		}
+		break;
+
 	case SWITCH_MESSAGE_INDICATE_RESPOND:
 		if (msg->numeric_arg || msg->string_arg) {
 			int code = msg->numeric_arg;
