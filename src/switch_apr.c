@@ -233,7 +233,7 @@ SWITCH_DECLARE(switch_status_t) switch_mutex_trylock(switch_mutex_t * lock)
 
 SWITCH_DECLARE(switch_time_t) switch_time_now(void)
 {
-#ifdef HAVE_CLOCK_GETTIME
+#if defined(HAVE_CLOCK_GETTIME) && defined(SWITCH_USE_CLOCK_FUNCS)
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME,&ts);
 	return ts.tv_sec * APR_USEC_PER_SEC + (ts.tv_nsec/1000);

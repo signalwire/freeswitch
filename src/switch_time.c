@@ -82,8 +82,8 @@ static timer_matrix_t TIMER_MATRIX[MAX_ELEMENTS + 1];
 
 SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 {
-	
-#if defined(HAVE_CLOCK_NANOSLEEP)
+
+#if defined(HAVE_CLOCK_NANOSLEEP) && defined(SWITCH_USE_CLOCK_FUNCS)	
 	struct timespec ts;
 	ts.tv_sec = t / APR_USEC_PER_SEC;
 	ts.tv_nsec = (t % APR_USEC_PER_SEC) * 1000;
