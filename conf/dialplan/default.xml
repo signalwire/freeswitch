@@ -165,6 +165,12 @@
       </condition>
     </extension>
 
+    <extension name="rtp_multicast_page">
+      <condition field="destination_number" expression="^pagegroup$">
+	<action application="esf_page_group"/>
+      </condition>
+    </extension>
+
     <!-- 
 	 Parking extensions... transferring calls to 5900 will park them in a queue.
     -->
