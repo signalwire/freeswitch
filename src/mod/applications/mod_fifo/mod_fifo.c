@@ -705,8 +705,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fifo_shutdown)
     void *val, *pop;
     fifo_node_t *node;
     switch_memory_pool_t *pool = globals.pool;
-    switch_mutex_lock(globals.mutex);
+    switch_mutex_t *mutex = globals.mutex;
 
+    switch_mutex_lock(mutex);
+    
     globals.running = 0;
     /* Cleanup*/
     for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
@@ -719,9 +721,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fifo_shutdown)
         switch_core_hash_destroy(&node->consumer_hash);
     }
     switch_core_hash_destroy(&globals.fifo_hash);
-    memset(&globals, 0, sizeof(globals));
-    switch_mutex_unlock(globals.mutex);
-    
+    memset(&globals, 0, sizeof(globals));    
+    switch_mutex_unlock(mutex);
     switch_core_destroy_memory_pool(&pool);
 	return SWITCH_STATUS_SUCCESS;
 }

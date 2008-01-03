@@ -7,6 +7,7 @@
       <param name="terminator-key" value="#"/>
       <param name="max-login-attempts" value="3"/>
       <param name="digit-timeout" value="10000"/>
+      <param name="min-record-len" value="3"/>
       <param name="max-record-len" value="300"/>
       <param name="tone-spec" value="%(1000, 0, 640)"/>
       <param name="callback-dialplan" value="XML"/>

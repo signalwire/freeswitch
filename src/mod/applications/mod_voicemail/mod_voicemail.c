@@ -96,6 +96,7 @@ struct vm_profile {
 	char *date_fmt;
 	uint32_t digit_timeout;
 	uint32_t max_login_attempts;
+	uint32_t min_record_len;
 	uint32_t max_record_len;
 	switch_mutex_t *mutex;
 	uint32_t record_threshold;
@@ -289,7 +290,7 @@ static switch_status_t load_config(void)
 		char *record_copyright = "http://www.freeswitch.org";
 
 		switch_core_db_t *db;
-		uint32_t timeout = 10000, max_login_attempts = 3, max_record_len = 300;
+		uint32_t timeout = 10000, max_login_attempts = 3, max_record_len = 300, min_record_len = 3;
 
 		db = NULL;
 
@@ -496,6 +497,16 @@ static switch_status_t load_config(void)
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid attempts [%s] must be between 1 and 10 ms\n", val);
 				}
+			} else if (!strcasecmp(var, "min-record-len")) {
+				int tmp = 0;
+				if (!switch_strlen_zero(val)) {
+					tmp = atoi(val);
+				}
+				if (tmp > 0 && tmp < 10000) {
+					min_record_len = tmp;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid attempts [%s] must be between 1 and 10000s\n", val);
+				}
 			} else if (!strcasecmp(var, "max-record-len")) {
 				int tmp = 0;
 				if (!switch_strlen_zero(val)) {
@@ -578,6 +589,7 @@ static switch_status_t load_config(void)
 
 			profile->digit_timeout = timeout;
 			profile->max_login_attempts = max_login_attempts;
+			profile->min_record_len = min_record_len;
 			profile->max_record_len = max_record_len;
 			*profile->terminator_key = *terminator_key;
 			*profile->play_new_messages_key = *play_new_messages_key;
@@ -878,6 +890,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 			profile->record_file_key);
 
 record_file:
+        *message_len = 0;
 		args.input_callback = cancel_on_dtmf;
 		TRY_CODE(switch_ivr_phrase_macro(session, macro_name, NULL, NULL, NULL));
 		TRY_CODE(switch_ivr_gentones(session, profile->tone_spec, 0, NULL));
@@ -887,9 +900,14 @@ record_file:
 		fh.silence_hits = profile->record_silence_hits;
 		fh.samplerate = profile->record_sample_rate;
 		switch_ivr_record_file(session, &fh, file_path, &args, profile->max_record_len);
-		*message_len = fh.sample_count / read_codec->implementation->actual_samples_per_second;
-		status = SWITCH_STATUS_SUCCESS;
-
+		if ((*message_len = fh.sample_count / read_codec->implementation->actual_samples_per_second) < profile->min_record_len) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Message is less than minimum record length: %d, discarding it.\n", 
+                              profile->min_record_len);
+            unlink(file_path);
+            goto record_file;
+        } else {
+            status = SWITCH_STATUS_SUCCESS;
+        }
 play_file:
 		memset(&fh, 0, sizeof(fh));
 		args.input_callback = control_playback;
