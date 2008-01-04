@@ -191,11 +191,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch (status) {
 			case SWITCH_STATUS_RESAMPLE:
 				if (!session->read_resampler) {
-					if (switch_resample_create(&session->read_resampler,
-											   read_frame->codec->implementation->actual_samples_per_second,
-											   read_frame->codec->implementation->bytes_per_frame * 20,
-											   session->read_codec->implementation->actual_samples_per_second,
-											   session->read_codec->implementation->bytes_per_frame * 20, session->pool) != SWITCH_STATUS_SUCCESS) {
+					switch_mutex_lock(session->resample_mutex);
+					status = switch_resample_create(&session->read_resampler,
+													read_frame->codec->implementation->actual_samples_per_second,
+													read_frame->codec->implementation->bytes_per_frame * 20,
+													session->read_codec->implementation->actual_samples_per_second,
+													session->read_codec->implementation->bytes_per_frame * 20, session->pool);
+					switch_mutex_unlock(session->resample_mutex);
+					
+					if (status != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to allocate resampler\n");
 						status = SWITCH_STATUS_FALSE;
 						goto done;
@@ -213,8 +217,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				break;
 			case SWITCH_STATUS_NOOP:
 				if (session->read_resampler) {
+					switch_mutex_lock(session->resample_mutex);
 					switch_resample_destroy(&session->read_resampler);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deactivating read resampler\n");
+					switch_mutex_unlock(session->resample_mutex);					
 				}
 
 				status = SWITCH_STATUS_SUCCESS;
@@ -240,6 +246,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 #if 0
 		if (session->read_resampler) {
 			short *data = read_frame->data;
+			switch_mutex_lock(session->resample_mutex);
 
 			session->read_resampler->from_len = switch_short_to_float(data, session->read_resampler->from, (int) read_frame->datalen / 2);
 			session->read_resampler->to_len =
@@ -249,6 +256,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			read_frame->samples = session->read_resampler->to_len;
 			read_frame->datalen = session->read_resampler->to_len * 2;
 			read_frame->rate = session->read_resampler->to_rate;
+			switch_mutex_unlock(session->resample_mutex);
+			
 		}
 #endif
 
@@ -514,11 +523,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			case SWITCH_STATUS_RESAMPLE:
 				write_frame = &session->raw_write_frame;
 				if (!session->write_resampler) {
+					switch_mutex_lock(session->resample_mutex);
 					status = switch_resample_create(&session->write_resampler,
 													frame->codec->implementation->actual_samples_per_second,
 													frame->codec->implementation->bytes_per_frame * 20,
 													session->write_codec->implementation->actual_samples_per_second,
 													session->write_codec->implementation->bytes_per_frame * 20, session->pool);
+					switch_mutex_unlock(session->resample_mutex);
 					if (status != SWITCH_STATUS_SUCCESS) {
 						goto done;
 					}
@@ -538,8 +549,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				return SWITCH_STATUS_SUCCESS;
 			case SWITCH_STATUS_NOOP:
 				if (session->write_resampler) {
+					switch_mutex_lock(session->resample_mutex);
 					switch_resample_destroy(&session->write_resampler);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deactivating write resampler\n");
+					switch_mutex_unlock(session->resample_mutex);
 				}
 				write_frame = frame;
 				status = SWITCH_STATUS_SUCCESS;
@@ -552,6 +565,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 		if (session->write_resampler) {
 			short *data = write_frame->data;
+			
+			switch_mutex_lock(session->resample_mutex);
 
 			session->write_resampler->from_len = write_frame->datalen / 2;
 			switch_short_to_float(data, session->write_resampler->from, session->write_resampler->from_len);
@@ -568,6 +583,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			write_frame->samples = session->write_resampler->to_len;
 			write_frame->datalen = write_frame->samples * 2;
 			write_frame->rate = session->write_resampler->to_rate;
+			switch_mutex_unlock(session->resample_mutex);
 		}
 
 		if (session->bugs) {
@@ -744,11 +760,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								session->enc_write_frame.payload = session->write_codec->implementation->ianacode;
 								write_frame = &session->enc_write_frame;
 								if (!session->read_resampler) {
+									switch_mutex_lock(session->resample_mutex);
 									status = switch_resample_create(&session->read_resampler,
 																	frame->codec->implementation->actual_samples_per_second,
 																	frame->codec->implementation->bytes_per_frame * 20,
 																	session->write_codec->implementation->actual_samples_per_second,
 																	session->write_codec->implementation->bytes_per_frame * 20, session->pool);
+									switch_mutex_unlock(session->resample_mutex);
+									
 									if (status != SWITCH_STATUS_SUCCESS) {
 										goto done;
 									}
@@ -766,8 +785,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								break;
 							case SWITCH_STATUS_NOOP:
 								if (session->read_resampler) {
+									switch_mutex_lock(session->resample_mutex);
 									switch_resample_destroy(&session->read_resampler);
 									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deactivating read resampler\n");
+									switch_mutex_unlock(session->resample_mutex);
 								}
 								enc_frame->codec = session->write_codec;
 								enc_frame->samples = enc_frame->datalen / sizeof(int16_t);
@@ -788,7 +809,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 							if (session->read_resampler) {
 								short *data = write_frame->data;
-
+								switch_mutex_lock(session->resample_mutex);
+								
 								session->read_resampler->from_len =
 									switch_short_to_float(data, session->read_resampler->from, (int) write_frame->datalen / 2);
 								session->read_resampler->to_len = (uint32_t)
@@ -799,6 +821,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								write_frame->samples = session->read_resampler->to_len;
 								write_frame->datalen = session->read_resampler->to_len * 2;
 								write_frame->rate = session->read_resampler->to_rate;
+								switch_mutex_unlock(session->resample_mutex);
+								
 							}
 							if (flag & SFF_CNG) {
 								switch_set_flag(write_frame, SFF_CNG);

@@ -196,6 +196,7 @@
     -->
     <extension name="unpark">
       <condition field="destination_number" expression="^5901$">
+	<action application="answer"/>
 	<action application="fifo" data="5900@$${domain} out nowait"/>
       </condition>
     </extension>
@@ -209,7 +210,7 @@
     -->
     <extension name="park">
       <condition field="source" expression="mod_sofia" continue="on-true"/>
-      <condition field="${sip_refer_to}" expression="park\+(.*)@(.*)>" continue="on-true">
+      <condition field="destination_number" expression="park\+(\d+)" continue="on-true">
 	<action application="fifo" data="$1@$${domain} in undef $${moh_uri}"/>
       </condition>
     </extension> 
@@ -222,7 +223,7 @@
       <condition field="destination_number" expression="^parking$" continue="on-true"/>
       <condition field="${sip_to_params}" expression="fifo\=(\d+)">
 	<action application="answer"/>
-	<action application="fifo" data="$1@$${domain} out undef"/>
+	<action application="fifo" data="$1@$${domain} out nowait"/>
       </condition>
     </extension>
 
