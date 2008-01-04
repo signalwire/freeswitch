@@ -15,7 +15,7 @@
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
-
+#define _GNU_SOURCE
 /*
 ** Extra interface definitions for those who need them
 */
@@ -285,14 +285,22 @@ static inline void *zmalloc(size_t x)
 #define ENTER_MALLOC 0
 #define sqliteMalloc(x)          zmalloc(x)//sqlite3Malloc(x,1)
 #define sqliteMallocRaw(x)       malloc(x)//sqlite3MallocRaw(x,1)
-#define sqliteRealloc(x,y)       sqlite3Realloc(x,y)
-#define sqliteStrDup(x)          sqlite3StrDup(x)
-#define sqliteStrNDup(x,y)       sqlite3StrNDup(x,y)
+#define sqliteRealloc(x,y)       realloc(x, y)//sqlite3Realloc(x,y)
+#define sqliteStrDup(x)          strdup(x)//sqlite3StrDup(x)
+#define sqliteStrNDup(x,y)       strndup(x, y)//sqlite3StrNDup(x,y)
 #define sqliteReallocOrFree(x,y) sqlite3ReallocOrFree(x,y)
 
 #endif
 
-#define sqliteFree(x)          sqlite3FreeX(x)
+static inline void sane_free(void *x)
+{
+	if (x) {
+		free(x);
+		x = NULL;
+	}
+}
+
+#define sqliteFree(x)          sane_free(x) //sqlite3FreeX(x)
 #define sqliteAllocSize(x)     sqlite3AllocSize(x)
 
 
