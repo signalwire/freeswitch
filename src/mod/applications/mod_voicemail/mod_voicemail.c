@@ -903,7 +903,9 @@ record_file:
 		if ((*message_len = fh.sample_count / read_codec->implementation->actual_samples_per_second) < profile->min_record_len) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Message is less than minimum record length: %d, discarding it.\n", 
                               profile->min_record_len);
-            unlink(file_path);
+			if (unlink(file_path) != 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "failed to delete file [%s]\n", file_path);
+			}
             goto record_file;
         } else {
             status = SWITCH_STATUS_SUCCESS;
