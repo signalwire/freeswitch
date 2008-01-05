@@ -297,7 +297,7 @@ static inline void *zmalloc(size_t x)
 #endif
 
 
-#define sqliteFree(x)          do { free((void *)x); x = NULL; } while(x) //sqlite3FreeX(x)
+#define sqliteFree(x)          if (x) { free((void *)x); x = NULL; } //sqlite3FreeX(x)
 #define sqliteAllocSize(x)     sqlite3AllocSize(x)
 
 
