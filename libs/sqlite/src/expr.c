@@ -420,8 +420,8 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
 */
 void sqlite3ExprDelete(Expr *p){
   if( p==0 ) return;
-  if( p->span.dyn ) sqliteFree((char*)p->span.z);
-  if( p->token.dyn ) sqliteFree((char*)p->token.z);
+  if( p->span.dyn ) sqliteFree(p->span.z);
+  if( p->token.dyn ) sqliteFree(p->token.z);
   sqlite3ExprDelete(p->pLeft);
   sqlite3ExprDelete(p->pRight);
   sqlite3ExprListDelete(p->pList);
@@ -478,7 +478,7 @@ Expr *sqlite3ExprDup(Expr *p){
   return pNew;
 }
 void sqlite3TokenCopy(Token *pTo, Token *pFrom){
-  if( pTo->dyn ) sqliteFree((char*)pTo->z);
+  if( pTo->dyn ) sqliteFree(pTo->z);
   if( pFrom->z ){
     pTo->n = pFrom->n;
     pTo->z = (u8*)sqliteStrNDup((char*)pFrom->z, pFrom->n);

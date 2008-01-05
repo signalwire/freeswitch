@@ -21,7 +21,7 @@ void sqlite3DeleteTriggerStep(TriggerStep *pTriggerStep){
     TriggerStep * pTmp = pTriggerStep;
     pTriggerStep = pTriggerStep->pNext;
 
-    if( pTmp->target.dyn ) sqliteFree((char*)pTmp->target.z);
+    if( pTmp->target.dyn ) sqliteFree(pTmp->target.z);
     sqlite3ExprDelete(pTmp->pWhere);
     sqlite3ExprListDelete(pTmp->pExprList);
     sqlite3SelectDelete(pTmp->pSelect);
@@ -430,7 +430,7 @@ void sqlite3DeleteTrigger(Trigger *pTrigger){
   sqliteFree(pTrigger->table);
   sqlite3ExprDelete(pTrigger->pWhen);
   sqlite3IdListDelete(pTrigger->pColumns);
-  if( pTrigger->nameToken.dyn ) sqliteFree((char*)pTrigger->nameToken.z);
+  if( pTrigger->nameToken.dyn ) sqliteFree(pTrigger->nameToken.z);
   sqliteFree(pTrigger);
 }
 
