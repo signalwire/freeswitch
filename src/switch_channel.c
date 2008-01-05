@@ -550,6 +550,23 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, sw
 	}
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *channel, switch_channel_flag_t want_flag, uint32_t to)
+{
+
+	if (to) {
+		to++;
+	}
+
+	while(!switch_test_flag(channel, want_flag)) {
+		switch_yield(1000);
+		if (to && !--to) {
+			return SWITCH_STATUS_TIMEOUT;
+		}
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_channel_flag_t flags)
 {
 	switch_assert(channel != NULL);
@@ -1223,8 +1240,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		switch_mutex_unlock(channel->profile_mutex);
 	}
 
-	switch_set_flag(channel, CF_BREAK);
-	switch_set_flag(channel, CF_STOP_BROADCAST);
+	switch_channel_stop_broadcast(channel);
 	
 	if (channel->state < CS_HANGUP) {
 		switch_event_t *event;

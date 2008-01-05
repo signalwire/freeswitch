@@ -75,6 +75,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_running_state(switch_c
 SWITCH_DECLARE(uint8_t) switch_channel_ready(switch_channel_t *channel);
 
 SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, switch_channel_t *other_channel, switch_channel_state_t want_state);
+SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *channel, switch_channel_flag_t want_flag, uint32_t to);
 
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_channel_t *channel,
 																		const char *file, const char *func, int line, switch_channel_state_t state);
@@ -468,6 +469,8 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel, const char *in);
 SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *channel, switch_caller_profile_t *caller_profile, const char *prefix);
 SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *channel);
+
+#define switch_channel_stop_broadcast(_channel)	switch_channel_set_flag(_channel, CF_BREAK | CF_STOP_BROADCAST)
 
 /** @} */
 

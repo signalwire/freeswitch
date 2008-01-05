@@ -414,8 +414,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
                 if (switch_channel_test_flag(other_channel, CF_TAGGED)) {
                     switch_channel_clear_flag(other_channel, CF_CONTROLLED);
-                    switch_channel_set_flag(other_channel, CF_STOP_BROADCAST);
-                    switch_channel_set_flag(other_channel, CF_BREAK);
+                    switch_channel_stop_broadcast(other_channel);
                     switch_core_session_kill_channel(other_session, SWITCH_SIG_BREAK);
                     while (switch_channel_test_flag(other_channel, CF_TAGGED)) {
                         status = switch_core_session_read_frame(session, &read_frame, -1, 0);
