@@ -852,6 +852,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 
+	switch_channel_clear_flag(channel, CF_ORIGINATING);
+
 	/* clear all state handlers */
 	switch_channel_clear_state_handler(channel, NULL);
 

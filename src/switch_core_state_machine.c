@@ -132,7 +132,7 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 		char *expanded = NULL;
 		int nomedia = 0;
 		
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute %s(%s)\n",
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Execute %s(%s)\n", switch_channel_get_name(session->channel),
 						  extension->current_application->application_name, switch_str_nil(extension->current_application->application_data));
 		if ((application_interface = switch_loadable_module_get_application_interface(extension->current_application->application_name)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application %s\n", extension->current_application->application_name);
@@ -156,8 +156,9 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 		if ((expanded =
 			 switch_channel_expand_variables(session->channel,
 											 extension->current_application->application_data)) != extension->current_application->application_data) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Expanded String %s(%s)\n", extension->current_application->application_name,
-							  expanded);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Expanded String %s(%s)\n", switch_channel_get_name(session->channel), 
+							  extension->current_application->application_name, expanded);
+							  
 		}
 
 		if (switch_channel_get_variable(session->channel, "presence_id")) {

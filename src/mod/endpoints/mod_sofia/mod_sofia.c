@@ -1685,6 +1685,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	switch_channel_set_variable(nchannel, "sip_destination_url", tech_pvt->dest);
 	
 	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
+	caller_profile->destination_number = switch_core_strdup(caller_profile->pool, dest);
 	switch_channel_set_caller_profile(nchannel, caller_profile);
 	switch_channel_set_flag(nchannel, CF_OUTBOUND);
 	switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);

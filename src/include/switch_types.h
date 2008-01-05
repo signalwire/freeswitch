@@ -628,6 +628,7 @@ CF_UNICAST      = (1 << 21) - Channel has a unicast connection
 CF_VIDEO		= (1 << 22) - Channel has video
 CF_EVENT_LOCK   = (1 << 23) - Don't parse events
 CF_RESET        = (1 << 24) - Tell extension parser to reset
+CF_ORIGINATING  = (1 << 25) - Channel is originating
 </pre>
  */
 
@@ -656,7 +657,8 @@ typedef enum {
 	CF_UNICAST = (1 << 21),
 	CF_VIDEO = (1 << 22),
 	CF_EVENT_LOCK = (1 << 23),
-	CF_RESET = (1 << 24)
+	CF_RESET = (1 << 24),
+	CF_ORIGINATING = (1 << 25)
 } switch_channel_flag_t;
 
 
