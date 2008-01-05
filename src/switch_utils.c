@@ -70,7 +70,7 @@ SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size
 	switch_size_t total = 0;
 
 	p = buf;
-	while (total + sizeof(c) < len && (cur = read(fd, &c, sizeof(c))) > 0) {
+	while (total + 2 < len && (cur = read(fd, &c, 1)) == 1) {
 		total += cur;
 		*p++ = c;
 		if (c == '\r' || c == '\n') {
@@ -79,6 +79,7 @@ SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size
 	}
 
 	*p++ = '\0';
+	assert(total < len);
 	return total;
 }
 
