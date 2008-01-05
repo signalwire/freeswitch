@@ -291,62 +291,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	}
 		
 	
-	if (ringback_data) {
-		char *tmp_data = NULL;
-	
-		if (!switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
-			switch_channel_pre_answer(caller_channel);
-		}
-
-		switch_buffer_create_dynamic(&ringback.audio_buffer, 512, 1024, 0);
-		switch_buffer_set_loops(ringback.audio_buffer, -1);
-							
-		if (switch_is_file_path(ringback_data)) {
-			char *ext;
-								
-			if (strrchr(ringback_data, '.') || strstr(ringback_data, SWITCH_URL_SEPARATOR)) {
-				switch_core_session_set_read_codec(session, &write_codec);
-			} else {
-				ringback.asis++;
-				write_frame.codec = read_codec;
-				ext = read_codec->implementation->iananame;
-				tmp_data = switch_mprintf("%s.%s", ringback_data, ext);
-				ringback_data = tmp_data;
-			}
-
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play Ringback File [%s]\n", ringback_data);
-
-			ringback.fhb.channels = read_codec->implementation->number_of_channels;
-			ringback.fhb.samplerate = read_codec->implementation->actual_samples_per_second;
-			if (switch_core_file_open(&ringback.fhb,
-									  ringback_data,
-									  read_codec->implementation->number_of_channels,
-									  read_codec->implementation->actual_samples_per_second,
-									  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
-									  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing File\n");
-				switch_safe_free(tmp_data);
-				goto done;
-			}
-			ringback.fh = &ringback.fhb;
-
-
-		} else {
-			teletone_init_session(&ringback.ts, 0, teletone_handler, &ringback);
-			ringback.ts.rate = read_codec->implementation->actual_samples_per_second;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play Ringback Tone [%s]\n", ringback_data);
-			if (teletone_run(&ringback.ts, ringback_data)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing Tone\n");
-				teletone_destroy_session(&ringback.ts);
-				switch_buffer_destroy(&ringback.audio_buffer);
-				ringback_data = NULL;
-			}
-		}
-		switch_safe_free(tmp_data);
- 
-	}
-
-
 	if ((read_codec = switch_core_session_get_read_codec(session)) && (ringback_data || !switch_channel_test_flag(caller_channel, CF_BYPASS_MEDIA))) {
 		if (!(pass = (uint8_t) switch_test_flag(read_codec, SWITCH_CODEC_FLAG_PASSTHROUGH))) {
 			if (switch_core_codec_init(&write_codec,
