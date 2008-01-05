@@ -1,10 +1,9 @@
-/opt/freeswitch/conf/default_context_old.xml
 /opt/freeswitch/conf/extensions.conf
 /opt/freeswitch/conf/freeswitch.xml
 /opt/freeswitch/conf/mime.types
 /opt/freeswitch/conf/vars.xml
 /opt/freeswitch/conf/autoload_configs/alsa.conf.xml
-/opt/freeswitch/conf/autoload_configs/cdr.conf.xml
+/opt/freeswitch/conf/autoload_configs/cdr_csv.conf.xml
 /opt/freeswitch/conf/autoload_configs/conference.conf.xml
 /opt/freeswitch/conf/autoload_configs/console.conf.xml
 /opt/freeswitch/conf/autoload_configs/dialplan_directory.conf.xml
@@ -33,7 +32,8 @@
 /opt/freeswitch/conf/autoload_configs/xml_rpc.conf.xml
 /opt/freeswitch/conf/autoload_configs/zeroconf.conf.xml
 /opt/freeswitch/conf/dialplan/default.xml
-/opt/freeswitch/conf/dialplan/US.conf.xml
 /opt/freeswitch/conf/directory/default.xml
 /opt/freeswitch/conf/sip_profiles/default.xml
 /opt/freeswitch/conf/sip_profiles/nat.xml
+/opt/freeswitch/conf/mrcp_profiles/openmrcp-v1.xml
+/opt/freeswitch/conf/mrcp_profiles/openmrcp-v2.xml

@@ -26,13 +26,12 @@ opt/freeswitch/mod/mod_native_file.so*
 opt/freeswitch/mod/mod_sndfile.so*
 opt/freeswitch/mod/mod_local_stream.so*
 opt/freeswitch/mod/mod_xml_*.so*
-opt/freeswitch/conf/default_context_old.xml
 opt/freeswitch/conf/extensions.conf
 opt/freeswitch/conf/freeswitch.xml
 opt/freeswitch/conf/mime.types
 opt/freeswitch/conf/vars.xml
 opt/freeswitch/conf/autoload_configs/alsa.conf.xml
-opt/freeswitch/conf/autoload_configs/cdr.conf.xml
+opt/freeswitch/conf/autoload_configs/cdr_csv.conf.xml
 opt/freeswitch/conf/autoload_configs/conference.conf.xml
 opt/freeswitch/conf/autoload_configs/console.conf.xml
 opt/freeswitch/conf/autoload_configs/dialplan_directory.conf.xml
@@ -62,7 +61,7 @@ opt/freeswitch/conf/autoload_configs/xml_curl.conf.xml
 opt/freeswitch/conf/autoload_configs/xml_rpc.conf.xml
 opt/freeswitch/conf/autoload_configs/zeroconf.conf.xml
 opt/freeswitch/conf/dialplan/default.xml
-opt/freeswitch/conf/dialplan/US.conf.xml
 opt/freeswitch/conf/directory/default.xml
+opt/freeswitch/conf/mrcp_profiles/*
 opt/freeswitch/conf/sip_profiles/default.xml
 opt/freeswitch/conf/sip_profiles/nat.xml
