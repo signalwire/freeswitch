@@ -292,7 +292,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 
 	if (ringback_data) {
 		char *tmp_data = NULL;
-		ringback_t ringback = { 0 };
 	
 		switch_buffer_create_dynamic(&ringback.audio_buffer, 512, 1024, 0);
 		switch_buffer_set_loops(ringback.audio_buffer, -1);
