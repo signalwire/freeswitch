@@ -331,8 +331,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 			teletone_init_session(&ringback.ts, 0, teletone_handler, &ringback);
 			ringback.ts.rate = read_codec->implementation->actual_samples_per_second;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play Ringback Tone [%s]\n", ringback_data);
-			//ringback.ts.debug = 1;
-			//ringback.ts.debug_stream = switch_core_get_console();
 			if (teletone_run(&ringback.ts, ringback_data)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing Tone\n");
 				teletone_destroy_session(&ringback.ts);
@@ -411,8 +409,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 						teletone_init_session(&ringback.ts, 0, teletone_handler, &ringback);
 						ringback.ts.rate = read_codec->implementation->actual_samples_per_second;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play Ringback Tone [%s]\n", ringback_data);
-						//ringback.ts.debug = 1;
-						//ringback.ts.debug_stream = switch_core_get_console();
 						if (teletone_run(&ringback.ts, ringback_data)) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing Tone\n");
 							teletone_destroy_session(&ringback.ts);
@@ -455,7 +451,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 		
 		if (read_frame && !pass) {
 			if (ringback.fh) {
-				uint8_t abuf[1024];
+				uint8_t fbuf[1024];
 				switch_size_t mlen, olen;
 				unsigned int pos = 0;
 							
@@ -466,18 +462,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 				}
 
 				olen = mlen;
-				switch_core_file_read(ringback.fh, abuf, &olen);
+				switch_core_file_read(ringback.fh, fbuf, &olen);
 
 				if (olen == 0) {
 					olen = mlen;
 					ringback.fh->speed = 0;
 					switch_core_file_seek(ringback.fh, &pos, 0, SEEK_SET);
-					switch_core_file_read(ringback.fh, abuf, &olen);
+					switch_core_file_read(ringback.fh, fbuf, &olen);
 					if (olen == 0) {
 						break;
 					}
 				}
-				write_frame.data = abuf;
+				write_frame.data = fbuf;
 				write_frame.datalen = (uint32_t) (ringback.asis ? olen : olen * 2);
 			} else if (ringback.audio_buffer) {
 				if ((write_frame.datalen = (uint32_t) switch_buffer_read_loop(ringback.audio_buffer,
