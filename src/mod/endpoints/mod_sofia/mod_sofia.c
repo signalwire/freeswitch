@@ -252,11 +252,29 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	cause = switch_channel_get_cause(channel);
 
 	if (switch_test_flag(tech_pvt, TFLAG_SIP_HOLD) && cause != SWITCH_CAUSE_ATTENDED_TRANSFER) {
+		const char *buuid;
+        switch_core_session_t *bsession;
+        switch_channel_t *bchannel;
+        const char *lost_ext;
 
 		if (tech_pvt->max_missed_packets) {
 			switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
 		}
 		switch_channel_presence(tech_pvt->channel, "unknown", "unhold");
+
+		if ((buuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+            if ((bsession = switch_core_session_locate(buuid))) {
+                bchannel = switch_core_session_get_channel(bsession);
+                if (switch_channel_test_flag(bchannel, CF_BROADCAST)) {
+                    if ((lost_ext = switch_channel_get_variable(bchannel, "left_hanging_extension"))) {
+                        switch_ivr_session_transfer(bsession, lost_ext, NULL, NULL);
+                    }
+					switch_channel_stop_broadcast(bchannel);
+                }
+                switch_core_session_rwunlock(bsession);
+            }
+        }
+
 		switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 		
 	}

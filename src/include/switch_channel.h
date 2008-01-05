@@ -75,7 +75,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_running_state(switch_c
 SWITCH_DECLARE(uint8_t) switch_channel_ready(switch_channel_t *channel);
 
 SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, switch_channel_t *other_channel, switch_channel_state_t want_state);
-SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *channel, switch_channel_flag_t want_flag, uint32_t to);
+SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *channel, switch_channel_flag_t want_flag, switch_bool_t pres, uint32_t to);
 
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_channel_t *channel,
 																		const char *file, const char *func, int line, switch_channel_state_t state);

@@ -1273,11 +1273,11 @@ SWITCH_STANDARD_APP(record_function)
 	if (l) {
 		if (*l == '+') {
 			l++;
-			if (l) {
-				limit = atoi(l);
-				if (limit < 0) {
-					limit = 0;
-				}
+		}
+		if (l) {
+			limit = atoi(l);
+			if (limit < 0) {
+				limit = 0;
 			}
 		}
 	}

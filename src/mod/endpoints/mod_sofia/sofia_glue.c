@@ -1395,24 +1395,35 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 			}
 
 			if (stream) {
-				switch_ivr_displace_session(tech_pvt->session, stream, 0, "rl");
+				//switch_ivr_displace_session(tech_pvt->session, stream, 0, "rl");
+				switch_ivr_broadcast(switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE), stream, SMF_ECHO_ALEG | SMF_LOOP);
 			}
 		}
 	} else {
 		if (switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
-			const char *stream;
+			const char *uuid;
+			switch_core_session_t *b_session;
+			
+			//const char *stream;
 
 			if (tech_pvt->max_missed_packets) {
 				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
 			}
 
-			if (!(stream = switch_channel_get_variable(tech_pvt->channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
-                stream = tech_pvt->profile->hold_music;
-            }
+			if ((uuid = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (b_session = switch_core_session_locate(uuid))) {
+				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
+				switch_channel_stop_broadcast(b_channel);
+				switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 2000);
+				switch_core_session_rwunlock(b_session);
+			}
 
-			if (stream) {
-                switch_ivr_stop_displace_session(tech_pvt->session, stream);
-            }
+			//if (!(stream = switch_channel_get_variable(tech_pvt->channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
+			//stream = tech_pvt->profile->hold_music;
+            //}
+
+			//if (stream) {
+			//switch_ivr_stop_displace_session(tech_pvt->session, stream);
+			//}
 
 			switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 			switch_channel_presence(tech_pvt->channel, "unknown", "unhold");
