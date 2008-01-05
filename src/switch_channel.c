@@ -1224,7 +1224,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 	}
 
 	switch_set_flag(channel, CF_BREAK);
-	switch_clear_flag(channel, CF_BROADCAST);
+	switch_set_flag(channel, CF_STOP_BROADCAST);
 	
 	if (channel->state < CS_HANGUP) {
 		switch_event_t *event;

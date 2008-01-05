@@ -315,11 +315,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 			if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
 				if (application_interface->application_function) {
 					int x;
+					switch_channel_clear_flag(channel, CF_STOP_BROADCAST);
 					switch_channel_set_flag(channel, CF_BROADCAST);
 					for (x = 0; x < loops || loops < 0; x++) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Command Execute %s(%s)\n", app_name, app_arg);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Command Execute %s(%s)\n", 
+										  switch_channel_get_name(channel), app_name, app_arg);
 						switch_core_session_exec(session, application_interface, app_arg);
-						if (!switch_channel_ready(channel) || !switch_channel_test_flag(channel, CF_BROADCAST)) {
+						if (!switch_channel_ready(channel) || switch_channel_test_flag(channel, CF_STOP_BROADCAST)) {
 							break;
 						}
 					}
