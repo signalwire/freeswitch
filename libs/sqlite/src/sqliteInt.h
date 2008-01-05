@@ -296,15 +296,8 @@ static inline void *zmalloc(size_t x)
 
 #endif
 
-static inline void sane_free(void *x)
-{
-	if (x) {
-		free(x);
-		x = NULL;
-	}
-}
 
-#define sqliteFree(x)          sane_free(x) //sqlite3FreeX(x)
+#define sqliteFree(x)          do { free(x); x = NULL; } while(x) //sqlite3FreeX(x)
 #define sqliteAllocSize(x)     sqlite3AllocSize(x)
 
 
