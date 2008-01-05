@@ -971,8 +971,11 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_RINGING:
-		nua_respond(tech_pvt->nh, SIP_180_RINGING, SIPTAG_CONTACT_STR(tech_pvt->profile->url), TAG_END());
-		switch_channel_mark_ring_ready(channel);
+		if (!switch_channel_test_flag(channel, CF_RING_READY) && 
+			!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
+			nua_respond(tech_pvt->nh, SIP_180_RINGING, SIPTAG_CONTACT_STR(tech_pvt->profile->url), TAG_END());
+			switch_channel_mark_ring_ready(channel);
+		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		sofia_answer_channel(session);

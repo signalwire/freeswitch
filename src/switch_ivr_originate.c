@@ -157,7 +157,7 @@ static void launch_collect_thread(struct key_collect *collect)
 
 static uint8_t check_channel_status(switch_channel_t **peer_channels,
 									switch_core_session_t **peer_sessions,
-									uint32_t len, int32_t *idx, uint32_t * hups, char *file, char *key, uint8_t early_ok, uint8_t *ring_ready)
+									uint32_t len, int32_t *idx, uint32_t * hups, char *file, char *key, uint8_t early_ok, uint8_t *ring_ready, uint8_t return_ring_ready)
 {
 
 	uint32_t i;
@@ -180,8 +180,11 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 			) {
 			(*hups)++;
 		} else if ((switch_channel_test_flag(peer_channels[i], CF_ANSWERED) ||
-					(early_ok && len == 1 && switch_channel_test_flag(peer_channels[i], CF_EARLY_MEDIA))) &&
-				   !switch_channel_test_flag(peer_channels[i], CF_TAGGED)) {
+					(early_ok && len == 1 && switch_channel_test_flag(peer_channels[i], CF_EARLY_MEDIA)) ||
+					(*ring_ready && return_ring_ready && len == 1 && switch_channel_test_flag(peer_channels[i], CF_RING_READY))
+					)
+				   && !switch_channel_test_flag(peer_channels[i], CF_TAGGED)
+				   ) {
 
 			if (!switch_strlen_zero(key)) {
 				struct key_collect *collect;
@@ -279,7 +282,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 
 	read_codec = switch_core_session_get_read_codec(session);
 
-	if (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
+	if (switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
 		ringback_data = switch_channel_get_variable(caller_channel, "transfer_ringback");
 	} 
 			
@@ -287,12 +290,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 		ringback_data = switch_channel_get_variable(caller_channel, "ringback");
 	}
 		
-	switch_channel_set_variable(caller_channel, "originate_disposition", "failure");
-
-
+	
 	if (ringback_data) {
 		char *tmp_data = NULL;
 	
+		if (!switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
+			switch_channel_pre_answer(caller_channel);
+		}
+
 		switch_buffer_create_dynamic(&ringback.audio_buffer, 512, 1024, 0);
 		switch_buffer_set_loops(ringback.audio_buffer, -1);
 							
@@ -342,10 +347,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	}
 
 
-	if (ringback_data && !switch_channel_test_flag(caller_channel, CF_ANSWERED) && !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
-		switch_channel_pre_answer(caller_channel);
-	}
-	
 	if ((read_codec = switch_core_session_get_read_codec(session)) && (ringback_data || !switch_channel_test_flag(caller_channel, CF_BYPASS_MEDIA))) {
 		if (!(pass = (uint8_t) switch_test_flag(read_codec, SWITCH_CODEC_FLAG_PASSTHROUGH))) {
 			if (switch_core_codec_init(&write_codec,
@@ -434,7 +435,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 		}
 
 		if (switch_core_session_dequeue_message(peer_session, &message) == SWITCH_STATUS_SUCCESS) {
-			switch_core_session_receive_message(session, message);
+			//switch_core_session_receive_message(session, message);
 
 			if (switch_test_flag(message, SCSMF_DYNAMIC)) {
 				switch_safe_free(message);
@@ -679,7 +680,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	if (caller_channel) {		/* ringback is only useful when there is an originator */
 		ringback_data = NULL;
 
-		if (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
+		if (switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
 			ringback_data = switch_channel_get_variable(caller_channel, "transfer_ringback");
 		} 
 			
@@ -757,11 +758,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			or_argc = 1;
 		}
 
-		if (caller_channel && or_argc > 1 && !ringback_data) {
-			switch_channel_ring_ready(caller_channel);
-			sent_ring = 1;
-		}
-
 		for (r = 0; r < or_argc; r++) {
 			uint32_t hups;
 			reason = SWITCH_CAUSE_UNALLOCATED;
@@ -794,11 +790,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				and_argc = 1;
 			}
 			
-			if (caller_channel && !sent_ring && and_argc > 1 && !ringback_data) {
-				switch_channel_ring_ready(caller_channel);
-				sent_ring = 1;
-			}
-
 			for (i = 0; i < and_argc; i++) {
 				char *vdata;
 				char *e = NULL;
@@ -1083,7 +1074,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 
 			while ((!caller_channel || switch_channel_ready(caller_channel)) &&
-				   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, &hups, file, key, early_ok, &ring_ready)) {
+				   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, &hups, file, key, early_ok, &ring_ready, return_ring_ready)) {
+
+				if (caller_channel && !sent_ring && ring_ready && !return_ring_ready) {
+					switch_channel_ring_ready(caller_channel);
+					sent_ring = 1;
+				}
 
 				// When the AND operator is being used, and fail_on_single_reject is set, a hangup indicates that the call should fail.
 				if ((to = (uint8_t) ((time(NULL) - start) >= (time_t) timelimit_sec))
@@ -1114,11 +1110,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						break;
 					}
 					
-					if (ring_ready && return_ring_ready) {
-						status = SWITCH_STATUS_SUCCESS;
-						goto done;
-					}
-
 					if (ring_ready && read_frame && !pass) {
 						if (ringback.fh) {
 							uint8_t abuf[1024];
@@ -1226,8 +1217,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 			}
 
-			if (switch_channel_test_flag(peer_channel, CF_ANSWERED)
-				|| switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
+			if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || 
+				(early_ok && switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) || 
+				(return_ring_ready && switch_channel_test_flag(peer_channel, CF_RING_READY))
+				) {
 				*bleg = peer_session;
 				status = SWITCH_STATUS_SUCCESS;
 			} else {

@@ -648,6 +648,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 					switch_core_session_rwunlock(peer_session);
 					goto done;
 				}
+				if (switch_channel_test_flag(peer_channel, CF_ANSWERED) && !switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
+					switch_channel_answer(caller_channel);
+				}
 			}
 
 
