@@ -549,7 +549,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	char *var_val, *vars = NULL;
 	const char *ringback_data = NULL;
 	switch_codec_t *read_codec = NULL;
-	uint8_t sent_ring = 0, early_ok = 1;
+	uint8_t sent_ring = 0, early_ok = 1, return_ring_ready = 0;
 	switch_core_session_message_t *message = NULL;
 	switch_event_t *var_event = NULL;
 	uint8_t fail_on_single_reject = 0;
@@ -626,6 +626,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				} else if (!strcasecmp((char *)hi->name, "fail_on_single_reject")) {
 					ok = 1;
 				} else if (!strcasecmp((char *)hi->name, "ignore_early_media")) {
+					ok = 1;
+				} else if (!strcasecmp((char *)hi->name, "return_ring_ready")) {
 					ok = 1;
 				} else if (!strcasecmp((char *)hi->name, "originate_retries")) {
 					ok = 1;
@@ -706,6 +708,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	if ((var_val = switch_event_get_header(var_event, "ignore_early_media")) && switch_true(var_val)) {
 		early_ok = 0;
+	}
+
+	if ((var_val = switch_event_get_header(var_event, "return_ring_ready")) && switch_true(var_val)) {
+		return_ring_ready = 1;
 	}
 
 	if ((var_val = switch_event_get_header(var_event, "originate_retries")) && switch_true(var_val)) {
@@ -1108,6 +1114,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						break;
 					}
 					
+					if (ring_ready && return_ring_ready) {
+						status = SWITCH_STATUS_SUCCESS;
+						goto done;
+					}
+
 					if (ring_ready && read_frame && !pass) {
 						if (ringback.fh) {
 							uint8_t abuf[1024];
