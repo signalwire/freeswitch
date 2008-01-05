@@ -729,7 +729,7 @@ char *sqlite3StrDup(const char *z){
 char *sqlite3StrNDup(const char *z, int n){
   char *zNew;
   if( z==0 ) return 0;
-  zNew = sqliteMallocRaw(n+1, 1);
+  zNew = sqliteMallocRaw(n+1);
   if( zNew ){
     memcpy(zNew, z, n);
     zNew[n] = 0;
