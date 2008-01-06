@@ -51,7 +51,9 @@ int main(int argc, char *argv[])
   suite = suite_for_nua();
   runner = srunner_create(suite);
 
-  srunner_set_xml(runner, "/tmp/result.xml");
+  if (argv[1]) {
+    srunner_set_xml(runner, argv[1]);
+  }
   srunner_run_all(runner, CK_NORMAL);
 
   failed = srunner_ntests_failed(runner);

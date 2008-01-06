@@ -101,7 +101,7 @@ doxygen: built-sources
 	    docs/$$d.doxytags > docs/$$d.doxytags.tmp && \
 	  mv -f docs/$$d.doxytags.tmp docs/$$d.doxytags ; \
 	done 
-	${srcdir}/docs/hide_emails.sh docs/html
+	${top_srcdir}/scripts/hide_emails.sh docs/html
 
 if HAVE_LCOV
 include $(top_srcdir)/rules/lcov.am

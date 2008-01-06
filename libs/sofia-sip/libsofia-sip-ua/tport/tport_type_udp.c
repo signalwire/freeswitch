@@ -35,6 +35,7 @@
 #include "config.h"
 
 #include "tport_internal.h"
+#include "sofia-sip/hostdomain.h"
 
 #if HAVE_IP_RECVERR || HAVE_IPV6_RECVERR
 #include <linux/types.h>
@@ -113,6 +114,8 @@ int tport_udp_init_primary(tport_primary_t *pri,
   unsigned rmem = 0, wmem = 0;
   int events = SU_WAIT_IN;
   int s;
+  su_sockaddr_t *su = (su_sockaddr_t *)ai->ai_addr;
+  int const one = 1; (void)one;
 
   s = su_socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
   if (s == INVALID_SOCKET)
@@ -125,20 +128,51 @@ int tport_udp_init_primary(tport_primary_t *pri,
 
   tport_set_tos(s, ai, pri->pri_params->tpp_tos);
 
+#if HAVE_IP_ADD_MEMBERSHIP
+  if (ai->ai_family == AF_INET && 
+      IN_MULTICAST(ntohl(su->su_sin.sin_addr.s_addr))) {
+    /* Try to join to the multicast group */
+    /* Bind to the SIP address like 
+       <sip:88.77.66.55:5060;maddr=224.0.1.75;transport=udp> */
+    struct ip_mreq imr[1];
+    struct in_addr iface;
+
+    memset(imr, 0, sizeof imr);
+      
+    imr->imr_multiaddr = su->su_sin.sin_addr;
+
+    if (host_is_ip4_address(tpn->tpn_canon) &&
+	inet_pton(AF_INET, tpn->tpn_canon, &iface) > 0) {
+      imr->imr_interface = iface;
+    }
+
+    if (setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP, imr, (sizeof imr)) < 0) {
+      SU_DEBUG_3(("setsockopt(%s): %s\n",
+		  "IP_ADD_MEMBERSHIP", su_strerror(su_errno())));
+    }
+#if HAVE_IP_MULTICAST_LOOP
+    else 
+      if (setsockopt(s, IPPROTO_IP, IP_MULTICAST_LOOP, &one, sizeof one) < 0) {
+	SU_DEBUG_3(("setsockopt(%s): %s\n",
+		    "IP_MULTICAST_LOOP", su_strerror(su_errno())));
+    }
+#endif
+  }
+#endif
+
 #if HAVE_IP_RECVERR
   if (ai->ai_family == AF_INET || ai->ai_family == AF_INET6) {
-    int const one = 1;
-    if (setsockopt(s, SOL_IP, IP_RECVERR, &one, sizeof(one)) < 0) {
+    if (setsockopt(s, IPPROTO_IP, IP_RECVERR, &one, sizeof(one)) < 0) {
       if (ai->ai_family == AF_INET)
-	SU_DEBUG_3(("setsockopt(IPVRECVERR): %s\n", su_strerror(su_errno())));
+	SU_DEBUG_3(("setsockopt(%s): %s\n",
+		    "IPVRECVERR", su_strerror(su_errno())));
     }
     events |= SU_WAIT_ERR;
   }
 #endif
 #if HAVE_IPV6_RECVERR
   if (ai->ai_family == AF_INET6) {
-    int const one = 1;
-    if (setsockopt(s, SOL_IPV6, IPV6_RECVERR, &one, sizeof(one)) < 0)
+    if (setsockopt(s, IPPROTO_IPV6, IPV6_RECVERR, &one, sizeof(one)) < 0)
       SU_DEBUG_3(("setsockopt(IPV6_RECVERR): %s\n", su_strerror(su_errno())));
     events |= SU_WAIT_ERR;
   }
@@ -150,12 +184,18 @@ int tport_udp_init_primary(tport_primary_t *pri,
 	  TAG_END());
 
   if (rmem != 0 && 
+#if HAVE_SO_RCVBUFFORCE
+      setsockopt(s, SOL_SOCKET, SO_RCVBUFFORCE, (void *)&rmem, sizeof rmem) < 0 &&
+#endif
       setsockopt(s, SOL_SOCKET, SO_RCVBUF, (void *)&rmem, sizeof rmem) < 0) {
     SU_DEBUG_3(("setsockopt(SO_RCVBUF): %s\n", 
 		su_strerror(su_errno())));
   }
 
   if (wmem != 0 && 
+#if HAVE_SO_SNDBUFFORCE
+      setsockopt(s, SOL_SOCKET, SO_SNDBUFFORCE, (void *)&wmem, sizeof wmem) < 0 &&
+#endif
       setsockopt(s, SOL_SOCKET, SO_SNDBUF, (void *)&wmem, sizeof wmem) < 0) {
     SU_DEBUG_3(("setsockopt(SO_SNDBUF): %s\n", 
 		su_strerror(su_errno())));
@@ -409,10 +449,10 @@ int tport_udp_error(tport_t const *self, su_sockaddr_t name[1])
   for (c = CMSG_FIRSTHDR(msg); c; c = CMSG_NXTHDR(msg, c)) {
     if (0
 #if HAVE_IP_RECVERR
-	|| (c->cmsg_level == SOL_IP && c->cmsg_type == IP_RECVERR)
+	|| (c->cmsg_level == IPPROTO_IP && c->cmsg_type == IP_RECVERR)
 #endif
 #if HAVE_IPV6_RECVERR
-	|| (c->cmsg_level == SOL_IPV6 && c->cmsg_type == IPV6_RECVERR)
+	|| (c->cmsg_level == IPPROTO_IPV6 && c->cmsg_type == IPV6_RECVERR)
 #endif
 	) {
       char info[128];

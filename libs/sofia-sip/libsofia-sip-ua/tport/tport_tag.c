@@ -311,6 +311,10 @@ tag_typedef_t tptag_debug_drop = UINTTAG_TYPEDEF(debug_drop);
  *
  * This is a parameter suitable for tuning.
  *
+ * On Linux systems, the default value for receive buffer is set with
+ * the sysctl "net.core.rmem_default", and the maximum value is set with
+ * the sysctl "net.core.rmem_max".
+ *
  * Use with tport_tbind(), nua_create(), nta_agent_create(),
  * nta_agent_add_tport(), nth_engine_create(), or initial nth_site_create().
  */
@@ -321,6 +325,10 @@ tag_typedef_t tptag_udp_rmem = UINTTAG_TYPEDEF(udp_rmem);
  * Sets the maximum send buffer in bytes for primary UDP socket.
  *
  * This is a parameter suitable for tuning.
+ *
+ * On Linux systems, the default value for receive buffer is set with
+ * the sysctl "net.core.wmem_default", and the maximum value is set with
+ * the sysctl "net.core.wmem_max".
  *
  * Use with tport_tbind(), nua_create(), nta_agent_create(),
  * nta_agent_add_tport(), nth_engine_create(), or initial nth_site_create().

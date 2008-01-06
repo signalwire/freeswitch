@@ -2023,7 +2023,8 @@ int nua_invite_server_respond(nua_server_request_t *sr, tagi_t const *tags)
     reliable = 1, early_answer = 1;
   }
   else if (!nh->nh_soa || sr->sr_status >= 300) {
-    
+    if (sr->sr_neutral)
+      return nua_base_server_respond(sr, tags);
   }
   else if (tags && 100 < sr->sr_status && sr->sr_status < 200 && 
 	   !NHP_ISSET(nh->nh_prefs, early_answer)) {

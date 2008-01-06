@@ -498,9 +498,17 @@ static int nua_notify_client_init(nua_client_request_t *cr,
       else if (nu->nu_requested >= now + expires)
 	nu->nu_expires = nu->nu_requested = now + expires;
     }
+    else {
+      if (nu->nu_requested >= nu->nu_expires)
+	nu->nu_expires = nu->nu_requested;
+    }
+
   }
   else {
     enum nua_substate substate = nu->nu_substate;
+
+    if (nu->nu_requested >= nu->nu_expires)
+      nu->nu_expires = nu->nu_requested;
 
     if (nu->nu_expires > now) {
       tagi_t const *t = tl_find_last(tags, nutag_substate);
@@ -794,8 +802,11 @@ static int nua_notify_usage_shutdown(nua_handle_t *nh,
       return 0;
   }
   else {
-    if (nua_client_create(nh, nua_r_notify, 
-			  &nua_notify_client_methods, NULL) >= 0)
+    if (nua_client_tcreate(nh, nua_r_notify, 
+			   &nua_notify_client_methods, 
+			   SIPTAG_EVENT(du->du_event),
+			   NUTAG_SUBSTATE(nua_substate_terminated),
+			   TAG_END()) >= 0)
       return 0;
   }
 

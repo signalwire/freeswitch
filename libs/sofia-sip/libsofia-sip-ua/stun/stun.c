@@ -1895,23 +1895,23 @@ static int process_test_lifetime(stun_request_t *req, stun_msg_t *binding_respon
   if ((req->sr_state == stun_req_timeout) && (req->sr_from_y == -1)) {
     SU_DEBUG_0(("%s: lifetime determination failed.\n", __func__));
     sd->sd_state = stun_discovery_timeout;
+    req->sr_state = stun_req_dispose_me;
 
     /* Use per discovery specific callback */
     if (sd->sd_callback)
       sd->sd_callback(sd->sd_magic, sh, sd, action, sd->sd_state);
 
-    req->sr_state = stun_req_dispose_me;
     return 0;
   }
 
   if (abs(sd->sd_lt_cur - sd->sd_lt) <= STUN_LIFETIME_CI) {
     sd->sd_state = stun_discovery_done;
+    req->sr_state = stun_req_dispose_me;
 
     /* Use per discovery specific callback */
     if (sd->sd_callback)
       sd->sd_callback(sd->sd_magic, sh, sd, action, sd->sd_state);
 
-    req->sr_state = stun_req_dispose_me;
     return 0;
   }
 
@@ -1998,11 +1998,10 @@ static int action_bind(stun_request_t *req, stun_msg_t *binding_response)
   memcpy(sd->sd_addr_seen_outside, sa, sizeof(su_sockaddr_t));
 
   sd->sd_state = stun_discovery_done;
+  req->sr_state = stun_req_dispose_me;
   
   if (sd->sd_callback)
     sd->sd_callback(sd->sd_magic, sh, sd, action, sd->sd_state);
-
-  req->sr_state = stun_req_dispose_me;
 
   return 0;
 }
@@ -2053,9 +2052,9 @@ static void priv_mark_discovery_done(stun_discovery_t *sd,
 				     stun_request_t *req)
 {
   sd->sd_state = stun_discovery_done;
+  req->sr_state = stun_req_dispose_me;
   if (sd->sd_callback)
     sd->sd_callback(sd->sd_magic, sh, sd, action, sd->sd_state);
-  req->sr_state = stun_req_dispose_me;
 }
 
 /**
@@ -2290,12 +2289,12 @@ static void stun_sendto_timer_cb(su_root_magic_t *magic,
     switch (action) {
     case stun_action_binding_request:
       sd->sd_state = stun_discovery_timeout;
+      req->sr_state = stun_req_dispose_me;
 
       /* Use per discovery specific callback */
       if (sd->sd_callback)
 	sd->sd_callback(sd->sd_magic, sh, sd, action, sd->sd_state);
 
-      req->sr_state = stun_req_dispose_me;
       break;
 
     case stun_action_test_nattype:

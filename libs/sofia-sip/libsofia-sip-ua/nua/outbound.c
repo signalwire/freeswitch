@@ -503,13 +503,13 @@ int outbound_nat_detect(outbound_t *ob,
   }
 
   if (!nat_detected) {
-    SU_DEBUG_1(("outbound(%p): detected NAT: %s != %s\n",
+    SU_DEBUG_5(("outbound(%p): detected NAT: %s != %s\n",
 		(void *)ob->ob_owner, v->v_host, received));
     if (ob->ob_oo && ob->ob_oo->oo_status)
       ob->ob_oo->oo_status(ob->ob_owner, ob, 101, "NAT detected", TAG_END());
   }
   else {
-    SU_DEBUG_1(("outbound(%p): NAT binding changed: "
+    SU_DEBUG_5(("outbound(%p): NAT binding changed: "
 		"[%s]:%s != [%s]:%s\n",
 		(void *)ob->ob_owner, nat_detected, nat_port, received, rport));
     if (ob->ob_oo && ob->ob_oo->oo_status)
@@ -860,8 +860,6 @@ static int response_to_keepalive_options(outbound_t *ob,
     else
       loglevel = 3, failed = 1;
       
-    loglevel = 1;		/* XXX ... for now */
-
     if (loglevel >= SU_LOG->log_level) {
       sip_contact_t const *m = ob->ob_rcontact;
 
@@ -886,7 +884,7 @@ static int response_to_keepalive_options(outbound_t *ob,
       ob->ob_oo->oo_probe_error(ob->ob_owner, ob, status, phrase, TAG_END());
   }
   else if (status == 408) {
-    SU_DEBUG_1(("outbound(%p): keepalive timeout\n", (void *)ob->ob_owner));
+    SU_DEBUG_3(("outbound(%p): keepalive timeout\n", (void *)ob->ob_owner));
     ob->ob_oo->oo_keepalive_error(ob->ob_owner, ob, status, phrase, TAG_END());
     return 0;
   }
@@ -979,7 +977,7 @@ int outbound_process_request(outbound_t *ob,
     return 0;
 
   if (ob->ob_keepalive.validating) {
-    SU_DEBUG_1(("outbound(%p): registration check OPTIONS received\n", 
+    SU_DEBUG_5(("outbound(%p): registration check OPTIONS received\n", 
 		(void *)ob->ob_owner));
     ob->ob_keepalive.validated = 1;
   }

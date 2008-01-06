@@ -40,7 +40,7 @@ doxygen: built-sources
           && ${DOXYGEN} \
           && popd > /dev/null ; \
 	done
-	${top_srcdir}/libsofia-sip-ua/docs/hide_emails.sh docs/html 
+	${top_srcdir}/scripts/hide_emails.sh docs/html
 
 PHONY = doxygen 
 

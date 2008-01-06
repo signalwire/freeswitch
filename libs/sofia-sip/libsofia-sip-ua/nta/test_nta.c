@@ -176,10 +176,13 @@ struct agent_t {
 
   msg_t          *ag_probe_msg;
 
+  su_sockaddr_t   ag_su_nta[1];
+  socklen_t       ag_su_nta_len;
 
   /* Dummy servers */
   char const     *ag_sink_port;
   su_socket_t     ag_sink_socket, ag_down_socket;
+  su_wait_t       ag_sink_wait[1];
 };
 
 static int test_init(agent_t *ag, char const *resolv_conf);
@@ -558,8 +561,11 @@ int test_init(agent_t *ag, char const *resolv_conf)
   TEST_1(bind(s, &su.su_sa, sulen) < 0 ? (perror("bind"), 0) : 1);
   TEST_1(getsockname(s, &su.su_sa, &sulen) == 0);
 
-  ag->ag_sink_port = su_sprintf(ag->ag_home, "%u", ntohs(su.su_sin.sin_port));
   ag->ag_sink_socket = s;
+  su_wait_init(ag->ag_sink_wait);
+  su_wait_create(ag->ag_sink_wait, ag->ag_sink_socket, SU_WAIT_IN);
+
+  ag->ag_sink_port = su_sprintf(ag->ag_home, "%u", ntohs(su.su_sin.sin_port));
 
   /* Down server */
   s = su_socket(af, SOCK_STREAM, 0); TEST_1(s != INVALID_SOCKET);
@@ -591,13 +597,38 @@ int test_init(agent_t *ag, char const *resolv_conf)
     sip_to_t to[1];
     sip_contact_t m[1];
 
+    su_sockaddr_t *su = ag->ag_su_nta;
+
     sip_from_init(from);
     sip_to_init(to);
     sip_contact_init(m);
 
+
     TEST_1(ag->ag_contact = nta_agent_contact(ag->ag_agent));
 
     *m->m_url = *ag->ag_contact->m_url;
+
+    if (host_is_ip4_address(m->m_url->url_host)) {
+      inet_pton(su->su_family = AF_INET,
+		m->m_url->url_host,
+		&su->su_sin.sin_addr);
+      ag->ag_su_nta_len = (sizeof su->su_sin);
+    }
+    else {
+      TEST_1(host_is_ip_address(m->m_url->url_host));
+      inet_pton(su->su_family = AF_INET6,
+		m->m_url->url_host,
+		&su->su_sin6.sin6_addr);
+      ag->ag_su_nta_len = (sizeof su->su_sin6);
+    }
+
+    su->su_port = htons(5060);
+    if (m->m_url->url_port && strlen(m->m_url->url_port)) {
+      unsigned long port = strtoul(m->m_url->url_port, NULL, 10);
+      su->su_port = htons(port);
+    }
+    TEST_1(su->su_port != 0);
+
     m->m_url->url_user = "bob";
     TEST_1(ag->ag_m_bob = sip_contact_dup(ag->ag_home, m));
 
@@ -651,11 +682,12 @@ int test_init(agent_t *ag, char const *resolv_conf)
 			       NTATAG_ALIASES(ag->ag_aliases),
 			       NTATAG_REL100(1),
 			       NTATAG_UA(1), 
+			       NTATAG_MERGE_482(1), 
 			       NTATAG_USE_NAPTR(1),
 			       NTATAG_USE_SRV(1),
 			       NTATAG_MAX_FORWARDS(20),
 			       TAG_END());
-    TEST(err, 6);
+    TEST(err, 7);
 
     err = nta_agent_set_params(ag->ag_agent, 
 			       NTATAG_ALIASES(ag->ag_aliases),
@@ -723,7 +755,11 @@ int test_deinit(agent_t *ag)
   nta_agent_destroy(ag->ag_agent);
   su_root_destroy(ag->ag_root);
 
-  su_free(ag->ag_home, (void *)ag->ag_sink_port), ag->ag_sink_port = NULL;
+  if (ag->ag_sink_port) {
+    su_free(ag->ag_home, (void *)ag->ag_sink_port), ag->ag_sink_port = NULL;
+    su_wait_destroy(ag->ag_sink_wait);
+    su_close(ag->ag_sink_socket);
+  }
 
   free(ag->ag_mclass), ag->ag_mclass = NULL;
 
@@ -1206,6 +1242,9 @@ int test_tports(agent_t *ag)
     
     ctx->c_extra = &used_tport;
     
+    *url = *ag->ag_aliases->m_url;
+    url->url_user = "alice";
+
     TEST(tport_shutdown(tcp_tport, 1), 0); /* Not going to send anymore */
 
     TEST_1(pl = test_payload(ag->ag_home, 512));
@@ -2213,6 +2252,302 @@ int test_dialog(agent_t *ag)
 
   nta_leg_destroy(ag->ag_alice_leg), ag->ag_alice_leg = NULL;
   nta_leg_destroy(ag->ag_bob_leg), ag->ag_bob_leg = NULL;
+
+  END();
+}
+
+/* Test merging  */
+
+int test_merging(agent_t *ag)
+{
+  BEGIN();
+
+  /*
+   * Test merging: send two messages with same 
+   * from tag/call-id/cseq number to nta,
+   * expect 200 and 408.
+   */
+
+  char const rfc3261prefix[] = "z9hG4bK";
+
+  char const template[] = 
+    "%s " URL_PRINT_FORMAT " SIP/2.0\r\n"
+    "Via: SIP/2.0/UDP 127.0.0.1:%s;branch=%s.%p\r\n"
+    "Via: SIP/2.0/TCP fake.address.for.via.example.net;branch=z9hG4bK.%p\r\n"
+    "CSeq: %u %s\r\n"
+    "Call-ID: dfsjfhsduifhsjfsfjkfsd.%p@dfsdhfsjkhsdjk\r\n"
+    "From: Evil Forker <sip:evel@forker.com>;tag=test_nta-%s\r\n"
+    "To: Bob the Builder <sip:bob@example.net>%s\r\n"
+    "Content-Length: 0\r\n"
+    "\r\n";
+
+  url_t u1[1], u2[2];
+
+  char m1[1024], m2[1024];
+  char r1[1024], r2[1024];
+
+  size_t len, l1, l2;
+  su_sockaddr_t *su = ag->ag_su_nta;
+  socklen_t sulen = ag->ag_su_nta_len;
+  int n;
+
+  /* Empty sink socket */
+  while (su_wait(ag->ag_sink_wait, 1, 0) == 0) 
+    su_recv(ag->ag_sink_socket, m1, sizeof m1, MSG_TRUNC);
+
+  {
+    /* RFC 3261 8.2.2.2 Merged Requests:
+
+   If the request has no tag in the To header field, the UAS core MUST
+   check the request against ongoing transactions.  If the From tag,
+   Call-ID, and CSeq exactly match those associated with an ongoing
+   transaction, but the request does not match that transaction (based
+   on the matching rules in Section 17.2.3), the UAS core SHOULD
+   generate a 482 (Loop Detected) response and pass it to the server
+   transaction.
+    */
+    nta_leg_bind(ag->ag_server_leg, leg_callback_200, ag);
+    ag->ag_expect_leg = ag->ag_server_leg;
+    ag->ag_latest_leg = NULL;
+
+    *u1 = *ag->ag_m_bob->m_url;
+    snprintf(m1, sizeof m1,
+	     template, 
+	     "MESSAGE", URL_PRINT_ARGS(u1),
+	     /* Via */ ag->ag_sink_port, rfc3261prefix, (void *)m1, 
+	     /* 2nd Via */ (void *)ag,
+	     /* CSeq */ 13, "MESSAGE",
+	     /* Call-ID */ (void *)ag,
+	     /* From tag */ "2.5.1",
+	     /* To tag */ "");
+    l1 = strlen(m1);
+
+    *u2 = *ag->ag_m_bob->m_url;
+
+    snprintf(m2, sizeof m2,
+	     template, 
+	     "MESSAGE", URL_PRINT_ARGS(u2),
+	     /* Via */ ag->ag_sink_port, rfc3261prefix, (void *)m2,
+	     /* 2nd Via */ (void *)ag,
+	     /* CSeq */ 13, "MESSAGE",
+	     /* Call-ID */ (void *)ag,
+	     /* From tag */ "2.5.1",
+	     /* To tag */ "");
+    l2 = strlen(m2);
+
+    TEST_1((size_t)su_sendto(ag->ag_sink_socket, m1, l1, 0, su, sulen) == l1);
+    TEST_1((size_t)su_sendto(ag->ag_sink_socket, m2, l2, 0, su, sulen) == l2);
+
+    for (n = 0; n < 2; ) {
+      su_root_step(ag->ag_root, 10L);
+      if (su_wait(ag->ag_sink_wait, 1, 0) == 0) {
+	if (n == 0)
+	  su_recv(ag->ag_sink_socket, r1, sizeof r1, MSG_TRUNC);
+	else
+	  su_recv(ag->ag_sink_socket, r2, sizeof r2, MSG_TRUNC);
+	n++;
+      }
+    }
+    len = strlen("SIP/2.0 200 ");
+    TEST_1(memcmp(r1, "SIP/2.0 200 ", len) == 0);
+    TEST_1(memcmp(r2, "SIP/2.0 482 ", len) == 0);
+
+    TEST_P(ag->ag_latest_leg, ag->ag_server_leg);
+  }
+
+  {
+    /*
+     * Check that request with same call-id, cseq and from-tag 
+     * are not merged if the method is different.
+     */
+    nta_leg_bind(ag->ag_server_leg, leg_callback_200, ag);
+    ag->ag_expect_leg = ag->ag_server_leg;
+    ag->ag_latest_leg = NULL;
+
+    *u1 = *ag->ag_m_bob->m_url;
+    snprintf(m1, sizeof m1,
+	     template, 
+	     "MESSAGE", URL_PRINT_ARGS(u1),
+	     /* Via */ ag->ag_sink_port, rfc3261prefix, (void *)m1, 
+	     /* 2nd Via */ (void *)ag,
+	     /* CSeq */ 14, "MESSAGE",
+	     /* Call-ID */ (void *)ag,
+	     /* From tag */ "2.5.2",
+	     /* To tag */ "");
+    l1 = strlen(m1);
+
+    *u2 = *ag->ag_m_bob->m_url;
+
+    snprintf(m2, sizeof m2,
+	     template, 
+	     "OPTIONS", URL_PRINT_ARGS(u2),
+	     /* Via */ ag->ag_sink_port, rfc3261prefix, (void *)m2,
+	     /* 2nd Via */ (void *)ag,
+	     /* CSeq */ 14, "OPTIONS",
+	     /* Call-ID */ (void *)ag,
+	     /* From tag */ "2.5.2",
+	     /* To tag */ "");
+    l2 = strlen(m2);
+
+    TEST_1((size_t)su_sendto(ag->ag_sink_socket, m1, l1, 0, su, sulen) == l1);
+    TEST_1((size_t)su_sendto(ag->ag_sink_socket, m2, l2, 0, su, sulen) == l2);
+
+    for (n = 0; n < 2; ) {
+      su_root_step(ag->ag_root, 10L);
+      if (su_wait(ag->ag_sink_wait, 1, 0) == 0) {
+	if (n == 0)
+	  su_recv(ag->ag_sink_socket, r1, sizeof r1, MSG_TRUNC);
+	else
+	  su_recv(ag->ag_sink_socket, r2, sizeof r2, MSG_TRUNC);
+	n++;
+      }
+    }
+
+    len = strlen("SIP/2.0 200 ");
+    TEST_1(memcmp(r1, "SIP/2.0 200 ", len) == 0);
+    TEST_1(memcmp(r2, "SIP/2.0 482 ", len) != 0);
+
+    TEST_P(ag->ag_latest_leg, ag->ag_server_leg);
+  }
+
+  {
+    /* test with rfc2543 */
+
+    snprintf(m1, sizeof m1,
+	     template, 
+	     "MASSAGE", URL_PRINT_ARGS(u1),
+	     /* Via */ ag->ag_sink_port, "0.", (void *)0, 
+	     /* 2nd Via */ (void *)ag,
+	     /* CSeq */ 14, "MASSAGE",
+	     /* Call-ID */ (void *)(ag + 1),
+	     /* From tag */ "2.5.3",
+	     /* To tag */ "");
+    l1 = strlen(m1);
+
+    u2->url_user = "bob+2";
+
+    snprintf(m2, sizeof m2,
+	     template, 
+	     "MASSAGE", URL_PRINT_ARGS(u2),
+	     /* Via */ ag->ag_sink_port, "0.", (void *)0,
+	     /* 2nd Via */ (void *)ag,
+	     /* CSeq */ 14, "MASSAGE",
+	     /* Call-ID */ (void *)(ag + 1),
+	     /* From tag */ "2.5.3",
+	     /* To tag */ "");
+    l2 = strlen(m2);
+
+    TEST_1((size_t)su_sendto(ag->ag_sink_socket, m1, l1, 0, su, sulen) == l1);
+    TEST_1((size_t)su_sendto(ag->ag_sink_socket, m2, l2, 0, su, sulen) == l2);
+
+    for (n = 0; n < 2; ) {
+      su_root_step(ag->ag_root, 10L);
+      if (su_wait(ag->ag_sink_wait, 1, 0) == 0) {
+	if (n == 0)
+	  su_recv(ag->ag_sink_socket, r1, sizeof r1, MSG_TRUNC);
+	else
+	  su_recv(ag->ag_sink_socket, r2, sizeof r2, MSG_TRUNC);
+	n++;
+      }
+    }
+    l1 = strlen("SIP/2.0 200 ");
+    TEST_1(memcmp(r1, "SIP/2.0 200 ", l1) == 0);
+    TEST_1(memcmp(r2, "SIP/2.0 482 ", l1) == 0);
+
+    TEST_P(ag->ag_latest_leg, ag->ag_server_leg);
+  }
+
+  {
+    /* test with to-tag */
+
+    snprintf(m1, sizeof m1,
+	     template, 
+	     "MESSAGE", URL_PRINT_ARGS(u1),
+	     /* Via */ ag->ag_sink_port, rfc3261prefix, (void *)m1, 
+	     /* 2nd Via */ (void *)ag,
+	     /* CSeq */ 15, "MESSAGE",
+	     /* Call-ID */ (void *)(ag + 2),
+	     /* From tag */ "2.5.4",
+	     /* To tag */ ";tag=in-dialog");
+    l1 = strlen(m1);
+
+    u2->url_user = "bob+2";
+
+    snprintf(m2, sizeof m2,
+	     template, 
+	     "MESSAGE", URL_PRINT_ARGS(u2),
+	     /* Via */ ag->ag_sink_port, rfc3261prefix, (void *)m2,
+	     /* 2nd Via */ (void *)ag,
+	     /* CSeq */ 15, "MESSAGE",
+	     /* Call-ID */ (void *)(ag + 2),
+	     /* From tag */ "2.5.4",
+	     /* To tag */ ";tag=in-dialog");
+    l2 = strlen(m2);
+
+    TEST_1((size_t)su_sendto(ag->ag_sink_socket, m1, l1, 0, su, sulen) == l1);
+    TEST_1((size_t)su_sendto(ag->ag_sink_socket, m2, l2, 0, su, sulen) == l2);
+
+    for (n = 0; n < 2; ) {
+      su_root_step(ag->ag_root, 10L);
+      if (su_wait(ag->ag_sink_wait, 1, 0) == 0) {
+	if (n == 0)
+	  su_recv(ag->ag_sink_socket, r1, sizeof r1, MSG_TRUNC);
+	else
+	  su_recv(ag->ag_sink_socket, r2, sizeof r2, MSG_TRUNC);
+	n++;
+      }
+    }
+    l1 = strlen("SIP/2.0 200 ");
+    TEST_1(memcmp(r1, "SIP/2.0 200 ", l1) == 0);
+    TEST_1(memcmp(r2, "SIP/2.0 482 ", l1) != 0);
+
+    TEST_P(ag->ag_latest_leg, ag->ag_server_leg);
+  }
+
+  {
+    /* test with rfc2543 and to-tag */
+
+    snprintf(m1, sizeof m1,
+	     template, 
+	     "MESSAGE", URL_PRINT_ARGS(u1),
+	     /* Via */ ag->ag_sink_port, "0.", (void *)0, 
+	     /* 2nd Via */ (void *)ag,
+	     /* CSeq */ 15, "MESSAGE",
+	     /* Call-ID */ (void *)(ag + 2),
+	     /* From tag */ "2.5.5",
+	     /* To tag */ ";tag=in-dialog");
+    l1 = strlen(m1);
+
+    snprintf(m2, sizeof m2,
+	     template, 
+	     "MESSAGE", URL_PRINT_ARGS(u2),
+	     /* Via */ ag->ag_sink_port, "0.", (void *)0,
+	     /* 2nd Via */ (void *)ag,
+	     /* CSeq */ 15, "MESSAGE",
+	     /* Call-ID */ (void *)(ag + 2),
+	     /* From tag */ "2.5.5",
+	     /* To tag */ ";tag=in-dialog");
+    l2 = strlen(m2);
+
+    TEST_1((size_t)su_sendto(ag->ag_sink_socket, m1, l1, 0, su, sulen) == l1);
+    TEST_1((size_t)su_sendto(ag->ag_sink_socket, m2, l2, 0, su, sulen) == l2);
+
+    for (n = 0; n < 2; ) {
+      su_root_step(ag->ag_root, 10L);
+      if (su_wait(ag->ag_sink_wait, 1, 0) == 0) {
+	if (n == 0)
+	  su_recv(ag->ag_sink_socket, r1, sizeof r1, MSG_TRUNC);
+	else
+	  su_recv(ag->ag_sink_socket, r2, sizeof r2, MSG_TRUNC);
+	n++;
+      }
+    }
+    l1 = strlen("SIP/2.0 200 ");
+    TEST_1(memcmp(r1, "SIP/2.0 200 ", l1) == 0);
+    TEST_1(memcmp(r2, "SIP/2.0 482 ", l1) != 0);
+
+    TEST_P(ag->ag_latest_leg, ag->ag_server_leg);
+  }
 
   END();
 }
@@ -3485,6 +3820,7 @@ int main(int argc, char *argv[])
   if (retval == 0) {
     retval |= test_bad_messages(ag); SINGLE_FAILURE_CHECK();
     retval |= test_reinit(ag); SINGLE_FAILURE_CHECK();
+    retval |= test_merging(ag); SINGLE_FAILURE_CHECK();
     retval |= test_tports(ag); SINGLE_FAILURE_CHECK();
     retval |= test_destroy_incoming(ag); SINGLE_FAILURE_CHECK();
     retval |= test_resolv(ag, argv[i]); SINGLE_FAILURE_CHECK();

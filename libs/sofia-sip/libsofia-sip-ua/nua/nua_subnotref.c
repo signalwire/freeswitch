@@ -581,7 +581,7 @@ int nua_notify_server_preprocess(nua_server_request_t *sr)
   sr->sr_usage = du;
   eu = nua_dialog_usage_private(du); assert(eu);
   eu->eu_notified++;
-  if (!o->o_id) 
+  if (!o || !o->o_id) 
     eu->eu_no_id = 1;
 
   if (subs == NULL) {
