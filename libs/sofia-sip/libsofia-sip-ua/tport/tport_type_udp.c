@@ -114,7 +114,9 @@ int tport_udp_init_primary(tport_primary_t *pri,
   unsigned rmem = 0, wmem = 0;
   int events = SU_WAIT_IN;
   int s;
+#if HAVE_IP_ADD_MEMBERSHIP
   su_sockaddr_t *su = (su_sockaddr_t *)ai->ai_addr;
+#endif
   int const one = 1; (void)one;
 
   s = su_socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
