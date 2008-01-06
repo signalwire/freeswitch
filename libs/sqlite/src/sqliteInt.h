@@ -281,20 +281,26 @@ static inline void *zmalloc(size_t x)
 	return z;
 }
 
+static inline char *strndup_lite(const char *s, size_t n)
+{
+	char *dup = malloc(n+1);
+	assert(dup);
+	memcpy(dup, s, n);
+	*(dup+n) = '\0';
+	return dup;
+}
 
 #define ENTER_MALLOC 0
 #define sqliteMalloc(x)          zmalloc(x)//sqlite3Malloc(x,1)
 #define sqliteMallocRaw(x)       malloc(x)//sqlite3MallocRaw(x,1)
 #define sqliteRealloc(x,y)       realloc(x, y)//sqlite3Realloc(x,y)
 #define sqliteStrDup(x)          strdup(x)//sqlite3StrDup(x)
-#define sqliteStrNDup(x,y)       sqlite3StrNDup(x,y)
-
+#define sqliteStrNDup(x,y)       strndup_lite(x,y) //sqlite3StrNDup(x,y)
 #define sqliteReallocOrFree(x,y) sqlite3ReallocOrFree(x,y)
 
 #endif
 
-
-#define sqliteFree(x)          if (x) { free((void *)x); x = NULL; } //sqlite3FreeX(x)
+#define sqliteFree(x)          if (x) { free((void *)x); x = NULL;} //sqlite3FreeX(x)
 #define sqliteAllocSize(x)     sqlite3AllocSize(x)
 
 

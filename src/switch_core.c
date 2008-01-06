@@ -705,10 +705,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	{
 		struct rlimit rlp;
 
+		/* 
+		   Setting the stack size on FreeBSD results in an instant crash.
+		 
+		   If anyone knows how to fix this,
+		   feel free to submit a patch to http://jira.freeswitch.org 
+		*/
+
+#ifndef __FreeBSD__
 		memset(&rlp, 0, sizeof(rlp));
 		rlp.rlim_cur = SWITCH_THREAD_STACKSIZE;
 		rlp.rlim_max = SWITCH_THREAD_STACKSIZE;
 		setrlimit(RLIMIT_STACK, &rlp);
+#endif
 
 		memset(&rlp, 0, sizeof(rlp));
 		rlp.rlim_cur = 999999;

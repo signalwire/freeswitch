@@ -89,7 +89,7 @@ int sqlite3VdbeFifoPop(Fifo *pFifo, i64 *pVal){
     pFifo->pFirst = pPage->pNext;
     sqliteFree(pPage);
     if( pFifo->nEntry==0 ){
-      assert( pFifo->pLast==pPage );
+		//assert( pFifo->pLast==pPage );
       pFifo->pLast = 0;
     }else{
       assert( pFifo->pFirst!=0 );
