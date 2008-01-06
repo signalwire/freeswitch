@@ -3952,8 +3952,8 @@ SWITCH_STANDARD_APP(conference_function)
 	uint32_t flags = 0;
 	conference_member_t member = { 0 };
 	conference_obj_t *conference = NULL;
-	switch_channel_t *channel = NULL;
-	char *mydata = switch_core_session_strdup(session, data);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *mydata = NULL;
 	char *conf_name = NULL;
 	char *bridge_prefix = "bridge:";
 	char *flags_prefix = "+flags{";
@@ -3968,8 +3968,14 @@ SWITCH_STANDARD_APP(conference_function)
 	conf_xml_cfg_t xml_cfg = { 0 };
 	char *params = NULL;
 
-	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
+
+	if (switch_strlen_zero(data)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid arguments\n");
+		return;
+	}
+
+	mydata = switch_core_session_strdup(session, data);
 
 	if (!mydata) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
