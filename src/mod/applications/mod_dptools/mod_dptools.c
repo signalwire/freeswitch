@@ -44,7 +44,7 @@ SWITCH_STANDARD_APP(detect_speech_function)
 	int argc;
 	char *lbuf = NULL;
 
-	if (data && (lbuf = switch_core_session_strdup(session, data))
+	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		if (!strcasecmp(argv[0], "grammar") && argc >= 1) {
 			switch_ivr_detect_speech_load_grammar(session, argv[1], argv[2]);
@@ -62,25 +62,18 @@ SWITCH_STANDARD_APP(detect_speech_function)
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", DETECT_SPEECH_SYNTAX);
 	}
-
 }
 
 #define EXE_SYNTAX "<extension> <dialplan> <context>"
 SWITCH_STANDARD_APP(exe_function)
 {
-	char *argv[4];
+	char *argv[4] = { 0 };
 	int argc;
 	char *lbuf = NULL;
-	char *extension;
-	char *context;
-	char *dialplan;
 	
-	if (data && (lbuf = switch_core_session_strdup(session, data))
+	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-		extension = argv[0];
-		dialplan = argv[1];
-		context = argv[2];
-		switch_core_session_execute_exten(session, extension, dialplan, context);
+		switch_core_session_execute_exten(session, argv[0], argv[1], argv[2]);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", EXE_SYNTAX);
 	}
@@ -92,27 +85,15 @@ SWITCH_STANDARD_APP(intercept_function)
 	switch_ivr_intercept_session(session, data);
 }
 
-
 #define eavesdrop_SYNTAX "<uuid>"
 SWITCH_STANDARD_APP(eavesdrop_function)
 {
-	char *argv[4];
-	int argc;
-	char *lbuf = NULL;
-	char *uuid;
-	
-	if (data && (lbuf = switch_core_session_strdup(session, data))
-		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-		uuid = argv[0];
-		
-		switch_ivr_eavesdrop_session(session, uuid, ED_DTMF);
-		
-	} else {
+	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", eavesdrop_SYNTAX);
+	} else {
+		switch_ivr_eavesdrop_session(session, data, ED_DTMF);
 	}
 }
-
-
 
 #define SET_USER_SYNTAX "<user>@<domain>"
 SWITCH_STANDARD_APP(set_user_function)
@@ -122,7 +103,7 @@ SWITCH_STANDARD_APP(set_user_function)
 	switch_channel_t *channel;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	if (switch_strlen_zero(data)) {
 		goto error;
@@ -165,20 +146,16 @@ SWITCH_STANDARD_APP(set_user_function)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No user@domain specified.\n");
 
  done:
-	
 	if (xml) {
 		switch_xml_free(xml);
 	}
-
-
 }
-
 
 SWITCH_STANDARD_APP(ring_ready_function)
 {
 	switch_channel_t *channel;
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 	switch_channel_ring_ready(channel);
 }
 
@@ -186,7 +163,7 @@ SWITCH_STANDARD_APP(break_function)
 {
 	switch_channel_t *channel;
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 	switch_channel_set_flag(channel, CF_BREAK);
 }
 
@@ -198,11 +175,10 @@ SWITCH_STANDARD_APP(queue_dtmf_function)
 
 	if (!switch_strlen_zero(data)) {
 		channel = switch_core_session_get_channel(session);
-		assert(channel != NULL);
+		switch_assert(channel != NULL);
 		for (p = (char *)data; p && *p; p++) {
 			dtmf.digit = *p;
 			switch_channel_queue_dtmf(channel, &dtmf);
-			p++;
 		}
 	}
 }
@@ -213,7 +189,7 @@ SWITCH_STANDARD_APP(transfer_function)
 	char *argv[4] = { 0 };
 	char *mydata;
 
-	if (data && (mydata = switch_core_session_strdup(session, data))) {
+	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
 			switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
 		} else {
@@ -228,7 +204,7 @@ SWITCH_STANDARD_APP(sched_transfer_function)
 	char *argv[4] = { 0 };
 	char *mydata;
 
-	if (data && (mydata = switch_core_session_strdup(session, data))) {
+	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
 			time_t when;
 
@@ -251,7 +227,7 @@ SWITCH_STANDARD_APP(sched_hangup_function)
 	char *argv[5] = { 0 };
 	char *mydata;
 
-	if (data && (mydata = switch_core_session_strdup(session, data))) {
+	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
 			time_t when;
 			switch_call_cause_t cause = SWITCH_CAUSE_ALLOTTED_TIMEOUT;
@@ -278,14 +254,13 @@ SWITCH_STANDARD_APP(sched_hangup_function)
 	}
 }
 
-
 SWITCH_STANDARD_APP(sched_broadcast_function)
 {
 	int argc;
 	char *argv[6] = { 0 };
 	char *mydata;
 
-	if (data && (mydata = switch_core_session_strdup(session, data))) {
+	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
 			time_t when;
 			switch_media_flag_t flags = SMF_NONE;
@@ -317,7 +292,6 @@ SWITCH_STANDARD_APP(sched_broadcast_function)
 
 SWITCH_STANDARD_APP(sleep_function)
 {
-
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No timeout specified.\n");
 	} else {
@@ -337,7 +311,6 @@ SWITCH_STANDARD_APP(delay_function)
 	}
 	
 	switch_ivr_delay_echo(session, len);
-	
 }
 
 SWITCH_STANDARD_APP(eval_function)
@@ -351,9 +324,9 @@ SWITCH_STANDARD_APP(phrase_function)
 	char *mydata = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
-	if ((mydata = switch_core_session_strdup(session, data))) {
+	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
 		const char *lang;
 		char *macro = mydata;
 		char *mdata = NULL;
@@ -364,12 +337,10 @@ SWITCH_STANDARD_APP(phrase_function)
 
 		lang = switch_channel_get_variable(channel, "language");
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute %s(%s) lang %s\n", macro, mdata, lang);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute %s(%s) lang %s\n", macro, switch_str_nil(mdata), switch_str_nil(lang));
 		switch_ivr_phrase_macro(session, macro, mdata, lang, NULL);
 	}
-
 }
-
 
 SWITCH_STANDARD_APP(hangup_function)
 {
@@ -377,10 +348,10 @@ SWITCH_STANDARD_APP(hangup_function)
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
-	if (!switch_strlen_zero((char *) data)) {
-		cause = switch_channel_str2cause((char *) data);
+	if (!switch_strlen_zero(data)) {
+		cause = switch_channel_str2cause(data);
 	}
 
 	switch_channel_hangup(channel, cause);
@@ -389,18 +360,18 @@ SWITCH_STANDARD_APP(hangup_function)
 SWITCH_STANDARD_APP(answer_function)
 {
 	switch_channel_t *channel;
-	channel = switch_core_session_get_channel(session);
 
-	assert(channel != NULL);
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel != NULL);
 	switch_channel_answer(channel);
 }
 
 SWITCH_STANDARD_APP(pre_answer_function)
 {
 	switch_channel_t *channel;
-	channel = switch_core_session_get_channel(session);
 
-	assert(channel != NULL);
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel != NULL);
 	switch_channel_pre_answer(channel);
 }
 
@@ -413,7 +384,6 @@ SWITCH_STANDARD_APP(redirect_function)
 	msg.string_arg = data;
 	msg.message_id = SWITCH_MESSAGE_INDICATE_REDIRECT;
 	switch_core_session_receive_message(session, &msg);
-
 }
 
 SWITCH_STANDARD_APP(respond_function)
@@ -425,19 +395,17 @@ SWITCH_STANDARD_APP(respond_function)
 	msg.string_arg = data;
 	msg.message_id = SWITCH_MESSAGE_INDICATE_RESPOND;
 	switch_core_session_receive_message(session, &msg);
-
 }
 
 SWITCH_STANDARD_APP(deflect_function)
 {
 	switch_core_session_message_t msg = { 0 };
 
-	/* Tell the channel to respond the call */
+	/* Tell the channel to deflect the call */
 	msg.from = __FILE__;
 	msg.string_arg = data;
 	msg.message_id = SWITCH_MESSAGE_INDICATE_DEFLECT;
 	switch_core_session_receive_message(session, &msg);
-
 }
 
 
@@ -447,7 +415,7 @@ SWITCH_STANDARD_APP(set_function)
 	char *var, *val = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
@@ -491,7 +459,6 @@ SWITCH_STANDARD_APP(set_global_function)
 	}
 }
 
-
 SWITCH_STANDARD_APP(set_profile_var_function)
 {
 	switch_channel_t *channel;
@@ -499,7 +466,7 @@ SWITCH_STANDARD_APP(set_profile_var_function)
 	char *name, *val = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	caller_profile = switch_channel_get_caller_profile(channel);
 
@@ -572,7 +539,6 @@ SWITCH_STANDARD_APP(set_profile_var_function)
 	}
 }
 
-
 SWITCH_STANDARD_APP(export_function)
 {
 	switch_channel_t *channel;
@@ -581,7 +547,7 @@ SWITCH_STANDARD_APP(export_function)
 	int local = 1;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
@@ -627,7 +593,7 @@ SWITCH_STANDARD_APP(unset_function)
 	switch_channel_t *channel;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
@@ -643,7 +609,7 @@ SWITCH_STANDARD_APP(log_function)
 	char *level, *log_str;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	if (data && (level = strdup(data))) {
 		switch_log_level_t ltype = SWITCH_LOG_DEBUG;
@@ -663,7 +629,6 @@ SWITCH_STANDARD_APP(log_function)
 	}
 }
 
-
 SWITCH_STANDARD_APP(info_function)
 {
 	switch_channel_t *channel;
@@ -671,7 +636,7 @@ SWITCH_STANDARD_APP(info_function)
 	char *buf;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
@@ -681,25 +646,22 @@ SWITCH_STANDARD_APP(info_function)
 		switch_event_destroy(&event);
 		free(buf);
 	}
-
 }
-
-
 
 SWITCH_STANDARD_APP(event_function)
 {
 	switch_channel_t *channel;
 	switch_event_t *event;
-	char *argv[25];
+	char *argv[25] = { 0 };
 	int argc = 0;
 	char *lbuf;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_APPLICATION) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
-		if (data && (lbuf = switch_core_session_strdup(session, data))
+		if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
 			&& (argc = switch_separate_string(lbuf, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 			int x = 0;
 
@@ -721,59 +683,52 @@ SWITCH_STANDARD_APP(event_function)
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, var, "%s", val);
 					}
 				}
-
 			}
 		}
-		
 		switch_event_fire(&event);
 	}
-
 }
-
 
 SWITCH_STANDARD_APP(privacy_function)
 {
 	switch_channel_t *channel;
 	switch_caller_profile_t *caller_profile;
-	char *arg;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	caller_profile = switch_channel_get_caller_profile(channel);
 
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No privacy mode specified.\n");
 	} else {
-		arg = switch_core_session_strdup(session, data);
-
 		switch_set_flag(caller_profile, SWITCH_CPF_SCREEN);
 
-		if (!strcasecmp(arg, "no")) {
+		if (!strcasecmp(data, "no")) {
 			switch_clear_flag(caller_profile, SWITCH_CPF_HIDE_NAME);
 			switch_clear_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER);
-		} else if (!strcasecmp(arg, "yes")) {
+		} else if (!strcasecmp(data, "yes")) {
 			switch_set_flag(caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
-		} else if (!strcasecmp(arg, "full")) {
+		} else if (!strcasecmp(data, "full")) {
 			switch_set_flag(caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
-		} else if (!strcasecmp(arg, "name")) {
+		} else if (!strcasecmp(data, "name")) {
 			switch_set_flag(caller_profile, SWITCH_CPF_HIDE_NAME);
-		} else if (!strcasecmp(arg, "number")) {
+		} else if (!strcasecmp(data, "number")) {
 			switch_set_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID privacy mode specified. Use a valid mode [no|yes|name|full|number].\n");
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Privacy to %s [%d]\n", arg, caller_profile->flags);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Privacy to %s [%d]\n", data, caller_profile->flags);
 	}
 }
 
 SWITCH_STANDARD_APP(strftime_function)
 {
-	char *argv[2];
+	char *argv[2] = { 0 };
 	int argc;
 	char *lbuf;
 
-	if (data && (lbuf = switch_core_session_strdup(session, data))
+	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, '=', argv, (sizeof(argv) / sizeof(argv[0])))) > 1) {
 		switch_size_t retsize;
 		switch_time_exp_t tm;
@@ -789,7 +744,6 @@ SWITCH_STANDARD_APP(strftime_function)
 		switch_channel_set_variable(channel, argv[0], date);
 	}
 }
-
 
 SWITCH_STANDARD_API(strepoch_api_function)
 {
@@ -808,7 +762,6 @@ SWITCH_STANDARD_API(strepoch_api_function)
 
 SWITCH_STANDARD_API(strftime_api_function)
 {
-
 	switch_size_t retsize;
 	switch_time_exp_t tm;
 	char date[80] = "";
@@ -834,7 +787,7 @@ SWITCH_STANDARD_API(presence_api_function)
 	int argc = 0;
 	switch_event_types_t type = SWITCH_EVENT_PRESENCE_IN;
 
-	if (cmd && (lbuf = strdup(cmd))
+	if (!switch_strlen_zero(cmd) && (lbuf = strdup(cmd))
 		&& (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) > 0) {
 		if (!strcasecmp(argv[0], "out")) {
 			type = SWITCH_EVENT_PRESENCE_OUT;
@@ -859,17 +812,15 @@ SWITCH_STANDARD_API(presence_api_function)
 	} else {
 		stream->write_function(stream, "Invalid");
 	}
-
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 SWITCH_STANDARD_API(chat_api_function)
 {
 	char *lbuf, *argv[4];
 	int argc = 0;
 
-	if (cmd && (lbuf = strdup(cmd))
+	if (!switch_strlen_zero(cmd) && (lbuf = strdup(cmd))
 		&& (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) == 4) {
 		switch_chat_interface_t *ci;
 
@@ -906,7 +857,7 @@ SWITCH_STANDARD_APP(ivr_application_function)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *params,*chanvars;
 
-	if (channel && data && (params = switch_core_session_strdup(session, data))) {
+	if (channel && !switch_strlen_zero(data) && (params = switch_core_session_strdup(session, data))) {
 		switch_xml_t cxml = NULL, cfg = NULL, xml_menus = NULL, xml_menu = NULL;
 
 		// Open the config from the xml registry
@@ -946,12 +897,10 @@ SWITCH_STANDARD_APP(ivr_application_function)
 	}
 }
 
-
 SWITCH_STANDARD_APP(dtmf_session_function)
 {
 	switch_ivr_inband_dtmf_session(session);
 }
-
 
 SWITCH_STANDARD_APP(stop_dtmf_session_function)
 {
@@ -966,11 +915,9 @@ SWITCH_STANDARD_APP(dtmf_session_generate_function)
 		if (!strcasecmp(data, "write")) {
 			do_read = SWITCH_FALSE;
 		}
-	}
-	
+	}	
 	switch_ivr_inband_dtmf_generate_session(session, do_read);
 }
-
 
 SWITCH_STANDARD_APP(stop_dtmf_session_generate_function)
 {
@@ -997,10 +944,16 @@ SWITCH_STANDARD_APP(tone_detect_session_function)
 	char *mydata = NULL;
 	time_t to = 0;
 
-	mydata = switch_core_session_strdup(session, data);
+	if (switch_strlen_zero(data) || !(mydata = switch_core_session_strdup(session, data))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID ARGS!\n");
+		return;
+	}
+
 	if ((argc = switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0]))) < 2) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID ARGS!\n");
+		return;
 	}
+
 	if (argv[3]) {
 		uint32_t mto;
 		if (*argv[3] == '+') {
@@ -1036,13 +989,11 @@ SWITCH_STANDARD_APP(echo_function)
 SWITCH_STANDARD_APP(park_function)
 {
 	switch_ivr_park(session, NULL);
-
 }
 
 SWITCH_STANDARD_APP(park_state_function)
 {
 	switch_ivr_park_session(session);
-
 }
 
 /********************************************************************************/
@@ -1055,8 +1006,6 @@ SWITCH_STANDARD_APP(park_state_function)
 */
 static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
-	
-
 	switch (itype) {
 	case SWITCH_INPUT_TYPE_DTMF:
 		{
@@ -1065,7 +1014,7 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 			switch_channel_t *channel = switch_core_session_get_channel(session);
 			const char *p;
 			
-			assert(channel);
+			switch_assert(channel);
 
 			if (!(terminators = switch_channel_get_variable(channel, SWITCH_PLAYBACK_TERMINATORS_VARIABLE))) {
 				terminators = "*";
@@ -1096,7 +1045,8 @@ SWITCH_STANDARD_APP(clear_speech_cache_function)
 
 SWITCH_STANDARD_APP(speak_function)
 {
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_codec_t *codec = switch_core_session_get_read_codec(session);
 	char buf[10];
 	char *argv[4] = { 0 };
 	int argc;
@@ -1104,19 +1054,22 @@ SWITCH_STANDARD_APP(speak_function)
 	const char *voice = NULL;
 	char *text = NULL;
 	char *mydata = NULL;
-	switch_codec_t *codec;
 	switch_input_args_t args = { 0 };
 
-	codec = switch_core_session_get_read_codec(session);
-	assert(codec != NULL);
+	switch_assert(codec != NULL);
+	switch_assert(channel != NULL);
 
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	if (switch_strlen_zero(data) || !(mydata = switch_core_session_strdup(session, data))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Params!\n");
+		return;
+	}
 
-	mydata = switch_core_session_strdup(session, data);
 	argc = switch_separate_string(mydata, '|', argv, sizeof(argv) / sizeof(argv[0]));
 	
-	if (argc == 1) {
+	if (argc == 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Params!\n");
+		return;
+	} else if (argc == 1) {
 		text = argv[0];
 	} else if (argc == 2) {
 		voice = argv[0];
@@ -1155,25 +1108,19 @@ SWITCH_STANDARD_APP(speak_function)
 	args.buf = buf;
 	args.buflen = sizeof(buf);
 	switch_ivr_speak_text(session, engine, voice, text, &args);
-
 }
 
 SWITCH_STANDARD_APP(playback_function)
 {
-	switch_channel_t *channel;
-	char *file_name = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_input_args_t args = { 0 };
 
-	file_name = switch_core_session_strdup(session, data);
-
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	switch_channel_pre_answer(channel);
 
 	args.input_callback = on_dtmf;
-	switch_ivr_play_file(session, NULL, file_name, &args);
-
+	switch_ivr_play_file(session, NULL, data, &args);
 }
 
 SWITCH_STANDARD_APP(gentones_function)
@@ -1184,10 +1131,15 @@ SWITCH_STANDARD_APP(gentones_function)
 	char *l;
 	int32_t loops = 0;
 
+	if (switch_strlen_zero(data) || !(tone_script = switch_core_session_strdup(session, data))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Params!\n");
+		return;
+	}
+
 	tone_script = switch_core_session_strdup(session, data);
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 	
 	switch_channel_pre_answer(channel);
 
@@ -1202,23 +1154,18 @@ SWITCH_STANDARD_APP(gentones_function)
 
 	args.input_callback = on_dtmf;
 	switch_ivr_gentones(session, tone_script, loops, &args);
-
 }
 
 SWITCH_STANDARD_APP(displace_session_function)
 {
-	switch_channel_t *channel;
 	char *path = NULL;
 	uint32_t limit = 0;
-    char *argv[6];
+	char *argv[6] = { 0 };
 	int x, argc;
 	char *lbuf = NULL;
 	char *flags = NULL;
 
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
-
-	if (data && (lbuf = switch_core_session_strdup(session, data))
+	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		path = argv[0];
 		for(x = 1; x < argc; x++) {
@@ -1232,20 +1179,14 @@ SWITCH_STANDARD_APP(displace_session_function)
 	}
 }
 
-
 SWITCH_STANDARD_APP(stop_displace_session_function)
 {
-	switch_channel_t *channel;
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
-
 	switch_ivr_stop_displace_session(session, data);
 }
 
-
 SWITCH_STANDARD_APP(record_function)
 {
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status;
 	uint32_t limit = 0;
 	char *path;
@@ -1257,10 +1198,9 @@ SWITCH_STANDARD_APP(record_function)
 	const char *tmp;
 	int rate;
 
-	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 	
-	if (data && (mydata = switch_core_session_strdup(session, data))) {
+	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No file specified.\n");		
@@ -1281,7 +1221,6 @@ SWITCH_STANDARD_APP(record_function)
 			}
 		}
 	}
-	
 
 	if (argv[2]) {
 		fh.thresh = atoi(argv[2]);
@@ -1312,15 +1251,13 @@ SWITCH_STANDARD_APP(record_function)
 	}
 }
 
-
 SWITCH_STANDARD_APP(record_session_function)
 {
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *p, *path = NULL;
 	uint32_t limit = 0;
 
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	path = switch_core_session_strdup(session, data);
 	if ((p = strchr(path, '+'))) {
@@ -1332,17 +1269,11 @@ SWITCH_STANDARD_APP(record_session_function)
 		*p++ = '\0';
 		limit = atoi(p);
 	}
-	
 	switch_ivr_record_session(session, path, limit, NULL);
 }
 
-
 SWITCH_STANDARD_APP(stop_record_session_function)
 {
-	switch_channel_t *channel;
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
-
 	switch_ivr_stop_record_session(session, data);
 }
 
@@ -1352,19 +1283,18 @@ SWITCH_STANDARD_APP(stop_record_session_function)
 
 SWITCH_STANDARD_APP(audio_bridge_function)
 {
-	switch_channel_t *caller_channel;
+	switch_channel_t *caller_channel = switch_core_session_get_channel(session);
 	switch_core_session_t *peer_session = NULL;
 	unsigned int timelimit = 60;
 	const char *var, *continue_on_fail = NULL;
 	uint8_t no_media_bridge = 0;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
+	assert(caller_channel != NULL);
+
 	if (switch_strlen_zero(data)) {
 		return;
 	}
-
-	caller_channel = switch_core_session_get_channel(session);
-	assert(caller_channel != NULL);
 
 	if ((var = switch_channel_get_variable(caller_channel, "call_timeout"))) {
 		timelimit = atoi(var);
@@ -1453,8 +1383,6 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	}
 }
 
-
-
 /* fake chan_user */
 switch_endpoint_interface_t *user_endpoint_interface;
 static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
@@ -1479,6 +1407,10 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	unsigned int timelimit = 60;
 	switch_channel_t *new_channel = NULL;
 
+	if (switch_strlen_zero(outbound_profile->destination_number)) {
+		goto done;
+	}
+
 	user = switch_core_session_strdup(session, outbound_profile->destination_number);
 
 	if (!(domain = strchr(user, '@'))) {
@@ -1501,7 +1433,6 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 				dest = val;
 				break;
 			}
-
 		}
 	}
 
@@ -1514,7 +1445,6 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 				dest = val;
 				break;
 			}
-
 		}
 	}
 
@@ -1551,7 +1481,6 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 					cp->context = switch_core_strdup(cp->pool, context);
 				}
 			}
-			
 			switch_core_session_rwunlock(*new_session);
 		}
 
@@ -1576,7 +1505,6 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 				switch_channel_set_variable(new_channel, var, val);
 			}
 		}
-		
 	}
 
 	if (xml) {
@@ -1585,9 +1513,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	
 
 	return cause;
-
 }
-
 
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
 #define DISPLACE_DESC "Displace audio from a file to the channels input"
@@ -1616,8 +1542,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
     user_endpoint_interface->interface_name = "USER";
     user_endpoint_interface->io_routines = &user_io_routines;
 
-
- 	SWITCH_ADD_API(api_interface, "strepoch", "Convert a date string into epoch time", strepoch_api_function, "<string>");
+	SWITCH_ADD_API(api_interface, "strepoch", "Convert a date string into epoch time", strepoch_api_function, "<string>");
 	SWITCH_ADD_API(api_interface, "chat", "chat", chat_api_function, "<proto>|<from>|<to>|<message>");
 	SWITCH_ADD_API(api_interface, "strftime", "strftime", strftime_api_function, "<format_string>");
 	SWITCH_ADD_API(api_interface, "presence", "presence", presence_api_function, "<user> <rpid> <message>");
