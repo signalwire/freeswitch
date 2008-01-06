@@ -1046,7 +1046,6 @@ SWITCH_STANDARD_APP(clear_speech_cache_function)
 SWITCH_STANDARD_APP(speak_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_codec_t *codec = switch_core_session_get_read_codec(session);
 	char buf[10];
 	char *argv[4] = { 0 };
 	int argc;
@@ -1056,7 +1055,6 @@ SWITCH_STANDARD_APP(speak_function)
 	char *mydata = NULL;
 	switch_input_args_t args = { 0 };
 
-	switch_assert(codec != NULL);
 	switch_assert(channel != NULL);
 
 	if (switch_strlen_zero(data) || !(mydata = switch_core_session_strdup(session, data))) {
@@ -1253,14 +1251,15 @@ SWITCH_STANDARD_APP(record_function)
 
 SWITCH_STANDARD_APP(record_session_function)
 {
-	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *p, *path = NULL;
 	uint32_t limit = 0;
 
-	switch_assert(channel != NULL);
+	if (switch_strlen_zero(data)) {
+		return;
+	}
 
 	path = switch_core_session_strdup(session, data);
-	if ((p = strchr(path, '+'))) {
+	if (path && (p = strchr(path, '+'))) {
 		char *q = p - 1;
 		while(q && *q == ' ') {
 			*q = '\0';
