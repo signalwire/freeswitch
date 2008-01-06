@@ -3913,36 +3913,29 @@ static void set_mflags(char *flags, member_flag_t * f)
 
 SWITCH_STANDARD_APP(conference_auto_function)
 {
-	switch_channel_t *channel = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	call_list_t *call_list, *np;
-	char *addition = (char *) data;
 
-	channel = switch_core_session_get_channel(session);
     switch_assert(channel != NULL);
 
 	call_list = switch_channel_get_private(channel, "_conference_autocall_list_");
 
-	if (switch_strlen_zero(addition)) {
+	if (switch_strlen_zero(data)) {
 		call_list = NULL;
 	} else {
 		np = switch_core_session_alloc(session, sizeof(*np));
 		switch_assert(np != NULL);
 
-		np->string = switch_core_session_strdup(session, addition);
+		np->string = switch_core_session_strdup(session, data);
 		if (call_list) {
 			np->next = call_list;
 			np->itteration = call_list->itteration + 1;
 		} else {
 			np->itteration = 1;
 		}
-
 		call_list = np;
-		
 	}
-	
 	switch_channel_set_private(channel, "_conference_autocall_list_", call_list);
-	
-
 }
 
 /* Application interface function that is called from the dialplan to join the channel to a conference */
