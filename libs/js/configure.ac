@@ -178,11 +178,13 @@ AC_ARG_WITH(nspr,
 AC_CACHE_CHECK([whether to build with NSPR], [ac_cv_with_nspr], [ac_cv_with_nspr=no])
 if test ".$ac_cv_with_nspr" = ".yes"; then
     sinclude(nsprpub/config/nspr.m4)
+
+    AC_CHECK_LIB(pthread, pthread_create, [CLI_LIBS="$CLI_LIBS -lpthread"])
+
     CPPFLAGS="$CPPFLAGS -DJS_THREADSAFE=1 -Insprpub/dist/include/nspr -Insprpub/pr/include"
     LDFLAGS="$LDFLAGS  -L./nsprpub/dist/lib"
     LIBS="$LIBS -lnspr4"
     LIBPATH="LD_LIBRARY_PATH=./nsprpub/dist/lib DYLD_LIBRARY_PATH=./nsprpub/dist/lib" 
-    AC_CHECK_LIB(pthread, pthread_create, [CLI_LIBS="$CLI_LIBS -lpthread"])
 fi
 
 AC_DEFUN([AX_COMPILER_VENDOR],
