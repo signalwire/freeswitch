@@ -1154,7 +1154,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 
 	  for(i = 0; i < cont->index; i++) {
 		  if (!switch_strlen_zero(cont->list[cont->index].key) && !strcasecmp(key, cont->list[cont->index].key)) {
-			  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Renabling %s\n", key);
+			  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-enabling %s\n", key);
 			  cont->list[cont->index].up = 1;
 			  teletone_multi_tone_init(&cont->list[i].mt, &cont->list[i].map);
 			  return SWITCH_STATUS_SUCCESS;

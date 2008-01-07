@@ -694,7 +694,7 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 		}
 
 		if (load_func_ptr == NULL) {
-			err = "Cannot locate symbol 'switch_module_load' please make sure this is a vaild module.";
+			err = "Cannot locate symbol 'switch_module_load' please make sure this is a valid module.";
 			break;
 		}
 
@@ -1018,7 +1018,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 	}
 
 	if (!count) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "No modules loaded assuming 'load all'\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "No modules loaded, assuming 'load all'\n");
 		all = 1;
 	}
 

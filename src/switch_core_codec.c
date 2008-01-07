@@ -119,7 +119,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, ch
 
 
 	if (channels == 2) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stereo is not currently supported. please downsample audio source to mono.\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stereo is currently unsupported. please downsample audio source to mono.\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -204,12 +204,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode(switch_codec_t *codec,
 	switch_assert(decoded_data != NULL);
 
 	if (!codec->implementation) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec is not initilized!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec is not initialized!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!switch_test_flag(codec, SWITCH_CODEC_FLAG_ENCODE)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec's encoder is not initilized!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec's encoder is not initialized!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -234,12 +234,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 
 
 	if (!codec->implementation) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec is not initilized!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec is not initialized!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!switch_test_flag(codec, SWITCH_CODEC_FLAG_DECODE)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec's decoder is not initilized!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec's decoder is not initialized!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -254,7 +254,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 	switch_assert(codec != NULL);
 
 	if (!codec->implementation) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec is not initilized!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec is not initialized!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 

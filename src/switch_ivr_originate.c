@@ -730,7 +730,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			and_argc = switch_separate_string(pipe_names[r], ',', peer_names, (sizeof(peer_names) / sizeof(peer_names[0])));
 
 			if ((flags & SOF_NOBLOCK) && and_argc > 1) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Only calling the first elemnent in the list in this mode.\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Only calling the first element in the list in this mode.\n");
 				and_argc = 1;
 			}
 			
