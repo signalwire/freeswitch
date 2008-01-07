@@ -29,7 +29,7 @@ fi
 
 if [ ! -z $install ] ; then
    test -d $install || mkdir $install
-   cd $install && $ZCAT -c -d $DIR/$tarfile | $TAR x
+   cd $install && $ZCAT -c -d $DIR/$tarfile | $TAR xf -
 fi
 
 exit 0
