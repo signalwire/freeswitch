@@ -848,7 +848,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 			if (rtp_session->timer.timer_interface) {
 				rtp_session->dtmf_data.timestamp_dtmf = rtp_session->timer.samplecount;
 			} else {
-				rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts;
+				rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts + samples;
 			}
 			
 			rtp_session->sending_dtmf = 1;
@@ -869,7 +869,6 @@ static void do_2833(switch_rtp_t *rtp_session)
 								  rtp_session->dtmf_data.out_digit,
 								  rtp_session->dtmf_data.timestamp_dtmf, rtp_session->dtmf_data.out_digit_sofar, 0, rtp_session->seq);
 			}
-			rtp_session->dtmf_data.timestamp_dtmf += samples;
 			free(rdigit);
 		}
 	}
