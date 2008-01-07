@@ -400,7 +400,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
-		fprintf(stderr, "FATAL ERROR! Could not initilize APR\n");
+		fprintf(stderr, "FATAL ERROR! Could not initialize APR\n");
 		return 255;
 	}
 
@@ -466,7 +466,7 @@ int main(int argc, char *argv[])
 	switch_file_write(fd, pid_buffer, &pid_len);
 
 	if (switch_core_init_and_modload(flags, nc ? SWITCH_FALSE : SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
-		fprintf(stderr, "Cannot Initilize [%s]\n", err);
+		fprintf(stderr, "Cannot Initialize [%s]\n", err);
 		return 255;
 	}
 
