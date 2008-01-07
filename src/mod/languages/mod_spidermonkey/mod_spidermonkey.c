@@ -1928,7 +1928,7 @@ static JSBool session_get_digits(JSContext * cx, JSObject * obj, uintN argc, jsv
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	char *terminators = NULL;
 	char buf[513] = { 0 };
-	int32 digits = 0, timeout = 5000;
+	int32 digits = 0, timeout = 5000, digit_timeout = 0, abs_timeout = 0;
 	switch_channel_t *channel;
 
 	METHOD_SANITY_CHECK();
@@ -1950,12 +1950,21 @@ static JSBool session_get_digits(JSContext * cx, JSObject * obj, uintN argc, jsv
 		if (argc > 1) {
 			terminators = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 		}
+
 		if (argc > 2) {
 			JS_ValueToInt32(cx, argv[2], &timeout);
 		}
 
+		if (argc > 3) {
+			JS_ValueToInt32(cx, argv[3], &digit_timeout);
+		}
 
-		switch_ivr_collect_digits_count(jss->session, buf, sizeof(buf), digits, terminators, &term, timeout);
+		if (argc > 4) {
+			JS_ValueToInt32(cx, argv[4], &abs_timeout);
+		}
+
+
+		switch_ivr_collect_digits_count(jss->session, buf, sizeof(buf), digits, terminators, &term, timeout, digit_timeout, abs_timeout);
 		*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, buf));
 		return JS_TRUE;
 	}

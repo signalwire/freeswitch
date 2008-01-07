@@ -274,7 +274,7 @@ static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_me
 			menu->ptr += strlen(menu->buf);
 			if (strlen(menu->buf) < need) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "waiting for %u digits\n", (uint32_t)need);
-				status = switch_ivr_collect_digits_count(session, menu->ptr, menu->inlen - strlen(menu->buf), need, "#", &terminator, menu->timeout);
+				status = switch_ivr_collect_digits_count(session, menu->ptr, menu->inlen - strlen(menu->buf), need, "#", &terminator, menu->timeout, 0, 0);
 			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "digits '%s'\n", menu->buf);
 		}

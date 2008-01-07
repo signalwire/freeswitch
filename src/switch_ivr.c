@@ -599,13 +599,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_session_t *session,
 																char *buf,
 																switch_size_t buflen,
-																switch_size_t maxdigits, const char *terminators, char *terminator, uint32_t timeout)
+																switch_size_t maxdigits, 
+																const char *terminators, char *terminator, 
+																uint32_t first_timeout,
+																uint32_t digit_timeout,
+																uint32_t abs_timeout)
 {
 	switch_size_t i = 0, x = strlen(buf);
 	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_time_t started = 0;
-	uint32_t elapsed;
+	switch_time_t started = 0, digit_started = 0;
+	uint32_t abs_elapsed = 0, digit_elapsed = 0;
+	uint32_t eff_timeout = 0;
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -622,16 +627,31 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 		}
 	}
 
-	if (timeout) {
-		started = switch_time_now();
+	if (abs_timeout) {
+		started = switch_timestamp_now();
 	}
+
+	if (digit_timeout && first_timeout) {
+		eff_timeout = first_timeout;
+	} else if (digit_timeout && !first_timeout) {
+		first_timeout = eff_timeout = digit_timeout;
+	} else if (first_timeout) {
+		digit_timeout = eff_timeout = first_timeout;
+	}
+	
+
+	if (eff_timeout) {
+		digit_started = switch_timestamp_now();
+	}
+
+
 
 	while (switch_channel_ready(channel)) {
 		switch_frame_t *read_frame;
 		
-		if (timeout) {
-			elapsed = (uint32_t) ((switch_time_now() - started) / 1000);
-			if (elapsed >= timeout) {
+		if (abs_timeout) {
+			abs_elapsed = (uint32_t) ((switch_timestamp_now() - started) / 1000);
+			if (abs_elapsed >= abs_timeout) {
 				break;
 			}
 		}
@@ -640,10 +660,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
             switch_ivr_parse_all_events(session);
         }
 
+
+		if (eff_timeout) {
+			digit_elapsed = (uint32_t) ((switch_timestamp_now() - digit_started) / 1000);
+			if (digit_elapsed >= eff_timeout) {
+				break;
+			}
+		}
+
 		if (switch_channel_has_dtmf(channel)) {
 			switch_dtmf_t dtmf = {0};
 			switch_size_t y;
 			
+			if (eff_timeout) {
+				eff_timeout = digit_timeout;
+				digit_started = switch_timestamp_now();
+			}
+
 			for (y = 0; y < maxdigits; y++) {
 				if (switch_channel_dequeue_dtmf(channel, &dtmf) != SWITCH_STATUS_SUCCESS) {
 					break;

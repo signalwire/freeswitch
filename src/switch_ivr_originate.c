@@ -129,7 +129,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t * thread, voi
 			args.buflen = sizeof(buf);
 			switch_ivr_play_file(collect->session, NULL, collect->file, &args);
 		} else {
-			switch_ivr_collect_digits_count(collect->session, buf, sizeof(buf), 1, SWITCH_BLANK_STRING, &term, 0);
+			switch_ivr_collect_digits_count(collect->session, buf, sizeof(buf), 1, SWITCH_BLANK_STRING, &term, 0, 0, 0);
 		}
 
 		for (p = buf; *p; p++) {

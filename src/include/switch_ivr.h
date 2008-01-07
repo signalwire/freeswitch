@@ -134,13 +134,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
   \param maxdigits max number of digits to read
   \param terminators digits to end the collection
   \param terminator actual digit that caused the collection to end (if any)
-  \param timeout timeout in ms
+  \param first_timeout timeout in ms
+  \param digit_timeout digit timeout in ms
+  \param abs_timeout abs timeout in ms
   \return SWITCH_STATUS_SUCCESS to keep the collection moving.
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_session_t *session,
 																char *buf,
 																switch_size_t buflen,
-																switch_size_t maxdigits, const char *terminators, char *terminator, uint32_t timeout);
+																switch_size_t maxdigits, 
+																const char *terminators, char *terminator, 
+																uint32_t first_timeout,
+																uint32_t digit_timeout,
+																uint32_t abs_timeout);
 
 /*!
   \brief Engage background Speech detection on a session

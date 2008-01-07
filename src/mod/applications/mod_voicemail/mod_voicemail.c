@@ -826,7 +826,7 @@ static switch_status_t vm_macro_get(switch_core_session_t *session,
 		maxlen = buflen -1;
 	}
 	if (bslen < maxlen) {
-		status = switch_ivr_collect_digits_count(session, buf + bslen, buflen, maxlen - bslen, term_chars, terminator_key, timeout);
+		status = switch_ivr_collect_digits_count(session, buf + bslen, buflen, maxlen - bslen, term_chars, terminator_key, timeout, 0, 0);
 	}
 
 	return status;

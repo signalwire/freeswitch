@@ -367,7 +367,7 @@ SWITCH_STANDARD_APP(rss_function)
 				switch_size_t blen = sizeof(cmd) - strlen(cmd);
 
 				cp = cmd + blen;
-				switch_ivr_collect_digits_count(session, cp, blen, blen, "#", &term, 5000);
+				switch_ivr_collect_digits_count(session, cp, blen, blen, "#", &term, 5000, 0, 0);
 			}
 
 			x = atoi(cmd) - 1;

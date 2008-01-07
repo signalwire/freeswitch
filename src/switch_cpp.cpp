@@ -216,7 +216,7 @@ int CoreSession::getDigits(char *dtmf_buf,
 											 maxdigits, 
 											 terminators, 
 											 terminator, 
-											 (uint32_t) timeout);
+											 (uint32_t) timeout, 0, 0);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "getDigits dtmf_buf: %s\n", dtmf_buf);
 	end_allow_threads();
