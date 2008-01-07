@@ -356,6 +356,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 
+	switch_channel_pre_answer(channel);
+
 	read_codec = switch_core_session_get_read_codec(session);
 	switch_assert(read_codec != NULL);
 
@@ -690,6 +692,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
+
+	switch_channel_pre_answer(channel);
 
 	prefix = switch_channel_get_variable(channel, "sound_prefix");
 	timer_name = switch_channel_get_variable(channel, "timer_name");
@@ -1130,7 +1134,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 	switch_assert(channel != NULL);
 
 	//Answer the channel if it hasn't already been answered
-	switch_channel_answer(channel);
+	switch_channel_pre_answer(channel);
 
 	//Start pestering the user for input
 	for (; (switch_channel_get_state(channel) == CS_EXECUTE) && max_tries > 0; max_tries--) {
@@ -1250,7 +1254,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_channel_answer(channel);
+	switch_channel_pre_answer(channel);
 
 	write_frame.data = abuf;
 	write_frame.buflen = sizeof(abuf);
@@ -1530,6 +1534,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
+
+	switch_channel_pre_answer(channel);
 
 	sh = &lsh;
 	codec = &lcodec;
