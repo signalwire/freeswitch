@@ -1531,6 +1531,7 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim(void);
 SWITCH_DECLARE(void) switch_core_memory_reclaim_events(void);
 SWITCH_DECLARE(void) switch_core_memory_reclaim_logger(void);
 SWITCH_DECLARE(void) switch_core_memory_reclaim_all(void);
+SWITCH_DECLARE(void) switch_core_setrlimits(void);
 
 ///\}
 

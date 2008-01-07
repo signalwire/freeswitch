@@ -661,6 +661,44 @@ static void load_mime_types(void)
 
 }	
 
+
+SWITCH_DECLARE(void) switch_core_setrlimits(void)
+{
+#ifdef HAVE_SETRLIMIT
+	struct rlimit rlp;
+
+	/* 
+	   Setting the stack size on FreeBSD results in an instant crash.
+		 
+	   If anyone knows how to fix this,
+	   feel free to submit a patch to http://jira.freeswitch.org 
+	*/
+
+#ifndef __FreeBSD__
+	memset(&rlp, 0, sizeof(rlp));
+	rlp.rlim_cur = SWITCH_THREAD_STACKSIZE;
+	rlp.rlim_max = SWITCH_THREAD_STACKSIZE;
+	setrlimit(RLIMIT_STACK, &rlp);
+#endif
+
+	memset(&rlp, 0, sizeof(rlp));
+	rlp.rlim_cur = 999999;
+	rlp.rlim_max = 999999;
+	setrlimit(RLIMIT_NOFILE, &rlp);
+
+	memset(&rlp, 0, sizeof(rlp));
+	rlp.rlim_cur = RLIM_INFINITY;
+	rlp.rlim_max = RLIM_INFINITY;
+
+	setrlimit(RLIMIT_CPU, &rlp);
+	setrlimit(RLIMIT_DATA, &rlp);
+	setrlimit(RLIMIT_FSIZE, &rlp);
+	setrlimit(RLIMIT_AS, &rlp);
+#endif
+	return;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switch_bool_t console, const char **err)
 {
 	switch_xml_t xml = NULL, cfg = NULL;
@@ -701,41 +739,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_core_set_variable("local_ip_v6", guess_ip);
 	switch_core_set_variable("base_dir", SWITCH_GLOBAL_dirs.base_dir);
 	
-
-#ifdef HAVE_SETRLIMIT
-	{
-		struct rlimit rlp;
-
-		/* 
-		   Setting the stack size on FreeBSD results in an instant crash.
-		 
-		   If anyone knows how to fix this,
-		   feel free to submit a patch to http://jira.freeswitch.org 
-		*/
-
-#ifndef __FreeBSD__
-		memset(&rlp, 0, sizeof(rlp));
-		rlp.rlim_cur = SWITCH_THREAD_STACKSIZE;
-		rlp.rlim_max = SWITCH_THREAD_STACKSIZE;
-		setrlimit(RLIMIT_STACK, &rlp);
-#endif
-
-		memset(&rlp, 0, sizeof(rlp));
-		rlp.rlim_cur = 999999;
-		rlp.rlim_max = 999999;
-		setrlimit(RLIMIT_NOFILE, &rlp);
-
-		memset(&rlp, 0, sizeof(rlp));
-		rlp.rlim_cur = RLIM_INFINITY;
-		rlp.rlim_max = RLIM_INFINITY;
-
-		setrlimit(RLIMIT_CPU, &rlp);
-		setrlimit(RLIMIT_DATA, &rlp);
-		setrlimit(RLIMIT_FSIZE, &rlp);
-		setrlimit(RLIMIT_AS, &rlp);
-	}
-	
-#endif
 
 
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {

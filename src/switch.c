@@ -430,6 +430,8 @@ int main(int argc, char *argv[])
 		set_high_priority();
 	}
 
+	switch_core_setrlimits();
+	
 #ifndef WIN32
 	if (runas_user || runas_group) {
 		if(change_user_group(runas_user, runas_group) < 0) {
