@@ -717,18 +717,25 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
 
+	if (switch_strlen_zero(outbound_profile->destination_number)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid dial string\n");
+		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+	}
+
 	dest = outbound_profile->destination_number;
 
 	if ((p = strchr(outbound_profile->destination_number, '/'))) {
 		dest = p + 1;
 		span_id = atoi(outbound_profile->destination_number);
-		chan_id = atoi(dest);		
-		if ((p = strchr(dest, '/'))) {
-			dest = p + 1;
+		if (!switch_strlen_zero(dest)) {
+			chan_id = atoi(dest);
+			if ((p = strchr(dest, '/'))) {
+				dest = p + 1;
+			}
 		}
 	}
 
-	if (!dest) {
+	if (!switch_strlen_zero(dest)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid dial string\n");
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
@@ -752,8 +759,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No channels available\n");
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
-
-
 
 	if ((*new_session = switch_core_session_request(openzap_endpoint_interface, pool)) != 0) {
 		private_t *tech_pvt;
