@@ -675,12 +675,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
-		*err = "FATAL ERROR! Could not initilize APR\n";
+		*err = "FATAL ERROR! Could not initialize APR\n";
 		return SWITCH_STATUS_MEMERR;
 	}
 
 	if (!(runtime.memory_pool = switch_core_memory_init())) {
-		*err = "FATAL ERROR! Could noat allocate memory pool\n";
+		*err = "FATAL ERROR! Could not allocate memory pool\n";
 		return SWITCH_STATUS_MEMERR;
 	}
 	switch_assert(runtime.memory_pool != NULL);

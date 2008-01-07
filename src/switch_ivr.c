@@ -409,7 +409,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	switch_assert(channel != NULL);
 
 	if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Careful, Channel is unaswered. Pre-answering...\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Careful, Channel is unanswered. Pre-answering...\n");
 		switch_channel_pre_answer(channel);
 	}
 

@@ -492,7 +492,7 @@ static switch_status_t switch_ivr_menu_stack_xml_add(switch_ivr_menu_xml_ctx_t *
 	if (xml_ctx != NULL && name != NULL && xml_ctx->pool != NULL && switch_ivr_menu_stack_xml_find(xml_ctx, name) == NULL) {
 		switch_ivr_menu_xml_map_t *map = switch_core_alloc(xml_ctx->pool, sizeof(switch_ivr_menu_xml_map_t));
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "switch_ivr_menu_stack_xml_add bindng '%s'\n", name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "switch_ivr_menu_stack_xml_add binding '%s'\n", name);
 		// and we have memory
 		if (map != NULL) {
 			map->name = switch_core_strdup(xml_ctx->pool, name);
