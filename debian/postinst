@@ -24,7 +24,7 @@ case "$1" in
 		if ! getent passwd freeswitch >/dev/null; then
 			adduser --disabled-password  --quiet --system \
 			--home /opt/freeswitch \
-			--gecos "FreeSwitch Voice Platform" --group daemon \
+			--gecos "FreeSwitch Voice Platform" --ingroup daemon \
 			freeswitch
 		fi
  
