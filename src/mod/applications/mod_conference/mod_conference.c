@@ -1528,7 +1528,7 @@ static caller_control_fn_table_t ccfntbl[] = {
 /* NB. this starts the input thread after some initial setup for the call leg */
 static void conference_loop_output(conference_member_t * member)
 {
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(member->session);
 	switch_frame_t write_frame = { 0 };
 	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	switch_timer_t timer = { 0 };
@@ -1536,17 +1536,12 @@ static void conference_loop_output(conference_member_t * member)
 	uint32_t interval = read_codec->implementation->microseconds_per_frame / 1000;
 	uint32_t csamples = switch_bytes_per_frame(member->conference->rate, member->conference->interval);
 	uint32_t samples = switch_bytes_per_frame(member->conference->rate, interval);
-	uint32_t tsamples;/* = switch_bytes_per_frame(read_codec->implementation->samples_per_second, interval);*/
+	uint32_t tsamples = member->orig_read_codec->implementation->samples_per_frame;
 	uint32_t low_count = 0, bytes = samples * 2;
 	call_list_t *call_list = NULL, *cp = NULL;
 
-	channel = switch_core_session_get_channel(member->session);
-
 	switch_assert(channel != NULL);
 	switch_assert(member->conference != NULL);
-
-
-	tsamples = member->orig_read_codec->implementation->samples_per_frame;
 
 	if (switch_core_timer_init(&timer, member->conference->timer_name, interval, tsamples, NULL) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer %s success interval: %u  samples: %u\n",
@@ -1572,7 +1567,6 @@ static void conference_loop_output(conference_member_t * member)
 		&& switch_ivr_digit_stream_new(member->conference->dtmf_parser, &member->digit_stream) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Danger Will Robinson, there is no digit parser stream object\n");
 	}
-	
 
 	if ((call_list = switch_channel_get_private(channel, "_conference_autocall_list_"))) {
 		const char *cid_name = switch_channel_get_variable(channel, "conference_auto_outcall_caller_id_name");
@@ -1590,17 +1584,14 @@ static void conference_loop_output(conference_member_t * member)
 		
 		if (toval) {
 			to = atoi(toval);
+			if (to < 10 || to > 500) {
+				to = 60;
+			}
 		}
-		
-		if (to < 10 || to > 500) {
-			to = 60;
-		}
-		
+
 		for (cp = call_list; cp; cp = cp->next) {
 			conference_outcall_bg(member->conference, NULL, member->session, cp->string, to, switch_str_nil(flags), cid_name, cid_num);
-
 		}
-
 	}
 	/* Fair WARNING, If you expect the caller to hear anything or for digit handling to be proccessed,      */
 	/* you better not block this thread loop for more than the duration of member->conference->timer_name!  */
@@ -1696,7 +1687,6 @@ static void conference_loop_output(conference_member_t * member)
 				if (member->fnode->type != NODE_TYPE_SPEECH) {
 					switch_core_file_close(&member->fnode->fh);
 				}
-
 
 				fnode = member->fnode;
 				member->fnode = member->fnode->next;
