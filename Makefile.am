@@ -259,6 +259,10 @@ endif
 core:
 	$(MAKE) $(AM_MAKEFLAGS) libfreeswitch.la
 
+core-clean: clean core
+
+core-install: core_install
+
 clean_core: clean-libLTLIBRARIES
 
 install_core: install-libLTLIBRARIES
