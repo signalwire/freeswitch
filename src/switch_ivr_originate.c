@@ -568,6 +568,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					ok = 1;
 				} else if (!strcasecmp((char *)hi->name, "group_confirm_file")) {
 					ok = 1;
+				} else if (!strcasecmp((char *)hi->name, "forked_dial")) {
+					ok = 1;
 				} else if (!strcasecmp((char *)hi->name, "fail_on_single_reject")) {
 					ok = 1;
 				} else if (!strcasecmp((char *)hi->name, "ignore_early_media")) {
@@ -810,8 +812,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				peer_sessions[i] = NULL;
 				new_session = NULL;
 				
+				
+
+
 				if (and_argc > 1 || or_argc > 1) {
 					myflags |= SOF_FORKED_DIAL;
+				} else if (var_event) {
+					const char *vvar;
+					if ((vvar = switch_event_get_header(var_event, "forked_dial")) && switch_true(vvar)) {
+						myflags |= SOF_FORKED_DIAL;
+					}
 				}
 				if ((reason = switch_core_session_outgoing_channel(session, chan_type, new_profile, &new_session, &pool, myflags)) != SWITCH_CAUSE_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! cause: %s\n", switch_channel_cause2str(reason));
