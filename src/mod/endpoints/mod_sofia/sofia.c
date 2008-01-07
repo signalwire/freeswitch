@@ -2232,6 +2232,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	char key[128] = "";
 	sip_unknown_t *un;
 	sip_remote_party_id_t *rpid = NULL;
+	sip_p_asserted_identity_t *passerted = NULL;
+	sip_p_preferred_identity_t *ppreferred = NULL;
 	sip_alert_info_t *alert_info = NULL;
 	private_object_t *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
@@ -2324,8 +2326,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		from_host = sip->sip_from->a_url->url_host;
 		channel_name = url_set_chanvars(session, sip->sip_from->a_url, sip_from);
 
-		check_decode(from_user, session);
-		
 		if (!switch_strlen_zero(from_user)) {
 			if (*from_user == '+') {
 				switch_channel_set_variable(channel, "sip_from_user_stripped", (const char *) (from_user + 1));
@@ -2346,12 +2346,32 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	if ((rpid = sip_remote_party_id(sip))) {
 		if (rpid->rpid_url && rpid->rpid_url->url_user) {
 			from_user = rpid->rpid_url->url_user;
-			check_decode(from_user, session);
 		}
-
 		if (rpid->rpid_display) {
 			displayname = rpid->rpid_display;
 		}
+	}
+
+	if ((passerted = sip_p_asserted_identity(sip))) {
+		if (passerted->paid_url && passerted->paid_url->url_user) {
+			from_user = passerted->paid_url->url_user;
+		}
+		if (passerted->paid_display) {
+			displayname = passerted->paid_display;
+		}
+	}
+
+	if ((ppreferred = sip_p_preferred_identity(sip))) {
+		if (ppreferred->ppid_url && ppreferred->ppid_url->url_user) {
+			from_user = ppreferred->ppid_url->url_user;
+		}
+		if (ppreferred->ppid_display) {
+			displayname = ppreferred->ppid_display;
+		}
+	}
+
+	if (from_user) {
+		check_decode(from_user, session);
 	}
 
 	if (sip->sip_request->rq_url) {
