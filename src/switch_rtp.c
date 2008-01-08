@@ -795,7 +795,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 	uint32_t samples = rtp_session->samples_per_interval;
 
 	if (rtp_session->dtmf_data.out_digit_dur > 0) {
-		int x, loops = 1, duration;
+		int x, loops = 1;
 		rtp_session->dtmf_data.out_digit_sofar += samples;
 
 		if (rtp_session->dtmf_data.out_digit_sofar > 0xFFFF) {
@@ -804,16 +804,13 @@ static void do_2833(switch_rtp_t *rtp_session)
 		}
 
 		if (rtp_session->dtmf_data.out_digit_sofar >= rtp_session->dtmf_data.out_digit_dur) {
-			duration = rtp_session->dtmf_data.out_digit_dur;
 			rtp_session->dtmf_data.out_digit_packet[1] |= 0x80;
 			rtp_session->dtmf_data.out_digit_dur = 0;
 			loops = 3;
-		} else {
-			duration = rtp_session->dtmf_data.out_digit_sofar;
 		}
-
-		rtp_session->dtmf_data.out_digit_packet[2] = (unsigned char) (duration >> 8);
-		rtp_session->dtmf_data.out_digit_packet[3] = (unsigned char) duration;
+			
+		rtp_session->dtmf_data.out_digit_packet[2] = (unsigned char) (rtp_session->dtmf_data.out_digit_sofar >> 8);
+		rtp_session->dtmf_data.out_digit_packet[3] = (unsigned char) rtp_session->dtmf_data.out_digit_sofar;
 
 		
 		for (x = 0; x < loops; x++) {
@@ -826,9 +823,9 @@ static void do_2833(switch_rtp_t *rtp_session)
 									rtp_session->te,
 									rtp_session->dtmf_data.timestamp_dtmf, rtp_session->seq, rtp_session->dtmf_data.out_digit_ssrc,
 									&flags);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s packet for [%c] ts=%d sofar=%u dur=%d seq=%d\n",
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s packet for [%c] ts=%d dur=%d seq=%d\n",
 							  loops == 1 ? "middle" : "end", rtp_session->dtmf_data.out_digit, rtp_session->dtmf_data.timestamp_dtmf,
-							  rtp_session->dtmf_data.out_digit_sofar, duration, rtp_session->seq);
+							  rtp_session->dtmf_data.out_digit_sofar, rtp_session->seq);
 		}
 
 		if (loops != 1) {
@@ -870,11 +867,10 @@ static void do_2833(switch_rtp_t *rtp_session)
 
 			switch_log_printf(SWITCH_CHANNEL_LOG,
 							  SWITCH_LOG_DEBUG,
-							  "Send start packet for [%c] ts=%d sofar=%u dur=%d seq=%d\n",
+							  "Send start packet for [%c] ts=%d dur=%d seq=%d\n",
 							  rtp_session->dtmf_data.out_digit,
 							  rtp_session->dtmf_data.timestamp_dtmf, 
 							  rtp_session->dtmf_data.out_digit_sofar, 
-							  0, 
 							  rtp_session->seq);
 			
 			free(rdigit);
