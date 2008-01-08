@@ -535,12 +535,22 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_thread_rwlock_wrlock(profile->rwlock);
 	sofia_reg_unregister(profile);
 	nua_shutdown(profile->nua);
-
 	su_root_run(profile->s_root);
+
+	while(profile->inuse) {
+		switch_yield(100000);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "waiting for %d session(s)\n", profile->inuse);
+	}
 	nua_destroy(profile->nua);
 
 	switch_mutex_lock(profile->ireg_mutex);
 	switch_mutex_unlock(profile->ireg_mutex);
+
+	switch_mutex_lock(profile->flag_mutex);
+	switch_mutex_unlock(profile->flag_mutex);
+
+
+
 
 	if (switch_event_create(&s_event, SWITCH_EVENT_UNPUBLISH) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp,_sip._tcp,_sip._sctp%s",
@@ -2250,7 +2260,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	int is_auth = 0, calling_myself = 0;
 	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
 	
-	if (sess_count >= sess_max) {
+	if (sess_count >= sess_max || !(profile->pflags & PFLAG_RUNNING)) {
 		nua_respond(nh, 480, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 		return;
 	}

@@ -1801,6 +1801,9 @@ sofia_profile_t *sofia_glue_find_profile__(const char *file, const char *func, i
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if ((profile = (sofia_profile_t *) switch_core_hash_find(mod_sofia_globals.profile_hash, key))) {
+		if (!(profile->pflags & PFLAG_RUNNING)) {
+			return NULL;
+		}
 		if (switch_thread_rwlock_tryrdlock(profile->rwlock) != SWITCH_STATUS_SUCCESS) {
 #ifdef SOFIA_DEBUG_RWLOCKS
 			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_ERROR, "Profile %s is locked\n", profile->name);
