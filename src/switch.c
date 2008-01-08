@@ -451,7 +451,7 @@ int main(int argc, char *argv[])
 	pid_len = sizeof(pid_buffer);
 
 	apr_pool_create(&pool, NULL);
-    if (switch_file_open(&fd,
+	if (switch_file_open(&fd,
 						pid_path,
 						SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE,
 						SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE,
