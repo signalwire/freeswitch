@@ -538,7 +538,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t * thread, void *obj)
 	if ((status = switch_api_execute(acs->api_cmd, acs->arg, NULL, &stream)) == SWITCH_STATUS_SUCCESS) {
 		reply = stream.data;
 	} else {
-		freply = switch_mprintf("%s: Command not found!", acs->api_cmd);
+		freply = switch_mprintf("%s: Command not found!\n", acs->api_cmd);
 		reply = freply;
 	}
 
