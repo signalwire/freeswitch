@@ -798,6 +798,11 @@ static void do_2833(switch_rtp_t *rtp_session)
 		int x, loops = 1, duration;
 		rtp_session->dtmf_data.out_digit_sofar += samples;
 
+		if (rtp_session->dtmf_data.out_digit_sofar > 0xFFFF) {
+			rtp_session->dtmf_data.out_digit_sofar = samples;
+			rtp_session->dtmf_data.timestamp_dtmf += 0xFFFF;
+		}
+
 		if (rtp_session->dtmf_data.out_digit_sofar >= rtp_session->dtmf_data.out_digit_dur) {
 			duration = rtp_session->dtmf_data.out_digit_dur;
 			rtp_session->dtmf_data.out_digit_packet[1] |= 0x80;
@@ -809,11 +814,11 @@ static void do_2833(switch_rtp_t *rtp_session)
 
 		rtp_session->dtmf_data.out_digit_packet[2] = (unsigned char) (duration >> 8);
 		rtp_session->dtmf_data.out_digit_packet[3] = (unsigned char) duration;
-		rtp_session->dtmf_data.timestamp_dtmf += samples;
+
 		
 		for (x = 0; x < loops; x++) {
 			rtp_session->seq++;
-
+			
 			switch_rtp_write_manual(rtp_session,
 									rtp_session->dtmf_data.out_digit_packet,
 									4,
@@ -835,11 +840,10 @@ static void do_2833(switch_rtp_t *rtp_session)
 		void *pop;
 
 		if (switch_queue_trypop(rtp_session->dtmf_data.dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-			int x;
 			switch_dtmf_t *rdigit = pop;
 
 			memset(rtp_session->dtmf_data.out_digit_packet, 0, 4);
-			rtp_session->dtmf_data.out_digit_sofar = 0;
+			rtp_session->dtmf_data.out_digit_sofar = samples;
 			rtp_session->dtmf_data.out_digit_dur = rdigit->duration;
 			rtp_session->dtmf_data.out_digit = rdigit->digit;
 			rtp_session->dtmf_data.out_digit_packet[0] = (unsigned char) switch_char_to_rfc2833(rdigit->digit);
@@ -853,22 +857,26 @@ static void do_2833(switch_rtp_t *rtp_session)
 			
 			rtp_session->sending_dtmf = 1;
 
-			for (x = 0; x < 3; x++) {
-				rtp_session->seq++;
-				switch_rtp_write_manual(rtp_session,
-										rtp_session->dtmf_data.out_digit_packet,
-										4,
-										switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BUGGY_2833) ? 0 : 1,
-										rtp_session->te,
-										rtp_session->dtmf_data.timestamp_dtmf,
-										rtp_session->seq, 
-										rtp_session->dtmf_data.out_digit_ssrc, &flags);
-				switch_log_printf(SWITCH_CHANNEL_LOG,
-								  SWITCH_LOG_DEBUG,
-								  "Send start packet for [%c] ts=%d sofar=%u dur=%d seq=%d\n",
-								  rtp_session->dtmf_data.out_digit,
-								  rtp_session->dtmf_data.timestamp_dtmf, rtp_session->dtmf_data.out_digit_sofar, 0, rtp_session->seq);
-			}
+			
+			rtp_session->seq++;
+			switch_rtp_write_manual(rtp_session,
+									rtp_session->dtmf_data.out_digit_packet,
+									4,
+									switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BUGGY_2833) ? 0 : 1,
+									rtp_session->te,
+									rtp_session->dtmf_data.timestamp_dtmf,
+									rtp_session->seq, 
+									rtp_session->dtmf_data.out_digit_ssrc, &flags);
+
+			switch_log_printf(SWITCH_CHANNEL_LOG,
+							  SWITCH_LOG_DEBUG,
+							  "Send start packet for [%c] ts=%d sofar=%u dur=%d seq=%d\n",
+							  rtp_session->dtmf_data.out_digit,
+							  rtp_session->dtmf_data.timestamp_dtmf, 
+							  rtp_session->dtmf_data.out_digit_sofar, 
+							  0, 
+							  rtp_session->seq);
+			
 			free(rdigit);
 		}
 	}
