@@ -60,6 +60,8 @@ static void switch_core_standard_on_ring(switch_core_session_t *session)
 	switch_dialplan_interface_t *dialplan_interface = NULL;
 	switch_caller_profile_t *caller_profile;
 	switch_caller_extension_t *extension = NULL;
+	char *expanded = NULL;
+	char *dpstr = NULL;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard RING %s\n", switch_channel_get_name(session->channel));
 
@@ -69,16 +71,16 @@ static void switch_core_standard_on_ring(switch_core_session_t *session)
 		return;
 	} else {
 		char *dp[25];
-		char *dpstr;
 		int argc, x, count = 0;
-
+		
 		if (!switch_strlen_zero(caller_profile->dialplan)) {
 			if ((dpstr = switch_core_session_strdup(session, caller_profile->dialplan))) {
-				argc = switch_separate_string(dpstr, ',', dp, (sizeof(dp) / sizeof(dp[0])));
+				expanded = switch_channel_expand_variables(session->channel, dpstr);
+				argc = switch_separate_string(expanded, ',', dp, (sizeof(dp) / sizeof(dp[0])));
 				for (x = 0; x < argc; x++) {
 					char *dpname = dp[x];
 					char *dparg = NULL;
-
+					
 					if (dpname) {
 						if ((dparg = strchr(dpname, ':'))) {
 							*dparg++ = '\0';
@@ -87,12 +89,12 @@ static void switch_core_standard_on_ring(switch_core_session_t *session)
 					if (!(dialplan_interface = switch_loadable_module_get_dialplan_interface(dpname))) {
 						continue;
 					}
-
+					
 					count++;
 
 					if ((extension = dialplan_interface->hunt_function(session, dparg, NULL)) != 0) {
 						switch_channel_set_caller_extension(session->channel, extension);
-						return;
+						goto end;
 					}
 				}
 			}
@@ -102,7 +104,7 @@ static void switch_core_standard_on_ring(switch_core_session_t *session)
 			if (switch_channel_test_flag(session->channel, CF_OUTBOUND)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No Dialplan, changing state to HOLD\n");
 				switch_channel_set_state(session->channel, CS_HOLD);
-				return;
+				goto end;
 			}
 		}
 	}
@@ -111,6 +113,13 @@ static void switch_core_standard_on_ring(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No Route, Aborting\n");
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_NO_ROUTE_DESTINATION);
 	}
+	
+ end:
+
+	if (expanded && dpstr && expanded != dpstr) {
+		free(expanded);
+	}
+
 }
 
 static void switch_core_standard_on_execute(switch_core_session_t *session)
