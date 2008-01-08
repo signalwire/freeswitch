@@ -1135,6 +1135,9 @@ static ZIO_CHANNEL_DESTROY_FUNCTION(pika_channel_destroy)
 		return ZAP_FAIL;
 	}
 
+	if (!zap_test_flag(chan_data, PK_FLAG_READY)) {
+		goto end;
+	}
 
 	PKH_RECORD_Stop(chan_data->media_in);
 	PKH_PLAY_Stop(chan_data->media_out);
@@ -1160,6 +1163,8 @@ static ZIO_CHANNEL_DESTROY_FUNCTION(pika_channel_destroy)
 
 	zap_mutex_destroy(&chan_data->digit_mutex);
 	zap_buffer_destroy(&chan_data->digit_buffer);
+
+ end:
 	zap_safe_free(chan_data);
 	
 	return ZAP_SUCCESS;

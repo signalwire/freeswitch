@@ -41,7 +41,6 @@ SWITCH_MODULE_DEFINITION(mod_openzap, mod_openzap_load, mod_openzap_shutdown, NU
 switch_endpoint_interface_t *openzap_endpoint_interface;
 
 static switch_memory_pool_t *module_pool = NULL;
-static int running = 1;
 
 struct span_config {
 	zap_span_t *span;
@@ -52,7 +51,7 @@ struct span_config {
 
 };
 
-static struct span_config SPAN_CONFIG[ZAP_MAX_SPANS_INTERFACE] = {0};
+static struct span_config SPAN_CONFIG[ZAP_MAX_SPANS_INTERFACE] = {{0}};
 
 typedef enum {
 	TFLAG_IO = (1 << 0),
@@ -106,7 +105,9 @@ static switch_status_t channel_on_loopback(switch_core_session_t *session);
 static switch_status_t channel_on_transmit(switch_core_session_t *session);
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t **pool);
+													switch_core_session_t **new_session, 
+													switch_memory_pool_t **pool,
+													switch_originate_flag_t flags);
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
@@ -197,6 +198,8 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 			dname = "L16";
 		}
 		break;
+	default:
+		abort();
 	}
 
 
@@ -702,7 +705,8 @@ that allocate memory or you will have 1 channel with memory allocated from anoth
 */
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t **pool)
+													switch_core_session_t **new_session, switch_memory_pool_t **pool,
+													switch_originate_flag_t flags)
 {
 
 	char *p, *dest = NULL;
@@ -918,6 +922,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 				zap_channel_clear_token(sigmsg->channel, 0);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
+				zap_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
 				switch_core_session_rwunlock(session);
 			}
 		}
@@ -939,6 +944,14 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 			}
 		}
 		break;
+
+	default:
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled type for channel %d:%d\n",
+							  sigmsg->channel->span_id, sigmsg->channel->chan_id);
+		}
+		break;
+
 	}
 
 	return ZAP_SUCCESS;
@@ -973,9 +986,9 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
     case ZAP_SIGEVENT_STOP:
 		{
 			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
-				zap_channel_clear_token(sigmsg->channel, 0);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				zap_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
 				switch_core_session_rwunlock(session);
 			}
 		}
@@ -1022,6 +1035,14 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 
 		}
 		break;
+
+	default:
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled type for channel %d:%d\n",
+							  sigmsg->channel->span_id, sigmsg->channel->chan_id);
+		}
+		break;
+
 	}
 
 	return status;
@@ -1043,9 +1064,9 @@ static ZIO_SIGNAL_CB_FUNCTION(on_isdn_signal)
     case ZAP_SIGEVENT_STOP:
 		{
 			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
-				zap_channel_clear_token(sigmsg->channel, 0);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
+				zap_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
 				switch_core_session_rwunlock(session);
 			}
 		}
@@ -1076,6 +1097,13 @@ static ZIO_SIGNAL_CB_FUNCTION(on_isdn_signal)
 			}
 		}
 		break;
+
+	default:
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled type for channel %d:%d\n",
+							  sigmsg->channel->span_id, sigmsg->channel->chan_id);
+		}
+		break;
 	}
 
 	return ZAP_SUCCESS;
@@ -1084,7 +1112,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_isdn_signal)
 
 static ZIO_SIGNAL_CB_FUNCTION(on_analog_signal)
 {
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	
 	switch (sigmsg->channel->type) {
 	case ZAP_CHAN_TYPE_FXO:
