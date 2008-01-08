@@ -984,7 +984,8 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 	if (switch_test_flag(conference, CFLAG_DESTRUCT)) {
 
 		switch_mutex_lock(conference->mutex);
-
+		conference_stop_file(conference, FILE_STOP_ASYNC);
+		conference_stop_file(conference, FILE_STOP_ALL);
 		/* Close Unused Handles */
 		if (conference->fnode) {
 			conference_file_node_t *fnode, *cur;
@@ -1003,6 +1004,14 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 				switch_core_destroy_memory_pool(&pool);
 			}
 			conference->fnode = NULL;
+		}
+
+		if (conference->async_fnode) {
+			switch_memory_pool_t *pool;
+            switch_core_file_close(&conference->async_fnode->fh);
+            pool = conference->async_fnode->pool;
+            conference->async_fnode = NULL;
+            switch_core_destroy_memory_pool(&pool);
 		}
 
 		switch_mutex_lock(conference->member_mutex);
@@ -2782,7 +2791,7 @@ static switch_status_t conf_api_sub_volume_out(conference_member_t * member, swi
 static switch_status_t conf_api_sub_list(conference_obj_t * conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	int ret_status = SWITCH_STATUS_GENERR;
-
+	int count = 0;
 	switch_hash_index_t *hi;
 	void *val;
 	char *d = ";";
@@ -2816,6 +2825,7 @@ static switch_status_t conf_api_sub_list(conference_obj_t * conference, switch_s
 			stream->write_function(stream, "Conference %s (%u member%s%s)\n",
 								   conference->name,
 								   conference->count, conference->count == 1 ? "" : "s", switch_test_flag(conference, CFLAG_LOCKED) ? " locked" : "");
+			count++;
 			if (pretty) {
 				conference_list_pretty(conference, stream);
 			} else {
@@ -2823,11 +2833,16 @@ static switch_status_t conf_api_sub_list(conference_obj_t * conference, switch_s
 			}
 		}
 	} else {
+		count++;
 		if (pretty) {
 			conference_list_pretty(conference, stream);
 		} else {
 			conference_list(conference, stream, d);
 		}
+	}
+
+	if (!count) {
+		stream->write_function(stream, "No active conferences.\n");
 	}
 
 	ret_status = SWITCH_STATUS_SUCCESS;
