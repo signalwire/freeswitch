@@ -34,8 +34,13 @@
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
-SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh,
-													  const char *file_path, uint8_t channels, uint32_t rate, unsigned int flags, switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, const char *func, int line,
+															  switch_file_handle_t *fh,
+															  const char *file_path, 
+															  uint8_t channels, 
+															  uint32_t rate, 
+															  unsigned int flags, 
+															  switch_memory_pool_t *pool)
 {
 	char *ext;
 	switch_status_t status;
@@ -63,6 +68,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh,
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid file format [%s] for [%s]!\n", ext, file_path);
 		return SWITCH_STATUS_GENERR;
 	}
+	
+	fh->file = file;
+	fh->func = func;
+	fh->line = line;
 
 	fh->flags = flags;
 	if (pool) {

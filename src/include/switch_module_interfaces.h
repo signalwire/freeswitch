@@ -301,6 +301,9 @@ struct switch_file_handle {
 	switch_buffer_t *buffer;
 	switch_byte_t *dbuf;
 	switch_size_t dbuflen;
+	const char *file;
+	const char *func;
+	int line;
 };
 
 /*! \brief Abstract interface to an asr module */

@@ -1135,12 +1135,16 @@ SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *te
   \return SWITCH_STATUS_SUCCESS if the file is opened
   \note the loadable module used is chosen based on the file extension
 */
-SWITCH_DECLARE(switch_status_t) switch_core_file_open(_In_ switch_file_handle_t *fh,
-													  _In_z_ const char *file_path,
-													  _In_ uint8_t channels,
-													  _In_ uint32_t rate,
-													  _In_ unsigned int flags,
-													  _In_opt_ switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, const char *func, int line,
+															  _In_ switch_file_handle_t *fh,
+															  _In_z_ const char *file_path,
+															  _In_ uint8_t channels,
+															  _In_ uint32_t rate,
+															  _In_ unsigned int flags,
+															  _In_opt_ switch_memory_pool_t *pool);
+#define switch_core_file_open(_fh, _file_path, _channels, _rate, _flags, _pool) \
+	switch_core_perform_file_open(__FILE__, __SWITCH_FUNC__, __LINE__, _fh, _file_path, _channels, _rate, _flags, _pool)
+
 /*! 
   \brief Read media from a file handle
   \param fh the file handle to read from (must be initilized by you memset all 0 for read, fill in channels and rate for write)

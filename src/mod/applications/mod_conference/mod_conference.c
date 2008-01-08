@@ -979,64 +979,63 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 		switch_event_fire(&event);
 	}
 
-	switch_core_timer_destroy(&timer);
+	
+
+	switch_mutex_lock(conference->mutex);
+	conference_stop_file(conference, FILE_STOP_ASYNC);
+	conference_stop_file(conference, FILE_STOP_ALL);
+	/* Close Unused Handles */
+	if (conference->fnode) {
+		conference_file_node_t *fnode, *cur;
+		switch_memory_pool_t *pool;
+
+		fnode = conference->fnode;
+		while (fnode) {
+			cur = fnode;
+			fnode = fnode->next;
+
+			if (cur->type != NODE_TYPE_SPEECH) {
+				switch_core_file_close(&cur->fh);
+			}
+
+			pool = cur->pool;
+			switch_core_destroy_memory_pool(&pool);
+		}
+		conference->fnode = NULL;
+	}
+
+	if (conference->async_fnode) {
+		switch_memory_pool_t *pool;
+		switch_core_file_close(&conference->async_fnode->fh);
+		pool = conference->async_fnode->pool;
+		conference->async_fnode = NULL;
+		switch_core_destroy_memory_pool(&pool);
+	}
+
+	switch_mutex_lock(conference->member_mutex);
+	for (imember = conference->members; imember; imember = imember->next) {
+		switch_channel_t *channel;
+
+		if (!switch_test_flag(imember, MFLAG_NOCHANNEL)) {
+			channel = switch_core_session_get_channel(imember->session);
+
+			/* add this little bit to preserve the bridge cause code in case of an early media call that */
+			/* never answers */
+			if (switch_test_flag(conference, CFLAG_ANSWERED)) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			} else {
+				/* put actual cause code from outbound channel hangup here */
+				switch_channel_hangup(channel, conference->bridge_hangup_cause);
+			}
+		}
+
+		switch_clear_flag_locked(imember, MFLAG_RUNNING);
+	}
+	switch_mutex_unlock(conference->member_mutex);
+	switch_mutex_unlock(conference->mutex);
 
 	if (switch_test_flag(conference, CFLAG_DESTRUCT)) {
-
-		switch_mutex_lock(conference->mutex);
-		conference_stop_file(conference, FILE_STOP_ASYNC);
-		conference_stop_file(conference, FILE_STOP_ALL);
-		/* Close Unused Handles */
-		if (conference->fnode) {
-			conference_file_node_t *fnode, *cur;
-			switch_memory_pool_t *pool;
-
-			fnode = conference->fnode;
-			while (fnode) {
-				cur = fnode;
-				fnode = fnode->next;
-
-				if (cur->type != NODE_TYPE_SPEECH) {
-					switch_core_file_close(&cur->fh);
-				}
-
-				pool = cur->pool;
-				switch_core_destroy_memory_pool(&pool);
-			}
-			conference->fnode = NULL;
-		}
-
-		if (conference->async_fnode) {
-			switch_memory_pool_t *pool;
-            switch_core_file_close(&conference->async_fnode->fh);
-            pool = conference->async_fnode->pool;
-            conference->async_fnode = NULL;
-            switch_core_destroy_memory_pool(&pool);
-		}
-
-		switch_mutex_lock(conference->member_mutex);
-		for (imember = conference->members; imember; imember = imember->next) {
-			switch_channel_t *channel;
-
-			if (!switch_test_flag(imember, MFLAG_NOCHANNEL)) {
-				channel = switch_core_session_get_channel(imember->session);
-
-				/* add this little bit to preserve the bridge cause code in case of an early media call that */
-				/* never answers */
-				if (switch_test_flag(conference, CFLAG_ANSWERED)) {
-					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-				} else {
-					/* put actual cause code from outbound channel hangup here */
-					switch_channel_hangup(channel, conference->bridge_hangup_cause);
-				}
-			}
-
-			switch_clear_flag_locked(imember, MFLAG_RUNNING);
-		}
-		switch_mutex_unlock(conference->member_mutex);
-
-		switch_mutex_unlock(conference->mutex);
-
+		switch_core_timer_destroy(&timer);
 		switch_mutex_lock(globals.hash_mutex);
 		switch_core_hash_delete(globals.conference_hash, conference->name);
 		switch_mutex_unlock(globals.hash_mutex);

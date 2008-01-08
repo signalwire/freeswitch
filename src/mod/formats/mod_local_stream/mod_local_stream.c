@@ -51,6 +51,9 @@ struct local_stream_context {
 	switch_mutex_t *audio_mutex;
 	switch_buffer_t *audio_buffer;
 	int err;	
+	const char *file;
+	const char *func;
+	int line;
 	struct local_stream_context *next;
 };
 typedef struct local_stream_context local_stream_context_t;
@@ -191,14 +194,20 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 				switch_buffer_write(audio_buffer, abuf, olen * 2);
 				used = switch_buffer_inuse(audio_buffer);
-
+				
 				if (used >= source->prebuf || (source->total && used > source->samples * 2)) {
 					used = switch_buffer_read(audio_buffer, dist_buf, source->samples * 2);
 					if (source->total) {
+						
 						switch_mutex_lock(source->mutex);
 						for (cp = source->context_list; cp; cp = cp->next) {
 							switch_mutex_lock(cp->audio_mutex);
-							switch_buffer_write(cp->audio_buffer, dist_buf, used);
+							if (switch_buffer_inuse(cp->audio_buffer) > source->samples * 128) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Leaking stream handle! [%s() %s:%d]\n", cp->func, cp->file, cp->line);
+								switch_buffer_zero(cp->audio_buffer);
+							} else {
+								switch_buffer_write(cp->audio_buffer, dist_buf, used);
+							}
 							switch_mutex_unlock(cp->audio_mutex);
 						}
 						switch_mutex_unlock(source->mutex);
@@ -277,6 +286,9 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 	}
 	
 	context->source = source;
+	context->file = handle->file;
+	context->func = handle->func;
+	context->line = handle->line;
 
 	switch_mutex_lock(source->mutex);
 	context->next = source->context_list;
