@@ -1323,7 +1323,7 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_chan_vars(switch_xml_t xml, switch_channe
 	if (!hi) return off;
 
 	for (; hi; hi = hi->next) {
-		if (hi->name && hi->value && ((variable = switch_xml_add_child_d(xml, hi->name, off++)))) {
+		if (!switch_strlen_zero(hi->name) && !switch_strlen_zero(hi->value) && ((variable = switch_xml_add_child_d(xml, hi->name, off++)))) {
 			char *data;
 			switch_size_t dlen = strlen(hi->value) * 3;
 			
