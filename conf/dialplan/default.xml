@@ -4,7 +4,7 @@
   <context name="default">
 
     <extension name="unloop">
-      <condition field="${unroll_loops}" expression="^true$" continue="on-true"/>
+      <condition field="${unroll_loops}" expression="^true$"/>
       <condition field="${sip_looped_call}" expression="^true$">
 	<action application="deflect" data="${destination_number}"/>
       </condition>
@@ -108,7 +108,7 @@
     </extension>
 
     <extension name="extension-intercom">
-      <condition field="${sip_to_params}" expression="intercom\=true" continue="on-true"/>
+      <condition field="${sip_to_params}" expression="intercom\=true"/>
       <condition field="destination_number" expression="^8(10[01][0-9])$">
 	<action application="set" data="dialed_ext=$1"/>
 	<action application="export" data="sip_h_Call-Info=<sip:$${domain}>;answer-after=0"/>
@@ -125,7 +125,7 @@
 	 successful bridge (hangup_after-bridge=true) 
     -->
     <extension name="Local_Extension">
-      <condition field="destination_number" expression="^(10[01][0-9])$" continue="on-true">
+      <condition field="destination_number" expression="^(10[01][0-9])$">
 	<action application="set" data="dialed_ext=$1"/>
       </condition>
       <condition field="destination_number" expression="^${caller_id_number}$">
@@ -209,8 +209,8 @@
 	the softkey on the phone.  Should work with other phones.
     -->
     <extension name="park">
-      <condition field="source" expression="mod_sofia" continue="on-true"/>
-      <condition field="destination_number" expression="park\+(\d+)" continue="on-true">
+      <condition field="source" expression="mod_sofia"/>
+      <condition field="destination_number" expression="park\+(\d+)">
 	<action application="fifo" data="$1@$${domain} in undef $${moh_uri}"/>
       </condition>
     </extension> 
@@ -219,8 +219,8 @@
 	Some phones send things like orbit= and you can extract that info.
     -->
     <extension name="unpark">
-      <condition field="source" expression="mod_sofia" continue="on-true"/>
-      <condition field="destination_number" expression="^parking$" continue="on-true"/>
+      <condition field="source" expression="mod_sofia"/>
+      <condition field="destination_number" expression="^parking$"/>
       <condition field="${sip_to_params}" expression="fifo\=(\d+)">
 	<action application="answer"/>
 	<action application="fifo" data="$1@$${domain} out nowait"/>
