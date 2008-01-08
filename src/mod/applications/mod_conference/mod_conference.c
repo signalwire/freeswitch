@@ -749,7 +749,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 		switch_size_t file_data_len = samples * 2;
 		int has_file_data = 0;
 
-		if (conference->perpetual_sound && !conference->fnode) {
+		if (conference->perpetual_sound && !conference->async_fnode) {
 			conference_play_file(conference, conference->perpetual_sound, CONF_DEFAULT_LEADIN, NULL, 1);
 		} else if (conference->moh_sound && conference->count == 1 && !conference->async_fnode) {
 			conference_play_file(conference, conference->moh_sound, CONF_DEFAULT_LEADIN, NULL, 1);
