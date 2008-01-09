@@ -3350,6 +3350,25 @@ static switch_status_t conf_api_sub_norecord(conference_obj_t * conference, swit
 	return ret_status;
 }
 
+static switch_status_t conf_api_sub_pin(conference_obj_t * conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	switch_assert(conference != NULL);
+	switch_assert(stream != NULL);
+
+	if ((argc == 3) && (!strcmp(argv[1], "pin"))) {
+		conference->pin = switch_core_strdup(conference->pool, argv[2]);
+		stream->write_function(stream, "Pin for conference %s set: %s\n", argv[0], conference->pin);
+		return SWITCH_STATUS_SUCCESS;
+	} else if (argc == 2 && (!strcmp(argv[1], "nopin"))) {
+		conference->pin = NULL;
+		stream->write_function(stream, "Pin for conference %s deleted\n", argv[0]);
+		return SWITCH_STATUS_SUCCESS;
+	} else {
+		stream->write_function(stream, "Invalid parameters:\n");
+		return SWITCH_STATUS_GENERR;
+	}
+}
+
 typedef enum {
 	CONF_API_COMMAND_LIST = 0,
 	CONF_API_COMMAND_ENERGY,
@@ -3412,6 +3431,8 @@ static api_command_t conf_api_sub_commands[] = {
 	 "<confname> transfer <conference_name> <member id> [...<member id>]"},
 	{"record", (void_fn_t) & conf_api_sub_record, CONF_API_SUB_ARGS_SPLIT, "<confname> record <filename>"},
 	{"norecord", (void_fn_t) & conf_api_sub_norecord, CONF_API_SUB_ARGS_SPLIT, "<confname> norecord <[filename|all]>"},
+	{"pin", (void_fn_t) & conf_api_sub_pin, CONF_API_SUB_ARGS_SPLIT, "<confname> pin <pin#>"},
+	{"nopin", (void_fn_t) & conf_api_sub_pin, CONF_API_SUB_ARGS_SPLIT, "<confname> nopin"},
 };
 
 #define CONFFUNCAPISIZE (sizeof(conf_api_sub_commands)/sizeof(conf_api_sub_commands[0]))
