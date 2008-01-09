@@ -839,6 +839,8 @@ static void do_2833(switch_rtp_t *rtp_session)
 		if (switch_queue_trypop(rtp_session->dtmf_data.dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_dtmf_t *rdigit = pop;
 
+			rtp_session->sending_dtmf = 1;
+
 			memset(rtp_session->dtmf_data.out_digit_packet, 0, 4);
 			rtp_session->dtmf_data.out_digit_sofar = samples;
 			rtp_session->dtmf_data.out_digit_dur = rdigit->duration;
@@ -847,12 +849,12 @@ static void do_2833(switch_rtp_t *rtp_session)
 			rtp_session->dtmf_data.out_digit_packet[1] = 7;
 
 			if (rtp_session->timer.timer_interface) {
-				rtp_session->dtmf_data.timestamp_dtmf = rtp_session->timer.samplecount;
+				rtp_session->dtmf_data.timestamp_dtmf = rtp_session->timer.samplecount + samples;
 			} else {
 				rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts + samples;
 			}
 			
-			rtp_session->sending_dtmf = 1;
+			
 
 			
 			rtp_session->seq++;
