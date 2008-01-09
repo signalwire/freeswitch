@@ -52,37 +52,37 @@
       <!-- If TTS is enabled all audio-file params beginning with -->
       <!-- 'say:' will be considered text to say with TTS -->
       <!-- Set a default path here so you can use relative paths in the other sound params-->
-      <!--<param name="sound-prefix" value="/soundfiles"/>-->
+      <param name="sound-prefix" value="${base_dir}/en/us/callie"/>
       <!-- File to play to acknowledge succees -->
       <!--<param name="ack-sound" value="beep.wav"/>-->
       <!-- File to play to acknowledge failure -->
       <!--<param name="nack-sound" value="beeperr.wav"/>-->
       <!-- File to play to acknowledge muted -->
-      <!--<param name="muted-sound" value="muted.wav"/>-->
+      <param name="muted-sound" value="conference/conf-muted.wav"/>
       <!-- File to play to acknowledge unmuted -->
-      <!--<param name="unmuted-sound" value="unmuted.wav"/>-->
+      <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
       <!-- File to play if you are alone in the conference -->
-      <!--<param name="alone-sound" value="yactopitc.wav"/>-->
+      <param name="alone-sound" value="conference/conf-alone.wav"/>
       <!-- File to play endlessly (nobody will ever be able to talk) -->
       <!--<param name="perpetual-sound" value="perpetual.wav"/>-->
       <!-- File to play when you're alone (music on hold)-->
       <param name="moh-sound" value="$${moh_uri}"/>
       <!-- File to play when you join the conference -->
-      <param name="enter-sound" value="tone_stream://%(1000,0,500)"/>
+      <param name="enter-sound" value="tone_stream://%(500,0,500,600)"/>
       <!-- File to play when you leave the conference -->
-      <!--<param name="exit-sound" value="exit.wav"/>-->
+      <param name="exit-sound" value="tone_stream://%(500,0,300,200)"/>
       <!-- File to play when you ae ejected from the conference -->
-      <!--<param name="kicked-sound" value="kicked.wav"/>-->
+      <param name="kicked-sound" value="conference/conf-kicked.wav"/>
       <!-- File to play when the conference is locked -->
-      <!--<param name="locked-sound" value="locked.wav"/>-->
+      <param name="locked-sound" value="conference/conf-locked.wav"/>
       <!-- File to play when the conference is locked during the call-->
-      <!--<param name="is-locked-sound" value="is-locked.wav"/>-->
+      <param name="is-locked-sound" value="conference/conf-is-locked.wav"/>
       <!-- File to play when the conference is unlocked during the call-->
-      <!--<param name="is-unlocked-sound" value="is-unlocked.wav"/>-->
+      <param name="is-unlocked-sound" value="conference/conf-is-unlocked.wav"/>
       <!-- File to play to prompt for a pin -->
-      <!--<param name="pin-sound" value="pin.wav"/>-->
+      <param name="pin-sound" value="conference/conf-pin.wav"/>
       <!-- File to play to when the pin is invalid -->
-      <!--<param name="bad-pin-sound" value="invalid-pin.wav"/>-->
+      <param name="bad-pin-sound" value="conference/conf-bad-pin.wav"/>
       <!-- Conference pin -->
       <!--<param name="pin" value="12345"/>-->
       <!-- Default Caller ID Name for outbound calls -->
