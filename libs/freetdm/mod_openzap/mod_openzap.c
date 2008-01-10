@@ -502,7 +502,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
-	uint32_t len;
+	zap_size_t len;
 	zap_wait_flag_t wflags = ZAP_READ;
 	char dtmf[128] = "";
 	zap_status_t status;

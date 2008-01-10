@@ -30,6 +30,44 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 SRC=src
+SOURCES=\
+$(SRC)/hashtable.c \
+$(SRC)/hashtable_itr.c \
+$(SRC)/zap_io.c \
+$(SRC)/zap_isdn.c \
+$(SRC)/zap_analog.c \
+$(SRC)/zap_config.c \
+$(SRC)/zap_callerid.c \
+$(SRC)/fsk.c \
+$(SRC)/uart.c \
+$(SRC)/g711.c \
+$(SRC)/libteletone_detect.c \
+$(SRC)/libteletone_generate.c \
+$(SRC)/zap_buffer.c \
+$(SRC)/zap_threadmutex.c \
+$(SRC)/isdn/EuroISDNStateNT.c \
+$(SRC)/isdn/EuroISDNStateTE.c \
+$(SRC)/isdn/mfifo.c \
+$(SRC)/isdn/Q921.c \
+$(SRC)/isdn/Q931api.c \
+$(SRC)/isdn/Q931.c \
+$(SRC)/isdn/Q931ie.c \
+$(SRC)/isdn/Q931mes.c \
+$(SRC)/isdn/Q931StateNT.c \
+$(SRC)/isdn/Q931StateTE.c \
+$(SRC)/isdn/nationalmes.c \
+$(SRC)/isdn/nationalStateNT.c \
+$(SRC)/isdn/nationalStateTE.c \
+$(SRC)/isdn/DMSmes.c \
+$(SRC)/isdn/DMSStateNT.c \
+$(SRC)/isdn/DMSStateTE.c \
+$(SRC)/isdn/5ESSmes.c \
+$(SRC)/isdn/5ESSStateNT.c \
+$(SRC)/isdn/5ESSStateTE.c \
+$(SRC)/isdn/Q932mes.c \
+$(SRC)/zap_zt.c \
+$(SRC)/zap_wanpipe.c
+
 OBJS=\
 $(SRC)/hashtable.o \
 $(SRC)/hashtable_itr.o \
@@ -109,8 +147,8 @@ LIBPRIA=libpri.a
 LIBPRI=./libpri
 TMP=-I$(LIBPRI) -I$(SRC)/include -I./src -w
 
-PIKA_DIR=$(shell ls -d /usr/include/pika)
-PIKA_LIB=$(shell ls /usr/lib/libpikahmpapi.so)
+PIKA_DIR=$(shell ls -d /usr/include/pika 2>/dev/null)
+PIKA_LIB=$(shell ls /usr/lib/libpikahmpapi.so 2>/dev/null)
 
 ifneq ($(PIKA_DIR),)
 ifneq ($(PIKA_LIB),)
@@ -124,7 +162,7 @@ include general.makefile
 
 all: $(MYLIB)
 
-$(MYLIB): $(OBJS) $(HEADERS)
+$(MYLIB): $(OBJS) $(HEADERS) $(SOURCES)
 	ar rcs $(MYLIB) $(OBJS) $(ADD_OBJS)
 	ranlib $(MYLIB)
 
