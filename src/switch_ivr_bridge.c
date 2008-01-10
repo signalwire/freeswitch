@@ -311,9 +311,8 @@ static switch_status_t uuid_bridge_on_reset(switch_core_session_t *session)
 	switch_channel_clear_flag(channel, CF_TRANSFER);
 
 	if (switch_channel_test_flag(channel, CF_ORIGINATOR)) {
-		printf("XXXXXXXXXXXXXXXXXXXOK\n");
 		switch_channel_set_state(channel, CS_TRANSMIT);
-	} else printf("XXXXXXXXXXXXXXXXXXXWTF\n");
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -386,7 +385,7 @@ static switch_status_t uuid_bridge_on_transmit(switch_core_session_t *session)
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", "%s", switch_core_session_get_uuid(session));
 			switch_event_fire(&event);
 		}
-	printf("XXXXXXXXXXXXXXXXXXXBLAH\n");
+
 		switch_ivr_multi_threaded_bridge(session, other_session, NULL, NULL, NULL);
 		switch_core_session_rwunlock(other_session);
 	} else {
