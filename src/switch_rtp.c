@@ -105,7 +105,6 @@ struct switch_rtp_rfc2833_data {
 	unsigned int out_digit_sofar;
 	unsigned int out_digit_dur;
 	uint16_t in_digit_seq;
-	uint32_t out_digit_ssrc;
 	int32_t timestamp_dtmf;
 	char last_digit;
 	unsigned int dc;
@@ -138,7 +137,6 @@ struct switch_rtp {
 	uint32_t last_write_ts;
 	uint32_t last_write_samplecount;
 	uint16_t last_write_seq;
-	uint32_t last_write_ssrc;
 	uint32_t flags;
 	switch_memory_pool_t *pool;
 	switch_sockaddr_t *from_addr;
@@ -486,7 +484,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	rtp_session->dtmf_data.out_digit_ssrc = ssrc;
 	rtp_session->pool = pool;
 	rtp_session->te = 101;
 
@@ -819,7 +816,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 									4,
 									0,
 									rtp_session->te,
-									rtp_session->dtmf_data.timestamp_dtmf, rtp_session->dtmf_data.out_digit_ssrc,
+									rtp_session->dtmf_data.timestamp_dtmf, 
 									&flags);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s packet for [%c] ts=%d dur=%d seq=%d\n",
 							  loops == 1 ? "middle" : "end", rtp_session->dtmf_data.out_digit, rtp_session->dtmf_data.timestamp_dtmf,
@@ -847,7 +844,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 			rtp_session->dtmf_data.out_digit_packet[1] = 7;
 
 			rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts + samples;
-			rtp_session->dtmf_data.out_digit_ssrc = rtp_session->last_write_ssrc;
+
 
 			switch_rtp_write_manual(rtp_session,
 									rtp_session->dtmf_data.out_digit_packet,
@@ -855,7 +852,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 									switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BUGGY_2833) ? 0 : 1,
 									rtp_session->te,
 									rtp_session->dtmf_data.timestamp_dtmf,
-									rtp_session->dtmf_data.out_digit_ssrc, &flags);
+									&flags);
 
 			switch_log_printf(SWITCH_CHANNEL_LOG,
 							  SWITCH_LOG_DEBUG,
@@ -1452,7 +1449,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 	if (send) {
 
 		rtp_session->last_write_ts = ntohl(send_msg->header.ts);
-		rtp_session->last_write_ssrc = ntohl(send_msg->header.ssrc);
 		rtp_session->last_write_seq = rtp_session->seq;
 		if (rtp_session->timer.interval) {
 			switch_core_timer_check(&rtp_session->timer);
@@ -1588,7 +1584,8 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 	if (switch_test_flag(frame, SFF_RTP_HEADER)) {
 		return switch_rtp_write_manual(rtp_session, frame->data, frame->datalen, frame->m, frame->payload, 
-									   (uint32_t)(frame->timestamp), frame->ssrc, &frame->flags);
+									   (uint32_t)(frame->timestamp), &frame->flags);
+									   
 	}
 
 	if (fwd) {
@@ -1619,7 +1616,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 											void *data,
 											uint32_t datalen,
-											uint8_t m, switch_payload_t payload, uint32_t ts, uint32_t ssrc, switch_frame_flag_t *flags)
+											uint8_t m, switch_payload_t payload, uint32_t ts, switch_frame_flag_t *flags)
 {
 	switch_size_t bytes;
 	uint16_t mseq;
@@ -1641,7 +1638,6 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 	rtp_session->write_msg = rtp_session->send_msg;
 	rtp_session->write_msg.header.seq = htons(mseq);
 	rtp_session->write_msg.header.ts = htonl(ts);
-	rtp_session->write_msg.header.ssrc = htonl(ssrc);
 	rtp_session->write_msg.header.pt = payload;
 	rtp_session->write_msg.header.m = m ? 1 : 0;
 	memcpy(rtp_session->write_msg.body, data, datalen);
