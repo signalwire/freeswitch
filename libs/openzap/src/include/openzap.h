@@ -313,6 +313,7 @@ struct zap_caller_data {
 	char aniII[25];
 	char dnis[25];
 	char rdnis[25];
+	char collected[25];
 	int CRV;
 	int hangup_cause;	
 	uint8_t raw_data[1024];
