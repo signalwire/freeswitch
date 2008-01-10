@@ -814,14 +814,12 @@ static void do_2833(switch_rtp_t *rtp_session)
 
 		
 		for (x = 0; x < loops; x++) {
-			rtp_session->seq++;
-			
 			switch_rtp_write_manual(rtp_session,
 									rtp_session->dtmf_data.out_digit_packet,
 									4,
 									0,
 									rtp_session->te,
-									rtp_session->dtmf_data.timestamp_dtmf, rtp_session->seq, rtp_session->dtmf_data.out_digit_ssrc,
+									rtp_session->dtmf_data.timestamp_dtmf, rtp_session->dtmf_data.out_digit_ssrc,
 									&flags);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s packet for [%c] ts=%d dur=%d seq=%d\n",
 							  loops == 1 ? "middle" : "end", rtp_session->dtmf_data.out_digit, rtp_session->dtmf_data.timestamp_dtmf,
@@ -849,15 +847,14 @@ static void do_2833(switch_rtp_t *rtp_session)
 			rtp_session->dtmf_data.out_digit_packet[1] = 7;
 
 			rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts + samples;
+			rtp_session->dtmf_data.out_digit_ssrc = rtp_session->last_write_ssrc;
 
-			rtp_session->seq++;
 			switch_rtp_write_manual(rtp_session,
 									rtp_session->dtmf_data.out_digit_packet,
 									4,
 									switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BUGGY_2833) ? 0 : 1,
 									rtp_session->te,
 									rtp_session->dtmf_data.timestamp_dtmf,
-									rtp_session->seq, 
 									rtp_session->dtmf_data.out_digit_ssrc, &flags);
 
 			switch_log_printf(SWITCH_CHANNEL_LOG,
@@ -1300,6 +1297,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 		if (flags && *flags & SFF_RFC2833) {
 			send_msg->header.pt = rtp_session->te;
 		}
+		rtp_session->seq++;
+		send_msg->header.seq = htons(rtp_session->seq);
 	} else {
 		uint8_t m = 0;
 		
@@ -1460,7 +1459,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 			rtp_session->last_write_samplecount = rtp_session->timer.samplecount;
 		}
 		switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void *) send_msg, &bytes);
-	} else if (!fwd) {
+	} else {
 		/* nevermind save this seq inc for next time */
 		rtp_session->seq--;
 		rtp_session->send_msg.header.seq = htons(rtp_session->seq);
@@ -1589,7 +1588,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 	if (switch_test_flag(frame, SFF_RTP_HEADER)) {
 		return switch_rtp_write_manual(rtp_session, frame->data, frame->datalen, frame->m, frame->payload, 
-									   (uint32_t)(frame->timestamp), frame->seq, frame->ssrc, &frame->flags);
+									   (uint32_t)(frame->timestamp), frame->ssrc, &frame->flags);
 	}
 
 	if (fwd) {
@@ -1620,9 +1619,10 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 											void *data,
 											uint32_t datalen,
-											uint8_t m, switch_payload_t payload, uint32_t ts, uint16_t mseq, uint32_t ssrc, switch_frame_flag_t *flags)
+											uint8_t m, switch_payload_t payload, uint32_t ts, uint32_t ssrc, switch_frame_flag_t *flags)
 {
 	switch_size_t bytes;
+	uint16_t mseq;
 
 	if (!switch_rtp_ready(rtp_session)) {
 		return -1;
@@ -1636,6 +1636,8 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 		return -1;
 	}
 
+	rtp_session->seq++;
+	mseq = rtp_session->seq;
 	rtp_session->write_msg = rtp_session->send_msg;
 	rtp_session->write_msg.header.seq = htons(mseq);
 	rtp_session->write_msg.header.ts = htonl(ts);
@@ -1660,8 +1662,12 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 	}
 
 	if (switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void *) &rtp_session->write_msg, &bytes) != SWITCH_STATUS_SUCCESS) {
+		rtp_session->seq--;
 		return -1;
 	}
+
+	rtp_session->last_write_seq = rtp_session->seq;
+
 	return (int) bytes;
 }
 

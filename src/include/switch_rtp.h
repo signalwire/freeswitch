@@ -345,7 +345,6 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
   \param m set mark bit or not
   \param payload the IANA payload number
   \param ts then number of bytes to increment the timestamp by
-  \param mseq the specific sequence number to use
   \param ssrc the ssrc
   \param flags frame flags
   \return the number of bytes written
@@ -353,7 +352,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 											void *data,
 											uint32_t datalen,
-											uint8_t m, switch_payload_t payload, uint32_t ts, uint16_t mseq, uint32_t ssrc, switch_frame_flag_t *flags);
+											uint8_t m, switch_payload_t payload, uint32_t ts, uint32_t ssrc, switch_frame_flag_t *flags);
 
 /*! 
   \brief Retrieve the SSRC from a given RTP session
