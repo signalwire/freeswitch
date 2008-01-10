@@ -311,8 +311,9 @@ static switch_status_t uuid_bridge_on_reset(switch_core_session_t *session)
 	switch_channel_clear_flag(channel, CF_TRANSFER);
 
 	if (switch_channel_test_flag(channel, CF_ORIGINATOR)) {
+		printf("XXXXXXXXXXXXXXXXXXXOK\n");
 		switch_channel_set_state(channel, CS_TRANSMIT);
-	}
+	} else printf("XXXXXXXXXXXXXXXXXXXWTF\n");
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -322,7 +323,7 @@ static switch_status_t uuid_bridge_on_transmit(switch_core_session_t *session)
 	switch_channel_t *channel = NULL;
 	switch_core_session_t *other_session;
 	const char *other_uuid = NULL;
-
+	
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 
@@ -385,7 +386,7 @@ static switch_status_t uuid_bridge_on_transmit(switch_core_session_t *session)
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", "%s", switch_core_session_get_uuid(session));
 			switch_event_fire(&event);
 		}
-
+	printf("XXXXXXXXXXXXXXXXXXXBLAH\n");
 		switch_ivr_multi_threaded_bridge(session, other_session, NULL, NULL, NULL);
 		switch_core_session_rwunlock(other_session);
 	} else {
@@ -810,8 +811,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			switch_channel_set_caller_profile(originator_channel, cp);
 			switch_channel_set_originatee_caller_profile(originator_channel, switch_caller_profile_clone(originator_session, originatee_cp));
 
-			switch_channel_set_flag(originator_channel, CF_BREAK);
-			switch_channel_set_flag(originatee_channel, CF_BREAK);
+			switch_channel_stop_broadcast(originator_channel);
+			switch_channel_stop_broadcast(originatee_channel);
 
 			switch_channel_set_flag(originator_channel, CF_TRANSFER);
 			switch_channel_set_flag(originatee_channel, CF_TRANSFER);
