@@ -260,7 +260,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				break;
 			case ZAP_CHANNEL_STATE_DIALTONE:
 				{
-					if (state_counter > 10000) {
+					if (!zap_test_flag(zchan, ZAP_CHANNEL_HOLD) && state_counter > 10000) {
 						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_BUSY);
 					}
 				}
