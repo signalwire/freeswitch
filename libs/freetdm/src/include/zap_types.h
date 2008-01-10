@@ -181,10 +181,11 @@ typedef enum {
 	ZAP_SIGEVENT_ALARM_CLEAR,
 	ZAP_SIGEVENT_MISC,
 	ZAP_SIGEVENT_COLLECTED_DIGIT,
+	ZAP_SIGEVENT_ADD_CALL,
 	ZAP_SIGEVENT_INVALID
 } zap_signal_event_t;
 #define SIGNAL_STRINGS "START", "STOP", "TRANSFER", "ANSWER", "UP", "FLASH", "PROGRESS", \
-		"PROGRESS_MEDIA", "NOTIFY", "TONE_DETECTED", "ALARM_TRAP", "ALARM_CLEAR", "MISC", "COLLECTED_DIGIT", "INVALID"
+		"PROGRESS_MEDIA", "NOTIFY", "TONE_DETECTED", "ALARM_TRAP", "ALARM_CLEAR", "MISC", "COLLECTED_DIGIT", "ADD_CALL", "INVALID"
 ZAP_STR2ENUM_P(zap_str2zap_signal_event, zap_signal_event2str, zap_signal_event_t)
 
 typedef enum {
@@ -326,7 +327,8 @@ typedef enum {
 	ZAP_CHANNEL_PROGRESS_DETECT = (1 << 16),
 	ZAP_CHANNEL_CALLERID_DETECT = (1 << 17),
 	ZAP_CHANNEL_OUTBOUND = (1 << 18),
-	ZAP_CHANNEL_SUSPENDED = (1 << 19)
+	ZAP_CHANNEL_SUSPENDED = (1 << 19),
+	ZAP_CHANNEL_3WAY = (1 << 20)
 } zap_channel_flag_t;
 
 typedef struct zap_channel zap_channel_t;

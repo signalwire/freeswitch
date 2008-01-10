@@ -372,7 +372,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 
 					if (zap_test_flag(zchan, ZAP_CHANNEL_HOLD)) {
 						zap_clear_flag(zchan, ZAP_CHANNEL_HOLD);
-						sig.event_id = ZAP_SIGEVENT_FLASH;
+						sig.event_id = ZAP_SIGEVENT_ADD_CALL;
 					} else {
 						sig.event_id = ZAP_SIGEVENT_UP;
 					}
@@ -707,10 +707,6 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 			} else {
 				sig.event_id = ZAP_SIGEVENT_FLASH;
 				analog_data->sig_cb(&sig);
-				if (event->channel->token_count == 1) {
-					zap_set_flag_locked(event->channel, ZAP_CHANNEL_HOLD);
-					zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_DIALTONE);
-				}
 			}
 		}
 		break;

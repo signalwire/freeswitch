@@ -558,7 +558,7 @@ static ZIO_CONFIGURE_SPAN_FUNCTION(pika_configure_span)
 {
 	int items, i;
     char *mydata, *item_list[10];
-	char *bd, *sp, *ch, *mx;
+	char *bd, *sp, *ch = NULL, *mx;
 	int boardno;
 	int channo;
 	int spanno;
@@ -978,7 +978,7 @@ static ZIO_SPAN_POLL_EVENT_FUNCTION(pika_poll_event)
 
 static ZIO_SPAN_NEXT_EVENT_FUNCTION(pika_next_event)
 {
-	uint32_t i, event_id;
+	uint32_t i, event_id = 0;
 	
 	for(i = 1; i <= span->chan_count; i++) {
 		if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_EVENT)) {

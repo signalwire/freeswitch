@@ -48,7 +48,7 @@ struct span_config {
 	char context[80];
 	char dial_regex[256];
 	char fail_dial_regex[256];
-
+	char hold_music[256];
 };
 
 static struct span_config SPAN_CONFIG[ZAP_MAX_SPANS_INTERFACE] = {{0}};
@@ -73,6 +73,7 @@ static struct {
 	unsigned int flags;
 	int fd;
 	int calls;
+	char hold_music[256];
 	switch_mutex_t *mutex;
 } globals;
 
@@ -122,32 +123,93 @@ static switch_core_session_t *zap_channel_get_session(zap_channel_t *channel, in
 	}
 
 	if (!switch_strlen_zero(channel->tokens[id])) {
-		session = switch_core_session_locate(channel->tokens[id]);
+		if (!(session = switch_core_session_locate(channel->tokens[id]))) {
+			zap_channel_clear_token(channel, channel->tokens[id]);
+		}
 	}
 
 	return session;
 }
 
 
-static void cycle_foreground(zap_channel_t *zchan, int flash) {
+static void stop_hold(const char *uuid)
+{
+	switch_core_session_t *session;
+	switch_channel_t *channel;
+
+	if (!uuid) {
+		return;
+	}
+
+	if ((session = switch_core_session_locate(uuid))) {
+		channel = switch_core_session_get_channel(session);
+		switch_channel_stop_broadcast(channel);
+		switch_channel_wait_for_flag(channel, CF_BROADCAST, SWITCH_FALSE, 2000);
+		switch_core_session_rwunlock(session);
+	}
+}
+
+static void start_hold(const char *uuid, const char *music)
+{
+	switch_core_session_t *session;
+	switch_channel_t *channel;
+	const char *stream = NULL;
+
+
+	if (!uuid) {
+		return;
+	}
+	
+	if ((session = switch_core_session_locate(uuid))) {
+		channel = switch_core_session_get_channel(session);
+		
+		if (!(stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
+			stream = music;
+			if (switch_strlen_zero(stream)) {
+				stream = globals.hold_music;
+			}
+		}
+
+		if (!switch_strlen_zero(stream)) {
+			switch_ivr_broadcast(switch_core_session_get_uuid(session), stream, SMF_ECHO_ALEG | SMF_LOOP);
+		}
+
+		switch_core_session_rwunlock(session);
+	}
+}
+
+
+static void cycle_foreground(zap_channel_t *zchan, int flash, const char *bcast) {
 	uint32_t i = 0;
 	switch_core_session_t *session;
 	switch_channel_t *channel;
 	private_t *tech_pvt;
 	
+	if (!bcast) {
+		bcast = SPAN_CONFIG[zchan->span->span_id].hold_music;
+	}
+
 	for (i = 0; i < zchan->token_count; i++) {
 		if ((session = zap_channel_get_session(zchan, i))) {
+			const char *buuid;
 			tech_pvt = switch_core_session_get_private(session);
 			channel = switch_core_session_get_channel(session);
+			buuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+
+			
 			if (zchan->token_count == 1 && flash) {
 				if (switch_test_flag(tech_pvt, TFLAG_HOLD)) {
+					stop_hold(buuid);
 					switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
 				} else {
+					start_hold(buuid, bcast);
 					switch_set_flag_locked(tech_pvt, TFLAG_HOLD);
 				}
 			} else if (i) {
+				start_hold(buuid, bcast);
 				switch_set_flag_locked(tech_pvt, TFLAG_HOLD);
 			} else {
+				stop_hold(buuid);
 				switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
 				if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
 					switch_channel_mark_answered(channel);
@@ -173,6 +235,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	tech_pvt->cng_frame.data = tech_pvt->cng_databuf;
 	tech_pvt->cng_frame.buflen = sizeof(tech_pvt->cng_databuf);
 	tech_pvt->cng_frame.flags = SFF_CNG;
+	tech_pvt->cng_frame.codec = &tech_pvt->read_codec;
 	memset(tech_pvt->cng_frame.data, 255, tech_pvt->cng_frame.buflen);
 	switch_mutex_init(&tech_pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
@@ -320,7 +383,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		{
 			if (tech_pvt->zchan->state != ZAP_CHANNEL_STATE_BUSY && tech_pvt->zchan->state != ZAP_CHANNEL_STATE_DOWN) {
 				if (tech_pvt->zchan->token_count) {
-					cycle_foreground(tech_pvt->zchan, 0);
+					cycle_foreground(tech_pvt->zchan, 0, NULL);
 				} else {
 					zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
@@ -739,7 +802,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		}
 	}
 
-	if (!switch_strlen_zero(dest)) {
+	if (switch_strlen_zero(dest)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid dial string\n");
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
@@ -849,7 +912,8 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 		return ZAP_FAIL;
 	}
 	
-
+	*sigmsg->channel->caller_data.collected = '\0';
+	
 	if (switch_strlen_zero(sigmsg->channel->caller_data.cid_name)) {
 		switch_set_string(sigmsg->channel->caller_data.cid_name, sigmsg->channel->chan_name);
 	}
@@ -985,18 +1049,104 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 		break;
     case ZAP_SIGEVENT_STOP:
 		{
+			switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
+			if (sigmsg->channel->token_count) {
+				switch_core_session_t *session_a, *session_b, *session_t = NULL;
+				switch_channel_t *channel_a = NULL, *channel_b = NULL;
+				int digits = !switch_strlen_zero(sigmsg->channel->caller_data.collected);
+				const char *br_a_uuid = NULL, *br_b_uuid = NULL;
+				private_t *tech_pvt = NULL;
+
+
+				if ((session_a = switch_core_session_locate(sigmsg->channel->tokens[0]))) {
+					channel_a = switch_core_session_get_channel(session_a);
+					br_a_uuid = switch_channel_get_variable(channel_a, SWITCH_SIGNAL_BOND_VARIABLE);
+
+					tech_pvt = switch_core_session_get_private(session_a);
+					stop_hold(switch_channel_get_variable(channel_a, SWITCH_SIGNAL_BOND_VARIABLE));
+					switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
+				}
+
+				if ((session_b = switch_core_session_locate(sigmsg->channel->tokens[1]))) {
+					channel_b = switch_core_session_get_channel(session_b);
+					br_b_uuid = switch_channel_get_variable(channel_b, SWITCH_SIGNAL_BOND_VARIABLE);
+
+					tech_pvt = switch_core_session_get_private(session_b);
+					stop_hold(switch_channel_get_variable(channel_b, SWITCH_SIGNAL_BOND_VARIABLE));
+					switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
+				}
+
+				if (channel_a && channel_b && !switch_channel_test_flag(channel_a, CF_OUTBOUND) && !switch_channel_test_flag(channel_b, CF_OUTBOUND)) {
+					cause = SWITCH_CAUSE_ATTENDED_TRANSFER;
+					if (br_a_uuid && br_b_uuid) {
+						switch_ivr_uuid_bridge(br_a_uuid, br_b_uuid);
+					} else if (br_a_uuid && digits) {
+						session_t = switch_core_session_locate(br_a_uuid);
+					} else if (br_b_uuid && digits) {
+						session_t = switch_core_session_locate(br_b_uuid);
+					}
+				}
+				
+				if (session_t) {
+					switch_ivr_session_transfer(session_t, sigmsg->channel->caller_data.collected, NULL, NULL);
+					switch_core_session_rwunlock(session_t);
+				}
+
+				if (session_a) {
+					switch_core_session_rwunlock(session_a);
+				}
+
+				if (session_b) {
+					switch_core_session_rwunlock(session_b);
+				}
+
+				
+			}
+
 			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
-				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				switch_channel_hangup(channel, cause);
 				zap_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
 				switch_core_session_rwunlock(session);
 			}
+			zap_channel_clear_token(sigmsg->channel, NULL);
+			
 		}
 		break;
 
+    case ZAP_SIGEVENT_ADD_CALL:
+		{
+			cycle_foreground(sigmsg->channel, 1, NULL);
+		}
+		break;
     case ZAP_SIGEVENT_FLASH:
 		{
-			cycle_foreground(sigmsg->channel, 1);
+			
+			if (sigmsg->channel->token_count == 2) {
+				if (zap_test_flag(sigmsg->channel, ZAP_CHANNEL_3WAY)) {
+					zap_clear_flag(sigmsg->channel, ZAP_CHANNEL_3WAY);
+					if ((session = zap_channel_get_session(sigmsg->channel, 1))) {
+						channel = switch_core_session_get_channel(session);
+						switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+						zap_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
+						switch_core_session_rwunlock(session);
+					}
+					cycle_foreground(sigmsg->channel, 1, NULL);
+				} else {
+					char *cmd;
+					cmd = switch_mprintf("three_way::%s", sigmsg->channel->tokens[0]);
+					zap_set_flag(sigmsg->channel, ZAP_CHANNEL_3WAY);
+					cycle_foreground(sigmsg->channel, 1, cmd);
+					free(cmd);
+				}
+			} else { 
+				cycle_foreground(sigmsg->channel, 1, NULL);
+				if (sigmsg->channel->token_count == 1) {
+					zap_set_flag_locked(sigmsg->channel, ZAP_CHANNEL_HOLD);
+					zap_set_state_locked(sigmsg->channel, ZAP_CHANNEL_STATE_DIALTONE);
+				}
+			}
+			
 		}
 		break;
 
@@ -1013,7 +1163,9 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			if (switch_strlen_zero(fail_regex)) {
 				fail_regex = NULL;
 			}
-
+			
+			switch_set_string(sigmsg->channel->caller_data.collected, dtmf);
+			
 			if ((regex || fail_regex) && !switch_strlen_zero(dtmf)) {
 				switch_regex_t *re = NULL;
 				int ovector[30];
@@ -1171,6 +1323,8 @@ static switch_status_t load_config(void)
 
 			if (!strcasecmp(var, "debug")) {
 				globals.debug = atoi(val);
+			} else if (!strcasecmp(var, "hold-music")) {
+				switch_set_string(globals.hold_music, val);
 			}
 		}
 	}
@@ -1184,6 +1338,7 @@ static switch_status_t load_config(void)
 			char *digit_timeout = NULL;
 			char *max_digits = NULL;
 			char *dial_regex = NULL;
+			char *hold_music = NULL;
 			char *fail_dial_regex = NULL;
 			uint32_t span_id = 0, to = 0, max = 0;
 			zap_span_t *span = NULL;
@@ -1204,6 +1359,8 @@ static switch_status_t load_config(void)
 					dial_regex = val;
 				} else if (!strcasecmp(var, "fail-dial-regex")) {
 					fail_dial_regex = val;
+				} else if (!strcasecmp(var, "hold-music")) {
+					hold_music = val;
 				} else if (!strcasecmp(var, "max_digits") || !strcasecmp(var, "max-digits")) {
 					digit_timeout = val;
 				}
@@ -1247,6 +1404,10 @@ static switch_status_t load_config(void)
 
 			if (fail_dial_regex) {
 				switch_set_string(SPAN_CONFIG[span->span_id].fail_dial_regex, fail_dial_regex);
+			}
+
+			if (hold_music) {
+				switch_set_string(SPAN_CONFIG[span->span_id].hold_music, hold_music);
 			}
 
 			zap_analog_start(span);
