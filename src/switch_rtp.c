@@ -830,6 +830,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 		}
 
 		if (loops != 1) {
+			rtp_session->last_write_ts = rtp_session->dtmf_data.timestamp_dtmf + rtp_session->dtmf_data.out_digit_sofar;
 			rtp_session->sending_dtmf = 0;
 		}
 	}
