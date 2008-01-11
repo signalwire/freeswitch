@@ -127,7 +127,6 @@ struct switch_rtp {
 	uint32_t autoadj_tally;
 
 	uint16_t seq;
-	uint16_t rseq;
 	uint8_t sending_dtmf;
 	switch_payload_t payload;
 	switch_payload_t rpayload;
@@ -1056,7 +1055,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			rtp_session->recv_msg.header.pt = 97;
 		}
 
-		rtp_session->rseq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
 		rtp_session->rpayload = (switch_payload_t) rtp_session->recv_msg.header.pt;
 
 		/* RFC2833 ... TBD try harder to honor the duration etc. */
@@ -1322,7 +1320,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		
 		rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
 
-
 		if ((rtp_session->ts > (rtp_session->last_write_ts + (rtp_session->samples_per_interval * 10))) 
 			|| rtp_session->ts == rtp_session->samples_per_interval) {
 			m++;
@@ -1333,8 +1330,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			m++;
 		}
 		send_msg->header.m = m ? 1 : 0;
-		
-		
+
 		memcpy(send_msg->body, data, datalen);
 		bytes = datalen + rtp_header_len;
 	}
@@ -1365,7 +1361,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		time_t now = switch_timestamp(NULL);
 		send = 0;
 
-
 		if (rtp_session->vad_data.scan_freq && rtp_session->vad_data.next_scan <= now) {
 			rtp_session->vad_data.bg_count = rtp_session->vad_data.bg_level = 0;
 			rtp_session->vad_data.next_scan = now + rtp_session->vad_data.scan_freq;
@@ -1377,7 +1372,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 									 datalen,
 									 rtp_session->vad_data.read_codec->implementation->actual_samples_per_second,
 									 decoded, &len, &rate, &codec_flags) == SWITCH_STATUS_SUCCESS) {
-			
 
 			uint32_t energy = 0;
 			uint32_t x, y = 0, z = len / sizeof(int16_t);
@@ -1457,19 +1451,14 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		}
 	}
 
-	if (rtp_session->sending_dtmf) {
-		send = 0;
-	}
-
 	this_ts = ntohl(send_msg->header.ts);
 
-	if (!this_ts) {
+	if (rtp_session->sending_dtmf || !this_ts) {
 		send = 0;
 	}
 
 	if (send) {
-		rtp_session->seq++;
-		rtp_session->send_msg.header.seq = htons(rtp_session->seq);
+		send_msg->header.seq = htons(++rtp_session->seq);
 		
 		if (switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void *) send_msg, &bytes) != SWITCH_STATUS_SUCCESS) {
 			rtp_session->seq--;
@@ -1480,10 +1469,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			switch_core_timer_check(&rtp_session->timer);
 			rtp_session->last_write_samplecount = rtp_session->timer.samplecount;
 		}
-		
 		rtp_session->last_write_ts = this_ts;
 	}
-
 
 	if (rtp_session->ice_user) {
 		if (ice_out(rtp_session) != SWITCH_STATUS_SUCCESS) {
@@ -1583,7 +1570,6 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	if (switch_test_flag(frame, SFF_RTP_HEADER)) {
 		return switch_rtp_write_manual(rtp_session, frame->data, frame->datalen, frame->m, frame->payload, 
 									   (uint32_t)(frame->timestamp), &frame->flags);
-									   
 	}
 
 	if (fwd) {
@@ -1605,7 +1591,6 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 											uint8_t m, switch_payload_t payload, uint32_t ts, switch_frame_flag_t *flags)
 {
 	switch_size_t bytes;
-	uint16_t mseq;
 
 	if (!switch_rtp_ready(rtp_session)) {
 		return -1;
@@ -1619,17 +1604,14 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 		return -1;
 	}
 
-	rtp_session->seq++;
-	mseq = rtp_session->seq;
 	rtp_session->write_msg = rtp_session->send_msg;
-	rtp_session->write_msg.header.seq = htons(mseq);
+	rtp_session->write_msg.header.seq = htons(++rtp_session->seq);
 	rtp_session->write_msg.header.ts = htonl(ts);
 	rtp_session->write_msg.header.pt = payload;
 	rtp_session->write_msg.header.m = m ? 1 : 0;
 	memcpy(rtp_session->write_msg.body, data, datalen);
 
 	bytes = rtp_header_len + datalen;
-
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
 		int sbytes = (int) bytes;
@@ -1639,7 +1621,6 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 		if (stat) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error: srtp protection failed with code %d\n", stat);
 		}
-
 		bytes = sbytes;
 	}
 
@@ -1648,8 +1629,7 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 		return -1;
 	}
 
-	//rtp_session->last_write_ts = ts;
-
+	rtp_session->last_write_ts = ts;
 
 	return (int) bytes;
 }
