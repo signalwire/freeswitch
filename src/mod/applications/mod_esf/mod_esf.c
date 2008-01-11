@@ -202,7 +202,7 @@ SWITCH_STANDARD_APP(bcast_function)
 			continue;
 		}
 		if (ready == SEND_TYPE_RTP) {
-			switch_rtp_write_frame(rtp_session, read_frame, 0);
+			switch_rtp_write_frame(rtp_session, read_frame);
 		} else {
 			bytes = read_frame->packetlen;
 			switch_socket_sendto(socket, audio_addr, 0, read_frame->packet, &bytes);

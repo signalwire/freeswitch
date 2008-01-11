@@ -527,7 +527,7 @@ static switch_status_t sofia_write_video_frame(switch_core_session_t *session, s
 	}
 
 	if (!switch_test_flag(frame, SFF_CNG)) {
-		switch_rtp_write_frame(tech_pvt->video_rtp_session, frame, 0);
+		switch_rtp_write_frame(tech_pvt->video_rtp_session, frame);
 	}
 	
 	return status;
@@ -674,7 +674,7 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 	}
 
 	tech_pvt->timestamp_send += samples;
-	switch_rtp_write_frame(tech_pvt->rtp_session, frame, 0);
+	switch_rtp_write_frame(tech_pvt->rtp_session, frame);
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_WRITING);
 	return status;

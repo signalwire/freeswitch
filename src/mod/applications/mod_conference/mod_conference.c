@@ -2647,9 +2647,21 @@ static switch_status_t conf_api_sub_dtmf(conference_member_t * member, switch_st
 {
 	switch_event_t *event;
 	char *dtmf = (char *) data;
-	char *p = dtmf;
+	char *p;
 	switch_dtmf_t _dtmf = { 0, SWITCH_DEFAULT_DTMF_DURATION };
+	int tmp;
 
+	if ((p = strchr(dtmf, '+'))) {
+		tmp = atoi(p);
+		if (tmp > 0) {
+			if (member->orig_read_codec && member->orig_read_codec->implementation) {
+				_dtmf.duration = tmp * (member->orig_read_codec->implementation->samples_per_second / 1000);
+			} else {
+				_dtmf.duration = tmp * (member->conference->rate / 1000);
+			}
+		}
+	}
+	
 	if (member == NULL) {
 		stream->write_function(stream, "Invalid member!\n");
 		return SWITCH_STATUS_GENERR;
@@ -2664,7 +2676,8 @@ static switch_status_t conf_api_sub_dtmf(conference_member_t * member, switch_st
 	switch_mutex_lock(member->flag_mutex);
 	switch_core_session_kill_channel(member->session, SWITCH_SIG_BREAK);
 
-	while(p && *p) {
+	p = dtmf;
+	while(p && *p && is_dtmf(*p)) {
 		_dtmf.digit = *p;
 		switch_core_session_send_dtmf(member->session, &_dtmf);
 		p++;
