@@ -468,7 +468,7 @@ struct switch_ivr_menu_xml_ctx {
 	int autocreated;
 };
 
-static switch_ivr_menu_xml_map_t *switch_ivr_menu_stack_xml_find(switch_ivr_menu_xml_ctx_t * xml_ctx, char *name)
+static switch_ivr_menu_xml_map_t *switch_ivr_menu_stack_xml_find(switch_ivr_menu_xml_ctx_t * xml_ctx, const char *name)
 {
 	switch_ivr_menu_xml_map_t *map = (xml_ctx != NULL ? xml_ctx->map : NULL);
 	int rc = -1;
@@ -480,7 +480,7 @@ static switch_ivr_menu_xml_map_t *switch_ivr_menu_stack_xml_find(switch_ivr_menu
 	return (rc == 0 ? map : NULL);
 }
 
-static switch_status_t switch_ivr_menu_stack_xml_add(switch_ivr_menu_xml_ctx_t * xml_ctx, char *name, int action,
+static switch_status_t switch_ivr_menu_stack_xml_add(switch_ivr_menu_xml_ctx_t * xml_ctx, const char *name, int action,
 													 switch_ivr_menu_action_function_t * function)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -512,6 +512,44 @@ static switch_status_t switch_ivr_menu_stack_xml_add(switch_ivr_menu_xml_ctx_t *
 	return status;
 }
 
+
+static struct iam_s {
+	const char *name;
+	switch_ivr_action_t action;
+} iam[] = {
+	{ "menu-exit", SWITCH_IVR_ACTION_DIE }, 
+	{ "menu-sub", SWITCH_IVR_ACTION_EXECMENU},
+	{ "menu-exec-app", SWITCH_IVR_ACTION_EXECAPP}, 
+	{ "menu-play-sound", SWITCH_IVR_ACTION_PLAYSOUND}, 
+	{ "menu-say-text", SWITCH_IVR_ACTION_SAYTEXT}, 
+	{ "menu-say-phrase", SWITCH_IVR_ACTION_SAYPHRASE}, 
+	{ "menu-back", SWITCH_IVR_ACTION_BACK}, 
+	{ "menu-top", SWITCH_IVR_ACTION_TOMAIN}, 
+	{ "menu-call-transfer", SWITCH_IVR_ACTION_TRANSFER},
+	{ NULL, 0}
+};
+
+
+static switch_bool_t is_valid_action(const char *action)
+{
+	int i;
+	
+	if (!switch_strlen_zero(action)) {
+		for(i = 0;;i++) {
+			if (!iam[i].name) {
+				break;
+			}
+
+			if (!strcmp(iam[i].name, action)) {
+				return SWITCH_TRUE;
+			}
+		}
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid Action [%s]\n", switch_str_nil(action));
+	return SWITCH_FALSE;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_xml_ctx_t ** xml_menu_ctx, switch_memory_pool_t *pool)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -537,20 +575,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_x
 	}
 	// build the standard/default xml menu handler mappings
 	if (status == SWITCH_STATUS_SUCCESS && xml_menu_ctx != NULL && *xml_menu_ctx != NULL) {
-		struct iam_s {
-			char *name;
-			switch_ivr_action_t action;
-		} iam[] = {
-			{
-				"menu-exit", SWITCH_IVR_ACTION_DIE}, {
-				"menu-sub", SWITCH_IVR_ACTION_EXECMENU}, {
-				"menu-exec-app", SWITCH_IVR_ACTION_EXECAPP}, {
-				"menu-play-sound", SWITCH_IVR_ACTION_PLAYSOUND}, {
-				"menu-say-text", SWITCH_IVR_ACTION_SAYTEXT}, {
-				"menu-say-phrase", SWITCH_IVR_ACTION_SAYPHRASE}, {
-				"menu-back", SWITCH_IVR_ACTION_BACK}, {
-				"menu-top", SWITCH_IVR_ACTION_TOMAIN}, {
-				"menu-call-transfer", SWITCH_IVR_ACTION_TRANSFER},};
 		int iam_qty = (sizeof(iam) / sizeof(iam[0]));
 		int i;
 
@@ -563,7 +587,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_x
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_add_custom(switch_ivr_menu_xml_ctx_t * xml_menu_ctx,
-																	 char *name, switch_ivr_menu_action_function_t * function)
+																	 const char *name, switch_ivr_menu_action_function_t * function)
 {
 	return switch_ivr_menu_stack_xml_add(xml_menu_ctx, name, -1, function);
 }
@@ -608,7 +632,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 				const char *digits = switch_xml_attr(xml_kvp, "digits");
 				const char *param = switch_xml_attr_soft(xml_kvp, "param");
 
-				if (!switch_strlen_zero(action) && !switch_strlen_zero(digits)) {
+				if (is_valid_action(action) && !switch_strlen_zero(digits)) {
 					switch_ivr_menu_xml_map_t *xml_map = xml_menu_ctx->map;
 					int found = 0;
 

@@ -719,7 +719,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
  *\return SWITCH_STATUS_SUCCESS if all is well
  */
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_add_custom(switch_ivr_menu_xml_ctx_t * xml_menu_ctx,
-																	 char *name, switch_ivr_menu_action_function_t * function);
+																	 const char *name, switch_ivr_menu_action_function_t * function);
 
 /*!
  *\param xml_menu_ctx A pointer of a XML menu parser context to be created
