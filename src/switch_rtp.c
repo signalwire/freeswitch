@@ -1460,11 +1460,11 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		send = 0;
 	}
 
-	/*
-	if ((this_ts = ntohl(send_msg->header.ts)) < rtp_session->last_write_ts) {
+	this_ts = ntohl(send_msg->header.ts);
+
+	if (!this_ts) {
 		send = 0;
 	}
-	*/
 
 	if (send) {
 		rtp_session->seq++;
