@@ -186,7 +186,7 @@ char *sofia_presence_translate_rpid(char *in, char *ext)
 
 void sofia_presence_mwi_event_handler(switch_event_t *event)
 {
-	char *account, *registered_account, *dup_account, *yn, *host, *user;
+	char *account, *dup_account, *yn, *host, *user;
 	char *sql;
 	sofia_profile_t *profile = NULL;
 	switch_stream_handle_t stream = { 0 };
@@ -195,9 +195,7 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 	
 	switch_assert(event != NULL);
 
-	registered_account = switch_event_get_header(event, "registered-message-account");
-
-	if(!(account = switch_event_get_header(event, "mwi-message-account"))) {
+	if (!(account = switch_event_get_header(event, "mwi-message-account"))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing required Header 'MWI-Message-Account'\n");
 		return;
 	}
@@ -206,11 +204,8 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing required Header 'MWI-Messages-Waiting'\n");
 		return;
 	}
-	if (!switch_strlen_zero(registered_account)) {
-		dup_account = strdup(registered_account);
-	} else {
-		dup_account = strdup(account);
-	}
+
+	dup_account = strdup(account);
 	switch_assert(dup_account != NULL);
 	sofia_glue_get_user_host(dup_account, &user, &host);
 
@@ -225,13 +220,10 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 		if (!strncasecmp(hp->name, "mwi-", 4)) {
 			char *tmp = NULL;
 			char *value = hp->value;
-			
 			if (!strcasecmp(hp->name, "mwi-message-account") && strncasecmp(hp->value, "sip:", 4)) {
 				tmp = switch_mprintf("sip:%s", hp->value);
 				value = tmp;
 			} 
-			
-
 			stream.write_function(&stream, "%s: %s\r\n", hp->name + 4, value);
 			switch_safe_free(tmp);
 		}
