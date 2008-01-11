@@ -542,15 +542,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_x
 			switch_ivr_action_t action;
 		} iam[] = {
 			{
-			"menu-exit", SWITCH_IVR_ACTION_DIE}, {
-			"menu-sub", SWITCH_IVR_ACTION_EXECMENU}, {
-			"menu-exec-api", SWITCH_IVR_ACTION_EXECAPP}, {
-			"menu-play-sound", SWITCH_IVR_ACTION_PLAYSOUND}, {
-			"menu-say-text", SWITCH_IVR_ACTION_SAYTEXT}, {
-			"menu-say-phrase", SWITCH_IVR_ACTION_SAYPHRASE}, {
-			"menu-back", SWITCH_IVR_ACTION_BACK}, {
-			"menu-top", SWITCH_IVR_ACTION_TOMAIN}, {
-		"menu-call-transfer", SWITCH_IVR_ACTION_TRANSFER},};
+				"menu-exit", SWITCH_IVR_ACTION_DIE}, {
+				"menu-sub", SWITCH_IVR_ACTION_EXECMENU}, {
+				"menu-exec-app", SWITCH_IVR_ACTION_EXECAPP}, {
+				"menu-play-sound", SWITCH_IVR_ACTION_PLAYSOUND}, {
+				"menu-say-text", SWITCH_IVR_ACTION_SAYTEXT}, {
+				"menu-say-phrase", SWITCH_IVR_ACTION_SAYPHRASE}, {
+				"menu-back", SWITCH_IVR_ACTION_BACK}, {
+				"menu-top", SWITCH_IVR_ACTION_TOMAIN}, {
+				"menu-call-transfer", SWITCH_IVR_ACTION_TRANSFER},};
 		int iam_qty = (sizeof(iam) / sizeof(iam[0]));
 		int i;
 
