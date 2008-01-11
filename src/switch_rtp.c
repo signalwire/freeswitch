@@ -849,7 +849,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 			rtp_session->dtmf_data.out_digit_packet[0] = (unsigned char) switch_char_to_rfc2833(rdigit->digit);
 			rtp_session->dtmf_data.out_digit_packet[1] = 7;
 
-			rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts;
+			rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts + samples;
 
 			switch_rtp_write_manual(rtp_session,
 									rtp_session->dtmf_data.out_digit_packet,
