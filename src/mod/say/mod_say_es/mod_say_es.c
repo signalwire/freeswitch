@@ -303,7 +303,7 @@ static switch_status_t es_say_time(switch_core_session_t *session, char *tosay, 
 			}
 		} else {
 			if ((seconds = atoi(tosay)) <= 0) {
-				seconds = (int64_t) time(NULL);
+				seconds = (int64_t) switch_timestamp(NULL);
 			}
 
 			if (seconds >= 60) {

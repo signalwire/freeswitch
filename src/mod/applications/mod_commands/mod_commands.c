@@ -600,11 +600,16 @@ SWITCH_STANDARD_API(ctl_function)
 			}
 			switch_core_session_ctl(SCSC_SPS, &arg);
 			stream->write_function(stream, "+OK sessions per second: %d\n", arg);
+		} else if (!strcasecmp(argv[0], "sync_clock")) {
+			arg = 0;
+			switch_core_session_ctl(SCSC_SYNC_CLOCK, &arg);
+			stream->write_function(stream, "+OK clock syncronized\n");
 		} else {
 			stream->write_function(stream, "-ERR INVALID COMMAND\nUSAGE: fsctl %s", CTL_SYNTAX);
 			goto end;
-		}
-
+		} 
+		
+		
 		stream->write_function(stream, "+OK\n");
 	  end:
 		free(mydata);
@@ -830,13 +835,13 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 		uint32_t mto;
 		if (*argv[4] == '+') {
 			if ((mto = atoi(argv[4]+1)) > 0) {
-				to = time(NULL) + mto;
+				to = switch_timestamp(NULL) + mto;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
 				goto done;
 			}
 		} else {
-			if ((to = atoi(argv[4])) < time(NULL)) {
+			if ((to = atoi(argv[4])) < switch_timestamp(NULL)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
 				to = 0;
 				goto done;
@@ -930,7 +935,7 @@ SWITCH_STANDARD_API(sched_transfer_function)
 		time_t when;
 
 		if (*argv[0] == '+') {
-			when = time(NULL) + atol(argv[0] + 1);
+			when = switch_timestamp(NULL) + atol(argv[0] + 1);
 		} else {
 			when = atol(argv[0]);
 		}
@@ -972,7 +977,7 @@ SWITCH_STANDARD_API(sched_hangup_function)
 		switch_call_cause_t cause = SWITCH_CAUSE_ALLOTTED_TIMEOUT;
 
 		if (*argv[0] == '+') {
-			when = time(NULL) + atol(argv[0] + 1);
+			when = switch_timestamp(NULL) + atol(argv[0] + 1);
 		} else {
 			when = atol(argv[0]);
 		}
@@ -1091,7 +1096,7 @@ SWITCH_STANDARD_API(sched_broadcast_function)
 		time_t when;
 
 		if (*argv[0] == '+') {
-			when = time(NULL) + atol(argv[0] + 1);
+			when = switch_timestamp(NULL) + atol(argv[0] + 1);
 		} else {
 			when = atol(argv[0]);
 		}
@@ -1603,7 +1608,7 @@ SWITCH_STANDARD_API(sched_api_function)
 			*dcmd++ = '\0';
 
 			if (*tm == '+') {
-				when = time(NULL) + atol(tm + 1);
+				when = switch_timestamp(NULL) + atol(tm + 1);
 			} else {
 				when = atol(tm);
 			}

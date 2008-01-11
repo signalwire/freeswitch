@@ -434,7 +434,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	}
 
 	if (limit) {
-		start = time(NULL);
+		start = switch_timestamp(NULL);
 	}
 
 	if (fh->thresh) {
@@ -464,7 +464,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			switch_ivr_parse_all_events(session);
 		}
 
-		if (start && (time(NULL) - start) > limit) {
+		if (start && (switch_timestamp(NULL) - start) > limit) {
 			break;
 		}
 

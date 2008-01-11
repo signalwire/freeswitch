@@ -72,7 +72,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	}
 
 	if (!tech_pvt->owner_id) {
-		tech_pvt->owner_id = (uint32_t) time(NULL) - port;
+		tech_pvt->owner_id = (uint32_t) switch_timestamp(NULL) - port;
 	}
 
 	if (!tech_pvt->session_id) {
@@ -1468,7 +1468,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					}
 				
 					if (match) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Our existing codec is still good, let's keep it\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Our existing codec [%s] is still good, let's keep it\n", 
+										  tech_pvt->rm_encoding);
 						goto end;
 					}
 				}

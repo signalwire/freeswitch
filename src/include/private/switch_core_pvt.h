@@ -158,6 +158,8 @@ struct switch_media_bug {
 
 struct switch_runtime {
 	switch_time_t initiated;
+	switch_time_t reference;
+	int64_t offset;
 	switch_hash_t *global_vars;
 	switch_hash_t *mime_types;
 	switch_memory_pool_t *memory_pool;

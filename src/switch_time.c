@@ -59,6 +59,9 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime);
 SWITCH_MODULE_DEFINITION(softtimer, softtimer_load, softtimer_shutdown, softtimer_runtime);
 
 #define MAX_ELEMENTS 1000
+#define IDLE_SPEED 100
+#define STEP_MS 1
+#define STEP_MIC 1000
 
 struct timer_private {
 	switch_size_t reference;
@@ -77,7 +80,45 @@ typedef struct timer_matrix timer_matrix_t;
 
 static timer_matrix_t TIMER_MATRIX[MAX_ELEMENTS + 1];
 
-#define IDLE_SPEED 100
+
+SWITCH_DECLARE(switch_time_t) switch_timestamp_now(void)
+{
+	return runtime.timestamp ? runtime.timestamp : switch_time_now();
+}
+
+
+SWITCH_DECLARE(time_t) switch_timestamp(time_t *t)
+{
+	time_t now = switch_timestamp_now() / APR_USEC_PER_SEC;
+	if (t) {
+		*t = now;
+	}
+	return now;
+}
+
+static switch_time_t time_now(int64_t offset)
+{
+	switch_time_t now;
+
+#if defined(HAVE_CLOCK_GETTIME)
+	struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    now = ts.tv_sec * APR_USEC_PER_SEC + (ts.tv_nsec/1000) + offset;
+
+#else
+	now = switch_time_now();
+#endif
+
+	return now;
+}
+
+SWITCH_DECLARE(void) switch_time_sync(void)
+{
+	runtime.reference = switch_time_now();
+	runtime.offset = runtime.reference - time_now(0);
+	runtime.reference = time_now(runtime.offset);
+}
+
 
 
 SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
@@ -225,15 +266,14 @@ static switch_status_t timer_destroy(switch_timer_t *timer)
 }
 
 
-#define STEP_MS 1
-#define STEP_MIC 1000
-
 SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 {
-	switch_time_t reference = switch_time_now();
+	switch_time_t too_late = STEP_MIC * 128;
 	uint32_t current_ms = 0;
 	uint32_t x, tick = 0;
-	switch_time_t ts = 0;
+	switch_time_t ts = 0, last = 0;
+	
+	switch_time_sync();
 
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
@@ -243,15 +283,35 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	runtime.sps = runtime.sps_total;
 	switch_mutex_unlock(runtime.throttle_mutex);
 
+
 	while (globals.RUNNING == 1) {
-		reference += STEP_MIC;
-		while ((ts = switch_time_now()) < reference) {
+		runtime.reference += STEP_MIC;
+		while ((ts = time_now(runtime.offset)) < runtime.reference) {
+			if (ts < last) {
+				int64_t diff = (int64_t)(ts - last);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Reverse Clock Skew Detected!\n");
+				runtime.reference = switch_time_now();
+				current_ms = 0;
+				tick = 0;
+				runtime.initiated += diff;
+			}
 			switch_yield(STEP_MIC);
+			last = ts;
 		}
+
+		if (ts > (runtime.reference + too_late)) {
+			switch_time_t diff = ts - runtime.reference - STEP_MIC;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Forward Clock Skew Detected!\n");
+			runtime.reference = switch_time_now();
+			current_ms = 0;
+			tick = 0;
+			runtime.initiated += diff;
+		}
+		
 		runtime.timestamp = ts;
 		current_ms += STEP_MS;
 		tick += STEP_MS;
-
+		
 		if (tick >= 1000) {
 			if (runtime.sps <= 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Rate of %d!\n", runtime.sps_total);

@@ -302,7 +302,7 @@ void sofia_reg_auth_challange(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 	switch_mutex_lock(profile->ireg_mutex);
 	sql = switch_mprintf("insert into sip_authentication (nonce, expires) values('%q', %ld)",
-						 uuid_str, time(NULL) + profile->nonce_ttl);
+						 uuid_str, switch_timestamp(NULL) + profile->nonce_ttl);
 	switch_assert(sql != NULL);
 	sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
 	switch_safe_free(sql);
@@ -495,7 +495,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		
 		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','%q', '%q', %ld, '%q')", call_id,
 							 to_user, to_host, contact_str, cd ? "Registered(NATHACK)" : "Registered", 
-							 rpid, (long) time(NULL) + (long) exptime * 2, agent);
+							 rpid, (long) switch_timestamp(NULL) + (long) exptime * 2, agent);
 
 		
 		if (sql) {

@@ -1242,7 +1242,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					switch_assert(gp->state < REG_STATE_LAST);
 					stream->write_function(stream, "%25s\t%s\t  %32s\t%s", gp->name, "gateway", gp->register_to, sofia_state_names[gp->state]);
 					if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
-						stream->write_function(stream, " (retry: %ds)", gp->retry - time(NULL));
+						stream->write_function(stream, " (retry: %ds)", gp->retry - switch_timestamp(NULL));
 					}
 					stream->write_function(stream, "\n");
 				}
@@ -1348,7 +1348,7 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 
 	if (!strcasecmp(argv[1], "stop") || !strcasecmp(argv[1], "restart")) {
 		int rsec = 3;
-		int diff = (int) (time(NULL) - profile->started);
+		int diff = (int) (switch_timestamp(NULL) - profile->started);
 		int remain = rsec - diff;
 		if (diff < rsec) {
 			stream->write_function(stream, "Profile %s must be up for at least %d seconds to stop/restart.\nPlease wait %d second%s\n", 

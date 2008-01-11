@@ -314,7 +314,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 	switch_stun_packet_attribute_add_username(packet, username, 32);
 	bytes = switch_stun_packet_length(packet);
 	switch_socket_sendto(sock, remote_addr, 0, (void *) packet, &bytes);
-	started = switch_time_now();
+	started = switch_timestamp_now();
 
 	*ip = NULL;
 	*port = 0;
@@ -326,7 +326,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 			break;
 		}
 
-		if ((elapsed = (unsigned int) ((switch_time_now() - started) / 1000)) > 5000) {
+		if ((elapsed = (unsigned int) ((switch_timestamp_now() - started) / 1000)) > 5000) {
 			*err = "Timeout";
 			switch_socket_shutdown(sock, SWITCH_SHUTDOWN_READWRITE);
 			switch_socket_close(sock);

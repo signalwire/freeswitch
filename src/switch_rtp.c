@@ -1063,7 +1063,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			uint16_t in_digit_seq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
 
 			/* SHEESH.... Curse you RFC2833 inventors!!!! */
-			if ((time(NULL) - rtp_session->dtmf_data.last_digit_time) > 2) {
+			if ((switch_timestamp(NULL) - rtp_session->dtmf_data.last_digit_time) > 2) {
 				rtp_session->dtmf_data.last_digit = 0;
 				rtp_session->dtmf_data.dc = 0;
 				rtp_session->dtmf_data.in_digit_seq = 0;
@@ -1073,7 +1073,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				if (duration && end) {
 					if (key != rtp_session->dtmf_data.last_digit) {
 						switch_dtmf_t dtmf = { key, duration };
-						time(&rtp_session->dtmf_data.last_digit_time);
+						switch_timestamp(&rtp_session->dtmf_data.last_digit_time);
 						switch_rtp_queue_rfc2833_in(rtp_session, &dtmf);
 						switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
 					}
@@ -1347,7 +1347,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 		uint32_t rate = 0;
 		uint32_t codec_flags = 0;
 		uint32_t len = sizeof(decoded);
-		time_t now = time(NULL);
+		time_t now = switch_timestamp(NULL);
 		send = 0;
 
 
@@ -1523,7 +1523,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_enable_vad(switch_rtp_t *rtp_session,
 	rtp_session->vad_data.cng_freq = 50;
 	rtp_session->vad_data.ts = 1;
 	rtp_session->vad_data.start = 0;
-	rtp_session->vad_data.next_scan = time(NULL);
+	rtp_session->vad_data.next_scan = switch_timestamp(NULL);
 	rtp_session->vad_data.scan_freq = 0;
 	switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_VAD);
 	switch_set_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_CNG);

@@ -77,7 +77,7 @@ static int task_thread_loop(int done)
 		if (done) {
 			tp->destroyed = 1;
 		} else {
-			int64_t now = time(NULL);
+			int64_t now = switch_timestamp(NULL);
 			if (now >= tp->task.runtime && !tp->in_thread) {
 				int32_t diff = (int32_t)(now - tp->task.runtime);
 				if (diff > 1) {
@@ -160,7 +160,7 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,
 	switch_zmalloc(container, sizeof(*container));
 	switch_assert(func);
 	container->func = func;
-	container->task.created = time(NULL);
+	container->task.created = switch_timestamp(NULL);
 	container->task.runtime = task_runtime;
 	container->task.group = strdup(group ? group : "none");
 	container->task.cmd_id = cmd_id;

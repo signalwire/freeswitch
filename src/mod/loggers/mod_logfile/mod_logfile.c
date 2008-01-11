@@ -123,7 +123,7 @@ static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 
 	switch_mutex_lock(globals.mutex);
 
-	switch_time_exp_lt(&tm, switch_time_now());
+	switch_time_exp_lt(&tm, switch_timestamp_now());
 	switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d-%H-%M-%S", &tm);
 
 	profile->log_size = 0;

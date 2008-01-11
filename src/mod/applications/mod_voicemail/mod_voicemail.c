@@ -1380,7 +1380,7 @@ default:
 			}
 		}
 		switch_snprintf(sql, sizeof(sql), "update voicemail_data set read_epoch=%ld where user='%s' and domain='%s' and flags='save'", 
-			(long)time(NULL), myid, domain_name);
+			(long)switch_timestamp(NULL), myid, domain_name);
 		vm_execute_sql(profile, sql, profile->mutex);
 		switch_snprintf(sql, sizeof(sql), "select file_path from voicemail_data where user='%s' and domain='%s' and flags='delete'", myid, domain_name);
 		vm_execute_sql_callback(profile, profile->mutex, sql, unlink_callback, NULL);
@@ -1891,7 +1891,7 @@ greet:
 		int total_new_urgent_messages = 0;
 		int total_saved_urgent_messages = 0;
 
-		usql = switch_mprintf("insert into voicemail_data values(%ld,0,'%q','%q','%q','%q','%q','%q','%q','%u','','%q')", (long)time(NULL),
+		usql = switch_mprintf("insert into voicemail_data values(%ld,0,'%q','%q','%q','%q','%q','%q','%q','%u','','%q')", (long)switch_timestamp(NULL),
 			id, domain_name, uuid, caller_profile->caller_id_name, caller_profile->caller_id_number, 
 			myfolder, file_path, message_len, read_flags);
 		vm_execute_sql(profile, usql, profile->mutex);
@@ -1936,7 +1936,7 @@ end:
 		message_count(profile, id, domain_name, myfolder, &total_new_messages, &total_saved_messages,
 			&total_new_urgent_messages, &total_saved_urgent_messages);
 
-		switch_time_exp_lt(&tm, switch_time_now());
+		switch_time_exp_lt(&tm, switch_timestamp_now());
 		switch_strftime(date, &retsize, sizeof(date), profile->date_fmt, &tm);
 
 		switch_channel_set_variable(channel, "voicemail_current_folder", myfolder);
@@ -2255,7 +2255,7 @@ static void do_play(vm_profile_t *profile, char *user, char *domain, char *file,
 	struct holder holder;
 
 	sql = switch_mprintf("update voicemail_data set read_epoch=%ld where user='%s' and domain='%s' and file_path like '%%%s'", 
-		(long)time(NULL), user, domain, file);
+		(long)switch_timestamp(NULL), user, domain, file);
 
 	vm_execute_sql(profile, sql, profile->mutex);
 	free(sql);

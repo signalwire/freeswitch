@@ -40,17 +40,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 {
 	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_time_t start, now, done = switch_time_now() + (ms * 1000);
+	switch_time_t start, now, done = switch_timestamp_now() + (ms * 1000);
 	switch_frame_t *read_frame;
 	int32_t left, elapsed;
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 
-	start = switch_time_now();
+	start = switch_timestamp_now();
 
 	for (;;) {
-		now = switch_time_now();
+		now = switch_timestamp_now();
 		elapsed = (int32_t) ((now - start) / 1000);
 		left = ms - elapsed;
 
@@ -548,7 +548,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 	}
 
 	if (timeout) {
-		started = switch_time_now();
+		started = switch_timestamp_now();
 	}
 
 	while (switch_channel_ready(channel)) {
@@ -557,7 +557,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 		switch_dtmf_t dtmf = {0};
 
 		if (timeout) {
-			elapsed = (uint32_t) ((switch_time_now() - started) / 1000);
+			elapsed = (uint32_t) ((switch_timestamp_now() - started) / 1000);
 			if (elapsed >= timeout) {
 				break;
 			}
@@ -1191,12 +1191,12 @@ SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stre
 					stream->digits = tmp;
 					*(stream->digits + (len++)) = digit;
 					*(stream->digits + len) = '\0';
-					stream->last_digit_time = switch_time_now() / 1000;
+					stream->last_digit_time = switch_timestamp_now() / 1000;
 				}
 			}
 		}
 		// don't allow collected digit string testing if there are varying sized keys until timeout
-		if (parser->maxlen - parser->minlen > 0 && (switch_time_now() / 1000) - stream->last_digit_time < parser->digit_timeout_ms) {
+		if (parser->maxlen - parser->minlen > 0 && (switch_timestamp_now() / 1000) - stream->last_digit_time < parser->digit_timeout_ms) {
 			len = 0;
 		}
 		// if we have digits to test

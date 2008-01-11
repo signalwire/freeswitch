@@ -1536,6 +1536,8 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim_events(void);
 SWITCH_DECLARE(void) switch_core_memory_reclaim_logger(void);
 SWITCH_DECLARE(void) switch_core_memory_reclaim_all(void);
 SWITCH_DECLARE(void) switch_core_setrlimits(void);
+SWITCH_DECLARE(void) switch_time_sync(void);
+SWITCH_DECLARE(time_t) switch_timestamp(time_t *t);
 
 ///\}
 

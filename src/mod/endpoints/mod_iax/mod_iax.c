@@ -637,7 +637,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
-	switch_time_t started = switch_time_now();
+	switch_time_t started = switch_timestamp_now();
 	unsigned int elapsed;
 	switch_byte_t *data;
 
@@ -680,7 +680,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		}
 
 		if (timeout > -1) {
-			elapsed = (unsigned int) ((switch_time_now() - started) / 1000);
+			elapsed = (unsigned int) ((switch_timestamp_now() - started) / 1000);
 			if (elapsed >= (unsigned int) timeout) {
 				return SWITCH_STATUS_SUCCESS;
 			}
@@ -724,7 +724,6 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		switch_swap_linear(frame->data, (int) frame->datalen / 2);
 	}
 #endif
-	//printf("Send %ld %d\n", time(NULL), (int) frame->datalen);
 	iax_send_voice(tech_pvt->iax_session, tech_pvt->codec, frame->data, (int) frame->datalen, tech_pvt->write_codec.implementation->samples_per_frame);
 
 	return SWITCH_STATUS_SUCCESS;

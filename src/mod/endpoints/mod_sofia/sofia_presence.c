@@ -608,13 +608,13 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char *prpid;
 	int done = 0;
 	const char *ct;
-	time_t exptime = time(NULL) + 3600; 
+	time_t exptime = switch_timestamp(NULL) + 3600; 
 	char exp[80] = "";   
 	
 	if (expires) { 
 		long tmp = atol(expires); 
 		if (tmp > 0) { 
-			exptime = tmp - time(NULL); 
+			exptime = tmp - switch_timestamp(NULL); 
 		}
 	}
 
@@ -855,7 +855,7 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	}
 
 	id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
-	expire_sec = (int)(expire_sec - time(NULL));
+	expire_sec = (int)(expire_sec - switch_timestamp(NULL));
 	if (expire_sec < 0) {
 		expire_sec = 3600;
 	}
@@ -1047,7 +1047,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		full_via = sip_header_as_string(profile->home, (void *) sip->sip_via);
 
 		exp_raw = (sip->sip_expires ? sip->sip_expires->ex_delta : 3600);
-		exp = (long) time(NULL) + exp_raw;
+		exp = (long) switch_timestamp(NULL) + exp_raw;
 
 		switch_mutex_lock(profile->ireg_mutex);
 

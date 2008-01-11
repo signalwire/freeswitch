@@ -354,7 +354,7 @@ static switch_status_t read_packet(listener_t * listener, switch_event_t **event
 	uint32_t max_len = sizeof(mbuf);
 	switch_channel_t *channel = NULL;
 	*event = NULL;
-	start = time(NULL);
+	start = switch_timestamp(NULL);
 	ptr = mbuf;
 
 
@@ -436,7 +436,7 @@ static switch_status_t read_packet(listener_t * listener, switch_event_t **event
 		}
 
 		if (timeout) {
-			elapsed = (uint32_t) (time(NULL) - start);
+			elapsed = (uint32_t) (switch_timestamp(NULL) - start);
 			if (elapsed >= timeout) {
 				switch_clear_flag_locked(listener, LFLAG_RUNNING);
 				return SWITCH_STATUS_FALSE;

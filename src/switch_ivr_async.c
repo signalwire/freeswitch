@@ -307,7 +307,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	switch_channel_pre_answer(channel);
 
 	if (limit) {
-		to = time(NULL) + limit;
+		to = switch_timestamp(NULL) + limit;
 	}
 
 	if (flags && strchr(flags, 'm')) {
@@ -763,7 +763,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	}
 
 	if (limit) {
-		to = time(NULL) + limit;
+		to = switch_timestamp(NULL) + limit;
 	}
 	
 	if ((status = switch_core_media_bug_add(session, record_callback, fh, to, flags, &bug)) != SWITCH_STATUS_SUCCESS) {

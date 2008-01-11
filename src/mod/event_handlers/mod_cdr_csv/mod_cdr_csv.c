@@ -87,7 +87,7 @@ static void do_rotate(cdr_fd_t *fd)
 	close(fd->fd);
 
 	if (globals.rotate) {
-		switch_time_exp_lt(&tm, switch_time_now());
+		switch_time_exp_lt(&tm, switch_timestamp_now());
 		switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d-%H-%M-%S", &tm);
 	
 		len = strlen(fd->path) + strlen(date) + 2;

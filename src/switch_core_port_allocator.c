@@ -118,7 +118,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 	int odd = switch_test_flag(alloc, SPF_ODD);
 
 	switch_mutex_lock(alloc->mutex);
-	srand(getpid() + (unsigned)time(NULL));
+	srand(getpid() + (unsigned)switch_timestamp(NULL));
 	
 	while(alloc->track_used < alloc->track_len) {
 		double r;

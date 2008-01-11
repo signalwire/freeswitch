@@ -182,7 +182,7 @@ SWITCH_STANDARD_APP(bcast_function)
 		}
 	}
 
-	control_packet.unique_id = htonl((u_long)time(NULL));
+	control_packet.unique_id = htonl((u_long)switch_timestamp(NULL));
 	control_packet.command = htonl(LS_START_BCAST);
 	control_packet.ip = inet_addr(mcast_ip);
 	control_packet.port = htonl(mcast_port);
@@ -211,7 +211,7 @@ SWITCH_STANDARD_APP(bcast_function)
 
 
 
-	control_packet.unique_id = htonl((u_long)time(NULL));
+	control_packet.unique_id = htonl((u_long)switch_timestamp(NULL));
 	control_packet.command = htonl(LS_STOP_BCAST);
 	bytes = 8;
 	switch_socket_sendto(socket, control_packet_addr, 0, (void *)&control_packet, &bytes);

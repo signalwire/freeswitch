@@ -220,7 +220,7 @@ SWITCH_STANDARD_APP(sched_transfer_function)
 			time_t when;
 
 			if (*argv[0] == '+') {
-				when = time(NULL) + atol(argv[0] + 1);
+				when = switch_timestamp(NULL) + atol(argv[0] + 1);
 			} else {
 				when = atol(argv[0]);
 			}
@@ -245,7 +245,7 @@ SWITCH_STANDARD_APP(sched_hangup_function)
 			switch_bool_t bleg = SWITCH_FALSE;
 
 			if (*argv[0] == '+') {
-				when = time(NULL) + atol(argv[0] + 1);
+				when = switch_timestamp(NULL) + atol(argv[0] + 1);
 			} else {
 				when = atol(argv[0]);
 			}
@@ -277,7 +277,7 @@ SWITCH_STANDARD_APP(sched_broadcast_function)
 			switch_media_flag_t flags = SMF_NONE;
 
 			if (*argv[0] == '+') {
-				when = time(NULL) + atol(argv[0] + 1);
+				when = switch_timestamp(NULL) + atol(argv[0] + 1);
 			} else {
 				when = atol(argv[0]);
 			}
@@ -749,7 +749,7 @@ SWITCH_STANDARD_APP(strftime_function)
 		channel = switch_core_session_get_channel(session);
 		assert(channel != NULL);
 
-		switch_time_exp_lt(&tm, switch_time_now());
+		switch_time_exp_lt(&tm, switch_timestamp_now());
 		switch_strftime(date, &retsize, sizeof(date), argv[1], &tm);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SET [%s]=[%s]\n", argv[0], date);
 		switch_channel_set_variable(channel, argv[0], date);
@@ -761,7 +761,7 @@ SWITCH_STANDARD_API(strepoch_api_function)
 	switch_time_t out;
 
 	if (switch_strlen_zero(cmd)) {
-		out = switch_time_now();
+		out = switch_timestamp_now();
 	} else {
 		out = switch_str_time(cmd);
 	}
@@ -782,7 +782,7 @@ SWITCH_STANDARD_API(strftime_api_function)
 		thetime = switch_time_make(atoi(cmd),0);
 		cmd = p+1;
 	} else {
-		thetime = switch_time_now();
+		thetime = switch_timestamp_now();
 	}
 	switch_time_exp_lt(&tm, thetime);
 	switch_strftime(date, &retsize, sizeof(date), switch_strlen_zero(cmd) ? "%Y-%m-%d %T" : cmd, &tm);
@@ -969,12 +969,12 @@ SWITCH_STANDARD_APP(tone_detect_session_function)
 		uint32_t mto;
 		if (*argv[3] == '+') {
 			if ((mto = atol(argv[3]+1)) > 0) {
-				to = time(NULL) + mto;
+				to = switch_timestamp(NULL) + mto;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
 			}
 		} else {
-			if ((to = atol(argv[3])) < time(NULL)) {
+			if ((to = atol(argv[3])) < switch_timestamp(NULL)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
 				to = 0;
 			}

@@ -80,13 +80,9 @@ SWITCH_STANDARD_SCHED_FUNC(heartbeat_callback)
 	send_heartbeat();
 
 	/* reschedule this task */
-	task->runtime = time(NULL) + 20;
+	task->runtime = switch_timestamp(NULL) + 20;
 }
 
-SWITCH_DECLARE(switch_time_t) switch_timestamp_now(void)
-{
-	return runtime.timestamp ? runtime.timestamp : switch_time_now();
-}
 
 SWITCH_DECLARE(switch_status_t) switch_core_set_console(const char *console)
 {
@@ -832,7 +828,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_scheduler_task_thread_start();
 	runtime.initiated = switch_time_now();
 
-	switch_scheduler_add_task(time(NULL), heartbeat_callback, "heartbeat", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL);
+	switch_scheduler_add_task(switch_timestamp(NULL), heartbeat_callback, "heartbeat", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL);
 
 
 	switch_uuid_get(&uuid);
@@ -966,7 +962,7 @@ SWITCH_DECLARE(void) switch_core_measure_time(switch_time_t total_ms, switch_cor
 
 SWITCH_DECLARE(switch_time_t) switch_core_uptime(void)
 {
-	return switch_time_now() - runtime.initiated;
+	return switch_timestamp_now() - runtime.initiated;
 }
 
 SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_t * val)
@@ -976,6 +972,10 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 	}
 
 	switch (cmd) {
+	case SCSC_SYNC_CLOCK:
+		switch_time_sync();
+		*val = 0;
+		break;
 	case SCSC_PAUSE_INBOUND:
 		if (*val) {
 			switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);

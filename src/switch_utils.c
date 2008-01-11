@@ -230,7 +230,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 	unsigned char in[B64BUFFLEN];
 	unsigned char out[B64BUFFLEN + 512];
 
-    switch_snprintf(filename, 80, "%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, (int)time(NULL), rand() & 0xffff);
+    switch_snprintf(filename, 80, "%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, (int)switch_timestamp(NULL), rand() & 0xffff);
     
     if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644))) {
         if (file) {
@@ -691,7 +691,7 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in)
 	switch_time_t ret = 0;
 	char *pattern = "^(\\d+)-(\\d+)-(\\d+)\\s*(\\d*):{0,1}(\\d*):{0,1}(\\d*)";
 
-	switch_time_exp_lt(&tm, switch_time_now());
+	switch_time_exp_lt(&tm, switch_timestamp_now());
 	tm.tm_year = tm.tm_mon = tm.tm_mday = tm.tm_hour = tm.tm_min = tm.tm_sec = 0;
 
 	if ((proceed = switch_regex_perform(in, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {

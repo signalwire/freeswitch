@@ -345,7 +345,7 @@ void event_handler(switch_event_t *event)
 		char *rpid = switch_event_get_header(event, "orig-rpid");
 		char *call_id = switch_event_get_header(event, "orig-call-id");
 		char *user_agent = switch_event_get_header(event, "user-agent");
-		long expires = (long) time(NULL) + atol(exp_str);
+		long expires = (long) switch_timestamp(NULL) + atol(exp_str);
 		char *profile_name = switch_event_get_header(event, "orig-profile-name");
 		sofia_profile_t *profile = NULL;
 
@@ -512,19 +512,19 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting thread for %s\n", profile->name);
 
-	profile->started = time(NULL);
+	profile->started = switch_timestamp(NULL);
 	switch_yield(1000000);
 
 	sofia_set_pflag_locked(profile, PFLAG_RUNNING);
 
 	while (mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING)) {
 		if (++ireg_loops >= IREG_SECONDS) {
-			sofia_reg_check_expire(profile, time(NULL));
+			sofia_reg_check_expire(profile, switch_timestamp(NULL));
 			ireg_loops = 0;
 		}
 
 		if (++gateway_loops >= GATEWAY_SECONDS) {
-			sofia_reg_check_gateway(profile, time(NULL));
+			sofia_reg_check_gateway(profile, switch_timestamp(NULL));
 			gateway_loops = 0;
 		}
 

@@ -899,7 +899,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			}			
 
-			time(&start);
+			switch_timestamp(&start);
 
 			for (;;) {
 				uint32_t valid_channels = 0;
@@ -922,7 +922,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						goto notready;
 					}
 
-					if ((time(NULL) - start) > (time_t) timelimit_sec) {
+					if ((switch_timestamp(NULL) - start) > (time_t) timelimit_sec) {
 						to++;
 						idx = IDX_CANCEL;
 						goto notready;
@@ -1036,7 +1036,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 
 				// When the AND operator is being used, and fail_on_single_reject is set, a hangup indicates that the call should fail.
-				if ((to = (uint8_t) ((time(NULL) - start) >= (time_t) timelimit_sec))
+				if ((to = (uint8_t) ((switch_timestamp(NULL) - start) >= (time_t) timelimit_sec))
 					|| (fail_on_single_reject && hups)) {
 					idx = IDX_CANCEL;
 					goto notready;
