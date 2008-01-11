@@ -237,7 +237,8 @@ void dsp_fsk_destroy(dsp_fsk_handle_t **handle)
 	}
 
 	if ((*handle)->attr.bytehandler) {
-		dsp_uart_destroy((dsp_uart_handle_t**)&(*handle)->attr.bithandler_arg);
+		dsp_uart_handle_t** dhandle = (void *)(&(*handle)->attr.bithandler_arg);
+		dsp_uart_destroy(dhandle);
 	}
 
 	free(*handle);
