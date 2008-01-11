@@ -868,7 +868,7 @@ static void do_2833(switch_rtp_t *rtp_session)
  				switch_core_timer_check(&rtp_session->timer);
 				offset = rtp_session->timer.samplecount - rtp_session->last_write_samplecount;
 				if (offset > 0) {
-					rtp_session->dtmf_data.timestamp_dtmf += offset;
+					rtp_session->dtmf_data.timestamp_dtmf = (uint32_t)(rtp_session->dtmf_data.timestamp_dtmf + offset);
 				}
 			}
 
@@ -1087,7 +1087,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833) && rtp_session->recv_msg.header.pt == rtp_session->te) {
 			unsigned char *packet = (unsigned char *) rtp_session->recv_msg.body;
 			int end = packet[1] & 0x80 ? 1 : 0;
-			int duration = (packet[2] << 8) + packet[3];
+			uint16_t duration = (packet[2] << 8) + packet[3];
 			char key = switch_rfc2833_to_char(packet[0]);
 			uint16_t in_digit_seq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
 			
