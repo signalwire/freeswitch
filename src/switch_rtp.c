@@ -105,7 +105,7 @@ struct switch_rtp_rfc2833_data {
 	unsigned int out_digit_sofar;
 	unsigned int out_digit_dur;
 	uint16_t in_digit_seq;
-	int32_t timestamp_dtmf;
+	uint32_t timestamp_dtmf;
 	char last_digit;
 	unsigned int dc;
 	time_t last_digit_time;
@@ -818,7 +818,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 									rtp_session->te,
 									rtp_session->dtmf_data.timestamp_dtmf, 
 									&flags);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s packet for [%c] ts=%d dur=%d seq=%d\n",
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s packet for [%c] ts=%u dur=%d seq=%d\n",
 							  loops == 1 ? "middle" : "end", rtp_session->dtmf_data.out_digit, rtp_session->dtmf_data.timestamp_dtmf,
 							  rtp_session->dtmf_data.out_digit_sofar, rtp_session->seq);
 		}
@@ -845,7 +845,6 @@ static void do_2833(switch_rtp_t *rtp_session)
 
 			rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts + samples;
 
-
 			switch_rtp_write_manual(rtp_session,
 									rtp_session->dtmf_data.out_digit_packet,
 									4,
@@ -856,7 +855,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 
 			switch_log_printf(SWITCH_CHANNEL_LOG,
 							  SWITCH_LOG_DEBUG,
-							  "Send start packet for [%c] ts=%d dur=%d seq=%d\n",
+							  "Send start packet for [%c] ts=%u dur=%d seq=%d\n",
 							  rtp_session->dtmf_data.out_digit,
 							  rtp_session->dtmf_data.timestamp_dtmf, 
 							  rtp_session->dtmf_data.out_digit_sofar, 
@@ -1447,8 +1446,11 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 	}
 
 	if (send) {
+		uint32_t last_ts = ntohl(send_msg->header.ts);
 
-		rtp_session->last_write_ts = ntohl(send_msg->header.ts);
+		if (last_ts) {
+			rtp_session->last_write_ts = last_ts;
+		}
 		rtp_session->last_write_seq = rtp_session->seq;
 		if (rtp_session->timer.interval) {
 			switch_core_timer_check(&rtp_session->timer);
@@ -1660,6 +1662,10 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 	if (switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void *) &rtp_session->write_msg, &bytes) != SWITCH_STATUS_SUCCESS) {
 		rtp_session->seq--;
 		return -1;
+	}
+
+	if (ts) {
+		rtp_session->last_write_ts = ts;
 	}
 
 	rtp_session->last_write_seq = rtp_session->seq;
