@@ -1413,7 +1413,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 			if ((uuid = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (b_session = switch_core_session_locate(uuid))) {
 				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 				switch_channel_stop_broadcast(b_channel);
-				switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 2000);
+				switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000);
 				switch_core_session_rwunlock(b_session);
 			}
 
