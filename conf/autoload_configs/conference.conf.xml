@@ -68,9 +68,9 @@
       <!-- File to play when you're alone (music on hold)-->
       <param name="moh-sound" value="$${moh_uri}"/>
       <!-- File to play when you join the conference -->
-      <param name="enter-sound" value="tone_stream://%(500,0,500,600)"/>
+      <param name="enter-sound" value="tone_stream://%(200,0,500,600,700)"/>
       <!-- File to play when you leave the conference -->
-      <param name="exit-sound" value="tone_stream://%(500,0,300,200)"/>
+      <param name="exit-sound" value="tone_stream://%(200,0,300,200,100)"/>
       <!-- File to play when you ae ejected from the conference -->
       <param name="kicked-sound" value="conference/conf-kicked.wav"/>
       <!-- File to play when the conference is locked -->
