@@ -337,8 +337,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 		if (!switch_strlen_zero(menu->buf)) {
 			for (ap = menu->actions; ap; ap = ap->next) {
 				if (!strcmp(menu->buf, ap->bind)) {
-					char *membuf;
-
 					match++;
 					errs = 0;
 					if (ap->function) {
@@ -376,24 +374,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 						reps = -1;
 						status = switch_ivr_menu_execute(session, stack, aptr, obj);
 						break;
-					case SWITCH_IVR_ACTION_EXECAPP:{
+					case SWITCH_IVR_ACTION_EXECAPP:
+						{
 							const switch_application_interface_t *application_interface;
+							char *app_name;
+							char *app_arg = NULL;
 
-							if ((membuf = strdup(aptr))) {
-								char *app_name = membuf;
-								char *app_arg = strchr(app_name, ' ');
+							status = SWITCH_STATUS_FALSE;
 
-								if (app_arg) {
-									*app_arg = '\0';
-									app_arg++;
+							if (!switch_strlen_zero(aptr)) {
+								app_name = switch_core_session_strdup(session, aptr);
+								if ((app_arg = strchr(app_name, ' '))) {
+									*app_arg++ = '\0';
 								}
 
-								if (app_name && app_arg) {
-									if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
-										if (application_interface->application_function) {
-											switch_core_session_exec(session, application_interface, app_arg);
-										}
-									}
+								if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
+									switch_core_session_exec(session, application_interface, app_arg);
+									status = SWITCH_STATUS_SUCCESS;
 								}
 							}
 						}

@@ -946,6 +946,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 
 	channel = switch_core_session_get_channel(session);
 	switch_channel_clear_flag(channel, CF_BREAK);
+
+	switch_assert(application_interface->application_function);
+
 	application_interface->application_function(session, arg);
 	
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE) == SWITCH_STATUS_SUCCESS) {
