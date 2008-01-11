@@ -202,7 +202,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 						switch_mutex_lock(source->mutex);
 						for (cp = source->context_list; cp; cp = cp->next) {
 							switch_mutex_lock(cp->audio_mutex);
-							if (switch_buffer_inuse(cp->audio_buffer) > source->samples * 128) {
+							if (switch_buffer_inuse(cp->audio_buffer) > source->samples * 768) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Leaking stream handle! [%s() %s:%d]\n", cp->func, cp->file, cp->line);
 								switch_buffer_zero(cp->audio_buffer);
 							} else {

@@ -1,5 +1,17 @@
 <include>
   <user id="1000" mailbox="1000">
+    <mailboxes>
+      <mailbox id="1001"/>
+      <mailbox id="1002"/>
+      <mailbox id="1003"/>
+      <mailbox id="1004"/>
+      <mailbox id="1005"/>
+      <mailbox id="1006"/>
+      <mailbox id="1007"/>
+      <mailbox id="1008"/>
+      <mailbox id="1009"/>
+      <mailbox id="1010"/>
+    </mailboxes>
     <params>
       <param name="password" value="1234"/>
       <param name="vm-password" value="1000"/>
