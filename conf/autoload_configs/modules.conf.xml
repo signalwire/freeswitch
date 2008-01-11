@@ -74,7 +74,7 @@
     <!-- Timers -->
 
     <!-- Languages -->
-    <!-- <load module="mod_spidermonkey"/> -->
+    <load module="mod_spidermonkey"/>
     <!-- <load module="mod_perl"/> -->
     <!-- <load module="mod_python"/> -->
     <!-- <load module="mod_java"/> -->

@@ -248,6 +248,7 @@
       </condition>
     </extension>
 
+
     <X-PRE-PROCESS cmd="include" data="extensions/*.xml"/>
 
     <extension name="enum">
@@ -256,6 +257,6 @@
 	<action application="transfer" data="$1 enum"/>
       </condition>
     </extension>
-    
+
   </context>
 </include>

@@ -103,12 +103,15 @@ struct switch_rtp_rfc2833_data {
 	char out_digit;
 	unsigned char out_digit_packet[4];
 	unsigned int out_digit_sofar;
+	unsigned int out_digit_sub_sofar;
 	unsigned int out_digit_dur;
 	uint16_t in_digit_seq;
+	uint32_t in_digit_ts;
 	uint32_t timestamp_dtmf;
+	uint16_t last_duration;
+	uint32_t flip;
+	char first_digit;
 	char last_digit;
-	unsigned int dc;
-	time_t last_digit_time;
 	switch_queue_t *dtmf_inqueue;
 	switch_mutex_t *dtmf_mutex;
 };
@@ -127,7 +130,6 @@ struct switch_rtp {
 	uint32_t autoadj_tally;
 
 	uint16_t seq;
-	uint32_t ssrc;
 	uint8_t sending_dtmf;
 	switch_payload_t payload;
 	switch_payload_t rpayload;
@@ -538,7 +540,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activating Secure RTP!\n");
 	}
 
-	rtp_session->ssrc = ssrc;
 	rtp_session->seq = (uint16_t) rand();
 	rtp_session->send_msg.header.ssrc = htonl(ssrc);
 	rtp_session->send_msg.header.ts = 0;
@@ -801,20 +802,20 @@ static void do_2833(switch_rtp_t *rtp_session)
 	if (rtp_session->dtmf_data.out_digit_dur > 0) {
 		int x, loops = 1;
 		rtp_session->dtmf_data.out_digit_sofar += samples;
+		rtp_session->dtmf_data.out_digit_sub_sofar += samples;
 
-		if (rtp_session->dtmf_data.out_digit_sofar > 0xFFFF) {
-			rtp_session->dtmf_data.out_digit_sofar = samples;
+		if (rtp_session->dtmf_data.out_digit_sub_sofar > 0xFFFF) {
+			rtp_session->dtmf_data.out_digit_sub_sofar = samples;
 			rtp_session->dtmf_data.timestamp_dtmf += 0xFFFF;
 		}
 
 		if (rtp_session->dtmf_data.out_digit_sofar >= rtp_session->dtmf_data.out_digit_dur) {
 			rtp_session->dtmf_data.out_digit_packet[1] |= 0x80;
-			rtp_session->dtmf_data.out_digit_dur = 0;
 			loops = 3;
 		}
 			
-		rtp_session->dtmf_data.out_digit_packet[2] = (unsigned char) (rtp_session->dtmf_data.out_digit_sofar >> 8);
-		rtp_session->dtmf_data.out_digit_packet[3] = (unsigned char) rtp_session->dtmf_data.out_digit_sofar;
+		rtp_session->dtmf_data.out_digit_packet[2] = (unsigned char) (rtp_session->dtmf_data.out_digit_sub_sofar >> 8);
+		rtp_session->dtmf_data.out_digit_packet[3] = (unsigned char) rtp_session->dtmf_data.out_digit_sub_sofar;
 
 		
 		for (x = 0; x < loops; x++) {
@@ -825,14 +826,23 @@ static void do_2833(switch_rtp_t *rtp_session)
 									rtp_session->te,
 									rtp_session->dtmf_data.timestamp_dtmf, 
 									&flags);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s packet for [%c] ts=%u dur=%d seq=%d\n",
-							  loops == 1 ? "middle" : "end", rtp_session->dtmf_data.out_digit, rtp_session->dtmf_data.timestamp_dtmf,
-							  rtp_session->dtmf_data.out_digit_sofar, rtp_session->seq);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s packet for [%c] ts=%u dur=%d/%d/%d seq=%d\n",
+							  loops == 1 ? "middle" : "end", rtp_session->dtmf_data.out_digit, 
+							  rtp_session->dtmf_data.timestamp_dtmf,
+							  rtp_session->dtmf_data.out_digit_sofar, 
+							  rtp_session->dtmf_data.out_digit_sub_sofar,
+							  rtp_session->dtmf_data.out_digit_dur,
+							  rtp_session->seq);
 		}
 
 		if (loops != 1) {
-			rtp_session->last_write_ts = rtp_session->dtmf_data.timestamp_dtmf + rtp_session->dtmf_data.out_digit_sofar;
+			rtp_session->last_write_ts = rtp_session->dtmf_data.timestamp_dtmf + rtp_session->dtmf_data.out_digit_sub_sofar;
 			rtp_session->sending_dtmf = 0;
+			if (rtp_session->timer.interval) {
+				switch_core_timer_check(&rtp_session->timer);
+				rtp_session->last_write_samplecount = rtp_session->timer.samplecount;
+			}
+			rtp_session->dtmf_data.out_digit_dur = 0;
 		}
 	}
 
@@ -841,17 +851,27 @@ static void do_2833(switch_rtp_t *rtp_session)
 
 		if (switch_queue_trypop(rtp_session->dtmf_data.dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_dtmf_t *rdigit = pop;
+			int64_t offset;
 
 			rtp_session->sending_dtmf = 1;
 
 			memset(rtp_session->dtmf_data.out_digit_packet, 0, 4);
 			rtp_session->dtmf_data.out_digit_sofar = samples;
+			rtp_session->dtmf_data.out_digit_sub_sofar = samples;
 			rtp_session->dtmf_data.out_digit_dur = rdigit->duration;
 			rtp_session->dtmf_data.out_digit = rdigit->digit;
 			rtp_session->dtmf_data.out_digit_packet[0] = (unsigned char) switch_char_to_rfc2833(rdigit->digit);
 			rtp_session->dtmf_data.out_digit_packet[1] = 7;
 
 			rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts + samples;
+			if (rtp_session->timer.interval) {
+ 				switch_core_timer_check(&rtp_session->timer);
+				offset = rtp_session->timer.samplecount - rtp_session->last_write_samplecount;
+				if (offset > 0) {
+					rtp_session->dtmf_data.timestamp_dtmf += offset;
+				}
+			}
+
 
 			switch_rtp_write_manual(rtp_session,
 									rtp_session->dtmf_data.out_digit_packet,
@@ -861,14 +881,14 @@ static void do_2833(switch_rtp_t *rtp_session)
 									rtp_session->dtmf_data.timestamp_dtmf,
 									&flags);
 
-			switch_log_printf(SWITCH_CHANNEL_LOG,
-							  SWITCH_LOG_DEBUG,
-							  "Send start packet for [%c] ts=%u dur=%d seq=%d\n",
-							  rtp_session->dtmf_data.out_digit,
-							  rtp_session->dtmf_data.timestamp_dtmf, 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send start packet for [%c] ts=%u dur=%d/%d/%d seq=%d\n",
+							  rtp_session->dtmf_data.out_digit, 
+							  rtp_session->dtmf_data.timestamp_dtmf,
 							  rtp_session->dtmf_data.out_digit_sofar, 
+							  rtp_session->dtmf_data.out_digit_sub_sofar,
+							  rtp_session->dtmf_data.out_digit_dur,
 							  rtp_session->seq);
-			
+
 			free(rdigit);
 		}
 	}
@@ -1059,40 +1079,57 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		rtp_session->rpayload = (switch_payload_t) rtp_session->recv_msg.header.pt;
 
-		/* RFC2833 ... TBD try harder to honor the duration etc. */
-		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833)
-			&& rtp_session->recv_msg.header.pt == rtp_session->te) {
+		/* RFC2833 ... like all RFC RE: VoIP, guarenteed to drive you to insanity! 
+		   We know the real rules here, but if we enforce them, it's an interop nightmare so,
+		   we put up with as much as we can so we don't have to deal with being punished for
+		   doing it right. Nice guys finish last!
+		 */
+		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833) && rtp_session->recv_msg.header.pt == rtp_session->te) {
 			unsigned char *packet = (unsigned char *) rtp_session->recv_msg.body;
-			int end = packet[1] & 0x80;
+			int end = packet[1] & 0x80 ? 1 : 0;
 			int duration = (packet[2] << 8) + packet[3];
 			char key = switch_rfc2833_to_char(packet[0]);
 			uint16_t in_digit_seq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
-
-			/* SHEESH.... Curse you RFC2833 inventors!!!! */
-			if ((switch_timestamp(NULL) - rtp_session->dtmf_data.last_digit_time) > 2) {
-				rtp_session->dtmf_data.last_digit = 0;
-				rtp_session->dtmf_data.dc = 0;
-				rtp_session->dtmf_data.in_digit_seq = 0;
-			}
+			
 			if (in_digit_seq > rtp_session->dtmf_data.in_digit_seq) {
+				uint32_t ts = htonl(rtp_session->recv_msg.header.ts);
+				//int m = rtp_session->recv_msg.header.m;
+
 				rtp_session->dtmf_data.in_digit_seq = in_digit_seq;
-				if (duration && end) {
-					if (key != rtp_session->dtmf_data.last_digit) {
+				
+				//printf("%c %u %u %u\n", key, in_digit_seq, ts, duration);
+
+				if (rtp_session->dtmf_data.last_duration > duration && ts == rtp_session->dtmf_data.in_digit_ts) {
+					rtp_session->dtmf_data.flip++;
+				}
+
+				if (end) {
+					if (rtp_session->dtmf_data.in_digit_ts) {
 						switch_dtmf_t dtmf = { key, duration };
-						switch_timestamp(&rtp_session->dtmf_data.last_digit_time);
+					
+						if (ts > rtp_session->dtmf_data.in_digit_ts) {
+							dtmf.duration += (ts - rtp_session->dtmf_data.in_digit_ts);
+						}
+						if (rtp_session->dtmf_data.flip) {
+							dtmf.duration += rtp_session->dtmf_data.flip * 0xFFFF;
+							rtp_session->dtmf_data.flip = 0;
+							//printf("you're welcome!\n");
+						}
+
+						//printf("done digit=%c ts=%u start_ts=%u dur=%u ddur=%u\n", 
+						//dtmf.digit, ts, rtp_session->dtmf_data.in_digit_ts, duration, dtmf.duration);
 						switch_rtp_queue_rfc2833_in(rtp_session, &dtmf);
 						switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
+						rtp_session->dtmf_data.last_digit = rtp_session->dtmf_data.first_digit;
 					}
-					if (++rtp_session->dtmf_data.dc >= 3) {
-						rtp_session->dtmf_data.last_digit = 0;
-						rtp_session->dtmf_data.dc = 0;
-					}
+					rtp_session->dtmf_data.in_digit_ts = 0;
+				} else if (!rtp_session->dtmf_data.in_digit_ts) {
+					rtp_session->dtmf_data.in_digit_ts = ts;
+					rtp_session->dtmf_data.first_digit = key;
+				} 
+				
+				rtp_session->dtmf_data.last_duration = duration;
 
-					rtp_session->dtmf_data.last_digit = key;
-				} else {
-					rtp_session->dtmf_data.last_digit = 0;
-					rtp_session->dtmf_data.dc = 0;
-				}
 			}
 			goto do_continue;
 		}
@@ -1302,7 +1339,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		if (flags && *flags & SFF_RFC2833) {
 			send_msg->header.pt = rtp_session->te;
 		}
-		send_msg->header.ssrc = htonl(rtp_session->ssrc);
 	} else {
 		uint8_t m = 0;
 		
