@@ -9,7 +9,7 @@
       <entry action="menu-exit" digits="*"/>
       <entry action="menu-play-sound" digits="1" params="soundfiles/features.wav"/>
       <entry action="menu-sub" digits="2" param="demo2"/>
-      <entry action="menu-exec-api" digits="3" param="bridge sofia/$${domain}/888@conference.freeswtich.org"/>
+      <entry action="menu-exec-app" digits="3" param="bridge sofia/$${domain}/888@conference.freeswtich.org"/>
       <entry action="menu-call-transfer" digits="4" param="888"/>
       <entry action="menu-sub" digits="8" param="menu8"/>
     </menu>

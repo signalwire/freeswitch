@@ -489,8 +489,6 @@ static switch_status_t switch_ivr_menu_stack_xml_add(switch_ivr_menu_xml_ctx_t *
 	if (xml_ctx != NULL && name != NULL && xml_ctx->pool != NULL && switch_ivr_menu_stack_xml_find(xml_ctx, name) == NULL) {
 		switch_ivr_menu_xml_map_t *map = switch_core_alloc(xml_ctx->pool, sizeof(switch_ivr_menu_xml_map_t));
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "switch_ivr_menu_stack_xml_add binding '%s'\n", name);
-		// and we have memory
 		if (map != NULL) {
 			map->name = switch_core_strdup(xml_ctx->pool, name);
 			map->action = action;
@@ -507,6 +505,10 @@ static switch_status_t switch_ivr_menu_stack_xml_add(switch_ivr_menu_xml_ctx_t *
 		} else {
 			status = SWITCH_STATUS_MEMERR;
 		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "switch_ivr_menu_stack_xml_add binding '%s'\n", name);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to add binding %s\n", name);
 	}
 
 	return status;
@@ -533,7 +535,7 @@ static struct iam_s {
 static switch_bool_t is_valid_action(const char *action)
 {
 	int i;
-	
+
 	if (!switch_strlen_zero(action)) {
 		for(i = 0;;i++) {
 			if (!iam[i].name) {
@@ -575,10 +577,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_x
 	}
 	// build the standard/default xml menu handler mappings
 	if (status == SWITCH_STATUS_SUCCESS && xml_menu_ctx != NULL && *xml_menu_ctx != NULL) {
-		int iam_qty = (sizeof(iam) / sizeof(iam[0]));
 		int i;
 
-		for (i = 0; i < iam_qty && status == SWITCH_STATUS_SUCCESS; i++) {
+		for (i = 0; iam[i].name && status == SWITCH_STATUS_SUCCESS; i++) {
 			status = switch_ivr_menu_stack_xml_add(*xml_menu_ctx, iam[i].name, iam[i].action, NULL);
 		}
 	}
