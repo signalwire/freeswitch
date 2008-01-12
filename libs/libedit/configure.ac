@@ -25,7 +25,7 @@ EL_MANTYPE
 
 AC_CHECK_LIB(curses, tgetent,,
    [AC_CHECK_LIB(ncurses, tgetent,,
-      [AC_MSG_ERROR([libtermcap, libcurses or libncurses are required!])] )] )
+      [AC_MSG_ERROR([libtermcap and libcurses or libncurses are required!])] )] )
 
 # Checks for header files.
 AC_FUNC_ALLOCA
