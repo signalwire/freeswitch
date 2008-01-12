@@ -521,6 +521,7 @@ int zap_hash_equalkeys(void *k1, void *k2);
 uint32_t zap_hash_hashfromstring(void *ky);
 uint32_t zap_running(void);
 
+
 ZIO_CODEC_FUNCTION(zio_slin2ulaw);
 ZIO_CODEC_FUNCTION(zio_ulaw2slin);
 ZIO_CODEC_FUNCTION(zio_slin2alaw);
