@@ -28,6 +28,7 @@
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
+ * Norman Brandinger
  *
  *
  * sofia.c -- SOFIA SIP Endpoint (sofia code)
@@ -49,6 +50,7 @@ extern su_log_t soa_log[];
 extern su_log_t sresolv_log[];
 extern su_log_t stun_log[];
 
+static void set_variable_sip_param(switch_channel_t *channel, char *header_type, sip_param_t const *params);
 
 static void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_session_t *bleg);
 
@@ -2256,6 +2258,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	const char *displayname = NULL;
 	const char *destination_number = NULL;
 	const char *from_user = NULL, *from_host = NULL;
+	const char *referred_by_user = NULL, *referred_by_host = NULL;
 	const char *context = NULL;
 	const char *dialplan = NULL;
 	char network_ip[80];
@@ -2349,6 +2352,11 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			}
 		}
 
+		switch_channel_set_variable(channel, "sip_from_comment", sip->sip_from->a_comment);
+
+		if (sip->sip_from->a_params)
+			set_variable_sip_param(channel, "from", sip->sip_from->a_params);
+
 		switch_channel_set_variable(channel, "sofia_profile_name", profile->name);
 
 		if (!switch_strlen_zero(sip->sip_from->a_display)) {
@@ -2409,6 +2417,11 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 			host = switch_channel_get_variable(channel, "sip_to_host");
 			user = switch_channel_get_variable(channel, "sip_to_user");
+		
+			switch_channel_set_variable(channel, "sip_to_comment", sip->sip_to->a_comment);
+
+			if (sip->sip_to->a_params)
+				set_variable_sip_param(channel, "to", sip->sip_to->a_params);
 
 			if (sip->sip_contact->m_url->url_port) {
 				port = atoi(sip->sip_contact->m_url->url_port);
@@ -2450,6 +2463,29 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		if (!channel_name) {
 			channel_name = contact_uri;
 		}
+	}
+
+	if (sip->sip_referred_by) {
+
+		referred_by_user = sip->sip_referred_by->b_url->url_user;
+		referred_by_host = sip->sip_referred_by->b_url->url_host;
+		channel_name = url_set_chanvars(session, sip->sip_referred_by->b_url, sip_referred_by);
+
+		check_decode(referred_by_user, session);
+
+		if (!switch_strlen_zero(referred_by_user)) {
+			if (*referred_by_user == '+') {
+				switch_channel_set_variable(channel, "sip_referred_by_user_stripped", (const char *) (referred_by_user + 1));
+			} else {
+				switch_channel_set_variable(channel, "sip_referred_by_user_stripped", referred_by_user);
+			}
+		}
+
+		switch_channel_set_variable(channel, "sip_referred_by_cid", sip->sip_referred_by->b_cid);
+
+		if (sip->sip_referred_by->b_params)
+			set_variable_sip_param(channel, "referred_by", sip->sip_referred_by->b_params);
+
 	}
 
 	sofia_glue_attach_private(session, profile, tech_pvt, channel_name);
@@ -2723,4 +2759,83 @@ static void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_ses
 			nua_info(b_tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"), SIPTAG_PAYLOAD_STR(message), TAG_END());
 		}
 	}
+}
+
+/*
+ * This subroutine will take the a_params of a sip_addr_s structure and spin through them.
+ * Each param will be used to create a channel variable.
+ * In the SIP RFC's, this data is called generic-param.
+ * Note that the tag-param is also included in the a_params list.
+ *
+ * From: "John Doe" <sip:5551212@1.2.3.4>;tag=ed23266b52cbb17eo2;ref=101;mbid=201
+ *
+ * For example, the header above will produce an a_params list with three entries
+ *    tag=ed23266b52cbb17eo2
+ *    ref=101
+ *    mbid=201
+ *
+ * The a_params list is parsed and the lvalue is used to create the channel variable name while the
+ * rvalue is used to create the channel variable value. 
+ *
+ * If no equal (=) sign is found during parsing, a channel variable name is created with the param and
+ * the value is set to NULL.
+ *
+ * Pointers are used for copying the sip_header_name for performance reasons.  There are no calls to
+ * any string functions and no memory is allocated/dealocated.  The only limiter is the size of the
+ * sip_header_name array. 
+*/
+static void set_variable_sip_param(switch_channel_t *channel, char *header_type, sip_param_t const *params)
+{
+	char sip_header_name[128] = "";
+	char var1[] = "sip_";
+	char *cp, *sh, *sh_end, *sh_save;
+
+	/* Build the static part of the sip_header_name variable from	*/
+	/* the header_type. If the header type is "referred_by" then	*/
+	/* sip_header_name = "sip_referred_by_".			*/
+	sh = sip_header_name;
+	sh_end = sh + sizeof(sip_header_name) - 1;
+	for (cp=var1; *cp; cp++, sh++) {
+		*sh = *cp;
+	}
+	*sh = '\0';
+
+	/* Copy the header_type to the sip_header_name. Before copying 	*/
+	/* each character, check that we aren't going to overflow the   */
+	/* the sip_header_name buffer.  We have to account for the 	*/
+	/* trailing underscore and NULL that will be added to the end.	*/
+	for (cp=header_type; (*cp && (sh < (sh_end-1))); cp++, sh++) {
+		*sh = *cp;
+	}
+	*sh++ = '_';
+	*sh = '\0';
+
+	/* sh now points to the NULL at the end of the partially built	*/
+	/* sip_header_name variable.  This is also the start of the     */
+	/* variable part of the sip_header_name built from the lvalue   */
+	/* of the parms data.                                           */
+	sh_save = sh;
+
+	while (params && params[0]) {
+
+		/* Copy the params data to the sip_header_name variable until	*/
+		/* the end of the params string is reached, an '=' is detected	*/
+		/* or until the sip_header_name buffer has been exhausted.	*/
+		for (cp=(char *)(*params); ((*cp != '=') && *cp && (sh < sh_end)); cp++, sh++) {
+			*sh = *cp;
+		}
+
+		/* cp now points to either the end of the parms data or the	*/
+		/* equal (=) sign spearating the lvalue and rvalue.		*/
+		if (*cp == '=')
+			cp++;	
+		*sh = '\0';
+		switch_channel_set_variable(channel, sip_header_name, cp);
+
+		/* Bump pointer to next param in the list.  Also reset the	*/
+		/* sip_header_name pointer to the beginning of the dynamic area */
+		params++;
+		sh = sh_save;
+	}
+
 }
