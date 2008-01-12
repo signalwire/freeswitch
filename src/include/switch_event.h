@@ -211,7 +211,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
   \param user_data optional private data to pass to the event handlers
   \return
 */
-SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *func, int line, switch_event_t **event, void *user_data);
+SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, const char *func, int line, switch_event_t **event, void *user_data);
 
 /*!
   \brief Bind an event callback to a specific event
@@ -222,7 +222,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
   \param user_data optional user specific data to pass whenever the callback is invoked
   \return SWITCH_STATUS_SUCCESS if the event was binded
 */
-SWITCH_DECLARE(switch_status_t) switch_event_bind(const char *id, switch_event_types_t event, char *subclass_name, switch_event_callback_t callback,
+SWITCH_DECLARE(switch_status_t) switch_event_bind(const char *id, switch_event_types_t event, const char *subclass_name, switch_event_callback_t callback,
 												  void *user_data);
 
 /*!
@@ -238,7 +238,7 @@ SWITCH_DECLARE(char *) switch_event_name(switch_event_types_t event);
   \param type the event id to return
   \return SWITCH_STATUS_SUCCESS if there was a match
 */
-SWITCH_DECLARE(switch_status_t) switch_name_event(char *name, switch_event_types_t *type);
+SWITCH_DECLARE(switch_status_t) switch_name_event(const char *name, switch_event_types_t *type);
 
 /*!
   \brief Reserve a subclass name for private use with a custom event
@@ -248,7 +248,7 @@ SWITCH_DECLARE(switch_status_t) switch_name_event(char *name, switch_event_types
   \note There is nothing to enforce this but I reccommend using module::event_name for the subclass names
 
 */
-SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(char *owner, char *subclass_name);
+SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(const char *owner, const char *subclass_name);
 
 /*!
   \brief Render a string representation of an event sutable for printing or network transport 

@@ -289,7 +289,7 @@ SWITCH_DECLARE(char *) switch_event_name(switch_event_types_t event)
 	return EVENT_NAMES[event];
 }
 
-SWITCH_DECLARE(switch_status_t) switch_name_event(char *name, switch_event_types_t *type)
+SWITCH_DECLARE(switch_status_t) switch_name_event(const char *name, switch_event_types_t *type)
 {
 	switch_event_types_t x;
 	switch_assert(BLOCK != NULL);
@@ -305,7 +305,7 @@ SWITCH_DECLARE(switch_status_t) switch_name_event(char *name, switch_event_types
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(char *owner, char *subclass_name)
+SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(const char *owner, const char *subclass_name)
 {
 	switch_event_subclass_t *subclass;
 
@@ -861,7 +861,7 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 	return xml;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *func, int line, switch_event_t **event, void *user_data)
+SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, const char *func, int line, switch_event_t **event, void *user_data)
 {
 	switch_time_exp_t tm;
 	char date[80] = "";
@@ -937,7 +937,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_event_bind(const char *id, switch_event_types_t event, char *subclass_name, switch_event_callback_t callback,
+SWITCH_DECLARE(switch_status_t) switch_event_bind(const char *id, switch_event_types_t event, const char *subclass_name, switch_event_callback_t callback,
 												  void *user_data)
 {
 	switch_event_node_t *event_node;
