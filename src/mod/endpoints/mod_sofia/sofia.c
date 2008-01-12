@@ -194,7 +194,7 @@ void sofia_event_callback(nua_event_t event,
 			char network_ip[80];
 			get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_addr);
 			auth_res = sofia_reg_parse_auth(profile, authorization, 
-											(char *) sip->sip_request->rq_method_name, tech_pvt->key, strlen(tech_pvt->key), network_ip, NULL, 0);
+											(char *) sip->sip_request->rq_method_name, tech_pvt->key, strlen(tech_pvt->key), network_ip, NULL, 0, REG_INVITE, NULL);
 		}
 
 		if (auth_res != AUTH_OK) {
@@ -1056,6 +1056,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "full-id-in-dialplan")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_FULL_ID;
+						}
+					} else if (!strcasecmp(var, "inbound-reg-force-matching-username")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_CHECKUSER;
 						}
 					} else if (!strcasecmp(var, "bitpacking")) {
 						if (!strcasecmp(val, "aal2")) {

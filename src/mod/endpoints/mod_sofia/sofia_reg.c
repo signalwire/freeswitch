@@ -28,6 +28,7 @@
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
+ * David Knell <>
  *
  *
  * sofia_ref.c -- SOFIA SIP Endpoint (registration code)
@@ -344,6 +345,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	int network_port;
 	int cd = 0;
 	const char *call_id = NULL;
+	char *force_user;
 
 	/* all callers must confirm that sip, sip->sip_request and sip->sip_contact are not NULL */
 	switch_assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
@@ -410,7 +412,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 
 	if (authorization) {
 		char *v_contact_str;
-		if ((auth_res = sofia_reg_parse_auth(profile, authorization, sip->sip_request->rq_method_name, key, keylen, network_ip, v_event, exptime)) 
+		if ((auth_res = sofia_reg_parse_auth(profile, authorization, sip->sip_request->rq_method_name, key, keylen, network_ip, v_event, exptime, regtype, to_user)) 
 			== AUTH_STALE) {
 			stale = 1;
 		}
@@ -419,6 +421,14 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			char *exp_var;
 
 			register_gateway = switch_event_get_header(*v_event, "sip-register-gateway");
+	
+			/* Allow us to force the SIP user to be something specific - needed if 
+			 * we - for example - want to be able to ensure that the username a UA can
+			 * be contacted at is the same one that they used for authentication.
+			 */ 
+			if ((force_user = switch_event_get_header(*v_event, "sip-force-user"))) {
+				to_user = force_user;
+			}
 			
 			if ((v_contact_str = switch_event_get_header(*v_event, "sip-force-contact"))) {
 				if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction") || !strcasecmp(v_contact_str, "NDLB-connectile-dysfunction")) {
@@ -742,8 +752,8 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	
 }
 
-auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, 
-								const char *regstr, char *np, size_t nplen, char *ip, switch_event_t **v_event, long exptime)
+auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, const char *regstr, 
+		char *np, size_t nplen, char *ip, switch_event_t **v_event, long exptime, sofia_regtype_t regtype, const char *to_user)
 {
 	int indexnum;
 	const char *cur;
@@ -814,6 +824,15 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	if (cnt != 8) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Authorization header!\n");
 		goto end;
+	}
+	
+	/* Optional check that auth name == SIP username */
+	if ((regtype == REG_REGISTER) && (profile->pflags & PFLAG_CHECKUSER)) {
+		if (switch_strlen_zero(username) || switch_strlen_zero(to_user) || strcasecmp(to_user, username)) {
+			/* Names don't match, so fail */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SIP username %s does not match auth username\n", switch_str_nil(to_user));
+			goto end;
+		}
 	}
 
 	if (switch_strlen_zero(np)) {
@@ -1089,6 +1108,7 @@ switch_status_t sofia_reg_add_gateway(char *key, sofia_gateway_t *gateway)
 
 	return status;
 }
+
 
 
 
