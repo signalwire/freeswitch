@@ -26,6 +26,9 @@ DEFAULT_SOUNDS=en-us-callie-8000
 	   cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@ ;\
 	 fi
 
+sounds: sounds-en-us-callie-8000
+sounds-install: sounds-en-us-callie-8000-install
+
 libfreeswitch_la_SOURCES	= \
 src/switch_apr.c \
 src/switch_buffer.c \
