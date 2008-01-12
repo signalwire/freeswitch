@@ -845,6 +845,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_write(_In_ switch_co
   \return SWITCH_STATUS_SUCCESS if the dtmf was written
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(_In_ switch_core_session_t *session, const switch_dtmf_t *dtmf);
+SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core_session_t *session, const char *dtmf_string);
 
 /*! 
   \brief RECV DTMF on a session

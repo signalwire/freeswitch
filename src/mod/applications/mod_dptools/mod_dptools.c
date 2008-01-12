@@ -181,17 +181,15 @@ SWITCH_STANDARD_APP(break_function)
 SWITCH_STANDARD_APP(queue_dtmf_function)
 {
 	switch_channel_t *channel;
-	char *p;
-	switch_dtmf_t dtmf = {0, SWITCH_DEFAULT_DTMF_DURATION};
+	channel = switch_core_session_get_channel(session);
+	switch_channel_queue_dtmf_string(channel, (const char *) data);
+	
+}
 
-	if (!switch_strlen_zero(data)) {
-		channel = switch_core_session_get_channel(session);
-		switch_assert(channel != NULL);
-		for (p = (char *)data; p && *p; p++) {
-			dtmf.digit = *p;
-			switch_channel_queue_dtmf(channel, &dtmf);
-		}
-	}
+
+SWITCH_STANDARD_APP(send_dtmf_function)
+{
+	switch_core_session_send_dtmf_string(session, (const char *) data);
 }
 
 SWITCH_STANDARD_APP(transfer_function)
@@ -1583,6 +1581,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "deflect", "Send call deflect", "Send a call deflect.", deflect_function, "<deflect_data>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "reject", "Send session reject (depricated)", "Send a respond message to a session.", respond_function, "<respond_data>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "queue_dtmf", "Queue dtmf to be sent", "Queue dtmf to be sent from a session", queue_dtmf_function, "<dtmf_data>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "send_dtmf", "Send dtmf to be sent", "Send dtmf to be sent from a session", send_dtmf_function, "<dtmf_data>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "sched_hangup", SCHED_HANGUP_DESCR, SCHED_HANGUP_DESCR, sched_hangup_function, "[+]<time> [<cause>]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "sched_broadcast", SCHED_BROADCAST_DESCR, SCHED_BROADCAST_DESCR, sched_broadcast_function, "[+]<time> <path> [aleg|bleg|both]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "sched_transfer", SCHED_TRANSF_DESCR, SCHED_TRANSF_DESCR, sched_transfer_function, "[+]<time> <extension> <dialplan> <context>", SAF_SUPPORT_NOMEDIA);

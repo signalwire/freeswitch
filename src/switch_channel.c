@@ -249,6 +249,51 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 }
 
 
+SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_t *channel, const char *dtmf_string)
+{
+	char *p;
+	switch_dtmf_t dtmf = {0, SWITCH_DEFAULT_DTMF_DURATION};
+	int sent = 0, dur;
+	char *string;
+	int i, argc;
+	char *argv[256];
+	
+
+	switch_assert(channel != NULL);
+
+	if (switch_strlen_zero(dtmf_string)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	string = switch_core_session_strdup(channel->session, dtmf_string);
+	argc = switch_separate_string(string, '+', argv, (sizeof(argv) / sizeof(argv[0])));
+	
+	for(i = 0; i < argc; i++) {
+		dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
+		dur = SWITCH_DEFAULT_DTMF_DURATION / 8;
+		if ((p = strchr(argv[i], '@'))) {
+			*p++ = '\0';
+			if ((dur = atoi(p)) > 50) {
+				dtmf.duration = dur * 8;
+			}
+		}
+
+		for (p = argv[i]; p && *p; p++) {
+			if (is_dtmf(*p)) {
+				dtmf.digit = *p;
+				if (switch_channel_queue_dtmf(channel, &dtmf) == SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Queue dtmf\ndigit=%c ms=%u samples=%u\n",
+									  switch_channel_get_name(channel), dtmf.digit, dur, dtmf.duration);
+					sent++;
+				}
+			}
+		}
+		
+	}
+
+	return sent ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(switch_channel_t *channel, switch_dtmf_t *dtmf)
 {
 	switch_event_t *event;

@@ -427,6 +427,7 @@ SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(switch_channel_t *channel)
   \return SWITCH_STATUS_SUCCESS if successful
 */
 SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *channel, const switch_dtmf_t *dtmf);
+SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_t *channel, const char *dtmf_string);
 
 /*!
   \brief Retrieve DTMF digits from a given channel
