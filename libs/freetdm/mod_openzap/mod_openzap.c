@@ -578,7 +578,14 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	if (zap_channel_dequeue_dtmf(tech_pvt->zchan, dtmf, sizeof(dtmf))) {
 		switch_dtmf_t _dtmf = { 0, SWITCH_DEFAULT_DTMF_DURATION };
-		switch_channel_queue_dtmf(channel, &_dtmf);
+		char *p;
+		for (p = dtmf; p && *p; p++) {
+			if (is_dtmf(*p)) {
+				_dtmf.digit = *p;
+				zap_log(ZAP_LOG_DEBUG, "queue DTMF [%c]\n", *p);
+				switch_channel_queue_dtmf(channel, &_dtmf);
+			}
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1214,7 +1221,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_isdn_signal)
 		}
 		break;
     case ZAP_SIGEVENT_STOP:
-		{
+		{	
 			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);

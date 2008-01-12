@@ -38,7 +38,6 @@
 struct tm * localtime_r(const time_t *clock, struct tm *result);
 #endif
 
-
 static void *zap_analog_channel_run(zap_thread_t *me, void *obj);
 
 static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxo_outgoing_call)
@@ -485,9 +484,10 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 			}
 		}
 
-		if ((dlen = zap_channel_dequeue_dtmf(zchan, dtmf + dtmf_offset, sizeof(dtmf) - strlen(dtmf)))) {
-			if (zchan->state == ZAP_CHANNEL_STATE_DIALTONE || zchan->state == ZAP_CHANNEL_STATE_COLLECT) {
-				zap_log(ZAP_LOG_DEBUG, "DTMF %s\n", dtmf + dtmf_offset);
+
+		if (zchan->state == ZAP_CHANNEL_STATE_DIALTONE || zchan->state == ZAP_CHANNEL_STATE_COLLECT) {
+			if ((dlen = zap_channel_dequeue_dtmf(zchan, dtmf + dtmf_offset, sizeof(dtmf) - strlen(dtmf)))) {
+
 				if (zchan->state == ZAP_CHANNEL_STATE_DIALTONE) {
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_COLLECT);
 					collecting = 1;
@@ -784,7 +784,6 @@ static void *zap_analog_run(zap_thread_t *me, void *obj)
 
 	return NULL;
 }
-
 
 
 zap_status_t zap_analog_start(zap_span_t *span)

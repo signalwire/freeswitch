@@ -1412,7 +1412,11 @@ zap_size_t zap_channel_dequeue_dtmf(zap_channel_t *zchan, char *dtmf, zap_size_t
 
 	assert(zchan != NULL);
 
-	if (zap_buffer_inuse(zchan->digit_buffer)) {
+	if (!zap_test_flag(zchan, ZAP_CHANNEL_READY)) {
+		return ZAP_FAIL;
+	}
+
+	if (zchan->digit_buffer && zap_buffer_inuse(zchan->digit_buffer)) {
 		zap_mutex_lock(zchan->mutex);
 		if ((bytes = zap_buffer_read(zchan->digit_buffer, dtmf, len)) > 0) {
 			*(dtmf + bytes) = '\0';
@@ -1608,7 +1612,6 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 		}
 
 		if (zap_test_flag(zchan, ZAP_CHANNEL_DTMF_DETECT)) {
-
 			teletone_dtmf_detect(&zchan->dtmf_detect, sln, (int)slen);
 			teletone_dtmf_get(&zchan->dtmf_detect, digit_str, sizeof(digit_str));
 
@@ -1987,7 +1990,7 @@ zap_status_t zap_global_destroy(void)
 	
 	zap_span_close_all();
 	globals.running = 0;
-	zap_sleep(200);
+	zap_sleep(1000);
 
 	for(i = 1; i <= globals.span_index; i++) {
 		zap_span_t *cur_span = &globals.spans[i];
