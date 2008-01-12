@@ -2354,8 +2354,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 		switch_channel_set_variable(channel, "sip_from_comment", sip->sip_from->a_comment);
 
-		if (sip->sip_from->a_params)
+		if (sip->sip_from->a_params) {
 			set_variable_sip_param(channel, "from", sip->sip_from->a_params);
+		}
 
 		switch_channel_set_variable(channel, "sofia_profile_name", profile->name);
 
@@ -2420,8 +2421,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		
 			switch_channel_set_variable(channel, "sip_to_comment", sip->sip_to->a_comment);
 
-			if (sip->sip_to->a_params)
+			if (sip->sip_to->a_params) {
 				set_variable_sip_param(channel, "to", sip->sip_to->a_params);
+			}
 
 			if (sip->sip_contact->m_url->url_port) {
 				port = atoi(sip->sip_contact->m_url->url_port);
@@ -2483,9 +2485,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 		switch_channel_set_variable(channel, "sip_referred_by_cid", sip->sip_referred_by->b_cid);
 
-		if (sip->sip_referred_by->b_params)
+		if (sip->sip_referred_by->b_params) {
 			set_variable_sip_param(channel, "referred_by", sip->sip_referred_by->b_params);
-
+		}
 	}
 
 	sofia_glue_attach_private(session, profile, tech_pvt, channel_name);
