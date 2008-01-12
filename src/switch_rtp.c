@@ -130,6 +130,7 @@ struct switch_rtp {
 	uint32_t autoadj_tally;
 
 	uint16_t seq;
+	uint32_t ssrc;
 	uint8_t sending_dtmf;
 	switch_payload_t payload;
 	switch_payload_t rpayload;
@@ -541,6 +542,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	}
 
 	rtp_session->seq = (uint16_t) rand();
+	rtp_session->ssrc = ssrc;
 	rtp_session->send_msg.header.ssrc = htonl(ssrc);
 	rtp_session->send_msg.header.ts = 0;
 	rtp_session->send_msg.header.m = 0;
@@ -1339,6 +1341,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		if (flags && *flags & SFF_RFC2833) {
 			send_msg->header.pt = rtp_session->te;
 		}
+		send_msg->header.ssrc = htonl(rtp_session->ssrc);
 	} else {
 		uint8_t m = 0;
 		
