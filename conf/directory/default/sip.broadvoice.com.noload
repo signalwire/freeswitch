@@ -1,0 +1,33 @@
+<include>
+ <user id="%BVUSERNAME%">
+  <gateways>
+	<gateway name="sip.broadvoice.com">
+	  <!--/// account username *required* ///-->
+	  <param name="username" value="%BVUSERNAME%"/>
+	  <!--/// auth realm: *optional* same as gateway name, if blank ///-->
+	  <param name="realm" value="BroadWorks"/>
+	  <!--/// domain to use in from: *optional* same as  realm, if blank ///-->
+	  <param name="from-domain" value="sip.broadvoice.com"/>
+	  <!--/// account password *required* ///-->
+	  <param name="password" value="%BVPASSWORD%"/> 
+	  <!--/// replace the INVITE from user with the channel's caller-id ///-->
+	  <!--<param name="caller-id-in-from" value="false"/>-->
+	  <!--/// extension for inbound calls: *optional* same as username, if blank ///-->
+	  <param name="extension" value="%BVEXTENSION%"/>
+	  <!--/// proxy host: *optional* same as realm, if blank ///-->
+	  <param name="proxy" value="sip.broadvoice.com"/>
+	  <!--/// expire in seconds: *optional* 3600, if blank ///-->
+	  <!--<param name="expire-seconds" value="3600"/>-->
+	  <!--/// register ///-->
+	  <param name="register" value="true"/>
+	  <!--How many seconds before a retry when a failure or timeout occurs -->
+	  <param name="retry_seconds" value="3600"/>
+	  <!--Use the callerid of an inbound call in the from field on outbound calls via this gateway -->
+	  <!--<param name="caller-id-in-from" value="false"/>-->
+	</gateway>
+  </gateways>
+   <params>
+     <param name="password" value="%BVPASSWORD%"/>
+    </params>
+ </user>
+</include>

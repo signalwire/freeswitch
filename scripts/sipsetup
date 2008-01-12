@@ -17,7 +17,8 @@ my $providers = {
     "3" => "IS",
     "4" => "AL",
     "5" => "SB",
-    "6" => "VU"
+    "6" => "VU",
+    "7" => "BV"
     };
 
 
@@ -26,6 +27,14 @@ my $FWD = {
     "register" => "true",
     "fields" => [number, password, extension],
     "domain" => "pulver.com",
+    "dialprefix" => "1-393"
+    };
+
+my $BROADVOICE = {
+    "type" => "network",
+    "register" => "true",
+    "fields" => [username, password, extension],
+    "domain" => "sip.broadvoice.com",
     "dialprefix" => "1-393"
     };
 
@@ -71,7 +80,8 @@ my $TEMPLATES = {
     "IS" => $IDEASIP,
     "AL" => $ASTERLINK,
     "SB" => $SIPBROKER,
-    "VU" => $VOIPUSER
+    "VU" => $VOIPUSER,
+    "BV" => $BROADVOICE
     };
 
 print "\n" x 60;
@@ -88,6 +98,7 @@ sub welcome {
 	4. Configure Asterlink.com
 	5. Configure SIPBroker.com
 	6. Configure voipuser.org
+	7. Configure broadvoice.com
 
 	X. Exit
 
@@ -98,7 +109,7 @@ WELCOME
     chomp($i);
     if ($i =~ m/X|x/) {
 	print "Thanks you!\n"; exit;
-    } elsif ($i > 6) {
+    } elsif ($i > 7) {
 	print "Invalid Choice\n"; &welcome;
     } else {
 	if (exists($providers->{$i})) {
