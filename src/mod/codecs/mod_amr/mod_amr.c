@@ -37,8 +37,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load);
 SWITCH_MODULE_DEFINITION(mod_amr, mod_amr_load, NULL, NULL);
 
 #ifndef AMR_PASSTHROUGH
-#include "amr/interf_enc.h"
-#include "amr/interf_dec.h"
+#include "interf_enc.h"
+#include "interf_dec.h"
 
 /*
  * Check section 8.1 of rfc3267 for possible sdp options.

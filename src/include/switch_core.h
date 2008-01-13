@@ -797,7 +797,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(_In_ switc
   \brief Reset the buffers and resampler on a session
   \param session the session to reset
 */
-SWITCH_DECLARE(void) switch_core_session_reset(_In_ switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_session_reset(_In_ switch_core_session_t *session, switch_bool_t flush_dtmf);
 
 /*! 
   \brief Write a frame to a session

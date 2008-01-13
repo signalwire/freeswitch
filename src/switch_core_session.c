@@ -575,10 +575,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch
 }
 
 
-SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session)
+SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, switch_bool_t flush_dtmf)
 {
 	switch_channel_t *channel;
 	switch_size_t has;
+
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel != NULL);
 
 	/* clear resamplers*/
 	switch_resample_destroy(&session->read_resampler);
@@ -590,12 +593,11 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session)
 	/* wipe theese, they will be recreated if need be */
 	switch_buffer_destroy(&session->raw_read_buffer);
 	switch_buffer_destroy(&session->raw_write_buffer);
-
-	/* flush dtmf */
-	channel = switch_core_session_get_channel(session);
-
-	while ((has = switch_channel_has_dtmf(channel))) {
-		switch_channel_flush_dtmf(channel);
+	
+	if (flush_dtmf) {
+		while ((has = switch_channel_has_dtmf(channel))) {
+			switch_channel_flush_dtmf(channel);
+		}
 	}
 
 	switch_ivr_deactivate_unicast(session);

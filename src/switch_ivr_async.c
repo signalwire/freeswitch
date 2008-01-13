@@ -300,7 +300,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
 							  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		switch_core_session_reset(session);
+		switch_core_session_reset(session, SWITCH_TRUE);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -664,7 +664,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		status = SWITCH_STATUS_SUCCESS;
 
 		switch_core_session_set_read_codec(session, read_codec);
-		switch_core_session_reset(session);
+		switch_core_session_reset(session, SWITCH_TRUE);
     }
 	
 	return status;
@@ -720,7 +720,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 							  SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", file);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		switch_core_session_reset(session);
+		switch_core_session_reset(session, SWITCH_TRUE);
 		return SWITCH_STATUS_GENERR;
 	}
 

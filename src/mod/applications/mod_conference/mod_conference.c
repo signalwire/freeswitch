@@ -4369,7 +4369,7 @@ SWITCH_STANDARD_APP(conference_function)
 		switch_safe_free(dfile);
 	}
 
-	switch_core_session_reset(session);
+	switch_core_session_reset(session, SWITCH_TRUE);
 
 	/* release the readlock */
 	if (rl) {

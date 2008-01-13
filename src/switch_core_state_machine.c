@@ -220,7 +220,7 @@ static void switch_core_standard_on_park(switch_core_session_t *session)
 	switch_assert(session != NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard PARK\n");
 	switch_channel_clear_flag(session->channel, CF_TRANSFER);
-	switch_core_session_reset(session);
+	switch_core_session_reset(session, SWITCH_TRUE);
 	switch_ivr_park(session, NULL);
 }
 

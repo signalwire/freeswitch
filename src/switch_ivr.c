@@ -882,7 +882,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	const char *uuid = NULL;
 
 	switch_assert(session != NULL);
-	switch_core_session_reset(session);
+	switch_core_session_reset(session, SWITCH_TRUE);
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
