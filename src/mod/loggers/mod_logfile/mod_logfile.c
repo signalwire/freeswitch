@@ -258,7 +258,7 @@ static switch_status_t load_profile(switch_xml_t xml)
     
     
 	if ((settings = switch_xml_child(xml, "settings"))) {
-        for (param = switch_xml_child(settings, "map"); param; param = param->next) {
+        for (param = switch_xml_child(settings, "param"); param; param = param->next) {
             char *var = (char *) switch_xml_attr_soft(param, "name");
             char *val = (char *) switch_xml_attr_soft(param, "value");
             if (!strcmp(var, "logfile")) {
