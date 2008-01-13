@@ -760,7 +760,7 @@ static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const swi
 		return switch_rtp_queue_rfc2833(tech_pvt->rtp_session, dtmf);
 
 	case DTMF_INFO:
-		snprintf(message, sizeof(message), "Signal=%c\r\nDuration=%d\r\n", dtmf->digit, dtmf->duration);
+		snprintf(message, sizeof(message), "Signal=%c\r\nDuration=%d\r\n", dtmf->digit, dtmf->duration / 8);
 		nua_info(tech_pvt->nh,
 				 //NUTAG_WITH_THIS(tech_pvt->profile->nua),
 				 SIPTAG_CONTENT_TYPE_STR("application/dtmf-relay"),

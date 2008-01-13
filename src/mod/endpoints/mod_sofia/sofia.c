@@ -2097,7 +2097,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 
 		if (sip && sip->sip_content_type && sip->sip_content_type->c_type && sip->sip_content_type->c_subtype && 
 			sip->sip_payload && sip->sip_payload->pl_data) {
-			if (!strcasecmp(sip->sip_content_type->c_type, "dtmf") && !strcasecmp(sip->sip_content_type->c_subtype, "relay")) {
+			if (!strncasecmp(sip->sip_content_type->c_type, "application", 11) && !strcasecmp(sip->sip_content_type->c_subtype, "dtmf-relay")) {
 				/* Try and find signal information in the payload */
 				if ((signal_ptr = switch_stristr("Signal=", sip->sip_payload->pl_data))) {
 					/* move signal_ptr where we need it (right past Signal=) */
@@ -2110,13 +2110,13 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 
 				if ((signal_ptr = switch_stristr("Duration=", sip->sip_payload->pl_data))) {
 					int tmp;
-					signal_ptr += 8;
-					if ((tmp = atoi(signal_ptr)) < 0) {
+					signal_ptr += 9;
+					if ((tmp = atoi(signal_ptr)) <= 0) {
 						tmp = SWITCH_DEFAULT_DTMF_DURATION;
 					} 
-					dtmf.duration = tmp;
+					dtmf.duration = tmp * 8;
 				}
-			} else if (!strcasecmp(sip->sip_content_type->c_type, "application") && !strcasecmp(sip->sip_content_type->c_subtype, "dtmf")) {
+			} else if (!strncasecmp(sip->sip_content_type->c_type, "application", 11) && !strcasecmp(sip->sip_content_type->c_subtype, "dtmf")) {
 				dtmf.digit = *sip->sip_payload->pl_data;
 			} else {
 				goto fail;
