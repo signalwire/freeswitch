@@ -3,7 +3,7 @@
 
 AC_INIT(libedit, [EL_RELEASE],, libedit-[EL_TIMESTAMP_CVSEXPORT])
 AC_CONFIG_SRCDIR([src/strlcat.c])
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 
 AM_INIT_AUTOMAKE
 AC_PROG_LIBTOOL
