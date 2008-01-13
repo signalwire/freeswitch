@@ -293,7 +293,7 @@ int nua_stack_event(nua_t *nua, nua_handle_t *nh, msg_t *msg,
   if ((event > nua_r_authenticate && event <= nua_r_ack)
       || event < nua_i_error
       || (nh && !nh->nh_valid)
-      || (nua->nua_shutdown && event != nua_r_shutdown)) {
+      ) {
     if (msg)
       msg_destroy(msg);
     return event;
