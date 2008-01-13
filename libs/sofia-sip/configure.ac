@@ -34,6 +34,7 @@ AC_CONFIG_HEADERS([config.h])
 
 AC_GNU_SOURCE
 
+CFLAGS="$CFLAGS -DSU_DEBUG=0 $DEBUG_CFLAGS"
 ### checks for programs
 ### -------------------
 AC_LANG([C])
