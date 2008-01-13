@@ -9,7 +9,7 @@
 	<action application="deflect" data="${destination_number}"/>
       </condition>
     </extension>
-
+    <!-- Example of doing things based on time of day. -->
     <extension name="tod_example" continue="true">
       <condition field="${strftime(%H%M)}" expression="^((09|1[0-7])[0-5][0-9]|1800)$">
 	<action application="set" data="open=true"/>
@@ -254,7 +254,6 @@
       </condition>
     </extension>
 
-
     <X-PRE-PROCESS cmd="include" data="extensions/*.xml"/>
 
     <extension name="enum">
@@ -263,6 +262,5 @@
 	<action application="transfer" data="$1 enum"/>
       </condition>
     </extension>
-
   </context>
 </include>
