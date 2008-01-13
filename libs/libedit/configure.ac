@@ -16,6 +16,8 @@ case $host in
    *-sun-*) AC_DEFINE([_SUNOS], [], [Solaris's term.h does horrid things.]);;
 esac
 
+CFLAGS="$CFLAGS -D_XOPEN_SOURCE=600 -D_BSD_SOURCE=1"
+
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
