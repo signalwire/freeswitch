@@ -375,7 +375,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		return SWITCH_STATUS_GENERR;
 	}
 
-	switch_channel_answer(channel);
+	switch_channel_pre_answer(channel);
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_TITLE"))) {
 		vval = switch_core_session_strdup(session, p);
@@ -1588,7 +1588,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 		switch_core_speech_text_param_tts(sh, "voice", voice_name);
 	}
 
-	switch_channel_answer(channel);
+	switch_channel_pre_answer(channel);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OPEN TTS %s\n", tts_name);
 
 
