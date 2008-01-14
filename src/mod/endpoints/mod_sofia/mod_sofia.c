@@ -546,7 +546,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
-	if (!(tech_pvt->profile->pflags & PFLAG_RUNNING)) {
+	if (0 && !(tech_pvt->profile->pflags & PFLAG_RUNNING)) {
 		switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		return SWITCH_STATUS_FALSE;
 	}

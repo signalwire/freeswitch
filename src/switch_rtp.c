@@ -139,6 +139,7 @@ struct switch_rtp {
 	uint32_t ts;
 	uint32_t last_write_ts;
 	uint32_t last_write_samplecount;
+	uint32_t next_write_samplecount;
 	uint32_t flags;
 	switch_memory_pool_t *pool;
 	switch_sockaddr_t *from_addr;
@@ -843,6 +844,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 			if (rtp_session->timer.interval) {
 				switch_core_timer_check(&rtp_session->timer);
 				rtp_session->last_write_samplecount = rtp_session->timer.samplecount;
+				rtp_session->next_write_samplecount = rtp_session->timer.samplecount + samples * 5;
 			}
 			rtp_session->dtmf_data.out_digit_dur = 0;
 		}
@@ -851,6 +853,13 @@ static void do_2833(switch_rtp_t *rtp_session)
 	if (!rtp_session->dtmf_data.out_digit_dur && rtp_session->dtmf_data.dtmf_queue && switch_queue_size(rtp_session->dtmf_data.dtmf_queue)) {
 		void *pop;
 
+		if (rtp_session->timer.interval) {
+			switch_core_timer_check(&rtp_session->timer);
+			if (rtp_session->timer.samplecount < rtp_session->next_write_samplecount) {
+				return;
+			}
+		}
+		
 		if (switch_queue_trypop(rtp_session->dtmf_data.dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_dtmf_t *rdigit = pop;
 			int64_t offset;
