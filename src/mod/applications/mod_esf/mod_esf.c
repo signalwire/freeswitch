@@ -136,7 +136,7 @@ SWITCH_STANDARD_APP(bcast_function)
 
 	while(!ready) {
 		status = switch_core_session_read_frame(session, &read_frame, -1, 0);
-		if (switch_test_flag(read_frame, SFF_CNG)) {
+		if (read_frame && switch_test_flag(read_frame, SFF_CNG)) {
 			continue;
 		}
 
