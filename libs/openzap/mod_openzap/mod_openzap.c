@@ -802,8 +802,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		dest = p + 1;
 		span_id = atoi(outbound_profile->destination_number);
 		if (!switch_strlen_zero(dest)) {
-			chan_id = atoi(dest);
 			if ((p = strchr(dest, '/'))) {
+				chan_id = atoi(dest);
 				dest = p + 1;
 			}
 		}
