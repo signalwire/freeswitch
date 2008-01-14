@@ -252,7 +252,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, const
 	   }
 	 */
 	if (switch_test_flag(buffer, SWITCH_BUFFER_FLAG_DYNAMIC)) {
-		if (freespace < datalen && (!buffer->max_len || (buffer->datalen + datalen <= buffer->max_len))) {
+		if (freespace < datalen && (!buffer->max_len || (buffer->used + datalen <= buffer->max_len))) {
 			switch_size_t new_size, new_block_size;
 
 			new_size = buffer->datalen + datalen;

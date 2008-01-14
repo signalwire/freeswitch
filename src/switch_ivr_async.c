@@ -411,7 +411,6 @@ struct eavesdrop_pvt {
 	uint32_t flags;
 };
 
-
 static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
 	struct eavesdrop_pvt *ep = (struct eavesdrop_pvt *) user_data;
@@ -432,7 +431,7 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 		if (ep->buffer) {
 			if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
                 switch_buffer_lock(ep->buffer);
-                switch_buffer_zwrite(ep->buffer, frame.data, frame.datalen);
+				switch_buffer_zwrite(ep->buffer, frame.data, frame.datalen);
                 switch_buffer_unlock(ep->buffer);
 			}
 		} else {
@@ -444,6 +443,7 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 
 	case SWITCH_ABC_TYPE_READ_REPLACE:
 		{
+
 			if (switch_test_flag(ep, ED_MUX_READ)) {
 				switch_frame_t *rframe = switch_core_media_bug_get_read_replace_frame(bug);
 			
@@ -496,9 +496,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
-	
+
 	if ((tsession = switch_core_session_locate(uuid))) {
-		struct eavesdrop_pvt ep = { 0 };
+		struct eavesdrop_pvt *ep;
 		switch_media_bug_t *bug = NULL;
 		switch_channel_t *tchannel = switch_core_session_get_channel(tsession);
 		switch_frame_t *read_frame, write_frame = { 0 };
@@ -506,7 +506,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		int16_t buf[1024];
 		switch_codec_t *tread_codec = switch_core_session_get_read_codec(tsession);
 		
-		
+		ep = switch_core_session_alloc(session, sizeof(*ep));
+
 		switch_channel_pre_answer(channel);
 		
 		if (switch_core_codec_init(&codec,
@@ -527,22 +528,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		write_frame.buflen = sizeof(buf);
 		write_frame.rate = read_codec->implementation->actual_samples_per_second;
 		
-		ep.flags = flags;
-		switch_mutex_init(&ep.mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
-		switch_buffer_create_dynamic(&ep.buffer, 1024, 2048, 2048);
-		switch_buffer_add_mutex(ep.buffer, ep.mutex);
+		ep->flags = flags;
+		switch_mutex_init(&ep->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
+		switch_buffer_create_dynamic(&ep->buffer, 2048, 2048, 8192);
+		switch_buffer_add_mutex(ep->buffer, ep->mutex);
 
-		switch_mutex_init(&ep.w_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
-		switch_buffer_create_dynamic(&ep.w_buffer, 1024, 2048, 2048);
-		switch_buffer_add_mutex(ep.w_buffer, ep.w_mutex);
+		switch_mutex_init(&ep->w_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
+		switch_buffer_create_dynamic(&ep->w_buffer, 2048, 2048, 8192);
+		switch_buffer_add_mutex(ep->w_buffer, ep->w_mutex);
 
-		switch_mutex_init(&ep.r_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
-		switch_buffer_create_dynamic(&ep.r_buffer, 1024, 2048, 2048);
-		switch_buffer_add_mutex(ep.r_buffer, ep.r_mutex);
+		switch_mutex_init(&ep->r_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
+		switch_buffer_create_dynamic(&ep->r_buffer, 2048, 2048, 8192);
+		switch_buffer_add_mutex(ep->r_buffer, ep->r_mutex);
 
 		
-		if (switch_core_media_bug_add(tsession, eavesdrop_callback, &ep, 0, 
-									  SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_READ_REPLACE | SMBF_WRITE_REPLACE | SMBF_READ_PING, 
+		if (switch_core_media_bug_add(tsession, eavesdrop_callback, ep, 0, 
+									  SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_READ_REPLACE | SMBF_WRITE_REPLACE | SMBF_READ_PING,
 									  &bug) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot attach bug\n");
 			goto end;
@@ -552,7 +553,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			uint32_t len = sizeof(buf);
 			switch_event_t *event = NULL;
 			char *fcommand = NULL;
-			
+			char db[2] = "";
+
 			status = switch_core_session_read_frame(session, &read_frame, 1000, 0);
 			
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -570,7 +572,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			if ((flags & ED_DTMF) && switch_channel_has_dtmf(channel)) {
 				switch_dtmf_t dtmf = {0};
 				switch_channel_dequeue_dtmf(channel, &dtmf);
-				*fcommand = dtmf.digit;
+				db[0] = dtmf.digit;
+				fcommand = db;
 			}
 
 			if (fcommand) {
@@ -580,20 +583,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 					
 					switch (*d) {
 					case '1':
-						switch_set_flag((&ep), ED_MUX_READ);
-						switch_clear_flag((&ep), ED_MUX_WRITE);
+						switch_set_flag(ep, ED_MUX_READ);
+						switch_clear_flag(ep, ED_MUX_WRITE);
 						break;
 					case '2':
-						switch_set_flag((&ep), ED_MUX_WRITE);
-						switch_clear_flag((&ep), ED_MUX_READ);
+						switch_set_flag(ep, ED_MUX_WRITE);
+						switch_clear_flag(ep, ED_MUX_READ);
 						break;
 					case '3':
-						switch_set_flag((&ep), ED_MUX_READ);
-						switch_set_flag((&ep), ED_MUX_WRITE);
+						switch_set_flag(ep, ED_MUX_READ);
+						switch_set_flag(ep, ED_MUX_WRITE);
 						break;
 					case '0':
-						switch_clear_flag((&ep), ED_MUX_READ);
-						switch_clear_flag((&ep), ED_MUX_WRITE);
+						switch_clear_flag(ep, ED_MUX_READ);
+						switch_clear_flag(ep, ED_MUX_WRITE);
 						break;
 					default:
 						z = 0;
@@ -602,41 +605,48 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 					}
 					
 					if (z) {
-						switch_buffer_lock(ep.r_buffer);
-						switch_buffer_zero(ep.r_buffer);
-						switch_buffer_unlock(ep.r_buffer);
+						if (ep->r_buffer) {
+							switch_buffer_lock(ep->r_buffer);
+							switch_buffer_zero(ep->r_buffer);
+							switch_buffer_unlock(ep->r_buffer);
+						}
 						
-						switch_buffer_lock(ep.w_buffer);
-						switch_buffer_zero(ep.w_buffer);
-						switch_buffer_unlock(ep.w_buffer);
+						if (ep->w_buffer) {
+							switch_buffer_lock(ep->w_buffer);
+							switch_buffer_zero(ep->w_buffer);
+							switch_buffer_unlock(ep->w_buffer);
+						}
 					}
 				}
 			}
 
 			if (!switch_test_flag(read_frame, SFF_CNG)) {
-				switch_buffer_lock(ep.r_buffer);
-				switch_buffer_zwrite(ep.r_buffer, read_frame->data, read_frame->datalen);
-				switch_buffer_unlock(ep.r_buffer);
+				switch_buffer_lock(ep->r_buffer);
+				switch_buffer_zwrite(ep->r_buffer, read_frame->data, read_frame->datalen);
+				switch_buffer_unlock(ep->r_buffer);
 
-				switch_buffer_lock(ep.w_buffer);
-				switch_buffer_zwrite(ep.w_buffer, read_frame->data, read_frame->datalen);
-				switch_buffer_unlock(ep.w_buffer);
+				switch_buffer_lock(ep->w_buffer);
+				switch_buffer_zwrite(ep->w_buffer, read_frame->data, read_frame->datalen);
+				switch_buffer_unlock(ep->w_buffer);
 			}
 
 
-			if (len > tread_codec->implementation->samples_per_frame * 2) {
-				len = tread_codec->implementation->samples_per_frame * 2;
+			if (len > tread_codec->implementation->bytes_per_frame) {
+				len = tread_codec->implementation->bytes_per_frame;
 			}
 			
-            if (switch_buffer_inuse(ep.buffer) >= len) {
-                switch_buffer_lock(ep.buffer);				
-                write_frame.datalen = (uint32_t)switch_buffer_read(ep.buffer, buf, len);
-				write_frame.samples = write_frame.datalen / 2;
-				if (switch_core_session_write_frame(session, &write_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
-					goto end;
+            if (switch_buffer_inuse(ep->buffer) >= len) {
+                switch_buffer_lock(ep->buffer);				
+				while (switch_buffer_inuse(ep->buffer) >= len) {
+					write_frame.datalen = (uint32_t)switch_buffer_read(ep->buffer, buf, len);
+					write_frame.samples = write_frame.datalen / 2;
+					if ((status = switch_core_session_write_frame(session, &write_frame, 1000, 0)) != SWITCH_STATUS_SUCCESS) {
+						break;
+					}
 				}
-                switch_buffer_unlock(ep.buffer);
+                switch_buffer_unlock(ep->buffer);
             }
+			
         }
 
 
@@ -648,16 +658,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
             switch_core_media_bug_remove(tsession, &bug);
         }
 
-        if (ep.buffer) {
-            switch_buffer_destroy(&ep.buffer);
+        if (ep->buffer) {
+            switch_buffer_destroy(&ep->buffer);
         }
 
-        if (ep.r_buffer) {
-            switch_buffer_destroy(&ep.r_buffer);
+        if (ep->r_buffer) {
+            switch_buffer_destroy(&ep->r_buffer);
         }
 
-        if (ep.w_buffer) {
-            switch_buffer_destroy(&ep.w_buffer);
+        if (ep->w_buffer) {
+            switch_buffer_destroy(&ep->w_buffer);
         }
 
         switch_core_session_rwunlock(tsession);

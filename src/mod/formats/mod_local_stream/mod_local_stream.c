@@ -411,7 +411,12 @@ static void launch_threads(void)
 					source->channels = (uint8_t)tmp;
 				}
 			} else if (!strcasecmp(var, "interval")) {
-				source->interval = atoi(val);
+				int tmp = atoi(val);
+				if (tmp >= 10) {
+					source->interval = tmp;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't set interval to less than 10\n");
+				}
 			} else if (!strcasecmp(var, "timer-name")) {
 				source->timer_name = switch_core_strdup(source->pool, val);
 			}

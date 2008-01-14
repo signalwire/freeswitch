@@ -103,6 +103,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 
 
 	maxlen = sizeof(data) > frame->buflen ? frame->buflen : sizeof(data);
+
+
 	if ((rdlen = rlen > wlen ? wlen : rlen) > maxlen) {
 		rdlen = maxlen;
 	}
@@ -222,7 +224,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	bug->user_data = user_data;
 	bug->session = session;
 	bug->flags = flags;
-	bug->ready = 1;
+
 	bug->stop_time = stop_time;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attaching BUG to %s\n", switch_channel_get_name(session->channel));
 	bytes = session->read_codec->implementation->bytes_per_frame;
@@ -231,7 +233,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 		bug->flags = (SMBF_READ_STREAM | SMBF_WRITE_STREAM);
 	}
 
-	if (switch_test_flag(bug, SMBF_READ_STREAM)) {
+	if (switch_test_flag(bug, SMBF_READ_STREAM) || switch_test_flag(bug, SMBF_READ_PING)) {
 		switch_buffer_create_dynamic(&bug->raw_read_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES, bytes * SWITCH_BUFFER_START_FRAMES, MAX_BUG_BUFFER);
 		switch_mutex_init(&bug->read_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	}
@@ -242,7 +244,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 		switch_buffer_create_dynamic(&bug->raw_write_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES, bytes * SWITCH_BUFFER_START_FRAMES, MAX_BUG_BUFFER);
 		switch_mutex_init(&bug->write_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	}
-
+	bug->ready = 1;
 	switch_thread_rwlock_wrlock(session->bug_rwlock);
 	bug->next = session->bugs;
 	session->bugs = bug;
