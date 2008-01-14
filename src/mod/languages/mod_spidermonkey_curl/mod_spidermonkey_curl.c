@@ -39,8 +39,9 @@ struct curl_obj {
 	JSContext *cx;
 	JSObject *obj;
 	JSFunction *function;
+	JSObject *user_data;
 	jsrefcount saveDepth;
-	jsval ret;
+	jsval ret;	
 };
 
 
@@ -58,7 +59,9 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	if (co->function) {
 		char *ret;
 		argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(co->cx, (char *)ptr));
-
+		if (co->user_data) {
+			argv[argc++] = OBJECT_TO_JSVAL(co->user_data);
+		}
 		JS_ResumeRequest(co->cx, co->saveDepth);
 		JS_CallFunction(co->cx, co->obj, co->function, argc, argv, &co->ret);
 		co->saveDepth = JS_SuspendRequest(co->cx);
@@ -134,7 +137,11 @@ static JSBool curl_run(JSContext *cx, JSObject *obj, uintN argc, jsval * argv, j
 	}
 
 	if (argc > 4) {
-		cred = JS_GetStringBytes(JS_ValueToString(cx, argv[4]));
+		JS_ValueToObject(cx, argv[4], &co->user_data);
+	}
+
+	if (argc > 5) {
+		cred = JS_GetStringBytes(JS_ValueToString(cx, argv[5]));
 		if (!switch_strlen_zero(cred)) {
 			curl_easy_setopt(co->curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 			curl_easy_setopt(co->curl_handle, CURLOPT_USERPWD, cred);
