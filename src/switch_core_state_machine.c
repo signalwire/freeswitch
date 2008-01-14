@@ -307,7 +307,7 @@ void switch_core_state_machine_init(switch_memory_pool_t *pool)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State %s\n", switch_channel_get_name(session->channel), __STATE_STR);	\
 		if (!driver_state_handler->on_##__STATE || (driver_state_handler->on_##__STATE(session) == SWITCH_STATUS_SUCCESS \
 													&& midstate == switch_channel_get_state(session->channel))) { \
-			while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) { \
+			while (do_extra_handlers && (application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) { \
 				if (!application_state_handler || !application_state_handler->on_##__STATE \
 					|| (application_state_handler->on_##__STATE			\
 						&& application_state_handler->on_##__STATE(session) == SWITCH_STATUS_SUCCESS \
@@ -320,7 +320,7 @@ void switch_core_state_machine_init(switch_memory_pool_t *pool)
 				}														\
 			}															\
 			index = 0;													\
-			while (proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) { \
+			while (do_extra_handlers && proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) { \
 				if (!application_state_handler || !application_state_handler->on_##__STATE || \
 					(application_state_handler->on_##__STATE &&			\
 					 application_state_handler->on_##__STATE(session) == SWITCH_STATUS_SUCCESS \
@@ -408,7 +408,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 		if (state != switch_channel_get_running_state(session->channel) || state == CS_HANGUP || exception) {
 			int index = 0;
 			int proceed = 1;
-			
+			int do_extra_handlers = 1;			
+
 			switch_channel_set_running_state(session->channel);
 
 			switch (state) {
@@ -418,7 +419,15 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			case CS_DONE:
 				goto done;
 			case CS_HANGUP:	    /* Deactivate and end the thread */
-				STATE_MACRO(hangup, "HANGUP");
+				{
+					const char *var = NULL;
+
+					if (!(var = switch_channel_get_variable(session->channel, SWITCH_PROCESS_CDR_VARIABLE)) || !switch_true(var)) {
+						do_extra_handlers = 0;
+					}
+					
+					STATE_MACRO(hangup, "HANGUP");
+				}
 				goto done;
 			case CS_INIT:		/* Basic setup tasks */
 				STATE_MACRO(init, "INIT");
