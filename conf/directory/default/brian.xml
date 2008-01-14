@@ -52,6 +52,8 @@
       <variable name="user_context" value="default"/>
       <variable name="effective_caller_id_name" value="Brian West"/>
       <variable name="effective_caller_id_number" value="1000"/>
+      <!-- Don't write a CDR if this is false valid values are: true, false, a_leg and b_leg -->
+      <variable name="process_cdr" value="true"/>
 
       <!-- limit the max number of outgoing calls for this user -->
       <!--<variable name="max_calls" value="2"/>-->
