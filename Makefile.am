@@ -168,7 +168,7 @@ $(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
 
 samples-conf:
 	test -d $(DESTDIR)$(prefix)/conf || $(mkinstalldirs) $(DESTDIR)$(prefix)/conf
-	for conffile in `find conf -name \*.xml && find conf -name \*.conf && find conf -name \*.tpl && find conf -name mime.types` ; do \
+	for conffile in `find conf -name \*.xml && find conf -name \*.conf && find conf -name \*.tpl  && find conf -name \*.ttml && find conf -name mime.types` ; do \
 		dir=`echo $$conffile | sed -e 's|/[^/]*$$||'`; \
 		filename=`echo $$conffile | sed -e 's|^.*/||'`; \
 		test -d $(DESTDIR)$(PREFIX)/$$dir || $(mkinstalldirs) $(DESTDIR)$(prefix)/$$dir ; \
