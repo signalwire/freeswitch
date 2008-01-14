@@ -174,7 +174,7 @@ samples-conf:
 		test -d $(DESTDIR)$(PREFIX)/$$dir || $(mkinstalldirs) $(DESTDIR)$(prefix)/$$dir ; \
 		test -f $(DESTDIR)$(PREFIX)/$$dir/$$filename || \
 		test -f $(DESTDIR)$(PREFIX)/$$dir/$$filename.noload || \
-			$(INSTALL) $$dir/$$filename $(DESTDIR)$(PREFIX)/$$dir; \
+			$(INSTALL) -m 644 $$dir/$$filename $(DESTDIR)$(PREFIX)/$$dir; \
 	done
 
 samples-htdocs: 
@@ -183,7 +183,7 @@ samples-htdocs:
 		dir=`echo $$htdocsfile | sed -e 's|/[^/]*$$||'`; \
 		filename=`echo $$htdocsfile | sed -e 's|^.*/||'`; \
 		test -d $(DESTDIR)$(PREFIX)/$$dir || $(mkinstalldirs) $(DESTDIR)$(prefix)/$$dir ; \
-		test -f $(DESTDIR)$(PREFIX)/$$dir/$$filename || $(INSTALL) $$dir/$$filename $(DESTDIR)$(PREFIX)/$$dir; \
+		test -f $(DESTDIR)$(PREFIX)/$$dir/$$filename || $(INSTALL) -m 644 $$dir/$$filename $(DESTDIR)$(PREFIX)/$$dir; \
 	done
 
 samples: samples-conf samples-htdocs
