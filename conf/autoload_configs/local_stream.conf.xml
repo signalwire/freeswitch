@@ -1,7 +1,4 @@
 <configuration name="local_stream.conf" description="stream files from local dir">
-
-  <!-- <X-PRE-PROCESS cmd="include" data="../streams/*.xml"/>   -->
-
   <directory name="moh/8000" path="$${base_dir}/sounds/music/8000">
     <param name="rate" value="8000"/>
     <param name="shuffle" value="true"/>
