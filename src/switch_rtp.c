@@ -1202,7 +1202,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833(switch_rtp_t *rtp_sessi
 
 	if ((rdigit = malloc(sizeof(*rdigit))) != 0) {
 		*rdigit = *dtmf;
-		switch_queue_push(rtp_session->dtmf_data.dtmf_queue, rdigit);
+		if ((switch_queue_trypush(rtp_session->dtmf_data.dtmf_queue, rdigit)) != SWITCH_STATUS_SUCCESS) {
+			free(rdigit);
+			return SWITCH_STATUS_FALSE;
+		}
 	} else {
 		abort();
 	}
@@ -1222,7 +1225,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833_in(switch_rtp_t *rtp_se
 
 	if ((rdigit = malloc(sizeof(*rdigit))) != 0) {
 		*rdigit = *dtmf;
-		switch_queue_push(rtp_session->dtmf_data.dtmf_inqueue, rdigit);
+		if ((switch_queue_trypush(rtp_session->dtmf_data.dtmf_inqueue, rdigit)) != SWITCH_STATUS_SUCCESS) {
+			free(rdigit);
+			return SWITCH_STATUS_FALSE;
+		}
 	} else {
 		abort();
 	}

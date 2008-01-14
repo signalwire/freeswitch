@@ -973,6 +973,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (strlen(dtmf_string) > 99) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Attempt to send very large dtmf string ignored!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
 	string = switch_core_session_strdup(session, dtmf_string);
 	argc = switch_separate_string(string, '+', argv, (sizeof(argv) / sizeof(argv[0])));
 	
