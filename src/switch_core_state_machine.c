@@ -424,9 +424,9 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 
 					if (!switch_strlen_zero(var)) {
 						
-						if (!strcasecmp(var, "a_only") && !switch_channel_test_flag(session->channel, CF_ORIGINATOR)) {
+						if (!strcasecmp(var, "a_only") && switch_channel_get_originator_caller_profile(session->channel)) {
 							do_extra_handlers = 0;
-						} else if (!strcasecmp(var, "b_only") && switch_channel_test_flag(session->channel, CF_ORIGINATOR)) {
+						} else if (!strcasecmp(var, "b_only") && switch_channel_get_originatee_caller_profile(session->channel)) {
 							do_extra_handlers = 0;
 						} else if (!switch_true(var)) {
                             do_extra_handlers = 0;
