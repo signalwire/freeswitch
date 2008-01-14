@@ -1339,6 +1339,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 	int greedy = 0, x = 0, skip = 0, mine = 0;
 	switch_channel_t *channel = NULL;
 	const char *val;
+	const char *crypto = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -1441,6 +1442,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 			for (a = m->m_attributes; a; a = a->a_next) {
 				if (!strcasecmp(a->a_name, "ptime") && a->a_value) {
 					ptime = atoi(a->a_value);
+				} else if (!strcasecmp(a->a_name, "crypto") && a->a_value) {
+					crypto = a->a_value;
 				}
 			}
 
