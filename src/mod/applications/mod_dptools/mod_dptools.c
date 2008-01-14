@@ -1419,7 +1419,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		goto done;
 	}
 
-	user = switch_core_session_strdup(session, outbound_profile->destination_number);
+	user = strdup(outbound_profile->destination_number);
 
 	if (!(domain = strchr(user, '@'))) {
 		goto done;
@@ -1464,15 +1464,20 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		switch_channel_t *channel;
 		switch_originate_flag_t myflags = SOF_NONE;
 
-		channel = switch_core_session_get_channel(session);
-		if ((var = switch_channel_get_variable(channel, "call_timeout"))) {
-			timelimit = atoi(var);
-		}
-		
-		switch_channel_set_variable(channel, "dialed_user", user);
-		switch_channel_set_variable(channel, "dialed_domain", domain);
+		if (session) {
+			channel = switch_core_session_get_channel(session);
+			if ((var = switch_channel_get_variable(channel, "call_timeout"))) {
+				timelimit = atoi(var);
+			}
+			
+			switch_channel_set_variable(channel, "dialed_user", user);
+			switch_channel_set_variable(channel, "dialed_domain", domain);
 
-		d_dest = switch_channel_expand_variables(channel, dest);
+			d_dest = switch_channel_expand_variables(channel, dest);
+
+		} else {
+			d_dest = strdup(dest);
+		}
 		
 		if ((flags & SOF_FORKED_DIAL)) {
 			myflags |= SOF_NOBLOCK;
@@ -1519,6 +1524,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		switch_xml_free(xml);
 	}
 	
+	switch_safe_free(user);
 
 	return cause;
 }
