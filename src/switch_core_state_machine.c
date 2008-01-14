@@ -420,10 +420,17 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				goto done;
 			case CS_HANGUP:	    /* Deactivate and end the thread */
 				{
-					const char *var = NULL;
+					const char *var = switch_channel_get_variable(session->channel, SWITCH_PROCESS_CDR_VARIABLE);
 
-					if (!(var = switch_channel_get_variable(session->channel, SWITCH_PROCESS_CDR_VARIABLE)) || !switch_true(var)) {
-						do_extra_handlers = 0;
+					if (!switch_strlen_zero(var)) {
+						
+						if (!strcasecmp(var, "a_only") && !switch_channel_test_flag(session->channel, CF_ORIGINATOR)) {
+							do_extra_handlers = 0;
+						} else if (!strcasecmp(var, "b_only") && switch_channel_test_flag(session->channel, CF_ORIGINATOR)) {
+							do_extra_handlers = 0;
+						} else if (!switch_true(var)) {
+                            do_extra_handlers = 0;
+						}
 					}
 					
 					STATE_MACRO(hangup, "HANGUP");
