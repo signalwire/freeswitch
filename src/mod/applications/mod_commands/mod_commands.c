@@ -1629,6 +1629,91 @@ SWITCH_STANDARD_API(sched_api_function)
 }
 
 
+struct bg_job {
+	char *cmd;
+	char *arg;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];	
+	switch_memory_pool_t *pool;
+};
+
+static void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
+{
+
+	struct bg_job *job = (struct bg_job *) obj;
+	switch_stream_handle_t stream = { 0 };
+	switch_status_t status;
+	char *reply, *freply = NULL;
+	switch_event_t *event;
+	char *arg;
+	
+	SWITCH_STANDARD_STREAM(stream);
+
+	if ((arg = strchr(job->cmd, ' '))) {
+		*arg++ = '\0';
+	}
+
+	if ((status = switch_api_execute(job->cmd, arg, NULL, &stream)) == SWITCH_STATUS_SUCCESS) {
+		reply = stream.data;
+	} else {
+		freply = switch_mprintf("%s: Command not found!\n", job->cmd);
+		reply = freply;
+	}
+
+	if (!reply) {
+		reply = "Command returned no output!";
+	}
+
+	if (switch_event_create(&event, SWITCH_EVENT_BACKGROUND_JOB) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-Command", "%s", job->cmd);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-Command-Arg", "%s", arg);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-UUID", "%s", job->uuid_str);
+		switch_event_add_body(event, "%s", reply);
+		switch_event_fire(&event);
+	}
+
+	switch_safe_free(stream.data);
+	switch_safe_free(freply);
+
+	if (job) {
+		switch_memory_pool_t *pool = job->pool;
+		job = NULL;
+		switch_core_destroy_memory_pool(&pool);
+		pool = NULL;
+	}
+	return NULL;
+}
+
+SWITCH_STANDARD_API(bgapi_function)
+{
+	struct bg_job *job;
+	switch_uuid_t uuid;
+	switch_memory_pool_t *pool;
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+	
+	if (!cmd) {
+		stream->write_function(stream, "-ERR Invalid syntax\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_core_new_memory_pool(&pool);
+	job = switch_core_alloc(pool, sizeof(*job));
+	job->cmd = switch_core_strdup(pool, cmd);
+	job->pool = pool;
+
+	switch_uuid_get(&uuid);
+	switch_uuid_format(job->uuid_str, &uuid);
+
+	switch_threadattr_create(&thd_attr, job->pool);
+	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	stream->write_function(stream, "+OK %s\n", job->uuid_str);
+	switch_thread_create(&thread, thd_attr, bgapi_exec, job, job->pool);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 struct holder {
 	switch_stream_handle_t *stream;
 	char *http;
@@ -2146,6 +2231,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "sched_transfer", "Schedule a broadcast event to a running call", sched_transfer_function, SCHED_TRANSFER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "create_uuid", "Create a uuid", uuid_function, UUID_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "sched_api", "Schedule an api command", sched_api_function, "[+]<time> <group_name> <command_string>");
+	SWITCH_ADD_API(commands_api_interface, "bgapi", "Execute an api command in a thread", bgapi_function, "<command>[ <arg>]");
 	SWITCH_ADD_API(commands_api_interface, "sched_del", "Delete a Scheduled task", sched_del_function, "<task_id>|<group_id>");
 	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");
 	SWITCH_ADD_API(commands_api_interface, "is_lan_addr", "see if an ip is a lan addr", lan_addr_function, "<ip>");
