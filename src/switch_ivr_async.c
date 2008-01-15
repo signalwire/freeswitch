@@ -1073,7 +1073,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 				frame = switch_core_media_bug_get_write_replace_frame(bug);
 			}
 			
-			for (i = 0 ; i < cont->index; cont++) {
+			for (i = 0 ; i < cont->index; i++) {
 				if (cont->list[i].up && teletone_multi_tone_detect(&cont->list[i].mt, frame->data, frame->samples)) {
 					switch_event_t *event;
 					
