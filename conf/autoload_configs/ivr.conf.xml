@@ -24,6 +24,19 @@
       <entry action="menu-back" digits="#"/>
       <entry action="menu-top" digits="*"/>
     </menu>
+    
+    <menu name="demo3"
+          greet-long="say:Press 1 to join the conference, Press 2 to join the other conference"
+          greet-short="say:Press 1 to join the conference, Press 2 to join the other conference"
+          invalid-sound="say:invalid extension"
+          exit-sound="say:exit sound" timeout ="15"
+          max-failures="3"
+          tts-voice="callie" tts-engine="cepstral">
+      <entry action="menu-exit" digits="*"/>
+      <!-- <entry action="menu-say-text" digits="1" param="You pressed 1"/> -->
+      <entry action="menu-call-transfer" digits="1" param="1000"/>
+      <entry action="menu-call-transfer" digits="2" param="1001"/>
+    </menu>
 
     <menu name="menu8"
           greet-long="/soundfiles/ivr/menu8/greet-long.wav"
