@@ -156,6 +156,7 @@ libfreeswitch_la_SOURCES += src/switch_odbc.c
 libfreeswitch_la_LDFLAGS     += -lodbc
 endif
 
+bin_SCRIPTS = scripts/gentls_cert
 
 
 libs/libedit/src/.libs/libedit.a:

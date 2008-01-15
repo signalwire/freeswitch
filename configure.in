@@ -424,7 +424,8 @@ AC_CONFIG_FILES([Makefile
                 src/include/switch_am_config.h
                 build/getsounds.sh
                 build/getlib.sh
-                build/modmake.rules])
+                build/modmake.rules
+                scripts/gentls_cert])
 
 AM_CONDITIONAL(ISLINUX, [test `uname -s` = Linux])
 AM_CONDITIONAL(ISMAC, [test `uname -s` = Darwin])
