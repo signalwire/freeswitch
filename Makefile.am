@@ -92,6 +92,7 @@ src/include/switch_core_event_hook.h\
 src/include/switch_scheduler.h\
 src/include/switch_core.h\
 src/include/switch_core_db.h\
+src/include/switch_config.h\
 src/include/switch_event.h\
 src/include/switch_frame.h\
 src/include/switch_ivr.h\
