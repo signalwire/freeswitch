@@ -1577,7 +1577,7 @@ case VM_CHECK_AUTH:
 			switch_safe_free(xtra);
 
 			if (!ok) {
-				goto failed;
+				goto end;
 			}
 		}
 
