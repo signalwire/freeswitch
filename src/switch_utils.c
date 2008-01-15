@@ -356,7 +356,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 
 SWITCH_DECLARE(switch_bool_t) switch_is_lan_addr(const char *ip)
 {
-
+	if (switch_strlen_zero(ip)) return SWITCH_FALSE;
 
 	return (
 			strncmp(ip, "10.", 3) &&
