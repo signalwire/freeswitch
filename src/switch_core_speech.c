@@ -47,6 +47,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 	char buf[256] = "";
 	char *param = NULL;
 
+	if (!sh || !flags || switch_strlen_zero(module_name)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (strchr(module_name, ':')) {
 		switch_set_string(buf, module_name);
 		if ((param = strchr(buf, ':'))) {
