@@ -44,7 +44,7 @@ static int EC = 0;
 
 /* Size to allocate for audio buffers */
 #define CONF_BUFFER_SIZE 1024 * 128
-#define CONF_EVENT_MAINT "conference::maintenence"
+#define CONF_EVENT_MAINT "conference::maintenance"
 #define CONF_DEFAULT_LEADIN 20
 
 #define CONF_DBLOCK_SIZE CONF_BUFFER_SIZE
