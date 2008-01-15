@@ -38,6 +38,7 @@
 #include <curl/curl.h>
 #endif
 static int foo = 0;
+static switch_mutex_t *mutex;
 
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load);
@@ -3404,6 +3405,7 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 	JSContext *cx = NULL;
 	jsval rval;
 
+	switch_mutex_lock(mutex);
 
 	if ((cx = JS_NewContext(globals.rt, globals.gStackChunkSize))) {
 		JS_BeginRequest(cx);
@@ -3423,7 +3425,7 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Allocation Error!\n");
-		return;
+		goto end;
 	}
 
 	script = input_code;
@@ -3448,11 +3450,17 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 			eval_some_js(buf, cx, javascript_global_object, &rval);
 		}
 	}
-
+	
 	if (cx) {
 		eval_some_js(script, cx, javascript_global_object, &rval);
 		JS_DestroyContext(cx);
 	}
+	
+ end:
+	switch_mutex_unlock(mutex);
+
+	return;
+
 }
 
 SWITCH_STANDARD_APP(js_dp_function)
@@ -3578,6 +3586,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 	SWITCH_ADD_APP(app_interface, "javascript", "Launch JS ivr", "Run a javascript ivr on a channel", js_dp_function, "<script> [additional_vars [...]]", SAF_NONE);
 
 	curl_global_init(CURL_GLOBAL_ALL);
+
+	switch_mutex_init(&mutex, SWITCH_MUTEX_NESTED, pool);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
