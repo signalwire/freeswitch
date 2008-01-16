@@ -19,7 +19,7 @@ that much better:
  Brian K. West - For countless hours of work on BSD and Mac support, finding countless bugs, 
   and moral support.  Xcode project files.
  Joshua Colp - For his help making mod_exosip possible (which we are now getting rid of but oh well), 
-               and for just being a swell guy! (until he backstabbed us, c'est la vie)
+               and for just being a swell guy!
  Michal "cypromis" Bielicki (michal.bielicki  AT voiceworks.pl) - Solaris porting, and autotools enhancements, debian, rpm and solaris packaging.
  James Martelletti <james@nerdc0re.com> - All around cool guy (mod_syslog)
  Johny Kadarisman <jkr888@gmail.com>
