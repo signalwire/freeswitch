@@ -52,14 +52,16 @@ sub do_exec {
 }
 
 sub fsxs_usage {
-	print "FreeSwitch fsxs\n(C) 2006 Stefan Knoblich <stkn\@netdomination.org>\n";
+	print "FreeSwitch fsxs\n(C) 2006-2008 Stefan Knoblich <stkn\@netdomination.org>\n";
 	print "\n";
 	print "Usage:\n";
 	print "\t$0 compile [options] <file1 ...>\n";
 	print "\t$0 link    [options] <target> <file1 ...>\n";
 	print "\t$0 build   [options] <target> <file1 ...>\n";
-	print "\t$0 install [options] <file1 ...>\n";
-	print "\t$0 show    <var1 ...>\n\n";
+	print "\t$0 install [options] <file1 ...>\n\n";
+	print "\t$0 show    <var1>...[varN]\n";
+	print "\t$0         <--var1>...<--varN>\n\n";
+
 	print "Command description:\n";
 	print "\tcompile: Compile source file(s) into object file(s)\n";
 	print "\tlink:    Create module from object file(s)\n";
@@ -78,6 +80,11 @@ sub fsxs_usage {
 	print "\t--set-libs    Override libs          [link, build]\n";
 	print "\n";
 	print "\t--destdir     Installation prefix    [install]\n";
+	print "\n";
+
+	print "Variable names for \"fsxs show\" / \"fsxs --var\":\n";
+	print "\tcflags ldflags libs solink includes cc ld mkdir install\n";
+	print "\tprefix lib_dir modules_dir db_dir inc_dir cfg_dir bin_dir\n";
 	print "\n";
 
 	print "Examples:\n";
@@ -168,23 +175,50 @@ sub fsxs_show {
 	}
 }
 
+sub fsxs_showq {
+	my @varlist = @_;
+
+	if( $#varlist >= 0 ) {
+		foreach( @varlist ) {
+			if( defined $vars{$_} ) {
+				print "$vars{$_} ";
+			}
+		}
+	}
+}
+
 #
 # main part
 #
 if( $#ARGV < 0 ) {
 	fsxs_usage;
 }
-chomp( $command = shift @ARGV );
 
-if( $command =~ /^install|build|link|compile|show$/ ) {
-
-	if( $command =~ /^show|compile|install$/ ) {
-		$needs_target = 0;
-	}
+if( @ARGV[0] =~ /^\--.+$/ ) {
+	# 'show' shortcut for using fsxs in scripts
+	$needs_target = 0;
+	$command = "showq";
 }
 else {
-	print STDERR "Unknown command: $command\n";
-	fsxs_usage;
+	chomp( $command = shift @ARGV );
+
+	if( $command =~ /^install|build|link|compile|show$/ ) {
+
+		# add -lfreeswitch to the front of the library list
+		# we don't want it to be in the show / showq output
+		# but we still want to be able to override it with --set-libs
+		if( $command ne "show" ) {
+			$vars{LIBS} = "-lfreeswitch $vars{LIBS}";
+		}
+
+		if( $command =~ /^show|compile|install$/ ) {
+			$needs_target = 0;
+		}
+	}
+	else {
+		print STDERR "Unknown command: $command\n";
+		fsxs_usage;
+	}
 }
 
 # parse environment variables
@@ -196,7 +230,7 @@ if( defined $ENV{DEBUG} && $ENV{DEBUG} ) {
 foreach(@ARGV) {
 	chomp( $_ );
 
-	if( $command ne 'show' )
+	if( $command ne "show" && $command ne "showq" )
 	{
 		if( /^\--add-cflags=(.*)$/ ) {
 			$vars{CFLAGS} = "$vars{CFLAGS} $1";
@@ -271,6 +305,9 @@ elsif( $command eq 'build' ) {
 }
 elsif( $command eq 'show' ) {
 	fsxs_show( @files );
+}
+elsif( $command eq 'showq' ) {
+	fsxs_showq( @files );
 }
 elsif( $command eq 'install' ) {
 	fsxs_install( @files );

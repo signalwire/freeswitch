@@ -157,7 +157,7 @@ libfreeswitch_la_SOURCES += src/switch_odbc.c
 libfreeswitch_la_LDFLAGS     += -lodbc
 endif
 
-bin_SCRIPTS = scripts/gentls_cert
+bin_SCRIPTS = scripts/gentls_cert scripts/fsxs
 
 
 libs/libedit/src/.libs/libedit.a:
@@ -304,6 +304,27 @@ modwipe:
 
 dox:
 	cd docs && doxygen $(PWD)/docs/Doxygen.conf
+
+scripts/fsxs: scripts/fsxs.in
+	@echo creating fsxs
+	@sed -e "s,@MODULES_DIR\@,$(PREFIX)/mod," \
+	    -e "s,@LIB_DIR\@,$(PREFIX)/lib," \
+	    -e "s,@BIN_DIR\@,$(PREFIX)/bin," \
+	    -e "s,@INC_DIR\@,$(PREFIX)/include," \
+	    -e "s,@CFG_DIR\@,$(PREFIX)/conf," \
+	    -e "s,@DB_DIR\@,$(PREFIX)/db," \
+	    -e "s,@PREFIX\@,$(PREFIX)," \
+	    -e "s,@CC\@,$(CC)," \
+	    -e "s,@LD\@,$(CC)," \
+	    -e "s,@INSTALL\@,$(INSTALL)," \
+	    -e "s,@MKINSTALLDIRS\@,$(mkdir_p)," \
+	    \
+	    -e "s|@CFLAGS\@|$(CFLAGS) `$(switch_srcdir)/libs/apr/apr-1-config --cflags --cppflags`|" \
+	    -e "s|@INCLUDES\@|-I$(PREFIX)/include|" \
+	    -e "s|@SOLINK\@|$(SOLINK)|" \
+	    -e "s|@LDFLAGS\@|-L$(PREFIX)/lib|" \
+	    -e "s|@LIBS\@|`$(switch_srcdir)/libs/apr/apr-1-config --libs` `$(switch_srcdir)/libs/apr-util/apu-1-config --libs`|" \
+	    scripts/fsxs.in > scripts/fsxs
 
 eclean: clean
 	rm -f `find . -type f -name \*~`
