@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
+ * Juan Jose Comellas <juanjo@comellas.org>
  *
  *
  * switch_utils.c -- Compatability and Helper Code
@@ -1004,62 +1005,182 @@ SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t *pool, char *in, 
 	return data;
 }
 
+/* Helper function used when separating strings to unescape a character. The
+   supported characters are:
+
+   \n  linefeed
+   \r  carriage return
+   \t  tab
+   \s  space
+
+   Any other character is returned as it was received. */
+static char unescape_char(char escaped)
+{
+	char unescaped;
+	
+	switch (escaped) {
+		case 'n':
+			unescaped = '\n';
+			break;
+		case 'r':
+			unescaped = '\r';
+			break;
+		case 't':
+			unescaped = '\t';
+			break;
+		case 's':
+			unescaped = ' ';
+			break;
+		default:
+			unescaped = escaped;
+	}
+	return unescaped;
+}
+
+/* Helper function used when separating strings to remove quotes, leading /
+   trailing spaces, and to convert escaped characters. */
+static char *cleanup_separated_string(char *str)
+{
+	char *ptr;
+	char *dest;
+	char *start;
+	char *end = NULL;
+	int inside_quotes = 0;
+
+	/* Skip initial whitespace */
+	for (ptr = str; *ptr == ' '; ++ptr) {
+	}
+
+	for (start = dest = ptr; *ptr; ++ptr) {
+		if (*ptr == '\\') {
+			++ptr;
+			*dest++ = unescape_char(*ptr);
+			end = dest;
+		} else if (*ptr == '\'') {
+			inside_quotes = (1 - inside_quotes);
+		} else {
+			*dest++ = *ptr;
+			if (*ptr != ' ' || inside_quotes) {
+				end = dest;
+			}
+		}
+	}
+	if (end) {
+		*end = '\0';
+	}
+	return start;
+}
+
+/* Separate a string using a delimiter that is not a space */
+static unsigned int separate_string_char_delim(char *buf, char delim, char **array, int arraylen)
+{
+	enum tokenizer_state {
+		START,
+		FIND_DELIM
+	} state = START;
+
+	unsigned int count = 0;
+	char *ptr = buf;
+	int  inside_quotes = 0;
+	int i;
+	
+	while (*ptr && count < arraylen) {
+		switch (state) {
+			case START:
+				array[count++] = ptr;
+				state = FIND_DELIM;
+				break;
+
+			case FIND_DELIM:
+				/* escaped characters are copied verbatim to the destination string */
+				if (*ptr == '\\') {
+					++ptr;
+				} else if (*ptr == '\'') {
+					inside_quotes = (1 - inside_quotes);
+				} else if (*ptr == delim && !inside_quotes) {
+					*ptr = '\0';
+					state = START;
+				}
+				++ptr;
+				break;
+		}
+	}
+	/* strip quotes, escaped chars and leading / trailing spaces */
+	for (i = 0; i < count; ++i) {
+		array[i] = cleanup_separated_string(array[i]);
+	}
+	return count;
+}
+
+/* Separate a string using a delimiter that is a space */
+static unsigned int separate_string_blank_delim(char *buf, char **array, int arraylen)
+{
+	enum tokenizer_state {
+		START,
+		SKIP_INITIAL_SPACE,
+		FIND_DELIM,
+		SKIP_ENDING_SPACE
+	} state = START;
+
+	unsigned int count = 0;
+	char *ptr = buf;
+	int  inside_quotes = 0;
+	int i;
+
+	while (*ptr && count < arraylen) {
+		switch (state) {
+			case START:
+				array[count++] = ptr;
+				state = SKIP_INITIAL_SPACE;
+				break;
+
+			case SKIP_INITIAL_SPACE:
+				if (*ptr == ' ') {
+					++ptr;
+				} else {
+					state = FIND_DELIM;
+				}
+				break;
+
+			case FIND_DELIM:
+				if (*ptr == '\\') {
+					++ptr;
+				} else if (*ptr == '\'') {
+					inside_quotes = (1 - inside_quotes);
+				} else if (*ptr == ' ' && !inside_quotes) {
+					*ptr = '\0';
+					state = SKIP_ENDING_SPACE;
+				}
+				++ptr;
+				break;
+
+			case SKIP_ENDING_SPACE:
+				if (*ptr == ' ') {
+					++ptr;
+				} else {
+					state = START;
+				}
+				break;
+		}
+	}
+	/* strip quotes, escaped chars and leading / trailing spaces */
+	for (i = 0; i < count; ++i) {
+		array[i] = cleanup_separated_string(array[i]);
+	}
+	return count;
+}
 
 SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char **array, int arraylen)
 {
-	int argc;
-	char *ptr;
-	int quot = 0;
-	char qc = '\'';
-	int x;
-
 	if (!buf || !array || !arraylen) {
 		return 0;
 	}
 
-	memset(array, 0, arraylen * sizeof(*array));
+	memset(array, 0, arraylen * sizeof (*array));
 
-	ptr = buf;
-
-	for (argc = 0; *ptr && (argc < arraylen - 1); argc++) {
-		array[argc] = ptr;
-		for (; *ptr; ptr++) {
-			if (*ptr == qc) {
-				if (quot) {
-					quot--;
-				} else {
-					quot++;
-				}
-			} else if ((*ptr == delim) && !quot) {
-				*ptr++ = '\0';
-				break;
-			}
-		}
-	}
-
-	if (*ptr) {
-		array[argc++] = ptr;
-	}
-
-	/* strip quotes and leading / trailing spaces */
-	for (x = 0; x < argc; x++) {
-		char *p;
-
-		while(*(array[x]) == ' ') {
-			(array[x])++;
-		}
-		p = array[x];
-		while((p = strchr(array[x], qc))) {
-			memmove(p, p+1, strlen(p));
-			p++;
-		}
-		p = array[x] + (strlen(array[x]) - 1);
-		while(*p == ' ') {
-			*p-- = '\0';
-		}
-	}
-
-	return argc;
+	return (delim == ' ' ?
+			separate_string_blank_delim(buf, array, arraylen) :
+			separate_string_char_delim(buf, delim, array, arraylen));
 }
 
 SWITCH_DECLARE(const char *) switch_cut_path(const char *in)

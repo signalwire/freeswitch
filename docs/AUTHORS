@@ -34,7 +34,8 @@ that much better:
  Matt Klein <mklein@nmedia.net>
  Jonas Gauffin <jonas at gauffin dot org> - Bugfixes and additions in mod_spidermonkey_odbc
  Damjan Jovanovic <moctodliamgtavojtodnajmad backwards> - mod_java
- 
+ Juan Jose Comellas <juanjo@comellas.org> - Patch to switch_utils for arg parsing.
+
 A big THANK YOU goes to:
 
 Justin Cassidy - Build related cleanups and automatic build setup.
