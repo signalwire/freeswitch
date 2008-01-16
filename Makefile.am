@@ -122,7 +122,7 @@ CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/include
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/crypto/include
 CORE_CFLAGS    += $(RESAMPLE_CFLAGS)
 
-CORE_LIBS      = libs/apr/libapr-1.la libs/apr-util/libaprutil-1.la
+CORE_LIBS      = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
 CORE_LIBS     += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la
 CORE_LIBS     += libs/srtp/libsrtp.la $(RESAMPLE_LIB)
 
