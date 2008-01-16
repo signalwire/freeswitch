@@ -1033,11 +1033,11 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTO_CNG) &&
 				rtp_session->timer.samplecount >= (rtp_session->last_write_samplecount + (rtp_session->samples_per_interval * 50))) {
-				uint8_t data[2] = { 0 };
+				uint8_t data[10] = { 0 };
 				switch_frame_flag_t frame_flags = SFF_NONE;
 				data[0] = 65;
 				rtp_session->cn++;
-				rtp_common_write(rtp_session, NULL, (void *) data, sizeof(data), rtp_session->cng_pt, 0, &frame_flags);
+				rtp_common_write(rtp_session, NULL, (void *) data, 2, rtp_session->cng_pt, 0, &frame_flags);
 			}
 		}
 
