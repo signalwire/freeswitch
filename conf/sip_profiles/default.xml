@@ -46,7 +46,7 @@
     <!--<param name="bind-params" value="transport=udp"/>-->
 
     <!-- TLS: disabled by default, set to "true" to enable -->
-    <param name="tls" value="true"/>
+    <param name="tls" value="false"/>
     <!-- additional bind parameters for TLS -->
     <param name="tls-bind-params" value="transport=tls"/>
     <!-- Port to listen on for TLS requests. (5061 will be used if unspecified) -->
