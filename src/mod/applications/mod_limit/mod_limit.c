@@ -622,7 +622,6 @@ SWITCH_STANDARD_APP(limit_function)
     switch_channel_set_variable(channel, "limit_realm", realm);
     switch_channel_set_variable(channel, "limit_id", id);
     switch_channel_set_variable(channel, "limit_max", argv[2]);
-    switch_channel_set_variable(channel, "limit_orignal_destination", switch_channel_get_variable(channel, "destination_number"));
 
     cbt.buf = buf;
     cbt.len = sizeof(buf);
