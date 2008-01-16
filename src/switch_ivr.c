@@ -28,6 +28,7 @@
  * Neal Horman <neal at wanlink dot com>
  * Matt Klein <mklein@nmedia.net>
  * Michael Jerris <mike@jerris.com>
+ * Ken Rice <krice at suspicious dot org>
  *
  * switch_ivr.c -- IVR Library
  *
@@ -916,9 +917,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		
 		new_profile = switch_caller_profile_clone(session, profile);
 
-		new_profile->dialplan = switch_core_strdup(profile->pool, dialplan);
-		new_profile->context = switch_core_strdup(profile->pool, context);
-		new_profile->destination_number = switch_core_strdup(profile->pool, extension);
+		new_profile->dialplan = switch_core_strdup(new_profile->pool, dialplan);
+		new_profile->context = switch_core_strdup(new_profile->pool, context);
+		new_profile->destination_number = switch_core_strdup(new_profile->pool, extension);
+		new_profile->rdnis = switch_core_strdup(new_profile->pool, profile->destination_number);
 
 		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, NULL);
 
