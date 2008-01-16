@@ -52,6 +52,9 @@
       <condition field="${call_debug}" expression="^true$" break="never">
 	<action application="info"/>
       </condition>
+      <condition field="${sip_has_crypto}" expression="^AES_CM_128_HMAC_SHA1_32$" break="never">
+	<action application="set" data="sip_secure_media=true"/>
+      </condition>
       <condition>
 	<action application="db" data="insert/spymap/${caller_id_number}/${uuid}"/>
 	<action application="db" data="insert/last_dial/${caller_id_number}/${destination_number}"/>
@@ -248,9 +251,20 @@
     </extension>
 
     <extension name="hold_music">
+      <condition field="${sip_has_crypto}" expression="^AES_CM_128_HMAC_SHA1_32$" break="never">
+	<action application="answer"/>
+	<action application="execute_extension" data="is_secure XML default"/>
+      </condition>
       <condition field="destination_number" expression="^9999$">
 	<action application="answer"/>
 	<action application="playback" data="$${moh_uri}"/>
+      </condition>
+    </extension>
+
+    <extension name="is_secure">
+      <condition field="${sip_secure_media_confirmed}" expression="^true$" break="never">
+	<action application="sleep" data="1000"/>
+	<action application="gentones" data="%(1000, 0, 320)"/>
       </condition>
     </extension>
 
