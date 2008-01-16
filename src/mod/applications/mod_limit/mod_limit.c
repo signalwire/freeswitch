@@ -568,8 +568,9 @@ SWITCH_STANDARD_APP(group_function)
 
 }
 
-#define LIMIT_USAGE "<realm> <id> <max>"
+#define LIMIT_USAGE "<realm> <id> <max> [transfer_destination_number]"
 #define LIMIT_DESC "limit access to an extension"
+static char *limit_def_xfer_exten="limit_exceeded";
 
 SWITCH_STANDARD_APP(limit_function)
 {
@@ -579,6 +580,7 @@ SWITCH_STANDARD_APP(limit_function)
     char *sql = NULL;
     char *realm = NULL;
     char *id = NULL;
+    char *xfer_exten = NULL;
     int max = 0, got = 0;
     char buf[80] = "";
     callback_t cbt = { 0 };
@@ -606,6 +608,12 @@ SWITCH_STANDARD_APP(limit_function)
     id = argv[1];
     max = atoi(argv[2]);
 
+    if (argc == 4) {
+        xfer_exten = argv[3];
+    } else {
+        xfer_exten = limit_def_xfer_exten;
+    }
+
     if (max < 0) {
         max = 0;
     }
@@ -613,6 +621,7 @@ SWITCH_STANDARD_APP(limit_function)
     switch_channel_set_variable(channel, "limit_realm", realm);
     switch_channel_set_variable(channel, "limit_id", id);
     switch_channel_set_variable(channel, "limit_max", argv[2]);
+    switch_channel_set_variable(channel, "limit_orignal_destination", switch_channel_get_variable(channel, "destination_number"));
 
     cbt.buf = buf;
     cbt.len = sizeof(buf);
@@ -621,7 +630,7 @@ SWITCH_STANDARD_APP(limit_function)
     got = atoi(buf);
 
     if (got + 1 > max) {
-        switch_ivr_session_transfer(session, "limit_exceeded", NULL, NULL);
+        switch_ivr_session_transfer(session, xfer_exten, NULL, NULL);
         goto done;
     }
 
