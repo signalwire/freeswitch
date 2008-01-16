@@ -823,6 +823,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 
 	if (cnt != 8) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Authorization header!\n");
+		ret = AUTH_STALE;
 		goto end;
 	}
 	
