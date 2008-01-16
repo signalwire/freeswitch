@@ -166,7 +166,7 @@ SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_b64_decode(char *in, char *out, switch_size_t olen)
+SWITCH_DECLARE(switch_size_t) switch_b64_decode(char *in, char *out, switch_size_t olen)
 {
 
 	char l64[256];
@@ -203,7 +203,7 @@ SWITCH_DECLARE(switch_status_t) switch_b64_decode(char *in, char *out, switch_si
 
 	op[ol++] = '\0';
 
-	return SWITCH_STATUS_SUCCESS;
+	return ol;
 }
 
 

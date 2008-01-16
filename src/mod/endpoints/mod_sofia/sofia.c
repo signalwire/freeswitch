@@ -1010,6 +1010,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_PRESENCE;
 						}
+					} else if (!strcasecmp(var, "require-secure-rtp")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_SECURE;
+						}
 					} else if (!strcasecmp(var, "multiple-registrations")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_MULTIREG;

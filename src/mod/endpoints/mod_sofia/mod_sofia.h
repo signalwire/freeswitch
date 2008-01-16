@@ -73,6 +73,9 @@ typedef struct private_object private_object_t;
 #define SOFIA_DEFAULT_PORT "5060"
 #define SOFIA_DEFAULT_TLS_PORT "5061"
 #define SOFIA_REFER_TO_VARIABLE "sip_refer_to"
+#define SOFIA_SECURE_MEDIA_VARIABLE "sip_secure_media"
+#define SOFIA_SECURE_MEDIA_CONFIRMED_VARIABLE "sip_secure_media_confirmed"
+#define SOFIA_HAS_CRYPTO_VARIABLE "sip_has_crypto"
 
 #include <sofia-sip/nua.h>
 #include <sofia-sip/sip_status.h>
@@ -124,7 +127,8 @@ typedef enum {
 	PFLAG_MULTIREG = (1 << 11),
 	PFLAG_SUPRESS_CNG = (1 << 12),
 	PFLAG_TLS = (1 << 13),
-	PFLAG_CHECKUSER = (1 << 14)
+	PFLAG_CHECKUSER = (1 << 14),
+	PFLAG_SECURE = (1 << 15)
 } PFLAGS;
 
 typedef enum {
@@ -339,6 +343,13 @@ struct private_object {
 	char *invite_contact;
 	char *local_url;
 	char *gateway_name;
+	char *local_crypto_key;
+	char *remote_crypto_key;
+	unsigned char local_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
+	unsigned char remote_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
+	switch_rtp_crypto_key_type_t crypto_send_type;
+	switch_rtp_crypto_key_type_t crypto_recv_type;
+	switch_rtp_crypto_key_type_t crypto_type;
 	unsigned long rm_rate;
 	switch_payload_t pt;
 	switch_mutex_t *flag_mutex;
@@ -561,3 +572,4 @@ const char *sofia_glue_transport2str(const sofia_transport_t tp);
 
 int sofia_glue_transport_has_tls(const sofia_transport_t tp);
 const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name);
+switch_status_t sofia_glue_build_crypto(private_object_t *tech_pvt, int index, switch_rtp_crypto_key_type_t type, switch_rtp_crypto_direction_t direction);

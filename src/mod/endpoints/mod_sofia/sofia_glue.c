@@ -89,6 +89,8 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 			 "a=%s\n" 
 			 "m=audio %d RTP/AVP", tech_pvt->owner_id, tech_pvt->session_id, ip, ip, sr, port);
 	
+
+
 	if (tech_pvt->rm_encoding) {
 		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->pt);
 	} else if (tech_pvt->num_codecs) {
@@ -125,6 +127,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	}
 
 	switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "\n");
+
 
 	if (tech_pvt->rm_encoding) {
 		rate = tech_pvt->rm_rate;
@@ -179,6 +182,11 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	}
 	if (ptime) {
 		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=ptime:%d\n", ptime);
+	}
+
+	if (!switch_strlen_zero(tech_pvt->local_crypto_key) && switch_test_flag(tech_pvt, TFLAG_SECURE)) {
+		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=crypto:%s\n", tech_pvt->local_crypto_key);
+		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_VIDEO) && tech_pvt->video_rm_encoding) {
@@ -928,7 +936,7 @@ void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt)
 
 void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 {
-	int loops = 0;				//, sock = -1;
+	int loops = 0;
 	if (switch_rtp_ready(tech_pvt->rtp_session)) {
 		while (loops < 10 && (switch_test_flag(tech_pvt, TFLAG_READING) || switch_test_flag(tech_pvt, TFLAG_WRITING))) {
 			switch_yield(10000);
@@ -1077,6 +1085,102 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+switch_status_t sofia_glue_build_crypto(private_object_t *tech_pvt, int index, switch_rtp_crypto_key_type_t type, switch_rtp_crypto_direction_t direction)
+{
+	unsigned char b64_key[512] = "";
+	const char *type_str;
+	unsigned char *key;
+
+	char *p;
+
+	if (type == AES_CM_128_HMAC_SHA1_80) {
+		type_str = SWITCH_RTP_CRYPTO_KEY_80;
+	} else {
+		type_str = SWITCH_RTP_CRYPTO_KEY_32;
+	}
+
+	if (direction == SWITCH_RTP_CRYPTO_SEND) {
+		key = tech_pvt->local_raw_key;
+	} else {
+		key = tech_pvt->remote_raw_key;
+
+	}
+	
+	switch_rtp_get_random(key, SWITCH_RTP_KEY_LEN);
+	switch_b64_encode(key, SWITCH_RTP_KEY_LEN, b64_key, sizeof(b64_key));
+	p = strrchr((char *)b64_key, '=');
+
+	while(p && *p && *p == '=') {
+		*p-- = '\0';
+	}
+
+	tech_pvt->local_crypto_key = switch_core_session_sprintf(tech_pvt->session, "%d %s inline:%s", index, type_str, b64_key);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Local Key [%s]\n", tech_pvt->local_crypto_key);
+	tech_pvt->crypto_type = type;
+
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+switch_status_t sofia_glue_add_crypto(private_object_t *tech_pvt, const char *key_str, switch_rtp_crypto_direction_t direction)
+{
+	unsigned char key[SWITCH_RTP_MAX_CRYPTO_LEN];
+	int index;
+	switch_rtp_crypto_key_type_t type;
+	char *p;
+
+
+	if (!switch_rtp_ready(tech_pvt->rtp_session)) {
+		goto bad;
+	}
+	
+	index = atoi(key_str);
+
+	p = strchr(key_str, ' ');
+	
+	if (p && *p && *(p+1)) {
+		p++;
+		if (!strncasecmp(p, SWITCH_RTP_CRYPTO_KEY_32, strlen(SWITCH_RTP_CRYPTO_KEY_32))) {
+			type = AES_CM_128_HMAC_SHA1_32;
+		} else if (!strncasecmp(p, SWITCH_RTP_CRYPTO_KEY_80, strlen(SWITCH_RTP_CRYPTO_KEY_80))) {
+			type = AES_CM_128_HMAC_SHA1_80;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error near [%s]\n", p);
+			goto bad;
+		}
+
+		p = strchr(p, ' ');
+		if (p && *p && *(p+1)) {
+			p++;
+			if (strncasecmp(p, "inline:", 7)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error near [%s]\n", p);
+				goto bad;
+			}
+
+			p += 7;
+			switch_b64_decode(p, (char *)key, sizeof(key));
+			
+			if (direction == SWITCH_RTP_CRYPTO_SEND) {
+				tech_pvt->crypto_send_type = type;
+				memcpy(tech_pvt->local_raw_key, key, SWITCH_RTP_KEY_LEN);
+			} else {
+				tech_pvt->crypto_recv_type = type;
+				memcpy(tech_pvt->remote_raw_key, key, SWITCH_RTP_KEY_LEN);
+			}
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+	}
+	
+ bad:
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
+	return SWITCH_STATUS_FALSE;
+
+}
+
+
 switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_flag_t myflags)
 {
 	int bw, ms;
@@ -1175,8 +1279,10 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 										   tech_pvt->read_codec.implementation->samples_per_frame,
 										   tech_pvt->codec_ms * 1000,
 										   (switch_rtp_flag_t) flags,
-										   NULL, tech_pvt->profile->timer_name, &err, switch_core_session_get_pool(tech_pvt->session));
-
+										   tech_pvt->profile->timer_name,
+										   &err,
+										   switch_core_session_get_pool(tech_pvt->session));
+	
 	if (switch_rtp_ready(tech_pvt->rtp_session)) {
 		uint8_t vad_in = switch_test_flag(tech_pvt, TFLAG_VAD_IN) ? 1 : 0;
 		uint8_t vad_out = switch_test_flag(tech_pvt, TFLAG_VAD_OUT) ? 1 : 0;
@@ -1243,6 +1349,14 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			switch_rtp_set_cng_pt(tech_pvt->rtp_session, tech_pvt->cng_pt);
 		}
 		
+		if (tech_pvt->remote_crypto_key && switch_test_flag(tech_pvt, TFLAG_SECURE)) {
+			sofia_glue_add_crypto(tech_pvt, tech_pvt->remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
+			switch_rtp_add_crypto_key(tech_pvt->rtp_session, SWITCH_RTP_CRYPTO_SEND, 1, tech_pvt->crypto_type, tech_pvt->local_raw_key, SWITCH_RTP_KEY_LEN);
+			switch_rtp_add_crypto_key(tech_pvt->rtp_session, SWITCH_RTP_CRYPTO_RECV, 1, tech_pvt->crypto_type, tech_pvt->remote_raw_key, SWITCH_RTP_KEY_LEN);
+			switch_channel_set_variable(tech_pvt->channel, SOFIA_SECURE_MEDIA_CONFIRMED_VARIABLE, "true");
+		}
+
+
 		sofia_glue_check_video_codecs(tech_pvt);
 
 		if (switch_test_flag(tech_pvt, TFLAG_VIDEO) && tech_pvt->video_rm_encoding) {
@@ -1250,16 +1364,16 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			sofia_glue_tech_set_video_codec(tech_pvt, 0);
 
 			tech_pvt->video_rtp_session = switch_rtp_new(tech_pvt->local_sdp_audio_ip,
-													 tech_pvt->local_sdp_video_port,
-													 tech_pvt->remote_sdp_video_ip,
-													 tech_pvt->remote_sdp_video_port,
-													 tech_pvt->video_agreed_pt,
-													 tech_pvt->video_read_codec.implementation->samples_per_frame,
-													 0,
-													 (switch_rtp_flag_t) flags,
-													 NULL, 
-													 NULL,
-													 &err, switch_core_session_get_pool(tech_pvt->session));
+														 tech_pvt->local_sdp_video_port,
+														 tech_pvt->remote_sdp_video_ip,
+														 tech_pvt->remote_sdp_video_port,
+														 tech_pvt->video_agreed_pt,
+														 tech_pvt->video_read_codec.implementation->samples_per_frame,
+														 0,
+														 (switch_rtp_flag_t) flags,
+														 NULL,
+														 &err, 
+														 switch_core_session_get_pool(tech_pvt->session));
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VIDEO RTP [%s] %s:%d->%s:%d codec: %u ms: %d [%s]\n",
 							  switch_channel_get_name(tech_pvt->channel),
@@ -1396,7 +1510,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 			}
 
 			if (stream) {
-				//switch_ivr_displace_session(tech_pvt->session, stream, 0, "rl");
 				switch_ivr_broadcast(switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE), stream, SMF_ECHO_ALEG | SMF_LOOP);
 			}
 		}
@@ -1405,8 +1518,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 			const char *uuid;
 			switch_core_session_t *b_session;
 			
-			//const char *stream;
-
 			if (tech_pvt->max_missed_packets) {
 				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
 			}
@@ -1417,14 +1528,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 				switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000);
 				switch_core_session_rwunlock(b_session);
 			}
-
-			//if (!(stream = switch_channel_get_variable(tech_pvt->channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
-			//stream = tech_pvt->profile->hold_music;
-            //}
-
-			//if (stream) {
-			//switch_ivr_stop_displace_session(tech_pvt->session, stream);
-			//}
 
 			switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 			switch_channel_presence(tech_pvt->channel, "unknown", "unhold");
@@ -1444,6 +1547,24 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					ptime = atoi(a->a_value);
 				} else if (!strcasecmp(a->a_name, "crypto") && a->a_value) {
 					crypto = a->a_value;
+					if (tech_pvt->remote_crypto_key) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Already have a key\n");
+					} else {
+						tech_pvt->remote_crypto_key = switch_core_session_strdup(tech_pvt->session, crypto);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Remote Key [%s]\n", tech_pvt->remote_crypto_key);
+
+						if (switch_strlen_zero(tech_pvt->local_crypto_key)) {
+							if (switch_stristr(SWITCH_RTP_CRYPTO_KEY_32, crypto)) {
+								switch_channel_set_variable(tech_pvt->channel, SOFIA_HAS_CRYPTO_VARIABLE, SWITCH_RTP_CRYPTO_KEY_32);
+								sofia_glue_build_crypto(tech_pvt, atoi(crypto), AES_CM_128_HMAC_SHA1_32, SWITCH_RTP_CRYPTO_SEND);
+							} else if (switch_stristr(SWITCH_RTP_CRYPTO_KEY_80, crypto)) {
+								switch_channel_set_variable(tech_pvt->channel, SOFIA_HAS_CRYPTO_VARIABLE, SWITCH_RTP_CRYPTO_KEY_80);
+								sofia_glue_build_crypto(tech_pvt, atoi(crypto), AES_CM_128_HMAC_SHA1_80, SWITCH_RTP_CRYPTO_SEND);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Crypto Setup Failed!.\n");
+							}
+						}
+					}
 				}
 			}
 
@@ -1461,7 +1582,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 		greed:
 			x = 0;
 
-			//xxxxxx
 			if (tech_pvt->rm_encoding) {
 				for (map = m->m_rtpmaps; map; map = map->rm_next) {
 					if (map->rm_pt < 96) {
@@ -1486,7 +1606,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 				const char *rm_encoding;
 				
 				if (x++ < skip) {
-					//printf("skip %s\n", map->rm_encoding);
 					continue;
 				}
 

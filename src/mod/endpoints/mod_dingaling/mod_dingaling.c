@@ -877,7 +877,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 												 tech_pvt->codec_num,
 												 tech_pvt->read_codec.implementation->samples_per_frame,
 												 tech_pvt->read_codec.implementation->microseconds_per_frame,
-												 flags, NULL, tech_pvt->profile->timer_name, &err, switch_core_session_get_pool(tech_pvt->session)))) {
+												 flags, tech_pvt->profile->timer_name, &err, switch_core_session_get_pool(tech_pvt->session)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP ERROR %s\n", err);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return 0;

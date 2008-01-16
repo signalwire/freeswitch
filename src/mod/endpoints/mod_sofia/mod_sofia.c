@@ -90,6 +90,19 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+		const char *var;
+
+		if ((var = switch_channel_get_variable(channel, SOFIA_SECURE_MEDIA_VARIABLE)) && !switch_strlen_zero(var)) {
+			if (switch_true(var) || !strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_32)) {
+				switch_set_flag_locked(tech_pvt, TFLAG_SECURE);
+				sofia_glue_build_crypto(tech_pvt, 1, AES_CM_128_HMAC_SHA1_32, SWITCH_RTP_CRYPTO_SEND);
+			} else if (!strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_80)) {
+				switch_set_flag_locked(tech_pvt, TFLAG_SECURE);
+				sofia_glue_build_crypto(tech_pvt, 1, AES_CM_128_HMAC_SHA1_80, SWITCH_RTP_CRYPTO_SEND);
+			}
+		}
+
+
 		if (sofia_glue_do_invite(session) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return SWITCH_STATUS_FALSE;
@@ -785,6 +798,13 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
+
+	if (msg->message_id == SWITCH_MESSAGE_INDICATE_ANSWER || msg->message_id == SWITCH_MESSAGE_INDICATE_PROGRESS) {
+		const char *var;
+		if ((var = switch_channel_get_variable(channel, SOFIA_SECURE_MEDIA_VARIABLE)) && switch_true(var)) {
+			switch_set_flag_locked(tech_pvt, TFLAG_SECURE);
+		}
+	}
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_BROADCAST: {
@@ -1746,6 +1766,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	*pool = NULL;
 
   done:
+
 	if (profile) {
 		sofia_glue_release_profile(profile);
 	}

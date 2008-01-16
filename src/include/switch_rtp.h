@@ -41,12 +41,50 @@
 
 SWITCH_BEGIN_EXTERN_C
 #define SWITCH_RTP_MAX_BUF_LEN 16384
+#define SWITCH_RTP_MAX_CRYPTO_LEN 64
+#define SWITCH_RTP_KEY_LEN 30
+#define SWITCH_RTP_CRYPTO_KEY_32 "AES_CM_128_HMAC_SHA1_32"
+#define SWITCH_RTP_CRYPTO_KEY_80 "AES_CM_128_HMAC_SHA1_80"
+
+
+typedef enum {
+	SWITCH_RTP_CRYPTO_SEND,
+	SWITCH_RTP_CRYPTO_RECV,
+	SWITCH_RTP_CRYPTO_MAX
+} switch_rtp_crypto_direction_t;
+
+typedef enum {
+	NO_CRYPTO,
+	AES_CM_128_HMAC_SHA1_80,
+	AES_CM_128_HMAC_SHA1_32
+} switch_rtp_crypto_key_type_t;
+
+struct switch_rtp_crypto_key {
+	uint32_t index;
+	switch_rtp_crypto_key_type_t type;
+	unsigned char key[SWITCH_RTP_MAX_CRYPTO_LEN];
+	switch_size_t keylen;
+	struct switch_rtp_crypto_key *next;
+};
+typedef struct switch_rtp_crypto_key switch_rtp_crypto_key_t;
+
+
+
+SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_session,
+														  switch_rtp_crypto_direction_t direction,
+														  uint32_t index,
+														  switch_rtp_crypto_key_type_t type,
+														  unsigned char *key,
+														  switch_size_t keylen);
+
 ///\defgroup rtp RTP (RealTime Transport Protocol)
 ///\ingroup core1
 ///\{
 typedef void (*switch_rtp_invalid_handler_t) (switch_rtp_t *rtp_session,
 											  switch_socket_t * sock, void *data, switch_size_t datalen, switch_sockaddr_t * from_addr);
 
+
+SWITCH_DECLARE(void) switch_rtp_get_random(void *buf, uint32_t len);
 /*! 
   \brief Initilize the RTP System
   \param pool the memory pool to use for long term allocations
@@ -83,7 +121,6 @@ SWITCH_DECLARE(void) switch_rtp_release_port(const char *ip, switch_port_t port)
   \param samples_per_interval the default samples_per_interval
   \param ms_per_packet time in microseconds per packet
   \param flags flags to control behaviour
-  \param crypto_key optional crypto key
   \param timer_name timer interface to use
   \param err a pointer to resolve error messages
   \param pool a memory pool to use for the session
@@ -93,7 +130,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 												  switch_payload_t payload,
 												  uint32_t samples_per_interval,
 												  uint32_t ms_per_packet,
-												  switch_rtp_flag_t flags, char *crypto_key, char *timer_name, const char **err,
+												  switch_rtp_flag_t flags,
+												  char *timer_name, 
+												  const char **err,
 												  switch_memory_pool_t *pool);
 
 
@@ -107,7 +146,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
   \param samples_per_interval the default samples_per_interval
   \param ms_per_packet time in microseconds per packet
   \param flags flags to control behaviour
-  \param crypto_key optional crypto key
   \param timer_name timer interface to use
   \param err a pointer to resolve error messages
   \param pool a memory pool to use for the session
@@ -120,7 +158,10 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 											  switch_payload_t payload,
 											  uint32_t samples_per_interval,
 											  uint32_t ms_per_packet,
-											  switch_rtp_flag_t flags, char *crypto_key, char *timer_name, const char **err, switch_memory_pool_t *pool);
+											  switch_rtp_flag_t flags,
+											  char *timer_name,
+											  const char **err,
+											  switch_memory_pool_t *pool);
 
 
 /*! 

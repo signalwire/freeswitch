@@ -167,7 +167,7 @@ SWITCH_STANDARD_APP(bcast_function)
 									 read_codec->implementation->samples_per_frame,
 									 read_codec->implementation->microseconds_per_frame,
 									 (switch_rtp_flag_t) flags,
-									 NULL, "soft", &err, switch_core_session_get_pool(session));
+									 "soft", &err, switch_core_session_get_pool(session));
 	
 		if (!switch_rtp_ready(rtp_session)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP Error\n");
