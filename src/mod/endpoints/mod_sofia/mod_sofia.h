@@ -345,6 +345,7 @@ struct private_object {
 	char *gateway_name;
 	char *local_crypto_key;
 	char *remote_crypto_key;
+	int crypto_tag;
 	unsigned char local_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
 	unsigned char remote_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
 	switch_rtp_crypto_key_type_t crypto_send_type;

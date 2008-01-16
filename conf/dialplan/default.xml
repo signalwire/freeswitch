@@ -52,7 +52,7 @@
       <condition field="${call_debug}" expression="^true$" break="never">
 	<action application="info"/>
       </condition>
-      <condition field="${sip_has_crypto}" expression="^AES_CM_128_HMAC_SHA1_32$" break="never">
+      <condition field="${sip_has_crypto}" expression="^(AES_CM_128_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_80)$" break="never">
 	<action application="set" data="sip_secure_media=true"/>
       </condition>
       <condition>
@@ -236,6 +236,13 @@
       </condition>
     </extension>
 
+    <extension name="echo">
+      <condition field="destination_number" expression="^9996$">
+	<action application="answer"/>
+	<action application="echo"/>
+      </condition>
+    </extension>
+
     <extension name="milliwatt">
       <condition field="destination_number" expression="^9997$">
 	<action application="answer"/>
@@ -251,7 +258,7 @@
     </extension>
 
     <extension name="hold_music">
-      <condition field="${sip_has_crypto}" expression="^AES_CM_128_HMAC_SHA1_32$" break="never">
+      <condition field="${sip_has_crypto}" expression="^(AES_CM_128_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_80)$" break="never">
 	<action application="answer"/>
 	<action application="execute_extension" data="is_secure XML default"/>
       </condition>

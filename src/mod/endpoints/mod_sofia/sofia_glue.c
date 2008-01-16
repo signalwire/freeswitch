@@ -1352,7 +1352,8 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		if (tech_pvt->remote_crypto_key && switch_test_flag(tech_pvt, TFLAG_SECURE)) {
 			sofia_glue_add_crypto(tech_pvt, tech_pvt->remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
 			switch_rtp_add_crypto_key(tech_pvt->rtp_session, SWITCH_RTP_CRYPTO_SEND, 1, tech_pvt->crypto_type, tech_pvt->local_raw_key, SWITCH_RTP_KEY_LEN);
-			switch_rtp_add_crypto_key(tech_pvt->rtp_session, SWITCH_RTP_CRYPTO_RECV, 1, tech_pvt->crypto_type, tech_pvt->remote_raw_key, SWITCH_RTP_KEY_LEN);
+			switch_rtp_add_crypto_key(tech_pvt->rtp_session, SWITCH_RTP_CRYPTO_RECV, tech_pvt->crypto_tag, 
+									  tech_pvt->crypto_type, tech_pvt->remote_raw_key, SWITCH_RTP_KEY_LEN);
 			switch_channel_set_variable(tech_pvt->channel, SOFIA_SECURE_MEDIA_CONFIRMED_VARIABLE, "true");
 		}
 
@@ -1547,11 +1548,23 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					ptime = atoi(a->a_value);
 				} else if (!strcasecmp(a->a_name, "crypto") && a->a_value) {
 					crypto = a->a_value;
+					int crypto_tag = atoi(crypto);
+					
 					if (tech_pvt->remote_crypto_key) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Already have a key\n");
+						if (crypto_tag && crypto_tag == tech_pvt->crypto_tag) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Existing key is still valid.\n");
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Change Remote key to [%s]\n", crypto);
+							tech_pvt->remote_crypto_key = switch_core_session_strdup(tech_pvt->session, crypto);
+							tech_pvt->crypto_tag = crypto_tag;
+							sofia_glue_add_crypto(tech_pvt, tech_pvt->remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
+							switch_rtp_add_crypto_key(tech_pvt->rtp_session, SWITCH_RTP_CRYPTO_RECV, tech_pvt->crypto_tag, 
+													  tech_pvt->crypto_type, tech_pvt->remote_raw_key, SWITCH_RTP_KEY_LEN);
+						}
 					} else {
 						tech_pvt->remote_crypto_key = switch_core_session_strdup(tech_pvt->session, crypto);
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Remote Key [%s]\n", tech_pvt->remote_crypto_key);
+						tech_pvt->crypto_tag = crypto_tag;
 
 						if (switch_strlen_zero(tech_pvt->local_crypto_key)) {
 							if (switch_stristr(SWITCH_RTP_CRYPTO_KEY_32, crypto)) {
