@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
+ * Ken Rice <krice at suspicious dot org
  *
  * mod_limit.c -- Resource Limit Module
  *
