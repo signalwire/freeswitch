@@ -440,6 +440,26 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 					}
 					cd = 1;
 					exptime = 20;
+				} else if (!strcasecmp(v_contact_str, "NDLB-tls-connectile-dysfunction")) {
+					const char *pt = contact->m_url->url_port;
+					int port;
+
+					if (!pt) {
+						pt = "5060";
+					}
+					
+					port = atoi(pt);
+
+					if (port > 0) {
+						port++;
+						if (contact->m_url->url_params) {
+							switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s>",
+											display, contact->m_url->url_user, contact->m_url->url_host, port, contact->m_url->url_params);
+						} else {
+							switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d>",
+											display, contact->m_url->url_user, contact->m_url->url_host, port);
+						}
+					}
 				} else {
 					char *p;
 					switch_copy_string(contact_str, v_contact_str, sizeof(contact_str));
