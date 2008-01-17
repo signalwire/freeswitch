@@ -1477,7 +1477,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 	switch_payload_t te = 0, cng_pt = 0;
 	private_object_t *tech_pvt;
 	sdp_media_t *m;
-	sdp_attribute_t *a;
+	sdp_attribute_t *attr;
 	int first = 0, last = 0;
 	int ptime = 0, dptime = 0;
 	int sendonly = 0;
@@ -1512,17 +1512,17 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 		sendonly = 1;
 	}
 
-	for (a = sdp->sdp_attributes; a; a = a->a_next) {
-		if (switch_strlen_zero(a->a_name)) {
+	for (attr = sdp->sdp_attributes; attr; attr = attr->a_next) {
+		if (switch_strlen_zero(attr->a_name)) {
 			continue;
 		}
 
-		if ((!strcasecmp(a->a_name, "sendonly")) || (!strcasecmp(a->a_name, "inactive"))) {
+		if ((!strcasecmp(attr->a_name, "sendonly")) || (!strcasecmp(attr->a_name, "inactive"))) {
 			sendonly = 1;
-		} else if (!strcasecmp(a->a_name, "sendrecv")) {
+		} else if (!strcasecmp(attr->a_name, "sendrecv")) {
 			sendonly = 0;
-		} else if (!strcasecmp(a->a_name, "ptime")) {
-			dptime = atoi(a->a_value);
+		} else if (!strcasecmp(attr->a_name, "ptime")) {
+			dptime = atoi(attr->a_value);
 		}
 	}
 
@@ -1574,13 +1574,13 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 		if (m->m_type == sdp_media_audio) {
 			sdp_rtpmap_t *map;
 			
-			for (a = m->m_attributes; a; a = a->a_next) {
-				if (!strcasecmp(a->a_name, "ptime") && a->a_value) {
-					ptime = atoi(a->a_value);
-				} else if (!got_crypto && !strcasecmp(a->a_name, "crypto") && !switch_strlen_zero(a->a_value)) {
-					crypto = a->a_value;
-					int crypto_tag = atoi(crypto);
-					
+			for (attr = m->m_attributes; attr; attr = attr->a_next) {
+				if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
+					ptime = atoi(attr->a_value);
+				} else if (!got_crypto && !strcasecmp(attr->a_name, "crypto") && !switch_strlen_zero(attr->a_value)) {
+					int crypto_tag;
+					crypto = attr->a_value;
+					crypto_tag = atoi(crypto);
 
 					if (tech_pvt->remote_crypto_key) {
 						if (crypto_tag && crypto_tag == tech_pvt->crypto_tag) {
@@ -1813,9 +1813,9 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 
-				for (a = m->m_attributes; a; a = a->a_next) {
-					if (!strcasecmp(a->a_name, "framerate") && a->a_value) {
-						framerate = atoi(a->a_value);
+				for (attr = m->m_attributes; attr; attr = attr->a_next) {
+					if (!strcasecmp(attr->a_name, "framerate") && attr->a_value) {
+						framerate = atoi(attr->a_value);
 					}
 				}
 				if (!(rm_encoding = map->rm_encoding)) {
