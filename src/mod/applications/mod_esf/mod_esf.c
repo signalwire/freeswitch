@@ -140,7 +140,7 @@ SWITCH_STANDARD_APP(bcast_function)
 			continue;
 		}
 
-		if (!SWITCH_READ_ACCEPTABLE(status)) {
+		if (!SWITCH_READ_ACCEPTABLE(status) || !read_frame) {
 			goto fail;
 		}
 		
