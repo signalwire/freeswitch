@@ -12,14 +12,24 @@ OUTFILE="agent.pem"
 
 umask 037
 
-setup_ca() {
-	echo "Creating new CA..."
+check_ca() {
+	for x in cacert.pem cakey.pem config.tpl; do
+		if [ ! -e "${CONFDIR}/CA/${x}" ]; then
+			return 1
+		fi
+	done
 
-	if [ -e "${CONFDIR}/CA/cacert.pem" ] || [ -e "${CONFDIR}/CA/cakey.pem" ]
-	then
-		echo "existing CA found in \"${CONFDIR}/CA\"!"
+	return 0
+}
+
+setup_ca() {
+	if check_ca; then
+		echo "Existing CA found in \"${CONFDIR}/CA\""
+		echo "(Use \"gentls_cert remove\" to delete)"
 		exit 1
 	fi
+
+	echo "Creating new CA..."
 
 	if [ ! -d "${CONFDIR}/CA" ]; then
 		mkdir -p -m 750 "${CONFDIR}/CA" || exit  1
@@ -68,6 +78,11 @@ setup_ca() {
 generate_cert() {
 	local val=""
 
+	if ! check_ca; then
+		echo "No existing CA found, please create one with \"gentls_cert setup\" first"
+		exit 1
+	fi
+
 	echo "Generating new certificate..."
 
 	echo
@@ -78,9 +93,9 @@ generate_cert() {
 	echo
 	echo "Certificate filename \"${OUTFILE}\""
 	echo
-	echo "[Enter \"OK\" to accept]"
+	echo "[Is this OK? (y/N)]"
 	read val
-	if [ "${val}" != "OK" ]; then
+	if [ "${val}" != "y" ] && [ "${val}" != "Y" ]; then
 		echo "Aborted"
 		return 2
 	fi
