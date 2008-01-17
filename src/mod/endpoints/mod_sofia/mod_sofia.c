@@ -1628,7 +1628,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	nchannel = switch_core_session_get_channel(nsession);
 
 	if (!strncasecmp(profile_name, "gateway", 7)) {
-		char *gw;
+		char *gw, *params;
 		sofia_gateway_t *gateway_ptr = NULL;
 
 		if (!(gw = strchr(profile_name, '/'))) {
@@ -1653,19 +1653,55 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			goto error;
 		}
 
+		tech_pvt->transport = gateway_ptr->register_transport;
+
+		/*
+		 * Handle params, strip them off the destination and add them to the
+		 * invite contact.
+		 *
+		 * TODO:
+		 *	- Add parameters back to destination url?
+		 */
+		if ((params = strchr(dest, ';'))) {
+			char *tp_param;
+
+			*params++ = '\0';
+
+			if ((tp_param = (char *)switch_stristr("port=", params))) {
+				tp_param += 5;
+				tech_pvt->transport = sofia_glue_str2transport(tp_param);
+				if (tech_pvt->transport == SOFIA_TRANSPORT_UNKNOWN) {
+					cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+					goto error;
+				}
+			}
+		}
+
+		if (tech_pvt->transport != gateway_ptr->register_transport) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "You are trying to use a different transport type for this gateway (overriding the register-transport), this is unsupported!\n");
+			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+			goto error;
+		}
+
 		profile = gateway_ptr->profile;
 		tech_pvt->gateway_name = switch_core_session_strdup(nsession, gateway_ptr->name);
 		switch_channel_set_variable(nchannel, "sip_gateway_name", gateway_ptr->name);
-		
+
 		if (!switch_test_flag(gateway_ptr, REG_FLAG_CALLERID)) {
 			tech_pvt->gateway_from_str = switch_core_session_strdup(nsession, gateway_ptr->register_from);
 		}
+
 		if (!strchr(dest, '@')) {
 			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s@%s", dest, gateway_ptr->register_proxy + 4);
 		} else {
 			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s", dest);
 		}
-		tech_pvt->invite_contact = switch_core_session_strdup(nsession, gateway_ptr->register_contact);
+
+		if (params) {
+			tech_pvt->invite_contact = switch_core_session_sprintf(nsession, "%s;%s", gateway_ptr->register_contact, params);
+		} else {
+			tech_pvt->invite_contact = switch_core_session_strdup(nsession, gateway_ptr->register_contact);
+		}
 	} else {
 		if (!(dest = strchr(profile_name, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
@@ -1729,7 +1765,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 	}
 	switch_channel_set_variable(nchannel, "sip_destination_url", tech_pvt->dest);
-	
+
 	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
 	caller_profile->destination_number = switch_core_strdup(caller_profile->pool, dest);
 	switch_channel_set_caller_profile(nchannel, caller_profile);

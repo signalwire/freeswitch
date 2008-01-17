@@ -196,6 +196,14 @@ typedef enum {
 	REG_STATE_LAST
 } reg_state_t;
 
+typedef enum {
+	SOFIA_TRANSPORT_UNKNOWN = 0,
+	SOFIA_TRANSPORT_UDP,
+	SOFIA_TRANSPORT_TCP,
+	SOFIA_TRANSPORT_TCP_TLS,
+	SOFIA_TRANSPORT_SCTP
+} sofia_transport_t;
+
 struct sofia_gateway {
 	sofia_private_t *sofia_private;
 	nua_handle_t *nh;
@@ -212,6 +220,7 @@ struct sofia_gateway {
 	char *register_context;
 	char *expires_str;
 	char *register_url;
+	sofia_transport_t register_transport;
 	uint32_t freq;
 	time_t expires;
 	time_t retry;
@@ -358,6 +367,7 @@ struct private_object {
 	switch_payload_t bte;
 	switch_payload_t cng_pt;
 	switch_payload_t bcng_pt;
+	sofia_transport_t transport;
 	nua_handle_t *nh;
 	nua_handle_t *nh2;
 	sip_contact_t *contact;
@@ -400,14 +410,6 @@ typedef enum {
 	AUTH_FORBIDDEN,
 	AUTH_STALE,
 } auth_res_t;
-
-typedef enum {
-	SOFIA_TRANSPORT_UNKNOWN = 0,
-	SOFIA_TRANSPORT_UDP,
-	SOFIA_TRANSPORT_TCP,
-	SOFIA_TRANSPORT_TCP_TLS,
-	SOFIA_TRANSPORT_SCTP,
-} sofia_transport_t;
 
 #define sofia_test_pflag(obj, flag) ((obj)->pflags & flag)
 #define sofia_set_pflag(obj, flag) (obj)->pflags |= (flag)
@@ -568,8 +570,10 @@ void sofia_reg_release_gateway__(const char *file, const char *func, int line, s
  */
 sofia_transport_t sofia_glue_via2transport(const sip_via_t *via);
 sofia_transport_t sofia_glue_url2transport(const url_t *url);
+sofia_transport_t sofia_glue_str2transport(const char *str);
 
 const char *sofia_glue_transport2str(const sofia_transport_t tp);
+char * sofia_glue_find_parameter(const char *str, const char *param);
 
 int sofia_glue_transport_has_tls(const sofia_transport_t tp);
 const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name);

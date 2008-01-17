@@ -664,8 +664,9 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				*register_proxy = NULL,
 				*contact_params = NULL,
 				*params = NULL,
-				*register_transport = "udp";
+				*register_transport = NULL;
 
+			gateway->register_transport = SOFIA_TRANSPORT_UDP;
 			gateway->pool = profile->pool;
 			gateway->profile = profile;
 			gateway->name = switch_core_strdup(gateway->pool, name);
@@ -707,12 +708,14 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				} else if (!strcmp(var, "contact-params")) {
 					contact_params = val;
 				} else if (!strcmp(var, "register-transport")) {
-					if (!strcasecmp(val, "udp") || !strcasecmp(val, "tcp")) {
-						register_transport = val;
-					} else {
+					sofia_transport_t transport = sofia_glue_str2transport(val);
+
+					if (transport == SOFIA_TRANSPORT_UNKNOWN || (!sofia_test_pflag(profile, PFLAG_TLS) && sofia_glue_transport_has_tls(transport))) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: unsupported transport\n");
 						goto skip;
 					}
+
+					gateway->register_transport = transport;
 				}
 			}
 
@@ -767,6 +770,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			if (switch_true(caller_id_in_from)) {
 				switch_set_flag(gateway, REG_FLAG_CALLERID);
 			}
+			register_transport = (char *)sofia_glue_transport2str(gateway->register_transport);
 			if (contact_params) {
 				if (*contact_params == ';') {
 					params = switch_core_sprintf(gateway->pool, "%s&transport=%s", contact_params, register_transport);
@@ -777,10 +781,11 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				params = switch_core_sprintf(gateway->pool, ";transport=%s", register_transport);
 			}
 
-			gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s;transport=%s", register_proxy,register_transport);
+			gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s;transport=%s", register_proxy, register_transport);
 			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>", from_user, from_domain, register_transport);
 			gateway->register_contact = switch_core_sprintf(gateway->pool, "<sip:%s@%s:%d%s>", extension,
-															 profile->extsipip ? profile->extsipip : profile->sipip, profile->sip_port, params);
+												 profile->extsipip ? profile->extsipip : profile->sipip,
+												 sofia_glue_transport_has_tls(gateway->register_transport) ? profile->tls_sip_port : profile->sip_port, params);
 
 			if (!strncasecmp(proxy, "sip:", 4)) {
 				gateway->register_proxy = switch_core_strdup(gateway->pool, proxy);

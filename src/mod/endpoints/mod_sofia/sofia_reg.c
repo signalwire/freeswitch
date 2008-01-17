@@ -343,7 +343,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	char network_ip[80];
 	char *register_gateway = NULL;
 	int network_port;
-	int cd = 0;
+	const char *reg_desc = "Registered";
 	const char *call_id = NULL;
 	char *force_user;
 
@@ -431,34 +431,19 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			}
 			
 			if ((v_contact_str = switch_event_get_header(*v_event, "sip-force-contact"))) {
-				if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction") || !strcasecmp(v_contact_str, "NDLB-connectile-dysfunction")) {
+				if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction") || 
+					!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction") || !strcasecmp(v_contact_str, "NDLB-tls-connectile-dysfunction")) {
 					if (contact->m_url->url_params) {
 						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s>",
 								 display, contact->m_url->url_user, network_ip, network_port, contact->m_url->url_params);
 					} else {
 						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d>", display, contact->m_url->url_user, network_ip, network_port);
 					}
-					cd = 1;
-					exptime = 20;
-				} else if (!strcasecmp(v_contact_str, "NDLB-tls-connectile-dysfunction")) {
-					const char *pt = contact->m_url->url_port;
-					int port;
-
-					if (!pt) {
-						pt = "5060";
-					}
-					
-					port = atoi(pt);
-
-					if (port > 0) {
-						port++;
-						if (contact->m_url->url_params) {
-							switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s>",
-											display, contact->m_url->url_user, contact->m_url->url_host, port, contact->m_url->url_params);
-						} else {
-							switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d>",
-											display, contact->m_url->url_user, contact->m_url->url_host, port);
-						}
+					if (strstr(v_contact_str, "tls")) {
+						reg_desc = "Registered(TLSHACK)";
+					} else {
+						reg_desc = "Registered(NATHACK)";
+						exptime = 20;
 					}
 				} else {
 					char *p;
@@ -524,7 +509,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		switch_safe_free(sql);
 		
 		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','%q', '%q', %ld, '%q')", call_id,
-							 to_user, to_host, contact_str, cd ? "Registered(NATHACK)" : "Registered", 
+							 to_user, to_host, contact_str, reg_desc,
 							 rpid, (long) switch_timestamp(NULL) + (long) exptime * 2, agent);
 
 		

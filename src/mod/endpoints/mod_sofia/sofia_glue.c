@@ -509,22 +509,38 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static sofia_transport_t sofia_glue_str2transport(const char *str)
+sofia_transport_t sofia_glue_str2transport(const char *str)
 {
-	if (!strcasecmp(str, "udp")) {
+	if (!strncasecmp(str, "udp", 3)) {
 		return SOFIA_TRANSPORT_UDP;
 	}
-	else if (!strcasecmp(str, "tcp")) {
+	else if (!strncasecmp(str, "tcp", 3)) {
 		return SOFIA_TRANSPORT_TCP;
 	}
-	else if (!strcasecmp(str, "sctp")) {
+	else if (!strncasecmp(str, "sctp", 4)) {
 		return SOFIA_TRANSPORT_SCTP;
 	}
-	else if (!strcasecmp(str, "tls")) {
+	else if (!strncasecmp(str, "tls", 3)) {
 		return SOFIA_TRANSPORT_TCP_TLS;
 	}
 
 	return SOFIA_TRANSPORT_UNKNOWN;
+}
+
+char * sofia_glue_find_parameter(const char *str, const char *param)
+{
+	char *ptr = NULL;
+
+	ptr = (char *)str;
+	while(ptr) {
+		if (!strncasecmp(ptr, param, strlen(param)))
+			return ptr;
+
+		if ((ptr = strchr(ptr, ';')))
+			ptr++;
+	}
+
+	return NULL;
 }
 
 sofia_transport_t sofia_glue_url2transport(const url_t *url)
@@ -539,29 +555,8 @@ sofia_transport_t sofia_glue_url2transport(const url_t *url)
 		tls++;
 	}
 
-	ptr = (char *)url->url_params;
-	while(ptr) {
-
-		if (!strncasecmp(ptr, "transport=", 10)) {
-			ptr += 10;
-
-			if (!strncasecmp(ptr, "udp", 3)) {
-				return SOFIA_TRANSPORT_UDP;
-			}
-			else if (!strncasecmp(ptr, "tcp", 3)) {
-				return SOFIA_TRANSPORT_TCP;
-			}
-			else if (!strncasecmp(ptr, "tls", 3)) {
-				return SOFIA_TRANSPORT_TCP_TLS;
-			}
-			else if (!strncasecmp(ptr, "sctp", 4)) {
-				return SOFIA_TRANSPORT_SCTP;
-			}
-			break;
-		}
-
-		if ((ptr = strchr(ptr, ';')))
-			ptr++;
+	if ((ptr = sofia_glue_find_parameter(url->url_params, "transport="))) {
+		return sofia_glue_str2transport(ptr + 10);
 	}
 
 	return (tls) ? SOFIA_TRANSPORT_TCP_TLS : SOFIA_TRANSPORT_UDP;
@@ -713,7 +708,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	if (!tech_pvt->nh) {
 		char *d_url = NULL, *url = NULL;
 		sofia_private_t *sofia_private;
-		sofia_transport_t transport = SOFIA_TRANSPORT_UDP;
 		char *invite_contact = NULL, *to_str, *use_from_str, *from_str, *url_str;
 		const char *t_var;
 		char *rpid_domain = "cluecon.com", *p;
@@ -752,28 +746,35 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			rpid_domain = "cluecon.com";
 		}
 
-		if ((p = (char *)switch_stristr("port=", url))) {
-			p += 5;
-			transport = sofia_glue_str2transport( p );
-		} else {
-			if ((t_var = switch_channel_get_variable(channel, "sip_transport"))) {
-				transport = sofia_glue_str2transport(t_var);
+		/*
+		 * Ignore transport chanvar and uri parameter for gateway connections
+		 * since all of them have been already taken care of in mod_sofia.c:sofia_outgoing_channel()
+		 */
+		if (switch_strlen_zero(tech_pvt->gateway_name)) {
+			if ((p = (char *)switch_stristr("port=", url))) {
+				p += 5;
+				tech_pvt->transport = sofia_glue_str2transport( p );
+			} else {
+				if ((t_var = switch_channel_get_variable(channel, "sip_transport"))) {
+					tech_pvt->transport = sofia_glue_str2transport(t_var);
+				}
+			}
+
+			if (tech_pvt->transport == SOFIA_TRANSPORT_UNKNOWN) {
+				tech_pvt->transport = SOFIA_TRANSPORT_UDP;
 			}
 		}
 
-		if (transport == SOFIA_TRANSPORT_UNKNOWN) {
-			transport = SOFIA_TRANSPORT_UDP;
-		}
-
-		if (switch_strlen_zero(tech_pvt->invite_contact)) {
-			if (sofia_glue_transport_has_tls(transport))
+		if (switch_strlen_zero(tech_pvt->invite_contact))
+		{
+			if (sofia_glue_transport_has_tls(tech_pvt->transport))
 				tech_pvt->invite_contact = tech_pvt->profile->tls_url;
 			else
 				tech_pvt->invite_contact = tech_pvt->profile->url;
 		}
 
-		url_str = sofia_overcome_sip_uri_weakness(session, url, transport, SWITCH_TRUE);
-		invite_contact = sofia_overcome_sip_uri_weakness(session, tech_pvt->invite_contact, transport, SWITCH_FALSE);
+		url_str = sofia_overcome_sip_uri_weakness(session, url, tech_pvt->transport, SWITCH_TRUE);
+		invite_contact = sofia_overcome_sip_uri_weakness(session, tech_pvt->invite_contact, tech_pvt->transport, SWITCH_FALSE);
 		from_str = sofia_overcome_sip_uri_weakness(session, use_from_str, 0, SWITCH_FALSE);
 		to_str = sofia_overcome_sip_uri_weakness(session, tech_pvt->dest_to, 0, SWITCH_FALSE);
 
