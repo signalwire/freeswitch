@@ -8,11 +8,18 @@ TMPFILE="/tmp/fs-ca-$$-$(date +%Y%m%d%H%M%S)"
 COMMON_NAME="FreesSWITCH CA"
 ALT_NAME="DNS:test.freeswitch.org"
 ORG_NAME="FreeSWITCH"
+OUTFILE="agent.pem"
 
 umask 037
 
 setup_ca() {
 	echo "Creating new CA..."
+
+	if [ -e "${CONFDIR}/CA/cacert.pem" ] || [ -e "${CONFDIR}/CA/cakey.pem" ]
+	then
+		echo "existing CA found in \"${CONFDIR}/CA\"!"
+		exit 1
+	fi
 
 	if [ ! -d "${CONFDIR}/CA" ]; then
 		mkdir -p -m 750 "${CONFDIR}/CA" || exit  1
@@ -69,9 +76,12 @@ generate_cert() {
 	echo "ORG_NAME: \"${ORG_NAME}\""
 	echo "ALT_NAME: \"${ALT_NAME}\""
 	echo
+	echo "Certificate filename \"${OUTFILE}\""
+	echo
 	echo "[Enter \"OK\" to accept]"
 	read val
 	if [ "${val}" != "OK" ]; then
+		echo "Aborted"
 		return 2
 	fi
 
@@ -91,7 +101,7 @@ generate_cert() {
 		-extensions ext -days ${DAYS} -sha1 >/dev/null || exit 1
 
 	cat "${CONFDIR}/CA/cacert.pem" > "${CONFDIR}/cafile.pem"
-	cat "${TMPFILE}.crt" "${TMPFILE}.key" > "${CONFDIR}/agent.pem"
+	cat "${TMPFILE}.crt" "${TMPFILE}.key" > "${CONFDIR}/${OUTFILE}"
 
 	rm "${TMPFILE}.cfg" "${TMPFILE}.crt" "${TMPFILE}.key" "${TMPFILE}.req"
 
@@ -99,7 +109,7 @@ generate_cert() {
 }
 
 remove_ca() {
-	echo "Cleaning CA"
+	echo "Removing CA"
 
 	if [ ! -d "${CONFDIR}/CA" ]; then
 		rm "${CONFDIR}/CA/"*
@@ -125,6 +135,10 @@ while [ $# -gt 0 ]; do
 		-org)
 			shift
 			ORG_NAME="$1"
+			;;
+		-out)
+			shift
+			OUTFILE="$1"
 			;;
 	esac
 	shift
@@ -157,14 +171,17 @@ case ${command} in
 		  * commands:
 
 		    setup  - Setup new CA
-		    create - Create new certificate (overwriting old!)
 		    remove - Remove CA
+
+		    create - Create new certificate (overwriting old!)
+
 
 		  * options:
 
 		   -cn       Set common name
 		   -alt      Set alternative name (use prefix 'DNS:' or 'URI:')
 		   -org      Set organization name
+		   -out      Filename for new certificate (create only)
 
 		EOF
 		exit 1
