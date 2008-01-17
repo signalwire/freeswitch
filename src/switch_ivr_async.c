@@ -1705,7 +1705,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 	switch_assert(path);
 
 	if (!(session = switch_core_session_locate(uuid))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "uuid [%s] does not match an existing session.\n", switch_str_nil(uuid));
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "uuid [%s] does not match an existing session.\n", switch_str_nil(uuid));
 		return SWITCH_STATUS_FALSE;
 	}
 

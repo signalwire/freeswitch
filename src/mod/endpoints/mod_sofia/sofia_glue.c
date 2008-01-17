@@ -1574,7 +1574,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 
 		if (m->m_type == sdp_media_audio) {
 			sdp_rtpmap_t *map;
-			
+
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {
 				if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
 					ptime = atoi(attr->a_value);
@@ -1594,7 +1594,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Change Remote key to [%s]\n", crypto);
 								tech_pvt->remote_crypto_key = switch_core_session_strdup(tech_pvt->session, crypto);
 								tech_pvt->crypto_tag = crypto_tag;
-								
+
 								if (switch_rtp_ready(tech_pvt->rtp_session)) {
 									sofia_glue_add_crypto(tech_pvt, tech_pvt->remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
 									switch_rtp_add_crypto_key(tech_pvt->rtp_session, SWITCH_RTP_CRYPTO_RECV, tech_pvt->crypto_tag, 
@@ -1605,7 +1605,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ignoring unacceptable key\n");
 							}
 						}
-					} else {
+					} else if (!switch_rtp_ready(tech_pvt->rtp_session)) {
 						tech_pvt->remote_crypto_key = switch_core_session_strdup(tech_pvt->session, crypto);
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Remote Key [%s]\n", tech_pvt->remote_crypto_key);
 						tech_pvt->crypto_tag = crypto_tag;
@@ -1621,16 +1621,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 							} else {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Crypto Setup Failed!.\n");
 							}
-						}
-
-						if (switch_rtp_ready(tech_pvt->rtp_session) &&
-							!switch_strlen_zero(tech_pvt->local_crypto_key) && !switch_strlen_zero(tech_pvt->remote_crypto_key)) {
-							switch_set_flag_locked(tech_pvt, TFLAG_SECURE);
-							sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
-							switch_rtp_add_crypto_key(tech_pvt->rtp_session, SWITCH_RTP_CRYPTO_RECV, tech_pvt->crypto_tag,
-                                                      tech_pvt->crypto_type, tech_pvt->remote_raw_key, SWITCH_RTP_KEY_LEN);
-							switch_rtp_add_crypto_key(tech_pvt->rtp_session, SWITCH_RTP_CRYPTO_SEND, tech_pvt->crypto_tag,
-                                                      tech_pvt->crypto_type, tech_pvt->local_raw_key, SWITCH_RTP_KEY_LEN);
 						}
 					}
 				}
