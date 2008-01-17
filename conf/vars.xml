@@ -33,14 +33,14 @@
        If unspecified, the bind_server_ip value is used.
        Used by: sofia.conf.xml dingaling.conf.xml
   -->
-  <X-PRE-PROCESS cmd="set" data="external_rtp_ip=stun:stun.fwdnet.net"/>
+  <X-PRE-PROCESS cmd="set" data="external_rtp_ip=stun:stun.freeswitch.org"/>
   <!-- external_sip_ip
        Used as the public IP address for SDP.
        Can be an ip address or a string like "stun:stun.server.com" 
        If unspecified, the bind_server_ip value is used.
        Used by: sofia.conf.xml dingaling.conf.xml
   -->
-  <X-PRE-PROCESS cmd="set" data="external_sip_ip=stun:stun.fwdnet.net"/>
+  <X-PRE-PROCESS cmd="set" data="external_sip_ip=stun:stun.freeswitch.org"/>
   <!-- unroll-loops
        Used to turn on sip loopback unrolling.
   --> 
