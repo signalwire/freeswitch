@@ -495,10 +495,15 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 	switch_rtp_crypto_key_t *crypto_key;
 	srtp_policy_t *policy;
 	err_status_t stat;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	crypto_key = switch_core_alloc(rtp_session->pool, sizeof(*crypto_key));
 	
-	policy = direction == SWITCH_RTP_CRYPTO_RECV ? &rtp_session->recv_policy : &rtp_session->send_policy;
+	if (direction == SWITCH_RTP_CRYPTO_RECV) {
+		policy = &rtp_session->recv_policy;
+	} else {
+		policy = &rtp_session->send_policy;
+	}
 	
 
 	crypto_key->type = type;
@@ -509,7 +514,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 
 
 	memset(policy, 0, sizeof(*policy));
-	switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_SECURE);
+	
 
 	switch(crypto_key->type) {
 	case AES_CM_128_HMAC_SHA1_80:
@@ -532,21 +537,43 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 	switch(direction) {
 	case SWITCH_RTP_CRYPTO_RECV:
 		policy->ssrc.type = ssrc_any_inbound;
-		if ((stat = srtp_create(&rtp_session->recv_ctx, policy))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error allocating srtp [%d]\n", stat);
-			return SWITCH_STATUS_FALSE;
+
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV)) {
+			switch_set_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV_RESET);
+		} else {
+			if ((stat = srtp_create(&rtp_session->recv_ctx, policy))) {
+				status = SWITCH_STATUS_FALSE;
+			}
+
+			if (status == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activating Secure RTP RECV\n");
+				switch_set_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error allocating srtp [%d]\n", stat);
+				return status;
+			}
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activating Secure RTP RECV\n");
 		break;
 	case SWITCH_RTP_CRYPTO_SEND:
 		policy->ssrc.type = ssrc_specific;
 		policy->ssrc.value = rtp_session->ssrc;
 
-		if ((stat = srtp_create(&rtp_session->send_ctx, policy))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error allocating srtp [%d]\n", stat);
-			return SWITCH_STATUS_FALSE;
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND)) {
+			switch_set_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND_RESET);
+		} else {
+			if ((stat = srtp_create(&rtp_session->send_ctx, policy))) {
+				status = SWITCH_STATUS_FALSE;
+			}
+
+			if (status == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activating Secure RTP SEND\n");
+				switch_set_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error allocating srtp [%d]\n", stat);
+				return status;
+			}
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activating Secure RTP SEND\n");
+
 		break;
 	default:
 		abort();
@@ -774,9 +801,20 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 		switch_rtp_disable_vad(*rtp_session);
 	}
 
-	if (switch_test_flag((*rtp_session), SWITCH_RTP_FLAG_SECURE)) {
-		srtp_dealloc((*rtp_session)->recv_ctx);
+	if (switch_test_flag((*rtp_session), SWITCH_RTP_FLAG_SECURE_SEND)) {
+		switch_mutex_lock((*rtp_session)->flag_mutex);
 		srtp_dealloc((*rtp_session)->send_ctx);
+		(*rtp_session)->send_ctx = NULL;
+		switch_clear_flag((*rtp_session), SWITCH_RTP_FLAG_SECURE_SEND);
+		switch_mutex_unlock((*rtp_session)->flag_mutex);
+	}
+
+	if (switch_test_flag((*rtp_session), SWITCH_RTP_FLAG_SECURE_RECV)) {
+		switch_mutex_lock((*rtp_session)->flag_mutex);
+		srtp_dealloc((*rtp_session)->recv_ctx);
+		(*rtp_session)->recv_ctx = NULL;
+		switch_clear_flag((*rtp_session), SWITCH_RTP_FLAG_SECURE_RECV);
+		switch_mutex_unlock((*rtp_session)->flag_mutex);
 	}
 
 	if ((*rtp_session)->timer.timer_interface) {
@@ -970,12 +1008,26 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			return -1;
 		}
 
-		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
+		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV)) {
 			int sbytes = (int) bytes;
-			err_status_t stat;
+			err_status_t stat = 0;
 
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV_RESET)) {
+				switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV_RESET);
+				srtp_dealloc(rtp_session->recv_ctx);
+				rtp_session->recv_ctx = NULL;
+				if ((stat = srtp_create(&rtp_session->recv_ctx, &rtp_session->recv_policy))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! RE-Activating Secure RTP RECV\n");
+					return -1;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "RE-Activating Secure RTP RECV\n");
+					rtp_session->srtp_errs = 0;
+				}
+			}
 
 			stat = srtp_unprotect(rtp_session->recv_ctx, &rtp_session->recv_msg.header, &sbytes);
+
+
 			if (stat && rtp_session->recv_msg.header.pt != rtp_session->te && rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
 				if (++rtp_session->srtp_errs >= MAX_SRTP_ERRS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
@@ -1558,10 +1610,24 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		send_msg->header.seq = htons(++rtp_session->seq);
 		
 
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND)) {
 			int sbytes = (int) bytes;
 			err_status_t stat;
 			
+
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND_RESET)) {
+				switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND_RESET);
+				srtp_dealloc(rtp_session->send_ctx);
+				rtp_session->send_ctx = NULL;
+				if ((stat = srtp_create(&rtp_session->send_ctx, &rtp_session->send_policy))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! RE-Activating Secure RTP SEND\n");
+					return -1;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "RE-Activating Secure RTP SEND\n");
+				}
+			}
+			
+
 			stat = srtp_protect(rtp_session->send_ctx, &send_msg->header, &sbytes);
 			if (stat) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error: srtp protection failed with code %d\n", stat);
@@ -1723,9 +1789,21 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 
 	bytes = rtp_header_len + datalen;
 
-	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND)) {
 		int sbytes = (int) bytes;
 		err_status_t stat;
+
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND_RESET)) {
+			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND_RESET);
+			srtp_dealloc(rtp_session->send_ctx);
+			rtp_session->send_ctx = NULL;
+			if ((stat = srtp_create(&rtp_session->send_ctx, &rtp_session->send_policy))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! RE-Activating Secure RTP SEND\n");
+				return -1;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "RE-Activating Secure RTP SEND\n");
+			}
+		}
 
 		stat = srtp_protect(rtp_session->send_ctx, &rtp_session->write_msg.header, &sbytes);
 		if (stat) {
