@@ -412,8 +412,8 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 
 	if (authorization) {
 		char *v_contact_str;
-		if ((auth_res = sofia_reg_parse_auth(profile, authorization, sip->sip_request->rq_method_name, key, keylen, network_ip, v_event, exptime, regtype, to_user)) 
-			== AUTH_STALE) {
+		if ((auth_res = sofia_reg_parse_auth(profile, authorization, sip, sip->sip_request->rq_method_name, 
+											 key, keylen, network_ip, v_event, exptime, regtype, to_user)) == AUTH_STALE) {
 			stale = 1;
 		}
 		
@@ -757,7 +757,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	
 }
 
-auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, const char *regstr, 
+auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, sip_t const *sip, const char *regstr, 
 		char *np, size_t nplen, char *ip, switch_event_t **v_event, long exptime, sofia_regtype_t regtype, const char *to_user)
 {
 	int indexnum;
@@ -853,8 +853,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		free(sql);
 	} 
 	
-	pbuf = switch_mprintf("profile=%s", profile->name);
-
+	pbuf = switch_mprintf("action=sip_auth&profile=%s&user_agent=%s", 
+						  profile->name, 
+						  (sip && sip->sip_user_agent) ? sip->sip_user_agent->g_string : "unknown");
 	
 	if (!switch_strlen_zero(profile->reg_domain)) {
 		domain_name = profile->reg_domain;
