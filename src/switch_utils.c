@@ -1072,7 +1072,7 @@ static char *cleanup_separated_string(char *str)
 }
 
 /* Separate a string using a delimiter that is not a space */
-static unsigned int separate_string_char_delim(char *buf, char delim, char **array, int arraylen)
+static unsigned int separate_string_char_delim(char *buf, char delim, char **array, unsigned int arraylen)
 {
 	enum tokenizer_state {
 		START,
@@ -1082,7 +1082,7 @@ static unsigned int separate_string_char_delim(char *buf, char delim, char **arr
 	unsigned int count = 0;
 	char *ptr = buf;
 	int  inside_quotes = 0;
-	int i;
+	unsigned int i;
 	
 	while (*ptr && count < arraylen) {
 		switch (state) {
@@ -1113,7 +1113,7 @@ static unsigned int separate_string_char_delim(char *buf, char delim, char **arr
 }
 
 /* Separate a string using a delimiter that is a space */
-static unsigned int separate_string_blank_delim(char *buf, char **array, int arraylen)
+static unsigned int separate_string_blank_delim(char *buf, char **array, unsigned int arraylen)
 {
 	enum tokenizer_state {
 		START,
@@ -1125,7 +1125,7 @@ static unsigned int separate_string_blank_delim(char *buf, char **array, int arr
 	unsigned int count = 0;
 	char *ptr = buf;
 	int  inside_quotes = 0;
-	int i;
+	unsigned int i;
 
 	while (*ptr && count < arraylen) {
 		switch (state) {
@@ -1170,7 +1170,7 @@ static unsigned int separate_string_blank_delim(char *buf, char **array, int arr
 	return count;
 }
 
-SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char **array, int arraylen)
+SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char **array, unsigned int arraylen)
 {
 	if (!buf || !array || !arraylen) {
 		return 0;
