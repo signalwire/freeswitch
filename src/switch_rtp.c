@@ -491,20 +491,22 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 														  unsigned char *key,
 														  switch_size_t keylen) 
 {
-	
 	switch_rtp_crypto_key_t *crypto_key;
 	srtp_policy_t *policy;
 	err_status_t stat;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+	if (direction >= SWITCH_RTP_CRYPTO_MAX || keylen > SWITCH_RTP_MAX_CRYPTO_LEN) {
+		return SWITCH_STATUS_FALSE;
+	} 
+
 	crypto_key = switch_core_alloc(rtp_session->pool, sizeof(*crypto_key));
-	
+		
 	if (direction == SWITCH_RTP_CRYPTO_RECV) {
 		policy = &rtp_session->recv_policy;
 	} else {
 		policy = &rtp_session->send_policy;
 	}
-	
 
 	crypto_key->type = type;
 	crypto_key->index = index;
@@ -512,9 +514,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 	crypto_key->next = rtp_session->crypto_keys[direction];
 	rtp_session->crypto_keys[direction] = crypto_key;
 
-
 	memset(policy, 0, sizeof(*policy));
-	
 
 	switch(crypto_key->type) {
 	case AES_CM_128_HMAC_SHA1_80:
@@ -527,7 +527,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		break;
 	}
 
-	
 	policy->next = NULL;	
 	policy->key = (uint8_t *) crypto_key->key;
 	crypto_policy_set_rtcp_default(&policy->rtcp);
@@ -581,8 +580,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 	}
 
 	return SWITCH_STATUS_SUCCESS;
-
 }
+
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session,
 												  switch_payload_t payload,
