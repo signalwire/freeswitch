@@ -273,7 +273,7 @@
     <extension name="is_secure">
       <condition field="${sip_secure_media_confirmed}" expression="^true$" break="never">
 	<action application="sleep" data="1000"/>
-	<action application="gentones" data="%(1000, 0, 320)"/>
+	<action application="gentones" data="${bong-ring}"/>
       </condition>
     </extension>
 

@@ -19,7 +19,7 @@
   <variables>
     <variable name="uk-ring" value="%(400,200,400,450);%(400,2200,400,450)"/>
     <variable name="us-ring" value="%(2000, 4000, 440.0, 480.0)"/>
-    <variable name="bong-ring" value="v=4000;>=0;+=2;#(60,0);v=2000;%(940,0,350,440)"/>
+    <variable name="bong-ring" value="v=-7;%(100,0,941.0,1477.0);v=-7;>=2;+=.1;%(1400,0,350,440)"/>
   </variables>
 </configuration>
 
