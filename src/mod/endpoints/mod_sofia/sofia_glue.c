@@ -765,6 +765,11 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			}
 		}
 
+	        if (!sofia_test_pflag(tech_pvt->profile, PFLAG_TLS) && sofia_glue_transport_has_tls(tech_pvt->transport)) {
+        	        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "TLS not supported by profile\n");
+			return SWITCH_STATUS_FALSE;
+	        }
+
 		if (switch_strlen_zero(tech_pvt->invite_contact))
 		{
 			if (sofia_glue_transport_has_tls(tech_pvt->transport))
