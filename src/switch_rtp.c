@@ -770,6 +770,7 @@ SWITCH_DECLARE(uint8_t) switch_rtp_ready(switch_rtp_t *rtp_session)
 SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 {
 	void *pop;
+	switch_socket_t *sock;
 
 	if (!switch_rtp_ready(*rtp_session)) {
 		return;
@@ -792,8 +793,10 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 	}
 
 	switch_rtp_kill_socket(*rtp_session);
-	switch_socket_close((*rtp_session)->sock);
+	sock = (*rtp_session)->sock;
 	(*rtp_session)->sock = NULL;
+	switch_socket_close(sock);
+
 
 
 	if (switch_test_flag((*rtp_session), SWITCH_RTP_FLAG_VAD)) {
@@ -1088,7 +1091,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				switch_frame_flag_t frame_flags = SFF_NONE;
 				data[0] = 65;
 				rtp_session->cn++;
+				switch_mutex_lock(rtp_session->flag_mutex);
 				rtp_common_write(rtp_session, NULL, (void *) data, 2, rtp_session->cng_pt, 0, &frame_flags);
+				switch_mutex_unlock(rtp_session->flag_mutex);
 			}
 		}
 
@@ -1601,7 +1606,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 	this_ts = ntohl(send_msg->header.ts);
 
-	if (rtp_session->sending_dtmf || !this_ts) {
+	if (!switch_rtp_ready(rtp_session) || rtp_session->sending_dtmf || !this_ts) {
 		send = 0;
 	}
 

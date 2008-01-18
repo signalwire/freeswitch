@@ -2453,7 +2453,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			} else {
 				const char *url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_url : profile->url;
 
-				if (strchr(url, '>')) {
+				if (url && strchr(url, '>')) {
 					tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;transport=%s", url, sofia_glue_transport2str(transport));
 				} else {
 					tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", url, sofia_glue_transport2str(transport));
