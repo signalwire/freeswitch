@@ -1,1 +1,9 @@
-freeswitch_1.0~beta1-1_i386.deb net optional
+freeswitch_1.0~rc1-1_i386.deb net extra
+freeswitch-spidermonkey_1.0~rc1-1_i386.deb net extra
+freeswitch-dev_1.0~rc1-1_i386.deb net extra
+freeswitch-codec-passthru-g7231_1.0~rc1-1_i386.deb net extra
+freeswitch-codec-passthru-amr_1.0~rc1-1_i386.deb net extra
+freeswitch-codec-passthru-g729_1.0~rc1-1_i386.deb net extra
+freeswitch-lang-en_1.0~rc1-1_i386.deb net extra
+freeswitch-lang-de_1.0~rc1-1_i386.deb net extra
+freeswitch-lang-fr_1.0~rc1-1_i386.deb net extra

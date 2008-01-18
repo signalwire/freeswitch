@@ -1,6 +1,8 @@
 opt/freeswitch
 opt/freeswitch/log
 opt/freeswitch/db
+opt/freeswitch/bin
+opt/freeswitch/bin/scripts
 etc/opt
 etc/monit
 etc/default

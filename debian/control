@@ -62,5 +62,5 @@ Homepage: http://www.freeswitch.org/
 Package: freeswitch-lang-fr
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
-Description: Frencch language files for the FreeSWITCH open source telephony platform
+Description: French language files for the FreeSWITCH open source telephony platform
 Homepage: http://www.freeswitch.org/

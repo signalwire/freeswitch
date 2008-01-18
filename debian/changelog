@@ -1,3 +1,10 @@
+freeswitch (1.0~rc1-1) unstable; urgency=low
+  * loads of fixes
+    new cdr-csv module
+    new spidermonkey-curl module
+
+ -- Michal Bielicki <michal.bielicki@voiceworks.pl>  Mon, 14 Jan 2008 23:37:04 +0100
+    
 freeswitch (1.0~beta3-1) unstable; urgency=low
 
   * Additional scripts for changing the user to freeswitch
