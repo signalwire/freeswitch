@@ -551,6 +551,10 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t * thread, void *obj)
 
 		if (switch_event_create(&event, SWITCH_EVENT_BACKGROUND_JOB) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-UUID", "%s", acs->uuid_str);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-Command", "%s", acs->api_cmd);
+			if (acs->arg) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-Command-Arg", "%s", acs->arg);
+			}
 			switch_event_add_body(event, "%s", reply);
 			switch_event_fire(&event);
 		}

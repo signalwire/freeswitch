@@ -1664,9 +1664,12 @@ static void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
 	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_BACKGROUND_JOB) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-Command", "%s", job->cmd);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-Command-Arg", "%s", arg);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-UUID", "%s", job->uuid_str);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-Command", "%s", job->cmd);
+		if (arg) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-Command-Arg", "%s", arg);
+		}
+
 		switch_event_add_body(event, "%s", reply);
 		switch_event_fire(&event);
 	}
@@ -1707,7 +1710,7 @@ SWITCH_STANDARD_API(bgapi_function)
 	switch_threadattr_create(&thd_attr, job->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	stream->write_function(stream, "+OK %s\n", job->uuid_str);
+	stream->write_function(stream, "+OK Job-UUID: %s\n", job->uuid_str);
 	switch_thread_create(&thread, thd_attr, bgapi_exec, job, job->pool);
 
 	return SWITCH_STATUS_SUCCESS;
