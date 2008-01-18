@@ -50,6 +50,7 @@
 #include <sofia-sip/su_types.h>
 #include <sofia-sip/su.h>
 #include <sofia-sip/su_wait.h>
+#include <sofia-sip/su_debug.h>
 
 #include <assert.h>
 #include <stdio.h>
@@ -127,17 +128,17 @@ int tls_verify_cb(int ok, X509_STORE_CTX *store)
 
 #if nomore 
   509_NAME_oneline(X509_get_subject_name(cert), data, 256);
-  fprintf(stderr,"depth=%d %s\n",depth,data);
+  SU_DEBUG_1(("depth=%d %s\n",depth,data));
 #endif
 
   if (!ok)
   {
-    fprintf(stderr, "-Error with certificate at depth: %i\n", depth);
+    SU_DEBUG_1(("-Error with certificate at depth: %i\n", depth));
     X509_NAME_oneline(X509_get_issuer_name(cert), data, 256);
-    fprintf(stderr, "  issuer   = %s\n", data);
+    SU_DEBUG_1(("  issuer   = %s\n", data));
     X509_NAME_oneline(X509_get_subject_name(cert), data, 256);
-    fprintf(stderr, "  subject  = %s\n", data);
-    fprintf(stderr, "  err %i:%s\n", err, X509_verify_cert_error_string(err));
+    SU_DEBUG_1(("  subject  = %s\n", data));
+    SU_DEBUG_1(("  err %i:%s\n", err, X509_verify_cert_error_string(err)));
   }
  
   return 1;			/* Always return "ok" */
@@ -156,8 +157,8 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
     if (ti->randFile &&
 	!RAND_load_file(ti->randFile, 1024 * 1024)) {
       if (ti->configured > 1) {
-	BIO_printf(tls->bio_err, "%s: cannot open randFile %s\n", 
-		   "tls_init_context", ti->randFile);
+	SU_DEBUG_1(("%s: cannot open randFile %s\n", 
+		   "tls_init_context", ti->randFile));
 	ERR_print_errors(tls->bio_err);
       }
       /* errno = EIO; */
@@ -197,8 +198,8 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
 				    ti->cert,
 				    SSL_FILETYPE_PEM)) {
     if (ti->configured > 0) {
-      BIO_printf(tls->bio_err, "%s: invalid certificate: %s\n",
-		 "tls_init_context", ti->cert);
+      SU_DEBUG_1(("%s: invalid certificate: %s\n",
+		 "tls_init_context", ti->cert));
       ERR_print_errors(tls->bio_err);
 #if require_client_certificate
       errno = EIO;
@@ -221,8 +222,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
 
   if (!SSL_CTX_check_private_key(tls->ctx)) {
     if (ti->configured > 0) {
-      BIO_printf(tls->bio_err,
-		 "Private key does not match the certificate public key\n");
+      SU_DEBUG_1(("Private key does not match the certificate public key\n"));
     }
 #if require_client_certificate
     errno = EIO;
@@ -247,7 +247,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
                      tls_verify_cb);
 
   if (!SSL_CTX_set_cipher_list(tls->ctx, ti->cipher)) {
-    BIO_printf(tls->bio_err,"error setting cipher list\n");
+    SU_DEBUG_1(("error setting cipher list\n"));
     ERR_print_errors(tls->bio_err);
     errno = EIO;
     return -1;
@@ -331,7 +331,7 @@ tls_t *tls_init_master(tls_issues_t *ti)
     tls->bio_con = BIO_new_socket(sock, BIO_NOCLOSE);
 
     if (tls->bio_con == NULL) {
-      BIO_printf(tls->bio_err, "tls_init_master: BIO_new_socket failed\n");
+      SU_DEBUG_1(("tls_init_master: BIO_new_socket failed\n"));
       ERR_print_errors(tls->bio_err);
       tls_free(tls);
       errno = EIO;
@@ -361,9 +361,9 @@ int tls_accept(tls_t *tls)
       return errno = EAGAIN, tls->read_events = SU_WAIT_OUT, 0;
 
     default:    
-      BIO_printf(tls->bio_err, "SSL_connect failed: %d %s\n", 
+      SU_DEBUG_1(("SSL_connect failed: %d %s\n", 
                  err,
-                 ERR_error_string(err, NULL));
+                 ERR_error_string(err, NULL)));
       ERR_print_errors(tls->bio_err);
       return -1;
     }
@@ -372,9 +372,9 @@ int tls_accept(tls_t *tls)
   verify_result = SSL_get_verify_result(tls->con);
 
   if (verify_result != X509_V_OK) {
-    BIO_printf(tls->bio_err, 
+    SU_DEBUG_1((
                "Client certificate doesn't verify: %s\n",
-               X509_verify_cert_error_string(verify_result));
+               X509_verify_cert_error_string(verify_result)));
 #if 0
     tls_free(tls);
     return NULL;
@@ -382,7 +382,7 @@ int tls_accept(tls_t *tls)
   }
 
   if (SSL_get_peer_certificate(tls->con) == NULL) {
-    BIO_printf(tls->bio_err, "Client didn't send certificate\n");
+    SU_DEBUG_1(("Client didn't send certificate\n"));
 #if 0
     tls_free(tls);
     return NULL;
@@ -413,7 +413,7 @@ tls_t *tls_clone(tls_t *master, int sock, int accept)
   tls->con = SSL_new(tls->ctx);
 
   if (tls->con == NULL) {
-    BIO_printf(tls->bio_err, "tls_clone: SSL_new failed\n");
+    SU_DEBUG_1(("tls_clone: SSL_new failed\n"));
     ERR_print_errors(tls->bio_err);
     tls_free(tls);
     errno = EIO;
@@ -594,8 +594,8 @@ int tls_error(tls_t *tls, int ret, char const *who, char const *operation,
     return -1;
 
   default:
-    BIO_printf(tls->bio_err, "%s: %s failed (%d): %s\n", 
-	       who, operation, err, ERR_error_string(err, errorbuf));
+    SU_DEBUG_1(("%s: %s failed (%d): %s\n", 
+	       who, operation, err, ERR_error_string(err, errorbuf)));
     ERR_print_errors(tls->bio_err);
     errno = EIO;
     return -1;
@@ -623,9 +623,9 @@ ssize_t tls_read(tls_t *tls)
   }
 
   if (0)
-    fprintf(stderr, "tls_read(%p) called on %s (events %u)\n", (void *)tls,
+    SU_DEBUG_1(("tls_read(%p) called on %s (events %u)\n", (void *)tls,
 	    tls->type == tls_slave ? "server" : "client",
-	    tls->read_events);
+	    tls->read_events));
 
   if (tls->read_buffer_len)
     return (ssize_t)tls->read_buffer_len;
@@ -643,9 +643,9 @@ ssize_t tls_read(tls_t *tls)
 	err != SSL_ERROR_SYSCALL &&
 	err != SSL_ERROR_WANT_WRITE &&
 	err != SSL_ERROR_WANT_READ) {
-      BIO_printf(tls->bio_err, 
+      SU_DEBUG_1((
 		 "%s: server certificate doesn't verify\n", 
-		 "tls_read");
+		 "tls_read"));
     }
   }
 
@@ -695,9 +695,9 @@ ssize_t tls_write(tls_t *tls, void *buf, size_t size)
   ssize_t ret;
 
   if (0) 
-    fprintf(stderr, "tls_write(%p, %p, "MOD_ZU") called on %s\n", 
+    SU_DEBUG_1(("tls_write(%p, %p, "MOD_ZU") called on %s\n", 
 	    (void *)tls, buf, size,
-	    tls && tls->type == tls_slave ? "server" : "client");
+	    tls && tls->type == tls_slave ? "server" : "client"));
 
   if (tls == NULL || buf == NULL) {
     errno = EINVAL;
@@ -731,8 +731,8 @@ ssize_t tls_write(tls_t *tls, void *buf, size_t size)
 
   if (!tls->verified) {
     if (tls_post_connection_check(tls) != X509_V_OK) {
-      BIO_printf(tls->bio_err, 
-		 "tls_read: server certificate doesn't verify\n");
+      SU_DEBUG_1((
+		 "tls_read: server certificate doesn't verify\n"));
     }
   }
 
