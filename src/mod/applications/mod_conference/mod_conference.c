@@ -424,7 +424,9 @@ static conference_member_t *conference_member_get(conference_obj_t * conference,
 	conference_member_t *member = NULL;
 
 	switch_assert(conference != NULL); 
-	switch_assert(id != 0);
+	if (!id) {
+		return NULL;
+	}
 
 	switch_mutex_lock(conference->member_mutex);
 	for (member = conference->members; member; member = member->next) {
