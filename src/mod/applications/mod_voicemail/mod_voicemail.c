@@ -867,7 +867,8 @@ typedef enum {
 } msg_type_t;
 
 
-static switch_status_t create_file(switch_core_session_t *session, vm_profile_t *profile, char *macro_name, char *file_path, switch_size_t *message_len)
+static switch_status_t create_file(switch_core_session_t *session, vm_profile_t *profile, 
+                                   char *macro_name, char *file_path, switch_size_t *message_len, switch_bool_t limit)
 {
 	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -900,7 +901,7 @@ record_file:
 		fh.silence_hits = profile->record_silence_hits;
 		fh.samplerate = profile->record_sample_rate;
 		switch_ivr_record_file(session, &fh, file_path, &args, profile->max_record_len);
-		if ((*message_len = fh.sample_count / read_codec->implementation->actual_samples_per_second) < profile->min_record_len) {
+		if (limit && (*message_len = fh.sample_count / read_codec->implementation->actual_samples_per_second) < profile->min_record_len) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Message is less than minimum record length: %d, discarding it.\n", 
                               profile->min_record_len);
 			if (unlink(file_path) != 0) {
@@ -1484,7 +1485,7 @@ case VM_CHECK_CONFIG:
 				TRY_CODE(switch_ivr_phrase_macro(session, VM_CHOOSE_GREETING_FAIL_MACRO, NULL, NULL, NULL));
 			} else {
 				file_path = switch_mprintf("%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, num, profile->file_ext);
-				TRY_CODE(create_file(session, profile, VM_RECORD_GREETING_MACRO, file_path, &message_len));
+				TRY_CODE(create_file(session, profile, VM_RECORD_GREETING_MACRO, file_path, &message_len, SWITCH_TRUE));
 				sql = switch_mprintf("update voicemail_prefs set greeting_path='%s' where user='%s' and domain='%s'", file_path, myid, domain_name);
 				vm_execute_sql(profile, sql, profile->mutex);
 				switch_safe_free(sql);
@@ -1493,7 +1494,7 @@ case VM_CHECK_CONFIG:
 
 		} else if (!strcmp(input, profile->record_name_key)) {
 			file_path = switch_mprintf("%s%srecorded_name.%s", dir_path, SWITCH_PATH_SEPARATOR, profile->file_ext);
-			TRY_CODE(create_file(session, profile, VM_RECORD_NAME_MACRO, file_path, &message_len));
+			TRY_CODE(create_file(session, profile, VM_RECORD_NAME_MACRO, file_path, &message_len, SWITCH_FALSE));
 			sql = switch_mprintf("update voicemail_prefs set name_path='%s' where user='%s' and domain='%s'", file_path, myid, domain_name);
 			vm_execute_sql(profile, sql, profile->mutex);
 			switch_safe_free(file_path);
@@ -1863,7 +1864,7 @@ greet:
 	switch_channel_set_variable(channel, "RECORD_COMMENT", profile->record_comment);
 	switch_channel_set_variable(channel, "RECORD_COPYRIGHT", profile->record_copyright);
 
-	status = create_file(session, profile, VM_RECORD_MESSAGE_MACRO, file_path, &message_len);
+	status = create_file(session, profile, VM_RECORD_MESSAGE_MACRO, file_path, &message_len, SWITCH_TRUE);
 
 	if ((status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) && switch_channel_ready(channel)) {
 		char input[10] = "", key_buf[80] = "", term = 0;
