@@ -54,6 +54,8 @@
       </condition>
       <condition field="${sip_has_crypto}" expression="^(AES_CM_128_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_80)$" break="never">
 	<action application="set" data="sip_secure_media=true"/>
+	<!-- Offer SRTP on outbound legs if we have it on inbound. -->
+	<action application="export" data="sip_secure_media=true"/>
       </condition>
       <condition>
 	<action application="db" data="insert/spymap/${caller_id_number}/${uuid}"/>
