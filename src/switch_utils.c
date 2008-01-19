@@ -1017,7 +1017,7 @@ SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t *pool, char *in, 
 static char unescape_char(char escaped)
 {
 	char unescaped;
-	printf("WTF [%c]\n", escaped);
+
 	switch (escaped) {
 		case 'n':
 			unescaped = '\n';
