@@ -38,8 +38,6 @@
 #include <curl/curl.h>
 #endif
 static int foo = 0;
-static switch_mutex_t *mutex;
-
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spidermonkey_shutdown);
@@ -3223,6 +3221,12 @@ static JSBool js_api_execute(JSContext * cx, JSObject * obj, uintN argc, jsval *
 		switch_stream_handle_t stream = { 0 };
 		char retbuf[2048] = "";
 
+		if (!strcasecmp(cmd, "jsapi")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid API Call!\n");
+			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+			return JS_TRUE;
+		}
+
 		if (argc > 1) {
 			arg = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 		}
@@ -3405,8 +3409,6 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 	JSContext *cx = NULL;
 	jsval rval;
 
-	switch_mutex_lock(mutex);
-
 	if ((cx = JS_NewContext(globals.rt, globals.gStackChunkSize))) {
 		JS_BeginRequest(cx);
 		JS_SetErrorReporter(cx, js_error);
@@ -3424,8 +3426,7 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 		}
 
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Allocation Error!\n");
-		goto end;
+		abort();
 	}
 
 	script = input_code;
@@ -3450,14 +3451,11 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 			eval_some_js(buf, cx, javascript_global_object, &rval);
 		}
 	}
-	
+
 	if (cx) {
 		eval_some_js(script, cx, javascript_global_object, &rval);
 		JS_DestroyContext(cx);
 	}
-	
- end:
-	switch_mutex_unlock(mutex);
 
 	return;
 
@@ -3523,6 +3521,7 @@ SWITCH_STANDARD_API(jsapi_function)
 	ro.cmd = cmd;
 	ro.session = session;
 	ro.stream = stream;
+
 	js_parse_and_execute(session, (char *) cmd, &ro);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -3586,8 +3585,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 	SWITCH_ADD_APP(app_interface, "javascript", "Launch JS ivr", "Run a javascript ivr on a channel", js_dp_function, "<script> [additional_vars [...]]", SAF_NONE);
 
 	curl_global_init(CURL_GLOBAL_ALL);
-
-	switch_mutex_init(&mutex, SWITCH_MUTEX_NESTED, pool);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
