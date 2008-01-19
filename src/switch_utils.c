@@ -35,7 +35,7 @@
 #include <arpa/inet.h>
 #endif
 #include "private/switch_core_pvt.h"
-
+#define ESCAPE_META '\\'
 
 SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char close)
 {
@@ -1017,7 +1017,7 @@ SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t *pool, char *in, 
 static char unescape_char(char escaped)
 {
 	char unescaped;
-	
+	printf("WTF [%c]\n", escaped);
 	switch (escaped) {
 		case 'n':
 			unescaped = '\n';
@@ -1052,16 +1052,25 @@ static char *cleanup_separated_string(char *str)
 	}
 
 	for (start = dest = ptr; *ptr; ++ptr) {
-		if (*ptr == '\\') {
-			++ptr;
-			*dest++ = unescape_char(*ptr);
-			end = dest;
-		} else if (*ptr == '\'') {
-			inside_quotes = (1 - inside_quotes);
-		} else {
-			*dest++ = *ptr;
-			if (*ptr != ' ' || inside_quotes) {
+		char e;
+		int esc = 0;
+
+		if (*ptr == ESCAPE_META) {
+			if ((e = unescape_char(*(ptr+1))) != e) {
+				++ptr;
+				*dest++ = e;
 				end = dest;
+				esc++;
+			}
+		}
+		if (!esc) {
+			if (*ptr == '\'') {
+				inside_quotes = (1 - inside_quotes);
+			} else {
+				*dest++ = *ptr;
+				if (*ptr != ' ' || inside_quotes) {
+					end = dest;
+				}
 			}
 		}
 	}
@@ -1093,7 +1102,7 @@ static unsigned int separate_string_char_delim(char *buf, char delim, char **arr
 
 			case FIND_DELIM:
 				/* escaped characters are copied verbatim to the destination string */
-				if (*ptr == '\\') {
+				if (*ptr == ESCAPE_META) {
 					++ptr;
 				} else if (*ptr == '\'') {
 					inside_quotes = (1 - inside_quotes);
@@ -1143,7 +1152,7 @@ static unsigned int separate_string_blank_delim(char *buf, char **array, unsigne
 				break;
 
 			case FIND_DELIM:
-				if (*ptr == '\\') {
+				if (*ptr == ESCAPE_META) {
 					++ptr;
 				} else if (*ptr == '\'') {
 					inside_quotes = (1 - inside_quotes);

@@ -95,7 +95,7 @@ SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expressi
 					  &erroffset,	/* for error offset */
 					  NULL);	/* use default character tables */
 	if (error) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "COMPILE ERROR: %d [%s]\n", erroffset, error);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "COMPILE ERROR: %d [%s][%s]\n", erroffset, error, expression);
 		switch_regex_safe_free(re);
 		goto end;
 	}
