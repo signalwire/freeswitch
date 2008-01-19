@@ -50,7 +50,6 @@
 #include <sofia-sip/su_types.h>
 #include <sofia-sip/su.h>
 #include <sofia-sip/su_wait.h>
-#include <sofia-sip/su_debug.h>
 
 #include <assert.h>
 #include <stdio.h>
@@ -62,6 +61,7 @@
 #endif
 
 #include "tport_tls.h"
+#include "tport_internal.h"
 
 char const tls_version[] = OPENSSL_VERSION_TEXT;
 
@@ -71,7 +71,6 @@ struct tls_s {
   SSL_CTX *ctx;
   SSL *con;
   BIO *bio_con;
-  BIO *bio_err;
   int type;
   int verified;
 
@@ -90,6 +89,13 @@ struct tls_s {
 };
 
 enum { tls_buffer_size = 16384 };
+
+static
+int tls_print_errors(const char *str, size_t len, void *u)
+{
+	SU_DEBUG_1((str));
+	return 0;
+}
 
 static
 tls_t *tls_create(int type)
@@ -159,7 +165,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
       if (ti->configured > 1) {
 	SU_DEBUG_1(("%s: cannot open randFile %s\n", 
 		   "tls_init_context", ti->randFile));
-	ERR_print_errors(tls->bio_err);
+	ERR_print_errors_cb(&tls_print_errors, NULL);
       }
       /* errno = EIO; */
       /* return -1; */
@@ -170,9 +176,6 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
   /* Avoid possible SIGPIPE when sending close_notify */
   signal(SIGPIPE, SIG_IGN);
 #endif
-
-  if (tls->bio_err == NULL)
-    tls->bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
 
   if (tls->ctx == NULL) {
     SSL_METHOD *meth;
@@ -189,7 +192,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
   }
 
   if (tls->ctx == NULL) {
-    ERR_print_errors(tls->bio_err);
+    ERR_print_errors_cb(&tls_print_errors, NULL);
     errno = EIO;
     return -1;
   }
@@ -200,7 +203,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
     if (ti->configured > 0) {
       SU_DEBUG_1(("%s: invalid certificate: %s\n",
 		 "tls_init_context", ti->cert));
-      ERR_print_errors(tls->bio_err);
+      ERR_print_errors_cb(&tls_print_errors, NULL);
 #if require_client_certificate
       errno = EIO;
       return -1;
@@ -212,7 +215,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
                                    ti->key, 
                                    SSL_FILETYPE_PEM)) {
     if (ti->configured > 0) {
-      ERR_print_errors(tls->bio_err);
+      ERR_print_errors_cb(&tls_print_errors, NULL);
 #if require_client_certificate
       errno = EIO;
       return -1;
@@ -234,7 +237,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
                                      ti->CAfile, 
                                      ti->CApath)) {
     if (ti->configured > 0)
-      ERR_print_errors(tls->bio_err);
+      ERR_print_errors_cb(&tls_print_errors, NULL);
     errno = EIO;
     return -1;
   }
@@ -248,7 +251,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
 
   if (!SSL_CTX_set_cipher_list(tls->ctx, ti->cipher)) {
     SU_DEBUG_1(("error setting cipher list\n"));
-    ERR_print_errors(tls->bio_err);
+    ERR_print_errors_cb(&tls_print_errors, NULL);
     errno = EIO;
     return -1;
   }
@@ -274,9 +277,6 @@ void tls_free(tls_t *tls)
 
   if (tls->bio_con != NULL)
     BIO_free(tls->bio_con);
-
-  if (tls->bio_err != NULL && tls->type != tls_slave)
-    BIO_free(tls->bio_err);
 
   for (k = 0; k < TLS_MAX_HOSTS; k++)
     free(tls->hosts[k]), tls->hosts[k] = NULL;
@@ -332,7 +332,7 @@ tls_t *tls_init_master(tls_issues_t *ti)
 
     if (tls->bio_con == NULL) {
       SU_DEBUG_1(("tls_init_master: BIO_new_socket failed\n"));
-      ERR_print_errors(tls->bio_err);
+      ERR_print_errors_cb(&tls_print_errors, NULL);
       tls_free(tls);
       errno = EIO;
       return NULL;
@@ -364,7 +364,7 @@ int tls_accept(tls_t *tls)
       SU_DEBUG_1(("SSL_connect failed: %d %s\n", 
                  err,
                  ERR_error_string(err, NULL)));
-      ERR_print_errors(tls->bio_err);
+      ERR_print_errors_cb(&tls_print_errors, NULL);
       return -1;
     }
   }
@@ -399,7 +399,6 @@ tls_t *tls_clone(tls_t *master, int sock, int accept)
 
   if (tls) {
     tls->ctx = master->ctx;
-    tls->bio_err = master->bio_err;
 
     if (!(tls->read_buffer = malloc(tls_buffer_size)))
       free(tls), tls = NULL;
@@ -414,7 +413,7 @@ tls_t *tls_clone(tls_t *master, int sock, int accept)
 
   if (tls->con == NULL) {
     SU_DEBUG_1(("tls_clone: SSL_new failed\n"));
-    ERR_print_errors(tls->bio_err);
+    ERR_print_errors_cb(&tls_print_errors, NULL);
     tls_free(tls);
     errno = EIO;
     return NULL;
@@ -596,7 +595,7 @@ int tls_error(tls_t *tls, int ret, char const *who, char const *operation,
   default:
     SU_DEBUG_1(("%s: %s failed (%d): %s\n", 
 	       who, operation, err, ERR_error_string(err, errorbuf)));
-    ERR_print_errors(tls->bio_err);
+    ERR_print_errors_cb(&tls_print_errors, NULL);
     errno = EIO;
     return -1;
   }
