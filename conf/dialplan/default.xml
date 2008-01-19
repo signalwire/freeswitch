@@ -260,13 +260,21 @@
     </extension>
 
     <extension name="hold_music">
-      <condition field="${sip_has_crypto}" expression="^(AES_CM_128_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_80)$" break="never">
+      <condition field="destination_number" expression="^9999$"/>
+      <condition field="${sip_has_crypto}" expression="^(AES_CM_128_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_80)$">
 	<action application="answer"/>
 	<action application="execute_extension" data="is_secure XML default"/>
-      </condition>
-      <condition field="destination_number" expression="^9999$">
-	<action application="answer"/>
 	<action application="playback" data="$${moh_uri}"/>
+	<anti-action application="answer"/>
+	<anti-action application="playback" data="$${moh_uri}"/>
+      </condition>
+    </extension>
+
+    <X-PRE-PROCESS cmd="include" data="extensions/*.xml"/>
+
+    <extension name="enum">
+      <condition field="destination_number" expression="^(.*)$">
+	<action application="transfer" data="$1 enum"/>
       </condition>
     </extension>
 
@@ -277,13 +285,5 @@
       </condition>
     </extension>
 
-    <X-PRE-PROCESS cmd="include" data="extensions/*.xml"/>
-
-    <extension name="enum">
-      <condition field="destination_number" expression="^(.*)$">
-	<action application="answer"/>
-	<action application="transfer" data="$1 enum"/>
-      </condition>
-    </extension>
   </context>
 </include>
