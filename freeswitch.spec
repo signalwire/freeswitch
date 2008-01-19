@@ -2,7 +2,7 @@ Name:         freeswitch
 Summary:      FreeSWITCH open source telephony platform
 License:      MPL
 Group:        Productivity/Telephony/Servers
-Version:      1.0.beta3
+Version:      1.0.rc1
 Release:      1
 URL:          http://www.freeswitch.org/
 Packager:     Michal Bielicki
@@ -51,15 +51,23 @@ PreReq:       %insserv_prereq %fillup_prereq
 BuildRoot:    %{_tmppath}/%{name}-%{version}-build
 
 %description
-FreeSWITCH is an open source telephony platform designed to facilitate the creation of voice and chat driven products scaling from a soft-phone up to a soft-switch.  It can be used as a simple switching engine, a media gateway or a media server to host IVR applications using simple scripts or XML to control the callflow. 
+FreeSWITCH is an open source telephony platform designed to facilitate the creation of voice 
+and chat driven products scaling from a soft-phone up to a soft-switch.  It can be used as a 
+simple switching engine, a media gateway or a media server to host IVR applications using 
+simple scripts or XML to control the callflow. 
 
-We support various communication technologies such as SIP, H.323, IAX2 and GoogleTalk making it easy to interface with other open source PBX systems such as sipX, OpenPBX, Bayonne, YATE or Asterisk.
+We support various communication technologies such as SIP, H.323, IAX2 and GoogleTalk making 
+it easy to interface with other open source PBX systems such as sipX, OpenPBX, Bayonne, YATE or Asterisk.
 
-We also support both wide and narrow band codecs making it an ideal solution to bridge legacy devices to the future. The voice channels and the conference bridge module all can operate at 8, 16 or 32 kilohertz and can bridge channels of different rates.
+We also support both wide and narrow band codecs making it an ideal solution to bridge legacy 
+devices to the future. The voice channels and the conference bridge module all can operate 
+at 8, 16 or 32 kilohertz and can bridge channels of different rates.
 
-FreeSWITCH runs on several operating systems including Windows, Max OS X, Linux, BSD and Solaris on both 32 and 64 bit platforms.
+FreeSWITCH runs on several operating systems including Windows, Max OS X, Linux, BSD and Solaris 
+on both 32 and 64 bit platforms.
 
-Our developers are heavily involved in open source and have donated code and other resources to other telephony projects including sipX, Asterisk and OpenPBX.
+Our developers are heavily involved in open source and have donated code and other resources to 
+other telephony projects including sipXecs, OpenSER, Asterisk, CodeWeaver and OpenPBX.
 
 %if 0%{?suse_version} > 100
 %debug_package
@@ -165,7 +173,7 @@ French language phrases module and directory structure for say module and voicem
 export CFLAGS="$CFLAGS -fstack-protector"
 %endif
 PASSTHRU_CODEC_MODULES="codecs/mod_g729 codecs/mod_g723_1 codecs/mod_amr"
-SPIDERMONKEY_MODULES="languages/mod_spidermonkey languages/mod_spidermonkey_core_db languages/mod_spidermonkey_odbc languages/mod_spidermonkey_socket languages/mod_spidermonkey_teletone"
+SPIDERMONKEY_MODULES="languages/mod_spidermonkey languages/mod_spidermonkey_curl languages/mod_spidermonkey_core_db languages/mod_spidermonkey_odbc languages/mod_spidermonkey_socket languages/mod_spidermonkey_teletone"
 APPLICATIONS_MODULES="applications/mod_commands applications/mod_conference applications/mod_dptools applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_limit applications/mod_rss applications/mod_voicemail"
 ASR_TTS_MODULES="asr_tts/mod_openmrcp"
 CODECS_MODULES="codecs/mod_g711 codecs/mod_g722 codecs/mod_g726 codecs/mod_gsm codecs/mod_ilbc codecs/mod_h26x codecs/mod_l16 codecs/mod_speex"
@@ -177,9 +185,9 @@ EVENT_HANDLERS_MODULES="event_handlers/mod_event_multicast event_handlers/mod_ev
 FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_sndfile"
 LANGUAGES_MODULES=
 LOGGERS_MODULES="loggers/mod_console loggers/mod_logfile loggers/mod_syslog"
-SAY_MODULES="say/mod_say_de say/mod_say_en say/mod_say_fr"
+SAY_MODULES="say/mod_say_en"
 TIMERS_MODULES=
-DISABLED_MODULES="applications/mod_sountouch directories/mod_ldap languages/mod_java languages/mod_python languages/mod_spidermonkey_skel ast_tts/mod_cepstral asr_tts/mod_lumenvox endpoints/mod_wanpipe event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf formats/mod_shout say/mod_say_it say/mod_say_es say/mod_say_nl"
+DISABLED_MODULES="applications/mod_sountouch directories/mod_ldap languages/mod_java languages/mod_python languages/mod_spidermonkey_skel ast_tts/mod_cepstral asr_tts/mod_lumenvox endpoints/mod_wanpipe event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf formats/mod_shout say/mod_say_it say/mod_say_es say/mod_say_nl say/mod_say_fr say/mod_say_de"
 XML_INT_MODULES="xml_int/mod_xml_rpc  xml_int/mod_xml_curl xml_int/mod_xml_cdr"
 MYMODULES="$PASSTHRU_CODEC_MODULES $SPIDERMONKEY_MODULES $APPLICATIONS_MODULES $ASR_TTS_MODULES $CODECS_MODULES $DIALPLANS_MODULES $DIRECTORIES_MODULES $DOTNET_MODULES $ENDPOINTS_MODULES $EVENT_HANDLERS_MODULES $FORMATS_MODULES $LANGUAGES_MODULES $LOGGERS_MODULES $SAY_MODULES $TIMERS_MODULES $XML_INT_MODULES"
 
@@ -261,65 +269,73 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,freeswitch,daemon)
-%dir %attr(750,freeswitch,daemon) /etc/monit.d
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/db
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/log
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/log/xml_cdr
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/htdocs
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/scripts
-#%dir %attr(750,freeswitch,daemon) /opt/freeswitch/grammer
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/dialplan
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/directory
-%dir %attr(750,freeswitch.daemon) /opt/freeswitch/conf/directory/default
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/sip_profiles
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/jingle_profiles
-%config(noreplace) %attr(644,freeswitch,daemon) /etc/monit.d/freeswitch.monitrc
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/mime.types
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/*.tpl
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/*.conf
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/alsa.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/cdr.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/conference.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/console.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/dialplan_directory.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/dingaling.conf.xml 
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/enum.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/event_multicast.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/event_socket.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/cdr_csv.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/iax.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/ivr.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/java.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/limit.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/local_stream.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/logfile.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/modules.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/openmrcp.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/portaudio.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/post_load_modules.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/rss.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/sofia.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/switch.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/syslog.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/voicemail.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/wanpipe.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/woomera.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/xml_cdr.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/xml_curl.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/xml_rpc.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/zeroconf.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/dialplan/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/directory/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/directory/default/*
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/sip_profiles/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/jingle_profiles/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/htdocs/*
+%dir %attr(0750, freeswitch, daemon) /etc/monit.d
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/db
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/log
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/log/xml_cdr
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/htdocs
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/scripts
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/dialplan
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/directory
+%dir %attr(0750, freeswitch. daemon) /opt/freeswitch/conf/directory/default
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/lang
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/mrcp_profiles
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/sip_profiles
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/sip_profiles/nat
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/dialplan/extensions
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/sip_profiles/default
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/sip_profiles/outbound
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/jingle_profiles
+%config(noreplace) %attr(0644, freeswitch, daemon) /etc/monit.d/freeswitch.monitrc
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/mime.types
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/*.tpl
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/*.ttml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/*.conf
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/alsa.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/conference.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/console.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/dialplan_directory.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/dingaling.conf.xml 
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/enum.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/event_multicast.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/event_socket.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/cdr_csv.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/iax.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/ivr.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/java.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/limit.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/local_stream.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/logfile.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/modules.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/openmrcp.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/portaudio.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/post_load_modules.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/rss.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/sofia.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/switch.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/syslog.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/voicemail.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/wanpipe.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/woomera.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/xml_cdr.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/xml_curl.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/xml_rpc.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/zeroconf.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/dialplan/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/directory/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/directory/default/*
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/mrcp_profiles/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/sip_profiles/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/sip_profiles/default/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/sip_profiles/outbound/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/sip_profiles/nat/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/jingle_profiles/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/htdocs/*
 /etc/ld.so.conf.d/*
-/opt/freeswitch/bin/freeswitch
+/opt/freeswitch/bin/*
 /etc/init.d/freeswitch
 /etc/sysconfig/freeswitch
 %if 0%{?suse_version} > 100
@@ -338,7 +354,6 @@ rm -rf $RPM_BUILD_ROOT
 /opt/freeswitch/mod/mod_fifo.so*
 /opt/freeswitch/mod/mod_limit.so*
 /opt/freeswitch/mod/mod_rss.so*
-#/opt/freeswitch/mod/mod_soundtouch.so*
 /opt/freeswitch/mod/mod_voicemail.so*
 /opt/freeswitch/mod/mod_openmrcp.so*
 /opt/freeswitch/mod/mod_g711.so*
@@ -387,11 +402,11 @@ rm -rf $RPM_BUILD_ROOT
 /opt/freeswitch/lib/libnspr4.so
 /opt/freeswitch/lib/libplds4.so
 /opt/freeswitch/lib/libplc4.so
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/spidermonkey.conf.xml
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/autoload_configs/spidermonkey.conf.xml
 
 %files devel
-%defattr(-,freeswitch,daemon)
+%defattr(-, freeswitch, daemon)
 /opt/freeswitch/lib/*.a
 /opt/freeswitch/lib/*.la
 /opt/freeswitch/mod/*.a
@@ -399,12 +414,12 @@ rm -rf $RPM_BUILD_ROOT
 /opt/freeswitch/include/*.h
 
 %files lang-en
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/en
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/en/demo
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/en/vm
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/en/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/en/demo/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/en/vm/*.xml
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/lang/en
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/lang/en/demo
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/lang/en/vm
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/lang/en/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/lang/en/demo/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/lang/en/vm/*.xml
 /opt/freeswitch/mod/mod_say_en.so*
 
 #%files lang-it
@@ -427,12 +442,12 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %files lang-de
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/de
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/de/demo
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/de/vm
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/de/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/de/demo/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/de/vm/*.xml
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/lang/de
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/lang/de/demo
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/lang/de/vm
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/lang/de/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/lang/de/demo/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/lang/de/vm/*.xml
 /opt/freeswitch/mod/mod_say_de.so*
 
 #%files lang-nl
@@ -445,15 +460,17 @@ rm -rf $RPM_BUILD_ROOT
 #/opt/freeswitch/mod/mod_say_nl.so*
 
 %files lang-fr
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/fr
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/demo
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/vm
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/demo/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/vm/*.xml
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/lang/fr
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/lang/fr/demo
+%dir %attr(0750, freeswitch, daemon) /opt/freeswitch/conf/lang/fr/vm
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/lang/fr/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/lang/fr/demo/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) /opt/freeswitch/conf/lang/fr/vm/*.xml
 /opt/freeswitch/mod/mod_say_fr.so*
 
 %changelog
+* Fri Jan 18 2008 - michal.bielicki@voiceworks.pl
+- fixes, fixes and more fixes in preparation for rc1
 * Thu Dec 5 2007 - michal.bielicki@voiceworks.pl
 - put in detail configfiles in to split of spidermonkey configs
 - created link from /opt/freesxwitch/conf to /etc/opt/freeswitch
