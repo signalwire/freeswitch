@@ -1260,6 +1260,12 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 			} else {
 				stream->write_function(stream, "%25s\t%s\t  %32s\t%s (%u)\n", profile->name, "profile", profile->url,
 									   sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN", profile->inuse);
+
+				if (sofia_test_pflag(profile, PFLAG_TLS)) {
+				stream->write_function(stream, "%25s\t%s\t  %32s\t%s (%u) (TLS)\n", profile->name, "profile", profile->tls_url,
+									   sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN", profile->inuse);
+				}
+
 				c++;
 
 				for (gp = profile->gateways; gp; gp = gp->next) {
