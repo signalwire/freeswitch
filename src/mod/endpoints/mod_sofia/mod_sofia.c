@@ -1214,6 +1214,10 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				}
 				stream->write_function(stream, "URL        \t%s\n", switch_str_nil(profile->url));
 				stream->write_function(stream, "BIND-URL   \t%s\n", switch_str_nil(profile->bindurl));
+				if (sofia_test_pflag(profile, PFLAG_TLS)) {
+				stream->write_function(stream, "TLS-URL   \t%s\n", switch_str_nil(profile->tls_url));
+				stream->write_function(stream, "TLS-BIND-URL   \t%s\n", switch_str_nil(profile->tls_bindurl));
+				}
 				stream->write_function(stream, "HOLD-MUSIC \t%s\n", switch_str_nil(profile->hold_music));
 				stream->write_function(stream, "CODECS     \t%s\n", switch_str_nil(profile->codec_string));
 				stream->write_function(stream, "TEL-EVENT  \t%d\n", profile->te);
