@@ -500,15 +500,18 @@ SWITCH_DECLARE(void) switch_rtp_set_max_missed_packets(switch_rtp_t *rtp_session
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, const char **err)
 {
+	switch_sockaddr_t *remote_addr;
 	*err = "Success";
-
-	if (switch_sockaddr_info_get(&rtp_session->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) 
-		!= SWITCH_STATUS_SUCCESS || !rtp_session->remote_addr) {
+	
+	if (switch_sockaddr_info_get(&remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS || !remote_addr) {
 		*err = "Remote Address Error!";
 		return SWITCH_STATUS_FALSE;
 	}
 
+	switch_mutex_lock(rtp_session->write_mutex);
+	rtp_session->remote_addr = remote_addr;
 	rtp_session->remote_port = port;
+	switch_mutex_unlock(rtp_session->write_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -796,7 +799,8 @@ SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp_t *rtp_session)
 
 SWITCH_DECLARE(uint8_t) switch_rtp_ready(switch_rtp_t *rtp_session)
 {
-	return (rtp_session != NULL && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) && rtp_session->sock && rtp_session->ready == 2) ? 1 : 0;
+	return (rtp_session != NULL && 
+			switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) && rtp_session->sock && rtp_session->remote_addr && rtp_session->ready == 2) ? 1 : 0;
 }
 
 SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)

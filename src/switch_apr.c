@@ -621,6 +621,9 @@ SWITCH_DECLARE(switch_status_t) switch_socket_send(switch_socket_t * sock, const
 
 SWITCH_DECLARE(switch_status_t) switch_socket_sendto(switch_socket_t * sock, switch_sockaddr_t * where, int32_t flags, const char *buf, switch_size_t *len)
 {
+	if (!where || !buf || !len || !*len) {
+		return SWITCH_STATUS_GENERR;
+	}
 	return apr_socket_sendto(sock, where, flags, buf, len);
 }
 
