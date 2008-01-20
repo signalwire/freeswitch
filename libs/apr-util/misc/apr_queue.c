@@ -126,7 +126,9 @@ APU_DECLARE(apr_status_t) apr_queue_create(apr_queue_t **q,
     }
 
     /* Set all the data in the queue to NULL */
-    queue->data = apr_pcalloc(a, queue_capacity * sizeof(void*));
+    queue->data = apr_palloc(a, queue_capacity * sizeof(void*));
+	if (!queue->data) return APR_ENOMEM;
+	memset(queue->data, 0, queue_capacity * sizeof(void*));
     queue->bounds = queue_capacity;
     queue->nelts = 0;
     queue->in = 0;
