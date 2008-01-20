@@ -481,7 +481,7 @@ static switch_status_t read_packet(listener_t * listener, switch_event_t **event
 							switch_xml_free(xml);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "XML ERROR!\n");
-							continue;
+							goto endloop;
 						}
 					}
 
@@ -496,6 +496,9 @@ static switch_status_t read_packet(listener_t * listener, switch_event_t **event
 					switch_socket_send(listener->sock, listener->ebuf, &len);
 
 					switch_safe_free(listener->ebuf);
+					
+				endloop:
+					switch_event_destroy(&pevent);
 				}
 			}
 		}
