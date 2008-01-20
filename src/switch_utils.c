@@ -1056,7 +1056,8 @@ static char *cleanup_separated_string(char *str)
 		int esc = 0;
 
 		if (*ptr == ESCAPE_META) {
-			if ((e = unescape_char(*(ptr+1))) != e) {
+			e = *(ptr+1);
+			if (e == '\'' || e == '"' || (e = unescape_char(*(ptr+1))) != *(ptr+1)) {
 				++ptr;
 				*dest++ = e;
 				end = dest;
