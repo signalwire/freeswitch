@@ -1832,7 +1832,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	} else {
 		data = frame->data;
 		len = frame->datalen;
-		ts = frame->timestamp;
+		ts = (uint32_t)frame->timestamp;
 	}
 
 	return rtp_common_write(rtp_session, send_msg, data, len, payload, ts, &frame->flags);
