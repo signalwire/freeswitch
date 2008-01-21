@@ -1198,6 +1198,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 			if ((profile = sofia_glue_find_profile(argv[1]))) {
 				stream->write_function(stream, "%s\n", line);
 				stream->write_function(stream, "Name       \t%s\n", switch_str_nil(argv[1]));
+				stream->write_function(stream, "Domain Name\t%s\n", switch_str_nil(profile->domain_name));
 				if (strcasecmp(argv[1], profile->name)) {
 				stream->write_function(stream, "Alias Of   \t%s\n", switch_str_nil(profile->name));
 				}
@@ -1748,11 +1749,11 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		} else if (!strchr(dest, '@')) {
 			char buf[128];
 			tech_pvt->e_dest = switch_core_session_strdup(nsession, dest);
-			if (sofia_reg_find_reg_url(profile, dest, profile->name, buf, sizeof(buf))) {
+			if (sofia_reg_find_reg_url(profile, dest, profile->domain_name, buf, sizeof(buf))) {
 				tech_pvt->dest = switch_core_session_strdup(nsession, buf);
-				tech_pvt->local_url = switch_core_session_sprintf(nsession, "%s@%s", dest, profile->name);
+				tech_pvt->local_url = switch_core_session_sprintf(nsession, "%s@%s", dest, profile->domain_name);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", dest, profile->name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", dest, profile->domain_name);
 				cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
 				goto error;
 			}

@@ -234,6 +234,7 @@ struct sofia_gateway {
 struct sofia_profile {
 	int debug;
 	char *name;
+	char *domain_name;
 	char *dbname;
 	char *dialplan;
 	char *context;

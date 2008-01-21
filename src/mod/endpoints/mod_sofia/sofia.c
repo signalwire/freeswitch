@@ -871,6 +871,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Settings, check the new config!\n");
 			} else {
 				char *xprofilename = (char *) switch_xml_attr_soft(xprofile, "name");
+				char *xprofiledomain = (char *) switch_xml_attr(xprofile, "domain");
 				switch_memory_pool_t *pool = NULL;
 
 				if (!xprofilename) {
@@ -901,6 +902,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 				profile->name = switch_core_strdup(profile->pool, xprofilename);
 				switch_snprintf(url, sizeof(url), "sofia_reg_%s", xprofilename);
+
+				if (xprofiledomain) {
+					profile->domain_name = switch_core_strdup(profile->pool, xprofiledomain);
+				} else {
+					profile->domain_name = profile->name;
+				}
 
 				profile->dbname = switch_core_strdup(profile->pool, url);
 				switch_core_hash_init(&profile->chat_hash, profile->pool);
@@ -2374,6 +2381,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		}
 
 		switch_channel_set_variable(channel, "sofia_profile_name", profile->name);
+		switch_channel_set_variable(channel, "sofia_profile_domain_name", profile->domain_name);
 
 		if (!switch_strlen_zero(sip->sip_from->a_display)) {
 			displayname = sip->sip_from->a_display;
