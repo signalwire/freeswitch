@@ -244,6 +244,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 		switch_buffer_create_dynamic(&bug->raw_write_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES, bytes * SWITCH_BUFFER_START_FRAMES, MAX_BUG_BUFFER);
 		switch_mutex_init(&bug->write_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	}
+
+	if ((bug->flags & SMBF_THREAD_LOCK)) {
+		bug->thread_id = switch_thread_self();
+	}
+
+
 	bug->ready = 1;
 	switch_thread_rwlock_wrlock(session->bug_rwlock);
 	bug->next = session->bugs;
@@ -269,6 +275,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_ses
 	if (session->bugs) {
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
+			if (bp->thread_id && bp->thread_id != switch_thread_self()) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BUG is thread locked skipping.\n");
+				continue;
+			}
+
 			if (bp->callback) {
 				bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_CLOSE);
 			}
@@ -287,6 +298,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(switch_media_bug_t *
 {
 	switch_media_bug_t *bp = *bug;
 	if (bp) {
+		if (bp->thread_id && bp->thread_id != switch_thread_self()) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BUG is thread locked skipping.\n");
+			return SWITCH_STATUS_FALSE;
+		}
+
 		if (bp->callback) {
 			bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_CLOSE);
 			bp->ready = 0;
@@ -308,6 +324,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 	if (session->bugs) {
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
+			if (bp->thread_id && bp->thread_id != switch_thread_self()) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BUG is thread locked skipping.\n");
+				continue;
+			}
+
 			if (!bp->ready) {
 				continue;
 			}

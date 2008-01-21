@@ -657,7 +657,8 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Close Channel %s [%s]\n", 
 					  switch_channel_get_name((*session)->channel),
 					  switch_channel_state_name(switch_channel_get_state((*session)->channel)));
-	
+
+	switch_core_media_bug_remove_all(*session);	
 	switch_ivr_deactivate_unicast(*session);
 	
 	switch_scheduler_del_task_group((*session)->uuid_str);
@@ -674,7 +675,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 		switch_event_fire(&event);
 	}
 
-	switch_core_media_bug_remove_all(*session);
+
 	switch_buffer_destroy(&(*session)->raw_read_buffer);
 	switch_buffer_destroy(&(*session)->raw_write_buffer);
 	switch_ivr_clear_speech_cache(*session);
@@ -694,10 +695,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t * thr
 	switch_core_session_t *session = obj;
 	session->thread = thread;
 
-
-
 	switch_core_session_run(session);
-	switch_core_media_bug_remove_all(session);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session %"SWITCH_SIZE_T_FMT" (%s) Locked, Waiting on external entities\n",
 					  session->id, switch_channel_get_name(session->channel));
 	switch_core_session_write_lock(session);

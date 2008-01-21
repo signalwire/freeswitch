@@ -830,6 +830,7 @@ SMBF_WRITE_REPLACE - Replace the Write Stream
 SMBF_READ_REPLACE - Replace the Read Stream
 SMBF_STEREO - Record in stereo
 SMBF_ANSWER_RECORD_REQ - Don't record until the channel is answered
+SMBF_THREAD_LOCK - Only let the same thread who created the bug remove it.
 </pre>
 */
 typedef enum {
@@ -840,7 +841,8 @@ typedef enum {
 	SMBF_READ_REPLACE = (1 << 3),
 	SMBF_READ_PING = (1 << 4),
 	SMBF_STEREO = (1 << 5),
-	SMBF_RECORD_ANSWER_REQ = (1 << 6)
+	SMBF_RECORD_ANSWER_REQ = (1 << 6),
+	SMBF_THREAD_LOCK = (1 << 7)
 } switch_media_bug_flag_t;
 
 /*!

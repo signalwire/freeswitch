@@ -153,6 +153,7 @@ struct switch_media_bug {
 	uint32_t flags;
 	uint8_t ready;
 	time_t stop_time;
+	switch_thread_id_t thread_id;
 	struct switch_media_bug *next;
 };
 
