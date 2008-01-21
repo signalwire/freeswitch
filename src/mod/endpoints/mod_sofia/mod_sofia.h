@@ -288,6 +288,7 @@ struct sofia_profile {
 	uint32_t session_timeout;
 	uint32_t max_proceeding;
 	uint32_t rtp_timeout_sec;
+	uint32_t rtp_hold_timeout_sec;
 	char *odbc_dsn;
 	char *odbc_user;
 	char *odbc_pass;
@@ -374,6 +375,7 @@ struct private_object {
 	uint32_t owner_id;
 	uint32_t session_id;
 	uint32_t max_missed_packets;
+	uint32_t max_missed_hold_packets;
 	/** VIDEO **/
 	switch_frame_t video_read_frame;
 	switch_codec_t video_read_codec;

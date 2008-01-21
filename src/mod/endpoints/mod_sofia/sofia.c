@@ -1011,6 +1011,11 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (v >= 0) {
 							profile->rtp_timeout_sec = v;
 						}
+					} else if (!strcasecmp(var, "rtp-hold-timeout-sec")) {
+						int v = atoi(val);
+						if (v >= 0) {
+							profile->rtp_hold_timeout_sec = v;
+						}
 					} else if (!strcasecmp(var, "manage-presence")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_PRESENCE;

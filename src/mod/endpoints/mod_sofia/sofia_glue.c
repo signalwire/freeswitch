@@ -1226,6 +1226,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	switch_status_t status;
 	char tmp[50];
 	uint32_t rtp_timeout_sec = tech_pvt->profile->rtp_timeout_sec;
+	uint32_t rtp_hold_timeout_sec = tech_pvt->profile->rtp_hold_timeout_sec;
 	
 	switch_assert(tech_pvt != NULL);
 
@@ -1370,12 +1371,27 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 				rtp_timeout_sec = v;
 			}
 		}
+
+		if ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_hold_timeout_sec"))) {
+			int v = atoi(val);
+			if (v >= 0) {
+				rtp_hold_timeout_sec = v;
+			}
+		}
 		
 		if (rtp_timeout_sec) {
 			tech_pvt->max_missed_packets = (tech_pvt->read_codec.implementation->samples_per_second * rtp_timeout_sec) / 
 				tech_pvt->read_codec.implementation->samples_per_frame;
 			
 			switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
+			if (!rtp_hold_timeout_sec) {
+				rtp_hold_timeout_sec = rtp_timeout_sec * 10;
+			}
+		}
+
+		if (rtp_hold_timeout_sec) {
+			tech_pvt->max_missed_hold_packets = (tech_pvt->read_codec.implementation->samples_per_second * rtp_hold_timeout_sec) / 
+				tech_pvt->read_codec.implementation->samples_per_frame;
 		}
 
 		if (tech_pvt->te) {
@@ -1540,7 +1556,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 			switch_channel_presence(tech_pvt->channel, "unknown", "hold");
 
 			if (tech_pvt->max_missed_packets) {
-				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets * 10);
+				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_hold_packets);
 			}
 
 			if (!(stream = switch_channel_get_variable(tech_pvt->channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
