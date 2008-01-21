@@ -283,6 +283,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_running(void);
   \note the body parameter can be shadowed by the switch_event_reserve_subclass_detailed function
 */
 SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, const char *fmt, ...) PRINTF_FUNCTION(2, 3);
+SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const char *in);
 
 SWITCH_DECLARE(switch_status_t) switch_event_create_pres_in_detailed(_In_z_ char *file, _In_z_ char *func, _In_ int line, 
 																	 _In_z_ const char *proto, _In_z_ const char *login,

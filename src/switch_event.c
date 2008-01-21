@@ -1007,6 +1007,267 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_pres_in_detailed(char *file,
 	return SWITCH_STATUS_MEMERR;
 }
 
+
+#define resize(l) {\
+char *dp;\
+olen += (len + l + block);\
+cpos = c - data;\
+if ((dp = realloc(data, olen))) {\
+    data = dp;\
+    c = data + cpos;\
+    memset(c, 0, olen - cpos);\
+ }}                           \
+
+SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const char *in)
+{
+	char *p, *c = NULL;
+	char *data, *indup;
+	size_t sp = 0, len = 0, olen = 0, vtype = 0, br = 0, cpos, block = 128;
+	const char *q, *sub_val = NULL;
+	char *cloned_sub_val = NULL;
+	char *func_val = NULL;
+	int nv = 0;
+
+	q = in;
+	while(q && *q) {
+		if (!(p = strchr(q, '$'))) {
+			break;
+		}
+		
+		if (*(p-1) == '\\') {
+			q = p + 1;
+			continue;
+		}
+
+		if (*(p+1) != '{') {
+			q = p + 1;
+			continue;
+		}
+		
+		nv = 1;
+		break;
+	}
+	
+	if (!nv) {
+		return (char *)in;
+	}
+
+	nv = 0;
+	olen = strlen(in) + 1;
+	indup = strdup(in);
+
+	if ((data = malloc(olen))) {
+		memset(data, 0, olen);
+		c = data;
+		for (p = indup; p && *p; p++) {
+			vtype = 0;
+			
+			if (*p == '\\') {
+				if (*(p + 1) == '$') {
+					nv = 1;
+				} else if (*(p + 1) == '\\') {
+					*c++ = *p++;
+					len++;
+					continue;
+				}
+				p++;
+			}
+
+			if (*p == '$' && !nv) {
+				if (*(p+1)) {
+					if (*(p+1) == '{') {
+						vtype = 1;
+					} else {
+						nv = 1;
+					}
+				} else {
+					nv = 1;
+				}
+			}
+
+			if (nv) {
+				*c++ = *p;
+				len++;
+				nv = 0;
+				continue;
+			}
+
+			if (vtype) {
+				char *s = p, *e, *vname, *vval = NULL;
+				size_t nlen;
+
+				s++;
+
+				if (vtype == 1 && *s == '{') {
+					br = 1;
+					s++;
+				}
+
+				e = s;
+				vname = s;
+				while (*e) {
+					if (br == 1 && *e == '}') {
+						br = 0;
+						*e++ = '\0';
+						break;
+					}
+
+					if (br > 0) {
+						if (e != s && *e == '{') {
+							br++;
+						} else if (br > 1 && *e == '}') {
+							br--;
+						}
+					}
+					
+					e++;
+				}
+				p = e;
+				
+				if ((vval = strchr(vname, '('))) {
+					e = vval - 1;
+					*vval++ = '\0';
+					while(*e == ' ') {
+						*e-- = '\0';
+					}
+					e = vval;
+					br = 1;
+					while(e && *e) {
+						if (*e == '(') {
+							br++;
+						} else if (br > 1 && *e == ')') {
+							br--;
+						} else if (br == 1 && *e == ')') {
+							*e = '\0';
+							break;
+						}
+						e++;
+					}
+
+					vtype = 2;
+				}
+
+				if (vtype == 1) {
+					char *expanded = NULL;
+					int offset = 0;
+					int ooffset = 0;
+					char *ptr;
+
+					if ((expanded = switch_event_expand_headers(event, (char *)vname)) == vname) {
+						expanded = NULL;
+					} else {
+						vname = expanded;
+					}
+					if ((ptr = strchr(vname, ':'))) {
+						*ptr++ = '\0';
+						offset = atoi(ptr);
+						if ((ptr = strchr(ptr, ':'))) {
+							ptr++;
+							ooffset = atoi(ptr);
+						}
+					}
+					
+					if (!(sub_val = switch_event_get_header(event, vname))) {
+						sub_val = switch_core_get_variable(vname);
+					}
+
+					if (offset || ooffset) {
+						cloned_sub_val = strdup(sub_val);
+                        switch_assert(cloned_sub_val);
+						sub_val = cloned_sub_val;
+					}
+
+					if (offset >= 0) {
+						sub_val += offset;
+					} else if ((size_t)abs(offset) <= strlen(sub_val)) {
+						sub_val = cloned_sub_val + (strlen(cloned_sub_val) + offset);
+					}
+
+					if (ooffset > 0 && (size_t)ooffset < strlen(sub_val)) {
+						if ((ptr = (char *)sub_val + ooffset)) {
+							*ptr = '\0';
+						}
+					}
+
+					switch_safe_free(expanded);
+				} else {
+					switch_stream_handle_t stream = { 0 };
+					char *expanded = NULL;
+
+					SWITCH_STANDARD_STREAM(stream);
+
+					if (stream.data) {
+						char *expanded_vname = NULL;
+
+						if ((expanded_vname = switch_event_expand_headers(event, (char *)vname)) == vname) {
+							expanded_vname = NULL;
+						} else {
+							vname = expanded_vname;
+						}
+
+						if ((expanded = switch_event_expand_headers(event, vval)) == vval) {
+							expanded = NULL;
+						} else {
+							vval = expanded;
+						}
+
+						if (switch_api_execute(vname, vval, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
+							func_val = stream.data;
+							sub_val = func_val;
+						} else {
+							free(stream.data);
+						}
+						
+						switch_safe_free(expanded);
+						switch_safe_free(expanded_vname);
+						
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+						free(data);
+						free(indup);
+						return (char *)in;
+					}
+				}
+				if ((nlen = sub_val ? strlen(sub_val) : 0)) {
+					if (len + nlen >= olen) {
+						resize(nlen);
+					}
+
+					len += nlen;
+					strcat(c, sub_val);
+					c += nlen;
+				}
+
+				switch_safe_free(func_val);
+				switch_safe_free(cloned_sub_val);
+				sub_val = NULL;
+				vname = NULL;
+				vtype = 0;
+				br = 0;
+			}
+			if (len + 1 >= olen) {
+				resize(1);
+			}
+
+			if (sp) {
+				*c++ = ' ';
+				sp = 0;
+				len++;
+			}
+
+			if (*p == '$') {
+				p--;
+			} else {
+				*c++ = *p;
+				len++;
+			}
+		}
+	}
+	free(indup);
+	
+	return data;
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c
