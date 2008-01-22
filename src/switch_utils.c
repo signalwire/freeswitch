@@ -1039,7 +1039,7 @@ static char unescape_char(char escaped)
 
 /* Helper function used when separating strings to remove quotes, leading /
    trailing spaces, and to convert escaped characters. */
-static char *cleanup_separated_string(char *str)
+static char *cleanup_separated_string(char *str, char delim)
 {
 	char *ptr;
 	char *dest;
@@ -1057,7 +1057,7 @@ static char *cleanup_separated_string(char *str)
 
 		if (*ptr == ESCAPE_META) {
 			e = *(ptr+1);
-			if (e == '\'' || e == '"' || (e = unescape_char(*(ptr+1))) != *(ptr+1)) {
+			if (e == '\'' || e == '"' || (delim && e == delim) || (e = unescape_char(*(ptr+1))) != *(ptr+1)) {
 				++ptr;
 				*dest++ = e;
 				end = dest;
@@ -1117,7 +1117,7 @@ static unsigned int separate_string_char_delim(char *buf, char delim, char **arr
 	}
 	/* strip quotes, escaped chars and leading / trailing spaces */
 	for (i = 0; i < count; ++i) {
-		array[i] = cleanup_separated_string(array[i]);
+		array[i] = cleanup_separated_string(array[i], delim);
 	}
 	return count;
 }
@@ -1175,7 +1175,7 @@ static unsigned int separate_string_blank_delim(char *buf, char **array, unsigne
 	}
 	/* strip quotes, escaped chars and leading / trailing spaces */
 	for (i = 0; i < count; ++i) {
-		array[i] = cleanup_separated_string(array[i]);
+		array[i] = cleanup_separated_string(array[i], 0);
 	}
 	return count;
 }
