@@ -3187,7 +3187,7 @@ static switch_status_t conf_api_sub_bgdial(conference_obj_t * conference, switch
 static switch_status_t conf_api_sub_transfer(conference_obj_t * conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	switch_status_t ret_status = SWITCH_STATUS_SUCCESS;
-	char *params = NULL, *chanvars = NULL;
+	switch_event_t *params = NULL;
 	switch_assert(conference != NULL);
 	switch_assert(stream != NULL);
 
@@ -3229,10 +3229,15 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t * conference, swit
 				} else {
 					profile_name = "default";
 				}
-				params = switch_mprintf("conf_name=%s&profile_name=%s", conf_name, profile_name);
-				chanvars = switch_channel_build_param_string(channel, NULL, params);
+				
+				switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+				switch_assert(params);
+				switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "conf_name", conf_name);
+				switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile_name", profile_name);
+				switch_channel_event_set_data(channel, params);
+
 				/* Open the config from the xml registry  */
-				if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, chanvars))) {
+				if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, params))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
 					goto done;
 				}
@@ -3303,9 +3308,9 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t * conference, swit
 	}
 
   done:
-	switch_safe_free(params);
-	switch_safe_free(chanvars);
-
+	if (params) {
+		switch_event_destroy(&params);
+	}
 	return ret_status;
 }
 
@@ -3980,7 +3985,7 @@ SWITCH_STANDARD_APP(conference_function)
 	uint8_t rl = 0, isbr = 0;
 	char *dpin = NULL;
 	conf_xml_cfg_t xml_cfg = { 0 };
-	char *params = NULL;
+	switch_event_t *params = NULL;
 
 	switch_assert(channel != NULL);
 
@@ -4032,7 +4037,11 @@ SWITCH_STANDARD_APP(conference_function)
 		profile_name = "default";
 	}
 
-	params = switch_mprintf("conf_name=%s&profile_name=%s", conf_name, profile_name);
+
+	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+	switch_assert(params);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "conf_name", conf_name);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile_name", profile_name);
 
 	/* Open the config from the xml registry */
 	if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, params))) {
@@ -4337,7 +4346,7 @@ SWITCH_STANDARD_APP(conference_function)
   codec_done2:
 	switch_core_codec_destroy(&member.write_codec);
   done:
-	switch_safe_free(params);
+	switch_event_destroy(&params);
 	switch_buffer_destroy(&member.resample_buffer);
 	switch_buffer_destroy(&member.audio_buffer);
 	switch_buffer_destroy(&member.mux_buffer);
@@ -4957,9 +4966,15 @@ static void pres_event_handler(switch_event_t *event)
 static void send_presence(switch_event_types_t id)
 {
 	switch_xml_t cxml, cfg, advertise, room;
+	switch_event_t *params = NULL;
+	
+	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+	switch_assert(params);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "presence", "true");
+	
 
 	/* Open the config from the xml registry */
-	if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, "presence"))) {
+	if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, params))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
 		goto done;
 	}
@@ -4983,6 +4998,8 @@ static void send_presence(switch_event_types_t id)
 	}
 
   done:
+	switch_event_destroy(&params);
+
 	/* Release the config registry handle */
 	if (cxml) {
 		switch_xml_free(cxml);

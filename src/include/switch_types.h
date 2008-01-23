@@ -1162,7 +1162,7 @@ typedef switch_status_t (*switch_say_callback_t) (switch_core_session_t *session
 typedef struct switch_xml *switch_xml_t;
 typedef struct switch_core_time_duration switch_core_time_duration_t;
 typedef switch_xml_t(*switch_xml_search_function_t) (const char *section,
-													 const char *tag_name, const char *key_name, const char *key_value, const char *params,
+													 const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,
 													 void *user_data);
 
 typedef struct switch_hash switch_hash_t;

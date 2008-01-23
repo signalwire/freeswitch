@@ -95,7 +95,7 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 }
 
 
-static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, const char *key_name, const char *key_value, const char *params,
+static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,
 								  void *user_data)
 {
 	char filename[512] = "";
@@ -111,7 +111,8 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	long httpRes = 0;
 	struct curl_slist *headers = NULL;
 	char hostname[256] = "";
-
+	char basic_data[512];
+	
 	gethostname(hostname, sizeof(hostname));
 
 	if (!binding) {
@@ -128,15 +129,18 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		return xml;
 	}
 
-	data = switch_mprintf("hostname=%s&section=%s&tag_name=%s&key_name=%s&key_value=%s%s%s",
-						  hostname,
-						  section,
-						  switch_str_nil(tag_name),
-						  switch_str_nil(key_name),
-						  switch_str_nil(key_value), 
-						  params ? strchr(params, '=') ? "&" : "&params=" : "", params ? params : "");
-	switch_assert(data);
+	
+	switch_snprintf(basic_data, sizeof(basic_data), "hostname=%s&section=%s&tag_name=%s&key_name=%s&key_value=%s",
+					hostname,
+					section,
+					switch_str_nil(tag_name),
+					switch_str_nil(key_name),
+					switch_str_nil(key_value));
 
+	data = switch_event_build_param_string(params, basic_data);
+	
+	switch_assert(data);
+	printf("XXXXXXXXXXXXXXXXXXXX\n%s\n", data);
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
 

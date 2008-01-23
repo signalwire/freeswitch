@@ -2278,7 +2278,8 @@ static switch_status_t load_config(void)
 
 static void do_vcard(ldl_handle_t *handle, char *to, char *from, char *id)
 {
-	char *params = NULL, *real_to, *to_user, *xmlstr = NULL, *to_host = NULL;
+	switch_event_t *params = NULL;
+	char *real_to, *to_user, *xmlstr = NULL, *to_host = NULL;
 	switch_xml_t domain, xml = NULL, user, vcard;
 	int sent = 0;
 
@@ -2303,11 +2304,11 @@ static void do_vcard(ldl_handle_t *handle, char *to, char *from, char *id)
 		goto end;
 	}
 
-	if (!(params = switch_mprintf("to=%s@%s&from=%s&object=vcard", to_user, to_host, from))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-		goto end;
-	}
-
+	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+	switch_assert(params);
+	switch_event_add_header(params, SWITCH_STACK_BOTTOM, "to", "%s@%s", to_user, to_host);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "from", from);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "object", "vcard");
 
 	if (switch_xml_locate("directory", "domain", "name", to_host, &xml, &domain, params) != SWITCH_STATUS_SUCCESS) {
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "can't find domain for [%s@%s]\n", to_user, to_host);
@@ -2334,6 +2335,8 @@ static void do_vcard(ldl_handle_t *handle, char *to, char *from, char *id)
 	}
 
  end:
+
+	switch_event_destroy(&params);
 
 	if (!sent) {
 		ldl_handle_send_vcard(handle, to, from, id, NULL);

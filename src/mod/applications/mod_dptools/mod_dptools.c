@@ -864,16 +864,19 @@ static switch_ivr_action_t menu_handler(switch_ivr_menu_t * menu, char *param, c
 SWITCH_STANDARD_APP(ivr_application_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	char *params,*chanvars;
-
-	if (channel && !switch_strlen_zero(data) && (params = switch_core_session_strdup(session, data))) {
+	switch_event_t *params;
+	
+	if (channel) {
 		switch_xml_t cxml = NULL, cfg = NULL, xml_menus = NULL, xml_menu = NULL;
 
 		// Open the config from the xml registry
-		chanvars = switch_channel_build_param_string(channel, NULL, NULL);
-		if ((cxml = switch_xml_open_cfg(ivr_cf_name, &cfg, chanvars)) != NULL) {
+		switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+		switch_assert(params);
+		switch_channel_event_set_data(channel, params);
+
+		if ((cxml = switch_xml_open_cfg(ivr_cf_name, &cfg, params)) != NULL) {
 			if ((xml_menus = switch_xml_child(cfg, "menus"))) {
-				xml_menu = switch_xml_find_child(xml_menus, "menu", "name", params);
+				xml_menu = switch_xml_find_child(xml_menus, "menu", "name", (char *)data);
 
 				// if the menu was found
 				if (xml_menu != NULL) {
@@ -889,20 +892,20 @@ SWITCH_STANDARD_APP(ivr_application_function)
 						switch_xml_free(cxml);
 						cxml = NULL;
 						switch_channel_pre_answer(channel);
-						switch_ivr_menu_execute(session, menu_stack, params, NULL);
+						switch_ivr_menu_execute(session, menu_stack, (char *)data, NULL);
 						switch_ivr_menu_stack_free(menu_stack);
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to create menu '%s'\n", params);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to create menu\n");
 					}
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to find menu '%s'\n", params);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to find menu\n");
 				}
 			}
 			switch_xml_free(cxml);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", ivr_cf_name);
 		}
-		switch_safe_free(chanvars);
+		switch_event_destroy(&params);
 	}
 }
 
@@ -1414,7 +1417,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	static switch_call_cause_t cause = SWITCH_CAUSE_UNALLOCATED;
 	unsigned int timelimit = 60;
 	switch_channel_t *new_channel = NULL;
-
+	switch_event_t *params;
 	if (switch_strlen_zero(outbound_profile->destination_number)) {
 		goto done;
 	}
@@ -1427,7 +1430,12 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 	*domain++ = '\0';
 
-	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, "as_channel=true") != SWITCH_STATUS_SUCCESS) {
+	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+	switch_assert(params);
+	switch_event_add_header(params, SWITCH_STACK_BOTTOM, "as_channel", "true");
+	
+
+	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain);
 		goto done;
 	}
@@ -1457,6 +1465,8 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	}
 
  done:
+
+	switch_event_destroy(&params);
 
 	if (dest) {
 		const char *var;

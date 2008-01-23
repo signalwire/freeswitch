@@ -1281,7 +1281,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 												  const char *tag_name,
 												  const char *key_name, const char *key_value, switch_xml_t * root, switch_xml_t * node,
-												  const char *params)
+												  switch_event_t *params)
 {
 	switch_xml_t conf = NULL;
 	switch_xml_t tag = NULL;
@@ -1353,17 +1353,24 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name, char *params, switch_xml_t *root, switch_xml_t *domain)
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name, switch_event_t *params, switch_xml_t *root, switch_xml_t *domain)
 {
-	char my_params[512];
+	switch_event_t *my_params = NULL;
+	switch_status_t status;
 	*domain = NULL;
 
 	if (!params) {
-		switch_snprintf(my_params, sizeof(my_params), "domain=%s", domain_name);
+		switch_event_create(&my_params, SWITCH_EVENT_MESSAGE);
+		switch_assert(my_params);
+		switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "domain", domain_name);
 		params = my_params;
 	}
 
-	return switch_xml_locate("directory", "domain", "name", domain_name, root, domain, params);
+	status = switch_xml_locate("directory", "domain", "name", domain_name, root, domain, params);
+	if (my_params) {
+		switch_event_destroy(&my_params);
+	}
+	return status;
 }
 
 
@@ -1374,22 +1381,31 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 													   switch_xml_t *root,
 													   switch_xml_t *domain,
 													   switch_xml_t *user,
-													   const char *xtra_params)
+													   switch_event_t *params)
 {
-	char params[1024] = "";
+
 	switch_status_t status;
 	*root = NULL;
 	*user = NULL;
 	*domain = NULL;
-	
-	if (!switch_strlen_zero(xtra_params)) {
-		switch_snprintf(params, sizeof(params), "key=%s&user=%s&domain=%s&ip=%s&%s", key,
-				 switch_str_nil(user_name), switch_str_nil(domain_name), switch_str_nil(ip), xtra_params);
-	} else {
-		switch_snprintf(params, sizeof(params), "key=%s&user=%s&domain=%s&ip=%s", key,
-				 switch_str_nil(user_name), switch_str_nil(domain_name), switch_str_nil(ip));
-		xtra_params = "";
+
+	if (params) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "key", key);
+
+		if (user_name) {
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "user", user_name);
+		}
+
+		if (domain_name) {
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain_name);
+		}
+
+		if (ip) {
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "ip", ip);
+		}
 	}
+	
+
 	if ((status = switch_xml_locate_domain(domain_name, params, root, domain)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
@@ -1402,7 +1418,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 
 	if (user_name) {
 		
-		if (!switch_strlen_zero(xtra_params) && strstr(xtra_params, "mailbox")) {
+		if (params && switch_event_get_header(params, "mailbox")) {
 			if ((*user = switch_xml_find_child(*domain, "user", "mailbox", user_name))) {
 				return SWITCH_STATUS_SUCCESS;
 			}
@@ -1507,7 +1523,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_destroy(void)
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_xml_t * node, const char *params)
+SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_xml_t *node, switch_event_t *params)
 {
 	switch_xml_t xml = NULL, cfg = NULL;
 

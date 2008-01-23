@@ -181,15 +181,18 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t * root,
 										   switch_xml_t * node)
 {
-	char *data;
 	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_GENERR;
+	switch_event_t *params = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	data = switch_channel_build_param_string(channel, caller_profile, NULL);
+	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+    switch_assert(params);
 
-	status = switch_xml_locate("dialplan", NULL, NULL, NULL, root, node, data);
-	switch_safe_free(data);
+	switch_channel_event_set_data(channel, params);
+
+	status = switch_xml_locate("dialplan", NULL, NULL, NULL, root, node, params);
+	switch_event_destroy(&params);
 	return status;
 }
 

@@ -775,8 +775,8 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	char *mailbox = NULL;
 	switch_xml_t domain, xml = NULL, user, param, uparams, dparams;	
 	char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1] = "";
-	char *pbuf = NULL;
 	char *domain_name = NULL;
+	switch_event_t *params = NULL;
 
 	username = realm = nonce = uri = qop = cnonce = nc = response = NULL;
 	
@@ -854,9 +854,12 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		free(sql);
 	} 
 	
-	pbuf = switch_mprintf("action=sip_auth&profile=%s&user_agent=%s", 
-						  profile->name, 
-						  (sip && sip->sip_user_agent) ? sip->sip_user_agent->g_string : "unknown");
+	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+	switch_assert(params);
+	switch_event_add_header(params, SWITCH_STACK_BOTTOM, "action", "sip_auth");
+	switch_event_add_header(params, SWITCH_STACK_BOTTOM, "profile", profile->name);
+	switch_event_add_header(params, SWITCH_STACK_BOTTOM, "user_agent", (sip && sip->sip_user_agent) ? sip->sip_user_agent->g_string : "unknown");
+	
 	
 	if (!switch_strlen_zero(profile->reg_domain)) {
 		domain_name = profile->reg_domain;
@@ -864,7 +867,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		domain_name = realm;
 	}
 	
-	if (switch_xml_locate_user("id", username, domain_name, ip, &xml, &domain, &user, pbuf) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user("id", username, domain_name, ip, &xml, &domain, &user, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", username, domain_name);
 		ret = AUTH_FORBIDDEN;
 		goto end;
@@ -1053,10 +1056,13 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		}
 	}
   end:
+
+	switch_event_destroy(&params);
+
 	if (xml) {
 		switch_xml_free(xml);
 	}
-	switch_safe_free(pbuf);
+
 	switch_safe_free(input);
 	switch_safe_free(input2);
 	switch_safe_free(username);

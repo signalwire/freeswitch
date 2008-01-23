@@ -1268,6 +1268,81 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 	return data;
 }
 
+
+SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, const char *prefix)
+{
+	switch_stream_handle_t stream = { 0 };
+	switch_size_t encode_len = 1024, new_len = 0;
+	char *encode_buf = NULL;
+	const char *prof[12] = { 0 }, *prof_names[12] = {0};
+	char *e = NULL;
+	switch_event_header_t *hi;
+	uint32_t x = 0;
+
+	SWITCH_STANDARD_STREAM(stream);
+
+	if (prefix) {
+		stream.write_function(&stream, "%s&", prefix);
+	}
+
+	encode_buf = malloc(encode_len);
+	switch_assert(encode_buf);
+
+
+
+	for (x = 0; prof[x]; x++) {
+		if (switch_strlen_zero(prof[x])) {
+			continue;
+		}
+		new_len = (strlen(prof[x]) * 3) + 1;
+		if (encode_len < new_len) {
+			char *tmp;
+
+			encode_len = new_len;
+
+			if (!(tmp = realloc(encode_buf, encode_len))) {
+				abort();
+			}
+
+			encode_buf = tmp;
+		}
+		switch_url_encode(prof[x], encode_buf, encode_len - 1);
+		stream.write_function(&stream, "%s=%s&", prof_names[x], encode_buf);
+	}
+
+	if ((hi = event->headers)) {
+		for (; hi; hi = hi->next) {
+			char *var = hi->name;
+			char *val = hi->value;
+			
+			new_len = (strlen((char *) var) * 3) + 1;
+			if (encode_len < new_len) {
+				char *tmp;
+				
+				encode_len = new_len;
+			
+				tmp = realloc(encode_buf, encode_len);
+				switch_assert(tmp);
+				encode_buf = tmp;
+			}
+
+			switch_url_encode((char *) val, encode_buf, encode_len - 1);
+			stream.write_function(&stream, "%s=%s&", (char *) var, encode_buf);
+
+		}
+	}
+
+	e = (char *) stream.data + (strlen((char *) stream.data) - 1);
+
+	if (e && *e == '&') {
+		*e = '\0';
+	}
+
+	switch_safe_free(encode_buf);
+
+	return stream.data;
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c

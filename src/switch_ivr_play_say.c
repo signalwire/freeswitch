@@ -93,8 +93,9 @@ static switch_say_type_t get_say_type_by_name(char *name)
 SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *session, const char *macro_name, const char *data, const char *lang,
 														switch_input_args_t *args)
 {
+	switch_event_t *hint_data;
 	switch_xml_t cfg, xml = NULL, language, macros, macro, input, action;
-	char *lname = NULL, *mname = NULL, hint_data[1024] = "", enc_hint[1024] = "";
+	char *lname = NULL, *mname = NULL;
 	switch_status_t status = SWITCH_STATUS_GENERR;
 	const char *old_sound_prefix = NULL, *sound_path = NULL, *tts_engine = NULL, *tts_voice = NULL;
 	const char *module_name = NULL, *chan_lang = NULL;
@@ -122,12 +123,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 
 	module_name = chan_lang;
 
-	if (!data) {
-		data = "";
+	switch_event_create(&hint_data, SWITCH_EVENT_MESSAGE);
+	switch_assert(hint_data);
+	
+	switch_event_add_header_string(hint_data, SWITCH_STACK_BOTTOM, "macro_name", macro_name);
+	switch_event_add_header_string(hint_data, SWITCH_STACK_BOTTOM, "lang", chan_lang);
+	if (data) {
+		switch_event_add_header_string(hint_data, SWITCH_STACK_BOTTOM, "data", data);
 	}
-
-	switch_url_encode(data, enc_hint, sizeof(enc_hint));
-	switch_snprintf(hint_data, sizeof(hint_data), "macro_name=%s&lang=%s&data=%s&destination_number=%s", macro_name, chan_lang, enc_hint, switch_channel_get_variable(channel,"destination_number"));
+	switch_channel_event_set_data(channel, hint_data);
 
 	if (switch_xml_locate("phrases", NULL, NULL, NULL, &xml, &cfg, hint_data) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of phrases failed.\n");
@@ -320,6 +324,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	}
 
   done:
+	
+	if (hint_data) {
+		switch_event_destroy(&hint_data);
+	}
+
 	if (!matches) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "macro [%s] did not match any patterns\n", macro_name);
 	}

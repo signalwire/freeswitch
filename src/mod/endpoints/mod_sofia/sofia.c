@@ -828,7 +828,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 	sofia_profile_t *profile = NULL;
 	char url[512] = "";
 	int profile_found = 0;
-
+	switch_event_t *params = NULL;;
+	
 	if (!reload) {
 		su_init();
 		if (sip_update_default_mclass(sip_extend_mclass(NULL)) < 0) {
@@ -847,9 +848,11 @@ switch_status_t config_sofia(int reload, char *profile_name)
 		return status;
 	}
 
-	switch_snprintf(url, sizeof(url), "profile=%s", switch_str_nil(profile_name));
-
-	if (!(xml = switch_xml_open_cfg(cf, &cfg, url))) {
+	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+	switch_assert(params);
+	switch_event_add_header(params, SWITCH_STACK_BOTTOM, "profile", profile_name);
+	
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, params))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
@@ -1279,6 +1282,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 		}
 	}
   done:
+
+	switch_event_destroy(&params);
+
 	if (xml) {
 		switch_xml_free(xml);
 	}

@@ -50,7 +50,7 @@ SWITCH_STANDARD_API(user_data_function)
 	char delim = ' ';
 	const char *err = NULL;
 	const char *container = "params", *elem = "param";
-	char *params = NULL;
+	switch_event_t *params = NULL;
 
     if (!cmd) {
 		err = "bad args";
@@ -77,7 +77,13 @@ SWITCH_STANDARD_API(user_data_function)
 		domain = "cluecon.com";
 	}
 	
-	params = switch_mprintf("user=%s&domain=%s&type=%s&key=%s", user, domain, type, key);
+	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+	switch_assert(params);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "user", user);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "type", type);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "key", key);
+
 
 	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, params) != SWITCH_STATUS_SUCCESS) {
 		err = "can't find user";
@@ -86,6 +92,9 @@ SWITCH_STANDARD_API(user_data_function)
 	
 	
  end:
+
+	switch_event_destroy(&params);
+
 
 	if (xml) {
 		if (err) {
@@ -217,7 +226,8 @@ SWITCH_STANDARD_API(xml_locate_function)
 	switch_xml_t xml = NULL, obj = NULL;
 	int argc;
     char *mydata = NULL, *argv[4];
-	char *section, *tag, *tag_attr_name, *tag_attr_val, *params = NULL;
+	char *section, *tag, *tag_attr_name, *tag_attr_val;
+	switch_event_t *params = NULL;
 	char *xmlstr;
 	char *path_info, delim = ' ';
 	char *host = NULL;
@@ -259,8 +269,13 @@ SWITCH_STANDARD_API(xml_locate_function)
 	tag_attr_name = argv[2];
 	tag_attr_val = argv[3];
 	
-	params = switch_mprintf("section=%s&tag=%s&tag_attr_name=%s&tag_attr_val=%s", section, tag, tag_attr_name, tag_attr_val);
+	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
 	switch_assert(params);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "section", section);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "tag", tag);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "tag_attr_name", tag_attr_name);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "tag_attr_val", tag_attr_val);
+
 	if (switch_xml_locate(section, tag, tag_attr_name, tag_attr_val, &xml, &obj, params) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream,  "can't find anything\n");
 		goto end;
@@ -268,6 +283,8 @@ SWITCH_STANDARD_API(xml_locate_function)
 
 
  end:
+
+	switch_event_destroy(&params);
 
 	if (err) {
 		if (host) {

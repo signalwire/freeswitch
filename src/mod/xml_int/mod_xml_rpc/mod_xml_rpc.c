@@ -158,6 +158,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 	switch_xml_t x_domain, x_domain_root = NULL, x_user, x_params, x_param;
 	const char *box;
 	int at = 0;
+	switch_event_t *params = NULL;
 
     p = RequestHeaderValue(r, "authorization");
 
@@ -197,11 +198,17 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 					r->user=strdup(user);
 					goto authed;
 				}
+				
+				switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+				switch_assert(params);
+				switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "mailbox", "check");
 
-				if (switch_xml_locate_user("id", user, domain_name, NULL, &x_domain_root, &x_domain, &x_user, "mailbox=check") != SWITCH_STATUS_SUCCESS) {
+				if (switch_xml_locate_user("id", user, domain_name, NULL, &x_domain_root, &x_domain, &x_user, params) != SWITCH_STATUS_SUCCESS) {
+					switch_event_destroy(&params);
 					goto fail;
 				}
-				
+
+				switch_event_destroy(&params);				
 				box = switch_xml_attr_soft(x_user, "mailbox");
 				
                 for (x_param = switch_xml_child(x_domain, "param"); x_param; x_param = x_param->next) {

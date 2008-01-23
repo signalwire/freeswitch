@@ -316,9 +316,9 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_root(void);
 SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 												  const char *tag_name,
 												  const char *key_name, const char *key_value, switch_xml_t * root, switch_xml_t * node,
-												  const char *params);
+												  switch_event_t *params);
 
-SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name, char *params, switch_xml_t *root, switch_xml_t *domain);
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name, switch_event_t *params, switch_xml_t *root, switch_xml_t *domain);
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 													   const char *user_name, 
 													   const char *domain_name, 
@@ -326,14 +326,14 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 													   switch_xml_t *root,
 													   switch_xml_t *domain,
 													   switch_xml_t *user,
-													   const char *xtra_params);
+													   switch_event_t *params);
 
 ///\brief open a config in the core registry
 ///\param file_path the name of the config section e.g. modules.conf
 ///\param node a pointer to point to the node if it is found
 ///\param params optional URL formatted params to pass to external gateways
 ///\return the root xml node associated with the current request or NULL
-SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_xml_t * node, const char *params);
+SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_xml_t * node, switch_event_t *params);
 
 ///\brief bind a search function to an external gateway
 ///\param function the search function to bind

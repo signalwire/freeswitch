@@ -336,6 +336,9 @@ SWITCH_DECLARE(void) switch_event_deliver(switch_event_t **event);
   \note the body supplied by this function will supersede an existing body the event may have
 */
 #define switch_event_fire_data(event, data) switch_event_fire_detailed(__FILE__, (char * )__SWITCH_FUNC__, __LINE__, event, data)
+
+SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, const char *prefix);
+
 ///\}
 
 SWITCH_END_EXTERN_C
