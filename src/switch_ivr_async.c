@@ -505,7 +505,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		switch_codec_t codec = {0};
 		int16_t buf[8192];
 		switch_codec_t *tread_codec = switch_core_session_get_read_codec(tsession);
-		int tlen = tread_codec->implementation->bytes_per_frame;
+		uint32_t tlen = tread_codec->implementation->bytes_per_frame;
 
 		ep = switch_core_session_alloc(session, sizeof(*ep));
 
