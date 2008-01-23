@@ -1543,6 +1543,9 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			rtp_session->ts = (uint32_t) timestamp;
 		} else if (rtp_session->timer.timer_interface) {
 			rtp_session->ts = rtp_session->timer.samplecount;
+			if (rtp_session->ts <= rtp_session->last_write_ts) {
+				rtp_session->ts = rtp_session->last_write_ts + rtp_session->samples_per_interval;
+			}
 		} else {
 			rtp_session->ts += rtp_session->samples_per_interval;
 		}
