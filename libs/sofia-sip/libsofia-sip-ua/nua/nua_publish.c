@@ -405,7 +405,7 @@ static int nua_publish_client_response(nua_client_request_t *cr,
 	if (!ex || ex->ex_delta == 0)
 	  SET_STATUS(900, "Received Invalid Expiration Time");
 	else
-	  SET_STATUS1(NUA_INTERNAL_ERROR);
+	  SET_STATUS1(NUA_ERROR_AT(__FILE__, __LINE__));
       }
       else
 	nua_dialog_usage_set_refresh(du, ex->ex_delta);
@@ -428,7 +428,7 @@ static void nua_publish_usage_refresh(nua_handle_t *nh,
   }
 
   nua_stack_event(nh->nh_nua, nh, NULL,
-		  nua_r_publish, NUA_INTERNAL_ERROR,
+		  nua_r_publish, NUA_ERROR_AT(__FILE__, __LINE__),
 		  NULL);
 
   nua_dialog_usage_remove(nh, ds, du);

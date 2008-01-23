@@ -34,30 +34,29 @@
  * always storing a pointer to element). It can be used without
  * <sofia-sip/su_alloc.h>.
  * 
- * This file contain a hash table template for C.  The hash tables are
- * resizeable, and they usually contain pointers to entries.  The
- * declaration for template datatypes is instantiated with macro
- * HTABLE2_DECLARE().  The prototypes for hashing functions are instantiated
- * with macro HTABLE2_PROTOS().  The implementation is instantiated with
- * macro HTABLE2_BODIES().
+ * This file contain a hash table template for C. The hash tables are
+ * resizeable, and they usually contain pointers to entries. The declaration
+ * for template datatypes is instantiated with macro HTABLE2_DECLARE2(). The
+ * prototypes for hashing functions are instantiated with macro
+ * HTABLE2_PROTOS2(). The implementation is instantiated with macro
+ * HTABLE2_BODIES2().
  *
  * The hash table template is most efficient when the hash value is
  * precalculated and stored in each entry.  The hash "function" given to the
- * HTABLE2_BODIES() would then be something like macro
+ * HTABLE2_BODIES2() would then be something like macro
  * @code
- * #define HTABLE2_ENTRY_HASH(e) ((e).e_hash_value)
+ * #define ENTRY_HASH(e) ((e).e_hash_value)
  * @endcode
  *
- * When a entry with new identical hash key is added to the table, it can be
- * either @e inserted (before any other entry with same key value) or
- * @e appended.
+ * When a entry with new identical key is added to the table, it can be
+ * either @e inserted (before any other entry with same key value) or @e
+ * appended.
  * 
  * Example code can be found from <htable_test.c>.
  * 
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
  *
  * @date Created: Tue Sep 25 17:42:40 2001 ppessi
- *
  */
 
 typedef unsigned long hash_value_t;
@@ -75,6 +74,8 @@ typedef unsigned long hash_value_t;
  * @param sname     name of struct
  * @param pr        hash table field prefix
  * @param entrytype entry type
+ *
+ * @NEW_1_12_8
  */
 #define HTABLE2_DECLARE2(type, sname, pr, entrytype, size_t)	\
 typedef struct sname { \
@@ -101,6 +102,8 @@ typedef struct sname { \
  * @param prefix    function prefix
  * @param pr        hash table field prefix (not used)
  * @param entrytype entry type
+ *
+ * @NEW_1_12_8
  */
 #define HTABLE2_PROTOS2(type, prefix, pr, entrytype, size_t)	    \
 HTABLE2_SCOPE int prefix##_resize(void *a, type *, size_t); \
@@ -131,6 +134,8 @@ HTABLE2_SCOPE int prefix##_remove(type *, entrytype const)
  * @param reclaim   function or macro zeroing entry
  * @param is_equal  equality test
  * @param halloc    function allocating or freeing memory
+ *
+ * @NEW_1_12_8
  */
 #define HTABLE2_BODIES2(type, prefix, pr, entrytype, size_t,		\
 		        hfun, is_used, reclaim, is_equal, halloc)	\

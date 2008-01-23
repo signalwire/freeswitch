@@ -2,7 +2,7 @@
 # Tests using check
 #
 
-EXTRA_DIST = check_nua.c
+EXTRA_DIST = check_sofia.h check_sofia.c suite_for_nua.c
 
 TESTS =
 check_PROGRAMS =

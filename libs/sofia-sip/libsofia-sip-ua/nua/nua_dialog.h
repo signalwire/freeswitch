@@ -422,6 +422,8 @@ void nua_dialog_uas_route(nua_owner_t *, nua_dialog_state_t *ds,
 			  sip_t const *sip, int rtag);
 void nua_dialog_store_peer_info(nua_owner_t *, nua_dialog_state_t *ds,
 				sip_t const *sip);
+int nua_dialog_zap(nua_owner_t *own,
+		   nua_dialog_state_t *ds);
 int nua_dialog_remove(nua_owner_t *own,
 		      nua_dialog_state_t *ds,
 		      nua_dialog_usage_t *usage);
@@ -544,6 +546,8 @@ su_inline void nua_client_terminating(nua_client_request_t *cr)
 }
 
 int nua_client_init_request(nua_client_request_t *cr);
+
+msg_t *nua_client_request_template(nua_client_request_t *cr);
 
 int nua_client_restart_request(nua_client_request_t *cr,
 			       int terminating,

@@ -451,7 +451,7 @@ static void nua_subscribe_usage_refresh(nua_handle_t *nh,
 
   if (!eu->eu_unsolicited)
     nua_stack_tevent(nh->nh_nua, nh, NULL,
-		     nua_i_notify, NUA_INTERNAL_ERROR,
+		     nua_i_notify, NUA_ERROR_AT(__FILE__, __LINE__),
 		     NUTAG_SUBSTATE(nua_substate_terminated),
 		     SIPTAG_EVENT(du->du_event),
 		     TAG_END());
@@ -831,22 +831,31 @@ static int nua_refer_client_request(nua_client_request_t *cr,
 				    tagi_t const *tags)
 {
   nua_handle_t *nh = cr->cr_owner;
-  nua_dialog_usage_t *du = cr->cr_usage;
+  nua_dialog_usage_t *du, *du0 = cr->cr_usage;
   struct event_usage *eu;
   sip_event_t *event;
   int error;
 
   cr->cr_usage = NULL;
 
-  if (du)
-    nua_dialog_usage_remove(nh, nh->nh_ds, du);
-
   event = sip_event_format(nh->nh_home, "refer;id=%u", sip->sip_cseq->cs_seq);
   if (!event)
     return -1;
-  du = nua_dialog_usage_add(nh, nh->nh_ds, nua_subscribe_usage, event);
-  if (!du)
-    return -1;
+
+  if (du0 == NULL ||
+      du0->du_event == NULL ||
+      du0->du_event->o_id == NULL ||
+      strcmp(du0->du_event->o_id, event->o_id)) {
+    du = nua_dialog_usage_add(nh, nh->nh_ds, nua_subscribe_usage, event);
+    if (!du)
+      return -1;
+  }
+  else {
+    du = du0, du0 = NULL;
+  }
+
+  if (du0)
+    nua_dialog_usage_remove(nh, nh->nh_ds, du0);
 
   eu = nua_dialog_usage_private(cr->cr_usage = du);
   eu ->eu_refer = 1;

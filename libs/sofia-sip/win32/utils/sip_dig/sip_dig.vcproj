@@ -42,7 +42,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/sip_dig.tlb"
+				TypeLibraryName=".\Release\sip_dig.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -54,10 +54,10 @@
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/sip_dig.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
+				PrecompiledHeaderFile=".\Release\sip_dig.pch"
+				AssemblerListingLocation=".\Release\"
+				ObjectFile=".\Release\"
+				ProgramDataBaseFileName=".\Release\"
 				WarningLevel="4"
 				WarnAsError="true"
 				SuppressStartupBanner="true"
@@ -77,10 +77,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib"
-				OutputFile=".\Release/sip_dig.exe"
+				OutputFile=".\Release\sip_dig.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile=".\Release/sip_dig.pdb"
+				ProgramDatabaseFile=".\Release\sip_dig.pdb"
 				SubSystem="1"
 				TargetMachine="1"
 			/>
@@ -96,7 +96,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/sip_dig.bsc"
+				OutputFile=".\Release\sip_dig.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -139,7 +139,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/sip_dig.tlb"
+				TypeLibraryName=".\Debug\sip_dig.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -150,10 +150,10 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/sip_dig.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
+				PrecompiledHeaderFile=".\Debug\sip_dig.pch"
+				AssemblerListingLocation=".\Debug\"
+				ObjectFile=".\Debug\"
+				ProgramDataBaseFileName=".\Debug\"
 				WarningLevel="4"
 				WarnAsError="true"
 				SuppressStartupBanner="true"
@@ -174,11 +174,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib"
-				OutputFile=".\Debug/sip_dig.exe"
+				OutputFile=".\Debug\sip_dig.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/sip_dig.pdb"
+				ProgramDatabaseFile=".\Debug\sip_dig.pdb"
 				SubSystem="1"
 				TargetMachine="1"
 			/>
@@ -194,7 +194,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/sip_dig.bsc"
+				OutputFile=".\Debug\sip_dig.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"

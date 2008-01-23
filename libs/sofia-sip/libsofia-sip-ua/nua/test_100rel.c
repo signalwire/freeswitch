@@ -1793,6 +1793,223 @@ int test_update_by_uas(struct context *ctx)
 
   END();
 }
+
+int test_update_failure(struct context *ctx)
+{
+  BEGIN();
+#if 0
+  struct endpoint *a = &ctx->a,  *b = &ctx->b;
+  struct call *a_call = a->call, *b_call = b->call;
+  struct event *e, *eu, *ei;
+  enum nua_callstate ustate, istate;
+
+  if (print_headings)
+    printf("TEST NUA-10.4.1: UPDATE failure terminating session\n");
+
+/* Test UPDATE failing:
+
+   A			B
+   |-------INVITE------>|
+   |<----100 Trying-----|
+   |			|
+   |<-------183---------|
+   |-------PRACK------->|
+   |<-------200---------|
+   |			|
+   |<-------180---------|
+   |			|
+ +------------------------+
+   |<------200 OK-------|
+   |-------UPDATE------>|
+   |			|
+   |<-------481---------|
+   |			|
+   |--------ACK-------->|
+   |			|
+   |<-------BYE---------|
+   |-------200 OK-------|
+   |			|
+
+*/
+
+  a_call->sdp = "m=audio 5008 RTP/AVP 8";
+  b_call->sdp = "m=audio 5010 RTP/AVP 0 8";
+
+  nua_set_params(ctx->a.nua,
+		 NUTAG_EARLY_MEDIA(1),
+		 SIPTAG_SUPPORTED_STR("100rel, precondition, timer"),
+		 TAG_END());
+  run_a_until(ctx, nua_r_set_params, until_final_response);
+
+  nua_set_params(ctx->b.nua,
+		 NUTAG_EARLY_MEDIA(1),
+		 NUTAG_ONLY183_100REL(1),
+		 SIPTAG_SUPPORTED_STR("100rel, precondition, timer"),
+		 NUTAG_APPL_METHOD("UPDATE"),
+		 TAG_END());
+  run_b_until(ctx, nua_r_set_params, until_final_response);
+
+  TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
+
+  INVITE(a, a_call, a_call->nh,
+	 TAG_IF(!ctx->proxy_tests, NUTAG_URL(b->contact->m_url)),
+	 SOATAG_USER_SDP_STR(a_call->sdp),
+	 SIPTAG_SUPPORTED_STR("100rel"),
+	 TAG_END());
+
+  run_ab_until(ctx, -1, save_until_final_response, -1, until_pracked);
+
+  /* Client transitions:
+     INIT -(C1)-> CALLING: nua_invite(), nua_i_state
+     CALLING -(C2)-> PROCEEDING: nua_r_invite, nua_i_state
+     PROCEEDING -(C3+C4)-> READY: nua_r_invite, nua_i_state
+  */
+  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_calling); /* CALLING */
+  TEST_1(is_offer_sent(e->data->e_tags));
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
+  TEST(e->data->e_status, 183);
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_proceeding);
+  TEST_1(is_answer_recv(e->data->e_tags));
+  /* Offer is sent in PRACK */
+  TEST_1(is_offer_sent(e->data->e_tags));
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_prack);
+  TEST(e->data->e_status, 200);
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_proceeding);
+  TEST_1(is_answer_recv(e->data->e_tags));
+  TEST_1(!is_offer_sent(e->data->e_tags));
+
+  /* Send UPDATE */
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_proceeding);
+  TEST_1(!is_answer_recv(e->data->e_tags));
+  TEST_1(is_offer_sent(e->data->e_tags));
+
+  /* The final response to the UPDATE and INVITE can be received in any order */
+  eu = event_by_type(e->next, nua_r_update);
+  ei = event_by_type(e->next, nua_r_invite);
+
+  TEST_1(e = eu); TEST_E(e->data->e_event, nua_r_update);
+  TEST(e->data->e_status, 200);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  ustate = callstate(e->data->e_tags);
+  TEST_1(is_answer_recv(e->data->e_tags));
+  TEST_1(!is_offer_sent(e->data->e_tags));
+
+  TEST_1(e = ei); TEST_E(e->data->e_event, nua_r_invite);
+  TEST(e->data->e_status, 180);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_proceeding); /* PROCEEDING */
+  TEST_1(!is_offer_answer_done(e->data->e_tags));
+
+  /* Final response to INVITE  */
+  TEST_1(ei = event_by_type(ei->next, nua_r_invite));
+
+  TEST_E(ei->data->e_event, nua_r_invite); TEST(ei->data->e_status, 200);
+  TEST_1(e = ei->next); TEST_E(e->data->e_event, nua_i_state);
+  istate = callstate(e->data->e_tags);
+  TEST_1(!is_offer_answer_done(e->data->e_tags));
+
+  if (eu == e->next) {
+    /* 200 OK to UPDATE is received after 200 OK to INVITE */
+    TEST(ustate, nua_callstate_ready);
+    TEST(istate, nua_callstate_completing);
+  }
+  else {
+    /* 200 OK to UPDATE is received before 200 OK to INVITE */
+    TEST(ustate, nua_callstate_proceeding);
+    TEST(istate, nua_callstate_ready);
+  }
+
+  free_events_in_list(ctx, a->events);
+
+  /*
+   Server transitions:
+   INIT -(S1)-> RECEIVED: nua_i_invite, nua_i_state
+   RECEIVED -(S2a)-> EARLY: nua_respond(), nua_i_state
+   EARLY -(S3b)-> COMPLETED: nua_respond(), nua_i_state
+   COMPLETED -(S4)-> READY: nua_i_ack, nua_i_state
+  */
+  TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_invite);
+  TEST(e->data->e_status, 100);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_received); /* RECEIVED */
+
+  /* Responded with 183 Session Progress */
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_early); /* EARLY */
+  TEST_1(is_answer_sent(e->data->e_tags));
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_prack);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_early); /* EARLY */
+  TEST_1(is_offer_recv(e->data->e_tags));
+  TEST_1(is_answer_sent(e->data->e_tags));
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_update);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_early); /* EARLY */
+  TEST_1(is_offer_recv(e->data->e_tags));
+  TEST_1(is_answer_sent(e->data->e_tags));
+
+  /* Responded with 180 Ringing */
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_early); /* EARLY */
+  TEST_1(!is_offer_answer_done(e->data->e_tags));
+
+  /* Responded with 200 OK */
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_completed); /* COMPLETED */
+  TEST_1(!is_offer_answer_done(e->data->e_tags));
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_ack);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
+  TEST_1(!is_offer_answer_done(e->data->e_tags));
+  TEST_1(!e->next);
+  free_events_in_list(ctx, b->events);
+
+  if (print_headings)
+    printf("TEST NUA-10.4.1: PASSED\n");
+
+  if (print_headings)
+    printf("TEST NUA-10.4.2: terminate call\n");
+
+  BYE(b, b_call, b_call->nh, TAG_END());
+  run_ab_until(ctx, -1, until_terminated, -1, until_terminated);
+
+  /* B transitions:
+   READY --(T2)--> TERMINATING: nua_bye()
+   TERMINATING --(T3)--> TERMINATED: nua_r_bye, nua_i_state
+  */
+  TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_r_bye);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* TERMINATED */
+  TEST_1(!e->next);
+  free_events_in_list(ctx, b->events);
+
+  /* A: READY -(T1)-> TERMINATED: nua_i_bye, nua_i_state */
+  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_bye);
+  TEST(e->data->e_status, 200);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* TERMINATED */
+  TEST_1(!e->next);
+  free_events_in_list(ctx, a->events);
+
+  nua_handle_destroy(a_call->nh), a_call->nh = NULL;
+  nua_handle_destroy(b_call->nh), b_call->nh = NULL;
+
+  if (print_headings)
+    printf("TEST NUA-10.4.2: PASSED\n");
+#endif
+  END();
+}
  
 int cancel_when_pracked(CONDITION_PARAMS);
 int alert_call(CONDITION_PARAMS);
@@ -2105,19 +2322,281 @@ int test_180rel_cancel2(struct context *ctx)
   END();
 }
 
+int redirect_pracked(CONDITION_PARAMS);
+
+int test_180rel_redirected(struct context *ctx)
+{
+  BEGIN();
+
+  struct endpoint *a = &ctx->a,  *b = &ctx->b;
+  struct call *a_call = a->call, *b_call = b->call;
+  struct event *e, *ep, *ei;
+  sip_t *sip;
+
+  if (print_headings)
+    printf("TEST NUA-10.8.1: Call with 100rel and 180\n");
+
+/* Test for 100rel:
+
+   A			B
+   |-------INVITE------>|
+   |<----100 Trying-----|
+   |			|
+   |<-------180---------|
+   |-------PRACK------->|
+   |<-------200---------|
+   |			|
+   |<----302 Moved------|
+   |--------ACK-------->|
+   |			|
+   |-------INVITE------>|
+   |<----100 Trying-----|
+   |			|
+   |<-------180---------|
+   |-------PRACK------->|
+   |<-------200---------|
+   |			|
+   |<------200 OK-------|
+   |--------ACK-------->|
+   |			|
+   |<-------BYE---------|
+   |-------200 OK-------|
+   |			|
+
+*/
+
+  a_call->sdp = "m=audio 5008 RTP/AVP 8";
+  b_call->sdp = "m=audio 5010 RTP/AVP 0 8";
+
+  nua_set_params(ctx->a.nua,
+		 NUTAG_EARLY_MEDIA(1),
+		 TAG_END());
+  run_a_until(ctx, nua_r_set_params, until_final_response);
+
+  nua_set_params(ctx->b.nua,
+		 NUTAG_EARLY_MEDIA(1),
+		 NUTAG_SESSION_TIMER(180),
+		 TAG_END());
+  run_b_until(ctx, nua_r_set_params, until_final_response);
+
+  TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
+
+  INVITE(a, a_call, a_call->nh,
+	 TAG_IF(!ctx->proxy_tests, NUTAG_URL(b->contact->m_url)),
+	 SOATAG_USER_SDP_STR(a_call->sdp),
+	 TAG_END());
+
+  run_ab_until(ctx, -1, until_ready, -1, redirect_pracked);
+
+  /* Client transitions:
+     INIT -(C1)-> CALLING: nua_invite(), nua_i_state
+     CALLING -(C2)-> PROCEEDING: nua_r_invite, nua_i_state, nua_r_prack
+     PROCEEDING->(redirected)->CALLING: nua_r_invite, nua_i_state
+     CALLING -(C2)-> PROCEEDING: nua_r_invite, nua_i_state, nua_r_prack
+     PROCEEDING -(C3+C4)-> READY: nua_r_invite, nua_i_state
+  */
+  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_calling); /* CALLING */
+  TEST_1(is_offer_sent(e->data->e_tags));
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
+  TEST(e->data->e_status, 180);
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_proceeding);
+  TEST_1(is_answer_recv(e->data->e_tags));
+  TEST_1(!is_offer_sent(e->data->e_tags));
+
+  ei = event_by_type(e->next, nua_r_invite); /* 302 */
+  ep = event_by_type(e->next, nua_r_prack); /* 200 */
+  if (!ep) {
+    run_a_until(ctx, -1, save_until_final_response);
+    ep = event_by_type(e->next, nua_r_prack);
+  }
+
+  TEST_1(e = ep); TEST_E(e->data->e_event, nua_r_prack);
+  TEST(e->data->e_status, 200);
+
+  TEST_1(e = ei); TEST_E(e->data->e_event, nua_r_invite);
+  TEST(e->data->e_status, 100);
+  TEST_1(sip = sip_object(e->data->e_msg));
+  TEST(sip->sip_status->st_status, 302);
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_calling); /* CALLING */
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
+  TEST(e->data->e_status, 180);
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_proceeding);
+  TEST_1(is_answer_recv(e->data->e_tags));
+  TEST_1(!is_offer_sent(e->data->e_tags));
+
+  ei = event_by_type(e->next, nua_r_invite);
+  ep = event_by_type(e->next, nua_r_prack);
+  if (!ep) {
+    run_a_until(ctx, -1, save_until_final_response);
+    ep = event_by_type(e->next, nua_r_prack);
+  }
+
+  TEST_1(e = ep); TEST_E(e->data->e_event, nua_r_prack);
+  TEST(e->data->e_status, 200);
+
+  TEST_1(e = ei); TEST_E(e->data->e_event, nua_r_invite);
+  TEST(e->data->e_status, 200);
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
+  TEST_1(!is_offer_answer_done(e->data->e_tags));
+
+  TEST_1(!e->next || !ep->next);
+  free_events_in_list(ctx, a->events);
+
+  /*
+   Server transitions:
+   INIT -(S1)-> RECEIVED: nua_i_invite, nua_i_state
+   RECEIVED -(S2a)-> EARLY: nua_respond(), nua_i_state
+   EARLY -(S3b)-> COMPLETED: nua_respond(), nua_i_state
+   COMPLETED -(S4)-> READY: nua_i_ack, nua_i_state
+  */
+  TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_invite);
+  TEST(e->data->e_status, 100);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_received); /* RECEIVED */
+  TEST_1(is_offer_recv(e->data->e_tags));
+
+  /* Responded with 180 Ringing */
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_early); /* EARLY */
+  TEST_1(is_answer_sent(e->data->e_tags));
+
+  /* 180 is PRACKed */
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_prack);
+  /* 302 terminates call */
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* Terminated */
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_invite);
+  TEST(e->data->e_status, 100);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_received); /* RECEIVED */
+  TEST_1(is_offer_recv(e->data->e_tags));
+
+  /* Responded with 180 Ringing */
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_early); /* EARLY */
+  TEST_1(is_answer_sent(e->data->e_tags));
+
+  /* 180 is PRACKed */
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_prack);
+  /* Does not have effect on call state */
+
+  /* Respond with 200 OK */
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_completed); /* COMPLETED */
+  TEST_1(!is_offer_answer_done(e->data->e_tags));
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_ack);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
+  TEST_1(!is_offer_answer_done(e->data->e_tags));
+  TEST_1(!e->next);
+  free_events_in_list(ctx, b->events);
+
+  if (print_headings)
+    printf("TEST NUA-10.8.1: PASSED\n");
+
+  if (print_headings)
+    printf("TEST NUA-10.8.2: terminate call\n");
+
+  BYE(b, b_call, b_call->nh, TAG_END());
+  run_ab_until(ctx, -1, until_terminated, -1, until_terminated);
+
+  /* B transitions:
+   READY --(T2)--> TERMINATING: nua_bye()
+   TERMINATING --(T3)--> TERMINATED: nua_r_bye, nua_i_state
+  */
+  TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_r_bye);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* TERMINATED */
+  TEST_1(!e->next);
+  free_events_in_list(ctx, b->events);
+
+  /* A: READY -(T1)-> TERMINATED: nua_i_bye, nua_i_state */
+  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_bye);
+  TEST(e->data->e_status, 200);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* TERMINATED */
+  TEST_1(!e->next);
+  free_events_in_list(ctx, a->events);
+
+  nua_handle_destroy(a_call->nh), a_call->nh = NULL;
+  nua_handle_destroy(b_call->nh), b_call->nh = NULL;
+
+  if (print_headings)
+    printf("TEST NUA-10.8.2: PASSED\n");
+  
+  END();
+}
+
+int redirect_pracked(CONDITION_PARAMS)
+{
+  if (!(check_handle(ep, call, nh, SIP_500_INTERNAL_SERVER_ERROR)))
+    return 0;
+
+  save_event_in_list(ctx, event, ep, call);
+
+  if (event == nua_i_prack) {
+    if (!ep->flags.bit0) {
+      sip_contact_t m[1];
+      
+      ep->flags.bit0 = 1;
+
+      *m = *ep->contact;
+      m->m_url->url_user = "302";
+      RESPOND(ep, call, nh, SIP_302_MOVED_TEMPORARILY, SIPTAG_CONTACT(m), TAG_END());
+      return 0;
+    }
+    else {
+      RESPOND(ep, call, nh, SIP_200_OK,
+	      TAG_IF(call->sdp, SOATAG_USER_SDP_STR(call->sdp)),
+	      TAG_END());
+    }
+  }
+
+
+  switch (callstate(tags)) {
+  case nua_callstate_received:
+    RESPOND(ep, call, nh, SIP_180_RINGING,
+	    TAG_IF(call->sdp, SOATAG_USER_SDP_STR(call->sdp)),
+	    TAG_END());
+    return 0;
+  case nua_callstate_ready:
+    return 1;
+  case nua_callstate_terminated:
+    if (call)
+      nua_handle_destroy(call->nh), call->nh = NULL;
+    return 0;
+  default:
+    return 0;
+  }
+}
 
 int test_100rel(struct context *ctx)
 {
   int retval = 0;
-  
+
   retval = test_180rel(ctx); RETURN_ON_SINGLE_FAILURE(retval);
   retval = test_prack_auth(ctx); RETURN_ON_SINGLE_FAILURE(retval);
   retval = test_183rel(ctx); RETURN_ON_SINGLE_FAILURE(retval);
   retval = test_preconditions(ctx); RETURN_ON_SINGLE_FAILURE(retval);
   retval = test_preconditions2(ctx); RETURN_ON_SINGLE_FAILURE(retval);
   retval = test_update_by_uas(ctx); RETURN_ON_SINGLE_FAILURE(retval);
+  retval = test_update_failure(ctx); RETURN_ON_SINGLE_FAILURE(retval);
   retval = test_180rel_cancel1(ctx); RETURN_ON_SINGLE_FAILURE(retval);
   retval = test_180rel_cancel2(ctx); RETURN_ON_SINGLE_FAILURE(retval);
+  retval = test_180rel_redirected(ctx); RETURN_ON_SINGLE_FAILURE(retval);
 
   nua_set_params(ctx->a.nua,
 		 NUTAG_EARLY_MEDIA(0),

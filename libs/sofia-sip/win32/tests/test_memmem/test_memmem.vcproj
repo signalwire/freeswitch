@@ -38,7 +38,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\Debug/test_memmem.tlb"
+				TypeLibraryName=".\Debug\test_memmem.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -49,10 +49,10 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/test_memmem.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
+				PrecompiledHeaderFile=".\Debug\test_memmem.pch"
+				AssemblerListingLocation=".\Debug\"
+				ObjectFile=".\Debug\"
+				ProgramDataBaseFileName=".\Debug\"
 				BrowseInformation="1"
 				WarningLevel="4"
 				WarnAsError="true"
@@ -73,11 +73,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile=".\Debug/test_memmem.exe"
+				OutputFile=".\Debug\test_memmem.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/test_memmem.pdb"
+				ProgramDatabaseFile=".\Debug\test_memmem.pdb"
 				SubSystem="1"
 				TargetMachine="1"
 			/>
@@ -93,7 +93,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/test_memmem.bsc"
+				OutputFile=".\Debug\test_memmem.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -132,7 +132,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\Release/test_memmem.tlb"
+				TypeLibraryName=".\Release\test_memmem.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -144,10 +144,10 @@
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/test_memmem.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
+				PrecompiledHeaderFile=".\Release\test_memmem.pch"
+				AssemblerListingLocation=".\Release\"
+				ObjectFile=".\Release\"
+				ProgramDataBaseFileName=".\Release\"
 				BrowseInformation="1"
 				WarningLevel="4"
 				WarnAsError="true"
@@ -167,10 +167,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile=".\Release/test_memmem.exe"
+				OutputFile=".\Release\test_memmem.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile=".\Release/test_memmem.pdb"
+				ProgramDatabaseFile=".\Release\test_memmem.pdb"
 				SubSystem="1"
 				TargetMachine="1"
 			/>
@@ -186,7 +186,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/test_memmem.bsc"
+				OutputFile=".\Release\test_memmem.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"

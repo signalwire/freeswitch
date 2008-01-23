@@ -48,13 +48,14 @@
 
 int test_refer0(struct context *ctx, char const *tests,
 		int refer_with_id, int notify_by_appl);
-
 int notify_until_terminated(CONDITION_PARAMS);
+int test_challenge_refer(struct context *ctx);
 
 int test_refer(struct context *ctx)
 {
   /* test twice, once without id and once with id */
   return
+    test_challenge_refer(ctx) ||
     test_refer0(ctx, "NUA-9.1", 0, 0) ||
     test_refer0(ctx, "NUA-9.2", 1, 0) ||
     test_refer0(ctx, "NUA-9.3", 0, 1) ||
@@ -712,4 +713,140 @@ int notify_until_terminated(CONDITION_PARAMS)
   default:
     return 0;
   }
+}
+
+int authenticate_refer(CONDITION_PARAMS);
+int reject_refer_after_notified(CONDITION_PARAMS);
+
+int test_challenge_refer(struct context *ctx)
+{
+  BEGIN();
+
+  struct endpoint *a = &ctx->a, *b = &ctx->b, *c = &ctx->c;
+  struct call *a_call = a->call, *c_call = c->call;
+  struct event *e;
+  sip_t const *sip;
+
+  sip_refer_to_t r0[1];
+
+  if (!ctx->proxy_tests)
+    return 0;
+
+  if (print_headings)
+    printf("TEST NUA-9.0.1: challenge REFER\n");
+
+  nua_set_params(ctx->a.nua, NUTAG_APPL_METHOD("REFER"), TAG_END());
+  run_a_until(ctx, nua_r_set_params, until_final_response);
+
+  *sip_refer_to_init(r0)->r_url = *b->contact->m_url;
+  r0->r_url->url_headers = "subject=referred";
+  r0->r_display = "B";
+
+  TEST_1(c_call->nh = nua_handle(c->nua, c_call, SIPTAG_TO(a->to), TAG_END()));
+
+  REFER(c, c_call, c_call->nh,
+	SIPTAG_FROM(c->to),
+	SIPTAG_REFER_TO(r0),
+	TAG_END());
+
+  run_abc_until(ctx, -1, reject_refer_after_notified, -1, NULL, -1, authenticate_refer);
+
+  /*
+    Events in A:
+    nua_i_refer
+  */
+  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_refer);
+  TEST(e->data->e_status, 100);
+  TEST_1(sip = sip_object(e->data->e_msg));
+  TEST_1(sip->sip_refer_to);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_notify);
+  TEST(e->data->e_status, 200);
+  TEST_1(!e->next); 
+  /*
+     Events in C after nua_refer():
+     nua_r_refer
+  */
+  TEST_1(e = c->events->head); TEST_E(e->data->e_event, nua_r_refer);
+  TEST(e->data->e_status, 100);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_refer);
+  TEST(e->data->e_status, 407);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_refer);
+  TEST(e->data->e_status, 100);
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_notify);
+  TEST(e->data->e_status, 200);
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_refer);
+  TEST(e->data->e_status, 480);
+
+  TEST_1(!e->next);
+  
+  free_events_in_list(ctx, a->events);
+  free_events_in_list(ctx, c->events);
+
+  nua_handle_destroy(a_call->nh), a_call->nh = NULL;
+  nua_handle_destroy(c_call->nh), c_call->nh = NULL;
+
+  nua_set_params(ctx->a.nua,
+		 NUTAG_APPL_METHOD(NULL),
+		 NUTAG_APPL_METHOD("INVITE, REGISTER, PUBLISH, SUBSCRIBE"),
+		 TAG_END());
+  run_a_until(ctx, nua_r_set_params, until_final_response);
+
+  if (print_headings)
+    printf("TEST NUA-9.0.1: PASSED\n");
+
+  END();
+}
+
+int reject_refer_after_notified(CONDITION_PARAMS)
+{
+  if (!(check_handle(ep, call, nh, SIP_500_INTERNAL_SERVER_ERROR)))
+    return 0;
+
+  save_event_in_list(ctx, event, ep, call);
+
+  if (event == nua_i_refer) {
+  }
+
+  if (event == nua_r_notify) {
+    /* Respond to refer only after initial notify has been responded */
+    struct eventlist *list;
+    struct event *e;
+
+    if (call->events)
+      list = call->events;
+    else
+      list = ep->events;
+
+    for (e = list->head; e; e = e->next)
+      if (e->data->e_event == nua_i_refer)
+	break;
+
+    if (e) {
+      RESPOND(ep, call, nh, SIP_480_TEMPORARILY_UNAVAILABLE,
+	      NUTAG_WITH(e->data->e_msg),
+	      TAG_END());
+      return 1;
+    }
+    return 0;
+  }
+
+  return 0;
+}
+
+int authenticate_refer(CONDITION_PARAMS)
+{
+  if (!(check_handle(ep, call, nh, SIP_500_INTERNAL_SERVER_ERROR)))
+    return 0;
+
+  save_event_in_list(ctx, event, ep, call);
+
+  if (status == 401 || status == 407) {
+    AUTHENTICATE(ep, call, nh,
+		 NUTAG_AUTH("Digest:\"test-proxy\":charlie:secret"),
+		 TAG_END());
+  }
+
+  return status == 480;
 }

@@ -90,6 +90,8 @@ msg_mclass_t const *sip_default_mclass(void)
  * @retval 0 when successful
  * @retval -1 upon an error
  *
+ * @sa sip_extend_mclass()
+ *
  * @NEW_1_12_7.
  */
 int sip_update_default_mclass(msg_mclass_t const *mclass)
@@ -103,11 +105,21 @@ int sip_update_default_mclass(msg_mclass_t const *mclass)
 /**Extend SIP parser class with extension headers.
  *
  * Extend given SIP parser class with extension headers. If the given parser
- * class is the default one or NULL, make a clone of it before extending it.
+ * (message class) is the default one or NULL, make a clone of default
+ * parser before extending it.
  *
  * @param input pointer to a SIP message class (may be NULL)
  *
  * @return Pointer to extended mclass, or NULL upon an error.
+ *
+ * @sa
+ * @AlertInfo,
+ * @ReplyTo,
+ * @RemotePartyId,
+ * @PAssertedIdentity,
+ * @PPreferredIdentity,
+ * @SuppressBodyIfMatch,
+ * @SuppressNotifyIfMatch
  *
  * @NEW_1_12_7.
  */

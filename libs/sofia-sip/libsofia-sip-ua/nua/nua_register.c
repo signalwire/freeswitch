@@ -1046,7 +1046,7 @@ static void nua_register_usage_refresh(nua_handle_t *nh,
   }
 
   /* Report that we have de-registered */
-  nua_stack_event(nua, nh, NULL, nua_r_register, NUA_INTERNAL_ERROR, NULL);
+  nua_stack_event(nua, nh, NULL, nua_r_register, NUA_ERROR_AT(__FILE__, __LINE__), NULL);
   nua_dialog_usage_remove(nh, ds, du);
 }
 

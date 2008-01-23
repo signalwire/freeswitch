@@ -363,8 +363,16 @@ int new_leg_callback_200(agent_t *ag,
   return 200;
 }
 
+static client_check_f client_check_to_tag;
 
-static client_check_f * const default_checks[];
+static client_check_f * const default_checks[] = {
+  client_check_to_tag,
+  NULL
+};
+
+static client_check_f * const no_default_checks[] = {
+  NULL
+};
 
 int outgoing_callback(client_t *ctx,
 		      nta_outgoing_t *orq,
@@ -1014,14 +1022,6 @@ int save_and_check_tcp(client_t *ctx, nta_outgoing_t *orq, sip_t const *sip)
 }
 
 
-static client_check_f * const default_checks[] = {
-  client_check_to_tag,
-  NULL
-};
-
-static client_check_f * const no_default_checks[] = {
-  NULL
-};
 
 
 /* Test transports */
@@ -2256,8 +2256,23 @@ int test_dialog(agent_t *ag)
   END();
 }
 
-/* Test merging  */
+static ssize_t recv_udp(agent_t *ag, void *b, size_t size)
+{
+  ssize_t n;
 
+  memset(b, size, 0);
+  
+  for (;;) {
+    su_root_step(ag->ag_root, 10L);
+    if (su_wait(ag->ag_sink_wait, 1, 0) == 0) {
+      n = su_recv(ag->ag_sink_socket, b, size, MSG_TRUNC);
+      if (n > 0)
+	return n;
+    }
+  }
+}
+
+/* Test merging  */
 int test_merging(agent_t *ag)
 {
   BEGIN();
@@ -2289,11 +2304,17 @@ int test_merging(agent_t *ag)
   size_t len, l1, l2;
   su_sockaddr_t *su = ag->ag_su_nta;
   socklen_t sulen = ag->ag_su_nta_len;
-  int n;
+
+#ifndef MSG_TRUNC
+#define MSG_TRUNC 0
+#endif
 
   /* Empty sink socket */
-  while (su_wait(ag->ag_sink_wait, 1, 0) == 0) 
-    su_recv(ag->ag_sink_socket, m1, sizeof m1, MSG_TRUNC);
+  su_setblocking(ag->ag_sink_socket, 0);
+  while (su_recv(ag->ag_sink_socket, m1, sizeof m1, MSG_TRUNC) >= 0)
+    ;
+  su_wait(ag->ag_sink_wait, 1, 0);
+  su_wait(ag->ag_sink_wait, 1, 0);
 
   {
     /* RFC 3261 8.2.2.2 Merged Requests:
@@ -2338,22 +2359,18 @@ int test_merging(agent_t *ag)
     TEST_1((size_t)su_sendto(ag->ag_sink_socket, m1, l1, 0, su, sulen) == l1);
     TEST_1((size_t)su_sendto(ag->ag_sink_socket, m2, l2, 0, su, sulen) == l2);
 
-    for (n = 0; n < 2; ) {
-      su_root_step(ag->ag_root, 10L);
-      if (su_wait(ag->ag_sink_wait, 1, 0) == 0) {
-	if (n == 0)
-	  su_recv(ag->ag_sink_socket, r1, sizeof r1, MSG_TRUNC);
-	else
-	  su_recv(ag->ag_sink_socket, r2, sizeof r2, MSG_TRUNC);
-	n++;
-      }
-    }
+    recv_udp(ag, r1, sizeof r1);
+    recv_udp(ag, r2, sizeof r2);
+
     len = strlen("SIP/2.0 200 ");
     TEST_1(memcmp(r1, "SIP/2.0 200 ", len) == 0);
     TEST_1(memcmp(r2, "SIP/2.0 482 ", len) == 0);
 
     TEST_P(ag->ag_latest_leg, ag->ag_server_leg);
   }
+
+  while (su_recv(ag->ag_sink_socket, m1, sizeof m1, MSG_TRUNC) >= 0)
+    ;
 
   {
     /*
@@ -2392,16 +2409,8 @@ int test_merging(agent_t *ag)
     TEST_1((size_t)su_sendto(ag->ag_sink_socket, m1, l1, 0, su, sulen) == l1);
     TEST_1((size_t)su_sendto(ag->ag_sink_socket, m2, l2, 0, su, sulen) == l2);
 
-    for (n = 0; n < 2; ) {
-      su_root_step(ag->ag_root, 10L);
-      if (su_wait(ag->ag_sink_wait, 1, 0) == 0) {
-	if (n == 0)
-	  su_recv(ag->ag_sink_socket, r1, sizeof r1, MSG_TRUNC);
-	else
-	  su_recv(ag->ag_sink_socket, r2, sizeof r2, MSG_TRUNC);
-	n++;
-      }
-    }
+    recv_udp(ag, r1, sizeof r1);
+    recv_udp(ag, r2, sizeof r2);
 
     len = strlen("SIP/2.0 200 ");
     TEST_1(memcmp(r1, "SIP/2.0 200 ", len) == 0);
@@ -2409,6 +2418,9 @@ int test_merging(agent_t *ag)
 
     TEST_P(ag->ag_latest_leg, ag->ag_server_leg);
   }
+
+  while (su_recv(ag->ag_sink_socket, m1, sizeof m1, MSG_TRUNC) >= 0)
+    ;
 
   {
     /* test with rfc2543 */
@@ -2440,22 +2452,18 @@ int test_merging(agent_t *ag)
     TEST_1((size_t)su_sendto(ag->ag_sink_socket, m1, l1, 0, su, sulen) == l1);
     TEST_1((size_t)su_sendto(ag->ag_sink_socket, m2, l2, 0, su, sulen) == l2);
 
-    for (n = 0; n < 2; ) {
-      su_root_step(ag->ag_root, 10L);
-      if (su_wait(ag->ag_sink_wait, 1, 0) == 0) {
-	if (n == 0)
-	  su_recv(ag->ag_sink_socket, r1, sizeof r1, MSG_TRUNC);
-	else
-	  su_recv(ag->ag_sink_socket, r2, sizeof r2, MSG_TRUNC);
-	n++;
-      }
-    }
+    recv_udp(ag, r1, sizeof r1);
+    recv_udp(ag, r2, sizeof r2);
+
     l1 = strlen("SIP/2.0 200 ");
     TEST_1(memcmp(r1, "SIP/2.0 200 ", l1) == 0);
     TEST_1(memcmp(r2, "SIP/2.0 482 ", l1) == 0);
 
     TEST_P(ag->ag_latest_leg, ag->ag_server_leg);
   }
+
+  while (su_recv(ag->ag_sink_socket, m1, sizeof m1, MSG_TRUNC) >= 0)
+    ;
 
   {
     /* test with to-tag */
@@ -2487,22 +2495,18 @@ int test_merging(agent_t *ag)
     TEST_1((size_t)su_sendto(ag->ag_sink_socket, m1, l1, 0, su, sulen) == l1);
     TEST_1((size_t)su_sendto(ag->ag_sink_socket, m2, l2, 0, su, sulen) == l2);
 
-    for (n = 0; n < 2; ) {
-      su_root_step(ag->ag_root, 10L);
-      if (su_wait(ag->ag_sink_wait, 1, 0) == 0) {
-	if (n == 0)
-	  su_recv(ag->ag_sink_socket, r1, sizeof r1, MSG_TRUNC);
-	else
-	  su_recv(ag->ag_sink_socket, r2, sizeof r2, MSG_TRUNC);
-	n++;
-      }
-    }
+    recv_udp(ag, r1, sizeof r1);
+    recv_udp(ag, r2, sizeof r2);
+
     l1 = strlen("SIP/2.0 200 ");
     TEST_1(memcmp(r1, "SIP/2.0 200 ", l1) == 0);
     TEST_1(memcmp(r2, "SIP/2.0 482 ", l1) != 0);
 
     TEST_P(ag->ag_latest_leg, ag->ag_server_leg);
   }
+
+  while (su_recv(ag->ag_sink_socket, m1, sizeof m1, MSG_TRUNC) >= 0)
+    ;
 
   {
     /* test with rfc2543 and to-tag */
@@ -2532,16 +2536,9 @@ int test_merging(agent_t *ag)
     TEST_1((size_t)su_sendto(ag->ag_sink_socket, m1, l1, 0, su, sulen) == l1);
     TEST_1((size_t)su_sendto(ag->ag_sink_socket, m2, l2, 0, su, sulen) == l2);
 
-    for (n = 0; n < 2; ) {
-      su_root_step(ag->ag_root, 10L);
-      if (su_wait(ag->ag_sink_wait, 1, 0) == 0) {
-	if (n == 0)
-	  su_recv(ag->ag_sink_socket, r1, sizeof r1, MSG_TRUNC);
-	else
-	  su_recv(ag->ag_sink_socket, r2, sizeof r2, MSG_TRUNC);
-	n++;
-      }
-    }
+    recv_udp(ag, r1, sizeof r1);
+    recv_udp(ag, r2, sizeof r2);
+
     l1 = strlen("SIP/2.0 200 ");
     TEST_1(memcmp(r1, "SIP/2.0 200 ", l1) == 0);
     TEST_1(memcmp(r2, "SIP/2.0 482 ", l1) != 0);

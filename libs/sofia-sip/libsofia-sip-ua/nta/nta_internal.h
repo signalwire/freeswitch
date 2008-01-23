@@ -167,6 +167,8 @@ struct nta_agent_s
   /** SIP timer C - interval between provisional responses receivedxs */
   unsigned              sa_timer_c;
 
+  /** Graylisting period */
+  unsigned              sa_graylist;
   /** Blacklisting period */
   unsigned              sa_blacklist;
 

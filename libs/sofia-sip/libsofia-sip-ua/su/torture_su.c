@@ -155,7 +155,7 @@ static int test_sockaddr(void)
 int test_sendrecv(void)
 {
   su_socket_t s, l, a;
-  int n;
+  ssize_t n;
   su_sockaddr_t su, csu;
   socklen_t sulen = sizeof su.su_sin, csulen = sizeof csu.su_sin;
   char b1[8], b2[8], b3[8];
@@ -172,6 +172,7 @@ int test_sendrecv(void)
   BEGIN();
 
   s = su_socket(AF_INET, SOCK_DGRAM, 0); TEST_1(s != -1);
+  su_setblocking(s, 1);
 
   memset(&su, 0, sulen);
   su.su_len = sulen;
@@ -208,6 +209,8 @@ int test_sendrecv(void)
   
   TEST(connect(s, &su.su_sa, sulen), 0);
   a = accept(l, &csu.su_sa, &csulen); TEST_1(a != -1);
+
+  TEST(su_setblocking(a, 1), 0);
 
   n = su_vsend(s, sv, 3, 0, NULL, 0); TEST(n, 8 + 8 + 6);
   n = su_vrecv(a, rv, 3, 0, NULL, NULL); TEST(n, 8 + 8 + 6);

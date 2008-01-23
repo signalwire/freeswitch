@@ -1347,6 +1347,47 @@ sres_cached_answers_sockaddr(sres_resolver_t *res,
   return result;
 }
 
+/** Set the priority of the matching cached SRV record.
+ *
+ * The SRV records with the domain name, target and port are matched and
+ * their priority value is adjusted. This function is used to implement
+ * greylisting of SIP servers.
+ *
+ * @param res      pointer to resolver
+ * @param domain   domain name of the SRV record(s) to modify
+ * @param target   SRV target of the SRV record(s) to modify
+ * @param port     port number of SRV record(s) to modify 
+ *                 (in host byte order) 
+ * @param ttl      new ttl for SRV records of the domain
+ * @param priority new priority value (0=highest, 65535=lowest)
+ *
+ * @sa sres_cache_set_srv_priority()
+ * 
+ * @NEW_1_12_8
+ */
+int sres_set_cached_srv_priority(sres_resolver_t *res,
+				 char const *domain,
+				 char const *target,
+				 uint16_t port,
+				 uint32_t ttl,
+				 uint16_t priority)
+{
+  char rooted_domain[SRES_MAXDNAME];
+
+  if (res == NULL || res->res_cache == NULL)
+    return su_seterrno(EFAULT);
+
+  domain = sres_toplevel(rooted_domain, sizeof rooted_domain, domain);
+
+  if (!domain)
+    return -1;
+
+  return sres_cache_set_srv_priority(res->res_cache, 
+				     domain, target, port, 
+				     ttl, priority);
+}
+
+
 /** Sort answers. */
 int
 sres_sort_answers(sres_resolver_t *res, sres_record_t **answers)

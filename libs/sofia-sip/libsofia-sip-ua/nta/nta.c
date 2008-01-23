@@ -176,9 +176,7 @@ static nta_leg_t *leg_find(nta_agent_t const *sa,
 			   url_t const *request_uri,
 			   sip_call_id_t const *i,
 			   char const *from_tag,
-			   url_t const *from_uri,
-			   char const *to_tag,
-			   url_t const *to_uri);
+			   char const *to_tag);
 static nta_leg_t *dst_find(nta_agent_t const *sa, url_t const *u0,
 			   char const *method);
 static void leg_recv(nta_leg_t *, msg_t *, sip_t *, tport_t *);
@@ -340,7 +338,7 @@ su_log_t nta_log[] = { SU_LOG_INIT("nta", "NTA_DEBUG", SU_DEBUG) };
  * NTATAG_BAD_REQ_MASK(), NTATAG_BAD_RESP_MASK(), NTATAG_BLACKLIST(),
  * NTATAG_CANCEL_2543(), NTATAG_CANCEL_487(), NTATAG_CLIENT_RPORT(),
  * NTATAG_DEBUG_DROP_PROB(), NTATAG_DEFAULT_PROXY(),
- * NTATAG_EXTRA_100(),
+ * NTATAG_EXTRA_100(), NTATAG_GRAYLIST(),
  * NTATAG_MAXSIZE(), NTATAG_MAX_FORWARDS(), NTATAG_MERGE_482(), NTATAG_MCLASS()
  * NTATAG_PASS_100(), NTATAG_PASS_408(), NTATAG_PRELOAD(), NTATAG_PROGRESS(), 
  * NTATAG_REL100(), 
@@ -402,6 +400,7 @@ nta_agent_t *nta_agent_create(su_root_t *root,
     agent->sa_t4              = NTA_SIP_T4;
     agent->sa_t1x64 	      = 64 * NTA_SIP_T1;
     agent->sa_timer_c         = 185 * 1000;
+    agent->sa_graylist        = 600;
     agent->sa_drop_prob       = 0;
     agent->sa_is_a_uas        = 0;
     agent->sa_progress        = 60 * 1000;
@@ -896,7 +895,7 @@ void agent_kill_terminator(nta_agent_t *agent)
  * NTATAG_BAD_REQ_MASK(), NTATAG_BAD_RESP_MASK(), NTATAG_BLACKLIST(),
  * NTATAG_CANCEL_2543(), NTATAG_CANCEL_487(), NTATAG_CLIENT_RPORT(),
  * NTATAG_DEBUG_DROP_PROB(), NTATAG_DEFAULT_PROXY(),
- * NTATAG_EXTRA_100(),
+ * NTATAG_EXTRA_100(), NTATAG_GRAYLIST(),
  * NTATAG_MAXSIZE(), NTATAG_MAX_FORWARDS(), NTATAG_MERGE_482(), NTATAG_MCLASS()
  * NTATAG_PASS_100(), NTATAG_PASS_408(), NTATAG_PRELOAD(), NTATAG_PROGRESS(), 
  * NTATAG_REL100(), 
@@ -946,6 +945,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
   unsigned sip_t4     = agent->sa_t4;
   unsigned sip_t1x64  = agent->sa_t1x64;
   unsigned timer_c    = agent->sa_timer_c;
+  unsigned graylist   = agent->sa_graylist;
   unsigned blacklist  = agent->sa_blacklist;
   int ua              = agent->sa_is_a_uas;
   unsigned progress   = agent->sa_progress;
@@ -989,6 +989,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
 	      NTATAG_DEBUG_DROP_PROB_REF(drop_prob),
 	      NTATAG_DEFAULT_PROXY_REF(proxy),
 	      NTATAG_EXTRA_100_REF(extra_100),
+	      NTATAG_GRAYLIST_REF(graylist),
 	      NTATAG_MAXSIZE_REF(maxsize),
 	      NTATAG_MAX_PROCEEDING_REF(max_proceeding),
 	      NTATAG_MAX_FORWARDS_REF(max_forwards),
@@ -1142,6 +1143,12 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
     outgoing_queue_adjust(agent, agent->sa_out.inv_proceeding, timer_c);
   }
 
+  if (graylist > 24 * 60 * 60)
+    graylist = 24 * 60 * 60;
+  agent->sa_graylist = graylist;
+
+  if (blacklist > 24 * 60 * 60)
+    blacklist = 24 * 60 * 60;
   agent->sa_blacklist = blacklist;
 
   if (progress == 0)
@@ -1204,7 +1211,7 @@ void agent_set_udp_params(nta_agent_t *self, usize_t udp_mtu)
  * NTATAG_CANCEL_2543_REF(), NTATAG_CANCEL_487_REF(),
  * NTATAG_CLIENT_RPORT_REF(), NTATAG_CONTACT_REF(), 
  * NTATAG_DEBUG_DROP_PROB_REF(), NTATAG_DEFAULT_PROXY_REF(),
- * NTATAG_EXTRA_100_REF(),
+ * NTATAG_EXTRA_100_REF(), NTATAG_GRAYLIST_REF(),
  * NTATAG_MAXSIZE_REF(), NTATAG_MAX_FORWARDS_REF(), NTATAG_MCLASS_REF(),
  * NTATAG_MERGE_482_REF(), NTATAG_MAX_PROCEEDING_REF(),
  * NTATAG_PASS_100_REF(), NTATAG_PASS_408_REF(), NTATAG_PRELOAD_REF(),
@@ -1253,6 +1260,7 @@ int agent_get_params(nta_agent_t *agent, tagi_t *tags)
 	     NTATAG_DEBUG_DROP_PROB(agent->sa_drop_prob),
 	     NTATAG_DEFAULT_PROXY(agent->sa_default_proxy),
 	     NTATAG_EXTRA_100(agent->sa_extra_100),
+	     NTATAG_GRAYLIST(agent->sa_graylist),
 	     NTATAG_MAXSIZE(agent->sa_maxsize),
 		 NTATAG_MAX_PROCEEDING(agent->sa_max_proceeding),
 	     NTATAG_MAX_FORWARDS(agent->sa_max_forwards->mf_count),
@@ -2416,8 +2424,8 @@ void agent_recv_request(nta_agent_t *agent,
   if ((leg = leg_find(agent, 
 		      method_name, url, 
 		      sip->sip_call_id,
-		      sip->sip_from->a_tag, sip->sip_from->a_url, 
-		      sip->sip_to->a_tag, sip->sip_to->a_url))) {
+		      sip->sip_from->a_tag, 
+		      sip->sip_to->a_tag))) {
     /* Try existing dialog */
     SU_DEBUG_5(("nta: %s (%u) %s\n",
 		method_name, cseq, "going to existing leg"));
@@ -3991,12 +3999,12 @@ nta_leg_t *nta_leg_by_replaces(nta_agent_t *sa, sip_replaces_t const *rp)
 
     id->i_hash = msg_hash_string(id->i_id = rp->rp_call_id);
 
-    leg = leg_find(sa, NULL, NULL, id, from_tag, NULL, to_tag, NULL);
+    leg = leg_find(sa, NULL, NULL, id, from_tag, to_tag);
 
     if (leg == NULL && strcmp(from_tag, "0") == 0)
-      leg = leg_find(sa, NULL, NULL, id, NULL, NULL, to_tag, NULL);
+      leg = leg_find(sa, NULL, NULL, id, NULL, to_tag);
     if (leg == NULL && strcmp(to_tag, "0") == 0)
-      leg = leg_find(sa, NULL, NULL, id, from_tag, NULL, NULL, NULL);
+      leg = leg_find(sa, NULL, NULL, id, from_tag, NULL);
   }
 
   return leg;
@@ -4120,11 +4128,14 @@ int addr_cmp(url_t const *a, url_t const *b)
  * @param call_id      if non-NULL, must match with @CallID header contents
  * @param remote_tag   if there is remote tag 
  *                     associated with dialog, @a remote_tag must match 
- * @param remote_uri   if there is no remote tag, the remote URI must match
+ * @param remote_uri   ignored
  * @param local_tag    if non-NULL and there is local tag associated with leg,
  *                     it must math
- * @param local_uri    if there is no local tag, the local URI must match
+ * @param local_uri    ignored
  *
+ * @note
+ * If @a remote_tag or @a local_tag is an empty string (""), the tag is
+ * ignored when matching legs.
  */
 nta_leg_t *nta_leg_by_dialog(nta_agent_t const *agent,
 			     url_t const *request_uri,
@@ -4134,7 +4145,7 @@ nta_leg_t *nta_leg_by_dialog(nta_agent_t const *agent,
 			     char const *local_tag,
 			     url_t const *local_uri)
 {
-  void *to_be_freed = NULL, *tbf2 = NULL, *tbf3 = NULL;
+  void *to_be_freed = NULL;
   url_t *url;
   url_t url0[1];
   nta_leg_t *leg;
@@ -4158,21 +4169,18 @@ nta_leg_t *nta_leg_by_dialog(nta_agent_t const *agent,
     agent_aliases(agent, url, NULL); /* canonize url */
   }
 
-  if (remote_uri && URL_IS_STRING(remote_uri))
-    request_uri = tbf2 = url_hdup(NULL, remote_uri);
+  if (remote_tag && remote_tag[0] == '\0')
+    remote_tag = NULL;
+  if (local_tag && local_tag[0] == '\0')
+    local_tag = NULL;
 
-  if (local_uri && URL_IS_STRING(local_uri))
-    local_uri = tbf3 = url_hdup(NULL, local_uri);
-  
   leg = leg_find(agent, 
 		 NULL, url, 
 		 call_id, 
-		 remote_tag, remote_uri,
-		 local_tag, local_uri);
+		 remote_tag, 
+		 local_tag);
 
   if (to_be_freed) su_free(NULL, to_be_freed);
-  if (tbf2) su_free(NULL, tbf2);
-  if (tbf3) su_free(NULL, tbf3);
 
   return leg;
 }
@@ -4181,7 +4189,7 @@ nta_leg_t *nta_leg_by_dialog(nta_agent_t const *agent,
  * Find a leg corresponding to the request message.
  *
  * A leg matches to message if leg_match_request() returns true ("Call-ID",
- * "To", and "From" match).
+ * "To"-tag, and "From"-tag match).
  */
 static
 nta_leg_t *leg_find(nta_agent_t const *sa,
@@ -4189,9 +4197,7 @@ nta_leg_t *leg_find(nta_agent_t const *sa,
 		    url_t const *request_uri,
 		    sip_call_id_t const *i,
 		    char const *from_tag,
-		    url_t const *from_uri,
-		    char const *to_tag,
-		    url_t const *to_uri)
+		    char const *to_tag)
 {
   hash_value_t hash = i->i_hash;
   leg_htable_t const *lht = sa->sa_dialogs;
@@ -4201,10 +4207,9 @@ nta_leg_t *leg_find(nta_agent_t const *sa,
        (leg = *ll);
        ll = leg_htable_next(lht, ll)) {
     sip_call_id_t const *leg_i = leg->leg_id;
-    url_t const *remote_uri = leg->leg_remote->a_url;
     char const *remote_tag = leg->leg_remote->a_tag;
-    url_t const *local_uri = leg->leg_local->a_url;
     char const *local_tag = leg->leg_local->a_tag;
+
     url_t const *leg_url = leg->leg_url;
     char const *leg_method = leg->leg_method;
 
@@ -4212,6 +4217,7 @@ nta_leg_t *leg_find(nta_agent_t const *sa,
       continue;
     if (strcmp(leg_i->i_id, i->i_id) != 0)
       continue;
+
     /* Do not match if the incoming To has tag, but the local does not */
     if (!local_tag && to_tag)
       continue;
@@ -4226,15 +4232,14 @@ nta_leg_t *leg_find(nta_agent_t const *sa,
     /* Do not match if incoming From has no tag but remote has a tag */
     if (remote_tag && !from_tag)
       continue;
+
     /* Avoid matching with itself */
     if (!remote_tag != !from_tag && !local_tag != !to_tag)
       continue;
 
-    if (local_tag && to_tag ? 
-	strcasecmp(local_tag, to_tag) : addr_cmp(local_uri, to_uri))
+    if (local_tag && to_tag && strcasecmp(local_tag, to_tag) && to_tag[0])
       continue;
-    if (remote_tag && from_tag ? 
-	strcasecmp(remote_tag, from_tag) : addr_cmp(remote_uri, from_uri))
+    if (remote_tag && from_tag && strcasecmp(remote_tag, from_tag) && from_tag[0])
       continue;
 
     if (leg_url && request_uri && url_cmp(leg_url, request_uri))
@@ -6390,7 +6395,7 @@ static size_t outgoing_timer_c(outgoing_queue_t *q,
 			       char const *timer, 
 			       su_duration_t now);
 
-static void outgoing_ack(nta_outgoing_t *orq, msg_t *msg, sip_t *sip);
+static void outgoing_ack(nta_outgoing_t *orq, sip_t *sip);
 static msg_t *outgoing_ackmsg(nta_outgoing_t *, sip_method_t, char const *,
 			      tagi_t const *tags);
 static void outgoing_retransmit(nta_outgoing_t *orq);
@@ -7657,6 +7662,7 @@ void outgoing_queue(outgoing_queue_t *queue,
   if (outgoing_is_queued(orq))
     outgoing_remove(orq);
 
+  assert(orq->orq_next == NULL);
   assert(*queue->q_tail == NULL);
 
   orq->orq_timeout = set_timeout(orq->orq_agent, queue->q_timeout);
@@ -7680,7 +7686,7 @@ void outgoing_remove(nta_outgoing_t *orq)
   if ((*orq->orq_prev = orq->orq_next))
     orq->orq_next->orq_prev = orq->orq_prev;
   else
-    orq->orq_queue->q_tail = orq->orq_prev, assert(!*orq->orq_queue->q_tail);
+    orq->orq_queue->q_tail = orq->orq_prev;
 
   orq->orq_queue->q_length--;
   orq->orq_next = NULL;
@@ -8334,7 +8340,7 @@ int outgoing_recv(nta_outgoing_t *orq,
     else {
       /* Final response */
       if (status >= 300 && !internal)
-	outgoing_ack(orq, msg, sip);
+	outgoing_ack(orq, sip);
 
       if (!orq->orq_completed) {
 	if (outgoing_complete(orq))
@@ -8532,7 +8538,7 @@ static int outgoing_duplicate(nta_outgoing_t *orq,
 /** @internal ACK to a final response (300..699).
  * These messages are ACK'ed via the original URL (and tport)
  */
-void outgoing_ack(nta_outgoing_t *orq, msg_t *msg, sip_t *sip)
+void outgoing_ack(nta_outgoing_t *orq, sip_t *sip)
 {
   nta_outgoing_t *ack;
   msg_t *ackmsg;
@@ -8563,7 +8569,7 @@ void outgoing_ack(nta_outgoing_t *orq, msg_t *msg, sip_t *sip)
 			       TAG_END())))
       ;
     else
-      msg_destroy(msg);
+      msg_destroy(ackmsg);
   }
 }
 
@@ -8836,8 +8842,8 @@ struct sipdns_query
   char const *sq_proto;
   char const *sq_domain;
   char     sq_port[6];		/* port number */
-
-  uint16_t sq_type;
+  uint16_t sq_otype;		/* origin type of query data (0 means request) */
+  uint16_t sq_type;		/* query type */
   uint16_t sq_priority;		/* priority or preference  */
   uint16_t sq_weight;		/* preference or weight */
 };
@@ -9067,6 +9073,65 @@ outgoing_try_another(nta_outgoing_t *orq)
   orq->orq_try_tcp_instead = 0, orq->orq_try_udp_instead = 0;
   outgoing_reset_timer(orq);
   outgoing_queue(orq->orq_agent->sa_out.resolving, orq);
+
+  if (orq->orq_status > 0)
+    /* PP: don't hack priority if a preliminary response has been received */
+    ;
+  else if (orq->orq_agent->sa_graylist == 0)
+    /* PP: priority hacking disabled */
+    ;
+  /* NetModule hack: 
+   * Move server that did not work to end of queue in sres cache
+   *
+   * the next request does not try to use the server that is currently down
+   *
+   * @TODO: fix cases with only A or AAAA answering, or all servers down.
+   */
+  else if (sr && sr->sr_target) {
+    struct sipdns_query *sq;
+
+    /* find latest A/AAAA record */
+    sq = sr->sr_head;
+    if (!sq || (sr->sr_a_aaaa1 != sr->sr_a_aaaa2 && sq->sq_type == sr->sr_a_aaaa1))
+	sq = sr->sr_done;	
+    
+    if (sq && sq->sq_otype == sres_type_srv) {
+      char const *target = sq->sq_domain, *proto = sq->sq_proto;
+      unsigned prio = sq->sq_priority, maxprio = prio;
+
+      SU_DEBUG_5(("nta: no response from %s:%s;transport=%s\n", target, sq->sq_port, proto));
+
+      for (sq = sr->sr_head; sq; sq = sq->sq_next) 
+	if (sq->sq_otype == sres_type_srv && sq->sq_priority > maxprio)
+	  maxprio = sq->sq_priority;
+
+      for (sq = sr->sr_done; sq; sq = sq->sq_next)
+	if (sq->sq_otype == sres_type_srv && sq->sq_priority > maxprio)
+	  maxprio = sq->sq_priority;
+
+      for (sq = sr->sr_done; sq; sq = sq->sq_next) {
+	int modified;
+
+	if (sq->sq_type != sres_type_srv || strcmp(proto, sq->sq_proto))
+	  continue;
+
+	/* modify the SRV record(s) corresponding to the latest A/AAAA record */
+	modified = sres_set_cached_srv_priority(
+	  orq->orq_agent->sa_resolver, 
+	  sq->sq_domain, 
+	  target,
+	  sq->sq_port[0] ? (uint16_t)strtoul(sq->sq_port, NULL, 10) : 0,
+	  orq->orq_agent->sa_graylist,
+	  maxprio + 1);
+
+	if (modified >= 0)
+	  SU_DEBUG_3(("nta: reduced priority of %d %s SRV records (increase value to %u)\n",
+		      modified, sq->sq_domain, maxprio + 1));
+	else
+	  SU_DEBUG_3(("nta: failed to reduce %s SRV priority\n", sq->sq_domain));
+      }
+    }
+  }
 
   return outgoing_resolve_next(orq);
 }
@@ -9346,6 +9411,7 @@ void outgoing_answer_naptr(sres_context_t *orq,
     sq = su_zalloc(home, (sizeof *sq) + rlen);
 
     *tail = sq, tail = &sq->sq_next;    
+    sq->sq_otype = sres_type_naptr;
     sq->sq_priority = na->na_prefer;
     sq->sq_weight = j;
     sq->sq_type = type;
@@ -9446,11 +9512,11 @@ outgoing_answer_srv(sres_context_t *orq, sres_query_t *q,
     if (sq) {
       *tail = sq, tail = &sq->sq_next;
 
+      sq->sq_otype = sres_type_srv;
       sq->sq_type = sr->sr_a_aaaa1;
       sq->sq_proto = sq0->sq_proto;
       sq->sq_domain = memcpy(sq + 1, srv->srv_target, tlen);
       snprintf(sq->sq_port, sizeof(sq->sq_port), "%u", srv->srv_port);
-
       sq->sq_priority = srv->srv_priority;
       sq->sq_weight = srv->srv_weight;
     }
@@ -10143,8 +10209,8 @@ int nta_reliable_leg_prack(nta_reliable_magic_t *magic,
   if ((leg = leg_find(irq->irq_agent, 
 		      method_name, url, 
 		      sip->sip_call_id,
-		      sip->sip_from->a_tag, sip->sip_from->a_url, 
-		      sip->sip_to->a_tag, sip->sip_to->a_url))) {
+		      sip->sip_from->a_tag,  
+		      sip->sip_to->a_tag))) {
     /* Use existing dialog */
     SU_DEBUG_5(("nta: %s (%u) %s\n",
 		method_name, sip->sip_cseq->cs_seq, 

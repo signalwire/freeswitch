@@ -207,6 +207,7 @@ typedef struct nua_event_frame_s nua_event_frame_t;
 extern char const nua_internal_error[];
 
 #define NUA_INTERNAL_ERROR 900, nua_internal_error
+#define NUA_ERROR_AT(file, line) 900, "Internal error at " file ":" #line
 
 struct nua_s {
   su_home_t            nua_home[1];

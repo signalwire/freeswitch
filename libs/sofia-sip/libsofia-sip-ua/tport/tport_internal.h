@@ -371,7 +371,7 @@ struct tport_vtable
 
 int tport_register_type(tport_vtable_t const *vtp);
 
-/** @internal Test if transport is needs connect() before sending. */
+/** @internal Test if transport needs connect() before sending. */
 su_inline int tport_is_connection_oriented(tport_t const *self)
 {
   return self->tp_conn_orient;

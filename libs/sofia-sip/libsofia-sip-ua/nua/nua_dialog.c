@@ -183,21 +183,34 @@ void nua_dialog_store_peer_info(nua_owner_t *own,
   }
 }
 
+/** Remove dialog information. */
+int nua_dialog_zap(nua_owner_t *own,
+		   nua_dialog_state_t *ds)
+{
+  /* zap peer info */
+  nua_dialog_store_peer_info(own, ds, NULL); 
+  /* Local Contact */
+  msg_header_free(own, (msg_header_t *)ds->ds_ltarget), ds->ds_ltarget = NULL;
+  /* Leg */
+  nta_leg_destroy(ds->ds_leg), ds->ds_leg = NULL;
+  /* Remote tag */
+  su_free(own, (void *)ds->ds_remote_tag), ds->ds_remote_tag = NULL;
+  /* Ready to set route/remote target */
+  ds->ds_route = 0;
+
+  return 0;
+}
+
 /** Remove dialog (if there is no other usages). */
 int nua_dialog_remove(nua_owner_t *own,
 		      nua_dialog_state_t *ds,
 		      nua_dialog_usage_t *usage)
 {
   if (ds->ds_usage == usage && (usage == NULL || usage->du_next == NULL)) {
-    nua_dialog_store_peer_info(own, ds, NULL); /* zap peer info */
-    msg_header_free(own, (msg_header_t *)ds->ds_ltarget), ds->ds_ltarget = NULL;
-    nta_leg_destroy(ds->ds_leg), ds->ds_leg = NULL;
-    su_free(own, (void *)ds->ds_remote_tag), ds->ds_remote_tag = NULL;
-    ds->ds_route = 0;
+    return nua_dialog_zap(own, ds);
   }
   return 0;
 }
-
 
 /** @internal Get dialog usage slot. */
 nua_dialog_usage_t **

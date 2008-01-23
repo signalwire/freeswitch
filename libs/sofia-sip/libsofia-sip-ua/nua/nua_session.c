@@ -1091,11 +1091,14 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
 
   assert(cr->cr_orq);
 
+
   if (!ds->ds_leg) {
-	  nta_outgoing_destroy(cr->cr_orq);
-	  return -1;
+    /* XXX - fix nua_dialog_usage_remove_at() instead! */
+    nta_outgoing_destroy(cr->cr_orq);
+    return -1;
   }
 
+  assert(ds->ds_leg);
 
   msg = nta_outgoing_getrequest(cr->cr_orq);
   sip = sip_object(msg);

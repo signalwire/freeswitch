@@ -1494,7 +1494,10 @@ int su_home_mutex_lock(su_home_t *home)
   return 0;
 }
 
-/** Release exclusive lock on home and decrease refcount (if home is threadsafe) */
+/** Release exclusive lock on home and decrease refcount (if home is threadsafe).
+ *
+ * @sa su_home_unlock().
+ */
 int su_home_mutex_unlock(su_home_t *home)
 {
   if (home == NULL)
@@ -1517,8 +1520,14 @@ int su_home_mutex_unlock(su_home_t *home)
 
 /** Obtain exclusive lock on home without increasing refcount. 
  *
+ * Unless su_home_threadsafe() has been used to intialize locking on home
+ * object the function just returns -1.
+ *
  * @return 0 if successful, -1 if not threadsafe, error code otherwise.
  *
+ * @sa su_home_mutex_lock(), su_home_unlock(), su_home_trylock().
+ *
+ * @NEW_1_12_8
  */
 int su_home_lock(su_home_t *home)
 {
@@ -1537,6 +1546,9 @@ int su_home_lock(su_home_t *home)
  * @return 0 if successful, -1 if not threadsafe, 
  * EBUSY if already locked, error code otherwise.
  *
+ * @sa su_home_lock(), su_home_unlock().
+ *
+ * @NEW_1_12_8
  */
 int su_home_trylock(su_home_t *home)
 {
@@ -1550,9 +1562,15 @@ int su_home_trylock(su_home_t *home)
 }
 
 
-/** Release exclusive lock on home. 
+/** Release exclusive lock on home.
+ *
+ * Release lock without decreasing refcount.
  *
  * @return 0 if successful, -1 if not threadsafe, error code otherwise.
+ *
+ * @sa su_home_lock(), su_home_trylock(), su_home_mutex_unlock().
+ *
+ * @NEW_1_12_8
  */
 int su_home_unlock(su_home_t *home)
 {

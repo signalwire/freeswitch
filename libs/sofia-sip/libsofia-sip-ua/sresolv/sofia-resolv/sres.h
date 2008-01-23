@@ -218,6 +218,16 @@ sres_record_t **sres_cached_answers_sockaddr(sres_resolver_t *res,
                                              uint16_t type,
 					     struct sockaddr const *addr);
 
+/**Modify the priority of the specified SRV records. */
+SRESPUBFUN
+int sres_set_cached_srv_priority(sres_resolver_t *res,
+				 char const *domain,
+				 char const *target,
+				 uint16_t port,
+				 uint32_t newttl,
+				 uint16_t newprio);
+
+
 /** Send a query, wait for answer, return results. */
 SRESPUBFUN 
 int sres_blocking_query(sres_resolver_t *res,

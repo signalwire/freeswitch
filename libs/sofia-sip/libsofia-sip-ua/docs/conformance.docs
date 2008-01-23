@@ -49,6 +49,7 @@ below.
 <a href="#4168">RFC 4168</a> <br>
 <a href="#4320">RFC 4320</a> <br>
 <a href="#4488">RFC 4488</a> <br>
+<a href="#5057">RFC 5057</a> <br>
 </td><td>
 <a href="#4566">RFC 4566</a> <br>
 <a href="#2327">RFC 2327</a> <br>
@@ -960,6 +961,23 @@ below.
     <td>
         The REFER client application must include SIPTAG_REFER_SUB_STR("true")
 	in the nua_refer() tags.
+    </td>
+</tr>
+
+<a name="5057"></a>
+<tr valign=top>
+    <th align="left">
+	@RFC5057: Multiple Dialog Usages in SIP
+    </th>
+    <td>
+	Sofia-SIP provides function sip_response_terminates_dialog() that
+	can be used to determine the effect of error response with dialog.
+	
+	The nua UA engine uses sip_response_terminates_dialog().
+    </td>
+    <td>
+        The client application must either use NUA or
+        sip_response_terminates_dialog().
     </td>
 </tr>
 

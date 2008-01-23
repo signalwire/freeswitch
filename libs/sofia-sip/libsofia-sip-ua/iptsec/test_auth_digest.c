@@ -520,6 +520,11 @@ int test_digest_client()
 	 sip_www_authenticate_class,
 	 sip_authentication_info_class
 	}};
+    auth_challenger_t pach[1] = 
+      {{ 407, "Proxy Authorization required", 
+	 sip_proxy_authenticate_class,
+	 sip_proxy_authentication_info_class
+	}};
 
     TEST_1(home = su_home_new(sizeof(*home)));
 
@@ -992,6 +997,46 @@ int test_digest_client()
 
     auth_mod_check_client(am, as, sip->sip_authorization, ach);
     TEST(as->as_status, 0);
+    auth_mod_destroy(am); aucs = NULL;
+
+    /* Test empty realm */
+    TEST_1(am = auth_mod_create(root, 
+				AUTHTAG_METHOD("Digest"),
+				AUTHTAG_REALM(""),
+				AUTHTAG_DB(testpasswd),
+				TAG_END()));
+    reinit_as(as);
+    auth_mod_check_client(am, as, NULL, ach); TEST(as->as_status, 401);
+    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response, 
+		       sip_authorization_class), 1);
+    reinit_as(as);
+
+    TEST(auc_all_credentials(&aucs, "Digest", "\"\"", "user1", "secret"), 1);
+    msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
+    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
+			   (url_t *)"sip:surf3@ims3.so.noklab.net",
+			   sip->sip_payload), 1);
+    TEST_1(sip->sip_authorization);
+
+    auth_mod_check_client(am, as, sip->sip_authorization, ach);
+    TEST(as->as_status, 0);
+    aucs = NULL;
+    reinit_as(as); 
+    auth_mod_check_client(am, as, NULL, pach); TEST(as->as_status, 407);
+    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response, 
+		       sip_proxy_authorization_class), 1);
+    reinit_as(as);
+
+    TEST(auc_credentials(&aucs, as->as_home, "Digest:\"\":user1:secret"), 1);
+    msg_header_remove(m2, (void *)sip, (void *)sip->sip_proxy_authorization);
+    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
+			   (url_t *)"sip:surf3@ims3.so.noklab.net",
+			   sip->sip_payload), 1);
+    TEST_1(sip->sip_proxy_authorization);
+
+    auth_mod_check_client(am, as, sip->sip_proxy_authorization, pach);
+    TEST(as->as_status, 0);
+
     auth_mod_destroy(am); aucs = NULL;
 
     /* Test Basic authentication scheme */

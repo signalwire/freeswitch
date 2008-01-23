@@ -1009,18 +1009,19 @@ static int test_incomplete(tp_test_t *tt)
 
   s = su_socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
   TEST_1(s != SOCKET_ERROR);
-
+  
+  su_setblocking(s, 1);
   connected = connect(s, ai->ai_addr, (socklen_t)ai->ai_addrlen);
 
   su_root_step(tt->tt_root, 50);
   
-  TEST(send(s, "F", 1, 0), 1);
+  TEST(su_send(s, "F", 1, 0), 1);
   su_root_step(tt->tt_root, 50);
-  TEST(send(s, "O", 1, 0), 1);
+  TEST(su_send(s, "O", 1, 0), 1);
   su_root_step(tt->tt_root, 50);
-  TEST(send(s, "O", 1, 0), 1);
+  TEST(su_send(s, "O", 1, 0), 1);
   su_root_step(tt->tt_root, 50);
-  TEST(send(s, " ", 1, 0), 1);
+  TEST(su_send(s, " ", 1, 0), 1);
   su_root_step(tt->tt_root, 50);
   
   tt->tt_received = 0;

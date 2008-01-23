@@ -471,6 +471,75 @@ void sres_cache_clean(sres_cache_t *cache, time_t now)
   }
 }
 
+/** Set the priority of the matching cached SRV record.
+ *
+ * The SRV records with the domain name, target and port are matched and
+ * their priority value is adjusted. This function is used to implement
+ * greylisting of SIP servers.
+ *
+ * @param cache    pointer to DNS cache object
+ * @param domain   domain name of the SRV record(s) to modify 
+ *                 (including final dot)
+ * @param target   SRV target of the SRV record(s) to modify
+ * @param port     port number of SRV record(s) to modify 
+ *                 (in host byte order) 
+ * @param ttl      new ttl
+ * @param priority new priority value (0=highest, 65535=lowest)
+ *
+ * @sa sres_set_cached_srv_priority()
+ * 
+ * @NEW_1_12_8
+ */
+int sres_cache_set_srv_priority(sres_cache_t *cache,
+				char const *domain,
+				char const *target,
+				uint16_t port,
+				uint32_t ttl,
+				uint16_t priority)
+{
+  int ret = 0;
+  unsigned hash;
+  sres_rr_hash_entry_t **iter;
+  time_t expires;
+  
+  if (cache == NULL || domain == NULL || target == NULL)
+    return -1;
+
+  hash = sres_hash_key(domain);
+
+  if (!LOCK(cache))
+    return -1;
+
+  time(&expires);
+  expires += ttl;
+
+  for (iter = sres_htable_hash(cache->cache_hash, hash);
+       iter && *iter;
+       iter = sres_htable_next(cache->cache_hash, iter)) {
+    sres_record_t *rr = (*iter)->rr;
+    
+    if (rr && rr->sr_name &&
+	sres_type_srv == rr->sr_type &&
+	strcasecmp(rr->sr_name, domain) == 0) {
+
+      (*iter)->rr_expires = expires;
+      
+      if ((port == 0 || rr->sr_srv->srv_port == port) &&
+	  rr->sr_srv->srv_target &&
+	  strcasecmp(rr->sr_srv->srv_target, target) == 0) {
+	/* record found --> change priority of server */
+	rr->sr_srv->srv_priority = priority;
+	ret++;
+      }
+    }
+  }
+
+  UNLOCK(cache);
+
+  /** @return number of modified entries or -1 upon an error. */
+  return ret;
+}
+
 HTABLE_BODIES_WITH(sres_htable, ht, sres_rr_hash_entry_t, SRES_HENTRY_HASH,
 		   unsigned, size_t);
 

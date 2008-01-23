@@ -42,7 +42,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/libsofia_sip_ua.tlb"
+				TypeLibraryName=".\Debug\libsofia_sip_ua.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -53,10 +53,10 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/libsofia_sip_ua.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
+				PrecompiledHeaderFile=".\Debug\libsofia_sip_ua.pch"
+				AssemblerListingLocation=".\Debug\"
+				ObjectFile=".\Debug\"
+				ProgramDataBaseFileName=".\Debug\"
 				BrowseInformation="1"
 				WarningLevel="4"
 				WarnAsError="true"
@@ -79,12 +79,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
-				OutputFile=".\Debug/libsofia_sip_ua.dll"
+				OutputFile=".\Debug\libsofia_sip_ua.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/libsofia_sip_ua.pdb"
-				ImportLibrary=".\Debug/libsofia_sip_ua.lib"
+				ProgramDatabaseFile=".\Debug\libsofia_sip_ua.pdb"
+				ImportLibrary=".\Debug\libsofia_sip_ua.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -99,7 +99,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/libsofia_sip_ua.bsc"
+				OutputFile=".\Debug\libsofia_sip_ua.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -144,7 +144,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/libsofia_sip_ua.tlb"
+				TypeLibraryName=".\Release\libsofia_sip_ua.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -156,10 +156,10 @@
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/libsofia_sip_ua.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
+				PrecompiledHeaderFile=".\Release\libsofia_sip_ua.pch"
+				AssemblerListingLocation=".\Release\"
+				ObjectFile=".\Release\"
+				ProgramDataBaseFileName=".\Release\"
 				BrowseInformation="1"
 				WarningLevel="4"
 				WarnAsError="true"
@@ -181,11 +181,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
-				OutputFile=".\Release/libsofia_sip_ua.dll"
+				OutputFile=".\Release\libsofia_sip_ua.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile=".\Release/libsofia_sip_ua.pdb"
-				ImportLibrary=".\Release/libsofia_sip_ua.lib"
+				ProgramDatabaseFile=".\Release\libsofia_sip_ua.pdb"
+				ImportLibrary=".\Release\libsofia_sip_ua.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -200,7 +200,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/libsofia_sip_ua.bsc"
+				OutputFile=".\Release\libsofia_sip_ua.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"

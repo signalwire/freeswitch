@@ -262,7 +262,7 @@ void nua_stack_authorize(nua_t *nua,
     nua_stack_event(nua, nh, NULL, e, SIP_200_OK, NULL);
   }
   else {
-    nua_stack_event(nua, nh, NULL, e, NUA_INTERNAL_ERROR, NULL);
+    nua_stack_event(nua, nh, NULL, e, NUA_ERROR_AT(__FILE__, __LINE__), NULL);
   }
 }
 

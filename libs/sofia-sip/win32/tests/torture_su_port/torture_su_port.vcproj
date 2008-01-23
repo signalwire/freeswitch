@@ -37,7 +37,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\Release/torture_su_port.tlb"
+				TypeLibraryName=".\Release\torture_su_port.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -49,10 +49,10 @@
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/torture_su_port.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
+				PrecompiledHeaderFile=".\Release\torture_su_port.pch"
+				AssemblerListingLocation=".\Release\"
+				ObjectFile=".\Release\"
+				ProgramDataBaseFileName=".\Release\"
 				BrowseInformation="1"
 				WarningLevel="3"
 				WarnAsError="true"
@@ -72,10 +72,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib"
-				OutputFile=".\Release/torture_su_port.exe"
+				OutputFile=".\Release\torture_su_port.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile=".\Release/torture_su_port.pdb"
+				ProgramDatabaseFile=".\Release\torture_su_port.pdb"
 				SubSystem="1"
 				TargetMachine="1"
 			/>
@@ -91,7 +91,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/torture_su_port.bsc"
+				OutputFile=".\Release\torture_su_port.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -130,7 +130,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\Debug/torture_su_port.tlb"
+				TypeLibraryName=".\Debug\torture_su_port.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -141,10 +141,10 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/torture_su_port.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
+				PrecompiledHeaderFile=".\Debug\torture_su_port.pch"
+				AssemblerListingLocation=".\Debug\"
+				ObjectFile=".\Debug\"
+				ProgramDataBaseFileName=".\Debug\"
 				BrowseInformation="1"
 				WarningLevel="3"
 				WarnAsError="true"
@@ -165,11 +165,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib"
-				OutputFile=".\Debug/torture_su_port.exe"
+				OutputFile=".\Debug\torture_su_port.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/torture_su_port.pdb"
+				ProgramDatabaseFile=".\Debug\torture_su_port.pdb"
 				SubSystem="1"
 				TargetMachine="1"
 			/>
@@ -185,7 +185,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/torture_su_port.bsc"
+				OutputFile=".\Debug\torture_su_port.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"

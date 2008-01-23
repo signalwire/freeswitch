@@ -1268,15 +1268,17 @@ static int api_test_dialog_matching(agent_t *ag)
   TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i, 
 				 "xyzzy", a2->a_url, a1->a_tag, a1->a_url),
 	 dialog1);
+#if nomore
   /* remote url is required */
   TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i, 
 				 a2->a_tag, a1->a_url, a1->a_tag, a1->a_url),
 	 NULL);
+#endif
   TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i, 
 				 a2->a_tag, NULL, a1->a_tag, a1->a_url),
 	 dialog1);
 
-  /* local url is used if there is no local tag */
+  /* local url is used if there is no local tag */ /* XXX - not really */
   TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i, 
 				 a2->a_tag, a2->a_url, NULL, NULL),
 	 NULL);

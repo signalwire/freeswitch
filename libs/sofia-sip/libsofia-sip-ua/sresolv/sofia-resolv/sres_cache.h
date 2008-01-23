@@ -102,6 +102,14 @@ SRESPUBFUN void sres_cache_free_record(sres_cache_t *cache, void *rr);
 /** Store a record to cache */
 SRESPUBFUN void sres_cache_store(sres_cache_t *, sres_record_t *, time_t now);
 
+/** Modify the priority in the specified SRV record */
+SRESPUBFUN int sres_cache_set_srv_priority(sres_cache_t *, 
+					   char const *domain,
+					   char const *target,
+					   uint16_t port,
+					   uint32_t newttl,
+					   uint16_t newprio);
+
 #ifdef __cplusplus
 }
 #endif

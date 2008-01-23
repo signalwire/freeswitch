@@ -77,6 +77,9 @@ static msg_t *read_message(int flags, char const string[]);
 static int test_identity(void)
 {
   su_home_t *home;
+  sip_alert_info_t *ai;
+  sip_reply_to_t *rplyto;
+  sip_remote_party_id_t *rpid;
   sip_p_asserted_identity_t *paid;
   sip_p_preferred_identity_t *ppid;
 
@@ -115,15 +118,21 @@ static int test_identity(void)
     "Call-ID: 0ha0isndaksdj@10.1.2.3\r\n"
     "CSeq: 8 SUBSCRIBE\r\n"
     "Via: SIP/2.0/UDP 135.180.130.133\r\n"
+    "Alert-Info: <http://test.com/tune>;walz, <http://test.com/buzz>\r\n"
+    "Reply-To: Arska <sip:arska@gov.ca.us>;humppa\r\n"
     "P-Asserted-Identity: <sip:test@test.domain.com>\r\n"
     "P-Preferred-Identity: <sip:test@test.domain.com>, <tel:+358708008000>\r\n"
+    "Remote-Party-ID: <sip:test2@test.domain.com>\r\n"
     "Content-Length: 0\r\n"
     "\r\n");
 
   sip = sip_object(msg);
 
+  TEST_1(!sip_alert_info(sip));
+  TEST_1(!sip_reply_to(sip));
   TEST_1(!sip_p_asserted_identity(sip));
   TEST_1(!sip_p_preferred_identity(sip));
+  TEST_1(!sip_remote_party_id(sip));
 
   msg_destroy(msg);
 
@@ -139,12 +148,21 @@ static int test_identity(void)
     "Call-ID: 0ha0isndaksdj@10.1.2.3\r\n"
     "CSeq: 8 SUBSCRIBE\r\n"
     "Via: SIP/2.0/UDP 135.180.130.133\r\n"
+    "Alert-Info: <http://test.com/tune>;walz, <http://test.com/buzz>\r\n"
+    "Reply-To: Arska <sip:arska@gov.ca.us>;humppa\r\n"
     "P-Asserted-Identity: <sip:test@test.domain.com>\r\n"
     "P-Preferred-Identity: <sip:test@test.domain.com>, <tel:+358708008000>\r\n"
+    "Remote-Party-ID: <sip:test2@test.domain.com>\r\n"
     "Content-Length: 0\r\n"
     "\r\n");
 
   sip = sip_object(msg);
+
+  TEST_1(!sip_alert_info(sip));
+  TEST_1(!sip_reply_to(sip));
+  TEST_1(sip_p_asserted_identity(sip));
+  TEST_1(sip_p_preferred_identity(sip));
+  TEST_1(!sip_remote_party_id(sip));
 
   TEST_1(home = msg_home(msg));
   
@@ -160,6 +178,34 @@ static int test_identity(void)
 
   /* Now with extensions */
   TEST_1(test_mclass = msg_mclass_clone(def1, 0, 0));
+
+  msg = read_message(MSG_DO_EXTRACT_COPY, 
+    "BYE sip:foo@bar SIP/2.0\r\n"
+    "To: <sip:foo@bar>;tag=deadbeef\r\n"
+    "From: <sip:bar@foo>;\r\n"
+    "Call-ID: 0ha0isndaksdj@10.1.2.3\r\n"
+    "CSeq: 8 SUBSCRIBE\r\n"
+    "Via: SIP/2.0/UDP 135.180.130.133\r\n"
+    "Alert-Info: <http://test.com/tune>;walz, <http://test.com/buzz>\r\n"
+    "Reply-To: Arska <sip:arska@gov.ca.us>;humppa\r\n"
+    "P-Asserted-Identity: <sip:test@test.domain.com>\r\n"
+    "P-Preferred-Identity: <sip:test@test.domain.com>, <tel:+358708008000>\r\n"
+    "Remote-Party-ID: <sip:test2@test.domain.com>\r\n"
+    "Content-Length: 0\r\n"
+    "\r\n");
+
+  sip = sip_object(msg);
+
+  TEST_1(ai = sip_alert_info(sip));
+  TEST_S(ai->ai_url->url_host, "test.com");
+  TEST_1(rplyto = sip_reply_to(sip));
+  TEST_S(rplyto->rplyto_url->url_host, "gov.ca.us");
+  TEST_1(paid = sip_p_asserted_identity(sip));
+  TEST_1(ppid = sip_p_preferred_identity(sip));
+  TEST_1(rpid = sip_remote_party_id(sip));
+  TEST_S(rpid->rpid_url->url_host, "test.domain.com");
+
+  msg_destroy(msg);
 
   {
     su_home_t *home = su_home_clone(NULL, sizeof *home);

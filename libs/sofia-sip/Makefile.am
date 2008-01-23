@@ -9,7 +9,7 @@ AUTOMAKE_OPTIONS = foreign 1.7
 
 SUBDIRS = libsofia-sip-ua $(GLIB_SUBDIRS) utils packages tests
 DIST_SUBDIRS = libsofia-sip-ua libsofia-sip-ua-glib utils packages \
-	win32 open_c
+	tests win32 open_c
 
 # note: when glib devel files are not available, make should not
 #       enter the libsofia-sip-ua-glib subdir at all
@@ -32,7 +32,8 @@ EXTRA_DIST +=   docs/build_system.txt \
 		docs/devel_platform_notes.txt \
 		docs/release_management.txt
 
-EXTRA_DIST +=   scripts/lcov-report scripts/uncovered
+EXTRA_DIST +=   scripts/lcov-report scripts/uncovered \
+		scripts/hide_emails.sh
 
 dist_man_MANS = man/man1/sip-date.1 man/man1/sip-options.1 \
 		man/man1/localinfo.1 man/man1/addrinfo.1 \

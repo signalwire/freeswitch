@@ -67,7 +67,7 @@ struct su_msg_s {
   su_task_r      sum_from;
   su_msg_f       sum_func;
   su_msg_f       sum_report;
-  su_msg_deinit_func *sum_deinit;
+  su_msg_deinit_function *sum_deinit;
   su_msg_arg_t   sum_data[1];		/* minimum size, may be extended */
 };
 

@@ -775,7 +775,7 @@ static void nua_notify_usage_refresh(nua_handle_t *nh,
       return;
   }
 
-  nua_stack_tevent(nh->nh_nua, nh, NULL, e, NUA_INTERNAL_ERROR,
+  nua_stack_tevent(nh->nh_nua, nh, NULL, e, NUA_ERROR_AT(__FILE__, __LINE__),
 		   NUTAG_SUBSTATE(nua_substate_terminated),
 		   TAG_END());
 

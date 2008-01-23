@@ -38,7 +38,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\Debug/test_nua.tlb"
+				TypeLibraryName=".\Debug\test_nua.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -49,10 +49,10 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/test_nua.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
+				PrecompiledHeaderFile=".\Debug\test_nua.pch"
+				AssemblerListingLocation=".\Debug\"
+				ObjectFile=".\Debug\"
+				ProgramDataBaseFileName=".\Debug\"
 				BrowseInformation="1"
 				WarningLevel="4"
 				WarnAsError="true"
@@ -74,11 +74,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib"
-				OutputFile=".\Debug/test_nua.exe"
+				OutputFile=".\Debug\test_nua.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/test_nua.pdb"
+				ProgramDatabaseFile=".\Debug\test_nua.pdb"
 				SubSystem="1"
 				TargetMachine="1"
 			/>
@@ -94,7 +94,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/test_nua.bsc"
+				OutputFile=".\Debug\test_nua.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -133,7 +133,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\Release/test_nua.tlb"
+				TypeLibraryName=".\Release\test_nua.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -145,10 +145,10 @@
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/test_nua.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
+				PrecompiledHeaderFile=".\Release\test_nua.pch"
+				AssemblerListingLocation=".\Release\"
+				ObjectFile=".\Release\"
+				ProgramDataBaseFileName=".\Release\"
 				BrowseInformation="1"
 				WarningLevel="4"
 				WarnAsError="true"
@@ -169,10 +169,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib"
-				OutputFile=".\Release/test_nua.exe"
+				OutputFile=".\Release\test_nua.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile=".\Release/test_nua.pdb"
+				ProgramDatabaseFile=".\Release\test_nua.pdb"
 				SubSystem="1"
 				TargetMachine="1"
 			/>
@@ -188,7 +188,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/test_nua.bsc"
+				OutputFile=".\Release\test_nua.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"

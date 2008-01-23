@@ -885,6 +885,8 @@ int su_root_has_thread(su_root_t *root)
  *
  * @retval  0 if successful,
  * @retval -1 if message allocation fails.  
+ *
+ * @NEW_1_12_8
  */
 int su_msg_new(su_msg_r rmsg, size_t size)
 {
@@ -957,9 +959,11 @@ int su_msg_report(su_msg_r msg,
  *
  * @param rmsg   message reference
  * @param deinit pointer to deinitializer function
+ *
+ * @NEW_1_12_8
  */
 int su_msg_deinitializer(su_msg_r rmsg,
-			 su_msg_deinit_func *deinit)
+			 su_msg_deinit_function *deinit)
 {
   if (rmsg && rmsg[0]) {
     rmsg[0]->sum_deinit = deinit;
@@ -1156,7 +1160,10 @@ int su_msg_send(su_msg_r rmsg)
   return 0;		
 }
 
-/** Send message to the @a to_task and mark @a from_task as sender */
+/** Send message to the @a to_task and mark @a from_task as sender.
+ *
+ * @NEW_1_12_8
+ */
 SOFIAPUBFUN int su_msg_send_to(su_msg_r rmsg,
 			       su_task_r const to_task,
 			       su_msg_f wakeup)

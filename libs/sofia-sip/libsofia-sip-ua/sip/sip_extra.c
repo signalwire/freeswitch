@@ -220,9 +220,13 @@ issize_t sip_error_info_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
  *
  * The parsed Alert-Info header is stored in #sip_alert_info_t structure.
  *
- * @NEW_1_12_7. In order to use @b Alert-Info header, 
- * initialize the SIP parser with, e.g.,
- * sip_update_default_mclass(sip_extend_mclass(NULL))
+ * @NEW_1_12_7. In order to use @b Alert-Info header, initialize the SIP
+ * parser before calling nta_agent_create() or nua_create() with, e.g.,
+ * sip_update_default_mclass(sip_extend_mclass(NULL)).
+ *
+ * The #sip_t structure does not contain a @a sip_alert_info field, but
+ * sip_alert_info() function should be used for accessing the @b Alert-Info
+ * header structure.
  */
 
 /**@ingroup sip_alert_info
@@ -283,8 +287,14 @@ issize_t sip_alert_info_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
  * @sa sip_update_default_mclass()
  *
  * @NEW_1_12_7. In order to use @b Reply-To header,
- * initialize the SIP parser with, e.g.,
+ * initialize the SIP parser before calling nta_agent_create() or
+ * nua_create() with, e.g.,
  * sip_update_default_mclass(sip_extend_mclass(NULL)).
+ *
+ * @note
+ * The #sip_t structure does not contain a @a sip_reply_to field, but
+ * sip_reply_to() function should be used for accessing the @b Reply-To
+ * header structure.
  */
 
 /**@ingroup sip_reply_to
@@ -933,7 +943,13 @@ char *sip_info_dup_one(sip_header_t *dst,
  *
  * @sa @RFC3265, draft-niemi-sip-subnot-etags-01.txt
  *
- * @EXP_1_12_5. Note that #sip_t does not contain @a
+ * @EXP_1_12_5. 
+ * In order to use @b Suppress-Body-If-Match header, 
+ * initialize the SIP parser with, e.g.,
+ * sip_update_default_mclass(sip_extend_mclass(NULL)).
+ * 
+ * @note
+ * The #sip_t structure does not contain a @a
  * sip_suppress_body_if_match field, but sip_suppress_body_if_match()
  * function should be used for accessing the @b Suppress-Body-If-Match
  * header structure.
@@ -999,10 +1015,15 @@ issize_t sip_suppress_body_if_match_e(char b[], isize_t bsiz,
  *
  * @sa @RFC3265, draft-niemi-sip-subnot-etag-01
  *
- * @EXP_1_12_5. Note that #sip_t does not contain @a
- * sip_suppress_notify_if_match field, but sip_suppress_notify_if_match()
- * function should be used for accessing the @b Suppress-Notify-If-Match
- * header structure.
+ * @EXP_1_12_5. 
+ * In order to use @b Suppress-Notify-If-Match header, 
+ * initialize the SIP parser with, e.g.,
+ * sip_update_default_mclass(sip_extend_mclass(NULL)).
+ * 
+ * @note
+ * The #sip_t struct does not contain @a sip_suppress_notify_if_match field,
+ * but sip_suppress_notify_if_match() function should be used for accessing
+ * the @b Suppress-Notify-If-Match header structure.
  */
 
 /**@ingroup sip_suppress_notify_if_match
@@ -1085,8 +1106,14 @@ issize_t sip_suppress_notify_if_match_e(char b[], isize_t bsiz,
  * @sa sip_update_default_mclass(), draft-ietf-sip-privacy-04.txt, @RFC3325
  *
  * @NEW_1_12_7. In order to use @b Remote-Party-ID header,
- * initialize the SIP parser with, e.g.,
+ * initialize the SIP parser before calling nta_agent_create() or
+ * nua_create() with, e.g.,
  * sip_update_default_mclass(sip_extend_mclass(NULL)).
+ *
+ * @note
+ * The #sip_t structure does not contain @a sip_remote_party_id field, but
+ * sip_remote_party_id() function should be used for accessing the @b
+ * Remote-Party-ID header structure.
  */
 
 /**@ingroup sip_remote_party_id
@@ -1222,8 +1249,14 @@ static int sip_remote_party_id_update(msg_common_t *h,
  * @sa @RFC3325, @PPreferredIdentity
  *
  * @NEW_1_12_7. In order to use @b P-Asserted-Identity header, 
- * initialize the SIP parser with, e.g.,
+ * initialize the SIP parser before calling nta_agent_create() or
+ * nua_create() with, e.g.,
  * sip_update_default_mclass(sip_extend_mclass(NULL)).
+ *
+ * @note
+ * The #sip_t structure does not contain @a sip_p_asserted_identity field,
+ * but sip_p_asserted_identity() function should be used for accessing the
+ * @b P-Asserted-Identity header structure.
  */
 
 /**@ingroup sip_p_asserted_identity
@@ -1325,8 +1358,14 @@ char *sip_p_asserted_identity_dup_one(sip_header_t *dst,
  * @sa @RFC3325, @PAssertedIdentity
  *
  * @NEW_1_12_7. In order to use @b P-Preferred-Identity header,
- * initialize the SIP parser with, e.g.,
+ * initialize the SIP parser before calling nta_agent_create() or
+ * nua_create() with, e.g.,
  * sip_update_default_mclass(sip_extend_mclass(NULL)).
+ *
+ * @note
+ * The #sip_t structure does not contain @a sip_p_preferred_identity field,
+ * but sip_p_preferred_identity() function should be used for accessing the
+ * @b P-Preferred-Identity header structure.
  */
 
 /**@ingroup sip_p_preferred_identity
