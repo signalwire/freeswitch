@@ -48,7 +48,6 @@
  * 
  * @sa <sofia-sip/su_debug.h>, su_log_global
  */
-#ifdef DOXYGEN
 extern char const SU_DEBUG[];
 #endif
 
