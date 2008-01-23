@@ -326,8 +326,11 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 			nua_bye(tech_pvt->nh, TAG_END());
 		} else {
 			if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+				switch_call_cause_t cause = switch_channel_get_cause(channel);
+				
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending CANCEL to %s\n", switch_channel_get_name(channel));
-				nua_cancel(tech_pvt->nh, TAG_END());
+				nua_cancel(tech_pvt->nh, TAG_IF(cause == SWITCH_CAUSE_PICKED_OFF, 
+												SIPTAG_REASON_STR("SIP;cause=200;text=\"Call completed elsewhere\"")), TAG_END());
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding to INVITE with: %d\n", sip_cause);
 				nua_respond(tech_pvt->nh, sip_cause, NULL, TAG_END());
