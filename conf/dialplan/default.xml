@@ -122,7 +122,7 @@
       <condition field="${sip_to_params}" expression="intercom\=true"/>
       <condition field="destination_number" expression="^8(10[01][0-9])$">
 	<action application="set" data="dialed_ext=$1"/>
-	<action application="export" data="sip_h_Call-Info=<sip:$${domain}>;answer-after=0"/>
+	<action application="export" data="sip_h_Call-Info=answer-after=0"/>
 	<action application="export" data="sip_auto_answer=true"/>
 	<action application="bridge" data="user/${dialed_ext}@$${domain}"/>
       </condition>
@@ -279,7 +279,7 @@
     </extension>
 
     <extension name="is_secure">
-      <condition field="${sip_secure_media_confirmed}" expression="^true$" break="never">
+      <condition field="${sip_secure_media_confirmed}" expression="^true$">
 	<action application="sleep" data="1000"/>
 	<action application="gentones" data="${bong-ring}"/>
       </condition>
