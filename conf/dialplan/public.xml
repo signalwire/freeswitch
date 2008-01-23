@@ -2,6 +2,12 @@
 <include>
   <context name="public">
 
+    <extension name="loop">
+      <condition field="${sip_looped_call}" expression="^true$">
+	<action application="transfer" data="${destination_number} XML default"/>
+      </condition>
+    </extension>
+
     <extension name="public_extensions">
       <condition field="destination_number" expression="^(10[01][0-9])$">
 	<action application="transfer" data="$1 XML default"/>
