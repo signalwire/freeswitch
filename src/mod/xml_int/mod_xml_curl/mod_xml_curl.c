@@ -138,9 +138,8 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 					switch_str_nil(key_value));
 
 	data = switch_event_build_param_string(params, basic_data);
-	
 	switch_assert(data);
-	printf("XXXXXXXXXXXXXXXXXXXX\n%s\n", data);
+
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
 

@@ -1310,28 +1310,29 @@ SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, co
 		stream.write_function(&stream, "%s=%s&", prof_names[x], encode_buf);
 	}
 
-	if ((hi = event->headers)) {
-		for (; hi; hi = hi->next) {
-			char *var = hi->name;
-			char *val = hi->value;
+	if (event) {
+		if ((hi = event->headers)) {
+			for (; hi; hi = hi->next) {
+				char *var = hi->name;
+				char *val = hi->value;
 			
-			new_len = (strlen((char *) var) * 3) + 1;
-			if (encode_len < new_len) {
-				char *tmp;
+				new_len = (strlen((char *) var) * 3) + 1;
+				if (encode_len < new_len) {
+					char *tmp;
 				
-				encode_len = new_len;
+					encode_len = new_len;
 			
-				tmp = realloc(encode_buf, encode_len);
-				switch_assert(tmp);
-				encode_buf = tmp;
+					tmp = realloc(encode_buf, encode_len);
+					switch_assert(tmp);
+					encode_buf = tmp;
+				}
+
+				switch_url_encode((char *) val, encode_buf, encode_len - 1);
+				stream.write_function(&stream, "%s=%s&", (char *) var, encode_buf);
+
 			}
-
-			switch_url_encode((char *) val, encode_buf, encode_len - 1);
-			stream.write_function(&stream, "%s=%s&", (char *) var, encode_buf);
-
 		}
 	}
-
 	e = (char *) stream.data + (strlen((char *) stream.data) - 1);
 
 	if (e && *e == '&') {
