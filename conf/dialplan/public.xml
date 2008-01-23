@@ -2,9 +2,10 @@
 <include>
   <context name="public">
 
-    <extension name="loop">
+    <extension name="unloop">
+      <condition field="${unroll_loops}" expression="^true$"/>
       <condition field="${sip_looped_call}" expression="^true$">
-	<action application="transfer" data="${destination_number} XML default"/>
+	<action application="deflect" data="${destination_number}"/>
       </condition>
     </extension>
 
