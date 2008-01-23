@@ -96,17 +96,27 @@ SWITCH_DECLARE(time_t) switch_timestamp(time_t *t)
 	return now;
 }
 
+#if defined(HAVE_CLOCK_GETTIME)
+static int MONO = 1;
+#else
+static int MONO = 0;
+#endif
+
 static switch_time_t time_now(int64_t offset)
 {
 	switch_time_t now;
 
 #if defined(HAVE_CLOCK_GETTIME)
-	struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    now = ts.tv_sec * APR_USEC_PER_SEC + (ts.tv_nsec/1000) + offset;
-
-#else
+	if (MONO) {
+		struct timespec ts;
+		clock_gettime(CLOCK_MONOTONIC, &ts);
+		now = ts.tv_sec * APR_USEC_PER_SEC + (ts.tv_nsec/1000) + offset;
+	} else {
+#endif
 	now = switch_time_now();
+
+#if defined(HAVE_CLOCK_GETTIME)
+	}
 #endif
 
 	return now;
@@ -283,6 +293,24 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	runtime.sps = runtime.sps_total;
 	switch_mutex_unlock(runtime.throttle_mutex);
 
+	if (MONO) {
+		int loops;
+		for(loops = 0; loops < 3; loops++) {
+			ts = time_now(0);
+			/* if it returns the same value every time it won't be of much use.*/
+			if (ts == last) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Broken MONOTONIC Clock Detected!, Support Disabled.\n");
+				MONO = 0;
+				runtime.reference = switch_time_now();
+				runtime.initiated = runtime.reference;
+			}
+			switch_yield(STEP_MIC);
+			last = ts;
+		}
+	}
+
+	ts = 0;
+	last = 0;
 
 	while (globals.RUNNING == 1) {
 		runtime.reference += STEP_MIC;
