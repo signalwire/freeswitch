@@ -2436,7 +2436,7 @@ static JSBool js_fetchurl_file(JSContext * cx, JSObject * obj, uintN argc, jsval
 		config_data.obj = obj;
 
 		config_data.name = filename;
-		if ((config_data.fd = open(filename, O_CREAT | O_RDWR | O_TRUNC)) > -1) {
+		if ((config_data.fd = open(filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 			curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 			curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
 			curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
