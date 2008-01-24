@@ -198,7 +198,7 @@ SWITCH_DECLARE(char *) switch_stun_packet_attribute_get_username(switch_stun_pac
 {
 	uint16_t cpylen;
 
-	cpylen = attribute->length > len ? attribute->length : len;
+	cpylen = attribute->length < len ? attribute->length : len;
 	return memcpy(username, attribute->value, cpylen);
 }
 
