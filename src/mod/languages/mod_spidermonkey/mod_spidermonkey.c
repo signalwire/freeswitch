@@ -2070,6 +2070,7 @@ static JSBool session_wait_for_media(JSContext * cx, JSObject * obj, uintN argc,
 	switch_time_t started;
 	unsigned int elapsed;
 	int32 timeout = 60;
+	jsrefcount saveDepth;
 
 	METHOD_SANITY_CHECK();
 
@@ -2082,6 +2083,7 @@ static JSBool session_wait_for_media(JSContext * cx, JSObject * obj, uintN argc,
 		JS_ValueToInt32(cx, argv[0], &timeout);
 	}
 
+	saveDepth = JS_SuspendRequest(cx);
 	for (;;) {
 		if (((elapsed = (unsigned int) ((switch_timestamp_now() - started) / 1000)) > (switch_time_t) timeout)
 			|| switch_channel_get_state(channel) >= CS_HANGUP) {
@@ -2097,6 +2099,7 @@ static JSBool session_wait_for_media(JSContext * cx, JSObject * obj, uintN argc,
 
 		switch_yield(1000);
 	}
+	JS_ResumeRequest(cx, saveDepth);
 
 	return JS_TRUE;
 }
@@ -2109,6 +2112,7 @@ static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc
 	switch_time_t started;
 	unsigned int elapsed;
 	int32 timeout = 60;
+	jsrefcount saveDepth;
 
 	METHOD_SANITY_CHECK();
 
@@ -2121,6 +2125,7 @@ static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc
 		JS_ValueToInt32(cx, argv[0], &timeout);
 	}
 
+	saveDepth = JS_SuspendRequest(cx);
 	for (;;) {
 		if (((elapsed = (unsigned int) ((switch_timestamp_now() - started) / 1000)) > (switch_time_t) timeout)
 			|| switch_channel_get_state(channel) >= CS_HANGUP) {
@@ -2135,6 +2140,7 @@ static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc
 
 		switch_yield(1000);
 	}
+	JS_ResumeRequest(cx, saveDepth);
 
 	return JS_TRUE;
 }
@@ -2797,7 +2803,9 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		const char *username = NULL;
 		char *to = NULL;
 		char *tmp;
-			
+		jsrefcount saveDepth;
+		switch_status_t status;
+
 		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 
 		if (JS_ValueToObject(cx, argv[0], &session_obj)) {
@@ -2847,8 +2855,11 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		caller_profile = switch_caller_profile_new(pool,username, dialplan, cid_name, cid_num, network_addr,
 												   ani, aniii, rdnis, modname, context, dest);
 
-		if (switch_ivr_originate(session, &peer_session, &jss->cause, dest, to ? atoi(to) : 60, NULL, NULL, NULL, caller_profile, SOF_NONE) 
-			!= SWITCH_STATUS_SUCCESS) {
+		saveDepth = JS_SuspendRequest(cx);
+		status = switch_ivr_originate(session, &peer_session, &jss->cause, dest, to ? atoi(to) : 60, NULL, NULL, NULL, caller_profile, SOF_NONE);
+		JS_ResumeRequest(cx, saveDepth);
+
+		if (status != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot Create Outgoing Channel! [%s]\n", dest);
 			goto done;
 		}
