@@ -1315,10 +1315,10 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			}
 
 			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
-				switch_core_session_message_t msg;
+				switch_core_session_message_t msg = { 0 };
 				
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n", status, phrase);
-
+				
 				msg.message_id = SWITCH_MESSAGE_INDICATE_RESPOND;
 				msg.from = __FILE__;
 				msg.numeric_arg = status;
@@ -1494,6 +1494,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				if (switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
 					switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 					switch_channel_mark_pre_answered(channel);
+					switch_set_flag(tech_pvt, TFLAG_SDP);
 					if (!switch_channel_test_flag(channel, CF_GEN_RINGBACK) && (uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
 						&& (other_session = switch_core_session_locate(uuid))) {
 						other_channel = switch_core_session_get_channel(other_session);
