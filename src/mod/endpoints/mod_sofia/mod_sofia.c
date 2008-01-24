@@ -1009,9 +1009,27 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Challenging call %s\n", to_uri);
 				sofia_reg_auth_challange(NULL, tech_pvt->profile, tech_pvt->nh, REG_INVITE, to_host, 0); 
 				switch_channel_hangup(channel, SWITCH_CAUSE_USER_CHALLENGE);
+			} else if (code == 484) {
+				const char *to = switch_channel_get_variable(channel, "sip_to_uri");
+				const char *max_forwards = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
+				
+				char *to_uri = NULL;
+				
+				if (to) {
+					char *p;
+					to_uri = switch_core_session_sprintf(session, "sip:%s", to);
+					if ((p = strstr(to_uri, ":5060"))) {
+						*p = '\0';
+					}
+				}
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Overlap Dial with %d %s\n", code, reason);
+				nua_respond(tech_pvt->nh, code, reason, TAG_IF(to_uri, SIPTAG_CONTACT_STR(to_uri)),
+							SIPTAG_SUPPORTED_STR(NULL), SIPTAG_ACCEPT_STR(NULL),
+							TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)), TAG_END());
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding with %d %s\n", code, reason);
-				nua_respond(tech_pvt->nh, code, reason, TAG_END());
+				nua_respond(tech_pvt->nh, code, reason, SIPTAG_CONTACT_STR(tech_pvt->reply_contact), TAG_END());
 			}
 			
 		}
