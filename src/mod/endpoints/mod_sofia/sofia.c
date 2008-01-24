@@ -1553,7 +1553,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED");
 						switch_set_flag_locked(tech_pvt, TFLAG_READY);
 						switch_channel_set_state(channel, CS_INIT);
-
+						switch_set_flag(tech_pvt, TFLAG_SDP);
 						if (replaces_str) {
 							home = su_home_new(sizeof(*home));
 							switch_assert(home != NULL);
@@ -1748,6 +1748,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							if (switch_channel_get_state(channel) == CS_HIBERNATE) {
 								switch_set_flag_locked(tech_pvt, TFLAG_READY);
 								switch_channel_set_state(channel, CS_INIT);
+								switch_set_flag(tech_pvt, TFLAG_SDP);
 							}
 							goto done;
 						}
