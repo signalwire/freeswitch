@@ -850,7 +850,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
 	switch_assert(params);
-	switch_event_add_header(params, SWITCH_STACK_BOTTOM, "profile", profile_name);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile", profile_name);
 	
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, params))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
