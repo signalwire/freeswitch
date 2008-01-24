@@ -857,9 +857,18 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "sip_auth");
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile", profile->name);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "user_agent", (sip && sip->sip_user_agent) ? sip->sip_user_agent->g_string : "unknown");
-	
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_profile", profile->name);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_user_agent", (sip && sip->sip_user_agent) ? sip->sip_user_agent->g_string : "unknown");
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_username", username);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_realm", realm);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_nonce", nonce);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_uri", uri);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_qop", qop);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_cnonce", cnonce);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_response", response);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_nc", nc);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_method", (sip && sip->sip_request) ? sip->sip_request->rq_method_name : NULL);
+
 	
 	if (!switch_strlen_zero(profile->reg_domain)) {
 		domain_name = profile->reg_domain;
