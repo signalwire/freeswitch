@@ -856,9 +856,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	
 	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
 	switch_assert(params);
-	switch_event_add_header(params, SWITCH_STACK_BOTTOM, "action", "sip_auth");
-	switch_event_add_header(params, SWITCH_STACK_BOTTOM, "profile", profile->name);
-	switch_event_add_header(params, SWITCH_STACK_BOTTOM, "user_agent", (sip && sip->sip_user_agent) ? sip->sip_user_agent->g_string : "unknown");
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "sip_auth");
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile", profile->name);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "user_agent", (sip && sip->sip_user_agent) ? sip->sip_user_agent->g_string : "unknown");
 	
 	
 	if (!switch_strlen_zero(profile->reg_domain)) {

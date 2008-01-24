@@ -1568,9 +1568,9 @@ case VM_CHECK_AUTH:
 
             switch_event_create(&params, SWITCH_EVENT_MESSAGE);
             switch_assert(params);
-            switch_event_add_header(params, SWITCH_STACK_BOTTOM, "mailbox", myid);
-            switch_event_add_header(params, SWITCH_STACK_BOTTOM, "destination_number", caller_profile->destination_number);
-            switch_event_add_header(params, SWITCH_STACK_BOTTOM, "caller_id_number", caller_profile->caller_id_number);
+            switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "mailbox", myid);
+            switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "destination_number", caller_profile->destination_number);
+            switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "caller_id_number", caller_profile->caller_id_number);
             
             
 			if (switch_xml_locate_user("id", myid, domain_name, switch_channel_get_variable(channel, "network_addr"), 
@@ -1752,7 +1752,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
         
         switch_event_create(&params, SWITCH_EVENT_MESSAGE);
         switch_assert(params);
-        switch_event_add_header(params, SWITCH_STACK_BOTTOM, "mailbox", id);
+        switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "mailbox", id);
         
 		x_user = x_domain = x_domain_root = NULL;
 		if (switch_xml_locate_user("id", id, domain_name, switch_channel_get_variable(channel, "network_addr"), 

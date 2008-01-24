@@ -1432,7 +1432,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
 	switch_assert(params);
-	switch_event_add_header(params, SWITCH_STACK_BOTTOM, "as_channel", "true");
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "as_channel", "true");
 	
 
 	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, params) != SWITCH_STATUS_SUCCESS) {
