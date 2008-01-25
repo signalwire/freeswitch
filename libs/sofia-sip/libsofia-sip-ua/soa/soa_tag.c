@@ -585,22 +585,12 @@ tag_typedef_t soatag_srtp_integrity = BOOLTAG_TYPEDEF(srtp_integrity);
 
 /**@def SOATAG_HOLD(x)
  *
- * Hold media stream or streams. 
- *
- * The hold media stream will have the attribute a=sendonly (meaning that
- * some hold announcements or pause music is sent to the held party but that
- * the held party should not generate any media) or a=inactive (meaning that
- * no media is sent). 
- *
- * When putting a SIP session on hold with sendonly, the application can
- * include, e.g., SOATAG_HOLD("audio") or SOATAG_HOLD("video") or
- * SOATAG_HOLD("audio, video") or SOATAG_HOLD("*") as @soa parameters. When
- * using inactive instead, the application should use "#" or
- * "audio=inactive" instead. When resuming the session, application should
- * include the tag SOATAG_HOLD(NULL).
- *
- * Note that last SOATAG_HOLD() in the tag list will override the
- * SOATAG_HOLD() tags before it.
+ * Hold media stream or streams. When putting a SIP session on hold, the
+ * application can include, e.g., SOATAG_HOLD("audio") or
+ * SOATAG_HOLD("video") or SOATAG_HOLD("audio, video") or SOATAG_HOLD("*")
+ * as @soa parameters. When resuming the session, it can include
+ * SOATAG_HOLD(NULL). Note that last SOATAG_HOLD() in the tag list will
+ * override the SOATAG_HOLD() tags before it.
  *
  * @par Used with
  *    soa_set_params(), soa_get_params(), soa_get_paramlist() \n
