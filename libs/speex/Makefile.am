@@ -13,7 +13,7 @@ pkgconfig_DATA = speex.pc
 EXTRA_DIST = Speex.spec Speex.spec.in Speex.kdevelop speex.m4 speex.pc.in README.blackfin README.symbian README.TI-DSP
 
 #Fools KDevelop into including all files
-SUBDIRS = libspeex include @src@ doc win32 symbian ti
+SUBDIRS = libspeex include doc win32 symbian ti
 
 DIST_SUBDIRS = libspeex include src doc win32 symbian ti
 

@@ -67,9 +67,6 @@ AC_MSG_RESULT($has_alloca)
 
 AC_CHECK_HEADERS(sys/soundcard.h sys/audioio.h)
 
-XIPH_PATH_OGG([src="src"], [src=""])
-AC_SUBST(src)
-
 AC_CHECK_LIB(m, sin)
 
 # Check for getopt_long; if not found, use included source.
@@ -229,11 +226,5 @@ AC_OUTPUT([Makefile libspeex/Makefile src/Makefile doc/Makefile Speex.spec
            include/speex/speex_config_types.h ti/Makefile 
 	   ti/speex_C54_test/Makefile ti/speex_C55_test/Makefile
 	   ti/speex_C64_test/Makefile ])
-
-if test "x$src" = "x"; then 
-echo "**IMPORTANT**"
-echo "You don't seem to have the development package for libogg (libogg-devel) installed. Only the Speex library (libspeex) will be built (no encoder/decoder executable)"
-echo "You can download libogg from http://downloads.xiph.org/releases/ogg/"
-fi
 
 echo "Type \"make; make install\" to compile and install Speex";
