@@ -785,7 +785,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	char name[128];
 	zap_status_t status;
-
+	int direction = ZAP_TOP_DOWN;
+	
 	if (!outbound_profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing caller profile\n");
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -796,37 +797,40 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
 
-	dest = outbound_profile->destination_number;
-
-	if ((p = strchr(outbound_profile->destination_number, '/'))) {
-		dest = p + 1;
-		span_id = atoi(outbound_profile->destination_number);
-		if (!switch_strlen_zero(dest)) {
-			if ((p = strchr(dest, '/'))) {
-				chan_id = atoi(dest);
-				dest = p + 1;
-			}
-		}
-	}
-
-	if (switch_strlen_zero(dest)) {
+	if (switch_strlen_zero(outbound_profile->destination_number)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid dial string\n");
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
 
+	dest = outbound_profile->destination_number;
+	span_id = atoi(dest);
+
+	if ((p = strchr(dest, '/'))) {
+		if (*p++) {
+			if (*p == 'A') {
+				direction = ZAP_BOTTOM_UP;
+			} else if (*p == 'a') {
+				direction =  ZAP_TOP_DOWN;
+			} else {
+				chan_id = atoi(dest);
+			}
+		}
+	}
+	
 	if (!span_id) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing span\n");
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
-	
+
+	if (chan_id < 0) {
+		direction = ZAP_BOTTOM_UP;
+		chan_id = 0;
+	}
+
 	if (chan_id) {
-		if (chan_id > 0) {
-			status = zap_channel_open(span_id, chan_id, &zchan);
-		} else {
-			status = zap_channel_open_any(span_id, ZAP_BOTTOM_UP, &zchan);
-		}
+		status = zap_channel_open(span_id, chan_id, &zchan);
 	} else {
-		status = zap_channel_open_any(span_id, ZAP_TOP_DOWN, &zchan);
+		status = zap_channel_open_any(span_id, direction, &zchan);
 	}
 	
 	if (status != ZAP_SUCCESS) {
