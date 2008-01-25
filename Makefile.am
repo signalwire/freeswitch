@@ -279,8 +279,14 @@ everything: install
 
 installall: install
 
-sure: clean modwipe uninstall
-	$(MAKE) -j install
+update-clean: clean modwipe uninstall
+	cd libs/sofia-sip && $(MAKE) clean
+
+sure: update-clean all
+
+speedy-sure: update-clean
+	$(MAKE) -j core
+	$(MAKE) -j modules
 
 wayclean: clean
 
