@@ -4,7 +4,7 @@
 
 EXTRA_DIST=testenc.c testenc_wb.c testenc_uwb.c testdenoise.c testecho.c
 
-INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_builddir) @OGG_CFLAGS@
+INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_builddir)
 
 lib_LTLIBRARIES = libspeex.la
 
