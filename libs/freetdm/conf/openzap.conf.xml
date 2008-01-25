@@ -1,9 +1,16 @@
 <configuration name="openzap.conf" description="OpenZAP Configuration">
   <settings>
     <param name="debug" value="0"/>
+    <!--<param name="hold-music" value="$${moh_uri}"/>-->
+    <!--<param name="enable-analog-option" value="call-swap"/>-->
+    <!--<param name="enable-analog-option" value="3-way"/>-->
   </settings>
+  <!-- one entry here per openzap span -->
   <analog_spans>
     <span id="1">
+      <!--<param name="hold-music" value="$${moh_uri}"/>-->
+      <!--<param name="enable-analog-option" value="call-swap"/>-->
+      <!--<param name="enable-analog-option" value="3-way"/>-->
       <param name="tonegroup" value="us"/>
       <param name="digit-timeout" value="2000"/>
       <param name="max-digits" value="11"/>
