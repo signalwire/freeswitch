@@ -654,11 +654,15 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 static ZIO_READ_FUNCTION(zt_read)
 {
 	zap_ssize_t r = 0;
-	//*datalen = zchan->packet_len;
+	int errs = 0;
 
-	r = read(zchan->sockfd, data, *datalen);
+	while (errs++ < 100) {
+		if ((r = read(zchan->sockfd, data, *datalen)) > 0) {
+			break;
+		}
+	}
 
-	if (r >= 0) {
+	if (r > 0) {
 		*datalen = r;
 		if (zchan->type == ZAP_CHAN_TYPE_DQ921) {
 			*datalen -= 2;

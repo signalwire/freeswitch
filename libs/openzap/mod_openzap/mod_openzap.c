@@ -42,6 +42,12 @@ switch_endpoint_interface_t *openzap_endpoint_interface;
 
 static switch_memory_pool_t *module_pool = NULL;
 
+typedef enum {
+	ANALOG_OPTION_NONE = 0,
+	ANALOG_OPTION_3WAY = (1 << 0),
+	ANALOG_OPTION_CALL_SWAP = (1 << 1)
+} analog_option_t;
+
 struct span_config {
 	zap_span_t *span;
 	char dialplan[80];
@@ -49,6 +55,7 @@ struct span_config {
 	char dial_regex[256];
 	char fail_dial_regex[256];
 	char hold_music[256];
+	analog_option_t analog_options;
 };
 
 static struct span_config SPAN_CONFIG[ZAP_MAX_SPANS_INTERFACE] = {{0}};
@@ -75,6 +82,7 @@ static struct {
 	int calls;
 	char hold_music[256];
 	switch_mutex_t *mutex;
+	analog_option_t analog_options;
 } globals;
 
 struct private_object {
@@ -511,6 +519,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
+	
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
@@ -1052,6 +1061,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 		break;
     case ZAP_SIGEVENT_START:
 		{
+			zap_clear_flag_locked(sigmsg->channel, ZAP_CHANNEL_HOLD);
 			status = zap_channel_from_event(sigmsg, &session);
 			if (status != ZAP_SUCCESS) {
 				zap_set_state_locked(sigmsg->channel, ZAP_CHANNEL_STATE_BUSY);
@@ -1132,8 +1142,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 		break;
     case ZAP_SIGEVENT_FLASH:
 		{
-			
-			if (sigmsg->channel->token_count == 2) {
+			if (sigmsg->channel->token_count == 2 && (SPAN_CONFIG[sigmsg->span_id].analog_options & ANALOG_OPTION_3WAY)) {
 				if (zap_test_flag(sigmsg->channel, ZAP_CHANNEL_3WAY)) {
 					zap_clear_flag(sigmsg->channel, ZAP_CHANNEL_3WAY);
 					if ((session = zap_channel_get_session(sigmsg->channel, 1))) {
@@ -1150,7 +1159,9 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 					cycle_foreground(sigmsg->channel, 1, cmd);
 					free(cmd);
 				}
-			} else { 
+			} else if ((SPAN_CONFIG[sigmsg->span_id].analog_options & ANALOG_OPTION_CALL_SWAP)
+					   || (SPAN_CONFIG[sigmsg->span_id].analog_options & ANALOG_OPTION_3WAY)
+					   ) { 
 				cycle_foreground(sigmsg->channel, 1, NULL);
 				if (sigmsg->channel->token_count == 1) {
 					zap_set_flag_locked(sigmsg->channel, ZAP_CHANNEL_HOLD);
@@ -1315,6 +1326,20 @@ static void zap_logger(char *file, const char *func, int line, int level, char *
 
 }
 
+static uint32_t enable_analog_option(const char *str, uint32_t current_options)
+{
+	if (!strcasecmp(str, "3-way")) {
+		current_options |= ANALOG_OPTION_3WAY;
+		current_options &= ~ANALOG_OPTION_CALL_SWAP;
+	} else if (!strcasecmp(str, "call-swap")) {
+		current_options |= ANALOG_OPTION_CALL_SWAP;
+		current_options &= ~ANALOG_OPTION_3WAY;
+	}
+	
+	return current_options;
+	
+}
+
 static switch_status_t load_config(void)
 {
 	char *cf = "openzap.conf";
@@ -1336,6 +1361,8 @@ static switch_status_t load_config(void)
 				globals.debug = atoi(val);
 			} else if (!strcasecmp(var, "hold-music")) {
 				switch_set_string(globals.hold_music, val);
+			} else if (!strcasecmp(var, "enable-analog-option")) {
+				globals.analog_options = enable_analog_option(val, globals.analog_options);
 			}
 		}
 	}
@@ -1353,6 +1380,7 @@ static switch_status_t load_config(void)
 			char *fail_dial_regex = NULL;
 			uint32_t span_id = 0, to = 0, max = 0;
 			zap_span_t *span = NULL;
+			analog_option_t analog_options = ANALOG_OPTION_NONE;
 
 			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -1374,6 +1402,8 @@ static switch_status_t load_config(void)
 					hold_music = val;
 				} else if (!strcasecmp(var, "max_digits") || !strcasecmp(var, "max-digits")) {
 					digit_timeout = val;
+				} else if (!strcasecmp(var, "enable-analog-option")) {
+					analog_options = enable_analog_option(val, analog_options);
 				}
 			}
 				
@@ -1408,7 +1438,8 @@ static switch_status_t load_config(void)
 			SPAN_CONFIG[span->span_id].span = span;
 			switch_set_string(SPAN_CONFIG[span->span_id].context, context);
 			switch_set_string(SPAN_CONFIG[span->span_id].dialplan, dialplan);
-
+			SPAN_CONFIG[span->span_id].analog_options = analog_options | globals.analog_options;
+			
 			if (dial_regex) {
 				switch_set_string(SPAN_CONFIG[span->span_id].dial_regex, dial_regex);
 			}

@@ -369,6 +369,10 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 						zap_channel_command(zchan, ZAP_COMMAND_GENERATE_RING_OFF, NULL);
 					}
 
+					if (zchan->token_count == 1) {
+						zap_clear_flag(zchan, ZAP_CHANNEL_HOLD);
+					}
+
 					if (zap_test_flag(zchan, ZAP_CHANNEL_HOLD)) {
 						zap_clear_flag(zchan, ZAP_CHANNEL_HOLD);
 						sig.event_id = ZAP_SIGEVENT_ADD_CALL;
@@ -519,7 +523,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 		}
 
 		if (zap_channel_read(zchan, frame, &len) != ZAP_SUCCESS) {
-			zap_log(ZAP_LOG_ERROR, "READ ERROR\n");
+			zap_log(ZAP_LOG_ERROR, "READ ERROR [%s]\n", zchan->last_error);
 			goto done;
 		}
 
