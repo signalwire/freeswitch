@@ -1484,8 +1484,11 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 
     status = zchan->zio->read(zchan, data, datalen);
 	if (zchan->fds[0]) {
-		unsigned int dlen = (unsigned int) *datalen;
-		write(zchan->fds[0], data, dlen);
+		int dlen = (int) *datalen;
+		if (write(zchan->fds[0], data, dlen) != dlen) {
+			snprintf(zchan->last_error, sizeof(zchan->last_error), "write error!");
+			return ZAP_FAIL;
+		}
 	}
 
 	if (status == ZAP_SUCCESS && zap_test_flag(zchan, ZAP_CHANNEL_TRANSCODE) && zchan->effective_codec != zchan->native_codec) {
@@ -1729,8 +1732,11 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t data
 		
 	} 
 	if (zchan->fds[1]) {
-		unsigned int dlen = (unsigned int) *datalen;
-		write(zchan->fds[1], data, dlen);
+		int dlen = (int) *datalen;
+		if ((write(zchan->fds[1], data, dlen)) != dlen) {
+			snprintf(zchan->last_error, sizeof(zchan->last_error), "write error!");
+			return ZAP_FAIL;
+		}
 	}
 
     status = zchan->zio->write(zchan, data, datalen);
