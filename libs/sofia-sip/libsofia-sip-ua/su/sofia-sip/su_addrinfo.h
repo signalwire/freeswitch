@@ -126,7 +126,7 @@ struct addrinfo {
 #define	AI_MASK		(AI_PASSIVE | AI_CANONNAME | AI_NUMERICHOST)
 #endif
 
-/** @RFC1576 address info structure. */
+/** RFC 1576 address info structure. */
 typedef struct addrinfo su_addrinfo_t;
 
 /** Translate address and service. */

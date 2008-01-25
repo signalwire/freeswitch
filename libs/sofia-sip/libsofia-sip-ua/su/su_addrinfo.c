@@ -893,7 +893,6 @@ int su_getaddrinfo(char const *node, char const *service,
 {
   int retval;
   su_addrinfo_t *ai;
-  char const *realservice = service;
 
   if (!service || service[0] == '\0')
     service = "0";
@@ -932,9 +931,6 @@ int su_getaddrinfo(char const *node, char const *service,
 #endif
 
   retval = getaddrinfo(node, service, hints, res);
-
-  if (service != realservice && retval == EAI_SERVICE)
-    retval = getaddrinfo(node, realservice, hints, res);
 
   if (retval == 0) {
     for (ai = *res; ai; ai = ai->ai_next) {

@@ -218,13 +218,21 @@ sres_record_t **sres_cached_answers_sockaddr(sres_resolver_t *res,
                                              uint16_t type,
 					     struct sockaddr const *addr);
 
-/**Modify the priority of the specified SRV records. */
+/**Modify the priority of the specified SRV records.
+ * 
+ * @param res       pointer to resolver object
+ * @param service   domain name of the SRV records to search in cache
+ * @param target    target to lower the prio
+ * @param port      port number to lower the prio
+ * @param newprio   new priority value
+ *
+ * @return Number of modified records on success, -1 otherwise
+ */
 SRESPUBFUN
 int sres_set_cached_srv_priority(sres_resolver_t *res,
 				 char const *domain,
 				 char const *target,
 				 uint16_t port,
-				 uint32_t newttl,
 				 uint16_t newprio);
 
 

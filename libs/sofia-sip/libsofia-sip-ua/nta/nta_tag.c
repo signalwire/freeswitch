@@ -643,31 +643,6 @@ tag_typedef_t ntatag_progress = UINTTAG_TYPEDEF(progress);
  */
 tag_typedef_t ntatag_timer_c = UINTTAG_TYPEDEF(timer_c);
 
-/**@def NTATAG_GRAYLIST(x)
- *
- * Avoid failed servers.
- *
- * The NTATAG_GRAYLIST() provides the time that the servers are avoided
- * after a request sent to them has been failed. Avoiding means that if a
- * domain provides multiple servers, the failed servers are tried last.
- *
- * @par Used with
- *    nua_create(), nua_set_params(),
- *    nta_agent_create(), nta_agent_set_params()
- *
- * @par Parameter type
- *     unsigned int
- *
- * @par Values
- *    - Number of seconds that server is kept in graylist, from 0 to 86400.
- *
- * @par Default Value
- *    - 600 (graylist server for 10 minutes)
- *
- * @sa NTATAG_BLACKLIST(), NTATAG_TIMEOUT_408()
- */
-tag_typedef_t ntatag_graylist = UINTTAG_TYPEDEF(graylist);
-
 /**@def NTATAG_BLACKLIST(x)
  *
  * Add Retry-After header to error responses returned to application.
@@ -685,7 +660,7 @@ tag_typedef_t ntatag_graylist = UINTTAG_TYPEDEF(graylist);
  *     unsigned int
  *
  * @par Values
- *    - Value of @i delta-seconds in @RetryAfter header, from 0 to 86400
+ *    - Value of delta-seconds in @RetryAfter header
  *
  * @par Default Value
  *    - 0 (no Retry-After is included)

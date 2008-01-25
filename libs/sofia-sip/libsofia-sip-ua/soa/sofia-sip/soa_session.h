@@ -238,11 +238,8 @@ SOFIAPUBFUN int soa_has_received_sdp(soa_session_t const *ss);
 SOFIAPUBFUN int soa_set_status(soa_session_t *ss,
 			       int status, char const *phrase);
 
-enum soa_activity { soa_activity_local, soa_activity_remote, soa_activity_session };
-
 SOFIAPUBFUN void soa_set_activity(soa_session_t *ss, 
-				  sdp_media_t const *m, 
-				  enum soa_activity activity);
+				  sdp_media_t const *m, int remote);
 
 SOFIAPUBFUN int soa_description_set(soa_session_t *ss, 
 				    struct soa_description *ssd,

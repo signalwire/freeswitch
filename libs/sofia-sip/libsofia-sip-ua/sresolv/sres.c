@@ -1358,7 +1358,6 @@ sres_cached_answers_sockaddr(sres_resolver_t *res,
  * @param target   SRV target of the SRV record(s) to modify
  * @param port     port number of SRV record(s) to modify 
  *                 (in host byte order) 
- * @param ttl      new ttl for SRV records of the domain
  * @param priority new priority value (0=highest, 65535=lowest)
  *
  * @sa sres_cache_set_srv_priority()
@@ -1369,7 +1368,6 @@ int sres_set_cached_srv_priority(sres_resolver_t *res,
 				 char const *domain,
 				 char const *target,
 				 uint16_t port,
-				 uint32_t ttl,
 				 uint16_t priority)
 {
   char rooted_domain[SRES_MAXDNAME];
@@ -1383,8 +1381,7 @@ int sres_set_cached_srv_priority(sres_resolver_t *res,
     return -1;
 
   return sres_cache_set_srv_priority(res->res_cache, 
-				     domain, target, port, 
-				     ttl, priority);
+				     domain, target, port, priority);
 }
 
 

@@ -70,6 +70,10 @@ static char const __func__[] = "soa";
 /* ======================================================================== */
 
 /* Internal prototypes */
+void soa_set_activity(soa_session_t *ss,
+		      sdp_media_t const *,
+		      int remote);
+
 su_inline int soa_media_is_ready(soa_session_t const *ss);
 
 enum soa_sdp_kind { 
@@ -1167,7 +1171,7 @@ int soa_base_set_remote_sdp(soa_session_t *ss,
   if (!new_version)
     return 0;
     
-  soa_set_activity(ss, sdp->sdp_media, soa_activity_remote);
+  soa_set_activity(ss, sdp->sdp_media, 1);
 
   ss->ss_remote_version++;
   
@@ -1450,7 +1454,7 @@ int soa_base_generate_offer(soa_session_t *ss,
   if (!sdp)
     return -1;
 
-  soa_set_activity(ss, sdp->sdp_media, soa_activity_local); /* Wanted activity */
+  soa_set_activity(ss, sdp->sdp_media, 0);
 
   ss->ss_offer_sent = 1;
   ss->ss_answer_recv = 0;
@@ -1538,7 +1542,8 @@ int soa_base_generate_answer(soa_session_t *ss,
     su_free(ss->ss_home, ss->ss_rsession);
   ss->ss_rsession = rsession;
 
-  soa_set_activity(ss, l_sdp->sdp_media, soa_activity_session);
+  soa_set_activity(ss, l_sdp->sdp_media, 0);
+  soa_set_activity(ss, r_sdp->sdp_media, 1);
 
   ss->ss_offer_recv = 1;
   ss->ss_answer_sent = 1;
@@ -1619,7 +1624,8 @@ int soa_base_process_answer(soa_session_t *ss,
     su_free(ss->ss_home, ss->ss_rsession);
   ss->ss_rsession = rsession;
 
-  soa_set_activity(ss, l_sdp->sdp_media, soa_activity_session);
+  soa_set_activity(ss, l_sdp->sdp_media, 0);
+  soa_set_activity(ss, r_sdp->sdp_media, 1);
 
   ss->ss_answer_recv = 1;
   ss->ss_complete = 1;
@@ -1686,7 +1692,7 @@ int soa_base_process_reject(soa_session_t *ss,
   if (!l_sdp)
     return -1;
 
-  soa_set_activity(ss, l_sdp->sdp_media, soa_activity_session);
+  soa_set_activity(ss, l_sdp->sdp_media, 0);
 
   ss->ss_offer_sent = 0;
 
@@ -1777,7 +1783,8 @@ void soa_base_terminate(soa_session_t *ss, char const *option)
   ss->ss_oa_rounds = 0;
 
   soa_description_free(ss, ss->ss_remote);
-  soa_set_activity(ss, NULL, soa_activity_session);
+  soa_set_activity(ss, NULL, 0);
+  soa_set_activity(ss, NULL, 1);
 }
 
 /** Return true if the SDP Offer/Answer negotation is complete.
@@ -1882,75 +1889,56 @@ int soa_media_is_ready(soa_session_t const *ss)
 
 void soa_set_activity(soa_session_t *ss,
 		      sdp_media_t const *m,
-		      enum soa_activity activity)
+		      int remote)
 {
   struct soa_media_activity *ma;
   sdp_connection_t const *c;
-  int mode, swap;
-  int l_audio = SOA_ACTIVE_DISABLED, r_audio = SOA_ACTIVE_DISABLED;
-  int l_video = SOA_ACTIVE_DISABLED, r_video = SOA_ACTIVE_DISABLED;
-  int l_chat = SOA_ACTIVE_DISABLED,  r_chat = SOA_ACTIVE_DISABLED;
-  int l_image = SOA_ACTIVE_DISABLED, r_image = SOA_ACTIVE_DISABLED;
+  int mode;
+  int ma_audio = SOA_ACTIVE_DISABLED;
+  int ma_video = SOA_ACTIVE_DISABLED;
+  int ma_chat = SOA_ACTIVE_DISABLED;
+  int ma_image = SOA_ACTIVE_DISABLED;
+  int *p;
 
-  int *l, *r;
+  remote = !!remote;
+
+  ma = remote ? ss->ss_remote_activity : ss->ss_local_activity;
 
   for (; m; m = m->m_next) {
     if (m->m_type == sdp_media_audio)
-      l = &l_audio, r = &r_audio;
+      p = &ma_audio;
     else if (m->m_type == sdp_media_video)
-      l = &l_video, r = &r_video;
+      p = &ma_video;
     else if (m->m_type == sdp_media_image)
-      l = &l_image, r = &r_image;
+      p = &ma_image;
     else if (strcasecmp(m->m_type_name, "message") == 0)
-      l = &l_chat, r = &r_chat;
+      p = &ma_chat;
     else
       continue;
 
     if (m->m_rejected) {
-      if (*l < 0) *l = SOA_ACTIVE_REJECTED;
-      if (*r < 0) *r = SOA_ACTIVE_REJECTED;
+      if (*p < 0)
+	*p = SOA_ACTIVE_REJECTED;
       continue;
     }
 
-    mode = m->m_mode, swap = ((mode << 1) & 2) | ((mode >> 1) & 1);
+    mode = m->m_mode;
 
     c = sdp_media_connections((sdp_media_t *)m);
 
-    switch (activity) {
-    case soa_activity_local:
-      *l &= SOA_ACTIVE_SENDRECV;
-      *l |= c && c->c_mcast ? swap : mode;
-      break;
-    case soa_activity_remote:
-      *r &= SOA_ACTIVE_SENDRECV;
-      *r = c && c->c_mcast ? mode : swap;
-      break;
-    case soa_activity_session:
-      *l &= SOA_ACTIVE_SENDRECV;
-      *l |= c && c->c_mcast ? swap : mode;
-      *r &= SOA_ACTIVE_SENDRECV;
-      *r = c && c->c_mcast ? swap : mode;
-      break;
-    }
+    if (remote != (c && c->c_mcast))
+      mode = ((mode << 1) & 2) | ((mode >> 1) & 1);
+
+    if (*p < 0)
+      *p = mode;
+    else
+      *p |= mode;
   }
 
-  if (activity == soa_activity_local ||
-      activity == soa_activity_session) {
-    ma = ss->ss_local_activity;
-    ma->ma_audio = l_audio;
-    ma->ma_video = l_video;
-    ma->ma_image = l_image;
-    ma->ma_chat = l_chat;
-  }
-
-  if (activity == soa_activity_remote ||
-      activity == soa_activity_session) {
-    ma = ss->ss_remote_activity;
-    ma->ma_audio = r_audio;
-    ma->ma_video = r_video;
-    ma->ma_image = r_image;
-    ma->ma_chat = r_chat;
-  }
+  ma->ma_audio = ma_audio;
+  ma->ma_video = ma_video;
+  ma->ma_image = ma_image;
+  ma->ma_chat = ma_chat;
 }
 
 /* ----------------------------------------------------------------------*/
