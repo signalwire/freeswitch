@@ -647,8 +647,13 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 	hp2 = (*event)->headers;
 
 	for (hp = todup->headers; hp; hp = hp->next) {
-		if ((header = ALLOC(sizeof(*header))) == 0) {
-			return SWITCH_STATUS_MEMERR;
+		void *pop;
+		
+		if (switch_queue_trypop(EVENT_HEADER_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
+			header = (switch_event_header_t *) pop;
+		} else {
+			header = ALLOC(sizeof(*header));
+			switch_assert(header);
 		}
 
 		memset(header, 0, sizeof(*header));
@@ -662,7 +667,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 			(*event)->headers = header;
 		}
 
-		last = header;
+		(*event)->last_header = last = header;
 	}
 
 	if (todup->body) {

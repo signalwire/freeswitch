@@ -253,7 +253,27 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 		} else {
 			if (level == SWITCH_LOG_CONSOLE || !LOG_QUEUE || !THREAD_RUNNING) {
 				if (handle) {
-					fprintf(handle, "%s", data);
+					int aok = 1;
+#ifndef WIN32
+
+					fd_set can_write;
+					int fd;
+					struct timeval to;
+					
+					fd = fileno(handle);
+					memset(&to, 0, sizeof(to));
+					FD_SET(fd, &can_write);
+					to.tv_sec = 0;
+					to.tv_usec = 5000;
+					if (select(fd+1, NULL, &can_write, NULL, &to) > 0) {
+						aok = FD_ISSET(fd, &can_write);
+					} else {
+						aok = 0;
+					}
+#endif
+					if (aok) {
+						fprintf(handle, "%s", data);
+					}
 				}
 				free(data);
 			} else if (level <= MAX_LEVEL) {

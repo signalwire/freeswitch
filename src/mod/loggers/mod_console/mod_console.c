@@ -62,7 +62,7 @@ static switch_memory_pool_t *module_pool = NULL;
 static switch_hash_t *log_hash = NULL;
 static uint32_t all_level = 0;
 static int32_t hard_log_level = SWITCH_LOG_DEBUG;
-
+static int32_t failed_write = 0;
 static void del_mapping(char *var)
 {
 	switch_core_hash_insert(log_hash, var, NULL);
@@ -147,12 +147,57 @@ static switch_status_t config_logger(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static int can_write(FILE *handle, int ms)
+{
+#ifndef WIN32
+	int aok = 1;
+	fd_set can_write;
+	int fd;
+	struct timeval to;
+	int sec, usec;
+
+	sec = ms / 1000;
+	usec = ms % 1000;
+
+	fd = fileno(handle);
+	memset(&to, 0, sizeof(to));
+	FD_SET(fd, &can_write);
+	to.tv_sec = sec;
+	to.tv_usec = usec;
+	if (select(fd+1, NULL, &can_write, NULL, &to) > 0) {
+		aok = FD_ISSET(fd, &can_write);
+	} else {
+		aok = 0;
+	}
+	
+	return aok;
+#else 
+	return 1;
+#endif
+}
+
+
 static switch_status_t switch_console_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
 	FILE *handle;
 	
 	if (!RUNNING) {
 		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (failed_write) {
+		if ((handle = switch_core_data_channel(SWITCH_CHANNEL_ID_LOG))) {
+			int aok = can_write(handle, 5);
+			if (aok) {
+				const char *msg = "Failed to write to the console! Logging disabled! RE-enable with the 'console loglevel' command\n";
+				if (COLORIZE) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s%s",  COLORS[1], msg, SWITCH_SEQ_DEFAULT_COLOR);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s", msg);
+				}
+				failed_write = 0;
+			}
+		}
 	}
 
 	if (level > hard_log_level) {
@@ -162,7 +207,7 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 	if ((handle = switch_core_data_channel(SWITCH_CHANNEL_ID_LOG))) {
         size_t mask = 0;
         size_t ok = 0;
-    
+		
         ok = switch_log_check_mask(all_level, level);
         
 		if (log_hash) {
@@ -178,6 +223,16 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 		}
 
 		if (ok) {
+#ifndef WIN32
+			int aok = can_write(handle, 2000);
+			
+			if (!aok) {
+				hard_log_level = 0;
+				failed_write++;
+				return SWITCH_STATUS_SUCCESS;
+			}
+#endif
+
 			if (COLORIZE) {
 #ifdef WIN32
 				SetConsoleTextAttribute(hStdout, COLORS[node->level]);
@@ -213,18 +268,20 @@ SWITCH_STANDARD_API(console_api_function)
 
 	if (argc > 0) {
 
-		if (argc < 2) {
+		if (argc < 1) {
 			err = "missing arg";
 			goto end;
 		}
 
 		if (!strcasecmp(argv[0], "loglevel")) {
-			int level;
+			int level = hard_log_level;
 			
-			if (*argv[1] > 47 && *argv[1] < 58) {
-				level = atoi(argv[1]);
-			} else {
-				level = switch_log_str2level(argv[1]);
+			if (argc > 1) {
+				if (*argv[1] > 47 && *argv[1] < 58) {
+					level = atoi(argv[1]);
+				} else {
+					level = switch_log_str2level(argv[1]);
+				}
 			}
 
 			if (level == SWITCH_LOG_INVALID) {
@@ -235,7 +292,9 @@ SWITCH_STANDARD_API(console_api_function)
 			}
 			goto end;
 		} else if (!strcasecmp(argv[0], "colorize")) {
-			COLORIZE = switch_true(argv[1]);
+			if (argc > 1) {
+				COLORIZE = switch_true(argv[1]);
+			}
 			stream->write_function(stream,  "+OK console color %s\n", COLORIZE ? "enabled" : "disabled");
 			goto end;
 		}

@@ -69,6 +69,8 @@ struct listener {
 	switch_hash_t *event_hash;
 	switch_thread_rwlock_t *rwlock;
 	switch_core_session_t *session;
+	int lost_events;
+	int lost_logs;
 	struct listener *next;
 };
 
@@ -106,7 +108,19 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 		if (switch_test_flag(l, LFLAG_LOG) && l->level >= node->level) {
 			char *data = strdup(node->data);
 			if (data) {
-				switch_queue_push(l->log_queue, data);
+				if (switch_queue_trypush(l->log_queue, data) == SWITCH_STATUS_SUCCESS) {
+					int ll =  l->lost_logs;
+					switch_event_t *event;
+					l->lost_logs = 0;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Lost %d log lines!\n", ll);
+					if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "info", "lost %d log lines", ll);
+						switch_event_fire(&event);
+					}
+				} else {
+					switch_safe_free(data);
+					l->lost_logs++;
+				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
 			}
@@ -153,7 +167,21 @@ static void event_handler(switch_event_t *event)
 
 		if (send) {
 			if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
-				switch_queue_push(l->event_queue, clone);
+				if (switch_queue_trypush(l->event_queue, clone) == SWITCH_STATUS_SUCCESS) {
+					if (l->lost_events) {
+						int le = l->lost_events;
+						l->lost_events = 0;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Lost %d events!\n", le);
+						clone = NULL;
+						if (switch_event_create(&clone, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
+							switch_event_add_header(clone, SWITCH_STACK_BOTTOM, "info", "lost %d events", le);
+							switch_event_fire(&clone);
+						}
+					}
+				} else {
+					l->lost_events++;
+					switch_event_destroy(&clone);
+				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
 			}
