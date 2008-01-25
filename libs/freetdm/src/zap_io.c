@@ -1483,10 +1483,10 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 	}
 
     status = zchan->zio->read(zchan, data, datalen);
-	if (zchan->fds[0]) {
+	if (zchan->fds[0] > -1) {
 		int dlen = (int) *datalen;
 		if (write(zchan->fds[0], data, dlen) != dlen) {
-			snprintf(zchan->last_error, sizeof(zchan->last_error), "write error!");
+			snprintf(zchan->last_error, sizeof(zchan->last_error), "file write error!");
 			return ZAP_FAIL;
 		}
 	}
@@ -1731,10 +1731,10 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t data
 		}
 		
 	} 
-	if (zchan->fds[1]) {
+	if (zchan->fds[1] > -1) {
 		int dlen = (int) *datalen;
 		if ((write(zchan->fds[1], data, dlen)) != dlen) {
-			snprintf(zchan->last_error, sizeof(zchan->last_error), "write error!");
+			snprintf(zchan->last_error, sizeof(zchan->last_error), "file write error!");
 			return ZAP_FAIL;
 		}
 	}
