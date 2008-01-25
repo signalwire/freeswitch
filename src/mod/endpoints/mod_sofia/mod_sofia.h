@@ -66,7 +66,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_EXPIRE "sofia::expire"
 #define MULTICAST_EVENT "multicast::event"
 #define SOFIA_REPLACES_HEADER "_sofia_replaces_"
-#define SOFIA_USER_AGENT "FreeSWITCH/" SWITCH_VERSION_MAJOR "." SWITCH_VERSION_MINOR "." SWITCH_VERSION_MICRO "/" SWITCH_VERSION_REVISION "/mod_sofia"
+#define SOFIA_USER_AGENT "FreeSWITCH-mod_sofia/" SWITCH_VERSION_MAJOR "." SWITCH_VERSION_MINOR "." SWITCH_VERSION_MICRO "-" SWITCH_VERSION_REVISION
 #define SOFIA_CHAT_PROTO "sip"
 #define SOFIA_SIP_HEADER_PREFIX "sip_h_"
 #define SOFIA_SIP_HEADER_PREFIX_T "~sip_h_"
