@@ -134,10 +134,16 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 
 		for (xaction = switch_xml_child(xcond, "action"); xaction; xaction = xaction->next) {
 			char *application = (char *) switch_xml_attr_soft(xaction, "application");
-			char *data = (char *) switch_xml_attr_soft(xaction, "data");
+			char *data = NULL;
 			char *substituted = NULL;
 			uint32_t len = 0;
 			char *app_data = NULL;
+
+			if (xaction->txt) {
+				data = xaction->txt;
+			} else {
+				data = (char *) switch_xml_attr_soft(xaction, "data");
+			}
 
 			if (field && strchr(expression, '(')) {
 				len = (uint32_t) (strlen(data) + strlen(field_data) + 10);
