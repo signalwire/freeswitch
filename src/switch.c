@@ -242,6 +242,7 @@ int main(int argc, char *argv[])
 		"\t-nosql           -- disable internal sql scoreboard\n"
 		"\t-stop            -- stop freeswitch\n"
 		"\t-nc              -- do not output to a console and background\n"
+		"\t-c              -- output to a console and stay in the foreground\n"
 		"\t-conf [confdir]  -- specify an alternate config dir\n"
 		"\t-log [logdir]    -- specify an alternate log dir\n"
 		"\t-db [dbdir]      -- specify an alternate db dir\n"
@@ -341,6 +342,10 @@ int main(int argc, char *argv[])
 			known_opt++;
 		}
 
+		if (argv[x] && !strcmp(argv[x], "-c")) {
+			nc = 0;
+			known_opt++;
+		}
 
 		if (argv[x] && !strcmp(argv[x], "-conf")) {
 			x++;
