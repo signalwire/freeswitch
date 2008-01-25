@@ -119,10 +119,10 @@
     </extension>
 
     <extension name="extension-intercom">
-      <condition field="${sip_to_params}" expression="intercom\=true"/>
+      <!-- <condition field="${sip_to_params}" expression="intercom\=true"/> -->
       <condition field="destination_number" expression="^8(10[01][0-9])$">
 	<action application="set" data="dialed_ext=$1"/>
-	<action application="export" data="sip_h_Call-Info=<sip:$${domain}>;answer-after=0"/>
+	<action application="export"><![CDATA[sip_h_Call-Info=<sip:$${domain}>;answer-after=0]]></action>
 	<action application="export" data="sip_auto_answer=true"/>
 	<action application="bridge" data="user/${dialed_ext}@$${domain}"/>
       </condition>
@@ -271,12 +271,6 @@
     </extension>
 
     <X-PRE-PROCESS cmd="include" data="extensions/*.xml"/>
-
-    <extension name="overlap_dial">
-      <condition field="destination_number" expression="^(.*)$">
-	<action application="respond" data="484 asterisk sucks"/>
-      </condition>
-    </extension>
 
     <extension name="enum">
       <condition field="destination_number" expression="^(.*)$">
