@@ -139,7 +139,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 			uint32_t len = 0;
 			char *app_data = NULL;
 
-			if (xaction->txt) {
+			if (!switch_strlen_zero(xaction->txt)) {
 				data = xaction->txt;
 			} else {
 				data = (char *) switch_xml_attr_soft(xaction, "data");
