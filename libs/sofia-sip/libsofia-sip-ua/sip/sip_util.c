@@ -883,8 +883,7 @@ sip_security_client_select(sip_security_client_t const *client,
  * decide whether to gracefully terminate or not, the
  * @a *return_graceful_terminate_usage is left unmodified.
  *
- * @sa 
- * http://www.ietf.org/internet-drafts/draft-ietf-sipping-dialogusage-02.txt
+ * @RFC 5057
  */
 int sip_response_terminates_dialog(int response_code,
 				   sip_method_t method,
@@ -1060,8 +1059,6 @@ int sip_response_terminates_dialog(int response_code,
       usage in an existing dialog, no new usage is created and existing
       usages are unaffected.
     */
-    *return_graceful_terminate_usage = 0;
-    return 0;
 
   case 423: /** @par 423 Interval Too Brief 
 
@@ -1070,8 +1067,6 @@ int sip_response_terminates_dialog(int response_code,
       subscribe usage is not destroyed (or otherwise affected).  No
       other usages of the dialog are affected.
     */
-    *return_graceful_terminate_usage = 0;
-    return sip_method_subscribe == method ? terminate_usage : no_effect;
 
   case 428: /** @par 428 Use Identity Header
 
@@ -1079,8 +1074,6 @@ int sip_response_terminates_dialog(int response_code,
       the usage.  The usage is not affected.  The dialog is only
       affected by a change in its local @CSeq.  No other usages of the
       dialog are affected. */
-    *return_graceful_terminate_usage = 0;
-    return 0;
 
   case 429: /** @par 429 Provide Referrer Identity 
 

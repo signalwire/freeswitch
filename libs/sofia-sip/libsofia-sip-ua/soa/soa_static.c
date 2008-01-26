@@ -974,58 +974,28 @@ int soa_sdp_reject(su_home_t *home,
   return 0;
 }
 
-/** Check if @a session mode should be changed. */ 
+
+/** Update mode within session.
+ *
+ * @sa soatag_hold
+ *
+ * @retval 1 if session was changed (or to be changed, if @a dryrun is nonzero)
+ */ 
 static
-int soa_sdp_mode_set_is_needed(sdp_session_t const *session,
-			       sdp_session_t const *remote,
-			       char const *hold)
-{
-  sdp_media_t const *sm, *rm, *rm_next;
-  int hold_all;
-  sdp_mode_t recv_mode;
-
-  SU_DEBUG_7(("soa_sdp_mode_set_is_needed(%p, %p, \"%s\"): called\n",
-	      (void *)session, (void *)remote, hold ? hold : ""));
-
-  if (!session )
-    return 0;
-
-  hold_all = str0cmp(hold, "*") == 0;
-
-  rm = remote ? remote->sdp_media : NULL, rm_next = NULL;
-
-  for (sm = session->sdp_media; sm; sm = sm->m_next, rm = rm_next) {
-    rm_next = rm ? rm->m_next : NULL;
-
-    if (sm->m_rejected)
-      continue;
-
-    if (rm) {
-      /* Mode bits do not match */
-      if (((rm->m_mode & sdp_recvonly) == sdp_recvonly)
-	  != ((sm->m_mode & sdp_sendonly) == sdp_sendonly))
-	return 1;
-    }
-
-    recv_mode = sm->m_mode & sdp_recvonly;
-    if (recv_mode && hold &&
-	(hold_all || strcasestr(hold, sm->m_type_name)))
-      return 1;
-  }
-
-  return 0;
-}
-
-
-/** Update mode within session */ 
-static
-int soa_sdp_mode_set(sdp_session_t *session,
+int soa_sdp_mode_set(sdp_session_t const *user,
+		     int const *s2u,
+		     sdp_session_t *session,
 		     sdp_session_t const *remote,
-		     char const *hold)
+		     char const *hold,
+		     int dryrun)
 {
   sdp_media_t *sm;
-  sdp_media_t const *rm, *rm_next;
+  sdp_media_t const *rm, *rm_next, *um;
+  int retval = 0, i, j;
   int hold_all;
+  int inactive_all;
+  int inactive = 0;
+  char const *hold_media = NULL;
   sdp_mode_t send_mode, recv_mode;
 
   SU_DEBUG_7(("soa_sdp_mode_set(%p, %p, \"%s\"): called\n",
@@ -1037,25 +1007,58 @@ int soa_sdp_mode_set(sdp_session_t *session,
   rm = remote ? remote->sdp_media : NULL, rm_next = NULL;
 
   hold_all = str0cmp(hold, "*") == 0;
+  inactive_all = str0cmp(hold, "#") == 0;
 
-  for (sm = session->sdp_media; sm; sm = sm->m_next, rm = rm_next) {
+  i = 0;
+
+  for (sm = session->sdp_media; sm; sm = sm->m_next, rm = rm_next, i++) {
     rm_next = rm ? rm->m_next : NULL;
+    inactive = 0;
 
     if (sm->m_rejected)
       continue;
 
-    send_mode = sdp_sendonly;
+    assert(s2u);
+
+    for (j = 0, um = user->sdp_media; j != s2u[i]; um = um->m_next, j++)
+      assert(um);
+    assert(um);
+
+    send_mode = um->m_mode & sdp_sendonly;
     if (rm)
       send_mode = (rm->m_mode & sdp_recvonly) ? sdp_sendonly : 0;
 
-    recv_mode = sm->m_mode & sdp_recvonly;
-    if (recv_mode && hold && (hold_all || strcasestr(hold, sm->m_type_name)))
-      recv_mode = 0;
+    recv_mode = um->m_mode & sdp_recvonly;
 
-    sm->m_mode = recv_mode | send_mode;
+    if (rm && rm->m_mode == sdp_inactive) {
+      send_mode = recv_mode = 0;
+    }
+    else if (inactive_all) {
+      send_mode = recv_mode = 0;
+    }
+    else if (hold_all) {
+      recv_mode = 0;
+    }
+    else if (hold && (hold_media = strcasestr(hold, sm->m_type_name))) {
+      recv_mode = 0;
+      hold_media += strlen(sm->m_type_name);
+      hold_media += strspn(hold_media, " \t");
+      if (hold_media[0] == '=') {
+	hold_media += strspn(hold, " \t");
+	if (strncasecmp(hold_media, "inactive", strlen("inactive")) == 0)
+	  recv_mode = send_mode = 0;
+      }
+    }
+
+    if (sm->m_mode != (unsigned)(recv_mode | send_mode))
+      retval = 1;
+
+    if (!dryrun) {
+      sm->m_mode = recv_mode | send_mode;
+    }
   }
 
-  return 0;
+  return retval;
 }
 
 enum offer_answer_action {
@@ -1213,16 +1216,22 @@ static int offer_answer_step(soa_session_t *ss,
 
   /* Step D: Set media mode bits */
   switch (action) {
+    int const *s2u_;
+
   case generate_offer:
   case generate_answer:
   case process_answer:
-    if (soa_sdp_mode_set_is_needed(local, remote, ss->ss_hold)) {
+    s2u_ = s2u;
+
+    if (!s2u_) s2u_ = sss->sss_s2u;
+
+    if (soa_sdp_mode_set(user, s2u_, local, remote, ss->ss_hold, 1)) {
       if (local != local0) {
 	*local0 = *local, local = local0;
 	DUP_LOCAL(local);
       }
 
-      soa_sdp_mode_set(local, remote, ss->ss_hold);
+      soa_sdp_mode_set(user, s2u_, local, remote, ss->ss_hold, 0);
     }
     break;
   default:

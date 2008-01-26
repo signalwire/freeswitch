@@ -338,7 +338,7 @@ su_log_t nta_log[] = { SU_LOG_INIT("nta", "NTA_DEBUG", SU_DEBUG) };
  * NTATAG_BAD_REQ_MASK(), NTATAG_BAD_RESP_MASK(), NTATAG_BLACKLIST(),
  * NTATAG_CANCEL_2543(), NTATAG_CANCEL_487(), NTATAG_CLIENT_RPORT(),
  * NTATAG_DEBUG_DROP_PROB(), NTATAG_DEFAULT_PROXY(),
- * NTATAG_EXTRA_100(),
+ * NTATAG_EXTRA_100(), NTATAG_GRAYLIST(),
  * NTATAG_MAXSIZE(), NTATAG_MAX_FORWARDS(), NTATAG_MERGE_482(), NTATAG_MCLASS()
  * NTATAG_PASS_100(), NTATAG_PASS_408(), NTATAG_PRELOAD(), NTATAG_PROGRESS(), 
  * NTATAG_REL100(), 
@@ -400,6 +400,7 @@ nta_agent_t *nta_agent_create(su_root_t *root,
     agent->sa_t4              = NTA_SIP_T4;
     agent->sa_t1x64 	      = 64 * NTA_SIP_T1;
     agent->sa_timer_c         = 185 * 1000;
+    agent->sa_graylist        = 600;
     agent->sa_drop_prob       = 0;
     agent->sa_is_a_uas        = 0;
     agent->sa_progress        = 60 * 1000;
@@ -894,7 +895,7 @@ void agent_kill_terminator(nta_agent_t *agent)
  * NTATAG_BAD_REQ_MASK(), NTATAG_BAD_RESP_MASK(), NTATAG_BLACKLIST(),
  * NTATAG_CANCEL_2543(), NTATAG_CANCEL_487(), NTATAG_CLIENT_RPORT(),
  * NTATAG_DEBUG_DROP_PROB(), NTATAG_DEFAULT_PROXY(),
- * NTATAG_EXTRA_100(),
+ * NTATAG_EXTRA_100(), NTATAG_GRAYLIST(),
  * NTATAG_MAXSIZE(), NTATAG_MAX_FORWARDS(), NTATAG_MERGE_482(), NTATAG_MCLASS()
  * NTATAG_PASS_100(), NTATAG_PASS_408(), NTATAG_PRELOAD(), NTATAG_PROGRESS(), 
  * NTATAG_REL100(), 
@@ -944,6 +945,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
   unsigned sip_t4     = agent->sa_t4;
   unsigned sip_t1x64  = agent->sa_t1x64;
   unsigned timer_c    = agent->sa_timer_c;
+  unsigned graylist   = agent->sa_graylist;
   unsigned blacklist  = agent->sa_blacklist;
   int ua              = agent->sa_is_a_uas;
   unsigned progress   = agent->sa_progress;
@@ -987,6 +989,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
 	      NTATAG_DEBUG_DROP_PROB_REF(drop_prob),
 	      NTATAG_DEFAULT_PROXY_REF(proxy),
 	      NTATAG_EXTRA_100_REF(extra_100),
+	      NTATAG_GRAYLIST_REF(graylist),
 	      NTATAG_MAXSIZE_REF(maxsize),
 	      NTATAG_MAX_PROCEEDING_REF(max_proceeding),
 	      NTATAG_MAX_FORWARDS_REF(max_forwards),
@@ -1140,6 +1143,12 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
     outgoing_queue_adjust(agent, agent->sa_out.inv_proceeding, timer_c);
   }
 
+  if (graylist > 24 * 60 * 60)
+    graylist = 24 * 60 * 60;
+  agent->sa_graylist = graylist;
+
+  if (blacklist > 24 * 60 * 60)
+    blacklist = 24 * 60 * 60;
   agent->sa_blacklist = blacklist;
 
   if (progress == 0)
@@ -1202,7 +1211,7 @@ void agent_set_udp_params(nta_agent_t *self, usize_t udp_mtu)
  * NTATAG_CANCEL_2543_REF(), NTATAG_CANCEL_487_REF(),
  * NTATAG_CLIENT_RPORT_REF(), NTATAG_CONTACT_REF(), 
  * NTATAG_DEBUG_DROP_PROB_REF(), NTATAG_DEFAULT_PROXY_REF(),
- * NTATAG_EXTRA_100_REF(),
+ * NTATAG_EXTRA_100_REF(), NTATAG_GRAYLIST_REF(),
  * NTATAG_MAXSIZE_REF(), NTATAG_MAX_FORWARDS_REF(), NTATAG_MCLASS_REF(),
  * NTATAG_MERGE_482_REF(), NTATAG_MAX_PROCEEDING_REF(),
  * NTATAG_PASS_100_REF(), NTATAG_PASS_408_REF(), NTATAG_PRELOAD_REF(),
@@ -1251,6 +1260,7 @@ int agent_get_params(nta_agent_t *agent, tagi_t *tags)
 	     NTATAG_DEBUG_DROP_PROB(agent->sa_drop_prob),
 	     NTATAG_DEFAULT_PROXY(agent->sa_default_proxy),
 	     NTATAG_EXTRA_100(agent->sa_extra_100),
+	     NTATAG_GRAYLIST(agent->sa_graylist),
 	     NTATAG_MAXSIZE(agent->sa_maxsize),
 		 NTATAG_MAX_PROCEEDING(agent->sa_max_proceeding),
 	     NTATAG_MAX_FORWARDS(agent->sa_max_forwards->mf_count),
@@ -4123,6 +4133,9 @@ int addr_cmp(url_t const *a, url_t const *b)
  *                     it must math
  * @param local_uri    ignored
  *
+ * @note
+ * If @a remote_tag or @a local_tag is an empty string (""), the tag is
+ * ignored when matching legs.
  */
 nta_leg_t *nta_leg_by_dialog(nta_agent_t const *agent,
 			     url_t const *request_uri,
@@ -4224,9 +4237,9 @@ nta_leg_t *leg_find(nta_agent_t const *sa,
     if (!remote_tag != !from_tag && !local_tag != !to_tag)
       continue;
 
-    if (local_tag && to_tag && strcasecmp(local_tag, to_tag))
+    if (local_tag && to_tag && strcasecmp(local_tag, to_tag) && to_tag[0])
       continue;
-    if (remote_tag && from_tag && strcasecmp(remote_tag, from_tag))
+    if (remote_tag && from_tag && strcasecmp(remote_tag, from_tag) && from_tag[0])
       continue;
 
     if (leg_url && request_uri && url_cmp(leg_url, request_uri))
@@ -7649,6 +7662,7 @@ void outgoing_queue(outgoing_queue_t *queue,
   if (outgoing_is_queued(orq))
     outgoing_remove(orq);
 
+  assert(orq->orq_next == NULL);
   assert(*queue->q_tail == NULL);
 
   orq->orq_timeout = set_timeout(orq->orq_agent, queue->q_timeout);
@@ -7672,7 +7686,7 @@ void outgoing_remove(nta_outgoing_t *orq)
   if ((*orq->orq_prev = orq->orq_next))
     orq->orq_next->orq_prev = orq->orq_prev;
   else
-    orq->orq_queue->q_tail = orq->orq_prev, assert(!*orq->orq_queue->q_tail);
+    orq->orq_queue->q_tail = orq->orq_prev;
 
   orq->orq_queue->q_length--;
   orq->orq_next = NULL;
@@ -8828,8 +8842,8 @@ struct sipdns_query
   char const *sq_proto;
   char const *sq_domain;
   char     sq_port[6];		/* port number */
-
-  uint16_t sq_type;
+  uint16_t sq_otype;		/* origin type of query data (0 means request) */
+  uint16_t sq_type;		/* query type */
   uint16_t sq_priority;		/* priority or preference  */
   uint16_t sq_weight;		/* preference or weight */
 };
@@ -9059,6 +9073,65 @@ outgoing_try_another(nta_outgoing_t *orq)
   orq->orq_try_tcp_instead = 0, orq->orq_try_udp_instead = 0;
   outgoing_reset_timer(orq);
   outgoing_queue(orq->orq_agent->sa_out.resolving, orq);
+
+  if (orq->orq_status > 0)
+    /* PP: don't hack priority if a preliminary response has been received */
+    ;
+  else if (orq->orq_agent->sa_graylist == 0)
+    /* PP: priority hacking disabled */
+    ;
+  /* NetModule hack: 
+   * Move server that did not work to end of queue in sres cache
+   *
+   * the next request does not try to use the server that is currently down
+   *
+   * @TODO: fix cases with only A or AAAA answering, or all servers down.
+   */
+  else if (sr && sr->sr_target) {
+    struct sipdns_query *sq;
+
+    /* find latest A/AAAA record */
+    sq = sr->sr_head;
+    if (!sq || (sr->sr_a_aaaa1 != sr->sr_a_aaaa2 && sq->sq_type == sr->sr_a_aaaa1))
+	sq = sr->sr_done;	
+    
+    if (sq && sq->sq_otype == sres_type_srv) {
+      char const *target = sq->sq_domain, *proto = sq->sq_proto;
+      unsigned prio = sq->sq_priority, maxprio = prio;
+
+      SU_DEBUG_5(("nta: no response from %s:%s;transport=%s\n", target, sq->sq_port, proto));
+
+      for (sq = sr->sr_head; sq; sq = sq->sq_next) 
+	if (sq->sq_otype == sres_type_srv && sq->sq_priority > maxprio)
+	  maxprio = sq->sq_priority;
+
+      for (sq = sr->sr_done; sq; sq = sq->sq_next)
+	if (sq->sq_otype == sres_type_srv && sq->sq_priority > maxprio)
+	  maxprio = sq->sq_priority;
+
+      for (sq = sr->sr_done; sq; sq = sq->sq_next) {
+	int modified;
+
+	if (sq->sq_type != sres_type_srv || strcmp(proto, sq->sq_proto))
+	  continue;
+
+	/* modify the SRV record(s) corresponding to the latest A/AAAA record */
+	modified = sres_set_cached_srv_priority(
+	  orq->orq_agent->sa_resolver, 
+	  sq->sq_domain, 
+	  target,
+	  sq->sq_port[0] ? (uint16_t)strtoul(sq->sq_port, NULL, 10) : 0,
+	  orq->orq_agent->sa_graylist,
+	  maxprio + 1);
+
+	if (modified >= 0)
+	  SU_DEBUG_3(("nta: reduced priority of %d %s SRV records (increase value to %u)\n",
+		      modified, sq->sq_domain, maxprio + 1));
+	else
+	  SU_DEBUG_3(("nta: failed to reduce %s SRV priority\n", sq->sq_domain));
+      }
+    }
+  }
 
   return outgoing_resolve_next(orq);
 }
@@ -9338,6 +9411,7 @@ void outgoing_answer_naptr(sres_context_t *orq,
     sq = su_zalloc(home, (sizeof *sq) + rlen);
 
     *tail = sq, tail = &sq->sq_next;    
+    sq->sq_otype = sres_type_naptr;
     sq->sq_priority = na->na_prefer;
     sq->sq_weight = j;
     sq->sq_type = type;
@@ -9438,11 +9512,11 @@ outgoing_answer_srv(sres_context_t *orq, sres_query_t *q,
     if (sq) {
       *tail = sq, tail = &sq->sq_next;
 
+      sq->sq_otype = sres_type_srv;
       sq->sq_type = sr->sr_a_aaaa1;
       sq->sq_proto = sq0->sq_proto;
       sq->sq_domain = memcpy(sq + 1, srv->srv_target, tlen);
       snprintf(sq->sq_port, sizeof(sq->sq_port), "%u", srv->srv_port);
-
       sq->sq_priority = srv->srv_priority;
       sq->sq_weight = srv->srv_weight;
     }

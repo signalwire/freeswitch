@@ -107,7 +107,8 @@ SRESPUBFUN int sres_cache_set_srv_priority(sres_cache_t *,
 					   char const *domain,
 					   char const *target,
 					   uint16_t port,
-					   uint16_t prio);
+					   uint32_t newttl,
+					   uint16_t newprio);
 
 #ifdef __cplusplus
 }
