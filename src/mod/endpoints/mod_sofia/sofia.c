@@ -1308,11 +1308,16 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *uuid;
 		switch_core_session_t *other_session;
-		
+
 		if (switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
-			if (status == 200 && !switch_channel_test_flag(channel, CF_ANSWERED) && !switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+			private_object_t *tech_pvt = switch_core_session_get_private(session);
+			switch_assert(tech_pvt != NULL);
+
+			if (!switch_test_flag(tech_pvt, TFLAG_SENT_UPDATE)) {
 				return;
 			}
+
+			switch_clear_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
 
 			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
 				switch_core_session_message_t msg = { 0 };
@@ -1322,7 +1327,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				msg.message_id = SWITCH_MESSAGE_INDICATE_RESPOND;
 				msg.from = __FILE__;
 				msg.numeric_arg = status;
-				msg.string_arg = phrase;
+				msg.string_arg = switch_core_session_strdup(other_session, phrase);
 				switch_core_session_receive_message(other_session, &msg);
 				switch_core_session_rwunlock(other_session);
 			}

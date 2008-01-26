@@ -333,7 +333,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 												SIPTAG_REASON_STR("SIP;cause=200;text=\"Call completed elsewhere\"")), TAG_END());
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding to INVITE with: %d\n", sip_cause);
-				nua_respond(tech_pvt->nh, sip_cause, NULL, TAG_END());
+				nua_respond(tech_pvt->nh, sip_cause, sip_status_phrase(sip_cause), TAG_END());
 			}
 		}
 		switch_set_flag(tech_pvt, TFLAG_BYE);
@@ -984,9 +984,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				reason = msg->string_arg;
 			} else {
 				if (!switch_strlen_zero(msg->string_arg)){
-					code = atoi(msg->string_arg);
-					if ((reason = strchr(msg->string_arg, ' '))) {
-						reason++;
+					if ((code = atoi(msg->string_arg))) {
+						if ((reason = strchr(msg->string_arg, ' '))) {
+							reason++;
+						}
 					}
 				}
 			}
@@ -999,7 +1000,14 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				code = 488;
 			}
 
-			if (code == 407) {
+			if (!reason) {
+				reason = sip_status_phrase(code);
+				if (switch_strlen_zero(reason)) {
+					reason = "Because";
+				}
+			}
+			
+			if (code == 407 && !msg->numeric_arg) {
 				const char *to_uri = switch_channel_get_variable(channel, "sip_to_uri");
 				const char *to_host = reason;
 					
@@ -1009,7 +1017,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Challenging call %s\n", to_uri);
 				sofia_reg_auth_challange(NULL, tech_pvt->profile, tech_pvt->nh, REG_INVITE, to_host, 0); 
 				switch_channel_hangup(channel, SWITCH_CAUSE_USER_CHALLENGE);
-			} else if (code == 484) {
+			} else if (code == 484 && msg->numeric_arg) {
 				const char *to = switch_channel_get_variable(channel, "sip_to_uri");
 				const char *max_forwards = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
 				

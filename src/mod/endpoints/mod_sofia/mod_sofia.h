@@ -164,7 +164,8 @@ typedef enum {
 	TFLAG_LATE_NEGOTIATION = (1 << 24),
 	TFLAG_SDP = (1 << 25),
 	TFLAG_VIDEO = (1 << 26),
-	TFLAG_TPORT_LOG = (1 << 27)
+	TFLAG_TPORT_LOG = (1 << 27),
+	TFLAG_SENT_UPDATE = (1 << 28)
 } TFLAGS;
 
 struct mod_sofia_globals {
