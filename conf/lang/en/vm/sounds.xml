@@ -95,7 +95,7 @@
       <match>
 	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$1" method="pronounced" type="name_spelled"/>
-	<action function="play-file" data="voicemail/vm-record_greeting_DUPLICATE.wav"/>
+	<action function="play-file" data="voicemail/vm-to_record_greeting.wav"/>
 	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$2" method="pronounced" type="name_spelled"/>
 	<action function="play-file" data="voicemail/vm-choose_greeting.wav"/>
@@ -172,7 +172,7 @@
   <macro name="voicemail_choose_greeting">
     <input pattern="^(.*)$">
       <match>
-	<action function="play-file" data="voicemail/vm-choose_greeting_DUPLICATE.wav"/>
+	<action function="play-file" data="voicemail/vm-choose_greeting_choose.wav"/>
       </match>
     </input>
   </macro>
