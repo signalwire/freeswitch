@@ -1046,19 +1046,19 @@ void su_msg_save(su_msg_r save, su_msg_r rmsg)
  */
 void su_msg_destroy(su_msg_r rmsg)
 {
+  su_msg_t *msg = rmsg[0];
   assert(rmsg);
-
-  if (rmsg[0]) {
-    SU_TASK_ZAP(rmsg[0]->sum_to, su_msg_destroy);
-    SU_TASK_ZAP(rmsg[0]->sum_from, su_msg_destroy);
-
-    if (rmsg[0]->sum_deinit)
-      rmsg[0]->sum_deinit(rmsg[0]->sum_data);
-
-    su_free(NULL, rmsg[0]);
-  }
-
   rmsg[0] = NULL;
+
+  if (msg) {
+    SU_TASK_ZAP(msg->sum_to, su_msg_destroy);
+    SU_TASK_ZAP(msg->sum_from, su_msg_destroy);
+
+    if (msg->sum_deinit)
+      msg->sum_deinit(msg->sum_data);
+
+    su_free(NULL, msg);
+  }
 }
 
 /** Gets a pointer to the message data area. 
