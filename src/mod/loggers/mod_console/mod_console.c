@@ -190,11 +190,15 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 			int aok = can_write(handle, 5);
 			if (aok) {
 				const char *msg = "Failed to write to the console! Logging disabled! RE-enable with the 'console loglevel' command\n";
+#ifdef WIN32
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s", msg);
+#else
 				if (COLORIZE) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s%s",  COLORS[1], msg, SWITCH_SEQ_DEFAULT_COLOR);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s", msg);
 				}
+#endif
 				failed_write = 0;
 			}
 		}
