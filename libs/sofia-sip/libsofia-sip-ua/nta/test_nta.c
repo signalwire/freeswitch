@@ -2256,11 +2256,15 @@ int test_dialog(agent_t *ag)
   END();
 }
 
+#ifndef MSG_TRUNC
+#define MSG_TRUNC 0
+#endif
+
 static ssize_t recv_udp(agent_t *ag, void *b, size_t size)
 {
   ssize_t n;
 
-  memset(b, size, 0);
+  memset(b, 0, size);
   
   for (;;) {
     su_root_step(ag->ag_root, 10L);
@@ -2304,10 +2308,6 @@ int test_merging(agent_t *ag)
   size_t len, l1, l2;
   su_sockaddr_t *su = ag->ag_su_nta;
   socklen_t sulen = ag->ag_su_nta_len;
-
-#ifndef MSG_TRUNC
-#define MSG_TRUNC 0
-#endif
 
   /* Empty sink socket */
   su_setblocking(ag->ag_sink_socket, 0);

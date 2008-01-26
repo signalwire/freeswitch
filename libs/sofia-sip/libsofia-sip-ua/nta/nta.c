@@ -8846,12 +8846,14 @@ struct sipdns_query
   uint16_t sq_type;		/* query type */
   uint16_t sq_priority;		/* priority or preference  */
   uint16_t sq_weight;		/* preference or weight */
+  uint16_t sq_grayish;		/* candidate for graylisting */
 };
 
 static int outgoing_resolve_next(nta_outgoing_t *orq);
 static int outgoing_resolving(nta_outgoing_t *orq);
 static int outgoing_resolving_error(nta_outgoing_t *, 
 				    int status, char const *phrase);
+static void outgoing_graylist(nta_outgoing_t *orq, struct sipdns_query *sq);
 static int outgoing_query_naptr(nta_outgoing_t *orq, char const *domain);
 static void outgoing_answer_naptr(sres_context_t *orq, sres_query_t *q,
 				  sres_record_t *answers[]);
@@ -9092,48 +9094,59 @@ outgoing_try_another(nta_outgoing_t *orq)
 
     /* find latest A/AAAA record */
     sq = sr->sr_head;
-    if (!sq || (sr->sr_a_aaaa1 != sr->sr_a_aaaa2 && sq->sq_type == sr->sr_a_aaaa1))
-	sq = sr->sr_done;	
-    
-    if (sq && sq->sq_otype == sres_type_srv) {
-      char const *target = sq->sq_domain, *proto = sq->sq_proto;
-      unsigned prio = sq->sq_priority, maxprio = prio;
-
-      SU_DEBUG_5(("nta: no response from %s:%s;transport=%s\n", target, sq->sq_port, proto));
-
-      for (sq = sr->sr_head; sq; sq = sq->sq_next) 
-	if (sq->sq_otype == sres_type_srv && sq->sq_priority > maxprio)
-	  maxprio = sq->sq_priority;
-
-      for (sq = sr->sr_done; sq; sq = sq->sq_next)
-	if (sq->sq_otype == sres_type_srv && sq->sq_priority > maxprio)
-	  maxprio = sq->sq_priority;
-
-      for (sq = sr->sr_done; sq; sq = sq->sq_next) {
-	int modified;
-
-	if (sq->sq_type != sres_type_srv || strcmp(proto, sq->sq_proto))
-	  continue;
-
-	/* modify the SRV record(s) corresponding to the latest A/AAAA record */
-	modified = sres_set_cached_srv_priority(
-	  orq->orq_agent->sa_resolver, 
-	  sq->sq_domain, 
-	  target,
-	  sq->sq_port[0] ? (uint16_t)strtoul(sq->sq_port, NULL, 10) : 0,
-	  orq->orq_agent->sa_graylist,
-	  maxprio + 1);
-
-	if (modified >= 0)
-	  SU_DEBUG_3(("nta: reduced priority of %d %s SRV records (increase value to %u)\n",
-		      modified, sq->sq_domain, maxprio + 1));
-	else
-	  SU_DEBUG_3(("nta: failed to reduce %s SRV priority\n", sq->sq_domain));
-      }
+    if (sq && sq->sq_type == sr->sr_a_aaaa2 && sr->sr_a_aaaa1 != sr->sr_a_aaaa2) {
+      sq->sq_grayish = 1;
+    }
+    else {
+      outgoing_graylist(orq, sr->sr_done);
     }
   }
 
   return outgoing_resolve_next(orq);
+}
+
+/** Graylist SRV records */
+static void outgoing_graylist(nta_outgoing_t *orq, struct sipdns_query *sq)
+{
+  struct sipdns_resolver *sr = orq->orq_resolver;
+  char const *target = sq->sq_domain, *proto = sq->sq_proto;
+  unsigned prio = sq->sq_priority, maxprio = prio;
+
+  /* Don't know how to graylist but SRV records */
+  if (sq->sq_otype != sres_type_srv)
+    return;			
+
+  SU_DEBUG_5(("nta: graylisting %s:%s;transport=%s\n", target, sq->sq_port, proto));
+
+  for (sq = sr->sr_head; sq; sq = sq->sq_next) 
+    if (sq->sq_otype == sres_type_srv && sq->sq_priority > maxprio)
+      maxprio = sq->sq_priority;
+
+  for (sq = sr->sr_done; sq; sq = sq->sq_next)
+    if (sq->sq_otype == sres_type_srv && sq->sq_priority > maxprio)
+      maxprio = sq->sq_priority;
+  
+  for (sq = sr->sr_done; sq; sq = sq->sq_next) {
+    int modified;
+
+    if (sq->sq_type != sres_type_srv || strcmp(proto, sq->sq_proto))
+      continue;
+
+    /* modify the SRV record(s) corresponding to the latest A/AAAA record */
+    modified = sres_set_cached_srv_priority(
+      orq->orq_agent->sa_resolver, 
+      sq->sq_domain, 
+      target,
+      sq->sq_port[0] ? (uint16_t)strtoul(sq->sq_port, NULL, 10) : 0,
+      orq->orq_agent->sa_graylist,
+      maxprio + 1);
+
+    if (modified >= 0)
+      SU_DEBUG_3(("nta: reduced priority of %d %s SRV records (increase value to %u)\n",
+		  modified, sq->sq_domain, maxprio + 1));
+    else
+      SU_DEBUG_3(("nta: failed to reduce %s SRV priority\n", sq->sq_domain));
+  }
 }
 
 /** Cancel resolver query */
@@ -9765,6 +9778,9 @@ outgoing_query_results(nta_outgoing_t *orq,
   }
   else {
     sq->sq_next = sr->sr_done, sr->sr_done = sq;
+
+    if (rlen == 0 && sq->sq_grayish)
+      outgoing_graylist(orq, sq);
   }
 
   if (rlen > 1) 
