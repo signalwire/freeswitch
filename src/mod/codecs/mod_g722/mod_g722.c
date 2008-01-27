@@ -46,7 +46,6 @@ static switch_status_t switch_g722_init(switch_codec_t *codec, switch_codec_flag
 	int encoding, decoding;
 	struct g722_context *context = NULL;
 
-
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
 
