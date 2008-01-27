@@ -233,7 +233,6 @@ static switch_status_t switch_speex_decode(switch_codec_t *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 static switch_status_t switch_speex_destroy(switch_codec_t *codec)
 {
 	int encoding, decoding;
@@ -305,7 +304,6 @@ static switch_codec_implementation_t speex_16k_implementation = {
 	/*.next */ &speex_32k_implementation
 };
 
-
 static switch_codec_implementation_t speex_8k_60ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 98,
@@ -350,7 +348,6 @@ static switch_codec_implementation_t speex_8k_40ms_implementation = {
 	/*.next */ &speex_8k_60ms_implementation
 
 };
-
 
 static switch_codec_implementation_t speex_8k_30ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
