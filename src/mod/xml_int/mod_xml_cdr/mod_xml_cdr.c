@@ -179,7 +179,6 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got error [%ld] posting to web server [%s]\n",httpRes, globals.url);
 			}
-			
 		}
 		curl_easy_cleanup(curl_handle);
 		curl_slist_free_all(headers);
@@ -209,7 +208,6 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 		}
 	}
 
-
 success:
 	status = SWITCH_STATUS_SUCCESS;
 
@@ -224,7 +222,6 @@ error:
 
 	return status;
 }
-
 
 static switch_state_handler_table_t state_handlers = {
 	/*.on_init */ NULL,
@@ -326,7 +323,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 		globals.retries = 0;
 	}
 
-
 	if (globals.retries && globals.delay<=0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "retries set but delay 0 setting to 5000ms\n");
 		globals.delay = 5000;
@@ -338,15 +334,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 	return status;
 }
 
-
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_cdr_shutdown)
 {
 	
 	globals.shutdown=1;
     return SWITCH_STATUS_SUCCESS;
 }
-
-
 
 /* For Emacs:
  * Local Variables:

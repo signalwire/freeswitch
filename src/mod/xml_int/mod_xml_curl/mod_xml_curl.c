@@ -81,7 +81,6 @@ usage:
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
 	register unsigned int realsize = (unsigned int) (size * nmemb);
@@ -93,7 +92,6 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	}
 	return x;
 }
-
 
 static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,
 								  void *user_data)
@@ -129,7 +127,6 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		return xml;
 	}
 
-	
 	switch_snprintf(basic_data, sizeof(basic_data), "hostname=%s&section=%s&tag_name=%s&key_name=%s&key_value=%s",
 					hostname,
 					section,
@@ -284,7 +281,6 @@ static switch_status_t do_config(void)
 
 	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
-
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_curl_load)
 {

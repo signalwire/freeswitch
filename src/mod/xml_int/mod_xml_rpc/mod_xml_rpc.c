@@ -104,7 +104,6 @@ static switch_status_t do_config(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_rpc_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
@@ -117,7 +116,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_rpc_load)
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 static switch_status_t http_stream_raw_write(switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen)
 {
@@ -146,7 +144,6 @@ static switch_status_t http_stream_write(switch_stream_handle_t *handle, const c
 
 	return ret ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 }
-
 
 static abyss_bool http_directory_auth(TSession *r, char *domain_name) 
 {
@@ -227,7 +224,6 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 				if (!(x_params = switch_xml_child(x_user, "params"))) {
 					goto authed;
                 }
-
 				
                 for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
                     const char *var = switch_xml_attr_soft(x_param, "name");
@@ -307,7 +303,6 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 				}
 				goto fail;
 
-
 			authed:
 				
 				ResponseAddField(r, "freeswitch-user", r->user);
@@ -338,8 +333,6 @@ abyss_bool auth_hook(TSession * r)
 {
 	char *domain_name, *e;
 	abyss_bool ret = FALSE;
-
-
 
 	if (!strncmp(r->uri, "/domains/", 9)) {
 		domain_name = strdup(r->uri + 9);
@@ -373,7 +366,6 @@ abyss_bool auth_hook(TSession * r)
 					 SWITCH_GLOBAL_dirs.htdocs_dir, 
 					 new_uri
 					 );
-			
 
 			if (switch_directory_exists(tmp, NULL) == SWITCH_STATUS_SUCCESS) {
 				for (x = 0; x < 2; x++) {
@@ -404,9 +396,7 @@ abyss_bool auth_hook(TSession * r)
 				ret = !http_directory_auth(r, NULL);
 			}
 		}
-
 	}
-
 	return ret;
 }
 
@@ -442,7 +432,6 @@ abyss_bool handler_hook(TSession * r)
 	if ((path_info = strchr(command, '/'))) {
 		*path_info++ = '\0';
 	}
-	
 
 	for (i=0;i<r->response_headers.size;i++) {
 		ti=&r->response_headers.item[i];
@@ -491,7 +480,6 @@ abyss_bool handler_hook(TSession * r)
 	goto end;
 
  auth:
-
 
 	if (switch_event_create(&stream.event, SWITCH_EVENT_API) == SWITCH_STATUS_SUCCESS) {
 		const char * const content_length = RequestHeaderValue(r, "content-length");
@@ -557,7 +545,6 @@ abyss_bool handler_hook(TSession * r)
 					
 					query = qbuf;
 				}
-
 			}
 			if (query) {
 				switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-QUERY", "%s", query);
@@ -582,7 +569,6 @@ abyss_bool handler_hook(TSession * r)
 					}
 
 					switch_url_decode(q);
-					
 
 					name = q;
 					if ((val = strchr(name, '='))) {
@@ -593,12 +579,9 @@ abyss_bool handler_hook(TSession * r)
 				} while (q != NULL);
 			
 				free(qd);
-			
 			}
 		}
 	}
-
-
 
 	//ResponseChunked(r);
 	
@@ -608,7 +591,6 @@ abyss_bool handler_hook(TSession * r)
 	HTTPWrite(r, buf, (uint32_t) strlen(buf));
 
 	//HTTPWrite(r, "<pre>\n\n", 7);
-
 
 	/* generation of the date field */
 	if (DateToString(&r->date, buf)) {
@@ -629,7 +611,6 @@ abyss_bool handler_hook(TSession * r)
 		ConnWrite(r->conn, ti->value, (uint32_t)strlen(ti->value));
 		ConnWrite(r->conn,CRLF,2);
 	}
-
 	
 	switch_snprintf(buf, sizeof(buf), "Connection: close\r\n");
 	ConnWrite(r->conn, buf, (uint32_t) strlen(buf));
@@ -655,7 +636,6 @@ abyss_bool handler_hook(TSession * r)
 
 	return ret;
 }
-
 
 static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * const paramArrayP, void *const userData)
 {
@@ -744,7 +724,6 @@ static xmlrpc_value *freeswitch_man(xmlrpc_env * const envP, xmlrpc_value * cons
 
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 {
-
 	xmlrpc_registry *registryP;
 	xmlrpc_env env;
 	char logfile[512];
@@ -783,7 +762,6 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 		return SWITCH_STATUS_TERM;
 	}
 
-
 	ServerAddHandler(&globals.abyssServer, handler_hook);
 	ServerAddHandler(&globals.abyssServer, auth_hook);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Starting HTTP Port %d, DocRoot [%s]\n", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir);
@@ -793,11 +771,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 	return SWITCH_STATUS_TERM;
 }
 
-
-
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown)
 {
-
 	globals.abyssServer.running = 0;
 	shutdown(globals.abyssServer.listensock, 2);
 	while(globals.running) {
