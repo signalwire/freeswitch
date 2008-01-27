@@ -72,7 +72,6 @@ typedef enum {
 	AMR_OPT_INTERLEAVING = (1 << 4)
 } amr_flag_t;
 
-
 typedef enum {
 	GENERIC_PARAMETER_AMR_MAXAL_SDUFRAMES = 0,
 	GENERIC_PARAMETER_AMR_BITRATE,
@@ -93,7 +92,6 @@ typedef enum {
 	AMR_BITRATE_1220
 } amr_bitrate_t;
 
-
 struct amr_context {
 	void *encoder_state;
 	void *decoder_state;
@@ -106,7 +104,6 @@ struct amr_context {
 	switch_byte_t flags;
 };
 
-
 #define AMR_DEFAULT_BITRATE AMR_BITRATE_1220
 
 static struct {
@@ -117,7 +114,6 @@ static struct {
 
 static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
-
 #ifdef AMR_PASSTHROUGH
 	codec->flags |= SWITCH_CODEC_FLAG_PASSTHROUGH;
 	if (codec->fmtp_in) {
@@ -148,7 +144,6 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 				}
 				if ((arg = strchr(data, '='))) {
 					*arg++ = '\0';
-					//printf("Codec arg %d [%s]=[%s]\n", x, data, arg);
 					if (!strcasecmp(data, "octet-align")) {
 						if (atoi(arg)) {
 							switch_set_flag(context, AMR_OPT_OCTET_ALIGN);
@@ -341,3 +336,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */
