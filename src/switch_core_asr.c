@@ -158,3 +158,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_get_results(switch_asr_handle_t 
 
 	return ah->asr_interface->asr_get_results(ah, xmlstr, flags);
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

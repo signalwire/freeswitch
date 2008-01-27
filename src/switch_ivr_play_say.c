@@ -688,7 +688,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	int stream_id = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_file_handle_t lfh;
-	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
+	switch_codec_t *read_codec = NULL;
 	const char *p;
 	char *title = "", *copyright = "", *software = "", *artist = "", *comment = "", *date = "";
 	uint8_t asis = 0;
@@ -707,8 +707,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	prefix = switch_channel_get_variable(channel, "sound_prefix");
 	timer_name = switch_channel_get_variable(channel, "timer_name");
 
+	read_codec = switch_core_session_get_read_codec(session);
 
-	if (switch_strlen_zero(file)) {
+	if (switch_strlen_zero(file) || !read_codec) {
 		status = SWITCH_STATUS_FALSE;
 		goto end;
 	}
@@ -1662,3 +1663,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	switch_core_session_reset(session, SWITCH_TRUE);
 	return status;
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

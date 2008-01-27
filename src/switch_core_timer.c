@@ -114,3 +114,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_destroy(switch_timer_t *timer)
 
 	return SWITCH_STATUS_SUCCESS;
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

@@ -153,3 +153,14 @@ SWITCH_DECLARE(void) switch_hash_this(switch_hash_index_t *hi, const void **key,
 		*val = sqliteHashData((HashElem *) hi);
 	}
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

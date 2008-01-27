@@ -733,3 +733,14 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_enum_shutdown)
 	switch_core_hash_destroy(&globals.routes);
 	return SWITCH_STATUS_SUCCESS;
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */
