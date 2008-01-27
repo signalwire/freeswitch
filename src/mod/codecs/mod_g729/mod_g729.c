@@ -252,7 +252,7 @@ static switch_codec_implementation_t g729_30ms_8k_implementation = {
 	/*.encode */ switch_g729_encode,
 	/*.decode */ switch_g729_decode,
 	/*.destroy */ switch_g729_destroy,
-	&g729_40ms_8k_implementation
+	/*.next */ &g729_40ms_8k_implementation
 };
 
 static switch_codec_implementation_t g729_10ms_8k_implementation = {
@@ -274,7 +274,7 @@ static switch_codec_implementation_t g729_10ms_8k_implementation = {
 	/*.encode */ switch_g729_encode,
 	/*.decode */ switch_g729_decode,
 	/*.destroy */ switch_g729_destroy,
-	&g729_30ms_8k_implementation
+	/*.next */ &g729_30ms_8k_implementation
 };
 
 static switch_codec_implementation_t g729_8k_implementation = {
@@ -296,7 +296,7 @@ static switch_codec_implementation_t g729_8k_implementation = {
 	/*.encode */ switch_g729_encode,
 	/*.decode */ switch_g729_decode,
 	/*.destroy */ switch_g729_destroy,
-	&g729_10ms_8k_implementation
+	/*.next */ &g729_10ms_8k_implementation
 };
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_g729_load)
