@@ -39,6 +39,7 @@ struct gsm_context {
 	gsm encoder;
 	gsm decoder;
 };
+
 static switch_status_t switch_gsm_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	struct gsm_context *context;
@@ -57,6 +58,7 @@ static switch_status_t switch_gsm_init(switch_codec_t *codec, switch_codec_flag_
 	codec->private_info = context;
 	return SWITCH_STATUS_SUCCESS;
 }
+
 static switch_status_t switch_gsm_destroy(switch_codec_t *codec)
 {
 	struct gsm_context *context = codec->private_info;
@@ -69,6 +71,7 @@ static switch_status_t switch_gsm_destroy(switch_codec_t *codec)
 	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
+
 static switch_status_t switch_gsm_encode(switch_codec_t *codec, switch_codec_t *other_codec, void *decoded_data,
 										 uint32_t decoded_data_len, uint32_t decoded_rate, void *encoded_data,
 										 uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
@@ -98,6 +101,7 @@ static switch_status_t switch_gsm_encode(switch_codec_t *codec, switch_codec_t *
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
+
 static switch_status_t switch_gsm_decode(switch_codec_t *codec, switch_codec_t *other_codec, void *encoded_data,
 										 uint32_t encoded_data_len, uint32_t encoded_rate, void *decoded_data,
 										 uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
@@ -131,7 +135,6 @@ static switch_status_t switch_gsm_decode(switch_codec_t *codec, switch_codec_t *
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 /* Registration */
 static switch_codec_implementation_t gsm_8k_implementation = {
