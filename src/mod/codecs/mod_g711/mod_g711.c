@@ -35,7 +35,6 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_g711_load);
 SWITCH_MODULE_DEFINITION(mod_g711, mod_g711_load, NULL, NULL);
 
-
 static switch_status_t switch_g711u_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	int encoding, decoding;
@@ -49,7 +48,6 @@ static switch_status_t switch_g711u_init(switch_codec_t *codec, switch_codec_fla
 		return SWITCH_STATUS_SUCCESS;
 	}
 }
-
 
 static switch_status_t switch_g711u_encode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
@@ -122,7 +120,6 @@ static switch_status_t switch_g711a_init(switch_codec_t *codec, switch_codec_fla
 	}
 }
 
-
 static switch_status_t switch_g711a_encode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *decoded_data,
@@ -180,7 +177,6 @@ static switch_status_t switch_g711a_destroy(switch_codec_t *codec)
 }
 
 /* Registration */
-
 
 static switch_codec_implementation_t g711u_8k_120ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
@@ -290,8 +286,6 @@ static switch_codec_implementation_t g711u_8k_10ms_implementation = {
 	/*.destroy */ switch_g711u_destroy,
 	/*.next */ &g711u_8k_20ms_implementation
 };
-
-
 
 static switch_codec_implementation_t g711a_8k_120ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
