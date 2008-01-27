@@ -87,13 +87,11 @@ static switch_status_t switch_ilbc_init(switch_codec_t *codec, switch_codec_flag
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 static switch_status_t switch_ilbc_destroy(switch_codec_t *codec)
 {
 	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 static switch_status_t switch_ilbc_encode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
@@ -179,7 +177,6 @@ static switch_status_t switch_ilbc_decode(switch_codec_t *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 /* Registration */
 
 static switch_codec_implementation_t ilbc_8k_30ms_implementation = {
@@ -225,8 +222,6 @@ static switch_codec_implementation_t ilbc_8k_20ms_implementation = {
 	/*.next */ &ilbc_8k_30ms_implementation
 };
 
-
-
 static switch_codec_implementation_t ilbc_102_8k_30ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 102,
@@ -270,7 +265,6 @@ static switch_codec_implementation_t ilbc_102_8k_20ms_implementation = {
 	/*.next */ &ilbc_102_8k_30ms_implementation
 };
 
-
 static switch_codec_implementation_t ilbc_8k_20ms_nonext_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 97,
@@ -303,7 +297,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_ilbc_load)
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 /* For Emacs:
