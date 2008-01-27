@@ -276,7 +276,6 @@ static JSPropertySpec request_props[] = {
 	{0}
 };
 
-
 static JSBool request_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 {
 	JSBool res = JS_TRUE;
@@ -307,13 +306,11 @@ static JSBool request_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval 
 	return res;
 }
 
-
 JSClass request_class = {
 	"Request", JSCLASS_HAS_PRIVATE,
 	JS_PropertyStub, JS_PropertyStub, request_getProperty, DEFAULT_SET_PROPERTY,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, request_destroy, NULL, NULL, NULL, NULL
 };
-
 
 static JSObject *new_request(JSContext *cx, JSObject *obj, struct request_obj *ro)
 {
@@ -424,12 +421,10 @@ static JSFunctionSpec pcre_methods[] = {
 	{0}
 };
 
-
 static JSPropertySpec pcre_props[] = {
 	{"ready", PCRE_READY, JSPROP_READONLY | JSPROP_PERMANENT},
 	{0}
 };
-
 
 static JSBool pcre_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
 {
@@ -696,8 +691,6 @@ static JSBool event_destroy_(JSContext * cx, JSObject * obj, uintN argc, jsval *
 	return JS_TRUE;
 }
 
-
-
 enum event_tinyid {
 	EVENT_READY
 };
@@ -714,12 +707,10 @@ static JSFunctionSpec event_methods[] = {
 	{0}
 };
 
-
 static JSPropertySpec event_props[] = {
 	{"ready", EVENT_READY, JSPROP_READONLY | JSPROP_PERMANENT},
 	{0}
 };
-
 
 static JSBool event_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
 {
@@ -732,7 +723,6 @@ static JSBool event_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval 
 		*vp = BOOLEAN_TO_JSVAL(JS_FALSE);
 		return JS_TRUE;
 	}
-
 
 	name = JS_GetStringBytes(JS_ValueToString(cx, id));
 	/* numbers are our props anything else is a method */
@@ -758,12 +748,10 @@ JSClass event_class = {
 	event_construct
 };
 
-
 /* Dtmf Object */
 /*********************************************************************************/
 static JSBool dtmf_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
-
 	switch_dtmf_t *dtmf;
 	int32 duration = SWITCH_DEFAULT_DTMF_DURATION;
 	char *ename;
@@ -786,7 +774,6 @@ static JSBool dtmf_construct(JSContext * cx, JSObject * obj, uintN argc, jsval *
 		JS_SetPrivate(cx, obj, dtmf);
 		return JS_TRUE;
 	}
-	
 
 	return JS_FALSE;
 }
@@ -816,7 +803,6 @@ static JSPropertySpec dtmf_props[] = {
 	{0}
 };
 
-
 static JSBool dtmf_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
 {
 	JSBool res = JS_TRUE;
@@ -828,7 +814,6 @@ static JSBool dtmf_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval *
 		*vp = BOOLEAN_TO_JSVAL(JS_FALSE);
 		return JS_TRUE;
 	}
-
 
 	name = JS_GetStringBytes(JS_ValueToString(cx, id));
 	/* numbers are our props anything else is a method */
@@ -863,7 +848,6 @@ JSClass dtmf_class = {
 	dtmf_construct
 };
 
-
 static void js_error(JSContext * cx, const char *message, JSErrorReport * report)
 {
 	const char *filename = __FILE__;
@@ -887,9 +871,7 @@ static void js_error(JSContext * cx, const char *message, JSErrorReport * report
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, filename, modname, line, NULL, SWITCH_LOG_ERROR, "%s %s%s\n", ex, message, text);
-
 }
-
 
 static switch_status_t sm_load_file(char *filename)
 {
@@ -956,7 +938,6 @@ static switch_status_t sm_load_file(char *filename)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Successfully Loaded [%s]\n", module->filename);
 
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 static switch_status_t sm_load_module(const char *dir, const char *fname)
@@ -970,7 +951,6 @@ static switch_status_t sm_load_module(const char *dir, const char *fname)
 #else
 	const char *ext = ".so";
 #endif
-
 
 	if ((file = switch_core_strdup(module_manager.pool, fname)) == 0) {
 		return SWITCH_STATUS_FALSE;
@@ -1081,7 +1061,6 @@ JSObject *new_js_event(switch_event_t *event, char *name, JSContext * cx, JSObje
 	return Event;
 }
 
-
 JSObject *new_js_dtmf(switch_dtmf_t *dtmf, char *name, JSContext * cx, JSObject * obj)
 {
 	JSObject *DTMF = NULL;
@@ -1113,7 +1092,6 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 	jsval nval , *rval = &nval; 
 	JSContext *cx = cb_state->cx;
 	JSObject *obj = cb_state->obj;
-	
 
 	METHOD_SANITY_CHECK();
 
@@ -1157,8 +1135,6 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 	if (cb_state->arg) {
 		argv[argc++] = cb_state->arg;
 	}
-
-
 
 	if (jss->stack_depth > MAX_STACK_DEPTH) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Maximum recursive callback limit %d reached.\n", MAX_STACK_DEPTH);
@@ -1368,7 +1344,6 @@ static JSBool session_flush_events(JSContext * cx, JSObject * obj, uintN argc, j
 	channel = switch_core_session_get_channel(jss->session);
 	switch_assert(channel != NULL);
 
-
 	while (switch_core_session_dequeue_event(jss->session, &event) == SWITCH_STATUS_SUCCESS) {
 		switch_event_destroy(&event);
 	}
@@ -1398,7 +1373,6 @@ static JSBool session_recordfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	switch_assert(channel != NULL);
 
 	CHANNEL_SANITY_CHECK();
-
 
 	if (argc > 0) {
 		file_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
@@ -1439,7 +1413,6 @@ static JSBool session_recordfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 		}
 	}
 
-
 	cb_state.extra = &fh;
 	cb_state.ret = BOOLEAN_TO_JSVAL(JS_FALSE);
 	cb_state.saveDepth = JS_SuspendRequest(cx);
@@ -1453,7 +1426,6 @@ static JSBool session_recordfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	return JS_TRUE;
 }
 
-
 static JSBool session_collect_input(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
@@ -1465,7 +1437,6 @@ static JSBool session_collect_input(JSContext * cx, JSObject * obj, uintN argc, 
 	struct input_callback_state cb_state = { 0 };
 	JSFunction *function;
 	switch_input_args_t args = { 0 };
-
 
 	METHOD_SANITY_CHECK();
 
@@ -1541,7 +1512,6 @@ static JSBool session_sayphrase(JSContext * cx, JSObject * obj, uintN argc, jsva
 	} else {
 		return JS_FALSE;
 	}
-
 
 	if (argc > 1) {
 		phrase_data = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
@@ -1621,7 +1591,6 @@ static switch_status_t hanguphook(switch_core_session_t *session)
 		}
 	}
 
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1671,7 +1640,6 @@ static JSBool session_streamfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 
 	CHANNEL_SANITY_CHECK();
 
-
 	if (argc > 0) {
 		file_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		if (switch_strlen_zero(file_name)) {
@@ -1709,7 +1677,6 @@ static JSBool session_streamfile(JSContext * cx, JSObject * obj, uintN argc, jsv
             fh.prebuf = maybe;
         }
     }
-
 
 	cb_state.extra = &fh;
 	cb_state.ret = BOOLEAN_TO_JSVAL(JS_FALSE);
@@ -1792,7 +1759,6 @@ static void destroy_speech_engine(struct js_session *jss)
 	}
 }
 
-
 static switch_status_t init_speech_engine(struct js_session *jss, char *engine, char *voice)
 {
 	switch_codec_t *read_codec;
@@ -1817,7 +1783,6 @@ static switch_status_t init_speech_engine(struct js_session *jss, char *engine, 
 		return SWITCH_STATUS_FALSE;
 	}
 
-
 	if (switch_core_speech_open(&jss->speech->sh, engine, voice, rate, interval,
 								&flags, switch_core_session_get_pool(jss->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module!\n");
@@ -1828,7 +1793,6 @@ static switch_status_t init_speech_engine(struct js_session *jss, char *engine, 
 	return SWITCH_STATUS_SUCCESS;
 
 }
-
 
 static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
@@ -1861,7 +1825,6 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	voice_name = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 	text = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
 
-
 	if (switch_strlen_zero(tts_name)) {
 		eval_some_js("~throw new Error(\"Invalid TTS Name\");", cx, obj, rval);
 		return JS_FALSE;
@@ -1871,7 +1834,6 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 		eval_some_js("~throw new Error(\"Invalid Text\");", cx, obj, rval);
 		return JS_FALSE;
 	}
-
 
 	if (jss->speech && strcasecmp(jss->speech->sh.name, tts_name)) {
 		destroy_speech_engine(jss);
@@ -1905,7 +1867,6 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 			len = sizeof(cb_state);
 		}
 	}
-
 
 	codec = switch_core_session_get_read_codec(jss->session);
 	cb_state.ret = BOOLEAN_TO_JSVAL(JS_FALSE);
@@ -1961,7 +1922,6 @@ static JSBool session_get_digits(JSContext * cx, JSObject * obj, uintN argc, jsv
 		if (argc > 4) {
 			JS_ValueToInt32(cx, argv[4], &abs_timeout);
 		}
-
 
 		switch_ivr_collect_digits_count(jss->session, buf, sizeof(buf), digits, terminators, &term, timeout, digit_timeout, abs_timeout);
 		*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, buf));
@@ -2061,8 +2021,6 @@ static JSBool session_ready(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	return JS_TRUE;
 }
 
-
-
 static JSBool session_wait_for_media(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
@@ -2103,7 +2061,6 @@ static JSBool session_wait_for_media(JSContext * cx, JSObject * obj, uintN argc,
 
 	return JS_TRUE;
 }
-
 
 static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
@@ -2158,7 +2115,6 @@ static JSBool session_execute(JSContext * cx, JSObject * obj, uintN argc, jsval 
 
 	/* you can execute some apps before you answer */
 	/* CHANNEL_SANITY_CHECK(); */
-	
 
 	if (argc > 0) {
 		const switch_application_interface_t *application_interface;
@@ -2212,7 +2168,6 @@ static JSBool session_get_event(JSContext * cx, JSObject * obj, uintN argc, jsva
 
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 	return JS_TRUE;
-
 }
 
 static JSBool session_send_event(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
@@ -2238,9 +2193,7 @@ static JSBool session_send_event(JSContext * cx, JSObject * obj, uintN argc, jsv
 
 	*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
 	return JS_TRUE;
-
 }
-
 
 static JSBool session_hangup(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
@@ -2260,7 +2213,6 @@ static JSBool session_hangup(JSContext * cx, JSObject * obj, uintN argc, jsval *
 		cause_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		cause = switch_channel_str2cause(cause_name);
 	}
-
 
 	switch_channel_hangup(channel, cause);
 	switch_core_session_kill_channel(jss->session, SWITCH_SIG_KILL);
@@ -2327,10 +2279,7 @@ static size_t hash_callback(void *ptr, size_t size, size_t nmemb, void *data)
 		}
 	}
 	return realsize;
-
 }
-
-
 
 static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
@@ -2462,7 +2411,6 @@ static JSBool js_fetchurl_file(JSContext * cx, JSObject * obj, uintN argc, jsval
 	return JS_TRUE;
 }
 
-
 static JSBool js_fetchurl(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	char *url = NULL;
@@ -2531,7 +2479,6 @@ static JSBool js_fetchurl(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 }
 #endif
 
-
 /* Session Object */
 /*********************************************************************************/
 enum session_tinyid {
@@ -2568,7 +2515,6 @@ static JSFunctionSpec session_methods[] = {
 	{0}
 };
 
-
 static JSPropertySpec session_props[] = {
 	{"name", SESSION_NAME, JSPROP_READONLY | JSPROP_PERMANENT},
 	{"state", SESSION_STATE, JSPROP_READONLY | JSPROP_PERMANENT},
@@ -2585,7 +2531,6 @@ static JSPropertySpec session_props[] = {
 	{"cause", SESSION_CAUSE, JSPROP_READONLY | JSPROP_PERMANENT},
 	{0}
 };
-
 
 static JSBool session_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
 {
@@ -2674,7 +2619,6 @@ static JSBool session_getProperty(JSContext * cx, JSObject * obj, jsval id, jsva
 	default:
 		*vp = BOOLEAN_TO_JSVAL(JS_FALSE);
 		break;
-
 	}
 
 	return JS_TRUE;
@@ -2686,7 +2630,6 @@ JSClass session_class = {
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, session_destroy, NULL, NULL, NULL,
 	session_construct
 };
-
 
 static JSObject *new_js_session(JSContext * cx, JSObject * obj, switch_core_session_t *session, struct js_session **jss, char *name, int flags)
 {
@@ -2775,9 +2718,7 @@ static JSBool session_set_callerdata(JSContext * cx, JSObject * obj, uintN argc,
 	}
 	
 	return JS_TRUE;
-
 }
-
 
 static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
@@ -3071,13 +3012,11 @@ static JSFunctionSpec fileio_methods[] = {
 	{0}
 };
 
-
 static JSPropertySpec fileio_props[] = {
 	{"path", FILEIO_PATH, JSPROP_READONLY | JSPROP_PERMANENT},
 	{"open", FILEIO_OPEN, JSPROP_READONLY | JSPROP_PERMANENT},
 	{0}
 };
-
 
 static JSBool fileio_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
 {
@@ -3117,7 +3056,6 @@ JSClass fileio_class = {
 	fileio_construct
 };
 
-
 /* Built-In*/
 /*********************************************************************************/
 static JSBool js_exit(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
@@ -3148,7 +3086,6 @@ static JSBool js_log(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, j
 		file = JS_GetScriptFilename(cx, script);
 		line = JS_GetScriptBaseLineNumber(cx, script);
 	}
-
 
 	if (argc > 1) {
 		if ((level_str = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
@@ -3220,7 +3157,6 @@ static JSBool js_api_use(JSContext * cx, JSObject * obj, uintN argc, jsval * arg
 	}
 
 	return JS_TRUE;
-
 }
 
 static JSBool js_api_execute(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
@@ -3251,7 +3187,6 @@ static JSBool js_api_execute(JSContext * cx, JSObject * obj, uintN argc, jsval *
 				}
 			}
 		}
-
 
 		stream.data = retbuf;
 		stream.end = stream.data;
@@ -3304,7 +3239,6 @@ static JSBool js_bridge(JSContext * cx, JSObject * obj, uintN argc, jsval * argv
 		return JS_FALSE;
 	}
 
-
 	if (argc > 2) {
 		if ((function = JS_ValueToFunction(cx, argv[2]))) {
 			memset(&cb_state, 0, sizeof(cb_state));
@@ -3351,7 +3285,6 @@ static JSBool js_system(JSContext * cx, JSObject * obj, uintN argc, jsval * argv
 	return JS_FALSE;
 }
 
-
 static JSBool js_file_unlink(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	const char *path;
@@ -3388,10 +3321,8 @@ static JSFunctionSpec fs_functions[] = {
 	{0}
 };
 
-
 static int env_init(JSContext * cx, JSObject * javascript_object)
 {
-
 	JS_DefineFunctions(cx, javascript_object, fs_functions);
 
 	JS_InitStandardClasses(cx, javascript_object);
@@ -3469,7 +3400,6 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 	}
 
 	return;
-
 }
 
 SWITCH_STANDARD_APP(js_dp_function)
@@ -3489,7 +3419,6 @@ static void *SWITCH_THREAD_FUNC js_thread_run(switch_thread_t * thread, void *ob
 
 	return NULL;
 }
-
 
 static switch_memory_pool_t *module_pool = NULL;
 
@@ -3540,7 +3469,6 @@ SWITCH_STANDARD_API(jsapi_function)
 
 SWITCH_STANDARD_API(launch_async)
 {
-
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", js_run_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
@@ -3570,7 +3498,6 @@ static void  message_query_handler(switch_event_t *event)
 
 		switch_safe_free(path);
 	}
-
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
