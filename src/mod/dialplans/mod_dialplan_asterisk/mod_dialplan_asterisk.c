@@ -47,7 +47,6 @@ static switch_status_t exec_app(switch_core_session_t *session, char *app, char 
 	return SWITCH_STATUS_FALSE;
 }
 
-
 SWITCH_STANDARD_APP(dial_function)
 {
 	int argc;
@@ -77,7 +76,6 @@ SWITCH_STANDARD_APP(dial_function)
 		
 		goto ok;
 	}
-
 	
  error:
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
@@ -85,7 +83,6 @@ SWITCH_STANDARD_APP(dial_function)
  ok:
 	
 	return;
-
 }
 
 SWITCH_STANDARD_APP(avoid_function)
@@ -107,8 +104,6 @@ SWITCH_STANDARD_APP(avoid_function)
     memset((void *) y, 0, 1000);
 }
 
-
-
 SWITCH_STANDARD_APP(goto_function)
 {
 	int argc;
@@ -118,7 +113,6 @@ SWITCH_STANDARD_APP(goto_function)
 	
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
-
 	
 	if (data && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, '|', argv, (sizeof(argv) / sizeof(argv[0])))) < 1) {
@@ -128,7 +122,6 @@ SWITCH_STANDARD_APP(goto_function)
 		switch_ivr_session_transfer(session, argv[1], "asterisk", argv[0]);
 		goto ok;
 	}
-
 	
  error:
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
@@ -136,9 +129,7 @@ SWITCH_STANDARD_APP(goto_function)
  ok:
 	
 	return;
-
 }
-
 
 SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 {
@@ -316,7 +307,6 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 	return extension;
 }
 
-
 /* fake chan_sip */
 switch_endpoint_interface_t *sip_endpoint_interface;
 static switch_call_cause_t sip_outgoing_channel(switch_core_session_t *session,
@@ -379,9 +369,6 @@ static char *key()
     return WE_DONT_NEED_NO_STINKIN_KEY;
 }
 
-
-
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_asterisk_load)
 {
 	switch_dialplan_interface_t *dp_interface;
@@ -407,7 +394,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_asterisk_load)
 	sip_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	sip_endpoint_interface->interface_name = "SIP";
 	sip_endpoint_interface->io_routines = &sip_io_routines;
-
 
 	/* fake chan_iax2 facade */
 	iax2_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);

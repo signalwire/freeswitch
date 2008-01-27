@@ -131,7 +131,6 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 			assert(re != NULL);
 		}
 
-
 		for (xaction = switch_xml_child(xcond, "action"); xaction; xaction = xaction->next) {
 			char *application = (char *) switch_xml_attr_soft(xaction, "application");
 			char *data = NULL;
@@ -221,7 +220,6 @@ SWITCH_STANDARD_DIALPLAN(dialplan_hunt)
 	if (!caller_profile->context) {
 		caller_profile->context = "default";
 	}
-	
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Processing %s->%s!\n", caller_profile->caller_id_name, caller_profile->destination_number);
 
@@ -273,7 +271,6 @@ SWITCH_STANDARD_DIALPLAN(dialplan_hunt)
 
 		xexten = xexten->next;
 	}
-
 
 	switch_xml_free(xml);
 	xml = NULL;
