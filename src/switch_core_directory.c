@@ -31,6 +31,7 @@
  * switch_core_directory.c -- Main Core Library (Directory Interface)
  *
  */
+
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 

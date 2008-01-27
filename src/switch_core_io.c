@@ -31,9 +31,9 @@
  * switch_core_io.c -- Main Core Library (Media I/O)
  *
  */
+
 #include <switch.h>
 #include "private/switch_core_pvt.h"
-
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, int stream_id)
 {
@@ -89,7 +89,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 	return status;
 }
 
-
 SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, int stream_id)
 {
 	switch_io_event_hook_read_frame_t *ptr;
@@ -137,7 +136,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			goto done;
 		}
 		is_cng = 1;
-
 	} 
 
 	switch_assert((*frame)->codec != NULL);
@@ -352,7 +350,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 												  session->read_codec->implementation->actual_samples_per_second,
 												  session->enc_read_frame.data, &session->enc_read_frame.datalen, &session->enc_read_frame.rate, &flag);
 
-
 				switch (status) {
 				case SWITCH_STATUS_RESAMPLE:
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "fixme 1\n");
@@ -431,7 +428,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_thread_rwlock_unlock(session->bug_rwlock);
 		}
 	}
-
 	return status;
 }
 
@@ -470,11 +466,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	}
 
 	if (switch_test_flag(frame, SFF_CNG)) {
-
 		if (switch_channel_test_flag(session->channel, CF_ACCEPT_CNG)) {
 			return perform_write(session, frame, timeout, flag, stream_id);
 		}
-
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -571,12 +565,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			session->write_resampler->from_len = write_frame->datalen / 2;
 			switch_short_to_float(data, session->write_resampler->from, session->write_resampler->from_len);
 
-			
-
 			session->write_resampler->to_len = (uint32_t)
 				switch_resample_process(session->write_resampler, session->write_resampler->from,
 										session->write_resampler->from_len, session->write_resampler->to, session->write_resampler->to_size, 0);
-
 
 			switch_float_to_short(session->write_resampler->to, data, session->write_resampler->to_len);
 
@@ -748,7 +739,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 															  session->enc_write_frame.data,
 															  &session->enc_write_frame.datalen, &session->enc_write_frame.rate, &flag);
 
-
 							switch (status) {
 							case SWITCH_STATUS_RESAMPLE:
 								session->enc_write_frame.codec = session->write_codec;
@@ -844,7 +834,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	if (do_write) {
 		return perform_write(session, frame, timeout, io_flag, stream_id);
 	}
-
 	return status;
 }
 
@@ -874,9 +863,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(switch_
 			}
 		}
 	}
-
 	return status;
-
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_read(switch_core_session_t *session, int timeout, int stream_id)
@@ -893,9 +880,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_read(switch_core_ses
 			}
 		}
 	}
-
 	return status;
-
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_write(switch_core_session_t *session, int timeout, int stream_id)
@@ -912,10 +897,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_write(switch_core_se
 			}
 		}
 	}
-
 	return status;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
@@ -951,11 +934,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 			status = session->endpoint_interface->io_routines->send_dtmf(session, dtmf);
 		}
 	}
-
 	return status;
 }
-
-
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core_session_t *session, const char *dtmf_string)
 {
@@ -1007,7 +987,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 		}
 		
 	}
-
 	return sent ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 

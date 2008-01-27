@@ -29,9 +29,9 @@
  * switch_caller.c -- Caller Identification
  *
  */
+
 #include <switch.h>
 #include <switch_caller.h>
-
 
 #define profile_dup(a,b,p) if (!switch_strlen_zero(a)) { b = switch_core_strdup(p, a); } else { b = SWITCH_BLANK_STRING; }
 #define profile_dup_clean(a,b,p) if (!switch_strlen_zero(a)) { b = switch_clean_string(switch_core_strdup(p, a)); } else { b = SWITCH_BLANK_STRING; }
@@ -49,8 +49,6 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 																	const char *context,
 																	const char *destination_number)
 {
-
-
 	switch_caller_profile_t *profile = NULL;
 
 	profile = switch_core_alloc(pool, sizeof(*profile));
@@ -78,7 +76,6 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 	profile->pool = pool;
 	return profile;
 }
-
 
 SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_dup(switch_memory_pool_t *pool, switch_caller_profile_t *tocopy)
 {
@@ -115,7 +112,6 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_dup(switch_memor
 	return profile;
 }
 
-
 SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_core_session_t *session, switch_caller_profile_t *tocopy)
 {
 	switch_memory_pool_t *pool;
@@ -124,7 +120,6 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_cor
 
 	return switch_caller_profile_dup(pool, tocopy);
 }
-
 
 SWITCH_DECLARE(const char *) switch_caller_get_field_by_name(switch_caller_profile_t *caller_profile, const char *name)
 {
@@ -198,7 +193,6 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 {
 	char header_name[1024];
 
-
 	if (!switch_strlen_zero(caller_profile->username)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Username", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->username);
@@ -270,9 +264,6 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 
 	switch_snprintf(header_name, sizeof(header_name), "%s-Privacy-Hide-Number", prefix);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER) ? "yes" : "no");
-
-	
-
 }
 
 SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(switch_core_session_t *session, const char *extension_name, const char *extension_number)
@@ -287,7 +278,6 @@ SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(switch_c
 
 	return caller_extension;
 }
-
 
 SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session_t *session,
 															 switch_caller_extension_t *caller_extension, const char *application_name, const char *application_data)

@@ -31,6 +31,7 @@
  * switch_core_file.c -- Main Core Library (File I/O Functions)
  *
  */
+
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
@@ -272,9 +273,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(switch_file_handle_t
 	}
 
 	return fh->file_interface->file_get_string(fh, col, string);
-
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 {
@@ -291,7 +290,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 	}
 
 	switch_resample_destroy(&fh->resampler);
-
 
 	if (switch_test_flag(fh, SWITCH_FILE_FLAG_FREE_POOL)) {
 		switch_core_destroy_memory_pool(&fh->memory_pool);

@@ -31,6 +31,7 @@
  * switch_core_asr.c -- Main Core Library (Speech Detection Interface)
  *
  */
+
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 

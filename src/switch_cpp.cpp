@@ -703,11 +703,9 @@ switch_status_t process_callback_result(char *ret,
     }
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no match, return false\n");
+
     return SWITCH_STATUS_FALSE;
-
-
 }
-
 
 /* For Emacs:
  * Local Variables:

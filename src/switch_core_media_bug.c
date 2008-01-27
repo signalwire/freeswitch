@@ -31,6 +31,7 @@
  * switch_core_media_bug.c -- Main Core Library (Media Bugs)
  *
  */
+
 #include "switch.h"
 #include "private/switch_core_pvt.h"
 
@@ -100,10 +101,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	if ((bug->raw_read_buffer && bug->raw_write_buffer) && (!rlen && !wlen)) {
 		return SWITCH_STATUS_FALSE;
 	}
-
-
+	
 	maxlen = sizeof(data) > frame->buflen ? frame->buflen : sizeof(data);
-
 
 	if ((rdlen = rlen > wlen ? wlen : rlen) > maxlen) {
 		rdlen = maxlen;
@@ -176,7 +175,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		
 		return SWITCH_STATUS_SUCCESS;
 	}
-
+	
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -249,7 +248,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 		bug->thread_id = switch_thread_self();
 	}
 
-
 	bug->ready = 1;
 	switch_thread_rwlock_wrlock(session->bug_rwlock);
 	bug->next = session->bugs;
@@ -290,7 +288,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_ses
 		session->bugs = NULL;
 		return SWITCH_STATUS_SUCCESS;
 	}
-
+	
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -312,7 +310,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(switch_media_bug_t *
 		*bug = NULL;
 		return SWITCH_STATUS_SUCCESS;
 	}
-
+	
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -345,7 +343,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 		switch_thread_rwlock_unlock(session->bug_rwlock);
 		status = switch_core_media_bug_close(&bp);
 	}
-
+	
 	return status;
 }
 

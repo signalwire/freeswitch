@@ -29,6 +29,7 @@
  * switch_buffer.c -- Data Buffering Code
  *
  */
+
 #include <switch.h>
 #include <switch_buffer.h>
 
@@ -131,7 +132,6 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_len(switch_buffer_t *buffer)
 	return buffer->datalen;
 
 }
-
 
 SWITCH_DECLARE(switch_size_t) switch_buffer_freespace(switch_buffer_t *buffer)
 {

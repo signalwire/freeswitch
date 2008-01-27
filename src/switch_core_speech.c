@@ -31,6 +31,7 @@
  * switch_core_speech.c -- Main Core Library (speech functions)
  *
  */
+
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
@@ -58,7 +59,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 		}
 	}
 
-
 	if ((sh->speech_interface = switch_loadable_module_get_speech_interface(module_name)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid speech module [%s]!\n", module_name);
 		return SWITCH_STATUS_GENERR;
@@ -79,14 +79,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 		sh->param = switch_core_strdup(sh->memory_pool, param);
 	}
 
-
 	sh->rate = rate;
 	sh->name = switch_core_strdup(pool, module_name);
 	sh->samples = switch_bytes_per_frame(rate, interval);
 
 	return sh->speech_interface->speech_open(sh, voice_name, rate, flags);
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags)
 {

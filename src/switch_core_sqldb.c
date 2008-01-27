@@ -31,6 +31,7 @@
  * switch_core_sqldb.c -- Main Core Library (statistics tracker)
  *
  */
+
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
@@ -88,9 +89,6 @@ static switch_status_t switch_core_db_persistant_execute_trans(switch_core_db_t 
 	}
 
 	while (retries > 0) {
-
-
-
 		switch_core_db_exec(db, sql, NULL, NULL, &errmsg);
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n", errmsg);
@@ -106,7 +104,6 @@ static switch_status_t switch_core_db_persistant_execute_trans(switch_core_db_t 
 			break;
 		}
 	}
-
 
   done:
 
@@ -347,7 +344,6 @@ static void core_event_handler(switch_event_t *event)
 	}
 }
 
-
 void switch_core_sqldb_start(switch_memory_pool_t *pool)
 {
 	switch_thread_t *thread;
@@ -431,3 +427,14 @@ void switch_core_sqldb_stop(void)
 	switch_core_db_close(sql_manager.event_db);
 
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

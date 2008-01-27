@@ -28,6 +28,7 @@
  * switch_ivr_bridge.c -- IVR Library 
  *
  */
+
 #include <switch.h>
 
 static const switch_state_handler_table_t audio_bridge_peer_state_handlers;
@@ -42,8 +43,6 @@ struct switch_ivr_bridge_data {
 	void *session_data;
 };
 typedef struct switch_ivr_bridge_data switch_ivr_bridge_data_t;
-
-
 
 static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 {
@@ -260,7 +259,6 @@ static switch_status_t audio_bridge_on_loopback(switch_core_session_t *session)
 	return SWITCH_STATUS_FALSE;
 }
 
-
 static switch_status_t audio_bridge_on_ring(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
@@ -297,7 +295,6 @@ static const switch_state_handler_table_t audio_bridge_peer_state_handlers = {
 	/*.on_transmit */ NULL,
 	/*.on_hold */ audio_bridge_on_hold,
 };
-
 
 static switch_status_t uuid_bridge_on_reset(switch_core_session_t *session)
 {
@@ -440,7 +437,6 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 		}
 	}
 
-
 	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE))
 		&& (other_session = switch_core_session_locate(uuid))) {
 		switch_channel_t *other_channel = NULL;
@@ -467,7 +463,6 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 		} 
 		switch_core_session_rwunlock(other_session);
 	}
-
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -514,7 +509,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 
 	switch_channel_add_state_handler(caller_channel, &signal_bridge_state_handlers);
 	switch_channel_add_state_handler(peer_channel, &signal_bridge_state_handlers);
-
 
 	/* fire events that will change the data table from "show channels" */
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
@@ -651,7 +645,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 				}
 			}
 
-
 			msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
 			msg.from = __FILE__;
 			msg.string_arg = switch_core_session_strdup(peer_session, switch_core_session_get_uuid(session));
@@ -668,7 +661,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 				switch_core_session_rwunlock(peer_session);
 				goto done;
 			}
-
 
 			switch_channel_set_variable(caller_channel, SWITCH_BRIDGE_CHANNEL_VARIABLE, switch_channel_get_name(peer_channel));
 			switch_channel_set_variable(caller_channel, SWITCH_BRIDGE_UUID_VARIABLE, switch_core_session_get_uuid(peer_session));
@@ -728,7 +720,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	return status;
 }
 
-
 SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uuid, const char *originatee_uuid)
 {
 	switch_core_session_t *originator_session, *originatee_session, *swap_session;
@@ -757,7 +748,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 				}
 			}
 
-
 			/* override transmit state for originator_channel to bridge to originatee_channel 
 			 * install pointer to originatee_session into originator_channel
 			 * set CF_TRANSFER on both channels and change state to CS_TRANSMIT to
@@ -772,9 +762,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			switch_channel_add_state_handler(originator_channel, &uuid_bridge_state_handlers);
 			switch_channel_add_state_handler(originatee_channel, &uuid_bridge_state_handlers);
 			switch_channel_set_variable(originator_channel, SWITCH_UUID_BRIDGE, switch_core_session_get_uuid(originatee_session));
-			
-
-			
+		
 			switch_channel_set_variable(originator_channel, SWITCH_BRIDGE_CHANNEL_VARIABLE, switch_channel_get_name(originatee_channel));
 			switch_channel_set_variable(originator_channel, SWITCH_BRIDGE_UUID_VARIABLE, switch_core_session_get_uuid(originatee_session));
 			switch_channel_set_variable(originator_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(originatee_session));
@@ -794,7 +782,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			switch_channel_set_variable(originator_channel, "original_destination_number", originator_cp->destination_number);
 			switch_channel_set_variable(originator_channel, "original_caller_id_name", originator_cp->caller_id_name);
 			switch_channel_set_variable(originator_channel, "original_caller_id_number", originator_cp->caller_id_number);
-			
 
 			cp = switch_caller_profile_clone(originatee_session, originatee_cp);
 			cp->destination_number = switch_core_strdup(cp->pool, originator_cp->caller_id_number);
@@ -838,7 +825,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 	}
 
 	return status;
-
 }
 
 SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session, const char *uuid)
@@ -868,15 +854,11 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 	switch_channel_set_state_flag(rchannel, CF_TRANSFER);
 	switch_channel_set_state(rchannel, CS_RESET);
 
-
 	if (bsession) {
 		bchannel = switch_core_session_get_channel(bsession);
 		switch_channel_hangup(bchannel, SWITCH_CAUSE_PICKED_OFF);
 		switch_core_session_rwunlock(bsession);
 	}
-
-	
-
 
 	switch_core_session_rwunlock(rsession);
 

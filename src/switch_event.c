@@ -31,6 +31,7 @@
  * switch_event.c -- Event System
  *
  */
+
 #include <switch.h>
 #include <switch_event.h>
 
@@ -326,7 +327,6 @@ SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(const cha
 	switch_core_hash_insert(CUSTOM_HASH, subclass->name, subclass);
 
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 SWITCH_DECLARE(void) switch_core_memory_reclaim_events(void)
@@ -390,7 +390,6 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 
 	switch_core_hash_destroy(&CUSTOM_HASH);
 	switch_core_memory_reclaim_events();
-	
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -413,8 +412,6 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	switch_queue_create(&EVENT_QUEUE[2], POOL_COUNT_MAX + 10, THRUNTIME_POOL);
 	switch_queue_create(&EVENT_RECYCLE_QUEUE, SWITCH_CORE_QUEUE_LEN, THRUNTIME_POOL);
 	switch_queue_create(&EVENT_HEADER_RECYCLE_QUEUE, SWITCH_CORE_QUEUE_LEN, THRUNTIME_POOL);
-	
-
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activate Eventing Engine.\n");
 	switch_mutex_init(&BLOCK, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
@@ -430,7 +427,6 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 		switch_yield(1000);
 	}
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 SWITCH_DECLARE(switch_status_t) switch_event_create_subclass(switch_event_t **event, switch_event_types_t event_id, const char *subclass_name)
@@ -794,7 +790,6 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 static switch_xml_t add_xml_header(switch_xml_t xml, char *name, char *value, int offset)
 {
 	switch_xml_t header = NULL;
@@ -1011,7 +1006,6 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_pres_in_detailed(char *file,
 	}
 	return SWITCH_STATUS_MEMERR;
 }
-
 
 #define resize(l) {\
 char *dp;\
@@ -1272,7 +1266,6 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 	
 	return data;
 }
-
 
 SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, const char *prefix)
 {

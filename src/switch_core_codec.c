@@ -31,6 +31,7 @@
  * switch_core_codec.c -- Main Core Library (codec functions)
  *
  */
+
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
@@ -80,7 +81,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 	switch_assert(session != NULL);
 	channel = switch_core_session_get_channel(session);
 
-
 	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-write-codec-name", "%s", codec->implementation->iananame);
@@ -116,7 +116,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, ch
 	switch_assert(codec_name != NULL);
 
 	memset(codec, 0, sizeof(*codec));
-
 
 	if (channels == 2) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stereo is currently unsupported. please downsample audio source to mono.\n");
@@ -189,7 +188,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, ch
 	}
 
 	return SWITCH_STATUS_NOTIMPL;
-
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_codec_encode(switch_codec_t *codec,
@@ -213,10 +211,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_GENERR;
 	}
 
-
 	return codec->implementation->encode(codec, other_codec, decoded_data, decoded_data_len, decoded_rate, encoded_data, encoded_data_len, encoded_rate,
 										 flag);
-
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
@@ -226,12 +222,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 														 uint32_t encoded_rate,
 														 void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
 {
-
 	switch_assert(codec != NULL);
 	switch_assert(encoded_data != NULL);
 	switch_assert(decoded_data != NULL);
-
-
 
 	if (!codec->implementation) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec is not initialized!\n");
@@ -243,10 +236,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_GENERR;
 	}
 
-
 	return codec->implementation->decode(codec, other_codec, encoded_data, encoded_data_len, encoded_rate, decoded_data, decoded_data_len, decoded_rate,
 										 flag);
-
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
@@ -266,3 +257,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 
 	return SWITCH_STATUS_SUCCESS;
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

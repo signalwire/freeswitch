@@ -31,6 +31,7 @@
  * switch_core_session.c -- Main Core Library (session routines)
  *
  */
+
 #include "switch.h"
 #include "switch_core.h"
 #include "private/switch_core_pvt.h"
@@ -42,7 +43,6 @@ static struct {
 	uint32_t session_limit;
 	switch_size_t session_id;
 } session_manager;
-
 
 #ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(const char *uuid_str, const char *file, const char *func, int line)
@@ -344,7 +344,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_
 
 	if (session->endpoint_interface->io_routines->receive_message) {
 		status = session->endpoint_interface->io_routines->receive_message(session, message);
-
 	}
 
 	if (status == SWITCH_STATUS_SUCCESS) {
@@ -380,7 +379,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_pass_indication(switch_core_
 	} else {
 		status = SWITCH_STATUS_FALSE;
 	}
-
+	
 	return status;
 }
 
@@ -396,7 +395,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_indication(switch_core
 		switch_core_session_queue_message(session, msg);
 		return SWITCH_STATUS_SUCCESS;
 	}
-
+	
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -411,7 +410,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_message(switch_core_se
 			status = SWITCH_STATUS_SUCCESS;
 		}
 	}
-
+	
 	return status;
 }
 
@@ -578,7 +577,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch
 	return status;
 }
 
-
 SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, switch_bool_t flush_dtmf)
 {
 	switch_channel_t *channel;
@@ -605,9 +603,7 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, s
 	}
 
 	switch_ivr_deactivate_unicast(session);
-
 	switch_channel_clear_flag(channel, CF_BREAK);
-
 }
 
 
@@ -615,8 +611,6 @@ SWITCH_DECLARE(switch_channel_t *) switch_core_session_get_channel(switch_core_s
 {
 	return session->channel;
 }
-
-
 
 SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session_t *session)
 {
@@ -708,7 +702,6 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t * thr
 	return NULL;
 }
 
-
 SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(switch_core_session_t *session)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -738,7 +731,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(switch_core_se
 	return status;
 }
 
-
 SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session_t *session, switch_thread_start_t func, void *obj)
 {
 	switch_thread_t *thread;
@@ -750,7 +742,6 @@ SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session_t *se
 	switch_thread_create(&thread, thd_attr, func, obj, session->pool);
 
 }
-
 
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch_endpoint_interface_t
 																	*endpoint_interface, switch_memory_pool_t **pool)
@@ -788,7 +779,6 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 		switch_core_new_memory_pool(&usepool);
 	}
 
-
 	session = switch_core_alloc(usepool, sizeof(*session));
 	session->pool = usepool;
 	
@@ -797,7 +787,6 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 	}
 
 	switch_channel_init(session->channel, session, CS_NEW, 0);
-
 
 	/* The session *IS* the pool you may not alter it because you have no idea how
 	   its all private it will be passed to the thread run function */
@@ -858,11 +847,9 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(cons
 	return switch_core_session_request(endpoint_interface, pool);
 }
 
-
 #ifndef SWITCH_PREFIX_DIR
 #define SWITCH_PREFIX_DIR "."
 #endif
-
 
 SWITCH_DECLARE(uint8_t) switch_core_session_compare(switch_core_session_t *a, switch_core_session_t *b)
 {
@@ -895,7 +882,6 @@ SWITCH_DECLARE(uint32_t) switch_core_sessions_per_second(uint32_t new_limit)
 
 	return runtime.sps_total;
 }
-
 
 void switch_core_session_init(switch_memory_pool_t *pool)
 {
@@ -1102,8 +1088,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 
 	session->stack_count--;
 
-	return status;
-	
+	return status;	
 }
 
 
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

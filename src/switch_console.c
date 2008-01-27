@@ -29,6 +29,7 @@
  * switch_console.c -- Simple Console
  *
  */
+
 #include <switch.h>
 #include <switch_console.h>
 #include <switch_version.h>
@@ -70,7 +71,6 @@ SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_write(switch_stream
 		switch_size_t remaining = handle->data_size - handle->data_len;
 		switch_size_t need = strlen(data) + 1;
 
-
 		if ((remaining < need) && handle->alloc_len) {
 			switch_size_t new_len;
 			void *new_data;
@@ -103,7 +103,6 @@ SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_write(switch_stream
 
 	return ret ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 }
-
 
 static int switch_console_process(char *cmd)
 {
@@ -186,7 +185,6 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const 
 		switch_event_fire(&event);
 	}
 
-
 done:
 	if (data) {
 		free(data);
@@ -208,7 +206,6 @@ char * prompt(EditLine *e) {
 	}	
 
 	return prompt_str;
-	
 }
 
 static EditLine *el;
@@ -283,7 +280,6 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 	el_set(el, EL_HIST, history, myhistory);
 	history(myhistory, &ev, H_LOAD, hfile);
 
-
 	switch_threadattr_create(&thd_attr, pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
@@ -304,8 +300,6 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 	/* Clean up our memory */
 	history_end(myhistory);
 	el_end(el);
-
-
 }
 
 #else
@@ -355,8 +349,6 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 			continue;
 		}
 #endif
-
-
 		memset(&cmd, 0, sizeof(cmd));
 		for (x = 0; x < (sizeof(cmd) - 1); x++) {
 			int c = getchar();
@@ -378,8 +370,6 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 			running = switch_console_process(cmd);
 		}
 	}
-
-
 }
 #endif
 

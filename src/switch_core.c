@@ -138,7 +138,6 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_core_get_state_handl
 	return runtime.state_handlers[index];
 }
 
-
 SWITCH_DECLARE(char *) switch_core_get_variable(const char *varname)
 {
 	char *val;
@@ -225,7 +224,6 @@ SWITCH_DECLARE(void) switch_core_service_session(switch_core_session_t *session,
 	switch_core_session_launch_thread(session, switch_core_service_thread, thread_session);
 }
 
-
 /* This function abstracts the thread creation for modules by allowing you to pass a function ptr and
    a void object and trust that that the function will be run in a thread with arg  This lets
    you request and activate a thread without giving up any knowledge about what is in the thread
@@ -267,7 +265,6 @@ SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void 
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 		switch_thread_create(&thread, thd_attr, func, ts, pool);
 	}
-
 }
 
 SWITCH_DECLARE(void) switch_core_set_globals(void)
@@ -366,7 +363,6 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 #endif
 #endif
 	}
-
 	
 	dir_path = switch_mprintf("%s%ssounds", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
 	switch_dir_make_recursive(dir_path,
@@ -374,7 +370,6 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 							  runtime.memory_pool);
 	switch_safe_free(dir_path);
 
-	
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.base_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.mod_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.conf_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
@@ -384,11 +379,7 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.htdocs_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.temp_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
-	
-
-
 }
-
 
 SWITCH_DECLARE(int32_t) set_high_priority(void)
 {
@@ -654,9 +645,7 @@ static void load_mime_types(void)
 		close(fd);
 		fd = -1;
 	}
-
 }	
-
 
 SWITCH_DECLARE(void) switch_core_setrlimits(void)
 {
@@ -693,7 +682,6 @@ SWITCH_DECLARE(void) switch_core_setrlimits(void)
 #endif
 	return;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switch_bool_t console, const char **err)
 {
@@ -734,8 +722,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), AF_INET6);
 	switch_core_set_variable("local_ip_v6", guess_ip);
 	switch_core_set_variable("base_dir", SWITCH_GLOBAL_dirs.base_dir);
-	
-
 
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
 		apr_terminate();
@@ -774,7 +760,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 					rlp.rlim_max = RLIM_INFINITY;
 					setrlimit(RLIMIT_CORE, &rlp);
 #endif
-
 				} else if (!strcasecmp(var, "mailer-app")) {
 					runtime.mailer_app = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "mailer-app-args")) {
@@ -829,7 +814,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	runtime.initiated = switch_time_now();
 
 	switch_scheduler_add_task(switch_timestamp(NULL), heartbeat_callback, "heartbeat", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL);
-
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(runtime.uuid_str, &uuid);
@@ -1026,7 +1010,6 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 	return 0;
 }
 
-
 SWITCH_DECLARE(switch_core_flag_t) switch_core_flags(void)
 {
 	return runtime.flags;
@@ -1036,7 +1019,6 @@ SWITCH_DECLARE(switch_bool_t) switch_core_ready(void)
 {
 	return (switch_test_flag((&runtime), SCF_SHUTTING_DOWN) || switch_test_flag((&runtime), SCF_NO_NEW_SESSIONS)) ? SWITCH_FALSE : SWITCH_TRUE;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 {
@@ -1048,7 +1030,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 
 	switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 	switch_set_flag((&runtime), SCF_SHUTTING_DOWN);
-
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "End existing sessions\n");
 	switch_core_session_hupall(SWITCH_CAUSE_SYSTEM_SHUTDOWN);
@@ -1083,7 +1064,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_safe_free(SWITCH_GLOBAL_dirs.htdocs_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.grammar_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.temp_dir);
-
 
 	switch_core_hash_destroy(&runtime.global_vars);
 	switch_core_hash_destroy(&runtime.mime_types);

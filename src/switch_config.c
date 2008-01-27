@@ -29,6 +29,7 @@
  * switch_config.c -- Configuration File Parser
  *
  */
+
 #include <switch.h>
 #include <switch_config.h>
 
@@ -87,7 +88,6 @@ SWITCH_DECLARE(int) switch_config_open_file(switch_config_t * cfg, char *file_pa
 	}
 }
 
-
 SWITCH_DECLARE(void) switch_config_close_file(switch_config_t * cfg)
 {
 
@@ -97,8 +97,6 @@ SWITCH_DECLARE(void) switch_config_close_file(switch_config_t * cfg)
 
 	memset(cfg, 0, sizeof(*cfg));
 }
-
-
 
 SWITCH_DECLARE(int) switch_config_next_pair(switch_config_t * cfg, char **var, char **val)
 {
@@ -143,8 +141,6 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config_t * cfg, char **var, c
 			continue;
 		}
 
-
-
 		if (**var == '#' || **var == ';' || **var == '\n' || **var == '\r') {
 			continue;
 		}
@@ -152,7 +148,6 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config_t * cfg, char **var, c
 		if (!strncmp(*var, "__END__", 7)) {
 			break;
 		}
-
 
 		if ((end = strchr(*var, '#')) != 0 || (end = strchr(*var, ';')) != 0) {
 			*end = '\0';
@@ -170,7 +165,6 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config_t * cfg, char **var, c
 			p++;
 		}
 		*var = p;
-
 
 		if ((*val = strchr(*var, '=')) == 0) {
 			ret = -1;
@@ -201,9 +195,7 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config_t * cfg, char **var, c
 		}
 	}
 
-
 	return ret;
-
 }
 
 /* For Emacs:

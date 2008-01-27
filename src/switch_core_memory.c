@@ -31,6 +31,7 @@
  * switch_core_memory.c -- Main Core Library (memory management)
  *
  */
+
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 /*#define LOCK_MORE*/
@@ -151,7 +152,6 @@ SWITCH_DECLARE(char *) switch_core_session_sprintf(switch_core_session_t *sessio
 	switch_assert(result != NULL);
 	va_end(ap);
 
-
 #ifdef LOCK_MORE
 	switch_mutex_unlock(memory_manager.mem_lock);
 #endif
@@ -182,7 +182,6 @@ SWITCH_DECLARE(char *) switch_core_sprintf(switch_memory_pool_t *pool, const cha
 
 	return result;
 }
-
 
 SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session_t *session, const char *todup)
 {
@@ -215,7 +214,6 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session_t *session
 
 	return duped;
 }
-
 
 SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool_t *pool, const char *todup)
 {
@@ -268,6 +266,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memor
 	tmp = switch_core_sprintf(*pool, "%s:%d", func, line);
 	apr_pool_tag(*pool, tmp);
 	switch_mutex_unlock(memory_manager.mem_lock);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -286,11 +285,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(switch_m
 		apr_pool_destroy(*pool);
 	}
 	*pool = NULL;
-
-
+	
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool_t *pool, switch_size_t memory)
 {
@@ -310,7 +307,6 @@ SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool_t *pool, switch_size
 	ptr = apr_palloc(pool, memory);
 	switch_assert(ptr != NULL);
 	memset(ptr, 0, memory);
-	
 
 #ifdef LOCK_MORE
 	switch_mutex_unlock(memory_manager.mem_lock);
@@ -318,7 +314,6 @@ SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool_t *pool, switch_size
 
 	return ptr;
 }
-
 
 SWITCH_DECLARE(void) switch_core_memory_reclaim(void)
 {
@@ -391,9 +386,9 @@ static void *SWITCH_THREAD_FUNC pool_thread(switch_thread_t * thread, void *obj)
 	}
 
 	memory_manager.pool_thread_running = 0;
+
 	return NULL;
 }
-
 
 void switch_core_memory_stop(void)
 {
@@ -430,3 +425,14 @@ switch_memory_pool_t *switch_core_memory_init(void)
 
 	return memory_manager.memory_pool;
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

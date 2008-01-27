@@ -31,6 +31,7 @@
  * switch_core_timer.c -- Main Core Library (timer interface)
  *
  */
+
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 

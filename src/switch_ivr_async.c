@@ -30,6 +30,7 @@
  * switch_ivr_async.c -- IVR Library (async operations)
  *
  */
+
 #include <switch.h>
 
 struct echo_helper {
@@ -93,7 +94,6 @@ SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session)
 		}
 	}
 }
-
 
 typedef struct {
 	switch_file_handle_t fh;
@@ -173,8 +173,6 @@ static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user
 
 	return SWITCH_TRUE;
 }
-
-
 
 static switch_bool_t read_displace_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
@@ -261,7 +259,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_displace_session(switch_core_ses
 	}
 
 	return SWITCH_STATUS_FALSE;
-
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_t *session, const char *file, uint32_t limit, const char *flags)
@@ -272,7 +269,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	switch_status_t status;
 	time_t to = 0;
 	displace_helper_t *dh;
-
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -333,7 +329,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
@@ -397,9 +392,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_sessi
 	}
 
 	return SWITCH_STATUS_FALSE;
-
 }
-
 
 struct eavesdrop_pvt {
 	switch_buffer_t *buffer;
@@ -488,7 +481,6 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 
 	return SWITCH_TRUE;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session_t *session, const char *uuid, switch_eavesdrop_flag_t flags)
 {
@@ -648,7 +640,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
             }
 			
         }
-
 
     end:
 
@@ -883,7 +874,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_session(switch_core_sessi
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 typedef struct {
 	switch_core_session_t *session;
 	teletone_generation_session_t ts;
@@ -906,7 +896,6 @@ static int teletone_dtmf_generate_handler(teletone_generation_session_t * ts, te
 
     return 0;
 }
-
 
 static switch_status_t generate_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
@@ -1034,7 +1023,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_generate_session(switch_c
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 #define MAX_TONES 16
 typedef struct {
 	teletone_multi_tone_t mt;
@@ -1044,7 +1032,6 @@ typedef struct {
 	teletone_tone_map_t map;
 	int up;
 } switch_tone_detect_t;
-
 
 typedef struct {
 	switch_tone_detect_t list[MAX_TONES+1];
@@ -1244,7 +1231,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
   return SWITCH_STATUS_SUCCESS;
 }
 
-
 struct speech_thread_handle {
 	switch_core_session_t *session;
 	switch_asr_handle_t *ah;
@@ -1336,7 +1322,6 @@ static switch_bool_t speech_callback(switch_media_bug_t *bug, void *user_data, s
 			switch_threadattr_detach_set(thd_attr, 1);
 			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 			switch_thread_create(&thread, thd_attr, speech_thread, sth, sth->pool);
-
 		}
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:{
@@ -1382,10 +1367,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_detect_speech(switch_core_sessio
 	}
 
 	return SWITCH_STATUS_FALSE;
-
 }
-
-
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_pause_detect_speech(switch_core_session_t *session)
 {
@@ -1399,7 +1381,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_pause_detect_speech(switch_core_sessi
 	}
 
 	return SWITCH_STATUS_FALSE;
-
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_resume_detect_speech(switch_core_session_t *session)
@@ -1414,9 +1395,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_resume_detect_speech(switch_core_sess
 	}
 
 	return SWITCH_STATUS_FALSE;
-
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_load_grammar(switch_core_session_t *session, char *grammar, char *path)
 {
@@ -1438,7 +1417,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_load_grammar(switch_cor
 
 	return SWITCH_STATUS_FALSE;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_unload_grammar(switch_core_session_t *session, const char *grammar)
 {
@@ -1535,7 +1513,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 struct hangup_helper {
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
@@ -1653,7 +1630,6 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_transfer(time_t runtime, const char
 
 	return switch_scheduler_add_task(runtime, sch_transfer_callback, (char *) __SWITCH_FUNC__, uuid, 0, helper, SSHF_FREE_ARG);
 }
-
 
 struct broadcast_helper {
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
@@ -1798,12 +1774,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 
 	switch_core_session_rwunlock(session);
 	switch_safe_free(mypath);
-	
-
 
 	return SWITCH_STATUS_SUCCESS;
-
 }
+
 /* For Emacs:
  * Local Variables:
  * mode:c

@@ -31,16 +31,15 @@
  * switch_core_hash.c -- Main Core Library (hash functions)
  *
  */
+
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 #include <sqlite3.h>
 #include "../../../libs/sqlite/src/hash.h"
 
-
 struct switch_hash {
 	Hash table;
 };
-
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_init(switch_hash_t ** hash, switch_memory_pool_t *pool)
 {
@@ -53,7 +52,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_init(switch_hash_t ** hash, swi
 	*hash = newhash;
 	
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(switch_hash_t **hash)
@@ -106,7 +104,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(switch_hash_t * h
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash_t * hash, const char *key)
 {
 	return sqlite3HashFind(&hash->table, key, (int)strlen(key)+1);
@@ -129,12 +126,10 @@ SWITCH_DECLARE(void *) switch_core_hash_find_locked(switch_hash_t * hash, const 
 	return val;
 }
 
-
 SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(char *depricate_me, switch_hash_t *hash)
 {
 	return (switch_hash_index_t *) sqliteHashFirst(&hash->table);
 }
-
 
 SWITCH_DECLARE(switch_hash_index_t *) switch_hash_next(switch_hash_index_t *hi)
 {

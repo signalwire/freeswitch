@@ -31,6 +31,7 @@
  * switch_core_port_allocator.c -- Main Core Library (port allocator)
  *
  */
+
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
@@ -109,7 +110,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t sta
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_core_port_allocator_t *alloc, switch_port_t *port_ptr)
 {
 	switch_port_t port = 0;
@@ -168,7 +168,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 	
 }
 
-
 SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_free_port(switch_core_port_allocator_t *alloc, switch_port_t port)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -191,10 +190,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_free_port(switch_core
 	return status;
 }
 
-
 SWITCH_DECLARE(void) switch_core_port_allocator_destroy(switch_core_port_allocator_t **alloc)
 {
 	switch_memory_pool_t *pool = (*alloc)->pool;
 	switch_core_destroy_memory_pool(&pool);
 	*alloc = NULL;
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

@@ -31,6 +31,7 @@
  * switch_core_state_maching.c -- Main Core Library (state machine)
  *
  */
+
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
@@ -44,15 +45,13 @@ static void switch_core_standard_on_hangup(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard HANGUP %s, cause: %s\n",
 					  switch_channel_get_name(session->channel), switch_channel_cause2str(switch_channel_get_cause(session->channel)));
-
 }
 
 static void switch_core_standard_on_reset(switch_core_session_t *session)
 {
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard RESET %s\n",
-					  switch_channel_get_name(session->channel));
-	
+					  switch_channel_get_name(session->channel));	
 }
 
 static void switch_core_standard_on_ring(switch_core_session_t *session)
@@ -119,7 +118,6 @@ static void switch_core_standard_on_ring(switch_core_session_t *session)
 	if (expanded && dpstr && expanded != dpstr) {
 		free(expanded);
 	}
-
 }
 
 static void switch_core_standard_on_execute(switch_core_session_t *session)
@@ -166,8 +164,7 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 			 switch_channel_expand_variables(session->channel,
 											 extension->current_application->application_data)) != extension->current_application->application_data) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Expanded String %s(%s)\n", switch_channel_get_name(session->channel), 
-							  extension->current_application->application_name, expanded);
-							  
+							  extension->current_application->application_name, expanded);				  
 		}
 
 		if (switch_channel_get_variable(session->channel, "presence_id")) {
@@ -274,7 +271,6 @@ static void print_trace(void)
 }
 #endif
 
-
 static void handle_fatality(int sig)
 {
 	switch_thread_id_t thread_id;
@@ -291,7 +287,6 @@ static void handle_fatality(int sig)
 	}
 }
 
-
 void switch_core_state_machine_init(switch_memory_pool_t *pool)
 {
 	
@@ -299,8 +294,6 @@ void switch_core_state_machine_init(switch_memory_pool_t *pool)
 		sqlite3HashInit(&stack_table, SQLITE_HASH_BINARY, 0);
 	}
 }
-
-
 
 #define STATE_MACRO(__STATE, __STATE_STR)						do {	\
 		midstate = state;												\
@@ -370,7 +363,6 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			//apr_hash_set(stack_table, &thread_id, sizeof(thread_id), &env);
 		}
 	}
-
 
 	/*
 	   Life of the channel. you have channel and pool in your session
@@ -477,9 +469,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 
 		}
 
-
 		endstate = switch_channel_get_state(session->channel);
-
 		
 		if (endstate == switch_channel_get_running_state(session->channel)) {
 			if (endstate == CS_NEW) {
@@ -488,7 +478,6 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				switch_thread_cond_wait(session->cond, session->mutex);
 			}
 		}
-
 	}
   done:
 	switch_mutex_unlock(session->mutex);
@@ -498,5 +487,15 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 		//apr_hash_set(stack_table, &thread_id, sizeof(thread_id), NULL);
 	}
 	session->thread_running = 0;
-
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

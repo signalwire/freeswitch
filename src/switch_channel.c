@@ -30,6 +30,7 @@
  * switch_channel.c -- Media Channel Interface
  *
  */
+
 #include <switch.h>
 #include <switch_channel.h>
 
@@ -122,7 +123,6 @@ struct switch_channel {
 	int vi;
 	int event_count;
 };
-
 
 SWITCH_DECLARE(const char *) switch_channel_cause2str(switch_call_cause_t cause)
 {
@@ -238,7 +238,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 		}
 	}
 	
-
 	status = SWITCH_STATUS_SUCCESS;
 
  done:
@@ -247,7 +246,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 
 	return status;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_t *channel, const char *dtmf_string)
 {
@@ -321,7 +319,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(switch_channel_t *ch
 	}
 
 	return status;
-
 }
 
 SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf_string(switch_channel_t *channel, char *dtmf_str, switch_size_t len)
@@ -398,9 +395,7 @@ SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const ch
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", channel->event_count++);
 		switch_event_fire(&event);
 	}
-
 }
-
 
 SWITCH_DECLARE(const char *) switch_channel_get_variable(switch_channel_t *channel, const char *varname)
 {
@@ -454,7 +449,6 @@ SWITCH_DECLARE(switch_event_header_t *) switch_channel_variable_first(switch_cha
 	}
 
 	return hi;
-
 }
 
 SWITCH_DECLARE(switch_status_t) switch_channel_set_private(switch_channel_t *channel, const char *key, const void *private_info)
@@ -484,7 +478,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_name(switch_channel_t *channe
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 SWITCH_DECLARE(char *) switch_channel_get_name(switch_channel_t *channel)
 {
@@ -758,7 +751,6 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 		}
 	}
 
-
 	switch_mutex_unlock(channel->flag_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -769,7 +761,6 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 {
 	switch_channel_state_t last_state;
 	int ok = 0;
-
 
 	switch_assert(channel != NULL);
 	switch_assert(state <= CS_DONE);
@@ -950,7 +941,6 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 
 	}
 
-
 	if (ok) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "%s State Change %s -> %s\n",
 						  channel->name, state_names[last_state], state_names[state]);
@@ -965,7 +955,6 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		if (state < CS_DONE) {
 			switch_core_session_signal_state_change(channel->session);
 		}
-
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_WARNING,
 						  "%s Invalid State Change %s -> %s\n", channel->name, state_names[last_state], state_names[state]);
@@ -1025,7 +1014,6 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 	if (caller_profile) {
 		switch_caller_profile_event_set_data(caller_profile, "Caller", event);
 	}
-
 	
 	if (originator_caller_profile && originatee_caller_profile) {
 		/* Index Originator's Profile */
@@ -1058,7 +1046,6 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 	}
 
 	switch_mutex_unlock(channel->profile_mutex);
-
 }
 
 SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile)
@@ -1144,8 +1131,7 @@ SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel
 		channel->caller_profile->originatee_caller_profile = caller_profile;
 	}
 	switch_assert(channel->caller_profile->originatee_caller_profile->next != channel->caller_profile->originatee_caller_profile);
-	switch_mutex_unlock(channel->profile_mutex);
-		
+	switch_mutex_unlock(channel->profile_mutex);		
 }
 
 SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_originator_caller_profile(switch_channel_t *channel)
@@ -1255,7 +1241,6 @@ SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel_t *channe
 	}
 
 	switch_mutex_unlock(channel->flag_mutex);
-
 }
 
 SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *channel, switch_caller_extension_t *caller_extension)
@@ -1324,7 +1309,6 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 	return channel->state;
 }
 
-
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_channel_t *channel, const char *file, const char *func, int line)
 {
 	if (!switch_channel_test_flag(channel, CF_RING_READY)) {
@@ -1335,8 +1319,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_ch
 
 	return SWITCH_STATUS_FALSE;
 }
-
-
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_channel_t *channel, const char *file, const char *func, int line)
 {
@@ -1957,8 +1939,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 			legbillusec = caller_profile->times->hungup - caller_profile->times->profile_created;
 		}
 	}
-	
-	
+
 	switch_channel_set_variable(channel, "last_app", last_app);
 	switch_channel_set_variable(channel, "last_arg", last_arg);
 	switch_channel_set_variable(channel, "caller_id", cid_buf);

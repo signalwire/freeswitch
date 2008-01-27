@@ -31,6 +31,7 @@
  * switch_core_rwlock.c -- Main Core Library (read / write locks)
  *
  */
+
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 

@@ -45,7 +45,6 @@ static void db_pick_path(char *dbname, char *buf, switch_size_t size)
 	}
 }
 
-
 SWITCH_DECLARE(int) switch_core_db_open(const char *filename, switch_core_db_t **ppDb)
 {
 	return sqlite3_open(filename, ppDb);
@@ -185,7 +184,6 @@ SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(char *filename)
 	return db;
 }
 
-
 SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *test_sql, char *drop_sql, char *reactive_sql)
 {
 	char *errmsg;
@@ -217,7 +215,6 @@ SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *te
 	}
 
 }
-
 
 /* For Emacs:
  * Local Variables:

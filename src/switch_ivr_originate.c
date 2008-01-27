@@ -29,6 +29,7 @@
  * switch_ivr_originate.c -- IVR Library (originate)
  *
  */
+
 #include <switch.h>
 
 static const switch_state_handler_table_t originate_state_handlers;
@@ -59,7 +60,6 @@ static const switch_state_handler_table_t originate_state_handlers = {
 	/*.on_transmit */ NULL,
 	/*.on_hold */ NULL
 };
-
 
 typedef enum {
 	IDX_CANCEL = -2,
@@ -215,7 +215,6 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 	} else {
 		return 1;
 	}
-
 }
 
 struct ringback {
@@ -622,7 +621,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 	}
 
-
 	if (caller_channel) {		/* ringback is only useful when there is an originator */
 		ringback_data = NULL;
 
@@ -690,8 +688,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	if (!cid_num_override) {
 		cid_num_override = switch_event_get_header(var_event, "origination_caller_id_number");
 	}
-
-
 
 	for (try = 0; try < retries; try++) {
 		switch_safe_free(loop_data);
@@ -812,9 +808,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				peer_sessions[i] = NULL;
 				new_session = NULL;
 				
-				
-
-
 				if (and_argc > 1 || or_argc > 1) {
 					myflags |= SOF_FORKED_DIAL;
 				} else if (var_event) {
@@ -879,14 +872,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_channel_add_state_handler(peer_channels[i], table);
 				}
 
-
 				if ((flags & SOF_NOBLOCK) && peer_sessions[i]) {
 					status = SWITCH_STATUS_SUCCESS;
 					*bleg = peer_sessions[i];
 					*cause = SWITCH_CAUSE_SUCCESS;
 					goto outer_for;
 				}
-
 				
 				if (switch_core_session_running(peer_sessions[i])) {
 					if (!(flags & SOF_NOBLOCK)) {
@@ -895,8 +886,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				} else {
 					switch_core_session_thread_launch(peer_sessions[i]);
 				}
-
-
 			}			
 
 			switch_timestamp(&start);

@@ -33,6 +33,7 @@
  * switch_ivr.c -- IVR Library
  *
  */
+
 #include <switch.h>
 #include <switch_ivr.h>
 #include "stfu.h"
@@ -77,7 +78,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 
 	return status;
 }
-
 
 static void *SWITCH_THREAD_FUNC unicast_thread_run(switch_thread_t *thread, void *obj)
 {
@@ -596,7 +596,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 	return status;
 }
 
-
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_session_t *session,
 																char *buf,
 																switch_size_t buflen,
@@ -644,8 +643,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 	if (eff_timeout) {
 		digit_started = switch_timestamp_now();
 	}
-
-
 
 	while (switch_channel_ready(channel)) {
 		switch_frame_t *read_frame;
@@ -708,7 +705,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 
 	return status;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session)
 {
@@ -822,7 +818,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 
 	return status;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_media_flag_t flags)
 {

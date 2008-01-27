@@ -97,7 +97,6 @@ SWITCH_DECLARE(void) switch_hash_this(switch_hash_index_t * hi, const void **key
 	apr_hash_this(hi, key, klen, val);
 }
 
-
 SWITCH_DECLARE(switch_memory_pool_t *) switch_hash_pool_get(switch_hash_t * ht)
 {
 	return apr_hash_pool_get(ht);
@@ -108,7 +107,6 @@ SWITCH_DECLARE(unsigned int) switch_hashfunc_default(const char *key, switch_ssi
 {
 	return apr_hashfunc_default(key, klen);
 }
-
 
 /* DSO functions */
 
@@ -131,7 +129,6 @@ SWITCH_DECLARE(const char *) switch_dso_error(switch_dso_handle_t * dso, char *b
 {
 	return apr_dso_error(dso, buf, bufsize);
 }
-
 
 /* string functions */
 
@@ -272,7 +269,6 @@ SWITCH_DECLARE(switch_time_t) switch_time_make(switch_time_t sec, int32_t usec)
 {
 	return ((switch_time_t) (sec) * APR_USEC_PER_SEC + (switch_time_t) (usec));
 }
-
 
 /* Thread condition locks */
 
@@ -438,7 +434,6 @@ SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename, switch_
 
 /* #define SWITCH_FPROT_OS_DEFAULT  0x0FFF /\**< use OS's default permissions *\/ */
 
-
 /**
  * Create a new directory on the file system.
  * @param path the path for the directory to be created. (use / on all systems)
@@ -464,7 +459,6 @@ SWITCH_DECLARE(switch_status_t) switch_dir_make_recursive(const char *path,
 {
 	return apr_dir_make_recursive(path, perm, pool);
 }
-
 
 struct switch_dir {
 	apr_dir_t *dir_handle;
@@ -531,9 +525,7 @@ SWITCH_DECLARE(const char *) switch_dir_next_file(switch_dir_t *thedir, char *bu
 	return fname;
 }
 
-
 /* thread stubs */
-
 
 SWITCH_DECLARE(switch_status_t) switch_threadattr_create(switch_threadattr_t ** new_attr, switch_memory_pool_t *pool)
 {
@@ -592,7 +584,6 @@ SWITCH_DECLARE(switch_status_t) switch_socket_connect(switch_socket_t * sock, sw
 {
 	return apr_socket_connect(sock, sa);
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_socket_send(switch_socket_t * sock, const char *buf, switch_size_t *len)
 {
@@ -742,14 +733,9 @@ SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t ** p
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
-
-
-
 /* apr-util stubs */
 
 /* UUID Handling (apr-util) */
-
 
 SWITCH_DECLARE(void) switch_uuid_format(char *buffer, const switch_uuid_t * uuid)
 {
@@ -765,7 +751,6 @@ SWITCH_DECLARE(switch_status_t) switch_uuid_parse(switch_uuid_t * uuid, const ch
 {
 	return apr_uuid_parse((apr_uuid_t *) uuid, uuid_str);
 }
-
 
 /* FIFO queues (apr-util) */
 
@@ -852,7 +837,6 @@ SWITCH_DECLARE(switch_status_t) switch_match_glob(const char *pattern, switch_ar
 {
 	return apr_match_glob(pattern, (apr_array_header_t **)result, p);
 }
-
 													
 /* For Emacs:
  * Local Variables:
