@@ -33,7 +33,6 @@
 #include <switch.h>
 #include <pcre.h>
 
- 
 SWITCH_DECLARE(switch_regex_t *) switch_regex_compile(const char *pattern,
 														 int options, const char **errorptr, int *erroroffset, 
 const unsigned char *tables) 
@@ -42,7 +41,6 @@ const unsigned char *tables)
 return pcre_compile(pattern, options, errorptr, erroroffset, tables);
 
 }
-
 
 SWITCH_DECLARE(int) switch_regex_copy_substring(const char *subject, int *ovector, int stringcount, int stringnumber, char *buffer, int size)
 {

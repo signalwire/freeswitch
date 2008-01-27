@@ -29,6 +29,7 @@
  * softtimer.c -- Software Timer Module
  *
  */
+
 #include <switch.h>
 #include <stdio.h>
 #include "private/switch_core_pvt.h"
@@ -38,7 +39,6 @@
 #endif
 
 #define MAX_TICK UINT32_MAX - 1024
-
 
 static switch_memory_pool_t *module_pool = NULL;
 

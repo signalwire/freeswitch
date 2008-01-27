@@ -30,6 +30,7 @@
  * switch_utils.c -- Compatability and Helper Code
  *
  */
+
 #include <switch.h>
 #ifndef WIN32
 #include <arpa/inet.h>

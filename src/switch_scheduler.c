@@ -29,8 +29,8 @@
  * switch_scheduler.c -- Switch Scheduler 
  *
  */
-#include <switch.h>
 
+#include <switch.h>
 
 struct switch_scheduler_task_container {
 	switch_scheduler_task_t task;
@@ -44,7 +44,6 @@ struct switch_scheduler_task_container {
 	struct switch_scheduler_task_container *next;
 };
 typedef struct switch_scheduler_task_container switch_scheduler_task_container_t;
-
 
 static struct {
 	switch_scheduler_task_container_t *task_list;

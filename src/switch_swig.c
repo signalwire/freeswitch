@@ -34,8 +34,6 @@
 #pragma warning (disable:1418)
 #endif
 
-
-
 #ifdef _MSC_VER
 #include <php.h>
 #pragma comment(lib, PHP_LIB)

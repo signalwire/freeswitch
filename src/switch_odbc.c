@@ -28,6 +28,7 @@
  * switch_odbc.c -- ODBC
  *
  */
+
 #include <switch.h>
 #include <switch_odbc.h>
 

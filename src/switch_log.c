@@ -29,9 +29,9 @@
  * switch_log.c -- Logging
  *
  */
+
 #include <switch.h>
 #include "private/switch_core_pvt.h"
-
 
 static const char *LEVELS[] = {
 	"CONSOLE",

@@ -32,6 +32,7 @@
  * switch_ivr_play_say.c -- IVR Library (functions to play or say audio)
  *
  */
+
 #include <switch.h>
 
 static char *SAY_METHOD_NAMES[] = {
@@ -64,7 +65,6 @@ static char *SAY_TYPE_NAMES[] = {
 	NULL
 };
 
-
 static switch_say_method_t get_say_method_by_name(char *name)
 {
 	int x = 0;
@@ -88,7 +88,6 @@ static switch_say_type_t get_say_type_by_name(char *name)
 
 	return (switch_say_type_t) x;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *session, const char *macro_name, const char *data, const char *lang,
 														switch_input_args_t *args)
