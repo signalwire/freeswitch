@@ -71,7 +71,6 @@ static switch_status_t switch_h26x_decode(switch_codec_t *codec,
 
 static switch_status_t switch_h26x_destroy(switch_codec_t *codec)
 {
-	
 	return SWITCH_STATUS_SUCCESS;
 }
 

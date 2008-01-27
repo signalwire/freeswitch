@@ -39,7 +39,6 @@ SWITCH_MODULE_DEFINITION(mod_g726, mod_g726_load, NULL, NULL);
 typedef int (*encoder_t) (int, int, g726_state *);
 typedef int (*decoder_t) (int, int, g726_state *);
 
-
 typedef struct {
 	g726_state context;
 	switch_byte_t bits_per_frame;
@@ -101,14 +100,11 @@ static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag
 	}
 }
 
-
 static switch_status_t switch_g726_destroy(switch_codec_t *codec)
 {
 	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
-
-
 
 static switch_status_t switch_g726_encode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
@@ -117,11 +113,9 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 										  uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
 										  unsigned int *flag)
 {
-
 	g726_handle_t *handle = codec->private_info;
 	g726_state *context = &handle->context;
 	uint32_t len = codec->implementation->bytes_per_frame;
-	//uint32_t elen = codec->implementation->encoded_bytes_per_frame;
 
 	if (!context) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
@@ -155,8 +149,6 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
-
 static switch_status_t switch_g726_decode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
 										  void *encoded_data,
@@ -164,7 +156,6 @@ static switch_status_t switch_g726_decode(switch_codec_t *codec,
 										  uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
 										  unsigned int *flag)
 {
-
 	g726_handle_t *handle = codec->private_info;
 	g726_state *context = &handle->context;
 	int16_t *ddp = decoded_data;
@@ -195,12 +186,8 @@ static switch_status_t switch_g726_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-
 	return SWITCH_STATUS_SUCCESS;
-
 }
-
-
 
 /* Registration */
 
@@ -224,7 +211,6 @@ static switch_codec_implementation_t g726_16k_implementation = {
 	/*.decode */ switch_g726_decode,
 	/*.destroy */ switch_g726_destroy,
 };
-
 
 static switch_codec_implementation_t g726_24k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
@@ -289,8 +275,6 @@ static switch_codec_implementation_t g726_40k_implementation = {
 	/*.destroy */ switch_g726_destroy,
 };
 
-
-
 static switch_codec_implementation_t aal2_g726_16k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 124,
@@ -311,7 +295,6 @@ static switch_codec_implementation_t aal2_g726_16k_implementation = {
 	/*.decode */ switch_g726_decode,
 	/*.destroy */ switch_g726_destroy,
 };
-
 
 static switch_codec_implementation_t aal2_g726_24k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,

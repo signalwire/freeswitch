@@ -51,7 +51,6 @@ static switch_status_t switch_ilbc_init(switch_codec_t *codec, switch_codec_flag
 	int encoding, decoding;
 	uint8_t ms = (uint8_t) (codec->implementation->microseconds_per_frame / 1000);
 
-
 	if (ms != 20 && ms != 30) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid speed! (I should never happen)\n");
 		return SWITCH_STATUS_FALSE;

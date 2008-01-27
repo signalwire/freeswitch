@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  *
  *
- * mod_rawaudio.c -- Raw Signed Linear Codec
+ * mod_l16.c -- Raw Signed Linear Codec
  *
  */
 #include <switch.h>

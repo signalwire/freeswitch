@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  * Michael Jerris <mike@jerris.com>
  *
- * mod_codec_gsm.c -- gsm Codec Module
+ * mod_gsm.c -- gsm Codec Module
  *
  */
 #include "switch.h"

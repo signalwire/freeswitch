@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  *
  *
- * mod_g711codec.c -- G711 Ulaw/Alaw Codec Module
+ * mod_g711.c -- G711 Ulaw/Alaw Codec Module
  *
  */
 #include <switch.h>

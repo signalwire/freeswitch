@@ -78,7 +78,6 @@ static switch_status_t switch_g729_init(switch_codec_t *codec, switch_codec_flag
 		codec->private_info = context;
 
 		return SWITCH_STATUS_SUCCESS;
-
 	}
 #endif
 }
@@ -151,7 +150,6 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
-
 	}
 
 	if (encoded_data_len % 2 == 0) {
@@ -192,11 +190,8 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 			}
 
 			if (new_len <= *decoded_data_len) {
-
 				*decoded_data_len = new_len;
-
 			} else {
-
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow!!!\n");
 				return SWITCH_STATUS_FALSE;
 

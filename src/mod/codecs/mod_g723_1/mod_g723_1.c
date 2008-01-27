@@ -28,7 +28,7 @@
  *
  * The g723.1 codec itself is not distributed with this module.
  *
- * mod_g723.c -- G723.1 Codec Module
+ * mod_g723_1.c -- G723.1 Codec Module
  *
  */
 #include "switch.h"
@@ -96,7 +96,6 @@ static switch_status_t switch_g723_init(switch_codec_t *codec, switch_codec_flag
 	}
 #endif
 }
-
 
 static switch_status_t switch_g723_destroy(switch_codec_t *codec)
 {
