@@ -69,7 +69,6 @@ typedef struct route enum_route_t;
 
 static enum dns_class qcls = DNS_C_IN;
 
-
 static struct {
 	char *root;
 	char *isn_root;
@@ -215,7 +214,6 @@ static void add_result(enum_query_t * q, int order, int preference, char *servic
 {
 	enum_record_t *new_result, *rp, *prev = NULL;
 
-
 	if (!(new_result = malloc(sizeof(*new_result)))) {
 		return;
 	}
@@ -226,7 +224,6 @@ static void add_result(enum_query_t * q, int order, int preference, char *servic
 	new_result->preference = preference;
 	new_result->service = strdup(service);
 	new_result->route = strdup(route);
-
 
 	if (!q->results) {
 		q->results = new_result;
@@ -646,7 +643,6 @@ SWITCH_STANDARD_APP(enum_app_function)
 
 SWITCH_STANDARD_API(enum_function)
 {
-
 	int argc = 0;
 	char *argv[4] = { 0 };
 	enum_record_t *results, *rp;
