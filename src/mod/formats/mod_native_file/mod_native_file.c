@@ -69,8 +69,6 @@ static switch_status_t native_file_file_open(switch_file_handle_t *handle, const
 		return SWITCH_STATUS_GENERR;
 	}
 
-
-
 	handle->samples = 0;
 	handle->samplerate = 8000;
 	handle->channels = 1;
@@ -81,7 +79,6 @@ static switch_status_t native_file_file_open(switch_file_handle_t *handle, const
 	handle->private_info = context;
 	handle->flags |= SWITCH_FILE_NATIVE;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s] %dhz\n", path, handle->samplerate);
-
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -105,7 +102,6 @@ static switch_status_t native_file_file_seek(switch_file_handle_t *handle, unsig
 	switch_file_seek(context->fd, whence, &samples);
 
 	return SWITCH_STATUS_FALSE;
-
 }
 
 static switch_status_t native_file_file_read(switch_file_handle_t *handle, void *data, size_t *len)
@@ -137,7 +133,6 @@ static switch_status_t native_file_file_get_string(switch_file_handle_t *handle,
 /* Registration */
 
 static char *supported_formats[SWITCH_MAX_CODECS] = { 0 };
-
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_native_file_load)
 {

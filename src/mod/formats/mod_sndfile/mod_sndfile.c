@@ -71,7 +71,6 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	}
 	ext++;
 
-
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_READ)) {
 		mode += SFM_READ;
 	}
@@ -177,13 +176,11 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	handle->seekable = context->sfinfo.seekable;
 	handle->speed = 0;
 	handle->private_info = context;
-		
 
  end:
 	
 	switch_safe_free(alt_path);
 	switch_safe_free(ldup);
-	
 
 	return status;
 }
@@ -210,7 +207,6 @@ static switch_status_t sndfile_file_seek(switch_file_handle_t *handle, unsigned 
 	handle->pos = *cur_sample;
 
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 static switch_status_t sndfile_file_read(switch_file_handle_t *handle, void *data, size_t *len)
@@ -302,7 +298,6 @@ static switch_status_t setup_formats(void)
 		return SWITCH_STATUS_FALSE;
 	}
 
-
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "\nLibSndFile Version : %s Supported Formats\n", buffer);
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "================================================================================\n");
 	sf_command(NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
@@ -355,13 +350,10 @@ static switch_status_t setup_formats(void)
 			   }
 			 */
 		}
-
 	}
 	for (m = 0; m < exlen; m++) {
 		supported_formats[len++] = extras[m];
 	}
-
-
 
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_NOTICE, "================================================================================\n");
 

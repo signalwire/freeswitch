@@ -70,7 +70,6 @@ struct shout_context {
 
 typedef struct shout_context shout_context_t;
 
-
 static size_t decode_fd(shout_context_t * context, void *data, size_t bytes);
 
 static inline void free_context(shout_context_t * context)
@@ -127,7 +126,6 @@ static inline void free_context(shout_context_t * context)
 		}
 	}
 }
-
 
 static void log_error(char const *fmt, va_list ap)
 {
@@ -287,7 +285,6 @@ static size_t decode_fd(shout_context_t * context, void *data, size_t bytes)
 
 		} while (decode_status != MP3_NEED_MORE);
 
-
 		if (context->audio_buffer) {
 			switch_buffer_write(context->audio_buffer, context->decode_buf, usedlen);
 		} else {
@@ -311,7 +308,6 @@ static size_t decode_fd(shout_context_t * context, void *data, size_t bytes)
 	context->err++;
 	switch_mutex_unlock(context->audio_mutex);
 	return 0;
-
 }
 
 #define error_check() if (context->err) goto error;
@@ -424,7 +420,6 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	context->err++;
 	switch_mutex_unlock(context->audio_mutex);
 	return 0;
-
 }
 
 
@@ -804,7 +799,6 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
 	int16_t *audio = data;
 	int nsamples = *len;
 
-
 	if (context->shout && !context->shout_init) {
 		context->shout_init++;
 		if (shout_open(context->shout) != SHOUTERR_SUCCESS) {
@@ -941,7 +935,6 @@ static switch_status_t shout_file_get_string(switch_file_handle_t *handle, switc
 	return SWITCH_STATUS_FALSE;
 }
 
-
 static switch_bool_t telecast_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
     switch_buffer_t *buffer = (switch_buffer_t *) user_data;
@@ -993,7 +986,6 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
     char title_aft[128*3] = "";
     char *mp3, *m3u;
 
-
     /*
       0  uuid  VARCHAR(255),
       1  created  VARCHAR(255),
@@ -1011,8 +1003,6 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
       13 write_rate  VARCHAR(255)
     */
     
-
-
     holder->stream->write_function(holder->stream, 
                                    "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>", 
                                    argv[1], argv[4], argv[5], argv[7], argv[8] ? argv[8] : "N/A", argv[9] ? argv[9] : "N/A", argv[10], argv[11]);
@@ -1031,7 +1021,6 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
     return 0;
 }
 
-
 void do_telecast(switch_stream_handle_t *stream)
 {
     char *path_info = switch_event_get_header(stream->event, "http-path-info");
@@ -1047,7 +1036,6 @@ void do_telecast(switch_stream_handle_t *stream)
         char *ref = switch_event_get_header(stream->event, "http-referer");
         stream->write_function(stream,"Content-type: text/html\r\n\r\n<h2>Not Found!</h2>\n"
                                "<META http-equiv=\"refresh\" content=\"1;URL=%s\">",  ref);
-
     } else {
         switch_media_bug_t *bug = NULL;
         switch_buffer_t *buffer;
@@ -1056,7 +1044,6 @@ void do_telecast(switch_stream_handle_t *stream)
         lame_global_flags *gfp = NULL;
         switch_codec_t *read_codec;
         
-
         if (!(gfp = lame_init())) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate lame\n");
             goto end;
@@ -1108,7 +1095,6 @@ void do_telecast(switch_stream_handle_t *stream)
                 memset(buf, 0, bytes);
             }
             
-
             if ((rlen = lame_encode_buffer(gfp, (void *)buf, NULL, bytes / 2, mp3buf, sizeof(mp3buf))) < 0) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
                 goto end;
@@ -1121,7 +1107,6 @@ void do_telecast(switch_stream_handle_t *stream)
                 }
             }
         }
-
 
     end:
 
@@ -1142,9 +1127,7 @@ void do_telecast(switch_stream_handle_t *stream)
 
         switch_core_session_rwunlock(tsession);
     }
-
 }
-
 
 void do_broadcast(switch_stream_handle_t *stream)
 {
@@ -1204,7 +1187,6 @@ void do_broadcast(switch_stream_handle_t *stream)
                            "Content-Disposition: inline; filename=\"%s.mp3\"\r\n\r\n", 
                            path_info + 7);
 
-
     if (fh.interval) {
         interval = fh.interval * 1000;
     }
@@ -1233,10 +1215,7 @@ void do_broadcast(switch_stream_handle_t *stream)
                 goto end;
             }
         }
-
-
     }
-
 
     while ((rlen = lame_encode_flush(gfp, mp3buf, sizeof(mp3buf))) > 0) {
         if (stream->raw_write_function(stream, mp3buf, rlen)) {
@@ -1244,7 +1223,6 @@ void do_broadcast(switch_stream_handle_t *stream)
             goto end;
         }
     }
-
 
  end:
 
@@ -1257,10 +1235,8 @@ void do_broadcast(switch_stream_handle_t *stream)
     if (gfp) {
         lame_close(gfp);
         gfp = NULL;
-    }
-            
+    }            
 }
-
 
 void do_index(switch_stream_handle_t *stream)
 {
@@ -1275,8 +1251,6 @@ void do_index(switch_stream_handle_t *stream)
     holder.stream = stream;
     
     stream->write_function(stream, "Content-type: text/html\r\n\r\n");
-
-
     stream->write_function(stream,
                            "<table align=center border=1 cellpadding=6 cellspacing=0>"
                            "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n",
@@ -1295,13 +1269,11 @@ void do_index(switch_stream_handle_t *stream)
 }
 
 #define TELECAST_SYNTAX ""
-
 SWITCH_STANDARD_API(telecast_api_function)
 {
     char *host = NULL, *port = NULL, *uri = NULL, *path_info = NULL;
 
-    
-	if (session) {
+   	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1369,8 +1341,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
     file_interface->file_set_string = shout_file_set_string;
     file_interface->file_get_string = shout_file_get_string;
 
-
-
 	/* connect my internal structure to the blank pointer passed to me */
 	//*module_interface = &shout_module_interface;
 
@@ -1382,7 +1352,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_shout_shutdown)
 {

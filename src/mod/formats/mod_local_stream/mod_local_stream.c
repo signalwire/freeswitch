@@ -56,6 +56,7 @@ struct local_stream_context {
 	int line;
 	struct local_stream_context *next;
 };
+
 typedef struct local_stream_context local_stream_context_t;
 
 struct local_stream_source {
@@ -74,6 +75,7 @@ struct local_stream_source {
 	switch_memory_pool_t *pool;
 	int shuffle;
 };
+
 typedef struct local_stream_source local_stream_source_t;
 
 static unsigned int S = 0;
