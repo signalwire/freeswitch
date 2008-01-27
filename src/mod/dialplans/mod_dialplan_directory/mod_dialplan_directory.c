@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  *
  *
- * mod_dialplan_demo.c -- Example Dialplan Module
+ * mod_dialplan_directory.c -- Example Dialplan Module
  *
  */
 #include <switch.h>

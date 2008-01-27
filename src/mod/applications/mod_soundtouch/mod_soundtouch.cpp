@@ -25,7 +25,7 @@
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
  *
- * mod_soundtouch.c -- Example of writeable media bugs
+ * mod_soundtouch.cpp -- Example of writeable media bugs
  *
  */
 

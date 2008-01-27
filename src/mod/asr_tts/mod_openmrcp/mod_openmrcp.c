@@ -26,6 +26,8 @@
  * Traun Leyden <tleyden@branchcut.com>
  * Arsen Chaloyan <achaloyan@yahoo.com>
  *
+ * mod_openmrcp.c -- OpenMRCP Interface
+ *
  * Module which acts as an MRCP client to an MRCP speech recognition
  * server.  In other words it bridges freeswitch to an external speech
  * recognition system.  Documentation on how to install and configure

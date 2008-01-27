@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  *
  *
- * mod_lumenvox.c -- Lumenvox Interface
+ * mod_lumenvox.cpp -- Lumenvox Interface
  * 
  *
  */
