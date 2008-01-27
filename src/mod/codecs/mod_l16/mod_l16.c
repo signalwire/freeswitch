@@ -55,9 +55,9 @@ static switch_status_t switch_raw_encode(switch_codec_t *codec,
 										 uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
 										 unsigned int *flag)
 {
-
 	/* NOOP indicates that the audio in is already the same as the audio out, so no conversion was necessary. */
-	if (codec && other_codec && codec->implementation && other_codec->implementation && codec->implementation->actual_samples_per_second != other_codec->implementation->actual_samples_per_second) {
+	if (codec && other_codec && codec->implementation && other_codec->implementation && 
+		codec->implementation->actual_samples_per_second != other_codec->implementation->actual_samples_per_second) {
 		memcpy(encoded_data, decoded_data, decoded_data_len);
 		*encoded_data_len = decoded_data_len;
 		return SWITCH_STATUS_RESAMPLE;
@@ -72,7 +72,8 @@ static switch_status_t switch_raw_decode(switch_codec_t *codec,
 										 uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
 										 unsigned int *flag)
 {
-	if (codec && other_codec && codec->implementation && other_codec->implementation && codec->implementation->actual_samples_per_second != other_codec->implementation->actual_samples_per_second) {
+	if (codec && other_codec && codec->implementation && other_codec->implementation &&
+		codec->implementation->actual_samples_per_second != other_codec->implementation->actual_samples_per_second) {
 		memcpy(decoded_data, encoded_data, encoded_data_len);
 		*decoded_data_len = encoded_data_len;
 		return SWITCH_STATUS_RESAMPLE;
@@ -80,10 +81,8 @@ static switch_status_t switch_raw_decode(switch_codec_t *codec,
 	return SWITCH_STATUS_NOOP;
 }
 
-
 static switch_status_t switch_raw_destroy(switch_codec_t *codec)
 {
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -106,7 +105,7 @@ static switch_codec_implementation_t raw_32k_60ms_implementation = {
 	/*.encode = */ switch_raw_encode,
 	/*.decode = */ switch_raw_decode,
 	/*.destroy = */ switch_raw_destroy
-		/*.next = */
+	/*.next = */
 };
 
 static switch_codec_implementation_t raw_32k_30ms_implementation = {
@@ -163,8 +162,8 @@ static switch_codec_implementation_t raw_32k_10ms_implementation = {
 	/*.bits_per_second = */ 512000,
 	/*.microseconds_per_frame = */ 10000,
 	/*.samples_per_frame = */ 320,
-	/*.bytes_per_frame = */ 960,
-	/*.encoded_bytes_per_frame = */ 960,
+	/*.bytes_per_frame = */ 640,
+	/*.encoded_bytes_per_frame = */ 640,
 	/*.number_of_channels = */ 1,
 	/*.pref_frames_per_packet = */ 1,
 	/*.max_frames_per_packet = */ 1,
@@ -309,7 +308,6 @@ static switch_codec_implementation_t raw_16k_10ms_implementation = {
 
 ///////////////////////////////
 
-
 static switch_codec_implementation_t raw_8k_120ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 10,
@@ -331,7 +329,6 @@ static switch_codec_implementation_t raw_8k_120ms_implementation = {
 	/*.destroy */ switch_raw_destroy,
 	/*.next */ &raw_16k_10ms_implementation
 };
-
 
 static switch_codec_implementation_t raw_8k_60ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
@@ -376,6 +373,7 @@ static switch_codec_implementation_t raw_8k_30ms_implementation = {
 	/*.destroy */ switch_raw_destroy,
 	/*.next */ &raw_8k_60ms_implementation
 };
+
 static switch_codec_implementation_t raw_8k_20ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 10,
@@ -397,8 +395,6 @@ static switch_codec_implementation_t raw_8k_20ms_implementation = {
 	/*.destroy = */ switch_raw_destroy,
 	/*.next */ &raw_8k_30ms_implementation
 };
-
-
 
 static switch_codec_implementation_t raw_8k_10ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
