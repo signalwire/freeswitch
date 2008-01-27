@@ -98,8 +98,6 @@ SWITCH_DECLARE(uint32_t) switch_log_str2mask(const char *str)
 	return mask;
 }
 
-
-
 SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(const char *str)
 {
 	int x = 0;
@@ -307,7 +305,6 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 	fflush(handle);
 }
 
-
 SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool)
 {
 	switch_thread_t *thread;
@@ -359,7 +356,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void)
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:t
+ * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4
  * End:

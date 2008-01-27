@@ -298,7 +298,6 @@ SWITCH_DECLARE(void) switch_scheduler_task_thread_start(void)
 	switch_thread_create(&thread, thd_attr, switch_scheduler_task_thread, NULL, globals.memory_pool);
 }
 
-
 SWITCH_DECLARE(void) switch_scheduler_task_thread_stop(void)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping Task Thread\n");
@@ -319,7 +318,7 @@ SWITCH_DECLARE(void) switch_scheduler_task_thread_stop(void)
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:t
+ * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4
  * End:

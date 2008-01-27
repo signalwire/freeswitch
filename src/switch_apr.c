@@ -841,7 +841,7 @@ SWITCH_DECLARE(switch_status_t) switch_match_glob(const char *pattern, switch_ar
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:t
+ * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4
  * End:

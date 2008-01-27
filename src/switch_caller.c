@@ -304,7 +304,7 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:t
+ * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4
  * End:

@@ -301,7 +301,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:t
+ * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4
  * End:

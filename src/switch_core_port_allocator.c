@@ -200,7 +200,7 @@ SWITCH_DECLARE(void) switch_core_port_allocator_destroy(switch_core_port_allocat
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:t
+ * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4
  * End:

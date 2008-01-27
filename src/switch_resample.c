@@ -84,7 +84,6 @@ SWITCH_DECLARE(switch_status_t) switch_resample_create(switch_audio_resampler_t 
 #endif
 }
 
-
 SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resampler, float *src, int srclen, float *dst, uint32_t dstlen, int last)
 {
 #ifdef DISABLE_RESAMPLE
@@ -122,7 +121,6 @@ SWITCH_DECLARE(void) switch_resample_destroy(switch_audio_resampler_t **resample
 		*resampler = NULL;
 	}
 }
-
 
 SWITCH_DECLARE(switch_size_t) switch_float_to_short(float *f, short *s, switch_size_t len)
 {
@@ -238,9 +236,7 @@ SWITCH_DECLARE(uint32_t) switch_merge_sln(int16_t *data, uint32_t samples, int16
 	}
 
 	return x;
-
 }
-
 
 SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, int32_t vol)
 {
@@ -278,7 +274,7 @@ SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, i
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:t
+ * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4
  * End:

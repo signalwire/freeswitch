@@ -80,7 +80,6 @@ typedef struct {
 	char body[SWITCH_RTP_MAX_BUF_LEN];
 } rtp_msg_t;
 
-
 struct switch_rtp_vad_data {
 	switch_core_session_t *session;
 	switch_codec_t vad_codec;
@@ -102,7 +101,6 @@ struct switch_rtp_vad_data {
 	uint8_t scan_freq;
 	time_t next_scan;
 };
-
 
 struct switch_rtp_rfc2833_data {
 	switch_queue_t *dtmf_queue;
@@ -233,7 +231,6 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session)
  end:
 	WRITE_DEC(rtp_session);
 	
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -244,7 +241,6 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 	char username[33] = { 0 };
 	unsigned char buf[512] = { 0 };
 	switch_size_t cpylen = len;
-
 
 	READ_INC(rtp_session);
 	WRITE_INC(rtp_session);
@@ -394,7 +390,6 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(const char *ip)
 	switch_mutex_unlock(port_lock);
 	return port;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, const char **err)
 {
@@ -613,7 +608,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session,
 												  switch_payload_t payload,
@@ -923,7 +917,6 @@ SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp_t *rtp_session, switch_rtp
 	switch_clear_flag_locked(rtp_session, flags);
 }
 
-
 static void do_2833(switch_rtp_t *rtp_session)
 {
 	switch_frame_flag_t flags = 0;
@@ -947,7 +940,6 @@ static void do_2833(switch_rtp_t *rtp_session)
 		rtp_session->dtmf_data.out_digit_packet[2] = (unsigned char) (rtp_session->dtmf_data.out_digit_sub_sofar >> 8);
 		rtp_session->dtmf_data.out_digit_packet[3] = (unsigned char) rtp_session->dtmf_data.out_digit_sub_sofar;
 
-		
 		for (x = 0; x < loops; x++) {
 			switch_rtp_write_manual(rtp_session,
 									rtp_session->dtmf_data.out_digit_packet,
@@ -1009,7 +1001,6 @@ static void do_2833(switch_rtp_t *rtp_session)
 					rtp_session->dtmf_data.timestamp_dtmf = (uint32_t)(rtp_session->dtmf_data.timestamp_dtmf + offset);
 				}
 			}
-
 
 			switch_rtp_write_manual(rtp_session,
 									rtp_session->dtmf_data.out_digit_packet,
@@ -1090,7 +1081,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 
 			bytes = sbytes;
-
 		}
 
 		if (rtp_session->jb && bytes && rtp_session->recv_msg.header.pt == rtp_session->payload) {
@@ -1312,7 +1302,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
         } else {
             switch_yield(1000);
         }
-
 	}
 
 	*payload_type = (switch_payload_t) rtp_session->recv_msg.header.pt;
@@ -1347,7 +1336,6 @@ SWITCH_DECLARE(switch_size_t) switch_rtp_has_dtmf(switch_rtp_t *rtp_session)
 	return has;
 }
 
-
 SWITCH_DECLARE(switch_size_t) switch_rtp_dequeue_dtmf(switch_rtp_t *rtp_session, switch_dtmf_t *dtmf)
 {
 	switch_size_t bytes = 0;
@@ -1368,7 +1356,6 @@ SWITCH_DECLARE(switch_size_t) switch_rtp_dequeue_dtmf(switch_rtp_t *rtp_session,
 
 	return bytes;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833(switch_rtp_t *rtp_session, const switch_dtmf_t *dtmf)
 {
@@ -1392,10 +1379,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833(switch_rtp_t *rtp_sessi
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833_in(switch_rtp_t *rtp_session, const switch_dtmf_t *dtmf)
 {
-
 	switch_dtmf_t *rdigit;
 
 	if (!switch_rtp_ready(rtp_session)) {
@@ -1480,7 +1465,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_session,
 														 void **data, uint32_t * datalen, switch_payload_t *payload_type, switch_frame_flag_t *flags)
@@ -1738,9 +1722,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	WRITE_DEC(rtp_session);
 
 	return ret;
-
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_disable_vad(switch_rtp_t *rtp_session)
 {
@@ -1760,7 +1742,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_disable_vad(switch_rtp_t *rtp_session
 SWITCH_DECLARE(switch_status_t) switch_rtp_enable_vad(switch_rtp_t *rtp_session, switch_core_session_t *session, switch_codec_t *codec,
 													  switch_vad_flag_t flags)
 {
-
 	if (!switch_rtp_ready(rtp_session)) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1903,7 +1884,6 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 	WRITE_DEC(rtp_session);
 
 	return ret;
-
 }
 
 SWITCH_DECLARE(uint32_t) switch_rtp_get_ssrc(switch_rtp_t *rtp_session)
@@ -1924,7 +1904,7 @@ SWITCH_DECLARE(void *) switch_rtp_get_private(switch_rtp_t *rtp_session)
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:t
+ * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4
  * End:

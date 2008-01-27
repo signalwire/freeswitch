@@ -88,7 +88,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_directory_close(switch_directory_han
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:t
+ * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4
  * End:

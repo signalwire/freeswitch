@@ -113,8 +113,6 @@ SWITCH_DECLARE(void) switch_stun_random_string(char *buf, uint16_t len, char *se
 	}
 }
 
-
-
 SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t * buf, uint32_t len)
 {
 	switch_stun_packet_t *packet;
@@ -140,7 +138,6 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t * buf, u
 				switch_stun_ip_t *ip;
 				ip = (switch_stun_ip_t *) attr->value;
 				ip->port = ntohs(ip->port);
-
 			}
 			break;
 		}
@@ -363,14 +360,13 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 		*err = "Invalid Reply";
 	}
 
-
 	return SWITCH_STATUS_FALSE;
 }
 
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:t
+ * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4
  * End:

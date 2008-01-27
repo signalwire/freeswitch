@@ -80,7 +80,6 @@ typedef struct timer_matrix timer_matrix_t;
 
 static timer_matrix_t TIMER_MATRIX[MAX_ELEMENTS + 1];
 
-
 SWITCH_DECLARE(switch_time_t) switch_timestamp_now(void)
 {
 	return runtime.timestamp ? runtime.timestamp : switch_time_now();
@@ -129,8 +128,6 @@ SWITCH_DECLARE(void) switch_time_sync(void)
 	runtime.reference = time_now(runtime.offset);
 }
 
-
-
 SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 {
 
@@ -151,8 +148,6 @@ SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 
 
 }
-
-
 
 static switch_status_t timer_init(switch_timer_t *timer)
 {
@@ -184,13 +179,10 @@ static switch_status_t timer_init(switch_timer_t *timer)
 	return SWITCH_STATUS_MEMERR;
 }
 
-
 #define check_roll() if (private_info->roll < TIMER_MATRIX[timer->interval].roll) {\
 		private_info->roll++;\
 		private_info->reference = private_info->start = TIMER_MATRIX[timer->interval].tick;\
 	}\
-
-
 
 static switch_status_t timer_step(switch_timer_t *timer)
 {
@@ -214,7 +206,6 @@ static switch_status_t timer_step(switch_timer_t *timer)
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 static switch_status_t timer_next(switch_timer_t *timer)
 {
@@ -261,7 +252,6 @@ static switch_status_t timer_check(switch_timer_t *timer)
 	return status;
 }
 
-
 static switch_status_t timer_destroy(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
@@ -274,7 +264,6 @@ static switch_status_t timer_destroy(switch_timer_t *timer)
 	private_info->ready = 0;
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 {
@@ -380,7 +369,6 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	return SWITCH_STATUS_TERM;
 }
 
-
 SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 {
 	switch_timer_interface_t *timer_interface;
@@ -419,7 +407,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown)
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:t
+ * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4
  * End:

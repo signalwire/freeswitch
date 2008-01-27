@@ -150,7 +150,6 @@ void fs_channel_set_state(switch_core_session_t *session, char *state)
 	}
 }
 
-
 /*
   IVR Routines!  You can do IVR in PHP NOW!
 */
@@ -246,8 +245,6 @@ int fs_switch_ivr_originate(switch_core_session_t *session, switch_core_session_
 		switch_ivr_multi_threaded_bridge(session, peer_session, NULL, NULL, NULL);
         switch_core_session_rwunlock(peer_session);
 	}
-
-
 }
 
 int fs_switch_ivr_session_transfer(switch_core_session_t *session, char *extension, char *dialplan, char *context)
@@ -266,7 +263,6 @@ int fs_switch_ivr_speak_text(switch_core_session_t *session, char *tts_name, cha
 	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-
 /*
 
 *******  CHANNEL STUFF  *******
@@ -277,7 +273,6 @@ char *fs_switch_channel_get_variable(switch_channel_t *channel, char *varname)
 {
 	return switch_channel_get_variable(channel, varname);
 }
-
 
 int fs_switch_channel_set_variable(switch_channel_t *channel, char *varname, char *value)
 {

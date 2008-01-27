@@ -1441,7 +1441,7 @@ SWITCH_DECLARE(void *) switch_loadable_module_create_interface(switch_loadable_m
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:t
+ * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4
  * End:

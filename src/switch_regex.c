@@ -86,7 +86,6 @@ SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expressi
 		}
 	}
 
-
 	re = pcre_compile(expression,	/* the pattern */
 					  flags,		/* default options */
 					  &error,	/* for error message */
@@ -119,7 +118,6 @@ SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expressi
 	switch_safe_free(tmp);
 	return match_count;
 }
-
 
 SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_count, const char *data, const char *field_data,
 												 char *substituted, switch_size_t len, int *ovector)
@@ -204,13 +202,10 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match(const char *target, const cha
 	}
 }
 
-
-
-
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:t
+ * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4
  * End:

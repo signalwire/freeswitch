@@ -2988,7 +2988,7 @@ static ldl_status handle_response(ldl_handle_t * handle, char *id)
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:t
+ * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4
  * End:

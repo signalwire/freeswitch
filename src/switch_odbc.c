@@ -43,7 +43,6 @@ struct switch_odbc_handle {
 	BOOL is_firebird;
 };
 
-
 SWITCH_DECLARE(switch_odbc_handle_t *) switch_odbc_handle_new(char *dsn, char *username, char *password)
 {
 	switch_odbc_handle_t *new_handle;
@@ -175,7 +174,6 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connected to [%s]\n", handle->dsn);
 	handle->state = SWITCH_ODBC_STATE_CONNECTED;
 	return SWITCH_ODBC_SUCCESS;
-
 }
 
 static int db_is_up(switch_odbc_handle_t *handle)
@@ -226,7 +224,6 @@ static int db_is_up(switch_odbc_handle_t *handle)
 	err_str = switch_odbc_handle_get_error(handle, stmt);
 	recon = switch_odbc_handle_connect(handle);
 
-	
 	max_tries--;
 
 	if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
@@ -266,10 +263,8 @@ static int db_is_up(switch_odbc_handle_t *handle)
 		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 	}
 
-	return ret;
-	
+	return ret;	
 }
-
 
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_t *handle, char *sql, SQLHSTMT *rstmt)
 {
@@ -308,10 +303,8 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
     } else if (stmt) {
 		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 	}
-	return SWITCH_ODBC_FAIL;
-	
+	return SWITCH_ODBC_FAIL;	
 }
-
 
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odbc_handle_t *handle,
 																	  char *sql, switch_core_db_callback_func_t callback, void *pdata)
@@ -340,7 +333,6 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odb
 	if (result != SQL_SUCCESS && result != SQL_SUCCESS_WITH_INFO) {
 		goto error;
 	}
-
 
 	SQLNumResultCols(stmt, &c);
 	SQLRowCount(stmt, &m);
@@ -400,9 +392,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odb
 	}
 
 	return SWITCH_ODBC_FAIL;
-
 }
-
 
 SWITCH_DECLARE(void) switch_odbc_handle_destroy(switch_odbc_handle_t **handlep)
 {
@@ -450,7 +440,7 @@ SWITCH_DECLARE(char *) switch_odbc_handle_get_error(switch_odbc_handle_t *handle
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:t
+ * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4
  * End:

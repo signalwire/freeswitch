@@ -1135,7 +1135,7 @@ switch_status_t sofia_reg_add_gateway(char *key, sofia_gateway_t *gateway)
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:t
+ * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4
  * End:

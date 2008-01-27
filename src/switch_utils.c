@@ -64,7 +64,6 @@ SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char clos
 	return (char *)e;
 }
 
-
 SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size_t len)
 {
 	char c, *p;
@@ -133,7 +132,6 @@ SWITCH_DECLARE(char *) switch_amp_encode(char *s, char *buf, switch_size_t len)
 	return buf;
 }
 
-
 static const char switch_b64_table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 #define B64BUFFLEN 1024
 SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size_t ilen, unsigned char *out, switch_size_t olen)
@@ -166,7 +164,6 @@ SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size
 
     return SWITCH_STATUS_SUCCESS;
 }
-
 
 SWITCH_DECLARE(switch_size_t) switch_b64_decode(char *in, char *out, switch_size_t olen)
 {
@@ -207,7 +204,6 @@ SWITCH_DECLARE(switch_size_t) switch_b64_decode(char *in, char *out, switch_size
 
 	return ol;
 }
-
 
 static int write_buf(int fd, const char *buf)
 {
@@ -322,8 +318,6 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 
         }
 
-
-
         if (file) {
             switch_snprintf(buf, B64BUFFLEN, "\n\n--%s--\n.\n", bound);
             if (!write_buf(fd, buf))
@@ -377,8 +371,7 @@ SWITCH_DECLARE(switch_bool_t) switch_is_lan_addr(const char *ip)
 			strncmp(ip, "172.31.", 7) &&
 			strncmp(ip, "192.0.2.", 8) &&
 			strncmp(ip, "169.254.", 8)
-			) ? SWITCH_FALSE : SWITCH_TRUE;
-	
+			) ? SWITCH_FALSE : SWITCH_TRUE;	
 }
 
 SWITCH_DECLARE(switch_bool_t) switch_ast2regex(char *pat, char *rbuf, size_t len)
@@ -452,7 +445,6 @@ SWITCH_DECLARE(char *) switch_strip_spaces(const char *str)
 	return s;
 }
 
-
 SWITCH_DECLARE(char *) switch_separate_paren_args(char *str)
 {
 	char *e, *args;
@@ -497,7 +489,6 @@ SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str)
 	return r;
 }
 
-
 SWITCH_DECLARE(const char *) switch_stristr(const char *instr, const char *str)
 {
 /*
@@ -508,7 +499,6 @@ SWITCH_DECLARE(const char *) switch_stristr(const char *instr, const char *str)
 **
 ** Hereby donated to public domain.
 */
-
 	const char *pptr, *sptr, *start;
 
 	if (!str || !instr)
@@ -538,7 +528,6 @@ SWITCH_DECLARE(const char *) switch_stristr(const char *instr, const char *str)
 	}
 	return NULL;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int family)
 {
@@ -573,7 +562,6 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
 		base = "127.0.0.1";
 		break;
 	}
-
 
 #ifdef WIN32
 	tmp_socket = socket(family, SOCK_DGRAM, 0);
@@ -671,7 +659,6 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
 		break;
 	}
 
-
   doh:
 	if (tmp_socket > 0) {
 		close(tmp_socket);
@@ -680,9 +667,7 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
 #endif
 
 	return status;
-
 }
-
 
 SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in)
 {
@@ -733,7 +718,6 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in)
 	}
 	/* possible else with more patterns later */
 	return ret;
-
 }
 
 SWITCH_DECLARE(const char *) switch_priority_name(switch_priority_t priority)
@@ -1213,7 +1197,6 @@ SWITCH_DECLARE(const char *) switch_cut_path(const char *in)
 	}
 }
 
-
 SWITCH_DECLARE(switch_status_t) switch_string_match(const char *string, size_t string_len, const char *search, size_t search_len)
 {
 	size_t i;
@@ -1275,7 +1258,6 @@ SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t * poll, int ms)
 	return nsds;
 }
 
-
 SWITCH_DECLARE(size_t) switch_url_encode(const char *url, char *buf, size_t len)
 {
 	const char *p;
@@ -1328,11 +1310,10 @@ SWITCH_DECLARE(char *) switch_url_decode(char *s)
 	return s;
 }
 
-
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:t
+ * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4
  * End:

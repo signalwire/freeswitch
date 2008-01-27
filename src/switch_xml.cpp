@@ -111,7 +111,6 @@ struct xml_section_t {
 	uint32_t section;
 };
 
-
 static struct xml_section_t SECTIONS[] = {
 	{"result", SWITCH_XML_SECTION_RESULT},
 	{"config", SWITCH_XML_SECTION_CONFIG},
@@ -169,7 +168,6 @@ SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_searc
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(switch_xml_t node, const char *childname, const char *attrname, const char *value)
 {
@@ -976,7 +974,6 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
 					}
 				}
 			}
-
 		}
 
 		*wp++ = *rp++;
@@ -985,7 +982,6 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
 	*newlen = strlen(ebuf);
 
 	return ebuf;
-
 }
 
 static int preprocess_glob(const char *cwd, const char *pattern, int write_fd, int rlevel)
@@ -1203,7 +1199,6 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 		if(write(write_fd, bp, (unsigned) cur) != (int) cur) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write!\n");
 		}
-
 	}
 
 	close(read_fd);
@@ -1276,7 +1271,6 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 	switch_safe_free(new_file);
 	return xml;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 												  const char *tag_name,
@@ -1373,7 +1367,6 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name
 	return status;
 }
 
-
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 													   const char *user_name,
 													   const char *domain_name, 
@@ -1383,7 +1376,6 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 													   switch_xml_t *user,
 													   switch_event_t *params)
 {
-
 	switch_status_t status;
 	*root = NULL;
 	*user = NULL;
@@ -1432,7 +1424,6 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 
 	return SWITCH_STATUS_FALSE;
 }
-
 
 SWITCH_DECLARE(switch_xml_t) switch_xml_root(void)
 {
@@ -1491,7 +1482,6 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 	return errcnt == 0 ? switch_xml_root() : NULL;
 }
 
-
 SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, const char **err)
 {
 	switch_xml_t xml;
@@ -1538,7 +1528,6 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_x
 	return xml;
 
 }
-
 
 // Encodes ampersand sequences appending the results to *dst, reallocating *dst
 // if length excedes max. a is non-zero for attribute encoding. Returns *dst

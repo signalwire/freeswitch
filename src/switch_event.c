@@ -1345,7 +1345,7 @@ SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, co
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:t
+ * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4
  * End:
