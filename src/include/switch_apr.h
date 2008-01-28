@@ -792,8 +792,22 @@ SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename, switch_
 
 SWITCH_DECLARE(switch_status_t) switch_directory_exists(const char *dirname, switch_memory_pool_t *pool);
 
+/**
+* Create a new directory on the file system.
+* @param path the path for the directory to be created. (use / on all systems)
+* @param perm Permissions for the new direcoty.
+* @param pool the pool to use.
+*/
 SWITCH_DECLARE(switch_status_t) switch_dir_make(const char *path, switch_fileperms_t perm,
 												switch_memory_pool_t *pool);
+
+/** Creates a new directory on the file system, but behaves like
+* 'mkdir -p'. Creates intermediate directories as required. No error
+* will be reported if PATH already exists.
+* @param path the path for the directory to be created. (use / on all systems)
+* @param perm Permissions for the new direcoty.
+* @param pool the pool to use.
+*/
 SWITCH_DECLARE(switch_status_t) switch_dir_make_recursive(const char *path, switch_fileperms_t perm,
 														  switch_memory_pool_t *pool);
 

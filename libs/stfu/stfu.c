@@ -120,7 +120,7 @@ static int32_t stfu_n_measure_interval(stfu_queue_t *queue)
 				track[(d/10)]++;
 			}
 		}
-		
+
 		last = this;
 	}
 
@@ -131,7 +131,6 @@ static int32_t stfu_n_measure_interval(stfu_queue_t *queue)
 	}
 
 	return most * 10;
-	
 }
 
 static int16_t stfu_n_process(stfu_instance_t *i, stfu_queue_t *queue)
@@ -149,23 +148,22 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, void *data, size_
 	stfu_frame_t *frame;
 	size_t cplen = 0;
 
-
 	if (last || i->in_queue->array_len == i->in_queue->array_size) {
 		stfu_queue_t *other_queue;
-		
+
 		if (i->out_queue->wr_len < i->out_queue->array_len) {
 			return STFU_IT_FAILED;
 		}
-		
+
 		other_queue = i->in_queue;
 		i->in_queue = i->out_queue;
 		i->out_queue = other_queue;
-		
+
 		i->in_queue->array_len = 0;
 		i->out_queue->wr_len = 0;
 		i->out_queue->last_index = 0;
 		i->miss_count = 0;
-	
+
 		if (stfu_n_process(i, i->out_queue) < 0) {
 			return STFU_IT_FAILED;
 		}
@@ -177,7 +175,7 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, void *data, size_
 	if (last) {
 		return STFU_IM_DONE;
 	}
-	
+
 	index = i->in_queue->array_len++;
 	frame = &i->in_queue->array[index];
 
@@ -198,7 +196,6 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 	uint32_t index, index2;
 	uint32_t should_have = 0;
 	stfu_frame_t *frame = NULL, *rframe = NULL;
-	
 
 	if (((i->out_queue->wr_len == i->out_queue->array_len) || !i->out_queue->array_len)) {
 		return NULL;
@@ -216,7 +213,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 		}
 
 		frame = &i->out_queue->array[index];
-		
+
 		if (frame->ts != should_have) {
 			unsigned int tried = 0;
 			for (index2 = 0; index2 < i->out_queue->array_len; index2++) {
@@ -249,7 +246,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 				i->out_queue->wr_len = i->out_queue->array_size;
 				return NULL;
 			}
-			
+
 			i->last_ts = should_have;
 			rframe = &i->out_queue->int_frame;
 			rframe->dlen = i->out_queue->array[i->out_queue->last_index].dlen;
@@ -265,8 +262,8 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 			goto done;
 		}
 	}
-	
- done:
+
+done:
 
 	if (rframe) {
 		i->out_queue->wr_len++;
@@ -279,4 +276,13 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 	return rframe;
 }
 
-
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:nil
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

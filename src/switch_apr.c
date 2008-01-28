@@ -73,36 +73,6 @@ SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t *p)
 	apr_pool_clear(p);
 }
 
-#if 0
-/* Hash tables */
-
-SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(switch_memory_pool_t *p, switch_hash_t * ht)
-{
-	return apr_hash_first(p, ht);
-}
-
-SWITCH_DECLARE(switch_hash_index_t *) switch_hash_next(switch_hash_index_t * ht)
-{
-	return apr_hash_next(ht);
-}
-
-SWITCH_DECLARE(void) switch_hash_this(switch_hash_index_t * hi, const void **key, switch_ssize_t *klen, void **val)
-{
-	if (key) {
-		*key = NULL;
-	}
-	if (val) {
-		*val = NULL;
-	}
-	apr_hash_this(hi, key, klen, val);
-}
-
-SWITCH_DECLARE(switch_memory_pool_t *) switch_hash_pool_get(switch_hash_t * ht)
-{
-	return apr_hash_pool_get(ht);
-}
-#endif
-
 SWITCH_DECLARE(unsigned int) switch_hashfunc_default(const char *key, switch_ssize_t *klen)
 {
 	return apr_hashfunc_default(key, klen);
@@ -259,7 +229,6 @@ SWITCH_DECLARE(switch_status_t) switch_time_exp_gmt(switch_time_exp_t * result, 
 	return apr_time_exp_gmt((apr_time_exp_t *) result, input);
 }
 
-
 SWITCH_DECLARE(switch_status_t) switch_rfc822_date(char *date_str, switch_time_t t)
 {
 	return apr_rfc822_date(date_str, t);
@@ -352,11 +321,11 @@ SWITCH_DECLARE(switch_status_t) switch_file_write(switch_file_t * thefile, const
 SWITCH_DECLARE(int) switch_file_printf(switch_file_t *thefile, const char *format, ...)
 {
 	va_list ap;
-    int ret;
+	int ret;
 	va_start(ap, format);
 	ret = apr_file_printf(thefile, format, ap);
 	va_end(ap);
-    return ret;
+	return ret;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_file_mktemp(switch_file_t **thefile, char *templ, int32_t flags, switch_memory_pool_t *pool)
@@ -384,7 +353,7 @@ SWITCH_DECLARE(switch_status_t) switch_directory_exists(const char *dirname, swi
 	if ((status = apr_dir_open(&dir_handle, dirname, pool)) == APR_SUCCESS) {
 		apr_dir_close(dir_handle);
 	}
-	
+
 	if (our_pool) {
 		switch_core_destroy_memory_pool(&our_pool);
 	}
@@ -417,42 +386,12 @@ SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename, switch_
 	return status;
 }
 
-/* #define SWITCH_FPROT_USETID      0x8000 /\**< Set user id *\/ */
-/* #define SWITCH_FPROT_UREAD       0x0400 /\**< Read by user *\/ */
-/* #define SWITCH_FPROT_UWRITE      0x0200 /\**< Write by user *\/ */
-/* #define SWITCH_FPROT_UEXECUTE    0x0100 /\**< Execute by user *\/ */
-
-/* #define SWITCH_FPROT_GSETID      0x4000 /\**< Set group id *\/ */
-/* #define SWITCH_FPROT_GREAD       0x0040 /\**< Read by group *\/ */
-/* #define SWITCH_FPROT_GWRITE      0x0020 /\**< Write by group *\/ */
-/* #define SWITCH_FPROT_GEXECUTE    0x0010 /\**< Execute by group *\/ */
-
-/* #define SWITCH_FPROT_WSTICKY     0x2000 /\**< Sticky bit *\/ */
-/* #define SWITCH_FPROT_WREAD       0x0004 /\**< Read by others *\/ */
-/* #define SWITCH_FPROT_WWRITE      0x0002 /\**< Write by others *\/ */
-/* #define SWITCH_FPROT_WEXECUTE    0x0001 /\**< Execute by others *\/ */
-
-/* #define SWITCH_FPROT_OS_DEFAULT  0x0FFF /\**< use OS's default permissions *\/ */
-
-/**
- * Create a new directory on the file system.
- * @param path the path for the directory to be created. (use / on all systems)
- * @param perm Permissions for the new direcoty.
- * @param pool the pool to use.
- */
 SWITCH_DECLARE(switch_status_t) switch_dir_make(const char *path, switch_fileperms_t perm,
 												switch_memory_pool_t *pool)
 {
 	return apr_dir_make(path, perm, pool);
 }
 
-/** Creates a new directory on the file system, but behaves like
- * 'mkdir -p'. Creates intermediate directories as required. No error
- * will be reported if PATH already exists.
- * @param path the path for the directory to be created. (use / on all systems)
- * @param perm Permissions for the new direcoty.
- * @param pool the pool to use.
- */
 SWITCH_DECLARE(switch_status_t) switch_dir_make_recursive(const char *path,
 														  switch_fileperms_t perm,
 														  switch_memory_pool_t *pool)
@@ -499,7 +438,7 @@ SWITCH_DECLARE(const char *) switch_dir_next_file(switch_dir_t *thedir, char *bu
 	const char *fname = NULL;
 	apr_int32_t finfo_flags = APR_FINFO_DIRENT | APR_FINFO_TYPE | APR_FINFO_NAME;
 	const char *name;
-	
+
 	while (apr_dir_read(&(thedir->finfo), finfo_flags, thedir->dir_handle) == SWITCH_STATUS_SUCCESS) {
 
 		if (thedir->finfo.filetype != APR_REG) {
@@ -509,7 +448,7 @@ SWITCH_DECLARE(const char *) switch_dir_next_file(switch_dir_t *thedir, char *bu
 		if (!(name = thedir->finfo.fname)) {
 			name = thedir->finfo.name;
 		}
-		
+
 		if (!name) {
 			continue;
 		}
@@ -604,10 +543,9 @@ SWITCH_DECLARE(switch_status_t) switch_socket_send(switch_socket_t * sock, const
 		}
 		wrote += need;
 	}
-	
+
 	*len = wrote;
 	return status;
-
 }
 
 SWITCH_DECLARE(switch_status_t) switch_socket_sendto(switch_socket_t * sock, switch_sockaddr_t * where, int32_t flags, const char *buf, switch_size_t *len)
@@ -628,7 +566,6 @@ SWITCH_DECLARE(switch_status_t) switch_sockaddr_info_get(switch_sockaddr_t ** sa
 {
 	return apr_sockaddr_info_get(sa, hostname, family, port, flags, pool);
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_socket_opt_set(switch_socket_t * sock, int32_t opt, int32_t on)
 {
@@ -661,7 +598,6 @@ SWITCH_DECLARE(const char *) switch_get_addr(char *buf, switch_size_t len, switc
 	return get_addr(buf, len, &in->sa.sin.sin_addr);
 }
 
-
 SWITCH_DECLARE(uint16_t) switch_sockaddr_get_port(switch_sockaddr_t * sa)
 {
 	return sa->port;
@@ -679,12 +615,11 @@ SWITCH_DECLARE(switch_status_t) switch_socket_recvfrom(switch_sockaddr_t * from,
 	if ((r = apr_socket_recvfrom(from, sock, flags, buf, len)) == APR_SUCCESS) {
 		from->port = ntohs(from->sa.sin.sin_port);
 		/* from->ipaddr_ptr = &(from->sa.sin.sin_addr);
-		 * from->ipaddr_ptr = inet_ntoa(from->sa.sin.sin_addr);
-		 */
+		* from->ipaddr_ptr = inet_ntoa(from->sa.sin.sin_addr);
+		*/
 	}
 
 	return r;
-
 }
 
 /* poll stubs */
@@ -776,7 +711,7 @@ SWITCH_DECLARE(switch_status_t) switch_queue_push(switch_queue_t * queue, void *
 	do {
 		s = apr_queue_push(queue, data);
 	} while (s == APR_EINTR);
-	
+
 	return s;
 }
 
@@ -829,7 +764,6 @@ SWITCH_DECLARE(int) switch_vasprintf(char **ret, const char *fmt, va_list ap)
 
 	va_end(ap2);
 	return len;
-
 #endif
 }
 
