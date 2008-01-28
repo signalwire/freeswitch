@@ -312,6 +312,7 @@ SWITCH_END_EXTERN_C
 #define _Check_return_
 #define _Inout_
 #define _Inout_opt_
+#define _In_bytecount_(x)
 #endif
 
 
