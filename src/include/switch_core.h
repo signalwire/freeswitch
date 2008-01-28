@@ -895,7 +895,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(_In_ switch_hash_t * has
   \return SWITCH_STATUS_SUCCESS if the data is added
   \note the string key must be a constant or a dynamic string
 */
-SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_locked(switch_hash_t * hash, const char *key, const void *data, switch_mutex_t *mutex);
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_locked(_In_ switch_hash_t * hash, _In_z_ const char *key, _In_opt_ const void *data, _In_ switch_mutex_t *mutex);
 
 /*! 
   \brief Delete data from a hash based on desired key
@@ -903,7 +903,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_locked(switch_hash_t * h
   \param key the key from which to delete the data
   \return SWITCH_STATUS_SUCCESS if the data is deleted
 */
-SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(switch_hash_t * hash, const char *key);
+SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(_In_ switch_hash_t * hash, _In_z_ const char *key);
 
 /*! 
   \brief Delete data from a hash based on desired key
@@ -912,7 +912,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(switch_hash_t * hash, co
   \param mutex optional mutex to lock
   \return SWITCH_STATUS_SUCCESS if the data is deleted
 */
-SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(switch_hash_t * hash, const char *key, switch_mutex_t *mutex);
+SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(_In_ switch_hash_t * hash, _In_z_ const char *key, _In_ switch_mutex_t *mutex);
 
 /*! 
   \brief Retrieve data from a given hash
@@ -920,7 +920,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(switch_hash_t * h
   \param key the key to retrieve
   \return a pointer to the data held in the key
 */
-SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash_t * hash, const char *key);
+SWITCH_DECLARE(void *) switch_core_hash_find(_In_ switch_hash_t * hash, _In_z_ const char *key);
 
 
 /*! 
@@ -930,11 +930,11 @@ SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash_t * hash, const char *k
   \param mutex optional mutex to lock
   \return a pointer to the data held in the key
 */
-SWITCH_DECLARE(void *) switch_core_hash_find_locked(switch_hash_t * hash, const char *key, switch_mutex_t *mutex);
+SWITCH_DECLARE(void *) switch_core_hash_find_locked(_In_ switch_hash_t * hash, _In_z_ const char *key, _In_ switch_mutex_t *mutex);
 
-SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(char *depricate_me, switch_hash_t *hash);
-SWITCH_DECLARE(switch_hash_index_t *) switch_hash_next(switch_hash_index_t *hi);
-SWITCH_DECLARE(void) switch_hash_this(switch_hash_index_t *hi, const void **key, switch_ssize_t *klen, void **val);
+SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(char *depricate_me, _In_ switch_hash_t *hash);
+SWITCH_DECLARE(switch_hash_index_t *) switch_hash_next(_In_ switch_hash_index_t *hi);
+SWITCH_DECLARE(void) switch_hash_this(_In_ switch_hash_index_t *hi, _Out_opt_ptrdiff_cap_(klen) const void **key, _Out_opt_ switch_ssize_t *klen, _Out_ void **val);
 
 ///\}
 

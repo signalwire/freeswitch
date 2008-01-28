@@ -208,7 +208,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
     mydata = switch_core_session_strdup(session, data);
     switch_assert(mydata);
-    if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+    if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2 || !argv[0]) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "USAGE %s\n", FIFO_USAGE);
         return;
     }

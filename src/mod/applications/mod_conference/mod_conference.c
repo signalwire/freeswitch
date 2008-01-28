@@ -3578,7 +3578,7 @@ SWITCH_STANDARD_API(conf_api_main)
 	argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 	/* try to find a command to execute */
-	if (argc) {
+	if (argc && argv[0]) {
 		conference_obj_t *conference = NULL;
 
 		if ((conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, argv[0]))) {

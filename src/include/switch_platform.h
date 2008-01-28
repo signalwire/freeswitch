@@ -319,6 +319,8 @@ SWITCH_END_EXTERN_C
 #define _Post_z_
 #define _Out_cap_(x)
 #define _Out_z_cap_(x)
+#define _Out_ptrdiff_cap_(x)
+#define _Out_opt_ptrdiff_cap_(x)
 #endif
 
 
