@@ -281,6 +281,7 @@ installall: install
 
 update-clean: clean modwipe uninstall
 	cd libs/sofia-sip && $(MAKE) clean
+	cd libs/openzap && $(MAKE) clean
 
 sure: update-clean all
 
