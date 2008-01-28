@@ -618,6 +618,10 @@ SWITCH_DECLARE(switch_status_t) switch_socket_recvfrom(switch_sockaddr_t * from,
 		* from->ipaddr_ptr = inet_ntoa(from->sa.sin.sin_addr);
 		*/
 	}
+    
+    if (r == 35 ) {
+        r = SWITCH_STATUS_BREAK;
+    }
 
 	return r;
 }
