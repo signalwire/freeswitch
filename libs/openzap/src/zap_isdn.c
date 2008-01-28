@@ -144,7 +144,11 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 		case Q931mes_RELEASE:
 		case Q931mes_RELEASE_COMPLETE:
 			{
-				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+				if (zchan) {
+					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+				} else {
+					zap_log(ZAP_LOG_CRIT, "Received Release Complete with no matching channel %d\n", chan_id);
+				}
 			}
 			break;
 		case Q931mes_DISCONNECT:
@@ -157,17 +161,29 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 			break;
 		case Q931mes_ALERTING:
 			{
-				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
+				if (zchan) {
+					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
+				} else {
+					zap_log(ZAP_LOG_CRIT, "Received Alerting with no matching channel %d\n", chan_id);
+				}
 			}
 			break;
 		case Q931mes_PROGRESS:
 			{
-				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_PROGRESS);
+				if (zchan) {
+					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_PROGRESS);
+				} else {
+					zap_log(ZAP_LOG_CRIT, "Received Progress with no matching channel %d\n", chan_id);
+				}
 			}
 			break;
 		case Q931mes_CONNECT:
 			{
-				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_UP);
+				if (zchan) {
+					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_UP);
+				} else {
+					zap_log(ZAP_LOG_CRIT, "Received Connect with no matching channel %d\n", chan_id);
+				}
 			}
 			break;
 		case Q931mes_SETUP:
