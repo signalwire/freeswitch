@@ -284,18 +284,13 @@ static switch_status_t do_config()
 
 static switch_status_t hanguphook(switch_core_session_t *session)
 {
-    switch_channel_t *channel;
-	switch_channel_state_t state;
+    switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_state_t state = switch_channel_get_state(channel);
     const char *realm = NULL;
     const char *id = NULL;
     char *sql = NULL;
 
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
-
-	state = switch_channel_get_state(channel);
-
-    if (state == CS_HANGUP || state == CS_RING) {
+	if (state == CS_HANGUP || state == CS_RING) {
         id = switch_channel_get_variable(channel, "limit_id");
         realm = switch_channel_get_variable(channel, "limit_realm");
         sql = switch_mprintf("delete from limit_data where uuid='%q' and hostname='%q' and realm='%q'and id='%q';", 
@@ -406,16 +401,12 @@ SWITCH_STANDARD_API(db_api_function)
 
 SWITCH_STANDARD_APP(db_function)
 {
-    switch_channel_t *channel;
     int argc = 0;
     char *argv[4] = { 0 };
     char *mydata = NULL;
     char *sql = NULL;
 
-    channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
-    
-    if (!switch_strlen_zero(data)) {
+	if (!switch_strlen_zero(data)) {
         mydata = switch_core_session_strdup(session, data);
         argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0])));
     }
@@ -423,9 +414,8 @@ SWITCH_STANDARD_APP(db_function)
     if (argc < 4 || !argv[0]) {
         goto error;
     }
-    
-    
-    if (!strcasecmp(argv[0], "insert")) {
+
+	if (!strcasecmp(argv[0], "insert")) {
         sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
         switch_assert(sql);
         limit_execute_sql(sql, globals.mutex);
@@ -441,12 +431,8 @@ SWITCH_STANDARD_APP(db_function)
     switch_safe_free(sql);
     return;
 
-    
- error:
+error:
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: db %s\n", DB_USAGE);
-
-    
-
 }
 
 
@@ -536,16 +522,12 @@ SWITCH_STANDARD_API(group_api_function)
 
 SWITCH_STANDARD_APP(group_function)
 {
-    switch_channel_t *channel;
     int argc = 0;
     char *argv[3] = { 0 };
     char *mydata = NULL;
     char *sql;
 
-    channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
-
-    if (!switch_strlen_zero(data)) {
+	if (!switch_strlen_zero(data)) {
         mydata = switch_core_session_strdup(session, data);
         argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])));
     }
@@ -585,10 +567,7 @@ SWITCH_STANDARD_APP(limit_function)
     int max = 0, got = 0;
     char buf[80] = "";
     callback_t cbt = { 0 };
-    switch_channel_t *channel;
-
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+    switch_channel_t *channel = switch_core_session_get_channel(session);
 
     if (!switch_strlen_zero(data)) {
         mydata = switch_core_session_strdup(session, data);
@@ -600,12 +579,9 @@ SWITCH_STANDARD_APP(limit_function)
         return;
     }
 
+	switch_mutex_lock(globals.mutex);
 
-    switch_mutex_lock(globals.mutex);
-
-    
-    
-    realm = argv[0];
+	realm = argv[0];
     id = argv[1];
     max = atoi(argv[2]);
 
@@ -639,11 +615,8 @@ SWITCH_STANDARD_APP(limit_function)
     limit_execute_sql(sql, NULL);
     switch_safe_free(sql);
 
-
- done:
-
+done:
     switch_mutex_unlock(globals.mutex);
-
 }
 
 

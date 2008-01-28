@@ -111,10 +111,7 @@ SWITCH_STANDARD_APP(set_user_function)
 {
 	switch_xml_t x_domain, xml = NULL, x_user, x_param, x_params;	
 	char *user, *mailbox, *domain;
-	switch_channel_t *channel;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	if (switch_strlen_zero(data)) {
 		goto error;
@@ -164,28 +161,18 @@ SWITCH_STANDARD_APP(set_user_function)
 
 SWITCH_STANDARD_APP(ring_ready_function)
 {
-	switch_channel_t *channel;
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-	switch_channel_ring_ready(channel);
+	switch_channel_ring_ready(switch_core_session_get_channel(session));
 }
 
 SWITCH_STANDARD_APP(break_function)
 {
-	switch_channel_t *channel;
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-	switch_channel_set_flag(channel, CF_BREAK);
+	switch_channel_set_flag(switch_core_session_get_channel(session), CF_BREAK);
 }
 
 SWITCH_STANDARD_APP(queue_dtmf_function)
 {
-	switch_channel_t *channel;
-	channel = switch_core_session_get_channel(session);
-	switch_channel_queue_dtmf_string(channel, (const char *) data);
-	
+	switch_channel_queue_dtmf_string(switch_core_session_get_channel(session), (const char *) data);
 }
-
 
 SWITCH_STANDARD_APP(send_dtmf_function)
 {
@@ -329,11 +316,7 @@ SWITCH_STANDARD_APP(eval_function)
 
 SWITCH_STANDARD_APP(phrase_function)
 {
-	switch_channel_t *channel;
 	char *mydata = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
 		const char *lang;
@@ -344,7 +327,7 @@ SWITCH_STANDARD_APP(phrase_function)
 			*mdata++ = '\0';
 		}
 
-		lang = switch_channel_get_variable(channel, "language");
+		lang = switch_channel_get_variable(switch_core_session_get_channel(session), "language");
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute %s(%s) lang %s\n", macro, switch_str_nil(mdata), switch_str_nil(lang));
 		switch_ivr_phrase_macro(session, macro, mdata, lang, NULL);
@@ -353,35 +336,23 @@ SWITCH_STANDARD_APP(phrase_function)
 
 SWITCH_STANDARD_APP(hangup_function)
 {
-	switch_channel_t *channel;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	if (!switch_strlen_zero(data)) {
 		cause = switch_channel_str2cause(data);
 	}
 
-	switch_channel_hangup(channel, cause);
+	switch_channel_hangup(switch_core_session_get_channel(session), cause);
 }
 
 SWITCH_STANDARD_APP(answer_function)
 {
-	switch_channel_t *channel;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-	switch_channel_answer(channel);
+	switch_channel_answer(switch_core_session_get_channel(session));
 }
 
 SWITCH_STANDARD_APP(pre_answer_function)
 {
-	switch_channel_t *channel;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-	switch_channel_pre_answer(channel);
+	switch_channel_pre_answer(switch_core_session_get_channel(session));
 }
 
 SWITCH_STANDARD_APP(redirect_function)
@@ -420,11 +391,7 @@ SWITCH_STANDARD_APP(deflect_function)
 
 SWITCH_STANDARD_APP(set_function)
 {
-	switch_channel_t *channel;
 	char *var, *val = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
@@ -440,7 +407,7 @@ SWITCH_STANDARD_APP(set_function)
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SET [%s]=[%s]\n", var, val ? val : "UNDEF");
-		switch_channel_set_variable(channel, var, val);
+		switch_channel_set_variable(switch_core_session_get_channel(session), var, val);
 	}
 }
 
@@ -470,14 +437,10 @@ SWITCH_STANDARD_APP(set_global_function)
 
 SWITCH_STANDARD_APP(set_profile_var_function)
 {
-	switch_channel_t *channel;
 	switch_caller_profile_t *caller_profile;
 	char *name, *val = NULL;
 
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	caller_profile = switch_channel_get_caller_profile(channel);
+	caller_profile = switch_channel_get_caller_profile(switch_core_session_get_channel(session));
 
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
@@ -550,13 +513,10 @@ SWITCH_STANDARD_APP(set_profile_var_function)
 
 SWITCH_STANDARD_APP(export_function)
 {
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *exports;
 	char *new_exports = NULL, *new_exports_d = NULL, *var, *val = NULL, *var_name = NULL;
 	int local = 1;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
@@ -599,26 +559,17 @@ SWITCH_STANDARD_APP(export_function)
 
 SWITCH_STANDARD_APP(unset_function)
 {
-	switch_channel_t *channel;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "UNSET [%s]\n", (char *) data);
-		switch_channel_set_variable(channel, data, NULL);
+		switch_channel_set_variable(switch_core_session_get_channel(session), data, NULL);
 	}
 }
 
 SWITCH_STANDARD_APP(log_function)
 {
-	switch_channel_t *channel;
 	char *level, *log_str;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	if (data && (level = strdup(data))) {
 		switch_log_level_t ltype = SWITCH_LOG_DEBUG;
@@ -640,15 +591,11 @@ SWITCH_STANDARD_APP(log_function)
 
 SWITCH_STANDARD_APP(info_function)
 {
-	switch_channel_t *channel;
 	switch_event_t *event;
 	char *buf;
 
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
 	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-		switch_channel_event_set_data(channel, event);
+		switch_channel_event_set_data(switch_core_session_get_channel(session), event);
 		switch_event_serialize(event, &buf, SWITCH_FALSE);
 		switch_assert(buf);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "CHANNEL_DATA:\n%s\n", buf);
@@ -659,17 +606,13 @@ SWITCH_STANDARD_APP(info_function)
 
 SWITCH_STANDARD_APP(event_function)
 {
-	switch_channel_t *channel;
 	switch_event_t *event;
 	char *argv[25] = { 0 };
 	int argc = 0;
 	char *lbuf;
 
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_APPLICATION) == SWITCH_STATUS_SUCCESS) {
-		switch_channel_event_set_data(channel, event);
+		switch_channel_event_set_data(switch_core_session_get_channel(session), event);
 		if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
 			&& (argc = switch_separate_string(lbuf, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 			int x = 0;
@@ -700,13 +643,7 @@ SWITCH_STANDARD_APP(event_function)
 
 SWITCH_STANDARD_APP(privacy_function)
 {
-	switch_channel_t *channel;
-	switch_caller_profile_t *caller_profile;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	caller_profile = switch_channel_get_caller_profile(channel);
+	switch_caller_profile_t *caller_profile = switch_channel_get_caller_profile(switch_core_session_get_channel(session));
 
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No privacy mode specified.\n");
@@ -742,15 +679,11 @@ SWITCH_STANDARD_APP(strftime_function)
 		switch_size_t retsize;
 		switch_time_exp_t tm;
 		char date[80] = "";
-		switch_channel_t *channel;
-
-		channel = switch_core_session_get_channel(session);
-		assert(channel != NULL);
 
 		switch_time_exp_lt(&tm, switch_timestamp_now());
 		switch_strftime(date, &retsize, sizeof(date), argv[1], &tm);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SET [%s]=[%s]\n", argv[0], date);
-		switch_channel_set_variable(channel, argv[0], date);
+		switch_channel_set_variable(switch_core_session_get_channel(session), argv[0], date);
 	}
 }
 
@@ -1025,8 +958,6 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 			const char *terminators;
 			switch_channel_t *channel = switch_core_session_get_channel(session);
 			const char *p;
-			
-			switch_assert(channel);
 
 			if (!(terminators = switch_channel_get_variable(channel, SWITCH_PLAYBACK_TERMINATORS_VARIABLE))) {
 				terminators = "*";
@@ -1066,8 +997,6 @@ SWITCH_STANDARD_APP(speak_function)
 	char *text = NULL;
 	char *mydata = NULL;
 	switch_input_args_t args = { 0 };
-
-	switch_assert(channel != NULL);
 
 	if (switch_strlen_zero(data) || !(mydata = switch_core_session_strdup(session, data))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Params!\n");
@@ -1122,12 +1051,9 @@ SWITCH_STANDARD_APP(speak_function)
 
 SWITCH_STANDARD_APP(playback_function)
 {
-	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_input_args_t args = { 0 };
 
-	switch_assert(channel != NULL);
-
-	switch_channel_pre_answer(channel);
+	switch_channel_pre_answer(switch_core_session_get_channel(session));
 
 	args.input_callback = on_dtmf;
 	switch_ivr_play_file(session, NULL, data, &args);
@@ -1135,7 +1061,6 @@ SWITCH_STANDARD_APP(playback_function)
 
 SWITCH_STANDARD_APP(gentones_function)
 {
-	switch_channel_t *channel;
 	char *tone_script = NULL;
 	switch_input_args_t args = { 0 };
 	char *l;
@@ -1146,12 +1071,7 @@ SWITCH_STANDARD_APP(gentones_function)
 		return;
 	}
 
-	tone_script = switch_core_session_strdup(session, data);
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-	
-	switch_channel_pre_answer(channel);
+	switch_channel_pre_answer(switch_core_session_get_channel(session));
 
 	if ((l = strchr(tone_script, '|'))) {
 		*l++ = '\0';
@@ -1208,8 +1128,6 @@ SWITCH_STANDARD_APP(record_function)
 	const char *tmp;
 	int rate;
 
-	switch_assert(channel != NULL);
-	
 	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	} else {
@@ -1300,8 +1218,6 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	const char *var, *continue_on_fail = NULL;
 	uint8_t no_media_bridge = 0;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
-
-	assert(caller_channel != NULL);
 
 	if (switch_strlen_zero(data)) {
 		return;

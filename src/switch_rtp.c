@@ -1620,8 +1620,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 								if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_EVENTS_TALK)) {
 									switch_event_t *event;
 									if (switch_event_create(&event, SWITCH_EVENT_TALK) == SWITCH_STATUS_SUCCESS) {
-										switch_channel_t *channel = switch_core_session_get_channel(rtp_session->vad_data.session);
-										switch_channel_event_set_data(channel, event);
+										switch_channel_event_set_data(switch_core_session_get_channel(rtp_session->vad_data.session), event);
 										switch_event_fire(&event);
 									}
 								}
@@ -1637,8 +1636,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 									if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_EVENTS_NOTALK)) {
 										switch_event_t *event;
 										if (switch_event_create(&event, SWITCH_EVENT_NOTALK) == SWITCH_STATUS_SUCCESS) {
-											switch_channel_t *channel = switch_core_session_get_channel(rtp_session->vad_data.session);
-											switch_channel_event_set_data(channel, event);
+											switch_channel_event_set_data(switch_core_session_get_channel(rtp_session->vad_data.session), event);
 											switch_event_fire(&event);
 										}
 									}

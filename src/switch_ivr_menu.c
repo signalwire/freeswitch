@@ -302,7 +302,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 	}
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
 
 	if (!(menu = switch_ivr_menu_find(stack, name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Menu!\n");

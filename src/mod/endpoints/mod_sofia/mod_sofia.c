@@ -73,13 +73,8 @@ static switch_status_t sofia_kill_channel(switch_core_session_t *session, int si
 */
 static switch_status_t sofia_on_init(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
-	private_object_t *tech_pvt;
-	
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	tech_pvt->read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
@@ -116,18 +111,12 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 
 static switch_status_t sofia_on_ring(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
-	private_object_t *tech_pvt = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SOFIA RING\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SOFIA RING\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -135,18 +124,12 @@ static switch_status_t sofia_on_ring(switch_core_session_t *session)
 
 static switch_status_t sofia_on_reset(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
-	private_object_t *tech_pvt = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SOFIA RESET\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SOFIA RESET\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -154,35 +137,23 @@ static switch_status_t sofia_on_reset(switch_core_session_t *session)
 
 static switch_status_t sofia_on_hibernate(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
-	private_object_t *tech_pvt = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SOFIA HIBERNATE\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SOFIA HIBERNATE\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t sofia_on_execute(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
-	private_object_t *tech_pvt = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SOFIA EXECUTE\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SOFIA EXECUTE\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -247,16 +218,10 @@ static int hangup_cause_to_sip(switch_call_cause_t cause)
 switch_status_t sofia_on_hangup(switch_core_session_t *session)
 {
 	switch_core_session_t *a_session;
-	private_object_t *tech_pvt;
-	switch_channel_t *channel = NULL;
+	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_call_cause_t cause;
 	int sip_cause;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
 	
 	if (tech_pvt->profile->rtpip && tech_pvt->local_sdp_audio_port) {
 		switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_audio_port);
@@ -364,18 +329,11 @@ static switch_status_t sofia_on_transmit(switch_core_session_t *session)
 
 static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 {
-	private_object_t *tech_pvt;
-	switch_channel_t *channel = NULL;
+	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status;
 	uint32_t session_timeout = 0;
 	const char *val;
-
-	switch_assert(session != NULL);
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 
 	if (switch_test_flag(tech_pvt, TFLAG_ANS) || switch_channel_test_flag(channel, CF_OUTBOUND)) {
 		return SWITCH_STATUS_SUCCESS;
@@ -445,14 +403,10 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 
 static switch_status_t sofia_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
-	private_object_t *tech_pvt = NULL;
-	switch_channel_t *channel = NULL;
+	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	int payload = 0;
-	
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
-	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	if (switch_test_flag(tech_pvt, TFLAG_HUP)) {
@@ -467,9 +421,7 @@ static switch_status_t sofia_read_video_frame(switch_core_session_t *session, sw
 		}
 	}
 
-
 	tech_pvt->video_read_frame.datalen = 0;
-
 
 	if (switch_test_flag(tech_pvt, TFLAG_IO)) {
 		switch_status_t status;
@@ -512,14 +464,10 @@ static switch_status_t sofia_read_video_frame(switch_core_session_t *session, sw
 
 static switch_status_t sofia_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
-	private_object_t *tech_pvt;
-	switch_channel_t *channel = NULL;
+	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	while (!(tech_pvt->video_read_codec.implementation && switch_rtp_ready(tech_pvt->video_rtp_session))) {
@@ -552,14 +500,10 @@ static switch_status_t sofia_write_video_frame(switch_core_session_t *session, s
 
 static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
-	private_object_t *tech_pvt = NULL;
-	switch_channel_t *channel = NULL;
+	private_object_t *tech_pvt =  switch_core_session_get_private(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	int payload = 0;
-	
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
-	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	if (!(tech_pvt->profile->pflags & PFLAG_RUNNING)) {
@@ -642,15 +586,11 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 
 static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
-	private_object_t *tech_pvt;
-	switch_channel_t *channel = NULL;
+	private_object_t *tech_pvt = switch_core_session_get_private(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int bytes = 0, samples = 0, frames = 0;
 
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	while (!(tech_pvt->read_codec.implementation && switch_rtp_ready(tech_pvt->rtp_session))) {
@@ -700,15 +640,9 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 
 static switch_status_t sofia_kill_channel(switch_core_session_t *session, int sig)
 {
-	private_object_t *tech_pvt;
-	switch_channel_t *channel = NULL;
+	private_object_t *tech_pvt = switch_core_session_get_private(session);
 
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
-
 
 	switch (sig) {
 	case SWITCH_SIG_BREAK:
@@ -737,29 +671,11 @@ static switch_status_t sofia_kill_channel(switch_core_session_t *session, int si
 
 static switch_status_t sofia_waitfor_read(switch_core_session_t *session, int ms, int stream_id)
 {
-	private_object_t *tech_pvt;
-	switch_channel_t *channel = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t sofia_waitfor_write(switch_core_session_t *session, int ms, int stream_id)
 {
-	private_object_t *tech_pvt;
-	switch_channel_t *channel = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -792,14 +708,10 @@ static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const swi
 
 static switch_status_t sofia_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
-	switch_channel_t *channel;
-	private_object_t *tech_pvt;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_status_t status;
 
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	if (msg->message_id == SWITCH_MESSAGE_INDICATE_ANSWER || msg->message_id == SWITCH_MESSAGE_INDICATE_PROGRESS) {
@@ -1109,15 +1021,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 static switch_status_t sofia_receive_event(switch_core_session_t *session, switch_event_t *event)
 {
-	switch_channel_t *channel;
-	struct private_object *tech_pvt;
+	struct private_object *tech_pvt = switch_core_session_get_private(session);
 	char *body;
 	nua_handle_t *msg_nh;
 
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	if (!(body = switch_event_get_body(event))) {

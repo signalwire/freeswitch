@@ -157,7 +157,6 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2cause(const char *str)
 
 SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(switch_channel_t *channel)
 {
-	switch_assert(channel != NULL);
 	return channel->hangup_cause;
 }
 
@@ -165,7 +164,6 @@ SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch
 {
 	switch_channel_timetable_t *times = NULL;
 
-	switch_assert(channel != NULL);
 	if (channel->caller_profile) {
 		switch_mutex_lock(channel->profile_mutex);
 		times = channel->caller_profile->times;
@@ -182,9 +180,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
 	if (((*channel) = switch_core_alloc(pool, sizeof(switch_channel_t))) == 0) {
 		return SWITCH_STATUS_MEMERR;
 	}
-	
+
 	switch_event_create(&(*channel)->variables, SWITCH_EVENT_MESSAGE);
-	
+
 	switch_core_hash_init(&(*channel)->private_hash, pool);
 	switch_queue_create(&(*channel)->dtmf_queue, 128, pool);
 
@@ -201,7 +199,6 @@ SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(switch_channel_t *channel)
 {
 	switch_size_t has;
 
-	switch_assert(channel != NULL);
 	switch_mutex_lock(channel->dtmf_mutex);
 	has = switch_queue_size(channel->dtmf_queue);
 	switch_mutex_unlock(channel->dtmf_mutex);
@@ -213,8 +210,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 {
 	switch_status_t status;
 	void *pop;
-
-	switch_assert(channel != NULL);
 
 	switch_mutex_lock(channel->dtmf_mutex);	
 
@@ -233,14 +228,14 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 			if (++x > 100) {
 				status = SWITCH_STATUS_FALSE;
 				free(dt);
-					goto done;
+				goto done;
 			}
 		}
 	}
-	
+
 	status = SWITCH_STATUS_SUCCESS;
 
- done:
+done:
 
 	switch_mutex_unlock(channel->dtmf_mutex);
 
@@ -255,9 +250,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_
 	char *string;
 	int i, argc;
 	char *argv[256];
-	
-
-	switch_assert(channel != NULL);
 
 	if (switch_strlen_zero(dtmf_string)) {
 		return SWITCH_STATUS_FALSE;
@@ -265,7 +257,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_
 
 	string = switch_core_session_strdup(channel->session, dtmf_string);
 	argc = switch_separate_string(string, '+', argv, (sizeof(argv) / sizeof(argv[0])));
-	
+
 	for(i = 0; i < argc; i++) {
 		dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
 		dur = SWITCH_DEFAULT_DTMF_DURATION / 8;
@@ -281,12 +273,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_
 				dtmf.digit = *p;
 				if (switch_channel_queue_dtmf(channel, &dtmf) == SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Queue dtmf\ndigit=%c ms=%u samples=%u\n",
-									  switch_channel_get_name(channel), dtmf.digit, dur, dtmf.duration);
+						switch_channel_get_name(channel), dtmf.digit, dur, dtmf.duration);
 					sent++;
 				}
 			}
 		}
-		
+
 	}
 
 	return sent ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
@@ -299,18 +291,17 @@ SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(switch_channel_t *ch
 	switch_dtmf_t *dt;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	switch_assert(channel != NULL);
-
 	switch_mutex_lock(channel->dtmf_mutex);
 
 	if (switch_queue_trypop(channel->dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 		dt = (switch_dtmf_t *) pop;
+		/* TODO: Shouldn't we be doing a memcpy here? */
 		*dtmf = *dt;
 		free(dt);
 		status = SWITCH_STATUS_SUCCESS;
 	}
 	switch_mutex_unlock(channel->dtmf_mutex);
-	
+
 	if (status == SWITCH_STATUS_SUCCESS && switch_event_create(&event, SWITCH_EVENT_DTMF) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Digit", "%c", dtmf->digit);
@@ -405,7 +396,7 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable(switch_channel_t *chann
 	switch_mutex_lock(channel->profile_mutex);
 	if (!(v = switch_event_get_header(channel->variables, (char*)varname))) {
 		switch_caller_profile_t *cp = channel->caller_profile;
-		
+
 		if (cp) {
 			if (!strncmp(varname, "aleg_", 5)) {
 				cp = cp->originator_caller_profile;
@@ -433,7 +424,7 @@ SWITCH_DECLARE(void) switch_channel_variable_last(switch_channel_t *channel)
 	}
 	channel->vi = 0;
 	switch_mutex_unlock(channel->profile_mutex);
-	
+
 }
 
 SWITCH_DECLARE(switch_event_header_t *) switch_channel_variable_first(switch_channel_t *channel)
@@ -488,7 +479,7 @@ SWITCH_DECLARE(char *) switch_channel_get_name(switch_channel_t *channel)
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *channel, const char *varname, const char *value)
 {
 	switch_assert(channel != NULL);
-	
+
 	if (!switch_strlen_zero(varname)) {
 		switch_mutex_lock(channel->profile_mutex);
 		switch_event_del_header(channel->variables, varname);
@@ -507,7 +498,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_partner(switch_chann
 {
 	const char *uuid;
 	switch_assert(channel != NULL);
-	
+
 	if (!switch_strlen_zero(varname)) {
 		if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 			switch_core_session_t *session;
@@ -576,11 +567,11 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, sw
 {
 	switch_channel_state_t state, mystate, ostate;
 	ostate = switch_channel_get_state(channel);
-	
+
 	for(;;) {
 		state = switch_channel_get_running_state(other_channel);
 		mystate = switch_channel_get_running_state(channel);
-		
+
 		if (mystate != ostate || state >= CS_HANGUP || state == want_state) {
 			break;
 		}
@@ -611,7 +602,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *c
 			return SWITCH_STATUS_TIMEOUT;
 		}
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -665,10 +656,10 @@ SWITCH_DECLARE(uint8_t) switch_channel_ready(switch_channel_t *channel)
 	uint8_t ret = 0;
 
 	switch_assert(channel != NULL);
-	
+
 	if (!channel->hangup_cause && channel->state > CS_RING && channel->state < CS_HANGUP && channel->state != CS_RESET && 
 		!switch_test_flag(channel, CF_TRANSFER)) {
-		ret++;
+			ret++;
 	}
 
 	return ret;
@@ -713,19 +704,19 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 {
 	switch_mutex_lock(channel->flag_mutex);
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "%s Running State Change %s\n",
-					  channel->name, state_names[channel->state]);
+		channel->name, state_names[channel->state]);
 	channel->running_state = channel->state;
 
 	if (channel->state_flags) {
 		channel->flags |= channel->state_flags;
 		channel->state_flags = 0;
 	}
-	
+
 	if (channel->state >= CS_RING) {
 		switch_clear_flag(channel, CF_TRANSFER);
 		switch_channel_presence(channel, "unknown", (char *) state_names[channel->state]);
 	}
-	
+
 	if (channel->state < CS_HANGUP) {
 		switch_event_t *event;
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
@@ -778,172 +769,172 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 	}
 
 	/* STUB for more dev
-	   case CS_INIT:
-	   switch(state) {
-
-	   case CS_NEW:
-	   case CS_INIT:
-	   case CS_LOOPBACK:
-	   case CS_TRANSMIT:
-	   case CS_RING:
-	   case CS_EXECUTE:
-	   case CS_HANGUP:
-	   case CS_DONE:
-
-	   default:
-	   break;
-	   }
-	   break;
-	 */
-
-	switch (last_state) {
-	case CS_NEW:
-	case CS_RESET:
-		switch (state) {
-		default:
-			ok++;
-			break;
-		}
-		break;
-
 	case CS_INIT:
-		switch (state) {
-		case CS_LOOPBACK:
-		case CS_TRANSMIT:
-		case CS_RING:
-		case CS_EXECUTE:
-		case CS_PARK:
-		case CS_HOLD:
-		case CS_HIBERNATE:
-		case CS_RESET:
-			ok++;
-		default:
-			break;
-		}
-		break;
+	switch(state) {
 
+	case CS_NEW:
+	case CS_INIT:
 	case CS_LOOPBACK:
-		switch (state) {
-		case CS_TRANSMIT:
-		case CS_RING:
-		case CS_EXECUTE:
-		case CS_PARK:
-		case CS_HOLD:
-		case CS_HIBERNATE:
-		case CS_RESET:
-			ok++;
-		default:
-			break;
-		}
-		break;
-
 	case CS_TRANSMIT:
-		switch (state) {
-		case CS_LOOPBACK:
-		case CS_RING:
-		case CS_EXECUTE:
-		case CS_PARK:
-		case CS_HOLD:
-		case CS_HIBERNATE:
-		case CS_RESET:
-			ok++;
-		default:
-			break;
-		}
-		break;
-
-	case CS_PARK:
-		switch (state) {
-		case CS_LOOPBACK:
-		case CS_RING:
-		case CS_EXECUTE:
-		case CS_TRANSMIT:
-		case CS_HIBERNATE:
-		case CS_RESET:
-		case CS_HOLD:
-			ok++;
-		default:
-			break;
-		}
-		break;
-
-	case CS_HOLD:
-		switch (state) {
-		case CS_LOOPBACK:
-		case CS_RING:
-		case CS_EXECUTE:
-		case CS_TRANSMIT:
-		case CS_HIBERNATE:
-		case CS_RESET:
-		case CS_PARK:
-			ok++;
-		default:
-			break;
-		}
-		break;
-	case CS_HIBERNATE:
-		switch (state) {
-		case CS_LOOPBACK:
-		case CS_INIT:
-		case CS_RING:
-		case CS_EXECUTE:
-		case CS_TRANSMIT:
-		case CS_PARK:
-		case CS_HOLD:
-		case CS_RESET:
-			ok++;
-		default:
-			break;
-		}
-		break;
-
 	case CS_RING:
-		switch (state) {
-		case CS_LOOPBACK:
-		case CS_EXECUTE:
-		case CS_TRANSMIT:
-		case CS_PARK:
-		case CS_HOLD:
-		case CS_HIBERNATE:
-		case CS_RESET:
-			ok++;
-		default:
-			break;
-		}
-		break;
-
 	case CS_EXECUTE:
-		switch (state) {
-		case CS_LOOPBACK:
-		case CS_TRANSMIT:
-		case CS_RING:
-		case CS_PARK:
-		case CS_HOLD:
-		case CS_HIBERNATE:
-		case CS_RESET:
-			ok++;
-		default:
-			break;
-		}
-		break;
-
 	case CS_HANGUP:
-		switch (state) {
-		case CS_DONE:
-			ok++;
-		default:
-			break;
-		}
-		break;
+	case CS_DONE:
 
 	default:
-		break;
+	break;
+	}
+	break;
+	*/
+
+	switch (last_state) {
+case CS_NEW:
+case CS_RESET:
+	switch (state) {
+default:
+	ok++;
+	break;
+	}
+	break;
+
+case CS_INIT:
+	switch (state) {
+case CS_LOOPBACK:
+case CS_TRANSMIT:
+case CS_RING:
+case CS_EXECUTE:
+case CS_PARK:
+case CS_HOLD:
+case CS_HIBERNATE:
+case CS_RESET:
+	ok++;
+default:
+	break;
+	}
+	break;
+
+case CS_LOOPBACK:
+	switch (state) {
+case CS_TRANSMIT:
+case CS_RING:
+case CS_EXECUTE:
+case CS_PARK:
+case CS_HOLD:
+case CS_HIBERNATE:
+case CS_RESET:
+	ok++;
+default:
+	break;
+	}
+	break;
+
+case CS_TRANSMIT:
+	switch (state) {
+case CS_LOOPBACK:
+case CS_RING:
+case CS_EXECUTE:
+case CS_PARK:
+case CS_HOLD:
+case CS_HIBERNATE:
+case CS_RESET:
+	ok++;
+default:
+	break;
+	}
+	break;
+
+case CS_PARK:
+	switch (state) {
+case CS_LOOPBACK:
+case CS_RING:
+case CS_EXECUTE:
+case CS_TRANSMIT:
+case CS_HIBERNATE:
+case CS_RESET:
+case CS_HOLD:
+	ok++;
+default:
+	break;
+	}
+	break;
+
+case CS_HOLD:
+	switch (state) {
+case CS_LOOPBACK:
+case CS_RING:
+case CS_EXECUTE:
+case CS_TRANSMIT:
+case CS_HIBERNATE:
+case CS_RESET:
+case CS_PARK:
+	ok++;
+default:
+	break;
+	}
+	break;
+case CS_HIBERNATE:
+	switch (state) {
+case CS_LOOPBACK:
+case CS_INIT:
+case CS_RING:
+case CS_EXECUTE:
+case CS_TRANSMIT:
+case CS_PARK:
+case CS_HOLD:
+case CS_RESET:
+	ok++;
+default:
+	break;
+	}
+	break;
+
+case CS_RING:
+	switch (state) {
+case CS_LOOPBACK:
+case CS_EXECUTE:
+case CS_TRANSMIT:
+case CS_PARK:
+case CS_HOLD:
+case CS_HIBERNATE:
+case CS_RESET:
+	ok++;
+default:
+	break;
+	}
+	break;
+
+case CS_EXECUTE:
+	switch (state) {
+case CS_LOOPBACK:
+case CS_TRANSMIT:
+case CS_RING:
+case CS_PARK:
+case CS_HOLD:
+case CS_HIBERNATE:
+case CS_RESET:
+	ok++;
+default:
+	break;
+	}
+	break;
+
+case CS_HANGUP:
+	switch (state) {
+case CS_DONE:
+	ok++;
+default:
+	break;
+	}
+	break;
+
+default:
+	break;
 
 	}
 
 	if (ok) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "%s State Change %s -> %s\n",
-						  channel->name, state_names[last_state], state_names[state]);
+			channel->name, state_names[last_state], state_names[state]);
 		switch_mutex_lock(channel->flag_mutex);
 		channel->state = state;
 		switch_mutex_unlock(channel->flag_mutex);
@@ -957,7 +948,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_WARNING,
-						  "%s Invalid State Change %s -> %s\n", channel->name, state_names[last_state], state_names[state]);
+			"%s Invalid State Change %s -> %s\n", channel->name, state_names[last_state], state_names[state]);
 
 		/* we won't tolerate an invalid state change so we can make sure we are as robust as a nice cup of dark coffee! */
 		if (channel->state < CS_HANGUP) {
@@ -965,7 +956,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 			switch_assert(0);
 		}
 	}
-  done:
+done:
 
 	switch_mutex_unlock(channel->flag_mutex);
 	return channel->state;
@@ -1014,7 +1005,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 	if (caller_profile) {
 		switch_caller_profile_event_set_data(caller_profile, "Caller", event);
 	}
-	
+
 	if (originator_caller_profile && originatee_caller_profile) {
 		/* Index Originator's Profile */
 		switch_caller_profile_event_set_data(originator_caller_profile, "Originator", event);
@@ -1038,7 +1029,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 		vvar = (char *) hi->name;
 		vval = (char *) hi->value;
 		x++;
-		
+
 		switch_assert(vvar && vval);
 		switch_snprintf(buf, sizeof(buf), "variable_%s", vvar);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, buf, "%s", vval);
@@ -1055,9 +1046,9 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel
 	switch_assert(channel->session != NULL);
 	switch_mutex_lock(channel->profile_mutex);
 	switch_assert(caller_profile != NULL);
-	
+
 	uuid = switch_core_session_get_uuid(channel->session);
-	
+
 	if (!caller_profile->uuid || strcasecmp(caller_profile->uuid, uuid)) {
 		caller_profile->uuid = switch_core_session_strdup(channel->session, uuid);
 	}
@@ -1144,7 +1135,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_originator_caller_p
 		profile = channel->caller_profile->originator_caller_profile;
 	}
 	switch_mutex_unlock(channel->profile_mutex);
-		
+
 	return profile;
 }
 
@@ -1158,7 +1149,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_originatee_caller_p
 		profile = channel->caller_profile->originatee_caller_profile;
 	}
 	switch_mutex_unlock(channel->profile_mutex);
-		
+
 	return profile;
 }
 
@@ -1190,7 +1181,7 @@ SWITCH_DECLARE(int) switch_channel_add_state_handler(switch_channel_t *channel, 
 
 	channel->state_handlers[index] = state_handler;
 
-  end:
+end:
 	switch_mutex_unlock(channel->flag_mutex);
 	return index;
 }
@@ -1281,15 +1272,15 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 	}
 
 	switch_channel_stop_broadcast(channel);
-	
+
 	if (channel->state < CS_HANGUP) {
 		switch_event_t *event;
 		switch_channel_state_t last_state = channel->state;
-		
+
 		channel->state = CS_HANGUP;
 		channel->hangup_cause = hangup_cause;
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n",
-						  channel->name, state_names[last_state], switch_channel_cause2str(channel->hangup_cause));
+			channel->name, state_names[last_state], switch_channel_cause2str(channel->hangup_cause));
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_HANGUP) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Hangup-Cause", "%s", switch_channel_cause2str(channel->hangup_cause));
 			switch_channel_event_set_data(channel, event);
@@ -1339,12 +1330,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 		}
 
 		/* if we're the child of another channel and the other channel is in a blocking read they will never realize we have answered so send 
-		   a SWITCH_SIG_BREAK to interrupt any blocking reads on that channel
-		 */
+		a SWITCH_SIG_BREAK to interrupt any blocking reads on that channel
+		*/
 		if ((uuid = switch_channel_get_variable(channel, SWITCH_ORIGINATOR_VARIABLE))
 			&& (other_session = switch_core_session_locate(uuid))) {
-			switch_core_session_kill_channel(other_session, SWITCH_SIG_BREAK);
-			switch_core_session_rwunlock(other_session);
+				switch_core_session_kill_channel(other_session, SWITCH_SIG_BREAK);
+				switch_core_session_rwunlock(other_session);
 		}
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1442,12 +1433,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	}
 
 	/* if we're the child of another channel and the other channel is in a blocking read they will never realize we have answered so send 
-	   a SWITCH_SIG_BREAK to interrupt any blocking reads on that channel
-	 */
+	a SWITCH_SIG_BREAK to interrupt any blocking reads on that channel
+	*/
 	if ((uuid = switch_channel_get_variable(channel, SWITCH_ORIGINATOR_VARIABLE))
 		&& (other_session = switch_core_session_locate(uuid))) {
-		switch_core_session_kill_channel(other_session, SWITCH_SIG_BREAK);
-		switch_core_session_rwunlock(other_session);
+			switch_core_session_kill_channel(other_session, SWITCH_SIG_BREAK);
+			switch_core_session_rwunlock(other_session);
 	}
 
 	switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
@@ -1485,14 +1476,14 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 }
 
 #define resize(l) {\
-char *dp;\
-olen += (len + l + block);\
-cpos = c - data;\
-if ((dp = realloc(data, olen))) {\
-    data = dp;\
-    c = data + cpos;\
-    memset(c, 0, olen - cpos);\
- }}                           \
+	char *dp;\
+	olen += (len + l + block);\
+	cpos = c - data;\
+	if ((dp = realloc(data, olen))) {\
+	data = dp;\
+	c = data + cpos;\
+	memset(c, 0, olen - cpos);\
+	}}                           \
 
 SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel, const char *in)
 {
@@ -1509,7 +1500,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 		if (!(p = strchr(q, '$'))) {
 			break;
 		}
-		
+
 		if (*(p-1) == '\\') {
 			q = p + 1;
 			continue;
@@ -1519,11 +1510,11 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 			q = p + 1;
 			continue;
 		}
-		
+
 		nv = 1;
 		break;
 	}
-	
+
 	if (!nv) {
 		return (char *)in;
 	}
@@ -1537,7 +1528,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 		c = data;
 		for (p = indup; p && *p; p++) {
 			vtype = 0;
-			
+
 			if (*p == '\\') {
 				if (*(p + 1) == '$') {
 					nv = 1;
@@ -1595,11 +1586,11 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 							br--;
 						}
 					}
-					
+
 					e++;
 				}
 				p = e;
-				
+
 				if ((vval = strchr(vname, '('))) {
 					e = vval - 1;
 					*vval++ = '\0';
@@ -1642,11 +1633,11 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 							ooffset = atoi(ptr);
 						}
 					}
-					
+
 					sub_val = switch_channel_get_variable(channel, vname);
 					if (offset || ooffset) {
 						cloned_sub_val = strdup(sub_val);
-                        switch_assert(cloned_sub_val);
+						switch_assert(cloned_sub_val);
 						sub_val = cloned_sub_val;
 					}
 
@@ -1690,10 +1681,10 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 						} else {
 							free(stream.data);
 						}
-						
+
 						switch_safe_free(expanded);
 						switch_safe_free(expanded_vname);
-						
+
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 						free(data);
@@ -1737,7 +1728,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 		}
 	}
 	free(indup);
-	
+
 	return data;
 }
 
@@ -1765,7 +1756,7 @@ SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *chann
 	}
 
 	switch_assert(caller_profile != NULL);
-	
+
 	prof[0] = caller_profile->context;
 	prof[1] = caller_profile->destination_number;
 	prof[2] = caller_profile->caller_id_name;
@@ -1777,7 +1768,7 @@ SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *chann
 	prof[8] = caller_profile->source;
 	prof[9] = caller_profile->chan_name;
 	prof[10] = caller_profile->uuid;
-	
+
 	prof_names[0] = "context";
 	prof_names[1] = "destination_number";
 	prof_names[2] = "caller_id_name";
@@ -1814,13 +1805,13 @@ SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *chann
 		for (; hi; hi = hi->next) {
 			char *var = hi->name;
 			char *val = hi->value;
-			
+
 			new_len = (strlen((char *) var) * 3) + 1;
 			if (encode_len < new_len) {
 				char *tmp;
-				
+
 				encode_len = new_len;
-			
+
 				tmp = realloc(encode_buf, encode_len);
 				switch_assert(tmp);
 				encode_buf = tmp;
@@ -1864,7 +1855,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 
 	if (!switch_strlen_zero(caller_profile->caller_id_name)) {
 		cid_buf = switch_core_session_sprintf(channel->session, "\"%s\" <%s>", caller_profile->caller_id_name, 
-											  switch_str_nil(caller_profile->caller_id_number));
+			switch_str_nil(caller_profile->caller_id_number));
 	} else {
 		cid_buf = caller_profile->caller_id_number;
 	}
@@ -1874,7 +1865,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		last_app = ap->app;
 		last_arg = ap->arg;
 	}
-	
+
 	if (caller_profile->times) {
 		switch_time_exp_t tm;
 		switch_size_t retsize;
@@ -1909,7 +1900,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		switch_channel_set_variable(channel, "profile_start_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->profile_created);
 		switch_channel_set_variable(channel, "profile_start_uepoch", tmp);
-		
+
 		tt_answered = (time_t) (caller_profile->times->answered / 1000000);
 		mtt_answered = (time_t) (caller_profile->times->answered / 1000);
 		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_answered);
@@ -1928,7 +1919,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		uduration = caller_profile->times->hungup - caller_profile->times->created;
 		duration = (int32_t)(tt_hungup - tt_created);
 		mduration = (int32_t)(mtt_hungup - mtt_created);
-		
+
 		if (caller_profile->times->answered) {
 			billsec = (int32_t)(tt_hungup - tt_answered);
 			billmsec = (int32_t)(mtt_hungup - mtt_answered);
@@ -1952,7 +1943,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 
 	switch_snprintf(tmp, sizeof(tmp), "%d", legbillsec);
 	switch_channel_set_variable(channel, "flow_billsec", tmp);
-	
+
 	switch_snprintf(tmp, sizeof(tmp), "%d", mduration);
 	switch_channel_set_variable(channel, "mduration", tmp);
 

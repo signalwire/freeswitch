@@ -231,14 +231,11 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 
 static switch_status_t audio_bridge_on_loopback(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
-	switch_ivr_bridge_data_t *bd;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_ivr_bridge_data_t *bd = switch_channel_get_private(channel, "_bridge_");
 	switch_channel_state_t state;
-	
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
-	if ((bd = (switch_ivr_bridge_data_t *) switch_channel_get_private(channel, "_bridge_"))) {
+	if (bd) {
 		switch_channel_set_private(channel, "_bridge_", NULL);
 		if (bd->session == session && *bd->b_uuid) {
 			audio_bridge_thread(NULL, (void *) bd);
@@ -261,10 +258,7 @@ static switch_status_t audio_bridge_on_loopback(switch_core_session_t *session)
 
 static switch_status_t audio_bridge_on_ring(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CUSTOM RING\n", switch_channel_get_name(channel));
 
@@ -275,10 +269,7 @@ static switch_status_t audio_bridge_on_ring(switch_core_session_t *session)
 
 static switch_status_t audio_bridge_on_hold(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CUSTOM HOLD\n", switch_channel_get_name(channel));
 
@@ -298,10 +289,7 @@ static const switch_state_handler_table_t audio_bridge_peer_state_handlers = {
 
 static switch_status_t uuid_bridge_on_reset(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
-
-	channel = switch_core_session_get_channel(session);
-    switch_assert(channel != NULL);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CUSTOM RESET\n", switch_channel_get_name(channel));
 
@@ -316,12 +304,9 @@ static switch_status_t uuid_bridge_on_reset(switch_core_session_t *session)
 
 static switch_status_t uuid_bridge_on_transmit(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_core_session_t *other_session;
 	const char *other_uuid = NULL;
-	
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CUSTOM TRANSMIT\n", switch_channel_get_name(channel));
 	switch_channel_clear_state_handler(channel, NULL);
@@ -422,12 +407,9 @@ static switch_status_t signal_bridge_on_hibernate(switch_core_session_t *session
 static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 {
 	const char *uuid;
-	switch_channel_t *channel = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_core_session_t *other_session;
 	switch_event_t *event;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	if (switch_channel_test_flag(channel, CF_ORIGINATOR)) {
 		switch_channel_clear_flag(channel, CF_ORIGINATOR);
@@ -439,10 +421,7 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 
 	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE))
 		&& (other_session = switch_core_session_locate(uuid))) {
-		switch_channel_t *other_channel = NULL;
-
-		other_channel = switch_core_session_get_channel(other_session);
-		switch_assert(other_channel != NULL);
+		switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
 
 		switch_channel_set_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
 		switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
@@ -480,14 +459,9 @@ static const switch_state_handler_table_t signal_bridge_state_handlers = {
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *session, switch_core_session_t *peer_session)
 {
-	switch_channel_t *caller_channel, *peer_channel;
+	switch_channel_t *caller_channel = switch_core_session_get_channel(session);
+	switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
 	switch_event_t *event;
-
-	caller_channel = switch_core_session_get_channel(session);
-	switch_assert(caller_channel != NULL);
-
-	peer_channel = switch_core_session_get_channel(peer_session);
-	switch_assert(peer_channel != NULL);
 
 	if (!switch_channel_ready(peer_channel)) {
 		switch_channel_hangup(caller_channel, switch_channel_get_cause(peer_channel));
@@ -545,30 +519,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 																 switch_input_callback_function_t input_callback, void *session_data,
 																 void *peer_session_data)
 {
-	switch_ivr_bridge_data_t *a_leg, *b_leg;
-	switch_channel_t *caller_channel, *peer_channel;
+	switch_ivr_bridge_data_t *a_leg = switch_core_session_alloc(session, sizeof(*a_leg));
+	switch_ivr_bridge_data_t *b_leg = switch_core_session_alloc(peer_session, sizeof(*b_leg));
+	switch_channel_t *caller_channel = switch_core_session_get_channel(session);
+	switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
 	int stream_id = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_state_t state;
 
-	switch_assert(session != NULL);
-	switch_assert(peer_session != NULL);
-
-	caller_channel = switch_core_session_get_channel(session);
-	switch_assert(caller_channel != NULL);
-
 	switch_channel_set_flag(caller_channel, CF_ORIGINATOR);
-
-	peer_channel = switch_core_session_get_channel(peer_session);
-	switch_assert(peer_channel != NULL);
-
 	switch_channel_clear_flag(caller_channel, CF_TRANSFER);
 	switch_channel_clear_flag(peer_channel, CF_TRANSFER);
-
-	a_leg = switch_core_session_alloc(session, sizeof(*a_leg));
-	b_leg = switch_core_session_alloc(peer_session, sizeof(*b_leg));
-	
-	switch_assert(a_leg && b_leg);
 
 	b_leg->session = peer_session;
 	switch_copy_string(b_leg->b_uuid, switch_core_session_get_uuid(session), sizeof(b_leg->b_uuid));

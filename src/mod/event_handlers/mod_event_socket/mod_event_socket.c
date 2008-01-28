@@ -653,7 +653,6 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 
 	if (listener->session) {
 		switch_channel_t *channel = switch_core_session_get_channel(listener->session);
-		switch_assert(channel != NULL);
 
 		if (!strncasecmp(cmd, "connect", 7)) {
 			switch_snprintf(reply, reply_len, "+OK");
@@ -763,8 +762,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 		}
 
 		if ((session = switch_core_session_locate(uuid))) {
-			switch_channel_t *channel = switch_core_session_get_channel(session);
-			if (!switch_channel_test_flag(channel, CF_CONTROLLED)) {
+			if (!switch_channel_test_flag(switch_core_session_get_channel(session), CF_CONTROLLED)) {
 				switch_core_session_rwunlock(session);
 				session = NULL;
 			}

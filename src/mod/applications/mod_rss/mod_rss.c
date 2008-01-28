@@ -155,7 +155,7 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 
 SWITCH_STANDARD_APP(rss_function)
 {
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status;
 	const char *err = NULL;
 	struct dtmf_buffer dtb = { 0 };
@@ -185,16 +185,12 @@ SWITCH_STANDARD_APP(rss_function)
 	uint32_t matches = 0;
 	switch_input_args_t args = { 0 };
 	const char *vcf = NULL;
-	char *chanvars = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	char *chanvars = switch_channel_build_param_string(channel, NULL, NULL);
 
 	if ((vcf = switch_channel_get_variable(channel, "rss_alt_config"))) {
 		cf = vcf;
 	}
 
-    chanvars = switch_channel_build_param_string(channel, NULL, NULL);
 	if (!(cxml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return;

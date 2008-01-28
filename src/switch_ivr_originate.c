@@ -36,18 +36,12 @@ static const switch_state_handler_table_t originate_state_handlers;
 
 static switch_status_t originate_on_ring(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	/* put the channel in a passive state so we can loop audio to it */
-
 	/* clear this handler so it only works once (next time (a.k.a. Transfer) we will do the real ring state) */
 	switch_channel_clear_state_handler(channel, &originate_state_handlers);
-
 	switch_channel_set_state(channel, CS_HOLD);
-
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -78,7 +72,6 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t * thread, voi
 	switch_channel_t *channel = switch_core_session_get_channel(collect->session);
 	char buf[10] = SWITCH_BLANK_STRING;
 	char *p, term;
-
 
 	if (!strcasecmp(collect->key, "exec")) {
 		char *data;
@@ -244,12 +237,12 @@ static int teletone_handler(teletone_generation_session_t * ts, teletone_tone_ma
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t *session, switch_core_session_t *peer_session)
 {
-	switch_channel_t *caller_channel;
-	switch_channel_t *peer_channel;
+	switch_channel_t *caller_channel = switch_core_session_get_channel(session);
+	switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
 	const char *ringback_data = NULL;	
 	switch_frame_t write_frame = { 0 };
 	switch_codec_t write_codec = { 0 };
-	switch_codec_t *read_codec = NULL;
+	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
 	uint8_t pass = 0;
 	ringback_t ringback = { 0 };
 	switch_core_session_message_t *message = NULL;
@@ -257,15 +250,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	uint8_t abuf[1024];
 	int timelimit = 60;
-	const char *var;
+	const char *var = switch_channel_get_variable(caller_channel, "call_timeout");
 	switch_time_t start = 0;
 
-	caller_channel = switch_core_session_get_channel(session);
-	peer_channel = switch_core_session_get_channel(peer_session);
-
-	switch_assert(caller_channel && peer_channel);
-
-	if ((var = switch_channel_get_variable(caller_channel, "call_timeout"))) {
+	if (var) {
 		timelimit = atoi(var);
 		if (timelimit < 0) {
 			timelimit = 60;
@@ -279,8 +267,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	read_codec = switch_core_session_get_read_codec(session);
-
 	if (switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
 		ringback_data = switch_channel_get_variable(caller_channel, "transfer_ringback");
 	} 
@@ -290,7 +276,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	}
 		
 	
-	if ((read_codec = switch_core_session_get_read_codec(session)) && (ringback_data || !switch_channel_test_flag(caller_channel, CF_BYPASS_MEDIA))) {
+	if (read_codec && (ringback_data || !switch_channel_test_flag(caller_channel, CF_BYPASS_MEDIA))) {
 		if (!(pass = (uint8_t) switch_test_flag(read_codec, SWITCH_CODEC_FLAG_PASSTHROUGH))) {
 			if (switch_core_codec_init(&write_codec,
 									   "L16",
@@ -346,8 +332,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 							goto done;
 						}
 						ringback.fh = &ringback.fhb;
-
-
 					} else {
 						teletone_init_session(&ringback.ts, 0, teletone_handler, &ringback);
 						ringback.ts.rate = read_codec->implementation->actual_samples_per_second;
@@ -378,8 +362,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 		}
 
 		if (switch_core_session_dequeue_message(peer_session, &message) == SWITCH_STATUS_SUCCESS) {
-			//switch_core_session_receive_message(session, message);
-
 			if (switch_test_flag(message, SCSMF_DYNAMIC)) {
 				switch_safe_free(message);
 			} else {
@@ -453,7 +435,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	}
 
 	return status;
-
 }
 
 #define MAX_PEERS 128
@@ -555,9 +536,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	if (session) {
 		switch_event_header_t *hi;
-
 		caller_channel = switch_core_session_get_channel(session);
-		switch_assert(caller_channel != NULL);
 
 		/* Copy all the applicable channel variables into the event */
 		if ((hi = switch_channel_variable_first(caller_channel))) {
@@ -830,7 +809,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				caller_profiles[i] = new_profile;
 				peer_sessions[i] = new_session;
 				peer_channels[i] = switch_core_session_get_channel(new_session);
-				switch_assert(peer_channels[i] != NULL);
 				switch_channel_set_flag(peer_channels[i], CF_ORIGINATING);
 				
 				if (var_event) {

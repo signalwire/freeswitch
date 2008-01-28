@@ -1366,7 +1366,6 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, 
 	switch_assert(member != NULL);
 
 	channel = switch_core_session_get_channel(member->session);
-	switch_assert(channel != NULL);
 
 	read_codec = switch_core_session_get_read_codec(member->session);
 	switch_assert(read_codec != NULL);
@@ -1550,7 +1549,6 @@ static void conference_loop_output(conference_member_t * member)
 	uint32_t low_count = 0, bytes = samples * 2;
 	call_list_t *call_list = NULL, *cp = NULL;
 
-	switch_assert(channel != NULL);
 	switch_assert(member->conference != NULL);
 
 	if (switch_core_timer_init(&timer, member->conference->timer_name, interval, tsamples, NULL) == SWITCH_STATUS_SUCCESS) {
@@ -2450,13 +2448,10 @@ static void conference_list_pretty(conference_obj_t * conference, switch_stream_
 		channel = switch_core_session_get_channel(member->session);
 		profile = switch_channel_get_caller_profile(channel);
 
-
 		stream->write_function(stream, "%u) %s (%s)\n", member->id, profile->caller_id_name, profile->caller_id_number);
-
 	}
 
 	switch_mutex_unlock(conference->member_mutex);
-
 }
 
 static void conference_list(conference_obj_t * conference, switch_stream_handle_t *stream, char *delim)
@@ -2485,7 +2480,6 @@ static void conference_list(conference_obj_t * conference, switch_stream_handle_
 		channel = switch_core_session_get_channel(member->session);
 		profile = switch_channel_get_caller_profile(channel);
 		name = switch_channel_get_name(channel);
-
 
 		stream->write_function(stream, "%u%s%s%s%s%s%s%s%s%s",
 							   member->id, delim, name, delim, uuid, delim, profile->caller_id_name, delim, profile->caller_id_number, delim);
@@ -3637,7 +3631,6 @@ static switch_status_t audio_bridge_on_ring(switch_core_session_t *session)
 	switch_channel_t *channel = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CUSTOM RING\n");
 
@@ -3684,11 +3677,9 @@ static switch_status_t conference_outcall(conference_obj_t * conference,
 		}
 
 		peer_channel = switch_core_session_get_channel(peer_session);
-		switch_assert(peer_channel != NULL);
 		rdlock = 1;
 		goto callup;
 	}
-
 
 	conference_name = conference->name;
 
@@ -3699,7 +3690,6 @@ static switch_status_t conference_outcall(conference_obj_t * conference,
 
 	if (session != NULL) {
 		caller_channel = switch_core_session_get_channel(session);
-
 	}
 
 	if (switch_strlen_zero(cid_name)) {
@@ -3723,7 +3713,6 @@ static switch_status_t conference_outcall(conference_obj_t * conference,
 
 	rdlock = 1;
 	peer_channel = switch_core_session_get_channel(peer_session);
-	switch_assert(peer_channel != NULL);
 
 	/* make sure the conference still exists */
 	if (!switch_test_flag(conference, CFLAG_RUNNING)) {
@@ -3942,8 +3931,6 @@ SWITCH_STANDARD_APP(conference_auto_function)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	call_list_t *call_list, *np;
 
-    switch_assert(channel != NULL);
-
 	call_list = switch_channel_get_private(channel, "_conference_autocall_list_");
 
 	if (switch_strlen_zero(data)) {
@@ -3986,8 +3973,6 @@ SWITCH_STANDARD_APP(conference_function)
 	char *dpin = NULL;
 	conf_xml_cfg_t xml_cfg = { 0 };
 	switch_event_t *params = NULL;
-
-	switch_assert(channel != NULL);
 
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid arguments\n");

@@ -77,7 +77,6 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 	switch_hash_index_t *hi;
 	void *val;
 	switch_core_session_t *session;
-	switch_channel_t *channel;
 	uint32_t loops = 0;
 
 	switch_mutex_lock(runtime.throttle_mutex);
@@ -86,10 +85,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 		if (val) {
 			session = (switch_core_session_t *) val;
 			switch_core_session_read_lock(session);
-
-			channel = switch_core_session_get_channel(session);
-			switch_channel_hangup(channel, cause);
-
+			switch_channel_hangup(switch_core_session_get_channel(session), cause);
 			switch_core_session_rwunlock(session);
 		}
 	}
@@ -255,7 +251,6 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		switch_event_t *event;
 		switch_channel_t *peer_channel = switch_core_session_get_channel(*new_session);
 
-
 		if (session && channel) {
 			profile = switch_channel_get_caller_profile(channel);
 		}
@@ -363,13 +358,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_pass_indication(switch_core_
 	switch_core_session_message_t msg = {0};
 	switch_core_session_t *other_session;
 	const char *uuid;
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-
-	switch_assert(session != NULL);
-	
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
 		msg.message_id = indication;
@@ -556,14 +546,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	void *pop;
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	switch_assert(session != NULL);
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	
 	if (switch_channel_test_flag(channel, CF_EVENT_LOCK)) {
 		return status;
 	}
@@ -579,11 +563,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch
 
 SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, switch_bool_t flush_dtmf)
 {
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_size_t has;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	/* clear resamplers*/
 	switch_resample_destroy(&session->read_resampler);
@@ -609,6 +590,7 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, s
 
 SWITCH_DECLARE(switch_channel_t *) switch_core_session_get_channel(switch_core_session_t *session)
 {
+	switch_assert(session->channel);
 	return session->channel;
 }
 
@@ -906,15 +888,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 														 const switch_application_interface_t *application_interface, const char *arg) {
 	switch_app_log_t *log, *lp;
 	switch_event_t *event;
-	switch_channel_t *channel;
 
 	if (!arg) {
 		arg = "";
 	}
 
 	log = switch_core_session_alloc(session, sizeof(*log));
-
-	switch_assert(log != NULL);
 
 	log->app = switch_core_session_strdup(session, application_interface->interface_name);
 	log->arg = switch_core_session_strdup(session, arg);
@@ -934,8 +913,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 		switch_event_fire(&event);
 	}
 
-	channel = switch_core_session_get_channel(session);
-	switch_channel_clear_flag(channel, CF_BREAK);
+	switch_channel_clear_flag(session->channel, CF_BREAK);
 
 	switch_assert(application_interface->application_function);
 
@@ -958,14 +936,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 	int argc, x, count = 0;
 	char *expanded = NULL;
 	switch_caller_profile_t *profile, *new_profile, *pp;
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_dialplan_interface_t *dialplan_interface = NULL;
 	switch_caller_extension_t *extension = NULL;
 	const switch_application_interface_t *application_interface;
 	switch_event_t *event;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	
-	channel = switch_core_session_get_channel(session);
 
 	if (!(profile = switch_channel_get_caller_profile(channel))) {
 		return SWITCH_STATUS_FALSE;
@@ -1085,9 +1061,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 	}
 
  done:
-
 	session->stack_count--;
-
 	return status;	
 }
 

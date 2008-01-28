@@ -97,28 +97,28 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
   \param str the string to check
   \return the code
 */
-SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2cause(const char *str);
+SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2cause(_In_ const char *str);
 
 /*!
   \brief return the cause code for a given channel
   \param channel the channel
   \return the code
 */
-SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(switch_channel_t *channel);
+SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(_In_ switch_channel_t *channel);
 
 /*!
   \brief return a cause string for a given cause
   \param cause the code to check
   \return the string
 */
-SWITCH_DECLARE(const char *) switch_channel_cause2str(switch_call_cause_t cause);
+SWITCH_DECLARE(const char *) switch_channel_cause2str(_In_ switch_call_cause_t cause);
 
 /*!
   \brief View the timetable of a channel
   \param channel channel to retrieve timetable from
   \return a pointer to the channel's timetable (created, answered, etc..)
 */
-SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch_channel_t *channel);
+SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(_In_ switch_channel_t *channel);
 
 /*!
   \brief Allocate a new channel
@@ -126,7 +126,7 @@ SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch
   \param pool memory_pool to use for allocation
   \return SWITCH_STATUS_SUCCESS if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_channel_alloc(_In_ switch_channel_t **channel, _In_ switch_memory_pool_t *pool);
 
 /*!
   \brief Connect a newly allocated channel to a session object and setup it's initial state
@@ -418,7 +418,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
   \param channel channel to test
   \return number of digits in the queue
 */
-SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(switch_channel_t *channel);
+SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(_In_ switch_channel_t *channel);
 
 /*!
   \brief Queue DTMF on a given channel
@@ -426,8 +426,8 @@ SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(switch_channel_t *channel)
   \param dtmf digit
   \return SWITCH_STATUS_SUCCESS if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *channel, const switch_dtmf_t *dtmf);
-SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_t *channel, const char *dtmf_string);
+SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(_In_ switch_channel_t *channel, _In_ const switch_dtmf_t *dtmf);
+SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(_In_ switch_channel_t *channel, _In_ const char *dtmf_string);
 
 /*!
   \brief Retrieve DTMF digits from a given channel
@@ -435,30 +435,30 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_
   \param dtmf digit
   \return number of bytes read into the buffer
 */
-SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(switch_channel_t *channel, switch_dtmf_t *dtmf);
-SWITCH_DECLARE(void) switch_channel_flush_dtmf(switch_channel_t *channel);
-SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf_string(switch_channel_t *channel, char *dtmf_str, switch_size_t len);
+SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(_In_ switch_channel_t *channel, _In_ switch_dtmf_t *dtmf);
+SWITCH_DECLARE(void) switch_channel_flush_dtmf(_In_ switch_channel_t *channel);
+SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf_string(_In_ switch_channel_t *channel, _Out_opt_bytecapcount_(len) char *dtmf_str, _In_ switch_size_t len);
 
 /*!
   \brief Render the name of the provided state enum
   \param state state to get name of
   \return the string representation of the state
 */
-SWITCH_DECLARE(const char *) switch_channel_state_name(switch_channel_state_t state);
+SWITCH_DECLARE(const char *) switch_channel_state_name(_In_ switch_channel_state_t state);
 
 /*!
   \brief Render the enum of the provided state name
   \param name the name of the state
   \return the enum value (numeric)
 */
-SWITCH_DECLARE(switch_channel_state_t) switch_channel_name_state(const char *name);
+SWITCH_DECLARE(switch_channel_state_t) switch_channel_name_state(_In_ const char *name);
 
 /*!
   \brief Add information about a given channel to an event object
   \param channel channel to add information about
   \param event event to add information to
 */
-SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, switch_event_t *event);
+SWITCH_DECLARE(void) switch_channel_event_set_data(_In_ switch_channel_t *channel, _In_ switch_event_t *event);
 
 /*!
   \brief Expand varaibles in a string based on the variables in a paticular channel
@@ -467,9 +467,9 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
   \return the original string if no expansion takes place otherwise a new string that must be freed
   \note it's necessary to test if the return val is the same as the input and free the string if it is not.
 */
-SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel, const char *in);
-SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *channel, switch_caller_profile_t *caller_profile, const char *prefix);
-SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *channel);
+SWITCH_DECLARE(char *) switch_channel_expand_variables(_In_ switch_channel_t *channel, _In_ const char *in);
+SWITCH_DECLARE(char *) switch_channel_build_param_string(_In_ switch_channel_t *channel, _In_opt_ switch_caller_profile_t *caller_profile, _In_opt_ const char *prefix);
+SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(_In_ switch_channel_t *channel);
 
 #define switch_channel_stop_broadcast(_channel)	if (switch_channel_test_flag(_channel, CF_BROADCAST)) switch_channel_set_flag(_channel, CF_BREAK | CF_STOP_BROADCAST)
 

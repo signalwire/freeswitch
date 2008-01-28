@@ -40,10 +40,7 @@ SWITCH_MODULE_DEFINITION(mod_fifo, mod_fifo_load, mod_fifo_shutdown, NULL);
 
 static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
-    switch_core_session_t *bleg;
-    switch_channel_t *channel;
-
-    bleg = (switch_core_session_t *) buf;
+    switch_core_session_t *bleg = (switch_core_session_t *) buf;
 
 	switch (itype) {
 	case SWITCH_INPUT_TYPE_DTMF:
@@ -51,10 +48,8 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
             switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
 
             if (dtmf->digit == '*') {
-                channel = switch_core_session_get_channel(session);
-                if (switch_channel_test_flag(channel, CF_ORIGINATOR)) {
-                    channel = switch_core_session_get_channel(bleg);
-                    switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+                if (switch_channel_test_flag(switch_core_session_get_channel(session), CF_ORIGINATOR)) {
+                    switch_channel_hangup(switch_core_session_get_channel(bleg), SWITCH_CAUSE_NORMAL_CLEARING);
                     return SWITCH_STATUS_BREAK;
                 }
             }
@@ -67,9 +62,7 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 #define check_string(s) if (!switch_strlen_zero(s) && !strcasecmp(s, "undef")) { s = NULL; }
-
 
 static switch_status_t read_frame_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
 {
@@ -194,7 +187,7 @@ SWITCH_STANDARD_APP(fifo_function)
     int argc;
     char *mydata = NULL, *argv[5] = { 0 };
     fifo_node_t *node;
-    switch_channel_t *channel;
+    switch_channel_t *channel = switch_core_session_get_channel(session);
     int nowait = 0;
     const char *moh = NULL;
     const char *announce = NULL;
@@ -208,8 +201,7 @@ SWITCH_STANDARD_APP(fifo_function)
         return;
     }
 
-
-    if (switch_strlen_zero(data)) {
+	if (switch_strlen_zero(data)) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Args\n");
         return;
     }
@@ -221,17 +213,13 @@ SWITCH_STANDARD_APP(fifo_function)
         return;
     }
 
-    channel = switch_core_session_get_channel(session);
-
-    switch_mutex_lock(globals.mutex);
+	switch_mutex_lock(globals.mutex);
     if (!(node = switch_core_hash_find(globals.fifo_hash, argv[0]))) {
         node = create_node(argv[0]);
     }
     switch_mutex_unlock(globals.mutex);
 
-
-
-    moh = switch_channel_get_variable(channel, "fifo_music");
+	moh = switch_channel_get_variable(channel, "fifo_music");
     announce = switch_channel_get_variable(channel, "fifo_announce");
 
     if (argc > 2) {
@@ -254,8 +242,7 @@ SWITCH_STANDARD_APP(fifo_function)
         check_string(announce);
         check_string(moh);
 
-        
-        if (moh) {
+		if (moh) {
             switch_ivr_broadcast(uuid, moh, SMF_LOOP | SMF_ECHO_ALEG);
         }
         
@@ -284,9 +271,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
         switch_ivr_park(session, NULL);
 
-
-
-        if (switch_channel_ready(channel)) {
+		if (switch_channel_ready(channel)) {
             if (announce) {
                 switch_ivr_play_file(session, NULL, announce, NULL);
             }
@@ -345,9 +330,8 @@ SWITCH_STANDARD_APP(fifo_function)
             switch_mutex_unlock(node->mutex);
             switch_channel_answer(channel);
         }
-        
 
-        if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
             switch_channel_event_set_data(channel, event);
             switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Name", "%s", argv[0]);
             switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "consumer_start");
@@ -360,9 +344,7 @@ SWITCH_STANDARD_APP(fifo_function)
         switch_channel_set_variable(channel, "fifo_status", "WAITING");
         switch_channel_set_variable(channel, "fifo_timestamp", date);
 
-
-
-        while(switch_channel_ready(channel)) {
+		while(switch_channel_ready(channel)) {
             if (moh) {
                 args.read_frame_callback = read_frame_callback;
                 args.user_data = node->fifo;
@@ -389,8 +371,7 @@ SWITCH_STANDARD_APP(fifo_function)
                 switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
                 switch_caller_profile_t *cloned_profile;
 
-
-                if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
                     switch_channel_event_set_data(other_channel, event);
                     switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Name", "%s", argv[0]);
                     switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "caller_pop");
@@ -404,9 +385,7 @@ SWITCH_STANDARD_APP(fifo_function)
                     switch_event_fire(&event);
                 }
 
-
-                
-                if (announce) {
+				if (announce) {
                     switch_ivr_play_file(session, NULL, announce, NULL);
                 } else {
                     switch_ivr_sleep(session, 500);
@@ -477,8 +456,7 @@ SWITCH_STANDARD_APP(fifo_function)
             }
         }
 
-
-        if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
             switch_channel_event_set_data(channel, event);
             switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Name", "%s", argv[0]);
             switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "consumer_stop");
@@ -495,7 +473,6 @@ SWITCH_STANDARD_APP(fifo_function)
     } else {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "USAGE %s\n", FIFO_USAGE);
     }
-
 }
 
 static int xml_hash(switch_xml_t xml, switch_hash_t *hash, char *container, char *tag, int cc_off, int verbose)

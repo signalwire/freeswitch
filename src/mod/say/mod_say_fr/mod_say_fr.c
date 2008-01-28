@@ -169,16 +169,11 @@ static char *strip_nonnumerics(char *in, char *out, switch_size_t len)
 static switch_status_t fr_say_general_count(switch_core_session_t *session,
 											char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
 {
-	switch_channel_t *channel;
 	int in;
 	int x = 0;
 	int places[9] = { 0 };
 	char sbuf[13] = "";
 	switch_status_t status;
-
-	switch_assert(session != NULL);
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	if (!(tosay = strip_commas(tosay, sbuf, sizeof(sbuf))) || strlen(tosay) > 9) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
@@ -420,15 +415,9 @@ static switch_status_t fr_say_time(switch_core_session_t *session, char *tosay, 
 static switch_status_t fr_say_money(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method,
 									switch_input_args_t *args)
 {
-	switch_channel_t *channel;
-
 	char sbuf[16] = "";			/* enough for 999,999,999,999.99 (w/o the commas or leading $) */
 	char *dollars = NULL;
 	char *cents = NULL;
-
-	switch_assert(session != NULL);
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	if (strlen(tosay) > 15 || !(tosay = strip_nonnumerics(tosay, sbuf, sizeof(sbuf)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");

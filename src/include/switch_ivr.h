@@ -98,7 +98,7 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_chan_vars(switch_xml_t xml, switch_channe
   \param event the event to parse
   \return SWITCH_STATUS_SUCCESS if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *session, switch_event_t *event);
+SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(_In_ switch_core_session_t *session, _In_ switch_event_t *event);
 
 /*!
   \brief Parse all commands from an event
@@ -388,8 +388,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
   \param peer_session_data data to pass to the DTMF callback for peer_session
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_session_t *session,
-																 switch_core_session_t *peer_session,
+SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(_In_ switch_core_session_t *session,
+																 _In_ switch_core_session_t *peer_session,
 																 switch_input_callback_function_t dtmf_callback, void *session_data,
 																 void *peer_session_data);
 
@@ -408,7 +408,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
   \param dialplan the new dialplan (OPTIONAL, may be NULL)
   \param context the new context (OPTIONAL, may be NULL)
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, const char *extension, const char *dialplan, const char *context);
+SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(_In_ switch_core_session_t *session, const char *extension, const char *dialplan, const char *context);
 
 /*!
   \brief Transfer an existing session to another location in the future

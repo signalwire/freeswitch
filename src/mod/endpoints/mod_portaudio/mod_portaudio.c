@@ -165,24 +165,17 @@ static switch_status_t pa_cmd(const char *dest, switch_core_session_t *session, 
 */
 static switch_status_t channel_on_init(switch_core_session_t *session)
 {
-	switch_channel_t *channel;
-	private_t *tech_pvt = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	private_t *tech_pvt = switch_core_session_get_private(session);
 	switch_time_t last;
 	int waitsec = globals.ring_interval * 1000000;
 	switch_file_handle_t fh = { 0 };
 	const char *val, *ring_file = NULL, *hold_file = NULL;
 	int16_t abuf[2048];
 
-	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-
 	last = switch_timestamp_now() - waitsec;
-
-
 
 	if ((val = switch_channel_get_variable(channel, "pa_hold_file"))) {
 		hold_file = val;
@@ -196,11 +189,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 
-
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL INIT %d %d\n",
 						  switch_channel_get_name(channel), switch_channel_get_state(channel), switch_test_flag(tech_pvt, TFLAG_ANSWER));
-
-
 
 		if (engage_device(tech_pvt->sample_rate, tech_pvt->codec_ms) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -297,40 +287,17 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	switch_channel_set_state(channel, CS_RING);
 
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 static switch_status_t channel_on_ring(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
-	private_t *tech_pvt = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL RING\n", switch_channel_get_name(channel));
-
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL RING\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t channel_on_execute(switch_core_session_t *session)
 {
-
-	switch_channel_t *channel = NULL;
-	private_t *tech_pvt = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL EXECUTE\n", switch_channel_get_name(channel));
-
-
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL EXECUTE\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -429,13 +396,7 @@ static void remove_pvt(private_t * tech_pvt)
 
 static switch_status_t channel_on_hangup(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
-	private_t *tech_pvt = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
+	private_t *tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	remove_pvt(tech_pvt);
@@ -450,20 +411,15 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		switch_core_file_close(&tech_pvt->fh);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig)
 {
-	switch_channel_t *channel = NULL;
-	private_t *tech_pvt = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	private_t *tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	switch (sig) {
@@ -476,7 +432,6 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
 
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -488,47 +443,24 @@ static switch_status_t channel_on_transmit(switch_core_session_t *session)
 
 static switch_status_t channel_on_loopback(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
-	private_t *tech_pvt = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
-
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CHANNEL LOOPBACK\n");
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
 static switch_status_t channel_waitfor_read(switch_core_session_t *session, int ms, int stream_id)
 {
-	private_t *tech_pvt = NULL;
-
-	tech_pvt = switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t channel_waitfor_write(switch_core_session_t *session, int ms, int stream_id)
 {
-	private_t *tech_pvt = NULL;
-
-	tech_pvt = switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
-
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 static switch_status_t channel_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
-	private_t *tech_pvt = NULL;
-
-	tech_pvt = switch_core_session_get_private(session);
+	private_t *tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF ON CALL %s [%c]\n", tech_pvt->call_id, dtmf->digit);
@@ -538,15 +470,9 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
-	switch_channel_t *channel = NULL;
-	private_t *tech_pvt = NULL;
+	private_t *tech_pvt = switch_core_session_get_private(session);
 	int samples = 0;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	if (!globals.audio_stream) {
@@ -590,7 +516,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		return SWITCH_STATUS_SUCCESS;
 
 	hold:
-
 		{
 			switch_size_t olen = globals.read_codec.implementation->samples_per_frame;
 			if (switch_core_timer_next(&globals.timer) != SWITCH_STATUS_SUCCESS) {
@@ -604,7 +529,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 				switch_core_file_seek(tech_pvt->hfh, &pos, 0, SEEK_SET);
 				goto cng;
 			}
-
 
 			tech_pvt->hold_frame.datalen = (uint32_t) (olen * sizeof(int16_t));
 			tech_pvt->hold_frame.samples = (uint32_t) olen;
@@ -642,13 +566,8 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
-	switch_channel_t *channel = NULL;
-	private_t *tech_pvt = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
+	private_t *tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	if (!globals.audio_stream) {
@@ -672,34 +591,17 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
 
 	return status;
-
 }
 
 static switch_status_t channel_answer_channel(switch_core_session_t *session)
 {
-	private_t *tech_pvt;
-	switch_channel_t *channel = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
-	switch_channel_t *channel;
-	private_t *tech_pvt;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
+	private_t *tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
-
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
@@ -743,7 +645,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
 {
-
 	if ((*new_session = switch_core_session_request(portaudio_endpoint_interface, pool)) != 0) {
 		private_t *tech_pvt;
 		switch_channel_t *channel;
@@ -790,7 +691,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 
 	return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-
 }
 
 
@@ -817,13 +717,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 					  "Input Device: %d, Output Device: %d, Ring Device: %d Sample Rate: %d MS: %d\n", globals.indev,
 					  globals.outdev, globals.ringdev, globals.sample_rate, globals.codec_ms);
 
-
 	switch_core_hash_init(&globals.call_hash, module_pool);
 	switch_mutex_init(&globals.device_lock, SWITCH_MUTEX_NESTED, module_pool);
 	switch_mutex_init(&globals.pvt_lock, SWITCH_MUTEX_NESTED, module_pool);
 	switch_mutex_init(&globals.flag_mutex, SWITCH_MUTEX_NESTED, module_pool);
-
-
 
 	if (switch_event_reserve_subclass(MY_EVENT_RINGING) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
@@ -1043,8 +940,7 @@ static void PrintSupportedStandardSampleRates(const PaStreamParameters * inputPa
 	int i, printCount, cr = 7;
 	PaError err;
 	static double standardSampleRates[] = { 8000.0, 9600.0, 11025.0, 12000.0, 16000.0, 22050.0, 24000.0, 32000.0,
-											44100.0, 48000.0, 88200.0, 96000.0, 192000.0, -1
-	};
+											44100.0, 48000.0, 88200.0, 96000.0, 192000.0, -1};
 
 	printCount = cr;
 	for (i = 0; standardSampleRates[i] > 0; i++) {
@@ -1092,8 +988,6 @@ static int dump_info(void)
 	PaStreamParameters inputParameters, outputParameters;
 	PaError err;
 	const char *line = "--------------------------------------------------------------------------------\n";
-
-
 
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
 					  "PortAudio version number = %d\nPortAudio version text = '%s'\n", Pa_GetVersion(), Pa_GetVersionText());
@@ -1194,8 +1088,6 @@ static int dump_info(void)
 	return err;
 }
 
-
-
 static switch_status_t engage_device(int sample_rate, int codec_ms)
 {
 	PaStreamParameters inputParameters, outputParameters;
@@ -1236,12 +1128,8 @@ static switch_status_t engage_device(int sample_rate, int codec_ms)
 			return SWITCH_STATUS_FALSE;
 		}
 
-
-
 		globals.read_frame.rate = sample_rate;
 		globals.read_frame.codec = &globals.read_codec;
-
-
 
 		switch_mutex_lock(globals.device_lock);
 		/* LOCKED ************************************************************************************************** */
@@ -1261,7 +1149,6 @@ static switch_status_t engage_device(int sample_rate, int codec_ms)
 		/* UNLOCKED ************************************************************************************************* */
 		switch_mutex_unlock(globals.device_lock);
 
-
 		if (err != paNoError) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open audio device!\n");
 			switch_core_codec_destroy(&globals.read_codec);
@@ -1271,13 +1158,8 @@ static switch_status_t engage_device(int sample_rate, int codec_ms)
 		}
 	}
 
-
-
 	return SWITCH_STATUS_SUCCESS;
-
-
 }
-
 
 static switch_status_t engage_ring_device(int sample_rate, int channels)
 {
@@ -1301,7 +1183,6 @@ static switch_status_t engage_ring_device(int sample_rate, int channels)
 		/* UNLOCKED ************************************************************************************************* */
 		switch_mutex_unlock(globals.device_lock);
 
-
 		if (err != paNoError) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open ring device!\n");
 			return SWITCH_STATUS_FALSE;
@@ -1311,8 +1192,6 @@ static switch_status_t engage_ring_device(int sample_rate, int channels)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Engage ring device! rate: %d channels %d\n", sample_rate, channels);
 	return SWITCH_STATUS_SUCCESS;
 }
-
-
 
 static switch_status_t dtmf_call(char **argv, int argc, switch_stream_handle_t *stream)
 {
@@ -1382,7 +1261,6 @@ static switch_status_t switch_call(char **argv, int argc, switch_stream_handle_t
 	switch_mutex_unlock(globals.pvt_lock);
 
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 static switch_status_t hangup_call(char **argv, int argc, switch_stream_handle_t *stream)
@@ -1406,7 +1284,6 @@ static switch_status_t hangup_call(char **argv, int argc, switch_stream_handle_t
 	switch_mutex_unlock(globals.pvt_lock);
 
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 static switch_status_t answer_call(char **argv, int argc, switch_stream_handle_t *stream)
@@ -1446,12 +1323,9 @@ static switch_status_t answer_call(char **argv, int argc, switch_stream_handle_t
 	}
  done:
 	switch_mutex_unlock(globals.pvt_lock);
-
 	stream->write_function(stream, "Answered %d channels.\n", x);
 
-
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 static switch_status_t do_flags(char **argv, int argc, switch_stream_handle_t *stream)
@@ -1676,18 +1550,8 @@ SWITCH_STANDARD_API(pa_cmd)
 		http = switch_event_get_header(stream->event, "http-host");
 	}
 
-
 	if (http) {
 		stream->write_function(stream, "Content-type: text/html\n\n");
-
-#if 0
-		switch_event_header_t *hp;
-		stream->write_function(stream, "<pre>");
-		for (hp = stream->event->headers; hp; hp = hp->next) {
-			stream->write_function(stream, "[%s]=[%s]\n", hp->name, hp->value);
-		}
-		stream->write_function(stream, "</pre>");
-#endif
 
 		wcmd = switch_str_nil(switch_event_get_header(stream->event, "wcmd"));
 		action = switch_event_get_header(stream->event, "action");
@@ -1815,13 +1679,10 @@ SWITCH_STANDARD_API(pa_cmd)
 	}
 
  done:
-
 	if (http) {
-
 		stream->write_function(stream,
 							   "<br><br><table align=center><tr><td><center><form method=post>\n"
 							   "<input type=text name=wcmd size=40><br><br>\n"
-
 							   "<input name=action type=submit value=\"call\"> "
 							   "<input name=action type=submit value=\"hangup\"> "
 							   "<input name=action type=submit value=\"list\"> "
@@ -1856,7 +1717,6 @@ SWITCH_STANDARD_API(pa_cmd)
 	}
 
 	switch_safe_free(mycmd);
-
 	return status;
 }
 

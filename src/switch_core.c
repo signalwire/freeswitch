@@ -184,7 +184,6 @@ static void *switch_core_service_thread(switch_thread_t * thread, void *obj)
 	switch_assert(thread != NULL);
 	switch_assert(session != NULL);
 	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	switch_channel_set_flag(channel, CF_SERVICE);
 	while (data->running > 0) {

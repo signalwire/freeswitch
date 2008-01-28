@@ -38,11 +38,8 @@
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_session_t *session, switch_codec_t *codec)
 {
 	switch_event_t *event;
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char tmp[30];
-
-	switch_assert(session != NULL);
-	channel = switch_core_session_get_channel(session);
 
 	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);
@@ -75,11 +72,8 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_read_codec(switch_core_
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_session_t *session, switch_codec_t *codec)
 {
 	switch_event_t *event;
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char tmp[30];
-
-	switch_assert(session != NULL);
-	channel = switch_core_session_get_channel(session);
 
 	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);

@@ -86,15 +86,12 @@ static void load_config(void)
 SWITCH_STANDARD_DIALPLAN(directory_dialplan_hunt)
 {
 	switch_caller_extension_t *extension = NULL;
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *var, *val;
 	char filter[256];
 	switch_directory_handle_t dh;
 	char app[512];
 	char *data;
-
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
 
 	if (!caller_profile) {
 		caller_profile = switch_channel_get_caller_profile(channel);
@@ -102,7 +99,6 @@ SWITCH_STANDARD_DIALPLAN(directory_dialplan_hunt)
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Hello %s You Dialed %s!\n", caller_profile->caller_id_name,
 					  caller_profile->destination_number);
-
 
 	if (!(globals.directory_name && globals.host && globals.dn && globals.base && globals.pass)) {
 		return NULL;

@@ -906,7 +906,6 @@ static int activate_rtp(struct private_object *tech_pvt)
 static int do_candidates(struct private_object *tech_pvt, int force)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
-	switch_assert(channel != NULL);
 
 	if (switch_test_flag(tech_pvt, TFLAG_DO_CAND)) {
 		return 1;
@@ -1052,7 +1051,7 @@ static int do_describe(struct private_object *tech_pvt, int force)
 static switch_status_t negotiate_media(switch_core_session_t *session)
 {
 	switch_status_t ret = SWITCH_STATUS_FALSE;
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	struct private_object *tech_pvt = NULL;
 	switch_time_t started;
 	switch_time_t now;
@@ -1060,9 +1059,6 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	switch_set_flag_locked(tech_pvt, TFLAG_IO);
 
@@ -1148,14 +1144,11 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 */
 static switch_status_t channel_on_init(switch_core_session_t *session)
 {
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	struct private_object *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	tech_pvt->read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
 
@@ -1171,11 +1164,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 static switch_status_t channel_on_ring(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	struct private_object *tech_pvt = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -1205,11 +1195,8 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 
 static switch_status_t channel_on_hangup(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	struct private_object *tech_pvt = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -1258,17 +1245,12 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig)
 {
-	switch_channel_t *channel = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	struct private_object *tech_pvt = NULL;
-
-	if (!(channel = switch_core_session_get_channel(session))) {
-		return SWITCH_STATUS_SUCCESS;
-	}
 
 	if (!(tech_pvt = switch_core_session_get_private(session))) {
 		return SWITCH_STATUS_SUCCESS;
 	}
-
 
 	switch (sig) {
 	case SWITCH_SIG_KILL:
@@ -1351,11 +1333,8 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
 	struct private_object *tech_pvt = NULL;
-	switch_channel_t *channel = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	int payload = 0;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	tech_pvt = (struct private_object *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -1452,12 +1431,9 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
 	struct private_object *tech_pvt;
-	switch_channel_t *channel = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int bytes = 0, samples = 0, frames = 0;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	tech_pvt = (struct private_object *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -1506,10 +1482,6 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 static switch_status_t channel_answer_channel(switch_core_session_t *session)
 {
 	struct private_object *tech_pvt;
-	switch_channel_t *channel = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -1524,11 +1496,7 @@ static switch_status_t channel_answer_channel(switch_core_session_t *session)
 
 static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
-	switch_channel_t *channel;
 	struct private_object *tech_pvt;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -1564,12 +1532,8 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 
 static switch_status_t channel_receive_event(switch_core_session_t *session, switch_event_t *event)
 {
-	switch_channel_t *channel;
 	struct private_object *tech_pvt;
 	char *subject, *body;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -2572,7 +2536,6 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 		switch_assert(tech_pvt != NULL);
 
 		channel = switch_core_session_get_channel(session);
-		switch_assert(channel != NULL);
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "using Existing session for %s\n", ldl_session_get_id(dlsession));
 

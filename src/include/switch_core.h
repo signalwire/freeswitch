@@ -405,7 +405,7 @@ SWITCH_DECLARE(void *) switch_core_alloc(_In_ switch_memory_pool_t *pool, _In_ s
   \return a void pointer to the newly allocated memory
   \note the memory will be in scope as long as the session exists
 */
-SWITCH_DECLARE(void *) switch_core_session_alloc(_In_ switch_core_session_t *session, _In_ switch_size_t memory);
+_Ret_ SWITCH_DECLARE(void *) switch_core_session_alloc(_In_ switch_core_session_t *session, _In_ switch_size_t memory);
 
 /*! 
   \brief Copy a string using permanent memory allocation
@@ -512,7 +512,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(_In_ switch_co
   \param session the session to retrieve from
   \return a pointer to the channel object
 */
-SWITCH_DECLARE(switch_channel_t *) switch_core_session_get_channel(_In_ switch_core_session_t *session);
+_Ret_ SWITCH_DECLARE(switch_channel_t *) switch_core_session_get_channel(_In_ switch_core_session_t *session);
 
 /*! 
   \brief Signal a session's state machine thread that a state change has occured

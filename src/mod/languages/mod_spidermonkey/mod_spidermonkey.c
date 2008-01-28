@@ -1317,14 +1317,9 @@ static switch_status_t js_collect_input_callback(switch_core_session_t *session,
 static JSBool session_flush_digits(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
-	switch_channel_t *channel;
-
 	METHOD_SANITY_CHECK();
 
-	channel = switch_core_session_get_channel(jss->session);
-	switch_assert(channel != NULL);
-
-	switch_channel_flush_dtmf(channel);
+	switch_channel_flush_dtmf(switch_core_session_get_channel(jss->session));
 
 	*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
 	return JS_TRUE;
@@ -1334,15 +1329,11 @@ static JSBool session_flush_events(JSContext * cx, JSObject * obj, uintN argc, j
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	switch_event_t *event;
-	switch_channel_t *channel;
 
 	if (!jss || !jss->session) {
 		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 		return JS_TRUE;
 	}
-
-	channel = switch_core_session_get_channel(jss->session);
-	switch_assert(channel != NULL);
 
 	while (switch_core_session_dequeue_event(jss->session, &event) == SWITCH_STATUS_SUCCESS) {
 		switch_event_destroy(&event);
@@ -1368,10 +1359,7 @@ static JSBool session_recordfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	switch_input_args_t args = { 0 };
 
 	METHOD_SANITY_CHECK();
-
 	channel = switch_core_session_get_channel(jss->session);
-	switch_assert(channel != NULL);
-
 	CHANNEL_SANITY_CHECK();
 
 	if (argc > 0) {
@@ -1439,10 +1427,7 @@ static JSBool session_collect_input(JSContext * cx, JSObject * obj, uintN argc, 
 	switch_input_args_t args = { 0 };
 
 	METHOD_SANITY_CHECK();
-
 	channel = switch_core_session_get_channel(jss->session);
-	switch_assert(channel != NULL);
-
 	CHANNEL_SANITY_CHECK();
 
 	if (argc > 0) {
@@ -1498,10 +1483,7 @@ static JSBool session_sayphrase(JSContext * cx, JSObject * obj, uintN argc, jsva
 	switch_input_args_t args = { 0 };
 
 	METHOD_SANITY_CHECK();
-
 	channel = switch_core_session_get_channel(jss->session);
-	switch_assert(channel != NULL);
-
 	CHANNEL_SANITY_CHECK();
 
 	if (argc > 0) {
@@ -1575,16 +1557,11 @@ static void check_hangup_hook(struct js_session *jss)
 
 static switch_status_t hanguphook(switch_core_session_t *session)
 {
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	struct js_session *jss = NULL;
-	switch_channel_state_t state;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	state = switch_channel_get_state(channel);
 
 	if ((jss = switch_channel_get_private(channel, "jss"))) {
+		switch_channel_state_t state = switch_channel_get_state(channel);
 		if (jss->hook_state != state) {
 			jss->hook_state = state;
 			check_hangup_hook(jss);
@@ -1604,7 +1581,6 @@ static JSBool session_hanguphook(JSContext * cx, JSObject * obj, uintN argc, jsv
 		if (argc > 0) {
 			if ((function = JS_ValueToFunction(cx, argv[0]))) {
 				switch_channel_t *channel = switch_core_session_get_channel(jss->session);
-				switch_assert(channel != NULL);
 				jss->on_hangup = function;
 				jss->hook_state = switch_channel_get_state(channel);
 				switch_channel_set_private(channel, "jss", jss);
@@ -1634,10 +1610,7 @@ static JSBool session_streamfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	char posbuf[35] = "";
 	
 	METHOD_SANITY_CHECK();
-
 	channel = switch_core_session_get_channel(jss->session);
-	switch_assert(channel != NULL);
-
 	CHANNEL_SANITY_CHECK();
 
 	if (argc > 0) {
@@ -1700,9 +1673,7 @@ static JSBool session_set_variable(JSContext * cx, JSObject * obj, uintN argc, j
 	switch_channel_t *channel;
 
 	METHOD_SANITY_CHECK();
-
 	channel = switch_core_session_get_channel(jss->session);
-	switch_assert(channel != NULL);
 
 	if (argc > 1) {
 		char *var, *val;
@@ -1729,7 +1700,6 @@ static JSBool session_get_variable(JSContext * cx, JSObject * obj, uintN argc, j
 	}
 
 	channel = switch_core_session_get_channel(jss->session);
-	switch_assert(channel != NULL);
 
 	if (argc > 0) {
 		const char *var, *val;
@@ -1813,8 +1783,6 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 	channel = switch_core_session_get_channel(jss->session);
-	switch_assert(channel != NULL);
-
 	CHANNEL_SANITY_CHECK();
 
 	if (argc < 3) {
@@ -1892,10 +1860,7 @@ static JSBool session_get_digits(JSContext * cx, JSObject * obj, uintN argc, jsv
 	switch_channel_t *channel;
 
 	METHOD_SANITY_CHECK();
-
 	channel = switch_core_session_get_channel(jss->session);
-	switch_assert(channel != NULL);
-
 	CHANNEL_SANITY_CHECK();
 
 	if (argc > 0) {
@@ -1958,10 +1923,7 @@ static JSBool session_answer(JSContext * cx, JSObject * obj, uintN argc, jsval *
 	switch_channel_t *channel;
 
 	METHOD_SANITY_CHECK();
-
 	channel = switch_core_session_get_channel(jss->session);
-	switch_assert(channel != NULL);
-
 	CHANNEL_SANITY_CHECK_ANSWER();
 
 	switch_channel_answer(channel);
@@ -1974,10 +1936,7 @@ static JSBool session_pre_answer(JSContext * cx, JSObject * obj, uintN argc, jsv
 	switch_channel_t *channel;
 
 	METHOD_SANITY_CHECK();
-
 	channel = switch_core_session_get_channel(jss->session);
-	switch_assert(channel != NULL);
-
 	CHANNEL_SANITY_CHECK_ANSWER();
 
 	switch_channel_pre_answer(channel);
@@ -2009,14 +1968,10 @@ static JSBool session_cdr(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 static JSBool session_ready(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
-	switch_channel_t *channel;
 
 	METHOD_SANITY_CHECK();
 
-	channel = switch_core_session_get_channel(jss->session);
-	switch_assert(channel != NULL);
-
-	*rval = BOOLEAN_TO_JSVAL(switch_channel_ready(channel) ? JS_TRUE : JS_FALSE);
+	*rval = BOOLEAN_TO_JSVAL(switch_channel_ready(switch_core_session_get_channel(jss->session)) ? JS_TRUE : JS_FALSE);
 
 	return JS_TRUE;
 }
@@ -2033,7 +1988,6 @@ static JSBool session_wait_for_media(JSContext * cx, JSObject * obj, uintN argc,
 	METHOD_SANITY_CHECK();
 
 	channel = switch_core_session_get_channel(jss->session);
-	switch_assert(channel != NULL);
 
 	started = switch_timestamp_now();
 
@@ -2072,9 +2026,7 @@ static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc
 	jsrefcount saveDepth;
 
 	METHOD_SANITY_CHECK();
-
 	channel = switch_core_session_get_channel(jss->session);
-	switch_assert(channel != NULL);
 
 	started = switch_timestamp_now();
 
@@ -2111,10 +2063,7 @@ static JSBool session_execute(JSContext * cx, JSObject * obj, uintN argc, jsval 
 	METHOD_SANITY_CHECK();
 
 	channel = switch_core_session_get_channel(jss->session);
-	switch_assert(channel != NULL);
-
-	/* you can execute some apps before you answer */
-	/* CHANNEL_SANITY_CHECK(); */
+	/* you can execute some apps before you answer  CHANNEL_SANITY_CHECK(); */
 
 	if (argc > 0) {
 		const switch_application_interface_t *application_interface;
@@ -2203,10 +2152,7 @@ static JSBool session_hangup(JSContext * cx, JSObject * obj, uintN argc, jsval *
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
 	METHOD_SANITY_CHECK();
-
 	channel = switch_core_session_get_channel(jss->session);
-	switch_assert(channel != NULL);
-
 	CHANNEL_SANITY_CHECK();
 
 	if (argc > 1) {
@@ -2542,7 +2488,6 @@ static JSBool session_getProperty(JSContext * cx, JSObject * obj, jsval id, jsva
 
 	if (jss && jss->session) {
 		channel = switch_core_session_get_channel(jss->session);
-		switch_assert(channel != NULL);
 		caller_profile = switch_channel_get_caller_profile(channel);
 	}
 

@@ -200,15 +200,11 @@ static int tech_activate(private_object * tech_pvt);
 */
 static switch_status_t woomera_on_init(switch_core_session_t *session)
 {
-	switch_channel_t *channel;
-	struct private_object *tech_pvt = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	struct private_object *tech_pvt = switch_core_session_get_private(session);
 	int rate = 8000;
 
-	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	tech_pvt->frame.data = tech_pvt->databuf;
 
@@ -244,53 +240,25 @@ static switch_status_t woomera_on_init(switch_core_session_t *session)
 
 static switch_status_t woomera_on_ring(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
-	struct private_object *tech_pvt = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERA RING\n", switch_channel_get_name(channel));
-
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERA RING\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t woomera_on_execute(switch_core_session_t *session)
 {
-
-	switch_channel_t *channel = NULL;
-	struct private_object *tech_pvt = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERA EXECUTE\n", switch_channel_get_name(channel));
-
-
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERA EXECUTE\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t woomera_on_hangup(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
-	struct private_object *tech_pvt = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
+	struct private_object *tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	switch_core_codec_destroy(&tech_pvt->read_codec);
 	switch_core_codec_destroy(&tech_pvt->write_codec);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERA HANGUP\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERA HANGUP\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 	tech_destroy(tech_pvt);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -316,13 +284,7 @@ static void udp_socket_close(struct private_object *tech_pvt)
 
 static switch_status_t woomera_kill_channel(switch_core_session_t *session, int sig)
 {
-	switch_channel_t *channel = NULL;
-	struct private_object *tech_pvt = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
+	struct private_object *tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	if (!tech_pvt->udp_socket) {
@@ -332,7 +294,7 @@ static switch_status_t woomera_kill_channel(switch_core_session_t *session, int 
 	switch (sig) {
 	case SWITCH_SIG_KILL:
 		udp_socket_close(tech_pvt);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERA KILL\n", switch_channel_get_name(channel));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERA KILL\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 		break;
 	case SWITCH_SIG_BREAK:
 		{
@@ -344,7 +306,6 @@ static switch_status_t woomera_kill_channel(switch_core_session_t *session, int 
 		}
 		break;
 	}
-
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -384,15 +345,10 @@ static switch_status_t woomera_waitfor_write(switch_core_session_t *session, int
 
 static switch_status_t woomera_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
-	switch_channel_t *channel = NULL;
-	struct private_object *tech_pvt = NULL;
+	struct private_object *tech_pvt = switch_core_session_get_private(session);
 	switch_frame_t *pframe;
 	switch_size_t len;
 
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	for(;;) {
@@ -406,15 +362,10 @@ static switch_status_t woomera_read_frame(switch_core_session_t *session, switch
 		switch_yield(1000);
 	}
 
-
 	if (!tech_pvt->udp_socket) {
 		return SWITCH_STATUS_GENERR;
 	}
-	/*
-	   if ((status = woomera_waitfor_read(session, -1)) != SWITCH_STATUS_SUCCESS) {
-	   return status;
-	   }1<
-	 */
+
 	pframe = &tech_pvt->frame;
 	*frame = pframe;
 
@@ -430,15 +381,9 @@ static switch_status_t woomera_read_frame(switch_core_session_t *session, switch
 
 static switch_status_t woomera_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
-	switch_channel_t *channel = NULL;
-	struct private_object *tech_pvt = NULL;
+	struct private_object *tech_pvt = switch_core_session_get_private(session);
 	switch_size_t len;
-	//switch_frame_t *pframe;
 
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 	
 	if (switch_test_flag(tech_pvt, TFLAG_ABORT) || !tech_pvt->udp_socket) {
@@ -449,7 +394,6 @@ static switch_status_t woomera_write_frame(switch_core_session_t *session, switc
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	//pframe = &tech_pvt->frame;
 	len = frame->datalen;
 	if (switch_socket_sendto(tech_pvt->udp_socket, tech_pvt->udpwrite, 0, frame->data, &len) == SWITCH_STATUS_SUCCESS) {
 		frame->datalen = (uint32_t) len;
@@ -953,23 +897,16 @@ static int tech_activate(private_object * tech_pvt)
 static void *woomera_channel_thread_run(switch_thread_t * thread, void *obj)
 {
 	switch_core_session_t *session = obj;
-	switch_channel_t *channel = NULL;
-	struct private_object *tech_pvt = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	struct private_object *tech_pvt = switch_core_session_get_private(session);
 	woomera_message wmsg;
 	int res = 0;
 
-	switch_assert(session != NULL);
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	if (!tech_pvt->udp_socket) {
 		tech_create_read_socket(tech_pvt);
 	}
-
 
 	for (;;) {
 		if (globals.panic) {
@@ -1014,18 +951,6 @@ static void *woomera_channel_thread_run(switch_thread_t * thread, void *obj)
 			memset(tech_pvt->dtmfbuf, 0, sizeof(tech_pvt->dtmfbuf));
 			switch_mutex_unlock(tech_pvt->iolock);
 		}
-#if 1==0						/*convert to use switch_time_now */
-		if (tech_pvt->timeout) {
-			struct timeval now;
-			int elapsed;
-			gettimeofday(&now, NULL);
-			elapsed = (((now.tv_sec * 1000) + now.tv_usec / 1000) - ((tech_pvt->started.tv_sec * 1000) + tech_pvt->started.tv_usec / 1000));
-			if (elapsed > tech_pvt->timeout) {
-				/* call timed out! */
-				switch_set_flag_locked(tech_pvt, TFLAG_ABORT);
-			}
-		}
-#endif
 
 		if (!tech_pvt->command_channel) {
 			break;
@@ -1038,17 +963,6 @@ static void *woomera_channel_thread_run(switch_thread_t * thread, void *obj)
 				switch_set_flag_locked(tech_pvt, TFLAG_ABORT);
 				continue;
 			} else if (!strcasecmp(wmsg.command, "DTMF")) {
-				/*
-				   struct ast_frame dtmf_frame = {AST_FRAME_DTMF};
-				   int x = 0;
-				   for (x = 0; x < strlen(wmsg.command_args); x++) {
-				   dtmf_frame.subclass = wmsg.command_args[x];
-				   ast_queue_frame(tech_pvt->owner, ast_frdup(&dtmf_frame));
-				   if (globals.debug > 1) {
-				   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, WOOMERA_DEBUG_PREFIX "SEND DTMF [%c] to %s\n", dtmf_frame.subclass, tech_pvt->owner->name);
-				   }
-				   }
-				 */
 			} else if (!strcasecmp(wmsg.command, "PROCEED")) {
 				/* This packet has lots of info so well keep it */
 				tech_pvt->call_info = wmsg;
@@ -1154,12 +1068,8 @@ static void *woomera_channel_thread_run(switch_thread_t * thread, void *obj)
 	return NULL;
 }
 
-
-
-
 static void *woomera_thread_run(void *obj)
 {
-
 	int res = 0;
 	woomera_message wmsg;
 	woomera_profile *profile;
@@ -1209,28 +1119,8 @@ static void *woomera_thread_run(void *obj)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "{%s} HELP! I lost my connection to woomera!\n", profile->name);
 				woomera_socket_close(&profile->woomera_socket);
 
-				//global_set_flag(TFLAG_ABORT);
 				globals.panic = 1;
 				continue;
-
-				/* Can't get to the following code --Commented out for now. */
-/*				if (profile->woomera_socket) 
-					if (switch_test_flag(profile, PFLAG_INBOUND)) {
-						woomera_printf(profile, profile->woomera_socket, "LISTEN%s", WOOMERA_RECORD_SEPERATOR);
-						if (woomera_message_parse(profile->woomera_socket,
-												  &wmsg, WOOMERA_HARD_TIMEOUT, profile, &profile->event_queue) < 0) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "{%s} HELP! Woomera is broken!\n",
-												  profile->name);
-							globals.panic = 1;
-							woomera_socket_close(&profile->woomera_socket);
-						}
-					}
-					if (profile->woomera_socket) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Woomera Thread Up {%s} %s/%d\n", profile->name,
-											  profile->woomera_host, profile->woomera_port);
-					}
-				}*/
-				//continue;
 			}
 
 			if (!strcasecmp(wmsg.command, "INCOMING")) {
@@ -1277,7 +1167,6 @@ static void *woomera_thread_run(void *obj)
 		switch_yield(100);
 	}
 
-
 	if (profile->woomera_socket) {
 		woomera_printf(profile, profile->woomera_socket, "BYE%s", WOOMERA_RECORD_SEPERATOR);
 		woomera_socket_close(&profile->woomera_socket);
@@ -1290,7 +1179,6 @@ static void *woomera_thread_run(void *obj)
 
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_woomera_runtime)
 {
-
 	woomera_thread_run(&default_profile);
 
 	return SWITCH_STATUS_TERM;

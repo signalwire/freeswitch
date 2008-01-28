@@ -52,13 +52,8 @@ SWITCH_STANDARD_APP(dial_function)
 	int argc;
 	char *argv[4] = { 0 };
 	char *mydata;
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-
-	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
-
-	
 	if (data && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, '|', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
 			goto error;
@@ -89,11 +84,7 @@ SWITCH_STANDARD_APP(avoid_function)
 {
     void *y = NULL;
 	int x = 0;
-
-	switch_channel_t *channel;
-
-    channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	for (x = 0; x < 5; x++) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Avoiding initial deadlock on channel %s.\n", switch_channel_get_name(channel));
@@ -109,11 +100,7 @@ SWITCH_STANDARD_APP(goto_function)
 	int argc;
 	char *argv[3] = { 0 };
 	char *mydata;
-	switch_channel_t *channel;
-	
-	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
-	
+
 	if (data && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, '|', argv, (sizeof(argv) / sizeof(argv[0])))) < 1) {
 			goto error;
@@ -134,7 +121,7 @@ SWITCH_STANDARD_APP(goto_function)
 SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 {
 	switch_caller_extension_t *extension = NULL;
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *cf = "extensions.conf";
 	switch_config_t cfg;
 	char *var, *val;
@@ -143,9 +130,6 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 	if (arg) {
 		cf = arg;
 	}
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	if (!caller_profile) {
 		caller_profile = switch_channel_get_caller_profile(channel);

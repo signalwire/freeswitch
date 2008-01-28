@@ -119,12 +119,9 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 							  sip_t const *sip,
 							  tagi_t tags[])
 {
-	switch_channel_t *channel = NULL;
-
 	if (session) {
 		const char *tmp;
-
-		channel = switch_core_session_get_channel(session); 
+		switch_channel_t *channel = switch_core_session_get_channel(session); 
 		if (sip->sip_user_agent && !switch_strlen_zero(sip->sip_user_agent->g_string)){
 			switch_channel_set_variable(channel, "sip_user_agent", sip->sip_user_agent->g_string);
 		}
@@ -1302,8 +1299,6 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 									  char const *phrase,
 									  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
-
-
 	if (sip && session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *uuid;
@@ -1437,8 +1432,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 	if (session) {
 		channel = switch_core_session_get_channel(session);
-		switch_assert(channel != NULL);
-
 		tech_pvt = switch_core_session_get_private(session);
 		switch_assert(tech_pvt != NULL);
 		switch_assert(tech_pvt->nh != NULL);
@@ -1821,21 +1814,18 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	sip_from_t const *from;
 	sip_to_t const *to;
 	sip_refer_to_t const *refer_to;
-	private_object_t *tech_pvt = NULL;
+	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	char *etmp = NULL, *exten = NULL;
-	switch_channel_t *channel_a = NULL, *channel_b = NULL;
+	switch_channel_t *channel_a = switch_core_session_get_channel(session);
+	switch_channel_t *channel_b = NULL;
 	su_home_t *home = NULL;
 	char *full_ref_by = NULL;
 	char *full_ref_to = NULL;
-
-	tech_pvt = switch_core_session_get_private(session);
-	channel_a = switch_core_session_get_channel(session);
 
 	if (!sip->sip_cseq || !(etmp = switch_mprintf("refer;id=%u", sip->sip_cseq->cs_seq))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
 		goto done;
 	}
-
 
 	if (switch_channel_test_flag(channel_a, CF_BYPASS_MEDIA)) {
 		nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
@@ -2115,8 +2105,6 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[])
 {
-	struct private_object *tech_pvt = NULL;
-	switch_channel_t *channel = NULL;
 	/* placeholder for string searching */
 	const char *signal_ptr;
 	const char *rec_header;
@@ -2125,14 +2113,10 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 	
 	if (session) {
 		/* Get the channel */
-		channel = switch_core_session_get_channel(session);
-
-		/* Barf if we didn't get it */
-		switch_assert(channel != NULL);
-		
+		switch_channel_t *channel = switch_core_session_get_channel(session);
 		/* make sure we have our privates */
-		tech_pvt = switch_core_session_get_private(session);
-	
+		struct private_object *tech_pvt = switch_core_session_get_private(session);
+		
 		/* Barf if we didn't get it */
 		switch_assert(tech_pvt != NULL);
 
@@ -2219,18 +2203,13 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 					}
 				}
 			}
-
 			return;
 		}
 	}
-
-
 	return;
 
  fail:
-
 	nua_respond(nh, 488, "Unsupported Request", NUTAG_WITH_THIS(nua), TAG_END());
-	
 }
 
 

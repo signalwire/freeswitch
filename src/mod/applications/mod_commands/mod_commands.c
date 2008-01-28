@@ -1465,7 +1465,6 @@ SWITCH_STANDARD_API(originate_function)
 	}
 
 	caller_channel = switch_core_session_get_channel(caller_session);
-	switch_assert(caller_channel != NULL);
 	switch_channel_clear_state_handler(caller_channel, NULL);
 	
 	if (*exten == '&' && *(exten + 1)) {
@@ -2016,8 +2015,6 @@ SWITCH_STANDARD_API(uuid_setvar_function)
 				switch_channel_t *channel;
 				channel = switch_core_session_get_channel(psession);
 
-				switch_assert(channel != NULL);
-
 				if (switch_strlen_zero(var_name)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
 					stream->write_function(stream, "-ERR No variable specified\n");
@@ -2063,8 +2060,6 @@ SWITCH_STANDARD_API(uuid_getvar_function)
 			if ((psession = switch_core_session_locate(uuid))) {
 				switch_channel_t *channel;
 				channel = switch_core_session_get_channel(psession);
-				
-				switch_assert(channel != NULL);
 
 				if (switch_strlen_zero(var_name)) {
 					stream->write_function(stream, "-ERR No variable name specified!\n");
@@ -2119,7 +2114,6 @@ SWITCH_STANDARD_API(uuid_dump_function)
 				char *buf;
 
 				channel = switch_core_session_get_channel(psession);
-				switch_assert(channel != NULL);
 
 				if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 					switch_xml_t xml;

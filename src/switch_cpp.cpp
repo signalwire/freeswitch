@@ -72,7 +72,7 @@ CoreSession::~CoreSession()
 
 	if (session) {
 		channel = switch_core_session_get_channel(session);
-		if (channel && switch_test_flag(this, S_HUP)) {
+		if (switch_test_flag(this, S_HUP)) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		}
 		switch_core_session_rwunlock(session);
@@ -300,11 +300,8 @@ bool CoreSession::ready() {
 	}
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
-	
+
 	return switch_channel_ready(channel) != 0;
-
-
 }
 
 int CoreSession::originate(CoreSession *a_leg_session, 
@@ -380,7 +377,6 @@ int CoreSession::flushEvents()
 		return SWITCH_STATUS_FALSE;
 	}
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
 
 	while (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
 		switch_event_destroy(&event);
@@ -390,14 +386,7 @@ int CoreSession::flushEvents()
 
 int CoreSession::flushDigits() 
 {
-	switch_channel_t *channel;
-
-
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
-
-	switch_channel_flush_dtmf(channel);
-
+	switch_channel_flush_dtmf(switch_core_session_get_channel(session));
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -451,12 +440,10 @@ void CoreSession::setHangupHook(void *hangup_func) {
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::seHangupHook, hangup_func: %p\n", hangup_func);
     on_hangup = hangup_func;
     switch_channel_t *channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
 
     hook_state = switch_channel_get_state(channel);
     switch_channel_set_private(channel, "CoreSession", this);
     switch_core_event_hook_add_state_change(session, hanguphook);
-
 }
 
 /** \brief Store a file handle in the callback args
@@ -530,18 +517,12 @@ void bridge(CoreSession &session_a, CoreSession &session_b)
 
 switch_status_t hanguphook(switch_core_session_t *session_hungup) 
 {
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session_hungup);
 	CoreSession *coresession = NULL;
-	switch_channel_state_t state;
-
+	switch_channel_state_t state = switch_channel_get_state(channel);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hangup_hook called\n");
 	fflush(stdout);
-
-	channel = switch_core_session_get_channel(session_hungup);
-	assert(channel != NULL);
-
-	state = switch_channel_get_state(channel);
 
 	if ((coresession = (CoreSession *) switch_channel_get_private(channel, "CoreSession"))) {
 		if (coresession->hook_state != state) {
@@ -560,15 +541,12 @@ switch_status_t dtmf_callback(switch_core_session_t *session_cb,
 							  void *buf,  
 							  unsigned int buflen) {
 	
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session_cb);
 	CoreSession *coresession = NULL;
 	switch_status_t result;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "dtmf_callback called\n");
 	fflush(stdout);
-
-	channel = switch_core_session_get_channel(session_cb);
-	assert(channel != NULL);
 
 	coresession = (CoreSession *) switch_channel_get_private(channel, "CoreSession");
 	if (!coresession) {
@@ -584,8 +562,6 @@ switch_status_t dtmf_callback(switch_core_session_t *session_cb,
 	return result;
 
 }
-
-
 
 switch_status_t process_callback_result(char *ret, 
 					struct input_callback_state *cb_state,

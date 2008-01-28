@@ -547,8 +547,6 @@ SWITCH_STANDARD_DIALPLAN(enum_dialplan_hunt)
 	enum_route_t *rtp;
 	char *dp = (char *) arg;
 
-	assert(channel != NULL);
-
 	if (!caller_profile) {
 		caller_profile = switch_channel_get_caller_profile(channel);
 	}
@@ -596,8 +594,6 @@ SWITCH_STANDARD_APP(enum_app_function)
 	switch_size_t l = 0, rbl = sizeof(rbuf);
 	uint32_t cnt = 1;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-
-	assert(channel != NULL);
 
 	if (!(mydata = switch_core_session_strdup(session, data))) {
 		return;

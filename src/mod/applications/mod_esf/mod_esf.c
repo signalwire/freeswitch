@@ -56,7 +56,7 @@ typedef enum {
 
 SWITCH_STANDARD_APP(bcast_function)
 {
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_socket_t *socket;
 	switch_sockaddr_t *audio_addr = NULL, *control_packet_addr;
 	switch_frame_t *read_frame;
@@ -76,11 +76,6 @@ SWITCH_STANDARD_APP(bcast_function)
 	switch_port_t mcast_port = 34567;
 	switch_port_t mcast_control_port = 6061;
 	char *mcast_port_str = "34567";
-
-
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
-	
 
 	if (!switch_strlen_zero((char *) data)) {
 		mydata = switch_core_session_strdup(session, data);

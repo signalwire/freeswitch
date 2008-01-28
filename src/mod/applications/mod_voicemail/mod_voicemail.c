@@ -792,12 +792,8 @@ static switch_status_t vm_macro_get(switch_core_session_t *session,
 									uint32_t timeout)
 {
 	switch_input_args_t args = { 0 }, *ap = NULL;
-	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_size_t bslen;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	if (buf && buflen) {
 		memset(buf, 0, buflen);
@@ -870,7 +866,7 @@ typedef enum {
 static switch_status_t create_file(switch_core_session_t *session, vm_profile_t *profile, 
                                    char *macro_name, char *file_path, switch_size_t *message_len, switch_bool_t limit)
 {
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_file_handle_t fh = { 0 };
 	switch_input_args_t args = { 0 };
@@ -878,8 +874,6 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 	char input[10] = "" , key_buf[80] = "";
 	cc_t cc = { 0 };
 	switch_codec_t *read_codec;
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	read_codec = switch_core_session_get_read_codec(session);
 
@@ -1040,15 +1034,13 @@ static void message_count(vm_profile_t *profile, const char *myid, const char *d
 
 static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t *profile, listen_callback_t *cbt)
 {
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_input_args_t args = { 0 };
 	char term;
 	char input[10] = "" , key_buf[80] = "";
 	switch_file_handle_t fh = { 0 };
 	cc_t cc = { 0 };
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
 
 	if(switch_channel_ready(channel)) {
 
@@ -1227,10 +1219,10 @@ end:
 static void voicemail_check_main(switch_core_session_t *session, const char *profile_name, const char *domain_name, const char *id, int auth)
 {
 	vm_check_state_t vm_check_state = VM_CHECK_START;
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_caller_profile_t *caller_profile;
 	vm_profile_t *profile;
-	switch_xml_t x_domain, x_domain_root, x_user, x_params, x_param;
+	switch_xml_t x_domain = NULL, x_domain_root = NULL, x_user = NULL, x_params, x_param;
 	switch_status_t status;
 	char pass_buf[80] = "", *mypass = NULL, id_buf[80] = "", *myfolder = NULL;
 	const char *thepass = NULL, *myid = id;
@@ -1246,15 +1238,10 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 	int heard_auto_saved = 0, heard_auto_new = 0;
 	char *email_vm = NULL;
 
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);    
-
 	if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error invalid profile %s\n", profile_name);
 		return;
 	}
-
-	x_user = x_domain = x_domain_root = NULL;
 
 	timeout = profile->digit_timeout;
 	attempts = profile->max_login_attempts;
@@ -1684,7 +1671,7 @@ end:
 
 static switch_status_t voicemail_leave_main(switch_core_session_t *session, const char *profile_name, const char *domain_name, const char *id)
 {
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *myfolder = "inbox";
 	char sql[256];
 	prefs_callback_t cbt;
@@ -1693,7 +1680,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	char *file_path = NULL;
 	char *dir_path = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_caller_profile_t *caller_profile;
+	switch_caller_profile_t *caller_profile = switch_channel_get_caller_profile(channel);
 	switch_file_handle_t fh = { 0 };
 	switch_input_args_t args = { 0 };
 	char *email_vm = NULL;
@@ -1719,10 +1706,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 		return SWITCH_STATUS_FALSE;
 	}
 
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
-
-	caller_profile = switch_channel_get_caller_profile(channel);
 	if(switch_strlen_zero(profile->storage_dir)) {
 		dir_path = switch_core_session_sprintf(session, "%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir, 
 			SWITCH_PATH_SEPARATOR,
@@ -2059,10 +2042,7 @@ SWITCH_STANDARD_APP(voicemail_function)
 	const char *id = NULL;
 	const char *auth_var = NULL;
 	int x = 0, check = 0, auth = 0;
-	switch_channel_t *channel;
-
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	if (switch_dir_make_recursive(SWITCH_GLOBAL_dirs.storage_dir, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", SWITCH_GLOBAL_dirs.storage_dir);

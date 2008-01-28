@@ -47,13 +47,10 @@ typedef enum {
 static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t xexten, switch_caller_extension_t **extension)
 {
 	switch_xml_t xcond, xaction;
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *exten_name = (char *) switch_xml_attr_soft(xexten, "name");
 	int proceed = 0;
 	char *expression_expanded = NULL, *field_expanded = NULL;
-
-
-	channel = switch_core_session_get_channel(session);
 
 	for (xcond = switch_xml_child(xexten, "condition"); xcond; xcond = xcond->next) {
 		char *field = NULL;
@@ -186,11 +183,10 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t * root,
 										   switch_xml_t * node)
 {
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_GENERR;
 	switch_event_t *params = NULL;
 
-	channel = switch_core_session_get_channel(session);
 	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
     switch_assert(params);
 
@@ -204,11 +200,9 @@ static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switc
 SWITCH_STANDARD_DIALPLAN(dialplan_hunt)
 {
 	switch_caller_extension_t *extension = NULL;
-	switch_channel_t *channel;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_xml_t alt_root = NULL, cfg, xml = NULL, xcontext, xexten;
 	char *alt_path = (char *) arg;
-	
-	channel = switch_core_session_get_channel(session);
 
 	if (!caller_profile) {
 		if (!(caller_profile = switch_channel_get_caller_profile(channel))) {
