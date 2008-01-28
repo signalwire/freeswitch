@@ -288,6 +288,11 @@ speedy-sure: update-clean
 	$(MAKE) -j core
 	$(MAKE) -j modules
 
+current: update-clean
+	svn update
+	$(MAKE) all
+	$(MAKE) install
+
 wayclean: clean
 
 modules: libfreeswitch.la
