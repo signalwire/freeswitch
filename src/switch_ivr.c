@@ -999,7 +999,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory
 			*parser = (switch_ivr_digit_stream_parser_t *) switch_core_alloc(pool, sizeof(switch_ivr_digit_stream_parser_t));
 		}
 		// if we have parser object, initialize it for the caller
-		if (*parser != NULL) {
+		if (pool && *parser != NULL) {
 			memset(*parser, 0, sizeof(switch_ivr_digit_stream_parser_t));
 			(*parser)->pool_auto_created = pool_auto_created;
 			(*parser)->pool = pool;

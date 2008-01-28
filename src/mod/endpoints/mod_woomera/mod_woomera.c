@@ -98,8 +98,8 @@ struct woomera_message {
 	int mval;
 	char command[WOOMERA_STRLEN];
 	char command_args[WOOMERA_STRLEN];
-	char names[WOOMERA_STRLEN][WOOMERA_ARRAY_LEN];
-	char values[WOOMERA_STRLEN][WOOMERA_ARRAY_LEN];
+	char names[WOOMERA_ARRAY_LEN][WOOMERA_STRLEN];
+	char values[WOOMERA_ARRAY_LEN][WOOMERA_STRLEN];
 	char body[WOOMERA_BODYLEN];
 	unsigned int flags;
 	int last;

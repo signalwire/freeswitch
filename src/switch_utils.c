@@ -549,6 +549,10 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
 	char abuf[25] = "";
 #endif
 
+	if (len < 16) {
+		return status;
+	}
+
 	switch_copy_string(buf, "127.0.0.1", len);
 
 	switch (family) {

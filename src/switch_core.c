@@ -589,7 +589,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_mime_add_type(const char *type, cons
 		if ((argc = switch_separate_string(ext_list, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 
 			for (x = 0; x < argc; x++) {
-				switch_core_hash_insert(runtime.mime_types, argv[x], ptype);
+				if (argv[x] && ptype) {
+					switch_core_hash_insert(runtime.mime_types, argv[x], ptype);
+				}
 			}
 			
 			status = SWITCH_STATUS_SUCCESS;

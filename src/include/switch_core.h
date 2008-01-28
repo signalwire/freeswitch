@@ -867,14 +867,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(_In_ switch_core_s
   \param pool the pool to use for the new hash
   \return SWITCH_STATUS_SUCCESS if the hash is created
 */
-SWITCH_DECLARE(switch_status_t) switch_core_hash_init(switch_hash_t ** hash, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_core_hash_init(_Out_ switch_hash_t ** hash, _In_ switch_memory_pool_t *pool);
 
 /*! 
   \brief Destroy an existing hash table
   \param hash the hash to destroy
   \return SWITCH_STATUS_SUCCESS if the hash is destroyed
 */
-SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(switch_hash_t **hash);
+SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(_Inout_ switch_hash_t **hash);
 
 /*! 
   \brief Insert data into a hash
@@ -884,7 +884,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(switch_hash_t **hash);
   \return SWITCH_STATUS_SUCCESS if the data is added
   \note the string key must be a constant or a dynamic string
 */
-SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(switch_hash_t * hash, const char *key, const void *data);
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(_In_ switch_hash_t * hash, _In_z_ const char *key, _In_opt_ const void *data);
 
 /*! 
   \brief Insert data into a hash

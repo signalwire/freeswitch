@@ -125,11 +125,11 @@ SWITCH_DECLARE(const char *) switch_dso_error(switch_dso_handle_t * dso, char *b
  * @{
  */
 
-SWITCH_DECLARE(int) switch_snprintf(char *buf, switch_size_t len, const char *format, ...);
+SWITCH_DECLARE(int) switch_snprintf(_Out_z_cap_(len) char *buf, _In_ switch_size_t len, _In_z_ _Printf_format_string_ const char *format, ...);
 
-SWITCH_DECLARE(int) switch_vasprintf(char **buf, const char *format, va_list ap);
+SWITCH_DECLARE(int) switch_vasprintf(_Out_opt_ char **buf, _In_z_ _Printf_format_string_ const char *format, _In_ va_list ap);
 
-SWITCH_DECLARE(char *) switch_copy_string(char *dst, const char *src, switch_size_t dst_size);
+SWITCH_DECLARE(char *) switch_copy_string(_Out_z_cap_(dst_size) char *dst, _In_z_ const char *src, _In_ switch_size_t dst_size);
 
 /** @} */
 

@@ -331,7 +331,7 @@ static void add_pvt(private_t * tech_pvt, int master)
 
 	switch_mutex_lock(globals.pvt_lock);
 
-	if (switch_strlen_zero(tech_pvt->call_id)) {
+	if (*tech_pvt->call_id == '\0') {
 		switch_snprintf(tech_pvt->call_id, sizeof(tech_pvt->call_id), "%d", ++globals.call_id);
 		switch_core_hash_insert(globals.call_hash, tech_pvt->call_id, tech_pvt);
 		switch_core_session_set_read_codec(tech_pvt->session, &globals.read_codec);

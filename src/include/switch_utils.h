@@ -92,7 +92,7 @@ atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE
   \param family the address family to return (AF_INET or AF_INET6)
   \return SWITCH_STATUS_SUCCESSS for success, otherwise failure
 */
-SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int family);
+SWITCH_DECLARE(switch_status_t) switch_find_local_ip(_Out_opt_bytecapcount_(len) char *buf, _In_ int len, _In_ int family);
 
 /*!
   \brief find the char representation of an ip adress

@@ -58,7 +58,7 @@ SWITCH_BEGIN_EXTERN_C
  * \param max_len length required by the buffer
  * \return status
  */
-SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t *pool, switch_buffer_t **buffer, switch_size_t max_len);
+SWITCH_DECLARE(switch_status_t) switch_buffer_create(_In_ switch_memory_pool_t *pool, _Out_ switch_buffer_t **buffer, _In_ switch_size_t max_len);
 
 /*! \brief Allocate a new dynamic switch_buffer 
  * \param buffer returned pointer to the new buffer
@@ -67,8 +67,8 @@ SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t *pool,
  * \param max_len length the buffer is allowed to grow to
  * \return status
  */
-SWITCH_DECLARE(switch_status_t) switch_buffer_create_dynamic(switch_buffer_t **buffer, switch_size_t blocksize, switch_size_t start_len,
-															 switch_size_t max_len);
+SWITCH_DECLARE(switch_status_t) switch_buffer_create_dynamic(_Out_ switch_buffer_t **buffer, _In_ switch_size_t blocksize, _In_ switch_size_t start_len,
+															 _In_ switch_size_t max_len);
 
 SWITCH_DECLARE(void) switch_buffer_add_mutex(_In_ switch_buffer_t *buffer, _In_ switch_mutex_t *mutex);
 SWITCH_DECLARE(void) switch_buffer_lock(_In_ switch_buffer_t *buffer);

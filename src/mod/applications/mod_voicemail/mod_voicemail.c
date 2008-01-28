@@ -437,7 +437,7 @@ static switch_status_t load_config(void)
 				callback_dialplan = val;
 			} else if (!strcasecmp(var, "callback-context") && !switch_strlen_zero(val)) {
 				callback_context = val;
-			} else if (!strcasecmp(var, "file-extension")) {
+			} else if (!strcasecmp(var, "file-extension") && !switch_strlen_zero(val)) {
 				file_ext = val;
 			} else if (!strcasecmp(var, "record-title") && !switch_strlen_zero(val)) {
 				record_title = val;
