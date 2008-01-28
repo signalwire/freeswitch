@@ -1513,6 +1513,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		if (flags && *flags & SFF_RFC2833) {
 			send_msg->header.pt = rtp_session->te;
 		}
+        data = send_msg->body;
+        datalen -= rtp_header_len;
 	} else {
 		uint8_t m = 0;
 		
