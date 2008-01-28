@@ -397,7 +397,7 @@ static void launch_threads(void)
 
 			if (!strcasecmp(var, "rate")) {
 				int tmp = atoi(val);
-				if (tmp == 8000 || tmp == 16000) {
+				if (tmp == 8000 || tmp == 16000 || tmp == 32000) {
 					source->rate = tmp;
 				}
 			} else if (!strcasecmp(var, "shuffle")) {
