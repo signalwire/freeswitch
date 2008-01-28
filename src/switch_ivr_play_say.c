@@ -126,7 +126,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	switch_event_add_header_string(hint_data, SWITCH_STACK_BOTTOM, "lang", chan_lang);
 	if (data) {
 		switch_event_add_header_string(hint_data, SWITCH_STACK_BOTTOM, "data", data);
-	}
+	} else {
+        data = "";
+    }
 	switch_channel_event_set_data(channel, hint_data);
 
 	if (switch_xml_locate("phrases", NULL, NULL, NULL, &xml, &cfg, hint_data) != SWITCH_STATUS_SUCCESS) {

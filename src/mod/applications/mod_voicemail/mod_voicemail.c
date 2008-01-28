@@ -901,7 +901,11 @@ record_file:
 			if (unlink(file_path) != 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "failed to delete file [%s]\n", file_path);
 			}
-            goto end;
+            if (switch_channel_ready(channel)) {
+                goto record_file;
+            } else {
+                goto end;
+            }
         } else {
             status = SWITCH_STATUS_SUCCESS;
         }
