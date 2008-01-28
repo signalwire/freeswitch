@@ -70,28 +70,28 @@ SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t *pool,
 SWITCH_DECLARE(switch_status_t) switch_buffer_create_dynamic(switch_buffer_t **buffer, switch_size_t blocksize, switch_size_t start_len,
 															 switch_size_t max_len);
 
-SWITCH_DECLARE(void) switch_buffer_add_mutex(switch_buffer_t *buffer, switch_mutex_t *mutex);
-SWITCH_DECLARE(void) switch_buffer_lock(switch_buffer_t *buffer);
-SWITCH_DECLARE(switch_status_t) switch_buffer_trylock(switch_buffer_t *buffer);
-SWITCH_DECLARE(void) switch_buffer_unlock(switch_buffer_t *buffer);
+SWITCH_DECLARE(void) switch_buffer_add_mutex(_In_ switch_buffer_t *buffer, _In_ switch_mutex_t *mutex);
+SWITCH_DECLARE(void) switch_buffer_lock(_In_ switch_buffer_t *buffer);
+SWITCH_DECLARE(switch_status_t) switch_buffer_trylock(_In_ switch_buffer_t *buffer);
+SWITCH_DECLARE(void) switch_buffer_unlock(_In_ switch_buffer_t *buffer);
 
 /*! \brief Get the length of a switch_buffer_t 
  * \param buffer any buffer of type switch_buffer_t
  * \return int size of the buffer.
  */
-SWITCH_DECLARE(switch_size_t) switch_buffer_len(switch_buffer_t *buffer);
+SWITCH_DECLARE(switch_size_t) switch_buffer_len(_In_ switch_buffer_t *buffer);
 
 /*! \brief Get the freespace of a switch_buffer_t 
  * \param buffer any buffer of type switch_buffer_t
  * \return int freespace in the buffer.
  */
-SWITCH_DECLARE(switch_size_t) switch_buffer_freespace(switch_buffer_t *buffer);
+SWITCH_DECLARE(switch_size_t) switch_buffer_freespace(_In_ switch_buffer_t *buffer);
 
 /*! \brief Get the in use amount of a switch_buffer_t 
  * \param buffer any buffer of type switch_buffer_t
  * \return int ammount of buffer curently in use
  */
-SWITCH_DECLARE(switch_size_t) switch_buffer_inuse(switch_buffer_t *buffer);
+SWITCH_DECLARE(switch_size_t) switch_buffer_inuse(_In_ switch_buffer_t *buffer);
 
 /*! \brief Read data from a switch_buffer_t up to the ammount of datalen if it is available.  Remove read data from buffer. 
  * \param buffer any buffer of type switch_buffer_t
@@ -99,7 +99,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_inuse(switch_buffer_t *buffer);
  * \param datalen amount of data to be returned
  * \return int ammount of data actually read
  */
-SWITCH_DECLARE(switch_size_t) switch_buffer_read(switch_buffer_t *buffer, void *data, switch_size_t datalen);
+SWITCH_DECLARE(switch_size_t) switch_buffer_read(_In_ switch_buffer_t *buffer, _In_ void *data, _In_ switch_size_t datalen);
 
 /*! \brief Read data endlessly from a switch_buffer_t 
  * \param buffer any buffer of type switch_buffer_t
@@ -108,13 +108,13 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_read(switch_buffer_t *buffer, void *
  * \return int ammount of data actually read
  * \note Once you have read all the data from the buffer it will loop around.
  */
-SWITCH_DECLARE(switch_size_t) switch_buffer_read_loop(switch_buffer_t *buffer, void *data, switch_size_t datalen);
+SWITCH_DECLARE(switch_size_t) switch_buffer_read_loop(_In_ switch_buffer_t *buffer, _In_ void *data, _In_ switch_size_t datalen);
 
 /*! \brief Assign a number of loops to read
  * \param buffer any buffer of type switch_buffer_t
  * \param loops the number of loops (-1 for infinite)
  */
-SWITCH_DECLARE(void) switch_buffer_set_loops(switch_buffer_t *buffer, int32_t loops);
+SWITCH_DECLARE(void) switch_buffer_set_loops(_In_ switch_buffer_t *buffer, _In_ int32_t loops);
 
 /*! \brief Write data into a switch_buffer_t up to the length of datalen
  * \param buffer any buffer of type switch_buffer_t
@@ -122,19 +122,19 @@ SWITCH_DECLARE(void) switch_buffer_set_loops(switch_buffer_t *buffer, int32_t lo
  * \param datalen amount of data to be written
  * \return int amount of buffer used after the write, or 0 if no space available
  */
-SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, const void *data, switch_size_t datalen);
+SWITCH_DECLARE(switch_size_t) switch_buffer_write(_In_ switch_buffer_t *buffer, _In_bytecount_(datalen) const void *data, _In_ switch_size_t datalen);
 
 /*! \brief Remove data from the buffer
  * \param buffer any buffer of type switch_buffer_t
  * \param datalen amount of data to be removed
  * \return int size of buffer, or 0 if unable to toss that much data
  */
-SWITCH_DECLARE(switch_size_t) switch_buffer_toss(switch_buffer_t *buffer, switch_size_t datalen);
+SWITCH_DECLARE(switch_size_t) switch_buffer_toss(_In_ switch_buffer_t *buffer, _In_ switch_size_t datalen);
 
 /*! \brief Remove all data from the buffer
  * \param buffer any buffer of type switch_buffer_t
  */
-SWITCH_DECLARE(void) switch_buffer_zero(switch_buffer_t *buffer);
+SWITCH_DECLARE(void) switch_buffer_zero(_In_ switch_buffer_t *buffer);
 
 /*! \brief Destroy the buffer
  * \param buffer buffer to destroy
@@ -142,7 +142,7 @@ SWITCH_DECLARE(void) switch_buffer_zero(switch_buffer_t *buffer);
  */
 SWITCH_DECLARE(void) switch_buffer_destroy(switch_buffer_t **buffer);
 
-SWITCH_DECLARE(switch_size_t) switch_buffer_zwrite(switch_buffer_t *buffer, const void *data, switch_size_t datalen);
+SWITCH_DECLARE(switch_size_t) switch_buffer_zwrite(_In_ switch_buffer_t *buffer, _In_bytecount_(datalen) const void *data, _In_ switch_size_t datalen);
 
 /** @} */
 
