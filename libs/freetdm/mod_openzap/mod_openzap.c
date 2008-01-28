@@ -1232,6 +1232,12 @@ static ZIO_SIGNAL_CB_FUNCTION(on_isdn_signal)
     switch(sigmsg->event_id) {
     case ZAP_SIGEVENT_START:
 		{
+			zap_tone_type_t tt = ZAP_TONE_DTMF;
+			
+			if (zap_channel_command(sigmsg->channel, ZAP_COMMAND_ENABLE_DTMF_DETECT, &tt) != ZAP_SUCCESS) {
+				zap_log(ZAP_LOG_ERROR, "TONE ERROR\n");
+			}
+
 			return zap_channel_from_event(sigmsg, &session);
 		}
 		break;
@@ -1248,12 +1254,6 @@ static ZIO_SIGNAL_CB_FUNCTION(on_isdn_signal)
     case ZAP_SIGEVENT_UP:
 		{
 			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
-				zap_tone_type_t tt = ZAP_TONE_DTMF;
-				
-				if (zap_channel_command(sigmsg->channel, ZAP_COMMAND_ENABLE_DTMF_DETECT, &tt) != ZAP_SUCCESS) {
-					zap_log(ZAP_LOG_ERROR, "TONE ERROR\n");
-				}
-
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_answered(channel);
 				switch_core_session_rwunlock(session);
