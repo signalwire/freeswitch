@@ -37,8 +37,6 @@ opt/freeswitch/mod/mod_native_file.so*
 opt/freeswitch/mod/mod_sndfile.so*
 opt/freeswitch/mod/mod_local_stream.so*
 opt/freeswitch/mod/mod_xml_*.so*
-opt/freeswitch/conf
-opt/freeswitch/conf/dialplan
 opt/freeswitch/conf/dialplan/public.xml
 opt/freeswitch/conf/dialplan/default.xml
 opt/freeswitch/conf/dialplan/extensions
@@ -46,18 +44,12 @@ opt/freeswitch/conf/vars.xml
 opt/freeswitch/conf/mime.types
 opt/freeswitch/conf/web-vm.tpl
 opt/freeswitch/conf/tetris.ttml
-opt/freeswitch/conf/sip_profiles
 opt/freeswitch/conf/sip_profiles/outbound.xml
 opt/freeswitch/conf/sip_profiles/nat.xml
-opt/freeswitch/conf/sip_profiles/nat
 opt/freeswitch/conf/sip_profiles/nat/example.xml
-opt/freeswitch/conf/sip_profiles/default
 opt/freeswitch/conf/sip_profiles/default/example.xml
 opt/freeswitch/conf/sip_profiles/default.xml
-opt/freeswitch/conf/sip_profiles/outbound
 opt/freeswitch/conf/sip_profiles/outbound/example.xml
-opt/freeswitch/conf/directory
-opt/freeswitch/conf/directory/default
 opt/freeswitch/conf/directory/default/1007.xml
 opt/freeswitch/conf/directory/default/1001.xml
 opt/freeswitch/conf/directory/default/1008.xml
@@ -85,7 +77,6 @@ opt/freeswitch/conf/fur_elise.ttml
 opt/freeswitch/conf/voicemail.tpl
 opt/freeswitch/conf/freeswitch.xml
 opt/freeswitch/conf/extensions.conf
-opt/freeswitch/conf/autoload_configs
 opt/freeswitch/conf/autoload_configs/ivr.conf.xml
 opt/freeswitch/conf/autoload_configs/voicemail.conf.xml
 opt/freeswitch/conf/autoload_configs/switch.conf.xml
@@ -116,9 +107,7 @@ opt/freeswitch/conf/autoload_configs/xml_cdr.conf.xml
 opt/freeswitch/conf/autoload_configs/cdr_csv.conf.xml
 opt/freeswitch/conf/autoload_configs/dialplan_directory.conf.xml
 opt/freeswitch/conf/autoload_configs/console.conf.xml
-opt/freeswitch/conf/jingle_profiles
 opt/freeswitch/conf/jingle_profiles/server.xml
 opt/freeswitch/conf/jingle_profiles/client.xml
-opt/freeswitch/conf/mrcp_profiles
 opt/freeswitch/conf/mrcp_profiles/openmrcp-v2.xml
 opt/freeswitch/conf/mrcp_profiles/openmrcp-v1.xml

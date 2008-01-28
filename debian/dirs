@@ -1,7 +1,13 @@
-opt/freeswitch
+opt/freeswitch/conf/dialplan/extensions
+opt/freeswitch/conf/sip_profiles/nat
+opt/freeswitch/conf/sip_profiles/default
+opt/freeswitch/conf/sip_profiles/outbound
+opt/freeswitch/conf/directory/default
+opt/freeswitch/conf/autoload_configs
+opt/freeswitch/conf/jingle_profiles
+opt/freeswitch/conf/mrcp_profiles
 opt/freeswitch/log
 opt/freeswitch/db
-opt/freeswitch/bin
 opt/freeswitch/bin/scripts
 etc/opt
 etc/monit
