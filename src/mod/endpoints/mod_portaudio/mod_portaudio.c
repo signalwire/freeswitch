@@ -540,12 +540,14 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 	switch_mutex_lock(globals.device_lock);
+ get_samples:
 
 	if ((samples = ReadAudioStream(globals.audio_stream, globals.read_frame.data, 
 								   globals.read_codec.implementation->samples_per_frame, 
 								   &globals.timer)) == 0) {
 		switch_mutex_unlock(globals.device_lock);
-		goto cng;
+        switch_yield(1000);
+        goto get_samples;
 	} else {
 		globals.read_frame.datalen = samples * 2;
 		globals.read_frame.samples = samples;
@@ -731,7 +733,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 	globals.read_frame.buflen = sizeof(globals.databuf);
 	globals.cng_frame.data = globals.cngbuf;
 	globals.cng_frame.buflen = sizeof(globals.cngbuf);
-	globals.cng_frame.datalen = sizeof(globals.cngbuf);
+	globals.cng_frame.datalen = switch_bytes_per_frame(globals.sample_rate, globals.codec_ms) * 2;
 	switch_set_flag((&globals.cng_frame), SFF_CNG);
 
 	/* connect my internal structure to the blank pointer passed to me */
