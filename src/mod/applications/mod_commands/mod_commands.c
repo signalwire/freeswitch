@@ -1794,7 +1794,7 @@ SWITCH_STANDARD_API(show_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	/* If you changes the field qty or order of any of these select */
+	/* If you change the field qty or order of any of these select */
 	/* statmements, you must also change show_callback and friends to match! */
 	if (!command) {
 		stream->write_function(stream, "-USAGE: %s\n", SHOW_SYNTAX);
