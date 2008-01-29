@@ -119,21 +119,42 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 							  sip_t const *sip,
 							  tagi_t tags[])
 {
-	if (session) {
-		const char *tmp;
-		switch_channel_t *channel = switch_core_session_get_channel(session); 
-		if (sip->sip_user_agent && !switch_strlen_zero(sip->sip_user_agent->g_string)){
-			switch_channel_set_variable(channel, "sip_user_agent", sip->sip_user_agent->g_string);
-		}
-		if ((tmp = sofia_glue_get_unknown_header(sip, "rtp-txstat"))) {
-			switch_channel_set_variable(channel, "sip_rtp_txstat", tmp);
-		}
-		if ((tmp = sofia_glue_get_unknown_header(sip, "rtp-rxstat"))) {
-			switch_channel_set_variable(channel, "sip_rtp_rxstat", tmp);
-		}
-		
+	const char *tmp;
+	switch_channel_t *channel;
+
+	if (!session) return;
+
+	channel = switch_core_session_get_channel(session); 
+	if (sip->sip_user_agent && !switch_strlen_zero(sip->sip_user_agent->g_string)){
+		switch_channel_set_variable(channel, "sip_user_agent", sip->sip_user_agent->g_string);
+	}
+	if ((tmp = sofia_glue_get_unknown_header(sip, "rtp-txstat"))) {
+		switch_channel_set_variable(channel, "sip_rtp_txstat", tmp);
+	}
+	if ((tmp = sofia_glue_get_unknown_header(sip, "rtp-rxstat"))) {
+		switch_channel_set_variable(channel, "sip_rtp_rxstat", tmp);
 	}
 	return;
+}
+
+void sofia_handle_sip_r_message(int status, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip)
+{
+	if (status == 503) {
+		const char *user = NULL, *host = NULL;
+		char *sql;
+
+		if (sip->sip_to && sip->sip_to->a_url) {
+			user = sip->sip_to->a_url->url_user;
+			host = sip->sip_to->a_url->url_host;
+
+			sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", user, host);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Deleting registration for %s@%s\n", user, host);
+			sofia_glue_execute_sql(profile, SWITCH_TRUE, sql, NULL);
+			switch_safe_free(sql);
+		}
+	}
+
+	nua_handle_destroy(nh);
 }
 
 void sofia_event_callback(nua_event_t event,
@@ -221,27 +242,8 @@ void sofia_event_callback(nua_event_t event,
 		break;
 
 	case nua_r_message:
-		{
-			if (status == 503) {
-				const char *user = NULL, *host = NULL;
-				char *sql;
-
-				if (sip->sip_to && sip->sip_to->a_url) {
-					user = sip->sip_to->a_url->url_user;
-					host = sip->sip_to->a_url->url_host;
-					
-					sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", user, host);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Deleting registration for %s@%s\n", user, host);
-					sofia_glue_execute_sql(profile, SWITCH_TRUE, sql, NULL);
-					switch_safe_free(sql);
-				}
-			} 
-
-			nua_handle_destroy(nh);
-			
-		}
+		sofia_handle_sip_r_message(status, profile, nh, sip);
 		break;
-
 	case nua_r_invite:
 		sofia_handle_sip_r_invite(session, status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
@@ -321,17 +323,14 @@ void sofia_event_callback(nua_event_t event,
 	}
 
   done:
-
 	if (gateway) {
 		sofia_reg_release_gateway(gateway);
 	}
 
 	if (session) {
 		switch_core_session_rwunlock(session);
-
 	}
 }
-
 
 void event_handler(switch_event_t *event)
 {
@@ -384,8 +383,6 @@ void event_handler(switch_event_t *event)
 		}
 	}
 }
-
-
 
 void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void *obj)
 {
@@ -477,7 +474,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 						TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("PUBLISH")),
 						TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ENABLEMESSAGE(1)),
 						SIPTAG_SUPPORTED_STR("100rel, precondition"), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
-
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "activated db for %s\n", profile->name);
@@ -548,9 +544,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	switch_mutex_lock(profile->flag_mutex);
 	switch_mutex_unlock(profile->flag_mutex);
-
-
-
 
 	if (switch_event_create(&s_event, SWITCH_EVENT_UNPUBLISH) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp,_sip._tcp,_sip._sctp%s",
@@ -630,7 +623,6 @@ static void logger(void *logarg, char const *fmt, va_list ap)
 		free(data);
 	}
 }
-
 
 static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 {
@@ -814,7 +806,6 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 	skip:
 		switch_assert(gateway_tag);
 	}
-
 }
 
 switch_status_t config_sofia(int reload, char *profile_name)
@@ -940,7 +931,6 @@ switch_status_t config_sofia(int reload, char *profile_name)
 #else
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 #endif
-
 					} else if (!strcasecmp(var, "user-agent-string")) {
 						profile->user_agent = switch_core_strdup(profile->pool, val);;
 					} else if (!strcasecmp(var, "dtmf-type")) {
@@ -1292,7 +1282,6 @@ switch_status_t config_sofia(int reload, char *profile_name)
 	}
 
 	return status;
-
 }
 
 static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status,
@@ -1326,7 +1315,6 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				switch_core_session_receive_message(other_session, &msg);
 				switch_core_session_rwunlock(other_session);
 			}
-			
 			return;
 		}
 
@@ -1806,7 +1794,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	return;
 }
 
-
 /*---------------------------------------*/
 void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[])
 {
@@ -2102,7 +2089,6 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	}
 }
 
-
 void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[])
 {
 	/* placeholder for string searching */
@@ -2262,7 +2248,6 @@ const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const 
 	return uri;
 }
 
-
 void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
 	switch_core_session_t *session = NULL;
@@ -2304,7 +2289,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		nua_respond(nh, 400, "Missing Contact Header", TAG_END());
 		return;
 	}
-	
 
 	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
 
@@ -2355,7 +2339,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		for(hp = v_event->headers; hp; hp = hp->next) {
 			switch_channel_set_variable(channel, hp->name, hp->value);
 		}
-		
 		switch_event_destroy(&v_event);
 	}
 
@@ -2497,7 +2480,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	}
 
 	if (sip->sip_referred_by) {
-
 		referred_by_user = sip->sip_referred_by->b_url->url_user;
 		referred_by_host = sip->sip_referred_by->b_url->url_host;
 		channel_name = url_set_chanvars(session, sip->sip_referred_by->b_url, sip_referred_by);
@@ -2868,7 +2850,6 @@ static void set_variable_sip_param(switch_channel_t *channel, char *header_type,
 		params++;
 		sh = sh_save;
 	}
-
 }
 
 /* For Emacs:
