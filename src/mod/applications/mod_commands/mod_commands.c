@@ -190,9 +190,6 @@ SWITCH_STANDARD_API(find_user_function)
 	return _find_user(cmd, session, stream, SWITCH_FALSE);
 }
 
-
-
-
 SWITCH_STANDARD_API(xml_locate_function)
 {
 	switch_xml_t xml = NULL, obj = NULL;
@@ -218,8 +215,7 @@ SWITCH_STANDARD_API(xml_locate_function)
         goto end;
     }
 
-
-    mydata = strdup(cmd);
+	mydata = strdup(cmd);
     switch_assert(mydata);
 	
     argc = switch_separate_string(mydata, delim, argv, (sizeof(argv) / sizeof(argv[0])));
@@ -253,9 +249,7 @@ SWITCH_STANDARD_API(xml_locate_function)
 		goto end;
 	}
 
-
- end:
-
+end:
 	switch_event_destroy(&params);
 
 	if (err) {
@@ -306,7 +300,6 @@ SWITCH_STANDARD_API(regex_function)
         goto error;
     }
 
-
 	if ((proceed = switch_regex_perform(argv[0], argv[1], &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 		if (argc > 2) {
 			len = strlen(argv[0]) * 3;
@@ -335,7 +328,6 @@ SWITCH_STANDARD_API(regex_function)
     switch_safe_free(mydata);
 	
     return SWITCH_STATUS_SUCCESS;
-
 }
 
 typedef enum {
@@ -462,8 +454,6 @@ SWITCH_STANDARD_API(cond_function)
 
     switch_safe_free(mydata);
     return SWITCH_STATUS_SUCCESS;
-    
-    
 }
 
 
@@ -597,8 +587,7 @@ SWITCH_STANDARD_API(ctl_function)
 			stream->write_function(stream, "-ERR INVALID COMMAND\nUSAGE: fsctl %s", CTL_SYNTAX);
 			goto end;
 		} 
-		
-		
+
 		stream->write_function(stream, "+OK\n");
 	  end:
 		free(mydata);
@@ -725,65 +714,65 @@ SWITCH_STANDARD_API(transfer_function)
 	switch_core_session_t *tsession = NULL, *other_session = NULL;
 	char *mycmd = NULL, *argv[5] = { 0 };
 	int argc = 0;
+	char *tuuid = argv[0];
+	char *dest = argv[1];
+	char *dp = argv[2];
+	char *context = argv[3];
+	char *arg = NULL;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
-		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-		if (argc >= 2 && argc <= 5) {
-			char *tuuid = argv[0];
-			char *dest = argv[1];
-			char *dp = argv[2];
-			char *context = argv[3];
-			char *arg = NULL;
+	if (switch_strlen_zero(cmd) || !(mycmd = strdup(cmd))) {
+		stream->write_function(stream, "-USAGE: %s\n", TRANSFER_SYNTAX);
+		return SWITCH_STATUS_SUCCESS;
+	}
 
-			if ((tsession = switch_core_session_locate(tuuid))) {
+	argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	if (argc < 2 || argc > 5) {
+		stream->write_function(stream, "-USAGE: %s\n", TRANSFER_SYNTAX);
+		goto done;
+	}
 
-				if (*dest == '-') {
-					arg = dest;
-					dest = argv[2];
-					dp = argv[3];
-					context = argv[4];
-				}
+	if (!(tsession = switch_core_session_locate(tuuid))) {
+		stream->write_function(stream, "-ERR No Such Channel!\n");
+		goto done;
+	}
 
-				if (arg) {
-					switch_channel_t *channel = switch_core_session_get_channel(tsession);
-					arg++;
-					if (!strcasecmp(arg, "bleg")) {
-						const char *uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE);
-						if (uuid && (other_session = switch_core_session_locate(uuid))) {
-							switch_core_session_t *tmp = tsession;
-							tsession = other_session;
-							other_session = NULL;
-							switch_core_session_rwunlock(tmp);
-						}
-					} else if (!strcasecmp(arg, "both")) {
-						const char *uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE);
-						if (uuid && (other_session = switch_core_session_locate(uuid))) {
-							switch_ivr_session_transfer(other_session, dest, dp, context);
-							switch_core_session_rwunlock(other_session);
-						}
-					}
-				}
-				
-				if (switch_ivr_session_transfer(tsession, dest, dp, context) == SWITCH_STATUS_SUCCESS) {
-					stream->write_function(stream, "+OK\n");
-				} else {
-					stream->write_function(stream, "-ERR\n");
-				}
+	if (*dest == '-') {
+		arg = dest;
+		dest = argv[2];
+		dp = argv[3];
+		context = argv[4];
+	}
 
-				switch_core_session_rwunlock(tsession);
-				
-			} else {
-				stream->write_function(stream, "-ERR No Such Channel!\n");
+	if (arg) {
+		switch_channel_t *channel = switch_core_session_get_channel(tsession);
+		const char *uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE);
+		arg++;
+		if (!strcasecmp(arg, "bleg")) {
+			if (uuid && (other_session = switch_core_session_locate(uuid))) {
+				switch_core_session_t *tmp = tsession;
+				tsession = other_session;
+				other_session = NULL;
+				switch_core_session_rwunlock(tmp);
 			}
-			goto done;
+		} else if (!strcasecmp(arg, "both")) {
+			if (uuid && (other_session = switch_core_session_locate(uuid))) {
+				switch_ivr_session_transfer(other_session, dest, dp, context);
+				switch_core_session_rwunlock(other_session);
+			}
 		}
 	}
 
-	stream->write_function(stream, "-USAGE: %s\n", TRANSFER_SYNTAX);
+	if (switch_ivr_session_transfer(tsession, dest, dp, context) == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK\n");
+	} else {
+		stream->write_function(stream, "-ERR\n");
+	}
+
+	switch_core_session_rwunlock(tsession);
 
 done:
 	switch_safe_free(mycmd);
