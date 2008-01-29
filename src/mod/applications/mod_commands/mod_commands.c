@@ -45,27 +45,18 @@ SWITCH_STANDARD_API(user_data_function)
 {
 	switch_xml_t x_domain, xml = NULL, x_user = NULL, x_param, x_params;	
 	int argc;
-    char *mydata = NULL, *argv[3];
-	char *key = NULL, *type = NULL, *user, *domain;
+	char *mydata = NULL, *argv[3], *key = NULL, *type = NULL, *user, *domain;
 	char delim = ' ';
-	const char *err = NULL;
 	const char *container = "params", *elem = "param";
 	switch_event_t *params = NULL;
 
-    if (!cmd) {
-		err = "bad args";
-        goto end;
-    }
+	if (switch_strlen_zero(cmd) || !(mydata = strdup(cmd))) {
+		goto end;
+	}
 
-    mydata = strdup(cmd);
-    switch_assert(mydata);
-	
-    argc = switch_separate_string(mydata, delim, argv, (sizeof(argv) / sizeof(argv[0])));
-
-    if (argc < 3) {
-		err = "bad args";
-        goto end;
-    }
+	if ((argc = switch_separate_string(mydata, delim, argv, (sizeof(argv) / sizeof(argv[0])))) < 3) {
+		goto end;
+	}
 
 	user = argv[0];
 	type = argv[1];
@@ -76,56 +67,39 @@ SWITCH_STANDARD_API(user_data_function)
 	} else {
 		domain = "cluecon.com";
 	}
-	
+
 	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
-	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "user", user);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "type", type);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "key", key);
 
+	if (key && type && switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, params) == SWITCH_STATUS_SUCCESS) {
+		if (!strcmp(type, "var")) {
+			container = "variables";
+			elem = "variable";
+		}
 
-	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, params) != SWITCH_STATUS_SUCCESS) {
-		err = "can't find user";
-		goto end;
-	}
-	
-	
- end:
+		if ((x_params = switch_xml_child(x_user, container))) {
+			for (x_param = switch_xml_child(x_params, elem); x_param; x_param = x_param->next) {
+				const char *var = switch_xml_attr(x_param, "name");
+				const char *val = switch_xml_attr(x_param, "value");
 
-	switch_event_destroy(&params);
-
-
-	if (xml) {
-		if (err) {
-			//stream->write_function(stream,  "-Error %s\n", err);
-		} else {
-			if (!strcmp(type, "var")) {
-				container = "variables";
-				elem = "variable";
-			}
-
-			if ((x_params = switch_xml_child(x_user, container))) {
-				for (x_param = switch_xml_child(x_params, elem); x_param; x_param = x_param->next) {
-					const char *var = switch_xml_attr(x_param, "name");
-					const char *val = switch_xml_attr(x_param, "value");
-				
-					if (!strcasecmp(var, key)) {
-						stream->write_function(stream, "%s", val);
-						break;
-					}
-				
+				if (var && val && !strcasecmp(var, key)) {
+					stream->write_function(stream, "%s", val);
+					break;
 				}
+
 			}
 		}
-		switch_xml_free(xml);
 	}
 
+end:
+	switch_xml_free(xml);
 	free(mydata);
-	switch_safe_free(params);
+	switch_event_destroy(&params);
 
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 
@@ -178,9 +152,7 @@ static switch_status_t _find_user(const char *cmd, switch_core_session_t *sessio
 		goto end;
 	}
 
-
- end:
-
+end:
 	if (session || tf) {
 		stream->write_function(stream, err ? "false" : "true");
 		switch_xml_free(xml);
