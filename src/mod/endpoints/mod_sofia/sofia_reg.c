@@ -36,7 +36,25 @@
  */
 #include "mod_sofia.h"
 
+static void sofia_reg_kill_reg(sofia_gateway_t *gateway_ptr, int unreg)
+{
+    if (gateway_ptr->nh) {
+        if (unreg) {
+            nua_unregister(gateway_ptr->nh,
+                           NUTAG_URL(gateway_ptr->register_url),
+                           SIPTAG_FROM_STR(gateway_ptr->register_from),
+                           SIPTAG_TO_STR(gateway_ptr->register_from),
+                           SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
+                           SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
+                           NUTAG_REGISTRAR(gateway_ptr->register_proxy),
+                           NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
+        }
+        nua_handle_bind(gateway_ptr->nh, NULL);
+        nua_handle_destroy(gateway_ptr->nh);
+        gateway_ptr->nh = NULL;
+    }
 
+}
 
 void sofia_reg_unregister(sofia_profile_t *profile)
 {
@@ -44,10 +62,9 @@ void sofia_reg_unregister(sofia_profile_t *profile)
 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
 		if (gateway_ptr->sofia_private) {
 			free(gateway_ptr->sofia_private);
-			nua_handle_bind(gateway_ptr->nh, NULL);
 			gateway_ptr->sofia_private = NULL;
 		}
-		nua_handle_destroy(gateway_ptr->nh);
+        sofia_reg_kill_reg(gateway_ptr, 1);
 	}
 }
 
@@ -73,25 +90,23 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			break;
 
 		case REG_STATE_UNREGISTER:
-			nua_unregister(gateway_ptr->nh,
-						   NUTAG_URL(gateway_ptr->register_url),
-						   SIPTAG_FROM_STR(gateway_ptr->register_from),
-						   SIPTAG_TO_STR(gateway_ptr->register_from),
-						   SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
-						   SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
-						   NUTAG_REGISTRAR(gateway_ptr->register_proxy),
-						   NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
+            sofia_reg_kill_reg(gateway_ptr, 1);
 			gateway_ptr->state = REG_STATE_NOREG;
 			break;
 		case REG_STATE_UNREGED:
+
+            sofia_reg_kill_reg(gateway_ptr, 1);
+
 			if ((gateway_ptr->nh = nua_handle(gateway_ptr->profile->nua, NULL,
 											  NUTAG_URL(gateway_ptr->register_proxy),
 											  SIPTAG_TO_STR(gateway_ptr->register_to),
 											  NUTAG_CALLSTATE_REF(ss_state), SIPTAG_FROM_STR(gateway_ptr->register_from), TAG_END()))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "registering %s\n", gateway_ptr->name);
 
-				gateway_ptr->sofia_private = malloc(sizeof(*gateway_ptr->sofia_private));
-				switch_assert(gateway_ptr->sofia_private);
+                if (!gateway_ptr->sofia_private) {
+                    gateway_ptr->sofia_private = malloc(sizeof(*gateway_ptr->sofia_private));
+                    switch_assert(gateway_ptr->sofia_private);
+                }
 				memset(gateway_ptr->sofia_private, 0, sizeof(*gateway_ptr->sofia_private));
 
 				gateway_ptr->sofia_private->gateway = gateway_ptr;
@@ -127,6 +142,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			break;
 
 		case REG_STATE_FAILED:
+            sofia_reg_kill_reg(gateway_ptr, 0);
 		case REG_STATE_TRYING:
 			if (gateway_ptr->retry && now >= gateway_ptr->retry) {
 				gateway_ptr->state = REG_STATE_UNREGED;
