@@ -828,7 +828,6 @@ void su_free(su_home_t *home, void *data)
   }
 
   free(data);
-  }
 }
 
 /** Check home consistency.
