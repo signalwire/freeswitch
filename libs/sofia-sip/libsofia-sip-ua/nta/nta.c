@@ -3920,6 +3920,18 @@ char const *nta_leg_get_rtag(nta_leg_t const *leg)
     return NULL;
 }
 
+/** Get local request sequence number. */
+uint32_t nta_leg_get_seq(nta_leg_t const *leg)
+{
+  return leg ? leg->leg_seq : 0;
+}
+
+/** Get remote request sequence number. */
+uint32_t nta_leg_get_rseq(nta_leg_t const *leg)
+{
+  return leg ? leg->leg_rseq : 0;
+}
+
 /** Save target and route set at UAC side.
  *
  * @sa nta_leg_server_route(), @RFC3261 section 12.1.2

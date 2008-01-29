@@ -780,7 +780,9 @@ void *su_alloc(su_home_t *home, isize_t size)
  */
 void su_free(su_home_t *home, void *data)
 {
-  if (data) {
+  if (!data)
+    return;
+
   if (home) {
     su_alloc_t *allocation;
     su_block_t *sub = MEMLOCK(home);

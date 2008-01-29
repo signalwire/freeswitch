@@ -1046,9 +1046,12 @@ void su_msg_save(su_msg_r save, su_msg_r rmsg)
  */
 void su_msg_destroy(su_msg_r rmsg)
 {
-  su_msg_t *msg = rmsg[0];
+  su_msg_t *msg;
+
   assert(rmsg);
   rmsg[0] = NULL;
+
+  msg = rmsg[0], rmsg[0] = NULL;
 
   if (msg) {
     SU_TASK_ZAP(msg->sum_to, su_msg_destroy);

@@ -210,6 +210,12 @@ SOFIAPUBFUN char const *nta_leg_rtag(nta_leg_t *leg, char const *tag);
 /** Get remote tag. */
 SOFIAPUBFUN char const *nta_leg_get_rtag(nta_leg_t const *leg);
 
+/** Get local request sequence number. @NEW_1_12_9 */
+SOFIAPUBFUN uint32_t nta_leg_get_seq(nta_leg_t const *leg);
+
+/** Get remote request sequence number. @NEW_1_12_9 */
+SOFIAPUBFUN uint32_t nta_leg_get_rseq(nta_leg_t const *leg);
+
 /** Set UAC route. */
 SOFIAPUBFUN int nta_leg_client_route(nta_leg_t *leg, 
 				     sip_record_route_t const *route, 
