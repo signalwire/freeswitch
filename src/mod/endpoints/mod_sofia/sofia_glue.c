@@ -1595,8 +1595,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						} else {
 							const char *a = switch_stristr("AES", tech_pvt->remote_crypto_key);
 							const char *b = switch_stristr("AES", crypto);
-							
-							if (a && b && strncasecmp(a, b, 23)) {
+
+							if (a && b && !strncasecmp(a, b, 23)) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Change Remote key to [%s]\n", crypto);
 								tech_pvt->remote_crypto_key = switch_core_session_strdup(tech_pvt->session, crypto);
 								tech_pvt->crypto_tag = crypto_tag;
