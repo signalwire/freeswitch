@@ -355,7 +355,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odb
 
 			for (x = 1; x <= c; x++) {
 				SQLSMALLINT NameLength, DataType, DecimalDigits, Nullable;
-				SQLUINTEGER ColumnSize;
+				SQLULEN ColumnSize;
 				names[y] = malloc(name_len);
 				memset(names[y], 0, name_len);
 
