@@ -1746,7 +1746,7 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames)
 		if (holder->http) {
 			char aval[512];
 
-			switch_amp_encode(argv[x], aval, sizeof(aval));
+			switch_amp_encode(val, aval, sizeof(aval));
 			holder->stream->write_function(holder->stream, "<td>");
 			holder->stream->write_function(holder->stream, "%s%s", aval, x == (argc - 1) ? "</td></tr>\n" : "</td><td>");
 		} else {
