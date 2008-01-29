@@ -1274,15 +1274,16 @@ SWITCH_STANDARD_API(break_function)
 
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "-USAGE: %s\n", BREAK_SYNTAX);
-	} else {
-		if ((psession = switch_core_session_locate(cmd))) {
-			switch_channel_t *channel = switch_core_session_get_channel(psession);
-			switch_channel_set_flag(channel, CF_BREAK);
-			switch_core_session_rwunlock(psession);
-		} else {
-			stream->write_function(stream, "-ERR No Such Channel!\n");
-		}
+		return SWITCH_STATUS_SUCCESS;
 	}
+
+	if (!(psession = switch_core_session_locate(cmd))) {
+		stream->write_function(stream, "-ERR No Such Channel!\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_channel_set_flag(switch_core_session_get_channel(psession), CF_BREAK);
+	switch_core_session_rwunlock(psession);
 
 	return SWITCH_STATUS_SUCCESS;
 }
