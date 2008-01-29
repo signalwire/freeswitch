@@ -220,20 +220,18 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	switch_core_session_t *a_session;
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_call_cause_t cause;
-	int sip_cause;
-	
+	switch_call_cause_t cause = switch_channel_get_cause(channel);
+	int sip_cause = hangup_cause_to_sip(cause);
+
 	if (tech_pvt->profile->rtpip && tech_pvt->local_sdp_audio_port) {
 		switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_audio_port);
 	}
 
-	cause = switch_channel_get_cause(channel);
-
 	if (switch_test_flag(tech_pvt, TFLAG_SIP_HOLD) && cause != SWITCH_CAUSE_ATTENDED_TRANSFER) {
 		const char *buuid;
-        switch_core_session_t *bsession;
-        switch_channel_t *bchannel;
-        const char *lost_ext;
+		switch_core_session_t *bsession;
+		switch_channel_t *bchannel;
+		const char *lost_ext;
 
 		if (tech_pvt->max_missed_packets) {
 			switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
@@ -241,39 +239,33 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		switch_channel_presence(tech_pvt->channel, "unknown", "unhold");
 
 		if ((buuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
-            if ((bsession = switch_core_session_locate(buuid))) {
-                bchannel = switch_core_session_get_channel(bsession);
-                if (switch_channel_test_flag(bchannel, CF_BROADCAST)) {
-                    if ((lost_ext = switch_channel_get_variable(bchannel, "left_hanging_extension"))) {
-                        switch_ivr_session_transfer(bsession, lost_ext, NULL, NULL);
-                    }
+			if ((bsession = switch_core_session_locate(buuid))) {
+				bchannel = switch_core_session_get_channel(bsession);
+				if (switch_channel_test_flag(bchannel, CF_BROADCAST)) {
+					if ((lost_ext = switch_channel_get_variable(bchannel, "left_hanging_extension"))) {
+						switch_ivr_session_transfer(bsession, lost_ext, NULL, NULL);
+					}
 					switch_channel_stop_broadcast(bchannel);
-                }
-                switch_core_session_rwunlock(bsession);
-            }
-        }
-
+				}
+				switch_core_session_rwunlock(bsession);
+			}
+		}
 		switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
-		
 	}
-
-	sip_cause = hangup_cause_to_sip(cause);
 
 	sofia_glue_deactivate_rtp(tech_pvt);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel %s hanging up, cause: %s\n",
-					  switch_channel_get_name(channel), switch_channel_cause2str(cause));
+		switch_channel_get_name(channel), switch_channel_cause2str(cause));
 
 	if (tech_pvt->hash_key) {
 		switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->hash_key);
 	}
 
 	if (session) {
-		const char *call_id = tech_pvt->call_id;
-		char *sql;
-		sql = switch_mprintf("delete from sip_dialogs where call_id='%q'", call_id);
+		char *sql = switch_mprintf("delete from sip_dialogs where call_id='%q'", tech_pvt->call_id);
 		switch_assert(sql);
-        sofia_glue_execute_sql(tech_pvt->profile, SWITCH_FALSE, sql, tech_pvt->profile->ireg_mutex);
+		sofia_glue_execute_sql(tech_pvt->profile, SWITCH_FALSE, sql, tech_pvt->profile->ireg_mutex);
 		free(sql);
 	}
 
@@ -292,10 +284,10 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		} else {
 			if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 				switch_call_cause_t causecode = switch_channel_get_cause(channel);
-				
+
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending CANCEL to %s\n", switch_channel_get_name(channel));
 				nua_cancel(tech_pvt->nh, TAG_IF(causecode == SWITCH_CAUSE_PICKED_OFF, 
-												SIPTAG_REASON_STR("SIP;cause=200;text=\"Call completed elsewhere\"")), TAG_END());
+					SIPTAG_REASON_STR("SIP;cause=200;text=\"Call completed elsewhere\"")), TAG_END());
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding to INVITE with: %d\n", sip_cause);
 				nua_respond(tech_pvt->nh, sip_cause, sip_status_phrase(sip_cause), TAG_END());
@@ -379,7 +371,6 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		}
 	}
 
-
 	if ((val = switch_channel_get_variable(channel, SOFIA_SESSION_TIMEOUT))) {
 		int v_session_timeout = atoi(val);
 		if (v_session_timeout >= 0) {
@@ -398,8 +389,6 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
-
 
 static switch_status_t sofia_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
@@ -497,7 +486,6 @@ static switch_status_t sofia_write_video_frame(switch_core_session_t *session, s
 	return status;
 }
 
-
 static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
 	private_object_t *tech_pvt =  switch_core_session_get_private(session);
@@ -536,7 +524,6 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 		switch_assert(tech_pvt->rtp_session != NULL);
 		tech_pvt->read_frame.datalen = 0;
 
-
 		while (switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
 			tech_pvt->read_frame.flags = SFF_NONE;
 
@@ -555,7 +542,6 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 				switch_rtp_dequeue_dtmf(tech_pvt->rtp_session, &dtmf);
 				switch_channel_queue_dtmf(channel, &dtmf);
 			}
-
 
 			if (tech_pvt->read_frame.datalen > 0) {
 				size_t bytes = 0;
@@ -636,8 +622,6 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 	return status;
 }
 
-
-
 static switch_status_t sofia_kill_channel(switch_core_session_t *session, int sig)
 {
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
@@ -694,7 +678,6 @@ static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const swi
 	case DTMF_INFO:
 		snprintf(message, sizeof(message), "Signal=%c\r\nDuration=%d\r\n", dtmf->digit, dtmf->duration / 8);
 		nua_info(tech_pvt->nh,
-				 //NUTAG_WITH_THIS(tech_pvt->profile->nua),
 				 SIPTAG_CONTENT_TYPE_STR("application/dtmf-relay"),
 				 SIPTAG_PAYLOAD_STR(message),
 				 TAG_END());
@@ -1541,7 +1524,6 @@ static switch_status_t sofia_manage(char *relative_oid, switch_management_action
 {
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session,
 												  switch_caller_profile_t *outbound_profile, switch_core_session_t **new_session,
