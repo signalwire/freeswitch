@@ -469,11 +469,11 @@ SWITCH_DECLARE(switch_status_t) switch_event_set_priority(switch_event_t *event,
 SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event, char *header_name)
 {
 	switch_event_header_t *hp;
-	if (header_name) {
-		for (hp = event->headers; hp; hp = hp->next) {
-			if (!strcasecmp(hp->name, header_name)) {
-				return hp->value;
-			}
+	if (!header_name) return NULL;
+
+	for (hp = event->headers; hp; hp = hp->next) {
+		if (!strcasecmp(hp->name, header_name)) {
+			return hp->value;
 		}
 	}
 	return NULL;
@@ -481,11 +481,7 @@ SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event, char *head
 
 SWITCH_DECLARE(char *) switch_event_get_body(switch_event_t *event)
 {
-	if (event) {
-		return event->body;
-	}
-
-	return NULL;
+	return (event ? event->body : NULL);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, const char *header_name)
@@ -792,9 +788,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 
 static switch_xml_t add_xml_header(switch_xml_t xml, char *name, char *value, int offset)
 {
-	switch_xml_t header = NULL;
+	switch_xml_t header = switch_xml_add_child_d(xml, "header", offset);
 
-	if ((header = switch_xml_add_child_d(xml, "header", offset))) {
+	if (header) {
 		switch_xml_set_attr_d(header, "name", name);
 		switch_xml_set_attr_d(header, "value", value);
 	}
