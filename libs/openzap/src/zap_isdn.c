@@ -144,8 +144,6 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 			{
 				if (zchan) {
 					zchan->span->channels_local_crv[gen->CRV] = zchan;
-				} else {
-					zap_log(ZAP_LOG_CRIT, "Received Release Complete with no matching channel %d\n", chan_id);
 				}
 			}
 			break;
