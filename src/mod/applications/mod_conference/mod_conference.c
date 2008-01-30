@@ -1513,7 +1513,8 @@ static void conference_loop_output(conference_member_t * member)
 	uint32_t tsamples = member->orig_read_codec->implementation->samples_per_frame;
 	uint32_t low_count = 0, bytes = samples * 2;
 	call_list_t *call_list = NULL, *cp = NULL;
-
+    uint32_t file_intervals = member->conference->interval / (member->orig_read_codec->implementation->microseconds_per_frame / 1000);
+    
 	switch_assert(member->conference != NULL);
 
 	if (switch_core_timer_init(& timer, member->conference->timer_name, interval, tsamples, NULL) != SWITCH_STATUS_SUCCESS) {
@@ -1689,6 +1690,7 @@ static void conference_loop_output(conference_member_t * member)
 						if (file_sample_len <= 0) {
 							member->fnode->done++;
 						} else {	/* there is file node data to deliver */
+                            int ic;
 							write_frame.data = file_frame;
 							write_frame.datalen = (uint32_t) file_data_len;
 							write_frame.samples = (uint32_t) file_sample_len;
@@ -1698,8 +1700,10 @@ static void conference_loop_output(conference_member_t * member)
 							}
 							write_frame.timestamp = timer.samplecount;
 							switch_core_session_write_frame(member->session, &write_frame, -1, 0);
-							switch_core_timer_next(&timer);
-
+                            for (ic = 0; ic < file_intervals; ic++) {
+                                switch_core_timer_next(&timer);
+                            }
+                            
 							/* forget the conference data we played file node data instead */
 							switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
 						}
