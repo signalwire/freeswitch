@@ -51,6 +51,8 @@
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #endif
 
+#define resample_buffer(a, b, c) a > b ? ((a / 1000) / 2) * c : ((b / 1000) / 2) * c
+
 SWITCH_DECLARE(switch_status_t) switch_resample_create(switch_audio_resampler_t **new_resampler,
 													   int from_rate, switch_size_t from_size, int to_rate, uint32_t to_size, switch_memory_pool_t *pool)
 {
@@ -74,9 +76,9 @@ SWITCH_DECLARE(switch_status_t) switch_resample_create(switch_audio_resampler_t 
 	resampler->resampler = resample_open(QUALITY, resampler->factor, resampler->factor);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Activate Resampler %d->%d %f\n", resampler->from_rate, resampler->to_rate,
 					  resampler->factor);
-	resampler->from_size = from_size;
+	resampler->from_size = resample_buffer(to_rate, from_rate, (uint32_t)from_size);
 	resampler->from = (float *) switch_core_alloc(pool, resampler->from_size);
-	resampler->to_size = to_size;
+	resampler->to_size = resample_buffer(to_rate, from_rate, (uint32_t)to_size); ;
 	resampler->to = (float *) switch_core_alloc(pool, resampler->to_size);
 
 	*new_resampler = resampler;

@@ -774,7 +774,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 				/* If the caller is not at the right sample rate resample him to suit and buffer accordingly */
 				if (imember->mux_resampler) {
 					int16_t *bptr = (int16_t *) imember->frame;
-					int16_t out[1024];
+					int16_t out[SWITCH_RECOMMENDED_BUFFER_SIZE];
 					int len = (int) imember->read;
 
 					imember->mux_resampler->from_len = switch_short_to_float(bptr, imember->mux_resampler->from, (int) len / 2);
@@ -784,6 +784,10 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 					switch_float_to_short(imember->mux_resampler->to, out, len);
 					len = imember->mux_resampler->to_len * 2;
 					
+                    if (len > SWITCH_RECOMMENDED_BUFFER_SIZE) {
+                        len = SWITCH_RECOMMENDED_BUFFER_SIZE;
+                    }
+
 					switch_buffer_write(imember->resample_buffer, out, len);
 					if (switch_buffer_inuse(imember->resample_buffer) >= bytes) {
 						imember->read = (uint32_t) switch_buffer_read(imember->resample_buffer, imember->frame, bytes);

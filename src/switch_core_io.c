@@ -192,9 +192,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					switch_mutex_lock(session->resample_mutex);
 					status = switch_resample_create(&session->read_resampler,
 													read_frame->codec->implementation->actual_samples_per_second,
-													read_frame->codec->implementation->bytes_per_frame * 20,
+													read_frame->codec->implementation->bytes_per_frame,
 													session->read_codec->implementation->actual_samples_per_second,
-													session->read_codec->implementation->bytes_per_frame * 20, session->pool);
+													session->read_codec->implementation->bytes_per_frame, session->pool);
 					switch_mutex_unlock(session->resample_mutex);
 					
 					if (status != SWITCH_STATUS_SUCCESS) {
@@ -520,9 +520,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					switch_mutex_lock(session->resample_mutex);
 					status = switch_resample_create(&session->write_resampler,
 													frame->codec->implementation->actual_samples_per_second,
-													frame->codec->implementation->bytes_per_frame * 20,
+													frame->codec->implementation->bytes_per_frame,
 													session->write_codec->implementation->actual_samples_per_second,
-													session->write_codec->implementation->bytes_per_frame * 20, session->pool);
+													session->write_codec->implementation->bytes_per_frame, session->pool);
 					switch_mutex_unlock(session->resample_mutex);
 					if (status != SWITCH_STATUS_SUCCESS) {
 						goto done;
@@ -753,9 +753,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 									switch_mutex_lock(session->resample_mutex);
 									status = switch_resample_create(&session->read_resampler,
 																	frame->codec->implementation->actual_samples_per_second,
-																	frame->codec->implementation->bytes_per_frame * 20,
+																	frame->codec->implementation->bytes_per_frame,
 																	session->write_codec->implementation->actual_samples_per_second,
-																	session->write_codec->implementation->bytes_per_frame * 20, session->pool);
+																	session->write_codec->implementation->bytes_per_frame, session->pool);
 									switch_mutex_unlock(session->resample_mutex);
 									
 									if (status != SWITCH_STATUS_SUCCESS) {
