@@ -67,10 +67,21 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 	zap_span_t *span = (zap_span_t *) pvt;
 	zap_isdn_data_t *isdn_data = span->signal_data;
 	Q931mes_Generic *gen = (Q931mes_Generic *) msg;
-	Q931ie_ChanID *chanid = Q931GetIEPtr(gen->ChanID, gen->buf);
-	int chan_id = chanid->ChanSlot;
+	int chan_id = 0;
 	zap_channel_t *zchan = NULL;
 	
+	if (Q931IsIEPresent(gen->ChanID)) {
+		Q931ie_ChanID *chanid = Q931GetIEPtr(gen->ChanID, gen->buf);
+		chan_id = chanid->ChanSlot;
+		zchan = &span->channels[chan_id];
+	} else {
+		if (gen->CRVFlag) {
+			zchan = span->channels_local_crv[gen->CRV];
+		} else {
+			zchan = span->channels_remote_crv[gen->CRV];
+		}
+	}   
+
 	assert(span != NULL);
 	assert(isdn_data != NULL);
 	
@@ -129,6 +140,15 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 		}
 	} else {
 		switch(gen->MesType) {
+		case Q931mes_CALL_PROCEEDING:
+			{
+				if (zchan) {
+					zchan->span->channels_local_crv[gen->CRV] = zchan;
+				} else {
+					zap_log(ZAP_LOG_CRIT, "Received Release Complete with no matching channel %d\n", chan_id);
+				}
+			}
+			break;
 		case Q931mes_RESTART:
 			{
 				if (zchan) {
@@ -198,6 +218,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 
 				if ((status = zap_channel_open(span->span_id, chan_id, &zchan) == ZAP_SUCCESS)) {
 					if (zchan->state == ZAP_CHANNEL_STATE_DOWN) {
+						zchan->span->channels_remote_crv[gen->CRV] = zchan;
 						memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
 
 						zap_set_string(zchan->caller_data.cid_num, (char *)callingnum->Digit);
