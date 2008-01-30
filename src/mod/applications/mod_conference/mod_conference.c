@@ -1529,12 +1529,11 @@ static void conference_loop_output(conference_member_t * member)
 	switch_timer_t timer = { 0 };
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(member->session);
 	uint32_t interval = read_codec->implementation->microseconds_per_frame / 1000;
-	uint32_t csamples = switch_bytes_per_frame(member->conference->rate, member->conference->interval);
 	uint32_t samples = switch_bytes_per_frame(member->conference->rate, interval);
+    uint32_t csamples = samples;
 	uint32_t tsamples = member->orig_read_codec->implementation->samples_per_frame;
 	uint32_t low_count = 0, bytes = samples * 2;
 	call_list_t *call_list = NULL, *cp = NULL;
-    uint32_t file_intervals = member->conference->interval / (member->orig_read_codec->implementation->microseconds_per_frame / 1000);
     
 	switch_assert(member->conference != NULL);
 
@@ -1594,12 +1593,12 @@ static void conference_loop_output(conference_member_t * member)
 		&& switch_channel_ready(channel)) {
 			char dtmf[128] = "";
 			uint8_t file_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
-			switch_size_t file_data_len = csamples * 2;
-			switch_size_t file_sample_len = csamples;
 			char *digit;
 			switch_event_t *event;
 			caller_control_action_t *caller_action = NULL;
 			int use_timer = 0;
+            switch_size_t file_sample_len = csamples;
+            switch_size_t file_data_len = file_sample_len * 2;
 
 			switch_mutex_lock(member->flag_mutex);
 
@@ -1711,7 +1710,6 @@ static void conference_loop_output(conference_member_t * member)
 						if (file_sample_len <= 0) {
 							member->fnode->done++;
 						} else {	/* there is file node data to deliver */
-                            int ic;
 							write_frame.data = file_frame;
 							write_frame.datalen = (uint32_t) file_data_len;
 							write_frame.samples = (uint32_t) file_sample_len;
@@ -1721,9 +1719,8 @@ static void conference_loop_output(conference_member_t * member)
 							}
 							write_frame.timestamp = timer.samplecount;
 							switch_core_session_write_frame(member->session, &write_frame, -1, 0);
-                            for (ic = 0; ic < file_intervals; ic++) {
-                                switch_core_timer_next(&timer);
-                            }
+                            switch_core_timer_next(&timer);
+
                             
 							/* forget the conference data we played file node data instead */
 							switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
