@@ -140,13 +140,6 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 		}
 	} else {
 		switch(gen->MesType) {
-		case Q931mes_CALL_PROCEEDING:
-			{
-				if (zchan) {
-					zchan->span->channels_local_crv[gen->CRV] = zchan;
-				}
-			}
-			break;
 		case Q931mes_RESTART:
 			{
 				if (zchan) {
@@ -434,6 +427,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 
 			//gen->Size += strlen(zchan->caller_data.ani);
 			Q931Rx43(&isdn_data->q931, (L3UCHAR *) gen, gen->Size);
+			zchan->span->channels_local_crv[gen->CRV] = zchan;
 		}
 		break;
 	case ZAP_CHANNEL_STATE_HANGUP:
