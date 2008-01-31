@@ -755,6 +755,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending media re-direct:\n%s\n", msg->string_arg);
 			tech_pvt->local_sdp_str = switch_core_session_strdup(session, msg->string_arg);
+			switch_set_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
 			sofia_glue_do_invite(session);
 		}
 		break;
