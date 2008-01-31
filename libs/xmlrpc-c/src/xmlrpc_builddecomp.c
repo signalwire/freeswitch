@@ -28,7 +28,7 @@ typedef double va_double;
 #define VA_LIST_COPY(dest,src) memcpy((dest), (src), sizeof(va_list))
 #else
 #if __sun
-#define VA_LIST_COPY(dest,src) (*(dest) = *(src))
+#define VA_LIST_COPY(dest,src) va_copy((dest),(src))
 #else
 #define VA_LIST_COPY(dest,src) ((dest) = (src))
 #endif
