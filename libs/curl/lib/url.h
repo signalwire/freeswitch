@@ -44,7 +44,8 @@ CURLcode Curl_disconnect(struct connectdata *);
 CURLcode Curl_protocol_connect(struct connectdata *conn, bool *done);
 CURLcode Curl_protocol_connecting(struct connectdata *conn, bool *done);
 CURLcode Curl_protocol_doing(struct connectdata *conn, bool *done);
-void Curl_safefree(void *ptr);
+void Curl_safefree_x(void *ptr);
+#define Curl_safefree(ptr) Curl_safefree_x(ptr), ptr = NULL
 
 /* create a connection cache */
 struct conncache *Curl_mk_connc(int type);

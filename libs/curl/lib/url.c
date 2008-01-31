@@ -200,7 +200,7 @@ RETSIGTYPE alarmfunc(int sig)
 #endif /* WIN32 */
 #endif /* USE_ARES */
 
-void Curl_safefree(void *ptr)
+void Curl_safefree_x(void *ptr)
 {
   if(ptr)
     free(ptr);
