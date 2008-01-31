@@ -414,8 +414,11 @@ static void pres_event_handler(switch_event_t *event)
 	char *rpid = switch_event_get_header(event, "rpid");
 	char *type = switch_event_get_header(event, "event_subtype");
 	char *sql;
-
-
+    
+    if (globals.running != 1) {
+        return;
+    }
+    
 	if (!proto) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Missing 'proto' header\n");
 		return;
@@ -557,6 +560,9 @@ static void roster_event_handler(switch_event_t *event)
 	void *val;
 	char *sql;
 
+    if (globals.running != 1) {
+        return;
+    }
 
 	if (status && !strcasecmp(status, "n/a")) {
 		status = NULL;
