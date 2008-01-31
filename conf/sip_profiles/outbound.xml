@@ -17,7 +17,7 @@
     <param name="dialplan" value="XML"/>
     <param name="context" value="public"/>
     <param name="dtmf-duration" value="100"/>
-    <param name="codec-prefs" value="$${global_codec_prefs}"/>
+    <param name="codec-prefs" value="$${outbound_codec_prefs}"/>
     <param name="hold-music" value="$${moh_uri}"/>
     <param name="use-rtp-timer" value="true"/>
     <param name="rtp-timer-name" value="soft"/>
