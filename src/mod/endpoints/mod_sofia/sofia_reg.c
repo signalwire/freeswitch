@@ -783,7 +783,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	char bigdigest[2 * SU_MD5_DIGEST_SIZE + 1];
 	char *username, *realm, *nonce, *uri, *qop, *cnonce, *nc, *response, *input = NULL, *input2 = NULL;
 	auth_res_t ret = AUTH_FORBIDDEN;
-	int cnt = 0, first = 0;
+	int first = 0;
 	const char *passwd = NULL;
 	const char *a1_hash = NULL;
 	char *sql;
@@ -812,28 +812,20 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 
 					if (!strcasecmp(var, "username")) {
 						username = strdup(val);
-						cnt++;
 					} else if (!strcasecmp(var, "realm")) {
 						realm = strdup(val);
-						cnt++;
 					} else if (!strcasecmp(var, "nonce")) {
 						nonce = strdup(val);
-						cnt++;
 					} else if (!strcasecmp(var, "uri")) {
 						uri = strdup(val);
-						cnt++;
 					} else if (!strcasecmp(var, "qop")) {
 						qop = strdup(val);
-						cnt++;
 					} else if (!strcasecmp(var, "cnonce")) {
 						cnonce = strdup(val);
-						cnt++;
 					} else if (!strcasecmp(var, "response")) {
 						response = strdup(val);
-						cnt++;
 					} else if (!strcasecmp(var, "nc")) {
 						nc = strdup(val);
-						cnt++;
 					}
 				}
 
@@ -842,7 +834,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		}
 	}
 
-	if (cnt != 8) {
+	if (!(username && realm && nonce && uri && response)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Authorization header!\n");
 		ret = AUTH_STALE;
 		goto end;
@@ -878,10 +870,17 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_realm", realm);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_nonce", nonce);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_uri", uri);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_qop", qop);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_cnonce", cnonce);
+    if (qop) {
+        switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_qop", qop);
+    }
+    if (cnonce) {
+        switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_cnonce", cnonce);
+    }
+    if (nc) {
+        switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_nc", nc);
+    }
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_response", response);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_nc", nc);
+
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_method", (sip && sip->sip_request) ? sip->sip_request->rq_method_name : NULL);
 
 	
@@ -964,29 +963,36 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		su_md5_deinit(&ctx);
 	}
 
-	if ((input2 = switch_mprintf("%q:%q:%q:%q:%q:%q", a1_hash, nonce, nc, cnonce, qop, uridigest))) {
-		memset(&ctx, 0, sizeof(ctx));
-		su_md5_init(&ctx);
-		su_md5_strupdate(&ctx, input2);
-		su_md5_hexdigest(&ctx, bigdigest);
-		su_md5_deinit(&ctx);
+    if (nc && cnonce && qop) {
+        input2 = switch_mprintf("%q:%q:%q:%q:%q:%q", a1_hash, nonce, nc, cnonce, qop, uridigest);
+    } else {
+        input2 = switch_mprintf("%q:%q:%q", a1_hash, nonce, uridigest);
+    }
 
-		if (!strcasecmp(bigdigest, response)) {
-			ret = AUTH_OK;
-		} else {
-			if ((profile->ndlb & PFLAG_NDLB_BROKEN_AUTH_HASH) && strcasecmp(regstr, "REGISTER") && strcasecmp(regstr, "INVITE")) {
-				/* some clients send an ACK with the method 'INVITE' in the hash which will break auth so we will
-				   try again with INVITE so we don't get people complaining to us when someone else's client has a bug......
-				 */
-				switch_safe_free(input);
-				switch_safe_free(input2);
-				regstr = "INVITE";
-				goto for_the_sake_of_interop;
-			}
+    switch_assert(input2);
 
-			ret = AUTH_FORBIDDEN;
-		}
-	}
+    memset(&ctx, 0, sizeof(ctx));
+    su_md5_init(&ctx);
+    su_md5_strupdate(&ctx, input2);
+    su_md5_hexdigest(&ctx, bigdigest);
+    su_md5_deinit(&ctx);
+
+    if (!strcasecmp(bigdigest, response)) {
+        ret = AUTH_OK;
+    } else {
+        if ((profile->ndlb & PFLAG_NDLB_BROKEN_AUTH_HASH) && strcasecmp(regstr, "REGISTER") && strcasecmp(regstr, "INVITE")) {
+            /* some clients send an ACK with the method 'INVITE' in the hash which will break auth so we will
+               try again with INVITE so we don't get people complaining to us when someone else's client has a bug......
+            */
+            switch_safe_free(input);
+            switch_safe_free(input2);
+            regstr = "INVITE";
+            goto for_the_sake_of_interop;
+        }
+
+        ret = AUTH_FORBIDDEN;
+    }
+        
 
  skip_auth:
 
