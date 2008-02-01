@@ -45,6 +45,7 @@ static struct {
 	uint32_t ignore_cacert_check;
 	int encode;
 	int log_b;
+	int disable100continue;
 } globals;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load);
@@ -121,6 +122,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	/* try to post it to the web server */
 	if (!switch_strlen_zero(globals.url)) {
 		struct curl_slist *headers = NULL;
+		struct curl_slist *slist = NULL;
 		curl_handle = curl_easy_init();
 		
 		if (globals.encode) {
@@ -158,6 +160,11 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 		curl_easy_setopt(curl_handle, CURLOPT_URL, globals.url);
 		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, httpCallBack);
+
+		if (globals.disable100continue) {
+			slist = curl_slist_append(slist, "Expect:");
+			curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, slist);
+		}
 		
 		if (globals.ignore_cacert_check) {
 			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
@@ -245,6 +252,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 
 	memset(&globals,0,sizeof(globals));
 	globals.log_b = 1;
+	globals.disable100continue = 0;
 
 	/* parse the config */
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -265,6 +273,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				globals.delay = (uint32_t) atoi(val);
 			} else if (!strcasecmp(var, "log-b-leg")) {
 				globals.log_b = switch_true(val);
+			} else if (!strcasecmp(var, "disable-100-continue") && switch_true(val)) {
+				globals.disable100continue = 1;
 			} else if (!strcasecmp(var, "encode")) {
 				if (!strcasecmp(val, "base64")) {
 					globals.encode = 2;
