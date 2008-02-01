@@ -16,7 +16,7 @@ include $(switch_srcdir)/build/modmake.rules
 
 $(LDAP_DIR):
 	$(GETLIB) $(LDAP).tgz
-	cd $(LDAP_DIR) && ./configure $(DEFAULT_ARGS) --disable-bdb --disable-hdb
+	cd $(LDAP_DIR) && ./configure $(DEFAULT_ARGS) --disable-bdb --disable-hdb --disable-slapd
 
 $(LDAPLA) $(LIBLBERLA): $(LDAP_DIR)
 	cd $(LDAP_DIR) && $(MAKE)
