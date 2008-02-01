@@ -47,9 +47,9 @@ static void *SWITCH_THREAD_FUNC echo_video_thread(switch_thread_t *thread, void 
 	switch_frame_t *read_frame;
 
 	eh->up = 1;	
-	while(switch_channel_ready(channel) && switch_channel_get_state(channel) == CS_LOOPBACK) {
+	while(switch_channel_ready(channel)) {
 		status = switch_core_session_read_video_frame(session, &read_frame, -1, 0);
-		
+        
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
 		}

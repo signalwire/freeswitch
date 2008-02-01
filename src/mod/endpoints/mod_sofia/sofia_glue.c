@@ -1294,7 +1294,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			/* Reactivate the NAT buster flag. */
 			switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 		}
-		return SWITCH_STATUS_SUCCESS;
+        goto video;
 	}
 
 	tech_pvt->rtp_session = switch_rtp_new(tech_pvt->local_sdp_audio_ip,
@@ -1398,6 +1398,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			switch_channel_set_variable(tech_pvt->channel, SOFIA_SECURE_MEDIA_CONFIRMED_VARIABLE, "true");
 		}
 
+    video:
 
 		sofia_glue_check_video_codecs(tech_pvt);
 
@@ -1496,7 +1497,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *val;
 	const char *crypto = NULL;
-	int got_crypto = 0;
+	int got_crypto = 0, got_audio = 0;
 
 	switch_assert(tech_pvt != NULL);
 
@@ -1578,7 +1579,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 
 		ptime = dptime;
 
-		if (m->m_type == sdp_media_audio) {
+		if (m->m_type == sdp_media_audio && !got_audio) {
 			sdp_rtpmap_t *map;
 
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {
@@ -1657,7 +1658,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					if (match) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Our existing codec [%s] is still good, let's keep it\n", 
 										  tech_pvt->rm_encoding);
-						goto end;
+                        got_audio = 1;
+                        break;
 					}
 				}
 			}
@@ -1845,7 +1847,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						vmatch = 0;
 					}
 				}
-				
+
+                                        
 				if (mimp) {
 					if ((tech_pvt->video_rm_encoding = switch_core_session_strdup(session, (char *) rm_encoding))) {
 						char tmp[50];
@@ -1859,6 +1862,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_video_port);
 						switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_VIDEO_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
 						switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_VIDEO_PORT_VARIABLE, tmp);
+                        break;
 					} else {
 						vmatch = 0;
 					}
@@ -1866,8 +1870,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 			}
 		}
 	}
-
- end:
 
 	switch_set_flag_locked(tech_pvt, TFLAG_SDP);
 
