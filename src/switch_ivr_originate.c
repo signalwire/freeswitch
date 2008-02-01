@@ -857,11 +857,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					goto outer_for;
 				}
 				
-				if (switch_core_session_running(peer_sessions[i])) {
-					if (!(flags & SOF_NOBLOCK)) {
-						switch_channel_set_state(peer_channels[i], CS_RING);
-					}
-				} else {
+				if (!switch_core_session_running(peer_sessions[i])) {
+					//if (!(flags & SOF_NOBLOCK)) {
+                    //switch_channel_set_state(peer_channels[i], CS_RING);
+					//}
+                    //} else {
 					switch_core_session_thread_launch(peer_sessions[i]);
 				}
 			}			
