@@ -39,7 +39,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\codec\g726\src&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\codec\g7xx\src\include&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -102,7 +102,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\codec\g726\src&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\codec\g7xx\src\include&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
