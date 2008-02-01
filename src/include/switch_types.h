@@ -1123,6 +1123,34 @@ typedef struct switch_core_port_allocator switch_core_port_allocator_t;
 typedef struct switch_media_bug switch_media_bug_t;
 typedef switch_bool_t (*switch_media_bug_callback_t) (switch_media_bug_t *, void *, switch_abc_type_t);
 
+
+typedef switch_status_t (*switch_core_codec_encode_func_t) (switch_codec_t *codec,
+                                                            switch_codec_t *other_codec,
+                                                            void *decoded_data,
+                                                            uint32_t decoded_data_len,
+                                                            uint32_t decoded_rate, 
+                                                            void *encoded_data, 
+                                                            uint32_t * encoded_data_len, 
+                                                            uint32_t * encoded_rate, 
+                                                            unsigned int *flag);
+
+
+typedef switch_status_t (*switch_core_codec_decode_func_t) (switch_codec_t *codec,
+                                                            switch_codec_t *other_codec,
+                                                            void *encoded_data,
+                                                            uint32_t encoded_data_len,
+                                                            uint32_t encoded_rate, 
+                                                            void *decoded_data, 
+                                                            uint32_t * decoded_data_len, 
+                                                            uint32_t * decoded_rate, 
+                                                            unsigned int *flag);
+
+typedef switch_status_t (*switch_core_codec_init_func_t) (switch_codec_t *, switch_codec_flag_t, const switch_codec_settings_t *codec_settings);
+typedef switch_status_t (*switch_core_codec_destroy_func_t) (switch_codec_t *);
+
+
+
+
 typedef void (*switch_application_function_t) (switch_core_session_t *, const char *);
 #define SWITCH_STANDARD_APP(name) static void name (switch_core_session_t *session, const char *data)
 

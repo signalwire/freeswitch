@@ -26,9 +26,10 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  *
  *
- * mod_speexcodec.c -- Speex Codec Module
+ * mod_speex.c -- Speex Codec Module
  *
  */
+
 #include <switch.h>
 #include <speex/speex.h>
 #include <speex/speex_preprocess.h>
@@ -260,145 +261,30 @@ static switch_status_t switch_speex_destroy(switch_codec_t *codec)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/* Registration */
-static switch_codec_implementation_t speex_32k_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 102,
-	/*.iananame */ "speex",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 32000,
-	/*.actual_samples_per_second */ 32000,
-	/*.bits_per_second */ 44000,
-	/*.nanoseconds_per_frame */ 20000,
-	/*.samples_per_frame */ 640,
-	/*.bytes_per_frame */ 1280,
-	/*.encoded_bytes_per_frame */ 0,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_speex_init,
-	/*.encode */ switch_speex_encode,
-	/*.decode */ switch_speex_decode,
-	/*.destroy */ switch_speex_destroy
-};
-
-static switch_codec_implementation_t speex_16k_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 99,
-	/*.iananame */ "speex",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 16000,
-	/*.actual_samples_per_second */ 16000,
-	/*.bits_per_second */ 42200,
-	/*.nanoseconds_per_frame */ 20000,
-	/*.samples_per_frame */ 320,
-	/*.bytes_per_frame */ 640,
-	/*.encoded_bytes_per_frame */ 0,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_speex_init,
-	/*.encode */ switch_speex_encode,
-	/*.decode */ switch_speex_decode,
-	/*.destroy */ switch_speex_destroy,
-	/*.next */ &speex_32k_implementation
-};
-
-static switch_codec_implementation_t speex_8k_60ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 98,
-	/*.iananame */ "speex",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 24600,
-	/*.nanoseconds_per_frame */ 60000,
-	/*.samples_per_frame */ 480,
-	/*.bytes_per_frame */ 960,
-	/*.encoded_bytes_per_frame */ 0,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_speex_init,
-	/*.encode */ switch_speex_encode,
-	/*.decode */ switch_speex_decode,
-	/*.destroy */ switch_speex_destroy,
-	/*.next */ &speex_16k_implementation
-};
-
-static switch_codec_implementation_t speex_8k_40ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 98,
-	/*.iananame */ "speex",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 24600,
-	/*.nanoseconds_per_frame */ 40000,
-	/*.samples_per_frame */ 240,
-	/*.bytes_per_frame */ 640,
-	/*.encoded_bytes_per_frame */ 0,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_speex_init,
-	/*.encode */ switch_speex_encode,
-	/*.decode */ switch_speex_decode,
-	/*.destroy */ switch_speex_destroy,
-	/*.next */ &speex_8k_60ms_implementation
-
-};
-
-static switch_codec_implementation_t speex_8k_30ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 98,
-	/*.iananame */ "speex",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 24600,
-	/*.nanoseconds_per_frame */ 30000,
-	/*.samples_per_frame */ 240,
-	/*.bytes_per_frame */ 480,
-	/*.encoded_bytes_per_frame */ 0,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_speex_init,
-	/*.encode */ switch_speex_encode,
-	/*.decode */ switch_speex_decode,
-	/*.destroy */ switch_speex_destroy,
-	/*.next */ &speex_8k_40ms_implementation
-};
-
-static switch_codec_implementation_t speex_8k_20ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 98,
-	/*.iananame */ "speex",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 24600,
-	/*.nanoseconds_per_frame */ 20000,
-	/*.samples_per_frame */ 160,
-	/*.bytes_per_frame */ 320,
-	/*.encoded_bytes_per_frame */ 0,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_speex_init,
-	/*.encode */ switch_speex_encode,
-	/*.decode */ switch_speex_decode,
-	/*.destroy */ switch_speex_destroy,
-	/*.next */ &speex_8k_30ms_implementation
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_speex_load)
 {
 	switch_codec_interface_t *codec_interface;
+    int mpf = 10000, spf = 80, bpf = 160, ebpf = 0, rate = 8000, counta, countb;
+    int ianacode[4] = { 0, 98, 99, 103};
+    int bps[4] = { 0, 24600, 42200, 44000 };
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	SWITCH_ADD_CODEC(codec_interface, "speex", &speex_8k_20ms_implementation);
+	SWITCH_ADD_CODEC(codec_interface, "Speex");
+    for (counta = 1; counta <= 3; counta++) {
+        for (countb = 6; countb > 0; countb--) {
+            switch_core_codec_add_implementation(pool, codec_interface,
+                                                 SWITCH_CODEC_TYPE_AUDIO, ianacode[counta], "speex", NULL, rate, rate, bps[counta],
+                                                 mpf * countb, spf * countb, bpf * countb, ebpf * countb, 1, 1, 6,
+                                                 switch_speex_init, switch_speex_encode, switch_speex_decode, switch_speex_destroy);
+        }
+        rate = rate * 2;
+        spf = spf * 2;
+        bpf = bpf * 2;
+        ebpf = ebpf * 2;
+    }
+
+
+
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

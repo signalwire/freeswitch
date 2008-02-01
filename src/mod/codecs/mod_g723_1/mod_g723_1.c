@@ -31,6 +31,7 @@
  * mod_g723_1.c -- G723.1 Codec Module
  *
  */
+
 #include "switch.h"
 
 #ifndef G723_PASSTHROUGH
@@ -166,36 +167,19 @@ static switch_status_t switch_g723_decode(switch_codec_t *codec,
 #endif
 }
 
-/* Registration */
-
-static switch_codec_implementation_t g723_1_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 4,
-	/*.iananame */ "G723",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 6300,
-	/*.microseconds_per_frame */ 30000,
-	/*.samples_per_frame */ 240,
-	/*.bytes_per_frame */ 480,
-	/*.encoded_bytes_per_frame */ 24,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 4,
-	/*.init */ switch_g723_init,
-	/*.encode */ switch_g723_encode,
-	/*.decode */ switch_g723_decode,
-	/*.destroy */ switch_g723_destroy,
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_g723_1_load)
 {
 	switch_codec_interface_t *codec_interface;
+    int mpf = 30000, spf = 240, bpf = 480, ebpf = 24, count;
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	SWITCH_ADD_CODEC(codec_interface, "g723.1 6.3k", &g723_1_implementation);
-
+	SWITCH_ADD_CODEC(codec_interface, "G.723.1 6.3k");
+    for (count = 1; count > 0; count--) {
+        switch_core_codec_add_implementation(pool, codec_interface,
+                                             SWITCH_CODEC_TYPE_AUDIO, 4, "G723", NULL, 8000, 8000, 6300,
+                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 4, 
+                                             switch_g723_init, switch_g723_encode, switch_g723_decode, switch_g723_destroy);
+    }
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

@@ -28,9 +28,10 @@
  *
  * The g729 codec itself is not distributed with this module.
  *
- * mod_g729.c -- G729 Codec Module
+ * mod_g729.c -- G.729 Codec Module
  *
  */
+
 #include "switch.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_g729_load);
@@ -205,102 +206,21 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 #endif
 }
 
-/* Registration */
-
-static switch_codec_implementation_t g729_40ms_8k_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 18,
-	/*.iananame */ "G729",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 128000,
-	/*.microseconds_per_frame */ 40000,
-	/*.samples_per_frame */ 320,
-	/*.bytes_per_frame */ 640,
-	/*.encoded_bytes_per_frame */ 40,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g729_init,
-	/*.encode */ switch_g729_encode,
-	/*.decode */ switch_g729_decode,
-	/*.destroy */ switch_g729_destroy,
-};
-
-static switch_codec_implementation_t g729_30ms_8k_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 18,
-	/*.iananame */ "G729",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 96000,
-	/*.microseconds_per_frame */ 30000,
-	/*.samples_per_frame */ 240,
-	/*.bytes_per_frame */ 480,
-	/*.encoded_bytes_per_frame */ 30,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g729_init,
-	/*.encode */ switch_g729_encode,
-	/*.decode */ switch_g729_decode,
-	/*.destroy */ switch_g729_destroy,
-	/*.next */ &g729_40ms_8k_implementation
-};
-
-static switch_codec_implementation_t g729_10ms_8k_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 18,
-	/*.iananame */ "G729",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 32000,
-	/*.microseconds_per_frame */ 10000,
-	/*.samples_per_frame */ 80,
-	/*.bytes_per_frame */ 160,
-	/*.encoded_bytes_per_frame */ 10,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g729_init,
-	/*.encode */ switch_g729_encode,
-	/*.decode */ switch_g729_decode,
-	/*.destroy */ switch_g729_destroy,
-	/*.next */ &g729_30ms_8k_implementation
-};
-
-static switch_codec_implementation_t g729_8k_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 18,
-	/*.iananame */ "G729",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 64000,
-	/*.microseconds_per_frame */ 20000,
-	/*.samples_per_frame */ 160,
-	/*.bytes_per_frame */ 320,
-	/*.encoded_bytes_per_frame */ 20,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g729_init,
-	/*.encode */ switch_g729_encode,
-	/*.decode */ switch_g729_decode,
-	/*.destroy */ switch_g729_destroy,
-	/*.next */ &g729_10ms_8k_implementation
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_g729_load)
 {
 	switch_codec_interface_t *codec_interface;
+    int mpf = 10000, spf = 80, bpf = 160, ebpf = 10, count;
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	SWITCH_ADD_CODEC(codec_interface, "g729", &g729_8k_implementation);
 
+	SWITCH_ADD_CODEC(codec_interface, "G.729");
+    for (count = 12; count > 0; count--) { 
+        switch_core_codec_add_implementation(pool, codec_interface,
+                                             SWITCH_CODEC_TYPE_AUDIO, 18, "G729", NULL, 8000, 8000, 8000,
+                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+                                             switch_g729_init, switch_g729_encode, switch_g729_decode, switch_g729_destroy);
+    }
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

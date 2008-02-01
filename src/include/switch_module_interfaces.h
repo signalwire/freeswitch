@@ -514,7 +514,7 @@ struct switch_codec {
 /*! \brief A table of settings and callbacks that define a paticular implementation of a codec */
 struct switch_codec_implementation {
 	/*! enumeration defining the type of the codec */
-	const switch_codec_type_t codec_type;
+	switch_codec_type_t codec_type;
 	/*! the IANA code number */
 	switch_payload_t ianacode;
 	/*! the IANA code name */
@@ -542,21 +542,13 @@ struct switch_codec_implementation {
 	/*! max number of frames to send in one network packet */
 	int max_frames_per_packet;
 	/*! function to initialize a codec handle using this implementation */
-	switch_status_t (*init) (switch_codec_t *, switch_codec_flag_t, const switch_codec_settings_t *codec_settings);
+    switch_core_codec_init_func_t init;
 	/*! function to encode raw data into encoded data */
-	switch_status_t (*encode) (switch_codec_t *codec,
-							   switch_codec_t *other_codec,
-							   void *decoded_data,
-							   uint32_t decoded_data_len,
-							   uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag);
+    switch_core_codec_encode_func_t encode;
 	/*! function to decode encoded data into raw data */
-	switch_status_t (*decode) (switch_codec_t *codec,
-							   switch_codec_t *other_codec,
-							   void *encoded_data,
-							   uint32_t encoded_data_len,
-							   uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag);
+    switch_core_codec_decode_func_t decode;
 	/*! deinitalize a codec handle using this implementation */
-	switch_status_t (*destroy) (switch_codec_t *);
+    switch_core_codec_destroy_func_t destroy;
 	struct switch_codec_implementation *next;
 };
 

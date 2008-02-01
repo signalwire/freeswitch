@@ -156,36 +156,17 @@ static switch_status_t switch_lpc10_decode(switch_codec_t *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/* Registration */
-
-static switch_codec_implementation_t lpc10_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 7,
-	/*.iananame */ "LPC",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 240,
-	/*.microseconds_per_frame */ 22500,
-	/*.samples_per_frame */ 180,
-	/*.bytes_per_frame */ 360,
-	/*.encoded_bytes_per_frame */ 7,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_lpc10_init,
-	/*.encode */ switch_lpc10_encode,
-	/*.decode */ switch_lpc10_decode,
-	/*.destroy */ switch_lpc10_destroy,
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_lpc10_load)
 {
 	switch_codec_interface_t *codec_interface;
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	SWITCH_ADD_CODEC(codec_interface, "LPC-10 2.4kbps", &lpc10_implementation);
+	SWITCH_ADD_CODEC(codec_interface, "LPC-10 2.4kbps");
+    switch_core_codec_add_implementation(pool, codec_interface,
+                                         SWITCH_CODEC_TYPE_AUDIO, 7, "LPC", NULL, 8000, 8000, 2400,
+                                         22500, 180, 360, 7, 1, 1, 1,
+                                         switch_lpc10_init, switch_lpc10_encode, switch_lpc10_decode, switch_lpc10_destroy);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

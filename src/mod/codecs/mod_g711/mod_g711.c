@@ -26,9 +26,10 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  *
  *
- * mod_g711.c -- G711 Ulaw/Alaw Codec Module
+ * mod_g711.c -- G.711 Ulaw/Alaw Codec Module
  *
  */
+
 #include <switch.h>
 #include <g7xx/g711.h>
 
@@ -176,233 +177,28 @@ static switch_status_t switch_g711a_destroy(switch_codec_t *codec)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/* Registration */
-
-static switch_codec_implementation_t g711u_8k_120ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 0,
-	/*.iananame */ "PCMU",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 64000,
-	/*.microseconds_per_frame */ 120000,
-	/*.samples_per_frame */ 960,
-	/*.bytes_per_frame */ 1920,
-	/*.encoded_bytes_per_frame */ 960,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g711u_init,
-	/*.encode */ switch_g711u_encode,
-	/*.decode */ switch_g711u_decode,
-	/*.destroy */ switch_g711u_destroy
-};
-
-static switch_codec_implementation_t g711u_8k_60ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 0,
-	/*.iananame */ "PCMU",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 64000,
-	/*.microseconds_per_frame */ 60000,
-	/*.samples_per_frame */ 480,
-	/*.bytes_per_frame */ 960,
-	/*.encoded_bytes_per_frame */ 480,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g711u_init,
-	/*.encode */ switch_g711u_encode,
-	/*.decode */ switch_g711u_decode,
-	/*.destroy */ switch_g711u_destroy,
-	/*.next */ &g711u_8k_120ms_implementation
-};
-
-static switch_codec_implementation_t g711u_8k_30ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 0,
-	/*.iananame */ "PCMU",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 64000,
-	/*.microseconds_per_frame */ 30000,
-	/*.samples_per_frame */ 240,
-	/*.bytes_per_frame */ 480,
-	/*.encoded_bytes_per_frame */ 240,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g711u_init,
-	/*.encode */ switch_g711u_encode,
-	/*.decode */ switch_g711u_decode,
-	/*.destroy */ switch_g711u_destroy,
-	/*.next */ &g711u_8k_60ms_implementation
-};
-
-static switch_codec_implementation_t g711u_8k_20ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 0,
-	/*.iananame */ "PCMU",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 64000,
-	/*.microseconds_per_frame */ 20000,
-	/*.samples_per_frame */ 160,
-	/*.bytes_per_frame */ 320,
-	/*.encoded_bytes_per_frame */ 160,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g711u_init,
-	/*.encode */ switch_g711u_encode,
-	/*.decode */ switch_g711u_decode,
-	/*.destroy */ switch_g711u_destroy,
-	/*.next */ &g711u_8k_30ms_implementation
-};
-
-static switch_codec_implementation_t g711u_8k_10ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 0,
-	/*.iananame */ "PCMU",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 64000,
-	/*.microseconds_per_frame */ 10000,
-	/*.samples_per_frame */ 80,
-	/*.bytes_per_frame */ 160,
-	/*.encoded_bytes_per_frame */ 80,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g711u_init,
-	/*.encode */ switch_g711u_encode,
-	/*.decode */ switch_g711u_decode,
-	/*.destroy */ switch_g711u_destroy,
-	/*.next */ &g711u_8k_20ms_implementation
-};
-
-static switch_codec_implementation_t g711a_8k_120ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 8,
-	/*.iananame */ "PCMA",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 64000,
-	/*.microseconds_per_frame */ 120000,
-	/*.samples_per_frame */ 960,
-	/*.bytes_per_frame */ 1920,
-	/*.encoded_bytes_per_frame */ 960,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g711a_init,
-	/*.encode */ switch_g711a_encode,
-	/*.decode */ switch_g711a_decode,
-	/*.destroy */ switch_g711a_destroy
-};
-
-static switch_codec_implementation_t g711a_8k_60ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 8,
-	/*.iananame */ "PCMA",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 64000,
-	/*.microseconds_per_frame */ 60000,
-	/*.samples_per_frame */ 480,
-	/*.bytes_per_frame */ 960,
-	/*.encoded_bytes_per_frame */ 480,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g711a_init,
-	/*.encode */ switch_g711a_encode,
-	/*.decode */ switch_g711a_decode,
-	/*.destroy */ switch_g711a_destroy,
-	/*.next */ &g711a_8k_120ms_implementation
-};
-
-static switch_codec_implementation_t g711a_8k_30ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 8,
-	/*.iananame */ "PCMA",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 64000,
-	/*.microseconds_per_frame */ 30000,
-	/*.samples_per_frame */ 240,
-	/*.bytes_per_frame */ 480,
-	/*.encoded_bytes_per_frame */ 240,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g711a_init,
-	/*.encode */ switch_g711a_encode,
-	/*.decode */ switch_g711a_decode,
-	/*.destroy */ switch_g711a_destroy,
-	/*.next */ &g711a_8k_60ms_implementation
-};
-
-static switch_codec_implementation_t g711a_8k_20ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 8,
-	/*.iananame */ "PCMA",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 64000,
-	/*.microseconds_per_frame */ 20000,
-	/*.samples_per_frame */ 160,
-	/*.bytes_per_frame */ 320,
-	/*.encoded_bytes_per_frame */ 160,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g711a_init,
-	/*.encode */ switch_g711a_encode,
-	/*.decode */ switch_g711a_decode,
-	/*.destroy */ switch_g711a_destroy,
-	/*.next */ &g711a_8k_30ms_implementation
-};
-
-static switch_codec_implementation_t g711a_8k_10ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 8,
-	/*.iananame */ "PCMA",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 64000,
-	/*.microseconds_per_frame */ 10000,
-	/*.samples_per_frame */ 80,
-	/*.bytes_per_frame */ 160,
-	/*.encoded_bytes_per_frame */ 80,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g711a_init,
-	/*.encode */ switch_g711a_encode,
-	/*.decode */ switch_g711a_decode,
-	/*.destroy */ switch_g711a_destroy,
-	/*.next */ &g711a_8k_20ms_implementation
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_g711_load)
 {
 	switch_codec_interface_t *codec_interface;
+    int mpf = 10000, spf = 80, bpf = 160, ebpf = 80, count;
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	SWITCH_ADD_CODEC(codec_interface, "g711 ulaw", &g711u_8k_10ms_implementation);
-	SWITCH_ADD_CODEC(codec_interface, "g711 alaw", &g711a_8k_10ms_implementation);
+	SWITCH_ADD_CODEC(codec_interface, "G.711 ulaw");
+    for (count = 12; count > 0; count--) {
+        switch_core_codec_add_implementation(pool, codec_interface,
+                                             SWITCH_CODEC_TYPE_AUDIO, 0, "PCMU", NULL, 8000, 8000, 64000,
+                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+                                             switch_g711u_init, switch_g711u_encode, switch_g711u_decode, switch_g711u_destroy);
+    }
+    
+	SWITCH_ADD_CODEC(codec_interface, "G.711 alaw");
+    for (count = 12; count > 0; count--) {
+        switch_core_codec_add_implementation(pool, codec_interface,
+                                             SWITCH_CODEC_TYPE_AUDIO, 8, "PCMA", NULL, 8000, 8000, 64000,
+                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+                                             switch_g711a_init, switch_g711a_encode, switch_g711a_decode, switch_g711a_destroy);
+    }
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

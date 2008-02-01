@@ -27,9 +27,10 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  * Michael Jerris <mike@jerris.com>
  *
- * mod_g722.c -- G722 Codec Module
+ * mod_g722.c -- G.722 Codec Module
  *
  */
+
 #include <switch.h>
 #include "g7xx/g722.h"
 
@@ -115,58 +116,21 @@ static switch_status_t switch_g722_destroy(switch_codec_t *codec)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/* Registration */
-
-static switch_codec_implementation_t g722_8k_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 109,
-	/*.iananame */ "G722_8",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 64000,
-	/*.microseconds_per_frame */ 20000,
-	/*.samples_per_frame */ 160,
-	/*.bytes_per_frame */ 320,
-	/*.encoded_bytes_per_frame */ 160,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g722_init,
-	/*.encode */ switch_g722_encode,
-	/*.decode */ switch_g722_decode,
-	/*.destroy */ switch_g722_destroy
-};
-
-static switch_codec_implementation_t g722_16k_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 9,
-	/*.iananame */ "G722",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 16000,
-	/*.bits_per_second */ 64000,
-	/*.microseconds_per_frame */ 20000,
-	/*.samples_per_frame */ 160,
-	/*.bytes_per_frame */ 640,
-	/*.encoded_bytes_per_frame */ 160,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g722_init,
-	/*.encode */ switch_g722_encode,
-	/*.decode */ switch_g722_decode,
-	/*.destroy */ switch_g722_destroy,
-	/*.next */ 
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_g722_load)
 {
 	switch_codec_interface_t *codec_interface;
+    int mpf = 10000, spf = 80, bpf = 320, ebpf = 80, count;
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	SWITCH_ADD_CODEC(codec_interface, "G722", &g722_16k_implementation);
-	SWITCH_ADD_CODEC(codec_interface, "G722_8", &g722_8k_implementation);
+
+	SWITCH_ADD_CODEC(codec_interface, "G.722");
+    for (count = 12; count > 0; count--) {
+        switch_core_codec_add_implementation(pool, codec_interface,
+                                             SWITCH_CODEC_TYPE_AUDIO, 9, "G722", NULL, 8000, 16000, 64000,
+                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+                                             switch_g722_init, switch_g722_encode, switch_g722_decode, switch_g722_destroy);
+    }
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

@@ -31,6 +31,7 @@
  * mod_amr.c -- GSM-AMR Codec Module
  *
  */
+
 #include "switch.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load);
@@ -284,28 +285,6 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 }
 
 /* Registration */
-
-static switch_codec_implementation_t amr_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 96,
-	/*.iananame */ "AMR",
-	/*.fmtp */ "octet-align=0",
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 0,
-	/*.microseconds_per_frame */ 20000,
-	/*.samples_per_frame */ 160,
-	/*.bytes_per_frame */ 320,
-	/*.encoded_bytes_per_frame */ 0,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_amr_init,
-	/*.encode */ switch_amr_encode,
-	/*.decode */ switch_amr_decode,
-	/*.destroy */ switch_amr_destroy,
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 {
 	switch_codec_interface_t *codec_interface;
@@ -331,8 +310,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	SWITCH_ADD_CODEC(codec_interface, "GSM-AMR", &amr_implementation);
 
+	SWITCH_ADD_CODEC(codec_interface, "GSM-AMR");
+    switch_core_codec_add_implementation(pool, codec_interface,
+                                         SWITCH_CODEC_TYPE_AUDIO, 96, "AMR", "octet-align=0", 8000, 8000, 12200,
+                                         20000, 160, 320, 0, 1, 1, 1,
+                                         switch_amr_init, switch_amr_encode, switch_amr_decode, switch_amr_destroy);
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

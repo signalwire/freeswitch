@@ -29,6 +29,7 @@
  * mod_h26x.c -- H26X Signed Linear Codec
  *
  */
+
 #include <switch.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_h26x_load);
@@ -68,85 +69,29 @@ static switch_status_t switch_h26x_decode(switch_codec_t *codec,
 	return SWITCH_STATUS_FALSE;
 }
 
-
 static switch_status_t switch_h26x_destroy(switch_codec_t *codec)
 {
 	return SWITCH_STATUS_SUCCESS;
 }
-
-static switch_codec_implementation_t h264_90000_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_VIDEO,
-	/*.ianacode */ 99,
-	/*.iananame */ "H264",
-	/*.fmtp */ NULL,
-	/*.samples_per_second = */ 90000,
-	/*.actual_samples_per_second = */ 90000,
-	/*.bits_per_second = */ 0,
-	/*.microseconds_per_frame = */ 0,
-	/*.samples_per_frame = */ 0,
-	/*.bytes_per_frame = */ 0,
-	/*.encoded_bytes_per_frame = */ 0,
-	/*.number_of_channels = */ 1,
-	/*.pref_frames_per_packet = */ 1,
-	/*.max_frames_per_packet = */ 1,
-	/*.init = */ switch_h26x_init,
-	/*.encode = */ switch_h26x_encode,
-	/*.decode = */ switch_h26x_decode,
-	/*.destroy = */ switch_h26x_destroy
-	/*.next = */
-};
-
-static switch_codec_implementation_t h263_90000_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_VIDEO,
-	/*.ianacode */ 34,
-	/*.iananame */ "H263",
-	/*.fmtp */ NULL,
-	/*.samples_per_second = */ 90000,
-	/*.actual_samples_per_second = */ 90000,
-	/*.bits_per_second = */ 0,
-	/*.microseconds_per_frame = */ 0,
-	/*.samples_per_frame = */ 0,
-	/*.bytes_per_frame = */ 0,
-	/*.encoded_bytes_per_frame = */ 0,
-	/*.number_of_channels = */ 1,
-	/*.pref_frames_per_packet = */ 1,
-	/*.max_frames_per_packet = */ 1,
-	/*.init = */ switch_h26x_init,
-	/*.encode = */ switch_h26x_encode,
-	/*.decode = */ switch_h26x_decode,
-	/*.destroy = */ switch_h26x_destroy,
-	/*.next = */&h264_90000_implementation
-};
-
-static switch_codec_implementation_t h261_90000_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_VIDEO,
-	/*.ianacode */ 31,
-	/*.iananame */ "H261",
-	/*.fmtp */ NULL,
-	/*.samples_per_second = */ 90000,
-	/*.actual_samples_per_second = */ 90000,
-	/*.bits_per_second = */ 0,
-	/*.microseconds_per_frame = */ 0,
-	/*.samples_per_frame = */ 0,
-	/*.bytes_per_frame = */ 0,
-	/*.encoded_bytes_per_frame = */ 0,
-	/*.number_of_channels = */ 1,
-	/*.pref_frames_per_packet = */ 1,
-	/*.max_frames_per_packet = */ 1,
-	/*.init = */ switch_h26x_init,
-	/*.encode = */ switch_h26x_encode,
-	/*.decode = */ switch_h26x_decode,
-	/*.destroy = */ switch_h26x_destroy,
-	/*.next = */&h263_90000_implementation
-};
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_h26x_load)
 {
 	switch_codec_interface_t *codec_interface;
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	SWITCH_ADD_CODEC(codec_interface, "h26x video (passthru)", &h261_90000_implementation);
-
+	SWITCH_ADD_CODEC(codec_interface, "H.26x Video (passthru)");
+    switch_core_codec_add_implementation(pool, codec_interface,
+                                         SWITCH_CODEC_TYPE_VIDEO, 99, "H264", NULL, 90000, 90000, 0,
+                                         0, 0, 0, 0, 1, 1, 1,
+                                         switch_h26x_init, switch_h26x_encode, switch_h26x_decode, switch_h26x_destroy);
+    switch_core_codec_add_implementation(pool, codec_interface,
+                                         SWITCH_CODEC_TYPE_VIDEO, 34, "H263", NULL, 90000, 90000, 0,
+                                         0, 0, 0, 0, 1, 1, 1,
+                                         switch_h26x_init, switch_h26x_encode, switch_h26x_decode, switch_h26x_destroy);
+    switch_core_codec_add_implementation(pool, codec_interface,
+                                         SWITCH_CODEC_TYPE_VIDEO, 31, "H261", NULL, 90000, 90000, 0,
+                                         0, 0, 0, 0, 1, 1, 1,
+                                         switch_h26x_init, switch_h26x_encode, switch_h26x_decode, switch_h26x_destroy);
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

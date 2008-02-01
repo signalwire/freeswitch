@@ -26,9 +26,10 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  * Michael Jerris <mike@jerris.com>
  *
- * mod_gsm.c -- gsm Codec Module
+ * mod_gsm.c -- GSM-FR Codec Module
  *
  */
+
 #include "switch.h"
 #include "gsm.h"
 
@@ -136,34 +137,20 @@ static switch_status_t switch_gsm_decode(switch_codec_t *codec, switch_codec_t *
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/* Registration */
-static switch_codec_implementation_t gsm_8k_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 3,
-	/*.iananame */ "GSM",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 13200,
-	/*.microseconds_per_frame */ 20000,
-	/*.samples_per_frame */ 160,
-	/*.bytes_per_frame */ 320,
-	/*.encoded_bytes_per_frame */ 33,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_gsm_init,
-	/*.encode */ switch_gsm_encode,
-	/*.decode */ switch_gsm_decode,
-	/*.destroy */ switch_gsm_destroy,
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_gsm_load)
 {
 	switch_codec_interface_t *codec_interface;
+    int mpf = 20000, spf = 160, bpf = 320, ebpf = 33, count;
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	SWITCH_ADD_CODEC(codec_interface, "gsm", &gsm_8k_implementation);
+	SWITCH_ADD_CODEC(codec_interface, "GSM-FR");
+    for (count = 6; count > 0; count--) {
+        switch_core_codec_add_implementation(pool, codec_interface,
+                                             SWITCH_CODEC_TYPE_AUDIO, 3, "GSM", NULL, 8000, 8000, 13200,
+                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 6,
+                                             switch_gsm_init, switch_gsm_encode, switch_gsm_decode, switch_gsm_destroy);
+    }
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

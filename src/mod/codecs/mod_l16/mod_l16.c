@@ -29,6 +29,7 @@
  * mod_l16.c -- Raw Signed Linear Codec
  *
  */
+
 #include <switch.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_l16_load);
@@ -86,345 +87,35 @@ static switch_status_t switch_raw_destroy(switch_codec_t *codec)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_codec_implementation_t raw_32k_60ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 119,
-	/*.iananame */ "L16",
-	/*.fmtp */ NULL,
-	/*.samples_per_second = */ 32000,
-	/*.actual_samples_per_second = */ 32000,
-	/*.bits_per_second = */ 512000,
-	/*.microseconds_per_frame = */ 60000,
-	/*.samples_per_frame = */ 1920,
-	/*.bytes_per_frame = */ 3840,
-	/*.encoded_bytes_per_frame = */ 3840,
-	/*.number_of_channels = */ 1,
-	/*.pref_frames_per_packet = */ 1,
-	/*.max_frames_per_packet = */ 1,
-	/*.init = */ switch_raw_init,
-	/*.encode = */ switch_raw_encode,
-	/*.decode = */ switch_raw_decode,
-	/*.destroy = */ switch_raw_destroy
-	/*.next = */
-};
-
-static switch_codec_implementation_t raw_32k_30ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 119,
-	/*.iananame */ "L16",
-	/*.fmtp */ NULL,
-	/*.samples_per_second = */ 32000,
-	/*.actual_samples_per_second = */ 32000,
-	/*.bits_per_second = */ 512000,
-	/*.microseconds_per_frame = */ 30000,
-	/*.samples_per_frame = */ 960,
-	/*.bytes_per_frame = */ 1920,
-	/*.encoded_bytes_per_frame = */ 1920,
-	/*.number_of_channels = */ 1,
-	/*.pref_frames_per_packet = */ 1,
-	/*.max_frames_per_packet = */ 1,
-	/*.init = */ switch_raw_init,
-	/*.encode = */ switch_raw_encode,
-	/*.decode = */ switch_raw_decode,
-	/*.destroy = */ switch_raw_destroy,
-	/*.next = */ &raw_32k_60ms_implementation
-};
-
-static switch_codec_implementation_t raw_32k_20ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 119,
-	/*.iananame */ "L16",
-	/*.fmtp */ NULL,
-	/*.samples_per_second = */ 32000,
-	/*.actual_samples_per_second = */ 32000,
-	/*.bits_per_second = */ 512000,
-	/*.microseconds_per_frame = */ 20000,
-	/*.samples_per_frame = */ 640,
-	/*.bytes_per_frame = */ 1280,
-	/*.encoded_bytes_per_frame = */ 1280,
-	/*.number_of_channels = */ 1,
-	/*.pref_frames_per_packet = */ 1,
-	/*.max_frames_per_packet = */ 1,
-	/*.init = */ switch_raw_init,
-	/*.encode = */ switch_raw_encode,
-	/*.decode = */ switch_raw_decode,
-	/*.destroy = */ switch_raw_destroy,
-	/*.next = */ &raw_32k_30ms_implementation
-};
-
-static switch_codec_implementation_t raw_32k_10ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 119,
-	/*.iananame */ "L16",
-	/*.fmtp */ NULL,
-	/*.samples_per_second = */ 32000,
-	/*.actual_samples_per_second = */ 32000,
-	/*.bits_per_second = */ 512000,
-	/*.microseconds_per_frame = */ 10000,
-	/*.samples_per_frame = */ 320,
-	/*.bytes_per_frame = */ 640,
-	/*.encoded_bytes_per_frame = */ 640,
-	/*.number_of_channels = */ 1,
-	/*.pref_frames_per_packet = */ 1,
-	/*.max_frames_per_packet = */ 1,
-	/*.init = */ switch_raw_init,
-	/*.encode = */ switch_raw_encode,
-	/*.decode = */ switch_raw_decode,
-	/*.destroy = */ switch_raw_destroy,
-	/*.next = */ &raw_32k_20ms_implementation
-};
-
-static switch_codec_implementation_t raw_22k_20ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 118,
-	/*.iananame */ "L16",
-	/*.fmtp */ NULL,
-	/*.samples_per_second = */ 22050,
-	/*.actual_samples_per_second = */ 22050,
-	/*.bits_per_second = */ 352800,
-	/*.microseconds_per_frame = */ 20000,
-	/*.samples_per_frame = */ 441,
-	/*.bytes_per_frame = */ 882,
-	/*.encoded_bytes_per_frame = */ 882,
-	/*.number_of_channels = */ 1,
-	/*.pref_frames_per_packet = */ 1,
-	/*.max_frames_per_packet = */ 1,
-	/*.init = */ switch_raw_init,
-	/*.encode = */ switch_raw_encode,
-	/*.decode = */ switch_raw_decode,
-	/*.destroy = */ switch_raw_destroy,
-	/*.next = */ &raw_32k_10ms_implementation
-};
-
-static switch_codec_implementation_t raw_16k_120ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 117,
-	/*.iananame */ "L16",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 16000,
-	/*.actual_samples_per_second */ 16000,
-	/*.bits_per_second */ 256000,
-	/*.microseconds_per_frame */ 120000,
-	/*.samples_per_frame */ 1920,
-	/*.bytes_per_frame */ 3840,
-	/*.encoded_bytes_per_frame */ 3840,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_raw_init,
-	/*.encode */ switch_raw_encode,
-	/*.decode */ switch_raw_decode,
-	/*.destroy */ switch_raw_destroy,
-	/*.next */ &raw_22k_20ms_implementation
-};
-
-static switch_codec_implementation_t raw_16k_60ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 117,
-	/*.iananame */ "L16",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 16000,
-	/*.actual_samples_per_second */ 16000,
-	/*.bits_per_second */ 256000,
-	/*.microseconds_per_frame */ 60000,
-	/*.samples_per_frame */ 960,
-	/*.bytes_per_frame */ 1920,
-	/*.encoded_bytes_per_frame */ 1920,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_raw_init,
-	/*.encode */ switch_raw_encode,
-	/*.decode */ switch_raw_decode,
-	/*.destroy */ switch_raw_destroy,
-	/*.next */ &raw_16k_120ms_implementation
-};
-
-static switch_codec_implementation_t raw_16k_30ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 117,
-	/*.iananame */ "L16",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 16000,
-	/*.actual_samples_per_second */ 16000,
-	/*.bits_per_second */ 256000,
-	/*.microseconds_per_frame */ 30000,
-	/*.samples_per_frame */ 480,
-	/*.bytes_per_frame */ 960,
-	/*.encoded_bytes_per_frame */ 960,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_raw_init,
-	/*.encode */ switch_raw_encode,
-	/*.decode */ switch_raw_decode,
-	/*.destroy */ switch_raw_destroy,
-	/*.next */ &raw_16k_60ms_implementation
-};
-
-static switch_codec_implementation_t raw_16k_20ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 117,
-	/*.iananame */ "L16",
-	/*.fmtp */ NULL,
-	/*.samples_per_second = */ 16000,
-	/*.actual_samples_per_second = */ 16000,
-	/*.bits_per_second = */ 256000,
-	/*.microseconds_per_frame = */ 20000,
-	/*.samples_per_frame = */ 320,
-	/*.bytes_per_frame = */ 640,
-	/*.encoded_bytes_per_frame = */ 640,
-	/*.number_of_channels = */ 1,
-	/*.pref_frames_per_packet = */ 1,
-	/*.max_frames_per_packet = */ 1,
-	/*.init = */ switch_raw_init,
-	/*.encode = */ switch_raw_encode,
-	/*.decode = */ switch_raw_decode,
-	/*.destroy = */ switch_raw_destroy,
-	/*.next = */ &raw_16k_30ms_implementation
-};
-
-static switch_codec_implementation_t raw_16k_10ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 117,
-	/*.iananame */ "L16",
-	/*.fmtp */ NULL,
-	/*.samples_per_second = */ 16000,
-	/*.actual_samples_per_second = */ 16000,
-	/*.bits_per_second = */ 256000,
-	/*.microseconds_per_frame = */ 10000,
-	/*.samples_per_frame = */ 160,
-	/*.bytes_per_frame = */ 320,
-	/*.encoded_bytes_per_frame = */ 320,
-	/*.number_of_channels = */ 1,
-	/*.pref_frames_per_packet = */ 1,
-	/*.max_frames_per_packet = */ 1,
-	/*.init = */ switch_raw_init,
-	/*.encode = */ switch_raw_encode,
-	/*.decode = */ switch_raw_decode,
-	/*.destroy = */ switch_raw_destroy,
-	/*.next = */ &raw_16k_20ms_implementation
-};
-
-///////////////////////////////
-
-static switch_codec_implementation_t raw_8k_120ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 10,
-	/*.iananame */ "L16",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 512000,
-	/*.microseconds_per_frame */ 120000,
-	/*.samples_per_frame */ 960,
-	/*.bytes_per_frame */ 1920,
-	/*.encoded_bytes_per_frame */ 1920,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_raw_init,
-	/*.encode */ switch_raw_encode,
-	/*.decode */ switch_raw_decode,
-	/*.destroy */ switch_raw_destroy,
-	/*.next */ &raw_16k_10ms_implementation
-};
-
-static switch_codec_implementation_t raw_8k_60ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 10,
-	/*.iananame */ "L16",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 256000,
-	/*.microseconds_per_frame */ 60000,
-	/*.samples_per_frame */ 480,
-	/*.bytes_per_frame */ 960,
-	/*.encoded_bytes_per_frame */ 960,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_raw_init,
-	/*.encode */ switch_raw_encode,
-	/*.decode */ switch_raw_decode,
-	/*.destroy */ switch_raw_destroy,
-	/*.next */ &raw_8k_120ms_implementation
-};
-
-static switch_codec_implementation_t raw_8k_30ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 10,
-	/*.iananame */ "L16",
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
-	/*.actual_samples_per_second */ 8000,
-	/*.bits_per_second */ 128000,
-	/*.microseconds_per_frame */ 30000,
-	/*.samples_per_frame */ 240,
-	/*.bytes_per_frame */ 480,
-	/*.encoded_bytes_per_frame */ 480,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_raw_init,
-	/*.encode */ switch_raw_encode,
-	/*.decode */ switch_raw_decode,
-	/*.destroy */ switch_raw_destroy,
-	/*.next */ &raw_8k_60ms_implementation
-};
-
-static switch_codec_implementation_t raw_8k_20ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 10,
-	/*.iananame */ "L16",
-	/*.fmtp */ NULL,
-	/*.samples_per_second = */ 8000,
-	/*.actual_samples_per_second = */ 8000,
-	/*.bits_per_second = */ 128000,
-	/*.microseconds_per_frame = */ 20000,
-	/*.samples_per_frame = */ 160,
-	/*.bytes_per_frame = */ 320,
-	/*.encoded_bytes_per_frame = */ 320,
-	/*.number_of_channels = */ 1,
-	/*.pref_frames_per_packet = */ 1,
-	/*.max_frames_per_packet = */ 1,
-	/*.init = */ switch_raw_init,
-	/*.encode = */ switch_raw_encode,
-	/*.decode = */ switch_raw_decode,
-	/*.destroy = */ switch_raw_destroy,
-	/*.next */ &raw_8k_30ms_implementation
-};
-
-static switch_codec_implementation_t raw_8k_10ms_implementation = {
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 10,
-	/*.iananame */ "L16",
-	/*.fmtp */ NULL,
-	/*.samples_per_second = */ 8000,
-	/*.actual_samples_per_second = */ 8000,
-	/*.bits_per_second = */ 128000,
-	/*.microseconds_per_frame = */ 10000,
-	/*.samples_per_frame = */ 80,
-	/*.bytes_per_frame = */ 160,
-	/*.encoded_bytes_per_frame = */ 160,
-	/*.number_of_channels = */ 1,
-	/*.pref_frames_per_packet = */ 1,
-	/*.max_frames_per_packet = */ 1,
-	/*.init = */ switch_raw_init,
-	/*.encode = */ switch_raw_encode,
-	/*.decode = */ switch_raw_decode,
-	/*.destroy = */ switch_raw_destroy,
-	/*.next */ &raw_8k_20ms_implementation
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_l16_load)
 {
 	switch_codec_interface_t *codec_interface;
+    int mpf = 10000, spf = 80, bpf = 160, ebpf = 160, bps = 128000, rate = 8000, counta, countb;
+    int ianacode[4] = { 0, 10, 117, 119 };
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	SWITCH_ADD_CODEC(codec_interface, "raw signed linear (16 bit)", &raw_8k_10ms_implementation);
+	SWITCH_ADD_CODEC(codec_interface, "RAW Signed Linear (16 bit)");
+    for (counta = 1; counta <= 3; counta++) {
+        for (countb = 12; countb > 0; countb--) {
+            switch_core_codec_add_implementation(pool, codec_interface,
+                                                 SWITCH_CODEC_TYPE_AUDIO, ianacode[counta], "L16", NULL, rate, rate, bps,
+                                                 mpf * countb, spf * countb, bpf * countb, ebpf * countb, 1, 1, 12,
+                                                 switch_raw_init, switch_raw_encode, switch_raw_decode, switch_raw_destroy);
+        }
+        rate = rate * 2;
+        bps = bps * 2;
+        spf = spf * 2;
+        bpf = bpf * 2;
+        ebpf = ebpf * 2;
+    }
 
+    switch_core_codec_add_implementation(pool, codec_interface,
+                                         SWITCH_CODEC_TYPE_AUDIO, 118, "L16", NULL, 22050, 22050, 352800,
+                                         20000, 441, 882, 882, 1, 1, 1,
+                                         switch_raw_init, switch_raw_encode, switch_raw_decode, switch_raw_destroy);
+    
+    
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

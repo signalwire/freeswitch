@@ -42,6 +42,7 @@
 #define SWITCH_LOADABLE_MODULE_H
 
 #include <switch.h>
+#include <switch_module_interfaces.h>
 
 SWITCH_BEGIN_EXTERN_C
 /*!
@@ -305,13 +306,78 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void);
 	break; \
 	}
 
-#define SWITCH_ADD_CODEC(codec_int, int_name, implementation) \
+#define SWITCH_ADD_CODEC(codec_int, int_name) \
 	for (;;) { \
 	codec_int = (switch_codec_interface_t *)switch_loadable_module_create_interface(*module_interface, SWITCH_CODEC_INTERFACE); \
-	codec_int->implementations = implementation; \
 	codec_int->interface_name = int_name; \
 	break; \
 	}
+
+
+static inline void switch_core_codec_add_implementation(switch_memory_pool_t *pool,
+                                                        switch_codec_interface_t *codec_interface,
+                                                        /*! enumeration defining the type of the codec */
+                                                        const switch_codec_type_t codec_type,
+                                                        /*! the IANA code number */
+                                                        switch_payload_t ianacode,
+                                                        /*! the IANA code name */
+                                                        char *iananame,
+                                                        /*! default fmtp to send (can be overridden by the init function) */
+                                                        char *fmtp,
+                                                        /*! samples transferred per second */
+                                                        uint32_t samples_per_second,
+                                                        /*! actual samples transferred per second for those who are not moron g722 RFC writers*/
+                                                        uint32_t actual_samples_per_second,
+                                                        /*! bits transferred per second */
+                                                        int bits_per_second,
+                                                        /*! number of microseconds that denote one frame */
+                                                        int microseconds_per_frame,
+                                                        /*! number of samples that denote one frame */
+                                                        uint32_t samples_per_frame,
+                                                        /*! number of bytes that denote one frame decompressed */
+                                                        uint32_t bytes_per_frame,
+                                                        /*! number of bytes that denote one frame compressed */
+                                                        uint32_t encoded_bytes_per_frame,
+                                                        /*! number of channels represented */
+                                                        uint8_t number_of_channels,
+                                                        /*! number of frames to send in one netowrk packet */
+                                                        int pref_frames_per_packet,
+                                                        /*! max number of frames to send in one network packet */
+                                                        int max_frames_per_packet,
+                                                        /*! function to initialize a codec handle using this implementation */
+                                                        switch_core_codec_init_func_t init,
+                                                        /*! function to encode raw data into encoded data */
+                                                        switch_core_codec_encode_func_t encode,
+                                                        /*! function to decode encoded data into raw data */
+                                                        switch_core_codec_decode_func_t decode,
+                                                        /*! deinitalize a codec handle using this implementation */
+                                                        switch_core_codec_destroy_func_t destroy)
+{
+
+    switch_codec_implementation_t *impl = (switch_codec_implementation_t *) switch_core_alloc(pool, sizeof(*impl));
+    impl->codec_type = codec_type;
+    impl->ianacode = ianacode;
+    impl->iananame = iananame;
+    impl->fmtp = fmtp;
+    impl->samples_per_second = samples_per_second;
+    impl->actual_samples_per_second = actual_samples_per_second;
+    impl->bits_per_second = bits_per_second;
+    impl->microseconds_per_frame = microseconds_per_frame;
+    impl->samples_per_frame = samples_per_frame;
+    impl->bytes_per_frame = bytes_per_frame;
+    impl->encoded_bytes_per_frame = encoded_bytes_per_frame;
+    impl->number_of_channels = number_of_channels;
+    impl->pref_frames_per_packet = pref_frames_per_packet;
+    impl->max_frames_per_packet = max_frames_per_packet;
+    impl->init = init;
+    impl->encode = encode;
+    impl->decode = decode;
+    impl->destroy = destroy;
+    
+    impl->next = codec_interface->implementations;
+    codec_interface->implementations = impl;
+
+}
 
 ///\}
 
