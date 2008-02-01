@@ -3054,9 +3054,21 @@ static JSBool js_log(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, j
 	return JS_FALSE;
 }
 
+static JSBool js_global_set(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	char *var_name = NULL, *val = NULL;
+	if (argc > 1) {
+		var_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		val =  JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		switch_core_set_variable(var_name, val);
+		return JS_TRUE;
+	}
+	/* this is so the wrong error message to throw for this one */
+	eval_some_js("~throw new Error(\"var name not supplied!\");", cx, obj, rval);
+	return JS_FALSE;
+}
 
-
-static JSBool js_global(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+static JSBool js_global_get(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	char *var_name = NULL, *val = NULL;
 
@@ -3247,7 +3259,8 @@ static JSBool js_file_unlink(JSContext * cx, JSObject * obj, uintN argc, jsval *
 static JSFunctionSpec fs_functions[] = {
 	{"console_log", js_log, 2},
 	{"consoleLog", js_log, 2},
-	{"getGlobalVariable", js_global, 2},
+	{"getGlobalVariable", js_global_get, 2},
+	{"setGlobalVariable", js_global_set, 2},
 	{"exit", js_exit, 0},
 	{"include", js_include, 1},
 	{"bridge", js_bridge, 2},
