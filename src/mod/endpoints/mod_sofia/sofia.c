@@ -1692,6 +1692,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		if (channel) {
 			if (switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
 				switch_set_flag_locked(tech_pvt, TFLAG_ANS);
+                switch_set_flag(tech_pvt, TFLAG_SDP);
 				switch_channel_mark_answered(channel);
 				if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
 					&& (other_session = switch_core_session_locate(uuid))) {
