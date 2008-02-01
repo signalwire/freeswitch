@@ -1521,7 +1521,13 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					}
 					switch_set_flag(tech_pvt, TFLAG_SDP);
 					goto done;
-				} else {
+				} else if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
+                    switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "DELAYED NEGOTIATION");
+                    switch_set_flag_locked(tech_pvt, TFLAG_READY);
+                    if (switch_channel_get_state(channel) == CS_NEW) {
+                        switch_channel_set_state(channel, CS_INIT);
+                    }
+                } else {
 					sdp_parser_t *parser;
 					sdp_session_t *sdp;
 					uint8_t match = 0;
