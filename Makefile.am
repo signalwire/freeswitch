@@ -287,11 +287,17 @@ sure: update-clean all
 
 speedy-sure: update-clean
 	$(MAKE) -j core
+	cd libs/sofia-sip && $(MAKE) -j
 	$(MAKE) -j modules
 
 current: update-clean
 	svn update
 	$(MAKE) all
+	$(MAKE) install
+
+speedy-current: update-clean
+	svn update
+	$(MAKE) speedy-sure
 	$(MAKE) install
 
 wayclean: clean
