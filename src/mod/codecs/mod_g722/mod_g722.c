@@ -131,6 +131,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_g722_load)
                                              mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
                                              switch_g722_init, switch_g722_encode, switch_g722_decode, switch_g722_destroy);
     }
+	SWITCH_ADD_CODEC(codec_interface, "G.722_8");
     for (count = 12; count > 0; count--) {
         switch_core_codec_add_implementation(pool, codec_interface,
                                              SWITCH_CODEC_TYPE_AUDIO, 109, "G722_8", NULL, 8000, 8000, 64000,
