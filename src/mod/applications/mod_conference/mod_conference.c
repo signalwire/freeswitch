@@ -871,11 +871,14 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 			int nt = 0;
 			/* Build a muxed frame for every member that contains the mixed audio of everyone else */
 			for (omember = conference->members; omember; omember = omember->next) {
-				omember->read = bytes;
 				if (has_file_data && file_sample_len) {
-					memcpy(omember->mux_frame, file_frame, file_sample_len * 2);
-				} else {
-					memset(omember->mux_frame, 0, omember->read);
+                    uint32_t sample_bytes = file_sample_len * 2;
+					memcpy(omember->mux_frame, file_frame, sample_bytes);
+                    if (sample_bytes < bytes) {
+                        memset(omember->mux_frame + sample_bytes, 255, bytes - sample_bytes);
+                    }
+                } else {
+					memset(omember->mux_frame, 255, bytes);
 				}
 				for (imember = conference->members; imember; imember = imember->next) {
 					uint32_t x;
@@ -937,7 +940,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 			for (imember = conference->members; imember; imember = imember->next) {
 				if (switch_test_flag(imember, MFLAG_RUNNING)) {
 					switch_mutex_lock(imember->audio_out_mutex);
-					switch_buffer_write(imember->mux_buffer, imember->mux_frame, imember->read);
+					switch_buffer_write(imember->mux_buffer, imember->mux_frame, bytes);
 					switch_mutex_unlock(imember->audio_out_mutex);
 				}
 			}
