@@ -51,23 +51,7 @@ static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag
             packing = G726_PACKING_LEFT;
         } 
 
-		switch (codec->implementation->bits_per_second) {
-		case 40000:
-            g726_init(context, codec->implementation->bits_per_second, G726_ENCODING_LINEAR, packing);
-			break;
-		case 32000:
-            g726_init(context, codec->implementation->bits_per_second, G726_ENCODING_LINEAR, packing);
-			break;
-		case 24000:
-            g726_init(context, codec->implementation->bits_per_second, G726_ENCODING_LINEAR, packing);
-			break;
-		case 16000:
-            g726_init(context, codec->implementation->bits_per_second, G726_ENCODING_LINEAR, packing);
-			break;
-		default:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid Encoding Size %d!\n", codec->implementation->encoded_bytes_per_frame);
-			return SWITCH_STATUS_FALSE;
-		}
+        g726_init(context, codec->implementation->bits_per_second, G726_ENCODING_LINEAR, packing);
 
 		codec->private_info = context;
 		return SWITCH_STATUS_SUCCESS;
