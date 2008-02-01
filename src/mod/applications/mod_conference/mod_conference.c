@@ -225,6 +225,7 @@ typedef struct conference_obj {
 	switch_speech_handle_t *sh;
     switch_byte_t *not_talking_buf;
     uint32_t not_talking_buf_len;
+    int comfort_noise_level;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -875,10 +876,19 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
                     uint32_t sample_bytes = file_sample_len * 2;
 					memcpy(omember->mux_frame, file_frame, sample_bytes);
                     if (sample_bytes < bytes) {
-                        memset(omember->mux_frame + sample_bytes, 255, bytes - sample_bytes);
+                        if (conference->comfort_noise_level) {
+                            switch_generate_sln_silence((int16_t *)omember->mux_frame + sample_bytes, 
+                                                        (bytes - sample_bytes) / 2, conference->comfort_noise_level);
+                        } else {
+                            memset(omember->mux_frame + sample_bytes, 255, bytes - sample_bytes);
+                        }
                     }
                 } else {
-					memset(omember->mux_frame, 255, bytes);
+                    if (conference->comfort_noise_level) {
+                        switch_generate_sln_silence((int16_t *)omember->mux_frame, bytes / 2, conference->comfort_noise_level);
+                    } else {
+                        memset(omember->mux_frame, 255, bytes);
+                    }
 				}
 				for (imember = conference->members; imember; imember = imember->next) {
 					uint32_t x;
@@ -1760,13 +1770,14 @@ static void conference_loop_output(conference_member_t * member)
 					switch_clear_flag_locked(member, MFLAG_FLUSH_BUFFER);
 				}
 
+                use_timer = 1;
+
 				if (mux_used) {
 					/* Flush the output buffer and write all the data (presumably muxed) back to the channel */
 					switch_mutex_lock(member->audio_out_mutex);
 					write_frame.data = data;
 					use_buffer = member->mux_buffer;
 					low_count = 0;
-					use_timer = 1;
 					if ((write_frame.datalen = (uint32_t) switch_buffer_read(use_buffer, write_frame.data, bytes))) {
 						if (write_frame.datalen && switch_test_flag(member, MFLAG_CAN_HEAR)) {
 							write_frame.samples = write_frame.datalen / 2;
@@ -1785,13 +1796,16 @@ static void conference_loop_output(conference_member_t * member)
 
 				} else {
 					if (switch_test_flag(member, MFLAG_WASTE_BANDWIDTH)) {
-						switch_generate_sln_silence(write_frame.data, samples, 1400);
+                        if (member->conference->comfort_noise_level) {
+                            switch_generate_sln_silence(write_frame.data, samples, member->conference->comfort_noise_level);
+                        } else {
+                            memset(write_frame.data, 255, bytes);
+                        }
 						write_frame.datalen = bytes;
 						write_frame.samples = samples;
 						write_frame.timestamp = timer.samplecount;
 						switch_core_session_write_frame(member->session, &write_frame, -1, 0);
 					}
-					use_timer = 1;
 				}
 			}
 
@@ -4513,6 +4527,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	char *maxmember_sound = NULL;
 	uint32_t rate = 8000, interval = 20;
 	switch_status_t status;
+    int comfort_noise_level = 0;
 
 	/* Validate the conference name */
 	if (switch_strlen_zero(name)) {
@@ -4594,6 +4609,14 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 			caller_id_number = val;
 		} else if (!strcasecmp(var, "caller-controls") && !switch_strlen_zero(val)) {
 			caller_controls = val;
+		} else if (!strcasecmp(var, "comfort-noise") && !switch_strlen_zero(val)) {
+            int tmp;
+            tmp = atoi(val);
+            if (tmp > 1 && tmp < 10000) {
+                comfort_noise_level = tmp;
+            } else if (switch_true(val)) {
+                comfort_noise_level = 1400;
+            }
 		} else if (!strcasecmp(var, "sound-prefix") && !switch_strlen_zero(val)) {
 			sound_prefix = val;
 		} else if (!strcasecmp(var, "max-members") && !switch_strlen_zero(val)) {
@@ -4679,6 +4702,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 		conference->tts_voice = switch_core_strdup(conference->pool, tts_voice);
 	}
 
+    conference->comfort_noise_level = comfort_noise_level;
 	conference->caller_id_name = switch_core_strdup(conference->pool, caller_id_name);
 	conference->caller_id_number = switch_core_strdup(conference->pool, caller_id_number);
 
