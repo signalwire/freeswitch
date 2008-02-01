@@ -2375,7 +2375,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		if (rpid->rpid_url && rpid->rpid_url->url_user) {
 			from_user = rpid->rpid_url->url_user;
 		}
-		if (rpid->rpid_display) {
+		if (!switch_strlen_zero(rpid->rpid_display)) {
 			displayname = rpid->rpid_display;
 		}
 	}
@@ -2384,7 +2384,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		if (passerted->paid_url && passerted->paid_url->url_user) {
 			from_user = passerted->paid_url->url_user;
 		}
-		if (passerted->paid_display) {
+		if (!switch_strlen_zero(passerted->paid_display)) {
 			displayname = passerted->paid_display;
 		}
 	}
@@ -2393,7 +2393,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		if (ppreferred->ppid_url && ppreferred->ppid_url->url_user) {
 			from_user = ppreferred->ppid_url->url_user;
 		}
-		if (ppreferred->ppid_display) {
+		if (!switch_strlen_zero(ppreferred->ppid_display)) {
 			displayname = ppreferred->ppid_display;
 		}
 	}
