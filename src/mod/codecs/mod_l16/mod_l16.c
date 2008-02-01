@@ -91,7 +91,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_l16_load)
 {
 	switch_codec_interface_t *codec_interface;
     int mpf = 10000, spf = 80, bpf = 160, ebpf = 160, bps = 128000, rate = 8000, counta, countb;
-    int ianacode[4] = { 0, 10, 117, 119 };
+    switch_payload_t ianacode[4] = { 0, 10, 117, 119 };
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
