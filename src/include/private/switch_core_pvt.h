@@ -152,6 +152,8 @@ struct switch_media_bug {
 	void *user_data;
 	uint32_t flags;
 	uint8_t ready;
+	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	int16_t tmp[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	time_t stop_time;
 	switch_thread_id_t thread_id;
 	struct switch_media_bug *next;

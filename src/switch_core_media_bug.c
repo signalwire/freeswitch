@@ -79,7 +79,6 @@ SWITCH_DECLARE(void *) switch_core_media_bug_get_user_data(switch_media_bug_t *b
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *bug, switch_frame_t *frame)
 {
 	uint32_t bytes = 0;
-	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 	uint32_t datalen = 0;
 	int16_t *dp, *fp;
 	uint32_t x;
@@ -102,7 +101,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	maxlen = sizeof(data) > frame->buflen ? frame->buflen : sizeof(data);
+	maxlen = SWITCH_RECOMMENDED_BUFFER_SIZE > frame->buflen ? frame->buflen : SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 	if ((rdlen = rlen > wlen ? wlen : rlen) > maxlen) {
 		rdlen = maxlen;
@@ -123,7 +122,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 
 	if (wlen) {
 		switch_mutex_lock(bug->write_mutex);
-		datalen = (uint32_t) switch_buffer_read(bug->raw_write_buffer, data, rdlen);
+		datalen = (uint32_t) switch_buffer_read(bug->raw_write_buffer, bug->data, rdlen);
 		switch_mutex_unlock(bug->write_mutex);
 	}
 
@@ -132,9 +131,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	switch_assert( bytes <= maxlen );
 	
 	if (bytes) {
-		int16_t tmp[SWITCH_RECOMMENDED_BUFFER_SIZE], *tp = tmp;
+		int16_t *tp = bug->tmp;
 		
-		dp = (int16_t *) data;
+		dp = (int16_t *) bug->data;
 		fp = (int16_t *) frame->data;
 		rlen = frame->datalen / 2;
 		wlen = datalen / 2;
@@ -153,7 +152,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 					*(tp++) = 0;
 				}
 			}
-			memcpy(frame->data, tmp, bytes * 2);
+			memcpy(frame->data, bug->tmp, bytes * 2);
 		} else {
 			for (x = 0; x < blen; x++) {
 				int32_t z = 0;
