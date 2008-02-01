@@ -79,15 +79,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_h26x_load)
 	switch_codec_interface_t *codec_interface;
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	SWITCH_ADD_CODEC(codec_interface, "H.26x Video (passthru)");
+	SWITCH_ADD_CODEC(codec_interface, "H.264 Video (passthru)");
     switch_core_codec_add_implementation(pool, codec_interface,
                                          SWITCH_CODEC_TYPE_VIDEO, 99, "H264", NULL, 90000, 90000, 0,
                                          0, 0, 0, 0, 1, 1, 1,
                                          switch_h26x_init, switch_h26x_encode, switch_h26x_decode, switch_h26x_destroy);
+	SWITCH_ADD_CODEC(codec_interface, "H.263 Video (passthru)");
     switch_core_codec_add_implementation(pool, codec_interface,
                                          SWITCH_CODEC_TYPE_VIDEO, 34, "H263", NULL, 90000, 90000, 0,
                                          0, 0, 0, 0, 1, 1, 1,
                                          switch_h26x_init, switch_h26x_encode, switch_h26x_decode, switch_h26x_destroy);
+	SWITCH_ADD_CODEC(codec_interface, "H.261 Video (passthru)");
     switch_core_codec_add_implementation(pool, codec_interface,
                                          SWITCH_CODEC_TYPE_VIDEO, 31, "H261", NULL, 90000, 90000, 0,
                                          0, 0, 0, 0, 1, 1, 1,
