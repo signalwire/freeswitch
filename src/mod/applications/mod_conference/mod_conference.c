@@ -255,14 +255,11 @@ struct conference_member {
 	uint8_t *frame;
     uint32_t frame_size;
 	uint8_t *mux_frame;
-	uint32_t buflen;
-	uint32_t framelen;
 	uint32_t read;
 	int32_t energy_level;
 	int32_t volume_in_level;
 	int32_t volume_out_level;
 	uint32_t native_rate;
-	switch_audio_resampler_t *mux_resampler;
 	switch_audio_resampler_t *read_resampler;
     int16_t *resample_out;
     uint32_t resample_out_len;
@@ -731,7 +728,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 	file_frame = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	async_file_frame = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
 
-
 	if (switch_core_timer_init(&timer, conference->timer_name, conference->interval, samples, conference->pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer success interval: %u  samples: %u\n", conference->interval, samples);
 	} else {
@@ -765,44 +761,17 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 		/* Read one frame of audio from each member channel and save it for redistribution */
 		for (imember = conference->members; imember; imember = imember->next) {
 			uint32_t buf_read = 0;
-			uint32_t buf_read_max = imember->framelen;
 			total++;
 			imember->read = 0;
 
 			switch_clear_flag_locked(imember, MFLAG_HAS_AUDIO);
 			switch_mutex_lock(imember->audio_in_mutex);
 
-			if (imember->read_resampler) {
-				buf_read_max = bytes;
-			}
-
-			if ((buf_read = (uint32_t) switch_buffer_read(imember->audio_buffer, imember->frame, buf_read_max))) {
-				/* If the caller is not at the right sample rate resample him to suit and buffer accordingly */
-				switch_audio_resampler_t *mux_resampler = imember->mux_resampler;
-				if (mux_resampler) {
-					int16_t *bptr = (int16_t *) imember->frame;
-					switch_assert(buf_read <= mux_resampler->from_size);
-					mux_resampler->from_len = switch_short_to_float(bptr, mux_resampler->from, (int) buf_read / 2);
-					mux_resampler->to_len = switch_resample_process(mux_resampler,
-						mux_resampler->from,
-						mux_resampler->from_len,
-						mux_resampler->to,
-						mux_resampler->to_size, 0);
-
-					switch_float_to_short(mux_resampler->to, imember->resample_out, mux_resampler->to_len);
-					switch_buffer_write(imember->resample_buffer, imember->resample_out, mux_resampler->to_len * 2);
-
-					if (switch_buffer_inuse(imember->resample_buffer) >= bytes) {
-						if ((imember->read = (uint32_t) switch_buffer_read(imember->resample_buffer, imember->frame, bytes))) {
-							switch_set_flag(imember, MFLAG_HAS_AUDIO);
-							ready++;
-						}
-					}
-				} else {
-					imember->read = buf_read;
-					switch_set_flag_locked(imember, MFLAG_HAS_AUDIO);
-					ready++;
-				}
+			if (switch_buffer_inuse(imember->audio_buffer) >= bytes 
+                && (buf_read = (uint32_t) switch_buffer_read(imember->audio_buffer, imember->frame, bytes))) {
+                imember->read = buf_read;
+                switch_set_flag_locked(imember, MFLAG_HAS_AUDIO);
+                ready++;
 			}
 			switch_mutex_unlock(imember->audio_in_mutex);
 		}
@@ -1408,7 +1377,6 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, 
 			}
 
 			if ((samples = read_frame->datalen / sizeof(*data))) {
-
 				for (i = 0; i < samples; i++) {
 					energy += abs(data[j]);
 					j += read_codec->implementation->number_of_channels;
@@ -1495,8 +1463,6 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, 
 	}
 
 	switch_resample_destroy(&member->read_resampler);
-	switch_resample_destroy(&member->mux_resampler);
-
 	switch_clear_flag_locked(member, MFLAG_ITHREAD);
 
 	return NULL;
@@ -1546,6 +1512,7 @@ static void conference_loop_output(conference_member_t * member)
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(member->session);
 	uint32_t interval = read_codec->implementation->microseconds_per_frame / 1000;
 	uint32_t samples = switch_bytes_per_frame(member->conference->rate, interval);
+	uint32_t flush_len = switch_bytes_per_frame(member->conference->rate, member->conference->interval) * 4;
     uint32_t csamples = samples;
 	uint32_t tsamples = member->orig_read_codec->implementation->samples_per_frame;
 	uint32_t low_count = 0, bytes = samples * 2;
@@ -1754,7 +1721,7 @@ static void conference_loop_output(conference_member_t * member)
 							switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
 						}
 						mux_used = 0;
-					} else if (mux_used > bytes * 4) {
+					} else if (mux_used > flush_len) {
 						/* getting behind, clear the buffer */
 						switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
 					}
@@ -3879,9 +3846,6 @@ SWITCH_STANDARD_APP(conference_function)
 	char *dpin = NULL;
 	conf_xml_cfg_t xml_cfg = { 0 };
 	switch_event_t *params = NULL;
-    uint32_t buflen;
-    uint32_t rinterval;
-
 
 
 	if (switch_strlen_zero(data)) {
@@ -4140,27 +4104,17 @@ SWITCH_STANDARD_APP(conference_function)
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
 						  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
+                          
 		flags = 0;
 		goto done;
 	}
 
-    buflen = switch_bytes_per_frame(conference->rate, conference->interval);
-    rinterval = read_codec->implementation->microseconds_per_frame / 1000;
-
-    member.framelen = member.read_codec.implementation->bytes_per_frame * ((conference->interval > rinterval) ? conference->interval / rinterval : 1);
-    member.buflen = buflen;
-    member.frame_size = (member.framelen + member.buflen) * 4;
-
+    member.frame_size = switch_bytes_per_frame(conference->rate, conference->interval) * 4;
     member.frame = switch_core_alloc(member.pool, member.frame_size);
     member.mux_frame = switch_core_alloc(member.pool, member.frame_size);
-
-
-
+    
 	if (read_codec->implementation->actual_samples_per_second != conference->rate) {
-		switch_audio_resampler_t **resampler = read_codec->implementation->actual_samples_per_second > conference->rate ?
-			&member.read_resampler : &member.mux_resampler;
-
-		if (switch_resample_create(resampler,
+		if (switch_resample_create(&member.read_resampler,
 								   read_codec->implementation->actual_samples_per_second,
 								   member.frame_size,
 								   conference->rate,
