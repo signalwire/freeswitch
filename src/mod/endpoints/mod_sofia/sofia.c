@@ -90,8 +90,19 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 {
 	switch_channel_t *channel = NULL;
 	
+	/* make sure we have a proper event */
+	if (!sip || !sip->sip_event) {
+		goto error;
+	}
+
+	/* Automatically return a 200 OK for Event: keep-alive */
+	if (!strcasecmp(sip->sip_event->o_type, "keep-alive")) {
+		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
+		return;
+	}
+
 	/* make sure we have a proper "talk" event */
-	if (!session || !sip || !sip->sip_event || strcasecmp(sip->sip_event->o_type, "talk")) {
+	if (!session || strcasecmp(sip->sip_event->o_type, "talk")) {
 		goto error;
 	}
 
