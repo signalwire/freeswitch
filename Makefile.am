@@ -279,6 +279,12 @@ everything: install
 
 installall: install
 
+up: clean
+	svn update
+	$(MAKE) -j core
+	$(MAKE) -j modules
+	$(MAKE) install
+
 update-clean: clean modwipe uninstall
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/openzap && $(MAKE) clean
