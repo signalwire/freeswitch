@@ -806,11 +806,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
 
-	if (switch_strlen_zero(outbound_profile->destination_number)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid dial string\n");
-		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-	}
-
 	dest = outbound_profile->destination_number;
 	span_id = atoi(dest);
 
