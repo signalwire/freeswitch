@@ -865,6 +865,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		extra_headers = stream.data;
 	}
 	
+	session_timeout = tech_pvt->profile->session_timeout;
 	if ((val = switch_channel_get_variable(channel, SOFIA_SESSION_TIMEOUT))) {
 		int v_session_timeout = atoi(val);
 		if (v_session_timeout >= 0) {
