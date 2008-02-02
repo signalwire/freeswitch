@@ -204,12 +204,8 @@ SWITCH_STANDARD_APP(bcast_function)
 	bytes = 16;
 	switch_socket_sendto(socket, control_packet_addr, 0, (void *)&control_packet, &bytes);
 
-    int fd;
-	fd = open("/tmp/wtf.ulaw", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-
 	for(;;) {
-        if (write(fd, read_frame->data, read_frame->datalen));
-        
+
 		status = switch_core_session_read_frame(session, &read_frame, -1, 0);
 
         if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -225,8 +221,6 @@ SWITCH_STANDARD_APP(bcast_function)
 			switch_socket_sendto(socket, audio_addr, 0, read_frame->packet, &bytes);
 		}
 	}
-
-
 
 	control_packet.unique_id = htonl((u_long)switch_timestamp(NULL));
 	control_packet.command = htonl(LS_STOP_BCAST);
