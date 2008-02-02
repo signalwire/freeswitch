@@ -3066,6 +3066,7 @@ static switch_status_t conf_api_sub_bgdial(conference_obj_t * conference, switch
 static switch_status_t conf_api_sub_transfer(conference_obj_t * conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	switch_status_t ret_status = SWITCH_STATUS_SUCCESS;
+	char *conf_name = NULL, *profile_name;
 	switch_event_t *params = NULL;
 	switch_assert(conference != NULL);
 	switch_assert(stream != NULL);
@@ -3073,13 +3074,20 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t * conference, swit
 	if (argc > 3 && !switch_strlen_zero(argv[2])) {
 		int x;
 
+		conf_name = strdup(argv[2]);
+
+		if ((profile_name = strchr(conf_name, '@'))) {
+			*profile_name++ = '\0';
+		} else {
+			profile_name = "default";
+		}
+		
 		for (x = 3; x < argc; x++) {
 			conference_member_t *member = NULL;
 			uint32_t id = atoi(argv[x]);
 			conference_obj_t *new_conference = NULL;
 			switch_channel_t *channel;
 			switch_event_t *event;
-			char *profile_name;
 			switch_xml_t cxml = NULL, cfg = NULL, profiles = NULL;
 
 			if (!id || !(member = conference_member_get(conference, id))) {
@@ -3090,9 +3098,8 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t * conference, swit
 			channel = switch_core_session_get_channel(member->session);
 
 			/* build a new conference if it doesn't exist */
-			if (!(new_conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, argv[2]))) {
+			if (!(new_conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, conf_name))) {
 				switch_memory_pool_t *pool = NULL;
-				char *conf_name;
 				conf_xml_cfg_t xml_cfg = { 0 };
 
 				/* Setup a memory pool to use. */
@@ -3101,14 +3108,6 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t * conference, swit
 					goto done;
 				}
 
-				conf_name = switch_core_strdup(pool, argv[2]);
-
-				if ((profile_name = strchr(conf_name, '@'))) {
-					*profile_name++ = '\0';
-				} else {
-					profile_name = "default";
-				}
-				
 				switch_event_create(&params, SWITCH_EVENT_MESSAGE);
 				switch_assert(params);
 				switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "conf_name", conf_name);
@@ -3190,6 +3189,7 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t * conference, swit
 	if (params) {
 		switch_event_destroy(&params);
 	}
+	switch_safe_free(conf_name);
 	return ret_status;
 }
 
