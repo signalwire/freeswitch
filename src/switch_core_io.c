@@ -241,23 +241,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				goto done;
 			}
 		}
-#if 0
-		if (session->read_resampler) {
-			short *data = read_frame->data;
-			switch_mutex_lock(session->resample_mutex);
-
-			session->read_resampler->from_len = switch_short_to_float(data, session->read_resampler->from, (int) read_frame->datalen / 2);
-			session->read_resampler->to_len =
-				switch_resample_process(session->read_resampler, session->read_resampler->from,
-										session->read_resampler->from_len, session->read_resampler->to, session->read_resampler->to_size, 0);
-			switch_float_to_short(session->read_resampler->to, data, read_frame->datalen);
-			read_frame->samples = session->read_resampler->to_len;
-			read_frame->datalen = session->read_resampler->to_len * 2;
-			read_frame->rate = session->read_resampler->to_rate;
-			switch_mutex_unlock(session->resample_mutex);
-			
-		}
-#endif
 
 		if (session->bugs) {
 			switch_media_bug_t *bp, *dp, *last = NULL;
@@ -311,6 +294,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		}
 
 		if (session->read_codec) {
+            
+            if (session->read_resampler) {
+                short *data = read_frame->data;
+                switch_mutex_lock(session->resample_mutex);
+                
+                session->read_resampler->from_len = switch_short_to_float(data, session->read_resampler->from, (int) read_frame->datalen / 2);
+                session->read_resampler->to_len =
+                    switch_resample_process(session->read_resampler, session->read_resampler->from,
+                                            session->read_resampler->from_len, session->read_resampler->to, session->read_resampler->to_size, 0);
+                switch_float_to_short(session->read_resampler->to, data, read_frame->datalen);
+                read_frame->samples = session->read_resampler->to_len;
+                read_frame->datalen = session->read_resampler->to_len * 2;
+                read_frame->rate = session->read_resampler->to_rate;
+                switch_mutex_unlock(session->resample_mutex);
+                
+            }
+
 			if ((*frame)->datalen == session->read_codec->implementation->bytes_per_frame) {
 				perfect = TRUE;
 			} else {

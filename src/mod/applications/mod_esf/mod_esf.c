@@ -63,7 +63,7 @@ SWITCH_STANDARD_APP(bcast_function)
 	switch_status_t status;
 	switch_size_t bytes;
 	ls_control_packet_t control_packet;
-	switch_codec_t *read_codec;
+	switch_codec_t codec = { 0}, *read_codec, *orig_codec = NULL;
 	uint32_t flags = 0;
 	const char *err;
 	switch_rtp_t *rtp_session = NULL;
@@ -139,15 +139,32 @@ SWITCH_STANDARD_APP(bcast_function)
 			goto fail;
 		}
 		
-		if (read_frame->packet && read_frame->packetlen) {
+		if (read_frame->packet && read_frame->packetlen && read_codec->implementation->ianacode == 0) {
 			ready = SEND_TYPE_RAW;
 		} else {
 			ready = SEND_TYPE_RTP;
 		}
-
 	}
 
 	if (ready == SEND_TYPE_RTP) {
+        if (read_codec->implementation->ianacode != 0) {
+            if (switch_core_codec_init(&codec,
+                                       "PCMU",
+                                       NULL,
+                                       8000,
+                                       20,
+                                       1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, 
+                                       NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+                orig_codec = read_codec;
+                read_codec = &codec;
+                switch_core_session_set_read_codec(session, read_codec);
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec Activation Success\n");
+            } else {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Activation Fail\n");
+                goto fail;
+            }
+        }
+
 		switch_find_local_ip(guess_ip, sizeof(guess_ip), AF_INET);
 		if (!(rtp_port = switch_rtp_request_port(guess_ip))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP Port Error\n");
@@ -187,9 +204,14 @@ SWITCH_STANDARD_APP(bcast_function)
 	bytes = 16;
 	switch_socket_sendto(socket, control_packet_addr, 0, (void *)&control_packet, &bytes);
 
+    int fd;
+	fd = open("/tmp/wtf.ulaw", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 
 	for(;;) {
+        if (write(fd, read_frame->data, read_frame->datalen));
+        
 		status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+
         if (!SWITCH_READ_ACCEPTABLE(status)) {
             break;
         }
@@ -214,6 +236,11 @@ SWITCH_STANDARD_APP(bcast_function)
 	switch_socket_sendto(socket, control_packet_addr, 0, (void *)&control_packet, &bytes);
 
  fail:
+
+    if (orig_codec) {
+        switch_core_session_set_read_codec(session, orig_codec);
+        switch_core_codec_destroy(&codec);
+    }
 
 	if (rtp_session && ready == SEND_TYPE_RTP && switch_rtp_ready(rtp_session)) {
 		switch_rtp_destroy(&rtp_session);
