@@ -396,6 +396,7 @@ struct private_object {
 	char *video_fmtp_out;
 	uint32_t video_count;
 	sofia_dtmf_t dtmf_type;
+	int q850_cause;
 };
 
 struct callback_t {

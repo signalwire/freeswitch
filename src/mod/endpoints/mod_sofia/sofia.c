@@ -136,6 +136,15 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	if (!session) return;
 
 	channel = switch_core_session_get_channel(session); 
+
+
+    if (sip->sip_reason && sip->sip_reason->re_protocol && 
+        (!strcasecmp(sip->sip_reason->re_protocol, "Q.850") || !strcasecmp(sip->sip_reason->re_protocol, "FreeSWITCH")) &&
+        sip->sip_reason->re_cause) {
+        private_object_t *tech_pvt = switch_core_session_get_private(session);
+        tech_pvt->q850_cause = atoi(sip->sip_reason->re_cause);
+    }
+
 	if (sip->sip_user_agent && !switch_strlen_zero(sip->sip_user_agent->g_string)){
 		switch_channel_set_variable(channel, "sip_user_agent", sip->sip_user_agent->g_string);
 	}
@@ -1784,8 +1793,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					switch_clear_flag_locked(tech_pvt, TFLAG_NOHUP);
 				} else {
                     int cause;
-                    if (sip->sip_reason && sip->sip_reason->re_protocol && !strcasecmp(sip->sip_reason->re_protocol, "Q.850") && sip->sip_reason->re_cause) {
-                        cause = atoi(sip->sip_reason->re_cause);
+                    if (tech_pvt->q850_cause) {
+                        cause = tech_pvt->q850_cause;
                     } else {
                         cause = sofia_glue_sip_cause_to_freeswitch(status);
                     }
