@@ -1783,9 +1783,17 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				if (switch_test_flag(tech_pvt, TFLAG_NOHUP)) {
 					switch_clear_flag_locked(tech_pvt, TFLAG_NOHUP);
 				} else {
+                    int cause;
+                    if (sip->sip_reason && sip->sip_reason->re_protocol && !strcasecmp(sip->sip_reason->re_protocol, "Q.850") && sip->sip_reason->re_cause) {
+                        cause = atoi(sip->sip_reason->re_cause);
+                    } else {
+                        cause = sofia_glue_sip_cause_to_freeswitch(status);
+                    }
 					switch_snprintf(st, sizeof(st), "%d", status);
 					switch_channel_set_variable(channel, "sip_term_status", st);
-					switch_channel_hangup(channel, sofia_glue_sip_cause_to_freeswitch(status));
+					switch_snprintf(st, sizeof(st), "%d", cause);
+					switch_channel_set_variable(channel, "sip_term_cause", st);
+					switch_channel_hangup(channel, cause);
 				}
 			}
 			

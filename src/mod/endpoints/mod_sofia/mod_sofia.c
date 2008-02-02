@@ -279,8 +279,10 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 	if (tech_pvt->nh  && !switch_test_flag(tech_pvt, TFLAG_BYE)) {
 		if (switch_test_flag(tech_pvt, TFLAG_ANS)) {
+            char reason[128] = "";
+            switch_snprintf(reason, sizeof(reason), "Q.850;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending BYE to %s\n", switch_channel_get_name(channel));
-			nua_bye(tech_pvt->nh, TAG_END());
+			nua_bye(tech_pvt->nh, SIPTAG_REASON_STR(reason), TAG_END());
 		} else {
 			if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 				switch_call_cause_t causecode = switch_channel_get_cause(channel);
