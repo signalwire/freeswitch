@@ -2412,7 +2412,7 @@ int sofia_glue_get_user_host(char *in, char **user, char **host)
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:

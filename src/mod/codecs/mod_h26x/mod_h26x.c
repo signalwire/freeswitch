@@ -101,7 +101,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_h26x_load)
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:

@@ -270,10 +270,10 @@ int main(int argc, char *argv[])
 				GetModuleFileName(NULL, exePath, 1024);
 				snprintf(servicePath, sizeof(servicePath), "%s -service", exePath);
 				if (!CreateService(handle,
-							  SERVICENAME,
-							  SERVICENAME,
-							  GENERIC_READ | GENERIC_EXECUTE,
-							  SERVICE_WIN32_OWN_PROCESS, SERVICE_AUTO_START, SERVICE_ERROR_IGNORE, servicePath, NULL, NULL, NULL, NULL, NULL)) {
+								   SERVICENAME,
+								   SERVICENAME,
+								   GENERIC_READ | GENERIC_EXECUTE,
+								   SERVICE_WIN32_OWN_PROCESS, SERVICE_AUTO_START, SERVICE_ERROR_IGNORE, servicePath, NULL, NULL, NULL, NULL, NULL)) {
 					fprintf(stderr, "Error installing freeswitch as a service.\n");
 				}
 				exit(0);
@@ -457,10 +457,10 @@ int main(int argc, char *argv[])
 
 	apr_pool_create(&pool, NULL);
 	if (switch_file_open(&fd,
-						pid_path,
-						SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE,
-						SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE,
-						pool) != SWITCH_STATUS_SUCCESS) {
+						 pid_path,
+						 SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE,
+						 SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE,
+						 pool) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Cannot open pid file %s.\n", pid_path);
 		return 255;
 	}
@@ -493,7 +493,7 @@ int main(int argc, char *argv[])
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:

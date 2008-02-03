@@ -1394,7 +1394,7 @@ void sofia_presence_set_chat_hash(private_object_t *tech_pvt, sip_t const *sip)
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:

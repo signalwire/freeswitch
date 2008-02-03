@@ -285,7 +285,7 @@ int fs_switch_channel_set_variable(switch_channel_t *channel, char *varname, cha
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:

@@ -440,7 +440,7 @@ SWITCH_DECLARE(char *) switch_odbc_handle_get_error(switch_odbc_handle_t *handle
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:

@@ -163,7 +163,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_get_results(switch_asr_handle_t 
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:

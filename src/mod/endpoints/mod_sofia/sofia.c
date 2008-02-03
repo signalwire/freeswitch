@@ -2891,7 +2891,7 @@ static void set_variable_sip_param(switch_channel_t *channel, char *header_type,
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:

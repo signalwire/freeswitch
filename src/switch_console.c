@@ -376,7 +376,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:

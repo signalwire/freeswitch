@@ -201,7 +201,7 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config_t * cfg, char **var, c
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:
