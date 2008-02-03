@@ -248,7 +248,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	switch_core_session_message_t *message = NULL;
 	switch_frame_t *read_frame = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	uint8_t abuf[1024];
+	uint8_t abuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	int timelimit = 60;
 	const char *var = switch_channel_get_variable(caller_channel, "call_timeout");
 	switch_time_t start = 0;
@@ -376,7 +376,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 		
 		if (read_frame && !pass) {
 			if (ringback.fh) {
-				uint8_t fbuf[1024];
+				uint8_t fbuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 				switch_size_t mlen, olen;
 				unsigned int pos = 0;
 							
@@ -467,7 +467,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	int32_t sleep_ms = 1000, try = 0, retries = 1, idx = IDX_NADA;
 	switch_codec_t write_codec = { 0 };
 	switch_frame_t write_frame = { 0 };
-	uint8_t fdata[1024], pass = 0;
+	uint8_t fdata[SWITCH_RECOMMENDED_BUFFER_SIZE], pass = 0;
 	char key[80] = SWITCH_BLANK_STRING, file[512] = SWITCH_BLANK_STRING, *odata, *var;
 	switch_call_cause_t reason = SWITCH_CAUSE_UNALLOCATED;
 	uint8_t to = 0;
@@ -1033,7 +1033,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					
 					if (ring_ready && read_frame && !pass) {
 						if (ringback.fh) {
-							uint8_t abuf[1024];
+							uint8_t abuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 							switch_size_t mlen, olen;
 							unsigned int pos = 0;
 
