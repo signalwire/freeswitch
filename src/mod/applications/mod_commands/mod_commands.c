@@ -1343,7 +1343,7 @@ SWITCH_STANDARD_API(originate_function)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (session || switch_strlen_zero(cmd)) {
-		stream->write_function(stream, "-ERR Illegal Usage\n");
+		stream->write_function(stream, "-USAGE %s\n", ORIGINATE_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
