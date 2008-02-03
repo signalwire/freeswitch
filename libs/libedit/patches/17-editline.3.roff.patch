@@ -1,0 +1,29 @@
+--- export/doc/editline.3.roff	2007-08-31 00:02:46.000000000 +0200
++++ ../doc/editline.3.roff	2007-08-31 00:03:08.000000000 +0200
+@@ -115,10 +115,11 @@
+ These functions are available in the
+ .Nm libedit
+ library (which needs the
+-.Nm libtermcap
++.Nm libcurses
+ library).
+ Programs should be linked with
+-.Fl ledit ltermcap .
++.Fl ledit
++.Fl lcurses .
+ .Sh LINE EDITING FUNCTIONS
+ The line editing functions use a common data structure,
+ .Fa EditLine ,
+@@ -711,8 +712,10 @@
+ to be used by all other tokenizer functions.
+ .Fa IFS
+ contains the Input Field Separators, which defaults to
+-.Aq space ,
+-.Aq tab ,
++.Aq space
++,
++.Aq tab
++,
+ and
+ .Aq newline
+ if

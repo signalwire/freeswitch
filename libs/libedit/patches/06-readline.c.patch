@@ -1,0 +1,88 @@
+--- export/src/readline.c	2007-08-31 00:02:46.000000000 +0200
++++ ../src/readline.c	2007-08-31 00:03:08.000000000 +0200
+@@ -32,7 +32,26 @@
+  * POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
+-#include "config.h"
++/* AIX requires this to be the first thing in the file.  */
++#if defined (_AIX) && !defined (__GNUC__)
++ #pragma alloca
++#endif
++
++#include <config.h>
++
++#ifdef __GNUC__
++# undef alloca
++# define alloca(n) __builtin_alloca (n)
++#else
++# ifdef HAVE_ALLOCA_H
++#  include <alloca.h>
++# else
++#  ifndef _AIX
++extern char *alloca ();
++#  endif
++# endif
++#endif
++
+ #if !defined(lint) && !defined(SCCSID)
+ __RCSID("$NetBSD: readline.c,v 1.72 2007/08/12 07:41:51 christos Exp $");
+ #endif /* not lint && not SCCSID */
+@@ -50,20 +69,17 @@
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <setjmp.h>
+-#ifdef HAVE_VIS_H
+ #include <vis.h>
+-#else
+-#include "np/vis.h"
+-#endif
+-#ifdef HAVE_ALLOCA_H
+-#include <alloca.h>
+-#endif
+ #include "el.h"
+ #include "fcns.h"		/* for EL_NUM_FCNS */
+ #include "histedit.h"
+-#include "readline/readline.h"
++#include "editline/readline.h"
+ #include "filecomplete.h"
+ 
++#if !defined(SIZE_T_MAX)
++# define SIZE_T_MAX (size_t)(-1) 
++#endif
++
+ void rl_prep_terminal(int);
+ void rl_deprep_terminal(void);
+ 
+@@ -198,7 +214,7 @@
+ 		return (HIST_ENTRY *) NULL;
+ 
+ 	rl_he.line = ev.str;
+-	rl_he.data = NULL;
++	rl_he.data = (histdata_t) &(ev.num);
+ 
+ 	return (&rl_he);
+ }
+@@ -1440,8 +1456,7 @@
+ char *
+ username_completion_function(const char *text, int state)
+ {
+-	struct passwd *pwd, pwres;
+-	char pwbuf[1024];
++	struct passwd *pwd;
+ 
+ 	if (text[0] == '\0')
+ 		return (NULL);
+@@ -1452,9 +1467,9 @@
+ 	if (state == 0)
+ 		setpwent();
+ 
+-	while (getpwent_r(&pwres, pwbuf, sizeof(pwbuf), &pwd) == 0
+-	    && pwd != NULL && text[0] == pwd->pw_name[0]
+-	    && strcmp(text, pwd->pw_name) == 0);
++   while ((pwd = getpwent())
++		&& pwd != NULL && text[0] == pwd->pw_name[0]
++		&& strcmp(text, pwd->pw_name) == 0);
+ 
+ 	if (pwd == NULL) {
+ 		endpwent();

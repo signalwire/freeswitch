@@ -1,0 +1,37 @@
+--- export/src/sys.h	2007-08-31 00:02:46.000000000 +0200
++++ ../src/sys.h	2007-08-31 00:03:08.000000000 +0200
+@@ -40,6 +40,8 @@
+ #ifndef _h_sys
+ #define	_h_sys
+ 
++#include <config.h>
++
+ #ifdef HAVE_SYS_CDEFS_H
+ #include <sys/cdefs.h>
+ #endif
+@@ -48,6 +50,14 @@
+ # define __attribute__(A)
+ #endif
+ 
++#ifndef __P
++# define __P(x) x
++#endif
++
++#ifndef _DIAGASSERT
++# define _DIAGASSERT(x)
++#endif
++
+ #ifndef __BEGIN_DECLS
+ # ifdef  __cplusplus
+ #  define __BEGIN_DECLS  extern "C" {
+@@ -71,6 +81,10 @@
+ 			/* When we want to hide everything	*/
+ #endif
+ 
++#ifndef HAVE_U_INT32_T
++typedef unsigned int  u_int32_t;
++#endif
++
+ #ifndef _PTR_T
+ # define _PTR_T
+ typedef void	*ptr_t;
