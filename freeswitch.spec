@@ -52,7 +52,7 @@ BuildRequires: which
 PreReq:       %insserv_prereq %fillup_prereq
 %endif
 
-BuildRoot:    %{_tmppath}/%{name}-%{version}-build
+BuildRoot:    %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %description
 FreeSWITCH is an open source telephony platform designed to facilitate the creation of voice 
