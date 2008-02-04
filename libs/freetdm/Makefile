@@ -140,7 +140,7 @@ $(SRC)/isdn/include/Q932.h
 
 
 PWD=$(shell pwd)
-INCS=-I$(PWD)/$(SRC)//include -I$(PWD)/$(SRC)//isdn/include
+INCS=-I$(PWD)/$(SRC)/include -I$(PWD)/$(SRC)/isdn/include
 CFLAGS= $(INCS) $(ZAP_CFLAGS)
 MYLIB=libopenzap.a
 LIBPRIA=libpri.a
