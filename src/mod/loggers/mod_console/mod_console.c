@@ -139,6 +139,9 @@ static switch_status_t config_logger(void)
 				COLORIZE = 1;
 #endif
 			}
+			if (!strcasecmp(var, "loglevel")) {
+				hard_log_level = switch_log_str2level(val);
+			}
 		}
 	}
 
