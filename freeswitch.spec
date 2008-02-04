@@ -171,9 +171,15 @@ French language phrases module and directory structure for say module and voicem
 %setup -q
 
 %build
+%ifos linux
 %if 0%{?suse_version} > 1000 && 0%{?suse_version} < 1030
 export CFLAGS="$CFLAGS -fstack-protector"
 %endif
+%if 0%{?fedora_version} >= 8
+export QA_RPATHS=$[ 0x0001|0x0002 ]
+%endif
+%endif
+
 PASSTHRU_CODEC_MODULES="codecs/mod_g729 codecs/mod_g723_1 codecs/mod_amr"
 SPIDERMONKEY_MODULES="languages/mod_spidermonkey languages/mod_spidermonkey_curl languages/mod_spidermonkey_core_db languages/mod_spidermonkey_odbc languages/mod_spidermonkey_socket languages/mod_spidermonkey_teletone"
 APPLICATIONS_MODULES="applications/mod_commands applications/mod_conference applications/mod_dptools applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_limit applications/mod_rss applications/mod_voicemail"
