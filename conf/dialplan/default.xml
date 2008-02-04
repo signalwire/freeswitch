@@ -274,6 +274,7 @@
 
     <extension name="enum">
       <condition field="destination_number" expression="^(.*)$">
+	<action application="unset" data="sip_secure_media"/>
 	<action application="transfer" data="$1 enum"/>
       </condition>
     </extension>
