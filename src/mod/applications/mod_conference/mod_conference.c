@@ -735,10 +735,11 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 	conference_member_t *imember, *last_member = NULL;
 	switch_frame_t *vid_frame;
 	switch_status_t status;
+	int skip = 0, has_vid = 1;
 
 	conference->video_running = 1;
 
-	while (conference->video_running == 1 && globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT)) {
+	while (has_vid && conference->video_running == 1 && globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT)) {
 		if (!conference->floor_holder) {
 			switch_yield(100000);
 			continue;
@@ -752,23 +753,34 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 				continue;
 			}
 			
-			if (last_member != conference->floor_holder && vid_frame->datalen < 1000) {
+			if (switch_test_flag(vid_frame, SFF_CNG)) {
 				continue;
-			}		
+			}
 
-			switch_mutex_lock(conference->member_mutex);	
+			if (last_member != conference->floor_holder && vid_frame->datalen < 1000) {
+				skip = 1000;
+			}
+
 			last_member = conference->floor_holder;
 			
+			if (skip && vid_frame->datalen >= skip) {
+				skip = 0;
+			}
+
+			if (skip) {
+				continue;
+			}
+			
+			switch_mutex_lock(conference->member_mutex);	
+			has_vid = 0;
 			for (imember = conference->members; imember; imember = imember->next) {
 				if (switch_channel_test_flag(switch_core_session_get_channel(imember->session), CF_VIDEO)) {
+					has_vid++;
 					switch_core_session_write_video_frame(imember->session, vid_frame, -1, 0);
 				}
 			}
 			switch_mutex_unlock(conference->member_mutex);
 		}
-
-		
-
 	}
 
 	conference->video_running = 0;
@@ -1627,10 +1639,6 @@ static void conference_loop_output(conference_member_t * member)
 	/* Start the input thread */
 	launch_conference_loop_input(member, switch_core_session_get_pool(member->session));
 
-	if (switch_channel_test_flag(channel, CF_VIDEO) && member->conference->video_running != 1) {
-		launch_conference_video_thread(member->conference);
-	}
-
 	/* build a digit stream object */
 	if (member->conference->dtmf_parser != NULL
 		&& switch_ivr_digit_stream_new(member->conference->dtmf_parser, &member->digit_stream) != SWITCH_STATUS_SUCCESS) {
@@ -1675,7 +1683,14 @@ static void conference_loop_output(conference_member_t * member)
             switch_size_t file_sample_len = csamples;
             switch_size_t file_data_len = file_sample_len * 2;
 
+			
+			if (switch_channel_test_flag(channel, CF_VIDEO) && member->conference->video_running != 1) {
+				launch_conference_video_thread(member->conference);
+			}
+			
+
 			switch_mutex_lock(member->flag_mutex);
+
 
 			if (switch_core_session_dequeue_event(member->session, &event) == SWITCH_STATUS_SUCCESS) {
 				char *from = switch_event_get_header(event, "from");
