@@ -1,5 +1,5 @@
-define %{_prefix}   /opt/freeswitch
-define %{prefix}    %{_prefix}
+%define _prefix   /opt/freeswitch
+%define prefix    %{_prefix}
 
 Name:         freeswitch
 Summary:      FreeSWITCH open source telephony platform
