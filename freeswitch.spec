@@ -73,9 +73,9 @@ on both 32 and 64 bit platforms.
 Our developers are heavily involved in open source and have donated code and other resources to 
 other telephony projects including sipXecs, OpenSER, Asterisk, CodeWeaver and OpenPBX.
 
-%if 0%{?suse_version} > 100
-%debug_package
-%endif
+#%if 0%{?suse_version} > 100
+#%debug_package
+#%endif
 
 %package devel
 Summary:        Development package for FreeSWITCH open source telephony platform
@@ -187,9 +187,9 @@ EVENT_HANDLERS_MODULES="event_handlers/mod_event_multicast event_handlers/mod_ev
 FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_sndfile"
 LANGUAGES_MODULES=
 LOGGERS_MODULES="loggers/mod_console loggers/mod_logfile loggers/mod_syslog"
-SAY_MODULES="say/mod_say_en"
+SAY_MODULES="say/mod_say_en say/mod_say_fr say/mod_say_de"
 TIMERS_MODULES=
-DISABLED_MODULES="applications/mod_sountouch directories/mod_ldap languages/mod_java languages/mod_python languages/mod_spidermonkey_skel ast_tts/mod_cepstral asr_tts/mod_lumenvox endpoints/mod_wanpipe event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf formats/mod_shout say/mod_say_it say/mod_say_es say/mod_say_nl say/mod_say_fr say/mod_say_de"
+DISABLED_MODULES="applications/mod_sountouch directories/mod_ldap languages/mod_java languages/mod_python languages/mod_spidermonkey_skel ast_tts/mod_cepstral asr_tts/mod_lumenvox endpoints/mod_wanpipe event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf formats/mod_shout say/mod_say_it say/mod_say_es say/mod_say_nl"
 XML_INT_MODULES="xml_int/mod_xml_rpc  xml_int/mod_xml_curl xml_int/mod_xml_cdr"
 MYMODULES="$PASSTHRU_CODEC_MODULES $SPIDERMONKEY_MODULES $APPLICATIONS_MODULES $ASR_TTS_MODULES $CODECS_MODULES $DIALPLANS_MODULES $DIRECTORIES_MODULES $DOTNET_MODULES $ENDPOINTS_MODULES $EVENT_HANDLERS_MODULES $FORMATS_MODULES $LANGUAGES_MODULES $LOGGERS_MODULES $SAY_MODULES $TIMERS_MODULES $XML_INT_MODULES"
 
@@ -212,7 +212,7 @@ export ACLOCAL_FLAGS="-I /usr/share/aclocal"
 		--enable-core-libedit-support \
 		--enable-core-odbc-support \
 %ifos linux
-%if 0{?fedora_version} >= 8
+%if 0%{?fedora_version} >= 8
 %else
                 --with-libcurl \
 %endif
@@ -224,7 +224,7 @@ export ACLOCAL_FLAGS="-I /usr/share/aclocal"
 cat src/include/switch_version.h.in | sed "s/@SVN_VERSION@/%{version}/g" > src/include/switch_version.h
 touch .noversion
 
-make
+%{__make}
 
 %install
 %{__make} DESTDIR=$RPM_BUILD_ROOT install
@@ -247,7 +247,7 @@ make
 # On SuSE make /usr/sbin/rcfreeswitch a link to /etc/init.d/freeswitch
 %if 0%{?suse_version} > 100
 %{__mkdir} -p $RPM_BUILD_ROOT/usr/sbin
-%{__ln} -sf /etc/init.d/freeswitch $RPM_BUILD_ROOT/usr/sbin/rcfreeswitch
+%{__ln_s} -f /etc/init.d/freeswitch $RPM_BUILD_ROOT/usr/sbin/rcfreeswitch
 %endif
 # Add the sysconfiguration file
 %{__install} -D -m 744 build/freeswitch.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/freeswitch
@@ -264,7 +264,7 @@ make
 %{?run_ldconfig:%run_ldconfig}
 # Make FHS2.0 happy
 %{__mkdir} -p /etc/opt
-%{__ln} -sf %{prefix}/conf /etc%{prefix}
+%{__ln_s} -f %{prefix}/conf /etc%{prefix}
 
 %postun
 %{?run_ldconfig:%run_ldconfig}
@@ -482,7 +482,10 @@ userdel freeswitch
 %{prefix}/mod/mod_say_fr.so*
 
 %changelog
-* Sun Fri 03 2008 - michal.bielicki@voiceworks.pl
+* Mon Feb 04 2008 - michal.bielicki@voiceworks.pl
+- More fixes to specfile
+- First go at SFE files
+* Sun Feb 03 2008 - michal.bielicki@voiceworks.pl
 - abstraction of prefix
 - more wrong stuff deleted
 - abstraction of mkdir, mv, rm, install etc into macros
