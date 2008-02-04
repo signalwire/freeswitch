@@ -171,8 +171,6 @@ French language phrases module and directory structure for say module and voicem
 %setup -q
 
 %build
-#export CFLAGS="$RPM_OPT_FLAGS -fno-strict-aliasing -DLDAP_DEPRECATED -fPIC -DPIC"
-#export CFLAGS="$RPM_OPT_FLAGS -fPIC -DPIC"
 %if 0%{?suse_version} > 1000 && 0%{?suse_version} < 1030
 export CFLAGS="$CFLAGS -fstack-protector"
 %endif
@@ -229,32 +227,32 @@ touch .noversion
 make
 
 %install
-make DESTDIR=$RPM_BUILD_ROOT install
+%{__make} DESTDIR=$RPM_BUILD_ROOT install
 
 # Create a log dir
-mkdir -p $RPM_BUILD_ROOT%{prefix}/log
+%{__mkdir} -p $RPM_BUILD_ROOT%{prefix}/log
 
 %ifos linux
 #Install the library path config so the system can find the modules
-mkdir -p $RPM_BUILD_ROOT/etc/ld.so.conf.d
-cp build/freeswitch.ld.so.conf $RPM_BUILD_ROOT/etc/ld.so.conf.d/
+%{__mkdir} -p $RPM_BUILD_ROOT/etc/ld.so.conf.d
+%{__cp} build/freeswitch.ld.so.conf $RPM_BUILD_ROOT/etc/ld.so.conf.d/
 # Install init files
 # On SuSE:
 %if 0%{?suse_version} > 100
-install -D -m 744 build/freeswitch.init.suse $RPM_BUILD_ROOT/etc/init.d/freeswitch
+%{__install} -D -m 744 build/freeswitch.init.suse $RPM_BUILD_ROOT/etc/init.d/freeswitch
 %else
 # On RedHat like
-install -D -m 744 build/freeswitch.init.redhat $RPM_BUILD_ROOT/etc/init.d/freeswitch
+%{__install} -D -m 744 build/freeswitch.init.redhat $RPM_BUILD_ROOT/etc/init.d/freeswitch
 %endif
 # On SuSE make /usr/sbin/rcfreeswitch a link to /etc/init.d/freeswitch
 %if 0%{?suse_version} > 100
-mkdir -p $RPM_BUILD_ROOT/usr/sbin
-ln -sf /etc/init.d/freeswitch $RPM_BUILD_ROOT/usr/sbin/rcfreeswitch
+%{__mkdir} -p $RPM_BUILD_ROOT/usr/sbin
+%{__ln} -sf /etc/init.d/freeswitch $RPM_BUILD_ROOT/usr/sbin/rcfreeswitch
 %endif
 # Add the sysconfiguration file
-install -D -m 744 build/freeswitch.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/freeswitch
+%{__install} -D -m 744 build/freeswitch.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/freeswitch
 # Add monit file
-install -D -m 644 build/freeswitch.monitrc $RPM_BUILD_ROOT/etc/monit.d/freeswitch.monitrc
+%{__install} -D -m 644 build/freeswitch.monitrc $RPM_BUILD_ROOT/etc/monit.d/freeswitch.monitrc
 %endif
 
 
@@ -265,16 +263,16 @@ install -D -m 644 build/freeswitch.monitrc $RPM_BUILD_ROOT/etc/monit.d/freeswitc
 %post
 %{?run_ldconfig:%run_ldconfig}
 # Make FHS2.0 happy
-mkdir -p /etc/opt
-ln -sf %{prefix}/conf /etc%{prefix}
+%{__mkdir} -p /etc/opt
+%{__ln} -sf %{prefix}/conf /etc%{prefix}
 
 %postun
 %{?run_ldconfig:%run_ldconfig}
-rm -rf %{prefix}
+%{__rm} -rf %{prefix}
 userdel freeswitch
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+%{__rm} -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,freeswitch,daemon)
@@ -484,6 +482,10 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/mod/mod_say_fr.so*
 
 %changelog
+* Sun Fri 03 2008 - michal.bielicki@voiceworks.pl
+- abstraction of prefix
+- more wrong stuff deleted
+- abstraction of mkdir, mv, rm, install etc into macros
 * Fri Jan 18 2008 - michal.bielicki@voiceworks.pl
 - fixes, fixes and more fixes in preparation for rc1
 * Thu Dec 5 2007 - michal.bielicki@voiceworks.pl
