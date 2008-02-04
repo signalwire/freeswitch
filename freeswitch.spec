@@ -212,7 +212,7 @@ export ACLOCAL_FLAGS="-I /usr/share/aclocal"
 		--enable-core-libedit-support \
 		--enable-core-odbc-support \
 %ifos linux
-%if 0{fedora_version} >= 8
+%if 0{?fedora_version} >= 8
 %else
                 --with-libcurl \
 %endif
