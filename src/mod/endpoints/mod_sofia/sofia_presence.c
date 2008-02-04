@@ -124,7 +124,9 @@ void sofia_presence_cancel(void)
 	switch_hash_index_t *hi;
 	void *val;
 	struct presence_helper helper = { 0 };
-	
+
+	if (!mod_sofia_globals.profile_hash) return;
+
 	if ((sql = switch_mprintf("select *,-1,'unavailable','unavailable' from sip_subscriptions where event='presence'"))) {
 		switch_mutex_lock(mod_sofia_globals.hash_mutex);
 		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
@@ -319,6 +321,8 @@ void sofia_presence_event_handler(switch_event_t *event)
 
 	if (event->event_id == SWITCH_EVENT_ROSTER) {
 		struct presence_helper helper = { 0 };
+
+		if (!mod_sofia_globals.profile_hash) return;
 		
 		if (from) {
 			sql = switch_mprintf("select *,1,'%q','%q' from sip_subscriptions where event='presence' and full_from like '%%%q%%'", status, rpid, from);
@@ -433,6 +437,8 @@ void sofia_presence_event_handler(switch_event_t *event)
 		break;
 	}
 
+	if (!mod_sofia_globals.profile_hash) goto done;
+
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
@@ -463,6 +469,7 @@ void sofia_presence_event_handler(switch_event_t *event)
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 
+done:
 	switch_safe_free(sql);
 	switch_safe_free(user);
 }
