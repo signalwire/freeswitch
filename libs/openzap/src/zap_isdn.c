@@ -70,18 +70,26 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 	int chan_id = 0;
 	zap_channel_t *zchan = NULL;
 	
+	if (Q931IsIEPresent(gen->ChanID)) {
+		Q931ie_ChanID *chanid = Q931GetIEPtr(gen->ChanID, gen->buf);
+		chan_id = chanid->ChanSlot;
+	}
+
+	assert(span != NULL);
+	assert(isdn_data != NULL);
+	
+#if 0
+	if (chan_id) {
+		zchan = &span->channels[chan_id];
+	}
+#endif
+
 	if (gen->CRVFlag) {
 		zchan = span->channels_local_crv[gen->CRV];
 	} else {
 		zchan = span->channels_remote_crv[gen->CRV];
 	}
 
-	assert(span != NULL);
-	assert(isdn_data != NULL);
-	
-	if (chan_id) {
-		zchan = &span->channels[chan_id];
-	}
 
 	zap_log(ZAP_LOG_DEBUG, "Yay I got an event! Type:[%02x] Size:[%d]\n", gen->MesType, gen->Size);
 
