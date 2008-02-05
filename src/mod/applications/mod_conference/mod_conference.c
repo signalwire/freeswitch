@@ -248,6 +248,7 @@ struct conference_member {
 	switch_buffer_t *mux_buffer;
 	switch_buffer_t *resample_buffer;
 	uint32_t flags;
+	uint32_t score;
 	switch_mutex_t *flag_mutex;
 	switch_mutex_t *audio_in_mutex;
 	switch_mutex_t *audio_out_mutex;
@@ -735,7 +736,7 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 	conference_member_t *imember, *last_member = NULL;
 	switch_frame_t *vid_frame;
 	switch_status_t status;
-	int skip = 0, has_vid = 1;
+	int has_vid = 1;
 
 	conference->video_running = 1;
 
@@ -757,19 +758,7 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 				continue;
 			}
 
-			if (last_member != conference->floor_holder && vid_frame->datalen < 1000) {
-				skip = 1000;
-			}
-
 			last_member = conference->floor_holder;
-			
-			if (skip && vid_frame->datalen >= skip) {
-				skip = 0;
-			}
-
-			if (skip) {
-				continue;
-			}
 			
 			switch_mutex_lock(conference->member_mutex);	
 			has_vid = 0;
@@ -1451,7 +1440,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, 
 		/* if the member can speak, compute the audio energy level and */
 		/* generate events when the level crosses the threshold        */
 		if (switch_test_flag(member, MFLAG_CAN_SPEAK) && energy_level) {
-			uint32_t energy = 0, i = 0, samples = 0, j = 0, score = 0;
+			uint32_t energy = 0, i = 0, samples = 0, j = 0;
 			int16_t *data;
 			int divisor = 0;
 
@@ -1461,16 +1450,18 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, 
 				divisor = 1;
 			}
 
+			member->score = 0;
+
 			if ((samples = read_frame->datalen / sizeof(*data))) {
 				for (i = 0; i < samples; i++) {
 					energy += abs(data[j]);
 					j += read_codec->implementation->number_of_channels;
 				}
-				score = energy / (samples / divisor);
+				member->score = energy / (samples / divisor);
 			}
 
-			if (score > energy_level) {
-				uint32_t diff = score - energy_level;
+			if (member->score > energy_level) {
+				uint32_t diff = member->score - energy_level;
 				if (hangover_hits) {
 					hangover_hits--;
 				}
@@ -1483,7 +1474,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, 
 						switch_set_flag_locked(member, MFLAG_TALKING);
 						switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
 						switch_mutex_lock(member->conference->member_mutex);
-						if (!member->conference->floor_holder || !switch_test_flag(member->conference->floor_holder, MFLAG_TALKING)) {
+						if (!member->conference->floor_holder || 
+							!switch_test_flag(member->conference->floor_holder, MFLAG_TALKING) || member->score > member->conference->floor_holder->score) {
 							if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 								conference_add_event_member_data(member, event);
 								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "floor-change");
@@ -2552,6 +2544,11 @@ static void conference_list(conference_obj_t * conference, switch_stream_handle_
 
 		if (switch_test_flag(member, MFLAG_CAN_SPEAK)) {
 			stream->write_function(stream, "%s%s", count ? "|" : "", "speak");
+			count++;
+		}
+
+		if (switch_test_flag(member, MFLAG_TALKING)) {
+			stream->write_function(stream, "%s%s", count ? "|" : "", "talking");
 			count++;
 		}
 
