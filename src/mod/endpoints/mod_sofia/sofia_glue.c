@@ -1413,16 +1413,18 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		sofia_glue_check_video_codecs(tech_pvt);
 
 		if (switch_test_flag(tech_pvt, TFLAG_VIDEO) && tech_pvt->video_rm_encoding) {
-			flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_NOBLOCK | SWITCH_RTP_FLAG_RAW_WRITE);
+			flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_AUTOADJ | 
+										 SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_NOBLOCK | SWITCH_RTP_FLAG_RAW_WRITE);
 			sofia_glue_tech_set_video_codec(tech_pvt, 0);
 
+			/* set video timer to 10ms so it can co-exist with audio */
 			tech_pvt->video_rtp_session = switch_rtp_new(tech_pvt->local_sdp_audio_ip,
 														 tech_pvt->local_sdp_video_port,
 														 tech_pvt->remote_sdp_video_ip,
 														 tech_pvt->remote_sdp_video_port,
 														 tech_pvt->video_agreed_pt,
-														 tech_pvt->video_read_codec.implementation->samples_per_frame,
-														 0,
+														 1,
+														 10000,
 														 (switch_rtp_flag_t) flags,
 														 NULL,
 														 &err, 

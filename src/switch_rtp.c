@@ -1040,7 +1040,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	while (switch_rtp_ready(rtp_session)) {
 		bytes = sizeof(rtp_msg_t);
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *) &rtp_session->recv_msg, &bytes);
-
+		
 		if (!SWITCH_STATUS_IS_BREAK(status) && rtp_session->timer.interval) {
 			switch_core_timer_step(&rtp_session->timer);
 		}
@@ -1151,7 +1151,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				}
 				bytes = jb_frame->dlen + rtp_header_len;
 				rtp_session->recv_msg.header.ts = htonl(jb_frame->ts);
-			} else if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) { /* We're late! We're Late! */
+			} else if (!bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) { /* We're late! We're Late! */
 				uint8_t *data = (uint8_t *) rtp_session->recv_msg.body;				
 				
 				if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK) && status == SWITCH_STATUS_BREAK) {

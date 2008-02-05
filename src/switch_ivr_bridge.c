@@ -36,6 +36,7 @@ static const switch_state_handler_table_t audio_bridge_peer_state_handlers;
 /* Bridge Related Stuff*/
 /*********************************************************************************/
 
+#ifdef SWITCH_VIDEO_IN_THREADS
 struct vid_helper {
 	switch_core_session_t *session_a;
 	switch_core_session_t *session_b;
@@ -52,7 +53,7 @@ static void *SWITCH_THREAD_FUNC video_bridge_thread(switch_thread_t *thread, voi
 	vh->up = 1;	
 	while(switch_channel_ready(channel) && vh->up == 1) {
 		status = switch_core_session_read_video_frame(vh->session_a, &read_frame, -1, 0);
-        
+		
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
 		}
@@ -64,7 +65,6 @@ static void *SWITCH_THREAD_FUNC video_bridge_thread(switch_thread_t *thread, voi
 	return NULL;
 }
 
-
 static void launch_video(struct vid_helper *vh)
 {
 	switch_thread_t *thread;
@@ -75,7 +75,7 @@ static void launch_video(struct vid_helper *vh)
     switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
     switch_thread_create(&thread, thd_attr, video_bridge_thread, vh, switch_core_session_get_pool(vh->session_a));
 }
-
+#endif
 
 struct switch_ivr_bridge_data {
 	switch_core_session_t *session;
@@ -96,9 +96,12 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 	switch_channel_t *chan_a, *chan_b;
 	switch_frame_t *read_frame;
 	switch_core_session_t *session_a, *session_b;
-	uint32_t loop_count = 0, vid_launch = 0;
+	uint32_t loop_count = 0;
 	const char *app_name = NULL, *app_arg = NULL;
+#ifdef SWITCH_VIDEO_IN_THREADS
     struct vid_helper vh = { 0 };
+	uint32_t vid_launch = 0;
+#endif
 
 	session_a = data->session;
 	if (!(session_b = switch_core_session_locate(data->b_uuid))) {
@@ -157,12 +160,14 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 			continue;
 		}
 
+#ifdef SWITCH_VIDEO_IN_THREADS
         if (switch_channel_test_flag(chan_a, CF_VIDEO) && switch_channel_test_flag(chan_b, CF_VIDEO) && !vid_launch) {
             vid_launch++;
             vh.session_a = session_a;
             vh.session_b = session_b;
             launch_video(&vh);
         }
+#endif
 
 		/* if 1 channel has DTMF pass it to the other */
 		while (switch_channel_has_dtmf(chan_a)) {
@@ -216,6 +221,19 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 			}
 		}
 
+#ifndef SWITCH_VIDEO_IN_THREADS
+		if (switch_channel_test_flag(chan_a, CF_VIDEO) && switch_channel_test_flag(chan_b, CF_VIDEO)) {
+			/* read video from 1 channel and write it to the other */
+			status = switch_core_session_read_video_frame(session_a, &read_frame, -1, 0);
+		
+			if (!SWITCH_READ_ACCEPTABLE(status)) {
+				break;
+			}
+		
+			switch_core_session_write_video_frame(session_b, read_frame, -1, 0);
+		}
+#endif
+
 		/* read audio from 1 channel and write it to the other */
 		status = switch_core_session_read_frame(session_a, &read_frame, -1, stream_id);
 
@@ -237,6 +255,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 		}
 	}
 
+#ifdef SWITCH_VIDEO_IN_THREADS
     if (vh.up) {
         vh.up = -1;
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ending video thread.\n");
@@ -244,6 +263,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
             switch_yield(100000);
         }
     }
+#endif
 
 
 	if (switch_channel_get_state(chan_b) >= CS_HANGUP) {	

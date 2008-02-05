@@ -33,6 +33,7 @@
 
 #include <switch.h>
 
+#ifdef SWITCH_VIDEO_IN_THREADS
 struct echo_helper {
 	switch_core_session_t *session;
 	int up;
@@ -54,24 +55,32 @@ static void *SWITCH_THREAD_FUNC echo_video_thread(switch_thread_t *thread, void 
 			break;
 		}
 		
+		if (switch_test_flag(read_frame, SFF_CNG)) {
+			continue;
+		}
+
 		switch_core_session_write_video_frame(session, read_frame, -1, 0);
 		
 	}
 	eh->up = 0;
 	return NULL;
 }
+#endif
 
 SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session)
 {
 	switch_status_t status;
 	switch_frame_t *read_frame;
-	struct echo_helper eh = {0};
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+#ifdef SWITCH_VIDEO_IN_THREADS
+	struct echo_helper eh = {0};
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
+#endif
 
 	switch_channel_pre_answer(channel);
-
+	
+#ifdef SWITCH_VIDEO_IN_THREADS
 	if (switch_channel_test_flag(channel, CF_VIDEO)) {
 		eh.session = session;
 		switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
@@ -79,6 +88,7 @@ SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session)
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 		switch_thread_create(&thread, thd_attr, echo_video_thread, &eh, switch_core_session_get_pool(session));
 	}
+#endif
 
 	while(switch_channel_ready(channel)) {
 		status = switch_core_session_read_frame(session, &read_frame, -1, 0);
@@ -86,13 +96,31 @@ SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session)
 			break;
 		}
 		switch_core_session_write_frame(session, read_frame, -1, 0);
+
+#ifndef SWITCH_VIDEO_IN_THREADS
+		status = switch_core_session_read_video_frame(session, &read_frame, -1, 0);
+        
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			break;
+		}
+		
+		if (switch_test_flag(read_frame, SFF_CNG)) {
+			continue;
+		}
+
+		switch_core_session_write_video_frame(session, read_frame, -1, 0);
+#endif
+
 	}
 
+#ifdef SWITCH_VIDEO_IN_THREADS
 	if (eh.up) {
 		while(eh.up) {
 			switch_yield(1000);
 		}
 	}
+#endif
+
 }
 
 typedef struct {
