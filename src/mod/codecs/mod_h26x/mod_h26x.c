@@ -89,6 +89,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_h26x_load)
                                          SWITCH_CODEC_TYPE_VIDEO, 34, "H263", NULL, 90000, 90000, 0,
                                          0, 0, 0, 0, 1, 1, 1,
                                          switch_h26x_init, switch_h26x_encode, switch_h26x_decode, switch_h26x_destroy);
+	SWITCH_ADD_CODEC(codec_interface, "H.263+ Video (passthru)");
+    switch_core_codec_add_implementation(pool, codec_interface,
+                                         SWITCH_CODEC_TYPE_VIDEO, 115, "H263-1998", NULL, 90000, 90000, 0,
+                                         0, 0, 0, 0, 1, 1, 1,
+                                         switch_h26x_init, switch_h26x_encode, switch_h26x_decode, switch_h26x_destroy);
 	SWITCH_ADD_CODEC(codec_interface, "H.261 Video (passthru)");
     switch_core_codec_add_implementation(pool, codec_interface,
                                          SWITCH_CODEC_TYPE_VIDEO, 31, "H261", NULL, 90000, 90000, 0,
