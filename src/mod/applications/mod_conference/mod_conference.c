@@ -1624,7 +1624,7 @@ static void conference_loop_output(conference_member_t * member)
 	write_frame.buflen = sizeof(data);
 	write_frame.codec = &member->write_codec;
 
-	if (switch_test_flag(member->conference, CFLAG_ANSWERED)) {
+	if (!switch_test_flag(member->conference, CFLAG_ANSWERED)) {
 		switch_channel_answer(channel);
 	}
 
