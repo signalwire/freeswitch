@@ -695,11 +695,6 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, z
 	}
 
 	for(;;) {
-		span = &globals.spans[j];
-		if (!zap_test_flag(span, ZAP_SPAN_CONFIGURED)) {
-			goto next_loop;
-		}
-
 		if (direction == ZAP_TOP_DOWN) {
 			if (j > span_max) {
 				break;
@@ -708,6 +703,11 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, z
 			if (j == 0) {
 				break;
 			}
+		}
+
+		span = &globals.spans[j];
+		if (!zap_test_flag(span, ZAP_SPAN_CONFIGURED)) {
+			goto next_loop;
 		}
 		
 		if (direction == ZAP_TOP_DOWN) {
