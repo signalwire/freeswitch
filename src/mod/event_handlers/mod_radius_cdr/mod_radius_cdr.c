@@ -182,6 +182,14 @@ static switch_status_t my_on_ring(switch_core_session_t *session)
 		profile = switch_channel_get_caller_profile(channel);
 
 		if(profile) {
+			if(profile->username) {
+				if (rc_avpair_add(rad_config, &send, PW_USER_NAME, (void *)profile->username, -1, 0) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"failed adding User-Name: %s\n", profile->username);
+					rc_destroy(rad_config);
+					return SWITCH_STATUS_TERM;
+				}
+			} 
 			if(profile->caller_id_number) {
 				if (rc_avpair_add(rad_config, &send, PW_FS_SRC, (void *)profile->caller_id_number, -1, PW_FS_PEC) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
@@ -210,6 +218,54 @@ static switch_status_t my_on_ring(switch_core_session_t *session)
 				if (rc_avpair_add(rad_config, &send, PW_FS_DIALPLAN, (void *)profile->dialplan, -1, PW_FS_PEC) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
 							"failed adding Freeswitch-Dialplan: %s\n", profile->dialplan);
+					rc_destroy(rad_config);
+					return SWITCH_STATUS_TERM;
+				}
+			} 
+			if(profile->network_addr) {
+				if (rc_avpair_add(rad_config, &send, PW_FRAMED_IP_ADDRESS, (void *)profile->network_addr, -1, 0) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"failed adding Framed-IP-Address: %s\n", profile->network_addr);
+					rc_destroy(rad_config);
+					return SWITCH_STATUS_TERM;
+				}
+			} 
+			if(profile->rdnis) {
+				if (rc_avpair_add(rad_config, &send, PW_FS_RDNIS, (void *)profile->rdnis, -1, PW_FS_PEC) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"failed adding Freeswitch-RDNIS: %s\n", profile->rdnis);
+					rc_destroy(rad_config);
+					return SWITCH_STATUS_TERM;
+				}
+			} 
+			if(profile->context) {
+				if (rc_avpair_add(rad_config, &send, PW_FS_CONTEXT, (void *)profile->context, -1, PW_FS_PEC) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"failed adding Freeswitch-Context: %s\n", profile->context);
+					rc_destroy(rad_config);
+					return SWITCH_STATUS_TERM;
+				}
+			} 
+			if(profile->ani) {
+				if (rc_avpair_add(rad_config, &send, PW_FS_ANI, (void *)profile->ani, -1, PW_FS_PEC) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"failed adding Freeswitch-ANI: %s\n", profile->ani);
+					rc_destroy(rad_config);
+					return SWITCH_STATUS_TERM;
+				}
+			} 
+			if(profile->aniii) {
+				if (rc_avpair_add(rad_config, &send, PW_FS_ANIII, (void *)profile->aniii, -1, PW_FS_PEC) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"failed adding Freeswitch-ANIII: %s\n", profile->aniii);
+					rc_destroy(rad_config);
+					return SWITCH_STATUS_TERM;
+				}
+			} 
+			if(profile->source) {
+				if (rc_avpair_add(rad_config, &send, PW_FS_SOURCE, (void *)profile->source, -1, PW_FS_PEC) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"failed adding Freeswitch-Source: %s\n", profile->source);
 					rc_destroy(rad_config);
 					return SWITCH_STATUS_TERM;
 				}
@@ -330,6 +386,14 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[mod_radius_cdr] Finished calculating billable time\n");
 
+			if(profile->username) {
+				if (rc_avpair_add(rad_config, &send, PW_USER_NAME, (void *)profile->username, -1, 0) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"failed adding User-Name: %s\n", profile->username);
+					rc_destroy(rad_config);
+					return SWITCH_STATUS_TERM;
+				}
+			} 
 			if(profile->caller_id_number) {
 				if (rc_avpair_add(rad_config, &send, PW_FS_SRC, (void *)profile->caller_id_number, -1, PW_FS_PEC) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
@@ -358,6 +422,54 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 				if (rc_avpair_add(rad_config, &send, PW_FS_DIALPLAN, (void *)profile->dialplan, -1, PW_FS_PEC) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
 							"failed adding Freeswitch-Dialplan: %s\n", profile->dialplan);
+					rc_destroy(rad_config);
+					return SWITCH_STATUS_TERM;
+				}
+			} 
+			if(profile->network_addr) {
+				if (rc_avpair_add(rad_config, &send, PW_FRAMED_IP_ADDRESS, (void *)profile->network_addr, -1, 0) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"failed adding Framed-IP-Address: %s\n", profile->network_addr);
+					rc_destroy(rad_config);
+					return SWITCH_STATUS_TERM;
+				}
+			} 
+			if(profile->rdnis) {
+				if (rc_avpair_add(rad_config, &send, PW_FS_RDNIS, (void *)profile->rdnis, -1, PW_FS_PEC) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"failed adding Freeswitch-RDNIS: %s\n", profile->rdnis);
+					rc_destroy(rad_config);
+					return SWITCH_STATUS_TERM;
+				}
+			} 
+			if(profile->context) {
+				if (rc_avpair_add(rad_config, &send, PW_FS_CONTEXT, (void *)profile->context, -1, PW_FS_PEC) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"failed adding Freeswitch-Context: %s\n", profile->context);
+					rc_destroy(rad_config);
+					return SWITCH_STATUS_TERM;
+				}
+			} 
+			if(profile->ani) {
+				if (rc_avpair_add(rad_config, &send, PW_FS_ANI, (void *)profile->ani, -1, PW_FS_PEC) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"failed adding Freeswitch-ANI: %s\n", profile->ani);
+					rc_destroy(rad_config);
+					return SWITCH_STATUS_TERM;
+				}
+			} 
+			if(profile->aniii) {
+				if (rc_avpair_add(rad_config, &send, PW_FS_ANIII, (void *)profile->aniii, -1, PW_FS_PEC) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"failed adding Freeswitch-ANIII: %s\n", profile->aniii);
+					rc_destroy(rad_config);
+					return SWITCH_STATUS_TERM;
+				}
+			} 
+			if(profile->source) {
+				if (rc_avpair_add(rad_config, &send, PW_FS_SOURCE, (void *)profile->source, -1, PW_FS_PEC) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"failed adding Freeswitch-Source: %s\n", profile->source);
 					rc_destroy(rad_config);
 					return SWITCH_STATUS_TERM;
 				}

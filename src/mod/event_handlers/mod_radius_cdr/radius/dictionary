@@ -266,10 +266,12 @@ ATTRIBUTE	Freeswitch-Aniii			9	string  Freeswitch
 ATTRIBUTE	Freeswitch-Lastapp			10	string  Freeswitch
 ATTRIBUTE	Freeswitch-Lastdata			11	string  Freeswitch
 ATTRIBUTE	Freeswitch-Disposition			12	string  Freeswitch
-ATTRIBUTE	Freeswitch-Hangupcause			13	integer  Freeswitch
-ATTRIBUTE	Freeswitch-Billusec			15	integer  Freeswitch
-ATTRIBUTE	Freeswitch-AMAFlags			16	integer  Freeswitch
-
+ATTRIBUTE	Freeswitch-Hangupcause			13	integer Freeswitch
+ATTRIBUTE	Freeswitch-Billusec			15	integer Freeswitch
+ATTRIBUTE	Freeswitch-AMAFlags			16	integer Freeswitch
+ATTRIBUTE	Freeswitch-RDNIS			17      string  Freeswitch
+ATTRIBUTE	Freeswitch-Context                      18      string  Freeswitch
+ATTRIBUTE	Freeswitch-Source                       19      string  Freeswitch
 ATTRIBUTE	Freeswitch-Callstartdate		20	string  Freeswitch
 ATTRIBUTE	Freeswitch-Callanswerdate		21	string  Freeswitch
 ATTRIBUTE	Freeswitch-Calltransferdate		22	string  Freeswitch
