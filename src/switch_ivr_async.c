@@ -965,21 +965,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_inband_dtmf_generate_session(swi
 SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_generate_session(switch_core_session_t *session, switch_bool_t read_stream)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_codec_t *read_codec;
 	switch_media_bug_t *bug;
 	switch_status_t status;
 	switch_inband_dtmf_generate_t *pvt;
 
-	if ((status = switch_channel_pre_answer(channel)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can not install inband dtmf generate.  Failed to pre_answer session!\n");
+	status = switch_channel_pre_answer(channel);
+
+	if (!switch_channel_media_ready(channel) || !switch_core_session_get_read_codec(session)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can not install inband dtmf generate.  Media not enabled on channel\n");
 		return status;
-	}
-
-	read_codec = switch_core_session_get_read_codec(session);
-
-	if (!read_codec) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can not install inband dtmf generate.  No read codec.!\n");
-		return SWITCH_STATUS_FALSE;
 	}
 
 	if (!(pvt = switch_core_session_alloc(session, sizeof(*pvt)))) {
