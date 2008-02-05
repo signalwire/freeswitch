@@ -156,10 +156,10 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 		if (switch_channel_test_flag(session->channel, CF_BYPASS_MEDIA) && !switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA)) {
 			switch_ivr_media(session->uuid_str, SMF_NONE);
 			nomedia++;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Application %s Requires media on channel %s!\n",
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Application %s Requires media on channel %s!\n",
 							  extension->current_application->application_name, switch_channel_get_name(session->channel));
-		} else if (!switch_channel_media_ready(session->channel)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Application %s Requires media! pre_answering channel %s\n",
+		} else if (!switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA) && !switch_channel_media_ready(session->channel)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Application %s Requires media! pre_answering channel %s\n",
 							  extension->current_application->application_name, switch_channel_get_name(session->channel));
 			switch_channel_pre_answer(session->channel);
 		}
