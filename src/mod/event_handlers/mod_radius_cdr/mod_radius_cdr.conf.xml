@@ -9,9 +9,9 @@
 		<!-- accounting servers, up to 8 allowed -->
 		<!-- value is "host:port:secret", port is optional -->
 		<!-- use IP ADDRESSES, not hostnames -->
-		<param name="acct_server" value="127.0.0.1:1813:testing123"/>
-		<param name="acct_server" value="10.0.0.254:1813:testing123"/>
-		<param name="acct_server" value="192.168.10.10:1813:testing123"/>
+		<param name="acctserver" value="127.0.0.1:1813:testing123"/>
+		<param name="acctserver" value="10.0.0.254:1813:testing123"/>
+		<param name="acctserver" value="192.168.10.10:1813:testing123"/>
 	</settings>
 </configuration>
 
