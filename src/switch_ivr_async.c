@@ -970,7 +970,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_generate_session(switch_c
 	switch_status_t status;
 	switch_inband_dtmf_generate_t *pvt;
 
-	switch_assert(read_codec != NULL);
+	if ((status = switch_channel_pre_answer(channel)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can not install inband dtmf generate.  Failed to pre_answer session!\n");
+		return status;
+	}
+
+	if (!read_codec) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can not install inband dtmf generate.  No read codec.!\n");
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (!(pvt = switch_core_session_alloc(session, sizeof(*pvt)))) {
 		return SWITCH_STATUS_MEMERR;
@@ -978,7 +986,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_generate_session(switch_c
 
 	pvt->session = session;
 	pvt->read = !!read_stream;
-	switch_channel_pre_answer(channel);
 
 	if ((status = switch_core_media_bug_add(session, inband_dtmf_generate_callback, pvt, 0, 
 											pvt->read ? SMBF_READ_REPLACE : SMBF_WRITE_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
