@@ -223,8 +223,8 @@ export ACLOCAL_FLAGS="-I /usr/share/aclocal"
                 --with-libcurl \
 %endif
 %endif
-                --with-openssl
-
+                --with-openssl \
+		%{?configure_options}
 
 #Create the version header file here
 cat src/include/switch_version.h.in | sed "s/@SVN_VERSION@/%{version}/g" > src/include/switch_version.h
@@ -264,7 +264,9 @@ touch .noversion
 
 # Add a freeswitch user with group daemon
 %pre
+%ifos linux
 /usr/sbin/useradd -r -g daemon -s /bin/false -c "The FreeSWITCH Open Source Voice Platform" -d %{prefix}/var freeswitch 2> /dev/null || :
+%endif
 
 %post
 %{?run_ldconfig:%run_ldconfig}
