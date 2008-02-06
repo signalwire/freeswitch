@@ -782,14 +782,24 @@ L3INT Q931ProcReleaseTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcReleaseCompleteTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    Q931mes_Generic *pMes = (Q931mes_Generic *)&buf[Q931L4HeaderSpace];
-    //L3INT state = Q931GetCallState(pTrunk, pMes->CRV);
-    L3INT ret = Q931E_NO_ERROR;
+    L3INT callIndex;
+    L3INT ret=Q931E_NO_ERROR;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)&buf[Q931L4HeaderSpace];
+
     if(iFrom == 2)
     {
         /* TODO Add proc here*/
 		ret = Q931Tx34(pTrunk,buf,pMes->Size);
     }
+
+	if (pMes->CRV) {
+		/* Find the call using CRV */
+		ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
+		if(ret != Q931E_NO_ERROR)
+			return ret;
+		pTrunk->call[callIndex].InUse = 0;
+	}
+
 	return ret;
 }
 
