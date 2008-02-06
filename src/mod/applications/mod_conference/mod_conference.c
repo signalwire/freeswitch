@@ -737,8 +737,9 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 	switch_frame_t *vid_frame;
 	switch_status_t status;
 	int has_vid = 1;
-
+	
 	conference->video_running = 1;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Video thread started for conference %s\n", conference->name);
 
 	while (has_vid && conference->video_running == 1 && globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT)) {
 		if (!conference->floor_holder) {
@@ -758,6 +759,25 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 				continue;
 			}
 
+			if (conference->floor_holder != last_member) {
+				int iframe = 0;
+	
+				if (vid_frame->codec->implementation->ianacode == 34) { /* h.263 */
+					iframe = (*((int16_t*)vid_frame->data) >> 12 == 6);
+				} else if (vid_frame->codec->implementation->ianacode == 115) { /* h.263-1998 */
+					int y = *((int8_t*)vid_frame->data + 2) & 0xfe;
+					iframe = (y == 0x80 || y == 0x82);					
+				} else if (vid_frame->codec->implementation->ianacode == 99) { /* h.264 */
+					iframe = (*((int16_t*)vid_frame->data) >> 5 == 0x11);
+				} else { /* we need more defs */
+					iframe = 1;
+				}
+				
+				if (!iframe) {
+					continue;
+				}
+			}
+
 			last_member = conference->floor_holder;
 			
 			switch_mutex_lock(conference->member_mutex);	
@@ -771,7 +791,7 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 			switch_mutex_unlock(conference->member_mutex);
 		}
 	}
-
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Video thread ending for conference %s\n", conference->name);
 	conference->video_running = 0;
 
 	return NULL;
@@ -807,8 +827,8 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 	while (globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT)) {
 		switch_size_t file_sample_len = samples;
 		switch_size_t file_data_len = samples * 2;
-		int has_file_data = 0;
-
+		int has_file_data = 0, members_with_video = 0;
+		
 		if (conference->perpetual_sound && !conference->async_fnode) {
 			conference_play_file(conference, conference->perpetual_sound, CONF_DEFAULT_LEADIN, NULL, 1);
 		} else if (conference->moh_sound && conference->count == 1 && !conference->async_fnode) {
@@ -829,6 +849,10 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 			total++;
 			imember->read = 0;
 
+			if (switch_channel_test_flag(switch_core_session_get_channel(imember->session), CF_VIDEO)) {
+				members_with_video++;
+			}
+
 			switch_clear_flag_locked(imember, MFLAG_HAS_AUDIO);
 			switch_mutex_lock(imember->audio_in_mutex);
 
@@ -839,6 +863,10 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
                 ready++;
 			}
 			switch_mutex_unlock(imember->audio_in_mutex);
+		}
+
+		if (members_with_video && conference->video_running != 1) {
+			launch_conference_video_thread(conference);
 		}
 
 		/* If a file or speech event is being played */
@@ -1676,11 +1704,6 @@ static void conference_loop_output(conference_member_t * member)
             switch_size_t file_data_len = file_sample_len * 2;
 
 			
-			if (switch_channel_test_flag(channel, CF_VIDEO) && member->conference->video_running != 1) {
-				launch_conference_video_thread(member->conference);
-			}
-			
-
 			switch_mutex_lock(member->flag_mutex);
 
 
