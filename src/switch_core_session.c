@@ -244,9 +244,11 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		}
 	}
 
-	switch_assert(*new_session != NULL);
-	
-	if (*new_session) {
+	if (!*new_session) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "outgoing method for endpoint: [%s] returned: [%s] but there is no new session!\n", 
+						  endpoint_name, switch_channel_cause2str(cause));
+		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+	} else {
 		switch_caller_profile_t *profile = NULL, *peer_profile = NULL, *cloned_profile = NULL;
 		switch_event_t *event;
 		switch_channel_t *peer_channel = switch_core_session_get_channel(*new_session);

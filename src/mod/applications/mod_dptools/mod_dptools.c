@@ -1352,6 +1352,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain);
+		cause = SWITCH_CAUSE_SUBSCRIBER_ABSENT;
 		goto done;
 	}
 
