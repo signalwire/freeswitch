@@ -841,7 +841,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 			break;
 		}
 		switch_mutex_lock(conference->mutex);
-		ready = total = 0;
+		ready = has_file_data = total = 0;
 
 		/* Read one frame of audio from each member channel and save it for redistribution */
 		for (imember = conference->members; imember; imember = imember->next) {
@@ -891,14 +891,12 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 
 				if (file_sample_len <= 0) {
 					conference->fnode->done++;
+				} else {
+					has_file_data = 1;
 				}
-			}
-			has_file_data = 1;
-			ready++;
-		} else {
-			has_file_data = 0;
+			}			
 		}
-
+		
 		if (conference->async_fnode) {
 			/* Lead in time */
 			if (conference->async_fnode->leadin) {
@@ -924,13 +922,12 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 					} else {
 						memcpy(file_frame, async_file_frame, file_sample_len * 2);
 						has_file_data = 1;
-						ready++;
 					}
 				}
 			}
 		}
 
-		if (ready) {
+		if (ready || has_file_data) {
 			int nt = 0;
 			/* Build a muxed frame for every member that contains the mixed audio of everyone else */
 			for (omember = conference->members; omember; omember = omember->next) {
