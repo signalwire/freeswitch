@@ -133,7 +133,7 @@ static switch_status_t my_on_ring(switch_core_session_t *session)
 
 	char 		*uuid_str;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "[mod_radius_cdr] Entering my_on_ring\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[mod_radius_cdr] Entering my_on_ring\n");
 
 	rad_config = my_radius_init();
 
@@ -285,7 +285,7 @@ static switch_status_t my_on_ring(switch_core_session_t *session)
 	}
 
 	if(rc_acct(rad_config, client_port, send) == OK_RC) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "[mod_radius_cdr] RADIUS Accounting OK\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[mod_radius_cdr] RADIUS Accounting OK\n");
 		retval = SWITCH_STATUS_SUCCESS;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "[mod_radius_cdr] RADIUS Accounting Failed\n");
