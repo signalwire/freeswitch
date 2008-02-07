@@ -997,10 +997,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							char *ip = mod_sofia_globals.guess_ip;
 							switch_port_t port = 0;
 							if (sofia_glue_ext_address_lookup(&ip, &port, val, profile->pool) == SWITCH_STATUS_SUCCESS) {
-
-								if (ip) {
-									profile->extsipip = switch_core_strdup(profile->pool, ip);
-								}
+								profile->extsipip = switch_core_strdup(profile->pool, ip);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to get external ip.\n");
 							}
 						}
 					} else if (!strcasecmp(var, "force-register-domain")) {

@@ -403,30 +403,34 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 
 switch_status_t sofia_glue_ext_address_lookup(char **ip, switch_port_t *port, char *sourceip, switch_memory_pool_t *pool)
 {
-	char *error;
-	switch_status_t status;
+	char *error = "";
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	int x;
 
 	if (!sourceip) {
-		return SWITCH_STATUS_FALSE;
+		return status;
 	}
 
 	if (!strncasecmp(sourceip, "stun:", 5)) {
+		char *stun_ip = sourceip + 5;
+		if (!stun_ip) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! NO STUN SERVER\n");
+			return status;
+		}
 		for (x = 0; x < 5; x++) {
-			char *stun_ip = sourceip + 5;
-			if (!stun_ip) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! NO STUN SERVER\n");
-				return SWITCH_STATUS_FALSE;
-			}
 			if ((status = switch_stun_lookup(ip, port, stun_ip, SWITCH_STUN_DEFAULT_PORT, &error, pool)) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, error);
 				switch_yield(100000);
 			} else {
 				break;
 			}
 		}
 		if (status != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, error);
 			return status;
+		}
+		if (!*ip) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! No IP returned\n");
+			return SWITCH_STATUS_FALSE;
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Success [%s]:[%d]\n", *ip, *port);
 	} else {
