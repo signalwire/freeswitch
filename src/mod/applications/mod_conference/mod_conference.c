@@ -736,7 +736,7 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 	conference_member_t *imember, *last_member = NULL;
 	switch_frame_t *vid_frame;
 	switch_status_t status;
-	int has_vid = 1;
+	int has_vid = 1, req_iframe = 0;
 	
 	conference->video_running = 1;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Video thread started for conference %s\n", conference->name);
@@ -752,6 +752,7 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 			
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				conference->floor_holder = NULL;
+				req_iframe = 0;
 				continue;
 			}
 			
@@ -759,9 +760,23 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 				continue;
 			}
 
+			if (!conference->floor_holder) {
+				req_iframe = 0;
+				continue;
+			}
+
 			if (conference->floor_holder != last_member) {
 				int iframe = 0;
-	
+				switch_core_session_message_t msg = { 0 };
+
+				if (!req_iframe) {
+					/* Tell the channel to request a fresh vid frame */
+					msg.from = __FILE__;
+					msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
+					switch_core_session_receive_message(conference->floor_holder->session, &msg);
+					req_iframe = 1;
+				}
+				
 				if (vid_frame->codec->implementation->ianacode == 34) { /* h.263 */
 					iframe = (*((int16_t*)vid_frame->data) >> 12 == 6);
 				} else if (vid_frame->codec->implementation->ianacode == 115) { /* h.263-1998 */
@@ -776,6 +791,8 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 				if (!iframe) {
 					continue;
 				}
+
+				req_iframe = 0;
 			}
 
 			last_member = conference->floor_holder;
@@ -1500,7 +1517,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, 
 						switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
 						switch_mutex_lock(member->conference->member_mutex);
 						if (!member->conference->floor_holder || 
-							!switch_test_flag(member->conference->floor_holder, MFLAG_TALKING) || member->score > member->conference->floor_holder->score) {
+							!switch_test_flag(member->conference->floor_holder, MFLAG_TALKING) || member->score > 
+							member->conference->floor_holder->score + 200) {
 							if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 								conference_add_event_member_data(member, event);
 								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "floor-change");

@@ -712,6 +712,27 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	}
 
 	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
+		{
+			const char *pl =
+				"<?xml version=\"1.0\" encoding=\"utf-8\" ?>\r\n"
+				" <media_control>\r\n"
+				"  <vc_primitive>\r\n"
+				"   <to_encoder>\r\n"
+				"    <picture_fast_update>\r\n"
+				"    </picture_fast_update>\r\n"
+				"   </to_encoder>\r\n"
+				"  </vc_primitive>\r\n"
+				" </media_control>\r\n";
+			
+			nua_info(tech_pvt->nh,
+					 SIPTAG_CONTENT_TYPE_STR("application/media_control+xml"),
+					 SIPTAG_PAYLOAD_STR(pl),
+					 TAG_END());
+
+			
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_BROADCAST: {
 		const char *ip = NULL, *port = NULL;
 		ip = switch_channel_get_variable(channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE);
