@@ -154,7 +154,7 @@ endif
 if ADD_ODBC
 CORE_CFLAGS    += -DSWITCH_HAVE_ODBC
 libfreeswitch_la_SOURCES += src/switch_odbc.c
-libfreeswitch_la_LDFLAGS     += -lodbc
+libfreeswitch_la_LDFLAGS     += -Wl,-lodbc
 endif
 
 bin_SCRIPTS = scripts/gentls_cert scripts/fsxs
