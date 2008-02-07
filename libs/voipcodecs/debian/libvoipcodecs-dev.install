@@ -1,0 +1,4 @@
+debian/tmp/usr/include
+debian/tmp/usr/lib/libvoipcodecs.so
+debian/tmp/usr/lib/libvoipcodecs.la
+debian/tmp/usr/lib/libvoipcodecs.a

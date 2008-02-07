@@ -1,0 +1,65 @@
+Summary:    VoIPcodecs is a library of unencumbered codecs commonly used for VoIP
+Name:       @PACKAGE@
+Version:    @VERSION@
+Release:    1
+License:    GPL
+Group:      System Environment/Libraries
+URL:        http://www.soft-switch.org/voipcodecs
+BuildRoot:  %{_tmppath}/%{name}-%{version}-root
+Source:     http://www.soft-switch.org/downloads/voipcodecs/@PACKAGE@-@VERSION@.tar.gz
+BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+
+Docdir:     %{_prefix}/doc
+
+BuildRequires: audiofile-devel
+BuildRequires: doxygen
+
+%description
+VoIPcodecs is a library of unencumbered codecs commonly used for VoIP.
+
+%package devel
+Summary:    VoIPcodecs development files
+Group:      Development/Libraries
+Requires:   voipcodecs = %{version}
+PreReq:     /sbin/install-info
+
+%description devel
+VoIPcodecs development files.
+
+%prep
+%setup -q
+
+%build
+%configure --enable-doc --disable-static --disable-rpath
+make
+
+%install
+rm -rf %{buildroot}
+make install DESTDIR=%{buildroot}
+rm %{buildroot}%{_libdir}/libvoipcodecs.la
+
+%clean
+rm -rf %{buildroot}
+
+%files
+%defattr(-,root,root,-)
+%doc ChangeLog AUTHORS COPYING NEWS README 
+
+%{_libdir}/libvoipcodecs.so.*
+
+%{_datadir}/voipcodecs
+
+%files devel
+%defattr(-,root,root,-)
+%doc doc/api
+%{_includedir}/voipcodecs.h
+%{_includedir}/voipcodecs
+%{_libdir}/libvoipcodecs.so
+
+%post -p /sbin/ldconfig
+
+%postun -p /sbin/ldconfig
+
+%changelog
+* Thu Feb  7 2008 Steve Underwood <steveu@coppice.org> 0.0.1
+- First pass
