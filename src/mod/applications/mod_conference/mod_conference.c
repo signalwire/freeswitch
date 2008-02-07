@@ -760,14 +760,11 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 				continue;
 			}
 
-			if (!conference->floor_holder) {
-				req_iframe = 0;
-				continue;
-			}
-
 			if (conference->floor_holder != last_member) {
 				int iframe = 0;
+#if 0
 				switch_core_session_message_t msg = { 0 };
+
 
 				if (!req_iframe) {
 					/* Tell the channel to request a fresh vid frame */
@@ -776,7 +773,8 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 					switch_core_session_receive_message(conference->floor_holder->session, &msg);
 					req_iframe = 1;
 				}
-				
+#endif
+		
 				if (vid_frame->codec->implementation->ianacode == 34) { /* h.263 */
 					iframe = (*((int16_t*)vid_frame->data) >> 12 == 6);
 				} else if (vid_frame->codec->implementation->ianacode == 115) { /* h.263-1998 */
@@ -945,7 +943,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 		}
 
 		if (ready || has_file_data) {
-			int nt = 0;
+			//int nt = 0;
 			/* Build a muxed frame for every member that contains the mixed audio of everyone else */
 			for (omember = conference->members; omember; omember = omember->next) {
 				if (has_file_data && file_sample_len) {
@@ -996,12 +994,12 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 							}
 						}
 					}
-
+#if 0
 					if (nt && conference->not_talking_buf_len && !switch_test_flag(omember, MFLAG_HAS_AUDIO)) {
 						memcpy(omember->mux_frame, conference->not_talking_buf, conference->not_talking_buf_len);
 						continue;
 					}
-
+#endif
 					bptr = (int16_t *) imember->frame;
 					muxed = (int16_t *) omember->mux_frame;
 
@@ -1010,7 +1008,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 						switch_normalize_to_16bit(z);
 						muxed[x] = (int16_t) z;
 					}
-
+#if 0
 					if (total - ready > 1) {
 						conference->not_talking_buf_len = imember->read;
 						if (!conference->not_talking_buf) {
@@ -1019,6 +1017,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 						memcpy(conference->not_talking_buf, muxed, conference->not_talking_buf_len);
 						nt++;
 					}
+#endif
 				}
 			}
 
@@ -2587,6 +2586,11 @@ static void conference_list(conference_obj_t * conference, switch_stream_handle_
 
 		if (switch_test_flag(member, MFLAG_TALKING)) {
 			stream->write_function(stream, "%s%s", count ? "|" : "", "talking");
+			count++;
+		}
+
+		if (switch_channel_test_flag(switch_core_session_get_channel(member->session), CF_VIDEO)) {
+			stream->write_function(stream, "%s%s", count ? "|" : "", "video");
 			count++;
 		}
 
