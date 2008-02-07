@@ -182,7 +182,6 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 						}
 					}
 				}
-
 			}
 		}
 
@@ -311,7 +310,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	SWITCH_ADD_CODEC(codec_interface, "GSM-AMR");
+	SWITCH_ADD_CODEC(codec_interface, "AMR");
     switch_core_codec_add_implementation(pool, codec_interface,
                                          SWITCH_CODEC_TYPE_AUDIO, 96, "AMR", "octet-align=0", 8000, 8000, 12200,
                                          20000, 160, 320, 0, 1, 1, 1,
