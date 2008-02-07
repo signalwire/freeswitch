@@ -1745,6 +1745,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		switch_ivr_transfer_variable(session, nsession, SOFIA_REPLACES_HEADER);
 		switch_ivr_transfer_variable(session, nsession, "sip_auto_answer");
 		switch_ivr_transfer_variable(session, nsession, SOFIA_SIP_HEADER_PREFIX_T);
+		switch_ivr_transfer_variable(session, nsession, "sip_video_fmtp");
+
 		if (switch_core_session_compare(session, nsession)) {
 			/* It's another sofia channel! so lets cache what they use as a pt for telephone event so 
 			   we can keep it the same

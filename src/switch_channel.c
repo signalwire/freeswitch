@@ -416,6 +416,31 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable(switch_channel_t *chann
 	return v;
 }
 
+SWITCH_DECLARE(const char *) switch_channel_get_variable_partner(switch_channel_t *channel, const char *varname)
+{
+	const char *uuid;
+	const char *val = NULL;
+	switch_assert(channel != NULL);
+
+	if (!switch_strlen_zero(varname)) {
+		if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+			switch_core_session_t *session;
+			switch_mutex_lock(channel->profile_mutex);
+			if ((session = switch_core_session_locate(uuid))) {
+				switch_channel_t *tchannel = switch_core_session_get_channel(session);
+				switch_mutex_lock(tchannel->profile_mutex);
+				val = switch_channel_get_variable(tchannel, varname);
+				switch_mutex_unlock(tchannel->profile_mutex);
+				switch_core_session_rwunlock(session);
+			}
+			switch_mutex_unlock(channel->profile_mutex);
+		}
+	}
+
+	return val;
+}
+
+
 SWITCH_DECLARE(void) switch_channel_variable_last(switch_channel_t *channel)
 {
 	switch_assert(channel != NULL);

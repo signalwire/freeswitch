@@ -43,7 +43,7 @@
 #define SWITCH_END_EXTERN_C
 #endif
 
-
+#define SWITCH_VIDEO_IN_THREADS
 
 #ifndef WIN32
 #include <switch_am_config.h>

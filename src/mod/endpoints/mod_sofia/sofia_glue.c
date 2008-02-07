@@ -46,6 +46,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	uint32_t v_port;
 	int use_cng = 1;
 	const char *val;
+	const char *pass_fmtp = switch_channel_get_variable(tech_pvt->channel, "sip_video_fmtp");
 
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPRESS_CNG) || 
 		((val = switch_channel_get_variable(tech_pvt->channel, "supress_cng")) && switch_true(val))) {
@@ -219,15 +220,15 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 		
 	}
 
-	if (switch_test_flag(tech_pvt, TFLAG_VIDEO) && tech_pvt->video_rm_encoding) {
+	if (switch_test_flag(tech_pvt, TFLAG_VIDEO)) {							
 		sofia_glue_tech_choose_video_port(tech_pvt);
+
 		if ((v_port = tech_pvt->adv_sdp_video_port)) {
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "m=video %d RTP/AVP", v_port);
 			
-			sofia_glue_tech_set_video_codec(tech_pvt, 0);	
-
 			/*****************************/
 			if (tech_pvt->video_rm_encoding) {
+				sofia_glue_tech_set_video_codec(tech_pvt, 0);
 				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->video_pt);
 			} else if (tech_pvt->num_codecs) {
 				int i;
@@ -255,15 +256,30 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "\n");
 
-			if (tech_pvt->rm_encoding) {
+			if (tech_pvt->video_rm_encoding) {
+				const char *of;
 				rate = tech_pvt->video_rm_rate;
 				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%ld\n", tech_pvt->video_pt, tech_pvt->video_rm_encoding, tech_pvt->video_rm_rate);
-				if (tech_pvt->video_fmtp_out) {
-					switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->video_pt, tech_pvt->video_fmtp_out);
+				
+				
+				if (switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE)) {
+					if ((of = switch_channel_get_variable_partner(tech_pvt->channel, "sip_video_fmtp"))) {
+						pass_fmtp = of;
+					}
+				} 
+				
+				if (!pass_fmtp) {
+					pass_fmtp = tech_pvt->video_fmtp_out;
 				}
+
+				if (pass_fmtp) {
+					switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->video_pt, pass_fmtp);
+				}
+				
 			} else if (tech_pvt->num_codecs) {
 				int i;
 				int already_did[128] = { 0 };
+
 				for (i = 0; i < tech_pvt->num_codecs; i++) {
 					const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
 				
@@ -285,6 +301,10 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 					switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", imp->ianacode, imp->iananame, imp->samples_per_second);
 					if (imp->fmtp) {
 						switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, imp->fmtp);
+					} else {
+						if (pass_fmtp) {
+							switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, pass_fmtp);
+						}
 					}
 				}
 			}
@@ -1042,7 +1062,8 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 							  switch_channel_get_name(tech_pvt->channel), tech_pvt->video_rm_encoding, tech_pvt->video_rm_rate, tech_pvt->video_codec_ms);
 			tech_pvt->video_read_frame.codec = &tech_pvt->video_read_codec;
 			
-			tech_pvt->fmtp_out = switch_core_session_strdup(tech_pvt->session, tech_pvt->video_write_codec.fmtp_out);
+			tech_pvt->video_fmtp_out = switch_core_session_strdup(tech_pvt->session, tech_pvt->video_write_codec.fmtp_out);
+
 		}
 	}
 	return SWITCH_STATUS_SUCCESS;
@@ -1878,6 +1899,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_video_port);
 						switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_VIDEO_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
 						switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_VIDEO_PORT_VARIABLE, tmp);
+						switch_channel_set_variable(tech_pvt->channel, "sip_video_fmtp", tech_pvt->video_rm_fmtp);
                         break;
 					} else {
 						vmatch = 0;
