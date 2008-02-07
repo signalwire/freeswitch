@@ -45,6 +45,9 @@ static switch_status_t switch_h26x_init(switch_codec_t *codec, switch_codec_flag
 	if (!(encoding || decoding)) {
 		return SWITCH_STATUS_FALSE;
 	} else {
+		if (codec->fmtp_in) { 
+			codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->fmtp_in);
+		}
 		return SWITCH_STATUS_SUCCESS;
 	}
 }
