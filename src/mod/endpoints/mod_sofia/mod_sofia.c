@@ -1795,13 +1795,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_core_hash_init(&mod_sofia_globals.gateway_hash, module_pool);
 	switch_mutex_init(&mod_sofia_globals.hash_mutex, SWITCH_MUTEX_NESTED, module_pool);
 	
-	if (config_sofia(0, NULL) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_GENERR;
-	}
-
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.running = 1;
 	switch_mutex_unlock(mod_sofia_globals.mutex);
+
+	if (config_sofia(0, NULL) != SWITCH_STATUS_SUCCESS) {
+		mod_sofia_globals.running = 0;
+		return SWITCH_STATUS_GENERR;
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for profiles to start\n");
 	switch_yield(1500000);
