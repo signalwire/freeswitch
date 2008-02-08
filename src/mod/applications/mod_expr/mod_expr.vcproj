@@ -38,6 +38,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				DefaultCharIsUnsigned="true"
 				UsePrecompiledHeader="0"
 				DisableSpecificWarnings="4100;4701"
 			/>
@@ -101,6 +102,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				DefaultCharIsUnsigned="true"
 				UsePrecompiledHeader="0"
 				DisableSpecificWarnings="4100;4701"
 			/>
