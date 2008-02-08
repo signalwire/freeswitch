@@ -22,9 +22,9 @@ codecs/mod_amr
 codecs/mod_g729
 codecs/mod_gsm
 #codecs/mod_h26x
+#codecs/mod_voipcodecs
 codecs/mod_ilbc
 codecs/mod_l16
-#codecs/mod_lpc10
 codecs/mod_speex
 #dialplans/mod_dialplan_directory
 dialplans/mod_dialplan_xml
