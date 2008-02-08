@@ -265,23 +265,23 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 
-			if (!strcasecmp(var, "cred")) {
+			if (!strcasecmp(var, "cred") && !switch_strlen_zero(val)) {
 				globals.cred = strdup(val);
-			} else if (!strcasecmp(var, "url")) {
+			} else if (!strcasecmp(var, "url") && !switch_strlen_zero(val)) {
 				globals.url = strdup(val);
-			} else if (!strcasecmp(var, "delay")) {
+			} else if (!strcasecmp(var, "delay") && !switch_strlen_zero(val)) {
 				globals.delay = (uint32_t) atoi(val);
 			} else if (!strcasecmp(var, "log-b-leg")) {
 				globals.log_b = switch_true(val);
 			} else if (!strcasecmp(var, "disable-100-continue") && switch_true(val)) {
 				globals.disable100continue = 1;
-			} else if (!strcasecmp(var, "encode")) {
+			} else if (!strcasecmp(var, "encode") && !switch_strlen_zero(val)) {
 				if (!strcasecmp(val, "base64")) {
 					globals.encode = 2;
 				} else {
 					globals.encode = switch_true(val) ? 1 : 0;
 				}
-			} else if (!strcasecmp(var, "retries")) {
+			} else if (!strcasecmp(var, "retries") && !switch_strlen_zero(val)) {
 				globals.retries = (uint32_t) atoi(val);
 			} else if (!strcasecmp(var, "log-dir")) {
 				if (switch_strlen_zero(val)) {

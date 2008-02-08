@@ -856,7 +856,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 			break;
 		}
 		switch_mutex_lock(conference->mutex);
-		ready = has_file_data = total = 0;
+		has_file_data = ready = total = 0;
 
 		/* Read one frame of audio from each member channel and save it for redistribution */
 		for (imember = conference->members; imember; imember = imember->next) {
