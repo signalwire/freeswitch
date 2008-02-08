@@ -43,8 +43,8 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj);
 static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxo_outgoing_call)
 {
 	if (!zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK) && !zap_test_flag(zchan, ZAP_CHANNEL_INTHREAD)) {		
-		zap_channel_command(zchan, ZAP_COMMAND_TRACE_INPUT, "/tmp/inbound.ul");
-		zap_channel_command(zchan, ZAP_COMMAND_TRACE_OUTPUT, "/tmp/outbound.ul");
+		//zap_channel_command(zchan, ZAP_COMMAND_TRACE_INPUT, "/tmp/inbound.ul");
+		//zap_channel_command(zchan, ZAP_COMMAND_TRACE_OUTPUT, "/tmp/outbound.ul");
 		zap_channel_clear_needed_tones(zchan);
 		zap_channel_clear_detected_tones(zchan);
 
