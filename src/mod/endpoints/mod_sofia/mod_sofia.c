@@ -916,18 +916,17 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				}
 			}
 
-			if (!reason && code != 407) {
-				reason = "Call Refused";
-			}
-
 			if (!code) {
 				code = 488;
 			}
-
-			if (!reason) {
-				reason = sip_status_phrase(code);
-				if (switch_strlen_zero(reason)) {
-					reason = "Because";
+			
+			if (!reason && code != 407) {
+				reason = "Call Refused";
+				if (!reason) {
+					reason = sip_status_phrase(code);
+					if (switch_strlen_zero(reason)) {
+						reason = "Because";
+					}
 				}
 			}
 			
