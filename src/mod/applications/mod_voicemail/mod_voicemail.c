@@ -584,8 +584,8 @@ static switch_status_t load_config(void)
 
 			profile->email_body = email_body;
 			profile->email_headers = email_headers;
-			profile->email_from = email_from;
-			profile->date_fmt = date_fmt;
+			profile->email_from = switch_core_strdup(globals.pool, email_from);
+			profile->date_fmt = switch_core_strdup(globals.pool, date_fmt);
 
 			profile->digit_timeout = timeout;
 			profile->max_login_attempts = max_login_attempts;
