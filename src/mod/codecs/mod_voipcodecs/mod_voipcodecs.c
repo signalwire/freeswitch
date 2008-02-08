@@ -158,7 +158,7 @@ static switch_status_t switch_gsm_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*encoded_data_len = gsm0610_encode(&context->encoder_object, (uint8_t *) encoded_data, (int16_t *) decoded_data, decoded_data_len / decoded_data_len);
+	*encoded_data_len = gsm0610_encode(&context->encoder_object, (uint8_t *) encoded_data, (int16_t *) decoded_data, decoded_data_len / 320);
 
 	return SWITCH_STATUS_SUCCESS;
 }
