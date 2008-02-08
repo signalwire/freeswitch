@@ -1850,6 +1850,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	}
 
 	if (switch_channel_test_flag(channel_a, CF_BYPASS_MEDIA)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Transfer on bypass media not allowed.\n");
 		nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 				   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
 		goto done;
@@ -1987,6 +1988,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 									switch_core_session_rwunlock(t_session);
 									switch_channel_hangup(hup_channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
 								} else {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session to transfer to not found.\n");
 									nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 											   NUTAG_SUBSTATE(nua_substate_terminated),
 											   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
