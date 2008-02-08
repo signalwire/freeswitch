@@ -701,11 +701,7 @@ SWITCH_STANDARD_API(transfer_function)
 	switch_core_session_t *tsession = NULL, *other_session = NULL;
 	char *mycmd = NULL, *argv[5] = { 0 };
 	int argc = 0;
-	char *tuuid = argv[0];
-	char *dest = argv[1];
-	char *dp = argv[2];
-	char *context = argv[3];
-	char *arg = NULL;
+	char *tuuid, *dest, *dp, *context, *arg = NULL;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
@@ -721,6 +717,11 @@ SWITCH_STANDARD_API(transfer_function)
 		stream->write_function(stream, "-USAGE: %s\n", TRANSFER_SYNTAX);
 		goto done;
 	}
+
+	tuuid = argv[0];
+	dest = argv[1];
+	dp = argv[2];
+	context = argv[3];
 
 	if (!(tsession = switch_core_session_locate(tuuid))) {
 		stream->write_function(stream, "-ERR No Such Channel!\n");
