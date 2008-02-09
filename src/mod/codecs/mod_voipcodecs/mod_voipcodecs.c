@@ -496,10 +496,10 @@ static switch_status_t switch_adpcm_init(switch_codec_t *codec, switch_codec_fla
 		return SWITCH_STATUS_FALSE;
 	} else {
 		if (encoding) {
-			ima_adpcm_init(&context->encoder_object, IMA_ADPCM_DVI4);
+			ima_adpcm_init(&context->encoder_object, IMA_ADPCM_DVI4, 0);
 		}
 		if (decoding) {
-			ima_adpcm_init(&context->decoder_object, IMA_ADPCM_DVI4);
+			ima_adpcm_init(&context->decoder_object, IMA_ADPCM_DVI4, 0);
  		}
 		
 		codec->private_info = context;
@@ -538,7 +538,7 @@ static switch_status_t switch_adpcm_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*decoded_data_len = (2 * ima_adpcm_decode(&context->decoder_object, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len));
+	*decoded_data_len = ima_adpcm_decode(&context->decoder_object, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -567,14 +567,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
     for (count = 12; count > 0; count--) {
         switch_core_codec_add_implementation(pool, codec_interface,
                                              SWITCH_CODEC_TYPE_AUDIO, 5, "DVI4", NULL, 8000, 8000, 32000,
-                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+                                             mpf * count, spf * count, bpf * count, (ebpf * count) + 4, 1, 1, 12,
                                              switch_adpcm_init, switch_adpcm_encode, switch_adpcm_decode, switch_adpcm_destroy);
     }
-	mpf = 10000, spf = 160, bpf = 360, ebpf = 160;
+	mpf = 10000, spf = 160, bpf = 320, ebpf = 160;
     for (count = 12; count > 0; count--) {
         switch_core_codec_add_implementation(pool, codec_interface,
                                              SWITCH_CODEC_TYPE_AUDIO, 6, "DVI4", NULL, 16000, 16000, 64000,
-                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+                                             mpf * count, spf * count, bpf * count, (ebpf * count) + 4, 1, 1, 12,
                                              switch_adpcm_init, switch_adpcm_encode, switch_adpcm_decode, switch_adpcm_destroy);
     }
 

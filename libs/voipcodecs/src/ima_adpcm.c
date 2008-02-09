@@ -1,8 +1,8 @@
 /*
- * VoIPcodecs - a series of DSP components for telephony
+ * SpanDSP - a series of DSP components for telephony
  *
  * ima_adpcm.c - Conversion routines between linear 16 bit PCM data and
- *                 IMA/DVI/Intel ADPCM format.
+ *               IMA/DVI/Intel ADPCM format.
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
@@ -11,8 +11,9 @@
  * All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the Lesser GNU General Public License version 2.1, as
- * published by the Free Software Foundation.
+ * it under the terms of the GNU General Public License version 2, or
+ * the Lesser GNU General Public License version 2.1, as published by
+ * the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -23,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: ima_adpcm.c,v 1.18 2006/11/30 15:41:47 steveu Exp $
+ * $Id: ima_adpcm.c,v 1.21 2008/02/09 15:33:40 steveu Exp $
  */
 
 /*! \file */
@@ -42,9 +43,9 @@
 #include <math.h>
 #endif
 
-#include "voipcodecs/telephony.h"
-#include "voipcodecs/dc_restore.h"
-#include "voipcodecs/ima_adpcm.h"
+#include "spandsp/telephony.h"
+#include "spandsp/dc_restore.h"
+#include "spandsp/ima_adpcm.h"
 
 /*
  * Intel/DVI ADPCM coder/decoder.
@@ -76,8 +77,46 @@
  * Any left over bits in the last octet of an encoded burst are set to one.
  */
 
+/*
+   DVI4 uses an adaptive delta pulse code modulation (ADPCM) encoding
+   scheme that was specified by the Interactive Multimedia Association
+   (IMA) as the "IMA ADPCM wave type".  However, the encoding defined
+   here as DVI4 differs in three respects from the IMA specification:
+
+   o  The RTP DVI4 header contains the predicted value rather than the
+      first sample value contained the IMA ADPCM block header.
+
+   o  IMA ADPCM blocks contain an odd number of samples, since the first
+      sample of a block is contained just in the header (uncompressed),
+      followed by an even number of compressed samples.  DVI4 has an
+      even number of compressed samples only, using the `predict' word
+      from the header to decode the first sample.
+
+   o  For DVI4, the 4-bit samples are packed with the first sample in
+      the four most significant bits and the second sample in the four
+      least significant bits.  In the IMA ADPCM codec, the samples are
+      packed in the opposite order.
+
+   Each packet contains a single DVI block.  This profile only defines
+   the 4-bit-per-sample version, while IMA also specified a 3-bit-per-
+   sample encoding.
+
+   The "header" word for each channel has the following structure:
+
+      int16  predict;  // predicted value of first sample
+                       // from the previous block (L16 format)
+      u_int8 index;    // current index into stepsize table
+      u_int8 reserved; // set to zero by sender, ignored by receiver
+
+   Each octet following the header contains two 4-bit samples, thus the
+   number of samples per packet MUST be even because there is no means
+   to indicate a partially filled last octet.
+*/
+
+#define STEP_MAX 88
+
 /* Intel ADPCM step variation table */
-static const int step_size[89] =
+static const int step_size[STEP_MAX + 1] =
 {
         7,     8,     9,   10,     11,    12,    13,    14,    16,    17,
        19,    21,    23,   25,     28,    31,    34,    37,    41,    45,
@@ -151,7 +190,6 @@ static int16_t decode(ima_adpcm_state_t *s, uint8_t adpcm)
     int16_t linear;
 
     /* e = (adpcm+0.5)*step/4 */
-
     ss = step_size[s->step_index];
     e = ss >> 3;
     if (adpcm & 0x01)
@@ -171,8 +209,8 @@ static int16_t decode(ima_adpcm_state_t *s, uint8_t adpcm)
     s->step_index += step_adjustment[adpcm & 0x07];
     if (s->step_index < 0)
         s->step_index = 0;
-    else if (s->step_index > 88)
-        s->step_index = 88;
+    else if (s->step_index > STEP_MAX)
+        s->step_index = STEP_MAX;
     /*endif*/
     return linear;
 }
@@ -227,14 +265,14 @@ static uint8_t encode(ima_adpcm_state_t *s, int16_t linear)
     s->step_index += step_adjustment[adpcm & 0x07];
     if (s->step_index < 0)
         s->step_index = 0;
-    else if (s->step_index > 88)
-        s->step_index = 88;
+    else if (s->step_index > STEP_MAX)
+        s->step_index = STEP_MAX;
     /*endif*/
     return (uint8_t) adpcm;
 }
 /*- End of function --------------------------------------------------------*/
 
-ima_adpcm_state_t *ima_adpcm_init(ima_adpcm_state_t *s, int variant)
+ima_adpcm_state_t *ima_adpcm_init(ima_adpcm_state_t *s, int variant, int chunk_size)
 {
     if (s == NULL)
     {
@@ -244,6 +282,7 @@ ima_adpcm_state_t *ima_adpcm_init(ima_adpcm_state_t *s, int variant)
     /*endif*/
     memset(s, 0, sizeof(*s));
     s->variant = variant;
+    s->chunk_size = chunk_size;
     return  s;
 }
 /*- End of function --------------------------------------------------------*/
@@ -266,11 +305,50 @@ int ima_adpcm_decode(ima_adpcm_state_t *s,
     uint16_t code;
 
     samples = 0;
-    if (s->variant == IMA_ADPCM_VDVI)
+    switch (s->variant)
     {
+    case IMA_ADPCM_IMA4:
+        i = 0;
+        if (s->chunk_size == 0)
+        {
+            amp[samples++] = (ima_data[1] << 8) | ima_data[0];
+            s->step_index = ima_data[2];
+            s->last = amp[0];
+            i = 4;
+        }
+        for (  ;  i < ima_bytes;  i++)
+        {
+            amp[samples++] = decode(s, ima_data[i] & 0xF);
+            amp[samples++] = decode(s, (ima_data[i] >> 4) & 0xF);
+        }
+        /*endfor*/
+        break;
+    case IMA_ADPCM_DVI4:
+        i = 0;
+        if (s->chunk_size == 0)
+        {
+            s->last = (int16_t) ((ima_data[0] << 8) | ima_data[1]);
+            s->step_index = ima_data[2];
+            i = 4;
+        }
+        for (  ;  i < ima_bytes;  i++)
+        {
+            amp[samples++] = decode(s, (ima_data[i] >> 4) & 0xF);
+            amp[samples++] = decode(s, ima_data[i] & 0xF);
+        }
+        /*endfor*/
+        break;
+    case IMA_ADPCM_VDVI:
+        i = 0;
+        if (s->chunk_size == 0)
+        {
+            s->last = (int16_t) ((ima_data[0] << 8) | ima_data[1]);
+            s->step_index = ima_data[2];
+            i = 4;
+        }
         code = 0;
         s->bits = 0;
-        for (i = 0;  ;  )
+        for (;;)
         {
             if (s->bits <= 8)
             {
@@ -321,18 +399,10 @@ int ima_adpcm_decode(ima_adpcm_state_t *s,
             code <<= vdvi_decode[j].bits;
             s->bits -= vdvi_decode[j].bits;
         }
-        /*endfor*/
-    }
-    else
-    {
-        for (i = 0;  i < ima_bytes;  i++)
-        {
-            amp[samples++] = decode(s, ima_data[i] & 0xF);
-            amp[samples++] = decode(s, (ima_data[i] >> 4) & 0xF);
-        }
         /*endwhile*/
+        break;
     }
-    /*endif*/
+    /*endswitch*/
     return samples;
 }
 /*- End of function --------------------------------------------------------*/
@@ -347,8 +417,54 @@ int ima_adpcm_encode(ima_adpcm_state_t *s,
     uint8_t code;
 
     bytes = 0;
-    if (s->variant == IMA_ADPCM_VDVI)
+    switch (s->variant)
     {
+    case IMA_ADPCM_IMA4:
+        i = 0;
+        if (s->chunk_size == 0)
+        {
+            ima_data[bytes++] = amp[1];
+            ima_data[bytes++] = amp[1] >> 8;
+            ima_data[bytes++] = s->step_index;
+            ima_data[bytes++] = 0;
+            s->last = amp[1];
+            s->bits = 0;
+            i = 1;
+        }
+        for (  ;  i < len;  i++)
+        {
+            s->ima_byte = (uint8_t) ((s->ima_byte >> 4) | (encode(s, amp[i]) << 4));
+            if ((s->bits++ & 1))
+                ima_data[bytes++] = (uint8_t) s->ima_byte;
+            /*endif*/
+        }
+        /*endfor*/
+        break;
+    case IMA_ADPCM_DVI4:
+        if (s->chunk_size == 0)
+        {
+            ima_data[bytes++] = s->last >> 8;
+            ima_data[bytes++] = s->last;
+            ima_data[bytes++] = s->step_index;
+            ima_data[bytes++] = 0;
+        }
+        for (i = 0;  i < len;  i++)
+        {
+            s->ima_byte = (uint8_t) ((s->ima_byte << 4) | encode(s, amp[i]));
+            if ((s->bits++ & 1))
+                ima_data[bytes++] = (uint8_t) s->ima_byte;
+            /*endif*/
+        }
+        /*endfor*/
+        break;
+    case IMA_ADPCM_VDVI:
+        if (s->chunk_size == 0)
+        {
+            ima_data[bytes++] = s->last >> 8;
+            ima_data[bytes++] = s->last;
+            ima_data[bytes++] = s->step_index;
+            ima_data[bytes++] = 0;
+        }
         s->bits = 0;
         for (i = 0;  i < len;  i++)
         {
@@ -364,23 +480,11 @@ int ima_adpcm_encode(ima_adpcm_state_t *s,
         }
         /*endfor*/
         if (s->bits)
-        {
             ima_data[bytes++] = (uint8_t) (((s->ima_byte << 8) | 0xFF) >> s->bits);
-        }
         /*endif*/
+        break;
     }
-    else
-    {
-        for (i = 0;  i < len;  i++)
-        {
-            s->ima_byte = (uint8_t) ((s->ima_byte >> 4) | (encode(s, amp[i]) << 4));
-            if ((s->bits++ & 1))
-                ima_data[bytes++] = (uint8_t) s->ima_byte;
-            /*endif*/
-        }
-        /*endfor*/
-    }
-    /*endif*/
+    /*endswitch*/
     return  bytes;
 }
 /*- End of function --------------------------------------------------------*/
