@@ -47,6 +47,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	int use_cng = 1;
 	const char *val;
 	const char *pass_fmtp = switch_channel_get_variable(tech_pvt->channel, "sip_video_fmtp");
+	const char *ov_fmtp = switch_channel_get_variable(tech_pvt->channel, "sip_force_video_fmtp");
 
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPRESS_CNG) || 
 		((val = switch_channel_get_variable(tech_pvt->channel, "supress_cng")) && switch_true(val))) {
@@ -261,21 +262,22 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 				rate = tech_pvt->video_rm_rate;
 				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%ld\n", tech_pvt->video_pt, tech_pvt->video_rm_encoding, tech_pvt->video_rm_rate);
 				
-				
+				pass_fmtp = NULL;
+
 				if (switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE)) {
 					if ((of = switch_channel_get_variable_partner(tech_pvt->channel, "sip_video_fmtp"))) {
 						pass_fmtp = of;
 					}
 				} 
 				
-				if (!pass_fmtp) {
-					pass_fmtp = tech_pvt->video_fmtp_out;
+				if (ov_fmtp) {
+					pass_fmtp = ov_fmtp;
 				}
 
 				if (pass_fmtp) {
 					switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->video_pt, pass_fmtp);
 				}
-				
+
 			} else if (tech_pvt->num_codecs) {
 				int i;
 				int already_did[128] = { 0 };
@@ -1063,7 +1065,8 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 			tech_pvt->video_read_frame.codec = &tech_pvt->video_read_codec;
 			
 			tech_pvt->video_fmtp_out = switch_core_session_strdup(tech_pvt->session, tech_pvt->video_write_codec.fmtp_out);
-
+			switch_core_session_set_video_read_codec(tech_pvt->session, &tech_pvt->video_read_codec);
+			switch_core_session_set_video_write_codec(tech_pvt->session, &tech_pvt->video_write_codec);
 		}
 	}
 	return SWITCH_STATUS_SUCCESS;

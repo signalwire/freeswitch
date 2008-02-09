@@ -386,6 +386,40 @@ typedef enum {
 	SWITCH_RTP_FLAG_SECURE_RECV_RESET = (1 << 17)
 } switch_rtp_flag_t;
 
+
+#ifdef _MSC_VER
+#pragma pack(push, r1, 1)
+#endif
+
+#if __BYTE_ORDER == __BIG_ENDIAN
+typedef struct {
+	unsigned version:2;   /* protocol version       */
+	unsigned p:1;     /* padding flag           */
+	unsigned x:1;     /* header extension flag  */
+	unsigned cc:4;    /* CSRC count             */
+	unsigned m:1;     /* marker bit             */
+	unsigned pt:7;    /* payload type           */
+	unsigned seq:16;      /* sequence number        */
+	unsigned ts:32;       /* timestamp              */
+	unsigned ssrc:32; /* synchronization source */
+} switch_rtp_hdr_t;
+
+#else /*  BIG_ENDIAN */
+
+typedef struct {
+	unsigned cc:4;    /* CSRC count             */
+	unsigned x:1;     /* header extension flag  */
+	unsigned p:1;     /* padding flag           */
+	unsigned version:2;   /* protocol version       */
+	unsigned pt:7;    /* payload type           */
+	unsigned m:1;     /* marker bit             */
+	unsigned seq:16;      /* sequence number        */
+	unsigned ts:32;       /* timestamp              */
+	unsigned ssrc:32; /* synchronization source */
+} switch_rtp_hdr_t;
+
+#endif
+
 /*!
   \enum switch_priority_t
   \brief Priority Indication

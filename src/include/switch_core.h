@@ -1084,6 +1084,36 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(_In_ switch_
 */
 SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_write_codec(_In_ switch_core_session_t *session);
 
+/*! 
+  \brief Assign the video_read codec to a given session
+  \param session session to add the codec to
+  \param codec the codec to add
+  \return SWITCH_STATUS_SUCCESS if successful
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_read_codec(_In_ switch_core_session_t *session, switch_codec_t *codec);
+
+/*! 
+  \brief Retrieve the video_read codec from a given session
+  \param session session to retrieve from
+  \return a pointer to the codec
+*/
+SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_video_read_codec(_In_ switch_core_session_t *session);
+
+/*! 
+  \brief Assign the video_write codec to a given session
+  \param session session to add the codec to
+  \param codec the codec to add
+  \return SWITCH_STATUS_SUCCESS if successful
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_write_codec(_In_ switch_core_session_t *session, switch_codec_t *codec);
+
+/*! 
+  \brief Retrieve the video_write codec from a given session
+  \param session session to retrieve from
+  \return a pointer to the codec
+*/
+SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_video_write_codec(_In_ switch_core_session_t *session);
+
 ///\}
 ///\defgroup db Database Functions
 ///\ingroup core1

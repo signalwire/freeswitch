@@ -98,6 +98,62 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_write_codec(switch_core
 	return session->write_codec;
 }
 
+
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_read_codec(switch_core_session_t *session, switch_codec_t *codec)
+{
+	switch_event_t *event;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char tmp[30];
+
+	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(session->channel, event);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-video-read-codec-name", "%s", codec->implementation->iananame);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-video-read-codec-rate", "%d", codec->implementation->actual_samples_per_second);
+		switch_event_fire(&event);
+	}
+
+	switch_channel_set_variable(channel, "video_read_codec", codec->implementation->iananame);
+	switch_snprintf(tmp, sizeof(tmp), "%d", codec->implementation->actual_samples_per_second);
+	switch_channel_set_variable(channel, "video_read_rate", tmp);
+
+	session->video_read_codec = codec;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_video_read_codec(switch_core_session_t *session)
+{
+	return session->video_read_codec;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_write_codec(switch_core_session_t *session, switch_codec_t *codec)
+{
+	switch_event_t *event;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char tmp[30];
+
+	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(session->channel, event);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-video-write-codec-name", "%s", codec->implementation->iananame);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-video-write-codec-rate", "%d", codec->implementation->actual_samples_per_second);
+		switch_event_fire(&event);
+	}
+
+	switch_channel_set_variable(channel, "video_write_codec", codec->implementation->iananame);
+	switch_snprintf(tmp, sizeof(tmp), "%d", codec->implementation->actual_samples_per_second);
+	switch_channel_set_variable(channel, "video_write_rate", tmp);
+
+	session->video_write_codec = codec;
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_video_write_codec(switch_core_session_t *session)
+{
+	return session->video_write_codec;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, char *codec_name, char *fmtp,
 													   uint32_t rate, int ms, int channels, uint32_t flags,
 													   const switch_codec_settings_t *codec_settings, switch_memory_pool_t *pool)
