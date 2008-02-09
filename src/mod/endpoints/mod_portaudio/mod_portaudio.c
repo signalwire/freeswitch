@@ -156,7 +156,7 @@ static int dump_info(void);
 static switch_status_t load_config(void);
 static int get_dev_by_name(char *name, int in);
 static int get_dev_by_number(int number, int in);
-static switch_status_t pa_cmd(const char *dest, switch_core_session_t *session, switch_stream_handle_t *stream);
+SWITCH_STANDARD_API(pa_cmd);
 
 /* 
    State methods they get called when the state changes to the specific state 

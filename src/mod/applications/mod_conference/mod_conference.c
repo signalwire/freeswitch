@@ -314,7 +314,7 @@ static uint32_t conference_stop_file(conference_obj_t * conference, file_stop_t 
 static switch_status_t conference_play_file(conference_obj_t * conference, char *file, uint32_t leadin, switch_channel_t *channel, uint8_t async);
 static switch_status_t conference_say(conference_obj_t * conference, const char *text, uint32_t leadin);
 static void conference_list(conference_obj_t * conference, switch_stream_handle_t *stream, char *delim);
-static switch_status_t conf_api_main(const char *buf, switch_core_session_t *session, switch_stream_handle_t *stream);
+SWITCH_STANDARD_API(conf_api_main);
 static switch_status_t audio_bridge_on_ring(switch_core_session_t *session);
 static switch_status_t conference_outcall(conference_obj_t * conference,
 										  char *conference_name,

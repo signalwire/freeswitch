@@ -723,7 +723,7 @@ SWITCH_STANDARD_API(transfer_function)
 	dp = argv[2];
 	context = argv[3];
 
-	if (!(tsession = switch_core_session_locate(tuuid))) {
+	if (switch_strlen_zero(tuuid) || !(tsession = switch_core_session_locate(tuuid))) {
 		stream->write_function(stream, "-ERR No Such Channel!\n");
 		goto done;
 	}
@@ -885,7 +885,7 @@ SWITCH_STANDARD_API(sched_transfer_function)
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (switch_strlen_zero(cmd) || argc < 2 || argc > 5) {
+	if (switch_strlen_zero(cmd) || argc < 2 || argc > 5 || switch_strlen_zero(argv[0])) {
 		stream->write_function(stream, "-USAGE: %s\n", SCHED_TRANSFER_SYNTAX);
 	} else {
 		char *uuid = argv[1];
@@ -928,7 +928,7 @@ SWITCH_STANDARD_API(sched_hangup_function)
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (switch_strlen_zero(cmd) || argc < 1) {
+	if (switch_strlen_zero(cmd) || argc < 1 || switch_strlen_zero(argv[0])) {
 		stream->write_function(stream, "-USAGE: %s\n", SCHED_HANGUP_SYNTAX);
 	} else {
 		char *uuid = argv[1];
@@ -974,7 +974,7 @@ SWITCH_STANDARD_API(uuid_media_function)
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (switch_strlen_zero(cmd) || argc < 1) {
+	if (switch_strlen_zero(cmd) || argc < 1 || switch_strlen_zero(argv[0])) {
 		stream->write_function(stream, "-USAGE: %s\n", MEDIA_SYNTAX);
 	} else {
 		if (!strcasecmp(argv[0], "off")) {
@@ -1049,7 +1049,7 @@ SWITCH_STANDARD_API(sched_broadcast_function)
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (switch_strlen_zero(cmd) || argc < 3) {
+	if (switch_strlen_zero(cmd) || argc < 3 || switch_strlen_zero(argv[0])) {
 		stream->write_function(stream, "-USAGE: %s\n", SCHED_BROADCAST_SYNTAX);
 	} else {
 		switch_media_flag_t flags = SMF_NONE;
@@ -1096,7 +1096,7 @@ SWITCH_STANDARD_API(uuid_hold_function)
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (switch_strlen_zero(cmd) || argc < 1) {
+	if (switch_strlen_zero(cmd) || argc < 1 || switch_strlen_zero(argv[0])) {
 		stream->write_function(stream, "-USAGE: %s\n", HOLD_SYNTAX);
 	} else {
 		if (!strcasecmp(argv[0], "off")) {
@@ -1304,7 +1304,7 @@ SWITCH_STANDARD_API(pause_function)
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (switch_strlen_zero(cmd) || argc < 2) {
+	if (switch_strlen_zero(cmd) || argc < 2 || switch_strlen_zero(argv[0])) {
 		stream->write_function(stream, "-USAGE: %s\n", PAUSE_SYNTAX);
 	} else {
 		char *uuid = argv[0];
@@ -1930,7 +1930,7 @@ SWITCH_STANDARD_API(uuid_setvar_function)
 
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-		if (argc == 3) {
+		if (argc == 3 && !switch_strlen_zero(argv[0])) {
 			char *uuid = argv[0];
 			char *var_name = argv[1];
 			char *var_value = argv[2];
@@ -1976,7 +1976,7 @@ SWITCH_STANDARD_API(uuid_getvar_function)
 
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-		if (argc >= 2) {
+		if (argc >= 2 && !switch_strlen_zero(argv[0])) {
 			char *uuid = argv[0];
 			char *var_name = argv[1];
 			const char *var_value = NULL;
@@ -2026,7 +2026,7 @@ SWITCH_STANDARD_API(uuid_dump_function)
 
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-		if (argc >= 0) {
+		if (argc >= 0 && !switch_strlen_zero(argv[0])) {
 			char *uuid = argv[0];
 			char *format = argv[1];
 
@@ -2085,7 +2085,7 @@ SWITCH_STANDARD_API(global_setvar_function)
 
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, '=', argv, (sizeof(argv) / sizeof(argv[0])));
-		if (argc > 0) {
+		if (argc > 0 && !switch_strlen_zero(argv[0])) {
 			char *var_name = argv[0];
 			char *var_value = argv[1];
 

@@ -364,9 +364,13 @@ void event_handler(switch_event_t *event)
 		char *rpid = switch_event_get_header(event, "orig-rpid");
 		char *call_id = switch_event_get_header(event, "orig-call-id");
 		char *user_agent = switch_event_get_header(event, "user-agent");
-		long expires = (long) switch_timestamp(NULL) + atol(exp_str);
+		long expires = (long) switch_timestamp(NULL);
 		char *profile_name = switch_event_get_header(event, "orig-profile-name");
 		sofia_profile_t *profile = NULL;
+
+		if (exp_str) {
+			expires += atol(exp_str);
+		}
 
 		if (!rpid) {
 			rpid = "unknown";

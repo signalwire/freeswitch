@@ -1206,9 +1206,9 @@ typedef struct switch_stream_handle switch_stream_handle_t;
 typedef switch_status_t (*switch_stream_handle_write_function_t) (switch_stream_handle_t *handle, const char *fmt, ...);
 typedef switch_status_t (*switch_stream_handle_raw_write_function_t) (switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen);
 
-typedef switch_status_t (*switch_api_function_t) (const char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream);
+typedef switch_status_t (*switch_api_function_t) (_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream);
 
-#define SWITCH_STANDARD_API(name) static switch_status_t name (const char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream)
+#define SWITCH_STANDARD_API(name) static switch_status_t name (_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream)
 
 typedef switch_status_t (*switch_input_callback_function_t) (switch_core_session_t *session, void *input,
 															 switch_input_type_t input_type, void *buf, unsigned int buflen);

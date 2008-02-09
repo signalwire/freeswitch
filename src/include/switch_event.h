@@ -156,7 +156,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_set_priority(switch_event_t *event,
   \param header_name the name of the header to read
   \return the value of the requested header
 */
-SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event, char *header_name);
+_Ret_opt_z_ SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event, char *header_name);
 
 /*!
   \brief Retrieve the body value from an event

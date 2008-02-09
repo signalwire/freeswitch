@@ -195,10 +195,10 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string);
 
-static switch_status_t dl_login(const char *arg, switch_core_session_t *session, switch_stream_handle_t *stream);
-static switch_status_t dl_logout(const char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream);
-static switch_status_t dl_pres(const char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream);
-static switch_status_t dl_debug(const char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream);
+SWITCH_STANDARD_API(dl_login);
+SWITCH_STANDARD_API(dl_logout);
+SWITCH_STANDARD_API(dl_pres);
+SWITCH_STANDARD_API(dl_debug);
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
 static switch_status_t channel_on_ring(switch_core_session_t *session);
