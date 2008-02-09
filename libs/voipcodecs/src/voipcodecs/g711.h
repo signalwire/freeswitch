@@ -1,5 +1,5 @@
 /*
- * SpanDSP - a series of DSP components for telephony
+ * VoIPcodecs - a series of DSP components for telephony
  *
  * g711.h - In line A-law and u-law conversion routines
  *
@@ -10,8 +10,9 @@
  * All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the Lesser GNU General Public License version 2.1, as
- * published by the Free Software Foundation.
+ * it under the terms of the GNU General Public License version 2, or
+ * the Lesser GNU General Public License version 2.1, as published by
+ * the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -22,7 +23,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g711.h,v 1.8 2007/12/13 11:31:32 steveu Exp $
+ * $Id: g711.h,v 1.9 2008/02/09 15:32:26 steveu Exp $
  */
 
 /*! \file */

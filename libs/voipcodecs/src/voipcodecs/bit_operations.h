@@ -1,5 +1,5 @@
 /*
- * SpanDSP - a series of DSP components for telephony
+ * VoIPcodecs - a series of DSP components for telephony
  *
  * bit_operations.h - Various bit level operations, such as bit reversal
  *

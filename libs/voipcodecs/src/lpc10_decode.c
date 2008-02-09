@@ -10,8 +10,9 @@
  * All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the Lesser GNU General Public License version 2.1, as
- * published by the Free Software Foundation.
+ * it under the terms of the GNU General Public License version 2, or
+ * the Lesser GNU General Public License version 2.1, as published by
+ * the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,7 +27,7 @@
  * implementation of the LPC-10 2400 bps Voice Coder. They do not
  * exert copyright claims on their code, and it may be freely used.
  *
- * $Id: lpc10_decode.c,v 1.16 2007/11/26 13:28:59 steveu Exp $
+ * $Id: lpc10_decode.c,v 1.18 2008/02/09 15:31:36 steveu Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1079,7 +1080,7 @@ int lpc10_decode_release(lpc10_decode_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-int lpc10_decode(lpc10_decode_state_t *s, int16_t amp[], const uint8_t code[], int quant)
+int lpc10_decode(lpc10_decode_state_t *s, int16_t amp[], const uint8_t code[], int len)
 {
     int voice[2];
     int32_t pitch;
@@ -1089,18 +1090,21 @@ int lpc10_decode(lpc10_decode_state_t *s, int16_t amp[], const uint8_t code[], i
     float rms;
     int i;
     int j;
+    int base;
 
-    /* Decode 54 bits to LPC10_SAMPLES_PER_FRAME speech samples. */
-    for (i = 0;  i < quant;  i++)
+    /* Decode 54 bits in 7 bytes to LPC10_SAMPLES_PER_FRAME speech samples. */
+    len /= 7;
+    for (i = 0;  i < len;  i++)
     {
         lpc10_unpack(&frame, &code[i*7]);
         decode(s, &frame, voice, &pitch, &rms, rc);
         synths(s, voice, &pitch, &rms, rc, speech);
+        base = i*LPC10_SAMPLES_PER_FRAME;
         for (j = 0;  j < LPC10_SAMPLES_PER_FRAME;  j++)
-            amp[i*LPC10_SAMPLES_PER_FRAME + j] = (int16_t) rintf(32768.0f*speech[j]);
+            amp[base + j] = (int16_t) rintf(32768.0f*speech[j]);
     }
 
-    return quant*LPC10_SAMPLES_PER_FRAME;
+    return len*LPC10_SAMPLES_PER_FRAME;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

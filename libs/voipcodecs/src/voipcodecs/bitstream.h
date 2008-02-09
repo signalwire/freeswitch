@@ -1,5 +1,5 @@
 /*
- * SpanDSP - a series of DSP components for telephony
+ * VoIPcodecs - a series of DSP components for telephony
  *
  * bitstream.h - Bitstream composition and decomposition routines.
  *

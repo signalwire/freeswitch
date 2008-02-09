@@ -1,5 +1,5 @@
 /*
- * SpanDSP - a series of DSP components for telephony
+ * VoIPcodecs - a series of DSP components for telephony
  *
  * imaadpcm.c - Conversion routines between linear 16 bit PCM data and
  *		        IMA/DVI/Intel ADPCM format.

@@ -10,8 +10,9 @@
  * All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the Lesser GNU General Public License version 2.1, as
- * published by the Free Software Foundation.
+ * it under the terms of the GNU General Public License version 2, or
+ * the Lesser GNU General Public License version 2.1, as published by
+ * the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,7 +27,7 @@
  * implementation of the LPC-10 2400 bps Voice Coder. They do not
  * exert copyright claims on their code, and it may be freely used.
  *
- * $Id: lpc10_encode.c,v 1.17 2007/11/26 13:28:59 steveu Exp $
+ * $Id: lpc10_encode.c,v 1.19 2008/02/09 15:31:36 steveu Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -368,7 +369,7 @@ int lpc10_encode_release(lpc10_encode_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-int lpc10_encode(lpc10_encode_state_t *s, uint8_t code[], const int16_t amp[], int quant)
+int lpc10_encode(lpc10_encode_state_t *s, uint8_t code[], const int16_t amp[], int len)
 {
     int32_t voice[2];
     int32_t pitch;
@@ -379,7 +380,8 @@ int lpc10_encode(lpc10_encode_state_t *s, uint8_t code[], const int16_t amp[], i
     int i;
     int j;
 
-    for (i = 0;  i < quant;  i++)
+    len /= LPC10_SAMPLES_PER_FRAME;
+    for (i = 0;  i < len;  i++)
     {
         for (j = 0;  j < LPC10_SAMPLES_PER_FRAME;  j++)
             speech[j] = (float) amp[i*LPC10_SAMPLES_PER_FRAME + j]/32768.0f;
@@ -388,7 +390,7 @@ int lpc10_encode(lpc10_encode_state_t *s, uint8_t code[], const int16_t amp[], i
         encode(s, &frame, voice, pitch, rms, rc);
         lpc10_pack(s, &code[7*i], &frame);
     }
-    return quant*7;
+    return len*7;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

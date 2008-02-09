@@ -1,5 +1,5 @@
 /*
- * SpanDSP - a series of DSP components for telephony
+ * VoIPcodecs - a series of DSP components for telephony
  *
  * dc_restore.h - General telephony routines to restore the zero D.C.
  *                level to audio which has a D.C. bias.
@@ -11,7 +11,7 @@
  * All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the Lesser GNU General Public License version 2.1, as
+ * it under the terms of the GNU General Public License version 2, as
  * published by the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful,

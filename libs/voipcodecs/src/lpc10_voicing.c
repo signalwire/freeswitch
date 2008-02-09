@@ -10,8 +10,9 @@
  * All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the Lesser GNU General Public License version 2.1, as
- * published by the Free Software Foundation.
+ * it under the terms of the GNU General Public License version 2, or
+ * the Lesser GNU General Public License version 2.1, as published by
+ * the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,7 +27,7 @@
  * implementation of the LPC-10 2400 bps Voice Coder. They do not
  * exert copyright claims on their code, and it may be freely used.
  *
- * $Id: lpc10_voicing.c,v 1.7 2006/11/30 15:41:47 steveu Exp $
+ * $Id: lpc10_voicing.c,v 1.9 2008/02/09 15:31:36 steveu Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -51,19 +52,19 @@
 #include "lpc10_encdecs.h"
 
 static void vparms(int32_t vwin[],
-                    float *inbuf,
-                    float *lpbuf,
-                    const int32_t buflim[],
-                    int32_t half,
-                    float *dither,
-                    int32_t *mintau,
-                    int32_t *zc, 
-                    int32_t *lbe,
-                    int32_t *fbe,
-                    float *qs,
-                    float *rc1,
-                    float *ar_b,
-                    float *ar_f)
+                   float *inbuf,
+                   float *lpbuf,
+                   const int32_t buflim[],
+                   int32_t half,
+                   float *dither,
+                   int32_t *mintau,
+                   int32_t *zc, 
+                   int32_t *lbe,
+                   int32_t *fbe,
+                   float *qs,
+                   float *rc1,
+                   float *ar_b,
+                   float *ar_f)
 {
     int32_t inbuf_offset;
     int32_t lpbuf_offset;
