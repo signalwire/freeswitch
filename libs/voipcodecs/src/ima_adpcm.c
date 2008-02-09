@@ -1,5 +1,5 @@
 /*
- * SpanDSP - a series of DSP components for telephony
+ * VoIPcodecs - a series of DSP components for telephony
  *
  * ima_adpcm.c - Conversion routines between linear 16 bit PCM data and
  *               IMA/DVI/Intel ADPCM format.
@@ -11,9 +11,8 @@
  * All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2, or
- * the Lesser GNU General Public License version 2.1, as published by
- * the Free Software Foundation.
+ * it under the terms of the Lesser GNU General Public License version 2.1, as
+ * published by the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -43,9 +42,9 @@
 #include <math.h>
 #endif
 
-#include "spandsp/telephony.h"
-#include "spandsp/dc_restore.h"
-#include "spandsp/ima_adpcm.h"
+#include "voipcodecs/telephony.h"
+#include "voipcodecs/dc_restore.h"
+#include "voipcodecs/ima_adpcm.h"
 
 /*
  * Intel/DVI ADPCM coder/decoder.
