@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="libvoipcodecs"
 	ProjectGUID="{CF70F278-3364-4395-A2E1-23501C9B8AD2}"
 	RootNamespace="libvoipcodecs"
 	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -41,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="src; src\voipcodecs; src\msvc"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBvoipcodecs_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBvoipcodecs_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_MATH_H"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -65,6 +66,8 @@
 				ModuleDefinitionFile="src/msvc/voipcodecs.def"
 				GenerateDebugInformation="true"
 				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -84,9 +87,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -118,7 +118,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="src; src\voipcodecs; src\msvc"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBvoipcodecs_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBvoipcodecs_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_MATH_H"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
@@ -142,6 +142,8 @@
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -163,9 +165,6 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -179,47 +178,11 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\src\adsi.c"
+				RelativePath=".\src\bitstream.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\async.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\awgn.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\bert.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\complex_dds.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\complex_filters.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\dds.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\ec_disable_tone.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\echo.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\fax.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\fsk.c"
+				RelativePath=".\src\g711.c"
 				>
 			</File>
 			<File
@@ -235,11 +198,31 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\msvc\gettimeofday.c"
+				RelativePath=".\src\gsm0610_decode.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\hdlc.c"
+				RelativePath=".\src\gsm0610_encode.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\gsm0610_long_term.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\gsm0610_lpc.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\gsm0610_preprocess.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\gsm0610_rpe.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\gsm0610_short_term.c"
 				>
 			</File>
 			<File
@@ -247,15 +230,23 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\logging.c"
+				RelativePath=".\src\lpc10_analyse.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\modem_echo.c"
+				RelativePath=".\src\lpc10_decode.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\noise.c"
+				RelativePath=".\src\lpc10_encode.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\lpc10_placev.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\lpc10_voicing.c"
 				>
 			</File>
 			<File
@@ -263,123 +254,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\playout.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\plc.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\power_meter.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\queue.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\schedule.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\sig_tone.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\super_tone_rx.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\super_tone_tx.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\t30.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\t31.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\t35.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\t38_gateway.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\t38_ifppacket.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\t38_terminal.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\t4.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\testcpuid.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\time_scale.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\tone_detect.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\tone_generate.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\v17rx.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\v17tx.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\v22bis_rx.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\v22bis_tx.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\v27ter_rx.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\v27ter_tx.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\v29rx.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\v29tx.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\v42.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\v42bis.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\v8.c"
+				RelativePath=".\src\vector_int.c"
 				>
 			</File>
 		</Filter>
@@ -389,39 +264,11 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\src\voipcodecs\adsi.h"
+				RelativePath=".\src\voipcodecs\bit_operations.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\voipcodecs\alaw_ulaw.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\arctan2.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\async.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\awgn.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\bert.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\biquad.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\complex.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\complex_filters.h"
+				RelativePath=".\src\voipcodecs\bitstream.h"
 				>
 			</File>
 			<File
@@ -429,39 +276,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\voipcodecs\dds.h"
+				RelativePath=".\src\float_fudge.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\voipcodecs\ec_disable_detector.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\ec_disable_tone.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\echo.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\fax.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\faxfont.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\fir.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\fsk.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\g168models.h"
+				RelativePath=".\src\voipcodecs\g711.h"
 				>
 			</File>
 			<File
@@ -473,7 +292,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\voipcodecs\hdlc.h"
+				RelativePath=".\src\voipcodecs\gsm0610.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\gsm0610_local.h"
 				>
 			</File>
 			<File
@@ -481,19 +304,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\msvc\inttypes.h"
+				RelativePath=".\src\voipcodecs\lpc10.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\voipcodecs\logging.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\modem_echo.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\noise.h"
+				RelativePath=".\src\lpc10_encdecs.h"
 				>
 			</File>
 			<File
@@ -501,155 +316,17 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\voipcodecs\oss.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\playout.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\plc.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\power_meter.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\queue.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\schedule.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\sig_tone.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\super_tone_rx.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\super_tone_tx.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\t30.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\t30_fcf.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\t31.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\t35.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\t38.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\t4.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\t4states.h"
-				>
-			</File>
-			<File
 				RelativePath=".\src\voipcodecs\telephony.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\msvc\tgmath.h"
+				RelativePath=".\src\voipcodecs\vector_int.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\msvc\sys\time.h"
+				RelativePath=".\src\voipcodecs\version.h"
 				>
 			</File>
-			<File
-				RelativePath=".\src\voipcodecs\time_scale.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\timing.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\tone_detect.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\tone_generate.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\msvc\unistd.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\v17rx.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\v17tx.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\v22bis.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\v27ter_rx.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\v27ter_tx.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\v29rx.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\v29tx.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\v42.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\v42bis.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\v8.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\voipcodecs\vector.h"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="Resource Files"
-			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
-			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
-			>
 		</Filter>
 	</Files>
 	<Globals>
