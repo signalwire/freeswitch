@@ -216,8 +216,8 @@ class FreeswitchEventListenerFactory(ClientFactory):
 
         if self.num_attempts < 10000:
             self.num_attempts += 1            
-            print "Connection refused, retrying attempt #%s in 5 seconds" % \
-                  (self.num_attempts)
+            print "Connection to %s:%s refused, retrying attempt #%s in " \
+                  "5 seconds" % (self.host, self.port, self.num_attempts)
             return reactor.callLater(5, self.connect)
         else:
             print "clientConnectionFailed! conn=%s, reason=%s" % (connector,
