@@ -273,6 +273,15 @@ gnu)
         COMP_VENDOR_CFLAGS="-mmmx $COMP_VENDOR_CFLAGS"
     fi
     ;;
+sun)
+    COMP_VENDOR_CFLAGS="-xc99=all -mt -xCC -errwarn=%all -xvpara"
+    if test "$enable_sse" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-native -fast $COMP_VENDOR_CFLAGS"
+    fi
+    if test "$enable_mmx" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-native -fast $COMP_VENDOR_CFLAGS"
+    fi
+    ;;
 *)
     COMP_VENDOR_CFLAGS="-std=c99 -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes"
     ;;
