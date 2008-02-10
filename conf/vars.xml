@@ -16,6 +16,52 @@
        containing the "subscriptions" table.
        used by: dingaling.conf.xml enum.conf.xml 
   --> 
+  <!-- 
+       Examples of codec options: (module must be compiled and loaded)
+       
+       codecname[@8000h|16000h|32000h[@XXi]]
+       
+       XX is the frame size must be multples allowed for the codec
+       FreeSWITCH can support 10-120ms on some codecs. 
+       We do not support exceeding the MTU of the RTP packet.
+
+
+       iLBC@30i         - iLBC using mode=30 which will win in all cases.
+       DVI4@8000h@20i   - IMA ADPCM 8kHz using 20ms ptime. (multiples of 10)
+       DVI4@16000h@40i  - IMA ADPCM 16kHz using 40ms ptime. (multiples of 10)
+       speex@8000h@20i  - Speex 8kHz using 20ms ptime.
+       speex@16000h@20i - Speex 16kHz using 20ms ptime.
+       speex@32000h@20i - Speex 32kHz using 20ms ptime.
+       GSM@40i          - GSM 8kHz using 40ms ptime. (GSM is done in multiples of 20, Default is 20ms)
+       G722             - G722 16kHz using default 20ms ptime. (multiples of 10)
+       PCMU             - G711 8kHz ulaw using default 20ms ptime. (multiples of 10)
+       PCMA             - G711 8kHz alaw using default 20ms ptime. (multiples of 10)
+       G726-16          - G726 16kbit adpcm using default 20ms ptime. (multiples of 10)
+       G726-24          - G726 24kbit adpcm using default 20ms ptime. (multiples of 10)
+       G726-32          - G726 32kbit adpcm using default 20ms ptime. (multiples of 10)
+       G726-40          - G726 40kbit adpcm using default 20ms ptime. (multiples of 10)
+       AAL2-G726-16     - Same as G726-16 but using AAL2 packing. (multiples of 10)
+       AAL2-G726-24     - Same as G726-24 but using AAL2 packing. (multiples of 10)
+       AAL2-G726-32     - Same as G726-32 but using AAL2 packing. (multiples of 10)
+       AAL2-G726-40     - Same as G726-40 but using AAL2 packing. (multiples of 10)
+       LPC              - LPC10 using 90ms ptime (only supports 90ms at this time in FreeSWITCH)
+       L16              - L16 isn't recommended for VoIP but you can do it. L16 can exceed the MTU rather quickly.
+       
+       These are the passthru audio codecs:
+       
+       G729             - G729 in passthru mode. (mod_g729)
+       G723             - G723.1 in passthru mode. (mod_g723_1)
+       AMR              - AMR in passthru mode. (mod_amr)
+       
+       These are the passthru video codecs: (mod_h26x)
+       
+       H261             - H.261 Video
+       H263             - H.263 Video
+       H263-1998        - H.263-1998 Video
+       H263-2000        - H.263-2000 Video
+       H264             - H.264 Video
+
+  -->
   <X-PRE-PROCESS cmd="set" data="global_codec_prefs=G722,PCMU@20i,PCMA@20i"/>
   <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=PCMU@20i,PCMA@20i"/>
   <X-PRE-PROCESS cmd="set" data="xmpp_client_profile=xmppc"/>
