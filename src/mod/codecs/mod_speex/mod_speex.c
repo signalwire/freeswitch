@@ -271,9 +271,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_speex_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_CODEC(codec_interface, "Speex");
     for (counta = 1; counta <= 3; counta++) {
-        for (countb = 6; countb > 0; countb--) {
+        for (countb = 1; countb > 0; countb--) {
             switch_core_codec_add_implementation(pool, codec_interface,
-                                                 SWITCH_CODEC_TYPE_AUDIO, ianacode[counta], "speex", NULL, rate, rate, bps[counta],
+                                                 SWITCH_CODEC_TYPE_AUDIO, ianacode[counta], "SPEEX", NULL, rate, rate, bps[counta],
                                                  mpf * countb, spf * countb, bpf * countb, ebpf * countb, 1, 1, 6,
                                                  switch_speex_init, switch_speex_encode, switch_speex_decode, switch_speex_destroy);
         }
