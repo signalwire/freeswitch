@@ -264,7 +264,7 @@ static switch_status_t switch_speex_destroy(switch_codec_t *codec)
 SWITCH_MODULE_LOAD_FUNCTION(mod_speex_load)
 {
 	switch_codec_interface_t *codec_interface;
-    int mpf = 10000, spf = 80, bpf = 160, ebpf = 0, rate = 8000, counta, countb;
+    int mpf = 20000, spf = 160, bpf = 320, ebpf = 0, rate = 8000, counta, countb;
     switch_payload_t ianacode[4] = { 0, 98, 99, 103};
     int bps[4] = { 0, 24600, 42200, 44000 };
 	/* connect my internal structure to the blank pointer passed to me */
