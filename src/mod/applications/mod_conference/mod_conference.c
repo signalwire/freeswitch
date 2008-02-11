@@ -1646,9 +1646,9 @@ static void conference_loop_output(conference_member_t * member)
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(member->session);
 	uint32_t interval = read_codec->implementation->microseconds_per_frame / 1000;
 	uint32_t samples = switch_bytes_per_frame(member->conference->rate, interval);
-	uint32_t flush_len = switch_bytes_per_frame(member->conference->rate, member->conference->interval) * 4;
     uint32_t csamples = samples;
 	uint32_t tsamples = member->orig_read_codec->implementation->samples_per_frame;
+	uint32_t flush_len = member->read_codec.implementation->bytes_per_frame * 4;
 	uint32_t low_count = 0, bytes = samples * 2;
 	call_list_t *call_list = NULL, *cp = NULL;
     
