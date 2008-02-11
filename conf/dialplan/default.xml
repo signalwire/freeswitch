@@ -238,6 +238,22 @@
       </condition>
     </extension>
 
+    <extension name="video_record">
+      <condition field="destination_number" expression="^9993$">
+	<action application="answer"/>
+	<action application="record_fsv" data="/tmp/testrecord.fsv"/>
+      </condition>
+    </extension>
+
+    <extension name="video_playback">
+      <condition field="destination_number" expression="^9994$">
+	<action application="answer"/>
+	<action application="play_fsv" data="/tmp/testrecord.fsv"/>
+      </condition>
+    </extension>
+
+
+
     <extension name="delay_echo">
       <condition field="destination_number" expression="^9995$">
 	<action application="answer"/>

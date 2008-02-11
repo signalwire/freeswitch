@@ -10,6 +10,7 @@ applications/mod_voicemail
 applications/mod_limit
 applications/mod_expr
 applications/mod_esf
+applications/mod_fsv
 #applications/mod_soundtouch
 #applications/mod_rss
 #asr_tts/mod_cepstral
@@ -21,7 +22,7 @@ codecs/mod_g723_1
 codecs/mod_amr
 codecs/mod_g729
 codecs/mod_gsm
-#codecs/mod_h26x
+codecs/mod_h26x
 #codecs/mod_voipcodecs
 codecs/mod_ilbc
 codecs/mod_l16

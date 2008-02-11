@@ -44,6 +44,7 @@
     <load module="mod_voicemail"/>
     <load module="mod_limit"/>
     <load module="mod_esf"/>
+    <load module="mod_fsv"/>
 
     <!-- Dialplan Interfaces -->
     <!-- <load module="mod_dialplan_directory"/> -->

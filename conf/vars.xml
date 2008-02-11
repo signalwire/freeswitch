@@ -62,7 +62,7 @@
        H264             - H.264 Video
 
   -->
-  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=G722,PCMU@20i,PCMA@20i"/>
+  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=G722,PCMU@20i,PCMA@20i,H263"/>
   <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=PCMU@20i,PCMA@20i"/>
   <X-PRE-PROCESS cmd="set" data="xmpp_client_profile=xmppc"/>
   <X-PRE-PROCESS cmd="set" data="xmpp_server_profile=xmpps"/>
