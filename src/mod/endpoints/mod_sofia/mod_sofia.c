@@ -1564,7 +1564,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	switch_caller_profile_t *caller_profile = NULL;
 	private_object_t *tech_pvt = NULL;
 	switch_channel_t *nchannel;
-	char *host, *dest_to;
+	char *host = NULL, *dest_to = NULL;
 
 	*new_session = NULL;
 
@@ -1679,8 +1679,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 		if ((dest_to = strchr(dest, '^'))) {
 			*dest_to++ = '\0';
-			tech_pvt->dest_to = switch_core_session_alloc(nsession, strlen(dest_to) + 5);
-			switch_snprintf(tech_pvt->dest_to, strlen(dest_to) + 5, "sip:%s", dest_to);
 		}
 
 		if ((host = strchr(dest, '%'))) {
@@ -1696,12 +1694,13 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
 				goto error;
 			}
-		} else if (!strchr(dest, '@')) {
+		} else if (!(host = strchr(dest, '@'))) {
 			char buf[128];
 			tech_pvt->e_dest = switch_core_session_strdup(nsession, dest);
 			if (sofia_reg_find_reg_url(profile, dest, profile_name, buf, sizeof(buf))) {
 				tech_pvt->dest = switch_core_session_strdup(nsession, buf);
 				tech_pvt->local_url = switch_core_session_sprintf(nsession, "%s@%s", dest, profile_name);
+				host = profile_name;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", dest, profile_name);
 				cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
@@ -1712,6 +1711,15 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			switch_snprintf(tech_pvt->dest, strlen(dest) + 5, "sip:%s", dest);
 		}
 	}
+
+	if (dest_to) {
+		if (strchr(dest_to, '@')) {
+			tech_pvt->dest_to = switch_core_session_sprintf(nsession, "sip:%s", dest_to);
+		} else {
+			tech_pvt->dest_to = switch_core_session_sprintf(nsession, "sip:%s@%s", dest_to, host);
+		}
+	}
+
 
 	if (!tech_pvt->dest_to) {
 		tech_pvt->dest_to = tech_pvt->dest;
