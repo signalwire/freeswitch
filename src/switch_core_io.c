@@ -674,7 +674,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 				switch (status) {
 				case SWITCH_STATUS_RESAMPLE:
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "fixme 2\n");
+					//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "fixme 2\n");
 				case SWITCH_STATUS_SUCCESS:
 					session->enc_write_frame.codec = session->write_codec;
 					session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t);
@@ -749,9 +749,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								session->enc_write_frame.seq = frame->seq;
 								session->enc_write_frame.payload = session->write_codec->implementation->ianacode;
 								write_frame = &session->enc_write_frame;
-								if (!session->read_resampler) {
+								if (!session->write_resampler) {
 									switch_mutex_lock(session->resample_mutex);
-									status = switch_resample_create(&session->read_resampler,
+									status = switch_resample_create(&session->write_resampler,
 																	frame->codec->implementation->actual_samples_per_second,
 																	frame->codec->implementation->bytes_per_frame,
 																	session->write_codec->implementation->actual_samples_per_second,
@@ -774,10 +774,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								write_frame = &session->enc_write_frame;
 								break;
 							case SWITCH_STATUS_NOOP:
-								if (session->read_resampler) {
+								if (session->write_resampler) {
 									switch_mutex_lock(session->resample_mutex);
-									switch_resample_destroy(&session->read_resampler);
-									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deactivating read resampler\n");
+									switch_resample_destroy(&session->write_resampler);
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deactivating write resampler\n");
 									switch_mutex_unlock(session->resample_mutex);
 								}
 								enc_frame->codec = session->write_codec;
