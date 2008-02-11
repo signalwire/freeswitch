@@ -46,7 +46,7 @@ typedef enum {
 
 static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t xexten, switch_caller_extension_t **extension)
 {
-	switch_xml_t xcond, xaction;
+	switch_xml_t xcond, xaction, xexpression;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *exten_name = (char *) switch_xml_attr_soft(xexten, "name");
 	int proceed = 0;
@@ -66,8 +66,12 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 
 		field = (char *) switch_xml_attr(xcond, "field");
 
-		expression = (char *) switch_xml_attr_soft(xcond, "expression");
-		
+		if ((xexpression = switch_xml_child(xcond, "expression"))) {
+			expression = switch_str_nil(xexpression->txt);
+		} else {
+			expression = (char *) switch_xml_attr_soft(xcond, "expression");
+		}
+
 		if ((expression_expanded = switch_channel_expand_variables(channel, expression)) == expression) {
 			expression_expanded = NULL;
 		} else {
