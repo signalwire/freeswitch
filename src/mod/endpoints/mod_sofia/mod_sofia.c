@@ -1382,6 +1382,8 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	char *domain = NULL;
 	char *profile_name = NULL;
 	char *p;
+	sofia_profile_t *profile = NULL;
+
 
 	if (!cmd) {
 		stream->write_function(stream, "%s", "");
@@ -1409,7 +1411,6 @@ SWITCH_STANDARD_API(sofia_contact_function)
 
 	if (user && profile_name) {
 		char *sql;
-		sofia_profile_t *profile;
 		
 		if (!(profile = sofia_glue_find_profile(profile_name))) {
 			profile_name = domain;
@@ -1449,6 +1450,11 @@ SWITCH_STANDARD_API(sofia_contact_function)
 
 end:
 	switch_safe_free(data);
+
+	if (profile) {
+		sofia_glue_release_profile(profile);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
