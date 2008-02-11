@@ -171,7 +171,7 @@ static void event_handler(switch_event_t *event)
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Multicast-Sender", "%s", globals.hostname);
 			if (switch_event_serialize(event, &packet, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 				memcpy(buf, &globals.host_hash, sizeof(globals.host_hash));
-				switch_copy_string(buf + sizeof(globals.host_hash), packet, sizeof(buf) - sizeof(globals.host_hash));
+				switch_copy_string(buf + sizeof(globals.host_hash), packet, MULTICAST_BUFFSIZE - sizeof(globals.host_hash));
 				len = strlen(packet) + sizeof(globals.host_hash);;
 				//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT\n--------------------------------\n%s\n", buf);
 				switch_socket_sendto(globals.udp_socket, globals.addr, 0, buf, &len);
@@ -270,7 +270,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 	globals.running = 1;
 	while (globals.running == 1) {
 		char *myaddr;
-		size_t len = sizeof(buf);
+		size_t len = MULTICAST_BUFFSIZE;
 		memset(buf, 0, len);
 
 		switch_sockaddr_ip_get(&myaddr, globals.addr);
