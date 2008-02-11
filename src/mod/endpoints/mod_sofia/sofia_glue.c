@@ -1065,6 +1065,9 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 			tech_pvt->video_read_frame.codec = &tech_pvt->video_read_codec;
 			
 			tech_pvt->video_fmtp_out = switch_core_session_strdup(tech_pvt->session, tech_pvt->video_write_codec.fmtp_out);
+
+			tech_pvt->video_write_codec.agreed_pt = tech_pvt->video_agreed_pt;
+			tech_pvt->video_read_codec.agreed_pt = tech_pvt->video_agreed_pt;
 			switch_core_session_set_video_read_codec(tech_pvt->session, &tech_pvt->video_read_codec);
 			switch_core_session_set_video_write_codec(tech_pvt->session, &tech_pvt->video_write_codec);
 		}
@@ -1137,6 +1140,9 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 					  );
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 	
+	tech_pvt->write_codec.agreed_pt = tech_pvt->agreed_pt;
+	tech_pvt->read_codec.agreed_pt = tech_pvt->agreed_pt;
+
 	switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
 	switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
 	tech_pvt->fmtp_out = switch_core_session_strdup(tech_pvt->session, tech_pvt->write_codec.fmtp_out);
@@ -1903,6 +1909,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_VIDEO_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
 						switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_VIDEO_PORT_VARIABLE, tmp);
 						switch_channel_set_variable(tech_pvt->channel, "sip_video_fmtp", tech_pvt->video_rm_fmtp);
+						switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->video_agreed_pt);
+						switch_channel_set_variable(tech_pvt->channel, "sip_video_pt", tmp);
                         break;
 					} else {
 						vmatch = 0;

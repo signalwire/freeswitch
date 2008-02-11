@@ -216,12 +216,13 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	switch_frame_t write_frame = {0}, vid_frame = {0};
 	int fd = -1;
 	int bytes;
-	switch_codec_t *read_codec = NULL, codec = {0}, vid_codec = {0};
+	switch_codec_t *read_codec = NULL, codec = {0}, vid_codec = {0}, *read_vid_codec;
 	unsigned char *aud_buffer;
 	unsigned char *vid_buffer;
 	struct file_header h;
 	uint32_t ts = 0, last = 0;	
 	switch_timer_t timer = {0};
+	switch_payload_t pt = 0;
 
 	aud_buffer = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	vid_buffer = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
@@ -243,6 +244,10 @@ SWITCH_STANDARD_APP(play_fsv_function)
 
 	switch_channel_set_variable(channel, "sip_force_video_fmtp", h.video_fmtp);
 	switch_channel_answer(channel);
+	
+	if ((read_vid_codec = switch_core_session_get_video_read_codec(session))) {
+		pt = read_vid_codec->agreed_pt;
+	}
 
 	write_frame.codec = &codec;
 	write_frame.data = aud_buffer;
@@ -304,7 +309,9 @@ SWITCH_STANDARD_APP(play_fsv_function)
 			}
 			
 			ts = ntohl(h->ts);
-			h->pt = vid_codec.implementation->ianacode;
+			if (pt) {
+				h->pt = pt;
+			}
 			if (switch_channel_test_flag(channel, CF_VIDEO)) {
 				switch_core_session_write_video_frame(session, &vid_frame, -1, 0);
 			}

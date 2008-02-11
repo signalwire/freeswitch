@@ -509,6 +509,7 @@ struct switch_codec {
 	switch_memory_pool_t *memory_pool;
 	/*! private data for the codec module to store handle specific info */
 	void *private_info;
+	switch_payload_t agreed_pt;
 };
 
 /*! \brief A table of settings and callbacks that define a paticular implementation of a codec */
