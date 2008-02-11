@@ -154,6 +154,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t * thread,
 	char *tmp, *sqlbuf = (char *) malloc(sql_len);
 	char *sql;
 	switch_size_t newlen;
+	int lc = 0;
 
 	switch_assert(sqlbuf);
 
@@ -209,6 +210,11 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t * thread,
 			nothing_in_queue = 0;
 			len = 0;
 			*sqlbuf = '\0';
+		}
+
+		if (++lc == 300000) {
+			switch_core_db_exec(sql_manager.db, "vacuum;", NULL, NULL, NULL);
+			lc = 0;
 		}
 
 		if (nothing_in_queue) {
@@ -394,6 +400,11 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 		switch_core_db_exec(sql_manager.db, "drop table calls", NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, "drop table interfaces", NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, "drop table tasks", NULL, NULL, NULL);
+		switch_core_db_exec(sql_manager.db, "PRAGMA synchronous=OFF;", NULL, NULL, NULL);
+		switch_core_db_exec(sql_manager.db, "PRAGMA count_changes=OFF;", NULL, NULL, NULL);
+		switch_core_db_exec(sql_manager.db, "PRAGMA cache_size=8000", NULL, NULL, NULL);
+		switch_core_db_exec(sql_manager.db, "PRAGMA temp_store=MEMORY;", NULL, NULL, NULL);
+
 		switch_core_db_exec(sql_manager.db, create_channels_sql, NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, create_calls_sql, NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, create_interfaces_sql, NULL, NULL, NULL);
