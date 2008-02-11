@@ -63,18 +63,6 @@
 	<action application="db" data="insert/last_dial/global/${uuid}"/>
       </condition>
     </extension>
-    <!-- This kinda breaks blind transfers back to ourself. -->
-    <!--
-	<extension name="refer">
-	<condition field="${sip_refer_to}" expression="<sip:${destination_number}@$${domain}>"/>
-	<condition field="${sip_refer_to}" expression="<sip:(.*)@(.*)>">
-	<action application="set" data="refer_user=$1"/>
-	<action application="set" data="refer_domain=$2"/>
-	<action application="info"/>
-	<action application="bridge" data="sofia/${use_profile}/${refer_user}@${refer_domain}"/>
-	</condition>
-	</extension>
-    -->
 
     <extension name="eavesdrop">
       <condition field="destination_number" expression="^88(.*)$|^\*0(.*)$">
@@ -165,26 +153,6 @@
     </extension>
 
     <!--
-	This is an example of how to overide the RURI on an outgoing invite to a registered contact.
-    -->
-    <!--
-    <extension name="ruri">
-      <condition field="destination_number" expression="^ruri$">
-	<action application="bridge" data="sofia/${ruri_profile}/${ruri_user}${regex(${sofia_contact(${ruri_contact})}|^[^\@]+(.*)|%1)}"/>
-      </condition>
-    </extension>
-
-    <extension name="7004">
-      <condition field="destination_number" expression="^7004$">
-	<action application="set" data="ruri_profile=default"/>
-	<action application="set" data="ruri_user=2000"/>
-	<action application="set" data="ruri_contact=1001@$${domain}"/>
-	<action application="execute_extension" data="ruri"/>
-      </condition>
-    </extension>
-    -->
-
-    <!--
 	start a dynamic conference with the settings of the "default" conference profile in conference.conf.xml
     -->                                                                                                                                                       
     <extension name="conferences">                                                                                                                           
@@ -272,8 +240,6 @@
       </condition>
     </extension>
 
-
-
     <extension name="delay_echo">
       <condition field="destination_number" expression="^9995$">
 	<action application="answer"/>
@@ -314,7 +280,36 @@
     </extension>
 
     <X-PRE-PROCESS cmd="include" data="extensions/*.xml"/>
-
+    <!--
+    <extension name="refer">
+      <condition field="${sip_refer_to}" expression="<sip:${destination_number}@$${domain}>"/>
+      <condition field="${sip_refer_to}" expression="<sip:(.*)@(.*)>">
+	<action application="set" data="refer_user=$1"/>
+	<action application="set" data="refer_domain=$2"/>
+	<action application="info"/>
+	<action application="bridge" data="sofia/${use_profile}/${refer_user}@${refer_domain}"/>
+      </condition>
+    </extension>
+    -->
+    <!--
+	This is an example of how to overide the RURI on an outgoing invite to a registered contact.
+    -->
+    <!--
+    <extension name="ruri">
+      <condition field="destination_number" expression="^ruri$">
+	<action application="bridge" data="sofia/${ruri_profile}/${ruri_user}${regex(${sofia_contact(${ruri_contact})}|^[^\@]+(.*)|%1)}"/>
+      </condition>
+    </extension>
+    
+    <extension name="7004">
+      <condition field="destination_number" expression="^7004$">
+	<action application="set" data="ruri_profile=default"/>
+	<action application="set" data="ruri_user=2000"/>
+	<action application="set" data="ruri_contact=1001@$${domain}"/>
+	<action application="execute_extension" data="ruri"/>
+      </condition>
+    </extension>
+    -->
     <extension name="enum">
       <condition field="destination_number" expression="^(.*)$">
 	<action application="unset" data="sip_secure_media"/>
