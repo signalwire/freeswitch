@@ -10,8 +10,8 @@
 	<param name="password" value="%%PASSWORD%%"/>
 	<param name="expire-seconds" value="600"/>
 	<param name="register" value="true"/>
-	<param name="proxy" value="208.64.252.122"/>
-	<param name="register-proxy" value="208.64.252.122"/>
+	<param name="proxy" value="sip.intelefone.net"/>
+	<param name="register-proxy" value="sip.intelefone.net"/>
 	<param name="retry_seconds" value="30"/>
 	<param name="extension" value="%%USERNAME%%"/>
 	<param name="context" value="public"/>
