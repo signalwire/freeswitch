@@ -13,7 +13,7 @@
 	<param name="proxy" value="208.64.252.122"/>
 	<param name="register-proxy" value="208.64.252.122"/>
 	<param name="retry_seconds" value="30"/>
-	<param name="extension" value="18186981869"/>
+	<param name="extension" value="%%USERNAME%%"/>
 	<param name="context" value="public"/>
       </gateway>
     </gateways>
