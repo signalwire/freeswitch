@@ -66,7 +66,8 @@ $(SRC)/isdn/5ESSStateNT.c \
 $(SRC)/isdn/5ESSStateTE.c \
 $(SRC)/isdn/Q932mes.c \
 $(SRC)/zap_zt.c \
-$(SRC)/zap_wanpipe.c
+$(SRC)/zap_wanpipe.c\
+$(SRC)/ss7_boost_client.c
 
 OBJS=\
 $(SRC)/hashtable.o \
@@ -104,7 +105,8 @@ $(SRC)/isdn/5ESSStateNT.o \
 $(SRC)/isdn/5ESSStateTE.o \
 $(SRC)/isdn/Q932mes.o \
 $(SRC)/zap_zt.o \
-$(SRC)/zap_wanpipe.o
+$(SRC)/zap_wanpipe.o\
+$(SRC)/ss7_boost_client.o
 
 #SRCS=$(shell echo $(OBJS) | sed "s/\.o/\.c/g")
 
@@ -129,6 +131,7 @@ $(SRC)/include/zap_threadmutex.h \
 $(SRC)/include/zap_types.h \
 $(SRC)/include/zap_wanpipe.h \
 $(SRC)/include/zap_zt.h \
+$(SRC)/include/ss7_boost_client.h \
 $(SRC)/isdn/include/mfifo.h \
 $(SRC)/isdn/include/national.h \
 $(SRC)/isdn/include/DMS.h \
@@ -146,6 +149,11 @@ MYLIB=libopenzap.a
 LIBPRIA=libpri.a
 LIBPRI=./libpri
 TMP=-I$(LIBPRI) -I$(SRC)/include -I./src -w
+
+SCTP_H=$(shell ls /usr/include/netinet/sctp.h 2>/dev/null)
+ifneq ($(SCTP_H),)
+CFLAGS += -DSS7BC_USE_SCTP
+endif
 
 PIKA_DIR=$(shell ls -d /usr/include/pika 2>/dev/null)
 PIKA_LIB=$(shell ls /usr/lib/libpikahmpapi.so 2>/dev/null)
