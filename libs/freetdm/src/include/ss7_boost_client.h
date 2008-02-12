@@ -44,7 +44,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#ifdef SS7BC_USE_SCTP
 #include <netinet/sctp.h>
+#endif
 #include <arpa/inet.h>
 #include <stdarg.h>
 #include <netdb.h>
@@ -109,8 +111,10 @@ typedef struct ss7bc_connection ss7bc_connection_t;
 /* disable nagle's algorythm */
 static inline void sctp_no_nagle(int socket)
 {
+#ifdef SS7BC_USE_SCTP
     int flag = 1;
     setsockopt(socket, IPPROTO_SCTP, SCTP_NODELAY, (char *) &flag, sizeof(int));
+#endif
 }
 
 int ss7bc_connection_close(ss7bc_connection_t *mcon);
