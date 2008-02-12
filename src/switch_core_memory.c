@@ -35,6 +35,7 @@
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 /*#define LOCK_MORE*/
+/*#define PER_POOL_LOCK 1*/
 
 static struct {
 	switch_mutex_t *mem_lock;
@@ -256,8 +257,30 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memor
 	if (switch_queue_trypop(memory_manager.pool_recycle_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 		*pool = (switch_memory_pool_t *) pop;
 	} else {
+#ifdef PER_POOL_LOCK
+		apr_allocator_t *my_allocator = NULL;
+        apr_thread_mutex_t *my_mutex;
+
+		if ((apr_allocator_create(&my_allocator)) != APR_SUCCESS) {
+			return SWITCH_STATUS_MEMERR;
+		}
+
+		if ((apr_pool_create_ex(pool, NULL, NULL, my_allocator)) != APR_SUCCESS) {
+			apr_allocator_destroy(my_allocator);
+			my_allocator = NULL;
+			return SWITCH_STATUS_MEMERR;
+		}
+
+		if ((apr_thread_mutex_create(&my_mutex, APR_THREAD_MUTEX_DEFAULT, *pool)) != APR_SUCCESS) {
+			return SWITCH_STATUS_MEMERR;
+		}
+
+		apr_allocator_mutex_set(my_allocator, my_mutex);
+		apr_allocator_owner_set(my_allocator, *pool);
+#else
 		apr_pool_create(pool, NULL);
 		switch_assert(*pool != NULL);
+#endif
 	}
 
 #ifdef DEBUG_ALLOC2
@@ -358,10 +381,14 @@ static void *SWITCH_THREAD_FUNC pool_thread(switch_thread_t * thread, void *obj)
 				}
 				
 				pool = (switch_memory_pool_t *) pop;
+#if PER_POOL_LOCK
+				apr_pool_destroy(pool);
+#else
 				apr_pool_clear(pool);
 				if (switch_queue_trypush(memory_manager.pool_recycle_queue, pool) != SWITCH_STATUS_SUCCESS) {
 					apr_pool_destroy(pool);
 				}
+#endif
 				pool = NULL;
 				x--;
 			}
@@ -403,12 +430,35 @@ switch_memory_pool_t *switch_core_memory_init(void)
 {
 	switch_thread_t *thread;
     switch_threadattr_t *thd_attr;
-
+#ifdef PER_POOL_LOCK
+	apr_allocator_t *my_allocator = NULL;
+	apr_thread_mutex_t *my_mutex;
+#endif
 
 	memset(&memory_manager, 0, sizeof(memory_manager));
 
+#ifdef PER_POOL_LOCK
+		if ((apr_allocator_create(&my_allocator)) != APR_SUCCESS) {
+			abort();
+		}
+
+		if ((apr_pool_create_ex(&memory_manager.memory_pool, NULL, NULL, my_allocator)) != APR_SUCCESS) {
+			apr_allocator_destroy(my_allocator);
+			my_allocator = NULL;
+			abort();
+		}
+
+		if ((apr_thread_mutex_create(&my_mutex, APR_THREAD_MUTEX_DEFAULT, memory_manager.memory_pool)) != APR_SUCCESS) {
+			abort();
+		}
+
+		apr_allocator_mutex_set(my_allocator, my_mutex);
+		apr_allocator_owner_set(my_allocator, memory_manager.memory_pool);
+#else
 	apr_pool_create(&memory_manager.memory_pool, NULL);
 	switch_assert(memory_manager.memory_pool != NULL);
+#endif
+
 	switch_mutex_init(&memory_manager.mem_lock, SWITCH_MUTEX_NESTED, memory_manager.memory_pool);
 	switch_queue_create(&memory_manager.pool_queue, 50000, memory_manager.memory_pool);
 	switch_queue_create(&memory_manager.pool_recycle_queue, 50000, memory_manager.memory_pool);
