@@ -282,8 +282,11 @@
     <X-PRE-PROCESS cmd="include" data="extensions/*.xml"/>
     <!--
     <extension name="refer">
-      <condition field="${sip_refer_to}" expression="<sip:${destination_number}@$${domain}>"/>
-      <condition field="${sip_refer_to}" expression="<sip:(.*)@(.*)>">
+      <condition field="${sip_refer_to}">
+	<expression><![CDATA[<sip:${destination_number}@$${domain}>]]></expression>
+      </condition>
+      <condition field="${sip_refer_to}">
+	<expression><![CDATA[<sip:(.*)@(.*)>]]></expression>
 	<action application="set" data="refer_user=$1"/>
 	<action application="set" data="refer_domain=$2"/>
 	<action application="info"/>
