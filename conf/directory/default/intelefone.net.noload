@@ -1,0 +1,25 @@
+<!-- This is a provider that has an authorization name and a username. -->
+<include>
+  <user id="%%AUTHUSERNAME%%">
+    <gateways>
+      <gateway name="sip.intelefone.net">
+	<param name="from-user" value="%%USERNAME%%"/>
+	<param name="from-domain" value="sip.intelefone.net"/>
+	<param name="username" value="%%AUTHUSERNAME%%"/>
+	<param name="realm" value="U-Phone"/>
+	<param name="password" value="%%PASSWORD%%"/>
+	<param name="expire-seconds" value="600"/>
+	<param name="register" value="true"/>
+	<param name="proxy" value="208.64.252.122"/>
+	<param name="register-proxy" value="208.64.252.122"/>
+	<param name="retry_seconds" value="30"/>
+	<param name="extension" value="18186981869"/>
+	<param name="context" value="public"/>
+      </gateway>
+    </gateways>
+    <params>
+      <param name="password" value="%%PASSWORD%%"/>
+    </params>
+  </user>
+</include>
+
