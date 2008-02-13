@@ -878,9 +878,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_session(switch_core_sessi
 typedef struct {
 	switch_core_session_t *session;
 	teletone_generation_session_t ts;
+	switch_queue_t *digit_queue;
     switch_buffer_t *audio_buffer;
 	switch_mutex_t *mutex;
 	int read;
+	int ready;
 } switch_inband_dtmf_generate_t;
 
 static int teletone_dtmf_generate_handler(teletone_generation_session_t * ts, teletone_tone_map_t * map)
@@ -902,21 +904,35 @@ static switch_status_t generate_on_dtmf(switch_core_session_t *session, const sw
 {
     switch_channel_t *channel = switch_core_session_get_channel(session);
     switch_media_bug_t *bug = switch_channel_get_private(channel, "dtmf_generate");
-    
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
     if (bug) {
         switch_inband_dtmf_generate_t *pvt = (switch_inband_dtmf_generate_t *) switch_core_media_bug_get_user_data(bug);
         
         if (pvt) {
-			char buf[2] = "";
 			switch_mutex_lock(pvt->mutex);
-			buf[0] = dtmf->digit;
-			teletone_run(&pvt->ts, buf);
+			if (pvt->ready) {
+				switch_dtmf_t *dt = NULL;
+				switch_zmalloc(dt, sizeof(*dt));
+				*dt = *dtmf;
+				if (switch_queue_trypush(pvt->digit_queue, dt) == SWITCH_STATUS_SUCCESS) {
+					dt = NULL;
+					/* 
+					   SWITCH_STATUS_FALSE indicates pretend there never was a DTMF
+					   since we will be generating it inband now.
+					*/
+					status = SWITCH_STATUS_FALSE;
+				} else {
+					free(dt);
+				}
+			}
 			switch_mutex_unlock(pvt->mutex);
-			return SWITCH_STATUS_FALSE;
 		}
 	}
-	return SWITCH_STATUS_SUCCESS;
+
+	return status;
 }
+
 
 static switch_bool_t inband_dtmf_generate_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
@@ -929,37 +945,63 @@ static switch_bool_t inband_dtmf_generate_callback(switch_media_bug_t *bug, void
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT:
 		{
+			switch_queue_create(&pvt->digit_queue, 100, switch_core_session_get_pool(pvt->session));
 			switch_buffer_create_dynamic(&pvt->audio_buffer, 512, 1024, 0);
 			teletone_init_session(&pvt->ts, 0, teletone_dtmf_generate_handler, pvt->audio_buffer);
 			pvt->ts.rate = read_codec->implementation->actual_samples_per_second;
 			pvt->ts.channels = 1;
 			switch_mutex_init(&pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(pvt->session));
 			switch_core_event_hook_add_recv_dtmf(pvt->session, generate_on_dtmf);
+			switch_mutex_lock(pvt->mutex);
+			pvt->ready = 1;
+			switch_mutex_unlock(pvt->mutex);
 		}
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
 		{
+			switch_mutex_lock(pvt->mutex);
+			pvt->ready = 0;
+			switch_core_event_hook_remove_recv_dtmf(pvt->session, generate_on_dtmf);
 			switch_buffer_destroy(&pvt->audio_buffer);
 			teletone_destroy_session(&pvt->ts);
-			switch_core_event_hook_remove_recv_dtmf(pvt->session, generate_on_dtmf);
+			switch_mutex_unlock(pvt->mutex);
 		}
 		break;
 	case SWITCH_ABC_TYPE_READ_REPLACE:
 	case SWITCH_ABC_TYPE_WRITE_REPLACE:
 		{
 			switch_size_t bytes;
+			void *pop;
+
 			switch_mutex_lock(pvt->mutex);
+
+			if (!pvt->ready) {
+				switch_mutex_unlock(pvt->mutex);
+                return SWITCH_FALSE;
+			}
+
 			if (pvt->read) {
 				frame = switch_core_media_bug_get_read_replace_frame(bug);
 			} else {
 				frame = switch_core_media_bug_get_write_replace_frame(bug);
 			}
+			
+			while (switch_queue_trypop(pvt->digit_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+				switch_dtmf_t *dtmf = (switch_dtmf_t *) pop;
+				char buf[2] = "";
+			
+				buf[0] = dtmf->digit;
+				pvt->ts.duration = dtmf->duration;
+				teletone_run(&pvt->ts, buf);
+			}
+			
 			if (switch_buffer_inuse(pvt->audio_buffer) && (bytes = switch_buffer_read(pvt->audio_buffer, frame->data, frame->datalen))) {
 				if (bytes < frame->datalen) {
 					switch_byte_t *dp = frame->data;
 					memset(dp + bytes, 0, frame->datalen - bytes);
 				}
 			}
+
 			if (pvt->read) {
 				switch_core_media_bug_set_read_replace_frame(bug, frame);
 			} else {

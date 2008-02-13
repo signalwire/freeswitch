@@ -1038,6 +1038,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	READ_INC(rtp_session);
 
 	while (switch_rtp_ready(rtp_session)) {
+		int do_cng = 0;
+
 		bytes = sizeof(rtp_msg_t);
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *) &rtp_session->recv_msg, &bytes);
 		
@@ -1102,7 +1104,64 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}			
 		}
 
-		if (!bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
+
+		/* RFC2833 ... like all RFC RE: VoIP, guarenteed to drive you to insanity! 
+		   We know the real rules here, but if we enforce them, it's an interop nightmare so,
+		   we put up with as much as we can so we don't have to deal with being punished for
+		   doing it right. Nice guys finish last!
+		 */
+		if (bytes && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833) && rtp_session->recv_msg.header.pt == rtp_session->te) {
+			unsigned char *packet = (unsigned char *) rtp_session->recv_msg.body;
+			int end = packet[1] & 0x80 ? 1 : 0;
+			uint16_t duration = (packet[2] << 8) + packet[3];
+			char key = switch_rfc2833_to_char(packet[0]);
+			uint16_t in_digit_seq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
+			
+			if (in_digit_seq > rtp_session->dtmf_data.in_digit_seq) {
+				uint32_t ts = htonl(rtp_session->recv_msg.header.ts);
+				//int m = rtp_session->recv_msg.header.m;
+
+				rtp_session->dtmf_data.in_digit_seq = in_digit_seq;
+				
+				//printf("%c %u %u %u\n", key, in_digit_seq, ts, duration);
+
+				if (rtp_session->dtmf_data.last_duration > duration && ts == rtp_session->dtmf_data.in_digit_ts) {
+					rtp_session->dtmf_data.flip++;
+				}
+
+				if (end) {
+					if (rtp_session->dtmf_data.in_digit_ts) {
+						switch_dtmf_t dtmf = { key, duration };
+					
+						if (ts > rtp_session->dtmf_data.in_digit_ts) {
+							dtmf.duration += (ts - rtp_session->dtmf_data.in_digit_ts);
+						}
+						if (rtp_session->dtmf_data.flip) {
+							dtmf.duration += rtp_session->dtmf_data.flip * 0xFFFF;
+							rtp_session->dtmf_data.flip = 0;
+							//printf("you're welcome!\n");
+						}
+
+						//printf("done digit=%c ts=%u start_ts=%u dur=%u ddur=%u\n", 
+						//dtmf.digit, ts, rtp_session->dtmf_data.in_digit_ts, duration, dtmf.duration);
+						switch_rtp_queue_rfc2833_in(rtp_session, &dtmf);
+						switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
+						rtp_session->dtmf_data.last_digit = rtp_session->dtmf_data.first_digit;
+					}
+					rtp_session->dtmf_data.in_digit_ts = 0;
+				} else if (!rtp_session->dtmf_data.in_digit_ts) {
+					rtp_session->dtmf_data.in_digit_ts = ts;
+					rtp_session->dtmf_data.first_digit = key;
+				} 
+				
+				rtp_session->dtmf_data.last_duration = duration;
+
+			}
+
+			do_cng = 1;
+		}
+		
+		if (do_cng || (!bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK))) {
 			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
 
 			memset(&rtp_session->recv_msg.body, 0, 2);
@@ -1239,69 +1298,15 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		rtp_session->rpayload = (switch_payload_t) rtp_session->recv_msg.header.pt;
 
-		/* RFC2833 ... like all RFC RE: VoIP, guarenteed to drive you to insanity! 
-		   We know the real rules here, but if we enforce them, it's an interop nightmare so,
-		   we put up with as much as we can so we don't have to deal with being punished for
-		   doing it right. Nice guys finish last!
-		 */
-		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833) && rtp_session->recv_msg.header.pt == rtp_session->te) {
-			unsigned char *packet = (unsigned char *) rtp_session->recv_msg.body;
-			int end = packet[1] & 0x80 ? 1 : 0;
-			uint16_t duration = (packet[2] << 8) + packet[3];
-			char key = switch_rfc2833_to_char(packet[0]);
-			uint16_t in_digit_seq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
-			
-			if (in_digit_seq > rtp_session->dtmf_data.in_digit_seq) {
-				uint32_t ts = htonl(rtp_session->recv_msg.header.ts);
-				//int m = rtp_session->recv_msg.header.m;
-
-				rtp_session->dtmf_data.in_digit_seq = in_digit_seq;
-				
-				//printf("%c %u %u %u\n", key, in_digit_seq, ts, duration);
-
-				if (rtp_session->dtmf_data.last_duration > duration && ts == rtp_session->dtmf_data.in_digit_ts) {
-					rtp_session->dtmf_data.flip++;
-				}
-
-				if (end) {
-					if (rtp_session->dtmf_data.in_digit_ts) {
-						switch_dtmf_t dtmf = { key, duration };
-					
-						if (ts > rtp_session->dtmf_data.in_digit_ts) {
-							dtmf.duration += (ts - rtp_session->dtmf_data.in_digit_ts);
-						}
-						if (rtp_session->dtmf_data.flip) {
-							dtmf.duration += rtp_session->dtmf_data.flip * 0xFFFF;
-							rtp_session->dtmf_data.flip = 0;
-							//printf("you're welcome!\n");
-						}
-
-						//printf("done digit=%c ts=%u start_ts=%u dur=%u ddur=%u\n", 
-						//dtmf.digit, ts, rtp_session->dtmf_data.in_digit_ts, duration, dtmf.duration);
-						switch_rtp_queue_rfc2833_in(rtp_session, &dtmf);
-						switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
-						rtp_session->dtmf_data.last_digit = rtp_session->dtmf_data.first_digit;
-					}
-					rtp_session->dtmf_data.in_digit_ts = 0;
-				} else if (!rtp_session->dtmf_data.in_digit_ts) {
-					rtp_session->dtmf_data.in_digit_ts = ts;
-					rtp_session->dtmf_data.first_digit = key;
-				} 
-				
-				rtp_session->dtmf_data.last_duration = duration;
-
-			}
-			goto do_continue;
-		}
 		break;
 
 	do_continue:
 		
 		if (rtp_session->ms_per_packet) {
-            switch_yield((rtp_session->ms_per_packet / 1000) * 750);
-        } else {
-            switch_yield(1000);
-        }
+			switch_yield((rtp_session->ms_per_packet / 1000) * 750);
+		} else {
+			switch_yield(1000);
+		}
 	}
 
 	*payload_type = (switch_payload_t) rtp_session->recv_msg.header.pt;
@@ -1437,7 +1442,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 	}
 
 	bytes = rtp_common_read(rtp_session, &frame->payload, &frame->flags);
-	
+
 	frame->data = rtp_session->recv_msg.body;
 	frame->packet = &rtp_session->recv_msg;
 	frame->packetlen = bytes;
