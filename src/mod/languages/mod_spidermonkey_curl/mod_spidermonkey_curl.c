@@ -185,7 +185,7 @@ static JSBool curl_run(JSContext *cx, JSObject *obj, uintN argc, jsval * argv, j
 	switch_safe_free(durl);
 	
 
-	return JS_FALSE;
+	return JS_TRUE;
 }
 
 static JSFunctionSpec curl_methods[] = {
