@@ -26,7 +26,7 @@
  * This code is based on the widely used GSM 06.10 code available from
  * http://kbs.cs.tu-berlin.de/~jutta/toast.html
  *
- * $Id: gsm0610_encode.c,v 1.18 2008/02/09 15:31:36 steveu Exp $
+ * $Id: gsm0610_encode.c,v 1.19 2008/02/12 12:27:48 steveu Exp $
  */
 
 /*! \file */
@@ -156,6 +156,7 @@ int gsm0610_pack_none(uint8_t c[], const gsm0610_frame_t *s)
         for (k = 0;  k < 13;  k++)
             c[i++] = (uint8_t) s->xMc[j][k];
     }
+    /*endfor*/
     return 76;
 }
 /*- End of function --------------------------------------------------------*/
@@ -206,6 +207,7 @@ int gsm0610_pack_wav49(uint8_t c[], const gsm0610_frame_t *s)
         *c++ = sr >> 7;
         sr = (sr >> 3) | (s->xMc[i][12] << 13);
     }
+    /*endfor*/
 
     s++;
     sr = (sr >> 6) | (s->LARc[0] << 10);
@@ -249,6 +251,7 @@ int gsm0610_pack_wav49(uint8_t c[], const gsm0610_frame_t *s)
         sr = (sr >> 3) | (s->xMc[i][12] << 13);
         *c++ = sr >> 8;
     }
+    /*endfor*/
     return 65;
 }
 /*- End of function --------------------------------------------------------*/
@@ -295,41 +298,39 @@ int gsm0610_pack_voip(uint8_t c[33], const gsm0610_frame_t *s)
              | ((s->xMc[i][11] & 0x7) << 3)
              |  (s->xMc[i][12] & 0x7);
     }
+    /*endfor*/
     return 33;
 }
 /*- End of function --------------------------------------------------------*/
 
-int gsm0610_encode(gsm0610_state_t *s, uint8_t code[], const int16_t amp[], int quant)
+int gsm0610_encode(gsm0610_state_t *s, uint8_t code[], const int16_t amp[], int len)
 {
     gsm0610_frame_t frame[2];
-    uint8_t *c;
+    int bytes;
     int i;
 
-    c = code;
-    for (i = 0;  i < quant;  i++)
+    bytes = 0;
+    for (i = 0;  i < len;  i += GSM0610_FRAME_LEN)
     {
-        encode_a_frame(s, frame, amp);
+        encode_a_frame(s, frame, &amp[i]);
         switch (s->packing)
         {
-        case GSM0610_PACKING_NONE:
-            c += gsm0610_pack_none(c, frame);
-            amp += GSM0610_FRAME_LEN;
-            break;
         case GSM0610_PACKING_WAV49:
-            amp += GSM0610_FRAME_LEN;
-            encode_a_frame(s, frame + 1, amp);
-            amp += GSM0610_FRAME_LEN;
-            c += gsm0610_pack_wav49(c, frame);
+            i += GSM0610_FRAME_LEN;
+            encode_a_frame(s, frame + 1, &amp[i]);
+            bytes += gsm0610_pack_wav49(&code[bytes], frame);
             break;
         case GSM0610_PACKING_VOIP:
-            c += gsm0610_pack_voip(c, frame);
-            amp += GSM0610_FRAME_LEN;
+            bytes += gsm0610_pack_voip(&code[bytes], frame);
+            break;
+        default:
+            bytes += gsm0610_pack_none(&code[bytes], frame);
             break;
         }
         /*endswitch*/
     }
-    /*endwhile*/
-    return (int) (c - code);
+    /*endfor*/
+    return bytes;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

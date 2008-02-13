@@ -158,7 +158,7 @@ static switch_status_t switch_gsm_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*encoded_data_len = gsm0610_encode(&context->encoder_object, (uint8_t *) encoded_data, (int16_t *) decoded_data, decoded_data_len / 320);
+	*encoded_data_len = gsm0610_encode(&context->encoder_object, (uint8_t *) encoded_data, (int16_t *) decoded_data, decoded_data_len / 2);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -176,7 +176,7 @@ static switch_status_t switch_gsm_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*decoded_data_len = (2 * gsm0610_decode(&context->decoder_object, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len / 33));
+	*decoded_data_len = (2 * gsm0610_decode(&context->decoder_object, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len));
 
 	return SWITCH_STATUS_SUCCESS;
 }

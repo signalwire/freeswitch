@@ -1,5 +1,5 @@
 /*
- * SpanDSP - a series of DSP components for telephony
+ * VoIPcodecs - a series of DSP components for telephony
  *
  * gsm0610_local.h - GSM 06.10 full rate speech codec.
  *
