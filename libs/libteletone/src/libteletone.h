@@ -104,6 +104,12 @@ typedef struct {
 typedef __int16 int16_t;
 #endif
 
+#if (_MSC_VER >= 1400)			// VC8+
+#define teletone_assert(expr) assert(expr);__analysis_assume( expr )
+#else
+#define teletone_assert(expr) assert(expr)
+#endif
+
 #include <libteletone_generate.h>
 #include <libteletone_detect.h>
 
