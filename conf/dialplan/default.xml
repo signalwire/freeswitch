@@ -155,11 +155,23 @@
     <!--
 	start a dynamic conference with the settings of the "default" conference profile in conference.conf.xml
     -->                                                                                                                                                       
-    <extension name="conferences">                                                                                                                           
-      <condition field="destination_number" expression="^(3\d{3})$">
+    <extension name="nb_conferences">
+      <condition field="destination_number" expression="^(30\d{2})$">
 	<action application="conference" data="$1@default"/>
       </condition>
-    </extension>           
+    </extension>
+
+    <extension name="wb_conferences">
+      <condition field="destination_number" expression="^(31\d{2})$">
+	<action application="conference" data="$1@wideband"/>
+      </condition>
+    </extension>
+
+    <extension name="uwb_conferences">
+      <condition field="destination_number" expression="^(32\d{2})$">
+	<action application="conference" data="$1@ultrawideband"/>
+      </condition>
+    </extension>
     
     <!-- dial the freeswitch conference via SIP-->
     <extension name="freeswitch_public_conf_via_sip">
