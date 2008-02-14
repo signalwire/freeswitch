@@ -577,7 +577,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 	switch_frame_t *read_frame = NULL;
 	switch_codec_t *read_codec = NULL, write_codec = { 0 };
 	switch_frame_t write_frame = { 0 };
-	switch_byte_t data[1024];
+	switch_byte_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	switch_channel_pre_answer(channel);

@@ -165,7 +165,7 @@ static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user
 			len = rframe->samples;
 
 			if (dh->mux) {
-				int16_t buf[1024];
+				int16_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE / 2];
 				int16_t *fp = rframe->data;
 				uint32_t x;
 
@@ -237,7 +237,7 @@ static switch_bool_t read_displace_callback(switch_media_bug_t *bug, void *user_
 			len = rframe->samples;
 
 			if (dh->mux) {
-				int16_t buf[1024];
+				int16_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE / 2];
 				int16_t *fp = rframe->data;
 				uint32_t x;
 
