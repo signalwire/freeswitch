@@ -283,8 +283,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_ses
 			switch_core_media_bug_destroy(bp);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing BUG from %s\n", switch_channel_get_name(session->channel));
 		}
-		switch_thread_rwlock_unlock(session->bug_rwlock);
 		session->bugs = NULL;
+		switch_thread_rwlock_unlock(session->bug_rwlock);
 		return SWITCH_STATUS_SUCCESS;
 	}
 	
