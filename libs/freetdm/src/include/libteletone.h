@@ -74,6 +74,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <math.h>
+
 #define	TELETONE_MAX_DTMF_DIGITS 128
 #define TELETONE_MAX_TONES 6
 #define TELETONE_TONE_RANGE 127
@@ -99,6 +102,12 @@ typedef struct {
 
 #ifdef _MSC_VER
 typedef __int16 int16_t;
+#endif
+
+#if (_MSC_VER >= 1400)			// VC8+
+#define teletone_assert(expr) assert(expr);__analysis_assume( expr )
+#else
+#define teletone_assert(expr) assert(expr)
 #endif
 
 #include <libteletone_generate.h>

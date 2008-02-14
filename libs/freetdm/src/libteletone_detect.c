@@ -432,6 +432,8 @@ int teletone_dtmf_get (teletone_dtmf_detect_state_t *dtmf_detect_state,
 					   char *buf,
 					   int max)
 {
+	teletone_assert(dtmf_detect_state->current_digits <= TELETONE_MAX_DTMF_DIGITS);
+
 	if (max > dtmf_detect_state->current_digits) {
 		max = dtmf_detect_state->current_digits;
 	}
