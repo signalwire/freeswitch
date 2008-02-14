@@ -90,9 +90,7 @@
       <!-- Default Caller ID Number for outbound calls -->
       <param name="caller-id-number" value="$${outbound_caller_id}"/>
     </profile>
-  </profiles>
 
-  <profiles>
     <profile name="wideband">
       <param name="domain" value="$${domain}"/>
       <param name="rate" value="16000"/>
@@ -114,9 +112,7 @@
       <param name="caller-id-name" value="$${outbound_caller_name}"/>
       <param name="caller-id-number" value="$${outbound_caller_id}"/>
     </profile>
-  </profiles>
 
-  <profiles>
     <profile name="ultrawideband">
       <param name="domain" value="$${domain}"/>
       <param name="rate" value="32000"/>
