@@ -191,10 +191,13 @@ static int ensure_buffer(teletone_generation_session_t *ts, int need)
 	need *= ts->channels;
 
 	if (need > ts->datalen) {
+		teletone_audio_t *tmp;
 		ts->datalen = need + ts->dynamic;
-		if (!(ts->buffer = realloc(ts->buffer, ts->datalen))) {
+		tmp = realloc(ts->buffer, ts->datalen);
+		if (!tmp) {
 			return -1;
 		}
+		ts->buffer = tmp;
 	}
 
 	return 0;
