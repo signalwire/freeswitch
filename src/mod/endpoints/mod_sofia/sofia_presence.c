@@ -449,7 +449,6 @@ void sofia_presence_event_handler(switch_event_t *event)
 
 		if (sql) {
 			struct presence_helper helper = { 0 };
-
 			helper.profile = profile;
             helper.event = event;
 			SWITCH_STANDARD_STREAM(helper.stream);
@@ -609,6 +608,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char *event = argv[5];
 	char *call_id = argv[7];
 	char *expires = argv[10];
+	//char *accept = argv[12];
 	nua_handle_t *nh;
 	char *to = NULL;
 	char *open;
@@ -617,7 +617,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	const char *ct;
 	time_t exptime = switch_timestamp(NULL) + 3600; 
 	char exp[80] = "";   
-	
+	int is_dialog = 0;
+
 	if (expires) { 
 		long tmp = atol(expires); 
 		if (tmp > 0) { 
@@ -641,14 +642,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		in = 0;
 	} 
 
-	if (in) {
-		note = switch_mprintf("<dm:note>%s</dm:note>", status);
-		open = "open";
-	} else {
-		note = NULL;
-		open = "closed";
-	}
-
 	if (!strcasecmp(proto, SOFIA_CHAT_PROTO)) {
 		clean_id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
 	} else {
@@ -666,8 +659,10 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	}
 
 	to = switch_mprintf("sip:%s@%s", user, host);
+
+	is_dialog = !strcmp(event, "dialog");
 	
-	if (!strcmp(event, "dialog") && helper->event) {
+	if (helper->event) {
 		switch_stream_handle_t stream = { 0 };
 		const char *direction = switch_str_nil(switch_event_get_header(helper->event, "call-direction"));
 		const char *uuid = switch_str_nil(switch_event_get_header(helper->event, "unique-id"));
@@ -676,8 +671,16 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		const char *astate = switch_str_nil(switch_event_get_header(helper->event, "astate"));
 		const char *answer_state = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
 		const char *dft_state;
+		const char *from_id = switch_str_nil(switch_event_get_header(helper->event, "Other-Leg-Caller-ID-Number"));
+		const char *to_user = switch_str_nil(switch_event_get_header(helper->event, "variable_sip_to_user"));
+		const char *from_user = switch_str_nil(switch_event_get_header(helper->event, "variable_sip_from_user"));
+		const char *clean_to_user = NULL;
+		const char *clean_from_user = NULL;
+
 		
-		SWITCH_STANDARD_STREAM(stream);
+		if (is_dialog) {
+			SWITCH_STANDARD_STREAM(stream);
+		}
 
 		if (!strcasecmp(direction, "outbound")) {
 			direction = "recipient";
@@ -695,13 +698,15 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			answer_state = "resubscribe";
 		}
 
-		stream.write_function(&stream, 
-							  "<?xml version=\"1.0\"?>\n"
-							  "<dialog-info xmlns=\"urn:ietf:params:xml:ns:dialog-info\" "
-							  "version=\"%s\" state=\"%s\" entity=\"%s\">\n", 
-							  switch_str_nil(switch_event_get_header(helper->event, "event_count")),
-							  !strcasecmp(answer_state, "resubscribe") ? "partial" : "full", clean_id);
-
+		if (is_dialog) {
+			stream.write_function(&stream, 
+								  "<?xml version=\"1.0\"?>\n"
+								  "<dialog-info xmlns=\"urn:ietf:params:xml:ns:dialog-info\" "
+								  "version=\"%s\" state=\"%s\" entity=\"%s\">\n", 
+								  switch_str_nil(switch_event_get_header(helper->event, "event_count")),
+								  !strcasecmp(answer_state, "resubscribe") ? "partial" : "full", clean_id);
+		}
+		
 		if (strcasecmp(answer_state, "resubscribe")) {
 
 			if (!strcasecmp(state, "cs_hangup")) {
@@ -728,57 +733,124 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 					astate = "confirmed";
 				}
 			}
-			stream.write_function(&stream, "<dialog id=\"%s\" direction=\"%s\">\n", uuid, direction);
-			stream.write_function(&stream, "<state>%s</state>\n", astate);
-			
-			if (!strcasecmp(astate, "early") | !strcasecmp(astate, "confirmed")) {
-				const char *from_id = switch_str_nil(switch_event_get_header(helper->event, "Other-Leg-Caller-ID-Number"));
-				const char *to_user = switch_str_nil(switch_event_get_header(helper->event, "variable_sip_to_user"));
-				const char *from_user = switch_str_nil(switch_event_get_header(helper->event, "variable_sip_from_user"));
-				const char *clean_to_user;
-				const char *clean_from_user;
+			if (is_dialog) {
+				stream.write_function(&stream, "<dialog id=\"%s\" direction=\"%s\">\n", uuid, direction);
+				stream.write_function(&stream, "<state>%s</state>\n", astate);
+			}
+			if (!strcasecmp(astate, "early") || !strcasecmp(astate, "confirmed")) {
 				
-				clean_to_user = switch_mprintf("%s", sub_to_user ? sub_to_user : to_user, host);
-				clean_from_user = switch_mprintf("%s", from_id ? from_id : from_user, host);
-				
-				if(!switch_strlen_zero(clean_to_user) && !switch_strlen_zero(clean_from_user)) {
-					stream.write_function(&stream, "<local>\n<identity display=\"%s\">sip:%s@%s</identity>\n", clean_to_user, clean_to_user, host);
-					stream.write_function(&stream, "<target uri=\"sip:%s@%s\">\n", clean_to_user, host);
-					stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"%s\"/>\n", !strcasecmp(event_status, "hold") ? "no" : "yes" );
-					stream.write_function(&stream, "</target>\n</local>\n");  
-					stream.write_function(&stream, "<remote>\n<identity display=\"%s\">sip:%s@%s</identity>\n", clean_from_user, clean_from_user, host);
-					stream.write_function(&stream, "<target uri=\"sip:**%s@%s\"/>\n", clean_to_user, host);
-					stream.write_function(&stream, "</remote>\n");
-				} else if (!strcasecmp(proto, "park")) {
-					stream.write_function(&stream, "<local>\n<identity display=\"parking\">sip:parking@%s;fifo=%s</identity>\n", 
-										  host, !switch_strlen_zero(clean_to_user) ? clean_to_user : "unknown");
-					stream.write_function(&stream, "<target uri=\"sip:parking@%s\">\n", host);
-					stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"no\"/>\n</target>\n</local>\n");  
-					stream.write_function(&stream, "<remote>\n<identity display=\"parking\">sip:%s</identity>\n", uuid);
-					stream.write_function(&stream, "<target uri=\"sip:park+%s\"/>\n", uuid);
-					stream.write_function(&stream, "</remote>\n");
-				} else if (!strcasecmp(proto, "conf")) {
-					stream.write_function(&stream, "<local>\n<identity display=\"conference\">sip:conference@%s;conference=%s</identity>\n", 
-										  host, !switch_strlen_zero(clean_to_user) ? clean_to_user : "unknown");
-					stream.write_function(&stream, "<target uri=\"sip:conference@%s\">\n", host);
-					stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"yes\"/>\n</target>\n</local>\n");  
-					stream.write_function(&stream, "<remote>\n<identity display=\"conference\">sip:%s@%s</identity>\n", uuid, host);
-					stream.write_function(&stream, "<target uri=\"sip:conf+%s@%s\"/>\n", uuid, host);
-					stream.write_function(&stream, "</remote>\n");
+				clean_to_user = switch_mprintf("%s", sub_to_user ? sub_to_user : to_user);
+				clean_from_user = switch_mprintf("%s", from_id ? from_id : from_user);
+
+				if (is_dialog) {
+					if(!switch_strlen_zero(clean_to_user) && !switch_strlen_zero(clean_from_user)) {
+						stream.write_function(&stream, "<local>\n<identity display=\"%s\">sip:%s@%s</identity>\n", clean_to_user, clean_to_user, host);
+						stream.write_function(&stream, "<target uri=\"sip:%s@%s\">\n", clean_to_user, host);
+						stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"%s\"/>\n", !strcasecmp(event_status, "hold") ? "no" : "yes" );
+						stream.write_function(&stream, "</target>\n</local>\n");  
+						stream.write_function(&stream, "<remote>\n<identity display=\"%s\">sip:%s@%s</identity>\n", clean_from_user, clean_from_user, host);
+						stream.write_function(&stream, "<target uri=\"sip:**%s@%s\"/>\n", clean_to_user, host);
+						stream.write_function(&stream, "</remote>\n");
+					} else if (!strcasecmp(proto, "park")) {
+						stream.write_function(&stream, "<local>\n<identity display=\"parking\">sip:parking@%s;fifo=%s</identity>\n", 
+											  host, !switch_strlen_zero(clean_to_user) ? clean_to_user : "unknown");
+						stream.write_function(&stream, "<target uri=\"sip:parking@%s\">\n", host);
+						stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"no\"/>\n</target>\n</local>\n");  
+						stream.write_function(&stream, "<remote>\n<identity display=\"parking\">sip:%s</identity>\n", uuid);
+						stream.write_function(&stream, "<target uri=\"sip:park+%s\"/>\n", uuid);
+						stream.write_function(&stream, "</remote>\n");
+					} else if (!strcasecmp(proto, "conf")) {
+						stream.write_function(&stream, "<local>\n<identity display=\"conference\">sip:conference@%s;conference=%s</identity>\n", 
+											  host, !switch_strlen_zero(clean_to_user) ? clean_to_user : "unknown");
+						stream.write_function(&stream, "<target uri=\"sip:conference@%s\">\n", host);
+						stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"yes\"/>\n</target>\n</local>\n");  
+						stream.write_function(&stream, "<remote>\n<identity display=\"conference\">sip:%s@%s</identity>\n", uuid, host);
+						stream.write_function(&stream, "<target uri=\"sip:conf+%s@%s\"/>\n", uuid, host);
+						stream.write_function(&stream, "</remote>\n");
+					}
 				}
 			}
-			stream.write_function(&stream, "</dialog>\n");			
+			if (is_dialog) {
+				stream.write_function(&stream, "</dialog>\n");			
+			}
 		}
 
-		stream.write_function(&stream, "</dialog-info>\n");
-
-		pl = stream.data;
-
-		ct = "application/dialog-info+xml";
-		if (astate && uuid && helper->stream.data) {
-			stream.write_function(&helper->stream, "update sip_dialogs set state='%s' where uuid='%s';\n", astate, uuid);
+		if (is_dialog) {
+			stream.write_function(&stream, "</dialog-info>\n");
+			pl = stream.data;
+			ct = "application/dialog-info+xml";
 		}
+		
+		if (astate && uuid && helper && helper->stream.data) {
+			helper->stream.write_function(&helper->stream, "update sip_dialogs set state='%s' where uuid='%s';\n", astate, uuid);
+		}
+
+
+		if (!is_dialog) {
+			if (in) {
+				char status_line[256] = "";
+				
+				if (!strcmp(astate, "early")) {
+					switch_snprintf(status_line, sizeof(status_line), "R %s", switch_str_nil(from_id));
+					rpid = "busy";
+				} else if (!strcmp(astate, "confirmed")) {
+					char *dest = switch_event_get_header(helper->event, "Caller-Destination-Number");
+					if (switch_strlen_zero(from_id) && !switch_strlen_zero(dest)) {
+						from_id = dest;
+					} 
+
+					switch_snprintf(status_line, sizeof(status_line), "T %s", switch_str_nil(from_id));
+					rpid = "busy";
+				} else if (!strcmp(astate, "terminated")) {
+					switch_snprintf(status_line, sizeof(status_line), "Available");
+				}
+
+				note = switch_mprintf("<dm:note>%s</dm:note>", status_line);
+				open = "open";
+			} else {
+				note = NULL;
+				open = "closed";
+			}
+			
+			prpid = translate_rpid(rpid);
+			pl = switch_mprintf("<?xml version='1.0' encoding='UTF-8'?>\r\n"
+								"<presence xmlns='urn:ietf:params:xml:ns:pidf'\r\n"
+								"xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model'\r\n"
+								"xmlns:rpid='urn:ietf:params:xml:ns:pidf:rpid'\r\n"
+								"xmlns:c='urn:ietf:params:xml:ns:pidf:cipid'\r\n"
+								"entity='pres:%s'>\r\n"
+								"<presentity uri=\"%s;method=SUBSCRIBE\"/>\r\n"
+								"<atom id=\"1002\">\r\n"
+								"<address uri=\"%s\" priority=\"0.800000\">\r\n"
+								"<status status=\"%s\">\r\n"
+								"<note>%s</note>\r\n"
+								"</status>\r\n"
+								"<msnsubstatus substatus=\"%s\"/>\r\n"
+								"</address>\r\n"
+								"</atom>\r\n"
+								"<tuple id='t6a5ed77e'>\r\n"
+								"<status>\r\n"
+								"<basic>%s</basic>\r\n"
+								"</status>\r\n"
+								"</tuple>\r\n"
+								"<dm:person id='p06360c4a'>\r\n"
+								"<rpid:activities>\r\n" "<rpid:%s/>\r\n" 
+								"</rpid:activities>%s</dm:person>\r\n" 
+								"</presence>", id, 
+								id, profile->url, open, status, prpid,
+								open, rpid, note);
+			ct = "application/pidf+xml";
+		}
+
 	} else {
+		if (in) {
+			note = switch_mprintf("<dm:note>%s</dm:note>", status);
+			open = "open";
+		} else {
+			note = NULL;
+			open = "closed";
+		}
+
 		pl = switch_mprintf("<?xml version='1.0' encoding='UTF-8'?>\r\n"
 							"<presence xmlns='urn:ietf:params:xml:ns:pidf'\r\n"
 							"xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model'\r\n"
@@ -944,7 +1016,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		char *full_from = NULL;
 		char *full_via = NULL;
 		char *full_agent = NULL;
-		char *full_accept = NULL;
 		char *sstr;
 		const char *display = "\"user\"";
 		switch_event_t *sevent;
@@ -1075,11 +1146,16 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			sstr = switch_mprintf("terminated");
 			switch_core_hash_delete(profile->sub_hash, call_id);
 		} else {
+			sip_accept_t *ap = sip->sip_accept;
+			char accept[256] = "";
 			full_agent = sip_header_as_string(profile->home, (void *) sip->sip_user_agent);
-			full_accept = sip_header_as_string(profile->home, (void *) sip->sip_accept);
+			while(ap) {
+				switch_snprintf(accept + strlen(accept), sizeof(accept) - strlen(accept), "%s%s ", ap->ac_type, ap->ac_next ? "," : "");
+				ap = ap->ac_next;
+			}
 			sql = switch_mprintf("insert into sip_subscriptions values ('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld,'%q','%q')",
 								 proto, from_user, from_host, to_user, to_host, event, 
-								 contact_str, call_id, full_from, full_via, exp, full_agent, full_accept);
+								 contact_str, call_id, full_from, full_via, exp, full_agent, accept);
 			
 			switch_assert(sql != NULL);
 			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
@@ -1140,9 +1216,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		}
 		if (full_agent) {
 			su_free(profile->home, full_agent);
-		}
-		if (full_accept) {
-			su_free(profile->home, full_accept);
 		}
 
 		switch_safe_free(d_user);
