@@ -614,7 +614,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char *open;
 	char *prpid;
 	int done = 0;
-	const char *ct;
+	const char *ct = "no/idea";
 	time_t exptime = switch_timestamp(NULL) + 3600; 
 	char exp[80] = "";   
 	int is_dialog = 0;
