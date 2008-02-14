@@ -792,15 +792,19 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				
 				if (!strcmp(astate, "early")) {
 					switch_snprintf(status_line, sizeof(status_line), "R %s", switch_str_nil(from_id));
-					rpid = "busy";
+					rpid = "on-the-phone";
 				} else if (!strcmp(astate, "confirmed")) {
 					char *dest = switch_event_get_header(helper->event, "Caller-Destination-Number");
 					if (switch_strlen_zero(from_id) && !switch_strlen_zero(dest)) {
 						from_id = dest;
 					} 
-
-					switch_snprintf(status_line, sizeof(status_line), "T %s", switch_str_nil(from_id));
-					rpid = "busy";
+					
+					if (switch_strlen_zero(from_id)) {
+						switch_snprintf(status_line, sizeof(status_line), "Available");
+					} else {
+						switch_snprintf(status_line, sizeof(status_line), "T %s", switch_str_nil(from_id));
+						rpid = "on-the-phone";
+					}
 				} else if (!strcmp(astate, "terminated")) {
 					switch_snprintf(status_line, sizeof(status_line), "Available");
 				}
