@@ -2257,7 +2257,9 @@ void sofia_glue_execute_sql(sofia_profile_t *profile, switch_bool_t master, char
 		if (switch_odbc_handle_exec(profile->master_odbc, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
 			char *err_str;
 			err_str = switch_odbc_handle_get_error(profile->master_odbc, stmt);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
+			if (!switch_strlen_zero(err_str)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, err_str);
+			}
 			switch_safe_free(err_str);
 		}
 		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
