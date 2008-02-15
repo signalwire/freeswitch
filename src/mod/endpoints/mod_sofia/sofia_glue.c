@@ -1084,6 +1084,11 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 {
 	int ms;
 
+	if (!tech_pvt->iananame) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No audio codec available\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (tech_pvt->read_codec.implementation) {
 		if (!force) {
 			return SWITCH_STATUS_SUCCESS;
@@ -1100,11 +1105,6 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Already using %s\n", tech_pvt->read_codec.implementation->iananame);
 			return SWITCH_STATUS_SUCCESS;
 		}
-	}
-
-	if (!tech_pvt->iananame) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec with no name?\n");
-		return SWITCH_STATUS_FALSE;
 	}
 
 	if (switch_core_codec_init(&tech_pvt->read_codec,

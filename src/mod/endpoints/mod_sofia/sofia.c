@@ -1462,6 +1462,10 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		goto done;
 	}
 
+	if (status == 183 && !r_sdp) {
+		status = 180;
+	}
+
 	if (channel && (status == 180 || status == 183) && switch_channel_test_flag(channel, CF_OUTBOUND)) {
 		const char *val;
 		if ((val = switch_channel_get_variable(channel, "sip_auto_answer")) && switch_true(val)) {

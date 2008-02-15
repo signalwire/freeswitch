@@ -702,7 +702,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_status_t status;
 
-	switch_assert(tech_pvt != NULL);
+	if (switch_channel_get_state(channel) >= CS_HANGUP || !tech_pvt) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (msg->message_id == SWITCH_MESSAGE_INDICATE_ANSWER || msg->message_id == SWITCH_MESSAGE_INDICATE_PROGRESS) {
 		const char *var;
@@ -755,11 +757,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			switch_core_session_t *other_session;
 			switch_channel_t *other_channel;
 			const char *ip = NULL, *port = NULL;
-
-			if (switch_channel_get_state(channel) >= CS_HANGUP) {
-				return SWITCH_STATUS_FALSE;
-			}
-
+			
 			switch_channel_set_flag(channel, CF_BYPASS_MEDIA);
 			tech_pvt->local_sdp_str = NULL;
 			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
@@ -791,10 +789,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_MEDIA:
 		{
 			uint32_t count = 0;
-
-			if (switch_channel_get_state(channel) >= CS_HANGUP) {
-				return SWITCH_STATUS_FALSE;
-			}
 
 			switch_channel_clear_flag(channel, CF_BYPASS_MEDIA);
 			tech_pvt->local_sdp_str = NULL;
@@ -975,8 +969,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		sofia_answer_channel(session);
 		break;
-	case SWITCH_MESSAGE_INDICATE_PROGRESS:{
-			if (!switch_test_flag(tech_pvt, TFLAG_ANS)) {
+	case SWITCH_MESSAGE_INDICATE_PROGRESS:
+		{
+			if (!switch_test_flag(tech_pvt, TFLAG_ANS) && !switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
 				
 				switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Asked to send early media by %s\n", msg->from);
