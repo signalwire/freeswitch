@@ -1518,7 +1518,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 
 	read_codec = switch_core_session_get_read_codec(session);
 	interval = read_codec->implementation->microseconds_per_frame / 1000;
-	samples = switch_bytes_per_frame(read_codec->implementation->samples_per_second, interval);
+	samples = switch_samples_per_frame(read_codec->implementation->samples_per_second, interval);
 
 	qlen = delay_ms / (interval);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting delay to %dms (%d frames)\n", delay_ms, qlen);

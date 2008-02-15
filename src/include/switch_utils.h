@@ -41,7 +41,7 @@
 #include <switch.h>
 
 SWITCH_BEGIN_EXTERN_C
-#define switch_bytes_per_frame(rate, interval) ((uint32_t)((float)rate / (1000.0f / (float)interval)))
+#define switch_samples_per_frame(rate, interval) ((uint32_t)((float)rate / (1000.0f / (float)interval)))
 #define SWITCH_SMAX 32767
 #define SWITCH_SMIN -32768
 #define switch_normalize_to_16bit(n) if (n > SWITCH_SMAX) n = SWITCH_SMAX / 2; else if (n < SWITCH_SMIN) n = SWITCH_SMIN / 2;

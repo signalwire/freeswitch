@@ -817,7 +817,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 {
 	conference_obj_t *conference = (conference_obj_t *) obj;
 	conference_member_t *imember, *omember;
-	uint32_t samples = switch_bytes_per_frame(conference->rate, conference->interval);
+	uint32_t samples = switch_samples_per_frame(conference->rate, conference->interval);
 	uint32_t bytes = samples * 2;
 	uint8_t ready = 0, total = 0;
 	switch_timer_t timer = { 0 };
@@ -1647,7 +1647,7 @@ static void conference_loop_output(conference_member_t * member)
 	switch_timer_t timer = { 0 };
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(member->session);
 	uint32_t interval = read_codec->implementation->microseconds_per_frame / 1000;
-	uint32_t samples = switch_bytes_per_frame(member->conference->rate, interval);
+	uint32_t samples = switch_samples_per_frame(member->conference->rate, interval);
     uint32_t csamples = samples;
 	uint32_t tsamples = member->orig_read_codec->implementation->samples_per_frame;
 	uint32_t flush_len = 0;
@@ -1656,7 +1656,7 @@ static void conference_loop_output(conference_member_t * member)
     
 	switch_assert(member->conference != NULL);
 
-	flush_len = switch_bytes_per_frame(member->conference->rate, member->conference->interval) * 10;
+	flush_len = switch_samples_per_frame(member->conference->rate, member->conference->interval) * 10;
 
 	if (switch_core_timer_init(&timer, member->conference->timer_name, interval, tsamples, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer Setup Failed.  Conference Cannot Start\n");
@@ -1952,7 +1952,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t * t
 	conference_member_t smember = { 0 }, *member;
 	conference_record_t *rec = (conference_record_t *) obj;
 	conference_obj_t *conference = rec->conference;
-	uint32_t samples = switch_bytes_per_frame(conference->rate, conference->interval);
+	uint32_t samples = switch_samples_per_frame(conference->rate, conference->interval);
 	uint32_t low_count = 0, mux_used;
 	char *vval;
 	switch_timer_t timer = { 0 };

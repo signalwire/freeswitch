@@ -176,7 +176,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 			}
 			
 			source->rate = fh.samplerate;
-			source->samples = switch_bytes_per_frame(fh.native_rate, source->interval);
+			source->samples = switch_samples_per_frame(fh.native_rate, source->interval);
 			
 			if (switch_core_timer_init(&timer, source->timer_name, source->interval, source->samples, source->pool) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't start timer.\n");
@@ -425,7 +425,7 @@ static void launch_threads(void)
 			}
 		}
 		
-		source->samples = switch_bytes_per_frame(source->rate, source->interval);
+		source->samples = switch_samples_per_frame(source->rate, source->interval);
 
 		switch_core_hash_insert(globals.source_hash, source->name, source);
 		

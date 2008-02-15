@@ -733,7 +733,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 	globals.read_frame.buflen = sizeof(globals.databuf);
 	globals.cng_frame.data = globals.cngbuf;
 	globals.cng_frame.buflen = sizeof(globals.cngbuf);
-	globals.cng_frame.datalen = switch_bytes_per_frame(globals.sample_rate, globals.codec_ms) * 2;
+	globals.cng_frame.datalen = switch_samples_per_frame(globals.sample_rate, globals.codec_ms) * 2;
 	switch_set_flag((&globals.cng_frame), SFF_CNG);
 
 	/* connect my internal structure to the blank pointer passed to me */
