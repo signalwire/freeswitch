@@ -58,7 +58,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime);
 SWITCH_MODULE_DEFINITION(softtimer, softtimer_load, softtimer_shutdown, softtimer_runtime);
 
-#define MAX_ELEMENTS 1000
+#define MAX_ELEMENTS 360
 #define IDLE_SPEED 100
 #define STEP_MS 1
 #define STEP_MIC 1000
@@ -340,14 +340,11 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			tick = 0;
 		}
 
-		for (x = 0; x < MAX_ELEMENTS; x++) {
-			int i = x, index;
-			if (i == 0) {
-				i = 1;
-			}
-
-			index = (current_ms % i == 0) ? i : 0;
-
+		
+		for (x = 1; x <= MAX_ELEMENTS; x++) {
+			int i = x * 10;
+			int index = (current_ms % i == 0) ? i : 0;
+			
 			if (TIMER_MATRIX[index].count) {
 				TIMER_MATRIX[index].tick++;
 				if (TIMER_MATRIX[index].tick == MAX_TICK) {
