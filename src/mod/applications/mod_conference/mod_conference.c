@@ -1643,7 +1643,7 @@ static void conference_loop_output(conference_member_t * member)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(member->session);
 	switch_frame_t write_frame = { 0 };
-	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	uint8_t *data;
 	switch_timer_t timer = { 0 };
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(member->session);
 	uint32_t interval = read_codec->implementation->microseconds_per_frame / 1000;
@@ -1666,8 +1666,8 @@ static void conference_loop_output(conference_member_t * member)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer %s success interval: %u  samples: %u\n",
 					  member->conference->timer_name, interval, tsamples);
 
-	write_frame.data = data;
-	write_frame.buflen = sizeof(data);
+	write_frame.data = data = switch_core_session_alloc(member->session, SWITCH_RECOMMENDED_BUFFER_SIZE);
+	write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 	write_frame.codec = &member->write_codec;
 
 	if (!switch_test_flag(member->conference, CFLAG_ANSWERED)) {
