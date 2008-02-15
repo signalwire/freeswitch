@@ -563,6 +563,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch
 	return status;
 }
 
+SWITCH_DECLARE(uint32_t) switch_core_session_flush_private_events(switch_core_session_t *session)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	int x = 0;
+	void *pop;
+
+	if (session->private_event_queue) {
+		while ((status = (switch_status_t) switch_queue_trypop(session->private_event_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
+			x++;
+		}
+	}
+	
+	return x;
+}
+
 SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, switch_bool_t flush_dtmf)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);

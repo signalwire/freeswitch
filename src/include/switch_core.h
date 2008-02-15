@@ -779,6 +779,7 @@ SWITCH_DECLARE(uint32_t) switch_core_session_private_event_count(_In_ switch_cor
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(_In_ switch_core_session_t *session, _Out_ switch_event_t **event);
 
+SWITCH_DECLARE(uint32_t) switch_core_session_flush_private_events(switch_core_session_t *session);
 
 /*! 
   \brief Read a frame from a session

@@ -268,7 +268,7 @@ SWITCH_STANDARD_APP(fifo_function)
             switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "push");
 			switch_event_fire(&event);
 		}
-
+		
         switch_ivr_park(session, NULL);
 
 		if (switch_channel_ready(channel)) {
@@ -393,6 +393,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
                 if (switch_channel_test_flag(other_channel, CF_TAGGED)) {
                     switch_channel_clear_flag(other_channel, CF_CONTROLLED);
+					switch_core_session_flush_private_events(other_session);
                     switch_channel_stop_broadcast(other_channel);
                     switch_core_session_kill_channel(other_session, SWITCH_SIG_BREAK);
                     while (switch_channel_test_flag(other_channel, CF_TAGGED)) {
