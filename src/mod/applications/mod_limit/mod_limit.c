@@ -353,7 +353,7 @@ SWITCH_STANDARD_API(db_api_function)
         assert(sql);
         limit_execute_sql(sql, NULL);
         switch_safe_free(sql);    
-        sql = switch_mprintf("insert into db_data values('%q','%q','%q','%q');", globals.hostname, argv[1], argv[2], argv[3]);
+        sql = switch_mprintf("insert into db_data (hostname, realm, data_key, data) values('%q','%q','%q','%q');", globals.hostname, argv[1], argv[2], argv[3]);
         assert(sql);
         limit_execute_sql(sql, NULL);
         switch_safe_free(sql);
@@ -421,7 +421,7 @@ SWITCH_STANDARD_APP(db_function)
         limit_execute_sql(sql, globals.mutex);
         switch_safe_free(sql);
         
-        sql = switch_mprintf("insert into db_data values('%q','%q','%q','%q');", globals.hostname, argv[1], argv[2], argv[3]);
+        sql = switch_mprintf("insert into db_data (hostname, realm, data_key, data) values('%q','%q','%q','%q');", globals.hostname, argv[1], argv[2], argv[3]);
     } else if (!strcasecmp(argv[0], "delete")) {
         sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
     }
@@ -464,7 +464,7 @@ SWITCH_STANDARD_API(group_api_function)
 
         limit_execute_sql(sql, NULL);
         switch_safe_free(sql);
-        sql = switch_mprintf("insert into group_data values('%q','%q','%q');", globals.hostname, argv[1], argv[2]);
+        sql = switch_mprintf("insert into group_data (hostname, groupname, url) values('%q','%q','%q');", globals.hostname, argv[1], argv[2]);
         assert(sql);
         limit_execute_sql(sql, NULL);
         switch_safe_free(sql);
@@ -538,7 +538,7 @@ SWITCH_STANDARD_APP(group_function)
     }
 
     if (!strcasecmp(argv[0], "insert")) {
-        sql = switch_mprintf("insert into group_data values('%q','%q','%q');", globals.hostname, argv[1], argv[2]);
+        sql = switch_mprintf("insert into group_data (hostname, groupname, url) values('%q','%q','%q');", globals.hostname, argv[1], argv[2]);
         assert(sql);
         limit_execute_sql(sql, globals.mutex);
         switch_safe_free(sql);
@@ -611,7 +611,7 @@ SWITCH_STANDARD_APP(limit_function)
     }
 
     switch_core_event_hook_add_state_change(session, hanguphook);
-    sql = switch_mprintf("insert into limit_data values('%q','%q','%q','%q');", globals.hostname, realm, id, switch_core_session_get_uuid(session));
+    sql = switch_mprintf("insert into limit_data (hostname, realm, id, uuid) values('%q','%q','%q','%q');", globals.hostname, realm, id, switch_core_session_get_uuid(session));
     limit_execute_sql(sql, NULL);
     switch_safe_free(sql);
 
