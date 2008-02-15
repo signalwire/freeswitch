@@ -218,7 +218,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 	
 	assert(interval != 0);
 
-	while (zap_test_flag(zchan, ZAP_CHANNEL_INTHREAD)) {
+	while (zap_running() && zap_test_flag(zchan, ZAP_CHANNEL_INTHREAD)) {
 		zap_wait_flag_t flags = ZAP_READ;
 		zap_size_t dlen = 0;
 		

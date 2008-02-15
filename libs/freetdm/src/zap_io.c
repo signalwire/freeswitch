@@ -233,6 +233,11 @@ static zap_status_t zap_channel_destroy(zap_channel_t *zchan)
 
 	if (zap_test_flag(zchan, ZAP_CHANNEL_CONFIGURED)) {
 
+		while (zap_test_flag(zchan, ZAP_CHANNEL_INTHREAD)) {
+			zap_log(ZAP_LOG_INFO, "Waiting for thread to exit on channel %u:%u\n", zchan->span_id, zchan->chan_id);
+			zap_sleep(500);
+		}
+
 		zap_buffer_destroy(&zchan->digit_buffer);
 		zap_buffer_destroy(&zchan->dtmf_buffer);
 		zap_buffer_destroy(&zchan->fsk_buffer);
@@ -1993,9 +1998,9 @@ zap_status_t zap_global_destroy(void)
 {
 	unsigned int i,j;
 	time_end();
-	
+
+	globals.running = 0;	
 	zap_span_close_all();
-	globals.running = 0;
 	zap_sleep(1000);
 
 	for(i = 1; i <= globals.span_index; i++) {
