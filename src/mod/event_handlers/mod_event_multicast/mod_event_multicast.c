@@ -248,13 +248,22 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown)
 {
 	int x = 0;
 
-	switch_socket_shutdown(globals.udp_socket, SWITCH_SHUTDOWN_READWRITE);
-	globals.running = -1;
-	while (x < 100000 && globals.running) {
-		x++;
-		switch_yield(1000);
+	if (globals.udp_socket) {
+		switch_socket_shutdown(globals.udp_socket, SWITCH_SHUTDOWN_READWRITE);
+		switch_socket_close(globals.udp_socket);
+		globals.udp_socket = NULL;
 	}
+
+	if (globals.running == 1) {
+		globals.running = -1;
+		while (x < 100000 && globals.running) {
+			x++;
+			switch_yield(1000);
+		}
+	}
+
 	switch_core_hash_destroy(&globals.event_hash);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
