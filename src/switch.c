@@ -93,7 +93,7 @@ static int freeswitch_kill_background()
 	}
 
 	/* pull the pid from the file */
-	if(fscanf(f, "%d", &pid)!=1) {
+	if (fscanf(f, "%d", &pid)!=1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Unable to get the pid!\n");
 	}
 
@@ -439,7 +439,7 @@ int main(int argc, char *argv[])
 	
 #ifndef WIN32
 	if (runas_user || runas_group) {
-		if(change_user_group(runas_user, runas_group) < 0) {
+		if (change_user_group(runas_user, runas_group) < 0) {
 			fprintf(stderr, "Failed to switch user / group\n" );
 			return 255;
 		}

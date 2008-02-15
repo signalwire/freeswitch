@@ -145,7 +145,7 @@ SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size
         l += 8;
         while (l >= 6) {
             out[bytes++] = switch_b64_table[(b>>(l-=6))%64];
-            if(++y != 72) {
+            if (++y != 72) {
                 continue;
             }
             //out[bytes++] = '\n';
@@ -332,7 +332,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
         close(ifd);
     }
     switch_snprintf(buf, B64BUFFLEN, "/bin/cat %s | %s %s %s", filename, runtime.mailer_app, runtime.mailer_app_args, to);
-    if(system(buf)) {
+    if (system(buf)) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to execute command: %s\n", buf);
     }
 

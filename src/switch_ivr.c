@@ -883,7 +883,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 
 		uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE);
 
-		if(!uuid) {
+		if (!uuid) {
 			uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE);
 		}
 		
