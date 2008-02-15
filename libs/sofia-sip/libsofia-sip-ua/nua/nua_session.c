@@ -1972,8 +1972,8 @@ int nua_invite_server_preprocess(nua_server_request_t *sr)
 
   session_timer_store(ss->ss_timer, request);
 
-  assert(ss->ss_state >= nua_callstate_ready ||
-	 ss->ss_state == nua_callstate_init);
+  if (!(ss->ss_state >= nua_callstate_ready || ss->ss_state == nua_callstate_init)) 
+    return SR_STATUS1(sr, SIP_500_INTERNAL_SERVER_ERROR);
 
   if (NH_PGET(nh, auto_answer) ||
       /* Auto-answer to re-INVITE unless auto_answer is set to 0 on handle */
