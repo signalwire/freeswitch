@@ -376,23 +376,23 @@ static int nua_subscribe_client_response(nua_client_request_t *cr,
     if (delta > 0) {
       nua_dialog_usage_set_refresh(du, delta);
     } 
-    else if (!eu->eu_notified) {
-      /* This is a fetch: subscription was really terminated
-	 but we wait 32 seconds for NOTIFY. */
-      delta = 64 * NTA_SIP_T1 / 1000;
-
-      if (win_messenger_enable)
-	delta = 4 * 60; 	/* Wait 4 minutes for NOTIFY from Messenger */
-
-      eu->eu_final_wait = 1;
-	
-      if (eu->eu_substate == nua_substate_terminated)
-	eu->eu_substate = nua_substate_embryonic;
-
-      nua_dialog_usage_set_refresh_range(du, delta, delta);
-    }
     else {
-      eu->eu_substate = nua_substate_terminated;
+      if (eu->eu_substate == nua_substate_terminated) {
+	if (!eu->eu_notified)
+	  eu->eu_substate = nua_substate_embryonic;
+      }
+
+      if (eu->eu_substate != nua_substate_terminated) {
+	/* Wait 32 seconds for NOTIFY. */
+	delta = 64 * NTA_SIP_T1 / 1000;
+	
+	eu->eu_final_wait = 1;
+
+	if (!eu->eu_notified && win_messenger_enable)
+	  delta = 4 * 60; 	/* Wait 4 minutes for NOTIFY from Messenger */
+
+	nua_dialog_usage_set_refresh_range(du, delta, delta);
+      }
     }
 
     substate = eu->eu_substate;

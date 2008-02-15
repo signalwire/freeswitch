@@ -4655,6 +4655,9 @@ int tport_name_dup(su_home_t *home,
   size_t n_proto, n_host, n_port, n_canon, n_comp = 0;
   char *s;
 
+  if (!src->tpn_proto || !src->tpn_host || !src->tpn_port || !src->tpn_canon)
+    return -1;
+
   if (strcmp(src->tpn_proto, tpn_any)) 
     n_proto = strlen(src->tpn_proto) + 1;
   else

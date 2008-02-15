@@ -48,6 +48,7 @@
 typedef struct tp_test_s tp_test_t;
 
 #define TP_STACK_T tp_test_t
+#define TP_CLIENT_T struct called
  
 #include <sofia-sip/su_wait.h>
 #include <sofia-sip/su_md5.h>

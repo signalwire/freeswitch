@@ -90,12 +90,34 @@ struct tls_s {
 
 enum { tls_buffer_size = 16384 };
 
+/** Log TLS error(s).
+ *
+ * Log the TLS error specified by the error code @a e and all the errors in
+ * the queue. The error code @a e implies no error, and it is not logged.
+ */
 static
-int tls_print_errors(const char *str, size_t len, void *u)
+void tls_log_errors(unsigned level, char const *s, unsigned long e)
 {
-	SU_DEBUG_1((str));
-	return 0;
+  if (e == 0)
+    e = ERR_get_error();
+
+  if (!tport_log->log_init)
+    su_log_init(tport_log);
+
+  if (s == NULL) s = "tls";
+
+  for (; e != 0; e = ERR_get_error()) {
+    if (level <= tport_log->log_level) {
+      const char *error = ERR_lib_error_string(e);
+      const char *func = ERR_func_error_string(e);
+      const char *reason = ERR_reason_error_string(e);
+
+      su_llog(tport_log, level, "%s: %08lx:%s:%s:%s\n", 
+	      s, e, error, func, reason);
+    }
+  }
 }
+
 
 static
 tls_t *tls_create(int type)
@@ -107,6 +129,7 @@ tls_t *tls_create(int type)
 
   return tls;
 }
+
 
 static
 void tls_set_default(tls_issues_t *i)
@@ -123,22 +146,18 @@ void tls_set_default(tls_issues_t *i)
   /* TLS_RSA_WITH_3DES_EDE_CBC_SHA; */
 }
 
+
 static
 int tls_verify_cb(int ok, X509_STORE_CTX *store)
 {
-  char data[256];
-
-  X509 *cert = X509_STORE_CTX_get_current_cert(store);
-  int  depth = X509_STORE_CTX_get_error_depth(store);
-  int  err = X509_STORE_CTX_get_error(store);
-
-#if nomore 
-  509_NAME_oneline(X509_get_subject_name(cert), data, 256);
-  SU_DEBUG_1(("depth=%d %s\n",depth,data));
-#endif
-
   if (!ok)
   {
+    char data[256];
+
+    X509 *cert = X509_STORE_CTX_get_current_cert(store);
+    int  depth = X509_STORE_CTX_get_error_depth(store);
+    int  err = X509_STORE_CTX_get_error(store);
+
     SU_DEBUG_1(("-Error with certificate at depth: %i\n", depth));
     X509_NAME_oneline(X509_get_issuer_name(cert), data, 256);
     SU_DEBUG_1(("  issuer   = %s\n", data));
@@ -163,9 +182,9 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
     if (ti->randFile &&
 	!RAND_load_file(ti->randFile, 1024 * 1024)) {
       if (ti->configured > 1) {
-	SU_DEBUG_1(("%s: cannot open randFile %s\n", 
+	SU_DEBUG_3(("%s: cannot open randFile %s\n", 
 		   "tls_init_context", ti->randFile));
-	ERR_print_errors_cb(&tls_print_errors, NULL);
+	tls_log_errors(3, "tls_init_context", 0);
       }
       /* errno = EIO; */
       /* return -1; */
@@ -192,7 +211,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
   }
 
   if (tls->ctx == NULL) {
-    ERR_print_errors_cb(&tls_print_errors, NULL);
+    tls_log_errors(1, "tls_init_context", 0);
     errno = EIO;
     return -1;
   }
@@ -201,9 +220,9 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
 				    ti->cert,
 				    SSL_FILETYPE_PEM)) {
     if (ti->configured > 0) {
-      SU_DEBUG_1(("%s: invalid certificate: %s\n",
+      SU_DEBUG_1(("%s: invalid local certificate: %s\n",
 		 "tls_init_context", ti->cert));
-      ERR_print_errors_cb(&tls_print_errors, NULL);
+      tls_log_errors(1, "tls_init_context", 0);
 #if require_client_certificate
       errno = EIO;
       return -1;
@@ -215,7 +234,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
                                    ti->key, 
                                    SSL_FILETYPE_PEM)) {
     if (ti->configured > 0) {
-      ERR_print_errors_cb(&tls_print_errors, NULL);
+      tls_log_errors(1, "tls_init_context", 0);
 #if require_client_certificate
       errno = EIO;
       return -1;
@@ -225,7 +244,8 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
 
   if (!SSL_CTX_check_private_key(tls->ctx)) {
     if (ti->configured > 0) {
-      SU_DEBUG_1(("Private key does not match the certificate public key\n"));
+      SU_DEBUG_1(("%s: private key does not match the certificate public key\n",
+		  "tls_init_context"));
     }
 #if require_client_certificate
     errno = EIO;
@@ -237,7 +257,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
                                      ti->CAfile, 
                                      ti->CApath)) {
     if (ti->configured > 0)
-      ERR_print_errors_cb(&tls_print_errors, NULL);
+      tls_log_errors(1, "tls_init_context", 0);
     errno = EIO;
     return -1;
   }
@@ -250,8 +270,8 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
                      tls_verify_cb);
 
   if (!SSL_CTX_set_cipher_list(tls->ctx, ti->cipher)) {
-    SU_DEBUG_1(("error setting cipher list\n"));
-    ERR_print_errors_cb(&tls_print_errors, NULL);
+    SU_DEBUG_1(("%s: error setting cipher list\n", "tls_init_context"));
+    tls_log_errors(1, "tls_init_context", 0);
     errno = EIO;
     return -1;
   }
@@ -331,8 +351,7 @@ tls_t *tls_init_master(tls_issues_t *ti)
     tls->bio_con = BIO_new_socket(sock, BIO_NOCLOSE);
 
     if (tls->bio_con == NULL) {
-      SU_DEBUG_1(("tls_init_master: BIO_new_socket failed\n"));
-      ERR_print_errors_cb(&tls_print_errors, NULL);
+      tls_log_errors(1, "tls_init_master", 0);
       tls_free(tls);
       errno = EIO;
       return NULL;
@@ -342,56 +361,6 @@ tls_t *tls_init_master(tls_issues_t *ti)
 
   return tls;
 }
-
-#if 0
-#include <poll.h>
-
-static 
-int tls_accept(tls_t *tls)
-{
-  int ret = SSL_accept(tls->con);
-  int verify_result;
-
-  if (ret <= 0) {
-    int err = SSL_get_error(tls->con, ret);
-    switch(err) {
-    case SSL_ERROR_WANT_READ:
-      return errno = EAGAIN, tls->read_events = SU_WAIT_IN, 0;
-    case SSL_ERROR_WANT_WRITE:
-      return errno = EAGAIN, tls->read_events = SU_WAIT_OUT, 0;
-
-    default:    
-      SU_DEBUG_1(("SSL_connect failed: %d %s\n", 
-                 err,
-                 ERR_error_string(err, NULL)));
-      ERR_print_errors_cb(&tls_print_errors, NULL);
-      return -1;
-    }
-  }
-
-  verify_result = SSL_get_verify_result(tls->con);
-
-  if (verify_result != X509_V_OK) {
-    SU_DEBUG_1((
-               "Client certificate doesn't verify: %s\n",
-               X509_verify_cert_error_string(verify_result)));
-#if 0
-    tls_free(tls);
-    return NULL;
-#endif
-  }
-
-  if (SSL_get_peer_certificate(tls->con) == NULL) {
-    SU_DEBUG_1(("Client didn't send certificate\n"));
-#if 0
-    tls_free(tls);
-    return NULL;
-#endif
-  }
-
-  return 1;
-}
-#endif
 
 tls_t *tls_clone(tls_t *master, int sock, int accept)
 {
@@ -412,8 +381,7 @@ tls_t *tls_clone(tls_t *master, int sock, int accept)
   tls->con = SSL_new(tls->ctx);
 
   if (tls->con == NULL) {
-    SU_DEBUG_1(("tls_clone: SSL_new failed\n"));
-    ERR_print_errors_cb(&tls_print_errors, NULL);
+    tls_log_errors(1, "tls_clone", 0);
     tls_free(tls);
     errno = EIO;
     return NULL;
@@ -566,10 +534,9 @@ int tls_check_hosts(tls_t *tls, char const *hosts[TLS_MAX_HOSTS])
 }
 
 static
-int tls_error(tls_t *tls, int ret, char const *who, char const *operation,
+int tls_error(tls_t *tls, int ret, char const *who,
 	      void *buf, int size)
 {
-  char errorbuf[128];
   int events = 0;
   int err = SSL_get_error(tls->con, ret);
 
@@ -593,9 +560,7 @@ int tls_error(tls_t *tls, int ret, char const *who, char const *operation,
     return -1;
 
   default:
-    SU_DEBUG_1(("%s: %s failed (%d): %s\n", 
-	       who, operation, err, ERR_error_string(err, errorbuf)));
-    ERR_print_errors_cb(&tls_print_errors, NULL);
+    tls_log_errors(1, who, err);
     errno = EIO;
     return -1;
   }
@@ -633,7 +598,7 @@ ssize_t tls_read(tls_t *tls)
 
   ret = SSL_read(tls->con, tls->read_buffer, tls_buffer_size);
   if (ret <= 0)
-    return tls_error(tls, ret, "tls_read", "SSL_read", NULL, 0);
+    return tls_error(tls, ret, "tls_read: SSL_read", NULL, 0);
 
   if (!tls->verified) {
     int err = tls_post_connection_check(tls);
@@ -737,7 +702,7 @@ ssize_t tls_write(tls_t *tls, void *buf, size_t size)
 
   ret = SSL_write(tls->con, buf, size);
   if (ret < 0)
-    return tls_error(tls, ret, "tls_write", "SSL_write", buf, size);
+    return tls_error(tls, ret, "tls_write: SSL_write", buf, size);
 
   return ret;
 }
