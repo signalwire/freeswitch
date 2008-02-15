@@ -743,7 +743,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				clean_from_user = switch_mprintf("%s", from_id ? from_id : from_user);
 
 				if (is_dialog) {
-					if(!switch_strlen_zero(clean_to_user) && !switch_strlen_zero(clean_from_user)) {
+					if (!switch_strlen_zero(clean_to_user) && !switch_strlen_zero(clean_from_user)) {
 						stream.write_function(&stream, "<local>\n<identity display=\"%s\">sip:%s@%s</identity>\n", clean_to_user, clean_to_user, host);
 						stream.write_function(&stream, "<target uri=\"sip:%s@%s\">\n", clean_to_user, host);
 						stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"%s\"/>\n", !strcasecmp(event_status, "hold") ? "no" : "yes" );

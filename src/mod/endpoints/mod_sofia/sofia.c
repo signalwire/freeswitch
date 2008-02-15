@@ -1936,10 +1936,10 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							new_b_session = switch_core_session_locate(br_b);
 							a_session = switch_core_session_locate(br_a);
 							sofia_info_send_sipfrag(a_session, new_b_session);
-							if(new_b_session) {
+							if (new_b_session) {
 								switch_core_session_rwunlock(new_b_session);
 							}
-							if(a_session) {
+							if (a_session) {
 								switch_core_session_rwunlock(a_session);
 							}
 							//switch_channel_hangup(channel_b, SWITCH_CAUSE_ATTENDED_TRANSFER);
@@ -2195,7 +2195,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 		}
 
 		if ((clientcode_header = sofia_glue_get_unknown_header(sip, "x-clientcode"))) {
-			if(!switch_strlen_zero(clientcode_header)) {
+			if (!switch_strlen_zero(clientcode_header)) {
 				switch_channel_set_variable(channel, "call_clientcode", clientcode_header);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Setting CMC to %s\n", clientcode_header);
 				nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
@@ -2256,7 +2256,7 @@ const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const 
 		user = url->url_user;
 		host = url->url_host;
 		port = url->url_port;
-		if(!switch_strlen_zero(url->url_params)) {
+		if (!switch_strlen_zero(url->url_params)) {
 			switch_channel_set_variable(channel, params_var, url->url_params);
 		}
 	}
@@ -2809,7 +2809,7 @@ static void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_ses
 		if (b_tech_pvt && a_tech_pvt && a_tech_pvt->caller_profile) {
 			switch_caller_profile_t *acp = a_tech_pvt->caller_profile;
 
-			if(switch_strlen_zero(acp->caller_id_name)) {
+			if (switch_strlen_zero(acp->caller_id_name)) {
 				snprintf(message, sizeof(message), "From:\r\nTo: %s\r\n", acp->caller_id_number);
 			} else {
 				snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", acp->caller_id_name, acp->caller_id_number);

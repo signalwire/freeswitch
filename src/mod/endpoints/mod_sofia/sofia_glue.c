@@ -580,7 +580,7 @@ sofia_transport_t sofia_glue_url2transport(const url_t *url)
 	char *ptr = NULL;
 	int tls = 0;
 
-	if(!url)
+	if (!url)
 		return SOFIA_TRANSPORT_UNKNOWN;
 
 	if (url->url_scheme && !strcasecmp(url->url_scheme, "sips")) {
@@ -612,13 +612,13 @@ sofia_transport_t sofia_glue_via2transport(const sip_via_t *via)
 		if (!strncasecmp(ptr, "udp", 3)) {
 			return SOFIA_TRANSPORT_UDP;
 		}
-		else if(!strncasecmp(ptr, "tcp", 3)) {
+		else if (!strncasecmp(ptr, "tcp", 3)) {
 			return SOFIA_TRANSPORT_TCP;
 		}
-		else if(!strncasecmp(ptr, "tls", 3)) {
+		else if (!strncasecmp(ptr, "tls", 3)) {
 			return SOFIA_TRANSPORT_TCP_TLS;
 		}
-		else if(!strncasecmp(ptr, "sctp", 4)) {
+		else if (!strncasecmp(ptr, "sctp", 4)) {
 			return SOFIA_TRANSPORT_SCTP;
 		}
 	}
