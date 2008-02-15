@@ -1043,6 +1043,26 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			switch_core_timer_step(&rtp_session->timer);
 		}
 
+		if (bytes && rtp_session->recv_msg.header.version != 2) {
+			uint8_t *data = (uint8_t *) rtp_session->recv_msg.body;
+			if (rtp_session->recv_msg.header.version == 0 && rtp_session->ice_user) {
+				handle_ice(rtp_session, (void *) &rtp_session->recv_msg, bytes);
+			}
+
+			if (rtp_session->invalid_handler) {
+				rtp_session->invalid_handler(rtp_session, rtp_session->sock, (void *) &rtp_session->recv_msg, bytes, rtp_session->from_addr);
+			}
+			
+			memset(data, 0, 2);
+			data[0] = 65;
+
+			rtp_session->recv_msg.header.pt = (uint32_t) rtp_session->cng_pt ? rtp_session->cng_pt : SWITCH_RTP_CNG_PAYLOAD;
+			*flags |= SFF_CNG;
+			*payload_type = (switch_payload_t)rtp_session->recv_msg.header.pt;
+			ret = 2 + rtp_header_len;
+			goto end;
+		}
+
 		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV)) {
 			int sbytes = (int) bytes;
 			err_status_t stat = 0;
@@ -1062,7 +1082,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 
 			stat = srtp_unprotect(rtp_session->recv_ctx, &rtp_session->recv_msg.header, &sbytes);
-
 
 			if (stat && rtp_session->recv_msg.header.pt != rtp_session->te && rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
 				if (++rtp_session->srtp_errs >= MAX_SRTP_ERRS) {
@@ -1223,26 +1242,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				ret = 2 + rtp_header_len;
 				goto end;
 			}
-		}
-
-		if (bytes && rtp_session->recv_msg.header.version != 2) {
-			uint8_t *data = (uint8_t *) rtp_session->recv_msg.body;
-			if (rtp_session->recv_msg.header.version == 0 && rtp_session->ice_user) {
-				handle_ice(rtp_session, (void *) &rtp_session->recv_msg, bytes);
-			}
-
-			if (rtp_session->invalid_handler) {
-				rtp_session->invalid_handler(rtp_session, rtp_session->sock, (void *) &rtp_session->recv_msg, bytes, rtp_session->from_addr);
-			}
-			
-			memset(data, 0, 2);
-			data[0] = 65;
-
-			rtp_session->recv_msg.header.pt = (uint32_t) rtp_session->cng_pt ? rtp_session->cng_pt : SWITCH_RTP_CNG_PAYLOAD;
-			*flags |= SFF_CNG;
-			*payload_type = (switch_payload_t)rtp_session->recv_msg.header.pt;
-			ret = 2 + rtp_header_len;
-			goto end;
 		}
 
 		if (bytes > 0) {
