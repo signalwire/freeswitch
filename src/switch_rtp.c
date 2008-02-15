@@ -843,19 +843,15 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 	}
 
 	if (switch_test_flag((*rtp_session), SWITCH_RTP_FLAG_SECURE_SEND)) {
-		switch_mutex_lock((*rtp_session)->flag_mutex);
 		srtp_dealloc((*rtp_session)->send_ctx);
 		(*rtp_session)->send_ctx = NULL;
 		switch_clear_flag((*rtp_session), SWITCH_RTP_FLAG_SECURE_SEND);
-		switch_mutex_unlock((*rtp_session)->flag_mutex);
 	}
 
 	if (switch_test_flag((*rtp_session), SWITCH_RTP_FLAG_SECURE_RECV)) {
-		switch_mutex_lock((*rtp_session)->flag_mutex);
 		srtp_dealloc((*rtp_session)->recv_ctx);
 		(*rtp_session)->recv_ctx = NULL;
 		switch_clear_flag((*rtp_session), SWITCH_RTP_FLAG_SECURE_RECV);
-		switch_mutex_unlock((*rtp_session)->flag_mutex);
 	}
 
 	if ((*rtp_session)->timer.timer_interface) {

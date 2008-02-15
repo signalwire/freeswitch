@@ -1003,11 +1003,16 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 			switch_yield(10000);
 			loops++;
 		}
+	}
+
+	if (tech_pvt->rtp_session) {
 		switch_rtp_destroy(&tech_pvt->rtp_session);
 	}
-	if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
+
+	if (tech_pvt->video_rtp_session) {
 		switch_rtp_destroy(&tech_pvt->video_rtp_session);
 	}
+
 }
 
 switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int force)
