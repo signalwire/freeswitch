@@ -1870,8 +1870,7 @@ static void conference_loop_output(conference_member_t * member)
 				
 			use_timer = 1;
 
-			if (mux_used >= bytes) {
-					
+			if (mux_used) {
 				/* Flush the output buffer and write all the data (presumably muxed) back to the channel */
 				switch_mutex_lock(member->audio_out_mutex);
 				write_frame.data = data;
