@@ -237,6 +237,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 		return SWITCH_STATUS_GENERR;
 	}
 
+	switch_socket_opt_set(globals.udp_socket, SWITCH_SO_NONBLOCK, TRUE);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -246,10 +247,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown)
 {
 	int x = 0;
-
-	if (globals.udp_socket) {
-		switch_socket_shutdown(globals.udp_socket, SWITCH_SHUTDOWN_READWRITE);
-	}
 
 	if (globals.running == 1) {
 		globals.running = -1;
@@ -282,53 +279,62 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 	while (globals.running == 1) {
 		char *myaddr;
 		size_t len = MULTICAST_BUFFSIZE;
+		char *packet;
+		uint64_t host_hash = 0;
+		switch_status_t status;
 		memset(buf, 0, len);
-
+		
 		switch_sockaddr_ip_get(&myaddr, globals.addr);
-
-		if (switch_socket_recvfrom(addr, globals.udp_socket, 0, buf, &len) == SWITCH_STATUS_SUCCESS) {
-			char *packet;
-			uint64_t host_hash = 0;
-
-			memcpy(&host_hash, buf, sizeof(host_hash));
-			packet = buf + sizeof(host_hash);
-
-			if (host_hash == globals.host_hash) {
+		status = switch_socket_recvfrom(addr, globals.udp_socket, 0, buf, &len);
+		
+		if (!len) {
+			if (SWITCH_STATUS_IS_BREAK(status)) {
+				switch_yield(100000);
 				continue;
 			}
-			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT %d\n--------------------------------\n%s\n", (int) len, packet);
-			if (switch_event_create_subclass(&local_event, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT) == SWITCH_STATUS_SUCCESS) {
-				char *var, *val, *term = NULL, tmpname[128];
-				switch_event_add_header(local_event, SWITCH_STACK_BOTTOM, "Multicast", "yes");
-				var = packet;
-				while (*var) {
-					if ((val = strchr(var, ':')) != 0) {
-						*val++ = '\0';
-						while (*val == ' ') {
-							val++;
-						}
-						if ((term = strchr(val, '\r')) != 0 || (term = strchr(val, '\n')) != 0) {
-							*term = '\0';
-							while (*term == '\r' || *term == '\n') {
-								term++;
-							}
-						}
-						switch_snprintf(tmpname, sizeof(tmpname), "Orig-%s", var);
-						switch_event_add_header(local_event, SWITCH_STACK_BOTTOM, tmpname, "%s", val);
-						var = term + 1;
-					} else {
-						break;
-					}
-				}
 
-				if (var && strlen(var) > 1) {
-					switch_event_add_body(local_event, var);
-				}
-
-				switch_event_fire(&local_event);
-
-			}
+			break;
 		}
+
+		memcpy(&host_hash, buf, sizeof(host_hash));
+		packet = buf + sizeof(host_hash);
+
+		if (host_hash == globals.host_hash) {
+			continue;
+		}
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT %d\n--------------------------------\n%s\n", (int) len, packet);
+		if (switch_event_create_subclass(&local_event, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT) == SWITCH_STATUS_SUCCESS) {
+			char *var, *val, *term = NULL, tmpname[128];
+			switch_event_add_header(local_event, SWITCH_STACK_BOTTOM, "Multicast", "yes");
+			var = packet;
+			while (*var) {
+				if ((val = strchr(var, ':')) != 0) {
+					*val++ = '\0';
+					while (*val == ' ') {
+						val++;
+					}
+					if ((term = strchr(val, '\r')) != 0 || (term = strchr(val, '\n')) != 0) {
+						*term = '\0';
+						while (*term == '\r' || *term == '\n') {
+							term++;
+						}
+					}
+					switch_snprintf(tmpname, sizeof(tmpname), "Orig-%s", var);
+					switch_event_add_header(local_event, SWITCH_STACK_BOTTOM, tmpname, "%s", val);
+					var = term + 1;
+				} else {
+					break;
+				}
+			}
+
+			if (var && strlen(var) > 1) {
+				switch_event_add_body(local_event, var);
+			}
+
+			switch_event_fire(&local_event);
+
+		}
+		
 	}
 
 	globals.running = 0;
