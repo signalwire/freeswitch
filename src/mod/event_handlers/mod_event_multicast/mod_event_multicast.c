@@ -145,13 +145,17 @@ static void event_handler(switch_event_t *event)
 	size_t len;
 	uint8_t send = 0;
 
-	buf = (char *) malloc(MULTICAST_BUFFSIZE);
-	switch_assert(buf);
+	if (globals.running != 1) {
+		return;
+	}
 
 	if (event->subclass && !strcmp(event->subclass->name, MULTICAST_EVENT)) {
 		/* ignore our own events to avoid ping pong */
 		return;
 	}
+
+	buf = (char *) malloc(MULTICAST_BUFFSIZE);
+	switch_assert(buf);
 
 	if (globals.event_list[(uint8_t) SWITCH_EVENT_ALL]) {
 		send = 1;
@@ -250,8 +254,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown)
 
 	if (globals.udp_socket) {
 		switch_socket_shutdown(globals.udp_socket, SWITCH_SHUTDOWN_READWRITE);
-		switch_socket_close(globals.udp_socket);
-		globals.udp_socket = NULL;
 	}
 
 	if (globals.running == 1) {
@@ -260,6 +262,11 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown)
 			x++;
 			switch_yield(1000);
 		}
+	}
+
+	if (globals.udp_socket) {
+		switch_socket_close(globals.udp_socket);
+		globals.udp_socket = NULL;
 	}
 
 	switch_core_hash_destroy(&globals.event_hash);
