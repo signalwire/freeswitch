@@ -132,11 +132,6 @@ typedef struct {
 static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
 	displace_helper_t *dh = (displace_helper_t *) user_data;
-	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
-	switch_frame_t frame = { 0 };
-
-	frame.data = data;
-	frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT:
@@ -205,11 +200,6 @@ static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user
 static switch_bool_t read_displace_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
 	displace_helper_t *dh = (displace_helper_t *) user_data;
-	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
-	switch_frame_t frame = { 0 };
-
-	frame.data = data;
-	frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT:
