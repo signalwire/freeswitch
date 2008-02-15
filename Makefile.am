@@ -193,7 +193,7 @@ samples: samples-conf samples-htdocs
 
 install-data-local:
 	@echo Installing $(NAME)
-	@for x in mod db log log/xml_cdr bin scripts grammar ; do \
+	@for x in mod db log log/xml_cdr bin scripts grammar recordings ; do \
 		$(mkinstalldirs) $(DESTDIR)$(prefix)/$$x ; \
 	 done
 	test -d $(DESTDIR)$(prefix)/conf || $(MAKE) samples-conf
