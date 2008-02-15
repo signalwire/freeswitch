@@ -1046,7 +1046,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 	switch_file_handle_t fh = { 0 };
 	cc_t cc = { 0 };
 
-	if(switch_channel_ready(channel)) {
+	if (switch_channel_ready(channel)) {
 
 		args.input_callback = cancel_on_dtmf;
 
@@ -1160,13 +1160,13 @@ play_file:
 					switch_channel_set_variable(channel, "voicemail_message_len", duration_str);
 					switch_channel_set_variable(channel, "voicemail_email", cbt->email);
 
-					if(switch_strlen_zero(profile->email_headers)) {
+					if (switch_strlen_zero(profile->email_headers)) {
 						from = switch_core_session_sprintf(session, "%s@%s", cbt->user, cbt->domain);
 					} else {
 						from = switch_channel_expand_variables(channel,profile->email_from);
 					}
 
-					if(switch_strlen_zero(profile->email_headers)) {
+					if (switch_strlen_zero(profile->email_headers)) {
 						headers = switch_core_session_sprintf(session, 
 							"From: FreeSWITCH mod_voicemail <%s@%s>\nSubject: Voicemail from %s %s\nX-Priority: %d", 
 							cbt->user, cbt->domain, cbt->cid_name, cbt->cid_number, priority);
@@ -1617,7 +1617,7 @@ case VM_CHECK_AUTH:
 
 		if (auth || !thepass || (thepass && mypass && !strcmp(thepass, mypass))) {
 			if (!dir_path) {
-				if(switch_strlen_zero(profile->storage_dir)) {
+				if (switch_strlen_zero(profile->storage_dir)) {
 					dir_path = switch_core_session_sprintf(session, "%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir, 
 						SWITCH_PATH_SEPARATOR,
 						SWITCH_PATH_SEPARATOR,
@@ -1710,7 +1710,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if(switch_strlen_zero(profile->storage_dir)) {
+	if (switch_strlen_zero(profile->storage_dir)) {
 		dir_path = switch_core_session_sprintf(session, "%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir, 
 			SWITCH_PATH_SEPARATOR,
 			SWITCH_PATH_SEPARATOR,
@@ -1819,14 +1819,14 @@ greet:
 	if (*buf != '\0') {
 		if (!strcasecmp(buf, profile->main_menu_key)) {
 			voicemail_check_main(session, profile_name, domain_name, id, 0);
-		} else if(!strcasecmp(buf, profile->operator_key) && !switch_strlen_zero(profile->operator_key)) {
+		} else if (!strcasecmp(buf, profile->operator_key) && !switch_strlen_zero(profile->operator_key)) {
 			int argc;
 			char *argv[4];
 			char *mycmd;
 
 			if (!switch_strlen_zero(profile->operator_ext) && (mycmd = switch_core_session_strdup(session, profile->operator_ext))) {
 				argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-				if(argc >= 1 && argc <= 4) {
+				if (argc >= 1 && argc <= 4) {
 					switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
 					/* the application still runs after we leave it so we need to make sure that we dont do anything evil */
 					send_mail=0;
@@ -1877,7 +1877,7 @@ greet:
 		}
 	}
 
-	if(!send_mail && switch_file_exists(file_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+	if (!send_mail && switch_file_exists(file_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 		char *usql;
 		switch_event_t *event;
 		char *mwi_id = NULL;

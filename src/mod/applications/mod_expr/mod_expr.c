@@ -82,43 +82,43 @@ SWITCH_STANDARD_API(expr_function)
 
     /* Create function list */
     err = exprFuncListCreate(&f);
-    if(err != EXPR_ERROR_NOERROR)
+    if (err != EXPR_ERROR_NOERROR)
         goto error;
 
     /* Init function list with internal functions */
     err = exprFuncListInit(f);
-    if(err != EXPR_ERROR_NOERROR)
+    if (err != EXPR_ERROR_NOERROR)
         goto error;
 
     /* Add custom function */
     //err = exprFuncListAdd(f, my_func, "myfunc", 1, 1, 1, 1);
-    //if(err != EXPR_ERROR_NOERROR)
+    //if (err != EXPR_ERROR_NOERROR)
 	//goto error;
 
     /* Create constant list */
     err = exprValListCreate(&c);
-    if(err != EXPR_ERROR_NOERROR)
+    if (err != EXPR_ERROR_NOERROR)
         goto error;
 
     /* Init constant list with internal constants */
     err = exprValListInit(c);
-    if(err != EXPR_ERROR_NOERROR)
+    if (err != EXPR_ERROR_NOERROR)
         goto error;
 
     /* Create variable list */
     err = exprValListCreate(&v);
-    if(err != EXPR_ERROR_NOERROR)
+    if (err != EXPR_ERROR_NOERROR)
         goto error;
 
     /* Create expression object */
     err = exprCreate(&e, f, v, c, breaker, NULL);
-    if(err != EXPR_ERROR_NOERROR)
+    if (err != EXPR_ERROR_NOERROR)
         goto error;
 
     /* Parse expression */
     err = exprParse(e, (char *)expr);
 
-    if(err != EXPR_ERROR_NOERROR)
+    if (err != EXPR_ERROR_NOERROR)
         goto error;
 
     /* Enable soft errors */
@@ -153,19 +153,19 @@ SWITCH_STANDARD_API(expr_function)
 
  done:
     /* Do cleanup */
-    if(e) {
+    if (e) {
         exprFree(e); 
     }
 
-    if(f) {
+    if (f) {
         exprFuncListFree(f);
     }
 
-    if(v) {
+    if (v) {
         exprValListFree(v);
     }
 
-    if(c) {
+    if (c) {
         exprValListFree(c);
     }
 

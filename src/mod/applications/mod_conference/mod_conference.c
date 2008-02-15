@@ -555,11 +555,11 @@ static switch_status_t conference_add_member(conference_obj_t * conference, conf
 		}
 
 		if (conference->count > 1) {
-			if(conference->moh_sound) {
+			if (conference->moh_sound) {
 				/* stop MoH if any */
 				conference_stop_file(conference, FILE_STOP_ASYNC);
 			}
-			if(conference->enter_sound) {
+			if (conference->enter_sound) {
 				conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 1);
 			}
 		}

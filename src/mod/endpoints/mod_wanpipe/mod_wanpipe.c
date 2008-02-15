@@ -809,7 +809,7 @@ static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch
 		teletone_dtmf_detect (&tech_pvt->dtmf_detect, tech_pvt->read_frame.data, tech_pvt->read_frame.samples);
 		teletone_dtmf_get(&tech_pvt->dtmf_detect, digit_str, sizeof(digit_str));
 	
-		if(digit_str[0]) {
+		if (digit_str[0]) {
 			char *p = digit_str;
 			switch_dtmf_t dtmf = {0, globals.dtmf_on};
 			while(p && *p) {
@@ -1141,7 +1141,7 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 	if (is_raw) {
 		int chan, span;
 
-		if (sangoma_span_chan_fromif(bchan, &span, &chan)) {
+		if (sangoma_span_chan_fromif (bchan, &span, &chan)) {
 			if (!(tech_pvt->wpsock = wp_open(span, chan))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd for s%dc%d! [%s]\n", span, chan, strerror(errno));
 				switch_core_session_destroy(new_session);
@@ -1744,7 +1744,7 @@ static int waitfor_socket(int fd, int timeout, int flags)
     res = poll(pfds, 1, timeout);
 
     if (res > 0) {
-	if(pfds[0].revents & POLLIN) {
+	if (pfds[0].revents & POLLIN) {
 		res = 1;
 	} else if ((pfds[0].revents & POLLERR)) {
 		res = -1;
@@ -2314,7 +2314,7 @@ static switch_status_t config_wanpipe(int reload)
 			continue;
 		}
 
-		if (!sangoma_span_chan_fromif(c_dev, &span, &chan)) {
+		if (!sangoma_span_chan_fromif (c_dev, &span, &chan)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid device name '%s'\n", c_dev);
 			continue;
 		}
