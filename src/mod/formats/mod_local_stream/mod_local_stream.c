@@ -414,10 +414,11 @@ static void launch_threads(void)
 				}
 			} else if (!strcasecmp(var, "interval")) {
 				int tmp = atoi(val);
-				if (tmp >= 10) {
+				if (SWITCH_ACCEPTABLE_INTERVAL(tmp)) {
 					source->interval = tmp;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't set interval to less than 10\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+								  "Interval must be multipe of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL); 
 				}
 			} else if (!strcasecmp(var, "timer-name")) {
 				source->timer_name = switch_core_strdup(source->pool, val);

@@ -782,7 +782,13 @@ static switch_status_t load_config(void)
 			} else if (!strcmp(var, "sample-rate")) {
 				globals.sample_rate = atoi(val);
 			} else if (!strcmp(var, "codec-ms")) {
-				globals.codec_ms = atoi(val);
+				int tmp = atoi(val);
+				if (SWITCH_ACCEPTABLE_INTERVAL(tmp)) {
+					globals.codec_ms = tmp;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+									  "codec-ms must be multipe of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL); 
+				}
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
 			} else if (!strcmp(var, "cid-name")) {

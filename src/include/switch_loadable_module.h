@@ -353,30 +353,30 @@ static inline void switch_core_codec_add_implementation(switch_memory_pool_t *po
                                                         /*! deinitalize a codec handle using this implementation */
                                                         switch_core_codec_destroy_func_t destroy)
 {
-
-    switch_codec_implementation_t *impl = (switch_codec_implementation_t *) switch_core_alloc(pool, sizeof(*impl));
-    impl->codec_type = codec_type;
-    impl->ianacode = ianacode;
-    impl->iananame = iananame;
-    impl->fmtp = fmtp;
-    impl->samples_per_second = samples_per_second;
-    impl->actual_samples_per_second = actual_samples_per_second;
-    impl->bits_per_second = bits_per_second;
-    impl->microseconds_per_frame = microseconds_per_frame;
-    impl->samples_per_frame = samples_per_frame;
-    impl->bytes_per_frame = bytes_per_frame;
-    impl->encoded_bytes_per_frame = encoded_bytes_per_frame;
-    impl->number_of_channels = number_of_channels;
-    impl->pref_frames_per_packet = pref_frames_per_packet;
-    impl->max_frames_per_packet = max_frames_per_packet;
-    impl->init = init;
-    impl->encode = encode;
-    impl->decode = decode;
-    impl->destroy = destroy;
-    
-    impl->next = codec_interface->implementations;
-    codec_interface->implementations = impl;
-
+	if (SWITCH_ACCEPTABLE_INTERVAL(microseconds_per_frame / 1000)) {
+		switch_codec_implementation_t *impl = (switch_codec_implementation_t *) switch_core_alloc(pool, sizeof(*impl));
+		impl->codec_type = codec_type;
+		impl->ianacode = ianacode;
+		impl->iananame = iananame;
+		impl->fmtp = fmtp;
+		impl->samples_per_second = samples_per_second;
+		impl->actual_samples_per_second = actual_samples_per_second;
+		impl->bits_per_second = bits_per_second;
+		impl->microseconds_per_frame = microseconds_per_frame;
+		impl->samples_per_frame = samples_per_frame;
+		impl->bytes_per_frame = bytes_per_frame;
+		impl->encoded_bytes_per_frame = encoded_bytes_per_frame;
+		impl->number_of_channels = number_of_channels;
+		impl->pref_frames_per_packet = pref_frames_per_packet;
+		impl->max_frames_per_packet = max_frames_per_packet;
+		impl->init = init;
+		impl->encode = encode;
+		impl->decode = decode;
+		impl->destroy = destroy;
+		
+		impl->next = codec_interface->implementations;
+		codec_interface->implementations = impl;
+	}
 }
 
 ///\}

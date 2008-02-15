@@ -4618,8 +4618,6 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 {
 	conference_obj_t *conference;
 	switch_xml_t xml_kvp;
-	char *rate_name = NULL;
-	char *interval_name = NULL;
 	char *timer_name = NULL;
 	char *domain = NULL;
 	char *tts_engine = NULL;
@@ -4679,12 +4677,18 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 		if (!strcasecmp(var, "rate") && !switch_strlen_zero(val)) {
             uint32_t tmp = atoi(val);
             if (tmp == 8000 || tmp == 16000 || tmp == 32000) {
-                rate_name = val;
+                rate = tmp;
             }
 		} else if (!strcasecmp(var, "domain") && !switch_strlen_zero(val)) {
 			domain = val;
 		} else if (!strcasecmp(var, "interval") && !switch_strlen_zero(val)) {
-			interval_name = val;
+			uint32_t tmp = atoi(val);
+			if (SWITCH_ACCEPTABLE_INTERVAL(tmp)) {
+				interval = tmp;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+								  "Interval must be multipe of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL); 
+			}
 		} else if (!strcasecmp(var, "timer-name") && !switch_strlen_zero(val)) {
 			timer_name = val;
 		} else if (!strcasecmp(var, "tts-engine") && !switch_strlen_zero(val)) {
@@ -4765,22 +4769,6 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	}
 
 	/* Set defaults and various paramaters */
-
-	/* Speed in hertz */
-	if (!switch_strlen_zero(rate_name)) {
-		uint32_t r = atoi(rate_name);
-		if (r) {
-			rate = r;
-		}
-	}
-
-	/* Packet Interval in milliseconds */
-	if (!switch_strlen_zero(interval_name)) {
-		uint32_t i = atoi(interval_name);
-		if (i) {
-			interval = i;
-		}
-	}
 
 	/* Timer module to use */
 	if (switch_strlen_zero(timer_name)) {

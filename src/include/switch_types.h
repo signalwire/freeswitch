@@ -306,7 +306,7 @@ SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
 #define SWITCH_CORE_QUEUE_LEN 100000
 #define SWITCH_MAX_MANAGEMENT_BUFFER_LEN 1024 * 8
 
-#define SWITCH_ACCEPTABLE_INTERVAL(_i) (_i <= SWITCH_MAX_INTERVAL && (_i % 10) == 0)
+#define SWITCH_ACCEPTABLE_INTERVAL(_i) (_i && _i <= SWITCH_MAX_INTERVAL && (_i % 10) == 0)
 
 typedef enum {
 	SWITCH_CPF_SCREEN = (1 << 0),

@@ -684,12 +684,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
                                              switch_gsm_init, switch_gsm_encode, switch_gsm_decode, switch_gsm_destroy);
     }
 	/* LPC10 */
-	SWITCH_ADD_CODEC(codec_interface, "LPC-10");
-    switch_core_codec_add_implementation(pool, codec_interface,
-                                         SWITCH_CODEC_TYPE_AUDIO, 7, "LPC", NULL, 8000, 8000, 2400,
-										 90000, 720, 1440, 28, 1, 1, 1,
-                                         switch_lpc10_init, switch_lpc10_encode, switch_lpc10_decode, switch_lpc10_destroy);
-	
+	if (SWITCH_MAX_INTERVAL >= 90) {
+		SWITCH_ADD_CODEC(codec_interface, "LPC-10");
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 7, "LPC", NULL, 8000, 8000, 2400,
+											 90000, 720, 1440, 28, 1, 1, 1,
+											 switch_lpc10_init, switch_lpc10_encode, switch_lpc10_decode, switch_lpc10_destroy);
+	}
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
