@@ -141,8 +141,6 @@ static switch_status_t load_config(void)
 
 static void event_handler(switch_event_t *event)
 {
-	char *buf;
-	size_t len;
 	uint8_t send = 0;
 
 	if (globals.running != 1) {
@@ -153,9 +151,6 @@ static void event_handler(switch_event_t *event)
 		/* ignore our own events to avoid ping pong */
 		return;
 	}
-
-	buf = (char *) malloc(MULTICAST_BUFFSIZE);
-	switch_assert(buf);
 
 	if (globals.event_list[(uint8_t) SWITCH_EVENT_ALL]) {
 		send = 1;
@@ -170,22 +165,22 @@ static void event_handler(switch_event_t *event)
 
 		switch (event->event_id) {
 		case SWITCH_EVENT_LOG:
-			goto end;
+			return;
 		default:
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Multicast-Sender", "%s", globals.hostname);
 			if (switch_event_serialize(event, &packet, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+				size_t len = strlen(packet) + sizeof(globals.host_hash);
+				char *buf = malloc(len + 1);
+				switch_assert(buf);
 				memcpy(buf, &globals.host_hash, sizeof(globals.host_hash));
-				switch_copy_string(buf + sizeof(globals.host_hash), packet, MULTICAST_BUFFSIZE - sizeof(globals.host_hash));
-				len = strlen(packet) + sizeof(globals.host_hash);;
-				//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT\n--------------------------------\n%s\n", buf);
+				switch_copy_string(buf + sizeof(globals.host_hash), packet, len - sizeof(globals.host_hash));
 				switch_socket_sendto(globals.udp_socket, globals.addr, 0, buf, &len);
 				switch_safe_free(packet);
+				switch_safe_free(buf);
 			}
 			break;
 		}
 	}
-end:
-	free(buf);
 	return;
 }
 
