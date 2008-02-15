@@ -1846,7 +1846,6 @@ static void conference_loop_output(conference_member_t * member)
 
                             
 						/* forget the conference data we played file node data instead */
-						printf("set flush 2\n");
 						switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
 					}
 				}
@@ -1859,12 +1858,10 @@ static void conference_loop_output(conference_member_t * member)
 				if (mux_used < bytes) {
 					if (++low_count >= 5) {
 						/* partial frame sitting around this long is useless and builds delay */
-						printf("set flush 3\n");
 						switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
 					}
 				} else if (mux_used > flush_len) {
 					/* getting behind, clear the buffer */
-					printf("set flush 4 %d\n", flush_len);
 					switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
 				}
 			} 
@@ -1893,7 +1890,6 @@ static void conference_loop_output(conference_member_t * member)
 
 				switch_mutex_unlock(member->audio_out_mutex);
 			} else {
-				printf("WTF\n");
 				if (switch_test_flag(member, MFLAG_WASTE_BANDWIDTH)) {
 					if (member->conference->comfort_noise_level) {
 						switch_generate_sln_silence(write_frame.data, samples, member->conference->comfort_noise_level);
@@ -1910,7 +1906,6 @@ static void conference_loop_output(conference_member_t * member)
 
 		if (switch_test_flag(member, MFLAG_FLUSH_BUFFER)) {
 			if (switch_buffer_inuse(member->mux_buffer)) {
-				printf("do flush\n");
 				switch_mutex_lock(member->audio_out_mutex);
 				switch_buffer_zero(member->mux_buffer);
 				switch_mutex_unlock(member->audio_out_mutex);
