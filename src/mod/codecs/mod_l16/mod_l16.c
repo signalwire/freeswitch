@@ -109,12 +109,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_l16_load)
         bpf = bpf * 2;
         ebpf = ebpf * 2;
     }
+	/* these formats below are for file playing. */
 
     switch_core_codec_add_implementation(pool, codec_interface,
                                          SWITCH_CODEC_TYPE_AUDIO, 118, "L16", NULL, 22050, 22050, 352800,
                                          20000, 441, 882, 882, 1, 1, 1,
                                          switch_raw_init, switch_raw_encode, switch_raw_decode, switch_raw_destroy);
-    
+
+    switch_core_codec_add_implementation(pool, codec_interface,
+                                         SWITCH_CODEC_TYPE_AUDIO, 118, "L16", NULL, 11025, 11025, 176400,
+                                         40000, 441, 882, 882, 1, 1, 1,
+                                         switch_raw_init, switch_raw_encode, switch_raw_decode, switch_raw_destroy);
     
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
