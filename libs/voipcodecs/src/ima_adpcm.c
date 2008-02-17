@@ -423,9 +423,9 @@ int ima_adpcm_encode(ima_adpcm_state_t *s,
         i = 0;
         if (s->chunk_size == 0)
         {
-            ima_data[bytes++] = amp[1];
+            ima_data[bytes++] = (uint8_t)amp[1];
             ima_data[bytes++] = amp[1] >> 8;
-            ima_data[bytes++] = s->step_index;
+            ima_data[bytes++] = (uint8_t)s->step_index;
             ima_data[bytes++] = 0;
             s->last = amp[1];
             s->bits = 0;
@@ -443,9 +443,9 @@ int ima_adpcm_encode(ima_adpcm_state_t *s,
     case IMA_ADPCM_DVI4:
         if (s->chunk_size == 0)
         {
-            ima_data[bytes++] = s->last >> 8;
-            ima_data[bytes++] = s->last;
-            ima_data[bytes++] = s->step_index;
+            ima_data[bytes++] = (uint8_t) (s->last >> 8);
+            ima_data[bytes++] = (uint8_t) s->last;
+            ima_data[bytes++] = (uint8_t) s->step_index;
             ima_data[bytes++] = 0;
         }
         for (i = 0;  i < len;  i++)
@@ -460,9 +460,9 @@ int ima_adpcm_encode(ima_adpcm_state_t *s,
     case IMA_ADPCM_VDVI:
         if (s->chunk_size == 0)
         {
-            ima_data[bytes++] = s->last >> 8;
-            ima_data[bytes++] = s->last;
-            ima_data[bytes++] = s->step_index;
+            ima_data[bytes++] = (uint8_t) (s->last >> 8);
+            ima_data[bytes++] = (uint8_t) s->last;
+            ima_data[bytes++] = (uint8_t) s->step_index;
             ima_data[bytes++] = 0;
         }
         s->bits = 0;
