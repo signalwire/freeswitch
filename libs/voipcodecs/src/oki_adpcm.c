@@ -276,6 +276,10 @@ int oki_adpcm_decode(oki_adpcm_state_t *s,
     int samples;
     float z;
 
+#if (_MSC_VER >= 1400) 
+	__analysis_assume(s->phase >=0 && s->phase <= 4);
+#endif
+
     samples = 0;
     if (s->bit_rate == 32000)
     {
