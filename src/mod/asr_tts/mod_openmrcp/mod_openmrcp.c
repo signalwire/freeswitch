@@ -783,7 +783,7 @@ static switch_status_t do_config()
 		return SWITCH_STATUS_TERM;
 	}
 
-	mrcp_logger.priority = MRCP_PRIO_EMERGENCY;
+	apt_log_priority_set(APT_PRIO_EMERGENCY);
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			const char *var = switch_xml_attr_soft(param, "name");
@@ -794,7 +794,7 @@ static switch_status_t do_config()
 			} else if (!strcasecmp(var, "tts_default_profile")) {
 				openmrcp_module.tts_profile_name = switch_core_strdup(openmrcp_module.pool, val);
 			} else if (!strcasecmp(var, "log_level")) {
-				mrcp_logger.priority = atoi(val);
+				apt_log_priority_set(atoi(val));
 			}
 		}
 	}
@@ -902,9 +902,10 @@ static switch_status_t openmrcp_profile_run(openmrcp_profile_t *profile)
 static switch_status_t openmrcp_init()
 {
 	/* one-time mrcp global initialization */
-	mrcp_global_init();
+	if(apr_pool_create(&openmrcp_module.pool,NULL) != APR_SUCCESS) {
+		return SWITCH_STATUS_FALSE;
+	}
 
-	openmrcp_module.pool = mrcp_global_pool_get();
 	switch_core_hash_init(&openmrcp_module.profile_hash, openmrcp_module.pool);
 
 	/* read config */
@@ -917,6 +918,8 @@ static switch_status_t openmrcp_init()
 
 static switch_status_t openmrcp_destroy()
 {
+	/* one-time mrcp global destroy */
+
 	/* destroy asr/tts profiles */
 	switch_hash_index_t *hi;
 	void *val;
@@ -933,8 +936,8 @@ static switch_status_t openmrcp_destroy()
 	switch_core_hash_destroy(&openmrcp_module.profile_hash);
 	openmrcp_module.profile_hash = NULL;
 
-	/* one-time mrcp global destroy */
-	mrcp_global_destroy();
+	apr_pool_destroy(openmrcp_module.pool);
+	openmrcp_module.pool = NULL;
 
 	return SWITCH_STATUS_SUCCESS;
 }
