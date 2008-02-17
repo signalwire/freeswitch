@@ -109,13 +109,15 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 			char *data = strdup(node->data);
 			if (data) {
 				if (switch_queue_trypush(l->log_queue, data) == SWITCH_STATUS_SUCCESS) {
-					int ll =  l->lost_logs;
-					switch_event_t *event;
-					l->lost_logs = 0;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Lost %d log lines!\n", ll);
-					if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "info", "lost %d log lines", ll);
-						switch_event_fire(&event);
+					if (l->lost_logs) {
+						int ll =  l->lost_logs;
+						switch_event_t *event;
+						l->lost_logs = 0;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Lost %d log lines!\n", ll);
+						if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
+							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "info", "lost %d log lines", ll);
+							switch_event_fire(&event);
+						}
 					}
 				} else {
 					switch_safe_free(data);
