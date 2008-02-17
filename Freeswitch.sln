@@ -206,9 +206,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_event_socket", "src\mod
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Libraries", "_Libraries", "{EB910B0D-F27D-4B62-B67B-DE834C99AC5B}"
-	ProjectSection(SolutionItems) = preProject
-		libs\voipcodecs\libvoipcodecs.vcproj = libs\voipcodecs\libvoipcodecs.vcproj
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libgsm", "libs\codec\gsm\libgsm.vcproj", "{8FD2E297-4096-47E5-9258-C48FF1841523}"
 EndProject
