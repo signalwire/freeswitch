@@ -251,7 +251,11 @@ void lpc10_voicing(lpc10_encode_state_t *s,
     int32_t lbe;
     float snr2;
 
-    inbuf_offset = 0;
+#if (_MSC_VER >= 1400) 
+	__analysis_assume(half >=0 && half < 2);
+#endif
+
+	inbuf_offset = 0;
     lpbuf_offset = 0;
     if (inbuf)
     {
