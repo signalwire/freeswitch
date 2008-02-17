@@ -140,15 +140,15 @@ static __inline__ int16_t gsm_abs(int16_t a)
 static __inline__ int16_t gsm_asr(int16_t a, int n)
 {
     if (n >= 16)
-        return  -(a < 0);
+        return  (int16_t)(-(a < 0));
     /*endif*/
     if (n <= -16)
         return  0;
     /*endif*/
     if (n < 0)
-        return a << -n;
+        return (int16_t)(a << -n);
     /*endif*/
-    return  a >> n;
+    return  (int16_t)(a >> n);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -158,12 +158,12 @@ static __inline__ int16_t gsm_asl(int16_t a, int n)
         return  0;
     /*endif*/
     if (n <= -16)
-        return  -(a < 0);
+        return  (int16_t)(-(a < 0));
     /*endif*/
     if (n < 0)
         return  gsm_asr(a, -n);
     /*endif*/
-    return  a << n;
+    return  (int16_t)(a << n);
 }
 /*- End of function --------------------------------------------------------*/
 

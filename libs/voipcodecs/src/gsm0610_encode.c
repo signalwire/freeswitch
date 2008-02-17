@@ -189,7 +189,7 @@ int gsm0610_pack_wav49(uint8_t c[], const gsm0610_frame_t *s)
     	sr = (sr >> 6) | (s->xmaxc[i] << 10);
     	*c++ = (uint8_t)(sr >> 3);
     	sr = (sr >> 3) | (s->xMc[i][0] << 13);
-    	*c++ = sr >> 8;
+    	*c++ = (uint8_t)(sr >> 8);
     	sr = (sr >> 3) | (s->xMc[i][1] << 13);
     	sr = (sr >> 3) | (s->xMc[i][2] << 13);
         sr = (sr >> 3) | (s->xMc[i][3] << 13);
@@ -260,43 +260,43 @@ int gsm0610_pack_voip(uint8_t c[33], const gsm0610_frame_t *s)
 {
     int i;
 
-    *c++ = ((GSM0610_MAGIC & 0xF) << 4)
-         | ((s->LARc[0] >> 2) & 0xF);
-    *c++ = ((s->LARc[0] & 0x3) << 6)
-         |  (s->LARc[1] & 0x3F);
-    *c++ = ((s->LARc[2] & 0x1F) << 3)
-         | ((s->LARc[3] >> 2) & 0x7);
-    *c++ = ((s->LARc[3] & 0x3) << 6)
+    *c++ = (uint8_t)(((GSM0610_MAGIC & 0xF) << 4)
+         | ((s->LARc[0] >> 2) & 0xF));
+    *c++ = (uint8_t)(((s->LARc[0] & 0x3) << 6)
+         |  (s->LARc[1] & 0x3F));
+    *c++ = (uint8_t)(((s->LARc[2] & 0x1F) << 3)
+         | ((s->LARc[3] >> 2) & 0x7));
+    *c++ = (uint8_t)(((s->LARc[3] & 0x3) << 6)
          | ((s->LARc[4] & 0xF) << 2)
-         | ((s->LARc[5] >> 2) & 0x3);
-    *c++ = ((s->LARc[5] & 0x3) << 6)
+         | ((s->LARc[5] >> 2) & 0x3));
+    *c++ = (uint8_t)(((s->LARc[5] & 0x3) << 6)
          | ((s->LARc[6] & 0x7) << 3)
-         |  (s->LARc[7] & 0x7);
+         |  (s->LARc[7] & 0x7));
 
     for (i = 0;  i < 4;  i++)
     {
-        *c++ = ((s->Nc[i] & 0x7F) << 1)
-             | ((s->bc[i] >> 1) & 0x1);
-        *c++ = ((s->bc[i] & 0x1) << 7)
+        *c++ = (uint8_t)(((s->Nc[i] & 0x7F) << 1)
+             | ((s->bc[i] >> 1) & 0x1));
+        *c++ = (uint8_t)(((s->bc[i] & 0x1) << 7)
              | ((s->Mc[i] & 0x3) << 5)
-             | ((s->xmaxc[i] >> 1) & 0x1F);
-        *c++ = ((s->xmaxc[i] & 0x1) << 7)
+             | ((s->xmaxc[i] >> 1) & 0x1F));
+        *c++ = (uint8_t)(((s->xmaxc[i] & 0x1) << 7)
              | ((s->xMc[i][0] & 0x7) << 4)
              | ((s->xMc[i][1] & 0x7) << 1)
-             | ((s->xMc[i][2] >> 2) & 0x1);
-        *c++ = ((s->xMc[i][2] & 0x3) << 6)
+             | ((s->xMc[i][2] >> 2) & 0x1));
+        *c++ = (uint8_t)(((s->xMc[i][2] & 0x3) << 6)
              | ((s->xMc[i][3] & 0x7) << 3)
-             |  (s->xMc[i][4] & 0x7);
-        *c++ = ((s->xMc[i][5] & 0x7) << 5)
+             |  (s->xMc[i][4] & 0x7));
+        *c++ = (uint8_t)(((s->xMc[i][5] & 0x7) << 5)
              | ((s->xMc[i][6] & 0x7) << 2)
-             | ((s->xMc[i][7] >> 1) & 0x3);
-        *c++ = ((s->xMc[i][7] & 0x1) << 7)
+             | ((s->xMc[i][7] >> 1) & 0x3));
+        *c++ = (uint8_t)(((s->xMc[i][7] & 0x1) << 7)
              | ((s->xMc[i][8] & 0x7) << 4)
              | ((s->xMc[i][9] & 0x7) << 1)
-             | ((s->xMc[i][10] >> 2) & 0x1);
-        *c++ = ((s->xMc[i][10] & 0x3) << 6)
+             | ((s->xMc[i][10] >> 2) & 0x1));
+        *c++ = (uint8_t)(((s->xMc[i][10] & 0x3) << 6)
              | ((s->xMc[i][11] & 0x7) << 3)
-             |  (s->xMc[i][12] & 0x7);
+             |  (s->xMc[i][12] & 0x7));
     }
     /*endfor*/
     return 33;

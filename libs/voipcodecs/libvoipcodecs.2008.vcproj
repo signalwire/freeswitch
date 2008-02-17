@@ -49,6 +49,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				DebugInformationFormat="3"
+				EnablePREfast="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -109,6 +110,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				DebugInformationFormat="3"
+				EnablePREfast="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

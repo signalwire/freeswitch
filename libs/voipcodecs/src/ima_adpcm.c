@@ -424,7 +424,7 @@ int ima_adpcm_encode(ima_adpcm_state_t *s,
         if (s->chunk_size == 0)
         {
             ima_data[bytes++] = (uint8_t)amp[1];
-            ima_data[bytes++] = amp[1] >> 8;
+            ima_data[bytes++] = (uint8_t)(amp[1] >> 8);
             ima_data[bytes++] = (uint8_t)s->step_index;
             ima_data[bytes++] = 0;
             s->last = amp[1];
