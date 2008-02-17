@@ -99,6 +99,35 @@ static __inline__ int16_t saturate(int32_t amp)
 }
 /*- End of function --------------------------------------------------------*/
 
+#ifdef _MSC_VER
+__inline float rintf (float flt)
+{
+	_asm
+	{	fld flt
+		frndint
+	}
+}
+
+__inline double rint(double dbl)
+{
+    __asm 
+	{
+        fld dbl
+        frndint
+    }
+}
+
+__inline long lrintf (float flt)
+{
+	long retval;
+	_asm
+	{	fld flt
+		fistp retval
+	}
+	return retval;
+}
+#endif
+
 static __inline__ int16_t fsaturatef(float famp)
 {
     if (famp > 32767.0)
