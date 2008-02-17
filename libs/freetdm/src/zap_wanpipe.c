@@ -31,6 +31,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef __sun
+#include <unistd.h>
+#include <stropts.h>
+#endif
 #include "openzap.h"
 #include "zap_wanpipe.h"
 #include <poll.h>

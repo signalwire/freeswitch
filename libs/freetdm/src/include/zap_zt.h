@@ -37,6 +37,12 @@
 #include <sys/ioctl.h>
 #include <poll.h>
 
+#ifdef __sun
+#include <unistd.h>
+#include <sys/ioccom.h>
+#include <stropts.h>
+#endif
+
 /* Hardware interface structures and defines */
 /* Based on documentation of the structures required for the hardware interface */
 /* from http://wiki.freeswitch.org/wiki/Zapata_zaptel_interface */
