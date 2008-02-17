@@ -433,7 +433,7 @@ static void apcm_inverse_quantization(int16_t xMc[13],
        samples to obtain the xMp[0..12] array.  Table 4.6 is used to get
        the mantissa of xmaxc (FAC[0..7]).
     */
-    assert(mant >= 0  &&  mant <= 7);
+    vc_assert(mant >= 0  &&  mant <= 7);
 
     temp1 = gsm_FAC[mant];          /* See 4.2-15 for mant */
     temp2 = gsm_sub(6, exp);        /* See 4.2-15 for exp */

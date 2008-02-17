@@ -355,12 +355,12 @@ void gsm0610_long_term_predictor(gsm0610_state_t *s,
                                  int16_t *Nc,
                                  int16_t *bc)
 {
-    assert(d);
-    assert(dp);
-    assert(e);
-    assert(dpp);
-    assert(Nc);
-    assert(bc);
+    vc_assert(d);
+    vc_assert(dp);
+    vc_assert(e);
+    vc_assert(dpp);
+    vc_assert(Nc);
+    vc_assert(bc);
 
     *bc = evaluate_ltp_parameters(d, dp, Nc);
     long_term_analysis_filtering(*bc, *Nc, dp, d, dpp, e);

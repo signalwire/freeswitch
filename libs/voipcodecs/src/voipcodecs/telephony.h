@@ -55,6 +55,12 @@ typedef int (span_tx_handler_t)(void *s, int16_t amp[], int max_len);
 #define TRUE (!FALSE)
 #endif
 
+#if (_MSC_VER >= 1400)			// VC8+
+#define vc_assert(expr) assert(expr);__analysis_assume( expr )
+#else
+#define vc_assert(expr) assert(expr)
+#endif
+
 #if defined(__cplusplus)
 /* C++ doesn't seem to have sane rounding functions/macros yet */
 #ifndef _MSC_VER
