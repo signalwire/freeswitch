@@ -55,6 +55,7 @@ typedef int (span_tx_handler_t)(void *s, int16_t amp[], int max_len);
 #define TRUE (!FALSE)
 #endif
 
+#include <assert.h>
 #if (_MSC_VER >= 1400)			// VC8+
 #define vc_assert(expr) assert(expr);__analysis_assume( expr )
 #else

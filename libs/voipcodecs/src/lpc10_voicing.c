@@ -303,7 +303,9 @@ void lpc10_voicing(lpc10_encode_state_t *s,
         s->voice[1][1] = s->voice[2][1];
         s->maxmin = *maxamd / max(*minamd, 1.0f);
     }
-    /* Calculate voicing parameters twice per frame */
+	vc_assert(lpbuf);
+	vc_assert(inbuf);
+	/* Calculate voicing parameters twice per frame */
     vparms(vwin,
            &inbuf[inbuf_offset],
            &lpbuf[lpbuf_offset],
