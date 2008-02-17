@@ -759,6 +759,7 @@ L3INT Q931ProcDisconnectTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcReleaseTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
+    L3INT callIndex;
     Q931mes_Generic *pMes = (Q931mes_Generic *)&buf[Q931L4HeaderSpace];
     L3INT state = Q931GetCallState(pTrunk, pMes->CRV);
     L3INT ret = Q931E_NO_ERROR;
@@ -771,6 +772,12 @@ L3INT Q931ProcReleaseTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
     } else {
         ret = Q931ProcUnexpectedMessage(pTrunk, buf, iFrom);
     }
+	if (pMes->CRV) {
+		/* Find the call using CRV */
+		if ((Q931FindCRV(pTrunk, pMes->CRV, &callIndex)) != Q931E_NO_ERROR)
+			return ret;
+		pTrunk->call[callIndex].InUse = 0;
+	}
 
 	return ret;
 }
