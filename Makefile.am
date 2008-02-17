@@ -28,6 +28,8 @@ DEFAULT_SOUNDS=en-us-callie-8000
 
 sounds: sounds-en-us-callie-8000
 sounds-install: sounds-en-us-callie-8000-install
+moh: sounds-music-8000
+moh-install: sounds-music-8000-install
 
 libfreeswitch_la_SOURCES	= \
 src/switch_apr.c \
