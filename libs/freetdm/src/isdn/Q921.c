@@ -84,7 +84,7 @@ void Q921_InitTrunk(L2TRUNK trunk,
 	trunk->T203Timeout = 10000;
 }
 
-static int Q921Tx21Proc(L2TRUNK trunk, L2UCHAR *Msg, L2INT size)
+int Q921Tx21Proc(L2TRUNK trunk, L2UCHAR *Msg, L2INT size)
 {
 	return trunk->Q921Tx21Proc(trunk->PrivateData21, Msg, size);
 }
@@ -105,10 +105,10 @@ int Q921Tx23Proc(L2TRUNK trunk, L2UCHAR *Msg, L2INT size)
   Return Value: none
 
 *****************************************************************************/
-L2ULONG (*Q921GetTimeProc) ()=NULL; /* callback for func reading time in ms */
-static L2ULONG tLast={0};
+L2ULONG (*Q921GetTimeProc) (void) = NULL; /* callback for func reading time in ms */
+L2ULONG tLast = {0};
 
-L2ULONG Q921GetTime()
+L2ULONG Q921GetTime(void)
 {
     L2ULONG tNow = 0;
     if(Q921GetTimeProc != NULL)
@@ -182,7 +182,7 @@ void Q921TimerTick(L2TRUNK trunk)
 }
 
 
-void Q921SetGetTimeCB(L2ULONG (*callback)())
+void Q921SetGetTimeCB(L2ULONG (*callback)(void))
 {
     Q921GetTimeProc = callback;
 }

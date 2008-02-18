@@ -1161,4 +1161,12 @@ q931uie_func_t Q931Uie_UserUser;
 
 q931uie_func_t Q931Uie_GenericDigits;
 
+
+L3INT Q931ReadExt(L3UCHAR * IBuf, L3INT Off);
+L3INT Q931Uie_CongLevel(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Pie_CongLevel(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Uie_RevChargeInd(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Pie_RevChargeInd(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+
+
 #endif /* _Q931IE_NL */

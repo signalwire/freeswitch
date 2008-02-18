@@ -34,10 +34,10 @@
 #include "openzap.h"
 #include "zap_config.h"
 
-int zap_config_open_file(zap_config_t *cfg, char *file_path)
+int zap_config_open_file(zap_config_t *cfg, const char *file_path)
 {
 	FILE *f;
-	char *path = NULL;
+	const char *path = NULL;
 	char path_buf[1024];
 
 	if (file_path[0] == '/') {
@@ -136,8 +136,8 @@ int zap_config_next_pair(zap_config_t *cfg, char **var, char **val)
 				}
 				cfg->catno = 0;
 				cfg->lineno = 0;
-				*var = "";
-				*val = "";
+				*var = (char *) "";
+				*val = (char *) "";
 				return 1;
 			} else {
 				zap_copy_string(cfg->category, *var, sizeof(cfg->category));

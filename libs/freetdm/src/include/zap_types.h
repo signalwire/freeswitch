@@ -412,7 +412,7 @@ typedef zap_status_t (*zio_write_t) ZIO_WRITE_ARGS ;
 typedef struct zap_fsk_data_state zap_fsk_data_state_t;
 typedef int (*zap_fsk_data_decoder_t)(zap_fsk_data_state_t *state);
 typedef zap_status_t (*zap_fsk_write_sample_t)(int16_t *buf, zap_size_t buflen, void *user_data);
-typedef void (*zap_logger_t)(char *file, const char *func, int line, int level, char *fmt, ...);
+typedef void (*zap_logger_t)(const char *file, const char *func, int line, int level, const char *fmt, ...);
 typedef struct zap_io_interface zap_io_interface_t;
 typedef struct hashtable zap_hash_t;
 typedef struct hashtable_itr zap_hash_itr_t;

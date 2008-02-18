@@ -126,10 +126,10 @@
   Enum helper macros  <Need description of these macros>
 
 *****************************************************************************/
-#define Q931_ENUM_NAMES(_NAME, _STRINGS) static char * _NAME [] = { _STRINGS , NULL };
-#define Q931_STR2ENUM_P(_FUNC1, _FUNC2, _TYPE) _TYPE _FUNC1 (char *name); char * _FUNC2 (_TYPE type);
+#define Q931_ENUM_NAMES(_NAME, _STRINGS) static const char * _NAME [] = { _STRINGS , NULL };
+#define Q931_STR2ENUM_P(_FUNC1, _FUNC2, _TYPE) _TYPE _FUNC1 (const char *name); const char * _FUNC2 (_TYPE type);
 #define Q931_STR2ENUM(_FUNC1, _FUNC2, _TYPE, _STRINGS, _MAX)	\
-	_TYPE _FUNC1 (char *name)								\
+	_TYPE _FUNC1 (const char *name)								\
 	{														\
 		int i;												\
 		_TYPE t = _MAX ;									\
@@ -143,7 +143,7 @@
 															\
 		return t;											\
 	}														\
-	char * _FUNC2 (_TYPE type)								\
+	const char * _FUNC2 (_TYPE type)						\
 	{														\
 		if (type > _MAX) {									\
 			type = _MAX;									\
@@ -904,14 +904,14 @@ void	Q931SetDefaultErrorCB(Q931ErrorCB_t Q931ErrorPar);
 
 void    Q931CreateTE(L3UCHAR i);
 void    Q931CreateNT(L3UCHAR i);
-void    Q931SetMesCreateCB(L3INT (*callback)());
+void    Q931SetMesCreateCB(L3INT (*callback)(void));
 void    Q931SetDialectCreateCB(L3INT (*callback)(L3INT));
 void    Q931SetHeaderSpace(L3INT space);
 
 void Q931SetMesProc(L3UCHAR mes, L3UCHAR dialect, q931proc_func_t *Q931ProcFunc, q931umes_func_t *Q931UmesFunc, q931pmes_func_t *Q931PmesFunc);
 void Q931SetIEProc(L3UCHAR iec, L3UCHAR dialect, q931pie_func_t *Q931PieProc, q931uie_func_t *Q931UieProc);
 
-void Q931Initialize();
+void Q931Initialize(void);
 void Q931AddDialect(L3UCHAR iDialect, void (*Q931CreateDialectCB)(L3UCHAR iDialect));
 L3INT Q931InitMesSetup(Q931mes_Generic *p);
 L3INT Q931InitMesRestartAck(Q931mes_Generic * pMes);
@@ -924,8 +924,8 @@ L3INT	Q931GetCallState(Q931_TrunkInfo_t *pTrunk, L3INT iCRV);
 L3INT	Q931StartTimer(Q931_TrunkInfo_t *pTrunk, L3INT callIndex, L3USHORT iTimer);
 L3INT	Q931StopTimer(Q931_TrunkInfo_t *pTrunk, L3INT callindex, L3USHORT iTimer);
 L3INT	Q931SetState(Q931_TrunkInfo_t *pTrunk, L3INT callIndex, L3INT iState);
-L3ULONG Q931GetTime();
-void Q931SetGetTimeCB(L3ULONG (*callback)());
+L3ULONG Q931GetTime(void);
+void Q931SetGetTimeCB(L3ULONG (*callback)(void));
 void	Q931AddStateEntry(L3UCHAR iD, L3INT iState, L3INT iMes, L3UCHAR cDir);
 L3BOOL	Q931IsEventLegal(L3UCHAR iD, L3INT iState, L3INT iMes, L3UCHAR cDir);
 
@@ -969,5 +969,22 @@ L3INT Q931Api_InitTrunk(Q931_TrunkInfo_t *pTrunk,
 						Q931ErrorCB_t Q931ErrorCBProc,
 						void *PrivateData32,
 						void *PrivateData34);
+
+L3INT Q931GetMesSize(Q931mes_Generic *pMes);
+L3INT Q931InitMesResume(Q931mes_Generic * pMes);
+
+
+
+void Q931SetL4HeaderSpace(L3INT space);
+void Q931SetL2HeaderSpace(L3INT space);
+L3INT Q931ProcDummy(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b,L3INT c);
+L3INT Q931UmesDummy(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size);
+L3INT Q931UieDummy(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931PmesDummy(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931PieDummy(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931TxDummy(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT n);
+L3INT Q931ErrorDummy(void *priv, L3INT a, L3INT b, L3INT c);
+
+
 
 #endif /* _Q931_NL */

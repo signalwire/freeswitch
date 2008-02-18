@@ -32,7 +32,7 @@ AX_COMPILER_VENDOR
 
 case "${ax_cv_c_compiler_vendor}" in
 gnu)
-    COMP_VENDOR_CFLAGS="-Wall -Werror -Wextra -Wno-unused-parameter"
+    COMP_VENDOR_CFLAGS="-std=gnu99 -ffast-math -Wall -Werror -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes"
     ;;
 sun)
     COMP_VENDOR_CFLAGS="-xc99=all -mt -xCC -D__FUNCTION__=__func__ -xvpara"
@@ -41,7 +41,7 @@ sun)
     fi
     ;;
 *)
-    COMP_VENDOR_CFLAGS="-Wall -Werror -Wextra -Wno-unused-parameter"
+    COMP_VENDOR_CFLAGS="-std=c99 -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes"
     ;;
 esac
 

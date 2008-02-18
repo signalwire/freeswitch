@@ -96,7 +96,7 @@ L3INT Q931L2HeaderSpace = {4};      /* Q921 header space, sapi, tei etc     */
 Q931ErrorCB_t Q931ErrorProc;
                                     /* callback for error messages.         */
 
-L3ULONG (*Q931GetTimeProc) ()=NULL; /* callback for func reading time in ms */
+L3ULONG (*Q931GetTimeProc) (void) = NULL; /* callback for func reading time in ms */
 
 /*****************************************************************************
 
@@ -606,7 +606,7 @@ L3ULONG Q931GetTime()
     return tNow;
 }
 
-void Q931SetGetTimeCB(L3ULONG (*callback)())
+void Q931SetGetTimeCB(L3ULONG (*callback)(void))
 {
     Q931GetTimeProc = callback;
 }
