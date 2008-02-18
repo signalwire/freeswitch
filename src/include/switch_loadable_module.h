@@ -309,7 +309,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void);
 #define SWITCH_ADD_CODEC(codec_int, int_name) \
 	for (;;) { \
 	codec_int = (switch_codec_interface_t *)switch_loadable_module_create_interface(*module_interface, SWITCH_CODEC_INTERFACE); \
-	codec_int->interface_name = int_name; \
+	codec_int->interface_name = switch_core_strdup(pool, int_name); \
 	break; \
 	}
 
@@ -358,7 +358,7 @@ static inline void switch_core_codec_add_implementation(switch_memory_pool_t *po
 		impl->codec_type = codec_type;
 		impl->ianacode = ianacode;
 		impl->iananame = switch_core_strdup(pool, iananame);
-		impl->fmtp = fmtp;
+		impl->fmtp = switch_core_strdup(pool, fmtp);
 		impl->samples_per_second = samples_per_second;
 		impl->actual_samples_per_second = actual_samples_per_second;
 		impl->bits_per_second = bits_per_second;
