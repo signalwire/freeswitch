@@ -15,15 +15,12 @@ applications/mod_fsv
 #applications/mod_rss
 #asr_tts/mod_cepstral
 #asr_tts/mod_openmrcp
-codecs/mod_g711
-codecs/mod_g722
-codecs/mod_g726
+#codecs/mod_g711
 codecs/mod_g723_1
 codecs/mod_amr
 codecs/mod_g729
-codecs/mod_gsm
 codecs/mod_h26x
-#codecs/mod_voipcodecs
+codecs/mod_voipcodecs
 codecs/mod_ilbc
 codecs/mod_l16
 codecs/mod_speex
