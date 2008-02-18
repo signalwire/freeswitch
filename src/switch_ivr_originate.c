@@ -252,7 +252,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	const char *var = switch_channel_get_variable(caller_channel, "call_timeout");
 	switch_time_t start = 0;
 	
-	write_frame.data = malloc(SWITCH_RECOMMENDED_BUFFER_SIZE);
+	switch_zmalloc(write_frame.data, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 	if (var) {
@@ -481,7 +481,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	uint8_t ring_ready = 0;
 	char *loop_data = NULL;
 
-	write_frame.data = malloc(SWITCH_RECOMMENDED_BUFFER_SIZE);
+	switch_zmalloc(write_frame.data, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 	*bleg = NULL;
