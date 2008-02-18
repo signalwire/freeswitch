@@ -59,6 +59,7 @@
     <load module="mod_ilbc"/>
     <load module="mod_l16"/>
     <load module="mod_speex"/>
+    <load module="mod_h26x"/>
 
     <!-- File Format Interfaces -->
     <load module="mod_sndfile"/>
