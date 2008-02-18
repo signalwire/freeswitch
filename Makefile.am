@@ -78,6 +78,8 @@ src/switch_config.c\
 src/switch_time.c\
 libs/stfu/stfu.c\
 src/switch_cpp.cpp\
+src/g711.c\
+src/switch_pcm.c\
 libs/libteletone/src/libteletone_detect.c\
 libs/libteletone/src/libteletone_generate.c
 

@@ -189,6 +189,7 @@ static switch_status_t switch_gsm_destroy(switch_codec_t *codec)
 }
 /*  GSM       - END */
 
+#ifdef ENABLE_G711
 /*  G711      - START */
 static switch_status_t switch_g711u_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
@@ -332,6 +333,8 @@ static switch_status_t switch_g711a_destroy(switch_codec_t *codec)
 }
 
 /*  G711      - END */
+#endif
+
 
 /*  G722      - START */
 
@@ -656,6 +659,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
                                              switch_g722_init, switch_g722_encode, switch_g722_decode, switch_g722_destroy);
     }
 
+#ifdef ENABLE_G711
 	/* G711 */
 	mpf = 10000, spf = 80, bpf = 160, ebpf = 80;
 	SWITCH_ADD_CODEC(codec_interface, "G.711 ulaw");
@@ -673,6 +677,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
                                              mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
                                              switch_g711a_init, switch_g711a_encode, switch_g711a_decode, switch_g711a_destroy);
     }
+#endif
 
 	/* GSM */
 	mpf = 20000, spf = 160, bpf = 320, ebpf = 33;

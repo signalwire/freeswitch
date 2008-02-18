@@ -978,6 +978,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 	switch_mutex_init(&loadable_modules.mutex, SWITCH_MUTEX_NESTED, loadable_modules.pool);
 
 	switch_loadable_module_load_module("", "softtimer", SWITCH_FALSE, &err);
+	switch_loadable_module_load_module("", "PCM", SWITCH_FALSE, &err);
 
 	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_xml_t mods, ld;
