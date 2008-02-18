@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.61)
+AC_PREREQ(2.59)
 AC_INIT([openzap],[pre-alpha],[bugs@freeswitch.prg])
 AC_CONFIG_SRCDIR([src/libteletone_detect.c])
 
