@@ -31,7 +31,7 @@
  */
 
 #include <switch.h>
-#include <g7xx/g711.h>
+#include <g711.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_g711_load);
 SWITCH_MODULE_DEFINITION(mod_g711, mod_g711_load, NULL, NULL);
