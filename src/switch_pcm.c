@@ -33,6 +33,10 @@
 #include <switch.h>
 #include <g711.h>
 
+#ifdef WIN32
+#undef SWITCH_MOD_DECLARE_DATA
+#define SWITCH_MOD_DECLARE_DATA __declspec(dllexport)
+#endif
 SWITCH_MODULE_LOAD_FUNCTION(mod_l16_load);
 SWITCH_MODULE_DEFINITION(mod_l16, mod_l16_load, NULL, NULL);
 
