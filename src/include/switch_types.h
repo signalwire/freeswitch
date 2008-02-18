@@ -426,6 +426,10 @@ typedef struct {
 
 #endif
 
+#ifdef _MSC_VER
+#pragma pack(pop, r1)
+#endif
+
 /*!
   \enum switch_priority_t
   \brief Priority Indication
