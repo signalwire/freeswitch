@@ -88,6 +88,7 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 				struct zt_chanconfig cc;
 				memset(&cc, 0, sizeof(cc));
 				cc.chan = cc.master = x;
+				
 				switch(type) {
 				case ZAP_CHAN_TYPE_FXS:
 					{
@@ -126,11 +127,9 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 				default:
 					break;
 				}
+				
 				if (ioctl(CONTROL_FD, ZT_CHANCONFIG, &cc)) {
-					zap_log(ZAP_LOG_ERROR, "failure configuring device %s chan %d fd %d (%s)\n", 
-							path, x, CONTROL_FD, strerror(errno));
-					close(sockfd);
-					break;
+					zap_log(ZAP_LOG_WARNING, "this ioctl fails on older zaptel but is harmless if you used ztcfg\n[device %s chan %d fd %d (%s)]\n", path, x, CONTROL_FD, strerror(errno));
 				}
 			}
 
@@ -319,7 +318,7 @@ static ZIO_CONFIGURE_FUNCTION(zt_configure)
 static ZIO_OPEN_FUNCTION(zt_open) 
 {
 	zap_channel_set_feature(zchan, ZAP_CHANNEL_FEATURE_INTERVAL);
-	
+
 	if (zchan->type == ZAP_CHAN_TYPE_DQ921 || zchan->type == ZAP_CHAN_TYPE_DQ931) {
 		zchan->native_codec = zchan->effective_codec = ZAP_CODEC_NONE;
 	} else {

@@ -18,7 +18,7 @@ static void fsk_byte_handler (void *x, int data)
 	if (state->dlen) {
 		goto add_byte;
 	}
-
+	
 	if (state->bpos == 1) {
 		state->blen = byte;
 

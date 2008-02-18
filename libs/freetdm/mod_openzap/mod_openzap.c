@@ -1187,7 +1187,8 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			if (switch_strlen_zero(fail_regex)) {
 				fail_regex = NULL;
 			}
-			
+
+			zap_log(ZAP_LOG_DEBUG, "got DTMF sig [%s]\n", dtmf);
 			switch_set_string(sigmsg->channel->caller_data.collected, dtmf);
 			
 			if ((regex || fail_regex) && !switch_strlen_zero(dtmf)) {
