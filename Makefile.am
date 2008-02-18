@@ -293,7 +293,11 @@ up: clean
 	$(MAKE) -j modules
 	$(MAKE) install
 
-update-clean: clean modwipe uninstall
+libs/openzap/Makefile:
+	cd libs/openzap && autoconf
+	cd libs/openzap && ./configure
+
+update-clean: clean modwipe uninstall libs/openzap/Makefile
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/openzap && $(MAKE) clean
 
