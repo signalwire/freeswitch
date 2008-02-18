@@ -34,6 +34,10 @@
 #include "zap_analog.h"
 #include "zap_isdn.h"
 
+#ifndef __FUNCTION__
+#define __FUNCTION__ __SWITCH_FUNC__
+#endif
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_openzap_shutdown);
 SWITCH_MODULE_DEFINITION(mod_openzap, mod_openzap_load, mod_openzap_shutdown, NULL);
