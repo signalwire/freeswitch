@@ -353,7 +353,7 @@ static inline void switch_core_codec_add_implementation(switch_memory_pool_t *po
                                                         /*! deinitalize a codec handle using this implementation */
                                                         switch_core_codec_destroy_func_t destroy)
 {
-	if (SWITCH_ACCEPTABLE_INTERVAL(microseconds_per_frame / 1000)) {
+	if (codec_type == SWITCH_CODEC_TYPE_VIDEO || SWITCH_ACCEPTABLE_INTERVAL(microseconds_per_frame / 1000)) {
 		switch_codec_implementation_t *impl = (switch_codec_implementation_t *) switch_core_alloc(pool, sizeof(*impl));
 		impl->codec_type = codec_type;
 		impl->ianacode = ianacode;
