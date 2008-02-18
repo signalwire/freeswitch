@@ -360,13 +360,16 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			Q931ie_BearerCap BearerCap;
 			Q931ie_ChanID ChanID;
 			Q931ie_CallingNum CallingNum;
+			Q931ie_CallingNum *ptrCallingNum;
 			Q931ie_CalledNum CalledNum;
 			Q931ie_CalledNum *ptrCalledNum;
+			Q931ie_Display Display, *ptrDisplay;
 			
 			Q931InitIEBearerCap(&BearerCap);
 			Q931InitIEChanID(&ChanID);
 			Q931InitIECallingNum(&CallingNum);
 			Q931InitIECalledNum(&CalledNum);
+			Q931InitIEDisplay(&Display);
 
 			Q931InitMesGeneric(gen);
 			gen->MesType = Q931mes_SETUP;
@@ -411,15 +414,56 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			ChanID.ChanMapType = 3; /* B-Chan */
 			ChanID.ChanSlot = (unsigned char)zchan->chan_id;
 			gen->ChanID = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &ChanID);
-#if 0
-			CallingNum.Size += strlen(zchan->caller_data.cid_num);
+			
+			Display.Size = Display.Size + (unsigned char)strlen(zchan->caller_data.cid_name);
+			gen->Display = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &Display);			
+			ptrDisplay = Q931GetIEPtr(gen->Display, gen->buf);
+			zap_copy_string((char *)ptrDisplay->Display, zchan->caller_data.cid_name, strlen(zchan->caller_data.cid_name)+1);
+
+			/* TypNum: Type of number		*/
+			/* Bits 7 6 5					*/
+			/* 000	Unknown					*/
+			/* 001	International number	*/
+			/* 010	National number			*/
+			/* 011	Network Specific number */
+			/* 100	Subscriber mumber		*/
+			/* 110	Abbreviated number		*/
+			/* 111	Reserved for extension	*/
+			/* All other values are reserved */
+			CallingNum.TypNum = 2;
+
+			/* NumPlanID									*/
+			/* Bits 4 3 2 1									*/
+			/* 0000	Unknown									*/
+			/* 0001	ISDN/telephony numbering plan (E.164)	*/
+			/* 0011	Data numbering plan (X.121)				*/
+			/* 0100	Telex numbering plan (F.69)				*/
+			/* 1000	National standard numbering plan		*/
+			/* 1001	Private numbering plan					*/
+			/* 1111	Reserved for extension					*/
+			/* All other valures are reserved				*/
+			CallingNum.NumPlanID = 1;
+
+			/* Presentation indicator		*/
+			/* Bits 7 6						*/
+			/* 00	Presenation Allowed		*/
+			/* 01	Presentation Restricted	*/
+			/* 10	Number not available due to internetworking	*/
+			/* 11	Reserved				*/
+			CallingNum.PresInd = 0;
+
+			/* Screening Indicator						*/
+			/* Bits 2 1									*/
+			/* 00	User-provided, not screened			*/
+			/* 01	User-provided, verified and passed	*/
+			/* 10	User-provided, verified and failed	*/
+			/* 11	Network provided					*/
+			CallingNum.ScreenInd = 0;
+			CallingNum.Size = CallingNum.Size + (unsigned char)strlen(zchan->caller_data.cid_num);
 			gen->CallingNum = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &CallingNum);			
-			zap_set_string((char *)CallingNum.Digit, zchan->caller_data.cid_num);
-			gen->Size += strlen(zchan->caller_data.cid_num);
+			ptrCallingNum = Q931GetIEPtr(gen->CallingNum, gen->buf);
+			zap_copy_string((char *)ptrCallingNum->Digit, zchan->caller_data.cid_num, strlen(zchan->caller_data.cid_num)+1);
 
-			//zap_set_string(zchan->caller_data.dnis, (char *)callednum->Digit);
-
-#endif
 			CalledNum.TypNum = 2;
 			CalledNum.NumPlanID = 1;
 			CalledNum.Size = CalledNum.Size + (unsigned char)strlen(zchan->caller_data.ani);
@@ -427,7 +471,6 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			ptrCalledNum = Q931GetIEPtr(gen->CalledNum, gen->buf);
 			zap_copy_string((char *)ptrCalledNum->Digit, zchan->caller_data.ani, strlen(zchan->caller_data.ani)+1);
 
-			//gen->Size += strlen(zchan->caller_data.ani);
 			Q931Rx43(&isdn_data->q931, (L3UCHAR *) gen, gen->Size);
 			zchan->span->channels_local_crv[gen->CRV] = zchan;
 		}
