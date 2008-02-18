@@ -5,13 +5,11 @@ opt/freeswitch/lib/libfreeswitch*.so*
 opt/freeswitch/mod/mod_console.so*
 opt/freeswitch/mod/mod_expr.so*
 opt/freeswitch/mod/mod_rss.so*
-opt/freeswitch/mod/mod_gsm.so*
 opt/freeswitch/mod/mod_h26x.so*
 opt/freeswitch/mod/mod_voicemail.so*
 opt/freeswitch/mod/mod_limit.so*
 opt/freeswitch/mod/mod_ilbc.so*
 opt/freeswitch/mod/mod_speex.so*
-opt/freeswitch/mod/mod_l16.so*
 opt/freeswitch/mod/mod_esf.so*
 opt/freeswitch/mod/mod_logfile.so*
 opt/freeswitch/mod/mod_syslog.so*
@@ -21,9 +19,7 @@ opt/freeswitch/mod/mod_dptools.so*
 opt/freeswitch/mod/mod_enum.so*
 opt/freeswitch/mod/mod_fifo.so*
 opt/freeswitch/mod/mod_openmrcp.so*
-opt/freeswitch/mod/mod_g711.so*
-opt/freeswitch/mod/mod_g722.so*
-opt/freeswitch/mod/mod_g726.so*
+opt/freeswitch/mod/mod_voipcodecs.so*
 opt/freeswutch/mod/mod_speex.so*
 opt/freeswitch/mod/mod_dialplan*.so*
 opt/freeswitch/mod/mod_dingaling.so*
