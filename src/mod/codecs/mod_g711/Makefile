@@ -1,5 +1,5 @@
 BASE=../../../..
-LOCAL_CFLAGS=-I$(BASE)/libs/codec/g7xx/src/include
+LOCAL_CFLAGS=-I.
 include $(BASE)/build/modmake.rules
 
 
