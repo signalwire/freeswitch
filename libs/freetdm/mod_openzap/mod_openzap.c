@@ -1323,7 +1323,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_analog_signal)
 	return status;
 }
 
-static void zap_logger(char *file, const char *func, int line, int level, char *fmt, ...)
+static void zap_logger(const char *file, const char *func, int line, int level, const char *fmt, ...)
 {
     char *data = NULL;
     va_list ap;
@@ -1464,7 +1464,7 @@ static switch_status_t load_config(void)
 			if (hold_music) {
 				switch_set_string(SPAN_CONFIG[span->span_id].hold_music, hold_music);
 			}
-
+			
 			zap_analog_start(span);
 		}
 	}
