@@ -752,6 +752,8 @@ L3INT Q931Pie_CalledNum(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
 
     /* Octet 1 */
     OBuf[(*Octet)++] = Q931ie_CALLED_PARTY_NUMBER;
+    
+	/* Octet 2 */
     li=(*Octet)++;
 
     /* Octet 3 */
@@ -814,7 +816,7 @@ L3INT Q931Uie_CallingNum(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHA
     }
     Octet++;
 
-    /* Octet 4a*/
+    /* Octet 4*/
     x=0;
     do{
         pie->Digit[x] = IBuf[Octet+Off] & 0x7f;
@@ -848,37 +850,30 @@ L3INT Q931Uie_CallingNum(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHA
 *****************************************************************************/
 L3INT Q931Pie_CallingNum(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
-    Q931ie_CallingSub * pIE = (Q931ie_CallingSub*)IBuf;
+    Q931ie_CallingNum * pIE = (Q931ie_CallingNum*)IBuf;
     L3INT rc=0;
     L3INT Beg=*Octet;
     L3INT li;
-    L3INT sN = pIE->Size - sizeof(Q931ie_CalledSub) + 1;
+    L3INT sN = pIE->Size - sizeof(Q931ie_CallingNum);
     L3INT x;
 
     /* Octet 1 */
-    OBuf[(*Octet)++] = Q931ie_CALLING_PARTY_SUBADDRESS;
+    OBuf[(*Octet)++] = Q931ie_CALLING_PARTY_NUMBER;
+	
+	/* Octet 2 */
     li=(*Octet)++;
 
     /* Octet 3 */
-    OBuf[(*Octet)++] = 0x80 | (pIE->TypNum << 4) | (pIE->OddEvenInd << 3);
+    OBuf[(*Octet)++] = 0x00 | (pIE->TypNum << 4) | (pIE->NumPlanID);
     
-    /* Octet 3a */
-    /*
-
-        Details about the use and how to detect if Octet 3a is used
-        are very weak. Temp left out.
-
-        Octet 3 msb is set to 1 to indicate that this is not present
-
-    */
-
     /* Octet 4 */
+    OBuf[(*Octet)++] = 0x80;
+
+    /* Octet 5 */
     for(x=0;x<sN;x++)
     {
         OBuf[(*Octet)++] = pIE->Digit[x];
     }
-
-    OBuf[(*Octet)-1] |= 0x80; /* Terminate bit */
 
     OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
@@ -1528,7 +1523,7 @@ L3INT Q931Pie_Display(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
     OBuf[(*Octet)++] = Q931ie_DISPLAY;
     li=(*Octet)++;
 
-    DSize = pIE->Size - sizeof(Q931ie_Display) + 1;
+    DSize = pIE->Size - sizeof(Q931ie_Display);
 
     for(x=0; x< DSize; x++)
     {
