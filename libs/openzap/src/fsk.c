@@ -307,21 +307,22 @@ dsp_fsk_sample (dsp_fsk_handle_t *handle, double normalized_sample)
 	if (handle->cellpos > 1.0) {
 		handle->cellpos -= 1.0;
 		
-
 		switch (handle->state) {
 		case FSK_STATE_DATA:
-			{
+			{		
+				
 				(*handle->attr.bithandler) (handle->attr.bithandler_arg, handle->current_bit);
 			}
 			break;
 		case FSK_STATE_CHANSEIZE:
 			{
+
 				if (handle->last_bit != handle->current_bit) {
 					handle->conscutive_state_bits++;
 				} else {
 					handle->conscutive_state_bits = 0;
 				}
-				
+
 				if (handle->conscutive_state_bits > 15) {
 					handle->state = FSK_STATE_CARRIERSIG;
 					handle->conscutive_state_bits = 0;

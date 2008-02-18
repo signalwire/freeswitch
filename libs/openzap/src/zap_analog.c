@@ -43,8 +43,6 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj);
 static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxo_outgoing_call)
 {
 	if (!zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK) && !zap_test_flag(zchan, ZAP_CHANNEL_INTHREAD)) {		
-		//zap_channel_command(zchan, ZAP_COMMAND_TRACE_INPUT, "/tmp/inbound.ul");
-		//zap_channel_command(zchan, ZAP_COMMAND_TRACE_OUTPUT, "/tmp/outbound.ul");
 		zap_channel_clear_needed_tones(zchan);
 		zap_channel_clear_detected_tones(zchan);
 
@@ -185,7 +183,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 	ts.buffer = NULL;
 
 	if (zap_channel_open_chan(zchan) != ZAP_SUCCESS) {
-		zap_log(ZAP_LOG_ERROR, "OPEN ERROR\n");
+		zap_log(ZAP_LOG_ERROR, "OPEN ERROR [%s]\n", zchan->last_error);
 		goto done;
 	}
 
@@ -226,12 +224,13 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 		
 		elapsed += interval;
 		state_counter += interval;
-
+		
 		if (!zap_test_flag(zchan, ZAP_CHANNEL_STATE_CHANGE)) {
 			switch(zchan->state) {
 			case ZAP_CHANNEL_STATE_GET_CALLERID:
 				{
 					if (state_counter > 5000 || !zap_test_flag(zchan, ZAP_CHANNEL_CALLERID_DETECT)) {
+						zap_channel_command(zchan, ZAP_COMMAND_DISABLE_CALLERID_DETECT, NULL);
 						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_IDLE);
 					}
 				}
@@ -355,7 +354,8 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				{
 					zap_channel_use(zchan);
 					zap_channel_clear_needed_tones(zchan);
-
+					zap_channel_flush_dtmf(zchan);
+						
 					if (zchan->type == ZAP_CHAN_TYPE_FXO && !zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK)) {
 						zap_channel_command(zchan, ZAP_COMMAND_OFFHOOK, NULL);
 					}
@@ -569,7 +569,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 						zchan->needed_tones[ZAP_TONEMAP_FAIL1] = 1;
 						zchan->needed_tones[ZAP_TONEMAP_FAIL2] = 1;
 						zchan->needed_tones[ZAP_TONEMAP_FAIL3] = 1;
-						dial_timeout = ((zchan->dtmf_on + zchan->dtmf_off) * strlen(zchan->caller_data.ani)) + 3000;
+						dial_timeout = ((zchan->dtmf_on + zchan->dtmf_off) * strlen(zchan->caller_data.ani)) + 2000;
 					}
 				}
 			} else if (zchan->detected_tones[ZAP_TONEMAP_RING]) {
@@ -658,7 +658,8 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 {
 	zap_sigmsg_t sig;
 	zap_analog_data_t *analog_data = event->channel->span->signal_data;
-
+	int locked = 0;
+	
 	memset(&sig, 0, sizeof(sig));
 	sig.chan_id = event->channel->chan_id;
 	sig.span_id = event->channel->span_id;
@@ -669,15 +670,16 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 			zap_oob_event2str(event->enum_id), event->channel->span_id, event->channel->chan_id, zap_channel_state2str(event->channel->state));
 
 	zap_mutex_lock(event->channel->mutex);
-
+	locked++;
 
 	switch(event->enum_id) {
 	case ZAP_OOB_RING_START:
 		{
-
-			if (event->channel->state == ZAP_CHANNEL_STATE_DOWN && !zap_test_flag(event->channel, ZAP_CHANNEL_INTHREAD)) {
+			if (!event->channel->ring_count && (event->channel->state == ZAP_CHANNEL_STATE_DOWN && !zap_test_flag(event->channel, ZAP_CHANNEL_INTHREAD))) {
 				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_GET_CALLERID);
 				event->channel->ring_count = 1;
+				zap_mutex_unlock(event->channel->mutex);
+				locked = 0;
 				zap_thread_create_detached(zap_analog_channel_run, event->channel);
 			} else {
 				event->channel->ring_count++;
@@ -693,6 +695,7 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 			if (event->channel->state != ZAP_CHANNEL_STATE_DOWN) {
 				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_DOWN);
 			}
+
 		}
 		break;
 	case ZAP_OOB_FLASH:
@@ -724,6 +727,8 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 					zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_UP);
 				} else {
 					zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_DIALTONE);
+					zap_mutex_unlock(event->channel->mutex);
+					locked = 0;
 					zap_thread_create_detached(zap_analog_channel_run, event->channel);
 				}
 			} else {
@@ -736,8 +741,9 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 			}
 		}
 	}
-	 
-	zap_mutex_unlock(event->channel->mutex);
+	if (locked) {
+		zap_mutex_unlock(event->channel->mutex);
+	}
 	return ZAP_SUCCESS;
 }
 

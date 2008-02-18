@@ -493,6 +493,7 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 zap_status_t zap_span_load_tones(zap_span_t *span, char *mapname);
 zap_size_t zap_channel_dequeue_dtmf(zap_channel_t *zchan, char *dtmf, zap_size_t len);
 zap_status_t zap_channel_queue_dtmf(zap_channel_t *zchan, const char *dtmf);
+void zap_channel_flush_dtmf(zap_channel_t *zchan);
 zap_time_t zap_current_time_in_ms(void);
 zap_status_t zap_span_poll_event(zap_span_t *span, uint32_t ms);
 zap_status_t zap_span_next_event(zap_span_t *span, zap_event_t **event);
@@ -531,6 +532,15 @@ ZIO_CODEC_FUNCTION(zio_alaw2slin);
 ZIO_CODEC_FUNCTION(zio_ulaw2alaw);
 ZIO_CODEC_FUNCTION(zio_alaw2ulaw);
 
+#ifdef DEBUG_LOCKS
+#define zap_mutex_lock(_x) printf("++++++lock %s:%d\n", __FILE__, __LINE__) && _zap_mutex_lock(_x)
+#define zap_mutex_trylock(_x) printf("++++++try %s:%d\n", __FILE__, __LINE__) && _zap_mutex_trylock(_x)
+#define zap_mutex_unlock(_x) printf("------unlock %s:%d\n", __FILE__, __LINE__) && _zap_mutex_unlock(_x)
+#else 
+#define zap_mutex_lock(_x) _zap_mutex_lock(_x)
+#define zap_mutex_trylock(_x) _zap_mutex_trylock(_x)
+#define zap_mutex_unlock(_x) _zap_mutex_unlock(_x)
+#endif
 
 #endif
 

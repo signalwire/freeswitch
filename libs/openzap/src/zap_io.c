@@ -436,8 +436,10 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 		if (!new_chan->dtmf_off) {
 			new_chan->dtmf_off = ZAP_DEFAULT_DTMF_OFF;
 		}
+
 		zap_mutex_create(&new_chan->mutex);
 		zap_buffer_create(&new_chan->digit_buffer, 128, 128, 0);
+
 		zap_set_flag(new_chan, ZAP_CHANNEL_CONFIGURED | ZAP_CHANNEL_READY);
 		*chan = new_chan;
 		return ZAP_SUCCESS;
@@ -814,10 +816,12 @@ zap_status_t zap_channel_open_chan(zap_channel_t *zchan)
 	assert(zchan != NULL);
 
 	if (zap_test_flag(zchan, ZAP_CHANNEL_SUSPENDED)) {
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", "Channel is suspended");
 		return ZAP_FAIL;
 	}
-
+	
 	if (!zap_test_flag(zchan, ZAP_CHANNEL_READY) || (status = zap_mutex_trylock(zchan->mutex)) != ZAP_SUCCESS) {
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "Channel is not ready or is in use %d %d", zap_test_flag(zchan, ZAP_CHANNEL_READY), status);
 		return status;
 	}
 
@@ -828,9 +832,11 @@ zap_status_t zap_channel_open_chan(zap_channel_t *zchan)
 		if (status == ZAP_SUCCESS) {
 			zap_set_flag(zchan, ZAP_CHANNEL_OPEN);
 		}
+	} else {
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", "Channel is not ready");
 	}
-	zap_mutex_unlock(zchan->mutex);
 
+	zap_mutex_unlock(zchan->mutex);
 	return status;
 }
 
@@ -894,8 +900,6 @@ zap_status_t zap_channel_outgoing_call(zap_channel_t *zchan)
 
 zap_status_t zap_channel_done(zap_channel_t *zchan)
 {
-	int i;
-
 	assert(zchan != NULL);
 
 	memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
@@ -903,12 +907,6 @@ zap_status_t zap_channel_done(zap_channel_t *zchan)
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_INUSE);
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_OUTBOUND);
 
-	for (i = 0; i < 2; i++) {
-		if (zchan->fds[i] > -1) {
-			close(zchan->fds[i]);
-			zchan->fds[i] = -1;
-		}
-	}
 	return ZAP_SUCCESS;
 }
 
@@ -1019,7 +1017,8 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 				close(zchan->fds[0]);
 				zchan->fds[0] = -1;
 			}
-			if ((zchan->fds[0] = open(path, O_WRONLY|O_CREAT|O_TRUNC, 755)) > -1) {
+			if ((zchan->fds[0] = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+				zap_log(ZAP_LOG_DEBUG, "Tracing channel %u:%u to [%s]\n", zchan->span_id, zchan->chan_id, path);	
 				GOTO_STATUS(done, ZAP_SUCCESS);
 			}
 			
@@ -1031,10 +1030,11 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 		{
 			char *path = (char *) obj;
 			if (zchan->fds[1] > 0) {
-				close(zchan->fds[0]);
+				close(zchan->fds[1]);
 				zchan->fds[1] = -1;
 			}
-			if ((zchan->fds[1] = open(path, O_WRONLY|O_CREAT|O_TRUNC, 755)) > -1) {
+			if ((zchan->fds[1] = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+				zap_log(ZAP_LOG_DEBUG, "Tracing channel %u:%u to [%s]\n", zchan->span_id, zchan->chan_id, path);	
 				GOTO_STATUS(done, ZAP_SUCCESS);
 			}
 			
@@ -1432,6 +1432,14 @@ zap_size_t zap_channel_dequeue_dtmf(zap_channel_t *zchan, char *dtmf, zap_size_t
 	return bytes;
 }
 
+void zap_channel_flush_dtmf(zap_channel_t *zchan)
+{
+	if (zchan->digit_buffer && zap_buffer_inuse(zchan->digit_buffer)) {
+		zap_mutex_lock(zchan->mutex);
+		zap_buffer_zero(zchan->digit_buffer);
+		zap_mutex_unlock(zchan->mutex);
+	}
+}
 
 zap_status_t zap_channel_queue_dtmf(zap_channel_t *zchan, const char *dtmf)
 {

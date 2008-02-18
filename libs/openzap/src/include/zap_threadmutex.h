@@ -32,9 +32,9 @@ zap_status_t zap_thread_create_detached_ex(zap_thread_function_t func, void *dat
 void zap_thread_override_default_stacksize(zap_size_t size);
 zap_status_t zap_mutex_create(zap_mutex_t **mutex);
 zap_status_t zap_mutex_destroy(zap_mutex_t **mutex);
-zap_status_t zap_mutex_lock(zap_mutex_t *mutex);
-zap_status_t zap_mutex_trylock(zap_mutex_t *mutex);
-zap_status_t zap_mutex_unlock(zap_mutex_t *mutex);
+zap_status_t _zap_mutex_lock(zap_mutex_t *mutex);
+zap_status_t _zap_mutex_trylock(zap_mutex_t *mutex);
+zap_status_t _zap_mutex_unlock(zap_mutex_t *mutex);
 
 #endif
 

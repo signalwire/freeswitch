@@ -184,7 +184,7 @@ zap_status_t zap_mutex_destroy(zap_mutex_t **mutex)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_mutex_lock(zap_mutex_t *mutex)
+zap_status_t _zap_mutex_lock(zap_mutex_t *mutex)
 {
 #ifdef WIN32
 	EnterCriticalSection(&mutex->mutex);
@@ -195,7 +195,7 @@ zap_status_t zap_mutex_lock(zap_mutex_t *mutex)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_mutex_trylock(zap_mutex_t *mutex)
+zap_status_t _zap_mutex_trylock(zap_mutex_t *mutex)
 {
 #ifdef WIN32
 	if (!TryEnterCriticalSection(&mutex->mutex))
@@ -207,7 +207,7 @@ zap_status_t zap_mutex_trylock(zap_mutex_t *mutex)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_mutex_unlock(zap_mutex_t *mutex)
+zap_status_t _zap_mutex_unlock(zap_mutex_t *mutex)
 {
 #ifdef WIN32
 	LeaveCriticalSection(&mutex->mutex);
@@ -217,6 +217,10 @@ zap_status_t zap_mutex_unlock(zap_mutex_t *mutex)
 #endif
 	return ZAP_SUCCESS;
 }
+
+
+
+
 
 /* For Emacs:
  * Local Variables:
