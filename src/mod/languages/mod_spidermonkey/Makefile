@@ -6,9 +6,9 @@ LOCAL_LIBADD=
 
 include sm.mak
 
-depend_install: $(DESTDIR)$(PREFIX)/lib/libjs.la
+depend_install: $(DESTDIR)$(libdir)/libjs.la
 
-$(DESTDIR)$(PREFIX)/lib/libjs.la: $(JSLA)
+$(DESTDIR)$(libdir)/libjs.la: $(JSLA)
 	cd $(JS_DIR)/nsprpub/ && $(MAKE) install
 	cd $(JS_DIR) && $(MAKE) install
 

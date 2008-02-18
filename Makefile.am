@@ -31,6 +31,9 @@ sounds-install: sounds-en-us-callie-8000-install
 moh: sounds-music-8000
 moh-install: sounds-music-8000-install
 
+libdir = @libdir@
+bindir = @bindir@
+includedir = @includedir@
 libfreeswitch_la_SOURCES	= \
 src/switch_apr.c \
 src/switch_buffer.c \
@@ -198,6 +201,7 @@ install-data-local:
 	@for x in mod db log log/xml_cdr bin scripts grammar recordings ; do \
 		$(mkinstalldirs) $(DESTDIR)$(prefix)/$$x ; \
 	 done
+	$(mkinstalldirs) $(DESTDIR)@modinstdir@
 	test -d $(DESTDIR)$(prefix)/conf || $(MAKE) samples-conf
 	test -d $(DESTDIR)$(prefix)/htdocs || $(MAKE) samples-htdocs
 
@@ -334,10 +338,10 @@ dox:
 
 scripts/fsxs: scripts/fsxs.in
 	@echo creating fsxs
-	@sed -e "s,@MODULES_DIR\@,$(PREFIX)/mod," \
-	    -e "s,@LIB_DIR\@,$(PREFIX)/lib," \
-	    -e "s,@BIN_DIR\@,$(PREFIX)/bin," \
-	    -e "s,@INC_DIR\@,$(PREFIX)/include," \
+	@sed -e "s,@MODULES_DIR\@,@modinstdir@," \
+	    -e "s,@LIB_DIR\@,@libdir@," \
+	    -e "s,@BIN_DIR\@,@bindir@," \
+	    -e "s,@INC_DIR\@,@includedir@," \
 	    -e "s,@CFG_DIR\@,$(PREFIX)/conf," \
 	    -e "s,@DB_DIR\@,$(PREFIX)/db," \
 	    -e "s,@PREFIX\@,$(PREFIX)," \
@@ -365,7 +369,7 @@ megaclean: eclean modclean
 	rm -f `find ./libs -name \*.la`
 
 libclean:
-	@for file in `ls ./libs`; do pushd "./libs/"$$file; make clean; popd; done
+	@for file in `ls ./libs`; do pushd "./libs/"$$file; make clean; rm -f .built; popd; done
 
 modules.conf:
 	if test -f $@; then touch $@; else cp build/modules.conf.in $@ ;fi

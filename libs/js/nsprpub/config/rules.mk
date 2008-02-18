@@ -232,7 +232,7 @@ install:: $(RELEASE_BINS) $(RELEASE_HEADERS) $(RELEASE_LIBS)
 #	$(NSINSTALL) -t -m 0644 $(RELEASE_HEADERS) $(DESTDIR)$(includedir)/$(include_subdir)
 #endif
 ifdef RELEASE_LIBS
-	$(NSINSTALL) -t -m 0755 $(RELEASE_LIBS) $(DESTDIR)$(prefix)/lib
+	$(NSINSTALL) -t -m 0755 $(RELEASE_LIBS) $(DESTDIR)$(libdir)
 endif
 	+$(LOOP_OVER_DIRS)
 

@@ -30,8 +30,11 @@ switch_builddir=`pwd`
 AC_SUBST(switch_srcdir)
 AC_SUBST(switch_builddir)
 
-moddir=$prefix/mod
-AC_SUBST(moddir)
+# Where to install the modules
+AC_ARG_WITH(modinstdir, [   --with-modinstdir (default=$prefix/mod)], modinstdir=$withval, modinstdir="${prefix}/mod")
+
+AC_SUBST(modinstdir)
+AC_DEFINE_UNQUOTED([SWITCH_MOD_DIR],"${modinstdir}",[where to install the modules to])
 
 #Set default language
 AC_LANG_C
@@ -66,7 +69,7 @@ AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
 # Optional Features
 
 AC_ARG_ENABLE(resample,
-[AC_HELP_STRING([--enable-resample],[build with embedded resamper])],[enable_resample="$enable_resample"],[enable_resample="yes"])
+[AC_HELP_STRING([--enable-resample],[build with embedded resampler])],[enable_resample="$enable_resample"],[enable_resample="yes"])
 
 # We should add checking for out of tree libresample here
 RESAMPLE_LIB=
@@ -383,6 +386,9 @@ AC_SUBST(int64_t_fmt)
 AC_SUBST(uint64_t_fmt) 
 AC_SUBST(ssize_t_fmt) 
 AC_SUBST(size_t_fmt)
+AC_SUBST(libdir)
+AC_SUBST(bindir)
+AC_SUBST(includedir)
 
 AC_PATH_PROGS(ZCAT, gunzip gzcat gzip zcat)
 AC_PATH_PROGS(TAR, gtar tar)
@@ -476,7 +482,7 @@ AC_CONFIG_SUBDIRS(libs/sofia-sip)
 AC_CONFIG_SUBDIRS(libs/speex)
 AC_CONFIG_SUBDIRS(libs/xmlrpc-c)
 AC_CONFIG_SUBDIRS(libs/portaudio)
-#AC_CONFIG_SUBDIRS(libs/openmrcp)
+AC_CONFIG_SUBDIRS(libs/openmrcp)
 AC_CONFIG_SUBDIRS(libs/openzap)
 
 AC_OUTPUT

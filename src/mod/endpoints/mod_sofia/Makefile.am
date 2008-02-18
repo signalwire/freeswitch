@@ -8,7 +8,7 @@ AM_MAKEFLAGS=`test -n "$(VERBOSE)" || echo -s`
 # Dirty trick to override the link output
 LIBS+=> $(MODNAME).log || error="yes";if test -n "$(VERBOSE)" -o "$$error" = "yes";then cat $(MODNAME).log;fi;if test "$$error" = "yes";then exit 1;fi
 
-moddir=$(prefix)/mod
+moddir=@modinstdir@
 
 MODNAME=mod_sofia
 

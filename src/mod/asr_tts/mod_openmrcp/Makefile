@@ -39,4 +39,3 @@ $(SOFIALA): $(SOFIA_DIR) $(SOFIA_DIR)/.update
 
 ../../../../libs/sofia-sip/libsofia-sip-ua/nua/sofia-sip/nua_tag.h: $(SOFIALA)
 
-
