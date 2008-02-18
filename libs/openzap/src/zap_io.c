@@ -111,9 +111,9 @@ ZAP_STR2ENUM(zap_str2zap_channel_state, zap_channel_state2str, zap_channel_state
 ZAP_ENUM_NAMES(MDMF_TYPE_NAMES, MDMF_STRINGS)
 ZAP_STR2ENUM(zap_str2zap_mdmf_type, zap_mdmf_type2str, zap_mdmf_type_t, MDMF_TYPE_NAMES, MDMF_INVALID)
 
-static char *cut_path(char *in)
+static const char *cut_path(const char *in)
 {
-	char *p, *ret = in;
+	const char *p, *ret = in;
 	char delims[] = "/\\";
 	char *i;
 
@@ -126,7 +126,7 @@ static char *cut_path(char *in)
 	return ret;
 }
 
-static void null_logger(char *file, const char *func, int line, int level, char *fmt, ...)
+static void null_logger(const char *file, const char *func, int line, int level, const char *fmt, ...)
 {
 	if (file && func && line && level && fmt) {
 		return;
@@ -135,7 +135,7 @@ static void null_logger(char *file, const char *func, int line, int level, char 
 }
 
 
-static char *LEVEL_NAMES[] = {
+static const char *LEVEL_NAMES[] = {
 	"EMERG",
 	"ALERT",
 	"CRIT",
@@ -149,9 +149,9 @@ static char *LEVEL_NAMES[] = {
 
 static int zap_log_level = 7;
 
-static void default_logger(char *file, const char *func, int line, int level, char *fmt, ...)
+static void default_logger(const char *file, const char *func, int line, int level, const char *fmt, ...)
 {
-	char *fp;
+	const char *fp;
 	char data[1024];
 	va_list ap;
 

@@ -48,6 +48,9 @@ static struct {
 static const char ctlpath[] = "/dev/zap/ctl";
 static zap_socket_t CONTROL_FD = ZT_INVALID_SOCKET;
 
+ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event);
+ZIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event);
+
 static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, zap_chan_type_t type, char *name, char *number)
 {
 	unsigned configured = 0, x;

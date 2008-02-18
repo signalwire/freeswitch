@@ -44,7 +44,7 @@
 #define LINE "--------------------------------------------------------------------------------"
 //#define IODEBUG
 
-static L2ULONG zap_time_now()
+static L2ULONG zap_time_now(void)
 {
 	return (L2ULONG)zap_current_time_in_ms();
 }

@@ -131,7 +131,29 @@ int Q921QueueHDLCFrame(L2TRUNK trunk, L2UCHAR *b, L2INT size);
 int Q921Rx12(L2TRUNK trunk);
 int Q921Rx32(L2TRUNK trunk, L2UCHAR * Mes, L2INT Size);
 int Q921Start(L2TRUNK trunk);
-void Q921SetGetTimeCB(L2ULONG (*callback)());
+void Q921SetGetTimeCB(L2ULONG (*callback)(void));
 void Q921TimerTick(L2TRUNK trunk);
+
+int Q921Tx21Proc(L2TRUNK trunk, L2UCHAR *Msg, L2INT size);
+int Q921Tx23Proc(L2TRUNK trunk, L2UCHAR *Msg, L2INT size);
+extern L2ULONG tLast;
+L2ULONG Q921GetTime(void);
+void Q921T200TimerStart(L2TRUNK trunk);
+void Q921T200TimerStop(L2TRUNK trunk);
+void Q921T200TimerReset(L2TRUNK trunk);
+void Q921T203TimerStart(L2TRUNK trunk);
+void Q921T203TimerStop(L2TRUNK trunk);
+void Q921T203TimerReset(L2TRUNK trunk);
+void Q921T200TimerExpire(L2TRUNK trunk);
+void Q921T203TimerExpire(L2TRUNK trunk);
+int Q921SendI(L2TRUNK trunk, L2UCHAR Sapi, char cr, L2UCHAR Tei, char pf, L2UCHAR *mes, L2INT size);
+int Q921SendRNR(L2TRUNK trunk, int Sapi, int cr, int Tei, int pf);
+int Q921SendREJ(L2TRUNK trunk, int Sapi, int cr, int Tei, int pf);
+int Q921SendSABME(L2TRUNK trunk, int Sapi, int cr, int Tei, int pf);
+int Q921SendDM(L2TRUNK trunk, int Sapi, int cr, int Tei, int pf);
+int Q921SendDISC(L2TRUNK trunk, int Sapi, int cr, int Tei, int pf);
+int Q921SendUA(L2TRUNK trunk, int Sapi, int cr, int Tei, int pf);
+int Q921ProcSABME(L2TRUNK trunk, L2UCHAR *mes, L2INT size);
+
 #endif
 

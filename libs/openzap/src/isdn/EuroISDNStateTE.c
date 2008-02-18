@@ -50,8 +50,9 @@
   however run smoothly under the generic space, so these functions are more 
   for show 
 */
-
-void EuroISDNCreateTE(L3UCHAR i)
+#if 0
+static void EuroISDNCreateTE(L3UCHAR i)
 {
 	Q931CreateTE(i);
 }
+#endif

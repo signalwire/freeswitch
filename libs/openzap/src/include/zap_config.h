@@ -77,7 +77,7 @@ struct zap_config {
 	/*! FILE stream buffer to the opened file */
 	FILE *file;
 	/*! path to the file */
-	char *path;
+	const char *path;
 	/*! current category */
 	char category[256];
 	/*! current section */
@@ -100,7 +100,7 @@ struct zap_config {
   \param file_path path to the file
   \return 1 (true) on success 0 (false) on failure
 */
-int zap_config_open_file(zap_config_t * cfg, char *file_path);
+int zap_config_open_file(zap_config_t * cfg, const char *file_path);
 
 /*!
   \brief Close a previously opened configuration file

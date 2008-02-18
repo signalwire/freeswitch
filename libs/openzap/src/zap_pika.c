@@ -42,6 +42,8 @@
 #define TRY_OR_DIE(__code, __status, __label) if ((status = __code ) != __status) goto __label
 #define pk_atof(__a) (PK_FLOAT) atof(__a)
 
+PK_VOID PK_CALLBACK media_out_callback(PKH_TPikaEvent *event);
+
 ZAP_ENUM_NAMES(PIKA_SPAN_NAMES, PIKA_SPAN_STRINGS)
 ZAP_STR2ENUM(pika_str2span, pika_span2str, PIKA_TSpanFraming, PIKA_SPAN_NAMES, PIKA_SPAN_INVALID)
 
@@ -126,7 +128,7 @@ struct pika_chan_data {
 };
 typedef struct pika_chan_data pika_chan_data_t;
 
-static char *pika_board_type_string(PK_UINT type)
+static const char *pika_board_type_string(PK_UINT type)
 {
 	if (type == PKH_BOARD_TYPE_DIGITAL_GATEWAY) {
 		return "digital_gateway";

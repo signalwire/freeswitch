@@ -55,6 +55,9 @@ static struct {
 
 /* a bunch of this stuff should go into the wanpipe_tdm_api_iface.h */
 
+ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event);
+ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event);
+
 #define WP_INVALID_SOCKET -1
 /* on windows right now, there is no way to specify if we want to read events here or not, we allways get them here */
 /* we need some what to select if we are reading regular tdm msgs or events */
