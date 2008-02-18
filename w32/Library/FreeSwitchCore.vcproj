@@ -207,6 +207,26 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\..\src\g711.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="..\..\libs\stfu\stfu.c"
 				>
 				<FileConfiguration
@@ -407,6 +427,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_pcm.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_regex.c"
 				>
 			</File>
@@ -465,6 +489,10 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\..\src\include\g711.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\include\SimpleGlob.h"
 				>
 			</File>
@@ -505,11 +533,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\include\private\switch_core.h"
+				RelativePath="..\..\src\include\switch_core.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\include\switch_core.h"
+				RelativePath="..\..\src\include\private\switch_core.h"
 				>
 			</File>
 			<File
