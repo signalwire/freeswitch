@@ -248,10 +248,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	switch_core_session_message_t *message = NULL;
 	switch_frame_t *read_frame = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	uint8_t *abuf = NULL;
 	int timelimit = 60;
 	const char *var = switch_channel_get_variable(caller_channel, "call_timeout");
 	switch_time_t start = 0;
+	
+	write_frame.data = malloc(SWITCH_RECOMMENDED_BUFFER_SIZE);
+	write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 	if (var) {
 		timelimit = atoi(var);
@@ -290,8 +292,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 								  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
 								  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
-				write_frame.data = abuf = malloc(SWITCH_RECOMMENDED_BUFFER_SIZE);
-				write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 				
 				write_frame.codec = &write_codec;
 				write_frame.datalen = read_codec->implementation->bytes_per_frame;
@@ -378,8 +378,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 			if (ringback.fh) {
 				switch_size_t mlen, olen;
 				unsigned int pos = 0;
-				uint8_t *fbuf = malloc(SWITCH_RECOMMENDED_BUFFER_SIZE);
-							
+
 				if (ringback.asis) {
 					mlen = write_frame.codec->implementation->encoded_bytes_per_frame;
 				} else {
@@ -387,20 +386,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 				}
 
 				olen = mlen;
-				switch_core_file_read(ringback.fh, fbuf, &olen);
+				switch_core_file_read(ringback.fh, write_frame.data, &olen);
 
 				if (olen == 0) {
 					olen = mlen;
 					ringback.fh->speed = 0;
 					switch_core_file_seek(ringback.fh, &pos, 0, SEEK_SET);
-					switch_core_file_read(ringback.fh, fbuf, &olen);
+					switch_core_file_read(ringback.fh, write_frame.data, &olen);
 					if (olen == 0) {
 						break;
 					}
 				}
-				write_frame.data = fbuf;
 				write_frame.datalen = (uint32_t) (ringback.asis ? olen : olen * 2);
-				switch_safe_free(fbuf);
 			} else if (ringback.audio_buffer) {
 				if ((write_frame.datalen = (uint32_t) switch_buffer_read_loop(ringback.audio_buffer,
 																			  write_frame.data,
@@ -434,7 +431,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 		}
 		switch_core_codec_destroy(&write_codec);
 	}
-	switch_safe_free(abuf);
+
+	switch_safe_free(write_frame.data);
 
 	return status;
 }
@@ -469,7 +467,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	int32_t sleep_ms = 1000, try = 0, retries = 1, idx = IDX_NADA;
 	switch_codec_t write_codec = { 0 };
 	switch_frame_t write_frame = { 0 };
-	uint8_t *fdata;
 	uint8_t pass = 0;
 	char key[80] = SWITCH_BLANK_STRING, file[512] = SWITCH_BLANK_STRING, *odata, *var;
 	switch_call_cause_t reason = SWITCH_CAUSE_UNALLOCATED;
@@ -484,7 +481,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	uint8_t ring_ready = 0;
 	char *loop_data = NULL;
 
-	write_frame.data = fdata = malloc(SWITCH_RECOMMENDED_BUFFER_SIZE);
+	write_frame.data = malloc(SWITCH_RECOMMENDED_BUFFER_SIZE);
+	write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 	*bleg = NULL;
 	odata = strdup(bridgeto);
@@ -1038,7 +1036,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						if (ringback.fh) {
 							switch_size_t mlen, olen;
 							unsigned int pos = 0;
-							uint8_t *abuf = malloc(SWITCH_RECOMMENDED_BUFFER_SIZE);
+							
 
 							if (ringback.asis) {
 								mlen = write_frame.codec->implementation->encoded_bytes_per_frame;
@@ -1047,20 +1045,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							}
 
 							olen = mlen;
-							switch_core_file_read(ringback.fh, abuf, &olen);
+							switch_core_file_read(ringback.fh, write_frame.data, &olen);
 
 							if (olen == 0) {
 								olen = mlen;
 								ringback.fh->speed = 0;
 								switch_core_file_seek(ringback.fh, &pos, 0, SEEK_SET);
-								switch_core_file_read(ringback.fh, abuf, &olen);
+								switch_core_file_read(ringback.fh, write_frame.data, &olen);
 								if (olen == 0) {
 									break;
 								}
 							}
-							write_frame.data = abuf;
 							write_frame.datalen = (uint32_t) (ringback.asis ? olen : olen * 2);
-							switch_safe_free(abuf);
 						} else if (ringback.audio_buffer) {
 							if ((write_frame.datalen = (uint32_t) switch_buffer_read_loop(ringback.audio_buffer,
 																						  write_frame.data,
@@ -1248,7 +1244,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	if (var_event) {
 		switch_event_destroy(&var_event);
 	}
-	switch_safe_free(fdata);
+	switch_safe_free(write_frame.data);
 
 	return status;
 }
