@@ -27,11 +27,13 @@ SOFIALA=$(SOFIAUA_DIR)/libsofia-sip-ua.la
 
 include ../../../../build/modmake.rules
 
-$(OPENMRCP_DIR)/.built: $(OPENMRCP_DIR)/.update
+$(OPENMRCP_DIR)/Makefile: $(OPENMRCP_DIR)/.update
 	cd $(OPENMRCP_DIR) && ./bootstrap && ./configure --with-apr=../apr --with-apr-util=../apr-util --with-sofia-sip=../sofia-sip
-	cd $(OPENMRCP_DIR) && $(MAKE) && touch .built
+	$(TOUCH_TARGET)
 
-$(OPENMRCP_LIBS): $(SOFIALA) $(OPENMRCP_DIR)/.built
+$(OPENMRCP_LIBS): $(SOFIALA) $(OPENMRCP_DIR)/Makefile
+	cd $(OPENMRCP_DIR) && $(MAKE)
+	$(TOUCH_TARGET)
 
 $(SOFIALA): $(SOFIA_DIR) $(SOFIA_DIR)/.update
 	cd $(SOFIA_DIR) && $(MAKE)
