@@ -1653,7 +1653,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 								tech_pvt->remote_crypto_key = switch_core_session_strdup(tech_pvt->session, crypto);
 								tech_pvt->crypto_tag = crypto_tag;
 
-								if (switch_rtp_ready(tech_pvt->rtp_session)) {
+								if (switch_rtp_ready(tech_pvt->rtp_session) && switch_test_flag(tech_pvt, TFLAG_SECURE)) {
 									sofia_glue_add_crypto(tech_pvt, tech_pvt->remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
 									switch_rtp_add_crypto_key(tech_pvt->rtp_session, SWITCH_RTP_CRYPTO_RECV, tech_pvt->crypto_tag, 
 															  tech_pvt->crypto_type, tech_pvt->remote_raw_key, SWITCH_RTP_KEY_LEN);
