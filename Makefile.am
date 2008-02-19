@@ -1,5 +1,5 @@
 EXTRA_DIST =
-SUBDIRS = . src
+SUBDIRS = . src build
 AUTOMAKE_OPTS = foreign
 NAME=freeswitch
 PREFIX=$(prefix)
