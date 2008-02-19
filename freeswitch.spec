@@ -73,10 +73,6 @@ on both 32 and 64 bit platforms.
 Our developers are heavily involved in open source and have donated code and other resources to 
 other telephony projects including sipXecs, OpenSER, Asterisk, CodeWeaver and OpenPBX.
 
-#%if 0%{?suse_version} > 100
-#%debug_package
-#%endif
-
 %package devel
 Summary:        Development package for FreeSWITCH open source telephony platform
 Group:          System/Libraries
@@ -127,22 +123,6 @@ Requires:        %{name} = %{version}-%{release}
 %description lang-en
 English language phrases module and directory structure for say module and voicemail
 
-#%package lang-it
-#Summary:        Provides italian language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
-#Group:          System/Libraries
-#Requires:        %{name} = %{version}-%{release}
-
-#%description lang-it
-#Italian language phrases module and directory structure for say module and voicemail
-
-#%package lang-es
-#Summary:        Provides spanish language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
-#Group:          System/Libraries
-#Requires:        %{name} = %{version}-%{release}
-
-#%description lang-es
-#Spanish language phrases module and directory structure for say module and voicemail
-
 %package lang-de
 Summary:        Provides german language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
 Group:          System/Libraries
@@ -150,14 +130,6 @@ Requires:        %{name} = %{version}-%{release}
 
 %description lang-de
 German language phrases module and directory structure for say module and voicemail
-
-#%package lang-nl
-#Summary:        Provides dutch language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
-#Group:          System/Libraries
-#Requires:        %{name} = %{version}-%{release}
-
-#%description lang-nl
-#Dutch language phrases module and directory structure for say module and voicemail
 
 %package lang-fr
 Summary:        Provides french language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
@@ -184,7 +156,7 @@ PASSTHRU_CODEC_MODULES="codecs/mod_g729 codecs/mod_g723_1 codecs/mod_amr"
 SPIDERMONKEY_MODULES="languages/mod_spidermonkey languages/mod_spidermonkey_curl languages/mod_spidermonkey_core_db languages/mod_spidermonkey_odbc languages/mod_spidermonkey_socket languages/mod_spidermonkey_teletone"
 APPLICATIONS_MODULES="applications/mod_commands applications/mod_conference applications/mod_dptools applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_limit applications/mod_rss applications/mod_voicemail"
 ASR_TTS_MODULES="asr_tts/mod_openmrcp"
-CODECS_MODULES="codecs/mod_g711 codecs/mod_g722 codecs/mod_g726 codecs/mod_gsm codecs/mod_ilbc codecs/mod_h26x codecs/mod_l16 codecs/mod_speex"
+CODECS_MODULES="codecs/mod_gsm codecs/mod_ilbc codecs/mod_h26x codecs/mod_voipcodecs codecs/mod_speex"
 DIALPLANS_MODULES="dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml"
 DIRECTORIES_MODULES=
 DOTNET_MODULES=
@@ -377,13 +349,9 @@ userdel freeswitch
 %{prefix}/mod/mod_rss.so*
 %{prefix}/mod/mod_voicemail.so*
 %{prefix}/mod/mod_openmrcp.so*
-%{prefix}/mod/mod_g711.so*
-%{prefix}/mod/mod_g722.so*
-%{prefix}/mod/mod_g726.so*
-%{prefix}/mod/mod_gsm.so*
 %{prefix}/mod/mod_ilbc.so* 
 %{prefix}/mod/mod_h26x.so*
-%{prefix}/mod/mod_l16.so* 
+%{prefix}/mod/mod_voipcodecs.so* 
 %{prefix}/mod/mod_speex.so* 
 %{prefix}/mod/mod_dialplan_directory.so* 
 %{prefix}/mod/mod_dialplan_xml.so* 
@@ -443,25 +411,6 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/en/vm/*.xml
 %{prefix}/mod/mod_say_en.so*
 
-#%files lang-it
-#%dir %attr(750,freeswitch,daemon) %{prefix}/conf/lang/it
-#%dir %attr(750,freeswitch,daemon) %{prefix}/conf/lang/it/demo
-#%dir %attr(750,freeswitch,daemon) %{prefix}/conf/lang/it/vm
-#%config(noreplace) %attr(640,freeswitch,daemon) %{prefix}/conf/lang/it/*.xml
-#%config(noreplace) %attr(640,freeswitch,daemon) %{prefix}/conf/lang/it/demo/*.xml
-#%config(noreplace) %attr(640,freeswitch,daemon) %{prefix}/conf/lang/it/vm/*.xml
-#%{prefix}/mod/mod_say_it.so*
-
-#%files lang-es
-#%dir %attr(750,freeswitch,daemon) %{prefix}/conf/lang/es
-#%dir %attr(750,freeswitch,daemon) %{prefix}/conf/lang/es/demo
-#%dir %attr(750,freeswitch,daemon) %{prefix}/conf/lang/es/vm
-#%config(noreplace) %attr(640,freeswitch,daemon) %{prefix}/conf/lang/es/*.xml
-#%config(noreplace) %attr(640,freeswitch,daemon) %{prefix}/conf/lang/es/demo/*.xml
-#%config(noreplace) %attr(640,freeswitch,daemon) %{prefix}/conf/lang/es/vm/*.xml
-#%{prefix}/mod/mod_say_es.so*
-
-
 %files lang-de
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/de
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/de/demo
@@ -470,15 +419,6 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/de/demo/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/de/vm/*.xml
 %{prefix}/mod/mod_say_de.so*
-
-#%files lang-nl
-#%dir %attr(750,freeswitch,daemon) %{prefix}/conf/lang/nl
-#%dir %attr(750,freeswitch,daemon) %{prefix}/conf/lang/nl/demo
-#%dir %attr(750,freeswitch,daemon) %{prefix}/conf/lang/nl/vm
-#%config(noreplace) %attr(640,freeswitch,daemon) %{prefix}/conf/lang/nl/*.xml
-#%config(noreplace) %attr(640,freeswitch,daemon) %{prefix}/conf/lang/nl/demo/*.xml
-#%config(noreplace) %attr(640,freeswitch,daemon) %{prefix}/conf/lang/nl/vm/*.xml
-#%{prefix}/mod/mod_say_nl.so*
 
 %files lang-fr
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/fr
