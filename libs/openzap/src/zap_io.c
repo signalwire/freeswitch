@@ -689,6 +689,11 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, z
 
 	zap_mutex_lock(globals.mutex);
 
+	if (span_id && globals.spans[span_id].channel_request) {
+		status = globals.spans[span_id].channel_request(&globals.spans[span_id], direction, zchan);
+		goto done;
+	}
+
 	if (span_id) {
 		span_max = span_id;
 		j = span_id;
@@ -845,6 +850,11 @@ zap_status_t zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t 
 	zap_status_t status = ZAP_FAIL;
 
 	zap_mutex_lock(globals.mutex);
+
+	if (span_id && globals.spans[span_id].channel_request) {
+		zap_log(ZAP_LOG_ERROR, "Individual channel selection not implemented on this span.\n");
+		goto done;
+	}
 
 	if (span_id < ZAP_MAX_SPANS_INTERFACE && chan_id < ZAP_MAX_CHANNELS_SPAN) {
 		zap_channel_t *check;
