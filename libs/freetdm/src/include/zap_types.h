@@ -163,7 +163,8 @@ typedef enum {
 	ZAP_SIGTYPE_NONE,
 	ZAP_SIGTYPE_ISDN,
 	ZAP_SIGTYPE_RBS,
-	ZAP_SIGTYPE_ANALOG
+	ZAP_SIGTYPE_ANALOG,
+	ZAP_SIGTYPE_SS7BOOST
 } zap_signal_type_t;
 
 typedef enum {
@@ -336,6 +337,7 @@ typedef struct zap_event zap_event_t;
 typedef struct zap_sigmsg zap_sigmsg_t;
 typedef struct zap_span zap_span_t;
 
+#define ZIO_CHANNEL_REQUEST_ARGS (zap_span_t *span, zap_direction_t direction, zap_channel_t **zchan)
 #define ZIO_CHANNEL_OUTGOING_CALL_ARGS (zap_channel_t *zchan)
 #define ZIO_SPAN_POLL_EVENT_ARGS (zap_span_t *span, uint32_t ms)
 #define ZIO_SPAN_NEXT_EVENT_ARGS (zap_span_t *span, zap_event_t **event)
@@ -354,6 +356,7 @@ typedef struct zap_span zap_span_t;
 #define ZIO_READ_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
 #define ZIO_WRITE_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
 
+typedef zap_status_t (*zio_channel_request_t) ZIO_CHANNEL_REQUEST_ARGS ;
 typedef zap_status_t (*zio_channel_outgoing_call_t) ZIO_CHANNEL_OUTGOING_CALL_ARGS ;
 typedef zap_status_t (*zio_span_poll_event_t) ZIO_SPAN_POLL_EVENT_ARGS ;
 typedef zap_status_t (*zio_span_next_event_t) ZIO_SPAN_NEXT_EVENT_ARGS ;
@@ -372,6 +375,7 @@ typedef zap_status_t (*zio_wait_t) ZIO_WAIT_ARGS ;
 typedef zap_status_t (*zio_read_t) ZIO_READ_ARGS ;
 typedef zap_status_t (*zio_write_t) ZIO_WRITE_ARGS ;
 
+#define ZIO_CHANNEL_REQUEST_FUNCTION(name) zap_status_t name ZIO_CHANNEL_REQUEST_ARGS
 #define ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(name) zap_status_t name ZIO_CHANNEL_OUTGOING_CALL_ARGS
 #define ZIO_SPAN_POLL_EVENT_FUNCTION(name) zap_status_t name ZIO_SPAN_POLL_EVENT_ARGS
 #define ZIO_SPAN_NEXT_EVENT_FUNCTION(name) zap_status_t name ZIO_SPAN_NEXT_EVENT_ARGS

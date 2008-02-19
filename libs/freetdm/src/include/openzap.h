@@ -428,6 +428,7 @@ struct zap_span {
 	zap_channel_t *channels_local_crv[32768];
 	zap_channel_t *channels_remote_crv[32768];
 	zio_channel_outgoing_call_t outgoing_call;
+	zio_channel_request_t channel_request;
 	void *mod_data;
 	char *type;
 };
