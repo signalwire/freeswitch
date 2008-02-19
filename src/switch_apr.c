@@ -124,6 +124,11 @@ SWITCH_DECLARE(int) switch_vsnprintf(char *buf, switch_size_t len, const char *f
 
 SWITCH_DECLARE(char *) switch_copy_string(char *dst, const char *src, switch_size_t dst_size)
 {
+	if (!dst) return NULL;
+	if (!src) {
+		dst = NULL;
+		return NULL;
+	}
 	return apr_cpystrn(dst, src, dst_size);
 }
 
