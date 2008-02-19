@@ -142,7 +142,9 @@ SWITCH_STANDARD_APP(record_fsv_function)
 		h.version = VERSION;
 		h.created = switch_timestamp_now();
 		switch_set_string(h.video_codec_name, vid_codec->implementation->iananame);
-		switch_set_string(h.video_fmtp, vid_codec->fmtp_in);
+		if (vid_codec->fmtp_in) {
+			switch_set_string(h.video_fmtp, vid_codec->fmtp_in);
+		}
 		h.audio_rate = read_codec->implementation->samples_per_second;
 		h.audio_ptime = read_codec->implementation->microseconds_per_frame / 1000;
 		
