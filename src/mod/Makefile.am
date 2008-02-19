@@ -6,7 +6,7 @@ uninstall: $(OUR_UNINSTALL_MODULES)
 $(OUR_MODULES) $(OUR_CLEAN_MODULES) $(OUR_INSTALL_MODULES) $(OUR_UNINSTALL_MODULES):
 	@set fnord $$MAKEFLAGS; amf=$$2; \
 	target=`echo $@ | sed -e 's|^.*-||'`; \
-	modname=`echo $@ | sed -e 's|-.*||'`; \
+	modname=`echo $@ | sed -e 's|-.*||' | sed -e 's|^.*/||'`; \
 	confmoddir=`cat $(switch_builddir)/modules.conf | sed -e 's| ||' | grep $$modname$$ | sed -e 's|#||' | head -1`; \
 	if test -z "$$confmoddir" ; then moddir=$@ ; else  \
 		if test -d  "$(switch_srcdir)/src/mod/$$confmoddir" ; then \
