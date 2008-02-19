@@ -126,8 +126,8 @@ SWITCH_DECLARE(char *) switch_copy_string(char *dst, const char *src, switch_siz
 {
 	if (!dst) return NULL;
 	if (!src) {
-		dst = NULL;
-		return NULL;
+		*dst = '\0';
+		return dst;
 	}
 	return apr_cpystrn(dst, src, dst_size);
 }
