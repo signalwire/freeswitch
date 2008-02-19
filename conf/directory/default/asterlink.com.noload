@@ -6,7 +6,7 @@
       <gateway name="asterlink.com">
 	<param name="username" value="%ALUSERNAME%"/>
 	<param name="password" value="%ALPASSWORD%"/>
-	<param name="from-user" valu="%ALUSERNAME%"/>
+	<param name="from-user" value="%ALUSERNAME%"/>
 	<param name="from-domain" value="asterlink.com"/>
 	<param name="expire-seconds" value="600"/>
 	<param name="register" value="true"/>
