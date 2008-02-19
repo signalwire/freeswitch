@@ -25,3 +25,9 @@ install:
 	@echo " +           $(MAKE) samples                      +"  
 	@echo " +                                             +"
 	@echo " +---------------------------------------------+"  
+
+
+
+.PHONY: check dvi html info install-data \
+        install-dvi install-exec install-html install-info install-pdf install-ps installcheck installdirs pdf \
+        ps uninstall mostlyclean clean distclean maintainer-clean
