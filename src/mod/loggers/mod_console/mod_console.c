@@ -171,7 +171,7 @@ static int can_write(FILE *handle, int ms)
 	} else {
 		aok = 0;
 	}
-	
+			
 	return aok;
 #else 
 	return 1;
@@ -189,7 +189,7 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 
 	if (failed_write) {
 		if ((handle = switch_core_data_channel(SWITCH_CHANNEL_ID_LOG))) {
-			int aok = can_write(handle, 5);
+			int aok = can_write(handle, 100);
 			if (aok) {
 				const char *msg = "Failed to write to the console! Logging disabled! RE-enable with the 'console loglevel' command\n";
 #ifdef WIN32
@@ -230,7 +230,7 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 
 		if (ok) {
 #ifndef WIN32
-			int aok = can_write(handle, 2000);
+			int aok = can_write(handle, 10000);
 			
 			if (!aok) {
 				hard_log_level = 0;
