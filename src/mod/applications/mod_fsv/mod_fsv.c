@@ -78,12 +78,12 @@ static void *SWITCH_THREAD_FUNC record_video_thread(switch_thread_t *thread, voi
 		
 		switch_mutex_lock(eh->mutex);
 		
-		if (write(eh->fd, &bytes, sizeof(bytes)) != sizeof(bytes)) {
+		if (write(eh->fd, &bytes, sizeof(bytes)) != (int)sizeof(bytes)) {
 			switch_mutex_unlock(eh->mutex);
 			break;
 		}
 
-		if (write(eh->fd, read_frame->packet, read_frame->packetlen) != read_frame->packetlen) {
+		if (write(eh->fd, read_frame->packet, read_frame->packetlen) != (int)read_frame->packetlen) {
 			switch_mutex_unlock(eh->mutex);
 			break;
 		}
@@ -186,7 +186,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 			break;
 		}
 
-		if (write(fd, read_frame->data, read_frame->datalen) != read_frame->datalen) {
+		if (write(fd, read_frame->data, read_frame->datalen) != (int)read_frame->datalen) {
 			if (mutex) {
 				switch_mutex_unlock(mutex);
 			}
@@ -303,16 +303,16 @@ SWITCH_STANDARD_APP(play_fsv_function)
 		}
 		
 		if (bytes & VID_BIT) {
-			switch_rtp_hdr_t *h = vid_frame.packet;
+			switch_rtp_hdr_t *hdr = vid_frame.packet;
 			bytes &= ~VID_BIT;
 
-			if ((vid_frame.packetlen = read(fd, vid_frame.packet, bytes)) != bytes) {
+			if ((vid_frame.packetlen = read(fd, vid_frame.packet, bytes)) != (uint32_t)bytes) {
 				break;
 			}
 			
-			ts = ntohl(h->ts);
+			ts = ntohl(hdr->ts);
 			if (pt) {
-				h->pt = pt;
+				hdr->pt = pt;
 			}
 			if (switch_channel_test_flag(channel, CF_VIDEO)) {
 				switch_core_session_write_video_frame(session, &vid_frame, -1, 0);
@@ -322,7 +322,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 			}
 			last = ts;
 		} else {
-			if (bytes > write_frame.buflen) {
+			if (bytes > (int)write_frame.buflen) {
 				bytes = write_frame.buflen;
 			}
 			if ((write_frame.datalen = read(fd, write_frame.data, bytes)) <= 0) {
