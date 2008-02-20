@@ -187,6 +187,7 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+#if 0
 	if (failed_write) {
 		if ((handle = switch_core_data_channel(SWITCH_CHANNEL_ID_LOG))) {
 			int aok = can_write(handle, 100);
@@ -205,6 +206,7 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 			}
 		}
 	}
+#endif
 
 	if (level > hard_log_level) {
 		return SWITCH_STATUS_SUCCESS;
