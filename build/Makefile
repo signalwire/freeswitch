@@ -33,6 +33,7 @@ install:
 	@echo " +	----------------------------------	+"
 	@echo " +	http://www.freeswitch.org		+"
 	@echo " +	http://wiki.freeswitch.org		+"
+	@echo " +	http://jira.freeswitch.org		+"
 	@echo " +	http://lists.freeswitch.org		+"
 	@echo " +						+"
 	@echo " +	irc.freenode.net / #freeswitch		+"
