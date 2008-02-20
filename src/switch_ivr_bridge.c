@@ -209,10 +209,16 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 		if (!ans_a && originator) {
 
 			if (!ans_b && switch_channel_test_flag(chan_b, CF_ANSWERED)) {
-				switch_channel_answer(chan_a);
+				if (switch_channel_answer(chan_a) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(chan_a));
+					break;
+				}
 				ans_a++;
 			} else if (!pre_b && switch_channel_test_flag(chan_b, CF_EARLY_MEDIA)) {
-				switch_channel_pre_answer(chan_a);
+				if (switch_channel_pre_answer(chan_a) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(chan_a));
+					break;
+				}
 				pre_b++;
 			}
 			if (!pre_b) {
@@ -605,6 +611,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	int stream_id = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_state_t state;
+	switch_event_t *event;
+	int br = 0;
 
 	switch_channel_set_flag(caller_channel, CF_ORIGINATOR);
 	switch_channel_clear_flag(caller_channel, CF_TRANSFER);
@@ -630,7 +638,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA) ||
 		switch_channel_test_flag(peer_channel, CF_RING_READY)) {
-		switch_event_t *event;
 		switch_core_session_message_t msg = { 0 };
 		const switch_application_interface_t *application_interface;
 		const char *app, *data;
@@ -640,8 +647,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(caller_channel, event);
 			switch_event_fire(&event);
+			br = 1;
 		}
-
+		
 		if (switch_core_session_read_lock(peer_session) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_set_variable(caller_channel, SWITCH_BRIDGE_VARIABLE, switch_core_session_get_uuid(peer_session));
 			switch_channel_set_variable(peer_channel, SWITCH_BRIDGE_VARIABLE, switch_core_session_get_uuid(session));
@@ -713,11 +721,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			switch_channel_set_state(peer_channel, CS_LOOPBACK);
 			audio_bridge_thread(NULL, (void *) a_leg);
 
-			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
-				switch_channel_event_set_data(caller_channel, event);
-				switch_event_fire(&event);
-			}
-
 			switch_channel_clear_flag(caller_channel, CF_ORIGINATOR);
 			//make sure this doesnt break anything
 
@@ -746,6 +749,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	}
 
   done:
+
+	if (br && switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(caller_channel, event);
+		switch_event_fire(&event);
+	}
 
 	state = switch_channel_get_state(caller_channel);
 	

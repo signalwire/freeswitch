@@ -1390,9 +1390,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 	msg.message_id = SWITCH_MESSAGE_INDICATE_PROGRESS;
 	msg.from = channel->name;
 	status = switch_core_session_receive_message(channel->session, &msg);
-
+	
 	if (status == SWITCH_STATUS_SUCCESS) {
-		status = switch_channel_perform_mark_pre_answered(channel, file, func, line);
+		switch_channel_perform_mark_pre_answered(channel, file, func, line);
+	} else {
+		switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 	}
 
 	return status;
@@ -1423,6 +1425,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready(switch_channel
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Ring Ready %s!\n", channel->name);
+	} else {
+		switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 	}
 
 	return status;
@@ -1487,17 +1491,17 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-
 	msg.message_id = SWITCH_MESSAGE_INDICATE_ANSWER;
 	msg.from = channel->name;
 	status = switch_core_session_receive_message(channel->session, &msg);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
-		return switch_channel_perform_mark_answered(channel, file, func, line);
+		switch_channel_perform_mark_answered(channel, file, func, line);
+	} else {
+		switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 	}
 
-	return SWITCH_STATUS_FALSE;
-
+	return status;
 }
 
 #define resize(l) {\

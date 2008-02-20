@@ -908,7 +908,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			if (ringback_data && !switch_channel_test_flag(caller_channel, CF_ANSWERED)
 				&& !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
-				switch_channel_pre_answer(caller_channel);
+				if ((status = switch_channel_pre_answer(caller_channel)) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(caller_channel));
+					goto done;
+				}
 			}
 
 			if (session && (read_codec = switch_core_session_get_read_codec(session)) &&
@@ -1132,9 +1135,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			if (caller_channel) {
 				if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
-					switch_channel_answer(caller_channel);
+					status = switch_channel_answer(caller_channel);
 				} else if (switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
-					switch_channel_pre_answer(caller_channel);
+					status = switch_channel_pre_answer(caller_channel);
+				} else {
+					status = SWITCH_STATUS_SUCCESS;
+				}
+
+				if (status != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(caller_channel));
+					switch_channel_hangup(peer_channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 				}
 			}
 

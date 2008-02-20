@@ -354,7 +354,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 				sofia_glue_tech_prepare_codecs(tech_pvt);
 				if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
-					nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+					//nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
 					return SWITCH_STATUS_FALSE;
 				}
 			}
@@ -967,7 +967,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
-		sofia_answer_channel(session);
+		return sofia_answer_channel(session);
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{
@@ -975,7 +975,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				
 				switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Asked to send early media by %s\n", msg->from);
-
+				
 				/* Transmit 183 Progress with SDP */
 				if (switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
 					const char *sdp = NULL;
@@ -985,13 +985,15 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				} else {
 					if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
 						switch_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);
+						
 						if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
 							const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
+
 							tech_pvt->num_codecs = 0;
 							sofia_glue_tech_prepare_codecs(tech_pvt);
 							if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
 								switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
-								nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+								//nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
 								return SWITCH_STATUS_FALSE;
 							}
 						}
