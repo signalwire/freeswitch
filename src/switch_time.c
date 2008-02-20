@@ -56,7 +56,7 @@ static struct {
 SWITCH_MODULE_LOAD_FUNCTION(softtimer_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime);
-SWITCH_MODULE_DEFINITION(softtimer, softtimer_load, softtimer_shutdown, softtimer_runtime);
+SWITCH_MODULE_DEFINITION(CORE_SOFTTIMER_MODULE, softtimer_load, softtimer_shutdown, softtimer_runtime);
 
 #define MAX_ELEMENTS 360
 #define IDLE_SPEED 100
