@@ -62,7 +62,7 @@ static switch_memory_pool_t *module_pool = NULL;
 static switch_hash_t *log_hash = NULL;
 static uint32_t all_level = 0;
 static int32_t hard_log_level = SWITCH_LOG_DEBUG;
-static int32_t failed_write = 0;
+//static int32_t failed_write = 0;
 static void del_mapping(char *var)
 {
 	switch_core_hash_insert(log_hash, var, NULL);
@@ -235,8 +235,8 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 			int aok = can_write(handle, 10000);
 			
 			if (!aok) {
-				hard_log_level = 0;
-				failed_write++;
+				//hard_log_level = 0;
+				//failed_write++;
 				return SWITCH_STATUS_SUCCESS;
 			}
 #endif
