@@ -37,8 +37,8 @@
 #undef SWITCH_MOD_DECLARE_DATA
 #define SWITCH_MOD_DECLARE_DATA __declspec(dllexport)
 #endif
-SWITCH_MODULE_LOAD_FUNCTION(mod_l16_load);
-SWITCH_MODULE_DEFINITION(mod_l16, mod_l16_load, NULL, NULL);
+SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load);
+SWITCH_MODULE_DEFINITION(CORE_PCM_MODULE, core_pcm_load, NULL, NULL);
 
 static switch_status_t switch_raw_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
@@ -258,7 +258,7 @@ static void mod_g711_load(switch_loadable_module_interface_t **module_interface,
 
 }
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_l16_load)
+SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 {
 	switch_codec_interface_t *codec_interface;
     int mpf = 10000, spf = 80, bpf = 160, ebpf = 160, bps = 128000, rate = 8000, counta, countb;
