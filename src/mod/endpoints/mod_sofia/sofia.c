@@ -1327,14 +1327,20 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			switch_clear_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
 
 			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+				const char *r_sdp = NULL;
 				switch_core_session_message_t msg = { 0 };
-				
+			
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n", status, phrase);
 				
+				tl_gets(tags, SOATAG_REMOTE_SDP_STR_REF(r_sdp), TAG_END());
 				msg.message_id = SWITCH_MESSAGE_INDICATE_RESPOND;
 				msg.from = __FILE__;
 				msg.numeric_arg = status;
 				msg.string_arg = switch_core_session_strdup(other_session, phrase);
+				if (r_sdp) {
+					msg.pointer_arg = switch_core_session_strdup(other_session, r_sdp);
+					msg.pointer_arg_size = strlen(r_sdp);
+				}
 				switch_core_session_receive_message(other_session, &msg);
 				switch_core_session_rwunlock(other_session);
 			}
