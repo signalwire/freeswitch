@@ -1174,7 +1174,7 @@ static int offer_answer_step(soa_session_t *ss,
 	*local0 = *local, local = local0;
       SU_DEBUG_7(("soa_static(%p, %s): %s\n", (void *)ss, by,
 		  "upgrade with remote description"));
-      soa_sdp_upgrade(ss, tmphome, local, user, remote, &u2s, &s2u);
+      soa_sdp_upgrade(ss, tmphome, local, user, NULL, &u2s, &s2u);
     }
     break;
   case process_answer:
