@@ -915,9 +915,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 {
 	switch_io_event_hook_recv_dtmf_t *ptr;	
 	switch_status_t status;
+	switch_dtmf_t new_dtmf;
+	
+	switch_assert(dtmf);
+
+	new_dtmf = *dtmf;
+
+	if (new_dtmf.duration > SWITCH_MAX_DTMF_DURATION) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXECSSIVE DTMF DIGIT [%c] LEN [%d]\n", 
+						  switch_channel_get_name(session->channel), new_dtmf.digit, new_dtmf.duration);
+		new_dtmf.duration = SWITCH_MAX_DTMF_DURATION;
+	} else if (!new_dtmf.duration) {
+		new_dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
+	}
 
 	for (ptr = session->event_hooks.recv_dtmf; ptr; ptr = ptr->next) {
-		if ((status = ptr->recv_dtmf(session, dtmf)) != SWITCH_STATUS_SUCCESS) {
+		if ((status = ptr->recv_dtmf(session, &new_dtmf)) != SWITCH_STATUS_SUCCESS) {
 			return status;
 		}
 	}
@@ -928,8 +941,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 {
 	switch_io_event_hook_send_dtmf_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_dtmf_t new_dtmf;
 	
-	
+	switch_assert(dtmf);
+
+	new_dtmf = *dtmf;
+
+	if (new_dtmf.duration > SWITCH_MAX_DTMF_DURATION) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXECSSIVE DTMF DIGIT [%c] LEN [%d]\n", 
+						  switch_channel_get_name(session->channel), new_dtmf.digit, new_dtmf.duration);
+		new_dtmf.duration = SWITCH_MAX_DTMF_DURATION;
+	} else if (!new_dtmf.duration) {
+		new_dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
+	}
+
+
 	for (ptr = session->event_hooks.send_dtmf; ptr; ptr = ptr->next) {
 		if ((status = ptr->send_dtmf(session, dtmf)) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_SUCCESS;
@@ -942,7 +968,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 		} else if (dtmf->digit == 'W') {
 			switch_yield(1000000);
 		} else {
-			status = session->endpoint_interface->io_routines->send_dtmf(session, dtmf);
+			status = session->endpoint_interface->io_routines->send_dtmf(session, &new_dtmf);
 		}
 	}
 	return status;
@@ -984,6 +1010,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 			if ((dur = atoi(p)) > 50) {
 				dtmf.duration = dur * 8;
 			}
+		}
+
+
+		if (dtmf.duration > SWITCH_MAX_DTMF_DURATION) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXECSSIVE DTMF DIGIT [%c] LEN [%d]\n", 
+							  switch_channel_get_name(session->channel), dtmf.digit, dtmf.duration);
+			dtmf.duration = SWITCH_MAX_DTMF_DURATION;
+		} else if (!dtmf.duration) {
+			dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
 		}
 
 		for (p = argv[i]; p && *p; p++) {

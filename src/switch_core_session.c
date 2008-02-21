@@ -690,6 +690,10 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t * thread, void *obj)
 {
 	switch_core_session_t *session = obj;
+	switch_event_t *event;
+	char *event_str = NULL;
+	const char *val;
+
 	session->thread = thread;
 
 	switch_core_session_run(session);
@@ -697,6 +701,17 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t * thr
 					  session->id, switch_channel_get_name(session->channel));
 	switch_core_session_write_lock(session);
 	switch_set_flag(session, SSF_DESTROYED);
+
+	if ((val = switch_channel_get_variable(session->channel, "memory_debug")) && switch_true(val)) {
+		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(session->channel, event);
+			switch_event_serialize(event, &event_str, SWITCH_FALSE);
+			switch_assert(event_str);
+			switch_core_memory_pool_tag(switch_core_session_get_pool(session), switch_core_session_strdup(session, event_str));
+			free(event_str);
+		}
+	}
+
 	switch_core_session_rwunlock(session);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Session %"SWITCH_SIZE_T_FMT" (%s) Ended\n",

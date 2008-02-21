@@ -1371,6 +1371,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833(switch_rtp_t *rtp_sessi
 
 	if ((rdigit = malloc(sizeof(*rdigit))) != 0) {
 		*rdigit = *dtmf;
+		if (rdigit->duration < SWITCH_DEFAULT_DTMF_DURATION) {
+			rdigit->duration = SWITCH_DEFAULT_DTMF_DURATION;
+		}
+		
 		if ((switch_queue_trypush(rtp_session->dtmf_data.dtmf_queue, rdigit)) != SWITCH_STATUS_SUCCESS) {
 			free(rdigit);
 			return SWITCH_STATUS_FALSE;
@@ -1389,9 +1393,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833_in(switch_rtp_t *rtp_se
 	if (!switch_rtp_ready(rtp_session)) {
 		return SWITCH_STATUS_FALSE;
 	}
-
+	
 	if ((rdigit = malloc(sizeof(*rdigit))) != 0) {
 		*rdigit = *dtmf;
+		if (rdigit->duration < SWITCH_DEFAULT_DTMF_DURATION) {
+			rdigit->duration = SWITCH_DEFAULT_DTMF_DURATION;
+		}
+
 		if ((switch_queue_trypush(rtp_session->dtmf_data.dtmf_inqueue, rdigit)) != SWITCH_STATUS_SUCCESS) {
 			free(rdigit);
 			return SWITCH_STATUS_FALSE;

@@ -979,9 +979,15 @@ static switch_bool_t inband_dtmf_generate_callback(switch_media_bug_t *bug, void
 			while (switch_queue_trypop(pvt->digit_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 				switch_dtmf_t *dtmf = (switch_dtmf_t *) pop;
 				char buf[2] = "";
-			
+				int duration = dtmf->duration;
+
 				buf[0] = dtmf->digit;
-				pvt->ts.duration = dtmf->duration;
+				if (duration > 8000) {
+					duration = 4000;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Truncating ridiculous DTMF duration %d ms to 1/2 second.\n", 
+									  switch_channel_get_name(switch_core_session_get_channel(pvt->session)), dtmf->duration / 8);
+				}
+				pvt->ts.duration = duration;
 				teletone_run(&pvt->ts, buf);
 			}
 			

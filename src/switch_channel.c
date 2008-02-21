@@ -210,19 +210,32 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 {
 	switch_status_t status;
 	void *pop;
+	switch_dtmf_t new_dtmf;
+	
+	switch_assert(dtmf);
 
 	switch_mutex_lock(channel->dtmf_mutex);	
-
+	new_dtmf = *dtmf;
+	
 	if ((status = switch_core_session_recv_dtmf(channel->session, dtmf) != SWITCH_STATUS_SUCCESS)) {
 		goto done;
 	}
 
-	if (is_dtmf(dtmf->digit)) {
+	if (is_dtmf(new_dtmf.digit)) {
 		switch_dtmf_t *dt;
 		int x = 0;
 
+		if (new_dtmf.duration > SWITCH_MAX_DTMF_DURATION) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXECSSIVE DTMF DIGIT [%c] LEN [%d]\n", 
+							  switch_channel_get_name(channel), new_dtmf.digit, new_dtmf.duration);
+			new_dtmf.duration = SWITCH_MAX_DTMF_DURATION;
+		} else if (!new_dtmf.duration) {
+			new_dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
+		}
+		
 		switch_zmalloc(dt, sizeof(*dt));
-		*dt = *dtmf;
+		*dt = new_dtmf;
+
 		while (switch_queue_trypush(channel->dtmf_queue, dt) != SWITCH_STATUS_SUCCESS) {
 			switch_queue_trypop(channel->dtmf_queue, &pop);
 			if (++x > 100) {
@@ -268,6 +281,14 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_
 			}
 		}
 
+		if (dtmf.duration > SWITCH_MAX_DTMF_DURATION) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "EXECSSIVE DTMF DIGIT LEN %c %d\n", dtmf.digit, dtmf.duration);
+			dtmf.duration = SWITCH_MAX_DTMF_DURATION;
+		} else if (!dtmf.duration) {
+			dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
+		}
+
+
 		for (p = argv[i]; p && *p; p++) {
 			if (is_dtmf(*p)) {
 				dtmf.digit = *p;
@@ -295,9 +316,17 @@ SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(switch_channel_t *ch
 
 	if (switch_queue_trypop(channel->dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 		dt = (switch_dtmf_t *) pop;
-		/* TODO: Shouldn't we be doing a memcpy here? */
 		*dtmf = *dt;
 		free(dt);
+
+		if (dtmf->duration > SWITCH_MAX_DTMF_DURATION) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXECSSIVE DTMF DIGIT [%c] LEN [%d]\n", 
+							  switch_channel_get_name(channel), dtmf->digit, dtmf->duration);
+			dtmf->duration = SWITCH_MAX_DTMF_DURATION;
+		} else if (!dtmf->duration) {
+			dtmf->duration = SWITCH_DEFAULT_DTMF_DURATION;
+		}
+
 		status = SWITCH_STATUS_SUCCESS;
 	}
 	switch_mutex_unlock(channel->dtmf_mutex);

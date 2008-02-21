@@ -350,6 +350,8 @@ SWITCH_DECLARE(int) switch_core_add_state_handler(_In_ const switch_state_handle
 SWITCH_DECLARE(const switch_state_handler_table_t *) switch_core_get_state_handler(_In_ int index);
 ///\}
 
+SWITCH_DECLARE(void) switch_core_memory_pool_tag(switch_memory_pool_t *pool, const char *tag);
+
 SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(_Out_ switch_memory_pool_t **pool,
 																	_In_z_ const char *file, _In_z_ const char *func, _In_ int line);
 
