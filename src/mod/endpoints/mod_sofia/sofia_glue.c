@@ -1789,11 +1789,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					}
 				}
 				
-				if (!match && greedy) {
-					skip++;
-					continue;
-				}
-
 				if (!match && near_match) {
 					const switch_codec_implementation_t *search[1];
 					char *prefs[1];
@@ -1814,6 +1809,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Substituting codec %s@%ums\n",
 									  mimp->iananame, mimp->microseconds_per_frame / 1000);
 					match = 1;
+				}
+
+				if (!match && greedy) {
+					skip++;
+					continue;
 				}
 
 				if (mimp) {

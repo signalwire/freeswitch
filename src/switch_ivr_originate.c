@@ -1161,6 +1161,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		  done:
 			*cause = SWITCH_CAUSE_UNALLOCATED;
 
+			if (caller_channel && !switch_channel_ready(caller_channel)) {
+				status = SWITCH_STATUS_FALSE;
+			}
+
 			if (status == SWITCH_STATUS_SUCCESS) {
 				if (caller_channel) {
 					switch_channel_set_variable(caller_channel, "originate_disposition", "call accepted");
