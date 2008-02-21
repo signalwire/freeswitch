@@ -688,8 +688,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	if (!switch_strlen_zero(timer_name)) {
 		if (switch_core_timer_init(&rtp_session->timer, timer_name, ms_per_packet / 1000, samples_per_interval, pool) ==
 			SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting timer [%s] %d bytes per %dms\n", timer_name, samples_per_interval,
-							  ms_per_packet);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+							  "Starting timer [%s] %d bytes per %dms\n", timer_name, samples_per_interval, ms_per_packet);
 		} else {
 			memset(&rtp_session->timer, 0, sizeof(rtp_session->timer));
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error starting timer [%s], async RTP disabled\n", timer_name);
@@ -1038,6 +1038,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		bytes = sizeof(rtp_msg_t);
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *) &rtp_session->recv_msg, &bytes);
+
+		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
+			/* Fast PASS! */
+			*flags |= SFF_PROXY_PACKET;
+			ret = (int) bytes;
+			goto end;
+		}
 		
 		if (!SWITCH_STATUS_IS_BREAK(status) && rtp_session->timer.interval) {
 			switch_core_timer_step(&rtp_session->timer);
@@ -1785,10 +1792,25 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	uint32_t len, ts = 0;
 	switch_payload_t payload;
 	rtp_msg_t *send_msg = NULL;
-
+	
 	if (!switch_rtp_ready(rtp_session) || !rtp_session->remote_addr) {
 		return -1;
 	}
+
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
+		switch_size_t bytes;
+		
+		/* Fast PASS! */
+		if (!switch_test_flag(frame, SFF_PROXY_PACKET)) {
+			return 0;
+		}
+		bytes = frame->packetlen;
+		if (switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, frame->packet, &bytes) != SWITCH_STATUS_SUCCESS) {
+			return -1;
+		}
+		return (int) bytes;
+	}
+
 
 	fwd = (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) && switch_test_flag(frame, SFF_RAW_RTP)) ? 1 : 0;
 

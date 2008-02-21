@@ -109,6 +109,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_CACHE_SPEECH_HANDLES_VARIABLE "cache_speech_handles"
 #define SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME "__cache_speech_handles_obj__"
 #define SWITCH_BYPASS_MEDIA_VARIABLE "bypass_media"
+#define SWITCH_PROXY_MEDIA_VARIABLE "proxy_media"
 #define SWITCH_ENDPOINT_DISPOSITION_VARIABLE "endpoint_disposition"
 #define SWITCH_HOLD_MUSIC_VARIABLE "hold_music"
 #define SWITCH_EXPORT_VARS_VARIABLE "export_vars"
@@ -389,7 +390,8 @@ typedef enum {
 	SWITCH_RTP_FLAG_PASS_RFC2833 = (1 << 14),
 	SWITCH_RTP_FLAG_AUTO_CNG = (1 << 15),
 	SWITCH_RTP_FLAG_SECURE_SEND_RESET = (1 << 16),
-	SWITCH_RTP_FLAG_SECURE_RECV_RESET = (1 << 17)
+	SWITCH_RTP_FLAG_SECURE_RECV_RESET = (1 << 17),
+	SWITCH_RTP_FLAG_PROXY_MEDIA = (1 << 18)
 } switch_rtp_flag_t;
 
 
@@ -666,7 +668,7 @@ CF_SERVICE		= (1 <<  9) - Channel has a service thread
 CF_TAGGED		= (1 << 10) - Channel is tagged
 CF_WINNER		= (1 << 11) - Channel is the winner
 CF_CONTROLLED	= (1 << 12) - Channel is under control
-CF_BYPASS_MEDIA		= (1 << 13) - Channel has no media
+CF_PROXY_MODE		= (1 << 13) - Channel has no media
 CF_SUSPEND		= (1 << 14) - Suspend i/o
 CF_EVENT_PARSE  = (1 << 15) - Suspend control events
 CF_REPEAT_STATE = (1 << 16) - Tell the state machine to repeat a state
@@ -697,7 +699,7 @@ typedef enum {
 	CF_TAGGED = (1 << 10),
 	CF_WINNER = (1 << 11),
 	CF_CONTROLLED = (1 << 12),
-	CF_BYPASS_MEDIA = (1 << 13),
+	CF_PROXY_MODE = (1 << 13),
 	CF_SUSPEND = (1 << 14),
 	CF_EVENT_PARSE = (1 << 15),
 	CF_REPEAT_STATE = (1 << 16),
@@ -711,6 +713,7 @@ typedef enum {
 	CF_RESET = (1 << 24),
 	CF_ORIGINATING = (1 << 25),
 	CF_STOP_BROADCAST = (1 << 26),
+	CF_PROXY_MEDIA = (1 << 27)
 } switch_channel_flag_t;
 
 
@@ -732,7 +735,8 @@ typedef enum {
 	SFF_RAW_RTP = (1 << 1),
 	SFF_RTP_HEADER = (1 << 2),
 	SFF_PLC = (1 << 3),
-	SFF_RFC2833 = (1 << 4)
+	SFF_RFC2833 = (1 << 4),
+	SFF_PROXY_PACKET = (1 << 5)
 } switch_frame_flag_t;
 
 

@@ -93,6 +93,39 @@ static switch_status_t switch_raw_destroy(switch_codec_t *codec)
 }
 
 
+
+static switch_status_t switch_nn_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
+{
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t switch_nn_encode(switch_codec_t *codec,
+										 switch_codec_t *other_codec,
+										 void *decoded_data,
+										 uint32_t decoded_data_len,
+										 uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
+										 unsigned int *flag)
+{
+	/* NOOP indicates that the audio in is already the same as the audio out, so no conversion was necessary. */
+	return SWITCH_STATUS_NOOP;
+}
+
+static switch_status_t switch_nn_decode(switch_codec_t *codec,
+										 switch_codec_t *other_codec,
+										 void *encoded_data,
+										 uint32_t encoded_data_len,
+										 uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
+										 unsigned int *flag)
+{
+	return SWITCH_STATUS_NOOP;
+}
+
+static switch_status_t switch_nn_destroy(switch_codec_t *codec)
+{
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 static switch_status_t switch_g711u_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	int encoding, decoding;
@@ -261,12 +294,20 @@ static void mod_g711_load(switch_loadable_module_interface_t **module_interface,
 SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 {
 	switch_codec_interface_t *codec_interface;
-    int mpf = 10000, spf = 80, bpf = 160, ebpf = 160, bps = 128000, rate = 8000, counta, countb;
+    int mpf = 10000, spf = 80, bpf = 160, ebpf = 160, bps = 128000, rate = 8000, counta = 1, countb = 12;
     switch_payload_t ianacode[4] = { 0, 10, 117, 119 };
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = switch_loadable_module_create_module_interface(pool, "PCM");
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
+	SWITCH_ADD_CODEC(codec_interface, "NO-NAME PASS-THROUGH");
+	switch_core_codec_add_implementation(pool, codec_interface,
+										 SWITCH_CODEC_TYPE_AUDIO, 0, "NO-NAME", NULL, 8000, 8000, 0,
+										 20000, 160, 320, 320, 1, 1, 12,
+										 switch_nn_init, switch_nn_encode, switch_nn_decode, switch_nn_destroy);
+	
 	SWITCH_ADD_CODEC(codec_interface, "RAW Signed Linear (16 bit)");
+
     for (counta = 1; counta <= 3; counta++) {
         for (countb = 12; countb > 0; countb--) {
             switch_core_codec_add_implementation(pool, codec_interface,
@@ -292,6 +333,8 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
                                          40000, 441, 882, 882, 1, 1, 1,
                                          switch_raw_init, switch_raw_encode, switch_raw_decode, switch_raw_destroy);
     
+
+
 	/* indicate that the module should continue to be loaded */
 
 	mod_g711_load(module_interface, pool);

@@ -165,7 +165,8 @@ typedef enum {
 	TFLAG_SDP = (1 << 25),
 	TFLAG_VIDEO = (1 << 26),
 	TFLAG_TPORT_LOG = (1 << 27),
-	TFLAG_SENT_UPDATE = (1 << 28)
+	TFLAG_SENT_UPDATE = (1 << 28),
+	TFLAG_PROXY_MEDIA = (1 << 29)
 } TFLAGS;
 
 struct mod_sofia_globals {
@@ -341,6 +342,7 @@ struct private_object {
 	char *fmtp_out;
 	char *remote_sdp_str;
 	char *local_sdp_str;
+	char *orig_local_sdp_str;
 	char *dest;
 	char *dest_to;
 	char *key;
@@ -439,7 +441,7 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt);
 
 void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *profile, private_object_t *tech_pvt, const char *channame);
 
-switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt);
+switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int force);
 
 switch_status_t sofia_glue_do_invite(switch_core_session_t *session);
 
@@ -584,3 +586,4 @@ char * sofia_glue_find_parameter(const char *str, const char *param);
 int sofia_glue_transport_has_tls(const sofia_transport_t tp);
 const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name);
 switch_status_t sofia_glue_build_crypto(private_object_t *tech_pvt, int index, switch_rtp_crypto_key_type_t type, switch_rtp_crypto_direction_t direction);
+void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt);

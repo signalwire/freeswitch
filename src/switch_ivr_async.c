@@ -1696,7 +1696,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 
 	mypath = strdup(path);
 
-	if ((nomedia = switch_channel_test_flag(channel, CF_BYPASS_MEDIA))) {
+	if ((nomedia = switch_channel_test_flag(channel, CF_PROXY_MODE))) {
 		switch_ivr_media(uuid, SMF_REBRIDGE);
 	}
 		

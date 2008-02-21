@@ -306,8 +306,12 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 				switch_channel_set_variable(peer_channel, SWITCH_B_SDP_VARIABLE, val);
 			}
 
-			if (switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
-				switch_channel_set_flag(peer_channel, CF_BYPASS_MEDIA);
+			if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+				switch_channel_set_flag(peer_channel, CF_PROXY_MODE);
+			}
+
+			if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+				switch_channel_set_flag(peer_channel, CF_PROXY_MEDIA);
 			}
 
 			if (profile) {
@@ -1031,7 +1035,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 			goto done;
 		}
 
-		if (switch_channel_test_flag(session->channel, CF_BYPASS_MEDIA) && !switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA)) {
+		if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) && !switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Application %s Cannot be used with NO_MEDIA mode!\n",
 							  extension->current_application->application_name);
 			status = SWITCH_STATUS_FALSE;

@@ -474,7 +474,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(_In_ switch_channe
 
 #define switch_channel_stop_broadcast(_channel)	if (switch_channel_test_flag(_channel, CF_BROADCAST)) switch_channel_set_flag(_channel, CF_BREAK | CF_STOP_BROADCAST)
 
-#define switch_channel_media_ready(_channel) ((switch_channel_test_flag(_channel, CF_ANSWERED) || switch_channel_test_flag(_channel, CF_EARLY_MEDIA)) && !switch_channel_test_flag(_channel, CF_BYPASS_MEDIA))
+#define switch_channel_media_ready(_channel) ((switch_channel_test_flag(_channel, CF_ANSWERED) || switch_channel_test_flag(_channel, CF_EARLY_MEDIA)) && !switch_channel_test_flag(_channel, CF_PROXY_MODE))
 
 /** @} */
 

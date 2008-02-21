@@ -130,6 +130,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	switch_assert(session != NULL);
 	switch_assert(*frame != NULL);
 
+	if (switch_test_flag(*frame, SFF_PROXY_PACKET)) {
+		/* Fast PASS! */
+		status = SWITCH_STATUS_SUCCESS;
+		goto done;
+	} 
+
 	if (switch_test_flag(*frame, SFF_CNG)) {
 		status = SWITCH_STATUS_SUCCESS;
 		if (!session->bugs) {
@@ -463,6 +469,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	if (switch_channel_test_flag(session->channel, CF_HOLD)) {
 		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (switch_test_flag(frame, SFF_PROXY_PACKET)) {
+		/* Fast PASS! */
+		return perform_write(session, frame, timeout, flag, stream_id);
 	}
 
 	if (switch_test_flag(frame, SFF_CNG)) {

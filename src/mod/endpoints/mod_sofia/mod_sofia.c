@@ -80,7 +80,7 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 	tech_pvt->read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SOFIA INIT\n", switch_channel_get_name(channel));
-	if (switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
+	if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 		sofia_glue_tech_absorb_sdp(tech_pvt);
 	}
 
@@ -340,10 +340,16 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 
 	switch_set_flag_locked(tech_pvt, TFLAG_ANS);
 
-	if (switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
+	if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 		const char *sdp = NULL;
 		if ((sdp = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE))) {
 			tech_pvt->local_sdp_str = switch_core_session_strdup(session, sdp);
+		}
+		if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+			sofia_glue_tech_patch_sdp(tech_pvt);
+			if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+				return SWITCH_STATUS_FALSE;
+			}
 		}
 	} else {
 		if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
@@ -360,7 +366,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			}
 		}
 
-		if ((status = sofia_glue_tech_choose_port(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
+		if ((status = sofia_glue_tech_choose_port(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return status;
 		}
@@ -612,7 +618,7 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 
 	switch_set_flag_locked(tech_pvt, TFLAG_WRITING);
 
-	if (!switch_test_flag(frame, SFF_CNG)) {
+	if (!switch_test_flag(frame, SFF_CNG) && !switch_test_flag(frame, SFF_PROXY_PACKET)) {
 		if (tech_pvt->read_codec.implementation->encoded_bytes_per_frame) {
 			bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
 			frames = ((int) frame->datalen / bytes);
@@ -758,7 +764,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			switch_channel_t *other_channel;
 			const char *ip = NULL, *port = NULL;
 			
-			switch_channel_set_flag(channel, CF_BYPASS_MEDIA);
+			switch_channel_set_flag(channel, CF_PROXY_MODE);
 			tech_pvt->local_sdp_str = NULL;
 			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
 				&& (other_session = switch_core_session_locate(uuid))) {
@@ -790,11 +796,11 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 			uint32_t count = 0;
 
-			switch_channel_clear_flag(channel, CF_BYPASS_MEDIA);
+			switch_channel_clear_flag(channel, CF_PROXY_MODE);
 			tech_pvt->local_sdp_str = NULL;
 			if (!switch_rtp_ready(tech_pvt->rtp_session)) {
 				sofia_glue_tech_prepare_codecs(tech_pvt);
-				if ((status = sofia_glue_tech_choose_port(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
+				if ((status = sofia_glue_tech_choose_port(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
 					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					return status;
 				}
@@ -957,10 +963,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 				if (!switch_strlen_zero(((char *)msg->pointer_arg))) {
 					nua_respond(tech_pvt->nh, code, reason, SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-					SOATAG_USER_SDP_STR(msg->pointer_arg),
-					SOATAG_AUDIO_AUX("cn telephone-event"),
-					NUTAG_INCLUDE_EXTRA_SDP(1),
-					TAG_END());
+								SOATAG_USER_SDP_STR(msg->pointer_arg),
+								SOATAG_AUDIO_AUX("cn telephone-event"),
+								NUTAG_INCLUDE_EXTRA_SDP(1),
+								TAG_END());
 				} else {
 					nua_respond(tech_pvt->nh, code, reason, SIPTAG_CONTACT_STR(tech_pvt->reply_contact), TAG_END());
 				}
@@ -986,10 +992,16 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Asked to send early media by %s\n", msg->from);
 				
 				/* Transmit 183 Progress with SDP */
-				if (switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
+				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 					const char *sdp = NULL;
 					if ((sdp = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE))) {
 						tech_pvt->local_sdp_str = switch_core_session_strdup(session, sdp);
+					}
+					if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+						sofia_glue_tech_patch_sdp(tech_pvt);
+						if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+							return SWITCH_STATUS_FALSE;
+						}
 					}
 				} else {
 					if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
@@ -1008,7 +1020,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						}
 					}
 
-					if ((status = sofia_glue_tech_choose_port(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
+					if ((status = sofia_glue_tech_choose_port(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
 						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 						return status;
 					}

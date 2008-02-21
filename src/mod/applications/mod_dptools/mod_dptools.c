@@ -1228,14 +1228,18 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	}
 
 	continue_on_fail = switch_channel_get_variable(caller_channel, "continue_on_fail");
-
-	if (switch_channel_test_flag(caller_channel, CF_BYPASS_MEDIA)
+	
+	if ((var = switch_channel_get_variable(caller_channel, SWITCH_PROXY_MEDIA_VARIABLE)) && switch_true(var)) {
+		switch_channel_set_flag(caller_channel, CF_PROXY_MEDIA);
+	}
+	
+	if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)
 		|| ((var = switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_VARIABLE)) && switch_true(var))) {
 		if (!switch_channel_test_flag(caller_channel, CF_ANSWERED)
 			&& !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
-			switch_channel_set_flag(caller_channel, CF_BYPASS_MEDIA);
+			switch_channel_set_flag(caller_channel, CF_PROXY_MODE);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already up, delaying point-to-point mode 'till both legs are up.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already up, delaying proxy mode 'till both legs are up.\n");
 			no_media_bridge = 1;
 		}
 	}
@@ -1292,12 +1296,12 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 				}
 			}
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Redirecting media to point-to-point mode.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Redirecting media to proxy mode.\n");
 			switch_ivr_nomedia(switch_core_session_get_uuid(session), SMF_FORCE);
 			switch_ivr_nomedia(switch_core_session_get_uuid(peer_session), SMF_FORCE);
 			switch_ivr_signal_bridge(session, peer_session);
 		} else {
-			if (switch_channel_test_flag(caller_channel, CF_BYPASS_MEDIA)) {
+			if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
 				switch_ivr_signal_bridge(session, peer_session);
 			} else {
 				switch_ivr_multi_threaded_bridge(session, peer_session, NULL, NULL, NULL);

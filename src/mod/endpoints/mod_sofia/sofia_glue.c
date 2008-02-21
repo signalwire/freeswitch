@@ -54,7 +54,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 		use_cng = 0;
 	}
 
-	if (!force && !ip && !sr && switch_channel_test_flag(tech_pvt->channel, CF_BYPASS_MEDIA)) {
+	if (!force && !ip && !sr && (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) || switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA))) {
 		return;
 	}
 
@@ -321,7 +321,7 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 	const char *abs, *codec_string = NULL;
 	const char *ocodec = NULL;
 
-	if (switch_channel_test_flag(tech_pvt->channel, CF_BYPASS_MEDIA)) {
+	if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) || switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
 		goto end;
 	}
 
@@ -475,15 +475,22 @@ const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name)
 	return NULL;
 }
 
-switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt)
+switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int force)
 {
 	char *ip = tech_pvt->profile->rtpip;
 	switch_port_t sdp_port;
 	char tmp[50];
 
-	if (switch_channel_test_flag(tech_pvt->channel, CF_BYPASS_MEDIA) || tech_pvt->adv_sdp_audio_port) {
-		return SWITCH_STATUS_SUCCESS;
+	if (!force) {
+		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) || 
+			switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA) || tech_pvt->adv_sdp_audio_port) {
+			return SWITCH_STATUS_SUCCESS;
+		}
 	}
+	if (tech_pvt->adv_sdp_audio_port) {
+		switch_rtp_release_port(tech_pvt->adv_sdp_audio_ip, tech_pvt->adv_sdp_audio_port);
+	}
+
 
 	tech_pvt->local_sdp_audio_ip = ip;
 	if (!(tech_pvt->local_sdp_audio_port = switch_rtp_request_port(tech_pvt->profile->rtpip))) {
@@ -515,7 +522,7 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt)
 	switch_port_t sdp_port;
 	char tmp[50];
 
-	if (switch_channel_test_flag(tech_pvt->channel, CF_BYPASS_MEDIA) || tech_pvt->adv_sdp_video_port) {
+	if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) || switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA) || tech_pvt->adv_sdp_video_port) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -678,6 +685,119 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 	return new_uri;
 }
 
+static switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt) {
+	char rip[128] = "";
+	char rp[128] = "";
+	char *p, *ip_ptr = NULL, *port_ptr = NULL;
+	int x;
+
+	if (switch_strlen_zero(tech_pvt->remote_sdp_str)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if ((p = (char *)switch_stristr("c=IN IP4 ", tech_pvt->remote_sdp_str))) {
+		ip_ptr = p + 9;
+	}
+
+	if ((p = (char *)switch_stristr("m=audio ", tech_pvt->remote_sdp_str))) {
+		port_ptr = p + 8;
+	}
+	
+	if (!(ip_ptr && port_ptr)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	p = ip_ptr;
+	x = 0;
+	while(x < sizeof(rip) && p && *p && ((*p >= '0' && *p <= '9') || *p == '.')) {
+		rip[x++] = *p;
+		p++;
+	}
+
+	p = port_ptr;
+	x = 0;
+	while(x < sizeof(rp) && p && *p && (*p >= '0' && *p <= '9')) {
+		rp[x++] = *p;
+		p++;
+	}
+
+	tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, rip);
+	tech_pvt->remote_sdp_audio_port = (switch_port_t) atoi(rp);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
+{
+	switch_size_t len;
+	char *p, *q, *ip_ptr = NULL, *port_ptr = NULL;
+	int x;
+
+	if (switch_strlen_zero(tech_pvt->local_sdp_str)) {
+		return;
+	}
+
+	if (!switch_strlen_zero(tech_pvt->orig_local_sdp_str)) {
+		return;
+	}
+
+	len = strlen(tech_pvt->local_sdp_str) + 256;
+	
+	if ((p = (char *)switch_stristr("c=IN IP4 ", tech_pvt->local_sdp_str))) {
+		ip_ptr = p + 9;
+	}
+
+	if ((p = (char *)switch_stristr("m=audio ", tech_pvt->local_sdp_str))) {
+		port_ptr = p + 8;
+	}
+	
+	if (!(ip_ptr && port_ptr)) {
+		return;
+	}
+
+	if (sofia_glue_tech_choose_port(tech_pvt, 1) != SWITCH_STATUS_SUCCESS) {
+		return;
+	}
+
+	tech_pvt->orig_local_sdp_str = tech_pvt->local_sdp_str;
+	tech_pvt->local_sdp_str = switch_core_session_alloc(tech_pvt->session, len);
+	
+	q = tech_pvt->local_sdp_str;
+	p = tech_pvt->orig_local_sdp_str;
+
+	while (p && *p) {
+		if (p == ip_ptr) {
+			strncpy(q, tech_pvt->adv_sdp_audio_ip, strlen(tech_pvt->adv_sdp_audio_ip));
+			q += strlen(tech_pvt->adv_sdp_audio_ip);
+			x = 0;
+			while(p && *p && ((*p >= '0' && *p <= '9') || *p == '.')) {
+				p++;
+			}
+
+		} else if (p == port_ptr) {
+			char port_buf[25] = "";
+			
+			switch_snprintf(port_buf, sizeof(port_buf), "%u", tech_pvt->adv_sdp_audio_port);
+			strncpy(q, port_buf, strlen(port_buf));
+			q += strlen(port_buf);
+			x = 0;
+			while(p && *p && (*p >= '0' && *p <= '9')) {
+				p++;
+			}
+		}
+
+		*q++ = *p++;
+	}
+	
+	tech_pvt->iananame = switch_core_session_strdup(tech_pvt->session, "NO-NAME");
+
+	tech_pvt->rm_rate = 8000;
+	tech_pvt->codec_ms = 20;
+	
+}
+
+
 switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 {
 	char *alert_info = NULL;
@@ -725,7 +845,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	max_forwards = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
 
-	if ((status = sofia_glue_tech_choose_port(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
+	if ((status = sofia_glue_tech_choose_port(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 
@@ -793,17 +913,17 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			}
 		}
 
-	        if (!sofia_test_pflag(tech_pvt->profile, PFLAG_TLS) && sofia_glue_transport_has_tls(tech_pvt->transport)) {
-        	        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "TLS not supported by profile\n");
+		if (!sofia_test_pflag(tech_pvt->profile, PFLAG_TLS) && sofia_glue_transport_has_tls(tech_pvt->transport)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "TLS not supported by profile\n");
 			return SWITCH_STATUS_FALSE;
-	        }
+		}
 
-		if (switch_strlen_zero(tech_pvt->invite_contact))
-		{
-			if (sofia_glue_transport_has_tls(tech_pvt->transport))
+		if (switch_strlen_zero(tech_pvt->invite_contact)) {
+			if (sofia_glue_transport_has_tls(tech_pvt->transport)) {
 				tech_pvt->invite_contact = tech_pvt->profile->tls_url;
-			else
+			} else {
 				tech_pvt->invite_contact = tech_pvt->profile->url;
+			}
 		}
 
 		url_str = sofia_overcome_sip_uri_weakness(session, url, tech_pvt->transport, SWITCH_TRUE);
@@ -835,6 +955,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		} else if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
 			priv = "full";
 		}
+
 		if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
 			screen = "yes";
 		}
@@ -906,6 +1027,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		if (v_session_timeout >= 0) {
 			session_timeout = v_session_timeout;
 		}
+	}
+
+	if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+		sofia_glue_tech_patch_sdp(tech_pvt);
 	}
 
 	nua_invite(tech_pvt->nh,
@@ -1265,11 +1390,11 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	char tmp[50];
 	uint32_t rtp_timeout_sec = tech_pvt->profile->rtp_timeout_sec;
 	uint32_t rtp_hold_timeout_sec = tech_pvt->profile->rtp_hold_timeout_sec;
-	
+	char *timer_name;
+
 	switch_assert(tech_pvt != NULL);
 
-
-	if (switch_channel_test_flag(tech_pvt->channel, CF_BYPASS_MEDIA)) {
+	if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1346,6 +1471,16 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
         goto video;
 	}
 
+	if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
+		if ((status = sofia_glue_tech_proxy_remote_addr(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+		flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_PROXY_MEDIA | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT);
+		timer_name = NULL;
+	} else {
+		timer_name = tech_pvt->profile->timer_name;
+	}
+
 	tech_pvt->rtp_session = switch_rtp_new(tech_pvt->local_sdp_audio_ip,
 										   tech_pvt->local_sdp_audio_port,
 										   tech_pvt->remote_sdp_audio_ip,
@@ -1354,7 +1489,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 										   tech_pvt->read_codec.implementation->samples_per_frame,
 										   tech_pvt->codec_ms * 1000,
 										   (switch_rtp_flag_t) flags,
-										   tech_pvt->profile->timer_name,
+										   timer_name,
 										   &err,
 										   switch_core_session_get_pool(tech_pvt->session));
 	
@@ -1519,7 +1654,7 @@ switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, const char *r_
 	}
 
 	if (match) {
-		if (sofia_glue_tech_choose_port(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+		if (sofia_glue_tech_choose_port(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
 		}
 		if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
@@ -2006,7 +2141,7 @@ void sofia_glue_pass_sdp(private_object_t *tech_pvt, char *sdp)
 
 		if (!switch_test_flag(tech_pvt, TFLAG_CHANGE_MEDIA) && (switch_channel_test_flag(other_channel, CF_OUTBOUND) &&
 																switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND) &&
-																switch_channel_test_flag(tech_pvt->channel, CF_BYPASS_MEDIA))) {
+																switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE))) {
 			switch_ivr_nomedia(val, SMF_FORCE);
 			switch_set_flag_locked(tech_pvt, TFLAG_CHANGE_MEDIA);
 		}

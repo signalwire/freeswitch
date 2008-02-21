@@ -753,7 +753,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 			swap = 1;
 		}
 
-		if (switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
+		if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 			status = SWITCH_STATUS_SUCCESS;
 			switch_core_session_receive_message(session, &msg);
 
@@ -805,7 +805,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 			swap = 1;
 		}
 
-		if ((flags & SMF_FORCE) || !switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
+		if ((flags & SMF_FORCE) || !switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 			switch_core_session_receive_message(session, &msg);
 
 			if ((flags & SMF_REBRIDGE) && (other_uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) &&

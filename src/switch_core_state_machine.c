@@ -153,7 +153,7 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 			return;
 		}
 		
-		if (switch_channel_test_flag(session->channel, CF_BYPASS_MEDIA) && !switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA)) {
+		if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) && !switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA)) {
 			switch_ivr_media(session->uuid_str, SMF_NONE);
 			nomedia++;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Application %s Requires media on channel %s!\n",
