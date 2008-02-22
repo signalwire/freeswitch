@@ -278,26 +278,25 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	switch_mutex_lock(tech_pvt->profile->flag_mutex);
 
 	if (tech_pvt->nh  && !switch_test_flag(tech_pvt, TFLAG_BYE)) {
+		char reason[128] = "";
+		if (cause > 1 && cause < 128) {
+			switch_snprintf(reason, sizeof(reason), "Q.850;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
+		} else if (cause == SWITCH_CAUSE_PICKED_OFF) {
+			switch_snprintf(reason, sizeof(reason), "SIP;cause=200;text=\"Call completed elsewhere\"");
+		} else {
+			switch_snprintf(reason, sizeof(reason), "FreeSWITCH;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
+		}
+			
 		if (switch_test_flag(tech_pvt, TFLAG_ANS)) {
-            char reason[128] = "";
-            if (cause > 1 && cause < 128) {
-                switch_snprintf(reason, sizeof(reason), "Q.850;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
-            } else {
-                switch_snprintf(reason, sizeof(reason), "FreeSWITCH;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
-            }
-
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending BYE to %s\n", switch_channel_get_name(channel));
 			nua_bye(tech_pvt->nh, SIPTAG_REASON_STR(reason), TAG_END());
 		} else {
 			if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-				switch_call_cause_t causecode = switch_channel_get_cause(channel);
-
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending CANCEL to %s\n", switch_channel_get_name(channel));
-				nua_cancel(tech_pvt->nh, TAG_IF(causecode == SWITCH_CAUSE_PICKED_OFF, 
-					SIPTAG_REASON_STR("SIP;cause=200;text=\"Call completed elsewhere\"")), TAG_END());
+				nua_cancel(tech_pvt->nh, SIPTAG_REASON_STR(reason), TAG_END());
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding to INVITE with: %d\n", sip_cause);
-				nua_respond(tech_pvt->nh, sip_cause, sip_status_phrase(sip_cause), TAG_END());
+				nua_respond(tech_pvt->nh, sip_cause, sip_status_phrase(sip_cause), SIPTAG_REASON_STR(reason), TAG_END());
 			}
 		}
 		switch_set_flag(tech_pvt, TFLAG_BYE);
@@ -882,6 +881,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		if (msg->string_arg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-directing to %s\n", msg->string_arg);
 			nua_respond(tech_pvt->nh, SIP_302_MOVED_TEMPORARILY, SIPTAG_CONTACT_STR(msg->string_arg), TAG_END());
+			switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 		}
 		break;
 
@@ -958,6 +958,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				nua_respond(tech_pvt->nh, code, reason, TAG_IF(to_uri, SIPTAG_CONTACT_STR(to_uri)),
 							SIPTAG_SUPPORTED_STR(NULL), SIPTAG_ACCEPT_STR(NULL),
 							TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)), TAG_END());
+				switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding with %d %s\n", code, reason);
 				
@@ -974,6 +975,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				} else {
 					nua_respond(tech_pvt->nh, code, reason, SIPTAG_CONTACT_STR(tech_pvt->reply_contact), TAG_END());
 				}
+				switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 			}
 			
 		}

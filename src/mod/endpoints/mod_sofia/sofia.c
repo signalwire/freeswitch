@@ -1642,7 +1642,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					}
 
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "NO CODECS");
-					nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
 					switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 				}
 			} else {
@@ -1816,7 +1815,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					}
 
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "NO CODECS");
-					nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
 					switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 				}
 			}
@@ -2362,12 +2360,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		return;
 	}
 
-	if (!(sip->sip_contact && sip->sip_contact->m_url)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO CONTACT!\n");
-		nua_respond(nh, 400, "Missing Contact Header", TAG_END());
-		return;
-	}
-
+	
 	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
 
 	if ((profile->pflags & PFLAG_AUTH_CALLS) || sip->sip_proxy_authorization || sip->sip_authorization) {
@@ -2383,6 +2376,14 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		}
 		is_auth++;
 	}
+
+	
+	if (!(sip->sip_contact && sip->sip_contact->m_url)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO CONTACT!\n");
+		nua_respond(nh, 400, "Missing Contact Header", TAG_END());
+		return;
+	}
+
 	
 	if (!sofia_endpoint_interface || !(session = switch_core_session_request(sofia_endpoint_interface, NULL))) {
 		nua_respond(nh, SIP_503_SERVICE_UNAVAILABLE, TAG_END());
