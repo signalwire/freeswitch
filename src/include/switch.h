@@ -54,7 +54,7 @@
 #define FREESWITCH_ITAD "543"
 #define __EXTENSIONS__ 1
 #ifndef MACOSX
-#ifndef _XOPEN_SOURCE
+#if !defined(_XOPEN_SOURCE) && !defined(__OpenBSD__)
 #ifndef __cplusplus
 #define _XOPEN_SOURCE 600
 #endif
