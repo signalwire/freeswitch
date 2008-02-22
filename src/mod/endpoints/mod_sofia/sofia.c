@@ -1335,7 +1335,6 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				if (sip->sip_payload && sip->sip_payload->pl_data && 
 					sip->sip_content_type && sip->sip_content_type->c_subtype && switch_stristr("sdp", sip->sip_content_type->c_subtype)) {
 					r_sdp = sip->sip_payload->pl_data;
-					printf("WOOT\n%s\n", r_sdp);
 				}
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n", status, phrase);
