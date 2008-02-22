@@ -685,7 +685,9 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 	return new_uri;
 }
 
-static switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt) {
+switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt) 
+{
+	const char *err;
 	char rip[128] = "";
 	char rp[128] = "";
 	char *p, *ip_ptr = NULL, *port_ptr = NULL;
@@ -721,9 +723,29 @@ static switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_
 		p++;
 	}
 
-	tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, rip);
-	tech_pvt->remote_sdp_audio_port = (switch_port_t) atoi(rp);
+	if (switch_strlen_zero(tech_pvt->remote_sdp_audio_ip) || !tech_pvt->remote_sdp_audio_port) {
+		tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, rip);
+		tech_pvt->remote_sdp_audio_port = (switch_port_t) atoi(rp);
+	}
 
+	if (!strcmp(tech_pvt->remote_sdp_audio_ip, rip) && atoi(rp) == tech_pvt->remote_sdp_audio_port) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote address:port [%s:%d] has not changed.\n", 
+						  tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (switch_rtp_ready(tech_pvt->rtp_session)) {
+		if (switch_rtp_set_remote_address(tech_pvt->rtp_session, tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port, &err) !=
+			SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AUDIO RTP REPORTS ERROR: [%s]\n", err);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AUDIO RTP CHANGING DEST TO: [%s:%d]\n",
+							  tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
+			/* Reactivate the NAT buster flag. */
+			switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+		}
+	}
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -738,14 +760,15 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 		return;
 	}
 
-	if (!switch_strlen_zero(tech_pvt->orig_local_sdp_str)) {
-		return;
-	}
-
 	len = strlen(tech_pvt->local_sdp_str) + 256;
 	
 	if ((p = (char *)switch_stristr("c=IN IP4 ", tech_pvt->local_sdp_str))) {
 		ip_ptr = p + 9;
+	}
+
+	if (!strncmp(ip_ptr, "0.0.0.0", 7) || switch_stristr("sendonly", tech_pvt->local_sdp_str)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Skip patch on hold SDP\n");
+		return;
 	}
 
 	if ((p = (char *)switch_stristr("m=audio ", tech_pvt->local_sdp_str))) {
@@ -797,7 +820,7 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 		*q++ = *p++;
 	}
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Patched SDP\n%s\n%s\n", 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Patched SDP\n---\n%s\n+++\n%s\n", 
 					  switch_channel_get_name(tech_pvt->channel), tech_pvt->orig_local_sdp_str, tech_pvt->local_sdp_str);
 }
 
@@ -1034,6 +1057,9 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	}
 
 	if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+		if (switch_rtp_ready(tech_pvt->rtp_session)) {
+			sofia_glue_tech_proxy_remote_addr(tech_pvt);
+		}
 		sofia_glue_tech_patch_sdp(tech_pvt);
 	}
 

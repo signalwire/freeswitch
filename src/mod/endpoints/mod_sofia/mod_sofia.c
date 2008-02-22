@@ -966,6 +966,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					tech_pvt->local_sdp_str = switch_core_session_strdup(tech_pvt->session, (char *)msg->pointer_arg);
 					if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 						sofia_glue_tech_patch_sdp(tech_pvt);
+						sofia_glue_tech_proxy_remote_addr(tech_pvt);
 					}
 					nua_respond(tech_pvt->nh, code, reason, SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
