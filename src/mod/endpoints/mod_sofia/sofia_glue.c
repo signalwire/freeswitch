@@ -753,11 +753,18 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 	}
 	
 	if (!(ip_ptr && port_ptr)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s SDP Error! [%s]\n", switch_channel_get_name(tech_pvt->channel), tech_pvt->local_sdp_str);
 		return;
 	}
 
-	if (sofia_glue_tech_choose_port(tech_pvt, 1) != SWITCH_STATUS_SUCCESS) {
-		return;
+	if (switch_strlen_zero(tech_pvt->adv_sdp_audio_ip) || !tech_pvt->adv_sdp_audio_port) {
+		if (sofia_glue_tech_choose_port(tech_pvt, 1) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s I/O Error\n", switch_channel_get_name(tech_pvt->channel));
+			return;
+		}
+		tech_pvt->iananame = switch_core_session_strdup(tech_pvt->session, "NO-NAME");
+		tech_pvt->rm_rate = 8000;
+		tech_pvt->codec_ms = 20;
 	}
 
 	tech_pvt->orig_local_sdp_str = tech_pvt->local_sdp_str;
@@ -790,11 +797,8 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 		*q++ = *p++;
 	}
 	
-	tech_pvt->iananame = switch_core_session_strdup(tech_pvt->session, "NO-NAME");
-
-	tech_pvt->rm_rate = 8000;
-	tech_pvt->codec_ms = 20;
-	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Patched SDP\n%s\n%s\n", 
+					  switch_channel_get_name(tech_pvt->channel), tech_pvt->orig_local_sdp_str, tech_pvt->local_sdp_str);
 }
 
 

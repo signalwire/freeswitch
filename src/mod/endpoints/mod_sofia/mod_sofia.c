@@ -960,10 +960,14 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)), TAG_END());
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding with %d %s\n", code, reason);
-
+				
 				if (!switch_strlen_zero(((char *)msg->pointer_arg))) {
+					tech_pvt->local_sdp_str = switch_core_session_strdup(tech_pvt->session, (char *)msg->pointer_arg);
+					if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+						sofia_glue_tech_patch_sdp(tech_pvt);
+					}
 					nua_respond(tech_pvt->nh, code, reason, SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-								SOATAG_USER_SDP_STR(msg->pointer_arg),
+								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 								SOATAG_AUDIO_AUX("cn telephone-event"),
 								NUTAG_INCLUDE_EXTRA_SDP(1),
 								TAG_END());
