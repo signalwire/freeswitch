@@ -353,6 +353,9 @@ case $host in
    *-os2*)
        size_t_fmt='#define SWITCH_SIZE_T_FMT "lu"'
        ;;
+   *-openbsd*)
+       size_t_fmt='#define SWITCH_SIZE_T_FMT "ld"'
+       ;;
    *aix4*|*aix5*)
        ssize_t_fmt='#define SWITCH_SSIZE_T_FMT "ld"'
        size_t_fmt='#define SWITCH_SIZE_T_FMT "ld"'
