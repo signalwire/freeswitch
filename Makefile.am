@@ -151,6 +151,10 @@ nodist_freeswitch_SOURCES = src/include/switch_version.h
 freeswitch_CFLAGS = $(AM_CFLAGS) $(CORE_CFLAGS)
 freeswitch_LDFLAGS = $(AM_LDFLAGS) -rpath $(libdir)
 freeswitch_LDADD = libfreeswitch.la libs/apr/libapr-1.la
+if ADD_LIBEDIT
+freeswitch_CFLAGS    += -Ilibs/libedit/src -DSWITCH_HAVE_LIBEDIT
+freeswitch_LDADD      += libs/libedit/src/.libs/libedit.a
+endif
 
 
 if ADD_LIBEDIT

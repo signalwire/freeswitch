@@ -80,7 +80,9 @@ dns_parse_a(dnscc_t *qdn, dnscc_t *pkt, dnscc_t *cur, dnscc_t *end,
 int
 dns_parse_a4(dnscc_t *qdn, dnscc_t *pkt, dnscc_t *cur, dnscc_t *end,
              void **result) {
+#ifndef __OpenBSD__ /* Openbsd likes to patch compilers to bitch about stupid things */
   assert(sizeof(struct in_addr) == 4);
+#endif
   assert(dns_get16(cur+2) == DNS_C_IN && dns_get16(cur+0) == DNS_T_A);
   return dns_parse_a(qdn, pkt, cur, end, result, 4);
 }

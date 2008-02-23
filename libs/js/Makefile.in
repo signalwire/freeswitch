@@ -172,7 +172,7 @@ src/jsautocfg.h: jscpucfg
 jscpucfg.o: src/jscpucfg.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
 jscpucfg: jscpucfg.o
-	@$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) $(CFLAGS) -o jscpucfg jscpucfg.o $(LIBS)
+	@$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) $(CFLAGS) -o jscpucfg jscpucfg.o $(LIBS) $(CLI_LIBS)
 src/jsopcode.h src/jsopcode.c: src/jsopcode.tbl
 
 .PHONY: install
