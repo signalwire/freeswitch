@@ -130,7 +130,7 @@
  *  - Linux (x86 & x86_64)
  *  - Windows (MSVC 2005)
  *  - Mac OS X (intel & ppc )
- *  - OpenBSD, FreeBSD 6
+ *  - FreeBSD 6
  *
  * \section depends Dependencies
  *  Freeswitch makes heavy use of external libraries.  
