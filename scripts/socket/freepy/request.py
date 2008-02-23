@@ -30,11 +30,13 @@ from twisted.internet import reactor, defer
 from twisted.protocols.basic import LineReceiver
 from twisted.internet.protocol import Protocol, ClientFactory
 from twisted.python import failure
+from twisted.python.failure import Failure
 import time, re
 from time import strftime
 from Queue import Queue
 
 from freepy import models
+import freepy.globals
 
 """
 These are response handlers for different types of requests.
@@ -46,6 +48,7 @@ The naming could be improved, but here is the translation:
 LoginRequest - Response handler for a login request
 
 """
+
 
 class FreepyRequest(object):
 
@@ -80,6 +83,9 @@ class FreepyRequest(object):
 
         otherwise, if the fs response is incomplete, just buffer the data
         """
+        if freepy.globals.DEBUG_ON:
+            print line
+            
         if not line or len(line) == 0:
             self._fsm.BlankLine()
             return self.isRequestFinished()
@@ -126,18 +132,13 @@ class FreepyRequest(object):
         self._fsm.ProcessLine(line)
         return self.isRequestFinished()
 
-
-
-
     def callOrErrback(self):
         matchstr = re.compile("OK", re.I)
         result = matchstr.search(self.response_content)
         if (result != None):
             self.callbackDeferred(self.response_content)
             return
-        
-        self.errbackDeferred(self.response_content)
-
+        self.errbackDeferred(Failure(Exception(self.response_content)))
 
     def doNothing(self):
         # weird smc issue workaround attempt
@@ -170,41 +171,16 @@ class LoginRequest(FreepyRequest):
         super(LoginRequest, self).__init__()
         import loginrequest_sm
         self._fsm = loginrequest_sm.LoginRequest_sm(self)
+
+    def callOrErrback(self):
+        matchstr = re.compile("OK", re.I)
+        result = matchstr.search(self.response_content)
+        if (result != None):
+            self.callbackDeferred(self.response_content)
+            return
+        msg = "Login failed, most likely a bad password"
+        self.errbackDeferred(Failure(Exception(msg)))
         
-    def processOLD(self, line):
-
-        if not line or len(line) == 0:
-            self._fsm.BlankLine()
-            return self.isRequestFinished()
-        
-        matchstr = re.compile("auth/request", re.I)
-        result = matchstr.search(line)
-        if (result != None):
-            self._fsm.AuthRequest()
-            return self.isRequestFinished()
-
-
-        matchstr = re.compile("command/reply", re.I)
-        result = matchstr.search(line)
-        if (result != None):
-            self._fsm.CommandReply()
-            return self.isRequestFinished()
-
-
-        matchstr = re.compile("Reply-Text", re.I)
-        result = matchstr.search(line)
-        if (result != None):
-            fields = line.split(":") # eg, ['Reply-Text','+OK Job-UUID', '882']
-            endfields = fields[1:]
-            self.response_content = "".join(endfields)
-            self._fsm.ReplyText()
-            return self.isRequestFinished()
-
-
-        self._fsm.ProcessLine(line)
-        return self.isRequestFinished()
-
-
     def getReplyText(self):
         self.response_content
 

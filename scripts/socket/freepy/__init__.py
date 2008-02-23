@@ -34,6 +34,7 @@ import time, re
 from time import strftime
 from Queue import Queue
 from freepy import request
+import freepy.globals
 
 """
 freepy library -- connect to freeswitch mod_socket_event via python/twisted
@@ -53,6 +54,7 @@ class FreepyDispatcher(LineReceiver):
         self.active_request = None # the current active (de-queued) request
 
     def connectionMade(self):
+        print "Connection made"
         self.conncb(self)
         
     def connectionLost(self, reason):
@@ -69,6 +71,8 @@ class FreepyDispatcher(LineReceiver):
         req = request.LoginRequest()
         self.requestq.put(req)
         self.transport.write("%s\n\n" % msg)
+        if freepy.globals.DEBUG_ON:
+            print msg
         return req.getDeferred()
 
     def confdialout(self, conf_name, sofia_url, bgapi=True):
