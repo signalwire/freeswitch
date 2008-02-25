@@ -361,7 +361,7 @@ SWITCH_DECLARE(void) switch_channel_flush_dtmf(switch_channel_t *channel)
 	void *pop;
 	switch_mutex_lock(channel->dtmf_mutex);
 	while(switch_queue_trypop(channel->dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-		free(pop);
+		switch_safe_free(pop);
 	}
 	switch_mutex_unlock(channel->dtmf_mutex);
 }
