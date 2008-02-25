@@ -857,11 +857,11 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 	switch_rtp_kill_socket(*rtp_session);
 
 	while(switch_queue_trypop((*rtp_session)->dtmf_data.dtmf_inqueue, &pop) == SWITCH_STATUS_SUCCESS) {
-		free(pop);
+		switch_safe_free(pop);
 	}
 	
 	while(switch_queue_trypop((*rtp_session)->dtmf_data.dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-		free(pop);
+		switch_safe_free(pop);
 	}
 
 	if ((*rtp_session)->jb) {
