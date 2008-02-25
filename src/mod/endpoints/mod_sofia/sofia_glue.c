@@ -1424,16 +1424,20 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 	switch_assert(tech_pvt != NULL);
 
+	switch_mutex_lock(tech_pvt->flag_mutex);
+	
 	if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE)) {
-		return SWITCH_STATUS_SUCCESS;
+		status = SWITCH_STATUS_SUCCESS;
+		goto end;
 	}
 
 	if (switch_rtp_ready(tech_pvt->rtp_session) && !switch_test_flag(tech_pvt, TFLAG_REINVITE)) {
-		return SWITCH_STATUS_SUCCESS;
+		status = SWITCH_STATUS_SUCCESS;
+		goto end;
 	}
 
 	if ((status = sofia_glue_tech_set_codec(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
-		return status;
+		goto end;
 	}
 
 	bw = tech_pvt->read_codec.implementation->bits_per_second;
@@ -1503,7 +1507,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 	if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
 		if ((status = sofia_glue_tech_proxy_remote_addr(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
-			return status;
+			goto end;
 		}
 		flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_PROXY_MEDIA | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT);
 		timer_name = NULL;
@@ -1543,12 +1547,12 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		}
 
 		tech_pvt->ssrc = switch_rtp_get_ssrc(tech_pvt->rtp_session);
-		switch_set_flag_locked(tech_pvt, TFLAG_RTP);
-		switch_set_flag_locked(tech_pvt, TFLAG_IO);
+		switch_set_flag(tech_pvt, TFLAG_RTP);
+		switch_set_flag(tech_pvt, TFLAG_IO);
 
 		if ((vad_in && inb) || (vad_out && !inb)) {
 			switch_rtp_enable_vad(tech_pvt->rtp_session, tech_pvt->session, &tech_pvt->read_codec, SWITCH_VAD_FLAG_TALKING);
-			switch_set_flag_locked(tech_pvt, TFLAG_VAD);
+			switch_set_flag(tech_pvt, TFLAG_VAD);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AUDIO RTP Engage VAD for %s ( %s %s )\n",
 							  switch_channel_get_name(switch_core_session_get_channel(tech_pvt->session)), vad_in ? "in" : "", vad_out ? "out" : "");
 		}
@@ -1651,11 +1655,18 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP REPORTS ERROR: [%s]\n", switch_str_nil(err));
 		switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_clear_flag_locked(tech_pvt, TFLAG_IO);
-		return SWITCH_STATUS_FALSE;
+		status = SWITCH_STATUS_FALSE;
+		goto end;
 	}
 
-	switch_set_flag_locked(tech_pvt, TFLAG_IO);
-	return SWITCH_STATUS_SUCCESS;
+	switch_set_flag(tech_pvt, TFLAG_IO);
+	status = SWITCH_STATUS_SUCCESS;
+	
+ end:
+
+	switch_mutex_unlock(tech_pvt->flag_mutex);
+	return status;
+	
 }
 
 switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, const char *r_sdp)

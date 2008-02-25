@@ -705,16 +705,19 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	switch_mutex_lock(tech_pvt->flag_mutex);
 
 	if (switch_channel_get_state(channel) >= CS_HANGUP || !tech_pvt) {
-		return SWITCH_STATUS_FALSE;
+		status = SWITCH_STATUS_FALSE;
+		goto end;
 	}
 
 	if (msg->message_id == SWITCH_MESSAGE_INDICATE_ANSWER || msg->message_id == SWITCH_MESSAGE_INDICATE_PROGRESS) {
 		const char *var;
 		if ((var = switch_channel_get_variable(channel, SOFIA_SECURE_MEDIA_VARIABLE)) && switch_true(var)) {
-			switch_set_flag_locked(tech_pvt, TFLAG_SECURE);
+			switch_set_flag(tech_pvt, TFLAG_SECURE);
 		}
 	}
 
@@ -786,7 +789,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending media re-direct:\n%s\n", msg->string_arg);
 			tech_pvt->local_sdp_str = switch_core_session_strdup(session, msg->string_arg);
-			switch_set_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
+			switch_set_flag(tech_pvt, TFLAG_SENT_UPDATE);
 			sofia_glue_do_invite(session);
 		}
 		break;
@@ -801,7 +804,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				sofia_glue_tech_prepare_codecs(tech_pvt);
 				if ((status = sofia_glue_tech_choose_port(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
 					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-					return status;
+					goto end;
 				}
 			}
 			sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
@@ -811,7 +814,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			tech_pvt->read_frame.datalen = 0;
 			while (switch_test_flag(tech_pvt, TFLAG_IO) && switch_channel_get_state(channel) < CS_HANGUP && !switch_rtp_ready(tech_pvt->rtp_session)) {
 				if (++count > 1000) {
-					return SWITCH_STATUS_FALSE;
+					status = SWITCH_STATUS_FALSE;
+					goto end;
 				}
 				if (!switch_rtp_ready(tech_pvt->rtp_session)) {
 					switch_yield(1000);
@@ -824,7 +828,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	case SWITCH_MESSAGE_INDICATE_HOLD:
 		{
-			switch_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+			switch_set_flag(tech_pvt, TFLAG_SIP_HOLD);
 			sofia_glue_do_invite(session);
 		}
 		break;
@@ -846,7 +850,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					private_object_t *a_tech_pvt = switch_core_session_get_private(a_session);
 					private_object_t *b_tech_pvt = switch_core_session_get_private(b_session);
 
-					switch_set_flag_locked(a_tech_pvt, TFLAG_REINVITE);
+					switch_set_flag(a_tech_pvt, TFLAG_REINVITE);
 					a_tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(a_session, b_tech_pvt->remote_sdp_audio_ip);
 					a_tech_pvt->remote_sdp_audio_port = b_tech_pvt->remote_sdp_audio_port;
 					a_tech_pvt->local_sdp_audio_ip = switch_core_session_strdup(a_session, b_tech_pvt->local_sdp_audio_ip);
@@ -859,7 +863,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				}
 
 				msg->pointer_arg = NULL;
-				return SWITCH_STATUS_FALSE;
+				status = SWITCH_STATUS_FALSE;
+				goto end;
 			}
 		}
 		/*
@@ -881,7 +886,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		if (msg->string_arg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-directing to %s\n", msg->string_arg);
 			nua_respond(tech_pvt->nh, SIP_302_MOVED_TEMPORARILY, SIPTAG_CONTACT_STR(msg->string_arg), TAG_END());
-			switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+			switch_set_flag(tech_pvt, TFLAG_BYE);
 		}
 		break;
 
@@ -958,7 +963,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				nua_respond(tech_pvt->nh, code, reason, TAG_IF(to_uri, SIPTAG_CONTACT_STR(to_uri)),
 							SIPTAG_SUPPORTED_STR(NULL), SIPTAG_ACCEPT_STR(NULL),
 							TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)), TAG_END());
-				switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+				switch_set_flag(tech_pvt, TFLAG_BYE);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding with %d %s\n", code, reason);
 				
@@ -976,7 +981,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				} else {
 					nua_respond(tech_pvt->nh, code, reason, SIPTAG_CONTACT_STR(tech_pvt->reply_contact), TAG_END());
 				}
-				switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+				switch_set_flag(tech_pvt, TFLAG_BYE);
 			}
 			
 		}
@@ -984,18 +989,18 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_RINGING:
 		if (!switch_channel_test_flag(channel, CF_RING_READY) && 
 			!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
-			nua_respond(tech_pvt->nh, SIP_180_RINGING, SIPTAG_CONTACT_STR(tech_pvt->profile->url), TAG_END());
+			nua_respond(tech_pvt->nh, SIP_180_RINGING, SIPTAG_CONTACT_STR(tech_pvt->reply_contact), TAG_END());
 			switch_channel_mark_ring_ready(channel);
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
-		return sofia_answer_channel(session);
+		status = sofia_answer_channel(session);
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{
 			if (!switch_test_flag(tech_pvt, TFLAG_ANS) && !switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
 				
-				switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
+				switch_set_flag(tech_pvt, TFLAG_EARLY_MEDIA);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Asked to send early media by %s\n", msg->from);
 				
 				/* Transmit 183 Progress with SDP */
@@ -1007,7 +1012,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 						sofia_glue_tech_patch_sdp(tech_pvt);
 						if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
-							return SWITCH_STATUS_FALSE;
+							status = SWITCH_STATUS_FALSE;
+							goto end;
 						}
 					}
 				} else {
@@ -1022,14 +1028,15 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
 								switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 								//nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
-								return SWITCH_STATUS_FALSE;
+								status = SWITCH_STATUS_FALSE;
+								goto end;
 							}
 						}
 					}
 
 					if ((status = sofia_glue_tech_choose_port(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
 						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-						return status;
+						goto end;
 					}
 					sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 					if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
@@ -1052,7 +1059,14 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+ end:
+	
+	//xxxbot
+
+	switch_mutex_unlock(tech_pvt->flag_mutex);
+
+	return status;
+	
 }
 
 static switch_status_t sofia_receive_event(switch_core_session_t *session, switch_event_t *event)

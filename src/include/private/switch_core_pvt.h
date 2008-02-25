@@ -90,32 +90,19 @@ typedef enum {
 
 
 struct switch_core_session {
-	switch_size_t id;
-	char name[80];
-	switch_session_flag_t flags;
-	int thread_running;
 	switch_memory_pool_t *pool;
-	switch_channel_t *channel;
 	switch_thread_t *thread;
 	const switch_endpoint_interface_t *endpoint_interface;
+	switch_size_t id;
+	switch_session_flag_t flags;
+	int thread_running;
+	switch_channel_t *channel;
+
 	switch_io_event_hooks_t event_hooks;
 	switch_codec_t *read_codec;
 	switch_codec_t *write_codec;
 	switch_codec_t *video_read_codec;
 	switch_codec_t *video_write_codec;
-
-	switch_buffer_t *raw_write_buffer;
-	switch_frame_t raw_write_frame;
-	switch_frame_t enc_write_frame;
-	uint8_t raw_write_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
-	uint8_t enc_write_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
-
-	switch_buffer_t *raw_read_buffer;
-	switch_frame_t raw_read_frame;
-	switch_frame_t enc_read_frame;
-	uint8_t raw_read_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
-	uint8_t enc_read_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
-
 
 	switch_audio_resampler_t *read_resampler;
 	switch_audio_resampler_t *write_resampler;
@@ -138,6 +125,18 @@ struct switch_core_session {
 	switch_media_bug_t *bugs;
 	switch_app_log_t *app_log;
 	uint32_t stack_count;
+
+	switch_buffer_t *raw_write_buffer;
+	switch_frame_t raw_write_frame;
+	switch_frame_t enc_write_frame;
+	uint8_t raw_write_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	uint8_t enc_write_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+
+	switch_buffer_t *raw_read_buffer;
+	switch_frame_t raw_read_frame;
+	switch_frame_t enc_read_frame;
+	uint8_t raw_read_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	uint8_t enc_read_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 };
 
 struct switch_media_bug {

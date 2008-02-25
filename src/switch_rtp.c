@@ -242,9 +242,18 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 	unsigned char buf[512] = { 0 };
 	switch_size_t cpylen = len;
 
+	if (!switch_rtp_ready(rtp_session)) {
+		return;
+	}
+
 	READ_INC(rtp_session);
 	WRITE_INC(rtp_session);
 	
+	if (!switch_rtp_ready(rtp_session)) {
+		goto end;
+	}
+
+
 	if (cpylen > 512) {
 		cpylen = 512;
 	}
@@ -287,6 +296,8 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 		bytes = switch_stun_packet_length(rpacket);
 		switch_socket_sendto(rtp_session->sock, rtp_session->from_addr, 0, (void *) rpacket, &bytes);
 	}
+
+ end:
 
 	READ_DEC(rtp_session);
 	WRITE_DEC(rtp_session);
@@ -401,8 +412,19 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 	int x;
 #endif
 
-	WRITE_INC(rtp_session);
-	READ_INC(rtp_session);
+	if (rtp_session->ready != 1) {
+		if (!switch_rtp_ready(rtp_session)) {
+			return SWITCH_STATUS_FALSE;
+		}
+
+		WRITE_INC(rtp_session);
+		READ_INC(rtp_session);
+
+		if (!switch_rtp_ready(rtp_session)) {
+			goto done;
+		}
+	}
+
 
 	*err = NULL;
 
@@ -482,8 +504,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 		switch_socket_close(old_sock);
 	}
 	
-	WRITE_DEC(rtp_session);
-	READ_DEC(rtp_session);
+	if (rtp_session->ready != 1) {
+		WRITE_DEC(rtp_session);
+		READ_DEC(rtp_session);
+	}
 
 	return status;
 }
@@ -635,7 +659,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 
 	rtp_session->pool = pool;
 	rtp_session->te = 101;
-	rtp_session->ready = 1;
+
 
 	switch_mutex_init(&rtp_session->flag_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&rtp_session->read_mutex, SWITCH_MUTEX_NESTED, pool);
@@ -697,6 +721,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		}
 	}
 
+	rtp_session->ready = 1;
 	*new_rtp_session = rtp_session;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -724,7 +749,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 		rtp_session = NULL;
 		goto end;
 	}
-
+	
 	if (switch_rtp_set_local_address(rtp_session, rx_host, rx_port, err) != SWITCH_STATUS_SUCCESS) {
 		rtp_session = NULL;
 	}
@@ -793,31 +818,41 @@ SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp_t *rtp_session)
 
 SWITCH_DECLARE(uint8_t) switch_rtp_ready(switch_rtp_t *rtp_session)
 {
-	return (rtp_session != NULL && 
-			switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) && rtp_session->sock && rtp_session->remote_addr && rtp_session->ready == 2) ? 1 : 0;
+	uint8_t ret;
+
+	if (!rtp_session || !rtp_session->flag_mutex) {
+		return 0;
+	}
+
+	switch_mutex_lock(rtp_session->flag_mutex);
+	ret = (rtp_session != NULL && 
+		   switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) && rtp_session->sock && rtp_session->remote_addr && rtp_session->ready == 2) ? 1 : 0;
+	switch_mutex_unlock(rtp_session->flag_mutex);
+
+	return ret;
 }
 
 SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 {
 	void *pop;
 	switch_socket_t *sock;
-	int sanity = 0;
+
 
 	switch_mutex_lock((*rtp_session)->flag_mutex);
 
 	if (!rtp_session || !*rtp_session || !(*rtp_session)->ready) {
+		switch_mutex_unlock((*rtp_session)->flag_mutex);
 		return;
 	}
 
+	READ_INC((*rtp_session));
+	WRITE_INC((*rtp_session));
+
 	(*rtp_session)->ready = 0;
 
-
-	while((*rtp_session)->reading || (*rtp_session)->writing) {
-		switch_yield(10000);
-		if (++sanity > 1000) {
-			break;
-		}
-	}
+	READ_DEC((*rtp_session));
+	WRITE_DEC((*rtp_session));
+	
 
 	switch_rtp_kill_socket(*rtp_session);
 
@@ -1027,6 +1062,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	stfu_frame_t *jb_frame;
 	int ret = -1;
 	
+	if (!switch_rtp_ready(rtp_session)) {
+		return -1;
+	}
+
 	if (!rtp_session->timer.interval) {
 		rtp_session->last_time = switch_time_now();
 	}
@@ -1307,17 +1346,21 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		switch_yield(5000);
 	}
 
-	*payload_type = (switch_payload_t) rtp_session->recv_msg.header.pt;
+	if (switch_rtp_ready(rtp_session)) {
+		*payload_type = (switch_payload_t) rtp_session->recv_msg.header.pt;
 
-	if (*payload_type == SWITCH_RTP_CNG_PAYLOAD) {
-		*flags |= SFF_CNG;
+		if (*payload_type == SWITCH_RTP_CNG_PAYLOAD) {
+			*flags |= SFF_CNG;
+		}
+
+		if (bytes > 0) {
+			do_2833(rtp_session);
+		}
+
+		ret = (int) bytes;
+	} else {
+		ret = -1;
 	}
-
-	if (bytes > 0) {
-		do_2833(rtp_session);
-	}
-
-	ret = (int) bytes;
 
  end:
 

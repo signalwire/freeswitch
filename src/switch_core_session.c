@@ -343,6 +343,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_
 
 	switch_assert(session != NULL);
 
+	if ((status = switch_core_session_read_lock(session)) != SWITCH_STATUS_SUCCESS) {
+		return status;
+	}
+	
 	if (session->endpoint_interface->io_routines->receive_message) {
 		status = session->endpoint_interface->io_routines->receive_message(session, message);
 	}
@@ -356,6 +360,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_
 	}
 
 	switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
+	switch_core_session_rwunlock(session);
+
 	return status;
 }
 
@@ -831,8 +837,6 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 	switch_queue_create(&session->message_queue, SWITCH_MESSAGE_QUEUE_LEN, session->pool);
 	switch_queue_create(&session->event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
 	switch_queue_create(&session->private_event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
-
-	switch_snprintf(session->name, sizeof(session->name), "%"SWITCH_SIZE_T_FMT, session->id);
 	switch_mutex_lock(runtime.throttle_mutex);
 	session->id = session_manager.session_id++;
 	switch_core_hash_insert(session_manager.session_table, session->uuid_str, session);
