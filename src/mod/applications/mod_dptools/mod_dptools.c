@@ -1337,7 +1337,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	static switch_call_cause_t cause = SWITCH_CAUSE_UNALLOCATED;
 	unsigned int timelimit = 60;
 	switch_channel_t *new_channel = NULL;
-	switch_event_t *params;
+	switch_event_t *params = NULL;
 	if (switch_strlen_zero(outbound_profile->destination_number)) {
 		goto done;
 	}
@@ -1452,7 +1452,9 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		switch_xml_free(xml);
 	}
 	
-	switch_event_destroy(&params);
+	if (params) {
+		switch_event_destroy(&params);
+	}
 
 	switch_safe_free(user);
 
