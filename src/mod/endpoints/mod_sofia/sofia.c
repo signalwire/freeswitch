@@ -222,8 +222,8 @@ void sofia_event_callback(nua_event_t event,
 						  nua_event_name(event), status, phrase, session ? switch_channel_get_name(channel) : "n/a");
 	}
 
-	if (tech_pvt) {
-		switch_mutex_lock(tech_pvt->flag_mutex);
+	if (session) {
+		switch_core_session_signal_lock(session);
 	}
 
 	if ((profile->pflags & PFLAG_AUTH_ALL) && tech_pvt && tech_pvt->key && sip) {
@@ -352,11 +352,8 @@ void sofia_event_callback(nua_event_t event,
 		sofia_reg_release_gateway(gateway);
 	}
 
-	if (tech_pvt) {
-		switch_mutex_unlock(tech_pvt->flag_mutex);
-	}
-
 	if (session) {
+		switch_core_session_signal_unlock(session);
 		switch_core_session_rwunlock(session);
 	}
 }

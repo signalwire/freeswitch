@@ -35,6 +35,17 @@
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_signal_lock(switch_core_session_t *session)
+{
+	return switch_mutex_lock(session->signal_mutex);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_signal_unlock(switch_core_session_t *session)
+{
+	return switch_mutex_unlock(session->signal_mutex);
+}
+
 #ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(switch_status_t) switch_core_session_perform_read_lock(switch_core_session_t *session, const char *file, const char *func, int line)
 #else

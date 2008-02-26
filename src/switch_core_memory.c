@@ -35,7 +35,7 @@
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 /*#define LOCK_MORE*/
-#define PER_POOL_LOCK 1
+/*#define PER_POOL_LOCK 1*/
 
 static struct {
 	switch_mutex_t *mem_lock;

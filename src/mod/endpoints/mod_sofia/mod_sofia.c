@@ -708,7 +708,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	switch_mutex_lock(tech_pvt->flag_mutex);
-
+	
 	if (switch_channel_get_state(channel) >= CS_HANGUP || !tech_pvt) {
 		status = SWITCH_STATUS_FALSE;
 		goto end;

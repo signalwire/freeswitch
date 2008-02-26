@@ -347,6 +347,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_
 		return status;
 	}
 	
+
+	switch_core_session_signal_lock(session);
+
 	if (session->endpoint_interface->io_routines->receive_message) {
 		status = session->endpoint_interface->io_routines->receive_message(session, message);
 	}
@@ -360,6 +363,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_
 	}
 
 	switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
+
+	switch_core_session_signal_unlock(session);
+
 	switch_core_session_rwunlock(session);
 
 	return status;
@@ -831,6 +837,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 
 	switch_mutex_init(&session->mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_mutex_init(&session->resample_mutex, SWITCH_MUTEX_NESTED, session->pool);
+	switch_mutex_init(&session->signal_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_thread_rwlock_create(&session->bug_rwlock, session->pool);
 	switch_thread_cond_create(&session->cond, session->pool);
 	switch_thread_rwlock_create(&session->rwlock, session->pool);
