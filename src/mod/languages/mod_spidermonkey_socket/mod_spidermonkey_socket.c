@@ -44,28 +44,27 @@ typedef struct js_socket_obj js_socket_obj_t;
 /*********************************************************************************/
 static JSBool socket_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
-	if (argc > 0) {
-		js_socket_obj_t* js_socket_obj = 0;
-		switch_memory_pool_t *pool;
-		switch_socket_t *socket;
+	js_socket_obj_t* js_socket_obj = 0;
+	switch_memory_pool_t *pool;
+	switch_socket_t *socket;
+	switch_status_t ret;
 
-		switch_core_new_memory_pool(&pool);
-		if (!switch_socket_create(&socket, AF_INET, SOCK_STREAM, SWITCH_PROTO_TCP, pool))
-		{
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Failed to create socket.\n");
-			return JS_FALSE;
-		}
-
-		// allocate information needed by JS to be able to write to the log.
-		// (needed since multitple js sessions can write to the same log)
-		js_socket_obj = switch_core_alloc(pool, sizeof(js_socket_obj_t));
-		js_socket_obj->pool = pool;
-		js_socket_obj->socket = socket;
-		JS_SetPrivate(cx, obj, js_socket_obj);
-		return JS_TRUE;
+	switch_core_new_memory_pool(&pool);
+	ret = switch_socket_create(&socket, AF_INET, SOCK_STREAM, SWITCH_PROTO_TCP, pool);
+	if (ret != SWITCH_STATUS_SUCCESS)
+	{
+		switch_core_destroy_memory_pool(&pool);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Failed to create socket, reason: %d.\n", ret);
+		return JS_FALSE;
 	}
 
-	return JS_FALSE;
+	// allocate information needed by JS to be able to write to the log.
+	// (needed since multitple js sessions can write to the same log)
+	js_socket_obj = switch_core_alloc(pool, sizeof(js_socket_obj_t));
+	js_socket_obj->pool = pool;
+	js_socket_obj->socket = socket;
+	JS_SetPrivate(cx, obj, js_socket_obj);
+	return JS_TRUE;
 }
 
 static void socket_destroy(JSContext * cx, JSObject * obj)
@@ -115,7 +114,7 @@ static JSBool socket_connect(JSContext * cx, JSObject * obj, uintN argc, jsval *
 			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 		}
 		else
-			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+			*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
 
 	}
 
