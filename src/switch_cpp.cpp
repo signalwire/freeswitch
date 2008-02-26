@@ -45,11 +45,33 @@
 
 CoreSession::CoreSession()
 {
-	do { session = NULL; channel = NULL; uuid = NULL; tts_name = NULL; voice_name = NULL; memset(&args, 0, sizeof(args)); ap = NULL; caller_profile.source = "mod_unknown";  caller_profile.dialplan = ""; caller_profile.context = ""; caller_profile.caller_id_name = ""; caller_profile.caller_id_number = ""; caller_profile.network_addr = ""; caller_profile.ani = ""; caller_profile.aniii = ""; caller_profile.rdnis = "";  caller_profile.username = ""; on_hangup = NULL; cb_state.function = NULL; } while(0);
+	session = NULL;
+	channel = NULL;
+	uuid = NULL;
+	tts_name = NULL;
+	voice_name = NULL;
+	memset(&args, 0, sizeof(args));
+	ap = NULL;
+	on_hangup = NULL;
+	cb_state.function = NULL;
+
+	memset(&caller_profile, 0, sizeof(caller_profile)); 
+	caller_profile.source = "mod_unknown";
+	caller_profile.dialplan = "";
+	caller_profile.context = "";
+	caller_profile.caller_id_name = "";
+	caller_profile.caller_id_number = "";
+	caller_profile.network_addr = "";
+	caller_profile.ani = "";
+	caller_profile.aniii = "";
+	caller_profile.rdnis = "";
+	caller_profile.username = "";
+		
 }
 
 CoreSession::CoreSession(char *nuuid)
 {
+	memset(&caller_profile, 0, sizeof(caller_profile)); 
 	init_vars();
     uuid = strdup(nuuid);
 	if (session = switch_core_session_locate(uuid)) {
@@ -59,6 +81,7 @@ CoreSession::CoreSession(char *nuuid)
 
 CoreSession::CoreSession(switch_core_session_t *new_session)
 {
+	memset(&caller_profile, 0, sizeof(caller_profile)); 
 	init_vars();
 	session = new_session;
 	channel = switch_core_session_get_channel(session);
