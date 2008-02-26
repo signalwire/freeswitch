@@ -1341,7 +1341,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 		if (!(x_callflow = switch_xml_add_child_d(cdr, "callflow", cdr_off++))) {
 			goto error;
 		}
-		switch_xml_set_attr_d(x_callflow, "dialplan", caller_profile->dialplan);
+
+		if (!switch_strlen_zero(caller_profile->dialplan)) {
+			switch_xml_set_attr_d(x_callflow, "dialplan", caller_profile->dialplan);
+		}
+
+		if (!switch_strlen_zero(caller_profile->profile_index)) {
+			switch_xml_set_attr_d(x_callflow, "profile_index", caller_profile->profile_index);
+		}
 
 		if (caller_profile->caller_extension) {
 			switch_caller_application_t *ap;

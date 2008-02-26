@@ -159,9 +159,15 @@ SWITCH_DECLARE(const char *) switch_caller_get_field_by_name(switch_caller_profi
 	if (!strcasecmp(name, "context")) {
 		return caller_profile->context;
 	}
+
 	if (!strcasecmp(name, "chan_name")) {
 		return caller_profile->chan_name;
 	}
+
+	if (!strcasecmp(name, "profile_index")) {
+		return caller_profile->profile_index;
+	}
+
 	if (!strcasecmp(name, "caller_ton")) {
 		return switch_core_sprintf(caller_profile->pool, "%u", caller_profile->caller_ton);
 	}
@@ -244,6 +250,10 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 	if (!switch_strlen_zero(caller_profile->chan_name)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Name", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->chan_name);
+	}
+	if (!switch_strlen_zero(caller_profile->profile_index)) {
+		switch_snprintf(header_name, sizeof(header_name), "%s-Profile-Index", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->profile_index);
 	}
 	if (caller_profile->times) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Created-Time", prefix);

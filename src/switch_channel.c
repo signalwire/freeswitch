@@ -122,6 +122,7 @@ struct switch_channel {
 	switch_call_cause_t hangup_cause;
 	int vi;
 	int event_count;
+	int profile_index;
 };
 
 SWITCH_DECLARE(const char *) switch_channel_cause2str(switch_call_cause_t cause)
@@ -190,7 +191,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
 	switch_mutex_init(&(*channel)->flag_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&(*channel)->profile_mutex, SWITCH_MUTEX_NESTED, pool);
 	(*channel)->hangup_cause = SWITCH_CAUSE_UNALLOCATED;
-	(*channel)->name = "N/A";
+	(*channel)->name = "";
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -513,13 +514,22 @@ SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel_t *channel, con
 
 SWITCH_DECLARE(switch_status_t) switch_channel_set_name(switch_channel_t *channel, const char *name)
 {
+	const char *old = NULL;
+
 	switch_assert(channel != NULL);
+	if (!switch_strlen_zero(channel->name)) {
+		old = channel->name;
+	}
 	channel->name = NULL;
 	if (name) {
 		char *uuid = switch_core_session_get_uuid(channel->session);
 		channel->name = switch_core_session_strdup(channel->session, name);
 		switch_channel_set_variable(channel, SWITCH_CHANNEL_NAME_VARIABLE, name);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New Chan %s [%s]\n", name, uuid);
+		if (old) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Rename Channel %s->%s [%s]\n", old, name, uuid);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New Channel %s [%s]\n", name, uuid);
+		}
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -527,7 +537,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_name(switch_channel_t *channe
 SWITCH_DECLARE(char *) switch_channel_get_name(switch_channel_t *channel)
 {
 	switch_assert(channel != NULL);
-	return channel->name ? channel->name : "N/A";
+	return (!switch_strlen_zero(channel->name)) ? channel->name : "N/A";
 }
 
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *channel, const char *varname, const char *value)
@@ -1138,7 +1148,8 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel
 
 	caller_profile->next = channel->caller_profile;
 	channel->caller_profile = caller_profile;
-
+	caller_profile->profile_index = switch_core_sprintf(caller_profile->pool, "%d", ++channel->profile_index);
+	
 	switch_mutex_unlock(channel->profile_mutex);
 }
 

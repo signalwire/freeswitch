@@ -93,6 +93,8 @@ SWITCH_BEGIN_EXTERN_C
 	char *uuid;
 	/*! context */
 	const char *context;
+	/*! profile index */
+	const char *profile_index;
 	/*! flags */
 	switch_caller_profile_flag_t flags;
 	struct switch_caller_profile *originator_caller_profile;
