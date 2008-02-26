@@ -752,20 +752,20 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_mutex_lock(tech_pvt->flag_mutex);
-
 	switch (tech_pvt->zchan->type) {
 	case ZAP_CHAN_TYPE_FXS:
 		status = channel_receive_message_fxs(session, msg);
+		break;
 	case ZAP_CHAN_TYPE_FXO:
 		status = channel_receive_message_fxo(session, msg);
+		break;
 	case ZAP_CHAN_TYPE_B:
 		status = channel_receive_message_b(session, msg);
+		break;
 	default:
 		status = SWITCH_STATUS_FALSE;
+		break;
 	}
-
-	switch_mutex_unlock(tech_pvt->flag_mutex);
 
 	return status;
 

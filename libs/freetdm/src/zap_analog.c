@@ -284,7 +284,8 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 							zap_channel_command(zchan, ZAP_COMMAND_GENERATE_RING_OFF, NULL);
 						}
 						
-						if (zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK) && zchan->last_state >= ZAP_CHANNEL_STATE_IDLE) {
+						if (zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK) && 
+							(zchan->last_state == ZAP_CHANNEL_STATE_RING || zchan->last_state >= ZAP_CHANNEL_STATE_IDLE)) {
 							zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_BUSY);
 						} else {
 							zchan->caller_data.hangup_cause = ZAP_CAUSE_NORMAL_CLEARING;
