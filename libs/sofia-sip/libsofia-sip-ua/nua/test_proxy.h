@@ -73,6 +73,11 @@ void test_proxy_domain_set_outbound(struct domain *d,
 void test_proxy_domain_get_outbound(struct domain *d,
 				    int *return_use_outbound);
 
+void test_proxy_domain_set_record_route(struct domain *d,
+					int use_record_route);
+void test_proxy_domain_get_record_route(struct domain *d,
+					int *return_use_record_route);
+
 int test_proxy_close_tports(struct proxy *p);
 
 SOFIA_END_DECLS

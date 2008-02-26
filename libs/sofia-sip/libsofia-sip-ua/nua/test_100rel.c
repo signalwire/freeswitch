@@ -726,9 +726,8 @@ int test_183rel(struct context *ctx)
       if (e->data->e_event == nua_r_bye) {
 	TEST_E(e->data->e_event, nua_r_bye);
 	TEST(e->data->e_status, 200);
-	TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-	TEST(callstate(e->data->e_tags), nua_callstate_terminated);
 	bye = 0;
+	break;
       }
       else if (e->data->e_event == nua_r_invite) {
 	TEST_E(e->data->e_event, nua_r_invite);
@@ -741,7 +740,10 @@ int test_183rel(struct context *ctx)
 	cancel = 0;
       }
     }
+    TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+    TEST(callstate(e->data->e_tags), nua_callstate_terminated);
   }
+
   TEST_1(!e->next);
 
   free_events_in_list(ctx, a->events);

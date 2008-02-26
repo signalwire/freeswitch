@@ -135,6 +135,7 @@ struct domain {
     sip_time_t min_expires, expires, max_expires;
     int outbound_tcp;		/**< Use inbound TCP connection as outbound */
     char const *authorize;	/**< Authorization realm to use */
+    int record_route;
   } prefs;  
 
   tagi_t *tags;
@@ -478,6 +479,23 @@ void test_proxy_domain_get_outbound(struct domain *d,
   }
 }
 
+void test_proxy_domain_set_record_route(struct domain *d,
+					int use_record_route)
+{
+  if (d) {
+    d->prefs.record_route = use_record_route;
+  }
+}
+
+void test_proxy_domain_get_record_route(struct domain *d,
+					int *return_use_record_route)
+{
+  if (d) {
+    if (return_use_record_route)
+      *return_use_record_route = d->prefs.record_route;
+  }
+}
+
 int test_proxy_domain_set_authorize(struct domain *d, 
 				     char const *realm)
 {
@@ -743,6 +761,9 @@ static int proxy_tr_with(struct proxy *proxy,
     if (t->method != sip_method_ack && t->method != sip_method_cancel)
       nta_incoming_bind(irq, proxy_ack_cancel, t);
 
+    if (domain && domain->prefs.record_route)
+      t->rr = 1;
+
     if (process(t) < 200)
       return 0;
 
@@ -818,6 +839,9 @@ static int originating_transaction(struct proxy_tr *t)
     t->use_auth = 407;
   }
 
+  if (o && o->prefs.record_route)
+    t->rr = 1;
+
   return 0;
 }
 
@@ -841,7 +865,6 @@ static int validate_transaction(struct proxy_tr *t)
 	  url_cmp(t->proxy->rr_uri, t->sip->sip_route->r_url) == 0)) {
     sip_route_remove(t->msg, t->sip);
     /* add record-route also to the forwarded request  */
-    t->rr = 1;			
   }
 
   if (t->use_auth)
@@ -947,12 +970,17 @@ static int target_transaction(struct proxy_tr *t,
 
   msg_header_insert(c->msg, (msg_pub_t *)c->sip, (msg_header_t *)c->rq);
 
-  if (t->rr && 0) {
+  if (t->rr) {
     sip_record_route_t rr[1];
 
-    *sip_record_route_init(rr)->r_url = *t->proxy->rr_uri;
-
-    msg_header_add_dup(c->msg, (msg_pub_t *)c->sip, (msg_header_t *)rr);    
+    if (t->proxy->rr_uri) {
+      *sip_record_route_init(rr)->r_url = *t->proxy->rr_uri;
+      msg_header_add_dup(c->msg, (msg_pub_t *)c->sip, (msg_header_t *)rr);
+    }
+    else if (t->proxy->lr) {
+      *sip_record_route_init(rr)->r_url = *t->proxy->lr->r_url;
+      msg_header_add_dup(c->msg, (msg_pub_t *)c->sip, (msg_header_t *)rr);
+    }
   }
 
   if (c->rq)

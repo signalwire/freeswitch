@@ -209,7 +209,7 @@ int nua_stack_init(su_root_t *root, nua_t *nua)
   if (nua_stack_set_from(nua, 1, nua->nua_args) < 0)
     return -1;
 
-  if (NHP_ISSET(dnh->nh_prefs, detect_network_updates))
+  if (nua->nua_prefs->ngp_detect_network_updates)
     nua_stack_launch_network_change_detector(nua);
 
   nua_stack_timer(nua, nua->nua_timer, NULL);
@@ -293,7 +293,8 @@ int nua_stack_event(nua_t *nua, nua_handle_t *nh, msg_t *msg,
   if ((event > nua_r_authenticate && event <= nua_r_ack)
       || event < nua_i_error
       || (nh && !nh->nh_valid)
-      ) {
+      || (nua->nua_shutdown && event != nua_r_shutdown && 
+	  !nua->nua_prefs->ngp_shutdown_events)) {
     if (msg)
       msg_destroy(msg);
     return event;
@@ -2075,6 +2076,13 @@ nua_client_request_t *nua_client_request_remove(nua_client_request_t *cr)
   return cr;
 }
 
+void nua_client_request_complete(nua_client_request_t *cr)
+{
+  nua_client_request_remove(cr);
+  if (cr && cr->cr_methods->crm_complete)
+    cr->cr_methods->crm_complete(cr);
+}
+
 void nua_client_request_destroy(nua_client_request_t *cr)
 {
   nua_handle_t *nh;
@@ -2082,14 +2090,12 @@ void nua_client_request_destroy(nua_client_request_t *cr)
   if (cr == NULL)
     return;
 
-  if (cr->cr_methods->crm_deinit)
-    cr->cr_methods->crm_deinit(cr);
+  nua_client_request_complete(cr);
 
   nh = cr->cr_owner;
 
   nua_destroy_signal(cr->cr_signal);
 
-  nua_client_request_remove(cr);
   nua_client_bind(cr, NULL);
   
   if (cr->cr_msg)
@@ -2098,7 +2104,6 @@ void nua_client_request_destroy(nua_client_request_t *cr)
 
   if (cr->cr_orq)
     nta_outgoing_destroy(cr->cr_orq);
-
   cr->cr_orq = NULL;
 
   if (cr->cr_timer)

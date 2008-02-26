@@ -1133,7 +1133,7 @@ int test_bye_before_ack(struct context *ctx)
    Server transitions:
    INIT -(S1)-> RECEIVED: nua_i_invite, nua_i_state
    RECEIVED -(S2a)-> EARLY: nua_respond(180), nua_i_state
-   EARLY -(S6b)--> TERMINATED: nua_i_cancel, nua_i_state
+   EARLY -(S6b)--> TERMINATED: nua_i_bye, nua_i_state
   */
   TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_invite);
   TEST(e->data->e_status, 100);
@@ -1423,6 +1423,79 @@ int reject_reinvite_401(CONDITION_PARAMS)
   return 0;
 }
 
+int test_bye_with_407(struct context *ctx)
+{
+  BEGIN();
+  struct endpoint *a = &ctx->a,  *c = &ctx->c;
+  struct call *a_call = a->call, *c_call = c->call;
+  struct event *e;
+
+  a_call->sdp = "m=audio 5008 RTP/AVP 8";
+  c_call->sdp = "m=audio 5010 RTP/AVP 0 8";
+
+/* BYE after receiving 401
+
+   A			C
+   |-------INVITE------>|
+   |<----100 Trying-----|
+   |			|
+   |<----180 Ringing----|
+   |<-------200---------|
+   |--------ACK-------->|
+   |			|
+   |       |<----BYE----|
+   |       |-----407--->|
+   |<-------BYE---------|
+   |--------200-------->|
+   |			|
+*/
+  if (print_headings)
+    printf("TEST NUA-6.4.5: BYE with 407\n");
+
+  TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(c->to), TAG_END()));
+
+  INVITE(a, a_call, a_call->nh,
+	 TAG_IF(!ctx->proxy_tests, NUTAG_URL(c->contact->m_url)),
+	 SIPTAG_SUBJECT_STR("NUA-6.4.2"),
+	 SOATAG_USER_SDP_STR(a_call->sdp),
+	 NUTAG_AUTOANSWER(0),
+	 NUTAG_APPL_METHOD("UPDATE"),
+	 TAG_END());
+
+  run_abc_until(ctx, -1, until_ready, -1, NULL, -1, accept_call);
+
+  free_events_in_list(ctx, a->events);
+
+  TEST_1(e = c->events->head); TEST_E(e->data->e_event, nua_i_invite);
+  free_events_in_list(ctx, c->events);
+
+  BYE(c, c_call, c_call->nh, 
+      TAG_END());
+  run_c_until(ctx, -1, save_until_final_response);
+
+  TEST_1(nua_handle_has_active_call(a_call->nh));
+  TEST_1(nua_handle_has_active_call(c_call->nh));
+
+  free_events_in_list(ctx, a->events);
+  free_events_in_list(ctx, c->events);
+
+  AUTHENTICATE(c, c_call, c_call->nh, 
+	       NUTAG_AUTH("Digest:\"test-proxy\":charlie:secret"), TAG_END());
+  
+  run_abc_until(ctx, -1, until_terminated, -1, NULL, -1, until_terminated);
+
+  free_events_in_list(ctx, a->events);
+  nua_handle_destroy(a_call->nh), a_call->nh = NULL;
+
+  free_events_in_list(ctx, c->events);
+  nua_handle_destroy(c_call->nh), c_call->nh = NULL;
+
+  if (print_headings)
+    printf("TEST NUA-6.4.5: PASSED\n");
+
+  END();
+}
+
 int test_bye_to_invalid_contact(struct context *ctx)
 {
   BEGIN();
@@ -1576,6 +1649,7 @@ int test_bye_to_invalid_contact(struct context *ctx)
 int test_early_bye(struct context *ctx)
 {
   return 
+    test_bye_with_407(ctx) ||
     test_bye_before_200(ctx) ||
     test_bye_before_ack(ctx) ||
     test_bye_after_receiving_401(ctx) ||

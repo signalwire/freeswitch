@@ -151,7 +151,10 @@ int test_nua_init(struct context *ctx,
 			      AUTHTAG_ALGORITHM("md5"),
 			      AUTHTAG_NEXT_EXPIRES(60),
 			      AUTHTAG_MAX_NCOUNT(1),
+			      AUTHTAG_ALLOW("ACK, CANCEL"),
 			      TAG_END());
+
+      test_proxy_domain_set_record_route(ctx->c.domain, 1);
 
       ctx->proxy_tests = 1;
     }

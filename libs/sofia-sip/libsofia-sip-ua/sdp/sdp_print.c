@@ -613,8 +613,8 @@ static void print_media(sdp_printer_t *p,
 	sdp_printf(p, " %s", l->l_text);
     }
     else {
-      sdp_printf(p, " 9");      /* SDP syntax requires at least one format.
-				   9 is used by nobody, right?. */
+      sdp_printf(p, " 19");      /* SDP syntax requires at least one format.
+				    19 is used by nobody, right?. */
     }
 
 
