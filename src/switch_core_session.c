@@ -343,13 +343,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_
 
 	switch_assert(session != NULL);
 
+	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if ((status = switch_core_session_read_lock(session)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 	
-
 	switch_core_session_signal_lock(session);
-
+	
 	if (session->endpoint_interface->io_routines->receive_message) {
 		status = session->endpoint_interface->io_routines->receive_message(session, message);
 	}

@@ -1425,7 +1425,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 	switch_assert(tech_pvt != NULL);
 
-	switch_mutex_lock(tech_pvt->flag_mutex);
+	switch_core_session_signal_lock(tech_pvt->session);
 	
 	if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE)) {
 		status = SWITCH_STATUS_SUCCESS;
@@ -1665,7 +1665,8 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	
  end:
 
-	switch_mutex_unlock(tech_pvt->flag_mutex);
+	switch_core_session_signal_unlock(tech_pvt->session);
+
 	return status;
 	
 }

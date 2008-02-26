@@ -414,6 +414,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				break;
 			case CS_DONE:
 				goto done;
+				/* HANGUP INIT RING and RESET are all short term so we signal lock during their callbacks */
 			case CS_HANGUP:	    /* Deactivate and end the thread */
 				{
 					const char *var = switch_channel_get_variable(session->channel, SWITCH_PROCESS_CDR_VARIABLE);
@@ -431,35 +432,43 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
                             do_extra_handlers = 0;
 						}
 					}
-					
+					switch_core_session_signal_lock(session);
 					STATE_MACRO(hangup, "HANGUP");
+					switch_core_session_signal_unlock(session);
 				}
 				goto done;
-			case CS_INIT:		/* Basic setup tasks */
+			case CS_INIT: /* Basic setup tasks */
+				switch_core_session_signal_lock(session);
 				STATE_MACRO(init, "INIT");
+				switch_core_session_signal_unlock(session);
 				break;
-			case CS_RING:		/* Look for a dialplan and find something to do */
+			case CS_RING: /* Look for a dialplan and find something to do */
+				switch_core_session_signal_lock(session);
 				STATE_MACRO(ring, "RING");
+				switch_core_session_signal_unlock(session);
 				break;
-			case CS_RESET:		/* Reset */
+			case CS_RESET: /* Reset */
+				switch_core_session_signal_lock(session);
 				STATE_MACRO(reset, "RESET");
+				switch_core_session_signal_unlock(session);
 				break;
-			case CS_EXECUTE:	/* Execute an Operation */
+				/* These other states are intended for prolonged durations so we do not signal lock for them */
+			case CS_EXECUTE: /* Execute an Operation */
 				STATE_MACRO(execute, "EXECUTE");
 				break;
-			case CS_LOOPBACK:	/* loop all data back to source */
+			case CS_LOOPBACK: /* loop all data back to source */
 				STATE_MACRO(loopback, "LOOPBACK");
 				break;
-			case CS_TRANSMIT:	/* send/recieve data to/from another channel */
+			case CS_TRANSMIT: /* send/recieve data to/from another channel */
 				STATE_MACRO(transmit, "TRANSMIT");
 				break;
-			case CS_PARK:		/* wait in limbo */
+			case CS_PARK: /* wait in limbo */
 				STATE_MACRO(park, "PARK");
 				break;
-			case CS_HOLD:		/* wait in limbo */
+			case CS_HOLD: /* wait in limbo */
 				STATE_MACRO(hold, "HOLD");
 				break;
-			case CS_HIBERNATE:	/* sleep */
+			case CS_HIBERNATE: /* sleep */
 				STATE_MACRO(hibernate, "HIBERNATE");
 				break;
 			case CS_NONE:
