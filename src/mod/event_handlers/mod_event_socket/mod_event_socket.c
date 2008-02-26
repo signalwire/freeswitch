@@ -195,7 +195,7 @@ static void event_handler(switch_event_t *event)
 
 SWITCH_STANDARD_APP(socket_function)
 {
-	char *host, *port_name;
+	char *host, *port_name, *path;
 	switch_socket_t *new_sock;
 	switch_sockaddr_t *sa;
 	switch_port_t port = 8084;
@@ -203,6 +203,9 @@ SWITCH_STANDARD_APP(socket_function)
 	int argc = 0, x = 0;
 	char *argv[80] = { 0 };
 	char *mydata;
+	switch_channel_t *channel = NULL;
+
+	channel = switch_core_session_get_channel(session);
 
 	if (data && (mydata = switch_core_session_strdup(session, data))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -220,9 +223,16 @@ SWITCH_STANDARD_APP(socket_function)
 		return;
 	}
 
+	switch_channel_set_variable(channel, "socket_host", host);
+
 	if ((port_name = strchr(host, ':'))) {
 		*port_name++ = '\0';
 		port = (switch_port_t) atoi(port_name);
+	}
+
+	if ((path = strchr(port_name, '/'))) {
+		*path++ = '\0';
+		switch_channel_set_variable(channel, "socket_path", path);
 	}
 
 	if (switch_sockaddr_info_get(&sa, host, AF_INET, port, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
