@@ -1937,9 +1937,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		switch_strftime(profile_start, &retsize, sizeof(profile_start), fmt, &tm);
 		switch_channel_set_variable(channel, "profile_start_stamp", profile_start);
 
-		switch_time_exp_lt(&tm, caller_profile->times->answered);
-		switch_strftime(answer, &retsize, sizeof(answer), fmt, &tm);
-		switch_channel_set_variable(channel, "answer_stamp", answer);
+		if (caller_profile->times->answered) {
+			switch_time_exp_lt(&tm, caller_profile->times->answered);
+			switch_strftime(answer, &retsize, sizeof(answer), fmt, &tm);
+			switch_channel_set_variable(channel, "answer_stamp", answer);
+		}
 
 		switch_time_exp_lt(&tm, caller_profile->times->hungup);
 		switch_strftime(end, &retsize, sizeof(end), fmt, &tm);
