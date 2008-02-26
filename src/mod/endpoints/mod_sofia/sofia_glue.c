@@ -1127,7 +1127,7 @@ void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt)
 		if ((parser = sdp_parse(NULL, sdp_str, (int) strlen(sdp_str), 0))) {
 			if ((sdp = sdp_session(parser))) {
 				for (m = sdp->sdp_media; m; m = m->m_next) {
-					if (m->m_type != sdp_media_audio) {
+					if (m->m_type != sdp_media_audio || !m->m_port) {
 						continue;
 					}
 
@@ -1726,7 +1726,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *val;
 	const char *crypto = NULL;
-	int got_crypto = 0, got_audio = 0;
+	int got_crypto = 0, got_audio = 0, got_avp = 0, got_savp = 0;
 
 	switch_assert(tech_pvt != NULL);
 
@@ -1808,7 +1808,13 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 
 		ptime = dptime;
 
-		if (m->m_type == sdp_media_audio && !got_audio) {
+		if (m->m_proto == sdp_proto_srtp) {
+			got_savp++;
+		} else if (m->m_proto == sdp_proto_rtp) {
+			got_avp++;
+		}
+
+		if (m->m_type == sdp_media_audio && m->m_port && !got_audio) {
 			sdp_rtpmap_t *map;
 
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {
@@ -1860,6 +1866,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						}
 					}
 				}
+			}
+
+			if (got_crypto && !got_avp) {
+				switch_channel_set_variable(tech_pvt->channel, SOFIA_CRYPTO_MANDATORY_VARIABLE, "true");
+				switch_channel_set_variable(tech_pvt->channel, SOFIA_SECURE_MEDIA_VARIABLE, "true");
 			}
 
 			connection = sdp->sdp_connection;
@@ -2024,7 +2035,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 				goto greed;
 			}
 
-		} else if (m->m_type == sdp_media_video) { 
+		} else if (m->m_type == sdp_media_video && m->m_port) { 
 			sdp_rtpmap_t *map;
 			const char *rm_encoding;
 			int framerate = 0;

@@ -76,6 +76,7 @@ typedef struct private_object private_object_t;
 #define SOFIA_SECURE_MEDIA_VARIABLE "sip_secure_media"
 #define SOFIA_SECURE_MEDIA_CONFIRMED_VARIABLE "sip_secure_media_confirmed"
 #define SOFIA_HAS_CRYPTO_VARIABLE "sip_has_crypto"
+#define SOFIA_CRYPTO_MANDATORY_VARIABLE "sip_crypto_mandatory"
 
 #include <sofia-sip/nua.h>
 #include <sofia-sip/sip_status.h>
