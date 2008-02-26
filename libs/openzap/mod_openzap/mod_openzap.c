@@ -747,20 +747,28 @@ static switch_status_t channel_receive_message_fxs(switch_core_session_t *sessio
 static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
 	private_t *tech_pvt;
-			
+	switch_status_t status;
+	
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	switch_mutex_lock(tech_pvt->flag_mutex);
+
 	switch (tech_pvt->zchan->type) {
 	case ZAP_CHAN_TYPE_FXS:
-		return channel_receive_message_fxs(session, msg);
+		status = channel_receive_message_fxs(session, msg);
 	case ZAP_CHAN_TYPE_FXO:
-		return channel_receive_message_fxo(session, msg);
+		status = channel_receive_message_fxo(session, msg);
 	case ZAP_CHAN_TYPE_B:
-		return channel_receive_message_b(session, msg);
+		status = channel_receive_message_b(session, msg);
 	default:
-		return SWITCH_STATUS_FALSE;
+		status = SWITCH_STATUS_FALSE;
 	}
+
+	switch_mutex_unlock(tech_pvt->flag_mutex);
+
+	return status;
+
 }
 
 switch_state_handler_table_t openzap_state_handlers = {
@@ -996,8 +1004,10 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
     case ZAP_SIGEVENT_PROGRESS_MEDIA:
 		{
 			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				switch_core_session_signal_lock(session);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_pre_answered(channel);
+				switch_core_session_signal_unlock(session);
 				switch_core_session_rwunlock(session);
 			}
 		}
@@ -1005,10 +1015,12 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
     case ZAP_SIGEVENT_STOP:
 		{
 			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				switch_core_session_signal_lock(session);
 				zap_channel_clear_token(sigmsg->channel, 0);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
 				zap_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
+				switch_core_session_signal_unlock(session);
 				switch_core_session_rwunlock(session);
 			}
 		}
@@ -1055,8 +1067,10 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
     case ZAP_SIGEVENT_UP:
 		{
 			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				switch_core_session_signal_lock(session);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_answered(channel);
+				switch_core_session_signal_unlock(session);
 				switch_core_session_rwunlock(session);
 			}
 		}
@@ -1082,6 +1096,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 
 
 				if ((session_a = switch_core_session_locate(sigmsg->channel->tokens[0]))) {
+					switch_core_session_signal_lock(session_a);
 					channel_a = switch_core_session_get_channel(session_a);
 					br_a_uuid = switch_channel_get_variable(channel_a, SWITCH_SIGNAL_BOND_VARIABLE);
 
@@ -1091,6 +1106,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 				}
 
 				if ((session_b = switch_core_session_locate(sigmsg->channel->tokens[1]))) {
+					switch_core_session_signal_lock(session_b);
 					channel_b = switch_core_session_get_channel(session_b);
 					br_b_uuid = switch_channel_get_variable(channel_b, SWITCH_SIGNAL_BOND_VARIABLE);
 
@@ -1105,21 +1121,26 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 						switch_ivr_uuid_bridge(br_a_uuid, br_b_uuid);
 					} else if (br_a_uuid && digits) {
 						session_t = switch_core_session_locate(br_a_uuid);
+						switch_core_session_signal_lock(session_t);
 					} else if (br_b_uuid && digits) {
 						session_t = switch_core_session_locate(br_b_uuid);
+						switch_core_session_signal_lock(session_t);
 					}
 				}
 				
 				if (session_t) {
 					switch_ivr_session_transfer(session_t, sigmsg->channel->caller_data.collected, NULL, NULL);
+					switch_core_session_signal_unlock(session_t);
 					switch_core_session_rwunlock(session_t);
 				}
 
 				if (session_a) {
+					switch_core_session_signal_unlock(session_a);
 					switch_core_session_rwunlock(session_a);
 				}
 
 				if (session_b) {
+					switch_core_session_signal_unlock(session_b);
 					switch_core_session_rwunlock(session_b);
 				}
 
@@ -1127,9 +1148,11 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			}
 
 			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				switch_core_session_signal_lock(session);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, cause);
 				zap_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
+				switch_core_session_signal_unlock(session);
 				switch_core_session_rwunlock(session);
 			}
 			zap_channel_clear_token(sigmsg->channel, NULL);
@@ -1148,9 +1171,11 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 				if (zap_test_flag(sigmsg->channel, ZAP_CHANNEL_3WAY)) {
 					zap_clear_flag(sigmsg->channel, ZAP_CHANNEL_3WAY);
 					if ((session = zap_channel_get_session(sigmsg->channel, 1))) {
+						switch_core_session_signal_lock(session);
 						channel = switch_core_session_get_channel(session);
 						switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 						zap_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
+						switch_core_session_signal_unlock(session);
 						switch_core_session_rwunlock(session);
 					}
 					cycle_foreground(sigmsg->channel, 1, NULL);
@@ -1247,9 +1272,11 @@ static ZIO_SIGNAL_CB_FUNCTION(on_isdn_signal)
     case ZAP_SIGEVENT_STOP:
 		{	
 			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				switch_core_session_signal_lock(session);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
 				zap_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
+				switch_core_session_signal_unlock(session);
 				switch_core_session_rwunlock(session);
 			}
 		}
@@ -1258,19 +1285,23 @@ static ZIO_SIGNAL_CB_FUNCTION(on_isdn_signal)
 		{
 			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
 				zap_tone_type_t tt = ZAP_TONE_DTMF;
+				switch_core_session_signal_lock(session);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_answered(channel);
 				if (zap_channel_command(sigmsg->channel, ZAP_COMMAND_ENABLE_DTMF_DETECT, &tt) != ZAP_SUCCESS) {
 					zap_log(ZAP_LOG_ERROR, "TONE ERROR\n");
 				}
+				switch_core_session_signal_unlock(session);
 				switch_core_session_rwunlock(session);
 			}
 		}
     case ZAP_SIGEVENT_PROGRESS_MEDIA:
 		{
 			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				switch_core_session_signal_lock(session);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_pre_answered(channel);
+				switch_core_session_signal_unlock(session);
 				switch_core_session_rwunlock(session);
 			}
 		}
@@ -1278,8 +1309,10 @@ static ZIO_SIGNAL_CB_FUNCTION(on_isdn_signal)
     case ZAP_SIGEVENT_PROGRESS:
 		{
 			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				switch_core_session_signal_lock(session);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_ring_ready(channel);
+				switch_core_session_signal_unlock(session);
 				switch_core_session_rwunlock(session);
 			}
 		}
