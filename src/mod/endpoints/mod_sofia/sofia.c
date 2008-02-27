@@ -224,6 +224,11 @@ void sofia_event_callback(nua_event_t event,
 
 	if (session) {
 		switch_core_session_signal_lock(session);
+
+		if (channel && switch_channel_get_state(channel) >= CS_HANGUP) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already hungup.\n");
+			goto done;
+		}
 	}
 
 	if ((profile->pflags & PFLAG_AUTH_ALL) && tech_pvt && tech_pvt->key && sip) {
