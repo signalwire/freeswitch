@@ -109,8 +109,6 @@ $(SRC)/zap_zt.o \
 $(SRC)/zap_wanpipe.o \
 $(SRC)/zap_ss7_boost.o
 
-#SRCS=$(shell echo $(OBJS) | sed "s/\.o/\.c/g")
-
 HEADERS= $(SRC)/include/fsk.h \
 $(SRC)/include/g711.h \
 $(SRC)/include/hashtable.h \
