@@ -67,7 +67,8 @@ $(SRC)/isdn/5ESSStateNT.c \
 $(SRC)/isdn/5ESSStateTE.c \
 $(SRC)/isdn/Q932mes.c \
 $(SRC)/zap_zt.c \
-$(SRC)/zap_wanpipe.c
+$(SRC)/zap_wanpipe.c \
+$(SRC)/zap_ss7_boost.c
 
 OBJS=\
 $(SRC)/hashtable.o \
@@ -105,7 +106,8 @@ $(SRC)/isdn/5ESSStateNT.o \
 $(SRC)/isdn/5ESSStateTE.o \
 $(SRC)/isdn/Q932mes.o \
 $(SRC)/zap_zt.o \
-$(SRC)/zap_wanpipe.o
+$(SRC)/zap_wanpipe.o \
+$(SRC)/zap_ss7_boost.o
 
 #SRCS=$(shell echo $(OBJS) | sed "s/\.o/\.c/g")
 
@@ -129,6 +131,7 @@ $(SRC)/include/zap_skel.h \
 $(SRC)/include/zap_threadmutex.h \
 $(SRC)/include/zap_types.h \
 $(SRC)/include/zap_wanpipe.h \
+$(SRC)/include/zap_ss7_boost.h \
 $(SRC)/include/zap_zt.h \
 $(SRC)/isdn/include/mfifo.h \
 $(SRC)/isdn/include/national.h \
@@ -182,6 +185,9 @@ detect_dtmf: $(SRC)/detect_dtmf.c $(MYLIB)
 testisdn: $(SRC)/testisdn.c $(MYLIB)
 	$(CC) $(INCS) $(ZAP_CFLAGS) -L. $(SRC)/testisdn.c -o testisdn -lopenzap -lm -lpthread
 
+testboost: $(SRC)/testboost.c $(MYLIB)
+	$(CC) $(INCS) $(ZAP_CFLAGS) -L. $(SRC)/testboost.c -o testboost -lopenzap -lm -lpthread
+
 testanalog: $(SRC)/testanalog.c $(MYLIB)
 	$(CC) $(INCS) -L. $(SRC)/testanalog.c -o testanalog -lopenzap -lm -lpthread 
 
@@ -218,5 +224,5 @@ mod_openzap-clean:
 	@if [ -f mod_openzap/mod_openzap.so ] ; then cd mod_openzap && make clean ; fi
 
 clean: mod_openzap-clean
-	rm -f $(SRC)/*.o $(SRC)/isdn/*.o $(MYLIB) *~ \#* testapp testcid testtones detect_tones detect_dtmf priserver testisdn testanalog
+	rm -f $(SRC)/*.o $(SRC)/isdn/*.o $(MYLIB) *~ \#* testapp testcid testtones detect_tones detect_dtmf priserver testisdn testboost testanalog
 	@if [ -f $(LIBPRI)/$(LIBPRIA) ] ; then cd $(LIBPRI) && make clean ; fi
