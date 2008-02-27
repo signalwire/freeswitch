@@ -144,6 +144,9 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 		switch(gen->MesType) {
 		case Q931mes_RESTART:
 			{
+				if (chan_id) {
+					zchan = &span->channels[chan_id];
+				}
 				if (zchan) {
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RESTART);
 				} else {
