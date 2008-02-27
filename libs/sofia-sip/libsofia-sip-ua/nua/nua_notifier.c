@@ -237,7 +237,8 @@ int nua_subscribe_server_preprocess(nua_server_request_t *sr)
   sip_event_t *o = sip->sip_event;
   char const *event = o ? o->o_type : NULL;
   /* Maximum expiration time */
-  unsigned long expires = 3600;
+  unsigned long expires = sip->sip_expires ? sip->sip_expires->ex_delta : 3600;
+  sip_time_t now = sip_now();
 
   assert(nh && nh->nh_nua->nua_dhandle != nh);
   
@@ -259,9 +260,10 @@ int nua_subscribe_server_preprocess(nua_server_request_t *sr)
 
   nu = nua_dialog_usage_private(du);
 
-  if (sip->sip_expires && sip->sip_expires->ex_delta < expires)
-    expires = sip->sip_expires->ex_delta;
-  nu->nu_requested = sip_now() + expires;
+  if (now + expires >= now)
+    nu->nu_requested = now + expires;
+  else
+    nu->nu_requested = SIP_TIME_MAX - 1;
 
 #if SU_HAVE_EXPERIMENTAL
   nu->nu_etags = 
@@ -295,9 +297,23 @@ int nua_subscribe_server_respond(nua_server_request_t *sr, tagi_t const *tags)
       sip_time_t now = sip_now();
 
       if (nu->nu_requested) {
-	if (nu->nu_requested > nu->nu_expires)
+	if (sip->sip_expires) {
+	  /* Expires in response can only shorten the expiration time */
+	  if (nu->nu_requested > now + sip->sip_expires->ex_delta) 
+	    nu->nu_requested = now + sip->sip_expires->ex_delta;
+	}
+	else {
+	  unsigned sub_expires = NH_PGET(sr->sr_owner, sub_expires);
+	  if (nu->nu_requested > now + sub_expires)
+	    nu->nu_requested = now + sub_expires;
+	}
+
+	if (nu->nu_requested >= now)
 	  nu->nu_expires = nu->nu_requested;
-	else if (nu->nu_expires <= now || nu->nu_requested <= now)
+	else
+	  nu->nu_expires = now;
+
+	if (nu->nu_expires <= now)
 	  nu->nu_substate = nua_substate_terminated;
       }
 
@@ -305,7 +321,7 @@ int nua_subscribe_server_respond(nua_server_request_t *sr, tagi_t const *tags)
 	ex->ex_delta = nu->nu_expires - now;
     }
     else {
-      /* Add header Expires: 0 */
+      /* Always add header Expires: 0 */
     }
 
     if (!sip->sip_expires || sip->sip_expires->ex_delta > ex->ex_delta)

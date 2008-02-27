@@ -209,7 +209,7 @@ int nua_stack_init(su_root_t *root, nua_t *nua)
   if (nua_stack_set_from(nua, 1, nua->nua_args) < 0)
     return -1;
 
-  if (NHP_ISSET(dnh->nh_prefs, detect_network_updates))
+  if (nua->nua_prefs->ngp_detect_network_updates)
     nua_stack_launch_network_change_detector(nua);
 
   nua_stack_timer(nua, nua->nua_timer, NULL);
