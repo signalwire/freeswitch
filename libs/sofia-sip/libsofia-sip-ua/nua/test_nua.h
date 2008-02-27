@@ -178,10 +178,7 @@ struct context
       unsigned bit4:1, bit5:1, bit6:1, bit7:1;
       unsigned :0;
     } flags;
-    /* Accross-run state information */
-    struct {
-      unsigned n;
-    } state;
+
   } a, b, c;
 
   struct proxy *p;

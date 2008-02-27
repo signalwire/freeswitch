@@ -182,12 +182,6 @@ void print_event(nua_event_t event,
 	    ep->name, (void *)nh, nua_event_name(event), phrase,
 	    nua_substate_name(t ? t->t_value : 0));
   }
-  else if ((int)event >= nua_i_bye || 
-	   event == nua_i_invite || event == nua_i_cancel ||
-	   event == nua_i_ack) {
-    fprintf(stderr, "%s %s.nua(%p): event %s %03d %s\n", timestamp,
-	    ep->name, (void *)nh, nua_event_name(event), status, phrase);
-  }
   else if ((int)event >= 0) {
     fprintf(stderr, "%s %s.nua(%p): event %s %s\n", timestamp,
 	    ep->name, (void *)nh, nua_event_name(event), phrase);

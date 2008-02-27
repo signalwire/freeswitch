@@ -209,7 +209,7 @@ int nua_stack_init(su_root_t *root, nua_t *nua)
   if (nua_stack_set_from(nua, 1, nua->nua_args) < 0)
     return -1;
 
-  if (nua->nua_prefs->ngp_detect_network_updates)
+  if (NHP_ISSET(dnh->nh_prefs, detect_network_updates))
     nua_stack_launch_network_change_detector(nua);
 
   nua_stack_timer(nua, nua->nua_timer, NULL);
@@ -293,8 +293,7 @@ int nua_stack_event(nua_t *nua, nua_handle_t *nh, msg_t *msg,
   if ((event > nua_r_authenticate && event <= nua_r_ack)
       || event < nua_i_error
       || (nh && !nh->nh_valid)
-      || (nua->nua_shutdown && event != nua_r_shutdown && 
-	  !nua->nua_prefs->ngp_shutdown_events)) {
+      || (nua->nua_shutdown && event != nua_r_shutdown)) {
     if (msg)
       msg_destroy(msg);
     return event;

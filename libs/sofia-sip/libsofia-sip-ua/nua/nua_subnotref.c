@@ -371,9 +371,6 @@ static int nua_subscribe_client_response(nua_client_request_t *cr,
     else
       delta = 0;
 
-    if (delta > eu->eu_expires)
-      delta = eu->eu_expires;
-
     if (win_messenger_enable && !nua_dialog_is_established(nh->nh_ds)) {
       /* Notify from messanger does not match with dialog tag */ 
       nh->nh_ds->ds_remote_tag = su_strdup(nh->nh_home, "");
@@ -382,23 +379,23 @@ static int nua_subscribe_client_response(nua_client_request_t *cr,
     if (delta > 0) {
       nua_dialog_usage_set_refresh(du, delta);
     } 
-    else {
-      if (eu->eu_substate == nua_substate_terminated) {
-	if (!eu->eu_notified)
-	  eu->eu_substate = nua_substate_embryonic;
-      }
+    else if (!eu->eu_notified) {
+      /* This is a fetch: subscription was really terminated
+	 but we wait 32 seconds for NOTIFY. */
+      delta = 64 * NTA_SIP_T1 / 1000;
 
-      if (eu->eu_substate != nua_substate_terminated) {
-	/* Wait 32 seconds for NOTIFY. */
-	delta = 64 * NTA_SIP_T1 / 1000;
+      if (win_messenger_enable)
+	delta = 4 * 60; 	/* Wait 4 minutes for NOTIFY from Messenger */
+
+      eu->eu_final_wait = 1;
 	
-	eu->eu_final_wait = 1;
+      if (eu->eu_substate == nua_substate_terminated)
+	eu->eu_substate = nua_substate_embryonic;
 
-	if (!eu->eu_notified && win_messenger_enable)
-	  delta = 4 * 60; 	/* Wait 4 minutes for NOTIFY from Messenger */
-
-	nua_dialog_usage_set_refresh_range(du, delta, delta);
-      }
+      nua_dialog_usage_set_refresh_range(du, delta, delta);
+    }
+    else {
+      eu->eu_substate = nua_substate_terminated;
     }
 
     substate = eu->eu_substate;
@@ -653,6 +650,8 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
     if (substate == nua_substate_active || substate == nua_substate_pending) {
       if (subs && subs->ss_expires)
 	delta = strtoul(subs->ss_expires, NULL, 10);
+      else
+	delta = eu->eu_expires;
     }
     else if (substate == nua_substate_embryonic) {
       if (subs && subs->ss_reason) {
@@ -690,8 +689,7 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
     nua_dialog_usage_set_refresh_range(du, retry, retry + 5);
   }
   else {
-    if (delta < SIP_TIME_MAX)
-      nua_dialog_usage_set_refresh(du, delta);
+    nua_dialog_usage_set_refresh(du, delta);
   }
 
   return retval;

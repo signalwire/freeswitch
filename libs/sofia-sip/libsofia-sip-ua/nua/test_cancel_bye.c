@@ -1433,9 +1433,6 @@ int test_bye_with_407(struct context *ctx)
   a_call->sdp = "m=audio 5008 RTP/AVP 8";
   c_call->sdp = "m=audio 5010 RTP/AVP 0 8";
 
-  if (!ctx->proxy_tests)
-    return 0;
-
 /* BYE after receiving 401
 
    A			C

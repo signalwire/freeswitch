@@ -45,9 +45,6 @@
 
 extern int accept_request(CONDITION_PARAMS);
 
-int save_until_nth_final_response(CONDITION_PARAMS);
-int accept_n_notifys(CONDITION_PARAMS);
-
 int test_message(struct context *ctx)
 {
   BEGIN();
@@ -567,47 +564,6 @@ static char const presence_closed[] =
     "</presence>\n";
 
 
-int accept_and_notify_twice(CONDITION_PARAMS)
-{
-  msg_t *with = nua_current_request(nua);
-
-  if (!(check_handle(ep, call, nh, SIP_500_INTERNAL_SERVER_ERROR)))
-    return 0;
-
-  save_event_in_list(ctx, event, ep, call);
-
-  switch (event) {
-  case nua_i_subscribe:
-    if (status < 200) {
-      NOTIFY(ep, call, nh, 
-	     SIPTAG_EVENT(sip->sip_event),
-	     SIPTAG_CONTENT_TYPE_STR("application/pidf+xml"),
-	     SIPTAG_PAYLOAD_STR(presence_closed),
-	     NUTAG_SUBSTATE(nua_substate_pending),
-	     TAG_END());
-      NOTIFY(ep, call, nh,
-	     SIPTAG_EVENT(sip->sip_event),
-	     SIPTAG_CONTENT_TYPE_STR("application/pidf+xml"),
-	     SIPTAG_PAYLOAD_STR(presence_open),
-	     NUTAG_SUBSTATE(nua_substate_active),
-	     TAG_END());
-      RESPOND(ep, call, nh, SIP_202_ACCEPTED,
-	      NUTAG_WITH(with),
-	      SIPTAG_EXPIRES_STR("360"),
-	      TAG_END());
-    }
-    return 0;
-
-  case nua_r_notify:
-    return status >= 200 &&
-      tl_find(tags, nutag_substate)->t_value == nua_substate_active;
-
-  default:
-    return 0;
-  }
-}
-
-
 int accept_and_notify(CONDITION_PARAMS)
 {
   msg_t *with = nua_current_request(nua);
@@ -624,40 +580,13 @@ int accept_and_notify(CONDITION_PARAMS)
 	      NUTAG_WITH(with),
 	      SIPTAG_EXPIRES_STR("360"),
 	      TAG_END());
-
       NOTIFY(ep, call, nh, 
 	     SIPTAG_EVENT(sip->sip_event),
 	     SIPTAG_CONTENT_TYPE_STR("application/pidf+xml"),
 	     SIPTAG_PAYLOAD_STR(presence_closed),
 	     NUTAG_SUBSTATE(nua_substate_pending),
 	     TAG_END());
-
     }
-    return 0;
-
-  case nua_r_notify:
-    return status >= 200;
-
-  default:
-    return 0;
-  }
-}
-
-int save_and_notify(CONDITION_PARAMS)
-{
-  if (!(check_handle(ep, call, nh, SIP_500_INTERNAL_SERVER_ERROR)))
-    return 0;
-
-  save_event_in_list(ctx, event, ep, call);
-
-  switch (event) {
-  case nua_i_subscribe:
-    NOTIFY(ep, call, nh, 
-	   SIPTAG_EVENT(sip->sip_event),
-	   SIPTAG_CONTENT_TYPE_STR("application/pidf+xml"),
-	   SIPTAG_PAYLOAD_STR(presence_closed),
-	   NUTAG_SUBSTATE(nua_substate_active),
-	   TAG_END());
     return 0;
 
   case nua_r_notify:
@@ -677,7 +606,7 @@ int test_subscribe_notify(struct context *ctx)
 
   struct endpoint *a = &ctx->a,  *b = &ctx->b;
   struct call *a_call = a->call, *b_call = b->call;
-  struct event *e, *en1, *en2, *es;
+  struct event *e;
   sip_t const *sip;
   tagi_t const *n_tags, *r_tags;
 
@@ -691,47 +620,44 @@ int test_subscribe_notify(struct context *ctx)
 
   SUBSCRIBE(a, a_call, a_call->nh, NUTAG_URL(b->contact->m_url),
 	    SIPTAG_EVENT_STR("presence"),
-	    SIPTAG_EXPIRES_STR("333"),
 	    SIPTAG_ACCEPT_STR("application/xpidf, application/pidf+xml"),
 	    TAG_END());
 
   run_ab_until(ctx, -1, save_until_notified_and_responded,
-	       -1, accept_and_notify_twice);
+	       -1, accept_and_notify);
 
   /* Client events:
-     nua_subscribe(), nua_i_notify/nua_r_subscribe/nua_i_notify
+     nua_subscribe(), nua_i_notify/nua_r_subscribe
   */
-  for (en1 = en2 = es = NULL, e = a->events->head; e; e = e->next) {
-    if (en1 == NULL && e->data->e_event == nua_i_notify)
-      en1 = e;
-    else if (en2 == NULL && e->data->e_event == nua_i_notify)
-      en2 = e;
-    else if (e->data->e_event == nua_r_subscribe)
-      es = e;
-    else
-      TEST_1(!e);
+  TEST_1(e = a->events->head);
+  if (e->data->e_event == nua_i_notify) {
+    TEST_E(e->data->e_event, nua_i_notify);
+    TEST_1(sip = sip_object(e->data->e_msg));
+    n_tags = e->data->e_tags;
+    TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_subscribe);
+    r_tags = e->data->e_tags;
+    TEST_1(tl_find(r_tags, nutag_substate));
+    TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_pending);
   }
-
-  TEST_1(e = en1);
-  TEST_E(e->data->e_event, nua_i_notify);
-  TEST_1(tl_find(e->data->e_tags, nutag_substate));
-  TEST(tl_find(e->data->e_tags, nutag_substate)->t_value, nua_substate_pending);
-  TEST_1(sip = sip_object(e->data->e_msg));
+  else {
+    TEST_E(e->data->e_event, nua_r_subscribe);
+    TEST(e->data->e_status, 202);
+    r_tags = e->data->e_tags;
+    TEST_1(tl_find(r_tags, nutag_substate));
+    TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_embryonic);
+    TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_notify);
+    TEST_1(sip = sip_object(e->data->e_msg));
+    n_tags = e->data->e_tags;
+  }
   TEST_1(sip->sip_event); TEST_S(sip->sip_event->o_type, "presence");
   TEST_1(sip->sip_content_type);
   TEST_S(sip->sip_content_type->c_type, "application/pidf+xml");
   TEST_1(sip->sip_subscription_state);
   TEST_S(sip->sip_subscription_state->ss_substate, "pending");
   TEST_1(sip->sip_subscription_state->ss_expires);
-
-  TEST_1(e = es); TEST_E(e->data->e_event, nua_r_subscribe);
-  TEST_1(e->data->e_status == 202 || e->data->e_status == 200);
-  TEST_1(tl_find(e->data->e_tags, nutag_substate));
-  TEST(tl_find(e->data->e_tags, nutag_substate)->t_value, nua_substate_pending);
-  TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_expires);
-  TEST_1(sip->sip_expires->ex_delta <= 333);
-
+  TEST_1(tl_find(n_tags, nutag_substate));
+  TEST(tl_find(n_tags, nutag_substate)->t_value, nua_substate_pending);
+  TEST_1(!e->next);
   free_events_in_list(ctx, a->events);
 
   /* Server events: nua_i_subscribe, nua_r_notify */
@@ -805,80 +731,6 @@ int test_subscribe_notify(struct context *ctx)
 
   /* ---------------------------------------------------------------------- */
 
-/* Re-SUBSCRIBE
-
-   A			B
-   |                    |
-   |<------NOTIFY-------|
-   |-------200 OK------>|
-   |                    |
-*/
-  if (print_headings)
-    printf("TEST NUA-11.4.3: re-SUBSCRIBE\n");
-
-  /* Set default expiration time */
-  nua_set_hparams(b_call->nh, NUTAG_SUB_EXPIRES(365), TAG_END());
-  run_b_until(ctx, nua_r_set_params, until_final_response);
-
-  SUBSCRIBE(a, a_call, a_call->nh, NUTAG_URL(b->contact->m_url),
-	    SIPTAG_EVENT_STR("presence"),
-	    SIPTAG_EXPIRES_STR("3600"),
-	    SIPTAG_ACCEPT_STR("application/xpidf, application/pidf+xml"),
-	    TAG_END());
-
-  run_ab_until(ctx, -1, save_until_notified_and_responded,
-	       -1, save_until_final_response);
-
-  /* Client events:
-     nua_subscribe(), nua_i_notify/nua_r_subscribe
-  */
-  for (en1 = en2 = es = NULL, e = a->events->head; e; e = e->next) {
-    if (en1 == NULL && e->data->e_event == nua_i_notify)
-      en1 = e;
-    else if (e->data->e_event == nua_r_subscribe)
-      es = e;
-    else
-      TEST_1(!e);
-  }
-  TEST_1(e = en1);
-  TEST_E(e->data->e_event, nua_i_notify);
-  TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_event); TEST_S(sip->sip_event->o_type, "presence");
-  TEST_1(sip->sip_content_type);
-  TEST_S(sip->sip_content_type->c_type, "application/pidf+xml");
-  TEST_1(sip->sip_subscription_state);
-  TEST_S(sip->sip_subscription_state->ss_substate, "active");
-  TEST_1(sip->sip_subscription_state->ss_expires);
-  n_tags = e->data->e_tags;
-  TEST_1(tl_find(n_tags, nutag_substate));
-  TEST(tl_find(n_tags, nutag_substate)->t_value, nua_substate_active);
-
-  TEST_1(e = es); TEST_E(e->data->e_event, nua_r_subscribe);
-  TEST_1(tl_find(e->data->e_tags, nutag_substate));
-  TEST(tl_find(e->data->e_tags, nutag_substate)->t_value, nua_substate_active);
-  TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_expires);
-  TEST_1(sip->sip_expires->ex_delta <= 365);
-
-  free_events_in_list(ctx, a->events);
-
-  /* Server events: nua_i_subscribe, nua_r_notify */
-  TEST_1(e = b->events->head);
-  TEST_E(e->data->e_event, nua_i_subscribe);
-  TEST_E(e->data->e_status, 100);
-  TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_notify);
-  r_tags = e->data->e_tags;
-  TEST_1(tl_find(r_tags, nutag_substate));
-  TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_active);
-
-  free_events_in_list(ctx, b->events);
-
-  if (print_headings)
-    printf("TEST NUA-11.4.3: PASSED\n");
-
-  /* ---------------------------------------------------------------------- */
-
 /* un-SUBSCRIBE
 
    A			B
@@ -890,7 +742,7 @@ int test_subscribe_notify(struct context *ctx)
    |                    |
 */
   if (print_headings)
-    printf("TEST NUA-11.4.4: un-SUBSCRIBE\n");
+    printf("TEST NUA-11.4.3: un-SUBSCRIBE\n");
 
   UNSUBSCRIBE(a, a_call, a_call->nh, TAG_END());
 
@@ -900,35 +752,31 @@ int test_subscribe_notify(struct context *ctx)
   /* Client events:
      nua_unsubscribe(), nua_i_notify/nua_r_unsubscribe
   */
-  for (en1 = en2 = es = NULL, e = a->events->head; e; e = e->next) {
-    if (en1 == NULL && e->data->e_event == nua_i_notify)
-      en1 = e;
-    else if (e->data->e_event == nua_r_unsubscribe)
-      es = e;
-    else
-      TEST_1(!e);
-  }
-  if (en1) {
-    TEST_1(e = en1); TEST_E(e->data->e_event, nua_i_notify);
+  TEST_1(e = a->events->head);
+  if (e->data->e_event == nua_i_notify) {
+    TEST_E(e->data->e_event, nua_i_notify);
+    n_tags = e->data->e_tags;
     TEST_1(sip = sip_object(e->data->e_msg));
     TEST_1(sip->sip_event);
     TEST_1(sip->sip_subscription_state);
     TEST_S(sip->sip_subscription_state->ss_substate, "terminated");
     TEST_1(!sip->sip_subscription_state->ss_expires);
-    n_tags = e->data->e_tags;
     TEST_1(tl_find(n_tags, nutag_substate));
     TEST(tl_find(n_tags, nutag_substate)->t_value, nua_substate_terminated);
+    TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_unsubscribe);
+    TEST(e->data->e_status, 200);
+    r_tags = e->data->e_tags;
+    TEST_1(tl_find(r_tags, nutag_substate));
+    TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_terminated);
   }
-
-  TEST_1(e = es); TEST_E(e->data->e_event, nua_r_unsubscribe);
-  TEST(e->data->e_status, 200);
-  r_tags = e->data->e_tags;
-  TEST_1(tl_find(r_tags, nutag_substate));
-  TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_terminated);
-  TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_expires);
-  TEST_1(sip->sip_expires->ex_delta == 0);
-
+  else {
+    TEST_E(e->data->e_event, nua_r_unsubscribe);
+    TEST(e->data->e_status, 200);
+    r_tags = e->data->e_tags;
+    TEST_1(tl_find(r_tags, nutag_substate));
+    TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_terminated);
+  }
+  TEST_1(!e->next);
   free_events_in_list(ctx, a->events);
 
   /* Notifier events: nua_r_notify */
@@ -951,7 +799,7 @@ int test_subscribe_notify(struct context *ctx)
   nua_handle_destroy(b_call->nh), b_call->nh = NULL;
 
   if (print_headings)
-    printf("TEST NUA-11.4.4: PASSED\n");
+    printf("TEST NUA-11.4.3: PASSED\n");
 
   if (print_headings)
     printf("TEST NUA-11.4: PASSED\n");
@@ -977,7 +825,7 @@ int test_subscribe_notify_graceful(struct context *ctx)
 
   struct endpoint *a = &ctx->a,  *b = &ctx->b;
   struct call *a_call = a->call, *b_call = b->call;
-  struct event *e, *en1, *en2, *es;
+  struct event *e;
   sip_t const *sip;
   tagi_t const *n_tags, *r_tags;
   struct nat_filter *f;
@@ -998,33 +846,35 @@ int test_subscribe_notify_graceful(struct context *ctx)
   /* Client events:
      nua_subscribe(), nua_i_notify/nua_r_subscribe
   */
-  for (en1 = en2 = es = NULL, e = a->events->head; e; e = e->next) {
-    if (en1 == NULL && e->data->e_event == nua_i_notify)
-      en1 = e;
-    else if (es == NULL && e->data->e_event == nua_r_subscribe)
-      es = e;
-    else
-      TEST_1(!e);
+  TEST_1(e = a->events->head);
+  if (e->data->e_event == nua_i_notify) {
+    TEST_E(e->data->e_event, nua_i_notify);
+    TEST_1(sip = sip_object(e->data->e_msg));
+    n_tags = e->data->e_tags;
+    TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_subscribe);
+    r_tags = e->data->e_tags;
+    TEST_1(tl_find(r_tags, nutag_substate));
+    TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_pending);
   }
-  TEST_1(e = en1); TEST_E(e->data->e_event, nua_i_notify);
-  TEST_1(sip = sip_object(e->data->e_msg));
+  else {
+    TEST_E(e->data->e_event, nua_r_subscribe);
+    TEST(e->data->e_status, 202);
+    r_tags = e->data->e_tags;
+    TEST_1(tl_find(r_tags, nutag_substate));
+    TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_embryonic);
+    TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_notify);
+    TEST_1(sip = sip_object(e->data->e_msg));
+    n_tags = e->data->e_tags;
+  }
   TEST_1(sip->sip_event); TEST_S(sip->sip_event->o_type, "presence");
   TEST_1(sip->sip_content_type);
   TEST_S(sip->sip_content_type->c_type, "application/pidf+xml");
   TEST_1(sip->sip_subscription_state);
   TEST_S(sip->sip_subscription_state->ss_substate, "pending");
   TEST_1(sip->sip_subscription_state->ss_expires);
-  n_tags = e->data->e_tags;
   TEST_1(tl_find(n_tags, nutag_substate));
   TEST(tl_find(n_tags, nutag_substate)->t_value, nua_substate_pending);
-
-  TEST_1(e = es); TEST_E(e->data->e_event, nua_r_subscribe);
-  r_tags = e->data->e_tags;
-  TEST_1(tl_find(r_tags, nutag_substate));
-  if (es == a->events->head)
-    TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_embryonic);
-  else
-    TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_pending);
+  TEST_1(!e->next);
   free_events_in_list(ctx, a->events);
 
   /* Server events: nua_i_subscribe, nua_r_notify */
@@ -1161,6 +1011,7 @@ int save_until_notify_responded_twice(CONDITION_PARAMS)
   return ep->flags.bit0 && ep->flags.bit1;
 }
 
+
 /* ---------------------------------------------------------------------- */
 /* Unsolicited NOTIFY */
 
@@ -1176,8 +1027,6 @@ int test_newsub_notify(struct context *ctx)
   sip_t const *sip;
   sip_call_id_t *i;
   tagi_t const *n_tags, *r_tags;
-
-#if 0
 
   if (print_headings)
     printf("TEST NUA-11.7.1: rejecting NOTIFY without subscription locally\n");
@@ -1312,298 +1161,6 @@ int test_newsub_notify(struct context *ctx)
   nua_handle_destroy(a_call->nh), a_call->nh = NULL;
   nua_handle_destroy(b_call->nh), b_call->nh = NULL;
 
-#else
-  (void)i;
-  nua_set_params(b->nua, NUTAG_APPL_METHOD("NOTIFY"), TAG_END());
-  run_b_until(ctx, nua_r_set_params, until_final_response);
-#endif
-
-  /* ---------------------------------------------------------------------- */
-
-  if (print_headings)
-    printf("TEST NUA-11.7.4: multiple unsolicited NOTIFYs\n");
-
-  TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
-
-  NOTIFY(a, a_call, a_call->nh,
-	 NUTAG_URL(b->contact->m_url),
-	 NUTAG_NEWSUB(1),
-	 SIPTAG_EXPIRES_STR("10"),
-	 SIPTAG_SUBJECT_STR("NUA-11.7.4aa"),
-	 SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"),
-	 SIPTAG_PAYLOAD_STR("Messages-Waiting: no"),
-	 TAG_END());
-
-  NOTIFY(a, a_call, a_call->nh,
-	 NUTAG_URL(b->contact->m_url),
-	 NUTAG_NEWSUB(1),
-	 SIPTAG_SUBSCRIPTION_STATE_STR("active; expires=333"),
-	 SIPTAG_SUBJECT_STR("NUA-11.7.4a"),
-	 SIPTAG_EVENT_STR("message-summary"),
-	 SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"),
-	 SIPTAG_PAYLOAD_STR("Messages-Waiting: no"),
-	 TAG_END());
-
-  NOTIFY(a, a_call, a_call->nh,
-	 NUTAG_URL(b->contact->m_url),
-	 NUTAG_NEWSUB(1),
-	 SIPTAG_SUBSCRIPTION_STATE_STR("active; expires=3000"),
-	 SIPTAG_SUBJECT_STR("NUA-11.7.4b"),
-	 SIPTAG_EVENT_STR("message-summary"),
-	 SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"),
-	 SIPTAG_PAYLOAD_STR("Messages-Waiting: yes"),
-	 TAG_END());
-
-  NOTIFY(a, a_call, a_call->nh,
-	 NUTAG_URL(b->contact->m_url),
-	 NUTAG_NEWSUB(1),
-	 SIPTAG_SUBSCRIPTION_STATE_STR("terminated"),
-	 SIPTAG_SUBJECT_STR("NUA-11.7.4c"),
-	 SIPTAG_EVENT_STR("message-summary"),
-	 SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"),
-	 SIPTAG_PAYLOAD_STR("Messages-Waiting: yes"),
-	 TAG_END());
-
-  a->state.n = 4;
-  b->state.n = 4;
-
-  run_ab_until(ctx, -1, save_until_nth_final_response, 
-	       -1, accept_n_notifys);
-
-  /* Notifier events: nua_r_notify nua_r_notify */
-  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_r_notify);
-  TEST(e->data->e_status, 200);
-  r_tags = e->data->e_tags;
-  TEST_1(tl_find(r_tags, nutag_substate));
-  TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_terminated);
-
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_notify);
-  TEST(e->data->e_status, 200);
-  r_tags = e->data->e_tags;
-  TEST_1(tl_find(r_tags, nutag_substate));
-  TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_active);
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_notify);
-  TEST(e->data->e_status, 200);
-  r_tags = e->data->e_tags;
-  TEST_1(tl_find(r_tags, nutag_substate));
-  TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_active);
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_notify);
-  TEST(e->data->e_status, 200);
-  r_tags = e->data->e_tags;
-  TEST_1(tl_find(r_tags, nutag_substate));
-  TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_terminated);
-  TEST_1(!e->next);
-
-  /* subscriber events:
-     nua_i_notify
-  */
-  TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_notify);
-  TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_subscription_state);
-  TEST_S(sip->sip_subscription_state->ss_substate, "terminated");
-  n_tags = e->data->e_tags;
-  TEST_1(tl_find(n_tags, nutag_substate));
-  TEST(tl_find(n_tags, nutag_substate)->t_value, nua_substate_terminated);
-
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_notify);
-  TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_subscription_state);
-  TEST_S(sip->sip_subscription_state->ss_substate, "active");
-  n_tags = e->data->e_tags;
-  TEST_1(tl_find(n_tags, nutag_substate));
-  TEST(tl_find(n_tags, nutag_substate)->t_value, nua_substate_active);
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_notify);
-  TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_subscription_state);
-  TEST_S(sip->sip_subscription_state->ss_substate, "active");
-  n_tags = e->data->e_tags;
-  TEST_1(tl_find(n_tags, nutag_substate));
-  TEST(tl_find(n_tags, nutag_substate)->t_value, nua_substate_active);
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_notify);
-  TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_subscription_state);
-  TEST_S(sip->sip_subscription_state->ss_substate, "terminated");
-  n_tags = e->data->e_tags;
-  TEST_1(tl_find(n_tags, nutag_substate));
-  TEST(tl_find(n_tags, nutag_substate)->t_value, nua_substate_terminated);
-  TEST_1(!e->next);
-
-  free_events_in_list(ctx, a->events);
-  free_events_in_list(ctx, b->events);
-
-  nua_handle_destroy(a_call->nh), a_call->nh = NULL;
-  nua_handle_destroy(b_call->nh), b_call->nh = NULL;
-
-  if (print_headings)
-    printf("TEST NUA-11.7.4: PASSED\n");
-
-  /* ---------------------------------------------------------------------- */
-
-  if (print_headings)
-    printf("TEST NUA-11.7.5: multiple unsolicited NOTIFYs\n");
-
-  TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
-
-  NOTIFY(a, a_call, a_call->nh,
-	 NUTAG_URL(b->contact->m_url),
-	 NUTAG_NEWSUB(1),
-	 SIPTAG_SUBSCRIPTION_STATE_STR("active; expires=333"),
-	 SIPTAG_SUBJECT_STR("NUA-11.7.5a"),
-	 SIPTAG_EVENT_STR("message-summary"),
-	 SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"),
-	 SIPTAG_PAYLOAD_STR("Messages-Waiting: no"),
-	 TAG_END());
-
-  NOTIFY(a, a_call, a_call->nh,
-	 NUTAG_URL(b->contact->m_url),
-	 NUTAG_NEWSUB(1),
-	 SIPTAG_SUBSCRIPTION_STATE_STR("active; expires=3000"),
-	 SIPTAG_SUBJECT_STR("NUA-11.7.5b"),
-	 SIPTAG_EVENT_STR("message-summary"),
-	 SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"),
-	 SIPTAG_PAYLOAD_STR("Messages-Waiting: yes"),
-	 TAG_END());
-
-  NOTIFY(a, a_call, a_call->nh,
-	 NUTAG_URL(b->contact->m_url),
-	 NUTAG_NEWSUB(1),
-	 SIPTAG_SUBSCRIPTION_STATE_STR("terminated"),
-	 SIPTAG_SUBJECT_STR("NUA-11.7.5c"),
-	 SIPTAG_EVENT_STR("message-summary"),
-	 SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"),
-	 SIPTAG_PAYLOAD_STR("Messages-Waiting: yes"),
-	 TAG_END());
-
-  a->state.n = 3;
-  b->state.n = 3;
-
-  run_ab_until(ctx, -1, save_until_nth_final_response, 
-	       -1, accept_n_notifys);
-
-  /* Notifier events: nua_r_notify nua_r_notify */
-  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_r_notify);
-  TEST(e->data->e_status, 200);
-  r_tags = e->data->e_tags;
-  TEST_1(tl_find(r_tags, nutag_substate));
-  TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_active);
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_notify);
-  TEST(e->data->e_status, 200);
-  r_tags = e->data->e_tags;
-  TEST_1(tl_find(r_tags, nutag_substate));
-  TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_active);
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_notify);
-  TEST(e->data->e_status, 200);
-  r_tags = e->data->e_tags;
-  TEST_1(tl_find(r_tags, nutag_substate));
-  TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_terminated);
-  TEST_1(!e->next);
-
-  /* subscriber events:
-     nua_i_notify
-  */
-  TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_notify);
-  TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_subscription_state);
-  TEST_S(sip->sip_subscription_state->ss_substate, "active");
-  n_tags = e->data->e_tags;
-  TEST_1(tl_find(n_tags, nutag_substate));
-  TEST(tl_find(n_tags, nutag_substate)->t_value, nua_substate_active);
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_notify);
-  TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_subscription_state);
-  TEST_S(sip->sip_subscription_state->ss_substate, "active");
-  n_tags = e->data->e_tags;
-  TEST_1(tl_find(n_tags, nutag_substate));
-  TEST(tl_find(n_tags, nutag_substate)->t_value, nua_substate_active);
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_notify);
-  TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_subscription_state);
-  TEST_S(sip->sip_subscription_state->ss_substate, "terminated");
-  n_tags = e->data->e_tags;
-  TEST_1(tl_find(n_tags, nutag_substate));
-  TEST(tl_find(n_tags, nutag_substate)->t_value, nua_substate_terminated);
-  TEST_1(!e->next);
-
-  free_events_in_list(ctx, a->events);
-  free_events_in_list(ctx, b->events);
-
-  nua_handle_destroy(a_call->nh), a_call->nh = NULL;
-  nua_handle_destroy(b_call->nh), b_call->nh = NULL;
-
-  if (print_headings)
-    printf("TEST NUA-11.7.5: PASSED\n");
-
-  /* ---------------------------------------------------------------------- */
-
-#if 0
-
-  if (print_headings)
-    printf("TEST NUA-11.7.6: unsolicited NOTIFY handle destroyed\n");
-
-  TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
-
-  NOTIFY(a, a_call, a_call->nh,
-	 NUTAG_URL(b->contact->m_url),
-	 NUTAG_NEWSUB(1),
-	 SIPTAG_SUBSCRIPTION_STATE_STR("active; expires=333"),
-	 SIPTAG_SUBJECT_STR("NUA-11.7.6a"),
-	 SIPTAG_EVENT_STR("message-summary"),
-	 SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"),
-	 SIPTAG_PAYLOAD_STR("Messages-Waiting: no"),
-	 TAG_END());
-
-  NOTIFY(a, a_call, a_call->nh,
-	 NUTAG_URL(b->contact->m_url),
-	 NUTAG_NEWSUB(1),
-	 SIPTAG_SUBSCRIPTION_STATE_STR("active; expires=3000"),
-	 SIPTAG_SUBJECT_STR("NUA-11.7.6b"),
-	 SIPTAG_EVENT_STR("message-summary"),
-	 SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"),
-	 SIPTAG_PAYLOAD_STR("Messages-Waiting: yes"),
-	 TAG_END());
-
-  nua_handle_destroy(a_call->nh), a_call->nh = NULL;
-
-  a->state.n = 3;
-  b->state.n = 3;
-
-  run_b_until(ctx, -1, accept_n_notifys);
-
-  /* subscriber events:
-     nua_i_notify
-  */
-  TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_notify);
-  TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_subscription_state);
-  TEST_S(sip->sip_subscription_state->ss_substate, "active");
-  n_tags = e->data->e_tags;
-  TEST_1(tl_find(n_tags, nutag_substate));
-  TEST(tl_find(n_tags, nutag_substate)->t_value, nua_substate_active);
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_notify);
-  TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_subscription_state);
-  TEST_S(sip->sip_subscription_state->ss_substate, "active");
-  n_tags = e->data->e_tags;
-  TEST_1(tl_find(n_tags, nutag_substate));
-  TEST(tl_find(n_tags, nutag_substate)->t_value, nua_substate_active);
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_notify);
-  TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_subscription_state);
-  TEST_S(sip->sip_subscription_state->ss_substate, "terminated");
-  n_tags = e->data->e_tags;
-  TEST_1(tl_find(n_tags, nutag_substate));
-  TEST(tl_find(n_tags, nutag_substate)->t_value, nua_substate_terminated);
-  TEST_1(!e->next);
-
-  free_events_in_list(ctx, b->events);
-
-  if (print_headings)
-    printf("TEST NUA-11.7.6: PASSED\n");
-
-  nua_handle_destroy(b_call->nh), b_call->nh = NULL;
-
-#endif
-
   if (print_headings)
     printf("TEST NUA-11.7: PASSED\n");
 
@@ -1624,50 +1181,6 @@ int accept_notify(CONDITION_PARAMS)
   save_event_in_list(ctx, event, ep, call);
 
   return event == nua_i_notify;
-}
-
-int save_until_nth_final_response(CONDITION_PARAMS)
-{
-  save_event_in_list(ctx, event, ep, call);
-
-  if (nua_r_set_params <= event && event < nua_i_network_changed
-      && status >= 200) {
-    if (ep->state.n > 0) 
-      ep->state.n--;
-    return ep->state.n == 0;
-  }
-
-  return 0;
-}
-
-int accept_n_notifys(CONDITION_PARAMS)
-{
-  tagi_t const *substate = tl_find(tags, nutag_substate);
-
-  if (event == nua_i_notify && status < 200)
-    RESPOND(ep, call, nh, SIP_200_OK, 
-	    NUTAG_WITH_THIS(ep->nua),
-	    TAG_END());
-
-  save_event_in_list(ctx, event, ep, call);
-
-  if (event != nua_i_notify)
-    return 0;
-
-  if (ep->state.n > 0) 
-    ep->state.n--;
-
-  if (ep->state.n == 0) 
-    return 1;
-
-  if (substate && substate->t_value == nua_substate_terminated) {
-    if (call && call->nh == nh) {
-      call->nh = NULL;
-      nua_handle_destroy(nh);
-    }
-  }
-
-  return 0;
 }
 
 /* ======================================================================== */
@@ -1823,8 +1336,8 @@ int accept_subscription_until_terminated(CONDITION_PARAMS)
 
 int test_simple(struct context *ctx)
 {
-  return 0
-    || test_message(ctx)
+  return
+    test_message(ctx)
     || test_publish(ctx)
     || test_subscribe_notify(ctx)
     || test_subscribe_notify_graceful(ctx)
