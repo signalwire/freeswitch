@@ -88,21 +88,18 @@
  */
 
 static nua_client_methods_t const nua_options_client_methods = {
-  SIP_METHOD_OPTIONS,		/* crm_method, crm_method_name */
-  0,				/* crm_extra */
-  {				/* crm_flags */
+  SIP_METHOD_OPTIONS,
+  0,
+  { 
     /* create_dialog */ 0,
     /* in_dialog */ 0,
     /* target refresh */ 0
   },
-  NULL,				/* crm_template */
-  NULL,				/* crm_init */
-  NULL,				/* crm_send */
-  NULL,				/* crm_check_restart */
-  NULL,				/* crm_recv */
-  NULL,				/* crm_preliminary */
-  NULL,				/* crm_report */
-  NULL,				/* crm_complete */
+  /*nua_options_client_template*/ NULL,
+  /*nua_options_client_init*/ NULL,
+  /*nua_options_client_request*/ NULL,
+  /* nua_options_client_check_restart */ NULL,
+  /*nua_options_client_response*/ NULL
 };
 
 int nua_stack_options(nua_t *nua,

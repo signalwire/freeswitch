@@ -373,12 +373,8 @@ void nua_dialog_usage_remove_at(nua_owner_t *own,
     /* Destroy saved client request */
     if (nua_client_is_bound(du->du_cr)) {
       nua_client_bind(cr = du->du_cr, NULL);
-
-      if (nua_client_is_queued(cr))
-	nua_client_request_complete(cr);
-      else if (nua_client_is_reporting(cr))
-	;
-      else
+      if (!nua_client_is_queued(cr) &&
+	  !nua_client_is_reporting(cr))
 	nua_client_request_destroy(cr);
     }
 

@@ -77,22 +77,18 @@ static int nua_message_client_init(nua_client_request_t *cr,
 				   tagi_t const *tags);
 
 static nua_client_methods_t const nua_message_client_methods = {
-  SIP_METHOD_MESSAGE,		/* crm_method, crm_method_name */
-  0,				/* crm_extra */
-  {				/* crm_flags */
+  SIP_METHOD_MESSAGE,
+  0,
+  { 
     /* create_dialog */ 0,
     /* in_dialog */ 0,
     /* target refresh */ 0
   },
-  NULL,				/* crm_template */
-  nua_message_client_init,	/* crm_init */
-  NULL,				/* crm_send */
-  NULL,				/* crm_check_restart */
-  NULL,				/* crm_recv */
-  NULL,				/* crm_preliminary */
-  NULL,				/* crm_report */
-  NULL,				/* crm_complete */
-
+  /* nua_message_client_template */ NULL,
+  nua_message_client_init,
+  /*nua_message_client_request*/ NULL,
+  /* nua_message_client_check_restart */ NULL,
+  /*nua_message_client_response*/ NULL
 };
 
 int 

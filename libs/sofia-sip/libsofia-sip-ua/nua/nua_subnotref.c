@@ -183,21 +183,18 @@ static int nua_subscribe_client_response(nua_client_request_t *cr,
 					 sip_t const *sip);
 
 static nua_client_methods_t const nua_subscribe_client_methods = {
-  SIP_METHOD_SUBSCRIBE,		/* crm_method, crm_method_name */
-  0,				/* crm_extra */
-  {				/* crm_flags */
+  SIP_METHOD_SUBSCRIBE,
+  0,
+  { 
     /* create_dialog */ 1,
     /* in_dialog */ 1,
     /* target refresh */ 1
   },
-  NULL,				/* crm_template */
-  nua_subscribe_client_init,	/* crm_init */
-  nua_subscribe_client_request,	/* crm_send */
-  NULL,				/* crm_check_restart */
-  nua_subscribe_client_response, /* crm_recv */
-  NULL,				/* crm_preliminary */
-  NULL,				/* crm_report */
-  NULL,				/* crm_complete */
+  NULL,
+  nua_subscribe_client_init,
+  nua_subscribe_client_request,
+  /* nua_subscribe_client_check_restart */ NULL,
+  nua_subscribe_client_response
 };
 
 int
@@ -370,9 +367,6 @@ static int nua_subscribe_client_response(nua_client_request_t *cr,
 				  eu->eu_expires, now);
     else
       delta = 0;
-
-    if (delta > eu->eu_expires)
-      delta = eu->eu_expires;
 
     if (win_messenger_enable && !nua_dialog_is_established(nh->nh_ds)) {
       /* Notify from messanger does not match with dialog tag */ 
@@ -653,6 +647,8 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
     if (substate == nua_substate_active || substate == nua_substate_pending) {
       if (subs && subs->ss_expires)
 	delta = strtoul(subs->ss_expires, NULL, 10);
+      else
+	delta = eu->eu_expires;
     }
     else if (substate == nua_substate_embryonic) {
       if (subs && subs->ss_reason) {
@@ -690,8 +686,7 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
     nua_dialog_usage_set_refresh_range(du, retry, retry + 5);
   }
   else {
-    if (delta < SIP_TIME_MAX)
-      nua_dialog_usage_set_refresh(du, delta);
+    nua_dialog_usage_set_refresh(du, delta);
   }
 
   return retval;
@@ -782,21 +777,20 @@ static int nua_refer_client_response(nua_client_request_t *cr,
 				     sip_t const *sip);
 
 static nua_client_methods_t const nua_refer_client_methods = {
-  SIP_METHOD_REFER,		/* crm_method, crm_method_name */
-  0,				/* crm_extra */
-  {				/* crm_flags */
+  SIP_METHOD_REFER,
+  0,
+  { 
     /* create_dialog */ 1,
     /* in_dialog */ 1,
     /* target refresh */ 1
   },
-  NULL,				/* crm_template */
-  nua_refer_client_init,	/* crm_init */
-  nua_refer_client_request,	/* crm_send */
-  NULL,				/* crm_check_restart */
-  nua_refer_client_response,	/* crm_recv */
-  nua_refer_client_response,	/* crm_preliminary */
-  NULL,				/* crm_report */
-  NULL,				/* crm_complete */
+  /*nua_refer_client_template*/ NULL,
+  nua_refer_client_init,
+  nua_refer_client_request,
+  /* nua_refer_client_check_restart */ NULL,
+  nua_refer_client_response,
+  nua_refer_client_response,	/* Preliminary */
+  NULL
 };
 
 int

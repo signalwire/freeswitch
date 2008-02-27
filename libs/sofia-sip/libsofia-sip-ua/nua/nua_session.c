@@ -191,7 +191,7 @@ static int nua_session_usage_shutdown(nua_owner_t *,
 				      nua_dialog_usage_t *);
 
 static int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags);
-static int nua_invite_client_complete(nua_client_request_t *cr);
+static int nua_invite_client_deinit(nua_client_request_t *cr);
 
 static nua_usage_class const nua_session_usage[1] = {
   {
@@ -238,8 +238,7 @@ void nua_session_usage_remove(nua_handle_t *nh,
 
   cr = du->du_cr;
 
-  if (cr && cr->cr_orq && cr->cr_status >= 200 && 
-      cr->cr_method == sip_method_invite) {
+  if (cr && cr->cr_orq && cr->cr_status >= 200) {
     ss->ss_reporting = 1;
     nua_invite_client_ack(cr, NULL);
     ss->ss_reporting = 0;
@@ -251,17 +250,14 @@ void nua_session_usage_remove(nua_handle_t *nh,
 
     if (cr->cr_method != sip_method_invite)
       continue;
-
     if (cr == du->du_cr)
       continue;
 
-    if (cr->cr_status < 200) {
-      nua_stack_event(nh->nh_nua, nh, 
-		      NULL,
-		      cr->cr_event,
-		      SIP_481_NO_TRANSACTION,
-		      NULL);
-    }
+    nua_stack_event(nh->nh_nua, nh, 
+		    NULL,
+		    cr->cr_event,
+		    SIP_481_NO_TRANSACTION,
+		    NULL);
 
     nua_client_request_destroy(cr);
 
@@ -546,21 +542,21 @@ static int nua_invite_client_report(nua_client_request_t *cr,
 				    tagi_t const *tags);
 
 nua_client_methods_t const nua_invite_client_methods = {
-  SIP_METHOD_INVITE,		/* crm_method, crm_method_name */
-  0,				/* crm_extra */
-  {				/* crm_flags */
+  SIP_METHOD_INVITE,
+  0,
+  { 
     /* create_dialog */ 1,
     /* in_dialog */ 1,
     /* target refresh */ 1
   },
-  NULL,				/* crm_template */
-  nua_invite_client_init,	/* crm_init */
-  nua_invite_client_request,	/* crm_send */
-  session_timer_check_restart,	/* crm_check_restart */
-  nua_invite_client_response,	/* crm_recv */
-  nua_invite_client_preliminary, /* crm_preliminary */
-  nua_invite_client_report,	/* crm_report */
-  nua_invite_client_complete,	/* crm_complete */
+  NULL,
+  nua_invite_client_init,
+  nua_invite_client_request,
+  session_timer_check_restart,
+  nua_invite_client_response,
+  nua_invite_client_preliminary,
+  nua_invite_client_report,
+  nua_invite_client_deinit
 };
 
 extern nua_client_methods_t const nua_bye_client_methods;
@@ -608,15 +604,10 @@ static int nua_invite_client_init(nua_client_request_t *cr,
   if (!du)
     return -1;
 
-  ss = nua_dialog_usage_private(du);
-
-  if (ss->ss_state >= nua_callstate_terminating)
-    return nua_client_return(cr, 900, "Session is terminating", msg);
-
   if (nua_client_bind(cr, du) < 0)
     return nua_client_return(cr, 900, "INVITE already in progress", msg);
 
-  cr->cr_neutral = 0;
+  ss = nua_dialog_usage_private(du);
 
   session_timer_preferences(ss->ss_timer,
 			    sip,
@@ -625,6 +616,8 @@ static int nua_invite_client_init(nua_client_request_t *cr,
 			    NUA_PISSET(nh->nh_nua, nh, session_timer),
 			    NH_PGET(nh, refresher),
 			    NH_PGET(nh, min_se));
+
+  cr->cr_neutral = 0;
 
   return 0;
 }
@@ -641,9 +634,6 @@ static int nua_invite_client_request(nua_client_request_t *cr,
 
   if (du == NULL)		/* Call terminated */ 
     return nua_client_return(cr, SIP_481_NO_TRANSACTION, msg);
-
-  if (ss->ss_state >= nua_callstate_terminating)
-    return nua_client_return(cr, 900, "Session is terminating", msg);
 
   assert(ss);
 
@@ -1057,7 +1047,7 @@ int nua_stack_ack(nua_t *nua, nua_handle_t *nh, nua_event_t e,
   if (error < 0) {
     if (ss->ss_reason == NULL)
       ss->ss_reason = "SIP;cause=500;text=\"Internal Error\"";
-    ss->ss_reporting = 1;	/* We report terminated state here if BYE fails */
+    ss->ss_reporting = 1;	/* We report state here if BYE fails */
     error = nua_client_create(nh, nua_r_bye, &nua_bye_client_methods, NULL);
     ss->ss_reporting = 0;
     signal_call_state_change(nh, ss, 500, "Internal Error", 
@@ -1100,7 +1090,6 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
   char const *invite_branch;
 
   assert(cr->cr_orq);
-  assert(cr->cr_method == sip_method_invite);
 
 
   if (!ds->ds_leg) {
@@ -1237,8 +1226,8 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
   return error;
 }
 
-/** Complete client request */
-static int nua_invite_client_complete(nua_client_request_t *cr)
+/** Deinitialize client request */
+static int nua_invite_client_deinit(nua_client_request_t *cr)
 {
   if (cr->cr_orq == NULL)
     /* Xyzzy */;
@@ -1274,21 +1263,18 @@ static int nua_cancel_client_request(nua_client_request_t *cr,
 				     tagi_t const *tags);
 
 nua_client_methods_t const nua_cancel_client_methods = {
-  SIP_METHOD_CANCEL,		/* crm_method, crm_method_name */
-  0,				/* crm_extra */
-  {				/* crm_flags */
+  SIP_METHOD_CANCEL,
+  0,
+  { 
     /* create_dialog */ 0,
     /* in_dialog */ 1,
     /* target refresh */ 0
   },
-  NULL,				/* crm_template */
-  NULL,				/* crm_init */
-  nua_cancel_client_request,	/* crm_send */
-  NULL,				/* crm_check_restart */
-  NULL,				/* crm_recv */
-  NULL,				/* crm_preliminary */
-  NULL,				/* crm_report */
-  NULL,				/* crm_complete */
+  NULL,
+  NULL,
+  nua_cancel_client_request,
+  /* nua_cancel_client_check_restart */ NULL,
+  /* nua_cancel_client_response */ NULL
 };
 
 int nua_stack_cancel(nua_t *nua, nua_handle_t *nh, nua_event_t e,
@@ -1507,21 +1493,20 @@ static int nua_prack_client_report(nua_client_request_t *cr,
 				   tagi_t const *tags);
 
 nua_client_methods_t const nua_prack_client_methods = {
-  SIP_METHOD_PRACK,		/* crm_method, crm_method_name */
-  0,				/* crm_extra */
-  {				/* crm_flags */
+  SIP_METHOD_PRACK,
+  0,
+  { 
     /* create_dialog */ 0,
     /* in_dialog */ 1,
     /* target refresh */ 0
   },
-  NULL,				/* crm_template */
-  nua_prack_client_init,	/* crm_init */
-  nua_prack_client_request,	/* crm_send */
-  NULL,				/* crm_check_restart */
-  nua_prack_client_response,	/* crm_recv */
-  NULL,				/* crm_preliminary */
-  nua_prack_client_report,	/* crm_report */
-  NULL,				/* crm_complete */
+  NULL,
+  nua_prack_client_init,
+  nua_prack_client_request,
+  /* nua_prack_client_check_restart */ NULL,
+  nua_prack_client_response,
+  NULL,
+  nua_prack_client_report
 };
 
 int nua_stack_prack(nua_t *nua, nua_handle_t *nh, nua_event_t e,
@@ -1557,8 +1542,6 @@ static int nua_prack_client_request(nua_client_request_t *cr,
   if (du == NULL)		/* Call terminated */
     return nua_client_return(cr, SIP_481_NO_TRANSACTION, msg);
   assert(ss);
-  if (ss->ss_state >= nua_callstate_terminating)
-    return nua_client_return(cr, 900, "Session is terminating", msg);
 
   cri = du->du_cr;
 
@@ -1837,7 +1820,6 @@ nua_invite_server_init(nua_server_request_t *sr)
 {
   nua_handle_t *nh = sr->sr_owner;
   nua_t *nua = nh->nh_nua;
-  nua_session_usage_t *ss;
 
   sr->sr_neutral = 1;
 
@@ -1854,8 +1836,9 @@ nua_invite_server_init(nua_server_request_t *sr)
     nua_client_request_t const *cr;
 
     for (sr0 = nh->nh_ds->ds_sr; sr0; sr0 = sr0->sr_next) {
-      /* Previous INVITE has not been ACKed */
-      if (sr0->sr_method == sip_method_invite)
+      /* Final response have not been sent to previous INVITE */
+      if (sr0->sr_method == sip_method_invite && 
+	  nua_server_request_is_pending(sr0))
 	break;
       /* Or we have sent offer but have not received an answer */
       if (sr->sr_sdp && sr0->sr_offer_sent && !sr0->sr_answer_recv)
@@ -1874,13 +1857,6 @@ nua_invite_server_init(nua_server_request_t *sr)
       if (cr->cr_usage == sr->sr_usage && cr->cr_orq && cr->cr_offer_sent)
 	/* Glare - RFC 3261 14.2 and RFC 3311 section 5.2 */
 	return SR_STATUS1(sr, SIP_491_REQUEST_PENDING);
-    }
-
-    ss = nua_dialog_usage_private(sr->sr_usage);
-
-    if (ss->ss_state < nua_callstate_ready &&
-	ss->ss_state != nua_callstate_init) {
-      return nua_server_retry_after(sr, 500, "Overlapping Requests 2", 0, 10);
     }
   }
 
@@ -1910,11 +1886,6 @@ nua_session_server_init(nua_server_request_t *sr)
   if (sr->sr_method != sip_method_invite && sr->sr_usage == NULL) {
     /* UPDATE/PRACK sent within an existing dialog? */
     return SR_STATUS(sr, 481, "Call Does Not Exist");
-  }
-  else if (sr->sr_usage) {
-    nua_session_usage_t *ss = nua_dialog_usage_private(sr->sr_usage);
-    if (ss->ss_state >= nua_callstate_terminating)
-      return SR_STATUS(sr, 481, "Call is being terminated");
   }
 
   if (nh->nh_soa) {
@@ -2001,10 +1972,8 @@ int nua_invite_server_preprocess(nua_server_request_t *sr)
 
   session_timer_store(ss->ss_timer, request);
 
-#if 0 /* The glare and overlap tests should take care of this. */
-  assert(ss->ss_state >= nua_callstate_completed ||
-	 ss->ss_state == nua_callstate_init);
-#endif
+  if (!(ss->ss_state >= nua_callstate_ready || ss->ss_state == nua_callstate_init)) 
+    return SR_STATUS1(sr, SIP_500_INTERNAL_SERVER_ERROR);
 
   if (NH_PGET(nh, auto_answer) ||
       /* Auto-answer to re-INVITE unless auto_answer is set to 0 on handle */
@@ -2350,7 +2319,7 @@ int process_ack(nua_server_request_t *sr,
       nua_stack_event(nh->nh_nua, nh, NULL,
 		      nua_i_media_error, status, phrase, NULL);
 
-      ss->ss_reporting = 1;	/* We report terminated state here if BYE fails */
+      ss->ss_reporting = 1;	/* We report state here if BYE fails */
       error = nua_client_create(nh, nua_r_bye, &nua_bye_client_methods, NULL);
       ss->ss_reporting = 0;
 
@@ -2447,7 +2416,7 @@ int process_timeout(nua_server_request_t *sr,
   /* send BYE, too, if 200 OK (or 183 to re-INVITE) timeouts  */
   ss->ss_reason = reason;
 
-  ss->ss_reporting = 1;		/* We report terminated state here if BYE fails */
+  ss->ss_reporting = 1;		/* We report state here if BYE fails */
   error = nua_client_create(nh, nua_r_bye, &nua_bye_client_methods, NULL);
   ss->ss_reporting = 0;
 
@@ -2818,21 +2787,18 @@ static int nua_info_client_request(nua_client_request_t *cr,
 				   tagi_t const *tags);
 
 nua_client_methods_t const nua_info_client_methods = {
-  SIP_METHOD_INFO,		/* crm_method, crm_method_name */
-  0,				/* crm_extra */
-  {				/* crm_flags */
+  SIP_METHOD_INFO,
+  0,
+  { 
     /* create_dialog */ 0,
     /* in_dialog */ 1,
     /* target refresh */ 0
   },
-  NULL,				/* crm_template */
-  nua_info_client_init,		/* crm_init */
-  nua_info_client_request,	/* crm_send */
-  NULL,				/* crm_check_restart */
-  NULL,				/* crm_recv */
-  NULL,				/* crm_preliminary */
-  NULL,				/* crm_report */
-  NULL,				/* crm_complete */
+  /*nua_info_client_template*/ NULL,
+  nua_info_client_init,
+  nua_info_client_request,
+  /*nua_info_client_check_restart*/ NULL,
+  /*nua_info_client_response*/ NULL
 };
 
 int
@@ -2968,21 +2934,20 @@ static int nua_update_client_report(nua_client_request_t *cr,
 				    tagi_t const *tags);
 
 nua_client_methods_t const nua_update_client_methods = {
-  SIP_METHOD_UPDATE,		/* crm_method, crm_method_name */
-  0,				/* crm_extrasize of private data */
-  {				/* crm_flags */
+  SIP_METHOD_UPDATE,
+  0,				/* size of private data */
+  { 
     /* create_dialog */ 0,
     /* in_dialog */ 1,
     /* target refresh */ 1
   },
-  NULL,				/* crm_template */
-  nua_update_client_init,	/* crm_init */
-  nua_update_client_request,	/* crm_send */
-  session_timer_check_restart,	/* crm_check_restart */
-  nua_update_client_response,	/* crm_recv */
-  NULL,				/* crm_preliminary */
-  nua_update_client_report,	/* crm_report */
-  NULL,				/* crm_complete */
+  NULL,
+  nua_update_client_init,
+  nua_update_client_request,
+  session_timer_check_restart,
+  nua_update_client_response,
+  NULL,
+  nua_update_client_report
 };
 
 int nua_stack_update(nua_t *nua, nua_handle_t *nh, nua_event_t e,
@@ -3017,8 +2982,6 @@ static int nua_update_client_request(nua_client_request_t *cr,
   if (du == NULL)		/* Call terminated */
     return nua_client_return(cr, SIP_481_NO_TRANSACTION, msg);
   assert(ss);
-  if (ss->ss_state >= nua_callstate_terminating)
-    return nua_client_return(cr, 900, "Session is terminating", msg);
 
   cri = du->du_cr;
 
@@ -3434,21 +3397,20 @@ static int nua_bye_client_report(nua_client_request_t *cr,
 				 tagi_t const *tags);
 
 nua_client_methods_t const nua_bye_client_methods = {
-  SIP_METHOD_BYE,		/* crm_method, crm_method_name */
-  0,				/* crm_extrasize */
-  {				/* crm_flags */
+  SIP_METHOD_BYE,
+  0,
+  { 
     /* create_dialog */ 0,
     /* in_dialog */ 1,
     /* target refresh */ 0
   },
-  NULL,				/* crm_template */
-  nua_bye_client_init,		/* crm_init */
-  nua_bye_client_request,	/* crm_send */
-  NULL,				/* crm_check_restart */
-  NULL,				/* crm_recv */
-  NULL,				/* crm_preliminary */
-  nua_bye_client_report,	/* crm_report */
-  NULL,				/* crm_complete */
+  NULL,
+  nua_bye_client_init,
+  nua_bye_client_request,
+  /*nua_bye_client_check_restart*/ NULL,
+  /*nua_bye_client_response*/ NULL,
+  /*nua_bye_client_preliminary*/ NULL,
+  nua_bye_client_report
 };
 
 int
@@ -3481,9 +3443,7 @@ static int nua_bye_client_init(nua_client_request_t *cr,
 
   if (nh->nh_soa)
     soa_terminate(nh->nh_soa, 0);
-
-  du->du_cr = NULL;
-  nua_client_bind(cr, du);
+  cr->cr_usage = du;
 
   return 0;
 }
@@ -3555,23 +3515,17 @@ static int nua_bye_client_report(nua_client_request_t *cr,
   else {
     nua_session_usage_t *ss = nua_dialog_usage_private(du);
 
-    if (ss->ss_reporting) {
-      return 1;			/* Somebody else's problem */
-    }
-    else if (cr->cr_waiting) {
-      return 1; /* Application problem */
-    }
-
     signal_call_state_change(nh, ss, status, "to BYE", 
 			     nua_callstate_terminated);
 
-    if (du && 
-	(du->du_cr == NULL ||
-	 !nua_client_is_queued(du->du_cr) ||
-	 du->du_cr->cr_status >= 200)) {
-      /* INVITE is completed, we can zap the session... */;
-      cr->cr_usage = NULL;
-      nua_session_usage_destroy(nh, ss);
+    if (ss && !ss->ss_reporting) {
+      if (du->du_cr == NULL ||
+	  !nua_client_is_queued(du->du_cr) ||
+	  du->du_cr->cr_status >= 200) {
+	/* INVITE is completed, we can zap the session... */;
+	cr->cr_usage = NULL;
+	nua_session_usage_destroy(nh, ss);
+      }
     }
   }
 

@@ -570,21 +570,18 @@ static int nua_register_client_response(nua_client_request_t *cr,
 					sip_t const *sip);
 
 static nua_client_methods_t const nua_register_client_methods = {
-  SIP_METHOD_REGISTER,		/* crm_method, crm_method_name */
-  0,				/* crm_extra */
-  {				/* crm_flags */
+  SIP_METHOD_REGISTER,
+  0,
+  {
     /* create_dialog */ 1,
     /* in_dialog */ 0,
     /* target refresh */ 0
   },
-  nua_register_client_template,	/* crm_template */
-  nua_register_client_init,	/* crm_init */
-  nua_register_client_request,	/* crm_send */
-  nua_register_client_check_restart, /* crm_check_restart */
-  nua_register_client_response,	/* crm_recv */
-  NULL,				/* crm_preliminary */
-  NULL,				/* crm_report */
-  NULL,				/* crm_complete */
+  nua_register_client_template,
+  nua_register_client_init,
+  nua_register_client_request,
+  nua_register_client_check_restart,
+  nua_register_client_response
 };
 
 /**@internal Send REGISTER. */
