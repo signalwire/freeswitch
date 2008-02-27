@@ -93,7 +93,7 @@ static int freeswitch_kill_background()
 	}
 
 	/* pull the pid from the file */
-	if (fscanf(f, "%d", &pid)!=1) {
+	if (fscanf(f, "%d", (int *)&pid)!=1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Unable to get the pid!\n");
 	}
 
