@@ -507,7 +507,6 @@ SOFIAPUBVAR tag_typedef_t nutag_newsub;
 #define NUTAG_NEWSUB_REF(x) nutag_newsub_ref, tag_bool_vr(&(x))
 SOFIAPUBVAR tag_typedef_t nutag_newsub_ref;
 
-
 #define NUTAG_REFER_EXPIRES(x)  nutag_refer_expires, tag_uint_v((x))
 SOFIAPUBVAR tag_typedef_t nutag_refer_expires;
 #define NUTAG_REFER_EXPIRES_REF(x) nutag_refer_expires_ref, tag_uint_vr((&(x)))

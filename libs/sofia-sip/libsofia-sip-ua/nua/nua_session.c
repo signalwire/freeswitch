@@ -1854,9 +1854,8 @@ nua_invite_server_init(nua_server_request_t *sr)
     nua_client_request_t const *cr;
 
     for (sr0 = nh->nh_ds->ds_sr; sr0; sr0 = sr0->sr_next) {
-      /* Final response have not been sent to previous INVITE */
-      if (sr0->sr_method == sip_method_invite && 
-	  nua_server_request_is_pending(sr0))
+      /* Previous INVITE has not been ACKed */
+      if (sr0->sr_method == sip_method_invite)
 	break;
       /* Or we have sent offer but have not received an answer */
       if (sr->sr_sdp && sr0->sr_offer_sent && !sr0->sr_answer_recv)
@@ -1879,10 +1878,8 @@ nua_invite_server_init(nua_server_request_t *sr)
 
     ss = nua_dialog_usage_private(sr->sr_usage);
 
-    if (ss->ss_state < nua_callstate_completed &&
+    if (ss->ss_state < nua_callstate_ready &&
 	ss->ss_state != nua_callstate_init) {
-      /* We should never trigger this, 
-	 but better not to assert() on network input */
       return nua_server_retry_after(sr, 500, "Overlapping Requests 2", 0, 10);
     }
   }
@@ -1917,7 +1914,7 @@ nua_session_server_init(nua_server_request_t *sr)
   else if (sr->sr_usage) {
     nua_session_usage_t *ss = nua_dialog_usage_private(sr->sr_usage);
     if (ss->ss_state >= nua_callstate_terminating)
-      return SR_STATUS1(sr, 481, "Call is being terminated");
+      return SR_STATUS(sr, 481, "Call is being terminated");
   }
 
   if (nh->nh_soa) {
