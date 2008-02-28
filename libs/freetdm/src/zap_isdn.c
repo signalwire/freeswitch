@@ -169,10 +169,13 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 			break;
 		case Q931mes_DISCONNECT:
 			{
-				Q931ie_Cause *cause = Q931GetIEPtr(gen->Cause, gen->buf);
-				zchan->caller_data.hangup_cause = cause->Value;
-				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_TERMINATING);
-
+				if (zchan) {
+					Q931ie_Cause *cause = Q931GetIEPtr(gen->Cause, gen->buf);
+					zchan->caller_data.hangup_cause = cause->Value;
+					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_TERMINATING);
+				} else {
+					zap_log(ZAP_LOG_CRIT, "Received Diconnect with no matching channel %d\n", chan_id);
+				}
 			}
 			break;
 		case Q931mes_ALERTING:
