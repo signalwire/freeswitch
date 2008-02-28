@@ -39,11 +39,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load);
 SWITCH_MODULE_DEFINITION(mod_limit, mod_limit_load, NULL, NULL);
 
 static struct {
-    switch_memory_pool_t *pool;
-    char hostname[256];
-    char *dbname;
-    char *odbc_dsn;
-    switch_mutex_t *mutex;
+	switch_memory_pool_t *pool;
+	char hostname[256];
+	char *dbname;
+	char *odbc_dsn;
+	switch_mutex_t *mutex;
 #ifdef SWITCH_HAVE_ODBC
 	switch_odbc_handle_t *master_odbc;
 #else
@@ -81,7 +81,7 @@ static char group_sql[] =
 static switch_status_t limit_execute_sql(char *sql, switch_mutex_t *mutex)
 {
 	switch_core_db_t *db;
-    switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (mutex) {
 		switch_mutex_lock(mutex);
@@ -95,14 +95,14 @@ static switch_status_t limit_execute_sql(char *sql, switch_mutex_t *mutex)
 			err_str = switch_odbc_handle_get_error(globals.master_odbc, stmt);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
 			switch_safe_free(err_str);
-            status = SWITCH_STATUS_FALSE;
+			status = SWITCH_STATUS_FALSE;
 		}
 		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 	} else {
 #endif
 		if (!(db = switch_core_db_open_file(globals.dbname))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", globals.dbname);
-            status = SWITCH_STATUS_FALSE;
+			status = SWITCH_STATUS_FALSE;
 			goto end;
 		}
 
@@ -133,24 +133,20 @@ static switch_bool_t limit_execute_sql_callback(switch_mutex_t *mutex,
 	char *errmsg = NULL;
 	
 	if (mutex) {
-        switch_mutex_lock(mutex);
-    }
+		switch_mutex_lock(mutex);
+	}
 
 
 #ifdef SWITCH_HAVE_ODBC
-    if (globals.odbc_dsn) {
+	if (globals.odbc_dsn) {
 		switch_odbc_handle_callback_exec(globals.master_odbc, sql, callback, pdata);
 	} else {
 #endif
-
-
-
 		if (!(db = switch_core_db_open_file(globals.dbname))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", globals.dbname);
 			goto end;
 		}
 
-	
 		switch_core_db_exec(db, sql, callback, pdata, &errmsg);
 
 		if (errmsg) {
@@ -161,19 +157,14 @@ static switch_bool_t limit_execute_sql_callback(switch_mutex_t *mutex,
 		if (db) {
 			switch_core_db_close(db);
 		}
-
 #ifdef SWITCH_HAVE_ODBC
-    }
+	}
 #endif
 
-
  end:
-
 	if (mutex) {
-        switch_mutex_unlock(mutex);
-    }
-	
-
+		switch_mutex_unlock(mutex);
+	}
 
 	return ret;
 
@@ -184,11 +175,11 @@ static switch_status_t do_config()
 {
 	char *cf = "limit.conf";
 	switch_xml_t cfg, xml, settings, param;
-    switch_core_db_t *db;
-    switch_status_t status = SWITCH_STATUS_SUCCESS;
-    char *odbc_user = NULL;
-    char *odbc_pass = NULL;
-    char *sql = NULL;
+	switch_core_db_t *db;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	char *odbc_user = NULL;
+	char *odbc_pass = NULL;
+	char *sql = NULL;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
@@ -198,114 +189,114 @@ static switch_status_t do_config()
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = NULL;
-            char *val = NULL;
+			char *val = NULL;
             
-            var = (char *) switch_xml_attr_soft(param, "name");
-            val = (char *) switch_xml_attr_soft(param, "value");
+			var = (char *) switch_xml_attr_soft(param, "name");
+			val = (char *) switch_xml_attr_soft(param, "value");
 
-            if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
+			if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
 #ifdef SWITCH_HAVE_ODBC
-                globals.odbc_dsn = switch_core_strdup(globals.pool, val);
-                if ((odbc_user = strchr(globals.odbc_dsn, ':'))) {
-                    *odbc_user++ = '\0';
-                    if ((odbc_pass = strchr(odbc_user, ':'))) {
-                        *odbc_pass++ = '\0';
-                    }
-                }
+				globals.odbc_dsn = switch_core_strdup(globals.pool, val);
+				if ((odbc_user = strchr(globals.odbc_dsn, ':'))) {
+				*odbc_user++ = '\0';
+					if ((odbc_pass = strchr(odbc_user, ':'))) {
+					*odbc_pass++ = '\0';
+					}
+				}
 #else
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 #endif
 
-            }
-        }
-    }
+			}
+		}
+	}
 
-    if (switch_strlen_zero(globals.odbc_dsn) || switch_strlen_zero(odbc_user) || switch_strlen_zero(odbc_pass)) {
-        globals.dbname = "call_limit";
-    }
+	if (switch_strlen_zero(globals.odbc_dsn) || switch_strlen_zero(odbc_user) || switch_strlen_zero(odbc_pass)) {
+		globals.dbname = "call_limit";
+	}
     
 
 #ifdef SWITCH_HAVE_ODBC
-    if (globals.odbc_dsn) {
-        if (!(globals.master_odbc = switch_odbc_handle_new(globals.odbc_dsn, odbc_user, odbc_pass))) {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-            status = SWITCH_STATUS_FALSE;
-            goto done;
-        }
-        if (switch_odbc_handle_connect(globals.master_odbc) != SWITCH_ODBC_SUCCESS) {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-            status = SWITCH_STATUS_FALSE;
-            goto done;
-        }
+	if (globals.odbc_dsn) {
+		if (!(globals.master_odbc = switch_odbc_handle_new(globals.odbc_dsn, odbc_user, odbc_pass))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
+			status = SWITCH_STATUS_FALSE;
+			goto done;
+		}
+		if (switch_odbc_handle_connect(globals.master_odbc) != SWITCH_ODBC_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
+			status = SWITCH_STATUS_FALSE;
+			goto done;
+		}
         
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", globals.odbc_dsn);
-        if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from limit_data", NULL) != SWITCH_STATUS_SUCCESS) {
-            if (switch_odbc_handle_exec(globals.master_odbc, limit_sql, NULL) != SWITCH_STATUS_SUCCESS) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Create SQL Database!\n");
-            }
-        }
-        if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from db_data", NULL) != SWITCH_STATUS_SUCCESS) {
-            if (switch_odbc_handle_exec(globals.master_odbc, db_sql, NULL) != SWITCH_STATUS_SUCCESS) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Create SQL Database!\n");
-            }
-        }
-        if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from group_data", NULL) != SWITCH_STATUS_SUCCESS) {
-            if (switch_odbc_handle_exec(globals.master_odbc, group_sql, NULL) != SWITCH_STATUS_SUCCESS) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Create SQL Database!\n");
-            }
-        }
-    } else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", globals.odbc_dsn);
+		if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from limit_data", NULL) != SWITCH_STATUS_SUCCESS) {
+			if (switch_odbc_handle_exec(globals.master_odbc, limit_sql, NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Create SQL Database!\n");
+			}
+		}
+		if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from db_data", NULL) != SWITCH_STATUS_SUCCESS) {
+			if (switch_odbc_handle_exec(globals.master_odbc, db_sql, NULL) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Create SQL Database!\n");
+			}
+		}
+		if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from group_data", NULL) != SWITCH_STATUS_SUCCESS) {
+			if (switch_odbc_handle_exec(globals.master_odbc, group_sql, NULL) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Create SQL Database!\n");
+			}
+		}
+	} else {
 #endif
-        if ((db = switch_core_db_open_file(globals.dbname))) {
-            switch_core_db_test_reactive(db, "select * from limit_data", NULL, limit_sql);
-            switch_core_db_test_reactive(db, "select * from db_data", NULL, db_sql);
-            switch_core_db_test_reactive(db, "select * from group_data", NULL, group_sql);
-        } else {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
-            status = SWITCH_STATUS_FALSE;
-            goto done;
-        }
-        switch_core_db_close(db);
+		if ((db = switch_core_db_open_file(globals.dbname))) {
+			switch_core_db_test_reactive(db, "select * from limit_data", NULL, limit_sql);
+			switch_core_db_test_reactive(db, "select * from db_data", NULL, db_sql);
+			switch_core_db_test_reactive(db, "select * from group_data", NULL, group_sql);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
+			status = SWITCH_STATUS_FALSE;
+			goto done;
+		}
+		switch_core_db_close(db);
 #ifdef SWITCH_HAVE_ODBC
-    }           
+	}           
 #endif
 
  done:
 
-    sql = switch_mprintf("delete from limit_data where hostname='%q';", globals.hostname);
-    limit_execute_sql(sql, globals.mutex);
-    switch_safe_free(sql);
+	sql = switch_mprintf("delete from limit_data where hostname='%q';", globals.hostname);
+	limit_execute_sql(sql, globals.mutex);
+	switch_safe_free(sql);
 
-    switch_xml_free(xml);
+	switch_xml_free(xml);
 
-    return status;
+	return status;
 
 }
 
 static switch_status_t hanguphook(switch_core_session_t *session)
 {
-    switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_state_t state = switch_channel_get_state(channel);
-    const char *realm = NULL;
-    const char *id = NULL;
-    char *sql = NULL;
+	const char *realm = NULL;
+	const char *id = NULL;
+	char *sql = NULL;
 
 	if (state == CS_HANGUP || state == CS_RING) {
-        id = switch_channel_get_variable(channel, "limit_id");
-        realm = switch_channel_get_variable(channel, "limit_realm");
-        sql = switch_mprintf("delete from limit_data where uuid='%q' and hostname='%q' and realm='%q'and id='%q';", 
+		id = switch_channel_get_variable(channel, "limit_id");
+		realm = switch_channel_get_variable(channel, "limit_realm");
+		sql = switch_mprintf("delete from limit_data where uuid='%q' and hostname='%q' and realm='%q'and id='%q';", 
                              switch_core_session_get_uuid(session), globals.hostname, realm, id);
-        limit_execute_sql(sql, globals.mutex);
-        switch_safe_free(sql);
-        switch_core_event_hook_remove_state_change(session, hanguphook);
-    }
-    return SWITCH_STATUS_SUCCESS;
+		limit_execute_sql(sql, globals.mutex);
+		switch_safe_free(sql);
+		switch_core_event_hook_remove_state_change(session, hanguphook);
+	}
+	return SWITCH_STATUS_SUCCESS;
 }
 
 struct callback {
-    char *buf;
-    size_t len;
-    int matches;
+	char *buf;
+	size_t len;
+	int matches;
 };
 typedef struct callback callback_t;
 static int sql2str_callback(void *pArg, int argc, char **argv, char **columnNames)
@@ -321,7 +312,7 @@ static int sql2str_callback(void *pArg, int argc, char **argv, char **columnName
 static int group_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	callback_t *cbt = (callback_t *) pArg;
-    switch_snprintf(cbt->buf + strlen(cbt->buf), cbt->len - strlen(cbt->buf), "%s%c", argv[0], *argv[1]);
+	switch_snprintf(cbt->buf + strlen(cbt->buf), cbt->len - strlen(cbt->buf), "%s%c", argv[0], *argv[1]);
 	cbt->matches++;
 	return 0;
 }
@@ -329,69 +320,69 @@ static int group_callback(void *pArg, int argc, char **argv, char **columnNames)
 
 SWITCH_STANDARD_API(db_api_function)
 {
-    int argc = 0;
-    char *argv[4] = { 0 };
-    char *mydata = NULL;
-    char *sql;
+	int argc = 0;
+	char *argv[4] = { 0 };
+	char *mydata = NULL;
+	char *sql;
 
-    switch_mutex_lock(globals.mutex);
+	switch_mutex_lock(globals.mutex);
 
-    if (!switch_strlen_zero(cmd)) {
-        mydata = strdup(cmd);
-        argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0])));
-    }
+	if (!switch_strlen_zero(cmd)) {
+		mydata = strdup(cmd);
+		argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
 
-    if (argc < 1 || !argv[0]) {
-        goto error;
-    }
+	if (argc < 1 || !argv[0]) {
+		goto error;
+	}
 
-    if (!strcasecmp(argv[0], "insert")) {
-        if (argc < 4) {
-            goto error;
-        }
-        sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
-        assert(sql);
-        limit_execute_sql(sql, NULL);
-        switch_safe_free(sql);    
-        sql = switch_mprintf("insert into db_data (hostname, realm, data_key, data) values('%q','%q','%q','%q');", globals.hostname, argv[1], argv[2], argv[3]);
-        assert(sql);
-        limit_execute_sql(sql, NULL);
-        switch_safe_free(sql);
-        stream->write_function(stream, "+OK");
-        goto done;
-    } else if (!strcasecmp(argv[0], "delete")) {
-        if (argc < 2) {
-            goto error;
-        }
-        sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
-        assert(sql);
-        limit_execute_sql(sql, NULL);
-        switch_safe_free(sql);    
-        stream->write_function(stream, "+OK");
-        goto done;
-    } else if (!strcasecmp(argv[0], "select")) {
-        char buf[256] = "";
-        callback_t cbt = { 0 };
-        if (argc < 3) {
-            goto error;
-        }
-        cbt.buf = buf;
-        cbt.len = sizeof(buf);
-        sql = switch_mprintf("select data from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
-        limit_execute_sql_callback(NULL, sql, sql2str_callback, &cbt);
-        stream->write_function(stream, "%s", buf);
-        goto done;
-    } 
+	if (!strcasecmp(argv[0], "insert")) {
+		if (argc < 4) {
+			goto error;
+		}
+		sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
+		assert(sql);
+		limit_execute_sql(sql, NULL);
+		switch_safe_free(sql);    
+		sql = switch_mprintf("insert into db_data (hostname, realm, data_key, data) values('%q','%q','%q','%q');", globals.hostname, argv[1], argv[2], argv[3]);
+		assert(sql);
+		limit_execute_sql(sql, NULL);
+		switch_safe_free(sql);
+		stream->write_function(stream, "+OK");
+		goto done;
+	} else if (!strcasecmp(argv[0], "delete")) {
+		if (argc < 2) {
+			goto error;
+		}
+		sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
+		assert(sql);
+		limit_execute_sql(sql, NULL);
+		switch_safe_free(sql);    
+		stream->write_function(stream, "+OK");
+		goto done;
+	} else if (!strcasecmp(argv[0], "select")) {
+		char buf[256] = "";
+		callback_t cbt = { 0 };
+		if (argc < 3) {
+			goto error;
+		}
+		cbt.buf = buf;
+		cbt.len = sizeof(buf);
+		sql = switch_mprintf("select data from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
+		limit_execute_sql_callback(NULL, sql, sql2str_callback, &cbt);
+		stream->write_function(stream, "%s", buf);
+		goto done;
+	} 
 
 
  error:
-    stream->write_function(stream, "!err!");
+	stream->write_function(stream, "!err!");
     
  done:
 
-    switch_mutex_unlock(globals.mutex);
-    switch_safe_free(mydata);
-    return SWITCH_STATUS_SUCCESS;
+	switch_mutex_unlock(globals.mutex);
+	switch_safe_free(mydata);
+	return SWITCH_STATUS_SUCCESS;
     
 }
 
@@ -401,119 +392,119 @@ SWITCH_STANDARD_API(db_api_function)
 
 SWITCH_STANDARD_APP(db_function)
 {
-    int argc = 0;
-    char *argv[4] = { 0 };
-    char *mydata = NULL;
-    char *sql = NULL;
+	int argc = 0;
+	char *argv[4] = { 0 };
+	char *mydata = NULL;
+	char *sql = NULL;
 
 	if (!switch_strlen_zero(data)) {
-        mydata = switch_core_session_strdup(session, data);
-        argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0])));
-    }
+		mydata = switch_core_session_strdup(session, data);
+		argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
 
-    if (argc < 4 || !argv[0]) {
-        goto error;
-    }
+	if (argc < 4 || !argv[0]) {
+		goto error;
+	}
 
 	if (!strcasecmp(argv[0], "insert")) {
-        sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
-        switch_assert(sql);
-        limit_execute_sql(sql, globals.mutex);
-        switch_safe_free(sql);
+		sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
+		switch_assert(sql);
+		limit_execute_sql(sql, globals.mutex);
+		switch_safe_free(sql);
         
-        sql = switch_mprintf("insert into db_data (hostname, realm, data_key, data) values('%q','%q','%q','%q');", globals.hostname, argv[1], argv[2], argv[3]);
-    } else if (!strcasecmp(argv[0], "delete")) {
-        sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
-    }
+		sql = switch_mprintf("insert into db_data (hostname, realm, data_key, data) values('%q','%q','%q','%q');", globals.hostname, argv[1], argv[2], argv[3]);
+	} else if (!strcasecmp(argv[0], "delete")) {
+		sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
+	}
 
-    switch_assert(sql);
-    limit_execute_sql(sql, globals.mutex);
-    switch_safe_free(sql);
-    return;
+	switch_assert(sql);
+	limit_execute_sql(sql, globals.mutex);
+	switch_safe_free(sql);
+	return;
 
 error:
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: db %s\n", DB_USAGE);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: db %s\n", DB_USAGE);
 }
 
 
 
 SWITCH_STANDARD_API(group_api_function)
 {
-    int argc = 0;
-    char *argv[4] = { 0 };
-    char *mydata = NULL;
-    char *sql;
+	int argc = 0;
+	char *argv[4] = { 0 };
+	char *mydata = NULL;
+	char *sql;
 
-    switch_mutex_lock(globals.mutex);
+	switch_mutex_lock(globals.mutex);
 
-    if (!switch_strlen_zero(cmd)) {
-        mydata = strdup(cmd);
-        argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])));
-    }
+	if (!switch_strlen_zero(cmd)) {
+		mydata = strdup(cmd);
+		argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
 
-    if (argc < 2 || !argv[0]) {
-        goto error;
-    }
+	if (argc < 2 || !argv[0]) {
+		goto error;
+	}
 
-    if (!strcasecmp(argv[0], "insert")) {
-        if (argc < 3) {
-            goto error;
-        }
-        sql = switch_mprintf("delete from group_data where groupname='%q' and url='%q';", argv[1], argv[2]);
-        assert(sql);
+	if (!strcasecmp(argv[0], "insert")) {
+		if (argc < 3) {
+			goto error;
+		}
+		sql = switch_mprintf("delete from group_data where groupname='%q' and url='%q';", argv[1], argv[2]);
+		assert(sql);
 
-        limit_execute_sql(sql, NULL);
-        switch_safe_free(sql);
-        sql = switch_mprintf("insert into group_data (hostname, groupname, url) values('%q','%q','%q');", globals.hostname, argv[1], argv[2]);
-        assert(sql);
-        limit_execute_sql(sql, NULL);
-        switch_safe_free(sql);
-        stream->write_function(stream, "+OK");
-        goto done;
-    } else if (!strcasecmp(argv[0], "delete")) {
-        if (argc < 3) {
-            goto error;
-        }
-        if (!strcmp(argv[2], "*")) {
-            sql = switch_mprintf("delete from group_data where groupname='%q';", argv[1]);
-        } else {
-            sql = switch_mprintf("delete from group_data where groupname='%q' and url='%q';", argv[1], argv[2]);
-        }
-        assert(sql);
-        limit_execute_sql(sql, NULL);
-        switch_safe_free(sql);
-        stream->write_function(stream, "+OK");
-        goto done;
-    } else if (!strcasecmp(argv[0], "call")) {
-        char buf[4096] = "";
-        char *how = ",";
-        callback_t cbt = { 0 };
-        cbt.buf = buf;
-        cbt.len = sizeof(buf);
+		limit_execute_sql(sql, NULL);
+		switch_safe_free(sql);
+		sql = switch_mprintf("insert into group_data (hostname, groupname, url) values('%q','%q','%q');", globals.hostname, argv[1], argv[2]);
+		assert(sql);
+		limit_execute_sql(sql, NULL);
+		switch_safe_free(sql);
+		stream->write_function(stream, "+OK");
+		goto done;
+	} else if (!strcasecmp(argv[0], "delete")) {
+		if (argc < 3) {
+			goto error;
+		}
+		if (!strcmp(argv[2], "*")) {
+			sql = switch_mprintf("delete from group_data where groupname='%q';", argv[1]);
+		} else {
+			sql = switch_mprintf("delete from group_data where groupname='%q' and url='%q';", argv[1], argv[2]);
+		}
+		assert(sql);
+		limit_execute_sql(sql, NULL);
+		switch_safe_free(sql);
+		stream->write_function(stream, "+OK");
+		goto done;
+	} else if (!strcasecmp(argv[0], "call")) {
+		char buf[4096] = "";
+		char *how = ",";
+		callback_t cbt = { 0 };
+		cbt.buf = buf;
+		cbt.len = sizeof(buf);
         
-        if (argc > 2) {
-            if (!strcasecmp(argv[2], "order")) {
-                how = "|";
-            }
-        }
+		if (argc > 2) {
+			if (!strcasecmp(argv[2], "order")) {
+				how = "|";
+			}
+		}
 
-        sql = switch_mprintf("select url,'%q' from group_data where groupname='%q'", how, argv[1]);
-        assert(sql);
+		sql = switch_mprintf("select url,'%q' from group_data where groupname='%q'", how, argv[1]);
+		assert(sql);
 
-        limit_execute_sql_callback(NULL, sql, group_callback, &cbt);
-        *(buf + (strlen(buf) - 1)) = '\0';
-        stream->write_function(stream, "%s", buf);
-        goto done;
-    }
+		limit_execute_sql_callback(NULL, sql, group_callback, &cbt);
+		*(buf + (strlen(buf) - 1)) = '\0';
+		stream->write_function(stream, "%s", buf);
+		goto done;
+	}
 
  error:
-    stream->write_function(stream, "!err!");
+	stream->write_function(stream, "!err!");
     
  done:
 
-    switch_mutex_unlock(globals.mutex);
-    switch_safe_free(mydata);
-    return SWITCH_STATUS_SUCCESS;
+	switch_mutex_unlock(globals.mutex);
+	switch_safe_free(mydata);
+	return SWITCH_STATUS_SUCCESS;
     
 }
 
@@ -522,32 +513,32 @@ SWITCH_STANDARD_API(group_api_function)
 
 SWITCH_STANDARD_APP(group_function)
 {
-    int argc = 0;
-    char *argv[3] = { 0 };
-    char *mydata = NULL;
-    char *sql;
+	int argc = 0;
+	char *argv[3] = { 0 };
+	char *mydata = NULL;
+	char *sql;
 
 	if (!switch_strlen_zero(data)) {
-        mydata = switch_core_session_strdup(session, data);
-        argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])));
-    }
+		mydata = switch_core_session_strdup(session, data);
+		argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
 
-    if (argc < 3 || !argv[0]) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: group %s\n", DB_USAGE);
-        return;
-    }
+	if (argc < 3 || !argv[0]) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: group %s\n", DB_USAGE);
+		return;
+	}
 
-    if (!strcasecmp(argv[0], "insert")) {
-        sql = switch_mprintf("insert into group_data (hostname, groupname, url) values('%q','%q','%q');", globals.hostname, argv[1], argv[2]);
-        assert(sql);
-        limit_execute_sql(sql, globals.mutex);
-        switch_safe_free(sql);
-    } else if (!strcasecmp(argv[0], "delete")) {
-        sql = switch_mprintf("delete from group_data where groupname='%q' and url='%q';", argv[1], argv[2]);
-        assert(sql);
-        limit_execute_sql(sql, globals.mutex);
-        switch_safe_free(sql);
-    }
+	if (!strcasecmp(argv[0], "insert")) {
+		sql = switch_mprintf("insert into group_data (hostname, groupname, url) values('%q','%q','%q');", globals.hostname, argv[1], argv[2]);
+		assert(sql);
+		limit_execute_sql(sql, globals.mutex);
+		switch_safe_free(sql);
+	} else if (!strcasecmp(argv[0], "delete")) {
+		sql = switch_mprintf("delete from group_data where groupname='%q' and url='%q';", argv[1], argv[2]);
+		assert(sql);
+		limit_execute_sql(sql, globals.mutex);
+		switch_safe_free(sql);
+	}
 
 }
 
@@ -557,87 +548,87 @@ static char *limit_def_xfer_exten="limit_exceeded";
 
 SWITCH_STANDARD_APP(limit_function)
 {
-    int argc = 0;
-    char *argv[6] = { 0 };
-    char *mydata = NULL;
-    char *sql = NULL;
-    char *realm = NULL;
-    char *id = NULL;
-    char *xfer_exten = NULL;
-    int max = 0, got = 0;
-    char buf[80] = "";
-    callback_t cbt = { 0 };
-    switch_channel_t *channel = switch_core_session_get_channel(session);
+	int argc = 0;
+	char *argv[6] = { 0 };
+	char *mydata = NULL;
+	char *sql = NULL;
+	char *realm = NULL;
+	char *id = NULL;
+	char *xfer_exten = NULL;
+	int max = 0, got = 0;
+	char buf[80] = "";
+	callback_t cbt = { 0 };
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-    if (!switch_strlen_zero(data)) {
-        mydata = switch_core_session_strdup(session, data);
-        argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-    }
+	if (!switch_strlen_zero(data)) {
+		mydata = switch_core_session_strdup(session, data);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
 
-    if (argc < 3) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: limit %s\n", LIMIT_USAGE);
-        return;
-    }
+	if (argc < 3) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: limit %s\n", LIMIT_USAGE);
+		return;
+	}
 
 	switch_mutex_lock(globals.mutex);
 
 	realm = argv[0];
-    id = argv[1];
-    max = atoi(argv[2]);
+	id = argv[1];
+	max = atoi(argv[2]);
 
-    if (argc == 4) {
-        xfer_exten = argv[3];
-    } else {
-        xfer_exten = limit_def_xfer_exten;
-    }
+	if (argc == 4) {
+		xfer_exten = argv[3];
+	} else {
+		xfer_exten = limit_def_xfer_exten;
+	}
 
-    if (max < 0) {
-        max = 0;
-    }
+	if (max < 0) {
+		max = 0;
+	}
     
-    switch_channel_set_variable(channel, "limit_realm", realm);
-    switch_channel_set_variable(channel, "limit_id", id);
-    switch_channel_set_variable(channel, "limit_max", argv[2]);
+	switch_channel_set_variable(channel, "limit_realm", realm);
+	switch_channel_set_variable(channel, "limit_id", id);
+	switch_channel_set_variable(channel, "limit_max", argv[2]);
 
-    cbt.buf = buf;
-    cbt.len = sizeof(buf);
-    sql = switch_mprintf("select count(hostname) from limit_data where realm='%q' and id like '%q'", realm, id);
-    limit_execute_sql_callback(NULL, sql, sql2str_callback, &cbt);
-    got = atoi(buf);
+	cbt.buf = buf;
+	cbt.len = sizeof(buf);
+	sql = switch_mprintf("select count(hostname) from limit_data where realm='%q' and id like '%q'", realm, id);
+	limit_execute_sql_callback(NULL, sql, sql2str_callback, &cbt);
+	got = atoi(buf);
 
-    if (got + 1 > max) {
-        switch_ivr_session_transfer(session, xfer_exten, NULL, NULL);
-        goto done;
-    }
+	if (got + 1 > max) {
+		switch_ivr_session_transfer(session, xfer_exten, NULL, NULL);
+		goto done;
+	}
 
-    switch_core_event_hook_add_state_change(session, hanguphook);
-    sql = switch_mprintf("insert into limit_data (hostname, realm, id, uuid) values('%q','%q','%q','%q');", globals.hostname, realm, id, switch_core_session_get_uuid(session));
-    limit_execute_sql(sql, NULL);
-    switch_safe_free(sql);
+	switch_core_event_hook_add_state_change(session, hanguphook);
+	sql = switch_mprintf("insert into limit_data (hostname, realm, id, uuid) values('%q','%q','%q','%q');", globals.hostname, realm, id, switch_core_session_get_uuid(session));
+	limit_execute_sql(sql, NULL);
+	switch_safe_free(sql);
 
 done:
-    switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(globals.mutex);
 }
 
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 {
-    switch_status_t status;
+	switch_status_t status;
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *commands_api_interface;
 
-    memset(&globals, 0, sizeof(&globals));
-    gethostname(globals.hostname, sizeof(globals.hostname));
-    globals.pool = pool;
+	memset(&globals, 0, sizeof(&globals));
+	gethostname(globals.hostname, sizeof(globals.hostname));
+	globals.pool = pool;
 
-    if ((status = do_config() != SWITCH_STATUS_SUCCESS)) {
-        return status;
-    }
+	if ((status = do_config() != SWITCH_STATUS_SUCCESS)) {
+		return status;
+	}
 
-    switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
+	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
     
-    /* connect my internal structure to the blank pointer passed to me */
-    *module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	/* connect my internal structure to the blank pointer passed to me */
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_APP(app_interface, "limit", "Limit", LIMIT_DESC, limit_function, LIMIT_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "db", "Insert to the db", DB_DESC, db_function, DB_USAGE, SAF_SUPPORT_NOMEDIA);
@@ -646,8 +637,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 	SWITCH_ADD_API(commands_api_interface, "db", "db get/set", db_api_function, "[get|set]/<realm>/<key>/<value>");
 	SWITCH_ADD_API(commands_api_interface, "group", "group [insert|delete|call]", group_api_function, "[insert|delete|call]:<group name>:<url>");
 
-    /* indicate that the module should continue to be loaded */
-    return SWITCH_STATUS_SUCCESS;
+	/* indicate that the module should continue to be loaded */
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
