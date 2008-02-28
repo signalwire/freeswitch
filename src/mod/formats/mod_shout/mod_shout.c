@@ -74,6 +74,8 @@ static size_t decode_fd(shout_context_t * context, void *data, size_t bytes);
 
 static inline void free_context(shout_context_t * context)
 {
+	int ret;
+
 	if (context) {
 		context->err++;
 
@@ -87,7 +89,10 @@ static inline void free_context(shout_context_t * context)
 			int len;
 
 			while ((len = lame_encode_flush(context->gfp, mp3buffer, sizeof(mp3buffer))) > 0) {
-				fwrite(mp3buffer, 1, len, context->fp);
+				ret = fwrite(mp3buffer, 1, len, context->fp);
+				if (ret < 0) {
+					break;
+				}
 			}
 
 			lame_mp3_tags_fid(context->gfp, context->fp);
@@ -857,7 +862,8 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
         }
 
 		if (rlen) {
-			if (fwrite(mp3buf, 1, rlen, context->fp) < 0) {
+			int ret = fwrite(mp3buf, 1, rlen, context->fp);
+			if (ret < 0) {
 				return SWITCH_STATUS_FALSE;
 			}
 		}
