@@ -44,6 +44,19 @@ sun)
     COMP_VENDOR_CFLAGS="-std=c99 -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes"
     ;;
 esac
+#  Enable debugging
+AC_ARG_ENABLE(debug,
+[AC_HELP_STRING([--enable-debug],[build with debug information])],[enable_debug="$enable_debug"],[enable_debug="yes"])
+
+if test "${enable_debug}" = "yes"; then
+        AC_DEFINE([DEBUG],[],[Enable extra debugging.])
+
+	if test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
+	   COMP_VENDOR_CFLAGS="$COMP_VENDOR_CFLAGS -g -ggdb"
+	fi
+fi
+
+
 
 COMP_VENDOR_CFLAGS="$COMP_VENDOR_CFLAGS"
 AC_SUBST(COMP_VENDOR_CFLAGS)
