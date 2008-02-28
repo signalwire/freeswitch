@@ -583,7 +583,8 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 
 		lame_set_num_channels(context->gfp, handle->channels);
 		lame_set_in_samplerate(context->gfp, handle->samplerate);
-		lame_set_brate(context->gfp, 24);
+		lame_set_brate(context->gfp, 64);
+		lame_set_out_samplerate(context->gfp, handle->samplerate);
         if (handle->channels == 2) {
             lame_set_mode(context->gfp, STEREO);
         } else {
