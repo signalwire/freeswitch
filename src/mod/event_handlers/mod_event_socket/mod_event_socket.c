@@ -223,17 +223,17 @@ SWITCH_STANDARD_APP(socket_function)
 		return;
 	}
 
-	switch_channel_set_variable(channel, "socket_host", host);
-
 	if ((port_name = strchr(host, ':'))) {
 		*port_name++ = '\0';
 		port = (switch_port_t) atoi(port_name);
 	}
 
-	if ((path = strchr(port_name, '/'))) {
+	if ((path = strchr((port_name ? port_name : host), '/'))) {
 		*path++ = '\0';
 		switch_channel_set_variable(channel, "socket_path", path);
 	}
+
+	switch_channel_set_variable(channel, "socket_host", host);
 
 	if (switch_sockaddr_info_get(&sa, host, AF_INET, port, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error!\n");
