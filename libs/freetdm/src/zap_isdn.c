@@ -332,6 +332,8 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			if (zchan->last_state > ZAP_CHANNEL_STATE_HANGUP) { 
 				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
+			} else {
+				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
 			}
 		}
 		break;
