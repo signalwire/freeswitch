@@ -44,7 +44,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#ifdef SS7BC_USE_SCTP
+#ifdef HAVE_NETINET_SCTP_H
 #include <netinet/sctp.h>
 #endif
 #include <arpa/inet.h>
@@ -77,13 +77,13 @@
 typedef  t_sigboost ss7bc_event_t;
 typedef uint32_t ss7bc_event_id_t;
 
-typedef struct smg_ip_cfg
+typedef struct ss7bc_ip_cfg
 {
 	char local_ip[25];
 	int local_port;
 	char remote_ip[25];
 	int remote_port;
-}smg_ip_cfg_t;
+}ss7bc_ip_cfg_t;
 
 struct ss7bc_connection {
 	zap_socket_t socket;
@@ -99,7 +99,7 @@ struct ss7bc_connection {
 	unsigned int rxseq;
 	unsigned int txwindow;
 	unsigned int rxseq_reset;
-	smg_ip_cfg_t cfg;
+	ss7bc_ip_cfg_t cfg;
 };
 
 typedef enum {
@@ -111,7 +111,7 @@ typedef struct ss7bc_connection ss7bc_connection_t;
 /* disable nagle's algorythm */
 static inline void sctp_no_nagle(int socket)
 {
-#ifdef SS7BC_USE_SCTP
+#ifdef HAVE_NETINET_SCTP_H
     int flag = 1;
     setsockopt(socket, IPPROTO_SCTP, SCTP_NODELAY, (char *) &flag, sizeof(int));
 #endif
@@ -123,8 +123,9 @@ ss7bc_event_t *ss7bc_connection_read(ss7bc_connection_t *mcon, int iteration);
 ss7bc_event_t *ss7bc_connection_readp(ss7bc_connection_t *mcon, int iteration);
 int ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event);
 void ss7bc_event_init(ss7bc_event_t *event, ss7bc_event_id_t event_id, int chan, int span);
-void ss7bc_call_init(ss7bc_event_t *event, char *calling, char *called, int setup_id);
-char *ss7bc_event_id_name(uint32_t event_id);
+void ss7bc_call_init(ss7bc_event_t *event, const char *calling, const char *called, int setup_id);
+const char *ss7bc_event_id_name(uint32_t event_id);
+int ss7bc_exec_command(ss7bc_connection_t *mcon, int span, int chan, int id, int cmd, int cause);
 
 #endif
 

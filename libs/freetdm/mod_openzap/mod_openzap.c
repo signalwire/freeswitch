@@ -33,6 +33,7 @@
 #include "openzap.h"
 #include "zap_analog.h"
 #include "zap_isdn.h"
+#include "zap_ss7_boost.h"
 
 #ifndef __FUNCTION__
 #define __FUNCTION__ __SWITCH_FUNC__
@@ -807,7 +808,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	char name[128];
 	zap_status_t status;
 	int direction = ZAP_TOP_DOWN;
-	
+	zap_caller_data_t caller_data = {{ 0 }};
+
 	if (!outbound_profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing caller profile\n");
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -846,10 +848,14 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		chan_id = 0;
 	}
 
+	zap_set_string(caller_data.ani, dest);
+	zap_set_string(caller_data.cid_name, outbound_profile->caller_id_name);
+	zap_set_string(caller_data.cid_num, outbound_profile->caller_id_number);
+	
 	if (chan_id) {
 		status = zap_channel_open(span_id, chan_id, &zchan);
 	} else {
-		status = zap_channel_open_any(span_id, direction, &zchan);
+		status = zap_channel_open_any(span_id, direction, &caller_data, &zchan);
 	}
 	
 	if (status != ZAP_SUCCESS) {
@@ -875,9 +881,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		snprintf(name, sizeof(name), "OPENZAP/%s", dest);
 		switch_channel_set_name(channel, name);
-		zap_set_string(zchan->caller_data.ani, dest);
-		zap_set_string(zchan->caller_data.cid_name, outbound_profile->caller_id_name);
-		zap_set_string(zchan->caller_data.cid_num, outbound_profile->caller_id_number);
+		zchan->caller_data = caller_data;
 		caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 		switch_channel_set_caller_profile(channel, caller_profile);
 		tech_pvt->caller_profile = caller_profile;
@@ -1535,6 +1539,7 @@ static switch_status_t load_config(void)
 				
 			if (!id) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param 'id'\n");
+				continue;
 			}
 
 			span_id = atoi(id);
@@ -1560,6 +1565,70 @@ static switch_status_t load_config(void)
 			zap_isdn_start(span);
 		}
 	}
+
+	if ((spans = switch_xml_child(cfg, "boost_spans"))) {
+		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
+			char *id = (char *) switch_xml_attr_soft(myspan, "id");
+			char *context = "default";
+			char *dialplan = "XML";
+			uint32_t span_id = 0;
+			zap_span_t *span = NULL;
+			char *tonegroup = NULL;
+			char *local_ip = NULL;
+			int local_port = 0;
+			char *remote_ip = NULL;
+			int remote_port = 0;
+
+			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				char *val = (char *) switch_xml_attr_soft(param, "value");
+
+				if (!strcasecmp(var, "tonegroup")) {
+					tonegroup = val;
+				} else if (!strcasecmp(var, "local-ip")) {
+					local_ip = val;
+				} else if (!strcasecmp(var, "local-port")) {
+					local_port = atoi(val);
+				} else if (!strcasecmp(var, "remote-ip")) {
+					remote_ip = val;
+				} else if (!strcasecmp(var, "remote-port")) {
+					remote_port = atoi(val);
+				} else if (!strcasecmp(var, "context")) {
+					context = val;
+				} else if (!strcasecmp(var, "dialplan")) {
+					dialplan = val;
+				} 
+			}
+				
+			if (!(id && local_ip && local_port && remote_ip && remote_port) ) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param\n");
+				continue;
+			}
+
+			span_id = atoi(id);
+			
+			if (!tonegroup) {
+				tonegroup = "us";
+			}
+			
+			if (zap_span_find(span_id, &span) != ZAP_SUCCESS) {
+				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span %d\n", span_id);
+				continue;
+			}
+
+			if (zap_ss7_boost_configure_span(span, local_ip, local_port, remote_ip, remote_port, on_isdn_signal) != ZAP_SUCCESS) {
+				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d error: %s\n", span_id, span->last_error);
+				continue;
+			}
+
+			SPAN_CONFIG[span->span_id].span = span;
+			switch_copy_string(SPAN_CONFIG[span->span_id].context, context, sizeof(SPAN_CONFIG[span->span_id].context));
+			switch_copy_string(SPAN_CONFIG[span->span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span->span_id].dialplan));
+
+			zap_ss7_boost_start(span);
+		}
+	}
+
 
 
 	switch_xml_free(xml);

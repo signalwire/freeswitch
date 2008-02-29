@@ -33,21 +33,19 @@
 
 #ifndef ZAP_SS7_BOOST_H
 #define ZAP_SS7_BOOST_H
+#include "ss7_boost_client.h"
 #include "openzap.h"
 
 typedef enum {
 	ZAP_SS7_BOOST_RUNNING = (1 << 0)
-} zap_isdn_flag_t;
+} zap_ss7_boost_flag_t;
 
-struct zap_ss7_boost_data {
-	const char *local_ip;
-	int local_port;
-	const char *remote_ip;
-	int remote_port;
+typedef struct zap_ss7_boost_data {
+	ss7bc_connection_t mcon;
+	ss7bc_connection_t pcon;
 	zio_signal_cb_t signal_cb;
 	uint32_t flags;
-};
-typedef struct zap_ss7_boost_data zap_ss7_boost_data_t;
+} zap_ss7_boost_data_t;
 
 zap_status_t zap_ss7_boost_start(zap_span_t *span);
 zap_status_t zap_ss7_boost_init(void);

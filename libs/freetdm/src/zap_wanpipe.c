@@ -358,13 +358,14 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 		sockfd = tdmv_api_open_span_chan(spanno, x);
 		
 		if (sockfd != WP_INVALID_SOCKET && zap_span_add_channel(span, sockfd, type, &chan) == ZAP_SUCCESS) {
+			wanpipe_tdm_api_t tdm_api;
 			zap_log(ZAP_LOG_INFO, "configuring device s%dc%d as OpenZAP device %d:%d fd:%d\n", spanno, x, chan->span_id, chan->chan_id, sockfd);
 			chan->physical_span_id = spanno;
 			chan->physical_chan_id = x;
 			chan->rate = 8000;
 
 			if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO) {
-				wanpipe_tdm_api_t tdm_api;
+				
 
 #if 1
 				if (type == ZAP_CHAN_TYPE_FXO) {
@@ -390,8 +391,9 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
 				wp_tdm_cmd_exec(chan, &tdm_api);
 
+			}
 
-
+			if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO || type == ZAP_CHAN_TYPE_B) {
 				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_GET_HW_CODING;
 				wp_tdm_cmd_exec(chan, &tdm_api);
 				if (tdm_api.wp_tdm_cmd.hw_tdm_coding) {
@@ -400,6 +402,7 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 					chan->native_codec = chan->effective_codec = ZAP_CODEC_ULAW;
 				}
 			}
+			
 			if (!zap_strlen_zero(name)) {
 				zap_copy_string(chan->chan_name, name, sizeof(chan->chan_name));
 			}
