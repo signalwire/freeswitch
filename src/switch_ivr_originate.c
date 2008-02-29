@@ -591,6 +591,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		if ((var_count = switch_separate_string(vars, ',', var_array, (sizeof(var_array) / sizeof(var_array[0]))))) {
 			int x = 0;
 			for (x = 0; x < var_count; x++) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"variable string %d = [%s]\n", x, var_array[x]);				
 				char *inner_var_array[2] = { 0 };
 				int inner_var_count;
 				if ((inner_var_count =
