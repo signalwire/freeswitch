@@ -43,7 +43,7 @@ extern int gethostbyname_r (__const char *__restrict __name,
 
 struct ss7bc_map {
 	uint32_t event_id;
-	char *name;
+	const char *name;
 };
 
 static struct ss7bc_map ss7bc_table[] = {
@@ -72,7 +72,7 @@ static int create_conn_socket(ss7bc_connection_t *mcon, char *local_ip, int loca
 
 	memset(&mcon->remote_hp, 0, sizeof(mcon->remote_hp));
 	memset(&mcon->local_hp, 0, sizeof(mcon->local_hp));
-#ifdef SS7BC_USE_SCTP
+#ifdef HAVE_NETINET_SCTP_H
 	mcon->socket = socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP);
 #else
 	mcon->socket = socket(AF_INET, SOCK_DGRAM, 0);
@@ -96,7 +96,7 @@ static int create_conn_socket(ss7bc_connection_t *mcon, char *local_ip, int loca
 			memcpy((char *) &mcon->local_addr.sin_addr.s_addr, mcon->local_hp.h_addr_list[0], mcon->local_hp.h_length);
 			mcon->local_addr.sin_port = htons(local_port);
 
-#ifdef SS7BC_USE_SCTP
+#ifdef HAVE_NETINET_SCTP_H
 			setsockopt(mcon->socket, IPPROTO_SCTP, SCTP_NODELAY, 
 					   (char *)&flag, sizeof(int));
 #endif
@@ -107,7 +107,7 @@ static int create_conn_socket(ss7bc_connection_t *mcon, char *local_ip, int loca
 				close(mcon->socket);
 				mcon->socket = -1;
 			} else {
-#ifdef SS7BC_USE_SCTP
+#ifdef HAVE_NETINET_SCTP_H
 				rc=listen(mcon->socket,100);
 				if (rc) {
 					close(mcon->socket);
@@ -123,9 +123,11 @@ static int create_conn_socket(ss7bc_connection_t *mcon, char *local_ip, int loca
 
 int ss7bc_connection_close(ss7bc_connection_t *mcon)
 {
-	close(mcon->socket);
-	mcon->socket = -1;
+	if (mcon->socket > -1) {
+		close(mcon->socket);
+	}
 	memset(mcon, 0, sizeof(*mcon));
+	mcon->socket = -1;
 
 	return 0;
 }
@@ -135,6 +137,41 @@ int ss7bc_connection_open(ss7bc_connection_t *mcon, char *local_ip, int local_po
 	create_conn_socket(mcon, local_ip, local_port, ip, port);
 	return mcon->socket;
 }
+
+
+int ss7bc_exec_command(ss7bc_connection_t *mcon, int span, int chan, int id, int cmd, int cause)
+{
+    ss7bc_event_t oevent;
+    int retry = 5;
+
+    ss7bc_event_init(&oevent, cmd, chan, span);
+    oevent.release_cause = cause;
+
+    if (id >= 0) {
+        oevent.call_setup_id = id;
+    }
+ isup_exec_cmd_retry:
+    if (ss7bc_connection_write(mcon, &oevent) <= 0){
+
+        --retry;
+        if (retry <= 0) {
+            zap_log(ZAP_LOG_WARNING,
+					   "Critical System Error: Failed to tx on ISUP socket: %s\n",
+					   strerror(errno));
+            return -1;
+        } else {
+            zap_log(ZAP_LOG_WARNING,
+					   "System Warning: Failed to tx on ISUP socket: %s :retry %i\n",
+					   strerror(errno),retry);
+        }
+
+        goto isup_exec_cmd_retry;
+    }
+
+    return 0;
+}
+
+
 
 ss7bc_event_t *ss7bc_connection_read(ss7bc_connection_t *mcon, int iteration)
 {
@@ -360,7 +397,7 @@ int ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event)
 	return err;
 }
 
-void ss7bc_call_init(ss7bc_event_t *event, char *calling, char *called, int setup_id)
+void ss7bc_call_init(ss7bc_event_t *event, const char *calling, const char *called, int setup_id)
 {
 	memset(event, 0, sizeof(ss7bc_event_t));
 	event->event_id = SIGBOOST_EVENT_CALL_START;
@@ -387,10 +424,10 @@ void ss7bc_event_init(ss7bc_event_t *event, ss7bc_event_id_t event_id, int chan,
 	event->span = span;
 }
 
-char *ss7bc_event_id_name(uint32_t event_id)
+const char *ss7bc_event_id_name(uint32_t event_id)
 {
 	unsigned int x;
-	char *ret = NULL;
+	const char *ret = NULL;
 
 	for (x = 0 ; x < sizeof(ss7bc_table)/sizeof(struct ss7bc_map); x++) {
 		if (ss7bc_table[x].event_id == event_id) {

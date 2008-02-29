@@ -37,6 +37,7 @@
 #endif
 #include "openzap.h"
 #include "zap_isdn.h"
+#include "zap_ss7_boost.h"
 #include <stdarg.h>
 #ifdef WIN32
 #include <io.h>
@@ -342,7 +343,7 @@ zap_status_t zap_span_close_all(void)
 		span = &globals.spans[i];
 		if (zap_test_flag(span, ZAP_SPAN_CONFIGURED)) {
 			for(j = 0; j < span->chan_count; j++) {
-				zap_channel_destroy(&span->channels[i]);
+				zap_channel_destroy(&span->channels[j]);
 			}
 		} 
 	}
@@ -679,7 +680,7 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 	return ok ? ZAP_SUCCESS : ZAP_FAIL;
 }
 
-zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, zap_channel_t **zchan)
+zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, const zap_caller_data_t *caller_data, zap_channel_t **zchan)
 {
 	zap_status_t status = ZAP_FAIL;
 	zap_channel_t *check;
@@ -690,7 +691,7 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, z
 	zap_mutex_lock(globals.mutex);
 
 	if (span_id && globals.spans[span_id].channel_request) {
-		status = globals.spans[span_id].channel_request(&globals.spans[span_id], direction, zchan);
+		status = globals.spans[span_id].channel_request(&globals.spans[span_id], direction, caller_data, zchan);
 		goto done;
 	}
 
@@ -1949,6 +1950,7 @@ zap_status_t zap_global_init(void)
 
 	time_init();
 	zap_isdn_init();
+	zap_ss7_boost_init();
 	
 	memset(&interfaces, 0, sizeof(interfaces));
 	globals.interface_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);

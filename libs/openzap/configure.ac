@@ -44,6 +44,9 @@ sun)
     COMP_VENDOR_CFLAGS="-std=c99 -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes"
     ;;
 esac
+
+AC_CHECK_HEADERS([netinet/sctp.h])
+
 #  Enable debugging
 AC_ARG_ENABLE(debug,
 [AC_HELP_STRING([--enable-debug],[build with debug information])],[enable_debug="$enable_debug"],[enable_debug="yes"])

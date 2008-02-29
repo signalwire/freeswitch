@@ -29,7 +29,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-CFLAGS=@COMP_VENDOR_CFLAGS@
+CFLAGS=@COMP_VENDOR_CFLAGS@ @DEFS@
 SRC=src
 SOURCES=\
 $(SRC)/hashtable.c \
@@ -68,6 +68,7 @@ $(SRC)/isdn/5ESSStateTE.c \
 $(SRC)/isdn/Q932mes.c \
 $(SRC)/zap_zt.c \
 $(SRC)/zap_wanpipe.c \
+$(SRC)/ss7_boost_client.c \
 $(SRC)/zap_ss7_boost.c
 
 OBJS=\
@@ -107,6 +108,7 @@ $(SRC)/isdn/5ESSStateTE.o \
 $(SRC)/isdn/Q932mes.o \
 $(SRC)/zap_zt.o \
 $(SRC)/zap_wanpipe.o \
+$(SRC)/ss7_boost_client.o \
 $(SRC)/zap_ss7_boost.o
 
 HEADERS= $(SRC)/include/fsk.h \
