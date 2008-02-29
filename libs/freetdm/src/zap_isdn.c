@@ -238,8 +238,12 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 				} 
 
 				if (fail) {
-					zap_log(ZAP_LOG_CRIT, "FIX ME! %s\n", zap_channel_state2str(zchan->state));
-					// add me 
+					if (zchan) {
+						zap_log(ZAP_LOG_CRIT, "FIX ME! %s\n", zap_channel_state2str(zchan->state));
+						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
+					} else {
+						zap_log(ZAP_LOG_CRIT, "Failed to open channel for new setup message\n");
+					}
 				}
 				
 			}
