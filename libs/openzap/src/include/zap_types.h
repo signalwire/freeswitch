@@ -261,7 +261,8 @@ typedef enum {
 typedef enum {
 	ZAP_SPAN_CONFIGURED = (1 << 0),
 	ZAP_SPAN_READY = (1 << 1),
-	ZAP_SPAN_STATE_CHANGE = (1 << 2)
+	ZAP_SPAN_STATE_CHANGE = (1 << 2),
+	ZAP_SPAN_SUSPENDED = (1 << 3)
 } zap_span_flag_t;
 
 typedef enum {
@@ -329,7 +330,10 @@ typedef enum {
 	ZAP_CHANNEL_CALLERID_DETECT = (1 << 17),
 	ZAP_CHANNEL_OUTBOUND = (1 << 18),
 	ZAP_CHANNEL_SUSPENDED = (1 << 19),
-	ZAP_CHANNEL_3WAY = (1 << 20)
+	ZAP_CHANNEL_3WAY = (1 << 20),
+	ZAP_CHANNEL_PROGRESS = (1 << 21),
+	ZAP_CHANNEL_MEDIA = (1 << 22),
+	ZAP_CHANNEL_ANSWERED = (1 << 23)
 } zap_channel_flag_t;
 
 typedef struct zap_channel zap_channel_t;
@@ -488,6 +492,7 @@ typedef enum {
 	ZAP_CAUSE_USER_CHALLENGE = 603,
 	ZAP_CAUSE_MEDIA_TIMEOUT = 604
 } zap_call_cause_t;
+
 
 #endif
 

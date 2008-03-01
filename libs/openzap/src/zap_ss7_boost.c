@@ -53,7 +53,7 @@ typedef struct {
 
 static ss7_boost_request_id_t current_request = 0;
 
-static ss7_boost_request_t OUTBOUND_REQUESTS[ZAP_MAX_CHANNELS_SPAN] = {{ 0 }};
+static ss7_boost_request_t OUTBOUND_REQUESTS[MAX_PENDING_CALLS] = {{ 0 }};
 
 static zap_mutex_t *request_mutex = NULL;
 static zap_mutex_t *signal_mutex = NULL;
@@ -63,7 +63,7 @@ static ss7_boost_request_id_t next_request_id(void)
 	 ss7_boost_request_id_t r;
 
 	zap_mutex_lock(request_mutex);
-	if (current_request == ZAP_MAX_CHANNELS_SPAN) {
+	if (current_request == MAX_PENDING_CALLS) {
 		current_request = 0;
 	}
 	r = current_request++;
@@ -90,31 +90,51 @@ static zap_channel_t *find_zchan(zap_span_t *span, ss7bc_event_t *event)
 static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 {
 	zap_ss7_boost_data_t *ss7_boost_data = span->signal_data;
-	zap_status_t status = ZAP_SUCCESS;
-	ss7_boost_request_id_t r = next_request_id();
+	zap_status_t status = ZAP_FAIL;
+	ss7_boost_request_id_t r;
 	ss7bc_event_t event = {0};
 	int sanity = 60000;
 
-	ss7bc_call_init(&event, caller_data->cid_num, caller_data->ani, r);
+	if (zap_test_flag(span, ZAP_SPAN_SUSPENDED)) {
+		zap_log(ZAP_LOG_CRIT, "SPAN is not online.\n");
+		*zchan = NULL;
+		return ZAP_FAIL;
+	}
+
+	if (span->active_count >= span->chan_count) {
+		zap_log(ZAP_LOG_CRIT, "All circuits are busy.\n");
+		*zchan = NULL;
+		return ZAP_FAIL;
+	}
+
+	r = next_request_id();
+
+	ss7bc_call_init(&event, caller_data->cid_num.digits, caller_data->ani.digits, r);
+	zap_set_string(event.redirection_string, caller_data->rdnis.digits);
+	
+
 	OUTBOUND_REQUESTS[r].status = BST_WAITING;
 	OUTBOUND_REQUESTS[r].span = span;
 
 	if (ss7bc_connection_write(&ss7_boost_data->mcon, &event) <= 0) {
 		zap_log(ZAP_LOG_CRIT, "Failed to tx on ISUP socket [%s]\n", strerror(errno));
 		status = ZAP_FAIL;
+		*zchan = NULL;
 		goto done;
 	}
 
-	while(OUTBOUND_REQUESTS[r].status == BST_WAITING) {
+	while(zap_running() && OUTBOUND_REQUESTS[r].status == BST_WAITING) {
 		zap_sleep(1);
 		if (!--sanity) {
 			status = ZAP_FAIL;
+			*zchan = NULL;
 			goto done;
 		}
 	}
 
 	if (OUTBOUND_REQUESTS[r].status == BST_READY) {
 		*zchan = OUTBOUND_REQUESTS[r].zchan;
+		status = ZAP_SUCCESS;
 	}
 
  done:
@@ -141,7 +161,7 @@ static void handle_call_start_ack(ss7bc_connection_t *mcon, ss7bc_event_t *event
 		if (zap_channel_open_chan(zchan) != ZAP_SUCCESS) {
 			zap_log(ZAP_LOG_ERROR, "OPEN ERROR [%s]\n", zchan->last_error);
 		} else {
-			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DIALING);
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
 			OUTBOUND_REQUESTS[event->call_setup_id].zchan = zchan;
 			return;
 		}
@@ -152,7 +172,7 @@ static void handle_call_start_ack(ss7bc_connection_t *mcon, ss7bc_event_t *event
 					   event->chan,
 					   event->call_setup_id,
 					   SIGBOOST_EVENT_CALL_STOPPED,
-					   0);
+					   ZAP_CAUSE_DESTINATION_OUT_OF_ORDER);
 	OUTBOUND_REQUESTS[event->call_setup_id].status = BST_FAIL;
 	
 }
@@ -175,14 +195,23 @@ static void handle_call_stop(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_e
 	zap_channel_t *zchan;
 	
 	if ((zchan = find_zchan(span, event))) {
+		zchan->caller_data.hangup_cause = event->release_cause;
 		zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_TERMINATING);
+
+		ss7bc_exec_command(mcon,
+						   event->span,
+						   event->chan,
+						   0,
+						   SIGBOOST_EVENT_CALL_STOPPED_ACK,
+						   0);
+
 	} else {
 		ss7bc_exec_command(mcon,
 						   event->span,
 						   event->chan,
 						   0,
 						   SIGBOOST_EVENT_CALL_STOPPED,
-						   0);
+						   ZAP_CAUSE_DESTINATION_OUT_OF_ORDER);
 	}
 }
 
@@ -198,7 +227,7 @@ static void handle_call_answer(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc
 						   event->chan,
 						   0,
 						   SIGBOOST_EVENT_CALL_STOPPED,
-						   0);
+						   ZAP_CAUSE_DESTINATION_OUT_OF_ORDER);
 	}
 }
 
@@ -206,45 +235,91 @@ static void handle_call_start(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_
 {
 	zap_channel_t *zchan;
 
-	if ((zchan = find_zchan(span, event))) {
-		ss7bc_exec_command(mcon,
-						   event->span,
-						   event->chan,
-						   0,
-						   SIGBOOST_EVENT_CALL_START_ACK,
-						   0);
-
-		zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RING);
-	} else {
-		ss7bc_exec_command(mcon,
-						   event->span,
-						   event->chan,
-						   0,
-						   SIGBOOST_EVENT_CALL_START_NACK,
-						   0);
+	if (!(zchan = find_zchan(span, event))) {
+		goto error;
 	}
+
+	if (zap_channel_open_chan(zchan) != ZAP_SUCCESS) {
+		goto error;
+	}
+
+	ss7bc_exec_command(mcon,
+					   event->span,
+					   event->chan,
+					   0,
+					   SIGBOOST_EVENT_CALL_START_ACK,
+					   0);
+
+	zap_set_string(zchan->caller_data.cid_num.digits, (char *)event->calling_number_digits);
+	zap_set_string(zchan->caller_data.cid_name, (char *)event->calling_number_digits);
+	zap_set_string(zchan->caller_data.ani.digits, (char *)event->calling_number_digits);
+	zap_set_string(zchan->caller_data.dnis.digits, (char *)event->called_number_digits);
+	zap_set_string(zchan->caller_data.rdnis.digits, (char *)event->redirection_string);
+	zchan->caller_data.screen = event->calling_number_screening_ind;
+	zchan->caller_data.pres = event->calling_number_presentation;
+	zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RING);
+	return;
+
+ error:
+
+	ss7bc_exec_command(mcon,
+					   event->span,
+					   event->chan,
+					   0,
+					   SIGBOOST_EVENT_CALL_START_NACK,
+					   0);
+		
 }
 
 
 static void handle_heartbeat(ss7bc_connection_t *mcon, ss7bc_event_t *event)
 {
-	int err = ss7bc_connection_write(mcon, event);
+	int err;
 
+	
+	err = ss7bc_connection_write(mcon, event);
+	
 	if (err <= 0) {
 		zap_log(ZAP_LOG_CRIT, "Failed to tx on ISUP socket [%s]: %s\n", strerror(errno));
 	}
+	
+	mcon->hb_elapsed = 0;
 
     return;
 }
 
-static void handle_restart_ack(ss7bc_connection_t *mcon, ss7bc_event_t *event)
+static void handle_restart_ack(ss7bc_connection_t *mcon, zap_span_t *span, ss7bc_event_t *event)
 {
     mcon->rxseq_reset = 0;
+	mcon->up = 1;
+	zap_set_state_all(span, ZAP_CHANNEL_STATE_RESTART);
+	zap_clear_flag_locked(span, ZAP_SPAN_SUSPENDED);
+	mcon->hb_elapsed = 0;
 }
 
 static int parse_ss7_event(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_event_t *event)
 {
 	zap_mutex_lock(signal_mutex);
+
+	if (zap_test_flag(span, ZAP_SPAN_SUSPENDED) && 
+		event->event_id != SIGBOOST_EVENT_SYSTEM_RESTART_ACK && event->event_id != SIGBOOST_EVENT_HEARTBEAT) {
+
+		zap_log(ZAP_LOG_WARNING,
+				"INVALID EVENT: %s:(%X) [w%dg%d] Rc=%i CSid=%i Seq=%i Cd=[%s] Ci=[%s]\n",
+				ss7bc_event_id_name(event->event_id),
+				event->event_id,
+				event->span+1,
+				event->chan+1,
+				event->release_cause,
+				event->call_setup_id,
+				event->fseqno,
+				(event->called_number_digits_count ? (char *) event->called_number_digits : "N/A"),
+				(event->calling_number_digits_count ? (char *) event->calling_number_digits : "N/A")
+				);
+		
+		goto end;
+	}
+
 
 	zap_log(ZAP_LOG_DEBUG,
 			"RX EVENT: %s:(%X) [w%dg%d] Rc=%i CSid=%i Seq=%i Cd=[%s] Ci=[%s]\n",
@@ -260,6 +335,7 @@ static int parse_ss7_event(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_eve
 			   );
 
 
+	
     switch(event->event_id) {
 
     case SIGBOOST_EVENT_CALL_START:
@@ -293,7 +369,7 @@ static int parse_ss7_event(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_eve
 		//handle_call_stop(event);
 		break;
     case SIGBOOST_EVENT_SYSTEM_RESTART_ACK:
-		handle_restart_ack(mcon,event);
+		handle_restart_ack(mcon, span, event);
 		break;
     case SIGBOOST_EVENT_AUTO_CALL_GAP_ABATE:
 		//handle_gap_abate(event);
@@ -302,6 +378,8 @@ static int parse_ss7_event(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_eve
 		zap_log(ZAP_LOG_WARNING, "No handler implemented for [%s]\n", ss7bc_event_id_name(event->event_id));
 		break;
     }
+
+ end:
 
 	zap_mutex_unlock(signal_mutex);
 
@@ -316,9 +394,8 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	zap_sigmsg_t sig;
 	zap_status_t status;
 
-	zap_log(ZAP_LOG_ERROR, "%d:%d STATE [%s]\n", 
-			zchan->span_id, zchan->chan_id, zap_channel_state2str(zchan->state));
-
+	zap_log(ZAP_LOG_DEBUG, "%d:%d STATE [%s]\n", zchan->span_id, zchan->chan_id, zap_channel_state2str(zchan->state));
+	
 	memset(&sig, 0, sizeof(sig));
 	sig.chan_id = zchan->chan_id;
 	sig.span_id = zchan->span_id;
@@ -330,15 +407,16 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			zap_channel_done(zchan);
 		}
 		break;
+	case ZAP_CHANNEL_STATE_PROGRESS_MEDIA:
 	case ZAP_CHANNEL_STATE_PROGRESS:
 		{
 			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
-				sig.event_id = ZAP_SIGEVENT_PROGRESS;
+				sig.event_id = ZAP_SIGEVENT_PROGRESS_MEDIA;
 				if ((status = ss7_boost_data->signal_cb(&sig) != ZAP_SUCCESS)) {
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
 			} else {
-				//send progress
+				
 			}
 		}
 		break;
@@ -357,18 +435,8 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			if (zchan->last_state > ZAP_CHANNEL_STATE_HANGUP) {
 				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
-			}
-		}
-		break;
-	case ZAP_CHANNEL_STATE_PROGRESS_MEDIA:
-		{
-			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
-				sig.event_id = ZAP_SIGEVENT_PROGRESS_MEDIA;
-				if ((status = ss7_boost_data->signal_cb(&sig) != ZAP_SUCCESS)) {
-					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
-				}
 			} else {
-				// send alerting
+				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
 			}
 		}
 		break;
@@ -380,7 +448,12 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
 			} else {
-				// send connect
+				ss7bc_exec_command(mcon,
+								   zchan->physical_span_id-1,
+								   zchan->physical_chan_id-1,								   
+								   0,
+								   SIGBOOST_EVENT_CALL_ANSWERED,
+								   0);
 			}
 		}
 		break;
@@ -395,7 +468,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 							   zchan->physical_chan_id-1,
 							   0,
 							   SIGBOOST_EVENT_CALL_STOPPED,
-							   0);
+							   zchan->caller_data.hangup_cause);
 			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
 			
 		}
@@ -410,6 +483,10 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	}
 }
 
+static __inline__ void init_outgoing_array(void)
+{
+	memset(&OUTBOUND_REQUESTS, 0, sizeof(OUTBOUND_REQUESTS));
+}
 
 static __inline__ void check_state(zap_span_t *span)
 {
@@ -429,13 +506,13 @@ static __inline__ void check_state(zap_span_t *span)
 	}
 }
 
-
 static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 {
     zap_span_t *span = (zap_span_t *) obj;
     zap_ss7_boost_data_t *ss7_boost_data = span->signal_data;
 	ss7bc_connection_t *mcon, *pcon;
-
+	uint32_t ms = 10, too_long = 60000;
+		
 
 	ss7_boost_data->pcon = ss7_boost_data->mcon;
 
@@ -460,7 +537,9 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 	mcon = &ss7_boost_data->mcon;
 	pcon = &ss7_boost_data->pcon;
 
-	mcon->rxseq_reset = 1;
+ top:
+
+	init_outgoing_array();		
 
 	ss7bc_exec_command(mcon,
 					   0,
@@ -471,7 +550,7 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 	
 	while (zap_running() && zap_test_flag(ss7_boost_data, ZAP_SS7_BOOST_RUNNING)) {
 		fd_set rfds, efds;
-		struct timeval tv = { 0, 100000 };
+		struct timeval tv = { 0, ms * 1000 };
 		int max, activity, i = 0;
 		ss7bc_event_t *event = NULL;
 
@@ -488,28 +567,34 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 			goto error;
 		}
 		
-		if (!activity) {
-			continue;
-		}
-
-		if (FD_ISSET(pcon->socket, &efds) || FD_ISSET(mcon->socket, &efds)) {
-			goto error;
-		}
-
-		if (FD_ISSET(pcon->socket, &rfds)) {
-			if ((event = ss7bc_connection_readp(pcon, i))) {
-				parse_ss7_event(span, pcon, event);
+		if (activity) {
+			if (FD_ISSET(pcon->socket, &efds) || FD_ISSET(mcon->socket, &efds)) {
+				goto error;
 			}
-		}
 
-		if (FD_ISSET(mcon->socket, &rfds)) {
-			if ((event = ss7bc_connection_read(mcon, i))) {
-				parse_ss7_event(span, mcon, event);
+			if (FD_ISSET(pcon->socket, &rfds)) {
+				if ((event = ss7bc_connection_readp(pcon, i))) {
+					parse_ss7_event(span, pcon, event);
+				} else goto top;
+			}
+
+			if (FD_ISSET(mcon->socket, &rfds)) {
+				if ((event = ss7bc_connection_read(mcon, i))) {
+					parse_ss7_event(span, mcon, event);
+				} else goto top;
 			}
 		}
 		
 		check_state(span);
+		mcon->hb_elapsed += ms;
 		
+		if (mcon->hb_elapsed >= too_long && (mcon->up || !zap_test_flag(span, ZAP_SPAN_SUSPENDED))) {
+			zap_set_state_all(span, ZAP_CHANNEL_STATE_RESTART);
+			zap_set_flag_locked(span, ZAP_SPAN_SUSPENDED);
+			mcon->up = 0;
+			zap_log(ZAP_LOG_CRIT, "Lost Heartbeat!\n");
+		}
+
 	}
 
 	goto end;
@@ -568,7 +653,8 @@ zap_status_t zap_ss7_boost_configure_span(zap_span_t *span,
     span->signal_type = ZAP_SIGTYPE_SS7BOOST;
     span->outgoing_call = ss7_boost_outgoing_call;
 	span->channel_request = ss7_boost_channel_request;
-	
+	zap_set_flag_locked(span, ZAP_SPAN_SUSPENDED);
+
 	return ZAP_SUCCESS;
 }
 

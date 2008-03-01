@@ -669,6 +669,23 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 	}
 	
 	if (ok) {
+		if (state == ZAP_CHANNEL_STATE_PROGRESS) {
+			zap_set_flag(zchan, ZAP_CHANNEL_PROGRESS);
+		} else if (state == ZAP_CHANNEL_STATE_UP) {
+			zap_set_flag(zchan, ZAP_CHANNEL_PROGRESS);
+			zap_set_flag(zchan, ZAP_CHANNEL_MEDIA);	
+			zap_set_flag(zchan, ZAP_CHANNEL_ANSWERED);	
+		} else if (state == ZAP_CHANNEL_STATE_PROGRESS_MEDIA) {
+			zap_set_flag(zchan, ZAP_CHANNEL_PROGRESS);	
+			zap_set_flag(zchan, ZAP_CHANNEL_MEDIA);	
+		}
+
+		if (zchan->state == ZAP_CHANNEL_STATE_DOWN) {
+			zchan->span->active_count++;
+		} else if (state == ZAP_CHANNEL_STATE_DOWN) {
+			zchan->span->active_count--;
+		}
+
 		zap_set_flag(zchan, ZAP_CHANNEL_STATE_CHANGE);	
 		zap_set_flag(zchan->span, ZAP_SPAN_STATE_CHANGE);
 		zchan->last_state = zchan->state; 
@@ -689,6 +706,12 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, c
 	uint32_t span_max;
 
 	zap_mutex_lock(globals.mutex);
+
+	if (globals.spans[span_id].active_count >= globals.spans[span_id].chan_count) {
+		zap_log(ZAP_LOG_CRIT, "All circuits are busy.\n");
+		*zchan = NULL;
+		goto done;
+	}
 
 	if (span_id && globals.spans[span_id].channel_request) {
 		status = globals.spans[span_id].channel_request(&globals.spans[span_id], direction, caller_data, zchan);
@@ -1587,14 +1610,14 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 							if (mlen > sizeof(zchan->caller_data.ani)) {
 								mlen = sizeof(zchan->caller_data.ani);
 							}
-							zap_set_string(zchan->caller_data.ani, str);
-							zap_set_string(zchan->caller_data.cid_num, zchan->caller_data.ani);
+							zap_set_string(zchan->caller_data.ani.digits, str);
+							zap_set_string(zchan->caller_data.cid_num.digits, zchan->caller_data.ani.digits);
 						}
 						break;
 					case MDMF_NO_NUM:
 						{
-							zap_set_string(zchan->caller_data.ani, *str == 'P' ? "private" : "unknown");
-							zap_set_string(zchan->caller_data.cid_name, zchan->caller_data.ani);
+							zap_set_string(zchan->caller_data.ani.digits, *str == 'P' ? "private" : "unknown");
+							zap_set_string(zchan->caller_data.cid_name, zchan->caller_data.ani.digits);
 						}
 						break;
 					case MDMF_PHONE_NAME:
