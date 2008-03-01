@@ -138,15 +138,15 @@ static void send_caller_id(zap_channel_t *zchan)
 	zap_fsk_data_init(&fsk_data, databuf, sizeof(databuf));
 	zap_fsk_data_add_mdmf(&fsk_data, MDMF_DATETIME, (uint8_t *) time_str, 8);
 					
-	if (zap_strlen_zero(zchan->caller_data.cid_num)) {
+	if (zap_strlen_zero(zchan->caller_data.cid_num.digits)) {
 		mt = MDMF_NO_NUM;
-		zap_set_string(zchan->caller_data.cid_num, "O");
-	} else if (!strcasecmp(zchan->caller_data.cid_num, "P") || !strcasecmp(zchan->caller_data.cid_num, "O")) {
+		zap_set_string(zchan->caller_data.cid_num.digits, "O");
+	} else if (!strcasecmp(zchan->caller_data.cid_num.digits, "P") || !strcasecmp(zchan->caller_data.cid_num.digits, "O")) {
 		mt = MDMF_NO_NUM;
 	} else {
 		mt = MDMF_PHONE_NUM;
 	}
-	zap_fsk_data_add_mdmf(&fsk_data, mt, (uint8_t *) zchan->caller_data.cid_num, (uint8_t)strlen(zchan->caller_data.cid_num));
+	zap_fsk_data_add_mdmf(&fsk_data, mt, (uint8_t *) zchan->caller_data.cid_num.digits, (uint8_t)strlen(zchan->caller_data.cid_num.digits));
 
 	if (zap_strlen_zero(zchan->caller_data.cid_name)) {
 		mt = MDMF_NO_NAME;
@@ -396,9 +396,9 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 					sig.event_id = ZAP_SIGEVENT_START;
 
 					if (zchan->type == ZAP_CHAN_TYPE_FXO) {
-						zap_set_string(zchan->caller_data.dnis, zchan->chan_number);
+						zap_set_string(zchan->caller_data.dnis.digits, zchan->chan_number);
 					} else {
-						zap_set_string(zchan->caller_data.dnis, dtmf);
+						zap_set_string(zchan->caller_data.dnis.digits, dtmf);
 					}
 
 					analog_data->sig_cb(&sig);
@@ -556,11 +556,11 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				zap_log(ZAP_LOG_ERROR, "Failure indication detected!\n");
 				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_BUSY);
 			} else if (zchan->detected_tones[ZAP_TONEMAP_DIAL]) {
-				if (zap_strlen_zero(zchan->caller_data.ani)) {
+				if (zap_strlen_zero(zchan->caller_data.ani.digits)) {
 					zap_log(ZAP_LOG_ERROR, "No Digits to send!\n");
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_BUSY);
 				} else {
-					if (zap_channel_command(zchan, ZAP_COMMAND_SEND_DTMF, zchan->caller_data.ani) != ZAP_SUCCESS) {
+					if (zap_channel_command(zchan, ZAP_COMMAND_SEND_DTMF, zchan->caller_data.ani.digits) != ZAP_SUCCESS) {
 						zap_log(ZAP_LOG_ERROR, "Send Digits Failed [%s]\n", zchan->last_error);
 						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_BUSY);
 					} else {
@@ -570,7 +570,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 						zchan->needed_tones[ZAP_TONEMAP_FAIL1] = 1;
 						zchan->needed_tones[ZAP_TONEMAP_FAIL2] = 1;
 						zchan->needed_tones[ZAP_TONEMAP_FAIL3] = 1;
-						dial_timeout = ((zchan->dtmf_on + zchan->dtmf_off) * strlen(zchan->caller_data.ani)) + 2000;
+						dial_timeout = ((zchan->dtmf_on + zchan->dtmf_off) * strlen(zchan->caller_data.ani.digits)) + 2000;
 					}
 				}
 			} else if (zchan->detected_tones[ZAP_TONEMAP_RING]) {

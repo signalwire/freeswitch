@@ -51,11 +51,7 @@
 #include <stdarg.h>
 #include <netdb.h>
 #include <sigboost.h>
-#include <pthread.h>
 #include <sys/time.h>
-
-
-
 
 #define ss7bc_test_flag(p,flag) 		({		\
 			((p)->flags & (flag));				\
@@ -93,13 +89,15 @@ struct ss7bc_connection {
 	struct hostent remote_hp;
 	struct hostent local_hp;
 	unsigned int flags;
-	pthread_mutex_t lock;
+	zap_mutex_t *mutex;
 	FILE *log;
 	unsigned int txseq;
 	unsigned int rxseq;
 	unsigned int txwindow;
 	unsigned int rxseq_reset;
 	ss7bc_ip_cfg_t cfg;
+	uint32_t hb_elapsed;
+	int up;
 };
 
 typedef enum {

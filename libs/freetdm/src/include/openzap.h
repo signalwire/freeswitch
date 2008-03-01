@@ -307,14 +307,22 @@ struct zap_fsk_modulator {
 	int16_t sample_buffer[64];
 };
 
+typedef struct {
+	char digits[25];
+	uint8_t type;
+	uint8_t plan;
+} zap_number_t;
+
 struct zap_caller_data {
-	char cid_name[80];
-	char cid_num[80];
 	char cid_date[8];
-	char ani[25];
+	char cid_name[80];
+	zap_number_t cid_num;
+	zap_number_t ani;
+	zap_number_t dnis;
+	zap_number_t rdnis;
 	char aniII[25];
-	char dnis[25];
-	char rdnis[25];
+	uint8_t screen;
+	uint8_t pres;
 	char collected[25];
 	int CRV;
 	int hangup_cause;	
@@ -413,6 +421,7 @@ struct zap_span {
 	zap_data_type_t data_type;
 	uint32_t span_id;
 	uint32_t chan_count;
+	uint32_t active_count;
 	zap_span_flag_t flags;
 	struct zap_io_interface *zio;
 	zio_event_cb_t event_callback;
@@ -454,6 +463,7 @@ struct zap_io_interface {
 	zio_span_poll_event_t poll_event;
 	zio_span_next_event_t next_event;
 };
+
 
 zap_size_t zap_fsk_modulator_generate_bit(zap_fsk_modulator_t *fsk_trans, int8_t bit, int16_t *buf, zap_size_t buflen);
 int32_t zap_fsk_modulator_generate_carrier_bits(zap_fsk_modulator_t *fsk_trans, uint32_t bits);
@@ -544,6 +554,27 @@ ZIO_CODEC_FUNCTION(zio_alaw2ulaw);
 #define zap_mutex_trylock(_x) _zap_mutex_trylock(_x)
 #define zap_mutex_unlock(_x) _zap_mutex_unlock(_x)
 #endif
+
+
+static __inline__ void zap_set_state_all(zap_span_t *span, zap_channel_state_t state)
+{
+	uint32_t j;
+	zap_mutex_lock(span->mutex);
+	for(j = 1; j <= span->chan_count; j++) {
+		zap_set_state_locked((&span->channels[j]), state);
+	}
+	zap_mutex_unlock(span->mutex);
+}
+
+static __inline__ void zap_set_flag_all(zap_span_t *span, uint32_t flag)
+{
+	uint32_t j;
+	zap_mutex_lock(span->mutex);
+	for(j = 1; j <= span->chan_count; j++) {
+		zap_set_flag_locked((&span->channels[j]), flag);
+	}
+	zap_mutex_unlock(span->mutex);
+}
 
 #endif
 

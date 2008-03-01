@@ -847,10 +847,27 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		direction = ZAP_BOTTOM_UP;
 		chan_id = 0;
 	}
+	
+	if (switch_test_flag(outbound_profile, SWITCH_CPF_SCREEN)) {
+		caller_data.screen = 1;
+	}
 
-	zap_set_string(caller_data.ani, dest);
+	if (switch_test_flag(outbound_profile, SWITCH_CPF_HIDE_NUMBER)) {
+		caller_data.pres = 1;
+	}
+
+	if (!switch_strlen_zero(dest)) {
+		zap_set_string(caller_data.ani.digits, dest);
+	}
+
+#if 0
+	if (!switch_strlen_zero(outbound_profile->rdnis)) {
+		zap_set_string(caller_data.rdnis.digits, outbound_profile->rdnis);
+	}
+#endif
+
 	zap_set_string(caller_data.cid_name, outbound_profile->caller_id_name);
-	zap_set_string(caller_data.cid_num, outbound_profile->caller_id_number);
+	zap_set_string(caller_data.cid_num.digits, outbound_profile->caller_id_number);
 	
 	if (chan_id) {
 		status = zap_channel_open(span_id, chan_id, &zchan);
@@ -952,11 +969,11 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 		switch_set_string(sigmsg->channel->caller_data.cid_name, sigmsg->channel->chan_name);
 	}
 
-	if (switch_strlen_zero(sigmsg->channel->caller_data.cid_num)) {
-		if (!switch_strlen_zero(sigmsg->channel->caller_data.ani)) {
-			switch_set_string(sigmsg->channel->caller_data.cid_num, sigmsg->channel->caller_data.ani);
+	if (switch_strlen_zero(sigmsg->channel->caller_data.cid_num.digits)) {
+		if (!switch_strlen_zero(sigmsg->channel->caller_data.ani.digits)) {
+			switch_set_string(sigmsg->channel->caller_data.cid_num.digits, sigmsg->channel->caller_data.ani.digits);
 		} else {
-			switch_set_string(sigmsg->channel->caller_data.cid_num, sigmsg->channel->chan_number);
+			switch_set_string(sigmsg->channel->caller_data.cid_num.digits, sigmsg->channel->chan_number);
 		}
 	}
 
@@ -964,16 +981,25 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 														 "OpenZAP",
 														 SPAN_CONFIG[sigmsg->channel->span_id].dialplan,
 														 sigmsg->channel->caller_data.cid_name,
-														 sigmsg->channel->caller_data.cid_num,
+														 sigmsg->channel->caller_data.cid_num.digits,
 														 NULL,
-														 sigmsg->channel->caller_data.ani,
+														 sigmsg->channel->caller_data.ani.digits,
 														 sigmsg->channel->caller_data.aniII,
-														 sigmsg->channel->caller_data.rdnis,
+														 sigmsg->channel->caller_data.rdnis.digits,
 														 (char *) modname,
 														 SPAN_CONFIG[sigmsg->channel->span_id].context,
-														 sigmsg->channel->caller_data.dnis);
+														 sigmsg->channel->caller_data.dnis.digits);
+
 	assert(tech_pvt->caller_profile != NULL);
-		
+
+	if (sigmsg->channel->caller_data.screen == 1 || sigmsg->channel->caller_data.screen == 3) {
+		switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_SCREEN);
+	}
+
+	if (sigmsg->channel->caller_data.pres) {
+		switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
+	}
+	
 	snprintf(name, sizeof(name), "OpenZAP/%s", tech_pvt->caller_profile->destination_number);
 	switch_channel_set_name(channel, name);
 	switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
@@ -1254,12 +1280,12 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 	return status;
 }
 
-static ZIO_SIGNAL_CB_FUNCTION(on_isdn_signal)
+static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 
-	zap_log(ZAP_LOG_DEBUG, "got ISDN sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
+	zap_log(ZAP_LOG_DEBUG, "got clear channel sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
 
     switch(sigmsg->event_id) {
     case ZAP_SIGEVENT_START:
@@ -1553,7 +1579,7 @@ static switch_status_t load_config(void)
 				continue;
 			}
 
-			if (zap_isdn_configure_span(span, mode, dialect, on_isdn_signal) != ZAP_SUCCESS) {
+			if (zap_isdn_configure_span(span, mode, dialect, on_clear_channel_signal) != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d mode: %d dialect: %d error: %s\n", span_id, mode, dialect, span->last_error);
 				continue;
 			}
@@ -1616,7 +1642,7 @@ static switch_status_t load_config(void)
 				continue;
 			}
 
-			if (zap_ss7_boost_configure_span(span, local_ip, local_port, remote_ip, remote_port, on_isdn_signal) != ZAP_SUCCESS) {
+			if (zap_ss7_boost_configure_span(span, local_ip, local_port, remote_ip, remote_port, on_clear_channel_signal) != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d error: %s\n", span_id, span->last_error);
 				continue;
 			}

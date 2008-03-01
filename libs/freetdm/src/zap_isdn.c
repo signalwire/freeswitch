@@ -220,10 +220,10 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 						zchan->span->channels_remote_crv[gen->CRV] = zchan;
 						memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
 
-						zap_set_string(zchan->caller_data.cid_num, (char *)callingnum->Digit);
+						zap_set_string(zchan->caller_data.cid_num.digits, (char *)callingnum->Digit);
 						zap_set_string(zchan->caller_data.cid_name, (char *)callingnum->Digit);
-						zap_set_string(zchan->caller_data.ani, (char *)callingnum->Digit);
-						zap_set_string(zchan->caller_data.dnis, (char *)callednum->Digit);
+						zap_set_string(zchan->caller_data.ani.digits, (char *)callingnum->Digit);
+						zap_set_string(zchan->caller_data.dnis.digits, (char *)callednum->Digit);
 
 						zchan->caller_data.CRV = gen->CRV;
 						if (cplen > sizeof(zchan->caller_data.raw_data)) {
@@ -472,17 +472,17 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			/* 10	User-provided, verified and failed	*/
 			/* 11	Network provided					*/
 			CallingNum.ScreenInd = 0;
-			CallingNum.Size = CallingNum.Size + (unsigned char)strlen(zchan->caller_data.cid_num);
+			CallingNum.Size = CallingNum.Size + (unsigned char)strlen(zchan->caller_data.cid_num.digits);
 			gen->CallingNum = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &CallingNum);			
 			ptrCallingNum = Q931GetIEPtr(gen->CallingNum, gen->buf);
-			zap_copy_string((char *)ptrCallingNum->Digit, zchan->caller_data.cid_num, strlen(zchan->caller_data.cid_num)+1);
+			zap_copy_string((char *)ptrCallingNum->Digit, zchan->caller_data.cid_num.digits, strlen(zchan->caller_data.cid_num.digits)+1);
 
 			CalledNum.TypNum = 2;
 			CalledNum.NumPlanID = 1;
-			CalledNum.Size = CalledNum.Size + (unsigned char)strlen(zchan->caller_data.ani);
+			CalledNum.Size = CalledNum.Size + (unsigned char)strlen(zchan->caller_data.ani.digits);
 			gen->CalledNum = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &CalledNum);
 			ptrCalledNum = Q931GetIEPtr(gen->CalledNum, gen->buf);
-			zap_copy_string((char *)ptrCalledNum->Digit, zchan->caller_data.ani, strlen(zchan->caller_data.ani)+1);
+			zap_copy_string((char *)ptrCalledNum->Digit, zchan->caller_data.ani.digits, strlen(zchan->caller_data.ani.digits)+1);
 
 			Q931Rx43(&isdn_data->q931, (L3UCHAR *) gen, gen->Size);
 			zchan->span->channels_local_crv[gen->CRV] = zchan;

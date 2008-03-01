@@ -118,6 +118,8 @@ static int create_conn_socket(ss7bc_connection_t *mcon, char *local_ip, int loca
 		}
 	}
 
+	zap_mutex_create(&mcon->mutex);
+
 	return mcon->socket;
 }
 
@@ -126,6 +128,8 @@ int ss7bc_connection_close(ss7bc_connection_t *mcon)
 	if (mcon->socket > -1) {
 		close(mcon->socket);
 	}
+
+	zap_mutex_destroy(&mcon->mutex);
 	memset(mcon, 0, sizeof(*mcon));
 	mcon->socket = -1;
 
@@ -147,25 +151,25 @@ int ss7bc_exec_command(ss7bc_connection_t *mcon, int span, int chan, int id, int
     ss7bc_event_init(&oevent, cmd, chan, span);
     oevent.release_cause = cause;
 
+	if (cmd == SIGBOOST_EVENT_SYSTEM_RESTART) {
+		mcon->rxseq_reset = 1;
+		mcon->txseq = 0;
+		mcon->rxseq = 0;
+		mcon->txwindow = 0;
+	}
+
     if (id >= 0) {
         oevent.call_setup_id = id;
     }
- isup_exec_cmd_retry:
-    if (ss7bc_connection_write(mcon, &oevent) <= 0){
 
-        --retry;
-        if (retry <= 0) {
-            zap_log(ZAP_LOG_WARNING,
-					   "Critical System Error: Failed to tx on ISUP socket: %s\n",
-					   strerror(errno));
+    while (ss7bc_connection_write(mcon, &oevent) <= 0) {
+        if (--retry <= 0) {
+            zap_log(ZAP_LOG_CRIT, "Failed to tx on ISUP socket: %s\n", strerror(errno));
             return -1;
         } else {
-            zap_log(ZAP_LOG_WARNING,
-					   "System Warning: Failed to tx on ISUP socket: %s :retry %i\n",
-					   strerror(errno),retry);
+            zap_log(ZAP_LOG_WARNING, "Failed to tx on ISUP socket: %s :retry %i\n", strerror(errno), retry);
+			zap_sleep(1);
         }
-
-        goto isup_exec_cmd_retry;
     }
 
     return 0;
@@ -176,21 +180,17 @@ int ss7bc_exec_command(ss7bc_connection_t *mcon, int span, int chan, int id, int
 ss7bc_event_t *ss7bc_connection_read(ss7bc_connection_t *mcon, int iteration)
 {
 	unsigned int fromlen = sizeof(struct sockaddr_in);
-#if 0
-	ss7bc_event_t *event = &mcon->event;
-#endif
 	int bytes = 0;
 
 	bytes = recvfrom(mcon->socket, &mcon->event, sizeof(mcon->event), MSG_DONTWAIT, 
 					 (struct sockaddr *) &mcon->local_addr, &fromlen);
 
-	if (bytes == sizeof(mcon->event) || 
-		bytes == (sizeof(mcon->event)-sizeof(uint32_t))) {
+	if (bytes == sizeof(mcon->event) || bytes == (sizeof(mcon->event)-sizeof(uint32_t))) {
 
 		if (mcon->rxseq_reset) {
 			if (mcon->event.event_id == SIGBOOST_EVENT_SYSTEM_RESTART_ACK) {
 				zap_log(ZAP_LOG_DEBUG, "Rx sync ok\n");
-				mcon->rxseq=mcon->event.fseqno;
+				mcon->rxseq = mcon->event.fseqno;
 				return &mcon->event;
 			}
 			errno=EAGAIN;
@@ -202,44 +202,15 @@ ss7bc_event_t *ss7bc_connection_read(ss7bc_connection_t *mcon, int iteration)
 		mcon->rxseq++;
 
 		if (mcon->rxseq != mcon->event.fseqno) {
-			zap_log(ZAP_LOG_DEBUG,  
-					"------------------------------------------\n");
-			zap_log(ZAP_LOG_DEBUG,  
-					"Critical Error: Invalid Sequence Number Expect=%i Rx=%i\n",
-					mcon->rxseq,mcon->event.fseqno);
-			zap_log(ZAP_LOG_DEBUG,  
-					"------------------------------------------\n");
-		}
-
-#if 0
-		/* Debugging only not to be used in production because span/chan can be invalid */
-	   	if (mcon->event.span < 0 || mcon->event.chan < 0 || mcon->event.span > 16 || mcon->event.chan > 31) {
-			zap_log(ZAP_LOG_DEBUG, 
-					"------------------------------------------\n");
-			zap_log(ZAP_LOG_DEBUG, 
-					"Critical Error: RX Cmd=%s Invalid Span=%i Chan=%i\n",
-					ss7bc_event_id_name(event->event_id), event->span,event->chan);
-			zap_log(ZAP_LOG_DEBUG, 
-					"------------------------------------------\n");
-		
-			errno=EAGAIN;
+			zap_log(ZAP_LOG_CRIT, "Invalid Sequence Number Expect=%i Rx=%i\n", mcon->rxseq, mcon->event.fseqno);
 			return NULL;
 		}
-#endif
-
- 
-
 
 		return &mcon->event;
 	} else {
 		if (iteration == 0) {
-			zap_log(ZAP_LOG_DEBUG, 
-					"------------------------------------------\n");
-			zap_log(ZAP_LOG_DEBUG, 
-					"Critical Error: Invalid Event lenght from boost rxlen=%i evsz=%i\n",
-					bytes, sizeof(mcon->event));
-			zap_log(ZAP_LOG_DEBUG, 
-					"------------------------------------------\n");
+			zap_log(ZAP_LOG_CRIT, "Invalid Event length from boost rxlen=%i evsz=%i\n", bytes, sizeof(mcon->event));
+			return NULL;
 		}
 	}
 
@@ -249,43 +220,16 @@ ss7bc_event_t *ss7bc_connection_read(ss7bc_connection_t *mcon, int iteration)
 ss7bc_event_t *ss7bc_connection_readp(ss7bc_connection_t *mcon, int iteration)
 {
 	unsigned int fromlen = sizeof(struct sockaddr_in);
-#if 0
-	ss7bc_event_t *event = &mcon->event;
-#endif
 	int bytes = 0;
 
-	bytes = recvfrom(mcon->socket, &mcon->event, sizeof(mcon->event), MSG_DONTWAIT, 
-					 (struct sockaddr *) &mcon->local_addr, &fromlen);
+	bytes = recvfrom(mcon->socket, &mcon->event, sizeof(mcon->event), MSG_DONTWAIT, (struct sockaddr *) &mcon->local_addr, &fromlen);
 
-	if (bytes == sizeof(mcon->event) || 
-		bytes == (sizeof(mcon->event)-sizeof(uint32_t))) {
-
-#if 0
-		/* Debugging only not to be used in production because span/chan can be invalid */
-		if (mcon->event.span < 0 || mcon->event.chan < 0 || mcon->event.span > 16 || mcon->event.chan > 31) {
-			zap_log(ZAP_LOG_DEBUG, 
-					"------------------------------------------\n");
-			zap_log(ZAP_LOG_DEBUG, 
-					"Critical Error: RXp Cmd=%s Invalid Span=%i Chan=%i\n",
-					ss7bc_event_id_name(event->event_id), event->span,event->chan);
-			zap_log(ZAP_LOG_DEBUG, 
-					"------------------------------------------\n");
-
-			errno=EAGAIN;
-			return NULL;
-		}
-#endif
-
+	if (bytes == sizeof(mcon->event) || bytes == (sizeof(mcon->event)-sizeof(uint32_t))) {
 		return &mcon->event;
 	} else {
 		if (iteration == 0) {
-			zap_log(ZAP_LOG_DEBUG, 
-					"------------------------------------------\n");
-			zap_log(ZAP_LOG_DEBUG, 
-					"Critical Error: PQ Invalid Event lenght from boost rxlen=%i evsz=%i\n",
-					bytes, sizeof(mcon->event));
-			zap_log(ZAP_LOG_DEBUG, 
-					"------------------------------------------\n");
+			zap_log(ZAP_LOG_CRIT, "Critical Error: PQ Invalid Event lenght from boost rxlen=%i evsz=%i\n", bytes, sizeof(mcon->event));
+			return NULL;
 		}
 	}
 
@@ -296,58 +240,30 @@ ss7bc_event_t *ss7bc_connection_readp(ss7bc_connection_t *mcon, int iteration)
 int ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event)
 {
 	int err;
+
 	if (!event) {
 		zap_log(ZAP_LOG_DEBUG,  "Critical Error: No Event Device\n");
 		return -EINVAL;
 	}
 
 	if (event->span > 16 || event->chan > 31) {
-		zap_log(ZAP_LOG_DEBUG,  
-				"------------------------------------------\n");
-		zap_log(ZAP_LOG_DEBUG,  
-				"Critical Error: TX Cmd=%s Invalid Span=%i Chan=%i\n",
-				ss7bc_event_id_name(event->event_id), event->span,event->chan);
-		zap_log(ZAP_LOG_DEBUG,  
-				"------------------------------------------\n");
-
+		zap_log(ZAP_LOG_CRIT, "Critical Error: TX Cmd=%s Invalid Span=%i Chan=%i\n", ss7bc_event_id_name(event->event_id), event->span,event->chan);
 		return -1;
 	}
 
 	gettimeofday(&event->tv,NULL);
 	
-	pthread_mutex_lock(&mcon->lock);
-	event->fseqno=mcon->txseq++;
-	event->bseqno=mcon->rxseq;
-	err=sendto(mcon->socket, event, sizeof(ss7bc_event_t), 0, 
-			   (struct sockaddr *) &mcon->remote_addr, sizeof(mcon->remote_addr));
-	pthread_mutex_unlock(&mcon->lock);
+	zap_mutex_lock(mcon->mutex);
+	event->fseqno = mcon->txseq++;
+	event->bseqno = mcon->rxseq;
+	err = sendto(mcon->socket, event, sizeof(ss7bc_event_t), 0, (struct sockaddr *) &mcon->remote_addr, sizeof(mcon->remote_addr));
+	zap_mutex_unlock(mcon->mutex);
 
 	if (err != sizeof(ss7bc_event_t)) {
 		err = -1;
 	}
 	
-#if 0
-	zap_log(ZAP_LOG_DEBUG,  "TX EVENT\n");
-	zap_log(ZAP_LOG_DEBUG,  "===================================\n");
-	zap_log(ZAP_LOG_DEBUG,  "       tType: %s (%0x HEX)\n",
-			ss7bc_event_id_name(event->event_id),event->event_id);
-	zap_log(ZAP_LOG_DEBUG,  "       tSpan: [%d]\n",event->span+1);
-	zap_log(ZAP_LOG_DEBUG,  "       tChan: [%d]\n",event->chan+1);
-	zap_log(ZAP_LOG_DEBUG,  "  tCalledNum: %s\n",
-			(event->called_number_digits_count ? (char *) event->called_number_digits : "N/A"));
-	zap_log(ZAP_LOG_DEBUG,  " tCallingNum: %s\n",
-			(event->calling_number_digits_count ? (char *) event->calling_number_digits : "N/A"));
-	zap_log(ZAP_LOG_DEBUG,  "      tCause: %d\n",event->release_cause);
-	zap_log(ZAP_LOG_DEBUG,  "  tInterface: [w%dg%d]\n",event->span+1,event->chan+1);
-	zap_log(ZAP_LOG_DEBUG,  "   tEvent ID: [%d]\n",event->event_id);
-	zap_log(ZAP_LOG_DEBUG,  "   tSetup ID: [%d]\n",event->call_setup_id);
-	zap_log(ZAP_LOG_DEBUG,  "        tSeq: [%d]\n",event->fseqno);
-	zap_log(ZAP_LOG_DEBUG,  "===================================\n");
-#endif
-
-#if 1
- 	zap_log(ZAP_LOG_DEBUG, 
-			"TX EVENT: %s:(%X) [w%dg%d] Rc=%i CSid=%i Seq=%i Cd=[%s] Ci=[%s]\n",
+ 	zap_log(ZAP_LOG_DEBUG, "TX EVENT: %s:(%X) [w%dg%d] Rc=%i CSid=%i Seq=%i Cd=[%s] Ci=[%s]\n",
 			ss7bc_event_id_name(event->event_id),
 			event->event_id,
 			event->span+1,
@@ -358,41 +274,6 @@ int ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event)
 			(event->called_number_digits_count ? (char *) event->called_number_digits : "N/A"),
 			(event->calling_number_digits_count ? (char *) event->calling_number_digits : "N/A")
 			);
-#endif
-
-
-#if 0
-
-	zap_log(ZAP_LOG_DEBUG, 
-			"\nTX EVENT\n"
-			"===================================\n"
-			"           tType: %s (%0x HEX)\n"
-			"           tSpan: [%d]\n"
-			"           tChan: [%d]\n"
-			"  tCalledNum: %s\n"
-			" tCallingNum: %s\n"
-			"      tCause: %d\n"
-			"  tInterface: [w%dg%d]\n"
-			"   tEvent ID: [%d]\n"
-			"   tSetup ID: [%d]\n"
-			"        tSeq: [%d]\n"
-			"===================================\n"
-			"\n",
-			ss7bc_event_id_name(event->event_id),
-			event->event_id,
-			event->span+1,
-			event->chan+1,
-			(event->called_number_digits_count ? (char *) event->called_number_digits : "N/A"),
-			(event->calling_number_digits_count ? (char *) event->calling_number_digits : "N/A"),
-			event->release_cause,
-			event->span+1,
-			event->chan+1,
-			event->event_id,
-			event->call_setup_id,
-			event->fseqno
-			);
-#endif
-
 
 	return err;
 }
