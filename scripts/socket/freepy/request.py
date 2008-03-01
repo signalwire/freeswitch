@@ -83,9 +83,6 @@ class FreepyRequest(object):
 
         otherwise, if the fs response is incomplete, just buffer the data
         """
-        if freepy.globals.DEBUG_ON:
-            print line
-            
         if not line or len(line) == 0:
             self._fsm.BlankLine()
             return self.isRequestFinished()

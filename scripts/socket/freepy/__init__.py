@@ -63,6 +63,13 @@ class FreepyDispatcher(LineReceiver):
         print "connectionLost: %s" % reason
 
 
+    def log(self, msg):
+        """
+        print a message to stdout if debug enabled
+        """
+        if freepy.globals.DEBUG_ON:
+            print msg
+            
     def login(self, passwd):
         """
         send login request
@@ -71,8 +78,7 @@ class FreepyDispatcher(LineReceiver):
         req = request.LoginRequest()
         self.requestq.put(req)
         self.transport.write("%s\n\n" % msg)
-        if freepy.globals.DEBUG_ON:
-            print msg
+        self.log(">> %s" % msg)
         return req.getDeferred()
 
     def confdialout(self, conf_name, sofia_url, bgapi=True):
@@ -95,6 +101,7 @@ class FreepyDispatcher(LineReceiver):
             req = request.DialoutRequest()
         self.requestq.put(req)
         self.transport.write("%s\n\n" % msg)
+        self.log(">> %s" % msg)        
         return req.getDeferred()
 
     def originate(self, party2dial, dest_ext_app, bgapi=True):
@@ -109,6 +116,7 @@ class FreepyDispatcher(LineReceiver):
             req = request.DialoutRequest()
         self.requestq.put(req)
         self.transport.write("%s\n\n" % msg)
+        self.log(">> %s" % msg)                
         return req.getDeferred()
 
     def listconf(self, conf_name):
@@ -122,6 +130,7 @@ class FreepyDispatcher(LineReceiver):
         req = request.ListConfRequest()
         self.requestq.put(req)
         self.transport.write("%s\n\n" % msg)
+        self.log(">> %s" % msg)                        
         return req.getDeferred()
         
 
@@ -143,6 +152,7 @@ class FreepyDispatcher(LineReceiver):
             req = request.ConfKickRequest()
         self.requestq.put(req)
         self.transport.write("%s\n\n" % msg)
+        self.log(">> %s" % msg)                        
         return req.getDeferred()
 
     def confdtmf(self, member_id, conf_name, dtmf, bgapi=False):
@@ -166,8 +176,8 @@ class FreepyDispatcher(LineReceiver):
                   (conf_name, member_id, dtmf)
             req = request.ApiRequest()
         self.requestq.put(req)
-        print "sending to fs: %s" % msg
         self.transport.write("%s\n\n" % msg)
+        self.log(">> %s" % msg)                        
         return req.getDeferred()
 
     def confsay(self, conf_name, text2speak, bgapi=False):
@@ -189,8 +199,8 @@ class FreepyDispatcher(LineReceiver):
                   (conf_name, text2speak)
             req = request.ApiRequest()
         self.requestq.put(req)
-        print "sending to fs: %s" % msg
         self.transport.write("%s\n\n" % msg)
+        self.log(">> %s" % msg)                                
         return req.getDeferred()
 
     def confplay(self, conf_name, snd_url, bgapi=False):
@@ -212,8 +222,8 @@ class FreepyDispatcher(LineReceiver):
                   (conf_name, snd_url)
             req = request.ApiRequest()
         self.requestq.put(req)
-        print "sending to fs: %s" % msg
         self.transport.write("%s\n\n" % msg)
+        self.log(">> %s" % msg)                                        
         return req.getDeferred()
 
     def confstop(self, conf_name, bgapi=False):
@@ -234,8 +244,8 @@ class FreepyDispatcher(LineReceiver):
                   (conf_name)
             req = request.ApiRequest()
         self.requestq.put(req)
-        print "sending to fs: %s" % msg
         self.transport.write("%s\n\n" % msg)
+        self.log(">> %s" % msg)                                        
         return req.getDeferred()
 
 
@@ -273,6 +283,7 @@ class FreepyDispatcher(LineReceiver):
             req = request.ApiRequest()
         self.requestq.put(req)
         self.transport.write("%s\n\n" % msg)
+        self.log(">> %s" % msg)                                                
         return req.getDeferred()
 
     def sofia_status_profile(self, profile_name, bgapi=False):
@@ -299,8 +310,8 @@ class FreepyDispatcher(LineReceiver):
                   (sofia_profile_name)
             req = request.ApiRequest()
         self.requestq.put(req)
-        print "sending to fs: %s" % msg
         self.transport.write("%s\n\n" % msg)
+        self.log(">> %s" % msg)                                                        
         return req.getDeferred()
 
 
@@ -312,8 +323,8 @@ class FreepyDispatcher(LineReceiver):
             msg = "api killchan %s" % (uuid)            
             req = request.ApiRequest()
         self.requestq.put(req)
-        print "sending to fs: %s" % msg
         self.transport.write("%s\n\n" % msg)
+        self.log(">> %s" % msg)        
         return req.getDeferred()
 
     def broadcast(self, uuid, path, legs, bgapi = False):
@@ -324,8 +335,8 @@ class FreepyDispatcher(LineReceiver):
             msg = "api broadcast %s %s %s" % (uuid, path, legs)            
             req = request.ApiRequest()
         self.requestq.put(req)
-        print "sending to fs: %s" % msg
         self.transport.write("%s\n\n" % msg)
+        self.log(">> %s" % msg)                
         return req.getDeferred()
 
     def transfer(self, uuid, dest_ext, legs, bgapi = False):
@@ -339,11 +350,12 @@ class FreepyDispatcher(LineReceiver):
             msg = "api transfer %s %s %s" % (uuid, legs, dest_ext)
             req = request.ApiRequest()
         self.requestq.put(req)
-        print "sending to fs: %s" % msg
         self.transport.write("%s\n\n" % msg)
+        self.log(">> %s" % msg)                        
         return req.getDeferred()
         
     def lineReceived(self, line):
+        self.log("<< %s" % line)                                
         if not self.active_request:
             # if no active request, dequeue a new one
             if self.requestq.empty():
