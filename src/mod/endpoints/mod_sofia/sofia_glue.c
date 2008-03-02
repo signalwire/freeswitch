@@ -767,7 +767,7 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 		ip_ptr = p + 9;
 	}
 
-	if (!strncmp(ip_ptr, "0.0.0.0", 7) || switch_stristr("sendonly", tech_pvt->local_sdp_str)) {
+	if ((ip_ptr && !strncmp(ip_ptr, "0.0.0.0", 7)) || switch_stristr("sendonly", tech_pvt->local_sdp_str)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Skip patch on hold SDP\n");
 		return;
 	}
