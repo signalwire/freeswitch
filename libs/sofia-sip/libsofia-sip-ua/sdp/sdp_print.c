@@ -565,6 +565,7 @@ static void print_media(sdp_printer_t *p,
 {
   char const *media, *proto;
   sdp_rtpmap_t *rm;
+  int print_rejected = 0;
 
   sdp_mode_t session_mode = sdp_sendrecv;
 
@@ -593,11 +594,13 @@ static void print_media(sdp_printer_t *p,
     default:              proto = m->m_proto_name; break;
     }
     
+    if (print_rejected || m->m_rtpmaps || m->m_format) {
     if (m->m_number_of_ports <= 1)
       sdp_printf(p, "m=%s %u %s", media, m->m_port, proto);
     else
       sdp_printf(p, "m=%s %u/%u %s", 
 		 media, m->m_port, m->m_number_of_ports, proto);
+    }
 
     if (m->m_rtpmaps) {
       for (rm = m->m_rtpmaps; rm; rm = rm->rm_next) {
@@ -612,13 +615,13 @@ static void print_media(sdp_printer_t *p,
       for (; l; l = l->l_next)
 	sdp_printf(p, " %s", l->l_text);
     }
-    else {
+    else if (print_rejected) {
       sdp_printf(p, " 19");      /* SDP syntax requires at least one format.
 				    19 is used by nobody, right?. */
     }
 
 
-    sdp_printf(p, CRLF);
+    if (print_rejected || m->m_rtpmaps || m->m_format) sdp_printf(p, CRLF);
 
     if (m->m_information)
       print_information(p, m->m_information);
