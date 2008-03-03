@@ -726,6 +726,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_core_set_variable("local_ip_v6", guess_ip);
 	switch_core_set_variable("base_dir", SWITCH_GLOBAL_dirs.base_dir);
 
+	switch_log_init(runtime.memory_pool);
+	switch_event_init(runtime.memory_pool);
+
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
 		apr_terminate();
 		return SWITCH_STATUS_MEMERR;
@@ -802,10 +805,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	if (console) {
 		runtime.console = stdout;
 	}
-
-	switch_assert(runtime.memory_pool != NULL);
-	switch_log_init(runtime.memory_pool);
-	switch_event_init(runtime.memory_pool);
 
 	if (switch_test_flag((&runtime), SCF_USE_SQL)) {
 		switch_core_sqldb_start(runtime.memory_pool);
