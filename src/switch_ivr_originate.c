@@ -34,14 +34,27 @@
 
 static const switch_state_handler_table_t originate_state_handlers;
 
+static switch_status_t originate_on_hold(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	
+	while(switch_channel_get_state(channel) == CS_HOLD) {
+		switch_ivr_sleep(session, 10);
+	}
+	
+	/* clear this handler so it only works once (next time (a.k.a. Transfer) we will do the real ring and hold states) */
+	switch_channel_clear_state_handler(channel, &originate_state_handlers);
+
+	return SWITCH_STATUS_FALSE;
+}
+
 static switch_status_t originate_on_ring(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	/* put the channel in a passive state so we can loop audio to it */
-	/* clear this handler so it only works once (next time (a.k.a. Transfer) we will do the real ring state) */
-	switch_channel_clear_state_handler(channel, &originate_state_handlers);
+	/* put the channel in a passive state until it is answered */
 	switch_channel_set_state(channel, CS_HOLD);
+
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -52,7 +65,7 @@ static const switch_state_handler_table_t originate_state_handlers = {
 	/*.on_hangup */ NULL,
 	/*.on_loopback */ NULL,
 	/*.on_transmit */ NULL,
-	/*.on_hold */ NULL
+	/*.on_hold */ originate_on_hold
 };
 
 typedef enum {
