@@ -1479,7 +1479,17 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 	}
 	switch_mutex_unlock(XML_LOCK);
 
-	return errcnt == 0 ? switch_xml_root() : NULL;
+	if (errcnt == 0) {
+		switch_event_t *event;
+		if (switch_event_create(&event, SWITCH_EVENT_RELOADXML) == SWITCH_STATUS_SUCCESS) {
+			if (switch_event_fire(&event) != SWITCH_STATUS_SUCCESS) {
+				switch_event_destroy(&event);
+			}
+		}
+		return switch_xml_root();
+	}
+
+	return NULL;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, const char **err)

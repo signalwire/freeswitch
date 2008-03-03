@@ -126,6 +126,7 @@ static char *EVENT_NAMES[] = {
 	"DEL_SCHEDULE",
 	"EXE_SCHEDULE",
 	"RE_SCHEDULE",
+	"RELOADXML",
 	"ALL"
 };
 

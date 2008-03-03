@@ -988,6 +988,7 @@ typedef enum {
 	SWITCH_EVENT_DEL_SCHEDULE		- Something has been unscheduled
 	SWITCH_EVENT_EXE_SCHEDULE		- Something scheduled has been executed
 	SWITCH_EVENT_RE_SCHEDULE		- Something scheduled has been rescheduled
+	SWITCH_EVENT_RELOADXML			- XML registry has been reloaded
     SWITCH_EVENT_ALL				- All events at once
 </pre>
 
@@ -1041,6 +1042,7 @@ typedef enum {
 	SWITCH_EVENT_DEL_SCHEDULE,
 	SWITCH_EVENT_EXE_SCHEDULE,
 	SWITCH_EVENT_RE_SCHEDULE,
+	SWITCH_EVENT_RELOADXML,
 	SWITCH_EVENT_ALL
 } switch_event_types_t;
 
