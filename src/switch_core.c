@@ -824,6 +824,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+#ifdef SIGQUIT
+static void handle_SIGQUIT(int sig)
+{
+	if (sig);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Sig Quit!\n");
+	return;
+}
+#endif
+
 #ifdef SIGPIPE
 static void handle_SIGPIPE(int sig)
 {
@@ -890,6 +900,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 	signal(SIGINT, handle_SIGINT);
 #ifdef SIGPIPE
 	signal(SIGPIPE, handle_SIGPIPE);
+#endif
+#ifdef SIGQUIT
+	signal(SIGQUIT, handle_SIGQUIT);
 #endif
 #ifdef SIGPOLL
 	signal(SIGPOLL, handle_SIGPOLL);

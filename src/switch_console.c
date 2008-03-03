@@ -35,6 +35,55 @@
 #include <switch_version.h>
 #define CMD_BUFLEN 1024;
 
+/*
+ * store a strdup() of the string configured in XML
+ * bound to each of the 12 function key
+ */
+static char *console_fnkeys[12];
+
+/*
+ * Load from console.conf XML file the section:
+ * <keybindings>
+ * <key name="1" value="show calls"/>
+ * </keybindings>
+ */
+static switch_status_t console_xml_config(void)
+{
+	char *cf = "switch.conf";
+	switch_xml_t cfg, xml, settings, param;
+
+    /* clear the keybind array */
+    int i;
+
+    for (i = 0; i < 12; i++) {
+        console_fnkeys[i] = NULL;
+    }
+
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if ((settings = switch_xml_child(cfg, "cli-keybindings"))) {
+		for (param = switch_xml_child(settings, "key"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+            int i = atoi(var);
+            if ((i < 1) || (i > 12)) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "keybind %s is invalid, range is from 1 to 12\n", var);
+            } else {
+                // Add the command to the fnkey array
+                console_fnkeys[i - 1] = switch_core_permanent_strdup(val);
+            }
+		}
+	}
+
+	switch_xml_free(xml);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_raw_write(switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen)
 {
 	switch_size_t nwrite;
@@ -199,6 +248,67 @@ static int32_t running = 1;
 #include <histedit.h>
 static char prompt_str[512] = "";
 
+/*
+ * If a fnkey is configured then process the command
+ */
+static unsigned char console_fnkey_pressed(int i) {
+	char *c;
+
+    assert((i > 0) && (i <= 12));
+
+    c = console_fnkeys[i-1];
+
+    // This new line is necessary to avoid output to begin after the ">" of the CLI's prompt
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE,"\n");
+
+    if (c == NULL) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "FUNCTION KEY F%d IS NOT BOUND, please edit switch.conf XML file\n", i);
+        return CC_REDISPLAY;
+    }
+
+	switch_console_process(c);
+
+    return CC_REDISPLAY;
+}
+
+static unsigned char console_f1key(EditLine *el, int ch) {
+    return console_fnkey_pressed(1);
+}
+static unsigned char console_f2key(EditLine *el, int ch) {
+    return console_fnkey_pressed(2);
+}
+static unsigned char console_f3key(EditLine *el, int ch) {
+    return console_fnkey_pressed(3);
+}
+static unsigned char console_f4key(EditLine *el, int ch) {
+    return console_fnkey_pressed(4);
+}
+static unsigned char console_f5key(EditLine *el, int ch) {
+    return console_fnkey_pressed(5);
+}
+static unsigned char console_f6key(EditLine *el, int ch) {
+    return console_fnkey_pressed(6);
+}
+static unsigned char console_f7key(EditLine *el, int ch) {
+    return console_fnkey_pressed(7);
+}
+static unsigned char console_f8key(EditLine *el, int ch) {
+    return console_fnkey_pressed(8);
+}
+static unsigned char console_f9key(EditLine *el, int ch) {
+    return console_fnkey_pressed(9);
+}
+static unsigned char console_f10key(EditLine *el, int ch) {
+    return console_fnkey_pressed(10);
+}
+static unsigned char console_f11key(EditLine *el, int ch) {
+    return console_fnkey_pressed(11);
+}
+static unsigned char console_f12key(EditLine *el, int ch) {
+    return console_fnkey_pressed(12);
+}
+
+
 char * prompt(EditLine *e) {
 	if (*prompt_str == '\0') {
 		gethostname(hostname, sizeof(hostname));
@@ -256,15 +366,53 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 	switch_memory_pool_t *pool;
-	
+
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
 		return;
 	}
-	
+
 	el = el_init(__FILE__, switch_core_get_console(), switch_core_get_console(), switch_core_get_console());
 	el_set(el, EL_PROMPT, &prompt);
 	el_set(el, EL_EDITOR, "emacs");
+    /* AGX: Bind Keyboard function keys. This has been tested with:
+     * - linux console keyabord
+     * - putty.exe connected via ssh to linux
+     */
+    /* Load/Init the config first */
+    console_xml_config();
+    /* Bind the functions to the key */
+    el_set(el, EL_ADDFN, "f1-key", "F1 KEY PRESS", console_f1key );
+    el_set(el, EL_ADDFN, "f2-key", "F2 KEY PRESS", console_f2key );
+    el_set(el, EL_ADDFN, "f3-key", "F3 KEY PRESS", console_f3key );
+    el_set(el, EL_ADDFN, "f4-key", "F4 KEY PRESS", console_f4key );
+    el_set(el, EL_ADDFN, "f5-key", "F5 KEY PRESS", console_f5key );
+    el_set(el, EL_ADDFN, "f6-key", "F6 KEY PRESS", console_f6key );
+    el_set(el, EL_ADDFN, "f7-key", "F7 KEY PRESS", console_f7key );
+    el_set(el, EL_ADDFN, "f8-key", "F8 KEY PRESS", console_f8key );
+    el_set(el, EL_ADDFN, "f9-key", "F9 KEY PRESS", console_f9key );
+    el_set(el, EL_ADDFN, "f10-key", "F10 KEY PRESS", console_f10key );
+    el_set(el, EL_ADDFN, "f11-key", "F11 KEY PRESS", console_f11key );
+    el_set(el, EL_ADDFN, "f12-key", "F12 KEY PRESS", console_f12key );
+
+    el_set(el, EL_BIND, "\033OP", "f1-key", NULL);
+    el_set(el, EL_BIND, "\033OQ", "f2-key", NULL);
+    el_set(el, EL_BIND, "\033OR", "f3-key", NULL);
+    el_set(el, EL_BIND, "\033OS", "f4-key", NULL);
+
+	
+    el_set(el, EL_BIND, "\033[11~", "f1-key", NULL);
+    el_set(el, EL_BIND, "\033[12~", "f2-key", NULL);
+    el_set(el, EL_BIND, "\033[13~", "f3-key", NULL);
+    el_set(el, EL_BIND, "\033[14~", "f4-key", NULL);
+    el_set(el, EL_BIND, "\033[15~", "f5-key", NULL);
+    el_set(el, EL_BIND, "\033[17~", "f6-key", NULL);
+    el_set(el, EL_BIND, "\033[18~", "f7-key", NULL);
+    el_set(el, EL_BIND, "\033[19~", "f8-key", NULL);
+    el_set(el, EL_BIND, "\033[20~", "f9-key", NULL);
+    el_set(el, EL_BIND, "\033[21~", "f10-key", NULL);
+    el_set(el, EL_BIND, "\033[23~", "f11-key", NULL);
+    el_set(el, EL_BIND, "\033[24~", "f12-key", NULL);
 
 	myhistory = history_init();
 	if (myhistory == 0) {
@@ -275,7 +423,6 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 	hfile = switch_mprintf("%s%sfreeswitch.history", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 	assert(hfile != NULL);
 
-	
 	history(myhistory, &ev, H_SETSIZE, 800);
 	el_set(el, EL_HIST, history, myhistory);
 	history(myhistory, &ev, H_LOAD, hfile);
