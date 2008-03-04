@@ -65,8 +65,11 @@
       <!--<variable name="numbering_plan" value="US"/>-->
       <!--<variable name="default_area_code" value="434"/>-->
       <!--<variable name="default_gateway" value="asterlink.com"/>-->
-
-      <!--<variable name="sip-force-contact" value="nat-connectile-dysfunction"/>-->
+      <!--  
+	   NDLB-connectile-dysfunction - Rewrite contact ip and port
+	   NDLB-tls-connectile-dysfunction - Rewrite contact port only.
+      -->
+      <!--<variable name="sip-force-contact" value="NDLB-connectile-dysfunction"/>-->
       <!--<variable name="sip-force-expires" value="10"/>-->
       <!--<variable name="sip-register-gateway" value="cluecon.com"/>-->
     </variables>
