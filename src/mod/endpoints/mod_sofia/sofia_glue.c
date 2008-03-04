@@ -2445,6 +2445,31 @@ void sofia_glue_sql_close(sofia_profile_t *profile)
 
 void sofia_glue_execute_sql(sofia_profile_t *profile, switch_bool_t master, char *sql, switch_mutex_t *mutex)
 {
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	sofia_sql_job_t *job = NULL;
+	
+	if (profile->sql_queue) {
+		switch_zmalloc(job, sizeof(*job));
+
+		job->sql = strdup(sql);
+		switch_assert(job->sql);
+		job->master = master;
+		
+		status = switch_queue_trypush(profile->sql_queue, job);
+	}
+	
+	if (status != SWITCH_STATUS_SUCCESS) {
+		if (job) {
+			free(job->sql);
+			free(job);
+		}
+		sofia_glue_actually_execute_sql(profile, master, sql, mutex);
+	}
+
+}
+
+void sofia_glue_actually_execute_sql(sofia_profile_t *profile, switch_bool_t master, char *sql, switch_mutex_t *mutex)
+{
 	switch_core_db_t *db;
 
 	if (mutex) {

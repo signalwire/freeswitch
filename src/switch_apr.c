@@ -486,6 +486,33 @@ SWITCH_DECLARE(switch_status_t) switch_threadattr_stacksize_set(switch_threadatt
 	return apr_threadattr_stacksize_set(attr, stacksize);
 }
 
+#ifndef WIN32
+struct apr_threadattr_t {
+    apr_pool_t *pool;
+    pthread_attr_t attr;
+};
+#endif
+
+SWITCH_DECLARE(switch_status_t) switch_threadattr_priority_increase(switch_threadattr_t *attr)
+{
+	int stat = 0;
+#ifndef WIN32
+	struct sched_param    param;
+	struct apr_threadattr_t *myattr = attr;
+
+	pthread_attr_getschedparam(&myattr->attr, &param);
+	param.sched_priority = 50;
+	stat = pthread_attr_setschedparam(&myattr->attr, &param);
+
+    if (stat == 0) {
+        return SWITCH_STATUS_SUCCESS;
+    }
+
+#endif
+    return stat;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_thread_create(switch_thread_t ** new_thread, switch_threadattr_t * attr,
 													 switch_thread_start_t func, void *data, switch_memory_pool_t *cont)
 {

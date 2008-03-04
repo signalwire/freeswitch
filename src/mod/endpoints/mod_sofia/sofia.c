@@ -419,13 +419,71 @@ void event_handler(switch_event_t *event)
 	}
 }
 
+void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread, void *obj)
+{
+	sofia_profile_t *profile = (sofia_profile_t *) obj;
+	uint32_t ireg_loops = 0;
+	uint32_t gateway_loops = 0;
+	void *pop;
+	sofia_sql_job_t *job;
+	int loops = 0;
+
+	ireg_loops = IREG_SECONDS;
+	gateway_loops = GATEWAY_SECONDS;
+
+	sofia_set_pflag_locked(profile, PFLAG_WORKER_RUNNING);
+	
+	switch_queue_create(&profile->sql_queue, 500000, profile->pool);
+	
+	while ((mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING)) || switch_queue_size(profile->sql_queue)) {
+		while (switch_queue_trypop(profile->sql_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+			job = (sofia_sql_job_t *) pop;
+			sofia_glue_actually_execute_sql(profile, job->master, job->sql, NULL);
+			free(job->sql);
+			free(job);
+			job = NULL;
+		}
+		
+		if (++loops >= 100) {
+			if (++ireg_loops >= IREG_SECONDS) {
+				sofia_reg_check_expire(profile, switch_timestamp(NULL));
+				ireg_loops = 0;
+			}
+
+			if (++gateway_loops >= GATEWAY_SECONDS) {
+				sofia_reg_check_gateway(profile, switch_timestamp(NULL));
+				gateway_loops = 0;
+			}
+			loops = 0;
+		}
+
+		switch_yield(10000);
+	}
+	
+	sofia_clear_pflag_locked(profile, PFLAG_WORKER_RUNNING);
+	
+	return NULL;
+}
+
+
+void launch_sofia_worker_thread(sofia_profile_t *profile)
+{
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+
+	switch_threadattr_create(&thd_attr, profile->pool);
+	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_priority_increase(thd_attr);
+	switch_thread_create(&thread, thd_attr, sofia_profile_worker_thread_run, profile, profile->pool);
+	switch_yield(1000000);
+}
+
 void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void *obj)
 {
 	sofia_profile_t *profile = (sofia_profile_t *) obj;
 	switch_memory_pool_t *pool;
 	sip_alias_node_t *node;
-	uint32_t ireg_loops = 0;
-	uint32_t gateway_loops = 0;
 	switch_event_t *s_event;
 	int tportlog = 0;
 
@@ -516,9 +574,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_mutex_init(&profile->ireg_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 	switch_mutex_init(&profile->gateway_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 
-	ireg_loops = IREG_SECONDS;
-	gateway_loops = GATEWAY_SECONDS;
-
 	if (switch_event_create(&s_event, SWITCH_EVENT_PUBLISH) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp,_sip._tcp,_sip._sctp%s",
 								(sofia_test_pflag(profile, PFLAG_TLS)) ? ",_sips._tcp" : "");
@@ -547,18 +602,9 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_yield(1000000);
 
 	sofia_set_pflag_locked(profile, PFLAG_RUNNING);
+	launch_sofia_worker_thread(profile);
 
-	while (mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING)) {
-		if (++ireg_loops >= IREG_SECONDS) {
-			sofia_reg_check_expire(profile, switch_timestamp(NULL));
-			ireg_loops = 0;
-		}
-
-		if (++gateway_loops >= GATEWAY_SECONDS) {
-			sofia_reg_check_gateway(profile, switch_timestamp(NULL));
-			gateway_loops = 0;
-		}
-
+	while (mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING) && sofia_test_pflag(profile, PFLAG_WORKER_RUNNING)) {
 		su_root_step(profile->s_root, 1000);
 	}
 
@@ -567,6 +613,13 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	sofia_reg_unregister(profile);
 	nua_shutdown(profile->nua);
 	su_root_run(profile->s_root);
+
+	sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "waiting for worker thread\n");
+
+	while(sofia_test_pflag(profile, PFLAG_WORKER_RUNNING)) {
+		switch_yield(100000);
+	}
 
 	while(profile->inuse) {
 		switch_yield(100000);
@@ -630,8 +683,11 @@ void launch_sofia_profile_thread(sofia_profile_t *profile)
 	switch_threadattr_create(&thd_attr, profile->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_priority_increase(thd_attr);
 	switch_thread_create(&thread, thd_attr, sofia_profile_thread_run, profile, profile->pool);
 }
+
+
 
 static void logger(void *logarg, char const *fmt, va_list ap)
 {
@@ -1415,26 +1471,28 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					contact_host = switch_str_nil(contact->url_host);
 				}
 
-				sql = switch_mprintf(
-									 "insert into sip_dialogs values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
-									 call_id,
-									 switch_core_session_get_uuid(session),
-									 to_user,
-									 to_host,
-									 from_user,
-									 from_host,
-									 contact_user,
-									 contact_host,
-									 astate,
-									 "outbound",
-									 user_agent
-									 );
+				if (profile->pflags & PFLAG_PRESENCE) {
+					sql = switch_mprintf(
+										 "insert into sip_dialogs values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
+										 call_id,
+										 switch_core_session_get_uuid(session),
+										 to_user,
+										 to_host,
+										 from_user,
+										 from_host,
+										 contact_user,
+										 contact_host,
+										 astate,
+										 "outbound",
+										 user_agent
+										 );
 
-				switch_assert(sql);
-
-				sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
-				free(sql);
-			} else if (status == 200) { 
+					switch_assert(sql);
+					
+					sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
+					free(sql);
+				}
+			} else if (status == 200 && (profile->pflags & PFLAG_PRESENCE)) { 
 				char *sql = NULL;
 				sql = switch_mprintf("update sip_dialogs set state='%s' where uuid='%s';\n", astate, switch_core_session_get_uuid(session));
 				switch_assert(sql); 
@@ -2364,6 +2422,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	int is_auth = 0, calling_myself = 0;
 	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
 	
+
 	if (sess_count >= sess_max || !(profile->pflags & PFLAG_RUNNING)) {
 		nua_respond(nh, 480, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 		return;
@@ -2795,25 +2854,29 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			contact_host = switch_str_nil(contact->url_host);
 		}
 
-		sql = switch_mprintf(
-							 "insert into sip_dialogs values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
-							 call_id,
-							 tech_pvt->sofia_private->uuid,
-							 to_user,
-							 to_host,
-							 dialog_from_user,
-							 dialog_from_host,
-							 contact_user,
-							 contact_host,
-							 "confirmed",
-							 "inbound",
-							 user_agent
-							 );
 
-		switch_assert(sql);
+		if (profile->pflags & PFLAG_PRESENCE) {
 
-		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
-		free(sql);
+			sql = switch_mprintf(
+								 "insert into sip_dialogs values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
+								 call_id,
+								 tech_pvt->sofia_private->uuid,
+								 to_user,
+								 to_host,
+								 dialog_from_user,
+								 dialog_from_host,
+								 contact_user,
+								 contact_host,
+								 "confirmed",
+								 "inbound",
+								 user_agent
+								 );
+			
+			switch_assert(sql);
+			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
+			free(sql);
+		}
+		
 		return;
 	}
 

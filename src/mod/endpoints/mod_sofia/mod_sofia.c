@@ -262,7 +262,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->hash_key);
 	}
 
-	if (session) {
+	if (session && (tech_pvt->profile->pflags & PFLAG_PRESENCE)) {
 		char *sql = switch_mprintf("delete from sip_dialogs where call_id='%q'", tech_pvt->call_id);
 		switch_assert(sql);
 		sofia_glue_execute_sql(tech_pvt->profile, SWITCH_FALSE, sql, tech_pvt->profile->ireg_mutex);
@@ -710,6 +710,13 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	if (switch_channel_get_state(channel) >= CS_HANGUP || !tech_pvt) {
 		status = SWITCH_STATUS_FALSE;
 		goto end;
+	}
+
+	if (msg->message_id == SWITCH_MESSAGE_INDICATE_ANSWER || msg->message_id == SWITCH_MESSAGE_INDICATE_PROGRESS) {
+		const char *var;
+		if ((var = switch_channel_get_variable(channel, SOFIA_SECURE_MEDIA_VARIABLE)) && switch_true(var)) {
+			switch_set_flag_locked(tech_pvt, TFLAG_SECURE);
+		}
 	}
 
 	switch (msg->message_id) {

@@ -88,6 +88,11 @@ typedef struct private_object private_object_t;
 #include <sofia-sip/nea.h>
 #include <sofia-sip/msg_addr.h>
 
+typedef struct {
+	switch_bool_t master;
+	char *sql;
+} sofia_sql_job_t;
+
 
 typedef enum {
 	DTMF_2833,
@@ -130,7 +135,8 @@ typedef enum {
 	PFLAG_TLS = (1 << 13),
 	PFLAG_CHECKUSER = (1 << 14),
 	PFLAG_SECURE = (1 << 15),
-	PFLAG_BLIND_AUTH = (1 << 16)
+	PFLAG_BLIND_AUTH = (1 << 16),
+	PFLAG_WORKER_RUNNING = (1 << 17),
 } PFLAGS;
 
 typedef enum {
@@ -298,6 +304,7 @@ struct sofia_profile {
 	char *odbc_user;
 	char *odbc_pass;
 	switch_odbc_handle_t *master_odbc;
+	switch_queue_t *sql_queue;
 };
 
 struct private_object {
@@ -503,6 +510,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 					 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 
 void sofia_glue_execute_sql(sofia_profile_t *profile, switch_bool_t master, char *sql, switch_mutex_t *mutex);
+void sofia_glue_actually_execute_sql(sofia_profile_t *profile, switch_bool_t master, char *sql, switch_mutex_t *mutex);
 void sofia_reg_check_expire(sofia_profile_t *profile, time_t now);
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now);
 void sofia_reg_unregister(sofia_profile_t *profile);
