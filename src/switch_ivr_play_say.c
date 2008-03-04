@@ -887,7 +887,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				if (args->input_callback) {
 					status = args->input_callback(session, (void *)&dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 				} else {
-					switch_copy_string((char *) args->buf, (void *)&dtmf, args->buflen);
+					*((char *)args->buf) = dtmf.digit;
 					status = SWITCH_STATUS_BREAK;
 				}
 			}
@@ -1080,6 +1080,65 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	switch_core_session_reset(session, SWITCH_TRUE);
 	return status;
 }
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
+												uint32_t min_digits,
+												uint32_t max_digits,
+												const char *prompt_audio_file,
+												const char *var_name,
+												char *digit_buffer, 
+												switch_size_t digit_buffer_length,
+												uint32_t timeout,
+												const char *valid_terminators)
+{
+	switch_channel_t *channel;
+	switch_input_args_t args = { 0 };
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	char terminator;
+	int len;
+
+	switch_assert(session);
+
+	channel = switch_core_session_get_channel(session);
+
+	if (digit_buffer_length < min_digits || digit_buffer_length < max_digits) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Buffer too small!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_channel_pre_answer(channel);
+
+	memset(digit_buffer, 0, digit_buffer_length);
+	args.buf = digit_buffer;
+	args.buflen = digit_buffer_length;
+
+	if (!switch_strlen_zero(prompt_audio_file)) {
+		status = switch_ivr_play_file(session, NULL, prompt_audio_file, &args);
+	}
+
+	if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+		goto end;
+	}
+
+	len = strlen(digit_buffer);
+
+	if (len < min_digits && len < max_digits) {
+		args.buf = digit_buffer + len;
+		args.buflen = digit_buffer_length - len;
+		status = switch_ivr_collect_digits_count(session, digit_buffer, digit_buffer_length, max_digits, valid_terminators, &terminator, timeout, 0, 0);
+	}
+
+
+ end:
+
+	if (var_name && !switch_strlen_zero(digit_buffer)) {
+		switch_channel_set_variable(channel, var_name, digit_buffer);
+	}
+
+	return status;
+	
+}
+
 
 SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t *session,
 														   uint32_t min_digits,

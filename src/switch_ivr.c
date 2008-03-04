@@ -647,7 +647,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 				digit_started = switch_timestamp_now();
 			}
 
-			for (y = 0; y < maxdigits; y++) {
+			for (y = 0; y <= maxdigits; y++) {
 				if (switch_channel_dequeue_dtmf(channel, &dtmf) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
