@@ -1099,6 +1099,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_BLIND_REG;
 						}
+					} else if (!strcasecmp(var, "accept-blind-auth")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_BLIND_AUTH;
+						}
 					} else if (!strcasecmp(var, "auth-all-packets")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_AUTH_ALL;
@@ -2374,7 +2378,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	
 	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
 
-	if ((profile->pflags & PFLAG_AUTH_CALLS) || sip->sip_proxy_authorization || sip->sip_authorization) {
+	if ((profile->pflags & PFLAG_AUTH_CALLS) || (!(profile->pflags & PFLAG_BLIND_AUTH) && (sip->sip_proxy_authorization || sip->sip_authorization))) {
 		if (strcmp(network_ip, profile->sipip)) {
 			if (sofia_reg_handle_register(nua, profile, nh, sip, REG_INVITE, key, sizeof(key), &v_event)) {
 				if (v_event) {
