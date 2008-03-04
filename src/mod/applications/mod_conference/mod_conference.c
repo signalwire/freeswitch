@@ -865,7 +865,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 			total++;
 			imember->read = 0;
 
-			if (switch_channel_test_flag(switch_core_session_get_channel(imember->session), CF_VIDEO)) {
+			if (imember->session && switch_channel_test_flag(switch_core_session_get_channel(imember->session), CF_VIDEO)) {
 				members_with_video++;
 			}
 
@@ -1978,6 +1978,11 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t * t
 	fh.samplerate = conference->rate;
 	member->id = next_member_id();
 	member->pool = rec->pool;
+
+    member->frame_size = SWITCH_RECOMMENDED_BUFFER_SIZE;
+    member->frame = switch_core_alloc(member->pool, member->frame_size);
+    member->mux_frame = switch_core_alloc(member->pool, member->frame_size);
+
 
 	switch_mutex_init(&member->flag_mutex, SWITCH_MUTEX_NESTED, rec->pool);
 	switch_mutex_init(&member->audio_in_mutex, SWITCH_MUTEX_NESTED, rec->pool);
