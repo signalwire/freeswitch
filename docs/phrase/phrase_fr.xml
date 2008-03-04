@@ -80,17 +80,17 @@
       <prompt phrase="Quatorze" filename="14.wav"/>
       <prompt phrase="Quinze" filename="15.wav"/>
       <prompt phrase="Seize" filename="16.wav"/>
-      <prompt phrase="Dix Sept" filename="17.wav"/>
-      <prompt phrase="Dix Huit" filename="18.wav"/>
-      <prompt phrase="Dix Neuf" filename="19.wav"/>
+      <prompt phrase="Dix-Sept" filename="17.wav"/>
+      <prompt phrase="Dix-Huit" filename="18.wav"/>
+      <prompt phrase="Dix-Neuf" filename="19.wav"/>
       <prompt phrase="Vingt" filename="20.wav"/>
-      <prompt phrase="Vingt et un" filename="30.wav"/>
+      <prompt phrase="Trente" filename="30.wav"/>
       <prompt phrase="Quarante" filename="40.wav"/>
       <prompt phrase="Cinquante" filename="50.wav"/>
       <prompt phrase="Soixante" filename="60.wav"/>
       <prompt phrase="Soixante Dix" filename="70.wav"/>
-      <prompt phrase="Quatre Vingt" filename="80.wav"/>
-      <prompt phrase="Quatre Vingt Dix" filename="90.wav"/>
+      <prompt phrase="Quatre-Vingt" filename="80.wav"/>
+      <prompt phrase="Quatre-Vingt-Dix" filename="90.wav"/>
       <prompt phrase="Point" filename="dot.wav"/>
       <prompt phrase="Premier" filename="h-1.wav"/>
       <prompt phrase="Second" filename="h-2.wav"/>
@@ -108,12 +108,13 @@
       <prompt phrase="Quatorzième" filename="h-14.wav"/>
       <prompt phrase="Quinzième" filename="h-15.wav"/>
       <prompt phrase="Seizième" filename="h-16.wav"/>
-      <prompt phrase="Dix Sepième" filename="h-17.wav"/>
-      <prompt phrase="Dix Huitième" filename="h-18.wav"/>
-      <prompt phrase="Dix Neuvième" filename="h-19.wav"/>
+      <prompt phrase="Dix-Septième" filename="h-17.wav"/>
+      <prompt phrase="Dix-Huitième" filename="h-18.wav"/>
+      <prompt phrase="Dix-Neuvième" filename="h-19.wav"/>
       <prompt phrase="Vingtième" filename="h-20.wav"/>
       <prompt phrase="Trentième" filename="h-30.wav"/>
-      <prompt phrase="Quarantième" filename="hundred.wav"/>
+      <prompt phrase="Quarantième" filename="hh-40.wav"/>
+      <prompt phrase="Cent" filename="hundred.wav"/>
       <prompt phrase="Million" filename="million.wav"/>
       <prompt phrase="Point Final" filename="period.wav"/>
       <prompt phrase="Point" filename="point.wav"/>
@@ -143,7 +144,7 @@
       <prompt phrase="Vendredi" filename="day-5.wav"/>
       <prompt phrase="Samedi" filename="day-6.wav"/>
       <prompt phrase="Heure" filename="hour.wav"/>
-      <prompt phrase="Houres" filename="hours.wav"/>
+      <prompt phrase="Heures" filename="hours.wav"/>
       <prompt phrase="Minute" filename="minute.wav"/>
       <prompt phrase="Minutes" filename="minutes.wav"/>
       <prompt phrase="Janvier" filename="mon-0.wav"/>
