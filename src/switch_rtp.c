@@ -1346,7 +1346,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 	do_continue:
 
-		switch_yield(5000);
+		switch_yield(1000);
 	}
 
 	if (switch_rtp_ready(rtp_session)) {
