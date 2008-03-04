@@ -496,7 +496,7 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 	switch_core_session_t *other_session;
 	switch_event_t *event;
 
-	if (switch_channel_test_flag(channel, CF_ORIGINATOR)) {
+	if (switch_channel_test_flag(channel, CF_ORIGINATOR)) {		
 		switch_channel_clear_flag(channel, CF_ORIGINATOR);
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
@@ -514,17 +514,10 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 		switch_channel_set_variable(channel, SWITCH_BRIDGE_VARIABLE, NULL);
 		switch_channel_set_variable(other_channel, SWITCH_BRIDGE_VARIABLE, NULL);
 
-		assert (!switch_channel_test_flag(other_channel, CF_TRANSFER));
+		if (switch_channel_get_state(other_channel) < CS_HANGUP) {
+			switch_channel_hangup(other_channel, switch_channel_get_cause(channel));
+		}
 
-		if (!switch_channel_test_flag(other_channel, CF_TRANSFER)) {
-			if (switch_channel_test_flag(other_channel, CF_ANSWERED) && 
-				switch_channel_get_state(other_channel) < CS_HANGUP &&
-				switch_true(switch_channel_get_variable(other_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
-				switch_channel_hangup(other_channel, switch_channel_get_cause(channel));
-			} else {
-				switch_channel_set_state(other_channel, CS_EXECUTE);
-			}
-		} 
 		switch_core_session_rwunlock(other_session);
 	}
 

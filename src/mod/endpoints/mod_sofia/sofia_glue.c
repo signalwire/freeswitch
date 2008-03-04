@@ -1422,11 +1422,18 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	uint32_t rtp_timeout_sec = tech_pvt->profile->rtp_timeout_sec;
 	uint32_t rtp_hold_timeout_sec = tech_pvt->profile->rtp_hold_timeout_sec;
 	char *timer_name;
+	const char *var;
 
 	switch_assert(tech_pvt != NULL);
 
 	switch_core_session_signal_lock(tech_pvt->session);
 	
+
+	if ((var = switch_channel_get_variable(tech_pvt->channel, SOFIA_SECURE_MEDIA_VARIABLE)) && switch_true(var)) {
+		switch_set_flag_locked(tech_pvt, TFLAG_SECURE);
+	}
+
+
 	if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE)) {
 		status = SWITCH_STATUS_SUCCESS;
 		goto end;

@@ -712,13 +712,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		goto end;
 	}
 
-	if (msg->message_id == SWITCH_MESSAGE_INDICATE_ANSWER || msg->message_id == SWITCH_MESSAGE_INDICATE_PROGRESS) {
-		const char *var;
-		if ((var = switch_channel_get_variable(channel, SOFIA_SECURE_MEDIA_VARIABLE)) && switch_true(var)) {
-			switch_set_flag_locked(tech_pvt, TFLAG_SECURE);
-		}
-	}
-
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
 		{
@@ -794,10 +787,26 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	case SWITCH_MESSAGE_INDICATE_MEDIA:
 		{
-			uint32_t count = 0;
-
+			uint32_t count = 0, send_invite = 1;
+			
 			switch_channel_clear_flag(channel, CF_PROXY_MODE);
 			tech_pvt->local_sdp_str = NULL;
+
+			if (!switch_channel_media_ready(channel)) {
+				if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
+					const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
+					
+					tech_pvt->num_codecs = 0;
+					sofia_glue_tech_prepare_codecs(tech_pvt);
+					if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
+						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
+						status = SWITCH_STATUS_FALSE;
+						goto end;
+					}
+					send_invite = 0;
+				}
+			}
+
 			if (!switch_rtp_ready(tech_pvt->rtp_session)) {
 				sofia_glue_tech_prepare_codecs(tech_pvt);
 				if ((status = sofia_glue_tech_choose_port(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
@@ -806,20 +815,22 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				}
 			}
 			sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
-			sofia_glue_do_invite(session);
 
-			/* wait for rtp to start and first real frame to arrive */
-			tech_pvt->read_frame.datalen = 0;
-			while (switch_test_flag(tech_pvt, TFLAG_IO) && switch_channel_get_state(channel) < CS_HANGUP && !switch_rtp_ready(tech_pvt->rtp_session)) {
-				if (++count > 1000) {
-					status = SWITCH_STATUS_FALSE;
-					goto end;
+			if (send_invite) {
+				sofia_glue_do_invite(session);
+				/* wait for rtp to start and first real frame to arrive */
+				tech_pvt->read_frame.datalen = 0;
+				while (switch_test_flag(tech_pvt, TFLAG_IO) && switch_channel_get_state(channel) < CS_HANGUP && !switch_rtp_ready(tech_pvt->rtp_session)) {
+					if (++count > 1000) {
+						status = SWITCH_STATUS_FALSE;
+						goto end;
+					}
+					if (!switch_rtp_ready(tech_pvt->rtp_session)) {
+						switch_yield(1000);
+						continue;
+					}
+					break;
 				}
-				if (!switch_rtp_ready(tech_pvt->rtp_session)) {
-					switch_yield(1000);
-					continue;
-				}
-				break;
 			}
 		}
 		break;
