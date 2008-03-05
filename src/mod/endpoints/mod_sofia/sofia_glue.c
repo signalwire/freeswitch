@@ -1072,6 +1072,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			   TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 			   TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
 			   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+			   SOATAG_REUSE_REJECTED(1),
+			   SOATAG_ORDERED_USER(1),
 			   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
 			   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), SOATAG_HOLD(holdstr), TAG_END());
 
@@ -1108,6 +1110,8 @@ void sofia_glue_do_xfer_invite(switch_core_session_t *session)
 		nua_invite(tech_pvt->nh2,
 				   SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 				   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+				   SOATAG_REUSE_REJECTED(1),
+				   SOATAG_ORDERED_USER(1),
 				   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE), SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), TAG_END());
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
