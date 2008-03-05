@@ -40,6 +40,7 @@ SWITCH_MODULE_DEFINITION(mod_radius_cdr, mod_radius_cdr_load, NULL, NULL);
 
 static char		cf[] = "mod_radius_cdr.conf";
 static char		my_dictionary[PATH_MAX];
+static char *		my_deadtime; /* 0 */
 static char *		my_timeout; /* 5 */
 static char *		my_retries; /* 3 */
 static char		my_servers[SERVER_MAX][255];
@@ -58,7 +59,7 @@ static rc_handle *	my_radius_init(void)
 	rad_config = rc_config_init(rad_config);
 
 	if (rad_config == NULL) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "[mod_radius_cdr] Error initializing radius config!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error initializing radius config!\n");
 		rc_destroy(rad_config);
 		return NULL;
 	}	
@@ -66,14 +67,14 @@ static rc_handle *	my_radius_init(void)
 	/* Some hardcoded ( for now ) defaults needed to initialize radius */
 	if (rc_add_config(rad_config, "auth_order", "radius", "mod_radius_cdr.c", 0) != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-					"[mod_radius_cdr] failed setting auth_order = radius\n");
+					"setting auth_order = radius failed\n");
 		rc_destroy(rad_config);
 		return NULL;
 	}
 
 	if (rc_add_config(rad_config, "seqfile", "/var/run/radius.seq", "mod_radius_cdr.c", 0) != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-					"failed setting seqfile =  /var/run/radius.seq\n");
+					"setting seqfile =  /var/run/radius.seq failed\n");
 		rc_destroy(rad_config);
 		return NULL;
 	}
@@ -96,16 +97,23 @@ static rc_handle *	my_radius_init(void)
 		return NULL;
 	}
 
+	if (rc_add_config(rad_config, "radius_deadtime", my_deadtime, cf, 0) != 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+				"setting radius_deadtime = %s failed\n", my_deadtime);
+		rc_destroy(rad_config);
+		return NULL;
+	}
+
 	if (rc_add_config(rad_config, "radius_timeout", my_timeout, cf, 0) != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-				"failed setting radius_timeout = %s failed\n", my_timeout);
+				"setting radius_timeout = %s failed\n", my_timeout);
 		rc_destroy(rad_config);
 		return NULL;
 	}
 
 	if (rc_add_config(rad_config, "radius_retries", my_retries, cf, 0) != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-				"failed setting radius_retries = %s failed\n", my_retries);
+				"setting radius_retries = %s failed\n", my_retries);
 		rc_destroy(rad_config);
 	        return NULL;
 	}
@@ -113,7 +121,7 @@ static rc_handle *	my_radius_init(void)
 	/* Read the dictionary file(s) */
 	if (rc_read_dictionary(rad_config, rc_conf_str(rad_config, "dictionary")) != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-				"failed reading dictionary file(s): %s\n", my_dictionary);
+				"reading dictionary file(s): %s\n", my_dictionary);
 		rc_destroy(rad_config);
 		return NULL;
 	}
