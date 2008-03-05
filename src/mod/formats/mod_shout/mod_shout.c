@@ -272,12 +272,13 @@ static size_t decode_fd(shout_context_t * context, void *data, size_t bytes)
 			}
 
 			if (decode_status == MP3_ERR) {
-				if (++context->mp3err >= 20) {
+				if (++context->mp3err >= 5) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decoder Error!\n");
+					goto error;
 				}
+
 				dlen = 0;
-				//continue;
-                goto error;
+				continue;				
 			}
 
 			context->mp3err = 0;
@@ -586,10 +587,11 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 
         }
 
+		lame_set_brate(context->gfp, 24 * (handle->samplerate / 8000) * handle->channels);
 		lame_set_num_channels(context->gfp, handle->channels);
 		lame_set_in_samplerate(context->gfp, handle->samplerate);
-		lame_set_brate(context->gfp, 64);
 		lame_set_out_samplerate(context->gfp, handle->samplerate);
+
         if (handle->channels == 2) {
             lame_set_mode(context->gfp, STEREO);
         } else {
