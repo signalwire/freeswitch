@@ -2618,7 +2618,7 @@ char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex
 	}
 
 	if (switch_core_db_prepare(db, sql, -1, &stmt, 0)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Statement Error!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Statement Error [%s]!\n", sql);
 		goto fail;
 	} else {
 		int running = 1;
