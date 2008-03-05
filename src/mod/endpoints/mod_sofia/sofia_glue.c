@@ -2443,27 +2443,34 @@ void sofia_glue_sql_close(sofia_profile_t *profile)
 }
 
 
-void sofia_glue_execute_sql(sofia_profile_t *profile, switch_bool_t master, char *sql, switch_mutex_t *mutex)
+void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t dyn)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	sofia_sql_job_t *job = NULL;
+	char *d_sql = NULL, *sql;
+
+	switch_assert(sqlp && *sqlp);
+	sql = *sqlp;
 	
 	if (profile->sql_queue) {
-		switch_zmalloc(job, sizeof(*job));
+		if (dyn) {
+			d_sql = sql;
+		} else {
+			d_sql = strdup(sql);
+		}
 
-		job->sql = strdup(sql);
-		switch_assert(job->sql);
-		job->master = master;
-		
-		status = switch_queue_trypush(profile->sql_queue, job);
+		switch_assert(d_sql);
+		status = switch_queue_trypush(profile->sql_queue, d_sql);
 	}
 	
-	if (status != SWITCH_STATUS_SUCCESS) {
-		if (job) {
-			free(job->sql);
-			free(job);
+	if (status == SWITCH_STATUS_SUCCESS) {
+		if (dyn) {
+			*sqlp = NULL;
 		}
-		sofia_glue_actually_execute_sql(profile, master, sql, mutex);
+	} else {
+		if (!dyn) {
+			switch_safe_free(d_sql);
+		}
+		sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 	}
 
 }

@@ -73,8 +73,7 @@ void sofia_handle_sip_r_notify(switch_core_session_t *session, int status,
 		
 		sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", call_id);
 		switch_assert(sql != NULL);
-		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
-		free(sql);
+		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		nua_handle_destroy(nh);
 	}
 }
@@ -169,8 +168,7 @@ void sofia_handle_sip_r_message(int status, sofia_profile_t *profile, nua_handle
 
 			sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", user, host);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Deleting registration for %s@%s\n", user, host);
-			sofia_glue_execute_sql(profile, SWITCH_TRUE, sql, NULL);
-			switch_safe_free(sql);
+			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
 	}
 
@@ -398,16 +396,13 @@ void event_handler(switch_event_t *event)
 		}
 
 		switch_mutex_lock(profile->ireg_mutex);
-		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
-		switch_safe_free(sql);
-
+		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+		
 		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','Registered', '%q', %ld, '%q')",
 							  call_id, from_user, from_host, contact_str, rpid, expires, user_agent);
 
 		if (sql) {
-			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
-			switch_safe_free(sql);
-			sql = NULL;
+			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Propagating registration for %s@%s->%s\n", from_user, from_host, contact_str);
 		}
 		switch_mutex_unlock(profile->ireg_mutex);
@@ -424,9 +419,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 	sofia_profile_t *profile = (sofia_profile_t *) obj;
 	uint32_t ireg_loops = 0;
 	uint32_t gateway_loops = 0;
-	void *pop;
-	sofia_sql_job_t *job;
 	int loops = 0;
+	uint32_t qsize;
 
 	ireg_loops = IREG_SECONDS;
 	gateway_loops = GATEWAY_SECONDS;
@@ -435,15 +429,19 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 	
 	switch_queue_create(&profile->sql_queue, 500000, profile->pool);
 	
-	while ((mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING)) || switch_queue_size(profile->sql_queue)) {
-		while (switch_queue_trypop(profile->sql_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
-			job = (sofia_sql_job_t *) pop;
-			sofia_glue_actually_execute_sql(profile, job->master, job->sql, NULL);
-			free(job->sql);
-			free(job);
-			job = NULL;
+	qsize = switch_queue_size(profile->sql_queue);
+
+	while ((mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING)) || qsize) {
+		if (qsize) {
+			void *pop;
+			switch_mutex_lock(profile->ireg_mutex);
+			while (switch_queue_trypop(profile->sql_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+				sofia_glue_actually_execute_sql(profile, SWITCH_TRUE, (char *) pop, NULL);
+				free(pop);
+			}
+			switch_mutex_unlock(profile->ireg_mutex);
 		}
-		
+
 		if (++loops >= 100) {
 			if (++ireg_loops >= IREG_SECONDS) {
 				sofia_reg_check_expire(profile, switch_timestamp(NULL));
@@ -458,6 +456,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 		}
 
 		switch_yield(10000);
+		qsize = switch_queue_size(profile->sql_queue);
 	}
 	
 	sofia_clear_pflag_locked(profile, PFLAG_WORKER_RUNNING);
@@ -470,13 +469,20 @@ void launch_sofia_worker_thread(sofia_profile_t *profile)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
+	int x = 0;
 
 	switch_threadattr_create(&thd_attr, profile->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_threadattr_priority_increase(thd_attr);
 	switch_thread_create(&thread, thd_attr, sofia_profile_worker_thread_run, profile, profile->pool);
-	switch_yield(1000000);
+
+	while(!sofia_test_pflag(profile, PFLAG_WORKER_RUNNING)) {
+		switch_yield(100000);
+		if (++x >= 100) {
+			break;
+		}
+	}
 }
 
 void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void *obj)
@@ -544,6 +550,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("dialog")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("call-info")),
+				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("sla")),
+				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("include-session-description")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence.winfo")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("message-summary")),
 				   SIPTAG_SUPPORTED_STR("100rel, precondition, timer"), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
@@ -599,10 +607,11 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting thread for %s\n", profile->name);
 
 	profile->started = switch_timestamp(NULL);
-	switch_yield(1000000);
 
 	sofia_set_pflag_locked(profile, PFLAG_RUNNING);
 	launch_sofia_worker_thread(profile);
+
+	switch_yield(1000000);
 
 	while (mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING) && sofia_test_pflag(profile, PFLAG_WORKER_RUNNING)) {
 		su_root_step(profile->s_root, 1000);
@@ -1489,15 +1498,13 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 					switch_assert(sql);
 					
-					sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
-					free(sql);
+					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 				}
 			} else if (status == 200 && (profile->pflags & PFLAG_PRESENCE)) { 
 				char *sql = NULL;
 				sql = switch_mprintf("update sip_dialogs set state='%s' where uuid='%s';\n", astate, switch_core_session_get_uuid(session));
 				switch_assert(sql); 
-				sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex); 
-				free(sql);
+				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE); 
 			}
 		}
 	}
@@ -2873,8 +2880,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 								 );
 			
 			switch_assert(sql);
-			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
-			free(sql);
+			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
 		
 		return;

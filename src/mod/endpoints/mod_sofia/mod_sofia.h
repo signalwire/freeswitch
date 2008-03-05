@@ -88,12 +88,6 @@ typedef struct private_object private_object_t;
 #include <sofia-sip/nea.h>
 #include <sofia-sip/msg_addr.h>
 
-typedef struct {
-	switch_bool_t master;
-	char *sql;
-} sofia_sql_job_t;
-
-
 typedef enum {
 	DTMF_2833,
 	DTMF_INFO,
@@ -509,7 +503,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 					 char const *phrase,
 					 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 
-void sofia_glue_execute_sql(sofia_profile_t *profile, switch_bool_t master, char *sql, switch_mutex_t *mutex);
+void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t dyn);
 void sofia_glue_actually_execute_sql(sofia_profile_t *profile, switch_bool_t master, char *sql, switch_mutex_t *mutex);
 void sofia_reg_check_expire(sofia_profile_t *profile, time_t now);
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now);

@@ -461,9 +461,10 @@ void sofia_presence_event_handler(switch_event_t *event)
 			
 
 			if (!switch_strlen_zero((char *)helper.stream.data)) {
-				sofia_glue_execute_sql(profile, SWITCH_FALSE, helper.stream.data, profile->ireg_mutex);
+				char *ssql = (char *)helper.stream.data;
+				sofia_glue_execute_sql(profile, &ssql, SWITCH_TRUE);
+				helper.stream.data = NULL;
 			}
-			switch_safe_free(helper.stream.data);
 		}
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
@@ -781,7 +782,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			ct = "application/dialog-info+xml";
 		}
 		
-		if (astate && uuid && helper && helper->stream.data) {
+		if (!switch_strlen_zero(astate) && !switch_strlen_zero(uuid) && helper && helper->stream.data) {
 			helper->stream.write_function(&helper->stream, "update sip_dialogs set state='%s' where uuid='%s';\n", astate, uuid);
 		}
 
@@ -1131,20 +1132,23 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		exp_raw = (sip->sip_expires ? sip->sip_expires->ex_delta : 3600);
 		exp = (long) switch_timestamp(NULL) + exp_raw;
 
+		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
+			sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", call_id);
+		} else {
+			sql = switch_mprintf("delete from sip_subscriptions where "
+								 "proto='%q' and sip_user='%q' and sip_host='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q'",
+								 proto,
+								 from_user,
+								 from_host,
+								 to_user,
+								 to_host, event
+								 );
+		}
+
+
 		switch_mutex_lock(profile->ireg_mutex);
-
-		sql = switch_mprintf("delete from sip_subscriptions where "
-							 "proto='%q' and sip_user='%q' and sip_host='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q'",
-							 proto,
-							 from_user,
-							 from_host,
-							 to_user,
-							 to_host, event
-							 );
-
 		switch_assert(sql != NULL);
-		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
-		free(sql);
+		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 
 		if (sub_state == nua_substate_terminated) {
 			sstr = switch_mprintf("terminated");
@@ -1162,8 +1166,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 								 contact_str, call_id, full_from, full_via, exp, full_agent, accept);
 			
 			switch_assert(sql != NULL);
-			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
-			free(sql);
+			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 
 			sstr = switch_mprintf("active;expires=%ld", exp_raw);
 			if (status < 200) {
@@ -1295,8 +1298,7 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 				if ((sql =
 					 switch_mprintf("update sip_registrations set status='%q',rpid='%q' where sip_user='%q' and sip_host='%q'",
 									note_txt, rpid, from_user, from_host))) {
-					sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
-					switch_safe_free(sql);
+					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 				}
 
 				event_type = sip_header_as_string(profile->home, (void *) sip->sip_event);

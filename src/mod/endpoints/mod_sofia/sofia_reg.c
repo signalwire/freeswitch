@@ -210,6 +210,7 @@ int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames
 void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
 {
 	char sql[1024];
+	char *psql = sql;
 
 #ifdef SWITCH_HAVE_ODBC
     if (profile->odbc_dsn) {
@@ -245,19 +246,19 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
 	} else {
 		switch_snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0");
 	}
-	sofia_glue_execute_sql(profile, SWITCH_TRUE, sql, NULL);
+	sofia_glue_execute_sql(profile, &psql, SWITCH_FALSE);
 	if (now) {
 		switch_snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and expires <= %ld", (long) now);
 	} else {
 		switch_snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0");
 	}
-	sofia_glue_execute_sql(profile, SWITCH_TRUE, sql, NULL);
+	sofia_glue_execute_sql(profile, &psql, SWITCH_FALSE);
 	if (now) {
 		switch_snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0 and expires <= %ld", (long) now);
 	} else {
 		switch_snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0");
 	}
-	sofia_glue_execute_sql(profile, SWITCH_TRUE, sql, NULL);
+	sofia_glue_execute_sql(profile, &psql, SWITCH_FALSE);
 
 	if (now) {
 		switch_snprintf(sql, sizeof(sql), "select * from sip_registrations where status like '%%NATHACK%%'");
@@ -317,13 +318,10 @@ void sofia_reg_auth_challange(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
 
-	switch_mutex_lock(profile->ireg_mutex);
 	sql = switch_mprintf("insert into sip_authentication (nonce, expires) values('%q', %ld)",
 						 uuid_str, switch_timestamp(NULL) + profile->nonce_ttl);
 	switch_assert(sql != NULL);
-	sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
-	switch_safe_free(sql);
-	switch_mutex_unlock(profile->ireg_mutex);
+	sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 
 	auth_str =
 		switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", realm, uuid_str, stale ? " stale=\"true\"," : "");
@@ -521,8 +519,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", to_user, to_host);
 		}
 		switch_mutex_lock(profile->ireg_mutex);
-		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
-		switch_safe_free(sql);
+		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		
 		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','%q', '%q', %ld, '%q')", call_id,
 							 to_user, to_host, contact_str, reg_desc,
@@ -530,9 +527,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 
 		
 		if (sql) {
-			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
-			switch_safe_free(sql);
-			sql = NULL;
+			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
 		switch_mutex_unlock(profile->ireg_mutex);
 
@@ -573,29 +568,21 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			if ((p = strchr(icontact + 4, ':'))) {
 				*p = '\0';
 			}
-			if ((sql = switch_mprintf("delete from sip_subscriptions where sip_user='%q' and sip_host='%q' and contact like '%%%q%%'", to_user, to_host, icontact))) {
-				sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
-				switch_safe_free(sql);
-				sql = NULL;
+			if ((sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", call_id))) {
+				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 			}
 			
 			if ((sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id))) {
-				sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
-				switch_safe_free(sql);
-				sql = NULL;
+				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 			}
 			switch_safe_free(icontact);
 		} else {
 			if ((sql = switch_mprintf("delete from sip_subscriptions where sip_user='%q' and sip_host='%q'", to_user, to_host))) {
-				sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
-				switch_safe_free(sql);
-				sql = NULL;
+				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 			}
 			
 			if ((sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", to_user, to_host))) {
-				sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
-				switch_safe_free(sql);
-				sql = NULL;
+				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 			}
 		}
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
@@ -654,19 +641,25 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 	if (!sip || !sip->sip_request || !sip->sip_request->rq_method_name) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received an invalid packet!\n");
 		nua_respond(nh, SIP_500_INTERNAL_SERVER_ERROR, TAG_END());
-		return;
+		goto end;
 	}
 
 	if (!(sip->sip_contact && sip->sip_contact->m_url)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO CONTACT!\n");
 		nua_respond(nh, 400, "Missing Contact Header", TAG_END());
-		return;
+		goto end;
 	}
 
 	sofia_reg_handle_register(nua, profile, nh, sip, REG_REGISTER, key, sizeof(key), &v_event);
+
 	if (v_event) {
 		switch_event_fire(&v_event);
 	}
+
+ end:	
+
+	nua_handle_destroy(nh);
+
 }
 
 
