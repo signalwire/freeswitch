@@ -252,7 +252,7 @@ static char prompt_str[512] = "";
  * If a fnkey is configured then process the command
  */
 static unsigned char console_fnkey_pressed(int i) {
-	char *c;
+	char *c, *cmd;
 
     assert((i > 0) && (i <= 12));
 
@@ -265,8 +265,10 @@ static unsigned char console_fnkey_pressed(int i) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "FUNCTION KEY F%d IS NOT BOUND, please edit switch.conf XML file\n", i);
         return CC_REDISPLAY;
     }
-
-	switch_console_process(c);
+	
+	cmd = strdup(c);
+	switch_console_process(cmd);
+	free(cmd);
 
     return CC_REDISPLAY;
 }
