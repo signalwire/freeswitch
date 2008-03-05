@@ -75,6 +75,9 @@
     <!-- accept any authentication without actually checking (not a good feature for most people) -->
     <!-- <param name="accept-blind-auth" value="true"/> -->
     
+    <!-- supress CNG on this profile or per call with the 'supress_cng' variable -->
+    <!-- <param name="supress-cng" value="true"/> -->
+    
     <!--TTL for nonce in sip auth-->
     <param name="nonce-ttl" value="60"/>
     <!--Uncomment if you want to force the outbound leg of a bridge to only offer the codec 
