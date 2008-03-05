@@ -1,4 +1,20 @@
-<configuration name="switch.conf" description="Modules">
+<configuration name="switch.conf" description="Core Configuration">
+
+  <cli-keybindings>
+    <key name="1" value="help"/>
+    <key name="2" value="status"/>
+    <key name="3" value="show channels"/>
+    <key name="4" value="show calls"/>
+    <key name="5" value="sofia status"/>
+    <key name="6" value="reloadxml"/>
+    <key name="7" value="console loglevel 0"/>
+    <key name="8" value="console loglevel 7"/>
+    <key name="9" value="sofia status profile default"/>
+    <key name="10" value="fsctl pause"/>
+    <key name="11" value="fsctl resume"/>
+    <key name="12" value="version"/>
+  </cli-keybindings> 
+  
   <settings>
     <!--Most channels to allow at once -->
     <param name="max-sessions" value="1000"/>
