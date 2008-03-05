@@ -822,13 +822,14 @@ int soa_sdp_upgrade(soa_session_t *ss,
 	continue;
 
       for (i = 0; i < size - 1; i++) {
-	if (s_media[i] != NULL)
-	  continue;
-	s_media[i] = u_media[j], u_media[j] = SDP_MEDIA_NONE;
-	u2s[j] = i, s2u[i] = j;
+	if (s_media[i] == NULL) {
+	  s_media[i] = u_media[j], u_media[j] = SDP_MEDIA_NONE;
+	  u2s[j] = i, s2u[i] = j;
+	  break;
+	}
       }
 
-      assert(i != size);
+      assert(i != size - 1);
     }
   }
   else {
