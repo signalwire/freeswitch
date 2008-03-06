@@ -2153,7 +2153,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "hold", "hold (depricated)", uuid_hold_function, HOLD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_hold", "hold", uuid_hold_function, HOLD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "media", "media (depricated)", uuid_media_function, MEDIA_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "uuid media", "media", uuid_media_function, MEDIA_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_media", "media", uuid_media_function, MEDIA_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "fsctl", "control messages", ctl_function, CTL_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "help", "Show help for all the api commands", help_function, "");
 	SWITCH_ADD_API(commands_api_interface, "version", "Show version of the switch", version_function, "");
