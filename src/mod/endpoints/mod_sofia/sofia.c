@@ -2134,7 +2134,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							uint32_t timeout = 60;
 							char *tuuid_str;
 							const char *port = NULL;
-							
+							switch_status_t status;
+
 							if (refer_to && refer_to->r_url && refer_to->r_url->url_port) {
 								port = refer_to->r_url->url_port;
 							}
@@ -2157,17 +2158,20 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							if (!switch_strlen_zero(full_ref_to)) {
 								switch_channel_set_variable(channel, SOFIA_REFER_TO_VARIABLE, full_ref_to);
 							}
-							if (switch_ivr_originate(a_session,
-													 &tsession, &cause, exten, timeout, &noop_state_handler, NULL, NULL, NULL, SOF_NONE) 
-								!= SWITCH_STATUS_SUCCESS) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! [%s]\n", exten);
-								nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
-										   NUTAG_SUBSTATE(nua_substate_terminated),
-										   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
+							status = switch_ivr_originate(a_session,
+														  &tsession, &cause, exten, timeout, &noop_state_handler, NULL, NULL, NULL, SOF_NONE);
+
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! [%s]\n", exten);
+							nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+									   NUTAG_SUBSTATE(nua_substate_terminated),
+									   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
+							
+							switch_core_session_rwunlock(a_session);
+
+							if (status != SWITCH_STATUS_SUCCESS) {
 								goto done;
 							}
-
-							switch_core_session_rwunlock(a_session);
+							
 							tuuid_str = switch_core_session_get_uuid(tsession);
 							switch_ivr_uuid_bridge(br_a, tuuid_str);
 							switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
@@ -2205,7 +2209,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 		if ((br = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 			switch_core_session_t *b_session;
-
+			
 			if ((b_session = switch_core_session_locate(br))) {
 				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 				switch_channel_set_variable(channel, "transfer_fallback_extension", from->a_user);

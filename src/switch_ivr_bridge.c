@@ -785,6 +785,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "reversing order of channels so this will work!\n");
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Neither channel is answered, cannot bridge them.\n");
+					switch_core_session_rwunlock(originator_session);
+					switch_core_session_rwunlock(originatee_session);
 					return SWITCH_STATUS_FALSE;
 				}
 			}
