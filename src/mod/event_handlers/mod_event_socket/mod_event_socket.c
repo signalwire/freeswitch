@@ -604,7 +604,12 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t * thread, void *obj)
 	} else {
 		switch_size_t rlen, blen;
 		char buf[1024] = "";
-		rlen = strlen(reply);
+
+		if (!(rlen = strlen(reply))) {
+			reply = "-ERR no reply\n";
+			rlen = strlen(reply);
+		}
+
 		switch_snprintf(buf, sizeof(buf), "Content-Type: api/response\nContent-Length: %" SWITCH_SSIZE_T_FMT "\n\n", rlen);
 		blen = strlen(buf);
 		switch_socket_send(acs->listener->sock, buf, &blen);
