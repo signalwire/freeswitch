@@ -48,6 +48,7 @@ typedef struct switch_io_event_hook_waitfor_write switch_io_event_hook_waitfor_w
 typedef struct switch_io_event_hook_send_dtmf switch_io_event_hook_send_dtmf_t;
 typedef struct switch_io_event_hook_recv_dtmf switch_io_event_hook_recv_dtmf_t;
 typedef struct switch_io_event_hook_state_change switch_io_event_hook_state_change_t;
+typedef struct switch_io_event_hook_resurrect_session switch_io_event_hook_resurrect_session_t;
 typedef switch_status_t (*switch_outgoing_channel_hook_t)
 (switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t *, switch_originate_flag_t);
 typedef switch_status_t (*switch_receive_message_hook_t) (switch_core_session_t *, switch_core_session_message_t *);
@@ -62,7 +63,7 @@ typedef switch_status_t (*switch_waitfor_write_hook_t) (switch_core_session_t *,
 typedef switch_status_t (*switch_send_dtmf_hook_t) (switch_core_session_t *, const switch_dtmf_t *);
 typedef switch_status_t (*switch_recv_dtmf_hook_t) (switch_core_session_t *, const switch_dtmf_t *);
 typedef switch_status_t (*switch_state_change_hook_t) (switch_core_session_t *);
-
+typedef switch_call_cause_t (*switch_resurrect_session_hook_t)(switch_core_session_t **, switch_memory_pool_t **, void *);
 
 /*! \brief Node in which to store custom receive message callback hooks */
 struct switch_io_event_hook_outgoing_channel {
@@ -154,6 +155,12 @@ struct switch_io_event_hook_state_change {
 	struct switch_io_event_hook_state_change *next;
 };
 
+
+struct switch_io_event_hook_resurrect_session {
+	switch_resurrect_session_hook_t resurrect_session;
+	struct switch_io_event_hook_resurrect_session *next;
+};
+
 /*! \brief A table of lists of io_event_hooks to store the event hooks associated with a session */
 struct switch_io_event_hooks {
 	/*! a list of outgoing channel hooks */
@@ -182,6 +189,7 @@ struct switch_io_event_hooks {
 	switch_io_event_hook_recv_dtmf_t *recv_dtmf;
 	/*! a list of state change hooks */
 	switch_io_event_hook_state_change_t *state_change;
+	switch_io_event_hook_resurrect_session_t *resurrect_session;
 };
 
 extern switch_io_event_hooks_t switch_core_session_get_event_hooks(switch_core_session_t *session);
@@ -240,6 +248,7 @@ NEW_HOOK_DECL_ADD_P(waitfor_read);
 NEW_HOOK_DECL_ADD_P(waitfor_write);
 NEW_HOOK_DECL_ADD_P(send_dtmf);
 NEW_HOOK_DECL_ADD_P(recv_dtmf);
+NEW_HOOK_DECL_ADD_P(resurrect_session);
 
 NEW_HOOK_DECL_REM_P(outgoing_channel);
 NEW_HOOK_DECL_REM_P(receive_message);
@@ -254,6 +263,7 @@ NEW_HOOK_DECL_REM_P(waitfor_read);
 NEW_HOOK_DECL_REM_P(waitfor_write);
 NEW_HOOK_DECL_REM_P(send_dtmf);
 NEW_HOOK_DECL_REM_P(recv_dtmf);
+NEW_HOOK_DECL_REM_P(resurrect_session);
 ///\}
 
 SWITCH_END_EXTERN_C

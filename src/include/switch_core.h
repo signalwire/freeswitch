@@ -728,6 +728,11 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(_In_opt
 																		 _Inout_ switch_memory_pool_t **pool,
 																		 _In_ switch_originate_flag_t flags);
 
+SWITCH_DECLARE(switch_call_cause_t) switch_core_session_resurrect_channel(_In_z_ const char *endpoint_name,
+																		  _Inout_ switch_core_session_t **new_session,
+																		  _Inout_ switch_memory_pool_t **pool,
+																		  _In_ void *data);
+
 /*! 
   \brief Receive a message on a given session
   \param session the session to receive the message from

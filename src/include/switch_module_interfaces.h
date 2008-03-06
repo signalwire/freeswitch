@@ -98,6 +98,7 @@ struct switch_stream_handle {
 struct switch_io_event_hooks;
 
 
+
 typedef switch_call_cause_t (*switch_io_outgoing_channel_t)
 (switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t **, switch_memory_pool_t **, switch_originate_flag_t);
 typedef switch_status_t (*switch_io_read_frame_t) (switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
@@ -111,6 +112,7 @@ typedef switch_status_t (*switch_io_receive_event_t) (switch_core_session_t *, s
 typedef switch_status_t (*switch_io_state_change_t) (switch_core_session_t *);
 typedef	switch_status_t (*switch_io_read_video_frame_t) (switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
 typedef switch_status_t (*switch_io_write_video_frame_t) (switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int);
+typedef switch_call_cause_t (*switch_io_resurrect_session_t)(switch_core_session_t **, switch_memory_pool_t **, void *);
 
 typedef enum {
 	SWITCH_IO_OUTGOING_CHANNEL,
@@ -124,7 +126,8 @@ typedef enum {
 	SWITCH_IO_RECEIVE_EVENT,
 	SWITCH_IO_STATE_CHANGE,
 	SWITCH_IO_READ_VIDEO_FRAME,
-	SWITCH_IO_WRITE_VIDEO_FRAME
+	SWITCH_IO_WRITE_VIDEO_FRAME,
+	SWITCH_IO_RESURRECT_SESSION
 } switch_io_routine_name_t;
 
 /*! \brief A table of i/o routines that an endpoint interface can implement */
@@ -153,6 +156,8 @@ struct switch_io_routines {
 	switch_io_read_video_frame_t read_video_frame;
 	/*! write a video frame to a session */
 	switch_io_write_video_frame_t write_video_frame;
+	/*! resurrect a session */
+	switch_io_resurrect_session_t resurrect_session;
 	void *padding[10];
 };
 

@@ -44,6 +44,7 @@ NEW_HOOK_DECL(waitfor_read)
 NEW_HOOK_DECL(waitfor_write)
 NEW_HOOK_DECL(send_dtmf)
 NEW_HOOK_DECL(recv_dtmf)
+NEW_HOOK_DECL(resurrect_session)
 
 /* For Emacs:
  * Local Variables:
