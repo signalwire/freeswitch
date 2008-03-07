@@ -144,7 +144,8 @@ static int tport_tls_init_client(tport_primary_t *pri,
 				 tagi_t const *tags,
 				 char const **return_culprit)
 {
-  tport_tls_init_master(pri, tpn, ai, tags, return_culprit);
+  if (tport_tls_init_master(pri, tpn, ai, tags, return_culprit) < 0)
+    return -1;
 
   return tport_tcp_init_client(pri, tpn, ai, tags, return_culprit);
 }
@@ -192,6 +193,9 @@ static int tport_tls_init_master(tport_primary_t *pri,
     SU_DEBUG_9(("%s(%p): tls key = %s\n", __func__, (void *)pri, ti.key));
 
     if (ti.key && ti.CAfile && ti.randFile) {
+      if (access(ti.key, R_OK) != 0) ti.key = NULL;
+      if (access(ti.randFile, R_OK) != 0) ti.randFile = NULL;
+      if (access(ti.CAfile, R_OK) != 0) ti.CAfile = NULL;
       tlspri->tlspri_master = tls_init_master(&ti);
     }
   }
