@@ -804,14 +804,29 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(void) switch_rtp_break(switch_rtp_t *rtp_session)
+{
+	char o = 42;
+	switch_size_t len = sizeof(o);
+
+	switch_assert(rtp_session != NULL);
+    switch_mutex_lock(rtp_session->flag_mutex);
+	if (rtp_session->sock) {
+		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
+		switch_socket_sendto(rtp_session->sock, rtp_session->local_addr, 0, (void *) &o, &len);
+	}
+	switch_mutex_unlock(rtp_session->flag_mutex);
+}
+
 SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp_t *rtp_session)
 {
 	switch_assert(rtp_session != NULL);
 	switch_mutex_lock(rtp_session->flag_mutex);
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
 		switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_IO);
-		switch_assert(rtp_session->sock != NULL);
-		switch_socket_shutdown(rtp_session->sock, SWITCH_SHUTDOWN_READWRITE);
+		if (rtp_session->sock) {
+			switch_socket_shutdown(rtp_session->sock, SWITCH_SHUTDOWN_READWRITE);
+		}
 	}
 	switch_mutex_unlock(rtp_session->flag_mutex);
 }
@@ -1081,6 +1096,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		bytes = sizeof(rtp_msg_t);
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *) &rtp_session->recv_msg, &bytes);
 
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
+			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
+			bytes = 0;
+			do_cng = 1;
+			goto cng;
+		}
+
 		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
 			/* Fast PASS! */
 			*flags |= SFF_PROXY_PACKET;
@@ -1224,10 +1246,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 			do_cng = 1;
 		}
-		
-		if (do_cng || (!bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK))) {
-			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
 
+	cng:
+		if (do_cng) {
 			memset(&rtp_session->recv_msg.body, 0, 2);
 			rtp_session->recv_msg.body[0] = 127;
 			rtp_session->recv_msg.header.pt = SWITCH_RTP_CNG_PAYLOAD;

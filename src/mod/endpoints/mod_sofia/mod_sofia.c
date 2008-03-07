@@ -644,10 +644,10 @@ static switch_status_t sofia_kill_channel(switch_core_session_t *session, int si
 	switch (sig) {
 	case SWITCH_SIG_BREAK:
 		if (switch_rtp_ready(tech_pvt->rtp_session)) {
-			switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_BREAK);
+			switch_rtp_break(tech_pvt->rtp_session);
 		}
 		if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
-			switch_rtp_set_flag(tech_pvt->video_rtp_session, SWITCH_RTP_FLAG_BREAK);
+			switch_rtp_break(tech_pvt->rtp_session);
 		}
 		break;
 	case SWITCH_SIG_KILL:

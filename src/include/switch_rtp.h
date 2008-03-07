@@ -191,6 +191,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 */
 SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp_t *rtp_session);
 
+SWITCH_DECLARE(void) switch_rtp_break(switch_rtp_t *rtp_session);
+
 /*! 
   \brief Test if an RTP session is ready
   \param rtp_session an RTP session to test
