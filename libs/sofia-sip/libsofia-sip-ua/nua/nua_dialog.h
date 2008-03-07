@@ -400,6 +400,8 @@ struct nua_dialog_usage {
   nua_usage_class const *du_class;
   nua_dialog_state_t *du_dialog;
   nua_client_request_t *du_cr;	        /**< Client request bound with usage */
+  sip_time_t   du_refquested;	        /**< When refreshed was requested */
+  sip_time_t   du_refresh;		/**< When to refresh */
 
   unsigned     du_ready:1;	        /**< Established usage */
   unsigned     du_shutdown:1;	        /**< Shutdown in progress */
@@ -409,8 +411,6 @@ struct nua_dialog_usage {
    * Non-zero if the usage is established, SIP_TIME_MAX if there no
    * expiration time.
    */
-
-  sip_time_t      du_refresh;		/**< When to refresh */
 
   sip_event_t const *du_event;		/**< Event of usage */
 

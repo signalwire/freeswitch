@@ -512,6 +512,8 @@ void nua_dialog_usage_set_refresh_range(nua_dialog_usage_t *du,
   SU_DEBUG_7(("nua(): refresh %s after %lu seconds (in [%u..%u])\n",
 	      nua_dialog_usage_name(du), target - now, min, max));
 
+  du->du_refquested = now;
+
   nua_dialog_usage_set_refresh_at(du, target);
 }
 
@@ -527,8 +529,10 @@ void nua_dialog_usage_set_refresh_at(nua_dialog_usage_t *du,
 /**@internal Do not refresh. */
 void nua_dialog_usage_reset_refresh(nua_dialog_usage_t *du)
 {
-  if (du)
+  if (du) {
+    du->du_refquested = sip_now();
     du->du_refresh = 0;
+  }
 }
 
 /** @internal Refresh usage. */
