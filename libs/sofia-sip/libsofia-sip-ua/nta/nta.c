@@ -6749,6 +6749,29 @@ nta_outgoing_t *nta_outgoing_tcancel(nta_outgoing_t *orq,
   return NULL;
 }
 
+/**Bind callback and application context to an client transaction.
+ *
+ * @param orq       outgoing client transaction
+ * @param callback  callback function (may be NULL)
+ * @param magic     application context pointer 
+ *                  (given as argument to @a callback)
+ *
+ * @NEW_1_12_9
+ */
+SOFIAPUBFUN int nta_outgoing_bind(nta_outgoing_t *orq,
+				  nta_response_f *callback,
+				  nta_outgoing_magic_t *magic)
+{
+  if (orq && !orq->orq_destroyed) {
+    if (callback == NULL)
+      callback = outgoing_default_cb;
+    orq->orq_callback = callback;
+    orq->orq_magic = magic;
+    return 0;
+  }
+  return -1;
+}
+
 /**
  * Destroy a request object.
  *

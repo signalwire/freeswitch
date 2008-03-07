@@ -383,6 +383,9 @@ nta_outgoing_t *nta_outgoing_default(nta_agent_t *agent,
 				     nta_response_f *callback,
 				     nta_outgoing_magic_t *magic);
 
+SOFIAPUBFUN int nta_outgoing_bind(nta_outgoing_t *orq,
+				  nta_response_f *callback,
+				  nta_outgoing_magic_t *magic);
 SOFIAPUBFUN int nta_outgoing_status(nta_outgoing_t const *orq);
 SOFIAPUBFUN sip_method_t nta_outgoing_method(nta_outgoing_t const *orq);
 SOFIAPUBFUN char const *nta_outgoing_method_name(nta_outgoing_t const *orq);

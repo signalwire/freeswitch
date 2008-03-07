@@ -103,7 +103,7 @@ tag_typedef_t ntatag_mclass = PTRTAG_TYPEDEF(mclass);
  *   @ContentLength, @Via, @ContentType, @ContentDisposition,
  *   @ContentEncoding, @Supported, @Contact, @Require, @RecordRoute, @RAck,
  *   @RSeq, @Event, @Expires, @SubscriptionState, @SessionExpires,
- *   @MinSE, @SIPEtag, and @SIPIfMatch.
+ *   @MinSE, @SIPETag, and @SIPIfMatch.
  *  
  * @sa enum #sip_bad_mask, NTATAG_BAD_RESP_MASK()
  */
@@ -140,7 +140,7 @@ tag_typedef_t ntatag_bad_req_mask = UINTTAG_TYPEDEF(bad_req_mask);
  *   @ContentLength, @Via, @ContentType, @ContentDisposition,
  *   @ContentEncoding, @Supported, @Contact, @Require, @RecordRoute, @RAck,
  *   @RSeq, @Event, @Expires, @SubscriptionState, @SessionExpires, 
- *   @MinSE, @SIPEtag, and @SIPIfMatch.
+ *   @MinSE, @SIPETag, and @SIPIfMatch.
  */
 tag_typedef_t ntatag_bad_resp_mask = UINTTAG_TYPEDEF(bad_resp_mask);
 
@@ -962,7 +962,7 @@ tag_typedef_t ntatag_pass_100 = BOOLTAG_TYPEDEF(pass_100);
  * As per recommended by @RFC4320, the stack can generate a 100 Trying
  * response to the non-INVITE requests if the application has not responded
  * to a request within half of the SIP T2 (the default value for T2 is 4000
- * milliseconds, so the extra <i>100 Trying<i/> would be sent after 2 seconds).
+ * milliseconds, so the extra <i>100 Trying</i> would be sent after 2 seconds).
  *
  * @par Used with	
  *    nua_create(), nua_set_params(),
