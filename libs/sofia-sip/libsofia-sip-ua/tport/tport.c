@@ -532,7 +532,6 @@ tport_t *tport_tcreate(tp_stack_t *stack,
   ta_start(ta, tag, value);
 
   tport_set_params(mr->mr_master, ta_tags(ta));
-  tport_open_log(mr, ta_args(ta));
 
 #if HAVE_SOFIA_STUN
   tport_init_stun_server(mr, ta_args(ta));
@@ -1233,12 +1232,12 @@ int tport_set_params(tport_t *self,
 		     tag_type_t tag, tag_value_t value, ...)
 {
   ta_list ta;
-  int n;
+  int n, m = 0;
   tport_params_t tpp[1], *tpp0;
   
   usize_t mtu;
   int connect, sdwn_error, reusable, stun_server, pong2ping;
-  
+
   if (self == NULL)
     return su_seterrno(EINVAL);
 
@@ -1272,10 +1271,13 @@ int tport_set_params(tport_t *self,
 	      TPTAG_TOS_REF(tpp->tpp_tos),
 	      TAG_END());
 
+  if (self == (tport_t *)self->tp_master)
+    m = tport_open_log(self->tp_master, ta_args(ta));
+
   ta_end(ta);
 
   if (n == 0)
-    return 0;
+    return m;
 
   if (tpp->tpp_idle > 0 && tpp->tpp_idle < 100)
     tpp->tpp_idle = 100;
@@ -1314,7 +1316,7 @@ int tport_set_params(tport_t *self,
   if (tport_is_secondary(self))
     tport_set_secondary_timer(self);
 
-  return n;
+  return n + m;
 }
 
 extern tport_vtable_t const tport_udp_vtable;
@@ -4260,6 +4262,7 @@ tport_t *tport_next(tport_t const *self)
     return NULL;
   else if (tport_is_master(self))
     return ((tport_master_t *)self)->mr_primaries->pri_primary;
+
   else if (tport_is_primary(self))
     return ((tport_primary_t *)self)->pri_next->pri_primary;
   else

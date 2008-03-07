@@ -94,30 +94,43 @@ su_log_t tport_log[] = {
 
 
 /** Initialize logging. */
-void tport_open_log(tport_master_t *mr, tagi_t *tags)
+int tport_open_log(tport_master_t *mr, tagi_t *tags)
 {
-  char const *log = NULL;
-  int log_msg = 0;
-
-  tl_gets(tags, TPTAG_LOG_REF(log_msg), TAG_END());
+  int log_msg = mr->mr_log != 0;
+  char const *dump = NULL;
+  int n;
+  
+  n = tl_gets(tags,
+	      TPTAG_LOG_REF(log_msg), 
+	      TPTAG_DUMP_REF(dump),
+	      TAG_END());
 
   if (getenv("MSG_STREAM_LOG") != NULL || getenv("TPORT_LOG") != NULL)
     log_msg = 1;
-
   mr->mr_log = log_msg ? MSG_DO_EXTRACT_COPY : 0;
 
-  tl_gets(tags, TPTAG_DUMP_REF(log), TAG_END());
-
   if (getenv("MSG_DUMP"))
-    log = getenv("MSG_DUMP");
+    dump = getenv("MSG_DUMP");
   if (getenv("TPORT_DUMP"))
-    log = getenv("TPORT_DUMP");
+    dump = getenv("TPORT_DUMP");
 
-  if (log) {
+  if (dump) {
     time_t now;
+    char *dumpname;
 
-    if (strcmp(log, "-")) 
-      mr->mr_dump_file = fopen(log, "ab"); /* XXX */
+    if (mr->mr_dump && strcmp(dump, mr->mr_dump) == 0)
+      return n;
+    dumpname = su_strdup(mr->mr_home, dump);
+    if (dumpname == NULL)
+      return n;
+    su_free(mr->mr_home, mr->mr_dump);
+    mr->mr_dump = dumpname;
+
+    if (mr->mr_dump_file && mr->mr_dump_file != stdout)
+      fclose(mr->mr_dump_file), mr->mr_dump_file = NULL;
+
+    if (strcmp(dumpname, "-")) 
+      mr->mr_dump_file = fopen(dumpname, "ab"); /* XXX */
     else
       mr->mr_dump_file = stdout;
 
@@ -126,6 +139,8 @@ void tport_open_log(tport_master_t *mr, tagi_t *tags)
       fprintf(mr->mr_dump_file, "dump started at %s\n\n", ctime(&now));
     }
   }
+
+  return n;
 }
 
 /** Create log stamp */
