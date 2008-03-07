@@ -202,6 +202,28 @@ SAC_SU_DEFINE([SU_HAVE_TAGSTACK], 1, [
 Define this as 1 if your compiler puts the variable argument list nicely in memory])
 fi
 
+### ======================================================================
+### Test if free(0) fails
+###
+
+AC_CACHE_CHECK([for graceful free(0)],[ac_cv_free_null],[
+ac_cv_free_null=no
+
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdlib.h>
+
+int main(int avc, char **av)
+{
+	free(0);
+	return 0;
+}
+]])],[ac_cv_free_null=yes],[ac_cv_free_null=no],[ac_cv_free_null=no])])
+
+if test $ac_cv_free_null = yes ; then
+AC_DEFINE([HAVE_FREE_NULL], 1, [
+Define this as 1 if your c library does not crash with free(0)])
+fi
+
 dnl ======================================================================
 dnl Socket features
 

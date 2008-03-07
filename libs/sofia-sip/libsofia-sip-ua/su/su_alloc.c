@@ -203,6 +203,12 @@ int (*_su_home_mutex_unlocker)(void *mutex);
 
 void (*_su_home_destroy_mutexes)(void *mutex);
 
+#if HAVE_FREE_NULL
+#define safefree(x) free((x))
+#else
+su_inline void safefree(void *b) { b ? free(b) : (void)0; }
+#endif
+
 #define MEMLOCK(h)   \
   ((void)((h) && (h)->suh_lock ? _su_home_locker((h)->suh_lock) : 0), (h)->suh_blocks)
 #define UNLOCK(h) ((void)((h) && (h)->suh_lock ? _su_home_unlocker((h)->suh_lock) : 0), NULL)
@@ -457,7 +463,7 @@ void *sub_alloc(su_home_t *home,
     home->suh_blocks = b2;
 
     if (sub && !sub->sub_auto)
-      free(sub);
+      safefree(sub);
     sub = b2;
   }
 
@@ -500,7 +506,7 @@ void *sub_alloc(su_home_t *home,
 
       subhome->suh_blocks = su_hash_alloc(SUB_N);
       if (!subhome->suh_blocks) 
-	return (void)free(data), NULL;
+	return (void)safefree(data), NULL;
 
       subhome->suh_size = (unsigned)size;
       subhome->suh_blocks->sub_parent = home;
@@ -555,7 +561,7 @@ void *su_home_new(isize_t size)
     if (home->suh_blocks)
       home->suh_blocks->sub_hauto = 0;
     else
-      free(home), home = NULL;
+      safefree(home), home = NULL;
   }
 
   return home;
@@ -670,7 +676,7 @@ int su_home_unref(su_home_t *home)
     int hauto = sub->sub_hauto;
     _su_home_deinit(home);
     if (!hauto)
-      free(home);
+      safefree(home);
     /* UNLOCK(home); */
     return 1;
   }
@@ -827,7 +833,7 @@ void su_free(su_home_t *home, void *data)
     UNLOCK(home);
   }
 
-  free(data);
+  safefree(data);
 }
 
 /** Check home consistency.
@@ -977,8 +983,8 @@ void _su_home_deinit(su_home_t *home)
 	}
 	else if (su_is_preloaded(b, b->sub_nodes[i].sua_data))
 	  continue;
-	safe_free(b->sub_nodes[i].sua_data);
-	
+
+	safefree(b->sub_nodes[i].sua_data);
       }
     }
 
