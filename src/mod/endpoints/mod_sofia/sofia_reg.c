@@ -637,6 +637,11 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 {
 	char key[128] = "";
 	switch_event_t *v_event = NULL;
+
+	if (profile->mflags & MFLAG_REFER) {
+		nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
+		goto end;
+	}
 	
 	if (!sip || !sip->sip_request || !sip->sip_request->rq_method_name) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received an invalid packet!\n");

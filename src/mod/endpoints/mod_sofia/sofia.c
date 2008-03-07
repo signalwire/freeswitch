@@ -537,8 +537,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   NUTAG_APPL_METHOD("INFO"),
 				   NUTAG_AUTOANSWER(0),
 				   NUTAG_AUTOALERT(0),
-				   NUTAG_ALLOW("REGISTER"),
-				   NUTAG_ALLOW("REFER"),
+				   TAG_IF((profile->mflags & MFLAG_REGISTER), NUTAG_ALLOW("REGISTER")),
+				   TAG_IF((profile->mflags & MFLAG_REFER), NUTAG_ALLOW("REFER")),
 				   NUTAG_ALLOW("INFO"),
 				   NUTAG_ALLOW("NOTIFY"),
 				   NUTAG_ALLOW_EVENTS("talk"),
@@ -565,16 +565,16 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 								NUTAG_URL(node->url), TAG_END());	/* Last tag should always finish the sequence */
 
 		nua_set_params(node->nua,
-						NUTAG_APPL_METHOD("OPTIONS"),
-						NUTAG_EARLY_MEDIA(1),
-						NUTAG_AUTOANSWER(0),
-						NUTAG_AUTOALERT(0),
-						NUTAG_ALLOW("REGISTER"),
-						NUTAG_ALLOW("REFER"),
-						NUTAG_ALLOW("INFO"),
-						TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("PUBLISH")),
-						TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ENABLEMESSAGE(1)),
-						SIPTAG_SUPPORTED_STR("100rel, precondition"), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
+					   NUTAG_APPL_METHOD("OPTIONS"),
+					   NUTAG_EARLY_MEDIA(1),
+					   NUTAG_AUTOANSWER(0),
+					   NUTAG_AUTOALERT(0),
+					   TAG_IF((profile->mflags & MFLAG_REGISTER), NUTAG_ALLOW("REGISTER")),
+					   TAG_IF((profile->mflags & MFLAG_REFER), NUTAG_ALLOW("REFER")),
+					   NUTAG_ALLOW("INFO"),
+					   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("PUBLISH")),
+					   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ENABLEMESSAGE(1)),
+					   SIPTAG_SUPPORTED_STR("100rel, precondition"), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "activated db for %s\n", profile->name);
@@ -1007,7 +1007,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				profile->dtmf_duration = 100;
 				profile->tls_version = 0;
-
+				profile->mflags = MFLAG_REFER | MFLAG_REGISTER;
+				
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
 					char *val = (char *) switch_xml_attr_soft(param, "value");
@@ -1044,6 +1045,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "record-template")) {
 						profile->record_template = switch_core_strdup(profile->pool, val);;
 					} else if (!strcasecmp(var, "inbound-no-media") && switch_true(val)) {
+						switch_set_flag(profile, TFLAG_INB_NOMEDIA);
+					} else if (!strcasecmp(var, "inbound-bypass-media") && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_INB_NOMEDIA);
 					} else if (!strcasecmp(var, "inbound-late-negotiation") && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_LATE_NEGOTIATION);
@@ -1114,6 +1117,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (v >= 0) {
 							profile->rtp_hold_timeout_sec = v;
 						}
+					} else if (!strcasecmp(var, "disable-transfer") && switch_true(val)) {
+						profile->mflags &= ~MFLAG_REFER;
+					} else if (!strcasecmp(var, "disable-register") && switch_true(val)) {
+						profile->mflags &= ~MFLAG_REGISTER;
 					} else if (!strcasecmp(var, "manage-presence")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_PRESENCE;
@@ -1973,6 +1980,11 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	su_home_t *home = NULL;
 	char *full_ref_by = NULL;
 	char *full_ref_to = NULL;
+
+	if (profile->mflags & MFLAG_REFER) {
+		nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
+		goto done;
+	}
 
 	if (!sip->sip_cseq || !(etmp = switch_mprintf("refer;id=%u", sip->sip_cseq->cs_seq))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");

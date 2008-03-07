@@ -113,6 +113,11 @@ struct sip_alias_node {
 typedef struct sip_alias_node sip_alias_node_t;
 
 typedef enum {
+	MFLAG_REFER = (1 << 0),
+	MFLAG_REGISTER = (1 << 1)
+} MFLAGS;
+
+typedef enum {
 	PFLAG_AUTH_CALLS = (1 << 0),
 	PFLAG_BLIND_REG = (1 << 1),
 	PFLAG_AUTH_ALL = (1 << 2),
@@ -269,6 +274,7 @@ struct sofia_profile {
 	int dtmf_duration;
 	unsigned int flags;
 	unsigned int pflags;
+	unsigned int mflags;
 	unsigned int ndlb;
 	uint32_t max_calls;
 	uint32_t nonce_ttl;

@@ -100,6 +100,9 @@
     <!--<param name="alias" value="sip:10.0.1.251:5555"/>-->
     <!--all inbound reg will look in this domain for the users -->
     <!--<param name="force-register-domain" value="cluecon.com"/>-->
+    <!-- disable register and transfer which may be undesirable in a public switch -->
+    <!--<param name="disable-transfer" value="true"/>-->
+    <!--<param name="disable-register" value="true"/>-->
   </settings>
 </profile>
 
