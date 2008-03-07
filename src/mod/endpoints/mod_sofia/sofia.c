@@ -1428,6 +1428,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					msg.pointer_arg_size = strlen(r_sdp);
 				}
 				if (switch_core_session_receive_message(other_session, &msg) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Other leg is not available\n");
 					nua_respond(tech_pvt->nh, 488, "Hangup in progress", TAG_END());
 				}
 				switch_core_session_rwunlock(other_session);
@@ -1771,6 +1772,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						msg.string_arg = (char *) r_sdp;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Passing SDP to other leg.\n%s\n", r_sdp);
 						if (switch_core_session_receive_message(other_session, &msg) != SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Other leg is not available\n");
 							nua_respond(tech_pvt->nh, 488, "Hangup in progress", TAG_END());
 						}					
 						switch_core_session_rwunlock(other_session);
