@@ -727,7 +727,10 @@ int test_subscribe_notify(struct context *ctx)
   TEST_1(e = es); TEST_E(e->data->e_event, nua_r_subscribe);
   TEST_1(e->data->e_status == 202 || e->data->e_status == 200);
   TEST_1(tl_find(e->data->e_tags, nutag_substate));
-  TEST(tl_find(e->data->e_tags, nutag_substate)->t_value, nua_substate_pending);
+  if (es == a->events->head) 
+    TEST(tl_find(e->data->e_tags, nutag_substate)->t_value, nua_substate_embryonic);
+  else
+    TEST(tl_find(e->data->e_tags, nutag_substate)->t_value, nua_substate_pending);
   TEST_1(sip = sip_object(e->data->e_msg));
   TEST_1(sip->sip_expires);
   TEST_1(sip->sip_expires->ex_delta <= 333);
