@@ -428,6 +428,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 
 	*err = NULL;
 
+	if (switch_strlen_zero(host) || !port) {
+		*err = "Address Error";
+		goto done;
+	}
+
 	if (switch_sockaddr_info_get(&rtp_session->local_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS) {
 		*err = "Local Address Error!";
 		goto done;
@@ -468,17 +473,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 			break;
 		}
 
-		if (++x > 500) {
+		if (++x > 1000) {
 			break;
 		}
 		switch_yield(1000);
 	}
 	switch_socket_opt_set(new_sock, SWITCH_SO_NONBLOCK, FALSE);
 
-	if (!ilen) {
-		*err = "Send myself a packet failed!";
-		goto done;
-	}
 #endif
 
 	old_sock = rtp_session->sock;
@@ -740,13 +741,28 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 											  switch_memory_pool_t *pool)
 {
 	switch_rtp_t *rtp_session = NULL;
-	
-	if (switch_rtp_create(&rtp_session, payload, samples_per_interval, ms_per_packet, flags, timer_name, err, pool) != SWITCH_STATUS_SUCCESS) {
+
+	if (switch_strlen_zero(rx_host)) {
+		*err = "Missing local host";
+		goto end;
+	}
+
+	if (!rx_port) {
+		*err = "Missing local port";
+		goto end;
+	}
+
+	if (switch_strlen_zero(tx_host)) {
+		*err = "Missing remote host";
+		goto end;
+	}
+
+	if (!tx_port) {
+		*err = "Missing local port";
 		goto end;
 	}
 	
-	if (switch_rtp_set_remote_address(rtp_session, tx_host, tx_port, err) != SWITCH_STATUS_SUCCESS) {
-		rtp_session = NULL;
+	if (switch_rtp_create(&rtp_session, payload, samples_per_interval, ms_per_packet, flags, timer_name, err, pool) != SWITCH_STATUS_SUCCESS) {
 		goto end;
 	}
 	
@@ -754,6 +770,11 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 		rtp_session = NULL;
 	}
 
+	if (switch_rtp_set_remote_address(rtp_session, tx_host, tx_port, err) != SWITCH_STATUS_SUCCESS) {
+		rtp_session = NULL;
+		goto end;
+	}
+	
  end:
 
 	if (rtp_session) {

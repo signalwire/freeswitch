@@ -532,6 +532,7 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt)
 		return SWITCH_STATUS_FALSE;
 	}
 	sdp_port = tech_pvt->local_sdp_video_port;
+	
 
 	if (tech_pvt->profile->extrtpip) {
 		if (sofia_glue_ext_address_lookup(&ip, &sdp_port, tech_pvt->profile->extrtpip, switch_core_session_get_pool(tech_pvt->session)) !=
@@ -1633,6 +1634,10 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 		sofia_glue_check_video_codecs(tech_pvt);
 
+		if (!tech_pvt->local_sdp_video_port) {
+			sofia_glue_tech_choose_video_port(tech_pvt);
+		}
+		
 		if (switch_test_flag(tech_pvt, TFLAG_VIDEO) && tech_pvt->video_rm_encoding) {
 			flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_AUTOADJ | 
 										 SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_NOBLOCK | SWITCH_RTP_FLAG_RAW_WRITE);
@@ -1662,10 +1667,14 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 			if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
 				switch_channel_set_flag(tech_pvt->channel, CF_VIDEO);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VIDEO RTP REPORTS ERROR: [%s]\n", switch_str_nil(err));
+				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				goto end;
 			}
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP REPORTS ERROR: [%s]\n", switch_str_nil(err));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AUDIO RTP REPORTS ERROR: [%s]\n", switch_str_nil(err));
 		switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 		status = SWITCH_STATUS_FALSE;
