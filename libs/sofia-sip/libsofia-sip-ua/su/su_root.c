@@ -327,8 +327,13 @@ int su_task_execute(su_task_r const task,
 		    int (*function)(void *), void *arg,
 		    int *return_value)
 {
+  int dummy;
+
   if (function == NULL)
     return (errno = EFAULT), -1;
+
+  if (return_value == NULL)
+    return_value = &dummy;
 
   if (!su_port_own_thread(task->sut_port)) {
     return su_port_execute(task, function, arg, return_value);
