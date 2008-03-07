@@ -787,7 +787,7 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s I/O Error\n", switch_channel_get_name(tech_pvt->channel));
 			return;
 		}
-		tech_pvt->iananame = switch_core_session_strdup(tech_pvt->session, "NO-NAME");
+		tech_pvt->iananame = switch_core_session_strdup(tech_pvt->session, "PROXY");
 		tech_pvt->rm_rate = 8000;
 		tech_pvt->codec_ms = 20;
 	}
