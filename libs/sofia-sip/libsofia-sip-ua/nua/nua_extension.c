@@ -74,18 +74,21 @@
  */
 
 static nua_client_methods_t const nua_method_client_methods = {
-  SIP_METHOD_UNKNOWN,
-  0,
-  { 
+  SIP_METHOD_UNKNOWN,		/* crm_method, crm_method_name */
+  0,				/* crm_extra */
+  {				/* crm_flags */
     /* create_dialog */ 0,
     /* in_dialog */ 0,
     /* target_refresh */ 1,
   },
-  /* nua_method_client_template */ NULL,
-  /* nua_method_client_init */ NULL,
-  /* nua_method_client_request */ NULL,
-  /* nua_method_client_check_restart */ NULL,
-  /* nua_method_client_response */ NULL
+  NULL,				/* crm_template */
+  NULL,				/* crm_init */
+  NULL,				/* crm_send */
+  NULL,				/* crm_check_restart */
+  NULL,				/* crm_recv */
+  NULL,				/* crm_preliminary */
+  NULL,				/* crm_report */
+  NULL,				/* crm_complete */
 };
 
 int 

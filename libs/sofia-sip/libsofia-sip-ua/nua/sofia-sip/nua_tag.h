@@ -497,11 +497,15 @@ SOFIAPUBFUN char const *nua_substate_name(enum nua_substate substate);
 /** Convert string to enum nua_substate. @NEW_1_12_5. */
 SOFIAPUBFUN enum nua_substate nua_substate_make(char const *sip_substate);
 
+#define NUTAG_SUB_EXPIRES(x) nutag_sub_expires, tag_uint_v(x)
+SOFIAPUBVAR tag_typedef_t nutag_sub_expires;
+#define NUTAG_SUB_EXPIRES_REF(x) nutag_sub_expires_ref, tag_uint_vr(&(x))
+SOFIAPUBVAR tag_typedef_t nutag_sub_expires_ref;
+
 #define NUTAG_NEWSUB(x)   nutag_newsub, tag_bool_v(x)
 SOFIAPUBVAR tag_typedef_t nutag_newsub;
 #define NUTAG_NEWSUB_REF(x) nutag_newsub_ref, tag_bool_vr(&(x))
 SOFIAPUBVAR tag_typedef_t nutag_newsub_ref;
-
 
 #define NUTAG_REFER_EXPIRES(x)  nutag_refer_expires, tag_uint_v((x))
 SOFIAPUBVAR tag_typedef_t nutag_refer_expires;
@@ -568,6 +572,13 @@ SOFIAPUBVAR tag_typedef_t nutag_detect_network_updates;
 #define NUTAG_DETECT_NETWORK_UPDATES_REF(x) \
           nutag_detect_network_updates_ref, tag_int_vr(&(x))
 SOFIAPUBVAR tag_typedef_t nutag_detect_network_updates_ref;
+
+#define NUTAG_SHUTDOWN_EVENTS(x) \
+  nutag_shutdown_events, tag_bool_v(x)
+SOFIAPUBVAR tag_typedef_t nutag_shutdown_events;
+#define NUTAG_SHUTDOWN_EVENTS_REF(x) \
+  nutag_shutdown_events_ref, tag_bool_vr(&(x))
+SOFIAPUBVAR tag_typedef_t nutag_shutdown_events_ref;
 
 /* Pass nua handle as tagged argument */
 #if SU_INLINE_TAG_CAST

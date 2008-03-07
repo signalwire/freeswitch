@@ -51,8 +51,9 @@ libtestnua_la_SOURCES = test_nua.h test_ops.c \
 			test_call_reject.c test_cancel_bye.c \
 			test_call_hold.c test_session_timer.c \
 			test_refer.c test_100rel.c \
-			test_simple.c test_sip_events.c \
+			test_sip_events.c test_simple.c \
 			test_extension.c
+
 
 libtestproxy_la_SOURCES = test_proxy.h test_proxy.c
 
