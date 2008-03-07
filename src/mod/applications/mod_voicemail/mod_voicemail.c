@@ -44,6 +44,8 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load);
 SWITCH_MODULE_DEFINITION(mod_voicemail, mod_voicemail_load, NULL, NULL);
 
+#define VM_MAX_GREETINGS 9
+
 static struct {
 	switch_hash_t *profile_hash;
 	int debug;
@@ -1445,7 +1447,7 @@ case VM_CHECK_CONFIG:
 
 			num = atoi(input);
 			file_path = switch_mprintf("%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, num, profile->file_ext);
-			if (num < 1 || num > 3) {
+			if (num < 1 || num > VM_MAX_GREETINGS) {
 				status = SWITCH_STATUS_FALSE;
 			} else {
 				switch_file_handle_t fh = { 0 };
@@ -1472,7 +1474,7 @@ case VM_CHECK_CONFIG:
 			TRY_CODE(vm_macro_get(session, VM_CHOOSE_GREETING_MACRO, key_buf, input, sizeof(input), 1, "", &term, timeout));
 
 			num = atoi(input);
-			if (num < 1 || num > 9) {
+			if (num < 1 || num > VM_MAX_GREETINGS) {
 				TRY_CODE(switch_ivr_phrase_macro(session, VM_CHOOSE_GREETING_FAIL_MACRO, NULL, NULL, NULL));
 			} else {
 				file_path = switch_mprintf("%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, num, profile->file_ext);
@@ -1789,7 +1791,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 
 	if ((voicemail_greeting_number = switch_channel_get_variable(channel, "voicemail_greeting_number"))) {
 		int num = atoi(voicemail_greeting_number);
-		if (num > 0 && num < 3) {
+		if (num > 0 && num < VM_MAX_GREETINGS) {
 			greet_path = switch_mprintf("%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, num, profile->file_ext);
 		}
 	} else {
