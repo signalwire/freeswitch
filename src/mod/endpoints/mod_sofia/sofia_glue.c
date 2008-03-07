@@ -777,7 +777,8 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 	}
 	
 	if (!(ip_ptr && port_ptr)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s SDP Error! [%s]\n", switch_channel_get_name(tech_pvt->channel), tech_pvt->local_sdp_str);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SDP has no audio in it.\n%s\n", 
+						  switch_channel_get_name(tech_pvt->channel), tech_pvt->local_sdp_str);
 		return;
 	}
 

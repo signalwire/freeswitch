@@ -1427,7 +1427,9 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					msg.pointer_arg = switch_core_session_strdup(other_session, r_sdp);
 					msg.pointer_arg_size = strlen(r_sdp);
 				}
-				switch_core_session_receive_message(other_session, &msg);
+				if (switch_core_session_receive_message(other_session, &msg) != SWITCH_STATUS_SUCCESS) {
+					nua_respond(tech_pvt->nh, 488, "Hangup in progress", TAG_END());
+				}
 				switch_core_session_rwunlock(other_session);
 			}
 			return;
@@ -1768,10 +1770,13 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						msg.from = __FILE__;
 						msg.string_arg = (char *) r_sdp;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Passing SDP to other leg.\n%s\n", r_sdp);
-						switch_core_session_receive_message(other_session, &msg);
+						if (switch_core_session_receive_message(other_session, &msg) != SWITCH_STATUS_SUCCESS) {
+							nua_respond(tech_pvt->nh, 488, "Hangup in progress", TAG_END());
+						}					
 						switch_core_session_rwunlock(other_session);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Re-INVITE to a no-media channel that is not in a bridge.\n");
+						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					}
 					goto done;
 				} else {
