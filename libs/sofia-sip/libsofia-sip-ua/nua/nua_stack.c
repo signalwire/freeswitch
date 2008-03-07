@@ -861,7 +861,7 @@ void nua_stack_shutdown(nua_t *nua)
     for (nh = nua->nua_handles; nh; nh = nh_next) {
       nh_next = nh->nh_next;
       while (nh->nh_ds && nh->nh_ds->ds_usage) {
-	nua_dialog_usage_remove(nh, nh->nh_ds, nh->nh_ds->ds_usage);
+	nua_dialog_usage_remove(nh, nh->nh_ds, nh->nh_ds->ds_usage, NULL, NULL);
       }
     }
     su_timer_destroy(nua->nua_timer), nua->nua_timer = NULL;
@@ -1867,13 +1867,13 @@ int nua_base_server_report(nua_server_request_t *sr, tagi_t const *tags)
   else
     terminated = sip_response_terminates_dialog(status, sr->sr_method, NULL);
 
+  if (usage && terminated)
+    nua_dialog_usage_remove(nh, nh->nh_ds, usage, NULL, sr);
+
   nua_server_request_destroy(sr);
 
   if (!terminated)
     return 1;
-
-  if (usage)
-    nua_dialog_usage_remove(nh, nh->nh_ds, usage);
 
   if (!initial) {
     if (terminated > 0)
@@ -2351,7 +2351,7 @@ msg_t *nua_client_request_template(nua_client_request_t *cr)
 
 /** Restart the request message.
  *
- * A restarted request has not completed successfully.
+ * A restarted request has not been completed successfully.
  *
  * @retval 0 if request is pending
  * @retval >=1 if error event has been sent
@@ -2690,6 +2690,7 @@ int nua_client_response(nua_client_request_t *cr,
     return 0;
 
   cr->cr_status = status;
+  cr->cr_phrase = phrase;
 
   if (status < 200) {
     /* Xyzzy */
@@ -2735,6 +2736,7 @@ int nua_client_response(nua_client_request_t *cr,
       cr->cr_methods->crm_preliminary(cr, status, phrase, sip);
     else
       nua_base_client_response(cr, status, phrase, sip, NULL);
+    cr->cr_phrase = NULL;
     return 0;
   }  
 
@@ -2853,6 +2855,7 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
       cr->cr_waiting = cr->cr_wait_for_cred = 1;
       nua_client_report(cr, status, phrase, NULL, orq, NULL);
       nta_outgoing_destroy(orq);
+      cr->cr_status = 0, cr->cr_phrase = NULL;
 
       return 1;
     }
@@ -2877,6 +2880,7 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
     cr->cr_waiting = cr->cr_wait_for_timer = 1;
     nua_client_report(cr, 100, phrase, NULL, orq, NULL);
     nta_outgoing_destroy(orq);
+    cr->cr_status = 0, cr->cr_phrase = NULL;
     return 1;
   }
 
@@ -3065,7 +3069,7 @@ int nua_base_client_response(nua_client_request_t *cr,
     if (cr->cr_terminated ||
 	(!du->du_ready && status >= 300 && nua_client_is_bound(cr))) {
       /* Usage has been destroyed */
-      nua_dialog_usage_remove(nh, nh->nh_ds, du), cr->cr_usage = NULL;
+      nua_dialog_usage_remove(nh, nh->nh_ds, du, cr, NULL), cr->cr_usage = NULL;
     }
     else if (cr->cr_graceful) {
       /* Terminate usage gracefully */
@@ -3078,6 +3082,7 @@ int nua_base_client_response(nua_client_request_t *cr,
       nua_dialog_remove(nh, nh->nh_ds, NULL), cr->cr_usage = NULL;
   }
 
+  cr->cr_phrase = NULL;
   cr->cr_reporting = 0, nh->nh_ds->ds_reporting = 0;
 
   if (!nua_client_is_queued(cr) && !nua_client_is_bound(cr))

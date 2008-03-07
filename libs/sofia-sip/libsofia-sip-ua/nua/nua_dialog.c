@@ -60,7 +60,9 @@
 /* Dialog handling */
 
 static void nua_dialog_usage_remove_at(nua_owner_t*, nua_dialog_state_t*, 
-				       nua_dialog_usage_t**);
+				       nua_dialog_usage_t**,
+				       nua_client_request_t *cr,
+				       nua_server_request_t *sr);
 static void nua_dialog_log_usage(nua_owner_t *, nua_dialog_state_t *);
 
 /**@internal
@@ -331,7 +333,9 @@ nua_dialog_usage_t *nua_dialog_usage_add(nua_owner_t *own,
 /** @internal Remove dialog usage. */
 void nua_dialog_usage_remove(nua_owner_t *own, 
 			     nua_dialog_state_t *ds,
-			     nua_dialog_usage_t *du)
+			     nua_dialog_usage_t *du,
+			     nua_client_request_t *cr,
+			     nua_server_request_t *sr)
 {
   nua_dialog_usage_t **at;
 
@@ -343,7 +347,7 @@ void nua_dialog_usage_remove(nua_owner_t *own,
 
   assert(*at);
 
-  nua_dialog_usage_remove_at(own, ds, at);
+  nua_dialog_usage_remove_at(own, ds, at, cr, sr);
 }
 
 /** @internal Remove dialog usage. 
@@ -353,7 +357,9 @@ void nua_dialog_usage_remove(nua_owner_t *own,
 static 
 void nua_dialog_usage_remove_at(nua_owner_t *own, 
 				nua_dialog_state_t *ds,
-				nua_dialog_usage_t **at)
+				nua_dialog_usage_t **at,
+				nua_client_request_t *cr0,
+				nua_server_request_t *sr0)
 {
   if (*at) {
     nua_dialog_usage_t *du = *at;
@@ -368,10 +374,10 @@ void nua_dialog_usage_remove_at(nua_owner_t *own,
     SU_DEBUG_5(("nua(%p): removing %s usage%s%s\n",
 		(void *)own, nua_dialog_usage_name(du), 
 		o ? " with event " : "", o ? o->o_type :""));
-    du->du_class->usage_remove(own, ds, du);
+    du->du_class->usage_remove(own, ds, du, cr0, sr0);
 
     /* Destroy saved client request */
-    if (nua_client_is_bound(du->du_cr)) {
+    if (cr0 != du->du_cr && nua_client_is_bound(du->du_cr)) {
       nua_client_bind(cr = du->du_cr, NULL);
 
       if (nua_client_is_queued(cr))
@@ -391,8 +397,11 @@ void nua_dialog_usage_remove_at(nua_owner_t *own,
 
     for (sr = ds->ds_sr; sr; sr = sr_next) {
       sr_next = sr->sr_next;
-      if (sr->sr_usage == du)
-	nua_server_request_destroy(sr);
+      if (sr->sr_usage == du) {
+	if (sr != sr0)
+	  nua_server_request_destroy(sr);
+	sr->sr_usage = NULL;
+      }
     }
 
     su_home_unref(own);
@@ -454,7 +463,7 @@ void nua_dialog_deinit(nua_owner_t *own,
   ds->ds_terminating = 1;
 
   while (ds->ds_usage) {
-    nua_dialog_usage_remove_at(own, ds, &ds->ds_usage);
+    nua_dialog_usage_remove_at(own, ds, &ds->ds_usage, NULL, NULL);
   }
 
   nua_dialog_remove(own, ds, NULL);

@@ -74,8 +74,10 @@ static int nua_notify_usage_add(nua_handle_t *nh,
 				   nua_dialog_state_t *ds,
 				   nua_dialog_usage_t *du);
 static void nua_notify_usage_remove(nua_handle_t *nh, 
-				       nua_dialog_state_t *ds,
-				       nua_dialog_usage_t *du);
+				    nua_dialog_state_t *ds,
+				    nua_dialog_usage_t *du,
+				    nua_client_request_t *cr,
+				    nua_server_request_t *sr);
 static void nua_notify_usage_refresh(nua_handle_t *nh,
 				     nua_dialog_state_t *ds,
 				     nua_dialog_usage_t *du,
@@ -102,8 +104,8 @@ static char const *nua_notify_usage_name(nua_dialog_usage_t const *du)
 
 static 
 int nua_notify_usage_add(nua_handle_t *nh, 
-			   nua_dialog_state_t *ds,
-			   nua_dialog_usage_t *du)
+			 nua_dialog_state_t *ds,
+			 nua_dialog_usage_t *du)
 {
   ds->ds_has_events++;
   ds->ds_has_notifys++;
@@ -112,8 +114,10 @@ int nua_notify_usage_add(nua_handle_t *nh,
 
 static 
 void nua_notify_usage_remove(nua_handle_t *nh, 
-			       nua_dialog_state_t *ds,
-			       nua_dialog_usage_t *du)
+			     nua_dialog_state_t *ds,
+			     nua_dialog_usage_t *du,
+			     nua_client_request_t *cr,
+			     nua_server_request_t *sr)
 {
   ds->ds_has_events--;	
   ds->ds_has_notifys--;	
@@ -796,7 +800,7 @@ static void nua_notify_usage_refresh(nua_handle_t *nh,
 		   NUTAG_SUBSTATE(nua_substate_terminated),
 		   TAG_END());
 
-  nua_dialog_usage_remove(nh, ds, du);
+  nua_dialog_usage_remove(nh, ds, du, NULL, NULL);
 }
 
 /** @interal Shut down NOTIFY usage. 
@@ -827,7 +831,7 @@ static int nua_notify_usage_shutdown(nua_handle_t *nh,
       return 0;
   }
 
-  nua_dialog_usage_remove(nh, ds, du);
+  nua_dialog_usage_remove(nh, ds, du, NULL, NULL);
   return 200;
 }
 

@@ -286,12 +286,12 @@ struct nua_client_request
 
   url_t              *cr_target;
 
-  uint32_t            cr_seq;
-
+  char const         *cr_phrase;        /**< Latest status phrase */
   unsigned short      cr_status;        /**< Latest status */
-
   unsigned short      cr_retry_count;   /**< Retry count for this request */
 
+  uint32_t            cr_seq;
+  
   /* Flags used with offer-answer */
   unsigned short      cr_answer_recv;   /**< Recv answer in response 
 					 *  with this status.
@@ -382,7 +382,9 @@ typedef struct {
 		   nua_dialog_usage_t *du);
   void (*usage_remove)(nua_owner_t *, 
 		       nua_dialog_state_t *ds,
-		       nua_dialog_usage_t *du);
+		       nua_dialog_usage_t *du,
+		       nua_client_request_t *cr,
+		       nua_server_request_t *sr);
   char const *(*usage_name)(nua_dialog_usage_t const *du);
   void (*usage_peer_info)(nua_dialog_usage_t *du,
 			  nua_dialog_state_t const *ds,
@@ -446,7 +448,9 @@ nua_dialog_usage_t *nua_dialog_usage_get(nua_dialog_state_t const *ds,
 
 void nua_dialog_usage_remove(nua_owner_t *, 
 			     nua_dialog_state_t *ds,
-			     nua_dialog_usage_t *du);
+			     nua_dialog_usage_t *du,
+			     nua_client_request_t *cr,
+			     nua_server_request_t *sr);
 
 void nua_dialog_deinit(nua_owner_t *own,
 		       nua_dialog_state_t *ds);

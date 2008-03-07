@@ -60,8 +60,10 @@ static int nua_publish_usage_add(nua_handle_t *nh,
 				  nua_dialog_state_t *ds,
 				  nua_dialog_usage_t *du);
 static void nua_publish_usage_remove(nua_handle_t *nh,
-				      nua_dialog_state_t *ds,
-				      nua_dialog_usage_t *du);
+				     nua_dialog_state_t *ds,
+				     nua_dialog_usage_t *du,
+				     nua_client_request_t *cr,
+				     nua_server_request_t *sr);
 static void nua_publish_usage_refresh(nua_handle_t *nh,
 				      nua_dialog_state_t *ds,
 				      nua_dialog_usage_t *du,
@@ -101,8 +103,11 @@ int nua_publish_usage_add(nua_handle_t *nh,
 
 static
 void nua_publish_usage_remove(nua_handle_t *nh,
-			       nua_dialog_state_t *ds,
-			       nua_dialog_usage_t *du)
+			      nua_dialog_state_t *ds,
+			      nua_dialog_usage_t *du,
+			      nua_client_request_t *cr,
+			      nua_server_request_t *sr
+)
 {
   struct publish_usage *pu = nua_dialog_usage_private(du);
 
@@ -433,7 +438,7 @@ static void nua_publish_usage_refresh(nua_handle_t *nh,
 		  nua_r_publish, NUA_ERROR_AT(__FILE__, __LINE__),
 		  NULL);
 
-  nua_dialog_usage_remove(nh, ds, du);
+  nua_dialog_usage_remove(nh, ds, du, NULL, NULL);
 }
 
 /** @interal Shut down PUBLISH usage.
@@ -454,7 +459,7 @@ static int nua_publish_usage_shutdown(nua_handle_t *nh,
   }
 
   /* XXX - report to user */
-  nua_dialog_usage_remove(nh, ds, du);
+  nua_dialog_usage_remove(nh, ds, du, NULL, NULL);
   return 200;
 }
 

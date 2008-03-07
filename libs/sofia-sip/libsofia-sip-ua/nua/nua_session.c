@@ -181,7 +181,9 @@ static int nua_session_usage_add(nua_handle_t *nh,
 				 nua_dialog_usage_t *du);
 static void nua_session_usage_remove(nua_handle_t *nh,
 				     nua_dialog_state_t *ds,
-				     nua_dialog_usage_t *du);
+				     nua_dialog_usage_t *du,
+				     nua_client_request_t *cr,
+				     nua_server_request_t *sr);
 static void nua_session_usage_refresh(nua_owner_t *,
 				      nua_dialog_state_t *,
 				      nua_dialog_usage_t *,
@@ -189,6 +191,11 @@ static void nua_session_usage_refresh(nua_owner_t *,
 static int nua_session_usage_shutdown(nua_owner_t *,
 				      nua_dialog_state_t *,
 				      nua_dialog_usage_t *);
+
+static void signal_call_state_change(nua_handle_t *nh,
+				      nua_session_usage_t *ss,
+				      int status, char const *phrase,
+				      enum nua_callstate next_state);
 
 static int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags);
 static int nua_invite_client_complete(nua_client_request_t *cr);
@@ -230,15 +237,17 @@ int nua_session_usage_add(nua_handle_t *nh,
 
 static
 void nua_session_usage_remove(nua_handle_t *nh,
-			       nua_dialog_state_t *ds,
-			       nua_dialog_usage_t *du)
+			      nua_dialog_state_t *ds,
+			      nua_dialog_usage_t *du,
+			      nua_client_request_t *cr0,
+			      nua_server_request_t *sr0)
 {
   nua_session_usage_t *ss = nua_dialog_usage_private(du);
   nua_client_request_t *cr, *cr_next;
 
   cr = du->du_cr;
 
-  if (cr && cr->cr_orq && cr->cr_status >= 200 && 
+  if (cr != cr0 && cr && cr->cr_orq && cr->cr_status >= 200 && 
       cr->cr_method == sip_method_invite) {
     ss->ss_reporting = 1;
     nua_invite_client_ack(cr, NULL);
@@ -252,7 +261,10 @@ void nua_session_usage_remove(nua_handle_t *nh,
     if (cr->cr_method != sip_method_invite)
       continue;
 
-    if (cr == du->du_cr)
+    if (cr == cr0)
+      continue;
+
+    if (cr == du->du_cr && cr->cr_orq)
       continue;
 
     if (cr->cr_status < 200) {
@@ -268,7 +280,19 @@ void nua_session_usage_remove(nua_handle_t *nh,
     cr_next = ds->ds_cr;
   }
 
-  
+  if (ss->ss_state != nua_callstate_terminated &&
+      ss->ss_state != nua_callstate_init &&
+      !ss->ss_reporting) {
+    int status = 0; char const *phrase = "Terminated";
+    
+    if (cr0) 
+      status = cr0->cr_status, phrase = cr0->cr_phrase ? cr0->cr_phrase : phrase;
+    else if (sr0)
+      status = sr0->sr_status, phrase = sr0->sr_phrase;
+
+    signal_call_state_change(nh, ss, status, phrase, nua_callstate_terminated);
+  }
+
   ds->ds_has_session = 0;
   nh->nh_has_invite = 0;
   nh->nh_active_call = 0;
@@ -306,7 +330,7 @@ void nua_session_usage_destroy(nua_handle_t *nh,
 			       nua_session_usage_t *ss)
 {
   /* Remove usage */
-  nua_dialog_usage_remove(nh, nh->nh_ds, nua_dialog_usage_public(ss));
+  nua_dialog_usage_remove(nh, nh->nh_ds, nua_dialog_usage_public(ss), NULL, NULL);
 
   SU_DEBUG_5(("nua: terminated session %p\n", (void *)nh));
 }
@@ -349,11 +373,6 @@ static int nh_referral_check(nua_handle_t *nh, tagi_t const *tags);
 static void nh_referral_respond(nua_handle_t *,
 				int status, char const *phrase);
 
-static void signal_call_state_change(nua_handle_t *nh,
-				      nua_session_usage_t *ss,
-				      int status, char const *phrase,
-				      enum nua_callstate next_state);
-
 static
 int session_get_description(sip_t const *sip,
 			    char const **return_sdp,
@@ -380,17 +399,26 @@ int nua_server_retry_after(nua_server_request_t *sr,
 
 /**@fn void nua_invite(nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...);
  *
- * Place a call using SIP INVITE method. 
+ * Place a call using SIP @b INVITE method. 
  *
- * Incomplete call can be hung-up with nua_cancel(). Complete or incomplete
- * calls can be hung-up with nua_bye().
+ * The INVITE method is used to initiate a call between two parties. The
+ * call is also known as <i>SIP session</i>.
+ * 
+ * At SIP level the session is represented as @e Dialog, which is a
+ * peer-to-peer association between two SIP User-Agents. The dialog is
+ * established by a successful 2XX response to the INVITE. The dialog is
+ * terminated by BYE transaction, which application can initiate with
+ * nua_bye() call.
  *
- * Optionally 
- * - uses early media if NUTAG_EARLY_MEDIA() tag is used with non zero-value
- * - media parameters can be set by SOA tags
- * - nua_invite() can be used to change status of an existing call: 
- *   - #SOATAG_HOLD tag can be used to list the media that will be put on hold,
- *     the value "*" sets all the media beloginging to the session on hold
+ * An @e early @e dialog is established by an preliminary response
+ * (101..199), such as <i>180 Ringing</i>. An early dialog is terminated
+ * with an error response with response code in range 300...699.
+ *
+ * The media session belonging to the SIP session is usually represented by
+ * SDP, Session Description Protocol. The media session it is usually
+ * established during the call set-up with procedure known as SDP
+ * Offer/Answer exchange, defined by @RFC3264. See <b>Media Session
+ * Handling</b> below for details.
  *
  * @param nh              Pointer to operation handle
  * @param tag, value, ... List of tagged parameters
@@ -398,21 +426,29 @@ int nua_server_retry_after(nua_server_request_t *sr,
  * @return 
  *    nothing
  *
- * @par Related Tags:
- *    NUTAG_URL() \n
- *    Tags of nua_set_hparams() \n
- *    NUTAG_INCLUDE_EXTRA_SDP() \n
- *    SOATAG_HOLD(), SOATAG_AF(), SOATAG_ADDRESS(),
- *    SOATAG_RTP_SELECT(), SOATAG_RTP_SORT(), SOATAG_RTP_MISMATCH(), 
- *    SOATAG_AUDIO_AUX(), \n
- *    SOATAG_USER_SDP() or SOATAG_USER_SDP_STR() \n
- *    See use of tags in <sip_tag.h> below
- *
  * @par Events:
  *    #nua_r_invite \n
  *    #nua_i_state (#nua_i_active, #nua_i_terminated) \n
  *    #nua_i_media_error \n
  *    #nua_i_fork \n
+ *
+ * @par Tags:
+ *   NUTAG_AUTH_CACHE() \n
+ *   NUTAG_AUTOACK() \n
+ *   NUTAG_AUTOANSWER() \n
+ *   NUTAG_EARLY_MEDIA() \n
+ *   NUTAG_ENABLEINVITE() \n
+ *   NUTAG_INITIAL_ROUTE(), NUTAG_INITIAL_ROUTE_STR() \n
+ *   NUTAG_INVITE_TIMER() \n
+ *   NUTAG_MEDIA_ENABLE() \n
+ *   NUTAG_MEDIA_FEATURES() \n
+ *   NUTAG_MIN_SE() \n
+ *   NUTAG_RETRY_COUNT() \n
+ *   NUTAG_SERVICE_ROUTE_ENABLE() \n
+ *   NUTAG_SESSION_REFRESHER() \n
+ *   NUTAG_SESSION_TIMER() \n
+ *   NUTAG_SOA_NAME() \n
+ *   NUTAG_UPDATE_REFRESH() \n
  *
  * @par Populating SIP Request Message with Tagged Arguments
  * The tagged arguments can be used to pass values for any SIP headers to
@@ -449,7 +485,27 @@ int nua_server_retry_after(nua_server_request_t *sr,
  * application. At this point, the target URI is stored in the request line,
  * together with method name ("INVITE") and protocol version ("SIP/2.0"). 
  * The initial dialog information is also created: @CallID, @CSeq headers
- * are generated, if they do not exist, and tag is added to @From header.
+ * are generated, if they do not exist, and an unique tag is added to @From
+ * header.
+ *
+ * @par
+ * For the initial INVITE requests, the @Route headers specified by
+ * SIPTAG_ROUTE()/SIPTAG_ROUTER_STR() tags in nua_handle() and nua_invite()
+ * calls are inserted to the request. Next the initial route set specified
+ * by NUTAG_INITIAL_ROUTE()/NUTAG_INITIAL_ROUTE_STR() tags is prepended to
+ * the route. Finally (unless NUTAG_SERVICE_ROUTE_ENABLE(0) is used) the
+ * @ServiceRoute set received from the registrar is also appended to the
+ * route set of the initial request message.
+ *
+ * @par
+ * Next, the stack generates a @Contact header for the request (Unless the
+ * application already gave a @Contact header or it does not want to use
+ * @Contact and indicates that by including SIPTAG_CONTACT(NULL) or
+ * SIPTAG_CONTACT(SIP_NONE) in the tagged parameters.) If the application
+ * has a registration active, the @Contact header used with registration is
+ * used. Otherwise, the @Contact header is generated from the local IP
+ * address and port number, taking also the values from NUTAG_M_DISPLAY(),
+ * NUTAG_M_FEATURES(), NUTAG_M_PARAMS(), and NUTAG_M_USERNAME().
  *
  * @par
  * For in-dialog INVITE (re-INVITE), the request URI is taken from the
@@ -464,19 +520,6 @@ int nua_server_retry_after(nua_server_request_t *sr,
  * also added now, if it does not exist.
  * 
  * @par
- * Next, the stack generates a @Contact header for the request (Unless the
- * application already gave a @Contact header or it does not want to use
- * @Contact and indicates that by including SIPTAG_CONTACT(NULL) or
- * SIPTAG_CONTACT(SIP_NONE) in the tagged parameters.) If the application
- * has registered the URI in @From header, the @Contact header used with
- * registration is used. Otherwise, the @Contact header is generated from the
- * local IP address and port number.
- *
- * @par
- * For the initial INVITE requests, @ServiceRoute set received from
- * the registrar is also added to the request message.
- *
- * @par
  * The INVITE request message created by nua_invite() operation is saved as
  * a template for automatic re-INVITE requests sent by the session timer
  * ("timer") feature (see NUTAG_SESSION_TIMER() for more details). Please
@@ -485,27 +528,105 @@ int nua_server_retry_after(nua_server_request_t *sr,
  * dialog-specific headers like @To, @From, and @CallID as well as
  * preference headers @Allow, @Supported, @UserAgent, @Organization).
  *
+ * @par Tags Related to SIP Headers and Request-URI
+ *    NUTAG_URL(), SIPTAG_REQUEST(), SIPTAG_REQUEST_STR() \n
+ *    NUTAG_INITIAL_ROUTE(), NUTAG_INITIAL_ROUTE_STR(), 
+ *    SIPTAG_ROUTE(), SIPTAG_ROUTE_STR(), 
+ *    NUTAG_SERVICE_ROUTE_ENABLE() \n
+ *    SIPTAG_MAX_FORWARDS(), SIPTAG_MAX_FORWARDS_STR() \n
+ *    SIPTAG_PROXY_REQUIRE(), SIPTAG_PROXY_REQUIRE_STR() \n
+ *    SIPTAG_FROM(), SIPTAG_FROM_STR() \n
+ *    SIPTAG_TO(), SIPTAG_TO_STR() \n
+ *    SIPTAG_CALL_ID(), SIPTAG_CALL_ID_STR() \n
+ *    SIPTAG_CSEQ(), SIPTAG_CSEQ_STR()
+ *    (note that @CSeq value is incremented if request gets retried)\n
+ *    SIPTAG_CONTACT(), SIPTAG_CONTACT_STR() \n
+ *    SIPTAG_REQUEST_DISPOSITION(), SIPTAG_REQUEST_DISPOSITION_STR() \n
+ *    SIPTAG_ACCEPT_CONTACT(), SIPTAG_ACCEPT_CONTACT_STR() \n
+ *    SIPTAG_REJECT_CONTACT(), SIPTAG_REJECT_CONTACT_STR() \n
+ *    SIPTAG_EXPIRES(), SIPTAG_EXPIRES_STR() \n
+ *    SIPTAG_DATE(), SIPTAG_DATE_STR() \n
+ *    SIPTAG_TIMESTAMP(), SIPTAG_TIMESTAMP_STR() \n
+ *    SIPTAG_SUBJECT(), SIPTAG_SUBJECT_STR() \n
+ *    SIPTAG_PRIORITY(), SIPTAG_PRIORITY_STR() \n
+ *    SIPTAG_CALL_INFO(), SIPTAG_CALL_INFO_STR() \n
+ *    SIPTAG_ORGANIZATION(), SIPTAG_ORGANIZATION_STR() \n
+ *    NUTAG_USER_AGENT(), SIPTAG_USER_AGENT() and SIPTAG_USER_AGENT_STR() \n
+ *    SIPTAG_IN_REPLY_TO(), SIPTAG_IN_REPLY_TO_STR() \n
+ *    SIPTAG_ACCEPT(), SIPTAG_ACCEPT_STR() \n
+ *    SIPTAG_ACCEPT_ENCODING(), SIPTAG_ACCEPT_ENCODING_STR() \n
+ *    SIPTAG_ACCEPT_LANGUAGE(), SIPTAG_ACCEPT_LANGUAGE_STR() \n
+ *    NUTAG_ALLOW(), SIPTAG_ALLOW(), and SIPTAG_ALLOW_STR() \n
+ *    NUTAG_EARLY_MEDIA(), SIPTAG_REQUIRE(), and SIPTAG_REQUIRE_STR() \n
+ *    NUTAG_SUPPORTED(), SIPTAG_SUPPORTED(), and SIPTAG_SUPPORTED_STR() \n
+ *    SIPTAG_ALLOW_EVENTS(), SIPTAG_ALLOW_EVENTS_STR() \n
+ *    SIPTAG_PROXY_AUTHORIZATION(), SIPTAG_PROXY_AUTHORIZATION_STR() \n
+ *    SIPTAG_AUTHORIZATION(), SIPTAG_AUTHORIZATION_STR() \n
+ *    SIPTAG_REFERRED_BY(), SIPTAG_REFERRED_BY_STR() \n
+ *    SIPTAG_REPLACES(), SIPTAG_REPLACES_STR() \n
+ *    NUTAG_SESSION_TIMER(), NUTAG_SESSION_REFRESHER(), 
+ *    SIPTAG_SESSION_EXPIRES(), SIPTAG_SESSION_EXPIRES_STR() \n
+ *    NUTAG_MIN_SE(), SIPTAG_MIN_SE(), SIPTAG_MIN_SE_STR() \n
+ *    SIPTAG_SECURITY_CLIENT(), SIPTAG_SECURITY_CLIENT_STR() \n
+ *    SIPTAG_SECURITY_VERIFY(), SIPTAG_SECURITY_VERIFY_STR() \n
+ *    SIPTAG_PRIVACY(), SIPTAG_PRIVACY_STR() \n
+ *    SIPTAG_MIME_VERSION(), SIPTAG_MIME_VERSION_STR() \n
+ *    SIPTAG_CONTENT_TYPE(), SIPTAG_CONTENT_TYPE_STR() \n
+ *    SIPTAG_CONTENT_ENCODING(), SIPTAG_CONTENT_ENCODING_STR() \n
+ *    SIPTAG_CONTENT_LANGUAGE(), SIPTAG_CONTENT_LANGUAGE_STR() \n
+ *    SIPTAG_CONTENT_DISPOSITION(), SIPTAG_CONTENT_DISPOSITION_STR() \n
+ *    SIPTAG_HEADER(), SIPTAG_HEADER_STR() \n
+ *    SIPTAG_PAYLOAD(), SIPTAG_PAYLOAD_STR() \n
+ *
  * @par SDP Handling
- * The initial nua_invite() creates a @ref soa_session_t "soa media session"
- * unless NUTAG_MEDIA_ENABLE(0) has been given. The SDP description of the
- * @ref soa_session_t "soa media session" is included in the INVITE request
- * as message body. 
+ * By default the nua_invite() uses an @ref soa_session_t "SOA media
+ * session" object to take care of the Offer/Answer exchange. The SOA can
+ * be disabled with tag NUTAG_MEDIA_ENABLE(0).
  *
  * @par
- * The SDP in a 1XX or 2XX response message is interpreted as an answer,
- * given to the @ref soa_session_t "soa media session" object for
- * processing.
+ * The SDP description of the
+ * @ref soa_session_t "soa media session" is included in the INVITE request
+ * as a message body. 
+ * The SDP in the message body of the 1XX or 2XX response message is
+ * interpreted as an answer, given to the @ref soa_session_t "soa media
+ * session" object for processing.
  *
  * @bug If the INVITE request already contains a message body, SDP is not
- * added. Also, if the response contains a multipart body, it is not parsed.
+ * added.  Also, if the response contains a multipart body, it is not parsed.
+ *
+ * @par Tags Related to SDP Management and Offer/Answer Model:
+ *    NUTAG_MEDIA_ENABLE(), \n
+ *    NUTAG_INCLUDE_EXTRA_SDP(), \n
+ *    SOATAG_HOLD(), SOATAG_AF(), SOATAG_ADDRESS(),
+ *    SOATAG_ORDERED_USER(), SOATAG_REUSE_REJECTED(), 
+ *    SOATAG_RTP_SELECT(), SOATAG_RTP_SORT(), SOATAG_RTP_MISMATCH(), 
+ *    SOATAG_AUDIO_AUX(), \n
+ *    SOATAG_USER_SDP() or SOATAG_USER_SDP_STR() \n
+ *
+ * @par Alternative Call Models
+ * In addition to the basic SIP call model described in @RFC3261 and
+ * @RFC3264, the early media model described in @RFC3262 is available. The
+ * use of 100rel and early media can be use can be forced with
+ * NUTAG_EARLY_MEDIA(1).
+ *
+ * Also, the "precondition" call model described in @RFC3312 is supported at
+ * SIP level, that is, the SIP PRACK and UPDATE requests are sent if
+ * "precondition" is added to the @Require header in the INVITE request.
+ *
+ * Optionally 
+ * - uses early media if NUTAG_EARLY_MEDIA() tag is used with non zero-value
+ * - media parameters can be set by SOA tags
+ * - nua_invite() can be used to change status of an existing call: 
+ *   - #SOATAG_HOLD tag can be used to list the media that will be put on hold,
+ *     the value "*" sets all the media beloginging to the session on hold
  *
  * @par Authentication
  * The INVITE request may need authentication. Each proxy or server
  * requiring authentication can respond with 401 or 407 response. The
  * nua_authenticate() operation stores authentication information (username
  * and password) to the handle, and stack tries to authenticate all the rest
- * of the requests (e.g., PRACK, ACK, UPDATE, re-INVITE, BYE) using same
- * username and password.
+ * of the requests (e.g., PRACK, ACK, UPDATE, re-INVITE, BYE) using the
+ * stored username and password.
  *
  * @sa @ref nua_call_model, #nua_r_invite, #nua_i_state, \n
  *     nua_handle_has_active_call() \n
@@ -803,7 +924,7 @@ static int nua_session_client_response(nua_client_request_t *cr,
 
 #define LOG3(m) \
   SU_DEBUG_3(("nua(%p): %s: %s %s in %u %s\n", \
-	      (void *)nh, cr->cr_method_name, (m),		\
+	      (void *)nh, cr->cr_method_name, (m), \
 	      received ? received : "SDP", status, phrase))
 #define LOG5(m) \
   SU_DEBUG_5(("nua(%p): %s: %s %s in %u %s\n", \
@@ -1445,7 +1566,7 @@ static int nua_session_usage_shutdown(nua_handle_t *nh,
     break;
   }
   
-  nua_dialog_usage_remove(nh, ds, du);
+  nua_dialog_usage_remove(nh, ds, du, NULL, NULL);
 
   return 200;
 }
@@ -1652,11 +1773,7 @@ static int nua_prack_client_report(nua_client_request_t *cr,
 		  status, phrase,
 		  tags);
 
-  if (!ss || cr->cr_terminated || cr->cr_graceful)
-    return 1;
-
-  if (cr->cr_waiting)
-    /* Do not report call state change if restarting later */
+  if (!ss || cr->cr_terminated || cr->cr_graceful || cr->cr_waiting)
     return 1;
 
   if (cr->cr_offer_sent || cr->cr_answer_sent) {
@@ -2231,9 +2348,12 @@ int nua_invite_server_report(nua_server_request_t *sr, tagi_t const *tags)
   
   if (retval >= 2 || ss == NULL) {
     /* Session has been terminated. */ 
-    if (!initial && !neutral)
+    if (!initial && !neutral) {
+#if 0
       signal_call_state_change(nh, NULL, status, phrase,
 			       nua_callstate_terminated);
+#endif
+    }
     return retval;
   }
 
@@ -2628,9 +2748,11 @@ int nua_prack_server_report(nua_server_request_t *sr, tagi_t const *tags)
   retval = nua_base_server_report(sr, tags), sr = NULL; /* destroys sr */
 
   if (retval >= 2 || ss == NULL) {
+#if 0
     signal_call_state_change(nh, NULL,
 			     status, phrase, 
 			     nua_callstate_terminated);
+#endif
     return retval;
   }
 
@@ -3155,11 +3277,7 @@ static int nua_update_client_report(nua_client_request_t *cr,
 		  status, phrase,
 		  tags);
 
-  if (!ss || cr->cr_terminated || cr->cr_graceful)
-    return 1;
-
-  if (cr->cr_waiting)
-    /* Do not report call state change if restarting later */
+  if (!ss || cr->cr_terminated || cr->cr_graceful || cr->cr_waiting)
     return 1;
 
   if (cr->cr_offer_sent) {
@@ -3360,8 +3478,10 @@ int nua_update_server_report(nua_server_request_t *sr, tagi_t const *tags)
   retval = nua_base_server_report(sr, tags), sr = NULL; /* destroys sr */
 
   if (retval >= 2 || ss == NULL) {
+#if 0
     signal_call_state_change(nh, NULL, status, phrase, 
 			     nua_callstate_terminated);
+#endif
     return retval;
   }
 
@@ -3633,7 +3753,8 @@ int nua_bye_server_init(nua_server_request_t *sr)
 int nua_bye_server_report(nua_server_request_t *sr, tagi_t const *tags)
 {
   nua_handle_t *nh = sr->sr_owner;
-  nua_session_usage_t *ss = nua_dialog_usage_private(sr->sr_usage);
+  nua_dialog_usage_t *du = sr->sr_usage;
+  nua_session_usage_t *ss = nua_dialog_usage_private(du);
   int early = 0, retval;
 
   if (sr->sr_status < 200)
@@ -3645,7 +3766,11 @@ int nua_bye_server_report(nua_server_request_t *sr, tagi_t const *tags)
 
     early = ss->ss_state < nua_callstate_ready;
     phrase = early ? "Early Session Terminated" : "Session Terminated";
-    
+
+#if 0
+    sr->sr_usage = NULL;
+#endif
+
     for (sr0 = nh->nh_ds->ds_sr; sr0; sr0 = sr_next) {
       sr_next = sr0->sr_next;
 
@@ -3658,16 +3783,22 @@ int nua_bye_server_report(nua_server_request_t *sr, tagi_t const *tags)
       }
       nua_server_request_destroy(sr0);
     }
+
+    sr->sr_phrase = phrase;
   }
 
   retval = nua_base_server_report(sr, tags);
 
   assert(2 <= retval && retval < 4);
 
-  if (ss)
-    signal_call_state_change(nh, NULL, 200,
+#if 0
+  if (ss) {
+    signal_call_state_change(nh, ss, 200,
 			     early ? "Received early BYE" : "Received BYE",
 			     nua_callstate_terminated);
+    nua_dialog_usage_remove(nh, nh->nh_ds, du);
+  }
+#endif
 
   return retval;
 }
@@ -3799,9 +3930,10 @@ static void signal_call_state_change(nua_handle_t *nh,
     if (next_state == nua_callstate_init) {
       if (ss_state < nua_callstate_ready)
 	ss->ss_state = next_state;
-      else
-	/* Do not change state - we are ready, terminating, or terminated */
-	next_state = ss_state;
+      else if (ss->ss_state == nua_callstate_ready)
+	next_state = ss->ss_state;
+      else 
+	ss->ss_state = next_state = nua_callstate_terminated;
     }
     else if (next_state > ss_state)
       ss->ss_state = next_state;

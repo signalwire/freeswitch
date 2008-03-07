@@ -1269,7 +1269,8 @@ tag_typedef_t nutag_autoack = BOOLTAG_TYPEDEF(autoACK);
 
 /**@def NUTAG_ENABLEINVITE(x)
  *
- * Enable incoming INVITE
+ * Enable incoming INVITE.
+ *
  *
  * @par Used with
  *    nua_set_params() \n
@@ -2570,7 +2571,8 @@ tag_typedef_t nutag_path_enable = BOOLTAG_TYPEDEF(path_enable);
 
 /**@def NUTAG_SERVICE_ROUTE_ENABLE(x) 
  *
- * Use route from @ServiceRoute header in response to REGISTER.
+ * Use route taken from the @ServiceRoute header in the 200 class response
+ * to REGISTER.
  *
  * @par Used with
  * - nua_create(), nua_set_params(), nua_get_params()

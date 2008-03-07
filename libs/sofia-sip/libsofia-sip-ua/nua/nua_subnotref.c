@@ -74,7 +74,9 @@ static int nua_subscribe_usage_add(nua_handle_t *nh,
 				   nua_dialog_usage_t *du);
 static void nua_subscribe_usage_remove(nua_handle_t *nh, 
 				       nua_dialog_state_t *ds,
-				       nua_dialog_usage_t *du);
+				       nua_dialog_usage_t *du,
+				       nua_client_request_t *cr,
+				       nua_server_request_t *sr);
 static void nua_subscribe_usage_refresh(nua_handle_t *,
 					nua_dialog_state_t *,
 					nua_dialog_usage_t *,
@@ -113,7 +115,9 @@ int nua_subscribe_usage_add(nua_handle_t *nh,
 static 
 void nua_subscribe_usage_remove(nua_handle_t *nh, 
 			       nua_dialog_state_t *ds,
-			       nua_dialog_usage_t *du)
+			       nua_dialog_usage_t *du,
+				nua_client_request_t *cr,
+				nua_server_request_t *sr)
 {
   ds->ds_has_events--;	
   ds->ds_has_subscribes--;	
@@ -446,7 +450,7 @@ static void nua_subscribe_usage_refresh(nua_handle_t *nh,
 		     NUTAG_SUBSTATE(nua_substate_terminated),
 		     SIPTAG_EVENT(du->du_event),
 		     TAG_END());
-    nua_dialog_usage_remove(nh, ds, du);
+    nua_dialog_usage_remove(nh, ds, du, NULL, NULL);
 
     return;
   }
@@ -469,7 +473,7 @@ static void nua_subscribe_usage_refresh(nua_handle_t *nh,
 		     SIPTAG_EVENT(du->du_event),
 		     TAG_END());
 
-  nua_dialog_usage_remove(nh, ds, du);
+  nua_dialog_usage_remove(nh, ds, du, NULL, NULL);
 }
 
 /** Terminate subscription.
@@ -492,7 +496,7 @@ static int nua_subscribe_usage_shutdown(nua_handle_t *nh,
       return 0;
   }
   
-  nua_dialog_usage_remove(nh, ds, du);
+  nua_dialog_usage_remove(nh, ds, du, NULL, NULL);
   return 200;
 }
 
@@ -874,7 +878,7 @@ static int nua_refer_client_request(nua_client_request_t *cr,
   }
 
   if (du0)
-    nua_dialog_usage_remove(nh, nh->nh_ds, du0);
+    nua_dialog_usage_remove(nh, nh->nh_ds, du0, NULL, NULL);
 
   eu = nua_dialog_usage_private(cr->cr_usage = du);
   eu ->eu_refer = 1;
