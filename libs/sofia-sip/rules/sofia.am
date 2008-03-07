@@ -38,6 +38,8 @@ _tag.c_tag_ref.c:
  ../tport/libtport.la ../url/liburl.la:
 	cd $(@D) && $(MAKE) $(@F)
 
+checklib: $(noinst_LTLIBRARIES) $(check_LTLIBRARIES)
+
 INTERNAL_INCLUDES = \
     -I${sofiasrcdir}/features -I${sofiabuilddir}/features \
     -I${sofiasrcdir}/ipt -I${sofiabuilddir}/ipt \

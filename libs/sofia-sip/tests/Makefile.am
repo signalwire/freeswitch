@@ -20,6 +20,11 @@ check_PROGRAMS += check_sofia
 check_sofia_SOURCES = check_sofia.c check_sofia.h \
 	suite_for_nua.c
 
+${sofiabuilddir}/nua/libtestnua.la \
+	${sofiabuilddir}/nua/libtestproxy.la \
+	${sofiabuilddir}/nua/libtestnat.la:
+	cd ${sofiabuilddir}/nua && make checklib
+
 check_sofia_LDADD = \
 	${sofiabuilddir}/nua/libtestnua.la \
 	${sofiabuilddir}/nua/libtestproxy.la \

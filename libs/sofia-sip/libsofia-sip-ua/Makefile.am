@@ -64,6 +64,8 @@ PHONY = doxygen built-sources
 
 include $(top_srcdir)/rules/recursive.am
 
+checklib: checklib-recursive $(lib_LTLIBRARIES)
+
 doxygen: built-sources
 	@echo Generating empty doxytags
 	mkdir -p docs/html ; \

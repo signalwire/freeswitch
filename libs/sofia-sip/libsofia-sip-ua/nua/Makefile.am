@@ -11,7 +11,9 @@
 # ----------------------------------------------------------------------
 # Build targets
 
-noinst_LTLIBRARIES = 	libnua.la libtestnua.la libtestproxy.la libtestnat.la
+noinst_LTLIBRARIES = 	libnua.la
+
+check_LTLIBRARIES = 	libtestnua.la libtestproxy.la libtestnat.la
 
 check_PROGRAMS =	test_nua
 
