@@ -2078,7 +2078,6 @@ nua_client_request_t *nua_client_request_remove(nua_client_request_t *cr)
 
 void nua_client_request_complete(nua_client_request_t *cr)
 {
-  nua_client_request_remove(cr);
   if (cr && cr->cr_methods->crm_complete)
     cr->cr_methods->crm_complete(cr);
 }
@@ -2096,6 +2095,7 @@ void nua_client_request_destroy(nua_client_request_t *cr)
 
   nua_destroy_signal(cr->cr_signal);
 
+  nua_client_request_remove(cr);
   nua_client_bind(cr, NULL);
   
   if (cr->cr_msg)
@@ -2104,6 +2104,7 @@ void nua_client_request_destroy(nua_client_request_t *cr)
 
   if (cr->cr_orq)
     nta_outgoing_destroy(cr->cr_orq);
+
   cr->cr_orq = NULL;
 
   if (cr->cr_timer)
