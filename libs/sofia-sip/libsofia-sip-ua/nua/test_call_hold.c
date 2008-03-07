@@ -43,7 +43,10 @@
 #define __func__ "test_call_hold"
 #endif
 
-int ack_when_completing(CONDITION_PARAMS);
+int complete_call(CONDITION_PARAMS);
+int until_complete(CONDITION_PARAMS);
+int invite_responded(CONDITION_PARAMS);
+static size_t remove_first_ack(void *_once, void *message, size_t len);
 
 /* ======================================================================== */
 /* test_call_hold message sequence looks like this:
@@ -88,6 +91,9 @@ int test_call_hold(struct context *ctx)
   struct endpoint *a = &ctx->a, *b = &ctx->b;
   struct call *a_call = a->call, *b_call = b->call;
   struct event *e;
+  sip_t *sip;
+  int zero = 0;
+  struct nat_filter *f;
 
   a_call->sdp =
     "m=audio 5008 RTP/AVP 0 8\n"
@@ -476,7 +482,7 @@ int test_call_hold(struct context *ctx)
   INVITE(b, b_call, b_call->nh, SOATAG_HOLD(""),
 	 SIPTAG_SUBJECT_STR("TEST NUA-7.6: re-INVITE without auto-ack"),
 	 TAG_END());
-  run_ab_until(ctx, -1, until_ready, -1, ack_when_completing);
+  run_ab_until(ctx, -1, until_complete, -1, complete_call);
 
   /* Client transitions:
      READY -(C1)-> CALLING: nua_invite(), nua_i_state
@@ -492,9 +498,8 @@ int test_call_hold(struct context *ctx)
   TEST_1(is_answer_recv(e->data->e_tags));
   TEST(audio_activity(e->data->e_tags), SOA_ACTIVE_SENDRECV);
   TEST(video_activity(e->data->e_tags), SOA_ACTIVE_SENDRECV);
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-  TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
   TEST_1(!e->next);
+
   free_events_in_list(ctx, b->events);
 
   /*
@@ -508,7 +513,19 @@ int test_call_hold(struct context *ctx)
   TEST(callstate(e->data->e_tags), nua_callstate_completed); /* COMPLETED */
   TEST_1(is_answer_sent(e->data->e_tags));
   TEST(audio_activity(e->data->e_tags), SOA_ACTIVE_SENDRECV);
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_ack);
+  TEST_1(!e->next);
+  free_events_in_list(ctx, a->events);
+
+  ACK(b, b_call, b_call->nh, TAG_END());
+
+  run_ab_until(ctx, -1, until_ready, -1, until_ready);
+
+  TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
+  TEST_1(!e->next);
+  free_events_in_list(ctx, b->events);
+  
+  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_ack);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
   TEST(audio_activity(e->data->e_tags), SOA_ACTIVE_SENDRECV);
@@ -519,6 +536,95 @@ int test_call_hold(struct context *ctx)
   if (print_headings)
     printf("TEST NUA-7.6.1: PASSED\n");
 
+  /* ------------------------------------------------------------------------ */
+  /*
+ :                    :
+ |<------INVITE-------|
+ |--------200-------->|
+ |<--------ACK--------|
+ :                    :
+  */
+
+  if (ctx->proxy_tests && ctx->nat) {
+  if (print_headings)
+    printf("TEST NUA-7.6.2: almost overlapping re-INVITE\n");
+
+  /* Turn off auto-ack */
+  nua_set_hparams(b_call->nh, NUTAG_AUTOACK(0), TAG_END());
+  run_b_until(ctx, nua_r_set_params, until_final_response);
+
+  INVITE(b, b_call, b_call->nh, SOATAG_HOLD("#"),
+	 SIPTAG_SUBJECT_STR("TEST NUA-7.6.2: re-INVITE"),
+	 TAG_END());
+  run_ab_until(ctx, -1, until_complete, -1, complete_call);
+
+  /* Client transitions:
+     READY -(C1)-> CALLING: nua_invite(), nua_i_state
+     CALLING -(C3a)-> COMPLETING: nua_r_invite, nua_i_state
+     COMPLETING -(C4)-> READY: nua_ack(), nua_i_state
+  */
+  TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_calling); /* CALLING */
+  TEST_1(is_offer_sent(e->data->e_tags));
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_completing); /* COMPLETING */
+  TEST_1(is_answer_recv(e->data->e_tags));
+  TEST(audio_activity(e->data->e_tags), SOA_ACTIVE_INACTIVE);
+  TEST(video_activity(e->data->e_tags), SOA_ACTIVE_INACTIVE);
+  TEST_1(!e->next);
+
+  free_events_in_list(ctx, b->events);
+
+  /*
+   Server transitions:
+   READY -(S3a)-> COMPLETED: nua_i_invite, <auto-answer>, nua_i_state
+   COMPLETED -(S4)-> READY: nua_i_ack, nua_i_state
+  */
+  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_invite);
+  TEST(e->data->e_status, 200);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_completed); /* COMPLETED */
+  TEST_1(is_answer_sent(e->data->e_tags));
+  TEST(audio_activity(e->data->e_tags), SOA_ACTIVE_INACTIVE);
+  TEST_1(!e->next);
+  free_events_in_list(ctx, a->events);
+
+  f = test_nat_add_filter(ctx->nat, remove_first_ack, &zero, nat_inbound);
+
+  ACK(b, b_call, b_call->nh, TAG_END());
+  INVITE(b, b_call, b_call->nh, SOATAG_HOLD("*"),
+	 SIPTAG_SUBJECT_STR("TEST NUA-7.6.2: almost overlapping re-INVITE"),
+	 NUTAG_AUTOACK(1),
+	 TAG_END());
+
+  run_ab_until(ctx, -1, until_ready, -1, invite_responded);
+
+  TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_calling); /* CALLING */
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
+  TEST(e->data->e_status, 100);
+  TEST_1(sip = sip_object(e->data->e_msg));
+  TEST_1(sip->sip_retry_after);
+  TEST_1(!e->next);
+  free_events_in_list(ctx, b->events);
+  
+  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_ack);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
+  TEST(audio_activity(e->data->e_tags), SOA_ACTIVE_INACTIVE);
+  TEST(video_activity(e->data->e_tags), SOA_ACTIVE_INACTIVE);
+  TEST_1(!e->next);
+  free_events_in_list(ctx, a->events);
+
+  test_nat_remove_filter(ctx->nat, f);
+
+  if (print_headings)
+    printf("TEST NUA-7.6.2: PASSED\n");
+  }
+  
 
   /* ---------------------------------------------------------------------- */
   /*
@@ -528,7 +634,7 @@ int test_call_hold(struct context *ctx)
    */
 
   if (print_headings)
-    printf("TEST NUA-7.6.2: terminate call\n");
+    printf("TEST NUA-7.6.3: terminate call\n");
 
   BYE(a, a_call, a_call->nh, TAG_END());
   run_ab_until(ctx, -1, until_terminated, -1, until_terminated);
@@ -549,13 +655,17 @@ int test_call_hold(struct context *ctx)
   */
   TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_bye);
   TEST(e->data->e_status, 200);
+  if (ctx->proxy_tests && ctx->nat) {
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
+  TEST(e->data->e_status, 481);
+  }
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* TERMINATED */
   TEST_1(!e->next);
   free_events_in_list(ctx, b->events);
 
   if (print_headings)
-    printf("TEST NUA-7.6.2: PASSED\n");
+    printf("TEST NUA-7.6.3: PASSED\n");
 
   nua_handle_destroy(a_call->nh), a_call->nh = NULL;
   nua_handle_destroy(b_call->nh), b_call->nh = NULL;
@@ -572,7 +682,7 @@ int test_call_hold(struct context *ctx)
  |                    |
  |---------ACK------->|
 */
-int ack_when_completing(CONDITION_PARAMS)
+int complete_call(CONDITION_PARAMS)
 {
   if (!(check_handle(ep, call, nh, SIP_500_INTERNAL_SERVER_ERROR)))
     return 0;
@@ -581,8 +691,7 @@ int ack_when_completing(CONDITION_PARAMS)
 
   switch (callstate(tags)) {
   case nua_callstate_completing:
-    ACK(ep, call, nh, TAG_END());
-    return 0;
+    return 1;
   case nua_callstate_ready:
     return 1;
   case nua_callstate_terminated:
@@ -592,6 +701,48 @@ int ack_when_completing(CONDITION_PARAMS)
   default:
     return 0;
   }
+}
+
+/*
+ X      INVITE
+ |                    |
+ |-------INVITE------>|
+ |<--------200--------|
+*/
+int until_complete(CONDITION_PARAMS)
+{
+  if (!(check_handle(ep, call, nh, SIP_500_INTERNAL_SERVER_ERROR)))
+    return 0;
+
+  save_event_in_list(ctx, event, ep, call);
+
+  switch (callstate(tags)) {
+  case nua_callstate_completed:
+  case nua_callstate_ready:
+    return 1;
+  case nua_callstate_terminated:
+    if (call)
+      nua_handle_destroy(call->nh), call->nh = NULL;
+    return 1;
+  default:
+    return 0;
+  }
+}
+
+static size_t remove_first_ack(void *_once, void *message, size_t len)
+{
+  int *once = _once;
+  
+  if (*once)
+    return len;
+
+  if (strncmp("ACK ", message, 4) == 0) {
+    printf("FILTERING %.*s\n", strcspn(message, "\r\n"), (char *)message);
+    *once = 1;
+    return 0;
+  }
+
+  return len;
 }
 
 /* ======================================================================== */
@@ -985,6 +1136,17 @@ int until_ready2(CONDITION_PARAMS)
     return 0;
   }
 }
+
+int invite_responded(CONDITION_PARAMS)
+{
+  if (!(check_handle(ep, call, nh, SIP_500_INTERNAL_SERVER_ERROR)))
+    return 0;
+
+  save_event_in_list(ctx, event, ep, call);
+
+  return event == nua_r_invite && status >= 100;
+}
+
 
 int test_reinvites(struct context *ctx)
 {
