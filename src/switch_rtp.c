@@ -1280,6 +1280,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 		if (check) {
+			do_2833(rtp_session);
 			if (!bytes && rtp_session->max_missed_packets) {
 				if (++rtp_session->missed_count >= rtp_session->max_missed_packets) {
 					ret = -2;
