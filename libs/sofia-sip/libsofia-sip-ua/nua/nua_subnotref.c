@@ -59,7 +59,8 @@
 struct event_usage
 {
   enum nua_substate eu_substate;	/**< Subscription state */
-  sip_time_t eu_expires;	        /**< Proposed expiration time */
+  unsigned eu_delta;	                /**< Proposed expiration */
+  sip_time_t eu_expires;	        /**< Absolute expiration time */
   unsigned eu_notified;		        /**< Number of NOTIFYs received */
   unsigned eu_unsolicited:1;	        /**< Not SUBSCRIBEd or REFERed */
   unsigned eu_refer:1;		        /**< Implied subscription by refer */
@@ -273,16 +274,16 @@ static int nua_subscribe_client_request(nua_client_request_t *cr,
     nua_dialog_usage_reset_refresh(du); /* during SUBSCRIBE transaction */
     
     if (cr->cr_terminating)
-      expires = eu->eu_expires = 0;
+      expires = eu->eu_delta = 0;
     else if (sip->sip_expires)
       /* Use value specified by application or negotiated with Min-Expires */
-      expires = eu->eu_expires = sip->sip_expires->ex_delta;
+      expires = eu->eu_delta = sip->sip_expires->ex_delta;
     else
     /* We just use common default value, but the default is actually
        package-specific according to the RFC 3265 section 4.4.4:
        [Event] packages MUST also define a
        default "Expires" value to be used if none is specified. */
-      expires = eu->eu_expires = 3600;
+      expires = eu->eu_delta = 3600;
 
     eu->eu_final_wait = 0;
 
@@ -365,14 +366,14 @@ static int nua_subscribe_client_response(nua_client_request_t *cr,
 
     if (eu->eu_substate != nua_substate_terminated)
       /* If there is no @Expires header, 
-	 use default value stored in eu_expires */
+	 use default value stored in eu_delta */
       delta = sip_contact_expires(NULL, sip->sip_expires, sip->sip_date, 
-				  eu->eu_expires, now);
+				  eu->eu_delta, now);
     else
       delta = 0;
 
-    if (delta > eu->eu_expires)
-      delta = eu->eu_expires;
+    if (delta > eu->eu_delta)
+      delta = eu->eu_delta;
 
     if (win_messenger_enable && !nua_dialog_is_established(nh->nh_ds)) {
       /* Notify from messanger does not match with dialog tag */ 
@@ -381,6 +382,7 @@ static int nua_subscribe_client_response(nua_client_request_t *cr,
 
     if (delta > 0) {
       nua_dialog_usage_set_refresh(du, delta);
+      eu->eu_expires = du->du_refquested + delta;
     } 
     else {
       if (eu->eu_substate == nua_substate_terminated) {
@@ -399,6 +401,11 @@ static int nua_subscribe_client_response(nua_client_request_t *cr,
 
 	nua_dialog_usage_set_refresh_range(du, delta, delta);
       }
+      else {
+	nua_dialog_usage_reset_refresh(du); 
+      }
+
+      eu->eu_expires = du->du_refquested;
     }
 
     substate = eu->eu_substate;
@@ -592,7 +599,7 @@ int nua_notify_server_preprocess(nua_server_request_t *sr)
 
   if (subs == NULL) {
     /* Compatibility */
-    unsigned long delta = eu->eu_expires;
+    unsigned long delta = eu->eu_delta;
     if (sip->sip_expires) 
       delta = sip->sip_expires->ex_delta;
 
@@ -651,8 +658,12 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
     substate = eu->eu_substate;
 
     if (substate == nua_substate_active || substate == nua_substate_pending) {
-      if (subs && subs->ss_expires)
-	delta = strtoul(subs->ss_expires, NULL, 10);
+      if (subs && subs->ss_expires) {
+	sip_time_t now = sip_now();
+	sip_time_t delta0 = strtoul(subs->ss_expires, NULL, 10);
+	if (now + delta0 <= eu->eu_expires)
+	  delta = delta0;
+      }
     }
     else if (substate == nua_substate_embryonic) {
       if (subs && subs->ss_reason) {
@@ -690,8 +701,10 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
     nua_dialog_usage_set_refresh_range(du, retry, retry + 5);
   }
   else {
-    if (delta < SIP_TIME_MAX)
+    if (delta < SIP_TIME_MAX) {
       nua_dialog_usage_set_refresh(du, delta);
+      eu->eu_expires = du->du_refquested + delta;
+    }
   }
 
   return retval;
