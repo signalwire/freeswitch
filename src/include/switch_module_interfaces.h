@@ -297,6 +297,7 @@ struct switch_file_handle {
 	char *handler;
 	int64_t pos;
 	switch_buffer_t *audio_buffer;
+	switch_buffer_t *sp_audio_buffer;
 	uint32_t thresh;
 	uint32_t silence_hits;
 	uint32_t offset_pos;

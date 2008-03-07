@@ -914,10 +914,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			memset(abuf, 0, framelen);
 			olen = ilen;
 			do_speed = 0;
+		} else if (fh->sp_audio_buffer && (switch_buffer_inuse(fh->sp_audio_buffer) > (switch_size_t) (framelen))) {
+			switch_buffer_read(fh->sp_audio_buffer, abuf, framelen);
+			olen = asis ? framelen : ilen;
+			do_speed = 0;
 		} else if (fh->audio_buffer && (switch_buffer_inuse(fh->audio_buffer) > (switch_size_t) (framelen))) {
 			switch_buffer_read(fh->audio_buffer, abuf, framelen);
 			olen = asis ? framelen : ilen;
-			do_speed = 0;
 		} else {
 			olen = FILE_STARTSAMPLES;
 			if (!asis) {
@@ -945,7 +948,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		}
 
 		if (!asis && fh->audio_buffer && last_speed > -1 && last_speed != fh->speed) {
-			switch_buffer_zero(fh->audio_buffer);
+			switch_buffer_zero(fh->sp_audio_buffer);
 		}
 
 		if (switch_test_flag(fh, SWITCH_FILE_SEEK)) {
@@ -954,6 +957,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			switch_clear_flag(fh, SWITCH_FILE_SEEK);
 		}
 
+
 		if (!asis && fh->speed && do_speed) {
 			float factor = 0.25f * abs(fh->speed);
 			switch_size_t newlen, supplement, step;
@@ -961,11 +965,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			switch_size_t wrote = 0;
 
 			supplement = (int) (factor * olen);
+			if (!supplement) {
+				supplement = 1;
+			}
 			newlen = (fh->speed > 0) ? olen - supplement : olen + supplement;
+			
 			step = (fh->speed > 0) ? (newlen / supplement) : (olen / supplement);
 
+			if (!fh->sp_audio_buffer) {
+				switch_buffer_create_dynamic(&fh->sp_audio_buffer, 1024, 1024, 0);
+			}
+
 			while ((wrote + step) < newlen) {
-				switch_buffer_write(fh->audio_buffer, bp, step * 2);
+				switch_buffer_write(fh->sp_audio_buffer, bp, step * 2);
 				wrote += step;
 				bp += step;
 				if (fh->speed > 0) {
@@ -976,13 +988,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					f = (float) (*bp + *(bp + 1) + *(bp - 1));
 					f /= 3;
 					s = (short) f;
-					switch_buffer_write(fh->audio_buffer, &s, 2);
+					switch_buffer_write(fh->sp_audio_buffer, &s, 2);
 					wrote++;
 				}
 			}
 			if (wrote < newlen) {
 				switch_size_t r = newlen - wrote;
-				switch_buffer_write(fh->audio_buffer, bp, r * 2);
+				switch_buffer_write(fh->sp_audio_buffer, bp, r * 2);
 				wrote += r;
 			}
 			last_speed = fh->speed;
@@ -1064,6 +1076,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	
 	switch_core_file_close(fh);
 	switch_buffer_destroy(&fh->audio_buffer);
+	switch_buffer_destroy(&fh->sp_audio_buffer);
 	if (!asis) {
 		switch_core_codec_destroy(&codec);
 	}
