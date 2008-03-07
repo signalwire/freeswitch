@@ -1791,7 +1791,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 
 	if ((voicemail_greeting_number = switch_channel_get_variable(channel, "voicemail_greeting_number"))) {
 		int num = atoi(voicemail_greeting_number);
-		if (num > 0 && num < VM_MAX_GREETINGS) {
+		if (num > 0 && num <= VM_MAX_GREETINGS) {
 			greet_path = switch_mprintf("%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, num, profile->file_ext);
 		}
 	} else {
