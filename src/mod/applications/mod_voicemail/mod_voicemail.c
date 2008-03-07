@@ -1472,7 +1472,7 @@ case VM_CHECK_CONFIG:
 			TRY_CODE(vm_macro_get(session, VM_CHOOSE_GREETING_MACRO, key_buf, input, sizeof(input), 1, "", &term, timeout));
 
 			num = atoi(input);
-			if (num < 1 || num > 3) {
+			if (num < 1 || num > 9) {
 				TRY_CODE(switch_ivr_phrase_macro(session, VM_CHOOSE_GREETING_FAIL_MACRO, NULL, NULL, NULL));
 			} else {
 				file_path = switch_mprintf("%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, num, profile->file_ext);
