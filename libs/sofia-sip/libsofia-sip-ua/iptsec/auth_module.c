@@ -1033,7 +1033,8 @@ int auth_readdb_internal(auth_mod_t *am, int always)
     N = i, i = 0;
 
     if (N > 0) {
-      if (auth_htable_resize(am->am_home, am->am_users, N) < 0 ||
+      size_t size = (N * 5 + 3) / 4;
+      if (auth_htable_resize(am->am_home, am->am_users, size) < 0 ||
 	  !(fresh = su_zalloc(am->am_home, sizeof(*fresh) * N))) {
 	su_free(am->am_home, buffer);
 	return -1;
@@ -1134,7 +1135,7 @@ int auth_readdb_internal(auth_mod_t *am, int always)
   return -1;
 }
 
-/** Append to hash, remove existing user */
+/** Append to hash, remove existing local user */
 su_inline void
 auth_htable_append_local(auth_htable_t *aht, auth_passwd_t *apw)
 {
