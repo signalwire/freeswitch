@@ -74,13 +74,14 @@ typedef unsigned long hash_value_t;
  * @param sname     name of struct
  * @param pr        hash table field prefix
  * @param entrytype entry type
+ * @param sizetype  type of size variables
  *
  * @NEW_1_12_8
  */
-#define HTABLE2_DECLARE2(type, sname, pr, entrytype, size_t)	\
+#define HTABLE2_DECLARE2(type, sname, pr, entrytype, sizetype)	\
 typedef struct sname { \
-  size_t pr##size; \
-  size_t pr##used; \
+  sizetype pr##size; \
+  sizetype pr##used; \
   entrytype *pr##table; \
 } type
 
@@ -102,11 +103,12 @@ typedef struct sname { \
  * @param prefix    function prefix
  * @param pr        hash table field prefix (not used)
  * @param entrytype entry type
+ * @param sizetype  type of size variables
  *
  * @NEW_1_12_8
  */
-#define HTABLE2_PROTOS2(type, prefix, pr, entrytype, size_t)	    \
-HTABLE2_SCOPE int prefix##_resize(void *a, type *, size_t); \
+#define HTABLE2_PROTOS2(type, prefix, pr, entrytype, sizetype)	    \
+HTABLE2_SCOPE int prefix##_resize(void *a, type *, sizetype); \
 HTABLE2_SCOPE int prefix##_is_full(type const *); \
 HTABLE2_SCOPE entrytype *prefix##_hash(type const *, hash_value_t); \
 HTABLE2_SCOPE entrytype *prefix##_next(type const *, entrytype *); \
@@ -128,7 +130,7 @@ HTABLE2_SCOPE int prefix##_remove(type *, entrytype const)
  * @param prefix    function prefix for hash table 
  * @param pr        field prefix for hash table 
  * @param entrytype type of entry element
- * @param size_t    size_t type
+ * @param sizetype  size_t type
  * @param hfun      function or macro returning hash value of entry
  * @param is_used   function or macro returning true if entry is occupied
  * @param reclaim   function or macro zeroing entry
@@ -137,19 +139,19 @@ HTABLE2_SCOPE int prefix##_remove(type *, entrytype const)
  *
  * @NEW_1_12_8
  */
-#define HTABLE2_BODIES2(type, prefix, pr, entrytype, size_t,		\
+#define HTABLE2_BODIES2(type, prefix, pr, entrytype, sizetype,		\
 		        hfun, is_used, reclaim, is_equal, halloc)	\
 /** Reallocate new hash table */ \
 HTABLE2_SCOPE \
 int prefix##_resize(void *realloc_arg, \
                     type pr[1], \
-		    size_t new_size) \
+		    sizetype new_size) \
 { \
   entrytype *new_hash; \
   entrytype *old_hash = pr->pr##table; \
-  size_t old_size; \
-  size_t i, j, i0; \
-  size_t again = 0, used = 0, collisions = 0; \
+  sizetype old_size; \
+  sizetype i, j, i0; \
+  sizetype again = 0, used = 0, collisions = 0; \
 \
   (void)realloc_arg; \
 \
@@ -261,7 +263,7 @@ entrytype *prefix##_insert(type *pr, entrytype e) \
 HTABLE2_SCOPE \
 int prefix##_remove(type *pr, entrytype const e) \
 { \
-  size_t i, j, k, size = pr->pr##size; \
+  sizetype i, j, k, size = pr->pr##size; \
   entrytype *htable = pr->pr##table; \
 \
   /* Search for entry */ \

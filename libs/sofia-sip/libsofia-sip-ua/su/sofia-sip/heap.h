@@ -134,6 +134,7 @@ scope type prefix##get(heaptype, size_t)
  *
  * @param scope     scope of functions
  * @param prefix    function prefix for heap
+ * @param heaptype  type of heap
  * @param type      type of heaped elements
  * @param less      function or macro comparing two entries
  * @param set       function or macro assigning entry to array
