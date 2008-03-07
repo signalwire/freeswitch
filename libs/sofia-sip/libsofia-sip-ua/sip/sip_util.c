@@ -883,7 +883,7 @@ sip_security_client_select(sip_security_client_t const *client,
  * decide whether to gracefully terminate or not, the
  * @a *return_graceful_terminate_usage is left unmodified.
  *
- * @RFC 5057
+ * @RFC5057
  */
 int sip_response_terminates_dialog(int response_code,
 				   sip_method_t method,
