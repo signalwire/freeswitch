@@ -177,6 +177,7 @@ int nua_stack_set_defaults(nua_handle_t *nh,
   NHP_SET(nhp, refer_with_id, 1);
 
   NHP_SET(nhp, substate, nua_substate_active);
+  NHP_SET(nhp, sub_expires, 3600);
 
   NHP_SET(nhp, allow, sip_allow_make(home, nua_allow_str));
   NHP_SET(nhp, supported, sip_supported_make(home, "timer, 100rel"));
