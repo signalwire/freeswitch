@@ -176,6 +176,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
 		curl_easy_cleanup(curl_handle);
 		curl_slist_free_all(headers);
+		curl_slist_free_all(slist);
 		close(config_data.fd);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening temp file!\n");
