@@ -1986,7 +1986,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	char *full_ref_by = NULL;
 	char *full_ref_to = NULL;
 
-	if (!profile->mflags & MFLAG_REFER) {
+	if (!(profile->mflags & MFLAG_REFER)) {
 		nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
 		goto done;
 	}
