@@ -73,6 +73,8 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	uint32_t cur_try;
 	long httpRes;
 	CURL *curl_handle = NULL;
+	struct curl_slist *headers = NULL;
+	struct curl_slist *slist = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -121,8 +123,6 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 
 	/* try to post it to the web server */
 	if (!switch_strlen_zero(globals.url)) {
-		struct curl_slist *headers = NULL;
-		struct curl_slist *slist = NULL;
 		curl_handle = curl_easy_init();
 		
 		if (globals.encode) {
@@ -189,6 +189,9 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 		}
 		curl_easy_cleanup(curl_handle);
 		curl_slist_free_all(headers);
+		curl_slist_free_all(slist);
+		slist = NULL;
+		headers = NULL;
 		curl_handle = NULL;
 
 		/* if we are here the web post failed for some reason */
@@ -221,6 +224,12 @@ success:
 error:
 	if (curl_handle) {	
 		curl_easy_cleanup(curl_handle);
+	}
+	if (headers) {
+		curl_slist_free_all(headers);
+	}
+	if (slist) {
+		curl_slist_free_all(slist);
 	}
 	switch_safe_free(curl_xml_text);
 	switch_safe_free(xml_text);
