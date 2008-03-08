@@ -35,6 +35,7 @@
 #include <switch_version.h>
 #define CMD_BUFLEN 1024;
 
+#ifdef SWITCH_HAVE_LIBEDIT
 /*
  * store a strdup() of the string configured in XML
  * bound to each of the 12 function key
@@ -82,7 +83,7 @@ static switch_status_t console_xml_config(void)
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
+#endif
 
 SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_raw_write(switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen)
 {
