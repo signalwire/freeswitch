@@ -80,9 +80,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *c
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_channel_t *channel,
 																		const char *file, const char *func, int line, switch_channel_state_t state);
 
-SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(switch_channel_t *channel,
+SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(switch_channel_t *channel, switch_channel_state_t state,
 																				const char *file, const char *func, int line);
-#define switch_channel_set_running_state(channel) switch_channel_perform_set_running_state(channel, __FILE__, __SWITCH_FUNC__, __LINE__)
+#define switch_channel_set_running_state(channel, state) switch_channel_perform_set_running_state(channel, state, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 /*!
   \brief Set the current state of a channel

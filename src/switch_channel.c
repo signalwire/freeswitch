@@ -763,13 +763,13 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_name_state(const char *nam
 	return CS_DONE;
 }
 
-SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(switch_channel_t *channel,
+SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(switch_channel_t *channel, switch_channel_state_t state,
 																				const char *file, const char *func, int line)
 {
 	switch_mutex_lock(channel->flag_mutex);
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "%s Running State Change %s\n",
-		channel->name, state_names[channel->state]);
-	channel->running_state = channel->state;
+		channel->name, state_names[state]);
+	channel->running_state = state;
 
 	if (channel->state_flags) {
 		channel->flags |= channel->state_flags;
@@ -778,18 +778,18 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 
 	if (channel->state >= CS_RING) {
 		switch_clear_flag(channel, CF_TRANSFER);
-		switch_channel_presence(channel, "unknown", (char *) state_names[channel->state]);
+		switch_channel_presence(channel, "unknown", (char *) state_names[state]);
 	}
 
-	if (channel->state < CS_HANGUP) {
+	if (state < CS_HANGUP) {
 		switch_event_t *event;
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
-			if (channel->state == CS_RING) {
+			if (state == CS_RING) {
 				switch_channel_event_set_data(channel, event);
 			} else {
 				char state_num[25];
-				switch_snprintf(state_num, sizeof(state_num), "%d", channel->state);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State", "%s", (char *) switch_channel_state_name(channel->state));
+				switch_snprintf(state_num, sizeof(state_num), "%d", state);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State", "%s", (char *) switch_channel_state_name(state));
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", "%s", (char *) state_num);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", "%s", channel->name);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", "%s", switch_core_session_get_uuid(channel->session));
@@ -1013,12 +1013,9 @@ default:
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_WARNING,
 			"%s Invalid State Change %s -> %s\n", channel->name, state_names[last_state], state_names[state]);
-
 		/* we won't tolerate an invalid state change so we can make sure we are as robust as a nice cup of dark coffee! */
-		if (channel->state < CS_HANGUP) {
-			/* not cool lets crash this bad boy and figure out wtf is going on */
-			switch_assert(0);
-		}
+		/* not cool lets crash this bad boy and figure out wtf is going on */
+		switch_assert(channel->state >= CS_HANGUP);
 	}
 done:
 
