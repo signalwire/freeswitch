@@ -1920,6 +1920,11 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 		break;
 	case nua_callstate_terminating:
+		if (session) {
+			if (!switch_test_flag(tech_pvt, TFLAG_BYE)) {
+				switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+			}
+		}
 		break;
 	case nua_callstate_terminated:
 		if (session) {

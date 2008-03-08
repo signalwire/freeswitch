@@ -765,12 +765,17 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 	if (switch_rtp_create(&rtp_session, payload, samples_per_interval, ms_per_packet, flags, timer_name, err, pool) != SWITCH_STATUS_SUCCESS) {
 		goto end;
 	}
-	
+
+	switch_mutex_lock(rtp_session->flag_mutex);	
+
 	if (switch_rtp_set_local_address(rtp_session, rx_host, rx_port, err) != SWITCH_STATUS_SUCCESS) {
+		switch_mutex_unlock(rtp_session->flag_mutex);	
 		rtp_session = NULL;
+		goto end;
 	}
 
 	if (switch_rtp_set_remote_address(rtp_session, tx_host, tx_port, err) != SWITCH_STATUS_SUCCESS) {
+		switch_mutex_unlock(rtp_session->flag_mutex);	
 		rtp_session = NULL;
 		goto end;
 	}
@@ -778,6 +783,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
  end:
 
 	if (rtp_session) {
+		switch_mutex_unlock(rtp_session->flag_mutex);
 		rtp_session->ready = 2;
 		rtp_session->rx_host = switch_core_strdup(rtp_session->pool, rx_host);
 		rtp_session->rx_port = rx_port;
