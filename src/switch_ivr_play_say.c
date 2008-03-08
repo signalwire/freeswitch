@@ -1108,7 +1108,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 	switch_input_args_t args = { 0 };
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char terminator;
-	int len;
+	size_t len;
 
 	switch_assert(session);
 
