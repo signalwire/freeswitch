@@ -178,7 +178,7 @@
       <prompt phrase="welcome to your voicemail" filename="vm-hello.wav"/>
       <prompt phrase="goodbye" filename="vm-goodbye.wav"/>
       <prompt phrase="at the tone please record your name, press any key or stop talking to end the recording." filename="vm-record_name1.wav"/>
-      <prompt phrase="choose a greeting between 1 and 3" filename="vm-choose_greeting.wav"/>
+      <prompt phrase="choose a greeting between 1 and 9" filename="vm-choose_greeting_choose.wav"/>
       <prompt phrase="invalid value" filename="vm-choose_greeting_fail.wav"/>
       <prompt phrase="too many failed attempts" filename="vm-abort.wav"/>
       <prompt phrase="record your greeting at the tone, press any key or stop talking to end the recording" filename="vm-record_greeting.wav"/>
