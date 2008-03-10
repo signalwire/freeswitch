@@ -1000,7 +1000,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 	char *dpstr;
 	int argc, x, count = 0;
 	char *expanded = NULL;
-	switch_caller_profile_t *profile, *new_profile, *pp;
+	switch_caller_profile_t *profile, *new_profile, *pp = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_dialplan_interface_t *dialplan_interface = NULL;
 	switch_caller_extension_t *extension = NULL;
@@ -1062,12 +1062,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 
 	new_profile->caller_extension = extension;
 
-	for(pp = profile->caller_extension->children; pp && pp->next; pp = pp->next);
-
-	if (pp) {
-		pp->next = new_profile;
-	} else {
-		profile->caller_extension->children = new_profile;
+	if (profile->caller_extension) {
+		for(pp = profile->caller_extension->children; pp && pp->next; pp = pp->next);
+ 
+		if (pp) {
+			pp->next = new_profile;
+		} else {
+			profile->caller_extension->children = new_profile;
+		}
 	}
 
 	while (switch_channel_ready(channel) && extension->current_application) {
