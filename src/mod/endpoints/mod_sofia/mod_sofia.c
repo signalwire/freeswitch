@@ -223,13 +223,6 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	switch_call_cause_t cause = switch_channel_get_cause(channel);
 	int sip_cause = hangup_cause_to_sip(cause);
 
-	if (tech_pvt->profile->rtpip) {
-		if (tech_pvt->local_sdp_audio_port) {
-			switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_audio_port);
-		} else if (tech_pvt->local_sdp_video_port) {
-			switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_video_port);
-		}
-	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_SIP_HOLD) && cause != SWITCH_CAUSE_ATTENDED_TRANSFER) {
 		const char *buuid;

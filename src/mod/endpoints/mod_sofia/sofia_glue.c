@@ -223,7 +223,9 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_VIDEO)) {							
-		sofia_glue_tech_choose_video_port(tech_pvt);
+		if (!tech_pvt->local_sdp_video_port) {
+			sofia_glue_tech_choose_video_port(tech_pvt);
+		}
 
 		if ((v_port = tech_pvt->adv_sdp_video_port)) {
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "m=video %d RTP/AVP", v_port);
@@ -523,7 +525,7 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt)
 	char *ip = tech_pvt->profile->rtpip;
 	switch_port_t sdp_port;
 	char tmp[50];
-
+	
 	if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) || switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA) || tech_pvt->adv_sdp_video_port) {
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1174,10 +1176,14 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 
 	if (tech_pvt->rtp_session) {
 		switch_rtp_destroy(&tech_pvt->rtp_session);
+	} else if (tech_pvt->local_sdp_audio_port) {
+		switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_audio_port);
 	}
 
 	if (tech_pvt->video_rtp_session) {
 		switch_rtp_destroy(&tech_pvt->video_rtp_session);
+	} else if (tech_pvt->local_sdp_video_port) {
+		switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_video_port);
 	}
 
 }
