@@ -40,6 +40,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	switch_io_event_hook_video_write_frame_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_io_flag_t flags = 0;
+
+	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (session->endpoint_interface->io_routines->write_video_frame) {
 		if ((status = session->endpoint_interface->io_routines->write_video_frame(session, frame, timeout, flags, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			for (ptr = session->event_hooks.video_write_frame; ptr; ptr = ptr->next) {
@@ -56,6 +61,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_io_event_hook_video_read_frame_t *ptr;
+
+	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (session->endpoint_interface->io_routines->read_video_frame) {
 		if ((status =
@@ -96,6 +105,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	int need_codec, perfect, do_bugs = 0, do_resample = 0, is_cng = 0;
 	unsigned int flag = 0;
   top:
+
+	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 
 	status = SWITCH_STATUS_FALSE;
 	need_codec = perfect = 0;
@@ -466,6 +480,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	switch_assert(session != NULL);
 	switch_assert(frame != NULL);
 
+	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (switch_channel_test_flag(session->channel, CF_HOLD)) {
 		return SWITCH_STATUS_SUCCESS;
@@ -917,6 +934,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 	switch_status_t status;
 	switch_dtmf_t new_dtmf;
 	
+	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_assert(dtmf);
 
 	new_dtmf = *dtmf;
@@ -943,6 +964,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_dtmf_t new_dtmf;
 	
+	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_assert(dtmf);
 
 	new_dtmf = *dtmf;
@@ -983,9 +1008,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 	int i, argc;
 	char *argv[256];
 	
-
 	switch_assert(session != NULL);
 
+
+	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
 	if (switch_strlen_zero(dtmf_string)) {
 		return SWITCH_STATUS_FALSE;
 	}

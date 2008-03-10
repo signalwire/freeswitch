@@ -636,7 +636,9 @@ static switch_status_t sofia_kill_channel(switch_core_session_t *session, int si
 {
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 
-	switch_assert(tech_pvt != NULL);
+	if (!tech_pvt) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	switch (sig) {
 	case SWITCH_SIG_BREAK:
