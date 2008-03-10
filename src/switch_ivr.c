@@ -682,6 +682,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session)
 {
 	switch_core_session_message_t msg = { 0 };
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *stream;
+	const char *other_uuid;
 
 	msg.message_id = SWITCH_MESSAGE_INDICATE_HOLD;
 	msg.from = __FILE__;
@@ -690,6 +692,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session)
 	switch_channel_set_flag(channel, CF_SUSPEND);
 
 	switch_core_session_receive_message(session, &msg);
+
+
+	if ((stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
+		if ((other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+			switch_ivr_broadcast(other_uuid, stream, SMF_ECHO_ALEG | SMF_LOOP);
+		}
+	}
+	
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -710,6 +720,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unhold(switch_core_session_t *session
 {
 	switch_core_session_message_t msg = { 0 };
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *other_uuid;
+	switch_core_session_t *b_session;
 
 	msg.message_id = SWITCH_MESSAGE_INDICATE_UNHOLD;
 	msg.from = __FILE__;
@@ -718,6 +730,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unhold(switch_core_session_t *session
 	switch_channel_clear_flag(channel, CF_SUSPEND);
 
 	switch_core_session_receive_message(session, &msg);
+
+
+	if ((other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (b_session = switch_core_session_locate(other_uuid))) {
+		switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
+		switch_channel_stop_broadcast(b_channel);
+		switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000);
+		switch_core_session_rwunlock(b_session);
+	}
+
 
 	return SWITCH_STATUS_SUCCESS;
 }
