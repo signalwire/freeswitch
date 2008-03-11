@@ -202,12 +202,14 @@ struct switch_timer {
 	void *private_info;
 	/*! remaining time from last call to _check()*/
 	switch_size_t diff;
+	switch_size_t tick;
 };
 
 typedef enum {
 	SWITCH_TIMER_FUNC_TIMER_INIT,
 	SWITCH_TIMER_FUNC_TIMER_NEXT,
 	SWITCH_TIMER_FUNC_TIMER_STEP,
+	SWITCH_TIMER_FUNC_TIMER_SYNC,
 	SWITCH_TIMER_FUNC_TIMER_CHECK,
 	SWITCH_TIMER_FUNC_TIMER_DESTROY
 } switch_timer_func_name_t;
@@ -222,8 +224,10 @@ struct switch_timer_interface {
 	switch_status_t (*timer_next) (switch_timer_t *);
 	/*! function to step the timer one step */
 	switch_status_t (*timer_step) (switch_timer_t *);
+	/*! function to reset the timer  */
+	switch_status_t (*timer_sync) (switch_timer_t *);
 	/*! function to check if the current step has expired */
-	switch_status_t (*timer_check) (switch_timer_t *);
+	switch_status_t (*timer_check) (switch_timer_t *, switch_bool_t);
 	/*! function to deallocate the timer */
 	switch_status_t (*timer_destroy) (switch_timer_t *);
 	struct switch_timer_interface *next;

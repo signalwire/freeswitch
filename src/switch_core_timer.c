@@ -40,7 +40,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_init(switch_timer_t *timer, co
 	switch_timer_interface_t *timer_interface;
 	switch_status_t status;
 	memset(timer, 0, sizeof(*timer));
-	if ((timer_interface = switch_loadable_module_get_timer_interface(timer_name)) == 0) {
+	if ((timer_interface = switch_loadable_module_get_timer_interface(timer_name)) == 0 || !timer_interface->timer_init) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid timer %s!\n", timer_name);
 		return SWITCH_STATUS_GENERR;
 	}
@@ -66,8 +66,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_init(switch_timer_t *timer, co
 
 SWITCH_DECLARE(switch_status_t) switch_core_timer_next(switch_timer_t *timer)
 {
-	if (!timer->timer_interface) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer is not initialized!\n");
+	if (!timer->timer_interface || !timer->timer_interface->timer_next) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer is not properly configured.\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -81,29 +81,40 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_next(switch_timer_t *timer)
 
 SWITCH_DECLARE(switch_status_t) switch_core_timer_step(switch_timer_t *timer)
 {
-	if (!timer->timer_interface) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer is not initialized!\n");
+	if (!timer->timer_interface || !timer->timer_interface->timer_step) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer is not properly configured.\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	return timer->timer_interface->timer_step(timer);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_timer_check(switch_timer_t *timer)
+
+SWITCH_DECLARE(switch_status_t) switch_core_timer_sync(switch_timer_t *timer)
 {
-	if (!timer->timer_interface) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer is not initialized!\n");
+	if (!timer->timer_interface || !timer->timer_interface->timer_sync) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer is not properly configured.\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
-	return timer->timer_interface->timer_check(timer);
+	return timer->timer_interface->timer_sync(timer);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_timer_check(switch_timer_t *timer, switch_bool_t step)
+{
+	if (!timer->timer_interface || !timer->timer_interface->timer_check) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer is not properly configured.\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	return timer->timer_interface->timer_check(timer, step);
 }
 
 
 SWITCH_DECLARE(switch_status_t) switch_core_timer_destroy(switch_timer_t *timer)
 {
-	if (!timer->timer_interface) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer is not initialized!\n");
+	if (!timer->timer_interface || !timer->timer_interface->timer_destroy) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer is not properly configured.\n");
 		return SWITCH_STATUS_GENERR;
 	}
 

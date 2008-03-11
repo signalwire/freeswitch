@@ -977,12 +977,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_next(switch_timer_t *timer);
 */
 SWITCH_DECLARE(switch_status_t) switch_core_timer_step(switch_timer_t *timer);
 
+SWITCH_DECLARE(switch_status_t) switch_core_timer_sync(switch_timer_t *timer);
+
 /*! 
   \brief Check if the current step has been exceeded
   \param timer the timer to wait on
+  \param step increment timer if a tick was detected
   \return the newest sample count
 */
-SWITCH_DECLARE(switch_status_t) switch_core_timer_check(switch_timer_t *timer);
+SWITCH_DECLARE(switch_status_t) switch_core_timer_check(switch_timer_t *timer, switch_bool_t step);
 
 /*! 
   \brief Destroy an allocated timer

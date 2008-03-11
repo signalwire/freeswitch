@@ -184,6 +184,7 @@ static switch_status_t timer_init(switch_timer_t *timer)
 		private_info->reference = private_info->start = TIMER_MATRIX[timer->interval].tick;\
 	}\
 
+
 static switch_status_t timer_step(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
@@ -202,10 +203,31 @@ static switch_status_t timer_step(switch_timer_t *timer)
 	}
 
 	timer->samplecount = (uint32_t) samples;
-	private_info->reference = TIMER_MATRIX[timer->interval].tick + 1;
-
+	private_info->reference++;
+	
 	return SWITCH_STATUS_SUCCESS;
 }
+
+static switch_status_t timer_sync(switch_timer_t *timer)
+{
+	timer_private_t *private_info = timer->private_info;
+
+	if (globals.RUNNING != 1 || private_info->ready == 0) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	/* sync the clock */
+	private_info->reference = timer->tick = TIMER_MATRIX[timer->interval].tick;
+
+	/* apply timestamp */
+	if (timer_step(timer) == SWITCH_STATUS_SUCCESS) {
+		/* push the reference into the future 2 more intervals to prevent collision */
+		private_info->reference += 2;
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 static switch_status_t timer_next(switch_timer_t *timer)
 {
@@ -225,7 +247,7 @@ static switch_status_t timer_next(switch_timer_t *timer)
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status_t timer_check(switch_timer_t *timer)
+static switch_status_t timer_check(switch_timer_t *timer, switch_bool_t step)
 {
 	timer_private_t *private_info = timer->private_info;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -236,17 +258,20 @@ static switch_status_t timer_check(switch_timer_t *timer)
 
 	check_roll();
 
-	if (TIMER_MATRIX[timer->interval].tick < private_info->reference) {
-		timer->diff = private_info->reference - TIMER_MATRIX[timer->interval].tick;
+	timer->tick = TIMER_MATRIX[timer->interval].tick;
+
+	if (timer->tick < private_info->reference) {
+		timer->diff = private_info->reference - timer->tick;
 	} else {
 		timer->diff = 0;
 	}
-
-	if (timer->diff) {
+	
+	if (timer->diff) {		
 		status = SWITCH_STATUS_FALSE;
-	} else {
+	} else if (step) {
 		timer_step(timer);
 	}
+
 
 	return status;
 }
@@ -348,7 +373,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			}
 			
 			index = (current_ms % i == 0) ? i : 0; 
-
+			
 			if (TIMER_MATRIX[index].count) {
 				TIMER_MATRIX[index].tick++;
 				if (TIMER_MATRIX[x].tick == MAX_TICK) {
@@ -382,6 +407,7 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 	timer_interface->timer_init = timer_init;
 	timer_interface->timer_next = timer_next;
 	timer_interface->timer_step = timer_step;
+	timer_interface->timer_sync = timer_sync;
 	timer_interface->timer_check = timer_check;
 	timer_interface->timer_destroy = timer_destroy;
 
