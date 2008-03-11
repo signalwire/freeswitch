@@ -915,6 +915,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		char *rpid_domain = "cluecon.com", *p;
 		const char *priv = "off";
 		const char *screen = "no";
+		const char *invite_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_params");
 
 		if (switch_strlen_zero(tech_pvt->dest)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "URL Error! [%s]\n", tech_pvt->dest);
@@ -980,11 +981,11 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			}
 		}
 
-		url_str = sofia_overcome_sip_uri_weakness(session, url, tech_pvt->transport, SWITCH_TRUE, 
-												  switch_channel_get_variable(tech_pvt->channel, "sip_invite_params"));
+		url_str = sofia_overcome_sip_uri_weakness(session, url, tech_pvt->transport, SWITCH_TRUE, invite_params);
 		invite_contact = sofia_overcome_sip_uri_weakness(session, tech_pvt->invite_contact, tech_pvt->transport, SWITCH_FALSE, NULL);
 		from_str = sofia_overcome_sip_uri_weakness(session, use_from_str, 0, SWITCH_FALSE, NULL);
-		to_str = sofia_overcome_sip_uri_weakness(session, tech_pvt->dest_to, 0, SWITCH_FALSE, NULL);
+		to_str = sofia_overcome_sip_uri_weakness(session, tech_pvt->dest_to, 0, SWITCH_FALSE, invite_params);
+												 
 
 		/*
 		   Does the "genius" who wanted SIP to be "text-based" so it was "easier to read" even use it now,
