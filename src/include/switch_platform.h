@@ -35,6 +35,7 @@
 #define SWITCH_PLATFORM_H
 
 SWITCH_BEGIN_EXTERN_C
+#define SWITCH_USE_CLOCK_FUNCS
 #ifdef __ICC
 #pragma warning (disable:810 869 981 279 1469 188)
 #endif

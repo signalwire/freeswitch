@@ -1083,20 +1083,20 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 	}
 	x = 0;
 	/* Index Variables */
-	for (hi = channel->variables->headers; hi; hi = hi->next) {
-		char buf[1024];
-		char *vvar = NULL, *vval = NULL;
+	if (channel->variables) {
+		for (hi = channel->variables->headers; hi; hi = hi->next) {
+			char buf[1024];
+			char *vvar = NULL, *vval = NULL;
 
-		vvar = (char *) hi->name;
-		vval = (char *) hi->value;
-		x++;
+			vvar = (char *) hi->name;
+			vval = (char *) hi->value;
+			x++;
 
-		switch_assert(vvar && vval);
-		switch_snprintf(buf, sizeof(buf), "variable_%s", vvar);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, buf, "%s", vval);
-
+			switch_assert(vvar && vval);
+			switch_snprintf(buf, sizeof(buf), "variable_%s", vvar);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, buf, "%s", vval);
+		}
 	}
-
 	switch_mutex_unlock(channel->profile_mutex);
 }
 

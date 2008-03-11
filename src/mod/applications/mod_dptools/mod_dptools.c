@@ -374,6 +374,17 @@ SWITCH_STANDARD_APP(redirect_function)
 	switch_core_session_receive_message(session, &msg);
 }
 
+SWITCH_STANDARD_APP(display_function)
+{
+	switch_core_session_message_t msg = { 0 };
+
+	/* Tell the channel to redirect */
+	msg.from = __FILE__;
+	msg.string_arg = data;
+	msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
+	switch_core_session_receive_message(session, &msg);
+}
+
 SWITCH_STANDARD_APP(respond_function)
 {
 	switch_core_session_message_t msg = { 0 };
@@ -1588,6 +1599,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "detect_speech", "Detect speech", "Detect speech on a channel.", detect_speech_function, DETECT_SPEECH_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "ivr", "Run an ivr menu", "Run an ivr menu.", ivr_application_function, "<menu_name>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "redirect", "Send session redirect", "Send a redirect message to a session.", redirect_function, "<redirect_data>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "send_display", "Send session a new display", "Send session a new display.", display_function, "<text>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "respond", "Send session respond", "Send a respond message to a session.", respond_function, "<respond_data>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "deflect", "Send call deflect", "Send a call deflect.", deflect_function, "<deflect_data>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "reject", "Send session reject (depricated)", "Send a respond message to a session.", respond_function, "<respond_data>", SAF_SUPPORT_NOMEDIA);

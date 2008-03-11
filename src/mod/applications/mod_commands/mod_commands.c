@@ -1081,7 +1081,7 @@ SWITCH_STANDARD_API(sched_broadcast_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define HOLD_SYNTAX "<uuid>"
+#define HOLD_SYNTAX "<uuid> [<display>]"
 SWITCH_STANDARD_API(uuid_hold_function)
 {
 	char *mycmd = NULL, *argv[4] = { 0 };
@@ -1102,7 +1102,49 @@ SWITCH_STANDARD_API(uuid_hold_function)
 		if (!strcasecmp(argv[0], "off")) {
 			status = switch_ivr_unhold_uuid(argv[1]);
 		} else {
-			status = switch_ivr_hold_uuid(argv[0]);
+			status = switch_ivr_hold_uuid(argv[0], argv[1]);
+		}
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Success\n");
+	} else {
+		stream->write_function(stream, "-ERR Operation Failed\n");
+	}
+
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+#define DISPLAY_SYNTAX "<uuid> <display>"
+SWITCH_STANDARD_API(uuid_display_function)
+{
+	char *mycmd = NULL, *argv[2] = { 0 };
+	int argc = 0;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (session) {
+		return status;
+	}
+
+	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (switch_strlen_zero(cmd) || argc < 2 || switch_strlen_zero(argv[0]) || switch_strlen_zero(argv[1])) {
+		stream->write_function(stream, "-USAGE: %s\n", HOLD_SYNTAX);
+	} else {
+		switch_core_session_message_t msg = { 0 };
+		switch_core_session_t *lsession = NULL;
+
+		msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
+		msg.string_arg = argv[1];
+		msg.from = __FILE__;
+
+		if ((lsession = switch_core_session_locate(argv[0]))) {
+			status = switch_core_session_receive_message(lsession, &msg);
+			switch_core_session_rwunlock(lsession);
 		}
 	}
 
@@ -2152,6 +2194,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_broadcast", "broadcast", uuid_broadcast_function, BROADCAST_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "hold", "hold (depricated)", uuid_hold_function, HOLD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_hold", "hold", uuid_hold_function, HOLD_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_display", "change display", uuid_display_function, DISPLAY_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "media", "media (depricated)", uuid_media_function, MEDIA_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_media", "media", uuid_media_function, MEDIA_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "fsctl", "control messages", ctl_function, CTL_SYNTAX);

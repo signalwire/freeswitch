@@ -100,12 +100,14 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 
 		if (sofia_glue_do_invite(session) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			assert( switch_channel_get_state(channel) != CS_INIT);
 			return SWITCH_STATUS_FALSE;
 		}
 	}
 
 	/* Move Channel's State Machine to RING */
 	switch_channel_set_state(channel, CS_RING);
+	assert( switch_channel_get_state(channel) != CS_INIT);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -538,6 +540,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 			tech_pvt->read_frame.flags = SFF_NONE;
 
 			status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame);
+			
 			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 				if (status == SWITCH_STATUS_TIMEOUT) {
 					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
@@ -552,7 +555,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 				switch_rtp_dequeue_dtmf(tech_pvt->rtp_session, &dtmf);
 				switch_channel_queue_dtmf(channel, &dtmf);
 			}
-
+			
 			if (tech_pvt->read_frame.datalen > 0) {
 				size_t bytes = 0;
 				int frames = 1;
@@ -844,10 +847,25 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		}
 		break;
 
+	case SWITCH_MESSAGE_INDICATE_DISPLAY:
+		{
+			if (!switch_strlen_zero(msg->string_arg)) {
+				char message[256] = "";
+				snprintf(message, sizeof(message), "From:\r\nTo: \"%s\"\r\n", msg->string_arg);
+				nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"), SIPTAG_PAYLOAD_STR(message), TAG_END());
+			}
+		}
+		break;
+
 	case SWITCH_MESSAGE_INDICATE_HOLD:
 		{
 			switch_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 			sofia_glue_do_invite(session);
+			if (!switch_strlen_zero(msg->string_arg)) {
+				char message[256] = "";
+				snprintf(message, sizeof(message), "From:\r\nTo: \"%s\"\r\n", msg->string_arg);
+				nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"), SIPTAG_PAYLOAD_STR(message), TAG_END());
+			}
 		}
 		break;
 		

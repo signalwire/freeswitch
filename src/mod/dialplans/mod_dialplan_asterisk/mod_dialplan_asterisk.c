@@ -284,10 +284,6 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 
 	switch_config_close_file(&cfg);
 
-	if (extension) {
-		switch_channel_set_state(channel, CS_EXECUTE);
-	} 
-
 	return extension;
 }
 

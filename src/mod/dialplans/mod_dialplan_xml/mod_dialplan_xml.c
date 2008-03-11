@@ -274,10 +274,6 @@ SWITCH_STANDARD_DIALPLAN(dialplan_hunt)
 	switch_xml_free(xml);
 	xml = NULL;
 
-	if (extension) {
-		switch_channel_set_state(channel, CS_EXECUTE);
-	}
-
   done:
 	switch_xml_free(xml);
 	return extension;

@@ -572,10 +572,6 @@ SWITCH_STANDARD_DIALPLAN(enum_dialplan_hunt)
 		free_results(&results);
 	}
 
-	if (extension) {
-		switch_channel_set_state(channel, CS_EXECUTE);
-	}
-
 	return extension;
 
 }

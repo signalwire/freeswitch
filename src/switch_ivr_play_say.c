@@ -1057,8 +1057,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_HOLD)) {
 				switch_yield(10000);
 			}
+			
 			tstatus = switch_core_session_read_frame(session, &read_frame, -1, 0);
-
+			
 			if (!SWITCH_READ_ACCEPTABLE(tstatus)) {
 				break;
 			}

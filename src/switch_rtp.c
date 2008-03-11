@@ -879,13 +879,11 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 	void *pop;
 	switch_socket_t *sock;
 
-
-	switch_mutex_lock((*rtp_session)->flag_mutex);
-
 	if (!rtp_session || !*rtp_session || !(*rtp_session)->ready) {
-		switch_mutex_unlock((*rtp_session)->flag_mutex);
 		return;
 	}
+
+	switch_mutex_lock((*rtp_session)->flag_mutex);
 
 	READ_INC((*rtp_session));
 	WRITE_INC((*rtp_session));
@@ -1122,7 +1120,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		bytes = sizeof(rtp_msg_t);
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *) &rtp_session->recv_msg, &bytes);
-
+		
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
 			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
 			bytes = 0;
@@ -1293,7 +1291,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (rtp_session->timer.interval) {
 			check = (uint8_t) (switch_core_timer_check(&rtp_session->timer) == SWITCH_STATUS_SUCCESS);
-
+			
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTO_CNG) &&
 				rtp_session->timer.samplecount >= (rtp_session->last_write_samplecount + (rtp_session->samples_per_interval * 50))) {
 				uint8_t data[10] = { 0 };

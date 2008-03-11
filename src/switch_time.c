@@ -58,7 +58,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime);
 SWITCH_MODULE_DEFINITION(CORE_SOFTTIMER_MODULE, softtimer_load, softtimer_shutdown, softtimer_runtime);
 
-#define MAX_ELEMENTS 360
+#define MAX_ELEMENTS 3600
 #define IDLE_SPEED 100
 #define STEP_MS 1
 #define STEP_MIC 1000
@@ -202,7 +202,7 @@ static switch_status_t timer_step(switch_timer_t *timer)
 	}
 
 	timer->samplecount = (uint32_t) samples;
-	private_info->reference++;
+	private_info->reference = TIMER_MATRIX[timer->interval].tick + 1;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -217,7 +217,7 @@ static switch_status_t timer_next(switch_timer_t *timer)
 		check_roll();
 		switch_yield(1000);
 	}
-
+	
 	if (globals.RUNNING == 1) {
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -229,7 +229,6 @@ static switch_status_t timer_check(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-
 
 	if (globals.RUNNING != 1 || !private_info->ready) {
 		return SWITCH_STATUS_SUCCESS;
@@ -340,20 +339,25 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			tick = 0;
 		}
 
-		
-		for (x = 1; x <= MAX_ELEMENTS; x++) {
-			int i = x * 10;
-			int index = (current_ms % i == 0) ? i : 0;
+
+		for (x = 0; x <= MAX_ELEMENTS; x++) {
+			int i = x, index;
+
+			if (i == 0) {
+				i = 1;
+			}
 			
+			index = (current_ms % i == 0) ? i : 0; 
+
 			if (TIMER_MATRIX[index].count) {
 				TIMER_MATRIX[index].tick++;
-				if (TIMER_MATRIX[index].tick == MAX_TICK) {
-					TIMER_MATRIX[index].tick = 0;
-					TIMER_MATRIX[index].roll++;
+				if (TIMER_MATRIX[x].tick == MAX_TICK) {
+					TIMER_MATRIX[x].tick = 0;
+					TIMER_MATRIX[x].roll++;
 				}
 			}
 		}
-
+		
 		if (current_ms == MAX_ELEMENTS) {
 			current_ms = 0;
 		}

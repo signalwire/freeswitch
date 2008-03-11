@@ -34,7 +34,7 @@
 
 static const switch_state_handler_table_t originate_state_handlers;
 
-static switch_status_t originate_on_hold(switch_core_session_t *session)
+static switch_status_t originate_on_hold_transmit(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	
@@ -42,7 +42,6 @@ static switch_status_t originate_on_hold(switch_core_session_t *session)
 		switch_ivr_sleep(session, 10);
 	}
 	
-	/* clear this handler so it only works once (next time (a.k.a. Transfer) we will do the real ring and hold states) */
 	switch_channel_clear_state_handler(channel, &originate_state_handlers);
 
 	return SWITCH_STATUS_FALSE;
@@ -64,8 +63,8 @@ static const switch_state_handler_table_t originate_state_handlers = {
 	/*.on_execute */ NULL,
 	/*.on_hangup */ NULL,
 	/*.on_loopback */ NULL,
-	/*.on_transmit */ NULL,
-	/*.on_hold */ originate_on_hold
+	/*.on_transmit */ originate_on_hold_transmit,
+	/*.on_hold */ originate_on_hold_transmit
 };
 
 typedef enum {
@@ -113,6 +112,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t * thread, voi
 			goto wbreak;
 		}
 
+		switch_channel_set_state(channel, CS_TRANSMIT);
 		switch_core_session_exec(collect->session, application_interface, app_data);
 		
 		if (switch_channel_get_state(channel) < CS_HANGUP) {

@@ -138,11 +138,6 @@ SWITCH_STANDARD_DIALPLAN(directory_dialplan_hunt)
 
 	switch_core_directory_close(&dh);
 
-
-	if (extension) {
-		switch_channel_set_state(channel, CS_EXECUTE);
-	}
-
 	return extension;
 }
 

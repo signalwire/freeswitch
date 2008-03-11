@@ -459,9 +459,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 /*!
   \brief Signal the session with a protocol specific hold message.
   \param uuid the uuid of the session to hold
+  \param message optional message
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_hold_uuid(const char *uuid);
+SWITCH_DECLARE(switch_status_t) switch_ivr_hold_uuid(const char *uuid, const char *message);
 
 /*!
   \brief Signal the session with a protocol specific unhold message.
@@ -473,9 +474,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unhold_uuid(const char *uuid);
 /*!
   \brief Signal the session with a protocol specific hold message.
   \param session the session to hold
+  \param message optional message
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session, const char *message);
 
 /*!
   \brief Signal the session with a protocol specific unhold message.
