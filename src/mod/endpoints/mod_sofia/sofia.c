@@ -2515,8 +2515,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		tech_pvt->key = switch_core_session_strdup(session, key);
 	}
 
-	channel = switch_core_session_get_channel(session);
-
+	channel = tech_pvt->channel = switch_core_session_get_channel(session);
+	
 	if (is_auth) {
 		switch_channel_set_variable(channel, "sip_authorized", "true");
 	}
