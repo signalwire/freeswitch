@@ -670,7 +670,7 @@ int sofia_glue_transport_has_tls(const sofia_transport_t tp)
 	}
 }
 
-char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char *uri, const sofia_transport_t transport, switch_bool_t uri_only)
+char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char *uri, const sofia_transport_t transport, switch_bool_t uri_only, const char *params)
 {
 	char *stripped = switch_core_session_strdup(session, uri);
 	char *new_uri = NULL;
@@ -681,16 +681,37 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 		if (switch_stristr("port=", stripped)) {
 			new_uri = switch_core_session_sprintf(session, "%s%s%s", uri_only ? "" : "<", stripped, uri_only ? "" : ">");
 		} else {
+			
 			if (strchr(stripped, ';')) {
-				new_uri = switch_core_session_sprintf(session, "%s%s&transport=%s%s", uri_only ? "" : "<", stripped, sofia_glue_transport2str(transport), uri_only ? "" : ">");
+				if (params) {
+					new_uri = switch_core_session_sprintf(session, "%s%s&transport=%s&%s%s",
+														  uri_only ? "" : "<", stripped, sofia_glue_transport2str(transport), params, uri_only ? "" : ">");
+				} else {
+					new_uri = switch_core_session_sprintf(session, "%s%s&transport=%s%s",
+														  uri_only ? "" : "<", stripped, sofia_glue_transport2str(transport), uri_only ? "" : ">");
+				}
 			} else {
-				new_uri = switch_core_session_sprintf(session, "%s%s;transport=%s%s", uri_only ? "" : "<", stripped, sofia_glue_transport2str(transport), uri_only ? "" : ">");
+				if (params) {
+					new_uri = switch_core_session_sprintf(session, "%s%s;transport=%s&%s%s", 
+														  uri_only ? "" : "<", stripped, sofia_glue_transport2str(transport), params, uri_only ? "" : ">");
+				} else {
+					new_uri = switch_core_session_sprintf(session, "%s%s;transport=%s%s", 
+														  uri_only ? "" : "<", stripped, sofia_glue_transport2str(transport), uri_only ? "" : ">");
+				}
 			}
 		}
 	} else {
-		new_uri = stripped;
+		if (params) {
+			if (strchr(stripped, ';')) {
+				new_uri = switch_core_session_sprintf(session, "%s&%s", stripped, params);
+			} else {
+				new_uri = switch_core_session_sprintf(session, "%s;%s", stripped, params);
+			}
+		} else {
+			new_uri = stripped;
+		}
 	}
-
+	
 	return new_uri;
 }
 
@@ -963,10 +984,11 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			}
 		}
 
-		url_str = sofia_overcome_sip_uri_weakness(session, url, tech_pvt->transport, SWITCH_TRUE);
-		invite_contact = sofia_overcome_sip_uri_weakness(session, tech_pvt->invite_contact, tech_pvt->transport, SWITCH_FALSE);
-		from_str = sofia_overcome_sip_uri_weakness(session, use_from_str, 0, SWITCH_FALSE);
-		to_str = sofia_overcome_sip_uri_weakness(session, tech_pvt->dest_to, 0, SWITCH_FALSE);
+		url_str = sofia_overcome_sip_uri_weakness(session, url, tech_pvt->transport, SWITCH_TRUE, 
+												  switch_channel_get_variable(tech_pvt->channel, "sip_invite_params"));
+		invite_contact = sofia_overcome_sip_uri_weakness(session, tech_pvt->invite_contact, tech_pvt->transport, SWITCH_FALSE, NULL);
+		from_str = sofia_overcome_sip_uri_weakness(session, use_from_str, 0, SWITCH_FALSE, NULL);
+		to_str = sofia_overcome_sip_uri_weakness(session, tech_pvt->dest_to, 0, SWITCH_FALSE, NULL);
 
 		/*
 		   Does the "genius" who wanted SIP to be "text-based" so it was "easier to read" even use it now,
