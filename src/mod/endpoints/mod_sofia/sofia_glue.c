@@ -684,7 +684,7 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 			
 			if (strchr(stripped, ';')) {
 				if (params) {
-					new_uri = switch_core_session_sprintf(session, "%s%s&transport=%s&%s%s",
+					new_uri = switch_core_session_sprintf(session, "%s%s&transport=%s;%s%s",
 														  uri_only ? "" : "<", stripped, sofia_glue_transport2str(transport), params, uri_only ? "" : ">");
 				} else {
 					new_uri = switch_core_session_sprintf(session, "%s%s&transport=%s%s",
@@ -692,7 +692,7 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 				}
 			} else {
 				if (params) {
-					new_uri = switch_core_session_sprintf(session, "%s%s;transport=%s&%s%s", 
+					new_uri = switch_core_session_sprintf(session, "%s%s;transport=%s;%s%s", 
 														  uri_only ? "" : "<", stripped, sofia_glue_transport2str(transport), params, uri_only ? "" : ">");
 				} else {
 					new_uri = switch_core_session_sprintf(session, "%s%s;transport=%s%s", 
@@ -702,11 +702,7 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 		}
 	} else {
 		if (params) {
-			if (strchr(stripped, ';')) {
-				new_uri = switch_core_session_sprintf(session, "%s&%s", stripped, params);
-			} else {
-				new_uri = switch_core_session_sprintf(session, "%s;%s", stripped, params);
-			}
+			new_uri = switch_core_session_sprintf(session, "%s;%s", stripped, params);
 		} else {
 			new_uri = stripped;
 		}
