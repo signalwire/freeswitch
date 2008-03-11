@@ -113,14 +113,12 @@ static void switch_core_standard_on_ring(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No Route, Aborting\n");
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_NO_ROUTE_DESTINATION);
 	}
-
 	
  end:
 
 	if (expanded && dpstr && expanded != dpstr) {
 		free(expanded);
 	}
-
 }
 
 static void switch_core_standard_on_execute(switch_core_session_t *session)
@@ -297,7 +295,7 @@ void switch_core_state_machine_init(switch_memory_pool_t *pool)
 #define STATE_MACRO(__STATE, __STATE_STR)						do {	\
 		midstate = state;												\
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State %s\n", switch_channel_get_name(session->channel), __STATE_STR);	\
-		if (!driver_state_handler->on_##__STATE || ( driver_state_handler->on_##__STATE(session) == SWITCH_STATUS_SUCCESS \
+		if (!driver_state_handler->on_##__STATE || (driver_state_handler->on_##__STATE(session) == SWITCH_STATUS_SUCCESS \
 													&& midstate == switch_channel_get_state(session->channel))) { \
 			while (do_extra_handlers && (application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) { \
 				if (!application_state_handler || !application_state_handler->on_##__STATE \
@@ -328,7 +326,7 @@ void switch_core_state_machine_init(switch_memory_pool_t *pool)
 				switch_core_standard_on_##__STATE(session);				\
 			}															\
 		}																\
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State end %s %s %s\n", switch_channel_get_name(session->channel), __STATE_STR, switch_channel_state_name(midstate), switch_channel_state_name(switch_channel_get_state(session->channel))); \
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State %s going to sleep\n", switch_channel_get_name(session->channel), __STATE_STR); \
 	} while (silly)
 
 SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
@@ -434,14 +432,9 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				}
 				goto done;
 			case CS_INIT: /* Basic setup tasks */
-				assert(driver_state_handler->on_init);
-				//switch_core_session_signal_lock(session);
-				if (0) STATE_MACRO(init, "INIT");
-				//switch_core_session_signal_unlock(session);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State INIT\n", switch_channel_get_name(session->channel));
-				driver_state_handler->on_init(session);
-				assert( switch_channel_get_state(session->channel) != CS_INIT);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State INIT-END\n", switch_channel_get_name(session->channel));
+				switch_core_session_signal_lock(session);
+				STATE_MACRO(init, "INIT");
+				switch_core_session_signal_unlock(session);
 				break;
 			case CS_RING: /* Look for a dialplan and find something to do */
 				switch_core_session_signal_lock(session);
@@ -489,8 +482,6 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			if (endstate == CS_NEW) {
 				switch_yield(1000);
 			} else {
-				assert( switch_channel_get_state(session->channel) != CS_INIT);
-				assert( switch_channel_get_running_state(session->channel) != CS_INIT);
 				switch_thread_cond_wait(session->cond, session->mutex);
 			}
 		}
