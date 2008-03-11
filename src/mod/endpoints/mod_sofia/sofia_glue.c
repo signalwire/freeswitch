@@ -1829,7 +1829,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 				stream = tech_pvt->profile->hold_music;
 			}
 
-			if (stream) {
+			if (stream && strcasecmp(stream, "silence")) {
 				switch_ivr_broadcast(switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE), stream, SMF_ECHO_ALEG | SMF_LOOP);
 			}
 		}
