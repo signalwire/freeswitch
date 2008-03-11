@@ -692,8 +692,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	uint8_t channels = read_codec->implementation->number_of_channels;
 
 	if ((bug = switch_channel_get_private(channel, file))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Only 1 of the same file per channel please!\n");
-		return SWITCH_STATUS_FALSE;
+		return switch_ivr_stop_record_session(session, file);
 	}
 
 	if (!fh) {
