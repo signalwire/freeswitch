@@ -127,7 +127,7 @@ long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switc
 		numBytes -= bytesWritten;
 		p += bytesWritten;
 		if (numBytes > 0) {
-			if (switch_core_timer_check(timer) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_timer_check(timer, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 				PaUtil_FlushRingBuffer(&aStream->outFIFO);
 				return 0;
 			}
@@ -151,7 +151,7 @@ long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switch
 		bytesRead = PaUtil_ReadRingBuffer(&aStream->inFIFO, p, numBytes);
 		numBytes -= bytesRead;
 		if (numBytes > 0) {
-			if (switch_core_timer_check(timer) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_timer_check(timer, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 				PaUtil_FlushRingBuffer(&aStream->inFIFO);
 				return 0;
 			}
