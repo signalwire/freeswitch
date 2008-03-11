@@ -79,19 +79,20 @@ SWITCH_STANDARD_APP(exe_function)
 	}
 }
 
-#define BIND_SYNTAX "<key> <app>"
+#define BIND_SYNTAX "<key> [a|b] [a|b] <app>"
 SWITCH_STANDARD_APP(dtmf_bind_function)
 {
-	char *argv[2] = { 0 };
+	char *argv[4] = { 0 };
 	int argc;
 	char *lbuf = NULL;
 	
 	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
-		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) == 2) {
+		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) == 4) {
 		int kval = atoi(argv[0]);
-		if (switch_ivr_bind_dtmf_meta_session(session, kval, argv[1]) == SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Bound: %s %s\n", argv[0], argv[1]);
-		} else {
+		char a1 = tolower(*argv[1]);
+		char a2 = tolower(*argv[2]);
+		
+		if (switch_ivr_bind_dtmf_meta_session(session, kval, a1 == 'b', a2 == 'b', argv[3]) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bind Error!\n");
 		}
 	} else {
@@ -207,7 +208,19 @@ SWITCH_STANDARD_APP(transfer_function)
 
 	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
-			switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
+			if (!strcasecmp(argv[0], "-bleg")) {
+				const char *uuid;
+				switch_channel_t *channel = switch_core_session_get_channel(session);																		
+				if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+					switch_core_session_t *b_session;
+					if ((b_session = switch_core_session_locate(uuid))) {
+						switch_ivr_session_transfer(b_session, argv[1], argv[2], argv[3]);
+						switch_core_session_rwunlock(b_session);
+					}
+				}
+			} else {
+				switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
+			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No extension specified.\n");
 		}

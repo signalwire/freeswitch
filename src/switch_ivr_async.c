@@ -1260,6 +1260,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 
 typedef struct {
 	const char *app;
+	uint32_t flags;
 } dtmf_meta_app_t;
 
 typedef struct {
@@ -1307,7 +1308,7 @@ static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch
 			if (md->map[dval].app) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Processing meta digit '%c' [%s]\n", 
 								  switch_channel_get_name(channel), dtmf->digit, md->map[dval].app);
-				switch_ivr_broadcast(switch_core_session_get_uuid(session), md->map[dval].app, SMF_ECHO_ALEG);
+				switch_ivr_broadcast(switch_core_session_get_uuid(session), md->map[dval].app, md->map[dval].flags);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Ignoring meta digit '%c' not mapped\n", 
 								  switch_channel_get_name(channel), dtmf->digit);
@@ -1329,7 +1330,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unbind_dtmf_meta_session(switch_core_
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_session_t *session, uint32_t key, const char *app)
+SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_session_t *session, uint32_t key, 
+																  switch_bool_t dial_b, switch_bool_t exec_b, const char *app)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	dtmf_meta_data_t *md = switch_channel_get_private(channel, SWITCH_META_VAR_KEY);
@@ -1342,12 +1344,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_se
 	if (!md) {
 		md = switch_core_session_alloc(session, sizeof(*md));
 		switch_channel_set_private(channel, SWITCH_META_VAR_KEY, md);
-		switch_core_event_hook_add_recv_dtmf(session, meta_on_dtmf);
+		if (dial_b) {
+			switch_core_event_hook_add_send_dtmf(session, meta_on_dtmf);
+		} else {
+			switch_core_event_hook_add_recv_dtmf(session, meta_on_dtmf);
+		}
 	}
 
 	if (!switch_strlen_zero(app)) {
 		md->map[key].app = switch_core_session_strdup(session, app);
+		md->map[key].flags = exec_b ? SMF_ECHO_BLEG : SMF_ECHO_ALEG;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Bound: %d %s\n", key, app);
 	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "UnBound: %d\n", key);
 		md->map[key].app = NULL;
 	}
 

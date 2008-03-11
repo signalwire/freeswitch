@@ -137,7 +137,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 			break;
 		}
 
-		if (switch_channel_test_flag(chan_a, CF_TRANSFER)) {
+		if (switch_channel_test_flag(chan_a, CF_TRANSFER) || switch_channel_test_flag(chan_b, CF_TRANSFER)) {
 			switch_channel_clear_flag(chan_a, CF_HOLD);
 			switch_channel_clear_flag(chan_a, CF_SUSPEND);
 			break;
