@@ -140,6 +140,7 @@
 	<anti-action application="db" data="insert/last_dial_ext/${dialed_ext}/${uuid}"/>
 	<anti-action application="bridge" data="user/${dialed_ext}@$${domain}"/>
 	<anti-action application="answer"/>
+	<anti-action application="send_display" data="Voicemail for ${dialed_ext}"/>
 	<anti-action application="sleep" data="1000"/>
 	<anti-action application="voicemail" data="default $${domain} ${dialed_ext}"/>
       </condition>
@@ -157,18 +158,24 @@
     -->                                                                                                                                                       
     <extension name="nb_conferences">
       <condition field="destination_number" expression="^(30\d{2})$">
+	<action application="answer"/>
+	<action application="send_display" data="8k Conference $1"/>
 	<action application="conference" data="$1@default"/>
       </condition>
     </extension>
 
     <extension name="wb_conferences">
       <condition field="destination_number" expression="^(31\d{2})$">
+	<action application="answer"/>
+	<action application="send_display" data="16k Conference $1"/>
 	<action application="conference" data="$1@wideband"/>
       </condition>
     </extension>
 
     <extension name="uwb_conferences">
       <condition field="destination_number" expression="^(32\d{2})$">
+	<action application="answer"/>
+	<action application="send_display" data="32k Conference $1"/>
 	<action application="conference" data="$1@ultrawideband"/>
       </condition>
     </extension>
@@ -189,6 +196,8 @@
 
     <extension name="rtp_multicast_page">
       <condition field="destination_number" expression="^pagegroup$|^7243">
+	<action application="answer"/>
+	<action application="send_display" data="Multicast Page"/>
 	<action application="esf_page_group"/>
       </condition>
     </extension>
@@ -255,6 +264,7 @@
     <extension name="delay_echo">
       <condition field="destination_number" expression="^9995$">
 	<action application="answer"/>
+	<action application="send_display" data="Delay Echo Test (5 sec)"/>
 	<action application="delay_echo" data="5000"/>
       </condition>
     </extension>
@@ -262,6 +272,7 @@
     <extension name="echo">
       <condition field="destination_number" expression="^9996$">
 	<action application="answer"/>
+	<action application="send_display" data="Echo Test"/>
 	<action application="echo"/>
       </condition>
     </extension>
@@ -269,6 +280,7 @@
     <extension name="milliwatt">
       <condition field="destination_number" expression="^9997$">
 	<action application="answer"/>
+	<action application="send_display" data="Milliwatt Test"/>
 	<action application="playback" data="tone_stream://%(10000,0,1004);loops=-1"/>
       </condition>
     </extension>
@@ -287,6 +299,7 @@
 	<action application="execute_extension" data="is_secure XML default"/>
 	<action application="playback" data="$${moh_uri}"/>
 	<anti-action application="answer"/>
+	<anti-action application="send_display" data="Insecure Music On Hold"/>
 	<anti-action application="playback" data="$${moh_uri}"/>
       </condition>
     </extension>
@@ -334,6 +347,7 @@
     <extension name="is_secure">
       <condition field="${sip_secure_media_confirmed}" expression="^true$">
 	<action application="sleep" data="1000"/>
+	<action application="send_display" data="Secure Music On Hold "/>
 	<action application="gentones" data="${bong-ring}"/>
       </condition>
     </extension>
