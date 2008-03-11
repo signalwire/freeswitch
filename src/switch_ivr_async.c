@@ -1258,6 +1258,104 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
   return SWITCH_STATUS_SUCCESS;
 }
 
+typedef struct {
+	const char *app;
+} dtmf_meta_app_t;
+
+typedef struct {
+	dtmf_meta_app_t map[10];
+	time_t last_digit;
+	switch_bool_t meta_on;
+} dtmf_meta_data_t;
+
+#define SWITCH_META_VAR_KEY "__dtmf_meta"
+
+static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	dtmf_meta_data_t *md = switch_channel_get_private(channel, SWITCH_META_VAR_KEY);
+	time_t now = switch_timestamp(NULL);
+	char digit[2] = "";
+	int dval;
+
+	if (!md) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (md->meta_on && now - md->last_digit > 5) {
+		md->meta_on = SWITCH_FALSE;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Meta digit timeout parsing %c\n", switch_channel_get_name(channel), dtmf->digit);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	md->last_digit = now;
+
+	if (dtmf->digit == '*') {
+		if (md->meta_on) {
+			md->meta_on = SWITCH_FALSE;
+			return SWITCH_STATUS_SUCCESS;
+		} else {
+			md->meta_on = SWITCH_TRUE;
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+
+	if (md->meta_on) {
+		if (dtmf->digit >= '0' && dtmf->digit <= '9') {
+			*digit = dtmf->digit;
+			dval = atoi(digit);
+			if (md->map[dval].app) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Processing meta digit '%c' [%s]\n", 
+								  switch_channel_get_name(channel), dtmf->digit, md->map[dval].app);
+				switch_ivr_broadcast(switch_core_session_get_uuid(session), md->map[dval].app, SMF_ECHO_ALEG);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Ignoring meta digit '%c' not mapped\n", 
+								  switch_channel_get_name(channel), dtmf->digit);
+								  
+			}
+		}
+		md->meta_on = SWITCH_FALSE;
+		return SWITCH_STATUS_FALSE;
+	}
+
+	return SWITCH_STATUS_SUCCESS;	
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_unbind_dtmf_meta_session(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+    switch_channel_set_private(channel, SWITCH_META_VAR_KEY, NULL);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_session_t *session, uint32_t key, const char *app)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	dtmf_meta_data_t *md = switch_channel_get_private(channel, SWITCH_META_VAR_KEY);
+	
+	if (key > 9) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid key %u\n", key);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!md) {
+		md = switch_core_session_alloc(session, sizeof(*md));
+		switch_channel_set_private(channel, SWITCH_META_VAR_KEY, md);
+		switch_core_event_hook_add_recv_dtmf(session, meta_on_dtmf);
+	}
+
+	if (!switch_strlen_zero(app)) {
+		md->map[key].app = switch_core_session_strdup(session, app);
+	} else {
+		md->map[key].app = NULL;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+
 struct speech_thread_handle {
 	switch_core_session_t *session;
 	switch_asr_handle_t *ah;
