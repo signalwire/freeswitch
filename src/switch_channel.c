@@ -1561,6 +1561,10 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 	char *func_val = NULL;
 	int nv = 0;
 
+	if (switch_strlen_zero(in)) {
+		return (char *)in;
+	}
+
 	q = in;
 	while(q && *q) {
 		if (!(p = strchr(q, '$'))) {
