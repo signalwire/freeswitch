@@ -637,7 +637,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		globals.read_frame.datalen = samples * 2;
 		globals.read_frame.samples = samples;
 
-		switch_core_timer_check(&globals.timer);
+		switch_core_timer_check(&globals.timer, SWITCH_TRUE);
 		globals.read_frame.timestamp = globals.timer.samplecount;
 		*frame = &globals.read_frame;
 
