@@ -110,7 +110,10 @@
       <!-- <condition field="${sip_to_params}" expression="intercom\=true"/> -->
       <condition field="destination_number" expression="^8(10[01][0-9])$">
 	<action application="set" data="dialed_ext=$1"/>
+	<!-- This Alert-Info seems to be a case for Intercom for Polycom which sip_auto_answer=true covers already. -->
+	<!--<action application="export"><![CDATA[alert_info=<sip:$${domain}>;Ring;Answer]]></action>-->
 	<action application="export"><![CDATA[sip_h_Call-Info=<sip:$${domain}>;answer-after=0]]></action>
+	<action application="export" data="sip_invite_params=intercom=true"/>
 	<action application="export" data="sip_auto_answer=true"/>
 	<action application="bridge" data="user/${dialed_ext}@$${domain}"/>
       </condition>
