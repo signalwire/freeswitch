@@ -40,7 +40,7 @@ $(SHOUT_DIR):
 	$(GETLIB) $(SHOUT).tar.gz
 
 $(SHOUT_DIR)/Makefile: $(SHOUT_DIR)
-	cd $(SHOUT_DIR) && ./configure $(DEFAULT_ARGS) --with-speex=no
+	cd $(SHOUT_DIR) && ./configure $(DEFAULT_ARGS) --with-speex=no --without-vorbis
 	$(TOUCH_TARGET)
 
 $(SHOUTLA): $(SHOUT_DIR)/Makefile

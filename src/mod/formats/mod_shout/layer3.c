@@ -14,7 +14,7 @@
 #define MPEG1
 
 /* These should all be constants setup once using init_layer3_const */
-static real ispow[8207];
+static real __ispow[8207];
 static real aa_ca[8], aa_cs[8];
 static real COS1[12][6];
 static real win[4][36];
@@ -31,6 +31,14 @@ struct bandInfoStruct {
 	short shortIdx[14];
 	short shortDiff[13];
 };
+
+
+static inline real find_pow(int i)
+{
+
+	return (i > 0 && i < 8207) ? __ispow[i] : 1;
+	
+}
 
 
 struct bandInfoStruct bandInfo[9] = {
@@ -104,7 +112,7 @@ void init_layer3_const(void)
 		gainpow2[i + 256] = pow((double) 2.0, -0.25 * (double) (i + 210));
 
 	for (i = 0; i < 8207; i++)
-		ispow[i] = pow((double) i, (double) 4.0 / 3.0);
+		__ispow[i] = pow((double) i, (double) 4.0 / 3.0);
 
 	for (i = 0; i < 8; i++) {
 		static double Ci[8] = { -0.6, -0.535, -0.33, -0.185, -0.095, -0.041, -0.0142, -0.0037 };
@@ -681,20 +689,21 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], in
 					x = y >> 4;
 					y &= 0xf;
 				}
+
 				if (x == 15) {
 					max[lwin] = cb;
 					part2remain -= h->linbits + 1;
 					x += getbits(mp, h->linbits);
 					if (get1bit(mp))
-						*xrpnt = -ispow[x] * v;
+						*xrpnt = find_pow(x) * -1 * v;
 					else
-						*xrpnt = ispow[x] * v;
+						*xrpnt = find_pow(x) * v;
 				} else if (x) {
 					max[lwin] = cb;
 					if (get1bit(mp))
-						*xrpnt = -ispow[x] * v;
+						*xrpnt = find_pow(x) * -1 * v;
 					else
-						*xrpnt = ispow[x] * v;
+						*xrpnt = find_pow(x) * v;
 					part2remain--;
 				} else
 					*xrpnt = 0.0;
@@ -704,15 +713,15 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], in
 					part2remain -= h->linbits + 1;
 					y += getbits(mp, h->linbits);
 					if (get1bit(mp))
-						*xrpnt = -ispow[y] * v;
+						*xrpnt = find_pow(y) * -1 * v;
 					else
-						*xrpnt = ispow[y] * v;
+						*xrpnt = find_pow(y) * v;
 				} else if (y) {
 					max[lwin] = cb;
 					if (get1bit(mp))
-						*xrpnt = -ispow[y] * v;
+						*xrpnt = find_pow(y) * -1 * v;
 					else
-						*xrpnt = ispow[y] * v;
+						*xrpnt = find_pow(y) * v;
 					part2remain--;
 				} else
 					*xrpnt = 0.0;
@@ -859,15 +868,15 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], in
 					part2remain -= h->linbits + 1;
 					x += getbits(mp, h->linbits);
 					if (get1bit(mp))
-						*xrpnt++ = -ispow[x] * v;
+						*xrpnt++ = find_pow(x) * -1 * v;
 					else
-						*xrpnt++ = ispow[x] * v;
+						*xrpnt++ = find_pow(x) * v;
 				} else if (x) {
 					max = cb;
 					if (get1bit(mp))
-						*xrpnt++ = -ispow[x] * v;
+						*xrpnt++ = find_pow(x) * -1 * v;
 					else
-						*xrpnt++ = ispow[x] * v;
+						*xrpnt++ = find_pow(x) * v;
 					part2remain--;
 				} else
 					*xrpnt++ = 0.0;
@@ -877,15 +886,15 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], in
 					part2remain -= h->linbits + 1;
 					y += getbits(mp, h->linbits);
 					if (get1bit(mp))
-						*xrpnt++ = -ispow[y] * v;
+						*xrpnt++ = find_pow(y) * -1 * v;
 					else
-						*xrpnt++ = ispow[y] * v;
+						*xrpnt++ = find_pow(y) * v;
 				} else if (y) {
 					max = cb;
 					if (get1bit(mp))
-						*xrpnt++ = -ispow[y] * v;
+						*xrpnt++ = find_pow(y) * -1 * v;
 					else
-						*xrpnt++ = ispow[y] * v;
+						*xrpnt++ = find_pow(y) * v;
 					part2remain--;
 				} else
 					*xrpnt++ = 0.0;
@@ -1049,22 +1058,22 @@ static int III_dequantize_sample_ms(real xr[2][SBLIMIT][SSLIMIT], int *scf, stru
 					part2remain -= h->linbits + 1;
 					x += getbits(mp, h->linbits);
 					if (get1bit(mp)) {
-						real a = ispow[x] * v;
+						real a = find_pow(x) * v;
 						*xrpnt = *xr0pnt + a;
 						*xr0pnt -= a;
 					} else {
-						real a = ispow[x] * v;
+						real a = find_pow(x) * v;
 						*xrpnt = *xr0pnt - a;
 						*xr0pnt += a;
 					}
 				} else if (x) {
 					max[lwin] = cb;
 					if (get1bit(mp)) {
-						real a = ispow[x] * v;
+						real a = find_pow(x) * v;
 						*xrpnt = *xr0pnt + a;
 						*xr0pnt -= a;
 					} else {
-						real a = ispow[x] * v;
+						real a = find_pow(x) * v;
 						*xrpnt = *xr0pnt - a;
 						*xr0pnt += a;
 					}
@@ -1079,22 +1088,22 @@ static int III_dequantize_sample_ms(real xr[2][SBLIMIT][SSLIMIT], int *scf, stru
 					part2remain -= h->linbits + 1;
 					y += getbits(mp, h->linbits);
 					if (get1bit(mp)) {
-						real a = ispow[y] * v;
+						real a = find_pow(y) * v;
 						*xrpnt = *xr0pnt + a;
 						*xr0pnt -= a;
 					} else {
-						real a = ispow[y] * v;
+						real a = find_pow(y) * v;
 						*xrpnt = *xr0pnt - a;
 						*xr0pnt += a;
 					}
 				} else if (y) {
 					max[lwin] = cb;
 					if (get1bit(mp)) {
-						real a = ispow[y] * v;
+						real a = find_pow(y) * v;
 						*xrpnt = *xr0pnt + a;
 						*xr0pnt -= a;
 					} else {
-						real a = ispow[y] * v;
+						real a = find_pow(y) * v;
 						*xrpnt = *xr0pnt - a;
 						*xr0pnt += a;
 					}
@@ -1231,22 +1240,22 @@ static int III_dequantize_sample_ms(real xr[2][SBLIMIT][SSLIMIT], int *scf, stru
 					part2remain -= h->linbits + 1;
 					x += getbits(mp, h->linbits);
 					if (get1bit(mp)) {
-						real a = ispow[x] * v;
+						real a = find_pow(x) * v;
 						*xrpnt++ = *xr0pnt + a;
 						*xr0pnt++ -= a;
 					} else {
-						real a = ispow[x] * v;
+						real a = find_pow(x) * v;
 						*xrpnt++ = *xr0pnt - a;
 						*xr0pnt++ += a;
 					}
 				} else if (x) {
 					max = cb;
 					if (get1bit(mp)) {
-						real a = ispow[x] * v;
+						real a = find_pow(x) * v;
 						*xrpnt++ = *xr0pnt + a;
 						*xr0pnt++ -= a;
 					} else {
-						real a = ispow[x] * v;
+						real a = find_pow(x) * v;
 						*xrpnt++ = *xr0pnt - a;
 						*xr0pnt++ += a;
 					}
@@ -1259,22 +1268,22 @@ static int III_dequantize_sample_ms(real xr[2][SBLIMIT][SSLIMIT], int *scf, stru
 					part2remain -= h->linbits + 1;
 					y += getbits(mp, h->linbits);
 					if (get1bit(mp)) {
-						real a = ispow[y] * v;
+						real a = find_pow(y) * v;
 						*xrpnt++ = *xr0pnt + a;
 						*xr0pnt++ -= a;
 					} else {
-						real a = ispow[y] * v;
+						real a = find_pow(y) * v;
 						*xrpnt++ = *xr0pnt - a;
 						*xr0pnt++ += a;
 					}
 				} else if (y) {
 					max = cb;
 					if (get1bit(mp)) {
-						real a = ispow[y] * v;
+						real a = find_pow(y) * v;
 						*xrpnt++ = *xr0pnt + a;
 						*xr0pnt++ -= a;
 					} else {
-						real a = ispow[y] * v;
+						real a = find_pow(y) * v;
 						*xrpnt++ = *xr0pnt - a;
 						*xr0pnt++ += a;
 					}
