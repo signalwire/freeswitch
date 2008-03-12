@@ -205,10 +205,15 @@ SWITCH_STANDARD_APP(transfer_function)
 	int argc;
 	char *argv[4] = { 0 };
 	char *mydata;
+	int bleg = 0, both = 0;
 
+	
 	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
-			if (!strcasecmp(argv[0], "-bleg")) {
+			bleg = !strcasecmp(argv[0], "-bleg");
+			both = !strcasecmp(argv[0], "-both");
+
+			if (bleg || both) {
 				const char *uuid;
 				switch_channel_t *channel = switch_core_session_get_channel(session);																		
 				if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
@@ -217,6 +222,9 @@ SWITCH_STANDARD_APP(transfer_function)
 						switch_ivr_session_transfer(b_session, argv[1], argv[2], argv[3]);
 						switch_core_session_rwunlock(b_session);
 					}
+				}
+				if (both) {
+					switch_ivr_session_transfer(session, argv[1], argv[2], argv[3]);
 				}
 			} else {
 				switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);

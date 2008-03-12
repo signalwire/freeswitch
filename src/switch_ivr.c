@@ -314,8 +314,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 							if (!(stream = switch_channel_get_variable_partner(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
 								stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE);
 							}
+
 							if (stream) {
-								switch_ivr_broadcast(b_uuid, hold_bleg, SMF_ECHO_ALEG | SMF_LOOP);
+								switch_ivr_broadcast(b_uuid, stream, SMF_ECHO_ALEG | SMF_LOOP);
 							} else {
 								b_uuid = NULL;
 							}
