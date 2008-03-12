@@ -142,7 +142,7 @@
     <extension name="cf">
       <condition field="destination_number" expression="^cf$">
 	<action application="answer"/>
-	<action application="transfer" data="-both 3000"/>
+	<action application="transfer" data="-both 30${dialed_extension:2}"/>
       </condition>
     </extension>
 
