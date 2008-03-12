@@ -316,7 +316,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 							}
 
 							if (stream) {
-								switch_ivr_broadcast(b_uuid, stream, SMF_ECHO_ALEG | SMF_LOOP);
+								if ((b_session = switch_core_session_locate(b_uuid))) {
+									switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
+
+									switch_ivr_broadcast(b_uuid, stream, SMF_ECHO_ALEG | SMF_LOOP);
+									switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_TRUE, 5000);
+									switch_core_session_rwunlock(b_session);
+								}
 							} else {
 								b_uuid = NULL;
 							}
@@ -621,6 +627,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 		for (i = 0; i < x; i++) {
 			if (strchr(terminators, buf[i]) && terminator != NULL) {
 				*terminator = buf[i];
+				buf[i] = '\0';
 				return SWITCH_STATUS_SUCCESS;
 			}
 		}
@@ -683,7 +690,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 					*terminator = dtmf.digit;
 					return SWITCH_STATUS_SUCCESS;
 				}
-
+				
+				
 				buf[x++] = dtmf.digit;
 				buf[x] = '\0';
 				if (x >= buflen || x >= maxdigits) {
