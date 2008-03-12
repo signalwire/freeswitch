@@ -382,7 +382,7 @@
 	<action application="sleep" data="1000"/>
 	<action application="send_display" data="Secure Music On Hold "/>
 	<action application="gentones" data="${bong-ring}"/>
-	<anti-actin application="eval" data="not_secure"/>
+	<anti-action application="eval" data="not_secure"/>
       </condition>
     </extension>
 
