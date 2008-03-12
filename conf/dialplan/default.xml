@@ -119,33 +119,6 @@
       </condition>
     </extension>
 
-    <!-- In call Transfer for phones without a transfer button -->
-    <extension name="dx">
-      <condition field="destination_number" expression="^dx$">
-	<action application="answer"/>
-	<action application="read" data="11 11 'tone_stream://%(10000,0,350,440)' digits 5000 #"/>
-	<!--<action application="transfer" data="-bleg ${digits}"/>-->
-	<action application="execute_extension" data="is_transfer XML default"/>
-      </condition>
-    </extension>
-
-    <extension name="is_transfer">
-      <condition field="destination_number" expression="^is_transfer$"/>
-      <condition field="${digits}" expression="^(\d+)$">
-	<action application="transfer" data="-bleg ${digits}"/>
-	<anti-action application="eval" data="w00t"/>
-      </condition>
-    </extension>
-
-
-    <!-- Used to transfer both legs into a conference -->
-    <extension name="cf">
-      <condition field="destination_number" expression="^cf$">
-	<action application="answer"/>
-	<action application="transfer" data="-both 30${dialed_extension:2}"/>
-      </condition>
-    </extension>
-
     <!-- 
 	 if the calling party is the called party, go to their VM
 	 if the calling party is NOT the called party dial the extension 
@@ -156,15 +129,16 @@
     <extension name="Local_Extension">
       <condition field="destination_number" expression="^(10[01][0-9])$">
 	<action application="set" data="dialed_ext=$1"/>
+	<action application="export" data="dialed_ext=$1"/>
       </condition>
       <condition field="destination_number" expression="^${caller_id_number}$">
 	<action application="set" data="voicemail_authorized=${sip_authorized}"/>
 	<action application="answer"/>
 	<action application="sleep" data="1000"/>
 	<action application="voicemail" data="check default $${domain} ${dialed_ext}"/>
-	<anti-action application="bind_meta_app" data="1 a a execute_extension::dx"/>
+	<anti-action application="bind_meta_app" data="1 a a execute_extension::dx XML features"/>
 	<anti-action application="bind_meta_app" data="2 a a record_session::$${base_dir}/recordings/${caller_id_number}.${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
-	<anti-action application="bind_meta_app" data="3 a a execute_extension::cf"/>
+	<anti-action application="bind_meta_app" data="3 a a execute_extension::cf XML features"/>
 	<anti-action application="set" data="transfer_ringback=${us-ring}"/>
 	<anti-action application="set" data="call_timeout=30"/>
 	<anti-action application="set" data="hangup_after_bridge=true"/>
@@ -329,7 +303,7 @@
       <condition field="destination_number" expression="^9999$"/>
       <condition field="${sip_has_crypto}" expression="^(AES_CM_128_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_80)$">
 	<action application="answer"/>
-	<action application="execute_extension" data="is_secure XML default"/>
+	<action application="execute_extension" data="is_secure XML features"/>
 	<action application="playback" data="$${moh_uri}"/>
 	<anti-action application="answer"/>
 	<anti-action application="send_display" data="Insecure Music On Hold"/>
@@ -374,15 +348,6 @@
     <extension name="enum">
       <condition field="destination_number" expression="^(.*)$">
 	<action application="transfer" data="$1 enum"/>
-      </condition>
-    </extension>
-
-    <extension name="is_secure">
-      <condition field="${sip_secure_media_confirmed}" expression="^true$">
-	<action application="sleep" data="1000"/>
-	<action application="send_display" data="Secure Music On Hold "/>
-	<action application="gentones" data="${bong-ring}"/>
-	<anti-action application="eval" data="not_secure"/>
       </condition>
     </extension>
 

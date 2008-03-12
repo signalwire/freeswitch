@@ -1,0 +1,42 @@
+<!-- http://wiki.freeswitch.org/wiki/Dialplan_XML -->
+<include>
+  <context name="features">
+
+    <!-- In call Transfer for phones without a transfer button -->
+    <extension name="dx">
+      <condition field="destination_number" expression="^dx$">
+	<action application="answer"/>
+	<action application="read" data="11 11 'tone_stream://%(10000,0,350,440)' digits 5000 #"/>
+	<!--<action application="transfer" data="-bleg ${digits}"/>-->
+	<action application="execute_extension" data="is_transfer XML features"/>
+      </condition>
+    </extension>
+
+    <extension name="is_transfer">
+      <condition field="destination_number" expression="^is_transfer$"/>
+      <condition field="${digits}" expression="^(\d+)$">
+	<action application="transfer" data="-bleg ${digits} XML default"/>
+	<anti-action application="eval" data="w00t"/>
+      </condition>
+    </extension>
+
+
+    <!-- Used to transfer both legs into a conference -->
+    <extension name="cf">
+      <condition field="destination_number" expression="^cf$">
+	<action application="answer"/>
+	<action application="transfer" data="-both 30${dialed_ext:2} XML default"/>
+      </condition>
+    </extension>
+
+    <extension name="is_secure">
+      <condition field="${sip_secure_media_confirmed}" expression="^true$">
+	<action application="sleep" data="1000"/>
+	<action application="send_display" data="Secure Music On Hold "/>
+	<action application="gentones" data="${bong-ring}"/>
+	<anti-action application="eval" data="not_secure"/>
+      </condition>
+    </extension>
+
+  </context>
+</include>
