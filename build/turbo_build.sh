@@ -5,6 +5,7 @@ if [ -z $MAKE ] ; then
 fi
 
 if [ -z $arg ] ; then
+    $MAKE clean
     $MAKE -j freeswitch
     MODS=`cat modules.conf | grep -v \#`
     for i in $MODS ; do 
