@@ -1969,9 +1969,7 @@ static JSBool session_ready(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 
-	METHOD_SANITY_CHECK();
-
-	*rval = BOOLEAN_TO_JSVAL(switch_channel_ready(switch_core_session_get_channel(jss->session)) ? JS_TRUE : JS_FALSE);
+	*rval = BOOLEAN_TO_JSVAL((jss && jss->session && switch_channel_ready(switch_core_session_get_channel(jss->session))) ? JS_TRUE : JS_FALSE);
 
 	return JS_TRUE;
 }
