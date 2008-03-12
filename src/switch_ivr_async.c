@@ -1353,6 +1353,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_se
 	if (!switch_strlen_zero(app)) {
 		md->map[key].app = switch_core_session_strdup(session, app);
 		md->map[key].flags = exec_b ? SMF_ECHO_BLEG : SMF_ECHO_ALEG;
+		md->map[key].flags |= SMF_HOLD_BLEG;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Bound: %d %s\n", key, app);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "UnBound: %d\n", key);
@@ -1837,6 +1838,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event-lock", "%s", "true");
 			if ((flags & SMF_LOOP)) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "loops", "%d", -1);
+			}
+			if ((flags & SMF_HOLD_BLEG)) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "hold-bleg", "%s", "true");
 			}
 				
 			switch_core_session_queue_private_event(other_session, &event);

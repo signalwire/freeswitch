@@ -291,6 +291,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 		char *app_name = switch_event_get_header(event, "execute-app-name");
 		char *app_arg = switch_event_get_header(event, "execute-app-arg");
 		char *loop_h = switch_event_get_header(event, "loops");
+		char *hold_bleg = switch_event_get_header(event, "hold-bleg");
 		int loops = 1;
 
 		if (loop_h) {
@@ -301,14 +302,39 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 			if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
 				if (application_interface->application_function) {
 					int x;
+					const char *b_uuid = NULL;
+					switch_core_session_t *b_session = NULL;
+					
 					switch_channel_clear_flag(channel, CF_STOP_BROADCAST);
 					switch_channel_set_flag(channel, CF_BROADCAST);
+					if (hold_bleg && switch_true(hold_bleg)) {
+						if ((b_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+							const char *stream;
+
+							if (!(stream = switch_channel_get_variable_partner(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
+								stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE);
+							}
+							if (stream) {
+								switch_ivr_broadcast(b_uuid, hold_bleg, SMF_ECHO_ALEG | SMF_LOOP);
+							} else {
+								b_uuid = NULL;
+							}
+						}
+					}
 					for (x = 0; x < loops || loops < 0; x++) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Command Execute %s(%s)\n", 
 										  switch_channel_get_name(channel), app_name, app_arg);
 						switch_core_session_exec(session, application_interface, app_arg);
 						if (!switch_channel_ready(channel) || switch_channel_test_flag(channel, CF_STOP_BROADCAST)) {
 							break;
+						}
+					}
+					if (b_uuid) {
+						if ((b_session = switch_core_session_locate(b_uuid))) {
+							switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
+							switch_channel_stop_broadcast(b_channel);
+							switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000);
+							switch_core_session_rwunlock(b_session);
 						}
 					}
 					switch_channel_clear_flag(channel, CF_BROADCAST);					

@@ -245,7 +245,8 @@ typedef enum {
 	SMF_ECHO_ALEG = (1 << 1),
 	SMF_ECHO_BLEG = (1 << 2),
 	SMF_FORCE = (1 << 3),
-	SMF_LOOP = (1 << 4)
+	SMF_LOOP = (1 << 4),
+	SMF_HOLD_BLEG = (1 << 5)
 } switch_media_flag_t;
 
 typedef enum {
