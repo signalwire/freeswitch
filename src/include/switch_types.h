@@ -102,6 +102,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_PATH_SEPARATOR "/"
 #endif
 #define SWITCH_URL_SEPARATOR "://"
+#define SWITCH_API_HANGUP_HOOK_VARIABLE "api_hangup_hook"
 #define SWITCH_PROCESS_CDR_VARIABLE "process_cdr"
 #define SWITCH_BRIDGE_CHANNEL_VARIABLE "bridge_channel"
 #define SWITCH_CHANNEL_NAME_VARIABLE "channel_name"
