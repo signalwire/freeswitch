@@ -89,8 +89,8 @@ SWITCH_STANDARD_APP(dtmf_bind_function)
 	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) == 4) {
 		int kval = atoi(argv[0]);
-		char a1 = tolower(*argv[1]);
-		char a2 = tolower(*argv[2]);
+		char a1 = (char)tolower(*argv[1]);
+		char a2 = (char)tolower(*argv[2]);
 		
 		if (switch_ivr_bind_dtmf_meta_session(session, kval, a1 == 'b', a2 == 'b', argv[3]) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bind Error!\n");
