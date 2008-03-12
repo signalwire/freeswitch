@@ -121,6 +121,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					}
 
 					switch_caller_extension_add_application(session, *extension, application, data);
+					proceed = 1;
 				}
 
 				if (do_break_i == BREAK_ON_FALSE || do_break_i == BREAK_ALWAYS) {
@@ -264,7 +265,7 @@ SWITCH_STANDARD_DIALPLAN(dialplan_hunt)
 
 		proceed = parse_exten(session, caller_profile, xexten, &extension);
 
-		if (proceed && !switch_true(cont)) {
+		if (proceed && !switch_true(cont)) { 
 			break;
 		}
 
