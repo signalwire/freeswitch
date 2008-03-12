@@ -1141,8 +1141,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (bytes) {
 				check++;
 				switch_core_timer_sync(&rtp_session->timer);
+			} else {
+				check = (uint8_t) (switch_core_timer_check(&rtp_session->timer, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS);						
 			}
-			check = (uint8_t) (switch_core_timer_check(&rtp_session->timer, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS);
+		} 
+
+		if (check) {
+			do_2833(rtp_session);
 		}
 
 		if (bytes && rtp_session->recv_msg.header.version != 2) {
@@ -1303,8 +1308,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 		}
 
-		if (check) {
-			do_2833(rtp_session);
+		if (check || (bytes && !rtp_session->timer.interval)) {
 			if (!bytes && rtp_session->max_missed_packets) {
 				if (++rtp_session->missed_count >= rtp_session->max_missed_packets) {
 					ret = -2;
@@ -1399,10 +1403,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (*payload_type == SWITCH_RTP_CNG_PAYLOAD) {
 			*flags |= SFF_CNG;
-		}
-
-		if (bytes > 0) {
-			do_2833(rtp_session);
 		}
 
 		ret = (int) bytes;
