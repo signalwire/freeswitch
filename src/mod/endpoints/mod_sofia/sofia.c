@@ -2607,7 +2607,16 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	if (sip->sip_to && sip->sip_to->a_url) {
 		const char *host, *user;
 		int port;
-		sofia_transport_t transport = sofia_glue_url2transport(sip->sip_contact->m_url);
+		sofia_transport_t transport;
+		url_t *transport_url;
+
+		if (sip->sip_record_route && sip->sip_record_route->r_url) {
+			transport_url = sip->sip_record_route->r_url;
+		} else {
+			transport_url = sip->sip_contact->m_url;
+		}
+
+		transport = sofia_glue_url2transport(transport_url);		
 
 		url_set_chanvars(session, sip->sip_to->a_url, sip_to);
 		if (switch_channel_get_variable(channel, "sip_to_uri")) {
