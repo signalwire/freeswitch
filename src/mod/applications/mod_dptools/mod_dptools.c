@@ -222,6 +222,8 @@ SWITCH_STANDARD_APP(transfer_function)
 						switch_ivr_session_transfer(b_session, argv[1], argv[2], argv[3]);
 						switch_core_session_rwunlock(b_session);
 					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No B-leg present.\n");
 				}
 				if (both) {
 					switch_ivr_session_transfer(session, argv[1], argv[2], argv[3]);
@@ -1109,6 +1111,146 @@ SWITCH_STANDARD_APP(speak_function)
 	switch_ivr_speak_text(session, engine, voice, text, &args);
 }
 
+static switch_status_t xfer_on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
+{
+	switch_core_session_t *peer_session = (switch_core_session_t *) buf;
+
+	if (!buf || !peer_session) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch (itype) {
+	case SWITCH_INPUT_TYPE_DTMF:
+		{			
+			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
+			
+			if (dtmf->digit == '#') {
+				return SWITCH_STATUS_FALSE;
+			}
+
+			if (dtmf->digit == '0') {
+				switch_caller_extension_t *extension = NULL;
+				const char *app = "three_way";
+				const char *app_arg = switch_core_session_get_uuid(session);
+				const char *holding = switch_channel_get_variable(channel, SWITCH_HOLDING_UUID_VARIABLE);
+				switch_core_session_t *b_session;
+
+				if (holding && (b_session = switch_core_session_locate(holding))) {
+					switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
+					if (!switch_channel_ready(b_channel)) {
+						app = "intercept";
+					}
+					switch_core_session_rwunlock(b_session);
+				}
+				
+				if ((extension = switch_caller_extension_new(peer_session, app, app_arg)) == 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
+					abort();
+				}
+				
+				switch_caller_extension_add_application(peer_session, extension, app, app_arg);
+				switch_channel_set_caller_extension(peer_channel, extension);
+				switch_channel_set_flag(peer_channel, CF_TRANSFER);
+				switch_channel_set_state(peer_channel, CS_EXECUTE);
+
+				return SWITCH_STATUS_FALSE;
+			}
+			
+		}
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+
+
+}
+
+static switch_status_t hanguphook(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_state_t state = switch_channel_get_state(channel);
+	const char *id = NULL;
+
+	if (state == CS_HANGUP || state == CS_RING) {
+		if ((id = switch_channel_get_variable(channel, "xfer_uuids"))) {
+			switch_stream_handle_t stream = { 0 };
+			SWITCH_STANDARD_STREAM(stream);
+			switch_api_execute("uuid_bridge", id, NULL, &stream);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nHangup Command uuid_bridge(%s):\n%s\n", id, switch_str_nil((char *) stream.data));
+			switch_safe_free(stream.data);
+		}
+		
+		switch_core_event_hook_remove_state_change(session, hanguphook);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_APP(att_xfer_function)
+{
+	const char *var;
+	switch_core_session_t *peer_session = NULL;
+	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
+	switch_channel_t *channel, *peer_channel = NULL;
+	const char *bond = NULL;
+	int timelimit = 60;
+
+	channel = switch_core_session_get_channel(session);
+
+	if ((bond = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+		bond = switch_core_session_strdup(session, bond);
+	}
+
+	switch_channel_set_variable(channel, SWITCH_HOLDING_UUID_VARIABLE, bond);
+	
+	
+	if ((var = switch_channel_get_variable(channel, SWITCH_CALL_TIMEOUT_VARIABLE))) {
+		timelimit = atoi(var);
+	}
+
+	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
+		return;
+	}
+
+	peer_channel = switch_core_session_get_channel(peer_session);
+	switch_channel_set_flag(peer_channel, CF_INNER_BRIDGE);
+	switch_channel_set_flag(channel, CF_INNER_BRIDGE);
+	
+	switch_ivr_multi_threaded_bridge(session, peer_session, xfer_on_dtmf, peer_session, NULL);
+	
+	if (bond) {
+		switch_core_session_t *b_session;
+		char buf[128] = "";
+
+		if ((b_session = switch_core_session_locate(bond))) {
+			switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
+			switch_snprintf(buf, sizeof(buf), "%s %s", switch_core_session_get_uuid(peer_session), switch_core_session_get_uuid(session));
+			switch_channel_set_variable(b_channel, "xfer_uuids", buf);
+
+			switch_snprintf(buf, sizeof(buf), "%s %s", switch_core_session_get_uuid(peer_session), bond);
+			switch_channel_set_variable(channel, "xfer_uuids", buf);
+			
+			switch_core_event_hook_add_state_change(session, hanguphook);
+			switch_core_event_hook_add_state_change(b_session, hanguphook);
+
+			switch_core_session_rwunlock(b_session);
+		}
+		
+		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, bond);
+	}
+
+	if (peer_session) {
+		switch_core_session_rwunlock(peer_session);
+	}
+	
+	switch_channel_set_variable(channel, SWITCH_HOLDING_UUID_VARIABLE, NULL);
+
+}
+
+
 
 SWITCH_STANDARD_APP(read_function)
 {
@@ -1126,7 +1268,7 @@ SWITCH_STANDARD_APP(read_function)
 	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No file specified.\n");		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No arguements specified.\n");		
 		return;
 	}
 
@@ -1347,7 +1489,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 		return;
 	}
 
-	if ((var = switch_channel_get_variable(caller_channel, "call_timeout"))) {
+	if ((var = switch_channel_get_variable(caller_channel, SWITCH_CALL_TIMEOUT_VARIABLE))) {
 		timelimit = atoi(var);
 	}
 
@@ -1516,13 +1658,13 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 		if (session) {
 			channel = switch_core_session_get_channel(session);
-			if ((var = switch_channel_get_variable(channel, "call_timeout"))) {
+			if ((var = switch_channel_get_variable(channel, SWITCH_CALL_TIMEOUT_VARIABLE))) {
 				timelimit = atoi(var);
 			}
 			
 			switch_channel_set_variable(channel, "dialed_user", user);
 			switch_channel_set_variable(channel, "dialed_domain", domain);
-
+			
 			d_dest = switch_channel_expand_variables(channel, dest);
 
 		} else {
@@ -1650,7 +1792,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "sched_broadcast", SCHED_BROADCAST_DESCR, SCHED_BROADCAST_DESCR, sched_broadcast_function, "[+]<time> <path> [aleg|bleg|both]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "sched_transfer", SCHED_TRANSF_DESCR, SCHED_TRANSF_DESCR, sched_transfer_function, "[+]<time> <extension> <dialplan> <context>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "execute_extension", "Execute an extension", "Execute an extension", exe_function, EXE_SYNTAX, SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_APP(app_interface, "bind_meta_app", "Bind a key to an application", "Bind a key to an application", dtmf_bind_function, BIND_SYNTAX, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "bind_meta_app", "Bind a key to an application", "Bind a key to an application", dtmf_bind_function, BIND_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "intercept", "intercept", "intercept", intercept_function, INTERCEPT_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "eavesdrop", "eavesdrop on a uuid", "eavesdrop on a uuid", eavesdrop_function, eavesdrop_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "three_way", "three way call with a uuid", "three way call with a uuid", three_way_function, eavesdrop_SYNTAX, SAF_NONE);
@@ -1668,6 +1810,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "park_state", "Park State", "Park State", park_state_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "gentones", "Generate Tones", "Generate tones to the channel", gentones_function, "<tgml_script>[|<loops>]", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "playback", "Playback File", "Playback a file to the channel", playback_function, "<path>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "att_xfer", "Read Digits", "Read Digits", att_xfer_function, "foo>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "read", "Read Digits", "Read Digits", read_function, "<min> <max> <file> <var name> <timeout> <terminators>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "stop_record_session", "Stop Record Session", STOP_SESS_REC_DESC, stop_record_session_function, "<path>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "record_session", "Record Session", SESS_REC_DESC, record_session_function, "<path>", SAF_NONE);

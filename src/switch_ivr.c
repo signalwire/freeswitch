@@ -310,6 +310,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 					if (hold_bleg && switch_true(hold_bleg)) {
 						if ((b_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 							const char *stream;
+							b_uuid = switch_core_session_strdup(session, b_uuid);
 
 							if (!(stream = switch_channel_get_variable_partner(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
 								stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE);
@@ -318,7 +319,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 							if (stream) {
 								if ((b_session = switch_core_session_locate(b_uuid))) {
 									switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
-
 									switch_ivr_broadcast(b_uuid, stream, SMF_ECHO_ALEG | SMF_LOOP);
 									switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_TRUE, 5000);
 									switch_core_session_rwunlock(b_session);
@@ -336,6 +336,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 							break;
 						}
 					}
+
 					if (b_uuid) {
 						if ((b_session = switch_core_session_locate(b_uuid))) {
 							switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
@@ -344,6 +345,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 							switch_core_session_rwunlock(b_session);
 						}
 					}
+
 					switch_channel_clear_flag(channel, CF_BROADCAST);					
 				}
 			}

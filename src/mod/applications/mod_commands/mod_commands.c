@@ -1172,10 +1172,25 @@ SWITCH_STANDARD_API(uuid_bridge_function)
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (switch_strlen_zero(cmd) || argc != 2) {
+	if (switch_strlen_zero(cmd) || argc < 2) {
 		stream->write_function(stream, "-USAGE: %s\n", UUID_SYNTAX);
 	} else {
-		if (switch_ivr_uuid_bridge(argv[0], argv[1]) != SWITCH_STATUS_SUCCESS) {
+		switch_status_t status;
+		char *who = NULL;
+		
+		if ((status = switch_ivr_uuid_bridge(argv[0], argv[1])) != SWITCH_STATUS_SUCCESS) {
+			if (argv[2]) {
+				if ((status = switch_ivr_uuid_bridge(argv[0], argv[2])) == SWITCH_STATUS_SUCCESS) {
+					who = argv[2];
+				}
+			} 
+		} else {
+			who = argv[1];
+		}
+
+		if (status == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "+OK %s\n", who);
+		} else {
 			stream->write_function(stream, "-ERR Invalid uuid\n");
 		}
 	}

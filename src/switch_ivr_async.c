@@ -1277,8 +1277,8 @@ static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch
 	time_t now = switch_timestamp(NULL);
 	char digit[2] = "";
 	int dval;
-
-	if (!md) {
+	
+	if (!md || switch_channel_test_flag(channel, CF_INNER_BRIDGE)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 

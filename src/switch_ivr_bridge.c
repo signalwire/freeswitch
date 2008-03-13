@@ -98,6 +98,8 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 	switch_core_session_t *session_a, *session_b;
 	uint32_t loop_count = 0;
 	const char *app_name = NULL, *app_arg = NULL;
+	const char *hook_var = NULL;
+	int nosuspend  = 0;
 #ifdef SWITCH_VIDEO_IN_THREADS
     struct vid_helper vh = { 0 };
 	uint32_t vid_launch = 0;
@@ -122,7 +124,9 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 	}
 
 	switch_channel_set_flag(chan_a, CF_BRIDGED);
-
+	
+	nosuspend = switch_channel_test_flag(chan_a, CF_INNER_BRIDGE);
+	
 	for (;;) {
 		switch_channel_state_t b_state;
 		switch_status_t status;
@@ -130,17 +134,17 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 		loop_count++;
 
 		if (!switch_channel_ready(chan_a)) {
-			break;
+			goto end_of_bridge_loop;
 		}
 
 		if ((b_state = switch_channel_get_state(chan_b)) >= CS_HANGUP) {
-			break;
+			goto end_of_bridge_loop;
 		}
 
 		if (switch_channel_test_flag(chan_a, CF_TRANSFER) || switch_channel_test_flag(chan_b, CF_TRANSFER)) {
 			switch_channel_clear_flag(chan_a, CF_HOLD);
 			switch_channel_clear_flag(chan_a, CF_SUSPEND);
-			break;
+			goto end_of_bridge_loop;
 		}
 
 		if (loop_count > 50 && switch_core_session_private_event_count(session_a)) {
@@ -155,8 +159,8 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 			switch_channel_clear_flag(chan_b, CF_SUSPEND);
 		}
 		
-		if (switch_channel_test_flag(chan_a, CF_SUSPEND) || switch_channel_test_flag(chan_b, CF_SUSPEND)) {
-			switch_yield(1000);
+		if (!nosuspend && (switch_channel_test_flag(chan_a, CF_SUSPEND) || switch_channel_test_flag(chan_b, CF_SUSPEND))) {
+			switch_yield(10000);
 			continue;
 		}
 
@@ -173,16 +177,23 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 		while (switch_channel_has_dtmf(chan_a)) {
 			switch_dtmf_t dtmf = { 0, 0 };
 			if (switch_channel_dequeue_dtmf(chan_a, &dtmf) == SWITCH_STATUS_SUCCESS) {
+				int send_dtmf = 1;
+				
 				if (input_callback) {
-					if (input_callback(session_a, (void *)&dtmf, SWITCH_INPUT_TYPE_DTMF, user_data, 0) != SWITCH_STATUS_SUCCESS) {
+					switch_status_t cb_status = input_callback(session_a, (void *)&dtmf, SWITCH_INPUT_TYPE_DTMF, user_data, 0);
+					
+					if (cb_status == SWITCH_STATUS_IGNORE) {
+						send_dtmf = 0;
+					} if (cb_status != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s ended call via DTMF\n", switch_channel_get_name(chan_a));
 						switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
-						break;
+						goto end_of_bridge_loop;
 					}
 				}
 				
-
-				switch_core_session_send_dtmf(session_b, &dtmf);
+				if (send_dtmf) {
+					switch_core_session_send_dtmf(session_b, &dtmf);
+				}
 			}
 		}
 
@@ -211,13 +222,13 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 			if (!ans_b && switch_channel_test_flag(chan_b, CF_ANSWERED)) {
 				if (switch_channel_answer(chan_a) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(chan_a));
-					break;
+					goto end_of_bridge_loop;
 				}
 				ans_a++;
 			} else if (!pre_b && switch_channel_test_flag(chan_b, CF_EARLY_MEDIA)) {
 				if (switch_channel_pre_answer(chan_a) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(chan_a));
-					break;
+					goto end_of_bridge_loop;
 				}
 				pre_b++;
 			}
@@ -233,7 +244,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 			status = switch_core_session_read_video_frame(session_a, &read_frame, -1, 0);
 		
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
-				break;
+				goto end_of_bridge_loop;
 			}
 		
 			switch_core_session_write_video_frame(session_b, read_frame, -1, 0);
@@ -252,14 +263,17 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 				if (switch_core_session_write_frame(session_b, read_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "write: %s Bad Frame....[%u] Bubye!\n",
 									  switch_channel_get_name(chan_b), read_frame->datalen);
-					break;
+					goto end_of_bridge_loop;
 				}
 			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "read: %s Bad Frame.... Bubye!\n", switch_channel_get_name(chan_a));
-			break;
+			goto end_of_bridge_loop;
 		}
 	}
+
+ end_of_bridge_loop:
+
 
 #ifdef SWITCH_VIDEO_IN_THREADS
     if (vh.up) {
@@ -271,7 +285,24 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
     }
 #endif
 
+	if (!nosuspend) {
+		hook_var = switch_channel_get_variable(chan_a, SWITCH_API_BRIDGE_END_VARIABLE);
+	}
 
+	if (!switch_strlen_zero(hook_var)) {
+		switch_stream_handle_t stream = { 0 };
+		char *cmd = switch_core_session_strdup(session_a, hook_var);
+		char *arg = NULL;
+		if ((arg = strchr(cmd, ' '))) {
+			*arg++ = '\0';
+		}
+		SWITCH_STANDARD_STREAM(stream);
+		switch_api_execute(cmd, arg, NULL, &stream);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nPost-Bridge Command %s(%s):\n%s\n", cmd, arg, switch_str_nil((char *) stream.data));
+		switch_safe_free(stream.data);
+	}
+	
+	
 	if (switch_channel_get_state(chan_b) >= CS_HANGUP) {	
 		if (originator && switch_channel_ready(chan_a) && !switch_channel_test_flag(chan_a, CF_ANSWERED)) {
 			switch_channel_hangup(chan_a, switch_channel_get_cause(chan_b));
@@ -282,8 +313,8 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 	msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
 	msg.from = __FILE__;
 	switch_core_session_receive_message(session_a, &msg);
-
-	if (switch_channel_get_state(chan_a) < CS_HANGUP) {
+	
+	if (!nosuspend && switch_channel_get_state(chan_a) < CS_HANGUP) {
 		if ((app_name = switch_channel_get_variable(chan_a, SWITCH_EXEC_AFTER_BRIDGE_APP_VARIABLE))) {
 			switch_caller_extension_t *extension = NULL;
 			if ((extension = switch_caller_extension_new(session_a, app_name, app_name)) == 0) {
@@ -412,12 +443,18 @@ static switch_status_t uuid_bridge_on_transmit(switch_core_session_t *session)
 
 		switch_channel_wait_for_state(channel, other_channel, CS_RESET);
 
+		if (switch_ivr_wait_for_answer(session, other_session) != SWITCH_STATUS_SUCCESS) {
+			switch_core_session_rwunlock(other_session);
+			switch_channel_hangup(channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+			return SWITCH_STATUS_FALSE;
+		}
+
 		if (switch_channel_get_state(other_channel) == CS_RESET) {
 			switch_channel_set_state(other_channel, CS_TRANSMIT);
 		}
 
 		switch_channel_wait_for_state(channel, other_channel, CS_TRANSMIT);
-		
+
 		switch_channel_clear_flag(channel, CF_TRANSFER);
 		switch_channel_clear_flag(other_channel, CF_TRANSFER);
 		switch_core_session_reset(session, SWITCH_TRUE);
@@ -743,6 +780,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
   done:
 
+	switch_channel_clear_flag(caller_channel, CF_INNER_BRIDGE);
+	switch_channel_clear_flag(peer_channel, CF_INNER_BRIDGE);
+
 	if (br && switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(caller_channel, event);
 		switch_event_fire(&event);
@@ -772,6 +812,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 		if ((originatee_session = switch_core_session_locate(originatee_uuid))) {
 			originator_channel = switch_core_session_get_channel(originator_session);
 			originatee_channel = switch_core_session_get_channel(originatee_session);
+
+			if (switch_channel_get_state(originator_channel) >= CS_HANGUP) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s is hungup refusing to bridge.\n", switch_channel_get_name(originatee_channel));
+				switch_core_session_rwunlock(originator_session);
+				switch_core_session_rwunlock(originatee_session);
+				return SWITCH_STATUS_FALSE;
+			}
 
 			if (!switch_channel_test_flag(originator_channel, CF_ANSWERED)) {
 				if (switch_channel_test_flag(originatee_channel, CF_ANSWERED)) {
@@ -861,10 +908,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 
 		} else {
 			switch_core_session_rwunlock(originator_session);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no channel for originatee uuid %s\n", originatee_uuid);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "originatee uuid %s is not present\n", originatee_uuid);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no channel for originator uuid %s\n", originator_uuid);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "originator uuid %s is not present\n", originator_uuid);
 	}
 
 	return status;

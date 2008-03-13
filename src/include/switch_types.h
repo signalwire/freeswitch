@@ -102,6 +102,9 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_PATH_SEPARATOR "/"
 #endif
 #define SWITCH_URL_SEPARATOR "://"
+#define SWITCH_CALL_TIMEOUT_VARIABLE "call_timeout"
+#define SWITCH_HOLDING_UUID_VARIABLE "holding_uuid"
+#define SWITCH_API_BRIDGE_END_VARIABLE "api_after_bridge"
 #define SWITCH_API_HANGUP_HOOK_VARIABLE "api_hangup_hook"
 #define SWITCH_PROCESS_CDR_VARIABLE "process_cdr"
 #define SWITCH_BRIDGE_CHANNEL_VARIABLE "bridge_channel"
@@ -564,7 +567,8 @@ typedef enum {
 	SWITCH_STATUS_MORE_DATA,
 	SWITCH_STATUS_NOTFOUND,
 	SWITCH_STATUS_UNLOAD,
-	SWITCH_STATUS_NOUNLOAD
+	SWITCH_STATUS_NOUNLOAD,
+	SWITCH_STATUS_IGNORE
 } switch_status_t;
 
 
@@ -717,7 +721,8 @@ typedef enum {
 	CF_RESET = (1 << 24),
 	CF_ORIGINATING = (1 << 25),
 	CF_STOP_BROADCAST = (1 << 26),
-	CF_PROXY_MEDIA = (1 << 27)
+	CF_PROXY_MEDIA = (1 << 27),
+	CF_INNER_BRIDGE = (1 << 28)
 } switch_channel_flag_t;
 
 
