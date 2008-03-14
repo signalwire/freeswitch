@@ -1918,10 +1918,16 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_time_t uduration = 0, legbillusec = 0, billusec = 0;
 	time_t tt_created = 0, tt_answered = 0, tt_hungup = 0, mtt_created = 0, mtt_answered = 0, mtt_hungup = 0, tt_prof_created, mtt_prof_created;
 
-	if (!(caller_profile = switch_channel_get_caller_profile(channel))) {
+	if (!(caller_profile = switch_channel_get_caller_profile(channel)) || !channel->variables) {
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if ((app_log = switch_core_session_get_app_log(channel->session))) {
+		for (ap = app_log; ap && ap->next; ap = ap->next);
+		last_app = ap->app;
+		last_arg = ap->arg;
+	}
+	
 	if (!(ocp = switch_channel_get_originatee_caller_profile(channel))) {
 		ocp = switch_channel_get_originator_caller_profile(channel);
 	}
@@ -1933,11 +1939,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		cid_buf = caller_profile->caller_id_number;
 	}
 
-	if ((app_log = switch_core_session_get_app_log(channel->session))) {
-		for (ap = app_log; ap && ap->next; ap = ap->next);
-		last_app = ap->app;
-		last_arg = ap->arg;
-	}
 
 	if (caller_profile->times) {
 		switch_time_exp_t tm;
