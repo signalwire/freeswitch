@@ -1465,7 +1465,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 
 	if (session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
-		exclude_contact = switch_channel_get_variable(channel, "exclude_contact");
+		exclude_contact = switch_channel_get_variable(channel, "sip_exclude_contact");
 	}
 
 
