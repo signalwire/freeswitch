@@ -1456,12 +1456,18 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	char *profile_name = NULL;
 	char *p;
 	sofia_profile_t *profile = NULL;
-
+	const char *exclude_contact = NULL;
 
 	if (!cmd) {
 		stream->write_function(stream, "%s", "");
 		return SWITCH_STATUS_SUCCESS;
 	}
+
+	if (session) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		exclude_contact = switch_channel_get_variable(channel, "exclude_contact");
+	}
+
 
 	data = strdup(cmd);
 	switch_assert(data);
@@ -1505,7 +1511,13 @@ SWITCH_STANDARD_API(sofia_contact_function)
 			cb.profile = profile;
 			cb.stream = &mystream;
 			
-			sql = switch_mprintf("select contact from sip_registrations where sip_user='%q' and sip_host='%q'", user, domain);
+			if (exclude_contact) {
+				sql = switch_mprintf("select contact from sip_registrations where sip_user='%q' and sip_host='%q' and contact not like '%%%s%%'", 
+									 user, domain, exclude_contact);
+			} else {
+				sql = switch_mprintf("select contact from sip_registrations where sip_user='%q' and sip_host='%q'", user, domain);
+			}
+
 			switch_assert(sql);
 			sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, contact_callback, &cb);
 			switch_safe_free(sql);
