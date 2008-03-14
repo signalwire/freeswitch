@@ -485,16 +485,29 @@ done:
 	switch_safe_free(user);
 }
 
+static int EVENT_THREAD_RUNNING = 0;
+static int EVENT_THREAD_STARTED = 0;
 
 void *SWITCH_THREAD_FUNC sofia_presence_event_thread_run(switch_thread_t *thread, void *obj)
 {
 	void *pop;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Event Thread Started\n");
+	int done = 0;
 
 	switch_mutex_lock(mod_sofia_globals.mutex);
-	mod_sofia_globals.threads++;
+	if (!EVENT_THREAD_RUNNING) {
+		EVENT_THREAD_RUNNING++;
+		mod_sofia_globals.threads++;
+	} else {
+		done = 1;
+	}
 	switch_mutex_unlock(mod_sofia_globals.mutex);
 
+	if (done) {
+		return NULL;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Event Thread Started\n");
+	
 	while (mod_sofia_globals.running == 1) {
 		int count = 0;
 		
@@ -541,8 +554,9 @@ void *SWITCH_THREAD_FUNC sofia_presence_event_thread_run(switch_thread_t *thread
 
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.threads--;
+	EVENT_THREAD_RUNNING = EVENT_THREAD_STARTED = 0;
 	switch_mutex_unlock(mod_sofia_globals.mutex);
-
+	
 	return NULL;
 }
 
@@ -550,6 +564,19 @@ void sofia_presence_event_thread_start(void)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
+	int done = 0;
+
+	switch_mutex_lock(mod_sofia_globals.mutex);
+	if (!EVENT_THREAD_STARTED) {
+		EVENT_THREAD_STARTED++;
+	} else {
+		done = 1;
+	}
+	switch_mutex_unlock(mod_sofia_globals.mutex);
+
+	if (done) {
+		return;
+	}
 
 	switch_threadattr_create(&thd_attr, mod_sofia_globals.pool);
 	switch_threadattr_detach_set(thd_attr, 1);
@@ -566,6 +593,10 @@ void sofia_presence_event_handler(switch_event_t *event)
 	switch_event_dup(&cloned_event, event);
 	switch_assert(cloned_event);
 	switch_queue_push(mod_sofia_globals.presence_queue, cloned_event);
+
+	if (!EVENT_THREAD_STARTED) {
+		sofia_presence_event_thread_start();
+	}
 }
 
 void sofia_presence_mwi_event_handler(switch_event_t *event)
@@ -575,6 +606,10 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 	switch_event_dup(&cloned_event, event);
 	switch_assert(cloned_event);
 	switch_queue_push(mod_sofia_globals.mwi_queue, cloned_event);
+
+	if (!EVENT_THREAD_STARTED) {
+		sofia_presence_event_thread_start();
+	}
 }
 
 

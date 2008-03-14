@@ -1888,7 +1888,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 
 	switch_queue_create(&mod_sofia_globals.presence_queue, 500000, mod_sofia_globals.pool);
 	switch_queue_create(&mod_sofia_globals.mwi_queue, 500000, mod_sofia_globals.pool);
-	sofia_presence_event_thread_start();
 
 	if (config_sofia(0, NULL) != SWITCH_STATUS_SUCCESS) {
 		mod_sofia_globals.running = 0;
