@@ -2,7 +2,7 @@
   <!--the domain or ip (the right hand side of the @ in the addr-->
   <domain name="$${domain}">
     <params>
-      <param name="dial-string" value="{transfer_fallback_extension=${dialed_user}}sofia/${dialed_domain}/${dialed_user}"/>
+      <param name="dial-string" value="{transfer_fallback_extension=${dialed_user}}${sofia_contact(${dialed_domain}/${dialed_ext}@${dialed_domain})}"/>
     </params>
 
     <variables>
