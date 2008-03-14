@@ -34,7 +34,10 @@
 
 #include <switch.h>
 #include <switch_event.h>
+#define MAX_DISPATCH 20
+#define DISPATCH_QUEUE_LEN 1000
 
+static int SOFT_MAX_DISPATCH = 0;
 static char hostname[128] = "";
 static char guess_ip_v4[80] = "";
 static char guess_ip_v6[80] = "";
@@ -47,6 +50,7 @@ static switch_thread_cond_t *EVENT_QUEUE_CONDITIONAL = NULL;
 static switch_memory_pool_t *RUNTIME_POOL = NULL;
 static switch_memory_pool_t *THRUNTIME_POOL = NULL;
 static switch_queue_t *EVENT_QUEUE[3] = { 0, 0, 0 };
+static switch_queue_t *EVENT_DISPATCH_QUEUE[MAX_DISPATCH] = { 0 };
 static int POOL_COUNT_MAX = SWITCH_CORE_QUEUE_LEN;
 
 static switch_hash_t *CUSTOM_HASH = NULL;
@@ -54,6 +58,7 @@ static int THREAD_RUNNING = 0;
 static int EVENT_QUEUE_HAVEMORE = 0;
 static switch_queue_t *EVENT_RECYCLE_QUEUE = NULL;
 static switch_queue_t *EVENT_HEADER_RECYCLE_QUEUE = NULL;
+static void launch_dispatch_threads(int max, int len, switch_memory_pool_t *pool);
 
 static char *my_dup (const char *s)
 {
@@ -168,6 +173,33 @@ static int switch_events_match(switch_event_t *event, switch_event_node_t *node)
 	return match;
 }
 
+static void *SWITCH_THREAD_FUNC switch_event_dispatch_thread(switch_thread_t * thread, void *obj)
+{
+	switch_queue_t *queue = (switch_queue_t *) obj;
+	int THREAD_RUNNING = 1;
+	
+	while (THREAD_RUNNING == 1) {
+		void *pop = NULL;
+		switch_event_t *event = NULL;
+		
+		if (switch_queue_pop(queue, &pop) != SWITCH_STATUS_SUCCESS) {
+			break;
+		}
+
+		if (!pop) {
+			break;
+		}
+
+		event = (switch_event_t *) pop;
+		switch_event_deliver(&event);
+	}
+
+	THREAD_RUNNING = 0;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Dispatch Ended.\n");
+	return NULL;
+	
+}
+
 static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t * thread, void *obj)
 {
 	switch_event_t *out_event = NULL;
@@ -175,6 +207,7 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t * thread, vo
 	switch_queue_t *queues[3] = { 0, 0, 0 };
 	void *pop;
 	int i, len[3] = { 0, 0, 0 };
+	int index = 0;
 
 	switch_assert(thread != NULL);
 	switch_assert(obj == NULL);
@@ -198,7 +231,6 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t * thread, vo
 		len[2] = switch_queue_size(EVENT_QUEUE[SWITCH_PRIORITY_LOW]);
 		len[0] = switch_queue_size(EVENT_QUEUE[SWITCH_PRIORITY_HIGH]);
 		any = len[1] + len[2] + len[0];
-
 
 		if (!any) {
 			/* lock on havemore so we are the only ones poking at it while we check it
@@ -236,11 +268,43 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t * thread, vo
 
 		for (i = 0; i < 3; i++) {
 			if (len[i]) {
+
 				queue = queues[i];
+
 				while (queue) {
 					if (switch_queue_trypop(queue, &pop) == SWITCH_STATUS_SUCCESS) {
 						out_event = pop;
-						switch_event_deliver(&out_event);
+
+						if (!pop) {
+							continue;
+						}
+
+					retry:
+						
+						for (index = 0; index < SOFT_MAX_DISPATCH; index++) {
+							if (switch_queue_trypush(EVENT_DISPATCH_QUEUE[index], out_event) == SWITCH_STATUS_SUCCESS) {
+								out_event = NULL;
+								break;
+							}
+						}
+
+						if (out_event) {
+							switch_yield(1000);
+
+							if (SOFT_MAX_DISPATCH+1 < MAX_DISPATCH) {
+								launch_dispatch_threads(SOFT_MAX_DISPATCH+1, DISPATCH_QUEUE_LEN, RUNTIME_POOL);
+							}
+
+							goto retry;
+						}
+
+#ifdef DEBUG_DISPATCH_QUEUES
+						printf ("SIZE ");
+						for (index = 0; index < SOFT_MAX_DISPATCH; index++) {
+							printf ("%d ", switch_queue_size(EVENT_DISPATCH_QUEUE[index]));
+						}
+						printf("\n");
+#endif
 					} else {
 						break;
 					}
@@ -356,7 +420,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 	if (THREAD_RUNNING > 0) {
 		THREAD_RUNNING = -1;
 
-		/* lock on havemore to make sure he event thread, if currently running
+		/* lock on havemore to make sure the event thread, if currently running
 		 * doesn't check the HAVEMORE flag before we set it
 		 */
 		switch_mutex_lock(EVENT_QUEUE_HAVEMORE_MUTEX);
@@ -380,7 +444,12 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 			switch_mutex_unlock(EVENT_QUEUE_HAVEMORE_MUTEX);
 		}
 
-		while (x < 100 && THREAD_RUNNING) {
+		for(x = 0; x < SOFT_MAX_DISPATCH; x++) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping dispatch queue %d\n", x);
+			switch_queue_trypush(EVENT_DISPATCH_QUEUE[x], NULL);
+		}
+
+		while (x < 10000 && THREAD_RUNNING) {
 			switch_yield(1000);
 			if (THREAD_RUNNING == last) {
 				x++;
@@ -393,6 +462,35 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 	switch_core_memory_reclaim_events();
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+static void launch_dispatch_threads(int max, int len, switch_memory_pool_t *pool)
+{
+	switch_thread_t *thread;
+    switch_threadattr_t *thd_attr;;
+	int index = 0;
+
+	if (max > MAX_DISPATCH) {
+		return;
+	}
+	
+	if (max < SOFT_MAX_DISPATCH) {
+		return;
+	}
+	
+	for (index = SOFT_MAX_DISPATCH; index < max && index < MAX_DISPATCH; index++) {
+		if (EVENT_DISPATCH_QUEUE[index]) {
+			continue;
+		}
+		switch_queue_create(&EVENT_DISPATCH_QUEUE[index], len, pool);
+		switch_threadattr_create(&thd_attr, pool);
+		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+		switch_threadattr_priority_increase(thd_attr);
+		switch_thread_create(&thread, thd_attr, switch_event_dispatch_thread, EVENT_DISPATCH_QUEUE[index], pool);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Create event dispatch thread %d\n", index);
+	}
+
+	SOFT_MAX_DISPATCH = index;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
@@ -413,6 +511,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	switch_queue_create(&EVENT_QUEUE[2], POOL_COUNT_MAX + 10, THRUNTIME_POOL);
 	switch_queue_create(&EVENT_RECYCLE_QUEUE, 250000, THRUNTIME_POOL);
 	switch_queue_create(&EVENT_HEADER_RECYCLE_QUEUE, 250000, THRUNTIME_POOL);
+	
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activate Eventing Engine.\n");
 	switch_mutex_init(&BLOCK, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
@@ -422,6 +521,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	switch_thread_cond_create(&EVENT_QUEUE_CONDITIONAL, RUNTIME_POOL);
 	switch_core_hash_init(&CUSTOM_HASH, RUNTIME_POOL);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_priority_increase(thd_attr);
+
+	launch_dispatch_threads(1, DISPATCH_QUEUE_LEN, RUNTIME_POOL);
 	switch_thread_create(&thread, thd_attr, switch_event_thread, NULL, RUNTIME_POOL);
 
 	while (!THREAD_RUNNING) {
@@ -902,7 +1004,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, con
 	if (user_data) {
 		(*event)->event_user_data = user_data;
 	}
-
+	
 	switch_queue_push(EVENT_QUEUE[(*event)->priority], *event);
 
 	/* lock on havemore to make sure he event thread, if currently running

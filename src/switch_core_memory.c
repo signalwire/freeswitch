@@ -31,6 +31,10 @@
  * switch_core_memory.c -- Main Core Library (memory management)
  *
  */
+//#define DEBUG_ALLOC
+//#define DEBUG_ALLOC2
+//#define DESTROY_POOLS
+//#define PER_POOL_LOCK
 
 #include <switch.h>
 #include "private/switch_core_pvt.h"
@@ -54,7 +58,7 @@ SWITCH_DECLARE(switch_memory_pool_t *) switch_core_session_get_pool(switch_core_
 
 /* **ONLY** alloc things with this function that **WILL NOT** outlive
    the session itself or expect an earth shattering KABOOM!*/
-SWITCH_DECLARE(void *) switch_core_session_alloc(switch_core_session_t *session, switch_size_t memory)
+SWITCH_DECLARE(void *) switch_core_perform_session_alloc(switch_core_session_t *session, switch_size_t memory, const char *file, const char *func, int line)
 {
 	void *ptr = NULL;
 	switch_assert(session != NULL);
@@ -65,7 +69,8 @@ SWITCH_DECLARE(void *) switch_core_session_alloc(switch_core_session_t *session,
 #endif
 
 #ifdef DEBUG_ALLOC
-	printf("Allocate %d\n", (int)memory);
+	if (memory > 500)
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Session Allocate %d\n", (int)memory);
 #endif
 
 	ptr = apr_palloc(session->pool, memory);
@@ -83,7 +88,7 @@ SWITCH_DECLARE(void *) switch_core_session_alloc(switch_core_session_t *session,
 /* **ONLY** alloc things with these functions that **WILL NOT** need
    to be freed *EVER* ie this is for *PERMANENT* memory allocation */
 
-SWITCH_DECLARE(void *) switch_core_permanent_alloc(switch_size_t memory)
+SWITCH_DECLARE(void *) switch_core_perform_permanent_alloc(switch_size_t memory, const char *file, const char *func, int line)
 {
 	void *ptr = NULL;
 	switch_assert(memory_manager.memory_pool != NULL);
@@ -93,7 +98,7 @@ SWITCH_DECLARE(void *) switch_core_permanent_alloc(switch_size_t memory)
 #endif
 
 #ifdef DEBUG_ALLOC
-	printf("Perm Allocate %d\n", (int)memory);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Perm Allocate %d\n", (int)memory);
 #endif
 
 	ptr = apr_palloc(memory_manager.memory_pool, memory);
@@ -108,7 +113,7 @@ SWITCH_DECLARE(void *) switch_core_permanent_alloc(switch_size_t memory)
 	return ptr;
 }
 
-SWITCH_DECLARE(char *) switch_core_permanent_strdup(const char *todup)
+SWITCH_DECLARE(char *) switch_core_perform_permanent_strdup(const char *todup, const char *file, const char *func, int line)
 {
 	char *duped = NULL;
 	switch_size_t len;
@@ -126,7 +131,7 @@ SWITCH_DECLARE(char *) switch_core_permanent_strdup(const char *todup)
 	switch_assert(duped != NULL);
 
 #ifdef DEBUG_ALLOC
-	printf("Perm Allocate %d\n", (int)len);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Perm Allocate %d\n", (int)len);
 #endif
 
 #ifdef LOCK_MORE
@@ -184,7 +189,7 @@ SWITCH_DECLARE(char *) switch_core_sprintf(switch_memory_pool_t *pool, const cha
 	return result;
 }
 
-SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session_t *session, const char *todup)
+SWITCH_DECLARE(char *) switch_core_perform_session_strdup(switch_core_session_t *session, const char *todup, const char *file, const char *func, int line)
 {
 	char *duped = NULL;
 	switch_size_t len;
@@ -202,7 +207,8 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session_t *session
 	len = strlen(todup) + 1;
 
 #ifdef DEBUG_ALLOC
-	printf("Allocate %d\n", (int)len);
+	if (len > 500)
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Sess Strdup Allocate %d\n", (int)len);
 #endif
 
 	duped = apr_pstrmemdup(session->pool, todup, len);
@@ -216,7 +222,7 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session_t *session
 	return duped;
 }
 
-SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool_t *pool, const char *todup)
+SWITCH_DECLARE(char *) switch_core_perform_strdup(switch_memory_pool_t *pool, const char *todup, const char *file, const char *func, int line)
 {
 	char *duped = NULL;
 	switch_size_t len;
@@ -233,7 +239,8 @@ SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool_t *pool, const char
 	len = strlen(todup) + 1;
 
 #ifdef DEBUG_ALLOC
-	printf("Allocate %d\n", (int)len);
+	if (len > 500)
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "core strdup Allocate %d\n", (int)len);
 #endif
 
 	duped = apr_pstrmemdup(pool, todup, len);
@@ -294,7 +301,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memor
 #endif
 
 #ifdef DEBUG_ALLOC2
-	printf("New Pool %s %s:%d\n", file, func, line);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "New Pool\n");
 #endif
 	tmp = switch_core_sprintf(*pool, "%s:%d", func, line);
 	apr_pool_tag(*pool, tmp);
@@ -311,7 +318,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(switch_m
 	switch_assert(pool != NULL);
 
 #ifdef DEBUG_ALLOC2
-	printf("Free Pool %s %s:%d\n", file, func, line);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Free Pool\n");
 #endif
 
 	if (switch_queue_push(memory_manager.pool_queue, *pool) != SWITCH_STATUS_SUCCESS) {
@@ -322,7 +329,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(switch_m
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool_t *pool, switch_size_t memory)
+SWITCH_DECLARE(void *) switch_core_perform_alloc(switch_memory_pool_t *pool, switch_size_t memory, const char *file, const char *func, int line)
 {
 	void *ptr = NULL;
 
@@ -333,7 +340,8 @@ SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool_t *pool, switch_size
 #endif
 
 #ifdef DEBUG_ALLOC
-	printf("Allocate %d\n", (int)memory);
+	if (memory > 500)
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Core Allocate %d\n", (int)memory);
 	/*switch_assert(memory < 20000);*/
 #endif
 

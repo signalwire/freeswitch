@@ -226,81 +226,90 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 
 	ret = switch_vasprintf(&data, fmt, ap);
 	va_end(ap);
+
 	if (ret == -1) {
 		fprintf(stderr, "Memory Error\n");
+		goto end;
+	}
+
+	if (channel == SWITCH_CHANNEL_ID_LOG_CLEAN) {
+		content = data;
 	} else {
-
-		if (channel == SWITCH_CHANNEL_ID_LOG_CLEAN) {
-			content = data;
-		} else {
-			if ((content = strchr(data, 128))) {
-				*content = ' ';
-			}
-		}
-
-		if (channel == SWITCH_CHANNEL_ID_EVENT) {
-			switch_event_t *event;
-			if (switch_event_running() == SWITCH_STATUS_SUCCESS && switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Data", "%s", data);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-File", "%s", filep);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Function", "%s", funcp);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Line", "%d", line);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Level", "%d", (int) level);
-				switch_event_fire(&event);
-			}
-		} else {
-			if (level == SWITCH_LOG_CONSOLE || !LOG_QUEUE || !THREAD_RUNNING) {
-				if (handle) {
-					int aok = 1;
-#ifndef WIN32
-
-					fd_set can_write;
-					int fd;
-					struct timeval to;
-					
-					fd = fileno(handle);
-					memset(&to, 0, sizeof(to));
-					FD_SET(fd, &can_write);
-					to.tv_sec = 0;
-					to.tv_usec = 5000;
-					if (select(fd+1, NULL, &can_write, NULL, &to) > 0) {
-						aok = FD_ISSET(fd, &can_write);
-					} else {
-						aok = 0;
-					}
-#endif
-					if (aok) {
-						fprintf(handle, "%s", data);
-					}
-				}
-				free(data);
-			} else if (level <= MAX_LEVEL) {
-				switch_log_node_t *node;
-				void *pop = NULL;
-
-				if (switch_queue_trypop(LOG_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
-					node = (switch_log_node_t *) pop;
-				} else {
-					node = malloc(sizeof(*node));
-					switch_assert(node);			
-				}
-
-				node->data = data;
-				switch_set_string(node->file, filep);
-				switch_set_string(node->func, funcp);
-				node->line = line;
-				node->level = level;
-				node->content = content;
-				node->timestamp = now;
-				if (switch_queue_trypush(LOG_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
-					free(node->data);
-					free(node);
-					node = NULL;
-				}
-			}
+		if ((content = strchr(data, 128))) {
+			*content = ' ';
 		}
 	}
 
+	if (channel == SWITCH_CHANNEL_ID_EVENT) {
+		switch_event_t *event;
+		if (switch_event_running() == SWITCH_STATUS_SUCCESS && switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Data", "%s", data);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-File", "%s", filep);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Function", "%s", funcp);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Line", "%d", line);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Level", "%d", (int) level);
+			switch_event_fire(&event);
+			data = NULL;
+		}
+
+		goto end;
+	}
+
+	if (level == SWITCH_LOG_CONSOLE || !LOG_QUEUE || !THREAD_RUNNING) {
+		if (handle) {
+			int aok = 1;
+#ifndef WIN32
+
+			fd_set can_write;
+			int fd;
+			struct timeval to;
+					
+			fd = fileno(handle);
+			memset(&to, 0, sizeof(to));
+			FD_SET(fd, &can_write);
+			to.tv_sec = 0;
+			to.tv_usec = 5000;
+			if (select(fd+1, NULL, &can_write, NULL, &to) > 0) {
+				aok = FD_ISSET(fd, &can_write);
+			} else {
+				aok = 0;
+			}
+#endif
+			if (aok) {
+				fprintf(handle, "%s", data);
+			}
+		}
+	} else if (level <= MAX_LEVEL) {
+		switch_log_node_t *node;
+		void *pop = NULL;
+
+		if (switch_queue_trypop(LOG_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
+			node = (switch_log_node_t *) pop;
+		} else {
+			node = malloc(sizeof(*node));
+			switch_assert(node);			
+		}
+
+		node->data = data;
+		data = NULL;
+		switch_set_string(node->file, filep);
+		switch_set_string(node->func, funcp);
+		node->line = line;
+		node->level = level;
+		node->content = content;
+		node->timestamp = now;
+		if (switch_queue_trypush(LOG_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
+			free(node->data);
+			if (switch_queue_trypush(LOG_RECYCLE_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
+				free(node);
+			}
+			node = NULL;
+		}
+	}
+	
+ end:
+
+	switch_safe_free(data);
 	switch_safe_free(new_fmt);
 	fflush(handle);
 }

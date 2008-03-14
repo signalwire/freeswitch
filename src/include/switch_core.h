@@ -393,7 +393,8 @@ SWITCH_DECLARE(unsigned int) switch_core_session_running(_In_ switch_core_sessio
   \return a void pointer to the allocated memory
   \note this memory never goes out of scope until the core is destroyed
 */
-SWITCH_DECLARE(void *) switch_core_permanent_alloc(_In_ switch_size_t memory);
+SWITCH_DECLARE(void *) switch_core_perform_permanent_alloc(_In_ switch_size_t memory, _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
+#define switch_core_permanent_alloc(m) switch_core_perform_permanent_alloc(m, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 /*! 
   \brief Allocate memory directly from a memory pool
@@ -401,8 +402,8 @@ SWITCH_DECLARE(void *) switch_core_permanent_alloc(_In_ switch_size_t memory);
   \param memory the number of bytes to allocate
   \return a void pointer to the allocated memory
 */
-SWITCH_DECLARE(void *) switch_core_alloc(_In_ switch_memory_pool_t *pool, _In_ switch_size_t memory);
-
+SWITCH_DECLARE(void *) switch_core_perform_alloc(_In_ switch_memory_pool_t *pool, _In_ switch_size_t memory, _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
+#define switch_core_alloc(p, m) switch_core_perform_alloc(p, m, __FILE__, __SWITCH_FUNC__, __LINE__)
 /*! 
   \brief Allocate memory from a session's pool
   \param session the session to request memory from
@@ -410,14 +411,17 @@ SWITCH_DECLARE(void *) switch_core_alloc(_In_ switch_memory_pool_t *pool, _In_ s
   \return a void pointer to the newly allocated memory
   \note the memory will be in scope as long as the session exists
 */
-_Ret_ SWITCH_DECLARE(void *) switch_core_session_alloc(_In_ switch_core_session_t *session, _In_ switch_size_t memory);
+_Ret_ SWITCH_DECLARE(void *) switch_core_perform_session_alloc(_In_ switch_core_session_t *session, _In_ switch_size_t memory, const char *file, const char *func, int line);
+#define switch_core_session_alloc(s, m) switch_core_perform_session_alloc(s, m, __FILE__, __SWITCH_FUNC__, __LINE__)
+
 
 /*! 
   \brief Copy a string using permanent memory allocation
   \param todup the string to duplicate
   \return a pointer to the newly duplicated string
 */
-SWITCH_DECLARE(char *) switch_core_permanent_strdup(_In_z_ const char *todup);
+SWITCH_DECLARE(char *) switch_core_perform_permanent_strdup(_In_z_ const char *todup,  _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
+#define switch_core_permanent_strdup(t) switch_core_perform_permanent_strdup(t, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 /*! 
   \brief Copy a string using memory allocation from a session's pool
@@ -425,7 +429,8 @@ SWITCH_DECLARE(char *) switch_core_permanent_strdup(_In_z_ const char *todup);
   \param todup the string to duplicate
   \return a pointer to the newly duplicated string
 */
-SWITCH_DECLARE(char *) switch_core_session_strdup(_In_ switch_core_session_t *session, _In_z_ const char *todup);
+SWITCH_DECLARE(char *) switch_core_perform_session_strdup(_In_ switch_core_session_t *session, _In_z_ const char *todup, _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
+#define switch_core_session_strdup(s, t) switch_core_perform_session_strdup(s, t, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 /*! 
   \brief Copy a string using memory allocation from a given pool
@@ -433,7 +438,8 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(_In_ switch_core_session_t *se
   \param todup the string to duplicate
   \return a pointer to the newly duplicated string
 */
-SWITCH_DECLARE(char *) switch_core_strdup(_In_ switch_memory_pool_t *pool, _In_z_ const char *todup);
+SWITCH_DECLARE(char *) switch_core_perform_strdup(_In_ switch_memory_pool_t *pool, _In_z_ const char *todup, _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
+#define switch_core_strdup(p, t)  switch_core_perform_strdup(p, t, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 /*!
   \brief printf-style style printing routine.  The data is output to a string allocated from the session
