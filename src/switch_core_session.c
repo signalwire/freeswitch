@@ -739,6 +739,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t * thr
 			switch_assert(event_str);
 			switch_core_memory_pool_tag(switch_core_session_get_pool(session), switch_core_session_strdup(session, event_str));
 			free(event_str);
+			switch_event_destroy(&event);
 		}
 	}
 
