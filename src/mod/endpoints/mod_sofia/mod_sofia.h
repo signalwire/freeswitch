@@ -177,6 +177,7 @@ typedef enum {
 } TFLAGS;
 
 struct mod_sofia_globals {
+	switch_memory_pool_t *pool;
 	switch_hash_t *profile_hash;
 	switch_hash_t *gateway_hash;
 	switch_mutex_t *hash_mutex;
@@ -185,6 +186,8 @@ struct mod_sofia_globals {
 	int32_t threads;
 	switch_mutex_t *mutex;
 	char guess_ip[80];
+	switch_queue_t *presence_queue;
+	switch_queue_t *mwi_queue;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 
@@ -598,3 +601,4 @@ const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name);
 switch_status_t sofia_glue_build_crypto(private_object_t *tech_pvt, int index, switch_rtp_crypto_key_type_t type, switch_rtp_crypto_direction_t direction);
 void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt);
 switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt);
+void sofia_presence_event_thread_start(void);

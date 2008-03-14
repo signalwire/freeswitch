@@ -40,6 +40,8 @@ static int sofia_presence_sub_reg_callback(void *pArg, int argc, char **argv, ch
 static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char **columnNames);
 static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char **columnNames);
 
+
+
 struct presence_helper {
 	sofia_profile_t *profile;
 	switch_event_t *event;
@@ -186,7 +188,7 @@ char *sofia_presence_translate_rpid(char *in, char *ext)
 	return r;
 }
 
-void sofia_presence_mwi_event_handler(switch_event_t *event)
+static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 {
 	char *account, *dup_account, *yn, *host, *user;
 	char *sql;
@@ -275,7 +277,7 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 	}
 }
 
-void sofia_presence_event_handler(switch_event_t *event)
+static void actual_sofia_presence_event_handler(switch_event_t *event)
 {
 	sofia_profile_t *profile = NULL;
 	switch_hash_index_t *hi;
@@ -289,6 +291,11 @@ void sofia_presence_event_handler(switch_event_t *event)
 	char *sql = NULL;
 	char *euser = NULL, *user = NULL, *host = NULL;
 
+	
+	if (!mod_sofia_globals.running) {
+		return;
+	}
+	
 	if (rpid && !strcasecmp(rpid, "n/a")) {
 		rpid = NULL;
 	}
@@ -452,19 +459,23 @@ void sofia_presence_event_handler(switch_event_t *event)
 			helper.profile = profile;
             helper.event = event;
 			SWITCH_STANDARD_STREAM(helper.stream);
+			switch_assert(helper.stream.data);
+
 			sofia_glue_execute_sql_callback(profile,
 											SWITCH_FALSE,
-											profile->ireg_mutex,
+											//profile->ireg_mutex,
+											NULL,
 											sql,
 											sofia_presence_sub_callback,
 											&helper);
 			
-
-			if (!switch_strlen_zero((char *)helper.stream.data)) {
+			if (switch_strlen_zero((char *)helper.stream.data)) {
+				switch_safe_free(helper.stream.data);
+			} else {
 				char *ssql = (char *)helper.stream.data;
 				sofia_glue_execute_sql(profile, &ssql, SWITCH_TRUE);
-				helper.stream.data = NULL;
 			}
+			helper.stream.data = NULL;
 		}
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
@@ -473,6 +484,99 @@ done:
 	switch_safe_free(sql);
 	switch_safe_free(user);
 }
+
+
+void *SWITCH_THREAD_FUNC sofia_presence_event_thread_run(switch_thread_t *thread, void *obj)
+{
+	void *pop;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Event Thread Started\n");
+
+	switch_mutex_lock(mod_sofia_globals.mutex);
+	mod_sofia_globals.threads++;
+	switch_mutex_unlock(mod_sofia_globals.mutex);
+
+	while (mod_sofia_globals.running == 1) {
+		int count = 0;
+		
+		if (switch_queue_trypop(mod_sofia_globals.presence_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+			switch_event_t *event = (switch_event_t *) pop;
+
+			if (!pop) {
+				break;
+			}
+
+			actual_sofia_presence_event_handler(event);
+			switch_event_destroy(&event);
+			count++;
+		}
+
+		if (switch_queue_trypop(mod_sofia_globals.mwi_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+			switch_event_t *event = (switch_event_t *) pop;
+
+			if (!pop) {
+				break;
+			}
+
+			actual_sofia_presence_mwi_event_handler(event);
+			switch_event_destroy(&event);
+			count++;
+		}
+
+		if (!count) {
+			switch_yield(100000);
+		}
+	}
+
+	while (switch_queue_trypop(mod_sofia_globals.presence_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+		switch_event_t *event = (switch_event_t *) pop;
+		switch_event_destroy(&event);
+	}
+	
+	while (switch_queue_trypop(mod_sofia_globals.mwi_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+		switch_event_t *event = (switch_event_t *) pop;
+		switch_event_destroy(&event);
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Event Thread Ended\n");
+
+	switch_mutex_lock(mod_sofia_globals.mutex);
+	mod_sofia_globals.threads--;
+	switch_mutex_unlock(mod_sofia_globals.mutex);
+
+	return NULL;
+}
+
+void sofia_presence_event_thread_start(void)
+{
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+
+	switch_threadattr_create(&thd_attr, mod_sofia_globals.pool);
+	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_priority_increase(thd_attr);
+	switch_thread_create(&thread, thd_attr, sofia_presence_event_thread_run, NULL, mod_sofia_globals.pool);
+}
+
+
+void sofia_presence_event_handler(switch_event_t *event)
+{
+	switch_event_t *cloned_event;
+
+	switch_event_dup(&cloned_event, event);
+	switch_assert(cloned_event);
+	switch_queue_push(mod_sofia_globals.presence_queue, cloned_event);
+}
+
+void sofia_presence_mwi_event_handler(switch_event_t *event)
+{
+	switch_event_t *cloned_event;
+
+	switch_event_dup(&cloned_event, event);
+	switch_assert(cloned_event);
+	switch_queue_push(mod_sofia_globals.mwi_queue, cloned_event);
+}
+
 
 static int sofia_presence_sub_reg_callback(void *pArg, int argc, char **argv, char **columnNames)
 {

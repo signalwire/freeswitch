@@ -48,8 +48,6 @@ static char silence_data[13] = "";
 
 #define STRLEN 15
 
-static switch_memory_pool_t *module_pool = NULL;
-
 static switch_status_t sofia_on_init(switch_core_session_t *session);
 
 static switch_status_t sofia_on_loopback(switch_core_session_t *session);
@@ -1874,20 +1872,23 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	silence_frame.buflen = sizeof(silence_data);
 	silence_frame.flags = SFF_CNG;
 
-	module_pool = pool;
-
 	memset(&mod_sofia_globals, 0, sizeof(mod_sofia_globals));
-	switch_mutex_init(&mod_sofia_globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
+	mod_sofia_globals.pool = pool;
+	switch_mutex_init(&mod_sofia_globals.mutex, SWITCH_MUTEX_NESTED, mod_sofia_globals.pool);
 
 	switch_find_local_ip(mod_sofia_globals.guess_ip, sizeof(mod_sofia_globals.guess_ip), AF_INET);
 
-	switch_core_hash_init(&mod_sofia_globals.profile_hash, module_pool);
-	switch_core_hash_init(&mod_sofia_globals.gateway_hash, module_pool);
-	switch_mutex_init(&mod_sofia_globals.hash_mutex, SWITCH_MUTEX_NESTED, module_pool);
+	switch_core_hash_init(&mod_sofia_globals.profile_hash, mod_sofia_globals.pool);
+	switch_core_hash_init(&mod_sofia_globals.gateway_hash, mod_sofia_globals.pool);
+	switch_mutex_init(&mod_sofia_globals.hash_mutex, SWITCH_MUTEX_NESTED, mod_sofia_globals.pool);
 	
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.running = 1;
 	switch_mutex_unlock(mod_sofia_globals.mutex);
+
+	switch_queue_create(&mod_sofia_globals.presence_queue, 500000, mod_sofia_globals.pool);
+	switch_queue_create(&mod_sofia_globals.mwi_queue, 500000, mod_sofia_globals.pool);
+	sofia_presence_event_thread_start();
 
 	if (config_sofia(0, NULL) != SWITCH_STATUS_SUCCESS) {
 		mod_sofia_globals.running = 0;
@@ -1970,8 +1971,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 
 	su_deinit();
 
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	switch_core_hash_destroy(&mod_sofia_globals.profile_hash);
 	switch_core_hash_destroy(&mod_sofia_globals.gateway_hash);
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
