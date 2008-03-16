@@ -47,7 +47,7 @@ static switch_mutex_t *BLOCK = NULL;
 static switch_mutex_t *POOL_LOCK = NULL;
 static switch_memory_pool_t *RUNTIME_POOL = NULL;
 static switch_memory_pool_t *THRUNTIME_POOL = NULL;
-static switch_queue_t *EVENT_QUEUE[3] = { 0, 0, 0 };
+static switch_queue_t *EVENT_QUEUE[MAX_DISPATCH] = { 0 };
 static switch_queue_t *EVENT_DISPATCH_QUEUE[MAX_DISPATCH] = { 0 };
 static int POOL_COUNT_MAX = SWITCH_CORE_QUEUE_LEN;
 static switch_mutex_t *EVENT_QUEUE_MUTEX = NULL;
@@ -398,7 +398,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 static void launch_dispatch_threads(int max, int len, switch_memory_pool_t *pool)
 {
 	switch_thread_t *thread;
-    switch_threadattr_t *thd_attr;;
+    switch_threadattr_t *thd_attr;
 	int index = 0;
 
 	if (max > MAX_DISPATCH) {
