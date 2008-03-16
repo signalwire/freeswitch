@@ -30,15 +30,21 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+#if HAVE_NETDB_H
+#include <netdb.h>
+#endif
+
 #include "openzap.h"
 #include <ss7_boost_client.h>
 
-#ifndef gethostbyname_r
-extern int gethostbyname_r (__const char *__restrict __name,
-							struct hostent *__restrict __result_buf,
-							char *__restrict __buf, size_t __buflen,
-							struct hostent **__restrict __result,
-							int *__restrict __h_errnop);
+
+#ifndef HAVE_GETHOSTBYNAME_R
+extern int gethostbyname_r (const char *__name,
+							struct hostent *__result_buf,
+							char *__buf, size_t __buflen,
+							struct hostent **__result,
+							int *__h_errnop);
 #endif
 
 struct ss7bc_map {

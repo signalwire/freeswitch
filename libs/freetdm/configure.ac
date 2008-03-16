@@ -45,7 +45,8 @@ sun)
     ;;
 esac
 
-AC_CHECK_HEADERS([netinet/sctp.h])
+AC_CHECK_HEADERS([netinet/sctp.h netdb.h])
+AC_CHECK_FUNCS([gethostbyname_r]) 
 
 #  Enable debugging
 AC_ARG_ENABLE(debug,
