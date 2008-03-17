@@ -39,7 +39,7 @@
 #endif
 
 #define MAX_TICK UINT32_MAX - 1024
-
+#define MS_PER_TICK 10
 static switch_memory_pool_t *module_pool = NULL;
 
 static struct {
@@ -364,25 +364,19 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			tick = 0;
 		}
 
-
-		for (x = 0; x <= MAX_ELEMENTS; x++) {
-			int i = x, index;
-
-			if (i == 0) {
-				i = 1;
-			}
-			
-			index = (current_ms % i == 0) ? i : 0; 
-			
-			if (TIMER_MATRIX[index].count) {
-				TIMER_MATRIX[index].tick++;
-				if (TIMER_MATRIX[x].tick == MAX_TICK) {
-					TIMER_MATRIX[x].tick = 0;
-					TIMER_MATRIX[x].roll++;
+		if ((current_ms % MS_PER_TICK) == 0) {
+			for (x = MS_PER_TICK; x <= MAX_ELEMENTS; x += MS_PER_TICK) {
+				if ((current_ms % x) == 0) {
+					if (TIMER_MATRIX[x].count) {
+						TIMER_MATRIX[x].tick++;
+						if (TIMER_MATRIX[x].tick == MAX_TICK) {
+							TIMER_MATRIX[x].tick = 0;
+							TIMER_MATRIX[x].roll++;
+						}
+					}
 				}
 			}
 		}
-		
 		if (current_ms == MAX_ELEMENTS) {
 			current_ms = 0;
 		}
