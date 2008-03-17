@@ -94,7 +94,7 @@ SWITCH_DECLARE(int) switch_core_db_exec(switch_core_db_t *db, const char *sql, s
 		}
 	}
 
-	if (err && errmsg) {
+	if (errmsg) {
 		*errmsg = err;
 	}
 
