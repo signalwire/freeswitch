@@ -154,6 +154,35 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_video_write_codec(switc
 }
 
 
+SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, switch_codec_t *new_codec, switch_memory_pool_t *pool)
+{
+	switch_status_t status;
+
+	switch_assert(codec != NULL);
+	switch_assert(new_codec != NULL);
+
+	if (pool) {
+		new_codec->memory_pool = pool;
+	} else {
+		if ((status = switch_core_new_memory_pool(&new_codec->memory_pool)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+		switch_set_flag(new_codec, SWITCH_CODEC_FLAG_FREE_POOL);
+	}
+
+	new_codec->codec_interface = codec->codec_interface;
+	new_codec->implementation = codec->implementation;
+	new_codec->flags = codec->flags;
+	
+	if (codec->fmtp_in) {
+		new_codec->fmtp_in = switch_core_strdup(new_codec->memory_pool, codec->fmtp_in);
+	}
+	
+	new_codec->implementation->init(new_codec, new_codec->flags, NULL);
+	
+	return SWITCH_STATUS_SUCCESS;	
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, char *codec_name, char *fmtp,
 													   uint32_t rate, int ms, int channels, uint32_t flags,
 													   const switch_codec_settings_t *codec_settings, switch_memory_pool_t *pool)
@@ -304,6 +333,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 	if (switch_test_flag(codec, SWITCH_CODEC_FLAG_FREE_POOL)) {
 		switch_core_destroy_memory_pool(&codec->memory_pool);
 	}
+
+	memset(codec, 0, sizeof(*codec));
 
 	return SWITCH_STATUS_SUCCESS;
 }

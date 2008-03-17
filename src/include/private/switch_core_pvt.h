@@ -138,6 +138,7 @@ struct switch_core_session {
 	switch_frame_t enc_read_frame;
 	uint8_t raw_read_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	uint8_t enc_read_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	switch_codec_t bug_codec;
 };
 
 struct switch_media_bug {

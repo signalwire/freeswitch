@@ -186,7 +186,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 		if (read_frame->codec || is_cng) {
 			session->raw_read_frame.datalen = session->raw_read_frame.buflen;
-
+			
 			if (is_cng) {
 				memset(session->raw_read_frame.data, 255, read_frame->codec->implementation->bytes_per_frame);
 				session->raw_read_frame.datalen = read_frame->codec->implementation->bytes_per_frame;
@@ -194,7 +194,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				read_frame = &session->raw_read_frame;
 				status = SWITCH_STATUS_SUCCESS;
 			} else {
-				status = switch_core_codec_decode(read_frame->codec,
+				switch_codec_t *use_codec = read_frame->codec;
+				if (do_bugs) {
+					if (!session->bug_codec.implementation) {
+						switch_core_codec_copy(read_frame->codec, &session->bug_codec, switch_core_session_get_pool(session));
+					}
+					use_codec = &session->bug_codec;
+				}
+
+				status = switch_core_codec_decode(use_codec,
 												  session->read_codec,
 												  read_frame->data,
 												  read_frame->datalen,
