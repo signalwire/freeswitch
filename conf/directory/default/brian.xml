@@ -1,6 +1,6 @@
 <include>
   <!-- ipauth if you have an ip= in the user attributes ie ip="1.2.3.4"  -->
-  <!-- <user ip="1.2.3.4"> -->
+  <!-- <user id="brian" ip="1.2.3.4"> -->
   <user id="brian" mailbox="9999"> 
     <!-- Outbound Registrations Related to this user -->
     <gateways>
