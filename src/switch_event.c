@@ -47,7 +47,8 @@ static switch_mutex_t *BLOCK = NULL;
 static switch_mutex_t *POOL_LOCK = NULL;
 static switch_memory_pool_t *RUNTIME_POOL = NULL;
 static switch_memory_pool_t *THRUNTIME_POOL = NULL;
-static switch_queue_t *EVENT_QUEUE[MAX_DISPATCH] = { 0 };
+#define NUMBER_OF_QUEUES 3
+static switch_queue_t *EVENT_QUEUE[NUMBER_OF_QUEUES] = { 0 };
 static switch_queue_t *EVENT_DISPATCH_QUEUE[MAX_DISPATCH] = { 0 };
 static int POOL_COUNT_MAX = SWITCH_CORE_QUEUE_LEN;
 static switch_mutex_t *EVENT_QUEUE_MUTEX = NULL;
@@ -179,7 +180,7 @@ static void *SWITCH_THREAD_FUNC switch_event_dispatch_thread(switch_thread_t * t
 	THREAD_COUNT++;
 	switch_mutex_unlock(EVENT_QUEUE_MUTEX);
 
-	for (my_id = 0; my_id < MAX_DISPATCH; my_id++) {
+	for (my_id = 0; my_id < NUMBER_OF_QUEUES; my_id++) {
 		if (EVENT_DISPATCH_QUEUE[my_id] == queue) {
 			break;
 		}
@@ -222,7 +223,7 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t * thread, vo
 	THREAD_COUNT++;
 	switch_mutex_unlock(EVENT_QUEUE_MUTEX);
 
-	for (my_id = 0; my_id < MAX_DISPATCH; my_id++) {
+	for (my_id = 0; my_id < NUMBER_OF_QUEUES; my_id++) {
 		if (EVENT_QUEUE[my_id] == queue) {
 			break;
 		}
