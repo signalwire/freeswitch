@@ -2487,7 +2487,7 @@ void sofia_glue_sql_close(sofia_profile_t *profile)
 }
 
 
-void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t dyn)
+void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t sql_already_dynamic)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *d_sql = NULL, *sql;
@@ -2496,7 +2496,7 @@ void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t
 	sql = *sqlp;
 	
 	if (profile->sql_queue) {
-		if (dyn) {
+		if (sql_already_dynamic) {
 			d_sql = sql;
 		} else {
 			d_sql = strdup(sql);
@@ -2504,19 +2504,19 @@ void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t
 
 		switch_assert(d_sql);
 		status = switch_queue_trypush(profile->sql_queue, d_sql);
+	} else if (sql_already_dynamic) {
+		d_sql = sql;
 	}
 	
-	if (status == SWITCH_STATUS_SUCCESS) {
-		if (dyn) {
-			*sqlp = NULL;
-		}
-	} else {
-		if (!dyn) {
-			switch_safe_free(d_sql);
-		}
+	if (status != SWITCH_STATUS_SUCCESS) {
 		sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 	}
 
+	switch_safe_free(d_sql);		
+
+	if (sql_already_dynamic) {
+		*sqlp = NULL;
+	}
 }
 
 void sofia_glue_actually_execute_sql(sofia_profile_t *profile, switch_bool_t master, char *sql, switch_mutex_t *mutex)
