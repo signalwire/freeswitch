@@ -436,6 +436,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 			void *pop;
 			switch_mutex_lock(profile->ireg_mutex);
 			while (switch_queue_trypop(profile->sql_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+				printf("WTF [%s]\n", (char *)pop);
 				sofia_glue_actually_execute_sql(profile, SWITCH_TRUE, (char *) pop, NULL);
 				free(pop);
 			}

@@ -2503,16 +2503,18 @@ void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t
 		}
 
 		switch_assert(d_sql);
-		status = switch_queue_trypush(profile->sql_queue, d_sql);
+		if ((status = switch_queue_trypush(profile->sql_queue, d_sql)) == SWITCH_STATUS_SUCCESS) {
+			d_sql = NULL;
+		}
 	} else if (sql_already_dynamic) {
 		d_sql = sql;
 	}
-	
+
 	if (status != SWITCH_STATUS_SUCCESS) {
 		sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 	}
 
-	switch_safe_free(d_sql);		
+	switch_safe_free(d_sql);
 
 	if (sql_already_dynamic) {
 		*sqlp = NULL;
