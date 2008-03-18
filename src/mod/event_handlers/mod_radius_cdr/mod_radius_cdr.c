@@ -147,10 +147,7 @@ static switch_status_t my_on_ring(switch_core_session_t *session)
 	char 		*uuid_str;
     
 	switch_time_exp_t tm;
-    switch_size_t retsize;
-    const char *fmt = "%Y-%m-%d %T";
-	char created[80] = "", answered[80] = "", transferred[80] = "", hungup[80] = "";
-
+	char buffer[32];
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[mod_radius_cdr] Entering my_on_ring\n");
 
@@ -207,23 +204,6 @@ static switch_status_t my_on_ring(switch_core_session_t *session)
 			calltransferdate = profile->times->transferred;
 			callenddate = profile->times->hungup;
 		
-			if (callstartdate > 0) {
-				switch_time_exp_lt(&tm, callstartdate);
-				switch_strftime(created, &retsize, sizeof(created), fmt, &tm);
-			}
-			if (callanswerdate > 0) {
-				switch_time_exp_lt(&tm, callanswerdate);
-				switch_strftime(answered, &retsize, sizeof(answered), fmt, &tm);
-			}
-			if (calltransferdate > 0) {
-				switch_time_exp_lt(&tm, calltransferdate);
-				switch_strftime(transferred, &retsize, sizeof(transferred), fmt, &tm);
-			}
-			if (callenddate > 0) { 
-				switch_time_exp_lt(&tm, callenddate);
-				switch_strftime(hungup, &retsize, sizeof(hungup), fmt, &tm);
-			}
-
 			if (profile->username) {
 				if (rc_avpair_add(rad_config, &send, PW_USER_NAME, (void *)profile->username, -1, 0) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
@@ -313,36 +293,56 @@ static switch_status_t my_on_ring(switch_core_session_t *session)
 				}
 			} 
 			if (callstartdate > 0) {
-				if (rc_avpair_add(rad_config, &send, PW_FS_CALLSTARTDATE, &created, -1, PW_FS_PEC) == NULL) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-						"failed adding Freeswitch-Callstartdate: %s\n", created);
+				switch_time_exp_lt(&tm, callstartdate);
+				switch_snprintf(buffer, sizeof(buffer), "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
+					tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+					tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec,
+					tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
+				if (rc_avpair_add(rad_config, &send, PW_FS_CALLSTARTDATE, &buffer, -1, PW_FS_PEC) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+						"failed adding Freeswitch-Callstartdate: %s\n", buffer);
 					rc_destroy(rad_config);
 					return SWITCH_STATUS_TERM;
 				}
 			}
 
 			if (callanswerdate > 0) {
-				if (rc_avpair_add(rad_config, &send, PW_FS_CALLANSWERDATE, &answered, -1, PW_FS_PEC) == NULL) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-						"failed adding Freeswitch-Callanswerdate: %s\n", answered);
+				switch_time_exp_lt(&tm, callanswerdate);
+				switch_snprintf(buffer, sizeof(buffer), "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
+					tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+					tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec,
+					tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
+				if (rc_avpair_add(rad_config, &send, PW_FS_CALLANSWERDATE, &buffer, -1, PW_FS_PEC) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+						"failed adding Freeswitch-Callanswerdate: %s\n", buffer);
 					rc_destroy(rad_config);
 					return SWITCH_STATUS_TERM;
 				}
 			}
 
 			if (calltransferdate > 0) {
-				if (rc_avpair_add(rad_config, &send, PW_FS_CALLTRANSFERDATE, &transferred, -1, PW_FS_PEC) == NULL) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-						"failed adding Freeswitch-Calltransferdate: %s\n", transferred);
+				switch_time_exp_lt(&tm, calltransferdate);
+				switch_snprintf(buffer, sizeof(buffer), "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
+					tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+					tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec,
+					tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
+				if (rc_avpair_add(rad_config, &send, PW_FS_CALLTRANSFERDATE, &buffer, -1, PW_FS_PEC) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+						"failed adding Freeswitch-Calltransferdate: %s\n", buffer);
 					rc_destroy(rad_config);
 					return SWITCH_STATUS_TERM;
 				}
 			}
 
 			if (callenddate > 0) {
-				if (rc_avpair_add(rad_config, &send, PW_FS_CALLENDDATE, &hungup, -1, PW_FS_PEC) == NULL) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-						"failed adding Freeswitch-Callenddate: %s\n", hungup);
+				switch_time_exp_lt(&tm, callenddate);
+				switch_snprintf(buffer, sizeof(buffer), "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
+					tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+					tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec,
+					tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
+				if (rc_avpair_add(rad_config, &send, PW_FS_CALLENDDATE, &buffer, -1, PW_FS_PEC) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+						"failed adding Freeswitch-Callenddate: %s\n", buffer);
 					rc_destroy(rad_config);
 					return SWITCH_STATUS_TERM;
 				}
@@ -381,8 +381,8 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	rc_handle 	*rad_config;
 	int             retval = 0;
 	VALUE_PAIR      *send = NULL;
-	uint32_t           client_port = 0;
-	uint32_t           status_type = PW_STATUS_STOP;
+	uint32_t        client_port = 0;
+	uint32_t        status_type = PW_STATUS_STOP;
 	switch_time_t	callstartdate = 0;
 	switch_time_t	callanswerdate = 0;
 	switch_time_t	callenddate = 0;
@@ -392,9 +392,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	char 		*uuid_str;
    
     switch_time_exp_t tm;
-    switch_size_t retsize;
-    const char *fmt = "%Y-%m-%d %T";
-	char created[80] = "", answered[80] = "", transferred[80] = "", hungup[80] = "";
+	char buffer[32] = "";
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[mod_radius_cdr] Entering my_on_hangup\n");
 
@@ -452,23 +450,6 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			calltransferdate = profile->times->transferred;
 			callenddate = profile->times->hungup;
 		
-			if (callstartdate > 0) {
-				switch_time_exp_lt(&tm, callstartdate);
-				switch_strftime(created, &retsize, sizeof(created), fmt, &tm);
-			}
-			if (callanswerdate > 0) {
-				switch_time_exp_lt(&tm, callanswerdate);
-				switch_strftime(answered, &retsize, sizeof(answered), fmt, &tm);
-			}
-			if (calltransferdate > 0) {
-				switch_time_exp_lt(&tm, calltransferdate);
-				switch_strftime(transferred, &retsize, sizeof(transferred), fmt, &tm);
-			}
-			if (callenddate > 0) { 
-				switch_time_exp_lt(&tm, callenddate);
-				switch_strftime(hungup, &retsize, sizeof(hungup), fmt, &tm);
-			}
-
 			if (switch_channel_test_flag(channel,CF_ANSWERED)) {
 				if (callstartdate && callanswerdate) {
 					if (callenddate)
@@ -590,36 +571,56 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			}
 
 			if (callstartdate > 0) {
-				if (rc_avpair_add(rad_config, &send, PW_FS_CALLSTARTDATE, &created, -1, PW_FS_PEC) == NULL) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-						"failed adding Freeswitch-Callstartdate: %s\n", created);
+				switch_time_exp_lt(&tm, callstartdate);
+				switch_snprintf(buffer, sizeof(buffer), "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
+					tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+					tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec,
+					tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
+				if (rc_avpair_add(rad_config, &send, PW_FS_CALLSTARTDATE, &buffer, -1, PW_FS_PEC) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+						"failed adding Freeswitch-Callstartdate: %s\n", buffer);
 					rc_destroy(rad_config);
 					return SWITCH_STATUS_TERM;
 				}
 			}
 
 			if (callanswerdate > 0) {
-				if (rc_avpair_add(rad_config, &send, PW_FS_CALLANSWERDATE, &answered, -1, PW_FS_PEC) == NULL) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-						"failed adding Freeswitch-Callanswerdate: %s\n", answered);
+				switch_time_exp_lt(&tm, callanswerdate);
+				switch_snprintf(buffer, sizeof(buffer), "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
+					tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+					tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec,
+					tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
+				if (rc_avpair_add(rad_config, &send, PW_FS_CALLANSWERDATE, &buffer, -1, PW_FS_PEC) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+						"failed adding Freeswitch-Callanswerdate: %s\n", buffer);
 					rc_destroy(rad_config);
 					return SWITCH_STATUS_TERM;
 				}
 			}
 
 			if (calltransferdate > 0) {
-				if (rc_avpair_add(rad_config, &send, PW_FS_CALLTRANSFERDATE, &transferred, -1, PW_FS_PEC) == NULL) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-						"failed adding Freeswitch-Calltransferdate: %s\n", transferred);
+				switch_time_exp_lt(&tm, calltransferdate);
+				switch_snprintf(buffer, sizeof(buffer), "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
+					tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+					tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec,
+					tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
+				if (rc_avpair_add(rad_config, &send, PW_FS_CALLTRANSFERDATE, &buffer, -1, PW_FS_PEC) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+						"failed adding Freeswitch-Calltransferdate: %s\n", buffer);
 					rc_destroy(rad_config);
 					return SWITCH_STATUS_TERM;
 				}
 			}
 
 			if (callenddate > 0) {
-				if (rc_avpair_add(rad_config, &send, PW_FS_CALLENDDATE, &hungup, -1, PW_FS_PEC) == NULL) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-						"failed adding Freeswitch-Callenddate: %s\n", hungup);
+				switch_time_exp_lt(&tm, callenddate);
+				switch_snprintf(buffer, sizeof(buffer), "%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
+					tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+					tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec,
+					tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
+				if (rc_avpair_add(rad_config, &send, PW_FS_CALLENDDATE, &buffer, -1, PW_FS_PEC) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+						"failed adding Freeswitch-Callenddate: %s\n", buffer);
 					rc_destroy(rad_config);
 					return SWITCH_STATUS_TERM;
 				}
