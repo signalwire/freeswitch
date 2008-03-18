@@ -40,6 +40,7 @@ SWITCH_MODULE_DEFINITION(mod_radius_cdr, mod_radius_cdr_load, NULL, NULL);
 
 static char		cf[] = "mod_radius_cdr.conf";
 static char		my_dictionary[PATH_MAX];
+static char		my_seqfile[PATH_MAX];
 static char *		my_deadtime; /* 0 */
 static char *		my_timeout; /* 5 */
 static char *		my_retries; /* 3 */
@@ -72,9 +73,9 @@ static rc_handle *	my_radius_init(void)
 		return NULL;
 	}
 
-	if (rc_add_config(rad_config, "seqfile", "/var/run/radius.seq", "mod_radius_cdr.c", 0) != 0) {
+	if (rc_add_config(rad_config, "seqfile", my_seqfile, "mod_radius_cdr.c", 0) != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-					"setting seqfile =  /var/run/radius.seq failed\n");
+					"setting seqfile = %s failed\n", my_seqfile);
 		rc_destroy(rad_config);
 		return NULL;
 	}
@@ -655,6 +656,9 @@ static switch_status_t load_config(void)
 
 	my_timeout = "5";
 	my_retries = "3";
+	my_deadtime = "0";
+	strncpy(my_seqfile, "/var/run/radius.seq", PATH_MAX-1);
+	strncpy(my_dictionary, "/usr/local/freeswitch/conf/radius/dictionary", PATH_MAX-1);
 
 	for( int i = 0; i < SERVER_MAX; i++ ) {
 		my_servers[i][0] = '\0';
@@ -667,10 +671,10 @@ static switch_status_t load_config(void)
 
         if ((settings = switch_xml_child(cfg, "settings"))) {
                 for (param = switch_xml_child(settings, "param"); param; param = param->next) {
-                        char *var = (char *) switch_xml_attr_soft(param, "name");
-                        char *val = (char *) switch_xml_attr_soft(param, "value");
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
 
-                        if (!strcmp(var, "acctserver")) {
+			if (!strcmp(var, "acctserver")) {
 				if (num_servers < SERVER_MAX) {
 					strncpy(my_servers[num_servers],val,255-1);
 					num_servers++;
@@ -679,14 +683,20 @@ static switch_status_t load_config(void)
 						"you can only specify %d radius servers, ignoring excess server entry\n", SERVER_MAX);
 				}
 			}
-                        else if (!strcmp(var, "dictionary")) {
+			else if (!strcmp(var, "dictionary")) {
 				strncpy(my_dictionary,val,PATH_MAX-1);
+			}
+			else if (!strcmp(var, "seqfile")) {
+				strncpy(my_seqfile,val,PATH_MAX-1);
 			}
 			else if (!strcmp(var, "radius_timeout")) {
 				my_timeout = strdup(val);
 			}
 			else if (!strcmp(var, "radius_retries")) {
 				my_retries = strdup(val);
+			}
+			else if (!strcmp(var, "radius_deadtime")) {
+				my_deadtime = strdup(val);
 			}
 		}
 	}
