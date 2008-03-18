@@ -247,7 +247,7 @@ int ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event)
 {
 	int err;
 
-	if (!event) {
+	if (!event || mcon->socket < 0 || !mcon->mutex) {
 		zap_log(ZAP_LOG_DEBUG,  "Critical Error: No Event Device\n");
 		return -EINVAL;
 	}

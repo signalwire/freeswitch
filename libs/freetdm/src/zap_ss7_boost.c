@@ -132,9 +132,12 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 		}
 	}
 
-	if (OUTBOUND_REQUESTS[r].status == BST_READY) {
+	if (OUTBOUND_REQUESTS[r].status == BST_READY && OUTBOUND_REQUESTS[r].zchan) {
 		*zchan = OUTBOUND_REQUESTS[r].zchan;
 		status = ZAP_SUCCESS;
+	} else {
+		status = ZAP_FAIL;
+        *zchan = NULL;
 	}
 
  done:
@@ -162,6 +165,7 @@ static void handle_call_start_ack(ss7bc_connection_t *mcon, ss7bc_event_t *event
 			zap_log(ZAP_LOG_ERROR, "OPEN ERROR [%s]\n", zchan->last_error);
 		} else {
 			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
+			zap_set_flag(zchan, ZAP_CHANNEL_OUTBOUND);
 			OUTBOUND_REQUESTS[event->call_setup_id].zchan = zchan;
 			return;
 		}
@@ -477,6 +481,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			sig.event_id = ZAP_SIGEVENT_STOP;
 			status = ss7_boost_data->signal_cb(&sig);
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
 		}
 	default:
 		break;
