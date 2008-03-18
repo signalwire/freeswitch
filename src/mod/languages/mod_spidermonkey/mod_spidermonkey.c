@@ -2616,6 +2616,13 @@ static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsva
 	jss->cx = cx;
 	jss->obj = obj;
 	JS_SetPrivate(cx, obj, jss);
+	
+	if (argc > 0) {
+		char *uuid = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		if (uuid) {
+			jss->session = switch_core_session_locate(uuid);
+		}
+	}
 
 	return JS_TRUE;
 }
