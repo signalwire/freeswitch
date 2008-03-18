@@ -72,6 +72,14 @@ if (!jss || !jss->session) {											\
 		}																\
 	} while (foo == 1)
 
+#define CHANNEL_MEDIA_SANITY_CHECK() do {								\
+		if (!switch_channel_media_ready(channel)) {						\
+			eval_some_js("~throw new Error(\"Session is not in media mode!\");", cx, obj, rval); \
+			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);							\
+			return JS_FALSE;											\
+		}																\
+	} while (foo == 1)
+
 static void session_destroy(JSContext * cx, JSObject * obj);
 static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval);
 static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval);
@@ -1092,7 +1100,7 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 	jsval nval , *rval = &nval; 
 	JSContext *cx = cb_state->cx;
 	JSObject *obj = cb_state->obj;
-
+	
 	METHOD_SANITY_CHECK();
 
 	jss->stack_depth++;
@@ -1317,7 +1325,11 @@ static switch_status_t js_collect_input_callback(switch_core_session_t *session,
 static JSBool session_flush_digits(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
+	switch_channel_t *channel;
+
 	METHOD_SANITY_CHECK();
+	channel = switch_core_session_get_channel(jss->session);
+	CHANNEL_MEDIA_SANITY_CHECK();
 
 	switch_channel_flush_dtmf(switch_core_session_get_channel(jss->session));
 
@@ -1361,6 +1373,8 @@ static JSBool session_recordfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	METHOD_SANITY_CHECK();
 	channel = switch_core_session_get_channel(jss->session);
 	CHANNEL_SANITY_CHECK();
+
+	CHANNEL_MEDIA_SANITY_CHECK();
 
 	if (argc > 0) {
 		file_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
@@ -1429,6 +1443,7 @@ static JSBool session_collect_input(JSContext * cx, JSObject * obj, uintN argc, 
 	METHOD_SANITY_CHECK();
 	channel = switch_core_session_get_channel(jss->session);
 	CHANNEL_SANITY_CHECK();
+	CHANNEL_MEDIA_SANITY_CHECK();
 
 	if (argc > 0) {
 		if ((function = JS_ValueToFunction(cx, argv[0]))) {
@@ -1485,6 +1500,7 @@ static JSBool session_sayphrase(JSContext * cx, JSObject * obj, uintN argc, jsva
 	METHOD_SANITY_CHECK();
 	channel = switch_core_session_get_channel(jss->session);
 	CHANNEL_SANITY_CHECK();
+	CHANNEL_MEDIA_SANITY_CHECK();
 
 	if (argc > 0) {
 		phrase_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
@@ -1612,6 +1628,7 @@ static JSBool session_streamfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	METHOD_SANITY_CHECK();
 	channel = switch_core_session_get_channel(jss->session);
 	CHANNEL_SANITY_CHECK();
+	CHANNEL_MEDIA_SANITY_CHECK();
 
 	if (argc > 0) {
 		file_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
@@ -1781,9 +1798,11 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 
 	METHOD_SANITY_CHECK();
 
+
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 	channel = switch_core_session_get_channel(jss->session);
 	CHANNEL_SANITY_CHECK();
+	CHANNEL_MEDIA_SANITY_CHECK();
 
 	if (argc < 3) {
 		return JS_FALSE;
@@ -1986,6 +2005,7 @@ static JSBool session_wait_for_media(JSContext * cx, JSObject * obj, uintN argc,
 	METHOD_SANITY_CHECK();
 
 	channel = switch_core_session_get_channel(jss->session);
+	CHANNEL_MEDIA_SANITY_CHECK();
 
 	started = switch_timestamp_now();
 
@@ -3483,7 +3503,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_API(api_interface, "jsrun", "run a script", launch_async, "jsrun <script> [additional_vars [...]]");
 	SWITCH_ADD_API(api_interface, "jsapi", "execute an api call", jsapi_function, "jsapi <script> [additional_vars [...]]");
-	SWITCH_ADD_APP(app_interface, "javascript", "Launch JS ivr", "Run a javascript ivr on a channel", js_dp_function, "<script> [additional_vars [...]]", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "javascript", "Launch JS ivr", "Run a javascript ivr on a channel", js_dp_function, "<script> [additional_vars [...]]", SAF_SUPPORT_NOMEDIA);
 
 	curl_global_init(CURL_GLOBAL_ALL);
 
