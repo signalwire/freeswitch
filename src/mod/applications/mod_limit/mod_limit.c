@@ -634,7 +634,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 	SWITCH_ADD_APP(app_interface, "db", "Insert to the db", DB_DESC, db_function, DB_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "group", "Manage a group", GROUP_DESC, group_function, GROUP_USAGE, SAF_SUPPORT_NOMEDIA);
 
-	SWITCH_ADD_API(commands_api_interface, "db", "db get/set", db_api_function, "[get|set]/<realm>/<key>/<value>");
+	SWITCH_ADD_API(commands_api_interface, "db", "db get/set", db_api_function, "[insert|delete|select]/<realm>/<key>/<value>");
 	SWITCH_ADD_API(commands_api_interface, "group", "group [insert|delete|call]", group_api_function, "[insert|delete|call]:<group name>:<url>");
 
 	/* indicate that the module should continue to be loaded */
