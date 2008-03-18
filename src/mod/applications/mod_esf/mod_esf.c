@@ -59,7 +59,7 @@ SWITCH_STANDARD_APP(bcast_function)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_socket_t *socket;
 	switch_sockaddr_t *audio_addr = NULL, *control_packet_addr;
-	switch_frame_t *read_frame;
+	switch_frame_t *read_frame = NULL;
 	switch_status_t status;
 	switch_size_t bytes;
 	ls_control_packet_t control_packet;
