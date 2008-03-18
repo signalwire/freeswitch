@@ -203,6 +203,10 @@ static int test_for_ack_or_timeout(agent_t *ag,
 				   nta_incoming_t *irq, 
 				   sip_t const *sip);
 
+static int wait_for_ack_or_cancel(agent_t *ag,
+				  nta_incoming_t *irq, 
+				  sip_t const *sip);
+
 int agent_callback(agent_t *ag,
 		   nta_agent_t *nta,
 		   msg_t *msg,
@@ -321,6 +325,7 @@ int leg_callback_500(agent_t *ag,
   return 500;
 }
 
+
 int new_leg_callback_200(agent_t *ag,
 			 nta_leg_t *leg,
 			 nta_incoming_t *irq,
@@ -362,6 +367,20 @@ int new_leg_callback_200(agent_t *ag,
 
   return 200;
 }
+
+int new_leg_callback_180(agent_t *ag,
+			 nta_leg_t *leg,
+			 nta_incoming_t *irq,
+			 sip_t const *sip)
+{
+  int status = new_leg_callback_200(ag, leg, irq, sip);
+  if (status == 200) {
+    ag->ag_irq = irq;
+    status = 180;
+  }
+  return status;
+}
+
 
 static client_check_f client_check_to_tag;
 
@@ -1037,6 +1056,8 @@ int test_tports(agent_t *ag)
   url_t url[1];
 
   BEGIN();
+
+  nta_leg_bind(ag->ag_server_leg, leg_callback_200, ag);
 
   *url = *ag->ag_contact->m_url;
   url->url_port = "*";
@@ -2546,8 +2567,111 @@ int test_merging(agent_t *ag)
     TEST_P(ag->ag_latest_leg, ag->ag_server_leg);
   }
 
+  while (su_recv(ag->ag_sink_socket, m1, sizeof m1, MSG_TRUNC) >= 0)
+    ;
+
+  {
+    /* test INVITE/CANCEL with rfc2543 */
+    char const template2[] = 
+      "%s " URL_PRINT_FORMAT " SIP/2.0\r\n"
+      "Via: SIP/2.0/UDP 127.0.0.1:%s;x-kuik=%p\r\n"
+      "CSeq: %u %s\r\n"
+      "Call-ID: %p.dfsdhfsjkhsdjk.dfsjfhsduifhsjfsfjkfsd\r\n"
+      "From: Evil Forker <sip:evel@forker.com>;tag=test_nta-%s\r\n"
+      "To: Bob the Builder <sip:bob@example.net>%s\r\n"
+      "Content-Length: 0\r\n"
+      "\r\n";
+
+    nta_leg_bind(ag->ag_server_leg, new_leg_callback_180, ag);
+
+    snprintf(m1, sizeof m1,
+	     template2, 
+	     "INVITE", URL_PRINT_ARGS(u1),
+	     /* Via */ ag->ag_sink_port, m1, 
+	     /* CSeq */ 15, "INVITE",
+	     /* Call-ID */ (void *)(ag + 2),
+	     /* From tag */ "2.6.1",
+	     /* To tag */ "");
+    l1 = strlen(m1);
+    TEST_1((size_t)su_sendto(ag->ag_sink_socket, m1, l1, 0, su, sulen) == l1);
+    recv_udp(ag, r1, sizeof r1);
+
+    l1 = strlen("SIP/2.0 180 ");
+    TEST_1(memcmp(r1, "SIP/2.0 180 ", l1) == 0);
+
+    TEST_1(ag->ag_irq);
+    nta_incoming_bind(ag->ag_irq, wait_for_ack_or_cancel, ag);
+
+    snprintf(m2, sizeof m2,
+	     template2, 
+	     "CANCEL", URL_PRINT_ARGS(u1),
+	     /* Via */ ag->ag_sink_port, m1,
+	     /* CSeq */ 15, "CANCEL",
+	     /* Call-ID */ (void *)(ag + 2),
+	     /* From tag */ "2.6.1",
+	     /* To tag */ "");
+    l2 = strlen(m2);
+
+    TEST_1((size_t)su_sendto(ag->ag_sink_socket, m2, l2, 0, su, sulen) == l2);
+    recv_udp(ag, r1, sizeof r1);
+    recv_udp(ag, r2, sizeof r2);
+
+    l1 = strlen("SIP/2.0 200 ");
+    TEST_1(strstr(r1, "15 CANCEL"));
+    TEST_1(memcmp(r1, "SIP/2.0 200 ", l1) == 0);
+
+    TEST_1(strstr(r2, "15 INVITE"));
+    TEST_1(memcmp(r2, "SIP/2.0 487 ", l1) == 0);
+
+    TEST_1(nta_incoming_status(ag->ag_irq) == 487);
+
+    snprintf(m2, sizeof m2,
+	     template2, 
+	     "ACK", URL_PRINT_ARGS(u1),
+	     /* Via */ ag->ag_sink_port, m1,
+	     /* CSeq */ 15, "ACK",
+	     /* Call-ID */ (void *)(ag + 2),
+	     /* From tag */ "2.6.1",
+	     /* To tag */ "");
+    l2 = strlen(m2);
+
+    TEST_1((size_t)su_sendto(ag->ag_sink_socket, m2, l2, 0, su, sulen) == l2);
+
+    nta_leg_destroy(ag->ag_bob_leg); ag->ag_bob_leg = NULL;
+  }
+
+  while (su_recv(ag->ag_sink_socket, m1, sizeof m1, MSG_TRUNC) >= 0)
+    ;
+
   END();
 }
+
+static
+int wait_for_ack_or_cancel(agent_t *ag,
+			   nta_incoming_t *irq, 
+			   sip_t const *sip)
+{
+  sip_method_t method;
+
+  method = sip ? sip->sip_request->rq_method : sip_method_unknown;
+
+  if (method == sip_method_cancel) {
+    nta_incoming_treply(ag->ag_irq, SIP_487_REQUEST_CANCELLED, TAG_END());
+  }
+  else if (method == sip_method_ack) {
+    nta_incoming_destroy(irq);
+    ag->ag_irq = NULL;
+    ag->ag_running = 0;
+  }
+  else {			/* Timeout */
+    nta_incoming_destroy(irq);
+    ag->ag_irq = NULL;
+    ag->ag_running = 0;
+  }
+  
+  return 0;
+}
+
 
 /* ---------------------------------------------------------------------- */
 /* Test INVITE, dialogs */

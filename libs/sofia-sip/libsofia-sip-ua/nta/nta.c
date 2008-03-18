@@ -5322,9 +5322,9 @@ static nta_incoming_t *incoming_find(nta_agent_t const *agent,
 	  !(irq->irq_tag_set && to->a_tag == NULL))
 	;
       /* Match top Via header field */
-      else if (str0casecmp(irq->irq_via->v_branch, v->v_branch) == 0 &&
-	  strcasecmp(irq->irq_via->v_host, v->v_host) == 0 &&
-	  str0cmp(irq->irq_via->v_port, v->v_port) == 0)
+      else if (str0casecmp(irq->irq_via->v_branch, v->v_branch) != 0 ||
+	       strcasecmp(irq->irq_via->v_host, v->v_host) != 0 ||
+	       str0cmp(irq->irq_via->v_port, v->v_port) != 0)
 	;
       /* Match Request-URI */
       else if (url_cmp(irq->irq_rq->rq_url, rq->rq_url))
@@ -5337,9 +5337,9 @@ static nta_incoming_t *incoming_find(nta_agent_t const *agent,
 	  return irq;		/* found */
 
 	if (return_ack && irq->irq_method == sip_method_invite)
-	  *return_ack = irq;
+	  return *return_ack = irq, NULL;
 	else if (return_cancel && irq->irq_method != sip_method_ack)
-	  *return_cancel = irq;
+	  return *return_cancel = irq, NULL;
       }
     }    
 
