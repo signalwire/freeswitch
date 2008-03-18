@@ -121,7 +121,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 		}
 	}
 
-	if (tech_pvt->te > 95) {
+	if (tech_pvt->dtmf_type == DTMF_2833 && tech_pvt->te > 95) {
 		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->te);
 	}
 	
@@ -172,7 +172,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 		}
 	}
 
-	if (tech_pvt->te > 95) {
+	if (tech_pvt->dtmf_type == DTMF_2833 && tech_pvt->te > 95) {
 		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
 	}
 	if (tech_pvt->cng_pt && use_cng) {
