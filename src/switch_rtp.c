@@ -1138,11 +1138,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 		if (rtp_session->timer.interval) {
+			check = (uint8_t) (switch_core_timer_check(&rtp_session->timer, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS);						
 			if (bytes) {
-				check++;
 				switch_core_timer_sync(&rtp_session->timer);
 			} else {
-				check = (uint8_t) (switch_core_timer_check(&rtp_session->timer, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS);						
 				if (check && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTO_CNG) &&
 					rtp_session->timer.samplecount >= (rtp_session->last_write_samplecount + (rtp_session->samples_per_interval * 50))) {
 					uint8_t data[10] = { 0 };
@@ -1179,6 +1178,32 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			ret = 2 + rtp_header_len;
 			goto end;
 		}
+
+
+	
+		if (rtp_session->jb && ((bytes && rtp_session->recv_msg.header.pt == rtp_session->payload) || check)) {
+			if (bytes) {
+				if (rtp_session->recv_msg.header.m) {
+					stfu_n_reset(rtp_session->jb);
+				}
+			
+				stfu_n_eat(rtp_session->jb, ntohl(rtp_session->recv_msg.header.ts), rtp_session->recv_msg.body, bytes - rtp_header_len);
+				bytes = 0;
+			}
+
+			if ((jb_frame = stfu_n_read_a_frame(rtp_session->jb))) {
+				memcpy(rtp_session->recv_msg.body, jb_frame->data, jb_frame->dlen);
+				if (jb_frame->plc) {
+					*flags |= SFF_PLC;
+				}
+				bytes = jb_frame->dlen + rtp_header_len;
+				rtp_session->recv_msg.header.ts = htonl(jb_frame->ts);
+				rtp_session->recv_msg.header.pt = rtp_session->payload;
+			} else {
+				goto cng;
+			}
+		}
+		
 
 		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV)) {
 			int sbytes = (int) bytes;
@@ -1217,24 +1242,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			bytes = sbytes;
 		}
 
-		if (rtp_session->jb && bytes && rtp_session->recv_msg.header.pt == rtp_session->payload) {
-			if (rtp_session->recv_msg.header.m) {
-				stfu_n_reset(rtp_session->jb);
-			} 
-			
-			stfu_n_eat(rtp_session->jb, ntohl(rtp_session->recv_msg.header.ts), rtp_session->recv_msg.body, bytes - rtp_header_len);
-			if ((jb_frame = stfu_n_read_a_frame(rtp_session->jb))) {
-				memcpy(rtp_session->recv_msg.body, jb_frame->data, jb_frame->dlen);
-				if (jb_frame->plc) {
-					*flags |= SFF_PLC;
-					}
-				bytes = jb_frame->dlen + rtp_header_len;
-				rtp_session->recv_msg.header.ts = htonl(jb_frame->ts);
-			} else {
-				bytes = 0;
-				continue;
-			}			
-		}
 
 
 		/* RFC2833 ... like all RFC RE: VoIP, guarenteed to drive you to insanity! 
