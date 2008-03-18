@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  * Neal Horman <neal at wanlink dot com>
  * Bret McDanel <trixter at 0xdecafbad dot com>
+ * Dale Thatcher <freeswitch at dalethatcher dot com>
  *
  *
  * mod_conference.c -- Software Conference Bridge
@@ -55,6 +56,8 @@ static int EC = 0;
 #ifndef MIN
 #define MIN(a, b) ((a)<(b)?(a):(b))
 #endif
+
+#define test_eflag(conference, flag) ((conference)->eflags & flag)
 
 typedef enum {
 	FILE_STOP_CURRENT,
@@ -157,6 +160,35 @@ typedef enum {
 	NODE_TYPE_SPEECH
 } node_type_t;
 
+typedef enum {
+	EFLAG_ADD_MEMBER = (1 << 0),
+	EFLAG_DEL_MEMBER = (1 << 1),
+	EFLAG_ENERGY_LEVEL = (1 << 2),
+	EFLAG_VOLUME_LEVEL = (1 << 3),
+	EFLAG_GAIN_LEVEL = (1 << 4),
+	EFLAG_DTMF = (1 << 5),
+	EFLAG_STOP_TALKING = (1 << 6),
+	EFLAG_START_TALKING = (1 << 7),
+	EFLAG_MUTE_MEMBER = (1 << 8),
+	EFLAG_UNMUTE_MEMBER = (1 << 9),
+	EFLAG_DEAF_MEMBER = (1 << 10),
+	EFLAG_UNDEAF_MEMBER = (1 << 11),
+	EFLAG_KICK_MEMBER = (1 << 12),
+	EFLAG_DTMF_MEMBER = (1 << 13),
+	EFLAG_ENERGY_LEVEL_MEMBER = (1 << 14),
+	EFLAG_VOLUME_IN_MEMBER = (1 << 15),
+	EFLAG_VOLUME_OUT_MEMBER = (1 << 16),
+	EFLAG_PLAY_FILE = (1 << 17),
+	EFLAG_PLAY_FILE_MEMBER = (1 << 18),
+	EFLAG_SPEAK_TEXT = (1 << 19),
+	EFLAG_SPEAK_TEXT_MEMBER = (1 << 20),
+	EFLAG_LOCK = (1 << 21),
+	EFLAG_UNLOCK = (1 << 22),
+	EFLAG_TRANSFER = (1 << 23),
+	EFLAG_BGDIAL_RESULT = (1 << 24),
+	EFLAG_FLOOR_CHANGE = (1 << 25)
+} event_type_t;
+
 typedef struct conference_file_node {
 	switch_file_handle_t fh;
 	switch_speech_handle_t *sh;
@@ -229,6 +261,7 @@ typedef struct conference_obj {
     uint32_t not_talking_buf_len;
     int comfort_noise_level;
 	int video_running;
+	uint32_t eflags;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -596,7 +629,8 @@ static switch_status_t conference_add_member(conference_obj_t * conference, conf
 			switch_set_flag(conference, CFLAG_ENFORCE_MIN);
 		}
 
-		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+		if (test_eflag(conference, EFLAG_ADD_MEMBER) &&
+				switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_add_event_member_data(member, event);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "add-member");
 			switch_event_fire(&event);
@@ -711,7 +745,8 @@ static switch_status_t conference_del_member(conference_obj_t * conference, conf
 			conference->floor_holder = conference->members;
 		}
 
-		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+		if (test_eflag(conference, EFLAG_DEL_MEMBER) &&
+				switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_add_event_member_data(member, event);
 			conference_add_event_data(conference, event);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "del-member");
@@ -1215,7 +1250,8 @@ static void conference_loop_fn_energy_up(conference_member_t * member, caller_co
 		member->energy_level = 3000;
 	}
 
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(member->conference, EFLAG_ENERGY_LEVEL) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->energy_level);
@@ -1237,7 +1273,8 @@ static void conference_loop_fn_energy_equ_conf(conference_member_t * member, cal
 	switch_mutex_lock(member->flag_mutex);
 	member->energy_level = member->conference->energy_level;
 
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(member->conference, EFLAG_ENERGY_LEVEL) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->energy_level);
@@ -1262,7 +1299,8 @@ static void conference_loop_fn_energy_dn(conference_member_t * member, caller_co
 		member->energy_level = 0;
 	}
 
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(member->conference, EFLAG_ENERGY_LEVEL) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->energy_level);
@@ -1285,7 +1323,8 @@ static void conference_loop_fn_volume_talk_up(conference_member_t * member, call
 	member->volume_out_level++;
 	switch_normalize_volume(member->volume_out_level);
 
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(member->conference, EFLAG_VOLUME_LEVEL) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_out_level);
@@ -1307,7 +1346,8 @@ static void conference_loop_fn_volume_talk_zero(conference_member_t * member, ca
 	switch_mutex_lock(member->flag_mutex);
 	member->volume_out_level = 0;
 
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(member->conference, EFLAG_VOLUME_LEVEL) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_out_level);
@@ -1330,7 +1370,8 @@ static void conference_loop_fn_volume_talk_dn(conference_member_t * member, call
 	member->volume_out_level--;
 	switch_normalize_volume(member->volume_out_level);
 
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(member->conference, EFLAG_VOLUME_LEVEL) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_out_level);
@@ -1353,7 +1394,8 @@ static void conference_loop_fn_volume_listen_up(conference_member_t * member, ca
 	member->volume_in_level++;
 	switch_normalize_volume(member->volume_in_level);
 
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(member->conference, EFLAG_GAIN_LEVEL) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_in_level);
@@ -1375,7 +1417,8 @@ static void conference_loop_fn_volume_listen_zero(conference_member_t * member, 
 	switch_mutex_lock(member->flag_mutex);
 	member->volume_in_level = 0;
 
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(member->conference, EFLAG_GAIN_LEVEL) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_in_level);
@@ -1398,7 +1441,8 @@ static void conference_loop_fn_volume_listen_dn(conference_member_t * member, ca
 	member->volume_in_level--;
 	switch_normalize_volume(member->volume_in_level);
 
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(member->conference, EFLAG_GAIN_LEVEL) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_in_level);
@@ -1413,7 +1457,8 @@ static void conference_loop_fn_volume_listen_dn(conference_member_t * member, ca
 static void conference_loop_fn_event(conference_member_t * member, caller_control_action_t * action)
 {
 	switch_event_t *event;
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(member->conference, EFLAG_DTMF) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "dtmf");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Key", "%s", action->binded_dtmf);
@@ -1469,7 +1514,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, 
 					hangover_hits = hangunder_hits = 0;
 					switch_clear_flag_locked(member, MFLAG_TALKING);
 
-					if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+					if (test_eflag(member->conference, EFLAG_STOP_TALKING) &&
+								switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 						conference_add_event_member_data(member, event);
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "stop-talking");
 						switch_event_fire(&event);
@@ -1520,7 +1566,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, 
 						if (!member->conference->floor_holder || 
 							!switch_test_flag(member->conference->floor_holder, MFLAG_TALKING) || member->score > 
 							member->conference->floor_holder->score + 200) {
-							if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+							if (test_eflag(member->conference, EFLAG_FLOOR_CHANGE) &&
+										switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 								conference_add_event_member_data(member, event);
 								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "floor-change");
 								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-ID", "%d", 
@@ -1533,7 +1580,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, 
 						}
 						switch_mutex_unlock(member->conference->member_mutex);
 						
-						if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+						if (test_eflag(member->conference, EFLAG_START_TALKING) &&
+								switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 							conference_add_event_member_data(member, event);
 							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "start-talking");
 							switch_event_fire(&event);
@@ -1550,7 +1598,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, 
 						hangover_hits = hangunder_hits = 0;
 						switch_clear_flag_locked(member, MFLAG_TALKING);
 
-						if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+						if (test_eflag(member->conference, EFLAG_STOP_TALKING) &&
+									switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 							conference_add_event_member_data(member, event);
 							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "stop-talking");
 							switch_event_fire(&event);
@@ -2631,7 +2680,8 @@ static switch_status_t conf_api_sub_mute(conference_member_t * member, switch_st
 	if (stream != NULL) {
 		stream->write_function(stream, "OK mute %u\n", member->id);
 	}
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(member->conference, EFLAG_MUTE_MEMBER) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "mute-member");
 		switch_event_fire(&event);
@@ -2658,7 +2708,8 @@ static switch_status_t conf_api_sub_unmute(conference_member_t * member, switch_
 		switch_snprintf(msg, sizeof(msg), "Un-Muted");
 		conference_member_say(member, msg, 0);
 	}
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(member->conference, EFLAG_UNMUTE_MEMBER) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "unmute-member");
 		switch_event_fire(&event);
@@ -2719,7 +2770,8 @@ static switch_status_t conf_api_sub_kick(conference_member_t * member, switch_st
 	if (stream != NULL) {
 		stream->write_function(stream, "OK kicked %u\n", member->id);
 	}
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(member->conference, EFLAG_KICK_MEMBER) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "kick-member");
 		switch_event_fire(&event);
@@ -2752,7 +2804,8 @@ static switch_status_t conf_api_sub_dtmf(conference_member_t * member, switch_st
 		stream->write_function(stream, "OK sent %s to %u\n", (char *) data, member->id);
 	}
 
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(member->conference, EFLAG_DTMF_MEMBER) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "dtmf-member");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Digits", "%s", dtmf);
@@ -2776,7 +2829,8 @@ static switch_status_t conf_api_sub_energy(conference_member_t * member, switch_
 	if (stream != NULL) {
 		stream->write_function(stream, "Energy %u = %d\n", member->id, member->energy_level);
 	}
-	if (data && switch_event_create_subclass(& event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(member->conference, EFLAG_ENERGY_LEVEL_MEMBER) &&
+			data && switch_event_create_subclass(& event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "energy-level-member");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Energy-Level", "%d", member->energy_level);
@@ -2801,7 +2855,8 @@ static switch_status_t conf_api_sub_volume_in(conference_member_t * member, swit
 	if (stream != NULL) {
 		stream->write_function(stream, "Volume IN %u = %d\n", member->id, member->volume_in_level);
 	}
-	if (data && switch_event_create_subclass(& event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(member->conference, EFLAG_VOLUME_IN_MEMBER) &&
+			data && switch_event_create_subclass(& event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-in-member");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Volume-Level", "%u", member->volume_in_level);
@@ -2826,7 +2881,8 @@ static switch_status_t conf_api_sub_volume_out(conference_member_t * member, swi
 	if (stream != NULL) {
 		stream->write_function(stream, "Volume OUT %u = %d\n", member->id, member->volume_out_level);
 	}
-	if (data && switch_event_create_subclass(& event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(member->conference, EFLAG_VOLUME_OUT_MEMBER) && data &&
+			switch_event_create_subclass(& event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-out-member");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Volume-Level", "%u", member->volume_out_level);
@@ -2915,7 +2971,8 @@ static switch_status_t conf_api_sub_play(conference_obj_t * conference, switch_s
 	if (argc == 3) {
 		if (conference_play_file(conference, argv[2], 0, NULL, async) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "(play) Playing file %s\n", argv[2]);
-			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+			if (test_eflag(conference, EFLAG_PLAY_FILE) &&
+					switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 				conference_add_event_data(conference, event);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "play-file");
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "File", "%s", argv[2]);
@@ -2932,7 +2989,8 @@ static switch_status_t conf_api_sub_play(conference_obj_t * conference, switch_s
 		if ((member = conference_member_get(conference, id))) {
 			if (conference_member_play_file(member, argv[2], 0) == SWITCH_STATUS_SUCCESS) {
 				stream->write_function(stream, "(play) Playing file %s to member %u\n", argv[2], id);
-				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+				if (test_eflag(conference, EFLAG_PLAY_FILE_MEMBER) &&
+						switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 					conference_add_event_member_data(member, event);
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "play-file-member");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "File", "%s", argv[2]);
@@ -2965,7 +3023,8 @@ static switch_status_t conf_api_sub_say(conference_obj_t * conference, switch_st
 	}
 
 	stream->write_function(stream, "(say) OK\n");
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(conference, EFLAG_SPEAK_TEXT) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_data(conference, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "speak-text");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Text", "%s", text);
@@ -3023,7 +3082,8 @@ static switch_status_t conf_api_sub_saymember(conference_obj_t * conference, swi
 	} 
 
 	stream->write_function(stream, "(saymember) OK\n");
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(member->conference, EFLAG_SPEAK_TEXT_MEMBER) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "speak-text-member");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Text", "%s", text);
@@ -3151,7 +3211,8 @@ static switch_status_t conf_api_sub_lock(conference_obj_t * conference, switch_s
 
 	switch_set_flag_locked(conference, CFLAG_LOCKED);
 	stream->write_function(stream, "OK %s locked\n", argv[0]);
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(conference, EFLAG_LOCK) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_data(conference, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "lock");
 		switch_event_fire(&event);
@@ -3173,7 +3234,8 @@ static switch_status_t conf_api_sub_unlock(conference_obj_t * conference, switch
 
 	switch_clear_flag_locked(conference, CFLAG_LOCKED);
 	stream->write_function(stream, "OK %s unlocked\n", argv[0]);
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+	if (test_eflag(conference, EFLAG_UNLOCK) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_data(conference, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "unlock");
 		switch_event_fire(&event);
@@ -3332,7 +3394,8 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t * conference, swit
 			stream->write_function(stream, "OK Members sent to conference %s.\n", argv[2]);
 			
 			/* tell them what happened */
-			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+			if (test_eflag(conference, EFLAG_TRANSFER) &&
+					switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 				conference_add_event_member_data(member, event);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-Conference-Name", "%s", conference->name);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Conference-Name", "%s", argv[3]);
@@ -3827,7 +3890,8 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t * thread,
 		conference_outcall(call->conference, call->conference_name, 
 						   call->session, call->bridgeto, call->timeout, call->flags, call->cid_name, call->cid_num, &cause);
 
-		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+		if (test_eflag(call->conference, EFLAG_BGDIAL_RESULT) &&
+				switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_add_event_data(call->conference, event);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "bgdial-result");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Result", "%s", switch_channel_cause2str(cause));
@@ -3956,6 +4020,76 @@ static void set_mflags(char *flags, member_flag_t * f)
 		}
 	}
 
+}
+
+static void clear_eflags(char *events, uint32_t * f)
+{
+	char buf[512] = "";
+	char* next = NULL;
+	char* event = buf;
+
+	if (events) {
+		switch_copy_string(buf, events, sizeof(buf));
+
+		while (event) {
+			next = strchr(event, ',');
+			if (next) {
+				*next++ = '\0';
+			}
+
+			if (!strcmp(event, "add-member")) {
+				*f &= ~EFLAG_ADD_MEMBER;
+			} else if (!strcmp(event, "del-member")) {
+				*f &= ~EFLAG_DEL_MEMBER;
+			} else if (!strcmp(event, "energy-level")) {
+				*f &= ~EFLAG_ENERGY_LEVEL;
+			} else if (!strcmp(event, "volume-level")) {
+				*f &= ~EFLAG_VOLUME_LEVEL;
+			} else if (!strcmp(event, "gain-level")) {
+				*f &= ~EFLAG_GAIN_LEVEL;
+			} else if (!strcmp(event, "dtmf")) {
+				*f &= ~EFLAG_DTMF;
+			} else if (!strcmp(event, "stop-talking")) {
+				*f &= ~EFLAG_STOP_TALKING;
+			} else if (!strcmp(event, "start-talking")) {
+				*f &= ~EFLAG_START_TALKING;
+			} else if (!strcmp(event, "mute-member")) {
+				*f &= ~EFLAG_MUTE_MEMBER;
+			} else if (!strcmp(event, "unmute-member")) {
+				*f &= ~EFLAG_UNMUTE_MEMBER;
+			} else if (!strcmp(event, "kick-member")) {
+				*f &= ~EFLAG_KICK_MEMBER;
+			} else if (!strcmp(event, "dtmf-member")) {
+				*f &= ~EFLAG_DTMF_MEMBER;
+			} else if (!strcmp(event, "energy-level-member")) {
+				*f &= ~EFLAG_ENERGY_LEVEL_MEMBER;
+			} else if (!strcmp(event, "volume-in-member")) {
+				*f &= ~EFLAG_VOLUME_IN_MEMBER;
+			} else if (!strcmp(event, "volume-out-member")) {
+				*f &= ~EFLAG_VOLUME_OUT_MEMBER;
+			} else if (!strcmp(event, "play-file")) {
+				*f &= ~EFLAG_PLAY_FILE;
+			} else if (!strcmp(event, "play-file-member")) {
+				*f &= ~EFLAG_PLAY_FILE_MEMBER;
+			} else if (!strcmp(event, "speak-text")) {
+				*f &= ~EFLAG_SPEAK_TEXT;
+			} else if (!strcmp(event, "speak-text-member")) {
+				*f &= ~EFLAG_SPEAK_TEXT_MEMBER;
+			} else if (!strcmp(event, "lock")) {
+				*f &= ~EFLAG_LOCK;
+			} else if (!strcmp(event, "unlock")) {
+				*f &= ~EFLAG_UNLOCK;
+			} else if (!strcmp(event, "transfer")) {
+				*f &= ~EFLAG_TRANSFER;
+			} else if (!strcmp(event, "bgdial-result")) {
+				*f &= ~EFLAG_BGDIAL_RESULT;
+			} else if (!strcmp(event, "floor-change")) {
+				*f &= ~EFLAG_FLOOR_CHANGE;
+			}
+
+			event = next;
+		}
+	}
 }
 
 SWITCH_STANDARD_APP(conference_auto_function)
@@ -4653,6 +4787,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	uint32_t rate = 8000, interval = 20;
 	switch_status_t status;
     int comfort_noise_level = 0;
+	char *suppress_events = NULL;
 
 	/* Validate the conference name */
 	if (switch_strlen_zero(name)) {
@@ -4768,7 +4903,9 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 				anounce_count = 0;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "anounce-count is invalid, not anouncing member counts\n");
 			}
-		}
+		} else if (!strcasecmp(var, "suppress-events") && !switch_strlen_zero(val)) {
+			suppress_events = val;
+        }
 	}
 
 	/* Set defaults and various paramaters */
@@ -4917,6 +5054,11 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	conference->rate = rate;
 	conference->interval = interval;
 	conference->dtmf_parser = NULL;
+
+	conference->eflags = 0xFFFFFFFF;
+	if (!switch_strlen_zero(suppress_events)) {
+		clear_eflags(suppress_events, &conference->eflags);
+	}
 
 	/* caller control configuration chores */
 	if (switch_ivr_digit_stream_parser_new(conference->pool, &conference->dtmf_parser) == SWITCH_STATUS_SUCCESS) {

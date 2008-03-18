@@ -35,6 +35,7 @@ that much better:
  Jonas Gauffin <jonas at gauffin dot org> - Bugfixes and additions in mod_spidermonkey_odbc
  Damjan Jovanovic <moctodliamgtavojtodnajmad backwards> - mod_java
  Juan Jose Comellas <juanjo@comellas.org> - Patch to switch_utils for arg parsing.
+ Dale Thatcher <freeswitch at dalethatcher dot com> - Additions to mod_conference.
 
 A big THANK YOU goes to:
 
