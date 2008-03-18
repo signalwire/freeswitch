@@ -89,6 +89,8 @@
       <param name="caller-id-name" value="$${outbound_caller_name}"/>
       <!-- Default Caller ID Number for outbound calls -->
       <param name="caller-id-number" value="$${outbound_caller_id}"/>
+      <!-- Suppress start and stop talking events -->
+      <!-- <param name="suppress-events" value="start-talking,stop-talking"/> -->
     </profile>
 
     <profile name="wideband">
