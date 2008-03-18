@@ -279,46 +279,57 @@ static void parse_rr(const struct dns_parse *p, enum_query_t * q, struct dns_rr 
 	const unsigned char *dend = rr->dnsrr_dend;
 	unsigned char *dn = rr->dnsrr_dn;
 	const unsigned char *c;
-	char *ptr;
 	char flags;
 	int order;
 	int preference;
-	char *nme;
 	char *service = NULL;
 	char *regex = NULL;
 	char *replace = NULL;
 	int argc = 0;
 	char *argv[4] = { 0 };
-	int leap;
+	int n;
+	char string_arg[3][256] = {{0}};
 
 	switch (rr->dnsrr_typ) {
-
-	case DNS_T_NAPTR:			/* prio weight port targetDN */
+	case DNS_T_NAPTR:/* prio weight port targetDN */
 		c = dptr;
-		c += 2 + 2 + 2;
-		if (dns_getdn(pkt, &c, end, dn, DNS_MAXDN) <= 0 || c != dend)
-			goto xperr;
-		c = dptr;
+		c += 4; /* order, pref */
 
-		leap = *dn;
-		nme = (char *) dn + 1;
-
-		order = dns_get16(c + 0);
-		preference = dns_get16(c + 2);
-		flags = (char) dns_get16(c + 4);
-
-		if ((ptr = nme + leap)) {
-			service = nme;
-			*ptr++ = '\0';
-			argc = switch_separate_string(ptr, '!', argv, (sizeof(argv) / sizeof(argv[0])));
-			regex = argv[1];
-			replace = argv[2];
+		for (n = 0; n < 3; ++n) {
+			if (c >= dend) {
+				goto xperr;
+			} else { 
+				c += *c + 1;
+			}
 		}
 
-		for (ptr = replace; ptr && *ptr; ptr++) {
-			if (*ptr == '\\') {
-				*ptr = '$';
+		if (dns_getdn(pkt, &c, end, dn, DNS_MAXDN) <= 0 || c != dend) {
+			goto xperr;
+		}
+
+		c = dptr;
+		order = dns_get16(c+0);
+		preference = dns_get16(c+2);
+		flags = (char) dns_get16(c + 4);
+		c += 4;
+
+		for(n = 0; n < 3; n++) {
+			uint32_t len = *c++, cpylen = len;
+			if (len > sizeof(string_arg[n]) - 1) {
+				cpylen = sizeof(string_arg[n]) - 1;
 			}
+			strncpy(string_arg[n], (char *)c, cpylen);
+			*(string_arg[n] + len) = '\0';
+			c += len;
+		}
+
+		service = string_arg[1];
+
+		if ((argc = switch_separate_string(string_arg[2], '!', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+			regex = argv[1];
+			replace = argv[2];
+		} else {
+			goto xperr;
 		}
 
 		if (flags && service && regex && replace) {
@@ -350,7 +361,7 @@ static void parse_rr(const struct dns_parse *p, enum_query_t * q, struct dns_rr 
 						}
 					}
 				}
-
+				
 				add_result(q, order, preference, service, uri);
 			}
 
@@ -365,7 +376,7 @@ static void parse_rr(const struct dns_parse *p, enum_query_t * q, struct dns_rr 
 
 	return;
 
-  xperr:
+	xperr:
 	//printf("<parse error>\n");
 	return;
 }
