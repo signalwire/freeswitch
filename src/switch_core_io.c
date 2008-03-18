@@ -107,6 +107,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
   top:
 
 	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
+		*frame = NULL;
 		return SWITCH_STATUS_FALSE;
 	}
 
