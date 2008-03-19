@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
-	Name="mod_fsv"
-	ProjectGUID="{4AE157CF-F2DD-4B5D-A1EE-4AC173B4F9AC}"
-	RootNamespace="mod_fsv"
+	Version="9.00"
+	Name="mod_spidermonkey_curl"
+	ProjectGUID="{36E854E3-CE12-4348-A125-CCF3F9D74813}"
+	RootNamespace="mod_spidermonkey_curl"
 	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -18,11 +19,12 @@
 		<Configuration
 			Name="Debug|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
+			InheritedPropertySheets="..\..\..\..\w32\winlibs.vsprops;..\..\..\..\w32\module_debug.vsprops;..\..\..\..\w32\spidermonkey.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -38,6 +40,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories=""
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -51,6 +54,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalLibraryDirectories=""
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -69,9 +75,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -80,11 +83,12 @@
 		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
+			InheritedPropertySheets="..\..\..\..\w32\winlibs.vsprops;..\..\..\..\w32\module_release.vsprops;..\..\..\..\w32\spidermonkey.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -100,6 +104,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories=""
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -113,6 +118,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalLibraryDirectories=""
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -131,9 +139,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -144,7 +149,7 @@
 	</References>
 	<Files>
 		<File
-			RelativePath=".\mod_fsv.c"
+			RelativePath=".\mod_spidermonkey_curl.c"
 			>
 		</File>
 	</Files>

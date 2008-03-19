@@ -1124,7 +1124,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 
 	memset(digit_buffer, 0, digit_buffer_length);
 	args.buf = digit_buffer;
-	args.buflen = digit_buffer_length;
+	args.buflen = (uint32_t)digit_buffer_length;
 
 	if (!switch_strlen_zero(prompt_audio_file) && strcasecmp(prompt_audio_file, "silence")) {
 		status = switch_ivr_play_file(session, NULL, prompt_audio_file, &args);
@@ -1139,7 +1139,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 
 	if (len < min_digits && len < max_digits) {
 		args.buf = digit_buffer + len;
-		args.buflen = digit_buffer_length - len;
+		args.buflen = (uint32_t)(digit_buffer_length - len);
 		status = switch_ivr_collect_digits_count(session, digit_buffer, digit_buffer_length, max_digits, valid_terminators, &terminator, timeout, 0, 0);
 	}
 
