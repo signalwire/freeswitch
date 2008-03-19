@@ -4,7 +4,7 @@
 #
 #       The FreeSwitch Open Source Voice Platform
 #
-#  chkconfig: - 89 14
+#  chkconfig: 345 89 14
 #  description: Starts and stops the freeswitch server daemon
 #  processname: freeswitch
 #  config: /opt/freeswitch/conf/freeswitch.conf
@@ -33,8 +33,9 @@ start() {
         echo -n "Starting $PROG_NAME: "
         if [ -e $LOCK_FILE ]; then
             if [ -e $PID_FILE ] && [ -e /proc/`$PID_FILE` ]; then
-                echo -n $"cannot start freeswitch: freeswitch is already running.";
-                failure $"cannot start freeswitch: freeswitch already running.";
+                echo
+                echo -n $"$PROG_NAME is already running.";
+                failure $"$PROG_NAME is already running.";
                 echo
                 return 1
             fi
@@ -50,13 +51,14 @@ start() {
 stop() {
         echo -n "Shutting down $PROG_NAME: "
         if [ ! -e $LOCK_FILE ]; then
+            echo
             echo -n $"cannot stop $PROG_NAME: $PROG_NAME is not running."
             failure $"cannot stop $PROG_NAME: $PROG_NAME is not running."
             echo
             return 1;
         fi
-	/opt/freeswitch/bin/freeswitch -stop > /dev/null 2>&1
-        killproc freeswitch
+	$FS_FILE -stop > /dev/null 2>&1
+        killproc $PROG_NAME
 	RETVAL=$?
 	echo
 	[ $RETVAL -eq 0 ] &&  rm -f $LOCK_FILE;
