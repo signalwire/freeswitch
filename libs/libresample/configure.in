@@ -45,6 +45,8 @@ fi
 AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
 
 
+echo host $host
+echo ax_cv_c_compiler_vendor ${ax_cv_c_compiler_vendor}
 case "$host" in
                 *-solaris2*)
                         if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then

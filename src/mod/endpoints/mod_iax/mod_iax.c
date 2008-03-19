@@ -87,6 +87,8 @@ struct private_object {
 	switch_codec_t write_codec;
 	switch_frame_t read_frame;
 	unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	switch_frame_t cng_frame;
+	unsigned char cng_databuf[10];
 	switch_core_session_t *session;
 	struct iax_session *iax_session;
 	switch_caller_profile_t *caller_profile;
@@ -441,6 +443,10 @@ static void tech_init(private_t * tech_pvt, switch_core_session_t *session)
 {
 	tech_pvt->read_frame.data = tech_pvt->databuf;
 	tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
+	tech_pvt->cng_frame.data = tech_pvt->cng_databuf;
+	tech_pvt->cng_frame.buflen = sizeof(tech_pvt->cng_databuf);
+	switch_set_flag((&tech_pvt->cng_frame), SFF_CNG);
+	tech_pvt->cng_frame.datalen = 2;
 	switch_mutex_init(&tech_pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_core_session_set_private(session, tech_pvt);
@@ -602,6 +608,12 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 		if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 			return SWITCH_STATUS_FALSE;
+		}
+
+		if (switch_test_flag(tech_pvt, TFLAG_IO) && switch_test_flag(tech_pvt, TFLAG_DTMF)) {
+			switch_clear_flag_locked(tech_pvt, TFLAG_DTMF);
+			*frame = &tech_pvt->cng_frame;
+			return SWITCH_STATUS_SUCCESS;
 		}
 
 		if (switch_test_flag(tech_pvt, TFLAG_IO) && switch_test_flag(tech_pvt, TFLAG_VOICE)) {
@@ -1107,7 +1119,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 					if (globals.debug) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%c DTMF %s\n", dtmf.digit, switch_channel_get_name(channel));
 					}
+					switch_mutex_lock(tech_pvt->flag_mutex);
 					switch_channel_queue_dtmf(channel, &dtmf);
+					switch_set_flag(tech_pvt, TFLAG_DTMF);
+					switch_mutex_unlock(tech_pvt->flag_mutex);
 				}
 
 				break;

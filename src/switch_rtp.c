@@ -1098,7 +1098,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 {
 	switch_size_t bytes = 0;
 	switch_status_t status;
-	uint8_t check = 1;
+	uint8_t check = 0;
 	stfu_frame_t *jb_frame;
 	int ret = -1;
 	
@@ -1125,6 +1125,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
 			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
+			do_2833(rtp_session);
 			bytes = 0;
 			do_cng = 1;
 			goto cng;
@@ -1154,8 +1155,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		} else if (bytes) {
 			check++;
 		}
-
-		if (check) {
+		
+		if (check || bytes) {
 			do_2833(rtp_session);
 		}
 

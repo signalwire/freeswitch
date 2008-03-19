@@ -178,7 +178,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 			switch_dtmf_t dtmf = { 0, 0 };
 			if (switch_channel_dequeue_dtmf(chan_a, &dtmf) == SWITCH_STATUS_SUCCESS) {
 				int send_dtmf = 1;
-				
+
 				if (input_callback) {
 					switch_status_t cb_status = input_callback(session_a, (void *)&dtmf, SWITCH_INPUT_TYPE_DTMF, user_data, 0);
 					
