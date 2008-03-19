@@ -325,11 +325,11 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 	const char *ocodec = NULL;
 
 	if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) || switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
-		goto end;
+		return;
 	}
 
 	if (tech_pvt->num_codecs) {
-		goto end;
+		return;
 	}
 
 	switch_assert(tech_pvt->session != NULL);
@@ -365,8 +365,8 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 		tech_pvt->num_codecs =
 			switch_loadable_module_get_codecs(tech_pvt->codecs, sizeof(tech_pvt->codecs) / sizeof(tech_pvt->codecs[0]));
 	}
- end:
-	sofia_glue_check_video_codecs(tech_pvt);
+ 
+
 }
 
 void sofia_glue_check_video_codecs(private_object_t *tech_pvt) 
@@ -882,6 +882,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	cid_name = caller_profile->caller_id_name;
 	cid_num = caller_profile->caller_id_number;
 	sofia_glue_tech_prepare_codecs(tech_pvt);
+	sofia_glue_check_video_codecs(tech_pvt);
 	check_decode(cid_name, session);
 	check_decode(cid_num, session);
 
@@ -2156,6 +2157,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						switch_channel_set_variable(tech_pvt->channel, "sip_video_fmtp", tech_pvt->video_rm_fmtp);
 						switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->video_agreed_pt);
 						switch_channel_set_variable(tech_pvt->channel, "sip_video_pt", tmp);
+						sofia_glue_check_video_codecs(tech_pvt);
                         break;
 					} else {
 						vmatch = 0;
