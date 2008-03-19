@@ -702,16 +702,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		char *dup;
 
 		if (!strncasecmp(file, "phrase:", 7)) {
-			char *arg;
+			char *arg = NULL;
 			char *lang = NULL;
 			alt = file + 7;
 			dup = switch_core_session_strdup(session, alt);
-			if ((arg = strchr(dup, ':'))) {
-				*arg++ = '\0';
-				if ((lang = strchr(arg, ':'))) {
-					*lang++ = '\0';
+
+			if ((lang = strchr(dup, ':'))) {
+				*lang++ = '\0';
+				if ((arg = strchr(lang, ':'))) {
+					*arg++ = '\0';
 				}
 			}
+			
 			if (dup) {
 				return switch_ivr_phrase_macro(session, dup, arg, lang, args);
 			} else {
