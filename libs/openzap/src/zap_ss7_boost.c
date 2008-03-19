@@ -80,6 +80,15 @@ static zap_channel_t *find_zchan(zap_span_t *span, ss7bc_event_t *event)
 	for(i = 0; i <= span->chan_count; i++) {
 		if (span->channels[i].physical_span_id == event->span+1 && span->channels[i].physical_chan_id == event->chan+1) {
 			zchan = &span->channels[i];
+			if (zap_test_flag(zchan, ZAP_CHANNEL_INUSE)) {
+				zchan = NULL;
+				zap_log(ZAP_LOG_WARNING, "Channel %d:%d ~ %d:%d is already in use.\n",
+						span->channels[i].span_id,
+						span->channels[i].chan_id,
+						span->channels[i].physical_span_id,
+						span->channels[i].physical_chan_id
+						);
+			}
 			break;
 		}
 	}
@@ -256,6 +265,8 @@ static void handle_call_start(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_
 	return;
 
  error:
+
+	zap_log(ZAP_LOG_CRIT, "START CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
 
 	ss7bc_exec_command(mcon,
 					   event->span,
