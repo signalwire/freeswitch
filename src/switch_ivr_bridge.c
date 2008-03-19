@@ -157,10 +157,15 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 			msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
 			switch_core_session_receive_message(session_a, &msg);
 			switch_channel_clear_flag(chan_b, CF_SUSPEND);
+			switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 		}
-		
+
 		if (!nosuspend && (switch_channel_test_flag(chan_a, CF_SUSPEND) || switch_channel_test_flag(chan_b, CF_SUSPEND))) {
-			switch_yield(10000);
+			status = switch_core_session_read_frame(session_a, &read_frame, -1, stream_id);
+			
+			if (!SWITCH_READ_ACCEPTABLE(status)) {
+				goto end_of_bridge_loop;
+			}
 			continue;
 		}
 
