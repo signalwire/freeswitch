@@ -14,11 +14,6 @@
 # Source function library.
 . /etc/init.d/functions
 
-# Source options file
-if [ -f /etc/sysconfig/freeswitch ]; then
-	. /etc/sysconfig/freeswitch
-fi
-
 PROG_NAME=freeswitch
 PID_FILE=/opt/freeswitch/log/freeswitch.pid
 FS_USER=freeswitch
@@ -26,6 +21,11 @@ FS_FILE=/opt/freeswitch/bin/freeswitch
 LOCK_FILE=/var/lock/subsys/freeswitch
 FREESWITCH_ARGS="-nc"
 RETVAL=0
+
+# Source options file
+if [ -f /etc/sysconfig/freeswitch ]; then
+	. /etc/sysconfig/freeswitch
+fi
 
 # <define any local shell functions used by the code that follows>
 
