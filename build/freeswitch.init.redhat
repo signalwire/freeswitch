@@ -22,6 +22,7 @@ fi
 prog=freeswitch
 pidfile=/opt/freeswitch/log/freeswitch.pid
 FS_USER=freeswitch
+FS_FILE=/opt/freeswitch/bin/freeswitch
 lockfile=/var/lock/subsys/freeswitch
 RETVAL=0
 
@@ -38,8 +39,9 @@ start() {
             fi
         fi
 
-        daemon --user $FS_USER --pidfile $pidfile $prog $FREESWITCH_PARAMS
-	RETVAL=$?
+        daemon --user $FS_USER --pidfile $pidfile "$FS_FILE $FREESWITCH_PARAMS >/dev/null 2>&1"
+		echo
+		RETVAL=$?
         [ $RETVAL -eq 0 ] && touch $lockfile;
         return $RETVAL
 }
@@ -52,7 +54,7 @@ stop() {
             echo
             return 1;
         fi
-	/opt/freeswitch/bin/freeswitch -stop
+	/opt/freeswitch/bin/freeswitch -stop > /dev/null 2>&1
         killproc freeswitch
 	RETVAL=$?
 	echo
