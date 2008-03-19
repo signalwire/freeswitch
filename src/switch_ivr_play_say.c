@@ -682,6 +682,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	const char *prefix;
 	const char *timer_name;
 	const char *prebuf;
+	const char *alt = NULL;
 
 	switch_zmalloc(abuf, FILE_STARTSAMPLES * sizeof(*abuf));
 
@@ -696,6 +697,49 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		status = SWITCH_STATUS_FALSE;
 		goto end;
 	}
+
+	if ((alt = strchr(file, ':'))) {
+		char *dup;
+
+		if (!strncasecmp(file, "phrase:", 7)) {
+			char *arg;
+			char *lang = NULL;
+			alt = file + 7;
+			dup = switch_core_session_strdup(session, alt);
+			if ((arg = strchr(dup, ':'))) {
+				*arg++ = '\0';
+				if ((lang = strchr(arg, ':'))) {
+					*lang++ = '\0';
+				}
+			}
+			if (dup) {
+				return switch_ivr_phrase_macro(session, dup, arg, lang, args);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Args\n");
+				return SWITCH_STATUS_FALSE;
+			}
+		} else if (!strncasecmp(file, "say:", 4)) {
+			char *engine = NULL, *voice = NULL, *text = NULL;
+			alt = file + 4;
+            dup = switch_core_session_strdup(session, alt);
+			engine = dup;
+
+			if ((voice = strchr(engine, ':'))) {
+				*voice++ = '\0';
+				if ((text = strchr(voice, ':'))) {
+					*text++ = '\0';
+				}
+			}
+			if (engine && voice && text) {
+				return switch_ivr_speak_text(session, engine, voice, dup, args);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Args\n");
+				return SWITCH_STATUS_FALSE;
+			}
+		}
+		
+	}
+
 
 	if (!prefix) {
 		prefix = SWITCH_GLOBAL_dirs.base_dir;
