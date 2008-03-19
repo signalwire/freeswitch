@@ -5,6 +5,7 @@
 #       The FreeSwitch Open Source Voice Platform
 #
 #  chkconfig: - 89 14
+#  description: Starts and stops the freeswitch server daemon
 #  processname: freeswitch
 #  config: /opt/freeswitch/conf/freeswitch.conf
 #  pidfile: /opt/freeswitch/log/freeswitch.pid
@@ -19,19 +20,19 @@ if [ -f /etc/sysconfig/freeswitch ]; then
 	. /etc/sysconfig/freeswitch
 fi
 
-prog=freeswitch
-pidfile=/opt/freeswitch/log/freeswitch.pid
+PROG_NAME=freeswitch
+PID_FILE=/opt/freeswitch/log/freeswitch.pid
 FS_USER=freeswitch
 FS_FILE=/opt/freeswitch/bin/freeswitch
-lockfile=/var/lock/subsys/freeswitch
+LOCK_FILE=/var/lock/subsys/freeswitch
 RETVAL=0
 
 # <define any local shell functions used by the code that follows>
 
 start() {
-        echo -n "Starting $prog: "
-        if [ -e $lockfile ]; then
-            if [ -e $pidfile ] && [ -e /proc/`$pidfile` ]; then
+        echo -n "Starting $PROG_NAME: "
+        if [ -e $LOCK_FILE ]; then
+            if [ -e $PID_FILE ] && [ -e /proc/`$PID_FILE` ]; then
                 echo -n $"cannot start freeswitch: freeswitch is already running.";
                 failure $"cannot start freeswitch: freeswitch already running.";
                 echo
@@ -39,18 +40,18 @@ start() {
             fi
         fi
 
-        daemon --user $FS_USER --pidfile $pidfile "$FS_FILE $FREESWITCH_PARAMS >/dev/null 2>&1"
+        daemon --user $FS_USER --pidfile $PID_FILE "$FS_FILE $FREESWITCH_PARAMS >/dev/null 2>&1"
 		echo
 		RETVAL=$?
-        [ $RETVAL -eq 0 ] && touch $lockfile;
+        [ $RETVAL -eq 0 ] && touch $LOCK_FILE;
         return $RETVAL
 }
 
 stop() {
-        echo -n "Shutting down $prog: "
-        if [ ! -e $lockfile ]; then
-            echo -n $"cannot stop $prog: $prog is not running."
-            failure $"cannot stop $prog: $prog is not running."
+        echo -n "Shutting down $PROG_NAME: "
+        if [ ! -e $LOCK_FILE ]; then
+            echo -n $"cannot stop $PROG_NAME: $PROG_NAME is not running."
+            failure $"cannot stop $PROG_NAME: $PROG_NAME is not running."
             echo
             return 1;
         fi
@@ -58,12 +59,12 @@ stop() {
         killproc freeswitch
 	RETVAL=$?
 	echo
-	[ $RETVAL -eq 0 ] &&  rm -f $lockfile;
+	[ $RETVAL -eq 0 ] &&  rm -f $LOCK_FILE;
         return $RETVAL
 }
 
 rhstatus() {
-	status $prog;
+	status $PROG_NAME;
 }
 
 case "$1" in
@@ -74,7 +75,7 @@ case "$1" in
         stop
         ;;
     status)
-        status $prog
+        status $PROG_NAME
 	RETVAL=$?
         ;;
     restart)
@@ -87,10 +88,10 @@ case "$1" in
 #        to restart above>
         ;;
     condrestart)
-        [ -f $pidfile ] && restart || :
+        [ -f $PID_FILE ] && restart || :
 	;;
     *)
-        echo "Usage: $prog {start|stop|status|reload|restart"
+        echo "Usage: $PROG_NAME {start|stop|status|reload|restart"
         exit 1
         ;;
 esac
