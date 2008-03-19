@@ -77,7 +77,7 @@ static zap_channel_t *find_zchan(zap_span_t *span, ss7bc_event_t *event)
 	int i;
 	zap_channel_t *zchan = NULL;
 
-	for(i = 0; i < span->chan_count; i++) {
+	for(i = 0; i <= span->chan_count; i++) {
 		if (span->channels[i].physical_span_id == event->span+1 && span->channels[i].physical_chan_id == event->chan+1) {
 			zchan = &span->channels[i];
 			break;
@@ -171,6 +171,7 @@ static void handle_call_start_ack(ss7bc_connection_t *mcon, ss7bc_event_t *event
 		}
 	} 
 
+	zap_log(ZAP_LOG_CRIT, "START ACK CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
 	ss7bc_exec_command(mcon,
 					   event->span,
 					   event->chan,
@@ -201,22 +202,17 @@ static void handle_call_stop(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_e
 	if ((zchan = find_zchan(span, event))) {
 		zchan->caller_data.hangup_cause = event->release_cause;
 		zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_TERMINATING);
-
-		ss7bc_exec_command(mcon,
-						   event->span,
-						   event->chan,
-						   0,
-						   SIGBOOST_EVENT_CALL_STOPPED_ACK,
-						   0);
-
 	} else {
-		ss7bc_exec_command(mcon,
-						   event->span,
-						   event->chan,
-						   0,
-						   SIGBOOST_EVENT_CALL_STOPPED,
-						   ZAP_CAUSE_DESTINATION_OUT_OF_ORDER);
+		zap_log(ZAP_LOG_CRIT, "STOP CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
 	}
+
+	ss7bc_exec_command(mcon,
+					   event->span,
+					   event->chan,
+					   0,
+					   SIGBOOST_EVENT_CALL_STOPPED_ACK,
+					   0);
+	
 }
 
 static void handle_call_answer(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_event_t *event)
@@ -226,12 +222,7 @@ static void handle_call_answer(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc
 	if ((zchan = find_zchan(span, event))) {
 		zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_UP);
 	} else {
-		ss7bc_exec_command(mcon,
-						   event->span,
-						   event->chan,
-						   0,
-						   SIGBOOST_EVENT_CALL_STOPPED,
-						   ZAP_CAUSE_DESTINATION_OUT_OF_ORDER);
+		zap_log(ZAP_LOG_CRIT, "ANSWER CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
 	}
 }
 
@@ -542,7 +533,7 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 	mcon = &ss7_boost_data->mcon;
 	pcon = &ss7_boost_data->pcon;
 
- top:
+	top:
 
 	init_outgoing_array();		
 
@@ -579,7 +570,7 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 
 			if (FD_ISSET(pcon->socket, &rfds)) {
 				if ((event = ss7bc_connection_readp(pcon, i))) {
-					parse_ss7_event(span, pcon, event);
+					parse_ss7_event(span, mcon, event);
 				} else goto top;
 			}
 

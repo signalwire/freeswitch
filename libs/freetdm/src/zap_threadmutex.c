@@ -174,6 +174,9 @@ zap_status_t zap_mutex_destroy(zap_mutex_t **mutex)
 {
 	zap_mutex_t *mp = *mutex;
 	*mutex = NULL;
+	if (!mp) {
+		return ZAP_FAIL;
+	}
 #ifdef WIN32
 	DeleteCriticalSection(&mp->mutex);
 #else
