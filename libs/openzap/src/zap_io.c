@@ -342,7 +342,7 @@ zap_status_t zap_span_close_all(void)
 	for(i = 1; i <= globals.span_index; i++) {
 		span = &globals.spans[i];
 		if (zap_test_flag(span, ZAP_SPAN_CONFIGURED)) {
-			for(j = 0; j < span->chan_count; j++) {
+			for(j = 0; j <= span->chan_count; j++) {
 				zap_channel_destroy(&span->channels[j]);
 			}
 		} 
@@ -940,6 +940,18 @@ zap_status_t zap_channel_done(zap_channel_t *zchan)
 
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_INUSE);
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_OUTBOUND);
+	zap_clear_flag_locked(zchan, ZAP_CHANNEL_WINK);
+	zap_clear_flag_locked(zchan, ZAP_CHANNEL_FLASH);
+	zap_clear_flag_locked(zchan, ZAP_CHANNEL_STATE_CHANGE);
+	zap_clear_flag_locked(zchan, ZAP_CHANNEL_HOLD);
+	zap_clear_flag_locked(zchan, ZAP_CHANNEL_OFFHOOK);
+	zap_clear_flag_locked(zchan, ZAP_CHANNEL_RINGING);
+	zap_clear_flag_locked(zchan, ZAP_CHANNEL_PROGRESS_DETECT);
+	zap_clear_flag_locked(zchan, ZAP_CHANNEL_CALLERID_DETECT);
+	zap_clear_flag_locked(zchan, ZAP_CHANNEL_3WAY);
+	zap_clear_flag_locked(zchan, ZAP_CHANNEL_PROGRESS);
+	zap_clear_flag_locked(zchan, ZAP_CHANNEL_MEDIA);
+	zap_clear_flag_locked(zchan, ZAP_CHANNEL_ANSWERED);
 
 	return ZAP_SUCCESS;
 }
