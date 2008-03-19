@@ -4,6 +4,5 @@
 ## ServiceRestart:      freeswitch
 #
 # if not empty: parameters for freeswitch
-# for example FREESWITCH_PARAMS="-nc"
 #
-FREESWITCH_PARAMS="-nc"
+FREESWITCH_PARAMS=""
