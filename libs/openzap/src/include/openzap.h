@@ -536,7 +536,7 @@ void print_hex_bytes(uint8_t *data, zap_size_t dlen, char *buf, zap_size_t blen)
 int zap_hash_equalkeys(void *k1, void *k2);
 uint32_t zap_hash_hashfromstring(void *ky);
 uint32_t zap_running(void);
-
+zap_status_t zap_channel_complete_state(zap_channel_t *zchan);
 
 ZIO_CODEC_FUNCTION(zio_slin2ulaw);
 ZIO_CODEC_FUNCTION(zio_ulaw2slin);

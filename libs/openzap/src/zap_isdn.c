@@ -334,7 +334,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		break;
 	case ZAP_CHANNEL_STATE_RESTART:
 		{
-			if (zchan->last_state > ZAP_CHANNEL_STATE_HANGUP) { 
+			if (zchan->last_state != ZAP_CHANNEL_STATE_HANGUP && zchan->last_state != ZAP_CHANNEL_STATE_DOWN) {
 				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 			} else {
 				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
@@ -523,6 +523,7 @@ static __inline__ void check_state(zap_span_t *span)
 		for(j = 1; j <= span->chan_count; j++) {
 			if (zap_test_flag((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE)) {
 				state_advance(&span->channels[j]);
+				zap_channel_complete_state(&span->channels[j]);
 				zap_clear_flag_locked((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE);
 			}
 		}
