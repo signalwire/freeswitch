@@ -315,6 +315,7 @@ static void parse_rr(const struct dns_parse *p, enum_query_t * q, struct dns_rr 
 
 		for(n = 0; n < 3; n++) {
 			uint32_t len = *c++, cpylen = len;
+			switch_assert(string_arg[n]);
 			if (len > sizeof(string_arg[n]) - 1) {
 				cpylen = sizeof(string_arg[n]) - 1;
 			}
