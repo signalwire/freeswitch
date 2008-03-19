@@ -11,7 +11,6 @@
 #  pidfile: /opt/freeswitch/log/freeswitch.pid
 #
 
-export PATH=$PATH:/opt/freeswitch/bin
 # Source function library.
 . /etc/init.d/functions
 
@@ -25,6 +24,7 @@ PID_FILE=/opt/freeswitch/log/freeswitch.pid
 FS_USER=freeswitch
 FS_FILE=/opt/freeswitch/bin/freeswitch
 LOCK_FILE=/var/lock/subsys/freeswitch
+FREESWITCH_ARGS="-nc"
 RETVAL=0
 
 # <define any local shell functions used by the code that follows>
@@ -32,7 +32,7 @@ RETVAL=0
 start() {
         echo -n "Starting $PROG_NAME: "
         if [ -e $LOCK_FILE ]; then
-            if [ -e $PID_FILE ] && [ -e /proc/`$PID_FILE` ]; then
+            if [ -e $PID_FILE ] && [ -e /proc/`cat $PID_FILE` ]; then
                 echo
                 echo -n $"$PROG_NAME is already running.";
                 failure $"$PROG_NAME is already running.";
@@ -41,10 +41,11 @@ start() {
             fi
         fi
 
-        daemon --user $FS_USER --pidfile $PID_FILE "$FS_FILE $FREESWITCH_PARAMS >/dev/null 2>&1"
+        daemon --user $FS_USER --pidfile $PID_FILE "$FS_FILE $FREESWITCH_ARGS $FREESWITCH_PARAMS >/dev/null 2>&1"
 		echo
 		RETVAL=$?
         [ $RETVAL -eq 0 ] && touch $LOCK_FILE;
+	echo
         return $RETVAL
 }
 
