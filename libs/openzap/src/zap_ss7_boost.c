@@ -77,21 +77,38 @@ static zap_channel_t *find_zchan(zap_span_t *span, ss7bc_event_t *event)
 	int i;
 	zap_channel_t *zchan = NULL;
 
+	zap_mutex_lock(signal_mutex);
 	for(i = 0; i <= span->chan_count; i++) {
 		if (span->channels[i].physical_span_id == event->span+1 && span->channels[i].physical_chan_id == event->chan+1) {
 			zchan = &span->channels[i];
 			if (zap_test_flag(zchan, ZAP_CHANNEL_INUSE)) {
-				zchan = NULL;
-				zap_log(ZAP_LOG_WARNING, "Channel %d:%d ~ %d:%d is already in use.\n",
-						span->channels[i].span_id,
-						span->channels[i].chan_id,
-						span->channels[i].physical_span_id,
-						span->channels[i].physical_chan_id
-						);
+				if (zchan->state == ZAP_CHANNEL_STATE_DOWN || zchan->state >= ZAP_CHANNEL_STATE_TERMINATING) {
+					int x = 0;
+					zap_log(ZAP_LOG_WARNING, "Channel %d:%d ~ %d:%d is already in use waiting for it to become available.\n");
+
+					zap_mutex_unlock(signal_mutex);
+					for (x = 0; x < 200; x++) {
+						if (!zap_test_flag(zchan, ZAP_CHANNEL_INUSE)) {
+							break;
+						}
+						zap_sleep(5);
+					}
+					zap_mutex_lock(signal_mutex);
+				}
+				if (zap_test_flag(zchan, ZAP_CHANNEL_INUSE)) {
+					zchan = NULL;
+					zap_log(ZAP_LOG_ERROR, "Channel %d:%d ~ %d:%d is already in use.\n",
+							span->channels[i].span_id,
+							span->channels[i].chan_id,
+							span->channels[i].physical_span_id,
+							span->channels[i].physical_chan_id
+							);
+				}
 			}
 			break;
 		}
 	}
+	zap_mutex_unlock(signal_mutex);
 
 	return zchan;
 }
@@ -246,13 +263,6 @@ static void handle_call_start(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_
 	if (zap_channel_open_chan(zchan) != ZAP_SUCCESS) {
 		goto error;
 	}
-
-	ss7bc_exec_command(mcon,
-					   event->span,
-					   event->chan,
-					   0,
-					   SIGBOOST_EVENT_CALL_START_ACK,
-					   0);
 
 	zap_set_string(zchan->caller_data.cid_num.digits, (char *)event->calling_number_digits);
 	zap_set_string(zchan->caller_data.cid_name, (char *)event->calling_number_digits);
@@ -458,6 +468,13 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 								   zchan->physical_span_id-1,
 								   zchan->physical_chan_id-1,								   
 								   0,
+								   SIGBOOST_EVENT_CALL_START_ACK,
+								   0);
+				
+				ss7bc_exec_command(mcon,
+								   zchan->physical_span_id-1,
+								   zchan->physical_chan_id-1,								   
+								   0,
 								   SIGBOOST_EVENT_CALL_ANSWERED,
 								   0);
 			}
@@ -469,12 +486,21 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		break;
 	case ZAP_CHANNEL_STATE_HANGUP:
 		{
-			ss7bc_exec_command(mcon,
-							   zchan->physical_span_id-1,
-							   zchan->physical_chan_id-1,
-							   0,
-							   SIGBOOST_EVENT_CALL_STOPPED,
-							   zchan->caller_data.hangup_cause);
+			if (zap_test_flag(zchan, ZAP_CHANNEL_ANSWERED)) {
+				ss7bc_exec_command(mcon,
+								   zchan->physical_span_id-1,
+								   zchan->physical_chan_id-1,
+								   0,
+								   SIGBOOST_EVENT_CALL_STOPPED,
+								   zchan->caller_data.hangup_cause);
+			} else {
+				ss7bc_exec_command(mcon,
+								   zchan->physical_span_id-1,
+								   zchan->physical_chan_id-1,								   
+								   0,
+								   SIGBOOST_EVENT_CALL_START_NACK,
+								   zchan->caller_data.hangup_cause);
+			}
 			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
 			
 		}

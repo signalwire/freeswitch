@@ -979,16 +979,17 @@ zap_status_t zap_channel_close(zap_channel_t **zchan)
 		return ZAP_FAIL;
 	}
 
-	zap_mutex_lock(check->mutex);
-	if (zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
-		status = check->zio->close(check);
-		if (status == ZAP_SUCCESS) {
-			zap_channel_reset(check);
-			*zchan = NULL;
+	if (zap_test_flag(check, ZAP_CHANNEL_CONFIGURED)) {
+		zap_mutex_lock(check->mutex);
+		if (zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
+			status = check->zio->close(check);
+			if (status == ZAP_SUCCESS) {
+				zap_channel_reset(check);
+				*zchan = NULL;
+			}
 		}
+		zap_mutex_unlock(check->mutex);
 	}
-
-	zap_mutex_unlock(check->mutex);
 	
 	return status;
 }
