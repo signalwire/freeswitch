@@ -599,6 +599,25 @@ zap_status_t zap_channel_add_token(zap_channel_t *zchan, char *token, int end)
 }
 
 
+zap_status_t zap_channel_complete_state(zap_channel_t *zchan)
+{
+	zap_channel_state_t state = zchan->state;
+
+	if (state == ZAP_CHANNEL_STATE_PROGRESS) {
+		zap_set_flag(zchan, ZAP_CHANNEL_PROGRESS);
+	} else if (state == ZAP_CHANNEL_STATE_UP) {
+		zap_set_flag(zchan, ZAP_CHANNEL_PROGRESS);
+		zap_set_flag(zchan, ZAP_CHANNEL_MEDIA);	
+		zap_set_flag(zchan, ZAP_CHANNEL_ANSWERED);	
+	} else if (state == ZAP_CHANNEL_STATE_PROGRESS_MEDIA) {
+		zap_set_flag(zchan, ZAP_CHANNEL_PROGRESS);	
+		zap_set_flag(zchan, ZAP_CHANNEL_MEDIA);	
+	}
+
+	return ZAP_SUCCESS;
+}
+
+
 zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state)
 {
 	int ok = 1;
@@ -669,17 +688,6 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 	}
 	
 	if (ok) {
-		if (state == ZAP_CHANNEL_STATE_PROGRESS) {
-			zap_set_flag(zchan, ZAP_CHANNEL_PROGRESS);
-		} else if (state == ZAP_CHANNEL_STATE_UP) {
-			zap_set_flag(zchan, ZAP_CHANNEL_PROGRESS);
-			zap_set_flag(zchan, ZAP_CHANNEL_MEDIA);	
-			zap_set_flag(zchan, ZAP_CHANNEL_ANSWERED);	
-		} else if (state == ZAP_CHANNEL_STATE_PROGRESS_MEDIA) {
-			zap_set_flag(zchan, ZAP_CHANNEL_PROGRESS);	
-			zap_set_flag(zchan, ZAP_CHANNEL_MEDIA);	
-		}
-
 		if (zchan->state == ZAP_CHANNEL_STATE_DOWN) {
 			zchan->span->active_count++;
 		} else if (state == ZAP_CHANNEL_STATE_DOWN) {

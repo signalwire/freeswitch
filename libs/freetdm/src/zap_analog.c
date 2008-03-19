@@ -345,6 +345,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 		} else {
 			zap_clear_flag_locked(zchan, ZAP_CHANNEL_STATE_CHANGE);
 			zap_clear_flag_locked(zchan->span, ZAP_SPAN_STATE_CHANGE);
+			zap_channel_complete_state(zchan);
 			indicate = 0;
 			state_counter = 0;
 			zap_log(ZAP_LOG_DEBUG, "Executing state handler on %d:%d for %s\n", 
