@@ -94,7 +94,7 @@ case "$1" in
         [ -f $PID_FILE ] && restart || :
 	;;
     *)
-        echo "Usage: $PROG_NAME {start|stop|status|reload|restart"
+        echo "Usage: $PROG_NAME {start|stop|status|reload|restart}"
         exit 1
         ;;
 esac
