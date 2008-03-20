@@ -2538,8 +2538,6 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 
 
 	if ((session = ldl_session_get_private(dlsession))) {
-
-		switch_core_session_signal_lock(session);
 		tech_pvt = switch_core_session_get_private(session);
 		switch_assert(tech_pvt != NULL);
 
@@ -2561,7 +2559,6 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 		}
 		if ((session = switch_core_session_request(dingaling_endpoint_interface, NULL)) != 0) {
 			switch_core_session_add_stream(session, NULL);
-			switch_core_session_signal_lock(session);
 			
 			if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object))) != 0) {
 				char *exten;
@@ -2946,11 +2943,9 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 		break;
 	}
 
+	
  done:
 
-	if (session) {
-		switch_core_session_signal_unlock(session);
-	}
 
 	return status;
 }
