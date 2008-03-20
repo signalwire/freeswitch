@@ -1049,6 +1049,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "End existing sessions\n");
 	switch_core_session_hupall(SWITCH_CAUSE_SYSTEM_SHUTDOWN);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Clean up modules.\n");
+	switch_core_memory_stop();
 	switch_loadable_module_shutdown();
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Closing Event Engine.\n");
@@ -1061,7 +1062,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 
 	switch_rtp_shutdown();
 	switch_xml_destroy();
-	switch_core_memory_stop();
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Finalizing Shutdown.\n");
 	switch_log_shutdown();
 

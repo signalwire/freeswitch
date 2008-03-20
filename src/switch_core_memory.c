@@ -312,16 +312,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memor
 
 SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(switch_memory_pool_t **pool, const char *file, const char *func, int line)
 {
-	//char tmp[128] = "";
-
-
 	switch_assert(pool != NULL);
 
 #ifdef DEBUG_ALLOC2
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Free Pool\n");
 #endif
 
-	if (switch_queue_push(memory_manager.pool_queue, *pool) != SWITCH_STATUS_SUCCESS) {
+	if ((memory_manager.pool_thread_running != 1) || (switch_queue_push(memory_manager.pool_queue, *pool) != SWITCH_STATUS_SUCCESS)) {
 		apr_pool_destroy(*pool);
 	}
 	*pool = NULL;

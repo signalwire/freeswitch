@@ -421,7 +421,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown)
 			switch_yield(10000);
 		}
 	}
-	switch_core_destroy_memory_pool(&module_pool);
 	return SWITCH_STATUS_SUCCESS;
 }
 
