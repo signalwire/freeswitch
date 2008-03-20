@@ -285,6 +285,7 @@ static void parse_rr(const struct dns_parse *p, enum_query_t * q, struct dns_rr 
 	char *service = NULL;
 	char *regex = NULL;
 	char *replace = NULL;
+	char *ptr;
 	int argc = 0;
 	char *argv[4] = { 0 };
 	int n;
@@ -331,6 +332,12 @@ static void parse_rr(const struct dns_parse *p, enum_query_t * q, struct dns_rr 
 			replace = argv[2];
 		} else {
 			goto xperr;
+		}
+
+		for (ptr = replace; ptr && *ptr; ptr++) {
+			if (*ptr == '\\') {
+				*ptr = '$';
+			}
 		}
 
 		if (flags && service && regex && replace) {
