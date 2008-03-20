@@ -295,7 +295,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	uint32_t current_ms = 0;
 	uint32_t x, tick = 0;
 	switch_time_t ts = 0, last = 0;
-	
+	int fwd_errs = 0, rev_errs = 0;
+
 	switch_time_sync();
 
 	memset(&globals, 0, sizeof(globals));
@@ -324,6 +325,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 
 	ts = 0;
 	last = 0;
+	fwd_errs = rev_errs = 0;
 
 	while (globals.RUNNING == 1) {
 		runtime.reference += STEP_MIC;
@@ -335,20 +337,33 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				current_ms = 0;
 				tick = 0;
 				runtime.initiated += diff;
+				rev_errs++;
+			} else {
+				rev_errs = 0;
 			}
 			switch_yield(STEP_MIC);
 			last = ts;
-		}
+		} 
+		
 
 		if (ts > (runtime.reference + too_late)) {
 			switch_time_t diff = ts - runtime.reference - STEP_MIC;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Forward Clock Skew Detected!\n");
+			fwd_errs++;
 			runtime.reference = switch_time_now();
 			current_ms = 0;
 			tick = 0;
 			runtime.initiated += diff;
+		} else {
+			fwd_errs = 0;
 		}
 		
+		if (fwd_errs > 9 || rev_errs > 9) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Auto Re-Syncing clock.\n");
+			switch_time_sync();
+			fwd_errs = rev_errs = 0;
+		}
+
 		runtime.timestamp = ts;
 		current_ms += STEP_MS;
 		tick += STEP_MS;
