@@ -2288,11 +2288,9 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 	if (session) {
 		/* Get the channel */
 		switch_channel_t *channel = switch_core_session_get_channel(session);
-		/* make sure we have our privates */
-		struct private_object *tech_pvt = switch_core_session_get_private(session);
-		
-		/* Barf if we didn't get it */
-		switch_assert(tech_pvt != NULL);
+
+		/* Barf if we didn't get our private */
+		assert(switch_core_session_get_private(session));
 
 		if (sip && sip->sip_content_type && sip->sip_content_type->c_type && sip->sip_content_type->c_subtype && 
 			sip->sip_payload && sip->sip_payload->pl_data) {

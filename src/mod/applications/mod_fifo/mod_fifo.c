@@ -326,7 +326,7 @@ SWITCH_STANDARD_APP(fifo_function)
         
         return;
     } else if (!strcasecmp(argv[1], "out")) {
-        void *pop;
+        void *pop = NULL;
         switch_frame_t *read_frame;
         switch_status_t status;
         char *uuid;

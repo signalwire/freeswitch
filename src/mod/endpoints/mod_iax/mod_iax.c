@@ -559,16 +559,14 @@ static switch_status_t channel_on_transmit(switch_core_session_t *session)
 
 static switch_status_t channel_waitfor_read(switch_core_session_t *session, int ms, int stream_id)
 {
-	private_t *tech_pvt = switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
+	assert(switch_core_session_get_private(session));
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t channel_waitfor_write(switch_core_session_t *session, int ms, int stream_id)
 {
-	private_t *tech_pvt = switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
+	assert(switch_core_session_get_private(session));
 
 	return SWITCH_STATUS_SUCCESS;
 }
