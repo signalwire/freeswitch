@@ -95,7 +95,7 @@ SWITCH_DECLARE(time_t) switch_timestamp(time_t *t)
 	return now;
 }
 
-#if defined(HAVE_CLOCK_GETTIME)
+#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
 static int MONO = 1;
 #else
 static int MONO = 0;
@@ -105,7 +105,7 @@ static switch_time_t time_now(int64_t offset)
 {
 	switch_time_t now;
 
-#if defined(HAVE_CLOCK_GETTIME)
+#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
 	if (MONO) {
 		struct timespec ts;
 		clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -114,7 +114,7 @@ static switch_time_t time_now(int64_t offset)
 #endif
 	now = switch_time_now();
 
-#if defined(HAVE_CLOCK_GETTIME)
+#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
 	}
 #endif
 
