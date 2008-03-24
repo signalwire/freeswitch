@@ -865,11 +865,6 @@ int soa_sdp_upgrade(soa_session_t *ss,
   }
   *mm = NULL;
 
-#ifndef NDEBUG
-  for (j = i; j < size; j++)
-    assert(s2u[j] == U2S_NOT_USED);
-#endif
-
   s2u[size = i] = U2S_SENTINEL;
   *return_u2s = u2s;
   *return_s2u = s2u;
