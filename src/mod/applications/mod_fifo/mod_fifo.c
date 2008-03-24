@@ -388,6 +388,8 @@ SWITCH_STANDARD_APP(fifo_function)
 		
 		while(switch_channel_ready(channel)) {
 			int x = 0 ;
+			pop = NULL;
+
             if (moh) {
                 args.read_frame_callback = read_frame_callback;
                 args.user_data = node;
@@ -423,6 +425,7 @@ SWITCH_STANDARD_APP(fifo_function)
             }
 			
             uuid = (char *) pop;
+			pop = NULL;
 
             if ((other_session = switch_core_session_locate(uuid))) {
                 switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
