@@ -337,7 +337,10 @@ SWITCH_STANDARD_APP(fifo_function)
 		int custom_pop = 0;
 		int pop_array[MAX_PRI] = { 0 };
 		char *pop_list[MAX_PRI] = { 0 };
-		
+		const char *fifo_consumer_wrapup_sound = NULL;
+		const char *fifo_consumer_wrapup_key = NULL;
+		char buf[5] = "";
+
         if (argc > 3) {
             announce = argv[3];
         }
@@ -508,6 +511,28 @@ SWITCH_STANDARD_APP(fifo_function)
                 if (nowait) {
                     done = 1;
                 }
+
+				fifo_consumer_wrapup_sound = switch_channel_get_variable(channel, "fifo_consumer_wrapup_sound");
+				fifo_consumer_wrapup_key = switch_channel_get_variable(channel, "fifo_consumer_wrapup_key");
+				memset(buf, 0, sizeof(buf));
+
+				if (!switch_strlen_zero(fifo_consumer_wrapup_sound)) {
+					args.buf = buf;
+					args.buflen = sizeof(buf);
+					
+					memset(&args, 0, sizeof(args));
+					switch_ivr_play_file(session, NULL, fifo_consumer_wrapup_sound, &args);
+				}
+
+				if (!switch_strlen_zero(fifo_consumer_wrapup_key) && strcmp(buf, fifo_consumer_wrapup_key)) {
+					for(;;) {
+						char terminator = 0;						
+						switch_ivr_collect_digits_count(session, buf, sizeof(buf)-1, 1, fifo_consumer_wrapup_key, &terminator, 0, 0, 0);
+						if (terminator == *fifo_consumer_wrapup_key) {
+							break;
+						}
+					}
+				}
             }
 
             switch_safe_free(uuid);
