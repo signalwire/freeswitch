@@ -475,6 +475,7 @@ static switch_status_t perform_write(switch_core_session_t *session, switch_fram
 			}
 		}
 	}
+
 	return status;
 }
 
@@ -868,6 +869,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	}
 
   done:
+
 	if (do_write) {
 		return perform_write(session, frame, timeout, io_flag, stream_id);
 	}

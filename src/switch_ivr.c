@@ -800,7 +800,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 	switch_core_session_message_t msg = { 0 };
 	switch_status_t status = SWITCH_STATUS_GENERR;
 	uint8_t swap = 0;
-
+	switch_frame_t *read_frame = NULL;
+	
 	msg.message_id = SWITCH_MESSAGE_INDICATE_MEDIA;
 	msg.from = __FILE__;
 
@@ -815,12 +816,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 			status = SWITCH_STATUS_SUCCESS;
 			switch_core_session_receive_message(session, &msg);
 
+			switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000);
+			switch_core_session_read_frame(session, &read_frame, -1, 0);
+			
 			if ((flags & SMF_REBRIDGE)
 				&& (other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE))
 				&& (other_session = switch_core_session_locate(other_uuid))) {
 				other_channel = switch_core_session_get_channel(other_session);
 				switch_assert(other_channel != NULL);
 				switch_core_session_receive_message(other_session, &msg);
+				switch_channel_wait_for_flag(other_channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000);
+				switch_core_session_read_frame(other_session, &read_frame, -1, 0);
 				switch_channel_clear_state_handler(other_channel, NULL);
 				switch_core_session_rwunlock(other_session);
 			}
@@ -865,12 +871,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 
 		if ((flags & SMF_FORCE) || !switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 			switch_core_session_receive_message(session, &msg);
+			switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000);
 
 			if ((flags & SMF_REBRIDGE) && (other_uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) &&
 				(other_session = switch_core_session_locate(other_uuid))) {
 				other_channel = switch_core_session_get_channel(other_session);
 
 				switch_core_session_receive_message(other_session, &msg);
+				switch_channel_wait_for_flag(other_channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000);
 				switch_channel_clear_state_handler(other_channel, NULL);
 			}
 

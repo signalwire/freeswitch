@@ -513,7 +513,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 		return SWITCH_STATUS_FALSE;
 	}
 
-	while (!(tech_pvt->read_codec.implementation && switch_rtp_ready(tech_pvt->rtp_session))) {
+	while (!(tech_pvt->read_codec.implementation && switch_rtp_ready(tech_pvt->rtp_session) && !switch_channel_test_flag(channel, CF_REQ_MEDIA))) {
 		if (switch_channel_ready(channel)) {
 			switch_yield(10000);
 		} else {
@@ -590,7 +590,7 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 
 	switch_assert(tech_pvt != NULL);
 
-	while (!(tech_pvt->read_codec.implementation && switch_rtp_ready(tech_pvt->rtp_session))) {
+	while (!(tech_pvt->read_codec.implementation && switch_rtp_ready(tech_pvt->rtp_session) && !switch_channel_test_flag(channel, CF_REQ_MEDIA))) {
 		if (switch_channel_ready(channel)) {
 			switch_yield(10000);
 		} else {
@@ -782,6 +782,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			if (!tech_pvt->local_sdp_str) {
 				sofia_glue_tech_absorb_sdp(tech_pvt);
 			}
+			switch_channel_set_flag(tech_pvt->channel, CF_REQ_MEDIA);
 			sofia_glue_do_invite(session);
 		}
 		break;
@@ -797,7 +798,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	case SWITCH_MESSAGE_INDICATE_MEDIA:
 		{
-			uint32_t count = 0, send_invite = 1;
+			uint32_t send_invite = 1;
 			
 			switch_channel_clear_flag(channel, CF_PROXY_MODE);
 			tech_pvt->local_sdp_str = NULL;
@@ -827,20 +828,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
 
 			if (send_invite) {
+				switch_channel_set_flag(tech_pvt->channel, CF_REQ_MEDIA);
 				sofia_glue_do_invite(session);
-				/* wait for rtp to start and first real frame to arrive */
-				tech_pvt->read_frame.datalen = 0;
-				while (switch_test_flag(tech_pvt, TFLAG_IO) && switch_channel_get_state(channel) < CS_HANGUP && !switch_rtp_ready(tech_pvt->rtp_session)) {
-					if (++count > 1000) {
-						status = SWITCH_STATUS_FALSE;
-						goto end;
-					}
-					if (!switch_rtp_ready(tech_pvt->rtp_session)) {
-						switch_yield(1000);
-						continue;
-					}
-					break;
-				}
 			}
 		}
 		break;

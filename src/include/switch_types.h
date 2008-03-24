@@ -722,7 +722,8 @@ typedef enum {
 	CF_ORIGINATING = (1 << 25),
 	CF_STOP_BROADCAST = (1 << 26),
 	CF_PROXY_MEDIA = (1 << 27),
-	CF_INNER_BRIDGE = (1 << 28)
+	CF_INNER_BRIDGE = (1 << 28),
+	CF_REQ_MEDIA = (1 << 29)
 } switch_channel_flag_t;
 
 
