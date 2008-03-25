@@ -394,6 +394,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			pop = NULL;
 
             if (moh) {
+				memset(&args, 0, sizeof(args));
                 args.read_frame_callback = read_frame_callback;
                 args.user_data = node;
                 switch_ivr_play_file(session, NULL, moh, &args);
@@ -517,10 +518,9 @@ SWITCH_STANDARD_APP(fifo_function)
 				memset(buf, 0, sizeof(buf));
 
 				if (!switch_strlen_zero(fifo_consumer_wrapup_sound)) {
+					memset(&args, 0, sizeof(args));
 					args.buf = buf;
 					args.buflen = sizeof(buf);
-
-					memset(&args, 0, sizeof(args));
 					switch_ivr_play_file(session, NULL, fifo_consumer_wrapup_sound, &args);
 				}
 

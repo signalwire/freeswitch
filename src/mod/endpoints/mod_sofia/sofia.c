@@ -1828,8 +1828,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		}
 		break;
 	case nua_callstate_ready:
-		switch_channel_clear_flag(channel, CF_REQ_MEDIA);
-
+		if (channel) {
+			switch_channel_clear_flag(channel, CF_REQ_MEDIA);
+		}
 		if (tech_pvt && nh == tech_pvt->nh2) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cheater Reinvite!\n");
 			switch_set_flag_locked(tech_pvt, TFLAG_REINVITE);
