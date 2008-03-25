@@ -153,7 +153,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 			msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
 			msg.from = __FILE__;
 			switch_core_session_receive_message(session_a, &msg);
-			switch_ivr_parse_all_events(session_a);
+			switch_ivr_parse_next_event(session_a);
 			msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
 			switch_core_session_receive_message(session_a, &msg);
 			switch_channel_clear_flag(chan_b, CF_SUSPEND);

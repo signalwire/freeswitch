@@ -399,15 +399,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_events(switch_core_session_t *session)
+SWITCH_DECLARE(switch_status_t) switch_ivr_parse_next_event(switch_core_session_t *session)
 {
 	switch_event_t *event;
 
-	while (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+	if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
 		switch_ivr_parse_event(session, event);
 		switch_event_fire(&event);
+		return SWITCH_STATUS_SUCCESS;
 	}
 
+	return SWITCH_STATUS_FALSE;
+
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_events(switch_core_session_t *session)
+{
+
+	while (switch_ivr_parse_next_event(session) == SWITCH_STATUS_SUCCESS);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -843,6 +852,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 			} else {
 				switch_ivr_uuid_bridge(uuid, other_uuid);
 			}
+			switch_channel_wait_for_flag(channel, CF_BRIDGED, SWITCH_TRUE, 1000);
+			switch_channel_wait_for_flag(other_channel, CF_BRIDGED, SWITCH_TRUE, 1000);
 		}
 	}
 
@@ -871,14 +882,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 
 		if ((flags & SMF_FORCE) || !switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 			switch_core_session_receive_message(session, &msg);
-			switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000);
-
+			
 			if ((flags & SMF_REBRIDGE) && (other_uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) &&
 				(other_session = switch_core_session_locate(other_uuid))) {
 				other_channel = switch_core_session_get_channel(other_session);
 
 				switch_core_session_receive_message(other_session, &msg);
-				switch_channel_wait_for_flag(other_channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000);
 				switch_channel_clear_state_handler(other_channel, NULL);
 			}
 
@@ -889,6 +898,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 				} else {
 					switch_ivr_signal_bridge(session, other_session);
 				}
+				switch_channel_wait_for_flag(channel, CF_BRIDGED, SWITCH_TRUE, 1000);
+				switch_channel_wait_for_flag(other_channel, CF_BRIDGED, SWITCH_TRUE, 1000);
 				switch_core_session_rwunlock(other_session);
 			}
 		}

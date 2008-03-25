@@ -782,7 +782,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			if (!tech_pvt->local_sdp_str) {
 				sofia_glue_tech_absorb_sdp(tech_pvt);
 			}
-			switch_channel_set_flag(tech_pvt->channel, CF_REQ_MEDIA);
 			sofia_glue_do_invite(session);
 		}
 		break;
@@ -828,7 +827,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
 
 			if (send_invite) {
-				switch_channel_set_flag(tech_pvt->channel, CF_REQ_MEDIA);
+				switch_channel_set_flag(channel, CF_REQ_MEDIA);
 				sofia_glue_do_invite(session);
 			}
 		}
