@@ -1325,10 +1325,16 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		stream->write_function(stream, "Invalid Profile [%s]", switch_str_nil(profile_name));
 		return SWITCH_STATUS_SUCCESS;
 	}
-
+	
 	if (!strcasecmp(argv[1], "flush_inbound_reg")) {
-		sofia_reg_check_expire(profile, 0);
-		stream->write_function(stream, "+OK\n");
+		if (argc > 2) {
+			sofia_reg_expire_call_id(profile, argv[2]);
+			stream->write_function(stream, "+OK flushing all registrations matching specified call_id\n");
+		} else {
+			sofia_reg_check_expire(profile, 0);
+			stream->write_function(stream, "+OK flushing all registrations\n");
+		}
+
 		goto done;
 	}
 
@@ -1542,7 +1548,7 @@ SWITCH_STANDARD_API(sofia_function)
 	const char *usage_string = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
 		"sofia help\n"
-		"sofia profile <profile_name> [start|stop|restart|flush_inbound_reg|[register|unregister] [<gateway name>|all]] [reloadxml]\n"
+		"sofia profile <profile_name> [start|stop|restart|flush_inbound_reg [<call_id>]|[register|unregister] [<gateway name>|all]] [reloadxml]\n"
 		"sofia status [[profile | gateway] <name>]\n"
 		"sofia loglevel [0-9]\n"
 		"--------------------------------------------------------------------------------\n";

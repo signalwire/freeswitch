@@ -206,6 +206,24 @@ int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames
 	return 0;
 }
 
+void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id)
+{
+	char sql[1024];
+	char *psql = sql;
+	
+	switch_snprintf(sql, sizeof(sql), "select *,'%s' from sip_registrations where call_id='%s'", profile->name, call_id);
+	switch_mutex_lock(profile->ireg_mutex);
+	sofia_glue_execute_sql_callback(profile,
+									SWITCH_TRUE,
+									NULL,
+									sql,
+									sofia_reg_del_callback,
+									NULL);
+	switch_mutex_unlock(profile->ireg_mutex);
+
+	switch_snprintf(sql, sizeof(sql), "delete from sip_registrations where call_id='%s'", call_id);
+	sofia_glue_execute_sql(profile, &psql, SWITCH_FALSE);
+}
 
 void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
 {
