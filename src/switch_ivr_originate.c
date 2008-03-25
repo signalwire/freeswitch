@@ -169,7 +169,7 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 	uint32_t i;
 	*hups = 0;
 	*idx = IDX_NADA;
-
+	
 	for (i = 0; i < len; i++) {
 		switch_channel_state_t state;
 		if (!peer_channels[i]) {
@@ -534,7 +534,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	if (switch_strlen_zero(data)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No origination URL specified!\n");
 		status = SWITCH_STATUS_GENERR;
 		goto done;
 	}
@@ -544,9 +544,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	   will use as a pseudo hash to consult for params as needed.
 	 */
 	if (switch_event_create(&var_event, SWITCH_EVENT_MESSAGE) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
-		status = SWITCH_STATUS_MEMERR;
-		goto done;
+		abort();
 	}
 
 	if (session) {
@@ -812,7 +810,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 				}
 				if ((reason = switch_core_session_outgoing_channel(session, chan_type, new_profile, &new_session, &pool, myflags)) != SWITCH_CAUSE_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! cause: %s\n", switch_channel_cause2str(reason));
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot create outgoing channel of type [%s] cause: [%s]\n", 
+									  chan_type, switch_channel_cause2str(reason));
 					if (pool) {
 						switch_core_destroy_memory_pool(&pool);
 					}
@@ -892,12 +891,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					if (!peer_channels[i]) {
 						continue;
 					}
-					valid_channels++;
+
 					state = switch_channel_get_state(peer_channels[i]);
 
-					if (state >= CS_HANGUP) {
-						goto notready;
-					} else if (state >= CS_RING) {
+					if (state < CS_HANGUP) {
+						valid_channels++;
+					} else {
+						continue;
+					}
+
+					if (state >= CS_RING) {
 						goto endfor1;
 					}
 
@@ -910,16 +913,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						idx = IDX_CANCEL;
 						goto notready;
 					}
-					switch_yield(1000);
-				}
 
+					switch_yield(10000);
+				}
+				
 				if (valid_channels == 0) {
 					status = SWITCH_STATUS_GENERR;
 					goto done;
 				}
 
 			}
-		  endfor1:
+
+		endfor1:
 
 			if (ringback_data && !switch_channel_test_flag(caller_channel, CF_ANSWERED)
 				&& !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
@@ -1228,6 +1233,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 
 				if (idx == IDX_CANCEL) {
+					*cause = SWITCH_CAUSE_ORIGINATOR_CANCEL;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 									  "Originate Cancelled by originator termination Cause: %d [%s]\n", *cause, switch_channel_cause2str(*cause));
 
