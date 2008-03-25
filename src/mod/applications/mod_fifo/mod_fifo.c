@@ -672,12 +672,12 @@ SWITCH_STANDARD_API(fifo_api_function)
     } else if (!strcasecmp(argv[0], "count")) {
         if (argc < 2) {
             for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
-				int x = 0;
+				int i = 0;
                 switch_hash_this(hi, &var, NULL, &val);
                 node = (fifo_node_t *) val;
 				len = 0;
-				for (x = 0 ;x < MAX_PRI; x++) {
-					len += switch_queue_size(node->fifo_list[x]);
+				for (i = 0; i < MAX_PRI; i++) {
+					len += switch_queue_size(node->fifo_list[i]);
 				}
                 switch_mutex_lock(node->mutex);
                 stream->write_function(stream, "%s:%d:%d:%d\n", (char *)var, node->consumer_count, node->caller_count, len);
@@ -690,10 +690,10 @@ SWITCH_STANDARD_API(fifo_api_function)
             }
         } else {
             if ((node = switch_core_hash_find(globals.fifo_hash, argv[1]))) {
-				int x = 0;
+				int i = 0;
 				len = 0;
-				for (x = 0 ;x < MAX_PRI; x++) {
-                    len += switch_queue_size(node->fifo_list[x]);
+				for (i = 0 ;i < MAX_PRI; i++) {
+                    len += switch_queue_size(node->fifo_list[i]);
                 }
 				
             }
