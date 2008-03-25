@@ -31,6 +31,16 @@ sounds-install: sounds-en-us-callie-8000-install
 moh: sounds-music-8000
 moh-install: sounds-music-8000-install
 
+hd-sounds: sounds-en-us-callie-8000 sounds-en-us-callie-16000
+hd-sounds-install: sounds-en-us-callie-8000-install sounds-en-us-callie-16000-install
+hd-moh: sounds-music-8000 sounds-music-16000
+hd-moh-install: sounds-music-8000-install sounds-music-16000-install
+
+uhd-sounds: sounds-en-us-callie-8000 sounds-en-us-callie-16000 sounds-en-us-callie-32000
+uhd-sounds-install: sounds-en-us-callie-8000-install sounds-en-us-callie-16000-install sounds-en-us-callie-32000-install
+uhd-moh: sounds-music-8000 sounds-music-16000 sounds-music-32000
+uhd-moh-install: sounds-music-8000-install sounds-music-16000-install sounds-music-32000-install
+
 libdir = @libdir@
 bindir = @bindir@
 includedir = @includedir@
