@@ -1,5 +1,11 @@
 <configuration name="acl.conf" description="Network Lists">
   <network-lists>
+    <list name="rfc1918" default="deny">
+      <node type="allow" cidr="10.0.0.0/8"/>
+      <node type="allow" cidr="172.16.0.0/12"/>
+      <node type="allow" cidr="192.168.0.0/16"/>
+    </list>
+
     <list name="lan" default="allow">
       <node type="deny" cidr="192.168.42.0/24"/>
       <node type="allow" cidr="192.168.42.42/32"/>
