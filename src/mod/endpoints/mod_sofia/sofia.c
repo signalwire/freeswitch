@@ -1195,6 +1195,18 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->username = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "context")) {
 						profile->context = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "apply-inbound-acl")) {
+						if (profile->acl_count < SOFIA_MAX_ACL) {
+							profile->acl[profile->acl_count++] = switch_core_strdup(profile->pool, val);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
+						}
+					} else if (!strcasecmp(var, "apply-register-acl")) {
+						if (profile->reg_acl_count < SOFIA_MAX_ACL) {
+							profile->reg_acl[profile->reg_acl_count++] = switch_core_strdup(profile->pool, val);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
+						}
 					} else if (!strcasecmp(var, "alias")) {
 						sip_alias_node_t *node;
 						if ((node = switch_core_alloc(profile->pool, sizeof(*node)))) {
@@ -2477,6 +2489,18 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	
 	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
+
+	if (profile->acl_count) {
+		int x = 0;
+		for (x = 0 ; x < profile->acl_count; x++) {
+			if (!switch_check_network_list_ip(network_ip, profile->acl[x])) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl %s\n", network_ip,  profile->acl[x]);
+				nua_respond(nh, SIP_403_FORBIDDEN, TAG_END());
+				return;
+			}
+		}
+	}
+
 
 	if ((profile->pflags & PFLAG_AUTH_CALLS) || (!(profile->pflags & PFLAG_BLIND_AUTH) && (sip->sip_proxy_authorization || sip->sip_authorization))) {
 		if (strcmp(network_ip, profile->sipip)) {

@@ -84,6 +84,7 @@ SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size
 !strcasecmp(expr, "true") ||\
 !strcasecmp(expr, "enabled") ||\
 !strcasecmp(expr, "active") ||\
+!strcasecmp(expr, "allow") ||\
 atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE
 /*!
   \brief find local ip of the box
@@ -346,6 +347,14 @@ SWITCH_DECLARE(size_t) switch_url_encode(const char *url, char *buf, size_t len)
 SWITCH_DECLARE(char *) switch_url_decode(char *s);
 SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *from, const char *headers, const char *body, const char *file);
 SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char close);
+
+SWITCH_DECLARE(int) switch_parse_cidr(const char *string, uint32_t *ip, uint32_t *mask, uint32_t *bitp);
+SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t **list, switch_bool_t default_type, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok);
+SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network_list_t *list, const char *host, const char *mask_str, switch_bool_t ok);
+SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip(switch_network_list_t *list, uint32_t ip);
+#define switch_test_subnet(_ip, _net, _mask) (_mask ? ((_net & _mask) == (_ip & _mask)) : _net == _ip)
+
 
 /* malloc or DIE macros */
 #ifdef NDEBUG

@@ -271,6 +271,63 @@ end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(reload_acl_function)
+{
+	const char *err;
+    switch_xml_t xml_root;
+
+    if (session) {
+        return SWITCH_STATUS_FALSE;
+    }
+
+	if (cmd && !strcmp(cmd, "reloadxml")) {
+		if ((xml_root = switch_xml_open_root(1, &err))) {
+			switch_xml_free(xml_root);
+		}
+	}
+
+	switch_load_network_lists(SWITCH_TRUE);
+
+	stream->write_function(stream, "+OK acl reloaded\n");
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(acl_function)
+{
+	int argc;
+	char *mydata = NULL, *argv[3];
+
+	if (!cmd) {
+		goto error;
+	}
+
+	mydata = strdup(cmd);
+	switch_assert(mydata);
+
+	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc < 2) {
+		goto error;
+	}
+
+	if (switch_check_network_list_ip(argv[0], argv[1])) {
+		stream->write_function(stream, "true");    
+		goto ok;
+	}
+
+error:
+
+	stream->write_function(stream, "false");    
+
+ok:
+
+	switch_safe_free(mydata);
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+
 SWITCH_STANDARD_API(regex_function)
 {
 	switch_regex_t *re = NULL;
@@ -2186,6 +2243,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "killchan", "Kill Channel (depricated)", kill_function, KILL_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_kill", "Kill Channel", kill_function, KILL_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_park", "Park Channel", park_function, PARK_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "reloadacl", "Reload ACL", reload_acl_function, "[reloadxml]");
 	SWITCH_ADD_API(commands_api_interface, "reloadxml", "Reload XML", reload_function, "");
 	SWITCH_ADD_API(commands_api_interface, "unload", "Unload Module", unload_function, LOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "load", "Load Module", load_function, LOAD_SYNTAX);
@@ -2226,6 +2284,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "is_lan_addr", "see if an ip is a lan addr", lan_addr_function, "<ip>");
 	SWITCH_ADD_API(commands_api_interface, "cond", "Eval a conditional", cond_function, "<expr> ? <true val> : <false val>");
 	SWITCH_ADD_API(commands_api_interface, "regex", "Eval a regex", regex_function, "<data>|<pattern>[|<subst string>]");
+	SWITCH_ADD_API(commands_api_interface, "acl", "compater an ip to an acl list", acl_function, "<ip> <list_name>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_chat", "Send a chat message", uuid_chat, UUID_CHAT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "find_user_xml", "find a user", find_user_function, "<key> <user> <domain>");
 	SWITCH_ADD_API(commands_api_interface, "user_exists", "find a user", user_exists_function, "<key> <user> <domain>");

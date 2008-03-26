@@ -521,6 +521,11 @@ SWITCH_DECLARE(switch_status_t) switch_thread_create(switch_thread_t ** new_thre
 
 /* socket stubs */
 
+SWITCH_DECLARE(switch_status_t) switch_socket_addr_get(switch_sockaddr_t **sa, switch_bool_t remote, switch_socket_t *sock)
+{
+	return apr_socket_addr_get(sa, remote, sock);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_socket_create(switch_socket_t ** new_sock, int family, int type, int protocol, switch_memory_pool_t *pool)
 {
 	return apr_socket_create(new_sock, family, type, protocol, pool);

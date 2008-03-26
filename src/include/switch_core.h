@@ -1591,6 +1591,8 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim_all(void);
 SWITCH_DECLARE(void) switch_core_setrlimits(void);
 SWITCH_DECLARE(void) switch_time_sync(void);
 SWITCH_DECLARE(time_t) switch_timestamp(time_t *t);
+SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload);
+SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip(const char *ip_str, const char *list_name);
 
 ///\}
 

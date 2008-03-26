@@ -686,6 +686,132 @@ SWITCH_DECLARE(void) switch_core_setrlimits(void)
 	return;
 }
 
+typedef struct {
+	switch_memory_pool_t *pool;
+	switch_hash_t *hash;
+} switch_ip_list_t;
+
+static switch_ip_list_t IP_LIST = { 0 };
+
+SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip(const char *ip_str, const char *list_name)
+{
+	switch_network_list_t *list;
+	uint32_t ip, net, mask, bits;
+	switch_bool_t ok = SWITCH_FALSE;
+	
+	switch_mutex_lock(runtime.global_mutex);
+	inet_pton(AF_INET, ip_str, &ip);
+	
+	if ((list = switch_core_hash_find(IP_LIST.hash, list_name))) {
+		ok = switch_network_list_validate_ip(list, ip);
+	} else if (strchr(list_name, '/')) {
+		switch_parse_cidr(list_name, &net, &mask, &bits);
+		ok = switch_test_subnet(ip, net, mask);
+	}
+	switch_mutex_unlock(runtime.global_mutex);
+	
+	return ok;
+}
+
+
+SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
+{
+	switch_xml_t xml = NULL, x_lists = NULL, x_list = NULL, x_node = NULL, cfg = NULL;
+	switch_network_list_t *list;
+
+
+	switch_mutex_lock(runtime.global_mutex);
+
+	if (IP_LIST.hash) {
+		switch_core_hash_destroy(&IP_LIST.hash);
+	}
+
+	if (IP_LIST.pool) {
+		switch_core_destroy_memory_pool(&IP_LIST.pool);
+	}
+	
+	memset(&IP_LIST, 0, sizeof(IP_LIST));
+	switch_core_new_memory_pool(&IP_LIST.pool);
+	switch_core_hash_init(&IP_LIST.hash, IP_LIST.pool);
+	
+	if ((xml = switch_xml_open_cfg("acl.conf", &cfg, NULL))) {
+		if ((x_lists = switch_xml_child(cfg, "network-lists"))) {
+			for (x_list = switch_xml_child(x_lists, "list"); x_list; x_list = x_list->next) {
+				const char *name = switch_xml_attr(x_list, "name");
+				const char *dft = switch_xml_attr(x_list, "default");
+				switch_bool_t default_type = SWITCH_TRUE;
+
+				if (switch_strlen_zero(name)) {
+					continue;
+				}
+
+				if (dft) {
+					default_type = switch_true(dft);
+				}
+				
+				if (switch_network_list_create(&list, default_type, IP_LIST.pool) != SWITCH_STATUS_SUCCESS) {
+					abort();
+				}
+
+				if (reload) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Created ip list %s default (%s)\n", name, default_type ? "allow" : "deny");
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Created ip list %s default (%s)\n", name, default_type ? "allow" : "deny");
+				}
+
+
+				for (x_node = switch_xml_child(x_list, "node"); x_node; x_node = x_node->next) {
+					const char *cidr = NULL, *host = NULL, *mask = NULL;
+					switch_bool_t ok = default_type;
+					const char *type = switch_xml_attr(x_node, "type");
+
+					if (type) {
+						ok = switch_true(type);
+					}					
+
+					cidr = switch_xml_attr(x_node, "cidr");
+					host = switch_xml_attr(x_node, "host");
+					mask = switch_xml_attr(x_node, "mask");
+					
+					if (cidr) {
+						if (switch_network_list_add_cidr(list, cidr, ok) == SWITCH_STATUS_SUCCESS) {
+							if (reload) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s (%s) to list %s\n", cidr, ok ? "allow" : "deny", name);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Adding %s (%s) to list %s\n", cidr, ok ? "allow" : "deny", name);
+							}
+						} else {
+							if (reload) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+												  "Error Adding %s (%s) to list %s\n", cidr, ok ? "allow" : "deny", name);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, 
+												  "Error Adding %s (%s) to list %s\n", cidr, ok ? "allow" : "deny", name);
+							}
+						}
+					} else if (host && mask) {
+						if (switch_network_list_add_host_mask(list, host, mask, ok) == SWITCH_STATUS_SUCCESS) {
+							if (reload) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 
+												  "Adding %s/%s (%s) to list %s\n", host, mask, ok ? "allow" : "deny", name);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, 
+												  "Adding %s/%s (%s) to list %s\n", host, mask, ok ? "allow" : "deny", name);
+							}
+						}
+					}
+
+					switch_core_hash_insert(IP_LIST.hash, name, list);
+				}
+			}
+		}
+
+		switch_xml_free(xml);
+	}
+
+	switch_mutex_unlock(runtime.global_mutex);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switch_bool_t console, const char **err)
 {
 	switch_xml_t xml = NULL, cfg = NULL;
@@ -733,7 +859,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		apr_terminate();
 		return SWITCH_STATUS_MEMERR;
 	}
-	
+
 	if ((xml = switch_xml_open_cfg("switch.conf", &cfg, NULL))) {
 		switch_xml_t settings, param;
 
@@ -795,6 +921,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 				switch_core_hash_insert(runtime.global_vars, varr, vall);
 			}
 		}
+
 		switch_xml_free(xml);
 	}
 
@@ -914,6 +1041,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 #endif
 
 	signal(SIGHUP, handle_SIGHUP);
+	switch_load_network_lists(SWITCH_FALSE);	
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bringing up environment.\n");
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Loading Modules.\n");

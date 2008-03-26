@@ -46,6 +46,8 @@
 #include <switch_odbc.h>
 #endif
 
+#define SOFIA_MAX_ACL 100
+
 #define MODNAME "mod_sofia"
 static const switch_state_handler_table_t noop_state_handler = { 0 };
 struct sofia_gateway;
@@ -308,6 +310,11 @@ struct sofia_profile {
 	char *odbc_pass;
 	switch_odbc_handle_t *master_odbc;
 	switch_queue_t *sql_queue;
+	char *acl[SOFIA_MAX_ACL];
+	uint32_t acl_count;
+	char *reg_acl[SOFIA_MAX_ACL];
+	uint32_t reg_acl_count;
+
 };
 
 struct private_object {

@@ -71,6 +71,9 @@ struct listener {
 	switch_core_session_t *session;
 	int lost_events;
 	int lost_logs;
+	switch_sockaddr_t *sa;
+	char remote_ip[50];
+	switch_port_t remote_port;
 	struct listener *next;
 };
 
@@ -84,6 +87,8 @@ static struct {
 	uint8_t ready;
 } listen_list;
 
+#define MAX_ACL 100
+
 static struct {
 	switch_mutex_t *mutex;
 	char *ip;
@@ -91,6 +96,8 @@ static struct {
 	char *password;
 	int done;
 	int threads;
+	char *acl[MAX_ACL];
+	uint32_t acl_count;
 } prefs;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_ip, prefs.ip);
@@ -1052,18 +1059,44 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 
+
 	switch_mutex_lock(listen_list.mutex);
 	prefs.threads++;
 	switch_mutex_unlock(listen_list.mutex);
 
 	switch_assert(listener != NULL);
 
+	if (prefs.acl_count && listener->sa && !switch_strlen_zero(listener->remote_ip)) {
+		int x = 0;
+		
+		for (x = 0 ; x < prefs.acl_count; x++) {
+			if (!switch_check_network_list_ip(listener->remote_ip, prefs.acl[x])) {
+				const char message[] = "Access Denied, go away.\n";
+				int mlen = strlen(message);
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl %s\n", listener->remote_ip,  prefs.acl[x]);
+
+				switch_snprintf(buf, sizeof(buf), "Content-Type: rude/rejection\nContent-Length %d\n\n", mlen);
+				len = strlen(buf);
+				switch_socket_send(listener->sock, buf, &len);
+				len = mlen;
+				switch_socket_send(listener->sock, message, &len);
+				goto done;
+			}
+		}
+	}
+
+
 	if ((session = listener->session)) {
 		channel = switch_core_session_get_channel(session);
 		switch_core_session_read_lock(session);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Open\n");
+	if (switch_strlen_zero(listener->remote_ip)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Open\n");
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Open from %s:%d\n", listener->remote_ip, listener->remote_port);
+	}
 
 	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, TRUE);
 	switch_set_flag_locked(listener, LFLAG_RUNNING);
@@ -1230,6 +1263,12 @@ static int config(void)
 					prefs.port = (uint16_t) atoi(val);
 				} else if (!strcmp(var, "password")) {
 					set_pref_pass(val);
+				} else if (!strcasecmp(var, "apply-inbound-acl")) {
+					if (prefs.acl_count < MAX_ACL) {
+						prefs.acl[prefs.acl_count++] = strdup(val);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", MAX_ACL);
+					}
 				}
 			}
 		}
@@ -1259,6 +1298,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 	switch_sockaddr_t *sa;
 	switch_socket_t *inbound_socket = NULL;
 	listener_t *listener;
+	int x = 0;
 
 	memset(&listen_list, 0, sizeof(listen_list));
 	config();
@@ -1335,6 +1375,9 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		listener->format = EVENT_FORMAT_PLAIN;
 		switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 		switch_core_hash_init(&listener->event_hash, listener->pool);
+		switch_socket_addr_get(&listener->sa, SWITCH_TRUE, listener->sock);
+		switch_get_addr(listener->remote_ip, sizeof(listener->remote_ip), listener->sa);
+		listener->remote_port = switch_sockaddr_get_port(listener->sa);
 		launch_listener_thread(listener);
 
 	}
@@ -1347,6 +1390,11 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 
 	if (listener_pool) {
 		switch_core_destroy_memory_pool(&listener_pool);
+	}
+
+
+	for (x = 0 ; x < prefs.acl_count; x++) {
+		switch_safe_free(prefs.acl[x]);
 	}
 
  fail:

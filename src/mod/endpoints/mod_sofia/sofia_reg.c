@@ -655,6 +655,23 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 {
 	char key[128] = "";
 	switch_event_t *v_event = NULL;
+	char network_ip[80];
+	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
+	
+	if (profile->reg_acl_count) {
+		int x = 0;
+
+		get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
+		
+		for (x = 0 ; x < profile->reg_acl_count; x++) {
+			if (!switch_check_network_list_ip(network_ip, profile->reg_acl[x])) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl %s\n", network_ip,  profile->reg_acl[x]);
+				nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
+				goto end;
+			}
+		}
+	}
+
 
 	if (!(profile->mflags & MFLAG_REGISTER)) {
 		nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());

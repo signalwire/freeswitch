@@ -38,6 +38,138 @@
 #include "private/switch_core_pvt.h"
 #define ESCAPE_META '\\'
 
+struct switch_network_node {
+	uint32_t ip;
+	uint32_t mask;
+	uint32_t bits;
+	switch_bool_t ok;
+	struct switch_network_node *next;
+};
+typedef struct switch_network_node switch_network_node_t;
+
+struct switch_network_list {
+	struct switch_network_node *node_head;
+	switch_bool_t default_type;
+	switch_memory_pool_t *pool;
+};
+
+
+SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t **list, switch_bool_t default_type, switch_memory_pool_t *pool)
+{
+	switch_network_list_t *new_list;
+	
+	if (!pool) {
+		switch_core_new_memory_pool(&pool);
+	}
+
+	new_list = switch_core_alloc(pool, sizeof(**list));
+	new_list->pool = pool;
+	new_list->default_type = default_type;
+
+	*list = new_list;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip(switch_network_list_t *list, uint32_t ip)
+{
+	switch_network_node_t *node;
+	switch_bool_t ok = list->default_type;
+	uint32_t bits = 0;
+
+	for (node = list->node_head; node; node = node->next) {
+		if (node->bits > bits && switch_test_subnet(ip, node->ip, node->mask)) {
+			if (node->ok) {
+				ok = SWITCH_TRUE;
+			} else {
+				ok = SWITCH_FALSE;
+			}
+			bits = node->bits;
+		}
+	}
+	
+	return ok;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok)
+{
+	uint32_t ip, mask, bits;
+	switch_network_node_t *node;
+	
+	if (switch_parse_cidr(cidr_str, &ip, &mask, &bits)) {
+		return SWITCH_STATUS_GENERR;
+	}
+	
+	node = switch_core_alloc(list->pool, sizeof(*node));
+
+	node->ip = ip;
+	node->mask = mask;
+	node->ok = ok;
+	node->bits = bits;
+
+	node->next = list->node_head;
+	list->node_head = node;
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network_list_t *list, const char *host, const char *mask_str, switch_bool_t ok)
+{
+	int ip, mask;
+	switch_network_node_t *node;
+
+	inet_pton(AF_INET, host, &ip);
+	inet_pton(AF_INET, mask_str, &mask);
+	
+	node = switch_core_alloc(list->pool, sizeof(*node));
+	
+	node->ip = ip;
+	node->mask = mask;
+	node->ok = ok;
+
+	/* http://graphics.stanford.edu/~seander/bithacks.html */
+	mask = mask - ((mask >> 1) & 0x55555555);
+    mask = (mask & 0x33333333) + ((mask >> 2) & 0x33333333);
+	node->bits = (((mask + (mask >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
+	
+	node->next = list->node_head;
+	list->node_head = node;
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(int) switch_parse_cidr(const char *string, uint32_t *ip, uint32_t *mask, uint32_t *bitp)
+{
+	char host[128] = "";
+	char *bit_str;
+	int32_t bits;
+
+	strncpy(host, string, sizeof(host) - 1);
+	bit_str = strchr(host, '/');
+
+	if (!bit_str) {
+		return -1;
+	}
+
+	*bit_str++ = '\0';
+	bits = atoi(bit_str);
+	
+	if (bits < 0 || bits > 32) {
+		return -2;
+	}
+
+	bits = atoi(bit_str);
+	inet_pton(AF_INET, host, ip);
+	*mask = 0xFFFFFFFF & ~(0xFFFFFFFF << bits);
+	*bitp = bits;
+
+	return 0;
+}
+
+
 SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char close)
 {
 	const char *e = NULL;

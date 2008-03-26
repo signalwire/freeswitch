@@ -29,6 +29,8 @@
     <param name="rtp-ip" value="$${local_ip_v4}"/>
     <param name="sip-ip" value="$${local_ip_v4}"/>
     <param name="hold-music" value="$${moh_uri}"/>
+    <!--<param name="apply-inbound-acl" value="lan"/>-->
+    <!--<param name="apply-register-acl" value="lan"/>-->
     <!--<param name="dtmf-type" value="info"/>-->
     <param name="record-template" value="$${base_dir}/recordings/${caller_id_number}.${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
     <!--enable to use presense and mwi -->

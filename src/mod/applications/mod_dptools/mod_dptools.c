@@ -200,6 +200,28 @@ SWITCH_STANDARD_APP(send_dtmf_function)
 	switch_core_session_send_dtmf_string(session, (const char *) data);
 }
 
+SWITCH_STANDARD_APP(check_acl_function)
+{
+	int argc;
+    char *argv[2] = { 0 };
+	char *mydata;
+	switch_call_cause_t cause = SWITCH_CAUSE_CALL_REJECTED;
+
+	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
+		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) > 1) {
+			if (!switch_check_network_list_ip(argv[0], argv[1])) {
+				switch_channel_t *channel = switch_core_session_get_channel(session);
+				if (argc > 2) {
+					cause = switch_channel_str2cause(argv[2]);
+				}
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call failed acl check for ip %s on list %s\n", argv[0], argv[1]);
+				switch_channel_hangup(channel, cause);
+			}
+		}
+	}
+	
+}
+
 SWITCH_STANDARD_APP(transfer_function)
 {
 	int argc;
@@ -1760,6 +1782,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_API(api_interface, "presence", "presence", presence_api_function, "<user> <rpid> <message>");
 	SWITCH_ADD_APP(app_interface, "privacy", "Set privacy on calls", "Set caller privacy on calls.", privacy_function, "off|on|name|full|number", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "transfer", "Transfer a channel", TRANSFER_LONG_DESC, transfer_function, "<exten> [<dialplan> <context>]", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "check_acl", "Check an ip against an ACL list", 
+				   "Check an ip against an ACL list", check_acl_function, "<ip> <acl | cidr>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "sleep", "Pause a channel", SLEEP_LONG_DESC, sleep_function, "<pausemilliseconds>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "delay_echo", "echo audio at a specified delay", "Delay n ms", delay_function, "<delay ms>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "strftime", NULL, NULL, strftime_function, NULL, SAF_SUPPORT_NOMEDIA);
