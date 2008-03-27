@@ -940,7 +940,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		rpid_domain = switch_core_session_strdup(session, use_from_str);
 		sofia_glue_get_url_from_contact(rpid_domain, 0);
-		if ((rpid_domain = strchr(rpid_domain, '@'))) {
+		if ((rpid_domain = strrchr(rpid_domain, '@'))) {
 			rpid_domain++;
 			if ((p = strchr(rpid_domain, ';'))) {
 				*p = '\0';
