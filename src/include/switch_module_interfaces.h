@@ -560,6 +560,7 @@ struct switch_codec_implementation {
     switch_core_codec_decode_func_t decode;
 	/*! deinitalize a codec handle using this implementation */
     switch_core_codec_destroy_func_t destroy;
+	uint32_t codec_id;
 	struct switch_codec_implementation *next;
 };
 
@@ -569,6 +570,7 @@ struct switch_codec_interface {
 	const char *interface_name;
 	/*! a list of codec implementations related to the codec */
 	switch_codec_implementation_t *implementations;
+	uint32_t codec_id;
 	struct switch_codec_interface *next;
 };
 

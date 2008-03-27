@@ -323,7 +323,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		}
 
 		if (session->read_codec) {
-            
             if (session->read_resampler) {
                 short *data = read_frame->data;
                 switch_mutex_lock(session->resample_mutex);
@@ -353,6 +352,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					goto done;
 				}
 			}
+			
 
 			if (perfect || switch_buffer_inuse(session->raw_read_buffer) >= session->read_codec->implementation->bytes_per_frame) {
 				if (perfect) {
@@ -484,7 +484,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_frame_t *enc_frame = NULL, *write_frame = frame;
-	unsigned int flag = 0, need_codec = 0, perfect = 0, do_bugs = 0, do_write = 0, do_resample = 0;
+	unsigned int flag = 0, need_codec = 0, perfect = 0, do_bugs = 0, do_write = 0, do_resample = 0, ptime_mismatch = 0;
 	switch_io_flag_t io_flag = SWITCH_IO_FLAG_NOOP;
 
 	switch_assert(session != NULL);
@@ -514,6 +514,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
 		need_codec = TRUE;
+		if (session->write_codec->implementation->codec_id == frame->codec->implementation->codec_id) {
+			ptime_mismatch = TRUE;
+		}
 	}
 
 	if (session->write_codec && !frame->codec) {
@@ -525,13 +528,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	}
 
 	if (session->bugs && !need_codec) {
-		do_bugs = 1;
-		need_codec = 1;
+		do_bugs = TRUE;
+		need_codec = TRUE;
 	}
 
 	if (frame->codec->implementation->actual_samples_per_second != session->write_codec->implementation->actual_samples_per_second) {
-		need_codec = 1;
-		do_resample = 1;
+		need_codec = TRUE;
+		do_resample = TRUE;
 	}
 
 	if (need_codec) {
@@ -671,7 +674,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		}
 
 		if (do_bugs) {
-			do_write = 1;
+			do_write = TRUE;
 			write_frame = frame;
 			goto done;
 		}
@@ -768,7 +771,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 							} else {
 								rate = session->write_codec->implementation->actual_samples_per_second;
 							} 
-
+							
 							status = switch_core_codec_encode(session->write_codec,
 															  frame->codec,
 															  enc_frame->data,
@@ -776,7 +779,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 															  rate,
 															  session->enc_write_frame.data,
 															  &session->enc_write_frame.datalen, &session->enc_write_frame.rate, &flag);
-
 							switch (status) {
 							case SWITCH_STATUS_RESAMPLE:
 								session->enc_write_frame.codec = session->write_codec;
@@ -804,10 +806,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 							case SWITCH_STATUS_SUCCESS:
 								session->enc_write_frame.codec = session->write_codec;
 								session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t);
-								session->enc_write_frame.timestamp = frame->timestamp;
+								if (!ptime_mismatch) {
+									session->enc_write_frame.timestamp = frame->timestamp;
+									session->enc_write_frame.seq = frame->seq;
+								}
 								session->enc_write_frame.m = frame->m;
 								session->enc_write_frame.ssrc = frame->ssrc;
-								session->enc_write_frame.seq = frame->seq;
 								session->enc_write_frame.payload = session->write_codec->implementation->ianacode;
 								write_frame = &session->enc_write_frame;
 								break;
@@ -855,6 +859,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 							if (flag & SFF_CNG) {
 								switch_set_flag(write_frame, SFF_CNG);
 							}
+
 							if ((status = perform_write(session, write_frame, timeout, io_flag, stream_id)) != SWITCH_STATUS_SUCCESS) {
 								break;
 							}
@@ -865,7 +870,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			}
 		}
 	} else {
-		do_write = 1;
+		do_write = TRUE;
 	}
 
   done:

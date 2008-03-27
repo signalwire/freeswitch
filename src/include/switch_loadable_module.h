@@ -306,11 +306,14 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void);
 	break; \
 	}
 
+SWITCH_DECLARE(uint32_t) switch_core_codec_next_id(void);
+
 #define SWITCH_ADD_CODEC(codec_int, int_name) \
 	for (;;) { \
-	codec_int = (switch_codec_interface_t *)switch_loadable_module_create_interface(*module_interface, SWITCH_CODEC_INTERFACE); \
-	codec_int->interface_name = switch_core_strdup(pool, int_name); \
-	break; \
+		codec_int = (switch_codec_interface_t *)switch_loadable_module_create_interface(*module_interface, SWITCH_CODEC_INTERFACE); \
+		codec_int->interface_name = switch_core_strdup(pool, int_name);	\
+		codec_int->codec_id = switch_core_codec_next_id();				\
+		break;															\
 	}
 
 
@@ -373,7 +376,7 @@ static inline void switch_core_codec_add_implementation(switch_memory_pool_t *po
 		impl->encode = encode;
 		impl->decode = decode;
 		impl->destroy = destroy;
-		
+		impl->codec_id = codec_interface->codec_id;
 		impl->next = codec_interface->implementations;
 		codec_interface->implementations = impl;
 	}

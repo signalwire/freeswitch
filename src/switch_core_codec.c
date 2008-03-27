@@ -35,6 +35,14 @@
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
+static uint32_t CODEC_ID = 0;
+
+SWITCH_DECLARE(uint32_t) switch_core_codec_next_id(void)
+{
+	return CODEC_ID++;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_session_t *session, switch_codec_t *codec)
 {
 	switch_event_t *event;
