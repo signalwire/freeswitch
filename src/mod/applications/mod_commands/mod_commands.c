@@ -505,7 +505,7 @@ ok:
 
 SWITCH_STANDARD_API(lan_addr_function)
 {
-	stream->write_function(stream, "%s", switch_is_lan_addr(cmd) ? "yes" : "no");
+	stream->write_function(stream, "%s", switch_is_lan_addr(cmd) ? "true" : "false");
 	return SWITCH_STATUS_SUCCESS;
 }
 
