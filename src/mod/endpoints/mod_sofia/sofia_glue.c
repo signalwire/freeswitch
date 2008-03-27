@@ -1961,6 +1961,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 				int32_t i;
+				uint32_t near_rate = 0;
 				const switch_codec_implementation_t *mimp = NULL, *near_match = NULL;
 				const char *rm_encoding;
 				
@@ -2018,8 +2019,9 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						match = strcasecmp(rm_encoding, imp->iananame) ? 0 : 1;
 					}
 					
-					if (match && (map->rm_rate == codec_rate)) {
-						if (ptime && ptime * 1000 != imp->microseconds_per_frame) {
+					if (match) {
+						if ((ptime && ptime * 1000 != imp->microseconds_per_frame) || map->rm_rate != codec_rate) {
+							near_rate = map->rm_rate;
 							near_match = imp;
 							match = 0;
 							continue;
@@ -2036,8 +2038,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					char *prefs[1];
 					char tmp[80];
 					int num;
-
-					switch_snprintf(tmp, sizeof(tmp), "%s@%uk@%ui", near_match->iananame, near_match->samples_per_second, ptime);
+					
+					switch_snprintf(tmp, sizeof(tmp), "%s@%uk@%ui", near_match->iananame, near_rate ? near_rate : near_match->samples_per_second, ptime);
 					
 					prefs[0] = tmp;
 					num = switch_loadable_module_get_codecs_sorted(search, 1, prefs, 1);
@@ -2047,9 +2049,9 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					} else {
 						mimp = near_match;
 					}
-
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Substituting codec %s@%ums\n",
-									  mimp->iananame, mimp->microseconds_per_frame / 1000);
+					
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Substituting codec %s@%ui@%uh\n",
+									  mimp->iananame, mimp->microseconds_per_frame / 1000, mimp->samples_per_second);
 					match = 1;
 				}
 

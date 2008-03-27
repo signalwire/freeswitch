@@ -1043,7 +1043,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				} else {
 					if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
 						switch_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);
-						
 						if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
 							const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 

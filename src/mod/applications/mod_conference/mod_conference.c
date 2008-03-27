@@ -4140,6 +4140,12 @@ SWITCH_STANDARD_APP(conference_function)
 	conf_xml_cfg_t xml_cfg = { 0 };
 	switch_event_t *params = NULL;
 
+	/* Save the original read codec. */
+	if (!(read_codec = switch_core_session_get_read_codec(session))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Channel has no media!\n");
+		return;
+	}
+	
 
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid arguments\n");
@@ -4376,9 +4382,7 @@ SWITCH_STANDARD_APP(conference_function)
 		if (!switch_channel_test_flag(channel, CF_OUTBOUND))
 			switch_set_flag(conference, CFLAG_ANSWERED);
 	}
-
-	/* Save the original read codec. */
-	read_codec = switch_core_session_get_read_codec(session);
+	
 	member.orig_read_codec = read_codec;
 	member.native_rate = read_codec->implementation->samples_per_second;
 	member.pool = switch_core_session_get_pool(session);

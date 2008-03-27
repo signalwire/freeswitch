@@ -160,7 +160,10 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 		} else if (!switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA) && !switch_channel_media_ready(session->channel)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Application %s Requires media! pre_answering channel %s\n",
 							  extension->current_application->application_name, switch_channel_get_name(session->channel));
-			switch_channel_pre_answer(session->channel);
+			if (switch_channel_pre_answer(session->channel) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Well, that didn't work very well did it? ...\n");
+				return;
+			}
 		}
 
 		if ((expanded =

@@ -41,6 +41,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char tmp[30];
 
+	switch_assert(codec->implementation);
+	
 	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-read-codec-name", "%s", codec->implementation->iananame);
@@ -74,6 +76,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 	switch_event_t *event;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char tmp[30];
+
+	switch_assert(codec->implementation);
 
 	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);

@@ -1245,7 +1245,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 	
 	for (x = 0; x < preflen; x++) {
 		char *cur, *last = NULL, *next = NULL, *name, *p, buf[256];
-		uint32_t interval = 0, rate = 0;
+		uint32_t interval = 0, rate = 8000;
 
 		switch_copy_string(buf, prefs[x], sizeof(buf));
 		last = name = next = cur = buf;
