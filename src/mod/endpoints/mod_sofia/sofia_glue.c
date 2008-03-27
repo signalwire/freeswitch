@@ -162,9 +162,6 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 			
 			rate = imp->samples_per_second;
 			
-			if (ptime && ptime != imp->microseconds_per_frame / 1000) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ptime %u != advertised ptime %u\n", imp->microseconds_per_frame / 1000, ptime);
-			}
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", imp->ianacode, imp->iananame, rate);
 			if (imp->fmtp) {
 				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, imp->fmtp);
@@ -343,7 +340,7 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 				codec_string = tech_pvt->profile->codec_string;
 			}
 		}
-
+		
 		if ((ocodec = switch_channel_get_variable(tech_pvt->channel, SWITCH_ORIGINATOR_CODEC_VARIABLE))) {
 			if (!codec_string || (tech_pvt->profile->pflags & PFLAG_DISABLE_TRANSCODING)) {
 				codec_string = ocodec;
@@ -354,7 +351,7 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 			}
 		}
 	}
-
+	
 	if (codec_string) {
 		char *tmp_codec_string;
 		if ((tmp_codec_string = switch_core_session_strdup(tech_pvt->session, codec_string))) {

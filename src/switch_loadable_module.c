@@ -1251,11 +1251,10 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 		last = name = next = cur = buf;
 
 		for (;;) {
-
-
 			if (!next) {
 				break;
 			}
+			
 			if ((p = strchr(next, '@'))) {
 				*p++ = '\0';
 			}

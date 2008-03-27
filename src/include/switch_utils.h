@@ -45,7 +45,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_SMAX 32767
 #define SWITCH_SMIN -32768
 #define switch_normalize_to_16bit(n) if (n > SWITCH_SMAX) n = SWITCH_SMAX / 2; else if (n < SWITCH_SMIN) n = SWITCH_SMIN / 2;
-#define switch_codec2str(codec,buf,len) snprintf(buf, len, "%s@%uk@%ui", \
+#define switch_codec2str(codec,buf,len) snprintf(buf, len, "%s@%uh@%ui", \
                                                  codec->implementation->iananame, \
                                                  codec->implementation->samples_per_second, \
                                                  codec->implementation->microseconds_per_frame / 1000)
