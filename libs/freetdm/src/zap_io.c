@@ -686,7 +686,7 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 	if (state == zchan->state) {
 		ok = 0;
 	}
-	
+		 
 	if (ok) {
 		if (zchan->state == ZAP_CHANNEL_STATE_DOWN) {
 			zchan->span->active_count++;
@@ -695,7 +695,7 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 		}
 
 		zap_set_flag(zchan, ZAP_CHANNEL_STATE_CHANGE);	
-		zap_set_flag(zchan->span, ZAP_SPAN_STATE_CHANGE);
+		zap_set_flag_locked(zchan->span, ZAP_SPAN_STATE_CHANGE);	
 		zchan->last_state = zchan->state; 
 		zchan->state = state;
 	}
