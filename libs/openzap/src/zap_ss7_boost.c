@@ -51,25 +51,42 @@ typedef struct {
 	zap_channel_t *zchan;
 } ss7_boost_request_t;
 
-static ss7_boost_request_id_t current_request = 0;
+#define MAX_REQ_ID MAX_PENDING_CALLS
 
-static ss7_boost_request_t OUTBOUND_REQUESTS[MAX_PENDING_CALLS] = {{ 0 }};
+static ss7_boost_request_t OUTBOUND_REQUESTS[MAX_REQ_ID+1] = {{ 0 }};
 
 static zap_mutex_t *request_mutex = NULL;
 static zap_mutex_t *signal_mutex = NULL;
 
+static uint8_t req_map[MAX_REQ_ID+1] = { 0 };
+
+static void release_request_id(ss7_boost_request_id_t r)
+{
+	zap_mutex_lock(request_mutex);
+	req_map[r] = 0;
+	zap_mutex_unlock(request_mutex);
+}
+
 static ss7_boost_request_id_t next_request_id(void)
 {
-	 ss7_boost_request_id_t r;
-
-	zap_mutex_lock(request_mutex);
-	if (current_request == MAX_PENDING_CALLS) {
-		current_request = 0;
-	}
-	r = current_request++;
-	zap_mutex_unlock(request_mutex);
+	ss7_boost_request_id_t r = 0;
+	int ok = 0;
 	
-	return r + 1;
+	while(!ok) {
+		zap_mutex_lock(request_mutex);
+		for (r = 1; r <= MAX_REQ_ID; r++) {
+			if (!req_map[r]) {
+				ok = 1;
+				req_map[r] = 1;
+				break;
+			}
+		}
+		zap_mutex_unlock(request_mutex);
+		if (!ok) {
+			zap_sleep(5);
+		}
+	}
+	return r;
 }
 
 static zap_channel_t *find_zchan(zap_span_t *span, ss7bc_event_t *event, int force)
@@ -193,9 +210,11 @@ static void handle_call_start_ack(ss7bc_connection_t *mcon, ss7bc_event_t *event
 		OUTBOUND_REQUESTS[event->call_setup_id].status = BST_READY;
 		if (zap_channel_open_chan(zchan) != ZAP_SUCCESS) {
 			zap_log(ZAP_LOG_ERROR, "OPEN ERROR [%s]\n", zchan->last_error);
+			release_request_id(event->call_setup_id);
 		} else {
 			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
 			zap_set_flag(zchan, ZAP_CHANNEL_OUTBOUND);
+			zchan->extra_id = event->call_setup_id;
 			OUTBOUND_REQUESTS[event->call_setup_id].zchan = zchan;
 			return;
 		}
@@ -228,7 +247,7 @@ static void handle_call_start_nack(ss7bc_connection_t *mcon, ss7bc_event_t *even
 {
 	OUTBOUND_REQUESTS[event->call_setup_id].event = *event;
 	OUTBOUND_REQUESTS[event->call_setup_id].status = BST_FAIL;
-
+	release_request_id(event->call_setup_id);
 	ss7bc_exec_command(mcon,
 					   event->span,
 					   event->chan,
@@ -434,7 +453,11 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	switch (zchan->state) {
 	case ZAP_CHANNEL_STATE_DOWN:
 		{
-			zap_channel_done(zchan);
+			if (zchan->extra_id) {
+				release_request_id((ss7_boost_request_id_t)zchan->extra_id);
+				zchan->extra_id = 0;
+			}
+			zap_channel_done(zchan);			
 		}
 		break;
 	case ZAP_CHANNEL_STATE_PROGRESS_MEDIA:
@@ -548,22 +571,19 @@ static __inline__ void init_outgoing_array(void)
 
 static __inline__ void check_state(zap_span_t *span)
 {
-	
-
-	if (zap_test_flag(span, ZAP_SPAN_STATE_CHANGE)) {
-		uint32_t j;
-		for(j = 1; j <= span->chan_count; j++) {
-			if (zap_test_flag((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE)) {
-				zap_mutex_lock(signal_mutex);
-				state_advance(&span->channels[j]);
-				zap_channel_complete_state(&span->channels[j]);
-				zap_mutex_unlock(signal_mutex);
-				zap_clear_flag_locked((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE);
-			}
-		}
-		zap_clear_flag_locked(span, ZAP_SPAN_STATE_CHANGE);
-	}
+    if (zap_test_flag(span, ZAP_SPAN_STATE_CHANGE)) {
+        uint32_t j;
+        zap_clear_flag_locked(span, ZAP_SPAN_STATE_CHANGE);
+        for(j = 1; j <= span->chan_count; j++) {
+            if (zap_test_flag((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE)) {
+                zap_clear_flag_locked((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE);
+                state_advance(&span->channels[j]);
+                zap_channel_complete_state(&span->channels[j]);
+            }
+        }
+    }
 }
+
 
 static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 {
