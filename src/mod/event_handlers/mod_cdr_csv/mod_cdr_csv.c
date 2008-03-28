@@ -85,6 +85,7 @@ static void do_rotate(cdr_fd_t *fd)
 	size_t len;
 
 	close(fd->fd);
+	fd->fd = -1;
 
 	if (globals.rotate) {
 		switch_time_exp_lt(&tm, switch_timestamp_now());
