@@ -65,14 +65,19 @@ static off_t fd_size(int fd)
 
 static void do_reopen(cdr_fd_t *fd) 
 {
+	int x = 0;
 
 	if (fd->fd > -1) {
 		close(fd->fd);
 		fd->fd = -1;
 	}
 
-	if ((fd->fd = open(fd->path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR)) > -1) {
-		fd->bytes = fd_size(fd->fd);
+	for (x = 0 ; x < 10; x++) {
+		if ((fd->fd = open(fd->path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR)) > -1) {
+			fd->bytes = fd_size(fd->fd);
+			break;
+		}
+		switch_yield(100000);
 	}
 }
 
@@ -101,58 +106,57 @@ static void do_rotate(cdr_fd_t *fd)
 	do_reopen(fd);
 	
 	if (fd->fd < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", fd->path);
+		switch_event_t *event;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error opening %s\n", fd->path);
+		if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Critical-Error", "Error opening cdr file %s\n", fd->path);
+			switch_event_fire(&event);
+		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "%s CDR logfile %s\n", globals.rotate ? "Rotated" : "Re-opened", fd->path);
 	}
-
+	
 }
 
 static void write_cdr(const char *path, const char *log_line)
 {
 	cdr_fd_t *fd = NULL;
-
-	if ((fd = switch_core_hash_find(globals.fd_hash, path))) {
-		switch_mutex_lock(fd->mutex);
-	} else {
-		int lfd = open(path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-		
-		if (lfd > -1) {
-			fd = switch_core_alloc(globals.pool, sizeof(*fd));
-			switch_mutex_init(&fd->mutex, SWITCH_MUTEX_NESTED, globals.pool);
-			fd->fd = lfd;
-			switch_mutex_lock(fd->mutex);
-			fd->path = switch_core_strdup(globals.pool, path);
-			fd->bytes = fd_size(fd->fd);
-			switch_core_hash_insert(globals.fd_hash, path, fd);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
-		}
-	}
-
-	if (fd) {
-		unsigned int bytes_in, bytes_out;
-		bytes_out = (unsigned)strlen(log_line);
-		
-		if (fd->bytes + bytes_out > UINT_MAX) {
-			do_rotate(fd);
-		}
-
-		if (fd->fd < 0) {
-			do_reopen(fd);
-			if (fd->fd < 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
-				return;
-			}
-		}
-		
-		if ((bytes_in = write(fd->fd, log_line, bytes_out)) != bytes_out) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write error to file %s %d/%d\n", path, (int)bytes_in, (int)bytes_out);
-		}
-		fd->bytes += bytes_in;
-		switch_mutex_unlock(fd->mutex);
+	unsigned int bytes_in, bytes_out;
+	
+	if (!(fd = switch_core_hash_find(globals.fd_hash, path))) {
+		fd = switch_core_alloc(globals.pool, sizeof(*fd));
+		switch_assert(fd);
+		memset(fd, 0, sizeof(*fd));
+		fd->fd = -1;
+		switch_mutex_init(&fd->mutex, SWITCH_MUTEX_NESTED, globals.pool);
+		fd->path = switch_core_strdup(globals.pool, path);
+		switch_core_hash_insert(globals.fd_hash, path, fd);
 	}
 	
+	switch_mutex_lock(fd->mutex);
+	bytes_out = (unsigned)strlen(log_line);
+	
+	if (fd->fd < 0) {
+		do_reopen(fd);
+		if (fd->fd < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
+			goto end;
+		}
+	}
+	
+	if (fd->bytes + bytes_out > UINT_MAX) {
+		do_rotate(fd);
+	}
+	
+	if ((bytes_in = write(fd->fd, log_line, bytes_out)) != bytes_out) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write error to file %s %d/%d\n", path, (int)bytes_in, (int)bytes_out);
+	}
+
+	fd->bytes += bytes_in;
+
+ end:
+
+	switch_mutex_unlock(fd->mutex);
 }
 
 static switch_status_t my_on_hangup(switch_core_session_t *session)
