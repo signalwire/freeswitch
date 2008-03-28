@@ -20,13 +20,16 @@
     <param name="sip-trace" value="no"/>
     <param name="context" value="public"/>
     <param name="rfc2833-pt" value="101"/>
+    <!-- port to bind to for sip traffic -->
     <param name="sip-port" value="5060"/>
     <param name="dialplan" value="XML"/>
     <param name="dtmf-duration" value="100"/>
     <param name="codec-prefs" value="$${global_codec_prefs}"/>
     <param name="use-rtp-timer" value="true"/>
     <param name="rtp-timer-name" value="soft"/>
+    <!-- ip address to use for rtp -->
     <param name="rtp-ip" value="$${local_ip_v4}"/>
+    <!-- ip address to bind to -->
     <param name="sip-ip" value="$${local_ip_v4}"/>
     <param name="hold-music" value="$${moh_uri}"/>
     <!--<param name="apply-inbound-acl" value="lan"/>-->
