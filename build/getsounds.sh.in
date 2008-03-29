@@ -7,10 +7,10 @@ CURL=@CURL@
 
 DIR=`pwd`
 
-if [ -f $WGET ] ; then
+if [ -x "$WGET" ] ; then
     DOWNLOAD_CMD=$WGET
 else
-    if [ -f $CURL ] ; then
+    if [ -x "$CURL" ] ; then
         DOWNLOAD_CMD="$CURL -O"
     fi
 fi
