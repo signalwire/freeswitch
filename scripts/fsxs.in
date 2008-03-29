@@ -20,12 +20,12 @@ my %vars = (
 	LDFLAGS => '@LDFLAGS@',
 	SOLINK => '@SOLINK@',
 
-	MODULES_DIR => '@MODULES_DIR@',
-	LIB_DIR => '@LIB_DIR@',
-	BIN_DIR => '@BIN_DIR@',
-	INC_DIR => '@INC_DIR@',
-	DB_DIR => '@DB_DIR@',
-	CFG_DIR => '@CFG_DIR@',
+	MODULESDIR => '@MODULES_DIR@',
+	LIBDIR => '@LIB_DIR@',
+	BINDIR => '@BIN_DIR@',
+	INCLUDEDIR => '@INC_DIR@',
+	DBDIR => '@DB_DIR@',
+	CONFDIR => '@CFG_DIR@',
 	PREFIX => '@PREFIX@'
 );
 
@@ -84,7 +84,7 @@ sub fsxs_usage {
 
 	print "Variable names for \"fsxs show\" / \"fsxs --var\":\n";
 	print "\tcflags ldflags libs solink includes cc ld mkdir install\n";
-	print "\tprefix lib_dir modules_dir db_dir inc_dir cfg_dir bin_dir\n";
+	print "\tprefix libdir modulesdir dbdir includedir confdir bindir\n";
 	print "\n";
 
 	print "Examples:\n";
@@ -135,7 +135,7 @@ sub fsxs_link {
 
 sub fsxs_install {
 	my @files = @_;
-	my $destination = $vars{DESTDIR} . $vars{MODULES_DIR};
+	my $destination = $vars{DESTDIR} . $vars{MODULESDIR};
 
 	# check if destination exists, create if it doesn't
 	if( ! -e $destination ) {
