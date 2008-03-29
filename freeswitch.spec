@@ -237,7 +237,7 @@ touch .noversion
 # Add a freeswitch user with group daemon
 %pre
 %ifos linux
-/usr/sbin/useradd -r -g daemon -s /bin/false -c "The FreeSWITCH Open Source Voice Platform" -d %{prefix}/var freeswitch 2> /dev/null || :
+/usr/sbin/useradd -r -g daemon -s /bin/false -c "The FreeSWITCH Open Source Voice Platform" -d %{prefix} freeswitch 2> /dev/null || :
 %endif
 
 %post
@@ -245,6 +245,8 @@ touch .noversion
 # Make FHS2.0 happy
 %{__mkdir} -p /etc/opt
 %{__ln_s} -f %{prefix}/conf /etc%{prefix}
+
+chkconfig --add freeswitch
 
 %postun
 %{?run_ldconfig:%run_ldconfig}
