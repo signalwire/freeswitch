@@ -1,8 +1,8 @@
 #!/usr/bin/perl
 #
-# FreeSwitch fsxs
+# FreeSWITCH fsxs
 #
-# (C) 2006 Stefan Knoblich <stkn@netdomination.org>
+# (C) 2006-2008 Stefan Knoblich <stkn@netdomination.org>
 
 use strict;
 
@@ -52,21 +52,21 @@ sub do_exec {
 }
 
 sub fsxs_usage {
-	print "FreeSwitch fsxs\n(C) 2006-2008 Stefan Knoblich <stkn\@netdomination.org>\n";
+	print "FreeSWITCH fsxs\n(C) 2006-2008 Stefan Knoblich <stkn\@netdomination.org>\n";
 	print "\n";
 	print "Usage:\n";
 	print "\t$0 compile [options] <file1 ...>\n";
 	print "\t$0 link    [options] <target> <file1 ...>\n";
 	print "\t$0 build   [options] <target> <file1 ...>\n";
 	print "\t$0 install [options] <file1 ...>\n\n";
-	print "\t$0 show    <var1>...[varN]\n";
-	print "\t$0         <--var1>...<--varN>\n\n";
+	print "\t$0 show    <var1 ...varN>\n";
+	print "\t$0         <--var1 ...--varN>\n\n";
 
 	print "Command description:\n";
 	print "\tcompile: Compile source file(s) into object file(s)\n";
 	print "\tlink:    Create module from object file(s)\n";
 	print "\tbuild:   Build module from source file(s) (compile + link)\n";
-	print "\tinstall: Install module(s) into freeswitch module directory\n";
+	print "\tinstall: Install module(s) into FreeSWITCH module directory\n";
 	print "\tshow:    Show defined variable(s)\n";
 	print "\n";
 
