@@ -32,7 +32,7 @@
     <extension name="is_secure">
       <condition field="${sip_secure_media_confirmed}" expression="^true$">
 	<action application="sleep" data="1000"/>
-	<action application="send_display" data="Secure Music On Hold "/>
+	<!--<action application="send_display" data="Secure Music On Hold "/>-->
 	<action application="gentones" data="${bong-ring}"/>
 	<anti-action application="eval" data="not_secure"/>
       </condition>
