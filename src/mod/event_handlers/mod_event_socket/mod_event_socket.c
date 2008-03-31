@@ -1067,7 +1067,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj
 	switch_assert(listener != NULL);
 
 	if (prefs.acl_count && listener->sa && !switch_strlen_zero(listener->remote_ip)) {
-		int x = 0;
+		uint32_t x = 0;
 		
 		for (x = 0 ; x < prefs.acl_count; x++) {
 			if (!switch_check_network_list_ip(listener->remote_ip, prefs.acl[x])) {
@@ -1298,7 +1298,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 	switch_sockaddr_t *sa;
 	switch_socket_t *inbound_socket = NULL;
 	listener_t *listener;
-	int x = 0;
+	uint32_t x = 0;
 
 	memset(&listen_list, 0, sizeof(listen_list));
 	config();

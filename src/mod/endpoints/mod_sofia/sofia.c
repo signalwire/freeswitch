@@ -2491,7 +2491,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
 
 	if (profile->acl_count) {
-		int x = 0;
+		uint32_t x = 0;
 		for (x = 0 ; x < profile->acl_count; x++) {
 			if (!switch_check_network_list_ip(network_ip, profile->acl[x])) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl %s\n", network_ip,  profile->acl[x]);

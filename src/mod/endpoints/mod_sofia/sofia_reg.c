@@ -659,7 +659,7 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
 	
 	if (profile->reg_acl_count) {
-		int x = 0;
+		uint32_t x = 0;
 
 		get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
 		
