@@ -113,6 +113,7 @@ class CoreSession {
 	switch_core_session_t *session;
 	switch_channel_t *channel;
 	unsigned int flags;
+	int allocated;
 	input_callback_state cb_state; // callback state, always pointed to by the buf
                                    // field in this->args
 	switch_channel_state_t hook_state; // store hookstate for on_hangup callback

@@ -37,8 +37,8 @@
 #pragma warning(disable:4127 4003)
 #endif
 
-#define sanity_check(x) do { if (!session) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return x;}} while(0)
-#define sanity_check_noreturn do { if (!session) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return;}} while(0)
+#define sanity_check(x) do { if (!(session && allocated)) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return x;}} while(0)
+#define sanity_check_noreturn do { if (!(session && allocated)) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return;}} while(0)
 #define init_vars() do { session = NULL; channel = NULL; uuid = NULL; tts_name = NULL; voice_name = NULL; memset(&args, 0, sizeof(args)); ap = NULL; caller_profile.source = "mod_unknown";  caller_profile.dialplan = ""; caller_profile.context = ""; caller_profile.caller_id_name = ""; caller_profile.caller_id_number = ""; caller_profile.network_addr = ""; caller_profile.ani = ""; caller_profile.aniii = ""; caller_profile.rdnis = "";  caller_profile.username = ""; on_hangup = NULL; cb_state.function = NULL; } while(0)
 
 
@@ -54,7 +54,7 @@ CoreSession::CoreSession()
 	ap = NULL;
 	on_hangup = NULL;
 	cb_state.function = NULL;
-
+	
 	memset(&caller_profile, 0, sizeof(caller_profile)); 
 	caller_profile.source = "mod_unknown";
 	caller_profile.dialplan = "";
@@ -71,11 +71,13 @@ CoreSession::CoreSession()
 
 CoreSession::CoreSession(char *nuuid)
 {
-	memset(&caller_profile, 0, sizeof(caller_profile)); 
-	init_vars();
-    uuid = strdup(nuuid);
-	if (session = switch_core_session_locate(uuid)) {
+
+	if (session = switch_core_session_locate(nuuid)) {
 		channel = switch_core_session_get_channel(session);
+		init_vars();
+		uuid = strdup(nuuid);
+		memset(&caller_profile, 0, sizeof(caller_profile)); 	
+		allocated = 1;
     }
 }
 
@@ -85,6 +87,7 @@ CoreSession::CoreSession(switch_core_session_t *new_session)
 	init_vars();
 	session = new_session;
 	channel = switch_core_session_get_channel(session);
+	allocated = 1;
 	switch_core_session_read_lock(session);
 }
 
@@ -369,6 +372,7 @@ int CoreSession::originate(CoreSession *a_leg_session,
 	}
 
     if (a_leg_session) a_leg_session->end_allow_threads();
+	allocated = 1;
 	return SWITCH_STATUS_SUCCESS;
 
  failed:
