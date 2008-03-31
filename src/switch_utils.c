@@ -143,11 +143,11 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network
 
 SWITCH_DECLARE(int) switch_parse_cidr(const char *string, uint32_t *ip, uint32_t *mask, uint32_t *bitp)
 {
-	char host[128] = "";
+	char host[128];
 	char *bit_str;
 	int32_t bits;
 
-	strncpy(host, string, sizeof(host) - 1);
+	switch_copy_string(host, string, sizeof(host));
 	bit_str = strchr(host, '/');
 
 	if (!bit_str) {
