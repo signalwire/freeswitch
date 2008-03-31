@@ -1080,16 +1080,18 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 			case IAX_EVENT_BUSY:
 			case IAX_EVENT_HANGUP:
 				if (channel) {
+					switch_mutex_lock(globals.mutex);
 					switch_mutex_lock(tech_pvt->flag_mutex);
 					switch_clear_flag(tech_pvt, TFLAG_IO);
 					switch_clear_flag(tech_pvt, TFLAG_VOICE);
 					switch_mutex_unlock(tech_pvt->flag_mutex);
 
-
+					
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hangup %s\n", switch_channel_get_name(channel));
 					switch_set_flag_locked(tech_pvt, TFLAG_HANGUP);
 					switch_channel_hangup(channel, iaxevent->etype == IAX_EVENT_HANGUP ? SWITCH_CAUSE_NORMAL_CLEARING : SWITCH_CAUSE_FACILITY_REJECTED);
 					iaxevent->session = NULL;
+					switch_mutex_unlock(globals.mutex);
 				}
 				break;
 			case IAX_EVENT_CNG:
