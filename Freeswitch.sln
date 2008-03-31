@@ -455,7 +455,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mrcpv2agent", "libs\openmrc
 		{829A9309-3B94-43C0-846B-7EC9D6D35F8B} = {829A9309-3B94-43C0-846B-7EC9D6D35F8B}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libopenmrcpclient", "libs\openmrcp\platform\openmrcpclient\libopenmrcpclient.vcproj", "{A407B661-D7DC-4E30-B268-FFF3296C35E6}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libopenmrcpclient", "libs\openmrcp\platform\libopenmrcpclient\libopenmrcpclient.vcproj", "{A407B661-D7DC-4E30-B268-FFF3296C35E6}"
 	ProjectSection(ProjectDependencies) = postProject
 		{FB64EA08-3BC0-48AE-BE4B-74F1024B756E} = {FB64EA08-3BC0-48AE-BE4B-74F1024B756E}
 		{9EA22C31-BB7E-4C40-A698-2C6792D1E0C6} = {9EA22C31-BB7E-4C40-A698-2C6792D1E0C6}

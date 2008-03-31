@@ -39,7 +39,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\openmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\aprtoolkit\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\libopenmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\aprtoolkit\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -103,7 +103,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\openmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\aprtoolkit\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\libopenmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\aprtoolkit\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -167,7 +167,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\openmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\aprtoolkit\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\libopenmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\aprtoolkit\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -231,7 +231,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\openmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\aprtoolkit\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\libopenmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\aprtoolkit\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
