@@ -15,9 +15,9 @@ fi
 # keep automake from making us magically GPL, and to stop complaining about missing files.
 cp -f docs/COPYING .
 cp -f docs/AUTHORS .
+cp -f docs/ChangeLog .
 touch NEWS
 touch README
-touch ChangeLog
 
 # autoconf 2.59 or newer
 ac_version=`${AUTOCONF:-autoconf} --version 2>/dev/null|sed -e 's/^[^0-9]*//;s/[a-z]* *$//;s/[- ].*//g;q'`
