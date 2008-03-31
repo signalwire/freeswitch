@@ -505,6 +505,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		switch_core_codec_destroy(&tech_pvt->write_codec);
 	}
 
+	switch_mutex_lock(globals.mutex);
 	if (tech_pvt->iax_session) {
 		if (!switch_test_flag(tech_pvt, TFLAG_HANGUP)) {
 			iax_hangup(tech_pvt->iax_session, "Hangup");
@@ -514,7 +515,6 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n", switch_channel_get_name(switch_core_session_get_channel(session)));
-	switch_mutex_lock(globals.mutex);
 	globals.calls--;
 	if (globals.calls < 0) {
 		globals.calls = 0;
@@ -576,7 +576,9 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 	private_t *tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 	if (tech_pvt->iax_session) {
+		switch_mutex_lock(globals.mutex);
 		iax_send_dtmf(tech_pvt->iax_session, dtmf->digit);
+		switch_mutex_unlock(globals.mutex);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -674,7 +676,9 @@ static switch_status_t channel_answer_channel(switch_core_session_t *session)
 	switch_assert(tech_pvt != NULL);
 
 	if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+		switch_mutex_lock(globals.mutex);
 		iax_answer(tech_pvt->iax_session);
+		switch_mutex_unlock(globals.mutex);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -689,8 +693,10 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	case SWITCH_MESSAGE_INDICATE_RESPOND:
 		{
 			if (tech_pvt->iax_session) {
+				switch_mutex_lock(globals.mutex);
 				iax_reject(tech_pvt->iax_session, msg->string_arg ? msg->string_arg : "Call Rejected");
 				switch_set_flag(tech_pvt, TFLAG_HANGUP);
+				switch_mutex_unlock(globals.mutex);
 			}
 		}
 		break;
@@ -745,7 +751,11 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		}
 
-		if ((tech_pvt->iax_session = iax_session_new()) == 0) {
+		switch_mutex_lock(globals.mutex);
+		tech_pvt->iax_session = iax_session_new();
+		switch_mutex_unlock(globals.mutex);
+
+		if (!tech_pvt->iax_session) {
 			switch_core_session_destroy(new_session);
 			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		}
@@ -955,6 +965,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Event %d [%s]!\n", iaxevent->etype, IAXNAMES[iaxevent->etype]);
 			}
 
+			switch_mutex_lock(globals.mutex);
 			switch (iaxevent->etype) {
 			case IAX_EVENT_REGACK:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Registration completed successfully.\n");
@@ -1129,7 +1140,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 				break;
 			}
 			iax_event_free(iaxevent);
-
+			switch_mutex_unlock(globals.mutex);			
 			if (tech_pvt && tech_pvt->session) {
 				switch_core_session_signal_unlock(tech_pvt->session);
 			}
