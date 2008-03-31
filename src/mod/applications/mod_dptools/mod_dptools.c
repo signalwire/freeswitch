@@ -203,7 +203,7 @@ SWITCH_STANDARD_APP(send_dtmf_function)
 SWITCH_STANDARD_APP(check_acl_function)
 {
 	int argc;
-    char *argv[2] = { 0 };
+    char *argv[3] = { 0 };
 	char *mydata;
 	switch_call_cause_t cause = SWITCH_CAUSE_CALL_REJECTED;
 
