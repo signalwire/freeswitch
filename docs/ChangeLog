@@ -1,0 +1,11 @@
+freeswitch (1.0.rc2)
+
+	Fixed speex protocol negotiation issues (8k vs 16k)
+	Fixed mod_iax race conditions
+	Fixed ptime negotiation issues when re-packetizing
+	Added ip based acl lists
+
+freeswitch (1.0.rc1)
+
+
+	
