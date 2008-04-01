@@ -33,6 +33,8 @@ opt/freeswitch/mod/mod_native_file.so*
 opt/freeswitch/mod/mod_sndfile.so*
 opt/freeswitch/mod/mod_local_stream.so*
 opt/freeswitch/mod/mod_xml_*.so*
+opt/freeswitch/mod/mod_fsv.so*
+opt/freeswitch/mod/mod_tone_stream.so*
 opt/freeswitch/conf/dialplan/public.xml
 opt/freeswitch/conf/dialplan/default.xml
 opt/freeswitch/conf/dialplan/extensions
