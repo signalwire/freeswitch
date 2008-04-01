@@ -174,7 +174,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 					zchan->caller_data.hangup_cause = cause->Value;
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_TERMINATING);
 				} else {
-					zap_log(ZAP_LOG_CRIT, "Received Diconnect with no matching channel %d\n", chan_id);
+					zap_log(ZAP_LOG_CRIT, "Received Disconnect with no matching channel %d\n", chan_id);
 				}
 			}
 			break;
