@@ -85,10 +85,12 @@ CoreSession::CoreSession(switch_core_session_t *new_session)
 {
 	memset(&caller_profile, 0, sizeof(caller_profile)); 
 	init_vars();
-	session = new_session;
-	channel = switch_core_session_get_channel(session);
-	allocated = 1;
-	switch_core_session_read_lock(session);
+	if (new_session) {
+		session = new_session;
+		channel = switch_core_session_get_channel(session);
+		allocated = 1;
+		switch_core_session_read_lock(session);
+	}
 }
 
 CoreSession::~CoreSession()
