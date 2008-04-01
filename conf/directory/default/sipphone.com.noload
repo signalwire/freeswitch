@@ -6,8 +6,6 @@
       <gateway name="proxy01.sipphone.com">
 	<param name="username" value="%SPUSERNAME%"/>
 	<param name="password" value="%SPPASSWORD%"/>
-	<param name="from-domain" value="proxy01.sipphone.com"/>
-	<param name="caller-id-in-from" value="true"/>
 	<param name="expire-seconds" value="600"/>
 	<param name="register" value="true"/>
 	<param name="retry_seconds" value="5"/>
