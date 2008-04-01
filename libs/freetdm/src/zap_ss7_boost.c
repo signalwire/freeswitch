@@ -264,7 +264,7 @@ static void handle_call_start_nack(zap_span_t *span, ss7bc_connection_t *mcon, s
 		if ((zchan = find_zchan(span, event, 1))) {
 			assert(!zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND));
 			zchan->caller_data.hangup_cause = event->release_cause;
-			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_TERMINATING);
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_CANCEL);
 		}
 	}
 
@@ -279,14 +279,15 @@ static void handle_call_stop(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_e
 		zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_TERMINATING);
 	} else {
 		zap_log(ZAP_LOG_CRIT, "STOP CANT FIND A CHAN %d:%d\n", event->span+1,event->chan+1);
+		ss7bc_exec_command(mcon,
+						   event->span,
+						   event->chan,
+						   0,
+						   SIGBOOST_EVENT_CALL_STOPPED_ACK,
+						   0);
 	}
+	
 
-	ss7bc_exec_command(mcon,
-					   event->span,
-					   event->chan,
-					   0,
-					   SIGBOOST_EVENT_CALL_STOPPED_ACK,
-					   0);
 	
 }
 
@@ -573,12 +574,32 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			}			
 		}
 		break;
+	case ZAP_CHANNEL_STATE_CANCEL:
+		{
+			sig.event_id = ZAP_SIGEVENT_STOP;
+			status = ss7_boost_data->signal_cb(&sig);
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+			ss7bc_exec_command(mcon,
+							   zchan->physical_span_id-1,
+							   zchan->physical_chan_id-1,
+							   0,
+							   SIGBOOST_EVENT_CALL_START_NACK_ACK,
+							   0);
+		}
+		break;
 	case ZAP_CHANNEL_STATE_TERMINATING:
 		{
 			sig.event_id = ZAP_SIGEVENT_STOP;
 			status = ss7_boost_data->signal_cb(&sig);
 			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+			ss7bc_exec_command(mcon,
+							   zchan->physical_span_id-1,
+							   zchan->physical_chan_id-1,
+							   0,
+							   SIGBOOST_EVENT_CALL_STOPPED_ACK,
+							   0);
 		}
+		break;
 	default:
 		break;
 	}
