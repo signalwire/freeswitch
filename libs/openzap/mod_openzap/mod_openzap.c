@@ -914,13 +914,14 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			goto fail;
 		}
 
-		snprintf(name, sizeof(name), "OPENZAP/%s", dest);
+		snprintf(name, sizeof(name), "OpenZAP/%u:%u/%s", zchan->span_id, zchan->chan_id, dest);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connect outbound channel %s\n", name);
 		switch_channel_set_name(channel, name);
 		zchan->caller_data = caller_data;
 		caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 		switch_channel_set_caller_profile(channel, caller_profile);
 		tech_pvt->caller_profile = caller_profile;
-
+		
 		
 		switch_channel_set_flag(channel, CF_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
@@ -1018,7 +1019,8 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 		switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
 	}
 	
-	snprintf(name, sizeof(name), "OpenZAP/%s", tech_pvt->caller_profile->destination_number);
+	snprintf(name, sizeof(name), "OpenZAP/%u:%u/%s", sigmsg->channel->span_id, sigmsg->channel->chan_id, tech_pvt->caller_profile->destination_number);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connect inbound channel %s\n", name);
 	switch_channel_set_name(channel, name);
 	switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 		

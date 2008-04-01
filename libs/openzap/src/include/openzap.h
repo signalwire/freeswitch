@@ -213,7 +213,7 @@
 
 
 #define zap_set_state_locked(obj, s) if ( obj->state == s ) {			\
-		zap_log(ZAP_LOG_WARNING, "Why bother changing state on %d:%dfrom %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(obj->state), zap_channel_state2str(s)); \
+		zap_log(ZAP_LOG_WARNING, "Why bother changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(obj->state), zap_channel_state2str(s)); \
 	} else if (zap_test_flag(obj, ZAP_CHANNEL_READY)) {									\
 		int st = obj->state;											\
 		zap_channel_set_state(obj, s);									\
