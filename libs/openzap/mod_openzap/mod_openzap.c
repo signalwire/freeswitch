@@ -333,6 +333,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	globals.calls++;
 	switch_mutex_unlock(globals.mutex);
 
+	zap_channel_init(tech_pvt->zchan);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
