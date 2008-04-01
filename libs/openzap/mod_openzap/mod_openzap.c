@@ -60,6 +60,7 @@ struct span_config {
 	char dial_regex[256];
 	char fail_dial_regex[256];
 	char hold_music[256];
+	char type[256];
 	analog_option_t analog_options;
 };
 
@@ -1544,7 +1545,7 @@ static switch_status_t load_config(void)
 			if (hold_music) {
 				switch_set_string(SPAN_CONFIG[span->span_id].hold_music, hold_music);
 			}
-			
+			switch_copy_string(SPAN_CONFIG[span->span_id].type, "analog", sizeof(SPAN_CONFIG[span->span_id].type));
 			zap_analog_start(span);
 		}
 	}
@@ -1604,6 +1605,7 @@ static switch_status_t load_config(void)
 			SPAN_CONFIG[span->span_id].span = span;
 			switch_copy_string(SPAN_CONFIG[span->span_id].context, context, sizeof(SPAN_CONFIG[span->span_id].context));
 			switch_copy_string(SPAN_CONFIG[span->span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span->span_id].dialplan));
+			switch_copy_string(SPAN_CONFIG[span->span_id].type, "isdn", sizeof(SPAN_CONFIG[span->span_id].type));
 
 			zap_isdn_start(span);
 		}
@@ -1669,6 +1671,7 @@ static switch_status_t load_config(void)
 			switch_copy_string(SPAN_CONFIG[span->span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span->span_id].dialplan));
 
 			zap_ss7_boost_start(span);
+			switch_copy_string(SPAN_CONFIG[span->span_id].type, "ss7 (boost)", sizeof(SPAN_CONFIG[span->span_id].type));
 		}
 	}
 
@@ -1679,8 +1682,139 @@ static switch_status_t load_config(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+void dump_chan(zap_span_t *span, uint32_t chan_id, switch_stream_handle_t *stream)
+{
+	stream->write_function(stream,
+						   "span_id: %u\n"
+						   "chan_id: %u\n"
+						   "physical_span_id: %u\n"
+						   "physical_chan_id: %u\n"
+						   "type: %s\n"
+						   "state: %s\n"
+						   "last_state: %s\n"
+						   "cid_date: %s\n"
+						   "cid_name: %s\n"
+						   "cid_num: %s\n"
+						   "ani: %s\n"
+						   "aniII: %s\n"
+						   "dnis: %s\n"
+						   "rdnis: %s\n"
+						   "cause: %s\n\n",
+						   span->channels[chan_id].span_id,
+						   span->channels[chan_id].chan_id,
+						   span->channels[chan_id].physical_span_id,
+						   span->channels[chan_id].physical_chan_id,
+						   zap_chan_type2str(span->channels[chan_id].type),
+						   zap_channel_state2str(span->channels[chan_id].state),
+						   zap_channel_state2str(span->channels[chan_id].last_state),
+						   span->channels[chan_id].caller_data.cid_date,
+						   span->channels[chan_id].caller_data.cid_name,
+						   span->channels[chan_id].caller_data.cid_num.digits,
+						   span->channels[chan_id].caller_data.ani.digits,
+						   span->channels[chan_id].caller_data.aniII,
+						   span->channels[chan_id].caller_data.dnis.digits,
+						   span->channels[chan_id].caller_data.rdnis.digits,
+						   switch_channel_cause2str(span->channels[chan_id].caller_data.hangup_cause)
+						   );
+}
+
+#define OZ_SYNTAX "list || dump <span_id> [<chan_id>]"
+SWITCH_STANDARD_API(oz_function)
+{
+	char *mycmd = NULL, *argv[10] = { 0 };
+	int argc = 0;
+
+	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (!argc) {
+		stream->write_function(stream, "%s", OZ_SYNTAX);
+		goto end;
+	}
+
+	if (!strcasecmp(argv[0], "dump")) {
+		if (argc < 2) {
+			stream->write_function(stream, "-ERR Usage: oz dump <span_id> [<chan_id>]\n");
+			goto end;
+		} else {
+			int32_t span_id, chan_id = 0;
+			zap_span_t *span;
+
+			span_id = atoi(argv[1]);
+
+			if (argc > 2) {
+				chan_id = atoi(argv[2]);
+			}
+			
+			if (!(span_id && (span = SPAN_CONFIG[span_id].span))) {
+				stream->write_function(stream, "-ERR invalid span\n");
+			} else {
+				if (chan_id) {
+					dump_chan(span, chan_id, stream);
+				} else {
+					int j;
+					
+					stream->write_function(stream, "+OK\n");
+					for(j = 0; j <= span->chan_count; j++) {
+						dump_chan(span, j, stream);
+					}
+
+				}
+			}
+		}
+	} else if (!strcasecmp(argv[0], "list")) {
+		int j;
+		for (j = 0 ; j < ZAP_MAX_SPANS_INTERFACE; j++) {
+			if (SPAN_CONFIG[j].span) {
+				char *flags = "none";
+
+				if (SPAN_CONFIG[j].analog_options & ANALOG_OPTION_3WAY) {
+					flags = "3way";
+				} else if (SPAN_CONFIG[j].analog_options & ANALOG_OPTION_CALL_SWAP) {
+					flags = "call swap";
+				}
+
+				stream->write_function(stream,
+									   "+OK\n"
+									   "span: %u\n"
+									   "type: %s\n"
+									   "chan_count: %u\n"
+									   "dialplan: %s\n"
+									   "context: %s\n"
+									   "dial_regex: %s\n"
+									   "fail_dial_regex: %s\n"
+									   "hold_music: %s\n"
+									   "analog_options %s\n",
+									   j,
+									   SPAN_CONFIG[j].type,
+									   SPAN_CONFIG[j].span->chan_count,
+									   SPAN_CONFIG[j].dialplan,
+									   SPAN_CONFIG[j].context,
+									   SPAN_CONFIG[j].dial_regex,
+									   SPAN_CONFIG[j].fail_dial_regex,
+									   SPAN_CONFIG[j].hold_music,
+									   flags
+									   );
+			}
+		}
+	} else {
+		stream->write_function(stream, "-ERR Usage: oz list || dump <span_id> [<chan_id>]\n");
+	}
+
+ end:
+
+	switch_safe_free(mycmd);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load)
 {
+
+	switch_api_interface_t *commands_api_interface;
 
 	module_pool = pool;
 
@@ -1701,7 +1835,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load)
 	openzap_endpoint_interface->interface_name = "openzap";
 	openzap_endpoint_interface->io_routines = &openzap_io_routines;
 	openzap_endpoint_interface->state_handler = &openzap_state_handlers;
-
+	
+	SWITCH_ADD_API(commands_api_interface, "oz", "OpenZAP commands", oz_function, OZ_SYNTAX);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
