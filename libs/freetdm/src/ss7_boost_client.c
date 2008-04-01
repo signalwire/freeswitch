@@ -135,6 +135,8 @@ int ss7bc_connection_close(ss7bc_connection_t *mcon)
 		close(mcon->socket);
 	}
 
+	zap_mutex_lock(mcon->mutex);
+	zap_mutex_unlock(mcon->mutex);
 	zap_mutex_destroy(&mcon->mutex);
 	memset(mcon, 0, sizeof(*mcon));
 	mcon->socket = -1;

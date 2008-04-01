@@ -722,6 +722,7 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, c
 	}
 
 	if (span_id && globals.spans[span_id].channel_request) {
+		zap_mutex_unlock(globals.mutex);
 		status = globals.spans[span_id].channel_request(&globals.spans[span_id], direction, caller_data, zchan);
 		goto done;
 	}
@@ -846,6 +847,16 @@ static zap_status_t zap_channel_reset(zap_channel_t *zchan)
 	return ZAP_SUCCESS;
 }
 
+zap_status_t zap_channel_init(zap_channel_t *zchan)
+{
+	if (zchan->init_state != ZAP_CHANNEL_STATE_DOWN) {
+		zap_set_state_locked(zchan, zchan->init_state);
+		zchan->init_state = ZAP_CHANNEL_STATE_DOWN;
+	}
+
+	return ZAP_SUCCESS;
+}
+
 zap_status_t zap_channel_open_chan(zap_channel_t *zchan)
 {
 	zap_status_t status = ZAP_FAIL;
@@ -960,6 +971,8 @@ zap_status_t zap_channel_done(zap_channel_t *zchan)
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_PROGRESS);
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_MEDIA);
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_ANSWERED);
+	zchan->init_state = ZAP_CHANNEL_STATE_DOWN;
+	zap_log(ZAP_LOG_DEBUG, "channel done %u:%u\n", zchan->span_id, zchan->chan_id);
 
 	return ZAP_SUCCESS;
 }

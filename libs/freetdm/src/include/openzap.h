@@ -358,6 +358,7 @@ struct zap_channel {
 	uint32_t packet_len;
 	zap_channel_state_t state;
 	zap_channel_state_t last_state;
+	zap_channel_state_t init_state;
 	zap_mutex_t *mutex;
 	teletone_dtmf_detect_state_t dtmf_detect;
 	uint32_t buffer_delay;
@@ -538,6 +539,7 @@ int zap_hash_equalkeys(void *k1, void *k2);
 uint32_t zap_hash_hashfromstring(void *ky);
 uint32_t zap_running(void);
 zap_status_t zap_channel_complete_state(zap_channel_t *zchan);
+zap_status_t zap_channel_init(zap_channel_t *zchan);
 
 ZIO_CODEC_FUNCTION(zio_slin2ulaw);
 ZIO_CODEC_FUNCTION(zio_ulaw2slin);
