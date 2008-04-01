@@ -154,7 +154,7 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 
 PASSTHRU_CODEC_MODULES="codecs/mod_g729 codecs/mod_g723_1 codecs/mod_amr"
 SPIDERMONKEY_MODULES="languages/mod_spidermonkey languages/mod_spidermonkey_curl languages/mod_spidermonkey_core_db languages/mod_spidermonkey_odbc languages/mod_spidermonkey_socket languages/mod_spidermonkey_teletone"
-APPLICATIONS_MODULES="applications/mod_commands applications/mod_conference applications/mod_dptools applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_limit applications/mod_rss applications/mod_voicemail"
+APPLICATIONS_MODULES="applications/mod_commands applications/mod_conference applications/mod_dptools applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_limit applications/mod_rss applications/mod_voicemail applications/mod_fsv"
 ASR_TTS_MODULES="asr_tts/mod_openmrcp"
 CODECS_MODULES="codecs/mod_ilbc codecs/mod_h26x codecs/mod_voipcodecs codecs/mod_speex"
 DIALPLANS_MODULES="dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml"
@@ -162,7 +162,7 @@ DIRECTORIES_MODULES=
 DOTNET_MODULES=
 ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_iax endpoints/mod_portaudio endpoints/mod_sofia endpoints/mod_woomera ../../libs/openzap/mod_openzap"
 EVENT_HANDLERS_MODULES="event_handlers/mod_event_multicast event_handlers/mod_event_socket event_handlers/mod_cdr_csv"
-FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_sndfile"
+FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_sndfile formats/mod_tone_stream"
 LANGUAGES_MODULES=
 LOGGERS_MODULES="loggers/mod_console loggers/mod_logfile loggers/mod_syslog"
 SAY_MODULES="say/mod_say_en say/mod_say_fr say/mod_say_de"
@@ -373,6 +373,8 @@ userdel freeswitch
 %{prefix}/mod/mod_xml_rpc.so* 
 %{prefix}/mod/mod_xml_curl.so* 
 %{prefix}/mod/mod_xml_cdr.so* 
+%{prefix}/mod/mod_fsv.so
+%{prefix}/mod/mod_tone_stream.so
 
 %files codec-passthru-amr
 %defattr(-,freeswitch,daemon)
