@@ -104,17 +104,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 						{
 							zap_clear_flag_locked(zchan, ZAP_CHANNEL_SUSPENDED);
 							zap_log(ZAP_LOG_DEBUG, "Channel %d:%d in service\n", zchan->span_id, zchan->chan_id);
-							switch(zchan->state) {
-							case ZAP_CHANNEL_STATE_UP:
-							case ZAP_CHANNEL_STATE_IDLE:
-								zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_TERMINATING);
-								break;
-							case ZAP_CHANNEL_STATE_DOWN:
-								break;
-							default:
-								zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
-								break;
-							}
+							zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RESTART);
 						}
 						break;
 					case 1: 
@@ -213,9 +203,36 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 				zap_status_t status;
 				int fail = 1;
 				uint32_t cplen = mlen;
+				
+				zchan = NULL;
+				if (chan_id < ZAP_MAX_CHANNELS_SPAN && chan_id <= span->chan_count) {
+					zchan = &span->channels[chan_id];
+				}
 
+				if (zchan && (status = zap_channel_open_chan(zchan) == ZAP_SUCCESS)) {
+					if (zap_test_flag(zchan, ZAP_CHANNEL_INUSE) || zchan->state != ZAP_CHANNEL_STATE_DOWN) {
+						if (zchan->state == ZAP_CHANNEL_STATE_DOWN || zchan->state >= ZAP_CHANNEL_STATE_TERMINATING) {
+							int x = 0;
+							zap_log(ZAP_LOG_WARNING, "Channel %d:%d ~ %d:%d is already in use waiting for it to become available.\n");
 
-				if ((status = zap_channel_open(span->span_id, chan_id, &zchan) == ZAP_SUCCESS)) {
+							for (x = 0; x < 200; x++) {
+								if (!zap_test_flag(zchan, ZAP_CHANNEL_INUSE)) {
+									break;
+								}
+								zap_sleep(5);
+							}
+						}
+						if (zap_test_flag(zchan, ZAP_CHANNEL_INUSE)) {
+							zchan = NULL;
+							zap_log(ZAP_LOG_ERROR, "Channel %d:%d ~ %d:%d is already in use.\n",
+									zchan->span_id,
+									zchan->chan_id,
+									zchan->physical_span_id,
+									zchan->physical_chan_id
+									);
+						}
+					}
+
 					if (zchan->state == ZAP_CHANNEL_STATE_DOWN) {
 						zchan->span->channels_remote_crv[gen->CRV] = zchan;
 						memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
@@ -238,12 +255,25 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 				} 
 
 				if (fail) {
+					Q931ie_Cause cause;
+					gen->MesType = Q931mes_DISCONNECT;
+					cause.IEId = Q931ie_CAUSE;
+					cause.Size = sizeof(Q931ie_Cause);
+					cause.CodStand  = 0;
+					cause.Location = 1;
+					cause.Recom = 1;
+					//should we be casting here.. or do we need to translate value?
+					cause.Value = (unsigned char) ZAP_CAUSE_WRONG_CALL_STATE;
+					*cause.Diag = '\0';
+					gen->Cause = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &cause);
+					Q931Rx43(&isdn_data->q931, (L3UCHAR *) gen, gen->Size);
+
 					if (zchan) {
-						zap_log(ZAP_LOG_CRIT, "FIX ME! %s\n", zap_channel_state2str(zchan->state));
-						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
+						zap_log(ZAP_LOG_CRIT, "Channel is busy\n");
 					} else {
 						zap_log(ZAP_LOG_CRIT, "Failed to open channel for new setup message\n");
 					}
+					
 				}
 				
 			}
@@ -550,7 +580,7 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 		{
 			sig.event_id = ZAP_OOB_ALARM_TRAP;
 			if (event->channel->state != ZAP_CHANNEL_STATE_DOWN) {
-				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_TERMINATING);
+				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_RESTART);
 			}
 			zap_set_flag(event->channel, ZAP_CHANNEL_SUSPENDED);
 			zap_channel_get_alarms(event->channel);
