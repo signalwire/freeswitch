@@ -85,9 +85,9 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 #endif
 
 	if (gen->CRVFlag) {
-		zchan = span->channels_local_crv[gen->CRV];
+		zchan = isdn_data->channels_local_crv[gen->CRV];
 	} else {
-		zchan = span->channels_remote_crv[gen->CRV];
+		zchan = isdn_data->channels_remote_crv[gen->CRV];
 	}
 
 
@@ -197,7 +197,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 			break;
 		case Q931mes_SETUP:
 			{
-
+				
 				Q931ie_CallingNum *callingnum = Q931GetIEPtr(gen->CallingNum, gen->buf);
 				Q931ie_CalledNum *callednum = Q931GetIEPtr(gen->CalledNum, gen->buf);
 				zap_status_t status;
@@ -234,7 +234,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 					}
 
 					if (zchan->state == ZAP_CHANNEL_STATE_DOWN) {
-						zchan->span->channels_remote_crv[gen->CRV] = zchan;
+						isdn_data->channels_remote_crv[gen->CRV] = zchan;
 						memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
 
 						zap_set_string(zchan->caller_data.cid_num.digits, (char *)callingnum->Digit);
@@ -267,6 +267,10 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 					*cause.Diag = '\0';
 					gen->Cause = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &cause);
 					Q931Rx43(&isdn_data->q931, (L3UCHAR *) gen, gen->Size);
+
+					if (gen->CRV) {
+						Q931ReleaseCRV(&isdn_data->q931, gen->CRV);
+					}
 
 					if (zchan) {
 						zap_log(ZAP_LOG_CRIT, "Channel is busy\n");
@@ -335,6 +339,9 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	switch (zchan->state) {
 	case ZAP_CHANNEL_STATE_DOWN:
 		{
+			if (gen->CRV) {
+				Q931ReleaseCRV(&isdn_data->q931, gen->CRV);
+			}
 			zap_channel_done(zchan);
 		}
 		break;
@@ -515,7 +522,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			zap_copy_string((char *)ptrCalledNum->Digit, zchan->caller_data.ani.digits, strlen(zchan->caller_data.ani.digits)+1);
 
 			Q931Rx43(&isdn_data->q931, (L3UCHAR *) gen, gen->Size);
-			zchan->span->channels_local_crv[gen->CRV] = zchan;
+			isdn_data->channels_local_crv[gen->CRV] = zchan;
 		}
 		break;
 	case ZAP_CHANNEL_STATE_HANGUP:
