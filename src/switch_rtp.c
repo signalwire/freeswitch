@@ -862,13 +862,12 @@ SWITCH_DECLARE(uint8_t) switch_rtp_ready(switch_rtp_t *rtp_session)
 {
 	uint8_t ret;
 
-	if (!rtp_session || !rtp_session->flag_mutex) {
+	if (!rtp_session || !rtp_session->flag_mutex || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SHUTDOWN)) {
 		return 0;
 	}
 
 	switch_mutex_lock(rtp_session->flag_mutex);
-	ret = (rtp_session != NULL && 
-		   switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) && rtp_session->sock && rtp_session->remote_addr && rtp_session->ready == 2) ? 1 : 0;
+	ret = (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) && rtp_session->sock && rtp_session->remote_addr && rtp_session->ready == 2) ? 1 : 0;
 	switch_mutex_unlock(rtp_session->flag_mutex);
 
 	return ret;
@@ -883,7 +882,7 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 		return;
 	}
 
-	switch_mutex_lock((*rtp_session)->flag_mutex);
+	switch_set_flag_locked((*rtp_session), SWITCH_RTP_FLAG_SHUTDOWN);
 
 	READ_INC((*rtp_session));
 	WRITE_INC((*rtp_session));
@@ -893,6 +892,7 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 	READ_DEC((*rtp_session));
 	WRITE_DEC((*rtp_session));
 	
+	switch_mutex_lock((*rtp_session)->flag_mutex);
 
 	switch_rtp_kill_socket(*rtp_session);
 
