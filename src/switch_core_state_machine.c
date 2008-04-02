@@ -124,7 +124,6 @@ static void switch_core_standard_on_ring(switch_core_session_t *session)
 static void switch_core_standard_on_execute(switch_core_session_t *session)
 {
 	switch_caller_extension_t *extension;
-	const switch_application_interface_t *application_interface;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard EXECUTE\n");
 
@@ -137,56 +136,15 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 	}
 
 	while (switch_channel_get_state(session->channel) == CS_EXECUTE && extension->current_application) {
-		char *expanded = NULL;
-
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Execute %s(%s)\n", switch_channel_get_name(session->channel),
 						  extension->current_application->application_name, switch_str_nil(extension->current_application->application_data));
-		if ((application_interface = switch_loadable_module_get_application_interface(extension->current_application->application_name)) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application %s\n", extension->current_application->application_name);
-			switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+
+		if (switch_core_session_execute_application(session, 
+													extension->current_application->application_name,
+													extension->current_application->application_data) != SWITCH_STATUS_SUCCESS) {
 			return;
 		}
 		
-		if (!application_interface->application_function) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Function for %s\n", extension->current_application->application_name);
-			switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			return;
-		}
-		
-		if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) && !switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA)) {
-			switch_ivr_media(session->uuid_str, SMF_NONE);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Application %s Requires media on channel %s!\n",
-							  extension->current_application->application_name, switch_channel_get_name(session->channel));
-		} else if (!switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA) && !switch_channel_media_ready(session->channel)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Application %s Requires media! pre_answering channel %s\n",
-							  extension->current_application->application_name, switch_channel_get_name(session->channel));
-			if (switch_channel_pre_answer(session->channel) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Well, that didn't work very well did it? ...\n");
-				return;
-			}
-		}
-
-		if ((expanded =
-			 switch_channel_expand_variables(session->channel,
-											 extension->current_application->application_data)) != extension->current_application->application_data) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Expanded String %s(%s)\n", switch_channel_get_name(session->channel), 
-							  extension->current_application->application_name, expanded);				  
-		}
-
-		if (switch_channel_get_variable(session->channel, "presence_id")) {
-			char *arg = switch_mprintf("%s(%s)", extension->current_application->application_name, expanded);
-			if (arg) {
-				switch_channel_presence(session->channel, "unknown", arg);
-				switch_safe_free(arg);
-			}
-		}
-		switch_core_session_exec(session, application_interface, expanded);
-		//application_interface->application_function(session, expanded);
-
-		if (expanded != extension->current_application->application_data) {
-			switch_safe_free(expanded);
-		}
-
 		if (switch_channel_test_flag(session->channel, CF_RESET)) {
 			goto top;
 		}

@@ -640,6 +640,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(_In_ switch_core_sessio
 														 _In_ const switch_application_interface_t *application_interface,
 														 _In_opt_z_ const char *arg);
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(_In_ switch_core_session_t *session,
+																		_In_ const char *app,
+																		_In_opt_z_ const char *arg);
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(_In_ switch_core_session_t *session,
 																  _In_z_ const char *exten,
 																  _In_opt_z_ const char *dialplan,
