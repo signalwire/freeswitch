@@ -495,6 +495,19 @@ L3INT    Q931CreateCRV(Q931_TrunkInfo_t *pTrunk, L3INT * callIndex)
     return Q931AllocateCRV(pTrunk, CRV, callIndex);
 }
 
+
+L3INT	Q931ReleaseCRV(Q931_TrunkInfo_t *pTrunk, L3INT CRV)
+{
+	int callIndex;
+	
+	if ((Q931FindCRV(pTrunk, CRV, &callIndex)) == Q931E_NO_ERROR) {
+		pTrunk->call[callIndex].InUse = 0;
+		return Q931E_NO_ERROR;
+	}
+
+	return Q931E_INVALID_CRV;
+}
+
 /*****************************************************************************
 
   Function:     Q931AllocateCRV

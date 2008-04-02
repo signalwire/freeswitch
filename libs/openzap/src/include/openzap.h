@@ -410,6 +410,8 @@ struct zap_isdn_data {
 	struct zap_sigmsg sigmsg;
 	zio_signal_cb_t sig_cb;
 	uint32_t flags;
+	zap_channel_t *channels_local_crv[32768];
+	zap_channel_t *channels_remote_crv[32768];
 };
 
 struct zap_analog_data {
@@ -438,8 +440,6 @@ struct zap_span {
 	teletone_tone_map_t tone_detect_map[ZAP_TONEMAP_INVALID+1];
 	teletone_multi_tone_t tone_finder[ZAP_TONEMAP_INVALID+1];
 	zap_channel_t channels[ZAP_MAX_CHANNELS_SPAN];
-	zap_channel_t *channels_local_crv[32768];
-	zap_channel_t *channels_remote_crv[32768];
 	zio_channel_outgoing_call_t outgoing_call;
 	zio_channel_request_t channel_request;
 	void *mod_data;

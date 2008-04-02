@@ -918,6 +918,7 @@ L3INT Q931InitMesRestartAck(Q931mes_Generic * pMes);
 L3INT Q931InitMesGeneric(Q931mes_Generic *pMes);
 
 L3INT	Q931CreateCRV(Q931_TrunkInfo_t *pTrunk, L3INT * callIndex);
+L3INT	Q931ReleaseCRV(Q931_TrunkInfo_t *pTrunk, L3INT CRV);
 L3INT	Q931AllocateCRV(Q931_TrunkInfo_t *pTrunk, L3INT iCRV, L3INT * callIndex);
 L3INT   Q931FindCRV(Q931_TrunkInfo_t *pTrunk, L3INT crv, L3INT *callindex);
 L3INT	Q931GetCallState(Q931_TrunkInfo_t *pTrunk, L3INT iCRV);
