@@ -717,21 +717,17 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, c
 	zap_span_t *span;
 	uint32_t span_max;
 
-	zap_mutex_lock(globals.mutex);
-
-	if (globals.spans[span_id].active_count >= globals.spans[span_id].chan_count) {
-		zap_log(ZAP_LOG_CRIT, "All circuits are busy.\n");
-		*zchan = NULL;
-		goto done;
-	}
-
-	if (span_id && globals.spans[span_id].channel_request) {
-		zap_mutex_unlock(globals.mutex);
-		status = globals.spans[span_id].channel_request(&globals.spans[span_id], direction, caller_data, zchan);
-		goto done;
-	}
-
 	if (span_id) {
+		if (globals.spans[span_id].active_count >= globals.spans[span_id].chan_count) {
+			zap_log(ZAP_LOG_CRIT, "All circuits are busy.\n");
+			*zchan = NULL;
+			return ZAP_FAIL;
+		}
+
+		if (globals.spans[span_id].channel_request) {
+			return globals.spans[span_id].channel_request(&globals.spans[span_id], direction, caller_data, zchan);
+		}
+		
 		span_max = span_id;
 		j = span_id;
 	} else {
@@ -742,19 +738,21 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, c
 			j = span_max;
 		}
 	}
-
+	
 	for(;;) {
 		if (direction == ZAP_TOP_DOWN) {
 			if (j > span_max) {
-				break;
+				goto done;
 			}
 		} else {
 			if (j == 0) {
-				break;
+				goto done;
 			}
 		}
 
 		span = &globals.spans[j];
+		zap_mutex_lock(span->mutex);
+
 		if (!zap_test_flag(span, ZAP_SPAN_CONFIGURED)) {
 			goto next_loop;
 		}
@@ -766,7 +764,7 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, c
 		}	
 		
 		for(;;) {
-		
+
 			if (direction == ZAP_TOP_DOWN) {
 				if (i > span->chan_count) {
 					break;
@@ -779,7 +777,11 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, c
 			
 			check = &span->channels[i];
 			
-			if (zap_test_flag(check, ZAP_CHANNEL_READY) && !zap_test_flag(check, ZAP_CHANNEL_INUSE) && !zap_test_flag(check, ZAP_CHANNEL_SUSPENDED)) {
+			if (zap_test_flag(check, ZAP_CHANNEL_READY) && 
+				!zap_test_flag(check, ZAP_CHANNEL_INUSE) && 
+				!zap_test_flag(check, ZAP_CHANNEL_SUSPENDED) && 
+				check->state == ZAP_CHANNEL_STATE_DOWN
+				) {
 
 				status = check->zio->open(check);
 				
@@ -787,6 +789,7 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, c
 					zap_set_flag(check, ZAP_CHANNEL_INUSE);
 					zap_channel_open_chan(check);
 					*zchan = check;
+					zap_mutex_unlock(span->mutex);
 					goto done;
 				}
 			}
@@ -796,11 +799,12 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, c
 			} else {
 				i--;
 			}
-
 		}
 		
 	next_loop:
-
+		
+		zap_mutex_unlock(span->mutex);
+		
 		if (direction == ZAP_TOP_DOWN) {
 			j++;
 		} else {
@@ -809,7 +813,6 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, c
 	}
 
  done:
-	zap_mutex_unlock(globals.mutex);
 
 	return status;
 }
