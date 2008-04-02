@@ -326,7 +326,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status;
-	uint32_t session_timeout = 0;
+	uint32_t session_timeout = tech_pvt->profile->session_timeout;
 	const char *val;
 
 	if (switch_test_flag(tech_pvt, TFLAG_ANS) || switch_channel_test_flag(channel, CF_OUTBOUND)) {
