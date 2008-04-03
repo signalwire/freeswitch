@@ -281,7 +281,7 @@ int test_url_headers(void)
      TAG_END());
 
   TEST_1(s);
-  TEST_S(s, "to=%22Joe%22%20%3Csip%3Ajoe@example.com%3E;tag%3Dfoofaa"
+  TEST_S(s, "to=%22Joe%22%20%3Csip%3Ajoe@example.com%3E%3Btag%3Dfoofaa"
 	 "&subject=foo");
 
   url = url_format(home, "sip:test@example.net?%s", s); TEST_1(url);
@@ -290,19 +290,19 @@ int test_url_headers(void)
 
   s = sip_headers_as_url_query
     (home,
-     SIPTAG_FROM_STR("<sip:joe@example.com>"),
+     SIPTAG_FROM_STR("<sip:joe@example.com;user=ip>"),
      SIPTAG_ACCEPT_STR(""),
      SIPTAG_PAYLOAD_STR("hello"),
      SIPTAG_ACCEPT_STR(""),
      TAG_END());
 
-  TEST_S(s, "from=%3Csip%3Ajoe@example.com%3E"
+  TEST_S(s, "from=%3Csip%3Ajoe@example.com%3Buser%3Dip%3E"
 	 "&accept="
 	 "&body=hello"
 	 "&accept=");
 
   d = url_query_as_header_string(home, s);
-  TEST_S(d, "from:<sip:joe@example.com>\n"
+  TEST_S(d, "from:<sip:joe@example.com;user=ip>\n"
 	 "accept:\n"
 	 "accept:\n"
 	 "\n"
