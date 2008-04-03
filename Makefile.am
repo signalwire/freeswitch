@@ -307,6 +307,10 @@ up: clean
 	$(MAKE) -j modules
 	$(MAKE) install
 
+sync:
+	svn update
+	$(MAKE) -j install
+
 libs/openzap/Makefile:
 	cd libs/openzap && autoconf
 	cd libs/openzap && ./configure
