@@ -509,6 +509,7 @@ SWITCH_STANDARD_APP(fifo_function)
             if ((other_session = switch_core_session_locate(uuid))) {
                 switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
                 switch_caller_profile_t *cloned_profile;
+				const char *o_announce = NULL;
 
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
                     switch_channel_event_set_data(other_channel, event);
@@ -524,15 +525,14 @@ SWITCH_STANDARD_APP(fifo_function)
                     switch_event_fire(&event);
                 }
 
+				if ((o_announce = switch_channel_get_variable(other_channel, "fifo_override_announce"))) {
+					announce = o_announce;
+				}
+
 				if (announce) {
                     switch_ivr_play_file(session, NULL, announce, NULL);
                 } else {
-					const char *o_announce = switch_channel_get_variable(other_channel, "fifo_override_announce");
-					if (o_announce) {
-						switch_ivr_play_file(session, NULL, o_announce, NULL);
-					} else {
-						switch_ivr_sleep(session, 500);
-					}
+					switch_ivr_sleep(session, 500);
                 }
 				
 				
