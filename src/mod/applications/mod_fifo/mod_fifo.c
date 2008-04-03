@@ -84,7 +84,10 @@ static switch_status_t moh_on_dtmf(switch_core_session_t *session, void *input, 
 	case SWITCH_INPUT_TYPE_DTMF:
         {
             switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
-            if (dtmf->digit == '*') {
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			const char *caller_exit_key = switch_channel_get_variable(channel, "fifo_caller_exit_key");
+			
+            if (caller_exit_key && dtmf->digit == *caller_exit_key) {
 				char *bp = buf;
 				*bp = dtmf->digit;
 				return SWITCH_STATUS_BREAK;
@@ -312,10 +315,11 @@ SWITCH_STANDARD_APP(fifo_function)
 		while(switch_channel_ready(channel)) {
 			switch_input_args_t args = { 0 };
 			char buf[25] = "";
+			const char *caller_exit_key = switch_channel_get_variable(channel, "fifo_caller_exit_key");
 			args.input_callback = moh_on_dtmf;
 			args.buf = buf;
 			args.buflen = sizeof(buf);
-
+			
 
 			if ((serviced_uuid = switch_channel_get_variable(channel, "fifo_serviced_uuid"))) {
 				break;
@@ -327,7 +331,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_ivr_collect_digits_callback(session, &args, 0);
 			}
 			
-			if (*buf == '*') {
+			if (caller_exit_key && *buf == *caller_exit_key) {
 				aborted = 1;
 				goto abort;
 			}
