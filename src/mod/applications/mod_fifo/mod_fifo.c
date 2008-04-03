@@ -232,15 +232,6 @@ SWITCH_STANDARD_APP(fifo_function)
 	moh = switch_channel_get_variable(channel, "fifo_music");
     announce = switch_channel_get_variable(channel, "fifo_announce");
 
-    if (argc > 2) {
-        if (!strcasecmp(argv[2], "nowait")) {
-			nowait++;
-		} else if (strcasecmp(argv[2], "wait")) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "USAGE %s\n", FIFO_USAGE);
-			return;
-		}
-    }
-
     if (!strcasecmp(argv[1], "in")) {
         const char *uuid = strdup(switch_core_session_get_uuid(session));
 		const char *pri;
@@ -346,6 +337,16 @@ SWITCH_STANDARD_APP(fifo_function)
 		const char *fifo_consumer_wrapup_key = NULL;
 		char buf[5] = "";
 
+
+		if (argc > 2) {
+			if (!strcasecmp(argv[2], "nowait")) {
+				nowait++;
+			} else if (strcasecmp(argv[2], "wait")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "USAGE %s\n", FIFO_USAGE);
+				return;
+			}
+		}
+		
         if (argc > 3) {
             announce = argv[3];
         }
