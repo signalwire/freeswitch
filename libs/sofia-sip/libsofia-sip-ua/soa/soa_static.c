@@ -805,34 +805,37 @@ int soa_sdp_upgrade(soa_session_t *ss,
 	soa_sdp_media_upgrade_rtpmaps(ss, m, rm);
     }
   }
-  else if (sss->sss_ordered_user) {
-    /* Update session with unused media in u_media */
+  else {
 
-    if (!sss->sss_reuse_rejected) {
-      /* Mark previously used slots */
-      for (i = 0; i < Ns; i++) {
-	if (s_media[i])
-	  continue;
-	s_media[i] = soa_sdp_make_rejected_media(home, o_media[i], session, 0);
-      }
-    }
+    if (sss->sss_ordered_user) {
+      /* Update session with unused media in u_media */
 
-    for (j = 0; j < Nu; j++) {
-      if (u_media[j] == SDP_MEDIA_NONE)
-	continue;
-
-      for (i = 0; i < size - 1; i++) {
-	if (s_media[i] == NULL) {
-	  s_media[i] = u_media[j], u_media[j] = SDP_MEDIA_NONE;
-	  u2s[j] = i, s2u[i] = j;
-	  break;
+      if (!sss->sss_reuse_rejected) {
+	/* Mark previously used slots */
+	for (i = 0; i < Ns; i++) {
+	  if (s_media[i])
+	    continue;
+	  s_media[i] = 
+	    soa_sdp_make_rejected_media(home, o_media[i], session, 0);
 	}
       }
 
-      assert(i != size - 1);
+      for (j = 0; j < Nu; j++) {
+	if (u_media[j] == SDP_MEDIA_NONE)
+	  continue;
+
+	for (i = 0; i < size - 1; i++) {
+	  if (s_media[i] == NULL) {
+	    s_media[i] = u_media[j], u_media[j] = SDP_MEDIA_NONE;
+	    u2s[j] = i, s2u[i] = j;
+	    break;
+	  }
+	}
+
+	assert(i != size - 1);
+      }
     }
-  }
-  else {
+
     /* Match unused user media by media types with the existing session */
     for (i = 0; i < Ns; i++) {
       if (s_media[i])

@@ -1389,9 +1389,6 @@ int test_media_replace2(struct context *ctx)
     "v=0\r\n"
     "o=a 432432423423 2 IN IP4 127.0.0.2\r\n"
     "c=IN IP4 127.0.0.2\r\n"
-    "m=audio 5004 RTP/AVP 0 8\n"
-    "a=rtpmap:96 G7231/8000\n"
-    "a=rtpmap:97 G729/8000\n"
     "m=image 5556 UDPTL t38\r\n"
     "a=T38FaxVersion:0\r\n"
     "a=T38MaxBitRate:9600\r\n"
@@ -1399,12 +1396,16 @@ int test_media_replace2(struct context *ctx)
     "a=T38FaxTranscodingMMR:0\r\n"
     "a=T38FaxTranscodingJBIG:0\r\n"
     "a=T38FaxRateManagement:transferredTCF\r\n"
-    "a=T38FaxMaxDatagram:400\r\n";
+    "a=T38FaxMaxDatagram:400\r\n"
+    "m=audio 5004 RTP/AVP 0 8\n"
+    "a=rtpmap:96 G7231/8000\n"
+    "a=rtpmap:97 G729/8000\n";
 
   char const a_caps2[] = 
     "v=0\r\n"
     "o=a 432432423423 2 IN IP4 127.0.0.2\r\n"
     "c=IN IP4 127.0.0.2\r\n"
+    "m=image 0 UDPTL t38\r\n"
     "m=image 5004 UDPTL t38\r\n"
     "a=T38FaxVersion:0\r\n"
     "a=T38MaxBitRate:9600\r\n"
@@ -1464,15 +1465,15 @@ int test_media_replace2(struct context *ctx)
   TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_SENDRECV);
 
   TEST_1(a_sdp->sdp_media);
-  TEST_1(a_sdp->sdp_media->m_type == sdp_media_audio);
+  TEST_1(a_sdp->sdp_media->m_type == sdp_media_image);
   TEST_1(a_sdp->sdp_media->m_next);
-  TEST_1(a_sdp->sdp_media->m_next->m_type == sdp_media_image);
+  TEST_1(a_sdp->sdp_media->m_next->m_type == sdp_media_audio);
 
   /* ---------------------------------------------------------------------- */
 
   /* Re-O/A: replace media stream */
 
-  /* Accept media without common codecs */
+  /* Do not accept media without common codecs */
   TEST_1(soa_set_params(b, SOATAG_RTP_MISMATCH(0),
 			SOATAG_USER_SDP_STR(b_caps2),
 			TAG_END()) > 0);
@@ -1481,7 +1482,7 @@ int test_media_replace2(struct context *ctx)
   n = soa_get_local_sdp(b, &b_sdp, &offer, &offerlen); TEST(n, 1);
   TEST_1(offer != NULL && offer != NONE);
   n = soa_set_remote_sdp(a, 0, offer, offerlen); TEST(n, 1);
-  /*printf("offer 2:\n%s", offer);*/
+  printf("offer 2:\n%s", offer);
   TEST_1(soa_set_params(a, SOATAG_RTP_MISMATCH(0),
 			SOATAG_USER_SDP_STR(a_caps2),
 			TAG_END()) > 0);
@@ -1489,7 +1490,7 @@ int test_media_replace2(struct context *ctx)
   n = soa_generate_answer(a, test_completed); TEST(n, 0);
   n = soa_get_local_sdp(a, &a_sdp, &answer, &answerlen); TEST(n, 1);
   TEST_1(answer != NULL && answer != NONE);
-  /*printf("answer 2:\n%s", answer);*/
+  printf("answer 2:\n%s", answer);
   n = soa_set_remote_sdp(b, 0, answer, -1); TEST(n, 1);
   n = soa_process_answer(b, test_completed); TEST(n, 0);
   n = soa_get_local_sdp(b, &b_sdp, NULL, NULL); TEST(n, 1);
@@ -1500,13 +1501,15 @@ int test_media_replace2(struct context *ctx)
   TEST_1(soa_is_complete(b));
   TEST(soa_activate(b, NULL), 0);
 
-  TEST_1(m = a_sdp->sdp_media); TEST_1(!m->m_rejected);
+  TEST_1(m = a_sdp->sdp_media); TEST_1(m->m_rejected);
+  TEST_1(m = m->m_next);
   TEST(m->m_type, sdp_media_image);
   TEST(m->m_proto, sdp_proto_udptl);
   TEST_1(m->m_format); 
   TEST_S(m->m_format->l_text, "t38"); 
 
-  TEST_1(m = b_sdp->sdp_media); TEST_1(!m->m_rejected);
+  TEST_1(m = b_sdp->sdp_media); TEST_1(m->m_rejected);
+  TEST_1(m = m->m_next);
   TEST(m->m_type, sdp_media_image);
   TEST(m->m_proto, sdp_proto_udptl);
   TEST_1(m->m_format); 
