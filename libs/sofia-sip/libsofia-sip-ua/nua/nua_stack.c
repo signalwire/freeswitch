@@ -1707,8 +1707,12 @@ int nua_server_respond(nua_server_request_t *sr, tagi_t const *tags)
 	   sip_add_dup(msg, sip, (void *)NH_PGET(nh, allow)) < 0)
     ;
   else if (!sip->sip_allow_events && 
-	   (method == sip_method_publish || method == sip_method_subscribe) &&
 	   NH_PGET(nh, allow_events) &&
+	   (method == sip_method_publish || method == sip_method_subscribe ||
+	    method == sip_method_options || method == sip_method_refer || 
+	    (sr->sr_initial &&
+	     (method == sip_method_invite ||
+	      method == sip_method_notify))) &&
 	   sip_add_dup(msg, sip, (void *)NH_PGET(nh, allow_events)) < 0)
     ;
   else if (!sip->sip_contact && sr->sr_status < 300 && sr->sr_add_contact &&
