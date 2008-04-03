@@ -576,6 +576,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 		switch_event_t *event;
 		switch_dtmf_t dtmf = {0};
 
+		if (switch_channel_test_flag(channel, CF_BREAK)) {
+			switch_channel_clear_flag(channel, CF_BREAK);
+			status = SWITCH_STATUS_BREAK;
+			break;
+		}
+
 		if (timeout) {
 			elapsed = (uint32_t) ((switch_timestamp_now() - started) / 1000);
 			if (elapsed >= timeout) {

@@ -76,6 +76,28 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+static switch_status_t moh_on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
+{
+
+	switch (itype) {
+	case SWITCH_INPUT_TYPE_DTMF:
+        {
+            switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
+            if (dtmf->digit == '*') {
+				char *bp = buf;
+				*bp = dtmf->digit;
+				return SWITCH_STATUS_BREAK;
+            }
+        }
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define check_string(s) if (!switch_strlen_zero(s) && !strcasecmp(s, "undef")) { s = NULL; }
 
 static switch_status_t read_frame_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
@@ -206,6 +228,7 @@ SWITCH_STANDARD_APP(fifo_function)
     switch_time_exp_t tm;
     switch_time_t ts = switch_timestamp_now();
     switch_size_t retsize;
+	const char *serviced_uuid = NULL;
 
     if (!globals.running) {
         return;
@@ -233,9 +256,12 @@ SWITCH_STANDARD_APP(fifo_function)
     announce = switch_channel_get_variable(channel, "fifo_announce");
 
     if (!strcasecmp(argv[1], "in")) {
+        switch_core_session_t *other_session;
+		switch_channel_t *other_channel;
         const char *uuid = strdup(switch_core_session_get_uuid(session));
 		const char *pri;
 		int p = 0;
+		int aborted = 0;
 
         switch_channel_answer(channel);
 
@@ -249,12 +275,6 @@ SWITCH_STANDARD_APP(fifo_function)
 
         check_string(announce);
         check_string(moh);
-
-		if (moh) {
-            switch_ivr_broadcast(uuid, moh, SMF_LOOP | SMF_ECHO_ALEG);
-        }
-        
-        switch_channel_set_flag(channel, CF_TAGGED);
 
         switch_mutex_lock(node->mutex);
         node->caller_count++;
@@ -287,7 +307,45 @@ SWITCH_STANDARD_APP(fifo_function)
 			switch_event_fire(&event);
 		}
 		
-        switch_ivr_park(session, NULL);
+        switch_channel_set_flag(channel, CF_TAGGED);
+
+		while(switch_channel_ready(channel)) {
+			switch_input_args_t args = { 0 };
+			char buf[25] = "";
+			args.input_callback = moh_on_dtmf;
+			args.buf = buf;
+			args.buflen = sizeof(buf);
+
+
+			if ((serviced_uuid = switch_channel_get_variable(channel, "fifo_serviced_uuid"))) {
+				break;
+			}
+			
+			if (moh) {
+				switch_ivr_play_file(session, NULL, moh, &args);
+			} else {
+				switch_ivr_collect_digits_callback(session, &args, 0);
+			}
+			
+			if (*buf == '*') {
+				aborted = 1;
+				goto abort;
+			}
+
+		}
+
+		if (!serviced_uuid && switch_channel_ready(channel)) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+		} else if ((other_session = switch_core_session_locate(serviced_uuid))) {
+			int ready;
+			other_channel = switch_core_session_get_channel(other_session);
+			ready = switch_channel_ready(other_channel);
+			switch_core_session_rwunlock(other_session);
+			if (!ready) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			}
+		}
+		
 
 		if (switch_channel_ready(channel)) {
             if (announce) {
@@ -296,8 +354,10 @@ SWITCH_STANDARD_APP(fifo_function)
         }
 
         switch_channel_clear_flag(channel, CF_TAGGED);
-
-        if (switch_channel_ready(channel)) {
+		
+	abort:
+		
+        if (!aborted && switch_channel_ready(channel)) {
             switch_channel_set_state(channel, CS_HIBERNATE);            
         } else {
             ts = switch_timestamp_now();
@@ -335,8 +395,13 @@ SWITCH_STANDARD_APP(fifo_function)
 		char *pop_list[MAX_PRI] = { 0 };
 		const char *fifo_consumer_wrapup_sound = NULL;
 		const char *fifo_consumer_wrapup_key = NULL;
+		const char *my_id;
 		char buf[5] = "";
 
+
+		if (!(my_id = switch_channel_get_variable(channel, "fifo_consumer_id"))) {
+			my_id = switch_core_session_get_uuid(session);
+		}
 
 		if (argc > 2) {
 			if (!strcasecmp(argv[2], "nowait")) {
@@ -458,21 +523,32 @@ SWITCH_STANDARD_APP(fifo_function)
 				if (announce) {
                     switch_ivr_play_file(session, NULL, announce, NULL);
                 } else {
-                    switch_ivr_sleep(session, 500);
+					const char *o_announce = switch_channel_get_variable(other_channel, "fifo_override_announce");
+					if (o_announce) {
+						switch_ivr_play_file(session, NULL, o_announce, NULL);
+					} else {
+						switch_ivr_sleep(session, 500);
+					}
                 }
+				
+				
+				switch_channel_set_variable(other_channel, "fifo_serviced_by", my_id);
+				switch_channel_set_variable(other_channel, "fifo_serviced_uuid", switch_core_session_get_uuid(session));
+				switch_channel_set_flag(other_channel, CF_BREAK);
 
-                if (switch_channel_test_flag(other_channel, CF_TAGGED)) {
-                    switch_channel_clear_flag(other_channel, CF_CONTROLLED);
-					switch_core_session_flush_private_events(other_session);
-                    switch_channel_stop_broadcast(other_channel);
-                    switch_core_session_kill_channel(other_session, SWITCH_SIG_BREAK);
-                    while (switch_channel_test_flag(other_channel, CF_TAGGED)) {
-                        status = switch_core_session_read_frame(session, &read_frame, -1, 0);
-                        if (!SWITCH_READ_ACCEPTABLE(status)) {
-                            break;
-                        }
-                    }
-                }
+				while (switch_channel_ready(channel) && switch_channel_ready(other_channel) && switch_channel_test_flag(other_channel, CF_TAGGED)) {
+					status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+					if (!SWITCH_READ_ACCEPTABLE(status)) {
+						break;
+					}
+				}
+				
+				if (!(switch_channel_ready(channel))) {
+					switch_channel_hangup(other_channel, SWITCH_CAUSE_NORMAL_CLEARING);
+					switch_core_session_rwunlock(other_session);
+					break;
+				}
+
 
                 switch_channel_answer(channel);
 				cloned_profile = switch_caller_profile_clone(other_session, switch_channel_get_caller_profile(channel));
