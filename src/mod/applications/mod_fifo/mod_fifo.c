@@ -233,7 +233,12 @@ SWITCH_STANDARD_APP(fifo_function)
     announce = switch_channel_get_variable(channel, "fifo_announce");
 
     if (argc > 2) {
-        nowait = !strcasecmp(argv[2], "nowait");
+        if (!strcasecmp(argv[2], "nowait")) {
+			nowait++;
+		} else if (strcasecmp(argv[2], "wait")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "USAGE %s\n", FIFO_USAGE);
+			return;
+		}
     }
 
     if (!strcasecmp(argv[1], "in")) {
