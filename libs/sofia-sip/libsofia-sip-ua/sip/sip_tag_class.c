@@ -342,8 +342,8 @@ char *sip_headers_as_url_query(su_home_t *home,
 }
 
 /* "[" / "]" / "/" / "?" / ":" / "+" / "$" */
-#define HNV_UNRESERVED "[]/?;+$"
-#define HNV_RESERVED ":=,"
+#define HNV_UNRESERVED "[]/?+$"
+#define HNV_RESERVED ":=,;"
 
 /* Append a string to list and url-escape it if needed */
 static
