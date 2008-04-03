@@ -3,7 +3,7 @@
 		<!-- location of the radius dictionary file -->
 		<param name="dictionary" value="/usr/local/freeswitch/conf/radius/dictionary"/>
 		<!-- location of the radius sequence file -->
-		<param name="dictionary" value="/var/run/radius.seq"/>
+		<param name="seqfile" value="/var/run/radius.seq"/>
 
 		<!-- accounting servers, up to 8 allowed -->
 		<!-- value is "host:port:secret", port is optional -->
