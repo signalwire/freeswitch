@@ -71,12 +71,11 @@ CoreSession::CoreSession()
 
 CoreSession::CoreSession(char *nuuid)
 {
-
+	memset(&caller_profile, 0, sizeof(caller_profile)); 	
+	init_vars();
 	if (session = switch_core_session_locate(nuuid)) {
 		channel = switch_core_session_get_channel(session);
-		init_vars();
 		uuid = strdup(nuuid);
-		memset(&caller_profile, 0, sizeof(caller_profile)); 	
 		allocated = 1;
     }
 }
@@ -161,6 +160,8 @@ void CoreSession::execute(char *app, char *data)
 }
 
 void CoreSession::setDTMFCallback(void *cbfunc, char *funcargs) {
+
+	sanity_check_noreturn;
 
 	cb_state.funcargs = funcargs;
 	cb_state.function = cbfunc;
@@ -465,6 +466,8 @@ void CoreSession::setCallerData(char *var, char *val) {
 }
 
 void CoreSession::setHangupHook(void *hangup_func) {
+
+	sanity_check_noreturn;
 
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::seHangupHook, hangup_func: %p\n", hangup_func);
     on_hangup = hangup_func;
