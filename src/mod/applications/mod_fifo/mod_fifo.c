@@ -407,6 +407,26 @@ SWITCH_STANDARD_APP(fifo_function)
 
 	moh = switch_channel_get_variable(channel, "fifo_music");
     announce = switch_channel_get_variable(channel, "fifo_announce");
+
+	if (consumer) {
+		if (argc > 3) {
+            announce = argv[3];
+        }
+
+        if (argc > 4) {
+            moh = argv[4];
+        }
+
+	} else {
+		if (argc > 2) {
+            announce = argv[2];
+        }
+
+        if (argc > 3) {
+            moh = argv[3];
+        }
+	}
+
 	check_string(announce);
 	check_string(moh);
 
