@@ -15,5 +15,6 @@
     <!--<param name="avatar" value="/path/to/tiny.jpg"/>-->
     <!--If you have ODBC support and a working dsn you can use it instead of SQLite-->
     <!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
+    <!--<param name="candidate-acl" value="dl-candidates"/>-->
   </x-profile>
 </include>

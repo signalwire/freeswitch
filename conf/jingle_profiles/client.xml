@@ -25,5 +25,6 @@
     <!-- <param name="vad" value="out"/> -->
     <param name="vad" value="both"/>
     <!--<param name="avatar" value="/path/to/tiny.jpg"/>-->
+    <!--<param name="candidate-acl" value="dl-candidates"/>-->
   </x-profile>
 </include>
