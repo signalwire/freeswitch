@@ -467,7 +467,7 @@ SWITCH_STANDARD_APP(fifo_function)
 		while(switch_channel_ready(channel)) {
 			int x = 0 ;
 			pop = NULL;
-
+			
             if (moh) {
 				memset(&args, 0, sizeof(args));
                 args.read_frame_callback = read_frame_callback;

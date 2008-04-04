@@ -90,6 +90,8 @@ typedef enum {
 	GFLAG_MY_CODEC_PREFS = (1 << 0)
 } GFLAGS;
 
+#define MAX_ACL 100
+
 static struct {
 	int debug;
 	char *dialplan;
@@ -140,6 +142,8 @@ struct mdl_profile {
 	ldl_handle_t *handle;
 	uint32_t flags;
 	uint32_t user_flags;
+	char *acl[MAX_ACL];
+	uint32_t acl_count;
 };
 typedef struct mdl_profile mdl_profile_t;
 
@@ -1948,6 +1952,12 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 		profile->timer_name = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "lanaddr") && !switch_strlen_zero(val)) {
 		profile->lanaddr = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "candidate-acl")) {
+		if (profile->acl_count < MAX_ACL) {
+			profile->acl[profile->acl_count++] = strdup(val);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", MAX_ACL);
+		}
 	} else if (!strcasecmp(var, "tls")) {
 		if (switch_true(val)) {
 			profile->user_flags |= LDL_FLAG_TLS;
@@ -2826,7 +2836,8 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 		if (dl_signal) {
 			ldl_candidate_t *candidates;
 			unsigned int len = 0;
-			unsigned int x;
+			unsigned int x, choice = 0, ok = 0;
+			uint8_t lanaddr = 0;
 
 			if (ldl_session_get_candidates(dlsession, &candidates, &len) != LDL_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Candidate Error!\n");
@@ -2843,81 +2854,110 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%u candidates\n", len);
-			for (x = 0; x < len; x++) {
-				uint8_t lanaddr = 0;
+			
+			if (profile->acl_count) {
+				for (x = 0; x < len; x++) {
+					int y = 0;
+					for (y = 0; y < profile->acl_count; y++) {
+						if (switch_check_network_list_ip(candidates[x].address, profile->acl[y])) {
+							choice = x;
+							ok = 1;
+						}
 
-				if (profile->lanaddr) {
-					lanaddr = strncasecmp(candidates[x].address, profile->lanaddr, strlen(profile->lanaddr)) ? 0 : 1;
+						if (ok) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "candidate %s:%d PASS ACL %s\n", 
+											  candidates[x].address, candidates[x].port, profile->acl[y]);
+							break;
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "candidate %s:%d FAIL ACL %s\n", 
+											  candidates[x].address, candidates[x].port, profile->acl[y]);
+						}
+					}
+				}
+			} else {
+				for (x = 0; x < len; x++) {
+					
+					if (profile->lanaddr) {
+						lanaddr = strncasecmp(candidates[x].address, profile->lanaddr, strlen(profile->lanaddr)) ? 0 : 1;
+					}
+
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "candidates %s:%d\n", candidates[x].address, candidates[x].port);
+
+					// 192.0.0.0 - 192.0.127.255 is marked as reserved, should we filter all of them?
+					if (!strcasecmp(candidates[x].protocol, "udp") &&
+						(!strcasecmp(candidates[x].type, "local") || !strcasecmp(candidates[x].type, "stun")) &&
+						((profile->lanaddr &&
+						  lanaddr) || (strncasecmp(candidates[x].address, "10.", 3) &&
+									   strncasecmp(candidates[x].address, "192.168.", 8) &&
+									   strncasecmp(candidates[x].address, "127.", 4) &&
+									   strncasecmp(candidates[x].address, "255.", 4) &&
+									   strncasecmp(candidates[x].address, "0.", 2) &&
+									   strncasecmp(candidates[x].address, "1.", 2) &&
+									   strncasecmp(candidates[x].address, "2.", 2) &&
+									   strncasecmp(candidates[x].address, "172.16.", 7) &&
+									   strncasecmp(candidates[x].address, "172.17.", 7) &&
+									   strncasecmp(candidates[x].address, "172.18.", 7) &&
+									   strncasecmp(candidates[x].address, "172.19.", 7) &&
+									   strncasecmp(candidates[x].address, "172.2", 5) &&
+									   strncasecmp(candidates[x].address, "172.30.", 7) &&
+									   strncasecmp(candidates[x].address, "172.31.", 7) &&
+									   strncasecmp(candidates[x].address, "192.0.2.", 8) &&
+									   strncasecmp(candidates[x].address, "169.254.", 8)
+									   ))) {
+						choice = x;
+						ok = 1;
+					}
+				}
+			}
+
+			if (ok) {
+				ldl_payload_t payloads[5];
+
+				memset(payloads, 0, sizeof(payloads));
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+								  "Acceptable Candidate %s:%d\n", candidates[choice].address, candidates[choice].port);
+
+				if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+					switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
+					ldl_session_accept_candidate(dlsession, &candidates[choice]);
 				}
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "candidates %s:%d\n", candidates[x].address, candidates[x].port);
+				if (!strcasecmp(subject, "candidates")) {
+					switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
+					switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
+				}
 
-				// 192.0.0.0 - 192.0.127.255 is marked as reserved, should we filter all of them?
-				if (!strcasecmp(candidates[x].protocol, "udp") &&
-					(!strcasecmp(candidates[x].type, "local") || !strcasecmp(candidates[x].type, "stun")) &&
-					((profile->lanaddr &&
-					  lanaddr) || (strncasecmp(candidates[x].address, "10.", 3) &&
-								   strncasecmp(candidates[x].address, "192.168.", 8) &&
-								   strncasecmp(candidates[x].address, "127.", 4) &&
-								   strncasecmp(candidates[x].address, "255.", 4) &&
-								   strncasecmp(candidates[x].address, "0.", 2) &&
-								   strncasecmp(candidates[x].address, "1.", 2) &&
-								   strncasecmp(candidates[x].address, "2.", 2) &&
-								   strncasecmp(candidates[x].address, "172.16.", 7) &&
-								   strncasecmp(candidates[x].address, "172.17.", 7) &&
-								   strncasecmp(candidates[x].address, "172.18.", 7) &&
-								   strncasecmp(candidates[x].address, "172.19.", 7) &&
-								   strncasecmp(candidates[x].address, "172.2", 5) &&
-								   strncasecmp(candidates[x].address, "172.30.", 7) &&
-								   strncasecmp(candidates[x].address, "172.31.", 7) &&
-								   strncasecmp(candidates[x].address, "192.0.2.", 8) &&
-								   strncasecmp(candidates[x].address, "169.254.", 8)
-								   ))) {
-					ldl_payload_t payloads[5];
+				if (lanaddr) {
+					switch_set_flag_locked(tech_pvt, TFLAG_LANADDR);
+				}
 
-					memset(payloads, 0, sizeof(payloads));
+				if (!get_codecs(tech_pvt)) {
+					terminate_session(&session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					status = LDL_STATUS_FALSE;
+					goto done;
+				}
 
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Acceptable Candidate %s:%d\n", candidates[x].address, candidates[x].port);
 
-					if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-						switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
-						ldl_session_accept_candidate(dlsession, &candidates[x]);
-					}
+				tech_pvt->remote_ip = switch_core_session_strdup(session, candidates[choice].address);
+				ldl_session_set_ip(dlsession, tech_pvt->remote_ip);
+				tech_pvt->remote_port = candidates[choice].port;
+				tech_pvt->remote_user = switch_core_session_strdup(session, candidates[choice].username);
 
-					if (!strcasecmp(subject, "candidates")) {
-						switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
-						switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
-					}
 
-					if (lanaddr) {
-						switch_set_flag_locked(tech_pvt, TFLAG_LANADDR);
-					}
-
-					if (!get_codecs(tech_pvt)) {
+				if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+					if (!do_candidates(tech_pvt, 0)) {
 						terminate_session(&session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 						status = LDL_STATUS_FALSE;
 						goto done;
 					}
-
-
-					tech_pvt->remote_ip = switch_core_session_strdup(session, candidates[x].address);
-					ldl_session_set_ip(dlsession, tech_pvt->remote_ip);
-					tech_pvt->remote_port = candidates[x].port;
-					tech_pvt->remote_user = switch_core_session_strdup(session, candidates[x].username);
-
-
-					if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-						if (!do_candidates(tech_pvt, 0)) {
-							terminate_session(&session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-							status = LDL_STATUS_FALSE;
-							goto done;
-						}
-					}
-
-					status = LDL_STATUS_SUCCESS;
-					goto done;
 				}
+
+				status = LDL_STATUS_SUCCESS;
 			}
+
+			goto done;				
+
 		}
 		break;
 	case LDL_SIGNAL_REJECT:

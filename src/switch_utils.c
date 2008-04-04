@@ -76,7 +76,7 @@ SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip(switch_network_lis
 	switch_network_node_t *node;
 	switch_bool_t ok = list->default_type;
 	uint32_t bits = 0;
-
+	
 	for (node = list->node_head; node; node = node->next) {
 		if (node->bits > bits && switch_test_subnet(ip, node->ip, node->mask)) {
 			if (node->ok) {
