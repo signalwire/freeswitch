@@ -153,7 +153,7 @@ struct fifo_chime_data {
 	time_t next;
 	int freq;
 	int abort;
-	int orbit_timeout;
+	time_t orbit_timeout;
 	int do_orbit;
 	char *orbit_exten;
 };
