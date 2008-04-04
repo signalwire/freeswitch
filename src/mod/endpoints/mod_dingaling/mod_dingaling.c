@@ -2857,7 +2857,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 			
 			if (profile->acl_count) {
 				for (x = 0; x < len; x++) {
-					int y = 0;
+					uint32_t y = 0;
 					for (y = 0; y < profile->acl_count; y++) {
 						if (switch_check_network_list_ip(candidates[x].address, profile->acl[y])) {
 							choice = x;
