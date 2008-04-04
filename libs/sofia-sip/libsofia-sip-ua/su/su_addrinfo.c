@@ -805,6 +805,9 @@ freeaddrinfo(ai)
 {
 	struct addrinfo *next;
 
+	if (ai == NULL)
+		return;
+
 	do {
 		next = ai->ai_next;
 		if (ai->ai_canonname)
