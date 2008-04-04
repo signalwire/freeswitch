@@ -208,9 +208,10 @@ ie Q931AppendIE( L3UCHAR *pm, L3UCHAR *pi)
 
 /*****************************************************************************
 *****************************************************************************/
+static L3INT crv={1};
+
 L3INT Q931GetUniqueCRV(Q931_TrunkInfo_t *pTrunk)
 {
-	static L3INT crv={1};
 	crv++;
 	if (crv > 32766) crv = 1;
 	return crv;
