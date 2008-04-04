@@ -315,6 +315,11 @@ static void pres_event_handler(switch_event_t *event)
 	switch_safe_free(dup_to);
 }
 
+typedef enum {
+	STRAT_MORE_PPL,
+	STRAT_WAITING_LONGER,
+} fifo_strategy_t;
+
 #define MAX_NODES_PER_CONSUMER 25
 #define FIFO_DESC "Fifo for stacking parked calls."
 #define FIFO_USAGE "<fifo name> [in [<announce file>|undef] [<music file>|undef] | out [wait|nowait] [<announce file>|undef] [<music file>|undef]]"
@@ -602,6 +607,20 @@ SWITCH_STANDARD_APP(fifo_function)
 		const char *fifo_consumer_wrapup_key = NULL;
 		const char *my_id;
 		char buf[5] = "";
+		const char *strat_str = switch_channel_get_variable(channel, "fifo_strategy");
+		fifo_strategy_t strat = STRAT_WAITING_LONGER;
+
+		
+		if (!switch_strlen_zero(strat_str)) {
+			if (!strcasecmp(strat_str, "more_ppl")) {
+				strat = STRAT_MORE_PPL;
+			} else if (!strcasecmp(strat_str, "waiting_longer")) {
+				strat = STRAT_WAITING_LONGER;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invaid strategy\n");
+				return;
+			}
+		}
 
 
 		if (argc > 2) {
@@ -631,7 +650,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			}
             switch_channel_answer(channel);
         }
-
+		
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
             switch_channel_event_set_data(channel, event);
             switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Name", "%s", argv[0]);
@@ -664,8 +683,8 @@ SWITCH_STANDARD_APP(fifo_function)
 		while(switch_channel_ready(channel)) {
 			int x = 0, winner = -1;
 			switch_time_t longest = 0xFFFFFFFFFFFFFFFF / 2;
-			uint32_t importance = 0;
-
+			uint32_t importance = 0, waiting = 0, most_waiting = 0;
+			
 			pop = NULL;
 			
             if (moh && do_wait) {
@@ -680,15 +699,24 @@ SWITCH_STANDARD_APP(fifo_function)
 					continue;
 				}
 				
-				if (node_consumer_wait_count(node)) {
-					if (!importance && node->start_waiting < longest) {
-						longest = node->start_waiting;
-						winner = i;
+				if ((waiting = node_consumer_wait_count(node))) {
+					
+					if (!importance || node->importance > importance) {
+						if (strat == STRAT_WAITING_LONGER) {
+							if (node->start_waiting < longest) {
+								longest = node->start_waiting;
+								winner = i;
+							}
+						} else {
+							if (waiting > most_waiting) {
+								most_waiting = waiting;
+								winner = i;
+							}
+						}
 					}
 					
 					if (node->importance > importance) {
 						importance = node->importance;
-						winner = i;
 					}
 				}
 
