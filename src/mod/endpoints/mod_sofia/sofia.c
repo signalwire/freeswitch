@@ -737,6 +737,14 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			name = "anonymous";
 		}
 
+		switch_mutex_lock(mod_sofia_globals.hash_mutex);
+		if ((gp = switch_core_hash_find(mod_sofia_globals.gateway_hash, name))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate gateway '%s'\n", name);
+			switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+			goto skip;
+		}
+		switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
 		if ((gateway = switch_core_alloc(profile->pool, sizeof(*gateway)))) {
 			char *register_str = "true", *scheme = "Digest",
 				*realm = NULL,
@@ -893,14 +901,9 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			}
 			gateway->freq -= 2;
 
-			if ((gp = sofia_reg_find_gateway(gateway->name))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate gateway '%s'\n", gateway->name);
-				sofia_reg_release_gateway(gp);
-			} else {
-				gateway->next = profile->gateways;
-				profile->gateways = gateway;
-				sofia_reg_add_gateway(gateway->name, gateway);
-			}
+			gateway->next = profile->gateways;
+			profile->gateways = gateway;
+			sofia_reg_add_gateway(gateway->name, gateway);
 		}
 
 	skip:

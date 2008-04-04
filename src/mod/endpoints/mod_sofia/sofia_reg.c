@@ -1149,7 +1149,8 @@ sofia_gateway_t *sofia_reg_find_gateway__(const char *file, const char *func, in
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if ((gateway = (sofia_gateway_t *) switch_core_hash_find(mod_sofia_globals.gateway_hash, key))) {
 		if (!(gateway->profile->pflags & PFLAG_RUNNING)) {
-			return NULL;
+			gateway =  NULL;
+			goto done;
 		}
 		if (switch_thread_rwlock_tryrdlock(gateway->profile->rwlock) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "Profile %s is locked\n", gateway->profile->name);
@@ -1161,6 +1162,8 @@ sofia_gateway_t *sofia_reg_find_gateway__(const char *file, const char *func, in
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_ERROR, "XXXXXXXXXXXXXX GW LOCK %s\n", gateway->profile->name);
 #endif
 	}
+
+ done:
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 	return gateway;
 }
