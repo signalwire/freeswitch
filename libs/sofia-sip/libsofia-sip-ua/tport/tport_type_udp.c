@@ -162,6 +162,17 @@ int tport_udp_init_primary(tport_primary_t *pri,
   }
 #endif
 
+#if HAVE_IP_MTU_DISCOVER
+  {
+    /* Turn off DF flag on Linux */
+    int dont = IP_PMTUDISC_DONT;
+    if (setsockopt(s, IPPROTO_IP, IP_MTU_DISCOVER, &dont, sizeof(dont)) < 0) {
+	SU_DEBUG_3(("setsockopt(%s): %s\n",
+		    "IP_MTU_DISCOVER", su_strerror(su_errno())));
+    }
+  }
+#endif
+
 #if HAVE_IP_RECVERR
   if (ai->ai_family == AF_INET || ai->ai_family == AF_INET6) {
     if (setsockopt(s, IPPROTO_IP, IP_RECVERR, &one, sizeof(one)) < 0) {

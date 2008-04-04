@@ -317,6 +317,13 @@ AC_DEFINE([HAVE_IP_MULTICAST_LOOP],1,[Define to 1 if you have IP_MULTICAST_LOOP]
 #include <sys/socket.h>
 #include <netinet/in.h>])
 
+AC_CHECK_DECL([IP_MTU_DISCOVER],
+AC_DEFINE([HAVE_IP_MTU_DISCOVER],1,
+[Define to 1 if you have IP_MTU_DISCOVER]),,[
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>])
+
 AC_CACHE_CHECK([for struct addrinfo],
 [ac_cv_struct_addrinfo],[
 ac_cv_struct_addrinfo=no
