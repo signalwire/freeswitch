@@ -697,8 +697,9 @@ SWITCH_STANDARD_APP(fifo_function)
 			}
 
 			for (x = 0; x < custom_pop; x++) {
+				int temp;
 				switch_assert(pop_list[x]);
-				int temp = atoi(pop_list[x]);
+				temp = atoi(pop_list[x]);
 				if (temp > -1 && temp < MAX_PRI) {
 					pop_array[x] = temp;
 				}
