@@ -641,7 +641,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			} else if (!strcasecmp(strat_str, "waiting_longer")) {
 				strat = STRAT_WAITING_LONGER;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invaid strategy\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid strategy\n");
 				return;
 			}
 		}
