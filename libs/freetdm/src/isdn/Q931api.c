@@ -211,7 +211,9 @@ ie Q931AppendIE( L3UCHAR *pm, L3UCHAR *pi)
 L3INT Q931GetUniqueCRV(Q931_TrunkInfo_t *pTrunk)
 {
 	static L3INT crv={1};
-	return crv++;
+	crv++;
+	if (crv > 32766) crv = 1;
+	return crv;
 }
 
 L3INT Q931InitMesGeneric(Q931mes_Generic *pMes)
