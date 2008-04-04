@@ -7,7 +7,7 @@ $(OUR_MODULES) $(OUR_CLEAN_MODULES) $(OUR_INSTALL_MODULES) $(OUR_UNINSTALL_MODUL
 	@set fnord $$MAKEFLAGS; amf=$$2; \
 	target=`echo $@ | sed -e 's|^.*-||'`; \
 	modname=`echo $@ | sed -e 's|-.*||' | sed -e 's|^.*/||'`; \
-	confmoddir=`cat $(switch_builddir)/modules.conf | sed -e 's| ||' | grep $$modname$$ | sed -e 's|#||' | head -1`; \
+	confmoddir=`cat $(switch_builddir)/modules.conf | sed -e 's| ||' | grep $$modname$$ | sed -e 's|#||' | head -n 1`; \
 	if test -z "$$confmoddir" ; then moddir=$@ ; else  \
 		if test -d  "$(switch_srcdir)/src/mod/$$confmoddir" ; then \
 			moddir="$(switch_srcdir)/src/mod/$$confmoddir" ; else \
