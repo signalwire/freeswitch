@@ -79,15 +79,15 @@ switch_odbc_status_t odbc_obj_connect(odbc_obj_t *obj)
 static void destroy_odbc_obj(odbc_obj_t ** objp)
 {
 	odbc_obj_t *obj = *objp;
-
+    if (obj == NULL) return;
 	if (obj->stmt) {
 		SQLFreeHandle(SQL_HANDLE_STMT, obj->stmt);
 	}
-	if (obj->handle) {
-		switch_odbc_handle_destroy(&obj->handle);
-	}
-	switch_safe_free(obj->colbuf);
-	switch_safe_free(obj->code);
+    if (obj->handle) {
+    	switch_odbc_handle_destroy(&obj->handle);
+    }
+    switch_safe_free(obj->colbuf);
+    switch_safe_free(obj->code);
 	switch_safe_free(obj);
 }
 
@@ -156,11 +156,13 @@ static JSBool odbc_construct(JSContext * cx, JSObject * obj, uintN argc, jsval *
 
 static void odbc_destroy(JSContext * cx, JSObject * obj)
 {
-	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
-
+    odbc_obj_t *odbc_obj;
+	if (obj == NULL) return;
+	odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
 	if (odbc_obj) {
 		destroy_odbc_obj(&odbc_obj);
-	}
+	    JS_SetPrivate(cx, obj, NULL);
+    }
 }
 
 static JSBool odbc_connect(JSContext * cx, JSObject * obj, uintN argc, jsval *argv, jsval *rval)
@@ -405,6 +407,12 @@ static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval *a
 
 }
 
+static JSBool odbc_close(JSContext * cx, JSObject * obj, uintN argc, jsval *argv, jsval *rval)
+{
+     odbc_destroy(cx, obj);
+     return JS_TRUE;
+}
+
 enum odbc_tinyid {
 	odbc_NAME
 };
@@ -417,6 +425,7 @@ static JSFunctionSpec odbc_methods[] = {
 	{"numRows", odbc_num_rows, 1},
 	{"nextRow", odbc_next_row, 1},
 	{"getData", odbc_get_data, 1},
+    {"close", odbc_close, 1},
 	{0}
 };
 
