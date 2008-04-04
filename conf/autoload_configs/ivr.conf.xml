@@ -1,30 +1,37 @@
 <configuration name="ivr.conf" description="IVR menus">
   <menus>
-    <menu name="demo"
-          greet-long="soundfiles/ivr/demo/greet-long.wav"
-          greet-short="soundfiles/ivr/demo/greet-short.wav"
-          invalid-sound="soundfiles/ivr/invalid.wav"
-          exit-sound="soundfiles/ivr/exit.wav" timeout ="15"
-          max-failures="3">
-      <entry action="menu-exit" digits="*"/>
-      <entry action="menu-play-sound" digits="1" params="soundfiles/features.wav"/>
-      <entry action="menu-sub" digits="2" param="demo2"/>
-      <entry action="menu-exec-app" digits="3" param="bridge sofia/$${domain}/888@conference.freeswtich.org"/>
-      <entry action="menu-call-transfer" digits="4" param="888"/>
-      <entry action="menu-sub" digits="8" param="menu8"/>
-    </menu>
-
-    <menu name="demo2"
-          greet-long="soundfiles/ivr/demo2/greet-long.wav"
-          greet-short="soundfiles/ivr/demo2/greet-short.wav"
-          invalid-sound="soundfiles/ivr/invalid.wav"
-          exit-sound="soundfiles/ivr/exit.wav"
+    <!-- demo IVR setup -->
+    <!-- demo IVR, Main Menu -->
+    <menu name="demo_ivr"
+          greet-long="phrase:demo_ivr_main_menu"
+          greet-short="phrase:demo_ivr_main_menu_short""
+          invalid-sound="voicemail/vm-hello.wav"
+          exit-sound="voicemail/vm-goodbye.wav"
           timeout ="15"
           max-failures="3">
-      <entry action="menu-back" digits="#"/>
-      <entry action="menu-top" digits="*"/>
+      <entry action="menu-exec-app" digits="1" param="bridge sofia/$${domain}/888@conference.freeswtich.org"/>
+      <entry action="menu-call-transfer" digits="2" param="9996"/>    <!-- FS echo -->
+      <entry action="menu-call-transfer" digits="3" param="9999"/>    <!-- MOH -->
+      <entry action="menu-sub" digits="4" param="demo_ivr_submenu"/>  <!-- demo sub menu -->
+      <entry action="menu-call-transfer" digits="5" param="1234*256"/>    <!-- Screaming monkeys -->
+      <entry action="menu-top" digits="9" param="demo_ivr"/>          <!-- Repeat this menu -->
     </menu>
-    
+
+    <!-- Demo IVR, Sub Menu -->
+    <menu name="demo_ivr_submenu"
+        greet-long="phrase:demo_ivr_sub_menu"
+        greet-short="phrase:demo_ivr_sub_menu_short"
+        invalid-sound="voicemail/vm-hello.wav"
+        exit-sound="voicemail/vm-goodbye.wav" timeout="15"
+        max-failures="3">
+      <entry action="menu-top" digits="*"/>
+     </menu>
+  </menus>
+</configuration>
+
+
+<!-- TTS sample; non-functional but it demonstrates say: and TTS -->
+<!--
     <menu name="demo3"
           greet-long="say:Press 1 to join the conference, Press 2 to join the other conference"
           greet-short="say:Press 1 to join the conference, Press 2 to join the other conference"
@@ -33,21 +40,8 @@
           max-failures="3"
           tts-voice="callie" tts-engine="cepstral">
       <entry action="menu-exit" digits="*"/>
-      <!-- <entry action="menu-say-text" digits="1" param="You pressed 1"/> -->
-      <entry action="menu-call-transfer" digits="1" param="1000"/>
-      <entry action="menu-call-transfer" digits="2" param="1001"/>
+      <entry action="menu-say-text" digits="1" param="You pressed 1"/>
+      <entry action="menu-call-transfer" digits="2" param="1000"/>
+      <entry action="menu-call-transfer" digits="3" param="1001"/>
     </menu>
-
-    <menu name="menu8"
-          greet-long="/soundfiles/ivr/menu8/greet-long.wav"
-          greet-short="/soundfiles/ivr/menu8/greet-short.wav"
-          invalid-sound="/soundfiles/ivr/menu8/invalid.wav"
-          exit-sound="/soundfiles/ivr/menu8/exit.wav"
-          timeout ="15"
-          max-failures="3">
-      <entry action="menu-back" digits="#"/>
-      <entry action="menu-play-sound" digits="4" param="soundfiles/4.wav"/>
-      <entry action="menu-top" digits="*"/>
-    </menu>
-  </menus>
-</configuration>
+-->
