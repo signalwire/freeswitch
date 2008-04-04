@@ -165,7 +165,11 @@ static switch_status_t caller_read_frame_callback(switch_core_session_t *session
 {
 	fifo_chime_data_t *cd = (fifo_chime_data_t *) user_data;
 	
-	if (cd && cd->total && switch_timestamp(NULL) >= cd->next) {
+	if (!cd) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (cd->total && switch_timestamp(NULL) >= cd->next) {
 		if (cd->index == MAX_CHIME || cd->index == cd->total || !cd->list[cd->index]) {
 			cd->index = 0;
 		}
@@ -361,7 +365,7 @@ SWITCH_STANDARD_APP(fifo_function)
 	arg_fifo_name = argv[0];
 	arg_inout = argv[1];
 	
-    if (!arg_fifo_name && arg_inout) {
+    if (!(arg_fifo_name && arg_inout)) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "USAGE %s\n", FIFO_USAGE);
         return;
     }
@@ -693,6 +697,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			}
 
 			for (x = 0; x < custom_pop; x++) {
+				switch_assert(pop_list[x]);
 				int temp = atoi(pop_list[x]);
 				if (temp > -1 && temp < MAX_PRI) {
 					pop_array[x] = temp;
