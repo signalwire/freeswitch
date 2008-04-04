@@ -937,7 +937,8 @@ typedef enum {
 	SWITCH_FILE_PAUSE = (1 << 8),
 	SWITCH_FILE_NATIVE = (1 << 9),
 	SWITCH_FILE_SEEK = (1 << 10),
-	SWITCH_FILE_OPEN = (1 << 11)
+	SWITCH_FILE_OPEN = (1 << 11),
+	SWITCH_FILE_CALLBACK = (1 << 12)
 } switch_file_flag_t;
 
 typedef enum {

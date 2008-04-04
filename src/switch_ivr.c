@@ -616,6 +616,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
 		}
+
+		if (args && (args->read_frame_callback)) {
+			if (args->read_frame_callback(session, read_frame, args->user_data) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
+		}
 	}
 
 	return status;

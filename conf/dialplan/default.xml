@@ -216,7 +216,8 @@
     -->
     <extension name="park">
       <condition field="destination_number" expression="^5900$">
-	<action application="fifo" data="5900@$${domain} in undef $${moh_uri}"/>
+	<action application="set" data="fifo_music=$${moh_uri}"/>
+	<action application="fifo" data="5900@$${domain} in"/>
       </condition>
     </extension>
 

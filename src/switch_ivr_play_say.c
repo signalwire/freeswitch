@@ -1111,7 +1111,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			}
 
 			if (args && (args->read_frame_callback)) {
+				int ok = 1;
+				switch_set_flag(fh, SWITCH_FILE_CALLBACK);
 				if (args->read_frame_callback(session, read_frame, args->user_data) != SWITCH_STATUS_SUCCESS) {
+					ok = 0;
+				}
+				switch_clear_flag(fh, SWITCH_FILE_CALLBACK);
+				if (!ok) {
 					break;
 				}
 			}
