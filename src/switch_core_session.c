@@ -980,15 +980,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_c
 		}
 	}
 
-	if ((expanded = switch_channel_expand_variables(session->channel, arg)) != arg) {
+	if (arg && (expanded = switch_channel_expand_variables(session->channel, arg)) != arg) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Expanded String %s(%s)\n", switch_channel_get_name(session->channel), app, expanded);
 	}
 
 	if (switch_channel_get_variable(session->channel, "presence_id")) {
-		char *arg = switch_mprintf("%s(%s)", app, expanded);
-		if (arg) {
-			switch_channel_presence(session->channel, "unknown", arg);
-			switch_safe_free(arg);
+		char *myarg = NULL;
+		if (expanded) {
+			switch_mprintf("%s(%s)", app, expanded);
+		}
+		if (myarg) {
+			switch_channel_presence(session->channel, "unknown", myarg);
+			switch_safe_free(myarg);
 		}
 	}
 
