@@ -91,6 +91,13 @@ typedef enum {
 } session_flag_t;
 
 
+class switchEvent {
+ protected:
+	switch_event_t *event;
+ public:
+	switchEvent(switch_event_types_t event_id, const char *subclass_name);
+};
+
 class CoreSession {
  protected:
 	switch_input_args_t args; // holds ptr to cb function and input_callback_state struct

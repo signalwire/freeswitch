@@ -797,7 +797,9 @@ SWITCH_STANDARD_APP(fifo_function)
                 switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
                 switch_caller_profile_t *cloned_profile;
 				const char *o_announce = NULL;
-
+				const char *record_template = switch_channel_get_variable(channel, "fifo_record_template");
+				char *expanded = NULL;
+				
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
                     switch_channel_event_set_data(other_channel, event);
                     switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Name", "%s", argv[0]);
@@ -864,7 +866,20 @@ SWITCH_STANDARD_APP(fifo_function)
                 switch_mutex_lock(node->mutex);
                 send_presence(node);
                 switch_mutex_unlock(node->mutex);
+
+				if (record_template) {
+					expanded = switch_channel_expand_variables(other_channel, record_template);
+					switch_ivr_record_session(session, expanded, 0, NULL);
+				}
+
                 switch_ivr_multi_threaded_bridge(session, other_session, on_dtmf, other_session, session);
+
+				if (record_template) {
+					switch_ivr_stop_record_session(session, expanded);
+					if (expanded != record_template) {
+						switch_safe_free(expanded);
+					}
+				}
 
                 ts = switch_timestamp_now();
                 switch_time_exp_lt(&tm, ts);
