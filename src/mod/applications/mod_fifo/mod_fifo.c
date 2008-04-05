@@ -117,7 +117,7 @@ static int node_consumer_wait_count(fifo_node_t *node)
 
 static void node_remove_uuid(fifo_node_t *node, const char *uuid)
 {
-	int i, len = 0;
+	int i, len = 0, done = 0;
 	void *pop = NULL;
 
 	for (i = 0; i < MAX_PRI; i++) {
@@ -126,17 +126,16 @@ static void node_remove_uuid(fifo_node_t *node, const char *uuid)
 		}
 		while(len) {
 			if (switch_queue_trypop(node->fifo_list[i], &pop) == SWITCH_STATUS_SUCCESS && pop) {
-				if (!strcmp((char *)pop, uuid)) {
+				if (!done && !strcmp((char *)pop, uuid)) {
 					free(pop);
-					goto end;
+					done++;
+				} else {
+					switch_queue_push(node->fifo_list[i], pop);
 				}
-				switch_queue_push(node->fifo_list[i], pop);
 			}
 			len--;
 		}
 	}
-
- end:
 
 	if (!node_consumer_wait_count(node)) {
 		node->start_waiting = 0;
