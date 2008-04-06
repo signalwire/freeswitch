@@ -1123,6 +1123,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			goto end;
 		}
 		
+		if (bytes > 0) {
+			rtp_session->missed_count = 0;
+		}
+
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
 			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
 			do_2833(rtp_session);
@@ -1345,10 +1349,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				ret = 2 + rtp_header_len;
 				goto end;
 			}
-		}
-
-		if (bytes > 0) {
-			rtp_session->missed_count = 0;
 		}
 
 		if (status == SWITCH_STATUS_BREAK || bytes == 0) {
