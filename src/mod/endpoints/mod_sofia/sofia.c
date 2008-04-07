@@ -2438,6 +2438,7 @@ const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const 
 	const char *user = NULL, *host = NULL, *port = NULL;
 	char *uri = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char new_port[25] = "";
 
 	if (url) {
 		user = url->url_user;
@@ -2462,16 +2463,17 @@ const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const 
 		switch_channel_set_variable(channel, user_var, user);
 	}
 
-	if (!port) {
-		port = SOFIA_DEFAULT_PORT;
+
+	if (port) {
+		switch_snprintf(new_port, sizeof(new_port), ":%s", port);
 	}
 
 	switch_channel_set_variable(channel, port_var, port);
 	if (host) {
 		if (user) {
-			uri = switch_core_session_sprintf(session, "%s@%s:%s", user, host, port);
+			uri = switch_core_session_sprintf(session, "%s@%s:%s", user, host, new_port);
 		} else {
-			uri = switch_core_session_sprintf(session, "%s:%s", host, port);
+			uri = switch_core_session_sprintf(session, "%s:%s", host, new_port);
 		}
 		switch_channel_set_variable(channel, uri_var, uri);
 		switch_channel_set_variable(channel, host_var, host);

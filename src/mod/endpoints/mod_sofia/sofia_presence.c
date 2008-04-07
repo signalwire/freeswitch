@@ -1173,6 +1173,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		if (contact) {
 			char *port = (char *) contact->m_url->url_port;
+			char new_port[25] = "";
 
 			display = contact->m_display;
 
@@ -1187,15 +1188,15 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 				display = "\"user\"";
 			}
 
-			if (!port) {
-				port = SOFIA_DEFAULT_PORT;
+			if (port) {
+				switch_snprintf(new_port, sizeof(new_port), ":%s", port);
 			}
-
+			
 			if (contact->m_url->url_params) {
-				contact_str = switch_mprintf("%s <sip:%s@%s:%s;%s>",
-											 display, contact->m_url->url_user, contact->m_url->url_host, port, contact->m_url->url_params);
+				contact_str = switch_mprintf("%s <sip:%s@%s%s;%s>",
+											 display, contact->m_url->url_user, contact->m_url->url_host, new_port, contact->m_url->url_params);
 			} else {
-				contact_str = switch_mprintf("%s <sip:%s@%s:%s>", display, contact->m_url->url_user, contact->m_url->url_host, port);
+				contact_str = switch_mprintf("%s <sip:%s@%s%s>", display, contact->m_url->url_user, contact->m_url->url_host, new_port);
 			}
 		}
 

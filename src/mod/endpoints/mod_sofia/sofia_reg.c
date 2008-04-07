@@ -403,6 +403,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 
 	if (contact->m_url) {
 		const char *port = contact->m_url->url_port;
+		char new_port[25] = "";
 		display = contact->m_display;
 
 		if (switch_strlen_zero(display)) {
@@ -414,15 +415,15 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			}
 		}
 
-		if (!port) {
-			port = SOFIA_DEFAULT_PORT;
+		if (port) {
+			switch_snprintf(new_port, sizeof(new_port), ":%s", port);
 		}
 
 		if (contact->m_url->url_params) {
-			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%s;%s>",
-					 display, contact->m_url->url_user, contact->m_url->url_host, port, contact->m_url->url_params);
+			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s%s;%s>",
+							display, contact->m_url->url_user, contact->m_url->url_host, new_port, contact->m_url->url_params);
 		} else {
-			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%s>", display, contact->m_url->url_user, contact->m_url->url_host, port);
+			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s%s>", display, contact->m_url->url_user, contact->m_url->url_host, new_port);
 		}
 	}
 
