@@ -38,7 +38,7 @@
 
 
 #include "openzap.h"
-//#include "m3ua_client.h"
+#include "m3ua_client.h"
 #include "zap_m3ua.h"
 
 struct general_config {

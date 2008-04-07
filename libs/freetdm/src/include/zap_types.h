@@ -164,7 +164,8 @@ typedef enum {
 	ZAP_SIGTYPE_ISDN,
 	ZAP_SIGTYPE_RBS,
 	ZAP_SIGTYPE_ANALOG,
-	ZAP_SIGTYPE_SS7BOOST
+	ZAP_SIGTYPE_SS7BOOST,
+	ZAP_SIGTYPE_M3UA
 } zap_signal_type_t;
 
 typedef enum {
