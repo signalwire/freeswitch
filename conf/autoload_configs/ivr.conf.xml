@@ -4,12 +4,12 @@
     <!-- demo IVR, Main Menu -->
     <menu name="demo_ivr"
           greet-long="phrase:demo_ivr_main_menu"
-          greet-short="phrase:demo_ivr_main_menu_short""
+          greet-short="phrase:demo_ivr_main_menu_short"
           invalid-sound="voicemail/vm-hello.wav"
           exit-sound="voicemail/vm-goodbye.wav"
           timeout ="15"
           max-failures="3">
-      <entry action="menu-exec-app" digits="1" param="bridge sofia/$${domain}/888@conference.freeswtich.org"/>
+      <entry action="menu-exec-app" digits="1" param="bridge sofia/$${domain}/888@conference.freeswitch.org"/>
       <entry action="menu-call-transfer" digits="2" param="9996"/>    <!-- FS echo -->
       <entry action="menu-call-transfer" digits="3" param="9999"/>    <!-- MOH -->
       <entry action="menu-sub" digits="4" param="demo_ivr_submenu"/>  <!-- demo sub menu -->
@@ -37,11 +37,13 @@
           greet-short="say:Press 1 to join the conference, Press 2 to join the other conference"
           invalid-sound="say:invalid extension"
           exit-sound="say:exit sound" timeout ="15"
-          max-failures="3"
-          tts-voice="callie" tts-engine="cepstral">
+          max-failures="3">
       <entry action="menu-exit" digits="*"/>
-      <entry action="menu-say-text" digits="1" param="You pressed 1"/>
-      <entry action="menu-call-transfer" digits="2" param="1000"/>
+      <entry action="menu-playback" digits="1" param="say:You pressed 1"/>
+      <entry action="menu-call-transfer" digits="2" param=
+
+
+"1000"/>
       <entry action="menu-call-transfer" digits="3" param="1001"/>
     </menu>
 -->

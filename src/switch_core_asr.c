@@ -47,9 +47,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
 	char buf[256] = "";
 	char *param = NULL;
 
-	if (strchr(module_name, ':')) {
+	if (strchr(module_name, '@')) {
 		switch_set_string(buf, module_name);
-		if ((param = strchr(buf, ':'))) {
+		if ((param = strchr(buf, '@'))) {
 			*param++ = '\0';
 			module_name = buf;
 		}

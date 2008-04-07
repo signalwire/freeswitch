@@ -618,11 +618,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
 		 SWITCH_IVR_ACTION_EXECMENU,	/* Goto another menu in the stack. */
 		 SWITCH_IVR_ACTION_EXECAPP,	/* Execute an application.         */
 		 SWITCH_IVR_ACTION_PLAYSOUND,	/* Play a sound.                   */
-		 SWITCH_IVR_ACTION_SAYTEXT,	/* say text.                       */
-		 SWITCH_IVR_ACTION_SAYPHRASE,	/* say a phrase macro.                       */
 		 SWITCH_IVR_ACTION_BACK,	/* Go back 1 menu.                 */
 		 SWITCH_IVR_ACTION_TOMAIN,	/* Go back to the top level menu.  */
-		 SWITCH_IVR_ACTION_TRANSFER,	/* Transfer caller to another ext. */
 		 SWITCH_IVR_ACTION_NOOP	/* No operation                    */
 	 } switch_ivr_action_t;
 	 struct switch_ivr_menu;
@@ -640,9 +637,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\param short_greeting_sound Optional pointer to a shorter main sound for subsequent loops.
  *\param exit_sound Optional pointer to a sound to play upon exiting the menu.
  *\param invalid_sound Optional pointer to a sound to play after invalid input.
- *\param tts_engine Text To Speech engine name.
- *\param tts_voice Text To Speech engine voice name.
- *\param phrase_lang the language to use for the phrase macros.
  *\param timeout A number of milliseconds to pause before looping.
  *\param max_failures Maximum number of failures to withstand before hangingup This resets everytime you enter the menu.
  *\param pool memory pool (NULL to create one).
@@ -655,9 +649,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 													 const char *short_greeting_sound,
 													 const char *exit_sound,
 													 const char *invalid_sound,
-													 const char *tts_engine,
-													 const char *tts_voice,
-													 const char *phrase_lang, int timeout, int max_failures, switch_memory_pool_t *pool);
+													 int timeout, 
+													 int max_failures, 
+													 switch_memory_pool_t *pool);
 
 /*!
  *\brief switch_ivr_menu_bind_action: Bind a keystroke to an action.

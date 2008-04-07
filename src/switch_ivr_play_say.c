@@ -706,15 +706,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 		if (!strncasecmp(file, "phrase:", 7)) {
 			char *arg = NULL;
-			char *lang = NULL;
+			const char *lang = switch_channel_get_variable(channel, "language");
 			alt = file + 7;
 			dup = switch_core_session_strdup(session, alt);
 
-			if ((lang = strchr(dup, ':'))) {
-				*lang++ = '\0';
-				if ((arg = strchr(lang, ':'))) {
-					*arg++ = '\0';
-				}
+			if ((arg = strchr(dup, ':'))) {
+				*arg++ = '\0';
 			}
 			
 			if (dup) {
@@ -736,7 +733,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				}
 			}
 			if (engine && voice && text) {
-				return switch_ivr_speak_text(session, engine, voice, dup, args);
+				return switch_ivr_speak_text(session, engine, voice, text, args);
+			} else if (engine && !(voice && text)) {
+				text = engine;
+				engine = (char *)switch_channel_get_variable(channel, "tts_engine");
+				voice = (char *)switch_channel_get_variable(channel, "tts_voice");
+				if (engine && text) {
+					return switch_ivr_speak_text(session, engine, voice, text, args);
+				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Args\n");
 				return SWITCH_STATUS_FALSE;
