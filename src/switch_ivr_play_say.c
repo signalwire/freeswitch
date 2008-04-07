@@ -176,7 +176,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	}
 
 	if (sound_path) {
-		old_sound_prefix = switch_channel_get_variable(channel, "sound_prefix");
+		if ((old_sound_prefix = switch_channel_get_variable(channel, "sound_prefix"))) {
+			char *p = switch_core_session_strdup(session, old_sound_prefix);
+			old_sound_prefix = p;
+		}
 		switch_channel_set_variable(channel, "sound_prefix", sound_path);
 	}
 
@@ -746,6 +749,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	if (!prefix) {
 		prefix = SWITCH_GLOBAL_dirs.base_dir;
 	}
+
 
 	if (!strstr(file, SWITCH_URL_SEPARATOR)) {
 		if (!switch_is_file_path(file)) {
