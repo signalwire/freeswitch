@@ -97,6 +97,6 @@ typedef unsigned long u32;
 #define M_CLASS_MASK	0xff00
 #define	M_TYPE_MASK	0x00ff
 
-
-
+int build_route_context(unsigned char *opc, unsigned char *dpc, unsigned char *bytemsg, unsigned char len);
+int build_m3ua_hdr(unsigned char len,unsigned char *bytemsg);
 #endif			
