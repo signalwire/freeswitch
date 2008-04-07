@@ -54,7 +54,7 @@
         <action function="play-file" data="ivr/ivr-please.wav"/>
         <action function="play-file" data="voicemail/vm-press.wav"/>
         <action function="play-file" data="digits/9.wav"/>
-        <action function="execute" data="sleep(6000)"/>
+        <action function="execute" data="sleep(2000)"/>
       </match>
     </input>
   </macro>
@@ -106,7 +106,7 @@
         <action function="play-file" data="ivr/ivr-please.wav"/>
         <action function="play-file" data="voicemail/vm-press.wav"/>
         <action function="play-file" data="digits/9.wav"/>
-        <action function="execute" data="sleep(6000)"/>
+        <action function="execute" data="sleep(2000)"/>
       </match>
     </input>
   </macro>
