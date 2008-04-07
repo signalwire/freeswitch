@@ -3910,6 +3910,8 @@ static void signal_call_state_change(nua_handle_t *nh,
 	ss->ss_state = next_state;
       else if (ss->ss_state == nua_callstate_ready)
 	next_state = ss->ss_state;
+      else if (ss->ss_state == nua_callstate_terminating)
+	return;
       else 
 	ss->ss_state = next_state = nua_callstate_terminated;
     }
