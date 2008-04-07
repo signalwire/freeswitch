@@ -223,13 +223,13 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 							}
 						}
 						if (zap_test_flag(zchan, ZAP_CHANNEL_INUSE)) {
-							zchan = NULL;
 							zap_log(ZAP_LOG_ERROR, "Channel %d:%d ~ %d:%d is already in use.\n",
 									zchan->span_id,
 									zchan->chan_id,
 									zchan->physical_span_id,
 									zchan->physical_chan_id
 									);
+							zchan = NULL;
 						}
 					}
 
