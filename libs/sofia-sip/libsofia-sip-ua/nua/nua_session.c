@@ -4168,6 +4168,10 @@ void session_timer_store(struct session_timer *t,
       else if (strcasecmp(x->x_refresher, "uas") == 0)
 	t->remote.refresher = uas ? nua_local_refresher : nua_remote_refresher;
     }
+    else if (t->remote.require) {
+      /* Require: timer but no refresher parameter in Session-Expires header */
+      t->remote.refresher = nua_local_refresher;
+    }
   }
 
   if (sip->sip_min_se)
