@@ -2471,9 +2471,9 @@ const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const 
 	switch_channel_set_variable(channel, port_var, port);
 	if (host) {
 		if (user) {
-			uri = switch_core_session_sprintf(session, "%s@%s:%s", user, host, new_port);
+			uri = switch_core_session_sprintf(session, "%s@%s%s", user, host, new_port);
 		} else {
-			uri = switch_core_session_sprintf(session, "%s:%s", host, new_port);
+			uri = switch_core_session_sprintf(session, "%s%s", host, new_port);
 		}
 		switch_channel_set_variable(channel, uri_var, uri);
 		switch_channel_set_variable(channel, host_var, host);
