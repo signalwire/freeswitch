@@ -199,7 +199,7 @@
     <!-- a sample IVR  -->
     <extension name="ivr_demo">
       <condition field="destination_number" expression="5000">
-	<action application="ivr" data="demo"/>
+	<action application="ivr" data="demo_ivr"/>
       </condition>
     </extension>
 
