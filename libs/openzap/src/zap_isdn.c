@@ -233,7 +233,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 						}
 					}
 
-					if (zchan->state == ZAP_CHANNEL_STATE_DOWN) {
+					if (zchan && zchan->state == ZAP_CHANNEL_STATE_DOWN) {
 						isdn_data->channels_remote_crv[gen->CRV] = zchan;
 						memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
 
