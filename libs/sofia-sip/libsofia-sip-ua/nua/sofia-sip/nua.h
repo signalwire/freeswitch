@@ -74,7 +74,7 @@ typedef NUA_HMAGIC_T nua_hmagic_t;
 typedef enum nua_nw_detector_e {
   NUA_NW_DETECT_NOTHING = 0,
   NUA_NW_DETECT_ONLY_INFO,
-  NUA_NW_DETECT_TRY_FULL,
+  NUA_NW_DETECT_TRY_FULL
 } nua_nw_detector_t;
 
 /** Events */
@@ -154,7 +154,7 @@ typedef enum nua_event_e {
      compatibility! */
   nua_i_network_changed,        /**< Local IP(v6) address has changed. 
 				   @NEW_1_12_2 */
-  nua_i_register,		/**< Incoming REGISTER. @NEW_1_12_4. */
+  nua_i_register		/**< Incoming REGISTER. @NEW_1_12_4. */
 } nua_event_t;
 
 typedef struct event_s {

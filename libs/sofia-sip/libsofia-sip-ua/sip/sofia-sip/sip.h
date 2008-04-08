@@ -61,7 +61,7 @@ typedef enum {
   sip_method_subscribe,		/**< SUBSCRIBE */
   sip_method_notify,		/**< NOTIFY */
   sip_method_refer,		/**< REFER */
-  sip_method_publish,		/**< PUBLISH */
+  sip_method_publish		/**< PUBLISH */
 } sip_method_t;
 
 #define SIP_METHOD(s)         sip_method_unknown, #s
@@ -95,7 +95,7 @@ enum {
 #define SIP_DEFAULT_SERV "5060"
 
  /** Default port for SIPS as integer */
- SIPS_DEFAULT_PORT = 5061,
+ SIPS_DEFAULT_PORT = 5061
 #define SIPS_DEFAULT_PORT SIPS_DEFAULT_PORT
  /** Default port for SIPS as string */
 #define SIPS_DEFAULT_SERV "5061"
