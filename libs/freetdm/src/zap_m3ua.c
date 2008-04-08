@@ -41,6 +41,24 @@
 #include "m3ua_client.h"
 #include "zap_m3ua.h"
 
+#define MAX_REQ_ID MAX_PENDING_CALLS
+typedef uint16_t m3ua_request_id_t;
+
+typedef enum {
+	BST_FREE,
+	BST_WAITING,
+	BST_READY,
+	BST_FAIL
+} m3ua_request_status_t;
+
+typedef struct {
+	m3ua_request_status_t status;
+	m3uac_event_t event;
+	zap_span_t *span;
+	zap_channel_t *zchan;
+} m3ua_request_t;
+
+
 struct general_config {
 	uint32_t region;
 };
@@ -50,6 +68,13 @@ typedef struct general_config general_config_t;
 struct m3ua_channel_profile {
 	char name[80];
 	int cust_span;
+	unsigned char opc[3];
+	unsigned char dpc[3];
+	int local_ip[4];
+	int local_port;
+	int remote_ip[4];
+	int remote_port;
+	int m3ua_mode;
 };
 typedef struct m3ua_channel_profile m3ua_channel_profile_t;
 
@@ -73,10 +98,298 @@ struct m3ua_chan_data {
 };
 typedef struct m3ua_chan_data m3ua_chan_data_t;
 
+static zap_mutex_t *request_mutex = NULL;
+static zap_mutex_t *signal_mutex = NULL;
+
+static uint8_t req_map[MAX_REQ_ID+1] = { 0 };
+
+static void release_request_id(m3ua_request_id_t r)
+{
+	zap_mutex_lock(request_mutex);
+	req_map[r] = 0;
+	zap_mutex_unlock(request_mutex);
+}
+
+/*static m3ua_request_id_t next_request_id(void)
+{
+	m3ua_request_id_t r = 0;
+	int ok = 0;
+	
+	while(!ok) {
+		zap_mutex_lock(request_mutex);
+		for (r = 1; r <= MAX_REQ_ID; r++) {
+			if (!req_map[r]) {
+				ok = 1;
+				req_map[r] = 1;
+				break;
+			}
+		}
+		zap_mutex_unlock(request_mutex);
+		if (!ok) {
+			zap_sleep(5);
+		}
+	}
+	return r;
+}
+*/
+
+static __inline__ void state_advance(zap_channel_t *zchan)
+{
+
+	m3ua_data_t *m3ua_data = zchan->span->signal_data;
+	m3uac_connection_t *mcon = &m3ua_data->mcon;
+	zap_sigmsg_t sig;
+	zap_status_t status;
+
+	zap_log(ZAP_LOG_DEBUG, "%d:%d STATE [%s]\n", zchan->span_id, zchan->chan_id, zap_channel_state2str(zchan->state));
+	
+	memset(&sig, 0, sizeof(sig));
+	sig.chan_id = zchan->chan_id;
+	sig.span_id = zchan->span_id;
+	sig.channel = zchan;
+
+	switch (zchan->state) {
+	case ZAP_CHANNEL_STATE_DOWN:
+		{
+			if (zchan->extra_id) {
+				release_request_id((m3ua_request_id_t)zchan->extra_id);
+				zchan->extra_id = 0;
+			}
+			zap_channel_done(zchan);			
+		}
+		break;
+	case ZAP_CHANNEL_STATE_PROGRESS_MEDIA:
+	case ZAP_CHANNEL_STATE_PROGRESS:
+		{
+			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
+				sig.event_id = ZAP_SIGEVENT_PROGRESS_MEDIA;
+				if ((status = m3ua_data->signal_cb(&sig) != ZAP_SUCCESS)) {
+					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
+				}
+			} else {
+				m3uac_exec_command(mcon,
+								   zchan->physical_span_id-1,
+								   zchan->physical_chan_id-1,								   
+								   0,
+								   SIGBOOST_EVENT_CALL_START_ACK,
+								   0);
+			}
+		}
+		break;
+	case ZAP_CHANNEL_STATE_RING:
+		{
+			if (!zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
+				sig.event_id = ZAP_SIGEVENT_START;
+				if ((status = m3ua_data->signal_cb(&sig) != ZAP_SUCCESS)) {
+					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
+				}
+			}
+
+		}
+		break;
+	case ZAP_CHANNEL_STATE_RESTART:
+		{
+			if (zchan->last_state != ZAP_CHANNEL_STATE_HANGUP && zchan->last_state != ZAP_CHANNEL_STATE_DOWN) {
+				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
+			} else {
+				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+			}
+		}
+		break;
+	case ZAP_CHANNEL_STATE_UP:
+		{
+			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
+				sig.event_id = ZAP_SIGEVENT_UP;
+				if ((status = m3ua_data->signal_cb(&sig) != ZAP_SUCCESS)) {
+					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
+				}
+			} else {
+				if (!(zap_test_flag(zchan, ZAP_CHANNEL_PROGRESS) || zap_test_flag(zchan, ZAP_CHANNEL_MEDIA))) {
+					m3uac_exec_command(mcon,
+									   zchan->physical_span_id-1,
+									   zchan->physical_chan_id-1,								   
+									   0,
+									   SIGBOOST_EVENT_CALL_START_ACK,
+									   0);
+				}
+				
+				m3uac_exec_command(mcon,
+								   zchan->physical_span_id-1,
+								   zchan->physical_chan_id-1,								   
+								   0,
+								   SIGBOOST_EVENT_CALL_ANSWERED,
+								   0);
+			}
+		}
+		break;
+	case ZAP_CHANNEL_STATE_DIALING:
+		{
+		}
+		break;
+	case ZAP_CHANNEL_STATE_HANGUP_COMPLETE:
+		{
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+		}
+		break;
+	case ZAP_CHANNEL_STATE_HANGUP:
+		{
+			if (zap_test_flag(zchan, ZAP_CHANNEL_ANSWERED) || zap_test_flag(zchan, ZAP_CHANNEL_PROGRESS) || zap_test_flag(zchan, ZAP_CHANNEL_MEDIA)) {
+				m3uac_exec_command(mcon,
+								   zchan->physical_span_id-1,
+								   zchan->physical_chan_id-1,
+								   0,
+								   SIGBOOST_EVENT_CALL_STOPPED,
+								   zchan->caller_data.hangup_cause);
+			} else {
+				m3uac_exec_command(mcon,
+								   zchan->physical_span_id-1,
+								   zchan->physical_chan_id-1,								   
+								   0,
+								   SIGBOOST_EVENT_CALL_START_NACK,
+								   zchan->caller_data.hangup_cause);
+			}			
+		}
+		break;
+	case ZAP_CHANNEL_STATE_CANCEL:
+		{
+			sig.event_id = ZAP_SIGEVENT_STOP;
+			status = m3ua_data->signal_cb(&sig);
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+			m3uac_exec_command(mcon,
+							   zchan->physical_span_id-1,
+							   zchan->physical_chan_id-1,
+							   0,
+							   SIGBOOST_EVENT_CALL_START_NACK_ACK,
+							   0);
+		}
+		break;
+	case ZAP_CHANNEL_STATE_TERMINATING:
+		{
+			sig.event_id = ZAP_SIGEVENT_STOP;
+			status = m3ua_data->signal_cb(&sig);
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+			m3uac_exec_command(mcon,
+							   zchan->physical_span_id-1,
+							   zchan->physical_chan_id-1,
+							   0,
+							   SIGBOOST_EVENT_CALL_STOPPED_ACK,
+							   0);
+		}
+		break;
+	default:
+		break;
+	}
+}
 
 
+static __inline__ void check_state(zap_span_t *span)
+{
+    if (zap_test_flag(span, ZAP_SPAN_STATE_CHANGE)) {
+        uint32_t j;
+        zap_clear_flag_locked(span, ZAP_SPAN_STATE_CHANGE);
+        for(j = 1; j <= span->chan_count; j++) {
+            if (zap_test_flag((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE)) {
+                zap_clear_flag_locked((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE);
+                state_advance(&span->channels[j]);
+                zap_channel_complete_state(&span->channels[j]);
+            }
+        }
+    }
+}
 
 
+static int parse_ss7_event(zap_span_t *span, m3uac_connection_t *mcon, m3uac_event_t *event)
+{
+	zap_mutex_lock(signal_mutex);
+	
+	if (!zap_running()) {
+		zap_log(ZAP_LOG_WARNING, "System is shutting down.\n");
+		goto end;
+	}
+
+
+	if (zap_test_flag(span, ZAP_SPAN_SUSPENDED) && 
+		event->event_id != SIGBOOST_EVENT_SYSTEM_RESTART_ACK && event->event_id != SIGBOOST_EVENT_HEARTBEAT) {
+
+		zap_log(ZAP_LOG_WARNING,
+				"INVALID EVENT: %s:(%X) [w%dg%d] Rc=%i CSid=%i Seq=%i Cd=[%s] Ci=[%s]\n",
+				m3uac_event_id_name(event->event_id),
+				event->event_id,
+				event->span+1,
+				event->chan+1,
+				event->release_cause,
+				event->call_setup_id,
+				event->fseqno,
+				(event->called_number_digits_count ? (char *) event->called_number_digits : "N/A"),
+				(event->calling_number_digits_count ? (char *) event->calling_number_digits : "N/A")
+				);
+		
+		goto end;
+	}
+
+
+	zap_log(ZAP_LOG_DEBUG,
+			"RX EVENT: %s:(%X) [w%dg%d] Rc=%i CSid=%i Seq=%i Cd=[%s] Ci=[%s]\n",
+			   m3uac_event_id_name(event->event_id),
+			   event->event_id,
+			   event->span+1,
+			   event->chan+1,
+			   event->release_cause,
+			   event->call_setup_id,
+			   event->fseqno,
+			   (event->called_number_digits_count ? (char *) event->called_number_digits : "N/A"),
+			   (event->calling_number_digits_count ? (char *) event->calling_number_digits : "N/A")
+			   );
+
+
+	
+    switch(event->event_id) {
+
+    case SIGBOOST_EVENT_CALL_START:
+		//handle_call_start(span, mcon, event);
+		break;
+    case SIGBOOST_EVENT_CALL_STOPPED:
+		//handle_call_stop(span, mcon, event);
+		break;
+    case SIGBOOST_EVENT_CALL_START_ACK:
+		//handle_call_start_ack(mcon, event);
+		break;
+    case SIGBOOST_EVENT_CALL_START_NACK:
+		//handle_call_start_nack(span, mcon, event);
+		break;
+    case SIGBOOST_EVENT_CALL_ANSWERED:
+		//handle_call_answer(span, mcon, event);
+		break;
+    case SIGBOOST_EVENT_HEARTBEAT:
+		//handle_heartbeat(mcon, event);
+		break;
+    case SIGBOOST_EVENT_CALL_STOPPED_ACK:
+    case SIGBOOST_EVENT_CALL_START_NACK_ACK:
+		//handle_call_done(span, mcon, event);
+		break;
+    case SIGBOOST_EVENT_INSERT_CHECK_LOOP:
+		//handle_call_loop_start(event);
+		break;
+    case SIGBOOST_EVENT_REMOVE_CHECK_LOOP:
+		//handle_call_stop(event);
+		break;
+    case SIGBOOST_EVENT_SYSTEM_RESTART_ACK:
+		//handle_restart_ack(mcon, span, event);
+		break;
+    case SIGBOOST_EVENT_AUTO_CALL_GAP_ABATE:
+		//handle_gap_abate(event);
+		break;
+    default:
+		zap_log(ZAP_LOG_WARNING, "No handler implemented for [%s]\n", m3uac_event_id_name(event->event_id));
+		break;
+    }
+
+ end:
+
+	zap_mutex_unlock(signal_mutex);
+
+	return 0;
+}
 
 static ZIO_CONFIGURE_FUNCTION(m3ua_configure)
 {
@@ -87,7 +400,6 @@ static ZIO_CONFIGURE_FUNCTION(m3ua_configure)
 		profile = malloc(sizeof(*profile));
 		memset(profile, 0, sizeof(*profile));
 		zap_set_string(profile->name, category);
-		//profile->play_config = globals.play_config;
 		hashtable_insert(globals.profile_hash, (void *)profile->name, profile);
 		zap_log(ZAP_LOG_INFO, "creating profile [%s]\n", category);
 	}
@@ -241,6 +553,130 @@ zap_status_t m3ua_init(zap_io_interface_t **zint)
 zap_status_t m3ua_destroy(void)
 {
 	return ZAP_FAIL;
+}
+
+
+static void *m3ua_run(zap_thread_t *me, void *obj)
+{
+    zap_span_t *span = (zap_span_t *) obj;
+    m3ua_data_t *m3ua_data = span->signal_data;
+	m3uac_connection_t *mcon, *pcon;
+	uint32_t ms = 10, too_long = 60000;
+		
+
+	m3ua_data->pcon = m3ua_data->mcon;
+
+	if (m3uac_connection_open(&m3ua_data->mcon,
+							  m3ua_data->mcon.cfg.local_ip,
+							  m3ua_data->mcon.cfg.local_port,
+							  m3ua_data->mcon.cfg.remote_ip,
+							  m3ua_data->mcon.cfg.remote_port) < 0) {
+		zap_log(ZAP_LOG_DEBUG, "Error: Opening MCON Socket [%d] %s\n", m3ua_data->mcon.socket, strerror(errno));
+		goto end;
+    }
+
+	if (m3uac_connection_open(&m3ua_data->pcon,
+							  m3ua_data->pcon.cfg.local_ip,
+							  ++m3ua_data->pcon.cfg.local_port,
+							  m3ua_data->pcon.cfg.remote_ip,
+							  m3ua_data->pcon.cfg.remote_port) < 0) {
+		zap_log(ZAP_LOG_DEBUG, "Error: Opening PCON Socket [%d] %s\n", m3ua_data->pcon.socket, strerror(errno));
+		goto end;
+    }
+	
+	mcon = &m3ua_data->mcon;
+	pcon = &m3ua_data->pcon;
+
+	top:
+
+	//init_outgoing_array();		
+
+	m3uac_exec_command(mcon,
+					   0,
+					   0,
+					   -1,
+					   SIGBOOST_EVENT_SYSTEM_RESTART,
+					   0);
+	
+	while (zap_test_flag(m3ua_data, ZAP_M3UA_RUNNING)) {
+		fd_set rfds, efds;
+		struct timeval tv = { 0, ms * 1000 };
+		int max, activity, i = 0;
+		m3uac_event_t *event = NULL;
+		
+		if (!zap_running()) {
+			m3uac_exec_command(mcon,
+							   0,
+							   0,
+							   -1,
+							   SIGBOOST_EVENT_SYSTEM_RESTART,
+							   0);
+			break;
+		}
+
+		FD_ZERO(&rfds);
+		FD_ZERO(&efds);
+		FD_SET(mcon->socket, &rfds);
+		FD_SET(mcon->socket, &efds);
+		FD_SET(pcon->socket, &rfds);
+		FD_SET(pcon->socket, &efds);
+
+		max = ((pcon->socket > mcon->socket) ? pcon->socket : mcon->socket) + 1;
+		
+		if ((activity = select(max, &rfds, NULL, &efds, &tv)) < 0) {
+			goto error;
+		}
+		
+		if (activity) {
+			if (FD_ISSET(pcon->socket, &efds) || FD_ISSET(mcon->socket, &efds)) {
+				goto error;
+			}
+
+			if (FD_ISSET(pcon->socket, &rfds)) {
+				if ((event = m3uac_connection_readp(pcon, i))) {
+					parse_ss7_event(span, mcon, event);
+				} else goto top;
+			}
+
+			if (FD_ISSET(mcon->socket, &rfds)) {
+				if ((event = m3uac_connection_read(mcon, i))) {
+					parse_ss7_event(span, mcon, event);
+				} else goto top;
+			}
+		}
+		
+		check_state(span);
+		mcon->hb_elapsed += ms;
+		
+		if (mcon->hb_elapsed >= too_long && (mcon->up || !zap_test_flag(span, ZAP_SPAN_SUSPENDED))) {
+			zap_set_state_all(span, ZAP_CHANNEL_STATE_RESTART);
+			zap_set_flag_locked(span, ZAP_SPAN_SUSPENDED);
+			mcon->up = 0;
+			zap_log(ZAP_LOG_CRIT, "Lost Heartbeat!\n");
+		}
+
+	}
+
+	goto end;
+
+ error:
+	zap_log(ZAP_LOG_CRIT, "Socket Error!\n");
+
+ end:
+
+	m3uac_connection_close(&m3ua_data->mcon);
+	m3uac_connection_close(&m3ua_data->pcon);
+
+	zap_clear_flag(m3ua_data, ZAP_M3UA_RUNNING);
+
+	zap_log(ZAP_LOG_DEBUG, "M3UA thread ended.\n");
+	return NULL;
+}
+zap_status_t m3ua_start(zap_span_t *span)
+{
+	m3ua_data_t *m3ua_data = span->signal_data;
+	zap_set_flag(m3ua_data, ZAP_M3UA_RUNNING);
+	return zap_thread_create_detached(m3ua_run, span);
 }
 
 /* For Emacs:
