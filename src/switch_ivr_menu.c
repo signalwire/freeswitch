@@ -56,6 +56,7 @@ struct switch_ivr_menu_action {
 	switch_ivr_action_t ivr_action;
 	char *arg;
 	char *bind;
+	int re;
 	struct switch_ivr_menu_action *next;
 };
 
@@ -190,6 +191,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_function(switch_ivr_menu_t 
 		action->bind = switch_core_strdup(menu->pool, bind);
 		action->next = menu->actions;
 		action->arg = switch_core_strdup(menu->pool, arg);
+		if (*action->arg == '/') {
+			action->re = 1;
+		}
 		len = (uint32_t) strlen(action->bind) + 1;
 		if (len > menu->inlen) {
 			menu->inlen = len;
@@ -311,7 +315,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 
 		if (!switch_strlen_zero(menu->buf)) {
 			for (ap = menu->actions; ap; ap = ap->next) {
-				if (!strcmp(menu->buf, ap->bind)) {
+				int ok = 0;
+				
+				if (*ap->bind == '/') {
+					switch_regex_t *re = NULL;
+					int ovector[30];
+					
+					ok = switch_regex_perform(menu->buf, ap->bind, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+					switch_regex_safe_free(re);
+				} else {
+					ok = !strcmp(menu->buf, ap->bind);
+				}
+
+				if (ok) {
 					match++;
 					errs = 0;
 					if (ap->function) {
