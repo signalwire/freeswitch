@@ -10,10 +10,10 @@
           timeout ="15"
           max-failures="3">
       <entry action="menu-exec-app" digits="1" param="bridge sofia/$${domain}/888@conference.freeswitch.org"/>
-      <entry action="menu-call-transfer" digits="2" param="9996"/>    <!-- FS echo -->
-      <entry action="menu-call-transfer" digits="3" param="9999"/>    <!-- MOH -->
+      <entry action="menu-exec-app" digits="2" param="transfer 9996 XML default"/>    <!-- FS echo -->
+      <entry action="menu-exec-app" digits="3" param="transfer 9999 XML default"/>    <!-- MOH -->
       <entry action="menu-sub" digits="4" param="demo_ivr_submenu"/>  <!-- demo sub menu -->
-      <entry action="menu-call-transfer" digits="5" param="1234*256"/>    <!-- Screaming monkeys -->
+      <entry action="menu-exec-app" digits="5" param="transfer 1234*256 enum"/>    <!-- Screaming monkeys -->
       <entry action="menu-top" digits="9" param="demo_ivr"/>          <!-- Repeat this menu -->
     </menu>
 
