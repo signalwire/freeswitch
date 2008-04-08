@@ -339,7 +339,9 @@ void sofia_reg_auth_challange(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	sql = switch_mprintf("insert into sip_authentication (nonce, expires) values('%q', %ld)",
 						 uuid_str, switch_timestamp(NULL) + profile->nonce_ttl);
 	switch_assert(sql != NULL);
-	sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, NULL);
+	switch_safe_free(sql);
+	//sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 
 	auth_str =
 		switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", realm, uuid_str, stale ? " stale=\"true\"," : "");
