@@ -291,27 +291,27 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 
 			menu->ptr += strlen(menu->buf);
 			if (strlen(menu->buf) < need) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "waiting for %lu/%u digits t/o %d\n", 
-								  menu->inlen - strlen(menu->buf), (uint32_t)need, menu->inter_timeout);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "waiting for %u/%u digits t/o %d\n", 
+								  (uint32_t)(menu->inlen - strlen(menu->buf)), (uint32_t)need, menu->inter_timeout);
 				status = switch_ivr_collect_digits_count(session, menu->ptr, menu->inlen - strlen(menu->buf), 
 														 need, "#", &terminator, menu->inter_timeout, 0, 0);
 			}
 
 			
 			if (menu->confirm_macro && status == SWITCH_STATUS_SUCCESS && !switch_strlen_zero(menu->buf)) {
-				switch_input_args_t args = { 0 }, *ap = NULL;
+				switch_input_args_t confirm_args = { 0 }, *ap = NULL;
 				char buf[10] = "";
 				char terminator_key;
 				int att = menu->confirm_attempts;
 
 				
 				while (att) {
-					args.buf = buf;
-					args.buflen = sizeof(buf);
-					memset(buf, 0, args.buflen);
+					confirm_args.buf = buf;
+					confirm_args.buflen = sizeof(buf);
+					memset(buf, 0, confirm_args.buflen);
 
 					if (menu->confirm_key) {
-						ap = &args;
+						ap = &confirm_args;
 					}
 					
 					switch_ivr_phrase_macro(session, menu->confirm_macro, menu->buf, NULL, ap);
