@@ -1,3 +1,13 @@
+freeswitch (1.0.rc3)
+
+        Fix transport=tls tag incorrectly included in re-invite
+        Enhance xml menu system
+        Fixes upstream from sofia-sip library
+        Enhance mod_fifo
+        Added close method to ODBC spidermonkey class
+        Fix multiple bugs in the cpp wrapper used in mod_java and mod_python
+        Fix hung sip channel issue using respond app or on re-invite with bypass media after 1xx or 2xx responses
+
 freeswitch (1.0.rc2)
 
 	Fixed speex protocol negotiation issues (8k vs 16k)
