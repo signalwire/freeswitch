@@ -316,11 +316,11 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 					
 					switch_ivr_phrase_macro(session, menu->confirm_macro, menu->buf, NULL, ap);
 
-					if (menu->confirm_key && switch_strlen_zero(buf)) {
+					if (menu->confirm_key && *buf == '\0') {
 						switch_ivr_collect_digits_count(session, buf, sizeof(buf), 1, "#", &terminator_key, menu->timeout, 0, 0);
 					}
 
-					if (menu->confirm_key && !switch_strlen_zero(buf)) {
+					if (menu->confirm_key && *buf != '\0') {
 						if (*menu->confirm_key == *buf) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
 											  "approving digits '%s' via confirm key %s\n", menu->buf, menu->confirm_key);
