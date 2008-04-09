@@ -1,3 +1,11 @@
+freeswitch (1.0~rc3-1) unstable; urgency=low
+
+freeswitch (1.0~rc2-1) unstable; urgency=low
+   * Fixed speex protocol negotiation issues (8k vs 16k)
+     Fixed mod_iax race conditions
+     Fixed ptime negotiation issues when re-packetizing
+     Added ip based acl lists
+	
 freeswitch (1.0~rc1-1) unstable; urgency=low
   * loads of fixes
     new cdr-csv module
