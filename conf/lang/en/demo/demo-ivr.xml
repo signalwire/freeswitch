@@ -1,5 +1,16 @@
 <include><!--This line will be ignored it's here to validate the xml and is optional -->
 
+
+  <macro name="demo_ivr_count">
+    <input pattern="^(\d+)$">
+      <match>
+	<action function="play-file" data="voicemail/vm-you_have.wav"/>
+	<action function="say" data="$1" method="pronounced" type="name_spelled"/>
+	<action function="play-file" data="voicemail/vm-messages.wav"/>
+      </match>
+    </input>
+  </macro>
+
   <macro name="demo_ivr_main_menu"> <!-- See conf/autoload_config/ivr.conf.xml for an example on how to use this macro in an IVR -->
     <input pattern="(.*)">
       <match>
