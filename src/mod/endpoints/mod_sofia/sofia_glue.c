@@ -952,7 +952,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		 * Ignore transport chanvar and uri parameter for gateway connections
 		 * since all of them have been already taken care of in mod_sofia.c:sofia_outgoing_channel()
 		 */
-		if (switch_strlen_zero(tech_pvt->gateway_name)) {
+		if (tech_pvt->transport == SOFIA_TRANSPORT_UNKNOWN && switch_strlen_zero(tech_pvt->gateway_name)) {
 			if ((p = (char *)switch_stristr("port=", url))) {
 				p += 5;
 				tech_pvt->transport = sofia_glue_str2transport( p );

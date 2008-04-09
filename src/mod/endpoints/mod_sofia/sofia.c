@@ -2674,7 +2674,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			transport_url = sip->sip_contact->m_url;
 		}
 
-		transport = sofia_glue_url2transport(transport_url);		
+		transport = sofia_glue_url2transport(transport_url);
+		tech_pvt->transport = transport;
 
 		url_set_chanvars(session, sip->sip_to->a_url, sip_to);
 		if (switch_channel_get_variable(channel, "sip_to_uri")) {
