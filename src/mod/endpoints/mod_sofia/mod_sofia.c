@@ -948,12 +948,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 			
 			if (!reason && code != 407) {
-				reason = "Call Refused";
-				if (!reason) {
-					reason = sip_status_phrase(code);
-					if (switch_strlen_zero(reason)) {
-						reason = "Because";
-					}
+				reason = sip_status_phrase(code);
+				if (switch_strlen_zero(reason)) {
+					reason = "Because";
 				}
 			}
 			
@@ -985,7 +982,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				nua_respond(tech_pvt->nh, code, reason, TAG_IF(to_uri, SIPTAG_CONTACT_STR(to_uri)),
 							SIPTAG_SUPPORTED_STR(NULL), SIPTAG_ACCEPT_STR(NULL),
 							TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)), TAG_END());
-				switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+				if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
+					switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding with %d %s\n", code, reason);
 				
@@ -1005,7 +1004,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				} else {
 					nua_respond(tech_pvt->nh, code, reason, SIPTAG_CONTACT_STR(tech_pvt->reply_contact), TAG_END());
 				}
-				switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+				if (!switch_channel_test_flag(channel, CF_ANSWERED) && code >= 300) {
+					switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+				}
 			}
 			
 		}
