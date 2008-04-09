@@ -1,11 +1,22 @@
 freeswitch (1.0~rc3-1) unstable; urgency=low
+   * Fix transport=tls tag incorrectly included in re-invite
+     Enhance xml menu system
+     fixes upstream from sofia-sip library
+     Enhance mod_fifo
+     added close method to ODBC spidermonkey class
+     Fix multiple bugs in the cpp wrapper used in mod_java and mod_python
+     Fix hung sip channel issue using respond app or on re-invite with bypass media after 1xx or 2xx responses
 
+ -- Michael Jerris <mike@jerris.com>  Wed, 9 Apr 2008 12:58:22 -0400
+    
 freeswitch (1.0~rc2-1) unstable; urgency=low
    * Fixed speex protocol negotiation issues (8k vs 16k)
      Fixed mod_iax race conditions
      Fixed ptime negotiation issues when re-packetizing
      Added ip based acl lists
 	
+ -- Michael Jerris <mike@jerris.com>  Wed, 9 Apr 2008 12:58:22 -0400
+    
 freeswitch (1.0~rc1-1) unstable; urgency=low
   * loads of fixes
     new cdr-csv module
