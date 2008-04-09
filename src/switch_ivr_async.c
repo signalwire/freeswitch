@@ -1802,8 +1802,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 	channel = switch_core_session_get_channel(session);
 
 	if ((switch_channel_test_flag(channel, CF_EVENT_PARSE))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Channel [%s] already broadcasting...broadcast aborted\n", 
-						  switch_channel_get_name(channel));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Channel [%s][%s] already broadcasting...broadcast aborted\n", 
+						  switch_channel_get_name(channel), path);
 		switch_core_session_rwunlock(session);
 		return SWITCH_STATUS_FALSE;
 	}

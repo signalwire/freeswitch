@@ -189,7 +189,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 					
 					if (cb_status == SWITCH_STATUS_IGNORE) {
 						send_dtmf = 0;
-					} if (cb_status != SWITCH_STATUS_SUCCESS) {
+					} else if (cb_status != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s ended call via DTMF\n", switch_channel_get_name(chan_a));
 						switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 						goto end_of_bridge_loop;

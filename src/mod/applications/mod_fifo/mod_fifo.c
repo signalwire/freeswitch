@@ -53,6 +53,8 @@ struct fifo_node {
 typedef struct fifo_node fifo_node_t;
 
 
+
+
 static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
     switch_core_session_t *bleg = (switch_core_session_t *) buf;
@@ -61,13 +63,31 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 	case SWITCH_INPUT_TYPE_DTMF:
         {
             switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
+			switch_channel_t *bchan = switch_core_session_get_channel(bleg);
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			if (switch_channel_test_flag(switch_core_session_get_channel(session), CF_ORIGINATOR)) {
+				if (dtmf->digit == '*') {
+					switch_channel_hangup(bchan, SWITCH_CAUSE_NORMAL_CLEARING);
+					return SWITCH_STATUS_BREAK;
+				} else if (dtmf->digit == '0') {
+					const char *moh_a = NULL, *moh_b = NULL;
+					
+					if (!(moh_b = switch_channel_get_variable(bchan, "fifo_music"))) {
+						moh_b = switch_channel_get_variable(bchan, "hold_music");
+					}
+					
+					if (!(moh_a = switch_channel_get_variable(channel, "fifo_hold_music"))) {
+						if (!(moh_a = switch_channel_get_variable(channel, "fifo_music"))) {
+							moh_a = switch_channel_get_variable(channel, "hold_music");
+						}
+					}
+					
+					switch_ivr_soft_hold(session, "0", moh_a, moh_b);
 
-            if (dtmf->digit == '*') {
-                if (switch_channel_test_flag(switch_core_session_get_channel(session), CF_ORIGINATOR)) {
-                    switch_channel_hangup(switch_core_session_get_channel(bleg), SWITCH_CAUSE_NORMAL_CLEARING);
-                    return SWITCH_STATUS_BREAK;
-                }
-            }
+
+					return SWITCH_STATUS_IGNORE;
+				}
+			}
         }
 		break;
 	default:

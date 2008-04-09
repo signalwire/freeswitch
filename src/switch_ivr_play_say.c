@@ -1746,6 +1746,88 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	return status;
 }
 
+
+static switch_status_t hold_on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
+{
+	char *stop_key = (char *) buf;
+
+	switch (itype) {
+	case SWITCH_INPUT_TYPE_DTMF:
+        {
+            switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
+			if (dtmf->digit == *stop_key) {
+				return SWITCH_STATUS_BREAK;
+			}
+		}
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *session, const char *unhold_key, const char *moh_a, const char *moh_b)
+{
+	switch_channel_t *channel, *other_channel;
+	switch_core_session_t *other_session;
+	const char *other_uuid, *moh = NULL;
+	int moh_br = 0;
+	switch_input_args_t args = { 0 };
+	args.input_callback = hold_on_dtmf;
+	args.buf = (void *) unhold_key;
+	args.buflen = strlen(unhold_key);
+	
+	switch_assert(session != NULL);
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel != NULL);
+
+
+	if ((other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+		if ((other_session = switch_core_session_locate(other_uuid))) {
+			other_channel = switch_core_session_get_channel(other_session);
+
+			if (moh_b) {
+				moh = moh_b; 
+			} else {
+				moh = switch_channel_get_variable(other_channel, "hold_music");
+			}
+
+			if (!switch_strlen_zero(moh) && strcasecmp(moh, "silence") && !switch_channel_test_flag(other_channel, CF_BROADCAST)) {
+				switch_ivr_broadcast(other_uuid, moh, SMF_ECHO_ALEG | SMF_LOOP);
+				moh_br++;
+			}
+			
+			if (moh_a) {
+				moh = moh_a;
+			} else {
+				moh = switch_channel_get_variable(channel, "hold_music");
+			}
+			
+			if (!switch_strlen_zero(moh) && strcasecmp(moh, "silence")) {
+				switch_ivr_play_file(session, NULL, moh, &args);
+			} else {
+				switch_ivr_collect_digits_callback(session, &args, 0);
+			}	
+
+			if (moh_br) {
+				switch_channel_stop_broadcast(other_channel);
+			}
+
+			switch_core_session_rwunlock(other_session);
+
+
+			return SWITCH_STATUS_SUCCESS;
+		}
+		
+	}
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Channel %s is not in a bridge\n", switch_channel_get_name(channel));
+	return SWITCH_STATUS_FALSE;
+
+}
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c
