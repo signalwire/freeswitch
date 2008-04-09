@@ -42,8 +42,13 @@ struct switch_ivr_menu {
 	char *exit_sound;
 	char *buf;
 	char *ptr;
+	char *confirm_macro;
+	char *confirm_key;
+	int confirm_attempts;
+	int digit_len;
 	int max_failures;
 	int timeout;
+	int inter_timeout;
 	switch_size_t inlen;
 	uint32_t flags;
 	struct switch_ivr_menu_action *actions;
@@ -91,6 +96,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 													 const char *short_greeting_sound,
 													 const char *invalid_sound,
 													 const char *exit_sound,
+													 const char *confirm_macro,
+													 const char *confirm_key,
+													 int confirm_attempts,
+													 int inter_timeout,
+													 int digit_len,
 													 int timeout, int max_failures,
 													 switch_memory_pool_t *pool)
 {
@@ -115,6 +125,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 
 	menu->pool = pool;
 
+	if (!confirm_attempts) {
+		confirm_attempts = 3;
+	}
+
+	if (!inter_timeout) {
+		inter_timeout = timeout / 2;
+	}
+
 	if (!switch_strlen_zero(name)) {
 		menu->name = switch_core_strdup(menu->pool, name);
 	}
@@ -135,9 +153,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 		menu->exit_sound = switch_core_strdup(menu->pool, exit_sound);
 	}
 
+	if (!switch_strlen_zero(confirm_macro)) {
+		menu->confirm_macro = switch_core_strdup(menu->pool, confirm_macro);
+	}
+
+	if (!switch_strlen_zero(confirm_key)) {
+		menu->confirm_key = switch_core_strdup(menu->pool, confirm_key);
+	}
+
+	menu->confirm_attempts = confirm_attempts;
+
+	menu->inlen = digit_len;
+	
 	menu->max_failures = max_failures;
 
 	menu->timeout = timeout;
+
+	menu->inter_timeout = inter_timeout;
 
 	menu->actions = NULL;
 
@@ -169,9 +201,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_action(switch_ivr_menu_t * 
 		action->bind = switch_core_strdup(menu->pool, bind);
 		action->next = menu->actions;
 		action->arg = switch_core_strdup(menu->pool, arg);
-		len = (uint32_t) strlen(action->bind) + 1;
-		if (len > menu->inlen) {
-			menu->inlen = len;
+		if (*action->bind == '/') {
+			action->re = 1;
+		} else {
+			len = (uint32_t) strlen(action->bind);
+			if (len > menu->inlen) {
+				menu->inlen = len;
+			}
 		}
 		action->ivr_action = ivr_action;
 		menu->actions = action;
@@ -191,12 +227,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_function(switch_ivr_menu_t 
 		action->bind = switch_core_strdup(menu->pool, bind);
 		action->next = menu->actions;
 		action->arg = switch_core_strdup(menu->pool, arg);
-		if (*action->arg == '/') {
+		if (*action->bind == '/') {
 			action->re = 1;
-		}
-		len = (uint32_t) strlen(action->bind) + 1;
-		if (len > menu->inlen) {
-			menu->inlen = len;
+		} else {
+			len = (uint32_t) strlen(action->bind);
+			if (len > menu->inlen) {
+				menu->inlen = len;
+			}
 		}
 		action->function = function;
 		menu->actions = action;
@@ -223,7 +260,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_free(switch_ivr_menu_t * s
 	return status;
 }
 
-static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_menu_t * menu, char *sound, switch_size_t need)
+static switch_status_t play_and_collect(switch_core_session_t *session, switch_ivr_menu_t * menu, char *sound, switch_size_t need)
 {
 	char terminator;
 	uint32_t len;
@@ -231,17 +268,17 @@ static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_me
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_input_args_t args = { 0 };
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "play_or_say sound=[%s]\n", sound);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sound=[%s]\n", sound);
 
 	if (session != NULL && menu != NULL && !switch_strlen_zero(sound)) {
-		memset(menu->buf, 0, menu->inlen);
+		memset(menu->buf, 0, menu->inlen + 1);
 		menu->ptr = menu->buf;
 
 		if (!need) {
 			len = 1;
 			ptr = NULL;
 		} else {
-			len = (uint32_t) menu->inlen;
+			len = (uint32_t) menu->inlen + 1;
 			ptr = menu->ptr;
 		}
 		args.buf = ptr;
@@ -251,15 +288,60 @@ static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_me
 
 		
 		if (need) {
+
 			menu->ptr += strlen(menu->buf);
 			if (strlen(menu->buf) < need) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "waiting for %u digits\n", (uint32_t)need);
-				status = switch_ivr_collect_digits_count(session, menu->ptr, menu->inlen - strlen(menu->buf), need, "#", &terminator, menu->timeout, 0, 0);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "waiting for %lu/%u digits t/o %d\n", 
+								  menu->inlen - strlen(menu->buf), (uint32_t)need, menu->inter_timeout);
+				status = switch_ivr_collect_digits_count(session, menu->ptr, menu->inlen - strlen(menu->buf), 
+														 need, "#", &terminator, menu->inter_timeout, 0, 0);
 			}
+
+			
+			if (menu->confirm_macro && status == SWITCH_STATUS_SUCCESS && !switch_strlen_zero(menu->buf)) {
+				switch_input_args_t args = { 0 }, *ap = NULL;
+				char buf[10] = "";
+				char terminator_key;
+				int att = menu->confirm_attempts;
+
+				
+				while (att) {
+					args.buf = buf;
+					args.buflen = sizeof(buf);
+					memset(buf, 0, args.buflen);
+
+					if (menu->confirm_key) {
+						ap = &args;
+					}
+					
+					switch_ivr_phrase_macro(session, menu->confirm_macro, menu->buf, NULL, ap);
+
+					if (menu->confirm_key && switch_strlen_zero(buf)) {
+						switch_ivr_collect_digits_count(session, buf, sizeof(buf), 1, "#", &terminator_key, menu->timeout, 0, 0);
+					}
+
+					if (menu->confirm_key && !switch_strlen_zero(buf)) {
+						if (*menu->confirm_key == *buf) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+											  "approving digits '%s' via confirm key %s\n", menu->buf, menu->confirm_key);
+							break;
+						} else {
+							att = 0;
+							break;
+						}
+					}
+					att--;
+				}
+				if (!att) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "rejecting digits '%s' via confirm key %s\n", menu->buf, menu->confirm_key);
+					*menu->buf = '\0';
+				}
+			}
+
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "digits '%s'\n", menu->buf);
 		}
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "play_or_say returning [%d]\n", status);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "returning [%d]\n", status);
 
 	return status;
 }
@@ -287,7 +369,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!(menu->buf = malloc(menu->inlen))) {
+	if (!(menu->buf = malloc(menu->inlen + 1))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Memory!\n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -310,18 +392,27 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 
 		memset(arg, 0, sizeof(arg));
 
-		memset(menu->buf, 0, menu->inlen);
-		status = play_or_say(session, menu, greeting_sound, menu->inlen - 1);
+		memset(menu->buf, 0, menu->inlen + 1);
+		status = play_and_collect(session, menu, greeting_sound, menu->inlen);
 
 		if (!switch_strlen_zero(menu->buf)) {
+
+
 			for (ap = menu->actions; ap; ap = ap->next) {
 				int ok = 0;
+				char substituted[1024];
+				char *use_arg = ap->arg;
 				
-				if (*ap->bind == '/') {
+				if (ap->re) {
 					switch_regex_t *re = NULL;
 					int ovector[30];
 					
-					ok = switch_regex_perform(menu->buf, ap->bind, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+					if ((ok = switch_regex_perform(menu->buf, ap->bind, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+						switch_perform_substitution(re, ok, ap->arg, menu->buf, substituted, sizeof(substituted), ovector);
+						use_arg = substituted;
+					}
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "action regex [%s] [%s] [%d]\n", menu->buf, ap->bind, ok);
+					
 					switch_regex_safe_free(re);
 				} else {
 					ok = !strcmp(menu->buf, ap->bind);
@@ -332,12 +423,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 					errs = 0;
 					if (ap->function) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-										  "IVR function on menu '%s' matched '%s' param '%s'\n", menu->name, menu->buf, ap->arg);
-						todo = ap->function(menu, ap->arg, arg, sizeof(arg), obj);
+										  "IVR function on menu '%s' matched '%s' param '%s'\n", menu->name, menu->buf, use_arg);
+						todo = ap->function(menu, use_arg, arg, sizeof(arg), obj);
 						aptr = arg;
 					} else {
 						todo = ap->ivr_action;
-						aptr = ap->arg;
+						aptr = use_arg;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 										  "IVR action on menu '%s' matched '%s' param '%s'\n", menu->name, menu->buf, aptr);
 					}
@@ -408,7 +499,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 			if (*menu->buf) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IVR menu '%s' caught invalid input '%s'\n", menu->name, menu->buf);
 				if (menu->invalid_sound) {
-					play_or_say(session, menu, menu->invalid_sound, 0);
+					play_and_collect(session, menu, menu->invalid_sound, 0);
 				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IVR menu '%s' no input detected\n", menu->name);
@@ -426,7 +517,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "exit-sound '%s'\n", menu->exit_sound);
 	if (!switch_strlen_zero(menu->exit_sound)) {
-		play_or_say(session, menu, menu->exit_sound, 0);
+		play_and_collect(session, menu, menu->exit_sound, 0);
 	}
 
 	switch_safe_free(menu->buf);
@@ -584,16 +675,31 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 		const char *exit_sound = switch_xml_attr(xml_menu, "exit-sound");	// if the attr doesn't exist, return NULL
 		const char *timeout = switch_xml_attr_soft(xml_menu, "timeout");	// if the attr doesn't exist, return ""
 		const char *max_failures = switch_xml_attr_soft(xml_menu, "max-failures");	// if the attr doesn't exist, return ""
+		const char *confirm_macro= switch_xml_attr(xml_menu, "confirm-macro");
+		const char *confirm_key= switch_xml_attr(xml_menu, "confirm-key");
+		const char *confirm_attempts = switch_xml_attr_soft(xml_menu, "confirm-attempts");
+		const char *digit_len = switch_xml_attr_soft(xml_menu, "digit-len");
+		const char *inter_timeout = switch_xml_attr_soft(xml_menu, "inter-digit-timeout");
+		
 		switch_ivr_menu_t *menu = NULL;
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "building menu '%s'\n", menu_name);
+
 		status = switch_ivr_menu_init(&menu,
 									  *menu_stack,
 									  menu_name,
 									  greet_long,
 									  greet_short,
 									  invalid_sound,
-									  exit_sound, atoi(timeout) * 1000, atoi(max_failures), xml_menu_ctx->pool);
+									  exit_sound, 
+									  confirm_macro,
+									  confirm_key,
+									  atoi(confirm_attempts),
+									  atoi(inter_timeout),
+									  atoi(digit_len),
+									  atoi(timeout), 
+									  atoi(max_failures), 
+									  xml_menu_ctx->pool);
 		// set the menu_stack for the caller
 		if (status == SWITCH_STATUS_SUCCESS && *menu_stack == NULL) {
 			*menu_stack = menu;

@@ -642,15 +642,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\param pool memory pool (NULL to create one).
  *\return SWITCH_STATUS_SUCCESS if the menu was created.
  */
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_menu,
 													 switch_ivr_menu_t * main,
 													 const char *name,
 													 const char *greeting_sound,
 													 const char *short_greeting_sound,
-													 const char *exit_sound,
 													 const char *invalid_sound,
-													 int timeout, 
-													 int max_failures, 
+													 const char *exit_sound,
+													 const char *confirm_macro,
+													 const char *confirm_key,
+													 int confirm_attempts,
+													 int inter_timeout,
+													 int digit_len,
+													 int timeout, int max_failures,
 													 switch_memory_pool_t *pool);
 
 /*!
