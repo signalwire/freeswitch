@@ -51,7 +51,7 @@ esac
 
 # Define LSB log_* functions.
 # Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
-. /lib/lsb/init-functions
+[ -x /lib/init/vars.sh ] && . /lib/lsb/init-functions
 
 #
 # Function that starts the daemon/service
