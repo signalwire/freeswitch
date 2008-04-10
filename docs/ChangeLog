@@ -1,6 +1,5 @@
 freeswitch (1.0.rc3)
 
-        Fix transport=tls tag incorrectly included in re-invite
         Enhance xml menu system
         Fixes upstream from sofia-sip library
         Enhance mod_fifo
