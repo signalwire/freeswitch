@@ -1,6 +1,5 @@
 freeswitch (1.0~rc3-1) unstable; urgency=low
-   * Fix transport=tls tag incorrectly included in re-invite
-     Enhance xml menu system
+   * Enhance xml menu system
      fixes upstream from sofia-sip library
      Enhance mod_fifo
      added close method to ODBC spidermonkey class
