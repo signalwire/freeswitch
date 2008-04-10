@@ -10,7 +10,6 @@ sub init($;$) {
   my $proto = shift;
   my $args = shift;
   my $class = ref($proto) || $proto;
-
   $self->{_host} = $args->{-host} || "localhost";
   $self->{_port} = $args->{-port} || 8021;
   $self->{_password} = $args->{-password} || undef; 
@@ -18,14 +17,10 @@ sub init($;$) {
 
   $self->{events} = [];
   my $me = bless $self,$class;
-
-
-
   if (!$self->{_password}) {
     return $me;
   }
   if ($me->connect()) {
-  print Dumper $me;
     return $me;
   } else {
     return undef;

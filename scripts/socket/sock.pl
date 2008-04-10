@@ -36,15 +36,6 @@ while(my $r = $fs->readhash(undef)) {
   if ($r->{has_event}) {
     print Dumper $r->{event};
   }
-  if ($r->{event}->{'event-name'} !~ /dtmf/i) {
-    $o = $fs->call_command("park");
-
-    print "Got DTMF $r->{event}->{'dtmf-digit'}\n";
-    push @digits, $r->{event}->{'dtmf-digit'};
-    print "Dialed: " . join("", @digits) . "\n";
-    next;
-  }
-
   if ($r->{event}->{'event-name'} !~ /execute/i) {
     printf "uuid: $data->{'unique-id'}\n";
     $o = $fs->call_command("break");
