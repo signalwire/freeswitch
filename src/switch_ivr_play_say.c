@@ -1776,7 +1776,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *sess
 	switch_input_args_t args = { 0 };
 	args.input_callback = hold_on_dtmf;
 	args.buf = (void *) unhold_key;
-	args.buflen = strlen(unhold_key);
+	args.buflen = (uint32_t)strlen(unhold_key);
 	
 	switch_assert(session != NULL);
 	channel = switch_core_session_get_channel(session);

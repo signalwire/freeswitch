@@ -22,14 +22,62 @@
 			CharacterSet="2"
 			>
 			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\openmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\aprtoolkit\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\libopenmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\aprtoolkit\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
 				UsePrecompiledHeader="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
 			/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
 				AdditionalLibraryDirectories="&quot;C:\Program Files\openmrcp\sdk\lib\winnt&quot;"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
@@ -39,14 +87,62 @@
 			CharacterSet="2"
 			>
 			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\openmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\aprtoolkit\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\libopenmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\aprtoolkit\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
 				UsePrecompiledHeader="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
 			/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
 				AdditionalLibraryDirectories="&quot;C:\Program Files\openmrcp\sdk\lib\winnt&quot;"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
@@ -56,14 +152,62 @@
 			CharacterSet="2"
 			>
 			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\openmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\aprtoolkit\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\libopenmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\aprtoolkit\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
 				UsePrecompiledHeader="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
 			/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
 				AdditionalLibraryDirectories="&quot;C:\Program Files\openmrcp\sdk\lib\winnt&quot;"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
@@ -73,14 +217,62 @@
 			CharacterSet="2"
 			>
 			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\openmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\aprtoolkit\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\libopenmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\aprtoolkit\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
 				UsePrecompiledHeader="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
 			/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
 				AdditionalLibraryDirectories="&quot;C:\Program Files\openmrcp\sdk\lib\winnt&quot;"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 	</Configurations>
