@@ -609,6 +609,8 @@ SWITCH_STANDARD_APP(enum_app_function)
 	switch_size_t l = 0, rbl = sizeof(rbuf);
 	uint32_t cnt = 1;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	int last_order = -1, last_pref = -2;
+	char *last_delim = "|";
 
 	if (!(mydata = switch_core_session_strdup(session, data))) {
 		return;
@@ -633,9 +635,14 @@ SWITCH_STANDARD_APP(enum_app_function)
 				for (rp = results; rp; rp = rp->next) {
 					if (!strcasecmp(rtp->service, rp->service)) {
 						switch_snprintf(vbuf, sizeof(vbuf), "enum_route_%d", cnt++);
-						switch_channel_set_variable(channel, vbuf, rp->route);
-
+						switch_channel_set_variable(channel, vbuf, rp->route);						
+						if (rp->preference == last_pref && rp->order == last_order) {
+							*last_delim = ',';
+						}
 						switch_snprintf(rbp, rbl, "%s|", rp->route);
+						last_delim = end_of_p(rbp);
+						last_order = rp->order;
+						last_pref = rp->preference;
 						l = strlen(rp->route) + 1;
 						rbp += l;
 						rbl -= l;
@@ -651,6 +658,57 @@ SWITCH_STANDARD_APP(enum_app_function)
 	}
 
 }
+
+
+SWITCH_STANDARD_API(enum_api)
+{
+	int argc = 0;
+	char *argv[4] = { 0 };
+	char *mydata = NULL;
+	char *dest = NULL, *root = NULL;
+	enum_record_t *results, *rp;
+	enum_route_t *rtp;
+	char rbuf[1024] = "";
+	char *rbp = rbuf;
+	switch_size_t l = 0, rbl = sizeof(rbuf);
+	int last_order = -1, last_pref = -2;
+	char *last_delim = "|";
+
+	if (!(mydata = strdup(cmd))) {
+		abort();
+	}
+
+	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		dest = argv[0];
+		root = argv[1];
+		if (enum_lookup(root, dest, &results) == SWITCH_STATUS_SUCCESS) {
+			for (rtp = globals.route_order; rtp; rtp = rtp->next) {
+				for (rp = results; rp; rp = rp->next) {
+					if (!strcasecmp(rtp->service, rp->service)) {
+						if (rp->preference == last_pref && rp->order == last_order) {
+							*last_delim = ',';
+						}
+						switch_snprintf(rbp, rbl, "%s|", rp->route);
+						last_delim = end_of_p(rbp);
+						last_order = rp->order;
+						last_pref = rp->preference;
+						l = strlen(rp->route) + 1;
+						rbp += l;
+						rbl -= l;
+					}
+				}
+			}
+			*(rbuf + strlen(rbuf) - 1) = '\0';
+			stream->write_function(stream, "%s", rbuf);
+			free_results(&results);
+		}
+	}
+
+	switch_safe_free(mydata);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 SWITCH_STANDARD_API(enum_function)
 {
@@ -728,6 +786,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_enum_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_API(api_interface, "enum", "ENUM", enum_function, "");
+	SWITCH_ADD_API(api_interface, "enum_auto", "ENUM", enum_api, "");
 	SWITCH_ADD_APP(app_interface, "enum", "Perform an ENUM lookup", "Perform an ENUM lookup", enum_app_function, "<number> [<root>]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_DIALPLAN(dp_interface, "enum", enum_dialplan_hunt);
 
