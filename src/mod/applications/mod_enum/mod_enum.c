@@ -673,6 +673,12 @@ SWITCH_STANDARD_API(enum_api)
 	switch_size_t l = 0, rbl = sizeof(rbuf);
 	int last_order = -1, last_pref = -2;
 	char *last_delim = "|";
+	int ok = 0;
+	
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "%s", "none");
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	if (!(mydata = strdup(cmd))) {
 		abort();
@@ -701,10 +707,15 @@ SWITCH_STANDARD_API(enum_api)
 			*(rbuf + strlen(rbuf) - 1) = '\0';
 			stream->write_function(stream, "%s", rbuf);
 			free_results(&results);
+			ok++;
 		}
 	}
 
 	switch_safe_free(mydata);
+
+	if (!ok) {
+		stream->write_function(stream, "%s", "none");
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
