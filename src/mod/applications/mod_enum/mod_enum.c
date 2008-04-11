@@ -842,7 +842,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_enum_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_API(api_interface, "enum", "ENUM", enum_function, "");
 	SWITCH_ADD_API(api_interface, "enum_auto", "ENUM", enum_api, "");
-	SWITCH_ADD_APP(app_interface, "enum", "Perform an ENUM lookup", "Perform an ENUM lookup", enum_app_function, "<number> [<root>]", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "enum", "Perform an ENUM lookup", "Perform an ENUM lookup", enum_app_function, "[reload | <number> [<root>]]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_DIALPLAN(dp_interface, "enum", enum_dialplan_hunt);
 
 	

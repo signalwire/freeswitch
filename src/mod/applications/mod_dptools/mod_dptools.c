@@ -140,7 +140,7 @@ static int e_callback(void *pArg, int argc, char **argv, char **columnNames)
 	return 1;
 }
 
-#define eavesdrop_SYNTAX "<uuid>"
+#define eavesdrop_SYNTAX "[all | <uuid>]"
 SWITCH_STANDARD_APP(eavesdrop_function)
 {
 	if (switch_strlen_zero(data)) {
