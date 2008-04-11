@@ -1044,11 +1044,6 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 			break;
 		}
 		
-		if (*(p-1) == '\\') {
-			q = p + 1;
-			continue;
-		}
-
 		if (*(p+1) != '{') {
 			q = p + 1;
 			continue;

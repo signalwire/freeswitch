@@ -1581,11 +1581,6 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 			break;
 		}
 
-		if (*(p-1) == '\\') {
-			q = p + 1;
-			continue;
-		}
-
 		if (*(p+1) != '{') {
 			q = p + 1;
 			continue;
@@ -1599,6 +1594,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 		return (char *)in;
 	}
 
+	
 	nv = 0;
 	olen = strlen(in) + 1;
 	indup = strdup(in);
