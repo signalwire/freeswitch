@@ -46,6 +46,7 @@ struct presence_helper {
 	sofia_profile_t *profile;
 	switch_event_t *event;
 	switch_stream_handle_t stream;
+	char last_uuid[512];
 };
 
 switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint)
@@ -472,6 +473,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			if (!switch_strlen_zero((char *)helper.stream.data)) {
 				char *this = (char *)helper.stream.data;
 				char *next = NULL;
+				char *last = NULL;
 				
 				do {
 					if ((next = strchr(this, ';'))) {
@@ -481,8 +483,9 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 						}
 					}
 
-					if (!switch_strlen_zero(this)) {
+					if (!switch_strlen_zero(this) && (!last || strcmp(last, this))) {
 						sofia_glue_execute_sql(profile, &this, SWITCH_FALSE);
+						last = this;
 					}
 					this = next;
 				} while (this);
@@ -934,8 +937,10 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			ct = "application/dialog-info+xml";
 		}
 		
-		if (!switch_strlen_zero(astate) && !switch_strlen_zero(uuid) && helper && helper->stream.data) {
-			helper->stream.write_function(&helper->stream, "update sip_dialogs set state='%s' where uuid='%s';\n", astate, uuid);
+		if (!switch_strlen_zero(astate) && !switch_strlen_zero(uuid) && helper && helper->stream.data && strcmp(helper->last_uuid, uuid)) {
+			helper->stream.write_function(&helper->stream, "update sip_dialogs set state='%s' where uuid='%s';", astate, uuid);
+			
+			switch_copy_string(helper->last_uuid, uuid, sizeof(helper->last_uuid));
 		}
 
 

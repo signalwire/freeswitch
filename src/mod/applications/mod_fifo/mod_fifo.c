@@ -329,9 +329,7 @@ static void pres_event_handler(switch_event_t *event)
         node = create_node(node_name, 0);
     }
 
-    switch_mutex_lock(node->mutex);
     send_presence(node);
-    switch_mutex_unlock(node->mutex);
 
     switch_mutex_unlock(globals.mutex);
 
@@ -498,8 +496,9 @@ SWITCH_STANDARD_APP(fifo_function)
 
         switch_mutex_lock(node->mutex);
         node->caller_count++;
-        send_presence(node);
+
         switch_core_hash_insert(node->caller_hash, uuid, session);
+		
 
         if ((pri = switch_channel_get_variable(channel, "fifo_priority"))) {
 			p = atoi(pri);
@@ -545,6 +544,8 @@ SWITCH_STANDARD_APP(fifo_function)
 			cd.next = switch_timestamp(NULL) + cd.freq;
 		}
 
+        send_presence(node);
+
 		while(switch_channel_ready(channel)) {
 			switch_input_args_t args = { 0 };
 			char buf[25] = "";
@@ -566,7 +567,9 @@ SWITCH_STANDARD_APP(fifo_function)
 			if ((serviced_uuid = switch_channel_get_variable(channel, "fifo_serviced_uuid"))) {
 				break;
 			}
-			
+
+			switch_core_session_flush_private_events(session);
+
 			if (moh) {
 				switch_ivr_play_file(session, NULL, moh, &args);
 			} else {
@@ -592,6 +595,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			}
 		}
 		
+		switch_core_session_flush_private_events(session);
 
 		if (switch_channel_ready(channel)) {
             if (announce) {
@@ -621,9 +625,10 @@ SWITCH_STANDARD_APP(fifo_function)
             switch_mutex_lock(node->mutex);
 			node_remove_uuid(node, uuid);
             node->caller_count--;
-            send_presence(node);
             switch_core_hash_delete(node->caller_hash, uuid);
             switch_mutex_unlock(node->mutex);
+            send_presence(node);
+			
         }
         
 		if (cd.do_orbit && cd.orbit_exten) {
@@ -847,6 +852,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				
 				switch_channel_set_variable(other_channel, "fifo_serviced_by", my_id);
 				switch_channel_set_variable(other_channel, "fifo_serviced_uuid", switch_core_session_get_uuid(session));
+
 				switch_channel_set_flag(other_channel, CF_BREAK);
 
 				while (switch_channel_ready(channel) && switch_channel_ready(other_channel) && switch_channel_test_flag(other_channel, CF_TAGGED)) {
@@ -883,9 +889,9 @@ SWITCH_STANDARD_APP(fifo_function)
                 switch_channel_set_variable(other_channel, "fifo_status", "TALKING");
                 switch_channel_set_variable(other_channel, "fifo_timestamp", date);
                 switch_channel_set_variable(other_channel, "fifo_target", switch_core_session_get_uuid(session));
-                switch_mutex_lock(node->mutex);
+
                 send_presence(node);
-                switch_mutex_unlock(node->mutex);
+
 
 				if (record_template) {
 					expanded = switch_channel_expand_variables(other_channel, record_template);
@@ -912,10 +918,12 @@ SWITCH_STANDARD_APP(fifo_function)
                 
                 switch_mutex_lock(node->mutex);
                 node->caller_count--;
-                send_presence(node);
                 switch_core_hash_delete(node->caller_hash, uuid);
                 switch_mutex_unlock(node->mutex);
+                send_presence(node);
                 switch_core_session_rwunlock(other_session);
+
+
                 if (!do_wait) {
                     done = 1;
                 }
