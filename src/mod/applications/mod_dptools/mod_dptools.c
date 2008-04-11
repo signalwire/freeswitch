@@ -121,13 +121,89 @@ SWITCH_STANDARD_APP(intercept_function)
 	switch_ivr_intercept_session(session, data);
 }
 
+#define MAX_SPY 3000
+struct e_data {
+	char *uuid_list[MAX_SPY];
+	int total;
+};
+
+static int e_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	char *uuid = argv[0];
+	struct e_data *e_data = (struct e_data *) pArg;
+
+	if (uuid && e_data) {
+		e_data->uuid_list[e_data->total++] = strdup(uuid);
+		return 0;
+	}
+
+	return 1;
+}
+
 #define eavesdrop_SYNTAX "<uuid>"
 SWITCH_STANDARD_APP(eavesdrop_function)
 {
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", eavesdrop_SYNTAX);
 	} else {
-		switch_ivr_eavesdrop_session(session, data, ED_DTMF);
+		if (!strcasecmp((char *)data, "all")) {
+			switch_core_db_t *db = switch_core_db_handle();
+			char *errmsg = NULL;
+			struct e_data e_data = {{ 0 }};
+			char *sql = switch_mprintf("select uuid from channels where uuid != '%q'", switch_core_session_get_uuid(session));
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			const char *file = NULL;
+			int x = 0;
+			char buf[2] = "";
+			switch_size_t buflen = sizeof(buf);
+			char terminator;
+
+			while(switch_channel_ready(channel)) {
+				for(x = 0; x < MAX_SPY; x++) {
+					switch_safe_free(e_data.uuid_list[x]);
+				}
+				e_data.total = 0;
+				switch_core_db_exec(db, sql, e_callback, &e_data, &errmsg);
+				if (errmsg) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error: %s\n", errmsg);
+					switch_core_db_free(errmsg);
+					if ((file = switch_channel_get_variable(channel, "eavesdrop_indicate_failed"))) {
+						switch_ivr_play_file(session, NULL, file, NULL);
+					}
+					switch_ivr_collect_digits_count(session, buf, buflen, 1, "*", &terminator, 5000, 0, 0);
+					continue;
+				}
+				if (e_data.total) {
+					for (x = 0; x < e_data.total && switch_channel_ready(channel); x++) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Spy: %s\n", e_data.uuid_list[x]);
+						if ((file = switch_channel_get_variable(channel, "eavesdrop_indicate_new"))) {
+							switch_ivr_play_file(session, NULL, file, NULL);
+						}
+						if (switch_ivr_eavesdrop_session(session, e_data.uuid_list[x], ED_DTMF) != SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Spy: %s Failed\n", e_data.uuid_list[x]);
+							if ((file = switch_channel_get_variable(channel, "eavesdrop_indicate_failed"))) {
+								switch_ivr_play_file(session, NULL, file, NULL);
+							}
+							switch_ivr_collect_digits_count(session, buf, buflen, 1, "*", &terminator, 5000, 0, 0);
+						}
+					}
+				} else {
+					if ((file = switch_channel_get_variable(channel, "eavesdrop_indicate_idle"))) {
+						switch_ivr_play_file(session, NULL, file, NULL);
+					}
+					switch_ivr_collect_digits_count(session, buf, buflen, 1, "*", &terminator, 2000, 0, 0);
+				}
+			}
+
+			for(x = 0; x < MAX_SPY; x++) {
+				switch_safe_free(e_data.uuid_list[x]);
+			}
+
+			switch_core_db_close(db);
+			
+		} else {
+			switch_ivr_eavesdrop_session(session, data, ED_DTMF);
+		}
 	}
 }
 

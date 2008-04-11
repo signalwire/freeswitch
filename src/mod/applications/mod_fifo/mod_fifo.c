@@ -81,10 +81,8 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 							moh_a = switch_channel_get_variable(channel, "hold_music");
 						}
 					}
-					
+
 					switch_ivr_soft_hold(session, "0", moh_a, moh_b);
-
-
 					return SWITCH_STATUS_IGNORE;
 				}
 			}

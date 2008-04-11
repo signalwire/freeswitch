@@ -497,16 +497,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
 
 	if ((tsession = switch_core_session_locate(uuid))) {
-		struct eavesdrop_pvt *ep;
+		struct eavesdrop_pvt *ep = NULL;
 		switch_media_bug_t *bug = NULL;
 		switch_channel_t *tchannel = switch_core_session_get_channel(tsession);
 		switch_frame_t *read_frame, write_frame = { 0 };
 		switch_codec_t codec = {0};
 		int16_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE/2];
 		switch_codec_t *tread_codec = switch_core_session_get_read_codec(tsession);
-		uint32_t tlen = tread_codec->implementation->bytes_per_frame;
+		uint32_t tlen;
+
+		if (!switch_channel_media_ready(channel)) {
+			goto end;
+		}
 
 		ep = switch_core_session_alloc(session, sizeof(*ep));
+
+		tlen = tread_codec->implementation->bytes_per_frame;
 
 		switch_channel_pre_answer(channel);
 		
@@ -520,7 +526,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 								   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot init codec\n");
 			switch_core_session_rwunlock(tsession);
-			return status;
+			goto end;
 		}
 		
 		switch_core_session_set_read_codec(session, &codec);
@@ -599,6 +605,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 						switch_clear_flag(ep, ED_MUX_READ);
 						switch_clear_flag(ep, ED_MUX_WRITE);
 						break;
+					case '*':
+						goto end;
 					default:
 						z = 0;
 						break;
@@ -657,17 +665,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
             switch_core_media_bug_remove(tsession, &bug);
         }
 
-        if (ep->buffer) {
-            switch_buffer_destroy(&ep->buffer);
-        }
-
-        if (ep->r_buffer) {
-            switch_buffer_destroy(&ep->r_buffer);
-        }
-
-        if (ep->w_buffer) {
-            switch_buffer_destroy(&ep->w_buffer);
-        }
+		if (ep) {
+			if (ep->buffer) {
+				switch_buffer_destroy(&ep->buffer);
+			}
+			
+			if (ep->r_buffer) {
+				switch_buffer_destroy(&ep->r_buffer);
+			}
+			
+			if (ep->w_buffer) {
+				switch_buffer_destroy(&ep->w_buffer);
+			}
+		}
 
         switch_core_session_rwunlock(tsession);
 		status = SWITCH_STATUS_SUCCESS;

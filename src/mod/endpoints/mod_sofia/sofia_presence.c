@@ -482,7 +482,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 							*next++ = '\0';
 						}
 					}
-
+					
 					if (!switch_strlen_zero(this) && (!last || strcmp(last, this))) {
 						sofia_glue_execute_sql(profile, &this, SWITCH_FALSE);
 						last = this;
