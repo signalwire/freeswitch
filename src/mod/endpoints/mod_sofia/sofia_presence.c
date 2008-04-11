@@ -469,12 +469,25 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 											sofia_presence_sub_callback,
 											&helper);
 			
-			if (switch_strlen_zero((char *)helper.stream.data)) {
-				switch_safe_free(helper.stream.data);
-			} else {
-				char *ssql = (char *)helper.stream.data;
-				sofia_glue_execute_sql(profile, &ssql, SWITCH_TRUE);
+			if (!switch_strlen_zero((char *)helper.stream.data)) {
+				char *this = (char *)helper.stream.data;
+				char *next = NULL;
+				
+				do {
+					if ((next = strchr(this, ';'))) {
+						*next++ = '\0';
+						while(*next == '\n' || *next == ' ' || *next == '\r') {
+							*next++ = '\0';
+						}
+					}
+
+					if (!switch_strlen_zero(this)) {
+						sofia_glue_execute_sql(profile, &this, SWITCH_FALSE);
+					}
+					this = next;
+				} while (this);
 			}
+			switch_safe_free(helper.stream.data);
 			helper.stream.data = NULL;
 		}
 	}
