@@ -489,7 +489,10 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 	return SWITCH_TRUE;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session_t *session, const char *uuid, switch_eavesdrop_flag_t flags)
+SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session_t *session, 
+															 const char *uuid, 
+															 const char *require_group, 
+															 switch_eavesdrop_flag_t flags)
 {
 	switch_core_session_t *tsession;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -505,11 +508,36 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		int16_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE/2];
 		switch_codec_t *tread_codec = switch_core_session_get_read_codec(tsession);
 		uint32_t tlen;
+		const char *macro_name = "eavesdrop_announce";
+		const char *id_name = NULL;
 
 		if (!switch_channel_media_ready(channel)) {
 			goto end;
 		}
 
+		if (!switch_channel_media_ready(tchannel)) {
+			goto end;
+		}
+
+		if ((id_name = switch_channel_get_variable(tchannel, "eavesdrop_announce_id"))) {
+			const char *tmp = switch_channel_get_variable(tchannel, "eavesdrop_annnounce_macro");
+			if (tmp) {
+				macro_name = tmp;
+			}
+
+			switch_ivr_phrase_macro(session, macro_name, id_name, NULL, NULL);
+		}
+
+
+		if (!switch_strlen_zero(require_group)) {
+			const char *group_name = switch_channel_get_variable(tchannel, "eavesdrop_group");			
+			if (!group_name || strcmp(group_name, require_group)) {
+				status = SWITCH_STATUS_BREAK;
+				goto end;
+			}
+		}
+
+		
 		ep = switch_core_session_alloc(session, sizeof(*ep));
 
 		tlen = tread_codec->implementation->bytes_per_frame;

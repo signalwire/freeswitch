@@ -146,18 +146,20 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", eavesdrop_SYNTAX);
 	} else {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		const char *require_group = switch_channel_get_variable(channel, "eavesdrop_require_group");
 		if (!strcasecmp((char *)data, "all")) {
 			switch_core_db_t *db = switch_core_db_handle();
 			char *errmsg = NULL;
 			struct e_data e_data = {{ 0 }};
 			char *sql = switch_mprintf("select uuid from channels where uuid != '%q'", switch_core_session_get_uuid(session));
-			switch_channel_t *channel = switch_core_session_get_channel(session);
 			const char *file = NULL;
 			int x = 0;
 			char buf[2] = "";
 			switch_size_t buflen = sizeof(buf);
 			char terminator;
-
+			switch_status_t status;
+			
 			while(switch_channel_ready(channel)) {
 				for(x = 0; x < MAX_SPY; x++) {
 					switch_safe_free(e_data.uuid_list[x]);
@@ -179,12 +181,14 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 						if ((file = switch_channel_get_variable(channel, "eavesdrop_indicate_new"))) {
 							switch_ivr_play_file(session, NULL, file, NULL);
 						}
-						if (switch_ivr_eavesdrop_session(session, e_data.uuid_list[x], ED_DTMF) != SWITCH_STATUS_SUCCESS) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Spy: %s Failed\n", e_data.uuid_list[x]);
-							if ((file = switch_channel_get_variable(channel, "eavesdrop_indicate_failed"))) {
-								switch_ivr_play_file(session, NULL, file, NULL);
+						if ((status = switch_ivr_eavesdrop_session(session, e_data.uuid_list[x], require_group, ED_DTMF)) != SWITCH_STATUS_SUCCESS) {
+							if (status != SWITCH_STATUS_BREAK) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Spy: %s Failed\n", e_data.uuid_list[x]);
+								if ((file = switch_channel_get_variable(channel, "eavesdrop_indicate_failed"))) {
+									switch_ivr_play_file(session, NULL, file, NULL);
+								}
+								switch_ivr_collect_digits_count(session, buf, buflen, 1, "*", &terminator, 5000, 0, 0);
 							}
-							switch_ivr_collect_digits_count(session, buf, buflen, 1, "*", &terminator, 5000, 0, 0);
 						}
 					}
 				} else {
@@ -202,7 +206,7 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 			switch_core_db_close(db);
 			
 		} else {
-			switch_ivr_eavesdrop_session(session, data, ED_DTMF);
+			switch_ivr_eavesdrop_session(session, data, require_group, ED_DTMF);
 		}
 	}
 }
@@ -214,7 +218,7 @@ SWITCH_STANDARD_APP(three_way_function)
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", threeway_SYNTAX);
 	} else {
-		switch_ivr_eavesdrop_session(session, data, ED_MUX_READ | ED_MUX_WRITE);
+		switch_ivr_eavesdrop_session(session, data, NULL, ED_MUX_READ | ED_MUX_WRITE);
 	}
 }
 

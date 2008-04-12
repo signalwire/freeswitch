@@ -211,7 +211,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_unload_grammar(switch_c
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t *session, char *file, uint32_t limit, switch_file_handle_t *fh);
-SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session_t *session, const char *uuid, switch_eavesdrop_flag_t flags);
+SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session_t *session, 
+															 const char *uuid, 
+															 const char *require_group, 
+															 switch_eavesdrop_flag_t flags);
 SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_t *session, const char *file, uint32_t limit, const char *flags);
 SWITCH_DECLARE(switch_status_t) switch_ivr_stop_displace_session(switch_core_session_t *session, const char *file);
 
