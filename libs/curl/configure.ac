@@ -33,7 +33,7 @@ This configure script may be copied, distributed and modified under the
 terms of the curl license; see COPYING for more details])
 
 AC_CONFIG_SRCDIR([lib/urldata.h])
-AM_CONFIG_HEADER(lib/config.h src/config.h)
+AC_CONFIG_HEADERS(lib/config.h src/config.h)
 #AM_MAINTAINER_MODE
 
 dnl SED is needed by some of the tools
