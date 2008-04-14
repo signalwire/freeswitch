@@ -431,6 +431,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	switch_unicast_conninfo_t *conninfo = NULL;
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
 
+	if (switch_channel_test_flag(channel, CF_CONTROLLED)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot park channels that is under control already.\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Careful, Channel is unanswered. Pre-answering...\n");
 		switch_channel_pre_answer(channel);
