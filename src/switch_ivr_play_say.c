@@ -176,10 +176,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	}
 
 	if (sound_path) {
-		if ((old_sound_prefix = switch_channel_get_variable(channel, "sound_prefix"))) {
-			char *p = switch_core_session_strdup(session, old_sound_prefix);
-			old_sound_prefix = p;
-		}
+		char *p;
+		old_sound_prefix = switch_str_nil(switch_channel_get_variable(channel, "sound_prefix"));
+		p = switch_core_session_strdup(session, old_sound_prefix);
+		old_sound_prefix = p;
 		switch_channel_set_variable(channel, "sound_prefix", sound_path);
 	}
 
