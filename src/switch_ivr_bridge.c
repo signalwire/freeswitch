@@ -689,20 +689,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			switch_channel_set_variable(caller_channel, SWITCH_BRIDGE_VARIABLE, switch_core_session_get_uuid(peer_session));
 			switch_channel_set_variable(peer_channel, SWITCH_BRIDGE_VARIABLE, switch_core_session_get_uuid(session));
 
-			if ((app = switch_channel_get_variable(caller_channel, "bridge_pre_execute_aleg_app"))) {
-				data = switch_channel_get_variable(caller_channel, "bridge_pre_execute_aleg_data");
-				if ((application_interface = switch_loadable_module_get_application_interface(app))) {
-					switch_core_session_exec(session, application_interface, data);
-				}
-			}
-			
-			if ((app = switch_channel_get_variable(caller_channel, "bridge_pre_execute_bleg_app"))) {
-				data = switch_channel_get_variable(caller_channel, "bridge_pre_execute_bleg_data");
-				if ((application_interface = switch_loadable_module_get_application_interface(app))) {
-					switch_core_session_exec(peer_session, application_interface, data);
-				}
-			}
-
 			if (!(switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA))) {
 				if ((status = switch_ivr_wait_for_answer(session, peer_session)) != SWITCH_STATUS_SUCCESS) {
 					switch_channel_state_t w_state = switch_channel_get_state(caller_channel);
@@ -752,6 +738,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			switch_channel_set_variable(peer_channel, SWITCH_BRIDGE_UUID_VARIABLE, switch_core_session_get_uuid(session));
 			switch_channel_set_variable(peer_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(session));
 			
+			if ((app = switch_channel_get_variable(caller_channel, "bridge_pre_execute_aleg_app"))) {
+				data = switch_channel_get_variable(caller_channel, "bridge_pre_execute_aleg_data");
+				if ((application_interface = switch_loadable_module_get_application_interface(app))) {
+					switch_core_session_exec(session, application_interface, data);
+				}
+			}
+			
+			if ((app = switch_channel_get_variable(caller_channel, "bridge_pre_execute_bleg_app"))) {
+				data = switch_channel_get_variable(caller_channel, "bridge_pre_execute_bleg_data");
+				if ((application_interface = switch_loadable_module_get_application_interface(app))) {
+					switch_core_session_exec(peer_session, application_interface, data);
+				}
+			}
+
 			switch_channel_set_private(peer_channel, "_bridge_", b_leg);
 			switch_channel_set_state(peer_channel, CS_LOOPBACK);
 			audio_bridge_thread(NULL, (void *) a_leg);
