@@ -175,7 +175,7 @@ int sofia_reg_nat_callback(void *pArg, int argc, char **argv, char **columnNames
 	char *contact = NULL;
 	char to[128] = "";
 
-	switch_snprintf(to, sizeof(to), "%s@%s", argv[1], argv[2]);
+	switch_snprintf(to, sizeof(to), "sip:%s@%s", argv[1], argv[2]);
 	contact = sofia_glue_get_url_from_contact(argv[3], 1);
 
 	nh = nua_handle(profile->nua, NULL, SIPTAG_FROM_STR(profile->url), SIPTAG_TO_STR(to), NUTAG_URL(contact), SIPTAG_CONTACT_STR(profile->url), TAG_END());
