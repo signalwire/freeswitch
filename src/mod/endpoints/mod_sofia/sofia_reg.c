@@ -228,7 +228,6 @@ void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id)
 void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
 {
 	char sql[1024];
-	char *psql = sql;
 
 #ifdef SWITCH_HAVE_ODBC
     if (profile->odbc_dsn) {
@@ -265,17 +264,15 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
 		switch_snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0");
 	}
 
-	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, psql, NULL);
-	switch_safe_free(psql);
-
+	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, NULL);
+	
 	if (now) {
 		switch_snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and expires <= %ld", (long) now);
 	} else {
 		switch_snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0");
 	}
 
-	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, psql, NULL);
-	switch_safe_free(psql);
+	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, NULL);
 	
 	if (now) {
 		switch_snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0 and expires <= %ld", (long) now);
@@ -283,8 +280,8 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
 		switch_snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0");
 	}
 
-	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, psql, NULL);
-	switch_safe_free(psql);
+	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, NULL);
+	
 
 	if (now) {
 		switch_snprintf(sql, sizeof(sql), "select * from sip_registrations where status like '%%NATHACK%%'");
