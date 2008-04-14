@@ -1458,7 +1458,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 						  sip->sip_to->a_url->url_host
 						  );
 
-		char *sql = switch_mprintf("update sip_registratons set expired=%ld where sip_user='%s' and sip_host='%s'", 
+		char *sql = switch_mprintf("update sip_registrations set expired=%ld where sip_user='%s' and sip_host='%s'", 
 								   (long)now,
 								   sip->sip_to->a_url->url_user,
 								   sip->sip_to->a_url->url_host
