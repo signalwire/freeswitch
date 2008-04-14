@@ -934,6 +934,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	switch_core_session_t *other_session;
 	switch_channel_t *other_channel = NULL;
 	const char *uuid = NULL;
+	const char *max_forwards;
+	const char *forwardvar = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
+	int forwardval = 70;
+
+	if (!switch_strlen_zero(forwardvar)) {
+		forwardval =  atoi(forwardvar) - 1;
+	}
+	if (forwardval <= 0) {
+		switch_channel_hangup(channel, SWITCH_CAUSE_EXCHANGE_ROUTING_ERROR);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	max_forwards = switch_core_session_sprintf(session, "%d", forwardval);
+	switch_channel_set_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE, max_forwards);
 
 	switch_core_session_reset(session, SWITCH_TRUE);
 	switch_channel_clear_flag(channel, CF_ORIGINATING);
