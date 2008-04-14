@@ -1452,13 +1452,14 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 									  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
 	if ((profile->pflags & PFLAG_UNREG_OPTIONS_FAIL) && status != 200 && sip && sip->sip_to) {
+		char *sql;
 		time_t now = switch_timestamp(NULL);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Expire registration '%s@%s' due to options failure\n", 
 						  sip->sip_to->a_url->url_user,
 						  sip->sip_to->a_url->url_host
 						  );
 
-		char *sql = switch_mprintf("update sip_registrations set expired=%ld where sip_user='%s' and sip_host='%s'", 
+		sql = switch_mprintf("update sip_registrations set expired=%ld where sip_user='%s' and sip_host='%s'", 
 								   (long)now,
 								   sip->sip_to->a_url->url_user,
 								   sip->sip_to->a_url->url_host
