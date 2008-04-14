@@ -61,6 +61,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status,
 									 char const *phrase,
 									 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
+static void sofia_handle_sip_r_options(switch_core_session_t *session, int status,
+									 char const *phrase,
+									  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 
 void sofia_handle_sip_r_notify(switch_core_session_t *session, int status,
 							   char const *phrase,
@@ -274,9 +277,11 @@ void sofia_event_callback(nua_event_t event,
 	case nua_r_invite:
 		sofia_handle_sip_r_invite(session, status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
+	case nua_r_options:
+		sofia_handle_sip_r_options(session, status, phrase, nua, profile, nh, sofia_private, sip, tags);
+		break;
 	case nua_r_get_params:
 	case nua_r_unregister:
-	case nua_r_options:
 	case nua_i_fork:
 	case nua_r_info:
 	case nua_r_bye:
@@ -1152,6 +1157,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_PRESENCE;
 						}
+					} else if (!strcasecmp(var, "unregister-on-options-fail")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_UNREG_OPTIONS_FAIL;
+						}
 					} else if (!strcasecmp(var, "require-secure-rtp")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_SECURE;
@@ -1437,6 +1446,27 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 	return status;
 }
+
+static void sofia_handle_sip_r_options(switch_core_session_t *session, int status,
+									  char const *phrase,
+									  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
+{
+	if ((profile->pflags & PFLAG_UNREG_OPTIONS_FAIL) && status != 200 && sip && sip->sip_to) {
+		time_t now = switch_timestamp(NULL);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Expire registration '%s@%s' due to options failure\n", 
+						  sip->sip_to->a_url->url_user,
+						  sip->sip_to->a_url->url_host
+						  );
+
+		char *sql = switch_mprintf("update sip_registratons set expired=%ld where sip_user='%s' and sip_host='%s'", 
+								   (long)now,
+								   sip->sip_to->a_url->url_user,
+								   sip->sip_to->a_url->url_host
+								   );
+		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+	}
+}
+
 
 static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status,
 									  char const *phrase,

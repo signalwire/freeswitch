@@ -138,6 +138,7 @@ typedef enum {
 	PFLAG_SECURE = (1 << 15),
 	PFLAG_BLIND_AUTH = (1 << 16),
 	PFLAG_WORKER_RUNNING = (1 << 17),
+	PFLAG_UNREG_OPTIONS_FAIL = (1 << 18)
 } PFLAGS;
 
 typedef enum {
