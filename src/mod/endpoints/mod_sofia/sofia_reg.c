@@ -264,19 +264,27 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
 	} else {
 		switch_snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0");
 	}
-	sofia_glue_execute_sql(profile, &psql, SWITCH_FALSE);
+
+	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, psql, NULL);
+	switch_safe_free(psql);
+
 	if (now) {
 		switch_snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and expires <= %ld", (long) now);
 	} else {
 		switch_snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0");
 	}
-	sofia_glue_execute_sql(profile, &psql, SWITCH_FALSE);
+
+	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, psql, NULL);
+	switch_safe_free(psql);
+	
 	if (now) {
 		switch_snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0 and expires <= %ld", (long) now);
 	} else {
 		switch_snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0");
 	}
-	sofia_glue_execute_sql(profile, &psql, SWITCH_FALSE);
+
+	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, psql, NULL);
+	switch_safe_free(psql);
 
 	if (now) {
 		switch_snprintf(sql, sizeof(sql), "select * from sip_registrations where status like '%%NATHACK%%'");
