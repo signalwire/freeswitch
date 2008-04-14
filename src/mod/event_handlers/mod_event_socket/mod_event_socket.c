@@ -852,10 +852,11 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 			acs->arg = switch_core_strdup(acs->pool, arg);
 		}
 		acs->bg = 1;
+
 		switch_threadattr_create(&thd_attr, acs->pool);
 		switch_threadattr_detach_set(thd_attr, 1);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		switch_thread_create(&thread, thd_attr, api_exec, acs, acs->pool);
+
 		if ((uuid_str = switch_event_get_header(event, "job-uuid"))) {
 			switch_copy_string(acs->uuid_str, uuid_str, sizeof(acs->uuid_str));
 		} else {
@@ -863,6 +864,8 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 			switch_uuid_format(acs->uuid_str, &uuid);
 		}
 		switch_snprintf(reply, reply_len, "+OK Job-UUID: %s", acs->uuid_str);
+
+		switch_thread_create(&thread, thd_attr, api_exec, acs, acs->pool);
 		
 		return SWITCH_STATUS_SUCCESS;
 	} else if (!strncasecmp(cmd, "log", 3)) {
