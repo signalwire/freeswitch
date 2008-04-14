@@ -497,6 +497,9 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	sip_alias_node_t *node;
 	switch_event_t *s_event;
 	int tportlog = 0;
+	int use_100rel = !sofia_test_pflag(profile, PFLAG_DISABLE_100REL);
+	int use_timer = !sofia_test_pflag(profile, PFLAG_DISABLE_TIMER);
+	const char *supported = NULL;
 
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.threads++;
@@ -515,6 +518,16 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	if (switch_test_flag(profile, TFLAG_TPORT_LOG)) {
 		tportlog = 1;
+	}
+
+	if (use_100rel && use_timer) {
+		supported = "100rel, precondition, timer";
+	} else if (use_100rel) {
+		supported = "100rel, precondition";
+	} else if (use_timer) {
+		supported = "timer, precondition";
+	} else {
+		supported = "precondition";
 	}
 
 	profile->nua = nua_create(profile->s_root,	/* Event loop */
@@ -559,7 +572,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("include-session-description")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence.winfo")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("message-summary")),
-				   SIPTAG_SUPPORTED_STR("100rel, precondition, timer"), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
+				   SIPTAG_SUPPORTED_STR(supported), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set params for %s\n", profile->name);
 
@@ -579,7 +592,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 					   NUTAG_ALLOW("INFO"),
 					   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("PUBLISH")),
 					   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ENABLEMESSAGE(1)),
-					   SIPTAG_SUPPORTED_STR("100rel, precondition"), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
+					   SIPTAG_SUPPORTED_STR(supported), 
+					   SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "activated db for %s\n", profile->name);
@@ -1222,6 +1236,14 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "inbound-reg-force-matching-username")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_CHECKUSER;
+						}
+					} else if (!strcasecmp(var, "enable-timer")) {
+						if (!switch_true(val)) {
+							profile->pflags |= PFLAG_DISABLE_TIMER;
+						}
+					} else if (!strcasecmp(var, "enable-100rel")) {
+						if (!switch_true(val)) {
+							profile->pflags |= PFLAG_DISABLE_100REL;
 						}
 					} else if (!strcasecmp(var, "bitpacking")) {
 						if (!strcasecmp(val, "aal2")) {
