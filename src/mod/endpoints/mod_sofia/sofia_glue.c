@@ -2345,28 +2345,28 @@ void sofia_glue_del_profile(sofia_profile_t *profile)
 	sofia_profile_t *pptr;
 	
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
-
-	for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &var, NULL, &val);
-		if ((pptr = (sofia_profile_t *) val) && pptr == profile) {
-			aliases[i++] = strdup((char *) var);
-			if (i == 512) {
-				abort();
+	if (mod_sofia_globals.profile_hash) {
+		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+			switch_hash_this(hi, &var, NULL, &val);
+			if ((pptr = (sofia_profile_t *) val) && pptr == profile) {
+				aliases[i++] = strdup((char *) var);
+				if (i == 512) {
+					abort();
+				}
 			}
 		}
-	}
 
-	for (j = 0; j < i && j < 512; j++) {
-		switch_core_hash_delete(mod_sofia_globals.profile_hash, aliases[j]);
-		free(aliases[j]);
-	}
+		for (j = 0; j < i && j < 512; j++) {
+			switch_core_hash_delete(mod_sofia_globals.profile_hash, aliases[j]);
+			free(aliases[j]);
+		}
 
-	for (gp = profile->gateways; gp; gp = gp->next) {
-		switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->name);
-		switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->register_from);
-		switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->register_contact);
+		for (gp = profile->gateways; gp; gp = gp->next) {
+			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->name);
+			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->register_from);
+			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->register_contact);
+		}
 	}
-
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 }
 

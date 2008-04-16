@@ -1969,7 +1969,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 
 	while (mod_sofia_globals.threads) {
 		switch_yield(1000);
-		if (++sanity >= 5000) {
+		if (++sanity >= 10000) {
 			break;
 		}
 	}
