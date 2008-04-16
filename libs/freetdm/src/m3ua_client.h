@@ -5,7 +5,7 @@
  *  Created by Shane Burrell on 4/3/08.
  *  Copyright 2008 Shane Burrell. All rights reserved.
  *
-
+ * Copyright (c) 2007, Anthony Minessale II, Nenad Corbic
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -46,6 +46,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+
+// Fix this for portability
 #include <sctp.h>
 //#include <netinet/sctp.h>
 #include <arpa/inet.h>
