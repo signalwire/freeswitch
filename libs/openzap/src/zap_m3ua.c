@@ -5,8 +5,9 @@
  *  Created by Shane Burrell on 4/3/08.
  *  Copyright 2008 Shane Burrell. All rights reserved.
  *
-
  * 
+ * Copyright (c) 2007, Anthony Minessale II, Nenad Corbic * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -394,6 +395,7 @@ static int parse_ss7_event(zap_span_t *span, m3uac_connection_t *mcon, m3uac_eve
 static ZIO_CONFIGURE_FUNCTION(m3ua_configure)
 {
 	m3ua_channel_profile_t *profile = NULL;
+
 	int ok = 1;
 
 	if (!(profile = (m3ua_channel_profile_t *) hashtable_search(globals.profile_hash, (char *)category))) {
@@ -404,12 +406,13 @@ static ZIO_CONFIGURE_FUNCTION(m3ua_configure)
 		zap_log(ZAP_LOG_INFO, "creating profile [%s]\n", category);
 	}
 
-	
-	if (!strcasecmp(var, "local_ip")) {
-		//profile->span_config.framing = pika_str2span(val);
+//	zap_set_string(m3ua_data->mcon. cfg.local_ip, local_ip);
+	if (!strcasecmp(var, "local_sctp_port")) {
+		profile->local_port = 30000 ;
+		profile->remote_port = 30000;
 		profile->cust_span++;
 	} 
-	ok = 0;
+	ok = 1;
 	
 
 	if (ok) {
