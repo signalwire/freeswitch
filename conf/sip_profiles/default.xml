@@ -53,6 +53,7 @@
     <param name="inbound-codec-negotiation" value="generous"/>
     <!-- if you want to send any special bind params of your own -->
     <!--<param name="bind-params" value="transport=udp"/>-->
+    <!--<param name="unregister-on-options-fail" value="true"/>-->
 
     <!-- TLS: disabled by default, set to "true" to enable -->
     <param name="tls" value="false"/>
