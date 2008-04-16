@@ -1,9 +1,10 @@
-
-/*  mstm3ua.h
+/*
+ *  mstm3ua.h
  *  mstss7d
  *
  *  Created by Shane Burrell on 3/2/08.
  *  Copyright 2008 Shane Burrell. All rights reserved.
+ *
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,10 +34,6 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-#ifndef __SS7_M3UA_H__
-#define __SS7_M3UA_H__
-
 typedef unsigned long m3ua_ulong;
 typedef unsigned short m3ua_ushort;
 typedef unsigned char m3ua_uchar;
@@ -97,6 +94,3 @@ typedef unsigned long u32;
 #define M_CLASS_MASK	0xff00
 #define	M_TYPE_MASK	0x00ff
 
-int build_route_context(unsigned char *opc, unsigned char *dpc, unsigned char *bytemsg, unsigned char len);
-int build_m3ua_hdr(unsigned char len,unsigned char *bytemsg);
-#endif			
