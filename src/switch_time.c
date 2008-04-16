@@ -101,6 +101,13 @@ static int MONO = 1;
 static int MONO = 0;
 #endif
 
+
+SWITCH_DECLARE(void) switch_time_set_monotonic(switch_bool_t enable) 
+{
+	MONO = enable ? 1 : 0;
+	switch_time_sync();
+}
+
 static switch_time_t time_now(int64_t offset)
 {
 	switch_time_t now;
@@ -112,7 +119,7 @@ static switch_time_t time_now(int64_t offset)
 		now = ts.tv_sec * APR_USEC_PER_SEC + (ts.tv_nsec/1000) + offset;
 	} else {
 #endif
-	now = switch_time_now();
+		now = switch_time_now();
 
 #if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
 	}
@@ -179,12 +186,12 @@ static switch_status_t timer_init(switch_timer_t *timer)
 	return SWITCH_STATUS_MEMERR;
 }
 
-#define check_roll() if (private_info->roll < TIMER_MATRIX[timer->interval].roll) {\
-		private_info->roll++;\
-		private_info->reference = private_info->start = TIMER_MATRIX[timer->interval].tick;\
-	}\
-
-
+#define check_roll() if (private_info->roll < TIMER_MATRIX[timer->interval].roll) {	\
+		private_info->roll++;											\
+		private_info->reference = private_info->start = TIMER_MATRIX[timer->interval].tick;	\
+	}																	\
+	
+	
 static switch_status_t timer_step(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
@@ -193,7 +200,7 @@ static switch_status_t timer_step(switch_timer_t *timer)
 	if (globals.RUNNING != 1 || private_info->ready == 0) {
 		return SWITCH_STATUS_FALSE;
 	}
-
+	
 	check_roll();
 	samples = timer->samples * (private_info->reference - private_info->start);
 
@@ -326,18 +333,23 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	ts = 0;
 	last = 0;
 	fwd_errs = rev_errs = 0;
-
+	
 	while (globals.RUNNING == 1) {
 		runtime.reference += STEP_MIC;
 		while ((ts = time_now(runtime.offset)) < runtime.reference) {
 			if (ts < last) {
-				int64_t diff = (int64_t)(ts - last);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Reverse Clock Skew Detected!\n");
-				runtime.reference = switch_time_now();
-				current_ms = 0;
-				tick = 0;
-				runtime.initiated += diff;
-				rev_errs++;
+				if (MONO) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Virtual Migration Detected! Syncing Clock\n");
+					switch_time_sync();
+				} else {
+					int64_t diff = (int64_t)(ts - last);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Reverse Clock Skew Detected!\n");
+					runtime.reference = switch_time_now();
+					current_ms = 0;
+					tick = 0;
+					runtime.initiated += diff;
+					rev_errs++;
+				}
 			} else {
 				rev_errs = 0;
 			}
@@ -347,13 +359,18 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 		
 
 		if (ts > (runtime.reference + too_late)) {
-			switch_time_t diff = ts - runtime.reference - STEP_MIC;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Forward Clock Skew Detected!\n");
-			fwd_errs++;
-			runtime.reference = switch_time_now();
-			current_ms = 0;
-			tick = 0;
-			runtime.initiated += diff;
+			if (MONO) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Virtual Migration Detected! Syncing Clock\n");
+				switch_time_sync();
+			} else {
+				switch_time_t diff = ts - runtime.reference - STEP_MIC;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Forward Clock Skew Detected!\n");
+				fwd_errs++;
+				runtime.reference = switch_time_now();
+				current_ms = 0;
+				tick = 0;
+				runtime.initiated += diff;
+			}
 		} else {
 			fwd_errs = 0;
 		}

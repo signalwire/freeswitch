@@ -898,6 +898,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 					runtime.mailer_app_args = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "sessions-per-second")) {
 					switch_core_sessions_per_second(atoi(val));
+				} else if (!strcasecmp(var, "disable-monotonic-timing")) {
+					switch_time_set_monotonic(SWITCH_FALSE);
 				} else if (!strcasecmp(var, "max-sessions")) {
 					switch_core_session_limit(atoi(val));
 				}
