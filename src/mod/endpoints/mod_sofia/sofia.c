@@ -3077,7 +3077,7 @@ static void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_ses
 	private_object_t *b_tech_pvt = NULL, *a_tech_pvt = NULL;
 	char message[256] = "";
 
-	if (aleg && bleg) {
+	if (aleg && bleg && switch_core_session_compare(aleg, bleg)) {
 		a_tech_pvt = (private_object_t *) switch_core_session_get_private(aleg);
 		b_tech_pvt = (private_object_t *) switch_core_session_get_private(bleg);
 		
