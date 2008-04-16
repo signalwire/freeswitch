@@ -141,7 +141,7 @@
 	<anti-action application="bind_meta_app" data="3 a a execute_extension::cf XML features"/>
 	<anti-action application="set" data="transfer_ringback=${us-ring}"/>
 	<anti-action application="set" data="call_timeout=30"/>
-	<anti-action application="set" data="sip_exclude_contact=${network_addr}"/>
+	<!-- <anti-action application="set" data="sip_exclude_contact=${network_addr}"/> -->
 	<anti-action application="set" data="hangup_after_bridge=true"/>
 	<!--<anti-action application="set" data="continue_on_fail=NORMAL_TEMPORARY_FAILURE,BUSY,USER_BUSY,NO_ANSWER,TIMEOUT,NO_ROUTE_DESTINATION"/> -->
 	<anti-action application="set" data="continue_on_fail=true"/>
