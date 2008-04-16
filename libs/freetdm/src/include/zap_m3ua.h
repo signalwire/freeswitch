@@ -5,7 +5,7 @@
  *  Created by Shane Burrell on 4/3/08.
  *  Copyright 2008 Shane Burrell. All rights reserved.
  *
-
+ * Copyright (c) 2007, Anthony Minessale II, Nenad Corbic
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -93,14 +93,14 @@ typedef enum {
 	ZAP_M3UA_RUNNING = (1 << 0)
 } zap_m3uat_flag_t;
 
-typedef struct m3ua_data {
+/*typedef struct m3ua_data {
 	m3uac_connection_t mcon;
 	m3uac_connection_t pcon;
 	zio_signal_cb_t signal_cb;
 	uint32_t flags;
 } m3ua_data_t;
 
-
+*/
 /*typedef struct mu3a_link {
 	ss7bc_connection_t mcon;
 	ss7bc_connection_t pcon;
