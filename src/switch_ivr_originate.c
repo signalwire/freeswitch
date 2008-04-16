@@ -68,6 +68,7 @@ static const switch_state_handler_table_t originate_state_handlers = {
 };
 
 typedef enum {
+	IDX_TIMEOUT = -3,
 	IDX_CANCEL = -2,
 	IDX_NADA = -1
 } abort_t;
@@ -919,7 +920,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 					if ((switch_timestamp(NULL) - start) > (time_t) timelimit_sec) {
 						to++;
-						idx = IDX_CANCEL;
+						idx = IDX_TIMEOUT;
 						goto notready;
 					}
 
@@ -1039,7 +1040,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				// When the AND operator is being used, and fail_on_single_reject is set, a hangup indicates that the call should fail.
 				if ((to = (uint8_t) ((switch_timestamp(NULL) - start) >= (time_t) timelimit_sec))
 					|| (fail_on_single_reject && hups)) {
-					idx = IDX_CANCEL;
+					idx = IDX_TIMEOUT;
 					goto notready;
 				}
 
@@ -1120,7 +1121,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 											   switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)))) {
 				switch_core_session_reset(session, SWITCH_FALSE);
 			}
-
+			
 			for (i = 0; i < and_argc; i++) {
 				if (!peer_channels[i]) {
 					continue;
@@ -1135,20 +1136,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				if (i != idx) {
 					const char *holding = NULL;
-					
-					if (idx == IDX_CANCEL) {
-						if (to) {
-							reason = SWITCH_CAUSE_NO_ANSWER;
-						} else {
-							reason = SWITCH_CAUSE_ORIGINATOR_CANCEL;
-						}
+
+					if (idx == IDX_TIMEOUT || to) {
+						reason = SWITCH_CAUSE_NO_ANSWER;
 					} else {
-						if (to) {
-							reason = SWITCH_CAUSE_NO_ANSWER;
-						} else if (and_argc > 1) {
-							reason = SWITCH_CAUSE_LOSE_RACE;
+						if (idx == IDX_CANCEL) {
+							reason = SWITCH_CAUSE_ORIGINATOR_CANCEL;
 						} else {
-							reason = SWITCH_CAUSE_NO_ANSWER;
+							if (and_argc > 1) {
+								reason = SWITCH_CAUSE_LOSE_RACE;
+							} else {
+								reason = SWITCH_CAUSE_NO_ANSWER;
+							}
 						}
 					}
 					
