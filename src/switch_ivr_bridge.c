@@ -464,7 +464,7 @@ static switch_status_t uuid_bridge_on_transmit(switch_core_session_t *session)
 		switch_channel_clear_flag(other_channel, CF_TRANSFER);
 		switch_core_session_reset(session, SWITCH_TRUE);
 		switch_core_session_reset(other_session, SWITCH_TRUE);
-
+		
 		ready_a = switch_channel_ready(channel);
 		ready_b = switch_channel_ready(other_channel);
 
@@ -583,7 +583,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 	switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
 	switch_event_t *event;
 
-	if (!switch_channel_ready(peer_channel)) {
+	if (switch_channel_get_state(peer_channel) >= CS_HANGUP) {
 		switch_channel_hangup(caller_channel, switch_channel_get_cause(peer_channel));
 		return SWITCH_STATUS_FALSE;
 	}
