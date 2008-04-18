@@ -91,6 +91,8 @@
       <param name="caller-id-number" value="$${outbound_caller_id}"/>
       <!-- Suppress start and stop talking events -->
       <!-- <param name="suppress-events" value="start-talking,stop-talking"/> -->
+      <!-- enable comfort noise generation -->
+      <param name="comfort-noise" value="true"/>
     </profile>
 
     <profile name="wideband">
@@ -113,6 +115,7 @@
       <param name="bad-pin-sound" value="conference/conf-bad-pin.wav"/>
       <param name="caller-id-name" value="$${outbound_caller_name}"/>
       <param name="caller-id-number" value="$${outbound_caller_id}"/>
+      <param name="comfort-noise" value="true"/>
     </profile>
 
     <profile name="ultrawideband">
@@ -135,6 +138,7 @@
       <param name="bad-pin-sound" value="conference/conf-bad-pin.wav"/>
       <param name="caller-id-name" value="$${outbound_caller_name}"/>
       <param name="caller-id-number" value="$${outbound_caller_id}"/>
+      <param name="comfort-noise" value="true"/>
     </profile>
   </profiles>
 </configuration>
