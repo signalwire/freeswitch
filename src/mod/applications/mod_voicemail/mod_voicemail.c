@@ -1281,6 +1281,8 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 	int total_saved_urgent_messages = 0;
 	int heard_auto_saved = 0, heard_auto_new = 0;
 	char *email_vm = NULL;
+	char foo[2] = "";
+	switch_input_args_t args = { 0 };
 
 	if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error invalid profile %s\n", profile_name);
@@ -1289,8 +1291,9 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 
 	timeout = profile->digit_timeout;
 	attempts = profile->max_login_attempts;
-
-	status = switch_ivr_phrase_macro(session, VM_HELLO_MACRO, NULL, NULL, NULL);
+	args.buf = &foo;
+	args.buflen = sizeof(foo);
+	status = switch_ivr_phrase_macro(session, VM_HELLO_MACRO, NULL, NULL, &args);
 
 	while(switch_channel_ready(channel)) {
 		switch_ivr_sleep(session, 100);
