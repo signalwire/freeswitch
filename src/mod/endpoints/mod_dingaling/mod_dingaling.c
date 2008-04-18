@@ -2706,7 +2706,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 		if (msg) {
 			if (*msg == '+') {
 				char *p = msg + 1;
-				switch_dtmf_t dtmf = { 0, SWITCH_DEFAULT_DTMF_DURATION };
+				switch_dtmf_t dtmf = { 0, switch_core_default_dtmf_duration(0) };
 				while (p && *p) {
 					dtmf.digit = *p;
 					switch_channel_queue_dtmf(channel, &dtmf);

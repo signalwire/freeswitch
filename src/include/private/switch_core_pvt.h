@@ -184,6 +184,8 @@ struct switch_runtime {
 	switch_log_level_t hard_log_level;
 	char *mailer_app;
 	char *mailer_app_args;
+	uint32_t max_dtmf_duration;
+	uint32_t default_dtmf_duration;
 };
 
 extern struct switch_runtime runtime;

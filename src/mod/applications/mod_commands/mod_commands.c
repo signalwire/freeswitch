@@ -562,7 +562,7 @@ SWITCH_STANDARD_API(status_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define CTL_SYNTAX "[hupall|pause|resume|shutdown|sync_clock|reclaim_mem|max_sessions [num]|loglevel [level]]"
+#define CTL_SYNTAX "[hupall|pause|resume|shutdown|sync_clock|reclaim_mem|max_sessions|max_dtmf_duration [num]|loglevel [level]]"
 SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
@@ -597,6 +597,18 @@ SWITCH_STANDARD_API(ctl_function)
 			}
 			switch_core_session_ctl(SCSC_MAX_SESSIONS, &arg);
 			stream->write_function(stream, "+OK max sessions: %d\n", arg);
+		} else if (!strcasecmp(argv[0], "max_dtmf_duration")) {
+			if (argc > 1) {
+				arg = atoi(argv[1]);
+			}
+			switch_core_session_ctl(SCSC_MAX_DTMF_DURATION, &arg);
+			stream->write_function(stream, "+OK max dtmf duration: %d\n", arg);
+		} else if (!strcasecmp(argv[0], "default_dtmf_duration")) {
+			if (argc > 1) {
+				arg = atoi(argv[1]);
+			}
+			switch_core_session_ctl(SCSC_DEFAULT_DTMF_DURATION, &arg);
+			stream->write_function(stream, "+OK default dtmf duration: %d\n", arg);
 		} else if (!strcasecmp(argv[0], "loglevel")) {
 			if (argc > 1) {
 				if (*argv[1] > 47 && *argv[1] < 58) {

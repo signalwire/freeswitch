@@ -2382,7 +2382,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 	const char *signal_ptr;
 	const char *rec_header;
 	const char *clientcode_header;
-	switch_dtmf_t dtmf = { 0, SWITCH_DEFAULT_DTMF_DURATION };
+	switch_dtmf_t dtmf = { 0, switch_core_default_dtmf_duration(0) };
 	
 	if (session) {
 		/* Get the channel */
@@ -2408,7 +2408,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 					int tmp;
 					signal_ptr += 9;
 					if ((tmp = atoi(signal_ptr)) <= 0) {
-						tmp = SWITCH_DEFAULT_DTMF_DURATION;
+						tmp = switch_core_default_dtmf_duration(0);
 					} 
 					dtmf.duration = tmp * 8;
 				}

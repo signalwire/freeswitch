@@ -1203,7 +1203,7 @@ static switch_status_t engage_ring_device(int sample_rate, int channels)
 static switch_status_t dtmf_call(char **argv, int argc, switch_stream_handle_t *stream)
 {
 	char *dtmf_str = argv[0];
-	switch_dtmf_t dtmf = {0, SWITCH_DEFAULT_DTMF_DURATION};
+	switch_dtmf_t dtmf = {0, switch_core_default_dtmf_duration(0)};
 	
 	if (switch_strlen_zero(dtmf_str)) {
 		stream->write_function(stream, "No DTMF Supplied!\n");

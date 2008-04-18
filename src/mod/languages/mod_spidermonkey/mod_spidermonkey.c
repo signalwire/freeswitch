@@ -761,7 +761,7 @@ JSClass event_class = {
 static JSBool dtmf_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	switch_dtmf_t *dtmf;
-	int32 duration = SWITCH_DEFAULT_DTMF_DURATION;
+	int32 duration = switch_core_default_dtmf_duration(0);
 	char *ename;
 
 	if (argc > 0) {
@@ -774,7 +774,7 @@ static JSBool dtmf_construct(JSContext * cx, JSObject * obj, uintN argc, jsval *
 	if (argc > 1) {
 		JS_ValueToInt32(cx, argv[1], &duration);
 		if (duration <= 0) {
-			duration = SWITCH_DEFAULT_DTMF_DURATION;
+			duration = switch_core_default_dtmf_duration(0);
 		}
 	}
 

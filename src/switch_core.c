@@ -812,6 +812,28 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	switch_mutex_unlock(runtime.global_mutex);
 }
 
+SWITCH_DECLARE(uint32_t) switch_core_max_dtmf_duration(uint32_t duration)
+{
+	if (duration) {
+		if (duration > SWITCH_MAX_DTMF_DURATION) {
+			duration = SWITCH_MAX_DTMF_DURATION;
+		}
+		runtime.max_dtmf_duration = duration;
+	}
+	return runtime.max_dtmf_duration;
+}
+
+SWITCH_DECLARE(uint32_t) switch_core_default_dtmf_duration(uint32_t duration)
+{
+	if (duration) {
+		if (duration < SWITCH_DEFAULT_DTMF_DURATION) {
+			duration = SWITCH_DEFAULT_DTMF_DURATION;
+		}
+		runtime.default_dtmf_duration = duration;
+	}
+	return runtime.default_dtmf_duration;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switch_bool_t console, const char **err)
 {
 	switch_xml_t xml = NULL, cfg = NULL;
@@ -824,6 +846,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	runtime.hard_log_level = SWITCH_LOG_DEBUG;
 	runtime.mailer_app = "sendmail";
 	runtime.mailer_app_args = "-t";
+	runtime.max_dtmf_duration = SWITCH_MAX_DTMF_DURATION;
+	runtime.default_dtmf_duration = SWITCH_DEFAULT_DTMF_DURATION;
 
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
@@ -898,6 +922,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 					runtime.mailer_app_args = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "sessions-per-second")) {
 					switch_core_sessions_per_second(atoi(val));
+				} else if (!strcasecmp(var, "max_dtmf_duration")) {
+					int tmp = atoi(val);
+					if (tmp > 0) {
+						switch_core_max_dtmf_duration((uint32_t)tmp);
+					}
+				} else if (!strcasecmp(var, "default_dtmf_duration")) {
+					int tmp = atoi(val);
+					if (tmp > 0) {
+						switch_core_default_dtmf_duration((uint32_t)tmp);
+					}
 				} else if (!strcasecmp(var, "disable-monotonic-timing")) {
 					switch_time_set_monotonic(SWITCH_FALSE);
 				} else if (!strcasecmp(var, "max-sessions")) {
@@ -1136,6 +1170,12 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 		break;
 	case SCSC_LAST_SPS:
 		*val = runtime.sps_last;
+		break;
+	case SCSC_MAX_DTMF_DURATION:
+		*val = switch_core_max_dtmf_duration(*val);
+		break;
+	case SCSC_DEFAULT_DTMF_DURATION:
+		*val = switch_core_default_dtmf_duration(*val);
 		break;
 	case SCSC_SPS:
 		switch_mutex_lock(runtime.throttle_mutex);

@@ -1126,7 +1126,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 				break;
 			case IAX_EVENT_DTMF:
 				if (channel) {
-					switch_dtmf_t dtmf = { (char) iaxevent->subclass , SWITCH_DEFAULT_DTMF_DURATION };
+					switch_dtmf_t dtmf = { (char) iaxevent->subclass , switch_core_default_dtmf_duration(0) };
 					if (globals.debug) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%c DTMF %s\n", dtmf.digit, switch_channel_get_name(channel));
 					}

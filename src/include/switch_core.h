@@ -1598,6 +1598,8 @@ SWITCH_DECLARE(time_t) switch_timestamp(time_t *t);
 SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload);
 SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip(const char *ip_str, const char *list_name);
 SWITCH_DECLARE(void) switch_time_set_monotonic(switch_bool_t enable);
+SWITCH_DECLARE(uint32_t) switch_core_max_dtmf_duration(uint32_t duration);
+SWITCH_DECLARE(uint32_t) switch_core_default_dtmf_duration(uint32_t duration);
 
 ///\}
 

@@ -845,7 +845,7 @@ static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_da
 				while(p && *p) {
 					switch_dtmf_t dtmf;
 					dtmf.digit = *p;
-					dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
+					dtmf.duration = switch_core_default_dtmf_duration(0);
 					switch_channel_queue_dtmf(channel, &dtmf);
 					p++;
 				}

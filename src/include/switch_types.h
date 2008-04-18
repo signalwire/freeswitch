@@ -1137,7 +1137,9 @@ typedef enum {
 	SCSC_LAST_SPS,
 	SCSC_RECLAIM,
 	SCSC_MAX_SESSIONS,
-	SCSC_SYNC_CLOCK
+	SCSC_SYNC_CLOCK,
+	SCSC_MAX_DTMF_DURATION,
+	SCSC_DEFAULT_DTMF_DURATION
 } switch_session_ctl_t;
 
 typedef struct apr_pool_t switch_memory_pool_t;

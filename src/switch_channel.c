@@ -226,12 +226,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 		switch_dtmf_t *dt;
 		int x = 0;
 
-		if (new_dtmf.duration > SWITCH_MAX_DTMF_DURATION) {
+		if (new_dtmf.duration > switch_core_max_dtmf_duration(0)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXECSSIVE DTMF DIGIT [%c] LEN [%d]\n", 
 							  switch_channel_get_name(channel), new_dtmf.digit, new_dtmf.duration);
-			new_dtmf.duration = SWITCH_MAX_DTMF_DURATION;
+			new_dtmf.duration = switch_core_max_dtmf_duration(0);
 		} else if (!new_dtmf.duration) {
-			new_dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
+			new_dtmf.duration = switch_core_default_dtmf_duration(0);
 		}
 		
 		switch_zmalloc(dt, sizeof(*dt));
@@ -259,7 +259,7 @@ done:
 SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_t *channel, const char *dtmf_string)
 {
 	char *p;
-	switch_dtmf_t dtmf = {0, SWITCH_DEFAULT_DTMF_DURATION};
+	switch_dtmf_t dtmf = {0, switch_core_default_dtmf_duration(0)};
 	int sent = 0, dur;
 	char *string;
 	int i, argc;
@@ -273,8 +273,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_
 	argc = switch_separate_string(string, '+', argv, (sizeof(argv) / sizeof(argv[0])));
 
 	for(i = 0; i < argc; i++) {
-		dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
-		dur = SWITCH_DEFAULT_DTMF_DURATION / 8;
+		dtmf.duration = switch_core_default_dtmf_duration(0);
+		dur = switch_core_default_dtmf_duration(0) / 8;
 		if ((p = strchr(argv[i], '@'))) {
 			*p++ = '\0';
 			if ((dur = atoi(p)) > 50) {
@@ -282,11 +282,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_
 			}
 		}
 
-		if (dtmf.duration > SWITCH_MAX_DTMF_DURATION) {
+		if (dtmf.duration > switch_core_max_dtmf_duration(0)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "EXECSSIVE DTMF DIGIT LEN %c %d\n", dtmf.digit, dtmf.duration);
-			dtmf.duration = SWITCH_MAX_DTMF_DURATION;
+			dtmf.duration = switch_core_max_dtmf_duration(0);
 		} else if (!dtmf.duration) {
-			dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
+			dtmf.duration = switch_core_default_dtmf_duration(0);
 		}
 
 
@@ -320,12 +320,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(switch_channel_t *ch
 		*dtmf = *dt;
 		free(dt);
 
-		if (dtmf->duration > SWITCH_MAX_DTMF_DURATION) {
+		if (dtmf->duration > switch_core_max_dtmf_duration(0)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXECSSIVE DTMF DIGIT [%c] LEN [%d]\n", 
 							  switch_channel_get_name(channel), dtmf->digit, dtmf->duration);
-			dtmf->duration = SWITCH_MAX_DTMF_DURATION;
+			dtmf->duration = switch_core_max_dtmf_duration(0);
 		} else if (!dtmf->duration) {
-			dtmf->duration = SWITCH_DEFAULT_DTMF_DURATION;
+			dtmf->duration = switch_core_default_dtmf_duration(0);
 		}
 
 		status = SWITCH_STATUS_SUCCESS;
