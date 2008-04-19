@@ -150,10 +150,15 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 		case Q931mes_RELEASE:
 		case Q931mes_RELEASE_COMPLETE:
 			{
+				const char *what = gen->MesType == Q931mes_RELEASE ? "Release" : "Release Complete";
 				if (zchan) {
-					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+					if (zchan->state == ZAP_CHANNEL_STATE_TERMINATING || zchan->state == ZAP_CHANNEL_STATE_HANGUP) {
+						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+					} else {
+						zap_log(ZAP_LOG_DEBUG, "Ignoring %s on channel %d\n", what, chan_id);
+					}
 				} else {
-					zap_log(ZAP_LOG_CRIT, "Received Release Complete with no matching channel %d\n", chan_id);
+					zap_log(ZAP_LOG_CRIT, "Received %s with no matching channel %d\n", what, chan_id);
 				}
 			}
 			break;
@@ -374,6 +379,8 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			if (zchan->last_state != ZAP_CHANNEL_STATE_HANGUP && zchan->last_state != ZAP_CHANNEL_STATE_DOWN) {
 				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 			} else {
+				sig.event_id = ZAP_SIGEVENT_RESTART;
+				status = isdn_data->sig_cb(&sig);
 				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
 			}
 		}
