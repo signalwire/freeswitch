@@ -93,11 +93,17 @@ typedef enum {
 	AMR_BITRATE_1220
 } amr_bitrate_t;
 
+typedef enum {
+	AMR_DTX_DISABLED = 0,
+	AMR_DTX_ENABLED
+} amr_dtx_t;
+
 struct amr_context {
 	void *encoder_state;
 	void *decoder_state;
 	switch_byte_t enc_modes;
 	switch_byte_t enc_mode;
+	switch_int_t  dtx_mode;
 	uint32_t change_period;
 	switch_byte_t max_ptime;
 	switch_byte_t ptime;
@@ -133,8 +139,9 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 
 	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(struct amr_context))))) {
 		return SWITCH_STATUS_FALSE;
-	} else {
-
+	} else {	
+	
+		context->dtx_mode = AMR_DTX_ENABLED;
 		if (codec->fmtp_in) {
 			argc = switch_separate_string(codec->fmtp_in, ';', argv, (sizeof(argv) / sizeof(argv[0])));
 			for (x = 0; x < argc; x++) {
@@ -180,6 +187,8 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 						for (y = 0; y < m_argc; y++) {
 							context->enc_modes |= (1 << atoi(m_argv[y]));
 						}
+					} else if (!strcasecmp(data, "dtx")) {
+						context->dtx_mode = if (atoi(arg)) ? AMR_DTX_ENABLED : AMR_DTX_DISABLED;
 					}
 				}
 			}
@@ -206,7 +215,7 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 		context->decoder_state = NULL;
 
 		if (encoding) {
-			context->encoder_state = Encoder_Interface_init(1);
+			context->encoder_state = Encoder_Interface_init(context->dtx_mode);
 		}
 
 		if (decoding) {
