@@ -1116,23 +1116,50 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invald option %s for VAD\n", val);
 						}
 					} else if (!strcasecmp(var, "ext-rtp-ip")) {
-						profile->extrtpip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip);
-					} else if (!strcasecmp(var, "rtp-ip")) {
-						profile->rtpip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip);
-					} else if (!strcasecmp(var, "sip-ip")) {
-						profile->sipip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip);
-					} else if (!strcasecmp(var, "ext-sip-ip")) {
-						if (!strcasecmp(val, "auto")) {
-							profile->extsipip = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
+						char *ip = mod_sofia_globals.guess_ip;
+
+						if (!strcmp(val, "0.0.0.0")) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invald IP 0.0.0.0 replaced with %s\n", mod_sofia_globals.guess_ip);
 						} else {
-							char *ip = mod_sofia_globals.guess_ip;
+							ip = strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip;
+						}
+						profile->extrtpip = switch_core_strdup(profile->pool, ip);
+					} else if (!strcasecmp(var, "rtp-ip")) {
+						char *ip = mod_sofia_globals.guess_ip;
+
+						if (!strcmp(val, "0.0.0.0")) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invald IP 0.0.0.0 replaced with %s\n", mod_sofia_globals.guess_ip);
+						} else {
+							ip = strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip;
+						}
+						profile->rtpip = switch_core_strdup(profile->pool, ip);
+					} else if (!strcasecmp(var, "sip-ip")) {
+						char *ip = mod_sofia_globals.guess_ip;
+
+						if (!strcmp(val, "0.0.0.0")) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invald IP 0.0.0.0 replaced with %s\n", mod_sofia_globals.guess_ip);
+						} else {
+							ip = strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip;
+						}
+						profile->sipip = switch_core_strdup(profile->pool, ip);
+					} else if (!strcasecmp(var, "ext-sip-ip")) {
+						char *ip = mod_sofia_globals.guess_ip;
+						char stun_ip[50] = "";
+						char *myip = stun_ip;
+
+						switch_copy_string(myip, ip, sizeof(myip));
+						
+						if (!strcasecmp(val, "0.0.0.0")) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invald IP 0.0.0.0 replaced with %s\n", mod_sofia_globals.guess_ip);
+						} else if (strcasecmp(val, "auto")) {
 							switch_port_t port = 0;
-							if (sofia_glue_ext_address_lookup(&ip, &port, val, profile->pool) == SWITCH_STATUS_SUCCESS) {
-								profile->extsipip = switch_core_strdup(profile->pool, ip);
+							if (sofia_glue_ext_address_lookup(&myip, &port, val, profile->pool) == SWITCH_STATUS_SUCCESS) {
+								ip = myip;
 							} else {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to get external ip.\n");
 							}
 						}
+						profile->extsipip = switch_core_strdup(profile->pool, ip);
 					} else if (!strcasecmp(var, "force-register-domain")) {
 						profile->reg_domain = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "bind-params")) {
