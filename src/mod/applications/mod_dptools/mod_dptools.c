@@ -1844,6 +1844,19 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	return cause;
 }
 
+
+#define HOLD_SYNTAX "[<display message>]"
+SWITCH_STANDARD_APP(hold_function)
+{
+	switch_ivr_hold_uuid(switch_core_session_get_uuid(session), data);
+}
+
+#define UNHOLD_SYNTAX ""
+SWITCH_STANDARD_APP(unhold_function)
+{
+	switch_ivr_unhold_uuid(switch_core_session_get_uuid(session));
+}
+
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
 #define DISPLACE_DESC "Displace audio from a file to the channels input"
 #define SESS_REC_DESC "Starts a background recording of the entire session"
@@ -1876,6 +1889,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_API(api_interface, "strftime", "strftime", strftime_api_function, "<format_string>");
 	SWITCH_ADD_API(api_interface, "presence", "presence", presence_api_function, "<user> <rpid> <message>");
 	SWITCH_ADD_APP(app_interface, "privacy", "Set privacy on calls", "Set caller privacy on calls.", privacy_function, "off|on|name|full|number", SAF_SUPPORT_NOMEDIA);
+
+	SWITCH_ADD_APP(app_interface, "hold", "Send a hold message", "Send a hold message", hold_function, HOLD_SYNTAX, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "unhold", "Send a un-hold message", "Send a un-hold message", unhold_function, UNHOLD_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "transfer", "Transfer a channel", TRANSFER_LONG_DESC, transfer_function, "<exten> [<dialplan> <context>]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "check_acl", "Check an ip against an ACL list", 
 				   "Check an ip against an ACL list", check_acl_function, "<ip> <acl | cidr>", SAF_SUPPORT_NOMEDIA);

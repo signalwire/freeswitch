@@ -2281,14 +2281,10 @@ static JSBool js_fetchurl_hash(JSContext * cx, JSObject * obj, uintN argc, jsval
 	CURL *curl_handle = NULL;
 	struct config_data config_data;
 	int saveDepth = 0;
-	int32 disable_wait = 0;
 
 	if (argc > 1) {
 		url = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		name = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
-		if (argc > 2) {
-			JS_ValueToInt32(cx, argv[2], &disable_wait);
-		}
 
 		curl_handle = curl_easy_init();
 		if (!strncasecmp(url, "https", 5)) {
@@ -2305,13 +2301,9 @@ static JSBool js_fetchurl_hash(JSContext * cx, JSObject * obj, uintN argc, jsval
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
 		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-js/1.0");
 
-		if (disable_wait) {
-			saveDepth = JS_SuspendRequest(cx);
-			curl_easy_perform(curl_handle);
-			JS_ResumeRequest(cx, saveDepth);
-		} else {
-			curl_easy_perform(curl_handle);
-		}
+		saveDepth = JS_SuspendRequest(cx);
+		curl_easy_perform(curl_handle);
+		JS_ResumeRequest(cx, saveDepth);
 
 		curl_easy_cleanup(curl_handle);
 	} else {
@@ -2330,14 +2322,10 @@ static JSBool js_fetchurl_file(JSContext * cx, JSObject * obj, uintN argc, jsval
 	CURL *curl_handle = NULL;
 	struct config_data config_data;
 	int saveDepth = 0;
-	int32 disable_wait = 0;
 
 	if (argc > 1) {
 		url = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		filename = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
-		if (argc > 2) {
-			JS_ValueToInt32(cx, argv[2], &disable_wait);
-		}
 
 		curl_global_init(CURL_GLOBAL_ALL);
 		curl_handle = curl_easy_init();
@@ -2355,13 +2343,9 @@ static JSBool js_fetchurl_file(JSContext * cx, JSObject * obj, uintN argc, jsval
 			curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
 			curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-js/1.0");
 
-			if (disable_wait) {
-				saveDepth = JS_SuspendRequest(cx);
-				curl_easy_perform(curl_handle);
-				JS_ResumeRequest(cx, saveDepth);
-			} else {
-				curl_easy_perform(curl_handle);
-			}
+			saveDepth = JS_SuspendRequest(cx);
+			curl_easy_perform(curl_handle);
+			JS_ResumeRequest(cx, saveDepth);
 
 			curl_easy_cleanup(curl_handle);
 			close(config_data.fd);
@@ -2383,15 +2367,11 @@ static JSBool js_fetchurl(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 	int32 buffer_size = 65535;
 	CURLcode code = 0;
 	int saveDepth = 0;
-	int32 disable_wait = 0;
 
 	if (argc >= 1) {
 		url = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		if (argc > 1) {
 			JS_ValueToInt32(cx, argv[1], &buffer_size);
-			if (argc > 2) {
-				JS_ValueToInt32(cx, argv[2], &disable_wait);
-			}
 		}
 
 		curl_global_init(CURL_GLOBAL_ALL);
@@ -2414,13 +2394,9 @@ static JSBool js_fetchurl(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
 		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-js/1.0");
 
-		if (disable_wait) {
-			saveDepth = JS_SuspendRequest(cx);
-			code = curl_easy_perform(curl_handle);
-			JS_ResumeRequest(cx, saveDepth);
-		} else {
-			code = curl_easy_perform(curl_handle);
-		}
+		saveDepth = JS_SuspendRequest(cx);
+		code = curl_easy_perform(curl_handle);
+		JS_ResumeRequest(cx, saveDepth);
 
 		curl_easy_cleanup(curl_handle);
 
