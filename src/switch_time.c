@@ -298,7 +298,7 @@ static switch_status_t timer_destroy(switch_timer_t *timer)
 
 SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 {
-	switch_time_t too_late = STEP_MIC * 128;
+	switch_time_t too_late = STEP_MIC * 1000;
 	uint32_t current_ms = 0;
 	uint32_t x, tick = 0;
 	switch_time_t ts = 0, last = 0;
@@ -324,6 +324,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				MONO = 0;
 				runtime.reference = switch_time_now();
 				runtime.initiated = runtime.reference;
+				break;
 			}
 			switch_yield(STEP_MIC);
 			last = ts;
