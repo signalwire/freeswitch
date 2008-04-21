@@ -250,7 +250,7 @@ do
       if [ ! -z "${AMTEST}" ] ; then
           if [ -f ${LIBDIR}/${i}/Makefile.am ] ; then
               echo "Creating Makefile.in"
-              ${AUTOMAKE:-automake} --no-force --add-missing ;
+              ${AUTOMAKE:-automake} --no-force --add-missing --copy ;
           fi
       fi
       rm -rf autom4te*.cache
@@ -264,6 +264,6 @@ ${ACLOCAL:-aclocal} ${ACLOCAL_OPTS}
 $libtoolize --copy --automake
 ${AUTOCONF:-autoconf}
 ${AUTOHEADER:-autoheader}
-${AUTOMAKE:-automake} --no-force --add-missing
+${AUTOMAKE:-automake} --no-force --add-missing --copy
 rm -rf autom4te*.cache
 
