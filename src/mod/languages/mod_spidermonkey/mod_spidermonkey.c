@@ -2721,7 +2721,7 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 
 		if (JS_ValueToObject(cx, argv[0], &session_obj)) {
 			struct js_session *old_jss = NULL;
-			if ((old_jss = JS_GetPrivate(cx, session_obj)) && old_jss->session) {
+			if (session_obj && (old_jss = JS_GetPrivate(cx, session_obj)) && old_jss->session) {
 				session = old_jss->session;
 				orig_caller_profile = switch_channel_get_caller_profile(switch_core_session_get_channel(session));
 				dialplan = orig_caller_profile->dialplan;
@@ -2774,9 +2774,10 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot Create Outgoing Channel! [%s]\n", dest);
 			goto done;
 		}
-
+		
 		jss->session = peer_session;
 		*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
+		switch_channel_set_state(switch_core_session_get_channel(jss->session), CS_TRANSMIT);
 
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing Args\n");
@@ -2803,8 +2804,8 @@ static void session_destroy(JSContext * cx, JSObject * obj)
 				
 				switch_channel_set_private(channel, "jss", NULL);
 				switch_core_event_hook_remove_state_change(session, hanguphook);
-
-				if (switch_test_flag(jss, S_HUP)) {
+				
+				if (switch_test_flag(jss, S_HUP) || switch_channel_get_state(channel) != CS_EXECUTE) {
 					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				}
 
