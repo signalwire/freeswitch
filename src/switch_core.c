@@ -700,7 +700,7 @@ SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip(const char *ip_str, c
 	switch_bool_t ok = SWITCH_FALSE;
 	
 	switch_mutex_lock(runtime.global_mutex);
-	inet_pton(AF_INET, ip_str, &ip);
+	switch_inet_pton(AF_INET, ip_str, &ip);
 	
 	if ((list = switch_core_hash_find(IP_LIST.hash, list_name))) {
 		ok = switch_network_list_validate_ip(list, ip);

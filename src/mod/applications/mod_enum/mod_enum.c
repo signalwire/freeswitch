@@ -767,7 +767,8 @@ SWITCH_STANDARD_API(enum_function)
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		dest = argv[0];
 		root = argv[1];
-		
+		switch_assert(dest);
+
 		if (!strcasecmp(dest, "reload")) {
 			do_load();
 			stream->write_function(stream, "+OK ENUM Reloaded.\n");

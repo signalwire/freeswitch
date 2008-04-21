@@ -1480,8 +1480,8 @@ case VM_CHECK_CONFIG:
 			vm_check_state = VM_CHECK_MENU;
 		} else if (!strcmp(input, profile->choose_greeting_key)) {
 			int num;
-			switch_input_args_t args = { 0 };
-			args.input_callback = cancel_on_dtmf;
+			switch_input_args_t greeting_args = { 0 };
+			greeting_args.input_callback = cancel_on_dtmf;
 
 			TRY_CODE(vm_macro_get(session, VM_CHOOSE_GREETING_MACRO, key_buf, input, sizeof(input), 1, "", &term, timeout));
 
@@ -1493,13 +1493,13 @@ case VM_CHECK_CONFIG:
 			} else {
 				switch_file_handle_t fh = { 0 };
 				memset(&fh, 0, sizeof(fh));
-				args.input_callback = control_playback;
+				greeting_args.input_callback = control_playback;
 				memset(&cc, 0, sizeof(cc));
 				cc.profile = profile;
 				cc.fh = &fh;
 				cc.noexit = 1;
-				args.buf = &cc;
-				status = switch_ivr_play_file(session, NULL, file_path, &args);
+				greeting_args.buf = &cc;
+				status = switch_ivr_play_file(session, NULL, file_path, &greeting_args);
 			}
 			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 				TRY_CODE(switch_ivr_phrase_macro(session, VM_CHOOSE_GREETING_FAIL_MACRO, NULL, NULL, NULL));

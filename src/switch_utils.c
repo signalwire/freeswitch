@@ -53,6 +53,12 @@ struct switch_network_list {
 	switch_memory_pool_t *pool;
 };
 
+#ifndef WIN32
+int switch_inet_pton(int af, const char *src, void *dst)
+{
+	return inet_pton(af, src, dst);
+}
+#endif
 
 SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t **list, switch_bool_t default_type, switch_memory_pool_t *pool)
 {
@@ -120,8 +126,8 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network
 	int ip, mask;
 	switch_network_node_t *node;
 
-	inet_pton(AF_INET, host, &ip);
-	inet_pton(AF_INET, mask_str, &mask);
+	switch_inet_pton(AF_INET, host, &ip);
+	switch_inet_pton(AF_INET, mask_str, &mask);
 	
 	node = switch_core_alloc(list->pool, sizeof(*node));
 	
@@ -162,7 +168,7 @@ SWITCH_DECLARE(int) switch_parse_cidr(const char *string, uint32_t *ip, uint32_t
 	}
 
 	bits = atoi(bit_str);
-	inet_pton(AF_INET, host, ip);
+	switch_inet_pton(AF_INET, host, ip);
 	*mask = 0xFFFFFFFF & ~(0xFFFFFFFF << bits);
 	*bitp = bits;
 
@@ -766,7 +772,7 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
 			memset(&remote, 0, sizeof(struct sockaddr_in6));
 
 			remote.sin6_family = AF_INET6;
-			inet_pton(AF_INET6, buf, &remote.sin6_addr);
+			switch_inet_pton(AF_INET6, buf, &remote.sin6_addr);
 			remote.sin6_port = htons(4242);
 
 			memset(&iface_out, 0, sizeof(iface_out));
