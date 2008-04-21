@@ -1429,7 +1429,7 @@ default:
 		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) {
 			char *mwi_id;
 			const char *yn = "no";
-			if (total_new_messages || total_saved_messages || total_new_urgent_messages || total_saved_urgent_messages) {
+			if (total_new_messages || total_new_urgent_messages ) {
 				yn = "yes";
 			}
 			mwi_id = switch_mprintf("%s@%s", myid, domain_name);
@@ -1940,7 +1940,7 @@ greet:
 
 		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) {
 			const char *yn = "no";
-			if (total_new_messages || total_saved_messages || total_new_urgent_messages || total_saved_urgent_messages) {
+			if (total_new_messages || total_new_urgent_messages) {
 				yn = "yes";
 			}
 			mwi_id = switch_mprintf("%s@%s", id, domain_name);
@@ -2187,7 +2187,7 @@ static void  message_query_handler(switch_event_t *event)
 				if (total_new_messages || total_saved_messages) {
 					if (switch_event_create(&new_event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) {
 						const char *yn = "no";
-						if (total_new_messages || total_saved_messages || total_new_urgent_messages || total_saved_urgent_messages) {
+						if (total_new_messages || total_new_urgent_messages ) {
 							yn = "yes";
 						}
 						switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", "%s", yn);
