@@ -36,8 +36,6 @@
 #include <string.h>
 #include <errno.h>
 
-#include "inet_pton.h"
-
 #define IN6ADDRSZ       16
 #define INADDRSZ         4
 #define INT16SZ          2
