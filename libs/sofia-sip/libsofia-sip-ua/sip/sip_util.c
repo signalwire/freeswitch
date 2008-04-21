@@ -412,7 +412,7 @@ char *sip_header_as_string(su_home_t *home, sip_header_t const *h)
   for (rv = su_alloc(home, len);
        rv;
        rv = su_realloc(home, rv, len)) {
-    ssize_t n = sip_header_field_e(s, sizeof(s), h, 0);
+    ssize_t n = sip_header_field_e(rv, len, h, 0);
     if (n > -1 && n + 1 <= len)
       break;
     if (n > -1)			/* glibc >2.1 */
