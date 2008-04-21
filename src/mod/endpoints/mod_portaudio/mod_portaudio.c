@@ -539,8 +539,9 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		return SWITCH_STATUS_SUCCESS;
 	}
 
- get_samples:
 	switch_mutex_lock(globals.device_lock);
+
+ get_samples:
 
 	if ((samples = ReadAudioStream(globals.audio_stream, globals.read_frame.data, 
 								   globals.read_codec.implementation->samples_per_frame, 
