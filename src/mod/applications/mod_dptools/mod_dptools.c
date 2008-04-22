@@ -37,6 +37,50 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load);
 SWITCH_MODULE_DEFINITION(mod_dptools, mod_dptools_load, NULL, NULL);
 
+SWITCH_STANDARD_DIALPLAN(inline_dialplan_hunt)
+{
+	switch_caller_extension_t *extension = NULL;
+	char *argv[4] = { 0 };
+	int argc;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	int x = 0;
+	char *lbuf;
+
+	if (!caller_profile) {
+		caller_profile = switch_channel_get_caller_profile(channel);
+	}	
+
+	if ((extension = switch_caller_extension_new(session, "inline", "inline")) == 0) {
+		abort();
+	}
+	
+	if (!switch_strlen_zero(caller_profile->destination_number) && (lbuf = switch_core_session_strdup(session, caller_profile->destination_number))
+		&& (argc = switch_separate_string(lbuf, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+	} else {
+		return NULL;
+	}
+
+	
+	for(x = 0; x < argc; x++) {
+		char *app = argv[x];
+		char *data = strchr(app, ':');
+
+		if (data) {
+			*data++ = '\0';
+		}
+		
+		while(*app == ' ') {
+			app++;
+		}
+		
+		switch_caller_extension_add_application(session, extension, app, data);
+	}
+
+
+	return extension;
+
+}
+
 #define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR pause OR resume"
 SWITCH_STANDARD_APP(detect_speech_function)
 {
@@ -1876,6 +1920,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 {
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
+	switch_dialplan_interface_t *dp_interface;
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -1957,6 +2002,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "clear_speech_cache", "Clear Speech Handle Cache", "Clear Speech Handle Cache", clear_speech_cache_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "bridge", "Bridge Audio", "Bridge the audio between two sessions", audio_bridge_function, "<channel_url>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "system", "Execute a system command", "Execute a system command", system_session_function, "<command>", SAF_SUPPORT_NOMEDIA);
+
+	SWITCH_ADD_DIALPLAN(dp_interface, "inline", inline_dialplan_hunt);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
