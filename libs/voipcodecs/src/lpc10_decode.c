@@ -66,7 +66,7 @@ static int32_t lpc10_random(lpc10_decode_state_t *s)
 
     /* The following is a 16 bit 2's complement addition,
        with overflow checking disabled */
-    s->y[s->k] += s->y[s->j];
+    s->y[s->k] = (int16_t)(s->y[s->k] + s->y[s->j]);
     ret_val = s->y[s->k];
     if (--s->k < 0)
         s->k = 4;
@@ -430,6 +430,7 @@ static int pitsyn(lpc10_decode_state_t *s,
                     ip = (int32_t) uvpit;
                 if (ip <= i - jused)
                 {
+					float f;
                     ++(*nout);
                     ipiti[*nout - 1] = ip;
                     *pitch = ip;
@@ -444,7 +445,8 @@ static int pitsyn(lpc10_decode_state_t *s,
                         xxy = expf(xxy);
                         rci[j + *nout*rci_dim1 + 1] = (xxy - 1.0f)/(xxy + 1.0f);
                     }
-                    rmsi[*nout - 1] = logf(s->rmso) + prop*(logf(*rms) - logf(s->rmso));
+					f = logf(*rms) - logf(s->rmso);
+                    rmsi[*nout - 1] = logf(s->rmso) + prop * f;
                     rmsi[*nout - 1] = expf(rmsi[*nout - 1]);
                 }
             }
