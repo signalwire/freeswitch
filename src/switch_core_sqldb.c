@@ -254,10 +254,12 @@ static void core_event_handler(switch_event_t *event)
 		sql = switch_mprintf("delete from channels where uuid='%q'", switch_event_get_header(event, "unique-id"));
 		break;
 	case SWITCH_EVENT_CHANNEL_CREATE:
-		sql = switch_mprintf("insert into channels (uuid,created,name,state) values('%q','%q','%q','%q')",
+		sql = switch_mprintf("insert into channels (uuid,created,created_epoch, name,state) values('%q','%q','%ld','%q','%q')",
 							 switch_event_get_header(event, "unique-id"),
 							 switch_event_get_header(event, "event-date-local"),
-							 switch_event_get_header(event, "channel-name"), switch_event_get_header(event, "channel-state")
+							 (long)switch_timestamp(NULL),							 
+							 switch_event_get_header(event, "channel-name"), 
+							 switch_event_get_header(event, "channel-state")
 			);
 		break;
 	case SWITCH_EVENT_CODEC:
@@ -305,7 +307,9 @@ static void core_event_handler(switch_event_t *event)
 		}
 		break;
 	case SWITCH_EVENT_CHANNEL_BRIDGE:
-		sql = switch_mprintf("insert into calls values ('%s','%q','%q','%q','%q','%s','%q','%q','%q','%q','%s')",
+		sql = switch_mprintf("insert into calls values ('%s', '%ld', '%s','%q','%q','%q','%q','%s','%q','%q','%q','%q','%s')",
+							 switch_event_get_header(event, "event-date-local"),
+							 (long)switch_timestamp(NULL),
 							 switch_event_get_header(event, "event-calling-function"),
 							 switch_event_get_header(event, "caller-caller-id-name"),
 							 switch_event_get_header(event, "caller-caller-id-number"),
@@ -362,10 +366,16 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
 		switch_clear_flag((&runtime), SCF_USE_SQL);
 	} else {
+		char create_complete_sql[] =
+			"CREATE TABLE complete (\n"
+			"   name  VARCHAR(255)\n" 
+			");\n";
+
 		char create_channels_sql[] =
 			"CREATE TABLE channels (\n"
 			"   uuid  VARCHAR(255),\n"
 			"   created  VARCHAR(255),\n"
+			"   created_epoch  INTEGER,\n"
 			"   name  VARCHAR(255),\n"
 			"   state  VARCHAR(255),\n"
 			"   cid_name  VARCHAR(255),\n"
@@ -374,10 +384,16 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 			"   dest  VARCHAR(255),\n"
 			"   application  VARCHAR(255),\n"
 			"   application_data  VARCHAR(255),\n"
-			"   read_codec  VARCHAR(255),\n" "   read_rate  VARCHAR(255),\n" "   write_codec  VARCHAR(255),\n" "   write_rate  VARCHAR(255)\n" ");\n";
+			"   read_codec  VARCHAR(255),\n" 
+			"   read_rate  VARCHAR(255),\n" 
+			"   write_codec  VARCHAR(255),\n" 
+			"   write_rate  VARCHAR(255)\n" 
+			");\n";
 		char create_calls_sql[] =
 			"CREATE TABLE calls (\n"
 			"   function  VARCHAR(255),\n"
+			"   created  VARCHAR(255),\n"
+			"   created_epoch  INTEGER,\n"
 			"   caller_cid_name  VARCHAR(255),\n"
 			"   caller_cid_num   VARCHAR(255),\n"
 			"   caller_dest_num  VARCHAR(255),\n"
@@ -385,15 +401,24 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 			"   caller_uuid      VARCHAR(255),\n"
 			"   callee_cid_name  VARCHAR(255),\n"
 			"   callee_cid_num   VARCHAR(255),\n"
-			"   callee_dest_num  VARCHAR(255),\n" "   callee_chan_name VARCHAR(255),\n" "   callee_uuid      VARCHAR(255)\n" ");\n";
+			"   callee_dest_num  VARCHAR(255),\n" 
+			"   callee_chan_name VARCHAR(255),\n" 
+			"   callee_uuid      VARCHAR(255)\n" 
+			");\n";
 		char create_interfaces_sql[] =
 			"CREATE TABLE interfaces (\n"
 			"   type             VARCHAR(255),\n"
-			"   name             VARCHAR(255),\n" "   description      VARCHAR(255),\n" "   syntax           VARCHAR(255)\n" ");\n";
+			"   name             VARCHAR(255),\n" 
+			"   description      VARCHAR(255),\n" 
+			"   syntax           VARCHAR(255)\n" 
+			");\n";
 		char create_tasks_sql[] =
 			"CREATE TABLE tasks (\n"
 			"   task_id             INTEGER(4),\n"
-			"   task_desc           VARCHAR(255),\n" "   task_group          VARCHAR(255),\n" "   task_sql_manager        INTEGER(8)\n" ");\n";
+			"   task_desc           VARCHAR(255),\n" 
+			"   task_group          VARCHAR(255),\n" 
+			"   task_sql_manager    INTEGER(8)\n" 
+			");\n";
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening DB\n");
 		switch_core_db_exec(sql_manager.db, "drop table channels", NULL, NULL, NULL);
@@ -405,6 +430,7 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 		switch_core_db_exec(sql_manager.db, "PRAGMA cache_size=8000", NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, "PRAGMA temp_store=MEMORY;", NULL, NULL, NULL);
 
+		switch_core_db_exec(sql_manager.db, create_complete_sql, NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, create_channels_sql, NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, create_calls_sql, NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, create_interfaces_sql, NULL, NULL, NULL);

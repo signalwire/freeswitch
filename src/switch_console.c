@@ -346,13 +346,16 @@ static void *SWITCH_THREAD_FUNC console_thread(switch_thread_t *thread, void *ob
 			if (!switch_strlen_zero(line)) {
 				char *cmd = strdup(line);
 				char *p;
-
+				const LineInfo *lf = el_line(el);
+				char *foo = (char *)lf->buffer;
 				if ((p = strrchr(cmd, '\r')) || (p = strrchr(cmd, '\n'))) {
 					*p = '\0';
 				}
 				assert(cmd != NULL);
 				history(myhistory, &ev, H_ENTER, line);
 				running = switch_console_process(cmd);
+				el_deletestr(el, strlen(foo)+1);
+				memset(foo, 0, strlen(foo));
 				free(cmd);
 			}
 		}
@@ -363,6 +366,115 @@ static void *SWITCH_THREAD_FUNC console_thread(switch_thread_t *thread, void *ob
 	return NULL;
 }
 
+
+struct helper {
+	EditLine *el;
+	int len;
+	int hits;
+	char last[512];
+	FILE *out;
+};
+
+static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct helper *h = (struct helper *) pArg;
+
+	fprintf(h->out, "%20s\t", argv[0]);
+	
+	switch_copy_string(h->last, argv[0], sizeof(h->last));
+
+	if ((++h->hits % 4) == 0) {
+		fprintf(h->out, "\n");
+	}
+	
+	return 0;
+}
+
+static unsigned char complete(EditLine *el, int ch)
+{
+	switch_core_db_t *db = switch_core_db_handle();
+	char *sql;
+	const LineInfo *lf = el_line(el);
+	char *dup = strdup(lf->buffer);
+	char *buf = dup;
+	char *p, *lp = NULL;
+	char *errmsg = NULL;
+	struct helper h = { el };
+	int words = 0;
+	unsigned char ret = CC_REDISPLAY;
+
+	h.out = switch_core_get_console();
+
+	if ((p = strchr(buf, '\r')) || (p = strchr(buf, '\n'))) {
+		*p = '\0';
+	}	
+	
+	while(*buf == ' ') {
+		buf++;
+	}
+
+	for(p = buf; p && *p; p++) {
+		if (*p == ' ') {
+			lp = p;
+			words++;
+		}
+	}
+
+	if (lp) {
+		buf = lp + 1;
+	}
+	
+	h.len = strlen(buf);
+	
+	fprintf(h.out, "\n\n");
+
+	if (words == 0) {
+		sql = switch_mprintf("select distinct name from interfaces where type='api' and name like '%s%%' order by name", buf);
+	} else {
+		sql = switch_mprintf("select distinct uuid from channels where uuid like '%s%%' order by uuid", buf);
+	}
+
+	switch_core_db_exec(db, sql, comp_callback, &h, &errmsg);
+	
+	if (errmsg) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error [%s][%s]\n", sql, errmsg);
+		free(errmsg);
+		ret = CC_ERROR;
+		goto end;
+	}
+
+	if (h.hits != 1) {
+		switch_safe_free(sql);
+		sql = switch_mprintf("select distinct name from complete where name like '%s%%' order by name", buf);
+		switch_core_db_exec(db, sql, comp_callback, &h, &errmsg);	
+		
+		if (errmsg) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error [%s][%s]\n", sql, errmsg);
+			free(errmsg);
+			ret = CC_ERROR;
+			goto end;
+		}
+	}
+
+	fprintf(h.out, "\n\n");
+	
+	if (h.hits == 1) {
+		el_deletestr(el, h.len);
+		el_insertstr(el, h.last);
+		el_insertstr(el, " ");
+	}
+
+ end:
+
+	fflush(h.out);
+
+	switch_safe_free(sql);
+	switch_safe_free(dup);
+
+	switch_core_db_close(db);
+	
+	return (ret);
+}
 
 SWITCH_DECLARE(void) switch_console_loop(void)
 {
@@ -416,6 +528,10 @@ SWITCH_DECLARE(void) switch_console_loop(void)
     el_set(el, EL_BIND, "\033[21~", "f10-key", NULL);
     el_set(el, EL_BIND, "\033[23~", "f11-key", NULL);
     el_set(el, EL_BIND, "\033[24~", "f12-key", NULL);
+
+
+	el_set(el, EL_ADDFN, "ed-complete", "Complete argument", complete);
+	el_set(el, EL_BIND, "^I", "ed-complete", NULL);
 
 	myhistory = history_init();
 	if (myhistory == 0) {

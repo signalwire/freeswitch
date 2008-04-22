@@ -1885,6 +1885,50 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames)
 	return 0;
 }
 
+#define COMPLETE_SYNTAX "add <word>|del [<word>|all]"
+SWITCH_STANDARD_API(complete_function)
+{
+	char *mydata = NULL, *argv[2] = {0};
+	int fail = 1, argc;
+	char sql[1024] = "";
+
+	if (cmd && (mydata = strdup(cmd))) {
+		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+			switch_core_db_t *db = switch_core_db_handle();
+			
+			if (!strcasecmp(argv[0], "add")) {
+				switch_snprintf(sql, sizeof(sql), "delete from complete where name = '%s'", argv[1]);
+				switch_core_db_persistant_execute(db, sql, 1);
+				switch_snprintf(sql, sizeof(sql), "insert into complete values ('%s')", argv[1]);
+				switch_core_db_persistant_execute(db, sql, 1);
+				stream->write_function(stream, "+OK\n");
+				fail = 0;
+			} else if (!strcasecmp(argv[0], "del")) {
+				char *what = argv[1];
+				if (!strcasecmp(what, "*")) {
+					switch_snprintf(sql, sizeof(sql), "delete from complete");
+				} else {
+					switch_snprintf(sql, sizeof(sql), "delete from complete where name = '%s'", what);
+				}
+				switch_core_db_persistant_execute(db, sql, 1);
+				stream->write_function(stream, "+OK\n");
+				fail = 0;
+			}
+
+			switch_core_db_close(db);
+		}
+	}
+
+	switch_safe_free(mydata);
+
+	if (fail) {
+		stream->write_function(stream, "-USAGE: %s\n", COMPLETE_SYNTAX);
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
 #define SHOW_SYNTAX "codec|application|api|dialplan|file|timer|calls|channels"
 SWITCH_STANDARD_API(show_function)
 {
@@ -1927,15 +1971,15 @@ SWITCH_STANDARD_API(show_function)
 		stream->write_function(stream, "-USAGE: %s\n", SHOW_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	} else if (!strcasecmp(command, "codec") || !strcasecmp(command, "dialplan") || !strcasecmp(command, "file") || !strcasecmp(command, "timer")) {
-		sprintf(sql, "select type, name from interfaces where type = '%s'", command);
+		sprintf(sql, "select type, name from interfaces where type = '%s' order by type,name", command);
 	} else if (!strcasecmp(command, "tasks")) {
 		sprintf(sql, "select * from %s", command);
 	} else if (!strcasecmp(command, "application") || !strcasecmp(command, "api")) {
-		sprintf(sql, "select name, description, syntax from interfaces where type = '%s' and description != ''", command);
+		sprintf(sql, "select name, description, syntax from interfaces where type = '%s' and description != '' order by type,name", command);
 	} else if (!strcasecmp(command, "calls")) {
-		sprintf(sql, "select * from calls");
+		sprintf(sql, "select * from calls order by created_epoch");
 	} else if (!strcasecmp(command, "channels")) {
-		sprintf(sql, "select * from channels");
+		sprintf(sql, "select * from channels order by created_epoch");
 	} else if (!strncasecmp(command, "help", 4)) {
 		char *cmdname = NULL;
 
@@ -1943,9 +1987,9 @@ SWITCH_STANDARD_API(show_function)
 		holder.print_title = 0;
 		if ((cmdname = strchr(command, ' ')) != 0) {
 			*cmdname++ = '\0';
-			switch_snprintf(sql, sizeof(sql) - 1, "select name, syntax, description from interfaces where type = 'api' and name = '%s'", cmdname);
+			switch_snprintf(sql, sizeof(sql) - 1, "select name, syntax, description from interfaces where type = 'api' and name = '%s' order by name", cmdname);
 		} else {
-			switch_snprintf(sql, sizeof(sql) - 1, "select name, syntax, description from interfaces where type = 'api'");
+			switch_snprintf(sql, sizeof(sql) - 1, "select name, syntax, description from interfaces where type = 'api' order by name");
 		}
 	} else {
 		stream->write_function(stream, "-USAGE: %s\n", SHOW_SYNTAX);
@@ -2264,6 +2308,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "pause", "Pause", pause_function, PAUSE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "break", "Break", break_function, BREAK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "show", "Show", show_function, SHOW_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "complete", "Complete", complete_function, COMPLETE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "status", "status", status_function, "");
 	SWITCH_ADD_API(commands_api_interface, "uuid_bridge", "uuid_bridge", uuid_bridge_function, "");
 	SWITCH_ADD_API(commands_api_interface, "uuid_setvar", "uuid_setvar", uuid_setvar_function, SETVAR_SYNTAX);
