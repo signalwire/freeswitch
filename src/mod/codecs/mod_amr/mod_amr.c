@@ -103,7 +103,7 @@ struct amr_context {
 	void *decoder_state;
 	switch_byte_t enc_modes;
 	switch_byte_t enc_mode;
-	switch_int_t  dtx_mode;
+	int dtx_mode;
 	uint32_t change_period;
 	switch_byte_t max_ptime;
 	switch_byte_t ptime;
@@ -188,7 +188,7 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 							context->enc_modes |= (1 << atoi(m_argv[y]));
 						}
 					} else if (!strcasecmp(data, "dtx")) {
-						context->dtx_mode = if (atoi(arg)) ? AMR_DTX_ENABLED : AMR_DTX_DISABLED;
+						context->dtx_mode = (atoi(arg)) ? AMR_DTX_ENABLED : AMR_DTX_DISABLED;
 					}
 				}
 			}
