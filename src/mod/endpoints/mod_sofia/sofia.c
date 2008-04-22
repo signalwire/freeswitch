@@ -1144,17 +1144,15 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->sipip = switch_core_strdup(profile->pool, ip);
 					} else if (!strcasecmp(var, "ext-sip-ip")) {
 						char *ip = mod_sofia_globals.guess_ip;
-						char stun_ip[50] = "";
-						char *myip = stun_ip;
 
-						switch_copy_string(myip, ip, sizeof(myip));
-						
 						if (!strcasecmp(val, "0.0.0.0")) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invald IP 0.0.0.0 replaced with %s\n", mod_sofia_globals.guess_ip);
-						} else if (strcasecmp(val, "auto")) {
+						} else if (!strcasecmp(val, "auto")) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Automatically using IP %s\n", mod_sofia_globals.guess_ip);
+						} else {
 							switch_port_t port = 0;
-							if (sofia_glue_ext_address_lookup(&myip, &port, val, profile->pool) == SWITCH_STATUS_SUCCESS) {
-								ip = myip;
+							if (sofia_glue_ext_address_lookup(&ip, &port, val, profile->pool) == SWITCH_STATUS_SUCCESS) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "STUN lookup sucessful using %s:%d\n", ip, port);
 							} else {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to get external ip.\n");
 							}
