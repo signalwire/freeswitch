@@ -461,7 +461,6 @@ static unsigned char complete(EditLine *el, int ch)
 	if (h.hits == 1) {
 		el_deletestr(el, h.len);
 		el_insertstr(el, h.last);
-		el_insertstr(el, " ");
 	}
 
  end:
