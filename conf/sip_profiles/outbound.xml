@@ -18,7 +18,7 @@
     <param name="context" value="public"/>
     <param name="dtmf-duration" value="100"/>
     <param name="codec-prefs" value="$${outbound_codec_prefs}"/>
-    <param name="hold-music" value="$${moh_uri}"/>
+    <param name="hold-music" value="$${hold_music}"/>
     <param name="use-rtp-timer" value="true"/>
     <param name="rtp-timer-name" value="soft"/>
     <param name="manage-presence" value="false"/>

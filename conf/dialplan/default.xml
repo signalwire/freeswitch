@@ -216,7 +216,7 @@
     -->
     <extension name="park">
       <condition field="destination_number" expression="^5900$">
-	<action application="set" data="fifo_music=$${moh_uri}"/>
+	<action application="set" data="fifo_music=$${hold_music}"/>
 	<action application="fifo" data="5900@$${domain} in"/>
       </condition>
     </extension>
@@ -241,7 +241,7 @@
     <extension name="park">
       <condition field="source" expression="mod_sofia"/>
       <condition field="destination_number" expression="park\+(\d+)">
-	<action application="fifo" data="$1@$${domain} in undef $${moh_uri}"/>
+	<action application="fifo" data="$1@$${domain} in undef $${hold_music}"/>
       </condition>
     </extension> 
     <!--
@@ -307,10 +307,10 @@
       <condition field="${sip_has_crypto}" expression="^(AES_CM_128_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_80)$">
 	<action application="answer"/>
 	<action application="execute_extension" data="is_secure XML features"/>
-	<action application="playback" data="$${moh_uri}"/>
+	<action application="playback" data="$${hold_music}"/>
 	<anti-action application="answer"/>
 	<!--<anti-action application="send_display" data="Insecure Music On Hold"/>-->
-	<anti-action application="playback" data="$${moh_uri}"/>
+	<anti-action application="playback" data="$${hold_music}"/>
       </condition>
     </extension>
 

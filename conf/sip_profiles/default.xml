@@ -33,7 +33,7 @@
     <param name="rtp-ip" value="$${local_ip_v4}"/>
     <!-- ip address to bind to -->
     <param name="sip-ip" value="$${local_ip_v4}"/>
-    <param name="hold-music" value="$${moh_uri}"/>
+    <param name="hold-music" value="$${hold_music}"/>
     <!--<param name="enable-timer" value="false"/>-->
     <!--<param name="enable-100rel" value="false"/>-->
     <!--<param name="apply-inbound-acl" value="lan"/>-->
