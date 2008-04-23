@@ -2752,6 +2752,7 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		}
 		
 		jss->session = peer_session;
+		switch_set_flag(jss, S_HUP);
 		*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
 		switch_channel_set_state(switch_core_session_get_channel(jss->session), CS_TRANSMIT);
 
@@ -2781,7 +2782,7 @@ static void session_destroy(JSContext * cx, JSObject * obj)
 				switch_channel_set_private(channel, "jss", NULL);
 				switch_core_event_hook_remove_state_change(session, hanguphook);
 				
-				if (switch_test_flag(jss, S_HUP) || switch_channel_get_state(channel) != CS_EXECUTE) {
+				if (switch_test_flag(jss, S_HUP)) {
 					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				}
 
