@@ -340,7 +340,8 @@ int nua_subscribe_server_report(nua_server_request_t *sr, tagi_t const *tags)
 {
   nua_handle_t *nh = sr->sr_owner;
   nua_dialog_state_t *ds = nh->nh_ds;
-  struct notifier_usage *nu = nua_dialog_usage_private(sr->sr_usage);
+  nua_dialog_usage_t *du = sr->sr_usage;
+  struct notifier_usage *nu = nua_dialog_usage_private(du);
   enum nua_substate substate = nua_substate_terminated;
   int notify = 0;
   int retval;
@@ -365,16 +366,18 @@ int nua_subscribe_server_report(nua_server_request_t *sr, tagi_t const *tags)
     else 
 #endif
       notify = 1;
+
+    notify = notify && du->du_cr != NULL;
   }
 
   retval = nua_base_server_treport(sr, NUTAG_SUBSTATE(substate), TAG_END());
 
-  if (retval >= 2 || nu == NULL)
+  if (retval >= 2 || du == NULL)
     return retval;
   
   if (notify) {
     /* Send NOTIFY (and terminate subscription, when needed) */
-    nua_dialog_usage_refresh(nh, ds, sr->sr_usage, sip_now());
+    nua_dialog_usage_refresh(nh, ds, du, sip_now());
   }
   
   return retval;
