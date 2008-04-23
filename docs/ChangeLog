@@ -1,3 +1,37 @@
+freeswitch (1.0.rc4)
+
+	Add tab completion in cli
+	Add "inline" dialplan
+	Fixed segfault in enum
+	Enhance enum to fork dial equal priority entries
+	Added auto-reload to enum
+	Fixed odbc bug is mod_sofia presence handling
+	Add presence for conference and dial an eavesdrop
+	Fix stack overflow segfault when recursively parking calls
+	Fixed race is sofia registration handling
+	Enhance sofia registration, unregister on keep-alive OPTIONS failure
+	Added internal routing loop detection/avoidance
+	Fixed race in bgapi in event socket
+	Fixed vars to execute apps before bridge "bridge_pre_execute_aleg_app" and "bridge_pre_execute_bleg_app"
+	Fixed re-setting sound prefix to no prefix after a pharse
+	Enhanced setting of bracket vars from originate so they show in the CHANNEL_ORIGINATE event
+	Add "enable-timer" and "enable-100rel" options to turn off default behaviors in sofia
+	Add originate_timeout to originate vars
+	Fixed hanging channels in mod_portaudio
+	Added auto time sync on vps migration to different hardware
+	Fixed seg on transfer when both legs are not sip
+	Added configurable dtmf duration defaults
+	Enhanced voicemail, allow interruption of hello message
+	Fixed voicemail to not light up light on saved messages
+	Enhance mod_amr honor disable dtx in fmtp (MODCODEC-3)
+	Fixed bootstrap to install automake dependencies so you can use tarball without same version of automake installed
+	Fixed MODLANG-56 (bad audio on originate and javascript streamFile)
+	Added hold/unhold dialplan apps
+	Enhanced sofia error checking to outlaw 0.0.0.0 in sofia ip params
+	Backport fixes from sofia-sip tree
+	Fixed MSVC build
+	Fixed segfault on sip SUBSCRIBE with Expires: 0
+	
 freeswitch (1.0.rc3)
 
         Enhance xml menu system
