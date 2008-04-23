@@ -344,7 +344,7 @@ void sofia_reg_auth_challange(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	sql = switch_mprintf("insert into sip_authentication (nonce, expires) values('%q', %ld)",
 						 uuid_str, switch_timestamp(NULL) + profile->nonce_ttl);
 	switch_assert(sql != NULL);
-	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, NULL);
+	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 	switch_safe_free(sql);
 	//sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 

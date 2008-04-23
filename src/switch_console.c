@@ -169,7 +169,7 @@ char *expand_alias(char *cmd, char *arg)
 	char *exp = NULL;
 	switch_core_db_t *db = switch_core_db_handle();
 	
-	sql = switch_mprintf("select command from aliases where alias='%s'", cmd);
+	sql = switch_mprintf("select command from aliases where alias='%q' or alias='%q %q'", cmd, cmd, arg);
 	switch_core_db_exec(db, sql, alias_callback, &r, &errmsg);
 
 	if (errmsg) {
