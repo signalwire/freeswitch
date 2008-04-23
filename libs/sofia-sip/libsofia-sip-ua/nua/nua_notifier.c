@@ -351,8 +351,8 @@ int nua_subscribe_server_report(nua_server_request_t *sr, tagi_t const *tags)
 
   /* nu_requested is set by SUBSCRIBE and cleared when NOTIFY is sent */
   if (nu && nu->nu_requested && substate != nua_substate_embryonic) {
-    sip_t const *sip = sr->sr_request.sip;
 #if SU_HAVE_EXPERIMENTAL
+    sip_t const *sip = sr->sr_request.sip;
     sip_suppress_notify_if_match_t *snim = sip_suppress_notify_if_match(sip);
     sip_suppress_body_if_match_t *sbim = sip_suppress_body_if_match(sip);
     
@@ -364,7 +364,7 @@ int nua_subscribe_server_report(nua_server_request_t *sr, tagi_t const *tags)
       notify = 1, nu->nu_no_body = 1;
     else 
 #endif
-		if (sip->sip_expires && sip->sip_expires->ex_delta) notify = 1;
+      notify = 1;
   }
 
   retval = nua_base_server_treport(sr, NUTAG_SUBSTATE(substate), TAG_END());
