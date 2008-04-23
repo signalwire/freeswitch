@@ -2247,6 +2247,31 @@ static int test_content_disposition(void)
   END();
 }
 
+static int test_www_authenticate(void)
+{
+  sip_www_authenticate_t *www;
+  su_home_t *home;
+  char const *s;
+  BEGIN();
+
+  TEST_1(home = su_home_create());
+  TEST_1(www = sip_www_authenticate_make
+	 (home, "Digest realm=\"Registered_Subscribers\",\n"
+	  "domain=\"sip:206.229.26.61\",\n"
+	  "nonce=\"20dfb7e5a77abee7a02dbe53efe42cdd\", "
+	  "opaque=\"423767123y723742376423762376423784623782a794e58\",\n"
+	  "stale=FALSE,algorithm=MD5"));
+  TEST_S(www->au_scheme, "Digest");
+  TEST_1(www->au_params && www->au_params[0] && www->au_params[1] && www->au_params[2] && 
+	 www->au_params[3] && www->au_params[4] && www->au_params[5] && 
+	 !www->au_params[6]);
+  TEST_1(s = sip_header_as_string(home, (sip_header_t *)www));
+  TEST_1(strlen(s) >= 128);
+
+  su_home_unref(home);
+  END();
+}
+
 int test_retry_after(void)
 {
   /* Test Session-Expires header */
@@ -3548,7 +3573,7 @@ int main(int argc, char *argv[])
   retval |= test_caller_prefs(); fflush(stdout);
   retval |= test_callerpref_scoring(); fflush(stdout);
   retval |= test_warning(); fflush(stdout);
-
+  retval |= test_www_authenticate(); fflush(stdout);
   retval |= test_sec_ext(); fflush(stdout);
 
   retval |= test_utils(); fflush(stdout);
