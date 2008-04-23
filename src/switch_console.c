@@ -168,8 +168,10 @@ char *expand_alias(char *cmd, char *arg)
 	char *sql;
 	char *exp = NULL;
 	switch_core_db_t *db = switch_core_db_handle();
+	int full = 0;
 	
-	sql = switch_mprintf("select command from aliases where alias='%q' or alias='%q %q'", cmd, cmd, arg);
+	sql = switch_mprintf("select command from aliases where alias='%q'", cmd);
+
 	switch_core_db_exec(db, sql, alias_callback, &r, &errmsg);
 
 	if (errmsg) {
@@ -177,8 +179,23 @@ char *expand_alias(char *cmd, char *arg)
 		free(errmsg);
 	}
 
+	if (!r) {
+		sql = switch_mprintf("select command from aliases where alias='%q %q'", cmd, arg);
+		
+		switch_core_db_exec(db, sql, alias_callback, &r, &errmsg);
+		
+		if (errmsg) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error [%s][%s]\n", sql, errmsg);
+			free(errmsg);
+		}
+		if (r) {
+			full++;
+		}
+	}
+
+
 	if (r) {
-		if (arg) {
+		if (arg && !full) {
 			exp = switch_mprintf("%s %s", r, arg);
 			free(r);
 		} else {
