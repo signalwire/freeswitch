@@ -2586,7 +2586,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	uint32_t sess_max = switch_core_session_limit(0);
 	int is_auth = 0, calling_myself = 0;
 	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
-	
+	int network_port = 0;
 
 	if (sess_count >= sess_max || !(profile->pflags & PFLAG_RUNNING)) {
 		nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
@@ -2601,6 +2601,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	
 	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
+	network_port = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
 
 	if (profile->acl_count) {
 		uint32_t x = 0;
@@ -2648,6 +2649,17 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		return;
 	}
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+
+	tech_pvt->remote_ip = switch_core_session_strdup(session, network_ip);
+	tech_pvt->remote_port = network_port;
+
+	if (sip->sip_contact && sip->sip_contact->m_url) {
+		tech_pvt->record_route = switch_core_session_sprintf(session, "<sip:%s@%s:%d;lr>", 
+															 sip->sip_contact->m_url->url_user, 
+															 tech_pvt->remote_ip,
+															 tech_pvt->remote_port);
+	}
+
 
 	if (*key != '\0') {
 		tech_pvt->key = switch_core_session_strdup(session, key);

@@ -584,8 +584,16 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 			switch_stream_handle_t mystream = { 0 };
 			SWITCH_STANDARD_STREAM(mystream);
 
-			if (!strcasecmp(argv[0], "add")) {
-				mystream.write_function(&mystream, "insert into complete values (");
+
+			if (!strcasecmp(argv[0], "stickyadd")) {
+				mystream.write_function(&mystream, "insert into complete values (1,");
+				for(x = 0; x < 10; x++) {
+					mystream.write_function(&mystream, "'%s'%s", switch_str_nil(argv[x+1]), x == 9 ? ")" : ", ");
+				}
+				switch_core_db_persistant_execute(db, mystream.data, 5);
+				status = SWITCH_STATUS_SUCCESS;
+			} else if (!strcasecmp(argv[0], "add")) {
+				mystream.write_function(&mystream, "insert into complete values (0,");
 				for(x = 0; x < 10; x++) {
 					mystream.write_function(&mystream, "'%s'%s", switch_str_nil(argv[x+1]), x == 9 ? ")" : ", ");
 				}
@@ -627,11 +635,19 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
 			switch_core_db_t *db = switch_core_db_handle();
 			char *sql = NULL;
 
-			if (!strcasecmp(argv[0], "add") && argc == 3) {
+
+			if (!strcasecmp(argv[0], "stickyadd") && argc == 3) {
 				sql = switch_mprintf("delete from aliases where alias='%q'", argv[1]);
 				switch_core_db_persistant_execute(db, sql, 5);
 				switch_safe_free(sql);
-				sql = switch_mprintf("insert into aliases (alias, command) values ('%q','%q')", argv[1], argv[2]);
+				sql = switch_mprintf("insert into aliases (sticky, alias, command) values (1, '%q','%q')", argv[1], argv[2]);
+				switch_core_db_persistant_execute(db, sql, 5);
+				status = SWITCH_STATUS_SUCCESS;
+			} else if (!strcasecmp(argv[0], "add") && argc == 3) {
+				sql = switch_mprintf("delete from aliases where alias='%q'", argv[1]);
+				switch_core_db_persistant_execute(db, sql, 5);
+				switch_safe_free(sql);
+				sql = switch_mprintf("insert into aliases (sticky, alias, command) values (0, '%q','%q')", argv[1], argv[2]);
 				switch_core_db_persistant_execute(db, sql, 5);
 				status = SWITCH_STATUS_SUCCESS;
 			} else if (!strcasecmp(argv[0], "del") && argc == 2) {
