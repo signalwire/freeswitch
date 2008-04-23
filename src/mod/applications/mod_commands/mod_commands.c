@@ -1885,7 +1885,7 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames)
 	return 0;
 }
 
-#define COMPLETE_SYNTAX "add <word>|del [<word>|all]"
+#define COMPLETE_SYNTAX "add <word>|del [<word>|*]"
 SWITCH_STANDARD_API(complete_function)
 {
 
@@ -1900,7 +1900,23 @@ SWITCH_STANDARD_API(complete_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define SHOW_SYNTAX "codec|application|api|dialplan|file|timer|calls|channels"
+
+#define ALIAS_SYNTAX "add <alias> <command> | del [<alias>|*]"
+SWITCH_STANDARD_API(alias_function)
+{
+
+	switch_status_t status;
+
+	if ((status = switch_console_set_alias(cmd)) == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK\n");
+	} else {
+		stream->write_function(stream, "-USAGE: %s\n", ALIAS_SYNTAX);
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define SHOW_SYNTAX "codec|application|api|dialplan|file|timer|calls|channels|aliases|complete"
 SWITCH_STANDARD_API(show_function)
 {
 	char sql[1024];
@@ -1951,6 +1967,10 @@ SWITCH_STANDARD_API(show_function)
 		sprintf(sql, "select * from calls order by created_epoch");
 	} else if (!strcasecmp(command, "channels")) {
 		sprintf(sql, "select * from channels order by created_epoch");
+	} else if (!strcasecmp(command, "aliases")) {
+		sprintf(sql, "select * from aliases order by alias");
+	} else if (!strcasecmp(command, "complete")) {
+		sprintf(sql, "select * from complete order by a1,a2,a3,a4,a5,a6,a7,a8,a9,a10");
 	} else if (!strncasecmp(command, "help", 4)) {
 		char *cmdname = NULL;
 
@@ -2280,6 +2300,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "break", "Break", break_function, BREAK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "show", "Show", show_function, SHOW_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "complete", "Complete", complete_function, COMPLETE_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "alias", "Alias", alias_function, ALIAS_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "status", "status", status_function, "");
 	SWITCH_ADD_API(commands_api_interface, "uuid_bridge", "uuid_bridge", uuid_bridge_function, "");
 	SWITCH_ADD_API(commands_api_interface, "uuid_setvar", "uuid_setvar", uuid_setvar_function, SETVAR_SYNTAX);

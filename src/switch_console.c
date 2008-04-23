@@ -154,9 +154,47 @@ SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_write(switch_stream
 	return ret ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 }
 
-static int switch_console_process(char *cmd)
+static int alias_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
-	char *arg = NULL;
+	char **r = (char **) pArg;
+	*r = strdup(argv[0]);
+	return -1;
+}
+
+char *expand_alias(char *cmd, char *arg)
+{
+	char *errmsg = NULL;
+	char *r = NULL;
+	char *sql;
+	char *exp = NULL;
+	switch_core_db_t *db = switch_core_db_handle();
+	
+	sql = switch_mprintf("select command from aliases where alias='%s'", cmd);
+	switch_core_db_exec(db, sql, alias_callback, &r, &errmsg);
+
+	if (errmsg) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error [%s][%s]\n", sql, errmsg);
+		free(errmsg);
+	}
+
+	if (r) {
+		if (arg) {
+			exp = switch_mprintf("%s %s", r, arg);
+			free(r);
+		} else {
+			exp = r;
+		}
+	} else {
+		exp = cmd;
+	}
+
+	switch_core_db_close(db);
+	return exp;
+}
+
+static int switch_console_process(char *cmd, int rec)
+{
+	char *arg = NULL, *alias = NULL;
 	switch_stream_handle_t stream = { 0 };
 
 	if (!strcmp(cmd, "shutdown") || !strcmp(cmd, "...")) {
@@ -173,6 +211,12 @@ static int switch_console_process(char *cmd)
 	}
 	if ((arg = strchr(cmd, ' ')) != 0) {
 		*arg++ = '\0';
+	}
+
+	if (!rec && (alias = expand_alias(cmd, arg)) && alias != cmd) {
+		int r = switch_console_process(alias, ++rec);
+		free(alias);
+		return r;
 	}
 
 	SWITCH_STANDARD_STREAM(stream);
@@ -268,7 +312,7 @@ static unsigned char console_fnkey_pressed(int i) {
     }
 	
 	cmd = strdup(c);
-	switch_console_process(cmd);
+	switch_console_process(cmd, 0);
 	free(cmd);
 
     return CC_REDISPLAY;
@@ -353,7 +397,7 @@ static void *SWITCH_THREAD_FUNC console_thread(switch_thread_t *thread, void *ob
 				}
 				assert(cmd != NULL);
 				history(myhistory, &ev, H_ENTER, line);
-				running = switch_console_process(cmd);
+				running = switch_console_process(cmd, 0);
 				el_deletestr(el, strlen(foo)+1);
 				memset(foo, 0, strlen(foo));
 				free(cmd);
@@ -528,7 +572,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 				for(x = 0; x < 10; x++) {
 					mystream.write_function(&mystream, "'%s'%s", switch_str_nil(argv[x+1]), x == 9 ? ")" : ", ");
 				}
-				switch_core_db_persistant_execute(db, mystream.data, 1);
+				switch_core_db_persistant_execute(db, mystream.data, 5);
 				status = SWITCH_STATUS_SUCCESS;
 			} else if (!strcasecmp(argv[0], "del")) {
 				char *what = argv[1];
@@ -548,6 +592,46 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 		}
 	}
 
+	switch_safe_free(mydata);
+
+	return status;
+
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
+{
+	char *mydata = NULL, *argv[3] = {0};
+	int argc;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	
+	if (string && (mydata = strdup(string))) {
+		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
+			switch_core_db_t *db = switch_core_db_handle();
+			char *sql = NULL;
+
+			if (!strcasecmp(argv[0], "add") && argc == 3) {
+				sql = switch_mprintf("delete from aliases where alias='%q'", argv[1]);
+				switch_core_db_persistant_execute(db, sql, 5);
+				switch_safe_free(sql);
+				sql = switch_mprintf("insert into aliases (alias, command) values ('%q','%q')", argv[1], argv[2]);
+				switch_core_db_persistant_execute(db, sql, 5);
+				status = SWITCH_STATUS_SUCCESS;
+			} else if (!strcasecmp(argv[0], "del") && argc == 2) {
+				char *what = argv[1];
+                if (!strcasecmp(what, "*")) {
+					switch_core_db_persistant_execute(db, "delete from aliases", 1);
+				} else {
+					sql = switch_mprintf("delete from aliases where alias='%q'", argv[1]);
+					switch_core_db_persistant_execute(db, sql, 5);
+				}
+				status = SWITCH_STATUS_SUCCESS;
+			}
+			switch_safe_free(sql);
+			switch_core_db_close(db);
+		}
+	}
+	
 	switch_safe_free(mydata);
 
 	return status;
@@ -712,7 +796,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 		}
 
 		if (cmd[0]) {
-			running = switch_console_process(cmd);
+			running = switch_console_process(cmd, 0);
 		}
 	}
 }

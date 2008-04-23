@@ -380,6 +380,12 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 			"   a10 VARCHAR(255)\n" 
 			");\n";
 
+		char create_alias_sql[] =
+			"CREATE TABLE aliases (\n"
+			"   alias  VARCHAR(255),\n" 
+			"   command  VARCHAR(255)\n" 
+			");\n";
+
 		char create_channels_sql[] =
 			"CREATE TABLE channels (\n"
 			"   uuid  VARCHAR(255),\n"
@@ -440,6 +446,7 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 		switch_core_db_exec(sql_manager.db, "PRAGMA temp_store=MEMORY;", NULL, NULL, NULL);
 
 		switch_core_db_test_reactive(sql_manager.db, "select a1 from complete", "DROP TABLE complete", create_complete_sql);
+		switch_core_db_test_reactive(sql_manager.db, "select alias from aliases", "DROP TABLE aliases", create_alias_sql);
 		switch_core_db_exec(sql_manager.db, create_channels_sql, NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, create_calls_sql, NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, create_interfaces_sql, NULL, NULL, NULL);
