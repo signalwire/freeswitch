@@ -1,0 +1,23 @@
+# FreeSWITCH auto-build Makefile
+# http://www.freeswitch.org
+
+cat << EOF | make -f -
+freeswitch: freeswitch.trunk/Makefile
+	cd freeswitch.trunk && make
+
+freeswitch.trunk/Makefile: freeswitch.trunk/configure
+	cd freeswitch.trunk && ./configure
+
+freeswitch.trunk/configure: freeswitch.trunk/bootstrap.sh
+	cd freeswitch.trunk && sh bootstrap.sh
+
+freeswitch.trunk/bootstrap.sh:
+	@echo 'Downloading FreeSWITCH please wait....(a while)'
+	svn co -q http://svn.freeswitch.org:/svn/freeswitch/trunk freeswitch.trunk
+
+
+install:
+	cd freeswitch.trunk && make install
+
+all: freeswitch
+EOF
