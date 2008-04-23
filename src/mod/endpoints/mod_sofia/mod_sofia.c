@@ -285,7 +285,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 			
 		if (switch_test_flag(tech_pvt, TFLAG_ANS)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending BYE to %s\n", switch_channel_get_name(channel));
-			nua_bye(tech_pvt->nh, SIPTAG_RECORD_ROUTE_STR(tech_pvt->record_route), SIPTAG_REASON_STR(reason), TAG_END());
+			nua_bye(tech_pvt->nh, SIPTAG_REASON_STR(reason), TAG_END());
 		} else {
 			if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending CANCEL to %s\n", switch_channel_get_name(channel));
@@ -386,9 +386,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		}
 	}
 
-	printf("XXXXXXXXXXXXXXXXXXXXXXXXWTF [%s]\n", tech_pvt->record_route);
 	nua_respond(tech_pvt->nh, SIP_200_OK,
-				SIPTAG_RECORD_ROUTE_STR(tech_pvt->record_route),
 				NUTAG_AUTOANSWER(0),
 				NUTAG_SESSION_TIMER(session_timeout),
 				SIPTAG_CONTACT_STR(tech_pvt->reply_contact),

@@ -381,7 +381,6 @@ struct private_object {
 	char *gateway_name;
 	char *local_crypto_key;
 	char *remote_crypto_key;
-	char *record_route;
 	int crypto_tag;
 	unsigned char local_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
 	unsigned char remote_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
@@ -422,8 +421,6 @@ struct private_object {
 	uint32_t video_count;
 	sofia_dtmf_t dtmf_type;
 	int q850_cause;
-	char *remote_ip;
-	int remote_port;
 };
 
 struct callback_t {
