@@ -445,8 +445,8 @@ static int pitsyn(lpc10_decode_state_t *s,
                         xxy = expf(xxy);
                         rci[j + *nout*rci_dim1 + 1] = (xxy - 1.0f)/(xxy + 1.0f);
                     }
-					f = logf(*rms) - logf(s->rmso);
-                    rmsi[*nout - 1] = logf(s->rmso) + prop * f;
+					f = ((logf(*rms)) - (logf(s->rmso)));
+                    rmsi[*nout - 1] = logf(s->rmso) + (prop * f);
                     rmsi[*nout - 1] = expf(rmsi[*nout - 1]);
                 }
             }
