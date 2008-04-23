@@ -1888,45 +1888,16 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames)
 #define COMPLETE_SYNTAX "add <word>|del [<word>|all]"
 SWITCH_STANDARD_API(complete_function)
 {
-	char *mydata = NULL, *argv[2] = {0};
-	int fail = 1, argc;
-	char sql[1024] = "";
 
-	if (cmd && (mydata = strdup(cmd))) {
-		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-			switch_core_db_t *db = switch_core_db_handle();
-			
-			if (!strcasecmp(argv[0], "add")) {
-				switch_snprintf(sql, sizeof(sql), "delete from complete where name = '%s'", argv[1]);
-				switch_core_db_persistant_execute(db, sql, 1);
-				switch_snprintf(sql, sizeof(sql), "insert into complete values ('%s')", argv[1]);
-				switch_core_db_persistant_execute(db, sql, 1);
-				stream->write_function(stream, "+OK\n");
-				fail = 0;
-			} else if (!strcasecmp(argv[0], "del")) {
-				char *what = argv[1];
-				if (!strcasecmp(what, "*")) {
-					switch_snprintf(sql, sizeof(sql), "delete from complete");
-				} else {
-					switch_snprintf(sql, sizeof(sql), "delete from complete where name = '%s'", what);
-				}
-				switch_core_db_persistant_execute(db, sql, 1);
-				stream->write_function(stream, "+OK\n");
-				fail = 0;
-			}
+	switch_status_t status;
 
-			switch_core_db_close(db);
-		}
-	}
-
-	switch_safe_free(mydata);
-
-	if (fail) {
+	if ((status = switch_console_set_complete(cmd)) == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK\n");
+	} else {
 		stream->write_function(stream, "-USAGE: %s\n", COMPLETE_SYNTAX);
 	}
 	
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 #define SHOW_SYNTAX "codec|application|api|dialplan|file|timer|calls|channels"

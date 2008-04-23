@@ -368,7 +368,16 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 	} else {
 		char create_complete_sql[] =
 			"CREATE TABLE complete (\n"
-			"   name  VARCHAR(255)\n" 
+			"   a1  VARCHAR(255),\n" 
+			"   a2  VARCHAR(255),\n" 
+			"   a3  VARCHAR(255),\n" 
+			"   a4  VARCHAR(255),\n" 
+			"   a5  VARCHAR(255),\n" 
+			"   a6  VARCHAR(255),\n" 
+			"   a7  VARCHAR(255),\n" 
+			"   a8  VARCHAR(255),\n" 
+			"   a9  VARCHAR(255),\n" 
+			"   a10 VARCHAR(255)\n" 
 			");\n";
 
 		char create_channels_sql[] =
@@ -430,7 +439,7 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 		switch_core_db_exec(sql_manager.db, "PRAGMA cache_size=8000", NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, "PRAGMA temp_store=MEMORY;", NULL, NULL, NULL);
 
-		switch_core_db_exec(sql_manager.db, create_complete_sql, NULL, NULL, NULL);
+		switch_core_db_test_reactive(sql_manager.db, "select a1 from complete", "DROP TABLE complete", create_complete_sql);
 		switch_core_db_exec(sql_manager.db, create_channels_sql, NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, create_calls_sql, NULL, NULL, NULL);
 		switch_core_db_exec(sql_manager.db, create_interfaces_sql, NULL, NULL, NULL);

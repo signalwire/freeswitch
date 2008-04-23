@@ -1600,6 +1600,7 @@ SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip(const char *ip_str, c
 SWITCH_DECLARE(void) switch_time_set_monotonic(switch_bool_t enable);
 SWITCH_DECLARE(uint32_t) switch_core_max_dtmf_duration(uint32_t duration);
 SWITCH_DECLARE(uint32_t) switch_core_default_dtmf_duration(uint32_t duration);
+SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string);
 
 ///\}
 

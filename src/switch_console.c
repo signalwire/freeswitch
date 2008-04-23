@@ -371,6 +371,7 @@ struct helper {
 	EditLine *el;
 	int len;
 	int hits;
+	int words;
 	char last[512];
 	FILE *out;
 };
@@ -378,10 +379,17 @@ struct helper {
 static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	struct helper *h = (struct helper *) pArg;
-
-	fprintf(h->out, "%20s\t", argv[0]);
+	char *target = NULL;
 	
-	switch_copy_string(h->last, argv[0], sizeof(h->last));
+	target = argv[0];
+
+	if (!target) {
+		return -1;
+	}
+
+	fprintf(h->out, "%20s\t", target);
+	
+	switch_copy_string(h->last, target, sizeof(h->last));
 
 	if ((++h->hits % 4) == 0) {
 		fprintf(h->out, "\n");
@@ -400,7 +408,6 @@ static unsigned char complete(EditLine *el, int ch)
 	char *p, *lp = NULL;
 	char *errmsg = NULL;
 	struct helper h = { el };
-	int words = 0;
 	unsigned char ret = CC_REDISPLAY;
 
 	h.out = switch_core_get_console();
@@ -416,7 +423,7 @@ static unsigned char complete(EditLine *el, int ch)
 	for(p = buf; p && *p; p++) {
 		if (*p == ' ') {
 			lp = p;
-			words++;
+			h.words++;
 		}
 	}
 
@@ -428,7 +435,7 @@ static unsigned char complete(EditLine *el, int ch)
 	
 	fprintf(h.out, "\n\n");
 
-	if (words == 0) {
+	if (h.words == 0) {
 		sql = switch_mprintf("select distinct name from interfaces where type='api' and name like '%s%%' order by name", buf);
 	} else {
 		sql = switch_mprintf("select distinct uuid from channels where uuid like '%s%%' order by uuid", buf);
@@ -444,14 +451,42 @@ static unsigned char complete(EditLine *el, int ch)
 	}
 
 	if (h.hits != 1) {
-		switch_safe_free(sql);
-		sql = switch_mprintf("select distinct name from complete where name like '%s%%' order by name", buf);
-		switch_core_db_exec(db, sql, comp_callback, &h, &errmsg);	
+		char *dupdup = strdup(dup);
+		switch_assert(dupdup);
+		int x, argc = 0;
+		char *argv[10] = {0};
+		switch_stream_handle_t stream = { 0 };
+		SWITCH_STANDARD_STREAM(stream);
+
 		
+		argc = switch_separate_string(dupdup, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+		if (h.words == 0) {
+			stream.write_function(&stream, 
+								  "select distinct a1 from complete where "
+								  "a1 not in (select name from interfaces) and ");
+		} else {
+			stream.write_function(&stream, 
+								  "select distinct a%d from complete where ", h.words + 1);
+								  
+		}
+
+		for(x = 0; x < argc; x++) {
+			stream.write_function(&stream, "(a%d = '' or a%d like '%s%%')%s", x+1, x+1, switch_str_nil(argv[x]), x == argc -1 ? "" : " and ");
+		}
+		
+		switch_core_db_exec(db, stream.data, comp_callback, &h, &errmsg);	
+
 		if (errmsg) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error [%s][%s]\n", sql, errmsg);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error [%s][%s]\n", (char *) stream.data, errmsg);
 			free(errmsg);
 			ret = CC_ERROR;
+		}
+
+		switch_safe_free(dupdup);
+		switch_safe_free(stream.data);
+		
+		if (ret == CC_ERROR) {
 			goto end;
 		}
 	}
@@ -474,6 +509,51 @@ static unsigned char complete(EditLine *el, int ch)
 	
 	return (ret);
 }
+
+
+SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
+{
+	char *mydata = NULL, *argv[11] = {0};
+	int argc, x;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (string && (mydata = strdup(string))) {
+		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+			switch_core_db_t *db = switch_core_db_handle();
+			switch_stream_handle_t mystream = { 0 };
+			SWITCH_STANDARD_STREAM(mystream);
+
+			if (!strcasecmp(argv[0], "add")) {
+				mystream.write_function(&mystream, "insert into complete values (");
+				for(x = 0; x < 10; x++) {
+					mystream.write_function(&mystream, "'%s'%s", switch_str_nil(argv[x+1]), x == 9 ? ")" : ", ");
+				}
+				switch_core_db_persistant_execute(db, mystream.data, 1);
+				status = SWITCH_STATUS_SUCCESS;
+			} else if (!strcasecmp(argv[0], "del")) {
+				char *what = argv[1];
+                if (!strcasecmp(what, "*")) {
+					switch_core_db_persistant_execute(db, "delete from complete", 1);
+				} else {
+					mystream.write_function(&mystream, "delete from complete where ");
+					for(x = 0; x < argc - 1; x++) {
+						mystream.write_function(&mystream, "a%d = '%s'%s", x+1, switch_str_nil(argv[x+1]), x == argc - 2 ? "" : " and ");
+					}
+					switch_core_db_persistant_execute(db, mystream.data, 1);
+				}
+				status = SWITCH_STATUS_SUCCESS;
+			}
+			switch_safe_free(mystream.data);
+			switch_core_db_close(db);
+		}
+	}
+
+	switch_safe_free(mydata);
+
+	return status;
+
+}
+
 
 SWITCH_DECLARE(void) switch_console_loop(void)
 {
