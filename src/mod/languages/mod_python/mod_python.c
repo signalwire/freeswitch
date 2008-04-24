@@ -169,28 +169,31 @@ static void eval_some_python(char *uuid, char *args, switch_core_session_t *sess
 
 	// swap out thread state
 	if (session) {
-	    // record the fact that thread state is swapped in
-	    switch_channel_t *channel = switch_core_session_get_channel(session);
-	    PyThreadState *swapin_tstate = (PyThreadState *) switch_channel_get_private(channel, "SwapInThreadState");
-	    // so lets assume nothing in the python script swapped any thread state in
-            // or out .. thread state will currently be swapped in, and the SwapInThreadState 
-	    // will be null
-	    if (swapin_tstate == NULL) {
-		// swap it out
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Threadstate mod_python.c swap-out! \n");
-		// PyEval_ReleaseThread(cur_tstate);
-		swapin_tstate = (void *) PyEval_SaveThread();
-		switch_channel_set_private(channel, "SwapInThreadState", (void *) swapin_tstate);
-	    }
-	    else {
-		// thread state is already swapped out, so, nothing for us to do
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "according to chan priv data, already swapped out \n");
-	    }
- 	}
+		// record the fact that thread state is swapped in
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		PyThreadState *swapin_tstate = (PyThreadState *) switch_channel_get_private(channel, "SwapInThreadState");
+		// so lets assume nothing in the python script swapped any thread state in
+		// or out .. thread state will currently be swapped in, and the SwapInThreadState 
+		// will be null
+		if (swapin_tstate == NULL) {
+			// clear out threadstate
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "clear threadstate \n");
+			// we know we are swapped in because swapin_tstate is NULL, and therefore we have the GIL, so
+			// it is safe to call PyThreadState_Get.
+			PyThreadState *cur_tstate = PyThreadState_Get();
+			PyThreadState_Clear(cur_tstate);
+			PyEval_ReleaseThread(cur_tstate);
+			PyThreadState_Delete(cur_tstate); 
+		}
+		else {
+			// thread state is already swapped out, so, nothing for us to do
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "according to chan priv data, already swapped out \n");
+		}
+	}
 	else {
-	    // they ran python script from cmd line, behave a bit differently (untested)
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Threadstate mod_python.c swap-out! \n");
-	    PyEval_ReleaseThread(tstate);
+		// they ran python script from cmd line, behave a bit differently (untested)
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No session: Threadstate mod_python.c swap-out! \n");
+		PyEval_ReleaseThread(tstate);
 	}
 
 	switch_safe_free(dupargs);
@@ -290,22 +293,22 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 	
 	if (!Py_IsInitialized()) {
 
-	    // initialize python system
-	    Py_Initialize();
+		// initialize python system
+		Py_Initialize();
 
-	    // create GIL and a threadstate
-	    PyEval_InitThreads();
+		// create GIL and a threadstate
+		PyEval_InitThreads();
 
-	    // save threadstate since it's interp field will be needed
-	    // to create new threadstates, and will be needed for shutdown
-	    mainThreadState = PyThreadState_Get();
+		// save threadstate since it's interp field will be needed
+		// to create new threadstates, and will be needed for shutdown
+		mainThreadState = PyThreadState_Get();
 	    
-	    // swap out threadstate since the call threads will create
-	    // their own and swap in their threadstate
-	    PyThreadState_Swap(NULL); 
+		// swap out threadstate since the call threads will create
+		// their own and swap in their threadstate
+		PyThreadState_Swap(NULL); 
 
-	    // release GIL
-	    PyEval_ReleaseLock();	
+		// release GIL
+		PyEval_ReleaseLock();	
 	}
 
 	/* indicate that the module should continue to be loaded */
