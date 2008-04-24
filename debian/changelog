@@ -30,6 +30,7 @@ freeswitch (1.0~rc4-1) unstable; urgency=low
      Backport fixes from sofia-sip tree
      Fixed MSVC build
      Fixed segfault on sip SUBSCRIBE with Expires: 0
+     Added mod_say_zh
 
  -- Michael Jerris <mike@jerris.com>  Wed, 23 Apr 2008 12:58:00 -0400
 

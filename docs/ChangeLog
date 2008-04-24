@@ -31,6 +31,7 @@ freeswitch (1.0.rc4)
 	Backport fixes from sofia-sip tree
 	Fixed MSVC build
 	Fixed segfault on sip SUBSCRIBE with Expires: 0
+	Added mod_say_zh
 	
 freeswitch (1.0.rc3)
 
