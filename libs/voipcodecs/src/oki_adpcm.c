@@ -177,7 +177,7 @@ static int16_t decode(oki_adpcm_state_t *s, uint8_t adpcm)
         e += (ss >> 1);
     /*endif*/
     if (adpcm & 0x04)
-        e += ss;
+        e = (int16_t)(e + ss);
     /*endif*/
     if (adpcm & 0x08)
         e = -e;
@@ -192,7 +192,7 @@ static int16_t decode(oki_adpcm_state_t *s, uint8_t adpcm)
     /*endif*/
 
     s->last = linear;
-    s->step_index += step_adjustment[adpcm & 0x07];
+    s->step_index = (int16_t)(s->step_index + step_adjustment[adpcm & 0x07]);
     if (s->step_index < 0)
         s->step_index = 0;
     else if (s->step_index > 48)
@@ -221,13 +221,13 @@ static uint8_t encode(oki_adpcm_state_t *s, int16_t linear)
     if (e >= ss)
     {
         adpcm |= (uint8_t) 0x04;
-        e -= ss;
+        e = (int16_t)(e - ss);
     }
     /*endif*/
     if (e >= (ss >> 1))
     {
         adpcm |= (uint8_t) 0x02;
-        e -= ss;
+        e = (int16_t)(e - ss);
     }
     /*endif*/
     if (e >= (ss >> 2))
