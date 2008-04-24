@@ -90,13 +90,14 @@ typedef enum {
 	S_RDLOCK = (1 << 2)
 } session_flag_t;
 
-
+#if 0
 class switchEvent {
  protected:
 	switch_event_t *event;
  public:
 	switchEvent(switch_event_types_t event_id, const char *subclass_name);
 };
+#endif
 
 class CoreSession {
  protected:
