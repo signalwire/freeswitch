@@ -1,0 +1,1 @@
+#define PERL_LIB "@PERL_LIB@"

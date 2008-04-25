@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="mod_perl"
+	ProjectGUID="{7B077E7F-1BE7-4291-AB86-55E527B25CAC}"
+	RootNamespace="mod_perl"
+	Keyword="Win32Proj"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="if not exist perlxsi.c perl -MExtUtils::Embed -e xsinit"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="@compiler.opts"
+				AdditionalIncludeDirectories="."
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;_CRT_SECURE_NO_DEPRECATE;MULTIPLICITY;EMBED_PERL"
+				UsePrecompiledHeader="0"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="if not exist perlxsi.c perl -MExtUtils::Embed -e xsinit"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="@compiler.opts"
+				AdditionalIncludeDirectories="."
+				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;MULTIPLICITY;EMBED_PERL"
+				UsePrecompiledHeader="0"
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<File
+			RelativePath=".\mod_perl.c"
+			>
+		</File>
+		<File
+			RelativePath=".\perlxsi.c"
+			>
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>
