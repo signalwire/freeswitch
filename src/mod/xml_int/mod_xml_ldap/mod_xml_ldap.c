@@ -134,7 +134,7 @@ static switch_status_t xml_ldap_directory_result(void *ldap_connection, xml_bind
 {
 	struct ldap_c *ldap = ldap_connection;
 	switch_xml_t asdf = *xml;
-	switch_xml_t param, variable, params, variables;
+	switch_xml_t param, variable, params = NULL, variables = NULL;
 	int i = 0;
 	int loff = *off;
 
@@ -217,7 +217,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 	xml_binding_t *binding = (xml_binding_t *)user_data;
 	switch_event_header_t *hi;
 
-	switch_xml_t xml, sub;
+	switch_xml_t xml = NULL, sub = NULL;
 
 	struct ldap_c ldap_connection;
 	struct ldap_c *ldap = &ldap_connection;
@@ -225,7 +225,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 	int auth_method     = LDAP_AUTH_SIMPLE;
 	int desired_version = LDAP_VERSION3;
 	xml_ldap_query_type_t query_type;
-	char *dir_exten, *dir_domain;
+	char *dir_exten = NULL, *dir_domain = NULL;
 	char *filter = "(objectClass=*)";
 
 	char *search_base = NULL;
@@ -248,6 +248,9 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 	}
 	else if (!strcmp(section,"phrases")) {
 		query_type = XML_LDAP_PHRASE;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid section\n");
+		return NULL;
 	}
 
 	if (params) {
@@ -277,20 +280,24 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 
 			case XML_LDAP_DIRECTORY:
 				if (dir_exten && dir_domain) {
-					xml = switch_xml_new("directory");
-					switch_xml_set_attr_d(xml, "type", "freeswitch/xml");
+					if ((xml = switch_xml_new("directory"))) {
+						switch_xml_set_attr_d(xml, "type", "freeswitch/xml");
+						
+						if ((sub = switch_xml_add_child_d(xml, "section", off++))) {
+							switch_xml_set_attr_d(sub, "name", "directory");
+						}
 
-					sub = switch_xml_add_child_d(xml, "section", off++);
-					switch_xml_set_attr_d(sub, "name", "directory");
-
-					sub = switch_xml_add_child_d(sub, "domain", off++);
-					switch_xml_set_attr_d(sub, "name", dir_domain);
-
-					sub = switch_xml_add_child_d(sub, "user", off++);
-					switch_xml_set_attr_d(sub, "id", dir_exten);
+						if ((sub = switch_xml_add_child_d(sub, "domain", off++))) {
+							switch_xml_set_attr_d(sub, "name", dir_domain);
+						}
+						
+						if ((sub = switch_xml_add_child_d(sub, "user", off++))) {
+							switch_xml_set_attr_d(sub, "id", dir_exten);
+						}
+					}
 
 					search_base = switch_mprintf(binding->queryfmt, dir_exten, dir_domain, binding->ldap_base);
-
+						
 					free(dir_exten);
 					dir_exten = NULL;
 
@@ -303,13 +310,15 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 				break;
 
 			case XML_LDAP_DIALPLAN:
-				xml = switch_xml_new("document");
-				switch_xml_set_attr_d(xml, "type", "freeswitch/xml");
+				if ((xml = switch_xml_new("document"))) {
+					switch_xml_set_attr_d(xml, "type", "freeswitch/xml");
 
-				sub = switch_xml_add_child_d(xml, "section", off++);
-				switch_xml_set_attr_d(sub, "name", "dialplan");
+					if ((sub = switch_xml_add_child_d(xml, "section", off++))) {
+						switch_xml_set_attr_d(sub, "name", "dialplan");
+					}
 
-				sub = switch_xml_add_child_d(xml, "context", off++);
+					sub = switch_xml_add_child_d(xml, "context", off++);
+				}
 				search_base = switch_mprintf(binding->queryfmt, dir_exten, dir_domain, binding->ldap_base);
 				break;
 
@@ -321,6 +330,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 			goto cleanup;
 		}
 	}
+
 
 
 	if ((ldap->ld = ldap_init(binding->host, LDAP_PORT)) == NULL) {
@@ -345,7 +355,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 		goto cleanup;
 	}
 
-	if (xml_ldap_result(&ldap_connection, binding, &sub, &off, query_type) != SWITCH_STATUS_SUCCESS) {
+	if (sub && xml_ldap_result(&ldap_connection, binding, &sub, &off, query_type) != SWITCH_STATUS_SUCCESS) {
 		goto cleanup;
 	}
 
