@@ -90,14 +90,34 @@ typedef enum {
 	S_RDLOCK = (1 << 2)
 } session_flag_t;
 
-#if 0
-class switchEvent {
+class Stream {
+ protected: 
+	switch_stream_handle_t mystream;
+	switch_stream_handle_t *stream_p;
+	int mine;
+ public: 
+	Stream(void);
+	Stream(switch_stream_handle_t *);
+	virtual ~Stream();
+	void write(const char *data);	
+	const char *get_data(void);
+};
+
+class Event {
  protected:
 	switch_event_t *event;
  public:
-	switchEvent(switch_event_types_t event_id, const char *subclass_name);
+	Event(const char *type, const char *subclass_name = NULL);
+	virtual ~Event();
+	bool set_priority(switch_priority_t priority = SWITCH_PRIORITY_NORMAL);
+	char *get_header(char *header_name);
+	char *get_body(void);
+	bool add_body(const char *value);
+	bool add_header(const char *header_name, const char *value);
+	bool del_header(const char *header_name);
+	bool fire(void);
 };
-#endif
+
 
 class CoreSession {
  protected:

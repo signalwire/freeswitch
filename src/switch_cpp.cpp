@@ -41,6 +41,117 @@
 #define sanity_check_noreturn do { if (!(session && allocated)) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return;}} while(0)
 #define init_vars() do { session = NULL; channel = NULL; uuid = NULL; tts_name = NULL; voice_name = NULL; memset(&args, 0, sizeof(args)); ap = NULL; caller_profile.source = "mod_unknown";  caller_profile.dialplan = ""; caller_profile.context = ""; caller_profile.caller_id_name = ""; caller_profile.caller_id_number = ""; caller_profile.network_addr = ""; caller_profile.ani = ""; caller_profile.aniii = ""; caller_profile.rdnis = "";  caller_profile.username = ""; on_hangup = NULL; cb_state.function = NULL; } while(0)
 
+Event::Event(const char *type, const char *subclass_name)
+{
+	switch_event_types_t event_id;
+
+	if (switch_name_event(type, &event_id) != SWITCH_STATUS_SUCCESS) {
+		event_id = SWITCH_EVENT_MESSAGE;
+	}
+
+	switch_event_create_subclass(&event, event_id, subclass_name);
+}
+
+Event::~Event()
+{
+	if (event) {
+		switch_event_destroy(&event);
+	}
+}
+
+bool Event::fire(void)
+{
+	if (event) {
+		switch_event_fire(&event);
+		return true;
+	}
+	return false;
+}
+
+bool Event::set_priority(switch_priority_t priority)
+{
+	if (event) {
+        switch_event_set_priority(event, priority);
+		return true;
+    }
+	return false;
+}
+
+char *Event::get_header(char *header_name)
+{
+	if (event) {
+		return switch_event_get_header(event, header_name);
+	}
+	return NULL;
+}
+
+bool Event::add_header(const char *header_name, const char *value)
+{
+	if (event) {
+		return switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, value) == SWITCH_STATUS_SUCCESS ? true : false;
+	}
+
+	return false;
+}
+
+bool Event::del_header(const char *header_name)
+{
+	if (event) {
+		return switch_event_del_header(event, header_name) == SWITCH_STATUS_SUCCESS ? true : false;
+	}
+
+	return false;
+}
+
+
+bool Event::add_body(const char *value)
+{
+	if (event) {
+		return switch_event_add_body(event, "%s", value) == SWITCH_STATUS_SUCCESS ? true : false;
+	}
+	
+	return false;
+}
+
+char *Event::get_body(void)
+{
+	if (event) {
+		return switch_event_get_body(event);
+	}
+	
+	return NULL;
+}
+
+Stream::Stream()
+{
+	SWITCH_STANDARD_STREAM(mystream);
+	stream_p = &mystream;
+	mine = 1;
+}
+
+Stream::Stream(switch_stream_handle_t *sp)
+{
+	stream_p = sp;
+	mine = 0;
+}
+
+
+Stream::~Stream()
+{
+	if (mine) {
+		switch_safe_free(mystream.data);
+	}
+}
+
+void Stream::write(const char *data)
+{
+	stream_p->write_function(stream_p, "%s", data);
+}
+
+const char *Stream::get_data()
+{
+	return stream_p ? (const char *)stream_p->data : NULL;
+}
 
 
 CoreSession::CoreSession()
@@ -77,7 +188,15 @@ CoreSession::CoreSession(char *nuuid)
 		channel = switch_core_session_get_channel(session);
 		uuid = strdup(nuuid);
 		allocated = 1;
-    }
+    } else {
+		switch_call_cause_t cause;
+		if (switch_ivr_originate(NULL, &session, &cause, nuuid, 60, NULL, NULL, NULL, NULL, SOF_NONE) == SWITCH_STATUS_SUCCESS) {
+			allocated = 1;
+			switch_set_flag(this, S_HUP);
+			uuid = strdup(switch_core_session_get_uuid(session));
+			switch_channel_set_state(switch_core_session_get_channel(session), CS_TRANSMIT);
+		}
+	}
 }
 
 CoreSession::CoreSession(switch_core_session_t *new_session)
@@ -376,6 +495,8 @@ int CoreSession::originate(CoreSession *a_leg_session,
 
     if (a_leg_session) a_leg_session->end_allow_threads();
 	allocated = 1;
+	switch_channel_set_state(switch_core_session_get_channel(session), CS_TRANSMIT);
+
 	return SWITCH_STATUS_SUCCESS;
 
  failed:
@@ -506,13 +627,12 @@ void console_log(char *level_str, char *msg)
 			level = SWITCH_LOG_DEBUG;
 		}
     }
-    switch_log_printf(SWITCH_CHANNEL_LOG, level, msg);
-	fflush(stdout); // TEMP ONLY!! SHOULD NOT BE CHECKED IN!!
+    switch_log_printf(SWITCH_CHANNEL_LOG, level, "%s", switch_str_nil(msg));
 }
 
 void console_clean_log(char *msg)
 {
-    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN,SWITCH_LOG_DEBUG, msg);
+    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN,SWITCH_LOG_DEBUG, "%s", switch_str_nil(msg));
 }
 
 
