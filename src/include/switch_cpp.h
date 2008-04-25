@@ -148,7 +148,7 @@ class CoreSession {
 
 	int answer();
 	int preAnswer();
-	virtual void hangup(char *cause);
+	virtual void hangup(char *cause = "normal_clearing");
 	void setVariable(char *var, char *val);
 	const char *getVariable(char *var);
 

@@ -185,12 +185,13 @@ CoreSession::CoreSession(char *nuuid)
 	memset(&caller_profile, 0, sizeof(caller_profile)); 	
 	init_vars();
 	if (session = switch_core_session_locate(nuuid)) {
-		channel = switch_core_session_get_channel(session);
 		uuid = strdup(nuuid);
+		channel = switch_core_session_get_channel(session);
 		allocated = 1;
     } else {
 		switch_call_cause_t cause;
 		if (switch_ivr_originate(NULL, &session, &cause, nuuid, 60, NULL, NULL, NULL, NULL, SOF_NONE) == SWITCH_STATUS_SUCCESS) {
+			channel = switch_core_session_get_channel(session);
 			allocated = 1;
 			switch_set_flag(this, S_HUP);
 			uuid = strdup(switch_core_session_get_uuid(session));
@@ -494,6 +495,7 @@ int CoreSession::originate(CoreSession *a_leg_session,
 	}
 
     if (a_leg_session) a_leg_session->end_allow_threads();
+	channel = switch_core_session_get_channel(session);
 	allocated = 1;
 	switch_channel_set_state(switch_core_session_get_channel(session), CS_TRANSMIT);
 
