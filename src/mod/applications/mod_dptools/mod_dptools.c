@@ -45,6 +45,7 @@ SWITCH_STANDARD_DIALPLAN(inline_dialplan_hunt)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	int x = 0;
 	char *lbuf;
+	char *target = arg;
 
 	if (!caller_profile) {
 		caller_profile = switch_channel_get_caller_profile(channel);
@@ -53,8 +54,12 @@ SWITCH_STANDARD_DIALPLAN(inline_dialplan_hunt)
 	if ((extension = switch_caller_extension_new(session, "inline", "inline")) == 0) {
 		abort();
 	}
+
+	if (switch_strlen_zero(target)) {
+		target = caller_profile->destination_number;
+	}
 	
-	if (!switch_strlen_zero(caller_profile->destination_number) && (lbuf = switch_core_session_strdup(session, caller_profile->destination_number))
+	if (!switch_strlen_zero(target) && (lbuf = switch_core_session_strdup(session, target))
 		&& (argc = switch_separate_string(lbuf, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 	} else {
 		return NULL;
