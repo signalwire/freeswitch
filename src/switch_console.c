@@ -765,6 +765,15 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 }
 
 #else
+SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
+{
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
+{
+	return SWITCH_STATUS_FALSE;
+}
 
 SWITCH_DECLARE(void) switch_console_loop(void)
 {
