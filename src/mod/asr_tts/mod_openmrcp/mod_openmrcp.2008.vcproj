@@ -40,6 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\libopenmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\aprtoolkit\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
+				PreprocessorDefinitions="APT_LIB_EXPORT"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -54,6 +55,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
+				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;C:\Program Files\openmrcp\sdk\lib\winnt&quot;"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -104,6 +106,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\libopenmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\aprtoolkit\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
+				PreprocessorDefinitions="APT_LIB_EXPORT"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
