@@ -29,6 +29,7 @@
  * mod_perl.c -- Perl
  *
  */
+
 #ifdef __ICC
 #pragma warning (disable:1419)
 #endif
@@ -47,8 +48,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_perl_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_perl_shutdown);
 SWITCH_MODULE_DEFINITION(mod_perl, mod_perl_load, mod_perl_shutdown, NULL);
 
-
-
 static STRLEN n_a;
 
 static struct {
@@ -56,7 +55,6 @@ static struct {
 	switch_memory_pool_t *pool;
 	char *xml_handler;
 } globals;
-
 
 static void Perl_safe_eval(PerlInterpreter *my_perl, const char *string, int tf)
 {
@@ -89,7 +87,6 @@ static perl_parse_and_execute (PerlInterpreter *my_perl, char *input_code, char 
 {
 	int error = 0;
 
-
 	if (*input_code == '~') {
 		char *buff = input_code + 1;
 		perl_parse(my_perl, xs_init, 3, embedding, NULL);
@@ -107,8 +104,6 @@ static perl_parse_and_execute (PerlInterpreter *my_perl, char *input_code, char 
 		perl_run(my_perl);
 	}
 }
-
-
 
 static void perl_function(switch_core_session_t *session, char *data)
 {
@@ -197,7 +192,6 @@ SWITCH_STANDARD_API(perl_api_function) {
 	if (session) {
 		uuid = switch_core_session_get_uuid(session);
 	}
-	
 
 	switch_snprintf(code, sizeof(code), 
 			"use lib '%s/perl';\n"
@@ -210,7 +204,6 @@ SWITCH_STANDARD_API(perl_api_function) {
 
 			SWITCH_GLOBAL_dirs.base_dir,
 			switch_str_nil(uuid)
-			
 			);
 
 	perl_parse(my_perl, xs_init, 3, embedding, NULL);
@@ -235,10 +228,8 @@ SWITCH_STANDARD_API(perl_api_function) {
 	Perl_safe_eval(my_perl, "undef(*);", TRUE);
 	destroy_perl(&my_perl);
 
-
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 static switch_xml_t perl_fetch(const char *section, 
 							   const char *tag_name, 
@@ -282,7 +273,6 @@ static switch_xml_t perl_fetch(const char *section,
 		sv_setpv(this, section);
 		hv_store(hash, "section", 7, this, 0);
 		
-
 		if (switch_strlen_zero(tag_name)) {
 			tag_name = "";
 		}
@@ -299,7 +289,6 @@ static switch_xml_t perl_fetch(const char *section,
 		sv_setpv(this, key_name);
 		hv_store(hash, "key_name", 8, this, 0);
 
-		
 		if (switch_strlen_zero(key_value)) {
 			key_value = "";
 		}
@@ -311,7 +300,6 @@ static switch_xml_t perl_fetch(const char *section,
 		if (!(hash = get_hv("XML_DATA", TRUE))) {
 			abort();
 		}
-
 
 		if (params) {
 			for (hp = params->headers; hp; hp = hp->next) {
@@ -344,15 +332,12 @@ static switch_xml_t perl_fetch(const char *section,
 	}
 
 	return xml;
-
 }
 
 static switch_status_t do_config(void)
 {
-
 	char *cf = "perl.conf";
 	switch_xml_t cfg, xml, settings, param;
-
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
@@ -375,12 +360,10 @@ static switch_status_t do_config(void)
 		}
 	}
 
-
 	switch_xml_free(xml);
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_perl_load)
 {
@@ -397,15 +380,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_perl_load)
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Allocated perl intrepreter.\n");
 
-
 	perl_construct(my_perl);
 	perl_parse(my_perl, xs_init, 3, embedding, NULL);
 	perl_run(my_perl);
 	globals.my_perl = my_perl;
-	
-	//switch_snprintf(code, sizeof(code), "use lib '%s/perl';use freeswitch\n", SWITCH_GLOBAL_dirs.base_dir);
-
-
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
