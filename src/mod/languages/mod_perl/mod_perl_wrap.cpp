@@ -3361,7 +3361,7 @@ XS(_wrap_CoreSession_preAnswer) {
 XS(_wrap_CoreSession_hangup) {
   {
     CoreSession *arg1 = (CoreSession *) 0 ;
-    char *arg2 = (char *) 0 ;
+    char *arg2 = (char *) "normal_clearing" ;
     void *argp1 = 0 ;
     int res1 = 0 ;
     int res2 ;
@@ -3370,7 +3370,7 @@ XS(_wrap_CoreSession_hangup) {
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 2) || (items > 2)) {
+    if ((items < 1) || (items > 2)) {
       SWIG_croak("Usage: CoreSession_hangup(self,cause);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
@@ -3378,11 +3378,13 @@ XS(_wrap_CoreSession_hangup) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_hangup" "', argument " "1"" of type '" "CoreSession *""'"); 
     }
     arg1 = reinterpret_cast< CoreSession * >(argp1);
-    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
-    if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_hangup" "', argument " "2"" of type '" "char *""'");
+    if (items > 1) {
+      res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+      if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_hangup" "', argument " "2"" of type '" "char *""'");
+      }
+      arg2 = reinterpret_cast< char * >(buf2);
     }
-    arg2 = reinterpret_cast< char * >(buf2);
     (arg1)->hangup(arg2);
     
     

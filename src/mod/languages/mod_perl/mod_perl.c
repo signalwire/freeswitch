@@ -56,17 +56,17 @@ static struct {
 	char *xml_handler;
 } globals;
 
-static void Perl_safe_eval(PerlInterpreter *my_perl, const char *string, int tf)
+static int Perl_safe_eval(PerlInterpreter *my_perl, const char *string, int tf)
 {
-	char *st = switch_mprintf("eval { %s }; $__ERR = $@", string);
 	char *err = NULL;
-	Perl_eval_pv(my_perl, st, tf);
-	
-	if ((err = SvPV(get_sv("__ERR", FALSE), n_a)) && !switch_strlen_zero(err)) {
+
+	Perl_eval_pv(my_perl, string, FALSE);
+
+	if ((err = SvPV(get_sv("@", TRUE), n_a)) && !switch_strlen_zero(err)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err);
+		return -1;
 	}
-	
-	switch_safe_free(st);
+	return 0;
 }
 
 static void destroy_perl(PerlInterpreter ** to_destroy)
@@ -90,18 +90,29 @@ static perl_parse_and_execute (PerlInterpreter *my_perl, char *input_code, char 
 	if (*input_code == '~') {
 		char *buff = input_code + 1;
 		perl_parse(my_perl, xs_init, 3, embedding, NULL);
-		if (setup_code) Perl_safe_eval(my_perl, setup_code, TRUE);
+		if (setup_code) Perl_safe_eval(my_perl, setup_code, FALSE);
 		Perl_safe_eval(my_perl, buff, TRUE);
 	} else {
 		int argc = 0;
 		char *argv[128] = { 0 };
+		char *err;
 		argv[0] = "FreeSWITCH";
 		argc++;
 		
 		argc += switch_separate_string(input_code, ' ', &argv[1], (sizeof(argv) / sizeof(argv[0])) - 1);
-		perl_parse(my_perl, xs_init, argc, argv, (char **)NULL);
-		if (setup_code) Perl_safe_eval(my_perl, setup_code, TRUE);
-		perl_run(my_perl);
+		if (!perl_parse(my_perl, xs_init, argc, argv, (char **)NULL)) {
+			if (setup_code) {
+				if (!Perl_safe_eval(my_perl, setup_code, FALSE)) {
+					perl_run(my_perl);
+				}
+			}
+		}
+		
+		if ((err = SvPV(get_sv("@", TRUE), n_a)) && !switch_strlen_zero(err)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err);
+		}
+		
+
 	}
 }
 
@@ -122,8 +133,8 @@ static void perl_function(switch_core_session_t *session, char *data)
 			uuid);
 
 	perl_parse_and_execute(my_perl, data, code);
-	Perl_safe_eval(my_perl, "undef $session;", TRUE);
-	Perl_safe_eval(my_perl, "undef (*);", TRUE);
+	Perl_safe_eval(my_perl, "undef $session;", FALSE);
+	Perl_safe_eval(my_perl, "undef (*);", FALSE);
 	destroy_perl(&my_perl);
 }
 
@@ -157,7 +168,7 @@ static void *SWITCH_THREAD_FUNC perl_thread_run(switch_thread_t *thread, void *o
 		free(input_code);
 	}
 
-	Perl_safe_eval(my_perl, "undef(*);", TRUE);
+	Perl_safe_eval(my_perl, "undef(*);", FALSE);
 	destroy_perl(&my_perl);
 
 	return NULL;
@@ -207,25 +218,25 @@ SWITCH_STANDARD_API(perl_api_function) {
 			);
 
 	perl_parse(my_perl, xs_init, 3, embedding, NULL);
-	Perl_safe_eval(my_perl, code, TRUE);
+	Perl_safe_eval(my_perl, code, FALSE);
 
 	if (uuid) {
 		switch_snprintf(code, sizeof(code), "$session = new freeswitch::Session(\"%s\")", uuid);
-		Perl_safe_eval(my_perl, code, TRUE);
+		Perl_safe_eval(my_perl, code, FALSE);
 	}
 
 	if (cmd) {
-		Perl_safe_eval(my_perl, cmd, TRUE);
+		Perl_safe_eval(my_perl, cmd, FALSE);
 	}
 
 	stream->write_function(stream, "%s", switch_str_nil(SvPV(get_sv("__OUT", FALSE), n_a)));
 
 	if (uuid) {
 		switch_snprintf(code, sizeof(code), "undef $session;", uuid);
-		Perl_safe_eval(my_perl, code, TRUE);
+		Perl_safe_eval(my_perl, code, FALSE);
 	}
 
-	Perl_safe_eval(my_perl, "undef(*);", TRUE);
+	Perl_safe_eval(my_perl, "undef(*);", FALSE);
 	destroy_perl(&my_perl);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -315,7 +326,7 @@ static switch_xml_t perl_fetch(const char *section,
 						,
 						SWITCH_GLOBAL_dirs.base_dir
 						);
-		Perl_safe_eval(my_perl, code, TRUE);
+		Perl_safe_eval(my_perl, code, FALSE);
 
 		perl_run(my_perl);
 		str = SvPV(get_sv("XML_STRING", FALSE), n_a);
