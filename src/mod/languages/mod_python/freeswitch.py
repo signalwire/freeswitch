@@ -83,6 +83,45 @@ input_callback_state_t_swigregister(input_callback_state_t)
 S_HUP = _freeswitch.S_HUP
 S_FREE = _freeswitch.S_FREE
 S_RDLOCK = _freeswitch.S_RDLOCK
+class Stream(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, Stream, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, Stream, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        this = _freeswitch.new_Stream(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _freeswitch.delete_Stream
+    __del__ = lambda self : None;
+    def write(*args): return _freeswitch.Stream_write(*args)
+    def get_data(*args): return _freeswitch.Stream_get_data(*args)
+Stream_swigregister = _freeswitch.Stream_swigregister
+Stream_swigregister(Stream)
+
+class Event(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, Event, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, Event, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        this = _freeswitch.new_Event(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _freeswitch.delete_Event
+    __del__ = lambda self : None;
+    def set_priority(*args): return _freeswitch.Event_set_priority(*args)
+    def get_header(*args): return _freeswitch.Event_get_header(*args)
+    def get_body(*args): return _freeswitch.Event_get_body(*args)
+    def add_body(*args): return _freeswitch.Event_add_body(*args)
+    def add_header(*args): return _freeswitch.Event_add_header(*args)
+    def del_header(*args): return _freeswitch.Event_del_header(*args)
+    def fire(*args): return _freeswitch.Event_fire(*args)
+Event_swigregister = _freeswitch.Event_swigregister
+Event_swigregister(Event)
+
 class CoreSession(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, CoreSession, name, value)
@@ -101,6 +140,9 @@ class CoreSession(_object):
     __swig_setmethods__["flags"] = _freeswitch.CoreSession_flags_set
     __swig_getmethods__["flags"] = _freeswitch.CoreSession_flags_get
     if _newclass:flags = _swig_property(_freeswitch.CoreSession_flags_get, _freeswitch.CoreSession_flags_set)
+    __swig_setmethods__["allocated"] = _freeswitch.CoreSession_allocated_set
+    __swig_getmethods__["allocated"] = _freeswitch.CoreSession_allocated_get
+    if _newclass:allocated = _swig_property(_freeswitch.CoreSession_allocated_get, _freeswitch.CoreSession_allocated_set)
     __swig_setmethods__["cb_state"] = _freeswitch.CoreSession_cb_state_set
     __swig_getmethods__["cb_state"] = _freeswitch.CoreSession_cb_state_get
     if _newclass:cb_state = _swig_property(_freeswitch.CoreSession_cb_state_get, _freeswitch.CoreSession_cb_state_set)
