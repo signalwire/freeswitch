@@ -25,15 +25,14 @@
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
  *
- * mod_lua.c -- Framework Demo Module
+ * mod_lua.c -- Lua
  *
  */
+
 #include <switch.h>
 #include "lua.h"
 #include <lauxlib.h>
 #include <lualib.h>
-//#include <tolua.h>
-//#include "mod_lua_wrap.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load);
 SWITCH_MODULE_DEFINITION(mod_lua, mod_lua_load, NULL, NULL);
@@ -41,7 +40,6 @@ SWITCH_MODULE_DEFINITION(mod_lua, mod_lua_load, NULL, NULL);
 static struct {
 	switch_memory_pool_t *pool;
 } globals;
-
 
 int luaopen_freeswitch(lua_State* L);
 
@@ -94,7 +92,6 @@ static int docall (lua_State *L, int narg, int clear) {
 	if (status != 0) lua_gc(L, LUA_GCCOLLECT, 0);
 	return status;
 }
-
 
 static void lua_parse_and_execute(lua_State *L, char *input_code)
 {
@@ -171,8 +168,8 @@ int lua_thread(const char *text)
 	return 0;
 }
 
-SWITCH_STANDARD_APP(lua_function) {
-
+SWITCH_STANDARD_APP(lua_function)
+{
 	lua_State *L = lua_init();
 	char code[1024] = "";
 	snprintf(code, sizeof(code), "~session = LUASession:new(\"%s\");", switch_core_session_get_uuid(session));
