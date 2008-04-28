@@ -1,5 +1,5 @@
 /*
-** $Id: lbaselib.c,v 1.189 2006/01/18 11:49:12 roberto Exp $
+** $Id: lbaselib.c,v 1.191.1.4 2008/01/20 13:53:22 roberto Exp $
 ** Basic library
 ** See Copyright Notice in lua.h
 */
@@ -114,11 +114,11 @@ static int luaB_setmetatable (lua_State *L) {
 }
 
 
-static void getfunc (lua_State *L) {
+static void getfunc (lua_State *L, int opt) {
   if (lua_isfunction(L, 1)) lua_pushvalue(L, 1);
   else {
     lua_Debug ar;
-    int level = luaL_optint(L, 1, 1);
+    int level = opt ? luaL_optint(L, 1, 1) : luaL_checkint(L, 1);
     luaL_argcheck(L, level >= 0, 1, "level must be non-negative");
     if (lua_getstack(L, level, &ar) == 0)
       luaL_argerror(L, 1, "invalid level");
@@ -131,7 +131,7 @@ static void getfunc (lua_State *L) {
 
 
 static int luaB_getfenv (lua_State *L) {
-  getfunc(L);
+  getfunc(L, 1);
   if (lua_iscfunction(L, -1))  /* is a C function? */
     lua_pushvalue(L, LUA_GLOBALSINDEX);  /* return the thread's global env. */
   else
@@ -142,7 +142,7 @@ static int luaB_getfenv (lua_State *L) {
 
 static int luaB_setfenv (lua_State *L) {
   luaL_checktype(L, 2, LUA_TTABLE);
-  getfunc(L);
+  getfunc(L, 0);
   lua_pushvalue(L, 2);
   if (lua_isnumber(L, 1) && lua_tonumber(L, 1) == 0) {
     /* change environment of current thread */
@@ -477,15 +477,52 @@ static const luaL_Reg base_funcs[] = {
 ** =======================================================
 */
 
+#define CO_RUN	0	/* running */
+#define CO_SUS	1	/* suspended */
+#define CO_NOR	2	/* 'normal' (it resumed another coroutine) */
+#define CO_DEAD	3
+
+static const char *const statnames[] =
+    {"running", "suspended", "normal", "dead"};
+
+static int costatus (lua_State *L, lua_State *co) {
+  if (L == co) return CO_RUN;
+  switch (lua_status(co)) {
+    case LUA_YIELD:
+      return CO_SUS;
+    case 0: {
+      lua_Debug ar;
+      if (lua_getstack(co, 0, &ar) > 0)  /* does it have frames? */
+        return CO_NOR;  /* it is running */
+      else if (lua_gettop(co) == 0)
+          return CO_DEAD;
+      else
+        return CO_SUS;  /* initial state */
+    }
+    default:  /* some error occured */
+      return CO_DEAD;
+  }
+}
+
+
+static int luaB_costatus (lua_State *L) {
+  lua_State *co = lua_tothread(L, 1);
+  luaL_argcheck(L, co, 1, "coroutine expected");
+  lua_pushstring(L, statnames[costatus(L, co)]);
+  return 1;
+}
+
+
 static int auxresume (lua_State *L, lua_State *co, int narg) {
-  int status;
+  int status = costatus(L, co);
   if (!lua_checkstack(co, narg))
     luaL_error(L, "too many arguments to resume");
-  if (lua_status(co) == 0 && lua_gettop(co) == 0) {
-    lua_pushliteral(L, "cannot resume dead coroutine");
+  if (status != CO_SUS) {
+    lua_pushfstring(L, "cannot resume %s coroutine", statnames[status]);
     return -1;  /* error flag */
   }
   lua_xmove(L, co, narg);
+  lua_setlevel(L, co);
   status = lua_resume(co, narg);
   if (status == 0 || status == LUA_YIELD) {
     int nres = lua_gettop(co);
@@ -556,39 +593,10 @@ static int luaB_yield (lua_State *L) {
 }
 
 
-static int luaB_costatus (lua_State *L) {
-  lua_State *co = lua_tothread(L, 1);
-  luaL_argcheck(L, co, 1, "coroutine expected");
-  if (L == co) lua_pushliteral(L, "running");
-  else {
-    switch (lua_status(co)) {
-      case LUA_YIELD:
-        lua_pushliteral(L, "suspended");
-        break;
-      case 0: {
-        lua_Debug ar;
-        if (lua_getstack(co, 0, &ar) > 0)  /* does it have frames? */
-          lua_pushliteral(L, "normal");  /* it is running */
-        else if (lua_gettop(co) == 0)
-            lua_pushliteral(L, "dead");
-        else
-          lua_pushliteral(L, "suspended");  /* initial state */
-        break;
-      }
-      default:  /* some error occured */
-        lua_pushliteral(L, "dead");
-        break;
-    }
-  }
-  return 1;
-}
-
-
 static int luaB_corunning (lua_State *L) {
   if (lua_pushthread(L))
-    return 0;  /* main thread is not a coroutine */
-  else
-    return 1;
+    lua_pushnil(L);  /* main thread is not a coroutine */
+  return 1;
 }
 
 

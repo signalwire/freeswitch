@@ -1,5 +1,5 @@
 /*
-** $Id: lapi.c,v 2.53 2006/01/10 12:50:00 roberto Exp $
+** $Id: lapi.c,v 2.55.1.3 2008/01/03 15:20:39 roberto Exp $
 ** Lua API
 ** See Copyright Notice in lua.h
 */
@@ -32,7 +32,7 @@
 
 
 const char lua_ident[] =
-  "$Lua: " LUA_VERSION " " LUA_COPYRIGHT " $\n"
+  "$Lua: " LUA_RELEASE " " LUA_COPYRIGHT " $\n"
   "$Authors: " LUA_AUTHORS " $\n"
   "$URL: www.lua.org $\n";
 
@@ -123,6 +123,11 @@ LUA_API void lua_xmove (lua_State *from, lua_State *to, int n) {
 }
 
 
+LUA_API void lua_setlevel (lua_State *from, lua_State *to) {
+  to->nCcalls = from->nCcalls;
+}
+
+
 LUA_API lua_CFunction lua_atpanic (lua_State *L, lua_CFunction panicf) {
   lua_CFunction old;
   lua_lock(L);
@@ -199,6 +204,9 @@ LUA_API void lua_insert (lua_State *L, int idx) {
 LUA_API void lua_replace (lua_State *L, int idx) {
   StkId o;
   lua_lock(L);
+  /* explicit test for incompatible code */
+  if (idx == LUA_ENVIRONINDEX && L->ci == L->base_ci)
+    luaG_runerror(L, "no calling environment");
   api_checknelems(L, 1);
   o = index2adr(L, idx);
   api_checkvalidindex(L, o);
@@ -746,7 +754,7 @@ LUA_API int lua_setfenv (lua_State *L, int idx) {
       res = 0;
       break;
   }
-  luaC_objbarrier(L, gcvalue(o), hvalue(L->top - 1));
+  if (res) luaC_objbarrier(L, gcvalue(o), hvalue(L->top - 1));
   L->top--;
   lua_unlock(L);
   return res;
