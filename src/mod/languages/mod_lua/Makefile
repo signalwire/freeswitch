@@ -13,8 +13,10 @@ glua.o: mod_lua_wrap.cpp
 $(LIBLUA_A):
 	cd lua && $(MAKE) CFLAGS="$(ALL_CFLAGS) -DLUA_USE_LINUX -w" liblua.a
 
-allclean: clean
+luaclean:
 	cd lua && $(MAKE) clean
+
+allclean: clean luaclean
 	rm -f mod_lua_wrap.* freeswitch_lua.$(DYNAMIC_LIB_EXTEN)
 
 swigclean:
