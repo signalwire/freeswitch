@@ -85,7 +85,7 @@ class FreeswitchEventListener(LineReceiver):
         msg = "auth %s" % passwd
         req = request.LoginRequest()
         self.active_request = req
-        self.transport.write("%s\n\n" % msg)
+        self.transport.write("%s\n\n" % str(msg))
         return req.getDeferred()
 
     def sniff_events(self, output_type, events):
@@ -95,7 +95,7 @@ class FreeswitchEventListener(LineReceiver):
         """
         event_list = " ".join(events)
         msg = "event %s %s" % (output_type, event_list)
-        self.transport.write("%s\n\n" % msg)
+        self.transport.write("%s\n\n" % str(msg))
 
     def sniff_custom_events(self, output_type, events):
         """
@@ -115,7 +115,7 @@ class FreeswitchEventListener(LineReceiver):
         @param output_type - eg, xml or plain
         """
         msg = "event %s all" % output_type
-        self.transport.write("%s\n\n" % msg)
+        self.transport.write("%s\n\n" % str(msg))
 
     def lineReceived(self, line):
         if not self.active_request:
