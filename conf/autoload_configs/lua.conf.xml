@@ -1,0 +1,6 @@
+<configuration name="lua.conf" description="LUA Configuration">
+  <settings>
+    <!--<param name="xml-handler-script" value="/dp.lua"/>-->
+    <!--<param name="xml-handler-bindings" value="dialplan"/>-->
+  </settings>
+</configuration>
