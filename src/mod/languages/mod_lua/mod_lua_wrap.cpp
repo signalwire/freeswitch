@@ -1493,15 +1493,16 @@ SWIG_Lua_dostring(lua_State *L, const char* str) {
 #define SWIGTYPE_p_switch_channel_state_t swig_types[6]
 #define SWIGTYPE_p_switch_channel_t swig_types[7]
 #define SWIGTYPE_p_switch_core_session_t swig_types[8]
-#define SWIGTYPE_p_switch_input_args_t swig_types[9]
-#define SWIGTYPE_p_switch_input_type_t swig_types[10]
-#define SWIGTYPE_p_switch_priority_t swig_types[11]
-#define SWIGTYPE_p_switch_size_t swig_types[12]
-#define SWIGTYPE_p_switch_status_t swig_types[13]
-#define SWIGTYPE_p_switch_stream_handle_t swig_types[14]
-#define SWIGTYPE_p_void swig_types[15]
-static swig_type_info *swig_types[17];
-static swig_module_info swig_module = {swig_types, 16, 0, 0, 0, 0};
+#define SWIGTYPE_p_switch_event_t swig_types[9]
+#define SWIGTYPE_p_switch_input_args_t swig_types[10]
+#define SWIGTYPE_p_switch_input_type_t swig_types[11]
+#define SWIGTYPE_p_switch_priority_t swig_types[12]
+#define SWIGTYPE_p_switch_size_t swig_types[13]
+#define SWIGTYPE_p_switch_status_t swig_types[14]
+#define SWIGTYPE_p_switch_stream_handle_t swig_types[15]
+#define SWIGTYPE_p_void swig_types[16]
+static swig_type_info *swig_types[18];
+static swig_module_info swig_module = {swig_types, 17, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1602,44 +1603,6 @@ static int _wrap_api_reply_delete(lua_State* L) {
   api_reply_delete(arg1);
   SWIG_arg=0;
   
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_process_callback_result(lua_State* L) {
-  int SWIG_arg = -1;
-  char *arg1 = (char *) 0 ;
-  input_callback_state *arg2 = (input_callback_state *) 0 ;
-  switch_core_session_t *arg3 = (switch_core_session_t *) 0 ;
-  switch_status_t result;
-  
-  SWIG_check_num_args("process_callback_result",3,3)
-  if(!lua_isstring(L,1)) SWIG_fail_arg("process_callback_result",1,"char *");
-  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("process_callback_result",2,"input_callback_state *");
-  if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("process_callback_result",3,"switch_core_session_t *");
-  arg1 = (char *)lua_tostring(L, 1);
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_input_callback_state,0))){
-    SWIG_fail_ptr("process_callback_result",2,SWIGTYPE_p_input_callback_state);
-  }
-  
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,3,(void**)&arg3,SWIGTYPE_p_switch_core_session_t,0))){
-    SWIG_fail_ptr("process_callback_result",3,SWIGTYPE_p_switch_core_session_t);
-  }
-  
-  result = process_callback_result(arg1,arg2,arg3);
-  SWIG_arg=0;
-  {
-    switch_status_t * resultptr = new switch_status_t((switch_status_t &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_switch_status_t,1); SWIG_arg++;
-  }
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2096,7 +2059,177 @@ static swig_lua_class *swig_Stream_bases[] = {0};
 static const char *swig_Stream_base_names[] = {0};
 static swig_lua_class _wrap_class_Stream = { "Stream", &SWIGTYPE_p_Stream,_wrap_new_Stream, swig_delete_Stream, swig_Stream_methods, swig_Stream_attributes, swig_Stream_bases, swig_Stream_base_names };
 
-static int _wrap_new_Event(lua_State* L) {
+static int _wrap_Event_event_set(lua_State* L) {
+  int SWIG_arg = -1;
+  Event *arg1 = (Event *) 0 ;
+  switch_event_t *arg2 = (switch_event_t *) 0 ;
+  
+  SWIG_check_num_args("event",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("event",1,"Event *");
+  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("event",2,"switch_event_t *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Event,0))){
+    SWIG_fail_ptr("Event_event_set",1,SWIGTYPE_p_Event);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_switch_event_t,SWIG_POINTER_DISOWN))){
+    SWIG_fail_ptr("Event_event_set",2,SWIGTYPE_p_switch_event_t);
+  }
+  
+  if (arg1) (arg1)->event = arg2;
+  
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Event_event_get(lua_State* L) {
+  int SWIG_arg = -1;
+  Event *arg1 = (Event *) 0 ;
+  switch_event_t *result = 0 ;
+  
+  SWIG_check_num_args("event",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("event",1,"Event *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Event,0))){
+    SWIG_fail_ptr("Event_event_get",1,SWIGTYPE_p_Event);
+  }
+  
+  result = (switch_event_t *) ((arg1)->event);
+  SWIG_arg=0;
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_switch_event_t,0); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Event_serialized_string_set(lua_State* L) {
+  int SWIG_arg = -1;
+  Event *arg1 = (Event *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  SWIG_check_num_args("serialized_string",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("serialized_string",1,"Event *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("serialized_string",2,"char *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Event,0))){
+    SWIG_fail_ptr("Event_serialized_string_set",1,SWIGTYPE_p_Event);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  {
+    if (arg1->serialized_string) delete [] arg1->serialized_string;
+    if (arg2) {
+      arg1->serialized_string = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->serialized_string, (const char *)arg2);
+    } else {
+      arg1->serialized_string = 0;
+    }
+  }
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Event_serialized_string_get(lua_State* L) {
+  int SWIG_arg = -1;
+  Event *arg1 = (Event *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("serialized_string",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("serialized_string",1,"Event *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Event,0))){
+    SWIG_fail_ptr("Event_serialized_string_get",1,SWIGTYPE_p_Event);
+  }
+  
+  result = (char *) ((arg1)->serialized_string);
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Event_mine_set(lua_State* L) {
+  int SWIG_arg = -1;
+  Event *arg1 = (Event *) 0 ;
+  int arg2 ;
+  
+  SWIG_check_num_args("mine",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("mine",1,"Event *");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("mine",2,"int");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Event,0))){
+    SWIG_fail_ptr("Event_mine_set",1,SWIGTYPE_p_Event);
+  }
+  
+  arg2 = (int)lua_tonumber(L, 2);
+  if (arg1) (arg1)->mine = arg2;
+  
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Event_mine_get(lua_State* L) {
+  int SWIG_arg = -1;
+  Event *arg1 = (Event *) 0 ;
+  int result;
+  
+  SWIG_check_num_args("mine",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("mine",1,"Event *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Event,0))){
+    SWIG_fail_ptr("Event_mine_get",1,SWIGTYPE_p_Event);
+  }
+  
+  result = (int) ((arg1)->mine);
+  SWIG_arg=0;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_new_Event__SWIG_0(lua_State* L) {
   int SWIG_arg = -1;
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) NULL ;
@@ -2122,6 +2255,88 @@ fail:
 }
 
 
+static int _wrap_new_Event__SWIG_1(lua_State* L) {
+  int SWIG_arg = -1;
+  switch_event_t *arg1 = (switch_event_t *) 0 ;
+  int arg2 = (int) 0 ;
+  Event *result = 0 ;
+  
+  SWIG_check_num_args("Event",1,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Event",1,"switch_event_t *");
+  if(lua_gettop(L)>=2 && !lua_isnumber(L,2)) SWIG_fail_arg("Event",2,"int");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_switch_event_t,0))){
+    SWIG_fail_ptr("new_Event",1,SWIGTYPE_p_switch_event_t);
+  }
+  
+  if(lua_gettop(L)>=2){
+    arg2 = (int)lua_tonumber(L, 2);
+  }
+  result = (Event *)new Event(arg1,arg2);
+  SWIG_arg=0;
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Event,1); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_new_Event(lua_State* L) {
+  int argc;
+  int argv[3]={
+    1,2,3
+  };
+  
+  argc = lua_gettop(L);
+  if ((argc >= 1) && (argc <= 2)) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_switch_event_t, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      if (argc <= 1) {
+        return _wrap_new_Event__SWIG_1(L);
+      }
+      {
+        _v = lua_isnumber(L,argv[1]);
+      }
+      if (_v) {
+        return _wrap_new_Event__SWIG_1(L);
+      }
+    }
+  }
+  if ((argc >= 1) && (argc <= 2)) {
+    int _v;
+    {
+      _v = lua_isstring(L,argv[0]);
+    }
+    if (_v) {
+      if (argc <= 1) {
+        return _wrap_new_Event__SWIG_0(L);
+      }
+      {
+        _v = lua_isstring(L,argv[1]);
+      }
+      if (_v) {
+        return _wrap_new_Event__SWIG_0(L);
+      }
+    }
+  }
+  
+  lua_pushstring(L,"No matching function for overloaded 'new_Event'");
+  lua_error(L);return 0;
+}
+
+
 static int _wrap_delete_Event(lua_State* L) {
   int SWIG_arg = -1;
   Event *arg1 = (Event *) 0 ;
@@ -2137,6 +2352,36 @@ static int _wrap_delete_Event(lua_State* L) {
   
   SWIG_arg=0;
   
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Event_serialize(lua_State* L) {
+  int SWIG_arg = -1;
+  Event *arg1 = (Event *) 0 ;
+  char *arg2 = (char *) NULL ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("serialize",1,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("serialize",1,"Event *");
+  if(lua_gettop(L)>=2 && !lua_isstring(L,2)) SWIG_fail_arg("serialize",2,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Event,0))){
+    SWIG_fail_ptr("Event_serialize",1,SWIGTYPE_p_Event);
+  }
+  
+  if(lua_gettop(L)>=2){
+    arg2 = (char *)lua_tostring(L, 2);
+  }
+  result = (char *)(arg1)->serialize((char const *)arg2);
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2351,6 +2596,7 @@ Event *arg1 = (Event *) obj;
 delete arg1;
 }
 static swig_lua_method swig_Event_methods[] = {
+    {"serialize", _wrap_Event_serialize}, 
     {"set_priority", _wrap_Event_set_priority}, 
     {"get_header", _wrap_Event_get_header}, 
     {"get_body", _wrap_Event_get_body}, 
@@ -2361,6 +2607,9 @@ static swig_lua_method swig_Event_methods[] = {
     {0,0}
 };
 static swig_lua_attribute swig_Event_attributes[] = {
+    { "event", _wrap_Event_event_get, _wrap_Event_event_set},
+    { "serialized_string", _wrap_Event_serialized_string_get, _wrap_Event_serialized_string_set},
+    { "mine", _wrap_Event_mine_get, _wrap_Event_mine_set},
     {0,0,0}
 };
 static swig_lua_class *swig_Event_bases[] = {0};
@@ -2830,6 +3079,64 @@ static int _wrap_CoreSession_setVariable(lua_State* L) {
   (arg1)->setVariable(arg2,arg3);
   SWIG_arg=0;
   
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_CoreSession_setPrivate(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  void *arg3 = (void *) 0 ;
+  
+  SWIG_check_num_args("setPrivate",3,3)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("setPrivate",1,"CoreSession *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("setPrivate",2,"char *");
+  if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("setPrivate",3,"void *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_setPrivate",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3=(void *)SWIG_MustGetPtr(L,3,0,0,3,"CoreSession_setPrivate");
+  (arg1)->setPrivate(arg2,arg3);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_CoreSession_getPrivate(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  void *result = 0 ;
+  
+  SWIG_check_num_args("getPrivate",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("getPrivate",1,"CoreSession *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("getPrivate",2,"char *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_getPrivate",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  result = (void *)(arg1)->getPrivate(arg2);
+  SWIG_arg=0;
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_void,0); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -3431,6 +3738,37 @@ fail:
 }
 
 
+static int _wrap_CoreSession_sendEvent(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  Event *arg2 = (Event *) 0 ;
+  
+  SWIG_check_num_args("sendEvent",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("sendEvent",1,"CoreSession *");
+  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("sendEvent",2,"Event *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_sendEvent",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_Event,0))){
+    SWIG_fail_ptr("CoreSession_sendEvent",2,SWIGTYPE_p_Event);
+  }
+  
+  (arg1)->sendEvent(arg2);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_CoreSession_begin_allow_threads(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -3607,6 +3945,8 @@ static swig_lua_method swig_CoreSession_methods[] = {
     {"preAnswer", _wrap_CoreSession_preAnswer}, 
     {"hangup", _wrap_CoreSession_hangup}, 
     {"setVariable", _wrap_CoreSession_setVariable}, 
+    {"setPrivate", _wrap_CoreSession_setPrivate}, 
+    {"getPrivate", _wrap_CoreSession_getPrivate}, 
     {"getVariable", _wrap_CoreSession_getVariable}, 
     {"recordFile", _wrap_CoreSession_recordFile}, 
     {"setCallerData", _wrap_CoreSession_setCallerData}, 
@@ -3625,6 +3965,7 @@ static swig_lua_method swig_CoreSession_methods[] = {
     {"setHangupHook", _wrap_CoreSession_setHangupHook}, 
     {"ready", _wrap_CoreSession_ready}, 
     {"execute", _wrap_CoreSession_execute}, 
+    {"sendEvent", _wrap_CoreSession_sendEvent}, 
     {"begin_allow_threads", _wrap_CoreSession_begin_allow_threads}, 
     {"end_allow_threads", _wrap_CoreSession_end_allow_threads}, 
     {"get_uuid", _wrap_CoreSession_get_uuid}, 
@@ -3758,7 +4099,7 @@ static int _wrap_new_Session__SWIG_0(lua_State* L) {
   SWIG_check_num_args("Session",0,0)
   result = (Session *)new Session();
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; result->setPrivate("__L", L);
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -3779,7 +4120,7 @@ static int _wrap_new_Session__SWIG_1(lua_State* L) {
   arg1 = (char *)lua_tostring(L, 1);
   result = (Session *)new Session(arg1);
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; result->setPrivate("__L", L);
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -3804,7 +4145,7 @@ static int _wrap_new_Session__SWIG_2(lua_State* L) {
   
   result = (Session *)new Session(arg1);
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; result->setPrivate("__L", L);
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -3993,26 +4334,24 @@ fail:
 }
 
 
-static int _wrap_Session_session_set(lua_State* L) {
+static int _wrap_Session_setInputCallback(lua_State* L) {
   int SWIG_arg = -1;
   Session *arg1 = (Session *) 0 ;
-  switch_core_session_t *arg2 = (switch_core_session_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
   
-  SWIG_check_num_args("session",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("session",1,"Session *");
-  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("session",2,"switch_core_session_t *");
+  SWIG_check_num_args("setInputCallback",3,3)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("setInputCallback",1,"Session *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("setInputCallback",2,"char *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("setInputCallback",3,"char *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
-    SWIG_fail_ptr("Session_session_set",1,SWIGTYPE_p_Session);
+    SWIG_fail_ptr("Session_setInputCallback",1,SWIGTYPE_p_Session);
   }
   
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_switch_core_session_t,SWIG_POINTER_DISOWN))){
-    SWIG_fail_ptr("Session_session_set",2,SWIGTYPE_p_switch_core_session_t);
-  }
-  
-  if (arg1) (arg1)->session = arg2;
-  
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (char *)lua_tostring(L, 3);
+  (arg1)->setInputCallback(arg2,arg3);
   SWIG_arg=0;
   
   return SWIG_arg;
@@ -4025,51 +4364,21 @@ fail:
 }
 
 
-static int _wrap_Session_session_get(lua_State* L) {
+static int _wrap_Session_setHangupHook(lua_State* L) {
   int SWIG_arg = -1;
   Session *arg1 = (Session *) 0 ;
-  switch_core_session_t *result = 0 ;
+  char *arg2 = (char *) 0 ;
   
-  SWIG_check_num_args("session",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("session",1,"Session *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
-    SWIG_fail_ptr("Session_session_get",1,SWIGTYPE_p_Session);
-  }
-  
-  result = (switch_core_session_t *) ((arg1)->session);
-  SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_switch_core_session_t,0); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_Session_channel_set(lua_State* L) {
-  int SWIG_arg = -1;
-  Session *arg1 = (Session *) 0 ;
-  switch_channel_t *arg2 = (switch_channel_t *) 0 ;
-  
-  SWIG_check_num_args("channel",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("channel",1,"Session *");
-  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("channel",2,"switch_channel_t *");
+  SWIG_check_num_args("setHangupHook",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("setHangupHook",1,"Session *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("setHangupHook",2,"char *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
-    SWIG_fail_ptr("Session_channel_set",1,SWIGTYPE_p_Session);
+    SWIG_fail_ptr("Session_setHangupHook",1,SWIGTYPE_p_Session);
   }
   
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_switch_channel_t,SWIG_POINTER_DISOWN))){
-    SWIG_fail_ptr("Session_channel_set",2,SWIGTYPE_p_switch_channel_t);
-  }
-  
-  if (arg1) (arg1)->channel = arg2;
-  
+  arg2 = (char *)lua_tostring(L, 2);
+  (arg1)->setHangupHook(arg2);
   SWIG_arg=0;
   
   return SWIG_arg;
@@ -4082,246 +4391,176 @@ fail:
 }
 
 
-static int _wrap_Session_channel_get(lua_State* L) {
+static int _wrap_Session_cb_function_set(lua_State* L) {
   int SWIG_arg = -1;
   Session *arg1 = (Session *) 0 ;
-  switch_channel_t *result = 0 ;
+  char *arg2 = (char *) 0 ;
   
-  SWIG_check_num_args("channel",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("channel",1,"Session *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
-    SWIG_fail_ptr("Session_channel_get",1,SWIGTYPE_p_Session);
-  }
-  
-  result = (switch_channel_t *) ((arg1)->channel);
-  SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_switch_channel_t,0); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_Session_flags_set(lua_State* L) {
-  int SWIG_arg = -1;
-  Session *arg1 = (Session *) 0 ;
-  unsigned int arg2 ;
-  
-  SWIG_check_num_args("flags",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("flags",1,"Session *");
-  if(!lua_isnumber(L,2)) SWIG_fail_arg("flags",2,"unsigned int");
+  SWIG_check_num_args("cb_function",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("cb_function",1,"Session *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("cb_function",2,"char *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
-    SWIG_fail_ptr("Session_flags_set",1,SWIGTYPE_p_Session);
+    SWIG_fail_ptr("Session_cb_function_set",1,SWIGTYPE_p_Session);
   }
   
-  arg2 = (unsigned int)lua_tonumber(L, 2);
-  if (arg1) (arg1)->flags = arg2;
-  
-  SWIG_arg=0;
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_Session_flags_get(lua_State* L) {
-  int SWIG_arg = -1;
-  Session *arg1 = (Session *) 0 ;
-  unsigned int result;
-  
-  SWIG_check_num_args("flags",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("flags",1,"Session *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
-    SWIG_fail_ptr("Session_flags_get",1,SWIGTYPE_p_Session);
-  }
-  
-  result = (unsigned int) ((arg1)->flags);
-  SWIG_arg=0;
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_Session_allocated_set(lua_State* L) {
-  int SWIG_arg = -1;
-  Session *arg1 = (Session *) 0 ;
-  int arg2 ;
-  
-  SWIG_check_num_args("allocated",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("allocated",1,"Session *");
-  if(!lua_isnumber(L,2)) SWIG_fail_arg("allocated",2,"int");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
-    SWIG_fail_ptr("Session_allocated_set",1,SWIGTYPE_p_Session);
-  }
-  
-  arg2 = (int)lua_tonumber(L, 2);
-  if (arg1) (arg1)->allocated = arg2;
-  
-  SWIG_arg=0;
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_Session_allocated_get(lua_State* L) {
-  int SWIG_arg = -1;
-  Session *arg1 = (Session *) 0 ;
-  int result;
-  
-  SWIG_check_num_args("allocated",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("allocated",1,"Session *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
-    SWIG_fail_ptr("Session_allocated_get",1,SWIGTYPE_p_Session);
-  }
-  
-  result = (int) ((arg1)->allocated);
-  SWIG_arg=0;
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_Session_cb_state_set(lua_State* L) {
-  int SWIG_arg = -1;
-  Session *arg1 = (Session *) 0 ;
-  input_callback_state *arg2 = (input_callback_state *) 0 ;
-  
-  SWIG_check_num_args("cb_state",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("cb_state",1,"Session *");
-  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("cb_state",2,"input_callback_state *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
-    SWIG_fail_ptr("Session_cb_state_set",1,SWIGTYPE_p_Session);
-  }
-  
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_input_callback_state,0))){
-    SWIG_fail_ptr("Session_cb_state_set",2,SWIGTYPE_p_input_callback_state);
-  }
-  
-  if (arg1) (arg1)->cb_state = *arg2;
-  
-  SWIG_arg=0;
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_Session_cb_state_get(lua_State* L) {
-  int SWIG_arg = -1;
-  Session *arg1 = (Session *) 0 ;
-  input_callback_state *result = 0 ;
-  
-  SWIG_check_num_args("cb_state",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("cb_state",1,"Session *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
-    SWIG_fail_ptr("Session_cb_state_get",1,SWIGTYPE_p_Session);
-  }
-  
-  result = (input_callback_state *)& ((arg1)->cb_state);
-  SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_input_callback_state,0); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_Session_hook_state_set(lua_State* L) {
-  int SWIG_arg = -1;
-  Session *arg1 = (Session *) 0 ;
-  switch_channel_state_t arg2 ;
-  switch_channel_state_t *argp2 ;
-  
-  SWIG_check_num_args("hook_state",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("hook_state",1,"Session *");
-  if(!lua_isuserdata(L,2)) SWIG_fail_arg("hook_state",2,"switch_channel_state_t");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
-    SWIG_fail_ptr("Session_hook_state_set",1,SWIGTYPE_p_Session);
-  }
-  
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&argp2,SWIGTYPE_p_switch_channel_state_t,0))){
-    SWIG_fail_ptr("Session_hook_state_set",2,SWIGTYPE_p_switch_channel_state_t);
-  }
-  arg2 = *argp2;
-  
-  if (arg1) (arg1)->hook_state = arg2;
-  
-  SWIG_arg=0;
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_Session_hook_state_get(lua_State* L) {
-  int SWIG_arg = -1;
-  Session *arg1 = (Session *) 0 ;
-  switch_channel_state_t result;
-  
-  SWIG_check_num_args("hook_state",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("hook_state",1,"Session *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
-    SWIG_fail_ptr("Session_hook_state_get",1,SWIGTYPE_p_Session);
-  }
-  
-  result =  ((arg1)->hook_state);
-  SWIG_arg=0;
+  arg2 = (char *)lua_tostring(L, 2);
   {
-    switch_channel_state_t * resultptr = new switch_channel_state_t((switch_channel_state_t &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_switch_channel_state_t,1); SWIG_arg++;
+    if (arg1->cb_function) delete [] arg1->cb_function;
+    if (arg2) {
+      arg1->cb_function = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->cb_function, (const char *)arg2);
+    } else {
+      arg1->cb_function = 0;
+    }
   }
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Session_cb_function_get(lua_State* L) {
+  int SWIG_arg = -1;
+  Session *arg1 = (Session *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("cb_function",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("cb_function",1,"Session *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
+    SWIG_fail_ptr("Session_cb_function_get",1,SWIGTYPE_p_Session);
+  }
+  
+  result = (char *) ((arg1)->cb_function);
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Session_cb_arg_set(lua_State* L) {
+  int SWIG_arg = -1;
+  Session *arg1 = (Session *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  SWIG_check_num_args("cb_arg",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("cb_arg",1,"Session *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("cb_arg",2,"char *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
+    SWIG_fail_ptr("Session_cb_arg_set",1,SWIGTYPE_p_Session);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  {
+    if (arg1->cb_arg) delete [] arg1->cb_arg;
+    if (arg2) {
+      arg1->cb_arg = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->cb_arg, (const char *)arg2);
+    } else {
+      arg1->cb_arg = 0;
+    }
+  }
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Session_cb_arg_get(lua_State* L) {
+  int SWIG_arg = -1;
+  Session *arg1 = (Session *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("cb_arg",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("cb_arg",1,"Session *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
+    SWIG_fail_ptr("Session_cb_arg_get",1,SWIGTYPE_p_Session);
+  }
+  
+  result = (char *) ((arg1)->cb_arg);
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Session_hangup_func_str_set(lua_State* L) {
+  int SWIG_arg = -1;
+  Session *arg1 = (Session *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  SWIG_check_num_args("hangup_func_str",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("hangup_func_str",1,"Session *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("hangup_func_str",2,"char *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
+    SWIG_fail_ptr("Session_hangup_func_str_set",1,SWIGTYPE_p_Session);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  {
+    if (arg1->hangup_func_str) delete [] arg1->hangup_func_str;
+    if (arg2) {
+      arg1->hangup_func_str = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->hangup_func_str, (const char *)arg2);
+    } else {
+      arg1->hangup_func_str = 0;
+    }
+  }
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Session_hangup_func_str_get(lua_State* L) {
+  int SWIG_arg = -1;
+  Session *arg1 = (Session *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("hangup_func_str",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("hangup_func_str",1,"Session *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
+    SWIG_fail_ptr("Session_hangup_func_str_get",1,SWIGTYPE_p_Session);
+  }
+  
+  result = (char *) ((arg1)->hangup_func_str);
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -4341,15 +4580,14 @@ static swig_lua_method swig_Session_methods[] = {
     {"end_allow_threads", _wrap_Session_end_allow_threads}, 
     {"check_hangup_hook", _wrap_Session_check_hangup_hook}, 
     {"run_dtmf_callback", _wrap_Session_run_dtmf_callback}, 
+    {"setInputCallback", _wrap_Session_setInputCallback}, 
+    {"setHangupHook", _wrap_Session_setHangupHook}, 
     {0,0}
 };
 static swig_lua_attribute swig_Session_attributes[] = {
-    { "session", _wrap_Session_session_get, _wrap_Session_session_set},
-    { "channel", _wrap_Session_channel_get, _wrap_Session_channel_set},
-    { "flags", _wrap_Session_flags_get, _wrap_Session_flags_set},
-    { "allocated", _wrap_Session_allocated_get, _wrap_Session_allocated_set},
-    { "cb_state", _wrap_Session_cb_state_get, _wrap_Session_cb_state_set},
-    { "hook_state", _wrap_Session_hook_state_get, _wrap_Session_hook_state_set},
+    { "cb_function", _wrap_Session_cb_function_get, _wrap_Session_cb_function_set},
+    { "cb_arg", _wrap_Session_cb_arg_get, _wrap_Session_cb_arg_set},
+    { "hangup_func_str", _wrap_Session_hangup_func_str_get, _wrap_Session_hangup_func_str_set},
     {0,0,0}
 };
 static swig_lua_class *swig_Session_bases[] = {0,0};
@@ -4365,7 +4603,6 @@ static const struct luaL_reg swig_commands[] = {
     { "console_clean_log", _wrap_console_clean_log},
     { "api_execute", _wrap_api_execute},
     { "api_reply_delete", _wrap_api_reply_delete},
-    { "process_callback_result", _wrap_process_callback_result},
     { "bridge", _wrap_bridge},
     { "hanguphook", _wrap_hanguphook},
     { "dtmf_callback", _wrap_dtmf_callback},
@@ -4397,6 +4634,7 @@ static swig_type_info _swigt__p_session_flag_t = {"_p_session_flag_t", "enum ses
 static swig_type_info _swigt__p_switch_channel_state_t = {"_p_switch_channel_state_t", "switch_channel_state_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_channel_t = {"_p_switch_channel_t", "switch_channel_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_core_session_t = {"_p_switch_core_session_t", "switch_core_session_t *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_switch_event_t = {"_p_switch_event_t", "switch_event_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_input_args_t = {"_p_switch_input_args_t", "switch_input_args_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_input_type_t = {"_p_switch_input_type_t", "switch_input_type_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_priority_t = {"_p_switch_priority_t", "switch_priority_t *", 0, 0, (void*)0, 0};
@@ -4415,6 +4653,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_switch_channel_state_t,
   &_swigt__p_switch_channel_t,
   &_swigt__p_switch_core_session_t,
+  &_swigt__p_switch_event_t,
   &_swigt__p_switch_input_args_t,
   &_swigt__p_switch_input_type_t,
   &_swigt__p_switch_priority_t,
@@ -4433,6 +4672,7 @@ static swig_cast_info _swigc__p_session_flag_t[] = {  {&_swigt__p_session_flag_t
 static swig_cast_info _swigc__p_switch_channel_state_t[] = {  {&_swigt__p_switch_channel_state_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_channel_t[] = {  {&_swigt__p_switch_channel_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_core_session_t[] = {  {&_swigt__p_switch_core_session_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_switch_event_t[] = {  {&_swigt__p_switch_event_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_input_args_t[] = {  {&_swigt__p_switch_input_args_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_input_type_t[] = {  {&_swigt__p_switch_input_type_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_priority_t[] = {  {&_swigt__p_switch_priority_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -4451,6 +4691,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_switch_channel_state_t,
   _swigc__p_switch_channel_t,
   _swigc__p_switch_core_session_t,
+  _swigc__p_switch_event_t,
   _swigc__p_switch_input_args_t,
   _swigc__p_switch_input_type_t,
   _swigc__p_switch_priority_t,
@@ -4769,3 +5010,4 @@ void SWIG_init_user(lua_State* L)
   SWIG_Lua_dostring(L,SWIG_LUACODE);
 }
 
+#include "mod_lua_extra.c"

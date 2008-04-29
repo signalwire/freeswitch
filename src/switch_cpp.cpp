@@ -37,30 +37,83 @@
 #pragma warning(disable:4127 4003)
 #endif
 
-#define sanity_check(x) do { if (!(session && allocated)) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return x;}} while(0)
-#define sanity_check_noreturn do { if (!(session && allocated)) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return;}} while(0)
-#define init_vars() do { session = NULL; channel = NULL; uuid = NULL; tts_name = NULL; voice_name = NULL; memset(&args, 0, sizeof(args)); ap = NULL; caller_profile.source = "mod_unknown";  caller_profile.dialplan = ""; caller_profile.context = ""; caller_profile.caller_id_name = ""; caller_profile.caller_id_number = ""; caller_profile.network_addr = ""; caller_profile.ani = ""; caller_profile.aniii = ""; caller_profile.rdnis = "";  caller_profile.username = ""; on_hangup = NULL; cb_state.function = NULL; } while(0)
 
 Event::Event(const char *type, const char *subclass_name)
 {
 	switch_event_types_t event_id;
-
+	
 	if (switch_name_event(type, &event_id) != SWITCH_STATUS_SUCCESS) {
 		event_id = SWITCH_EVENT_MESSAGE;
 	}
 
 	switch_event_create_subclass(&event, event_id, subclass_name);
+	serialized_string = NULL;
+	mine = 1;
+}
+
+Event::Event(switch_event_t *wrap_me, int free_me)
+{
+	event = wrap_me;
+	mine = free_me;
+	serialized_string = NULL;
 }
 
 Event::~Event()
 {
-	if (event) {
+
+	if (serialized_string) {
+		free(serialized_string);
+	}
+
+	if (event && mine) {
 		switch_event_destroy(&event);
 	}
 }
 
+
+const char *Event::serialize(const char *format)
+{
+	int isxml = 0;
+
+	if (serialized_string) {
+		free(serialized_string);
+	}
+
+	if (!event) {
+		return "";
+	}
+
+	if (format && !strcasecmp(format, "xml")) {
+		isxml++;
+	}
+
+	if (isxml) {
+		switch_xml_t xml;
+		char *xmlstr;
+		if ((xml = switch_event_xmlize(event, SWITCH_VA_NONE))) {
+			serialized_string = switch_xml_toxml(xml, SWITCH_FALSE);
+			switch_xml_free(xml);
+			return serialized_string;
+		} else {
+			return "";
+		}
+	} else {
+		if (switch_event_serialize(event, &serialized_string, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+			return serialized_string;
+		}
+	}
+	
+	return "";
+
+}
+
 bool Event::fire(void)
 {
+	if (!mine) {
+		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Not My event!\n");
+		return false;
+	}
+
 	if (event) {
 		switch_event_fire(&event);
 		return true;
@@ -184,7 +237,7 @@ CoreSession::CoreSession(char *nuuid)
 {
 	memset(&caller_profile, 0, sizeof(caller_profile)); 	
 	init_vars();
-	if (session = switch_core_session_locate(nuuid)) {
+	if (!strchr(nuuid, '/') && (session = switch_core_session_locate(nuuid))) {
 		uuid = strdup(nuuid);
 		channel = switch_core_session_get_channel(session);
 		allocated = 1;
@@ -254,6 +307,18 @@ void CoreSession::hangup(char *cause)
     switch_channel_hangup(channel, switch_channel_str2cause(cause));
 }
 
+void CoreSession::setPrivate(char *var, void *val)
+{
+	sanity_check_noreturn;
+    switch_channel_set_private(channel, var, val);
+}
+
+void *CoreSession::getPrivate(char *var)
+{
+	sanity_check(NULL);
+    return switch_channel_get_private(channel, var);
+}
+
 void CoreSession::setVariable(char *var, char *val)
 {
 	sanity_check_noreturn;
@@ -299,6 +364,15 @@ void CoreSession::setDTMFCallback(void *cbfunc, char *funcargs) {
 	ap = &args;
 
 
+}
+
+void CoreSession::sendEvent(Event *sendME)
+{
+	if (sendME->mine) {
+		switch_core_session_receive_event(session, &sendME->event);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Not My event!\n");
+	}
 }
 
 int CoreSession::speak(char *text)
@@ -417,23 +491,29 @@ int CoreSession::playAndGetDigits(int min_digits,
 int CoreSession::streamFile(char *file, int starting_sample_count) {
 
     switch_status_t status;
-    switch_file_handle_t fh = { 0 };
+    //switch_file_handle_t fh = { 0 };
 	const char *prebuf;
 
     sanity_check(-1);
-    fh.samples = starting_sample_count;
-	store_file_handle(&fh);
+	
+	memset(&local_fh, 0, sizeof(local_fh));
+	fhp = &local_fh;
+    local_fh.samples = starting_sample_count;
 
-    begin_allow_threads();
-    status = switch_ivr_play_file(session, &fh, file, ap);
-    end_allow_threads();
 
 	if ((prebuf = switch_channel_get_variable(this->channel, "stream_prebuffer"))) {
         int maybe = atoi(prebuf);
         if (maybe > 0) {
-            fh.prebuf = maybe;
+            local_fh.prebuf = maybe;
         }
 	}
+
+
+	store_file_handle(&local_fh);
+
+    begin_allow_threads();
+    status = switch_ivr_play_file(session, fhp, file, ap);
+    end_allow_threads();
 
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 
@@ -676,7 +756,7 @@ switch_status_t hanguphook(switch_core_session_t *session_hungup)
 	switch_channel_state_t state = switch_channel_get_state(channel);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hangup_hook called\n");
-	fflush(stdout);
+	
 
 	if ((coresession = (CoreSession *) switch_channel_get_private(channel, "CoreSession"))) {
 		if (coresession->hook_state != state) {
@@ -700,9 +780,11 @@ switch_status_t dtmf_callback(switch_core_session_t *session_cb,
 	switch_status_t result;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "dtmf_callback called\n");
-	fflush(stdout);
 
+
+	//coresession = (CoreSession *) buf;
 	coresession = (CoreSession *) switch_channel_get_private(channel, "CoreSession");
+
 	if (!coresession) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid CoreSession\n");		
 		return SWITCH_STATUS_FALSE;
@@ -717,24 +799,24 @@ switch_status_t dtmf_callback(switch_core_session_t *session_cb,
 
 }
 
-switch_status_t process_callback_result(char *ret, 
-					struct input_callback_state *cb_state,
-					switch_core_session_t *session) 
+
+
+switch_status_t CoreSession::process_callback_result(char *ret)
 {
 	
     switch_file_handle_t *fh = NULL;	   
 
-    if (!cb_state) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because cb_state is null\n");
-		return SWITCH_STATUS_FALSE;	
-    }
+	if (fhp) {
+		fh = fhp;
+	} else {
+		if (!cb_state.extra) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because cb_state.extra is null\n");
+			return SWITCH_STATUS_FALSE;	
+		}
+		
+		fh = (switch_file_handle_t *) cb_state.extra;    
+	}
 
-    if (!cb_state->extra) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because cb_state->extra is null\n");
-		return SWITCH_STATUS_FALSE;	
-    }
-
-    fh = (switch_file_handle_t *) cb_state->extra;    
 
     if (!fh) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because fh is null\n");
@@ -747,8 +829,7 @@ switch_status_t process_callback_result(char *ret,
     }
 
     if (!ret) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because ret is null\n");
-		return SWITCH_STATUS_FALSE;	
+		return SWITCH_STATUS_SUCCESS;	
     }
 
     if (!session) {

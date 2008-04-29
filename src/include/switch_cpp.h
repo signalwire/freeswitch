@@ -11,6 +11,11 @@ extern "C" {
 
 #include <switch.h>
 
+#define sanity_check(x) do { if (!(session && allocated)) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return x;}} while(0)
+#define sanity_check_noreturn do { if (!(session && allocated)) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return;}} while(0)
+#define init_vars() do { session = NULL; channel = NULL; uuid = NULL; tts_name = NULL; voice_name = NULL; memset(&args, 0, sizeof(args)); ap = NULL; caller_profile.source = "mod_unknown";  caller_profile.dialplan = ""; caller_profile.context = ""; caller_profile.caller_id_name = ""; caller_profile.caller_id_number = ""; caller_profile.network_addr = ""; caller_profile.ani = ""; caller_profile.aniii = ""; caller_profile.rdnis = "";  caller_profile.username = ""; on_hangup = NULL; memset(&cb_state, 0, sizeof(cb_state)); hook_state = CS_NEW; } while(0)
+
+
 //
 // C++ Interface: switch_to_cpp_mempool
 //
@@ -62,19 +67,6 @@ char *api_execute(char *cmd, char *arg);
 void api_reply_delete(char *reply);
 
 
-/**
- * \brief - process language specific callback results
- * 
- * First the actual callback is called, (in the case of python, 
- * PythonDTMFCallback), it then calls the language specific callback defined
- * by the user (eg, some python method), and then _this_ function is called
- * with the results of the language specific callback.
- */
-switch_status_t process_callback_result(char *raw_result,
-										struct input_callback_state *cb_state,
-										switch_core_session_t *session);
-
-
 typedef struct input_callback_state {
     void *function;           // pointer to the language specific callback function
                               // eg, PyObject *pyfunc
@@ -105,10 +97,15 @@ class Stream {
 
 class Event {
  protected:
-	switch_event_t *event;
  public:
+	switch_event_t *event;
+	char *serialized_string;
+	int mine;
+
 	Event(const char *type, const char *subclass_name = NULL);
+	Event(switch_event_t *wrap_me, int free_me=0);
 	virtual ~Event();
+	const char *serialize(const char *format=NULL);
 	bool set_priority(switch_priority_t priority = SWITCH_PRIORITY_NORMAL);
 	char *get_header(char *header_name);
 	char *get_body(void);
@@ -131,8 +128,9 @@ class CoreSession {
 	char *voice_name;
 	void store_file_handle(switch_file_handle_t *fh);
 	void *on_hangup; // language specific callback function, cast as void * 
-
-
+	switch_file_handle_t local_fh;
+	switch_file_handle_t *fhp;
+	switch_status_t process_callback_result(char *ret);
  public:
 	CoreSession();
 	CoreSession(char *uuid);
@@ -150,8 +148,10 @@ class CoreSession {
 	int preAnswer();
 	virtual void hangup(char *cause = "normal_clearing");
 	void setVariable(char *var, char *val);
+	void setPrivate(char *var, void *val);
+	void *getPrivate(char *var);
 	const char *getVariable(char *var);
-
+	
 
 	/** \brief Record to a file
 	 * \param filename 
@@ -192,7 +192,6 @@ class CoreSession {
      *
 	 */
 	void setDTMFCallback(void *cbfunc, char *funcargs);
-
 
 	int speak(char *text);
 	void set_tts_parms(char *tts_name, char *voice_name);
@@ -265,6 +264,9 @@ class CoreSession {
 	bool ready();
 
 	void execute(char *app, char *data);
+
+	void sendEvent(Event *sendME);
+
 	virtual bool begin_allow_threads() = 0;
 	virtual bool end_allow_threads() = 0;
 

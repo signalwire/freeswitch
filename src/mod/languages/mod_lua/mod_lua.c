@@ -33,15 +33,26 @@
 #include "lua.h"
 #include <lauxlib.h>
 #include <lualib.h>
+#include "mod_lua_extra.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load);
 SWITCH_MODULE_DEFINITION(mod_lua, mod_lua_load, NULL, NULL);
 
 static struct {
 	switch_memory_pool_t *pool;
+	char *xml_handler;
 } globals;
 
 int luaopen_freeswitch(lua_State* L);
+
+static int panic (lua_State *L) 
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "unprotected error in call to Lua API (%s)\n",
+					  lua_tostring(L, -1));
+
+	return 0;
+}
+
 
 static lua_State *lua_init(void) 
 {
@@ -51,6 +62,7 @@ static lua_State *lua_init(void)
 		luaL_openlibs(L);
 		luaopen_freeswitch(L);
 		lua_gc(L, LUA_GCRESTART, 0);
+		lua_atpanic(L, panic);
  	}
 	return L;
 }
@@ -144,6 +156,11 @@ static void *SWITCH_THREAD_FUNC lua_thread_run(switch_thread_t *thread, void *ob
 	char *input_code = (char *) obj;
 	lua_State *L = lua_init();	 /* opens Lua */
 
+	//switch_event_t *event;
+	//switch_event_create(&event, SWITCH_EVENT_MESSAGE);
+	//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "testing", "1234");
+	//mod_lua_conjure_event(L, event, "blah");
+
 	lua_parse_and_execute(L, input_code);
 	
 	if (input_code) {
@@ -153,6 +170,96 @@ static void *SWITCH_THREAD_FUNC lua_thread_run(switch_thread_t *thread, void *ob
 	lua_uninit(L);
 
 	return NULL;
+}
+
+
+static switch_xml_t lua_fetch(const char *section, 
+							  const char *tag_name, 
+							  const char *key_name, 
+							  const char *key_value, 
+							  switch_event_t *params,
+							  void *user_data)
+{
+
+	switch_xml_t xml = NULL;
+
+	if (!switch_strlen_zero(globals.xml_handler)) {
+		lua_State *L = lua_init();
+		char *mycmd = strdup(globals.xml_handler);
+		const char *str;
+
+		switch_assert(mycmd);
+
+		lua_newtable(L);
+
+		lua_pushstring(L, "section");
+		lua_pushstring(L, switch_str_nil(section));
+		lua_rawset(L, -3);
+		lua_pushstring(L, "tag_name");
+		lua_pushstring(L, switch_str_nil(tag_name));
+		lua_rawset(L, -3);
+		lua_pushstring(L, "key_name");
+		lua_pushstring(L, switch_str_nil(key_name));
+		lua_rawset(L, -3);
+		lua_pushstring(L, "key_value");
+		lua_pushstring(L, switch_str_nil(key_value));
+		lua_rawset(L, -3);
+		lua_setglobal(L, "XML_REQUEST");
+
+		if (params) {
+			mod_lua_conjure_event(L, params, "params", 1);
+		}
+
+		lua_parse_and_execute(L, mycmd);
+
+		lua_getfield(L, LUA_GLOBALSINDEX, "XML_STRING");
+		str = lua_tostring(L, 1);
+
+		if (str) {
+			if (switch_strlen_zero(str)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Result\n");
+			} else if (!(xml = switch_xml_parse_str((char *)str, strlen(str)))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing XML Result!\n");
+			}
+		}
+		
+		lua_uninit(L);
+		free(mycmd);
+	}
+
+	return xml;
+}
+
+
+static switch_status_t do_config(void)
+{
+	char *cf = "lua.conf";
+	switch_xml_t cfg, xml, settings, param;
+
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if ((settings = switch_xml_child(cfg, "settings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+
+			if (!strcmp(var, "xml-handler-script")) {
+				globals.xml_handler = switch_core_strdup(globals.pool, val);
+			} else if (!strcmp(var, "xml-handler-bindings")) {
+				if (!switch_strlen_zero(globals.xml_handler)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "binding '%s' to '%s'\n", globals.xml_handler, val);
+					switch_xml_bind_search_function(lua_fetch, switch_xml_parse_section_string(val), NULL);
+				}
+			}
+		}
+	}
+
+	switch_xml_free(xml);
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 int lua_thread(const char *text)
@@ -172,17 +279,33 @@ SWITCH_STANDARD_APP(lua_function)
 {
 	lua_State *L = lua_init();
 	char code[1024] = "";
-	snprintf(code, sizeof(code), "~session = LUASession:new(\"%s\");", switch_core_session_get_uuid(session));
+	snprintf(code, sizeof(code), "~session = freeswitch.Session(\"%s\");", switch_core_session_get_uuid(session));
 	lua_parse_and_execute(L, code);
 	lua_parse_and_execute(L, (char *) data);
-	snprintf(code, sizeof(code), "~session:delete()");
-	lua_parse_and_execute(L, code);
 	lua_uninit(L);
 }
 
-SWITCH_STANDARD_API(lua_api_function) {
+SWITCH_STANDARD_API(luarun_api_function) {
 	lua_thread(cmd);
 	stream->write_function(stream, "+OK\n");
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_STANDARD_API(lua_api_function) {
+
+	lua_State *L = lua_init();
+	char *mycmd = strdup(cmd);
+
+	switch_assert(mycmd);
+	mod_lua_conjure_stream(L, stream, "stream", 1);
+	if (stream->event) {
+		mod_lua_conjure_event(L, stream->event, "env", 1);
+	}
+
+	lua_parse_and_execute(L, mycmd);
+	lua_uninit(L);
+	free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -194,12 +317,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	SWITCH_ADD_API(api_interface, "luarun", "run a script", lua_api_function, "<script>");
+	SWITCH_ADD_API(api_interface, "luarun", "run a script", luarun_api_function, "<script>");
+	SWITCH_ADD_API(api_interface, "lua", "run a script as an api function", lua_api_function, "<script>");
 	SWITCH_ADD_APP(app_interface, "lua", "Launch LUA ivr", "Run a lua ivr on a channel", lua_function, "<script>", SAF_SUPPORT_NOMEDIA);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hello World!\n");
-
+	
 	globals.pool = pool;
+	do_config();
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

@@ -871,7 +871,7 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 		add_xml_header(xml, hp->name, hp->value, off++);
 	}
 
-	if (data) {
+	if (!switch_strlen_zero(data)) {
 		body = data;
 	} else if (event->body) {
 		body = event->body;

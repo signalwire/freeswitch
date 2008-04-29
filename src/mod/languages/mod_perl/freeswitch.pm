@@ -52,7 +52,6 @@ package freeswitch;
 *console_clean_log = *freeswitchc::console_clean_log;
 *api_execute = *freeswitchc::api_execute;
 *api_reply_delete = *freeswitchc::api_reply_delete;
-*process_callback_result = *freeswitchc::process_callback_result;
 *bridge = *freeswitchc::bridge;
 *hanguphook = *freeswitchc::hanguphook;
 *dtmf_callback = *freeswitchc::dtmf_callback;
@@ -148,6 +147,12 @@ use vars qw(@ISA %OWNER %ITERATORS %BLESSEDMEMBERS);
 @ISA = qw( freeswitch );
 %OWNER = ();
 %ITERATORS = ();
+*swig_event_get = *freeswitchc::Event_event_get;
+*swig_event_set = *freeswitchc::Event_event_set;
+*swig_serialized_string_get = *freeswitchc::Event_serialized_string_get;
+*swig_serialized_string_set = *freeswitchc::Event_serialized_string_set;
+*swig_mine_get = *freeswitchc::Event_mine_get;
+*swig_mine_set = *freeswitchc::Event_mine_set;
 sub new {
     my $pkg = shift;
     my $self = freeswitchc::new_Event(@_);
@@ -165,6 +170,7 @@ sub DESTROY {
     }
 }
 
+*serialize = *freeswitchc::Event_serialize;
 *set_priority = *freeswitchc::Event_set_priority;
 *get_header = *freeswitchc::Event_get_header;
 *get_body = *freeswitchc::Event_get_body;
@@ -219,6 +225,8 @@ sub DESTROY {
 *preAnswer = *freeswitchc::CoreSession_preAnswer;
 *hangup = *freeswitchc::CoreSession_hangup;
 *setVariable = *freeswitchc::CoreSession_setVariable;
+*setPrivate = *freeswitchc::CoreSession_setPrivate;
+*getPrivate = *freeswitchc::CoreSession_getPrivate;
 *getVariable = *freeswitchc::CoreSession_getVariable;
 *recordFile = *freeswitchc::CoreSession_recordFile;
 *setCallerData = *freeswitchc::CoreSession_setCallerData;
@@ -237,6 +245,7 @@ sub DESTROY {
 *setHangupHook = *freeswitchc::CoreSession_setHangupHook;
 *ready = *freeswitchc::CoreSession_ready;
 *execute = *freeswitchc::CoreSession_execute;
+*sendEvent = *freeswitchc::CoreSession_sendEvent;
 *begin_allow_threads = *freeswitchc::CoreSession_begin_allow_threads;
 *end_allow_threads = *freeswitchc::CoreSession_end_allow_threads;
 *get_uuid = *freeswitchc::CoreSession_get_uuid;

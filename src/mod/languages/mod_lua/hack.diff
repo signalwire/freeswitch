@@ -1,0 +1,29 @@
+--- hack.cpp	2008-04-29 13:49:22.000000000 -0400
++++ mod_lua_wrap.cpp	2008-04-29 13:49:10.000000000 -0400
+@@ -4028,7 +4028,7 @@
+   SWIG_check_num_args("Session",0,0)
+   result = (Session *)new Session();
+   SWIG_arg=0;
+-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; 
++  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; result->setPrivate("__L", L);
+   return SWIG_arg;
+   
+   if(0) SWIG_fail;
+@@ -4049,7 +4049,7 @@
+   arg1 = (char *)lua_tostring(L, 1);
+   result = (Session *)new Session(arg1);
+   SWIG_arg=0;
+-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; 
++  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; result->setPrivate("__L", L);
+   return SWIG_arg;
+   
+   if(0) SWIG_fail;
+@@ -4074,7 +4074,7 @@
+   
+   result = (Session *)new Session(arg1);
+   SWIG_arg=0;
+-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; 
++  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; result->setPrivate("__L", L);
+   return SWIG_arg;
+   
+   if(0) SWIG_fail;

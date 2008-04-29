@@ -1456,15 +1456,16 @@ SWIG_Perl_SetModule(swig_module_info *module) {
 #define SWIGTYPE_p_switch_channel_state_t swig_types[7]
 #define SWIGTYPE_p_switch_channel_t swig_types[8]
 #define SWIGTYPE_p_switch_core_session_t swig_types[9]
-#define SWIGTYPE_p_switch_input_args_t swig_types[10]
-#define SWIGTYPE_p_switch_input_type_t swig_types[11]
-#define SWIGTYPE_p_switch_priority_t swig_types[12]
-#define SWIGTYPE_p_switch_size_t swig_types[13]
-#define SWIGTYPE_p_switch_status_t swig_types[14]
-#define SWIGTYPE_p_switch_stream_handle_t swig_types[15]
-#define SWIGTYPE_p_void swig_types[16]
-static swig_type_info *swig_types[18];
-static swig_module_info swig_module = {swig_types, 17, 0, 0, 0, 0};
+#define SWIGTYPE_p_switch_event_t swig_types[10]
+#define SWIGTYPE_p_switch_input_args_t swig_types[11]
+#define SWIGTYPE_p_switch_input_type_t swig_types[12]
+#define SWIGTYPE_p_switch_priority_t swig_types[13]
+#define SWIGTYPE_p_switch_size_t swig_types[14]
+#define SWIGTYPE_p_switch_status_t swig_types[15]
+#define SWIGTYPE_p_switch_stream_handle_t swig_types[16]
+#define SWIGTYPE_p_void swig_types[17]
+static swig_type_info *swig_types[19];
+static swig_module_info swig_module = {swig_types, 18, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1591,19 +1592,6 @@ SWIG_From_int  SWIG_PERL_DECL_ARGS_1(int value)
 }
 
 
-SWIGINTERNINLINE SV *
-SWIG_From_bool  SWIG_PERL_DECL_ARGS_1(bool value)
-{    
-  SV *obj = sv_newmortal();
-  if (value) {
-    sv_setsv(obj, &PL_sv_yes);
-  } else {
-    sv_setsv(obj, &PL_sv_no); 
-  }
-  return obj;
-}
-
-
 #include <limits.h>
 #if !defined(SWIG_NO_LLONG_MAX)
 # if !defined(LLONG_MAX) && defined(__GNUC__) && defined (__LONG_LONG_MAX__)
@@ -1676,6 +1664,72 @@ SWIG_CanCastAsInteger(double *d, double min, double max) {
    }
   }
   return 0;
+}
+
+
+SWIGINTERN int
+SWIG_AsVal_long SWIG_PERL_DECL_ARGS_2(SV *obj, long* val)
+{
+  if (SvIOK(obj)) {
+    if (val) *val = SvIV(obj);
+    return SWIG_OK;
+  } else {
+    int dispatch = 0;
+    const char *nptr = SvPV_nolen(obj);
+    if (nptr) {
+      char *endptr;
+      long v;
+      errno = 0;
+      v = strtol(nptr, &endptr,0);
+      if (errno == ERANGE) {
+	errno = 0;
+	return SWIG_OverflowError;
+      } else {
+	if (*endptr == '\0') {
+	  if (val) *val = v;
+	  return SWIG_Str2NumCast(SWIG_OK);
+	}
+      }
+    }
+    if (!dispatch) {
+      double d;
+      int res = SWIG_AddCast(SWIG_AsVal_double SWIG_PERL_CALL_ARGS_2(obj,&d));
+      if (SWIG_IsOK(res) && SWIG_CanCastAsInteger(&d, LONG_MIN, LONG_MAX)) {
+	if (val) *val = (long)(d);
+	return res;
+      }
+    }
+  }
+  return SWIG_TypeError;
+}
+
+
+SWIGINTERN int
+SWIG_AsVal_int SWIG_PERL_DECL_ARGS_2(SV * obj, int *val)
+{
+  long v;
+  int res = SWIG_AsVal_long SWIG_PERL_CALL_ARGS_2(obj, &v);
+  if (SWIG_IsOK(res)) {
+    if ((v < INT_MIN || v > INT_MAX)) {
+      return SWIG_OverflowError;
+    } else {
+      if (val) *val = static_cast< int >(v);
+    }
+  }  
+  return res;
+}
+
+
+SWIGINTERNINLINE SV *
+SWIG_From_bool  SWIG_PERL_DECL_ARGS_1(bool value)
+{    
+  SV *obj = sv_newmortal();
+  if (value) {
+    sv_setsv(obj, &PL_sv_yes);
+  } else {
+    sv_setsv(obj, &PL_sv_no); 
+  }
+  return obj;
 }
 
 
@@ -1753,59 +1807,6 @@ SWIGINTERNINLINE SV *
 SWIG_From_unsigned_SS_int  SWIG_PERL_DECL_ARGS_1(unsigned int value)
 {    
   return SWIG_From_unsigned_SS_long  SWIG_PERL_CALL_ARGS_1(value);
-}
-
-
-SWIGINTERN int
-SWIG_AsVal_long SWIG_PERL_DECL_ARGS_2(SV *obj, long* val)
-{
-  if (SvIOK(obj)) {
-    if (val) *val = SvIV(obj);
-    return SWIG_OK;
-  } else {
-    int dispatch = 0;
-    const char *nptr = SvPV_nolen(obj);
-    if (nptr) {
-      char *endptr;
-      long v;
-      errno = 0;
-      v = strtol(nptr, &endptr,0);
-      if (errno == ERANGE) {
-	errno = 0;
-	return SWIG_OverflowError;
-      } else {
-	if (*endptr == '\0') {
-	  if (val) *val = v;
-	  return SWIG_Str2NumCast(SWIG_OK);
-	}
-      }
-    }
-    if (!dispatch) {
-      double d;
-      int res = SWIG_AddCast(SWIG_AsVal_double SWIG_PERL_CALL_ARGS_2(obj,&d));
-      if (SWIG_IsOK(res) && SWIG_CanCastAsInteger(&d, LONG_MIN, LONG_MAX)) {
-	if (val) *val = (long)(d);
-	return res;
-      }
-    }
-  }
-  return SWIG_TypeError;
-}
-
-
-SWIGINTERN int
-SWIG_AsVal_int SWIG_PERL_DECL_ARGS_2(SV * obj, int *val)
-{
-  long v;
-  int res = SWIG_AsVal_long SWIG_PERL_CALL_ARGS_2(obj, &v);
-  if (SWIG_IsOK(res)) {
-    if ((v < INT_MIN || v > INT_MAX)) {
-      return SWIG_OverflowError;
-    } else {
-      if (val) *val = static_cast< int >(v);
-    }
-  }  
-  return res;
 }
 
 
@@ -1984,55 +1985,6 @@ XS(_wrap_api_reply_delete) {
     XSRETURN(argvi);
   fail:
     if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_process_callback_result) {
-  {
-    char *arg1 = (char *) 0 ;
-    input_callback_state *arg2 = (input_callback_state *) 0 ;
-    switch_core_session_t *arg3 = (switch_core_session_t *) 0 ;
-    switch_status_t result;
-    int res1 ;
-    char *buf1 = 0 ;
-    int alloc1 = 0 ;
-    void *argp2 = 0 ;
-    int res2 = 0 ;
-    void *argp3 = 0 ;
-    int res3 = 0 ;
-    int argvi = 0;
-    dXSARGS;
-    
-    if ((items < 3) || (items > 3)) {
-      SWIG_croak("Usage: process_callback_result(raw_result,cb_state,session);");
-    }
-    res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "process_callback_result" "', argument " "1"" of type '" "char *""'");
-    }
-    arg1 = reinterpret_cast< char * >(buf1);
-    res2 = SWIG_ConvertPtr(ST(1), &argp2,SWIGTYPE_p_input_callback_state, 0 |  0 );
-    if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "process_callback_result" "', argument " "2"" of type '" "input_callback_state *""'"); 
-    }
-    arg2 = reinterpret_cast< input_callback_state * >(argp2);
-    res3 = SWIG_ConvertPtr(ST(2), &argp3,SWIGTYPE_p_switch_core_session_t, 0 |  0 );
-    if (!SWIG_IsOK(res3)) {
-      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "process_callback_result" "', argument " "3"" of type '" "switch_core_session_t *""'"); 
-    }
-    arg3 = reinterpret_cast< switch_core_session_t * >(argp3);
-    result = process_callback_result(arg1,arg2,arg3);
-    ST(argvi) = SWIG_NewPointerObj((new switch_status_t(static_cast< const switch_status_t& >(result))), SWIGTYPE_p_switch_status_t, SWIG_POINTER_OWN | 0); argvi++ ;
-    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-    
-    
-    XSRETURN(argvi);
-  fail:
-    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-    
-    
     SWIG_croak_null();
   }
 }
@@ -2537,7 +2489,211 @@ XS(_wrap_Stream_get_data) {
 }
 
 
-XS(_wrap_new_Event) {
+XS(_wrap_Event_event_set) {
+  {
+    Event *arg1 = (Event *) 0 ;
+    switch_event_t *arg2 = (switch_event_t *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    void *argp2 = 0 ;
+    int res2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: Event_event_set(self,event);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Event, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Event_event_set" "', argument " "1"" of type '" "Event *""'"); 
+    }
+    arg1 = reinterpret_cast< Event * >(argp1);
+    res2 = SWIG_ConvertPtr(ST(1), &argp2,SWIGTYPE_p_switch_event_t, SWIG_POINTER_DISOWN |  0 );
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Event_event_set" "', argument " "2"" of type '" "switch_event_t *""'"); 
+    }
+    arg2 = reinterpret_cast< switch_event_t * >(argp2);
+    if (arg1) (arg1)->event = arg2;
+    
+    
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_Event_event_get) {
+  {
+    Event *arg1 = (Event *) 0 ;
+    switch_event_t *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: Event_event_get(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Event, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Event_event_get" "', argument " "1"" of type '" "Event *""'"); 
+    }
+    arg1 = reinterpret_cast< Event * >(argp1);
+    result = (switch_event_t *) ((arg1)->event);
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_switch_event_t, 0 | 0); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_Event_serialized_string_set) {
+  {
+    Event *arg1 = (Event *) 0 ;
+    char *arg2 = (char *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: Event_serialized_string_set(self,serialized_string);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Event, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Event_serialized_string_set" "', argument " "1"" of type '" "Event *""'"); 
+    }
+    arg1 = reinterpret_cast< Event * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Event_serialized_string_set" "', argument " "2"" of type '" "char *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    if (arg1->serialized_string) delete[] arg1->serialized_string;
+    if (arg2) {
+      size_t size = strlen(reinterpret_cast< const char * >(arg2)) + 1;
+      arg1->serialized_string = (char *)reinterpret_cast< char* >(memcpy((new char[size]), reinterpret_cast< const char * >(arg2), sizeof(char)*(size)));
+    } else {
+      arg1->serialized_string = 0;
+    }
+    
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_Event_serialized_string_get) {
+  {
+    Event *arg1 = (Event *) 0 ;
+    char *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: Event_serialized_string_get(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Event, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Event_serialized_string_get" "', argument " "1"" of type '" "Event *""'"); 
+    }
+    arg1 = reinterpret_cast< Event * >(argp1);
+    result = (char *) ((arg1)->serialized_string);
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_Event_mine_set) {
+  {
+    Event *arg1 = (Event *) 0 ;
+    int arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: Event_mine_set(self,mine);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Event, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Event_mine_set" "', argument " "1"" of type '" "Event *""'"); 
+    }
+    arg1 = reinterpret_cast< Event * >(argp1);
+    ecode2 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Event_mine_set" "', argument " "2"" of type '" "int""'");
+    } 
+    arg2 = static_cast< int >(val2);
+    if (arg1) (arg1)->mine = arg2;
+    
+    
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_Event_mine_get) {
+  {
+    Event *arg1 = (Event *) 0 ;
+    int result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: Event_mine_get(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Event, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Event_mine_get" "', argument " "1"" of type '" "Event *""'"); 
+    }
+    arg1 = reinterpret_cast< Event * >(argp1);
+    result = (int) ((arg1)->mine);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_new_Event__SWIG_0) {
   {
     char *arg1 = (char *) 0 ;
     char *arg2 = (char *) NULL ;
@@ -2579,6 +2735,129 @@ XS(_wrap_new_Event) {
 }
 
 
+XS(_wrap_new_Event__SWIG_1) {
+  {
+    switch_event_t *arg1 = (switch_event_t *) 0 ;
+    int arg2 = (int) 0 ;
+    Event *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 2)) {
+      SWIG_croak("Usage: new_Event(wrap_me,free_me);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_switch_event_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_Event" "', argument " "1"" of type '" "switch_event_t *""'"); 
+    }
+    arg1 = reinterpret_cast< switch_event_t * >(argp1);
+    if (items > 1) {
+      ecode2 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
+      if (!SWIG_IsOK(ecode2)) {
+        SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_Event" "', argument " "2"" of type '" "int""'");
+      } 
+      arg2 = static_cast< int >(val2);
+    }
+    result = (Event *)new Event(arg1,arg2);
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_new_Event) {
+  dXSARGS;
+  
+  {
+    unsigned long _index = 0;
+    SWIG_TypeRank _rank = 0; 
+    if ((items >= 1) && (items <= 2)) {
+      SWIG_TypeRank _ranki = 0;
+      SWIG_TypeRank _rankm = 0;
+      SWIG_TypeRank _pi = 1;
+      int _v = 0;
+      {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(ST(0), &vptr, SWIGTYPE_p_switch_event_t, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_1;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      if (items > 1) {
+        {
+          {
+            int res = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(1), NULL);
+            _v = SWIG_CheckState(res);
+          }
+        }
+        if (!_v) goto check_1;
+        _ranki += _v*_pi;
+        _rankm += _pi;
+        _pi *= SWIG_MAXCASTRANK;
+      }
+      if (!_index || (_ranki < _rank)) {
+        _rank = _ranki; _index = 1;
+        if (_rank == _rankm) goto dispatch;
+      }
+    }
+  check_1:
+    
+    if ((items >= 1) && (items <= 2)) {
+      SWIG_TypeRank _ranki = 0;
+      SWIG_TypeRank _rankm = 0;
+      SWIG_TypeRank _pi = 1;
+      int _v = 0;
+      {
+        int res = SWIG_AsCharPtrAndSize(ST(0), 0, NULL, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_2;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      if (items > 1) {
+        {
+          int res = SWIG_AsCharPtrAndSize(ST(1), 0, NULL, 0);
+          _v = SWIG_CheckState(res);
+        }
+        if (!_v) goto check_2;
+        _ranki += _v*_pi;
+        _rankm += _pi;
+        _pi *= SWIG_MAXCASTRANK;
+      }
+      if (!_index || (_ranki < _rank)) {
+        _rank = _ranki; _index = 2;
+        if (_rank == _rankm) goto dispatch;
+      }
+    }
+  check_2:
+    
+  dispatch:
+    switch(_index) {
+    case 1:
+      ++PL_markstack_ptr; SWIG_CALLXS(_wrap_new_Event__SWIG_1); return;
+    case 2:
+      ++PL_markstack_ptr; SWIG_CALLXS(_wrap_new_Event__SWIG_0); return;
+    }
+  }
+  
+  croak("No matching function for overloaded 'new_Event'");
+  XSRETURN(0);
+}
+
+
 XS(_wrap_delete_Event) {
   {
     Event *arg1 = (Event *) 0 ;
@@ -2602,6 +2881,47 @@ XS(_wrap_delete_Event) {
     XSRETURN(argvi);
   fail:
     
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_Event_serialize) {
+  {
+    Event *arg1 = (Event *) 0 ;
+    char *arg2 = (char *) NULL ;
+    char *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 2)) {
+      SWIG_croak("Usage: Event_serialize(self,format);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Event, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Event_serialize" "', argument " "1"" of type '" "Event *""'"); 
+    }
+    arg1 = reinterpret_cast< Event * >(argp1);
+    if (items > 1) {
+      res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+      if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Event_serialize" "', argument " "2"" of type '" "char const *""'");
+      }
+      arg2 = reinterpret_cast< char * >(buf2);
+    }
+    result = (char *)(arg1)->serialize((char const *)arg2);
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     SWIG_croak_null();
   }
 }
@@ -3442,6 +3762,91 @@ XS(_wrap_CoreSession_setVariable) {
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_CoreSession_setPrivate) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    char *arg2 = (char *) 0 ;
+    void *arg3 = (void *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int res3 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 3) || (items > 3)) {
+      SWIG_croak("Usage: CoreSession_setPrivate(self,var,val);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_setPrivate" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_setPrivate" "', argument " "2"" of type '" "char *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    res3 = SWIG_ConvertPtr(ST(2),SWIG_as_voidptrptr(&arg3), 0, 0);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "CoreSession_setPrivate" "', argument " "3"" of type '" "void *""'"); 
+    }
+    (arg1)->setPrivate(arg2,arg3);
+    
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_CoreSession_getPrivate) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    char *arg2 = (char *) 0 ;
+    void *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: CoreSession_getPrivate(self,var);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_getPrivate" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_getPrivate" "', argument " "2"" of type '" "char *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    result = (void *)(arg1)->getPrivate(arg2);
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_void, 0 | 0); argvi++ ;
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     SWIG_croak_null();
   }
 }
@@ -4378,6 +4783,43 @@ XS(_wrap_CoreSession_execute) {
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_CoreSession_sendEvent) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    Event *arg2 = (Event *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    void *argp2 = 0 ;
+    int res2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: CoreSession_sendEvent(self,sendME);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_sendEvent" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    res2 = SWIG_ConvertPtr(ST(1), &argp2,SWIGTYPE_p_Event, 0 |  0 );
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_sendEvent" "', argument " "2"" of type '" "Event *""'"); 
+    }
+    arg2 = reinterpret_cast< Event * >(argp2);
+    (arg1)->sendEvent(arg2);
+    
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    
     SWIG_croak_null();
   }
 }
@@ -5437,6 +5879,7 @@ static swig_type_info _swigt__p_session_flag_t = {"_p_session_flag_t", "enum ses
 static swig_type_info _swigt__p_switch_channel_state_t = {"_p_switch_channel_state_t", "switch_channel_state_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_channel_t = {"_p_switch_channel_t", "switch_channel_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_core_session_t = {"_p_switch_core_session_t", "switch_core_session_t *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_switch_event_t = {"_p_switch_event_t", "switch_event_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_input_args_t = {"_p_switch_input_args_t", "switch_input_args_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_input_type_t = {"_p_switch_input_type_t", "switch_input_type_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_priority_t = {"_p_switch_priority_t", "switch_priority_t *", 0, 0, (void*)0, 0};
@@ -5456,6 +5899,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_switch_channel_state_t,
   &_swigt__p_switch_channel_t,
   &_swigt__p_switch_core_session_t,
+  &_swigt__p_switch_event_t,
   &_swigt__p_switch_input_args_t,
   &_swigt__p_switch_input_type_t,
   &_swigt__p_switch_priority_t,
@@ -5475,6 +5919,7 @@ static swig_cast_info _swigc__p_session_flag_t[] = {  {&_swigt__p_session_flag_t
 static swig_cast_info _swigc__p_switch_channel_state_t[] = {  {&_swigt__p_switch_channel_state_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_channel_t[] = {  {&_swigt__p_switch_channel_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_core_session_t[] = {  {&_swigt__p_switch_core_session_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_switch_event_t[] = {  {&_swigt__p_switch_event_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_input_args_t[] = {  {&_swigt__p_switch_input_args_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_input_type_t[] = {  {&_swigt__p_switch_input_type_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_priority_t[] = {  {&_swigt__p_switch_priority_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -5494,6 +5939,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_switch_channel_state_t,
   _swigc__p_switch_channel_t,
   _swigc__p_switch_core_session_t,
+  _swigc__p_switch_event_t,
   _swigc__p_switch_input_args_t,
   _swigc__p_switch_input_type_t,
   _swigc__p_switch_priority_t,
@@ -5520,7 +5966,6 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::console_clean_log", _wrap_console_clean_log},
 {"freeswitchc::api_execute", _wrap_api_execute},
 {"freeswitchc::api_reply_delete", _wrap_api_reply_delete},
-{"freeswitchc::process_callback_result", _wrap_process_callback_result},
 {"freeswitchc::input_callback_state_t_function_set", _wrap_input_callback_state_t_function_set},
 {"freeswitchc::input_callback_state_t_function_get", _wrap_input_callback_state_t_function_get},
 {"freeswitchc::input_callback_state_t_threadState_set", _wrap_input_callback_state_t_threadState_set},
@@ -5535,8 +5980,15 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::delete_Stream", _wrap_delete_Stream},
 {"freeswitchc::Stream_write", _wrap_Stream_write},
 {"freeswitchc::Stream_get_data", _wrap_Stream_get_data},
+{"freeswitchc::Event_event_set", _wrap_Event_event_set},
+{"freeswitchc::Event_event_get", _wrap_Event_event_get},
+{"freeswitchc::Event_serialized_string_set", _wrap_Event_serialized_string_set},
+{"freeswitchc::Event_serialized_string_get", _wrap_Event_serialized_string_get},
+{"freeswitchc::Event_mine_set", _wrap_Event_mine_set},
+{"freeswitchc::Event_mine_get", _wrap_Event_mine_get},
 {"freeswitchc::new_Event", _wrap_new_Event},
 {"freeswitchc::delete_Event", _wrap_delete_Event},
+{"freeswitchc::Event_serialize", _wrap_Event_serialize},
 {"freeswitchc::Event_set_priority", _wrap_Event_set_priority},
 {"freeswitchc::Event_get_header", _wrap_Event_get_header},
 {"freeswitchc::Event_get_body", _wrap_Event_get_body},
@@ -5561,6 +6013,8 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::CoreSession_preAnswer", _wrap_CoreSession_preAnswer},
 {"freeswitchc::CoreSession_hangup", _wrap_CoreSession_hangup},
 {"freeswitchc::CoreSession_setVariable", _wrap_CoreSession_setVariable},
+{"freeswitchc::CoreSession_setPrivate", _wrap_CoreSession_setPrivate},
+{"freeswitchc::CoreSession_getPrivate", _wrap_CoreSession_getPrivate},
 {"freeswitchc::CoreSession_getVariable", _wrap_CoreSession_getVariable},
 {"freeswitchc::CoreSession_recordFile", _wrap_CoreSession_recordFile},
 {"freeswitchc::CoreSession_setCallerData", _wrap_CoreSession_setCallerData},
@@ -5579,6 +6033,7 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::CoreSession_setHangupHook", _wrap_CoreSession_setHangupHook},
 {"freeswitchc::CoreSession_ready", _wrap_CoreSession_ready},
 {"freeswitchc::CoreSession_execute", _wrap_CoreSession_execute},
+{"freeswitchc::CoreSession_sendEvent", _wrap_CoreSession_sendEvent},
 {"freeswitchc::CoreSession_begin_allow_threads", _wrap_CoreSession_begin_allow_threads},
 {"freeswitchc::CoreSession_end_allow_threads", _wrap_CoreSession_end_allow_threads},
 {"freeswitchc::CoreSession_get_uuid", _wrap_CoreSession_get_uuid},
