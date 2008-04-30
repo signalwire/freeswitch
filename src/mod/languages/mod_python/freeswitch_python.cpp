@@ -201,7 +201,7 @@ switch_status_t PySession::run_dtmf_callback(void *input,
 
    if (pyresult && pyresult != Py_None) {                       
        resultStr = (char *) PyString_AsString(pyresult);
-       switch_status_t cbresult = process_callback_result(resultStr, &cb_state, session);
+       switch_status_t cbresult = process_callback_result(resultStr);
        return cbresult;
    }
    else {

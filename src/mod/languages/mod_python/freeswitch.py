@@ -52,7 +52,6 @@ console_log = _freeswitch.console_log
 console_clean_log = _freeswitch.console_clean_log
 api_execute = _freeswitch.api_execute
 api_reply_delete = _freeswitch.api_reply_delete
-process_callback_result = _freeswitch.process_callback_result
 class input_callback_state_t(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, input_callback_state_t, name, value)
@@ -106,12 +105,22 @@ class Event(_object):
     __swig_getmethods__ = {}
     __getattr__ = lambda self, name: _swig_getattr(self, Event, name)
     __repr__ = _swig_repr
+    __swig_setmethods__["event"] = _freeswitch.Event_event_set
+    __swig_getmethods__["event"] = _freeswitch.Event_event_get
+    if _newclass:event = _swig_property(_freeswitch.Event_event_get, _freeswitch.Event_event_set)
+    __swig_setmethods__["serialized_string"] = _freeswitch.Event_serialized_string_set
+    __swig_getmethods__["serialized_string"] = _freeswitch.Event_serialized_string_get
+    if _newclass:serialized_string = _swig_property(_freeswitch.Event_serialized_string_get, _freeswitch.Event_serialized_string_set)
+    __swig_setmethods__["mine"] = _freeswitch.Event_mine_set
+    __swig_getmethods__["mine"] = _freeswitch.Event_mine_get
+    if _newclass:mine = _swig_property(_freeswitch.Event_mine_get, _freeswitch.Event_mine_set)
     def __init__(self, *args): 
         this = _freeswitch.new_Event(*args)
         try: self.this.append(this)
         except: self.this = this
     __swig_destroy__ = _freeswitch.delete_Event
     __del__ = lambda self : None;
+    def serialize(*args): return _freeswitch.Event_serialize(*args)
     def set_priority(*args): return _freeswitch.Event_set_priority(*args)
     def get_header(*args): return _freeswitch.Event_get_header(*args)
     def get_body(*args): return _freeswitch.Event_get_body(*args)
@@ -153,6 +162,8 @@ class CoreSession(_object):
     def preAnswer(*args): return _freeswitch.CoreSession_preAnswer(*args)
     def hangup(*args): return _freeswitch.CoreSession_hangup(*args)
     def setVariable(*args): return _freeswitch.CoreSession_setVariable(*args)
+    def setPrivate(*args): return _freeswitch.CoreSession_setPrivate(*args)
+    def getPrivate(*args): return _freeswitch.CoreSession_getPrivate(*args)
     def getVariable(*args): return _freeswitch.CoreSession_getVariable(*args)
     def recordFile(*args): return _freeswitch.CoreSession_recordFile(*args)
     def setCallerData(*args): return _freeswitch.CoreSession_setCallerData(*args)
@@ -171,6 +182,7 @@ class CoreSession(_object):
     def setHangupHook(*args): return _freeswitch.CoreSession_setHangupHook(*args)
     def ready(*args): return _freeswitch.CoreSession_ready(*args)
     def execute(*args): return _freeswitch.CoreSession_execute(*args)
+    def sendEvent(*args): return _freeswitch.CoreSession_sendEvent(*args)
     def begin_allow_threads(*args): return _freeswitch.CoreSession_begin_allow_threads(*args)
     def end_allow_threads(*args): return _freeswitch.CoreSession_end_allow_threads(*args)
     def get_uuid(*args): return _freeswitch.CoreSession_get_uuid(*args)
