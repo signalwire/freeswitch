@@ -206,7 +206,7 @@ const char *Stream::get_data()
 }
 
 
-CoreSession::CoreSession()
+SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession()
 {
 	session = NULL;
 	channel = NULL;
@@ -232,7 +232,7 @@ CoreSession::CoreSession()
 		
 }
 
-CoreSession::CoreSession(char *nuuid)
+SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession(char *nuuid)
 {
 	memset(&caller_profile, 0, sizeof(caller_profile)); 	
 	init_vars();
@@ -252,7 +252,7 @@ CoreSession::CoreSession(char *nuuid)
 	}
 }
 
-CoreSession::CoreSession(switch_core_session_t *new_session)
+SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession(switch_core_session_t *new_session)
 {
 	memset(&caller_profile, 0, sizeof(caller_profile)); 
 	init_vars();
@@ -264,7 +264,7 @@ CoreSession::CoreSession(switch_core_session_t *new_session)
 	}
 }
 
-CoreSession::~CoreSession()
+SWITCH_DECLARE_CONSTRUCTOR CoreSession::~CoreSession()
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::~CoreSession desctructor\n");
 	switch_channel_t *channel = NULL;
@@ -282,7 +282,7 @@ CoreSession::~CoreSession()
 	switch_safe_free(voice_name);
 }
 
-int CoreSession::answer()
+SWITCH_DECLARE(int) CoreSession::answer()
 {
     switch_status_t status;
 
@@ -291,7 +291,7 @@ int CoreSession::answer()
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-int CoreSession::preAnswer()
+SWITCH_DECLARE(int) CoreSession::preAnswer()
 {
     switch_status_t status;
 	sanity_check(-1);
@@ -299,38 +299,38 @@ int CoreSession::preAnswer()
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-void CoreSession::hangup(char *cause)
+SWITCH_DECLARE(void) CoreSession::hangup(char *cause)
 {
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::hangup\n");
 	sanity_check_noreturn;
     switch_channel_hangup(channel, switch_channel_str2cause(cause));
 }
 
-void CoreSession::setPrivate(char *var, void *val)
+SWITCH_DECLARE(void) CoreSession::setPrivate(char *var, void *val)
 {
 	sanity_check_noreturn;
     switch_channel_set_private(channel, var, val);
 }
 
-void *CoreSession::getPrivate(char *var)
+SWITCH_DECLARE(void *)CoreSession::getPrivate(char *var)
 {
 	sanity_check(NULL);
     return switch_channel_get_private(channel, var);
 }
 
-void CoreSession::setVariable(char *var, char *val)
+SWITCH_DECLARE(void) CoreSession::setVariable(char *var, char *val)
 {
 	sanity_check_noreturn;
     switch_channel_set_variable(channel, var, val);
 }
 
-const char *CoreSession::getVariable(char *var)
+SWITCH_DECLARE(const char *)CoreSession::getVariable(char *var)
 {
 	sanity_check(NULL);
     return switch_channel_get_variable(channel, var);
 }
 
-void CoreSession::execute(char *app, char *data)
+SWITCH_DECLARE(void) CoreSession::execute(char *app, char *data)
 {
 	const switch_application_interface_t *application_interface;
 	sanity_check_noreturn;
@@ -343,7 +343,7 @@ void CoreSession::execute(char *app, char *data)
 	}
 }
 
-void CoreSession::setDTMFCallback(void *cbfunc, char *funcargs) {
+SWITCH_DECLARE(void) CoreSession::setDTMFCallback(void *cbfunc, char *funcargs) {
 
 	sanity_check_noreturn;
 
@@ -365,7 +365,7 @@ void CoreSession::setDTMFCallback(void *cbfunc, char *funcargs) {
 
 }
 
-void CoreSession::sendEvent(Event *sendME)
+SWITCH_DECLARE(void) CoreSession::sendEvent(Event *sendME)
 {
 	if (sendME->mine) {
 		switch_core_session_receive_event(session, &sendME->event);
@@ -374,7 +374,7 @@ void CoreSession::sendEvent(Event *sendME)
 	}
 }
 
-int CoreSession::speak(char *text)
+SWITCH_DECLARE(int) CoreSession::speak(char *text)
 {
     switch_status_t status;
 
@@ -402,7 +402,7 @@ int CoreSession::speak(char *text)
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-void CoreSession::set_tts_parms(char *tts_name_p, char *voice_name_p)
+SWITCH_DECLARE(void) CoreSession::set_tts_parms(char *tts_name_p, char *voice_name_p)
 {
 	sanity_check_noreturn;
 	switch_safe_free(tts_name);
@@ -413,7 +413,7 @@ void CoreSession::set_tts_parms(char *tts_name_p, char *voice_name_p)
 
 
 
-int CoreSession::collectDigits(int timeout) {
+SWITCH_DECLARE(int) CoreSession::collectDigits(int timeout) {
 	sanity_check(-1);
     begin_allow_threads();
 	switch_ivr_collect_digits_callback(session, ap, timeout);
@@ -421,7 +421,7 @@ int CoreSession::collectDigits(int timeout) {
     return SWITCH_STATUS_SUCCESS;
 } 
 
-int CoreSession::getDigits(char *dtmf_buf, 
+SWITCH_DECLARE(int) CoreSession::getDigits(char *dtmf_buf, 
 						   switch_size_t buflen, 
 						   switch_size_t maxdigits, 
 						   char *terminators, 
@@ -445,7 +445,7 @@ int CoreSession::getDigits(char *dtmf_buf,
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-int CoreSession::transfer(char *extension, char *dialplan, char *context)
+SWITCH_DECLARE(int) CoreSession::transfer(char *extension, char *dialplan, char *context)
 {
     switch_status_t status;
 	sanity_check(-1);
@@ -456,7 +456,7 @@ int CoreSession::transfer(char *extension, char *dialplan, char *context)
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-int CoreSession::playAndGetDigits(int min_digits, 
+SWITCH_DECLARE(int) CoreSession::playAndGetDigits(int min_digits, 
 								  int max_digits, 
 								  int max_tries, 
 								  int timeout, 
@@ -487,7 +487,7 @@ int CoreSession::playAndGetDigits(int min_digits,
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-int CoreSession::streamFile(char *file, int starting_sample_count) {
+SWITCH_DECLARE(int) CoreSession::streamFile(char *file, int starting_sample_count) {
 
     switch_status_t status;
     //switch_file_handle_t fh = { 0 };
@@ -518,7 +518,7 @@ int CoreSession::streamFile(char *file, int starting_sample_count) {
 
 }
 
-bool CoreSession::ready() {
+SWITCH_DECLARE(bool) CoreSession::ready() {
 
 	switch_channel_t *channel;
 
@@ -532,7 +532,7 @@ bool CoreSession::ready() {
 	return switch_channel_ready(channel) != 0;
 }
 
-int CoreSession::originate(CoreSession *a_leg_session, 
+SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, 
 						   char *dest, 
 						   int timeout)
 {
@@ -585,7 +585,7 @@ int CoreSession::originate(CoreSession *a_leg_session,
 	return SWITCH_STATUS_FALSE;
 }
 
-int CoreSession::recordFile(char *file_name, int max_len, int silence_threshold, int silence_secs) 
+SWITCH_DECLARE(int) CoreSession::recordFile(char *file_name, int max_len, int silence_threshold, int silence_secs) 
 {
 	switch_file_handle_t fh = { 0 };
 	switch_status_t status;
@@ -600,7 +600,7 @@ int CoreSession::recordFile(char *file_name, int max_len, int silence_threshold,
 
 }
 
-int CoreSession::flushEvents() 
+SWITCH_DECLARE(int) CoreSession::flushEvents() 
 {
 	switch_event_t *event;
 	switch_channel_t *channel;
@@ -616,13 +616,13 @@ int CoreSession::flushEvents()
 	return SWITCH_STATUS_SUCCESS;
 }
 
-int CoreSession::flushDigits() 
+SWITCH_DECLARE(int) CoreSession::flushDigits() 
 {
 	switch_channel_flush_dtmf(switch_core_session_get_channel(session));
 	return SWITCH_STATUS_SUCCESS;
 }
 
-int CoreSession::setAutoHangup(bool val) 
+SWITCH_DECLARE(int) CoreSession::setAutoHangup(bool val) 
 {
 	if (!session) {
 		return SWITCH_STATUS_FALSE;
@@ -635,7 +635,7 @@ int CoreSession::setAutoHangup(bool val)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-void CoreSession::setCallerData(char *var, char *val) {
+SWITCH_DECLARE(void) CoreSession::setCallerData(char *var, char *val) {
 
 	if (strcmp(var, "dialplan") == 0) {
 		caller_profile.dialplan = val;
@@ -667,7 +667,7 @@ void CoreSession::setCallerData(char *var, char *val) {
 
 }
 
-void CoreSession::setHangupHook(void *hangup_func) {
+SWITCH_DECLARE(void) CoreSession::setHangupHook(void *hangup_func) {
 
 	sanity_check_noreturn;
 
@@ -699,7 +699,7 @@ void CoreSession::store_file_handle(switch_file_handle_t *fh) {
 /* ---- methods not bound to CoreSession instance ---- */
 
 
-void console_log(char *level_str, char *msg)
+SWITCH_DECLARE(void) console_log(char *level_str, char *msg)
 {
     switch_log_level_t level = SWITCH_LOG_DEBUG;
     if (level_str) {
@@ -711,13 +711,13 @@ void console_log(char *level_str, char *msg)
     switch_log_printf(SWITCH_CHANNEL_LOG, level, "%s", switch_str_nil(msg));
 }
 
-void console_clean_log(char *msg)
+SWITCH_DECLARE(void) console_clean_log(char *msg)
 {
     switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN,SWITCH_LOG_DEBUG, "%s", switch_str_nil(msg));
 }
 
 
-char *api_execute(char *cmd, char *arg)
+SWITCH_DECLARE(char *)api_execute(char *cmd, char *arg)
 {
 	switch_stream_handle_t stream = { 0 };
 	SWITCH_STANDARD_STREAM(stream);
@@ -725,7 +725,7 @@ char *api_execute(char *cmd, char *arg)
 	return (char *) stream.data;
 }
 
-void api_reply_delete(char *reply)
+SWITCH_DECLARE(void) api_reply_delete(char *reply)
 {
 	if (!switch_strlen_zero(reply)) {
 		free(reply);
@@ -733,7 +733,7 @@ void api_reply_delete(char *reply)
 }
 
 
-void bridge(CoreSession &session_a, CoreSession &session_b)
+SWITCH_DECLARE(void) bridge(CoreSession &session_a, CoreSession &session_b)
 {
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "bridge called, session_a uuid: %s\n", session_a.get_uuid());
 	switch_input_callback_function_t dtmf_func = NULL;
@@ -748,7 +748,7 @@ void bridge(CoreSession &session_a, CoreSession &session_b)
 }
 
 
-switch_status_t hanguphook(switch_core_session_t *session_hungup) 
+SWITCH_DECLARE_NONSTD(switch_status_t) hanguphook(switch_core_session_t *session_hungup) 
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session_hungup);
 	CoreSession *coresession = NULL;
@@ -768,7 +768,7 @@ switch_status_t hanguphook(switch_core_session_t *session_hungup)
 }
 
 
-switch_status_t dtmf_callback(switch_core_session_t *session_cb, 
+SWITCH_DECLARE_NONSTD(switch_status_t) dtmf_callback(switch_core_session_t *session_cb, 
 							  void *input, 
 							  switch_input_type_t itype, 
 							  void *buf,  
@@ -800,7 +800,7 @@ switch_status_t dtmf_callback(switch_core_session_t *session_cb,
 
 
 
-switch_status_t CoreSession::process_callback_result(char *ret)
+SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *ret)
 {
 	
     switch_file_handle_t *fh = NULL;	   

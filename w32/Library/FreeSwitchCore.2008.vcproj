@@ -389,8 +389,6 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						UsePrecompiledHeader="0"
-						PrecompiledHeaderThrough=""
-						PrecompiledHeaderFile=""
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -399,8 +397,6 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						UsePrecompiledHeader="0"
-						PrecompiledHeaderThrough=""
-						PrecompiledHeaderFile=""
 					/>
 				</FileConfiguration>
 			</File>

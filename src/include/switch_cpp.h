@@ -61,12 +61,6 @@ Note that the first parameter to the new operator is implicitly handled by c++..
 */
 
 
-void console_log(char *level_str, char *msg);
-void console_clean_log(char *msg);
-char *api_execute(char *cmd, char *arg);
-void api_reply_delete(char *reply);
-
-
 typedef struct input_callback_state {
     void *function;           // pointer to the language specific callback function
                               // eg, PyObject *pyfunc
@@ -130,12 +124,12 @@ class CoreSession {
 	void *on_hangup; // language specific callback function, cast as void * 
 	switch_file_handle_t local_fh;
 	switch_file_handle_t *fhp;
-	switch_status_t process_callback_result(char *ret);
+	SWITCH_DECLARE(switch_status_t) process_callback_result(char *ret);
  public:
-	CoreSession();
-	CoreSession(char *uuid);
-	CoreSession(switch_core_session_t *new_session);
-	virtual ~CoreSession();
+	SWITCH_DECLARE_CONSTRUCTOR CoreSession();
+	SWITCH_DECLARE_CONSTRUCTOR CoreSession(char *uuid);
+	SWITCH_DECLARE_CONSTRUCTOR CoreSession(switch_core_session_t *new_session);
+	virtual SWITCH_DECLARE_CONSTRUCTOR ~CoreSession();
 	switch_core_session_t *session;
 	switch_channel_t *channel;
 	unsigned int flags;
@@ -144,13 +138,13 @@ class CoreSession {
                                    // field in this->args
 	switch_channel_state_t hook_state; // store hookstate for on_hangup callback
 
-	int answer();
-	int preAnswer();
-	virtual void hangup(char *cause = "normal_clearing");
-	void setVariable(char *var, char *val);
-	void setPrivate(char *var, void *val);
-	void *getPrivate(char *var);
-	const char *getVariable(char *var);
+	SWITCH_DECLARE(int) answer();
+	SWITCH_DECLARE(int) preAnswer();
+	virtual SWITCH_DECLARE(void) hangup(char *cause = "normal_clearing");
+	SWITCH_DECLARE(void) setVariable(char *var, char *val);
+	SWITCH_DECLARE(void) setPrivate(char *var, void *val);
+	SWITCH_DECLARE(void *)getPrivate(char *var);
+	SWITCH_DECLARE(const char *)getVariable(char *var);
 	
 
 	/** \brief Record to a file
@@ -160,14 +154,14 @@ class CoreSession {
 	 *        to be considered silence (500 is a good starting point).
 	 * \param <[silence_secs]> seconds of silence to interrupt the record.
 	 */
-	int recordFile(char *file_name, int max_len=0, int silence_threshold=0, int silence_secs=0);
+	SWITCH_DECLARE(int) recordFile(char *file_name, int max_len=0, int silence_threshold=0, int silence_secs=0);
 
 
 	/** \brief Set attributes of caller data for purposes of outgoing calls
 	 * \param var - the variable name, eg, "caller_id_name"
 	 * \param val - the data to set, eg, "bob"
 	 */
-	void setCallerData(char *var, char *val);
+	SWITCH_DECLARE(void) setCallerData(char *var, char *val);
 
 	/** \brief Originate a call to a destination
 	 *
@@ -178,7 +172,7 @@ class CoreSession {
 	 * \return an int status code indicating success or failure
      *
 	 */
-	int originate(CoreSession *a_leg_session, 
+	SWITCH_DECLARE(int) originate(CoreSession *a_leg_session, 
 				  char *dest, 
 				  int timeout=60);
 
@@ -191,16 +185,16 @@ class CoreSession {
      * certain other methods are executing.
      *
 	 */
-	void setDTMFCallback(void *cbfunc, char *funcargs);
+	SWITCH_DECLARE(void) setDTMFCallback(void *cbfunc, char *funcargs);
 
-	int speak(char *text);
-	void set_tts_parms(char *tts_name, char *voice_name);
+	SWITCH_DECLARE(int) speak(char *text);
+	SWITCH_DECLARE(void) set_tts_parms(char *tts_name, char *voice_name);
 
 	/**
      * For timeout milliseconds, call the dtmf function set previously
 	 * by setDTMFCallback whenever a dtmf or event is received
 	 */
-	int collectDigits(int timeout);
+	SWITCH_DECLARE(int) collectDigits(int timeout);
 
 	/** 
      * Collect up to maxdigits digits worth of digits
@@ -209,14 +203,14 @@ class CoreSession {
 	 * (see mod_python.i).  This does NOT call any callbacks upon
 	 * receiving dtmf digits.  For that, use collectDigits.
 	 */
-	int getDigits(char *dtmf_buf, 
+	SWITCH_DECLARE(int) getDigits(char *dtmf_buf, 
 				  switch_size_t buflen, 
 				  switch_size_t maxdigits, 
 				  char *terminators, 
 				  char *terminator, 
 				  int timeout);
 
-	int transfer(char *extensions, char *dialplan, char *context);
+	SWITCH_DECLARE(int) transfer(char *extensions, char *dialplan, char *context);
 
 	/** \brief Play a file into channel and collect dtmfs
 	 * 
@@ -226,7 +220,7 @@ class CoreSession {
      *       setDTMFCallback(..) as it uses its own internal callback
      *       handler.
      */
-	int playAndGetDigits(int min_digits, 
+	SWITCH_DECLARE(int) playAndGetDigits(int min_digits, 
 						 int max_digits, 
 						 int max_tries, 
 						 int timeout, 
@@ -244,28 +238,28 @@ class CoreSession {
 	 * \return an int status code indicating success or failure
 	 *
 	 */
-	int streamFile(char *file, int starting_sample_count=0);
+	SWITCH_DECLARE(int) streamFile(char *file, int starting_sample_count=0);
 
 	/** \brief flush any pending events
 	 */
-	int flushEvents();
+	SWITCH_DECLARE(int) flushEvents();
 
 	/** \brief flush any pending digits
 	 */
-	int flushDigits();
+	SWITCH_DECLARE(int) flushDigits();
 
-	int setAutoHangup(bool val);
+	SWITCH_DECLARE(int) setAutoHangup(bool val);
 
 	/** \brief Set the hangup callback function
 	 * \param hangup_func - language specific function ptr cast into void *
 	 */
-	void setHangupHook(void *hangup_func);
+	SWITCH_DECLARE(void) setHangupHook(void *hangup_func);
 
-	bool ready();
+	SWITCH_DECLARE(bool) ready();
 
-	void execute(char *app, char *data);
+	SWITCH_DECLARE(void) execute(char *app, char *data);
 
-	void sendEvent(Event *sendME);
+	SWITCH_DECLARE(void) sendEvent(Event *sendME);
 
 	virtual bool begin_allow_threads() = 0;
 	virtual bool end_allow_threads() = 0;
@@ -292,26 +286,26 @@ class CoreSession {
 
 /* ---- functions not bound to CoreSession instance ----- */
 
-void console_log(char *level_str, char *msg);
-void console_clean_log(char *msg);
-char *api_execute(char *cmd, char *arg);
-void api_reply_delete(char *reply);
+SWITCH_DECLARE(void) console_log(char *level_str, char *msg);
+SWITCH_DECLARE(void) console_clean_log(char *msg);
+SWITCH_DECLARE(char *)api_execute(char *cmd, char *arg);
+SWITCH_DECLARE(void) api_reply_delete(char *reply);
 
 /** \brief bridge the audio of session_b into session_a
  * 
  * NOTE: the stuff regarding the dtmf callback might be completely
  *       wrong and has not been reviewed or tested
  */
-void bridge(CoreSession &session_a, CoreSession &session_b);
+SWITCH_DECLARE(void) bridge(CoreSession &session_a, CoreSession &session_b);
 
 
 /** \brief the actual hangup hook called back by freeswitch core
  *         which in turn gets the session and calls the appropriate
  *         instance method to complete the callback.
  */
-switch_status_t hanguphook(switch_core_session_t *session);
+SWITCH_DECLARE_NONSTD(switch_status_t) hanguphook(switch_core_session_t *session);
 
-switch_status_t dtmf_callback(switch_core_session_t *session, 
+SWITCH_DECLARE_NONSTD(switch_status_t) dtmf_callback(switch_core_session_t *session, 
 							  void *input, 
 							  switch_input_type_t itype, 
 							  void *buf,  

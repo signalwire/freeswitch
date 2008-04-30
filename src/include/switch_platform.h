@@ -175,6 +175,7 @@ typedef int gid_t;
 #define SWITCH_MOD_DECLARE_DATA
 #define SWITCH_THREAD_FUNC
 #endif
+#define SWITCH_DECLARE_CONSTRUCTOR SWITCH_DECLARE_DATA
 #ifdef DOXYGEN
 #define DoxyDefine(x) x
 #else
