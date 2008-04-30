@@ -159,16 +159,15 @@ static void stop_hold(const char *uuid)
 		channel = switch_core_session_get_channel(session);
 		switch_channel_stop_broadcast(channel);
 		switch_channel_wait_for_flag(channel, CF_BROADCAST, SWITCH_FALSE, 2000);
+
 		switch_core_session_rwunlock(session);
 	}
 }
 
-static void start_hold(const char *uuid, const char *music)
+static void start_hold(const char *uuid, const char *stream)
 {
 	switch_core_session_t *session;
 	switch_channel_t *channel;
-	const char *stream = NULL;
-
 
 	if (!uuid) {
 		return;
@@ -177,11 +176,8 @@ static void start_hold(const char *uuid, const char *music)
 	if ((session = switch_core_session_locate(uuid))) {
 		channel = switch_core_session_get_channel(session);
 		
-		if (!(stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
-			stream = music;
-			if (switch_strlen_zero(stream)) {
-				stream = globals.hold_music;
-			}
+		if (switch_strlen_zero(stream) && !(stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
+			stream = globals.hold_music;
 		}
 
 		if (!switch_strlen_zero(stream)) {
