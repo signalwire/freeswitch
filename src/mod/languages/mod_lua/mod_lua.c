@@ -140,7 +140,15 @@ static void lua_parse_and_execute(lua_State *L, char *input_code)
 			}
 		}
 		if (!error) {
-			error = luaL_loadfile(L, input_code) || docall(L, 0, 1);
+			char *file = input_code, *fdup = NULL;
+			
+			if (!switch_is_file_path(file)) {
+				fdup = switch_mprintf("%s/%s", SWITCH_GLOBAL_dirs.script_dir, file);
+				switch_assert(fdup);
+				file = fdup;
+			}
+			error = luaL_loadfile(L, file) || docall(L, 0, 1);
+			switch_safe_free(fdup);
 		}
 	}
 

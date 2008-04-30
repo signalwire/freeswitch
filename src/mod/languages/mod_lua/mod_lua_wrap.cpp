@@ -1484,26 +1484,27 @@ SWIG_Lua_dostring(lua_State *L, const char* str) {
 
 /* -------- TYPES TABLE (BEGIN) -------- */
 
-#define SWIGTYPE_p_CoreSession swig_types[0]
-#define SWIGTYPE_p_Event swig_types[1]
-#define SWIGTYPE_p_Session swig_types[2]
-#define SWIGTYPE_p_Stream swig_types[3]
-#define SWIGTYPE_p_input_callback_state swig_types[4]
-#define SWIGTYPE_p_lua_State swig_types[5]
-#define SWIGTYPE_p_session_flag_t swig_types[6]
-#define SWIGTYPE_p_switch_channel_state_t swig_types[7]
-#define SWIGTYPE_p_switch_channel_t swig_types[8]
-#define SWIGTYPE_p_switch_core_session_t swig_types[9]
-#define SWIGTYPE_p_switch_event_t swig_types[10]
-#define SWIGTYPE_p_switch_input_args_t swig_types[11]
-#define SWIGTYPE_p_switch_input_type_t swig_types[12]
-#define SWIGTYPE_p_switch_priority_t swig_types[13]
-#define SWIGTYPE_p_switch_size_t swig_types[14]
-#define SWIGTYPE_p_switch_status_t swig_types[15]
-#define SWIGTYPE_p_switch_stream_handle_t swig_types[16]
-#define SWIGTYPE_p_void swig_types[17]
-static swig_type_info *swig_types[19];
-static swig_module_info swig_module = {swig_types, 18, 0, 0, 0, 0};
+#define SWIGTYPE_p_API swig_types[0]
+#define SWIGTYPE_p_CoreSession swig_types[1]
+#define SWIGTYPE_p_Event swig_types[2]
+#define SWIGTYPE_p_Session swig_types[3]
+#define SWIGTYPE_p_Stream swig_types[4]
+#define SWIGTYPE_p_input_callback_state swig_types[5]
+#define SWIGTYPE_p_lua_State swig_types[6]
+#define SWIGTYPE_p_session_flag_t swig_types[7]
+#define SWIGTYPE_p_switch_channel_state_t swig_types[8]
+#define SWIGTYPE_p_switch_channel_t swig_types[9]
+#define SWIGTYPE_p_switch_core_session_t swig_types[10]
+#define SWIGTYPE_p_switch_event_t swig_types[11]
+#define SWIGTYPE_p_switch_input_args_t swig_types[12]
+#define SWIGTYPE_p_switch_input_type_t swig_types[13]
+#define SWIGTYPE_p_switch_priority_t swig_types[14]
+#define SWIGTYPE_p_switch_size_t swig_types[15]
+#define SWIGTYPE_p_switch_status_t swig_types[16]
+#define SWIGTYPE_p_switch_stream_handle_t swig_types[17]
+#define SWIGTYPE_p_void swig_types[18]
+static swig_type_info *swig_types[20];
+static swig_module_info swig_module = {swig_types, 19, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1528,6 +1529,167 @@ typedef struct{} LANGUAGE_OBJ;
 #ifdef __cplusplus
 extern "C" {
 #endif
+static int _wrap_consoleLog(lua_State* L) {
+  int SWIG_arg = -1;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  SWIG_check_num_args("consoleLog",2,2)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("consoleLog",1,"char *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("consoleLog",2,"char *");
+  arg1 = (char *)lua_tostring(L, 1);
+  arg2 = (char *)lua_tostring(L, 2);
+  consoleLog(arg1,arg2);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_consoleCleanLog(lua_State* L) {
+  int SWIG_arg = -1;
+  char *arg1 = (char *) 0 ;
+  
+  SWIG_check_num_args("consoleCleanLog",1,1)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("consoleCleanLog",1,"char *");
+  arg1 = (char *)lua_tostring(L, 1);
+  consoleCleanLog(arg1);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_new_API(lua_State* L) {
+  int SWIG_arg = -1;
+  API *result = 0 ;
+  
+  SWIG_check_num_args("API",0,0)
+  result = (API *)new API();
+  SWIG_arg=0;
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_API,1); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_delete_API(lua_State* L) {
+  int SWIG_arg = -1;
+  API *arg1 = (API *) 0 ;
+  
+  SWIG_check_num_args("API",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("API",1,"API *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_API,SWIG_POINTER_DISOWN))){
+    SWIG_fail_ptr("delete_API",1,SWIGTYPE_p_API);
+  }
+  
+  delete arg1;
+  
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_API_execute(lua_State* L) {
+  int SWIG_arg = -1;
+  API *arg1 = (API *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("execute",3,3)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("execute",1,"API *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("execute",2,"char const *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("execute",3,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_API,0))){
+    SWIG_fail_ptr("API_execute",1,SWIGTYPE_p_API);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (char *)lua_tostring(L, 3);
+  result = (char *)(arg1)->execute((char const *)arg2,(char const *)arg3);
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_API_executeString(lua_State* L) {
+  int SWIG_arg = -1;
+  API *arg1 = (API *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("executeString",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("executeString",1,"API *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("executeString",2,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_API,0))){
+    SWIG_fail_ptr("API_executeString",1,SWIGTYPE_p_API);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  result = (char *)(arg1)->executeString((char const *)arg2);
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static void swig_delete_API(void *obj) {
+API *arg1 = (API *) obj;
+delete arg1;
+}
+static swig_lua_method swig_API_methods[] = {
+    {"execute", _wrap_API_execute}, 
+    {"executeString", _wrap_API_executeString}, 
+    {0,0}
+};
+static swig_lua_attribute swig_API_attributes[] = {
+    {0,0,0}
+};
+static swig_lua_class *swig_API_bases[] = {0};
+static const char *swig_API_base_names[] = {0};
+static swig_lua_class _wrap_class_API = { "API", &SWIGTYPE_p_API,_wrap_new_API, swig_delete_API, swig_API_methods, swig_API_attributes, swig_API_bases, swig_API_base_names };
+
 static int _wrap_input_callback_state_t_function_set(lua_State* L) {
   int SWIG_arg = -1;
   input_callback_state_t *arg1 = (input_callback_state_t *) 0 ;
@@ -4640,50 +4802,6 @@ fail:
 }
 
 
-static int _wrap_api_execute(lua_State* L) {
-  int SWIG_arg = -1;
-  char *arg1 = (char *) 0 ;
-  char *arg2 = (char *) 0 ;
-  char *result = 0 ;
-  
-  SWIG_check_num_args("api_execute",2,2)
-  if(!lua_isstring(L,1)) SWIG_fail_arg("api_execute",1,"char *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("api_execute",2,"char *");
-  arg1 = (char *)lua_tostring(L, 1);
-  arg2 = (char *)lua_tostring(L, 2);
-  result = (char *)api_execute(arg1,arg2);
-  SWIG_arg=0;
-  lua_pushstring(L,(const char*)result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_api_reply_delete(lua_State* L) {
-  int SWIG_arg = -1;
-  char *arg1 = (char *) 0 ;
-  
-  SWIG_check_num_args("api_reply_delete",1,1)
-  if(!lua_isstring(L,1)) SWIG_fail_arg("api_reply_delete",1,"char *");
-  arg1 = (char *)lua_tostring(L, 1);
-  api_reply_delete(arg1);
-  SWIG_arg=0;
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
 static int _wrap_bridge(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = 0 ;
@@ -5349,10 +5467,10 @@ static swig_lua_class _wrap_class_Session = { "Session", &SWIGTYPE_p_Session,_wr
 #endif
 
 static const struct luaL_reg swig_commands[] = {
+    { "consoleLog", _wrap_consoleLog},
+    { "consoleCleanLog", _wrap_consoleCleanLog},
     { "console_log", _wrap_console_log},
     { "console_clean_log", _wrap_console_clean_log},
-    { "api_execute", _wrap_api_execute},
-    { "api_reply_delete", _wrap_api_reply_delete},
     { "bridge", _wrap_bridge},
     { "hanguphook", _wrap_hanguphook},
     { "dtmf_callback", _wrap_dtmf_callback},
@@ -5375,6 +5493,7 @@ static swig_lua_const_info swig_constants[] = {
 static void *_p_SessionTo_p_CoreSession(void *x, int *newmemory) {
     return (void *)((CoreSession *)  ((Session *) x));
 }
+static swig_type_info _swigt__p_API = {"_p_API", "API *", 0, 0, (void*)&_wrap_class_API, 0};
 static swig_type_info _swigt__p_CoreSession = {"_p_CoreSession", "CoreSession *", 0, 0, (void*)&_wrap_class_CoreSession, 0};
 static swig_type_info _swigt__p_Event = {"_p_Event", "Event *", 0, 0, (void*)&_wrap_class_Event, 0};
 static swig_type_info _swigt__p_Session = {"_p_Session", "Session *", 0, 0, (void*)&_wrap_class_Session, 0};
@@ -5395,6 +5514,7 @@ static swig_type_info _swigt__p_switch_stream_handle_t = {"_p_switch_stream_hand
 static swig_type_info _swigt__p_void = {"_p_void", "void *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
+  &_swigt__p_API,
   &_swigt__p_CoreSession,
   &_swigt__p_Event,
   &_swigt__p_Session,
@@ -5415,6 +5535,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_void,
 };
 
+static swig_cast_info _swigc__p_API[] = {  {&_swigt__p_API, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_CoreSession[] = {  {&_swigt__p_CoreSession, 0, 0, 0},  {&_swigt__p_Session, _p_SessionTo_p_CoreSession, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Event[] = {  {&_swigt__p_Event, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Session[] = {  {&_swigt__p_Session, 0, 0, 0},{0, 0, 0, 0}};
@@ -5435,6 +5556,7 @@ static swig_cast_info _swigc__p_switch_stream_handle_t[] = {  {&_swigt__p_switch
 static swig_cast_info _swigc__p_void[] = {  {&_swigt__p_void, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
+  _swigc__p_API,
   _swigc__p_CoreSession,
   _swigc__p_Event,
   _swigc__p_Session,

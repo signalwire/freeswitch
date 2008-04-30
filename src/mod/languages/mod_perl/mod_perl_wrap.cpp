@@ -1446,26 +1446,27 @@ SWIG_Perl_SetModule(swig_module_info *module) {
 
 /* -------- TYPES TABLE (BEGIN) -------- */
 
-#define SWIGTYPE_p_CoreSession swig_types[0]
-#define SWIGTYPE_p_Event swig_types[1]
-#define SWIGTYPE_p_Session swig_types[2]
-#define SWIGTYPE_p_Stream swig_types[3]
-#define SWIGTYPE_p_char swig_types[4]
-#define SWIGTYPE_p_input_callback_state swig_types[5]
-#define SWIGTYPE_p_session_flag_t swig_types[6]
-#define SWIGTYPE_p_switch_channel_state_t swig_types[7]
-#define SWIGTYPE_p_switch_channel_t swig_types[8]
-#define SWIGTYPE_p_switch_core_session_t swig_types[9]
-#define SWIGTYPE_p_switch_event_t swig_types[10]
-#define SWIGTYPE_p_switch_input_args_t swig_types[11]
-#define SWIGTYPE_p_switch_input_type_t swig_types[12]
-#define SWIGTYPE_p_switch_priority_t swig_types[13]
-#define SWIGTYPE_p_switch_size_t swig_types[14]
-#define SWIGTYPE_p_switch_status_t swig_types[15]
-#define SWIGTYPE_p_switch_stream_handle_t swig_types[16]
-#define SWIGTYPE_p_void swig_types[17]
-static swig_type_info *swig_types[19];
-static swig_module_info swig_module = {swig_types, 18, 0, 0, 0, 0};
+#define SWIGTYPE_p_API swig_types[0]
+#define SWIGTYPE_p_CoreSession swig_types[1]
+#define SWIGTYPE_p_Event swig_types[2]
+#define SWIGTYPE_p_Session swig_types[3]
+#define SWIGTYPE_p_Stream swig_types[4]
+#define SWIGTYPE_p_char swig_types[5]
+#define SWIGTYPE_p_input_callback_state swig_types[6]
+#define SWIGTYPE_p_session_flag_t swig_types[7]
+#define SWIGTYPE_p_switch_channel_state_t swig_types[8]
+#define SWIGTYPE_p_switch_channel_t swig_types[9]
+#define SWIGTYPE_p_switch_core_session_t swig_types[10]
+#define SWIGTYPE_p_switch_event_t swig_types[11]
+#define SWIGTYPE_p_switch_input_args_t swig_types[12]
+#define SWIGTYPE_p_switch_input_type_t swig_types[13]
+#define SWIGTYPE_p_switch_priority_t swig_types[14]
+#define SWIGTYPE_p_switch_size_t swig_types[15]
+#define SWIGTYPE_p_switch_status_t swig_types[16]
+#define SWIGTYPE_p_switch_stream_handle_t swig_types[17]
+#define SWIGTYPE_p_void swig_types[18]
+static swig_type_info *swig_types[20];
+static swig_module_info swig_module = {swig_types, 19, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1855,6 +1856,208 @@ SWIGCLASS_STATIC int swig_magic_readonly(pTHX_ SV *SWIGUNUSEDPARM(sv), MAGIC *SW
 #ifdef __cplusplus
 extern "C" {
 #endif
+XS(_wrap_consoleLog) {
+  {
+    char *arg1 = (char *) 0 ;
+    char *arg2 = (char *) 0 ;
+    int res1 ;
+    char *buf1 = 0 ;
+    int alloc1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: consoleLog(level_str,msg);");
+    }
+    res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "consoleLog" "', argument " "1"" of type '" "char *""'");
+    }
+    arg1 = reinterpret_cast< char * >(buf1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "consoleLog" "', argument " "2"" of type '" "char *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    consoleLog(arg1,arg2);
+    
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    XSRETURN(argvi);
+  fail:
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_consoleCleanLog) {
+  {
+    char *arg1 = (char *) 0 ;
+    int res1 ;
+    char *buf1 = 0 ;
+    int alloc1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: consoleCleanLog(msg);");
+    }
+    res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "consoleCleanLog" "', argument " "1"" of type '" "char *""'");
+    }
+    arg1 = reinterpret_cast< char * >(buf1);
+    consoleCleanLog(arg1);
+    
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    XSRETURN(argvi);
+  fail:
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_new_API) {
+  {
+    API *result = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 0) || (items > 0)) {
+      SWIG_croak("Usage: new_API();");
+    }
+    result = (API *)new API();
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_API, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
+    XSRETURN(argvi);
+  fail:
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_delete_API) {
+  {
+    API *arg1 = (API *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: delete_API(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_API, SWIG_POINTER_DISOWN |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_API" "', argument " "1"" of type '" "API *""'"); 
+    }
+    arg1 = reinterpret_cast< API * >(argp1);
+    delete arg1;
+    
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_API_execute) {
+  {
+    API *arg1 = (API *) 0 ;
+    char *arg2 = (char *) 0 ;
+    char *arg3 = (char *) 0 ;
+    char *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int res3 ;
+    char *buf3 = 0 ;
+    int alloc3 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 3) || (items > 3)) {
+      SWIG_croak("Usage: API_execute(self,command,data);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_API, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "API_execute" "', argument " "1"" of type '" "API *""'"); 
+    }
+    arg1 = reinterpret_cast< API * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "API_execute" "', argument " "2"" of type '" "char const *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "API_execute" "', argument " "3"" of type '" "char const *""'");
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
+    result = (char *)(arg1)->execute((char const *)arg2,(char const *)arg3);
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_API_executeString) {
+  {
+    API *arg1 = (API *) 0 ;
+    char *arg2 = (char *) 0 ;
+    char *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: API_executeString(self,command);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_API, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "API_executeString" "', argument " "1"" of type '" "API *""'"); 
+    }
+    arg1 = reinterpret_cast< API * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "API_executeString" "', argument " "2"" of type '" "char const *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    result = (char *)(arg1)->executeString((char const *)arg2);
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_input_callback_state_t_function_set) {
   {
     input_callback_state_t *arg1 = (input_callback_state_t *) 0 ;
@@ -5978,74 +6181,6 @@ XS(_wrap_console_clean_log) {
 }
 
 
-XS(_wrap_api_execute) {
-  {
-    char *arg1 = (char *) 0 ;
-    char *arg2 = (char *) 0 ;
-    char *result = 0 ;
-    int res1 ;
-    char *buf1 = 0 ;
-    int alloc1 = 0 ;
-    int res2 ;
-    char *buf2 = 0 ;
-    int alloc2 = 0 ;
-    int argvi = 0;
-    dXSARGS;
-    
-    if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: api_execute(cmd,arg);");
-    }
-    res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "api_execute" "', argument " "1"" of type '" "char *""'");
-    }
-    arg1 = reinterpret_cast< char * >(buf1);
-    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
-    if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "api_execute" "', argument " "2"" of type '" "char *""'");
-    }
-    arg2 = reinterpret_cast< char * >(buf2);
-    result = (char *)api_execute(arg1,arg2);
-    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
-    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-    XSRETURN(argvi);
-  fail:
-    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_api_reply_delete) {
-  {
-    char *arg1 = (char *) 0 ;
-    int res1 ;
-    char *buf1 = 0 ;
-    int alloc1 = 0 ;
-    int argvi = 0;
-    dXSARGS;
-    
-    if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: api_reply_delete(reply);");
-    }
-    res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "api_reply_delete" "', argument " "1"" of type '" "char *""'");
-    }
-    arg1 = reinterpret_cast< char * >(buf1);
-    api_reply_delete(arg1);
-    
-    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-    XSRETURN(argvi);
-  fail:
-    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-    SWIG_croak_null();
-  }
-}
-
-
 XS(_wrap_bridge) {
   {
     CoreSession *arg1 = 0 ;
@@ -6180,6 +6315,74 @@ XS(_wrap_dtmf_callback) {
     
     
     
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_api_execute) {
+  {
+    char *arg1 = (char *) 0 ;
+    char *arg2 = (char *) 0 ;
+    char *result = 0 ;
+    int res1 ;
+    char *buf1 = 0 ;
+    int alloc1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: api_execute(cmd,arg);");
+    }
+    res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "api_execute" "', argument " "1"" of type '" "char *""'");
+    }
+    arg1 = reinterpret_cast< char * >(buf1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "api_execute" "', argument " "2"" of type '" "char *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    result = (char *)api_execute(arg1,arg2);
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    XSRETURN(argvi);
+  fail:
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_api_reply_delete) {
+  {
+    char *arg1 = (char *) 0 ;
+    int res1 ;
+    char *buf1 = 0 ;
+    int alloc1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: api_reply_delete(reply);");
+    }
+    res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "api_reply_delete" "', argument " "1"" of type '" "char *""'");
+    }
+    arg1 = reinterpret_cast< char * >(buf1);
+    api_reply_delete(arg1);
+    
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    XSRETURN(argvi);
+  fail:
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
     SWIG_croak_null();
   }
 }
@@ -6898,6 +7101,7 @@ XS(_wrap_Session_hook_state_get) {
 static void *_p_SessionTo_p_CoreSession(void *x, int *newmemory) {
     return (void *)((CoreSession *)  ((Session *) x));
 }
+static swig_type_info _swigt__p_API = {"_p_API", "API *", 0, 0, (void*)"freeswitch::API", 0};
 static swig_type_info _swigt__p_CoreSession = {"_p_CoreSession", "CoreSession *", 0, 0, (void*)"freeswitch::CoreSession", 0};
 static swig_type_info _swigt__p_Event = {"_p_Event", "Event *", 0, 0, (void*)"freeswitch::Event", 0};
 static swig_type_info _swigt__p_Session = {"_p_Session", "Session *", 0, 0, (void*)"freeswitch::Session", 0};
@@ -6918,6 +7122,7 @@ static swig_type_info _swigt__p_switch_stream_handle_t = {"_p_switch_stream_hand
 static swig_type_info _swigt__p_void = {"_p_void", "void *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
+  &_swigt__p_API,
   &_swigt__p_CoreSession,
   &_swigt__p_Event,
   &_swigt__p_Session,
@@ -6938,6 +7143,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_void,
 };
 
+static swig_cast_info _swigc__p_API[] = {  {&_swigt__p_API, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_CoreSession[] = {  {&_swigt__p_CoreSession, 0, 0, 0},  {&_swigt__p_Session, _p_SessionTo_p_CoreSession, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Event[] = {  {&_swigt__p_Event, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Session[] = {  {&_swigt__p_Session, 0, 0, 0},{0, 0, 0, 0}};
@@ -6958,6 +7164,7 @@ static swig_cast_info _swigc__p_switch_stream_handle_t[] = {  {&_swigt__p_switch
 static swig_cast_info _swigc__p_void[] = {  {&_swigt__p_void, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
+  _swigc__p_API,
   _swigc__p_CoreSession,
   _swigc__p_Event,
   _swigc__p_Session,
@@ -6991,6 +7198,12 @@ static swig_variable_info swig_variables[] = {
 {0,0,0,0}
 };
 static swig_command_info swig_commands[] = {
+{"freeswitchc::consoleLog", _wrap_consoleLog},
+{"freeswitchc::consoleCleanLog", _wrap_consoleCleanLog},
+{"freeswitchc::new_API", _wrap_new_API},
+{"freeswitchc::delete_API", _wrap_delete_API},
+{"freeswitchc::API_execute", _wrap_API_execute},
+{"freeswitchc::API_executeString", _wrap_API_executeString},
 {"freeswitchc::input_callback_state_t_function_set", _wrap_input_callback_state_t_function_set},
 {"freeswitchc::input_callback_state_t_function_get", _wrap_input_callback_state_t_function_get},
 {"freeswitchc::input_callback_state_t_threadState_set", _wrap_input_callback_state_t_threadState_set},
@@ -7068,11 +7281,11 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::CoreSession_run_dtmf_callback", _wrap_CoreSession_run_dtmf_callback},
 {"freeswitchc::console_log", _wrap_console_log},
 {"freeswitchc::console_clean_log", _wrap_console_clean_log},
-{"freeswitchc::api_execute", _wrap_api_execute},
-{"freeswitchc::api_reply_delete", _wrap_api_reply_delete},
 {"freeswitchc::bridge", _wrap_bridge},
 {"freeswitchc::hanguphook", _wrap_hanguphook},
 {"freeswitchc::dtmf_callback", _wrap_dtmf_callback},
+{"freeswitchc::api_execute", _wrap_api_execute},
+{"freeswitchc::api_reply_delete", _wrap_api_reply_delete},
 {"freeswitchc::new_Session", _wrap_new_Session},
 {"freeswitchc::delete_Session", _wrap_delete_Session},
 {"freeswitchc::Session_begin_allow_threads", _wrap_Session_begin_allow_threads},
@@ -7385,6 +7598,7 @@ XS(SWIG_init) {
     SvREADONLY_on(sv);
   }
   
+  SWIG_TypeClientData(SWIGTYPE_p_API, (void*) "freeswitch::API");
   SWIG_TypeClientData(SWIGTYPE_p_input_callback_state, (void*) "freeswitch::input_callback_state_t");
   /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_HUP", TRUE | 0x2 | GV_ADDMULTI);

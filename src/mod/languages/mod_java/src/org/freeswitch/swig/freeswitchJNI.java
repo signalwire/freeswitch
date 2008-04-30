@@ -9,6 +9,12 @@
 package org.freeswitch.swig;
 
 class freeswitchJNI {
+  public final static native void consoleLog(String jarg1, String jarg2);
+  public final static native void consoleCleanLog(String jarg1);
+  public final static native long new_API();
+  public final static native void delete_API(long jarg1);
+  public final static native String API_execute(long jarg1, API jarg1_, String jarg2, String jarg3);
+  public final static native String API_executeString(long jarg1, API jarg1_, String jarg2);
   public final static native void input_callback_state_t_function_set(long jarg1, input_callback_state_t jarg1_, long jarg2);
   public final static native long input_callback_state_t_function_get(long jarg1, input_callback_state_t jarg1_);
   public final static native void input_callback_state_t_threadState_set(long jarg1, input_callback_state_t jarg1_, long jarg2);
@@ -101,8 +107,6 @@ class freeswitchJNI {
   public final static native long CoreSession_run_dtmf_callback(long jarg1, CoreSession jarg1_, long jarg2, long jarg3);
   public final static native void console_log(String jarg1, String jarg2);
   public final static native void console_clean_log(String jarg1);
-  public final static native String api_execute(String jarg1, String jarg2);
-  public final static native void api_reply_delete(String jarg1);
   public final static native void bridge(long jarg1, CoreSession jarg1_, long jarg2, CoreSession jarg2_);
   public final static native long hanguphook(long jarg1);
   public final static native long dtmf_callback(long jarg1, long jarg2, long jarg3, long jarg4, long jarg5);

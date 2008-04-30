@@ -9,20 +9,20 @@
 package org.freeswitch.swig;
 
 public class freeswitch {
+  public static void consoleLog(String level_str, String msg) {
+    freeswitchJNI.consoleLog(level_str, msg);
+  }
+
+  public static void consoleCleanLog(String msg) {
+    freeswitchJNI.consoleCleanLog(msg);
+  }
+
   public static void console_log(String level_str, String msg) {
     freeswitchJNI.console_log(level_str, msg);
   }
 
   public static void console_clean_log(String msg) {
     freeswitchJNI.console_clean_log(msg);
-  }
-
-  public static String api_execute(String cmd, String arg) {
-    return freeswitchJNI.api_execute(cmd, arg);
-  }
-
-  public static void api_reply_delete(String reply) {
-    freeswitchJNI.api_reply_delete(reply);
   }
 
   public static void bridge(CoreSession session_a, CoreSession session_b) {

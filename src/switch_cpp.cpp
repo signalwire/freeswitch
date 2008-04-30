@@ -37,6 +37,46 @@
 #pragma warning(disable:4127 4003)
 #endif
 
+SWITCH_DECLARE_CONSTRUCTOR API::API()
+{
+	last_data = NULL;
+}
+
+SWITCH_DECLARE_CONSTRUCTOR API::~API()
+{
+	switch_safe_free(last_data);
+}
+
+
+SWITCH_DECLARE(char *) API::execute(const char *cmd, const char *arg)
+{
+	switch_stream_handle_t stream = { 0 };
+	SWITCH_STANDARD_STREAM(stream);
+	switch_api_execute(cmd, arg, NULL, &stream);
+	last_data = (char *) stream.data;
+	return last_data;
+}
+
+SWITCH_DECLARE(char *) API::executeString(const char *cmd)
+{
+	char *arg;
+	switch_stream_handle_t stream = { 0 };
+	char *mycmd = strdup(cmd);
+
+	switch_assert(mycmd);
+
+	if ((arg = strchr(mycmd, ' '))) {
+		*arg++ = '\0';
+	}
+
+	switch_safe_free(last_data);
+
+	SWITCH_STANDARD_STREAM(stream);
+	switch_api_execute(mycmd, arg, NULL, &stream);
+	last_data = (char *) stream.data;
+	switch_safe_free(mycmd);
+	return last_data;
+}
 
 SWITCH_DECLARE_CONSTRUCTOR Event::Event(const char *type, const char *subclass_name)
 {
@@ -697,6 +737,15 @@ void CoreSession::store_file_handle(switch_file_handle_t *fh) {
 
 /* ---- methods not bound to CoreSession instance ---- */
 
+SWITCH_DECLARE(void) consoleLog(char *level_str, char *msg)
+{
+	return console_log(level_str, msg);
+}
+
+SWITCH_DECLARE(void) consoleCleanLog(char *msg)
+{
+	return console_clean_log(msg);
+}
 
 SWITCH_DECLARE(void) console_log(char *level_str, char *msg)
 {
@@ -716,22 +765,6 @@ SWITCH_DECLARE(void) console_clean_log(char *msg)
 }
 
 
-SWITCH_DECLARE(char *)api_execute(char *cmd, char *arg)
-{
-	switch_stream_handle_t stream = { 0 };
-	SWITCH_STANDARD_STREAM(stream);
-	switch_api_execute(cmd, arg, NULL, &stream);
-	return (char *) stream.data;
-}
-
-SWITCH_DECLARE(void) api_reply_delete(char *reply)
-{
-	if (!switch_strlen_zero(reply)) {
-		free(reply);
-	}
-}
-
-
 SWITCH_DECLARE(void) bridge(CoreSession &session_a, CoreSession &session_b)
 {
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "bridge called, session_a uuid: %s\n", session_a.get_uuid());
@@ -745,7 +778,6 @@ SWITCH_DECLARE(void) bridge(CoreSession &session_a, CoreSession &session_b)
 	session_a.end_allow_threads();
 
 }
-
 
 SWITCH_DECLARE_NONSTD(switch_status_t) hanguphook(switch_core_session_t *session_hungup) 
 {

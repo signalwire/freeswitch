@@ -48,13 +48,54 @@ sub this {
 
 package freeswitch;
 
+*consoleLog = *freeswitchc::consoleLog;
+*consoleCleanLog = *freeswitchc::consoleCleanLog;
 *console_log = *freeswitchc::console_log;
 *console_clean_log = *freeswitchc::console_clean_log;
-*api_execute = *freeswitchc::api_execute;
-*api_reply_delete = *freeswitchc::api_reply_delete;
 *bridge = *freeswitchc::bridge;
 *hanguphook = *freeswitchc::hanguphook;
 *dtmf_callback = *freeswitchc::dtmf_callback;
+*api_execute = *freeswitchc::api_execute;
+*api_reply_delete = *freeswitchc::api_reply_delete;
+
+############# Class : freeswitch::API ##############
+
+package freeswitch::API;
+use vars qw(@ISA %OWNER %ITERATORS %BLESSEDMEMBERS);
+@ISA = qw( freeswitch );
+%OWNER = ();
+%ITERATORS = ();
+sub new {
+    my $pkg = shift;
+    my $self = freeswitchc::new_API(@_);
+    bless $self, $pkg if defined($self);
+}
+
+sub DESTROY {
+    return unless $_[0]->isa('HASH');
+    my $self = tied(%{$_[0]});
+    return unless defined $self;
+    delete $ITERATORS{$self};
+    if (exists $OWNER{$self}) {
+        freeswitchc::delete_API($self);
+        delete $OWNER{$self};
+    }
+}
+
+*execute = *freeswitchc::API_execute;
+*executeString = *freeswitchc::API_executeString;
+sub DISOWN {
+    my $self = shift;
+    my $ptr = tied(%$self);
+    delete $OWNER{$ptr};
+}
+
+sub ACQUIRE {
+    my $self = shift;
+    my $ptr = tied(%$self);
+    $OWNER{$ptr} = 1;
+}
+
 
 ############# Class : freeswitch::input_callback_state_t ##############
 

@@ -61,6 +61,19 @@ Note that the first parameter to the new operator is implicitly handled by c++..
 
 */
 
+SWITCH_DECLARE(void) consoleLog(char *level_str, char *msg);
+SWITCH_DECLARE(void) consoleCleanLog(char *msg);
+
+class API {
+ protected:
+	char *last_data;
+ public:
+	SWITCH_DECLARE_CONSTRUCTOR API(void);
+	virtual SWITCH_DECLARE_CONSTRUCTOR ~API();
+	SWITCH_DECLARE(char *) execute(const char *command, const char *data);
+	SWITCH_DECLARE(char *) executeString(const char *command);
+};
+
 
 typedef struct input_callback_state {
     void *function;           // pointer to the language specific callback function
@@ -291,8 +304,6 @@ class CoreSession {
 
 SWITCH_DECLARE(void) console_log(char *level_str, char *msg);
 SWITCH_DECLARE(void) console_clean_log(char *msg);
-SWITCH_DECLARE(char *)api_execute(char *cmd, char *arg);
-SWITCH_DECLARE(void) api_reply_delete(char *reply);
 
 /** \brief bridge the audio of session_b into session_a
  * 

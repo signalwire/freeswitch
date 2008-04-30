@@ -48,6 +48,25 @@ except AttributeError:
 del types
 
 
+consoleLog = _freeswitch.consoleLog
+consoleCleanLog = _freeswitch.consoleCleanLog
+class API(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, API, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, API, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        this = _freeswitch.new_API(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _freeswitch.delete_API
+    __del__ = lambda self : None;
+    def execute(*args): return _freeswitch.API_execute(*args)
+    def executeString(*args): return _freeswitch.API_executeString(*args)
+API_swigregister = _freeswitch.API_swigregister
+API_swigregister(API)
+
 class input_callback_state_t(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, input_callback_state_t, name, value)
@@ -191,13 +210,13 @@ CoreSession_swigregister(CoreSession)
 
 console_log = _freeswitch.console_log
 console_clean_log = _freeswitch.console_clean_log
-api_execute = _freeswitch.api_execute
-api_reply_delete = _freeswitch.api_reply_delete
 bridge = _freeswitch.bridge
 hanguphook = _freeswitch.hanguphook
 dtmf_callback = _freeswitch.dtmf_callback
 S_SWAPPED_IN = _freeswitch.S_SWAPPED_IN
 S_SWAPPED_OUT = _freeswitch.S_SWAPPED_OUT
+api_execute = _freeswitch.api_execute
+api_reply_delete = _freeswitch.api_reply_delete
 class PySession(CoreSession):
     __swig_setmethods__ = {}
     for _s in [CoreSession]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
