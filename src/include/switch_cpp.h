@@ -82,11 +82,11 @@ class Stream {
 	switch_stream_handle_t *stream_p;
 	int mine;
  public: 
-	Stream(void);
-	Stream(switch_stream_handle_t *);
-	virtual ~Stream();
-	void write(const char *data);	
-	const char *get_data(void);
+	SWITCH_DECLARE_CONSTRUCTOR Stream(void);
+	SWITCH_DECLARE_CONSTRUCTOR Stream(switch_stream_handle_t *);
+	virtual SWITCH_DECLARE_CONSTRUCTOR ~Stream();
+	SWITCH_DECLARE(void) write(const char *data);	
+	SWITCH_DECLARE(const char *)get_data(void);
 };
 
 class Event {
@@ -96,17 +96,17 @@ class Event {
 	char *serialized_string;
 	int mine;
 
-	Event(const char *type, const char *subclass_name = NULL);
-	Event(switch_event_t *wrap_me, int free_me=0);
-	virtual ~Event();
-	const char *serialize(const char *format=NULL);
-	bool set_priority(switch_priority_t priority = SWITCH_PRIORITY_NORMAL);
-	char *get_header(char *header_name);
-	char *get_body(void);
-	bool add_body(const char *value);
-	bool add_header(const char *header_name, const char *value);
-	bool del_header(const char *header_name);
-	bool fire(void);
+	SWITCH_DECLARE_CONSTRUCTOR Event(const char *type, const char *subclass_name = NULL);
+	SWITCH_DECLARE_CONSTRUCTOR Event(switch_event_t *wrap_me, int free_me=0);
+	virtual SWITCH_DECLARE_CONSTRUCTOR ~Event();
+	SWITCH_DECLARE(const char *)serialize(const char *format=NULL);
+	SWITCH_DECLARE(bool) set_priority(switch_priority_t priority = SWITCH_PRIORITY_NORMAL);
+	SWITCH_DECLARE(char *)get_header(char *header_name);
+	SWITCH_DECLARE(char *)get_body(void);
+	SWITCH_DECLARE(bool) add_body(const char *value);
+	SWITCH_DECLARE(bool) add_header(const char *header_name, const char *value);
+	SWITCH_DECLARE(bool) del_header(const char *header_name);
+	SWITCH_DECLARE(bool) fire(void);
 };
 
 

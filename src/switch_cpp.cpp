@@ -38,7 +38,7 @@
 #endif
 
 
-Event::Event(const char *type, const char *subclass_name)
+SWITCH_DECLARE_CONSTRUCTOR Event::Event(const char *type, const char *subclass_name)
 {
 	switch_event_types_t event_id;
 	
@@ -51,14 +51,14 @@ Event::Event(const char *type, const char *subclass_name)
 	mine = 1;
 }
 
-Event::Event(switch_event_t *wrap_me, int free_me)
+SWITCH_DECLARE_CONSTRUCTOR Event::Event(switch_event_t *wrap_me, int free_me)
 {
 	event = wrap_me;
 	mine = free_me;
 	serialized_string = NULL;
 }
 
-Event::~Event()
+SWITCH_DECLARE_CONSTRUCTOR Event::~Event()
 {
 
 	if (serialized_string) {
@@ -71,7 +71,7 @@ Event::~Event()
 }
 
 
-const char *Event::serialize(const char *format)
+SWITCH_DECLARE(const char *)Event::serialize(const char *format)
 {
 	int isxml = 0;
 
@@ -106,7 +106,7 @@ const char *Event::serialize(const char *format)
 
 }
 
-bool Event::fire(void)
+SWITCH_DECLARE(bool) Event::fire(void)
 {
 	if (!mine) {
 		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Not My event!\n");
@@ -120,7 +120,7 @@ bool Event::fire(void)
 	return false;
 }
 
-bool Event::set_priority(switch_priority_t priority)
+SWITCH_DECLARE(bool) Event::set_priority(switch_priority_t priority)
 {
 	if (event) {
         switch_event_set_priority(event, priority);
@@ -129,7 +129,7 @@ bool Event::set_priority(switch_priority_t priority)
 	return false;
 }
 
-char *Event::get_header(char *header_name)
+SWITCH_DECLARE(char *)Event::get_header(char *header_name)
 {
 	if (event) {
 		return switch_event_get_header(event, header_name);
@@ -137,7 +137,7 @@ char *Event::get_header(char *header_name)
 	return NULL;
 }
 
-bool Event::add_header(const char *header_name, const char *value)
+SWITCH_DECLARE(bool) Event::add_header(const char *header_name, const char *value)
 {
 	if (event) {
 		return switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, value) == SWITCH_STATUS_SUCCESS ? true : false;
@@ -146,7 +146,7 @@ bool Event::add_header(const char *header_name, const char *value)
 	return false;
 }
 
-bool Event::del_header(const char *header_name)
+SWITCH_DECLARE(bool) Event::del_header(const char *header_name)
 {
 	if (event) {
 		return switch_event_del_header(event, header_name) == SWITCH_STATUS_SUCCESS ? true : false;
@@ -156,7 +156,7 @@ bool Event::del_header(const char *header_name)
 }
 
 
-bool Event::add_body(const char *value)
+SWITCH_DECLARE(bool) Event::add_body(const char *value)
 {
 	if (event) {
 		return switch_event_add_body(event, "%s", value) == SWITCH_STATUS_SUCCESS ? true : false;
@@ -165,7 +165,7 @@ bool Event::add_body(const char *value)
 	return false;
 }
 
-char *Event::get_body(void)
+SWITCH_DECLARE(char *)Event::get_body(void)
 {
 	if (event) {
 		return switch_event_get_body(event);
@@ -174,33 +174,33 @@ char *Event::get_body(void)
 	return NULL;
 }
 
-Stream::Stream()
+SWITCH_DECLARE_CONSTRUCTOR Stream::Stream()
 {
 	SWITCH_STANDARD_STREAM(mystream);
 	stream_p = &mystream;
 	mine = 1;
 }
 
-Stream::Stream(switch_stream_handle_t *sp)
+SWITCH_DECLARE_CONSTRUCTOR Stream::Stream(switch_stream_handle_t *sp)
 {
 	stream_p = sp;
 	mine = 0;
 }
 
 
-Stream::~Stream()
+SWITCH_DECLARE_CONSTRUCTOR Stream::~Stream()
 {
 	if (mine) {
 		switch_safe_free(mystream.data);
 	}
 }
 
-void Stream::write(const char *data)
+SWITCH_DECLARE(void) Stream::write(const char *data)
 {
 	stream_p->write_function(stream_p, "%s", data);
 }
 
-const char *Stream::get_data()
+SWITCH_DECLARE(const char *)Stream::get_data()
 {
 	return stream_p ? (const char *)stream_p->data : NULL;
 }
