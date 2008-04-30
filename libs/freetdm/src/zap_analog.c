@@ -416,7 +416,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				break;
 			case ZAP_CHANNEL_STATE_DIALTONE:
 				{
-					zap_channel_done(zchan);
+					memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
 					*dtmf = '\0';
 					dtmf_offset = 0;
 					zap_buffer_zero(dt_buffer);
@@ -447,7 +447,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				break;
 			case ZAP_CHANNEL_STATE_GET_CALLERID:
 				{
-					zap_channel_done(zchan);
+					memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
 					zap_channel_command(zchan, ZAP_COMMAND_ENABLE_CALLERID_DETECT, NULL);
 					continue;
 				}
@@ -464,7 +464,6 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				{
 					zchan->caller_data.hangup_cause = ZAP_CAUSE_NORMAL_CIRCUIT_CONGESTION;
 					if (zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK) && !zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
-						zap_channel_done(zchan);
 						zap_buffer_zero(dt_buffer);
 						teletone_run(&ts, zchan->span->tone_map[ZAP_TONEMAP_BUSY]);
 						indicate = 1;
@@ -476,7 +475,6 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 			case ZAP_CHANNEL_STATE_ATTN:
 				{
 					if (zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK) && !zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
-						zap_channel_done(zchan);
 						zap_buffer_zero(dt_buffer);
 						teletone_run(&ts, zchan->span->tone_map[ZAP_TONEMAP_ATTN]);
 						indicate = 1;
