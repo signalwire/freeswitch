@@ -89,7 +89,6 @@ const char *Event::serialize(const char *format)
 
 	if (isxml) {
 		switch_xml_t xml;
-		char *xmlstr;
 		if ((xml = switch_event_xmlize(event, SWITCH_VA_NONE))) {
 			serialized_string = switch_xml_toxml(xml, SWITCH_FALSE);
 			switch_xml_free(xml);
