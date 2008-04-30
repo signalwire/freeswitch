@@ -2615,15 +2615,16 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 
 	if ((profile->pflags & PFLAG_AUTH_CALLS) || (!(profile->pflags & PFLAG_BLIND_AUTH) && (sip->sip_proxy_authorization || sip->sip_authorization))) {
-		if (strcmp(network_ip, profile->sipip)) {
+		int rport = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
+		if (!strcmp(network_ip, profile->sipip) && rport == profile->sip_port) {
+			calling_myself++;
+		} else {
 			if (sofia_reg_handle_register(nua, profile, nh, sip, REG_INVITE, key, sizeof(key), &v_event)) {
 				if (v_event) {
 					switch_event_destroy(&v_event);
 				}
 				return;
 			}
-		} else {
-			calling_myself++;
 		}
 		is_auth++;
 	}
