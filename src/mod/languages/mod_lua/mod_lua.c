@@ -116,9 +116,9 @@ static void lua_parse_and_execute(lua_State *L, char *input_code)
 		char *args = strchr(input_code, ' ');
 		if (args) {
 			char *code = NULL;
-			*args++ = '\0';
 			int x, argc;
 			char *argv[128] = { 0 };
+			*args++ = '\0';
 
 			if ((argc = switch_separate_string(args, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 				switch_stream_handle_t stream = { 0 };
