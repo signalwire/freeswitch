@@ -9,10 +9,11 @@ VERBOSE=1
 
 include $(BASE)/build/modmake.rules
 
-swigclean: clean
-	rm mod_perl_wrap.*
 
-mod_perl_wrap.cpp: $(TOLUA_A)	
+swigclean: clean
+	rm -f mod_perl_wrap.*
+
+mod_perl_wrap.cpp:
 	swig -static -shadow -perl5 -c++ -DMULTIPLICITY -I../../../../src/include -o mod_perl_wrap.cpp freeswitch.i
 
 freeswitch.$(DYNAMIC_LIB_EXTEN): $(LOCAL_OBJS) $(LOCAL_LIBADD)

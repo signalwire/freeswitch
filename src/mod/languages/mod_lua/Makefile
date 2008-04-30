@@ -21,8 +21,8 @@ freeswitch_lua.o: freeswitch_lua.h
 allclean: clean luaclean
 	rm -f mod_lua_wrap.* freeswitch_lua.$(DYNAMIC_LIB_EXTEN)
 
-swigclean:
-	rm mod_lua_wrap.*
+swigclean: clean
+	rm -f mod_lua_wrap.*
 
 mod_lua_wrap.cpp: mod_lua_extra.c
 	swig -lua -c++ -I../../../../src/include -oh mod_lua_wrap.h -o mod_lua_wrap.cpp freeswitch.i

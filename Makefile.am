@@ -148,16 +148,16 @@ libfreeswitch_la_CFLAGS   = $(CORE_CFLAGS) $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS  = -version-info 1:0:0 $(AM_LDFLAGS)
 libfreeswitch_la_LIBADD  = $(CORE_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
-nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
+nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h src/include/switch_swigable_cpp.h
 
 MOD_LINK       = $(BASE)/libfreeswitch.la
 
-CLEANFILES     = src/include/switch_version.h
-BUILT_SOURCES  = src/include/switch_version.h
+CLEANFILES     = src/include/switch_version.h src/include/switch_swigable_cpp.h
+BUILT_SOURCES  = src/include/switch_version.h src/include/switch_swigable_cpp.h
 
 bin_PROGRAMS = freeswitch
 freeswitch_SOURCES = src/switch.c
-nodist_freeswitch_SOURCES = src/include/switch_version.h
+nodist_freeswitch_SOURCES = src/include/switch_version.h 
 freeswitch_CFLAGS = $(AM_CFLAGS) $(CORE_CFLAGS)
 freeswitch_LDFLAGS = $(AM_LDFLAGS) -rpath $(libdir)
 freeswitch_LDADD = libfreeswitch.la libs/apr/libapr-1.la
@@ -180,6 +180,8 @@ endif
 
 bin_SCRIPTS = scripts/gentls_cert scripts/fsxs
 
+src/include/switch_swigable_cpp.h: src/include/switch_cpp.h
+	$(CC) -E src/include/switch_cpp.h -DSWITCH_DECLARE\(x\)=x -DSWITCH_DECLARE_CONSTRUCTOR= -DSWITCH_DECLARE_NONSTD\(x\)=x 2>/dev/null | grep -v "^#" > src/include/switch_swigable_cpp.h 
 
 libs/libedit/src/.libs/libedit.a:
 	cd libs/libedit && $(MAKE)

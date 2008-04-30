@@ -12,6 +12,7 @@
 
 /** insert the following includes into generated code so it compiles */
 %{
+#include "switch.h"
 #include "switch_cpp.h"
 #include "freeswitch_lua.h"
 %}
@@ -23,7 +24,7 @@
  * tell swig to grok everything defined in these header files and
  * build all sorts of c wrappers and lua shadows of the c wrappers.
  */
-%include switch_cpp.h
+%include switch_swigable_cpp.h
 %include freeswitch_lua.h
 
 

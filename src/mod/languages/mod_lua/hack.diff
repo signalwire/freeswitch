@@ -5,7 +5,7 @@
    result = (Session *)new Session();
    SWIG_arg=0;
 -  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; 
-+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; result->setPrivate("__L", L);
++  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; result->setLUA(L);
    return SWIG_arg;
    
    if(0) SWIG_fail;
@@ -14,7 +14,7 @@
    result = (Session *)new Session(arg1);
    SWIG_arg=0;
 -  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; 
-+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; result->setPrivate("__L", L);
++  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; result->setLUA(L);
    return SWIG_arg;
    
    if(0) SWIG_fail;
@@ -23,7 +23,7 @@
    result = (Session *)new Session(arg1);
    SWIG_arg=0;
 -  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; 
-+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; result->setPrivate("__L", L);
++  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Session,1); SWIG_arg++; result->setLUA(L);
    return SWIG_arg;
    
    if(0) SWIG_fail;

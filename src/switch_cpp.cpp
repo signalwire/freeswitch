@@ -120,7 +120,7 @@ SWITCH_DECLARE(bool) Event::fire(void)
 	return false;
 }
 
-SWITCH_DECLARE(bool) Event::set_priority(switch_priority_t priority)
+SWITCH_DECLARE(bool) Event::setPriority(switch_priority_t priority)
 {
 	if (event) {
         switch_event_set_priority(event, priority);
@@ -129,7 +129,7 @@ SWITCH_DECLARE(bool) Event::set_priority(switch_priority_t priority)
 	return false;
 }
 
-SWITCH_DECLARE(char *)Event::get_header(char *header_name)
+SWITCH_DECLARE(char *)Event::getHeader(char *header_name)
 {
 	if (event) {
 		return switch_event_get_header(event, header_name);
@@ -137,7 +137,7 @@ SWITCH_DECLARE(char *)Event::get_header(char *header_name)
 	return NULL;
 }
 
-SWITCH_DECLARE(bool) Event::add_header(const char *header_name, const char *value)
+SWITCH_DECLARE(bool) Event::addHeader(const char *header_name, const char *value)
 {
 	if (event) {
 		return switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, value) == SWITCH_STATUS_SUCCESS ? true : false;
@@ -146,7 +146,7 @@ SWITCH_DECLARE(bool) Event::add_header(const char *header_name, const char *valu
 	return false;
 }
 
-SWITCH_DECLARE(bool) Event::del_header(const char *header_name)
+SWITCH_DECLARE(bool) Event::delHeader(const char *header_name)
 {
 	if (event) {
 		return switch_event_del_header(event, header_name) == SWITCH_STATUS_SUCCESS ? true : false;
@@ -156,7 +156,7 @@ SWITCH_DECLARE(bool) Event::del_header(const char *header_name)
 }
 
 
-SWITCH_DECLARE(bool) Event::add_body(const char *value)
+SWITCH_DECLARE(bool) Event::addBody(const char *value)
 {
 	if (event) {
 		return switch_event_add_body(event, "%s", value) == SWITCH_STATUS_SUCCESS ? true : false;
@@ -165,13 +165,22 @@ SWITCH_DECLARE(bool) Event::add_body(const char *value)
 	return false;
 }
 
-SWITCH_DECLARE(char *)Event::get_body(void)
+SWITCH_DECLARE(char *)Event::getBody(void)
 {
 	if (event) {
 		return switch_event_get_body(event);
 	}
 	
 	return NULL;
+}
+
+SWITCH_DECLARE(char *)Event::getType(void)
+{
+	if (event) {
+		return switch_event_name(event->event_id);
+	}
+	
+	return "invalid";
 }
 
 SWITCH_DECLARE_CONSTRUCTOR Stream::Stream()
@@ -520,21 +529,11 @@ SWITCH_DECLARE(int) CoreSession::streamFile(char *file, int starting_sample_coun
 
 SWITCH_DECLARE(bool) CoreSession::ready() {
 
-	switch_channel_t *channel;
-
-	if (!session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "You must call the session.originate method before calling this method!\n");
-		return false;
-	}
-
-	channel = switch_core_session_get_channel(session);
-
+	sanity_check(false);	
 	return switch_channel_ready(channel) != 0;
 }
 
-SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, 
-						   char *dest, 
-						   int timeout)
+SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, char *dest, int timeout)
 {
 
 	switch_memory_pool_t *pool = NULL;

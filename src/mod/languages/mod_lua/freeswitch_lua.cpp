@@ -1,26 +1,22 @@
+#include <switch.h>
 #include "freeswitch_lua.h"
-
-SWITCH_BEGIN_EXTERN_C
-#include "lua.h"
-#include <lauxlib.h>
-#include <lualib.h>
-#include "mod_lua_extra.h"
-SWITCH_END_EXTERN_C
-
 
 Session::Session() : CoreSession()
 {
 	cb_function = cb_arg = hangup_func_str = NULL;
+	hh = mark = 0;
 }
 
 Session::Session(char *uuid) : CoreSession(uuid)
 {
 	cb_function = cb_arg = hangup_func_str = NULL;
+	hh = mark = 0;
 }
 
 Session::Session(switch_core_session_t *new_session) : CoreSession(new_session)
 {
 	cb_function = cb_arg = hangup_func_str = NULL;
+	hh = mark = 0;
 }
 static switch_status_t lua_hanguphook(switch_core_session_t *session_hungup);
 Session::~Session()
@@ -31,31 +27,68 @@ Session::~Session()
 	switch_core_event_hook_remove_state_change(session, lua_hanguphook);
 }
 
-
 bool Session::begin_allow_threads() 
 {
+	do_hangup_hook();
 	return true;
 }
 
 bool Session::end_allow_threads() 
 {
+	do_hangup_hook();
 	return true;
+}
+
+void Session::setLUA(lua_State *state)
+{
+	L = state;
+}
+
+lua_State *Session::getLUA()
+{
+	if (!L) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Doh!\n");		
+	}
+	return L;
+}
+
+
+bool Session::ready() {
+	bool r;
+
+	sanity_check(false);	
+	r = switch_channel_ready(channel) != 0;
+	do_hangup_hook();
+
+	return r;
 }
 
 void Session::check_hangup_hook() 
 {
 	if (hangup_func_str && (hook_state == CS_HANGUP || hook_state == CS_RING)) {
-		lua_State *L;
-		L = (lua_State *) getPrivate("__L");
+		hh++;
+	}
+}
 
-		if (!L) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Doh!\n");
+void Session::do_hangup_hook() 
+{
+	if (hh && !mark) {
+		const char *err = NULL;
+		mark++;
+
+		if (!getLUA()) {
 			return;
 		}
-		
+
 		lua_getfield(L, LUA_GLOBALSINDEX, (char *)hangup_func_str);
+		
 		lua_pushstring(L, hook_state == CS_HANGUP ? "hangup" : "transfer");
-		lua_call(L, 1, 0);
+		lua_call(L, 1, 1);
+		err = lua_tostring(L, -1);
+
+		if (!switch_strlen_zero(err)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err);
+		}
 	}
 }
 
@@ -82,9 +115,6 @@ void Session::setHangupHook(char *func) {
 
 	switch_safe_free(hangup_func_str);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not Currently Available\n");
-	func = NULL;
-
 	if (func) {
 		hangup_func_str = strdup(func);
 		switch_channel_set_private(channel, "CoreSession", this);
@@ -106,7 +136,7 @@ void Session::setInputCallback(char *cbfunc, char *funcargs) {
 	if (funcargs) {
 		cb_arg = strdup(funcargs);
 	}
-
+	
 	args.buf = this;
 	switch_channel_set_private(channel, "CoreSession", this);
 
@@ -116,13 +146,10 @@ void Session::setInputCallback(char *cbfunc, char *funcargs) {
 
 switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t itype) 
 {
-	lua_State *L;
 	const char *ret;
-	
-	L = (lua_State *) getPrivate("__L");
-	if (!L) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Doh!\n");
-		return SWITCH_STATUS_FALSE;
+
+	if (!getLUA()) {
+		return SWITCH_STATUS_FALSE;;
 	}
 
 	switch (itype) {

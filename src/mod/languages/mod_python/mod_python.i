@@ -23,7 +23,7 @@
  * tell swig to grok everything defined in these header files and
  * build all sorts of c wrappers and python shadows of the c wrappers.
  */
-%include switch_cpp.h
+%include switch_swigable_cpp.h
 %include freeswitch_python.h
 
 

@@ -171,12 +171,13 @@ sub DESTROY {
 }
 
 *serialize = *freeswitchc::Event_serialize;
-*set_priority = *freeswitchc::Event_set_priority;
-*get_header = *freeswitchc::Event_get_header;
-*get_body = *freeswitchc::Event_get_body;
-*add_body = *freeswitchc::Event_add_body;
-*add_header = *freeswitchc::Event_add_header;
-*del_header = *freeswitchc::Event_del_header;
+*setPriority = *freeswitchc::Event_setPriority;
+*getHeader = *freeswitchc::Event_getHeader;
+*getBody = *freeswitchc::Event_getBody;
+*getType = *freeswitchc::Event_getType;
+*addBody = *freeswitchc::Event_addBody;
+*addHeader = *freeswitchc::Event_addHeader;
+*delHeader = *freeswitchc::Event_delHeader;
 *fire = *freeswitchc::Event_fire;
 sub DISOWN {
     my $self = shift;
