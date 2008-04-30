@@ -1161,6 +1161,8 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 	return 0;
 }
 
+static const char *status_names[] = { "DOWN", "UP", NULL };
+
 static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t *stream)
 {
 	sofia_profile_t *profile = NULL;
@@ -1180,7 +1182,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 		if (!strcasecmp(argv[0], "gateway")) {
 			if ((gp = sofia_reg_find_gateway(argv[1]))) {
 				switch_assert(gp->state < REG_STATE_LAST);
-				
+
 				stream->write_function(stream, "%s\n", line);
 				stream->write_function(stream, "Name    \t%s\n", switch_str_nil(gp->name));
 				stream->write_function(stream, "Scheme  \t%s\n", switch_str_nil(gp->register_scheme));
@@ -1194,7 +1196,10 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				stream->write_function(stream, "Context \t%s\n", switch_str_nil(gp->register_context));
 				stream->write_function(stream, "Expires \t%s\n", switch_str_nil(gp->expires_str));
 				stream->write_function(stream, "Freq    \t%d\n", gp->freq);
+				stream->write_function(stream, "Ping    \t%d\n", gp->ping);
+				stream->write_function(stream, "PingFreq\t%d\n", gp->ping_freq);
 				stream->write_function(stream, "State   \t%s\n", sofia_state_names[gp->state]);
+				stream->write_function(stream, "Status  \t%s%s\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
 				stream->write_function(stream, "%s\n", line);
 				sofia_reg_release_gateway(gp);
 			} else {
@@ -1692,6 +1697,14 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		if (!(gateway_ptr = sofia_reg_find_gateway(gw))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Gateway\n");
 			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
+			goto error;
+		}
+
+		if (gateway_ptr->status != SOFIA_GATEWAY_UP) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Gateway is down!\n");
+			cause = SWITCH_CAUSE_NETWORK_OUT_OF_ORDER;
+			sofia_reg_release_gateway(gateway_ptr);
+			gateway_ptr = NULL;
 			goto error;
 		}
 

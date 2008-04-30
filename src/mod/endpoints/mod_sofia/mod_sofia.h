@@ -99,6 +99,7 @@ typedef enum {
 struct sofia_private {
 	char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	sofia_gateway_t *gateway;
+	char gateway_name[512];
 };
 
 #define set_param(ptr,val) if (ptr) {free(ptr) ; ptr = NULL;} if (val) {ptr = strdup(val);}
@@ -221,6 +222,11 @@ typedef enum {
 	SOFIA_TRANSPORT_SCTP
 } sofia_transport_t;
 
+typedef enum {
+	SOFIA_GATEWAY_DOWN,
+	SOFIA_GATEWAY_UP
+} sofia_gateway_status_t;
+
 struct sofia_gateway {
 	sofia_private_t *sofia_private;
 	nua_handle_t *nh;
@@ -241,6 +247,10 @@ struct sofia_gateway {
 	uint32_t freq;
 	time_t expires;
 	time_t retry;
+	time_t ping;
+	int pinging;
+	sofia_gateway_status_t status;
+	uint32_t ping_freq;
 	uint32_t flags;
 	int32_t retry_seconds;
 	reg_state_t state;

@@ -80,6 +80,21 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			gateway_ptr->expires_str = "0";
 		}
 
+		if (gateway_ptr->ping && !gateway_ptr->pinging && (now >= gateway_ptr->ping && (ostate == REG_STATE_NOREG || ostate == REG_STATE_REGED))) {
+			nua_handle_t *nh = nua_handle(profile->nua, NULL, NUTAG_URL(gateway_ptr->register_url), SIPTAG_CONTACT_STR(profile->url), TAG_END());
+			sofia_private_t *pvt;
+
+			pvt = malloc(sizeof(*pvt));
+			switch_assert(pvt);
+			memset(pvt, 0, sizeof(*pvt));
+			
+			switch_copy_string(pvt->gateway_name, gateway_ptr->name, sizeof(pvt->gateway_name));
+			nua_handle_bind(nh, pvt);
+
+			gateway_ptr->pinging = 1;
+			nua_options(nh, TAG_END());
+		}
+		
 		switch (ostate) {
 		case REG_STATE_NOREG:
 			break;
@@ -87,6 +102,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "registered %s\n", gateway_ptr->name);
 			gateway_ptr->expires = now + gateway_ptr->freq;
 			gateway_ptr->state = REG_STATE_REGED;
+			gateway_ptr->status = SOFIA_GATEWAY_UP;
 			break;
 
 		case REG_STATE_UNREGISTER:

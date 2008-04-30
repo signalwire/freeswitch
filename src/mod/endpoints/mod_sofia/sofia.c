@@ -782,12 +782,16 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				*params = NULL,
 				*register_transport = NULL;
 
+			uint32_t ping_freq = 0;
+
 			gateway->register_transport = SOFIA_TRANSPORT_UDP;
 			gateway->pool = profile->pool;
 			gateway->profile = profile;
 			gateway->name = switch_core_strdup(gateway->pool, name);
 			gateway->freq = 0;
 			gateway->next = NULL;
+			gateway->ping = 0;
+			gateway->ping_freq = 0;
 
 			for (param = switch_xml_child(gateway_tag, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -807,6 +811,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					caller_id_in_from = val;
 				} else if (!strcmp(var, "extension")) {
 					extension = val;
+				} else if (!strcmp(var, "ping")) {
+					ping_freq = atoi(val);
 				} else if (!strcmp(var, "proxy")) {
 					proxy = val;
 				} else if (!strcmp(var, "context")) {
@@ -832,6 +838,15 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					}
 
 					gateway->register_transport = transport;
+				}
+			}
+
+			if (ping_freq) {
+				if (ping_freq >= 5) {
+					gateway->ping_freq = ping_freq;
+					gateway->ping = switch_timestamp(NULL) + ping_freq;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: invalid ping!\n");
 				}
 			}
 
@@ -1497,10 +1512,33 @@ switch_status_t config_sofia(int reload, char *profile_name)
 }
 
 static void sofia_handle_sip_r_options(switch_core_session_t *session, int status,
-									  char const *phrase,
+									   char const *phrase,
 									  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
-	if ((profile->pflags & PFLAG_UNREG_OPTIONS_FAIL) && status != 200 && sip && sip->sip_to) {
+	sofia_gateway_t *gateway = NULL;
+
+	if (sofia_private->gateway_name) {
+		gateway = sofia_reg_find_gateway(sofia_private->gateway_name);
+	}
+
+	if (gateway) {
+		if (status == 200 || status == 404) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ping success %s\n", gateway->name);
+			gateway->status = SOFIA_GATEWAY_UP;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ping failed %s\n", gateway->name);
+			gateway->status = SOFIA_GATEWAY_DOWN;
+			if (gateway->state == REG_STATE_REGED) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "unregister %s\n", gateway->name);
+				gateway->state = REG_STATE_UNREGISTER;
+			}
+		}
+		gateway->ping = switch_timestamp(NULL) + gateway->ping_freq;
+		sofia_reg_release_gateway(gateway);
+		nua_handle_bind(nh, NULL);
+		free(sofia_private);
+		gateway->pinging = 0;
+	} else if ((profile->pflags & PFLAG_UNREG_OPTIONS_FAIL) && status != 200 && sip && sip->sip_to) {
 		char *sql;
 		time_t now = switch_timestamp(NULL);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Expire registration '%s@%s' due to options failure\n", 
@@ -1515,6 +1553,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 								   );
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 	}
+	nua_handle_destroy(nh);
 }
 
 
