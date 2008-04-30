@@ -159,6 +159,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 
 		case REG_STATE_FAILED:
             sofia_reg_kill_reg(gateway_ptr, 0);
+			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
 		case REG_STATE_TRYING:
 			if (gateway_ptr->retry && now >= gateway_ptr->retry) {
 				gateway_ptr->state = REG_STATE_UNREGED;
