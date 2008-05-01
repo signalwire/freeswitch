@@ -1576,26 +1576,20 @@ SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1coll
 }
 
 
-SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1getDigits(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jstring jarg3, jbyteArray jarg4, jint jarg5) {
+SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1getDigits(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2, jstring jarg3, jbyteArray jarg4, jint jarg5) {
   jstring jresult = 0 ;
   CoreSession *arg1 = (CoreSession *) 0 ;
-  switch_size_t arg2 ;
+  int arg2 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
   int arg5 ;
   char *result = 0 ;
-  switch_size_t *argp2 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg1_;
   arg1 = *(CoreSession **)&jarg1; 
-  argp2 = *(switch_size_t **)&jarg2; 
-  if (!argp2) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "Attempt to dereference null switch_size_t");
-    return 0;
-  }
-  arg2 = *argp2; 
+  arg2 = (int)jarg2; 
   arg3 = 0;
   if (jarg3) {
     arg3 = (char *)jenv->GetStringUTFChars(jarg3, 0);

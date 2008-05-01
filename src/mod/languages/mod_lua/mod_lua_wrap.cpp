@@ -1499,12 +1499,11 @@ SWIG_Lua_dostring(lua_State *L, const char* str) {
 #define SWIGTYPE_p_switch_input_args_t swig_types[12]
 #define SWIGTYPE_p_switch_input_type_t swig_types[13]
 #define SWIGTYPE_p_switch_priority_t swig_types[14]
-#define SWIGTYPE_p_switch_size_t swig_types[15]
-#define SWIGTYPE_p_switch_status_t swig_types[16]
-#define SWIGTYPE_p_switch_stream_handle_t swig_types[17]
-#define SWIGTYPE_p_void swig_types[18]
-static swig_type_info *swig_types[20];
-static swig_module_info swig_module = {swig_types, 19, 0, 0, 0, 0};
+#define SWIGTYPE_p_switch_status_t swig_types[15]
+#define SWIGTYPE_p_switch_stream_handle_t swig_types[16]
+#define SWIGTYPE_p_void swig_types[17]
+static swig_type_info *swig_types[19];
+static swig_module_info swig_module = {swig_types, 18, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -4097,16 +4096,15 @@ fail:
 static int _wrap_CoreSession_getDigits(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
-  switch_size_t arg2 ;
+  int arg2 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
   int arg5 ;
   char *result = 0 ;
-  switch_size_t *argp2 ;
   
   SWIG_check_num_args("getDigits",5,5)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("getDigits",1,"CoreSession *");
-  if(!lua_isuserdata(L,2)) SWIG_fail_arg("getDigits",2,"switch_size_t");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("getDigits",2,"int");
   if(!lua_isstring(L,3)) SWIG_fail_arg("getDigits",3,"char *");
   if(!lua_isstring(L,4)) SWIG_fail_arg("getDigits",4,"char *");
   if(!lua_isnumber(L,5)) SWIG_fail_arg("getDigits",5,"int");
@@ -4115,12 +4113,7 @@ static int _wrap_CoreSession_getDigits(lua_State* L) {
     SWIG_fail_ptr("CoreSession_getDigits",1,SWIGTYPE_p_CoreSession);
   }
   
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&argp2,SWIGTYPE_p_switch_size_t,0))){
-    SWIG_fail_ptr("CoreSession_getDigits",2,SWIGTYPE_p_switch_size_t);
-  }
-  arg2 = *argp2;
-  
+  arg2 = (int)lua_tonumber(L, 2);
   arg3 = (char *)lua_tostring(L, 3);
   arg4 = (char *)lua_tostring(L, 4);
   arg5 = (int)lua_tonumber(L, 5);
@@ -5493,7 +5486,6 @@ static swig_type_info _swigt__p_switch_event_t = {"_p_switch_event_t", "switch_e
 static swig_type_info _swigt__p_switch_input_args_t = {"_p_switch_input_args_t", "switch_input_args_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_input_type_t = {"_p_switch_input_type_t", "switch_input_type_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_priority_t = {"_p_switch_priority_t", "switch_priority_t *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_switch_size_t = {"_p_switch_size_t", "switch_size_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_status_t = {"_p_switch_status_t", "switch_status_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_stream_handle_t = {"_p_switch_stream_handle_t", "switch_stream_handle_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_void = {"_p_void", "void *", 0, 0, (void*)0, 0};
@@ -5514,7 +5506,6 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_switch_input_args_t,
   &_swigt__p_switch_input_type_t,
   &_swigt__p_switch_priority_t,
-  &_swigt__p_switch_size_t,
   &_swigt__p_switch_status_t,
   &_swigt__p_switch_stream_handle_t,
   &_swigt__p_void,
@@ -5535,7 +5526,6 @@ static swig_cast_info _swigc__p_switch_event_t[] = {  {&_swigt__p_switch_event_t
 static swig_cast_info _swigc__p_switch_input_args_t[] = {  {&_swigt__p_switch_input_args_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_input_type_t[] = {  {&_swigt__p_switch_input_type_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_priority_t[] = {  {&_swigt__p_switch_priority_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_switch_size_t[] = {  {&_swigt__p_switch_size_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_status_t[] = {  {&_swigt__p_switch_status_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_stream_handle_t[] = {  {&_swigt__p_switch_stream_handle_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_void[] = {  {&_swigt__p_void, 0, 0, 0},{0, 0, 0, 0}};
@@ -5556,7 +5546,6 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_switch_input_args_t,
   _swigc__p_switch_input_type_t,
   _swigc__p_switch_priority_t,
-  _swigc__p_switch_size_t,
   _swigc__p_switch_status_t,
   _swigc__p_switch_stream_handle_t,
   _swigc__p_void,

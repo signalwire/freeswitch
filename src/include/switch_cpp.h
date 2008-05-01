@@ -221,7 +221,7 @@ class CoreSession {
 	 * receiving dtmf digits.  For that, use collectDigits.
 	 */
 	SWITCH_DECLARE(char *) getDigits(
-								  switch_size_t maxdigits, 
+								  int maxdigits, 
 								  char *terminators, 
 								  char *terminator, 
 								  int timeout);

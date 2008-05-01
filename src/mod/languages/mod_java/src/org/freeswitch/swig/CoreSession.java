@@ -161,8 +161,8 @@ public class CoreSession {
     return freeswitchJNI.CoreSession_collectDigits(swigCPtr, this, timeout);
   }
 
-  public String getDigits(SWIGTYPE_p_switch_size_t maxdigits, String terminators, byte[] terminator, int timeout) {
-    return freeswitchJNI.CoreSession_getDigits(swigCPtr, this, SWIGTYPE_p_switch_size_t.getCPtr(maxdigits), terminators, terminator, timeout);
+  public String getDigits(int maxdigits, String terminators, byte[] terminator, int timeout) {
+    return freeswitchJNI.CoreSession_getDigits(swigCPtr, this, maxdigits, terminators, terminator, timeout);
   }
 
   public int transfer(String extensions, String dialplan, String context) {

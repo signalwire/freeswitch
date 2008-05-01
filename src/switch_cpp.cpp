@@ -470,7 +470,7 @@ SWITCH_DECLARE(int) CoreSession::collectDigits(int timeout) {
     return SWITCH_STATUS_SUCCESS;
 } 
 
-SWITCH_DECLARE(char *) CoreSession::getDigits(switch_size_t maxdigits, 
+SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits, 
 										   char *terminators, 
 										   char *terminator, 
 										   int timeout)
