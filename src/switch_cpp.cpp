@@ -320,7 +320,7 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::~CoreSession()
 
 	if (session) {
 		channel = switch_core_session_get_channel(session);
-		if (switch_test_flag(this, S_HUP)) {
+		if (switch_test_flag(this, S_HUP) && !switch_channel_test_flag(channel, CF_TRANSFER)) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		}
 		switch_core_session_rwunlock(session);
