@@ -55,8 +55,6 @@ package freeswitch;
 *bridge = *freeswitchc::bridge;
 *hanguphook = *freeswitchc::hanguphook;
 *dtmf_callback = *freeswitchc::dtmf_callback;
-*api_execute = *freeswitchc::api_execute;
-*api_reply_delete = *freeswitchc::api_reply_delete;
 
 ############# Class : freeswitch::API ##############
 
