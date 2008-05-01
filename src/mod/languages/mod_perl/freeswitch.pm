@@ -335,18 +335,6 @@ sub DESTROY {
 *end_allow_threads = *freeswitchc::Session_end_allow_threads;
 *check_hangup_hook = *freeswitchc::Session_check_hangup_hook;
 *run_dtmf_callback = *freeswitchc::Session_run_dtmf_callback;
-*swig_session_get = *freeswitchc::Session_session_get;
-*swig_session_set = *freeswitchc::Session_session_set;
-*swig_channel_get = *freeswitchc::Session_channel_get;
-*swig_channel_set = *freeswitchc::Session_channel_set;
-*swig_flags_get = *freeswitchc::Session_flags_get;
-*swig_flags_set = *freeswitchc::Session_flags_set;
-*swig_allocated_get = *freeswitchc::Session_allocated_get;
-*swig_allocated_set = *freeswitchc::Session_allocated_set;
-*swig_cb_state_get = *freeswitchc::Session_cb_state_get;
-*swig_cb_state_set = *freeswitchc::Session_cb_state_set;
-*swig_hook_state_get = *freeswitchc::Session_hook_state_get;
-*swig_hook_state_set = *freeswitchc::Session_hook_state_set;
 sub DISOWN {
     my $self = shift;
     my $ptr = tied(%$self);
