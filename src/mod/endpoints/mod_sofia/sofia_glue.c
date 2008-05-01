@@ -1829,7 +1829,13 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 			}
 
 			if (stream && strcasecmp(stream, "silence")) {
-				switch_ivr_broadcast(switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE), stream, SMF_ECHO_ALEG | SMF_LOOP);
+				if (!strcasecmp(stream, "indicate_hold")) {
+					switch_channel_set_flag(tech_pvt->channel, CF_SUSPEND);
+					switch_channel_set_flag(tech_pvt->channel, CF_HOLD);
+					switch_ivr_hold_uuid(switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE), NULL, 0);
+				} else {
+					switch_ivr_broadcast(switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE), stream, SMF_ECHO_ALEG | SMF_LOOP);
+				}
 			}
 		}
 	} else {
@@ -1843,8 +1849,15 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 
 			if ((uuid = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (b_session = switch_core_session_locate(uuid))) {
 				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
-				switch_channel_stop_broadcast(b_channel);
-				switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000);
+
+				if (switch_channel_test_flag(tech_pvt->channel, CF_HOLD)) {
+					switch_ivr_unhold(b_session);
+					switch_channel_clear_flag(tech_pvt->channel, CF_SUSPEND);
+					switch_channel_clear_flag(tech_pvt->channel, CF_HOLD);
+				} else {
+					switch_channel_stop_broadcast(b_channel);
+					switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000);
+				}
 				switch_core_session_rwunlock(b_session);
 			}
 

@@ -35,7 +35,6 @@
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
-
 SWITCH_DECLARE(switch_status_t) switch_core_session_signal_lock(switch_core_session_t *session)
 {
 	return switch_mutex_lock(session->signal_mutex);
@@ -58,12 +57,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_lock(switch_core_sessio
 		if (switch_test_flag(session, SSF_DESTROYED)) {
 			status = SWITCH_STATUS_FALSE;
 #ifdef SWITCH_DEBUG_RWLOCKS
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_ERROR, "%s Read lock FAIL\n", switch_channel_get_name(session->channel));
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "%s Read lock FAIL\n", switch_channel_get_name(session->channel));
 #endif
 		} else {
 			status = (switch_status_t) switch_thread_rwlock_tryrdlock(session->rwlock);
 #ifdef SWITCH_DEBUG_RWLOCKS
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_ERROR, "%s Read lock AQUIRED\n",
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "%s Read lock AQUIRED\n",
 							  switch_channel_get_name(session->channel));
 #endif
 		}
@@ -76,7 +75,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_lock(switch_core_sessio
 SWITCH_DECLARE(void) switch_core_session_perform_write_lock(switch_core_session_t *session, const char *file, const char *func, int line)
 {
 
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_ERROR, "%s Write lock AQUIRED\n", switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "%s Write lock AQUIRED\n", switch_channel_get_name(session->channel));
 #else
 SWITCH_DECLARE(void) switch_core_session_write_lock(switch_core_session_t *session)
 {
@@ -87,7 +86,7 @@ SWITCH_DECLARE(void) switch_core_session_write_lock(switch_core_session_t *sessi
 #ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(void) switch_core_session_perform_rwunlock(switch_core_session_t *session, const char *file, const char *func, int line)
 {
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_ERROR, "%s Read/Write lock CLEARED\n",
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "%s Read/Write lock CLEARED\n",
 					  switch_channel_get_name(session->channel));
 #else
 SWITCH_DECLARE(void) switch_core_session_rwunlock(switch_core_session_t *session)

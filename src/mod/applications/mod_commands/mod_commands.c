@@ -1171,7 +1171,7 @@ SWITCH_STANDARD_API(uuid_hold_function)
 		if (!strcasecmp(argv[0], "off")) {
 			status = switch_ivr_unhold_uuid(argv[1]);
 		} else {
-			status = switch_ivr_hold_uuid(argv[0], argv[1]);
+			status = switch_ivr_hold_uuid(argv[0], argv[1], 1);
 		}
 	}
 

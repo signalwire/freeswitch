@@ -120,7 +120,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 	if (switch_channel_test_flag(session->channel, CF_HOLD)) {
 		status = SWITCH_STATUS_BREAK;
-		goto done;
+		goto even_more_done;
 	}
 
 	if (session->endpoint_interface->io_routines->read_frame) {
@@ -459,6 +459,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_thread_rwlock_unlock(session->bug_rwlock);
 		}
 	}
+
+ even_more_done:
+
 	return status;
 }
 

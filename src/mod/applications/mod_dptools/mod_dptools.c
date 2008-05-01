@@ -1897,7 +1897,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 #define HOLD_SYNTAX "[<display message>]"
 SWITCH_STANDARD_APP(hold_function)
 {
-	switch_ivr_hold_uuid(switch_core_session_get_uuid(session), data);
+	switch_ivr_hold_uuid(switch_core_session_get_uuid(session), data, 1);
 }
 
 #define UNHOLD_SYNTAX ""

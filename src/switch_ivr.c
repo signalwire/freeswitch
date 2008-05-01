@@ -741,7 +741,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session, const char *message)
+SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session, const char *message, switch_bool_t moh)
 {
 	switch_core_session_message_t msg = { 0 };
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -756,8 +756,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session, 
 	switch_channel_set_flag(channel, CF_SUSPEND);
 
 	switch_core_session_receive_message(session, &msg);
-
-	if ((stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
+	
+	if (moh && (stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
 		if ((other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 			switch_ivr_broadcast(other_uuid, stream, SMF_ECHO_ALEG | SMF_LOOP);
 		}
@@ -767,12 +767,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_hold_uuid(const char *uuid, const char *message)
+SWITCH_DECLARE(switch_status_t) switch_ivr_hold_uuid(const char *uuid, const char *message, switch_bool_t moh)
 {
 	switch_core_session_t *session;
 
 	if ((session = switch_core_session_locate(uuid))) {
-		switch_ivr_hold(session, message);
+		switch_ivr_hold(session, message, moh);
 		switch_core_session_rwunlock(session);
 	}
 
