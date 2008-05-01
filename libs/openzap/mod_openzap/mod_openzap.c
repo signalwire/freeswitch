@@ -146,10 +146,11 @@ static switch_core_session_t *zap_channel_get_session(zap_channel_t *channel, in
 }
 
 
-static void stop_hold(const char *uuid)
+static void stop_hold(switch_core_session_t *session_a, const char *uuid)
 {
 	switch_core_session_t *session;
-	switch_channel_t *channel;
+	switch_channel_t *channel, *channel_a;
+	;
 
 	if (!uuid) {
 		return;
@@ -157,31 +158,68 @@ static void stop_hold(const char *uuid)
 
 	if ((session = switch_core_session_locate(uuid))) {
 		channel = switch_core_session_get_channel(session);
-		switch_channel_stop_broadcast(channel);
-		switch_channel_wait_for_flag(channel, CF_BROADCAST, SWITCH_FALSE, 2000);
+
+		if (switch_channel_test_flag(channel, CF_HOLD)) {
+			channel_a = switch_core_session_get_channel(session_a);
+			switch_ivr_unhold(session);
+			switch_channel_clear_flag(channel_a, CF_SUSPEND);
+			switch_channel_clear_flag(channel_a, CF_HOLD);
+		} else {
+			switch_channel_stop_broadcast(channel);
+			switch_channel_wait_for_flag(channel, CF_BROADCAST, SWITCH_FALSE, 2000);
+		}
 
 		switch_core_session_rwunlock(session);
 	}
 }
 
-static void start_hold(const char *uuid, const char *stream)
+static void start_hold(zap_channel_t *zchan, switch_core_session_t *session_a, const char *uuid, const char *stream)
 {
 	switch_core_session_t *session;
-	switch_channel_t *channel;
+	switch_channel_t *channel, *channel_a;
 
 	if (!uuid) {
 		return;
 	}
 	
+	
 	if ((session = switch_core_session_locate(uuid))) {
 		channel = switch_core_session_get_channel(session);
+		if (switch_strlen_zero(stream)) {
+			if (!strcasecmp(globals.hold_music, "indicate_hold")) {
+				stream = "indicate_hold";
+			}
+			if (!strcasecmp(SPAN_CONFIG[zchan->span->span_id].hold_music, "indicate_hold")) {
+				stream = "indicate_hold";
+			}
+		}
+
+		if (switch_strlen_zero(stream)) {
+			stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE);
+		}
+
+		if (switch_strlen_zero(stream)) {
+			stream = SPAN_CONFIG[zchan->span->span_id].hold_music;
+		}
+
+		if (switch_strlen_zero(stream)) {
+			stream = globals.hold_music;
+		}
+		
 		
 		if (switch_strlen_zero(stream) && !(stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
 			stream = globals.hold_music;
 		}
 
 		if (!switch_strlen_zero(stream)) {
-			switch_ivr_broadcast(switch_core_session_get_uuid(session), stream, SMF_ECHO_ALEG | SMF_LOOP);
+			if (!strcasecmp(stream, "indicate_hold")) {
+				channel_a = switch_core_session_get_channel(session_a);
+				switch_ivr_hold_uuid(uuid, NULL, 0);
+				switch_channel_set_flag(channel_a, CF_SUSPEND);
+				switch_channel_set_flag(channel_a, CF_HOLD);
+			} else {
+				switch_ivr_broadcast(switch_core_session_get_uuid(session), stream, SMF_ECHO_ALEG | SMF_LOOP);
+			}
 		}
 
 		switch_core_session_rwunlock(session);
@@ -195,9 +233,6 @@ static void cycle_foreground(zap_channel_t *zchan, int flash, const char *bcast)
 	switch_channel_t *channel;
 	private_t *tech_pvt;
 	
-	if (!bcast) {
-		bcast = SPAN_CONFIG[zchan->span->span_id].hold_music;
-	}
 
 	for (i = 0; i < zchan->token_count; i++) {
 		if ((session = zap_channel_get_session(zchan, i))) {
@@ -209,17 +244,17 @@ static void cycle_foreground(zap_channel_t *zchan, int flash, const char *bcast)
 			
 			if (zchan->token_count == 1 && flash) {
 				if (switch_test_flag(tech_pvt, TFLAG_HOLD)) {
-					stop_hold(buuid);
+					stop_hold(session, buuid);
 					switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
 				} else {
-					start_hold(buuid, bcast);
+					start_hold(zchan, session, buuid, bcast);
 					switch_set_flag_locked(tech_pvt, TFLAG_HOLD);
 				}
 			} else if (i) {
-				start_hold(buuid, bcast);
+				start_hold(zchan, session, buuid, bcast);
 				switch_set_flag_locked(tech_pvt, TFLAG_HOLD);
 			} else {
-				stop_hold(buuid);
+				stop_hold(session, buuid);
 				switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
 				if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
 					switch_channel_mark_answered(channel);
@@ -1147,7 +1182,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 					br_a_uuid = switch_channel_get_variable(channel_a, SWITCH_SIGNAL_BOND_VARIABLE);
 
 					tech_pvt = switch_core_session_get_private(session_a);
-					stop_hold(switch_channel_get_variable(channel_a, SWITCH_SIGNAL_BOND_VARIABLE));
+					stop_hold(session_a, switch_channel_get_variable(channel_a, SWITCH_SIGNAL_BOND_VARIABLE));
 					switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
 				}
 
@@ -1157,7 +1192,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 					br_b_uuid = switch_channel_get_variable(channel_b, SWITCH_SIGNAL_BOND_VARIABLE);
 
 					tech_pvt = switch_core_session_get_private(session_b);
-					stop_hold(switch_channel_get_variable(channel_b, SWITCH_SIGNAL_BOND_VARIABLE));
+					stop_hold(session_a, switch_channel_get_variable(channel_b, SWITCH_SIGNAL_BOND_VARIABLE));
 					switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
 				}
 
@@ -1213,7 +1248,23 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 		break;
     case ZAP_SIGEVENT_FLASH:
 		{
-			if (sigmsg->channel->token_count == 2 && (SPAN_CONFIG[sigmsg->span_id].analog_options & ANALOG_OPTION_3WAY)) {
+
+			if (zap_test_flag(sigmsg->channel, ZAP_CHANNEL_HOLD) && sigmsg->channel->token_count == 1) {
+				switch_core_session_t *session;
+				if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
+					const char *buuid;
+					switch_channel_t *channel;
+					private_t *tech_pvt;
+					
+					tech_pvt = switch_core_session_get_private(session);
+					channel = switch_core_session_get_channel(session);
+					buuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+					zap_set_state_locked(sigmsg->channel,  ZAP_CHANNEL_STATE_UP);
+					stop_hold(session, buuid);
+					switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
+					switch_core_session_rwunlock(session);
+				}
+			} else if (sigmsg->channel->token_count == 2 && (SPAN_CONFIG[sigmsg->span_id].analog_options & ANALOG_OPTION_3WAY)) {
 				if (zap_test_flag(sigmsg->channel, ZAP_CHANNEL_3WAY)) {
 					zap_clear_flag(sigmsg->channel, ZAP_CHANNEL_3WAY);
 					if ((session = zap_channel_get_session(sigmsg->channel, 1))) {
