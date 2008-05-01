@@ -109,6 +109,11 @@ static void lua_parse_and_execute(lua_State *L, char *input_code)
 {
 	int error = 0;
 
+	if (switch_strlen_zero(input_code)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No code to execute!\n");
+		return;
+	}
+
 	if (*input_code == '~') {
 		char *buff = input_code + 1;
 		error = luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 1); //lua_pcall(L, 0, 0, 0);
@@ -287,15 +292,32 @@ SWITCH_STANDARD_APP(lua_function)
 {
 	lua_State *L = lua_init();
 	char code[1024] = "";
+	char *mycmd;
+	if (switch_strlen_zero(data)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no args specified!\n");
+        return;
+    }
+
 	snprintf(code, sizeof(code), "~session = freeswitch.Session(\"%s\");", switch_core_session_get_uuid(session));
 	lua_parse_and_execute(L, code);
-	lua_parse_and_execute(L, (char *) data);
+
+	mycmd = strdup((char *)data);
+	switch_assert(mycmd);
+
+	lua_parse_and_execute(L, mycmd);
 	lua_uninit(L);
+	free(mycmd);
 }
 
 SWITCH_STANDARD_API(luarun_api_function) {
-	lua_thread(cmd);
-	stream->write_function(stream, "+OK\n");
+
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "-ERR no args specified!\n");
+	} else {
+		lua_thread(cmd);
+		stream->write_function(stream, "+OK\n");
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -303,17 +325,24 @@ SWITCH_STANDARD_API(luarun_api_function) {
 SWITCH_STANDARD_API(lua_api_function) {
 
 	lua_State *L = lua_init();
-	char *mycmd = strdup(cmd);
+	char *mycmd;
+	
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "");
+	} else {
 
-	switch_assert(mycmd);
-	mod_lua_conjure_stream(L, stream, "stream", 1);
-	if (stream->event) {
-		mod_lua_conjure_event(L, stream->event, "env", 1);
+		mycmd = strdup(cmd);
+		switch_assert(mycmd);
+		mod_lua_conjure_stream(L, stream, "stream", 1);
+
+		if (stream->event) {
+			mod_lua_conjure_event(L, stream->event, "env", 1);
+		}
+
+		lua_parse_and_execute(L, mycmd);
+		lua_uninit(L);
+		free(mycmd);
 	}
-
-	lua_parse_and_execute(L, mycmd);
-	lua_uninit(L);
-	free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -324,12 +353,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-
+	
 	SWITCH_ADD_API(api_interface, "luarun", "run a script", luarun_api_function, "<script>");
 	SWITCH_ADD_API(api_interface, "lua", "run a script as an api function", lua_api_function, "<script>");
 	SWITCH_ADD_APP(app_interface, "lua", "Launch LUA ivr", "Run a lua ivr on a channel", lua_function, "<script>", SAF_SUPPORT_NOMEDIA);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hello World!\n");
+
 	
 	globals.pool = pool;
 	do_config();
