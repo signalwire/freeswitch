@@ -2106,6 +2106,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
                     }
 					switch_snprintf(st, sizeof(st), "%d", status);
 					switch_channel_set_variable(channel, "sip_term_status", st);
+					switch_snprintf(st, sizeof(st), "sip:%d", status);
+					switch_channel_set_variable_partner(channel, SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE, st);
 					switch_snprintf(st, sizeof(st), "%d", cause);
 					switch_channel_set_variable(channel, "sip_term_cause", st);
 					switch_channel_hangup(channel, cause);
