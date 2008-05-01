@@ -333,6 +333,16 @@ sub DESTROY {
 *end_allow_threads = *freeswitchc::Session_end_allow_threads;
 *check_hangup_hook = *freeswitchc::Session_check_hangup_hook;
 *run_dtmf_callback = *freeswitchc::Session_run_dtmf_callback;
+*setInputCallback = *freeswitchc::Session_setInputCallback;
+*setHangupHook = *freeswitchc::Session_setHangupHook;
+*ready = *freeswitchc::Session_ready;
+*swig_cb_function_get = *freeswitchc::Session_cb_function_get;
+*swig_cb_function_set = *freeswitchc::Session_cb_function_set;
+*swig_cb_arg_get = *freeswitchc::Session_cb_arg_get;
+*swig_cb_arg_set = *freeswitchc::Session_cb_arg_set;
+*swig_hangup_func_str_get = *freeswitchc::Session_hangup_func_str_get;
+*swig_hangup_func_str_set = *freeswitchc::Session_hangup_func_str_set;
+*setPERL = *freeswitchc::Session_setPERL;
 sub DISOWN {
     my $self = shift;
     my $ptr = tied(%$self);
