@@ -285,7 +285,8 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 						}
 						
 						if (zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK) && 
-							(zchan->last_state == ZAP_CHANNEL_STATE_RING || zchan->last_state >= ZAP_CHANNEL_STATE_IDLE)) {
+							(zchan->last_state == ZAP_CHANNEL_STATE_RING || zchan->last_state == ZAP_CHANNEL_STATE_DIALTONE 
+							 || zchan->last_state >= ZAP_CHANNEL_STATE_IDLE)) {
 							zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_BUSY);
 						} else {
 							zchan->caller_data.hangup_cause = ZAP_CAUSE_NORMAL_CLEARING;
@@ -348,6 +349,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 			zap_channel_complete_state(zchan);
 			indicate = 0;
 			state_counter = 0;
+
 			zap_log(ZAP_LOG_DEBUG, "Executing state handler on %d:%d for %s\n", 
 					zchan->span_id, zchan->chan_id,
 					zap_channel_state2str(zchan->state));
@@ -709,7 +711,7 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 
 			zap_channel_rotate_tokens(event->channel);
 			
-			if (zap_test_flag(event->channel, ZAP_CHANNEL_HOLD)) {
+			if (zap_test_flag(event->channel, ZAP_CHANNEL_HOLD) && event->channel->token_count != 1) {
 				zap_set_state_locked(event->channel,  ZAP_CHANNEL_STATE_UP);
 			} else {
 				sig.event_id = ZAP_SIGEVENT_FLASH;
