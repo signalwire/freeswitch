@@ -87,9 +87,9 @@ class freeswitchJNI {
   public final static native int CoreSession_speak(long jarg1, CoreSession jarg1_, String jarg2);
   public final static native void CoreSession_set_tts_parms(long jarg1, CoreSession jarg1_, String jarg2, String jarg3);
   public final static native int CoreSession_collectDigits(long jarg1, CoreSession jarg1_, int jarg2);
-  public final static native int CoreSession_getDigits(long jarg1, CoreSession jarg1_, byte[] jarg2, long jarg3, long jarg4, String jarg5, byte[] jarg6, int jarg7);
+  public final static native String CoreSession_getDigits(long jarg1, CoreSession jarg1_, long jarg2, String jarg3, byte[] jarg4, int jarg5);
   public final static native int CoreSession_transfer(long jarg1, CoreSession jarg1_, String jarg2, String jarg3, String jarg4);
-  public final static native int CoreSession_playAndGetDigits(long jarg1, CoreSession jarg1_, int jarg2, int jarg3, int jarg4, int jarg5, String jarg6, String jarg7, String jarg8, byte[] jarg9, String jarg10);
+  public final static native String CoreSession_playAndGetDigits(long jarg1, CoreSession jarg1_, int jarg2, int jarg3, int jarg4, int jarg5, String jarg6, String jarg7, String jarg8, String jarg9);
   public final static native int CoreSession_streamFile__SWIG_0(long jarg1, CoreSession jarg1_, String jarg2, int jarg3);
   public final static native int CoreSession_streamFile__SWIG_1(long jarg1, CoreSession jarg1_, String jarg2);
   public final static native int CoreSession_flushEvents(long jarg1, CoreSession jarg1_);

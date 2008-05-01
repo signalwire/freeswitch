@@ -1239,7 +1239,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 	switch_channel_pre_answer(channel);
 
 	//Start pestering the user for input
-	for (; (switch_channel_get_state(channel) == CS_EXECUTE) && max_tries > 0; max_tries--) {
+	for (; switch_channel_ready(channel) && max_tries > 0; max_tries--) {
 		switch_input_args_t args = { 0 };
 		//make the buffer so fresh and so clean clean
 		memset(digit_buffer, 0, digit_buffer_length);

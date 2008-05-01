@@ -470,20 +470,19 @@ SWITCH_DECLARE(int) CoreSession::collectDigits(int timeout) {
     return SWITCH_STATUS_SUCCESS;
 } 
 
-SWITCH_DECLARE(int) CoreSession::getDigits(char *dtmf_buf, 
-						   switch_size_t buflen, 
-						   switch_size_t maxdigits, 
-						   char *terminators, 
-						   char *terminator, 
-						   int timeout)
+SWITCH_DECLARE(char *) CoreSession::getDigits(switch_size_t maxdigits, 
+										   char *terminators, 
+										   char *terminator, 
+										   int timeout)
 {
     switch_status_t status;
-	sanity_check(-1);
+	sanity_check("");
 	begin_allow_threads();
 
+	memset(dtmf_buf, 0, sizeof(dtmf_buf));
     status = switch_ivr_collect_digits_count(session, 
 											 dtmf_buf,
-											 buflen,
+											 sizeof(dtmf_buf),
 											 maxdigits, 
 											 terminators, 
 											 terminator, 
@@ -491,7 +490,7 @@ SWITCH_DECLARE(int) CoreSession::getDigits(char *dtmf_buf,
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "getDigits dtmf_buf: %s\n", dtmf_buf);
 	end_allow_threads();
-    return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+    return dtmf_buf;
 }
 
 SWITCH_DECLARE(int) CoreSession::transfer(char *extension, char *dialplan, char *context)
@@ -505,19 +504,19 @@ SWITCH_DECLARE(int) CoreSession::transfer(char *extension, char *dialplan, char 
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-SWITCH_DECLARE(int) CoreSession::playAndGetDigits(int min_digits, 
-								  int max_digits, 
-								  int max_tries, 
-								  int timeout, 
-								  char *terminators, 
-								  char *audio_files, 
-								  char *bad_input_audio_files, 
-								  char *dtmf_buf, 
-								  char *digits_regex)
+SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits, 
+												  int max_digits, 
+												  int max_tries, 
+												  int timeout, 
+												  char *terminators, 
+												  char *audio_files, 
+												  char *bad_input_audio_files, 
+												  char *digits_regex)
 {
     switch_status_t status;
-	sanity_check(-1);
+	sanity_check("");
 	begin_allow_threads();
+	memset(dtmf_buf, 0, sizeof(dtmf_buf));
     status = switch_play_and_get_digits( session, 
 										 (uint32_t) min_digits,
 										 (uint32_t) max_digits,
@@ -527,13 +526,13 @@ SWITCH_DECLARE(int) CoreSession::playAndGetDigits(int min_digits,
 										 audio_files, 
 										 bad_input_audio_files, 
 										 dtmf_buf, 
-										 128, 
+										 sizeof(dtmf_buf), 
 										 digits_regex);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "playAndGetDigits dtmf_buf: %s\n", dtmf_buf);
 
 	end_allow_threads();
-    return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+	return dtmf_buf;
 }
 
 SWITCH_DECLARE(int) CoreSession::streamFile(char *file, int starting_sample_count) {

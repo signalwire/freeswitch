@@ -140,6 +140,7 @@ class CoreSession {
 	void *on_hangup; // language specific callback function, cast as void * 
 	switch_file_handle_t local_fh;
 	switch_file_handle_t *fhp;
+	char dtmf_buf[512];
 	SWITCH_DECLARE(switch_status_t) process_callback_result(char *ret);
  public:
 	SWITCH_DECLARE_CONSTRUCTOR CoreSession();
@@ -219,13 +220,12 @@ class CoreSession {
 	 * (see mod_python.i).  This does NOT call any callbacks upon
 	 * receiving dtmf digits.  For that, use collectDigits.
 	 */
-	SWITCH_DECLARE(int) getDigits(char *dtmf_buf, 
-				  switch_size_t buflen, 
-				  switch_size_t maxdigits, 
-				  char *terminators, 
-				  char *terminator, 
-				  int timeout);
-
+	SWITCH_DECLARE(char *) getDigits(
+								  switch_size_t maxdigits, 
+								  char *terminators, 
+								  char *terminator, 
+								  int timeout);
+	
 	SWITCH_DECLARE(int) transfer(char *extensions, char *dialplan, char *context);
 
 	/** \brief Play a file into channel and collect dtmfs
@@ -236,14 +236,13 @@ class CoreSession {
      *       setDTMFCallback(..) as it uses its own internal callback
      *       handler.
      */
-	SWITCH_DECLARE(int) playAndGetDigits(int min_digits, 
+	SWITCH_DECLARE(char *) playAndGetDigits(int min_digits, 
 						 int max_digits, 
 						 int max_tries, 
 						 int timeout, 
 						 char *terminators,
 						 char *audio_files, 
 						 char *bad_input_audio_files, 
-						 char *dtmf_buf, 
 						 char *digits_regex);
 
 	/** \brief Play a file that resides on disk into the channel

@@ -5223,96 +5223,71 @@ XS(_wrap_CoreSession_collectDigits) {
 XS(_wrap_CoreSession_getDigits) {
   {
     CoreSession *arg1 = (CoreSession *) 0 ;
-    char *arg2 = (char *) 0 ;
-    switch_size_t arg3 ;
-    switch_size_t arg4 ;
-    char *arg5 = (char *) 0 ;
-    char *arg6 = (char *) 0 ;
-    int arg7 ;
-    int result;
+    switch_size_t arg2 ;
+    char *arg3 = (char *) 0 ;
+    char *arg4 = (char *) 0 ;
+    int arg5 ;
+    char *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
-    int res2 ;
-    char *buf2 = 0 ;
-    int alloc2 = 0 ;
-    void *argp3 ;
-    int res3 = 0 ;
-    void *argp4 ;
-    int res4 = 0 ;
-    int res5 ;
-    char *buf5 = 0 ;
-    int alloc5 = 0 ;
-    int res6 ;
-    char *buf6 = 0 ;
-    int alloc6 = 0 ;
-    int val7 ;
-    int ecode7 = 0 ;
+    void *argp2 ;
+    int res2 = 0 ;
+    int res3 ;
+    char *buf3 = 0 ;
+    int alloc3 = 0 ;
+    int res4 ;
+    char *buf4 = 0 ;
+    int alloc4 = 0 ;
+    int val5 ;
+    int ecode5 = 0 ;
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 7) || (items > 7)) {
-      SWIG_croak("Usage: CoreSession_getDigits(self,dtmf_buf,buflen,maxdigits,terminators,terminator,timeout);");
+    if ((items < 5) || (items > 5)) {
+      SWIG_croak("Usage: CoreSession_getDigits(self,maxdigits,terminators,terminator,timeout);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_getDigits" "', argument " "1"" of type '" "CoreSession *""'"); 
     }
     arg1 = reinterpret_cast< CoreSession * >(argp1);
-    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
-    if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_getDigits" "', argument " "2"" of type '" "char *""'");
-    }
-    arg2 = reinterpret_cast< char * >(buf2);
     {
-      res3 = SWIG_ConvertPtr(ST(2), &argp3, SWIGTYPE_p_switch_size_t,  0 );
-      if (!SWIG_IsOK(res3)) {
-        SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "CoreSession_getDigits" "', argument " "3"" of type '" "switch_size_t""'"); 
+      res2 = SWIG_ConvertPtr(ST(1), &argp2, SWIGTYPE_p_switch_size_t,  0 );
+      if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_getDigits" "', argument " "2"" of type '" "switch_size_t""'"); 
       }  
-      if (!argp3) {
-        SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "CoreSession_getDigits" "', argument " "3"" of type '" "switch_size_t""'");
+      if (!argp2) {
+        SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "CoreSession_getDigits" "', argument " "2"" of type '" "switch_size_t""'");
       } else {
-        arg3 = *(reinterpret_cast< switch_size_t * >(argp3));
+        arg2 = *(reinterpret_cast< switch_size_t * >(argp2));
       }
     }
-    {
-      res4 = SWIG_ConvertPtr(ST(3), &argp4, SWIGTYPE_p_switch_size_t,  0 );
-      if (!SWIG_IsOK(res4)) {
-        SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "CoreSession_getDigits" "', argument " "4"" of type '" "switch_size_t""'"); 
-      }  
-      if (!argp4) {
-        SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "CoreSession_getDigits" "', argument " "4"" of type '" "switch_size_t""'");
-      } else {
-        arg4 = *(reinterpret_cast< switch_size_t * >(argp4));
-      }
+    res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "CoreSession_getDigits" "', argument " "3"" of type '" "char *""'");
     }
-    res5 = SWIG_AsCharPtrAndSize(ST(4), &buf5, NULL, &alloc5);
-    if (!SWIG_IsOK(res5)) {
-      SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "CoreSession_getDigits" "', argument " "5"" of type '" "char *""'");
+    arg3 = reinterpret_cast< char * >(buf3);
+    res4 = SWIG_AsCharPtrAndSize(ST(3), &buf4, NULL, &alloc4);
+    if (!SWIG_IsOK(res4)) {
+      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "CoreSession_getDigits" "', argument " "4"" of type '" "char *""'");
     }
-    arg5 = reinterpret_cast< char * >(buf5);
-    res6 = SWIG_AsCharPtrAndSize(ST(5), &buf6, NULL, &alloc6);
-    if (!SWIG_IsOK(res6)) {
-      SWIG_exception_fail(SWIG_ArgError(res6), "in method '" "CoreSession_getDigits" "', argument " "6"" of type '" "char *""'");
-    }
-    arg6 = reinterpret_cast< char * >(buf6);
-    ecode7 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(6), &val7);
-    if (!SWIG_IsOK(ecode7)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode7), "in method '" "CoreSession_getDigits" "', argument " "7"" of type '" "int""'");
+    arg4 = reinterpret_cast< char * >(buf4);
+    ecode5 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(4), &val5);
+    if (!SWIG_IsOK(ecode5)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "CoreSession_getDigits" "', argument " "5"" of type '" "int""'");
     } 
-    arg7 = static_cast< int >(val7);
-    result = (int)(arg1)->getDigits(arg2,arg3,arg4,arg5,arg6,arg7);
-    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
+    arg5 = static_cast< int >(val5);
+    result = (char *)(arg1)->getDigits(arg2,arg3,arg4,arg5);
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
     
-    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-    if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
-    if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
     
     XSRETURN(argvi);
   fail:
     
-    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-    if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
-    if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
     
     SWIG_croak_null();
   }
@@ -5391,8 +5366,7 @@ XS(_wrap_CoreSession_playAndGetDigits) {
     char *arg7 = (char *) 0 ;
     char *arg8 = (char *) 0 ;
     char *arg9 = (char *) 0 ;
-    char *arg10 = (char *) 0 ;
-    int result;
+    char *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
     int val2 ;
@@ -5415,14 +5389,11 @@ XS(_wrap_CoreSession_playAndGetDigits) {
     int res9 ;
     char *buf9 = 0 ;
     int alloc9 = 0 ;
-    int res10 ;
-    char *buf10 = 0 ;
-    int alloc10 = 0 ;
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 10) || (items > 10)) {
-      SWIG_croak("Usage: CoreSession_playAndGetDigits(self,min_digits,max_digits,max_tries,timeout,terminators,audio_files,bad_input_audio_files,dtmf_buf,digits_regex);");
+    if ((items < 9) || (items > 9)) {
+      SWIG_croak("Usage: CoreSession_playAndGetDigits(self,min_digits,max_digits,max_tries,timeout,terminators,audio_files,bad_input_audio_files,digits_regex);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -5469,13 +5440,8 @@ XS(_wrap_CoreSession_playAndGetDigits) {
       SWIG_exception_fail(SWIG_ArgError(res9), "in method '" "CoreSession_playAndGetDigits" "', argument " "9"" of type '" "char *""'");
     }
     arg9 = reinterpret_cast< char * >(buf9);
-    res10 = SWIG_AsCharPtrAndSize(ST(9), &buf10, NULL, &alloc10);
-    if (!SWIG_IsOK(res10)) {
-      SWIG_exception_fail(SWIG_ArgError(res10), "in method '" "CoreSession_playAndGetDigits" "', argument " "10"" of type '" "char *""'");
-    }
-    arg10 = reinterpret_cast< char * >(buf10);
-    result = (int)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10);
-    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
+    result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9);
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
     
     
     
@@ -5485,7 +5451,6 @@ XS(_wrap_CoreSession_playAndGetDigits) {
     if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
     if (alloc8 == SWIG_NEWOBJ) delete[] buf8;
     if (alloc9 == SWIG_NEWOBJ) delete[] buf9;
-    if (alloc10 == SWIG_NEWOBJ) delete[] buf10;
     XSRETURN(argvi);
   fail:
     
@@ -5497,7 +5462,6 @@ XS(_wrap_CoreSession_playAndGetDigits) {
     if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
     if (alloc8 == SWIG_NEWOBJ) delete[] buf8;
     if (alloc9 == SWIG_NEWOBJ) delete[] buf9;
-    if (alloc10 == SWIG_NEWOBJ) delete[] buf10;
     SWIG_croak_null();
   }
 }

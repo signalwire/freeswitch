@@ -161,16 +161,16 @@ public class CoreSession {
     return freeswitchJNI.CoreSession_collectDigits(swigCPtr, this, timeout);
   }
 
-  public int getDigits(byte[] dtmf_buf, SWIGTYPE_p_switch_size_t buflen, SWIGTYPE_p_switch_size_t maxdigits, String terminators, byte[] terminator, int timeout) {
-    return freeswitchJNI.CoreSession_getDigits(swigCPtr, this, dtmf_buf, SWIGTYPE_p_switch_size_t.getCPtr(buflen), SWIGTYPE_p_switch_size_t.getCPtr(maxdigits), terminators, terminator, timeout);
+  public String getDigits(SWIGTYPE_p_switch_size_t maxdigits, String terminators, byte[] terminator, int timeout) {
+    return freeswitchJNI.CoreSession_getDigits(swigCPtr, this, SWIGTYPE_p_switch_size_t.getCPtr(maxdigits), terminators, terminator, timeout);
   }
 
   public int transfer(String extensions, String dialplan, String context) {
     return freeswitchJNI.CoreSession_transfer(swigCPtr, this, extensions, dialplan, context);
   }
 
-  public int playAndGetDigits(int min_digits, int max_digits, int max_tries, int timeout, String terminators, String audio_files, String bad_input_audio_files, byte[] dtmf_buf, String digits_regex) {
-    return freeswitchJNI.CoreSession_playAndGetDigits(swigCPtr, this, min_digits, max_digits, max_tries, timeout, terminators, audio_files, bad_input_audio_files, dtmf_buf, digits_regex);
+  public String playAndGetDigits(int min_digits, int max_digits, int max_tries, int timeout, String terminators, String audio_files, String bad_input_audio_files, String digits_regex) {
+    return freeswitchJNI.CoreSession_playAndGetDigits(swigCPtr, this, min_digits, max_digits, max_tries, timeout, terminators, audio_files, bad_input_audio_files, digits_regex);
   }
 
   public int streamFile(String file, int starting_sample_count) {

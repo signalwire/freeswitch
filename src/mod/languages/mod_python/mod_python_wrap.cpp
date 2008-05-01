@@ -5631,112 +5631,77 @@ fail:
 SWIGINTERN PyObject *_wrap_CoreSession_getDigits(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  switch_size_t arg3 ;
-  switch_size_t arg4 ;
-  char *arg5 = (char *) 0 ;
-  char *arg6 = (char *) 0 ;
-  int arg7 ;
-  int result;
+  switch_size_t arg2 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  int arg5 ;
+  char *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  int res2 ;
-  char temp2[128+1] ;
-  char *t2 = 0 ;
-  size_t n2 = 0 ;
-  int alloc2 = 0 ;
-  void *argp3 ;
-  int res3 = 0 ;
-  void *argp4 ;
-  int res4 = 0 ;
-  int res5 ;
-  char *buf5 = 0 ;
-  int alloc5 = 0 ;
-  int res6 ;
-  char temp6[8+1] ;
-  char *t6 = 0 ;
-  size_t n6 = 0 ;
-  int alloc6 = 0 ;
-  int val7 ;
-  int ecode7 = 0 ;
+  void *argp2 ;
+  int res2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  int res4 ;
+  char temp4[8+1] ;
+  char *t4 = 0 ;
+  size_t n4 = 0 ;
+  int alloc4 = 0 ;
+  int val5 ;
+  int ecode5 = 0 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
   PyObject * obj3 = 0 ;
   PyObject * obj4 = 0 ;
-  PyObject * obj5 = 0 ;
-  PyObject * obj6 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"OOOOOOO:CoreSession_getDigits",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OOOOO:CoreSession_getDigits",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_getDigits" "', argument " "1"" of type '" "CoreSession *""'"); 
   }
   arg1 = reinterpret_cast< CoreSession * >(argp1);
-  res2 = SWIG_AsCharPtrAndSize(obj1, &t2, &n2, &alloc2);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_getDigits" "', argument " "2"" of type '" "char *dtmf_buf""'");
-  }
-  if ( n2 > (size_t) 128 ) n2 = (size_t) 128;
-  memcpy(temp2, t2, sizeof(char)*n2);
-  if (alloc2 == SWIG_NEWOBJ) delete[] t2;
-  temp2[n2 - 1] = 0;                                                             
-  arg2 = (char *) temp2;
   {
-    res3 = SWIG_ConvertPtr(obj2, &argp3, SWIGTYPE_p_switch_size_t,  0  | 0);
-    if (!SWIG_IsOK(res3)) {
-      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "CoreSession_getDigits" "', argument " "3"" of type '" "switch_size_t""'"); 
+    res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_switch_size_t,  0  | 0);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_getDigits" "', argument " "2"" of type '" "switch_size_t""'"); 
     }  
-    if (!argp3) {
-      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "CoreSession_getDigits" "', argument " "3"" of type '" "switch_size_t""'");
+    if (!argp2) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "CoreSession_getDigits" "', argument " "2"" of type '" "switch_size_t""'");
     } else {
-      switch_size_t * temp = reinterpret_cast< switch_size_t * >(argp3);
-      arg3 = *temp;
-      if (SWIG_IsNewObj(res3)) delete temp;
+      switch_size_t * temp = reinterpret_cast< switch_size_t * >(argp2);
+      arg2 = *temp;
+      if (SWIG_IsNewObj(res2)) delete temp;
     }
   }
-  {
-    res4 = SWIG_ConvertPtr(obj3, &argp4, SWIGTYPE_p_switch_size_t,  0  | 0);
-    if (!SWIG_IsOK(res4)) {
-      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "CoreSession_getDigits" "', argument " "4"" of type '" "switch_size_t""'"); 
-    }  
-    if (!argp4) {
-      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "CoreSession_getDigits" "', argument " "4"" of type '" "switch_size_t""'");
-    } else {
-      switch_size_t * temp = reinterpret_cast< switch_size_t * >(argp4);
-      arg4 = *temp;
-      if (SWIG_IsNewObj(res4)) delete temp;
-    }
+  res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "CoreSession_getDigits" "', argument " "3"" of type '" "char *""'");
   }
-  res5 = SWIG_AsCharPtrAndSize(obj4, &buf5, NULL, &alloc5);
-  if (!SWIG_IsOK(res5)) {
-    SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "CoreSession_getDigits" "', argument " "5"" of type '" "char *""'");
+  arg3 = reinterpret_cast< char * >(buf3);
+  res4 = SWIG_AsCharPtrAndSize(obj3, &t4, &n4, &alloc4);
+  if (!SWIG_IsOK(res4)) {
+    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "CoreSession_getDigits" "', argument " "4"" of type '" "char *terminator""'");
   }
-  arg5 = reinterpret_cast< char * >(buf5);
-  res6 = SWIG_AsCharPtrAndSize(obj5, &t6, &n6, &alloc6);
-  if (!SWIG_IsOK(res6)) {
-    SWIG_exception_fail(SWIG_ArgError(res6), "in method '" "CoreSession_getDigits" "', argument " "6"" of type '" "char *terminator""'");
-  }
-  if ( n6 > (size_t) 8 ) n6 = (size_t) 8;
-  memcpy(temp6, t6, sizeof(char)*n6);
-  if (alloc6 == SWIG_NEWOBJ) delete[] t6;
-  temp6[n6 - 1] = 0;                                                             
-  arg6 = (char *) temp6;
-  ecode7 = SWIG_AsVal_int(obj6, &val7);
-  if (!SWIG_IsOK(ecode7)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode7), "in method '" "CoreSession_getDigits" "', argument " "7"" of type '" "int""'");
+  if ( n4 > (size_t) 8 ) n4 = (size_t) 8;
+  memcpy(temp4, t4, sizeof(char)*n4);
+  if (alloc4 == SWIG_NEWOBJ) delete[] t4;
+  temp4[n4 - 1] = 0;                                                             
+  arg4 = (char *) temp4;
+  ecode5 = SWIG_AsVal_int(obj4, &val5);
+  if (!SWIG_IsOK(ecode5)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "CoreSession_getDigits" "', argument " "5"" of type '" "int""'");
   } 
-  arg7 = static_cast< int >(val7);
-  result = (int)(arg1)->getDigits(arg2,arg3,arg4,arg5,arg6,arg7);
-  resultobj = SWIG_From_int(static_cast< int >(result));
-  arg2[128] = 0;
-  resultobj = SWIG_Python_AppendOutput(resultobj, SWIG_FromCharPtr(arg2));
-  arg6[8] = 0;
-  resultobj = SWIG_Python_AppendOutput(resultobj, SWIG_FromCharPtr(arg6));
-  if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
+  arg5 = static_cast< int >(val5);
+  result = (char *)(arg1)->getDigits(arg2,arg3,arg4,arg5);
+  resultobj = SWIG_FromCharPtr((const char *)result);
+  arg4[8] = 0;
+  resultobj = SWIG_Python_AppendOutput(resultobj, SWIG_FromCharPtr(arg4));
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   return resultobj;
 fail:
-  if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   return NULL;
 }
 
@@ -5810,8 +5775,7 @@ SWIGINTERN PyObject *_wrap_CoreSession_playAndGetDigits(PyObject *SWIGUNUSEDPARM
   char *arg7 = (char *) 0 ;
   char *arg8 = (char *) 0 ;
   char *arg9 = (char *) 0 ;
-  char *arg10 = (char *) 0 ;
-  int result;
+  char *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int val2 ;
@@ -5832,13 +5796,8 @@ SWIGINTERN PyObject *_wrap_CoreSession_playAndGetDigits(PyObject *SWIGUNUSEDPARM
   char *buf8 = 0 ;
   int alloc8 = 0 ;
   int res9 ;
-  char temp9[128+1] ;
-  char *t9 = 0 ;
-  size_t n9 = 0 ;
+  char *buf9 = 0 ;
   int alloc9 = 0 ;
-  int res10 ;
-  char *buf10 = 0 ;
-  int alloc10 = 0 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -5848,9 +5807,8 @@ SWIGINTERN PyObject *_wrap_CoreSession_playAndGetDigits(PyObject *SWIGUNUSEDPARM
   PyObject * obj6 = 0 ;
   PyObject * obj7 = 0 ;
   PyObject * obj8 = 0 ;
-  PyObject * obj9 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOO:CoreSession_playAndGetDigits",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOO:CoreSession_playAndGetDigits",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_playAndGetDigits" "', argument " "1"" of type '" "CoreSession *""'"); 
@@ -5891,34 +5849,23 @@ SWIGINTERN PyObject *_wrap_CoreSession_playAndGetDigits(PyObject *SWIGUNUSEDPARM
     SWIG_exception_fail(SWIG_ArgError(res8), "in method '" "CoreSession_playAndGetDigits" "', argument " "8"" of type '" "char *""'");
   }
   arg8 = reinterpret_cast< char * >(buf8);
-  res9 = SWIG_AsCharPtrAndSize(obj8, &t9, &n9, &alloc9);
+  res9 = SWIG_AsCharPtrAndSize(obj8, &buf9, NULL, &alloc9);
   if (!SWIG_IsOK(res9)) {
-    SWIG_exception_fail(SWIG_ArgError(res9), "in method '" "CoreSession_playAndGetDigits" "', argument " "9"" of type '" "char *dtmf_buf""'");
+    SWIG_exception_fail(SWIG_ArgError(res9), "in method '" "CoreSession_playAndGetDigits" "', argument " "9"" of type '" "char *""'");
   }
-  if ( n9 > (size_t) 128 ) n9 = (size_t) 128;
-  memcpy(temp9, t9, sizeof(char)*n9);
-  if (alloc9 == SWIG_NEWOBJ) delete[] t9;
-  temp9[n9 - 1] = 0;                                                             
-  arg9 = (char *) temp9;
-  res10 = SWIG_AsCharPtrAndSize(obj9, &buf10, NULL, &alloc10);
-  if (!SWIG_IsOK(res10)) {
-    SWIG_exception_fail(SWIG_ArgError(res10), "in method '" "CoreSession_playAndGetDigits" "', argument " "10"" of type '" "char *""'");
-  }
-  arg10 = reinterpret_cast< char * >(buf10);
-  result = (int)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10);
-  resultobj = SWIG_From_int(static_cast< int >(result));
-  arg9[128] = 0;
-  resultobj = SWIG_Python_AppendOutput(resultobj, SWIG_FromCharPtr(arg9));
+  arg9 = reinterpret_cast< char * >(buf9);
+  result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9);
+  resultobj = SWIG_FromCharPtr((const char *)result);
   if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
   if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
   if (alloc8 == SWIG_NEWOBJ) delete[] buf8;
-  if (alloc10 == SWIG_NEWOBJ) delete[] buf10;
+  if (alloc9 == SWIG_NEWOBJ) delete[] buf9;
   return resultobj;
 fail:
   if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
   if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
   if (alloc8 == SWIG_NEWOBJ) delete[] buf8;
-  if (alloc10 == SWIG_NEWOBJ) delete[] buf10;
+  if (alloc9 == SWIG_NEWOBJ) delete[] buf9;
   return NULL;
 }
 
