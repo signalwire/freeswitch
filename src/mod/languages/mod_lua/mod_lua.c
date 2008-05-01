@@ -53,20 +53,6 @@ static int panic (lua_State *L)
 	return 0;
 }
 
-
-static lua_State *lua_init(void) 
-{
-	lua_State *L = lua_open();
-	if (L) {
-		lua_gc(L, LUA_GCSTOP, 0);
-		luaL_openlibs(L);
-		luaopen_freeswitch(L);
-		lua_gc(L, LUA_GCRESTART, 0);
-		lua_atpanic(L, panic);
- 	}
-	return L;
-}
-
 static void lua_uninit(lua_State *L) 
 {
 	lua_gc(L, LUA_GCCOLLECT, 0);
@@ -104,6 +90,24 @@ static int docall (lua_State *L, int narg, int clear) {
 	if (status != 0) lua_gc(L, LUA_GCCOLLECT, 0);
 	return status;
 }
+
+
+
+static lua_State *lua_init(void) 
+{
+	lua_State *L = lua_open();
+	if (L) {
+		const char *buff = "os.exit = function() freeswitch.consoleLog(\"err\", \"Surely you jest! exiting is a bad plan....\\n\") end";
+		lua_gc(L, LUA_GCSTOP, 0);
+		luaL_openlibs(L);
+		luaopen_freeswitch(L);
+		lua_gc(L, LUA_GCRESTART, 0);
+		lua_atpanic(L, panic);
+		luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 1);
+ 	}
+	return L;
+}
+
 
 static void lua_parse_and_execute(lua_State *L, char *input_code)
 {
