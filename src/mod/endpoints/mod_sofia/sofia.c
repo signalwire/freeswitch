@@ -1517,7 +1517,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 {
 	sofia_gateway_t *gateway = NULL;
 
-	if (sofia_private->gateway_name) {
+	if (sofia_private && !switch_strlen_zero(sofia_private->gateway_name)) {
 		gateway = sofia_reg_find_gateway(sofia_private->gateway_name);
 	}
 
