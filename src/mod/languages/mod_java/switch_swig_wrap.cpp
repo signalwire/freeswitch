@@ -1776,6 +1776,41 @@ SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1tran
 }
 
 
+SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1read(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2, jint jarg3, jstring jarg4, jint jarg5, jstring jarg6) {
+  jstring jresult = 0 ;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  int arg2 ;
+  int arg3 ;
+  char *arg4 = (char *) 0 ;
+  int arg5 ;
+  char *arg6 = (char *) 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(CoreSession **)&jarg1; 
+  arg2 = (int)jarg2; 
+  arg3 = (int)jarg3; 
+  arg4 = 0;
+  if (jarg4) {
+    arg4 = (char *)jenv->GetStringUTFChars(jarg4, 0);
+    if (!arg4) return 0;
+  }
+  arg5 = (int)jarg5; 
+  arg6 = 0;
+  if (jarg6) {
+    arg6 = (char *)jenv->GetStringUTFChars(jarg6, 0);
+    if (!arg6) return 0;
+  }
+  result = (char *)(arg1)->read(arg2,arg3,(char const *)arg4,arg5,(char const *)arg6);
+  if(result) jresult = jenv->NewStringUTF((const char *)result);
+  if (arg4) jenv->ReleaseStringUTFChars(jarg4, (const char *)arg4);
+  if (arg6) jenv->ReleaseStringUTFChars(jarg6, (const char *)arg6);
+  return jresult;
+}
+
+
 SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1playAndGetDigits(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2, jint jarg3, jint jarg4, jint jarg5, jstring jarg6, jstring jarg7, jstring jarg8, jstring jarg9) {
   jstring jresult = 0 ;
   CoreSession *arg1 = (CoreSession *) 0 ;

@@ -169,6 +169,10 @@ public class CoreSession {
     return freeswitchJNI.CoreSession_transfer(swigCPtr, this, extensions, dialplan, context);
   }
 
+  public String read(int min_digits, int max_digits, String prompt_audio_file, int timeout, String valid_terminators) {
+    return freeswitchJNI.CoreSession_read(swigCPtr, this, min_digits, max_digits, prompt_audio_file, timeout, valid_terminators);
+  }
+
   public String playAndGetDigits(int min_digits, int max_digits, int max_tries, int timeout, String terminators, String audio_files, String bad_input_audio_files, String digits_regex) {
     return freeswitchJNI.CoreSession_playAndGetDigits(swigCPtr, this, min_digits, max_digits, max_tries, timeout, terminators, audio_files, bad_input_audio_files, digits_regex);
   }

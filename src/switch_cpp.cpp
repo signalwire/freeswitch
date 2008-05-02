@@ -561,6 +561,29 @@ SWITCH_DECLARE(int) CoreSession::transfer(char *extension, char *dialplan, char 
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
+
+SWITCH_DECLARE(char *) CoreSession::read(int min_digits,
+										 int max_digits,
+										 const char *prompt_audio_file,
+										 int timeout,
+										 const char *valid_terminators)
+{
+	if (min_digits < 1) {
+		min_digits = 1;
+	}
+
+	if (max_digits < 1) {
+		max_digits = 1;
+	}
+
+	if (timeout < 1) {
+		timeout = 1;
+	}
+
+	switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, NULL, dtmf_buf, sizeof(dtmf_buf), timeout, valid_terminators);
+	return dtmf_buf;
+}
+
 SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits, 
 												  int max_digits, 
 												  int max_tries, 

@@ -316,6 +316,7 @@ sub DESTROY {
 *collectDigits = *freeswitchc::CoreSession_collectDigits;
 *getDigits = *freeswitchc::CoreSession_getDigits;
 *transfer = *freeswitchc::CoreSession_transfer;
+*read = *freeswitchc::CoreSession_read;
 *playAndGetDigits = *freeswitchc::CoreSession_playAndGetDigits;
 *streamFile = *freeswitchc::CoreSession_streamFile;
 *flushEvents = *freeswitchc::CoreSession_flushEvents;

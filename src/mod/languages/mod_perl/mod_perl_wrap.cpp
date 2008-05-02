@@ -5632,6 +5632,86 @@ XS(_wrap_CoreSession_transfer) {
 }
 
 
+XS(_wrap_CoreSession_read) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    int arg2 ;
+    int arg3 ;
+    char *arg4 = (char *) 0 ;
+    int arg5 ;
+    char *arg6 = (char *) 0 ;
+    char *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    int val3 ;
+    int ecode3 = 0 ;
+    int res4 ;
+    char *buf4 = 0 ;
+    int alloc4 = 0 ;
+    int val5 ;
+    int ecode5 = 0 ;
+    int res6 ;
+    char *buf6 = 0 ;
+    int alloc6 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 6) || (items > 6)) {
+      SWIG_croak("Usage: CoreSession_read(self,min_digits,max_digits,prompt_audio_file,timeout,valid_terminators);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_read" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    ecode2 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "CoreSession_read" "', argument " "2"" of type '" "int""'");
+    } 
+    arg2 = static_cast< int >(val2);
+    ecode3 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(2), &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "CoreSession_read" "', argument " "3"" of type '" "int""'");
+    } 
+    arg3 = static_cast< int >(val3);
+    res4 = SWIG_AsCharPtrAndSize(ST(3), &buf4, NULL, &alloc4);
+    if (!SWIG_IsOK(res4)) {
+      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "CoreSession_read" "', argument " "4"" of type '" "char const *""'");
+    }
+    arg4 = reinterpret_cast< char * >(buf4);
+    ecode5 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(4), &val5);
+    if (!SWIG_IsOK(ecode5)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "CoreSession_read" "', argument " "5"" of type '" "int""'");
+    } 
+    arg5 = static_cast< int >(val5);
+    res6 = SWIG_AsCharPtrAndSize(ST(5), &buf6, NULL, &alloc6);
+    if (!SWIG_IsOK(res6)) {
+      SWIG_exception_fail(SWIG_ArgError(res6), "in method '" "CoreSession_read" "', argument " "6"" of type '" "char const *""'");
+    }
+    arg6 = reinterpret_cast< char * >(buf6);
+    result = (char *)(arg1)->read(arg2,arg3,(char const *)arg4,arg5,(char const *)arg6);
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
+    
+    
+    
+    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+    
+    if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
+    XSRETURN(argvi);
+  fail:
+    
+    
+    
+    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+    
+    if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_CoreSession_playAndGetDigits) {
   {
     CoreSession *arg1 = (CoreSession *) 0 ;
@@ -7413,6 +7493,7 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::CoreSession_collectDigits", _wrap_CoreSession_collectDigits},
 {"freeswitchc::CoreSession_getDigits", _wrap_CoreSession_getDigits},
 {"freeswitchc::CoreSession_transfer", _wrap_CoreSession_transfer},
+{"freeswitchc::CoreSession_read", _wrap_CoreSession_read},
 {"freeswitchc::CoreSession_playAndGetDigits", _wrap_CoreSession_playAndGetDigits},
 {"freeswitchc::CoreSession_streamFile", _wrap_CoreSession_streamFile},
 {"freeswitchc::CoreSession_flushEvents", _wrap_CoreSession_flushEvents},

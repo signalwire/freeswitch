@@ -254,6 +254,13 @@ class CoreSession {
 	
 	SWITCH_DECLARE(int) transfer(char *extensions, char *dialplan, char *context);
 
+
+	SWITCH_DECLARE(char *) read(int min_digits,
+								int max_digits,
+								const char *prompt_audio_file,
+								int timeout,
+								const char *valid_terminators);
+	
 	/** \brief Play a file into channel and collect dtmfs
 	 * 
      * See API docs in switch_ivr.h: switch_play_and_get_digits(..)

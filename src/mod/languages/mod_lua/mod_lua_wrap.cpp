@@ -4331,6 +4331,46 @@ fail:
 }
 
 
+static int _wrap_CoreSession_read(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  int arg2 ;
+  int arg3 ;
+  char *arg4 = (char *) 0 ;
+  int arg5 ;
+  char *arg6 = (char *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("read",6,6)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("read",1,"CoreSession *");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("read",2,"int");
+  if(!lua_isnumber(L,3)) SWIG_fail_arg("read",3,"int");
+  if(!lua_isstring(L,4)) SWIG_fail_arg("read",4,"char const *");
+  if(!lua_isnumber(L,5)) SWIG_fail_arg("read",5,"int");
+  if(!lua_isstring(L,6)) SWIG_fail_arg("read",6,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_read",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg2 = (int)lua_tonumber(L, 2);
+  arg3 = (int)lua_tonumber(L, 3);
+  arg4 = (char *)lua_tostring(L, 4);
+  arg5 = (int)lua_tonumber(L, 5);
+  arg6 = (char *)lua_tostring(L, 6);
+  result = (char *)(arg1)->read(arg2,arg3,(char const *)arg4,arg5,(char const *)arg6);
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_CoreSession_playAndGetDigits(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -4874,6 +4914,7 @@ static swig_lua_method swig_CoreSession_methods[] = {
     {"collectDigits", _wrap_CoreSession_collectDigits}, 
     {"getDigits", _wrap_CoreSession_getDigits}, 
     {"transfer", _wrap_CoreSession_transfer}, 
+    {"read", _wrap_CoreSession_read}, 
     {"playAndGetDigits", _wrap_CoreSession_playAndGetDigits}, 
     {"streamFile", _wrap_CoreSession_streamFile}, 
     {"flushEvents", _wrap_CoreSession_flushEvents}, 
