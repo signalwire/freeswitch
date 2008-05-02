@@ -632,6 +632,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, con
 		if (ret == -1) {
 			return SWITCH_STATUS_GENERR;
 		} else {
+			switch_safe_free(event->body);
 			event->body = data;
 			return SWITCH_STATUS_SUCCESS;
 		}

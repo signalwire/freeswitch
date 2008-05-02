@@ -154,8 +154,11 @@ SWITCH_DECLARE(bool) Event::fire(void)
 	}
 
 	if (event) {
-		switch_event_fire(&event);
-		return true;
+		switch_event_t *new_event;
+		if (switch_event_dup(&new_event, event) == SWITCH_STATUS_SUCCESS) {
+			switch_event_fire(&new_event);
+			return true;
+		}
 	}
 	return false;
 }
@@ -416,10 +419,11 @@ SWITCH_DECLARE(void) CoreSession::setDTMFCallback(void *cbfunc, char *funcargs) 
 
 SWITCH_DECLARE(void) CoreSession::sendEvent(Event *sendME)
 {
-	if (sendME->mine) {
-		switch_core_session_receive_event(session, &sendME->event);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Not My event!\n");
+	if (sendME->event) {
+		switch_event_t *new_event;
+		if (switch_event_dup(&new_event, sendME->event) == SWITCH_STATUS_SUCCESS) {
+			switch_core_session_receive_event(session, &new_event);
+		}
 	}
 }
 

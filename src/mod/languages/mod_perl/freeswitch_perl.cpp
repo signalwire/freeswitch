@@ -4,22 +4,21 @@
 
 static STRLEN n_a;
 
+#define init_me() cb_function = hangup_func_str = NULL; hh = mark = 0; my_perl = NULL; cb_arg = NULL
+
 Session::Session() : CoreSession()
 {
-	cb_function = cb_arg = hangup_func_str = NULL;
-	hh = mark = 0;
+	init_me();
 }
 
 Session::Session(char *uuid) : CoreSession(uuid)
 {
-	cb_function = cb_arg = hangup_func_str = NULL;
-	hh = mark = 0;
+	init_me();
 }
 
 Session::Session(switch_core_session_t *new_session) : CoreSession(new_session)
 {
-	cb_function = cb_arg = hangup_func_str = NULL;
-	hh = mark = 0;
+	init_me();
 }
 static switch_status_t perl_hanguphook(switch_core_session_t *session_hungup);
 Session::~Session()
@@ -143,8 +142,6 @@ void Session::setInputCallback(char *cbfunc, char *funcargs) {
 
 switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t itype) 
 {
-	const char *ret;
-
 	if (!getPERL()) {
 		return SWITCH_STATUS_FALSE;;
 	}
@@ -173,15 +170,11 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 			sv_setpv(this_sv, str);
 			hv_store(hash, "duration", 8, this_sv, 0);			
 
-			if (cb_arg) {
-				//this_sv = get_sv(cb_arg, TRUE); DOH!
-			}
-			
-			code = switch_mprintf("%s('dtmf', \\%__dtmf, %s);", cb_function, switch_str_nil(cb_arg));
-			Perl_eval_pv(my_perl, code, TRUE);
+			code = switch_mprintf("$__RV = %s('dtmf', \\%%__dtmf, %s);", cb_function, switch_str_nil(cb_arg));
+			Perl_eval_pv(my_perl, code, FALSE);
 			free(code);
 
-			return process_callback_result(SvPV(get_sv(cb_function, FALSE), n_a));
+			return process_callback_result(SvPV(get_sv("__RV", TRUE), n_a));
 		}
 		break;
     case SWITCH_INPUT_TYPE_EVENT:
@@ -192,12 +185,11 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 
 			mod_perl_conjure_event(my_perl, event, "__Input_Event__");
 			
-			code = switch_mprintf("%s('event', $__Input_Event__, %s);", cb_function, switch_str_nil(cb_arg));
+			code = switch_mprintf("$__RV = %s('event', $__Input_Event__, %s);", cb_function, switch_str_nil(cb_arg));
 			Perl_eval_pv(my_perl, code, TRUE);
 			free(code);
 			
-			
-            return process_callback_result((char *)ret);			
+			return process_callback_result(SvPV(get_sv("__RV", TRUE), n_a));
 		}
 		break;
 	}

@@ -175,11 +175,6 @@ static void *SWITCH_THREAD_FUNC lua_thread_run(switch_thread_t *thread, void *ob
 	char *input_code = (char *) obj;
 	lua_State *L = lua_init();	 /* opens Lua */
 
-	//switch_event_t *event;
-	//switch_event_create(&event, SWITCH_EVENT_MESSAGE);
-	//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "testing", "1234");
-	//mod_lua_conjure_event(L, event, "blah");
-
 	lua_parse_and_execute(L, input_code);
 	
 	if (input_code) {

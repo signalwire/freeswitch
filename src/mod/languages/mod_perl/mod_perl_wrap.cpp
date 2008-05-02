@@ -1462,12 +1462,11 @@ SWIG_Perl_SetModule(swig_module_info *module) {
 #define SWIGTYPE_p_switch_input_args_t swig_types[13]
 #define SWIGTYPE_p_switch_input_type_t swig_types[14]
 #define SWIGTYPE_p_switch_priority_t swig_types[15]
-#define SWIGTYPE_p_switch_size_t swig_types[16]
-#define SWIGTYPE_p_switch_status_t swig_types[17]
-#define SWIGTYPE_p_switch_stream_handle_t swig_types[18]
-#define SWIGTYPE_p_void swig_types[19]
-static swig_type_info *swig_types[21];
-static swig_module_info swig_module = {swig_types, 20, 0, 0, 0, 0};
+#define SWIGTYPE_p_switch_status_t swig_types[16]
+#define SWIGTYPE_p_switch_stream_handle_t swig_types[17]
+#define SWIGTYPE_p_void swig_types[18]
+static swig_type_info *swig_types[20];
+static swig_module_info swig_module = {swig_types, 19, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -5224,15 +5223,15 @@ XS(_wrap_CoreSession_collectDigits) {
 XS(_wrap_CoreSession_getDigits) {
   {
     CoreSession *arg1 = (CoreSession *) 0 ;
-    switch_size_t arg2 ;
+    int arg2 ;
     char *arg3 = (char *) 0 ;
     char *arg4 = (char *) 0 ;
     int arg5 ;
     char *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
-    void *argp2 ;
-    int res2 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
     int res3 ;
     char *buf3 = 0 ;
     int alloc3 = 0 ;
@@ -5252,17 +5251,11 @@ XS(_wrap_CoreSession_getDigits) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_getDigits" "', argument " "1"" of type '" "CoreSession *""'"); 
     }
     arg1 = reinterpret_cast< CoreSession * >(argp1);
-    {
-      res2 = SWIG_ConvertPtr(ST(1), &argp2, SWIGTYPE_p_switch_size_t,  0 );
-      if (!SWIG_IsOK(res2)) {
-        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_getDigits" "', argument " "2"" of type '" "switch_size_t""'"); 
-      }  
-      if (!argp2) {
-        SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "CoreSession_getDigits" "', argument " "2"" of type '" "switch_size_t""'");
-      } else {
-        arg2 = *(reinterpret_cast< switch_size_t * >(argp2));
-      }
-    }
+    ecode2 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "CoreSession_getDigits" "', argument " "2"" of type '" "int""'");
+    } 
+    arg2 = static_cast< int >(val2);
     res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
     if (!SWIG_IsOK(res3)) {
       SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "CoreSession_getDigits" "', argument " "3"" of type '" "char *""'");
@@ -5281,11 +5274,13 @@ XS(_wrap_CoreSession_getDigits) {
     result = (char *)(arg1)->getDigits(arg2,arg3,arg4,arg5);
     ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
     
+    
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
     if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
     
     XSRETURN(argvi);
   fail:
+    
     
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
     if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
@@ -6982,7 +6977,6 @@ static swig_type_info _swigt__p_switch_event_t = {"_p_switch_event_t", "switch_e
 static swig_type_info _swigt__p_switch_input_args_t = {"_p_switch_input_args_t", "switch_input_args_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_input_type_t = {"_p_switch_input_type_t", "switch_input_type_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_priority_t = {"_p_switch_priority_t", "switch_priority_t *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_switch_size_t = {"_p_switch_size_t", "switch_size_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_status_t = {"_p_switch_status_t", "switch_status_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_stream_handle_t = {"_p_switch_stream_handle_t", "switch_stream_handle_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_void = {"_p_void", "void *", 0, 0, (void*)0, 0};
@@ -7004,7 +6998,6 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_switch_input_args_t,
   &_swigt__p_switch_input_type_t,
   &_swigt__p_switch_priority_t,
-  &_swigt__p_switch_size_t,
   &_swigt__p_switch_status_t,
   &_swigt__p_switch_stream_handle_t,
   &_swigt__p_void,
@@ -7026,7 +7019,6 @@ static swig_cast_info _swigc__p_switch_event_t[] = {  {&_swigt__p_switch_event_t
 static swig_cast_info _swigc__p_switch_input_args_t[] = {  {&_swigt__p_switch_input_args_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_input_type_t[] = {  {&_swigt__p_switch_input_type_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_priority_t[] = {  {&_swigt__p_switch_priority_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_switch_size_t[] = {  {&_swigt__p_switch_size_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_status_t[] = {  {&_swigt__p_switch_status_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_stream_handle_t[] = {  {&_swigt__p_switch_stream_handle_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_void[] = {  {&_swigt__p_void, 0, 0, 0},{0, 0, 0, 0}};
@@ -7048,7 +7040,6 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_switch_input_args_t,
   _swigc__p_switch_input_type_t,
   _swigc__p_switch_priority_t,
-  _swigc__p_switch_size_t,
   _swigc__p_switch_status_t,
   _swigc__p_switch_stream_handle_t,
   _swigc__p_void,
