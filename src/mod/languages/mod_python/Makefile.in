@@ -3,20 +3,16 @@
 
 # and define these variables to impact your build
 
-PYVER="Python-2.5.1"
-
-LOCAL_CFLAGS =-I$(BASE)/libs/$(PYVER)/ -I$(BASE)/libs/$(PYVER)/Include/
-LOCAL_LDFLAGS=-L$(BASE)/libs/$(PYVER)/ -lpython2.5 -lutil -lstdc++
+LOCAL_CFLAGS = @PYTHON_CFLAGS@
+LOCAL_LDFLAGS= @PYTHON_LDFLAGS@ -lstdc++
 LOCAL_OBJS=freeswitch_python.o mod_python_wrap.o
 include ../../../../build/modmake.rules
 
 PYMOD=freeswitch
+PYTHON_SITE_DIR=@PYTHON_SITE_DIR@
 
 SWIGCFILE=../../../switch_swig.c
 SWIGIFILE=../../../switch_swig.i
-
-local_depend:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) $(PYVER).tgz --prefix=$(PREFIX) --enable-threads CFLAGSFORSHARED="-fPIC"
 
 reswig: 
 	swig -python -shadow -c++ -I../../../../src/include -o mod_python_wrap.cpp mod_python.i
@@ -28,6 +24,6 @@ switch_swig.o: $(SWIGCFILE) Makefile
 	$(CC)  -w $(CFLAGS) -c $< -o $@
 
 local_install:
-	$(MAKE) -C $(BASE)/libs/$(PYVER)/ DESTDIR=$(DESTDIR) install
-	cp -f freeswitch.py $(DESTDIR)$(PREFIX)/lib/python2.5/site-packages/
+	mkdir -m755 -p $(DESTDIR)$(PYTHON_SITE_DIR)
+	cp -f freeswitch.py $(DESTDIR)$(PYTHON_SITE_DIR)
 

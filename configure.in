@@ -424,12 +424,120 @@ AM_CONDITIONAL([ADD_ODBC],[test "x$enable_core_odbc_support" != "xno"])
 AM_CONDITIONAL([ADD_LIBEDIT],[test "x$enable_core_libedit_support" != "xno"])
 AM_CONDITIONAL([HAVE_MYSQL],[test "$found_mysql" = "yes"])
 
+#
+# Python checks for mod_python
+#
+AC_ARG_WITH(
+	[python],
+	[AS_HELP_STRING([--with-python], [Use system provided version of python (default: try)])],
+	[with_python="$withval"],
+	[with_python="try"]
+)
+
+AC_ARG_WITH(
+	[python-config],
+	[AS_HELP_STRING([--with-python-config=PATH], [Location of python-config])],
+	[with_python_config="$withval"],
+	[with_python_config="no"]
+)
+
+
+if test "$with_python" != "no"
+then
+	if test "$with_python" != "yes" -a "$with_python" != "try" ; then
+		AC_MSG_CHECKING([for python])
+		if test ! -x "$with_python" ; then
+			AC_MSG_ERROR([Specified python does not exist or is not executable: $with_python])
+		fi
+		AC_MSG_RESULT([$with_python])
+		AC_SUBST([PYTHON], ["$with_python"])
+	else
+		AC_PATH_PROG([PYTHON], ["python"], ["no"], ["$PATH:/usr/bin:/usr/local/bin"])
+	fi
+
+	if test "$PYTHON" != "no" ; then
+		AC_MSG_CHECKING([python version])
+		PYTHON_VER="`$PYTHON -V 2>&1 | cut -d' ' -f2`"
+
+		if test -z "$PYTHON_VER" ; then
+			AC_MSG_ERROR([Unable to detect python version])
+		fi
+		AC_MSG_RESULT([$PYTHON_VER])
+
+		AC_MSG_CHECKING([location of site-packages])
+
+		# NOTE: this assumes our desired location is always the last one in the list
+		# (= system package location is searched last)
+		#
+		# needs double brackets because m4 removes one pair
+		PYTHON_SITE_DIR="`$PYTHON -c 'import sys; print sys.path[[-1]];'`"
+
+		if test -z "$PYTHON_SITE_DIR" ; then
+			AC_MSG_ERROR([Unable to detect python site-packages path])
+		elif test ! -d "$PYTHON_SITE_DIR" ; then
+			AC_MSG_ERROR([Path $PYTHON_SITE_DIR returned by python does not exist!])
+		fi
+		AC_MSG_RESULT([$PYTHON_SITE_DIR])
+		AC_SUBST([PYTHON_SITE_DIR], [$PYTHON_SITE_DIR])
+
+		if test "$with_python_config" != "no" ; then
+			AC_MSG_CHECKING([for python-config])
+			if test ! -x "$with_python_config" ; then
+				AC_MSG_ERROR([Specified python-config does not exist or is not executable: $with_python_config])
+			fi
+			AC_MSG_RESULT([$with_python_config])
+			AC_SUBST([PYTHON_CONFIG], ["$with_python_config"])
+		else
+			AC_PATH_PROG([PYTHON_CONFIG], ["python-config"], ["no"], ["$PATH:/usr/bin:/usr/local/bin"])
+		fi
+
+		# this one is fatal if with_python != try
+		if test "$PYTHON_CONFIG" != "no" ; then
+			PYTHON_CFLAGS="`$PYTHON_CONFIG --cflags`"
+			PYTHON_LDFLAGS="`$PYTHON_CONFIG --ldflags`"
+
+			# check whether system libpython is usable and has threads support
+			save_LIBS="$LIBS"
+			LIBS="$PYTHON_LDFLAGS"
+			AC_CHECK_FUNC([PyThread_init_thread], [python_has_threads="yes"], [python_has_threads="no"])
+			LIBS="$save_LIBS"
+
+			if test "$python_has_threads" = "no" ; then
+				if test "$with_python" = "try" ; then
+					AC_MSG_ERROR([Your python lacks threads support, can not build mod_python])
+				fi
+
+				AC_MSG_WARN([Your python lacks threads support, can not build mod_python])
+			else
+				AC_MSG_NOTICE([Your python seems OK, do not forget to enable mod_python in modules.conf])
+				AC_SUBST([PYTHON_CFLAGS], [$PYTHON_CFLAGS])
+				AC_SUBST([PYTHON_LDFLAGS], [$PYTHON_LDFLAGS])
+			fi
+		else
+			if test "$with_python" != "try" ; then
+				AC_MSG_ERROR([python-config could not be found, use --with-python-config to specify the location])
+			fi
+
+			AC_MSG_WARN([python-config could not be found, mod_python will not build, use --with-python-config to specify the location])
+		fi
+	else
+		if test "$with_python" != "try" ; then
+			AC_MSG_ERROR([Could not find python, use --with-python to specify the location])
+		fi
+
+		AC_MSG_WARN([Could not find python, mod_python will not build, use --with-python to specify the location])
+	fi
+else
+	AC_MSG_WARN([python support disabled, building mod_python will fail!])
+fi
+
 AC_CONFIG_FILES([Makefile
                 src/Makefile
                 src/mod/Makefile
                 src/mod/endpoints/mod_sofia/Makefile
                 src/mod/event_handlers/mod_radius_cdr/Makefile
                 src/mod/languages/mod_java/Makefile
+                src/mod/languages/mod_python/Makefile
                 src/include/switch_am_config.h
                 build/getsounds.sh
                 build/getlib.sh
