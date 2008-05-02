@@ -21,8 +21,6 @@ typedef enum {
 
 void console_log(char *level_str, char *msg);
 void console_clean_log(char *msg);
-char *api_execute(char *cmd, char *arg);
-void api_reply_delete(char *reply);
 
 class PySession : public CoreSession {
  private:

@@ -55,12 +55,16 @@ void PySession::check_hangup_hook() {
    char *resultStr;
    bool did_swap_in = false;
 
-   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "check_hangup_hook called\n");
+   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "check_hangup_hook has been DISABLED, please do not use hangup hooks in python code until further notice!\n");
 
    if (!session) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No valid session\n");
 	return;
    }
+
+   return;
+
+   /*! NEEDS TO BE FIXED:
 
    // The did_swap_in boolean was added to fix the following problem:
    // Design flaw - we swap in threadstate based on the assumption that thread state 
@@ -101,7 +105,7 @@ void PySession::check_hangup_hook() {
    }
 
    Py_XDECREF(result);
-
+   */
 }
 
 switch_status_t PySession::run_dtmf_callback(void *input, 
