@@ -567,9 +567,11 @@ static __inline__ void check_state(zap_span_t *span)
         zap_clear_flag_locked(span, ZAP_SPAN_STATE_CHANGE);
         for(j = 1; j <= span->chan_count; j++) {
             if (zap_test_flag((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE)) {
-                zap_clear_flag_locked((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE);
+				zap_mutex_lock(span->channels[j].mutex);
+                zap_clear_flag((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE);
                 state_advance(&span->channels[j]);
                 zap_channel_complete_state(&span->channels[j]);
+				zap_mutex_unlock(span->channels[j].mutex);
             }
         }
     }
