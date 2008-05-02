@@ -1449,24 +1449,25 @@ SWIG_Perl_SetModule(swig_module_info *module) {
 #define SWIGTYPE_p_API swig_types[0]
 #define SWIGTYPE_p_CoreSession swig_types[1]
 #define SWIGTYPE_p_Event swig_types[2]
-#define SWIGTYPE_p_PerlInterpreter swig_types[3]
-#define SWIGTYPE_p_Session swig_types[4]
-#define SWIGTYPE_p_Stream swig_types[5]
-#define SWIGTYPE_p_char swig_types[6]
-#define SWIGTYPE_p_input_callback_state swig_types[7]
-#define SWIGTYPE_p_session_flag_t swig_types[8]
-#define SWIGTYPE_p_switch_channel_state_t swig_types[9]
-#define SWIGTYPE_p_switch_channel_t swig_types[10]
-#define SWIGTYPE_p_switch_core_session_t swig_types[11]
-#define SWIGTYPE_p_switch_event_t swig_types[12]
-#define SWIGTYPE_p_switch_input_args_t swig_types[13]
-#define SWIGTYPE_p_switch_input_type_t swig_types[14]
-#define SWIGTYPE_p_switch_priority_t swig_types[15]
-#define SWIGTYPE_p_switch_status_t swig_types[16]
-#define SWIGTYPE_p_switch_stream_handle_t swig_types[17]
-#define SWIGTYPE_p_void swig_types[18]
-static swig_type_info *swig_types[20];
-static swig_module_info swig_module = {swig_types, 19, 0, 0, 0, 0};
+#define SWIGTYPE_p_IVRMenu swig_types[3]
+#define SWIGTYPE_p_PerlInterpreter swig_types[4]
+#define SWIGTYPE_p_Session swig_types[5]
+#define SWIGTYPE_p_Stream swig_types[6]
+#define SWIGTYPE_p_char swig_types[7]
+#define SWIGTYPE_p_input_callback_state swig_types[8]
+#define SWIGTYPE_p_session_flag_t swig_types[9]
+#define SWIGTYPE_p_switch_channel_state_t swig_types[10]
+#define SWIGTYPE_p_switch_channel_t swig_types[11]
+#define SWIGTYPE_p_switch_core_session_t swig_types[12]
+#define SWIGTYPE_p_switch_event_t swig_types[13]
+#define SWIGTYPE_p_switch_input_args_t swig_types[14]
+#define SWIGTYPE_p_switch_input_type_t swig_types[15]
+#define SWIGTYPE_p_switch_priority_t swig_types[16]
+#define SWIGTYPE_p_switch_status_t swig_types[17]
+#define SWIGTYPE_p_switch_stream_handle_t swig_types[18]
+#define SWIGTYPE_p_void swig_types[19]
+static swig_type_info *swig_types[21];
+static swig_module_info swig_module = {swig_types, 20, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1555,42 +1556,6 @@ SWIG_AsCharPtrAndSize(SV *obj, char** cptr, size_t* psize, int *alloc)
 
 
 
-
-
-SWIGINTERNINLINE SV *
-SWIG_FromCharPtrAndSize(const char* carray, size_t size)
-{
-  SV *obj = sv_newmortal();
-  if (carray) {
-    sv_setpvn(obj, carray, size);
-  } else {
-    sv_setsv(obj, &PL_sv_undef);
-  }
-  return obj;
-}
-
-
-SWIGINTERNINLINE SV * 
-SWIG_FromCharPtr(const char *cptr)
-{ 
-  return SWIG_FromCharPtrAndSize(cptr, (cptr ? strlen(cptr) : 0));
-}
-
-
-SWIGINTERNINLINE SV *
-SWIG_From_long  SWIG_PERL_DECL_ARGS_1(long value)
-{    
-  SV *obj = sv_newmortal();
-  sv_setiv(obj, (IV) value);
-  return obj;
-}
-
-
-SWIGINTERNINLINE SV *
-SWIG_From_int  SWIG_PERL_DECL_ARGS_1(int value)
-{    
-  return SWIG_From_long  SWIG_PERL_CALL_ARGS_1(value);
-}
 
 
 #include <limits.h>
@@ -1718,6 +1683,42 @@ SWIG_AsVal_int SWIG_PERL_DECL_ARGS_2(SV * obj, int *val)
     }
   }  
   return res;
+}
+
+
+SWIGINTERNINLINE SV *
+SWIG_FromCharPtrAndSize(const char* carray, size_t size)
+{
+  SV *obj = sv_newmortal();
+  if (carray) {
+    sv_setpvn(obj, carray, size);
+  } else {
+    sv_setsv(obj, &PL_sv_undef);
+  }
+  return obj;
+}
+
+
+SWIGINTERNINLINE SV * 
+SWIG_FromCharPtr(const char *cptr)
+{ 
+  return SWIG_FromCharPtrAndSize(cptr, (cptr ? strlen(cptr) : 0));
+}
+
+
+SWIGINTERNINLINE SV *
+SWIG_From_long  SWIG_PERL_DECL_ARGS_1(long value)
+{    
+  SV *obj = sv_newmortal();
+  sv_setiv(obj, (IV) value);
+  return obj;
+}
+
+
+SWIGINTERNINLINE SV *
+SWIG_From_int  SWIG_PERL_DECL_ARGS_1(int value)
+{    
+  return SWIG_From_long  SWIG_PERL_CALL_ARGS_1(value);
 }
 
 
@@ -1918,6 +1919,297 @@ XS(_wrap_consoleCleanLog) {
     XSRETURN(argvi);
   fail:
     if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_new_IVRMenu) {
+  {
+    IVRMenu *arg1 = (IVRMenu *) 0 ;
+    char *arg2 = (char *) 0 ;
+    char *arg3 = (char *) 0 ;
+    char *arg4 = (char *) 0 ;
+    char *arg5 = (char *) 0 ;
+    char *arg6 = (char *) 0 ;
+    char *arg7 = (char *) 0 ;
+    char *arg8 = (char *) 0 ;
+    int arg9 ;
+    int arg10 ;
+    int arg11 ;
+    int arg12 ;
+    int arg13 ;
+    IVRMenu *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int res3 ;
+    char *buf3 = 0 ;
+    int alloc3 = 0 ;
+    int res4 ;
+    char *buf4 = 0 ;
+    int alloc4 = 0 ;
+    int res5 ;
+    char *buf5 = 0 ;
+    int alloc5 = 0 ;
+    int res6 ;
+    char *buf6 = 0 ;
+    int alloc6 = 0 ;
+    int res7 ;
+    char *buf7 = 0 ;
+    int alloc7 = 0 ;
+    int res8 ;
+    char *buf8 = 0 ;
+    int alloc8 = 0 ;
+    int val9 ;
+    int ecode9 = 0 ;
+    int val10 ;
+    int ecode10 = 0 ;
+    int val11 ;
+    int ecode11 = 0 ;
+    int val12 ;
+    int ecode12 = 0 ;
+    int val13 ;
+    int ecode13 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 13) || (items > 13)) {
+      SWIG_croak("Usage: new_IVRMenu(main,name,greeting_sound,short_greeting_sound,invalid_sound,exit_sound,confirm_macro,confirm_key,confirm_attempts,inter_timeout,digit_len,timeout,max_failures);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_IVRMenu, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_IVRMenu" "', argument " "1"" of type '" "IVRMenu *""'"); 
+    }
+    arg1 = reinterpret_cast< IVRMenu * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_IVRMenu" "', argument " "2"" of type '" "char const *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "new_IVRMenu" "', argument " "3"" of type '" "char const *""'");
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
+    res4 = SWIG_AsCharPtrAndSize(ST(3), &buf4, NULL, &alloc4);
+    if (!SWIG_IsOK(res4)) {
+      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "new_IVRMenu" "', argument " "4"" of type '" "char const *""'");
+    }
+    arg4 = reinterpret_cast< char * >(buf4);
+    res5 = SWIG_AsCharPtrAndSize(ST(4), &buf5, NULL, &alloc5);
+    if (!SWIG_IsOK(res5)) {
+      SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "new_IVRMenu" "', argument " "5"" of type '" "char const *""'");
+    }
+    arg5 = reinterpret_cast< char * >(buf5);
+    res6 = SWIG_AsCharPtrAndSize(ST(5), &buf6, NULL, &alloc6);
+    if (!SWIG_IsOK(res6)) {
+      SWIG_exception_fail(SWIG_ArgError(res6), "in method '" "new_IVRMenu" "', argument " "6"" of type '" "char const *""'");
+    }
+    arg6 = reinterpret_cast< char * >(buf6);
+    res7 = SWIG_AsCharPtrAndSize(ST(6), &buf7, NULL, &alloc7);
+    if (!SWIG_IsOK(res7)) {
+      SWIG_exception_fail(SWIG_ArgError(res7), "in method '" "new_IVRMenu" "', argument " "7"" of type '" "char const *""'");
+    }
+    arg7 = reinterpret_cast< char * >(buf7);
+    res8 = SWIG_AsCharPtrAndSize(ST(7), &buf8, NULL, &alloc8);
+    if (!SWIG_IsOK(res8)) {
+      SWIG_exception_fail(SWIG_ArgError(res8), "in method '" "new_IVRMenu" "', argument " "8"" of type '" "char const *""'");
+    }
+    arg8 = reinterpret_cast< char * >(buf8);
+    ecode9 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(8), &val9);
+    if (!SWIG_IsOK(ecode9)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "new_IVRMenu" "', argument " "9"" of type '" "int""'");
+    } 
+    arg9 = static_cast< int >(val9);
+    ecode10 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(9), &val10);
+    if (!SWIG_IsOK(ecode10)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode10), "in method '" "new_IVRMenu" "', argument " "10"" of type '" "int""'");
+    } 
+    arg10 = static_cast< int >(val10);
+    ecode11 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(10), &val11);
+    if (!SWIG_IsOK(ecode11)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode11), "in method '" "new_IVRMenu" "', argument " "11"" of type '" "int""'");
+    } 
+    arg11 = static_cast< int >(val11);
+    ecode12 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(11), &val12);
+    if (!SWIG_IsOK(ecode12)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode12), "in method '" "new_IVRMenu" "', argument " "12"" of type '" "int""'");
+    } 
+    arg12 = static_cast< int >(val12);
+    ecode13 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(12), &val13);
+    if (!SWIG_IsOK(ecode13)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode13), "in method '" "new_IVRMenu" "', argument " "13"" of type '" "int""'");
+    } 
+    arg13 = static_cast< int >(val13);
+    result = (IVRMenu *)new IVRMenu(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,arg9,arg10,arg11,arg12,arg13);
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_IVRMenu, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+    if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
+    if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
+    if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
+    if (alloc8 == SWIG_NEWOBJ) delete[] buf8;
+    
+    
+    
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+    if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
+    if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
+    if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
+    if (alloc8 == SWIG_NEWOBJ) delete[] buf8;
+    
+    
+    
+    
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_delete_IVRMenu) {
+  {
+    IVRMenu *arg1 = (IVRMenu *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: delete_IVRMenu(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_IVRMenu, SWIG_POINTER_DISOWN |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_IVRMenu" "', argument " "1"" of type '" "IVRMenu *""'"); 
+    }
+    arg1 = reinterpret_cast< IVRMenu * >(argp1);
+    delete arg1;
+    
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_IVRMenu_bindAction) {
+  {
+    IVRMenu *arg1 = (IVRMenu *) 0 ;
+    char *arg2 = (char *) 0 ;
+    char *arg3 = (char *) 0 ;
+    char *arg4 = (char *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int res3 ;
+    char *buf3 = 0 ;
+    int alloc3 = 0 ;
+    int res4 ;
+    char *buf4 = 0 ;
+    int alloc4 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 4) || (items > 4)) {
+      SWIG_croak("Usage: IVRMenu_bindAction(self,action,arg,bind);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_IVRMenu, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "IVRMenu_bindAction" "', argument " "1"" of type '" "IVRMenu *""'"); 
+    }
+    arg1 = reinterpret_cast< IVRMenu * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "IVRMenu_bindAction" "', argument " "2"" of type '" "char *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "IVRMenu_bindAction" "', argument " "3"" of type '" "char const *""'");
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
+    res4 = SWIG_AsCharPtrAndSize(ST(3), &buf4, NULL, &alloc4);
+    if (!SWIG_IsOK(res4)) {
+      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "IVRMenu_bindAction" "', argument " "4"" of type '" "char const *""'");
+    }
+    arg4 = reinterpret_cast< char * >(buf4);
+    (arg1)->bindAction(arg2,(char const *)arg3,(char const *)arg4);
+    
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_IVRMenu_execute) {
+  {
+    IVRMenu *arg1 = (IVRMenu *) 0 ;
+    CoreSession *arg2 = (CoreSession *) 0 ;
+    char *arg3 = (char *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    void *argp2 = 0 ;
+    int res2 = 0 ;
+    int res3 ;
+    char *buf3 = 0 ;
+    int alloc3 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 3) || (items > 3)) {
+      SWIG_croak("Usage: IVRMenu_execute(self,session,name);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_IVRMenu, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "IVRMenu_execute" "', argument " "1"" of type '" "IVRMenu *""'"); 
+    }
+    arg1 = reinterpret_cast< IVRMenu * >(argp1);
+    res2 = SWIG_ConvertPtr(ST(1), &argp2,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "IVRMenu_execute" "', argument " "2"" of type '" "CoreSession *""'"); 
+    }
+    arg2 = reinterpret_cast< CoreSession * >(argp2);
+    res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "IVRMenu_execute" "', argument " "3"" of type '" "char const *""'");
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
+    (arg1)->execute(arg2,(char const *)arg3);
+    
+    
+    
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    XSRETURN(argvi);
+  fail:
+    
+    
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
     SWIG_croak_null();
   }
 }
@@ -6964,6 +7256,7 @@ static void *_p_SessionTo_p_CoreSession(void *x, int *newmemory) {
 static swig_type_info _swigt__p_API = {"_p_API", "API *", 0, 0, (void*)"freeswitch::API", 0};
 static swig_type_info _swigt__p_CoreSession = {"_p_CoreSession", "CoreSession *", 0, 0, (void*)"freeswitch::CoreSession", 0};
 static swig_type_info _swigt__p_Event = {"_p_Event", "Event *", 0, 0, (void*)"freeswitch::Event", 0};
+static swig_type_info _swigt__p_IVRMenu = {"_p_IVRMenu", "IVRMenu *", 0, 0, (void*)"freeswitch::IVRMenu", 0};
 static swig_type_info _swigt__p_PerlInterpreter = {"_p_PerlInterpreter", "PerlInterpreter *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_Session = {"_p_Session", "Session *", 0, 0, (void*)"freeswitch::Session", 0};
 static swig_type_info _swigt__p_Stream = {"_p_Stream", "Stream *", 0, 0, (void*)"freeswitch::Stream", 0};
@@ -6985,6 +7278,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_API,
   &_swigt__p_CoreSession,
   &_swigt__p_Event,
+  &_swigt__p_IVRMenu,
   &_swigt__p_PerlInterpreter,
   &_swigt__p_Session,
   &_swigt__p_Stream,
@@ -7006,6 +7300,7 @@ static swig_type_info *swig_type_initial[] = {
 static swig_cast_info _swigc__p_API[] = {  {&_swigt__p_API, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_CoreSession[] = {  {&_swigt__p_CoreSession, 0, 0, 0},  {&_swigt__p_Session, _p_SessionTo_p_CoreSession, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Event[] = {  {&_swigt__p_Event, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_IVRMenu[] = {  {&_swigt__p_IVRMenu, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_PerlInterpreter[] = {  {&_swigt__p_PerlInterpreter, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Session[] = {  {&_swigt__p_Session, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Stream[] = {  {&_swigt__p_Stream, 0, 0, 0},{0, 0, 0, 0}};
@@ -7027,6 +7322,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_API,
   _swigc__p_CoreSession,
   _swigc__p_Event,
+  _swigc__p_IVRMenu,
   _swigc__p_PerlInterpreter,
   _swigc__p_Session,
   _swigc__p_Stream,
@@ -7060,6 +7356,10 @@ static swig_variable_info swig_variables[] = {
 static swig_command_info swig_commands[] = {
 {"freeswitchc::consoleLog", _wrap_consoleLog},
 {"freeswitchc::consoleCleanLog", _wrap_consoleCleanLog},
+{"freeswitchc::new_IVRMenu", _wrap_new_IVRMenu},
+{"freeswitchc::delete_IVRMenu", _wrap_delete_IVRMenu},
+{"freeswitchc::IVRMenu_bindAction", _wrap_IVRMenu_bindAction},
+{"freeswitchc::IVRMenu_execute", _wrap_IVRMenu_execute},
 {"freeswitchc::new_API", _wrap_new_API},
 {"freeswitchc::delete_API", _wrap_delete_API},
 {"freeswitchc::API_execute", _wrap_API_execute},
@@ -7454,6 +7754,7 @@ XS(SWIG_init) {
     SvREADONLY_on(sv);
   }
   
+  SWIG_TypeClientData(SWIGTYPE_p_IVRMenu, (void*) "freeswitch::IVRMenu");
   SWIG_TypeClientData(SWIGTYPE_p_API, (void*) "freeswitch::API");
   SWIG_TypeClientData(SWIGTYPE_p_input_callback_state, (void*) "freeswitch::input_callback_state_t");
   /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {

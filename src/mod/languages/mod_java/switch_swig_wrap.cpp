@@ -244,6 +244,144 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_consoleCleanLog(J
 }
 
 
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1IVRMenu(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3, jstring jarg4, jstring jarg5, jstring jarg6, jstring jarg7, jstring jarg8, jint jarg9, jint jarg10, jint jarg11, jint jarg12, jint jarg13) {
+  jlong jresult = 0 ;
+  IVRMenu *arg1 = (IVRMenu *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  char *arg5 = (char *) 0 ;
+  char *arg6 = (char *) 0 ;
+  char *arg7 = (char *) 0 ;
+  char *arg8 = (char *) 0 ;
+  int arg9 ;
+  int arg10 ;
+  int arg11 ;
+  int arg12 ;
+  int arg13 ;
+  IVRMenu *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(IVRMenu **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return 0;
+  }
+  arg3 = 0;
+  if (jarg3) {
+    arg3 = (char *)jenv->GetStringUTFChars(jarg3, 0);
+    if (!arg3) return 0;
+  }
+  arg4 = 0;
+  if (jarg4) {
+    arg4 = (char *)jenv->GetStringUTFChars(jarg4, 0);
+    if (!arg4) return 0;
+  }
+  arg5 = 0;
+  if (jarg5) {
+    arg5 = (char *)jenv->GetStringUTFChars(jarg5, 0);
+    if (!arg5) return 0;
+  }
+  arg6 = 0;
+  if (jarg6) {
+    arg6 = (char *)jenv->GetStringUTFChars(jarg6, 0);
+    if (!arg6) return 0;
+  }
+  arg7 = 0;
+  if (jarg7) {
+    arg7 = (char *)jenv->GetStringUTFChars(jarg7, 0);
+    if (!arg7) return 0;
+  }
+  arg8 = 0;
+  if (jarg8) {
+    arg8 = (char *)jenv->GetStringUTFChars(jarg8, 0);
+    if (!arg8) return 0;
+  }
+  arg9 = (int)jarg9; 
+  arg10 = (int)jarg10; 
+  arg11 = (int)jarg11; 
+  arg12 = (int)jarg12; 
+  arg13 = (int)jarg13; 
+  result = (IVRMenu *)new IVRMenu(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,arg9,arg10,arg11,arg12,arg13);
+  *(IVRMenu **)&jresult = result; 
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+  if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
+  if (arg4) jenv->ReleaseStringUTFChars(jarg4, (const char *)arg4);
+  if (arg5) jenv->ReleaseStringUTFChars(jarg5, (const char *)arg5);
+  if (arg6) jenv->ReleaseStringUTFChars(jarg6, (const char *)arg6);
+  if (arg7) jenv->ReleaseStringUTFChars(jarg7, (const char *)arg7);
+  if (arg8) jenv->ReleaseStringUTFChars(jarg8, (const char *)arg8);
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_delete_1IVRMenu(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+  IVRMenu *arg1 = (IVRMenu *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = *(IVRMenu **)&jarg1; 
+  delete arg1;
+  
+}
+
+
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_IVRMenu_1bindAction(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3, jstring jarg4) {
+  IVRMenu *arg1 = (IVRMenu *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(IVRMenu **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return ;
+  }
+  arg3 = 0;
+  if (jarg3) {
+    arg3 = (char *)jenv->GetStringUTFChars(jarg3, 0);
+    if (!arg3) return ;
+  }
+  arg4 = 0;
+  if (jarg4) {
+    arg4 = (char *)jenv->GetStringUTFChars(jarg4, 0);
+    if (!arg4) return ;
+  }
+  (arg1)->bindAction(arg2,(char const *)arg3,(char const *)arg4);
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+  if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
+  if (arg4) jenv->ReleaseStringUTFChars(jarg4, (const char *)arg4);
+}
+
+
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_IVRMenu_1execute(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jstring jarg3) {
+  IVRMenu *arg1 = (IVRMenu *) 0 ;
+  CoreSession *arg2 = (CoreSession *) 0 ;
+  char *arg3 = (char *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  (void)jarg2_;
+  arg1 = *(IVRMenu **)&jarg1; 
+  arg2 = *(CoreSession **)&jarg2; 
+  arg3 = 0;
+  if (jarg3) {
+    arg3 = (char *)jenv->GetStringUTFChars(jarg3, 0);
+    if (!arg3) return ;
+  }
+  (arg1)->execute(arg2,(char const *)arg3);
+  if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
+}
+
+
 SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1API(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   API *result = 0 ;

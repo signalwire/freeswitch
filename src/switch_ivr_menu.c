@@ -601,6 +601,27 @@ static struct iam_s {
 };
 
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_str2action(const char *action_name, switch_ivr_action_t *action)
+{
+	int i;
+
+	if (!switch_strlen_zero(action_name)) {
+		for(i = 0;;i++) {
+			if (!iam[i].name) {
+				break;
+			}
+
+			if (!strcasecmp(iam[i].name, action_name)) {
+				*action = iam[i].action;
+				return SWITCH_STATUS_SUCCESS;
+			}
+		}
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+
 static switch_bool_t is_valid_action(const char *action)
 {
 	int i;

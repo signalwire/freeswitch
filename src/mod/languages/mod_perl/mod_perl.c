@@ -121,14 +121,16 @@ static int perl_parse_and_execute(PerlInterpreter *my_perl, char *input_code, ch
 		}
 		if (!error) {
 			char *file = input_code;
-			
+			char *err;
+
 			if (!switch_is_file_path(file)) {
-				file = switch_mprintf("do '%s/%s';\n", SWITCH_GLOBAL_dirs.script_dir, file);
+				file = switch_mprintf("require '%s/%s';", SWITCH_GLOBAL_dirs.script_dir, file);
 				switch_assert(file);
 			} else {
-				file = switch_mprintf("do '%s';\n", file);
+				file = switch_mprintf("require '%s';", file);
 				switch_assert(file);
 			}
+			
 			error = Perl_safe_eval(my_perl, file);
 			switch_safe_free(file);
 		}

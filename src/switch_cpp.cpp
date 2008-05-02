@@ -37,6 +37,59 @@
 #pragma warning(disable:4127 4003)
 #endif
 
+
+SWITCH_DECLARE_CONSTRUCTOR IVRMenu::IVRMenu(IVRMenu *main,
+											const char *name,
+											const char *greeting_sound,
+											const char *short_greeting_sound,
+											const char *invalid_sound,
+											const char *exit_sound,
+											const char *confirm_macro,
+											const char *confirm_key,
+											int confirm_attempts,
+											int inter_timeout,
+											int digit_len,
+											int timeout,
+											int max_failures)
+{
+	menu = NULL;
+	switch_core_new_memory_pool(&pool);
+	switch_assert(pool);
+	if (switch_strlen_zero(name)) {
+		name = "no name";
+	}
+
+	switch_ivr_menu_init(&menu, main ? main->menu : NULL, name, greeting_sound, short_greeting_sound, invalid_sound, 
+						 exit_sound, confirm_macro, confirm_key, confirm_attempts, inter_timeout, digit_len, timeout, max_failures, pool);
+	
+
+}
+											
+SWITCH_DECLARE_CONSTRUCTOR IVRMenu::~IVRMenu()
+{
+	if (menu) {
+		switch_ivr_menu_stack_free(menu);
+	}
+	switch_core_destroy_memory_pool(&pool);
+}
+
+SWITCH_DECLARE(void) IVRMenu::bindAction(char *action, const char *arg, const char *bind)
+{
+	switch_ivr_action_t ivr_action = SWITCH_IVR_ACTION_NOOP;
+
+	if (switch_ivr_menu_str2action(action, &ivr_action) == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "bind %s to %s(%s)\n", bind, action, arg);
+		switch_ivr_menu_bind_action(menu, ivr_action, arg, bind);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid action %s\n", action);
+	}
+}
+
+SWITCH_DECLARE(void) IVRMenu::execute(CoreSession *session, const char *name)
+{
+	switch_ivr_menu_execute(session->session, menu, (char *)name, NULL);
+}
+
 SWITCH_DECLARE_CONSTRUCTOR API::API()
 {
 	last_data = NULL;

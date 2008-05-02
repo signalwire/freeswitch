@@ -717,6 +717,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_free(switch_ivr_menu_t * s
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_xml_ctx_t * xml_menu_ctx,
 																switch_ivr_menu_t ** menu_stack, switch_xml_t xml_menus, switch_xml_t xml_menu);
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_str2action(const char *action_name, switch_ivr_action_t *action);
+
 /*!
  *\param xml_menu_ctx The XML menu parser context previously created by switch_ivr_menu_stack_xml_init
  *\param name The xml tag name to add to the parser engine

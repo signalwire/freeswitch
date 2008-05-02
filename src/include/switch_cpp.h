@@ -64,6 +64,33 @@ Note that the first parameter to the new operator is implicitly handled by c++..
 SWITCH_DECLARE(void) consoleLog(char *level_str, char *msg);
 SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 
+class CoreSession;
+
+class IVRMenu {
+ protected:
+	switch_ivr_menu_t *menu;
+	switch_memory_pool_t *pool;
+ public:
+	SWITCH_DECLARE_CONSTRUCTOR IVRMenu(IVRMenu *main,
+									   const char *name,
+									   const char *greeting_sound,
+									   const char *short_greeting_sound,
+									   const char *invalid_sound,
+									   const char *exit_sound,
+									   const char *confirm_macro,
+									   const char *confirm_key,
+									   int confirm_attempts,
+									   int inter_timeout,
+									   int digit_len,
+									   int timeout,
+									   int max_failures
+									   );
+	virtual SWITCH_DECLARE_CONSTRUCTOR ~IVRMenu();
+	SWITCH_DECLARE(void) bindAction(char *action, const char *arg, const char *bind);
+	SWITCH_DECLARE(void) execute(CoreSession *session, const char *name);
+};
+
+
 class API {
  protected:
 	char *last_data;

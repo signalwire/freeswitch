@@ -1487,23 +1487,24 @@ SWIG_Lua_dostring(lua_State *L, const char* str) {
 #define SWIGTYPE_p_API swig_types[0]
 #define SWIGTYPE_p_CoreSession swig_types[1]
 #define SWIGTYPE_p_Event swig_types[2]
-#define SWIGTYPE_p_Session swig_types[3]
-#define SWIGTYPE_p_Stream swig_types[4]
-#define SWIGTYPE_p_input_callback_state swig_types[5]
-#define SWIGTYPE_p_lua_State swig_types[6]
-#define SWIGTYPE_p_session_flag_t swig_types[7]
-#define SWIGTYPE_p_switch_channel_state_t swig_types[8]
-#define SWIGTYPE_p_switch_channel_t swig_types[9]
-#define SWIGTYPE_p_switch_core_session_t swig_types[10]
-#define SWIGTYPE_p_switch_event_t swig_types[11]
-#define SWIGTYPE_p_switch_input_args_t swig_types[12]
-#define SWIGTYPE_p_switch_input_type_t swig_types[13]
-#define SWIGTYPE_p_switch_priority_t swig_types[14]
-#define SWIGTYPE_p_switch_status_t swig_types[15]
-#define SWIGTYPE_p_switch_stream_handle_t swig_types[16]
-#define SWIGTYPE_p_void swig_types[17]
-static swig_type_info *swig_types[19];
-static swig_module_info swig_module = {swig_types, 18, 0, 0, 0, 0};
+#define SWIGTYPE_p_IVRMenu swig_types[3]
+#define SWIGTYPE_p_Session swig_types[4]
+#define SWIGTYPE_p_Stream swig_types[5]
+#define SWIGTYPE_p_input_callback_state swig_types[6]
+#define SWIGTYPE_p_lua_State swig_types[7]
+#define SWIGTYPE_p_session_flag_t swig_types[8]
+#define SWIGTYPE_p_switch_channel_state_t swig_types[9]
+#define SWIGTYPE_p_switch_channel_t swig_types[10]
+#define SWIGTYPE_p_switch_core_session_t swig_types[11]
+#define SWIGTYPE_p_switch_event_t swig_types[12]
+#define SWIGTYPE_p_switch_input_args_t swig_types[13]
+#define SWIGTYPE_p_switch_input_type_t swig_types[14]
+#define SWIGTYPE_p_switch_priority_t swig_types[15]
+#define SWIGTYPE_p_switch_status_t swig_types[16]
+#define SWIGTYPE_p_switch_stream_handle_t swig_types[17]
+#define SWIGTYPE_p_void swig_types[18]
+static swig_type_info *swig_types[20];
+static swig_module_info swig_module = {swig_types, 19, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1570,6 +1571,175 @@ fail:
   return SWIG_arg;
 }
 
+
+static int _wrap_new_IVRMenu(lua_State* L) {
+  int SWIG_arg = -1;
+  IVRMenu *arg1 = (IVRMenu *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  char *arg5 = (char *) 0 ;
+  char *arg6 = (char *) 0 ;
+  char *arg7 = (char *) 0 ;
+  char *arg8 = (char *) 0 ;
+  int arg9 ;
+  int arg10 ;
+  int arg11 ;
+  int arg12 ;
+  int arg13 ;
+  IVRMenu *result = 0 ;
+  
+  SWIG_check_num_args("IVRMenu",13,13)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IVRMenu",1,"IVRMenu *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("IVRMenu",2,"char const *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("IVRMenu",3,"char const *");
+  if(!lua_isstring(L,4)) SWIG_fail_arg("IVRMenu",4,"char const *");
+  if(!lua_isstring(L,5)) SWIG_fail_arg("IVRMenu",5,"char const *");
+  if(!lua_isstring(L,6)) SWIG_fail_arg("IVRMenu",6,"char const *");
+  if(!lua_isstring(L,7)) SWIG_fail_arg("IVRMenu",7,"char const *");
+  if(!lua_isstring(L,8)) SWIG_fail_arg("IVRMenu",8,"char const *");
+  if(!lua_isnumber(L,9)) SWIG_fail_arg("IVRMenu",9,"int");
+  if(!lua_isnumber(L,10)) SWIG_fail_arg("IVRMenu",10,"int");
+  if(!lua_isnumber(L,11)) SWIG_fail_arg("IVRMenu",11,"int");
+  if(!lua_isnumber(L,12)) SWIG_fail_arg("IVRMenu",12,"int");
+  if(!lua_isnumber(L,13)) SWIG_fail_arg("IVRMenu",13,"int");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_IVRMenu,0))){
+    SWIG_fail_ptr("new_IVRMenu",1,SWIGTYPE_p_IVRMenu);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (char *)lua_tostring(L, 3);
+  arg4 = (char *)lua_tostring(L, 4);
+  arg5 = (char *)lua_tostring(L, 5);
+  arg6 = (char *)lua_tostring(L, 6);
+  arg7 = (char *)lua_tostring(L, 7);
+  arg8 = (char *)lua_tostring(L, 8);
+  arg9 = (int)lua_tonumber(L, 9);
+  arg10 = (int)lua_tonumber(L, 10);
+  arg11 = (int)lua_tonumber(L, 11);
+  arg12 = (int)lua_tonumber(L, 12);
+  arg13 = (int)lua_tonumber(L, 13);
+  result = (IVRMenu *)new IVRMenu(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,arg9,arg10,arg11,arg12,arg13);
+  SWIG_arg=0;
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_IVRMenu,1); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_delete_IVRMenu(lua_State* L) {
+  int SWIG_arg = -1;
+  IVRMenu *arg1 = (IVRMenu *) 0 ;
+  
+  SWIG_check_num_args("IVRMenu",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IVRMenu",1,"IVRMenu *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_IVRMenu,SWIG_POINTER_DISOWN))){
+    SWIG_fail_ptr("delete_IVRMenu",1,SWIGTYPE_p_IVRMenu);
+  }
+  
+  delete arg1;
+  
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_IVRMenu_bindAction(lua_State* L) {
+  int SWIG_arg = -1;
+  IVRMenu *arg1 = (IVRMenu *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  
+  SWIG_check_num_args("bindAction",4,4)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("bindAction",1,"IVRMenu *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("bindAction",2,"char *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("bindAction",3,"char const *");
+  if(!lua_isstring(L,4)) SWIG_fail_arg("bindAction",4,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_IVRMenu,0))){
+    SWIG_fail_ptr("IVRMenu_bindAction",1,SWIGTYPE_p_IVRMenu);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (char *)lua_tostring(L, 3);
+  arg4 = (char *)lua_tostring(L, 4);
+  (arg1)->bindAction(arg2,(char const *)arg3,(char const *)arg4);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_IVRMenu_execute(lua_State* L) {
+  int SWIG_arg = -1;
+  IVRMenu *arg1 = (IVRMenu *) 0 ;
+  CoreSession *arg2 = (CoreSession *) 0 ;
+  char *arg3 = (char *) 0 ;
+  
+  SWIG_check_num_args("execute",3,3)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("execute",1,"IVRMenu *");
+  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("execute",2,"CoreSession *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("execute",3,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_IVRMenu,0))){
+    SWIG_fail_ptr("IVRMenu_execute",1,SWIGTYPE_p_IVRMenu);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("IVRMenu_execute",2,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg3 = (char *)lua_tostring(L, 3);
+  (arg1)->execute(arg2,(char const *)arg3);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static void swig_delete_IVRMenu(void *obj) {
+IVRMenu *arg1 = (IVRMenu *) obj;
+delete arg1;
+}
+static swig_lua_method swig_IVRMenu_methods[] = {
+    {"bindAction", _wrap_IVRMenu_bindAction}, 
+    {"execute", _wrap_IVRMenu_execute}, 
+    {0,0}
+};
+static swig_lua_attribute swig_IVRMenu_attributes[] = {
+    {0,0,0}
+};
+static swig_lua_class *swig_IVRMenu_bases[] = {0};
+static const char *swig_IVRMenu_base_names[] = {0};
+static swig_lua_class _wrap_class_IVRMenu = { "IVRMenu", &SWIGTYPE_p_IVRMenu,_wrap_new_IVRMenu, swig_delete_IVRMenu, swig_IVRMenu_methods, swig_IVRMenu_attributes, swig_IVRMenu_bases, swig_IVRMenu_base_names };
 
 static int _wrap_new_API(lua_State* L) {
   int SWIG_arg = -1;
@@ -5474,6 +5644,7 @@ static void *_p_SessionTo_p_CoreSession(void *x, int *newmemory) {
 static swig_type_info _swigt__p_API = {"_p_API", "API *", 0, 0, (void*)&_wrap_class_API, 0};
 static swig_type_info _swigt__p_CoreSession = {"_p_CoreSession", "CoreSession *", 0, 0, (void*)&_wrap_class_CoreSession, 0};
 static swig_type_info _swigt__p_Event = {"_p_Event", "Event *", 0, 0, (void*)&_wrap_class_Event, 0};
+static swig_type_info _swigt__p_IVRMenu = {"_p_IVRMenu", "IVRMenu *", 0, 0, (void*)&_wrap_class_IVRMenu, 0};
 static swig_type_info _swigt__p_Session = {"_p_Session", "Session *", 0, 0, (void*)&_wrap_class_Session, 0};
 static swig_type_info _swigt__p_Stream = {"_p_Stream", "Stream *", 0, 0, (void*)&_wrap_class_Stream, 0};
 static swig_type_info _swigt__p_input_callback_state = {"_p_input_callback_state", "input_callback_state_t *|input_callback_state *", 0, 0, (void*)&_wrap_class_input_callback_state_t, 0};
@@ -5494,6 +5665,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_API,
   &_swigt__p_CoreSession,
   &_swigt__p_Event,
+  &_swigt__p_IVRMenu,
   &_swigt__p_Session,
   &_swigt__p_Stream,
   &_swigt__p_input_callback_state,
@@ -5514,6 +5686,7 @@ static swig_type_info *swig_type_initial[] = {
 static swig_cast_info _swigc__p_API[] = {  {&_swigt__p_API, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_CoreSession[] = {  {&_swigt__p_CoreSession, 0, 0, 0},  {&_swigt__p_Session, _p_SessionTo_p_CoreSession, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Event[] = {  {&_swigt__p_Event, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_IVRMenu[] = {  {&_swigt__p_IVRMenu, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Session[] = {  {&_swigt__p_Session, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Stream[] = {  {&_swigt__p_Stream, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_input_callback_state[] = {  {&_swigt__p_input_callback_state, 0, 0, 0},{0, 0, 0, 0}};
@@ -5534,6 +5707,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_API,
   _swigc__p_CoreSession,
   _swigc__p_Event,
+  _swigc__p_IVRMenu,
   _swigc__p_Session,
   _swigc__p_Stream,
   _swigc__p_input_callback_state,

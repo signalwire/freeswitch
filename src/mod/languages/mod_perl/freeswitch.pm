@@ -56,6 +56,45 @@ package freeswitch;
 *hanguphook = *freeswitchc::hanguphook;
 *dtmf_callback = *freeswitchc::dtmf_callback;
 
+############# Class : freeswitch::IVRMenu ##############
+
+package freeswitch::IVRMenu;
+use vars qw(@ISA %OWNER %ITERATORS %BLESSEDMEMBERS);
+@ISA = qw( freeswitch );
+%OWNER = ();
+%ITERATORS = ();
+sub new {
+    my $pkg = shift;
+    my $self = freeswitchc::new_IVRMenu(@_);
+    bless $self, $pkg if defined($self);
+}
+
+sub DESTROY {
+    return unless $_[0]->isa('HASH');
+    my $self = tied(%{$_[0]});
+    return unless defined $self;
+    delete $ITERATORS{$self};
+    if (exists $OWNER{$self}) {
+        freeswitchc::delete_IVRMenu($self);
+        delete $OWNER{$self};
+    }
+}
+
+*bindAction = *freeswitchc::IVRMenu_bindAction;
+*execute = *freeswitchc::IVRMenu_execute;
+sub DISOWN {
+    my $self = shift;
+    my $ptr = tied(%$self);
+    delete $OWNER{$ptr};
+}
+
+sub ACQUIRE {
+    my $self = shift;
+    my $ptr = tied(%$self);
+    $OWNER{$ptr} = 1;
+}
+
+
 ############# Class : freeswitch::API ##############
 
 package freeswitch::API;

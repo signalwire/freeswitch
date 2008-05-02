@@ -11,7 +11,7 @@ include $(BASE)/build/modmake.rules
 
 
 swigclean: clean
-	rm -f mod_perl_wrap.*
+	rm -f mod_perl_wrap.* freeswitch.so freeswitch.pm
 
 mod_perl_wrap.cpp:
 	swig -static -shadow -perl5 -c++ -DMULTIPLICITY -I../../../../src/include -o mod_perl_wrap.cpp freeswitch.i
