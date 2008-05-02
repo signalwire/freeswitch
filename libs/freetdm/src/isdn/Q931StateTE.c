@@ -772,7 +772,7 @@ L3INT Q931ProcReleaseTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
     } else {
         ret = Q931ProcUnexpectedMessage(pTrunk, buf, iFrom);
     }
-	if (pMes->CRV) {
+	if (pMes->CRV && iFrom == 2) {
 		/* Find the call using CRV */
 		if ((Q931FindCRV(pTrunk, pMes->CRV, &callIndex)) != Q931E_NO_ERROR)
 			return ret;
@@ -797,16 +797,17 @@ L3INT Q931ProcReleaseCompleteTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT i
     {
         /* TODO Add proc here*/
 		ret = Q931Tx34(pTrunk,buf,pMes->Size);
-    }
+    } else {
 
-	if (pMes->CRV) {
-		/* Find the call using CRV */
-		ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-		if(ret != Q931E_NO_ERROR)
-			return ret;
-		pTrunk->call[callIndex].InUse = 0;
+		if (pMes->CRV) {
+			/* Find the call using CRV */
+			ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
+			if(ret != Q931E_NO_ERROR)
+				return ret;
+			pTrunk->call[callIndex].InUse = 0;
+		}
+
 	}
-
 	return ret;
 }
 
