@@ -5517,8 +5517,7 @@ XS(_wrap_CoreSession_getDigits) {
     CoreSession *arg1 = (CoreSession *) 0 ;
     int arg2 ;
     char *arg3 = (char *) 0 ;
-    char *arg4 = (char *) 0 ;
-    int arg5 ;
+    int arg4 ;
     char *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -5527,16 +5526,13 @@ XS(_wrap_CoreSession_getDigits) {
     int res3 ;
     char *buf3 = 0 ;
     int alloc3 = 0 ;
-    int res4 ;
-    char *buf4 = 0 ;
-    int alloc4 = 0 ;
-    int val5 ;
-    int ecode5 = 0 ;
+    int val4 ;
+    int ecode4 = 0 ;
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 5) || (items > 5)) {
-      SWIG_croak("Usage: CoreSession_getDigits(self,maxdigits,terminators,terminator,timeout);");
+    if ((items < 4) || (items > 4)) {
+      SWIG_croak("Usage: CoreSession_getDigits(self,maxdigits,terminators,timeout);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -5553,29 +5549,22 @@ XS(_wrap_CoreSession_getDigits) {
       SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "CoreSession_getDigits" "', argument " "3"" of type '" "char *""'");
     }
     arg3 = reinterpret_cast< char * >(buf3);
-    res4 = SWIG_AsCharPtrAndSize(ST(3), &buf4, NULL, &alloc4);
-    if (!SWIG_IsOK(res4)) {
-      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "CoreSession_getDigits" "', argument " "4"" of type '" "char *""'");
-    }
-    arg4 = reinterpret_cast< char * >(buf4);
-    ecode5 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(4), &val5);
-    if (!SWIG_IsOK(ecode5)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "CoreSession_getDigits" "', argument " "5"" of type '" "int""'");
+    ecode4 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(3), &val4);
+    if (!SWIG_IsOK(ecode4)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "CoreSession_getDigits" "', argument " "4"" of type '" "int""'");
     } 
-    arg5 = static_cast< int >(val5);
-    result = (char *)(arg1)->getDigits(arg2,arg3,arg4,arg5);
+    arg4 = static_cast< int >(val4);
+    result = (char *)(arg1)->getDigits(arg2,arg3,arg4);
     ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
     
     
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
-    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
     
     XSRETURN(argvi);
   fail:
     
     
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
-    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
     
     SWIG_croak_null();
   }

@@ -528,13 +528,13 @@ SWITCH_DECLARE(int) CoreSession::collectDigits(int timeout) {
 } 
 
 SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits, 
-										   char *terminators, 
-										   char *terminator, 
-										   int timeout)
+											  char *terminators, 
+											  int timeout)
 {
     switch_status_t status;
 	sanity_check("");
 	begin_allow_threads();
+	char terminator;
 
 	memset(dtmf_buf, 0, sizeof(dtmf_buf));
     status = switch_ivr_collect_digits_count(session, 
@@ -542,7 +542,7 @@ SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits,
 											 sizeof(dtmf_buf),
 											 maxdigits, 
 											 terminators, 
-											 terminator, 
+											 &terminator, 
 											 (uint32_t) timeout, 0, 0);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "getDigits dtmf_buf: %s\n", dtmf_buf);

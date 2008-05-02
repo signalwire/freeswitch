@@ -301,8 +301,6 @@ core_install: install_core
 
 everything: install
 
-installall: install
-
 up: clean
 	svn update
 	$(MAKE) -j core
@@ -321,6 +319,10 @@ update-clean: clean modwipe uninstall libs/openzap/Makefile
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/openzap && $(MAKE) clean
 
+swigall:
+	@echo reswigging all
+	sh ./build/swigall.sh
+
 sure: update-clean all
 
 speedy-sure: update-clean
@@ -332,6 +334,8 @@ current: update-clean
 	svn update
 	$(MAKE) all
 	$(MAKE) install
+
+installall: current
 
 speedy-current: update-clean
 	svn update

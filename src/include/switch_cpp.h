@@ -250,7 +250,6 @@ class CoreSession {
 	SWITCH_DECLARE(char *) getDigits(
 								  int maxdigits, 
 								  char *terminators, 
-								  char *terminator, 
 								  int timeout);
 	
 	SWITCH_DECLARE(int) transfer(char *extensions, char *dialplan, char *context);

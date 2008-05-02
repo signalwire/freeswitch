@@ -5912,8 +5912,7 @@ SWIGINTERN PyObject *_wrap_CoreSession_getDigits(PyObject *SWIGUNUSEDPARM(self),
   CoreSession *arg1 = (CoreSession *) 0 ;
   int arg2 ;
   char *arg3 = (char *) 0 ;
-  char *arg4 = (char *) 0 ;
-  int arg5 ;
+  int arg4 ;
   char *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -5922,20 +5921,14 @@ SWIGINTERN PyObject *_wrap_CoreSession_getDigits(PyObject *SWIGUNUSEDPARM(self),
   int res3 ;
   char *buf3 = 0 ;
   int alloc3 = 0 ;
-  int res4 ;
-  char temp4[8+1] ;
-  char *t4 = 0 ;
-  size_t n4 = 0 ;
-  int alloc4 = 0 ;
-  int val5 ;
-  int ecode5 = 0 ;
+  int val4 ;
+  int ecode4 = 0 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
   PyObject * obj3 = 0 ;
-  PyObject * obj4 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"OOOOO:CoreSession_getDigits",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OOOO:CoreSession_getDigits",&obj0,&obj1,&obj2,&obj3)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_getDigits" "', argument " "1"" of type '" "CoreSession *""'"); 
@@ -5951,24 +5944,13 @@ SWIGINTERN PyObject *_wrap_CoreSession_getDigits(PyObject *SWIGUNUSEDPARM(self),
     SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "CoreSession_getDigits" "', argument " "3"" of type '" "char *""'");
   }
   arg3 = reinterpret_cast< char * >(buf3);
-  res4 = SWIG_AsCharPtrAndSize(obj3, &t4, &n4, &alloc4);
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "CoreSession_getDigits" "', argument " "4"" of type '" "char *terminator""'");
-  }
-  if ( n4 > (size_t) 8 ) n4 = (size_t) 8;
-  memcpy(temp4, t4, sizeof(char)*n4);
-  if (alloc4 == SWIG_NEWOBJ) delete[] t4;
-  temp4[n4 - 1] = 0;                                                             
-  arg4 = (char *) temp4;
-  ecode5 = SWIG_AsVal_int(obj4, &val5);
-  if (!SWIG_IsOK(ecode5)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "CoreSession_getDigits" "', argument " "5"" of type '" "int""'");
+  ecode4 = SWIG_AsVal_int(obj3, &val4);
+  if (!SWIG_IsOK(ecode4)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "CoreSession_getDigits" "', argument " "4"" of type '" "int""'");
   } 
-  arg5 = static_cast< int >(val5);
-  result = (char *)(arg1)->getDigits(arg2,arg3,arg4,arg5);
+  arg4 = static_cast< int >(val4);
+  result = (char *)(arg1)->getDigits(arg2,arg3,arg4);
   resultobj = SWIG_FromCharPtr((const char *)result);
-  arg4[8] = 0;
-  resultobj = SWIG_Python_AppendOutput(resultobj, SWIG_FromCharPtr(arg4));
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   return resultobj;
 fail:
