@@ -835,6 +835,10 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *ret)
 	
     switch_file_handle_t *fh = NULL;	   
 
+    if (switch_strlen_zero(ret)) {
+		return SWITCH_STATUS_SUCCESS;	
+    }
+
 	if (fhp) {
 		fh = fhp;
 	} else {
@@ -855,10 +859,6 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *ret)
     if (!fh->file_interface) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because fh->file_interface is null\n");
 		return SWITCH_STATUS_FALSE;	
-    }
-
-    if (!ret) {
-		return SWITCH_STATUS_SUCCESS;	
     }
 
     if (!session) {
