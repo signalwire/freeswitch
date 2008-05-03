@@ -21,10 +21,16 @@ Session::Session(switch_core_session_t *new_session) : CoreSession(new_session)
 static switch_status_t lua_hanguphook(switch_core_session_t *session_hungup);
 Session::~Session()
 {
+
+	if (hangup_func_str) {
+		if (session) {
+			switch_core_event_hook_remove_state_change(session, lua_hanguphook);
+		}
+		free(hangup_func_str);
+	}
+	
 	switch_safe_free(cb_function);
 	switch_safe_free(cb_arg);
-	switch_safe_free(hangup_func_str);
-	switch_core_event_hook_remove_state_change(session, lua_hanguphook);
 }
 
 bool Session::begin_allow_threads() 
