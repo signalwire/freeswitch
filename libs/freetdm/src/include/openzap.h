@@ -313,6 +313,12 @@ typedef struct {
 	uint8_t plan;
 } zap_number_t;
 
+typedef enum {
+	ZAP_CALLER_STATE_DIALING,
+	ZAP_CALLER_STATE_SUCCESS,
+	ZAP_CALLER_STATE_FAIL
+} zap_caller_state_t;
+
 struct zap_caller_data {
 	char cid_date[8];
 	char cid_name[80];
@@ -328,6 +334,9 @@ struct zap_caller_data {
 	int hangup_cause;	
 	uint8_t raw_data[1024];
 	uint32_t raw_data_len;
+	uint32_t flags;
+	zap_caller_state_t call_state;
+	uint32_t chan_id;
 };
 
 typedef enum {
@@ -410,6 +419,7 @@ struct zap_isdn_data {
 	struct zap_sigmsg sigmsg;
 	zio_signal_cb_t sig_cb;
 	uint32_t flags;
+	zap_caller_data_t *outbound_crv[32768];
 	zap_channel_t *channels_local_crv[32768];
 	zap_channel_t *channels_remote_crv[32768];
 };
@@ -444,6 +454,7 @@ struct zap_span {
 	zio_channel_request_t channel_request;
 	void *mod_data;
 	char *type;
+	int suggest_chan_id;
 };
 
 
@@ -520,7 +531,7 @@ zap_status_t zap_span_set_event_callback(zap_span_t *span, zio_event_cb_t event_
 zap_status_t zap_channel_set_event_callback(zap_channel_t *zchan, zio_event_cb_t event_callback);
 zap_status_t zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t **zchan);
 zap_status_t zap_channel_open_chan(zap_channel_t *zchan);
-zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, const zap_caller_data_t *caller_data, zap_channel_t **zchan);
+zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, zap_caller_data_t *caller_data, zap_channel_t **zchan);
 zap_status_t zap_channel_close(zap_channel_t **zchan);
 zap_status_t zap_channel_done(zap_channel_t *zchan);
 zap_status_t zap_channel_use(zap_channel_t *zchan);

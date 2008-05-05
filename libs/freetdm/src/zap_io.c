@@ -709,7 +709,7 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 	return ok ? ZAP_SUCCESS : ZAP_FAIL;
 }
 
-zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, const zap_caller_data_t *caller_data, zap_channel_t **zchan)
+zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, zap_caller_data_t *caller_data, zap_channel_t **zchan)
 {
 	zap_status_t status = ZAP_FAIL;
 	zap_channel_t *check;
@@ -723,9 +723,9 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, c
 			*zchan = NULL;
 			return ZAP_FAIL;
 		}
-
-		if (globals.spans[span_id].channel_request) {
-			return globals.spans[span_id].channel_request(&globals.spans[span_id], direction, caller_data, zchan);
+		
+		if (globals.spans[span_id].channel_request && !globals.spans[span_id].suggest_chan_id) {
+			return globals.spans[span_id].channel_request(&globals.spans[span_id], 0, direction, caller_data, zchan);
 		}
 		
 		span_max = span_id;
@@ -782,6 +782,12 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, c
 				!zap_test_flag(check, ZAP_CHANNEL_SUSPENDED) && 
 				check->state == ZAP_CHANNEL_STATE_DOWN
 				) {
+
+				if (globals.spans[span_id].channel_request) {
+					status = globals.spans[span_id].channel_request(&globals.spans[span_id], i, direction, caller_data, zchan);
+					zap_mutex_unlock(span->mutex);
+                    goto done;
+				}
 
 				status = check->zio->open(check);
 				
