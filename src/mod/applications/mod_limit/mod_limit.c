@@ -281,7 +281,7 @@ static switch_status_t hanguphook(switch_core_session_t *session)
 	const char *id = NULL;
 	char *sql = NULL;
 
-	if (state == CS_HANGUP || state == CS_RING) {
+	if (state == CS_HANGUP || state == CS_ROUTING) {
 		id = switch_channel_get_variable(channel, "limit_id");
 		realm = switch_channel_get_variable(channel, "limit_realm");
 		sql = switch_mprintf("delete from limit_data where uuid='%q' and hostname='%q' and realm='%q'and id='%q';", 

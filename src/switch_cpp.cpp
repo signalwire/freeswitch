@@ -352,7 +352,7 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession(char *nuuid)
 			allocated = 1;
 			switch_set_flag(this, S_HUP);
 			uuid = strdup(switch_core_session_get_uuid(session));
-			switch_channel_set_state(switch_core_session_get_channel(session), CS_TRANSMIT);
+			switch_channel_set_state(switch_core_session_get_channel(session), CS_SOFT_EXECUTE);
 		}
 	}
 }
@@ -694,7 +694,7 @@ SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, char *des
     if (a_leg_session) a_leg_session->end_allow_threads();
 	channel = switch_core_session_get_channel(session);
 	allocated = 1;
-	switch_channel_set_state(switch_core_session_get_channel(session), CS_TRANSMIT);
+	switch_channel_set_state(switch_core_session_get_channel(session), CS_SOFT_EXECUTE);
 
 	return SWITCH_STATUS_SUCCESS;
 

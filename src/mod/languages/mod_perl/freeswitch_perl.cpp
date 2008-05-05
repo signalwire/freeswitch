@@ -67,7 +67,7 @@ bool Session::ready() {
 
 void Session::check_hangup_hook() 
 {
-	if (hangup_func_str && (hook_state == CS_HANGUP || hook_state == CS_RING)) {
+	if (hangup_func_str && (hook_state == CS_HANGUP || hook_state == CS_ROUTING)) {
 		hh++;
 	}
 }

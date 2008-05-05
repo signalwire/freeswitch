@@ -54,7 +54,7 @@ static void switch_core_standard_on_reset(switch_core_session_t *session)
 					  switch_channel_get_name(session->channel));	
 }
 
-static void switch_core_standard_on_ring(switch_core_session_t *session)
+static void switch_core_standard_on_routing(switch_core_session_t *session)
 {
 	switch_dialplan_interface_t *dialplan_interface = NULL;
 	switch_caller_profile_t *caller_profile;
@@ -103,7 +103,7 @@ static void switch_core_standard_on_ring(switch_core_session_t *session)
 		if (!count) {
 			if (switch_channel_test_flag(session->channel, CF_OUTBOUND)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No Dialplan, changing state to HOLD\n");
-				switch_channel_set_state(session->channel, CS_HOLD);
+				switch_channel_set_state(session->channel, CS_CONSUME_MEDIA);
 				goto end;
 			}
 		}
@@ -157,14 +157,14 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 	}
 }
 
-static void switch_core_standard_on_loopback(switch_core_session_t *session)
+static void switch_core_standard_on_exchange_media(switch_core_session_t *session)
 {
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard LOOPBACK\n");
 	switch_ivr_session_echo(session);
 }
 
-static void switch_core_standard_on_transmit(switch_core_session_t *session)
+static void switch_core_standard_on_soft_execute(switch_core_session_t *session)
 {
 	switch_assert(session != NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard TRANSMIT\n");
@@ -179,7 +179,7 @@ static void switch_core_standard_on_park(switch_core_session_t *session)
 	switch_ivr_park(session, NULL);
 }
 
-static void switch_core_standard_on_hold(switch_core_session_t *session)
+static void switch_core_standard_on_consume_media(switch_core_session_t *session)
 {
 	switch_assert(session != NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard HOLD\n");
@@ -413,9 +413,9 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				STATE_MACRO(init, "INIT");
 				switch_core_session_signal_unlock(session);
 				break;
-			case CS_RING: /* Look for a dialplan and find something to do */
+			case CS_ROUTING: /* Look for a dialplan and find something to do */
 				switch_core_session_signal_lock(session);
-				STATE_MACRO(ring, "RING");
+				STATE_MACRO(routing, "ROUTING");
 				switch_core_session_signal_unlock(session);
 				break;
 			case CS_RESET: /* Reset */
@@ -427,17 +427,17 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			case CS_EXECUTE: /* Execute an Operation */
 				STATE_MACRO(execute, "EXECUTE");
 				break;
-			case CS_LOOPBACK: /* loop all data back to source */
-				STATE_MACRO(loopback, "LOOPBACK");
+			case CS_EXCHANGE_MEDIA: /* loop all data back to source */
+				STATE_MACRO(exchange_media, "EXCHANGE_MEDIA");
 				break;
-			case CS_TRANSMIT: /* send/recieve data to/from another channel */
-				STATE_MACRO(transmit, "TRANSMIT");
+			case CS_SOFT_EXECUTE: /* send/recieve data to/from another channel */
+				STATE_MACRO(soft_execute, "SOFT_EXECUTE");
 				break;
 			case CS_PARK: /* wait in limbo */
 				STATE_MACRO(park, "PARK");
 				break;
-			case CS_HOLD: /* wait in limbo */
-				STATE_MACRO(hold, "HOLD");
+			case CS_CONSUME_MEDIA: /* wait in limbo */
+				STATE_MACRO(consume_media, "CONSUME_MEDIA");
 				break;
 			case CS_HIBERNATE: /* sleep */
 				STATE_MACRO(hibernate, "HIBERNATE");

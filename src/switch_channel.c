@@ -721,7 +721,7 @@ SWITCH_DECLARE(uint8_t) switch_channel_ready(switch_channel_t *channel)
 
 	switch_assert(channel != NULL);
 
-	if (!channel->hangup_cause && channel->state > CS_RING && channel->state < CS_HANGUP && channel->state != CS_RESET && 
+	if (!channel->hangup_cause && channel->state > CS_ROUTING && channel->state < CS_HANGUP && channel->state != CS_RESET && 
 		!switch_test_flag(channel, CF_TRANSFER)) {
 			ret++;
 	}
@@ -732,12 +732,12 @@ SWITCH_DECLARE(uint8_t) switch_channel_ready(switch_channel_t *channel)
 static const char *state_names[] = {
 	"CS_NEW",
 	"CS_INIT",
-	"CS_RING",
-	"CS_TRANSMIT",
+	"CS_ROUTING",
+	"CS_SOFT_EXECUTE",
 	"CS_EXECUTE",
-	"CS_LOOPBACK",
+	"CS_EXCHANGE_MEDIA",
 	"CS_PARK",
-	"CS_HOLD",
+	"CS_CONSUME_MEDIA",
 	"CS_HIBERNATE",
 	"CS_RESET",
 	"CS_HANGUP",
@@ -776,7 +776,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 		channel->state_flags = 0;
 	}
 
-	if (channel->state >= CS_RING) {
+	if (channel->state >= CS_ROUTING) {
 		switch_clear_flag(channel, CF_TRANSFER);
 		switch_channel_presence(channel, "unknown", (char *) state_names[state]);
 	}
@@ -784,7 +784,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 	if (state < CS_HANGUP) {
 		switch_event_t *event;
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
-			if (state == CS_RING) {
+			if (state == CS_ROUTING) {
 				switch_channel_event_set_data(channel, event);
 			} else {
 				char state_num[25];
@@ -838,9 +838,9 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 
 	case CS_NEW:
 	case CS_INIT:
-	case CS_LOOPBACK:
-	case CS_TRANSMIT:
-	case CS_RING:
+	case CS_EXCHANGE_MEDIA:
+	case CS_SOFT_EXECUTE:
+	case CS_ROUTING:
 	case CS_EXECUTE:
 	case CS_HANGUP:
 	case CS_DONE:
@@ -863,12 +863,12 @@ default:
 
 case CS_INIT:
 	switch (state) {
-case CS_LOOPBACK:
-case CS_TRANSMIT:
-case CS_RING:
+case CS_EXCHANGE_MEDIA:
+case CS_SOFT_EXECUTE:
+case CS_ROUTING:
 case CS_EXECUTE:
 case CS_PARK:
-case CS_HOLD:
+case CS_CONSUME_MEDIA:
 case CS_HIBERNATE:
 case CS_RESET:
 	ok++;
@@ -877,13 +877,13 @@ default:
 	}
 	break;
 
-case CS_LOOPBACK:
+case CS_EXCHANGE_MEDIA:
 	switch (state) {
-case CS_TRANSMIT:
-case CS_RING:
+case CS_SOFT_EXECUTE:
+case CS_ROUTING:
 case CS_EXECUTE:
 case CS_PARK:
-case CS_HOLD:
+case CS_CONSUME_MEDIA:
 case CS_HIBERNATE:
 case CS_RESET:
 	ok++;
@@ -892,13 +892,13 @@ default:
 	}
 	break;
 
-case CS_TRANSMIT:
+case CS_SOFT_EXECUTE:
 	switch (state) {
-case CS_LOOPBACK:
-case CS_RING:
+case CS_EXCHANGE_MEDIA:
+case CS_ROUTING:
 case CS_EXECUTE:
 case CS_PARK:
-case CS_HOLD:
+case CS_CONSUME_MEDIA:
 case CS_HIBERNATE:
 case CS_RESET:
 	ok++;
@@ -909,25 +909,25 @@ default:
 
 case CS_PARK:
 	switch (state) {
-case CS_LOOPBACK:
-case CS_RING:
+case CS_EXCHANGE_MEDIA:
+case CS_ROUTING:
 case CS_EXECUTE:
-case CS_TRANSMIT:
+case CS_SOFT_EXECUTE:
 case CS_HIBERNATE:
 case CS_RESET:
-case CS_HOLD:
+case CS_CONSUME_MEDIA:
 	ok++;
 default:
 	break;
 	}
 	break;
 
-case CS_HOLD:
+case CS_CONSUME_MEDIA:
 	switch (state) {
-case CS_LOOPBACK:
-case CS_RING:
+case CS_EXCHANGE_MEDIA:
+case CS_ROUTING:
 case CS_EXECUTE:
-case CS_TRANSMIT:
+case CS_SOFT_EXECUTE:
 case CS_HIBERNATE:
 case CS_RESET:
 case CS_PARK:
@@ -938,13 +938,13 @@ default:
 	break;
 case CS_HIBERNATE:
 	switch (state) {
-case CS_LOOPBACK:
+case CS_EXCHANGE_MEDIA:
 case CS_INIT:
-case CS_RING:
+case CS_ROUTING:
 case CS_EXECUTE:
-case CS_TRANSMIT:
+case CS_SOFT_EXECUTE:
 case CS_PARK:
-case CS_HOLD:
+case CS_CONSUME_MEDIA:
 case CS_RESET:
 	ok++;
 default:
@@ -952,13 +952,13 @@ default:
 	}
 	break;
 
-case CS_RING:
+case CS_ROUTING:
 	switch (state) {
-case CS_LOOPBACK:
+case CS_EXCHANGE_MEDIA:
 case CS_EXECUTE:
-case CS_TRANSMIT:
+case CS_SOFT_EXECUTE:
 case CS_PARK:
-case CS_HOLD:
+case CS_CONSUME_MEDIA:
 case CS_HIBERNATE:
 case CS_RESET:
 	ok++;
@@ -969,11 +969,11 @@ default:
 
 case CS_EXECUTE:
 	switch (state) {
-case CS_LOOPBACK:
-case CS_TRANSMIT:
-case CS_RING:
+case CS_EXCHANGE_MEDIA:
+case CS_SOFT_EXECUTE:
+case CS_ROUTING:
 case CS_PARK:
-case CS_HOLD:
+case CS_CONSUME_MEDIA:
 case CS_HIBERNATE:
 case CS_RESET:
 	ok++;

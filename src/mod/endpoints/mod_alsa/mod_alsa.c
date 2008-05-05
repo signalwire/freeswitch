@@ -143,9 +143,9 @@ static void add_pvt(private_t * tech_pvt, int master);
 static void remove_pvt(private_t * tech_pvt);
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
-static switch_status_t channel_on_ring(switch_core_session_t *session);
-static switch_status_t channel_on_loopback(switch_core_session_t *session);
-static switch_status_t channel_on_transmit(switch_core_session_t *session);
+static switch_status_t channel_on_routing(switch_core_session_t *session);
+static switch_status_t channel_on_exchange_media(switch_core_session_t *session);
+static switch_status_t channel_on_soft_execute(switch_core_session_t *session);
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags);
@@ -294,13 +294,13 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	switch_set_flag_locked(tech_pvt, TFLAG_IO);
 
 	/* Move Channel's State Machine to RING */
-	switch_channel_set_state(channel, CS_RING);
+	switch_channel_set_state(channel, CS_ROUTING);
 
 	return SWITCH_STATUS_SUCCESS;
 
 }
 
-static switch_status_t channel_on_ring(switch_core_session_t *session)
+static switch_status_t channel_on_routing(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
@@ -478,13 +478,13 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t channel_on_transmit(switch_core_session_t *session)
+static switch_status_t channel_on_soft_execute(switch_core_session_t *session)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CHANNEL TRANSMIT\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t channel_on_loopback(switch_core_session_t *session)
+static switch_status_t channel_on_exchange_media(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
@@ -737,11 +737,11 @@ static switch_api_interface_t channel_api_interface = {
 
 static switch_state_handler_table_t channel_event_handlers = {
 	/*.on_init */ channel_on_init,
-	/*.on_ring */ channel_on_ring,
+	/*.on_routing */ channel_on_routing,
 	/*.on_execute */ channel_on_execute,
 	/*.on_hangup */ channel_on_hangup,
-	/*.on_loopback */ channel_on_loopback,
-	/*.on_transmit */ channel_on_transmit
+	/*.on_exchange_media */ channel_on_exchange_media,
+	/*.on_soft_execute */ channel_on_soft_execute
 };
 
 static switch_io_routines_t channel_io_routines = {

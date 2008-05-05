@@ -348,7 +348,7 @@ static switch_status_t conference_play_file(conference_obj_t * conference, char 
 static switch_status_t conference_say(conference_obj_t * conference, const char *text, uint32_t leadin);
 static void conference_list(conference_obj_t * conference, switch_stream_handle_t *stream, char *delim);
 SWITCH_STANDARD_API(conf_api_main);
-static switch_status_t audio_bridge_on_ring(switch_core_session_t *session);
+static switch_status_t audio_bridge_on_routing(switch_core_session_t *session);
 static switch_status_t conference_outcall(conference_obj_t * conference,
 										  char *conference_name,
 										  switch_core_session_t *session,
@@ -581,7 +581,7 @@ static switch_status_t conference_add_member(conference_obj_t * conference, conf
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", conference->name);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_RING");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_ROUTING");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", conference->count == 1 ? "early" : "confirmed");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", conference->count == 1 ? "outbound" : "inbound");
 			switch_event_fire(&event);
@@ -723,7 +723,7 @@ static switch_status_t conference_del_member(conference_obj_t * conference, conf
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", conference->name);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_RING");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_ROUTING");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", conference->count == 1 ? "early" : "confirmed");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", conference->count == 1 ? "outbound" : "inbound");
 			switch_event_fire(&event);
@@ -3726,7 +3726,7 @@ SWITCH_STANDARD_API(conf_api_main)
 }
 
 /* outbound call bridge progress call state callback handler */
-static switch_status_t audio_bridge_on_ring(switch_core_session_t *session)
+static switch_status_t audio_bridge_on_routing(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 
@@ -3735,18 +3735,18 @@ static switch_status_t audio_bridge_on_ring(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CUSTOM RING\n");
 
 	/* put the channel in a passive state so we can loop audio to it */
-	switch_channel_set_state(channel, CS_TRANSMIT);
+	switch_channel_set_state(channel, CS_SOFT_EXECUTE);
 	return SWITCH_STATUS_FALSE;
 }
 
 static switch_state_handler_table_t audio_bridge_peer_state_handlers = {
 	/*.on_init */ NULL,
-	/*.on_ring */ audio_bridge_on_ring,
+	/*.on_routing */ audio_bridge_on_routing,
 	/*.on_execute */ NULL,
 	/*.on_hangup */ NULL,
-	/*.on_loopback */ NULL,
-	/*.on_transmit */ NULL,
-	/*.on_hold */ NULL,
+	/*.on_exchange_media */ NULL,
+	/*.on_soft_execute */ NULL,
+	/*.on_consume_media */ NULL,
 };
 
 
@@ -5124,7 +5124,7 @@ static void pres_event_handler(switch_event_t *event)
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", conf_name);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_RING");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_ROUTING");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", conference->count == 1 ? "early" : "confirmed");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", conference->count == 1 ? "outbound" : "inbound");
 			switch_event_fire(&event);

@@ -701,7 +701,7 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_HANGUP");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", "resubscribe");
 		} else {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_RING");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_ROUTING");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", uuid);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", state);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "astate", "%s", state);

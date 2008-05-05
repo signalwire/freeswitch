@@ -34,11 +34,11 @@
 
 static const switch_state_handler_table_t originate_state_handlers;
 
-static switch_status_t originate_on_hold_transmit(switch_core_session_t *session)
+static switch_status_t originate_on_consume_media_transmit(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	
-	while(switch_channel_get_state(channel) == CS_HOLD) {
+	while(switch_channel_get_state(channel) == CS_CONSUME_MEDIA) {
 		switch_ivr_sleep(session, 10);
 	}
 	
@@ -47,24 +47,24 @@ static switch_status_t originate_on_hold_transmit(switch_core_session_t *session
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status_t originate_on_ring(switch_core_session_t *session)
+static switch_status_t originate_on_routing(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	/* put the channel in a passive state until it is answered */
-	switch_channel_set_state(channel, CS_HOLD);
+	switch_channel_set_state(channel, CS_CONSUME_MEDIA);
 
 	return SWITCH_STATUS_FALSE;
 }
 
 static const switch_state_handler_table_t originate_state_handlers = {
 	/*.on_init */ NULL,
-	/*.on_ring */ originate_on_ring,
+	/*.on_routing */ originate_on_routing,
 	/*.on_execute */ NULL,
 	/*.on_hangup */ NULL,
-	/*.on_loopback */ NULL,
-	/*.on_transmit */ originate_on_hold_transmit,
-	/*.on_hold */ originate_on_hold_transmit
+	/*.on_exchange_media */ NULL,
+	/*.on_soft_execute */ originate_on_consume_media_transmit,
+	/*.on_consume_media */ originate_on_consume_media_transmit
 };
 
 typedef enum {
@@ -113,7 +113,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t * thread, voi
 			goto wbreak;
 		}
 
-		switch_channel_set_state(channel, CS_TRANSMIT);
+		switch_channel_set_state(channel, CS_SOFT_EXECUTE);
 		switch_core_session_exec(collect->session, application_interface, app_data);
 		
 		if (switch_channel_get_state(channel) < CS_HANGUP) {
@@ -884,7 +884,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				
 				if (!switch_core_session_running(peer_sessions[i])) {
 					//if (!(flags & SOF_NOBLOCK)) {
-                    //switch_channel_set_state(peer_channels[i], CS_RING);
+                    //switch_channel_set_state(peer_channels[i], CS_ROUTING);
 					//}
                     //} else {
 					switch_core_session_thread_launch(peer_sessions[i]);
@@ -910,7 +910,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						continue;
 					}
 
-					if (state >= CS_RING) {
+					if (state >= CS_ROUTING) {
 						goto endfor1;
 					}
 

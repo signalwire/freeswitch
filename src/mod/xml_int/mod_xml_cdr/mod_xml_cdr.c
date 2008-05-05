@@ -241,11 +241,11 @@ error:
 
 static switch_state_handler_table_t state_handlers = {
 	/*.on_init */ NULL,
-	/*.on_ring */ NULL,
+	/*.on_routing */ NULL,
 	/*.on_execute */ NULL,
 	/*.on_hangup */ my_on_hangup,
-	/*.on_loopback */ NULL,
-	/*.on_transmit */ NULL
+	/*.on_exchange_media */ NULL,
+	/*.on_soft_execute */ NULL
 };
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)

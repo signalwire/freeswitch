@@ -2924,19 +2924,19 @@ extern "C"
 		PyDict_SetItemString(d, "CS_INIT", SWIG_From_int((int) (CS_INIT)));
 	}
 	{
-		PyDict_SetItemString(d, "CS_RING", SWIG_From_int((int) (CS_RING)));
+		PyDict_SetItemString(d, "CS_ROUTING", SWIG_From_int((int) (CS_ROUTING)));
 	}
 	{
-		PyDict_SetItemString(d, "CS_TRANSMIT", SWIG_From_int((int) (CS_TRANSMIT)));
+		PyDict_SetItemString(d, "CS_SOFT_EXECUTE", SWIG_From_int((int) (CS_SOFT_EXECUTE)));
 	}
 	{
 		PyDict_SetItemString(d, "CS_EXECUTE", SWIG_From_int((int) (CS_EXECUTE)));
 	}
 	{
-		PyDict_SetItemString(d, "CS_LOOPBACK", SWIG_From_int((int) (CS_LOOPBACK)));
+		PyDict_SetItemString(d, "CS_EXCHANGE_MEDIA", SWIG_From_int((int) (CS_EXCHANGE_MEDIA)));
 	}
 	{
-		PyDict_SetItemString(d, "CS_HOLD", SWIG_From_int((int) (CS_HOLD)));
+		PyDict_SetItemString(d, "CS_CONSUME_MEDIA", SWIG_From_int((int) (CS_CONSUME_MEDIA)));
 	}
 	{
 		PyDict_SetItemString(d, "CS_HIBERNATE", SWIG_From_int((int) (CS_HIBERNATE)));

@@ -170,9 +170,9 @@ static woomera_profile default_profile;
 
 static switch_status_t woomera_on_init(switch_core_session_t *session);
 static switch_status_t woomera_on_hangup(switch_core_session_t *session);
-static switch_status_t woomera_on_ring(switch_core_session_t *session);
-static switch_status_t woomera_on_loopback(switch_core_session_t *session);
-static switch_status_t woomera_on_transmit(switch_core_session_t *session);
+static switch_status_t woomera_on_routing(switch_core_session_t *session);
+static switch_status_t woomera_on_exchange_media(switch_core_session_t *session);
+static switch_status_t woomera_on_soft_execute(switch_core_session_t *session);
 static switch_call_cause_t woomera_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags);
@@ -238,7 +238,7 @@ static switch_status_t woomera_on_init(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t woomera_on_ring(switch_core_session_t *session)
+static switch_status_t woomera_on_routing(switch_core_session_t *session)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERA RING\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 	return SWITCH_STATUS_SUCCESS;
@@ -310,13 +310,13 @@ static switch_status_t woomera_kill_channel(switch_core_session_t *session, int 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t woomera_on_loopback(switch_core_session_t *session)
+static switch_status_t woomera_on_exchange_media(switch_core_session_t *session)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WOOMERA LOOPBACK\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t woomera_on_transmit(switch_core_session_t *session)
+static switch_status_t woomera_on_soft_execute(switch_core_session_t *session)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WOOMERA TRANSMIT\n");
 	return SWITCH_STATUS_SUCCESS;
@@ -405,11 +405,11 @@ static switch_status_t woomera_write_frame(switch_core_session_t *session, switc
 
 static switch_state_handler_table_t woomera_event_handlers = {
 	/*.on_init */ woomera_on_init,
-	/*.on_ring */ woomera_on_ring,
+	/*.on_routing */ woomera_on_routing,
 	/*.on_execute */ woomera_on_execute,
 	/*.on_hangup */ woomera_on_hangup,
-	/*.on_loopback */ woomera_on_loopback,
-	/*.on_transmit */ woomera_on_transmit
+	/*.on_exchange_media */ woomera_on_exchange_media,
+	/*.on_soft_execute */ woomera_on_soft_execute
 };
 
 static switch_io_routines_t woomera_io_routines = {
@@ -1044,7 +1044,7 @@ static void *woomera_channel_thread_run(switch_thread_t * thread, void *obj)
 					}
 					/* Move Channel's State Machine to RING */
 					switch_channel_answer(channel);
-					switch_channel_set_state(channel, CS_RING);
+					switch_channel_set_state(channel, CS_ROUTING);
 
 					if (switch_sockaddr_info_get(&tech_pvt->udpwrite,
 												 ip, SWITCH_UNSPEC, port, 0, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {

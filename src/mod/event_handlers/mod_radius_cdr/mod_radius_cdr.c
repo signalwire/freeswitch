@@ -130,7 +130,7 @@ static rc_handle *	my_radius_init(void)
 	return rad_config;
 }
 
-static switch_status_t my_on_ring(switch_core_session_t *session)
+static switch_status_t my_on_routing(switch_core_session_t *session)
 {
 	switch_xml_t 	cdr;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -149,7 +149,7 @@ static switch_status_t my_on_ring(switch_core_session_t *session)
 	switch_time_exp_t tm;
 	char buffer[32];
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[mod_radius_cdr] Entering my_on_ring\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[mod_radius_cdr] Entering my_on_routing\n");
 
 	rad_config = my_radius_init();
 
@@ -716,11 +716,11 @@ static switch_status_t load_config(void)
 
 static const switch_state_handler_table_t state_handlers = {
 	/*.on_init */ NULL,
-	/*.on_ring */ my_on_ring,
+	/*.on_routing */ my_on_routing,
 	/*.on_execute */ NULL,
 	/*.on_hangup */ my_on_hangup,
-	/*.on_loopback */ NULL,
-	/*.on_transmit */ NULL
+	/*.on_exchange_media */ NULL,
+	/*.on_soft_execute */ NULL
 };
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_radius_cdr_load)

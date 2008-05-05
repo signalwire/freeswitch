@@ -294,7 +294,7 @@ static void send_presence(fifo_node_t *node)
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", 0);
 
-        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", wait_count > 0 ? "CS_RING" : "CS_HANGUP");
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", wait_count > 0 ? "CS_ROUTING" : "CS_HANGUP");
         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", node->name);
         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", wait_count > 0 ? "early" : "terminated");
         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", "inbound");

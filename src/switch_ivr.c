@@ -1023,7 +1023,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		switch_channel_set_caller_profile(channel, new_profile);
 		switch_channel_set_flag(channel, CF_TRANSFER);
 
-		switch_channel_set_state(channel, CS_RING);
+		switch_channel_set_state(channel, CS_ROUTING);
 		
 		msg.message_id = SWITCH_MESSAGE_INDICATE_TRANSFER;
 		msg.from = __FILE__;

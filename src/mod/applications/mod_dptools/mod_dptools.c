@@ -1341,7 +1341,7 @@ static switch_status_t hanguphook(switch_core_session_t *session)
 	switch_channel_state_t state = switch_channel_get_state(channel);
 	const char *id = NULL;
 
-	if (state == CS_HANGUP || state == CS_RING) {
+	if (state == CS_HANGUP || state == CS_ROUTING) {
 		if ((id = switch_channel_get_variable(channel, "xfer_uuids"))) {
 			switch_stream_handle_t stream = { 0 };
 			SWITCH_STANDARD_STREAM(stream);
@@ -1703,7 +1703,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 			}
 
 		}
-		if (!switch_channel_test_flag(caller_channel, CF_TRANSFER) && switch_channel_get_state(caller_channel) != CS_RING) {
+		if (!switch_channel_test_flag(caller_channel, CF_TRANSFER) && switch_channel_get_state(caller_channel) != CS_ROUTING) {
 			switch_channel_hangup(caller_channel, cause);
 		}
 		return;

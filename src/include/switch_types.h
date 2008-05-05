@@ -628,16 +628,16 @@ typedef enum {
 
 /*!
   \enum switch_channel_state_t
-  \brief Channel States
+  \brief Channel States (these are the defaults, CS_SOFT_EXECUTE, CS_EXCHANGE_MEDIA, and CS_CONSUME_MEDIA are often overridden by specific apps)
 <pre>
 CS_NEW       - Channel is newly created 
 CS_INIT      - Channel has been initilized
-CS_RING      - Channel is looking for a dialplan
-CS_TRANSMIT  - Channel is in a passive transmit state
+CS_ROUTING   - Channel is looking for an extension to execute
+CS_SOFT_EXECUTE  - Channel is ready to execute from 3rd party control
 CS_EXECUTE   - Channel is executing it's dialplan 
-CS_LOOPBACK  - Channel is in loopback
-CS_PARK      - Channel is parked
-CS_HOLD		 - Channel is on hold
+CS_EXCHANGE_MEDIA  - Channel is exchanging media with another channel.
+CS_PARK      - Channel is accepting media awaiting commands.
+CS_CONSUME_MEDIA		 - Channel is consuming all media and dropping it.
 CS_HIBERNATE - Channel is in a sleep state
 CS_RESET 	 - Channel is in a reset state
 CS_HANGUP    - Channel is flagged for hangup and ready to end
@@ -647,12 +647,12 @@ CS_DONE      - Channel is ready to be destroyed and out of the state machine
 typedef enum {
 	CS_NEW,
 	CS_INIT,
-	CS_RING,
-	CS_TRANSMIT,
+	CS_ROUTING,
+	CS_SOFT_EXECUTE,
 	CS_EXECUTE,
-	CS_LOOPBACK,
+	CS_EXCHANGE_MEDIA,
 	CS_PARK,
-	CS_HOLD,
+	CS_CONSUME_MEDIA,
 	CS_HIBERNATE,
 	CS_RESET,
 	CS_HANGUP,

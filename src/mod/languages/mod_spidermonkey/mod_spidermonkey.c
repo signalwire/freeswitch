@@ -1560,7 +1560,7 @@ static void check_hangup_hook(struct js_session *jss)
 	int argc = 0;
 	jsval ret;
 
-	if (jss->on_hangup && (jss->hook_state == CS_HANGUP || jss->hook_state == CS_RING)) {
+	if (jss->on_hangup && (jss->hook_state == CS_HANGUP || jss->hook_state == CS_ROUTING)) {
 		argv[argc++] = OBJECT_TO_JSVAL(jss->obj);
 		if (jss->hook_state == CS_HANGUP) {
 			argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(jss->cx, "hangup"));
@@ -2754,7 +2754,7 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		jss->session = peer_session;
 		switch_set_flag(jss, S_HUP);
 		*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
-		switch_channel_set_state(switch_core_session_get_channel(jss->session), CS_TRANSMIT);
+		switch_channel_set_state(switch_core_session_get_channel(jss->session), CS_SOFT_EXECUTE);
 
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing Args\n");

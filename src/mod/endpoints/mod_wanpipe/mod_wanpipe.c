@@ -464,8 +464,8 @@ static int str2node(char *node);
 static int str2switch(char *swtype);
 static switch_status_t wanpipe_on_init(switch_core_session_t *session);
 static switch_status_t wanpipe_on_hangup(switch_core_session_t *session);
-static switch_status_t wanpipe_on_loopback(switch_core_session_t *session);
-static switch_status_t wanpipe_on_transmit(switch_core_session_t *session);
+static switch_status_t wanpipe_on_exchange_media(switch_core_session_t *session);
+static switch_status_t wanpipe_on_soft_execute(switch_core_session_t *session);
 static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags);
 static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
@@ -474,7 +474,7 @@ static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switc
 										 switch_io_flag_t flags, int stream_id);
 static int on_info(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent);
 static int on_hangup(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent);
-static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent);
+static int on_routing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent);
 static int check_flags(struct sangoma_pri *spri);
 static int on_restart(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent);
 static int on_anything(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent);
@@ -614,11 +614,11 @@ static switch_status_t wanpipe_on_init(switch_core_session_t *session)
  done:
 
 	/* Move Channel's State Machine to RING */
-	switch_channel_set_state(channel, CS_RING);
+	switch_channel_set_state(channel, CS_ROUTING);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t wanpipe_on_ring(switch_core_session_t *session)
+static switch_status_t wanpipe_on_routing(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	private_object_t *tech_pvt = NULL;
@@ -694,13 +694,13 @@ static switch_status_t wanpipe_on_hangup(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t wanpipe_on_loopback(switch_core_session_t *session)
+static switch_status_t wanpipe_on_exchange_media(switch_core_session_t *session)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WANPIPE LOOPBACK\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t wanpipe_on_transmit(switch_core_session_t *session)
+static switch_status_t wanpipe_on_soft_execute(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt;
 	switch_channel_t *channel;
@@ -1001,11 +1001,11 @@ switch_io_routines_t wanpipe_io_routines = {
 
 switch_state_handler_table_t wanpipe_state_handlers = {
 	/*.on_init */ wanpipe_on_init,
-	/*.on_ring */ wanpipe_on_ring,
+	/*.on_routing */ wanpipe_on_routing,
 	/*.on_execute */ NULL,
 	/*.on_hangup */ wanpipe_on_hangup,
-	/*.on_loopback */ wanpipe_on_loopback,
-	/*.on_transmit */ wanpipe_on_transmit
+	/*.on_exchange_media */ wanpipe_on_exchange_media,
+	/*.on_soft_execute */ wanpipe_on_soft_execute
 };
 
 static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
@@ -1463,7 +1463,7 @@ static int on_proceed(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 }
 
 
-static int on_ringing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent)
+static int on_routinging(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent)
 {
 	switch_core_session_t *session;
 	switch_channel_t *channel;
@@ -1489,7 +1489,7 @@ static int on_ringing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 }
 
 
-static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent)
+static int on_routing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent)
 {
 	char name[128];
 	switch_core_session_t *session = NULL;
@@ -1671,8 +1671,8 @@ static void *SWITCH_THREAD_FUNC pri_thread_run(switch_thread_t *thread, void *ob
 
 	switch_mutex_init(&chanmap.mutex, SWITCH_MUTEX_NESTED, module_pool);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_ANY, on_anything);
-	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RING, on_ring);
-	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RINGING, on_ringing);
+	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RING, on_routing);
+	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RINGING, on_routinging);
 	//SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_SETUP_ACK, on_proceed);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_PROCEEDING, on_proceed);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_ANSWER, on_answer);

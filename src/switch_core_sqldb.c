@@ -287,7 +287,7 @@ static void core_event_handler(switch_event_t *event)
 			case CS_HANGUP:
 			case CS_DONE:
 				break;
-			case CS_RING:
+			case CS_ROUTING:
 				sql = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',ip_addr='%s',dest='%q' "
 									 "where uuid='%s'",
 									 switch_event_get_header(event, "channel-state"),

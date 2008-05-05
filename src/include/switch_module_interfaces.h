@@ -63,17 +63,17 @@ struct switch_state_handler_table {
 	/*! executed when the state changes to init */
 	switch_state_handler_t on_init;
 	/*! executed when the state changes to ring */
-	switch_state_handler_t on_ring;
+	switch_state_handler_t on_routing;
 	/*! executed when the state changes to execute */
 	switch_state_handler_t on_execute;
 	/*! executed when the state changes to hangup */
 	switch_state_handler_t on_hangup;
 	/*! executed when the state changes to loopback */
-	switch_state_handler_t on_loopback;
+	switch_state_handler_t on_exchange_media;
 	/*! executed when the state changes to transmit */
-	switch_state_handler_t on_transmit;
+	switch_state_handler_t on_soft_execute;
 	/*! executed when the state changes to hold */
-	switch_state_handler_t on_hold;
+	switch_state_handler_t on_consume_media;
 	/*! executed when the state changes to hibernate */
 	switch_state_handler_t on_hibernate;
 	/*! executed when the state changes to reset */
