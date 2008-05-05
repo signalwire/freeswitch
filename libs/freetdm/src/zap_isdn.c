@@ -467,7 +467,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 
 			//is cast right here?
 			ChanID.IntType = 1; /* PRI = 1, BRI = 0 */
-			ChanID.InfoChanSel = 1;
+			ChanID.InfoChanSel = 1;//2 suggest 3 you tell me
 			ChanID.ChanMapType = 3; /* B-Chan */
 			ChanID.ChanSlot = (unsigned char)zchan->chan_id;
 			gen->ChanID = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &ChanID);

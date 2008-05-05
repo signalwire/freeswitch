@@ -115,9 +115,9 @@ typedef struct private_object private_t;
 
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
-static switch_status_t channel_on_ring(switch_core_session_t *session);
-static switch_status_t channel_on_loopback(switch_core_session_t *session);
-static switch_status_t channel_on_transmit(switch_core_session_t *session);
+static switch_status_t channel_on_routing(switch_core_session_t *session);
+static switch_status_t channel_on_exchange_media(switch_core_session_t *session);
+static switch_status_t channel_on_soft_execute(switch_core_session_t *session);
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, 
@@ -359,8 +359,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 	switch_set_flag_locked(tech_pvt, TFLAG_IO);
 	
-	/* Move Channel's State Machine to RING */
-	switch_channel_set_state(channel, CS_RING);
+	/* Move Channel's State Machine to ROUTING */
+	switch_channel_set_state(channel, CS_ROUTING);
 	switch_mutex_lock(globals.mutex);
 	globals.calls++;
 	switch_mutex_unlock(globals.mutex);
@@ -370,7 +370,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t channel_on_ring(switch_core_session_t *session)
+static switch_status_t channel_on_routing(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
@@ -498,15 +498,15 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t channel_on_loopback(switch_core_session_t *session)
+static switch_status_t channel_on_exchange_media(switch_core_session_t *session)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CHANNEL LOOPBACK\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CHANNEL EXCHANGE_MEDIA\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t channel_on_transmit(switch_core_session_t *session)
+static switch_status_t channel_on_soft_execute(switch_core_session_t *session)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CHANNEL TRANSMIT\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CHANNEL SOFT_EXECUTE\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -823,11 +823,11 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 
 switch_state_handler_table_t openzap_state_handlers = {
 	/*.on_init */ channel_on_init,
-	/*.on_ring */ channel_on_ring,
+	/*.on_routing */ channel_on_routing,
 	/*.on_execute */ channel_on_execute,
 	/*.on_hangup */ channel_on_hangup,
-	/*.on_loopback */ channel_on_loopback,
-	/*.on_transmit */ channel_on_transmit
+	/*.on_exchange_media */ channel_on_exchange_media,
+	/*.on_soft_execute */ channel_on_soft_execute
 };
 
 switch_io_routines_t openzap_io_routines = {
