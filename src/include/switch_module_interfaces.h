@@ -62,17 +62,17 @@ typedef enum {
 struct switch_state_handler_table {
 	/*! executed when the state changes to init */
 	switch_state_handler_t on_init;
-	/*! executed when the state changes to ring */
+	/*! executed when the state changes to routing */
 	switch_state_handler_t on_routing;
 	/*! executed when the state changes to execute */
 	switch_state_handler_t on_execute;
 	/*! executed when the state changes to hangup */
 	switch_state_handler_t on_hangup;
-	/*! executed when the state changes to loopback */
+	/*! executed when the state changes to exchange_media */
 	switch_state_handler_t on_exchange_media;
-	/*! executed when the state changes to transmit */
+	/*! executed when the state changes to soft_execute */
 	switch_state_handler_t on_soft_execute;
-	/*! executed when the state changes to hold */
+	/*! executed when the state changes to consume_media */
 	switch_state_handler_t on_consume_media;
 	/*! executed when the state changes to hibernate */
 	switch_state_handler_t on_hibernate;
