@@ -349,7 +349,7 @@ typedef struct zap_sigmsg zap_sigmsg_t;
 typedef struct zap_span zap_span_t;
 typedef struct zap_caller_data zap_caller_data_t;
 
-#define ZIO_CHANNEL_REQUEST_ARGS (zap_span_t *span, zap_direction_t direction, const zap_caller_data_t *caller_data, zap_channel_t **zchan)
+#define ZIO_CHANNEL_REQUEST_ARGS (zap_span_t *span, uint32_t chan_id, zap_direction_t direction, zap_caller_data_t *caller_data, zap_channel_t **zchan)
 #define ZIO_CHANNEL_OUTGOING_CALL_ARGS (zap_channel_t *zchan)
 #define ZIO_SPAN_POLL_EVENT_ARGS (zap_span_t *span, uint32_t ms)
 #define ZIO_SPAN_NEXT_EVENT_ARGS (zap_span_t *span, zap_event_t **event)
