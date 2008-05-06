@@ -103,7 +103,7 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 		}
 	}
 
-	/* Move Channel's State Machine to RING */
+	/* Move channel's state machine to ROUTING */
 	switch_channel_set_state(channel, CS_ROUTING);
 	assert( switch_channel_get_state(channel) != CS_INIT);
 	return SWITCH_STATUS_SUCCESS;

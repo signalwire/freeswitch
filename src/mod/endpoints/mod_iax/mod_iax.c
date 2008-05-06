@@ -467,7 +467,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 	switch_set_flag_locked(tech_pvt, TFLAG_IO);
 
-	/* Move Channel's State Machine to RING */
+	/* Move channel's state machine to ROUTING */
 	switch_channel_set_state(switch_core_session_get_channel(session), CS_ROUTING);
 	switch_mutex_lock(globals.mutex);
 	globals.calls++;

@@ -613,7 +613,7 @@ static switch_status_t wanpipe_on_init(switch_core_session_t *session)
 
  done:
 
-	/* Move Channel's State Machine to RING */
+	/* Move channel's state machine to ROUTING */
 	switch_channel_set_state(channel, CS_ROUTING);
 	return SWITCH_STATUS_SUCCESS;
 }

@@ -1042,7 +1042,7 @@ static void *woomera_channel_thread_run(switch_thread_t * thread, void *obj)
 						ptr++;
 						port = (switch_port_t) atoi(ptr);
 					}
-					/* Move Channel's State Machine to RING */
+					/* Move channel's state machine to ROUTING */
 					switch_channel_answer(channel);
 					switch_channel_set_state(channel, CS_ROUTING);
 
