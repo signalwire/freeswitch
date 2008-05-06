@@ -253,6 +253,10 @@ SOFIAPUBFUN sip_replaces_t *nta_leg_make_replaces(nta_leg_t *leg,
 SOFIAPUBFUN
 nta_leg_t *nta_leg_by_replaces(nta_agent_t *, sip_replaces_t const *);
 
+/** Get dialog leg by CallID */
+SOFIAPUBFUN
+nta_leg_t *nta_leg_by_call_id(nta_agent_t *sa, const char *call_id);
+
 /* ----------------------------------------------------------------------
  * 6) Prototypes for incoming transactions 
  */

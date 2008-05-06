@@ -384,6 +384,7 @@ SOFIAPUBFUN sip_replaces_t *nua_handle_make_replaces(nua_handle_t *nh,
 SOFIAPUBFUN nua_handle_t *nua_handle_by_replaces(nua_t *nua,
 						 sip_replaces_t const *rp);
 
+nua_handle_t *nua_handle_by_call_id(nua_t *nua, const char *call_id);
 
 SOFIA_END_DECLS
 

@@ -1005,6 +1005,21 @@ static int nua_stack_handle_by_replaces_call(void *arg)
   return 0;
 }
 
+struct nua_stack_handle_by_call_id_args {
+  nua_handle_t *retval;
+  nua_t *nua;
+  const char *call_id;
+};
+
+static int nua_stack_handle_by_call_id_call(void *arg)
+{
+  struct nua_stack_handle_by_call_id_args *a = arg;
+
+  a->retval = nua_stack_handle_by_call_id(a->nua, a->call_id);
+
+  return 0;
+}
+
 /** Obtain a new reference to an existing handle based on @Replaces header.
  *
  * @since New in @VERSION_1_12_4.
@@ -1030,6 +1045,41 @@ nua_handle_t *nua_handle_by_replaces(nua_t *nua, sip_replaces_t const *r)
 
     if (su_task_execute(nua->nua_server,
 			nua_stack_handle_by_replaces_call, (void *)&a,
+			NULL) == 0) {
+      nua_handle_t *nh = a.retval;
+
+      if (nh && !NH_IS_DEFAULT(nh) && nh->nh_valid)
+	return nua_handle_ref(nh);
+    }
+  }
+  return NULL;
+}
+
+/** Obtain a new reference to an existing handle based on @CallID.
+ *
+ * @since New in @VERSION_1_12_9.
+ *
+ * @note
+ * You should release the reference with nua_handle_unref() when you are
+ * done with the handle.
+ *
+ * @sa nua_handle_make_replaces(), @Replaces, @RFC3891, nua_refer(),
+ * #nua_i_refer, @ReferTo, nta_leg_by_replaces()
+ */
+nua_handle_t *nua_handle_by_call_id(nua_t *nua, const char *call_id)
+{
+  if (nua) {
+#if HAVE_OPEN_C
+    struct nua_stack_handle_by_call_id_args a;
+	a.retval = NULL;
+    a.nua = nua;
+    a.call_id = call_id;
+#else
+    struct nua_stack_handle_by_call_id_args a = { NULL, nua, call_id };
+#endif
+
+    if (su_task_execute(nua->nua_server,
+			nua_stack_handle_by_call_id_call, (void *)&a,
 			NULL) == 0) {
       nua_handle_t *nh = a.retval;
 

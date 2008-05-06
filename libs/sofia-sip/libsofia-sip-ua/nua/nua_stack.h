@@ -380,6 +380,9 @@ sip_replaces_t *nua_stack_handle_make_replaces(nua_handle_t *handle,
 nua_handle_t *nua_stack_handle_by_replaces(nua_t *nua,
 					   sip_replaces_t const *r);
 
+nua_handle_t *nua_stack_handle_by_call_id(nua_t *nua, const char *call_id);
+
+
 /* ---------------------------------------------------------------------- */
 
 int nua_stack_set_defaults(nua_handle_t *nh, nua_handle_preferences_t *nhp);

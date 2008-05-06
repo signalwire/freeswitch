@@ -4022,6 +4022,27 @@ nta_leg_t *nta_leg_by_replaces(nta_agent_t *sa, sip_replaces_t const *rp)
   return leg;
 }
 
+/** Get dialog leg by @CallID.
+ *
+ * @since New in @VERSION_1_12_9.
+ */
+SOFIAPUBFUN
+nta_leg_t *nta_leg_by_call_id(nta_agent_t *sa, const char *call_id)
+{
+  nta_leg_t *leg = NULL;
+
+  if (call_id) {
+    sip_call_id_t id[1];
+    sip_call_id_init(id);
+
+    id->i_hash = msg_hash_string(id->i_id = call_id);
+
+    leg = leg_find(sa, NULL, NULL, id, NULL, NULL);
+  }
+
+  return leg;
+}
+
 /** Calculate a simple case-insensitive hash over a string */
 su_inline
 hash_value_t hash_istring(char const *s, char const *term, hash_value_t hash)

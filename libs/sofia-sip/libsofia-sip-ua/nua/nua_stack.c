@@ -1115,6 +1115,15 @@ nua_handle_t *nua_stack_handle_by_replaces(nua_t *nua,
   return NULL;
 }
 
+nua_handle_t *nua_stack_handle_by_call_id(nua_t *nua, const char *call_id)
+{
+  if (nua) {
+    nta_leg_t *leg = nta_leg_by_call_id(nua->nua_nta, call_id);
+    if (leg)
+      return nta_leg_magic(leg, nua_stack_process_request);
+  }
+  return NULL;
+}
 
 /** @internal Add authorization data */
 int nh_authorize(nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...)
