@@ -782,8 +782,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		}
 	}
 	
-	//if (!(nh = nua_handle_by_call_id(profile->nua, call_id))) {
-	if (!(nh = (nua_handle_t *) switch_core_hash_find(profile->sub_hash, call_id))) {
+	if (!(nh = nua_handle_by_call_id(profile->nua, call_id))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find handle for %s\n", call_id);
 		return 0;
 	}
@@ -1046,13 +1045,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	switch_snprintf(exp, sizeof(exp), "active;expires=%ld", (long) exptime); 
 
 	nua_notify(nh,
-			   //NUTAG_NEWSUB(1),
 			   SIPTAG_SUBSCRIPTION_STATE_STR(exp),
 			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR(ct), SIPTAG_PAYLOAD_STR(pl), TAG_END());
-
-	if (done) {
-		switch_core_hash_delete(profile->sub_hash, call_id);
-	}
 
  end:
 
@@ -1091,8 +1085,7 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 		return 0;
 	}
 	
-	//if (!(nh = nua_handle_by_call_id(profile->nua, call_id))) {
-	if (!(nh = (nua_handle_t *) switch_core_hash_find(profile->sub_hash, call_id))) {
+	if (!(nh = nua_handle_by_call_id(profile->nua, call_id))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find handle for %s\n", call_id);
 		return 0;
 	}
@@ -1105,7 +1098,6 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	exp = switch_mprintf("active;expires=%ld", expire_sec);
 
 	nua_notify(nh,
-			   //NUTAG_NEWSUB(1),
 			   SIPTAG_SUBSCRIPTION_STATE_STR(exp),
 			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"), SIPTAG_PAYLOAD_STR(body), TAG_END());
 	
@@ -1313,7 +1305,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		if (sub_state == nua_substate_terminated) {
 			sstr = switch_mprintf("terminated");
-			switch_core_hash_delete(profile->sub_hash, call_id);
 		} else {
 			sip_accept_t *ap = sip->sip_accept;
 			char accept[256] = "";
@@ -1330,9 +1321,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 
 			sstr = switch_mprintf("active;expires=%ld", exp_raw);
-			if (status < 200) {
-				switch_core_hash_insert(profile->sub_hash, call_id, nh);
-			}
 		}
 	
 		switch_mutex_unlock(profile->ireg_mutex);

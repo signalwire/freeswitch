@@ -69,12 +69,10 @@ void sofia_handle_sip_r_notify(switch_core_session_t *session, int status,
 							   char const *phrase,
 							   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
-	if (status >= 300 && sip) {
-		const char *call_id = sip->sip_call_id->i_id;
+	if (status >= 300 && sip && sip->sip_call_id) {
 		char *sql;
-		switch_core_hash_delete(profile->sub_hash, call_id);
 		
-		sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", call_id);
+		sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", sip->sip_call_id->i_id);
 		switch_assert(sql != NULL);
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		nua_handle_destroy(nh);
@@ -689,7 +687,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	sofia_glue_del_profile(profile);
 	switch_core_hash_destroy(&profile->chat_hash);
-	switch_core_hash_destroy(&profile->sub_hash);
 
 	switch_thread_rwlock_unlock(profile->rwlock);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write unlock %s\n", profile->name);
@@ -1068,7 +1065,6 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 				profile->dbname = switch_core_strdup(profile->pool, url);
 				switch_core_hash_init(&profile->chat_hash, profile->pool);
-				switch_core_hash_init(&profile->sub_hash, profile->pool);
 				switch_thread_rwlock_create(&profile->rwlock, profile->pool);
 				switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				profile->dtmf_duration = 100;
