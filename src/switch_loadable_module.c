@@ -1276,12 +1276,14 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 				for (imp = codec_interface->implementations; imp; imp = imp->next) {
 					uint8_t match = 1;
 
-					if ((uint32_t) (imp->microseconds_per_frame / 1000) != 20) {
-						match = 0;
-					}
+					if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
+						if ((uint32_t) (imp->microseconds_per_frame / 1000) != 20) {
+							match = 0;
+						}
 
-					if (match && rate && (uint32_t) imp->samples_per_second != rate) {
-						match = 0;
+						if (match && rate && (uint32_t) imp->samples_per_second != rate) {
+							match = 0;
+						}
 					}
 
 					if (match) {
@@ -1295,12 +1297,14 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 			for (imp = codec_interface->implementations; imp; imp = imp->next) {
 				uint8_t match = 1;
 
-				if (interval && (uint32_t) (imp->microseconds_per_frame / 1000) != interval) {
-					match = 0;
-				}
+				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
+					if (interval && (uint32_t) (imp->microseconds_per_frame / 1000) != interval) {
+						match = 0;
+					}
 
-				if (match && rate && (uint32_t) imp->samples_per_second != rate) {
-					match = 0;
+					if (match && rate && (uint32_t) imp->samples_per_second != rate) {
+						match = 0;
+					}
 				}
 
 				if (match) {
