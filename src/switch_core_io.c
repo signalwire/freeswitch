@@ -462,6 +462,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
  even_more_done:
 
+	if (!*frame) {
+		*frame = &runtime.dummy_cng_frame;
+	}
+
 	return status;
 }
 

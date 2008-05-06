@@ -842,6 +842,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	memset(&runtime, 0, sizeof(runtime));
 
+	runtime.dummy_cng_frame.data = runtime.dummy_data;
+	runtime.dummy_cng_frame.datalen= sizeof(runtime.dummy_data);
+	runtime.dummy_cng_frame.buflen= sizeof(runtime.dummy_data);
+	runtime.dummy_cng_frame.flags = SFF_CNG;
+
 	switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 	runtime.hard_log_level = SWITCH_LOG_DEBUG;
 	runtime.mailer_app = "sendmail";
