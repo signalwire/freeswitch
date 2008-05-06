@@ -165,7 +165,9 @@ static void lua_parse_and_execute(lua_State *L, char *input_code)
 
 	if (error) {
 		const char *err = lua_tostring(L, -1);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", switch_str_nil(err));
+		if (!switch_strlen_zero(err)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err);
+		}
 		lua_pop(L, 1);	/* pop error message from the stack */
 	}
 }
