@@ -43,7 +43,7 @@
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_WIN32"
 				UsePrecompiledHeader="0"
 				DisableSpecificWarnings="4127, 4505"
-				EnablePREfast="false"
+				EnablePREfast="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
