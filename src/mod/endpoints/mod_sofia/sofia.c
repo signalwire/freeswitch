@@ -194,7 +194,7 @@ void sofia_event_callback(nua_event_t event,
 	switch_channel_t *channel = NULL;
 	sofia_gateway_t *gateway = NULL;
 
-	if (sofia_private) {
+	if (sofia_private && sofia_private != &mod_sofia_globals.destroy_private) {
 		if ((gateway = sofia_private->gateway)) {
 			if (switch_thread_rwlock_tryrdlock(gateway->profile->rwlock) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile %s is locked\n", gateway->profile->name);
@@ -355,6 +355,11 @@ void sofia_event_callback(nua_event_t event,
 	}
 
   done:
+
+	if (sofia_private && sofia_private->destroy_nh) {
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroy handle requested.\n");
+		nua_handle_destroy(nh);
+	}
 
 	if (gateway) {
 		sofia_reg_release_gateway(gateway);

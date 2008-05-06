@@ -1899,6 +1899,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	silence_frame.flags = SFF_CNG;
 
 	memset(&mod_sofia_globals, 0, sizeof(mod_sofia_globals));
+	mod_sofia_globals.destroy_private.destroy_nh = 1;
 	mod_sofia_globals.pool = pool;
 	switch_mutex_init(&mod_sofia_globals.mutex, SWITCH_MUTEX_NESTED, mod_sofia_globals.pool);
 

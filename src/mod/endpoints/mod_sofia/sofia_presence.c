@@ -781,7 +781,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			exptime = tmp - switch_timestamp(NULL); 
 		}
 	}
-
+	
+	//if (!(nh = nua_handle_by_call_id(profile->nua, call_id))) {
 	if (!(nh = (nua_handle_t *) switch_core_hash_find(profile->sub_hash, call_id))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find handle for %s\n", call_id);
 		return 0;
@@ -1045,7 +1046,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	switch_snprintf(exp, sizeof(exp), "active;expires=%ld", (long) exptime); 
 
 	nua_notify(nh,
-			   NUTAG_NEWSUB(1),
+			   //NUTAG_NEWSUB(1),
 			   SIPTAG_SUBSCRIPTION_STATE_STR(exp),
 			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR(ct), SIPTAG_PAYLOAD_STR(pl), TAG_END());
 
@@ -1090,6 +1091,7 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 		return 0;
 	}
 	
+	//if (!(nh = nua_handle_by_call_id(profile->nua, call_id))) {
 	if (!(nh = (nua_handle_t *) switch_core_hash_find(profile->sub_hash, call_id))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find handle for %s\n", call_id);
 		return 0;
@@ -1103,7 +1105,7 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	exp = switch_mprintf("active;expires=%ld", expire_sec);
 
 	nua_notify(nh,
-			   NUTAG_NEWSUB(1),
+			   //NUTAG_NEWSUB(1),
 			   SIPTAG_SUBSCRIPTION_STATE_STR(exp),
 			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"), SIPTAG_PAYLOAD_STR(body), TAG_END());
 	
@@ -1146,6 +1148,7 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 					SIPTAG_CONTACT_STR(profile->url),
 					TAG_END());
 	
+	nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
 	nua_notify(nh,
 			   NUTAG_NEWSUB(1),
 			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"), SIPTAG_PAYLOAD_STR(body), TAG_END());
@@ -1347,6 +1350,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		sent_reply++;
 
 #if 0
+		nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
 		nua_notify(nh, 
 				   NUTAG_NEWSUB(1),
 				   SIPTAG_SUBSCRIPTION_STATE_STR(sstr), SIPTAG_EVENT_STR(event), 

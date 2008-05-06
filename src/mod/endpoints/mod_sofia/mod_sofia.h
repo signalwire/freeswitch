@@ -100,6 +100,7 @@ struct sofia_private {
 	char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	sofia_gateway_t *gateway;
 	char gateway_name[512];
+	int destroy_nh;
 };
 
 #define set_param(ptr,val) if (ptr) {free(ptr) ; ptr = NULL;} if (val) {ptr = strdup(val);}
@@ -194,6 +195,7 @@ struct mod_sofia_globals {
 	char guess_ip[80];
 	switch_queue_t *presence_queue;
 	switch_queue_t *mwi_queue;
+	struct sofia_private destroy_private;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 
