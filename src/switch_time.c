@@ -173,6 +173,9 @@ static switch_status_t timer_init(switch_timer_t *timer)
 	}
 
 	if ((private_info = switch_core_alloc(timer->memory_pool, sizeof(*private_info)))) {
+#if defined(WIN32)
+		timeBeginPeriod(1);
+#endif
 		switch_mutex_lock(globals.mutex);
 		TIMER_MATRIX[timer->interval].count++;
 		switch_mutex_unlock(globals.mutex);
@@ -454,6 +457,12 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown)
 			switch_yield(10000);
 		}
 	}
+
+#if defined(WIN32)
+	timeEndPeriod(1);
+#endif
+
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
