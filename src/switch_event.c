@@ -510,6 +510,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_set_priority(switch_event_t *event,
 SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event, char *header_name)
 {
 	switch_event_header_t *hp;
+	switch_assert(event);
 	if (!header_name) return NULL;
 
 	for (hp = event->headers; hp; hp = hp->next) {

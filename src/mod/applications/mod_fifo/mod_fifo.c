@@ -452,7 +452,7 @@ SWITCH_STANDARD_APP(fifo_function)
     if (!consumer && node) {
         switch_core_session_t *other_session;
 		switch_channel_t *other_channel;
-        const char *uuid = strdup(switch_core_session_get_uuid(session));
+        const char *uuid = switch_core_session_get_uuid(session);
 		const char *pri;
 		char tmp[25] = "";
 		int p = 0;
@@ -510,7 +510,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			node->start_waiting = switch_timestamp_now();
 		}
 		
-        switch_queue_push(node->fifo_list[p], (void *)uuid);
+        switch_queue_push(node->fifo_list[p], (void *)strdup(uuid));
 
 		if (!pri) {
 			switch_snprintf(tmp, sizeof(tmp), "%d", p);

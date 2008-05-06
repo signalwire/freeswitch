@@ -424,7 +424,7 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable(switch_channel_t *chann
 	switch_assert(channel != NULL);
 
 	switch_mutex_lock(channel->profile_mutex);
-	if (!(v = switch_event_get_header(channel->variables, (char*)varname))) {
+	if (!channel->variables || !(v = switch_event_get_header(channel->variables, (char*)varname))) {
 		switch_caller_profile_t *cp = channel->caller_profile;
 
 		if (cp) {
