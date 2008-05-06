@@ -4022,6 +4022,34 @@ nta_leg_t *nta_leg_by_replaces(nta_agent_t *sa, sip_replaces_t const *rp)
   return leg;
 }
 
+/**@internal
+ * Find a leg corresponding to the request message.
+ *
+ */
+static
+nta_leg_t *leg_find_call_id(nta_agent_t const *sa,
+		    sip_call_id_t const *i)
+{
+  hash_value_t hash = i->i_hash;
+  leg_htable_t const *lht = sa->sa_dialogs;
+  nta_leg_t **ll, *leg = NULL;
+
+  for (ll = leg_htable_hash(lht, hash);
+       (leg = *ll);
+       ll = leg_htable_next(lht, ll)) {
+    sip_call_id_t const *leg_i = leg->leg_id;
+
+	if (leg->leg_hash != hash)
+      continue;
+    if (strcmp(leg_i->i_id, i->i_id) != 0)
+      continue;
+
+	return leg;
+  }
+
+  return leg;
+}
+
 /** Get dialog leg by @CallID.
  *
  * @since New in @VERSION_1_12_9.
@@ -4037,7 +4065,7 @@ nta_leg_t *nta_leg_by_call_id(nta_agent_t *sa, const char *call_id)
 
     id->i_hash = msg_hash_string(id->i_id = call_id);
 
-    leg = leg_find(sa, NULL, NULL, id, NULL, NULL);
+    leg = leg_find_call_id(sa, id);
   }
 
   return leg;
