@@ -158,6 +158,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_set_priority(switch_event_t *event,
 */
 _Ret_opt_z_ SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event, char *header_name);
 
+#define switch_event_get_header_nil(e, h) switch_str_nil(switch_event_get_header(e,h))
+
 /*!
   \brief Retrieve the body value from an event
   \param event the event to read the body from

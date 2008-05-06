@@ -202,7 +202,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t * thread,
 
 
 		if (trans && ((itterations == target) || nothing_in_queue)) {
-			if (switch_core_db_persistant_execute_trans(sql_manager.event_db, sqlbuf, 1000) != SWITCH_STATUS_SUCCESS) {
+			if (switch_core_db_persistant_execute_trans(sql_manager.event_db, sqlbuf, 100) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL thread unable to commit transaction, records lost!\n");
 			}
 			itterations = 0;
@@ -237,50 +237,53 @@ static void core_event_handler(switch_event_t *event)
 	switch (event->event_id) {
 	case SWITCH_EVENT_ADD_SCHEDULE:
 		sql = switch_mprintf("insert into tasks values('%q','%q','%q','%q')",
-							 switch_event_get_header(event, "task-id"),
-							 switch_event_get_header(event, "task-desc"),
-							 switch_event_get_header(event, "task-group"), switch_event_get_header(event, "task-sql_manager")
-			);
+							 switch_event_get_header_nil(event, "task-id"),
+							 switch_event_get_header_nil(event, "task-desc"),
+							 switch_event_get_header_nil(event, "task-group"), 
+							 switch_event_get_header_nil(event, "task-sql_manager")
+							 );
 		break;
 	case SWITCH_EVENT_DEL_SCHEDULE:
 	case SWITCH_EVENT_EXE_SCHEDULE:
-		sql = switch_mprintf("delete from tasks where task_id=%q", switch_event_get_header(event, "task-id"));
+		sql = switch_mprintf("delete from tasks where task_id=%q", switch_event_get_header_nil(event, "task-id"));
 		break;
 	case SWITCH_EVENT_RE_SCHEDULE:
 		sql = switch_mprintf("update tasks set task_sql_manager='%q' where task_id=%q",
-							 switch_event_get_header(event, "task-sql_manager"), switch_event_get_header(event, "task-id"));
+							 switch_event_get_header_nil(event, "task-sql_manager"), switch_event_get_header_nil(event, "task-id"));
 		break;
 	case SWITCH_EVENT_CHANNEL_DESTROY:
-		sql = switch_mprintf("delete from channels where uuid='%q'", switch_event_get_header(event, "unique-id"));
+		sql = switch_mprintf("delete from channels where uuid='%q'", switch_event_get_header_nil(event, "unique-id"));
 		break;
 	case SWITCH_EVENT_CHANNEL_CREATE:
-		sql = switch_mprintf("insert into channels (uuid,created,created_epoch, name,state) values('%q','%q','%ld','%q','%q')",
-							 switch_event_get_header(event, "unique-id"),
-							 switch_event_get_header(event, "event-date-local"),
+		sql = switch_mprintf("insert into channels (uuid,created,created_epoch, name,state,dialplan,context) values('%q','%q','%ld','%q','%q','%q','%q')",
+							 switch_event_get_header_nil(event, "unique-id"),
+							 switch_event_get_header_nil(event, "event-date-local"),
 							 (long)switch_timestamp(NULL),							 
-							 switch_event_get_header(event, "channel-name"), 
-							 switch_event_get_header(event, "channel-state")
+							 switch_event_get_header_nil(event, "channel-name"),
+							 switch_event_get_header_nil(event, "channel-state"),
+							 switch_event_get_header_nil(event, "caller-dialplan"),
+							 switch_event_get_header_nil(event, "caller-context")
 			);
 		break;
 	case SWITCH_EVENT_CODEC:
 		sql =
 			switch_mprintf
 			("update channels set read_codec='%q',read_rate='%q',write_codec='%q',write_rate='%q' where uuid='%q'",
-			 switch_event_get_header(event, "channel-read-codec-name"), switch_event_get_header(event,
+			 switch_event_get_header_nil(event, "channel-read-codec-name"), switch_event_get_header_nil(event,
 																								"channel-read-codec-rate"),
-			 switch_event_get_header(event, "channel-write-codec-name"), switch_event_get_header(event,
+			 switch_event_get_header_nil(event, "channel-write-codec-name"), switch_event_get_header_nil(event,
 																								 "channel-write-codec-rate"),
-			 switch_event_get_header(event, "unique-id"));
+			 switch_event_get_header_nil(event, "unique-id"));
 		break;
 	case SWITCH_EVENT_CHANNEL_EXECUTE:
 		sql = switch_mprintf("update channels set application='%q',application_data='%q' where uuid='%q'",
-							 switch_event_get_header(event, "application"),
-							 switch_event_get_header(event, "application-data"), switch_event_get_header(event, "unique-id")
+							 switch_event_get_header_nil(event, "application"),
+							 switch_event_get_header_nil(event, "application-data"), switch_event_get_header_nil(event, "unique-id")
 			);
 		break;
 	case SWITCH_EVENT_CHANNEL_STATE:
 		if (event) {
-			char *state = switch_event_get_header(event, "channel-state-number");
+			char *state = switch_event_get_header_nil(event, "channel-state-number");
 			switch_channel_state_t state_i = atoi(state);
 
 			switch (state_i) {
@@ -288,18 +291,21 @@ static void core_event_handler(switch_event_t *event)
 			case CS_DONE:
 				break;
 			case CS_ROUTING:
-				sql = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',ip_addr='%s',dest='%q' "
+				sql = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',ip_addr='%s',dest='%q',dialplan='%q',context='%q' "
 									 "where uuid='%s'",
-									 switch_event_get_header(event, "channel-state"),
-									 switch_event_get_header(event, "caller-caller-id-name"),
-									 switch_event_get_header(event, "caller-caller-id-number"),
-									 switch_event_get_header(event, "caller-network-addr"),
-									 switch_event_get_header(event, "caller-destination-number"), switch_event_get_header(event, "unique-id")
+									 switch_event_get_header_nil(event, "channel-state"),
+									 switch_event_get_header_nil(event, "caller-caller-id-name"),
+									 switch_event_get_header_nil(event, "caller-caller-id-number"),
+									 switch_event_get_header_nil(event, "caller-network-addr"),
+									 switch_event_get_header_nil(event, "caller-destination-number"), 
+									 switch_event_get_header_nil(event, "caller-dialplan"), 
+									 switch_event_get_header_nil(event, "caller-context"), 
+									 switch_event_get_header_nil(event, "unique-id")
 					);
 				break;
 			default:
 				sql = switch_mprintf("update channels set state='%s' where uuid='%s'",
-									 switch_event_get_header(event, "channel-state"), switch_event_get_header(event, "unique-id")
+									 switch_event_get_header_nil(event, "channel-state"), switch_event_get_header_nil(event, "unique-id")
 					);
 				break;
 			}
@@ -308,22 +314,22 @@ static void core_event_handler(switch_event_t *event)
 		break;
 	case SWITCH_EVENT_CHANNEL_BRIDGE:
 		sql = switch_mprintf("insert into calls values ('%s', '%ld', '%s','%q','%q','%q','%q','%s','%q','%q','%q','%q','%s')",
-							 switch_event_get_header(event, "event-date-local"),
+							 switch_event_get_header_nil(event, "event-date-local"),
 							 (long)switch_timestamp(NULL),
-							 switch_event_get_header(event, "event-calling-function"),
-							 switch_event_get_header(event, "caller-caller-id-name"),
-							 switch_event_get_header(event, "caller-caller-id-number"),
-							 switch_event_get_header(event, "caller-destination-number"),
-							 switch_event_get_header(event, "caller-channel-name"),
-							 switch_event_get_header(event, "caller-unique-id"),
-							 switch_event_get_header(event, "Other-Leg-caller-id-name"),
-							 switch_event_get_header(event, "Other-Leg-caller-id-number"),
-							 switch_event_get_header(event, "Other-Leg-destination-number"),
-							 switch_event_get_header(event, "Other-Leg-channel-name"), switch_event_get_header(event, "Other-Leg-unique-id")
+							 switch_event_get_header_nil(event, "event-calling-function"),
+							 switch_event_get_header_nil(event, "caller-caller-id-name"),
+							 switch_event_get_header_nil(event, "caller-caller-id-number"),
+							 switch_event_get_header_nil(event, "caller-destination-number"),
+							 switch_event_get_header_nil(event, "caller-channel-name"),
+							 switch_event_get_header_nil(event, "caller-unique-id"),
+							 switch_event_get_header_nil(event, "Other-Leg-caller-id-name"),
+							 switch_event_get_header_nil(event, "Other-Leg-caller-id-number"),
+							 switch_event_get_header_nil(event, "Other-Leg-destination-number"),
+							 switch_event_get_header_nil(event, "Other-Leg-channel-name"), switch_event_get_header_nil(event, "Other-Leg-unique-id")
 			);
 		break;
 	case SWITCH_EVENT_CHANNEL_UNBRIDGE:
-		sql = switch_mprintf("delete from calls where caller_uuid='%s'", switch_event_get_header(event, "caller-unique-id"));
+		sql = switch_mprintf("delete from calls where caller_uuid='%s'", switch_event_get_header_nil(event, "caller-unique-id"));
 		break;
 	case SWITCH_EVENT_SHUTDOWN:
 		sql = switch_mprintf("delete from channels;delete from interfaces;delete from calls");
@@ -332,10 +338,10 @@ static void core_event_handler(switch_event_t *event)
 		return;
 	case SWITCH_EVENT_MODULE_LOAD:
 		{
-			const char *type = switch_event_get_header(event, "type");
-			const char *name = switch_event_get_header(event, "name");
-			const char *description = switch_event_get_header(event, "description");
-			const char *syntax = switch_event_get_header(event, "syntax");
+			const char *type = switch_event_get_header_nil(event, "type");
+			const char *name = switch_event_get_header_nil(event, "name");
+			const char *description = switch_event_get_header_nil(event, "description");
+			const char *syntax = switch_event_get_header_nil(event, "syntax");
 			if (!switch_strlen_zero(type) && !switch_strlen_zero(name)) {
 				sql =
 					switch_mprintf("insert into interfaces (type,name,description,syntax) values('%q','%q','%q','%q')",
@@ -401,6 +407,8 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 			"   dest  VARCHAR(255),\n"
 			"   application  VARCHAR(255),\n"
 			"   application_data  VARCHAR(255),\n"
+			"   dialplan VARCHAR(255),\n"
+			"   context VARCHAR(255),\n"
 			"   read_codec  VARCHAR(255),\n" 
 			"   read_rate  VARCHAR(255),\n" 
 			"   write_codec  VARCHAR(255),\n" 
