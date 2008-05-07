@@ -2202,11 +2202,11 @@ int nua_invite_server_respond(nua_server_request_t *sr, tagi_t const *tags)
   }
   else if (sr->sr_offer_recv && !sr->sr_answer_sent && early_answer) {
     /* Generate answer */ 
-    if (soa_generate_answer(nh->nh_soa, NULL) >= 0) {
-      answer = 1;
-      soa_activate(nh->nh_soa, NULL);
-      /* signal that O/A answer sent (answer to invite) */
+    if (soa_generate_answer(nh->nh_soa, NULL) >= 0 &&
+	soa_activate(nh->nh_soa, NULL) >= 0) {
+      answer = 1;      /* signal that O/A answer sent (answer to invite) */
     }
+    /* We have an error! */
     else if (sr->sr_status >= 200) {
       sip_warning_t *warning = NULL;
       int wcode;
