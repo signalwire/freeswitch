@@ -1463,7 +1463,7 @@ static int on_proceed(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 }
 
 
-static int on_routinging(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent)
+static int on_routing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent)
 {
 	switch_core_session_t *session;
 	switch_channel_t *channel;
@@ -1672,7 +1672,7 @@ static void *SWITCH_THREAD_FUNC pri_thread_run(switch_thread_t *thread, void *ob
 	switch_mutex_init(&chanmap.mutex, SWITCH_MUTEX_NESTED, module_pool);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_ANY, on_anything);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RING, on_routing);
-	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RINGING, on_routinging);
+	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RINGING, on_routing);
 	//SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_SETUP_ACK, on_proceed);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_PROCEEDING, on_proceed);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_ANSWER, on_answer);
