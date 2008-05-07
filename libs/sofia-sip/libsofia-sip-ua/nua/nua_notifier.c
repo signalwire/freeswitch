@@ -558,9 +558,6 @@ static int nua_notify_client_init(nua_client_request_t *cr,
     }
   }
 
-  if (nu->nu_substate == nua_substate_terminated)
-    cr->cr_terminating = 1;
-
   cr->cr_usage = du;
 
   return nua_notify_client_init_etag(cr, msg, sip, tags);
@@ -699,6 +696,18 @@ int nua_notify_client_request(nua_client_request_t *cr,
 
   if (nu->nu_substate == nua_substate_terminated)
     cr->cr_terminating = 1;
+
+  if (cr->cr_terminating) {
+    nua_server_request_t *sr;
+    for (sr = du->du_dialog->ds_sr; sr; sr = sr->sr_next) {
+      if (sr->sr_usage == du) {
+	/* If subscribe has not been responded, don't terminate usage by NOTIFY */
+	sr->sr_terminating = 1;
+	cr->cr_terminating = 0;
+	break;
+      }
+    }
+  }
 
   if (du->du_event && !sip->sip_event)
     sip_add_dup(cr->cr_msg, sip, (sip_header_t *)du->du_event);

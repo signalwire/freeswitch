@@ -248,14 +248,17 @@ static int nua_subscribe_client_request(nua_client_request_t *cr,
   nua_dialog_usage_t *du = cr->cr_usage; 
   sip_time_t expires = 0;
 
-  if (cr->cr_event != nua_r_subscribe ||
-      (du && du->du_shutdown) ||
-      (sip->sip_expires && sip->sip_expires->ex_delta == 0))
+  if (cr->cr_event != nua_r_subscribe || !du || du->du_shutdown)
     cr->cr_terminating = 1;
 
   if (du) {
     struct event_usage *eu = nua_dialog_usage_private(du);
     sip_event_t *o = sip->sip_event;
+
+    if (eu->eu_notified &&
+	sip->sip_expires &&
+	sip->sip_expires->ex_delta == 0)
+      cr->cr_terminating = 1;
 
     if (nua_client_bind(cr, du) < 0)
       return -1;
