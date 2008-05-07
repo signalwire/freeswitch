@@ -107,7 +107,7 @@ switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char
 						SIPTAG_CONTACT_STR(profile->url), TAG_END());
 
 	switch_safe_free(contact);
-
+	nua_handle_bind(msg_nh, &mod_sofia_globals.destroy_private);
 	nua_message(msg_nh, SIPTAG_CONTENT_TYPE_STR("text/html"), SIPTAG_PAYLOAD_STR(body), TAG_END());
 
 	switch_safe_free(ffrom);

@@ -71,7 +71,7 @@ void sofia_handle_sip_r_notify(switch_core_session_t *session, int status,
 {
 	if (status >= 300 && sip && sip->sip_call_id) {
 		char *sql;
-		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "delete subscriptions for failed notify\n");
 		sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", sip->sip_call_id->i_id);
 		switch_assert(sql != NULL);
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
@@ -159,21 +159,6 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 
 void sofia_handle_sip_r_message(int status, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip)
 {
-	if (status == 503) {
-		const char *user = NULL, *host = NULL;
-		char *sql;
-
-		if (sip->sip_to && sip->sip_to->a_url) {
-			user = sip->sip_to->a_url->url_user;
-			host = sip->sip_to->a_url->url_host;
-
-			sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", user, host);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Deleting registration for %s@%s\n", user, host);
-			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
-		}
-	}
-
-	nua_handle_destroy(nh);
 }
 
 void sofia_event_callback(nua_event_t event,
@@ -354,7 +339,7 @@ void sofia_event_callback(nua_event_t event,
 
   done:
 
-	if (sofia_private && sofia_private->destroy_nh) {
+	if ((sofia_private && sofia_private->destroy_nh) || !nua_handle_magic(nh)) {
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroy handle requested.\n");
 		nua_handle_destroy(nh);
 	}
@@ -1554,7 +1539,6 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 								   );
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 	}
-	nua_handle_destroy(nh);
 }
 
 
@@ -3139,7 +3123,6 @@ void sofia_handle_sip_i_options(int status,
 	nua_respond(nh, SIP_200_OK,
 				NUTAG_WITH_THIS(nua),
 				TAG_END());
-	nua_handle_destroy(nh);
 }
 
 static void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_session_t *bleg)

@@ -87,7 +87,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			pvt = malloc(sizeof(*pvt));
 			switch_assert(pvt);
 			memset(pvt, 0, sizeof(*pvt));
-			
+			pvt->destroy_nh = 1;
 			switch_copy_string(pvt->gateway_name, gateway_ptr->name, sizeof(pvt->gateway_name));
 			nua_handle_bind(nh, pvt);
 
@@ -196,7 +196,7 @@ int sofia_reg_nat_callback(void *pArg, int argc, char **argv, char **columnNames
 	contact = sofia_glue_get_url_from_contact(argv[3], 1);
 
 	nh = nua_handle(profile->nua, NULL, SIPTAG_FROM_STR(profile->url), SIPTAG_TO_STR(to), NUTAG_URL(contact), SIPTAG_CONTACT_STR(profile->url), TAG_END());
-
+	nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
 	nua_options(nh, TAG_END());
 
 	switch_safe_free(contact);
