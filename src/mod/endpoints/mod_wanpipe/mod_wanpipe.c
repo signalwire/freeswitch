@@ -474,7 +474,7 @@ static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switc
 										 switch_io_flag_t flags, int stream_id);
 static int on_info(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent);
 static int on_hangup(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent);
-static int on_routing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent);
+static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent);
 static int check_flags(struct sangoma_pri *spri);
 static int on_restart(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent);
 static int on_anything(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent);
@@ -1463,7 +1463,7 @@ static int on_proceed(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 }
 
 
-static int on_routing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent)
+static int on_ringing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent)
 {
 	switch_core_session_t *session;
 	switch_channel_t *channel;
@@ -1489,7 +1489,7 @@ static int on_routing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 }
 
 
-static int on_routing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent)
+static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent)
 {
 	char name[128];
 	switch_core_session_t *session = NULL;
@@ -1671,8 +1671,8 @@ static void *SWITCH_THREAD_FUNC pri_thread_run(switch_thread_t *thread, void *ob
 
 	switch_mutex_init(&chanmap.mutex, SWITCH_MUTEX_NESTED, module_pool);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_ANY, on_anything);
-	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RING, on_routing);
-	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RINGING, on_routing);
+	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RING, on_ring);
+	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RINGING, on_ringing);
 	//SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_SETUP_ACK, on_proceed);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_PROCEEDING, on_proceed);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_ANSWER, on_answer);
