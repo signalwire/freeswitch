@@ -1262,7 +1262,7 @@ int agent_get_params(nta_agent_t *agent, tagi_t *tags)
 	     NTATAG_EXTRA_100(agent->sa_extra_100),
 	     NTATAG_GRAYLIST(agent->sa_graylist),
 	     NTATAG_MAXSIZE(agent->sa_maxsize),
-		 NTATAG_MAX_PROCEEDING(agent->sa_max_proceeding),
+	     NTATAG_MAX_PROCEEDING(agent->sa_max_proceeding),
 	     NTATAG_MAX_FORWARDS(agent->sa_max_forwards->mf_count),
 	     NTATAG_MCLASS(agent->sa_mclass),
 	     NTATAG_MERGE_482(agent->sa_merge_482),
@@ -2440,16 +2440,20 @@ void agent_recv_request(nta_agent_t *agent,
     leg_recv(leg, msg, sip, tport);
   }
   else if (!agent->sa_is_stateless && (leg = agent->sa_default_leg)) {
-	if (method == sip_method_invite && agent->sa_in.proceeding->q_length >= agent->sa_max_proceeding) {
-		SU_DEBUG_5(("nta: proceeding queue full for %s (%u)\n", method_name, cseq));
-		nta_msg_treply(agent, msg, SIP_503_SERVICE_UNAVAILABLE,
-			   NTATAG_TPORT(tport), 
-			   TAG_END());
-		return;
-	} else {
-		SU_DEBUG_5(("nta: %s (%u) %s\n", method_name, cseq, "going to a default leg"));
-		leg_recv(leg, msg, sip, tport);
-	}
+    if (method == sip_method_invite &&
+	agent->sa_in.proceeding->q_length >= agent->sa_max_proceeding) {
+      SU_DEBUG_5(("nta: proceeding queue full for %s (%u)\n",
+		  method_name, cseq));
+      nta_msg_treply(agent, msg, SIP_503_SERVICE_UNAVAILABLE,
+		     NTATAG_TPORT(tport),
+		     TAG_END());
+      return;
+    }
+    else {
+      SU_DEBUG_5(("nta: %s (%u) %s\n",
+		  method_name, cseq, "going to a default leg"));
+      leg_recv(leg, msg, sip, tport);
+    }
   }
   else if (agent->sa_callback) {
     /* Stateless processing for request */
