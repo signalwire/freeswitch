@@ -423,10 +423,14 @@ static switch_xml_t perl_fetch(const char *section,
 						);
 		Perl_safe_eval(my_perl, code);
 
-		perl_run(my_perl);
-		str = SvPV(get_sv("XML_STRING", FALSE), n_a);
+		if (params) {
+			mod_perl_conjure_event(my_perl, params, "params");
+		}
 
-		if (str) {
+		perl_run(my_perl);
+		str = SvPV(get_sv("XML_STRING", TRUE), n_a);
+
+		if (!switch_strlen_zero(str)) {
 			if (switch_strlen_zero(str)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Result\n");
 			} else if (!(xml = switch_xml_parse_str(str, strlen(str)))) {
