@@ -97,6 +97,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 		
 		switch (ostate) {
 		case REG_STATE_NOREG:
+			gateway_ptr->status = SOFIA_GATEWAY_UP;
 			break;
 		case REG_STATE_REGISTER:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "registered %s\n", gateway_ptr->name);
@@ -110,7 +111,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			gateway_ptr->state = REG_STATE_NOREG;
 			break;
 		case REG_STATE_UNREGED:
-
+			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
             sofia_reg_kill_reg(gateway_ptr, 1);
 
 			if ((gateway_ptr->nh = nua_handle(gateway_ptr->profile->nua, NULL,
@@ -204,6 +205,20 @@ int sofia_reg_nat_callback(void *pArg, int argc, char **argv, char **columnNames
 	return 0;
 }
 
+
+int sofia_sub_del_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	sofia_profile_t *profile = (sofia_profile_t *) pArg;
+	nua_handle_t *nh;
+
+	if (argv[0]) {
+		if ((nh = nua_handle_by_call_id(profile->nua, argv[0]))) {
+			nua_handle_destroy(nh);
+		}
+	}
+	return 0;
+}
+
 int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	switch_event_t *s_event;
@@ -262,13 +277,15 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
     }
 #endif
 
+
+	switch_mutex_lock(profile->ireg_mutex);
+
 	if (now) {
 		switch_snprintf(sql, sizeof(sql), "select *,'%s' from sip_registrations where expires > 0 and expires <= %ld", profile->name, (long) now);
 	} else {
 		switch_snprintf(sql, sizeof(sql), "select *,'%s' from sip_registrations where expires > 0", profile->name);
 	}
 
-	switch_mutex_lock(profile->ireg_mutex);
 	sofia_glue_execute_sql_callback(profile,
 									SWITCH_TRUE,
 									NULL,
@@ -291,6 +308,21 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
 
 	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, NULL);
 	
+
+
+	if (now) {
+		switch_snprintf(sql, sizeof(sql), "select call_id from sip_subscriptions where expires > 0 and expires <= %ld", (long) now);
+	} else {
+		switch_snprintf(sql, sizeof(sql), "select call_id from sip_subscriptions where expires > 0");
+	}
+
+	sofia_glue_execute_sql_callback(profile,
+									SWITCH_TRUE,
+									NULL,
+									sql,
+									sofia_sub_del_callback,
+									profile);
+
 	if (now) {
 		switch_snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0 and expires <= %ld", (long) now);
 	} else {

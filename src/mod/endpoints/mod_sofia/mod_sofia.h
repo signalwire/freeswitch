@@ -196,6 +196,7 @@ struct mod_sofia_globals {
 	switch_queue_t *presence_queue;
 	switch_queue_t *mwi_queue;
 	struct sofia_private destroy_private;
+	struct sofia_private keep_private;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 

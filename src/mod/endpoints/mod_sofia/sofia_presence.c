@@ -107,7 +107,6 @@ switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char
 						SIPTAG_CONTACT_STR(profile->url), TAG_END());
 
 	switch_safe_free(contact);
-	nua_handle_bind(msg_nh, &mod_sofia_globals.destroy_private);
 	nua_message(msg_nh, SIPTAG_CONTENT_TYPE_STR("text/html"), SIPTAG_PAYLOAD_STR(body), TAG_END());
 
 	switch_safe_free(ffrom);
@@ -1043,7 +1042,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	}
 
 	switch_snprintf(exp, sizeof(exp), "active;expires=%ld", (long) exptime); 
-
+	nua_handle_bind(nh, &mod_sofia_globals.keep_private);
 	nua_notify(nh,
 			   SIPTAG_SUBSCRIPTION_STATE_STR(exp),
 			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR(ct), SIPTAG_PAYLOAD_STR(pl), TAG_END());
@@ -1096,7 +1095,7 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 		expire_sec = 3600;
 	}
 	exp = switch_mprintf("active;expires=%ld", expire_sec);
-
+	nua_handle_bind(nh, &mod_sofia_globals.keep_private);
 	nua_notify(nh,
 			   SIPTAG_SUBSCRIPTION_STATE_STR(exp),
 			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"), SIPTAG_PAYLOAD_STR(body), TAG_END());
@@ -1140,7 +1139,6 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 					SIPTAG_CONTACT_STR(profile->url),
 					TAG_END());
 	
-	nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
 	nua_notify(nh,
 			   NUTAG_NEWSUB(1),
 			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"), SIPTAG_PAYLOAD_STR(body), TAG_END());
@@ -1338,7 +1336,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		sent_reply++;
 
 #if 0
-		nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
+
 		nua_notify(nh, 
 				   NUTAG_NEWSUB(1),
 				   SIPTAG_SUBSCRIPTION_STATE_STR(sstr), SIPTAG_EVENT_STR(event), 
