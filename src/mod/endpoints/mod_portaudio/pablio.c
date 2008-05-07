@@ -145,20 +145,36 @@ long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switch
 {
 	long bytesRead;
 	char *p = (char *) data;
-	long numBytes = aStream->bytesPerFrame * numFrames;
+	long avail, readBytes = 0, numBytes = aStream->bytesPerFrame * numFrames;
 	
 	while (numBytes > 0) {
-		bytesRead = PaUtil_ReadRingBuffer(&aStream->inFIFO, p, numBytes);
-		numBytes -= bytesRead;
+		avail = PaUtil_GetRingBufferReadAvailable(&aStream->inFIFO);
+
+		if (avail >= numBytes * 10) {
+			PaUtil_FlushRingBuffer(&aStream->inFIFO);
+			avail = 0;
+		}
+
+		if (avail >= numBytes) {
+			bytesRead = PaUtil_ReadRingBuffer(&aStream->inFIFO, p, numBytes);
+			numBytes -= bytesRead;
+			readBytes += bytesRead;
+		}
+		
 		if (numBytes > 0) {
 			if (switch_core_timer_check(timer, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-				PaUtil_FlushRingBuffer(&aStream->inFIFO);
-				return 0;
+				break;
 			}
 			switch_yield(1000);
+			p += bytesRead;
 		}
 	}
-	return numFrames;
+
+	if (readBytes) {
+		switch_core_timer_sync(timer);
+	}
+
+	return readBytes / aStream->bytesPerFrame;
 }
 
 /************************************************************

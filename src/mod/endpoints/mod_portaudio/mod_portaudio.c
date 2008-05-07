@@ -552,7 +552,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		globals.read_frame.datalen = samples * 2;
 		globals.read_frame.samples = samples;
 
-		switch_core_timer_check(&globals.timer, SWITCH_TRUE);
+		//switch_core_timer_check(&globals.timer, SWITCH_TRUE);
 		*frame = &globals.read_frame;
 
 		if (!switch_test_flag((&globals), GFLAG_MOUTH)) {
