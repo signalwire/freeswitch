@@ -311,6 +311,12 @@ int perl_thread(const char *text)
 }
 
 SWITCH_STANDARD_API(perlrun_api_function) {
+
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "-ERR Missing args.\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	perl_thread(cmd);
 	stream->write_function(stream, "+OK\n");
 	return SWITCH_STATUS_SUCCESS;
@@ -319,6 +325,12 @@ SWITCH_STANDARD_API(perlrun_api_function) {
 SWITCH_STANDARD_API(perl_api_function) {
 
 	struct perl_o po = { 0 };
+
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "-ERR Missing args.\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	po.cmd = strdup(cmd);
 	po.stream = stream;
 	po.session = session;
