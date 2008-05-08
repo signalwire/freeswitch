@@ -1,5 +1,5 @@
 <!-- http://wiki.freeswitch.org/wiki/Sofia_Configuration_Files --> 
-<profile name="outbound">
+<profile name="external">
   <!-- This profile is only for outbound registrations to providers -->
   <gateways>
     <X-PRE-PROCESS cmd="include" data="outbound/*.xml"/>
