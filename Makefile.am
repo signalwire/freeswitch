@@ -309,7 +309,7 @@ up: clean
 
 sync:
 	svn update
-	$(MAKE)
+	$(MAKE) install
 
 speedy-sync:
 	svn update
