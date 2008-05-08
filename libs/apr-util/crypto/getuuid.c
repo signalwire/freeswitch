@@ -20,10 +20,11 @@
  */
 #include "apr.h"
 #include "apr_uuid.h"
-#include "apr_md5.h"
 #include "apr_general.h"
 #include "apr_portable.h"
-
+#if !APR_HAS_RANDOM
+#include "apr_md5.h"
+#endif
 
 #if APR_HAVE_UNISTD_H
 #include <unistd.h>     /* for getpid, gethostname */
