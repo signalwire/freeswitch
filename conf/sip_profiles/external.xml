@@ -2,7 +2,7 @@
 <profile name="external">
   <!-- This profile is only for outbound registrations to providers -->
   <gateways>
-    <X-PRE-PROCESS cmd="include" data="outbound/*.xml"/>
+    <X-PRE-PROCESS cmd="include" data="external/*.xml"/>
   </gateways>
 
   <aliases>
