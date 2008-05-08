@@ -250,7 +250,6 @@ chkconfig --add freeswitch
 
 %postun
 %{?run_ldconfig:%run_ldconfig}
-%{__rm} -rf %{prefix}
 userdel freeswitch
 
 %clean
