@@ -688,12 +688,14 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 
 	if (regtype == REG_REGISTER) {
 		char *new_contact = NULL;
+
 		if (exptime) {
 			new_contact = switch_mprintf("%s;expires=%ld", contact_str, (long)exptime);
 			nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT_STR(new_contact), NUTAG_WITH_THIS(nua), TAG_END());
 			switch_safe_free(new_contact);
 			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", to_user, to_host);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "VM-Sofia-Profile", "%s", profile->name);
 				switch_event_fire(&event);
 			}
 		} else {

@@ -2156,7 +2156,7 @@ SWITCH_STANDARD_APP(voicemail_function)
 static void  message_query_handler(switch_event_t *event)
 {
 	char *account = switch_event_get_header(event, "message-account");
-	int sent = 0;
+	int created = 0;
 	switch_event_t *new_event = NULL;
 
 	if (account) {
@@ -2194,8 +2194,7 @@ static void  message_query_handler(switch_event_t *event)
 						switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", account);
 						switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)", 
 							total_new_messages, total_saved_messages, total_new_urgent_messages, total_saved_urgent_messages);
-						switch_event_fire(&new_event);
-						sent++;
+						created++;
 					}
 				}
 			}
@@ -2205,13 +2204,26 @@ static void  message_query_handler(switch_event_t *event)
 
 	}
 
-	if (!sent) {
+	if (!created) {
 		if (switch_event_create(&new_event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", "no");
 			switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", account);
-			switch_event_fire(&new_event);
 		}
 	}
+
+	if (new_event) {
+		switch_event_header_t *hp;
+
+		for (hp = event->headers; hp; hp = hp->next) {
+			if (!strncasecmp(hp->name, "vm-", 3)) {
+				switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, hp->name + 3, hp->value);
+			}
+		}
+
+		switch_event_fire(&new_event);
+	}
+
+
 }
 
 #define VOICEMAIL_SYNTAX "rss [<host> <port> <uri> <user> <domain>]"
