@@ -170,7 +170,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 									  (char *)fname,
 									  source->channels,
 									  source->rate,
-									  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, source->pool) != SWITCH_STATUS_SUCCESS) {
+									  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open %s\n", fname);
 				switch_yield(1000000);
 				continue;

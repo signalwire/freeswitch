@@ -341,7 +341,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 												  read_codec->implementation->number_of_channels,
 												  read_codec->implementation->actual_samples_per_second,
 												  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
-												  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+												  NULL) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing File\n");
 							switch_safe_free(tmp_data);
 							goto done;
@@ -994,7 +994,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 														  read_codec->implementation->number_of_channels,
 														  read_codec->implementation->actual_samples_per_second,
 														  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
-														  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+														  NULL) != SWITCH_STATUS_SUCCESS) {
 									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing File\n");
 									switch_safe_free(tmp_data);
 									goto notready;

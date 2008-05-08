@@ -496,7 +496,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 										  globals.read_codec.implementation->number_of_channels,
 										  globals.read_codec.implementation->actual_samples_per_second,
 										  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
-										  switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+										  NULL) != SWITCH_STATUS_SUCCESS) {
 					tech_pvt->hold_file = NULL;
 					goto cng;
 				}
