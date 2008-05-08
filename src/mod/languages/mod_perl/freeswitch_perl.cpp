@@ -4,7 +4,7 @@
 
 static STRLEN n_a;
 
-#define init_me() cb_function = hangup_func_str = NULL; hh = mark = 0; my_perl = NULL; cb_arg = NULL
+#define init_me() cb_function = hangup_func_str = NULL; hangup_func_arg = NULL; hh = mark = 0; my_perl = NULL; cb_arg = NULL
 
 Session::Session() : CoreSession()
 {
@@ -26,6 +26,7 @@ Session::~Session()
 	switch_safe_free(cb_function);
 	switch_safe_free(cb_arg);
 	switch_safe_free(hangup_func_str);
+	switch_safe_free(hangup_func_arg);
 	switch_core_event_hook_remove_state_change(session, perl_hanguphook);
 }
 
@@ -82,7 +83,12 @@ void Session::do_hangup_hook()
 			return;
 		}
 
-		code = switch_mprintf("%s(%s)", hangup_func_str, hook_state == CS_HANGUP ? "hangup" : "transfer");
+		if (hangup_func_arg) {
+			code = switch_mprintf("%s(%s,%s)", hangup_func_str, hook_state == CS_HANGUP ? "hangup" : "transfer", hangup_func_arg);
+		} else {
+			code = switch_mprintf("%s(%s)", hangup_func_str, hook_state == CS_HANGUP ? "hangup" : "transfer");
+		}
+
 		Perl_eval_pv(my_perl, code, TRUE);
 		free(code);
 	}
@@ -105,7 +111,7 @@ static switch_status_t perl_hanguphook(switch_core_session_t *session_hungup)
 }
 
 
-void Session::setHangupHook(char *func) {
+void Session::setHangupHook(char *func, char *arg) {
 
 	sanity_check_noreturn;
 
@@ -116,6 +122,9 @@ void Session::setHangupHook(char *func) {
 		switch_channel_set_private(channel, "CoreSession", this);
 		hook_state = switch_channel_get_state(channel);
 		switch_core_event_hook_add_state_change(session, perl_hanguphook);
+		if (arg) {
+			hangup_func_arg = strdup(func);
+		}
 	}
 }
 

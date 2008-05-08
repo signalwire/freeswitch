@@ -382,6 +382,8 @@ sub DESTROY {
 *swig_cb_arg_set = *freeswitchc::Session_cb_arg_set;
 *swig_hangup_func_str_get = *freeswitchc::Session_hangup_func_str_get;
 *swig_hangup_func_str_set = *freeswitchc::Session_hangup_func_str_set;
+*swig_hangup_func_arg_get = *freeswitchc::Session_hangup_func_arg_get;
+*swig_hangup_func_arg_set = *freeswitchc::Session_hangup_func_arg_set;
 *setPERL = *freeswitchc::Session_setPERL;
 sub DISOWN {
     my $self = shift;

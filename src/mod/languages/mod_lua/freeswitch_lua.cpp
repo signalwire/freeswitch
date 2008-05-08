@@ -3,19 +3,19 @@
 
 Session::Session() : CoreSession()
 {
-	cb_function = cb_arg = hangup_func_str = NULL;
+	cb_function = cb_arg = hangup_func_str = hangup_func_arg = NULL;
 	hh = mark = 0;
 }
 
 Session::Session(char *uuid) : CoreSession(uuid)
 {
-	cb_function = cb_arg = hangup_func_str = NULL;
+	cb_function = cb_arg = hangup_func_str = hangup_func_arg = NULL;
 	hh = mark = 0;
 }
 
 Session::Session(switch_core_session_t *new_session) : CoreSession(new_session)
 {
-	cb_function = cb_arg = hangup_func_str = NULL;
+	cb_function = cb_arg = hangup_func_str = hangup_func_arg = NULL;
 	hh = mark = 0;
 }
 static switch_status_t lua_hanguphook(switch_core_session_t *session_hungup);
@@ -29,6 +29,7 @@ Session::~Session()
 		free(hangup_func_str);
 	}
 	
+	switch_safe_free(hangup_func_arg);
 	switch_safe_free(cb_function);
 	switch_safe_free(cb_arg);
 }
@@ -89,6 +90,11 @@ void Session::do_hangup_hook()
 		lua_getfield(L, LUA_GLOBALSINDEX, (char *)hangup_func_str);
 		
 		lua_pushstring(L, hook_state == CS_HANGUP ? "hangup" : "transfer");
+
+		if (hangup_func_arg) {
+			lua_pushstring(L, hangup_func_arg);
+		}
+
 		lua_call(L, 1, 1);
 		err = lua_tostring(L, -1);
 
@@ -115,14 +121,16 @@ static switch_status_t lua_hanguphook(switch_core_session_t *session_hungup)
 }
 
 
-void Session::setHangupHook(char *func) {
+void Session::setHangupHook(char *func, char *arg) {
 
 	sanity_check_noreturn;
 
 	switch_safe_free(hangup_func_str);
-
+	switch_safe_free(hangup_func_arg);
+	
 	if (func) {
 		hangup_func_str = strdup(func);
+		hangup_func_arg = strdup(arg);
 		switch_channel_set_private(channel, "CoreSession", this);
 		hook_state = switch_channel_get_state(channel);
 		switch_core_event_hook_add_state_change(session, lua_hanguphook);

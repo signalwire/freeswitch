@@ -5365,7 +5365,37 @@ fail:
 }
 
 
-static int _wrap_Session_setHangupHook(lua_State* L) {
+static int _wrap_Session_setHangupHook__SWIG_0(lua_State* L) {
+  int SWIG_arg = -1;
+  Session *arg1 = (Session *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  
+  SWIG_check_num_args("setHangupHook",3,3)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("setHangupHook",1,"Session *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("setHangupHook",2,"char *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("setHangupHook",3,"char *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
+    SWIG_fail_ptr("Session_setHangupHook",1,SWIGTYPE_p_Session);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (char *)lua_tostring(L, 3);
+  (arg1)->setHangupHook(arg2,arg3);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Session_setHangupHook__SWIG_1(lua_State* L) {
   int SWIG_arg = -1;
   Session *arg1 = (Session *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -5389,6 +5419,62 @@ static int _wrap_Session_setHangupHook(lua_State* L) {
 fail:
   lua_error(L);
   return SWIG_arg;
+}
+
+
+static int _wrap_Session_setHangupHook(lua_State* L) {
+  int argc;
+  int argv[4]={
+    1,2,3,4
+  };
+  
+  argc = lua_gettop(L);
+  if (argc == 2) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_Session, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = lua_isstring(L,argv[1]);
+      }
+      if (_v) {
+        return _wrap_Session_setHangupHook__SWIG_1(L);
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_Session, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = lua_isstring(L,argv[1]);
+      }
+      if (_v) {
+        {
+          _v = lua_isstring(L,argv[2]);
+        }
+        if (_v) {
+          return _wrap_Session_setHangupHook__SWIG_0(L);
+        }
+      }
+    }
+  }
+  
+  lua_pushstring(L,"No matching function for overloaded 'Session_setHangupHook'");
+  lua_error(L);return 0;
 }
 
 
@@ -5597,6 +5683,66 @@ fail:
 }
 
 
+static int _wrap_Session_hangup_func_arg_set(lua_State* L) {
+  int SWIG_arg = -1;
+  Session *arg1 = (Session *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  SWIG_check_num_args("hangup_func_arg",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("hangup_func_arg",1,"Session *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("hangup_func_arg",2,"char *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
+    SWIG_fail_ptr("Session_hangup_func_arg_set",1,SWIGTYPE_p_Session);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  {
+    if (arg1->hangup_func_arg) delete [] arg1->hangup_func_arg;
+    if (arg2) {
+      arg1->hangup_func_arg = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->hangup_func_arg, (const char *)arg2);
+    } else {
+      arg1->hangup_func_arg = 0;
+    }
+  }
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Session_hangup_func_arg_get(lua_State* L) {
+  int SWIG_arg = -1;
+  Session *arg1 = (Session *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("hangup_func_arg",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("hangup_func_arg",1,"Session *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Session,0))){
+    SWIG_fail_ptr("Session_hangup_func_arg_get",1,SWIGTYPE_p_Session);
+  }
+  
+  result = (char *) ((arg1)->hangup_func_arg);
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_Session_setLUA(lua_State* L) {
   int SWIG_arg = -1;
   Session *arg1 = (Session *) 0 ;
@@ -5642,6 +5788,7 @@ static swig_lua_attribute swig_Session_attributes[] = {
     { "cb_function", _wrap_Session_cb_function_get, _wrap_Session_cb_function_set},
     { "cb_arg", _wrap_Session_cb_arg_get, _wrap_Session_cb_arg_set},
     { "hangup_func_str", _wrap_Session_hangup_func_str_get, _wrap_Session_hangup_func_str_set},
+    { "hangup_func_arg", _wrap_Session_hangup_func_arg_get, _wrap_Session_hangup_func_arg_set},
     {0,0,0}
 };
 static swig_lua_class *swig_Session_bases[] = {0,0};

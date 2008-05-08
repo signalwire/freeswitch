@@ -29,12 +29,13 @@ class Session : public CoreSession {
 
 	virtual switch_status_t run_dtmf_callback(void *input, switch_input_type_t itype);
 	void setInputCallback(char *cbfunc, char *funcargs);
-	void setHangupHook(char *func);
+	void setHangupHook(char *func, char *arg = NULL);
 	bool ready();
 	
 	char *cb_function;
 	char *cb_arg;
 	char *hangup_func_str;
+	char *hangup_func_arg;
 	void setLUA(lua_State *state);
 };
 
