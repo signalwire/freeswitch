@@ -187,7 +187,7 @@ static void *switch_core_service_thread(switch_thread_t * thread, void *obj)
 
 	switch_channel_set_flag(channel, CF_SERVICE);
 	while (data->running > 0) {
-		switch (switch_core_session_read_frame(session, &read_frame, -1, stream_id)) {
+		switch (switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, stream_id)) {
 		case SWITCH_STATUS_SUCCESS:
 		case SWITCH_STATUS_TIMEOUT:
 		case SWITCH_STATUS_BREAK:

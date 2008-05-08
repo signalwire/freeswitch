@@ -43,8 +43,6 @@ typedef struct switch_io_event_hook_video_read_frame switch_io_event_hook_video_
 typedef struct switch_io_event_hook_write_frame switch_io_event_hook_write_frame_t;
 typedef struct switch_io_event_hook_video_write_frame switch_io_event_hook_video_write_frame_t;
 typedef struct switch_io_event_hook_kill_channel switch_io_event_hook_kill_channel_t;
-typedef struct switch_io_event_hook_waitfor_read switch_io_event_hook_waitfor_read_t;
-typedef struct switch_io_event_hook_waitfor_write switch_io_event_hook_waitfor_write_t;
 typedef struct switch_io_event_hook_send_dtmf switch_io_event_hook_send_dtmf_t;
 typedef struct switch_io_event_hook_recv_dtmf switch_io_event_hook_recv_dtmf_t;
 typedef struct switch_io_event_hook_state_change switch_io_event_hook_state_change_t;
@@ -53,13 +51,11 @@ typedef switch_status_t (*switch_outgoing_channel_hook_t)
 (switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t *, switch_originate_flag_t);
 typedef switch_status_t (*switch_receive_message_hook_t) (switch_core_session_t *, switch_core_session_message_t *);
 typedef switch_status_t (*switch_receive_event_hook_t) (switch_core_session_t *, switch_event_t *);
-typedef switch_status_t (*switch_read_frame_hook_t) (switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
-typedef switch_status_t (*switch_video_read_frame_hook_t) (switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
-typedef switch_status_t (*switch_write_frame_hook_t) (switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int);
-typedef switch_status_t (*switch_video_write_frame_hook_t) (switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int);
+typedef switch_status_t (*switch_read_frame_hook_t) (switch_core_session_t *, switch_frame_t **, switch_io_flag_t, int);
+typedef switch_status_t (*switch_video_read_frame_hook_t) (switch_core_session_t *, switch_frame_t **, switch_io_flag_t, int);
+typedef switch_status_t (*switch_write_frame_hook_t) (switch_core_session_t *, switch_frame_t *, switch_io_flag_t, int);
+typedef switch_status_t (*switch_video_write_frame_hook_t) (switch_core_session_t *, switch_frame_t *, switch_io_flag_t, int);
 typedef switch_status_t (*switch_kill_channel_hook_t) (switch_core_session_t *, int);
-typedef switch_status_t (*switch_waitfor_read_hook_t) (switch_core_session_t *, int, int);
-typedef switch_status_t (*switch_waitfor_write_hook_t) (switch_core_session_t *, int, int);
 typedef switch_status_t (*switch_send_dtmf_hook_t) (switch_core_session_t *, const switch_dtmf_t *);
 typedef switch_status_t (*switch_recv_dtmf_hook_t) (switch_core_session_t *, const switch_dtmf_t *);
 typedef switch_status_t (*switch_state_change_hook_t) (switch_core_session_t *);
@@ -120,20 +116,6 @@ struct switch_io_event_hook_kill_channel {
 	struct switch_io_event_hook_kill_channel *next;
 };
 
-/*! \brief Node in which to store custom waitfor read channel callback hooks */
-struct switch_io_event_hook_waitfor_read {
-	/*! the waitfor read channel callback hook */
-	switch_waitfor_read_hook_t waitfor_read;
-	struct switch_io_event_hook_waitfor_read *next;
-};
-
-/*! \brief Node in which to store custom waitfor write channel callback hooks */
-struct switch_io_event_hook_waitfor_write {
-	/*! the waitfor write channel callback hook */
-	switch_waitfor_write_hook_t waitfor_write;
-	struct switch_io_event_hook_waitfor_write *next;
-};
-
 /*! \brief Node in which to store custom send dtmf channel callback hooks */
 struct switch_io_event_hook_send_dtmf {
 	/*! the send dtmf channel callback hook */
@@ -179,10 +161,6 @@ struct switch_io_event_hooks {
 	switch_io_event_hook_video_write_frame_t *video_write_frame;
 	/*! a list of kill channel hooks */
 	switch_io_event_hook_kill_channel_t *kill_channel;
-	/*! a list of wait for read hooks */
-	switch_io_event_hook_waitfor_read_t *waitfor_read;
-	/*! a list of wait for write hooks */
-	switch_io_event_hook_waitfor_write_t *waitfor_write;
 	/*! a list of send dtmf hooks */
 	switch_io_event_hook_send_dtmf_t *send_dtmf;
 	/*! a list of recv dtmf hooks */
@@ -244,8 +222,6 @@ NEW_HOOK_DECL_ADD_P(write_frame);
 NEW_HOOK_DECL_ADD_P(video_read_frame);
 NEW_HOOK_DECL_ADD_P(video_write_frame);
 NEW_HOOK_DECL_ADD_P(kill_channel);
-NEW_HOOK_DECL_ADD_P(waitfor_read);
-NEW_HOOK_DECL_ADD_P(waitfor_write);
 NEW_HOOK_DECL_ADD_P(send_dtmf);
 NEW_HOOK_DECL_ADD_P(recv_dtmf);
 NEW_HOOK_DECL_ADD_P(resurrect_session);
@@ -259,8 +235,6 @@ NEW_HOOK_DECL_REM_P(write_frame);
 NEW_HOOK_DECL_REM_P(video_read_frame);
 NEW_HOOK_DECL_REM_P(video_write_frame);
 NEW_HOOK_DECL_REM_P(kill_channel);
-NEW_HOOK_DECL_REM_P(waitfor_read);
-NEW_HOOK_DECL_REM_P(waitfor_write);
 NEW_HOOK_DECL_REM_P(send_dtmf);
 NEW_HOOK_DECL_REM_P(recv_dtmf);
 NEW_HOOK_DECL_REM_P(resurrect_session);

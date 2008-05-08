@@ -783,7 +783,7 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 		} 
 		
 		if (switch_channel_test_flag(switch_core_session_get_channel(conference->floor_holder->session), CF_VIDEO)) {
-			status = switch_core_session_read_video_frame(conference->floor_holder->session, &vid_frame, -1, 0);
+			status = switch_core_session_read_video_frame(conference->floor_holder->session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
 			
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				conference->floor_holder = NULL;
@@ -835,7 +835,7 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 			for (imember = conference->members; imember; imember = imember->next) {
 				if (switch_channel_test_flag(switch_core_session_get_channel(imember->session), CF_VIDEO)) {
 					has_vid++;
-					switch_core_session_write_video_frame(imember->session, vid_frame, -1, 0);
+					switch_core_session_write_video_frame(imember->session, vid_frame, SWITCH_IO_FLAG_NONE, 0);
 				}
 			}
 			switch_mutex_unlock(conference->member_mutex);
@@ -1497,7 +1497,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, 
 
 	while (switch_test_flag(member, MFLAG_RUNNING) && switch_channel_ready(channel)) {
 		/* Read a frame. */
-		status = switch_core_session_read_frame(member->session, &read_frame, -1, 0);
+		status = switch_core_session_read_frame(member->session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		/* end the loop, if appropriate */
 		if (!SWITCH_READ_ACCEPTABLE(status) || !switch_test_flag(member, MFLAG_RUNNING)) {
@@ -1890,7 +1890,7 @@ static void conference_loop_output(conference_member_t * member)
 							switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
 						}
 						write_frame.timestamp = timer.samplecount;
-						switch_core_session_write_frame(member->session, &write_frame, -1, 0);
+						switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 						switch_core_timer_next(&timer);
 
                             
@@ -1933,7 +1933,7 @@ static void conference_loop_output(conference_member_t * member)
 							switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
 						}
 						write_frame.timestamp = timer.samplecount;
-						switch_core_session_write_frame(member->session, &write_frame, -1, 0);
+						switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 					}
 				}
 
@@ -1948,7 +1948,7 @@ static void conference_loop_output(conference_member_t * member)
 					write_frame.datalen = bytes;
 					write_frame.samples = samples;
 					write_frame.timestamp = timer.samplecount;
-					switch_core_session_write_frame(member->session, &write_frame, -1, 0);
+					switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 				}
 			}
 		}
@@ -3961,7 +3961,7 @@ static switch_status_t conference_local_play_file(conference_obj_t * conference,
 	/* generate some space infront of the file to be played */
 	for (x = 0; x < leadin; x++) {
 		switch_frame_t *read_frame;
-		status = switch_core_session_read_frame(session, &read_frame, 1000, 0);
+		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;

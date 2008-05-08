@@ -64,7 +64,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 			(!switch_channel_test_flag(channel, CF_ANSWERED) && !switch_channel_test_flag(channel, CF_EARLY_MEDIA))) {
 			switch_yield(1000);
 		} else {
-			status = switch_core_session_read_frame(session, &read_frame, left, 0);
+			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
 			}
@@ -93,7 +93,7 @@ static void *SWITCH_THREAD_FUNC unicast_thread_run(switch_thread_t *thread, void
 		}
 		conninfo->write_frame.datalen = (uint32_t)len;
 		conninfo->write_frame.samples = conninfo->write_frame.datalen / 2;
-		switch_core_session_write_frame(conninfo->session, &conninfo->write_frame, -1, conninfo->stream_id);
+		switch_core_session_write_frame(conninfo->session, &conninfo->write_frame, SWITCH_IO_FLAG_NONE, conninfo->stream_id);
 	}
 	
 	switch_clear_flag_locked(conninfo, SUF_READY);
@@ -276,7 +276,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 		int frame_count = atoi(lead_frames);
 
 		while(frame_count > 0) {
-			status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				goto done;
 			}
@@ -449,7 +449,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 
 	while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_CONTROLLED)) {
 
-		if ((status = switch_core_session_read_frame(session, &read_frame, -1, stream_id)) == SWITCH_STATUS_SUCCESS) {
+		if ((status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
 			}
@@ -615,7 +615,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 		if (switch_channel_test_flag(channel, CF_SERVICE)) {
 			switch_yield(1000);
 		} else {
-			status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		}
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -731,7 +731,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 		if (switch_channel_test_flag(channel, CF_SERVICE)) {
 			switch_yield(1000);
 		} else {
-			status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
 			}
@@ -843,7 +843,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 			switch_core_session_receive_message(session, &msg);
 
 			switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000);
-			switch_core_session_read_frame(session, &read_frame, -1, 0);
+			switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 			
 			if ((flags & SMF_REBRIDGE)
 				&& (other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE))
@@ -852,7 +852,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 				switch_assert(other_channel != NULL);
 				switch_core_session_receive_message(other_session, &msg);
 				switch_channel_wait_for_flag(other_channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000);
-				switch_core_session_read_frame(other_session, &read_frame, -1, 0);
+				switch_core_session_read_frame(other_session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 				switch_channel_clear_state_handler(other_channel, NULL);
 				switch_core_session_rwunlock(other_session);
 			}
@@ -1642,7 +1642,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 	write_frame.codec = read_codec;
 
 	while(switch_channel_ready(channel)) {
-		status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
 		}
@@ -1653,7 +1653,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 		if ((jb_frame = stfu_n_read_a_frame(jb))) {
 			write_frame.data = jb_frame->data;
 			write_frame.datalen = (uint32_t)jb_frame->dlen;
-			status = switch_core_session_write_frame(session, &write_frame, -1, 0);
+			status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
 			}

@@ -422,8 +422,8 @@ static switch_status_t channel_on_soft_execute(switch_core_session_t *session);
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags);
-static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
-static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id);
+static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
+static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
 
 
@@ -557,20 +557,6 @@ static switch_status_t channel_on_soft_execute(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t channel_waitfor_read(switch_core_session_t *session, int ms, int stream_id)
-{
-	assert(switch_core_session_get_private(session));
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t channel_waitfor_write(switch_core_session_t *session, int ms, int stream_id)
-{
-	assert(switch_core_session_get_private(session));
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
 static switch_status_t channel_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
 	private_t *tech_pvt = switch_core_session_get_private(session);
@@ -584,11 +570,9 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id)
+static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
 {
 	private_t *tech_pvt = switch_core_session_get_private(session);
-	switch_time_t started = switch_timestamp_now();
-	unsigned int elapsed;
 	switch_byte_t *data;
 
 	switch_assert(tech_pvt != NULL);
@@ -630,12 +614,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			return SWITCH_STATUS_SUCCESS;
 		}
 
-		if (timeout > -1) {
-			elapsed = (unsigned int) ((switch_timestamp_now() - started) / 1000);
-			if (elapsed >= (unsigned int) timeout) {
-				return SWITCH_STATUS_SUCCESS;
-			}
-		}
 		switch_yield(1000);
 	}
 
@@ -651,7 +629,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id)
+static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
 	private_t *tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -812,8 +790,6 @@ switch_io_routines_t iax_io_routines = {
 	/*.read_frame */ channel_read_frame,
 	/*.write_frame */ channel_write_frame,
 	/*.kill_channel */ channel_kill_channel,
-	/*.waitfor_read */ channel_waitfor_read,
-	/*.waitfor_write */ channel_waitfor_write,
 	/*.send_dtmf */ channel_send_dtmf,
 	/*.receive_message*/ channel_receive_message,
 	/*.receive_event */ channel_receive_event

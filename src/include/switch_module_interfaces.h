@@ -101,17 +101,15 @@ struct switch_io_event_hooks;
 
 typedef switch_call_cause_t (*switch_io_outgoing_channel_t)
 (switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t **, switch_memory_pool_t **, switch_originate_flag_t);
-typedef switch_status_t (*switch_io_read_frame_t) (switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
-typedef switch_status_t (*switch_io_write_frame_t) (switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int);
+typedef switch_status_t (*switch_io_read_frame_t) (switch_core_session_t *, switch_frame_t **, switch_io_flag_t, int);
+typedef switch_status_t (*switch_io_write_frame_t) (switch_core_session_t *, switch_frame_t *, switch_io_flag_t, int);
 typedef switch_status_t (*switch_io_kill_channel_t) (switch_core_session_t *, int);
-typedef switch_status_t (*switch_io_waitfor_read_t) (switch_core_session_t *, int, int);
-typedef switch_status_t (*switch_io_waitfor_write_t) (switch_core_session_t *, int, int);
 typedef switch_status_t (*switch_io_send_dtmf_t) (switch_core_session_t *, const switch_dtmf_t *);
 typedef switch_status_t (*switch_io_receive_message_t) (switch_core_session_t *, switch_core_session_message_t *);
 typedef switch_status_t (*switch_io_receive_event_t) (switch_core_session_t *, switch_event_t *);
 typedef switch_status_t (*switch_io_state_change_t) (switch_core_session_t *);
-typedef	switch_status_t (*switch_io_read_video_frame_t) (switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
-typedef switch_status_t (*switch_io_write_video_frame_t) (switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int);
+typedef	switch_status_t (*switch_io_read_video_frame_t) (switch_core_session_t *, switch_frame_t **, switch_io_flag_t, int);
+typedef switch_status_t (*switch_io_write_video_frame_t) (switch_core_session_t *, switch_frame_t *, switch_io_flag_t, int);
 typedef switch_call_cause_t (*switch_io_resurrect_session_t)(switch_core_session_t **, switch_memory_pool_t **, void *);
 
 typedef enum {
@@ -119,8 +117,6 @@ typedef enum {
 	SWITCH_IO_READ_FRAME,
 	SWITCH_IO_WRITE_FRAME,
 	SWITCH_IO_KILL_CHANNEL,
-	SWITCH_IO_WAITFOR_READ,
-	SWITCH_IO_WAITFOR_WRITE,
 	SWITCH_IO_SEND_DTMF,
 	SWITCH_IO_RECEIVE_MESSAGE,
 	SWITCH_IO_RECEIVE_EVENT,
@@ -140,10 +136,6 @@ struct switch_io_routines {
 	switch_io_write_frame_t write_frame;
 	/*! send a kill signal to the session's channel */
 	switch_io_kill_channel_t kill_channel;
-	/*! wait for the session's channel to be ready to read audio */
-	switch_io_waitfor_read_t waitfor_read;
-	/*! wait for the session's channel to be ready to write audio */
-	switch_io_waitfor_write_t waitfor_write;
 	/*! send a string of DTMF digits to a session's channel */
 	switch_io_send_dtmf_t send_dtmf;
 	/*! receive a message from another session */

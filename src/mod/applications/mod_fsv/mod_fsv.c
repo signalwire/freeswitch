@@ -64,7 +64,7 @@ static void *SWITCH_THREAD_FUNC record_video_thread(switch_thread_t *thread, voi
 	
 	eh->up = 1;	
 	while(switch_channel_ready(channel)) {
-		status = switch_core_session_read_video_frame(session, &read_frame, -1, 0);
+		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
@@ -90,7 +90,7 @@ static void *SWITCH_THREAD_FUNC record_video_thread(switch_thread_t *thread, voi
 
 		switch_mutex_unlock(eh->mutex);
         
-		switch_core_session_write_video_frame(session, read_frame, -1, 0);
+		switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 	}
 	eh->up = 0;
 	return NULL;
@@ -165,7 +165,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 	
 	while(switch_channel_ready(channel)) {
 
-		status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
@@ -315,7 +315,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 				hdr->pt = pt;
 			}
 			if (switch_channel_test_flag(channel, CF_VIDEO)) {
-				switch_core_session_write_video_frame(session, &vid_frame, -1, 0);
+				switch_core_session_write_video_frame(session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
 			}
 			if (ts && last && last != ts) {
 				switch_yield(1000);
@@ -328,7 +328,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 			if ((write_frame.datalen = read(fd, write_frame.data, bytes)) <= 0) {
 				break;
 			}
-			switch_core_session_write_frame(session, &write_frame, -1, 0);
+			switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 			switch_core_timer_next(&timer);
 		}
 

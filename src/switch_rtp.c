@@ -1094,7 +1094,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 	}
 }
 
-static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_type, switch_frame_flag_t *flags)
+static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_type, switch_frame_flag_t *flags, switch_io_flag_t io_flags)
 {
 	switch_size_t bytes = 0;
 	switch_status_t status;
@@ -1141,6 +1141,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			ret = (int) bytes;
 			goto end;
 		}
+
+		if (!bytes && (io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
+			do_cng = 1;
+            goto cng;
+		}
+
 
 		if (rtp_session->timer.interval) {
 			check = (uint8_t) (switch_core_timer_check(&rtp_session->timer, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS);						
@@ -1508,7 +1514,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833_in(switch_rtp_t *rtp_se
 }
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void *data, uint32_t * datalen,
-												switch_payload_t *payload_type, switch_frame_flag_t *flags)
+												switch_payload_t *payload_type, switch_frame_flag_t *flags, switch_io_flag_t io_flags)
 {
 	int bytes = 0;
 
@@ -1516,7 +1522,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void 
 		return SWITCH_STATUS_FALSE;
 	}
 
-	bytes = rtp_common_read(rtp_session, payload_type, flags);
+	bytes = rtp_common_read(rtp_session, payload_type, flags, io_flags);
 
 	if (bytes < 0) {
 		*datalen = 0;
@@ -1535,7 +1541,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp_session, switch_frame_t *frame)
+SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp_session, switch_frame_t *frame, switch_io_flag_t io_flags)
 {
 	int bytes = 0;
 
@@ -1543,7 +1549,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 		return SWITCH_STATUS_FALSE;
 	}
 
-	bytes = rtp_common_read(rtp_session, &frame->payload, &frame->flags);
+	bytes = rtp_common_read(rtp_session, &frame->payload, &frame->flags, io_flags);
 
 	frame->data = rtp_session->recv_msg.body;
 	frame->packet = &rtp_session->recv_msg;
@@ -1574,7 +1580,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 }
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_session,
-														 void **data, uint32_t * datalen, switch_payload_t *payload_type, switch_frame_flag_t *flags)
+														 void **data, uint32_t * datalen, switch_payload_t *payload_type, switch_frame_flag_t *flags, switch_io_flag_t io_flags)
 {
 	int bytes = 0;
 
@@ -1582,7 +1588,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_sessi
 		return SWITCH_STATUS_FALSE;
 	}
 
-	bytes = rtp_common_read(rtp_session, payload_type, flags);
+	bytes = rtp_common_read(rtp_session, payload_type, flags, io_flags);
 	*data = rtp_session->recv_msg.body;
 
 	if (bytes < 0) {

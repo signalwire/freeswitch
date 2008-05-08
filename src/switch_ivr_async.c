@@ -49,7 +49,7 @@ static void *SWITCH_THREAD_FUNC echo_video_thread(switch_thread_t *thread, void 
 
 	eh->up = 1;	
 	while(switch_channel_ready(channel)) {
-		status = switch_core_session_read_video_frame(session, &read_frame, -1, 0);
+		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
         
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
@@ -59,7 +59,7 @@ static void *SWITCH_THREAD_FUNC echo_video_thread(switch_thread_t *thread, void 
 			continue;
 		}
 
-		switch_core_session_write_video_frame(session, read_frame, -1, 0);
+		switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 		
 	}
 	eh->up = 0;
@@ -91,14 +91,14 @@ SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session)
 #endif
 
 	while(switch_channel_ready(channel)) {
-		status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
 		}
-		switch_core_session_write_frame(session, read_frame, -1, 0);
+		switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 #ifndef SWITCH_VIDEO_IN_THREADS
-		status = switch_core_session_read_video_frame(session, &read_frame, -1, 0);
+		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
         
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
@@ -108,7 +108,7 @@ SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session)
 			continue;
 		}
 
-		switch_core_session_write_video_frame(session, read_frame, -1, 0);
+		switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 #endif
 
 	}
@@ -590,7 +590,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			char *fcommand = NULL;
 			char db[2] = "";
 
-			status = switch_core_session_read_frame(session, &read_frame, 1000, 0);
+			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 			
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				goto end;
@@ -676,7 +676,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 				while (switch_buffer_inuse(ep->buffer) >= len) {
 					write_frame.datalen = (uint32_t)switch_buffer_read(ep->buffer, buf, len);
 					write_frame.samples = write_frame.datalen / 2;
-					if ((status = switch_core_session_write_frame(session, &write_frame, 1000, 0)) != SWITCH_STATUS_SUCCESS) {
+					if ((status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0)) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
 				}

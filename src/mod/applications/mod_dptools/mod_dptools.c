@@ -1714,11 +1714,11 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 			/* SIP won't let us redir media until the call has been answered #$^#%& so we will proxy any early media until they do */
 			while (switch_channel_ready(caller_channel) && switch_channel_ready(peer_channel)
 				   && !switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
-				switch_status_t status = switch_core_session_read_frame(peer_session, &read_frame, -1, 0);
+				switch_status_t status = switch_core_session_read_frame(peer_session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 				uint8_t bad = 1;
 
 				if (SWITCH_READ_ACCEPTABLE(status)
-					&& switch_core_session_write_frame(session, read_frame, -1, 0) == SWITCH_STATUS_SUCCESS) {
+					&& switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0) == SWITCH_STATUS_SUCCESS) {
 					bad = 0;
 				}
 				if (bad) {

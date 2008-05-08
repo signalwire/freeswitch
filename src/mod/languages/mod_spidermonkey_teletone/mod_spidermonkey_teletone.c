@@ -209,7 +209,6 @@ static JSBool teletone_generate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		switch_frame_t write_frame = { 0 };
 		unsigned char *fdata[1024];
 		switch_frame_t *read_frame;
-		int stream_id;
 		switch_core_thread_session_t thread_session = { 0 };
 		switch_channel_t *channel;
 
@@ -238,9 +237,7 @@ static JSBool teletone_generate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		channel = switch_core_session_get_channel(session);
 
 		if (tto->timer) {
-			for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
-				switch_core_service_session(session, &thread_session, stream_id);
-			}
+			switch_core_service_session(session, &thread_session, 0);
 		}
 
 		if (loops) {
@@ -275,7 +272,7 @@ static JSBool teletone_generate(JSContext * cx, JSObject * obj, uintN argc, jsva
 
 			} else {
 				switch_status_t status;
-				status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+				status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 				if (!SWITCH_READ_ACCEPTABLE(status)) {
 					break;
@@ -287,11 +284,9 @@ static JSBool teletone_generate(JSContext * cx, JSObject * obj, uintN argc, jsva
 			}
 
 			write_frame.samples = write_frame.datalen / 2;
-			for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
-				if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad Write\n");
-					break;
-				}
+			if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad Write\n");
+				break;
 			}
 		}
 

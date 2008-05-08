@@ -176,8 +176,8 @@ static switch_status_t woomera_on_soft_execute(switch_core_session_t *session);
 static switch_call_cause_t woomera_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags);
-static switch_status_t woomera_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
-static switch_status_t woomera_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id);
+static switch_status_t woomera_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
+static switch_status_t woomera_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t woomera_kill_channel(switch_core_session_t *session, int sig);
 static void tech_destroy(private_object * tech_pvt);
 static void woomera_printf(woomera_profile * profile, switch_socket_t * socket, char *fmt, ...);
@@ -322,28 +322,7 @@ static switch_status_t woomera_on_soft_execute(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t woomera_waitfor_read(switch_core_session_t *session, int ms, int stream_id)
-{
-	struct private_object *tech_pvt = NULL;
-
-	tech_pvt = switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
-
-	return switch_socket_waitfor(tech_pvt->read_poll, ms) ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t woomera_waitfor_write(switch_core_session_t *session, int ms, int stream_id)
-{
-	struct private_object *tech_pvt = NULL;
-
-	tech_pvt = switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
-
-	return SWITCH_STATUS_SUCCESS;
-//  return switch_socket_waitfor(tech_pvt->write_poll, ms);
-}
-
-static switch_status_t woomera_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id)
+static switch_status_t woomera_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
 {
 	struct private_object *tech_pvt = switch_core_session_get_private(session);
 	switch_frame_t *pframe;
@@ -379,7 +358,7 @@ static switch_status_t woomera_read_frame(switch_core_session_t *session, switch
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status_t woomera_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id)
+static switch_status_t woomera_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
 	struct private_object *tech_pvt = switch_core_session_get_private(session);
 	switch_size_t len;
@@ -417,8 +396,6 @@ static switch_io_routines_t woomera_io_routines = {
 	/*.read_frame */ woomera_read_frame,
 	/*.write_frame */ woomera_write_frame,
 	/*.kill_channel */ woomera_kill_channel,
-	/*.waitfor_read */ woomera_waitfor_read,
-	/*.waitfor_write */ woomera_waitfor_write
 };
 
 /* Make sure when you have 2 sessions in the same scope that you pass the appropriate one to the routines

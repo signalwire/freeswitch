@@ -505,7 +505,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			}
 		}
 
-		status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
 		}
@@ -624,7 +624,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 			break;
 		}
 
-		status = switch_core_session_read_frame(session, &read_frame, 1000, 0);
+		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
@@ -643,7 +643,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 
 		write_frame.samples = write_frame.datalen / 2;
 
-		if (switch_core_session_write_frame(session, &write_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 			break;
 		}
 	}
@@ -674,7 +674,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	switch_codec_t codec;
 	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
 	char *codec_name;
-	int stream_id = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_file_handle_t lfh;
 	switch_codec_t *read_codec = NULL;
@@ -899,9 +898,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 	if (timer_name) {
 		/* start a thread to absorb incoming audio */
-		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
-			switch_core_service_session(session, &thread_session, stream_id);
-		}
+		switch_core_service_session(session, &thread_session, 0);
 	}
 
 	ilen = samples;
@@ -1080,14 +1077,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		}
 #endif
 #endif
-		stream_id = 0;
-
 		if (fh->vol) {
 			switch_change_sln_volume(write_frame.data, write_frame.datalen / 2, fh->vol);
 		}
 
 		fh->offset_pos += write_frame.samples / 2;
-		status = switch_core_session_write_frame(session, &write_frame, -1, stream_id);
+		status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 		
 		if (status == SWITCH_STATUS_MORE_DATA) {
 			status = SWITCH_STATUS_SUCCESS;
@@ -1112,7 +1107,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_yield(10000);
 			}
 
-			tstatus = switch_core_session_read_frame(session, &read_frame, -1, 0);
+			tstatus = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 			
 			if (!SWITCH_READ_ACCEPTABLE(tstatus)) {
 				break;
@@ -1338,7 +1333,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	switch_size_t ilen = 0;
 	switch_frame_t write_frame = { 0 };
 	int x;
-	int stream_id = 0;
 	int done = 0;
 	int lead_in_out = 10;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -1420,7 +1414,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 		if (timer) {
 			write_frame.timestamp = timer->samplecount;
 		}
-		if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 			done = 1;
 			break;
 		}
@@ -1490,7 +1484,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 				}
 			} else {
 				switch_frame_t *read_frame;
-				switch_status_t tstatus = switch_core_session_read_frame(session, &read_frame, -1, 0);
+				switch_status_t tstatus = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 				while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_HOLD)) {
 					switch_yield(10000);
@@ -1518,7 +1512,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 				if (timer) {
 					write_frame.timestamp = timer->samplecount;
 				}
-				if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
+				if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 					done = 1;
 					break;
 				}
@@ -1538,7 +1532,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 		if (timer) {
 			write_frame.timestamp = timer->samplecount;
 		}
-		if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 			done = 1;
 			break;
 		}
@@ -1553,7 +1547,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 			}
 		} else {				/* time off the channel (if you must) */
 			switch_frame_t *read_frame;
-			switch_status_t tstatus = switch_core_session_read_frame(session, &read_frame, -1, 0);
+			switch_status_t tstatus = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 			while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_HOLD)) {
 				switch_yield(10000);
@@ -1618,7 +1612,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	switch_codec_t lcodec, *codec;
 	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
 	char *codec_name;
-	int stream_id = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_speech_handle_t lsh, *sh;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
@@ -1721,9 +1714,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer success %u bytes per %d ms!\n", sh->samples * 2, interval);
 		}
 		/* start a thread to absorb incoming audio */
-		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
-			switch_core_service_session(session, &thread_session, stream_id);
-		}
+		switch_core_service_session(session, &thread_session, 0);
+
 	}
 	
 	status = switch_ivr_speak_text_handle(session, sh, write_frame.codec, timer_name ? timer : NULL, text, args);

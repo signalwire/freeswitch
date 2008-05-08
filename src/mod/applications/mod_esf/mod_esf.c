@@ -130,7 +130,7 @@ SWITCH_STANDARD_APP(bcast_function)
 
 
 	while(!ready) {
-		status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		if (read_frame && switch_test_flag(read_frame, SFF_CNG)) {
 			continue;
 		}
@@ -206,7 +206,7 @@ SWITCH_STANDARD_APP(bcast_function)
 
 	for(;;) {
 
-		status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
         if (!SWITCH_READ_ACCEPTABLE(status)) {
             break;

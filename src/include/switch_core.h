@@ -809,10 +809,10 @@ SWITCH_DECLARE(uint32_t) switch_core_session_flush_private_events(switch_core_se
   \param stream_id which logical media channel to use
   \return SWITCH_STATUS_SUCCESS a the frame was read
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(_In_ switch_core_session_t *session, switch_frame_t **frame, int timeout, int stream_id);
+SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(_In_ switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(_In_ switch_core_session_t *session, switch_frame_t **frame, int timeout, int stream_id);
-SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(_In_ switch_core_session_t *session, switch_frame_t *frame, int timeout, int stream_id);
+SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(_In_ switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
+SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(_In_ switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 
 /*! 
   \brief Reset the buffers and resampler on a session
@@ -828,7 +828,7 @@ SWITCH_DECLARE(void) switch_core_session_reset(_In_ switch_core_session_t *sessi
   \param stream_id which logical media channel to use
   \return SWITCH_STATUS_SUCCESS a the frame was written
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(_In_ switch_core_session_t *session, switch_frame_t *frame, int timeout, int stream_id);
+SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(_In_ switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(_In_ switch_core_session_t *session,
@@ -840,24 +840,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(_In_ sw
   \return status returned by the session's signal handler
 */
 #define switch_core_session_kill_channel(session, sig) switch_core_session_perform_kill_channel(session, __FILE__, __SWITCH_FUNC__, __LINE__, sig)
-
-/*! 
-  \brief Wait for a session to be ready for input
-  \param session session to wait for
-  \param timeout number of milliseconds to wait for data
-  \param stream_id which logical media channel to use
-  \return SWITCH_STATUS_SUCCESS if data is available for read within timeframe specified
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_read(_In_ switch_core_session_t *session, int timeout, int stream_id);
-
-/*! 
-  \brief Wait for a session to be ready for output
-  \param session session to wait for
-  \param timeout number of milliseconds to wait for data
-  \param stream_id which logical media channel to use
-  \return SWITCH_STATUS_SUCCESS if the session is available for write within timeframe specified
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_write(_In_ switch_core_session_t *session, int timeout, int stream_id);
 
 /*! 
   \brief Send DTMF to a session

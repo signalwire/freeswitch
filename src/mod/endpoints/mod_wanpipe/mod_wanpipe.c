@@ -468,9 +468,9 @@ static switch_status_t wanpipe_on_exchange_media(switch_core_session_t *session)
 static switch_status_t wanpipe_on_soft_execute(switch_core_session_t *session);
 static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags);
-static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
+static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch_frame_t **frame,
 										switch_io_flag_t flags, int stream_id);
-static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
+static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switch_frame_t *frame,
 										 switch_io_flag_t flags, int stream_id);
 static int on_info(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent);
 static int on_hangup(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent);
@@ -751,7 +751,7 @@ static switch_status_t wanpipe_answer_channel(switch_core_session_t *session)
 
 
 
-static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
+static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch_frame_t **frame,
 										switch_io_flag_t flags, int stream_id)
 {
 	private_object_t *tech_pvt;
@@ -838,7 +838,7 @@ static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
+static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switch_frame_t *frame,
 										 switch_io_flag_t flags, int stream_id)
 {
 	private_object_t *tech_pvt;
@@ -993,8 +993,6 @@ switch_io_routines_t wanpipe_io_routines = {
 	/*.read_frame */ wanpipe_read_frame,
 	/*.write_frame */ wanpipe_write_frame,
 	/*.kill_channel */ wanpipe_kill_channel,
-	/*.waitfor_read */ NULL,
-	/*.waitfor_read */ NULL,
 	/*.send_dtmf*/ wanpipe_send_dtmf,
 	/*.receive_message*/ wanpipe_receive_message
 };

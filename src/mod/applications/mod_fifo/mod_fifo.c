@@ -804,7 +804,7 @@ SWITCH_STANDARD_APP(fifo_function)
                     break;
                 }
 
-                status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+                status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
                 if (!SWITCH_READ_ACCEPTABLE(status)) {
                     break;
@@ -854,7 +854,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_channel_set_flag(other_channel, CF_BREAK);
 
 				while (switch_channel_ready(channel) && switch_channel_ready(other_channel) && switch_channel_test_flag(other_channel, CF_TAGGED)) {
-					status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+					status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 					if (!SWITCH_READ_ACCEPTABLE(status)) {
 						break;
 					}

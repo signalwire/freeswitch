@@ -171,7 +171,6 @@ SWITCH_STANDARD_APP(rss_function)
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	switch_core_thread_session_t thread_session;
 	uint32_t rate, interval = 20;
-	int stream_id = 0;
 	switch_timer_t timer = { 0 }, *timerp = NULL;
 	uint32_t last;
 	char *mydata = NULL;
@@ -292,9 +291,7 @@ SWITCH_STANDARD_APP(rss_function)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer success %u bytes per %d ms!\n", (rate / 50) * 2, interval);
 
 		/* start a thread to absorb incoming audio */
-		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
-			switch_core_service_session(session, &thread_session, stream_id);
-		}
+		switch_core_service_session(session, &thread_session, 0);
 		timerp = &timer;
 	}
 

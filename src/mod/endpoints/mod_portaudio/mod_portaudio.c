@@ -146,8 +146,8 @@ static switch_status_t channel_on_soft_execute(switch_core_session_t *session);
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags);
-static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
-static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id);
+static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
+static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
 static switch_status_t engage_device(int samplerate, int codec_ms);
 static switch_status_t engage_ring_device(int sample_rate, int channels);
@@ -448,16 +448,6 @@ static switch_status_t channel_on_exchange_media(switch_core_session_t *session)
 }
 
 
-static switch_status_t channel_waitfor_read(switch_core_session_t *session, int ms, int stream_id)
-{
-	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t channel_waitfor_write(switch_core_session_t *session, int ms, int stream_id)
-{
-	return SWITCH_STATUS_SUCCESS;
-}
-
 static switch_status_t channel_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
 	private_t *tech_pvt = switch_core_session_get_private(session);
@@ -468,7 +458,7 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id)
+static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
 {
 	private_t *tech_pvt = switch_core_session_get_private(session);
 	int samples = 0;
@@ -566,7 +556,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	return status;
 }
 
-static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id)
+static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	private_t *tech_pvt = switch_core_session_get_private(session);

@@ -296,7 +296,7 @@ SWITCH_DECLARE(void) switch_rtp_set_invald_handler(switch_rtp_t *rtp_session, sw
   \return the number of bytes read
 */
 SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void *data, uint32_t * datalen,
-												switch_payload_t *payload_type, switch_frame_flag_t *flags);
+												switch_payload_t *payload_type, switch_frame_flag_t *flags, switch_io_flag_t io_flags);
 
 /*! 
   \brief Queue RFC2833 DTMF data into an RTP Session
@@ -332,7 +332,7 @@ SWITCH_DECLARE(switch_size_t) switch_rtp_dequeue_dtmf(switch_rtp_t *rtp_session,
   \return the number of bytes read
 */
 SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_session,
-														 void **data, uint32_t * datalen, switch_payload_t *payload_type, switch_frame_flag_t *flags);
+														 void **data, uint32_t * datalen, switch_payload_t *payload_type, switch_frame_flag_t *flags, switch_io_flag_t io_flags);
 
 /*! 
   \brief Read data from a given RTP session without copying
@@ -340,7 +340,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_sessi
   \param frame a frame to populate with information
   \return the number of bytes read
 */
-SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp_session, switch_frame_t *frame);
+SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp_session, switch_frame_t *frame, switch_io_flag_t io_flagsm);
 
 /*!
   \brief Enable VAD on an RTP Session

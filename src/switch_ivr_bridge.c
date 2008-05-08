@@ -52,13 +52,13 @@ static void *SWITCH_THREAD_FUNC video_bridge_thread(switch_thread_t *thread, voi
 
 	vh->up = 1;	
 	while(switch_channel_ready(channel) && vh->up == 1) {
-		status = switch_core_session_read_video_frame(vh->session_a, &read_frame, -1, 0);
+		status = switch_core_session_read_video_frame(vh->session_a, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
 		}
 		
-		switch_core_session_write_video_frame(vh->session_b, read_frame, -1, 0);
+		switch_core_session_write_video_frame(vh->session_b, read_frame, SWITCH_IO_FLAG_NONE, 0);
 		
 	}
 	vh->up = 0;
@@ -164,7 +164,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 			if (switch_channel_test_flag(chan_a, CF_SUSPEND)) {
 				status = SWITCH_STATUS_SUCCESS;
 			} else {
-				status = switch_core_session_read_frame(session_a, &read_frame, -1, stream_id);
+				status = switch_core_session_read_frame(session_a, &read_frame, SWITCH_IO_FLAG_NONE, stream_id);
 			}
 
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -250,18 +250,18 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 #ifndef SWITCH_VIDEO_IN_THREADS
 		if (switch_channel_test_flag(chan_a, CF_VIDEO) && switch_channel_test_flag(chan_b, CF_VIDEO)) {
 			/* read video from 1 channel and write it to the other */
-			status = switch_core_session_read_video_frame(session_a, &read_frame, -1, 0);
+			status = switch_core_session_read_video_frame(session_a, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				goto end_of_bridge_loop;
 			}
 		
-			switch_core_session_write_video_frame(session_b, read_frame, -1, 0);
+			switch_core_session_write_video_frame(session_b, read_frame, SWITCH_IO_FLAG_NONE, 0);
 		}
 #endif
 
 		/* read audio from 1 channel and write it to the other */
-		status = switch_core_session_read_frame(session_a, &read_frame, -1, stream_id);
+		status = switch_core_session_read_frame(session_a, &read_frame, SWITCH_IO_FLAG_NONE, stream_id);
 
 		if (SWITCH_READ_ACCEPTABLE(status)) {
 			if (switch_test_flag(read_frame, SFF_CNG)) {
@@ -269,7 +269,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 			}
 
 			if (status != SWITCH_STATUS_BREAK && !switch_channel_test_flag(chan_a, CF_HOLD)) {
-				if (switch_core_session_write_frame(session_b, read_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
+				if (switch_core_session_write_frame(session_b, read_frame, SWITCH_IO_FLAG_NONE, stream_id) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "write: %s Bad Frame....[%u] Bubye!\n",
 									  switch_channel_get_name(chan_b), read_frame->datalen);
 					goto end_of_bridge_loop;

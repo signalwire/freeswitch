@@ -943,7 +943,8 @@ typedef enum {
 } switch_file_flag_t;
 
 typedef enum {
-	SWITCH_IO_FLAG_NOOP = 0
+	SWITCH_IO_FLAG_NONE = 0,
+	SWITCH_IO_FLAG_NOBLOCK = (1 << 0)
 } switch_io_flag_t;
 
 /* make sure this is synced with the EVENT_NAMES array in switch_event.c

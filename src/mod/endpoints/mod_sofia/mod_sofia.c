@@ -55,10 +55,10 @@ static switch_status_t sofia_on_soft_execute(switch_core_session_t *session);
 static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session,
 												  switch_caller_profile_t *outbound_profile, switch_core_session_t **new_session,
 												  switch_memory_pool_t **pool, switch_originate_flag_t flags);
-static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
-static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id);
-static switch_status_t sofia_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
-static switch_status_t sofia_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id);
+static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
+static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
+static switch_status_t sofia_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
+static switch_status_t sofia_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t sofia_kill_channel(switch_core_session_t *session, int sig);
 
 /* BODY OF THE MODULE */
@@ -407,7 +407,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t sofia_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id)
+static switch_status_t sofia_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -442,7 +442,7 @@ static switch_status_t sofia_read_video_frame(switch_core_session_t *session, sw
 		while (switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->video_read_frame.datalen == 0) {
 			tech_pvt->video_read_frame.flags = SFF_NONE;
 
-			status = switch_rtp_zerocopy_read_frame(tech_pvt->video_rtp_session, &tech_pvt->video_read_frame);
+			status = switch_rtp_zerocopy_read_frame(tech_pvt->video_rtp_session, &tech_pvt->video_read_frame, flags);
 			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 				if (status == SWITCH_STATUS_TIMEOUT) {
 					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
@@ -468,7 +468,7 @@ static switch_status_t sofia_read_video_frame(switch_core_session_t *session, sw
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t sofia_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id)
+static switch_status_t sofia_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -503,7 +503,7 @@ static switch_status_t sofia_write_video_frame(switch_core_session_t *session, s
 	return status;
 }
 
-static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id)
+static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
 {
 	private_object_t *tech_pvt =  switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -544,7 +544,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 		while (switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
 			tech_pvt->read_frame.flags = SFF_NONE;
 
-			status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame);
+			status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame, flags);
 			
 			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 				if (status == SWITCH_STATUS_TIMEOUT) {
@@ -588,7 +588,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id)
+static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -670,16 +670,6 @@ static switch_status_t sofia_kill_channel(switch_core_session_t *session, int si
 		}
 		break;
 	}
-	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t sofia_waitfor_read(switch_core_session_t *session, int ms, int stream_id)
-{
-	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t sofia_waitfor_write(switch_core_session_t *session, int ms, int stream_id)
-{
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1623,8 +1613,6 @@ switch_io_routines_t sofia_io_routines = {
 	/*.read_frame */ sofia_read_frame,
 	/*.write_frame */ sofia_write_frame,
 	/*.kill_channel */ sofia_kill_channel,
-	/*.waitfor_read */ sofia_waitfor_read,
-	/*.waitfor_read */ sofia_waitfor_write,
 	/*.send_dtmf */ sofia_send_dtmf,
 	/*.receive_message */ sofia_receive_message,
 	/*.receive_event */ sofia_receive_event,

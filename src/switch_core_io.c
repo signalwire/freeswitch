@@ -35,20 +35,19 @@
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, int stream_id)
+SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
 	switch_io_event_hook_video_write_frame_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_io_flag_t flags = 0;
 
 	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (session->endpoint_interface->io_routines->write_video_frame) {
-		if ((status = session->endpoint_interface->io_routines->write_video_frame(session, frame, timeout, flags, stream_id)) == SWITCH_STATUS_SUCCESS) {
+		if ((status = session->endpoint_interface->io_routines->write_video_frame(session, frame, flags, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			for (ptr = session->event_hooks.video_write_frame; ptr; ptr = ptr->next) {
-				if ((status = ptr->video_write_frame(session, frame, timeout, flags, stream_id)) != SWITCH_STATUS_SUCCESS) {
+				if ((status = ptr->video_write_frame(session, frame, flags, stream_id)) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
 			}
@@ -57,7 +56,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, int stream_id)
+SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_io_event_hook_video_read_frame_t *ptr;
@@ -68,9 +67,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 
 	if (session->endpoint_interface->io_routines->read_video_frame) {
 		if ((status =
-			 session->endpoint_interface->io_routines->read_video_frame(session, frame, timeout, SWITCH_IO_FLAG_NOOP, stream_id)) == SWITCH_STATUS_SUCCESS) {
+			 session->endpoint_interface->io_routines->read_video_frame(session, frame, flags, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			for (ptr = session->event_hooks.video_read_frame; ptr; ptr = ptr->next) {
-				if ((status = ptr->video_read_frame(session, frame, timeout, SWITCH_IO_FLAG_NOOP, stream_id)) != SWITCH_STATUS_SUCCESS) {
+				if ((status = ptr->video_read_frame(session, frame, flags, stream_id)) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
 			}
@@ -98,7 +97,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, int stream_id)
+SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
 {
 	switch_io_event_hook_read_frame_t *ptr;
 	switch_status_t status;
@@ -125,9 +124,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 	if (session->endpoint_interface->io_routines->read_frame) {
 		if ((status =
-			 session->endpoint_interface->io_routines->read_frame(session, frame, timeout, SWITCH_IO_FLAG_NOOP, stream_id)) == SWITCH_STATUS_SUCCESS) {
+			 session->endpoint_interface->io_routines->read_frame(session, frame, flags, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			for (ptr = session->event_hooks.read_frame; ptr; ptr = ptr->next) {
-				if ((status = ptr->read_frame(session, frame, timeout, SWITCH_IO_FLAG_NOOP, stream_id)) != SWITCH_STATUS_SUCCESS) {
+				if ((status = ptr->read_frame(session, frame, flags, stream_id)) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
 			}
@@ -469,16 +468,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	return status;
 }
 
-static switch_status_t perform_write(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id)
+static switch_status_t perform_write(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
 	switch_io_event_hook_write_frame_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (session->endpoint_interface->io_routines->write_frame) {
 
-		if ((status = session->endpoint_interface->io_routines->write_frame(session, frame, timeout, flags, stream_id)) == SWITCH_STATUS_SUCCESS) {
+		if ((status = session->endpoint_interface->io_routines->write_frame(session, frame, flags, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			for (ptr = session->event_hooks.write_frame; ptr; ptr = ptr->next) {
-				if ((status = ptr->write_frame(session, frame, timeout, flags, stream_id)) != SWITCH_STATUS_SUCCESS) {
+				if ((status = ptr->write_frame(session, frame, flags, stream_id)) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
 			}
@@ -488,13 +487,12 @@ static switch_status_t perform_write(switch_core_session_t *session, switch_fram
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, int stream_id)
+SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
 
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_frame_t *enc_frame = NULL, *write_frame = frame;
 	unsigned int flag = 0, need_codec = 0, perfect = 0, do_bugs = 0, do_write = 0, do_resample = 0, ptime_mismatch = 0;
-	switch_io_flag_t io_flag = SWITCH_IO_FLAG_NOOP;
 
 	switch_assert(session != NULL);
 	switch_assert(frame != NULL);
@@ -509,12 +507,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	if (switch_test_flag(frame, SFF_PROXY_PACKET)) {
 		/* Fast PASS! */
-		return perform_write(session, frame, timeout, flag, stream_id);
+		return perform_write(session, frame, flag, stream_id);
 	}
 
 	if (switch_test_flag(frame, SFF_CNG)) {
 		if (switch_channel_test_flag(session->channel, CF_ACCEPT_CNG)) {
-			return perform_write(session, frame, timeout, flag, stream_id);
+			return perform_write(session, frame, flag, stream_id);
 		}
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -755,7 +753,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				if (flag & SFF_CNG) {
 					switch_set_flag(write_frame, SFF_CNG);
 				}
-				status = perform_write(session, write_frame, timeout, io_flag, stream_id);
+				status = perform_write(session, write_frame, flags, stream_id);
 				return status;
 			} else {
 				switch_size_t used = switch_buffer_inuse(session->raw_write_buffer);
@@ -861,7 +859,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								switch_set_flag(write_frame, SFF_CNG);
 							}
 
-							if ((status = perform_write(session, write_frame, timeout, io_flag, stream_id)) != SWITCH_STATUS_SUCCESS) {
+							if ((status = perform_write(session, write_frame, flags, stream_id)) != SWITCH_STATUS_SUCCESS) {
 								break;
 							}
 						}
@@ -877,7 +875,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
   done:
 
 	if (do_write) {
-		return perform_write(session, frame, timeout, io_flag, stream_id);
+		return perform_write(session, frame, flags, stream_id);
 	}
 	return status;
 }
@@ -903,40 +901,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(switch_
 		if ((status = session->endpoint_interface->io_routines->kill_channel(session, sig)) == SWITCH_STATUS_SUCCESS) {
 			for (ptr = session->event_hooks.kill_channel; ptr; ptr = ptr->next) {
 				if ((status = ptr->kill_channel(session, sig)) != SWITCH_STATUS_SUCCESS) {
-					break;
-				}
-			}
-		}
-	}
-	return status;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_read(switch_core_session_t *session, int timeout, int stream_id)
-{
-	switch_io_event_hook_waitfor_read_t *ptr;
-	switch_status_t status = SWITCH_STATUS_FALSE;
-
-	if (session->endpoint_interface->io_routines->waitfor_read) {
-		if ((status = session->endpoint_interface->io_routines->waitfor_read(session, timeout, stream_id)) == SWITCH_STATUS_SUCCESS) {
-			for (ptr = session->event_hooks.waitfor_read; ptr; ptr = ptr->next) {
-				if ((status = ptr->waitfor_read(session, timeout, stream_id)) != SWITCH_STATUS_SUCCESS) {
-					break;
-				}
-			}
-		}
-	}
-	return status;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_write(switch_core_session_t *session, int timeout, int stream_id)
-{
-	switch_io_event_hook_waitfor_write_t *ptr;
-	switch_status_t status = SWITCH_STATUS_FALSE;
-
-	if (session->endpoint_interface->io_routines->waitfor_write) {
-		if ((status = session->endpoint_interface->io_routines->waitfor_write(session, timeout, stream_id)) == SWITCH_STATUS_SUCCESS) {
-			for (ptr = session->event_hooks.waitfor_write; ptr; ptr = ptr->next) {
-				if ((status = ptr->waitfor_write(session, timeout, stream_id)) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
 			}
