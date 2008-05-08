@@ -70,7 +70,7 @@
  * PaUtil_WriteMemoryBarrier()
  *
  ****************/
-
+#define __VIA_HACK__
 #if defined(__VIA_HACK__)
 #define NO_BARRIER
 #endif
