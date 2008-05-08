@@ -161,12 +161,8 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 		}
 
 		if (!nosuspend && (switch_channel_test_flag(chan_a, CF_SUSPEND) || switch_channel_test_flag(chan_b, CF_SUSPEND))) {
-			if (switch_channel_test_flag(chan_a, CF_SUSPEND)) {
-				status = SWITCH_STATUS_SUCCESS;
-			} else {
-				status = switch_core_session_read_frame(session_a, &read_frame, SWITCH_IO_FLAG_NONE, stream_id);
-			}
-
+			status = switch_core_session_read_frame(session_a, &read_frame, SWITCH_IO_FLAG_NONE, stream_id);
+			
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				goto end_of_bridge_loop;
 			}
