@@ -306,8 +306,7 @@ static int __debug(char *file, int lineno, const char *func, char *fmt, ...)
 #ifdef	WIN32
 #define	DEBU
 #else
-#define DEBU(fmt...) \
-    do {} while(0)
+#define DEBU(...) (void)(0)
 #endif
 #define G
 #endif
@@ -847,9 +846,9 @@ static int get_sample_cnt(struct iax_event *e)
 
 static int iax_xmit_frame(struct iax_frame *f)
 {
-	struct ast_iax2_full_hdr *h = (f->data);
 	/* Send the frame raw */
 #ifdef DEBUG_SUPPORT
+	struct ast_iax2_full_hdr *h = (f->data);
 	if (ntohs(h->scallno) & IAX_FLAG_FULL)
 		iax_showframe(f, NULL, 0, f->transfer ? 
 						&(f->session->transfer) :

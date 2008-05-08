@@ -111,6 +111,7 @@ static void dump_byte(char *output, int maxlen, void *value, int len)
 		snprintf(output, maxlen, "Invalid BYTE");
 }
 
+#if 0
 static void dump_ipaddr(char *output, int maxlen, void *value, int len)
 {
 	struct sockaddr_in sin;
@@ -121,7 +122,6 @@ static void dump_ipaddr(char *output, int maxlen, void *value, int len)
 		snprintf(output, maxlen, "Invalid IPADDR");
 }
 
-
 static void dump_prov_flags(char *output, int maxlen, void *value, int len)
 {
 	if (len == (int)sizeof(unsigned int))
@@ -130,6 +130,7 @@ static void dump_prov_flags(char *output, int maxlen, void *value, int len)
 	else
 		snprintf(output, maxlen, "Invalid INT");
 }
+#endif
 
 static void dump_samprate(char *output, int maxlen, void *value, int len)
 {

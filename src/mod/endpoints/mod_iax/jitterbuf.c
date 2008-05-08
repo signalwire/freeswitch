@@ -265,17 +265,17 @@ static void history_calc_maxbuf(jitterbuf *jb)
 			}
 		}
 
-		if (0) {
-			int k;
-			fprintf(stderr, "toins = %ld\n", toins);
-			fprintf(stderr, "maxbuf =");
-			for (k=0;k<JB_HISTORY_MAXBUF_SZ;k++)
-				fprintf(stderr, "%ld ", jb->hist_maxbuf[k]);
-			fprintf(stderr, "\nminbuf =");
-			for (k=0;k<JB_HISTORY_MAXBUF_SZ;k++)
-				fprintf(stderr, "%ld ", jb->hist_minbuf[k]);
-			fprintf(stderr, "\n");
-		}
+#if 0
+		int k;
+		fprintf(stderr, "toins = %ld\n", toins);
+		fprintf(stderr, "maxbuf =");
+		for (k=0;k<JB_HISTORY_MAXBUF_SZ;k++)
+			fprintf(stderr, "%ld ", jb->hist_maxbuf[k]);
+		fprintf(stderr, "\nminbuf =");
+		for (k=0;k<JB_HISTORY_MAXBUF_SZ;k++)
+			fprintf(stderr, "%ld ", jb->hist_minbuf[k]);
+		fprintf(stderr, "\n");
+#endif
 	}
 
 	jb->hist_maxbuf_valid = 1;
