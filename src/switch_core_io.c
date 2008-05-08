@@ -501,6 +501,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (!(session->write_codec && session->write_codec->implementation)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (switch_channel_test_flag(session->channel, CF_HOLD)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
