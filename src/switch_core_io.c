@@ -103,7 +103,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	switch_status_t status;
 	int need_codec, perfect, do_bugs = 0, do_resample = 0, is_cng = 0;
 	unsigned int flag = 0;
+
   top:
+
+	if (!(session->read_codec && session->read_codec->implementation)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s has no read codec.\n", switch_channel_get_name(session->channel));
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
 		*frame = NULL;
@@ -502,6 +508,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	}
 
 	if (!(session->write_codec && session->write_codec->implementation)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s has no write codec.\n", switch_channel_get_name(session->channel));
 		return SWITCH_STATUS_FALSE;
 	}
 
