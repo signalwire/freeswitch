@@ -728,8 +728,6 @@ static switch_io_routines_t channel_io_routines = {
 	/*.read_frame */ channel_read_frame,
 	/*.write_frame */ channel_write_frame,
 	/*.kill_channel */ channel_kill_channel,
-	/*.waitfor_read */ channel_waitfor_read,
-	/*.waitfor_write */ channel_waitfor_write,
 	/*.send_dtmf */ channel_send_dtmf,
 	/*.receive_message */ channel_receive_message
 };
