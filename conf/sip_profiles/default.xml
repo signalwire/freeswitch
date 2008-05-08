@@ -3,6 +3,7 @@
   <!--aliases are other names that will work as a valid profile name for this profile-->
   <aliases>
     <alias name="$${domain}"/>
+    <alias name="internal"/>
   </aliases>
   <!-- Outbound Registrations -->
   <gateways>

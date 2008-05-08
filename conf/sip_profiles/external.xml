@@ -5,6 +5,10 @@
     <X-PRE-PROCESS cmd="include" data="outbound/*.xml"/>
   </gateways>
 
+  <aliases>
+    <alias name="outbound"/>
+  </aliases>
+
   <domains>
     <domain name="$${domain}" parse="true"/>
   </domains>
