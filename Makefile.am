@@ -309,6 +309,10 @@ up: clean
 
 sync:
 	svn update
+	$(MAKE)
+
+speedy-sync:
+	svn update
 	$(MAKE) -j install
 
 libs/openzap/Makefile:
