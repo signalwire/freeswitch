@@ -9,7 +9,7 @@
     <key name="6" value="reloadxml"/>
     <key name="7" value="console loglevel 0"/>
     <key name="8" value="console loglevel 7"/>
-    <key name="9" value="sofia status profile default"/>
+    <key name="9" value="sofia status profile internal"/>
     <key name="10" value="fsctl pause"/>
     <key name="11" value="fsctl resume"/>
     <key name="12" value="version"/>
