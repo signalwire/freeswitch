@@ -30,11 +30,11 @@
  */
 
 #include <switch.h>
+SWITCH_BEGIN_EXTERN_C
 #include "lua.h"
 #include <lauxlib.h>
 #include <lualib.h>
 #include "mod_lua_extra.h"
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load);
 SWITCH_MODULE_DEFINITION(mod_lua, mod_lua_load, NULL, NULL);
 
@@ -140,7 +140,7 @@ static void lua_parse_and_execute(lua_State *L, char *input_code)
 					stream.write_function(&stream, "'%s'%s", argv[x], x == argc-1 ? "" : ", ");
 				}
 				stream.write_function(&stream, " };");
-				code = stream.data;
+				code = (char *)stream.data;
 			} else {
 				code = switch_mprintf("argv = {};");
 			}
@@ -369,6 +369,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
+
+SWITCH_END_EXTERN_C
 
 /* For Emacs:
  * Local Variables:
