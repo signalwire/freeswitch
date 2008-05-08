@@ -2,7 +2,7 @@ Source: freeswitch
 Maintainer: Michal Bielicki <michal.bielicki@voiceworks.pl>
 Section: net
 Priority: extra
-Build-Depends: debhelper (>= 5), automake1.9, autoconf, libtool, unixodbc-dev, libasound2-dev, libcurl3-dev, libssl-dev, ncurses-dev
+Build-Depends: debhelper (>= 5), automake1.9, autoconf, libtool, unixodbc-dev, libasound2-dev, libcurl3-dev|libcurl4-openssl-dev, libssl-dev, ncurses-dev, libogg-dev, libvorbis-dev, libperl-dev, libgdbm-dev, libdb4.4-dev, libgnutls-dev
 Standards-Version: 3.7.2
 
 Package: freeswitch
@@ -63,4 +63,10 @@ Package: freeswitch-lang-fr
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Description: French language files for the FreeSWITCH open source telephony platform
+Homepage: http://www.freeswitch.org/
+
+Package: freeswitch-lang-it
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: Italian language files for the FreeSWITCH open source telephony platform
 Homepage: http://www.freeswitch.org/

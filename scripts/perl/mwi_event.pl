@@ -3,6 +3,9 @@
 freeswitch::console_log("info", "Perl in da house!!!\n");
 
 $event = new freeswitch::Event("message_waiting");
-$event->add_header("MWI-Messages-Waiting", "yes");
-$event->add_header("MWI-Message-Account", 'sip:1002@10.0.1.100');
+$event->addHeader("MWI-Messages-Waiting", "yes");
+$event->addHeader("MWI-Message-Account", 'sip:1002@10.0.1.100');
+
+#$event->addHeader("Sofia-Profile", 'internal');
+
 $event->fire();

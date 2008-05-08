@@ -1,3 +1,9 @@
+freeswitch (1.0~8303) unstable; urgency=low
+
+  * pacchetto
+
+ -- root <root@fs.navynet.it>  Tue,  6 May 2008 09:46:26 +0000
+
 freeswitch (1.0~rc4-1) unstable; urgency=low
    * Add tab completion in cli
      Add "inline" dialplan

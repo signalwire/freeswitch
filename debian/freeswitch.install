@@ -2,6 +2,9 @@ opt/freeswitch/htdocs/*
 opt/freeswitch/bin/freeswitch
 opt/freeswitch/bin/scripts/*
 opt/freeswitch/lib/libfreeswitch*.so*
+opt/freeswitch/perl/*
+opt/freeswitch/mod/mod_perl*
+opt/freeswitch/mod/mod_shout*
 opt/freeswitch/mod/mod_console.so*
 opt/freeswitch/mod/mod_expr.so*
 opt/freeswitch/mod/mod_rss.so*
@@ -42,12 +45,12 @@ opt/freeswitch/conf/vars.xml
 opt/freeswitch/conf/mime.types
 opt/freeswitch/conf/web-vm.tpl
 opt/freeswitch/conf/tetris.ttml
-opt/freeswitch/conf/sip_profiles/outbound.xml
+opt/freeswitch/conf/sip_profiles/external.xml
 opt/freeswitch/conf/sip_profiles/nat.xml
 opt/freeswitch/conf/sip_profiles/nat/example.xml
-opt/freeswitch/conf/sip_profiles/default/example.xml
-opt/freeswitch/conf/sip_profiles/default.xml
-opt/freeswitch/conf/sip_profiles/outbound/example.xml
+opt/freeswitch/conf/sip_profiles/internal/example.xml
+opt/freeswitch/conf/sip_profiles/internal.xml
+opt/freeswitch/conf/sip_profiles/external/example.xml
 opt/freeswitch/conf/directory/default/1007.xml
 opt/freeswitch/conf/directory/default/1001.xml
 opt/freeswitch/conf/directory/default/1008.xml
@@ -75,6 +78,7 @@ opt/freeswitch/conf/fur_elise.ttml
 opt/freeswitch/conf/voicemail.tpl
 opt/freeswitch/conf/freeswitch.xml
 opt/freeswitch/conf/extensions.conf
+opt/freeswitch/conf/autoload_configs/perl.conf.xml
 opt/freeswitch/conf/autoload_configs/ivr.conf.xml
 opt/freeswitch/conf/autoload_configs/voicemail.conf.xml
 opt/freeswitch/conf/autoload_configs/switch.conf.xml
