@@ -1,9 +1,9 @@
 <!-- http://wiki.freeswitch.org/wiki/Sofia_Configuration_Files -->
-<profile name="default" domain="$${domain}">
+<profile name="internal" domain="$${domain}">
   <!--aliases are other names that will work as a valid profile name for this profile-->
   <aliases>
     <alias name="$${domain}"/>
-    <alias name="internal"/>
+    <alias name="default"/>
   </aliases>
   <!-- Outbound Registrations -->
   <gateways>
