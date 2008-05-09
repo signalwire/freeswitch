@@ -957,7 +957,7 @@ int iax_init(char *ip, int preferredportno)
 {
 	int portno = preferredportno;
 	struct sockaddr_in sin;
-	int sinlen;
+	socklen_t sinlen;
 	int flags;
 
 	init_time();
