@@ -684,13 +684,13 @@ static unsigned char get_n_bits_at(unsigned char *data, int n, int bit)
 		return 0;
 
 	if (rem < n) {
-		ret = (data[byte] << (n - rem));
+		ret = (unsigned char)(data[byte] << (n - rem));
 		ret |= (data[byte + 1] >> (8 - n + rem));
 	} else {
-		ret = (data[byte] >> (rem - n));
+		ret = (unsigned char)(data[byte] >> (rem - n));
 	}
 
-	return (ret & (0xff >> (8 - n)));
+	return (unsigned char)(ret & (0xff >> (8 - n)));
 }
 
 static int speex_get_wb_sz_at(unsigned char *data, int len, int bit)
@@ -957,7 +957,7 @@ int iax_init(char *ip, int preferredportno)
 {
 	int portno = preferredportno;
 	struct sockaddr_in sin;
-	unsigned int sinlen;
+	int sinlen;
 	int flags;
 
 	init_time();
@@ -1060,7 +1060,7 @@ static unsigned char compress_subclass(int subclass)
 	int power=-1;
 	/* If it's 128 or smaller, just return it */
 	if (subclass < IAX_FLAG_SC_LOG)
-		return subclass;
+		return (unsigned char)subclass;
 	/* Otherwise find its power */
 	for (x = 0; x < IAX_MAX_SHIFT; x++) {
 		if (subclass & (1 << x)) {
@@ -1071,7 +1071,7 @@ static unsigned char compress_subclass(int subclass)
 				power = x;
 		}
 	}
-	return power | IAX_FLAG_SC_LOG;
+	return (unsigned char)(power | IAX_FLAG_SC_LOG);
 }
 
 static int iax_send(struct iax_session *pvt, struct ast_frame *f, time_in_ms_t ts, int seqno, int now, int transfer, int final) 
@@ -1131,7 +1131,7 @@ static int iax_send(struct iax_session *pvt, struct ast_frame *f, time_in_ms_t t
 		return -1;
 	}
 
-	fr->callno = pvt->callno;
+	fr->callno = (unsigned short)pvt->callno;
 	fr->transfer = transfer;
 	fr->final = final;
 	fr->session = pvt;
@@ -1145,19 +1145,19 @@ static int iax_send(struct iax_session *pvt, struct ast_frame *f, time_in_ms_t t
 		fh = (struct ast_iax2_full_hdr *)(((char *)fr->af.data) - sizeof(struct ast_iax2_full_hdr));
 		fh->scallno = htons(fr->callno | IAX_FLAG_FULL);
 		fh->ts = htonl((long)(fr->ts));
-		fh->oseqno = fr->oseqno;
+		fh->oseqno = (unsigned char)fr->oseqno;
 		if (transfer) {
 			fh->iseqno = 0;
 		} else
-			fh->iseqno = fr->iseqno;
+			fh->iseqno = (unsigned char)fr->iseqno;
 		/* Keep track of the last thing we've acknowledged */
-		pvt->aseqno = fr->iseqno;
-		fh->type = fr->af.frametype & 0xFF;
+		pvt->aseqno = (unsigned char)fr->iseqno;
+		fh->type = (char)(fr->af.frametype & 0xFF);
 		fh->csub = compress_subclass(fr->af.subclass);
 		if (transfer) {
-			fr->dcallno = pvt->transfercallno;
+			fr->dcallno = (unsigned short)pvt->transfercallno;
 		} else
-			fr->dcallno = pvt->peercallno;
+			fr->dcallno = (unsigned short)pvt->peercallno;
 		fh->dcallno = htons(fr->dcallno);
 		fr->datalen = fr->af.datalen + sizeof(struct ast_iax2_full_hdr);
 		fr->data = fh;
@@ -1370,11 +1370,11 @@ int iax_setup_transfer(struct iax_session *org_session, struct iax_session *new_
 
 	/* reversed setup */
 	iax_ie_append_addr(&ied0, IAX_IE_APPARENT_ADDR, &s1->peeraddr);
-	iax_ie_append_short(&ied0, IAX_IE_CALLNO, s1->peercallno);
+	iax_ie_append_short(&ied0, IAX_IE_CALLNO, (unsigned short)s1->peercallno);
 	iax_ie_append_int(&ied0, IAX_IE_TRANSFERID, transfer_id);
 
 	iax_ie_append_addr(&ied1, IAX_IE_APPARENT_ADDR, &s0->peeraddr);
-	iax_ie_append_short(&ied1, IAX_IE_CALLNO, s0->peercallno);
+	iax_ie_append_short(&ied1, IAX_IE_CALLNO, (unsigned short)s0->peercallno);
 	iax_ie_append_int(&ied1, IAX_IE_TRANSFERID, transfer_id);
 
 	s0->transfer = s1->peeraddr;
@@ -1460,15 +1460,15 @@ static int iax_handle_txready(struct iax_session *s)
 	s->transferring = TRANSFER_REL;
 
 	s0 = s;
-	s1 = iax_find_session2(s0->transferpeer);
+	s1 = iax_find_session2((short)s0->transferpeer);
 
 	if (s1 != NULL &&
 	    s1->callno == s0->transferpeer &&
 		 s0->transferring == TRANSFER_REL &&
 		 s1->transferring == TRANSFER_REL) {
 
-		s0_org_peer = s0->peercallno;
-		s1_org_peer = s1->peercallno;
+		s0_org_peer = (short)s0->peercallno;
+		s1_org_peer = (short)s1->peercallno;
 
 		iax_finish_transfer(s0, s1_org_peer);
 		iax_finish_transfer(s1, s0_org_peer);
@@ -1483,7 +1483,7 @@ static void iax_handle_txreject(struct iax_session *s)
 	struct iax_session *s0, *s1;
 
 	s0 = s;
-	s1 = iax_find_session2(s0->transferpeer);
+	s1 = iax_find_session2((short)s0->transferpeer);
 	if (s1 != NULL &&
 		 s0->transferpeer == s1->callno &&
 		 s1->transferring) {
@@ -1662,12 +1662,12 @@ int iax_register(struct iax_session *session, char *server, char *peer, char *se
 		return -1;
 	}
 	memcpy(&session->peeraddr.sin_addr, hp->h_addr, sizeof(session->peeraddr.sin_addr));
-	session->peeraddr.sin_port = htons(portno);
+	session->peeraddr.sin_port = htons((unsigned short)portno);
 	session->peeraddr.sin_family = AF_INET;
 	strncpy(session->username, peer, sizeof(session->username) - 1);
 	session->refresh = refresh;
 	iax_ie_append_str(&ied, IAX_IE_USERNAME, (unsigned char *) peer);
-	iax_ie_append_short(&ied, IAX_IE_REFRESH, refresh);
+	iax_ie_append_short(&ied, IAX_IE_REFRESH, (unsigned short)refresh);
 	res = send_command(session, AST_FRAME_IAX, IAX_COMMAND_REGREQ, 0, ied.buf, ied.pos, -1);
 	return res;
 }
@@ -1854,7 +1854,7 @@ static int iax_send_txready(struct iax_session *session)
 	struct iax_ie_data ied;
 	memset(&ied, 0, sizeof(ied));
 	/* see asterisk chan_iax2.c */
-	iax_ie_append_short(&ied, IAX_IE_CALLNO, session->callno);
+	iax_ie_append_short(&ied, IAX_IE_CALLNO, (unsigned short)session->callno);
 	return send_command(session, AST_FRAME_IAX, IAX_COMMAND_TXREADY, 0, ied.buf, ied.pos, -1);
 }
 
@@ -1887,7 +1887,7 @@ static int iax_regauth_reply(struct iax_session *session, char *password, char *
 	struct iax_ie_data ied;
 	memset(&ied, 0, sizeof(ied));
 	iax_ie_append_str(&ied, IAX_IE_USERNAME, (unsigned char *) session->username);
-	iax_ie_append_short(&ied, IAX_IE_REFRESH, session->refresh);
+	iax_ie_append_short(&ied, IAX_IE_REFRESH, (unsigned short)session->refresh);
 	if ((methods & IAX_AUTHMETHOD_MD5) && challenge) {
 		MD5Init(&md5);
 		MD5Update(&md5, (const unsigned char *) challenge, (unsigned int)strlen(challenge));
@@ -1931,9 +1931,9 @@ int iax_dialplan_request(struct iax_session *session, char *number)
 
 static inline int which_bit(unsigned int i)
 {
-    char x;
+    unsigned char x;
     for(x = 0; x < 32; x++) {
-        if ((1 << x) == i) {
+        if ((unsigned)(1 << x) == i) {
             return x + 1;
         }
     }
@@ -1943,7 +1943,7 @@ static inline int which_bit(unsigned int i)
 char iax_pref_codec_add(struct iax_session *session, unsigned int format)
 {
 	int diff = (int) 'A';
-	session->codec_order[session->codec_order_len++] = (which_bit(format)) + diff;
+	session->codec_order[session->codec_order_len++] = (char)((which_bit(format)) + diff);
 	session->codec_order[session->codec_order_len] = '\0';
 	return session->codec_order[session->codec_order_len-1];
 }
@@ -1954,7 +1954,7 @@ void iax_pref_codec_del(struct iax_session *session, unsigned int format)
 	int diff = (int) 'A';
 	size_t x;
 	char old[32];
-	char remove = which_bit(format) + diff;
+	char remove = (char)(which_bit(format) + diff);
 
 	strncpy(old, session->codec_order, sizeof(old));
 	session->codec_order_len = 0;
@@ -2083,7 +2083,7 @@ int iax_call(struct iax_session *session, const char *cidnum, const char *cidnam
 		return -1;
 	}
 	memcpy(&session->peeraddr.sin_addr, hp->h_addr, sizeof(session->peeraddr.sin_addr));
-	session->peeraddr.sin_port = htons(portno);
+	session->peeraddr.sin_port = htons((unsigned short)portno);
 	session->peeraddr.sin_family = AF_INET;
 	res = send_command(session, AST_FRAME_IAX, IAX_COMMAND_NEW, 0, ied.buf, ied.pos, -1);
 	if (res < 0)
@@ -2984,7 +2984,7 @@ static struct iax_event *iax_net_read(void)
 	struct sockaddr_in sin;
 
 	sinlen = sizeof(sin);
-	res = iax_recvfrom(netfd, buf, sizeof(buf), 0, (struct sockaddr *) &sin, &sinlen);
+	res = iax_recvfrom(netfd, (char *)buf, sizeof(buf), 0, (struct sockaddr *) &sin, &sinlen);
 
 	if (res < 0) {
 #ifdef	WIN32
@@ -3024,7 +3024,7 @@ static struct iax_session *iax_txcnt_session(struct ast_iax2_full_hdr *fh, int d
 	}
 	iax_mutex_lock(session_mutex); 
 	for( cur=sessions; cur; cur=cur->next ) {
-		if ((cur->transferring) && (cur->transferid == ies.transferid) &&
+		if ((cur->transferring) && (cur->transferid == (int)ies.transferid) &&
 		   	(cur->callno == dcallno) && (cur->transfercallno == callno)) {
 			/* We're transferring ---
 			 * 	skip address/port checking which would fail while remote peer behind symmetric NAT

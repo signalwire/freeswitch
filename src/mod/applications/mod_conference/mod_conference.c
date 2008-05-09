@@ -302,6 +302,7 @@ struct conference_member {
     uint32_t resample_out_len;
 	conference_file_node_t *fnode;
 	conference_relationship_t *relationships;
+	switch_ivr_digit_stream_parser_t *dtmf_parser;
 	switch_ivr_digit_stream_t *digit_stream;
 	switch_speech_handle_t lsh;
 	switch_speech_handle_t *sh;
@@ -4195,6 +4196,12 @@ SWITCH_STANDARD_APP(conference_function)
 		profile_name = "default";
 	}
 
+	if (0) {
+		member.dtmf_parser = conference->dtmf_parser;
+	} else {
+		
+	}
+
 	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "conf_name", conf_name);
@@ -4514,6 +4521,9 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_buffer_destroy(&member.resample_buffer);
 	switch_buffer_destroy(&member.audio_buffer);
 	switch_buffer_destroy(&member.mux_buffer);
+	if (member.dtmf_parser != conference->dtmf_parser) {
+		switch_ivr_digit_stream_parser_destroy(member.dtmf_parser);
+	}
 
 	if (conference) {
 		switch_mutex_lock(conference->mutex);

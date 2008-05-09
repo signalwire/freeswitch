@@ -33,7 +33,7 @@
 #include "iax2.h"
 #include "iax2-parser.h"
 
-static int frames = 0;
+static int frame_count = 0;
 static int iframes = 0;
 static int oframes = 0;
 
@@ -391,7 +391,7 @@ void iax_showframe(struct iax_frame *f, struct ast_iax2_full_hdr *fhi, int rx, s
 		/* Don't mess with mini-frames */
 		return;
 	}
-	if (fh->type > (int)sizeof(frames)/(int)sizeof(char *)) {
+	if (fh->type > ((int)sizeof(frames)/(int)sizeof(char *)) - 1) {
 		snprintf(class2, (int)sizeof(class2), "(%d?)", fh->type);
 		class = class2;
 	} else {
@@ -442,7 +442,7 @@ int iax_ie_append_raw(struct iax_ie_data *ied, unsigned char ie, const void *dat
 		return -1;
 	}
 	ied->buf[ied->pos++] = ie;
-	ied->buf[ied->pos++] = datalen;
+	ied->buf[ied->pos++] = (unsigned char)datalen;
 	memcpy(ied->buf + ied->pos, data, datalen);
 	ied->pos += datalen;
 	return 0;
@@ -492,19 +492,19 @@ void iax_set_error(void (*func)(const char *))
 	errorf = func;
 }
 
-int iax_parse_ies(struct iax_ies *ies, unsigned char *data, int datalen)
+int iax_parse_ies(struct iax_ies *my_ies, unsigned char *data, int datalen)
 {
 	/* Parse data into information elements */
 	int len;
 	int ie;
 	char tmp[256];
-	memset(ies, 0, (int)sizeof(struct iax_ies));
-	ies->msgcount = -1;
-	ies->firmwarever = -1;
-	ies->calling_ton = -1;
-	ies->calling_tns = -1;
-	ies->calling_pres = -1;
-	ies->samprate = IAX_RATE_8KHZ;
+	memset(my_ies, 0, (int)sizeof(struct iax_ies));
+	my_ies->msgcount = -1;
+	my_ies->firmwarever = -1;
+	my_ies->calling_ton = -1;
+	my_ies->calling_tns = -1;
+	my_ies->calling_pres = -1;
+	my_ies->samprate = IAX_RATE_8KHZ;
 	while(datalen >= 2) {
 		ie = data[0];
 		len = data[1];
@@ -514,127 +514,127 @@ int iax_parse_ies(struct iax_ies *ies, unsigned char *data, int datalen)
 		}
 		switch(ie) {
 		case IAX_IE_CALLED_NUMBER:
-			ies->called_number = (char *) data + 2;
+			my_ies->called_number = (char *) data + 2;
 			break;
 		case IAX_IE_CALLING_NUMBER:
-			ies->calling_number = (char *) data + 2;
+			my_ies->calling_number = (char *) data + 2;
 			break;
 		case IAX_IE_CALLING_ANI:
-			ies->calling_ani = (char *) data + 2;
+			my_ies->calling_ani = (char *) data + 2;
 			break;
 		case IAX_IE_CALLING_NAME:
-			ies->calling_name = (char *) data + 2;
+			my_ies->calling_name = (char *) data + 2;
 			break;
 		case IAX_IE_CALLED_CONTEXT:
-			ies->called_context = (char *) data + 2;
+			my_ies->called_context = (char *) data + 2;
 			break;
 		case IAX_IE_USERNAME:
-			ies->username = (char *) data + 2;
+			my_ies->username = (char *) data + 2;
 			break;
 		case IAX_IE_PASSWORD:
-			ies->password = (char *) data + 2;
+			my_ies->password = (char *) data + 2;
 			break;
 		case IAX_IE_CAPABILITY:
 			if (len != (int)sizeof(unsigned int)) {
 				snprintf(tmp, (int)sizeof(tmp), "Expecting capability to be %d bytes long but was %d\n", (int)sizeof(unsigned int), len);
 				errorf(tmp);
 			} else
-				ies->capability = ntohl(get_uint32(data + 2));
+				my_ies->capability = ntohl(get_uint32(data + 2));
 			break;
 		case IAX_IE_FORMAT:
 			if (len != (int)sizeof(unsigned int)) {
 				snprintf(tmp, (int)sizeof(tmp), "Expecting format to be %d bytes long but was %d\n", (int)sizeof(unsigned int), len);
 				errorf(tmp);
 			} else
-				ies->format = ntohl(get_uint32(data + 2));
+				my_ies->format = ntohl(get_uint32(data + 2));
 			break;
 		case IAX_IE_LANGUAGE:
-			ies->language = (char *) data + 2;
+			my_ies->language = (char *) data + 2;
 			break;
 		case IAX_IE_CODEC_PREFS:
-			ies->codec_prefs = (char *) data + 2;
+			my_ies->codec_prefs = (char *) data + 2;
 			break;
 		case IAX_IE_VERSION:
 			if (len != (int)sizeof(unsigned short)) {
 				snprintf(tmp, (int)sizeof(tmp),  "Expecting version to be %d bytes long but was %d\n", (int)sizeof(unsigned short), len);
 				errorf(tmp);
 			} else
-				ies->version = ntohs(get_uint16(data + 2));
+				my_ies->version = ntohs(get_uint16(data + 2));
 			break;
 		case IAX_IE_ADSICPE:
 			if (len != (int)sizeof(unsigned short)) {
 				snprintf(tmp, (int)sizeof(tmp), "Expecting adsicpe to be %d bytes long but was %d\n", (int)sizeof(unsigned short), len);
 				errorf(tmp);
 			} else
-				ies->adsicpe = ntohs(get_uint16(data + 2));
+				my_ies->adsicpe = ntohs(get_uint16(data + 2));
 			break;
 		case IAX_IE_SAMPLINGRATE:
 			if (len != (int)sizeof(unsigned short)) {
 				snprintf(tmp, (int)sizeof(tmp), "Expecting samplingrate to be %d bytes long but was %d\n", (int)sizeof(unsigned short), len);
 				errorf(tmp);
 			} else
-				ies->samprate = ntohs(get_uint16(data + 2));
+				my_ies->samprate = ntohs(get_uint16(data + 2));
 			break;
 		case IAX_IE_DNID:
-			ies->dnid = (char *) data + 2;
+			my_ies->dnid = (char *) data + 2;
 			break;
 		case IAX_IE_RDNIS:
-			ies->rdnis = (char *) data + 2;
+			my_ies->rdnis = (char *) data + 2;
 			break;
 		case IAX_IE_AUTHMETHODS:
 			if (len != (int)sizeof(unsigned short))  {
 				snprintf(tmp, (int)sizeof(tmp), "Expecting authmethods to be %d bytes long but was %d\n", (int)sizeof(unsigned short), len);
 				errorf(tmp);
 			} else
-				ies->authmethods = ntohs(get_uint16(data + 2));
+				my_ies->authmethods = ntohs(get_uint16(data + 2));
 			break;
 		case IAX_IE_CHALLENGE:
-			ies->challenge = (char *) data + 2;
+			my_ies->challenge = (char *) data + 2;
 			break;
 		case IAX_IE_MD5_RESULT:
-			ies->md5_result = (char *) data + 2;
+			my_ies->md5_result = (char *) data + 2;
 			break;
 		case IAX_IE_RSA_RESULT:
-			ies->rsa_result = (char *) data + 2;
+			my_ies->rsa_result = (char *) data + 2;
 			break;
 		case IAX_IE_APPARENT_ADDR:
-			ies->apparent_addr = ((struct sockaddr_in *)(data + 2));
+			my_ies->apparent_addr = ((struct sockaddr_in *)(data + 2));
 			break;
 		case IAX_IE_REFRESH:
 			if (len != (int)sizeof(unsigned short)) {
 				snprintf(tmp, (int)sizeof(tmp),  "Expecting refresh to be %d bytes long but was %d\n", (int)sizeof(unsigned short), len);
 				errorf(tmp);
 			} else
-				ies->refresh = ntohs(get_uint16(data + 2));
+				my_ies->refresh = ntohs(get_uint16(data + 2));
 			break;
 		case IAX_IE_DPSTATUS:
 			if (len != (int)sizeof(unsigned short)) {
 				snprintf(tmp, (int)sizeof(tmp),  "Expecting dpstatus to be %d bytes long but was %d\n", (int)sizeof(unsigned short), len);
 				errorf(tmp);
 			} else
-				ies->dpstatus = ntohs(get_uint16(data + 2));
+				my_ies->dpstatus = ntohs(get_uint16(data + 2));
 			break;
 		case IAX_IE_CALLNO:
 			if (len != (int)sizeof(unsigned short)) {
 				snprintf(tmp, (int)sizeof(tmp),  "Expecting callno to be %d bytes long but was %d\n", (int)sizeof(unsigned short), len);
 				errorf(tmp);
 			} else
-				ies->callno = ntohs(get_uint16(data + 2));
+				my_ies->callno = ntohs(get_uint16(data + 2));
 			break;
 		case IAX_IE_CAUSE:
-			ies->cause = (char *) data + 2;
+			my_ies->cause = (char *) data + 2;
 			break;
 		case IAX_IE_CAUSECODE:
 			if (len != 1) {
 				snprintf(tmp, (int)sizeof(tmp), "Expecting causecode to be single byte but was %d\n", len);
 				errorf(tmp);
 			} else {
-				ies->causecode = data[2];
+				my_ies->causecode = data[2];
 			}
 			break;
 		case IAX_IE_IAX_UNKNOWN:
 			if (len == 1)
-				ies->iax_unknown = data[2];
+				my_ies->iax_unknown = data[2];
 			else {
 				snprintf(tmp, (int)sizeof(tmp), "Expected single byte Unknown command, but was %d long\n", len);
 				errorf(tmp);
@@ -645,64 +645,64 @@ int iax_parse_ies(struct iax_ies *ies, unsigned char *data, int datalen)
 				snprintf(tmp, (int)sizeof(tmp), "Expecting msgcount to be %d bytes long but was %d\n", (int)sizeof(unsigned short), len);
 				errorf(tmp);
 			} else
-				ies->msgcount = ntohs(get_uint16(data + 2));	
+				my_ies->msgcount = ntohs(get_uint16(data + 2));	
 			break;
 		case IAX_IE_AUTOANSWER:
-			ies->autoanswer = 1;
+			my_ies->autoanswer = 1;
 			break;
 		case IAX_IE_MUSICONHOLD:
-			ies->musiconhold = 1;
+			my_ies->musiconhold = 1;
 			break;
 		case IAX_IE_TRANSFERID:
 			if (len != (int)sizeof(unsigned int)) {
 				snprintf(tmp, (int)sizeof(tmp), "Expecting transferid to be %d bytes long but was %d\n", (int)sizeof(unsigned int), len);
 				errorf(tmp);
 			} else
-				ies->transferid = ntohl(get_uint32(data + 2));
+				my_ies->transferid = ntohl(get_uint32(data + 2));
 			break;
 		case IAX_IE_DATETIME:
 			if (len != (int)sizeof(unsigned int)) {
 				snprintf(tmp, (int)sizeof(tmp), "Expecting date/time to be %d bytes long but was %d\n", (int)sizeof(unsigned int), len);
 				errorf(tmp);
 			} else
-				ies->datetime = ntohl(get_uint32(data + 2));
+				my_ies->datetime = ntohl(get_uint32(data + 2));
 			break;
 		case IAX_IE_FIRMWAREVER:
 			if (len != (int)sizeof(unsigned short)) {
 				snprintf(tmp, (int)sizeof(tmp), "Expecting firmwarever to be %d bytes long but was %d\n", (int)sizeof(unsigned short), len);
 				errorf(tmp);
 			} else
-				ies->firmwarever = ntohs(get_uint16(data + 2));	
+				my_ies->firmwarever = ntohs(get_uint16(data + 2));	
 			break;
 		case IAX_IE_DEVICETYPE:
-			ies->devicetype = (char *) data + 2;
+			my_ies->devicetype = (char *) data + 2;
 			break;
 		case IAX_IE_SERVICEIDENT:
-			ies->serviceident = (char *) data + 2;
+			my_ies->serviceident = (char *) data + 2;
 			break;
 		case IAX_IE_FWBLOCKDESC:
 			if (len != (int)sizeof(unsigned int)) {
 				snprintf(tmp, (int)sizeof(tmp), "Expected block desc to be %d bytes long but was %d\n", (int)sizeof(unsigned int), len);
 				errorf(tmp);
 			} else
-				ies->fwdesc = ntohl(get_uint32(data + 2));
+				my_ies->fwdesc = ntohl(get_uint32(data + 2));
 			break;
 		case IAX_IE_FWBLOCKDATA:
-			ies->fwdata = data + 2;
-			ies->fwdatalen = len;
+			my_ies->fwdata = data + 2;
+			my_ies->fwdatalen = (unsigned char)len;
 			break;
 		case IAX_IE_PROVVER:
 			if (len != (int)sizeof(unsigned int)) {
 				snprintf(tmp, (int)sizeof(tmp), "Expected provisioning version to be %d bytes long but was %d\n", (int)sizeof(unsigned int), len);
 				errorf(tmp);
 			} else {
-				ies->provverpres = 1;
-				ies->provver = ntohl(get_uint32(data + 2));
+				my_ies->provverpres = 1;
+				my_ies->provver = ntohl(get_uint32(data + 2));
 			}
 			break;
 		case IAX_IE_CALLINGPRES:
 			if (len == 1)
-				ies->calling_pres = data[2];
+				my_ies->calling_pres = data[2];
 			else {
 				snprintf(tmp, (int)sizeof(tmp), "Expected single byte callingpres, but was %d long\n", len);
 				errorf(tmp);
@@ -710,7 +710,7 @@ int iax_parse_ies(struct iax_ies *ies, unsigned char *data, int datalen)
 			break;
 		case IAX_IE_CALLINGTON:
 			if (len == 1)
-				ies->calling_ton = data[2];
+				my_ies->calling_ton = data[2];
 			else {
 				snprintf(tmp, (int)sizeof(tmp), "Expected single byte callington, but was %d long\n", len);
 				errorf(tmp);
@@ -721,14 +721,14 @@ int iax_parse_ies(struct iax_ies *ies, unsigned char *data, int datalen)
 				snprintf(tmp, (int)sizeof(tmp), "Expecting callingtns to be %d bytes long but was %d\n", (int)sizeof(unsigned short), len);
 				errorf(tmp);
 			} else
-				ies->calling_tns = ntohs(get_uint16(data + 2));	
+				my_ies->calling_tns = ntohs(get_uint16(data + 2));	
 			break;
 		case IAX_IE_RR_JITTER:
 			if (len != (int)sizeof(unsigned int)) {
 				snprintf(tmp, (int)sizeof(tmp), "Expected jitter rr to be %d bytes long but was %d\n", (int)sizeof(unsigned int), len);
 				errorf(tmp);
 			} else {
-				ies->rr_jitter = ntohl(get_uint32(data + 2));
+				my_ies->rr_jitter = ntohl(get_uint32(data + 2));
 			}
 			break;
 		case IAX_IE_RR_LOSS:
@@ -736,7 +736,7 @@ int iax_parse_ies(struct iax_ies *ies, unsigned char *data, int datalen)
 				snprintf(tmp, (int)sizeof(tmp), "Expected loss rr to be %d bytes long but was %d\n", (int)sizeof(unsigned int), len);
 				errorf(tmp);
 			} else {
-				ies->rr_loss = ntohl(get_uint32(data + 2));
+				my_ies->rr_loss = ntohl(get_uint32(data + 2));
 			}
 			break;
 		case IAX_IE_RR_PKTS:
@@ -744,7 +744,7 @@ int iax_parse_ies(struct iax_ies *ies, unsigned char *data, int datalen)
 				snprintf(tmp, (int)sizeof(tmp), "Expected packets rr to be %d bytes long but was %d\n", (int)sizeof(unsigned int), len);
 				errorf(tmp);
 			} else {
-				ies->rr_pkts = ntohl(get_uint32(data + 2));
+				my_ies->rr_pkts = ntohl(get_uint32(data + 2));
 			}
 			break;
 		case IAX_IE_RR_DELAY:
@@ -752,7 +752,7 @@ int iax_parse_ies(struct iax_ies *ies, unsigned char *data, int datalen)
 				snprintf(tmp, (int)sizeof(tmp), "Expected loss rr to be %d bytes long but was %d\n", (int)sizeof(unsigned short), len);
 				errorf(tmp);
 			} else {
-				ies->rr_delay = ntohs(get_uint16(data + 2));
+				my_ies->rr_delay = ntohs(get_uint16(data + 2));
 			}
 			break;
 		case IAX_IE_RR_DROPPED:
@@ -760,7 +760,7 @@ int iax_parse_ies(struct iax_ies *ies, unsigned char *data, int datalen)
 				snprintf(tmp, (int)sizeof(tmp), "Expected packets rr to be %d bytes long but was %d\n", (int)sizeof(unsigned int), len);
 				errorf(tmp);
 			} else {
-				ies->rr_dropped = ntohl(get_uint32(data + 2));
+				my_ies->rr_dropped = ntohl(get_uint32(data + 2));
 			}
 			break;
 		case IAX_IE_RR_OOO:
@@ -768,7 +768,7 @@ int iax_parse_ies(struct iax_ies *ies, unsigned char *data, int datalen)
 				snprintf(tmp, (int)sizeof(tmp), "Expected packets rr to be %d bytes long but was %d\n", (int)sizeof(unsigned int), len);
 				errorf(tmp);
 			} else {
-				ies->rr_ooo = ntohl(get_uint32(data + 2));
+				my_ies->rr_ooo = ntohl(get_uint32(data + 2));
 			}
 			break;
 		default:
@@ -810,7 +810,7 @@ struct iax_frame *iax_frame_new(int direction, int datalen)
 	if (fr) {
 		fr->direction = direction;
 		fr->retrans = -1;
-		frames++;
+		frame_count++;
 		if (fr->direction == DIRECTION_INGRESS)
 			iframes++;
 		else
@@ -832,9 +832,9 @@ void iax_frame_free(struct iax_frame *fr)
 	}
 	fr->direction = 0;
 	free(fr);
-	frames--;
+	frame_count--;
 }
 
-int iax_get_frames(void) { return frames; }
+int iax_get_frames(void) { return frame_count; }
 int iax_get_iframes(void) { return iframes; }
 int iax_get_oframes(void) { return oframes; }

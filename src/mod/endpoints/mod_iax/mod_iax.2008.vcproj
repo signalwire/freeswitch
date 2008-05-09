@@ -40,10 +40,10 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\iax\src&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
+				AdditionalIncludeDirectories="."
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;WIN32_TIME_GET_TIME;LIBIAX;NEWJB;_CRT_SECURE_NO_DEPRECATE;DEBUG_SUPPORT"
 				UsePrecompiledHeader="0"
-				DisableSpecificWarnings="4201"
+				DisableSpecificWarnings="4201;4200;4100;4127;6246;6053;6031;6262;4706"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -105,9 +105,10 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\iax\src&quot;"
+				AdditionalIncludeDirectories="."
+				PreprocessorDefinitions="WIN32;_WINDOWS;_USRDLL;MOD_EXPORTS;LIBIAX;WIN32_TIME_GET_TIME;DEBUG_SUPPORT;NEWJB;_CRT_SECURE_NO_DEPRECATE"
 				UsePrecompiledHeader="0"
-				DisableSpecificWarnings="4201"
+				DisableSpecificWarnings="4201;4200;4100;4127;6246;6053;6031;6262;4706"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -150,6 +151,26 @@
 	<References>
 	</References>
 	<Files>
+		<File
+			RelativePath=".\iax-mutex.c"
+			>
+		</File>
+		<File
+			RelativePath=".\iax.c"
+			>
+		</File>
+		<File
+			RelativePath=".\iax2-parser.c"
+			>
+		</File>
+		<File
+			RelativePath=".\jitterbuf.c"
+			>
+		</File>
+		<File
+			RelativePath=".\md5.c"
+			>
+		</File>
 		<File
 			RelativePath=".\mod_iax.c"
 			>

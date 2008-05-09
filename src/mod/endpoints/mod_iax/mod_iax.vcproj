@@ -6,6 +6,7 @@
 	ProjectGUID="{3A5B9131-F20C-4A85-9447-6C1610941CEE}"
 	RootNamespace="mod_iax"
 	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -22,16 +23,63 @@
 			CharacterSet="2"
 			>
 			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\iax\src&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
+				AdditionalIncludeDirectories="."
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;WIN32_TIME_GET_TIME;LIBIAX;NEWJB;_CRT_SECURE_NO_DEPRECATE;DEBUG_SUPPORT"
 				UsePrecompiledHeader="0"
-				DisableSpecificWarnings="4201"
+				DisableSpecificWarnings="4201;4200;4100;4127;6246;6053;6031;6262;4706"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
 			/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalLibraryDirectories="&quot;..\..\..\..\libs\iax\$(OutDir)&quot;"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
@@ -41,20 +89,88 @@
 			CharacterSet="2"
 			>
 			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\iax\src&quot;"
+				AdditionalIncludeDirectories="."
+				PreprocessorDefinitions="WIN32;_WINDOWS;_USRDLL;MOD_EXPORTS;LIBIAX;WIN32_TIME_GET_TIME;DEBUG_SUPPORT;NEWJB;_CRT_SECURE_NO_DEPRECATE"
 				UsePrecompiledHeader="0"
-				DisableSpecificWarnings="4201"
+				DisableSpecificWarnings="4201;4200;4100;4127;6246;6053;6031;6262;4706"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
 			/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalLibraryDirectories="&quot;..\..\..\..\libs\iax\$(OutDir)&quot;"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 	</Configurations>
 	<References>
 	</References>
 	<Files>
+		<File
+			RelativePath=".\iax-mutex.c"
+			>
+		</File>
+		<File
+			RelativePath=".\iax.c"
+			>
+		</File>
+		<File
+			RelativePath=".\iax2-parser.c"
+			>
+		</File>
+		<File
+			RelativePath=".\jitterbuf.c"
+			>
+		</File>
+		<File
+			RelativePath=".\md5.c"
+			>
+		</File>
 		<File
 			RelativePath=".\mod_iax.c"
 			>

@@ -84,23 +84,20 @@ void jb_reset(jitterbuf *jb)
 
 jitterbuf * jb_new()
 {
-	jitterbuf *jb;
+	jitterbuf *jb = (jitterbuf *)malloc(sizeof(*jb));
 
-	if (!(jb = (jitterbuf *)malloc(sizeof(*jb))))
-		return NULL;
+	if (!jb) return NULL;
 
 	jb->info.conf.target_extra = JB_TARGET_EXTRA;
 
 	jb_reset(jb);
 
-	jb_dbg2("jb_new() = %x\n", jb);
 	return jb;
 }
 
 void jb_destroy(jitterbuf *jb)
 {
 	jb_frame *frame;
-	jb_dbg2("jb_destroy(%x)\n", jb);
 
 	/* free all the frames on the "free list" */
 	frame = jb->free;
@@ -127,7 +124,7 @@ static int longcmp(const void *a, const void *b)
 /* maybe later we can make the history buckets variable size, or something? */
 /* drop parameter determines whether we will drop outliers to minimize
  * delay */
-static int history_put(jitterbuf *jb, time_in_ms_t ts, time_in_ms_t now, long ms)
+static int history_put(jitterbuf *jb, time_in_ms_t ts, time_in_ms_t now)
 {
 	time_in_ms_t delay = now - (ts - jb->info.resync_offset);
 	time_in_ms_t threshold = 2 * jb->info.jitter + jb->info.conf.resync_threshold;
@@ -326,16 +323,19 @@ static void history_get(jitterbuf *jb)
 /* returns 1 if frame was inserted into head of queue, 0 otherwise */
 static int queue_put(jitterbuf *jb, void *data, const enum jb_frame_type type, long ms, time_in_ms_t ts)
 {
-	jb_frame *frame;
+	jb_frame *frame = jb->free;
 	jb_frame *p;
 	int head = 0;
 	time_in_ms_t resync_ts = ts - jb->info.resync_offset;
 
-	if ((frame = jb->free)) {
+	if (frame) {
 		jb->free = frame->next;
-	} else if (!(frame = (jb_frame *)malloc(sizeof(*frame)))) {
-		jb_err("cannot allocate frame\n");
-		return 0;
+	} else {
+		frame = (jb_frame *)malloc(sizeof(*frame));
+		if (!frame) {
+			jb_err("cannot allocate frame\n");
+			return 0;
+		}
 	}
 
 	jb->info.frames_cur++;
@@ -514,8 +514,6 @@ static void jb_dbgqueue(jitterbuf *jb)
 
 enum jb_return_code jb_put(jitterbuf *jb, void *data, const enum jb_frame_type type, long ms, time_in_ms_t ts, time_in_ms_t now)
 {
-	jb_dbg2("jb_put(%x,%x,%ld,%ld,%ld)\n", jb, data, ms, ts, now);
-
 	jb->info.frames_in++;
 
 	if (type == JB_TYPE_VOICE) {
@@ -524,7 +522,7 @@ enum jb_return_code jb_put(jitterbuf *jb, void *data, const enum jb_frame_type t
 		 * sending retransmitted control frames with their awkward
 		 * timestamps through
 		 */
-		if (history_put(jb,ts,now,ms))
+		if (history_put(jb,ts,now))
 			return JB_DROP;
 	}
 
