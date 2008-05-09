@@ -565,6 +565,10 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
 		}
 	}
 
+	if (!k) {
+		snprintf(span->last_error, sizeof(span->last_error), "no matching descriptor");
+	}
+
 	return k ? ZAP_SUCCESS : ZAP_FAIL;
 }
 
