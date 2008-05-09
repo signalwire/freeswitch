@@ -2063,11 +2063,16 @@ int outgoing_insert_via(nta_outgoing_t *orq,
     clear = 1, v->v_protocol = via->v_protocol;
 
   /* XXX - should we do this? */
-  if (via->v_host != v->v_host &&
+  if (!user_via &&
+      via->v_host != v->v_host &&
       str0cmp(via->v_host, v->v_host))
     clear = 1, v->v_host = via->v_host;
 
-  if (via->v_port != v->v_port &&
+  if ((!user_via ||
+       /* Replace port in user Via only if we use udp and no rport */
+       (v->v_protocol == sip_transport_udp && !v->v_rport && 
+	!orq->orq_stateless)) &&
+      via->v_port != v->v_port &&
       str0cmp(via->v_port, v->v_port))
     clear = 1, v->v_port = via->v_port;
 
