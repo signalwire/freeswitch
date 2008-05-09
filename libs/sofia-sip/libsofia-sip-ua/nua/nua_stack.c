@@ -2290,6 +2290,12 @@ int nua_client_init_request(nua_client_request_t *cr)
 	sip_add_dup(msg, sip, (sip_header_t *)nua->nua_from) < 0)
       return nua_client_return(cr, NUA_ERROR_AT(__FILE__, __LINE__), msg);
 
+    if (sip->sip_to == NULL && cr->cr_method == sip_method_register &&
+      sip_add_dup_as(msg, sip, sip_to_class,
+		     (sip_header_t *)sip->sip_from) < 0) {
+      return nua_client_return(cr, NUA_ERROR_AT(__FILE__, __LINE__), msg);
+    }
+
     if (cr->cr_dialog) {
       ds->ds_leg = nta_leg_tcreate(nua->nua_nta,
 				   nua_stack_process_request, nh,
