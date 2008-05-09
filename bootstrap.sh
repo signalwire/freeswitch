@@ -3,7 +3,7 @@ echo "bootstrap: checking installation..."
 
 BASEDIR=`pwd`;
 LIBDIR=${BASEDIR}/libs;
-SUBDIRS="codec/ilbc curl iax iksemel voipcodecs \
+SUBDIRS="codec/ilbc curl iksemel voipcodecs \
         js js/nsprpub libdingaling libedit libresample libsndfile pcre sofia-sip \
         speex sqlite srtp xmlrpc-c openzap";
 
