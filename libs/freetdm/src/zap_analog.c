@@ -778,8 +778,7 @@ static void *zap_analog_run(zap_thread_t *me, void *obj)
 			break;
 		case ZAP_FAIL:
 			{
-				zap_log(ZAP_LOG_DEBUG, "Failure!\n");
-				goto end;
+				zap_log(ZAP_LOG_ERROR, "Failure Polling event! [%s]\n", span->last_error);
 			}
 			break;
 		default:
