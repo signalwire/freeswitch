@@ -3,4 +3,5 @@
 # start and stop of freeswitch
 
 # Enable initd (let init handle start and stop of freeswitch)
+
 USE_INIT="false"

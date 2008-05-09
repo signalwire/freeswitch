@@ -1,6 +1,7 @@
-freeswitch (1.0~8303) unstable; urgency=low
+freeswitch (1.0~8327) unstable; urgency=low
 
-  * pacchetto
+  * Adding perl and lua separate packages
+  * Adding mod_voipcodecs
 
  -- root <root@fs.navynet.it>  Tue,  6 May 2008 09:46:26 +0000
 

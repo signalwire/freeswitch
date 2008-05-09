@@ -1,9 +1,14 @@
-/opt/freeswitch/conf/dialplan/public.xml
-/opt/freeswitch/conf/dialplan/default.xml
 /opt/freeswitch/conf/vars.xml
 /opt/freeswitch/conf/mime.types
 /opt/freeswitch/conf/web-vm.tpl
 /opt/freeswitch/conf/tetris.ttml
+/opt/freeswitch/conf/fur_elise.ttml
+/opt/freeswitch/conf/voicemail.tpl
+/opt/freeswitch/conf/freeswitch.xml
+/opt/freeswitch/conf/extensions.conf
+/opt/freeswitch/conf/dialplan/public.xml
+/opt/freeswitch/conf/dialplan/default.xml
+/opt/freeswitch/conf/dialplan/features.xml
 /opt/freeswitch/conf/sip_profiles/external.xml
 /opt/freeswitch/conf/sip_profiles/nat.xml
 /opt/freeswitch/conf/sip_profiles/nat/example.xml
@@ -33,10 +38,6 @@
 /opt/freeswitch/conf/directory/default/1016.xml
 /opt/freeswitch/conf/directory/default/1012.xml
 /opt/freeswitch/conf/directory/default.xml
-/opt/freeswitch/conf/fur_elise.ttml
-/opt/freeswitch/conf/voicemail.tpl
-/opt/freeswitch/conf/freeswitch.xml
-/opt/freeswitch/conf/extensions.conf
 /opt/freeswitch/conf/autoload_configs/ivr.conf.xml
 /opt/freeswitch/conf/autoload_configs/voicemail.conf.xml
 /opt/freeswitch/conf/autoload_configs/switch.conf.xml
@@ -67,7 +68,6 @@
 /opt/freeswitch/conf/autoload_configs/cdr_csv.conf.xml
 /opt/freeswitch/conf/autoload_configs/dialplan_directory.conf.xml
 /opt/freeswitch/conf/autoload_configs/console.conf.xml
-/opt/freeswitch/conf/autoload_configs/perl.conf.xml
 /opt/freeswitch/conf/jingle_profiles/server.xml
 /opt/freeswitch/conf/jingle_profiles/client.xml
 /opt/freeswitch/conf/mrcp_profiles/openmrcp-v2.xml

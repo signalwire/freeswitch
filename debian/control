@@ -17,17 +17,33 @@ Description: A telephony platform that really kicks some ass...
  control the callflow.
 Homepage: http://www.freeswitch.org/
 
+Package: freeswitch-dev
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: Development Package for the FreeSwitch open source telephony platform
+Homepage: http://www.freeswitch.org/
+
+
 Package: freeswitch-spidermonkey
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Description: A Javascript engine for freeswitch
 Homepage: http://www.freeswitch.org/
 
-Package: freeswitch-dev
+Package: freeswitch-perl
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
-Description: Development Package for the FreeSwitch open source telephony platform
+Description: A perl engine for freeswitch
 Homepage: http://www.freeswitch.org/
+
+Package: freeswitch-lua
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: A lua engine for freeswitch
+Homepage: http://www.freeswitch.org/
+
+
+
 
 Package: freeswitch-codec-passthru-g7231
 Architecture: any
@@ -46,6 +62,9 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Description: Pass through g729 Codec support for the FreeSWITCH open source telephony platform
 Homepage: http://www.freeswitch.org/
+
+
+
 
 Package: freeswitch-lang-en
 Architecture: any
