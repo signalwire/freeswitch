@@ -1293,7 +1293,9 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
       /* signal SOA that O/A round(s) is (are) complete */
 	soa_activate(nh->nh_soa, NULL);
     }
-    else if (nh->nh_soa == NULL && !(cr->cr_offer_sent && !cr->cr_answer_recv)) {
+    else if (nh->nh_soa == NULL
+	     /* NUA does not necessarily know dirty details */
+	     /* && !(cr->cr_offer_sent && !cr->cr_answer_recv) */) {
       ;
     }
     else {
@@ -3135,16 +3137,14 @@ static int nua_update_client_request(nua_client_request_t *cr,
 	(sr->sr_offer_recv && !sr->sr_answer_sent))
       break;
 
-  if (sr ||
-      (cri && cri->cr_offer_sent && !cri->cr_answer_recv) ||
-      (cri && cri->cr_offer_recv && !cri->cr_answer_sent)) {
-    if (nh->nh_soa == NULL) {
-      if (session_get_description(sip, NULL, NULL))
-	return nua_client_return(cr, 500, "Overlapping Offer/Answer", msg);
-    }
-  }
-  else if (nh->nh_soa == NULL) {
+  if (nh->nh_soa == NULL) {
     offer_sent = session_get_description(sip, NULL, NULL);
+  }
+  else if (sr ||
+	   (cri && cri->cr_offer_sent && !cri->cr_answer_recv) ||
+	   (cri && cri->cr_offer_recv && !cri->cr_answer_sent)) {
+   if (session_get_description(sip, NULL, NULL))
+     return nua_client_return(cr, 500, "Overlapping Offer/Answer", msg);
   }
   else if (!sip->sip_payload) {
     soa_init_offer_answer(nh->nh_soa);
@@ -3360,7 +3360,7 @@ int nua_update_server_init(nua_server_request_t *sr)
 	if ((overlap = sr0->sr_offer_recv && !sr0->sr_answer_sent))
 	  break;
 
-    if (overlap)
+    if (nh->nh_soa && overlap)
       return nua_server_retry_after(sr, 500, "Overlapping Offer/Answer", 1, 9);
 
     if (nh->nh_soa &&
