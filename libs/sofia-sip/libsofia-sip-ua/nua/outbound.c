@@ -97,7 +97,7 @@ struct outbound {
   /** Source of Contact header */
   unsigned ob_by_stack:1;
   /** Self-generated contacts */
-  unsigned ob_contacts:1, :0;
+  unsigned ob_contacts:1;
 
   /* The registration state machine. */
   /** Initial REGISTER containing ob_rcontact has been sent */
@@ -336,6 +336,14 @@ int outbound_get_contacts(outbound_t *ob,
   if (ob) {
     if (ob->ob_contacts)
       *return_current_contact = ob->ob_rcontact;
+    else {
+      sip_contact_t *contact = *return_current_contact;
+      if (contact) {
+	if (ob->ob_rcontact)
+	  msg_header_free_all(ob->ob_home, (msg_header_t*)ob->ob_rcontact);
+	ob->ob_rcontact = sip_contact_dup(ob->ob_home, contact);
+      }
+    }
     *return_previous_contact = ob->ob_previous;
   }
   return 0;
