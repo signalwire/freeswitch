@@ -1671,8 +1671,13 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 			&& !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
 			switch_channel_set_flag(caller_channel, CF_PROXY_MODE);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already up, delaying proxy mode 'till both legs are up.\n");
-			no_media_bridge = 1;
+			if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
+				switch_ivr_media(switch_core_session_get_uuid(session), SMF_REBRIDGE);
+				switch_channel_set_flag(caller_channel, CF_PROXY_MODE);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already up, delaying proxy mode 'till both legs are up.\n");
+				no_media_bridge = 1;
+			}
 		}
 	}
 

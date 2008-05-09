@@ -1520,7 +1520,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 
 	if (gateway) {
 		if (status == 200 || status == 404) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ping success %s\n", gateway->name);
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ping success %s\n", gateway->name);
 			gateway->status = SOFIA_GATEWAY_UP;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ping failed %s\n", gateway->name);
@@ -2159,11 +2159,6 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 		goto done;
 	}
 
-	if (switch_channel_test_flag(channel_a, CF_PROXY_MODE)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Re-establishing media.\n");
-		switch_ivr_media(switch_core_session_get_uuid(session), SMF_REBRIDGE);
-	}
-
 	from = sip->sip_from;
 	to = sip->sip_to;
 	
@@ -2189,6 +2184,15 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 			sip_replaces_t *replaces;
 			nua_handle_t *bnh;
 			char *rep;
+			
+			if (switch_channel_test_flag(channel_a, CF_PROXY_MODE)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Attended Transfer BYPASS MEDIA CALLS!\n");
+				switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
+				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+						   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp),
+						   TAG_END());
+				goto done;
+			}
 
 			if ((rep = strchr(refer_to->r_url->url_headers, '='))) {
 				const char *br_a = NULL, *br_b = NULL;
@@ -2209,6 +2213,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 					sofia_private_t *b_private = NULL;
 					private_object_t *b_tech_pvt = NULL;
 					switch_core_session_t *b_session = NULL;
+					
 
 					switch_channel_set_variable(channel_a, SOFIA_REPLACES_HEADER, rep);
 					if ((b_private = nua_handle_magic(bnh))) {
@@ -2347,7 +2352,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 														  &tsession, &cause, exten, timeout, &noop_state_handler, NULL, NULL, NULL, SOF_NONE);
 
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! [%s]\n", exten);
-							nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+							nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("messsage/sipfrag"),
 									   NUTAG_SUBSTATE(nua_substate_terminated),
 									   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
 							
@@ -2404,6 +2409,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 				if (!switch_strlen_zero(full_ref_to)) {
 					switch_channel_set_variable(b_channel, SOFIA_REFER_TO_VARIABLE, full_ref_to);
 				}
+
+
+
 				switch_ivr_session_transfer(b_session, exten, NULL, NULL);
 				switch_core_session_rwunlock(b_session);
 			}

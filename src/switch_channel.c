@@ -112,8 +112,8 @@ struct switch_channel {
 	switch_core_session_t *session;
 	switch_channel_state_t state;
 	switch_channel_state_t running_state;
-	uint32_t flags;
-	uint32_t state_flags;
+	switch_channel_flag_t flags;
+	switch_channel_flag_t state_flags;
 	switch_caller_profile_t *caller_profile;
 	const switch_state_handler_table_t *state_handlers[SWITCH_MAX_STATE_HANDLERS];
 	int state_handler_index;

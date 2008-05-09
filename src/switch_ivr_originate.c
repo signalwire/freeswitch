@@ -38,8 +38,10 @@ static switch_status_t originate_on_consume_media_transmit(switch_core_session_t
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	
-	while(switch_channel_get_state(channel) == CS_CONSUME_MEDIA) {
-		switch_ivr_sleep(session, 10);
+	if (!switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+		while(switch_channel_get_state(channel) == CS_CONSUME_MEDIA) {
+			switch_ivr_sleep(session, 10);
+		}
 	}
 	
 	switch_channel_clear_state_handler(channel, &originate_state_handlers);
@@ -1057,10 +1059,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 				}
 
-				/* read from the channel while we wait if the audio is up on it */
-				if (session && (ringback_data || 
-								!(switch_channel_test_flag(caller_channel, CF_PROXY_MODE) && switch_channel_test_flag(caller_channel, CF_PROXY_MODE))) &&
-					(switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA))) {
+				/* read from the channel while we wait if the audio is up on it */				
+				if (session && 
+					!switch_channel_test_flag(caller_channel, CF_PROXY_MODE) && 
+					!switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA) && 
+					(ringback_data || (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)))) {
+					 
 					switch_status_t tstatus = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 					
 					if (!SWITCH_READ_ACCEPTABLE(tstatus)) {

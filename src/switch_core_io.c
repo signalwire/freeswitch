@@ -106,11 +106,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
   top:
 
-	if (!(session->read_codec && session->read_codec->implementation)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s has no read codec.\n", switch_channel_get_name(session->channel));
-		return SWITCH_STATUS_FALSE;
-	}
-
 	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
 		*frame = NULL;
 		return SWITCH_STATUS_FALSE;
@@ -165,7 +160,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	} 
 
 	switch_assert((*frame)->codec != NULL);
-	if ((session->read_codec && (*frame)->codec && session->read_codec->implementation != (*frame)->codec->implementation)) {
+
+	if (!(session->read_codec && session->read_codec->implementation)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s has no read codec.\n", switch_channel_get_name(session->channel));
+		abort();
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (((*frame)->codec && session->read_codec->implementation != (*frame)->codec->implementation)) {
 		need_codec = TRUE;
 	}
 

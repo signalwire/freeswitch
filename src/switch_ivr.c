@@ -60,6 +60,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 			break;
 		}
 
+		if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+			switch_yield(1000);
+			continue;
+		}
+
 		if (switch_channel_test_flag(channel, CF_SERVICE) ||
 			(!switch_channel_test_flag(channel, CF_ANSWERED) && !switch_channel_test_flag(channel, CF_EARLY_MEDIA))) {
 			switch_yield(1000);
