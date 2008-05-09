@@ -350,6 +350,11 @@ void sofia_event_callback(nua_event_t event,
 		break;
 	}
 
+	if (sofia_private && sofia_private->destroy_me) {
+		free(sofia_private);
+		sofia_private = NULL;
+	}
+
 	if (gateway) {
 		sofia_reg_release_gateway(gateway);
 	}
@@ -2108,14 +2113,14 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			if (tech_pvt->sofia_private) {
 				sofia_private = tech_pvt->sofia_private;
 				tech_pvt->sofia_private = NULL;
-				free(sofia_private);
+				sofia_private->destroy_me = 1;
 			}
 
 			tech_pvt->nh = NULL;		
 
 
 		} else if (sofia_private) {
-			free(sofia_private);
+			sofia_private->destroy_me = 1;
 		}
 
 		if (nh) {
