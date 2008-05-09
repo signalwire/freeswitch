@@ -130,7 +130,7 @@ void Session::setHangupHook(char *func, char *arg) {
 	
 	if (func) {
 		hangup_func_str = strdup(func);
-		if (arg) {
+		if (!switch_strlen_zero(arg)) {
 			hangup_func_arg = strdup(arg);
 		}
 		switch_channel_set_private(channel, "CoreSession", this);
