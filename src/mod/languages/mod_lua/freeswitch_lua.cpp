@@ -130,7 +130,9 @@ void Session::setHangupHook(char *func, char *arg) {
 	
 	if (func) {
 		hangup_func_str = strdup(func);
-		hangup_func_arg = strdup(arg);
+		if (arg) {
+			hangup_func_arg = strdup(arg);
+		}
 		switch_channel_set_private(channel, "CoreSession", this);
 		hook_state = switch_channel_get_state(channel);
 		switch_core_event_hook_add_state_change(session, lua_hanguphook);
