@@ -299,7 +299,9 @@ void tls_free(tls_t *tls)
     BIO_free(tls->bio_con);
 
   for (k = 0; k < TLS_MAX_HOSTS; k++)
-    free(tls->hosts[k]), tls->hosts[k] = NULL;
+    if (tls->hosts[k]) {
+      free(tls->hosts[k]), tls->hosts[k] = NULL;
+    }
 
   free(tls);
 }
