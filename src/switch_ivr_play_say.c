@@ -65,7 +65,7 @@ static char *SAY_TYPE_NAMES[] = {
 	NULL
 };
 
-static switch_say_method_t get_say_method_by_name(char *name)
+SWITCH_DECLARE(switch_say_method_t) switch_ivr_get_say_method_by_name(const char *name)
 {
 	int x = 0;
 	for (x = 0; SAY_METHOD_NAMES[x]; x++) {
@@ -77,7 +77,7 @@ static switch_say_method_t get_say_method_by_name(char *name)
 	return (switch_say_method_t) x;
 }
 
-static switch_say_type_t get_say_type_by_name(char *name)
+SWITCH_DECLARE(switch_say_type_t) switch_ivr_get_say_type_by_name(const char *name)
 {
 	int x = 0;
 	for (x = 0; SAY_TYPE_NAMES[x]; x++) {
@@ -286,7 +286,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 							char *say_type = (char *) switch_xml_attr_soft(action, "type");
 							char *say_method = (char *) switch_xml_attr_soft(action, "method");
 
-							status = si->say_function(session, odata, get_say_type_by_name(say_type), get_say_method_by_name(say_method), args);
+							status = si->say_function(session, odata, switch_ivr_get_say_type_by_name(say_type), switch_ivr_get_say_method_by_name(say_method), args);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", module_name);
 						}

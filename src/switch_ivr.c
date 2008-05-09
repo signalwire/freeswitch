@@ -1668,6 +1668,21 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 	stfu_n_destroy(&jb);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, const char *tosay, const char *module_name, const char *say_type, const char *say_method, switch_input_args_t *args)
+{
+	switch_say_interface_t *si;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if ((si = switch_loadable_module_get_say_interface(module_name))) {
+		// should go back and proto all the say mods to const....
+		status = si->say_function(session, (char *)tosay, switch_ivr_get_say_type_by_name(say_type), switch_ivr_get_say_method_by_name(say_method), args);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", module_name);
+		status = SWITCH_STATUS_FALSE;
+	}
+
+	return status;
+}
 
 /* For Emacs:
  * Local Variables:
