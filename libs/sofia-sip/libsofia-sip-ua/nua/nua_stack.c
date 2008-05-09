@@ -511,12 +511,19 @@ int nua_signal(nua_t *nua, nua_handle_t *nh, msg_t *msg,
     e->e_status = status;
     e->e_phrase = phrase;
 
-    SU_DEBUG_7(("nua(%p): signal %s\n", (void *)nh,
-		nua_event_name(event) + 4));
-
     su_msg_deinitializer(sumsg, nua_event_deinit);
       
     retval = su_msg_send_to(sumsg, nua->nua_server, nua_stack_signal);
+
+    if (retval == 0){
+      SU_DEBUG_7(("nua(%p): %s signal %s\n", (void *)nh,
+		  "sent", nua_event_name(event) + 4));
+    }
+    else {
+      SU_DEBUG_0(("nua(%p): %s signal %s\n", (void *)nh,
+		  "FAILED TO SEND", nua_event_name(event) + 4));
+
+    }
   }
 
   ta_end(ta);
@@ -552,9 +559,9 @@ void nua_stack_signal(nua_t *nua, su_msg_r msg, nua_ee_data_t *ee)
     char const *name = nua_event_name(e->e_event);
 
     if (e->e_status == 0)
-      SU_DEBUG_5(("nua(%p): signal %s\n", (void *)nh, name + 4));
+      SU_DEBUG_5(("nua(%p): %s signal %s\n", (void *)nh, "recv", name + 4));
     else
-      SU_DEBUG_5(("nua(%p): signal %s %u %s\n",
+      SU_DEBUG_5(("nua(%p): recv signal %s %u %s\n",
 		  (void *)nh, name + 4,
 		  e->e_status, e->e_phrase ? e->e_phrase : ""));
   }
@@ -651,7 +658,8 @@ void nua_stack_signal(nua_t *nua, su_msg_r msg, nua_ee_data_t *ee)
   }
 
   if (error < 0) {
-    nua_stack_event(nh->nh_nua, nh, NULL, event, NUA_ERROR_AT(__FILE__, __LINE__), NULL);
+    nua_stack_event(nh->nh_nua, nh, NULL, event,
+		    NUA_ERROR_AT(__FILE__, __LINE__), NULL);
   }
 
   su_msg_destroy(nua->nua_signal);
