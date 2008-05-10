@@ -67,7 +67,7 @@ fi
 # Optional Features
 
 AC_ARG_ENABLE(resample,
-[AC_HELP_STRING([--enable-resample],[build with embedded resampler])],[enable_resample="$enable_resample"],[enable_resample="yes"])
+[AC_HELP_STRING([--disable-resample],[build without embedded resampler])],[enable_resample="$enableval"],[enable_resample="yes"])
 
 # We should add checking for out of tree libresample here
 RESAMPLE_LIB=
