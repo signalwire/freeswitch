@@ -301,6 +301,11 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 				continue;
 			}
 			*frame = &tech_pvt->read_frame;
+#ifdef BIGENDIAN
+			if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {
+				switch_swap_linear((*frame)->data, (int) (*frame)->datalen / 2);
+			}
+#endif
 			return SWITCH_STATUS_SUCCESS;
 		}
 
