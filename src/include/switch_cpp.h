@@ -310,8 +310,8 @@ class CoreSession {
 
 	SWITCH_DECLARE(void) sendEvent(Event *sendME);
 
-	SWITCH_DECLARE(void) CoreSession::setEventData(Event *e);
-	SWITCH_DECLARE(char *) CoreSession::getXMLCDR();
+	SWITCH_DECLARE(void) setEventData(Event *e);
+	SWITCH_DECLARE(char *) getXMLCDR();
 
 	virtual bool begin_allow_threads() = 0;
 	virtual bool end_allow_threads() = 0;

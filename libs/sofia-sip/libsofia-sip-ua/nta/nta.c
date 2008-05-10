@@ -170,6 +170,10 @@ static char const * stateless_branch(nta_agent_t *, msg_t *, sip_t const *,
 #define NTA_BRANCH_PRIME SU_U64_C(0xB9591D1C361C6521)
 #define NTA_TAG_PRIME    SU_U64_C(0xB9591D1C361C6521)
 
+#ifndef UINT32_MAX
+#define UINT32_MAX (0xffffffffU)
+#endif
+
 HTABLE_PROTOS_WITH(leg_htable, lht, nta_leg_t, size_t, hash_value_t);
 static nta_leg_t *leg_find(nta_agent_t const *sa,
 			   char const *method_name,

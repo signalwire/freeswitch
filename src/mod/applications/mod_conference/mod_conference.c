@@ -4196,11 +4196,13 @@ SWITCH_STANDARD_APP(conference_function)
 		profile_name = "default";
 	}
 
+#if 0
 	if (0) {
 		member.dtmf_parser = conference->dtmf_parser;
 	} else {
 		
 	}
+#endif
 
 	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
 	switch_assert(params);
@@ -4521,7 +4523,7 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_buffer_destroy(&member.resample_buffer);
 	switch_buffer_destroy(&member.audio_buffer);
 	switch_buffer_destroy(&member.mux_buffer);
-	if (member.dtmf_parser != conference->dtmf_parser) {
+	if (conference && member.dtmf_parser != conference->dtmf_parser) {
 		switch_ivr_digit_stream_parser_destroy(member.dtmf_parser);
 	}
 
