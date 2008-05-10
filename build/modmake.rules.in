@@ -93,7 +93,7 @@ Makefile:
 	@if test ! -f $@; then \
 	  if ! pwd | grep $(switch_srcdir)/src/mod ; then rulesdir=$(switch_srcdir) ; else rulesdir=../../../.. ; fi ; \
 	  echo BASE=$$rulesdir > Makefile ; \
-	  echo "include $(BASE)/build/modmake.rules" >> Makefile ; \
+	  echo 'include $(BASE)/build/modmake.rules' >> Makefile ; \
 	fi ;
 
 $(CURLLA):
