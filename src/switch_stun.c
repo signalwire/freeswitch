@@ -117,6 +117,7 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t * buf, u
 {
 	switch_stun_packet_t *packet;
 	switch_stun_packet_attribute_t *attr;
+	void *end_buf = buf + len;
 
 	if (len < SWITCH_STUN_PACKET_MIN_LEN) {
 		return NULL;
@@ -141,7 +142,7 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t * buf, u
 			}
 			break;
 		}
-	} while (switch_stun_packet_next_attribute(attr));
+	} while (switch_stun_packet_next_attribute(attr, end_buf));
 	return packet;
 }
 
@@ -273,6 +274,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 	switch_sockaddr_t *local_addr = NULL, *remote_addr = NULL, *from_addr = NULL;
 	switch_socket_t *sock = NULL;
 	uint8_t buf[256] = { 0 };
+	void *end_buf;
 	switch_stun_packet_t *packet;
 	switch_stun_packet_attribute_t *attr;
 	switch_size_t bytes = 0;
@@ -335,6 +337,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 	switch_socket_close(sock);
 
 	packet = switch_stun_packet_parse(buf, sizeof(buf));
+	end_buf = buf + sizeof(buf);
 	switch_stun_packet_first_attribute(packet, attr);
 
 	do {
@@ -350,7 +353,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 			}
 			break;
 		}
-	} while (switch_stun_packet_next_attribute(attr));
+	} while (switch_stun_packet_next_attribute(attr, end_buf));
 
 	if (packet->header.type == SWITCH_STUN_BINDING_RESPONSE) {
 		*ip = switch_core_strdup(pool, rip);

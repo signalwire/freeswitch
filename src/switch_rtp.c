@@ -238,6 +238,7 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 {
 	switch_stun_packet_t *packet;
 	switch_stun_packet_attribute_t *attr;
+	void *end_buf;
 	char username[33] = { 0 };
 	unsigned char buf[512] = { 0 };
 	switch_size_t cpylen = len;
@@ -260,6 +261,7 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 
 	memcpy(buf, data, cpylen);
 	packet = switch_stun_packet_parse(buf, sizeof(buf));
+	end_buf = buf + sizeof(buf);
 	rtp_session->last_stun = switch_time_now();
 
 	switch_stun_packet_first_attribute(packet, attr);
@@ -279,7 +281,7 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 			}
 			break;
 		}
-	} while (switch_stun_packet_next_attribute(attr));
+	} while (switch_stun_packet_next_attribute(attr, end_buf));
 
 	if ((packet->header.type == SWITCH_STUN_BINDING_REQUEST) && !strcmp(rtp_session->user_ice, username)) {
 		uint8_t stunbuf[512];

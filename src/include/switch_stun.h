@@ -221,7 +221,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
   \param attribute the pointer to increment
   \return true or false depending on if there are any more attributes
 */
-#define switch_stun_packet_next_attribute(attribute) (attribute = (switch_stun_packet_attribute_t *) (attribute->value + attribute->length)) && attribute->length
+#define switch_stun_packet_next_attribute(attribute, end) (attribute && (attribute = (switch_stun_packet_attribute_t *) (attribute->value + attribute->length)) && ((void *)attribute < end) && attribute->length && ((void *)(attribute + attribute->length) < end))
 
 /*!
   \brief Obtain the correct length in bytes of a stun packet
