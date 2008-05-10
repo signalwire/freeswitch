@@ -382,9 +382,36 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::~CoreSession()
 		switch_core_session_rwunlock(session);
 	}
 
+	switch_safe_free(xml_cdr_text);
 	switch_safe_free(uuid);	
 	switch_safe_free(tts_name);
 	switch_safe_free(voice_name);
+}
+
+SWITCH_DECLARE(char *) CoreSession::getXMLCDR()
+{
+	
+	switch_xml_t cdr;
+	
+	sanity_check("");
+
+	switch_safe_free(xml_cdr_text);
+
+	if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
+		xml_cdr_text = switch_xml_toxml(cdr, SWITCH_FALSE);
+		switch_xml_free(cdr);
+	}
+
+	return (char *) (xml_cdr_text ? xml_cdr_text : "");
+}
+
+SWITCH_DECLARE(void) CoreSession::setEventData(Event *e)
+{
+	sanity_check_noreturn;
+	
+	if (channel && e->event) {
+		switch_channel_event_set_data(channel, e->event);
+	}
 }
 
 SWITCH_DECLARE(int) CoreSession::answer()

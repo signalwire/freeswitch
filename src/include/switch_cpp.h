@@ -160,6 +160,7 @@ class CoreSession {
 	switch_input_args_t *ap;  // ptr to args .. (is this really needed?)
 	switch_caller_profile_t caller_profile; // avoid passing so many args to originate, 
 	                                        // instead set them here first
+	char *xml_cdr_text;
 	char *uuid;
 	char *tts_name;
 	char *voice_name;
@@ -308,6 +309,9 @@ class CoreSession {
 	SWITCH_DECLARE(void) execute(char *app, char *data);
 
 	SWITCH_DECLARE(void) sendEvent(Event *sendME);
+
+	SWITCH_DECLARE(void) CoreSession::setEventData(Event *e);
+	SWITCH_DECLARE(char *) CoreSession::getXMLCDR();
 
 	virtual bool begin_allow_threads() = 0;
 	virtual bool end_allow_threads() = 0;

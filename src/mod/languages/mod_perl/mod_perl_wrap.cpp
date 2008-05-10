@@ -6243,6 +6243,71 @@ XS(_wrap_CoreSession_sendEvent) {
 }
 
 
+XS(_wrap_CoreSession_setEventData) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    Event *arg2 = (Event *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    void *argp2 = 0 ;
+    int res2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: CoreSession_setEventData(self,e);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_setEventData" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    res2 = SWIG_ConvertPtr(ST(1), &argp2,SWIGTYPE_p_Event, 0 |  0 );
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_setEventData" "', argument " "2"" of type '" "Event *""'"); 
+    }
+    arg2 = reinterpret_cast< Event * >(argp2);
+    (arg1)->setEventData(arg2);
+    
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_CoreSession_getXMLCDR) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    char *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: CoreSession_getXMLCDR(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_getXMLCDR" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    result = (char *)(arg1)->getXMLCDR();
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_CoreSession_begin_allow_threads) {
   {
     CoreSession *arg1 = (CoreSession *) 0 ;
@@ -7710,6 +7775,8 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::CoreSession_ready", _wrap_CoreSession_ready},
 {"freeswitchc::CoreSession_execute", _wrap_CoreSession_execute},
 {"freeswitchc::CoreSession_sendEvent", _wrap_CoreSession_sendEvent},
+{"freeswitchc::CoreSession_setEventData", _wrap_CoreSession_setEventData},
+{"freeswitchc::CoreSession_getXMLCDR", _wrap_CoreSession_getXMLCDR},
 {"freeswitchc::CoreSession_begin_allow_threads", _wrap_CoreSession_begin_allow_threads},
 {"freeswitchc::CoreSession_end_allow_threads", _wrap_CoreSession_end_allow_threads},
 {"freeswitchc::CoreSession_get_uuid", _wrap_CoreSession_get_uuid},

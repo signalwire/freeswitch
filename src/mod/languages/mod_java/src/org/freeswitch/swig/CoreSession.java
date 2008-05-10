@@ -213,6 +213,14 @@ public class CoreSession {
     freeswitchJNI.CoreSession_sendEvent(swigCPtr, this, Event.getCPtr(sendME), sendME);
   }
 
+  public void setEventData(Event e) {
+    freeswitchJNI.CoreSession_setEventData(swigCPtr, this, Event.getCPtr(e), e);
+  }
+
+  public String getXMLCDR() {
+    return freeswitchJNI.CoreSession_getXMLCDR(swigCPtr, this);
+  }
+
   public boolean begin_allow_threads() {
     return freeswitchJNI.CoreSession_begin_allow_threads(swigCPtr, this);
   }

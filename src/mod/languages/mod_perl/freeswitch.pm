@@ -326,6 +326,8 @@ sub DESTROY {
 *ready = *freeswitchc::CoreSession_ready;
 *execute = *freeswitchc::CoreSession_execute;
 *sendEvent = *freeswitchc::CoreSession_sendEvent;
+*setEventData = *freeswitchc::CoreSession_setEventData;
+*getXMLCDR = *freeswitchc::CoreSession_getXMLCDR;
 *begin_allow_threads = *freeswitchc::CoreSession_begin_allow_threads;
 *end_allow_threads = *freeswitchc::CoreSession_end_allow_threads;
 *get_uuid = *freeswitchc::CoreSession_get_uuid;
