@@ -304,14 +304,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			return SWITCH_STATUS_SUCCESS;
 		}
 
-		if (timeout > -1) {
-			elapsed = (unsigned int) ((switch_time_now() - started) / 1000);
-			if (elapsed >= (unsigned int) timeout) {
-				return SWITCH_STATUS_SUCCESS;
-			}
-		}
-
-
 		switch_yield(1000);
 	}
 
