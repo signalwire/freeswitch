@@ -731,10 +731,11 @@ int soa_sdp_upgrade(soa_session_t *ss,
   o_media = su_zalloc(home, (Ns + 1) * (sizeof *o_media));
   u_media = su_zalloc(home, (Nu + 1) * (sizeof *u_media));
   r_media = su_zalloc(home, (Nr + 1) * (sizeof *r_media));
+  if (!s_media || !o_media || !u_media || !r_media)
+    return -1;
 
   um = sdp_media_dup_all(home, user->sdp_media, session); 
-
-  if (!s_media || !u_media || !r_media || !um)
+  if (!um && user->sdp_media)
     return -1;
 
   u2s = su_alloc(home, (Nu + 1) * sizeof(*u2s));
@@ -1022,9 +1023,13 @@ int soa_sdp_mode_set(sdp_session_t const *user,
     for (j = 0, um = user->sdp_media; j != s2u[i]; um = um->m_next, j++)
       assert(um);
     if (um == NULL) {
+      if (dryrun)
+	return 1;
+      else
+	retval = 1;
       sm->m_rejected = 1;
       sm->m_mode = sdp_inactive;
-      retval = 1;
+      sm->m_port = 0;
       continue;
     }
 
@@ -1054,10 +1059,11 @@ int soa_sdp_mode_set(sdp_session_t const *user,
       }
     }
 
-    if (sm->m_mode != (unsigned)(recv_mode | send_mode))
-      retval = 1;
-
-    if (!dryrun) {
+    if (sm->m_mode != (unsigned)(recv_mode | send_mode)) {
+      if (dryrun)
+	return 1;
+      else
+	retval = 1;
       sm->m_mode = recv_mode | send_mode;
     }
   }
@@ -1166,7 +1172,8 @@ static int offer_answer_step(soa_session_t *ss,
       *local0 = *local, local = local0;
     SU_DEBUG_7(("soa_static(%p, %s): %s\n", (void *)ss, by, 
 		"upgrade with local description"));
-    soa_sdp_upgrade(ss, tmphome, local, user, NULL, &u2s, &s2u);
+    if (soa_sdp_upgrade(ss, tmphome, local, user, NULL, &u2s, &s2u) < 0)
+      goto internal_error;
     break;
   case generate_answer:
     /* Upgrade local SDP based on remote SDP */
@@ -1178,7 +1185,8 @@ static int offer_answer_step(soa_session_t *ss,
 	*local0 = *local, local = local0;
       SU_DEBUG_7(("soa_static(%p, %s): %s\n", (void *)ss, by,
 		  "upgrade with remote description"));
-      soa_sdp_upgrade(ss, tmphome, local, user, remote, &u2s, &s2u);
+      if (soa_sdp_upgrade(ss, tmphome, local, user, remote, &u2s, &s2u) < 0)
+	goto internal_error;
     }
     break;
   case process_answer:
