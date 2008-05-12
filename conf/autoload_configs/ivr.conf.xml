@@ -24,7 +24,8 @@
         greet-long="phrase:demo_ivr_sub_menu"
         greet-short="phrase:demo_ivr_sub_menu_short"
         invalid-sound="voicemail/vm-hello.wav"
-        exit-sound="voicemail/vm-goodbye.wav" timeout="15"
+        exit-sound="voicemail/vm-goodbye.wav"
+        timeout="15000"
         max-failures="3">
       <entry action="menu-top" digits="*"/>
      </menu>
@@ -41,7 +42,8 @@
           greet-long="say:Press 1 to join the conference, Press 2 to join the other conference"
           greet-short="say:Press 1 to join the conference, Press 2 to join the other conference"
           invalid-sound="say:invalid extension"
-          exit-sound="say:exit sound" timeout ="15"
+          exit-sound="say:exit sound"
+          timeout ="15000"
           max-failures="3">
       <entry action="menu-exit" digits="*"/>
       <entry action="menu-playback" digits="1" param="say:You pressed 1"/>
