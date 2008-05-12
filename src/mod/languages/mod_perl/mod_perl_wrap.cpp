@@ -1450,8 +1450,8 @@ SWIG_Perl_SetModule(swig_module_info *module) {
 #define SWIGTYPE_p_CoreSession swig_types[1]
 #define SWIGTYPE_p_Event swig_types[2]
 #define SWIGTYPE_p_IVRMenu swig_types[3]
-#define SWIGTYPE_p_PerlInterpreter swig_types[4]
-#define SWIGTYPE_p_Session swig_types[5]
+#define SWIGTYPE_p_PERL__Session swig_types[4]
+#define SWIGTYPE_p_PerlInterpreter swig_types[5]
 #define SWIGTYPE_p_Stream swig_types[6]
 #define SWIGTYPE_p_char swig_types[7]
 #define SWIGTYPE_p_input_callback_state swig_types[8]
@@ -4661,6 +4661,45 @@ XS(_wrap_CoreSession_getVariable) {
 }
 
 
+XS(_wrap_CoreSession_process_callback_result) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    char *arg2 = (char *) 0 ;
+    switch_status_t result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: CoreSession_process_callback_result(self,ret);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_process_callback_result" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_process_callback_result" "', argument " "2"" of type '" "char *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    result = (arg1)->process_callback_result(arg2);
+    ST(argvi) = SWIG_NewPointerObj((new switch_status_t(static_cast< const switch_status_t& >(result))), SWIGTYPE_p_switch_status_t, SWIG_POINTER_OWN | 0); argvi++ ;
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_CoreSession_recordFile__SWIG_0) {
   {
     CoreSession *arg1 = (CoreSession *) 0 ;
@@ -6708,15 +6747,15 @@ XS(_wrap_dtmf_callback) {
 
 XS(_wrap_new_Session__SWIG_0) {
   {
-    Session *result = 0 ;
+    PERL::Session *result = 0 ;
     int argvi = 0;
     dXSARGS;
     
     if ((items < 0) || (items > 0)) {
       SWIG_croak("Usage: new_Session();");
     }
-    result = (Session *)new Session(); result->setPERL(my_perl);
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Session, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
+    result = (PERL::Session *)new PERL::Session();
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     XSRETURN(argvi);
   fail:
     SWIG_croak_null();
@@ -6727,7 +6766,7 @@ XS(_wrap_new_Session__SWIG_0) {
 XS(_wrap_new_Session__SWIG_1) {
   {
     char *arg1 = (char *) 0 ;
-    Session *result = 0 ;
+    PERL::Session *result = 0 ;
     int res1 ;
     char *buf1 = 0 ;
     int alloc1 = 0 ;
@@ -6742,8 +6781,8 @@ XS(_wrap_new_Session__SWIG_1) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_Session" "', argument " "1"" of type '" "char *""'");
     }
     arg1 = reinterpret_cast< char * >(buf1);
-    result = (Session *)new Session(arg1); result->setPERL(my_perl);
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Session, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
+    result = (PERL::Session *)new PERL::Session(arg1);
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
     XSRETURN(argvi);
   fail:
@@ -6756,7 +6795,7 @@ XS(_wrap_new_Session__SWIG_1) {
 XS(_wrap_new_Session__SWIG_2) {
   {
     switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
-    Session *result = 0 ;
+    PERL::Session *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
     int argvi = 0;
@@ -6770,8 +6809,8 @@ XS(_wrap_new_Session__SWIG_2) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_Session" "', argument " "1"" of type '" "switch_core_session_t *""'"); 
     }
     arg1 = reinterpret_cast< switch_core_session_t * >(argp1);
-    result = (Session *)new Session(arg1); result->setPERL(my_perl);
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Session, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
+    result = (PERL::Session *)new PERL::Session(arg1);
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     
     XSRETURN(argvi);
   fail:
@@ -6854,7 +6893,7 @@ XS(_wrap_new_Session) {
 
 XS(_wrap_delete_Session) {
   {
-    Session *arg1 = (Session *) 0 ;
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
     int argvi = 0;
@@ -6863,11 +6902,11 @@ XS(_wrap_delete_Session) {
     if ((items < 1) || (items > 1)) {
       SWIG_croak("Usage: delete_Session(self);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Session, SWIG_POINTER_DISOWN |  0 );
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, SWIG_POINTER_DISOWN |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_Session" "', argument " "1"" of type '" "Session *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_Session" "', argument " "1"" of type '" "PERL::Session *""'"); 
     }
-    arg1 = reinterpret_cast< Session * >(argp1);
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
     delete arg1;
     
     
@@ -6882,7 +6921,7 @@ XS(_wrap_delete_Session) {
 
 XS(_wrap_Session_begin_allow_threads) {
   {
-    Session *arg1 = (Session *) 0 ;
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
     bool result;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -6892,11 +6931,11 @@ XS(_wrap_Session_begin_allow_threads) {
     if ((items < 1) || (items > 1)) {
       SWIG_croak("Usage: Session_begin_allow_threads(self);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Session, 0 |  0 );
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_begin_allow_threads" "', argument " "1"" of type '" "Session *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_begin_allow_threads" "', argument " "1"" of type '" "PERL::Session *""'"); 
     }
-    arg1 = reinterpret_cast< Session * >(argp1);
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
     result = (bool)(arg1)->begin_allow_threads();
     ST(argvi) = SWIG_From_bool  SWIG_PERL_CALL_ARGS_1(static_cast< bool >(result)); argvi++ ;
     
@@ -6910,7 +6949,7 @@ XS(_wrap_Session_begin_allow_threads) {
 
 XS(_wrap_Session_end_allow_threads) {
   {
-    Session *arg1 = (Session *) 0 ;
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
     bool result;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -6920,11 +6959,11 @@ XS(_wrap_Session_end_allow_threads) {
     if ((items < 1) || (items > 1)) {
       SWIG_croak("Usage: Session_end_allow_threads(self);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Session, 0 |  0 );
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_end_allow_threads" "', argument " "1"" of type '" "Session *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_end_allow_threads" "', argument " "1"" of type '" "PERL::Session *""'"); 
     }
-    arg1 = reinterpret_cast< Session * >(argp1);
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
     result = (bool)(arg1)->end_allow_threads();
     ST(argvi) = SWIG_From_bool  SWIG_PERL_CALL_ARGS_1(static_cast< bool >(result)); argvi++ ;
     
@@ -6938,7 +6977,7 @@ XS(_wrap_Session_end_allow_threads) {
 
 XS(_wrap_Session_check_hangup_hook) {
   {
-    Session *arg1 = (Session *) 0 ;
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
     int argvi = 0;
@@ -6947,11 +6986,11 @@ XS(_wrap_Session_check_hangup_hook) {
     if ((items < 1) || (items > 1)) {
       SWIG_croak("Usage: Session_check_hangup_hook(self);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Session, 0 |  0 );
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_check_hangup_hook" "', argument " "1"" of type '" "Session *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_check_hangup_hook" "', argument " "1"" of type '" "PERL::Session *""'"); 
     }
-    arg1 = reinterpret_cast< Session * >(argp1);
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
     (arg1)->check_hangup_hook();
     
     
@@ -6965,7 +7004,7 @@ XS(_wrap_Session_check_hangup_hook) {
 
 XS(_wrap_Session_run_dtmf_callback) {
   {
-    Session *arg1 = (Session *) 0 ;
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
     void *arg2 = (void *) 0 ;
     switch_input_type_t arg3 ;
     switch_status_t result;
@@ -6980,11 +7019,11 @@ XS(_wrap_Session_run_dtmf_callback) {
     if ((items < 3) || (items > 3)) {
       SWIG_croak("Usage: Session_run_dtmf_callback(self,input,itype);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Session, 0 |  0 );
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_run_dtmf_callback" "', argument " "1"" of type '" "Session *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_run_dtmf_callback" "', argument " "1"" of type '" "PERL::Session *""'"); 
     }
-    arg1 = reinterpret_cast< Session * >(argp1);
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
     res2 = SWIG_ConvertPtr(ST(1),SWIG_as_voidptrptr(&arg2), 0, 0);
     if (!SWIG_IsOK(res2)) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Session_run_dtmf_callback" "', argument " "2"" of type '" "void *""'"); 
@@ -7015,7 +7054,7 @@ XS(_wrap_Session_run_dtmf_callback) {
 
 XS(_wrap_Session_setInputCallback) {
   {
-    Session *arg1 = (Session *) 0 ;
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
     char *arg2 = (char *) 0 ;
     char *arg3 = (char *) 0 ;
     void *argp1 = 0 ;
@@ -7032,11 +7071,11 @@ XS(_wrap_Session_setInputCallback) {
     if ((items < 3) || (items > 3)) {
       SWIG_croak("Usage: Session_setInputCallback(self,cbfunc,funcargs);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Session, 0 |  0 );
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_setInputCallback" "', argument " "1"" of type '" "Session *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_setInputCallback" "', argument " "1"" of type '" "PERL::Session *""'"); 
     }
-    arg1 = reinterpret_cast< Session * >(argp1);
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
     res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
     if (!SWIG_IsOK(res2)) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Session_setInputCallback" "', argument " "2"" of type '" "char *""'");
@@ -7064,7 +7103,7 @@ XS(_wrap_Session_setInputCallback) {
 
 XS(_wrap_Session_setHangupHook__SWIG_0) {
   {
-    Session *arg1 = (Session *) 0 ;
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
     char *arg2 = (char *) 0 ;
     char *arg3 = (char *) 0 ;
     void *argp1 = 0 ;
@@ -7081,11 +7120,11 @@ XS(_wrap_Session_setHangupHook__SWIG_0) {
     if ((items < 3) || (items > 3)) {
       SWIG_croak("Usage: Session_setHangupHook(self,func,arg);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Session, 0 |  0 );
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_setHangupHook" "', argument " "1"" of type '" "Session *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_setHangupHook" "', argument " "1"" of type '" "PERL::Session *""'"); 
     }
-    arg1 = reinterpret_cast< Session * >(argp1);
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
     res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
     if (!SWIG_IsOK(res2)) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Session_setHangupHook" "', argument " "2"" of type '" "char *""'");
@@ -7113,7 +7152,7 @@ XS(_wrap_Session_setHangupHook__SWIG_0) {
 
 XS(_wrap_Session_setHangupHook__SWIG_1) {
   {
-    Session *arg1 = (Session *) 0 ;
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
     char *arg2 = (char *) 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -7126,11 +7165,11 @@ XS(_wrap_Session_setHangupHook__SWIG_1) {
     if ((items < 2) || (items > 2)) {
       SWIG_croak("Usage: Session_setHangupHook(self,func);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Session, 0 |  0 );
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_setHangupHook" "', argument " "1"" of type '" "Session *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_setHangupHook" "', argument " "1"" of type '" "PERL::Session *""'"); 
     }
-    arg1 = reinterpret_cast< Session * >(argp1);
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
     res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
     if (!SWIG_IsOK(res2)) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Session_setHangupHook" "', argument " "2"" of type '" "char *""'");
@@ -7162,7 +7201,7 @@ XS(_wrap_Session_setHangupHook) {
       int _v = 0;
       {
         void *vptr = 0;
-        int res = SWIG_ConvertPtr(ST(0), &vptr, SWIGTYPE_p_Session, 0);
+        int res = SWIG_ConvertPtr(ST(0), &vptr, SWIGTYPE_p_PERL__Session, 0);
         _v = SWIG_CheckState(res);
       }
       if (!_v) goto check_1;
@@ -7191,7 +7230,7 @@ XS(_wrap_Session_setHangupHook) {
       int _v = 0;
       {
         void *vptr = 0;
-        int res = SWIG_ConvertPtr(ST(0), &vptr, SWIGTYPE_p_Session, 0);
+        int res = SWIG_ConvertPtr(ST(0), &vptr, SWIGTYPE_p_PERL__Session, 0);
         _v = SWIG_CheckState(res);
       }
       if (!_v) goto check_2;
@@ -7237,7 +7276,7 @@ XS(_wrap_Session_setHangupHook) {
 
 XS(_wrap_Session_ready) {
   {
-    Session *arg1 = (Session *) 0 ;
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
     bool result;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -7247,11 +7286,11 @@ XS(_wrap_Session_ready) {
     if ((items < 1) || (items > 1)) {
       SWIG_croak("Usage: Session_ready(self);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Session, 0 |  0 );
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_ready" "', argument " "1"" of type '" "Session *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_ready" "', argument " "1"" of type '" "PERL::Session *""'"); 
     }
-    arg1 = reinterpret_cast< Session * >(argp1);
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
     result = (bool)(arg1)->ready();
     ST(argvi) = SWIG_From_bool  SWIG_PERL_CALL_ARGS_1(static_cast< bool >(result)); argvi++ ;
     
@@ -7265,7 +7304,7 @@ XS(_wrap_Session_ready) {
 
 XS(_wrap_Session_cb_function_set) {
   {
-    Session *arg1 = (Session *) 0 ;
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
     char *arg2 = (char *) 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -7278,11 +7317,11 @@ XS(_wrap_Session_cb_function_set) {
     if ((items < 2) || (items > 2)) {
       SWIG_croak("Usage: Session_cb_function_set(self,cb_function);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Session, 0 |  0 );
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_cb_function_set" "', argument " "1"" of type '" "Session *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_cb_function_set" "', argument " "1"" of type '" "PERL::Session *""'"); 
     }
-    arg1 = reinterpret_cast< Session * >(argp1);
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
     res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
     if (!SWIG_IsOK(res2)) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Session_cb_function_set" "', argument " "2"" of type '" "char *""'");
@@ -7309,7 +7348,7 @@ XS(_wrap_Session_cb_function_set) {
 
 XS(_wrap_Session_cb_function_get) {
   {
-    Session *arg1 = (Session *) 0 ;
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
     char *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -7319,11 +7358,11 @@ XS(_wrap_Session_cb_function_get) {
     if ((items < 1) || (items > 1)) {
       SWIG_croak("Usage: Session_cb_function_get(self);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Session, 0 |  0 );
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_cb_function_get" "', argument " "1"" of type '" "Session *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_cb_function_get" "', argument " "1"" of type '" "PERL::Session *""'"); 
     }
-    arg1 = reinterpret_cast< Session * >(argp1);
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
     result = (char *) ((arg1)->cb_function);
     ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
     
@@ -7337,7 +7376,7 @@ XS(_wrap_Session_cb_function_get) {
 
 XS(_wrap_Session_cb_arg_set) {
   {
-    Session *arg1 = (Session *) 0 ;
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
     char *arg2 = (char *) 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -7350,11 +7389,11 @@ XS(_wrap_Session_cb_arg_set) {
     if ((items < 2) || (items > 2)) {
       SWIG_croak("Usage: Session_cb_arg_set(self,cb_arg);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Session, 0 |  0 );
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_cb_arg_set" "', argument " "1"" of type '" "Session *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_cb_arg_set" "', argument " "1"" of type '" "PERL::Session *""'"); 
     }
-    arg1 = reinterpret_cast< Session * >(argp1);
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
     res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
     if (!SWIG_IsOK(res2)) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Session_cb_arg_set" "', argument " "2"" of type '" "char *""'");
@@ -7381,7 +7420,7 @@ XS(_wrap_Session_cb_arg_set) {
 
 XS(_wrap_Session_cb_arg_get) {
   {
-    Session *arg1 = (Session *) 0 ;
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
     char *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -7391,11 +7430,11 @@ XS(_wrap_Session_cb_arg_get) {
     if ((items < 1) || (items > 1)) {
       SWIG_croak("Usage: Session_cb_arg_get(self);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Session, 0 |  0 );
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_cb_arg_get" "', argument " "1"" of type '" "Session *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_cb_arg_get" "', argument " "1"" of type '" "PERL::Session *""'"); 
     }
-    arg1 = reinterpret_cast< Session * >(argp1);
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
     result = (char *) ((arg1)->cb_arg);
     ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
     
@@ -7409,7 +7448,7 @@ XS(_wrap_Session_cb_arg_get) {
 
 XS(_wrap_Session_hangup_func_str_set) {
   {
-    Session *arg1 = (Session *) 0 ;
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
     char *arg2 = (char *) 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -7422,11 +7461,11 @@ XS(_wrap_Session_hangup_func_str_set) {
     if ((items < 2) || (items > 2)) {
       SWIG_croak("Usage: Session_hangup_func_str_set(self,hangup_func_str);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Session, 0 |  0 );
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_hangup_func_str_set" "', argument " "1"" of type '" "Session *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_hangup_func_str_set" "', argument " "1"" of type '" "PERL::Session *""'"); 
     }
-    arg1 = reinterpret_cast< Session * >(argp1);
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
     res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
     if (!SWIG_IsOK(res2)) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Session_hangup_func_str_set" "', argument " "2"" of type '" "char *""'");
@@ -7453,7 +7492,7 @@ XS(_wrap_Session_hangup_func_str_set) {
 
 XS(_wrap_Session_hangup_func_str_get) {
   {
-    Session *arg1 = (Session *) 0 ;
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
     char *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -7463,11 +7502,11 @@ XS(_wrap_Session_hangup_func_str_get) {
     if ((items < 1) || (items > 1)) {
       SWIG_croak("Usage: Session_hangup_func_str_get(self);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Session, 0 |  0 );
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_hangup_func_str_get" "', argument " "1"" of type '" "Session *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_hangup_func_str_get" "', argument " "1"" of type '" "PERL::Session *""'"); 
     }
-    arg1 = reinterpret_cast< Session * >(argp1);
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
     result = (char *) ((arg1)->hangup_func_str);
     ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
     
@@ -7481,7 +7520,7 @@ XS(_wrap_Session_hangup_func_str_get) {
 
 XS(_wrap_Session_hangup_func_arg_set) {
   {
-    Session *arg1 = (Session *) 0 ;
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
     char *arg2 = (char *) 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -7494,11 +7533,11 @@ XS(_wrap_Session_hangup_func_arg_set) {
     if ((items < 2) || (items > 2)) {
       SWIG_croak("Usage: Session_hangup_func_arg_set(self,hangup_func_arg);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Session, 0 |  0 );
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_hangup_func_arg_set" "', argument " "1"" of type '" "Session *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_hangup_func_arg_set" "', argument " "1"" of type '" "PERL::Session *""'"); 
     }
-    arg1 = reinterpret_cast< Session * >(argp1);
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
     res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
     if (!SWIG_IsOK(res2)) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Session_hangup_func_arg_set" "', argument " "2"" of type '" "char *""'");
@@ -7525,7 +7564,7 @@ XS(_wrap_Session_hangup_func_arg_set) {
 
 XS(_wrap_Session_hangup_func_arg_get) {
   {
-    Session *arg1 = (Session *) 0 ;
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
     char *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -7535,11 +7574,11 @@ XS(_wrap_Session_hangup_func_arg_get) {
     if ((items < 1) || (items > 1)) {
       SWIG_croak("Usage: Session_hangup_func_arg_get(self);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Session, 0 |  0 );
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_hangup_func_arg_get" "', argument " "1"" of type '" "Session *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_hangup_func_arg_get" "', argument " "1"" of type '" "PERL::Session *""'"); 
     }
-    arg1 = reinterpret_cast< Session * >(argp1);
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
     result = (char *) ((arg1)->hangup_func_arg);
     ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
     
@@ -7553,7 +7592,7 @@ XS(_wrap_Session_hangup_func_arg_get) {
 
 XS(_wrap_Session_setPERL) {
   {
-    Session *arg1 = (Session *) 0 ;
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
     PerlInterpreter *arg2 = (PerlInterpreter *) 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -7565,11 +7604,11 @@ XS(_wrap_Session_setPERL) {
     if ((items < 2) || (items > 2)) {
       SWIG_croak("Usage: Session_setPERL(self,pi);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Session, 0 |  0 );
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_setPERL" "', argument " "1"" of type '" "Session *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_setPERL" "', argument " "1"" of type '" "PERL::Session *""'"); 
     }
-    arg1 = reinterpret_cast< Session * >(argp1);
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
     res2 = SWIG_ConvertPtr(ST(1), &argp2,SWIGTYPE_p_PerlInterpreter, 0 |  0 );
     if (!SWIG_IsOK(res2)) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Session_setPERL" "', argument " "2"" of type '" "PerlInterpreter *""'"); 
@@ -7591,15 +7630,15 @@ XS(_wrap_Session_setPERL) {
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
-static void *_p_SessionTo_p_CoreSession(void *x, int *newmemory) {
-    return (void *)((CoreSession *)  ((Session *) x));
+static void *_p_PERL__SessionTo_p_CoreSession(void *x, int *newmemory) {
+    return (void *)((CoreSession *)  ((PERL::Session *) x));
 }
 static swig_type_info _swigt__p_API = {"_p_API", "API *", 0, 0, (void*)"freeswitch::API", 0};
 static swig_type_info _swigt__p_CoreSession = {"_p_CoreSession", "CoreSession *", 0, 0, (void*)"freeswitch::CoreSession", 0};
 static swig_type_info _swigt__p_Event = {"_p_Event", "Event *", 0, 0, (void*)"freeswitch::Event", 0};
 static swig_type_info _swigt__p_IVRMenu = {"_p_IVRMenu", "IVRMenu *", 0, 0, (void*)"freeswitch::IVRMenu", 0};
+static swig_type_info _swigt__p_PERL__Session = {"_p_PERL__Session", "PERL::Session *", 0, 0, (void*)"freeswitch::Session", 0};
 static swig_type_info _swigt__p_PerlInterpreter = {"_p_PerlInterpreter", "PerlInterpreter *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_Session = {"_p_Session", "Session *", 0, 0, (void*)"freeswitch::Session", 0};
 static swig_type_info _swigt__p_Stream = {"_p_Stream", "Stream *", 0, 0, (void*)"freeswitch::Stream", 0};
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_input_callback_state = {"_p_input_callback_state", "input_callback_state_t *|input_callback_state *", 0, 0, (void*)"freeswitch::input_callback_state_t", 0};
@@ -7620,8 +7659,8 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_CoreSession,
   &_swigt__p_Event,
   &_swigt__p_IVRMenu,
+  &_swigt__p_PERL__Session,
   &_swigt__p_PerlInterpreter,
-  &_swigt__p_Session,
   &_swigt__p_Stream,
   &_swigt__p_char,
   &_swigt__p_input_callback_state,
@@ -7639,11 +7678,11 @@ static swig_type_info *swig_type_initial[] = {
 };
 
 static swig_cast_info _swigc__p_API[] = {  {&_swigt__p_API, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_CoreSession[] = {  {&_swigt__p_CoreSession, 0, 0, 0},  {&_swigt__p_Session, _p_SessionTo_p_CoreSession, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_CoreSession[] = {  {&_swigt__p_CoreSession, 0, 0, 0},  {&_swigt__p_PERL__Session, _p_PERL__SessionTo_p_CoreSession, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Event[] = {  {&_swigt__p_Event, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_IVRMenu[] = {  {&_swigt__p_IVRMenu, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_PERL__Session[] = {  {&_swigt__p_PERL__Session, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_PerlInterpreter[] = {  {&_swigt__p_PerlInterpreter, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_Session[] = {  {&_swigt__p_Session, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Stream[] = {  {&_swigt__p_Stream, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_input_callback_state[] = {  {&_swigt__p_input_callback_state, 0, 0, 0},{0, 0, 0, 0}};
@@ -7664,8 +7703,8 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_CoreSession,
   _swigc__p_Event,
   _swigc__p_IVRMenu,
+  _swigc__p_PERL__Session,
   _swigc__p_PerlInterpreter,
-  _swigc__p_Session,
   _swigc__p_Stream,
   _swigc__p_char,
   _swigc__p_input_callback_state,
@@ -7756,6 +7795,7 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::CoreSession_setPrivate", _wrap_CoreSession_setPrivate},
 {"freeswitchc::CoreSession_getPrivate", _wrap_CoreSession_getPrivate},
 {"freeswitchc::CoreSession_getVariable", _wrap_CoreSession_getVariable},
+{"freeswitchc::CoreSession_process_callback_result", _wrap_CoreSession_process_callback_result},
 {"freeswitchc::CoreSession_recordFile", _wrap_CoreSession_recordFile},
 {"freeswitchc::CoreSession_setCallerData", _wrap_CoreSession_setCallerData},
 {"freeswitchc::CoreSession_originate", _wrap_CoreSession_originate},
@@ -8121,7 +8161,7 @@ XS(SWIG_init) {
   SWIG_TypeClientData(SWIGTYPE_p_Stream, (void*) "freeswitch::Stream");
   SWIG_TypeClientData(SWIGTYPE_p_Event, (void*) "freeswitch::Event");
   SWIG_TypeClientData(SWIGTYPE_p_CoreSession, (void*) "freeswitch::CoreSession");
-  SWIG_TypeClientData(SWIGTYPE_p_Session, (void*) "freeswitch::Session");
+  SWIG_TypeClientData(SWIGTYPE_p_PERL__Session, (void*) "freeswitch::Session");
   ST(0) = &PL_sv_yes;
   XSRETURN(1);
 }

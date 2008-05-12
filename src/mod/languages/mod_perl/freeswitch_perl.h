@@ -17,6 +17,7 @@ extern "C" {
 
 #include <switch_cpp.h>
 
+namespace PERL {
 class Session : public CoreSession {
  private:
 	virtual void do_hangup_hook();
@@ -45,5 +46,5 @@ class Session : public CoreSession {
 	char *hangup_func_arg;
 	void setPERL(PerlInterpreter *pi);
 };
-
+}
 #endif

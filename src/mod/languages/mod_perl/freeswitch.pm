@@ -307,6 +307,7 @@ sub DESTROY {
 *setPrivate = *freeswitchc::CoreSession_setPrivate;
 *getPrivate = *freeswitchc::CoreSession_getPrivate;
 *getVariable = *freeswitchc::CoreSession_getVariable;
+*process_callback_result = *freeswitchc::CoreSession_process_callback_result;
 *recordFile = *freeswitchc::CoreSession_recordFile;
 *setCallerData = *freeswitchc::CoreSession_setCallerData;
 *originate = *freeswitchc::CoreSession_originate;

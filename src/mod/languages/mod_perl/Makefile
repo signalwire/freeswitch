@@ -16,7 +16,7 @@ swigclean: clean
 mod_perl_wrap.cpp:
 	swig -static -shadow -perl5 -c++ -DMULTIPLICITY -I../../../../src/include -o mod_perl_wrap.cpp freeswitch.i
 	echo "#include \"mod_perl_extra.c\"" >> mod_perl_wrap.cpp
-	patch -s -p0 -i hack.diff
+	#	patch -s -p0 -i hack.diff
 
 
 

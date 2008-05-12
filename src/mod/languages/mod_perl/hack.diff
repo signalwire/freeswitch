@@ -1,30 +1,29 @@
---- mod_perl_wrap.cpp	2008-05-01 18:05:28.000000000 -0400
-+++ old.cpp	2008-05-01 18:05:51.000000000 -0400
-
-@@ -6293,7 +6293,7 @@
+--- mod_perl_wrap2.cpp	2008-05-11 20:28:24.000000000 -0400
++++ mod_perl_wrap.cpp	2008-05-11 20:26:06.000000000 -0400
+@@ -6754,7 +6754,7 @@
      if ((items < 0) || (items > 0)) {
        SWIG_croak("Usage: new_Session();");
      }
--    result = (Session *)new Session();
-+    result = (Session *)new Session(); result->setPERL(my_perl);
-     ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Session, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
+-    result = (PERL::Session *)new PERL::Session(); result->setPERL(my_perl);
++    result = (PERL::Session *)new PERL::Session();
+     ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
      XSRETURN(argvi);
    fail:
-@@ -6320,7 +6320,7 @@
+@@ -6781,7 +6781,7 @@
        SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_Session" "', argument " "1"" of type '" "char *""'");
      }
      arg1 = reinterpret_cast< char * >(buf1);
--    result = (Session *)new Session(arg1);
-+    result = (Session *)new Session(arg1); result->setPERL(my_perl);
-     ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Session, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
+-    result = (PERL::Session *)new PERL::Session(arg1); result->setPERL(my_perl);
++    result = (PERL::Session *)new PERL::Session(arg1);
+     ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
      if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
      XSRETURN(argvi);
-@@ -6348,7 +6348,7 @@
+@@ -6809,7 +6809,7 @@
        SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_Session" "', argument " "1"" of type '" "switch_core_session_t *""'"); 
      }
      arg1 = reinterpret_cast< switch_core_session_t * >(argp1);
--    result = (Session *)new Session(arg1);
-+    result = (Session *)new Session(arg1); result->setPERL(my_perl);
-     ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Session, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
+-    result = (PERL::Session *)new PERL::Session(arg1); result->setPERL(my_perl);
++    result = (PERL::Session *)new PERL::Session(arg1);
+     ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
      
      XSRETURN(argvi);

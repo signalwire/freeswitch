@@ -6,6 +6,8 @@ static STRLEN n_a;
 
 #define init_me() cb_function = hangup_func_str = NULL; hangup_func_arg = NULL; hh = mark = 0; my_perl = NULL; cb_arg = NULL
 
+using namespace PERL;
+
 Session::Session() : CoreSession()
 {
 	init_me();
