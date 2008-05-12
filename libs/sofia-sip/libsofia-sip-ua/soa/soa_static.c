@@ -1021,7 +1021,12 @@ int soa_sdp_mode_set(sdp_session_t const *user,
 
     for (j = 0, um = user->sdp_media; j != s2u[i]; um = um->m_next, j++)
       assert(um);
-    assert(um);
+    if (um == NULL) {
+      sm->m_rejected = 1;
+      sm->m_mode = sdp_inactive;
+      retval = 1;
+      continue;
+    }
 
     send_mode = um->m_mode & sdp_sendonly;
     if (rm)
