@@ -435,7 +435,9 @@ SWITCH_DECLARE(void) CoreSession::hangup(char *cause)
 {
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::hangup\n");
 	sanity_check_noreturn;
+	this->begin_allow_threads();
     switch_channel_hangup(channel, switch_channel_str2cause(cause));
+	this->end_allow_threads();
 }
 
 SWITCH_DECLARE(void) CoreSession::setPrivate(char *var, void *val)
