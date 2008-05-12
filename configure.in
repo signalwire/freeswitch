@@ -31,7 +31,8 @@ AC_SUBST(switch_srcdir)
 AC_SUBST(switch_builddir)
 
 # Where to install the modules
-AC_ARG_WITH(modinstdir, [   --with-modinstdir (default=$prefix/mod)], modinstdir=$withval, modinstdir="${prefix}/mod")
+AC_ARG_WITH([modinstdir],
+	[AS_HELP_STRING([--with-modinstdir=DIR], [Install modules into this location (default: $prefix/mod)])], [modinstdir="$withval"], [modinstdir="${prefix}/mod"])
 
 AC_SUBST(modinstdir)
 AC_DEFINE_UNQUOTED([SWITCH_MOD_DIR],"${modinstdir}",[where to install the modules to])
@@ -408,10 +409,10 @@ LIBCURL_CHECK_CONFIG([yes], [7.13.0], [LIBCURL_DEPS=''], [LIBCURL_DEPS='${switch
 AC_SUBST(LIBCURL_DEPS)
 
 AC_ARG_ENABLE(core-odbc-support,     
-	[  --enable-core-odbc-support         Compile with ODBC Support],,[enable_core_odbc_support="no"])
+	[AS_HELP_STRING([--enable-core-odbc-support], [Compile with ODBC Support])],,[enable_core_odbc_support="no"])
 
 AC_ARG_ENABLE(core-libedit-support,     
-	[  --disable-core-libedit-support         Compile without libedit Support],,[enable_core_libedit_support="yes"])
+	[AS_HELP_STRING([--disable-core-libedit-support], [Compile without libedit Support])], [enable_core_libedit_support="$enableval"], [enable_core_libedit_support="yes"])
 
 if test "$enable_core_libedit_support" = "yes" ; then
     AC_CHECK_LIB(ncurses, tgetent,,

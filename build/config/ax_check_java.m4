@@ -9,9 +9,9 @@ dnl prerequisites:
 AC_DEFUN([AX_CHECK_JAVA],
 [
 AC_ARG_WITH([java],
-            AC_HELP_STRING([  --with-java=PFX], [prefix where 'java' is installed.]),
-            [with_java_prefix=$withval], 
-	    [with_java_prefix=${JAVA_INSTALL_PATH:-/usr/java/j2sdk1.4.1_01}])
+            [AC_HELP_STRING([--with-java=PFX], [prefix where 'java' is installed.])],
+            [with_java_prefix="$withval"], 
+	    [with_java_prefix="${JAVA_INSTALL_PATH:-/usr/java/j2sdk1.4.1_01}"])
 have_java='no'
 LIB_JAVA=''
 JAVA_FLAGS=''
