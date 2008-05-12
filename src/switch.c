@@ -44,8 +44,6 @@
 #define PIDFILE "freeswitch.pid"
 static char *pfile = PIDFILE;
 
-/* If we are a windows service, what should we be called */
-#define SERVICENAME "Freeswitch"
 
 /* Picky compiler */
 #ifdef __ICC
@@ -53,6 +51,10 @@ static char *pfile = PIDFILE;
 #endif
 
 #ifdef WIN32
+/* If we are a windows service, what should we be called */
+#define SERVICENAME_DEFAULT "FreeSWITCH"
+#define SERVICENAME_MAXLEN 256
+static char service_name[SERVICENAME_MAXLEN];
 #include <winsock2.h>
 #include <windows.h>
 
@@ -62,7 +64,7 @@ static HANDLE shutdown_event;
 
 /* signal handler for when freeswitch is running in background mode.
  * signal triggers the shutdown of freeswitch
- */
+# */
 static void handle_SIGTERM(int sig)
 {
 	int32_t arg = 0;
@@ -172,7 +174,7 @@ void WINAPI service_main(DWORD numArgs, char **args)
 	status.dwControlsAccepted = SERVICE_ACCEPT_STOP;
 
 	/* register our handler for service control messages */
-	hStatus = RegisterServiceCtrlHandler(SERVICENAME, &ServiceCtrlHandler);
+	hStatus = RegisterServiceCtrlHandler(service_name, &ServiceCtrlHandler);
 
 	/* update the service status */
 	SetServiceStatus(hStatus, &status);
@@ -217,17 +219,10 @@ int main(int argc, char *argv[])
     switch_file_t *fd;
 	switch_memory_pool_t *pool = NULL;
 
-
-#ifdef WIN32
-	SERVICE_TABLE_ENTRY dispatchTable[] = {
-		{SERVICENAME, &service_main},
-		{NULL, NULL}
-	};
-#endif
 	usageDesc = "these are the optional arguments you can pass to freeswitch\n"
 #ifdef WIN32
-		"\t-service         -- start freeswitch as a service, cannot be used if loaded as a console app\n"
-		"\t-install         -- install freeswitch as a service\n"
+		"\t-service [name]  -- start freeswitch as a service, cannot be used if loaded as a console app\n"
+		"\t-install [name]  -- install freeswitch as a service, with optional service name\n"
 		"\t-uninstall       -- remove freeswitch as a service\n"
 #else
 		"\t-nf              -- no forking\n"
@@ -253,42 +248,100 @@ int main(int argc, char *argv[])
 #ifdef WIN32
 		if (x == 1) {
 			if (argv[x] && !strcmp(argv[x], "-service")) {
-				known_opt++;
-				if (StartServiceCtrlDispatcher(dispatchTable) == 0) {
-					/* Not loaded as a service */
-					fprintf(stderr, "Error Freeswitch loaded as a console app with -service option\n");
-					fprintf(stderr, "To install the service load freeswitch with -install\n");
+				/* New installs will always have the service name specified, but keep a default for compat */
+				x++;
+				if (argv[x] && strlen(argv[x])) {
+					switch_copy_string(service_name, argv[x], SERVICENAME_MAXLEN);
+				} else {
+					switch_copy_string(service_name, SERVICENAME_DEFAULT, SERVICENAME_MAXLEN);
 				}
-				exit(0);
+				{ /* Attempt to start service */
+					SERVICE_TABLE_ENTRY dispatchTable[] = {
+						{service_name, &service_main},
+						{NULL, NULL}
+					};
+					known_opt++;
+					if (StartServiceCtrlDispatcher(dispatchTable) == 0) {
+						/* Not loaded as a service */
+						fprintf(stderr, "Error Freeswitch loaded as a console app with -service option\n");
+						fprintf(stderr, "To install the service load freeswitch with -install\n");
+					}
+					exit(0);
+				}
 			}
 			if (argv[x] && !strcmp(argv[x], "-install")) {
 				char exePath[1024];
 				char servicePath[1024];
-
-				SC_HANDLE handle = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+				x++;
+				if (argv[x] && strlen(argv[x])) {
+					switch_copy_string(service_name, argv[x], SERVICENAME_MAXLEN);
+				} else {
+					switch_copy_string(service_name, SERVICENAME_DEFAULT, SERVICENAME_MAXLEN);
+				}
 				known_opt++;
 				GetModuleFileName(NULL, exePath, 1024);
-				snprintf(servicePath, sizeof(servicePath), "%s -service", exePath);
-				if (!CreateService(handle,
-								   SERVICENAME,
-								   SERVICENAME,
-								   GENERIC_READ | GENERIC_EXECUTE,
-								   SERVICE_WIN32_OWN_PROCESS, SERVICE_AUTO_START, SERVICE_ERROR_IGNORE, servicePath, NULL, NULL, NULL, NULL, NULL)) {
-					fprintf(stderr, "Error installing freeswitch as a service.\n");
+				snprintf(servicePath, sizeof(servicePath), "%s -service %s", exePath, service_name);
+				{ /* Perform service installation */
+					SC_HANDLE hService; 
+					SC_HANDLE hSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+					if (!hSCManager) {
+						fprintf(stderr, "Could not open service manager (%d).\n", GetLastError());
+						exit(1);
+					}
+					hService = CreateService(hSCManager,
+							 				 service_name,
+											 service_name,
+											 GENERIC_READ | GENERIC_EXECUTE | SERVICE_CHANGE_CONFIG,
+											 SERVICE_WIN32_OWN_PROCESS, SERVICE_AUTO_START, SERVICE_ERROR_IGNORE, 
+											 servicePath, NULL, NULL, NULL,
+											 "NT AUTHORITY\\NetworkService",  /* Service start name */
+											 NULL);
+					if (!hService) {
+						fprintf(stderr, "Error creating freeswitch service (%d).\n", GetLastError());
+					} else {
+						/* Set desc, and don't care if it succeeds */
+						SERVICE_DESCRIPTION desc;
+						desc.lpDescription = "The FreeSWITCH service.";
+						if (!ChangeServiceConfig2(hService, SERVICE_CONFIG_DESCRIPTION, &desc)) {
+							fprintf(stderr, "FreeSWITCH installed, but could not set the service description (%d).\n", GetLastError());
+						}
+						CloseServiceHandle(hService);
+					}
+					CloseServiceHandle(hSCManager);
+					exit(0);
 				}
-				exit(0);
 			}
 			if (argv[x] && !strcmp(argv[x], "-uninstall")) {
-				SC_HANDLE handle = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
-				SC_HANDLE service = OpenService(handle, SERVICENAME, DELETE);
-				known_opt++;
-				if (service != NULL) {
-					/* remove the service! */
-					DeleteService(service);
+				x++;
+				if (argv[x] && strlen(argv[x])) {
+					switch_copy_string(service_name, argv[x], SERVICENAME_MAXLEN);
+				} else {
+					switch_copy_string(service_name, SERVICENAME_DEFAULT, SERVICENAME_MAXLEN);
 				}
-				exit(0);
+				{ /* Do the uninstallation */
+					SC_HANDLE hService;
+					SC_HANDLE hSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+					if (!hSCManager) {
+						fprintf(stderr, "Could not open service manager (%d).\n", GetLastError());
+						exit(1);
+					}
+					hService = OpenService(hSCManager, service_name, DELETE);
+					known_opt++;
+					if (hService != NULL) {
+						/* remove the service! */
+						if (!DeleteService(hService)) {
+							fprintf(stderr, "Error deleting service (%d).\n", GetLastError());
+						}
+						CloseServiceHandle(hService);
+					} else {
+						fprintf(stderr, "Error opening service (%d).\n", GetLastError());
+					}
+					CloseServiceHandle(hSCManager);
+					exit(0);
+				}
 			}
 		}
+
 #else
 		if (argv[x] && !strcmp(argv[x], "-u")) {
 			x++;
