@@ -609,6 +609,7 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], in
 {
 	int shift = 1 + gr_info->scalefac_scale;
 	real *xrpnt = (real *) xr;
+	real *toomuch = (real *) xr + (SBLIMIT * SBLIMIT * sizeof(real));
 	int l[3], l3;
 	int part2remain = gr_info->part2_3_length - part2bits;
 	int *me;
@@ -668,7 +669,9 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], in
 				register int x, y;
 				if ((!mc)) {
 					mc = *m++;
-					xrpnt = ((real *) xr) + (*m++);
+					if ((xrpnt = ((real *) xr) + (*m++)) > toomuch) {
+						return 1;
+					}
 					lwin = *m++;
 					cb = *m++;
 					if (lwin == 3) {
@@ -707,7 +710,9 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], in
 					part2remain--;
 				} else
 					*xrpnt = 0.0;
-				xrpnt += step;
+				if ((xrpnt += step) > toomuch) {
+					return 1;
+				}
 				if (y == 15) {
 					max[lwin] = cb;
 					part2remain -= h->linbits + 1;
@@ -725,7 +730,9 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], in
 					part2remain--;
 				} else
 					*xrpnt = 0.0;
-				xrpnt += step;
+				if ((xrpnt += step) > toomuch) {
+					return 1;
+				}
 			}
 		}
 		for (; l3 && (part2remain > 0); l3--) {
@@ -747,7 +754,9 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], in
 				if (!(i & 1)) {
 					if (!mc) {
 						mc = *m++;
-						xrpnt = ((real *) xr) + (*m++);
+						if ((xrpnt = ((real *) xr) + (*m++)) > toomuch) {
+							return 1;
+						}
 						lwin = *m++;
 						cb = *m++;
 						if (lwin == 3) {
@@ -773,14 +782,18 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], in
 						*xrpnt = v;
 				} else
 					*xrpnt = 0.0;
-				xrpnt += step;
+				if ((xrpnt += step) > toomuch) {
+					return 1;
+				}
 			}
 		}
 
 		while (m < me) {
 			if (!mc) {
 				mc = *m++;
-				xrpnt = ((real *) xr) + *m++;
+				if ((xrpnt = ((real *) xr) + *m++) > toomuch) {
+					return 1;
+				}
 				if ((*m++) == 3)
 					step = 1;
 				else
@@ -789,9 +802,13 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], in
 			}
 			mc--;
 			*xrpnt = 0.0;
-			xrpnt += step;
+			if ((xrpnt += step) > toomuch) {
+				return 1;
+			}
 			*xrpnt = 0.0;
-			xrpnt += step;
+			if ((xrpnt += step) > toomuch) {
+				return 1;
+			}
 /* we could add a little opt. here:
  * if we finished a band for window 3 or a long band
  * further bands could copied in a simple loop without a
@@ -863,6 +880,11 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], in
 					x = y >> 4;
 					y &= 0xf;
 				}
+
+				if (xrpnt >= toomuch) {
+					return 1;
+				}
+
 				if (x == 15) {
 					max = cb;
 					part2remain -= h->linbits + 1;
@@ -971,7 +993,7 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], in
 
 #if 0
 static int III_dequantize_sample_ms(real xr[2][SBLIMIT][SSLIMIT], int *scf, struct gr_info_s *gr_info, int sfreq, int part2bits)
-{
+{ma
 	int shift = 1 + gr_info->scalefac_scale;
 	real *xrpnt = (real *) xr[1];
 	real *xr0pnt = (real *) xr[0];
