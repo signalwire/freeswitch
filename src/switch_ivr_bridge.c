@@ -381,7 +381,7 @@ static switch_status_t audio_bridge_on_routing(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CUSTOM RING\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CUSTOM ROUTING\n", switch_channel_get_name(channel));
 
 	/* put the channel in a passive state so we can loop audio to it */
 	switch_channel_set_state(channel, CS_CONSUME_MEDIA);

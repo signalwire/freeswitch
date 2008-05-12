@@ -62,7 +62,7 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 	char *expanded = NULL;
 	char *dpstr = NULL;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard RING %s\n", switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard ROUTING %s\n", switch_channel_get_name(session->channel));
 
 	if ((caller_profile = switch_channel_get_caller_profile(session->channel)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't get profile!\n");
@@ -369,7 +369,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				break;
 			case CS_DONE:
 				goto done;
-				/* HANGUP INIT RING and RESET are all short term so we signal lock during their callbacks */
+				/* HANGUP INIT ROUTING and RESET are all short term so we signal lock during their callbacks */
 			case CS_HANGUP:	    /* Deactivate and end the thread */
 				{
 					const char *var = switch_channel_get_variable(session->channel, SWITCH_PROCESS_CDR_VARIABLE);

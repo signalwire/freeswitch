@@ -240,7 +240,7 @@ static switch_status_t woomera_on_init(switch_core_session_t *session)
 
 static switch_status_t woomera_on_routing(switch_core_session_t *session)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERA RING\n", switch_channel_get_name(switch_core_session_get_channel(session)));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERA ROUTING\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 	return SWITCH_STATUS_SUCCESS;
 }
 

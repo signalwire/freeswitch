@@ -826,7 +826,7 @@ int sangoma_tdm_read_event(sng_fd_t fd, wanpipe_tdm_api_t *tdm_api)
 		break;
 
 	case WP_TDM_EVENT_RING_TRIP:
-		printf("%d: GOT RING TRIP EVENT\n",(int)fd);
+		printf("%d: GOT ROUTING TRIP EVENT\n",(int)fd);
 		if (tdm_api->wp_tdm_event.wp_ringtrip_event) {
 			tdm_api->wp_tdm_event.wp_ringtrip_event(fd,
 						rx_event->wp_tdm_api_event_ring_state);

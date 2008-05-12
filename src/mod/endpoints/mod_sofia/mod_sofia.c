@@ -116,7 +116,7 @@ static switch_status_t sofia_on_routing(switch_core_session_t *session)
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SOFIA RING\n", switch_channel_get_name(switch_core_session_get_channel(session)));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SOFIA ROUTING\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 
 	return SWITCH_STATUS_SUCCESS;
 }
