@@ -27,9 +27,14 @@ Session::~Session()
 {
 	switch_safe_free(cb_function);
 	switch_safe_free(cb_arg);
+
+	if (session && hangup_func_str) {
+		switch_core_event_hook_remove_state_change(session, perl_hanguphook);
+	}
+
 	switch_safe_free(hangup_func_str);
 	switch_safe_free(hangup_func_arg);
-	switch_core_event_hook_remove_state_change(session, perl_hanguphook);
+
 }
 
 bool Session::begin_allow_threads() 
