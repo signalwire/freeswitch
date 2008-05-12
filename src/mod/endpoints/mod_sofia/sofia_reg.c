@@ -88,7 +88,6 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			switch_assert(pvt);
 			memset(pvt, 0, sizeof(*pvt));
 			pvt->destroy_nh = 1;
-			pvt->destroy_me = 1;
 			switch_copy_string(pvt->gateway_name, gateway_ptr->name, sizeof(pvt->gateway_name));
 			nua_handle_bind(nh, pvt);
 

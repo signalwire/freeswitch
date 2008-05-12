@@ -75,7 +75,6 @@ void sofia_handle_sip_r_notify(switch_core_session_t *session, int status,
 		sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", sip->sip_call_id->i_id);
 		switch_assert(sql != NULL);
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
-		nua_handle_destroy(nh);
 	}
 }
 
@@ -347,14 +346,18 @@ void sofia_event_callback(nua_event_t event,
 			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Destroy handle [%s]\n", nua_event_name(event));
 			if (sofia_private) {
 				nua_handle_bind(nh, NULL);
-				sofia_private->destroy_me = 1;
 			}
 			nua_handle_destroy(nh);
+			nh = NULL;
 		}
 		break;
 	}
 
 	if (sofia_private && sofia_private->destroy_me) {
+		if (nh) {
+			nua_handle_bind(nh, NULL);
+		}
+		sofia_private->destroy_me = 12;
 		free(sofia_private);
 		sofia_private = NULL;
 	}
@@ -1520,6 +1523,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 
 	if (sofia_private && !switch_strlen_zero(sofia_private->gateway_name)) {
 		gateway = sofia_reg_find_gateway(sofia_private->gateway_name);
+		sofia_private->destroy_me = 1;
 	}
 
 	if (gateway) {
