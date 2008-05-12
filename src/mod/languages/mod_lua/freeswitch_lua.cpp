@@ -1,5 +1,7 @@
+
 #include <switch.h>
 #include "freeswitch_lua.h"
+using namespace LUA;
 
 Session::Session() : CoreSession()
 {
