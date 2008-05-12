@@ -335,6 +335,8 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	switch_status_t status;
 	uint32_t session_timeout = tech_pvt->profile->session_timeout;
 	const char *val;
+	const char *b_sdp = NULL;
+	int is_proxy = 0;
 
 	if (switch_test_flag(tech_pvt, TFLAG_ANS) || switch_channel_test_flag(channel, CF_OUTBOUND)) {
 		return SWITCH_STATUS_SUCCESS;
@@ -342,11 +344,12 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 
 	switch_set_flag_locked(tech_pvt, TFLAG_ANS);
 
-	if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-		const char *sdp = NULL;
-		if ((sdp = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE))) {
-			tech_pvt->local_sdp_str = switch_core_session_strdup(session, sdp);
-		}
+	b_sdp = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE);
+	is_proxy = (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA));
+	
+	if (b_sdp && is_proxy) {
+		tech_pvt->local_sdp_str = switch_core_session_strdup(session, b_sdp);
+
 		if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 			sofia_glue_tech_patch_sdp(tech_pvt);
 			if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
@@ -354,12 +357,20 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			}
 		}
 	} else {
-		if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
+		if ((is_proxy && !b_sdp) || switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
 			switch_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);
+
+			if (is_proxy) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Disabling proxy mode due to call answer with no bridge\n");
+				switch_channel_clear_flag(channel, CF_PROXY_MEDIA);
+				switch_channel_clear_flag(channel, CF_PROXY_MODE);
+			}
+
 			if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
 				const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 				tech_pvt->num_codecs = 0;
 				sofia_glue_tech_prepare_codecs(tech_pvt);
+				
 				if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 					//nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
