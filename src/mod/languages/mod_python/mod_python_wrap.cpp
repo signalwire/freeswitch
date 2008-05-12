@@ -5255,6 +5255,40 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_CoreSession_process_callback_result(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_status_t result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:CoreSession_process_callback_result",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_process_callback_result" "', argument " "1"" of type '" "CoreSession *""'"); 
+  }
+  arg1 = reinterpret_cast< CoreSession * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_process_callback_result" "', argument " "2"" of type '" "char *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  result = (arg1)->process_callback_result(arg2);
+  resultobj = SWIG_NewPointerObj((new switch_status_t(static_cast< const switch_status_t& >(result))), SWIGTYPE_p_switch_status_t, SWIG_POINTER_OWN |  0 );
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return resultobj;
+fail:
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_CoreSession_recordFile__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -7323,6 +7357,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"CoreSession_setPrivate", _wrap_CoreSession_setPrivate, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_getPrivate", _wrap_CoreSession_getPrivate, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_getVariable", _wrap_CoreSession_getVariable, METH_VARARGS, NULL},
+	 { (char *)"CoreSession_process_callback_result", _wrap_CoreSession_process_callback_result, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_recordFile", _wrap_CoreSession_recordFile, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_setCallerData", _wrap_CoreSession_setCallerData, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_originate", _wrap_CoreSession_originate, METH_VARARGS, NULL},

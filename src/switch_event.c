@@ -297,7 +297,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_running(void)
 	return SYSTEM_RUNNING ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(char *) switch_event_name(switch_event_types_t event)
+SWITCH_DECLARE(const char *) switch_event_name(switch_event_types_t event)
 {
 	switch_assert(BLOCK != NULL);
 	switch_assert(RUNTIME_POOL != NULL);

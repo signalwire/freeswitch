@@ -270,13 +270,13 @@ SWITCH_DECLARE(char *)Event::getBody(void)
 	return NULL;
 }
 
-SWITCH_DECLARE(char *)Event::getType(void)
+SWITCH_DECLARE(const char *)Event::getType(void)
 {
 	if (event) {
 		return switch_event_name(event->event_id);
 	}
 	
-	return "invalid";
+	return (char *) "invalid";
 }
 
 SWITCH_DECLARE_CONSTRUCTOR Stream::Stream()
@@ -393,7 +393,7 @@ SWITCH_DECLARE(char *) CoreSession::getXMLCDR()
 	
 	switch_xml_t cdr;
 	
-	sanity_check("");
+	sanity_check((char *)"");
 
 	switch_safe_free(xml_cdr_text);
 
@@ -561,7 +561,7 @@ SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits,
 											  int timeout)
 {
     switch_status_t status;
-	sanity_check("");
+	sanity_check((char *)"");
 	begin_allow_threads();
 	char terminator;
 
@@ -623,7 +623,7 @@ SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
 												  char *digits_regex)
 {
     switch_status_t status;
-	sanity_check("");
+	sanity_check((char *)"");
 	begin_allow_threads();
 	memset(dtmf_buf, 0, sizeof(dtmf_buf));
     status = switch_play_and_get_digits( session, 

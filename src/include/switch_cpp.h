@@ -144,7 +144,7 @@ class Event {
 	SWITCH_DECLARE(bool) setPriority(switch_priority_t priority = SWITCH_PRIORITY_NORMAL);
 	SWITCH_DECLARE(char *)getHeader(char *header_name);
 	SWITCH_DECLARE(char *)getBody(void);
-	SWITCH_DECLARE(char *)getType(void);
+	SWITCH_DECLARE(const char *)getType(void);
 	SWITCH_DECLARE(bool) addBody(const char *value);
 	SWITCH_DECLARE(bool) addHeader(const char *header_name, const char *value);
 	SWITCH_DECLARE(bool) delHeader(const char *header_name);

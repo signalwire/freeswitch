@@ -198,6 +198,7 @@ class CoreSession(_object):
     def setPrivate(*args): return _freeswitch.CoreSession_setPrivate(*args)
     def getPrivate(*args): return _freeswitch.CoreSession_getPrivate(*args)
     def getVariable(*args): return _freeswitch.CoreSession_getVariable(*args)
+    def process_callback_result(*args): return _freeswitch.CoreSession_process_callback_result(*args)
     def recordFile(*args): return _freeswitch.CoreSession_recordFile(*args)
     def setCallerData(*args): return _freeswitch.CoreSession_setCallerData(*args)
     def originate(*args): return _freeswitch.CoreSession_originate(*args)

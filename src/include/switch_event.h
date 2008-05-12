@@ -232,7 +232,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_bind(const char *id, switch_event_t
   \param event the event id to render the name of
   \return the rendered name
 */
-SWITCH_DECLARE(char *) switch_event_name(switch_event_types_t event);
+SWITCH_DECLARE(const char *) switch_event_name(switch_event_types_t event);
 
 /*!
   \brief return the event id that matches a given event name

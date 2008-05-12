@@ -1453,6 +1453,28 @@ SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1g
 }
 
 
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1process_1callback_1result(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+  jlong jresult = 0 ;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_status_t result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(CoreSession **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return 0;
+  }
+  result = (arg1)->process_callback_result(arg2);
+  *(switch_status_t **)&jresult = new switch_status_t((switch_status_t &)result); 
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+  return jresult;
+}
+
+
 SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1recordFile_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jint jarg3, jint jarg4, jint jarg5) {
   jint jresult = 0 ;
   CoreSession *arg1 = (CoreSession *) 0 ;

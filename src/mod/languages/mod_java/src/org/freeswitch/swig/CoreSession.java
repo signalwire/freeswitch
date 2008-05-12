@@ -117,6 +117,10 @@ public class CoreSession {
     return freeswitchJNI.CoreSession_getVariable(swigCPtr, this, var);
   }
 
+  public SWIGTYPE_p_switch_status_t process_callback_result(String ret) {
+    return new SWIGTYPE_p_switch_status_t(freeswitchJNI.CoreSession_process_callback_result(swigCPtr, this, ret), true);
+  }
+
   public int recordFile(String file_name, int max_len, int silence_threshold, int silence_secs) {
     return freeswitchJNI.CoreSession_recordFile__SWIG_0(swigCPtr, this, file_name, max_len, silence_threshold, silence_secs);
   }
