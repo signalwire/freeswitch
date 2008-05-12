@@ -345,6 +345,10 @@ void sofia_event_callback(nua_event_t event,
 	default:
 		if (nh && ((sofia_private && sofia_private->destroy_nh) || !nua_handle_magic(nh))) {
 			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Destroy handle [%s]\n", nua_event_name(event));
+			if (sofia_private) {
+				nua_handle_bind(nh, NULL);
+				sofia_private->destroy_me = 1;
+			}
 			nua_handle_destroy(nh);
 		}
 		break;
@@ -1532,8 +1536,6 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 		}
 		gateway->ping = switch_timestamp(NULL) + gateway->ping_freq;
 		sofia_reg_release_gateway(gateway);
-		nua_handle_bind(nh, NULL);
-		free(sofia_private);
 		gateway->pinging = 0;
 	} else if ((profile->pflags & PFLAG_UNREG_OPTIONS_FAIL) && status != 200 && sip && sip->sip_to) {
 		char *sql;
