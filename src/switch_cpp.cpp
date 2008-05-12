@@ -936,7 +936,6 @@ SWITCH_DECLARE_NONSTD(switch_status_t) dtmf_callback(switch_core_session_t *sess
 }
 
 
-
 SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *ret)
 {
 	

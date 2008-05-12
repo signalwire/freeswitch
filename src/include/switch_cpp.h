@@ -14,7 +14,7 @@ extern "C" {
 
 #define sanity_check(x) do { if (!(session && allocated)) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return x;}} while(0)
 #define sanity_check_noreturn do { if (!(session && allocated)) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return;}} while(0)
-#define init_vars() do { session = NULL; channel = NULL; uuid = NULL; tts_name = NULL; voice_name = NULL; memset(&args, 0, sizeof(args)); ap = NULL; caller_profile.source = "mod_unknown";  caller_profile.dialplan = ""; caller_profile.context = ""; caller_profile.caller_id_name = ""; caller_profile.caller_id_number = ""; caller_profile.network_addr = ""; caller_profile.ani = ""; caller_profile.aniii = ""; caller_profile.rdnis = "";  caller_profile.username = ""; on_hangup = NULL; memset(&cb_state, 0, sizeof(cb_state)); hook_state = CS_NEW; } while(0)
+#define init_vars() do { session = NULL; channel = NULL; uuid = NULL; tts_name = NULL; voice_name = NULL; xml_cdr_text = NULL; memset(&args, 0, sizeof(args)); ap = NULL; caller_profile.source = "mod_unknown";  caller_profile.dialplan = ""; caller_profile.context = ""; caller_profile.caller_id_name = ""; caller_profile.caller_id_number = ""; caller_profile.network_addr = ""; caller_profile.ani = ""; caller_profile.aniii = ""; caller_profile.rdnis = "";  caller_profile.username = ""; on_hangup = NULL; memset(&cb_state, 0, sizeof(cb_state)); hook_state = CS_NEW; } while(0)
 
 
 //
@@ -169,12 +169,12 @@ class CoreSession {
 	switch_file_handle_t local_fh;
 	switch_file_handle_t *fhp;
 	char dtmf_buf[512];
-	SWITCH_DECLARE(switch_status_t) process_callback_result(char *ret);
+
  public:
 	SWITCH_DECLARE_CONSTRUCTOR CoreSession();
 	SWITCH_DECLARE_CONSTRUCTOR CoreSession(char *uuid);
 	SWITCH_DECLARE_CONSTRUCTOR CoreSession(switch_core_session_t *new_session);
-	virtual SWITCH_DECLARE_CONSTRUCTOR ~CoreSession();
+	SWITCH_DECLARE_CONSTRUCTOR ~CoreSession();
 	switch_core_session_t *session;
 	switch_channel_t *channel;
 	unsigned int flags;
@@ -185,12 +185,12 @@ class CoreSession {
 
 	SWITCH_DECLARE(int) answer();
 	SWITCH_DECLARE(int) preAnswer();
-	virtual SWITCH_DECLARE(void) hangup(char *cause = "normal_clearing");
+	SWITCH_DECLARE(void) hangup(char *cause = "normal_clearing");
 	SWITCH_DECLARE(void) setVariable(char *var, char *val);
 	SWITCH_DECLARE(void) setPrivate(char *var, void *val);
 	SWITCH_DECLARE(void *)getPrivate(char *var);
 	SWITCH_DECLARE(const char *)getVariable(char *var);
-	
+	SWITCH_DECLARE(switch_status_t) process_callback_result(char *ret);	
 
 	/** \brief Record to a file
 	 * \param filename 
