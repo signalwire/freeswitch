@@ -36,6 +36,14 @@
 # makelist.sh: Automatically generate header files...
 
 AWK=awk
+TR=tr
+
+# workaround for solaris
+if [ -x /usr/xpg4/bin/tr ]
+then
+     TR=/usr/xpg4/bin/tr
+fi
+
 USAGE="Usage: $0 -h|-e|-fc|-fh|-bc|-bh|-m <filenames>"
 
 if [ "x$1" = "x" ]
@@ -140,7 +148,7 @@ case $FLAG in
 #
 -fh)
     cat $FILES | $AWK '/el_action_t/ { print $3 }' | \
-    sort | tr '[:lower:]' '[:upper:]' | $AWK '
+    sort | $TR '[:lower:]' '[:upper:]' | $AWK '
 	BEGIN {
 	    printf("/* Automatically generated file, do not edit */\n");
 	    printf("#ifndef _h_fcns_c\n#define _h_fcns_c\n");
