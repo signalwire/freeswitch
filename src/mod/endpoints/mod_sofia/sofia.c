@@ -2655,11 +2655,24 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if (profile->acl_count) {
 		uint32_t x = 0;
+		int ok = 1;
+		char *last_acl = NULL;
+
 		for (x = 0 ; x < profile->acl_count; x++) {
-			if (!switch_check_network_list_ip(network_ip, profile->acl[x])) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl %s\n", network_ip,  profile->acl[x]);
+			last_acl = profile->acl[x];
+			if (!(ok = switch_check_network_list_ip(network_ip, last_acl))) {
+				break;
+			}
+		}
+
+		if (!ok) {
+			if (!(profile->pflags & PFLAG_AUTH_CALLS)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl %s\n", network_ip, switch_str_nil(last_acl));
 				nua_respond(nh, SIP_403_FORBIDDEN, TAG_END());
 				return;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Rejected by acl %s. Falling back to Digest auth.\n", 
+								  network_ip, switch_str_nil(last_acl));
 			}
 		}
 	}
