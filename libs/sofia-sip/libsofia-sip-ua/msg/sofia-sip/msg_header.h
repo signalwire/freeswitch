@@ -282,7 +282,7 @@ SOFIAPUBFUN unsigned long msg_hash_string(char const *id);
 #define MSG_STRUCT_ALIGN(p) ((p) = (void*)MSG_ALIGN(p, sizeof(void *)))
 
 enum {
- msg_n_params = 8,	/* allocation size of parameter string list */
+ msg_n_params = 8	/* allocation size of parameter string list */
 #define MSG_N_PARAMS msg_n_params
 };
 
