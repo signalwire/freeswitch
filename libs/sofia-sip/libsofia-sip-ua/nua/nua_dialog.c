@@ -468,6 +468,26 @@ void nua_dialog_deinit(nua_owner_t *own,
   ds->ds_terminating = 0;
 }
 
+void nua_dialog_update_params(nua_dialog_state_t *ds,
+			      nua_handle_preferences_t const *changed,
+			      nua_handle_preferences_t const *params,
+			      nua_handle_preferences_t const *defaults)
+{
+  nua_dialog_usage_t *usage;
+
+  for (usage = ds->ds_usage; usage; usage = usage->du_next) {
+    usage->du_class->usage_update_params(usage, changed, params, defaults);
+  }
+}
+
+void nua_base_usage_update_params(nua_dialog_usage_t const *du,
+				  nua_handle_preferences_t const *changed,
+				  nua_handle_preferences_t const *params,
+				  nua_handle_preferences_t const *defaults)
+{
+  (void)du, (void)changed, (void)params, (void)defaults;
+}
+
 /**@internal
  * Set refresh value suitably. 
  *

@@ -92,6 +92,7 @@ static nua_usage_class const nua_notify_usage[1] = {
     nua_notify_usage_add,
     nua_notify_usage_remove,
     nua_notify_usage_name,
+    nua_base_usage_update_params,
     NULL,
     nua_notify_usage_refresh,
     nua_notify_usage_shutdown,

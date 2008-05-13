@@ -35,6 +35,8 @@
  * @date Created: Wed Mar  8 11:38:18 EET 2006  ppessi
  */
 
+#include <nua_types.h>
+
 /**@internal @brief NUA preferences. 
  *
  * This structure contains values for various preferences and a separate
@@ -50,7 +52,7 @@
  *
  * @see NHP_GET(), NH_PGET(), NHP_ISSET(), NH_PISSET()
  */
-typedef struct nua_handle_preferences
+struct nua_handle_preferences
 {
   unsigned         nhp_retry_count;	/**< times to retry a request */
   unsigned         nhp_max_subscriptions;
@@ -133,6 +135,9 @@ typedef struct nua_handle_preferences
   /** Initial route set */
   sip_route_t        *nhp_initial_route;
 
+  /** Next hop URI (used instead of route). */
+  url_string_t       *nhp_proxy;
+
   union { struct {
     /* A bit for each feature set by application */
     /* NOTE: 
@@ -191,16 +196,17 @@ typedef struct nua_handle_preferences
     unsigned nhb_outbound:1;
     unsigned nhb_appl_method:1;
     unsigned nhb_initial_route:1;
+    unsigned nhb_proxy:1;
     unsigned :0;
   } set_bits; 
     unsigned set_unsigned[2];
   } nhp_set_;
-} nua_handle_preferences_t;
+};
 
 #define nhp_set nhp_set_.set_bits
 
 /** Global preferences for nua. */
-typedef struct {
+struct nua_global_preferences {
   /** Network detection: NONE, INFORMAL, TRY_FULL */
   signed int ngp_detect_network_updates:3;
   /** Pass events during shutdown, too */
@@ -215,7 +221,7 @@ typedef struct {
   } set_bits; 
     unsigned set_unsigned[2];
   } ngp_set_;
-} nua_global_preferences_t;
+};
 
 #define ngp_set ngp_set_.set_bits
 
@@ -238,7 +244,7 @@ typedef struct {
 
 /* Get preference from handle, if set, otherwise from default handle */
 #define NH_PGET(nh, pref)						\
-  NHP_GET((nh)->nh_prefs, (nh)->nh_nua->nua_dhandle->nh_prefs, pref)
+  NHP_GET((nh)->nh_prefs, (nh)->nh_dprefs, pref)
 
 /* Get preference from handle, if exists and set, 
    otherwise from default handle */
@@ -255,7 +261,7 @@ typedef struct {
   (NHP_ISSET((nh)->nh_prefs, pref) &&					\
    (nh)->nh_nua->nua_dhandle->nh_prefs != (nh)->nh_prefs)
 
-/* Check if preference has been set by applicationx */
+/* Check if preference has been set by application */
 #define NUA_PISSET(nua, nh, pref)					\
   (NHP_ISSET((nua)->nua_dhandle->nh_prefs, pref) ||			\
    ((nh) && NHP_ISSET((nh)->nh_prefs, pref)))

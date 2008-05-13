@@ -30,7 +30,7 @@ nobase_include_sofia_HEADERS = \
 			sofia-sip/nua.h sofia-sip/nua_tag.h
 
 libnua_la_SOURCES = 	nua.c nua_stack.h nua_common.c nua_stack.c \
-			nua_extension.c \
+			nua_extension.c nua_types.h \
 			nua_dialog.c nua_dialog.h \
 			outbound.c outbound.h \
 			nua_params.c nua_params.h \

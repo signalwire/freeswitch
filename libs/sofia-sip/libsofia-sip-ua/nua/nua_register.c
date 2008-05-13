@@ -107,6 +107,10 @@ static void nua_register_usage_remove(nua_handle_t *nh,
 				      nua_dialog_usage_t *du,
 				      nua_client_request_t *cr,
 				      nua_server_request_t *sr);
+static void nua_register_usage_update_params(nua_dialog_usage_t const *du,
+					     nua_handle_preferences_t const *,
+					     nua_handle_preferences_t const *,
+					     nua_handle_preferences_t const *);
 static void nua_register_usage_peer_info(nua_dialog_usage_t *du,
 					 nua_dialog_state_t const *ds,
 					 sip_t const *sip);
@@ -169,6 +173,7 @@ nua_usage_class const nua_register_usage[1] = {
     nua_register_usage_add,
     nua_register_usage_remove,
     nua_register_usage_name,
+    nua_register_usage_update_params,
     nua_register_usage_peer_info,
     nua_register_usage_refresh,
     nua_register_usage_shutdown
@@ -672,6 +677,11 @@ static int nua_register_client_init(nua_client_request_t *cr,
 			     NH_PGET(nh, instance));
     if (!nr->nr_ob)
       return nua_client_return(cr, 900, "Cannot create outbound", msg);
+
+    nua_register_usage_update_params(du,
+				     NULL,
+				     nh->nh_prefs,
+				     nh->nh_dprefs);
   }
 
   if (nr->nr_ob) {
@@ -686,13 +696,6 @@ static int nua_register_client_init(nua_client_request_t *cr,
       if (m == NULL)
 	unreg = 1;	/* All contacts have expires=0 */
     }
-
-    outbound_set_options(ob,
-			 NH_PGET(nh, outbound),
-			 NH_PGET(nh, keepalive),
-			 NH_PISSET(nh, keepalive_stream)
-			 ? NH_PGET(nh, keepalive_stream)
-			 : NH_PGET(nh, keepalive));
 
     if (outbound_set_contact(ob, sip->sip_contact, nr->nr_via, unreg) < 0)
       return nua_client_return(cr, 900, "Cannot set outbound contact", msg);
@@ -1036,6 +1039,42 @@ void nua_register_connection_closed(tp_stack_t *sip_stack,
 
   /* Schedule re-REGISTER immediately */
   nua_dialog_usage_set_refresh_range(du, 0, 0);
+}
+
+static void
+nua_register_usage_update_params(nua_dialog_usage_t const *du,
+				 nua_handle_preferences_t const *changed,
+				 nua_handle_preferences_t const *nhp,
+				 nua_handle_preferences_t const *dnhp)
+{
+  nua_registration_t *nr = nua_dialog_usage_private(du);
+  outbound_t *ob = nr->nr_ob;
+
+  if (!ob)
+    return;
+
+  if (!changed ||
+      NHP_ISSET(changed, outbound) ||
+      NHP_ISSET(changed, keepalive) ||
+      NHP_ISSET(changed, keepalive_stream)) {
+    char const *outbound =
+      NHP_ISSET(nhp, outbound) ? nhp->nhp_outbound
+      : dnhp->nhp_outbound;
+    unsigned keepalive =
+      NHP_ISSET(nhp, keepalive) ? nhp->nhp_keepalive
+      : dnhp->nhp_keepalive;
+    unsigned keepalive_stream =
+      NHP_ISSET(nhp, keepalive_stream) ? nhp->nhp_keepalive_stream
+      : NHP_ISSET(dnhp, keepalive_stream) ? nhp->nhp_keepalive_stream
+      : keepalive;
+
+    outbound_set_options(ob, outbound, keepalive, keepalive_stream);
+  }
+
+  if (!changed || NHP_ISSET(changed, proxy)) {
+    if (NHP_ISSET(nhp, proxy))
+      outbound_set_proxy(ob, nhp->nhp_proxy);
+  }
 }
 
 

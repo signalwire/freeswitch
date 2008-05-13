@@ -91,6 +91,7 @@ static nua_usage_class const nua_subscribe_usage[1] = {
     nua_subscribe_usage_add,
     nua_subscribe_usage_remove,
     nua_subscribe_usage_name,
+    nua_base_usage_update_params,
     NULL,
     nua_subscribe_usage_refresh,
     nua_subscribe_usage_shutdown

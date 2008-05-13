@@ -104,8 +104,8 @@ struct outbound {
   unsigned ob_registering:1;
   /** 2XX response to REGISTER containg ob_rcontact has been received */
   unsigned ob_registered:1;
-  /**The registration has been validated:
-   * We have successfully sent OPTIONS to ourselves.
+  /** The registration has been validated:
+   *  We have successfully sent OPTIONS to ourselves.
    */
   unsigned ob_validated:1;
   /** The registration has been validated once.
@@ -113,8 +113,11 @@ struct outbound {
    *   up if OPTIONS probe fails.
    */
   unsigned ob_once_validated:1;
+
+  unsigned ob_proxy_override:1;	/**< Override stack default proxy */
   unsigned :0;
 
+  url_string_t *ob_proxy;	/**< Outbound-specific proxy */
   char const *ob_instance;	/**< Our instance ID */
   int32_t ob_reg_id;		/**< Flow-id */
   sip_contact_t *ob_rcontact;	/**< Our contact */
@@ -209,10 +212,11 @@ outbound_new(outbound_owner_t *owner,
     ob->ob_nta = agent;
 
     if (instance)
-      ob->ob_instance = su_strcat_all(ob->ob_home, "+sip.instance=\"<", instance, ">\"", NULL);
+      ob->ob_instance =
+	su_sprintf(ob->ob_home, "+sip.instance=\"<%s>\"", instance);
     ob->ob_reg_id = 0;
 
-    /* Generate a cookie (used as Call-ID) for us */
+    /* Generate a random cookie (used as Call-ID) for us */
     su_md5_init(md5);
     su_guid_generate(guid);
     if (instance)
@@ -246,15 +250,22 @@ void outbound_unref(outbound_t *ob)
 
 /** Set various outbound and nat-traversal related options. */
 int outbound_set_options(outbound_t *ob,
-			 char const *options,
+			 char const *_options,
 			 unsigned interval,
 			 unsigned stream_interval)
 {
   struct outbound_prefs prefs[1] = {{ 0 }};
-  char const *s;
+  char *s, *options = su_strdup(NULL, _options);
+  int invalid;
 
   prefs->interval = interval;
   prefs->stream_interval = stream_interval;
+
+#define MATCH(v) (len == sizeof(#v) - 1 && strncasecmp(#v, s, len) == 0)
+
+  if (options) {
+    for (s = options; s[0]; s++) if (s[0] == '-') s[0] = '_';
+  }
 
   prefs->gruuize = 1;
   prefs->outbound = 0;
@@ -263,17 +274,11 @@ int outbound_set_options(outbound_t *ob,
   prefs->validate = 1;
   prefs->use_rport = 1;
 
-#define MATCH(v) (len == sizeof(#v) - 1 && strncasecmp(#v, s, len) == 0)
-
   for (s = options; s && s[0]; ) {
     size_t len = span_token(s);
     int value = 1;
 
-    if (len > 3 && strncasecmp(s, "no-", 3) == 0)
-      value = 0, s += 3, len -= 3;
-    else if (len > 4 && strncasecmp(s, "not-", 4) == 0)
-      value = 0, s += 4, len -= 4;
-    else if (len > 3 && strncasecmp(s, "no_", 3) == 0)
+    if (len > 3 && strncasecmp(s, "no_", 3) == 0)
       value = 0, s += 3, len -= 3;
     else if (len > 4 && strncasecmp(s, "not_", 4) == 0)
       value = 0, s += 4, len -= 4;
@@ -284,14 +289,12 @@ int outbound_set_options(outbound_t *ob,
     else if (MATCH(outbound)) prefs->outbound = value;
     else if (MATCH(natify)) prefs->natify = value;
     else if (MATCH(validate)) prefs->validate = value;
-    else if (MATCH(options-keepalive)) prefs->okeepalive = value;
     else if (MATCH(options_keepalive)) prefs->okeepalive = value;
-    else if (MATCH(use-connect)) prefs->use_connect = value;
     else if (MATCH(use_connect)) prefs->use_connect = value;
-    else if (MATCH(use-rport) || MATCH(use_rport)) prefs->use_rport = value;
-    else if (MATCH(use-socks) || MATCH(use_socks)) prefs->use_socks = value;
-    else if (MATCH(use-upnp) || MATCH(use_upnp)) prefs->use_upnp = value;
-    else if (MATCH(use-stun) || MATCH(use_stun)) prefs->use_stun = value;
+    else if (MATCH(use_rport)) prefs->use_rport = value;
+    else if (MATCH(use_socks)) prefs->use_socks = value;
+    else if (MATCH(use_upnp)) prefs->use_upnp = value;
+    else if (MATCH(use_stun)) prefs->use_stun = value;
     else
       SU_DEBUG_1(("outbound(%p): unknown option \"%.*s\"\n",
 		  (void *)ob->ob_owner, (int)len, s));
@@ -303,7 +306,10 @@ int outbound_set_options(outbound_t *ob,
     s += len;
   }
 
-  if (s && s[0]) {
+  invalid = s && s[0];
+  su_free(NULL, options);
+
+  if (invalid) {
     SU_DEBUG_1(("outbound(%p): invalid options \"%s\"\n", 
 		(void *)ob->ob_owner, options));
     return -1;
@@ -324,6 +330,25 @@ int outbound_set_options(outbound_t *ob,
   ob->ob_reg_id = prefs->outbound ? 1 : 0;
 
   return 0;
+}
+
+/** Override stack default proxy for outbound */
+int outbound_set_proxy(outbound_t *ob,
+		       url_string_t *proxy)
+{
+  url_string_t *new_proxy = NULL, *old_proxy = ob->ob_proxy;
+
+  if (proxy)
+    new_proxy = (url_string_t *)url_as_string(ob->ob_home, proxy->us_url);
+
+  if (proxy == NULL || new_proxy != NULL) {
+    ob->ob_proxy_override = 1;
+    ob->ob_proxy = new_proxy;
+    su_free(ob->ob_home, old_proxy);
+    return 0;
+  }
+
+  return -1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -784,6 +809,8 @@ static int keepalive_options(outbound_t *ob)
 			 ob,
 			 NULL,
 			 req,
+			 TAG_IF(ob->ob_proxy_override,
+				NTATAG_DEFAULT_PROXY(ob->ob_proxy)),
 			 TAG_END());
 
   if (!ob->ob_keepalive.orq)
@@ -949,6 +976,8 @@ static int keepalive_options_with_registration_probe(outbound_t *ob)
 			 ob,
 			 NULL,
 			 req,
+			 TAG_IF(ob->ob_proxy_override,
+				NTATAG_DEFAULT_PROXY(ob->ob_proxy)),
 			 SIPTAG_SUBJECT_STR("REGISTRATION PROBE"),
 			 /* NONE is used to remove
 			    Max-Forwards: 0 found in ordinary keepalives */

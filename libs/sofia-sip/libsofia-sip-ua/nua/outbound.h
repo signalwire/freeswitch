@@ -70,6 +70,9 @@ int outbound_set_options(outbound_t *ob,
 			 unsigned dgram_interval,
 			 unsigned stream_interval);
 
+int outbound_set_proxy(outbound_t *ob,
+		       url_string_t *proxy);
+
 int outbound_get_contacts(outbound_t *ob, 
 			  sip_contact_t **return_current_contact, 
 			  sip_contact_t **return_previous_contact);

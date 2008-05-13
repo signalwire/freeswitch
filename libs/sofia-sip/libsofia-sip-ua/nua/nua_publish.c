@@ -79,6 +79,7 @@ static nua_usage_class const nua_publish_usage[1] = {
     nua_publish_usage_add,
     nua_publish_usage_remove,
     nua_publish_usage_name,
+    nua_base_usage_update_params,
     NULL,
     nua_publish_usage_refresh,
     nua_publish_usage_shutdown,

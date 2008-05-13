@@ -207,6 +207,7 @@ static nua_usage_class const nua_session_usage[1] = {
     nua_session_usage_add,
     nua_session_usage_remove,
     nua_session_usage_name,
+    nua_base_usage_update_params,
     NULL,
     nua_session_usage_refresh,
     nua_session_usage_shutdown
@@ -334,9 +335,6 @@ void nua_session_usage_destroy(nua_handle_t *nh,
 
 /* ======================================================================== */
 /* INVITE and call (session) processing */
-
-int nua_stack_prack(nua_t *nua, nua_handle_t *nh, nua_event_t e,
-		    tagi_t const *tags);
 
 static int session_timer_is_supported(struct session_timer const *t);
 
@@ -1206,6 +1204,8 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
   sip_authorization_t *wa;
   sip_proxy_authorization_t *pa;
   sip_cseq_t *cseq;
+  int proxy_is_set;
+  url_string_t *proxy;
   nta_outgoing_t *ack;
   int status = 200;
   char const *phrase = "OK", *reason = NULL;
@@ -1314,9 +1314,14 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
       }
     }
     
+    proxy_is_set = NH_PISSET(nh, proxy);
+    proxy = NH_PGET(nh, proxy);
+
     if ((ack = nta_outgoing_mcreate(nh->nh_nua->nua_nta, NULL, NULL, NULL,
 				    msg,
 				    NTATAG_ACK_BRANCH(invite_branch),
+				    TAG_IF(proxy_is_set,
+					   NTATAG_DEFAULT_PROXY(proxy)),
 				    SIPTAG_END(),
 				    TAG_NEXT(tags)))) {
       /* TR engine keeps this around for T2 so it catches all 2XX retransmissions  */

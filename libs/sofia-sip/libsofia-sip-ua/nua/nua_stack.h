@@ -154,6 +154,7 @@ struct nua_handle_s
   nua_handle_t   *nh_identity;	/**< Identity */
 
   nua_handle_preferences_t *nh_prefs; /**< Preferences */
+#define nh_dprefs nh_nua->nua_dhandle->nh_prefs
 
   /* Handle type is determined by special event and flags. */
   nua_event_t     nh_special;	/**< Special event */

@@ -2633,6 +2633,8 @@ int nua_base_client_request(nua_client_request_t *cr, msg_t *msg, sip_t *sip,
 			    tagi_t const *tags)
 {
   nua_handle_t *nh = cr->cr_owner;
+  int proxy_is_set = NH_PISSET(nh, proxy);
+  url_string_t * proxy = NH_PGET(nh, proxy);
 
   if (nh->nh_auth) {
     if (cr->cr_challenged || 
@@ -2648,6 +2650,8 @@ int nua_base_client_request(nua_client_request_t *cr, msg_t *msg, sip_t *sip,
 				    nua_client_orq_response, cr,
 				    NULL, 
 				    msg,
+				    TAG_IF(proxy_is_set,
+					   NTATAG_DEFAULT_PROXY(proxy)),
 				    TAG_NEXT(tags));
 
   return cr->cr_orq ? 0 : -1;

@@ -35,26 +35,11 @@
  * @date Created: Wed Mar  8 11:38:18 EET 2006  ppessi
  */
 
-#ifndef NUA_OWNER_T
-#define NUA_OWNER_T struct nua_owner_s
-#endif
-typedef NUA_OWNER_T nua_owner_t;
+#include <nua_types.h>
 
 #ifndef NTA_H
 #include <sofia-sip/nta.h>
 #endif
-
-typedef struct nua_dialog_state nua_dialog_state_t;
-typedef struct nua_dialog_usage nua_dialog_usage_t;
-typedef struct nua_server_request nua_server_request_t; 
-typedef struct nua_client_request nua_client_request_t; 
-typedef struct nua_dialog_peer_info nua_dialog_peer_info_t;
-
-#ifndef NUA_SAVED_SIGNAL_T
-#define NUA_SAVED_SIGNAL_T struct nua_saved_signal *
-#endif
-
-typedef NUA_SAVED_SIGNAL_T nua_saved_signal_t;
 
 typedef struct {
   sip_method_t sm_method; 
@@ -386,6 +371,10 @@ typedef struct {
 		       nua_client_request_t *cr,
 		       nua_server_request_t *sr);
   char const *(*usage_name)(nua_dialog_usage_t const *du);
+  void (*usage_update_params)(nua_dialog_usage_t const *du,
+			      nua_handle_preferences_t const *changed,
+			      nua_handle_preferences_t const *params,
+			      nua_handle_preferences_t const *defaults);
   void (*usage_peer_info)(nua_dialog_usage_t *du,
 			  nua_dialog_state_t const *ds,
 			  sip_t const *sip);
@@ -451,6 +440,16 @@ void nua_dialog_usage_remove(nua_owner_t *,
 			     nua_dialog_usage_t *du,
 			     nua_client_request_t *cr,
 			     nua_server_request_t *sr);
+
+void nua_dialog_update_params(nua_dialog_state_t *ds,
+			      nua_handle_preferences_t const *changed,
+			      nua_handle_preferences_t const *params,
+			      nua_handle_preferences_t const *defaults);
+
+void nua_base_usage_update_params(nua_dialog_usage_t const *du,
+				  nua_handle_preferences_t const *changed,
+				  nua_handle_preferences_t const *params,
+				  nua_handle_preferences_t const *defaults);
 
 void nua_dialog_deinit(nua_owner_t *own,
 		       nua_dialog_state_t *ds);

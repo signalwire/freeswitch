@@ -82,17 +82,6 @@ su_inline void nhp_or_set(nua_handle_preferences_t *a,
   /* Bitwise or of bitfields, casted to unsigned */
   a->nhp_set_.set_unsigned[0] |= b->nhp_set_.set_unsigned[0];
   a->nhp_set_.set_unsigned[1] |= b->nhp_set_.set_unsigned[1];
-
-  /* 
-  unsigned *ap, const *bp;
-  size_t i;
-
-  ap = a->nhp_set_.set_unsigned;
-  bp = b->nhp_set_.set_unsigned;
-  for (i = 0; i < (sizeof a->nhp_set); i += (sizeof *ap))
-    *ap++ |= *bp++;
-
-  */
 }
 
 static int nhp_set_tags(su_home_t *home, 
@@ -110,10 +99,9 @@ static int nhp_merge_lists(su_home_t *home,
 			   tag_value_t value);
 
 static int nhp_save_params(nua_handle_t *nh,
-		    su_home_t *tmphome, 
-		    nua_global_preferences_t *gsrc,
-		    nua_handle_preferences_t *src);
-
+			   su_home_t *tmphome,
+			   nua_global_preferences_t *gsrc,
+			   nua_handle_preferences_t *src);
 
 /* ====================================================================== */
 /* Magical NUTAG_USER_AGENT() - add NHP_USER_AGENT there if it is not there */
@@ -310,6 +298,7 @@ int nua_stack_init_instance(nua_handle_t *nh, tagi_t const *tags)
  *   NUTAG_ONLY183_100REL() \n
  *   NUTAG_OUTBOUND() \n
  *   NUTAG_PATH_ENABLE() \n
+ *   NUTAG_PROXY() (aka NTATAG_DEFAULT_PROXY()) \n
  *   NUTAG_REFER_EXPIRES() \n
  *   NUTAG_REFER_WITH_ID() \n
  *   NUTAG_REGISTRAR() \n
@@ -430,6 +419,7 @@ int nua_stack_init_instance(nua_handle_t *nh, tagi_t const *tags)
  *   NUTAG_ONLY183_100REL() \n
  *   NUTAG_OUTBOUND() \n
  *   NUTAG_PATH_ENABLE() \n
+ *   NUTAG_PROXY() (aka NTATAG_DEFAULT_PROXY()) \n
  *   NUTAG_REFER_EXPIRES() \n
  *   NUTAG_REFER_WITH_ID() \n
  *   NUTAG_REGISTRAR() \n
@@ -482,13 +472,15 @@ int nua_stack_set_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
   int status;
   char const *phrase;
 
+  nua_handle_preferences_t tmp[1];
+  int any_changes = 0;
+
   enter;
 
   {
     su_home_t tmphome[1] = { SU_HOME_INIT(tmphome) };
     nua_handle_preferences_t *nhp = nh->nh_prefs;
     nua_handle_preferences_t const *dnhp = dnh->nh_prefs;
-    nua_handle_preferences_t tmp[1];
     nua_global_preferences_t gtmp[1], *ngp = NULL;
 
     *tmp = *nhp; NHP_UNSET_ALL(tmp);
@@ -521,7 +513,7 @@ int nua_stack_set_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
       status = 900, phrase = "Error storing default handle parameters";
     else if (nhp_set_tags(tmphome, tmp, ngp, tags) < 0)
       status = 900, phrase = "Error storing parameters";
-    else if (nhp_save_params(nh, tmphome, ngp, tmp) < 0)
+    else if ((any_changes = nhp_save_params(nh, tmphome, ngp, tmp)) < 0)
       status = 900, phrase = su_strerror(ENOMEM);
     else
       status = 200, phrase = "OK", nh->nh_used_ptags = 1;
@@ -562,7 +554,8 @@ int nua_stack_set_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
     if (nua_stack_set_smime_params(nua, tags) < 0) {
       status = 900, phrase = "Error setting S/MIME parameters";
     }
-    else if (nua->nua_nta && nta_agent_set_params(nua->nua_nta, TAG_NEXT(tags)) < 0) {
+    else if (nua->nua_nta &&
+	     nta_agent_set_params(nua->nua_nta, TAG_NEXT(tags)) < 0) {
       status = 900, phrase = "Error setting NTA parameters";
     }
     else {
@@ -581,6 +574,18 @@ int nua_stack_set_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
   else {
     if (e == nua_r_set_params)
       UA_EVENT2(e, status, phrase);
+
+    if (any_changes) {
+      nua_handle_preferences_t changed[1];
+
+      *changed = *nh->nh_prefs;
+      memcpy(&changed->nhp_set_, &tmp->nhp_set_, sizeof changed->nhp_set_);
+
+      nua_dialog_update_params(nh->nh_ds,
+			       changed,
+			       nh->nh_prefs,
+			       dnh->nh_prefs);
+    }
     return 0;
   }
 }
@@ -612,11 +617,10 @@ static int nhp_set_tags(su_home_t *home,
   }
 
 /* Set copy of string from url to handle pref structure */
-#define NHP_SET_STR_BY_URL(nhp, name, v)			 \
+#define NHP_SET_STR_BY_URL(nhp, type, name, v)			 \
   if ((v) != (tag_value_t)-1) {					 \
     url_t const *_value = (url_t const *)(v);			 \
-    char *_new;							 \
-    _new = url_as_string(home, (void *)_value);			 \
+    type *_new = (type *)url_as_string(home, (void *)_value);	 \
     if (NHP_ISSET(nhp, name))					 \
       su_free(home, (void *)nhp->nhp_##name);			 \
     NHP_SET(nhp, name, _new);					 \
@@ -953,7 +957,7 @@ static int nhp_set_tags(su_home_t *home,
     }
     /* NUTAG_REGISTRAR(registrar) */
     else if (tag == nutag_registrar) {
-      NHP_SET_STR_BY_URL(nhp, registrar, value);
+      NHP_SET_STR_BY_URL(nhp, char, registrar, value);
       if (NHP_ISSET(nhp, registrar) && !str0cmp(nhp->nhp_registrar, "*"))
 	NHP_SET_STR(nhp, registrar, 0);
     }
@@ -980,6 +984,10 @@ static int nhp_set_tags(su_home_t *home,
     /* NUTAG_OUTBOUND(outbound) */
     else if (tag == nutag_outbound) {
       NHP_SET_STR(nhp, outbound, value);
+    }
+    /* NUTAG_PROXY() (aka NTATAG_DEFAULT_PROXY()) */
+    else if (tag == ntatag_default_proxy) {
+      NHP_SET_STR_BY_URL(nhp, url_string_t, proxy, value);
     }
     /* NUTAG_DETECT_NETWORK_UPDATES(detect_network_updates) */
     else if (ngp && tag == nutag_detect_network_updates) {
@@ -1070,6 +1078,10 @@ static int nhp_merge_lists(su_home_t *home,
 }
 
 /** Save parameters in @a gtmp and @a tmp.
+ *
+ * @retval 1 - parameters were changed
+ * @retval 0 - no changes in parameters
+ * @retval -1 - an error
  */
 static 
 int nhp_save_params(nua_handle_t *nh,
@@ -1132,7 +1144,7 @@ int nhp_save_params(nua_handle_t *nh,
 
   nh->nh_prefs = dst;
   
-  return 0;
+  return memcmp(dst, old, sizeof *dst) != 0;
 }
 
 static int nua_handle_tags_filter(tagi_t const *f, tagi_t const *t);
@@ -1141,21 +1153,6 @@ static int nua_handle_param_filter(tagi_t const *f, tagi_t const *t);
 /** Save taglist to a handle */
 int nua_handle_save_tags(nua_handle_t *nh, tagi_t *tags)
 {
-#if HAVE_OPEN_C
-  /* Nice. An old symbian compiler */
-  tagi_t tagfilter[2];
-  tagi_t paramfilter[2];
-#else
-  tagi_t const tagfilter[] = {
-    { TAG_FILTER(nua_handle_tags_filter) },
-    { TAG_NULL() }
-  };
-  tagi_t const paramfilter[] = {
-    { TAG_FILTER(nua_handle_param_filter) },
-    { TAG_NULL() }
-  };
-#endif
-
   /* Initialization parameters */
   url_string_t const *url = NULL;
   sip_to_t const *p_to = NULL;
@@ -1171,6 +1168,10 @@ int nua_handle_save_tags(nua_handle_t *nh, tagi_t *tags)
   int error;
 
 #if HAVE_OPEN_C
+  /* Nice. An old symbian compiler */
+  tagi_t tagfilter[2];
+  tagi_t paramfilter[2];
+
   tagfilter[0].t_tag = tag_filter;
   tagfilter[0].t_value = tag_filter_v(nua_handle_tags_filter);
   tagfilter[1].t_tag = (tag_type_t)0;
@@ -1180,6 +1181,16 @@ int nua_handle_save_tags(nua_handle_t *nh, tagi_t *tags)
   paramfilter[0].t_value = tag_filter_v(nua_handle_param_filter);
   paramfilter[1].t_tag = (tag_type_t)0;
   paramfilter[1].t_value = (tag_value_t)0;
+
+#else
+  tagi_t const tagfilter[] = {
+    { TAG_FILTER(nua_handle_tags_filter) },
+    { TAG_NULL() }
+  };
+  tagi_t const paramfilter[] = {
+    { TAG_FILTER(nua_handle_param_filter) },
+    { TAG_NULL() }
+  };
 #endif
 
   for (t = tags; t; t = tl_next(t)) {
@@ -1525,7 +1536,7 @@ int nua_stack_get_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
   nua_handle_t *dnh = nua->nua_dhandle;
   nua_global_preferences_t const *ngp = nua->nua_prefs;
   nua_handle_preferences_t const *nhp = nh->nh_prefs;
-
+  nua_handle_preferences_t const nhp_zero[1] = {{ 0 }};
   tagi_t *lst;
 
   int has_from;
@@ -1549,18 +1560,19 @@ int nua_stack_get_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
 
   enter;
 
-  nta_agent_get_params(nua->nua_nta,
-		       NTATAG_UDP_MTU_REF(udp_mtu),
-		       NTATAG_MAX_PROCEEDING_REF(max_proceeding),
-		       NTATAG_SIP_T1_REF(sip_t1),
-		       NTATAG_SIP_T2_REF(sip_t2),
-		       NTATAG_SIP_T4_REF(sip_t4),
-		       NTATAG_SIP_T1X64_REF(sip_t1x64),
-		       NTATAG_DEBUG_DROP_PROB_REF(debug_drop_prob),
-		       NTATAG_DEFAULT_PROXY_REF(proxy),
-		       NTATAG_ALIASES_REF(aliases),
-		       NTATAG_SIPFLAGS_REF(flags),
-		       TAG_END());
+  if (nh == dnh)
+    nta_agent_get_params(nua->nua_nta,
+			 NTATAG_UDP_MTU_REF(udp_mtu),
+			 NTATAG_MAX_PROCEEDING_REF(max_proceeding),
+			 NTATAG_SIP_T1_REF(sip_t1),
+			 NTATAG_SIP_T2_REF(sip_t2),
+			 NTATAG_SIP_T4_REF(sip_t4),
+			 NTATAG_SIP_T1X64_REF(sip_t1x64),
+			 NTATAG_DEBUG_DROP_PROB_REF(debug_drop_prob),
+			 NTATAG_DEFAULT_PROXY_REF(proxy),
+			 NTATAG_ALIASES_REF(aliases),
+			 NTATAG_SIPFLAGS_REF(flags),
+			 TAG_END());
 
   if (nh->nh_ds->ds_local)
     has_from = 1, *from = *nh->nh_ds->ds_local, from->a_params = NULL;
@@ -1596,6 +1608,9 @@ int nua_stack_get_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
 	 TAG(nhp->nhp_set.nhb_##pref && nhp->nhp_##pref			\
 	     ? sip_##pref##_make(tmphome, (char *)nhp->nhp_##pref)	\
 	     : NULL))
+
+  if (nh != dnh && nhp == dnh->nh_prefs)
+    nhp = nhp_zero;
 
   su_home_auto(tmphome, sizeof(tmphome));
 
@@ -1669,6 +1684,10 @@ int nua_stack_get_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
      TIF(NUTAG_M_FEATURES, m_features),
      TIF(NUTAG_OUTBOUND, outbound),
 
+     /* Handle-specific proxy */
+     TAG_IF(nh != dnh && nhp->nhp_set.nhb_proxy,
+	    NUTAG_PROXY(nhp->nhp_proxy)),
+
      /* Skip user-agent-level parameters if parameters are for handle only */
      TAG_IF(nh != dnh, TAG_NEXT(media_params)),
 
@@ -1693,12 +1712,13 @@ int nua_stack_get_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
 #endif
 
      NTATAG_UDP_MTU(udp_mtu),
-	 NTATAG_MAX_PROCEEDING(max_proceeding),
+     NTATAG_MAX_PROCEEDING(max_proceeding),
      NTATAG_SIP_T1(sip_t1),
      NTATAG_SIP_T2(sip_t2),
      NTATAG_SIP_T4(sip_t4),
      NTATAG_SIP_T1X64(sip_t1x64),
      NTATAG_DEBUG_DROP_PROB(debug_drop_prob),
+     /* Stack-wide proxy */
      NTATAG_DEFAULT_PROXY(proxy),
      NTATAG_ALIASES(aliases),
      NTATAG_SIPFLAGS(flags),
