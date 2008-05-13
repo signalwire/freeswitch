@@ -27,6 +27,7 @@ INCLUDES = -I$(top_builddir)
 lib_LTLIBRARIES = libvoipcodecs.la
 
 libvoipcodecs_la_SOURCES = bitstream.c \
+                           bit_operations.c \
                            g711.c \
                            g722_encode.c \
                            g722_decode.c \
