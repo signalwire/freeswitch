@@ -1,3 +1,36 @@
+freeswitch (1.0.rc5)
+
+	Changed internal state names to avoid confusion
+	Fixed video negotiation
+	Enhanced accuracy of windows timer
+	Fixed mod_ldap build
+	Added dialplan and context to sql table for channels
+	Multiple fixes to mod_lua and mod_perl
+	Fixed logic bug in fifo causing segfault
+	internal changes to sip stack so we can remove a hash redundant to the stack
+	Fixed multiple memory leaks in mod_sofia
+	Fixed event fetch segfault on sip subscribe
+	Fixed segfault on timer rollover in sofia on 64bit
+	Fixed audio timing issues in mod_portaudio
+	Changed names of sip profiles in default config to avoid confusion
+	Fixed memory usage leak-like behavior when playing files requiring resampling
+	Removed some unused api's
+	Fix rtp timeout when playing moh
+	Removed some un-needed libraries and files from tree
+	Fixed multiple issues in sip stack including multiple segfaults
+	Added support for sip transfers on bypass_media and proxy_media calls
+	Added say application
+	Fixed --disable-debug configure option
+	Enhanced switch_cpp wrapper (and perl, python, lua, java)
+	Fixed segfault on inavalid stun response
+	Fixed configure help output
+	Fixed segfault on mp3 playback
+	Fixed assert on invalid sdp (missing m= line)
+	Added configurable windows service name
+	Fixed proxy mode call transition to non proxy call
+	Fixed solaris build of voipcodecs
+	Fixed sofia seg when call failure edge case
+
 freeswitch (1.0.rc4)
 
 	Add tab completion in cli
@@ -32,6 +65,16 @@ freeswitch (1.0.rc4)
 	Fixed MSVC build
 	Fixed segfault on sip SUBSCRIBE with Expires: 0
 	Added mod_say_zh
+	Added --with-pyton and --with-pyton-config configure options
+	Added mod_lua
+	Enhanced switch_cpp wrapper in core and normalized interfaces for perl, python, lua, and java
+	Fixed multiple issues in cpp wrapper and the languages perl, python, lua and java
+	Added back mod_perl
+	Added sofia gateway option ping to adjust options ping frequency
+	Added .net event socket lib to contrib
+	Fixed passing of exact response codes of sip across a bridge
+	Added mod_reference, reference endpoint module
+	Enhanced build so you can now make commented out modules using "make mod_name"
 	
 freeswitch (1.0.rc3)
 
