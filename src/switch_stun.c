@@ -118,7 +118,7 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t * buf, u
 {
 	switch_stun_packet_t *packet;
 	switch_stun_packet_attribute_t *attr;
-	int32_t bytes_left = len;
+	uint32_t bytes_left = len;
 	void *end_buf = buf + len;
 
 	if (len < SWITCH_STUN_PACKET_MIN_LEN) {
@@ -295,12 +295,12 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t * buf, u
 
 	} while (bytes_left >= SWITCH_STUN_ATTRIBUTE_MIN_LEN && switch_stun_packet_next_attribute(attr, end_buf));
 
-	if ((packet->header.length + 20) > (len - bytes_left)) {
+	if ((uint32_t)(packet->header.length + 20) > (uint32_t)(len - bytes_left)) {
 		/*
 		 * the packet length is longer than the length of all attributes?
 		 * for now simply decrease the packet size
 		 */
-		packet->header.length = (len - bytes_left) - 20;
+		packet->header.length = (uint16_t)((len - bytes_left) - 20);
 	}
 
 	return packet;
