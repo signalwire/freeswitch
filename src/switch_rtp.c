@@ -261,7 +261,12 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 
 	memcpy(buf, data, cpylen);
 	packet = switch_stun_packet_parse(buf, sizeof(buf));
-	end_buf = buf + sizeof(buf);
+	if (!packet) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid STUN/ICE packet received\n");
+		goto end;
+	}
+	end_buf = buf + ((sizeof(buf) > packet->header.length) ? packet->header.length : sizeof(buf));
+
 	rtp_session->last_stun = switch_time_now();
 
 	switch_stun_packet_first_attribute(packet, attr);

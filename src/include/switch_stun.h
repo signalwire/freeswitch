@@ -40,6 +40,7 @@
 SWITCH_BEGIN_EXTERN_C
 #define SWITCH_STUN_DEFAULT_PORT 3478
 #define SWITCH_STUN_PACKET_MIN_LEN 20
+#define SWITCH_STUN_ATTRIBUTE_MIN_LEN 8
 	typedef enum {
 	SWITCH_STUN_BINDING_REQUEST = 0x0001,
 	SWITCH_STUN_BINDING_RESPONSE = 0x0101,
@@ -98,13 +99,13 @@ typedef enum {
 } switch_stun_type_t;
 
 typedef struct {
-	int16_t type;
-	int16_t length;
+	uint16_t type;
+	uint16_t length;
 	char id[16];
 } switch_stun_packet_header_t;
 
 typedef struct {
-	int16_t type;
+	uint16_t type;
 	uint16_t length;
 	char value[];
 } switch_stun_packet_attribute_t;
@@ -115,10 +116,10 @@ typedef struct {
 } switch_stun_packet_t;
 
 typedef struct {
-	int8_t wasted;
-	int8_t family;
-	int16_t port;
-	int32_t address;
+	uint8_t wasted;
+	uint8_t family;
+	uint16_t port;
+	uint32_t address;
 } switch_stun_ip_t;
 
 
@@ -208,6 +209,12 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 												   switch_port_t *port, char *stunip, switch_port_t stunport, char **err, switch_memory_pool_t *pool);
 
 
+/*!
+  \brief Obtain the padded length of an attribute's value
+  \param attribute the attribute
+  \return the padded size in bytes
+*/
+#define switch_stun_attribute_padded_length(attribute) ((uint16_t)(attribute->length + (sizeof(uint32_t)-1)) & ~sizeof(uint32_t))
 
 /*!
   \brief set a switch_stun_packet_attribute_t pointer to point at the first attribute in a packet
@@ -221,7 +228,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
   \param attribute the pointer to increment
   \return true or false depending on if there are any more attributes
 */
-#define switch_stun_packet_next_attribute(attribute, end) (attribute && (attribute = (switch_stun_packet_attribute_t *) (attribute->value + attribute->length)) && ((void *)attribute < end) && attribute->length && ((void *)(attribute + attribute->length) < end))
+#define switch_stun_packet_next_attribute(attribute, end) (attribute && (attribute = (switch_stun_packet_attribute_t *) (attribute->value +  switch_stun_attribute_padded_length(attribute))) && ((void *)attribute < end) && attribute->length && ((void *)(attribute +  switch_stun_attribute_padded_length(attribute)) < end))
 
 /*!
   \brief Obtain the correct length in bytes of a stun packet

@@ -113,10 +113,12 @@ SWITCH_DECLARE(void) switch_stun_random_string(char *buf, uint16_t len, char *se
 	}
 }
 
+
 SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t * buf, uint32_t len)
 {
 	switch_stun_packet_t *packet;
 	switch_stun_packet_attribute_t *attr;
+	int32_t bytes_left = len;
 	void *end_buf = buf + len;
 
 	if (len < SWITCH_STUN_PACKET_MIN_LEN) {
@@ -126,23 +128,181 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t * buf, u
 	packet = (switch_stun_packet_t *) buf;
 	packet->header.type = ntohs(packet->header.type);
 	packet->header.length = ntohs(packet->header.length);
+	bytes_left -= packet->header.length + 20;
+
+	/*
+	 * Check packet type (RFC3489(bis?) values)
+	 */
+	switch(packet->header.type) {
+	case SWITCH_STUN_BINDING_REQUEST:
+	case SWITCH_STUN_BINDING_RESPONSE:
+	case SWITCH_STUN_BINDING_ERROR_RESPONSE:
+	case SWITCH_STUN_SHARED_SECRET_REQUEST:
+	case SWITCH_STUN_SHARED_SECRET_RESPONSE:
+	case SWITCH_STUN_SHARED_SECRET_ERROR_RESPONSE:
+	case SWITCH_STUN_ALLOCATE_REQUEST:
+	case SWITCH_STUN_ALLOCATE_RESPONSE:
+	case SWITCH_STUN_ALLOCATE_ERROR_RESPONSE:
+	case SWITCH_STUN_SEND_REQUEST:
+	case SWITCH_STUN_SEND_RESPONSE:
+	case SWITCH_STUN_SEND_ERROR_RESPONSE:
+	case SWITCH_STUN_DATA_INDICATION:
+		/* Valid */
+		break;
+
+	default:
+		/* Invalid value */
+		return NULL;
+	}
+
+	/*
+	 * Check for length overflow
+	 */
+	if (bytes_left <= 0) {
+		/* Invalid */
+		return NULL;
+	}
+
+	/*
+	 * No payload?
+	 */
+	if (packet->header.length == 0) {
+		/* Invalid?! */
+		return NULL;
+	}
+
+	/* check if we have enough bytes left for an attribute */
+	if (bytes_left < SWITCH_STUN_ATTRIBUTE_MIN_LEN) {
+		return NULL;
+	}
+
 	switch_stun_packet_first_attribute(packet, attr);
 	do {
 		attr->length = ntohs(attr->length);
 		attr->type = ntohs(attr->type);
-		if (!attr->length) {
-			break;
+		bytes_left -= 4;	/* attribute header consumed */
+
+		if (!attr->length || switch_stun_attribute_padded_length(attr) > bytes_left) {
+			/*
+			 * Note we simply don't "break" here out of the loop anymore because
+			 * we don't want the upper layers to have to deal with attributes without a value
+			 * (or worse: invalid length)
+			 */
+			return NULL;
 		}
+
+		/*
+		 * Handle STUN attributes
+		 */
 		switch (attr->type) {
-		case SWITCH_STUN_ATTR_MAPPED_ADDRESS:
-			if (attr->type) {
+		case SWITCH_STUN_ATTR_MAPPED_ADDRESS:		/* Address, we only care about this one, but parse the others too */
+		case SWITCH_STUN_ATTR_RESPONSE_ADDRESS:
+		case SWITCH_STUN_ATTR_SOURCE_ADDRESS:
+		case SWITCH_STUN_ATTR_CHANGED_ADDRESS:
+		case SWITCH_STUN_ATTR_REFLECTED_FROM:
+		case SWITCH_STUN_ATTR_ALTERNATE_SERVER:
+		case SWITCH_STUN_ATTR_DESTINATION_ADDRESS:
+		case SWITCH_STUN_ATTR_SOURCE_ADDRESS2:
+			{
 				switch_stun_ip_t *ip;
+				uint32_t addr_length = 0;
 				ip = (switch_stun_ip_t *) attr->value;
+
+				switch (ip->family) {
+				case 0x01:		/* IPv4 */
+					addr_length = 4;
+					break;
+
+				case 0x02:		/* IPv6 */
+					addr_length = 16;
+					break;
+
+				default:		/* Invalid */
+					return NULL;
+				}
+
+				/* attribute payload length must be == address length + size of other payload fields (family...) */
+				if (attr->length != addr_length + 4) {
+					/* Invalid */
+					return NULL;
+				}
+
 				ip->port = ntohs(ip->port);
 			}
 			break;
+
+		case SWITCH_STUN_ATTR_CHANGE_REQUEST:		/* UInt32 */
+		case SWITCH_STUN_ATTR_LIFETIME:
+		case SWITCH_STUN_ATTR_BANDWIDTH:
+		case SWITCH_STUN_ATTR_OPTIONS:
+			{
+				uint32_t *val = (uint32_t *) attr->value;
+
+				if (attr->length != sizeof(uint32_t)) {
+					/* Invalid */
+					return NULL;
+				}
+
+				*val = ntohl(*val);	/* should we do this here? */
+			}
+			break;
+
+		case SWITCH_STUN_ATTR_USERNAME:			/* ByteString, multiple of 4 bytes */
+		case SWITCH_STUN_ATTR_PASSWORD:			/* ByteString, multiple of 4 bytes */
+			if (attr->length % 4 != 0) {
+				/* Invalid */
+				return NULL;
+			}
+			break;
+
+		case SWITCH_STUN_ATTR_DATA:			/* ByteString */
+		case SWITCH_STUN_ATTR_ERROR_CODE:		/* ErrorCode */
+		case SWITCH_STUN_ATTR_TRANSPORT_PREFERENCES:	/* TransportPrefs */
+			/*
+			 * No length checking here, since we already checked against the padded length
+			 * before
+			 */
+			break;
+
+		case SWITCH_STUN_ATTR_MESSAGE_INTEGRITY:	/* ByteString, 20 bytes */
+			if (attr->length != 20) {
+				/* Invalid */
+				return NULL;
+			}
+			break;
+
+		case SWITCH_STUN_ATTR_MAGIC_COOKIE:		/* ByteString, 4 bytes */
+			if (attr->length != 4) {
+				/* Invalid */
+				return NULL;
+			}
+			break;
+
+		case SWITCH_STUN_ATTR_UNKNOWN_ATTRIBUTES:	/* UInt16List (= multiple of 2 bytes) */
+			if (attr->length % 2 != 0) {
+				return NULL;
+			}
+			break;
+
+		default:
+			/* Mandatory attribute range? => invalid */
+			if (attr->type <= 0x7FFF) {
+				return NULL;
+			}
+			break;
 		}
-	} while (switch_stun_packet_next_attribute(attr, end_buf));
+		bytes_left -= switch_stun_attribute_padded_length(attr);	/* attribute value consumed, substract padded length */
+
+	} while (bytes_left >= SWITCH_STUN_ATTRIBUTE_MIN_LEN && switch_stun_packet_next_attribute(attr, end_buf));
+
+	if ((packet->header.length + 20) > (len - bytes_left)) {
+		/*
+		 * the packet length is longer than the length of all attributes?
+		 * for now simply decrease the packet size
+		 */
+		packet->header.length = (len - bytes_left) - 20;
+	}
+
 	return packet;
 }
 
@@ -337,9 +497,13 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 	switch_socket_close(sock);
 
 	packet = switch_stun_packet_parse(buf, sizeof(buf));
-	end_buf = buf + sizeof(buf);
-	switch_stun_packet_first_attribute(packet, attr);
+	if (!packet) {
+		*err = "Invalid STUN/ICE packet";
+		return SWITCH_STATUS_FALSE;
+	}
+	end_buf = buf + ((sizeof(buf) > packet->header.length) ? packet->header.length : sizeof(buf));
 
+	switch_stun_packet_first_attribute(packet, attr);
 	do {
 		switch (attr->type) {
 		case SWITCH_STUN_ATTR_MAPPED_ADDRESS:
