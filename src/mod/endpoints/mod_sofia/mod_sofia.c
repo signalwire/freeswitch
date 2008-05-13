@@ -226,9 +226,11 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	
 	if (!switch_strlen_zero(ps_cause) && !strncasecmp(ps_cause, "sip:", 4)) {
 		int new_cause = atoi(ps_cause + 4);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Overriding SIP cause %d with %d from the other leg\n", 
-						  switch_channel_get_name(channel), sip_cause, new_cause);
-		sip_cause = new_cause;
+		if (new_cause) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Overriding SIP cause %d with %d from the other leg\n", 
+							  switch_channel_get_name(channel), sip_cause, new_cause);
+			sip_cause = new_cause;
+		}
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_SIP_HOLD) && cause != SWITCH_CAUSE_ATTENDED_TRANSFER) {
