@@ -121,6 +121,22 @@ public class CoreSession {
     return new SWIGTYPE_p_switch_status_t(freeswitchJNI.CoreSession_process_callback_result(swigCPtr, this, ret), true);
   }
 
+  public void say(String tosay, String module_name, String say_type, String say_method) {
+    freeswitchJNI.CoreSession_say(swigCPtr, this, tosay, module_name, say_type, say_method);
+  }
+
+  public void sayPhrase(String phrase_name, String phrase_data, String phrase_lang) {
+    freeswitchJNI.CoreSession_sayPhrase__SWIG_0(swigCPtr, this, phrase_name, phrase_data, phrase_lang);
+  }
+
+  public void sayPhrase(String phrase_name, String phrase_data) {
+    freeswitchJNI.CoreSession_sayPhrase__SWIG_1(swigCPtr, this, phrase_name, phrase_data);
+  }
+
+  public void sayPhrase(String phrase_name) {
+    freeswitchJNI.CoreSession_sayPhrase__SWIG_2(swigCPtr, this, phrase_name);
+  }
+
   public int recordFile(String file_name, int max_len, int silence_threshold, int silence_secs) {
     return freeswitchJNI.CoreSession_recordFile__SWIG_0(swigCPtr, this, file_name, max_len, silence_threshold, silence_secs);
   }

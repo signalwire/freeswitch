@@ -644,6 +644,32 @@ SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
 	return dtmf_buf;
 }
 
+SWITCH_DECLARE(void) CoreSession::say(const char *tosay, const char *module_name, const char *say_type, const char *say_method) 
+{
+	sanity_check_noreturn;
+	if (!(tosay && module_name && say_type && say_method)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! invalid args.\n");
+		return;
+	}
+	begin_allow_threads();
+	switch_ivr_say(session, tosay, module_name, say_type, say_method, ap);
+    end_allow_threads();
+}
+
+SWITCH_DECLARE(void) CoreSession::sayPhrase(const char *phrase_name, const char *phrase_data, const char *phrase_lang) 
+{
+	sanity_check_noreturn;
+	
+	if (!(phrase_name)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! invalid args.\n");
+		return;
+	}
+
+	begin_allow_threads();
+	switch_ivr_phrase_macro(session, phrase_name, phrase_data, phrase_lang, ap);
+    end_allow_threads();
+}
+
 SWITCH_DECLARE(int) CoreSession::streamFile(char *file, int starting_sample_count) {
 
     switch_status_t status;

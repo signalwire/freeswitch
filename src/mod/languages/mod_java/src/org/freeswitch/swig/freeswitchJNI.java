@@ -81,6 +81,10 @@ class freeswitchJNI {
   public final static native long CoreSession_getPrivate(long jarg1, CoreSession jarg1_, String jarg2);
   public final static native String CoreSession_getVariable(long jarg1, CoreSession jarg1_, String jarg2);
   public final static native long CoreSession_process_callback_result(long jarg1, CoreSession jarg1_, String jarg2);
+  public final static native void CoreSession_say(long jarg1, CoreSession jarg1_, String jarg2, String jarg3, String jarg4, String jarg5);
+  public final static native void CoreSession_sayPhrase__SWIG_0(long jarg1, CoreSession jarg1_, String jarg2, String jarg3, String jarg4);
+  public final static native void CoreSession_sayPhrase__SWIG_1(long jarg1, CoreSession jarg1_, String jarg2, String jarg3);
+  public final static native void CoreSession_sayPhrase__SWIG_2(long jarg1, CoreSession jarg1_, String jarg2);
   public final static native int CoreSession_recordFile__SWIG_0(long jarg1, CoreSession jarg1_, String jarg2, int jarg3, int jarg4, int jarg5);
   public final static native int CoreSession_recordFile__SWIG_1(long jarg1, CoreSession jarg1_, String jarg2, int jarg3, int jarg4);
   public final static native int CoreSession_recordFile__SWIG_2(long jarg1, CoreSession jarg1_, String jarg2, int jarg3);

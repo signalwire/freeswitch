@@ -585,7 +585,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_partner(switch_chann
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(int) switch_channel_test_flag(switch_channel_t *channel, switch_channel_flag_t flags)
+SWITCH_DECLARE(uint32_t) switch_channel_test_flag(switch_channel_t *channel, switch_channel_flag_t flags)
 {
 	switch_assert(channel != NULL);
 	return switch_test_flag(channel, flags) ? 1 : 0;

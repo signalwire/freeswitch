@@ -192,6 +192,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	if (status == SWITCH_STATUS_SUCCESS && need_codec) {
 		switch_frame_t *enc_frame, *read_frame = *frame;
 
+		if (!switch_test_flag(session, SSF_WARN_TRANSCODE)) {
+			switch_core_session_message_t msg = { 0 };
+			
+			msg.message_id = SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY;
+			switch_core_session_receive_message(session, &msg);
+			switch_set_flag(session, SSF_WARN_TRANSCODE);
+		}
+		
 		if (read_frame->codec || is_cng) {
 			session->raw_read_frame.datalen = session->raw_read_frame.buflen;
 			
@@ -558,6 +566,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	}
 
 	if (need_codec) {
+		if (!switch_test_flag(session, SSF_WARN_TRANSCODE)) {
+			switch_core_session_message_t msg = { 0 };
+			
+			msg.message_id = SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY;
+			switch_core_session_receive_message(session, &msg);
+			switch_set_flag(session, SSF_WARN_TRANSCODE);
+		}
+
 		if (frame->codec) {
 			session->raw_write_frame.datalen = session->raw_write_frame.buflen;
 			status = switch_core_codec_decode(frame->codec,

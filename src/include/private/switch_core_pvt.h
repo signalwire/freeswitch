@@ -85,7 +85,8 @@ typedef apr_os_thread_t switch_thread_id_t;
 
 typedef enum {
 	SSF_NONE = 0,
-	SSF_DESTROYED = (1 << 0)
+	SSF_DESTROYED = (1 << 0),
+	SSF_WARN_TRANSCODE = (1 << 1)
 } switch_session_flag_t;
 
 

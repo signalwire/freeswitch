@@ -254,7 +254,7 @@ SWITCH_DECLARE(switch_caller_extension_t *) switch_channel_get_caller_extension(
   \param flags or'd list of channel flags to test
   \return TRUE if flags were present
 */
-SWITCH_DECLARE(int) switch_channel_test_flag(switch_channel_t *channel, switch_channel_flag_t flags);
+SWITCH_DECLARE(uint32_t) switch_channel_test_flag(switch_channel_t *channel, switch_channel_flag_t flags);
 
 /*!
   \brief Set given flag(s) on a given channel

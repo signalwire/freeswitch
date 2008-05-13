@@ -3750,6 +3750,217 @@ fail:
 }
 
 
+static int _wrap_CoreSession_say(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  char *arg5 = (char *) 0 ;
+  
+  SWIG_check_num_args("say",5,5)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("say",1,"CoreSession *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("say",2,"char const *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("say",3,"char const *");
+  if(!lua_isstring(L,4)) SWIG_fail_arg("say",4,"char const *");
+  if(!lua_isstring(L,5)) SWIG_fail_arg("say",5,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_say",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (char *)lua_tostring(L, 3);
+  arg4 = (char *)lua_tostring(L, 4);
+  arg5 = (char *)lua_tostring(L, 5);
+  (arg1)->say((char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_CoreSession_sayPhrase__SWIG_0(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  
+  SWIG_check_num_args("sayPhrase",4,4)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("sayPhrase",1,"CoreSession *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("sayPhrase",2,"char const *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("sayPhrase",3,"char const *");
+  if(!lua_isstring(L,4)) SWIG_fail_arg("sayPhrase",4,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_sayPhrase",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (char *)lua_tostring(L, 3);
+  arg4 = (char *)lua_tostring(L, 4);
+  (arg1)->sayPhrase((char const *)arg2,(char const *)arg3,(char const *)arg4);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_CoreSession_sayPhrase__SWIG_1(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  
+  SWIG_check_num_args("sayPhrase",3,3)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("sayPhrase",1,"CoreSession *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("sayPhrase",2,"char const *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("sayPhrase",3,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_sayPhrase",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (char *)lua_tostring(L, 3);
+  (arg1)->sayPhrase((char const *)arg2,(char const *)arg3);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_CoreSession_sayPhrase__SWIG_2(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  SWIG_check_num_args("sayPhrase",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("sayPhrase",1,"CoreSession *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("sayPhrase",2,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_sayPhrase",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  (arg1)->sayPhrase((char const *)arg2);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_CoreSession_sayPhrase(lua_State* L) {
+  int argc;
+  int argv[5]={
+    1,2,3,4,5
+  };
+  
+  argc = lua_gettop(L);
+  if (argc == 2) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = lua_isstring(L,argv[1]);
+      }
+      if (_v) {
+        return _wrap_CoreSession_sayPhrase__SWIG_2(L);
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = lua_isstring(L,argv[1]);
+      }
+      if (_v) {
+        {
+          _v = lua_isstring(L,argv[2]);
+        }
+        if (_v) {
+          return _wrap_CoreSession_sayPhrase__SWIG_1(L);
+        }
+      }
+    }
+  }
+  if (argc == 4) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = lua_isstring(L,argv[1]);
+      }
+      if (_v) {
+        {
+          _v = lua_isstring(L,argv[2]);
+        }
+        if (_v) {
+          {
+            _v = lua_isstring(L,argv[3]);
+          }
+          if (_v) {
+            return _wrap_CoreSession_sayPhrase__SWIG_0(L);
+          }
+        }
+      }
+    }
+  }
+  
+  lua_pushstring(L,"No matching function for overloaded 'CoreSession_sayPhrase'");
+  lua_error(L);return 0;
+}
+
+
 static int _wrap_CoreSession_recordFile__SWIG_0(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -4993,6 +5204,8 @@ static swig_lua_method swig_CoreSession_methods[] = {
     {"getPrivate", _wrap_CoreSession_getPrivate}, 
     {"getVariable", _wrap_CoreSession_getVariable}, 
     {"process_callback_result", _wrap_CoreSession_process_callback_result}, 
+    {"say", _wrap_CoreSession_say}, 
+    {"sayPhrase", _wrap_CoreSession_sayPhrase}, 
     {"recordFile", _wrap_CoreSession_recordFile}, 
     {"setCallerData", _wrap_CoreSession_setCallerData}, 
     {"originate", _wrap_CoreSession_originate}, 

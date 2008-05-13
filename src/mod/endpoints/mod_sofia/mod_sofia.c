@@ -752,6 +752,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			
 		}
 		break;
+	case SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY:
+		if (tech_pvt->rtp_session && switch_rtp_test_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot pass 2833 on a transcoded call.\n");
+			switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833);
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_BROADCAST: {
 		const char *ip = NULL, *port = NULL;
 		ip = switch_channel_get_variable(channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE);
