@@ -868,6 +868,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	uint32_t session_timeout = 0;
 	const char *val;
 	const char *rep;
+	char *sticky;
 
 	rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
 
@@ -1001,6 +1002,17 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 								  TAG_END());
 
 
+		if (switch_test_flag(tech_pvt, TFLAG_NAT) ||
+			(val = switch_channel_get_variable(channel, "sip-force-contact")) || 
+			((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val))) {
+			tech_pvt->record_route = switch_core_session_strdup(tech_pvt->session, url_str);
+			sticky = tech_pvt->record_route;
+			session_timeout = 20;
+		}
+
+
+
+
 		/* TODO: We should use the new tags for making an rpid and add profile options to turn this on/off */
 		if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
 			priv = "name";
@@ -1090,6 +1102,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		}
 		sofia_glue_tech_patch_sdp(tech_pvt);
 	}
+
 
 	nua_invite(tech_pvt->nh,
 			   NUTAG_AUTOANSWER(0),

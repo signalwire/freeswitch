@@ -495,7 +495,8 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		authorization = sip->sip_proxy_authorization;
 	}
 
-	if (regtype == REG_REGISTER && (profile->pflags & PFLAG_BLIND_REG)) {
+	if (regtype == REG_AUTO_REGISTER || (regtype == REG_REGISTER && (profile->pflags & PFLAG_BLIND_REG))) {
+		regtype = REG_REGISTER;
 		goto reg;
 	}
 
@@ -716,18 +717,28 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 	switch_event_t *v_event = NULL;
 	char network_ip[80];
 	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
-	
+	sofia_regtype_t type = REG_REGISTER;
+
 	if (profile->reg_acl_count) {
 		uint32_t x = 0;
+		int ok = 1;
+		char *last_acl = NULL;
 
 		get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
-		
+
 		for (x = 0 ; x < profile->reg_acl_count; x++) {
-			if (!switch_check_network_list_ip(network_ip, profile->reg_acl[x])) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl %s\n", network_ip,  profile->reg_acl[x]);
-				nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
-				goto end;
+			last_acl = profile->reg_acl[x];
+			if (!(ok = switch_check_network_list_ip(network_ip, last_acl))) {
+				break;
 			}
+		}
+		
+		if (ok && !(profile->pflags & PFLAG_BLIND_REG)) {
+			type = REG_AUTO_REGISTER;
+		} else if (!ok) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl %s\n", network_ip,  profile->reg_acl[x]);
+			nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
+			goto end;
 		}
 	}
 
@@ -749,7 +760,7 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 		goto end;
 	}
 
-	sofia_reg_handle_register(nua, profile, nh, sip, REG_REGISTER, key, sizeof(key), &v_event);
+	sofia_reg_handle_register(nua, profile, nh, sip, type, key, sizeof(key), &v_event);
 
 	if (v_event) {
 		switch_event_fire(&v_event);

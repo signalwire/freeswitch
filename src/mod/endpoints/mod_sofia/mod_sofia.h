@@ -172,7 +172,7 @@ typedef enum {
 	TFLAG_REFER = (1 << 17),
 	TFLAG_NOHUP = (1 << 18),
 	TFLAG_XFER = (1 << 19),
-	TFLAG_RESERVED = (1 << 20),
+	TFLAG_NAT = (1 << 20),
 	TFLAG_BUGGY_2833 = (1 << 21),
 	TFLAG_SIP_HOLD = (1 << 22),
 	TFLAG_INB_NOMEDIA = (1 << 23),
@@ -330,6 +330,8 @@ struct sofia_profile {
 	uint32_t acl_count;
 	char *reg_acl[SOFIA_MAX_ACL];
 	uint32_t reg_acl_count;
+	char *nat_acl[SOFIA_MAX_ACL];
+	uint32_t nat_acl_count;
 
 };
 
@@ -394,6 +396,7 @@ struct private_object {
 	char *gateway_name;
 	char *local_crypto_key;
 	char *remote_crypto_key;
+	char *record_route;
 	int crypto_tag;
 	unsigned char local_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
 	unsigned char remote_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
@@ -434,6 +437,8 @@ struct private_object {
 	uint32_t video_count;
 	sofia_dtmf_t dtmf_type;
 	int q850_cause;
+	char *remote_ip;
+	int remote_port;
 };
 
 struct callback_t {
@@ -444,7 +449,8 @@ struct callback_t {
 
 typedef enum {
 	REG_REGISTER,
-	REG_INVITE
+	REG_AUTO_REGISTER,
+	REG_INVITE,
 } sofia_regtype_t;
 
 typedef enum {

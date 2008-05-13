@@ -1299,6 +1299,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->username = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "context")) {
 						profile->context = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "apply-nat-acl")) {
+						if (profile->acl_count < SOFIA_MAX_ACL) {
+							profile->nat_acl[profile->nat_acl_count++] = switch_core_strdup(profile->pool, val);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
+						}
 					} else if (!strcasecmp(var, "apply-inbound-acl")) {
 						if (profile->acl_count < SOFIA_MAX_ACL) {
 							profile->acl[profile->acl_count++] = switch_core_strdup(profile->pool, val);
@@ -1529,6 +1535,9 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 	if (gateway) {
 		if (status == 200 || status == 404) {
 			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ping success %s\n", gateway->name);
+			if (gateway->state == REG_STATE_FAILED) {
+				gateway->state = REG_STATE_UNREGED;
+			}
 			gateway->status = SOFIA_GATEWAY_UP;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ping failed %s\n", gateway->name);
@@ -2637,7 +2646,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	uint32_t sess_max = switch_core_session_limit(0);
 	int is_auth = 0, calling_myself = 0;
 	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
-	
+	int network_port = 0;
 
 	if (sess_count >= sess_max || !(profile->pflags & PFLAG_RUNNING)) {
 		nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
@@ -2652,6 +2661,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	
 	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
+	network_port = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
 
 	if (profile->acl_count) {
 		uint32_t x = 0;
@@ -2679,8 +2689,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 
 	if ((profile->pflags & PFLAG_AUTH_CALLS) || (!(profile->pflags & PFLAG_BLIND_AUTH) && (sip->sip_proxy_authorization || sip->sip_authorization))) {
-		int rport = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
-		if (!strcmp(network_ip, profile->sipip) && rport == profile->sip_port) {
+		if (!strcmp(network_ip, profile->sipip) && network_port == profile->sip_port) {
 			calling_myself++;
 		} else {
 			if (sofia_reg_handle_register(nua, profile, nh, sip, REG_INVITE, key, sizeof(key), &v_event)) {
@@ -2713,6 +2722,16 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		return;
 	}
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+
+	tech_pvt->remote_ip = switch_core_session_strdup(session, network_ip);
+	tech_pvt->remote_port = network_port;
+
+	if (sip->sip_contact && sip->sip_contact->m_url) {
+		tech_pvt->record_route = switch_core_session_sprintf(session, "sip:%s@%s:%d", 
+															 sip->sip_contact->m_url->url_user, 
+															 tech_pvt->remote_ip,
+															 tech_pvt->remote_port);
+	}
 
 	if (*key != '\0') {
 		tech_pvt->key = switch_core_session_strdup(session, key);
@@ -3127,6 +3146,34 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			switch_assert(sql);
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
+
+
+		if (profile->nat_acl_count) {
+			uint32_t x = 0;
+			int ok = 1;
+			char *last_acl = NULL;
+			const char *contact_host = NULL;
+
+			if (sip && sip->sip_contact && sip->sip_contact->m_url && sip->sip_contact->m_url->url_host) {
+				contact_host = sip->sip_contact->m_url->url_host;
+			}
+			if (contact_host) {
+				for (x = 0 ; x < profile->nat_acl_count; x++) {
+					last_acl = profile->nat_acl[x];
+					if (!(ok = switch_check_network_list_ip(contact_host, last_acl))) {
+						break;
+					}
+				}
+
+				if (ok) {
+					switch_set_flag(tech_pvt, TFLAG_NAT);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting NAT mode based on acl %s\n", last_acl);
+				}
+			}
+		}
+
+
+
 		
 		return;
 	}
