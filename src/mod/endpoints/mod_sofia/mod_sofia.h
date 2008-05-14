@@ -45,7 +45,7 @@
 #ifdef SWITCH_HAVE_ODBC
 #include <switch_odbc.h>
 #endif
-
+#define SOFIA_NAT_SESSION_TIMEOUT 20
 #define SOFIA_MAX_ACL 100
 
 #define MODNAME "mod_sofia"

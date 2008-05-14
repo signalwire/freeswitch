@@ -2727,10 +2727,14 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	tech_pvt->remote_port = network_port;
 
 	if (sip->sip_contact && sip->sip_contact->m_url) {
+		char tmp[35] = "";
 		tech_pvt->record_route = switch_core_session_sprintf(session, "sip:%s@%s:%d", 
 															 sip->sip_contact->m_url->url_user, 
 															 tech_pvt->remote_ip,
 															 tech_pvt->remote_port);
+		switch_channel_set_variable(channel, "sip_received_ip", tech_pvt->remote_ip);
+		snprintf(tmp, sizeof(tmp), "tech_pvt->remote_port");
+		switch_channel_set_variable(channel, "sip_received_port", tmp);
 	}
 
 	if (*key != '\0') {
@@ -3168,6 +3172,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				if (ok) {
 					switch_set_flag(tech_pvt, TFLAG_NAT);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting NAT mode based on acl %s\n", last_acl);
+					switch_channel_set_variable(channel, "sip_nat_detected", "true");
 				}
 			}
 		}

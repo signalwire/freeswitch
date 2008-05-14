@@ -1007,7 +1007,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val))) {
 			tech_pvt->record_route = switch_core_session_strdup(tech_pvt->session, url_str);
 			sticky = tech_pvt->record_route;
-			session_timeout = 20;
+			session_timeout = SOFIA_NAT_SESSION_TIMEOUT;
+			switch_channel_set_variable(channel, "sip_nat_detected", "true");
 		}
 
 
@@ -1532,6 +1533,16 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	if (tech_pvt->cng_pt) {
 		flags |= SWITCH_RTP_FLAG_AUTO_CNG;
 	}
+	
+	if (tech_pvt->rtp_session && switch_test_flag(tech_pvt, TFLAG_REINVITE)) {
+		const char *ip = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE);
+		const char *port = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);
+
+		if (ip && port && !strcmp(ip, tech_pvt->adv_sdp_audio_ip) && atoi(port) == tech_pvt->remote_sdp_audio_port) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Audio params are unchanged.\n");
+			goto video;
+		}
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AUDIO RTP [%s] %s:%d->%s:%d codec: %u ms: %d\n",
 					  switch_channel_get_name(tech_pvt->channel),
@@ -1809,7 +1820,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 	}
 
 	if (((m = sdp->sdp_media)) && m->m_mode == sdp_sendonly) {
-		sendonly = 1;
+		sendonly = 2; /* global sendonly always wins */
 	}
 
 	for (attr = sdp->sdp_attributes; attr; attr = attr->a_next) {
@@ -1819,7 +1830,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 
 		if ((!strcasecmp(attr->a_name, "sendonly")) || (!strcasecmp(attr->a_name, "inactive"))) {
 			sendonly = 1;
-		} else if (!strcasecmp(attr->a_name, "sendrecv")) {
+		} else if (sendonly < 2 && !strcasecmp(attr->a_name, "sendrecv")) {
 			sendonly = 0;
 		} else if (!strcasecmp(attr->a_name, "ptime")) {
 			dptime = atoi(attr->a_value);
@@ -1840,7 +1851,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 			if (!(stream = switch_channel_get_variable(tech_pvt->channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
 				stream = tech_pvt->profile->hold_music;
 			}
-
+			
 			if (stream && strcasecmp(stream, "silence")) {
 				if (!strcasecmp(stream, "indicate_hold")) {
 					switch_channel_set_flag(tech_pvt->channel, CF_SUSPEND);

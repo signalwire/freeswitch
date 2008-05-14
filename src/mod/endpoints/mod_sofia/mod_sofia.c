@@ -411,7 +411,8 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		(val = switch_channel_get_variable(channel, "sip-force-contact")) || 
 		((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val))) {
 		sticky = tech_pvt->record_route;
-		session_timeout = 20;
+		session_timeout = SOFIA_NAT_SESSION_TIMEOUT;
+		switch_channel_set_variable(channel, "sip_nat_detected", "true");
 	}
 
 	
@@ -1107,6 +1108,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					(val = switch_channel_get_variable(channel, "sip-force-contact")) || 
 					((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val))) {
 					sticky = tech_pvt->record_route;
+					switch_channel_set_variable(channel, "sip_nat_detected", "true");
 				}
 
 				nua_respond(tech_pvt->nh,
