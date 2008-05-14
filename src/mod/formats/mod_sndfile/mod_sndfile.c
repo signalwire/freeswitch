@@ -167,7 +167,7 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opening File [%s] rate %dhz\n", path, context->sfinfo.samplerate);
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opening File [%s] rate %dhz\n", path, context->sfinfo.samplerate);
 	handle->samples = (unsigned int) context->sfinfo.frames;
 	handle->samplerate = context->sfinfo.samplerate;
 	handle->channels = (uint8_t) context->sfinfo.channels;
