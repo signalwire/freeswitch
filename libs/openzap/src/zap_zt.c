@@ -346,16 +346,18 @@ static ZIO_OPEN_FUNCTION(zt_open)
 		} else if (zchan->type == ZAP_CHAN_TYPE_FXS || zchan->type == ZAP_CHAN_TYPE_FXO) {
 			int len = zt_globals.eclevel;
 			if (ioctl(zchan->sockfd, ZT_ECHOCANCEL, &len)) {
-				snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
-				zap_log(ZAP_LOG_ERROR, "%s\n", zchan->last_error);
-				return ZAP_FAIL;
-			}
-			
-			len = zt_globals.etlevel;
-			if (ioctl(zchan->sockfd, ZT_ECHOTRAIN, &len)) {
-				snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
-				zap_log(ZAP_LOG_ERROR, "%s\n", zchan->last_error);
-				return ZAP_FAIL;
+				zap_log(ZAP_LOG_WARNING, "Echo cancel not available for %d:%d\n", zchan->span_id, zchan->chan_id);
+				//snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
+				//zap_log(ZAP_LOG_ERROR, "%s\n", zchan->last_error);
+				//return ZAP_FAIL;
+			} else {
+				len = zt_globals.etlevel;
+				if (ioctl(zchan->sockfd, ZT_ECHOTRAIN, &len)) {
+					zap_log(ZAP_LOG_WARNING, "Echo training not available for %d:%d\n", zchan->span_id, zchan->chan_id);
+					//snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
+					//zap_log(ZAP_LOG_ERROR, "%s\n", zchan->last_error);
+					//return ZAP_FAIL;
+				}
 			}
 		}
 	}
