@@ -432,8 +432,6 @@ extern tag_typedef_t _nutag_add_contact;
 
 /* ---------------------------------------------------------------------- */
 
-typedef unsigned longlong ull;
-
 #define SET_STATUS(_status, _phrase) status = _status, phrase = _phrase
 
 #define SET_STATUS2(_status, _phrase) status = _status, phrase = _phrase
