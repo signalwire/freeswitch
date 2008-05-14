@@ -336,7 +336,6 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				break;
 			case ZAP_CHANNEL_STATE_DOWN:
 				{
-					zap_channel_done(zchan);
 					goto done;
 				}
 				break;
@@ -412,7 +411,6 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				{
 					sig.event_id = ZAP_SIGEVENT_STOP;
 					analog_data->sig_cb(&sig);
-					zap_channel_done(zchan);
 					goto done;
 				}
 				break;
@@ -623,8 +621,6 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 	}
 
  done:
-
-	zap_channel_done(zchan);
 
 
 	if (zchan->type == ZAP_CHAN_TYPE_FXO && zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK)) {
