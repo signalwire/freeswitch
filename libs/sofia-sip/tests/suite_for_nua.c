@@ -22,7 +22,7 @@
  *
  */
 
-/**@CFILE check_sofia.c
+/**@CFILE suite_for_nua.c
  *
  * @brief Check-driven tester for Sofia SIP User Agent library
  *

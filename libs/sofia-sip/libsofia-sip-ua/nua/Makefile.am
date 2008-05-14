@@ -13,13 +13,13 @@
 
 noinst_LTLIBRARIES = 	libnua.la
 
-check_LTLIBRARIES = 	libtestnua.la libtestproxy.la libtestnat.la
+check_PROGRAMS =
+TESTS =
 
-check_PROGRAMS =	test_nua
-
-TESTS = 		test_nua
-
-CLEANFILES =           tmp_sippasswd.??????
+if HAVE_CHECK
+check_PROGRAMS +=	check_nua
+TESTS += 		check_nua
+endif
 
 # ----------------------------------------------------------------------
 # Rules for building the targets
@@ -42,6 +42,29 @@ libnua_la_SOURCES = 	nua.c nua_stack.h nua_common.c nua_stack.c \
 			nua_tag.c nua_tag_ref.c
 
 COVERAGE_INPUT = 	$(libnua_la_SOURCES) $(include_sofia_HEADERS)
+
+check_nua_SOURCES = 	check_nua.c check_nua.h \
+			check_session.c check_register.c \
+			test_s2.h test_s2.c
+
+check_nua_LDADD = 	$(nua_libs) @CHECK_LIBS@
+
+nua_libs = 		libnua.la  \
+			../iptsec/libiptsec.la \
+			../ipt/libipt.la \
+			../nea/libnea.la \
+			../nta/libnta.la \
+			../sresolv/libsresolv.la \
+			../tport/libtport.la \
+			../stun/libstun.la \
+			../soa/libsoa.la \
+			../sdp/libsdp.la \
+			../sip/libsip.la \
+			../http/libhttp.la \
+			../msg/libmsg.la \
+			../url/liburl.la \
+			../bnf/libbnf.la \
+			../su/libsu.la
 
 test_nua_LDFLAGS = 	-static
 
@@ -80,6 +103,7 @@ test_nua_LDADD = 	libnua.la libtestnua.la libtestproxy.la libtestnat.la \
 			../bnf/libbnf.la \
 			../su/libsu.la
 
+^ ^ ^ ^ ^ ^ ^
 # ----------------------------------------------------------------------
 # Install and distribution rules
 
