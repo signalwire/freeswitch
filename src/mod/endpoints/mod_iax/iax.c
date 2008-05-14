@@ -2984,7 +2984,12 @@ void iax_destroy(struct iax_session *session)
 static struct iax_event *iax_net_read(void)
 {
 	unsigned char buf[65536];
-	int res, sinlen;
+	int res;
+#ifdef WIN32
+	socklen_t sinlen;
+#else
+	unsigned int sinlen;
+#endif
 	struct sockaddr_in sin;
 
 	sinlen = sizeof(sin);
