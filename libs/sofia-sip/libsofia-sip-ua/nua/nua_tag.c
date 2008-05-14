@@ -598,6 +598,8 @@ tag_typedef_t nutag_soa_name = STRTAG_TYPEDEF(soa_name);
  * Retry count determines how many times stack will automatically retry
  * after an recoverable error response, like 302, 401 or 407.
  *
+ * Note that the first request does not count as retry.
+ *
  * @par Used with
  *    nua_create(), nua_set_params(), nua_handle(), nua_set_hparams(),
  *    nua_get_params(), nua_get_hparams(),
@@ -613,7 +615,9 @@ tag_typedef_t nutag_soa_name = STRTAG_TYPEDEF(soa_name);
  *    unsigned
  *
  * @par Values
- *    @c 0   Never retry automatically \n
+ * - 0 - Never retry automatically \n
+ * - Otherwise, number of extra transactions initiated after initial
+ *   transaction failed with recoverable error response
  *
  * @NEW_1_12_4.
  *
