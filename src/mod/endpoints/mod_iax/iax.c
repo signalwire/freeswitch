@@ -2985,7 +2985,7 @@ static struct iax_event *iax_net_read(void)
 {
 	unsigned char buf[65536];
 	int res;
-#ifdef WIN32
+#ifndef __Linux__
 	socklen_t sinlen;
 #else
 	unsigned int sinlen;
