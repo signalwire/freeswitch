@@ -83,6 +83,7 @@
       <param name="pin-sound" value="conference/conf-pin.wav"/>
       <!-- File to play to when the pin is invalid -->
       <param name="bad-pin-sound" value="conference/conf-bad-pin.wav"/>
+      <param name="comfort-noise-level" value="1400"/>
       <!-- Conference pin -->
       <!--<param name="pin" value="12345"/>-->
       <!-- Default Caller ID Name for outbound calls -->

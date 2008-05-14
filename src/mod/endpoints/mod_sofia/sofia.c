@@ -2726,6 +2726,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	tech_pvt->remote_ip = switch_core_session_strdup(session, network_ip);
 	tech_pvt->remote_port = network_port;
 
+	channel = tech_pvt->channel = switch_core_session_get_channel(session);
+
 	if (sip->sip_contact && sip->sip_contact->m_url) {
 		char tmp[35] = "";
 		tech_pvt->record_route = switch_core_session_sprintf(session, "sip:%s@%s:%d", 
@@ -2741,7 +2743,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		tech_pvt->key = switch_core_session_strdup(session, key);
 	}
 
-	channel = tech_pvt->channel = switch_core_session_get_channel(session);
 	
 	if (is_auth) {
 		switch_channel_set_variable(channel, "sip_authorized", "true");
