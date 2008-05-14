@@ -8008,7 +8008,7 @@ static void outgoing_timer(nta_agent_t *sa)
   outgoing_queue_init(sa->sa_out.free = rq, 0);
 
   while ((orq = sa->sa_out.re_list)) {
-    if ((int32_t)(orq->orq_retry) - now > 0)
+    if ((int32_t)(orq->orq_retry - now) > 0)
       break;
     if (retransmitted >= timer_max_retransmit)
       break;
