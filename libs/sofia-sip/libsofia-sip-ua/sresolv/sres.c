@@ -2190,6 +2190,8 @@ sres_config_t *sres_parse_resolv_conf(sres_resolver_t *res,
   return c;
 }
 
+uint16_t _sres_default_port = 53;
+
 /** Parse config file. 
  *
  * @return Number of search domains, if successful.
@@ -2212,7 +2214,7 @@ int sres_parse_config(sres_config_t *c, FILE *f)
   c->c_opt.check_names = 1;
   c->c_opt.timeout = SRES_RETRY_INTERVAL;
   c->c_opt.attempts = SRES_MAX_RETRY_COUNT;
-  c->c_port = 53;
+  c->c_port = _sres_default_port;
 
   if (f != NULL) {  
     for (line = 1; fgets(buf, sizeof(buf), f); line++) {
