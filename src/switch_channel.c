@@ -130,7 +130,7 @@ SWITCH_DECLARE(const char *) switch_channel_cause2str(switch_call_cause_t cause)
 	uint8_t x;
 	const char *str = "UNKNOWN";
 
-	for (x = 0; CAUSE_CHART[x].name; x++) {
+	for (x = 0; x < (sizeof(CAUSE_CHART) / sizeof(struct switch_cause_table)) ; x++) {
 		if (CAUSE_CHART[x].cause == cause) {
 			str = CAUSE_CHART[x].name;
 		}
@@ -147,7 +147,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2cause(const char *str)
 	if (*str > 47 && *str < 58) {
 		cause = atoi(str);
 	} else {
-		for (x = 0; CAUSE_CHART[x].name; x++) {
+		for (x = 0; x < (sizeof(CAUSE_CHART) / sizeof(struct switch_cause_table)) && CAUSE_CHART[x].name; x++) {
 			if (!strcasecmp(CAUSE_CHART[x].name, str)) {
 				cause = CAUSE_CHART[x].cause;
 			}
@@ -1272,10 +1272,9 @@ SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel_t *channe
 	int index, i = channel->state_handler_index;
 	const switch_state_handler_table_t *new_handlers[SWITCH_MAX_STATE_HANDLERS] = { 0 };
 
+	switch_assert(channel != NULL);
 
 	switch_mutex_lock(channel->flag_mutex);
-
-	switch_assert(channel != NULL);
 	channel->state_handler_index = 0;
 
 	if (state_handler) {
