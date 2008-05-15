@@ -69,7 +69,7 @@ int zap_config_open_file(zap_config_t *cfg, const char *file_path)
 			}
 
 			cfg->file = f;
-			cfg->path = path;
+			zap_set_string(cfg->path, path);
 
 			while (zap_config_next_pair(cfg, &var, &val)) {
 				if ((cfg->sectno != last) && !strcmp(cfg->section, file_path)) {
@@ -86,7 +86,7 @@ int zap_config_open_file(zap_config_t *cfg, const char *file_path)
 		return 0;
 	} else {
 		cfg->file = f;
-		cfg->path = path;
+		zap_set_string(cfg->path, path);
 		return 1;
 	}
 }
