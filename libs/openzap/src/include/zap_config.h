@@ -77,7 +77,7 @@ struct zap_config {
 	/*! FILE stream buffer to the opened file */
 	FILE *file;
 	/*! path to the file */
-	const char *path;
+	char path[512];
 	/*! current category */
 	char category[256];
 	/*! current section */
