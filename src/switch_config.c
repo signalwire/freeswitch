@@ -66,7 +66,7 @@ SWITCH_DECLARE(int) switch_config_open_file(switch_config_t * cfg, char *file_pa
 			}
 
 			cfg->file = f;
-			cfg->path = path;
+			switch_set_string(cfg->path, path);
 
 			while (switch_config_next_pair(cfg, &var, &val)) {
 				if (file_path && (cfg->sectno != last) && !strcmp(cfg->section, file_path)) {
@@ -83,7 +83,7 @@ SWITCH_DECLARE(int) switch_config_open_file(switch_config_t * cfg, char *file_pa
 		return 0;
 	} else {
 		cfg->file = f;
-		cfg->path = path;
+		switch_set_string(cfg->path, path);
 		return 1;
 	}
 }
