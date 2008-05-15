@@ -11,7 +11,7 @@ include $(BASE)/build/modmake.rules
 local_depend: $(LOCAL_OBJS)
 
 $(LIBLUA_A):
-	cd lua && $(MAKE) CFLAGS="$(ALL_CFLAGS) -DLUA_USE_LINUX -w" liblua.a
+	cd lua && $(MAKE) CC="$(CC)" CFLAGS="$(ALL_CFLAGS) -DLUA_USE_LINUX -w" liblua.a
 
 luaclean:
 	cd lua && $(MAKE) clean
