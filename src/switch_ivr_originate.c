@@ -39,7 +39,7 @@ static switch_status_t originate_on_consume_media_transmit(switch_core_session_t
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	
 	if (!switch_channel_test_flag(channel, CF_PROXY_MODE)) {
-		while(switch_channel_get_state(channel) == CS_CONSUME_MEDIA) {
+		while(switch_channel_get_state(channel) == CS_CONSUME_MEDIA && !switch_channel_test_flag(channel, CF_TAGGED)) {
 			switch_ivr_sleep(session, 10);
 		}
 	}
