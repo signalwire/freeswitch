@@ -975,7 +975,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				code = 488;
 			}
 			
-			if (!reason && code != 407) {
+			if (switch_strlen_zero(reason) && code != 407) {
 				reason = sip_status_phrase(code);
 				if (switch_strlen_zero(reason)) {
 					reason = "Because";
@@ -1014,7 +1014,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 				}
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding with %d %s\n", code, reason);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding with %d [%s]\n", code, reason);
 				
 				if (!switch_strlen_zero(((char *)msg->pointer_arg))) {
 					tech_pvt->local_sdp_str = switch_core_session_strdup(tech_pvt->session, (char *)msg->pointer_arg);
