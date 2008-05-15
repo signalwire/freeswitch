@@ -349,7 +349,7 @@ static switch_status_t conference_play_file(conference_obj_t * conference, char 
 static switch_status_t conference_say(conference_obj_t * conference, const char *text, uint32_t leadin);
 static void conference_list(conference_obj_t * conference, switch_stream_handle_t *stream, char *delim);
 SWITCH_STANDARD_API(conf_api_main);
-static switch_status_t audio_bridge_on_routing(switch_core_session_t *session);
+
 static switch_status_t conference_outcall(conference_obj_t * conference,
 										  char *conference_name,
 										  switch_core_session_t *session,
@@ -1755,7 +1755,7 @@ static void conference_loop_output(conference_member_t * member)
 		}
 
 		for (cp = call_list; cp; cp = cp->next) {
-			conference_outcall_bg(member->conference, NULL, member->session, cp->string, to, switch_str_nil(flags), cid_name, cid_num);
+			conference_outcall_bg(member->conference, NULL, NULL, cp->string, to, switch_str_nil(flags), cid_name, cid_num);
 		}
 	}
 	/* Fair WARNING, If you expect the caller to hear anything or for digit handling to be proccessed,      */
@@ -3726,31 +3726,6 @@ SWITCH_STANDARD_API(conf_api_main)
 
 }
 
-/* outbound call bridge progress call state callback handler */
-static switch_status_t audio_bridge_on_routing(switch_core_session_t *session)
-{
-	switch_channel_t *channel = NULL;
-
-	channel = switch_core_session_get_channel(session);
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CUSTOM ROUTING\n");
-
-	/* put the channel in a passive state so we can loop audio to it */
-	switch_channel_set_state(channel, CS_SOFT_EXECUTE);
-	return SWITCH_STATUS_FALSE;
-}
-
-static switch_state_handler_table_t audio_bridge_peer_state_handlers = {
-	/*.on_init */ NULL,
-	/*.on_routing */ audio_bridge_on_routing,
-	/*.on_execute */ NULL,
-	/*.on_hangup */ NULL,
-	/*.on_exchange_media */ NULL,
-	/*.on_soft_execute */ NULL,
-	/*.on_consume_media */ NULL,
-};
-
-
 /* generate an outbound call from the conference */
 static switch_status_t conference_outcall(conference_obj_t * conference,
 										  char *conference_name,
@@ -3769,7 +3744,6 @@ static switch_status_t conference_outcall(conference_obj_t * conference,
 
 	if (conference == NULL) {
 		char *dialstr = switch_mprintf("{ignore_early_media=true}%s", bridgeto);
-
 		status = switch_ivr_originate(NULL, &peer_session, cause, dialstr, 60, NULL, cid_name, cid_num, NULL, SOF_NONE);
 		switch_safe_free(dialstr);
 
@@ -3802,8 +3776,9 @@ static switch_status_t conference_outcall(conference_obj_t * conference,
 	}
 
 	/* establish an outbound call leg */
+		
 	if (switch_ivr_originate(session,
-							 &peer_session, cause, bridgeto, timeout, &audio_bridge_peer_state_handlers, cid_name, cid_num,
+							 &peer_session, cause, bridgeto, timeout, NULL,  cid_name, cid_num,
 							 NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot create outgoing channel, cause: %s\n", switch_channel_cause2str(*cause));
 		if (caller_channel) {
@@ -3811,10 +3786,11 @@ static switch_status_t conference_outcall(conference_obj_t * conference,
 		}
 		goto done;
 	}
-
+	
 	rdlock = 1;
 	peer_channel = switch_core_session_get_channel(peer_session);
-
+	switch_channel_set_state(peer_channel, CS_SOFT_EXECUTE);
+	
 	/* make sure the conference still exists */
 	if (!switch_test_flag(conference, CFLAG_RUNNING)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Conference is gone now, nevermind..\n");
