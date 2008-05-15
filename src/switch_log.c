@@ -311,7 +311,9 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 
 	switch_safe_free(data);
 	switch_safe_free(new_fmt);
-	fflush(handle);
+	if (handle) {
+		fflush(handle);
+	}
 }
 
 SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool)
