@@ -824,7 +824,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 		for (x = 0; x < (sizeof(cmd) - 1); x++) {
 			int c = getchar();
 			if (c < 0) {
-				int y = read(fileno(stdin), cmd, sizeof(cmd));
+				int y = read(fileno(stdin), cmd, sizeof(cmd) - 1);
 				cmd[y - 1] = '\0';
 				break;
 			}
