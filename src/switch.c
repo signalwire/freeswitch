@@ -404,6 +404,10 @@ int main(int argc, char *argv[])
 			x++;
 			if (argv[x] && strlen(argv[x])) {
 				SWITCH_GLOBAL_dirs.conf_dir = (char *) malloc(strlen(argv[x]) + 1);
+				if (!SWITCH_GLOBAL_dirs.conf_dir) {
+					fprintf(stderr, "Allocation error\n");
+					return 255;
+				}
 				strcpy(SWITCH_GLOBAL_dirs.conf_dir, argv[x]);
 				alt_dirs++;
 			} else {
@@ -417,6 +421,10 @@ int main(int argc, char *argv[])
 			x++;
 			if (argv[x] && strlen(argv[x])) {
 				SWITCH_GLOBAL_dirs.log_dir = (char *) malloc(strlen(argv[x]) + 1);
+				if (!SWITCH_GLOBAL_dirs.log_dir) {
+					fprintf(stderr, "Allocation error\n");
+					return 255;
+				}
 				strcpy(SWITCH_GLOBAL_dirs.log_dir, argv[x]);
 				alt_dirs++;
 			} else {
@@ -430,6 +438,10 @@ int main(int argc, char *argv[])
 			x++;
 			if (argv[x] && strlen(argv[x])) {
 				SWITCH_GLOBAL_dirs.db_dir = (char *) malloc(strlen(argv[x]) + 1);
+				if (!SWITCH_GLOBAL_dirs.db_dir) {
+					fprintf(stderr, "Allocation error\n");
+					return 255;
+				}
 				strcpy(SWITCH_GLOBAL_dirs.db_dir, argv[x]);
 				alt_dirs++;
 			} else {
@@ -443,6 +455,10 @@ int main(int argc, char *argv[])
 			x++;
 			if (argv[x] && strlen(argv[x])) {
 				SWITCH_GLOBAL_dirs.script_dir = (char *) malloc(strlen(argv[x]) + 1);
+				if (!SWITCH_GLOBAL_dirs.script_dir) {
+					fprintf(stderr, "Allocation error\n");
+					return 255;
+				}
 				strcpy(SWITCH_GLOBAL_dirs.script_dir, argv[x]);
 			} else {
 				fprintf(stderr, "When using -scripts you must specify a scripts directory\n");
