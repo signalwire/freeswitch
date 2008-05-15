@@ -4982,7 +4982,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 		conference->mflags = MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR;
 	}
 
-	if (!switch_strlen_zero(moh_sound)) {
+	if (!switch_strlen_zero(moh_sound) && switch_is_moh(moh_sound)) {
 		conference->moh_sound = switch_core_strdup(conference->pool, moh_sound);
 	}
 
