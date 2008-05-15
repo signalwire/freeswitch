@@ -2675,7 +2675,13 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			}
 		}
 
-		if (!ok) {
+		if (ok) {
+			if ((profile->pflags & PFLAG_AUTH_CALLS)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Approved by acl %s. Access Granted.\n", 
+								  network_ip, switch_str_nil(last_acl));
+				is_auth = 1;
+			}
+		} else {
 			if (!(profile->pflags & PFLAG_AUTH_CALLS)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl %s\n", network_ip, switch_str_nil(last_acl));
 				nua_respond(nh, SIP_403_FORBIDDEN, TAG_END());
@@ -2687,8 +2693,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		}
 	}
 
-
-	if ((profile->pflags & PFLAG_AUTH_CALLS) || (!(profile->pflags & PFLAG_BLIND_AUTH) && (sip->sip_proxy_authorization || sip->sip_authorization))) {
+	
+	if (!is_auth && 
+		((profile->pflags & PFLAG_AUTH_CALLS) || (!(profile->pflags & PFLAG_BLIND_AUTH) && (sip->sip_proxy_authorization || sip->sip_authorization)))) {
 		if (!strcmp(network_ip, profile->sipip) && network_port == profile->sip_port) {
 			calling_myself++;
 		} else {
