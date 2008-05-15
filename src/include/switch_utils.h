@@ -55,6 +55,18 @@ SWITCH_BEGIN_EXTERN_C
 #define switch_is_file_path(file) (file && ((*file == '/') || strstr(file, SWITCH_URL_SEPARATOR)))
 #endif
 
+
+static inline switch_bool_t switch_is_moh(const char *s)
+{
+	if (!strcasecmp(s, "silence") || !strcasecmp(s, "indicate_hold")) {
+		return SWITCH_FALSE;
+	}
+	return SWITCH_TRUE;
+}
+
+
+
+
 SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size_t ilen, unsigned char *out, switch_size_t olen);
 SWITCH_DECLARE(switch_size_t) switch_b64_decode(char *in, char *out, switch_size_t olen);
 SWITCH_DECLARE(char *) switch_amp_encode(char *s, char *buf, switch_size_t len);
@@ -72,6 +84,7 @@ static inline switch_bool_t switch_is_digit_string(const char *s) {
 }
 
 SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size_t len);
+
 
 /*!
   \brief Evaluate the truthfullness of a string expression

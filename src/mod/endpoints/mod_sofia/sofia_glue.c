@@ -1852,7 +1852,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 				stream = tech_pvt->profile->hold_music;
 			}
 			
-			if (stream && strcasecmp(stream, "silence")) {
+			if (stream && switch_is_moh(stream)) {
 				if (!strcasecmp(stream, "indicate_hold")) {
 					switch_channel_set_flag(tech_pvt->channel, CF_SUSPEND);
 					switch_channel_set_flag(tech_pvt->channel, CF_HOLD);

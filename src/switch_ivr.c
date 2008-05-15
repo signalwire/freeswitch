@@ -321,7 +321,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 								stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE);
 							}
 
-							if (stream) {
+							if (stream && switch_is_moh(stream)) {
 								if ((b_session = switch_core_session_locate(b_uuid))) {
 									switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 									switch_ivr_broadcast(b_uuid, stream, SMF_ECHO_ALEG | SMF_LOOP);
@@ -334,10 +334,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 						}
 					}
 					for (x = 0; x < loops || loops < 0; x++) {
+						switch_time_t b4, aftr;
+						
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Command Execute %s(%s)\n", 
 										  switch_channel_get_name(channel), app_name, app_arg);
+						b4 = switch_timestamp_now();
 						switch_core_session_exec(session, application_interface, app_arg);
-						if (!switch_channel_ready(channel) || switch_channel_test_flag(channel, CF_STOP_BROADCAST)) {
+						aftr = switch_timestamp_now();
+						if (!switch_channel_ready(channel) || switch_channel_test_flag(channel, CF_STOP_BROADCAST) || aftr - b4 < 500000) {
 							break;
 						}
 					}
