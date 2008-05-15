@@ -6,5 +6,7 @@
     <param name="auth-realm" value="freeswitch"/>
     <param name="auth-user" value="freeswitch"/>
     <param name="auth-pass" value="works"/>
+    <!-- one or more of these imply you want to pick the exact variables that are transmitted -->
+    <!--<param name="enable-post-var" value="Unique-ID"/>-->
   </settings>
 </configuration>

@@ -1275,7 +1275,7 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 	return data;
 }
 
-SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, const char *prefix)
+SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, const char *prefix, switch_hash_t* vars_map)
 {
 	switch_stream_handle_t stream = { 0 };
 	switch_size_t encode_len = 1024, new_len = 0;
@@ -1284,6 +1284,7 @@ SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, co
 	char *e = NULL;
 	switch_event_header_t *hi;
 	uint32_t x = 0;
+	void* data = NULL;
 
 	SWITCH_STANDARD_STREAM(stream);
 
@@ -1318,10 +1319,18 @@ SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, co
 
 	if (event) {
 		if ((hi = event->headers)) {
+		
 			for (; hi; hi = hi->next) {
 				char *var = hi->name;
 				char *val = hi->value;
-			
+				
+				if (vars_map != NULL)
+				{
+				    if ((data = switch_core_hash_find(vars_map,var)) == NULL || strcasecmp(((char*)data),"enabled"))
+					continue;
+				    
+				}
+				
 				new_len = (strlen((char *) var) * 3) + 1;
 				if (encode_len < new_len) {
 					char *tmp;
@@ -1339,6 +1348,7 @@ SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, co
 			}
 		}
 	}
+	
 	e = (char *) stream.data + (strlen((char *) stream.data) - 1);
 
 	if (e && *e == '&') {
