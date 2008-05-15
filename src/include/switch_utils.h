@@ -55,10 +55,17 @@ SWITCH_BEGIN_EXTERN_C
 #define switch_is_file_path(file) (file && ((*file == '/') || strstr(file, SWITCH_URL_SEPARATOR)))
 #endif
 
+/*!
+  \brief Test for NULL or zero length string
+  \param s the string to test
+  \return true value if the string is NULL or zero length
+*/
+#define switch_strlen_zero(s) (!s || *s == '\0')
+
 
 static inline switch_bool_t switch_is_moh(const char *s)
 {
-	if (!strcasecmp(s, "silence") || !strcasecmp(s, "indicate_hold")) {
+	if (switch_strlen_zero(s) || !strcasecmp(s, "silence") || !strcasecmp(s, "indicate_hold")) {
 		return SWITCH_FALSE;
 	}
 	return SWITCH_TRUE;
@@ -276,13 +283,6 @@ static inline switch_bool_t switch_strstr(char *s, char *q)
 	return tf;
 }
 
-
-/*!
-  \brief Test for NULL or zero length string
-  \param s the string to test
-  \return true value if the string is NULL or zero length
-*/
-#define switch_strlen_zero(s) (!s || *s == '\0')
 
 /*!
   \brief Make a null string a blank string instead
