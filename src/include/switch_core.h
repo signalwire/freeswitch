@@ -732,6 +732,7 @@ SWITCH_DECLARE(void) switch_core_service_session(_In_ switch_core_session_t *ses
   \return the cause code of the attempted call
 */
 SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(_In_opt_ switch_core_session_t *session,
+																		 _In_opt_ switch_event_t *var_event,
 																		 _In_z_ const char *endpoint_name,
 																		 _In_ switch_caller_profile_t *caller_profile,
 																		 _Inout_ switch_core_session_t **new_session,

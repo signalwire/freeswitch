@@ -466,7 +466,7 @@ static switch_status_t wanpipe_on_init(switch_core_session_t *session);
 static switch_status_t wanpipe_on_hangup(switch_core_session_t *session);
 static switch_status_t wanpipe_on_exchange_media(switch_core_session_t *session);
 static switch_status_t wanpipe_on_soft_execute(switch_core_session_t *session);
-static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
+static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event, switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags);
 static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch_frame_t **frame,
 										switch_io_flag_t flags, int stream_id);
@@ -1006,7 +1006,7 @@ switch_state_handler_table_t wanpipe_state_handlers = {
 	/*.on_soft_execute */ wanpipe_on_soft_execute
 };
 
-static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
+static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event, switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
 {
 	char *bchan = NULL;

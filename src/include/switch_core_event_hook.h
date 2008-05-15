@@ -48,7 +48,7 @@ typedef struct switch_io_event_hook_recv_dtmf switch_io_event_hook_recv_dtmf_t;
 typedef struct switch_io_event_hook_state_change switch_io_event_hook_state_change_t;
 typedef struct switch_io_event_hook_resurrect_session switch_io_event_hook_resurrect_session_t;
 typedef switch_status_t (*switch_outgoing_channel_hook_t)
-(switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t *, switch_originate_flag_t);
+(switch_core_session_t *, switch_event_t *, switch_caller_profile_t *, switch_core_session_t *, switch_originate_flag_t);
 typedef switch_status_t (*switch_receive_message_hook_t) (switch_core_session_t *, switch_core_session_message_t *);
 typedef switch_status_t (*switch_receive_event_hook_t) (switch_core_session_t *, switch_event_t *);
 typedef switch_status_t (*switch_read_frame_hook_t) (switch_core_session_t *, switch_frame_t **, switch_io_flag_t, int);

@@ -52,7 +52,7 @@ static switch_status_t sofia_on_init(switch_core_session_t *session);
 
 static switch_status_t sofia_on_exchange_media(switch_core_session_t *session);
 static switch_status_t sofia_on_soft_execute(switch_core_session_t *session);
-static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session,
+static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 												  switch_caller_profile_t *outbound_profile, switch_core_session_t **new_session,
 												  switch_memory_pool_t **pool, switch_originate_flag_t flags);
 static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
@@ -1682,7 +1682,7 @@ static switch_status_t sofia_manage(char *relative_oid, switch_management_action
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session,
+static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 												  switch_caller_profile_t *outbound_profile, switch_core_session_t **new_session,
 												  switch_memory_pool_t **pool, switch_originate_flag_t flags)
 {
@@ -1694,7 +1694,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	private_object_t *tech_pvt = NULL;
 	switch_channel_t *nchannel;
 	char *host = NULL, *dest_to = NULL;
-
+	
 	*new_session = NULL;
 
 	if (!(nsession = switch_core_session_request(sofia_endpoint_interface, pool))) {

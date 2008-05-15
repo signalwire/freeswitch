@@ -188,12 +188,12 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_resurrect_channel(const 
 	return endpoint_interface->io_routines->resurrect_session(new_session, pool, data);
 }
 
-SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_core_session_t *session,
-																		 const char *endpoint_name,
-																		 switch_caller_profile_t *caller_profile,
-																		 switch_core_session_t **new_session, 
-																		 switch_memory_pool_t **pool,
-																		 switch_originate_flag_t flags)
+ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
+																		  const char *endpoint_name,
+																		  switch_caller_profile_t *caller_profile,
+																		  switch_core_session_t **new_session, 
+																		  switch_memory_pool_t **pool,
+																		  switch_originate_flag_t flags)
 {
 	switch_io_event_hook_outgoing_channel_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -247,13 +247,13 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		}
 	}
 
-	if ((cause = endpoint_interface->io_routines->outgoing_channel(session, outgoing_profile, new_session, pool, flags)) != SWITCH_CAUSE_SUCCESS) {
+	if ((cause = endpoint_interface->io_routines->outgoing_channel(session, var_event, outgoing_profile, new_session, pool, flags)) != SWITCH_CAUSE_SUCCESS) {
 		return cause;
 	}
 
 	if (session) {
 		for (ptr = session->event_hooks.outgoing_channel; ptr; ptr = ptr->next) {
-			if ((status = ptr->outgoing_channel(session, caller_profile, *new_session, flags)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = ptr->outgoing_channel(session, var_event, caller_profile, *new_session, flags)) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
 		}
