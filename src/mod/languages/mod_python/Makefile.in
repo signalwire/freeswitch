@@ -4,9 +4,11 @@
 # and define these variables to impact your build
 
 LOCAL_CFLAGS = @PYTHON_CFLAGS@
-LOCAL_LDFLAGS= @PYTHON_LDFLAGS@ -lstdc++
+LOCAL_LDFLAGS= @PYTHON_LDFLAGS@
 LOCAL_OBJS=freeswitch_python.o mod_python_wrap.o
 include ../../../../build/modmake.rules
+
+LINK=$(CXXLINK)
 
 PYMOD=freeswitch
 PYTHON_SITE_DIR=@PYTHON_SITE_DIR@
