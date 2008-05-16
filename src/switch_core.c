@@ -369,6 +369,16 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 							  runtime.memory_pool);
 	switch_safe_free(dir_path);
 
+	switch_assert(SWITCH_GLOBAL_dirs.base_dir);
+	switch_assert(SWITCH_GLOBAL_dirs.mod_dir);
+	switch_assert(SWITCH_GLOBAL_dirs.conf_dir);
+	switch_assert(SWITCH_GLOBAL_dirs.log_dir);
+	switch_assert(SWITCH_GLOBAL_dirs.db_dir);
+	switch_assert(SWITCH_GLOBAL_dirs.script_dir);
+	switch_assert(SWITCH_GLOBAL_dirs.htdocs_dir);
+	switch_assert(SWITCH_GLOBAL_dirs.grammar_dir);
+	switch_assert(SWITCH_GLOBAL_dirs.temp_dir);
+
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.base_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.mod_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.conf_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
