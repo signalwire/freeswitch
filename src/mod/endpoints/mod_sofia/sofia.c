@@ -3164,12 +3164,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			uint32_t x = 0;
 			int ok = 1;
 			char *last_acl = NULL;
-			const char *contact_host = NULL;
 
-			if (sip && sip->sip_contact && sip->sip_contact->m_url && sip->sip_contact->m_url->url_host) {
-				contact_host = sip->sip_contact->m_url->url_host;
-			}
-			if (contact_host) {
+			if (!switch_strlen_zero(contact_host)) {
 				for (x = 0 ; x < profile->nat_acl_count; x++) {
 					last_acl = profile->nat_acl[x];
 					if (!(ok = switch_check_network_list_ip(contact_host, last_acl))) {
@@ -3184,10 +3180,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				}
 			}
 		}
-
-
-
-		
 		return;
 	}
 
