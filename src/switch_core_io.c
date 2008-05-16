@@ -61,6 +61,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_io_event_hook_video_read_frame_t *ptr;
 
+	switch_assert(session != NULL);
+
 	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -84,7 +86,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 		goto done;
 	}
 
-	switch_assert(session != NULL);
 	switch_assert(*frame != NULL);
 
 	if (switch_test_flag(*frame, SFF_CNG)) {
@@ -104,7 +105,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	int need_codec, perfect, do_bugs = 0, do_resample = 0, is_cng = 0;
 	unsigned int flag = 0;
 
-  top:
+	switch_assert(session != NULL);
+
+top:
 
 	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
 		*frame = NULL;
@@ -115,7 +118,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	status = SWITCH_STATUS_FALSE;
 	need_codec = perfect = 0;
 
-	switch_assert(session != NULL);
 	*frame = NULL;
 
 	if (switch_channel_test_flag(session->channel, CF_HOLD)) {
@@ -142,7 +144,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		goto done;
 	}
 
-	switch_assert(session != NULL);
 	switch_assert(*frame != NULL);
 
 	if (switch_test_flag(*frame, SFF_PROXY_PACKET)) {
