@@ -469,21 +469,6 @@ then
 		fi
 		AC_MSG_RESULT([$PYTHON_VER])
 
-		AC_MSG_CHECKING([location of site-packages])
-
-		# NOTE: this assumes our desired location is always the last one in the list
-		# (= system package location is searched last)
-		#
-		# needs double brackets because m4 removes one pair
-		PYTHON_SITE_DIR="`$PYTHON -c 'import sys; print sys.path[[-1]];'`"
-
-		if test -z "$PYTHON_SITE_DIR" ; then
-			AC_MSG_ERROR([Unable to detect python site-packages path])
-		elif test ! -d "$PYTHON_SITE_DIR" ; then
-			AC_MSG_ERROR([Path $PYTHON_SITE_DIR returned by python does not exist!])
-		fi
-		AC_MSG_RESULT([$PYTHON_SITE_DIR])
-		AC_SUBST([PYTHON_SITE_DIR], [$PYTHON_SITE_DIR])
 
 		AC_MSG_CHECKING([for python distutils])
 		python_has_distutils="no"
@@ -495,6 +480,22 @@ then
 
 		if test "$python_has_distutils" = "no" ; then
 			AC_MSG_RESULT([Falling back to python-config])
+
+			# NOTE: this assumes our desired location is always the last one in the list
+			# (= system package location is searched last)
+			#
+			# needs double brackets because m4 removes one pair
+			AC_MSG_CHECKING([location of site-packages])
+
+			PYTHON_SITE_DIR="`$PYTHON -c 'import sys; print sys.path[[-1]];'`"
+
+			if test -z "$PYTHON_SITE_DIR" ; then
+				AC_MSG_ERROR([Unable to detect python site-packages path])
+			elif test ! -d "$PYTHON_SITE_DIR" ; then
+				AC_MSG_ERROR([Path $PYTHON_SITE_DIR returned by python does not exist!])
+			fi
+			AC_MSG_RESULT([$PYTHON_SITE_DIR])
+			AC_SUBST([PYTHON_SITE_DIR], [$PYTHON_SITE_DIR])
 
 			#
 			# no python distutils, try to use python-config
@@ -521,12 +522,24 @@ then
 				)
 			fi
 		else
+			AC_MSG_CHECKING([location of site-packages])
+
+			PYTHON_SITE_DIR="`$PYTHON -c 'from distutils import sysconfig; print sysconfig.get_python_lib(1);'`"
+
+			if test -z "$PYTHON_SITE_DIR" ; then
+				AC_MSG_ERROR([Unable to detect python site-packages path])
+			elif test ! -d "$PYTHON_SITE_DIR" ; then
+				AC_MSG_ERROR([Path $PYTHON_SITE_DIR returned by python does not exist!])
+			fi
+			AC_MSG_RESULT([$PYTHON_SITE_DIR])
+			AC_SUBST([PYTHON_SITE_DIR], [$PYTHON_SITE_DIR])
+
 			#
 			# python distutils found, get settings from python directly
 			#
-			PYTHON_CFLAGS="`$PYTHON -c 'from distutils import sysconfig; flags = ["-I" + sysconfig.get_python_inc(0), "-I" + sysconfig.get_python_inc(1), " ".join(sysconfig.get_config_var("CFLAGS").split())]; print " ".join(flags);'`"
-			PYTHON_LDFLAGS="`$PYTHON -c 'from distutils import sysconfig; libs = sysconfig.get_config_var("LIBS").split() + sysconfig.get_config_var("SYSLIBS").split(); libs.append("-lpython"+sysconfig.get_config_var("VERSION")); print " ".join(libs);'`"
-			PYTHON_LIB="`$PYTHON -c 'from distutils import sysconfig; print "python" + sysconfig.get_config_var("VERSION");'`"
+			PYTHON_CFLAGS="`$PYTHON -c 'from distutils import sysconfig; flags = [[\"-I\" + sysconfig.get_python_inc(0), \"-I\" + sysconfig.get_python_inc(1), \" \".join(sysconfig.get_config_var(\"CFLAGS\").split())]]; print \" \".join(flags);'`"
+			PYTHON_LDFLAGS="`$PYTHON -c 'from distutils import sysconfig; libs = sysconfig.get_config_var(\"LIBS\").split() + sysconfig.get_config_var(\"SYSLIBS\").split(); libs.append(\"-lpython\"+sysconfig.get_config_var(\"VERSION\")); print \" \".join(libs);'`"
+			PYTHON_LIB="`$PYTHON -c 'from distutils import sysconfig; print \"python\" + sysconfig.get_config_var(\"VERSION\");'`"
 		fi
 
 		if test -n "$PYTHON_CFLAGS" -a -n "$PYTHON_LDFLAGS"
