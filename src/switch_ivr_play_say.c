@@ -209,7 +209,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 
 	while (input && !done) {
 		char *pattern = (char *) switch_xml_attr(input, "pattern");
-
+		const char *do_break = switch_xml_attr_soft(input, "break_on_match");
+		
 		if (pattern) {
 			switch_regex_t *re = NULL;
 			int proceed = 0, ovector[30];
@@ -220,7 +221,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 			switch_xml_t match = NULL;
 
 			status = SWITCH_STATUS_SUCCESS;
-
+			
 			if ((proceed = switch_regex_perform(data, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 				match = switch_xml_child(input, "match");
 			} else {
@@ -232,7 +233,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 				for (action = switch_xml_child(match, "action"); action && status == SWITCH_STATUS_SUCCESS; action = action->next) {
 					char *adata = (char *) switch_xml_attr_soft(action, "data");
 					char *func = (char *) switch_xml_attr_soft(action, "function");
-
+					
 					if (strchr(pattern, '(') && strchr(adata, '$')) {
 						len = (uint32_t) (strlen(data) + strlen(adata) + 10);
 						if (!(substituted = malloc(len))) {
@@ -313,6 +314,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 			switch_regex_safe_free(re);
 			switch_safe_free(expanded);
 			switch_safe_free(substituted);
+
+			
+			if (match && do_break && switch_true(do_break)) {
+				break;
+			}
+			
 		}
 
 		if (status != SWITCH_STATUS_SUCCESS) {

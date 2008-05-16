@@ -310,7 +310,7 @@ class CoreSession {
 
 	SWITCH_DECLARE(bool) ready();
 
-	SWITCH_DECLARE(void) execute(char *app, char *data);
+	SWITCH_DECLARE(void) execute(char *app, char *data=NULL);
 
 	SWITCH_DECLARE(void) sendEvent(Event *sendME);
 

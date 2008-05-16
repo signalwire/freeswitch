@@ -50,7 +50,7 @@
   </macro>
 
   <macro name="voicemail_message_count">
-    <input pattern="^(1):(.*)$">
+    <input pattern="^(1):(.*)$" break_on_match="true">
       <match>
 	<action function="play-file" data="voicemail/vm-you_have.wav"/>
 	<action function="say" data="$1" method="pronounced" type="items"/>
@@ -59,7 +59,7 @@
 	<action function="play-file" data="voicemail/vm-in_folder.wav"/>
       </match>
     </input>
-    <input pattern="^([0,2-9]+):(.*)$">
+    <input pattern="^(\d+):(.*)$">
       <match>
 	<action function="play-file" data="voicemail/vm-you_have.wav"/>
 	<action function="say" data="$1" method="pronounced" type="items"/>

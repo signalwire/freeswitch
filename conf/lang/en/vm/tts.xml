@@ -48,12 +48,12 @@
   </macro>
 
   <macro name="voicemail_message_count">
-    <input pattern="^1:(.*)$">
+    <input pattern="^1:(.*)$" break_on_match="true">
       <match>
 	<action function="speak-text" data="you have 1 $1 message in folder ${voicemail_current_folder}."/>
       </match>
     </input>
-    <input pattern="^([0,2-9]+):(.*)$">
+    <input pattern="^(\d+):(.*)$">
       <match>
 	<action function="speak-text" data="you have $1 $2 messages in folder ${voicemail_current_folder}."/>
       </match>

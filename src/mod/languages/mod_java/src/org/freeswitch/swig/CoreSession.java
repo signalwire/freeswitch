@@ -226,7 +226,11 @@ public class CoreSession {
   }
 
   public void execute(String app, String data) {
-    freeswitchJNI.CoreSession_execute(swigCPtr, this, app, data);
+    freeswitchJNI.CoreSession_execute__SWIG_0(swigCPtr, this, app, data);
+  }
+
+  public void execute(String app) {
+    freeswitchJNI.CoreSession_execute__SWIG_1(swigCPtr, this, app);
   }
 
   public void sendEvent(Event sendME) {

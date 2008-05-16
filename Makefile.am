@@ -191,6 +191,13 @@ $(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool modul
 $(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
 	@cat libtool | sed -e 's|$$show "$$command"|if test -z "$$suppress_output" ; then $$show "Compiling $$srcfile ..." ; fi|' > quiet_libtool
 
+vm-sync:
+	test -d $(DESTDIR)$(prefix)/conf || $(mkinstalldirs) $(DESTDIR)$(prefix)/conf
+	test -d $(DESTDIR)$(prefix)/conf/lang || $(mkinstalldirs) $(DESTDIR)$(prefix)/conf/lang
+	test -d $(DESTDIR)$(prefix)/conf/lang/en || $(mkinstalldirs) $(DESTDIR)$(prefix)/conf/lang/en
+	test -d $(DESTDIR)$(prefix)/conf/lang/en/vm || $(mkinstalldirs) $(DESTDIR)$(prefix)/conf/lang/en/vm
+	$(INSTALL) -m 644 conf/lang/en/vm/* $(DESTDIR)$(prefix)/conf/lang/en/vm
+
 samples-conf:
 	test -d $(DESTDIR)$(prefix)/conf || $(mkinstalldirs) $(DESTDIR)$(prefix)/conf
 	test -d $(DESTDIR)$(prefix)/conf/dialplan/extensions || $(mkinstalldirs) $(DESTDIR)$(prefix)/conf/dialplan/extensions
