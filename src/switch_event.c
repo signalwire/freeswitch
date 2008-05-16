@@ -734,6 +734,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 
 	/* go ahead and give ourselves some space to work with, should save a few reallocs */
 	if (!(encode_buf = malloc(encode_len))) {
+		switch_safe_free(buf);
 		return SWITCH_STATUS_MEMERR;
 	}
 
