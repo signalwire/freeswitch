@@ -217,6 +217,8 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_resurrect_channel(const 
 	if (session) {
 		channel = switch_core_session_get_channel(session);
 
+		switch_assert(channel != NULL);
+		
 		forwardvar = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
 		if (!switch_strlen_zero(forwardvar)) {
 			forwardval =  atoi(forwardvar) - 1;
@@ -267,19 +269,19 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_resurrect_channel(const 
 		switch_caller_profile_t *profile = NULL, *peer_profile = NULL, *cloned_profile = NULL;
 		switch_event_t *event;
 		switch_channel_t *peer_channel = switch_core_session_get_channel(*new_session);
+		
+		switch_assert(peer_channel);
+		
+		peer_profile = switch_channel_get_caller_profile(peer_channel);
 
-		if (session && channel) {
-			profile = switch_channel_get_caller_profile(channel);
-		}
-		if (peer_channel) {
-			peer_profile = switch_channel_get_caller_profile(peer_channel);
-		}
-
-		if (channel && peer_channel) {
+		if (channel) {
 			const char *export_vars, *val;
 			switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
 			const char *max_forwards = switch_core_session_sprintf(session, "%d", forwardval);
+
 			switch_channel_set_variable(peer_channel, SWITCH_MAX_FORWARDS_VARIABLE, max_forwards);
+
+			profile = switch_channel_get_caller_profile(channel);
 
 			if (read_codec) {
 				char tmp[80];
@@ -336,7 +338,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_resurrect_channel(const 
 			}
 			
 			if (peer_profile) {
-				if (session && (cloned_profile = switch_caller_profile_clone(session, peer_profile)) != 0) {
+				if ((cloned_profile = switch_caller_profile_clone(session, peer_profile)) != 0) {
 					switch_channel_set_originatee_caller_profile(channel, cloned_profile);
 				}
 			}
