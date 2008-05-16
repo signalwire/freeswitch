@@ -363,6 +363,14 @@
 			<File
 				RelativePath="..\..\src\switch_core_session.c"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						DisableSpecificWarnings="6385"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\src\switch_core_speech.c"
