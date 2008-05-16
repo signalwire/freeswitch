@@ -266,9 +266,9 @@ static switch_status_t do_config(void)
 				    need_vars_map = 1;
 				}
 				
-				if(vars_map)
-				    if (switch_core_hash_insert(vars_map,val,ENABLE_PARAM_VALUE) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cant add %s to params hash!\n",val);
+				if (vars_map && val)
+				    if (switch_core_hash_insert(vars_map, val, ENABLE_PARAM_VALUE) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cant add %s to params hash!\n",val);
 				    }
 				
 		        }	
