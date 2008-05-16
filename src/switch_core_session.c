@@ -1098,7 +1098,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 			if ((dparg = strchr(dpname, ':'))) {
 				*dparg++ = '\0';
 			}
+		} else {
+			continue;
 		}
+
 		if (!(dialplan_interface = switch_loadable_module_get_dialplan_interface(dpname))) {
 			continue;
 		}
