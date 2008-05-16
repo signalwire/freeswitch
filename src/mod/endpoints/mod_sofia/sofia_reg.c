@@ -507,7 +507,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			stale = 1;
 		}
 		
-		if (v_event && *v_event) {
+		if (exptime && v_event && *v_event) {
 			char *exp_var;
 
 			register_gateway = switch_event_get_header(*v_event, "sip-register-gateway");
@@ -581,7 +581,6 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	call_id = sip->sip_call_id->i_id; //sip_header_as_string(profile->home, (void *) sip->sip_call_id);
 	switch_assert(call_id);
 
-	
 	if (exptime) {
 		const char *agent = "dunno";
 
@@ -701,6 +700,17 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			}
 		} else {
 			nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT(contact), NUTAG_WITH_THIS(nua), TAG_END());
+			
+			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile-name", "%s", profile->name);
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-user", "%s", to_user);
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-host", "%s", to_host);
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s", contact_str);
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "call-id", "%s", call_id);
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "rpid", "%s", rpid);
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
+				switch_event_fire(&s_event);
+			}
 		}
 
 		return 1;
