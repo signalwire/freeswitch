@@ -71,9 +71,10 @@ static switch_status_t switch_core_db_persistant_execute_trans(switch_core_db_t 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL Retry [%s]\n", errmsg);
 			}
 			switch_core_db_free(errmsg);
+			errmsg = NULL;
 
 			if (again) {
-				switch_core_db_exec(db, "end transaction", NULL, NULL, &errmsg);
+				switch_core_db_exec(db, "end transaction", NULL, NULL, NULL);
 				goto again;
 			}
 
@@ -93,6 +94,7 @@ static switch_status_t switch_core_db_persistant_execute_trans(switch_core_db_t 
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n", errmsg);
 			switch_core_db_free(errmsg);
+			errmsg = NULL;
 			switch_yield(100000);
 			retries--;
 			if (retries == 0 && forever) {
@@ -107,7 +109,7 @@ static switch_status_t switch_core_db_persistant_execute_trans(switch_core_db_t 
 
   done:
 
-	switch_core_db_exec(db, "end transaction", NULL, NULL, &errmsg);
+	switch_core_db_exec(db, "end transaction", NULL, NULL, NULL);
 
 	return status;
 }
@@ -234,6 +236,8 @@ static void core_event_handler(switch_event_t *event)
 {
 	char *sql = NULL;
 
+	switch_assert(event);
+
 	switch (event->event_id) {
 	case SWITCH_EVENT_ADD_SCHEDULE:
 		sql = switch_mprintf("insert into tasks values('%q','%q','%q','%q')",
@@ -282,10 +286,14 @@ static void core_event_handler(switch_event_t *event)
 			);
 		break;
 	case SWITCH_EVENT_CHANNEL_STATE:
-		if (event) {
+		{
 			char *state = switch_event_get_header_nil(event, "channel-state-number");
-			switch_channel_state_t state_i = atoi(state);
+			switch_channel_state_t state_i = CS_DONE;
 
+			if (!switch_strlen_zero(state)) {
+				state_i = atoi(state);
+			}
+		
 			switch (state_i) {
 			case CS_HANGUP:
 			case CS_DONE:
@@ -300,18 +308,15 @@ static void core_event_handler(switch_event_t *event)
 									 switch_event_get_header_nil(event, "caller-destination-number"), 
 									 switch_event_get_header_nil(event, "caller-dialplan"), 
 									 switch_event_get_header_nil(event, "caller-context"), 
-									 switch_event_get_header_nil(event, "unique-id")
-					);
+									 switch_event_get_header_nil(event, "unique-id"));
 				break;
 			default:
 				sql = switch_mprintf("update channels set state='%s' where uuid='%s'",
-									 switch_event_get_header_nil(event, "channel-state"), switch_event_get_header_nil(event, "unique-id")
-					);
+									 switch_event_get_header_nil(event, "channel-state"), switch_event_get_header_nil(event, "unique-id"));
 				break;
 			}
-
+			break;
 		}
-		break;
 	case SWITCH_EVENT_CHANNEL_BRIDGE:
 		sql = switch_mprintf("insert into calls values ('%s', '%ld', '%s','%q','%q','%q','%q','%s','%q','%q','%q','%q','%s')",
 							 switch_event_get_header_nil(event, "event-date-local"),

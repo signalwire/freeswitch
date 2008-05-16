@@ -96,6 +96,10 @@ SWITCH_DECLARE(int) switch_core_db_exec(switch_core_db_t *db, const char *sql, s
 
 	if (errmsg) {
 		*errmsg = err;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n", err);
+		switch_core_db_free(err);
+		err = NULL;
 	}
 
 	return ret;
