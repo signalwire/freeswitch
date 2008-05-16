@@ -577,7 +577,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 	switch_time_t started = 0;
 	uint32_t elapsed;
 
-	if (!args->input_callback) {
+	if (!args || !args->input_callback) {
 		return SWITCH_STATUS_GENERR;
 	}
 
