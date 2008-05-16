@@ -1921,7 +1921,7 @@ SWITCH_STANDARD_API(show_function)
 {
 	char sql[1024];
 	char *errmsg;
-	switch_core_db_t *db = switch_core_db_handle();
+	switch_core_db_t *db;
 	struct holder holder = { 0 };
 	int help = 0;
 	char *mydata = NULL, *argv[6] = {0};
@@ -1932,6 +1932,8 @@ SWITCH_STANDARD_API(show_function)
 	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
+
+	db = switch_core_db_handle();
 
 	if (cmd && (mydata = strdup(cmd))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
