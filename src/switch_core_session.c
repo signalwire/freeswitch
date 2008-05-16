@@ -571,7 +571,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_c
 
 SWITCH_DECLARE(uint32_t) switch_core_session_private_event_count(switch_core_session_t *session)
 {
-	if (session->private_event_queue) {
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (!switch_channel_test_flag(channel, CF_EVENT_LOCK) && session->private_event_queue) {
 		return switch_queue_size(session->private_event_queue);
 	}
 	
