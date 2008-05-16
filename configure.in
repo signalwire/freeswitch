@@ -436,14 +436,6 @@ AC_ARG_WITH(
 	[with_python="try"]
 )
 
-AC_ARG_WITH(
-	[python-config],
-	[AS_HELP_STRING([--with-python-config=PATH], [Location of python-config])],
-	[with_python_config="$withval"],
-	[with_python_config="no"]
-)
-
-
 if test "$with_python" != "no"
 then
 	save_CFLAGS="$CFLAGS"
@@ -469,62 +461,19 @@ then
 		fi
 		AC_MSG_RESULT([$PYTHON_VER])
 
-
 		AC_MSG_CHECKING([for python distutils])
-		python_has_distutils="no"
-		if test "$PYTHON -c 'import distutils;' 2>/dev/null" ; then
+		python_result="`$PYTHON -c 'import distutils;' 2>&1`"
+		if test -z "$python_result" ; then
 			python_has_distutils="yes"
+		else
+			python_has_distutils="no"
 		fi
 		AC_MSG_RESULT([$python_has_distutils])
 
-
-		if test "$python_has_distutils" = "no" ; then
-			AC_MSG_RESULT([Falling back to python-config])
-
-			# NOTE: this assumes our desired location is always the last one in the list
-			# (= system package location is searched last)
-			#
-			# needs double brackets because m4 removes one pair
+		if test "$python_has_distutils" != "no" ; then
 			AC_MSG_CHECKING([location of site-packages])
 
-			PYTHON_SITE_DIR="`$PYTHON -c 'import sys; print sys.path[[-1]];'`"
-
-			if test -z "$PYTHON_SITE_DIR" ; then
-				AC_MSG_ERROR([Unable to detect python site-packages path])
-			elif test ! -d "$PYTHON_SITE_DIR" ; then
-				AC_MSG_ERROR([Path $PYTHON_SITE_DIR returned by python does not exist!])
-			fi
-			AC_MSG_RESULT([$PYTHON_SITE_DIR])
-			AC_SUBST([PYTHON_SITE_DIR], [$PYTHON_SITE_DIR])
-
-			#
-			# no python distutils, try to use python-config
-			# (do we really need to keep this?)
-
-			if test "$with_python_config" != "no" ; then
-				AC_MSG_CHECKING([for python-config])
-				if test ! -x "$with_python_config" ; then
-					AC_MSG_ERROR([Specified python-config does not exist or is not executable: $with_python_config])
-				fi
-				AC_MSG_RESULT([$with_python_config])
-				AC_SUBST([PYTHON_CONFIG], ["$with_python_config"])
-			else
-				AC_PATH_PROG([PYTHON_CONFIG], ["python-config"], ["no"], ["$PATH:/usr/bin:/usr/local/bin"])
-			fi
-
-			if test "$PYTHON_CONFIG" != "no" ; then
-				PYTHON_CFLAGS="`$PYTHON_CONFIG --cflags`"
-				PYTHON_LDFLAGS="`$PYTHON_CONFIG --ldflags`"
-			else
-				AS_IF([test "$with_python" = "try"],
-					[AC_MSG_WARN([python-config could not be found, mod_python will not build, use --with-python-config to specify the location])],
-					[AC_MSG_ERROR([python-config could not be found, use --with-python-config to specify the location])]
-				)
-			fi
-		else
-			AC_MSG_CHECKING([location of site-packages])
-
-			PYTHON_SITE_DIR="`$PYTHON -c 'from distutils import sysconfig; print sysconfig.get_python_lib(1);'`"
+			PYTHON_SITE_DIR="`$PYTHON -c 'from distutils import sysconfig; print sysconfig.get_python_lib(0);'`"
 
 			if test -z "$PYTHON_SITE_DIR" ; then
 				AC_MSG_ERROR([Unable to detect python site-packages path])
@@ -540,10 +489,7 @@ then
 			PYTHON_CFLAGS="`$PYTHON -c 'from distutils import sysconfig; flags = [[\"-I\" + sysconfig.get_python_inc(0), \"-I\" + sysconfig.get_python_inc(1), \" \".join(sysconfig.get_config_var(\"CFLAGS\").split())]]; print \" \".join(flags);'`"
 			PYTHON_LDFLAGS="`$PYTHON -c 'from distutils import sysconfig; libs = sysconfig.get_config_var(\"LIBS\").split() + sysconfig.get_config_var(\"SYSLIBS\").split(); libs.append(\"-lpython\"+sysconfig.get_config_var(\"VERSION\")); print \" \".join(libs);'`"
 			PYTHON_LIB="`$PYTHON -c 'from distutils import sysconfig; print \"python\" + sysconfig.get_config_var(\"VERSION\");'`"
-		fi
 
-		if test -n "$PYTHON_CFLAGS" -a -n "$PYTHON_LDFLAGS"
-		then
 			# check libpython
 			AC_CHECK_LIB([$PYTHON_LIB], [main], [has_libpython="yes"], [has_libpython="no"])
 
@@ -571,8 +517,8 @@ then
 			fi
 		else
 			AS_IF([test "$with_python" = "try"],
-				[AC_MSG_WARN([Unable to use python, maybe you need to install "python-devel"])],
-				[AC_MSG_ERROR([Unable to use python, maybe you need to install "python-devel"])]
+				[AC_MSG_WARN([Could not find or use python distutils module: $python_result])],
+				[AC_MSG_ERROR([Could not find or use python distutils module: $python_result])]
 			)
 		fi
 
@@ -581,6 +527,7 @@ then
 
 		unset python_has_threads
 		unset python_has_distutils
+		unset python_result
 	else
 		AS_IF([test "$with_python" = "try"],
 			[AC_MSG_WARN([Could not find python, mod_python will not build, use --with-python to specify the location])],
