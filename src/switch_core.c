@@ -581,11 +581,13 @@ SWITCH_DECLARE(switch_hash_index_t *) switch_core_mime_index(void)
 
 SWITCH_DECLARE(switch_status_t) switch_core_mime_add_type(const char *type, const char *ext)
 {
-	const char *check = (const char *) switch_core_hash_find(runtime.mime_types, ext);
+	const char *check;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	switch_assert(type);
 	switch_assert(ext);
+
+	check = (const char *) switch_core_hash_find(runtime.mime_types, ext);
 
 	if (!check) {
 		char *ptype = switch_core_permanent_strdup(type);
