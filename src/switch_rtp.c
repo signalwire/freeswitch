@@ -201,11 +201,11 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session)
 	unsigned int elapsed;
 	switch_size_t bytes;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-
-	WRITE_INC(rtp_session);
 	
 	switch_assert(rtp_session != NULL);
 	switch_assert(rtp_session->ice_user != NULL);
+
+	WRITE_INC(rtp_session);
 
 	if (rtp_session->stuncount != 0) {
 		rtp_session->stuncount--;
