@@ -2742,7 +2742,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 															 tech_pvt->remote_ip,
 															 tech_pvt->remote_port);
 		switch_channel_set_variable(channel, "sip_received_ip", tech_pvt->remote_ip);
-		snprintf(tmp, sizeof(tmp), "tech_pvt->remote_port");
+		snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_port);
 		switch_channel_set_variable(channel, "sip_received_port", tmp);
 	}
 
