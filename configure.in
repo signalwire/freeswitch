@@ -446,6 +446,9 @@ AC_ARG_WITH(
 
 if test "$with_python" != "no"
 then
+	save_CFLAGS="$CFLAGS"
+	save_LIBS="$LIBS"
+
 	if test "$with_python" != "yes" -a "$with_python" != "try" ; then
 		AC_MSG_CHECKING([for python])
 		if test ! -x "$with_python" ; then
@@ -482,52 +485,94 @@ then
 		AC_MSG_RESULT([$PYTHON_SITE_DIR])
 		AC_SUBST([PYTHON_SITE_DIR], [$PYTHON_SITE_DIR])
 
-		if test "$with_python_config" != "no" ; then
-			AC_MSG_CHECKING([for python-config])
-			if test ! -x "$with_python_config" ; then
-				AC_MSG_ERROR([Specified python-config does not exist or is not executable: $with_python_config])
+		AC_MSG_CHECKING([for python distutils])
+		python_has_distutils="no"
+		if test "$PYTHON -c 'import distutils;' 2>/dev/null" ; then
+			python_has_distutils="yes"
+		fi
+		AC_MSG_RESULT([$python_has_distutils])
+
+
+		if test "$python_has_distutils" = "no" ; then
+			AC_MSG_RESULT([Falling back to python-config])
+
+			#
+			# no python distutils, try to use python-config
+			# (do we really need to keep this?)
+
+			if test "$with_python_config" != "no" ; then
+				AC_MSG_CHECKING([for python-config])
+				if test ! -x "$with_python_config" ; then
+					AC_MSG_ERROR([Specified python-config does not exist or is not executable: $with_python_config])
+				fi
+				AC_MSG_RESULT([$with_python_config])
+				AC_SUBST([PYTHON_CONFIG], ["$with_python_config"])
+			else
+				AC_PATH_PROG([PYTHON_CONFIG], ["python-config"], ["no"], ["$PATH:/usr/bin:/usr/local/bin"])
 			fi
-			AC_MSG_RESULT([$with_python_config])
-			AC_SUBST([PYTHON_CONFIG], ["$with_python_config"])
+
+			if test "$PYTHON_CONFIG" != "no" ; then
+				PYTHON_CFLAGS="`$PYTHON_CONFIG --cflags`"
+				PYTHON_LDFLAGS="`$PYTHON_CONFIG --ldflags`"
+			else
+				AS_IF([test "$with_python" = "try"],
+					[AC_MSG_WARN([python-config could not be found, mod_python will not build, use --with-python-config to specify the location])],
+					[AC_MSG_ERROR([python-config could not be found, use --with-python-config to specify the location])]
+				)
+			fi
 		else
-			AC_PATH_PROG([PYTHON_CONFIG], ["python-config"], ["no"], ["$PATH:/usr/bin:/usr/local/bin"])
+			#
+			# python distutils found, get settings from python directly
+			#
+			PYTHON_CFLAGS="`$PYTHON -c 'from distutils import sysconfig; flags = ["-I" + sysconfig.get_python_inc(0), "-I" + sysconfig.get_python_inc(1), " ".join(sysconfig.get_config_var("CFLAGS").split())]; print " ".join(flags);'`"
+			PYTHON_LDFLAGS="`$PYTHON -c 'from distutils import sysconfig; libs = sysconfig.get_config_var("LIBS").split() + sysconfig.get_config_var("SYSLIBS").split(); libs.append("-lpython"+sysconfig.get_config_var("VERSION")); print " ".join(libs);'`"
+			PYTHON_LIB="`$PYTHON -c 'from distutils import sysconfig; print "python" + sysconfig.get_config_var("VERSION");'`"
 		fi
 
-		# this one is fatal if with_python != try
-		if test "$PYTHON_CONFIG" != "no" ; then
-			PYTHON_CFLAGS="`$PYTHON_CONFIG --cflags`"
-			PYTHON_LDFLAGS="`$PYTHON_CONFIG --ldflags`"
+		if test -n "$PYTHON_CFLAGS" -a -n "$PYTHON_LDFLAGS"
+		then
+			# check libpython
+			AC_CHECK_LIB([$PYTHON_LIB], [main], [has_libpython="yes"], [has_libpython="no"])
+
+			if test "$has_libpython" = "no" ; then
+				AS_IF([test "$with_python" = "try"],
+				 	[AC_MSG_WARN([$PYTHON_LIB is unusable])],
+					[AC_MSG_ERROR([$PYTHON_LIB is unusable])]
+				)
+			fi
 
 			# check whether system libpython is usable and has threads support
-			save_LIBS="$LIBS"
+			CFLAGS="$PYTHON_CFLAGS"
 			LIBS="$PYTHON_LDFLAGS"
 			AC_CHECK_FUNC([PyThread_init_thread], [python_has_threads="yes"], [python_has_threads="no"])
-			LIBS="$save_LIBS"
 
-			if test "$python_has_threads" = "no" ; then
-				if test "$with_python" = "try" ; then
-					AC_MSG_ERROR([Your python lacks threads support, can not build mod_python])
-				fi
-
-				AC_MSG_WARN([Your python lacks threads support, can not build mod_python])
+			if test "$python_has_threads" = "no"; then
+				AS_IF([test "$with_python" = "try"],
+					[AC_MSG_WARN([Your python lacks threads support, can not build mod_python])],
+					[AC_MSG_ERROR([Your python lacks threads support, can not build mod_python])]
+				)
 			else
 				AC_MSG_NOTICE([Your python seems OK, do not forget to enable mod_python in modules.conf])
-				AC_SUBST([PYTHON_CFLAGS], [$PYTHON_CFLAGS])
+				AC_SUBST([PYTHON_CFLAGS],  [$PYTHON_CFLAGS])
 				AC_SUBST([PYTHON_LDFLAGS], [$PYTHON_LDFLAGS])
 			fi
 		else
-			if test "$with_python" != "try" ; then
-				AC_MSG_ERROR([python-config could not be found, use --with-python-config to specify the location])
-			fi
-
-			AC_MSG_WARN([python-config could not be found, mod_python will not build, use --with-python-config to specify the location])
+			AS_IF([test "$with_python" = "try"],
+				[AC_MSG_WARN([Unable to use python, maybe you need to install "python-devel"])],
+				[AC_MSG_ERROR([Unable to use python, maybe you need to install "python-devel"])]
+			)
 		fi
+
+		LIBS="$save_LIBS"
+		CFLAGS="$save_CFLAGS"
+
+		unset python_has_threads
+		unset python_has_distutils
 	else
-		if test "$with_python" != "try" ; then
-			AC_MSG_ERROR([Could not find python, use --with-python to specify the location])
-		fi
-
-		AC_MSG_WARN([Could not find python, mod_python will not build, use --with-python to specify the location])
+		AS_IF([test "$with_python" = "try"],
+			[AC_MSG_WARN([Could not find python, mod_python will not build, use --with-python to specify the location])],
+			[AC_MSG_ERROR([Could not find python, use --with-python to specify the location])]
+		)
 	fi
 else
 	AC_MSG_WARN([python support disabled, building mod_python will fail!])
