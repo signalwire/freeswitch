@@ -84,6 +84,8 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 						if ((dparg = strchr(dpname, ':'))) {
 							*dparg++ = '\0';
 						}
+					} else {
+						continue;
 					}
 					if (!(dialplan_interface = switch_loadable_module_get_dialplan_interface(dpname))) {
 						continue;
