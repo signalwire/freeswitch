@@ -2025,6 +2025,12 @@ SWITCH_STANDARD_API(show_function)
 	} else if (!strcasecmp(as, "xml")) {
 		switch_core_db_exec(db, sql, show_as_xml_callback, &holder, &errmsg);
 
+		if (errmsg) {
+			stream->write_function(stream, "-ERR SQL Error [%s]\n", errmsg);
+			switch_core_db_free(errmsg);
+			errmsg = NULL;
+		}
+
 		if (holder.xml) {
 			char count[50];
 			char *xmlstr;
