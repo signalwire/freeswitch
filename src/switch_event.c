@@ -429,13 +429,15 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;
+
+	switch_assert(pool != NULL);
+
 	switch_threadattr_create(&thd_attr, pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	gethostname(hostname, sizeof(hostname));
 	switch_find_local_ip(guess_ip_v4, sizeof(guess_ip_v4), AF_INET);
 	switch_find_local_ip(guess_ip_v6, sizeof(guess_ip_v6), AF_INET6);
 
-	switch_assert(pool != NULL);
 	THRUNTIME_POOL = RUNTIME_POOL = pool;
 
 	switch_queue_create(&EVENT_QUEUE[0], POOL_COUNT_MAX + 10, THRUNTIME_POOL);
