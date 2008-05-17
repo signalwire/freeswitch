@@ -2153,11 +2153,75 @@ SWITCH_STANDARD_APP(voicemail_function)
 	}
 }
 
-static void  message_query_handler(switch_event_t *event)
+#define BOXCOUNT_SYNTAX "<user>@<domain>[|[new|saved|new-urgent|saved-urgent|all]]"
+SWITCH_STANDARD_API(boxcount_api_function)
+{
+	char *dup;
+	char *how = "new";
+	int total_new_messages = 0;
+	int total_saved_messages = 0;
+	int total_new_urgent_messages = 0;
+	int total_saved_urgent_messages = 0;
+
+	if (cmd) {
+		switch_hash_index_t *hi;
+		void *val;
+		vm_profile_t *profile;
+		char *id, *domain, *p;
+
+		dup = strdup(cmd);
+		id = dup;
+
+		if (!strncasecmp(cmd, "sip:", 4)) {
+			id += 4;
+		}
+
+		if (!id) {
+			stream->write_function(stream, "%d", 0);
+			free(dup);
+			return SWITCH_STATUS_SUCCESS;
+		}
+		
+		if ((domain = strchr(id, '@'))) {
+			*domain++ = '\0';
+			if ((p = strchr(domain, '|'))) {
+				*p++ = '\0';
+				how = p;
+			}
+			
+			for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+				switch_hash_this(hi, NULL, NULL, &val);
+				profile = (vm_profile_t *) val;
+				total_new_messages =  total_saved_messages = 0;
+				message_count(profile, id, domain, "inbox", &total_new_messages, &total_saved_messages,
+							  &total_new_urgent_messages, &total_saved_urgent_messages);
+			}
+		}
+
+		switch_safe_free(id);
+	}
+
+	if (!strcasecmp(how, "saved")) {
+		stream->write_function(stream, "%d", total_saved_messages);
+	} else if (!strcasecmp(how, "new-urgent")) {
+		stream->write_function(stream, "%d", total_new_urgent_messages);
+	} else if (!strcasecmp(how, "new-saved")) {
+		stream->write_function(stream, "%d", total_saved_urgent_messages);
+	} else if (!strcasecmp(how, "all")) {
+		stream->write_function(stream, "%d:%d:%d:%d", total_new_messages, total_saved_messages, total_new_urgent_messages, total_saved_urgent_messages);
+	} else {
+		stream->write_function(stream, "%d", total_new_messages);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static void message_query_handler(switch_event_t *event)
 {
 	char *account = switch_event_get_header(event, "message-account");
 	int created = 0;
 	switch_event_t *new_event = NULL;
+	char *dup = NULL;
 
 	if (account) {
 		switch_hash_index_t *hi;
@@ -2169,12 +2233,17 @@ static void  message_query_handler(switch_event_t *event)
 		vm_profile_t *profile;
 		char *id, *domain;
 
+		dup = strdup(account);
+		id = dup;
+
 		if (!strncasecmp(account, "sip:", 4)) {
-			id = strdup(account + 4);
-		} else {
-			id = strdup(account);
+			dup += 4;
 		}
-		switch_assert(id);
+
+		if (!id) {
+			free(dup);
+			return;
+		}
 
 		if ((domain = strchr(id, '@'))) {
 			*domain++ = '\0';
@@ -2200,7 +2269,7 @@ static void  message_query_handler(switch_event_t *event)
 			}
 		}
 
-		switch_safe_free(id);
+		switch_safe_free(dup);
 
 	}
 
@@ -2784,7 +2853,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load)
 	}
 
 	SWITCH_ADD_API(commands_api_interface, "voicemail", "voicemail", voicemail_api_function, VOICEMAIL_SYNTAX);
-
+	SWITCH_ADD_API(commands_api_interface, "vm_boxcount", "vm_boxcount", boxcount_api_function, BOXCOUNT_SYNTAX);
+	
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
 }
