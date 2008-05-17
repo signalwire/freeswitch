@@ -2237,7 +2237,7 @@ static void message_query_handler(switch_event_t *event)
 		id = dup;
 
 		if (!strncasecmp(account, "sip:", 4)) {
-			dup += 4;
+			id += 4;
 		}
 
 		if (!id) {
