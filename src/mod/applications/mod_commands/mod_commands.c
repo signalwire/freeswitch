@@ -1513,7 +1513,7 @@ SWITCH_STANDARD_API(originate_function)
 		timeout = atoi(argv[6]);
 	}
 
-	if (switch_ivr_originate(NULL, &caller_session, &cause, aleg, timeout, NULL, cid_name, cid_num, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_originate(NULL, &caller_session, &cause, aleg, timeout, NULL, cid_name, cid_num, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS || !caller_session) {
 		if (machine) {
 			stream->write_function(stream, "-ERR %s\n", switch_channel_cause2str(cause));
 		} else {
@@ -1555,9 +1555,7 @@ SWITCH_STANDARD_API(originate_function)
 		stream->write_function(stream, "+OK Created Session: %s\n", switch_core_session_get_uuid(caller_session));
 	}
 
-	if (caller_session) {
-		switch_core_session_rwunlock(caller_session);
-	}
+	switch_core_session_rwunlock(caller_session);
 
 done:
 	switch_safe_free(mycmd);
@@ -1715,6 +1713,11 @@ static void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
 	char *reply, *freply = NULL;
 	switch_event_t *event;
 	char *arg;
+	switch_memory_pool_t *pool;
+
+	if (!job) return NULL;
+
+	pool = job->pool;
 
 	SWITCH_STANDARD_STREAM(stream);
 
@@ -1747,12 +1750,9 @@ static void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
 	switch_safe_free(stream.data);
 	switch_safe_free(freply);
 
-	if (job) {
-		switch_memory_pool_t *pool = job->pool;
-		job = NULL;
-		switch_core_destroy_memory_pool(&pool);
-		pool = NULL;
-	}
+	job = NULL;
+	switch_core_destroy_memory_pool(&pool);
+	pool = NULL;
 	return NULL;
 }
 
@@ -2215,6 +2215,7 @@ SWITCH_STANDARD_API(uuid_dump_function)
 							switch_xml_free(xml);
 						} else {
 							stream->write_function(stream, "-ERR Unable to create xml!\n");
+							switch_event_destroy(&event);
 							switch_core_session_rwunlock(psession);
 							goto done;
 						}
@@ -2227,7 +2228,7 @@ SWITCH_STANDARD_API(uuid_dump_function)
 					switch_event_destroy(&event);
 					free(buf);
 				} else {
-					abort();
+					stream->write_function(stream, "-ERR Allocation error\n");
 				}
 
 				switch_core_session_rwunlock(psession);
