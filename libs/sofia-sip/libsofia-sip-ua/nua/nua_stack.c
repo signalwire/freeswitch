@@ -2541,8 +2541,9 @@ int nua_client_request_sendmsg(nua_client_request_t *cr, msg_t *msg, sip_t *sip)
 
   /**
    * Next, values previously set with nua_set_params() or nua_set_hparams()
-   * are used: @Allow, @Supported, @Organization, and @UserAgent headers are
-   * added to the request if they are not already set. 
+   * are used: @Allow, @Supported, @Organization, @UserAgent and
+   * @AllowEvents headers are added to the request if they are not already
+   * set.
    */
   if (!sip->sip_allow)
     sip_add_dup(msg, sip, (sip_header_t*)NH_PGET(nh, allow));
@@ -2560,6 +2561,20 @@ int nua_client_request_sendmsg(nua_client_request_t *cr, msg_t *msg, sip_t *sip)
 
   if (!sip->sip_user_agent && NH_PGET(nh, user_agent))
     sip_add_make(msg, sip, sip_user_agent_class, NH_PGET(nh, user_agent));
+
+  /** Any node implementing one or more event packages SHOULD include an
+   * appropriate @AllowEvents header indicating all supported events in
+   * all methods which initiate dialogs and their responses (such as
+   * INVITE) and OPTIONS responses.
+   */
+  if (!sip->sip_allow_events &&
+      NH_PGET(nh, allow_events) &&
+      (method == sip_method_notify || /* Always in NOTIFY */
+       (!ds->ds_remote_tag &&	      /* And in initial requests */
+	(method == sip_method_subscribe || method == sip_method_refer ||
+	 method == sip_method_options ||
+	 method == sip_method_invite))))
+    sip_add_dup(msg, sip, (void *)NH_PGET(nh, allow_events));
 
   /**
    * Next, the stack generates a @Contact header for the request (unless
