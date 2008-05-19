@@ -568,11 +568,15 @@ SWITCH_DECLARE(char *) switch_strip_spaces(const char *str)
 	const char *sp = str;
 	char *p, *s = NULL;
 	
-	while(sp && *sp && *sp == ' ') {
+	if (!sp) return NULL;
+
+	while(*sp == ' ') {
 		sp++;
 	}
 	
 	s = strdup(sp);
+
+	if (!s) return NULL;
 
 	p = s + (strlen(s) - 1);
 
