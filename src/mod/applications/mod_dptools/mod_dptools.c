@@ -1687,7 +1687,10 @@ SWITCH_STANDARD_APP(record_session_function)
 	}
 
 	path = switch_core_session_strdup(session, data);
-	if (path && (p = strchr(path, '+'))) {
+
+	if (!path) return;
+
+	if ((p = strchr(path, '+'))) {
 		char *q = p - 1;
 		while(q && *q == ' ') {
 			*q = '\0';
