@@ -270,6 +270,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 						status = SWITCH_STATUS_FALSE;
 
 						cmd = switch_core_session_strdup(session, odata);
+
+						if (!cmd) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Allocation error calling execute\n");
+							break;
+						}
+
 						cmd_args = switch_separate_paren_args(cmd);
 
 						if (!cmd_args ) {
