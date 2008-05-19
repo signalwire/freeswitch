@@ -676,7 +676,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *session, switch_file_handle_t *fh, const char *file, switch_input_args_t *args)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	int16_t *abuf;
+	int16_t *abuf = NULL;
 	switch_dtmf_t dtmf = {0};
 	uint32_t interval = 0, samples = 0, framelen, sample_start = 0;
 	uint32_t ilen = 0;
@@ -698,8 +698,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	const char *timer_name;
 	const char *prebuf;
 	const char *alt = NULL;
-
-	switch_zmalloc(abuf, FILE_STARTSAMPLES * sizeof(*abuf));
 
 	switch_channel_pre_answer(channel);
 
@@ -760,11 +758,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		
 	}
 
-
 	if (!prefix) {
 		prefix = SWITCH_GLOBAL_dirs.base_dir;
 	}
-
 
 	if (!strstr(file, SWITCH_URL_SEPARATOR)) {
 		if (!switch_is_file_path(file)) {
@@ -809,6 +805,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		asis = 1;
 	}
 
+	switch_zmalloc(abuf, FILE_STARTSAMPLES * sizeof(*abuf));
 	write_frame.data = abuf;
 	write_frame.buflen = FILE_STARTSAMPLES;
 
@@ -1000,7 +997,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		if (done || olen <= 0) {
 			break;
 		}
-		
 
 		if (!asis) {
 			if (fh->speed > 2) {
@@ -1156,7 +1152,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 
  end:
-	free(abuf);
+	switch_safe_free(abuf);
 
 	switch_core_session_reset(session, SWITCH_TRUE);
 	return status;
