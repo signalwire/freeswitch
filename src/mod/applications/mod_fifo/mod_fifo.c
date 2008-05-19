@@ -569,7 +569,11 @@ SWITCH_STANDARD_APP(fifo_function)
 			switch_core_session_flush_private_events(session);
 
 			if (moh) {
-				switch_ivr_play_file(session, NULL, moh, &args);
+				switch_status_t status = switch_ivr_play_file(session, NULL, moh, &args);
+				if (!SWITCH_READ_ACCEPTABLE(status)) {
+					aborted = 1;
+					goto abort;
+				}
 			} else {
 				switch_ivr_collect_digits_callback(session, &args, 0);
 			}
@@ -736,10 +740,15 @@ SWITCH_STANDARD_APP(fifo_function)
 			pop = NULL;
 			
             if (moh && do_wait) {
+				switch_status_t status = switch_ivr_play_file(session, NULL, moh, &args);
 				memset(&args, 0, sizeof(args));
                 args.read_frame_callback = consumer_read_frame_callback;
                 args.user_data = node_list;
                 switch_ivr_play_file(session, NULL, moh, &args);
+				
+				if (!SWITCH_READ_ACCEPTABLE(status)) {
+					break;
+				}
             }
 			
 			for(i = 0; i < node_count; i++) {
