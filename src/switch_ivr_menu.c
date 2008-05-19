@@ -268,80 +268,77 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_input_args_t args = { 0 };
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sound=[%s]\n", sound);
+	if (!session || !menu || switch_strlen_zero(sound)) {
+		return status;
+	}
 
-	if (session != NULL && menu != NULL && !switch_strlen_zero(sound)) {
-		memset(menu->buf, 0, menu->inlen + 1);
-		menu->ptr = menu->buf;
+	memset(menu->buf, 0, menu->inlen + 1);
+	menu->ptr = menu->buf;
 
-		if (!need) {
-			len = 1;
-			ptr = NULL;
-		} else {
-			len = (uint32_t) menu->inlen + 1;
-			ptr = menu->ptr;
-		}
-		args.buf = ptr;
-		args.buflen = len;
+	if (!need) {
+		len = 1;
+		ptr = NULL;
+	} else {
+		len = (uint32_t) menu->inlen + 1;
+		ptr = menu->ptr;
+	}
+	args.buf = ptr;
+	args.buflen = len;
 
-		status = switch_ivr_play_file(session, NULL, sound, &args);
+	status = switch_ivr_play_file(session, NULL, sound, &args);
 
-		
-		if (need) {
+	if (!need) {
+		return status;
+	}
 
-			menu->ptr += strlen(menu->buf);
-			if (strlen(menu->buf) < need) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "waiting for %u/%u digits t/o %d\n", 
-								  (uint32_t)(menu->inlen - strlen(menu->buf)), (uint32_t)need, menu->inter_timeout);
-				status = switch_ivr_collect_digits_count(session, menu->ptr, menu->inlen - strlen(menu->buf), 
-														 need, "#", &terminator, menu->inter_timeout, 0, 0);
+	menu->ptr += strlen(menu->buf);
+	if (strlen(menu->buf) < need) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "waiting for %u/%u digits t/o %d\n", 
+						  (uint32_t)(menu->inlen - strlen(menu->buf)), (uint32_t)need, menu->inter_timeout);
+		status = switch_ivr_collect_digits_count(session, menu->ptr, menu->inlen - strlen(menu->buf), 
+												 need, "#", &terminator, menu->inter_timeout, 0, 0);
+	}
+
+	if (menu->confirm_macro && status == SWITCH_STATUS_SUCCESS && *menu->buf != '\0') {
+		switch_input_args_t confirm_args = { 0 }, *ap = NULL;
+		char buf[10] = "";
+		char terminator_key;
+		int att = menu->confirm_attempts;
+
+		while (att) {
+			confirm_args.buf = buf;
+			confirm_args.buflen = sizeof(buf);
+			memset(buf, 0, confirm_args.buflen);
+
+			if (menu->confirm_key) {
+				ap = &confirm_args;
 			}
-
 			
-			if (menu->confirm_macro && status == SWITCH_STATUS_SUCCESS && !switch_strlen_zero(menu->buf)) {
-				switch_input_args_t confirm_args = { 0 }, *ap = NULL;
-				char buf[10] = "";
-				char terminator_key;
-				int att = menu->confirm_attempts;
+			switch_ivr_phrase_macro(session, menu->confirm_macro, menu->buf, NULL, ap);
 
-				
-				while (att) {
-					confirm_args.buf = buf;
-					confirm_args.buflen = sizeof(buf);
-					memset(buf, 0, confirm_args.buflen);
-
-					if (menu->confirm_key) {
-						ap = &confirm_args;
-					}
-					
-					switch_ivr_phrase_macro(session, menu->confirm_macro, menu->buf, NULL, ap);
-
-					if (menu->confirm_key && *buf == '\0') {
-						switch_ivr_collect_digits_count(session, buf, sizeof(buf), 1, "#", &terminator_key, menu->timeout, 0, 0);
-					}
-
-					if (menu->confirm_key && *buf != '\0') {
-						if (*menu->confirm_key == *buf) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-											  "approving digits '%s' via confirm key %s\n", menu->buf, menu->confirm_key);
-							break;
-						} else {
-							att = 0;
-							break;
-						}
-					}
-					att--;
-				}
-				if (!att) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "rejecting digits '%s' via confirm key %s\n", menu->buf, menu->confirm_key);
-					*menu->buf = '\0';
-				}
+			if (menu->confirm_key && *buf == '\0') {
+				switch_ivr_collect_digits_count(session, buf, sizeof(buf), 1, "#", &terminator_key, menu->timeout, 0, 0);
 			}
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "digits '%s'\n", menu->buf);
+			if (menu->confirm_key && *buf != '\0') {
+				if (*menu->confirm_key == *buf) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+									  "approving digits '%s' via confirm key %s\n", menu->buf, menu->confirm_key);
+					break;
+				} else {
+					att = 0;
+					break;
+				}
+			}
+			att--;
+		}
+		if (!att) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "rejecting digits '%s' via confirm key %s\n", menu->buf, menu->confirm_key);
+			*menu->buf = '\0';
 		}
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "returning [%d]\n", status);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "digits '%s'\n", menu->buf);
 
 	return status;
 }
@@ -357,7 +354,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (session == NULL || stack == NULL || switch_strlen_zero(name)) {
+	if (!session || !stack || switch_strlen_zero(name)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid menu context\n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -395,8 +392,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 		memset(menu->buf, 0, menu->inlen + 1);
 		status = play_and_collect(session, menu, greeting_sound, menu->inlen);
 
-		if (!switch_strlen_zero(menu->buf)) {
-
+		if (*menu->buf != '\0') {
 
 			for (ap = menu->actions; ap; ap = ap->next) {
 				int ok = 0;
@@ -484,7 +480,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 					}
 				}
 			}
-
 
 			if (switch_test_flag(menu, SWITCH_IVR_MENU_FLAG_STACK)) {	// top level
 				if (switch_test_flag(stack, SWITCH_IVR_MENU_FLAG_FALLTOMAIN)) {	// catch the fallback and recover
