@@ -750,16 +750,16 @@ SWITCH_STANDARD_APP(set_profile_var_function)
 		if (!strcasecmp(name, "caller_id_number")) {
 			caller_profile->caller_id_number = val;
 		}
-		if (!strcasecmp(name, "caller_ton")) {
+		if (val && !strcasecmp(name, "caller_ton")) {
 			caller_profile->caller_ton = (uint8_t)atoi(val);
 		}
-		if (!strcasecmp(name, "caller_numplan")) {
+		if (val && !strcasecmp(name, "caller_numplan")) {
 			caller_profile->caller_numplan = (uint8_t)atoi(val);
 		}
-		if (!strcasecmp(name, "destination_number_ton")) {
+		if (val && !strcasecmp(name, "destination_number_ton")) {
 			caller_profile->destination_number_ton = (uint8_t)atoi(val);
 		}
-		if (!strcasecmp(name, "destination_number_numplan")) {
+		if (val && !strcasecmp(name, "destination_number_numplan")) {
 			caller_profile->destination_number_numplan = (uint8_t)atoi(val);
 		}
 		if (!strcasecmp(name, "ani")) {
