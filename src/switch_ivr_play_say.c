@@ -721,12 +721,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			const char *lang = switch_channel_get_variable(channel, "language");
 			alt = file + 7;
 			dup = switch_core_session_strdup(session, alt);
-
-			if ((arg = strchr(dup, ':'))) {
-				*arg++ = '\0';
-			}
 			
 			if (dup) {
+				if ((arg = strchr(dup, ':'))) {
+					*arg++ = '\0';
+				}
 				return switch_ivr_phrase_macro(session, dup, arg, lang, args);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Args\n");
