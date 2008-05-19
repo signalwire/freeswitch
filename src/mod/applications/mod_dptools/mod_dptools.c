@@ -804,7 +804,15 @@ SWITCH_STANDARD_APP(export_function)
 	} else {
 		exports = switch_channel_get_variable(channel, SWITCH_EXPORT_VARS_VARIABLE);
 		var = switch_core_session_strdup(session, data);
-		val = strchr(var, '=');
+		if (var) {
+			val = strchr(var, '=');
+			if (!strncasecmp(var, "nolocal:", 8)) {
+				var_name = var + 8;
+				local = 0;
+			} else {
+				var_name = var;
+			}
+		}
 
 		if (val) {
 			*val++ = '\0';
@@ -813,14 +821,7 @@ SWITCH_STANDARD_APP(export_function)
 			}
 		}
 
-		if (!strncasecmp(var, "nolocal:", 8)) {
-			var_name = var + 8;
-			local = 0;
-		} else {
-			var_name = var;
-		}
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "EXPORT %s[%s]=[%s]\n", local ? "" : "(REMOTE ONLY) ", var_name, val ? val : "UNDEF");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "EXPORT %s[%s]=[%s]\n", local ? "" : "(REMOTE ONLY) ", var_name ? var_name : "", val ? val : "UNDEF");
 		switch_channel_set_variable(channel, var, val);
 
 		if (var && val) {
