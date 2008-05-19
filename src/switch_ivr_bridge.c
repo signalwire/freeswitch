@@ -648,7 +648,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	switch_channel_state_t state;
 	switch_event_t *event;
 	int br = 0;
-
+	int nosuspend = switch_channel_test_flag(caller_channel, CF_INNER_BRIDGE);
+	
 	switch_channel_set_flag(caller_channel, CF_ORIGINATOR);
 	switch_channel_clear_flag(caller_channel, CF_TRANSFER);
 	switch_channel_clear_flag(peer_channel, CF_TRANSFER);
@@ -785,9 +786,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
   done:
 
-	switch_channel_clear_flag(caller_channel, CF_INNER_BRIDGE);
-	switch_channel_clear_flag(peer_channel, CF_INNER_BRIDGE);
-
 	if (br && switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(caller_channel, event);
 		switch_event_fire(&event);
@@ -795,7 +793,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 	state = switch_channel_get_state(caller_channel);
 	
-	if (!switch_channel_test_flag(caller_channel, CF_TRANSFER)) {
+	if (!switch_channel_test_flag(caller_channel, CF_TRANSFER) && !nosuspend) {
 		if ((state != CS_EXECUTE && state != CS_PARK && state != CS_ROUTING) || 
 			(switch_channel_test_flag(peer_channel, CF_ANSWERED) && state < CS_HANGUP && 
 			 switch_true(switch_channel_get_variable(caller_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE)))) {

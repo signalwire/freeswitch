@@ -279,8 +279,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	if (lead_frames) {
 		switch_frame_t *read_frame;
 		int frame_count = atoi(lead_frames);
-
-		while(frame_count > 0) {
+		int max_frames = frame_count * 2;
+		
+		while(frame_count > 0 && --max_frames > 0) {
 			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				goto done;
