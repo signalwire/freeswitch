@@ -1309,7 +1309,7 @@ typedef struct {
 } dtmf_meta_settings_t;
 
 typedef struct {
-	dtmf_meta_settings_t sr[2];
+	dtmf_meta_settings_t sr[3];
 } dtmf_meta_data_t;
 
 #define SWITCH_META_VAR_KEY "__dtmf_meta"
@@ -1354,9 +1354,9 @@ static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch
 
 	if (md->sr[direction].meta_on) {
 		if (dtmf->digit >= '0' && dtmf->digit <= '9') {
+			int ok = 0;
 			*digit = dtmf->digit;
 			dval = atoi(digit);
-			int ok = 0;
 
 			if (direction == SWITCH_DTMF_RECV && (md->sr[direction].map[dval].bind_flags & SBF_DIAL_ALEG)) { 
 				ok = 1;

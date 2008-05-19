@@ -160,8 +160,8 @@ typedef enum {
 } switch_bind_flag_t;
 
 typedef enum {
-	SWITCH_DTMF_RECV,
-	SWITCH_DTMF_SEND
+	SWITCH_DTMF_RECV = 0,
+	SWITCH_DTMF_SEND = 1
 } switch_dtmf_direction_t;
 
 typedef enum {
