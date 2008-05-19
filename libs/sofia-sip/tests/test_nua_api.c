@@ -450,6 +450,8 @@ int test_stack_errors(struct context *ctx)
   
   TEST_VOID(nua_destroy(a->nua));
 
+  a->nua = NULL;
+
   su_root_destroy(ctx->root), ctx->root = NULL;
 	 
   if (print_headings)
