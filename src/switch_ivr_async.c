@@ -928,7 +928,7 @@ static int teletone_dtmf_generate_handler(teletone_generation_session_t * ts, te
     return 0;
 }
 
-static switch_status_t generate_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
+static switch_status_t generate_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction)
 {
     switch_channel_t *channel = switch_core_session_get_channel(session);
     switch_media_bug_t *bug = switch_channel_get_private(channel, "dtmf_generate");
@@ -1298,17 +1298,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 typedef struct {
 	const char *app;
 	uint32_t flags;
+	switch_bind_flag_t bind_flags;
 } dtmf_meta_app_t;
 
 typedef struct {
 	dtmf_meta_app_t map[10];
 	time_t last_digit;
-	switch_bool_t meta_on;
+	switch_bool_t meta_on;	
+	int up;
+} dtmf_meta_settings_t;
+
+typedef struct {
+	dtmf_meta_settings_t sr[2];
 } dtmf_meta_data_t;
 
 #define SWITCH_META_VAR_KEY "__dtmf_meta"
 
-static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
+static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	dtmf_meta_data_t *md = switch_channel_get_private(channel, SWITCH_META_VAR_KEY);
@@ -1320,39 +1326,77 @@ static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (md->meta_on && now - md->last_digit > 5) {
-		md->meta_on = SWITCH_FALSE;
+	if (direction == SWITCH_DTMF_RECV && !md->sr[SWITCH_DTMF_RECV].up) { 
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (direction == SWITCH_DTMF_SEND && !md->sr[SWITCH_DTMF_SEND].up) { 
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	if (md->sr[direction].meta_on && now - md->sr[direction].last_digit > 5) {
+		md->sr[direction].meta_on = SWITCH_FALSE;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Meta digit timeout parsing %c\n", switch_channel_get_name(channel), dtmf->digit);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	md->last_digit = now;
+	md->sr[direction].last_digit = now;
 
 	if (dtmf->digit == '*') {
-		if (md->meta_on) {
-			md->meta_on = SWITCH_FALSE;
+		if (md->sr[direction].meta_on) {
+			md->sr[direction].meta_on = SWITCH_FALSE;
 			return SWITCH_STATUS_SUCCESS;
 		} else {
-			md->meta_on = SWITCH_TRUE;
+			md->sr[direction].meta_on = SWITCH_TRUE;
 			return SWITCH_STATUS_FALSE;
 		}
 	}
 
-	if (md->meta_on) {
+	if (md->sr[direction].meta_on) {
 		if (dtmf->digit >= '0' && dtmf->digit <= '9') {
 			*digit = dtmf->digit;
 			dval = atoi(digit);
-			if (md->map[dval].app) {
+			int ok = 0;
+
+			if (direction == SWITCH_DTMF_RECV && (md->sr[direction].map[dval].bind_flags & SBF_DIAL_ALEG)) { 
+				ok = 1;
+			} else if (direction == SWITCH_DTMF_SEND && (md->sr[direction].map[dval].bind_flags & SBF_DIAL_BLEG)) { 
+				ok = 1;
+			}
+
+			if (ok && md->sr[direction].map[dval].app) {
+				uint32_t flags = md->sr[direction].map[dval].flags;
+
+				if ((md->sr[direction].map[dval].bind_flags & SBF_EXEC_OPPOSITE)) {
+					if (direction == SWITCH_DTMF_SEND) {
+						flags |= SMF_ECHO_ALEG;
+					} else {
+						flags |= SMF_ECHO_BLEG;
+					}
+				} else if ((md->sr[direction].map[dval].bind_flags & SBF_EXEC_SAME)) {
+					if (direction == SWITCH_DTMF_SEND) {
+						flags |= SMF_ECHO_BLEG;
+					} else {
+						flags |= SMF_ECHO_ALEG;
+					}
+				} else if ((md->sr[direction].map[dval].bind_flags & SBF_EXEC_ALEG)) {
+					flags |= SMF_ECHO_ALEG;
+				} else if ((md->sr[direction].map[dval].bind_flags & SBF_EXEC_BLEG)) {
+					flags |= SMF_ECHO_BLEG;
+				} else {
+					flags |= SMF_ECHO_ALEG;
+				}
+
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Processing meta digit '%c' [%s]\n", 
-								  switch_channel_get_name(channel), dtmf->digit, md->map[dval].app);
-				switch_ivr_broadcast(switch_core_session_get_uuid(session), md->map[dval].app, md->map[dval].flags);
+								  switch_channel_get_name(channel), dtmf->digit, md->sr[direction].map[dval].app);
+				switch_ivr_broadcast(switch_core_session_get_uuid(session), md->sr[direction].map[dval].app, flags);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Ignoring meta digit '%c' not mapped\n", 
 								  switch_channel_get_name(channel), dtmf->digit);
 								  
 			}
 		}
-		md->meta_on = SWITCH_FALSE;
+		md->sr[direction].meta_on = SWITCH_FALSE;
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1368,7 +1412,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unbind_dtmf_meta_session(switch_core_
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_session_t *session, uint32_t key, 
-																  switch_bool_t dial_b, switch_bool_t exec_b, const char *app)
+																  switch_bind_flag_t bind_flags, const char *app)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	dtmf_meta_data_t *md = switch_channel_get_private(channel, SWITCH_META_VAR_KEY);
@@ -1377,25 +1421,39 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_se
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid key %u\n", key);
 		return SWITCH_STATUS_FALSE;
 	}
-
+	
 	if (!md) {
 		md = switch_core_session_alloc(session, sizeof(*md));
 		switch_channel_set_private(channel, SWITCH_META_VAR_KEY, md);
-		if (dial_b) {
-			switch_core_event_hook_add_send_dtmf(session, meta_on_dtmf);
-		} else {
-			switch_core_event_hook_add_recv_dtmf(session, meta_on_dtmf);
-		}
+		switch_core_event_hook_add_send_dtmf(session, meta_on_dtmf);
+		switch_core_event_hook_add_recv_dtmf(session, meta_on_dtmf);
 	}
 
 	if (!switch_strlen_zero(app)) {
-		md->map[key].app = switch_core_session_strdup(session, app);
-		md->map[key].flags = exec_b ? SMF_ECHO_BLEG : SMF_ECHO_ALEG;
-		md->map[key].flags |= SMF_HOLD_BLEG;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Bound: %d %s\n", key, app);
+		if ((bind_flags & SBF_DIAL_ALEG)) {
+			md->sr[SWITCH_DTMF_RECV].up = 1;
+			md->sr[SWITCH_DTMF_RECV].map[key].app = switch_core_session_strdup(session, app);
+			md->sr[SWITCH_DTMF_RECV].map[key].flags |= SMF_HOLD_BLEG;
+			md->sr[SWITCH_DTMF_RECV].map[key].bind_flags = bind_flags;
+		
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Bound A-Leg: %d %s\n", key, app);
+		}
+		if ((bind_flags & SBF_DIAL_BLEG)) {
+			md->sr[SWITCH_DTMF_SEND].up = 1;
+			md->sr[SWITCH_DTMF_SEND].map[key].app = switch_core_session_strdup(session, app);
+			md->sr[SWITCH_DTMF_SEND].map[key].flags |= SMF_HOLD_BLEG;
+			md->sr[SWITCH_DTMF_SEND].map[key].bind_flags = bind_flags;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Bound B-Leg: %d %s\n", key, app);
+		}
+		
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "UnBound: %d\n", key);
-		md->map[key].app = NULL;
+		if ((bind_flags & SBF_DIAL_ALEG)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "UnBound A-Leg: %d\n", key);
+			md->sr[SWITCH_DTMF_SEND].map[key].app = NULL;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "UnBound: B-Leg %d\n", key);
+			md->sr[SWITCH_DTMF_SEND].map[key].app = NULL;
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;

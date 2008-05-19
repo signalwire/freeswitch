@@ -962,7 +962,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 	}
 
 	for (ptr = session->event_hooks.recv_dtmf; ptr; ptr = ptr->next) {
-		if ((status = ptr->recv_dtmf(session, &new_dtmf)) != SWITCH_STATUS_SUCCESS) {
+		if ((status = ptr->recv_dtmf(session, &new_dtmf, SWITCH_DTMF_RECV)) != SWITCH_STATUS_SUCCESS) {
 			return status;
 		}
 	}
@@ -993,7 +993,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 
 
 	for (ptr = session->event_hooks.send_dtmf; ptr; ptr = ptr->next) {
-		if ((status = ptr->send_dtmf(session, dtmf)) != SWITCH_STATUS_SUCCESS) {
+		if ((status = ptr->send_dtmf(session, dtmf, SWITCH_DTMF_SEND)) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_SUCCESS;
 		}
 	}

@@ -56,8 +56,8 @@ typedef switch_status_t (*switch_video_read_frame_hook_t) (switch_core_session_t
 typedef switch_status_t (*switch_write_frame_hook_t) (switch_core_session_t *, switch_frame_t *, switch_io_flag_t, int);
 typedef switch_status_t (*switch_video_write_frame_hook_t) (switch_core_session_t *, switch_frame_t *, switch_io_flag_t, int);
 typedef switch_status_t (*switch_kill_channel_hook_t) (switch_core_session_t *, int);
-typedef switch_status_t (*switch_send_dtmf_hook_t) (switch_core_session_t *, const switch_dtmf_t *);
-typedef switch_status_t (*switch_recv_dtmf_hook_t) (switch_core_session_t *, const switch_dtmf_t *);
+typedef switch_status_t (*switch_send_dtmf_hook_t) (switch_core_session_t *, const switch_dtmf_t *, switch_dtmf_direction_t direction);
+typedef switch_status_t (*switch_recv_dtmf_hook_t) (switch_core_session_t *, const switch_dtmf_t *, switch_dtmf_direction_t direction);
 typedef switch_status_t (*switch_state_change_hook_t) (switch_core_session_t *);
 typedef switch_call_cause_t (*switch_resurrect_session_hook_t)(switch_core_session_t **, switch_memory_pool_t **, void *);
 

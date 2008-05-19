@@ -1154,16 +1154,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							}
 						}
 					}
-					
-					if (caller_channel && i == 0) {
-						holding = switch_channel_get_variable(caller_channel, SWITCH_HOLDING_UUID_VARIABLE);
-						holding = switch_core_session_strdup(session, holding);
-						switch_channel_set_variable(caller_channel, SWITCH_HOLDING_UUID_VARIABLE, NULL);
-					}
-					if (holding) {
-						switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(peer_sessions[i]));
-					} else {
-						switch_channel_hangup(peer_channels[i], reason);
+					if (switch_channel_ready(peer_channels[i])) {
+						if (caller_channel && i == 0) {
+							holding = switch_channel_get_variable(caller_channel, SWITCH_HOLDING_UUID_VARIABLE);
+							holding = switch_core_session_strdup(session, holding);
+							switch_channel_set_variable(caller_channel, SWITCH_HOLDING_UUID_VARIABLE, NULL);
+						}
+						if (holding) {
+							switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(peer_sessions[i]));
+						} else {
+							switch_channel_hangup(peer_channels[i], reason);
+						}
 					}
 				}
 			}

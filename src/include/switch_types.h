@@ -151,6 +151,20 @@ typedef struct {
 } switch_dtmf_t;
 
 typedef enum {
+	SBF_DIAL_ALEG = (1 << 0),
+	SBF_EXEC_ALEG = (1 << 1),
+	SBF_DIAL_BLEG = (1 << 2),
+	SBF_EXEC_BLEG = (1 << 3),
+	SBF_EXEC_OPPOSITE = (1 << 4),
+	SBF_EXEC_SAME = (1 << 5)
+} switch_bind_flag_t;
+
+typedef enum {
+	SWITCH_DTMF_RECV,
+	SWITCH_DTMF_SEND
+} switch_dtmf_direction_t;
+
+typedef enum {
 	SOF_NONE = 0,
 	SOF_NOBLOCK = (1 << 0),
 	SOF_FORKED_DIAL = (1 << 1) 

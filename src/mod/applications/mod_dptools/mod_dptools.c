@@ -160,7 +160,7 @@ SWITCH_STANDARD_APP(soft_hold_function)
 	}
 }
 
-#define BIND_SYNTAX "<key> [a|b] [a|b] <app>"
+#define BIND_SYNTAX "<key> [a|b|ab] [a|b|o|s] <app>"
 SWITCH_STANDARD_APP(dtmf_bind_function)
 {
 	char *argv[4] = { 0 };
@@ -170,10 +170,46 @@ SWITCH_STANDARD_APP(dtmf_bind_function)
 	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) == 4) {
 		int kval = atoi(argv[0]);
-		char a1 = (char)tolower(*argv[1]);
-		char a2 = (char)tolower(*argv[2]);
-		
-		if (switch_ivr_bind_dtmf_meta_session(session, kval, a1 == 'b', a2 == 'b', argv[3]) != SWITCH_STATUS_SUCCESS) {
+		switch_bind_flag_t bind_flags = 0;
+
+		if (strchr(argv[1], 'a')) {
+			bind_flags |= SBF_DIAL_ALEG;
+		}
+		if (strchr(argv[1], 'b')) {
+			bind_flags |= SBF_DIAL_BLEG;
+		}
+		if (strchr(argv[2], 'a')) {
+			if ((bind_flags & SBF_EXEC_BLEG)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind execute to multiple legs\n");
+			} else {
+				bind_flags |= SBF_EXEC_ALEG;
+			}
+		}
+		if (strchr(argv[2], 'b')) {
+			if ((bind_flags & SBF_EXEC_ALEG)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind execute to multiple legs\n");
+			} else {
+				bind_flags |= SBF_EXEC_BLEG;
+			}
+		}
+
+		if (strchr(argv[2], 'o')) {
+			if ((bind_flags & SBF_EXEC_BLEG) || (bind_flags & SBF_EXEC_ALEG) || (bind_flags & SBF_EXEC_SAME)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind execute to multiple legs\n");
+			} else {
+				bind_flags |= SBF_EXEC_OPPOSITE;
+			}
+		}
+
+		if (strchr(argv[2], 's')) {
+			if ((bind_flags & SBF_EXEC_BLEG) || (bind_flags & SBF_EXEC_ALEG) || (bind_flags & SBF_EXEC_SAME)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind execute to multiple legs\n");
+			} else {
+				bind_flags |= SBF_EXEC_SAME;
+			}
+		}
+
+		if (switch_ivr_bind_dtmf_meta_session(session, kval, bind_flags, argv[3]) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bind Error!\n");
 		}
 	} else {
@@ -1381,6 +1417,8 @@ SWITCH_STANDARD_APP(att_xfer_function)
 	switch_channel_t *channel, *peer_channel = NULL;
 	const char *bond = NULL;
 	int timelimit = 60;
+	switch_core_session_t *b_session = NULL;
+
 
 	channel = switch_core_session_get_channel(session);
 
@@ -1396,7 +1434,7 @@ SWITCH_STANDARD_APP(att_xfer_function)
 	}
 
 	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
-		return;
+		goto end;
 	}
 
 	peer_channel = switch_core_session_get_channel(peer_session);
@@ -1404,12 +1442,16 @@ SWITCH_STANDARD_APP(att_xfer_function)
 	switch_channel_set_flag(channel, CF_INNER_BRIDGE);
 	
 	switch_ivr_multi_threaded_bridge(session, peer_session, xfer_on_dtmf, peer_session, NULL);
-
+	
 	switch_channel_clear_flag(peer_channel, CF_INNER_BRIDGE);
 	switch_channel_clear_flag(channel, CF_INNER_BRIDGE);
 
+	if (!switch_channel_get_state(peer_channel) >= CS_HANGUP) {
+		switch_core_session_rwunlock(peer_session);
+		goto end;
+	}
+
 	if (bond) {
-		switch_core_session_t *b_session;
 		char buf[128] = "";
 
 		if (!switch_channel_ready(channel)) {
@@ -1431,12 +1473,13 @@ SWITCH_STANDARD_APP(att_xfer_function)
 		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, bond);
 	}
 
+ end:
+	
 	if (peer_session) {
 		switch_core_session_rwunlock(peer_session);
 	}
 	
 	switch_channel_set_variable(channel, SWITCH_HOLDING_UUID_VARIABLE, NULL);
-
 }
 
 
