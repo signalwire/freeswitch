@@ -901,12 +901,14 @@ SWITCH_STANDARD_APP(event_function)
 
 			for (x = 0; x < argc; x++) {
 				char *p, *this = argv[x];
-				p = this;
-				while(*p == ' ') *p++ = '\0';
-				this = p;
-				
 				if (this) {
-					char *var = this, *val = NULL;
+					char *var, *val;
+					p = this;
+					while(*p == ' ') *p++ = '\0';
+					this = p;
+				
+					var = this;
+					val = NULL;
 					if ((val = strchr(var, '='))) {
 						p = val - 1;
 						*val++ = '\0';
