@@ -715,6 +715,7 @@ int nua_register_client_request(nua_client_request_t *cr,
   sip_contact_t *m, *contacts = sip->sip_contact;
   char const *min_expires = NULL;
   int unreg;
+  tport_t *tport = NULL;
 
   (void)nh;
 
@@ -758,6 +759,8 @@ int nua_register_client_request(nua_client_request_t *cr,
       if (previous)
 	sip_add_dup(msg, sip, (sip_header_t *)previous);
     }
+
+    tport = nr->nr_tport;
   }
 
   for (m = sip->sip_contact; m; m = m->m_next) {
@@ -792,7 +795,7 @@ int nua_register_client_request(nua_client_request_t *cr,
 				  TAG_IF(unreg, NTATAG_SIGCOMP_CLOSE(1)),
 				  TAG_IF(!unreg, NTATAG_COMP("sigcomp")),
 #endif
-				  NTATAG_TPORT(nr->nr_tport),
+				  NTATAG_TPORT(tport),
 				  TAG_NEXT(tags));
 }
 
