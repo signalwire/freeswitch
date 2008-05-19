@@ -268,6 +268,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	const char *var = switch_channel_get_variable(caller_channel, "call_timeout");
 	switch_time_t start = 0;
 	
+	if ((switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA))) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	switch_zmalloc(write_frame.data, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
@@ -280,10 +284,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 
 	timelimit *= 1000000;
 	start = switch_timestamp_now();
-
-	if ((switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA))) {
-		return SWITCH_STATUS_SUCCESS;
-	}
 
 	if (switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
 		ringback_data = switch_channel_get_variable(caller_channel, "transfer_ringback");
