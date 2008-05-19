@@ -650,12 +650,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 		}
 
 		if ((write_frame.datalen = (uint32_t) switch_buffer_read_loop(audio_buffer, write_frame.data,
-																	  read_frame->codec->implementation->bytes_per_frame)) <= 0) {
+																	  read_codec->implementation->bytes_per_frame)) <= 0) {
 			break;
 		}
 
 		write_frame.samples = write_frame.datalen / 2;
-
+		
 		if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 			break;
 		}
