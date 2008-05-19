@@ -641,8 +641,6 @@ int accept_and_notify(CONDITION_PARAMS)
   switch (event) {
   case nua_i_subscribe:
     if (status < 200) {
-      int fetch = sip->sip_expires && sip->sip_expires->ex_delta == 0;
-
       RESPOND(ep, call, nh, SIP_202_ACCEPTED,
 	      NUTAG_WITH(with),
 	      SIPTAG_EXPIRES_STR("360"),
@@ -653,11 +651,8 @@ int accept_and_notify(CONDITION_PARAMS)
 	     SIPTAG_EVENT(sip->sip_event),
 	     SIPTAG_CONTENT_TYPE_STR("application/pidf+xml"),
 	     SIPTAG_PAYLOAD_STR(presence_closed),
-	     NUTAG_SUBSTATE(fetch
-			    ? nua_substate_pending
-			    : nua_substate_terminated),
+	     NUTAG_SUBSTATE(nua_substate_pending),
 	     TAG_END());
-
     }
     return 0;
 
@@ -1019,6 +1014,10 @@ int test_subscribe_notify_graceful(struct context *ctx)
 
   if (print_headings)
     printf("TEST NUA-11.5.1: establishing subscription\n");
+
+  nua_set_params(b->nua, NUTAG_APPL_METHOD("NOTIFY"),
+		 TAG_END());
+  run_b_until(ctx, nua_r_set_params, until_final_response);
 
   TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
 
@@ -2092,8 +2091,8 @@ int test_simple(struct context *ctx)
     || test_publish(ctx)
     || test_subscribe_notify(ctx)
     || test_event_fetch(ctx)
-    || test_subscribe_notify_graceful(ctx)
     || test_newsub_notify(ctx)
+    || test_subscribe_notify_graceful(ctx)
     || test_subscription_timeout(ctx)
     ;
 }
