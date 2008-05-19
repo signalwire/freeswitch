@@ -1852,6 +1852,8 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 	user = strdup(outbound_profile->destination_number);
 
+	if (!user) goto done;
+
 	if (!(domain = strchr(user, '@'))) {
 		goto done;
 	}
