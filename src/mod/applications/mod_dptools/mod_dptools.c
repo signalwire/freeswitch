@@ -1436,7 +1436,7 @@ SWITCH_STANDARD_APP(att_xfer_function)
 		timelimit = atoi(var);
 	}
 
-	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS || !peer_session) {
 		goto end;
 	}
 
@@ -1475,13 +1475,10 @@ SWITCH_STANDARD_APP(att_xfer_function)
 		
 		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, bond);
 	}
-
+	
+	switch_core_session_rwunlock(peer_session);
+	
  end:
-	
-	if (peer_session) {
-		switch_core_session_rwunlock(peer_session);
-	}
-	
 	switch_channel_set_variable(channel, SWITCH_HOLDING_UUID_VARIABLE, NULL);
 }
 
