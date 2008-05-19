@@ -583,8 +583,12 @@ s2_request_to(struct dialog *d,
   assert(tport);
 
   *tpn = *tport_name(tport);
-  tpn->tpn_host = d->target->m_url->url_host;
-  tpn->tpn_port = d->target->m_url->url_port;
+  if (tport_is_udp(tport)) {
+    tpn->tpn_host = d->target->m_url->url_host;
+    tpn->tpn_port = url_port(d->target->m_url);
+    if (!tpn->tpn_port || !tpn->tpn_port[0])
+      tpn->tpn_port = url_port_default(d->target->m_url->url_type);
+  }
 
   magic = tport_magic(tport);
   assert(magic != NULL);
@@ -777,7 +781,6 @@ void s2_case(char const *number,
 {
   _s2case = number;
 }
-
 
 /* ---------------------------------------------------------------------- */
 /* tport interface */
