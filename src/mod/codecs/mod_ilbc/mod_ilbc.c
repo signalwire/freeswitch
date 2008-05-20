@@ -115,7 +115,7 @@ static switch_status_t switch_ilbc_encode(switch_codec_t *codec,
 		float buf[240];
 
 		for (x = 0; x < loops && new_len < *encoded_data_len; x++) {
-			for (y = 0; y < context->dbytes / sizeof(short); y++) {
+			for (y = 0; y < context->dbytes / sizeof(short) && y < 240; y++) {
 				buf[y] = ddp[y];
 			}
 			iLBC_encode(edp, buf, &context->encoder);
@@ -157,7 +157,7 @@ static switch_status_t switch_ilbc_decode(switch_codec_t *codec,
 
 		for (x = 0; x < loops && new_len < *decoded_data_len; x++) {
 			iLBC_decode(buf, edp, &context->decoder, 1);
-			for (y = 0; y < context->dbytes / sizeof(short); y++) {
+			for (y = 0; y < context->dbytes / sizeof(short) && y < 240; y++) {
 				ddp[y] = (short) buf[y];
 			}
 			ddp += context->dbytes / sizeof(short);
