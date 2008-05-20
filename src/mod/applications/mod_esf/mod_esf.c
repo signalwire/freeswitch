@@ -76,6 +76,8 @@ SWITCH_STANDARD_APP(bcast_function)
 	switch_port_t mcast_port = 34567;
 	switch_port_t mcast_control_port = 6061;
 	char *mcast_port_str = "34567";
+	const char *esf_broadcast_ip = NULL;
+
 
 	if (!switch_strlen_zero((char *) data)) {
 		mydata = switch_core_session_strdup(session, data);
@@ -165,13 +167,18 @@ SWITCH_STANDARD_APP(bcast_function)
             }
         }
 
-		switch_find_local_ip(guess_ip, sizeof(guess_ip), AF_INET);
-		if (!(rtp_port = switch_rtp_request_port(guess_ip))) {
+		if (!(esf_broadcast_ip = switch_channel_get_variable(channel, "esf_broadcast_ip"))) {
+			switch_find_local_ip(guess_ip, sizeof(guess_ip), AF_INET);
+			esf_broadcast_ip = guess_ip;
+		}
+
+
+		if (!(rtp_port = switch_rtp_request_port(esf_broadcast_ip))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP Port Error\n");
 			goto fail;
 		}
 
-		rtp_session = switch_rtp_new(guess_ip,
+		rtp_session = switch_rtp_new(esf_broadcast_ip,
 									 rtp_port,
 									 mcast_ip,
 									 mcast_port,
