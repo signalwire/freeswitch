@@ -76,7 +76,7 @@ SWITCH_STANDARD_APP(bcast_function)
 	switch_port_t mcast_port = 34567;
 	switch_port_t mcast_control_port = 6061;
 	char *mcast_port_str = "34567";
-	const char *esf_broadcast_ip = NULL;
+	const char *esf_broadcast_ip = NULL, *var;
 
 
 	if (!switch_strlen_zero((char *) data)) {
@@ -85,6 +85,10 @@ SWITCH_STANDARD_APP(bcast_function)
 
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	
+		if ((var = switch_channel_get_variable(channel, "esf_multicast_ip"))) {
+			mcast_ip = switch_core_session_strdup(session, var);
+		}
+
 		if (!switch_strlen_zero(argv[0])) {
 			mcast_ip = argv[0];
 		}
@@ -167,7 +171,9 @@ SWITCH_STANDARD_APP(bcast_function)
             }
         }
 
-		if (!(esf_broadcast_ip = switch_channel_get_variable(channel, "esf_broadcast_ip"))) {
+		if ((var = switch_channel_get_variable(channel, "esf_broadcast_ip"))) {
+			esf_broadcast_ip = switch_core_session_strdup(session, var);
+		} else {
 			switch_find_local_ip(guess_ip, sizeof(guess_ip), AF_INET);
 			esf_broadcast_ip = guess_ip;
 		}
