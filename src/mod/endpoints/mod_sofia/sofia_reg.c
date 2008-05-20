@@ -269,10 +269,10 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
 		}   
     } else {
 #endif
-	if (!profile->master_db) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-		return;
-	}
+		if (!profile->master_db) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+			return;
+		}
 #ifdef SWITCH_HAVE_ODBC
     }
 #endif
@@ -381,7 +381,7 @@ char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const c
 }
 
 
-void sofia_reg_auth_challange(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_regtype_t regtype, const char *realm, int stale, const char *new_via)
+void sofia_reg_auth_challange(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_regtype_t regtype, const char *realm, int stale)
 {
 	switch_uuid_t uuid;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
@@ -403,12 +403,10 @@ void sofia_reg_auth_challange(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	if (regtype == REG_REGISTER) {
 		nua_respond(nh, 
 					SIP_401_UNAUTHORIZED, 
-					TAG_IF(new_via, SIPTAG_VIA((void *)-1)), TAG_IF(new_via, SIPTAG_VIA_STR(new_via)),
 					TAG_IF(nua, NUTAG_WITH_THIS(nua)), SIPTAG_WWW_AUTHENTICATE_STR(auth_str), TAG_END());
 	} else if (regtype == REG_INVITE) {
 		nua_respond(nh, 
 					SIP_407_PROXY_AUTH_REQUIRED, 
-					TAG_IF(new_via, SIPTAG_VIA((void *)-1)), TAG_IF(new_via, SIPTAG_VIA_STR(new_via)),
 					TAG_IF(nua, NUTAG_WITH_THIS(nua)), SIPTAG_PROXY_AUTHENTICATE_STR(auth_str), TAG_END());
 	}
 
@@ -416,7 +414,7 @@ void sofia_reg_auth_challange(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 }
 
 uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_handle_t * nh, sip_t const *sip, sofia_regtype_t regtype, char *key,
-								  uint32_t keylen, switch_event_t **v_event, const char *new_via)
+								  uint32_t keylen, switch_event_t **v_event)
 {
 	sip_to_t const *to = NULL;
 	sip_expires_t const *expires = NULL;
@@ -532,7 +530,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 					!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction") || !strcasecmp(v_contact_str, "NDLB-tls-connectile-dysfunction")) {
 					if (contact->m_url->url_params) {
 						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s>",
-								 display, contact->m_url->url_user, network_ip, network_port, contact->m_url->url_params);
+										display, contact->m_url->url_user, network_ip, network_port, contact->m_url->url_params);
 					} else {
 						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d>", display, contact->m_url->url_user, network_ip, network_port);
 					}
@@ -567,12 +565,10 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			if (auth_res == AUTH_FORBIDDEN) {
 				nua_respond(nh, 
 							SIP_403_FORBIDDEN, 
-							TAG_IF(new_via, SIPTAG_VIA((void *)-1)), TAG_IF(new_via, SIPTAG_VIA_STR(new_via)),							
 							NUTAG_WITH_THIS(nua), TAG_END());
 			} else {
 				nua_respond(nh, 
 							SIP_401_UNAUTHORIZED, 
-							TAG_IF(new_via, SIPTAG_VIA((void *)-1)), TAG_IF(new_via, SIPTAG_VIA_STR(new_via)),
 							NUTAG_WITH_THIS(nua), TAG_END());
 			}
 			return 1;
@@ -580,13 +576,13 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	}
 
 	if (!authorization || stale) {
-		sofia_reg_auth_challange(nua, profile, nh, regtype, to_host, stale, new_via);
+		sofia_reg_auth_challange(nua, profile, nh, regtype, to_host, stale);
 		if (regtype == REG_REGISTER && profile->debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Requesting Registration from: [%s@%s]\n", to_user, to_host);
 		}
 		return 1;
 	}
-  reg:
+ reg:
 
 	if (regtype != REG_REGISTER) {
 		return 0;
@@ -695,9 +691,9 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 
 	
 	/*
-	if (call_id) {
-		su_free(profile->home, call_id);
-	}
+	  if (call_id) {
+	  su_free(profile->home, call_id);
+	  }
 	*/
 
 	if (regtype == REG_REGISTER) {
@@ -711,7 +707,6 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			}
 			nua_respond(nh, 
 						SIP_200_OK, 
-						TAG_IF(new_via, SIPTAG_VIA((void *)-1)), TAG_IF(new_via, SIPTAG_VIA_STR(new_via)),						
 						SIPTAG_CONTACT_STR(new_contact), NUTAG_WITH_THIS(nua), TAG_END());
 			switch_safe_free(new_contact);
 			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
@@ -722,7 +717,6 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		} else {
 			nua_respond(nh, 
 						SIP_200_OK, 
-						TAG_IF(new_via, SIPTAG_VIA((void *)-1)), TAG_IF(new_via, SIPTAG_VIA_STR(new_via)),
 						SIPTAG_CONTACT(contact), NUTAG_WITH_THIS(nua), TAG_END());
 			
 			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
@@ -752,7 +746,6 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 	char network_ip[80];
 	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
 	sofia_regtype_t type = REG_REGISTER;
-	char *new_via = NULL;
 	int network_port = 0;
 
 	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
@@ -765,38 +758,9 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 		goto end;
 	}
 
-	if (profile->nat_acl_count) {
-		uint32_t x = 0;
-		int ok = 1;
-		char *last_acl = NULL;
-		const char *contact_host = NULL;
-
-		if (sip && sip->sip_contact && sip->sip_contact->m_url) {
-			contact_host = sip->sip_contact->m_url->url_host;
-		}
-
-		if (!switch_strlen_zero(contact_host)) {
-			for (x = 0 ; x < profile->nat_acl_count; x++) {
-				last_acl = profile->nat_acl[x];
-				if (!(ok = switch_check_network_list_ip(contact_host, last_acl))) {
-					break;
-				}
-			}
-			
-			if (ok) {
-				if (sip->sip_via) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting NAT mode based on acl %s\n", last_acl);
-					new_via = sofia_glue_hack_via(profile, sip, network_port);
-				}
-			}
-		}
-	}
-	
-
 	if (!(profile->mflags & MFLAG_REGISTER)) {
 		nua_respond(nh, 
 					SIP_403_FORBIDDEN, 
-					TAG_IF(new_via, SIPTAG_VIA((void *)-1)), TAG_IF(new_via, SIPTAG_VIA_STR(new_via)),
 					NUTAG_WITH_THIS(nua), TAG_END());
 		goto end;
 	}
@@ -819,7 +783,6 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl %s\n", network_ip,  profile->reg_acl[x]);
 			nua_respond(nh, 
 						SIP_403_FORBIDDEN, 
-						TAG_IF(new_via, SIPTAG_VIA((void *)-1)), TAG_IF(new_via, SIPTAG_VIA_STR(new_via)),
 						NUTAG_WITH_THIS(nua), TAG_END());
 			goto end;
 		}
@@ -829,12 +792,11 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received an invalid packet!\n");
 		nua_respond(nh, 
 					SIP_500_INTERNAL_SERVER_ERROR, 
-					TAG_IF(new_via, SIPTAG_VIA((void *)-1)), TAG_IF(new_via, SIPTAG_VIA_STR(new_via)),
 					TAG_END());
 		goto end;
 	}
 
-	sofia_reg_handle_register(nua, profile, nh, sip, type, key, sizeof(key), &v_event, new_via);
+	sofia_reg_handle_register(nua, profile, nh, sip, type, key, sizeof(key), &v_event);
 
 	if (v_event) {
 		switch_event_fire(&v_event);
@@ -842,15 +804,14 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 
  end:	
 
-	switch_safe_free(new_via);
 	nua_handle_destroy(nh);
 
 }
 
 
 void sofia_reg_handle_sip_r_register(int status,
-						   char const *phrase,
-						   nua_t * nua, sofia_profile_t *profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[])
+									 char const *phrase,
+									 nua_t * nua, sofia_profile_t *profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[])
 {
 	if (sofia_private && sofia_private->gateway) {
 		switch (status) {
@@ -952,7 +913,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 }
 
 auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, sip_t const *sip, const char *regstr, 
-		char *np, size_t nplen, char *ip, switch_event_t **v_event, long exptime, sofia_regtype_t regtype, const char *to_user)
+								char *np, size_t nplen, char *ip, switch_event_t **v_event, long exptime, sofia_regtype_t regtype, const char *to_user)
 {
 	int indexnum;
 	const char *cur;
@@ -1263,7 +1224,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 			}
 		}
 	}
-  end:
+ end:
 
 	switch_event_destroy(&params);
 

@@ -2725,11 +2725,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		if (!strcmp(network_ip, profile->sipip) && network_port == profile->sip_port) {
 			calling_myself++;
 		} else {
-			if (is_nat) {
-				sticky = switch_mprintf("sip:%s@%s:%d", sip->sip_contact->m_url->url_user, network_ip, network_port);
-			}
-
-			if (sofia_reg_handle_register(nua, profile, nh, sip, REG_INVITE, key, sizeof(key), &v_event, sticky)) {
+			if (sofia_reg_handle_register(nua, profile, nh, sip, REG_INVITE, key, sizeof(key), &v_event)) {
 				if (v_event) {
 					switch_event_destroy(&v_event);
 				}
