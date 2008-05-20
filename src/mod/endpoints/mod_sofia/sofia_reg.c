@@ -381,7 +381,7 @@ char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const c
 }
 
 
-void sofia_reg_auth_challange(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_regtype_t regtype, const char *realm, int stale, const char *sticky)
+void sofia_reg_auth_challange(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_regtype_t regtype, const char *realm, int stale, const char *new_via)
 {
 	switch_uuid_t uuid;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
@@ -403,12 +403,12 @@ void sofia_reg_auth_challange(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	if (regtype == REG_REGISTER) {
 		nua_respond(nh, 
 					SIP_401_UNAUTHORIZED, 
-					TAG_IF(sticky, NUTAG_PROXY(sticky)),
+					TAG_IF(new_via, SIPTAG_VIA((void *)-1)), TAG_IF(new_via, SIPTAG_VIA_STR(new_via)),
 					TAG_IF(nua, NUTAG_WITH_THIS(nua)), SIPTAG_WWW_AUTHENTICATE_STR(auth_str), TAG_END());
 	} else if (regtype == REG_INVITE) {
 		nua_respond(nh, 
 					SIP_407_PROXY_AUTH_REQUIRED, 
-					TAG_IF(sticky, NUTAG_PROXY(sticky)),
+					TAG_IF(new_via, SIPTAG_VIA((void *)-1)), TAG_IF(new_via, SIPTAG_VIA_STR(new_via)),
 					TAG_IF(nua, NUTAG_WITH_THIS(nua)), SIPTAG_PROXY_AUTHENTICATE_STR(auth_str), TAG_END());
 	}
 
@@ -416,7 +416,7 @@ void sofia_reg_auth_challange(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 }
 
 uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_handle_t * nh, sip_t const *sip, sofia_regtype_t regtype, char *key,
-								  uint32_t keylen, switch_event_t **v_event, const char *sticky)
+								  uint32_t keylen, switch_event_t **v_event, const char *new_via)
 {
 	sip_to_t const *to = NULL;
 	sip_expires_t const *expires = NULL;
@@ -567,12 +567,12 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			if (auth_res == AUTH_FORBIDDEN) {
 				nua_respond(nh, 
 							SIP_403_FORBIDDEN, 
-							TAG_IF(sticky, NUTAG_PROXY(sticky)),							
+							TAG_IF(new_via, SIPTAG_VIA((void *)-1)), TAG_IF(new_via, SIPTAG_VIA_STR(new_via)),							
 							NUTAG_WITH_THIS(nua), TAG_END());
 			} else {
 				nua_respond(nh, 
 							SIP_401_UNAUTHORIZED, 
-							TAG_IF(sticky, NUTAG_PROXY(sticky)),
+							TAG_IF(new_via, SIPTAG_VIA((void *)-1)), TAG_IF(new_via, SIPTAG_VIA_STR(new_via)),
 							NUTAG_WITH_THIS(nua), TAG_END());
 			}
 			return 1;
@@ -580,7 +580,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	}
 
 	if (!authorization || stale) {
-		sofia_reg_auth_challange(nua, profile, nh, regtype, to_host, stale, sticky);
+		sofia_reg_auth_challange(nua, profile, nh, regtype, to_host, stale, new_via);
 		if (regtype == REG_REGISTER && profile->debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Requesting Registration from: [%s@%s]\n", to_user, to_host);
 		}
@@ -711,7 +711,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			}
 			nua_respond(nh, 
 						SIP_200_OK, 
-						TAG_IF(sticky, NUTAG_PROXY(sticky)),						
+						TAG_IF(new_via, SIPTAG_VIA((void *)-1)), TAG_IF(new_via, SIPTAG_VIA_STR(new_via)),						
 						SIPTAG_CONTACT_STR(new_contact), NUTAG_WITH_THIS(nua), TAG_END());
 			switch_safe_free(new_contact);
 			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
@@ -722,7 +722,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		} else {
 			nua_respond(nh, 
 						SIP_200_OK, 
-						TAG_IF(sticky, NUTAG_PROXY(sticky)),
+						TAG_IF(new_via, SIPTAG_VIA((void *)-1)), TAG_IF(new_via, SIPTAG_VIA_STR(new_via)),
 						SIPTAG_CONTACT(contact), NUTAG_WITH_THIS(nua), TAG_END());
 			
 			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
@@ -752,7 +752,7 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 	char network_ip[80];
 	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
 	sofia_regtype_t type = REG_REGISTER;
-	char *sticky = NULL;
+	char *new_via = NULL;
 	int network_port = 0;
 
 	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
@@ -784,8 +784,10 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 			}
 			
 			if (ok) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting NAT mode based on acl %s\n", last_acl);
-				sticky = switch_mprintf("sip:%s@%s:%d", sip->sip_contact->m_url->url_user, network_ip, network_port);
+				if (sip->sip_via) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting NAT mode based on acl %s\n", last_acl);
+					new_via = sofia_glue_hack_via(profile, sip, network_port);
+				}
 			}
 		}
 	}
@@ -794,7 +796,7 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 	if (!(profile->mflags & MFLAG_REGISTER)) {
 		nua_respond(nh, 
 					SIP_403_FORBIDDEN, 
-					TAG_IF(sticky, NUTAG_PROXY(sticky)),
+					TAG_IF(new_via, SIPTAG_VIA((void *)-1)), TAG_IF(new_via, SIPTAG_VIA_STR(new_via)),
 					NUTAG_WITH_THIS(nua), TAG_END());
 		goto end;
 	}
@@ -817,7 +819,7 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl %s\n", network_ip,  profile->reg_acl[x]);
 			nua_respond(nh, 
 						SIP_403_FORBIDDEN, 
-						TAG_IF(sticky, NUTAG_PROXY(sticky)),
+						TAG_IF(new_via, SIPTAG_VIA((void *)-1)), TAG_IF(new_via, SIPTAG_VIA_STR(new_via)),
 						NUTAG_WITH_THIS(nua), TAG_END());
 			goto end;
 		}
@@ -827,12 +829,12 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received an invalid packet!\n");
 		nua_respond(nh, 
 					SIP_500_INTERNAL_SERVER_ERROR, 
-					TAG_IF(sticky, NUTAG_PROXY(sticky)),
+					TAG_IF(new_via, SIPTAG_VIA((void *)-1)), TAG_IF(new_via, SIPTAG_VIA_STR(new_via)),
 					TAG_END());
 		goto end;
 	}
 
-	sofia_reg_handle_register(nua, profile, nh, sip, type, key, sizeof(key), &v_event, sticky);
+	sofia_reg_handle_register(nua, profile, nh, sip, type, key, sizeof(key), &v_event, new_via);
 
 	if (v_event) {
 		switch_event_fire(&v_event);
@@ -840,7 +842,7 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 
  end:	
 
-	switch_safe_free(sticky);
+	switch_safe_free(new_via);
 	nua_handle_destroy(nh);
 
 }

@@ -463,6 +463,32 @@ switch_status_t sofia_glue_ext_address_lookup(char **ip, switch_port_t *port, ch
 }
 
 
+char *sofia_glue_hack_via(sofia_profile_t *profile, sip_t const *sip, int network_port)
+{
+	
+	char *full_via, *p, *new_via = NULL;
+
+	if (sip->sip_via) {
+		full_via = sip_header_as_string(profile->home, (void *) sip->sip_via);
+		if ((p = (char *)switch_stristr("rport=", full_via))) {
+			*p = '\0';
+			p--;
+		}
+		
+		p = end_of_p(full_via);
+		if (*p == ';') {
+			*p = '\0';
+		}
+
+	
+		new_via = switch_mprintf("%s;rport=%d", full_via, network_port);
+		su_free(profile->home, full_via);
+	}
+
+	return new_via;
+}
+
+
 const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name)
 {
 	sip_unknown_t *un;
