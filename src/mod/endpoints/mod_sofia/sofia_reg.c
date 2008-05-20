@@ -427,6 +427,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	const char *to_user = NULL;
 	const char *to_host = NULL;
 	char contact_str[1024] = "";
+	int nat_hack = 0;
 	//char buf[512];
 	uint8_t stale = 0, forbidden = 0;
 	auth_res_t auth_res;
@@ -541,6 +542,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 						reg_desc = "Registered(NATHACK)";
 						exptime = 20;
 					}
+					nat_hack = 1;
 				} else {
 					char *p;
 					switch_copy_string(contact_str, v_contact_str, sizeof(contact_str));
@@ -702,7 +704,11 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		char *new_contact = NULL;
 
 		if (exptime) {
-			new_contact = switch_mprintf("%s;expires=%ld", contact_str, (long)exptime);
+			if (nat_hack) {
+				new_contact = switch_mprintf("%s;expires=%ld;received=\"%s:%d\"", contact_str, (long)exptime, network_ip, network_port);
+			} else {
+				new_contact = switch_mprintf("%s;expires=%ld", contact_str, (long)exptime);
+			}
 			nua_respond(nh, 
 						SIP_200_OK, 
 						TAG_IF(sticky, NUTAG_PROXY(sticky)),						
