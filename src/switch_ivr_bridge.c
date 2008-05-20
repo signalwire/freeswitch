@@ -99,7 +99,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 	uint32_t loop_count = 0;
 	const char *app_name = NULL, *app_arg = NULL;
 	const char *hook_var = NULL;
-	int nosuspend  = 0;
+	int inner_bridge  = 0;
 #ifdef SWITCH_VIDEO_IN_THREADS
     struct vid_helper vh = { 0 };
 	uint32_t vid_launch = 0;
@@ -123,15 +123,23 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 		ans_b = switch_channel_test_flag(chan_b, CF_ANSWERED);
 	}
 
+	inner_bridge = switch_channel_test_flag(chan_a, CF_INNER_BRIDGE);
+	
+
 	switch_channel_set_flag(chan_a, CF_BRIDGED);
-	
-	nosuspend = switch_channel_test_flag(chan_a, CF_INNER_BRIDGE);
-	
+
+
+	switch_channel_wait_for_flag(chan_b, CF_BRIDGED, SWITCH_TRUE, 1000000);
+
 	for (;;) {
 		switch_channel_state_t b_state;
 		switch_status_t status;
 		switch_event_t *event;
 		loop_count++;
+
+		if (!switch_channel_test_flag(chan_b, CF_BRIDGED)) {
+			goto end_of_bridge_loop;
+		}
 
 		if (!switch_channel_ready(chan_a)) {
 			goto end_of_bridge_loop;
@@ -160,7 +168,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 			switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 		}
 
-		if (!nosuspend && (switch_channel_test_flag(chan_a, CF_SUSPEND) || switch_channel_test_flag(chan_b, CF_SUSPEND))) {
+		if (!inner_bridge && (switch_channel_test_flag(chan_a, CF_SUSPEND) || switch_channel_test_flag(chan_b, CF_SUSPEND))) {
 			status = switch_core_session_read_frame(session_a, &read_frame, SWITCH_IO_FLAG_NONE, stream_id);
 			
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -290,7 +298,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
     }
 #endif
 
-	if (!nosuspend) {
+	if (!inner_bridge) {
 		hook_var = switch_channel_get_variable(chan_a, SWITCH_API_BRIDGE_END_VARIABLE);
 	}
 
@@ -319,7 +327,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 	msg.from = __FILE__;
 	switch_core_session_receive_message(session_a, &msg);
 	
-	if (!nosuspend && switch_channel_get_state(chan_a) < CS_HANGUP) {
+	if (!inner_bridge && switch_channel_get_state(chan_a) < CS_HANGUP) {
 		if ((app_name = switch_channel_get_variable(chan_a, SWITCH_EXEC_AFTER_BRIDGE_APP_VARIABLE))) {
 			switch_caller_extension_t *extension = NULL;
 			if ((extension = switch_caller_extension_new(session_a, app_name, app_name)) == 0) {
@@ -345,7 +353,9 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 	switch_core_session_reset(session_a, SWITCH_TRUE);
 	switch_channel_set_variable(chan_a, SWITCH_BRIDGE_VARIABLE, NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BRIDGE THREAD DONE [%s]\n", switch_channel_get_name(chan_a));
-	switch_channel_clear_flag(chan_a, CF_BRIDGED);
+	if (!inner_bridge) {
+		switch_channel_clear_flag(chan_a, CF_BRIDGED);
+	}
 	switch_core_session_rwunlock(session_b);
 	return NULL;
 }
@@ -648,7 +658,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	switch_channel_state_t state;
 	switch_event_t *event;
 	int br = 0;
-	int nosuspend = switch_channel_test_flag(caller_channel, CF_INNER_BRIDGE);
+	int inner_bridge = switch_channel_test_flag(caller_channel, CF_INNER_BRIDGE);
 	
 	switch_channel_set_flag(caller_channel, CF_ORIGINATOR);
 	switch_channel_clear_flag(caller_channel, CF_TRANSFER);
@@ -758,8 +768,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			audio_bridge_thread(NULL, (void *) a_leg);
 
 			switch_channel_clear_flag(caller_channel, CF_ORIGINATOR);
-			//make sure this doesnt break anything
-
+			
 			if (!switch_channel_test_flag(peer_channel, CF_TRANSFER) && switch_channel_get_state(peer_channel) == CS_EXCHANGE_MEDIA) {
 				switch_channel_set_state(peer_channel, CS_RESET);
 			}
@@ -793,7 +802,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 	state = switch_channel_get_state(caller_channel);
 	
-	if (!switch_channel_test_flag(caller_channel, CF_TRANSFER) && !nosuspend) {
+	if (!switch_channel_test_flag(caller_channel, CF_TRANSFER) && !inner_bridge) {
 		if ((state != CS_EXECUTE && state != CS_PARK && state != CS_ROUTING) || 
 			(switch_channel_test_flag(peer_channel, CF_ANSWERED) && state < CS_HANGUP && 
 			 switch_true(switch_channel_get_variable(caller_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE)))) {
