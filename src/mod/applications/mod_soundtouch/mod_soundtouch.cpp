@@ -55,7 +55,7 @@ struct soundtouch_helper {
     int literal;
 };
 
-static switch_status_t on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
+static switch_status_t on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction)
 {
 
     switch_media_bug_t *bug;
