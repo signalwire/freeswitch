@@ -40,6 +40,8 @@
        -->
       <param name="operator-extension" value="operator XML default"/>
       <param name="operator-key" value="9"/>
+      <param name="vmain-extension" value="vmain XML default"/>
+      <param name="vmain-key" value="*"/>
       <email>
 	<param name="template-file" value="voicemail.tpl"/>
 	<!-- this is the format voicemail_time will have -->

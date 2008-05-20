@@ -81,11 +81,13 @@ struct vm_profile {
 	char rew_key[2];
 	char urgent_key[2];
 	char operator_key[2];
+	char vmain_key[2];
 	char file_ext[10];
 	char *record_title;
 	char *record_comment;
 	char *record_copyright;
 	char *operator_ext;
+	char *vmain_ext;
 	char *tone_spec;
 	char *storage_dir;
 	char *callback_dialplan;
@@ -272,6 +274,8 @@ static switch_status_t load_config(void)
 		char *urgent_key = "*";
 		char *operator_key = "";
 		char *operator_ext = "";
+		char *vmain_key = "";
+		char *vmain_ext = "";
 		char *tone_spec = "%(1000, 0, 640)";
 		char *file_ext = "wav";
 		char *storage_dir = "";
@@ -433,6 +437,10 @@ static switch_status_t load_config(void)
 				operator_key = val;
 			} else if (!strcasecmp(var, "operator-extension") && !switch_strlen_zero(val)) {
 				operator_ext = val;
+                        } else if (!strcasecmp(var, "vmain-key") && !switch_strlen_zero(val)) {
+                                vmain_key = val;
+                        } else if (!strcasecmp(var, "vmain-extension") && !switch_strlen_zero(val)) {
+                                vmain_ext = val;
 			} else if (!strcasecmp(var, "storage-dir") && !switch_strlen_zero(val)) {
 				storage_dir = val;
 			} else if (!strcasecmp(var, "callback-dialplan") && !switch_strlen_zero(val)) {
@@ -652,11 +660,13 @@ static switch_status_t load_config(void)
 			*profile->rew_key = *rew_key;
 			*profile->urgent_key = *urgent_key;
 			*profile->operator_key = *operator_key;
+                        *profile->vmain_key = *vmain_key;
 			profile->record_threshold = record_threshold;
 			profile->record_silence_hits = record_silence_hits;
 			profile->record_sample_rate = record_sample_rate;
 
 			profile->operator_ext = switch_core_strdup(globals.pool, operator_ext);
+                        profile->vmain_ext = switch_core_strdup(globals.pool, vmain_ext);
 			profile->storage_dir = switch_core_strdup(globals.pool, storage_dir);
 			profile->tone_spec = switch_core_strdup(globals.pool, tone_spec);
 			profile->callback_dialplan = switch_core_strdup(globals.pool, callback_dialplan);
@@ -1868,6 +1878,20 @@ greet:
 			char *mycmd;
 
 			if (!switch_strlen_zero(profile->operator_ext) && (mycmd = switch_core_session_strdup(session, profile->operator_ext))) {
+				argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+				if (argc >= 1 && argc <= 4) {
+					switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
+					/* the application still runs after we leave it so we need to make sure that we dont do anything evil */
+					send_mail=0;
+					goto end;
+				}
+			}
+		} else if (!strcasecmp(buf, profile->vmain_key) && !switch_strlen_zero(profile->vmain_key)) {
+			int argc;
+			char *argv[4];
+			char *mycmd;
+
+			if (!switch_strlen_zero(profile->vmain_ext) && (mycmd = switch_core_session_strdup(session, profile->vmain_ext))) {
 				argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 				if (argc >= 1 && argc <= 4) {
 					switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
