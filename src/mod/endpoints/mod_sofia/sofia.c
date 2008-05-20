@@ -2647,6 +2647,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	int is_auth = 0, calling_myself = 0;
 	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
 	int network_port = 0;
+	char *sticky = NULL, *is_nat = NULL;
 
 	if (sess_count >= sess_max || !(profile->pflags & PFLAG_RUNNING)) {
 		nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
@@ -2662,6 +2663,31 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	
 	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
 	network_port = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
+	
+	if (profile->nat_acl_count) {
+		uint32_t x = 0;
+		int ok = 1;
+		char *last_acl = NULL;
+		const char *contact_host = NULL;
+
+		if (sip && sip->sip_contact && sip->sip_contact->m_url) {
+			contact_host = sip->sip_contact->m_url->url_host;
+		}
+
+		if (!switch_strlen_zero(contact_host)) {
+			for (x = 0 ; x < profile->nat_acl_count; x++) {
+				last_acl = profile->nat_acl[x];
+				if (!(ok = switch_check_network_list_ip(contact_host, last_acl))) {
+					break;
+				}
+			}
+			
+			if (ok) {
+				is_nat = last_acl;
+			}
+		}
+	}
+	
 
 	if (profile->acl_count) {
 		uint32_t x = 0;
@@ -2699,12 +2725,18 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		if (!strcmp(network_ip, profile->sipip) && network_port == profile->sip_port) {
 			calling_myself++;
 		} else {
-			if (sofia_reg_handle_register(nua, profile, nh, sip, REG_INVITE, key, sizeof(key), &v_event)) {
+			if (is_nat) {
+				sticky = switch_mprintf("sip:%s@%s:%d", sip->sip_contact->m_url->url_user, network_ip, network_port);
+			}
+
+			if (sofia_reg_handle_register(nua, profile, nh, sip, REG_INVITE, key, sizeof(key), &v_event, sticky)) {
 				if (v_event) {
 					switch_event_destroy(&v_event);
 				}
+				switch_safe_free(sticky);
 				return;
 			}
+			switch_safe_free(sticky);
 		}
 		is_auth++;
 	}
@@ -3159,27 +3191,12 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
 
-
-		if (profile->nat_acl_count) {
-			uint32_t x = 0;
-			int ok = 1;
-			char *last_acl = NULL;
-
-			if (!switch_strlen_zero(contact_host)) {
-				for (x = 0 ; x < profile->nat_acl_count; x++) {
-					last_acl = profile->nat_acl[x];
-					if (!(ok = switch_check_network_list_ip(contact_host, last_acl))) {
-						break;
-					}
-				}
-
-				if (ok) {
-					switch_set_flag(tech_pvt, TFLAG_NAT);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting NAT mode based on acl %s\n", last_acl);
-					switch_channel_set_variable(channel, "sip_nat_detected", "true");
-				}
-			}
+		if (is_nat) {
+			switch_set_flag(tech_pvt, TFLAG_NAT);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting NAT mode based on acl %s\n", is_nat);
+			switch_channel_set_variable(channel, "sip_nat_detected", "true");
 		}
+		
 		return;
 	}
 
