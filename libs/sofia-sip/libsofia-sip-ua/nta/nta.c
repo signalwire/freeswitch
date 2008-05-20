@@ -2579,6 +2579,10 @@ int agent_check_request_via(nta_agent_t *agent,
     rport = su_sprintf(msg_home(msg), "rport=%u", ntohs(from->su_port));
     msg_header_replace_param(msg_home(msg), v->v_common, rport);
   }
+  else {
+    rport = su_sprintf(msg_home(msg), "rport=%u", ntohs(from->su_port));
+    msg_header_replace_param(msg_home(msg), v->v_common, rport);
+  } 
 
   return 0;
 }
