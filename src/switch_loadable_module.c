@@ -154,13 +154,18 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 				for (impl = ptr->implementations; impl; impl = impl->next) {
 					if (!impl->iananame) {
 						load_interface = 0;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
+									  "Failed to load codec interface %s from %s due to no iana name in an implementation.\n", ptr->interface_name, key);
+						break;
+					}
+					if (impl->bytes_per_frame > SWITCH_RECOMMENDED_BUFFER_SIZE) {
+						load_interface = 0;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
+									  "Failed to load codec interface %s from %s due to bytes per frame exceeding buffer size.\n", ptr->interface_name, key);
 						break;
 					}
 				}
-				if (!load_interface) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
-									  "Failed to load codec interface %s from %s due to no iana name in an implementation.\n", ptr->interface_name, key);
-				} else {
+				if (load_interface) {
 					for (impl = ptr->implementations; impl; impl = impl->next) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 										  "Adding Codec '%s' (%s) %dhz %dms\n",

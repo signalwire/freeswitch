@@ -487,6 +487,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 
 					if (switch_test_flag(read_frame, SFF_CNG)) {
 						sendlen = read_codec->implementation->bytes_per_frame;
+						switch_assert(sendlen <= SWITCH_RECOMMENDED_BUFFER_SIZE);
 						memset(decoded, 255, sendlen);
 						sendbuf = decoded;
 						tstatus = SWITCH_STATUS_SUCCESS;
