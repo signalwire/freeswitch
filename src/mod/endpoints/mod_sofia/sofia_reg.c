@@ -529,10 +529,10 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 				if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction") || 
 					!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction") || !strcasecmp(v_contact_str, "NDLB-tls-connectile-dysfunction")) {
 					if (contact->m_url->url_params) {
-						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s>",
+						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s>;nat",
 										display, contact->m_url->url_user, network_ip, network_port, contact->m_url->url_params);
 					} else {
-						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d>", display, contact->m_url->url_user, network_ip, network_port);
+						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d>;nat", display, contact->m_url->url_user, network_ip, network_port);
 					}
 					if (strstr(v_contact_str, "tls")) {
 						reg_desc = "Registered(TLSHACK)";

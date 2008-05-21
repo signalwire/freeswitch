@@ -1117,6 +1117,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						switch_set_flag(profile, TFLAG_LATE_NEGOTIATION);
 					} else if (!strcasecmp(var, "inbound-proxy-media") && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_PROXY_MEDIA);
+					} else if (!strcasecmp(var, "aggressive-nat-detection") && switch_true(val)) {
+						profile->pflags |= PFLAG_AGGRESSIVE_NAT_DETECTION;
 					} else if (!strcasecmp(var, "rfc2833-pt")) {
 						profile->te = (switch_payload_t) atoi(val);
 					} else if (!strcasecmp(var, "cng-pt")) {
@@ -2647,7 +2649,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	int is_auth = 0, calling_myself = 0;
 	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
 	int network_port = 0;
-	char *sticky = NULL, *is_nat = NULL;
+	char *is_nat = NULL;
 
 	if (sess_count >= sess_max || !(profile->pflags & PFLAG_RUNNING)) {
 		nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
@@ -2659,12 +2661,24 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		nua_respond(nh, SIP_503_SERVICE_UNAVAILABLE, TAG_END());
 		return;
 	}
-
 	
 	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
 	network_port = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
-	
-	if (profile->nat_acl_count) {
+
+	if ((profile->pflags & PFLAG_AGGRESSIVE_NAT_DETECTION)) {
+		if (sip && sip->sip_via) {
+			const char *port = sip->sip_via->v_port;
+			const char *host = sip->sip_via->v_host;
+			
+			if (host && strcmp(network_ip, host)) {
+				is_nat = "via host";
+			} else if (port && atoi(port) != network_port) {
+				is_nat = "via port";
+			}
+		}
+	}
+
+	if (!is_nat && profile->nat_acl_count) {
 		uint32_t x = 0;
 		int ok = 1;
 		char *last_acl = NULL;
@@ -2687,7 +2701,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			}
 		}
 	}
-	
 
 	if (profile->acl_count) {
 		uint32_t x = 0;
@@ -2718,7 +2731,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			}
 		}
 	}
-
 	
 	if (!is_auth && 
 		((profile->pflags & PFLAG_AUTH_CALLS) || (!(profile->pflags & PFLAG_BLIND_AUTH) && (sip->sip_proxy_authorization || sip->sip_authorization)))) {
@@ -2729,22 +2741,18 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				if (v_event) {
 					switch_event_destroy(&v_event);
 				}
-				switch_safe_free(sticky);
 				return;
 			}
-			switch_safe_free(sticky);
 		}
 		is_auth++;
 	}
 
-	
 	if (!(sip->sip_contact && sip->sip_contact->m_url)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO CONTACT!\n");
 		nua_respond(nh, 400, "Missing Contact Header", TAG_END());
 		return;
 	}
 
-	
 	if (!sofia_endpoint_interface || !(session = switch_core_session_request(sofia_endpoint_interface, NULL))) {
 		nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 		return;
@@ -2756,6 +2764,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		switch_core_session_destroy(&session);
 		return;
 	}
+
+
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 
 	tech_pvt->remote_ip = switch_core_session_strdup(session, network_ip);
@@ -3189,7 +3199,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 		if (is_nat) {
 			switch_set_flag(tech_pvt, TFLAG_NAT);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting NAT mode based on acl %s\n", is_nat);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting NAT mode based on %s\n", is_nat);
 			switch_channel_set_variable(channel, "sip_nat_detected", "true");
 		}
 		

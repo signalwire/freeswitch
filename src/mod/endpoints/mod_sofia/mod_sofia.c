@@ -1856,7 +1856,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			tech_pvt->dest_to = switch_core_session_sprintf(nsession, "sip:%s@%s", dest_to, host);
 		}
 	}
-
+	
 
 	if (!tech_pvt->dest_to) {
 		tech_pvt->dest_to = tech_pvt->dest;

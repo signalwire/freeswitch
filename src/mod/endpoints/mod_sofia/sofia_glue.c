@@ -868,7 +868,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	uint32_t session_timeout = 0;
 	const char *val;
 	const char *rep;
-	char *sticky;
+	char *sticky = NULL;
 
 	rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
 
@@ -1001,19 +1001,15 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 								  SIPTAG_CONTACT_STR(invite_contact),
 								  TAG_END());
 
-
-		if (switch_test_flag(tech_pvt, TFLAG_NAT) ||
-			(val = switch_channel_get_variable(channel, "sip-force-contact")) || 
-			((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val))) {
+		
+		if (strstr(tech_pvt->dest, ";nat") || ((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val))) {
+			switch_set_flag(tech_pvt, TFLAG_NAT);
 			tech_pvt->record_route = switch_core_session_strdup(tech_pvt->session, url_str);
 			sticky = tech_pvt->record_route;
 			session_timeout = SOFIA_NAT_SESSION_TIMEOUT;
 			switch_channel_set_variable(channel, "sip_nat_detected", "true");
 		}
-
-
-
-
+		
 		/* TODO: We should use the new tags for making an rpid and add profile options to turn this on/off */
 		if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
 			priv = "name";
@@ -1104,7 +1100,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		sofia_glue_tech_patch_sdp(tech_pvt);
 	}
 
-
 	nua_invite(tech_pvt->nh,
 			   NUTAG_AUTOANSWER(0),
 			   NUTAG_SESSION_TIMER(session_timeout),
@@ -1112,6 +1107,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			   TAG_IF(!switch_strlen_zero(alert_info), SIPTAG_HEADER_STR(alert_info)),
 			   TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 			   TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
+			   TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
 			   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 			   SOATAG_REUSE_REJECTED(1),
 			   SOATAG_ORDERED_USER(1),
