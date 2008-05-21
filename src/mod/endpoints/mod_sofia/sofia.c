@@ -2670,7 +2670,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			const char *port = sip->sip_via->v_port;
 			const char *host = sip->sip_via->v_host;
 			
-			if (host && strcmp(network_ip, host)) {
+			if (host && sip->sip_via->v_received) {
+				is_nat = "via received";
+			} else if (host && strcmp(network_ip, host)) {
 				is_nat = "via host";
 			} else if (port && atoi(port) != network_port) {
 				is_nat = "via port";
@@ -2737,7 +2739,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		if (!strcmp(network_ip, profile->sipip) && network_port == profile->sip_port) {
 			calling_myself++;
 		} else {
-			if (sofia_reg_handle_register(nua, profile, nh, sip, REG_INVITE, key, sizeof(key), &v_event)) {
+			if (sofia_reg_handle_register(nua, profile, nh, sip, REG_INVITE, key, sizeof(key), &v_event, NULL)) {
 				if (v_event) {
 					switch_event_destroy(&v_event);
 				}

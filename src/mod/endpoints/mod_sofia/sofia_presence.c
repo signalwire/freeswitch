@@ -1136,7 +1136,7 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 	char *sub_to_user = argv[0];
 	char *sub_to_host = argv[1];
 	char *event = "message-summary";
-	char *contact = argv[2];
+	char *contact, *o_contact = argv[2];
 	char *body = argv[3];
 	char *id = NULL;
 	nua_handle_t *nh;
@@ -1145,7 +1145,7 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 	
 	id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
 
-	contact = sofia_glue_get_url_from_contact(contact, 0);
+	contact = sofia_glue_get_url_from_contact(o_contact, 1);
 	
 	nh = nua_handle(h->profile->nua, NULL,
 					NUTAG_URL(contact),
@@ -1156,8 +1156,10 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 	
 	nua_notify(nh,
 			   NUTAG_NEWSUB(1),
+			   TAG_IF(strstr(o_contact, ";nat"), NUTAG_PROXY(contact)),
 			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"), SIPTAG_PAYLOAD_STR(body), TAG_END());
-
+	
+	switch_safe_free(contact);
 	switch_safe_free(id);
 	
 	return 0;
@@ -1189,40 +1191,97 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		switch_event_t *sevent;
 		int sub_state;
 		int sent_reply = 0;
+		su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
+		int network_port = 0;
+		char network_ip[80];
+		const char *contact_host, *contact_user;
+		char *port;
+		char new_port[25] = "";
+		char *is_nat = NULL;
+
+		if (!(contact && sip->sip_contact->m_url)) {
+			nua_respond(nh, 481, "INVALID SUBSCRIPTION", TAG_END());
+			return;
+		}
+
+		get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
+		network_port = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
 
 		tl_gets(tags,
 				NUTAG_SUBSTATE_REF(sub_state), TAG_END());
 
 		event = sip_header_as_string(profile->home, (void *) sip->sip_event);
 
-		if (contact) {
-			char *port = (char *) contact->m_url->url_port;
-			char new_port[25] = "";
-
-			display = contact->m_display;
-
-			if (switch_strlen_zero(display)) {
-				if (from) {
-					display = from->a_display;
-					if (switch_strlen_zero(display)) {
-						display = "\"user\"";
-					}
-				}
-			} else {
-				display = "\"user\"";
-			}
-
-			if (port) {
-				switch_snprintf(new_port, sizeof(new_port), ":%s", port);
-			}
+		port = (char *) contact->m_url->url_port;
+		contact_host = sip->sip_contact->m_url->url_host;
+		contact_user = sip->sip_contact->m_url->url_user;
 			
-			if (contact->m_url->url_params) {
-				contact_str = switch_mprintf("%s <sip:%s@%s%s;%s>",
-											 display, contact->m_url->url_user, contact->m_url->url_host, new_port, contact->m_url->url_params);
-			} else {
-				contact_str = switch_mprintf("%s <sip:%s@%s%s>", display, contact->m_url->url_user, contact->m_url->url_host, new_port);
+		display = contact->m_display;
+
+		if (switch_strlen_zero(display)) {
+			if (from) {
+				display = from->a_display;
+				if (switch_strlen_zero(display)) {
+					display = "\"user\"";
+				}
+			}
+		} else {
+			display = "\"user\"";
+		}
+			
+		if ((profile->pflags & PFLAG_AGGRESSIVE_NAT_DETECTION)) {
+			if (sip && sip->sip_via) {
+				const char *port = sip->sip_via->v_port;
+				const char *host = sip->sip_via->v_host;
+					
+				if (host && sip->sip_via->v_received) {
+					is_nat = "via received";
+				} else if (host && strcmp(network_ip, host)) {
+					is_nat = "via host";
+				} else if (port && atoi(port) != network_port) {
+					is_nat = "via port";
+				}
 			}
 		}
+			
+		if (!is_nat && profile->nat_acl_count) {
+			uint32_t x = 0;
+			int ok = 1;
+			char *last_acl = NULL;
+				
+			if (!switch_strlen_zero(contact_host)) {
+				for (x = 0 ; x < profile->nat_acl_count; x++) {
+					last_acl = profile->nat_acl[x];
+					if (!(ok = switch_check_network_list_ip(contact_host, last_acl))) {
+						break;
+					}
+				}
+					
+				if (ok) {
+					is_nat = last_acl;
+				}
+			}
+		}
+			
+			
+		if (is_nat) {
+			contact_host = network_ip;
+			switch_snprintf(new_port, sizeof(new_port), ":%d", network_port);
+			port = NULL;
+		}
+
+
+		if (port) {
+			switch_snprintf(new_port, sizeof(new_port), ":%s", port);
+		}
+			
+		if (contact->m_url->url_params) {
+			contact_str = switch_mprintf("%s <sip:%s@%s%s;%s>%s",
+										 display, contact->m_url->url_user, contact_host, new_port, contact->m_url->url_params, is_nat ? ";nat" : "");
+		} else {
+			contact_str = switch_mprintf("%s <sip:%s@%s%s>%s", display, contact->m_url->url_user, contact_host, new_port, is_nat ? ";nat" : "");
+		}
+		
 
 		if (to) {
 			to_str = switch_mprintf("sip:%s@%s", to->a_url->url_user, to->a_url->url_host);	//, to->a_url->url_port);
@@ -1336,14 +1395,25 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	
 		switch_mutex_unlock(profile->ireg_mutex);
 
+
 		if (status < 200) {
-			nua_respond(nh, SIP_202_ACCEPTED,
+			char *sticky = NULL;
+			
+			if (is_nat) {
+				sticky = switch_mprintf("sip:%s@%s:%d", contact_user, network_ip, network_port);
+			}
+
+			nua_respond(nh, SIP_202_ACCEPTED,						
 						NUTAG_WITH_THIS(nua),
 						SIPTAG_SUBSCRIPTION_STATE_STR(sstr), 
+						TAG_IF(sticky, NUTAG_PROXY(sticky)),
 						//SIPTAG_FROM(sip->sip_to),
 						//SIPTAG_TO(sip->sip_from),
 						//SIPTAG_CONTACT_STR(contact_str),
 						TAG_END());
+
+			switch_safe_free(sticky);
+
 		}
 		
 		sent_reply++;

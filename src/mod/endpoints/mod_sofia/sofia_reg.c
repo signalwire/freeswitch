@@ -333,7 +333,7 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
 	
 
 	if (now) {
-		switch_snprintf(sql, sizeof(sql), "select * from sip_registrations where status like '%%NATHACK%%'");
+		switch_snprintf(sql, sizeof(sql), "select * from sip_registrations where status like '%%AUTO-NAT%%'");
 		sofia_glue_execute_sql_callback(profile,
 										SWITCH_TRUE,
 										NULL,
@@ -414,7 +414,7 @@ void sofia_reg_auth_challange(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 }
 
 uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_handle_t * nh, sip_t const *sip, sofia_regtype_t regtype, char *key,
-								  uint32_t keylen, switch_event_t **v_event)
+								  uint32_t keylen, switch_event_t **v_event, const char *is_nat)
 {
 	sip_to_t const *to = NULL;
 	sip_expires_t const *expires = NULL;
@@ -466,7 +466,15 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		const char *port = contact->m_url->url_port;
 		char new_port[25] = "";
 		display = contact->m_display;
-
+		const char *contact_host = contact->m_url->url_host;
+		
+		if (is_nat) {
+			reg_desc = "Registered(AUTO-NAT)";
+			contact_host = network_ip;
+			switch_snprintf(new_port, sizeof(new_port), ":%d", network_port);
+			port = NULL;
+		}
+		
 		if (switch_strlen_zero(display)) {
 			if (to) {
 				display = to->a_display;
@@ -481,10 +489,10 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		}
 
 		if (contact->m_url->url_params) {
-			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s%s;%s>",
-							display, contact->m_url->url_user, contact->m_url->url_host, new_port, contact->m_url->url_params);
+			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s%s;%s>%s",
+							display, contact->m_url->url_user, contact_host, new_port, contact->m_url->url_params, is_nat ? ";nat" : "");
 		} else {
-			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s%s>", display, contact->m_url->url_user, contact->m_url->url_host, new_port);
+			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s%s>%s", display, contact->m_url->url_user, contact_host, new_port, is_nat ? ";nat" : "");
 		}
 	}
 
@@ -537,7 +545,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 					if (strstr(v_contact_str, "tls")) {
 						reg_desc = "Registered(TLSHACK)";
 					} else {
-						reg_desc = "Registered(NATHACK)";
+						reg_desc = "Registered(AUTO-NAT)";
 						exptime = 20;
 					}
 					nat_hack = 1;
@@ -609,8 +617,6 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','%q', '%q', %ld, '%q')", call_id,
 							 to_user, to_host, contact_str, reg_desc,
 							 rpid, (long) switch_timestamp(NULL) + (long) exptime * 2, agent);
-
-		
 		if (sql) {
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
@@ -747,6 +753,7 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
 	sofia_regtype_t type = REG_REGISTER;
 	int network_port = 0;
+	char *is_nat = NULL;
 
 	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
 	network_port = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
@@ -763,6 +770,45 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 					SIP_403_FORBIDDEN, 
 					NUTAG_WITH_THIS(nua), TAG_END());
 		goto end;
+	}
+
+	if ((profile->pflags & PFLAG_AGGRESSIVE_NAT_DETECTION)) {
+		if (sip && sip->sip_via) {
+			const char *port = sip->sip_via->v_port;
+			const char *host = sip->sip_via->v_host;
+			
+			if (host && sip->sip_via->v_received) {
+				is_nat = "via received";
+			} else if (host && strcmp(network_ip, host)) {
+				is_nat = "via host";
+			} else if (port && atoi(port) != network_port) {
+				is_nat = "via port";
+			}
+		}
+	}
+
+	if (!is_nat && profile->nat_acl_count) {
+		uint32_t x = 0;
+		int ok = 1;
+		char *last_acl = NULL;
+		const char *contact_host = NULL;
+
+		if (sip && sip->sip_contact && sip->sip_contact->m_url) {
+			contact_host = sip->sip_contact->m_url->url_host;
+		}
+
+		if (!switch_strlen_zero(contact_host)) {
+			for (x = 0 ; x < profile->nat_acl_count; x++) {
+				last_acl = profile->nat_acl[x];
+				if (!(ok = switch_check_network_list_ip(contact_host, last_acl))) {
+					break;
+				}
+			}
+			
+			if (ok) {
+				is_nat = last_acl;
+			}
+		}
 	}
 
 	if (profile->reg_acl_count) {
@@ -796,7 +842,7 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 		goto end;
 	}
 
-	sofia_reg_handle_register(nua, profile, nh, sip, type, key, sizeof(key), &v_event);
+	sofia_reg_handle_register(nua, profile, nh, sip, type, key, sizeof(key), &v_event, is_nat);
 
 	if (v_event) {
 		switch_event_fire(&v_event);
