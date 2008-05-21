@@ -1386,6 +1386,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 		char *tp;
 		switch_size_t mylen = strlen(text) + extra + 1;
 		tmp = malloc(mylen);
+		if (!tmp) {
+			return SWITCH_STATUS_MEMERR;
+		}
 		memset(tmp, 0, mylen);
 		tp = tmp;
 		for (p = text; p && *p; p++) {
