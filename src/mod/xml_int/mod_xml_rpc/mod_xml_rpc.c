@@ -419,14 +419,17 @@ abyss_bool handler_hook(TSession * r)
 	stream.write_function = http_stream_write;
 	stream.raw_write_function = http_stream_raw_write;
 
+	if (!r || !r->uri) {
+		return FALSE;
+	}
+
 	if ((command = strstr(r->uri, "/api/"))) {
 		command += 5;
 	} else if ((command = strstr(r->uri, "/webapi/"))) {
 		command += 8;
 		html++;
 	} else {
-		ret = FALSE;
-		goto end;
+		return FALSE;
 	}
 
 	if ((path_info = strchr(command, '/'))) {
@@ -490,8 +493,7 @@ abyss_bool handler_hook(TSession * r)
 			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Domain", "%s", fs_domain);
 		if (path_info)
 			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-Path-Info", "%s", path_info);
-		if (r->uri)
-			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-URI", "%s", r->uri);
+		switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-URI", "%s", r->uri);
 		if (r->query)
 			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-QUERY", "%s", r->query);
 		if (r->host)
