@@ -130,9 +130,10 @@ SWITCH_DECLARE(const char *) switch_channel_cause2str(switch_call_cause_t cause)
 	uint8_t x;
 	const char *str = "UNKNOWN";
 
-	for (x = 0; x < (sizeof(CAUSE_CHART) / sizeof(struct switch_cause_table)) ; x++) {
+	for (x = 0; x < (sizeof(CAUSE_CHART) / sizeof(struct switch_cause_table)) -1 ; x++) {
 		if (CAUSE_CHART[x].cause == cause) {
 			str = CAUSE_CHART[x].name;
+			break;
 		}
 	}
 
@@ -147,9 +148,10 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2cause(const char *str)
 	if (*str > 47 && *str < 58) {
 		cause = atoi(str);
 	} else {
-		for (x = 0; x < (sizeof(CAUSE_CHART) / sizeof(struct switch_cause_table)) && CAUSE_CHART[x].name; x++) {
+		for (x = 0; x < (sizeof(CAUSE_CHART) / sizeof(struct switch_cause_table)) - 1 && CAUSE_CHART[x].name; x++) {
 			if (!strcasecmp(CAUSE_CHART[x].name, str)) {
 				cause = CAUSE_CHART[x].cause;
+				break;
 			}
 		}
 	}
