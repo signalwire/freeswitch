@@ -981,6 +981,7 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 	*sp = NULL;
 	
 	if (!(session = switch_core_session_request(openzap_endpoint_interface, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Initilization Error!\n");
 		return ZAP_FAIL;
 	}
 	
@@ -1045,6 +1046,7 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 	}
 
 	if (zap_channel_add_token(sigmsg->channel, switch_core_session_get_uuid(session), 0) != ZAP_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error adding token\n");
 		switch_core_session_destroy(&session);
 		return ZAP_FAIL;
 	}
@@ -1351,11 +1353,11 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
     case ZAP_SIGEVENT_STOP:
 		{	
 			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
-				switch_core_session_signal_lock(session);
+				//switch_core_session_signal_lock(session);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
 				zap_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
-				switch_core_session_signal_unlock(session);
+				//switch_core_session_signal_unlock(session);
 				switch_core_session_rwunlock(session);
 			}
 		}
@@ -1364,23 +1366,23 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 		{
 			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
 				zap_tone_type_t tt = ZAP_TONE_DTMF;
-				switch_core_session_signal_lock(session);
+				//switch_core_session_signal_lock(session);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_answered(channel);
 				if (zap_channel_command(sigmsg->channel, ZAP_COMMAND_ENABLE_DTMF_DETECT, &tt) != ZAP_SUCCESS) {
 					zap_log(ZAP_LOG_ERROR, "TONE ERROR\n");
 				}
-				switch_core_session_signal_unlock(session);
+				//switch_core_session_signal_unlock(session);
 				switch_core_session_rwunlock(session);
 			}
 		}
     case ZAP_SIGEVENT_PROGRESS_MEDIA:
 		{
 			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
-				switch_core_session_signal_lock(session);
+				//switch_core_session_signal_lock(session);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_pre_answered(channel);
-				switch_core_session_signal_unlock(session);
+				//switch_core_session_signal_unlock(session);
 				switch_core_session_rwunlock(session);
 			}
 		}
@@ -1388,10 +1390,10 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
     case ZAP_SIGEVENT_PROGRESS:
 		{
 			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
-				switch_core_session_signal_lock(session);
+				//switch_core_session_signal_lock(session);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_ring_ready(channel);
-				switch_core_session_signal_unlock(session);
+				//switch_core_session_signal_unlock(session);
 				switch_core_session_rwunlock(session);
 			}
 		}

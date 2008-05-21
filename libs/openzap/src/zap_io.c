@@ -621,16 +621,69 @@ zap_status_t zap_channel_complete_state(zap_channel_t *zchan)
 	return ZAP_SUCCESS;
 }
 
-
-zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state)
+static int zap_parse_state_map(zap_channel_t *zchan, zap_channel_state_t state, zap_state_map_t *state_map)
 {
-	int ok = 1;
+	int x = 0, ok = 0;
+	zap_state_direction_t direction = zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND) ? ZSD_OUTBOUND : ZSD_INBOUND;
+
+	for(x = 0; x < ZAP_MAP_NODE_SIZE; x++) {
+		int i = 0, proceed = 0;
+		if (!state_map->nodes[x].type) {
+			break;
+		}
+
+		if (state_map->nodes[x].direction != direction) {
+			continue;
+		}
+		
+		if (state_map->nodes[x].check_states[0] == ZAP_ANY_STATE) {
+			proceed = 1;
+		} else {
+			for(i = 0; i < ZAP_MAP_MAX; i++) {
+				if (state_map->nodes[x].check_states[i] == zchan->state) {
+					proceed = 1;
+					break;
+				}
+			}
+		}
+
+		if (!proceed) {
+			continue;
+		}
+		
+		for(i = 0; i < ZAP_MAP_MAX; i++) {
+			ok = (state_map->nodes[x].type == ZSM_ACCEPTABLE);
+			if (state_map->nodes[x].states[i] == ZAP_END) {
+				break;
+			}
+			if (state_map->nodes[x].states[i] == state) {
+				ok = !ok;
+				goto end;
+			}
+		}
+	}
+ end:
+	
+	return ok;
+}
+
+zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state, int lock)
+{
+	int ok = 0;
 	
 	if (!zap_test_flag(zchan, ZAP_CHANNEL_READY)) {
 		return ZAP_FAIL;
 	}
 
-	zap_mutex_lock(zchan->mutex);
+	if (lock) {
+		zap_mutex_lock(zchan->mutex);
+	}
+
+	if (zchan->span->state_map) {
+		ok = zap_parse_state_map(zchan, state, zchan->span->state_map);
+		goto end;
+	}
+
 	switch(zchan->state) {
 	case ZAP_CHANNEL_STATE_HANGUP:
 	case ZAP_CHANNEL_STATE_TERMINATING:
@@ -649,6 +702,7 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 		break;
 	case ZAP_CHANNEL_STATE_UP:
 		{
+			ok = 0;
 			switch(state) {
 			case ZAP_CHANNEL_STATE_PROGRESS:
 			case ZAP_CHANNEL_STATE_PROGRESS_MEDIA:
@@ -661,11 +715,12 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 		break;
 	case ZAP_CHANNEL_STATE_DOWN:
 		{
+			ok = 0;
+			
 			switch(state) {
-			case ZAP_CHANNEL_STATE_BUSY:
-			case ZAP_CHANNEL_STATE_HANGUP:
-			case ZAP_CHANNEL_STATE_TERMINATING:
-				ok = 0;
+			case ZAP_CHANNEL_STATE_DIALTONE:
+			case ZAP_CHANNEL_STATE_RING:
+				ok = 1;
 				break;
 			default:
 				break;
@@ -683,14 +738,28 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 			}
 		}
 		break;
+	case ZAP_CHANNEL_STATE_RING:
+		{
+			switch(state) {
+			case ZAP_CHANNEL_STATE_UP:
+				ok = 0;
+				break;
+			default:
+				break;
+			}
+		}
+		break;
 	default:
 		break;
 	}
 
+ end:
+
 	if (state == zchan->state) {
 		ok = 0;
 	}
-		 
+	
+
 	if (ok) {
 		if (zchan->state == ZAP_CHANNEL_STATE_DOWN) {
 			zchan->span->active_count++;
@@ -704,7 +773,9 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 		zchan->state = state;
 	}
 
-	zap_mutex_unlock(zchan->mutex);
+	if (lock) {
+		zap_mutex_unlock(zchan->mutex);
+	}
 
 	return ok ? ZAP_SUCCESS : ZAP_FAIL;
 }
@@ -868,6 +939,7 @@ static zap_status_t zap_channel_reset(zap_channel_t *zchan)
 
 zap_status_t zap_channel_init(zap_channel_t *zchan)
 {
+
 	if (zchan->init_state != ZAP_CHANNEL_STATE_DOWN) {
 		zap_set_state_locked(zchan, zchan->init_state);
 		zchan->init_state = ZAP_CHANNEL_STATE_DOWN;

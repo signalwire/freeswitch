@@ -66,6 +66,9 @@ struct zap_io_interface;
 #define ZAP_DEFAULT_DTMF_ON 250
 #define ZAP_DEFAULT_DTMF_OFF 50
 
+#define ZAP_END -1
+#define ZAP_ANY_STATE -1
+
 typedef uint64_t zap_time_t; 
 
 typedef enum {
@@ -342,6 +345,33 @@ typedef enum {
 	ZAP_CHANNEL_MEDIA = (1 << 22),
 	ZAP_CHANNEL_ANSWERED = (1 << 23)
 } zap_channel_flag_t;
+
+typedef enum {
+	ZSM_NONE,
+	ZSM_UNACCEPTABLE,
+	ZSM_ACCEPTABLE
+} zap_state_map_type_t;
+
+typedef enum {
+	ZSD_INBOUND,
+	ZSD_OUTBOUND,
+} zap_state_direction_t;
+
+#define ZAP_MAP_NODE_SIZE 512
+#define ZAP_MAP_MAX ZAP_CHANNEL_STATE_INVALID+2
+
+struct zap_state_map_node {
+	zap_state_direction_t direction;
+	zap_state_map_type_t type;
+	zap_channel_state_t check_states[ZAP_MAP_MAX];
+	zap_channel_state_t states[ZAP_MAP_MAX];
+};
+typedef struct zap_state_map_node zap_state_map_node_t;
+
+struct zap_state_map {
+	zap_state_map_node_t nodes[ZAP_MAP_NODE_SIZE];
+};
+typedef struct zap_state_map zap_state_map_t;
 
 typedef struct zap_channel zap_channel_t;
 typedef struct zap_event zap_event_t;

@@ -135,9 +135,11 @@ int ss7bc_connection_close(ss7bc_connection_t *mcon)
 		close(mcon->socket);
 	}
 
-	zap_mutex_lock(mcon->mutex);
-	zap_mutex_unlock(mcon->mutex);
-	zap_mutex_destroy(&mcon->mutex);
+	if (mcon->mutex) {
+		zap_mutex_lock(mcon->mutex);
+		zap_mutex_unlock(mcon->mutex);
+		zap_mutex_destroy(&mcon->mutex);
+	}
 	memset(mcon, 0, sizeof(*mcon));
 	mcon->socket = -1;
 
@@ -245,17 +247,19 @@ ss7bc_event_t *ss7bc_connection_readp(ss7bc_connection_t *mcon, int iteration)
 }
 
 
-int ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event)
+int __ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event, const char *file, const char *func, int line)
 {
 	int err;
 
 	if (!event || mcon->socket < 0 || !mcon->mutex) {
-		zap_log(ZAP_LOG_DEBUG,  "Critical Error: No Event Device\n");
+		zap_log(file, func, line, ZAP_LOG_LEVEL_CRIT,  "Critical Error: No Event Device\n");
 		return -EINVAL;
+		abort();
 	}
 
 	if (event->span > 16 || event->chan > 31) {
-		zap_log(ZAP_LOG_CRIT, "Critical Error: TX Cmd=%s Invalid Span=%i Chan=%i\n", ss7bc_event_id_name(event->event_id), event->span,event->chan);
+		zap_log(file, func, line, ZAP_LOG_LEVEL_CRIT, "Critical Error: TX Cmd=%s Invalid Span=%i Chan=%i\n", ss7bc_event_id_name(event->event_id), event->span,event->chan);
+		abort();
 		return -1;
 	}
 
@@ -269,9 +273,10 @@ int ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event)
 
 	if (err != sizeof(ss7bc_event_t)) {
 		err = -1;
+		abort();
 	}
 	
- 	zap_log(ZAP_LOG_DEBUG, "TX EVENT: %s:(%X) [w%dg%d] Rc=%i CSid=%i Seq=%i Cd=[%s] Ci=[%s]\n",
+ 	zap_log(file, func, line, ZAP_LOG_LEVEL_DEBUG, "TX EVENT: %s:(%X) [w%dg%d] Rc=%i CSid=%i Seq=%i Cd=[%s] Ci=[%s]\n",
 			ss7bc_event_id_name(event->event_id),
 			event->event_id,
 			event->span+1,
@@ -285,6 +290,7 @@ int ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event)
 
 	return err;
 }
+
 
 void ss7bc_call_init(ss7bc_event_t *event, const char *calling, const char *called, int setup_id)
 {
