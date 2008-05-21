@@ -36,15 +36,36 @@
 #include "openzap.h"
 
 typedef enum {
+	ZAP_ISDN_OPT_NONE = 0,
+	ZAP_ISDN_OPT_SUGGEST_CHANNEL = (1 << 0)
+} zap_isdn_opts_t;
+
+typedef enum {
 	ZAP_ISDN_RUNNING = (1 << 0)
 } zap_isdn_flag_t;
+
+
+struct zap_isdn_data {
+	Q921Data_t q921;
+	Q931_TrunkInfo_t q931;
+	zap_channel_t *dchan;
+	zap_channel_t *dchans[2];
+	struct zap_sigmsg sigmsg;
+	zio_signal_cb_t sig_cb;
+	uint32_t flags;
+	zap_caller_data_t *outbound_crv[32768];
+	zap_channel_t *channels_local_crv[32768];
+	zap_channel_t *channels_remote_crv[32768];
+	zap_isdn_opts_t opts;
+};
+
 
 
 typedef struct zap_isdn_data zap_isdn_data_t;
 
 zap_status_t zap_isdn_start(zap_span_t *span);
 zap_status_t zap_isdn_init(void);
-zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931Dialect_t dialect, zio_signal_cb_t sig_cb);
+zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931Dialect_t dialect, zap_isdn_opts_t opts, zio_signal_cb_t sig_cb);
 
 #endif
 

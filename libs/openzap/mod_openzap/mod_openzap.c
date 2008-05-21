@@ -1593,7 +1593,8 @@ static switch_status_t load_config(void)
 			uint32_t span_id = 0;
 			zap_span_t *span = NULL;
 			char *tonegroup = NULL;
-
+			zap_isdn_opts_t opts = ZAP_ISDN_OPT_NONE;
+			
 			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
@@ -1609,6 +1610,8 @@ static switch_status_t load_config(void)
 					}
 				} else if (!strcasecmp(var, "context")) {
 					context = val;
+				} else if (!strcasecmp(var, "suggest-channel") && switch_true(val)) {
+					opts |= ZAP_ISDN_OPT_SUGGEST_CHANNEL;
 				} else if (!strcasecmp(var, "dialplan")) {
 					dialplan = val;
 				} 
@@ -1630,7 +1633,7 @@ static switch_status_t load_config(void)
 				continue;
 			}
 
-			if (zap_isdn_configure_span(span, mode, dialect, on_clear_channel_signal) != ZAP_SUCCESS) {
+			if (zap_isdn_configure_span(span, mode, dialect, opts, on_clear_channel_signal) != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d mode: %d dialect: %d error: %s\n", span_id, mode, dialect, span->last_error);
 				continue;
 			}

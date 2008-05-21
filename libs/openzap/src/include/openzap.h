@@ -438,19 +438,6 @@ struct zap_sigmsg {
 };
 
 
-struct zap_isdn_data {
-	Q921Data_t q921;
-	Q931_TrunkInfo_t q931;
-	zap_channel_t *dchan;
-	zap_channel_t *dchans[2];
-	struct zap_sigmsg sigmsg;
-	zio_signal_cb_t sig_cb;
-	uint32_t flags;
-	zap_caller_data_t *outbound_crv[32768];
-	zap_channel_t *channels_local_crv[32768];
-	zap_channel_t *channels_remote_crv[32768];
-};
-
 struct zap_analog_data {
 	uint32_t flags;
 	uint32_t max_dialstr;
