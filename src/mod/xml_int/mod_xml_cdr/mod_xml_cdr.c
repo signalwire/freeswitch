@@ -130,7 +130,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 
 			xml_text_escaped = malloc(need_bytes);
 			switch_assert(xml_text_escaped);
-			memset(xml_text_escaped, 0, sizeof(xml_text_escaped));
+			memset(xml_text_escaped, 0, need_bytes);
 			if (globals.encode == 1) {
 				headers = curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
 				switch_url_encode(xml_text, xml_text_escaped, need_bytes - 1);
