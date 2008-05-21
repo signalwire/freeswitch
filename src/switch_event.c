@@ -770,7 +770,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 
 		/* handle any bad things in the string like newlines : etc that screw up the serialized format */
 		if (encode) {
-			switch_url_encode(hp->value, encode_buf, encode_len - 1);
+			switch_url_encode(hp->value, encode_buf, encode_len);
 		} else {
 			switch_snprintf(encode_buf, encode_len, "[%s]", hp->value);
 		}
@@ -1319,7 +1319,7 @@ SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, co
 
 			encode_buf = tmp;
 		}
-		switch_url_encode(prof[x], encode_buf, encode_len - 1);
+		switch_url_encode(prof[x], encode_buf, encode_len);
 		stream.write_function(&stream, "%s=%s&", prof_names[x], encode_buf);
 	}
 
@@ -1348,7 +1348,7 @@ SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, co
 					encode_buf = tmp;
 				}
 
-				switch_url_encode((char *) val, encode_buf, encode_len - 1);
+				switch_url_encode((char *) val, encode_buf, encode_len);
 				stream.write_function(&stream, "%s=%s&", (char *) var, encode_buf);
 
 			}

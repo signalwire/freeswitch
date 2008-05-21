@@ -133,7 +133,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			memset(xml_text_escaped, 0, need_bytes);
 			if (globals.encode == 1) {
 				headers = curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
-				switch_url_encode(xml_text, xml_text_escaped, need_bytes - 1);
+				switch_url_encode(xml_text, xml_text_escaped, need_bytes);
 			} else {
 				headers = curl_slist_append(headers, "Content-Type: application/x-www-form-base64-encoded");
 				switch_b64_encode((unsigned char *)xml_text, need_bytes / 3, (unsigned char *)xml_text_escaped, need_bytes);

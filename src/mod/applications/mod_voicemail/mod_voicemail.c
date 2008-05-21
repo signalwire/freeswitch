@@ -2516,7 +2516,7 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
 		strcmp(argv[10], URGENT_FLAG_STRING) ? "normal" : "urgent", create_date, heard, duration_str);
 
 	switch_snprintf(title_b4, sizeof(title_b4), "%s <%s> %s", argv[5], argv[6], rss_date);
-	switch_url_encode(title_b4, title_aft, sizeof(title_aft)-1);
+	switch_url_encode(title_b4, title_aft, sizeof(title_aft));
 
 	holder->stream->write_function(holder->stream,
 		"<br><object width=550 height=15 \n"

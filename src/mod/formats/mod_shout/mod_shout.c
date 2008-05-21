@@ -1017,7 +1017,7 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
                                    argv[1], argv[4], argv[5], argv[7], argv[8] ? argv[8] : "N/A", argv[9] ? argv[9] : "N/A", argv[10], argv[11]);
     
     snprintf(title_b4, sizeof(title_b4), "%s <%s>", argv[4], argv[5]);
-    switch_url_encode(title_b4, title_aft, sizeof(title_aft)-1);
+    switch_url_encode(title_b4, title_aft, sizeof(title_aft));
 
     mp3 = switch_mprintf("http://%s:%s%s/mp3/%s/%s.mp3", holder->host, holder->port, holder->uri, argv[0], argv[5]);
     m3u = switch_mprintf("http://%s:%s%s/m3u/mp3/%s/%s.mp3.m3u", holder->host, holder->port, holder->uri, argv[0], argv[5]);

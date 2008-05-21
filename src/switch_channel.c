@@ -1877,7 +1877,7 @@ SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *chann
 
 			encode_buf = tmp;
 		}
-		switch_url_encode(prof[x], encode_buf, encode_len - 1);
+		switch_url_encode(prof[x], encode_buf, encode_len);
 		stream.write_function(&stream, "%s=%s&", prof_names[x], encode_buf);
 	}
 
@@ -1897,7 +1897,7 @@ SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *chann
 				encode_buf = tmp;
 			}
 
-			switch_url_encode((char *) val, encode_buf, encode_len - 1);
+			switch_url_encode((char *) val, encode_buf, encode_len);
 			stream.write_function(&stream, "%s=%s&", (char *) var, encode_buf);
 
 		}

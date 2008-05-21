@@ -1415,15 +1415,18 @@ SWITCH_DECLARE(size_t) switch_url_encode(const char *url, char *buf, size_t len)
 		return 0;
 	}
 
-	memset(buf, 0, len);
-
 	if (!url) {
 		return 0;
 	}
 
+	len--;
+
 	for (p = url; *p; p++) {
+		if (x >= len) {
+			break;
+		}
 		if (*p < ' ' || *p > '~' || strchr(urlunsafe, *p)) {
-			if ((x + 3) > len) {
+			if ((x + 3) >= len) {
 				break;
 			}
 			buf[x++] = '%';
@@ -1432,10 +1435,9 @@ SWITCH_DECLARE(size_t) switch_url_encode(const char *url, char *buf, size_t len)
 		} else {
 			buf[x++] = *p;
 		}
-		if (x == len) {
-			break;
-		}
 	}
+	buf[x] = '\0';
+
 	return x;
 }
 
