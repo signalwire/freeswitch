@@ -813,6 +813,7 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 				zap_log(ZAP_LOG_ERROR, "D-Chan Read Error!\n");
 				snprintf(span->last_error, sizeof(span->last_error), "D-Chan Read Error!");
 				if (++errs == 10) {
+					isdn_data->dchan->state = ZAP_CHANNEL_STATE_UP;
 					goto done;
 				}
 			}
@@ -913,6 +914,7 @@ zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931D
 			} else {
 				if (zap_channel_open(span->span_id, i, &dchans[x]) == ZAP_SUCCESS) {
 					zap_log(ZAP_LOG_DEBUG, "opening d-channel #%d %d:%d\n", x, dchans[x]->span_id, dchans[x]->chan_id);
+					dchans[x]->state = ZAP_CHANNEL_STATE_UP;
 					x++;
 				}
 			}
