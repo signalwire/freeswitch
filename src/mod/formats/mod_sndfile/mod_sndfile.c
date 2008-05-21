@@ -323,18 +323,22 @@ static switch_status_t setup_formats(void)
 			char *p;
 			struct format_map *map = switch_core_permanent_alloc(sizeof(*map));
 			switch_assert(map);
-
+	
 			map->ext = switch_core_permanent_strdup(info.extension);
 			map->uext = switch_core_permanent_strdup(info.extension);
 			map->format = info.format;
-			for (p = map->ext; *p; p++) {
-				*p = (char) tolower(*p);
+			if (map->ext) {
+				for (p = map->ext; *p; p++) {
+					*p = (char) tolower(*p);
+				}
+				switch_core_hash_insert(globals.format_hash, map->ext, map);
 			}
-			for (p = map->uext; *p; p++) {
-				*p = (char) toupper(*p);
+			if (map->uext) {
+				for (p = map->uext; *p; p++) {
+					*p = (char) toupper(*p);
+				}
+				switch_core_hash_insert(globals.format_hash, map->uext, map);
 			}
-			switch_core_hash_insert(globals.format_hash, map->ext, map);
-			switch_core_hash_insert(globals.format_hash, map->uext, map);
 			supported_formats[len++] = (char *) info.extension;
 		}
 		format = info.format;
