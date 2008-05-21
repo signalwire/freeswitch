@@ -52,6 +52,7 @@ static L2ULONG zap_time_now(void)
 static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(isdn_outgoing_call)
 {
 	zap_status_t status = ZAP_SUCCESS;
+	zap_set_flag(zchan, ZAP_CHANNEL_OUTBOUND);
 	zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DIALING);
 	return status;
 }
@@ -85,37 +86,11 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
 	BearerCap.ITR = 16; /* 64k */
 	BearerCap.Layer1Ident = 1;
 	BearerCap.UIL1Prot = 2; /* U-law (a-law = 3)*/
-#if 0
-	BearerCap.SyncAsync = ;
-	BearerCap.Negot = ;
-	BearerCap.UserRate = ;
-	BearerCap.InterRate = ;
-	BearerCap.NIConTx = ;
-	BearerCap.FlowCtlTx = ;
-	BearerCap.HDR = ;
-	BearerCap.MultiFrame = ;
-	BearerCap.Mode = ;
-	BearerCap.LLInegot = ;
-	BearerCap.Assignor = ;
-	BearerCap.InBandNeg = ;
-	BearerCap.NumStopBits = ;
-	BearerCap.NumDataBits = ;
-	BearerCap.Parity = ;
-	BearerCap.DuplexMode = ;
-	BearerCap.ModemType = ;
-	BearerCap.Layer2Ident = ;
-	BearerCap.UIL2Prot = ;
-	BearerCap.Layer3Ident = ;
-	BearerCap.UIL3Prot = ;
-	BearerCap.AL3Info1 = ;
-	BearerCap.AL3Info2 = ;
-#endif
 
 	gen->BearerCap = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &BearerCap);
 
-	//is cast right here?
 	ChanID.IntType = 1; /* PRI = 1, BRI = 0 */
-	ChanID.PrefExcl = 0; /* 0 = preferred, 1 exclusive */
+	ChanID.PrefExcl = (isdn_data->opts & ZAP_ISDN_OPT_SUGGEST_CHANNEL) ? 0 : 1; /* 0 = preferred, 1 exclusive */
 	ChanID.InfoChanSel = 1;
 	ChanID.ChanMapType = 3; /* B-Chan */
 	ChanID.ChanSlot = chan_id;
@@ -230,7 +205,8 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
 			if (new_chan && new_chan->state == ZAP_CHANNEL_STATE_DOWN) {
 				isdn_data->channels_local_crv[gen->CRV] = new_chan;
 				memset(&new_chan->caller_data, 0, sizeof(new_chan->caller_data));
-				
+				zap_set_flag(new_chan, ZAP_CHANNEL_OUTBOUND);
+				zap_set_state_locked(new_chan, ZAP_CHANNEL_STATE_DIALING);
 				switch(gen->MesType) {
 				case Q931mes_ALERTING:
 					new_chan->init_state = ZAP_CHANNEL_STATE_PROGRESS_MEDIA;
@@ -400,7 +376,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 				const char *what = gen->MesType == Q931mes_RELEASE ? "Release" : "Release Complete";
 				if (zchan) {
 					if (zchan->state == ZAP_CHANNEL_STATE_TERMINATING || zchan->state == ZAP_CHANNEL_STATE_HANGUP) {
-						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP_COMPLETE);
 					} else {
 						zap_log(ZAP_LOG_DEBUG, "Ignoring %s on channel %d\n", what, chan_id);
 					}
@@ -660,8 +636,102 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		}
 		break;
 	case ZAP_CHANNEL_STATE_DIALING:
-		{
+		if (!(isdn_data->opts & ZAP_ISDN_OPT_SUGGEST_CHANNEL)) {
+			Q931ie_BearerCap BearerCap;
+			Q931ie_ChanID ChanID;
+			Q931ie_CallingNum CallingNum;
+			Q931ie_CallingNum *ptrCallingNum;
+			Q931ie_CalledNum CalledNum;
+			Q931ie_CalledNum *ptrCalledNum;
+			Q931ie_Display Display, *ptrDisplay;
+			
+			Q931InitIEBearerCap(&BearerCap);
+			Q931InitIEChanID(&ChanID);
+			Q931InitIECallingNum(&CallingNum);
+			Q931InitIECalledNum(&CalledNum);
+			Q931InitIEDisplay(&Display);
 
+			Q931InitMesGeneric(gen);
+			gen->MesType = Q931mes_SETUP;
+
+			BearerCap.CodStand = 0; /* ITU-T = 0, ISO/IEC = 1, National = 2, Network = 3 */
+			BearerCap.ITC = 0; /* Speech */
+			BearerCap.TransMode = 0; /* Circuit = 0, Packet = 1 */
+			BearerCap.ITR = 16; /* 64k */
+			BearerCap.Layer1Ident = 1;
+			BearerCap.UIL1Prot = 2; /* U-law (a-law = 3)*/
+			gen->BearerCap = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &BearerCap);
+
+			//is cast right here?
+			ChanID.IntType = 1; /* PRI = 1, BRI = 0 */
+			ChanID.InfoChanSel = 1;
+			ChanID.ChanMapType = 3; /* B-Chan */
+			ChanID.ChanSlot = (unsigned char)zchan->chan_id;
+			gen->ChanID = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &ChanID);
+			
+			Display.Size = Display.Size + (unsigned char)strlen(zchan->caller_data.cid_name);
+			gen->Display = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &Display);
+			ptrDisplay = Q931GetIEPtr(gen->Display, gen->buf);
+			zap_copy_string((char *)ptrDisplay->Display, zchan->caller_data.cid_name, strlen(zchan->caller_data.cid_name)+1);
+
+			/* TypNum: Type of number*/
+			/* Bits 7 6 5*/
+			/* 000Unknown*/
+			/* 001International number*/
+			/* 010National number*/
+			/* 011Network Specific number */
+			/* 100Subscriber mumber*/
+			/* 110Abbreviated number*/
+			/* 111Reserved for extension*/
+			/* All other values are reserved */
+			CallingNum.TypNum = 2;
+
+			/* NumPlanID*/
+			/* Bits 4 3 2 1*/
+			/* 0000Unknown*/
+			/* 0001ISDN/telephony numbering plan (E.164)*/
+			/* 0011Data numbering plan (X.121)*/
+			/* 0100Telex numbering plan (F.69)*/
+			/* 1000National standard numbering plan*/
+			/* 1001Private numbering plan*/
+			/* 1111Reserved for extension*/
+			/* All other valures are reserved*/
+			CallingNum.NumPlanID = 1;
+
+			/* Presentation indicator*/
+			/* Bits 7 6*/
+			/* 00Presenation Allowed*/
+			/* 01Presentation Restricted*/
+			/* 10Number not available due to internetworking*/
+			/* 11Reserved*/
+			CallingNum.PresInd = 0;
+
+			/* Screening Indicator*/
+			/* Bits 2 1*/
+			/* 00User-provided, not screened*/
+			/* 01User-provided, verified and passed*/
+			/* 10User-provided, verified and failed*/
+			/* 11Network provided*/
+			CallingNum.ScreenInd = 0;
+			CallingNum.Size = CallingNum.Size + (unsigned char)strlen(zchan->caller_data.cid_num.digits);
+			gen->CallingNum = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &CallingNum);
+			ptrCallingNum = Q931GetIEPtr(gen->CallingNum, gen->buf);
+			zap_copy_string((char *)ptrCallingNum->Digit, zchan->caller_data.cid_num.digits, strlen(zchan->caller_data.cid_num.digits)+1);
+
+			CalledNum.TypNum = 2;
+			CalledNum.NumPlanID = 1;
+			CalledNum.Size = CalledNum.Size + (unsigned char)strlen(zchan->caller_data.ani.digits);
+			gen->CalledNum = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &CalledNum);
+			ptrCalledNum = Q931GetIEPtr(gen->CalledNum, gen->buf);
+			zap_copy_string((char *)ptrCalledNum->Digit, zchan->caller_data.ani.digits, strlen(zchan->caller_data.ani.digits)+1);
+
+			Q931Rx43(&isdn_data->q931, (L3UCHAR *) gen, gen->Size);
+			isdn_data->channels_local_crv[gen->CRV] = zchan;
+		}
+		break;
+	case ZAP_CHANNEL_STATE_HANGUP_COMPLETE:
+		{
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
 		}
 		break;
 	case ZAP_CHANNEL_STATE_HANGUP:
@@ -891,7 +961,113 @@ static int q931_rx_32(void *pvt,L3UCHAR *msg, L3INT mlen)
 	return ret;
 }
 
-zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931Dialect_t dialect, zio_signal_cb_t sig_cb)
+
+static zap_state_map_t isdn_state_map = {
+	{
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_ANY_STATE},
+			{ZAP_CHANNEL_STATE_RESTART, ZAP_END}
+		},
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_CHANNEL_STATE_RESTART, ZAP_END},
+			{ZAP_CHANNEL_STATE_DOWN, ZAP_END}
+		},
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_CHANNEL_STATE_DOWN, ZAP_END},
+			{ZAP_CHANNEL_STATE_DIALING, ZAP_END}
+		},
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_CHANNEL_STATE_DIALING, ZAP_END},
+			{ZAP_CHANNEL_STATE_PROGRESS_MEDIA, ZAP_CHANNEL_STATE_PROGRESS, ZAP_CHANNEL_STATE_UP, ZAP_CHANNEL_STATE_HANGUP, ZAP_CHANNEL_STATE_TERMINATING, ZAP_END}
+		},
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_CHANNEL_STATE_PROGRESS_MEDIA, ZAP_CHANNEL_STATE_PROGRESS, ZAP_END},
+			{ZAP_CHANNEL_STATE_HANGUP, ZAP_CHANNEL_STATE_PROGRESS_MEDIA, ZAP_CHANNEL_STATE_TERMINATING, ZAP_CHANNEL_STATE_UP, ZAP_END}
+		},
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_CHANNEL_STATE_HANGUP, ZAP_CHANNEL_STATE_TERMINATING, ZAP_END},
+			{ZAP_CHANNEL_STATE_HANGUP_COMPLETE, ZAP_END}
+		},
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_CHANNEL_STATE_HANGUP_COMPLETE, ZAP_END},
+			{ZAP_CHANNEL_STATE_DOWN, ZAP_END},
+		},
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_CHANNEL_STATE_UP, ZAP_END},
+			{ZAP_CHANNEL_STATE_HANGUP, ZAP_CHANNEL_STATE_TERMINATING, ZAP_END}
+		},
+
+		/****************************************/
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_ANY_STATE},
+			{ZAP_CHANNEL_STATE_RESTART, ZAP_END}
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_CHANNEL_STATE_RESTART, ZAP_END},
+			{ZAP_CHANNEL_STATE_DOWN, ZAP_END}
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_CHANNEL_STATE_DOWN, ZAP_END},
+			{ZAP_CHANNEL_STATE_RING, ZAP_END}
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_CHANNEL_STATE_RING, ZAP_END},
+			{ZAP_CHANNEL_STATE_HANGUP, ZAP_CHANNEL_STATE_TERMINATING, ZAP_CHANNEL_STATE_PROGRESS, ZAP_CHANNEL_STATE_PROGRESS_MEDIA, ZAP_CHANNEL_STATE_UP, ZAP_END}
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_CHANNEL_STATE_HANGUP, ZAP_CHANNEL_STATE_TERMINATING, ZAP_END},
+			{ZAP_CHANNEL_STATE_HANGUP_COMPLETE, ZAP_END},
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_CHANNEL_STATE_HANGUP_COMPLETE, ZAP_END},
+			{ZAP_CHANNEL_STATE_DOWN, ZAP_END},
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_CHANNEL_STATE_PROGRESS, ZAP_CHANNEL_STATE_PROGRESS_MEDIA, ZAP_END},
+			{ZAP_CHANNEL_STATE_HANGUP, ZAP_CHANNEL_STATE_PROGRESS_MEDIA, ZAP_CHANNEL_STATE_CANCEL, ZAP_CHANNEL_STATE_UP, ZAP_END},
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_CHANNEL_STATE_UP, ZAP_END},
+			{ZAP_CHANNEL_STATE_HANGUP, ZAP_CHANNEL_STATE_TERMINATING, ZAP_END},
+		},
+		
+
+	}
+};
+
+zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931Dialect_t dialect, zap_isdn_opts_t opts, zio_signal_cb_t sig_cb)
 {
 	uint32_t i, x = 0;
 	zap_channel_t *dchans[2] = {0};
@@ -962,8 +1138,14 @@ zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931D
 	span->signal_data = isdn_data;
 	span->signal_type = ZAP_SIGTYPE_ISDN;
 	span->outgoing_call = isdn_outgoing_call;
-	span->channel_request = isdn_channel_request;
-	span->suggest_chan_id = 1;
+	isdn_data->opts = opts;
+
+	if ((opts & ZAP_ISDN_OPT_SUGGEST_CHANNEL)) {
+		span->channel_request = isdn_channel_request;
+		span->suggest_chan_id = 1;
+	}
+	span->state_map = &isdn_state_map;
+
 	return ZAP_SUCCESS;
 }
 
