@@ -471,7 +471,7 @@ static void tech_destroy(private_object * tech_pvt)
 
 static void woomera_printf(woomera_profile * profile, switch_socket_t * socket, char *fmt, ...)
 {
-	char *stuff;
+	char *stuff = NULL;
 	size_t res = 0, len = 0;
 
 	va_list ap;
@@ -479,13 +479,13 @@ static void woomera_printf(woomera_profile * profile, switch_socket_t * socket, 
 #ifndef vasprintf
 	stuff = (char *) malloc(10240);
 	switch_assert(stuff);
-	vsnprintf(stuff, 10240, fmt, ap);
+	res = vsnprintf(stuff, 10240, fmt, ap);
 #else
 	res = vasprintf(&stuff, fmt, ap);
 	switch_assert(stuff);
 #endif
 	va_end(ap);
-	if (res == -1) {
+	if (res < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Out of memory\n");
 	} else {
 		if (profile && globals.debug) {
@@ -494,10 +494,11 @@ static void woomera_printf(woomera_profile * profile, switch_socket_t * socket, 
 		}
 		len = strlen(stuff);
 		switch_socket_send(socket, stuff, &len);
-
-		free(stuff);
 	}
 
+	if (stuff) {
+		free(stuff);
+	}
 }
 
 static char *woomera_message_header(woomera_message * wmsg, char *key)
