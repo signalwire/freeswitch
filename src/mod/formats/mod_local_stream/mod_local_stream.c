@@ -120,10 +120,9 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 		if (switch_dir_open(&source->dir_handle, source->location, source->pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't open directory: %s\n", source->location);
-			return NULL;
+			goto done;
 		}
 
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "open directory: %s\n", source->location);
 		switch_yield(1000000);
 
 		while(RUNNING) {
@@ -181,10 +180,10 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 			
 			if (switch_core_timer_init(&timer, source->timer_name, source->interval, source->samples, source->pool) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't start timer.\n");
-				return NULL;
+				switch_dir_close(source->dir_handle);
+				source->dir_handle = NULL;
+				goto done;
 			}
-
-			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Playing [%s] rate: %dhz\n", fname, source->rate);
 
 			while (RUNNING) {
 				switch_core_timer_next(&timer);
@@ -230,6 +229,9 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 		switch_dir_close(source->dir_handle);
 		source->dir_handle = NULL;
 	}
+
+done:
+	switch_buffer_destroy(&audio_buffer);
 
 	if (fd > -1) {
 		close(fd);
