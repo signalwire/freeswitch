@@ -740,13 +740,13 @@ SWITCH_STANDARD_APP(fifo_function)
 			pop = NULL;
 			
             if (moh && do_wait) {
-				switch_status_t status = switch_ivr_play_file(session, NULL, moh, &args);
+				switch_status_t moh_status = switch_ivr_play_file(session, NULL, moh, &args);
 				memset(&args, 0, sizeof(args));
                 args.read_frame_callback = consumer_read_frame_callback;
                 args.user_data = node_list;
                 switch_ivr_play_file(session, NULL, moh, &args);
 				
-				if (!SWITCH_READ_ACCEPTABLE(status)) {
+				if (!SWITCH_READ_ACCEPTABLE(moh_status)) {
 					break;
 				}
             }
@@ -1153,13 +1153,13 @@ SWITCH_STANDARD_API(fifo_api_function)
             if (!x) {
                 stream->write_function(stream, "none\n");
             }
-        } else {
-            if ((node = switch_core_hash_find(globals.fifo_hash, argv[1]))) {
-				len = node_consumer_wait_count(node);
-            }
+        } else if ((node = switch_core_hash_find(globals.fifo_hash, argv[1]))) {
+			len = node_consumer_wait_count(node);
             switch_mutex_lock(node->mutex);
             stream->write_function(stream, "%s:%d:%d:%d\n", argv[1], node->consumer_count, node->caller_count, len);
             switch_mutex_unlock(node->mutex);
+		} else {
+			stream->write_function(stream, "none\n");
         }
     }
 
