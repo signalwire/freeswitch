@@ -735,15 +735,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
             dup = switch_core_session_strdup(session, alt);
 			engine = dup;
 
-			if ((voice = strchr(engine, ':'))) {
-				*voice++ = '\0';
-				if ((text = strchr(voice, ':'))) {
-					*text++ = '\0';
+			if (!switch_strlen_zero(engine)) {
+				if ((voice = strchr(engine, ':'))) {
+					*voice++ = '\0';
+					if (!switch_strlen_zero(voice) && (text = strchr(voice, ':'))) {
+						*text++ = '\0';
+					}
 				}
 			}
-			if (engine && voice && text) {
+
+			if (!switch_strlen_zero(engine) && !switch_strlen_zero(voice) && !switch_strlen_zero(text)) {
 				return switch_ivr_speak_text(session, engine, voice, text, args);
-			} else if (engine && !(voice && text)) {
+			} else if (!switch_strlen_zero(engine) && !(voice && text)) {
 				text = engine;
 				engine = (char *)switch_channel_get_variable(channel, "tts_engine");
 				voice = (char *)switch_channel_get_variable(channel, "tts_voice");
