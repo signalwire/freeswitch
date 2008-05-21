@@ -718,6 +718,12 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, z
 	uint32_t span_max;
 
 	if (span_id) {
+		if (span_id >= ZAP_MAX_SPANS_INTERFACE) {
+			zap_log(ZAP_LOG_CRIT, "SPAN NOT DEFINED!\n");
+			*zchan = NULL;
+            return ZAP_FAIL;
+		}
+
 		if (globals.spans[span_id].active_count >= globals.spans[span_id].chan_count) {
 			zap_log(ZAP_LOG_CRIT, "All circuits are busy.\n");
 			*zchan = NULL;
@@ -907,14 +913,14 @@ zap_status_t zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t 
 
 	zap_mutex_lock(globals.mutex);
 
-	if (span_id && globals.spans[span_id].channel_request) {
-		zap_log(ZAP_LOG_ERROR, "Individual channel selection not implemented on this span.\n");
-		goto done;
-	}
-
 	if (span_id < ZAP_MAX_SPANS_INTERFACE && chan_id < ZAP_MAX_CHANNELS_SPAN) {
 		zap_channel_t *check;
 
+		if (globals.spans[span_id].channel_request) {
+			zap_log(ZAP_LOG_ERROR, "Individual channel selection not implemented on this span.\n");
+			goto done;
+		}
+		
 		check = &globals.spans[span_id].channels[chan_id];
 
 		if (zap_test_flag(check, ZAP_CHANNEL_SUSPENDED) || 
