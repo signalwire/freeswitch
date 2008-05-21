@@ -119,7 +119,8 @@ int ss7bc_connection_close(ss7bc_connection_t *mcon);
 int ss7bc_connection_open(ss7bc_connection_t *mcon, char *local_ip, int local_port, char *ip, int port);
 ss7bc_event_t *ss7bc_connection_read(ss7bc_connection_t *mcon, int iteration);
 ss7bc_event_t *ss7bc_connection_readp(ss7bc_connection_t *mcon, int iteration);
-int ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event);
+int __ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event, const char *file, const char *func, int line);
+#define ss7bc_connection_write(_m,_e) __ss7bc_connection_write(_m, _e, __FILE__, __func__, __LINE__)
 void ss7bc_event_init(ss7bc_event_t *event, ss7bc_event_id_t event_id, int chan, int span);
 void ss7bc_call_init(ss7bc_event_t *event, const char *calling, const char *called, int setup_id);
 const char *ss7bc_event_id_name(uint32_t event_id);

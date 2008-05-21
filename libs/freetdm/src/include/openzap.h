@@ -175,6 +175,7 @@
 */
 #define zap_test_flag(obj, flag) ((obj)->flags & flag)
 #define zap_test_pflag(obj, flag) ((obj)->pflags & flag)
+#define zap_test_sflag(obj, flag) ((obj)->sflags & flag)
 
 
 #define zap_set_alarm_flag(obj, flag) (obj)->alarm_flags |= (flag)
@@ -198,6 +199,12 @@
 	(obj)->pflags |= (flag);											\
 	zap_mutex_unlock(obj->mutex);
 
+#define zap_set_sflag(obj, flag) (obj)->sflags |= (flag)
+#define zap_set_sflag_locked(obj, flag) assert(obj->mutex != NULL);	\
+	zap_mutex_lock(obj->mutex);										\
+	(obj)->sflags |= (flag);											\
+	zap_mutex_unlock(obj->mutex);
+
 /*!
   \brief Clear a flag on an arbitrary object while locked
   \command obj the object to test
@@ -211,14 +218,33 @@
 
 #define zap_clear_pflag_locked(obj, flag) assert(obj->mutex != NULL); zap_mutex_lock(obj->mutex); (obj)->pflags &= ~(flag); zap_mutex_unlock(obj->mutex);
 
+#define zap_clear_sflag(obj, flag) (obj)->sflags &= ~(flag)
+
+#define zap_clear_sflag_locked(obj, flag) assert(obj->mutex != NULL); zap_mutex_lock(obj->mutex); (obj)->sflags &= ~(flag); zap_mutex_unlock(obj->mutex);
+
 
 #define zap_set_state_locked(obj, s) if ( obj->state == s ) {			\
 		zap_log(ZAP_LOG_WARNING, "Why bother changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(obj->state), zap_channel_state2str(s)); \
 	} else if (zap_test_flag(obj, ZAP_CHANNEL_READY)) {									\
 		int st = obj->state;											\
-		zap_channel_set_state(obj, s);									\
+		zap_channel_set_state(obj, s, 1);									\
 		if (obj->state == s) zap_log(ZAP_LOG_DEBUG, "Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(st), zap_channel_state2str(s)); \
 		else zap_log(ZAP_LOG_WARNING, "VETO Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(st), zap_channel_state2str(s)); \
+	}
+
+typedef enum {
+	ZAP_STATE_CHANGE_FAIL,
+	ZAP_STATE_CHANGE_SUCCESS,
+	ZAP_STATE_CHANGE_SAME,
+} zap_state_change_result_t;
+
+#define zap_set_state_r(obj, s, l, r) if ( obj->state == s ) {	\
+		zap_log(ZAP_LOG_WARNING, "Why bother changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(obj->state), zap_channel_state2str(s)); r = ZAP_STATE_CHANGE_SAME;	\
+	} else if (zap_test_flag(obj, ZAP_CHANNEL_READY)) {					\
+		int st = obj->state;											\
+		r = (zap_channel_set_state(obj, s, l) == ZAP_SUCCESS) ? ZAP_STATE_CHANGE_SUCCESS : ZAP_STATE_CHANGE_FAIL; \
+		if (obj->state == s) {zap_log(ZAP_LOG_DEBUG, "Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(st), zap_channel_state2str(s));} \
+		else {zap_log(ZAP_LOG_WARNING, "VETO Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(st), zap_channel_state2str(s)); } \
 	}
 
 
@@ -358,6 +384,7 @@ struct zap_channel {
 	zap_socket_t sockfd;
 	zap_channel_flag_t flags;
 	uint32_t pflags;
+	uint32_t sflags;
 	zap_alarm_flag_t alarm_flags;
 	zap_channel_feature_t features;
 	zap_codec_t effective_codec;
@@ -455,6 +482,7 @@ struct zap_span {
 	void *mod_data;
 	char *type;
 	int suggest_chan_id;
+	zap_state_map_t *state_map;
 };
 
 
@@ -515,7 +543,7 @@ zap_status_t zap_channel_get_alarms(zap_channel_t *zchan);
 zap_status_t zap_channel_send_fsk_data(zap_channel_t *zchan, zap_fsk_data_state_t *fsk_data, float db_level);
 zap_status_t zap_channel_clear_token(zap_channel_t *zchan, const char *token);
 zap_status_t zap_channel_add_token(zap_channel_t *zchan, char *token, int end);
-zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state);
+zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state, int lock);
 zap_status_t zap_span_load_tones(zap_span_t *span, char *mapname);
 zap_size_t zap_channel_dequeue_dtmf(zap_channel_t *zchan, char *dtmf, zap_size_t len);
 zap_status_t zap_channel_queue_dtmf(zap_channel_t *zchan, const char *dtmf);
