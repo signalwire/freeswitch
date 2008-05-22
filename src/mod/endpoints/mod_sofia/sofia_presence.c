@@ -1231,14 +1231,14 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			
 		if ((profile->pflags & PFLAG_AGGRESSIVE_NAT_DETECTION)) {
 			if (sip && sip->sip_via) {
-				const char *port = sip->sip_via->v_port;
-				const char *host = sip->sip_via->v_host;
+				const char *v_port = sip->sip_via->v_port;
+				const char *v_host = sip->sip_via->v_host;
 					
-				if (host && sip->sip_via->v_received) {
+				if (v_host && sip->sip_via->v_received) {
 					is_nat = "via received";
-				} else if (host && strcmp(network_ip, host)) {
+				} else if (v_host && strcmp(network_ip, v_host)) {
 					is_nat = "via host";
-				} else if (port && atoi(port) != network_port) {
+				} else if (v_port && atoi(v_port) != network_port) {
 					is_nat = "via port";
 				}
 			}

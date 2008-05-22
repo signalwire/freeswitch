@@ -465,8 +465,8 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	if (contact->m_url) {
 		const char *port = contact->m_url->url_port;
 		char new_port[25] = "";
-		display = contact->m_display;
 		const char *contact_host = contact->m_url->url_host;
+		display = contact->m_display;
 		
 		if (is_nat) {
 			reg_desc = "Registered(AUTO-NAT)";
