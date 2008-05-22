@@ -149,7 +149,7 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	switch_zmalloc(alt_path, alt_len);
 	
 	switch_copy_string(alt_path, path, alt_len);
-	if ((last = strrchr(alt_path, *SWITCH_PATH_SEPARATOR))) {
+	if ((last = strrchr(alt_path, '/'))) {
 		next = ++last;
 		ldup = strdup(last);
 		switch_assert(ldup);
@@ -158,7 +158,18 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 			path = alt_path;
 		}
 	}
-	
+#ifdef WIN32
+	else if ((last = strrchr(alt_path, '\\'))) {
+		next = ++last;
+		ldup = strdup(last);
+		switch_assert(ldup);
+		switch_snprintf(next, alt_len - (last - alt_path), "%d%s%s", handle->samplerate, SWITCH_PATH_SEPARATOR, ldup);
+		if ((context->handle = sf_open(alt_path, mode, &context->sfinfo))) {
+			path = alt_path;
+		}
+	}
+#endif
+
 	if (!context->handle) {
 		if ((context->handle = sf_open(path, mode, &context->sfinfo)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s] [%s]\n", path, sf_strerror(context->handle));
