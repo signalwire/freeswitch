@@ -1117,6 +1117,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						switch_set_flag(profile, TFLAG_LATE_NEGOTIATION);
 					} else if (!strcasecmp(var, "inbound-proxy-media") && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_PROXY_MEDIA);
+					} else if (!strcasecmp(var, "received-in-nat-reg-contact") && switch_true(val)) {
+						profile->pflags |= PFLAG_RECIEVED_IN_NAT_REG_CONTACT;
 					} else if (!strcasecmp(var, "aggressive-nat-detection") && switch_true(val)) {
 						profile->pflags |= PFLAG_AGGRESSIVE_NAT_DETECTION;
 					} else if (!strcasecmp(var, "rfc2833-pt")) {

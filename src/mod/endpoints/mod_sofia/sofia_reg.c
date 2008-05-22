@@ -439,7 +439,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	const char *reg_desc = "Registered";
 	const char *call_id = NULL;
 	char *force_user;
-
+	
 	/* all callers must confirm that sip, sip->sip_request and sip->sip_contact are not NULL */
 	switch_assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
 
@@ -704,43 +704,57 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 
 	if (regtype == REG_REGISTER) {
 		char *new_contact = NULL;
-		char *p;
+		char new_port[30] = "";
+		char received_data[128] = "";
+		char exp_param[128] = "";
+		
+		if (exptime) {
+			switch_snprintf(exp_param, sizeof(exp_param), ";expires=%ld", exptime);
+		}
+			
 
-		if ((p = strstr(contact_str, ";nat"))) {
-			*p = '\0';
+		if (contact->m_url->url_port) {
+			switch_snprintf(new_port, sizeof(new_port), ":%s", contact->m_url->url_port);
 		}
 
+		if ((is_nat || nat_hack) && (profile->pflags & PFLAG_RECIEVED_IN_NAT_REG_CONTACT)) {
+			switch_snprintf(received_data, sizeof(received_data), ";received=\"%s:%d\"", network_ip, network_port);
+		}
+
+		if (contact->m_url->url_params) {
+			new_contact = switch_mprintf("%s <sip:%s@%s%s;%s>%s%s",
+										 display, contact->m_url->url_user, contact->m_url->url_host, new_port, contact->m_url->url_params,
+										 exp_param, received_data);
+		} else {
+			new_contact = switch_mprintf("%s <sip:%s@%s%s>%s%s",
+										 display, contact->m_url->url_user, contact->m_url->url_host, new_port,
+										 exp_param, received_data);
+		}
+			
+		nua_respond(nh,
+					SIP_200_OK, 
+					SIPTAG_CONTACT_STR(new_contact), NUTAG_WITH_THIS(nua), TAG_END());
+		switch_safe_free(new_contact);
+
 		if (exptime) {
-			if (is_nat || nat_hack) {
-				new_contact = switch_mprintf("%s;expires=%ld;received=\"%s:%d\"", contact_str, (long)exptime, network_ip, network_port);
-			} else {
-				new_contact = switch_mprintf("%s;expires=%ld", contact_str, (long)exptime);
-			}
-			nua_respond(nh, 
-						SIP_200_OK, 
-						SIPTAG_CONTACT_STR(new_contact), NUTAG_WITH_THIS(nua), TAG_END());
-			switch_safe_free(new_contact);
 			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", to_user, to_host);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "VM-Sofia-Profile", "%s", profile->name);
 				switch_event_fire(&event);
-			}
-		} else {
-			nua_respond(nh, 
-						SIP_200_OK, 
-						SIPTAG_CONTACT(contact), NUTAG_WITH_THIS(nua), TAG_END());
-			
-			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile-name", "%s", profile->name);
-				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-user", "%s", to_user);
-				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-host", "%s", to_host);
-				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s", contact_str);
-				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "call-id", "%s", call_id);
-				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "rpid", "%s", rpid);
-				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
-				switch_event_fire(&s_event);
+			} else {
+				if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile-name", "%s", profile->name);
+					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-user", "%s", to_user);
+					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-host", "%s", to_host);
+					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s", contact_str);
+					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "call-id", "%s", call_id);
+					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "rpid", "%s", rpid);
+					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
+					switch_event_fire(&s_event);
+				}
 			}
 		}
+		
 
 		return 1;
 	}
