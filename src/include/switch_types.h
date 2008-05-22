@@ -140,6 +140,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_EXEC_AFTER_BRIDGE_APP_VARIABLE "exec_after_bridge_app"
 #define SWITCH_EXEC_AFTER_BRIDGE_ARG_VARIABLE "exec_after_bridge_arg"
 #define SWITCH_MAX_FORWARDS_VARIABLE "max_forwards"
+#define SWITCH_DISABLE_APP_LOG_VARIABLE "disable_app_log"
 #define SWITCH_SPEECH_KEY "speech"
 #define SWITCH_UUID_BRIDGE "uuid_bridge"
 #define SWITCH_BITS_PER_BYTE 8

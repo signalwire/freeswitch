@@ -1013,22 +1013,25 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 														 const switch_application_interface_t *application_interface, const char *arg) {
 	switch_app_log_t *log, *lp;
 	switch_event_t *event;
+	const char *var;
 
 	if (!arg) {
 		arg = "";
 	}
 
-	log = switch_core_session_alloc(session, sizeof(*log));
+	if (!(var = switch_channel_get_variable(session->channel, SWITCH_DISABLE_APP_LOG_VARIABLE)) || (!(switch_true(var)))) {
+		log = switch_core_session_alloc(session, sizeof(*log));
 
-	log->app = switch_core_session_strdup(session, application_interface->interface_name);
-	log->arg = switch_core_session_strdup(session, arg);
+		log->app = switch_core_session_strdup(session, application_interface->interface_name);
+		log->arg = switch_core_session_strdup(session, arg);
 
-	for(lp = session->app_log; lp && lp->next; lp = lp->next);
+		for(lp = session->app_log; lp && lp->next; lp = lp->next);
 
-	if (lp) {
-		lp->next = log;
-	} else {
-		session->app_log = log;
+		if (lp) {
+			lp->next = log;
+		} else {
+			session->app_log = log;
+		}
 	}
 	
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
