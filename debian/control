@@ -15,77 +15,58 @@ Description: A telephony platform that really kicks some ass...
  a soft-switch.  It can be used as a simple switching engine, a media gateway
  or a media server to host IVR applications using simple scripts or XML to
  control the callflow.
-Homepage: http://www.freeswitch.org/
 
 Package: freeswitch-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Description: Development Package for the FreeSwitch open source telephony platform
-Homepage: http://www.freeswitch.org/
-
 
 Package: freeswitch-spidermonkey
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Description: A Javascript engine for freeswitch
-Homepage: http://www.freeswitch.org/
 
 Package: freeswitch-perl
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Description: A perl engine for freeswitch
-Homepage: http://www.freeswitch.org/
 
 Package: freeswitch-lua
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Description: A lua engine for freeswitch
-Homepage: http://www.freeswitch.org/
-
-
-
 
 Package: freeswitch-codec-passthru-g7231
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Description: Pass through g723.1 Codec support for the FreeSWITCH open source telephony platform
-Homepage: http://www.freeswitch.org/
 
 Package: freeswitch-codec-passthru-amr
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Description: Pass through AMR Codec support for the FreeSWITCH open source telephony platform
-Homepage: http://www.freeswitch.org/
 
 Package: freeswitch-codec-passthru-g729
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Description: Pass through g729 Codec support for the FreeSWITCH open source telephony platform
-Homepage: http://www.freeswitch.org/
-
-
-
 
 Package: freeswitch-lang-en
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Description: English language files for the FreeSWITCH open source telephony platform
-Homepage: http://www.freeswitch.org/
 
 Package: freeswitch-lang-de
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Description: German language files for the FreeSWITCH open source telephony platform
-Homepage: http://www.freeswitch.org/
 
 Package: freeswitch-lang-fr
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Description: French language files for the FreeSWITCH open source telephony platform
-Homepage: http://www.freeswitch.org/
 
 Package: freeswitch-lang-it
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Description: Italian language files for the FreeSWITCH open source telephony platform
-Homepage: http://www.freeswitch.org/

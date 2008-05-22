@@ -1,11 +1,13 @@
 freeswitch (1.0~rc6-1) unstable; urgency=low
 
-   * Changed to not allow pass_2833 on transcoded calls (it never worked, now it will tell you)
+   * Changed to not allow pass_2833 on transcoded calls 
+     (it never worked, now it will tell you)
    * Enhanced sofia sip nat handling
    * Fix libedit build on solaris
    * Fix session timers in mod_sofia
    * Fix conference fire-call
-   * Change: add var_event down into the endpoints so chans with no parents can still pass options
+   * Change: add var_event down into the endpoints so chans 
+     with no parents can still pass options
    * Added enable-post-var param to xml_rpc
    * Fix mod_lua build on solaris
    * Many fixes found by Klockwork (www.klocwork.com)
@@ -15,7 +17,7 @@ freeswitch (1.0~rc6-1) unstable; urgency=low
    * Fixed att_xfer issue
    * Fix sip now includes the Allow-Events header in more places
 
--- Michael Jerris <mike@jerris.com>  Tue, 13 May 2008 02:01:00 -0400
+ -- Michael Jerris <mike@jerris.com>  Tue, 13 May 2008 02:01:00 -0400
 
 freeswitch (1.0~rc5-1) unstable; urgency=low
 

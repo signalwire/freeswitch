@@ -5,7 +5,7 @@ Name:         freeswitch
 Summary:      FreeSWITCH open source telephony platform
 License:      MPL
 Group:        Productivity/Telephony/Servers
-Version:      1.0.rc5
+Version:      1.0.rc6
 Release:      1
 URL:          http://www.freeswitch.org/
 Packager:     Michal Bielicki
@@ -275,8 +275,8 @@ userdel freeswitch
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/sip_profiles
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/sip_profiles/nat
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/dialplan/extensions
-%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/sip_profiles/default
-%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/sip_profiles/outbound
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/sip_profiles/internal
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/sip_profiles/external
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/jingle_profiles
 %ifos linux
 %config(noreplace) %attr(0644, freeswitch, daemon) /etc/monit.d/freeswitch.monitrc
@@ -443,7 +443,7 @@ userdel freeswitch
 * Fri Jan 18 2008 - michal.bielicki@voiceworks.pl
 - fixes, fixes and more fixes in preparation for rc1
 * Thu Dec 5 2007 - michal.bielicki@voiceworks.pl
-- put in detail configfiles in to split of spidermonkey configs
+	- put in detail configfiles in to split of spidermonkey configs
 - created link from /opt/freesxwitch/conf to /etc%{prefix}
 * Thu Nov 29 2007 - michal.bielicki@voiceworks.pl
 - Added ifdefs for susealities
