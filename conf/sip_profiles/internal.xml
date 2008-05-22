@@ -98,6 +98,8 @@
     <!--<param name="disable-transcoding" value="true"/>-->
     <!-- Used for when phones respond to a challenged ACK with method INVITE in the hash -->
     <!--<param name="NDLB-broken-auth-hash" value="true"/>-->
+    <!-- add a ;received="<ip>:<port>" to the contact when replying to register for nat handling -->
+    <!--<param name="NDLB-received-in-nat-reg-contact" value="true"/>-->
     <param name="auth-calls" value="true"/>
     <!-- on authed calls, authenticate *all* the packets not just invite -->
     <param name="auth-all-packets" value="false"/>
