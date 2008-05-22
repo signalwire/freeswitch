@@ -343,7 +343,7 @@ speedy-sure: update-clean
 
 sofia-reconf:
 	cd libs/sofia-sip && $(MAKE) clean
-	cd libs/sofia-sip && autoreconf -fi
+	cd libs/sofia-sip && sh ./autogen.sh
 	cd libs/sofia-sip && ./configure --prefix=$(PREFIX) --with-pic --with-glib=no --disable-shared
 
 current: update-clean
