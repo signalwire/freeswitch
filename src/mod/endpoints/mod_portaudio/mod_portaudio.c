@@ -1538,9 +1538,9 @@ SWITCH_STANDARD_API(pa_cmd)
 		"pa dtmf <digit string>\n"
 		"pa flags [on|off] [ear] [mouth]\n"
 		"pa devlist\n"
-		"pa indev [#<num>|<partial name>\n"
-		"pa outdev [#<num>|<partial name>\n"
-		"pa ringdev [#<num>|<partial name>\n" "--------------------------------------------------------------------------------\n";
+		"pa indev #<num>|<partial name>\n"
+		"pa outdev #<num>|<partial name>\n"
+		"pa ringdev #<num>|<partial name>\n" "--------------------------------------------------------------------------------\n";
 
 	if (stream->event) {
 		http = switch_event_get_header(stream->event, "http-host");
