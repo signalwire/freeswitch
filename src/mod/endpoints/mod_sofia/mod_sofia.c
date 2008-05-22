@@ -1497,6 +1497,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	char *p;
 	sofia_profile_t *profile = NULL;
 	const char *exclude_contact = NULL;
+	char *reply = "";
 
 	if (!cmd) {
 		stream->write_function(stream, "%s", "");
@@ -1543,11 +1544,13 @@ SWITCH_STANDARD_API(sofia_contact_function)
 		if (profile) {
 			struct cb_helper cb;
 			switch_stream_handle_t mystream = { 0 };
+			
 			if (!domain || !strchr(domain, '.')) {
 				domain = profile->name;
 			}
 
 			SWITCH_STANDARD_STREAM(mystream);
+			switch_assert(mystream.data);
 			cb.profile = profile;
 			cb.stream = &mystream;
 			
@@ -1561,19 +1564,20 @@ SWITCH_STANDARD_API(sofia_contact_function)
 			switch_assert(sql);
 			sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, contact_callback, &cb);
 			switch_safe_free(sql);
-			if (mystream.data) {
-				char *str = mystream.data;
-				*(str + (strlen(str) - 1)) = '\0';
+			reply = (char *) mystream.data;
+			if (!switch_strlen_zero(reply) && end_of(reply) == ',') {
+				end_of(reply) = '\0';
 			}
-			stream->write_function(stream, "%s", mystream.data);
+			stream->write_function(stream, "%s", reply);
+			reply = NULL;
 			switch_safe_free(mystream.data);
-			goto end;
 		}
 	}
 	
-	stream->write_function(stream, "%s", "");
+	if (reply) {
+		stream->write_function(stream, "%s", reply);
+	}
 
-end:
 	switch_safe_free(data);
 
 	if (profile) {

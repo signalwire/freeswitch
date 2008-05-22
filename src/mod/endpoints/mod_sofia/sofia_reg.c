@@ -704,9 +704,14 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 
 	if (regtype == REG_REGISTER) {
 		char *new_contact = NULL;
+		char *p;
+
+		if ((p = strstr(contact_str, ";nat"))) {
+			*p = '\0';
+		}
 
 		if (exptime) {
-			if (nat_hack) {
+			if (is_nat || nat_hack) {
 				new_contact = switch_mprintf("%s;expires=%ld;received=\"%s:%d\"", contact_str, (long)exptime, network_ip, network_port);
 			} else {
 				new_contact = switch_mprintf("%s;expires=%ld", contact_str, (long)exptime);
