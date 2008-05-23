@@ -544,7 +544,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			
 			if ((v_contact_str = switch_event_get_header(*v_event, "sip-force-contact"))) {
 
-				if (switch_strlen_zero(received_data) && (profile->pflags & PFLAG_RECIEVED_IN_NAT_REG_CONTACT)) {
+				if (*received_data && (profile->pflags & PFLAG_RECIEVED_IN_NAT_REG_CONTACT)) {
 					switch_snprintf(received_data, sizeof(received_data), ";received=\"%s:%d\"", network_ip, network_port);
 				}
 
