@@ -36,18 +36,19 @@
 #endif
 
 #include <xmlrpc-c/base.h>
-#ifdef ABYSS_WIN32
-#undef strcasecmp
-#endif
 #include <xmlrpc-c/abyss.h>
 #include <xmlrpc-c/server.h>
 #include <xmlrpc-c/server_abyss.h>
 #include "../../libs/xmlrpc-c/lib/abyss/src/token.h"
+#include "http.h"
+#include "session.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_rpc_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime);
 SWITCH_MODULE_DEFINITION(mod_xml_rpc, mod_xml_rpc_load, mod_xml_rpc_shutdown, mod_xml_rpc_runtime);
+
+static abyss_bool HTTPWrite(TSession *s,char *buffer,uint32_t len);
 
 static struct {
 	uint16_t port;
@@ -147,7 +148,8 @@ static switch_status_t http_stream_write(switch_stream_handle_t *handle, const c
 
 static abyss_bool http_directory_auth(TSession *r, char *domain_name) 
 {
-    char *p, *x;
+    char *p;
+	char *x;
     char z[256], t[80];
 	char user[512];
 	char *pass;
@@ -160,13 +162,13 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
     p = RequestHeaderValue(r, "authorization");
 
     if (p) {
-        NextToken(&p);
+        NextToken((const char **)&p);
         x = GetToken(&p);
         if (x) {
             if (!strcasecmp(x, "basic")) {
 
 
-                NextToken(&p);
+                NextToken((const char **)&p);
 				switch_b64_decode(p, user, sizeof(user));
 				if ((pass = strchr(user, ':'))) {
 					*pass++ = '\0';
@@ -177,7 +179,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 						*domain_name++ = '\0';
 						at++;
 					} else {
-						domain_name = r->host;
+						domain_name = (char *)r->requestInfo.host;
 						if (!strncasecmp(domain_name, "www.", 3)) {
 							domain_name += 4;
 						}
@@ -192,7 +194,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 				Base64Encode(z, t);
 				
 				if (!strcmp(p, t)) {
-					r->user=strdup(user);
+					r->requestInfo.user=strdup(user);
 					goto authed;
 				}
 				
@@ -239,7 +241,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 				}
 				
 				if (!(mypass1 && mypass2)) {
-					r->user=strdup(user);
+					r->requestInfo.user=strdup(user);
 					goto authed;
 				} else {
 					if (mypass1) {
@@ -251,7 +253,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 						Base64Encode(z, t);
 				
 						if (!strcmp(p, t)) {
-							r->user=strdup(box ? box : user);
+							r->requestInfo.user=strdup(box ? box : user);
 							goto authed;
 						}
 					}
@@ -265,7 +267,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 						Base64Encode(z, t);
 				
 						if (!strcmp(p, t)) {
-							r->user=strdup(box ? box : user);
+							r->requestInfo.user=strdup(box ? box : user);
 							goto authed;
 						}
 					}
@@ -280,7 +282,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 							Base64Encode(z, t);
 					
 							if (!strcmp(p, t)) {
-								r->user=strdup(box);
+								r->requestInfo.user=strdup(box);
 								goto authed;
 							}
 						}
@@ -295,7 +297,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 							Base64Encode(z, t);
 					
 							if (!strcmp(p, t)) {
-								r->user=strdup(box);
+								r->requestInfo.user=strdup(box);
 								goto authed;
 							}
 						}
@@ -305,7 +307,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 
 			authed:
 				
-				ResponseAddField(r, "freeswitch-user", r->user);
+				ResponseAddField(r, "freeswitch-user", r->requestInfo.user);
 				ResponseAddField(r, "freeswitch-domain", domain_name);
 				
 				if (x_domain_root) {
@@ -334,8 +336,8 @@ abyss_bool auth_hook(TSession * r)
 	char *domain_name, *e;
 	abyss_bool ret = FALSE;
 
-	if (!strncmp(r->uri, "/domains/", 9)) {
-		domain_name = strdup(r->uri + 9);
+	if (!strncmp(r->requestInfo.uri, "/domains/", 9)) {
+		domain_name = strdup(r->requestInfo.uri + 9);
 		switch_assert(domain_name);
 		
 		if ((e = strchr(domain_name, '/'))) {
@@ -344,7 +346,7 @@ abyss_bool auth_hook(TSession * r)
 
 		if (!strcmp(domain_name, "this")) {
 			free(domain_name);
-			domain_name = strdup(r->host);
+			domain_name = strdup(r->requestInfo.host);
 		}
 
 		ret = !http_directory_auth(r, domain_name);
@@ -355,8 +357,8 @@ abyss_bool auth_hook(TSession * r)
 		const char *list[2] = {"index.html", "index.txt"};
 		int x;
 
-		if (!strncmp(r->uri, "/pub", 4)) {
-			char *p = r->uri;
+		if (!strncmp(r->requestInfo.uri, "/pub", 4)) {
+			char *p = (char *)r->requestInfo.uri;
 			char *new_uri = p + 4;
 			if (!new_uri) {
 				new_uri = "/";
@@ -388,16 +390,49 @@ abyss_bool auth_hook(TSession * r)
 				}
 			}
 
-			r->uri = strdup(new_uri);
+			r->requestInfo.uri = strdup(new_uri);
 			free(p);
 
 		} else {
-			if (globals.realm && strncmp(r->uri, "/pub", 4)) {
+			if (globals.realm && strncmp(r->requestInfo.uri, "/pub", 4)) {
 				ret = !http_directory_auth(r, NULL);
 			}
 		}
 	}
 	return ret;
+}
+
+
+static abyss_bool HTTPWrite(TSession *s,char *buffer,uint32_t len)
+{
+    if (s->chunkedwrite && s->chunkedwritemode)
+		{
+			char t[16];
+
+			if (ConnWrite(s->conn,t,sprintf(t,"%x"CRLF,len)))
+				if (ConnWrite(s->conn,buffer,len))
+					return ConnWrite(s->conn,CRLF,2);
+
+			return FALSE;
+		}
+
+    return ConnWrite(s->conn,buffer,len);
+}
+
+static abyss_bool HTTPWriteEnd(TSession *s)
+{
+    if (!s->chunkedwritemode)
+        return TRUE;
+
+    if (s->chunkedwrite)
+		{
+			/* May be one day trailer dumping will be added */
+			s->chunkedwritemode=FALSE;
+			return ConnWrite(s->conn,"0"CRLF CRLF,5);
+		}
+
+    s->requestInfo.keepalive=FALSE;
+    return TRUE;
 }
 
 abyss_bool handler_hook(TSession * r)
@@ -419,13 +454,13 @@ abyss_bool handler_hook(TSession * r)
 	stream.write_function = http_stream_write;
 	stream.raw_write_function = http_stream_raw_write;
 
-	if (!r || !r->uri) {
+	if (!r || !r->requestInfo.uri) {
 		return FALSE;
 	}
 
-	if ((command = strstr(r->uri, "/api/"))) {
+	if ((command = strstr(r->requestInfo.uri, "/api/"))) {
 		command += 5;
-	} else if ((command = strstr(r->uri, "/webapi/"))) {
+	} else if ((command = strstr(r->requestInfo.uri, "/webapi/"))) {
 		command += 8;
 		html++;
 	} else {
@@ -493,31 +528,31 @@ abyss_bool handler_hook(TSession * r)
 			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Domain", "%s", fs_domain);
 		if (path_info)
 			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-Path-Info", "%s", path_info);
-		switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-URI", "%s", r->uri);
-		if (r->query)
-			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-QUERY", "%s", r->query);
-		if (r->host)
-			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-HOST", "%s", r->host);
-		if (r->from)
-			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-FROM", "%s", r->from);
-		if (r->useragent)
-			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-USER-AGENT", "%s", r->useragent);
-		if (r->referer)
-			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-REFERER", "%s", r->referer);
-		if (r->requestline)
-			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-REQUESTLINE", "%s", r->requestline);
-		if (r->user)
-			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-USER", "%s", r->user);
-		if (r->port)
-			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-PORT", "%u", r->port);
-		if (r->query || content_length) {
+		switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-URI", "%s", r->requestInfo.uri);
+		if (r->requestInfo.query)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-QUERY", "%s", r->requestInfo.query);
+		if (r->requestInfo.host)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-HOST", "%s", r->requestInfo.host);
+		if (r->requestInfo.from)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-FROM", "%s", r->requestInfo.from);
+		if (r->requestInfo.useragent)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-USER-AGENT", "%s", r->requestInfo.useragent);
+		if (r->requestInfo.referer)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-REFERER", "%s", r->requestInfo.referer);
+		if (r->requestInfo.requestline)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-REQUESTLINE", "%s", r->requestInfo.requestline);
+		if (r->requestInfo.user)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-USER", "%s", r->requestInfo.user);
+		if (r->requestInfo.port)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-PORT", "%u", r->requestInfo.port);
+		if (r->requestInfo.query || content_length) {
 			char *q, *qd;
 			char *next;
-			char *query = r->query;
+			char *query = (char *)r->requestInfo.query;
 			char *name, *val;
 			char qbuf[8192] = "";
 			
-			if (r->method == m_post && content_length) {
+			if (r->requestInfo.method == m_post && content_length) {
 				int len = atoi(content_length);
 				int qlen = 0;
 				
@@ -543,7 +578,7 @@ abyss_bool handler_hook(TSession * r)
 						if (qlen >= len) {
 							break;
 						}
-					} while ((succeeded = ConnRead(r->conn, r->server->timeout)));
+					} while ((succeeded = ConnRead(r->conn, 2000)));
 					
 					query = qbuf;
 				}
@@ -595,9 +630,16 @@ abyss_bool handler_hook(TSession * r)
 	//HTTPWrite(r, "<pre>\n\n", 7);
 
 	/* generation of the date field */
-	if (DateToString(&r->date, buf)) {
-		ResponseAddField(r,"Date", buf);
+	{
+		const char * dateValue;
+
+		DateToString(r->date, &dateValue);
+
+		if (dateValue) {
+			ResponseAddField(r, "Date", dateValue);
+		}
 	}
+
 	
 	/* Generation of the server field */
 	ResponseAddField(r,"Server", "FreeSWITCH-" SWITCH_VERSION_FULL "-mod_xml_rpc");
@@ -622,17 +664,24 @@ abyss_bool handler_hook(TSession * r)
 	}
 
 
-	if (switch_api_execute(command, r->query, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
+	if (switch_api_execute(command, r->requestInfo.query, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
 		ResponseStatus(r, 200);
-		r->done = TRUE;
+		r->responseStarted = TRUE;
+		//r->done = TRUE;
 	} else {
 		ResponseStatus(r, 404);
 		ResponseError(r);
 	} 
 	
-	SocketClose(&(r->conn->socket));
+	//SocketClose(&(r->conn->socket));
+	
 	HTTPWriteEnd(r);
-	ConnClose(r->conn);
+	//if(r->conn->channelP)
+	//ConnKill(r->conn);
+	//ChannelInterrupt(r->conn->channelP);
+	//ConnClose(r->conn);
+	//ChannelDestroy(r->conn->channelP);
+	r->requestInfo.keepalive = 0;
 
  end:
 
@@ -757,15 +806,19 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 	ServerCreate(&globals.abyssServer, "XmlRpcServer", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir, logfile);
 
 	xmlrpc_server_abyss_set_handler(&env, &globals.abyssServer, "/RPC2", registryP);
+	ServerInit(&globals.abyssServer);
 
+#if 0
 	if (ServerInit(&globals.abyssServer) != TRUE) {
 		globals.running = 0;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to start HTTP Port %d\n", globals.port);
 		return SWITCH_STATUS_TERM;
 	}
+#endif
 
 	ServerAddHandler(&globals.abyssServer, handler_hook);
 	ServerAddHandler(&globals.abyssServer, auth_hook);
+	ServerSetKeepaliveTimeout(&globals.abyssServer, 1);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Starting HTTP Port %d, DocRoot [%s]\n", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir);
 	ServerRun(&globals.abyssServer);
 	globals.running = 0;
@@ -775,8 +828,9 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown)
 {
-	globals.abyssServer.running = 0;
-	shutdown(globals.abyssServer.listensock, 2);
+	//globals.abyssServer.running = 0;
+	//shutdown(globals.abyssServer.listensock, 2);
+	ServerTerminate(&globals.abyssServer);
 	while(globals.running) {
 		switch_yield(100000);
 	}
