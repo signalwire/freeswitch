@@ -329,6 +329,9 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_resurrect_channel(const 
 
 			if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 				switch_channel_set_flag(peer_channel, CF_PROXY_MEDIA);
+				if (switch_channel_test_flag(channel, CF_VIDEO)) {
+					switch_channel_set_flag(peer_channel, CF_VIDEO);
+				}
 			}
 
 			if (profile) {

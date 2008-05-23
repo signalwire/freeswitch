@@ -1890,6 +1890,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	cause = SWITCH_CAUSE_SUCCESS;
 
 	if (session) {
+		switch_channel_t *o_channel = switch_core_session_get_channel(session);
+
 		switch_ivr_transfer_variable(session, nsession, SOFIA_REPLACES_HEADER);
 		switch_ivr_transfer_variable(session, nsession, "sip_auto_answer");
 		switch_ivr_transfer_variable(session, nsession, SOFIA_SIP_HEADER_PREFIX_T);
@@ -1906,6 +1908,19 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			switch_assert(ctech_pvt != NULL);
 			tech_pvt->bte = ctech_pvt->te;
 			tech_pvt->bcng_pt = ctech_pvt->cng_pt;
+		}
+
+		if (switch_channel_test_flag(o_channel, CF_PROXY_MEDIA)) {
+			const char *r_sdp = switch_channel_get_variable(o_channel, SWITCH_R_SDP_VARIABLE);
+
+			if (switch_stristr("m=video", r_sdp)) {
+				sofia_glue_tech_choose_video_port(tech_pvt, 1);
+				tech_pvt->video_rm_encoding = "PROXY-VID";
+				tech_pvt->video_rm_rate = 90000;
+				tech_pvt->video_codec_ms = 0;
+				switch_channel_set_flag(tech_pvt->channel, CF_VIDEO);
+				switch_set_flag(tech_pvt, TFLAG_VIDEO);
+			}
 		}
 	}
 

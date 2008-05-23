@@ -299,6 +299,13 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
+	SWITCH_ADD_CODEC(codec_interface, "PROXY VIDEO PASS-THROUGH");
+    switch_core_codec_add_implementation(pool, codec_interface,
+                                         SWITCH_CODEC_TYPE_VIDEO, 31, "PROXY-VID", NULL, 90000, 90000, 0,
+                                         0, 0, 0, 0, 1, 1, 1,
+										 switch_proxy_init, switch_proxy_encode, switch_proxy_decode, switch_proxy_destroy);
+
+
 	SWITCH_ADD_CODEC(codec_interface, "PROXY PASS-THROUGH");
 	switch_core_codec_add_implementation(pool, codec_interface,
 										 SWITCH_CODEC_TYPE_AUDIO, 0, "PROXY", NULL, 8000, 8000, 0,
