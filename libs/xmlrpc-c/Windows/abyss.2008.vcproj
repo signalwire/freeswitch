@@ -43,7 +43,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\,..\include,..\lib\util\include"
+				AdditionalIncludeDirectories="..\,..\include,..\lib\util\include,."
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;ABYSS_WIN32;_THREAD"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -119,7 +119,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\,..\include,..\lib\util\include"
+				AdditionalIncludeDirectories="..\,..\include,..\lib\util\include,."
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;ABYSS_WIN32;_THREAD"
 				StringPooling="true"
 				RuntimeLibrary="2"

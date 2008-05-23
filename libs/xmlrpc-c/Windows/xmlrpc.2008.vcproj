@@ -43,7 +43,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../lib,../lib/util/include,../include,..,../lib/expat/xmlparse,../lib/abyss/src,../lib/wininet_transport"
+				AdditionalIncludeDirectories="../lib,../lib/util/include,../include,..,../lib/expat/xmlparse,../lib/abyss/src,../lib/wininet_transport,."
 				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -119,7 +119,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../lib,../lib/util/include,../include,..,../lib/expat/xmlparse,../lib/abyss/src,../lib/wininet_transport"
+				AdditionalIncludeDirectories="../lib,../lib/util/include,../include,..,../lib/expat/xmlparse,../lib/abyss/src,../lib/wininet_transport,."
 				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB"
 				StringPooling="true"
 				RuntimeLibrary="2"

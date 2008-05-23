@@ -44,7 +44,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\lib\expat\xmltok,..\lib\expat\xmlwf,..,..\lib\util\include,..\include"
+				AdditionalIncludeDirectories="..\lib\expat\xmltok,..\lib\expat\xmlwf,..,..\lib\util\include,..\include,."
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;XML_DTD;_LIB"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -118,7 +118,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\lib\expat\xmltok,..\lib\expat\xmlwf,..,..\lib\util\include,..\include"
+				AdditionalIncludeDirectories="..\lib\expat\xmltok,..\lib\expat\xmlwf,..,..\lib\util\include,..\include,."
 				PreprocessorDefinitions="WIN32;_WINDOWS;XML_DTD;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"

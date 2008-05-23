@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".."
+				AdditionalIncludeDirectories="..,."
 				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;XML_DTD;XML_NS;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -118,7 +118,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories=".."
+				AdditionalIncludeDirectories="..,."
 				PreprocessorDefinitions="NDEBUG;XML_NS;WIN32;_WINDOWS;XML_DTD;_LIB"
 				StringPooling="true"
 				RuntimeLibrary="0"
