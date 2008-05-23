@@ -68,6 +68,7 @@ static zap_mutex_t *request_mutex = NULL;
 static zap_mutex_t *signal_mutex = NULL;
 
 static uint8_t req_map[MAX_REQ_ID+1] = { 0 };
+static uint8_t nack_map[MAX_REQ_ID+1] = { 0 };
 
 static void __release_request_id_span_chan(int span, int chan, const char *func, int line)
 {
@@ -75,6 +76,7 @@ static void __release_request_id_span_chan(int span, int chan, const char *func,
 
 	zap_mutex_lock(request_mutex);
 	if ((id = SETUP_GRID[span][chan])) {
+		assert(id <= MAX_REQ_ID);
 		req_map[id] = 0;
 		SETUP_GRID[span][chan] = 0;
 	}
@@ -84,6 +86,7 @@ static void __release_request_id_span_chan(int span, int chan, const char *func,
 
 static void __release_request_id(ss7_boost_request_id_t r, const char *func, int line)
 {
+	assert(r <= MAX_REQ_ID);
 	zap_mutex_lock(request_mutex);
 	req_map[r] = 0;
 	zap_mutex_unlock(request_mutex);
@@ -248,6 +251,8 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 	if (st == BST_FAIL) {
 		release_request_id(r);
 	} else if (st != BST_READY) {
+		assert(r <= MAX_REQ_ID);
+		nack_map[r] = 1;
 		ss7bc_exec_command(&ss7_boost_data->mcon,
 						   0,
 						   0,
@@ -269,16 +274,16 @@ static void handle_call_start_ack(ss7bc_connection_t *mcon, ss7bc_event_t *event
 {
 	zap_channel_t *zchan;
 
+	if (nack_map[event->call_setup_id]) {
+		return;
+	}
+
 	OUTBOUND_REQUESTS[event->call_setup_id].event = *event;
-	zap_mutex_lock(request_mutex);
-	assert(SETUP_GRID[event->span][event->chan] == 0);
 	SETUP_GRID[event->span][event->chan] = event->call_setup_id;
-	zap_mutex_unlock(request_mutex);
 
 	if ((zchan = find_zchan(OUTBOUND_REQUESTS[event->call_setup_id].span, event, 0))) {
 		if (zap_channel_open_chan(zchan) != ZAP_SUCCESS) {
 			zap_log(ZAP_LOG_ERROR, "OPEN ERROR [%s]\n", zchan->last_error);
-			//release_request_id(event->call_setup_id);
 		} else {
 			zap_set_flag(zchan, ZAP_CHANNEL_OUTBOUND);
 			zap_set_flag_locked(zchan, ZAP_CHANNEL_INUSE);
@@ -324,6 +329,7 @@ static void handle_call_done(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_e
 		
 		if (r) {
 			zap_set_sflag(zchan, SFLAG_FREE_REQ_ID);
+			zap_mutex_unlock(zchan->mutex);
 			return;
 		}
 	} 
@@ -556,6 +562,7 @@ static int parse_ss7_event(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_eve
 			   );
 
 
+	assert(event->call_setup_id <= MAX_REQ_ID);
 	
     switch(event->event_id) {
 
@@ -578,8 +585,11 @@ static int parse_ss7_event(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_eve
 		handle_heartbeat(mcon, event);
 		break;
     case SIGBOOST_EVENT_CALL_STOPPED_ACK:
+		handle_call_done(span, mcon, event);
+		break;
     case SIGBOOST_EVENT_CALL_START_NACK_ACK:
 		handle_call_done(span, mcon, event);
+		nack_map[event->call_setup_id] = 0;
 		break;
     case SIGBOOST_EVENT_INSERT_CHECK_LOOP:
 		//handle_call_loop_start(event);
@@ -751,7 +761,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			sig.event_id = ZAP_SIGEVENT_STOP;
 			status = ss7_boost_data->signal_cb(&sig);
-			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP_COMPLETE);
 			zap_set_sflag_locked(zchan, SFLAG_SENT_FINAL_RESPONSE);
 			ss7bc_exec_command(mcon,
 							   zchan->physical_span_id-1,
@@ -1010,7 +1020,7 @@ static zap_state_map_t boost_state_map = {
 			ZSD_INBOUND,
 			ZSM_UNACCEPTABLE,
 			{ZAP_CHANNEL_STATE_PROGRESS, ZAP_CHANNEL_STATE_PROGRESS_MEDIA, ZAP_END},
-			{ZAP_CHANNEL_STATE_HANGUP, ZAP_CHANNEL_STATE_CANCEL, ZAP_CHANNEL_STATE_UP, ZAP_END},
+			{ZAP_CHANNEL_STATE_HANGUP, ZAP_CHANNEL_STATE_CANCEL, ZAP_CHANNEL_STATE_TERMINATING, ZAP_CHANNEL_STATE_UP, ZAP_END},
 		},
 		{
 			ZSD_INBOUND,
