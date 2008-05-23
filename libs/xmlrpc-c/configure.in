@@ -198,9 +198,7 @@ dnl Checks for programs.
 dnl =======================================================================
 
 AC_PROG_CC
-if test x"$enable_cplusplus" != xno; then
-    AC_PROG_CXX
-fi
+AC_PROG_CXX
 
 
 dnl =======================================================================
