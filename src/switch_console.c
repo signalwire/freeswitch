@@ -525,7 +525,7 @@ static unsigned char complete(EditLine *el, int ch)
 		if (h.words == 0) {
 			stream.write_function(&stream, 
 								  "select distinct a1 from complete where "
-								  "a1 not in (select name from interfaces) and ");
+								  "a1 not in (select name from interfaces) %s ", argc ? "and" : "");
 		} else {
 			stream.write_function(&stream, 
 								  "select distinct a%d from complete where ", h.words + 1);
