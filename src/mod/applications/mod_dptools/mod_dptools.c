@@ -1233,6 +1233,19 @@ SWITCH_STANDARD_APP(park_state_function)
   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
    if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 */
+static switch_status_t bridge_on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
+{
+	char *str = (char *) buf;
+	
+	if (str && input && itype == SWITCH_INPUT_TYPE_DTMF) {
+		switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
+		if (strchr(str, dtmf->digit)) {
+			return SWITCH_STATUS_BREAK;
+		}
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
 	switch (itype) {
@@ -1810,7 +1823,29 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 			if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
 				switch_ivr_signal_bridge(session, peer_session);
 			} else {
-				switch_ivr_multi_threaded_bridge(session, peer_session, NULL, NULL, NULL);
+				switch_channel_t *channel = switch_core_session_get_channel(session);
+				switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
+				char *a_key = (char *)switch_channel_get_variable(channel, "bridge_terminate_key");
+				char *b_key = (char *)switch_channel_get_variable(peer_channel, "bridge_terminate_key");
+				int ok = 0;
+				switch_input_callback_function_t func = NULL;
+				
+				if (a_key) {
+					a_key = switch_core_session_strdup(session, a_key);
+					ok++;
+				}
+				if (b_key) {
+					b_key = switch_core_session_strdup(session, b_key);
+					ok++;
+				}
+				if (ok) {
+					func = bridge_on_dtmf;
+				} else {
+					a_key = NULL;
+					b_key = NULL;
+				}
+
+				switch_ivr_multi_threaded_bridge(session, peer_session, func, a_key, a_key);
 			}
 		}
 	end:
