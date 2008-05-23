@@ -777,7 +777,7 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt)
 void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 {
 	switch_size_t len;
-	char *p, *q, *ip_ptr = NULL, *port_ptr = NULL;
+	char *p, *q, *ip_ptr = NULL, *port_ptr = NULL, *vport_ptr = NULL;
 	int x;
 
 	if (switch_strlen_zero(tech_pvt->local_sdp_str)) {
@@ -797,6 +797,10 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 
 	if ((p = (char *)switch_stristr("m=audio ", tech_pvt->local_sdp_str))) {
 		port_ptr = p + 8;
+	}
+
+	if ((p = (char *)switch_stristr("m=video ", tech_pvt->local_sdp_str))) {
+		vport_ptr = p + 8;
 	}
 	
 	if (!(ip_ptr && port_ptr)) {
@@ -834,6 +838,16 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 			char port_buf[25] = "";
 			
 			switch_snprintf(port_buf, sizeof(port_buf), "%u", tech_pvt->adv_sdp_audio_port);
+			strncpy(q, port_buf, strlen(port_buf));
+			q += strlen(port_buf);
+			x = 0;
+			while(p && *p && (*p >= '0' && *p <= '9')) {
+				p++;
+			}
+		} else if (vport_ptr && p == vport_ptr) {
+			char port_buf[25] = "";
+			
+			switch_snprintf(port_buf, sizeof(port_buf), "%u", tech_pvt->adv_sdp_video_port);
 			strncpy(q, port_buf, strlen(port_buf));
 			q += strlen(port_buf);
 			x = 0;
