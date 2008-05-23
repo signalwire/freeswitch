@@ -113,13 +113,13 @@ static lua_State *lua_init(void)
 }
 
 
-static void lua_parse_and_execute(lua_State *L, char *input_code)
+static int lua_parse_and_execute(lua_State *L, char *input_code)
 {
 	int error = 0;
 
 	if (switch_strlen_zero(input_code)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No code to execute!\n");
-		return;
+		return 1;
 	}
 
 	if (*input_code == '~') {
@@ -172,6 +172,8 @@ static void lua_parse_and_execute(lua_State *L, char *input_code)
 		}
 		lua_pop(L, 1);	/* pop error message from the stack */
 	}
+
+	return error;
 }
 
 static void *SWITCH_THREAD_FUNC lua_thread_run(switch_thread_t *thread, void *obj)
@@ -298,13 +300,15 @@ SWITCH_STANDARD_APP(lua_function)
 	lua_State *L = lua_init();
 	char code[1024] = "";
 	char *mycmd;
+	int error;
+
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no args specified!\n");
         return;
     }
 
 	snprintf(code, sizeof(code), "~session = freeswitch.Session(\"%s\");", switch_core_session_get_uuid(session));
-	lua_parse_and_execute(L, code);
+	error = lua_parse_and_execute(L, code);
 
 	mycmd = strdup((char *)data);
 	switch_assert(mycmd);
@@ -312,10 +316,11 @@ SWITCH_STANDARD_APP(lua_function)
 	lua_parse_and_execute(L, mycmd);
 	lua_uninit(L);
 	free(mycmd);
+
 }
 
 SWITCH_STANDARD_API(luarun_api_function) {
-
+	
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "-ERR no args specified!\n");
 	} else {
@@ -331,7 +336,8 @@ SWITCH_STANDARD_API(lua_api_function) {
 
 	lua_State *L = lua_init();
 	char *mycmd;
-	
+	int error;
+
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "");
 	} else {
@@ -344,7 +350,13 @@ SWITCH_STANDARD_API(lua_api_function) {
 			mod_lua_conjure_event(L, stream->event, "env", 1);
 		}
 
-		lua_parse_and_execute(L, mycmd);
+		if ((error = lua_parse_and_execute(L, mycmd))) {
+			if (switch_event_get_header(stream->event, "http-host")) {
+				stream->write_function(stream, "Content-Type: text/html\n\n<H2>Error Executing Script</H2>");
+			} else {
+				stream->write_function(stream, "-ERR encounterd\n");
+			}
+		}
 		lua_uninit(L);
 		free(mycmd);
 	}
