@@ -784,7 +784,7 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 		return;
 	}
 
-	len = strlen(tech_pvt->local_sdp_str) + 256;
+	len = strlen(tech_pvt->local_sdp_str) + 384;
 	
 	if ((p = (char *)switch_stristr("c=IN IP4 ", tech_pvt->local_sdp_str))) {
 		ip_ptr = p + 9;
