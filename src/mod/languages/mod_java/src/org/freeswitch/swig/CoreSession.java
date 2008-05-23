@@ -117,8 +117,8 @@ public class CoreSession {
     return freeswitchJNI.CoreSession_getVariable(swigCPtr, this, var);
   }
 
-  public SWIGTYPE_p_switch_status_t process_callback_result(String ret) {
-    return new SWIGTYPE_p_switch_status_t(freeswitchJNI.CoreSession_process_callback_result(swigCPtr, this, ret), true);
+  public SWIGTYPE_p_switch_status_t process_callback_result(String result) {
+    return new SWIGTYPE_p_switch_status_t(freeswitchJNI.CoreSession_process_callback_result(swigCPtr, this, result), true);
   }
 
   public void say(String tosay, String module_name, String say_type, String say_method) {

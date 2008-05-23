@@ -4675,7 +4675,7 @@ XS(_wrap_CoreSession_process_callback_result) {
     dXSARGS;
     
     if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: CoreSession_process_callback_result(self,ret);");
+      SWIG_croak("Usage: CoreSession_process_callback_result(self,result);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
