@@ -7,25 +7,14 @@ be useful to anyone proposing changes of any kind.
 FUNCTIONAL CHANGES
 ------------------
 
-Make xmlrpc_server_abyss() catch a SIGTERM and terminate cleanly.
-
-Make a system.shutdown XML-RPC method to send SIGTERM to its server.
-Don't know what kind of security.
-
-Provide an interface for Abyss servers where the user accepts the TCP
-connection and passes to Xmlrpc-c the open socket.  This would be
-useful for inetd servers, among others.
-
-Document the xmlrpc-c/server_abyss.hpp interface.
+Put details in the manual for the xmlrpc-c/server_abyss.hpp interface:
+libxmlrpc_server_abyss++.html.
 
 Implement pluggable XML transports on the server side like on the
 client side.
 
 Create a non-XML non-HTTP efficient transport, client and server.
 The tools/binmode-rpc-kit/ directory might be useful.  Consider XDR.
-
-Make clients and servers reentrant (this requires getting or making
-reentrant HTTP libraries).
 
 Change the argument order of asynchronous response callbacks to be
 more consistent with the xmlrpc_client_call_asynch function.  Also
@@ -37,9 +26,8 @@ Return XMLRPC_LIMIT_EXCEEDED_ERROR when nesting limits are exceeded.
 This will break binary and source API compatibility in a very minor
 way.
 
-Make a Perl interface to Xmlrpc-c libraries.  This would be better than the
-existing Perl RPC::XML modules because the latter are Perl all the way down
-to the sockets and are thus very slow.
+Expand the Perl interface to Xmlrpc-c libraries to do server functions.
+Maybe match some other features of RPC::XML.
 
 Don't use xmlrpc_value for things that aren't part of an XML-RPC call or
 response.  It's confusing.  In particular, we use an xmlrpc_value
@@ -49,11 +37,15 @@ should instead be a normal C array plus count, or variable argument list.
 Don't use XML-RPC fault codes internally.  It's confusing.  Plus, there's
 no need for fault codes at all.  Just use the string descriptions.
 
+Add a function to deregister a method from a method registry.
+
+Add a "registry" type that works via a filesystem directory.  There is
+a .so file for each method with its code, and probably a configuration
+file.  Make it dynamically updatable.
+
 
 IMPLEMENTATION CHANGES
 ----------------------
-
-Replace dynamically created make files with static ones based on GNU make.
 
 Use function pointers to access cleanup code in xmlrpc_DECREF?
 

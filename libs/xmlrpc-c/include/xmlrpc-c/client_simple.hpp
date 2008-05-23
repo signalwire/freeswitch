@@ -14,8 +14,6 @@ class clientSimple {
 public:
     clientSimple();
 
-    ~clientSimple();
-
     void
     call(std::string       const serverUrl,
          std::string       const methodName,
@@ -35,8 +33,7 @@ public:
          xmlrpc_c::value *   const  resultP);
 
 private:
-    xmlrpc_c::client * clientP;
-    xmlrpc_c::clientXmlTransport * transportP;
+    xmlrpc_c::clientPtr clientP;
 };
 
 } // namespace

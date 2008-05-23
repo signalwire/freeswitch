@@ -21,6 +21,8 @@ static const char cgiResponse1[] =
   "</methodResponse>\r\n";
 
 
+#define TESTDATA_DIR "data"
+#define DIRSEP DIRECTORY_SEPARATOR
 
 void
 test_server_cgi(void) {
@@ -36,7 +38,8 @@ test_server_cgi(void) {
                        "CONTENT_TYPE=text/xml "
                        "CONTENT_LENGTH=211 "
                        "./cgitest1 "
-                       "<sample_add_call.xml",
+                       "<"
+                       TESTDATA_DIR DIRSEP "sample_add_call.xml",
                        "r");
 
     if (cgiOutputP == NULL)
@@ -51,6 +54,7 @@ test_server_cgi(void) {
 
         TEST(memcmp(cgiResponse, cgiResponse1, bytesRead) == 0);
     }
+    fclose(cgiOutputP);
     printf("\n");
     printf("CGI tests done.\n");
 }

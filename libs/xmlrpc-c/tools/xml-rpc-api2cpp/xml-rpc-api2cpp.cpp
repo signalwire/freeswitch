@@ -14,144 +14,199 @@ using namespace std;
 #define VERSION        "0.1"
 
 
-//=========================================================================
-//  function get_class_info
-//=========================================================================
-//  Connect to a remote server and extract the information we'll need to
-//  build a proxy class.
+/*----------------------------------------------------------------------------
+   Command line
+-----------------------------------------------------------------------------*/
 
-XmlRpcClass get_class_info (string server_url,
-			    string class_prefix,
-			    string class_name)
-{
-    // Create a place to store our data.
-    XmlRpcClass info(class_name);
+class cmdlineInfo {
+public:
+    string serverUrl;
+    string methodPrefix;
+    string localClass;
 
-    // Create a proxy class.
-    SystemProxy system(server_url);
+    cmdlineInfo(int           const argc,
+                const char ** const argv);
 
-    // Fetch the full list of methods, and process the ones we want.
-    XmlRpcValue methods = system.listMethods();
-    size_t end = methods.arraySize();
-    for (size_t i = 0; i < end; i++) {
+private:
+    cmdlineInfo();
+};
 
-	// Break the method name into two pieces.
-	string method_prefix;
-	string function_name;
-	string method_name = methods.arrayGetItem(i).getString();
-	size_t last_dot = method_name.rfind('.');
-	if (last_dot == string::npos) {
-	    function_name = method_name;
-	} else {
-	    method_prefix = string(method_name, 0, last_dot);
-	    function_name = string(method_name, last_dot + 1);
-	}
 
-	// Decide whether we care about this function.
-	if (method_prefix == class_prefix) {
 
-	    // Fetch some information about the function.
-	    string help = system.methodHelp(method_name);
-	    XmlRpcValue signature = system.methodSignature(method_name);
+cmdlineInfo::cmdlineInfo(int           const argc,
+                         const char ** const argv) {
 
-	    // Add this function to our class information.
-	    XmlRpcFunction func(function_name, method_name, help, signature);
-	    info.addFunction(func);
-	}
+    if (argc-1 != 3) {
+        cerr << argv[0] << ": Usage:" << endl
+             << "  xml-rpc-api2cpp <server_url> <method_prefix> <local_class>"
+             << endl << endl
+             << "Sample arguments:" << endl
+             << "  server_url = http://localhost/RPC2" << endl
+             << "  method_prefix = system" << endl
+             << "  local_class = SystemProxy" << endl;
+        exit(1);
     }
+    this->serverUrl    = string(argv[1]);
+    this->methodPrefix = string(argv[2]);
+    this->localClass   = string(argv[3]);
+}
 
+
+
+static XmlRpcClass
+getClassInfo(string const& serverUrl,
+             string const& classPrefix,
+             string const& className) {
+/*----------------------------------------------------------------------------
+  Connect to a remote server and extract the information we'll need to
+  build a proxy class.
+-----------------------------------------------------------------------------*/
+    XmlRpcClass info(className);
+
+    SystemProxy system(serverUrl);
+
+    XmlRpcValue const methods(system.listMethods());
+
+    size_t const end = methods.arraySize();
+    
+    for (size_t i = 0; i < end; ++i) {
+
+        // Break the method name into two pieces.
+        string const methodName(methods.arrayGetItem(i).getString());
+        size_t const lastDot(methodName.rfind('.'));
+
+        string methodPrefix;
+        string functionName;
+
+        if (lastDot == string::npos) {
+            methodPrefix = "";
+            functionName = methodName;
+        } else {
+            methodPrefix = string(methodName, 0, lastDot);
+            functionName = string(methodName, lastDot + 1);
+        }
+
+        if (methodPrefix == classPrefix) {
+            // It's a method User cares about
+
+            string const help(system.methodHelp(methodName));
+            XmlRpcValue const signatureList(
+                system.methodSignature(methodName));
+
+            if (signatureList.getType() != XMLRPC_TYPE_ARRAY) {
+                // It must be the string "undef", meaning the server
+                // won't tell us any signatures.
+                cerr << "Skipping method " << methodName << " "
+                     << "because server does not report any signatures "
+                     << "for it (via system.methodSignature method)"
+                     << endl;
+            } else {
+                // Add this function to our class information.
+                XmlRpcFunction const method(functionName,
+                                            methodName,
+                                            help,
+                                            signatureList);
+                info.addFunction(method);
+            }
+        }
+    }
     return info;
 }
 
 
-//=========================================================================
-//  function print_header
-//=========================================================================
-//  Print a complete header for the specified class.
 
-void print_header (ostream& out, XmlRpcClass& class_info) {
-    string class_name = class_info.className();
-    out << "// " << class_name << ".h - xmlrpc-c C++ proxy class" << endl;
-    out << "// Auto-generated by xml-rpc-api2cpp." << endl;
-    out << endl;
+static void
+printHeader(ostream          & out,
+            XmlRpcClass const& classInfo) {
+/*----------------------------------------------------------------------------
+  Print a complete header for the specified class.
+-----------------------------------------------------------------------------*/
+    string const className(classInfo.className());
 
-    string header_symbol = "_" + class_name + "_H_";
-    out << "#ifndef " << header_symbol << endl;
-    out << "#define " << header_symbol << " 1" << endl;
-    out << endl;
-    out << "#include <XmlRpcCpp.h>" << endl;
-    out << endl;
+    try {
+        out << "// " << className << ".h - xmlrpc-c C++ proxy class" << endl;
+        out << "// Auto-generated by xml-rpc-api2cpp." << endl;
+        out << endl;
 
-    class_info.printDeclaration(cout);
+        string const headerSymbol("_" + className + "_H_");
 
-    out << endl;
-    out << "#endif /* " << header_symbol << " */" << endl;
-}
+        out << "#ifndef " << headerSymbol << endl;
+        out << "#define " << headerSymbol << " 1" << endl;
+        out << endl;
+        out << "#include <xmlrpc-c/oldcppwrapper.hpp>" << endl;
+        out << endl;
 
+        classInfo.printDeclaration(cout);
 
-//=========================================================================
-//  function print_cc_file
-//=========================================================================
-//  Print a complete header for the specified class.
-
-void print_cc_file (ostream& out, XmlRpcClass& class_info) {
-    string class_name = class_info.className();
-    out << "// " << class_name << ".cc - xmlrpc-c C++ proxy class" << endl;
-    out << "// Auto-generated by xml-rpc-api2cpp." << endl;
-    out << endl;
-
-    out << "#include <XmlRpcCpp.h>" << endl;
-    out << "#include \"" << class_name << ".h\"" << endl;
-
-    class_info.printDefinition(cout);
-}
-
-
-//=========================================================================
-//  function main
-//=========================================================================
-//  For now, just a test harness.
-
-int main (int argc, char **argv) {
-
-    /* Parse our command-line arguments. */
-    if (argc != 4) {
-	cerr << argv[0] << ": Usage:" << endl
-	     << "  xml-rpc-api2cpp <server_url> <method_prefix> <local_class>"
-	     << endl << endl
-	     << "Sample arguments:" << endl
-	     << "  server_url = http://localhost/RPC2" << endl
-	     << "  method_prefix = system" << endl
-	     << "  local_class = SystemProxy" << endl;
-	exit(1);
+        out << endl;
+        out << "#endif /* " << headerSymbol << " */" << endl;
+    } catch (exception const& e) {
+        throw(logic_error("Failed to generate header for class " +
+                          className + ".  " + e.what()));
     }
-    string server_url = argv[1];
-    string method_prefix = argv[2];
-    string local_class = argv[3];
+}
 
-    int status = 0;
+
+
+static void
+printCppFile(ostream          & out,
+             XmlRpcClass const& classInfo) {
+/*----------------------------------------------------------------------------
+  Print a complete definition for the specified class.
+-----------------------------------------------------------------------------*/
+    string const className(classInfo.className());
+
+    try {
+        out << "// " << className << ".cc - xmlrpc-c C++ proxy class" << endl;
+        out << "// Auto-generated by xml-rpc-api2cpp." << endl;
+        out << endl;
+        
+        out << "#include <xmlrpc-c/oldcppwrapper.hpp>" << endl;
+        out << "#include \"" << className << ".h\"" << endl;
+        
+        classInfo.printDefinition(cout);
+    } catch (XmlRpcFault const& fault) {
+        throw(logic_error("Failed to generate definition for class " +
+                          className + ".  " + fault.getFaultString()));
+    }
+}
+
+
+
+int
+main(int           const argc,
+     const char ** const argv) {
+
+    string const progName(argv[0]);
+
+    cmdlineInfo const cmdline(argc, argv);
+
+    int retval;
+
     XmlRpcClient::Initialize(NAME, VERSION);
 
     try {
-	XmlRpcClass system = get_class_info(server_url,
-					    method_prefix,
-					    local_class);
-	print_header(cout, system);
-	cout << endl;
-	print_cc_file(cout, system);
+        XmlRpcClass system = getClassInfo(cmdline.serverUrl,
+                                          cmdline.methodPrefix,
+                                          cmdline.localClass);
+        printHeader(cout, system);
+        cout << endl;
+        printCppFile(cout, system);
+        retval = 0;
     } catch (XmlRpcFault& fault) {
-	cerr << argv[0] << ": XML-RPC fault #" << fault.getFaultCode()
-	     << ": " << fault.getFaultString() << endl;
-	status = 1;
+        cerr << progName << ": XML-RPC fault #" << fault.getFaultCode()
+             << ": " << fault.getFaultString() << endl;
+        retval = 1;
     } catch (logic_error& err) {
-	cerr << argv[0] << ": " << err.what() << endl;
-	status = 1;
+        cerr << progName << ": " << err.what() << endl;
+        retval = 1;
     } catch (...) {
-	cerr << argv[0] << ": Unknown exception" << endl;
-	status = 1;
+        cerr << progName << ": Unknown exception" << endl;
+        retval = 1;
     }
 
     XmlRpcClient::Terminate();
 
-    return status;
+    return retval;
 }
+

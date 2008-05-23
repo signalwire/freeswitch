@@ -1,9 +1,9 @@
 /*****************************************************************************
-                                xmlrpc_value.cpp
+                                value.cpp
 ******************************************************************************
-  This module provides services for dealwith XML-RPC values.  Each type
-  of XML-RPC value is a C++ class.  An object represents a particular
-  XML-RPC value.
+  This module provides services for dealing with XML-RPC values.  Each
+  type of XML-RPC value is a C++ class.  An object represents a
+  particular XML-RPC value.
 
   Everything is based on the C services in libxmlrpc.
 
@@ -25,34 +25,44 @@
   class members had to be declared public so that other components of
   the library could see them, but the user is not supposed to access
   those members.
-
 *****************************************************************************/
 
+#include <cstdlib>
 #include <string>
 #include <vector>
-#include <time.h>
+#include <ctime>
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
+#include "env_wrap.hpp"
+
 #include "xmlrpc-c/base.hpp"
 
 using namespace std;
+using namespace xmlrpc_c;
 
 namespace {
+
+void
+throwIfError(env_wrap const& env) {
+
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
 
 class cDatetimeValueWrapper {
 public:
     xmlrpc_value * valueP;
     
     cDatetimeValueWrapper(time_t const cppvalue) {
-        xmlrpc_env env;
-        xmlrpc_env_init(&env);
+        env_wrap env;
         
-        this->valueP = xmlrpc_datetime_new_sec(&env, cppvalue);
-        if (env.fault_occurred)
-            throw(error(env.fault_string));
+        this->valueP = xmlrpc_datetime_new_sec(&env.env_c, cppvalue);
+        throwIfError(env);
     }
     ~cDatetimeValueWrapper() {
         xmlrpc_DECREF(this->valueP);
@@ -65,18 +75,17 @@ public:
     const char * str;
     size_t length;
     cStringWrapper(xmlrpc_value * valueP) {
-        xmlrpc_env env;
-        xmlrpc_env_init(&env);
+        env_wrap env;
 
-        xmlrpc_read_string_lp(&env, valueP, &length, &str);
-        if (env.fault_occurred)
-            throw(error(env.fault_string));
+        xmlrpc_read_string_lp(&env.env_c, valueP, &length, &str);
+        throwIfError(env);
     }
     ~cStringWrapper() {
         free((char*)str);
     }
 };
-    
+
+
 
 } // namespace
 
@@ -123,6 +132,17 @@ value::~value() {
 
 
 
+bool
+value::isInstantiated() const {
+/*----------------------------------------------------------------------------
+   Return whether the value is actually a value, as opposed to a placeholder
+   variable waiting to be assigned a value.
+-----------------------------------------------------------------------------*/
+    return (this->cValueP != NULL);
+}
+
+
+
 void
 value::instantiate(xmlrpc_value * const valueP) {
 
@@ -148,13 +168,11 @@ value::appendToCArray(xmlrpc_value * const arrayP) const {
 /*----------------------------------------------------------------------------
   Append this value to the C array 'arrayP'.
 ----------------------------------------------------------------------------*/
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
+    env_wrap env;
 
-    xmlrpc_array_append_item(&env, arrayP, this->cValueP);
-    
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    xmlrpc_array_append_item(&env.env_c, arrayP, this->cValueP);
+
+    throwIfError(env);
 }
 
 
@@ -165,15 +183,13 @@ value::addToCStruct(xmlrpc_value * const structP,
 /*----------------------------------------------------------------------------
   Add this value to the C array 'arrayP' with key 'key'.
 ----------------------------------------------------------------------------*/
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
+    env_wrap env;
 
-    xmlrpc_struct_set_value_n(&env, structP,
+    xmlrpc_struct_set_value_n(&env.env_c, structP,
                               key.c_str(), key.length(),
                               this->cValueP);
 
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    throwIfError(env);
 }
 
 
@@ -203,12 +219,10 @@ value_int::value_int(int const cppvalue) {
         xmlrpc_value * valueP;
         
         cWrapper(int const cppvalue) {
-            xmlrpc_env env;
-            xmlrpc_env_init(&env);
+            env_wrap env;
             
-            this->valueP = xmlrpc_int_new(&env, cppvalue);
-            if (env.fault_occurred)
-                throw(error(env.fault_string));
+            this->valueP = xmlrpc_int_new(&env.env_c, cppvalue);
+            throwIfError(env);
         }
         ~cWrapper() {
             xmlrpc_DECREF(this->valueP);
@@ -236,13 +250,10 @@ value_int::value_int(xmlrpc_c::value const baseValue) {
 value_int::operator int() const {
 
     int retval;
+    env_wrap env;
 
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
-
-    xmlrpc_read_int(&env, this->cValueP, &retval);
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    xmlrpc_read_int(&env.env_c, this->cValueP, &retval);
+    throwIfError(env);
 
     return retval;
 }
@@ -256,12 +267,10 @@ value_double::value_double(double const cppvalue) {
         xmlrpc_value * valueP;
         
         cWrapper(double const cppvalue) {
-            xmlrpc_env env;
-            xmlrpc_env_init(&env);
+            env_wrap env;
             
-            this->valueP = xmlrpc_double_new(&env, cppvalue);
-            if (env.fault_occurred)
-                throw(error(env.fault_string));
+            this->valueP = xmlrpc_double_new(&env.env_c, cppvalue);
+            throwIfError(env);
         }
         ~cWrapper() {
             xmlrpc_DECREF(this->valueP);
@@ -288,12 +297,10 @@ value_double::operator double() const {
 
     double retval;
 
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
+    env_wrap env;
 
-    xmlrpc_read_double(&env, this->cValueP, &retval);
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    xmlrpc_read_double(&env.env_c, this->cValueP, &retval);
+    throwIfError(env);
 
     return retval;
 }
@@ -307,12 +314,10 @@ value_boolean::value_boolean(bool const cppvalue) {
         xmlrpc_value * valueP;
         
         cWrapper(xmlrpc_bool const cppvalue) {
-            xmlrpc_env env;
-            xmlrpc_env_init(&env);
+            env_wrap env;
             
-            this->valueP = xmlrpc_bool_new(&env, cppvalue);
-            if (env.fault_occurred)
-                throw(error(env.fault_string));
+            this->valueP = xmlrpc_bool_new(&env.env_c, cppvalue);
+            throwIfError(env);
         }
         ~cWrapper() {
             xmlrpc_DECREF(this->valueP);
@@ -330,14 +335,12 @@ value_boolean::operator bool() const {
 
     xmlrpc_bool retval;
 
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
+    env_wrap env;
 
-    xmlrpc_read_bool(&env, this->cValueP, &retval);
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    xmlrpc_read_bool(&env.env_c, this->cValueP, &retval);
+    throwIfError(env);
 
-    return (bool)retval;
+    return (retval != false);
 }
 
 
@@ -360,12 +363,11 @@ value_datetime::value_datetime(string const cppvalue) {
         xmlrpc_value * valueP;
         
         cWrapper(string const cppvalue) {
-            xmlrpc_env env;
-            xmlrpc_env_init(&env);
+            env_wrap env;
             
-            this->valueP = xmlrpc_datetime_new_str(&env, cppvalue.c_str());
-            if (env.fault_occurred)
-                throw(error(env.fault_string));
+            this->valueP = xmlrpc_datetime_new_str(&env.env_c,
+                                                   cppvalue.c_str());
+            throwIfError(env);
         }
         ~cWrapper() {
             xmlrpc_DECREF(this->valueP);
@@ -388,21 +390,25 @@ value_datetime::value_datetime(time_t const cppvalue) {
 
 
 
+#if XMLRPC_HAVE_TIMEVAL
 value_datetime::value_datetime(struct timeval const& cppvalue) {
 
     cDatetimeValueWrapper wrapper(cppvalue.tv_sec);
 
     this->instantiate(wrapper.valueP);
 }
+#endif
 
 
 
+#if XMLRPC_HAVE_TIMESPEC
 value_datetime::value_datetime(struct timespec const& cppvalue) {
 
     cDatetimeValueWrapper wrapper(cppvalue.tv_sec);
 
     this->instantiate(wrapper.valueP);
 }
+#endif
 
 
 
@@ -420,45 +426,68 @@ value_datetime::value_datetime(xmlrpc_c::value const baseValue) {
 value_datetime::operator time_t() const {
 
     time_t retval;
+    env_wrap env;
 
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
-
-    xmlrpc_read_datetime_sec(&env, this->cValueP, &retval);
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    xmlrpc_read_datetime_sec(&env.env_c, this->cValueP, &retval);
+    throwIfError(env);
 
     return retval;
 }
 
 
 
-value_string::value_string(string const& cppvalue) {
-    
-    class cWrapper {
-    public:
-        xmlrpc_value * valueP;
+class cNewStringWrapper {
+public:
+    xmlrpc_value * valueP;
         
-        cWrapper(string const cppvalue) {
-            xmlrpc_env env;
-            xmlrpc_env_init(&env);
+    cNewStringWrapper(string               const cppvalue,
+                      value_string::nlCode const nlCode) {
+        env_wrap env;
             
-            this->valueP = xmlrpc_string_new(&env, cppvalue.c_str());
-            if (env.fault_occurred)
-                throw(error(env.fault_string));
+        switch (nlCode) {
+        case value_string::nlCode_all:
+            this->valueP = xmlrpc_string_new_lp(&env.env_c,
+                                                cppvalue.length(),
+                                                cppvalue.c_str());
+            break;
+        case value_string::nlCode_lf:
+            this->valueP = xmlrpc_string_new_lp_cr(&env.env_c,
+                                                   cppvalue.length(),
+                                                   cppvalue.c_str());
+            break;
+        default:
+            throw(error("Newline encoding argument to value_string "
+                        "constructor is not one of the defined "
+                        "enumerations of value_string::nlCode"));
         }
-        ~cWrapper() {
-            xmlrpc_DECREF(this->valueP);
-        }
-    };
+        throwIfError(env);
+    }
+    ~cNewStringWrapper() {
+        xmlrpc_DECREF(this->valueP);
+    }
+};
     
-    cWrapper wrapper(cppvalue);
+
+
+value_string::value_string(std::string          const& cppvalue,
+                           value_string::nlCode const  nlCode) {
+    
+    cNewStringWrapper wrapper(cppvalue, nlCode);
     
     this->instantiate(wrapper.valueP);
 }
 
 
 
+value_string::value_string(std::string const& cppvalue) {
+
+    cNewStringWrapper wrapper(cppvalue, nlCode_all);
+    
+    this->instantiate(wrapper.valueP);
+}
+
+
+    
 value_string::value_string(xmlrpc_c::value const baseValue) {
 
     if (baseValue.type() != xmlrpc_c::value::TYPE_STRING)
@@ -470,10 +499,34 @@ value_string::value_string(xmlrpc_c::value const baseValue) {
 
 
 
+std::string
+value_string::crlfValue() const {
+
+    class cWrapper {
+    public:
+        const char * str;
+        size_t length;
+        cWrapper(xmlrpc_value * valueP) {
+            env_wrap env;
+            
+            xmlrpc_read_string_lp_crlf(&env.env_c, valueP, &length, &str);
+            throwIfError(env);
+        }
+        ~cWrapper() {
+            free((char*)str);
+        }
+    };
+    
+    cWrapper wrapper(this->cValueP);
+
+    return string(wrapper.str, wrapper.length);
+}
+
+
+
 value_string::operator string() const {
 
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
+    env_wrap env;
 
     cStringWrapper adapter(this->cValueP);
 
@@ -490,13 +543,11 @@ value_bytestring::value_bytestring(
         xmlrpc_value * valueP;
         
         cWrapper(vector<unsigned char> const& cppvalue) {
-            xmlrpc_env env;
-            xmlrpc_env_init(&env);
+            env_wrap env;
             
             this->valueP = 
-                xmlrpc_base64_new(&env, cppvalue.size(), &cppvalue[0]);
-            if (env.fault_occurred)
-                throw(error(env.fault_string));
+                xmlrpc_base64_new(&env.env_c, cppvalue.size(), &cppvalue[0]);
+            throwIfError(env);
         }
         ~cWrapper() {
             xmlrpc_DECREF(this->valueP);
@@ -519,12 +570,10 @@ value_bytestring::vectorUcharValue() const {
         size_t length;
 
         cWrapper(xmlrpc_value * const valueP) {
-            xmlrpc_env env;
-            xmlrpc_env_init(&env);
+            env_wrap env;
 
-            xmlrpc_read_base64(&env, valueP, &length, &contents);
-            if (env.fault_occurred)
-                throw(error(env.fault_string));
+            xmlrpc_read_base64(&env.env_c, valueP, &length, &contents);
+            throwIfError(env);
         }
         ~cWrapper() {
             free((void*)contents);
@@ -542,13 +591,11 @@ value_bytestring::vectorUcharValue() const {
 size_t
 value_bytestring::length() const {
 
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
-    
+    env_wrap env;
     size_t length;
-    xmlrpc_read_base64_size(&env, this->cValueP, &length);
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+
+    xmlrpc_read_base64_size(&env.env_c, this->cValueP, &length);
+    throwIfError(env);
 
     return length;
 }
@@ -573,12 +620,10 @@ value_array::value_array(vector<xmlrpc_c::value> const& cppvalue) {
         xmlrpc_value * valueP;
         
         cWrapper() {
-            xmlrpc_env env;
-            xmlrpc_env_init(&env);
+            env_wrap env;
             
-            this->valueP = xmlrpc_array_new(&env);
-            if (env.fault_occurred)
-                throw(error(env.fault_string));
+            this->valueP = xmlrpc_array_new(&env.env_c);
+            throwIfError(env);
         }
         ~cWrapper() {
             xmlrpc_DECREF(this->valueP);
@@ -610,14 +655,12 @@ value_array::value_array(xmlrpc_c::value const baseValue) {
 vector<xmlrpc_c::value>
 value_array::vectorValueValue() const {
 
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
+    env_wrap env;
 
     unsigned int arraySize;
 
-    arraySize = xmlrpc_array_size(&env, this->cValueP);
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    arraySize = xmlrpc_array_size(&env.env_c, this->cValueP);
+    throwIfError(env);
     
     vector<xmlrpc_c::value> retval(arraySize);
     
@@ -629,14 +672,11 @@ value_array::vectorValueValue() const {
 
             cWrapper(xmlrpc_value * const arrayP,
                      unsigned int   const index) {
+                env_wrap env;
 
-                xmlrpc_env env;
-                xmlrpc_env_init(&env);
-
-                xmlrpc_array_read_item(&env, arrayP, index, &valueP);
+                xmlrpc_array_read_item(&env.env_c, arrayP, index, &valueP);
                 
-                if (env.fault_occurred)
-                    throw(error(env.fault_string));
+                throwIfError(env);
             }
             ~cWrapper() {
                 xmlrpc_DECREF(valueP);
@@ -656,14 +696,11 @@ value_array::vectorValueValue() const {
 size_t
 value_array::size() const {
 
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
-
+    env_wrap env;
     unsigned int arraySize;
 
-    arraySize = xmlrpc_array_size(&env, this->cValueP);
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    arraySize = xmlrpc_array_size(&env.env_c, this->cValueP);
+    throwIfError(env);
     
     return arraySize;
 }
@@ -678,12 +715,10 @@ value_struct::value_struct(
         xmlrpc_value * valueP;
         
         cWrapper() {
-            xmlrpc_env env;
-            xmlrpc_env_init(&env);
+            env_wrap env;
             
-            this->valueP = xmlrpc_struct_new(&env);
-            if (env.fault_occurred)
-                throw(error(env.fault_string));
+            this->valueP = xmlrpc_struct_new(&env.env_c);
+            throwIfError(env);
         }
         ~cWrapper() {
             xmlrpc_DECREF(this->valueP);
@@ -717,14 +752,11 @@ value_struct::value_struct(xmlrpc_c::value const baseValue) {
 
 value_struct::operator map<string, xmlrpc_c::value>() const {
 
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
-
+    env_wrap env;
     unsigned int structSize;
 
-    structSize = xmlrpc_struct_size(&env, this->cValueP);
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    structSize = xmlrpc_struct_size(&env.env_c, this->cValueP);
+    throwIfError(env);
     
     map<string, xmlrpc_c::value> retval;
     
@@ -737,14 +769,12 @@ value_struct::operator map<string, xmlrpc_c::value>() const {
             cMemberWrapper(xmlrpc_value * const structP,
                            unsigned int   const index) {
 
-                xmlrpc_env env;
-                xmlrpc_env_init(&env);
+                env_wrap env;
             
-                xmlrpc_struct_read_member(&env, structP, index, 
+                xmlrpc_struct_read_member(&env.env_c, structP, index, 
                                           &keyP, &valueP);
                 
-                if (env.fault_occurred)
-                    throw(error(env.fault_string));
+                throwIfError(env);
             }
             ~cMemberWrapper() {
                 xmlrpc_DECREF(keyP);
@@ -773,12 +803,10 @@ value_nil::value_nil() {
         xmlrpc_value * valueP;
         
         cWrapper() {
-            xmlrpc_env env;
-            xmlrpc_env_init(&env);
+            env_wrap env;
             
-            this->valueP = xmlrpc_nil_new(&env);
-            if (env.fault_occurred)
-                throw(error(env.fault_string));
+            this->valueP = xmlrpc_nil_new(&env.env_c);
+            throwIfError(env);
         }
         ~cWrapper() {
             xmlrpc_DECREF(this->valueP);
@@ -803,5 +831,52 @@ value_nil::value_nil(xmlrpc_c::value const baseValue) {
 
 
 
-} // namespace
+value_i8::value_i8(xmlrpc_int64 const cppvalue) {
 
+    class cWrapper {
+    public:
+        xmlrpc_value * valueP;
+        
+        cWrapper(xmlrpc_int64 const cppvalue) {
+            env_wrap env;
+            
+            this->valueP = xmlrpc_i8_new(&env.env_c, cppvalue);
+            throwIfError(env);
+        }
+        ~cWrapper() {
+            xmlrpc_DECREF(this->valueP);
+        }
+    };
+    
+    cWrapper wrapper(cppvalue);
+    
+    this->instantiate(wrapper.valueP);
+}
+
+
+
+value_i8::value_i8(xmlrpc_c::value const baseValue) {
+
+    if (baseValue.type() != xmlrpc_c::value::TYPE_I8)
+        throw(error("Not 64 bit integer type.  See type() method"));
+    else {
+        this->instantiate(baseValue.cValueP);
+    }
+}
+
+
+
+value_i8::operator xmlrpc_int64() const {
+
+    xmlrpc_int64 retval;
+    env_wrap env;
+
+    xmlrpc_read_i8(&env.env_c, this->cValueP, &retval);
+    throwIfError(env);
+
+    return retval;
+}
+
+
+
+} // namespace

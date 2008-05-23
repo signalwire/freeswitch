@@ -355,6 +355,7 @@ mod_gzip_min_http 1001
  * End of inline comments
  */
 
+#include <stdlib.h>
 /*
  * Apache headers...
  */
@@ -6722,7 +6723,6 @@ typedef int            gz1_file_t;
 #  define STDC_HEADERS
 #  define SET_BINARY_MODE(fd) setmode(fd, O_BINARY)
 #  include <io.h>
-#  include <malloc.h>
 #  ifdef NTFAT
 #    define NO_MULTIPLE_DOTS
 #    define MAX_EXT_CHARS 3
@@ -6742,7 +6742,6 @@ typedef int            gz1_file_t;
      void * fcalloc (unsigned items, unsigned size);
      void fcfree (void *ptr);
 #  else
-#    include <malloc.h>
 #    define fcalloc(nitems,itemsize) halloc((long)(nitems),(itemsize))
 #    define fcfree(ptr) hfree(ptr)
 #  endif

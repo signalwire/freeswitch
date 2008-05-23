@@ -16,10 +16,10 @@
 #include "config.h"
 
 static void 
-die_if_fault_occurred (xmlrpc_env *env) {
-    if (env->fault_occurred) {
+die_if_fault_occurred(xmlrpc_env * const envP) {
+    if (envP->fault_occurred) {
         fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
-                env->fault_string, env->fault_code);
+                envP->fault_string, envP->fault_code);
         exit(1);
     }
 }

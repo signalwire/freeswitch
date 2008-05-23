@@ -37,13 +37,9 @@
 #include <time.h>
 #include <fcntl.h>
 
-#ifdef ABYSS_WIN32
+#ifdef WIN32
 #include <io.h>
-#else
-/* Must check this
-#include <sys/io.h>
-*/
-#endif  /* ABYSS_WIN32 */
+#endif  /* WIN32 */
 
 #ifdef _UNIX
 #include <sys/signal.h>
@@ -60,7 +56,7 @@ void Answer(TSession *r, uint16_t statuscode, char *buffer)
 
     ResponseContentType(r,"text/html");
 
-    ResponseWrite(r);
+    ResponseWriteStart(r);
     
     HTTPWrite(r,"<HTML><BODY>",12);
     
@@ -76,6 +72,8 @@ abyss_bool HandleTime(TSession *r)
     char z[50];
     time_t ltime;
     TDate date;
+    const char * dateString;
+    const char * answer;
 
     if (strcmp(r->uri,"/time")!=0)
         return FALSE;
@@ -83,14 +81,17 @@ abyss_bool HandleTime(TSession *r)
     if (!RequestAuth(r,"Mot de passe","moez","hello"))
         return TRUE;
 
-    time( &ltime );
-    DateFromGMT(&date,ltime);
-    
+    time(&ltime);
+    DateFromGMT(&date, ltime);
 
-    strcpy(z,"The time is ");
-    DateToString(&date,z+strlen(z));
+    DateToString(&date, &dateString);
 
-    Answer(r,200,z);
+    xmlrpc_asprintf(&answer, "The time is %s", dateString);
+
+    Answer(r, 200, answer);
+
+    xmlrpc_strfree(dateString);
+    xmlrpc_strfree(answer);
 
     return TRUE;
 }
@@ -142,49 +143,52 @@ static void sigterm(int sig)
     TraceExit("Signal %d received. Exiting...\n",sig);
 }
 
-static void sigchld(int sig)
-{
-    pid_t pid;
-    int status;
+
+
+static void
+sigchld(int const signalClass) {
+
+    bool childrenLeft;
+    bool error;
+
+    childrenLeft = true;
+    error = false;
 
     /* Reap defunct children until there aren't any more. */
-    for (;;)
-    {
-        pid = waitpid( (pid_t) -1, &status, WNOHANG );
+    while (childrenLeft && !error) {
+        int status;
+        pid_t rc;
+        rc = waitpid((pid_t) -1, &status, WNOHANG);
 
-        /* none left */
-        if (pid==0)
-            break;
-
-        if (pid<0)
-        {
+        if (rc == 0)
+            childrenLeft = false;
+        else if (rc < 0) {
             /* because of ptrace */
-            if (errno==EINTR)   
-                continue;
-
-            break;
+            if (errno == EINTR) {
+                /* ptrace causes this */
+            } else
+                error = true;
+        } else {
+            /* We reaped a child. */
+            pid_t const pid = rc;
+            ThreadHandleSigchld(pid);
         }
     }
 }
 #endif _UNIX
 
-void copyright()
-{
-    printf("ABYSS Web Server version "SERVER_VERSION"\n(C) Moez Mahfoudh - 2000\n\n");
-}
 
-void help(char *name)
-{
-    copyright();
-    printf("Usage: %s [-h] [-c configuration file]\n\n",name);
-}
 
 int main(int argc,char **argv)
 {
+    const char * const name = argv[0];
     TServer srv;
-    char *p,*conffile=DEFAULT_CONF_FILE;
-    abyss_bool err=FALSE;
-    char *name=argv[0];
+    char * p;
+    const char * conffile;
+    bool err;
+
+    conffile = DEFAULT_CONF_FILE;  /* initial value */
+    err = FALSE;  /* initial value */
 
     while (p=*(++argv))
     {
@@ -199,9 +203,6 @@ int main(int argc,char **argv)
                     else
                         err=TRUE;
                     break;
-                case 'h':
-                    help(name);
-                    exit(0);
                 default:
                     err=TRUE;
                 }
@@ -216,11 +217,6 @@ int main(int argc,char **argv)
         help(name);
         exit(1);
     };
-
-#ifdef ABYSS_WIN32
-    copyright();
-    printf("\nPress Ctrl+C to stop the server\n");
-#endif
 
     DateInit();
 
@@ -246,47 +242,9 @@ int main(int argc,char **argv)
 
     /* Catch defunct children. */
     signal(SIGCHLD,sigchld);
-    /* Become a daemon */
-    switch (fork())
-    {
-    case 0:
-        break;
-    case -1:
-        TraceExit("Unable to become a daemon");
-    default:
-        exit(0);
-    };
-
-#if !defined( _NO_USERS ) && !defined( __CYGWIN32__ )
-    setsid();
-    /* Change the current user if we are root */
-    if (getuid()==0)
-    {
-        if (srv.uid==(-1))
-            TraceExit("Can't run under root privileges. Please add a User option in your configuration file.");
-
-        if (setgroups(0,NULL)==(-1))
-            TraceExit("Failed to setup the group.");
-
-        if (srv.gid!=(-1))
-            if (setgid(srv.gid)==(-1))
-                TraceExit("Failed to change the group.");
-        
-        if (setuid(srv.uid)==(-1))
-            TraceExit("Failed to change the user.");
-    };
 #endif
 
-    if (srv.pidfile!=(-1))
-    {
-        char z[16];
-
-        sprintf(z,"%d",getpid());
-        FileWrite(&srv.pidfile,z,strlen(z));
-        FileClose(&srv.pidfile);
-    };
-
-#endif
+    ServerDaemonize(srv);
 
     ServerRun(&srv);
 

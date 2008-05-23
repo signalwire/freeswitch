@@ -1,21 +1,32 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/../..
-BUILDDIR= $(SRCDIR)
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  TOOLSDIR := $(call updir,$(CURDIR))
+  SRCDIR := $(call updir,$(TOOLSDIR))
+  BLDDIR := $(SRCDIR)
 endif
+SUBDIR := tools/xml-rpc-api2cpp
 
 default: all
 
-include $(BUILDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
-include ../Makefile.common
+include $(SRCDIR)/tools/common.mk
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/include
+INCLUDES = -I$(BLDDIR) -I$(BLDDIR)/include -I$(SRCDIR)/include
 
 CXXFLAGS = $(INCLUDES) $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
-LDFLAGS = $(CLIENT_LDFLAGS) $(LADD)
+LDFLAGS = $(LADD)
 
-all: xml-rpc-api2cpp
+LDLIBS = -L$(BLDDIR)/src/cpp -lxmlrpc_cpp -lxmlrpc_server $(CLIENT_LDLIBS)
+
+PROGS :=
+
+ifeq ($(MUST_BUILD_CLIENT),yes)
+  PROGS += xml-rpc-api2cpp
+endif
+
+all: $(PROGS)
 
 OBJECTS = \
   xml-rpc-api2cpp.o \
@@ -30,17 +41,23 @@ xml-rpc-api2cpp: \
   $(LIBXMLRPC_CLIENT) \
   $(LIBXMLRPC_SERVER) \
   $(LIBXMLRPC) \
-  $(LIBXML)
-	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
+  $(LIBXMLRPC_XML) \
+  $(LIBXMLRPC_UTIL)
+	$(CXXLD) -o $@ $(LDFLAGS) $(OBJECTS) $(LDLIBS)
 
 %.o:%.cpp
-	$(LIBTOOL) --mode=compile $(CXX) -c $(CXXFLAGS) $<
+	$(CXX) -c $(CXXFLAGS) $<
+
+# This common.mk dependency makes sure the symlinks get built before
+# this make file is used for anything.
+
+$(SRCDIR)/common.mk: srcdir blddir
 
 include Makefile.depend
 
 .PHONY: clean
 clean: clean-common
-	rm -f xml-rpc-api2cpp
+	rm -f $(PROGS)
 
 .PHONY: distclean
 distclean: clean distclean-common

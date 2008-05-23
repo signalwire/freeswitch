@@ -21,6 +21,11 @@ private:
     std::string _what;
 };
 
+// throwf() always throws a girerr::error .
+
+void
+throwf(const char * const format, ...);
+
 } // namespace
 
 #endif

@@ -8,9 +8,10 @@ struct timeout {
     timeout() : finite(false) {}
 
     timeout(unsigned int const duration) : duration(duration) {}
+        // 'duration' is the timeout time in milliseconds
 
     bool finite;
-    unsigned int duration;
+    unsigned int duration;  // in milliseconds
 };
 
 

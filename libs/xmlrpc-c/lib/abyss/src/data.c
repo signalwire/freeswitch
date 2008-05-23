@@ -36,25 +36,30 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "bool.h"
 #include "mallocvar.h"
+#include "xmlrpc-c/util_int.h"
+#include "xmlrpc-c/string_int.h"
 
 #include "xmlrpc-c/abyss.h"
 
 #include "token.h"
+#include "thread.h"
 
-#define safe_free(it) if (it) {free(it);it=NULL;}
+#include "data.h"
+
 /*********************************************************************
 ** List
 *********************************************************************/
 
-void ListInit(TList *sl)
+void ListInit(TList * const sl)
 {
     sl->item=NULL;
     sl->size=sl->maxsize=0;
     sl->autofree=FALSE;
 }
 
-void ListInitAutoFree(TList *sl)
+void ListInitAutoFree(TList * const sl)
 {
     sl->item=NULL;
     sl->size=sl->maxsize=0;
@@ -70,10 +75,10 @@ ListFree(TList * const sl) {
         if (sl->autofree) {
             unsigned int i;
             for (i = sl->size; i > 0; --i)
-                safe_free(sl->item[i-1]);
+                free(sl->item[i-1]);
             
         }
-        safe_free(sl->item);
+        free(sl->item);
     }
     sl->item = NULL;
     sl->size = 0;
@@ -88,19 +93,19 @@ ListFreeItems(TList * const sl) {
     if (sl->item) {
         unsigned int i;
         for (i = sl->size; i > 0; --i)
-            safe_free(sl->item[i-1]);
+            free(sl->item[i-1]);
     }
 }
 
 
 
-abyss_bool
+bool
 ListAdd(TList * const sl,
         void *  const str) {
 /*----------------------------------------------------------------------------
    Add an item to the end of the list.
 -----------------------------------------------------------------------------*/
-    abyss_bool success;
+    bool success;
 
     if (sl->size >= sl->maxsize) {
         uint16_t newSize = sl->maxsize + 16;
@@ -137,43 +142,65 @@ ListRemove(TList * const sl) {
 
 
 
-abyss_bool
-ListAddFromString(TList * const list,
-                  char *  const stringArg) {
+bool
+ListAddFromString(TList *      const list,
+                  const char * const stringArg) {
 
-    char *t,*p;
-    char * c;
+    bool retval;
+    
+    if (!stringArg)
+        retval = TRUE;
+    else {
+        char * buffer;
+        
+        buffer = strdup(stringArg);
+        if (!buffer)
+            retval = FALSE;
+        else {
+            bool endOfString;
+            bool error;
+            char * c;
 
-    c = stringArg;
+            for (c = &buffer[0], endOfString = FALSE, error = FALSE;
+                 !endOfString && !error;
+                ) {
+                const char * t;
+                NextToken((const char **)&c);
+                
+                while (*c == ',')
+                    ++c;
+                
+                t = GetToken(&c);
+                if (!t)
+                    endOfString = TRUE;
+                else {
+                    char * p;
 
-    if (c)
-        while (1)
-        {
-            NextToken(&c);
-
-            while (*c==',')
-                c++;
-
-            if (!(t=GetToken(&c)))
-                break;
-
-            p=c-2;
-
-            while (*p==',')
-                *(p--)='\0';
-
-            if (*t)
-                if (!ListAdd(list,t))
-                    return FALSE;
-        };
-
-    return TRUE;
+                    for (p = c - 2; *p == ','; --p)
+                        *p = '\0';
+                    
+                    if (t[0] != '\0') {
+                        bool added;
+                        added = ListAdd(list, (void*)t);
+                        
+                        if (!added)
+                            error = TRUE;
+                    }
+                }
+            }
+            retval = !error;
+            xmlrpc_strfree(buffer);
+        }
+    }
+    return retval;
 }
 
-abyss_bool
-ListFindString(TList *    const sl,
-               char *     const str,
-               uint16_t * const indexP)
+
+
+bool
+ListFindString(TList *      const sl,
+               const char * const str,
+               uint16_t *   const indexP)
 {
     uint16_t i;
 
@@ -192,8 +219,10 @@ ListFindString(TList *    const sl,
 ** Buffer
 *********************************************************************/
 
-abyss_bool BufferAlloc(TBuffer *buf,uint32_t memsize)
-{
+bool
+BufferAlloc(TBuffer *       const buf,
+            xmlrpc_uint32_t const memsize) {
+
     /* ************** Implement the static buffers ***/
     buf->staticid=0;
     buf->data=(void *)malloc(memsize);
@@ -209,21 +238,28 @@ abyss_bool BufferAlloc(TBuffer *buf,uint32_t memsize)
     };
 }
 
-void BufferFree(TBuffer *buf)
-{
+
+
+void
+BufferFree(TBuffer * const buf) {
+
     if (buf->staticid)
     {
         /* ************** Implement the static buffers ***/
     }
     else
-        safe_free(buf->data);
+        free(buf->data);
 
     buf->size=0;
     buf->staticid=0;
 }
 
-abyss_bool BufferRealloc(TBuffer *buf,uint32_t memsize)
-{
+
+
+bool
+BufferRealloc(TBuffer *       const buf,
+              xmlrpc_uint32_t const memsize) {
+
     if (buf->staticid)
     {
         TBuffer b;
@@ -260,55 +296,82 @@ abyss_bool BufferRealloc(TBuffer *buf,uint32_t memsize)
 ** String
 *********************************************************************/
 
-abyss_bool StringAlloc(TString *s)
-{
-    s->size=0;
-    if (BufferAlloc(&(s->buffer),256))
-    {
-        *(char *)(s->buffer.data)='\0';
+bool
+StringAlloc(TString * const stringP) {
+
+    bool succeeded;
+    
+    stringP->size = 0;
+
+    succeeded = BufferAlloc(&stringP->buffer, 256);
+    if (succeeded) {
+        *(char *)(stringP->buffer.data) = '\0';
         return TRUE;
-    }
-    else
+    } else
         return FALSE;
 }
 
-abyss_bool StringConcat(TString *s,char *s2)
-{
-    uint32_t len=strlen(s2);
 
-    if (len+s->size+1>s->buffer.size)
-        if (!BufferRealloc(&(s->buffer),((len+s->size+1+256)/256)*256))
+
+bool
+StringConcat(TString *    const stringP,
+             const char * const string2) {
+
+    uint32_t const len = strlen(string2);
+
+    if (len + stringP->size + 1 > stringP->buffer.size) {
+        bool succeeded;
+        succeeded = BufferRealloc(
+            &stringP->buffer,
+            ((len + stringP->size + 1 + 256) / 256) * 256);
+        if (!succeeded)
             return FALSE;
-    
-    strcat((char *)(s->buffer.data),s2);
-    s->size+=len;
+    }
+    strcat((char *)(stringP->buffer.data), string2);
+    stringP->size += len;
     return TRUE;
 }
 
-abyss_bool StringBlockConcat(TString *s,char *s2,char **ref)
-{
-    uint32_t len=strlen(s2)+1;
 
-    if (len+s->size>s->buffer.size)
-        if (!BufferRealloc(&(s->buffer),((len+s->size+1+256)/256)*256))
+
+bool
+StringBlockConcat(TString *    const stringP,
+                  const char * const string2,
+                  char **      const ref) {
+
+    uint32_t const len = strlen(string2) + 1;
+
+    if (len + stringP->size > stringP->buffer.size) {
+        bool succeeded;
+        succeeded = BufferRealloc(
+            &stringP->buffer,
+            ((len + stringP->size + 1 + 256) / 256) * 256);
+        if (!succeeded)
             return FALSE;
-    
-    *ref=(char *)(s->buffer.data)+s->size;
-    memcpy(*ref,s2,len);
-    s->size+=len;
+    }
+    *ref = (char *)(stringP->buffer.data) + stringP->size;
+    memcpy(*ref, string2, len);
+    stringP->size += len;
+
     return TRUE;
 }
 
-void StringFree(TString *s)
-{
-    s->size=0;
-    BufferFree(&(s->buffer));
+
+
+void
+StringFree(TString * const stringP) {
+    stringP->size = 0;
+    BufferFree(&stringP->buffer);
 }
 
-char *StringData(TString *s)
-{
-    return (char *)(s->buffer.data);
+
+
+char *
+StringData(TString * const stringP) {
+    return (char *)stringP->buffer.data;
 }
+
+
 
 /*********************************************************************
 ** Hash
@@ -334,13 +397,13 @@ Hash16(const char * const start) {
 ** Table
 *********************************************************************/
 
-void TableInit(TTable *t)
+void TableInit(TTable * const t)
 {
     t->item=NULL;
     t->size=t->maxsize=0;
 }
 
-void TableFree(TTable *t)
+void TableFree(TTable * const t)
 {
     uint16_t i;
 
@@ -349,18 +412,23 @@ void TableFree(TTable *t)
         if (t->size)
             for (i=t->size;i>0;i--)
             {
-                safe_free(t->item[i-1].name);
-                safe_free(t->item[i-1].value);
+                free(t->item[i-1].name);
+                free(t->item[i-1].value);
             };
             
-        safe_free(t->item);
+        free(t->item);
     }
 
     TableInit(t);
 }
 
-abyss_bool TableFindIndex(TTable *t,char *name,uint16_t *index)
-{
+
+
+bool
+TableFindIndex(TTable *     const t,
+               const char * const name,
+               uint16_t *   const index) {
+
     uint16_t i,hash=Hash16(name);
 
     if ((t->item) && (t->size>0) && (*index<t->size))
@@ -377,18 +445,23 @@ abyss_bool TableFindIndex(TTable *t,char *name,uint16_t *index)
     return FALSE;
 }
 
-abyss_bool TableAddReplace(TTable *t,char *name,char *value)
-{
+
+
+bool
+TableAddReplace(TTable *     const t,
+                const char * const name,
+                const char * const value) {
+
     uint16_t i=0;
 
     if (TableFindIndex(t,name,&i))
     {
-        safe_free(t->item[i].value);
+        free(t->item[i].value);
         if (value)
             t->item[i].value=strdup(value);
         else
         {
-            safe_free(t->item[i].name);
+            free(t->item[i].name);
             if (--t->size>0)
                 t->item[i]=t->item[t->size];
         };
@@ -401,8 +474,10 @@ abyss_bool TableAddReplace(TTable *t,char *name,char *value)
 
 
 
-abyss_bool
-TableAdd(TTable *t,char *name,char *value) {
+bool
+TableAdd(TTable *     const t,
+         const char * const name,
+         const char * const value) {
 
     if (t->size>=t->maxsize) {
         TTableItem *newitem;
@@ -427,8 +502,12 @@ TableAdd(TTable *t,char *name,char *value) {
     return TRUE;
 }
 
-char *TableFind(TTable *t,char *name)
-{
+
+
+char *
+TableFind(TTable *     const t,
+          const char * const name) {
+
     uint16_t i=0;
 
     if (TableFindIndex(t,name,&i))
@@ -442,103 +521,159 @@ char *TableFind(TTable *t,char *name)
 *********************************************************************/
 
 static TPoolZone *
-PoolZoneAlloc(uint32_t zonesize) {
-    TPoolZone *pz;
+PoolZoneAlloc(uint32_t const zonesize) {
 
-    pz=(TPoolZone *)malloc(zonesize+sizeof(TPoolZone));
-    if (pz)
-    {
-        pz->pos=pz->data;
-        pz->maxpos=pz->pos+zonesize;
-        pz->next=pz->prev=NULL;
-    };
-
-    return pz;
-}
-
-abyss_bool PoolCreate(TPool *p,uint32_t zonesize)
-{
-    p->zonesize=zonesize;
-    if (MutexCreate(&p->mutex))
-        if (!(p->firstzone=p->currentzone=PoolZoneAlloc(zonesize)))
-        {
-            MutexFree(&p->mutex);
-            return FALSE;
-        };
+    TPoolZone * poolZoneP;
     
-    return TRUE;
-}
-
-void *PoolAlloc(TPool *p,uint32_t size)
-{
-    TPoolZone *pz,*npz;
-    void *x;
-    uint32_t zonesize;
-
-    if (size==0)
-        return NULL;
-
-    if (!MutexLock(&p->mutex))
-        return NULL;
-
-    pz=p->currentzone;
-
-    if (pz->pos+size<pz->maxpos)
-    {
-        x=pz->pos;
-        pz->pos+=size;
-        MutexUnlock(&p->mutex);
-        return x;
-    };
-
-    if (size>p->zonesize)
-        zonesize=size;
-    else
-        zonesize=p->zonesize;
-
-    npz=PoolZoneAlloc(zonesize);
-    if (npz)
-    {
-        npz->prev=pz;
-        npz->next=pz->next;
-        pz->next=npz;
-        p->currentzone=npz; 
-        x=npz->data;
-        npz->pos=npz->data+size;
+    MALLOCARRAY(poolZoneP, zonesize);
+    if (poolZoneP) {
+        poolZoneP->pos    = &poolZoneP->data[0];
+        poolZoneP->maxpos = poolZoneP->pos + zonesize;
+        poolZoneP->next   = NULL;
+        poolZoneP->prev   = NULL;
     }
-    else
-        x=NULL;
-
-    MutexUnlock(&p->mutex);
-    return x;
-}
-
-void PoolFree(TPool *p)
-{
-    TPoolZone *pz,*npz;
-
-    pz=p->firstzone;
-
-    while (pz)
-    {
-        npz=pz->next;
-        safe_free(pz);
-        pz=npz;
-    };
+    return poolZoneP;
 }
 
 
 
-char *PoolStrdup(TPool *p,char *s) {
+static void
+PoolZoneFree(TPoolZone * const poolZoneP) {
 
-    char *ns;
+    free(poolZoneP);
+}
 
-    if (s) {
-        ns = PoolAlloc(p, strlen(s) + 1);
-        if (ns)
-            strcpy(ns, s);
+
+
+bool
+PoolCreate(TPool *  const poolP,
+           uint32_t const zonesize) {
+
+    bool success;
+    bool mutexCreated;
+
+    poolP->zonesize = zonesize;
+
+    mutexCreated = MutexCreate(&poolP->mutexP);
+    if (mutexCreated) {
+        TPoolZone * const firstZoneP = PoolZoneAlloc(zonesize);
+
+        if (firstZoneP != NULL) {
+            poolP->firstzone   = firstZoneP;
+            poolP->currentzone = firstZoneP;
+            success = TRUE;
+        } else
+            success = FALSE;
+        if (!success)
+            MutexDestroy(poolP->mutexP);
     } else
-        ns = NULL;
+        success = FALSE;
 
-    return ns;
+    return success;
+}
+
+
+
+void *
+PoolAlloc(TPool *  const poolP,
+          uint32_t const size) {
+/*----------------------------------------------------------------------------
+   Allocate a block of size 'size' from pool 'poolP'.
+-----------------------------------------------------------------------------*/
+    void * retval;
+
+    if (size == 0)
+        retval = NULL;
+    else {
+        bool gotMutexLock;
+
+        gotMutexLock = MutexLock(poolP->mutexP);
+        if (!gotMutexLock)
+            retval = NULL;
+        else {
+            TPoolZone * const curPoolZoneP = poolP->currentzone;
+
+            if (curPoolZoneP->pos + size < curPoolZoneP->maxpos) {
+                retval = curPoolZoneP->pos;
+                curPoolZoneP->pos += size;
+            } else {
+                uint32_t const zonesize = MAX(size, poolP->zonesize);
+
+                TPoolZone * const newPoolZoneP = PoolZoneAlloc(zonesize);
+                if (newPoolZoneP) {
+                    newPoolZoneP->prev = curPoolZoneP;
+                    newPoolZoneP->next = curPoolZoneP->next;
+                    curPoolZoneP->next = newPoolZoneP;
+                    poolP->currentzone = newPoolZoneP;
+                    retval= newPoolZoneP->data;
+                    newPoolZoneP->pos = newPoolZoneP->data + size;
+                } else
+                    retval = NULL;
+            }
+            MutexUnlock(poolP->mutexP);
+        }
+    }
+    return retval;
+}
+
+
+
+void
+PoolReturn(TPool *  const poolP,
+           void *   const blockP) {
+/*----------------------------------------------------------------------------
+   Return the block at 'blockP' to the pool 'poolP'.  WE ASSUME THAT IS
+   THE MOST RECENTLY ALLOCATED AND NOT RETURNED BLOCK IN THE POOL.
+-----------------------------------------------------------------------------*/
+    TPoolZone * const curPoolZoneP = poolP->currentzone;
+
+    assert((char*)curPoolZoneP->data < (char*)blockP &&
+           (char*)blockP < (char*)curPoolZoneP->pos);
+
+    curPoolZoneP->pos = blockP;
+
+    if (curPoolZoneP->pos == curPoolZoneP->data) {
+        /* That emptied out the current zone.  Free it and make the previous
+           zone current.
+        */
+
+        assert(curPoolZoneP->prev);  /* entry condition */
+
+        curPoolZoneP->prev->next = NULL;
+
+        PoolZoneFree(curPoolZoneP);
+    }
+}
+
+
+
+void
+PoolFree(TPool * const poolP) {
+
+    TPoolZone * poolZoneP;
+    TPoolZone * nextPoolZoneP;
+    
+    for (poolZoneP = poolP->firstzone; poolZoneP; poolZoneP = nextPoolZoneP) {
+        nextPoolZoneP = poolZoneP->next;
+        free(poolZoneP);
+    }
+    MutexDestroy(poolP->mutexP);
+}
+
+
+
+const char *
+PoolStrdup(TPool *      const poolP,
+           const char * const origString) {
+
+    char * newString;
+
+    if (origString == NULL)
+        newString = NULL;
+    else {
+        newString = PoolAlloc(poolP, strlen(origString) + 1);
+        if (newString != NULL)
+            strcpy(newString, origString);
+    }
+    return newString;
 }

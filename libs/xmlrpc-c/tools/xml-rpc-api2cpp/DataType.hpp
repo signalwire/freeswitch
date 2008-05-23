@@ -23,7 +23,7 @@ public:
     // Given a parameter position, calculate a unique base name for all
     // parameter-related variables.
     virtual std::string
-    defaultParameterBaseName(int position) const;
+    defaultParameterBaseName(unsigned int const position) const;
 
     // Virtual functions for processing parameters.
     virtual std::string

@@ -1,3 +1,976 @@
+/* Copyright information is at end of file */
+
+#include "xmlrpc_config.h"
+
+#undef PACKAGE
+#undef VERSION
+
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <errno.h>
+
+#include "bool.h"
+#include "mallocvar.h"
+
+#include "xmlrpc-c/base.h"
+#include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/client.h"
+#include "xmlrpc-c/client_int.h"
+/* transport_config.h defines XMLRPC_DEFAULT_TRANSPORT,
+    MUST_BUILD_WININET_CLIENT, MUST_BUILD_CURL_CLIENT,
+    MUST_BUILD_LIBWWW_CLIENT 
+*/
+#include "transport_config.h"
+#include "version.h"
+
+struct xmlrpc_client {
+/*----------------------------------------------------------------------------
+   This represents a client object.
+-----------------------------------------------------------------------------*/
+    bool myTransport;
+        /* The transport described below was created by this object;
+           No one else knows it exists and this object is responsible
+           for destroying it.
+        */
+    struct xmlrpc_client_transport *   transportP;
+    struct xmlrpc_client_transport_ops transportOps;
+    xmlrpc_dialect                     dialect;
+};
+
+
+
+struct xmlrpc_call_info {
+    /* This is all the information needed to finish executing a started
+       RPC.
+
+       You don't need this for an RPC the user executes synchronously,
+       because then you can just use the storage in which the user passed
+       his arguments.  But for asynchronous, the user will take back his
+       storage, and we need to keep this info in our own.
+    */
+
+    struct {
+        /* This are arguments to pass to the completion function.  It
+           doesn't make sense to use them for anything else.  In fact, it
+           really doesn't make sense for them to be arguments to the
+           completion function, but they are historically.  */
+        const char *   serverUrl;
+        const char *   methodName;
+        xmlrpc_value * paramArrayP;
+        void *         userData;
+    } completionArgs;
+    xmlrpc_response_handler completionFn;
+
+    
+    /* The serialized XML data passed to this call. We keep this around
+    ** for use by our source_anchor field. */
+    xmlrpc_mem_block *serialized_xml;
+};
+
+
+
+/*=========================================================================
+   Global Constant Setup/Teardown
+=========================================================================*/
+
+static void
+callTransportSetup(xmlrpc_env *           const envP,
+                   xmlrpc_transport_setup       setupFn) {
+
+    if (setupFn)
+        setupFn(envP);
+}
+
+
+
+static void
+setupTransportGlobalConst(xmlrpc_env * const envP) {
+
+#if MUST_BUILD_WININET_CLIENT
+    if (!envP->fault_occurred)
+        callTransportSetup(envP,
+                           xmlrpc_wininet_transport_ops.setup_global_const);
+#endif
+#if MUST_BUILD_CURL_CLIENT
+    if (!envP->fault_occurred)
+        callTransportSetup(envP,
+                           xmlrpc_curl_transport_ops.setup_global_const);
+#endif
+#if MUST_BUILD_LIBWWW_CLIENT
+    if (!envP->fault_occurred)
+        callTransportSetup(envP,
+                           xmlrpc_libwww_transport_ops.setup_global_const);
+#endif
+}
+
+
+
+static void
+callTransportTeardown(xmlrpc_transport_teardown teardownFn) {
+
+    if (teardownFn)
+        teardownFn();
+}
+
+
+
+static void
+teardownTransportGlobalConst(void) {
+
+#if MUST_BUILD_WININET_CLIENT
+    callTransportTeardown(
+        xmlrpc_wininet_transport_ops.teardown_global_const);
+#endif
+#if MUST_BUILD_CURL_CLIENT
+    callTransportTeardown(
+        xmlrpc_curl_transport_ops.teardown_global_const);
+#endif
+#if MUST_BUILD_LIBWWW_CLIENT
+    callTransportTeardown(
+        xmlrpc_libwww_transport_ops.teardown_global_const);
+#endif
+}
+
+
+
+/*=========================================================================
+   Global stuff (except the global client)
+=========================================================================*/
+
+static unsigned int constSetupCount = 0;
+
+
+void
+xmlrpc_client_setup_global_const(xmlrpc_env * const envP) {
+/*----------------------------------------------------------------------------
+   Set up pseudo-constant global variables (they'd be constant, except that
+   the library loader doesn't set them.  An explicit call from the loaded
+   program does).
+
+   This function is not thread-safe.  The user is supposed to call it
+   (perhaps cascaded down from a multitude of higher level libraries)
+   as part of early program setup, when the program is only one thread.
+-----------------------------------------------------------------------------*/
+    if (constSetupCount == 0)
+        setupTransportGlobalConst(envP);
+
+    ++constSetupCount;
+}
+
+
+
+void
+xmlrpc_client_teardown_global_const(void) {
+/*----------------------------------------------------------------------------
+   Complement to xmlrpc_client_setup_global_const().
+
+   This function is not thread-safe.  The user is supposed to call it
+   (perhaps cascaded down from a multitude of higher level libraries)
+   as part of final program cleanup, when the program is only one thread.
+-----------------------------------------------------------------------------*/
+    assert(constSetupCount > 0);
+
+    --constSetupCount;
+
+    if (constSetupCount == 0)
+        teardownTransportGlobalConst();
+}
+
+
+
+unsigned int const xmlrpc_client_version_major = XMLRPC_VERSION_MAJOR;
+unsigned int const xmlrpc_client_version_minor = XMLRPC_VERSION_MINOR;
+unsigned int const xmlrpc_client_version_point = XMLRPC_VERSION_POINT;
+
+
+/*=========================================================================
+   Client Create/Destroy
+=========================================================================*/
+
+static void
+getTransportOps(
+    xmlrpc_env *                                const envP,
+    const char *                                const transportName,
+    const struct xmlrpc_client_transport_ops ** const opsPP) {
+
+    if (false) {
+    }
+#if MUST_BUILD_WININET_CLIENT
+    else if (strcmp(transportName, "wininet") == 0)
+        *opsPP = &xmlrpc_wininet_transport_ops;
+#endif
+#if MUST_BUILD_CURL_CLIENT
+    else if (strcmp(transportName, "curl") == 0)
+        *opsPP = &xmlrpc_curl_transport_ops;
+#endif
+#if MUST_BUILD_LIBWWW_CLIENT
+    else if (strcmp(transportName, "libwww") == 0)
+        *opsPP = &xmlrpc_libwww_transport_ops;
+#endif
+    else
+        xmlrpc_faultf(envP, "Unrecognized XML transport name '%s'",
+                      transportName);
+}
+
+
+
+struct xportParms {
+    const void * parmsP;
+    size_t size;
+};
+
+
+
+static void
+getTransportParmsFromClientParms(
+    xmlrpc_env *                      const envP,
+    const struct xmlrpc_clientparms * const clientparmsP,
+    unsigned int                      const parmSize,
+    struct xportParms *               const xportParmsP) {
+
+    if (parmSize < XMLRPC_CPSIZE(transportparmsP) ||
+        clientparmsP->transportparmsP == NULL) {
+
+        xportParmsP->parmsP = NULL;
+        xportParmsP->size   = 0;
+    } else {
+        xportParmsP->parmsP = clientparmsP->transportparmsP;
+        if (parmSize < XMLRPC_CPSIZE(transportparm_size))
+            xmlrpc_faultf(envP, "Your 'clientparms' argument contains the "
+                          "transportparmsP member, "
+                          "but no transportparms_size member");
+        else
+            xportParmsP->size = clientparmsP->transportparm_size;
+    }
+}
+
+
+
+static void
+getTransportInfo(
+    xmlrpc_env *                                const envP,
+    const struct xmlrpc_clientparms *           const clientparmsP,
+    unsigned int                                const parmSize,
+    const char **                               const transportNameP,
+    struct xportParms *                         const transportParmsP,
+    const struct xmlrpc_client_transport_ops ** const transportOpsPP,
+    xmlrpc_client_transport **                  const transportPP) {
+
+    const char * transportNameParm;
+    xmlrpc_client_transport * transportP;
+    const struct xmlrpc_client_transport_ops * transportOpsP;
+
+    if (parmSize < XMLRPC_CPSIZE(transport))
+        transportNameParm = NULL;
+    else
+        transportNameParm = clientparmsP->transport;
+    
+    if (parmSize < XMLRPC_CPSIZE(transportP))
+        transportP = NULL;
+    else
+        transportP = clientparmsP->transportP;
+
+    if (parmSize < XMLRPC_CPSIZE(transportOpsP))
+        transportOpsP = NULL;
+    else
+        transportOpsP = clientparmsP->transportOpsP;
+
+    if ((transportOpsP && !transportP) || (transportP && ! transportOpsP))
+        xmlrpc_faultf(envP, "'transportOpsP' and 'transportP' go together. "
+                      "You must specify both or neither");
+    else if (transportNameParm && transportP)
+        xmlrpc_faultf(envP, "You cannot specify both 'transport' and "
+                      "'transportP' transport parameters.");
+    else if (transportP)
+        *transportNameP = NULL;
+    else if (transportNameParm)
+        *transportNameP = transportNameParm;
+    else
+        *transportNameP = xmlrpc_client_get_default_transport(envP);
+
+    *transportOpsPP = transportOpsP;
+    *transportPP    = transportP;
+
+    if (!envP->fault_occurred) {
+        getTransportParmsFromClientParms(
+            envP, clientparmsP, parmSize, transportParmsP);
+        
+        if (!envP->fault_occurred) {
+            if (transportParmsP->parmsP && !transportNameParm)
+                xmlrpc_faultf(
+                    envP,
+                    "You specified transport parameters, but did not "
+                    "specify a transport type.  Parameters are specific "
+                    "to a particular type.");
+        }
+    }
+}
+
+
+
+static void
+getDialectFromClientParms(
+    const struct xmlrpc_clientparms * const clientparmsP,
+    unsigned int                      const parmSize,
+    xmlrpc_dialect *                  const dialectP) {
+    
+    if (parmSize < XMLRPC_CPSIZE(dialect))
+        *dialectP = xmlrpc_dialect_i8;
+    else
+        *dialectP = clientparmsP->dialect;
+}
+            
+
+
+static void 
+clientCreate(
+    xmlrpc_env *                               const envP,
+    bool                                       const myTransport,
+    const struct xmlrpc_client_transport_ops * const transportOpsP,
+    struct xmlrpc_client_transport *           const transportP,
+    xmlrpc_dialect                             const dialect,
+    xmlrpc_client **                           const clientPP) {
+
+    XMLRPC_ASSERT_PTR_OK(transportOpsP);
+    XMLRPC_ASSERT_PTR_OK(transportP);
+    XMLRPC_ASSERT_PTR_OK(clientPP);
+
+    if (constSetupCount == 0) {
+        xmlrpc_faultf(envP,
+                      "You have not called "
+                      "xmlrpc_client_setup_global_const().");
+        /* Impl note:  We can't just call it now because it isn't
+           thread-safe.
+        */
+    } else {
+        xmlrpc_client * clientP;
+
+        MALLOCVAR(clientP);
+
+        if (clientP == NULL)
+            xmlrpc_faultf(envP, "Unable to allocate memory for "
+                          "client descriptor.");
+        else {
+            clientP->myTransport  = myTransport;
+            clientP->transportOps = *transportOpsP;
+            clientP->transportP   = transportP;
+            clientP->dialect      = dialect;
+            
+            *clientPP = clientP;
+        }
+    }
+}
+
+
+
+static void
+createTransportAndClient(
+    xmlrpc_env *     const envP,
+    const char *     const transportName,
+    const void *     const transportparmsP,
+    size_t           const transportparmSize,
+    int              const flags,
+    const char *     const appname,
+    const char *     const appversion,
+    xmlrpc_dialect   const dialect,
+    xmlrpc_client ** const clientPP) {
+
+    const struct xmlrpc_client_transport_ops * transportOpsP;
+
+    getTransportOps(envP, transportName, &transportOpsP);
+    if (!envP->fault_occurred) {
+        xmlrpc_client_transport * transportP;
+        
+        /* The following call is not thread-safe */
+        transportOpsP->create(
+            envP, flags, appname, appversion,
+            transportparmsP, transportparmSize,
+            &transportP);
+        if (!envP->fault_occurred) {
+            bool const myTransportTrue = true;
+
+            clientCreate(envP, myTransportTrue, transportOpsP, transportP,
+                         dialect, clientPP);
+            
+            if (envP->fault_occurred)
+                transportOpsP->destroy(transportP);
+        }
+    }
+}
+
+
+
+void 
+xmlrpc_client_create(xmlrpc_env *                      const envP,
+                     int                               const flags,
+                     const char *                      const appname,
+                     const char *                      const appversion,
+                     const struct xmlrpc_clientparms * const clientparmsP,
+                     unsigned int                      const parmSize,
+                     xmlrpc_client **                  const clientPP) {
+    
+    XMLRPC_ASSERT_PTR_OK(clientPP);
+
+    if (constSetupCount == 0) {
+        xmlrpc_faultf(envP,
+                      "You have not called "
+                      "xmlrpc_client_setup_global_const().");
+        /* Impl note:  We can't just call it now because it isn't
+           thread-safe.
+        */
+    } else {
+        const char * transportName;
+        struct xportParms transportparms;
+        const struct xmlrpc_client_transport_ops * transportOpsP;
+        xmlrpc_client_transport * transportP;
+        xmlrpc_dialect dialect;
+        
+        getTransportInfo(envP, clientparmsP, parmSize, &transportName, 
+                         &transportparms, &transportOpsP, &transportP);
+        
+        getDialectFromClientParms(clientparmsP, parmSize, &dialect);
+            
+        if (!envP->fault_occurred) {
+            if (transportName)
+                createTransportAndClient(envP, transportName,
+                                         transportparms.parmsP,
+                                         transportparms.size,
+                                         flags, appname, appversion, dialect,
+                                         clientPP);
+            else {
+                bool myTransportFalse = false;
+                clientCreate(envP, myTransportFalse,
+                             transportOpsP, transportP, dialect, clientPP);
+            }
+        }
+    }
+}
+
+
+
+void 
+xmlrpc_client_destroy(xmlrpc_client * const clientP) {
+
+    XMLRPC_ASSERT_PTR_OK(clientP);
+
+    if (clientP->myTransport)
+        clientP->transportOps.destroy(clientP->transportP);
+
+    free(clientP);
+}
+
+
+
+/*=========================================================================
+   Call/Response Utilities
+=========================================================================*/
+
+static void
+makeCallXml(xmlrpc_env *               const envP,
+            const char *               const methodName,
+            xmlrpc_value *             const paramArrayP,
+            xmlrpc_dialect             const dialect,
+            xmlrpc_mem_block **        const callXmlPP) {
+
+    XMLRPC_ASSERT_VALUE_OK(paramArrayP);
+    XMLRPC_ASSERT_PTR_OK(callXmlPP);
+
+    if (methodName == NULL)
+        xmlrpc_faultf(envP, "method name argument is NULL pointer");
+    else {
+        xmlrpc_mem_block * callXmlP;
+
+        callXmlP = XMLRPC_MEMBLOCK_NEW(char, envP, 0);
+        if (!envP->fault_occurred) {
+            xmlrpc_serialize_call2(envP, callXmlP, methodName, paramArrayP,
+                                   dialect);
+
+            *callXmlPP = callXmlP;
+
+            if (envP->fault_occurred)
+                XMLRPC_MEMBLOCK_FREE(char, callXmlP);
+        }
+    }    
+}
+
+
+
+/*=========================================================================
+   Synchronous Call
+=========================================================================*/
+
+void
+xmlrpc_client_transport_call2(
+    xmlrpc_env *               const envP,
+    xmlrpc_client *            const clientP,
+    const xmlrpc_server_info * const serverP,
+    xmlrpc_mem_block *         const callXmlP,
+    xmlrpc_mem_block **        const respXmlPP) {
+
+    XMLRPC_ASSERT_PTR_OK(clientP);
+    XMLRPC_ASSERT_PTR_OK(serverP);
+    XMLRPC_ASSERT_PTR_OK(callXmlP);
+    XMLRPC_ASSERT_PTR_OK(respXmlPP);
+
+    clientP->transportOps.call(
+        envP, clientP->transportP, serverP, callXmlP,
+        respXmlPP);
+}
+
+
+
+static void
+parseResponse(xmlrpc_env *       const envP,
+              xmlrpc_mem_block * const respXmlP,
+              xmlrpc_value **    const resultPP,
+              int *              const faultCodeP,
+              const char **      const faultStringP) {
+
+    xmlrpc_env respEnv;
+
+    xmlrpc_env_init(&respEnv);
+
+    xmlrpc_parse_response2(
+        &respEnv,
+        XMLRPC_MEMBLOCK_CONTENTS(char, respXmlP),
+        XMLRPC_MEMBLOCK_SIZE(char, respXmlP),
+        resultPP, faultCodeP, faultStringP);
+
+    if (respEnv.fault_occurred)
+        xmlrpc_env_set_fault_formatted(
+            envP, respEnv.fault_code,
+            "Unable to make sense of XML-RPC response from server.  "
+            "%s.  Use XMLRPC_TRACE_XML to see for yourself",
+            respEnv.fault_string);
+
+    xmlrpc_env_clean(&respEnv);
+}
+
+
+
+void
+xmlrpc_client_call2(xmlrpc_env *               const envP,
+                    struct xmlrpc_client *     const clientP,
+                    const xmlrpc_server_info * const serverInfoP,
+                    const char *               const methodName,
+                    xmlrpc_value *             const paramArrayP,
+                    xmlrpc_value **            const resultPP) {
+
+    xmlrpc_mem_block * callXmlP;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_PTR_OK(clientP);
+    XMLRPC_ASSERT_PTR_OK(serverInfoP);
+    XMLRPC_ASSERT_PTR_OK(paramArrayP);
+
+    makeCallXml(envP, methodName, paramArrayP, clientP->dialect, &callXmlP);
+    
+    if (!envP->fault_occurred) {
+        xmlrpc_mem_block * respXmlP;
+        
+        xmlrpc_traceXml("XML-RPC CALL", 
+                        XMLRPC_MEMBLOCK_CONTENTS(char, callXmlP),
+                        XMLRPC_MEMBLOCK_SIZE(char, callXmlP));
+        
+        clientP->transportOps.call(
+            envP, clientP->transportP, serverInfoP, callXmlP, &respXmlP);
+        if (!envP->fault_occurred) {
+            int faultCode;
+            const char * faultString;
+
+            xmlrpc_traceXml("XML-RPC RESPONSE", 
+                            XMLRPC_MEMBLOCK_CONTENTS(char, respXmlP),
+                            XMLRPC_MEMBLOCK_SIZE(char, respXmlP));
+            
+            parseResponse(envP, respXmlP, resultPP, &faultCode, &faultString);
+            
+            if (!envP->fault_occurred) {
+                if (faultString) {
+                    xmlrpc_env_set_fault_formatted(
+                        envP, faultCode,
+                        "RPC failed at server.  %s", faultString);
+                    xmlrpc_strfree(faultString);
+                } else
+                    XMLRPC_ASSERT_VALUE_OK(*resultPP);
+            }
+            XMLRPC_MEMBLOCK_FREE(char, respXmlP);
+        }
+        XMLRPC_MEMBLOCK_FREE(char, callXmlP);
+    }
+}
+
+
+
+static void
+clientCall2f_va(xmlrpc_env *               const envP,
+                xmlrpc_client *            const clientP,
+                const char *               const serverUrl,
+                const char *               const methodName,
+                const char *               const format,
+                xmlrpc_value **            const resultPP,
+                va_list                          args) {
+
+    xmlrpc_value * argP;
+    xmlrpc_env argenv;
+    const char * suffix;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_PTR_OK(serverUrl);
+    XMLRPC_ASSERT_PTR_OK(methodName);
+    XMLRPC_ASSERT_PTR_OK(format);
+    XMLRPC_ASSERT_PTR_OK(resultPP);
+
+    /* Build our argument value. */
+    xmlrpc_env_init(&argenv);
+    xmlrpc_build_value_va(&argenv, format, args, &argP, &suffix);
+    if (argenv.fault_occurred)
+        xmlrpc_env_set_fault_formatted(
+            envP, argenv.fault_code, "Invalid RPC arguments.  "
+            "The format argument must indicate a single array, and the "
+            "following arguments must correspond to that format argument.  "
+            "The failure is: %s",
+            argenv.fault_string);
+    else {
+        XMLRPC_ASSERT_VALUE_OK(argP);
+        
+        if (*suffix != '\0')
+            xmlrpc_faultf(envP, "Junk after the argument specifier: '%s'.  "
+                          "There must be exactly one argument.",
+                          suffix);
+        else {
+            xmlrpc_server_info * serverInfoP;
+
+            serverInfoP = xmlrpc_server_info_new(envP, serverUrl);
+            
+            if (!envP->fault_occurred) {
+                /* Perform the actual XML-RPC call. */
+                xmlrpc_client_call2(envP, clientP,
+                                    serverInfoP, methodName, argP, resultPP);
+                if (!envP->fault_occurred)
+                    XMLRPC_ASSERT_VALUE_OK(*resultPP);
+                xmlrpc_server_info_free(serverInfoP);
+            }
+        }
+        xmlrpc_DECREF(argP);
+    }
+    xmlrpc_env_clean(&argenv);
+}
+
+
+
+void
+xmlrpc_client_call2f(xmlrpc_env *    const envP,
+                     xmlrpc_client * const clientP,
+                     const char *    const serverUrl,
+                     const char *    const methodName,
+                     xmlrpc_value ** const resultPP,
+                     const char *    const format,
+                     ...) {
+
+    va_list args;
+
+    va_start(args, format);
+    clientCall2f_va(envP, clientP, serverUrl,
+                    methodName, format, resultPP, args);
+    va_end(args);
+}
+
+
+
+/*=========================================================================
+   Asynchronous Call
+=========================================================================*/
+
+static void 
+callInfoSetCompletion(xmlrpc_env *              const envP,
+                      struct xmlrpc_call_info * const callInfoP,
+                      const char *              const serverUrl,
+                      const char *              const methodName,
+                      xmlrpc_value *            const paramArrayP,
+                      xmlrpc_response_handler         completionFn,
+                      void *                    const userData) {
+
+    callInfoP->completionFn = completionFn;
+    callInfoP->completionArgs.userData = userData;
+    callInfoP->completionArgs.serverUrl = strdup(serverUrl);
+    if (callInfoP->completionArgs.serverUrl == NULL)
+        xmlrpc_faultf(envP, "Couldn't get memory to store server URL");
+    else {
+        callInfoP->completionArgs.methodName = strdup(methodName);
+        if (callInfoP->completionArgs.methodName == NULL)
+            xmlrpc_faultf(envP, "Couldn't get memory to store method name");
+        else {
+            callInfoP->completionArgs.paramArrayP = paramArrayP;
+            xmlrpc_INCREF(paramArrayP);
+        }
+        if (envP->fault_occurred)
+            xmlrpc_strfree(callInfoP->completionArgs.serverUrl);
+    }
+}
+
+
+
+static void
+callInfoCreate(xmlrpc_env *               const envP,
+               const char *               const methodName,
+               xmlrpc_value *             const paramArrayP,
+               xmlrpc_dialect             const dialect,
+               const char *               const serverUrl,
+               xmlrpc_response_handler          completionFn,
+               void *                     const userData,
+               struct xmlrpc_call_info ** const callInfoPP) {
+/*----------------------------------------------------------------------------
+   Create a call_info object.  A call_info object represents an XML-RPC
+   call.
+-----------------------------------------------------------------------------*/
+    struct xmlrpc_call_info * callInfoP;
+
+    XMLRPC_ASSERT_PTR_OK(serverUrl);
+    XMLRPC_ASSERT_PTR_OK(methodName);
+    XMLRPC_ASSERT_VALUE_OK(paramArrayP);
+    XMLRPC_ASSERT_PTR_OK(callInfoPP);
+
+    MALLOCVAR(callInfoP);
+    if (callInfoP == NULL)
+        xmlrpc_faultf(envP, "Couldn't allocate memory for xmlrpc_call_info");
+    else {
+        xmlrpc_mem_block * callXmlP;
+
+        makeCallXml(envP, methodName, paramArrayP, dialect, &callXmlP);
+
+        if (!envP->fault_occurred) {
+            xmlrpc_traceXml("XML-RPC CALL", 
+                            XMLRPC_MEMBLOCK_CONTENTS(char, callXmlP),
+                            XMLRPC_MEMBLOCK_SIZE(char, callXmlP));
+            
+            callInfoP->serialized_xml = callXmlP;
+            
+            *callInfoPP = callInfoP;
+
+            callInfoSetCompletion(envP, callInfoP, serverUrl, methodName,
+                                  paramArrayP, completionFn, userData);
+
+            if (envP->fault_occurred)
+                free(callInfoP);
+        }
+    }
+}
+
+
+
+static void 
+callInfoDestroy(struct xmlrpc_call_info * const callInfoP) {
+
+    XMLRPC_ASSERT_PTR_OK(callInfoP);
+
+    if (callInfoP->completionFn) {
+        xmlrpc_DECREF(callInfoP->completionArgs.paramArrayP);
+        xmlrpc_strfree(callInfoP->completionArgs.methodName);
+        xmlrpc_strfree(callInfoP->completionArgs.serverUrl);
+    }
+    if (callInfoP->serialized_xml)
+         xmlrpc_mem_block_free(callInfoP->serialized_xml);
+
+    free(callInfoP);
+}
+
+
+
+void 
+xmlrpc_client_event_loop_finish(xmlrpc_client * const clientP) {
+
+    XMLRPC_ASSERT_PTR_OK(clientP);
+
+    clientP->transportOps.finish_asynch(
+        clientP->transportP, timeout_no, 0);
+}
+
+
+
+void 
+xmlrpc_client_event_loop_finish_timeout(xmlrpc_client * const clientP,
+                                        xmlrpc_timeout  const timeout) {
+
+    XMLRPC_ASSERT_PTR_OK(clientP);
+
+    clientP->transportOps.finish_asynch(
+        clientP->transportP, timeout_yes, timeout);
+}
+
+
+
+static void
+asynchComplete(struct xmlrpc_call_info * const callInfoP,
+               xmlrpc_mem_block *        const responseXmlP,
+               xmlrpc_env                const transportEnv) {
+/*----------------------------------------------------------------------------
+   Complete an asynchronous XML-RPC call request.
+
+   This includes calling the user's RPC completion routine.
+
+   'transportEnv' describes an error that the transport
+   encountered in processing the call.  If the transport successfully
+   sent the call to the server and processed the response but the
+   server failed the call, 'transportEnv' indicates no error, and the
+   response in *responseXmlP might very well indicate that the server
+   failed the request.
+-----------------------------------------------------------------------------*/
+    xmlrpc_env env;
+    xmlrpc_value * resultP;
+
+    xmlrpc_env_init(&env);
+
+    resultP = NULL;  /* Just to quiet compiler warning */
+
+    if (transportEnv.fault_occurred)
+        xmlrpc_env_set_fault_formatted(
+            &env, transportEnv.fault_code,
+            "Client transport failed to execute the RPC.  %s",
+            transportEnv.fault_string);
+
+    if (!env.fault_occurred) {
+        int faultCode;
+        const char * faultString;
+
+        xmlrpc_parse_response2(&env,
+                               XMLRPC_MEMBLOCK_CONTENTS(char, responseXmlP),
+                               XMLRPC_MEMBLOCK_SIZE(char, responseXmlP),
+                               &resultP, &faultCode, &faultString);
+
+        if (!env.fault_occurred) {
+            if (faultString) {
+                xmlrpc_env_set_fault_formatted(
+                    &env, faultCode,
+                    "RPC failed at server.  %s", faultString);
+                xmlrpc_strfree(faultString);
+            }
+        }
+    }
+    /* Call the user's completion function with the RPC result */
+    (*callInfoP->completionFn)(callInfoP->completionArgs.serverUrl, 
+                               callInfoP->completionArgs.methodName, 
+                               callInfoP->completionArgs.paramArrayP,
+                               callInfoP->completionArgs.userData,
+                               &env, resultP);
+
+    if (!env.fault_occurred)
+        xmlrpc_DECREF(resultP);
+
+    callInfoDestroy(callInfoP);
+
+    xmlrpc_env_clean(&env);
+}
+
+
+
+void
+xmlrpc_client_start_rpc(xmlrpc_env *             const envP,
+                        struct xmlrpc_client *   const clientP,
+                        xmlrpc_server_info *     const serverInfoP,
+                        const char *             const methodName,
+                        xmlrpc_value *           const argP,
+                        xmlrpc_response_handler        completionFn,
+                        void *                   const userData) {
+    
+    struct xmlrpc_call_info * callInfoP;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_PTR_OK(clientP);
+    XMLRPC_ASSERT_PTR_OK(serverInfoP);
+    XMLRPC_ASSERT_PTR_OK(methodName);
+    XMLRPC_ASSERT_VALUE_OK(argP);
+
+    callInfoCreate(envP, methodName, argP, clientP->dialect,
+                   serverInfoP->serverUrl, completionFn, userData,
+                   &callInfoP);
+
+    if (!envP->fault_occurred)
+        clientP->transportOps.send_request(
+            envP, clientP->transportP, serverInfoP,
+            callInfoP->serialized_xml,
+            &asynchComplete, callInfoP);
+    
+    if (envP->fault_occurred)
+        callInfoDestroy(callInfoP);
+    else {
+        /* asynchComplete() will destroy *callInfoP */
+    }
+}
+
+
+
+void 
+xmlrpc_client_start_rpcf(xmlrpc_env *    const envP,
+                         xmlrpc_client * const clientP,
+                         const char *    const serverUrl,
+                         const char *    const methodName,
+                         xmlrpc_response_handler responseHandler,
+                         void *          const userData,
+                         const char *    const format,
+                         ...) {
+
+    va_list args;
+    xmlrpc_value * paramArrayP;
+    const char * suffix;
+
+    XMLRPC_ASSERT_PTR_OK(serverUrl);
+    XMLRPC_ASSERT_PTR_OK(format);
+
+    /* Build our argument array. */
+    va_start(args, format);
+    xmlrpc_build_value_va(envP, format, args, &paramArrayP, &suffix);
+    va_end(args);
+    if (!envP->fault_occurred) {
+        if (*suffix != '\0')
+            xmlrpc_faultf(envP, "Junk after the argument "
+                          "specifier: '%s'.  "
+                          "There must be exactly one arument.",
+                          suffix);
+        else {
+            xmlrpc_server_info * serverInfoP;
+
+            serverInfoP = xmlrpc_server_info_new(envP, serverUrl);
+            if (!envP->fault_occurred) {
+                xmlrpc_client_start_rpc(
+                    envP, clientP,
+                    serverInfoP, methodName, paramArrayP,
+                    responseHandler, userData);
+            }
+            xmlrpc_server_info_free(serverInfoP);
+        }
+        xmlrpc_DECREF(paramArrayP);
+    }
+}
+
+
+
+/*=========================================================================
+   Miscellaneous
+=========================================================================*/
+
+const char * 
+xmlrpc_client_get_default_transport(xmlrpc_env * const envP ATTR_UNUSED) {
+
+    return XMLRPC_DEFAULT_TRANSPORT;
+}
+
+
+
+void
+xmlrpc_client_set_interrupt(xmlrpc_client * const clientP,
+                            int *           const interruptP) {
+
+    if (clientP->transportOps.set_interrupt)
+        clientP->transportOps.set_interrupt(clientP->transportP, interruptP);
+}
+
+
+
 /* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
 **
 ** Redistribution and use in source and binary forms, with or without
@@ -21,1128 +994,5 @@
 ** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 ** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 ** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-** SUCH DAMAGE. */
-
-#include "xmlrpc_config.h"
-
-#undef PACKAGE
-#undef VERSION
-
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <errno.h>
-
-#include "bool.h"
-#include "mallocvar.h"
-#include "xmlrpc-c/base.h"
-#include "xmlrpc-c/base_int.h"
-#include "xmlrpc-c/client.h"
-#include "xmlrpc-c/client_int.h"
-/* transport_config.h defines XMLRPC_DEFAULT_TRANSPORT,
-    MUST_BUILD_WININET_CLIENT, MUST_BUILD_CURL_CLIENT,
-    MUST_BUILD_LIBWWW_CLIENT 
+** SUCH DAMAGE.
 */
-#include "transport_config.h"
-
-#if MUST_BUILD_WININET_CLIENT
-#include "xmlrpc_wininet_transport.h"
-#endif
-#if MUST_BUILD_CURL_CLIENT
-#include "xmlrpc_curl_transport.h"
-#endif
-#if MUST_BUILD_LIBWWW_CLIENT
-#include "xmlrpc_libwww_transport.h"
-#endif
-
-struct xmlrpc_client {
-/*----------------------------------------------------------------------------
-   This represents a client object.
------------------------------------------------------------------------------*/
-    struct xmlrpc_client_transport *   transportP;
-    struct xmlrpc_client_transport_ops clientTransportOps;
-};
-
-
-
-typedef struct xmlrpc_call_info
-{
-    /* These fields are used when performing asynchronous calls.
-    ** The _asynch_data_holder contains server_url, method_name and
-    ** param_array, so it's the only thing we need to free. */
-    xmlrpc_value *_asynch_data_holder;
-    char *server_url;
-    char *method_name;
-    xmlrpc_value *param_array;
-    xmlrpc_response_handler callback;
-    void *user_data;
-
-    /* The serialized XML data passed to this call. We keep this around
-    ** for use by our source_anchor field. */
-    xmlrpc_mem_block *serialized_xml;
-} xmlrpc_call_info;
-
-static bool clientInitialized = FALSE;
-
-/*=========================================================================
-**  Initialization and Shutdown
-**=========================================================================
-*/
-
-static struct xmlrpc_client client;
-    /* Some day, we need to make this dynamically allocated, so there can
-       be more than one client per program and just generally to provide
-       a cleaner interface.
-    */
-
-extern void
-xmlrpc_client_init(int          const flags,
-                   const char * const appname,
-                   const char * const appversion) {
-
-    struct xmlrpc_clientparms clientparms;
-
-    /* As our interface does not allow for failure, we just fail silently ! */
-    
-    xmlrpc_env env;
-    xmlrpc_env_init(&env);
-
-    clientparms.transport = XMLRPC_DEFAULT_TRANSPORT;
-
-    xmlrpc_client_init2(&env, flags,
-                        appname, appversion,
-                        &clientparms, XMLRPC_CPSIZE(transport));
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-const char * 
-xmlrpc_client_get_default_transport(xmlrpc_env * const env ATTR_UNUSED) {
-
-    return XMLRPC_DEFAULT_TRANSPORT;
-}
-
-
-
-static void
-setupTransport(xmlrpc_env * const envP,
-               const char * const transportName) {
-
-    if (FALSE) {
-    }
-#if MUST_BUILD_WININET_CLIENT
-    else if (strcmp(transportName, "wininet") == 0)
-        client.clientTransportOps = xmlrpc_wininet_transport_ops;
-#endif
-#if MUST_BUILD_CURL_CLIENT
-    else if (strcmp(transportName, "curl") == 0)
-        client.clientTransportOps = xmlrpc_curl_transport_ops;
-#endif
-#if MUST_BUILD_LIBWWW_CLIENT
-    else if (strcmp(transportName, "libwww") == 0)
-        client.clientTransportOps = xmlrpc_libwww_transport_ops;
-#endif
-    else
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR, 
-            "Unrecognized XML transport name '%s'", transportName);
-}
-
-
-
-static void
-getTransportParmsFromClientParms(
-    xmlrpc_env *                      const envP,
-    const struct xmlrpc_clientparms * const clientparmsP,
-    unsigned int                      const parm_size,
-    const struct xmlrpc_xportparms ** const transportparmsPP,
-    size_t *                          const transportparm_sizeP) {
-
-    if (parm_size < XMLRPC_CPSIZE(transportparmsP) ||
-        clientparmsP->transportparmsP == NULL) {
-
-        *transportparmsPP = NULL;
-        *transportparm_sizeP = 0;
-    } else {
-        *transportparmsPP = clientparmsP->transportparmsP;
-        if (parm_size < XMLRPC_CPSIZE(transportparm_size))
-            xmlrpc_faultf(envP, "Your 'clientparms' argument contains the "
-                          "transportparmsP member, "
-                          "but no transportparms_size member");
-        else
-            *transportparm_sizeP = clientparmsP->transportparm_size;
-    }
-}
-
-
-
-static void
-getTransportInfo(xmlrpc_env *                      const envP,
-                 const struct xmlrpc_clientparms * const clientparmsP,
-                 unsigned int                      const parm_size,
-                 const char **                     const transportNameP,
-                 const struct xmlrpc_xportparms ** const transportparmsPP,
-                 size_t *                          const transportparm_sizeP) {
-
-    getTransportParmsFromClientParms(
-        envP, clientparmsP, parm_size, 
-        transportparmsPP, transportparm_sizeP);
-    
-    if (!envP->fault_occurred) {
-        if (parm_size < XMLRPC_CPSIZE(transport) ||
-            clientparmsP->transport == NULL) {
-
-            /* He didn't specify a transport.  Use the default */
-
-            *transportNameP = xmlrpc_client_get_default_transport(envP);
-            if (*transportparmsPP)
-                xmlrpc_env_set_fault_formatted(
-                    envP, XMLRPC_INTERNAL_ERROR,
-                    "You specified transport parameters, but did not "
-                    "specify a transport type.  Parameters are specific to "
-                    "a particular type.");
-        } else
-            *transportNameP = clientparmsP->transport;
-    }
-}
-
-
-
-void 
-xmlrpc_client_init2(xmlrpc_env *                      const envP,
-                    int                               const flags,
-                    const char *                      const appname,
-                    const char *                      const appversion,
-                    const struct xmlrpc_clientparms * const clientparmsP,
-                    unsigned int                      const parm_size) {
-
-    if (clientInitialized)
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR, 
-            "Xmlrpc-c client instance has already been initialized "
-            "(need to call xmlrpc_client_cleanup() before you can "
-            "reinitialize).");
-    else {
-        const char * transportName;
-        const struct xmlrpc_xportparms * transportparmsP;
-        size_t transportparm_size;
-
-        getTransportInfo(envP, clientparmsP, parm_size, &transportName, 
-                         &transportparmsP, &transportparm_size);
-
-        if (!envP->fault_occurred) {
-            setupTransport(envP, transportName);
-            if (!envP->fault_occurred) {
-                client.clientTransportOps.create(
-                    envP, flags, appname, appversion,
-                    transportparmsP, transportparm_size,
-                    &client.transportP);
-                if (!envP->fault_occurred)
-                    clientInitialized = TRUE;
-            }
-        }
-    }
-}
-
-
-
-void 
-xmlrpc_client_cleanup() {
-
-    XMLRPC_ASSERT(clientInitialized);
-
-    client.clientTransportOps.destroy(client.transportP);
-    
-    clientInitialized = FALSE;
-}
-
-
-
-static void
-makeCallXml(xmlrpc_env *               const envP,
-            const char *               const methodName,
-            xmlrpc_value *             const paramArrayP,
-            xmlrpc_mem_block **        const callXmlPP) {
-
-    XMLRPC_ASSERT_VALUE_OK(paramArrayP);
-    XMLRPC_ASSERT_PTR_OK(callXmlPP);
-
-    if (methodName == NULL)
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR,
-            "method name argument is NULL pointer");
-    else {
-        xmlrpc_mem_block * callXmlP;
-
-        callXmlP = XMLRPC_MEMBLOCK_NEW(char, envP, 0);
-        if (!envP->fault_occurred) {
-            xmlrpc_serialize_call(envP, callXmlP, methodName, paramArrayP);
-
-            *callXmlPP = callXmlP;
-
-            if (envP->fault_occurred)
-                XMLRPC_MEMBLOCK_FREE(char, callXmlP);
-        }
-    }    
-}
-
-
-
-void
-xmlrpc_client_transport_call(
-    xmlrpc_env *               const envP,
-    void *                     const reserved ATTR_UNUSED, 
-        /* for client handle */
-    const xmlrpc_server_info * const serverP,
-    xmlrpc_mem_block *         const callXmlP,
-    xmlrpc_mem_block **        const respXmlPP) {
-
-    if (!clientInitialized)
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR, 
-            "Xmlrpc-c client instance has not been initialized "
-            "(need to call xmlrpc_client_init2()).");
-    else {
-        struct xmlrpc_client * const clientP = &client;
-            /* Some day, the library will be re-entrant and this will be
-               passed in.
-            */
-
-        XMLRPC_ASSERT_PTR_OK(serverP);
-        XMLRPC_ASSERT_PTR_OK(callXmlP);
-        XMLRPC_ASSERT_PTR_OK(respXmlPP);
-
-        clientP->clientTransportOps.call(
-            envP, clientP->transportP, serverP, callXmlP,
-            respXmlPP);
-    }    
-}
-                             
-
-
-static void
-clientCallServerParams(xmlrpc_env *               const envP,
-                       struct xmlrpc_client *     const clientP,
-                       const xmlrpc_server_info * const serverP,
-                       const char *               const methodName,
-                       xmlrpc_value *             const paramArrayP,
-                       xmlrpc_value **            const resultPP) {
-
-    xmlrpc_mem_block * callXmlP;
-
-    makeCallXml(envP, methodName, paramArrayP, &callXmlP);
-    
-    if (!envP->fault_occurred) {
-        xmlrpc_mem_block * respXmlP;
-        
-        xmlrpc_traceXml("XML-RPC CALL", 
-                        XMLRPC_MEMBLOCK_CONTENTS(char, callXmlP),
-                        XMLRPC_MEMBLOCK_SIZE(char, callXmlP));
-        
-        clientP->clientTransportOps.call(
-            envP, clientP->transportP, serverP, callXmlP, &respXmlP);
-        if (!envP->fault_occurred) {
-            xmlrpc_traceXml("XML-RPC RESPONSE", 
-                            XMLRPC_MEMBLOCK_CONTENTS(char, respXmlP),
-                            XMLRPC_MEMBLOCK_SIZE(char, respXmlP));
-            
-            *resultPP = xmlrpc_parse_response(
-                envP,
-                XMLRPC_MEMBLOCK_CONTENTS(char, respXmlP),
-                XMLRPC_MEMBLOCK_SIZE(char, respXmlP));
-            XMLRPC_MEMBLOCK_FREE(char, respXmlP);
-        }
-        XMLRPC_MEMBLOCK_FREE(char, callXmlP);
-    }
-}
-
-
-
-xmlrpc_value * 
-xmlrpc_client_call_params(xmlrpc_env *   const envP,
-                          const char *   const serverUrl,
-                          const char *   const methodName,
-                          xmlrpc_value * const paramArrayP) {
-
-    xmlrpc_value *retval;
-
-    XMLRPC_ASSERT_ENV_OK(envP);
-    XMLRPC_ASSERT_PTR_OK(serverUrl);
-
-    if (!clientInitialized)
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR, 
-            "Xmlrpc-c client instance has not been initialized "
-            "(need to call xmlrpc_client_init2()).");
-    else {
-        struct xmlrpc_client * const clientP = &client;
-            /* Some day, the library will be re-entrant and this will be
-               passed in.
-            */
-            
-        xmlrpc_server_info * serverP;
-        
-        /* Build a server info object and make our call. */
-        serverP = xmlrpc_server_info_new(envP, serverUrl);
-        if (!envP->fault_occurred) {
-            clientCallServerParams(envP, clientP, serverP, 
-                                   methodName, paramArrayP,
-                                   &retval);
-
-            xmlrpc_server_info_free(serverP);
-        }
-    }
-        
-    if (!envP->fault_occurred)
-        XMLRPC_ASSERT_VALUE_OK(retval);
-
-    return retval;
-}
-
-
-
-xmlrpc_value *
-xmlrpc_client_call_server_params(
-    xmlrpc_env *               const envP,
-    const xmlrpc_server_info * const serverP,
-    const char *               const methodName,
-    xmlrpc_value *             const paramArrayP) {
-
-    xmlrpc_value *retval;
-
-    XMLRPC_ASSERT_ENV_OK(envP);
-    XMLRPC_ASSERT_PTR_OK(serverP);
-
-    if (!clientInitialized)
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR, 
-            "Xmlrpc-c client instance has not been initialized "
-            "(need to call xmlrpc_client_init2()).");
-    else {
-        struct xmlrpc_client * const clientP = &client;
-            /* Some day, the library will be re-entrant and this will be
-               passed in.
-            */
-            
-        clientCallServerParams(envP, clientP, serverP, methodName, paramArrayP,
-                               &retval);
-    }
-    if (!envP->fault_occurred)
-        XMLRPC_ASSERT_VALUE_OK(retval);
-
-    return retval;
-}
-
-
-
-static xmlrpc_value * 
-xmlrpc_client_call_va(xmlrpc_env * const envP,
-                      const char * const server_url,
-                      const char * const methodName,
-                      const char * const format,
-                      va_list            args) {
-
-    xmlrpc_value * argP;
-    xmlrpc_value * retval;
-    xmlrpc_env argenv;
-    const char * suffix;
-
-    XMLRPC_ASSERT_ENV_OK(envP);
-    XMLRPC_ASSERT_PTR_OK(format);
-
-    /* Build our argument value. */
-    xmlrpc_env_init(&argenv);
-    xmlrpc_build_value_va(&argenv, format, args, &argP, &suffix);
-    if (argenv.fault_occurred) {
-        xmlrpc_env_set_fault_formatted(
-            envP, argenv.fault_code, "Invalid RPC arguments.  "
-            "The format argument must indicate a single array, and the "
-            "following arguments must correspond to that format argument.  "
-            "The failure is: %s",
-            argenv.fault_string);
-        retval = NULL;  /* just to quiet compiler warning */
-    } else {
-        XMLRPC_ASSERT_VALUE_OK(argP);
-        
-        if (*suffix != '\0') {
-            xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_INTERNAL_ERROR, "Junk after the argument "
-                "specifier: '%s'.  There must be exactly one arument.",
-                suffix);
-            retval = NULL;  /* just to quiet compiler warning */
-        } else {
-            /* Perform the actual XML-RPC call. */
-            retval = xmlrpc_client_call_params(
-                envP, server_url, methodName, argP);
-            if (!envP->fault_occurred)
-                XMLRPC_ASSERT_VALUE_OK(retval);
-        }
-        xmlrpc_DECREF(argP);
-    }
-    xmlrpc_env_clean(&argenv);
-    return retval;
-}
-
-
-
-xmlrpc_value * 
-xmlrpc_client_call(xmlrpc_env * const envP,
-                   const char * const serverUrl,
-                   const char * const methodName,
-                   const char * const format,
-                   ...) {
-
-    xmlrpc_value * result;
-    va_list args;
-
-    va_start(args, format);
-    result = xmlrpc_client_call_va(envP, serverUrl,
-                                   methodName, format, args);
-    va_end(args);
-
-    return result;
-}
-
-
-
-xmlrpc_value * 
-xmlrpc_client_call_server(xmlrpc_env *               const envP,
-                          const xmlrpc_server_info * const serverP,
-                          const char *               const methodName,
-                          const char *               const format, 
-                          ...) {
-
-    va_list args;
-    xmlrpc_value * paramArrayP;
-    xmlrpc_value * retval;
-    const char * suffix;
-
-    XMLRPC_ASSERT_ENV_OK(envP);
-    XMLRPC_ASSERT_PTR_OK(format);
-
-    if (!clientInitialized)
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR, 
-            "Xmlrpc-c client instance has not been initialized "
-            "(need to call xmlrpc_client_init2()).");
-    else {
-        struct xmlrpc_client * const clientP = &client;
-            /* Some day, the library will be re-entrant and this will be
-               passed in.
-            */
-            
-        /* Build our argument */
-        va_start(args, format);
-        xmlrpc_build_value_va(envP, format, args, &paramArrayP, &suffix);
-        va_end(args);
-        
-        if (!envP->fault_occurred) {
-            if (*suffix != '\0')
-                xmlrpc_env_set_fault_formatted(
-                    envP, XMLRPC_INTERNAL_ERROR, "Junk after the argument "
-                    "specifier: '%s'.  There must be exactly one arument.",
-                    suffix);
-            else
-                clientCallServerParams(envP, clientP, serverP, 
-                                       methodName, paramArrayP, 
-                                       &retval);
-            
-            xmlrpc_DECREF(paramArrayP);
-        }
-    }
-    return retval;
-}
-
-
-void 
-xmlrpc_client_event_loop_finish_asynch(void) {
-    XMLRPC_ASSERT(clientInitialized);
-    client.clientTransportOps.finish_asynch(
-        client.transportP, timeout_no, 0);
-}
-
-
-
-void 
-xmlrpc_client_event_loop_finish_asynch_timeout(xmlrpc_timeout const timeout) {
-    XMLRPC_ASSERT(clientInitialized);
-    client.clientTransportOps.finish_asynch(
-        client.transportP, timeout_yes, timeout);
-}
-
-
-
-static void 
-call_info_set_asynch_data(xmlrpc_env *       const env,
-                          xmlrpc_call_info * const info,
-                          const char *       const server_url,
-                          const char *       const method_name,
-                          xmlrpc_value *     const argP,
-                          xmlrpc_response_handler callback,
-                          void *             const user_data) {
-
-    xmlrpc_value *holder;
-
-    /* Error-handling preconditions. */
-    holder = NULL;
-
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_PTR_OK(info);
-    XMLRPC_ASSERT(info->_asynch_data_holder == NULL);
-    XMLRPC_ASSERT_PTR_OK(server_url);
-    XMLRPC_ASSERT_PTR_OK(method_name);
-    XMLRPC_ASSERT_VALUE_OK(argP);
-
-    /* Install our callback and user_data.
-    ** (We're not responsible for destroying the user_data.) */
-    info->callback  = callback;
-    info->user_data = user_data;
-
-    /* Build an XML-RPC data structure to hold our other data. This makes
-    ** copies of server_url and method_name, and increments the reference
-    ** to the argument *argP. */
-    holder = xmlrpc_build_value(env, "(ssV)",
-                                server_url, method_name, argP);
-    XMLRPC_FAIL_IF_FAULT(env);
-
-    /* Parse the newly-allocated structure into our public member variables.
-    ** This doesn't make any new references, so we can dispose of the whole
-    ** thing by DECREF'ing the one master reference. Nifty, huh? */
-    xmlrpc_parse_value(env, holder, "(ssV)",
-                       &info->server_url,
-                       &info->method_name,
-                       &info->param_array);
-    XMLRPC_FAIL_IF_FAULT(env);
-
-    /* Hand over ownership of the holder to the call_info struct. */
-    info->_asynch_data_holder = holder;
-    holder = NULL;
-
- cleanup:
-    if (env->fault_occurred) {
-        if (holder)
-            xmlrpc_DECREF(holder);
-    }
-}
-
-/*=========================================================================
-**  xmlrpc_server_info
-**=========================================================================
-*/
-
-xmlrpc_server_info *
-xmlrpc_server_info_new (xmlrpc_env * const env,
-                        const char * const server_url) {
-
-    xmlrpc_server_info *server;
-    char *url_copy;
-
-    /* Error-handling preconditions. */
-    server = NULL;
-    url_copy = NULL;
-
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_PTR_OK(server_url);
-
-    /* Allocate our memory blocks. */
-    server = (xmlrpc_server_info*) malloc(sizeof(xmlrpc_server_info));
-    XMLRPC_FAIL_IF_NULL(server, env, XMLRPC_INTERNAL_ERROR,
-                        "Couldn't allocate memory for xmlrpc_server_info");
-    memset(server, 0, sizeof(xmlrpc_server_info));
-    url_copy = (char*) malloc(strlen(server_url) + 1);
-    XMLRPC_FAIL_IF_NULL(url_copy, env, XMLRPC_INTERNAL_ERROR,
-                        "Couldn't allocate memory for server URL");
-
-    /* Build our object. */
-    strcpy(url_copy, server_url);
-    server->_server_url = url_copy;
-    server->_http_basic_auth = NULL;
-
- cleanup:
-    if (env->fault_occurred) {
-        if (url_copy)
-            free(url_copy);
-        if (server)
-            free(server);
-        return NULL;
-    }
-    return server;
-}
-
-xmlrpc_server_info * xmlrpc_server_info_copy(xmlrpc_env *env,
-                                             xmlrpc_server_info *aserver)
-{
-    xmlrpc_server_info *server;
-    char *url_copy, *auth_copy;
-
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_PTR_OK(aserver);
-
-    /* Error-handling preconditions. */
-    server = NULL;
-    url_copy = NULL;
-    auth_copy = NULL;
-
-    /* Allocate our memory blocks. */
-    server = (xmlrpc_server_info*) malloc(sizeof(xmlrpc_server_info));
-    XMLRPC_FAIL_IF_NULL(server, env, XMLRPC_INTERNAL_ERROR,
-                        "Couldn't allocate memory for xmlrpc_server_info");
-    url_copy = (char*) malloc(strlen(aserver->_server_url) + 1);
-    XMLRPC_FAIL_IF_NULL(url_copy, env, XMLRPC_INTERNAL_ERROR,
-                        "Couldn't allocate memory for server URL");
-    auth_copy = (char*) malloc(strlen(aserver->_http_basic_auth) + 1);
-    XMLRPC_FAIL_IF_NULL(auth_copy, env, XMLRPC_INTERNAL_ERROR,
-                        "Couldn't allocate memory for authentication info");
-
-    /* Build our object. */
-    strcpy(url_copy, aserver->_server_url);
-    server->_server_url = url_copy;
-    strcpy(auth_copy, aserver->_http_basic_auth);
-    server->_http_basic_auth = auth_copy;
-
-    cleanup:
-    if (env->fault_occurred) {
-        if (url_copy)
-            free(url_copy);
-        if (auth_copy)
-            free(auth_copy);
-        if (server)
-            free(server);
-        return NULL;
-    }
-    return server;
-
-}
-
-void xmlrpc_server_info_free (xmlrpc_server_info *server)
-{
-    XMLRPC_ASSERT_PTR_OK(server);
-    XMLRPC_ASSERT(server->_server_url != XMLRPC_BAD_POINTER);
-
-    if (server->_http_basic_auth)
-        free(server->_http_basic_auth);
-    free(server->_server_url);
-    server->_server_url = XMLRPC_BAD_POINTER;
-    free(server);
-}
-
-/*=========================================================================
-**  xmlrpc_client_call_asynch
-**=========================================================================
-*/
-
-static void 
-call_info_free(xmlrpc_call_info * const callInfoP) {
-
-    /* Assume the worst.. That only parts of the call_info are valid. */
-
-    XMLRPC_ASSERT_PTR_OK(callInfoP);
-
-    /* If this has been allocated, we're responsible for destroying it. */
-    if (callInfoP->_asynch_data_holder)
-        xmlrpc_DECREF(callInfoP->_asynch_data_holder);
-
-    /* Now we can blow away the XML data. */
-    if (callInfoP->serialized_xml)
-         xmlrpc_mem_block_free(callInfoP->serialized_xml);
-
-    free(callInfoP);
-}
-
-
-
-static void
-call_info_new(xmlrpc_env *               const envP,
-              const char *               const methodName,
-              xmlrpc_value *             const paramArrayP,
-              xmlrpc_call_info **        const callInfoPP) {
-/*----------------------------------------------------------------------------
-   Create a call_info object.  A call_info object represents an XML-RPC
-   call.
------------------------------------------------------------------------------*/
-    struct xmlrpc_call_info * callInfoP;
-
-    XMLRPC_ASSERT_PTR_OK(paramArrayP);
-    XMLRPC_ASSERT_PTR_OK(callInfoPP);
-
-    MALLOCVAR(callInfoP);
-    if (callInfoP == NULL)
-        xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INTERNAL_ERROR,
-            "Couldn't allocate memory for xmlrpc_call_info");
-    else {
-        xmlrpc_mem_block * callXmlP;
-
-        /* Clear contents. */
-        memset(callInfoP, 0, sizeof(*callInfoP));
-        
-        makeCallXml(envP, methodName, paramArrayP, &callXmlP);
-
-        if (!envP->fault_occurred) {
-            xmlrpc_traceXml("XML-RPC CALL", 
-                            XMLRPC_MEMBLOCK_CONTENTS(char, callXmlP),
-                            XMLRPC_MEMBLOCK_SIZE(char, callXmlP));
-            
-            callInfoP->serialized_xml = callXmlP;
-            
-            *callInfoPP = callInfoP;
-
-            if (envP->fault_occurred)
-                free(callInfoP);
-        }
-    }
-}
-
-
-
-void 
-xmlrpc_client_call_asynch(const char * const serverUrl,
-                          const char * const methodName,
-                          xmlrpc_response_handler callback,
-                          void *       const userData,
-                          const char * const format,
-                          ...) {
-
-    xmlrpc_env env;
-    va_list args;
-    xmlrpc_value * paramArrayP;
-    const char * suffix;
-
-    xmlrpc_env_init(&env);
-
-    XMLRPC_ASSERT_PTR_OK(serverUrl);
-    XMLRPC_ASSERT_PTR_OK(format);
-
-    /* Build our argument array. */
-    va_start(args, format);
-    xmlrpc_build_value_va(&env, format, args, &paramArrayP, &suffix);
-    va_end(args);
-    if (env.fault_occurred) {
-        /* Unfortunately, we have no way to return an error and the
-           regular callback for a failed RPC is designed to have the
-           parameter array passed to it.  This was probably an oversight
-           of the original asynch design, but now we have to be as
-           backward compatible as possible, so we do this:
-        */
-        (*callback)(serverUrl, methodName, NULL, userData, &env, NULL);
-    } else {
-        if (*suffix != '\0')
-            xmlrpc_env_set_fault_formatted(
-                &env, XMLRPC_INTERNAL_ERROR, "Junk after the argument "
-                "specifier: '%s'.  There must be exactly one arument.",
-                suffix);
-        else {
-            xmlrpc_server_info * serverP;
-            serverP = xmlrpc_server_info_new(&env, serverUrl);
-            if (!env.fault_occurred) {
-                xmlrpc_client_call_server_asynch_params(
-                    serverP, methodName, callback, userData, 
-                    paramArrayP);
-            }
-            xmlrpc_server_info_free(serverP);
-        }
-        if (env.fault_occurred)
-            (*callback)(serverUrl, methodName, paramArrayP, userData,
-                        &env, NULL);
-        xmlrpc_DECREF(paramArrayP);
-    }
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-void
-xmlrpc_client_call_asynch_params(const char *   const serverUrl,
-                                 const char *   const methodName,
-                                 xmlrpc_response_handler callback,
-                                 void *         const userData,
-                                 xmlrpc_value * const paramArrayP) {
-
-    xmlrpc_env env;
-    xmlrpc_server_info *serverP;
-
-    xmlrpc_env_init(&env);
-
-    XMLRPC_ASSERT_PTR_OK(serverUrl);
-
-    serverP = xmlrpc_server_info_new(&env, serverUrl);
-    if (!env.fault_occurred) {
-        xmlrpc_client_call_server_asynch_params(
-            serverP, methodName, callback, userData, paramArrayP);
-
-        xmlrpc_server_info_free(serverP);
-    }
-
-    if (env.fault_occurred)
-        /* We have no way to return failure; we report the failure
-           as it happened after we successfully started the RPC.
-        */
-        (*callback)(serverUrl, methodName, paramArrayP, userData,
-                    &env, NULL);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-void 
-xmlrpc_client_call_server_asynch(xmlrpc_server_info * const serverP,
-                                 const char *         const methodName,
-                                 xmlrpc_response_handler callback,
-                                 void *               const userData,
-                                 const char *         const format,
-                                 ...) {
-
-    xmlrpc_env env;
-    va_list args;
-    xmlrpc_value * paramArrayP;
-    const char * suffix;
-
-    xmlrpc_env_init(&env);
-
-    XMLRPC_ASSERT_PTR_OK(format);
-
-    /* Build our parameter array. */
-    va_start(args, format);
-    xmlrpc_build_value_va(&env, format, args, &paramArrayP, &suffix);
-    va_end(args);
-    if (env.fault_occurred) {
-        /* Unfortunately, we have no way to return an error and the
-           regular callback for a failed RPC is designed to have the
-           parameter array passed to it.  This was probably an oversight
-           of the original asynch design, but now we have to be as
-           backward compatible as possible, so we do this:
-        */
-        (*callback)(serverP->_server_url, methodName, NULL, userData, 
-                    &env, NULL);
-    } else {
-        if (*suffix != '\0')
-            xmlrpc_env_set_fault_formatted(
-                &env, XMLRPC_INTERNAL_ERROR, "Junk after the argument "
-                "specifier: '%s'.  There must be exactly one arument.",
-                suffix);
-        else {
-            xmlrpc_client_call_server_asynch_params(
-                serverP, methodName, callback, userData, paramArrayP);
-        }
-        xmlrpc_DECREF(paramArrayP);
-    }
-
-    if (env.fault_occurred)
-        (*callback)(serverP->_server_url, methodName, paramArrayP, userData,
-                    &env, NULL);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-asynchComplete(struct xmlrpc_call_info * const callInfoP,
-               xmlrpc_mem_block *        const responseXmlP,
-               xmlrpc_env                const transportEnv) {
-/*----------------------------------------------------------------------------
-   Complete an asynchronous XML-RPC call request.
-
-   This includes calling the user's RPC completion routine.
-
-   'transportEnv' describes an error that the transport
-   encountered in processing the call.  If the transport successfully
-   sent the call to the server and processed the response but the
-   server failed the call, 'transportEnv' indicates no error, and the
-   response in *responseXmlP might very well indicate that the server
-   failed the request.
------------------------------------------------------------------------------*/
-    xmlrpc_env env;
-    xmlrpc_value * responseP;
-
-    xmlrpc_env_init(&env);
-
-    if (transportEnv.fault_occurred)
-        xmlrpc_env_set_fault_formatted(
-            &env, transportEnv.fault_code,
-            "Client transport failed to execute the RPC.  %s",
-            transportEnv.fault_string);
-
-    if (!env.fault_occurred)
-        responseP = xmlrpc_parse_response(
-            &env,
-            XMLRPC_MEMBLOCK_CONTENTS(char, responseXmlP),
-            XMLRPC_MEMBLOCK_SIZE(char, responseXmlP));
-    else
-        responseP = NULL;
-        /* just to quiet compiler warning; value undefined when env
-           indicates an error.
-        */
-
-    /* Call the user's callback function with the result */
-    (*callInfoP->callback)(callInfoP->server_url, 
-                           callInfoP->method_name, 
-                           callInfoP->param_array,
-                           callInfoP->user_data, &env, responseP);
-
-    if (!env.fault_occurred)
-        xmlrpc_DECREF(responseP);
-
-    call_info_free(callInfoP);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-sendRequest(xmlrpc_env *             const envP,
-            struct xmlrpc_client *   const clientP,
-            xmlrpc_server_info *     const serverP,
-            const char *             const methodName,
-            xmlrpc_response_handler        responseHandler,
-            void *                   const userData,
-            xmlrpc_value *           const argP) {
-
-    xmlrpc_call_info * callInfoP;
-
-    call_info_new(envP, methodName, argP, &callInfoP);
-    if (!envP->fault_occurred) {
-        call_info_set_asynch_data(envP, callInfoP, 
-                                  serverP->_server_url, methodName,
-                                  argP, responseHandler, userData);
-        if (!envP->fault_occurred)
-            clientP->clientTransportOps.send_request(
-                envP, clientP->transportP, serverP, callInfoP->serialized_xml,
-                &asynchComplete, callInfoP);
-
-        if (envP->fault_occurred)
-            call_info_free(callInfoP);
-        else {
-            /* asynchComplete() will free *callInfoP */
-        }
-    }
-    if (envP->fault_occurred) {
-        /* Transport did not start the call.  Report the call complete
-           (with error) now.
-        */
-        (*responseHandler)(serverP->_server_url, methodName, argP, userData,
-                           envP, NULL);
-    } else {
-        /* The transport will call *responseHandler() when it has completed
-           the call
-        */
-    }
-}
-
-
-
-void 
-xmlrpc_client_call_server_asynch_params(
-    xmlrpc_server_info * const serverP,
-    const char *         const methodName,
-    xmlrpc_response_handler    responseHandler,
-    void *               const userData,
-    xmlrpc_value *       const argP) {
-    xmlrpc_env env;
-
-    xmlrpc_env_init(&env);
-
-    XMLRPC_ASSERT_PTR_OK(serverP);
-    XMLRPC_ASSERT_PTR_OK(methodName);
-    XMLRPC_ASSERT_PTR_OK(responseHandler);
-    XMLRPC_ASSERT_VALUE_OK(argP);
-
-    if (!clientInitialized)
-        xmlrpc_env_set_fault_formatted(
-            &env, XMLRPC_INTERNAL_ERROR, 
-            "Xmlrpc-c client instance has not been initialized "
-            "(need to call xmlrpc_client_init2()).");
-    else {
-        struct xmlrpc_client * const clientP = &client;
-            /* Some day, the library will be re-entrant and this will be
-               passed in.
-            */
-            
-        sendRequest(&env, clientP, serverP, 
-                    methodName, responseHandler, userData, 
-                    argP);
-
-    }
-    xmlrpc_env_clean(&env);
-}
-
-
-
-void 
-xmlrpc_server_info_set_basic_auth(xmlrpc_env *         const envP,
-                                  xmlrpc_server_info * const serverP,
-                                  const char *         const username,
-                                  const char *         const password) {
-
-    size_t username_len, password_len, raw_token_len;
-    char *raw_token;
-    xmlrpc_mem_block *token;
-    char *token_data, *auth_type, *auth_header;
-    size_t token_len, auth_type_len, auth_header_len;
-
-    /* Error-handling preconditions. */
-    raw_token = NULL;
-    token = NULL;
-    token_data = auth_type = auth_header = NULL;
-
-    XMLRPC_ASSERT_ENV_OK(envP);
-    XMLRPC_ASSERT_PTR_OK(serverP);
-    XMLRPC_ASSERT_PTR_OK(username);
-    XMLRPC_ASSERT_PTR_OK(password);
-
-    /* Calculate some lengths. */
-    username_len = strlen(username);
-    password_len = strlen(password);
-    raw_token_len = username_len + password_len + 1;
-
-    /* Build a raw token of the form 'username:password'. */
-    raw_token = (char*) malloc(raw_token_len + 1);
-    XMLRPC_FAIL_IF_NULL(raw_token, envP, XMLRPC_INTERNAL_ERROR,
-                        "Couldn't allocate memory for auth token");
-    strcpy(raw_token, username);
-    raw_token[username_len] = ':';
-    strcpy(&raw_token[username_len + 1], password);
-
-    /* Encode our raw token using Base64. */
-    token = xmlrpc_base64_encode_without_newlines(envP, 
-                                                  (unsigned char*) raw_token,
-                                                  raw_token_len);
-    XMLRPC_FAIL_IF_FAULT(envP);
-    token_data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, token);
-    token_len = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, token);
-
-    /* Build our actual header value. (I hate string processing in C.) */
-    auth_type = "Basic ";
-    auth_type_len = strlen(auth_type);
-    auth_header_len = auth_type_len + token_len;
-    auth_header = (char*) malloc(auth_header_len + 1);
-    XMLRPC_FAIL_IF_NULL(auth_header, envP, XMLRPC_INTERNAL_ERROR,
-                        "Couldn't allocate memory for auth header");
-    memcpy(auth_header, auth_type, auth_type_len);
-    memcpy(&auth_header[auth_type_len], token_data, token_len);
-    auth_header[auth_header_len] = '\0';
-
-    /* Clean up any pre-existing authentication information, and install
-    ** the new value. */
-    if (serverP->_http_basic_auth)
-        free(serverP->_http_basic_auth);
-    serverP->_http_basic_auth = auth_header;
-
- cleanup:
-    if (raw_token)
-        free(raw_token);
-    if (token)
-        xmlrpc_mem_block_free(token);
-    if (envP->fault_occurred) {
-        if (auth_header)
-            free(auth_header);
-    }
-}
-

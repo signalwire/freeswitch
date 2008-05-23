@@ -21,12 +21,12 @@ simpleVasprintf(char **      const retvalP,
     result = malloc(initialSize);
     if (result != NULL) {
         size_t bytesNeeded;
-        bytesNeeded = vsnprintf(result, initialSize, fmt, varargs);
+        bytesNeeded = XMLRPC_VSNPRINTF(result, initialSize, fmt, varargs);
         if (bytesNeeded > initialSize) {
             free(result);
             result = malloc(bytesNeeded);
             if (result != NULL)
-                vsnprintf(result, bytesNeeded, fmt, varargs);
+                XMLRPC_VSNPRINTF(result, bytesNeeded, fmt, varargs);
         } else if (bytesNeeded == initialSize) {
             if (result[initialSize-1] != '\0') {
                 /* This is one of those old systems where vsnprintf()
@@ -46,21 +46,29 @@ simpleVasprintf(char **      const retvalP,
 
 
 
+const char * const strsol = "[Insufficient memory to build string]";
+
+
+
 void
 cvasprintf(const char ** const retvalP,
            const char *  const fmt,
            va_list             varargs) {
 
-    char * retval;
+    char * string;
 
 #if HAVE_ASPRINTF
-    vasprintf(&retval, fmt, varargs);
+    vasprintf(&string, fmt, varargs);
 #else
-    simpleVasprintf(&retval, fmt, varargs);
+    simpleVasprintf(&string, fmt, varargs);
 #endif
 
-    *retvalP = retval;
+    if (string == NULL)
+        *retvalP = strsol;
+    else
+        *retvalP = string;
 }
+
 
 
 void GNU_PRINTF_ATTR(2,3)
@@ -79,5 +87,7 @@ casprintf(const char ** const retvalP, const char * const fmt, ...) {
 
 void
 strfree(const char * const string) {
-    free((void *)string);
+
+    if (string != strsol)
+        free((void *)string);
 }

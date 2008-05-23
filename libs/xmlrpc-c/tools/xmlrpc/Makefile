@@ -1,35 +1,59 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/../..
-BUILDDIR = $(SRCDIR)
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  TOOLSDIR := $(call updir,$(CURDIR))
+  SRCDIR := $(call updir,$(TOOLSDIR))
+  BLDDIR := $(SRCDIR)
 endif
+SUBDIR := tools/xmlrpc
 
-all: xmlrpc
+default: all
 
-include $(BUILDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 PROGRAMS_TO_INSTALL = xmlrpc
 
-include ../Makefile.common
+include $(SRCDIR)/tools/common.mk
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/include -I$(SRCDIR)/lib/util/include
+INCLUDES = \
+  -I../lib/include \
+  -Iblddir \
+  -Iblddir/include \
+  -Isrcdir/include \
+  -Isrcdir/lib/util/include
 
 CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
 
-LDFLAGS = $(CLIENT_LDFLAGS) $(LADD)
+LDFLAGS = $(LADD)
 
-UTIL_OBJS = cmdline_parser.o getoptx.o
+all: xmlrpc
+
+UTIL_OBJS = \
+  casprintf.o \
+  cmdline_parser.o \
+  getoptx.o \
+  stripcaseeq.o \
+  string_parser.o \
+
 UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
 
-xmlrpc:%:%.o $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXML) $(UTILS)
-	$(LIBTOOL) --mode=link $(CCLD) -o $@ $(LDFLAGS) $^
+DUMPVALUE = srcdir/tools/lib/dumpvalue.o
 
-%.o:%.c
-	$(LIBTOOL) --mode=compile $(CC) -c $(CFLAGS) $<
+# Can we just use $(LIBS) in the link?
 
-*.c: config.h
+LIBS = $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXMLRPC_XML) $(LIBXMLRPC_UTIL)
 
-config.h:
-	$(LN_S) $(BUILDDIR)/xmlrpc_config.h $@
+XMLRPC_OBJS = xmlrpc.o $(DUMPVALUE)
+
+xmlrpc: $(XMLRPC_OBJS) $(LIBS) $(UTILS)
+	$(CCLD) -o $@ $(LDFLAGS) $(XMLRPC_OBJS) $(UTILS) $(CLIENT_LDLIBS)
+
+%.o:%.c $(BLDDIR)/include/xmlrpc-c/config.h
+	$(CC) -c $(CFLAGS) $<
+
+# This common.mk dependency makes sure the symlinks get built before
+# this make file is used for anything.
+
+$(SRCDIR)/tools/common.mk: srcdir blddir
 
 include Makefile.depend
 
@@ -38,7 +62,7 @@ dep: dep-common
 
 .PHONY: clean
 clean: clean-common
-	rm -f xmlrpc config.h
+	rm -f xmlrpc
 
 .PHONY: distclean
 distclean: clean distclean-common

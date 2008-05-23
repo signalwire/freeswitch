@@ -6,7 +6,7 @@ using namespace std;
 
 namespace xmlrpc_c {
 
-    rpcOutcome::rpcOutcome() : valid(false) {}
+rpcOutcome::rpcOutcome() : valid(false) {}
 
 rpcOutcome::rpcOutcome(xmlrpc_c::value const result) :
     valid(true), _succeeded(true), result(result) 

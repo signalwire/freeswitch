@@ -167,8 +167,8 @@ int __cdecl wmain( int argc, wchar_t * argv[])
 	serverparm.portNum=8080;
 
 	//if this is set, we will use the authorization function
-	serverparm.authfn=NULL;
-	//serverparm.authfn=&handleAuthorization;
+	//serverparm.authfn=NULL;
+	serverparm.authfn=&handleAuthorization;
 
 	//set the logging level and log file
 	serverparm.logLevel=2;

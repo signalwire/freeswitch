@@ -19,6 +19,7 @@
 #  include <pthread.h>
    typedef pthread_mutex_t girmem_lock;
 #else
+#  include <windows.h>
    typedef CRITICAL_SECTION girmem_lock;
 #endif
 
@@ -51,14 +52,20 @@ public:
     ~autoObjectPtr();
     
     void
-    instantiate(girmem::autoObject * const objectP);
-    
+    point(girmem::autoObject * const objectP);
+
+    void
+    unpoint();
+
     autoObjectPtr
     operator=(girmem::autoObjectPtr const& objectPtr);
     
     girmem::autoObject *
     operator->() const;
     
+    girmem::autoObject *
+    get() const;
+
 protected:
     girmem::autoObject * objectP;
 };

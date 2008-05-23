@@ -1,11 +1,15 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  SRCDIR := $(call updir,$(CURDIR))
+  BLDDIR := $(SRCDIR)
 endif
-SUBDIR = lib
+SUBDIR := lib
 
-include $(SRCDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
-SUBDIRS = util
+# Build up SUBDIRS:
+SUBDIRS = 
+SUBDIRS += util libutil
 ifeq ($(ENABLE_ABYSS_SERVER),yes)
   SUBDIRS += abyss
 endif
@@ -18,36 +22,37 @@ endif
 ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
   SUBDIRS += libwww_transport
 endif
-ifneq ($(ENABLE_LIBXML2),yes)
+ifneq ($(ENABLE_LIBXML2_BACKEND),yes)
   SUBDIRS += expat
 endif
 
 default: all
 
-.PHONY: all
+.PHONY: all clean distclean tags distdir install check dep
+
 all: $(SUBDIRS:%=%/all)
 
-.PHONY: clean
+# Extra dependencies to make parallel make work in spite of all the submakes
+# (See top level make file for details)
+abyss/all curl_transport/all: $(BLDDIR)/version.h
+
 clean: $(SUBDIRS:%=%/clean) clean-common
 
-.PHONY: distclean
 distclean: $(SUBDIRS:%=%/distclean) distclean-common
 
-.PHONY: tags
 tags: $(SUBDIRS:%=%/tags) TAGS
 
 DISTFILES = 
 
-.PHONY: distdir
 distdir: distdir-common
 
-.PHONY: install
 install: $(SUBDIRS:%=%/install)
 
-.PHONY: dep
+check:
+
 dep: $(SUBDIRS:%=%/dep)
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 
 

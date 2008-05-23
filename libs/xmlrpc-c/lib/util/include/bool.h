@@ -1,18 +1,18 @@
-#ifndef BOOL_H_INCLUDED
-#define BOOL_H_INCLUDED
+/* This takes the place of C99 stdbool.h, which at least some Windows
+   compilers don't have.  (October 2005).
 
-#ifndef TRUE
-#define TRUE (1)
-#endif
-#ifndef FALSE
-#define FALSE (0)
-#endif
+   One must not also include <stdbool.h>, because it might cause a name
+   collision.
+*/
 
 #ifndef __cplusplus
-#ifndef HAVE_BOOL
-#define HAVE_BOOL
-typedef int bool;
+/* At least the GNU compiler defines __bool_true_false_are_defined */
+#ifndef __bool_true_false_are_defined
+#define __bool_true_false_are_defined
+typedef enum {
+    false = 0,
+    true = 1
+} bool;
 #endif
 #endif
 
-#endif

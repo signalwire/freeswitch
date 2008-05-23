@@ -9,6 +9,9 @@
 
 <H1>expat - XML Parser Toolkit</H1>
 
+<p>This is outdated stuff from the independently developed Expat which
+was forked in 2001 to make the Xmlrpc-c embedded version.
+
 <H3>Version 1.2</H3>
 
 <P>Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center
@@ -22,6 +25,10 @@ Compiling with -DXML_DTD enables this support.  There's a new
 external DTDs and parameter entities; this implies the <CODE>-x</CODE>
 option.  See the comment above <CODE>XML_SetParamEntityParsing</CODE>
 in <CODE>xmlparse.h</CODE> for the API addition that enables this.</P>
+
+<p>For Xmlrpc-c, we find no reason to exclude this function from the
+library, and ifdefs make code harder to maintain, so we include the
+function unconditionally.  (i.e. -DXML_DTD does nothing).
 
 <P>Expat is an <A
 HREF="http://www.w3.org/TR/1998/REC-xml-19980210">XML 1.0</A> parser

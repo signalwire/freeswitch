@@ -1,0 +1,51 @@
+
+Using xmlrpc_cpp_proxy.dsp
+
+While not included in the main xmlrpc.dsw file, this
+xmlrpc_cpp_proxy.dsp, if added as a project to the xmlrpc solution,
+will build bin\xmlrpc_cpp_proxy.exe and xmlrpc_cpp_proxyD.exe, for
+testing using the default WinINET transport.
+
+After you have loaded the xmlrpc_cpp_proxy.dsp, which adds an 
+xmlrpc_cpp_proxy project, it is necessary to ADD a dependance on
+the xmlrpc library, to complete the link.
+
+To do this in say MSVC8, select the xmlrpc_cpp_proxy project, and right
+mouse click, and in the context menu, select 'Project Dependancies...'.
+And in the Project Dependancies dialog, check the xmlrpc proejct,
+then [Ok] ...
+
+To test your xmlrpc_cpp_proxy[D].exe -
+
+
+1. In a console start the server, like -
+
+bin/xmlrpc_sample_add_serverD 8080
+
+Note, since this server opens a socket, you may have to enable it on some
+anti-virus software that detects the socket being established, and
+'Unblock' it in the Windows Security Alert system dialog that appears.
+
+You can later remove this program from the Firewall exceptions, through
+Control Panel -> Windows Firewall, selecting the 'Exceptions' tab, where
+you can also disable this 'blocking' notification, but not recommended.
+
+The server should start, and report -
+Running XML-RPC server...
+
+
+2. In another console run the cpp proxy client, with say -
+
+bin>xmlrpc_cpp_proxyD http://localhost:8080/RPC2 null null
+
+The client should connect to the server, and output a 'null' header,
+and implementation file. If this functions, for a bigger example, try -
+
+bin>xmlrpc_cpp_proxyD http://localhost:8080/RPC2 system systemProxy
+
+and you should see a better example of a class header, and the 
+implementation code ...
+
+20 December, 2007
+
+EOF

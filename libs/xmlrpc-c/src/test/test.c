@@ -1,16 +1,24 @@
 /* Copyright information is at the end of the file. */
 
+#ifdef WIN32
+#include <direct.h>
+#else
+#include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <limits.h>
 
+#include "casprintf.h"
+
 #include "xmlrpc_config.h"
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
 
+#include "bool.h"
 #include "test.h"
 #include "value.h"
 #include "serialize.h"
@@ -18,7 +26,9 @@
 #include "cgi.h"
 #include "xml_data.h"
 #include "client.h"
+#include "abyss.h"
 #include "server_abyss.h"
+#include "method_registry.h"
 
 /*=========================================================================
 **  Test Harness
@@ -39,6 +49,13 @@
 
 int total_tests = 0;
 int total_failures = 0;
+
+bool const runningUnderWindows =
+#ifdef WIN32
+    true;
+#else
+    false;
+#endif
 
 
 /*=========================================================================
@@ -62,7 +79,6 @@ static int test_int_array_3[8] = {1, 2, 3, 4, 5, 6, 7, 8};
 static void test_env(void)
 {
     xmlrpc_env env, env2;
-    char *s;
 
     /* Test xmlrpc_env_init. */
     xmlrpc_env_init(&env);
@@ -88,13 +104,6 @@ static void test_env(void)
     TEST(env.fault_occurred);
     TEST(env.fault_code == 3);
     TEST(strcmp(env.fault_string, "abar9") == 0);
-
-    /* Set a fault with an oversized string. */
-    s = "12345678901234567890123456789012345678901234567890";
-    xmlrpc_env_set_fault_formatted(&env, 4, "%s%s%s%s%s%s", s, s, s, s, s, s);
-    TEST(env.fault_occurred);
-    TEST(env.fault_code == 4);
-    TEST(strlen(env.fault_string) == 255);
 
     /* Test cleanup code (with help from memprof). */
     xmlrpc_env_clean(&env);
@@ -195,15 +204,19 @@ static char *(base64_triplets[]) = {
     "ZmdoaWprbG1ub3BxcnN0dXZ3eHl6QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo=\r\n",
     NULL};
 
-static void test_base64_conversion (void)
-{
-    xmlrpc_env env, env2;
-    char **triplet, *bin_data, *nocrlf_ascii_data, *ascii_data;
-    xmlrpc_mem_block *output;
+static void
+test_base64_conversion(void) {
+    xmlrpc_env env;
+    char ** triplet;
 
     xmlrpc_env_init(&env);
 
     for (triplet = base64_triplets; *triplet != NULL; triplet += 3) {
+        char * bin_data;
+        char * nocrlf_ascii_data;
+        char * ascii_data;
+        xmlrpc_mem_block * output;
+
         bin_data = *triplet;
         nocrlf_ascii_data = *(triplet + 1);
         ascii_data = *(triplet + 2);
@@ -242,19 +255,26 @@ static void test_base64_conversion (void)
     }
 
     /* Now for something broken... */
-    xmlrpc_env_init(&env2);
-    output = xmlrpc_base64_decode(&env2, "====", 4);
-    TEST(output == NULL);
-    TEST_FAULT(&env2, XMLRPC_PARSE_ERROR);
-    xmlrpc_env_clean(&env2);
+    {
+        xmlrpc_env env2;
+        xmlrpc_mem_block * output;
 
+        xmlrpc_env_init(&env2);
+        output = xmlrpc_base64_decode(&env2, "====", 4);
+        TEST(output == NULL);
+        TEST_FAULT(&env2, XMLRPC_PARSE_ERROR);
+        xmlrpc_env_clean(&env2);
+    }
     /* Now for something broken in a really sneaky way... */
-    xmlrpc_env_init(&env2);
-    output = xmlrpc_base64_decode(&env2, "a==", 4);
-    TEST(output == NULL);
-    TEST_FAULT(&env2, XMLRPC_PARSE_ERROR);
-    xmlrpc_env_clean(&env2);
-
+    {
+        xmlrpc_env env2;
+        xmlrpc_mem_block * output;
+        xmlrpc_env_init(&env2);
+        output = xmlrpc_base64_decode(&env2, "a==", 4);
+        TEST(output == NULL);
+        TEST_FAULT(&env2, XMLRPC_PARSE_ERROR);
+        xmlrpc_env_clean(&env2);
+    }
     xmlrpc_env_clean(&env);
 }
 
@@ -290,249 +310,6 @@ static void test_bounds_checks (void)
 
 
 
-/*=========================================================================
-**  test_method_registry
-**=========================================================================
-**  We need to define some static callbacks to test this code.
-*/
-
-#define FOO_USER_DATA ((void*) 0xF00)
-#define BAR_USER_DATA ((void*) 0xBAF)
-
-static xmlrpc_value *test_foo (xmlrpc_env *env,
-                               xmlrpc_value *param_array,
-                               void *user_data)
-{
-    xmlrpc_int32 x, y;
-
-    TEST_NO_FAULT(env);
-    TEST(param_array != NULL);
-    TEST(user_data == FOO_USER_DATA);
-
-    xmlrpc_decompose_value(env, param_array, "(ii)", &x, &y);
-    TEST_NO_FAULT(env);
-    TEST(x == 25);
-    TEST(y == 17);
-
-    return xmlrpc_build_value(env, "i", (xmlrpc_int32) x + y);
-}
-
-static xmlrpc_value *test_bar (xmlrpc_env *env,
-                               xmlrpc_value *param_array,
-                               void *user_data)
-{
-    xmlrpc_int32 x, y;
-
-    TEST_NO_FAULT(env);
-    TEST(param_array != NULL);
-    TEST(user_data == BAR_USER_DATA);
-
-    xmlrpc_decompose_value(env, param_array, "(ii)", &x, &y);
-    TEST_NO_FAULT(env);
-    TEST(x == 25);
-    TEST(y == 17);
-
-    xmlrpc_env_set_fault(env, 123, "Test fault");
-    return NULL;
-}
-
-static xmlrpc_value *
-test_default(xmlrpc_env *   const env,
-             const char *   const host ATTR_UNUSED,
-             const char *   const method_name ATTR_UNUSED,
-             xmlrpc_value * const param_array,
-             void *         const user_data) {
-
-    xmlrpc_int32 x, y;
-
-    TEST_NO_FAULT(env);
-    TEST(param_array != NULL);
-    TEST(user_data == FOO_USER_DATA);
-
-    xmlrpc_decompose_value(env, param_array, "(ii)", &x, &y);
-    TEST_NO_FAULT(env);
-    TEST(x == 25);
-    TEST(y == 17);
-
-    return xmlrpc_build_value(env, "i", 2 * (x + y));
-}
-
-static xmlrpc_value *
-process_call_helper (xmlrpc_env *env,
-                     xmlrpc_registry *registry,
-                     const char *method_name,
-                     xmlrpc_value *arg_array)
-{
-    xmlrpc_mem_block *call, *response;
-    xmlrpc_value *value;
-
-    /* Build a call, and tell the registry to handle it. */
-    call = xmlrpc_mem_block_new(env, 0);
-    TEST_NO_FAULT(env);
-    xmlrpc_serialize_call(env, call, method_name, arg_array);
-    TEST_NO_FAULT(env);
-    response = xmlrpc_registry_process_call(env, registry, NULL,
-                                            xmlrpc_mem_block_contents(call),
-                                            xmlrpc_mem_block_size(call));
-    TEST_NO_FAULT(env);
-    TEST(response != NULL);
-
-    /* Parse the response. */
-    value = xmlrpc_parse_response(env, xmlrpc_mem_block_contents(response),
-                                  xmlrpc_mem_block_size(response));
-
-    xmlrpc_mem_block_free(call);
-    xmlrpc_mem_block_free(response);
-    return value;
-}
-
-
-
-static void
-test_method_registry(void) {
-
-    xmlrpc_env env, env2;
-    xmlrpc_value *arg_array, *value;
-    xmlrpc_registry *registry;
-    xmlrpc_mem_block *response;
-    xmlrpc_int32 i;
-
-    xmlrpc_value *multi;
-    xmlrpc_int32 foo1_result, foo2_result;
-    xmlrpc_int32 bar_code, nosuch_code, multi_code, bogus1_code, bogus2_code;
-    char *bar_string, *nosuch_string, *multi_string;
-    char *bogus1_string, *bogus2_string;
-
-    xmlrpc_env_init(&env);
-
-    /* Create a new registry. */
-    registry = xmlrpc_registry_new(&env);
-    TEST(registry != NULL);
-    TEST_NO_FAULT(&env);
-
-    /* Add some test methods. */
-    xmlrpc_registry_add_method(&env, registry, NULL, "test.foo",
-                               test_foo, FOO_USER_DATA);
-    TEST_NO_FAULT(&env);
-    xmlrpc_registry_add_method(&env, registry, NULL, "test.bar",
-                               test_bar, BAR_USER_DATA);
-    TEST_NO_FAULT(&env);
-
-    /* Build an argument array for our calls. */
-    arg_array = xmlrpc_build_value(&env, "(ii)",
-                                   (xmlrpc_int32) 25, (xmlrpc_int32) 17); 
-    TEST_NO_FAULT(&env);
-
-    /* Call test.foo and check the result. */
-    value = process_call_helper(&env, registry, "test.foo", arg_array);
-    TEST_NO_FAULT(&env);
-    TEST(value != NULL);
-    xmlrpc_decompose_value(&env, value, "i", &i);
-    xmlrpc_DECREF(value);
-    TEST_NO_FAULT(&env);
-    TEST(i == 42);
-
-    /* Call test.bar and check the result. */
-    xmlrpc_env_init(&env2);
-    value = process_call_helper(&env2, registry, "test.bar", arg_array);
-    TEST_FAULT(&env2, 123);
-    TEST(env2.fault_string && strcmp(env2.fault_string, "Test fault") == 0);
-    xmlrpc_env_clean(&env2);
-
-    /* Call a non-existant method and check the result. */
-    xmlrpc_env_init(&env2);
-    value = process_call_helper(&env2, registry, "test.nosuch", arg_array);
-    TEST(value == NULL);
-    TEST_FAULT(&env2, XMLRPC_NO_SUCH_METHOD_ERROR);
-    xmlrpc_env_clean(&env2);
-
-    /* Test system.multicall. */
-    multi = xmlrpc_build_value(&env,
-                               "(({s:s,s:V}{s:s,s:V}{s:s,s:V}"
-                               "{s:s,s:()}s{}{s:s,s:V}))",
-                               "methodName", "test.foo",
-                               "params", arg_array,
-                               "methodName", "test.bar",
-                               "params", arg_array,
-                               "methodName", "test.nosuch",
-                               "params", arg_array,
-                               "methodName", "system.multicall",
-                               "params",
-                               "bogus_entry",
-                               "methodName", "test.foo",
-                               "params", arg_array);
-    TEST_NO_FAULT(&env);    
-    value = process_call_helper(&env, registry, "system.multicall", multi);
-    TEST_NO_FAULT(&env);
-    xmlrpc_decompose_value(&env, value,
-                           "((i){s:i,s:s,*}{s:i,s:s,*}"
-                           "{s:i,s:s,*}{s:i,s:s,*}{s:i,s:s,*}(i))",
-                           &foo1_result,
-                           "faultCode", &bar_code,
-                           "faultString", &bar_string,
-                           "faultCode", &nosuch_code,
-                           "faultString", &nosuch_string,
-                           "faultCode", &multi_code,
-                           "faultString", &multi_string,
-                           "faultCode", &bogus1_code,
-                           "faultString", &bogus1_string,
-                           "faultCode", &bogus2_code,
-                           "faultString", &bogus2_string,
-                           &foo2_result);
-    xmlrpc_DECREF(value);
-    TEST_NO_FAULT(&env);    
-    TEST(foo1_result == 42);
-    TEST(bar_code == 123);
-    TEST(strcmp(bar_string, "Test fault") == 0);
-    TEST(nosuch_code == XMLRPC_NO_SUCH_METHOD_ERROR);
-    TEST(multi_code == XMLRPC_REQUEST_REFUSED_ERROR);
-    TEST(foo2_result == 42);
-    xmlrpc_DECREF(multi);
-    free(bar_string);
-    free(nosuch_string);
-    free(multi_string);
-    free(bogus1_string);
-    free(bogus2_string);
-
-    /* PASS bogus XML data and make sure our parser pukes gracefully.
-    ** (Because of the way the code is laid out, and the presence of other
-    ** test suites, this lets us skip tests for invalid XML-RPC data.) */
-    xmlrpc_env_init(&env2);
-    response = xmlrpc_registry_process_call(&env, registry, NULL,
-                                            expat_error_data,
-                                            strlen(expat_error_data));
-    TEST_NO_FAULT(&env);
-    TEST(response != NULL);
-    value = xmlrpc_parse_response(&env2, xmlrpc_mem_block_contents(response),
-                                  xmlrpc_mem_block_size(response));
-    TEST(value == NULL);
-    TEST_FAULT(&env2, XMLRPC_PARSE_ERROR);
-    xmlrpc_mem_block_free(response);
-    xmlrpc_env_clean(&env2);
-
-    xmlrpc_registry_set_default_method(&env, registry, &test_default,
-                                       FOO_USER_DATA);
-    TEST_NO_FAULT(&env);
-    value = process_call_helper(&env, registry, "test.nosuch", arg_array);
-    TEST_NO_FAULT(&env);
-    TEST(value != NULL);
-    xmlrpc_decompose_value(&env, value, "i", &i);
-    xmlrpc_DECREF(value);
-    TEST_NO_FAULT(&env);
-    TEST(i == 84);
-
-    /* Change the default method. */
-    xmlrpc_registry_set_default_method(&env, registry, &test_default,
-                                       BAR_USER_DATA);
-    TEST_NO_FAULT(&env);
-    
-    /* Test cleanup code (w/memprof). */
-    xmlrpc_registry_free(registry);
-    xmlrpc_DECREF(arg_array);
-
-    xmlrpc_env_clean(&env);
-}
-
 static void test_nesting_limit (void)
 {
     xmlrpc_env env;
@@ -540,16 +317,21 @@ static void test_nesting_limit (void)
 
     xmlrpc_env_init(&env);
     
-    /* Test with an adequate limit for (...(...()...)...). */
-    xmlrpc_limit_set(XMLRPC_NESTING_LIMIT_ID, 2);
-    val = xmlrpc_parse_response(&env, correct_value, strlen(correct_value));
+    /* Test with an adequate limit for a result value which is an
+       array which contains an element which is a struct, whose values
+       are simple: 3.
+    */
+    xmlrpc_limit_set(XMLRPC_NESTING_LIMIT_ID, 3);
+    val = xmlrpc_parse_response(&env,
+                                good_response_xml, strlen(good_response_xml));
     TEST_NO_FAULT(&env);
     TEST(val != NULL);
     xmlrpc_DECREF(val);
 
     /* Test with an inadequate limit. */
-    xmlrpc_limit_set(XMLRPC_NESTING_LIMIT_ID, 1);
-    val = xmlrpc_parse_response(&env, correct_value, strlen(correct_value));
+    xmlrpc_limit_set(XMLRPC_NESTING_LIMIT_ID, 2);
+    val = xmlrpc_parse_response(&env,
+                                good_response_xml, strlen(good_response_xml));
     TEST_FAULT(&env, XMLRPC_PARSE_ERROR); /* BREAKME - Will change. */
     TEST(val == NULL);
 
@@ -561,16 +343,19 @@ static void test_nesting_limit (void)
     xmlrpc_env_clean(&env);
 }
 
-static void test_xml_size_limit (void)
-{
-    xmlrpc_env env;
-    const char *method_name;
-    xmlrpc_value *params, *val;
-    
 
+
+static void
+test_xml_size_limit(void) {
+
+    xmlrpc_env env;
+    const char * methodName;
+    xmlrpc_value * paramsP;
+    
     /* NOTE - This test suite only verifies the last-ditch size-checking
-    ** code.  There should also be matching code in all server (and
-    ** preferably all client) modules as well. */
+       code.  There should also be matching code in all server (and
+       preferably all client) modules as well.
+    */
 
     /* Set our XML size limit to something ridiculous. */
     xmlrpc_limit_set(XMLRPC_XML_SIZE_LIMIT_ID, 6);
@@ -578,22 +363,28 @@ static void test_xml_size_limit (void)
     /* Attempt to parse a call. */
     xmlrpc_env_init(&env);
     xmlrpc_parse_call(&env, serialized_call, strlen(serialized_call),
-                      &method_name, &params);
+                      &methodName, &paramsP);
     TEST_FAULT(&env, XMLRPC_LIMIT_EXCEEDED_ERROR);
-    TEST(method_name == NULL);
-    TEST(params == NULL);
     xmlrpc_env_clean(&env);
 
-    /* Attempt to parse a response. */
-    xmlrpc_env_init(&env);
-    val = xmlrpc_parse_response(&env, correct_value, strlen(correct_value));
-    TEST_FAULT(&env, XMLRPC_LIMIT_EXCEEDED_ERROR);
-    TEST(val == NULL);
-    xmlrpc_env_clean(&env);
+    {
+        xmlrpc_value * resultP;
+        int faultCode;
+        const char * faultString;
 
+        /* Attempt to parse a response. */
+        xmlrpc_env_init(&env);
+        xmlrpc_parse_response2(&env,
+                               good_response_xml, strlen(good_response_xml),
+                               &resultP, &faultCode, &faultString);
+        TEST_FAULT(&env, XMLRPC_LIMIT_EXCEEDED_ERROR);
+        xmlrpc_env_clean(&env);
+    }
     /* Reset the default limit. */
     xmlrpc_limit_set(XMLRPC_XML_SIZE_LIMIT_ID, XMLRPC_XML_SIZE_LIMIT_DEFAULT);
 }
+
+
 
 /*=========================================================================
 **  test_sample_files
@@ -602,67 +393,105 @@ static void test_xml_size_limit (void)
 **  results.
 **
 **  We use these files to test strange-but-legal encodings, illegal-but-
-**  supported encodings, etc.
+**  allowed-by-Xmlrpc-c encodings, etc.
 */
+#ifdef WIN32
+/* usually compiled in 'Windows' folder */
+#define TESTDATA_DIR ".." DIRECTORY_SEPARATOR "bin" DIRECTORY_SEPARATOR "data"
+#else
+#define TESTDATA_DIR "data"
+#endif
 
-static char *good_requests[] = {
-    "req_out_of_order.xml",
-    "req_no_params.xml",
-    "req_value_name.xml",
+static const char * goodRequests[] = {
+    TESTDATA_DIR DIRECTORY_SEPARATOR "req_out_of_order.xml",
+    TESTDATA_DIR DIRECTORY_SEPARATOR "req_no_params.xml",
+    TESTDATA_DIR DIRECTORY_SEPARATOR "req_value_name.xml",
     NULL
 };
 
 #define MAX_SAMPLE_FILE_LEN (16 * 1024)
 
-static char file_buff [MAX_SAMPLE_FILE_LEN];
+
 
 static void
-read_file (char *path, char **out_data, size_t *out_size)
-{
-    FILE *f;
-    size_t bytes_read;
+reportFileOpenError(const char * const path,
+                    int          const openErrno) {
 
-    /* Open the file. */
-    f = fopen(path, "r");
-    if (f == NULL) {
+    if (runningUnderWindows) {
+        char cwdname[1024];
+        char * succeeded;
+
+        succeeded = getcwd(cwdname, sizeof(cwdname));
+        if (succeeded)
+            fprintf(stderr, "Running in current work directory '%s'\n",
+                    cwdname);
+    }
+    fprintf(stderr, "Could not open file '%s'.  errno=%d (%s)\n", 
+            path, openErrno, strerror(openErrno));
+}
+
+
+
+static void
+readFile(const char *  const path,
+         const char ** const outDataP,
+         size_t *      const outSizeP) {
+
+    static char fileBuff[MAX_SAMPLE_FILE_LEN];
+
+    FILE * fileP;
+    size_t bytesRead;
+
+    fileP = fopen(path, "r");
+
+    if (fileP == NULL) {
         /* Since this error is fairly likely to happen, give an
-        ** informative error message... */
-        fflush(stdout);
-        fprintf(stderr, "Could not open file '%s'.  errno=%d (%s)\n", 
-                path, errno, strerror(errno));
-        abort();
+           informative error message...
+        */
+        reportFileOpenError(path, errno);
+        exit(1);
     }
     
     /* Read in one buffer full of data, and make sure that everything
-    ** fit.  (We perform a lazy error/no-eof/zero-length-file test using
-    ** bytes_read.) */
-    bytes_read = fread(file_buff, sizeof(char), MAX_SAMPLE_FILE_LEN, f);
-    TEST(0 < bytes_read && bytes_read < MAX_SAMPLE_FILE_LEN);
+       fit.  (We perform a lazy error/no-eof/zero-length-file test using
+       'bytesRead'.)
+    */
+    bytesRead = fread(fileBuff, sizeof(char), MAX_SAMPLE_FILE_LEN, fileP);
+    TEST(0 < bytesRead && bytesRead < MAX_SAMPLE_FILE_LEN);
+    
+    fclose(fileP);
 
-    /* Close the file and return our data. */
-    fclose(f);
-    *out_data = file_buff;
-    *out_size = bytes_read;
+    *outDataP = fileBuff;
+    *outSizeP = bytesRead;
 }
 
-static void test_sample_files (void)
-{
+
+
+static void
+testSampleFiles(void) {
+
     xmlrpc_env env;
-    char **paths, *path;
-    char *data;
-    size_t data_len;
-    const char *method_name;
-    xmlrpc_value *params;
+    const char ** pathP;
 
     xmlrpc_env_init(&env);
 
     /* Test our good requests. */
-    for (paths = good_requests; *paths != NULL; paths++) {
-        path = *paths;
-        read_file(path, &data, &data_len);
-        xmlrpc_parse_call(&env, data, data_len, &method_name, &params);
+
+    for (pathP = goodRequests; *pathP != NULL; ++pathP) {
+        const char * const path = *pathP;
+
+        const char * data;
+        size_t dataLen;
+        const char * methodName;
+        xmlrpc_value * params;
+
+        readFile(path, &data, &dataLen);
+
+        xmlrpc_parse_call(&env, data, dataLen, &methodName, &params);
+
         TEST_NO_FAULT(&env);
-        strfree(method_name);
+
+        strfree(methodName);
         xmlrpc_DECREF(params);
     }
 
@@ -679,7 +508,7 @@ static void test_sample_files (void)
 **      http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
 */
 
-#ifdef HAVE_UNICODE_WCHAR
+#if HAVE_UNICODE_WCHAR
 
 typedef struct {
     char *utf8;
@@ -760,6 +589,7 @@ static char *(bad_utf8[]) = {
 
     NULL
 };
+#endif  /* HAVE_UNICODE_WCHAR */
 
 /* This routine is missing on certain platforms.  This implementation
 ** *appears* to be correct. */
@@ -782,8 +612,10 @@ int wcsncmp(wchar_t *wcs1, wchar_t* wcs2, size_t len)
 #endif /* HAVE_WCSNCMP */
 #endif
 
-static void test_utf8_coding (void)
-{
+static void
+test_utf8_coding(void) {
+
+#if HAVE_UNICODE_WCHAR
     xmlrpc_env env, env2;
     utf8_and_wcs *good_data;
     char **bad_data;
@@ -841,72 +673,87 @@ static void test_utf8_coding (void)
         TEST(output == NULL);
         xmlrpc_env_clean(&env2);
     }
-
     xmlrpc_env_clean(&env);
+#endif  /* HAVE_UNICODE_WCHAR */
 }
 
-#endif /* HAVE_UNICODE_WCHAR */
 
 
-/*=========================================================================
-**  Test Driver
-**=========================================================================
-*/
+static void
+test_server_cgi_maybe(void) {
+
+#ifndef WIN32
+
+    test_server_cgi();
+
+#endif 
+}
+
+
+
+static void
+test_client_maybe(void) {
+
+#ifndef WIN32 /* Must get Windows Curl transport working for this to work */
+
+    test_client();
+
+#endif 
+}
+
+
 
 int 
 main(int     argc, 
      char ** argv ATTR_UNUSED) {
 
+    int retval;
+
     if (argc-1 > 0) {
-        fprintf(stderr, "There are no arguments.");
-        exit(1);
+        fprintf(stderr, "There are no arguments.\n");
+        retval = 1;
+    } else {
+        test_env();
+        test_mem_block();
+        test_base64_conversion();
+        printf("\n");
+        test_value();
+        test_bounds_checks();
+        printf("\n");
+        test_serialize();
+        test_parse_xml();
+        test_method_registry();
+        test_nesting_limit();
+        test_xml_size_limit();
+        testSampleFiles();
+        printf("\n");
+        test_server_cgi_maybe();
+        test_abyss();
+        test_server_abyss();
+
+        test_utf8_coding();
+
+        printf("\n");
+
+        test_client_maybe();
+
+        printf("\n");
+
+        /* Summarize our test run. */
+        printf("Ran %d tests, %d failed, %.1f%% passed\n",
+               total_tests, total_failures,
+               100.0 - (100.0 * total_failures) / total_tests);
+
+        /* Print the final result. */
+        if (total_failures == 0) {
+            printf("OK\n");
+            retval = 0;
+        } else {
+            retval = 1;
+            printf("FAILED\n");
+        }
     }
-
-    /* Add your test suites here. */
-    test_env();
-    test_mem_block();
-    test_base64_conversion();
-    printf("\n");
-    test_value();
-    test_bounds_checks();
-    printf("\n");
-    test_serialize();
-    test_parse_xml();
-
-    test_method_registry();
-    test_nesting_limit();
-    test_xml_size_limit();
-    test_sample_files();
-    printf("\n");
-
-#ifndef WIN32 /* CGI unsupported in Windows */
-    test_server_cgi();
-#endif 
-    test_server_abyss();
-
-#ifdef HAVE_UNICODE_WCHAR
-    test_utf8_coding();
-#endif /* HAVE_UNICODE_WCHAR */
-
-    printf("\n");
-
-#ifndef WIN32 /* TODO: Client test uses curl... */
-    test_client();
-#endif 
-
-    /* Summarize our test run. */
-    printf("\nRan %d tests, %d failed, %.1f%% passed\n",
-           total_tests, total_failures,
-           100.0 - (100.0 * total_failures) / total_tests);
-
-    /* Print the final result. */
-    if (total_failures == 0) {
-        printf("OK\n");
-        return 0;
-    }
-
-    printf("FAILED\n");
-    return 1;
+    return retval;
 }
 
 

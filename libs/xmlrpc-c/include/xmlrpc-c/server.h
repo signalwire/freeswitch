@@ -9,145 +9,121 @@
 extern "C" {
 #endif
 
-/*=========================================================================
-**  XML-RPC Server Method Registry
-**=========================================================================
-**  A method registry maintains a list of functions, and handles
-**  dispatching. To build an XML-RPC server, just add an XML-RPC protocol
-**  driver.
-**
-**  Methods are C functions which take some combination of the following
-**  parameters. All pointers except user_data belong to the library, and
-**  must not be freed by the callback or used after the callback returns.
-**
-**  env:          An XML-RPC error-handling environment. No faults will be
-**                set when the function is called. If an error occurs,
-**                set an appropriate fault and return NULL. (If a fault is
-**                set, the NULL return value will be enforced!)
-**  host:         The 'Host:' header passed by the XML-RPC client, or NULL,
-**                if no 'Host:' header has been provided.
-**  method_name:  The name used to call this method.
-**  user_data:    The user_data used to register this method.
-**  param_array:  The parameters passed to this function, stored in an
-**                XML-RPC array. You are *not* responsible for calling
-**                xmlrpc_DECREF on this array.
-**
-**  Return value: If no fault has been set, the function must return a
-**                valid xmlrpc_value. This will be serialized, returned
-**                to the caller, and xmlrpc_DECREF'd.
-*/
+typedef struct xmlrpc_registry xmlrpc_registry;
 
-/* A function to call before invoking a method for doing things like access
-** control or sanity checks.  If a fault is set from this function, the
-** method will not be called and the fault will be returned. */
 typedef void
-(*xmlrpc_preinvoke_method)(xmlrpc_env *   env,
-                           const char *   method_name,
-                           xmlrpc_value * param_array,
-                           void *         user_data);
+(*xmlrpc_preinvoke_method)(xmlrpc_env *   const envP,
+                           const char *   const methodName,
+                           xmlrpc_value * const paramArrayP,
+                           void *         const userData);
 
-/* An ordinary method. */
 typedef xmlrpc_value *
-(*xmlrpc_method)(xmlrpc_env *   env,
-                 xmlrpc_value * param_array,
-                 void *         user_data);
+(*xmlrpc_method1)(xmlrpc_env *   const envP,
+                  xmlrpc_value * const paramArrayP,
+                  void *         const serverInfo);
 
-/* A default method to call if no method can be found. */
 typedef xmlrpc_value *
-(*xmlrpc_default_method)(xmlrpc_env *   env,
-                         const char *   host,
-                         const char *   method_name,
-                         xmlrpc_value * param_array,
-                         void *         user_data);
+(*xmlrpc_method2)(xmlrpc_env *   const envP,
+                  xmlrpc_value * const paramArrayP,
+                  void *         const serverInfo,
+                  void *         const callInfo);
 
-/* Our registry structure. This has no public members. */
-typedef struct _xmlrpc_registry xmlrpc_registry;
+typedef xmlrpc_method1 xmlrpc_method;  /* backward compatibility */
 
-/* Create a new method registry. */
+typedef xmlrpc_value *
+(*xmlrpc_default_method)(xmlrpc_env *   const envP,
+                         const char *   const callInfoP,
+                         const char *   const methodName,
+                         xmlrpc_value * const paramArrayP,
+                         void *         const serverInfo);
+
+extern unsigned int const xmlrpc_server_version_major;
+extern unsigned int const xmlrpc_server_version_minor;
+extern unsigned int const xmlrpc_server_version_point;
+
 xmlrpc_registry *
-xmlrpc_registry_new(xmlrpc_env * env);
+xmlrpc_registry_new(xmlrpc_env * const envP);
 
-/* Delete a method registry. */
 void
-xmlrpc_registry_free(xmlrpc_registry * registry);
+xmlrpc_registry_free(xmlrpc_registry * const registryP);
 
-/* Disable introspection.  The xmlrpc_registry has introspection
-** capability built-in.  If you want to make nosy people work harder,
-** you can turn this off. */
 void
-xmlrpc_registry_disable_introspection(xmlrpc_registry * registry);
+xmlrpc_registry_disable_introspection(xmlrpc_registry * const registryP);
 
-/* Register a method. The host parameter must be NULL (for now). You
-** are responsible for owning and managing user_data. The registry
-** will make internal copies of any other pointers it needs to
-** keep around. */
 void
-xmlrpc_registry_add_method(xmlrpc_env *      env,
-                           xmlrpc_registry * registry,
-                           const char *      host,
-                           const char *      method_name,
-                           xmlrpc_method     method,
-                           void *            user_data);
+xmlrpc_registry_add_method(xmlrpc_env *      const envP,
+                           xmlrpc_registry * const registryP,
+                           const char *      const host,
+                           const char *      const methodName,
+                           xmlrpc_method     const method,
+                           void *            const serverInfo);
 
-/* As above, but allow the user to supply introspection information. 
-**
-** Signatures use their own little description language. It consists
-** of one-letter type code (similar to the ones used in xmlrpc_parse_value)
-** for the result, a colon, and zero or more one-letter type codes for
-** the parameters. For example:
-**   i:ibdsAS86
-** If a function has more than one possible prototype, separate them with
-** commas:
-**   i:,i:s,i:ii
-** If the function signature can't be represented using this language,
-** pass a single question mark:
-**   ?
-** Help strings are ASCII text, and may contain HTML markup. */
 void
-xmlrpc_registry_add_method_w_doc(xmlrpc_env *      env,
-                                 xmlrpc_registry * registry,
-                                 const char *      host,
-                                 const char *      method_name,
-                                 xmlrpc_method     method,
-                                 void *            user_data,
-                                 const char *      signature,
-                                 const char *      help);
+xmlrpc_registry_add_method_w_doc(xmlrpc_env *      const envP,
+                                 xmlrpc_registry * const registryP,
+                                 const char *      const host,
+                                 const char *      const methodName,
+                                 xmlrpc_method     const method,
+                                 void *            const serverInfo,
+                                 const char *      const signatureString,
+                                 const char *      const help);
 
-/* Given a registry, a host name, and XML data; parse the <methodCall>,
-** find the appropriate method, call it, serialize the response, and
-** return it as an xmlrpc_mem_block. Most errors will be serialized
-** as <fault> responses. If a *really* bad error occurs, set a fault and
-** return NULL. (Actually, we currently give up with a fatal error,
-** but that should change eventually.)
-** The caller is responsible for destroying the memory block. */
+void
+xmlrpc_registry_add_method2(xmlrpc_env *      const envP,
+                            xmlrpc_registry * const registryP,
+                            const char *      const methodName,
+                            xmlrpc_method2          method,
+                            const char *      const signatureString,
+                            const char *      const help,
+                            void *            const serverInfo);
+
+void
+xmlrpc_registry_set_default_method(xmlrpc_env *          const envP,
+                                   xmlrpc_registry *     const registryP,
+                                   xmlrpc_default_method const handler,
+                                   void *                const userData);
+
+void
+xmlrpc_registry_set_preinvoke_method(xmlrpc_env *            const envP,
+                                     xmlrpc_registry *       const registryP,
+                                     xmlrpc_preinvoke_method const method,
+                                     void *                  const userData);
+
+
+typedef void xmlrpc_server_shutdown_fn(xmlrpc_env * const envP,
+                                       void *       const context,
+                                       const char * const comment,
+                                       void *       const callInfo);
+
+void
+xmlrpc_registry_set_shutdown(xmlrpc_registry *           const registryP,
+                             xmlrpc_server_shutdown_fn * const shutdownFn,
+                             void *                      const context);
+
+void
+xmlrpc_registry_set_dialect(xmlrpc_env *      const envP,
+                            xmlrpc_registry * const registryP,
+                            xmlrpc_dialect    const dialect);
+
+/*----------------------------------------------------------------------------
+   Lower interface -- services to be used by an HTTP request handler
+-----------------------------------------------------------------------------*/
+                    
+void
+xmlrpc_registry_process_call2(xmlrpc_env *        const envP,
+                              xmlrpc_registry *   const registryP,
+                              const char *        const xmlData,
+                              size_t              const xmlLen,
+                              void *              const callInfo,
+                              xmlrpc_mem_block ** const outputPP);
+
 xmlrpc_mem_block *
 xmlrpc_registry_process_call(xmlrpc_env *      const envP,
                              xmlrpc_registry * const registryP,
                              const char *      const host,
-                             const char *      const xml_data,
-                             size_t            const xml_len);
+                             const char *      const xmlData,
+                             size_t            const xmlLen);
 
-/* Define a default method for the specified registry.  This will be invoked
-** if no other method matches.  The user_data pointer is property of the
-** application, and will not be freed or manipulated by the registry. */
-void
-xmlrpc_registry_set_default_method(xmlrpc_env *          env,
-                                   xmlrpc_registry *     registry,
-                                   xmlrpc_default_method handler,
-                                   void *                user_data);
-
-/* Define a preinvoke method for the specified registry.  This function will
-** be called before any method (either the default or a registered one) is
-** invoked.  Applications can use this to do things like access control or
-** sanity checks.  The user_data pointer is property of the application,
-** and will not be freed or manipulated by the registry. */
-void
-xmlrpc_registry_set_preinvoke_method(xmlrpc_env *            env,
-                                     xmlrpc_registry *       registry,
-                                     xmlrpc_preinvoke_method method,
-                                     void *                  user_data);
-
-                    
 #ifdef __cplusplus
 }
 #endif

@@ -68,7 +68,7 @@ xmlrpc_authcookie_set(xmlrpc_env * const envP,
         /* Set HTTP_COOKIE_AUTH to the character representation of the
            encoded string.
         */
-#ifdef HAVE_SETENV
+#if HAVE_SETENV
         setenv("HTTP_COOKIE_AUTH", 
                XMLRPC_MEMBLOCK_CONTENTS(char, token),
                1);

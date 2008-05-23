@@ -1,19 +1,21 @@
 #include "xmlrpc-c/abyss.h"
 
+#include "bool.h"
+
 #include "token.h"
 
 void
-NextToken(char ** const p) {
+NextToken(const char ** const pP) {
 
-    abyss_bool gotToken;
+    bool gotToken;
 
     gotToken = FALSE;
 
     while (!gotToken) {
-        switch (**p) {
+        switch (**pP) {
         case '\t':
         case ' ':
-            ++(*p);
+            ++(*pP);
             break;
         default:
             gotToken = TRUE;
@@ -24,30 +26,39 @@ NextToken(char ** const p) {
 
 
 char *
-GetToken(char ** const p) {
+GetToken(char ** const pP) {
 
     char * p0;
         
-    p0 = *p;
+    p0 = *pP;
 
     while (1) {
-        switch (**p) {
+        switch (**pP) {
         case '\t':
         case ' ':
         case CR:
         case LF:
         case '\0':
-            if (p0 == *p)
+            if (p0 == *pP)
                 return NULL;
 
-            if (**p) {
-                **p = '\0';
-                ++(*p);
+            if (**pP) {
+                **pP = '\0';
+                ++(*pP);
             };
             return p0;
 
         default:
-            ++(*p);
+            ++(*pP);
         };
     }
+}
+
+
+
+void
+GetTokenConst(char **       const pP,
+              const char ** const tokenP) {
+
+    *tokenP = GetToken(pP);
 }

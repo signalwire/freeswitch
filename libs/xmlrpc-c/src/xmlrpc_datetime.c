@@ -5,15 +5,21 @@
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
+#if MSVCRT
+#include <windows.h>
+#endif
 
 #include "bool.h"
+
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/time_int.h"
 
 
 /* Future work: the XMLRPC_TYPE_DATETIME xmlrpc_value should store the
    datetime as something computation-friendly, not as a string.  The
-   client library should parse the string value and reject the XML if
+   XML-RPC XML parser should parse the string value and reject the XML if
    it isn't valid.
 
    But this file should remain the authority on datetimes, so the XML
@@ -24,58 +30,70 @@
 */
 
 
-#ifdef WIN32
+#if MSVCRT
 
 static const __int64 SECS_BETWEEN_EPOCHS = 11644473600;
 static const __int64 SECS_TO_100NS = 10000000; /* 10^7 */
 
 
-void UnixTimeToFileTime(const time_t t, LPFILETIME pft)
-{
-    // Note that LONGLONG is a 64-bit value
-    LONGLONG ll;
-    ll = Int32x32To64(t, SECS_TO_100NS) + SECS_BETWEEN_EPOCHS * SECS_TO_100NS;
-    pft->dwLowDateTime = (DWORD)ll;
-    pft->dwHighDateTime = ll >> 32;
+void
+UnixTimeToFileTime(time_t     const t,
+                   LPFILETIME const pft) {
+
+    int64_t const ll =
+        Int32x32To64(t, SECS_TO_100NS) + SECS_BETWEEN_EPOCHS * SECS_TO_100NS;
+
+    pft->dwLowDateTime  = (DWORD)ll;
+    pft->dwHighDateTime = (DWORD)(ll >> 32);
 }
 
-void UnixTimeToSystemTime(const time_t t, LPSYSTEMTIME pst)
-{
+
+
+void
+UnixTimeToSystemTime(time_t const t,
+                     LPSYSTEMTIME const pst) {
     FILETIME ft;
 
     UnixTimeToFileTime(t, &ft);
     FileTimeToSystemTime(&ft, pst);
 }
 
-static void UnixTimeFromFileTime(xmlrpc_env *  const envP, LPFILETIME pft, time_t * const timeValueP) 
-{ 
-    LONGLONG ll;
 
-    ll = ((LONGLONG)pft->dwHighDateTime << 32) + pft->dwLowDateTime;
-    /* convert to the Unix epoch */
-    ll -= (SECS_BETWEEN_EPOCHS * SECS_TO_100NS);
-    /* now convert to seconds */
-    ll /= SECS_TO_100NS; 
 
-    if ( (time_t)ll != ll )
-    {
-        //fail - value is too big for a time_t
+static void
+UnixTimeFromFileTime(xmlrpc_env *  const envP,
+                     LPFILETIME    const pft,
+                     time_t *      const timeValueP) { 
+
+    int64_t const WinEpoch100Ns =
+        ((int64_t)pft->dwHighDateTime << 32) + pft->dwLowDateTime;
+    int64_t const unixEpoch100Ns =
+        WinEpoch100Ns - (SECS_BETWEEN_EPOCHS * SECS_TO_100NS);
+    int64_t const unixEpochSeconds =
+        unixEpoch100Ns / SECS_TO_100NS; 
+
+    if ((time_t)unixEpochSeconds != unixEpochSeconds) {
+        /* Value is too big for a time_t; fail. */
         xmlrpc_faultf(envP, "Does not indicate a valid date");
-        *timeValueP = (time_t)-1;
-        return;
-    }
-    *timeValueP = (time_t)ll;
+        *timeValueP = (time_t)(-1);
+    } else
+        *timeValueP = (time_t)unixEpochSeconds;
 }
 
-static void UnixTimeFromSystemTime(xmlrpc_env *  const envP, LPSYSTEMTIME pst, time_t * const timeValueP) 
-{
+
+
+static void
+UnixTimeFromSystemTime(xmlrpc_env * const envP,
+                       LPSYSTEMTIME const pst,
+                       time_t *     const timeValueP) {
     FILETIME filetime;
 
     SystemTimeToFileTime(pst, &filetime); 
     UnixTimeFromFileTime(envP, &filetime, timeValueP); 
 }
 
-#endif
+#endif  /* MSVCRT */
+
 
 
 static void
@@ -86,8 +104,8 @@ validateDatetimeType(xmlrpc_env *         const envP,
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_TYPE_ERROR, "Value of type %s supplied where "
             "type %s was expected.", 
-            xmlrpc_typeName(valueP->_type), 
-            xmlrpc_typeName(XMLRPC_TYPE_DATETIME));
+            xmlrpc_type_name(valueP->_type), 
+            xmlrpc_type_name(XMLRPC_TYPE_DATETIME));
     }
 }
 
@@ -184,125 +202,6 @@ parseDateNumbers(const char * const t,
 }
 
 
-#ifdef HAVE_SETENV
-xmlrpc_bool const haveSetenv = TRUE;
-#else
-xmlrpc_bool const haveSetenv = FALSE;
-static void
-setenv(const char * const name ATTR_UNUSED,
-       const char * const value ATTR_UNUSED,
-       int          const replace ATTR_UNUSED) {
-    assert(FALSE);
-}
-#endif
-
-static void
-makeTimezoneUtc(xmlrpc_env *  const envP,
-                const char ** const oldTzP) {
-
-    const char * const tz = getenv("TZ");
-
-#ifdef WIN32
-	/* Windows implementation does not exist */
-	assert(TRUE);
-#endif
-
-    if (haveSetenv) {
-        if (tz) {
-            *oldTzP = strdup(tz);
-            if (*oldTzP == NULL)
-                xmlrpc_faultf(envP, "Unable to get memory to save TZ "
-                              "environment variable.");
-        } else
-            *oldTzP = NULL;
-
-        if (!envP->fault_occurred)
-            setenv("TZ", "", 1);
-    } else {
-        if (tz && strlen(tz) == 0) {
-            /* Everything's fine.  Nothing to change or restore */
-        } else {
-            /* Note that putenv() is not sufficient.  You can't restore
-               the original value with that, because it sets a pointer into
-               your own storage.
-            */
-            xmlrpc_faultf(envP, "Your TZ environment variable is not a "
-                          "null string and your C library does not have "
-                          "setenv(), so we can't change it.");
-        }
-    }
-}
-    
-
-
-static void
-restoreTimezone(const char * const oldTz) {
-
-    if (haveSetenv) {
-        setenv("TZ", oldTz, 1);
-        free((char*)oldTz);
-    }
-}
-
-
-
-static void
-mkAbsTime(xmlrpc_env * const envP,
-          struct tm    const brokenTime,
-          time_t     * const timeValueP) {
-
-#ifdef WIN32
-    /* Windows Implementation */
-    SYSTEMTIME stbrokenTime;
-
-    stbrokenTime.wHour = brokenTime.tm_hour;
-    stbrokenTime.wMinute = brokenTime.tm_min;
-    stbrokenTime.wSecond = brokenTime.tm_sec;
-    stbrokenTime.wMonth = brokenTime.tm_mon;
-    stbrokenTime.wDay = brokenTime.tm_mday;
-    stbrokenTime.wYear = brokenTime.tm_year;
-    stbrokenTime.wMilliseconds = 0;
-
-    /* When the date string is parsed into the tm structure, it was
-       modified to decrement the month count by one and convert the
-       4 digit year to a two digit year.  We undo what the parser 
-       did to make it a true SYSTEMTIME structure, then convert this
-       structure into a UNIX time_t structure
-    */
-    stbrokenTime.wYear+=1900;
-    stbrokenTime.wMonth+=1;
-
-    UnixTimeFromSystemTime(envP, &stbrokenTime,timeValueP);
-
-#else
-
-    time_t mktimeResult;
-    const char * oldTz;
-    struct tm mktimeWork;
-
-    /* We use mktime() to create the time_t because it's the
-       best we have available, but mktime() takes a local time
-       argument, and we have absolute time.  So we fake it out
-       by temporarily setting the timezone to UTC.
-    */
-    makeTimezoneUtc(envP, &oldTz);
-
-    if (!envP->fault_occurred) {
-        mktimeWork = brokenTime;
-        mktimeResult = mktime(&mktimeWork);
-
-        restoreTimezone(oldTz);
-
-        if (mktimeResult == (time_t)-1)
-            xmlrpc_faultf(envP, "Does not indicate a valid date");
-        else
-            *timeValueP = mktimeResult;
-    }
-#endif
-
-}
- 
-
 
 static void
 validateFormat(xmlrpc_env * const envP,
@@ -353,6 +252,13 @@ parseDatetime(xmlrpc_env * const envP,
    Example of the format we parse: "19980717T14:08:55"
    Note that this is not quite ISO 8601.  It's a bizarre combination of
    two ISO 8601 formats.
+
+   The input is capable of representing datetimes that cannot be expressed
+   as a time_t.  In that case, we fail, with fault code
+   XMLRPC_INTERNAL_ERROR.
+
+   And of course the input may not validly represent a datetime at all.
+   In that case too, we fail with fault code XMLRPC_PARSE_ERROR.
 -----------------------------------------------------------------------------*/
     validateFormat(envP, t);
 
@@ -361,20 +267,27 @@ parseDatetime(xmlrpc_env * const envP,
         
         parseDateNumbers(t, &Y, &M, &D, &h, &m, &s);
         
-        if (Y < 1900)
-            xmlrpc_faultf(envP, "Year is too early to represent as "
-                          "a standard Unix time");
+        if (Y < 1970)
+            xmlrpc_env_set_fault(envP, XMLRPC_INTERNAL_ERROR,
+                                 "Year is too early to represent as "
+                                 "a standard Unix time");
         else {
             struct tm brokenTime;
+            const char * error;
             
-            brokenTime.tm_sec   = s;
-            brokenTime.tm_min   = m;
-            brokenTime.tm_hour  = h;
-            brokenTime.tm_mday  = D;
-            brokenTime.tm_mon   = M - 1;
-            brokenTime.tm_year  = Y - 1900;
+            brokenTime.tm_sec  = s;
+            brokenTime.tm_min  = m;
+            brokenTime.tm_hour = h;
+            brokenTime.tm_mday = D;
+            brokenTime.tm_mon  = M - 1;
+            brokenTime.tm_year = Y - 1900;
             
-            mkAbsTime(envP, brokenTime, timeValueP);
+            xmlrpc_timegm(&brokenTime, timeValueP, &error);
+
+            if (error) {
+                xmlrpc_env_set_fault(envP, XMLRPC_PARSE_ERROR, error);
+                xmlrpc_strfree(error);
+            }
         }
     }
 }
@@ -435,7 +348,7 @@ xmlrpc_datetime_new_sec(xmlrpc_env * const envP,
         
         valP->_type = XMLRPC_TYPE_DATETIME;
 
-        gmtime_r(&value, &brokenTime);
+        xmlrpc_gmtime(value, &brokenTime);
         
         /* Note that this format is NOT ISO 8601 -- it's a bizarre
            hybrid of two ISO 8601 formats.

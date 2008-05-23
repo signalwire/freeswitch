@@ -1,0 +1,28 @@
+#! /bin/sh
+
+# This is for testing and playing with Xmlrpc_pstream.
+
+# To use, first start a packet stream XML-RPC server.  The
+# 'pstream_inetd_server' program from examples/cpp is good:
+#
+#  $ socketexec -accept -local_port=8080 -- pstream_inetd_server
+# 
+# Then (in another shell), run this program:
+#
+#  $ ./test
+#  > sample.add i/3 i/5
+#
+#      Result:
+#        Integer: 8
+#
+#  > [ctl-D]
+#  $
+#
+# OR:
+#
+#  $ ./test sample.add i/3 i/5
+#  $
+
+socketexec -connect -remote_host=localhost -remote_port=8080 --filedes=3 -- \
+  ./xmlrpc_pstream $*
+

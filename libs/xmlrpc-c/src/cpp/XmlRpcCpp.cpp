@@ -25,6 +25,8 @@
 
 
 #include <string>
+#include <cstring>
+
 #include "xmlrpc-c/oldcppwrapper.hpp"
 
 using std::string;
@@ -36,23 +38,23 @@ using std::string;
 XmlRpcFault::XmlRpcFault (const XmlRpcFault &fault) {
     xmlrpc_env_init(&mFault);
     xmlrpc_env_set_fault(&mFault,
-			 fault.mFault.fault_code,
-			 fault.mFault.fault_string);
+                         fault.mFault.fault_code,
+                         fault.mFault.fault_string);
 }
 
 XmlRpcFault::XmlRpcFault (const int faultCode, const string faultString) {
     xmlrpc_env_init(&mFault);
     xmlrpc_env_set_fault(&mFault, faultCode,
-			 const_cast<char*>(faultString.c_str()));
+                         const_cast<char*>(faultString.c_str()));
 }
  
 XmlRpcFault::XmlRpcFault (const xmlrpc_env *env) {
     if (!env->fault_string)
-	throw XmlRpcFault(XMLRPC_INTERNAL_ERROR,
-			  "Tried to create empty fault");
+        throw XmlRpcFault(XMLRPC_INTERNAL_ERROR,
+                          "Tried to create empty fault");
     xmlrpc_env_init(&mFault);
     xmlrpc_env_set_fault(&mFault, env->fault_code,
-			 const_cast<char*>(env->fault_string));
+                         const_cast<char*>(env->fault_string));
 }
 
 XmlRpcFault::~XmlRpcFault (void) {
@@ -72,9 +74,9 @@ string XmlRpcFault::getFaultString (void) const {
 XmlRpcEnv::XmlRpcEnv (const XmlRpcEnv &env) {
     xmlrpc_env_init(&mEnv);
     if (env.hasFaultOccurred())
-	xmlrpc_env_set_fault(&mEnv,
-			     env.mEnv.fault_code,
-			     env.mEnv.fault_string);
+        xmlrpc_env_set_fault(&mEnv,
+                             env.mEnv.fault_code,
+                             env.mEnv.fault_string);
 }
 
 XmlRpcFault XmlRpcEnv::getFault (void) const {
@@ -166,7 +168,7 @@ XmlRpcValue XmlRpcValue::makeStruct (void) {
 }
 
 XmlRpcValue XmlRpcValue::makeBase64 (const unsigned char *const data,
-				     size_t len)
+                                     size_t len)
 {
     XmlRpcEnv env;
     xmlrpc_value *value = xmlrpc_build_value(env, "6", data, len);
@@ -187,7 +189,7 @@ bool XmlRpcValue::getBool (void) const {
     xmlrpc_bool result;
     xmlrpc_parse_value(env, mValue, "b", &result);
     env.throwIfFaultOccurred();
-    return result;
+    return (result != 0);
 }
 
 double XmlRpcValue::getDouble (void) const {
@@ -233,7 +235,7 @@ XmlRpcValue XmlRpcValue::getStruct (void) const {
 }
 
 void XmlRpcValue::getBase64 (const unsigned char *& out_data,
-			     size_t& out_len) const
+                             size_t& out_len) const
 {
     XmlRpcEnv env;
     xmlrpc_parse_value(env, mValue, "6", &out_data, &out_len);
@@ -271,10 +273,10 @@ bool XmlRpcValue::structHasKey (const string& key) const {
     XmlRpcEnv env;
     const char *keystr = key.data();
     size_t keylen = key.size();
-    bool result = xmlrpc_struct_has_key_n(env, mValue,
-					  const_cast<char*>(keystr), keylen);
+    int result = xmlrpc_struct_has_key_n(env, mValue,
+                                         const_cast<char*>(keystr), keylen);
     env.throwIfFaultOccurred();
-    return result;
+    return (result != 0);
 }
 
 XmlRpcValue XmlRpcValue::structGetValue (const string& key) const {
@@ -282,8 +284,8 @@ XmlRpcValue XmlRpcValue::structGetValue (const string& key) const {
     const char *keystr = key.data();
     size_t keylen = key.size();
     xmlrpc_value *result =
-	xmlrpc_struct_get_value_n(env, mValue,
-				  const_cast<char*>(keystr), keylen);
+        xmlrpc_struct_get_value_n(env, mValue,
+                                  const_cast<char*>(keystr), keylen);
     env.throwIfFaultOccurred();
     return XmlRpcValue(result);
 }
@@ -294,13 +296,13 @@ void XmlRpcValue::structSetValue (const string& key, const XmlRpcValue& value)
     const char *keystr = key.data();
     size_t keylen = key.size();
     xmlrpc_struct_set_value_n(env, mValue, (char*) keystr, keylen,
-			      value.borrowReference());
+                              value.borrowReference());
     env.throwIfFaultOccurred();
 }
 
 void XmlRpcValue::structGetKeyAndValue (const int index,
-					string& out_key,
-					XmlRpcValue& out_value) const
+                                        string& out_key,
+                                        XmlRpcValue& out_value) const
 {
     XmlRpcEnv env;
 
@@ -313,81 +315,81 @@ void XmlRpcValue::structGetKeyAndValue (const int index,
 }
 
 XmlRpcGenSrv& XmlRpcGenSrv::addMethod (const string& name,
-							xmlrpc_method method,
-							void *data)
+                                       xmlrpc_method method,
+                                       void *data)
 {
     XmlRpcEnv env;
 
-	xmlrpc_registry_add_method (env, mRegistry, NULL,
-				name.c_str (),
-				method, data);
+    xmlrpc_registry_add_method (env, mRegistry, NULL,
+                                name.c_str (),
+                                method, data);
 
     env.throwIfFaultOccurred ();
-	return (*this);
+    return (*this);
 }
 
 XmlRpcGenSrv& XmlRpcGenSrv::addMethod (const string& name,
-			xmlrpc_method method,
-			void* data,
-			const string& signature,
-			const string& help)
+                                       xmlrpc_method method,
+                                       void* data,
+                                       const string& signature,
+                                       const string& help)
 {
     XmlRpcEnv env;
 
-	xmlrpc_registry_add_method_w_doc (env, mRegistry, NULL,
-				name.c_str (),
-				method, data,
-				signature.c_str (),
-				help.c_str ());
+    xmlrpc_registry_add_method_w_doc (env, mRegistry, NULL,
+                                      name.c_str (),
+                                      method, data,
+                                      signature.c_str (),
+                                      help.c_str ());
 
     env.throwIfFaultOccurred ();
-	return (*this);
+    return (*this);
 }
 
 xmlrpc_mem_block* XmlRpcGenSrv::alloc (XmlRpcEnv& env, const string& body) const
 {
-   	xmlrpc_mem_block*	result = NULL;
-   	char*				contents;
+    xmlrpc_mem_block*   result = NULL;
+    char*               contents;
 
-	result		= xmlrpc_mem_block_new (env, body.length ());
-	env.throwIfFaultOccurred ();
+    result      = xmlrpc_mem_block_new (env, body.length ());
+    env.throwIfFaultOccurred ();
 
-	contents	= XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, result);
+    contents    = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, result);
 
-	memcpy (contents, body.c_str (), body.length ());
-	return result;
+    memcpy (contents, body.c_str (), body.length ());
+    return result;
 }
 
 string XmlRpcGenSrv::handle (const string& body) const
 {
-	XmlRpcEnv env;
-	string result;
-	xmlrpc_mem_block*	input = NULL, * output = NULL; 
-   	char* input_data, * output_data;
-   	size_t input_size, output_size;
+    XmlRpcEnv env;
+    string result;
+    xmlrpc_mem_block*   input = NULL, * output = NULL; 
+    char* input_data, * output_data;
+    size_t input_size, output_size;
 
-   	if (body.length () > xmlrpc_limit_get (XMLRPC_XML_SIZE_LIMIT_ID))
-		throw XmlRpcFault (XMLRPC_LIMIT_EXCEEDED_ERROR, "XML-RPC request too large");
+    if (body.length () > xmlrpc_limit_get (XMLRPC_XML_SIZE_LIMIT_ID))
+        throw XmlRpcFault (XMLRPC_LIMIT_EXCEEDED_ERROR, "XML-RPC request too large");
 
-	input	= alloc (env, body);
-	input_data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, input);
-	input_size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, input);
+    input   = alloc (env, body);
+    input_data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, input);
+    input_size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, input);
 
-	output	= xmlrpc_registry_process_call (env, mRegistry, NULL,
-			input_data, input_size);
+    output  = xmlrpc_registry_process_call (env, mRegistry, NULL,
+                                            input_data, input_size);
 
-	if (output)
-	{
-    	output_data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output);
-		output_size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output);
+    if (output)
+    {
+        output_data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output);
+        output_size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output);
 
-		result.assign (output_data, output_size);
-		xmlrpc_mem_block_free (output);
-	}
+        result.assign (output_data, output_size);
+        xmlrpc_mem_block_free (output);
+    }
 
-	xmlrpc_mem_block_free (input);
-	if (!result.length ())
-		throw XmlRpcFault (env);
+    xmlrpc_mem_block_free (input);
+    if (!result.length ())
+        throw XmlRpcFault (env);
 
-	return result;
+    return result;
 }

@@ -30,39 +30,51 @@
 #  define _REENTRANT
 #  include <pthread.h>
 #elif defined (WIN32)
+#include <windows.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef HANDLE pthread_t;
 typedef CRITICAL_SECTION pthread_mutex_t;
 
 #define PTHREAD_MUTEX_INITIALIZER NULL
-    //usage: pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    /* usage: pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; */
 
 typedef
 struct {
-    int attrs; //currently unused. placeholder.
+    int attrs; /* currently unused. placeholder. */
 } pthread_attr_t;
 
 typedef
 struct {
-    int attrs; //currently unused. placeholder.
+    int attrs; /* currently unused. placeholder. */
 } pthread_mutexattr_t;
 
-//typedef void * (*pthread_func)(void *);
-typedef unsigned ( __stdcall *pthread_func )( void * );
+/* We make pthread_func identical to a Windows thread start function
+   so we can use Windows thread functions to implement these pthread
+   functions directly.
+*/
+typedef unsigned (WINAPI pthread_func)(void *);
 
-extern int pthread_create(pthread_t *new_thread_ID,
-                          const pthread_attr_t *attr,
-                          pthread_func start_func, void *arg);
+extern int pthread_create(pthread_t *            const new_thread_ID,
+                          const pthread_attr_t * const attr,
+                          pthread_func * start_func,
+                          void *                 const arg);
 extern int pthread_cancel(pthread_t target_thread);
 extern int pthread_join(pthread_t target_thread, void **status);
 extern int pthread_detach(pthread_t target_thread);
 
-extern int pthread_mutex_init(pthread_mutex_t *mp,
-                              const pthread_mutexattr_t *attr);
-extern int pthread_mutex_lock(pthread_mutex_t *mp);
-extern int pthread_mutex_unlock(pthread_mutex_t *mp);
-extern int pthread_mutex_destroy(pthread_mutex_t *mp);
+extern int pthread_mutex_init(pthread_mutex_t *           const mp,
+                              const pthread_mutexattr_t * const attr);
+extern int pthread_mutex_lock(pthread_mutex_t * const mp);
+extern int pthread_mutex_unlock(pthread_mutex_t * const mp);
+extern int pthread_mutex_destroy(pthread_mutex_t * const mp);
 
+#ifdef __cplusplus
+}
+#endif
 #endif  /* WIN32 */
 
 #endif

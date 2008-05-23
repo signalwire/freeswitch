@@ -11,68 +11,74 @@ using namespace std;
 #include "XmlRpcClass.hpp"
 
 
-//=========================================================================
-//  XmlRpcClass
-//=========================================================================
-//  This class stores information about a proxy class, and knows how to
-//  generate code.
+XmlRpcClass::XmlRpcClass(string const& className) :
+    mClassName(className) {}
 
-XmlRpcClass::XmlRpcClass (string class_name)
-    : mClassName(class_name)
-{
-}
 
-XmlRpcClass::XmlRpcClass (const XmlRpcClass& c)
-    : mClassName(c.mClassName),
-      mFunctions(c.mFunctions)
-{
-}
 
-XmlRpcClass& XmlRpcClass::operator= (const XmlRpcClass& c)
-{
-    if (this == &c)
-	return *this;
-    mClassName = c.mClassName;
-    mFunctions = c.mFunctions;
+XmlRpcClass::XmlRpcClass(XmlRpcClass const& c) :
+    mClassName(c.mClassName),
+    mFunctions(c.mFunctions) {}
+
+
+
+XmlRpcClass&
+XmlRpcClass::operator= (XmlRpcClass const& c) {
+
+    if (this != &c) {
+        this->mClassName = c.mClassName;
+        this->mFunctions = c.mFunctions;
+    }
     return *this;
 }
 
-void XmlRpcClass::addFunction (const XmlRpcFunction& function)
-{
+
+
+void
+XmlRpcClass::addFunction(XmlRpcFunction const& function) {
+
     mFunctions.push_back(function);
 }
 
-void XmlRpcClass::printDeclaration (ostream&)
-{
-    cout << "class " << mClassName << " {" << endl;
-    cout << "    XmlRpcClient mClient;" << endl;
-    cout << endl;
-    cout << "public:" << endl;
-    cout << "    " << mClassName << " (const XmlRpcClient& client)" << endl;
-    cout << "        : mClient(client) {}" << endl;
-    cout << "    " << mClassName << " (const string& server_url)" << endl;
-    cout << "        : mClient(XmlRpcClient(server_url)) {}" << endl;
-    cout << "    " << mClassName << " (const " << mClassName << "& o)" << endl;
-    cout << "        : mClient(o.mClient) {}" << endl;
-    cout << endl;
-    cout << "    " << mClassName << "& operator= (const "
-	 << mClassName << "& o) {" << endl;
-    cout << "        if (this != &o) mClient = o.mClient;" << endl;
-    cout << "        return *this;" << endl;
-    cout << "    }" << endl;
 
-    vector<XmlRpcFunction>::iterator f;
+
+void
+XmlRpcClass::printDeclaration(ostream & out) const {
+
+    out << "class " << mClassName << " {" << endl;
+    out << "    XmlRpcClient mClient;" << endl;
+    out << endl;
+    out << "public:" << endl;
+    out << "    " << mClassName << " (const XmlRpcClient& client)" << endl;
+    out << "        : mClient(client) {}" << endl;
+    out << "    " << mClassName << " (const std::string& server_url)" << endl;
+    out << "        : mClient(XmlRpcClient(server_url)) {}" << endl;
+    out << "    " << mClassName << " (const " << mClassName << "& o)" << endl;
+    out << "        : mClient(o.mClient) {}" << endl;
+    out << endl;
+    out << "    " << mClassName << "& operator= (const "
+         << mClassName << "& o) {" << endl;
+    out << "        if (this != &o) mClient = o.mClient;" << endl;
+    out << "        return *this;" << endl;
+    out << "    }" << endl;
+
+    vector<XmlRpcFunction>::const_iterator f;
     for (f = mFunctions.begin(); f < mFunctions.end(); ++f) {
-	f->printDeclarations(cout);
+        f->printDeclarations(out);
     }
 
-    cout << "};" << endl;    
+    out << "};" << endl;    
 }
 
-void XmlRpcClass::printDefinition (ostream&)
-{
-    vector<XmlRpcFunction>::iterator f;
+
+
+void
+XmlRpcClass::printDefinition(ostream & out) const {
+
+    vector<XmlRpcFunction>::const_iterator f;
+
     for (f = mFunctions.begin(); f < mFunctions.end(); ++f) {
-	f->printDefinitions(cout, mClassName);
+        f->printDefinitions(out, mClassName);
     }
 }
+

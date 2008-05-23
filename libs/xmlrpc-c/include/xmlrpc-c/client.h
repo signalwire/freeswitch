@@ -16,33 +16,61 @@
 extern "C" {
 #endif /* __cplusplus */
 
-/*=========================================================================
-**  Initialization and Shutdown
-**=========================================================================
-**  These routines initialize and terminate the XML-RPC client. If you're
-**  already using libwww on your own, you can pass
-**  XMLRPC_CLIENT_SKIP_LIBWWW_INIT to avoid initializing it twice.
+struct xmlrpc_client;
+struct xmlrpc_client_transport;
+struct xmlrpc_client_transport_ops;
+#ifndef __cplusplus
+typedef struct xmlrpc_client xmlrpc_client;
+typedef struct xmlrpc_client_transport xmlrpc_client_transport;
+typedef struct xmlrpc_client_transport_ops xmlrpc_client_transport_ops;
+#endif
+
+/* libxmlrpc_client typically does _not_ actually include all of the
+   XML transports declared here by xmlrpc_*_transport_ops.
+
+   Use 'xmlrpc-c-config --features' to determine which features are
+   installed.
 */
 
-#define XMLRPC_CLIENT_NO_FLAGS         (0)
-#define XMLRPC_CLIENT_SKIP_LIBWWW_INIT (1)
+/* Before Xmlrpc-c 1.13 (December 2007), we declared struct
+   xmlrpc_xportparms, as a sort of "base class."  The struct was never
+   complete -- you just cast pointer to it it to pointers to other
+   types.  It turned out not to be really helpful and casts are ugly,
+   so now we just use void * as a base class pointer.
+*/
 
-extern void
-xmlrpc_client_init(int          const flags,
-                   const char * const appname,
-                   const char * const appversion);
+extern struct xmlrpc_client_transport_ops xmlrpc_libwww_transport_ops;
+extern struct xmlrpc_client_transport_ops xmlrpc_wininet_transport_ops;
+extern struct xmlrpc_client_transport_ops xmlrpc_curl_transport_ops;
 
-struct xmlrpc_xportparms;
-    /* This is a "base class".  The struct is never complete; you're
-       supposed to cast between struct xmlrpc_xportparms * and 
-       "struct xmlrpc_..._xportparms *" in order to use it.  
-    */
+enum xmlrpc_sslversion {
+    XMLRPC_SSLVERSION_DEFAULT,
+    XMLRPC_SSLVERSION_TLSv1,
+    XMLRPC_SSLVERSION_SSLv2,
+    XMLRPC_SSLVERSION_SSLv3
+};
 
 struct xmlrpc_curl_xportparms {
+    /* This is designed so that zero values are always the defaults. */
     const char * network_interface;
     xmlrpc_bool  no_ssl_verifypeer;
     xmlrpc_bool  no_ssl_verifyhost;
     const char * user_agent;
+    const char * ssl_cert;
+    const char * sslcerttype;
+    const char * sslcertpasswd;
+    const char * sslkey;
+    const char * sslkeytype;
+    const char * sslkeypasswd;
+    const char * sslengine;
+    xmlrpc_bool  sslengine_default;
+    enum xmlrpc_sslversion sslversion;
+    const char * cainfo;
+    const char * capath;
+    const char * randomfile;
+    const char * egdsocket;
+    const char * ssl_cipher_list;
+    unsigned int timeout;
 };
 
 
@@ -61,10 +89,17 @@ struct xmlrpc_wininet_xportparms {
 /* XMLRPC_WXPSIZE(xyz) is analogous to XMLRPC_CPSIZE, below */
 
 struct xmlrpc_clientparms {
+    /* (transport, transportparmsP, transportparm_size) and
+       (transportOpsP, transportP) are mutually exclusive.
+    */
     const char *               transport;
-    struct xmlrpc_xportparms * transportparmsP;
-        /* Cast a "struct ..._xportparms *" to fit here */
+    const void *               transportparmsP;
+        /* This should be type "const struct ..._xportparms *" */
     size_t                     transportparm_size;
+
+    const struct xmlrpc_client_transport_ops * transportOpsP;
+    xmlrpc_client_transport *  transportP;
+    xmlrpc_dialect             dialect;
 };
 
 #define XMLRPC_CPSIZE(mbrname) \
@@ -77,24 +112,9 @@ struct xmlrpc_clientparms {
    not the caller is new enough to have supplied a certain parameter.
 */
 
-void 
-xmlrpc_client_init2(xmlrpc_env *                      const env,
-                    int                               const flags,
-                    const char *                      const appname,
-                    const char *                      const appversion,
-                    const struct xmlrpc_clientparms * const clientparms,
-                    unsigned int                      const parm_size);
-
-extern void
-xmlrpc_client_cleanup(void);
-
 const char * 
 xmlrpc_client_get_default_transport(xmlrpc_env * const env);
 
-/*=========================================================================
-** Required for both internal and external development.
-**=========================================================================
-*/
 /* A callback function to handle the response to an asynchronous call.
 ** If 'fault->fault_occurred' is true, then response will be NULL. All
 ** arguments except 'user_data' will be deallocated internally; please do
@@ -112,32 +132,39 @@ typedef void (*xmlrpc_response_handler) (const char *server_url,
 
 
 /*=========================================================================
-**  xmlrpc_server_info
-**=========================================================================
-**  We normally refer to servers by URL. But sometimes we need to do extra
-**  setup for particular servers. In that case, we can create an
-**  xmlrpc_server_info object, configure it in various ways, and call the
-**  remote server.
-**
-**  (This interface is also designed to discourage further multiplication
-**  of xmlrpc_client_call APIs. We have enough of those already. Please
-**  add future options and flags using xmlrpc_server_info.)
-*/
+   xmlrpc_server_info
+===========================================================================
+  We normally refer to servers by URL. But sometimes we need to do extra
+  setup for particular servers. In that case, we can create an
+  xmlrpc_server_info object, configure it in various ways, and call the
+  remote server.
+
+  (This interface is also designed to discourage further multiplication
+  of xmlrpc_client_call APIs. We have enough of those already. Please
+  add future options and flags using xmlrpc_server_info.)
+=========================================================================*/
 
 typedef struct _xmlrpc_server_info xmlrpc_server_info;
 
 /* Create a new server info record, pointing to the specified server. */
 xmlrpc_server_info *
-xmlrpc_server_info_new(xmlrpc_env * const env,
-                       const char * const server_url);
+xmlrpc_server_info_new(xmlrpc_env * const envP,
+                       const char * const serverUrl);
 
 /* Create a new server info record, with a copy of the old server. */
 extern xmlrpc_server_info * 
-xmlrpc_server_info_copy(xmlrpc_env *env, xmlrpc_server_info *src_server);
+xmlrpc_server_info_copy(xmlrpc_env *         const envP,
+                        xmlrpc_server_info * const srcP);
 
-/* Delete a server info record. */
-extern void
-xmlrpc_server_info_free (xmlrpc_server_info *server);
+void
+xmlrpc_server_info_free(xmlrpc_server_info * const serverP);
+
+
+void 
+xmlrpc_server_info_set_user(xmlrpc_env *         const envP,
+                            xmlrpc_server_info * const serverInfoP,
+                            const char *         const username,
+                            const char *         const password);
 
 void 
 xmlrpc_server_info_set_basic_auth(xmlrpc_env *         const envP,
@@ -145,118 +172,116 @@ xmlrpc_server_info_set_basic_auth(xmlrpc_env *         const envP,
                                   const char *         const username,
                                   const char *         const password);
 
-
-/*=========================================================================
-**  xmlrpc_client_call
-**=========================================================================
-**  A synchronous XML-RPC client. Do not attempt to call any of these
-**  functions from inside an asynchronous callback!
-*/
-
-xmlrpc_value * 
-xmlrpc_client_call(xmlrpc_env * const envP,
-                   const char * const server_url,
-                   const char * const method_name,
-                   const char * const format,
-                   ...);
-
-xmlrpc_value * 
-xmlrpc_client_call_params(xmlrpc_env *   const envP,
-                          const char *   const serverUrl,
-                          const char *   const methodName,
-                          xmlrpc_value * const paramArrayP);
-
-xmlrpc_value * 
-xmlrpc_client_call_server(xmlrpc_env *               const envP,
-                          const xmlrpc_server_info * const server,
-                          const char *               const method_name,
-                          const char *               const format, 
-                          ...);
-
-xmlrpc_value *
-xmlrpc_client_call_server_params(
-    xmlrpc_env *               const envP,
-    const xmlrpc_server_info * const serverP,
-    const char *               const method_name,
-    xmlrpc_value *             const paramArrayP);
+void
+xmlrpc_server_info_allow_auth_basic(xmlrpc_env *         const envP,
+                                    xmlrpc_server_info * const sP);
 
 void
-xmlrpc_client_transport_call(
+xmlrpc_server_info_disallow_auth_basic(xmlrpc_env *         const envP,
+                                       xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_allow_auth_digest(xmlrpc_env *         const envP,
+                                     xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_disallow_auth_digest(xmlrpc_env *         const envP,
+                                        xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_allow_auth_negotiate(xmlrpc_env *         const envP,
+                                        xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_disallow_auth_negotiate(xmlrpc_env *         const envP,
+                                           xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_allow_auth_ntlm(xmlrpc_env *         const envP,
+                                   xmlrpc_server_info * const sP);
+
+void
+xmlrpc_server_info_disallow_auth_ntlm(xmlrpc_env *         const envP,
+                                      xmlrpc_server_info * const sP);
+
+extern unsigned int const xmlrpc_client_version_major;
+extern unsigned int const xmlrpc_client_version_minor;
+extern unsigned int const xmlrpc_client_version_point;
+
+void
+xmlrpc_client_setup_global_const(xmlrpc_env * const envP);
+
+void
+xmlrpc_client_teardown_global_const(void);
+
+void 
+xmlrpc_client_create(xmlrpc_env *                      const envP,
+                     int                               const flags,
+                     const char *                      const appname,
+                     const char *                      const appversion,
+                     const struct xmlrpc_clientparms * const clientparmsP,
+                     unsigned int                      const parmSize,
+                     xmlrpc_client **                  const clientPP);
+
+void 
+xmlrpc_client_destroy(xmlrpc_client * const clientP);
+
+void
+xmlrpc_client_transport_call2(
     xmlrpc_env *               const envP,
-    void *                     const reserved,  /* for client handle */
+    xmlrpc_client *            const clientP,
     const xmlrpc_server_info * const serverP,
     xmlrpc_mem_block *         const callXmlP,
     xmlrpc_mem_block **        const respXmlPP);
 
-
-/*=========================================================================
-**  xmlrpc_client_call_asynch
-**=========================================================================
-**  An asynchronous XML-RPC client.
-*/
-
-/* Make an asynchronous XML-RPC call. We make internal copies of all
-** arguments except user_data, so you can deallocate them safely as soon
-** as you return. Errors will be passed to the callback. You will need
-** to run the event loop somehow; see below.
-** WARNING: If an error occurs while building the argument, the
-** response handler will be called with a NULL param_array. */
-void 
-xmlrpc_client_call_asynch(const char * const server_url,
-                          const char * const method_name,
-                          xmlrpc_response_handler callback,
-                          void *       const user_data,
-                          const char * const format,
-                          ...);
-
-/* As above, but use an xmlrpc_server_info object. The server object can be
-** safely destroyed as soon as this function returns. */
-void 
-xmlrpc_client_call_server_asynch(xmlrpc_server_info * const server,
-                                 const char *         const method_name,
-                                 xmlrpc_response_handler callback,
-                                 void *               const user_data,
-                                 const char *         const format,
-                                 ...);
-
-/* As above, but the parameter list is supplied as an xmlrpc_value
-** containing an array.
-*/
 void
-xmlrpc_client_call_asynch_params(const char *   const server_url,
-                                 const char *   const method_name,
-                                 xmlrpc_response_handler callback,
-                                 void *         const user_data,
-                                 xmlrpc_value * const paramArrayP);
-    
-/* As above, but use an xmlrpc_server_info object. The server object can be
-** safely destroyed as soon as this function returns. */
+xmlrpc_client_call2(xmlrpc_env *               const envP,
+                    struct xmlrpc_client *     const clientP,
+                    const xmlrpc_server_info * const serverInfoP,
+                    const char *               const methodName,
+                    xmlrpc_value *             const paramArrayP,
+                    xmlrpc_value **            const resultPP);
+
+void
+xmlrpc_client_call2f(xmlrpc_env *    const envP,
+                     xmlrpc_client * const clientP,
+                     const char *    const serverUrl,
+                     const char *    const methodName,
+                     xmlrpc_value ** const resultPP,
+                     const char *    const format,
+                     ...);
+
 void 
-xmlrpc_client_call_server_asynch_params(
-    xmlrpc_server_info * const server,
-    const char *         const method_name,
-    xmlrpc_response_handler callback,
-    void *               const user_data,
-    xmlrpc_value *       const paramArrayP);
-    
-/*=========================================================================
-**  Event Loop Interface
-**=========================================================================
-**  These functions can be used to run the XML-RPC event loop. If you
-**  don't like these, you can also run the libwww event loop directly.
-*/
+xmlrpc_client_event_loop_finish(xmlrpc_client * const clientP);
 
-/* Finish all outstanding asynchronous calls. Alternatively, the loop
-** will exit if someone calls xmlrpc_client_event_loop_end. */
-extern void
-xmlrpc_client_event_loop_finish_asynch(void);
+void 
+xmlrpc_client_event_loop_finish_timeout(xmlrpc_client * const clientP,
+                                        unsigned long   const milliseconds);
 
+void
+xmlrpc_client_start_rpc(xmlrpc_env *             const envP,
+                        struct xmlrpc_client *   const clientP,
+                        xmlrpc_server_info *     const serverInfoP,
+                        const char *             const methodName,
+                        xmlrpc_value *           const argP,
+                        xmlrpc_response_handler        responseHandler,
+                        void *                   const userData);
 
-/* Finish all outstanding asynchronous calls. */
-extern void
-xmlrpc_client_event_loop_finish_asynch_timeout(unsigned long milliseconds);
+void 
+xmlrpc_client_start_rpcf(xmlrpc_env *    const envP,
+                         xmlrpc_client * const clientP,
+                         const char *    const serverUrl,
+                         const char *    const methodName,
+                         xmlrpc_response_handler callback,
+                         void *          const userData,
+                         const char *    const format,
+                         ...);
 
+void
+xmlrpc_client_set_interrupt(xmlrpc_client * const clientP,
+                            int *           const interruptP);
 
+#include <xmlrpc-c/client_global.h>
 
 /* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
 **

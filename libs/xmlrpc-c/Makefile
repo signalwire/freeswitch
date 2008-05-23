@@ -7,8 +7,11 @@
 # GNU Make uses a make file named "GNUmakefile" in preference to "Makefile"
 # if it exists.  This package contains a "GNUmakefile".
 
+default: all
+
 all install clean dep depend:
 	@echo "You must use GNU Make to build this.  You are running some "
 	@echo "other Make.  GNU Make may be installed on your system with "
 	@echo "the name 'gmake'.  If not, see http://www.gnu.org/software ."
 	@echo
+	false

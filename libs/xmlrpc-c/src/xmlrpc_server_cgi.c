@@ -237,8 +237,8 @@ xmlrpc_server_cgi_process_call(xmlrpc_registry * const registryP) {
     input_size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, input);
 
     /* Process our call. */
-    output = xmlrpc_registry_process_call(&env, registryP, NULL,
-                                          input_data, input_size);
+    xmlrpc_registry_process_call2(&env, registryP,
+                                  input_data, input_size, NULL, &output);
     XMLRPC_FAIL_IF_FAULT(&env);
     output_data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, output);
     output_size = XMLRPC_TYPED_MEM_BLOCK_SIZE(char, output);

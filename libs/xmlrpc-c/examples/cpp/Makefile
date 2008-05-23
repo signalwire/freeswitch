@@ -5,14 +5,15 @@
 # these programs depend.
 
 
-ifeq ($(SRCDIR)x,x)
+ifeq ($(SRCDIR),)
 SRCDIR = $(CURDIR)/../..
-BUILDDIR = $(SRCDIR)
+BLDDIR = $(SRCDIR)
 endif
+SUBDIR=examples/cpp
+
+include $(BLDDIR)/config.mk
 
 default: all
-
-include $(BUILDDIR)/Makefile.config
 
 CXXFLAGS = $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 LDFLAGS = $(LADD)
@@ -20,18 +21,18 @@ LDFLAGS = $(LADD)
 # If this were a real application, working from an installed copy of
 # Xmlrpc-c, XMLRPC_C_CONFIG would just be 'xmlrpc-c-config'.  It would be
 # found in the user's PATH.
-XMLRPC_C_CONFIG = $(BUILDDIR)/xmlrpc-c-config.test
+XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
 
 SERVERPROGS_ABYSS = \
+  xmlrpc_inetd_server \
+  xmlrpc_loop_server \
   xmlrpc_sample_add_server \
-
-LEGACY_CLIENTPROGS = \
-  meerkat-app-list
 
 CLIENTPROGS = \
   xmlrpc_sample_add_client \
   sample_add_client_complex \
+  asynch_client \
 
 # Build up PROGS:
 PROGS = 
@@ -41,10 +42,16 @@ ifeq ($(ENABLE_ABYSS_SERVER),yes)
 endif
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
-  PROGS += $(CLIENTPROGS) $(LEGACY_CLIENTPROGS)
+  PROGS += $(CLIENTPROGS)
 endif
 
-INCLUDES = $(shell $(XMLRPC_C_CONFIG) c++2 client abyss-server --cflags)
+PROGS += pstream_inetd_server
+
+ifeq ($(MUST_BUILD_CLIENT),yes)
+  PROGS += pstream_client
+endif
+
+INCLUDES = -I. $(shell $(XMLRPC_C_CONFIG) c++2 client abyss-server --cflags)
 
 LDADD_SERVER_ABYSS = \
   $(shell $(XMLRPC_C_CONFIG) c++2 abyss-server --ldadd)
@@ -55,31 +62,42 @@ LDADD_CLIENT = \
 LDADD_BASE = \
   $(shell $(XMLRPC_C_CONFIG) c++2 --ldadd)
 
-LDADD_LEGACY_CLIENT = \
-  $(shell $(XMLRPC_C_CONFIG) c++ client --ldadd)
-
 all: $(PROGS)
 
 $(SERVERPROGS_ABYSS):%:%.o
 	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_SERVER_ABYSS)
 
-$(LEGACY_CLIENTPROGS):%:%.o
-	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_LEGACY_CLIENT)
-
 $(CLIENTPROGS):%:%.o
 	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_CLIENT)
 
-%.o:%.cpp
+
+LDADD_PSTREAM_CLIENT = \
+  $(shell $(XMLRPC_C_CONFIG) c++2 client --ldadd)
+
+pstream_client:%:%.o
+	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_PSTREAM_CLIENT)
+
+LDADD_PSTREAM_SERVER = \
+  $(shell $(XMLRPC_C_CONFIG) c++2 pstream-server --ldadd)
+
+pstream_inetd_server:%:%.o
+	$(CXXLD) -o $@ $(LDFLAGS) $^ $(LDADD_PSTREAM_SERVER)
+
+OBJECTS = $(PROGS:%=%.o)
+
+$(OBJECTS):%.o:%.cpp
 	$(CXX) -c $(INCLUDES) $(CXXFLAGS) $<
 
-*.c: config.h xmlrpc_amconfig.h
+# See example/Makefile for an explanation of config.h and xmlrpc_amconfig.h
+
+$(OBJECTS): config.h xmlrpc_amconfig.h
 
 config.h:
-	$(LN_S) $(BUILDDIR)/xmlrpc_config.h $@
+	$(LN_S) $(BLDDIR)/xmlrpc_config.h $@
 xmlrpc_amconfig.h:
-	$(LN_S) $(BUILDDIR)/$@ .
+	$(LN_S) $(BLDDIR)/$@ .
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 .PHONY: clean
 clean: clean-common

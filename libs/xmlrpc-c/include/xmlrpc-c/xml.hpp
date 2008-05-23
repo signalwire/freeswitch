@@ -13,6 +13,12 @@ generateCall(std::string         const& methodName,
              std::string *       const  callXmlP);
     
 void
+generateCall(std::string         const& methodName,
+             xmlrpc_c::paramList const& paramList,
+             xmlrpc_dialect      const  dialect,
+             std::string *       const  callXmlP);
+    
+void
 parseSuccessfulResponse(std::string       const& responseXml,
                         xmlrpc_c::value * const  resultP);
 

@@ -1,5 +1,5 @@
 /*============================================================================
-                         xmlrpc_client_int.h
+                         base_int.h
 ==============================================================================
   This header file defines the interface between modules inside
   xmlrpc-c.
@@ -11,12 +11,19 @@
 ============================================================================*/
 
 
-#ifndef  XMLRPC_INT_H_INCLUDED
-#define  XMLRPC_INT_H_INCLUDED
+#ifndef  XMLRPC_C_BASE_INT_H_INCLUDED
+#define  XMLRPC_C_BASE_INT_H_INCLUDED
+
+#include "xmlrpc_config.h"
+#include "bool.h"
+#include "int.h"
+
+#include <xmlrpc-c/base.h>
+#include <xmlrpc-c/util_int.h>
 
 #ifdef __cplusplus
 extern "C" {
-#endif /* __cplusplus */
+#endif
 
 
 struct _xmlrpc_value {
@@ -26,20 +33,37 @@ struct _xmlrpc_value {
     /* Certain data types store their data directly in the xmlrpc_value. */
     union {
         xmlrpc_int32 i;
+        xmlrpc_int64 i8;
         xmlrpc_bool b;
         double d;
         /* time_t t */
-        void *c_ptr;
+        void * c_ptr;
     } _value;
     
     /* Other data types use a memory block.
 
-       For a string, this is the characters of the string in UTF-8, plus
-       a NUL added to the end.
+       For a string, this is the characters of the lines of the string
+       in UTF-8, with lines delimited by either CR, LF, or CRLF, plus
+       a NUL added to the end.  The characters of the lines may be any
+       character representable in UTF-8, even the ones that are not
+       legal XML (XML doesn't allow ASCII control characters except
+       tab, CR, LF).  But note that a line can't contain CR or LF
+       because that would form a line delimiter.  To disambiguate:
+       CRLF together is always one line delimiter.
+       
+       This format for string is quite convenient because it is also
+       the format of that part of an XML document which is the
+       contents of a <string> element (except of course that for the
+       non-XML characters, we have to stretch the definition of XML).
+
+       For base64, this is bytes of the byte string, directly.
+
+       For datetime, this is in the same format as the contents of
+       a <dateTime.iso8601> XML element.  That really ought to be changed
+       to time_t some day.
     */
     xmlrpc_mem_block _block;
 
-#ifdef HAVE_UNICODE_WCHAR
     xmlrpc_mem_block *_wcs_block;
         /* This is a copy of the string value in _block, but in UTF-16
            instead of UTF-8.  This member is not always present.  If NULL,
@@ -49,8 +73,10 @@ struct _xmlrpc_value {
            redundant with _block.
 
            This member is always NULL when the data type is not string.
+
+           This member is always NULL on a system that does not have
+           Unicode wchar functions.
         */
-#endif
 };
 
 #define XMLRPC_ASSERT_VALUE_OK(val) \
@@ -65,9 +91,9 @@ struct _xmlrpc_value {
 
 
 typedef struct {
-    unsigned char key_hash;
-    xmlrpc_value *key;
-    xmlrpc_value *value;
+    uint32_t keyHash;
+    xmlrpc_value * key;
+    xmlrpc_value * value;
 } _struct_member;
 
 
@@ -78,37 +104,19 @@ xmlrpc_createXmlrpcValue(xmlrpc_env *    const envP,
 const char *
 xmlrpc_typeName(xmlrpc_type const type);
 
-
-struct _xmlrpc_registry {
-    int _introspection_enabled;
-    xmlrpc_value *_methods;
-    xmlrpc_value *_default_method;
-    xmlrpc_value *_preinvoke_method;
-};
-
-
-/* When we deallocate a pointer in a struct, we often replace it with
-** this and throw in a few assertions here and there. */
-#define XMLRPC_BAD_POINTER ((void*) 0xDEADBEEF)
-
-
 void
 xmlrpc_traceXml(const char * const label, 
                 const char * const xml,
                 unsigned int const xmlLength);
 
 void
+xmlrpc_destroyString(xmlrpc_value * const stringP);
+
+void
 xmlrpc_destroyStruct(xmlrpc_value * const structP);
 
 void
 xmlrpc_destroyArrayContents(xmlrpc_value * const arrayP);
-
-const char * 
-xmlrpc_makePrintable(const char * const input);
-
-const char *
-xmlrpc_makePrintableChar(char const input);
-
 
 /*----------------------------------------------------------------------------
    The following are for use by the legacy xmlrpc_parse_value().  They don't
@@ -138,7 +146,7 @@ xmlrpc_read_string_lp_old(xmlrpc_env *         const envP,
                           size_t *             const lengthP,
                           const char **        const stringValueP);
 
-#ifdef HAVE_UNICODE_WCHAR
+#if XMLRPC_HAVE_WCHAR
 void
 xmlrpc_read_string_w_old(xmlrpc_env *     const envP,
                          xmlrpc_value *   const valueP,
@@ -185,6 +193,6 @@ xmlrpc_read_base64_old(xmlrpc_env *           const envP,
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif
 
 #endif

@@ -1,3 +1,495 @@
+/* Copyright information is at the end of the file. */
+
+#include <time.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <assert.h>
+
+#include "bool.h"
+#include "mallocvar.h"
+#include "xmlrpc-c/util_int.h"
+#include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/sleep_int.h"
+#include "xmlrpc-c/abyss.h"
+#include "channel.h"
+#include "server.h"
+#include "thread.h"
+#include "file.h"
+
+#include "conn.h"
+
+/*********************************************************************
+** Conn
+*********************************************************************/
+
+static TThreadProc connJob;
+
+static void
+connJob(void * const userHandle) {
+/*----------------------------------------------------------------------------
+   This is the root function for a thread that processes a connection
+   (performs HTTP transactions).
+-----------------------------------------------------------------------------*/
+    TConn * const connectionP = userHandle;
+
+    (connectionP->job)(connectionP);
+
+    connectionP->finished = TRUE;
+        /* Note that if we are running in a forked process, setting
+           connectionP->finished has no effect, because it's just our own
+           copy of *connectionP.  In this case, Parent must update his own
+           copy based on a SIGCHLD signal that the OS will generate right
+           after we exit.
+        */
+
+    ThreadExit(0);
+}
+
+
+
+static void
+connDone(TConn * const connectionP) {
+
+    /* In the forked case, this is designed to run in the parent
+       process after the child has terminated.
+    */
+    connectionP->finished = TRUE;
+
+    if (connectionP->done)
+        connectionP->done(connectionP);
+}
+
+
+
+static TThreadDoneFn threadDone;
+
+static void
+threadDone(void * const userHandle) {
+
+    TConn * const connectionP = userHandle;
+    
+    connDone(connectionP);
+}
+
+
+
+static void
+makeThread(TConn *             const connectionP,
+           enum abyss_foreback const foregroundBackground,
+           bool                const useSigchld,
+           const char **       const errorP) {
+           
+    switch (foregroundBackground) {
+    case ABYSS_FOREGROUND:
+        connectionP->hasOwnThread = FALSE;
+        *errorP = NULL;
+        break;
+    case ABYSS_BACKGROUND: {
+        const char * error;
+        connectionP->hasOwnThread = TRUE;
+        ThreadCreate(&connectionP->threadP, connectionP,
+                     &connJob, &threadDone, useSigchld,
+                     &error);
+        if (error) {
+            xmlrpc_asprintf(errorP, "Unable to create thread to "
+                            "process connection.  %s", error);
+            xmlrpc_strfree(error);
+        } else
+            *errorP = NULL;
+    } break;
+    } /* switch */
+}
+
+    
+
+void
+ConnCreate(TConn **            const connectionPP,
+           TServer *           const serverP,
+           TChannel *          const channelP,
+           void *              const channelInfoP,
+           TThreadProc *       const job,
+           TThreadDoneFn *     const done,
+           enum abyss_foreback const foregroundBackground,
+           bool                const useSigchld,
+           const char **       const errorP) {
+/*----------------------------------------------------------------------------
+   Create an HTTP connection.
+
+   A connection carries one or more HTTP transactions (request/response).
+
+   *channelP transports the requests and responses.
+
+   The connection handles those HTTP requests.
+
+   The connection handles the requests primarily by running the
+   function 'job' once.  Some connections can do that autonomously, as
+   soon as the connection is created.  Others don't until Caller
+   subsequently calls ConnProcess.  Some connections complete the
+   processing before ConnProcess return, while others may run the
+   connection asynchronously to the creator, in the background, via a
+   TThread thread.  'foregroundBackground' determines which.
+
+   'job' calls methods of the connection to get requests and send
+   responses.
+
+   Some time after the HTTP transactions are all done, 'done' gets
+   called in some context.
+
+   'channelInfoP' == NULL means no channel info supplied.
+-----------------------------------------------------------------------------*/
+    TConn * connectionP;
+
+    MALLOCVAR(connectionP);
+
+    if (connectionP == NULL)
+        xmlrpc_asprintf(errorP, "Unable to allocate memory for a connection "
+                        "descriptor.");
+    else {
+        connectionP->server       = serverP;
+        connectionP->channelP     = channelP;
+        connectionP->channelInfoP = channelInfoP;
+        connectionP->buffer[0]    = '\0';
+        connectionP->buffersize   = 0;
+        connectionP->bufferpos    = 0;
+        connectionP->finished     = FALSE;
+        connectionP->job          = job;
+        connectionP->done         = done;
+        connectionP->inbytes      = 0;
+        connectionP->outbytes     = 0;
+        connectionP->trace        = getenv("ABYSS_TRACE_CONN");
+
+        makeThread(connectionP, foregroundBackground, useSigchld, errorP);
+    }
+    *connectionPP = connectionP;
+}
+
+
+
+bool
+ConnProcess(TConn * const connectionP) {
+/*----------------------------------------------------------------------------
+   Drive the main processing of a connection -- run the connection's
+   "job" function, which should read HTTP requests from the connection
+   and send HTTP responses.
+
+   If we succeed, we guarantee the connection's "done" function will get
+   called some time after all processing is complete.  It might be before
+   we return or some time after.  If we fail, we guarantee the "done"
+   function will not be called.
+-----------------------------------------------------------------------------*/
+    bool retval;
+
+    if (connectionP->hasOwnThread) {
+        /* There's a background thread to handle this connection.  Set
+           it running.
+        */
+        retval = ThreadRun(connectionP->threadP);
+    } else {
+        /* No background thread.  We just handle it here while Caller waits. */
+        (connectionP->job)(connectionP);
+        connDone(connectionP);
+        retval = TRUE;
+    }
+    return retval;
+}
+
+
+
+void
+ConnWaitAndRelease(TConn * const connectionP) {
+    if (connectionP->hasOwnThread)
+        ThreadWaitAndRelease(connectionP->threadP);
+    
+    free(connectionP);
+}
+
+
+
+bool
+ConnKill(TConn * const connectionP) {
+    connectionP->finished = TRUE;
+    return ThreadKill(connectionP->threadP);
+}
+
+
+
+void
+ConnReadInit(TConn * const connectionP) {
+
+    if (connectionP->buffersize > connectionP->bufferpos) {
+        connectionP->buffersize -= connectionP->bufferpos;
+        memmove(connectionP->buffer,
+                connectionP->buffer + connectionP->bufferpos,
+                connectionP->buffersize);
+        connectionP->bufferpos = 0;
+    } else
+        connectionP->buffersize = connectionP->bufferpos = 0;
+
+    connectionP->buffer[connectionP->buffersize] = '\0';
+
+    connectionP->inbytes = connectionP->outbytes = 0;
+}
+
+
+
+static size_t
+nextLineSize(const char * const string,
+             size_t       const startPos,
+             size_t       const stringSize) {
+/*----------------------------------------------------------------------------
+   Return the length of the line that starts at offset 'startPos' in the
+   string 'string', which is 'stringSize' characters long.
+
+   'string' in not NUL-terminated.
+   
+   A line begins at beginning of string or after a newline character and
+   runs through the next newline character or end of string.  The line
+   includes the newline character at the end, if any.
+-----------------------------------------------------------------------------*/
+    size_t i;
+
+    for (i = startPos; i < stringSize && string[i] != '\n'; ++i);
+
+    if (i < stringSize)
+        ++i;  /* Include the newline */
+
+    return i - startPos;
+}
+
+
+
+static void
+traceBuffer(const char * const label,
+            const char * const buffer,
+            unsigned int const size) {
+
+    size_t cursor;  /* Index into buffer[] */
+
+    fprintf(stderr, "%s:\n\n", label);
+
+    for (cursor = 0; cursor < size; ) {
+        /* Print one line of buffer */
+
+        size_t const lineSize = nextLineSize(buffer, cursor, size);
+        const char * const printableLine =
+            xmlrpc_makePrintable_lp(&buffer[cursor], lineSize);
+        
+        fprintf(stderr, "%s\n", printableLine);
+
+        cursor += lineSize;
+
+        xmlrpc_strfree(printableLine);
+    }
+    fprintf(stderr, "\n");
+}
+
+
+
+static void
+traceChannelRead(TConn *      const connectionP,
+                 unsigned int const size) {
+
+    if (connectionP->trace)
+        traceBuffer("READ FROM CHANNEL",
+                    connectionP->buffer + connectionP->buffersize, size);
+}
+
+
+
+static void
+traceChannelWrite(TConn *      const connectionP,
+                  const char * const buffer,
+                  unsigned int const size,
+                  bool         const failed) {
+    
+    if (connectionP->trace) {
+        const char * const label =
+            failed ? "FAILED TO WRITE TO CHANNEL" : "WROTE TO CHANNEL";
+        traceBuffer(label, buffer, size);
+    }
+}
+
+
+
+static uint32_t
+bufferSpace(TConn * const connectionP) {
+    
+    return BUFFER_SIZE - connectionP->buffersize;
+}
+                    
+
+
+bool
+ConnRead(TConn *  const connectionP,
+         uint32_t const timeout) {
+/*----------------------------------------------------------------------------
+   Read some stuff on connection *connectionP from the channel.
+
+   Don't wait more than 'timeout' seconds for data to arrive.  Fail if
+   nothing arrives within that time.
+
+   'timeout' must be before the end of time.
+-----------------------------------------------------------------------------*/
+    time_t const deadline = time(NULL) + timeout;
+
+    bool cantGetData;
+    bool gotData;
+
+    cantGetData = FALSE;
+    gotData = FALSE;
+    
+    while (!gotData && !cantGetData) {
+        int const timeLeft = (int)(deadline - time(NULL));
+
+        if (timeLeft <= 0)
+            cantGetData = TRUE;
+        else {
+            bool const waitForRead  = TRUE;
+            bool const waitForWrite = FALSE;
+            
+            bool readyForRead;
+            bool failed;
+            
+            ChannelWait(connectionP->channelP, waitForRead, waitForWrite,
+                        timeLeft * 1000, &readyForRead, NULL, &failed);
+            
+            if (failed)
+                cantGetData = TRUE;
+            else {
+                uint32_t bytesRead;
+                bool readFailed;
+
+                ChannelRead(connectionP->channelP,
+                            connectionP->buffer + connectionP->buffersize,
+                            bufferSpace(connectionP) - 1,
+                            &bytesRead, &readFailed);
+
+                if (readFailed)
+                    cantGetData = TRUE;
+                else {
+                    if (bytesRead > 0) {
+                        traceChannelRead(connectionP, bytesRead);
+                        connectionP->inbytes += bytesRead;
+                        connectionP->buffersize += bytesRead;
+                        connectionP->buffer[connectionP->buffersize] = '\0';
+                        gotData = TRUE;
+                    } else
+                        /* Other end has disconnected */
+                        cantGetData = TRUE;
+                }
+            }
+        }
+    }
+    if (gotData)
+        return TRUE;
+    else
+        return FALSE;
+}
+
+
+            
+bool
+ConnWrite(TConn *      const connectionP,
+          const void * const buffer,
+          uint32_t     const size) {
+
+    bool failed;
+
+    ChannelWrite(connectionP->channelP, buffer, size, &failed);
+
+    traceChannelWrite(connectionP, buffer, size, failed);
+
+    if (!failed)
+        connectionP->outbytes += size;
+
+    return !failed;
+}
+
+
+
+bool
+ConnWriteFromFile(TConn *       const connectionP,
+                  const TFile * const fileP,
+                  uint64_t      const start,
+                  uint64_t      const last,
+                  void *        const buffer,
+                  uint32_t      const buffersize,
+                  uint32_t      const rate) {
+/*----------------------------------------------------------------------------
+   Write the contents of the file stream *fileP, from offset 'start'
+   up through 'last', to the HTTP connection *connectionP.
+
+   Meter the reading so as not to read more than 'rate' bytes per second.
+
+   Use the 'bufferSize' bytes at 'buffer' as an internal buffer for this.
+-----------------------------------------------------------------------------*/
+    bool retval;
+    uint32_t waittime;
+    bool success;
+    uint32_t readChunkSize;
+
+    if (rate > 0) {
+        readChunkSize = MIN(buffersize, rate);  /* One second's worth */
+        waittime = (1000 * buffersize) / rate;
+    } else {
+        readChunkSize = buffersize;
+        waittime = 0;
+    }
+
+    success = FileSeek(fileP, start, SEEK_SET);
+    if (!success)
+        retval = FALSE;
+    else {
+        uint64_t const totalBytesToRead = last - start + 1;
+        uint64_t bytesread;
+
+        bytesread = 0;  /* initial value */
+
+        while (bytesread < totalBytesToRead) {
+            uint64_t const bytesLeft     = totalBytesToRead - bytesread;
+            uint64_t const bytesToRead64 = MIN(readChunkSize, bytesLeft);
+            uint32_t const bytesToRead   = (uint32_t)bytesToRead64;
+            
+            uint32_t bytesReadThisTime;
+
+            assert(bytesToRead == bytesToRead64); /* readChunkSize is uint32 */
+
+            bytesReadThisTime = FileRead(fileP, buffer, bytesToRead);
+            bytesread += bytesReadThisTime;
+            
+            if (bytesReadThisTime > 0)
+                ConnWrite(connectionP, buffer, bytesReadThisTime);
+            else
+                break;
+            
+            if (waittime > 0)
+                xmlrpc_millisecond_sleep(waittime);
+        }
+        retval = (bytesread >= totalBytesToRead);
+    }
+    return retval;
+}
+
+
+
+TServer *
+ConnServer(TConn * const connectionP) {
+    return connectionP->server;
+}
+
+
+
+void
+ConnFormatClientAddr(TConn *       const connectionP,
+                     const char ** const clientAddrPP) {
+
+    ChannelFormatPeerInfo(connectionP->channelP, clientAddrPP);
+}
+
+
+
 /*******************************************************************************
 **
 ** conn.c
@@ -30,314 +522,4 @@
 ** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 ** SUCH DAMAGE.
 **
-*******************************************************************************/
-
-#include <time.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <ctype.h>
-
-#include "xmlrpc-c/abyss.h"
-
-/*********************************************************************
-** Conn
-*********************************************************************/
-
-TConn *ConnAlloc()
-{
-    return (TConn *)malloc(sizeof(TConn));
-}
-
-void ConnFree(TConn *c)
-{
-    free(c);
-}
-
-static uint32_t
-THREAD_ENTRYTYPE ConnJob(TConn *c) {
-    c->connected=TRUE;
-    (c->job)(c);
-    c->connected=FALSE;
-    ThreadExit( &c->thread, 0 );
-    return 0;
-}
-
-abyss_bool ConnCreate2(TConn *             const connectionP, 
-                       TServer *           const serverP,
-                       TSocket             const connectedSocket,
-                       TIPAddr             const peerIpAddr,
-                       void            ( *       func)(TConn *),
-                       enum abyss_foreback const foregroundBackground)
-{
-    abyss_bool retval;
-    
-    connectionP->server     = serverP;
-    connectionP->socket     = connectedSocket;
-    connectionP->peerip     = peerIpAddr;
-    connectionP->buffersize = 0;
-    connectionP->bufferpos  = 0;
-    connectionP->connected  = TRUE;
-    connectionP->job        = func;
-    connectionP->inbytes    = 0;
-    connectionP->outbytes   = 0;
-    connectionP->trace      = getenv("ABYSS_TRACE_CONN");
-    
-    switch (foregroundBackground)
-    {
-    case ABYSS_FOREGROUND:
-        connectionP->hasOwnThread = FALSE;
-        retval = TRUE;
-        break;
-    case ABYSS_BACKGROUND:
-        connectionP->hasOwnThread = TRUE;
-        retval = ThreadCreate(&connectionP->thread,
-                              (TThreadProc)ConnJob, 
-                              connectionP);
-        break;
-    }
-    return retval;
-}
-
-abyss_bool ConnCreate(TConn *c, TSocket *s, void (*func)(TConn *))
-{
-    return ConnCreate2(c, c->server, *s, c->peerip, func, ABYSS_BACKGROUND);
-}
-
-abyss_bool ConnProcess(TConn *c)
-{
-    abyss_bool retval;
-
-    if (c->hasOwnThread) {
-        /* There's a background thread to handle this connection.  Set
-           it running.
-        */
-        retval = ThreadRun(&(c->thread));
-    } else {
-        /* No background thread.  We just handle it here while Caller waits. */
-        (c->job)(c);
-        c->connected=FALSE;
-        retval = TRUE;
-    }
-    return retval;
-}
-
-void ConnClose(TConn *c)
-{
-    if (c->hasOwnThread)
-        ThreadClose(&c->thread);
-}
-
-abyss_bool ConnKill(TConn *c)
-{
-    c->connected=FALSE;
-    return ThreadKill(&(c->thread));
-}
-
-void ConnReadInit(TConn *c)
-{
-    if (c->buffersize>c->bufferpos)
-    {
-        c->buffersize-=c->bufferpos;
-        memmove(c->buffer,c->buffer+c->bufferpos,c->buffersize);
-        c->bufferpos=0;
-    }
-    else
-        c->buffersize=c->bufferpos=0;
-
-    c->inbytes=c->outbytes=0;
-}
-
-
-
-static void
-traceSocketRead(const char * const label,
-                const char * const buffer,
-                unsigned int const size) {
-
-    unsigned int nonPrintableCount;
-    unsigned int i;
-    
-    nonPrintableCount = 0;  /* Initial value */
-    
-    for (i = 0; i < size; ++i) {
-        if (!isprint(buffer[i]) && buffer[i] != '\n' && buffer[i] != '\r')
-            ++nonPrintableCount;
-    }
-    if (nonPrintableCount > 0)
-        fprintf(stderr, "%s contains %u nonprintable characters.\n", 
-                label, nonPrintableCount);
-    
-    fprintf(stderr, "%s:\n", label);
-    fprintf(stderr, "%.*s\n", (int)size, buffer);
-}
-
-
-
-abyss_bool
-ConnRead(TConn *  const c,
-         uint32_t const timeout) {
-
-    while (SocketWait(&(c->socket),TRUE,FALSE,timeout*1000) == 1) {
-        uint32_t x;
-        uint32_t y;
-        
-        x = SocketAvailableReadBytes(&c->socket);
-
-        /* Avoid lost connections */
-        if (x <= 0)
-            break;
-        
-        /* Avoid Buffer overflow and lost Connections */
-        if (x + c->buffersize >= BUFFER_SIZE)
-            x = BUFFER_SIZE-c->buffersize - 1;
-        
-        y = SocketRead(&c->socket, c->buffer + c->buffersize, x);
-        if (y > 0) {
-            if (c->trace)
-                traceSocketRead("READ FROM SOCKET:",
-                                c->buffer + c->buffersize, y);
-
-            c->inbytes += y;
-            c->buffersize += y;
-            c->buffer[c->buffersize] = '\0';
-            return TRUE;
-        }
-        break;
-    }
-    return FALSE;
-}
-
-
-            
-abyss_bool ConnWrite(TConn *c,void *buffer,uint32_t size)
-{
-    char *buf = buffer;
-    int rc, off = 0;
-
-    while (TRUE) {
-        /* try sending data */
-        if ((rc = SocketWrite(&(c->socket),&buf[off],size - off)) <= 0)
-            return FALSE;
-
-        /* increase count */
-        off += rc;
-
-        /* check we're not finished writing */
-        if (off >= size)
-            break;
-    }
-
-    c->outbytes+=size;
-    return TRUE;
-}
-
-abyss_bool ConnWriteFromFile(TConn *c,TFile *file,uint64_t start,uint64_t end,
-            void *buffer,uint32_t buffersize,uint32_t rate)
-{
-    uint64_t y,bytesread=0;
-    uint32_t waittime;
-
-    if (rate>0)
-    {
-        if (buffersize>rate)
-            buffersize=rate;
-
-        waittime=(1000*buffersize)/rate;
-    }
-    else
-        waittime=0;
-
-    if (!FileSeek(file,start,SEEK_SET))
-        return FALSE;
-
-    while (bytesread<=end-start)
-    {
-        y=(end-start+1)-bytesread;
-
-        if (y>buffersize)
-            y=buffersize;
-
-        y=FileRead(file,buffer,y);
-        bytesread+=y;
-
-        if (y>0)
-            ConnWrite(c,buffer,y);
-        else
-            break;
-
-        if (waittime)
-            ThreadWait(waittime);
-    };
-
-    return (bytesread>end-start);
-}
-
-abyss_bool ConnReadLine(TConn *c,char **z,uint32_t timeout)
-{
-    char *p,*t;
-    abyss_bool first=TRUE;
-    clock_t to,start;
-
-    p=*z=c->buffer+c->bufferpos;
-    start=clock();
-
-    for (;;)
-    {
-        to=(clock()-start)/CLOCKS_PER_SEC;
-        if (to>timeout)
-            break;
-
-        if (first)
-        {
-            if (c->bufferpos>=c->buffersize)
-                if (!ConnRead(c,timeout-to))
-                    break;
-
-            first=FALSE;
-        }
-        else
-        {
-            if (!ConnRead(c,timeout-to))
-                break;
-        };
-
-        t=strchr(p,LF);
-        if (t)
-        {
-            if ((*p!=LF) && (*p!=CR))
-            {
-                if (!*(t+1))
-                    continue;
-
-                p=t;
-
-                if ((*(p+1)==' ') || (*(p+1)=='\t'))
-                {
-                    if (p>*z)
-                        if (*(p-1)==CR)
-                            *(p-1)=' ';
-
-                    *(p++)=' ';
-                    continue;
-                };
-            } else {
-                /* emk - 04 Jan 2001 - Bug fix to leave buffer
-                ** pointing at start of body after reading blank
-                ** line following header. */
-                p=t;
-            }
-
-            c->bufferpos+=p+1-*z;
-
-            if (p>*z)
-                if (*(p-1)==CR)
-                    p--;
-
-            *p='\0';
-            return TRUE;
-        }
-    };
-
-    return FALSE;
-}
+******************************************************************************/

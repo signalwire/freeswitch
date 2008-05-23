@@ -1,8 +1,26 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/../..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  LIBDIR := $(call updir,$(CURDIR))
+  SRCDIR := $(call updir,$(LIBDIR))
+  BLDDIR := $(SRCDIR)
 endif
+SUBDIR := lib/curl_transport
 
-include $(SRCDIR)/Makefile.config
+include $(BLDDIR)/config.mk
+
+default: all
+
+.PHONY: all
+all: xmlrpc_curl_transport.o xmlrpc_curl_transport.osh
+
+# Rules for the above dependencies are in common.mk,
+# courtesy of TARGET_MODS.
+
+TARGET_MODS = xmlrpc_curl_transport
+
+OMIT_CURL_TRANSPORT_RULE=Y
+
+include $(SRCDIR)/common.mk
 
 CURL_INCLUDES := $(shell curl-config --cflags)
 # We expect that curl-config --cflags just gives us -I options, because
@@ -10,15 +28,13 @@ CURL_INCLUDES := $(shell curl-config --cflags)
 # of what any other compiler flag would do to our compile.
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-LDFLAGS = -lpthread $(LADD)
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/include -I$(SRCDIR)/lib/util/include \
+INCLUDES = \
+  -I$(BLDDIR) \
+  -I$(BLDDIR)/include \
+  -I$(SRCDIR)/include \
+  -I$(SRCDIR)/lib/util/include \
   $(CURL_INCLUDES)
-
-default: all
-
-.PHONY: all
-all: xmlrpc_curl_transport.lo
 
 .PHONY: clean
 clean: clean-common
@@ -38,9 +54,8 @@ install:
 .PHONY: dep
 dep: dep-common
 
-include $(SRCDIR)/Makefile.common
-
 include Makefile.depend
 
-xmlrpc_curl_transport.lo:%.lo:%.c
-	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(CFLAGS) $<
+# Need this dependency for those who don't use Makefile.depend.
+# Without it, version.h doesn't get created.
+xmlrpc_curl_transport.o xmlrpc_curl_transport.osh: version.h

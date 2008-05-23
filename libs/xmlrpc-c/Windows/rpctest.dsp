@@ -23,8 +23,6 @@ CFG=rpctest - Win32 Debug
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
-# PROP Scc_ProjName "rpctest"
-# PROP Scc_LocalPath ".."
 CPP=cl.exe
 RSC=rc.exe
 
@@ -42,7 +40,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\\" /I "..\include" /I "../lib/util/include" /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "ABYSS_WIN32" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I ".." /I "../include" /I "../lib/util/include" /I "../.." /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "ABYSS_WIN32" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -54,7 +52,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
 PostBuild_Desc=Copy test files
-PostBuild_Cmds=copy ..\src\testdata\*.* .
+PostBuild_Cmds=if not exist ..\Bin\data md ..\Bin\data	copy ..\src\test\data\*.* ..\Bin\data
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "rpctest - Win32 Debug"
@@ -71,7 +69,7 @@ PostBuild_Cmds=copy ..\src\testdata\*.* .
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "..\\" /I "..\include" /I "../lib/util/include" /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "ABYSS_WIN32" /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../.." /I ".." /I "../include" /I "../lib/util/include" /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "ABYSS_WIN32" /YX /FD /GZ /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -83,7 +81,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
 PostBuild_Desc=Copy test files
-PostBuild_Cmds=copy ..\src\testdata\*.* .
+PostBuild_Cmds=if not exist ..\Bin\data md ..\Bin\data	copy ..\src\test\data\*.* ..\Bin\data
 # End Special Build Tool
 
 !ENDIF 
@@ -97,6 +95,10 @@ PostBuild_Cmds=copy ..\src\testdata\*.* .
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
+SOURCE=..\src\test\abyss.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\test\cgi.c
 # End Source File
 # Begin Source File
@@ -105,23 +107,11 @@ SOURCE=..\src\test\client.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\abyss\src\conf.c
+SOURCE=..\lib\util\casprintf.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\abyss\src\conn.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\data.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\file.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\http.c
+SOURCE=..\src\test\method_registry.c
 # End Source File
 # Begin Source File
 
@@ -133,7 +123,7 @@ SOURCE=..\src\test\serialize.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\abyss\src\server.c
+SOURCE=..\src\test\serialize_value.c
 # End Source File
 # Begin Source File
 
@@ -141,27 +131,11 @@ SOURCE=..\src\test\server_abyss.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\abyss\src\socket.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\src\test\test.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\lib\abyss\src\thread.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\token.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\lib\abyss\src\token.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\lib\abyss\src\trace.c
 # End Source File
 # Begin Source File
 
@@ -170,10 +144,6 @@ SOURCE=..\src\test\value.c
 # Begin Source File
 
 SOURCE=..\src\test\xml_data.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\src\xmlrpc_server_abyss.c
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -190,6 +160,10 @@ SOURCE=..\src\test\parse_xml.h
 # Begin Source File
 
 SOURCE=..\src\test\serialize.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\test\serialize_value.h
 # End Source File
 # Begin Source File
 

@@ -31,6 +31,7 @@
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
+#include "int.h"
 
 #define KEY_ERROR_BUFFER_SZ (32)
 
@@ -115,26 +116,23 @@ xmlrpc_struct_size(xmlrpc_env* env, xmlrpc_value* strct)
 
 
 
-/*=========================================================================
-**  get_hash
-**=========================================================================
-**  A mindlessly simple hash function. Please feel free to write something
-**  more clever if this produces bad results.
-*/
+static uint32_t
+hashStructKey(const char * const key, 
+              size_t       const keyLen) {
 
-static unsigned char 
-get_hash(const char * const key, 
-         size_t       const key_len) {
-
-    unsigned char retval;
+    uint32_t hash;
     size_t i;
 
     XMLRPC_ASSERT(key != NULL);
     
-    retval = 0;
-    for (i = 0; i < key_len; i++)
-        retval += key[i];
-    return retval;
+    /* This is the Bernstein hash, optimized for lower case ASCII
+       keys.  Note that the bytes of such a key differ only in their
+       lower 5 bits.
+    */
+    for (hash = 0, i = 0; i < keyLen; ++i)
+        hash = hash + key[i] + (hash << 5);
+
+    return hash;
 }
 
 
@@ -149,28 +147,28 @@ get_hash(const char * const key,
 static int 
 find_member(xmlrpc_value * const strctP, 
             const char *   const key, 
-            size_t         const key_len) {
+            size_t         const keyLen) {
 
     size_t size, i;
-    unsigned char hash;
-    _struct_member *contents;
-    xmlrpc_value *keyval;
-    char *keystr;
-    size_t keystr_size;
+    uint32_t searchHash;
+    _struct_member * contents;  /* array */
+    xmlrpc_value * keyvalP;
+    const char * keystr;
+    size_t keystrSize;
 
     XMLRPC_ASSERT_VALUE_OK(strctP);
     XMLRPC_ASSERT(key != NULL);
 
     /* Look for our key. */
-    hash = get_hash(key, key_len);
+    searchHash = hashStructKey(key, keyLen);
     size = XMLRPC_MEMBLOCK_SIZE(_struct_member, &strctP->_block);
     contents = XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &strctP->_block);
-    for (i = 0; i < size; i++) {
-        if (contents[i].key_hash == hash) {
-            keyval = contents[i].key;
-            keystr = XMLRPC_MEMBLOCK_CONTENTS(char, &keyval->_block);
-            keystr_size = XMLRPC_MEMBLOCK_SIZE(char, &keyval->_block)-1;
-            if (key_len == keystr_size && memcmp(key, keystr, key_len) == 0)
+    for (i = 0; i < size; ++i) {
+        if (contents[i].keyHash == searchHash) {
+            keyvalP = contents[i].key;
+            keystr = XMLRPC_MEMBLOCK_CONTENTS(char, &keyvalP->_block);
+            keystrSize = XMLRPC_MEMBLOCK_SIZE(char, &keyvalP->_block)-1;
+            if (keystrSize == keyLen && memcmp(key, keystr, keyLen) == 0)
                 return i;
         }   
     }
@@ -336,7 +334,7 @@ xmlrpc_struct_read_value_v(xmlrpc_env *    const envP,
         if (*valuePP == NULL) {
             xmlrpc_env_set_fault_formatted(
                 envP, XMLRPC_INDEX_ERROR, "No member of struct has key '%.*s'",
-                XMLRPC_MEMBLOCK_SIZE(char, &keyP->_block),
+                (int)XMLRPC_MEMBLOCK_SIZE(char, &keyP->_block),
                 XMLRPC_MEMBLOCK_CONTENTS(char, &keyP->_block));
         }
     }
@@ -390,7 +388,7 @@ xmlrpc_struct_get_value_n(xmlrpc_env *   const envP,
                 xmlrpc_env_set_fault_formatted(
                     envP, XMLRPC_INDEX_ERROR, 
                     "No member of struct has key '%.*s'",
-                    keyLen, key);
+                    (int)keyLen, key);
                 /* We should fix the error message to format the key
                    for display */
             } else
@@ -436,29 +434,28 @@ void
 xmlrpc_struct_set_value_n(xmlrpc_env *    const envP,
                           xmlrpc_value *  const strctP,
                           const char *    const key, 
-                          size_t          const key_len,
+                          size_t          const keyLen,
                           xmlrpc_value *  const valueP) {
-
-    xmlrpc_value *keyval;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(key != NULL);
 
-    /* Set up error handling preconditions. */
-    keyval = NULL;
+    if (xmlrpc_value_type(strctP) != XMLRPC_TYPE_STRUCT)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_TYPE_ERROR,
+            "Trying to set value in something not a struct.  "
+            "Type is %d; struct is %d",
+            xmlrpc_value_type(strctP), XMLRPC_TYPE_STRUCT);
+    else {
+        xmlrpc_value * keyvalP;
 
-    XMLRPC_TYPE_CHECK(envP, strctP, XMLRPC_TYPE_STRUCT);
+        /* Get the key as an xmlrpc_value */
+        keyvalP = xmlrpc_build_value(envP, "s#", key, keyLen);
+        if (!envP->fault_occurred)
+            xmlrpc_struct_set_value_v(envP, strctP, keyvalP, valueP);
 
-    /* Build an xmlrpc_value from our string. */
-    keyval = xmlrpc_build_value(envP, "s#", key, key_len);
-    XMLRPC_FAIL_IF_FAULT(envP);
-
-    /* Do the actual work. */
-    xmlrpc_struct_set_value_v(envP, strctP, keyval, valueP);
-
- cleanup:
-    if (keyval)
-        xmlrpc_DECREF(keyval);
+        xmlrpc_DECREF(keyvalP);
+    }
 }
 
 
@@ -501,9 +498,9 @@ xmlrpc_struct_set_value_v(xmlrpc_env *   const envP,
         xmlrpc_DECREF(old_value);
     } else {
         /* Add a new member. */
-        new_member.key_hash = get_hash(key, key_len);
-        new_member.key      = keyvalP;
-        new_member.value    = valueP;
+        new_member.keyHash = hashStructKey(key, key_len);
+        new_member.key     = keyvalP;
+        new_member.value   = valueP;
         XMLRPC_MEMBLOCK_APPEND(_struct_member, envP, &strctP->_block,
                                &new_member, 1);
         XMLRPC_FAIL_IF_FAULT(envP);
@@ -578,7 +575,7 @@ xmlrpc_struct_get_key_and_value(xmlrpc_env *    const envP,
 
     if (index < 0)
         xmlrpc_env_set_fault_formatted(
-            envP, XMLRPC_INDEX_ERROR, "Index %d is negative.");
+            envP, XMLRPC_INDEX_ERROR, "Index %d is negative.", index);
     else {
         xmlrpc_struct_read_member(envP, structP, index, keyvalP, valueP);
         if (!envP->fault_occurred) {

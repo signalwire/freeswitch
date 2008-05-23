@@ -25,7 +25,7 @@
 
 #include "xmlrpc_config.h"
 
-#if WIN32
+#ifdef WIN32
 
 #include "pthreadx.h"
 
@@ -34,15 +34,17 @@
 #undef PACKAGE
 #undef VERSION
 
-int pthread_create(pthread_t *new_thread_ID,
-                   const pthread_attr_t * attr,
-                   pthread_func start_func, void *arg)
-{
+int
+pthread_create(pthread_t *            const new_thread_ID,
+               const pthread_attr_t * const attr,
+               pthread_func *               func,
+               void *                 const arg) {
+
     HANDLE hThread;
     DWORD dwThreadID;
 
     hThread = (HANDLE) _beginthreadex (
-        NULL, 0, start_func, (LPVOID)arg, CREATE_SUSPENDED, &dwThreadID);
+        NULL, 0, func, (LPVOID)arg, CREATE_SUSPENDED, &dwThreadID);
 
     SetThreadPriority (hThread, THREAD_PRIORITY_NORMAL); 
     ResumeThread (hThread);
@@ -52,48 +54,68 @@ int pthread_create(pthread_t *new_thread_ID,
     return hThread ? 0 : -1;
 }
 
+
+
 /* Just kill it. */
-int pthread_cancel(pthread_t target_thread)
-{
-    CloseHandle (target_thread);
+int
+pthread_cancel(pthread_t const target_thread) {
+
+    CloseHandle(target_thread);
     return 0;
 }
+
+
 
 /* Waits for the thread to exit before continuing. */
-int pthread_join(pthread_t target_thread, void **status)
-{
+int
+pthread_join(pthread_t const target_thread,
+             void **   const statusP) {
+
     DWORD dwResult = WaitForSingleObject(target_thread, INFINITE);
-    (*status) = (void *)dwResult;
+    *statusP = (void *)dwResult;
     return 0;
 }
 
-/* Stubbed. Do nothing. */
-int pthread_detach(pthread_t target_thread)
-{
+
+
+int
+pthread_detach(pthread_t const target_thread) {
     return 0;
 }
 
-int pthread_mutex_init(pthread_mutex_t *mp,
-                       const pthread_mutexattr_t * attr)
-{
+
+
+int
+pthread_mutex_init(pthread_mutex_t *           const mp,
+                   const pthread_mutexattr_t * const attr) {
+
     InitializeCriticalSection(mp);
     return 0;
 }
 
-int pthread_mutex_lock(pthread_mutex_t *mp)
-{
+
+
+int
+pthread_mutex_lock(pthread_mutex_t * const mp) {
+
     EnterCriticalSection(mp);
     return 0;
 }
 
-int pthread_mutex_unlock(pthread_mutex_t *mp)
-{
+
+
+int
+pthread_mutex_unlock(pthread_mutex_t * const mp) {
+
     LeaveCriticalSection(mp);
     return 0;
 }
 
-int pthread_mutex_destroy(pthread_mutex_t *mp)
-{
+
+
+int
+pthread_mutex_destroy(pthread_mutex_t * const mp) {
+
     DeleteCriticalSection(mp);
     return 0;
 }

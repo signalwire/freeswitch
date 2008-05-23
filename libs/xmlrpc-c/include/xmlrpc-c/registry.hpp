@@ -32,15 +32,6 @@ public:
     std::string signature() const { return _signature; };
     std::string help() const { return _help; };
 
-    // self() is a strange concession to the fact that we interface with
-    // C code.  C code needs a regular pointer to this method, but our
-    // C++ interface carefully prevents one from making such a pointer,
-    // since it would be an uncounted reference.  So users of self() must
-    // make sure that the reference it returns is always subordinate to a
-    // methodPtr reference.
-
-    xmlrpc_c::method * self();
-
 protected:
     std::string _signature;
     std::string _help;
@@ -95,8 +86,6 @@ public:
     execute(std::string         const& methodName,
             xmlrpc_c::paramList const& paramList,
             xmlrpc_c::value *   const  resultP) = 0;
-
-    xmlrpc_c::defaultMethod * self();  // analogous to 'method' class
 };
 
 class defaultMethodPtr : public girmem::autoObjectPtr {
@@ -108,9 +97,14 @@ public:
 
     xmlrpc_c::defaultMethod *
     operator->() const;
+
+    xmlrpc_c::defaultMethod *
+    get() const;
 };
 
-class registry {
+
+
+class registry : public girmem::autoObject {
 /*----------------------------------------------------------------------------
    An Xmlrpc-c server method registry.  An Xmlrpc-c server transport
    (e.g.  an HTTP server) uses this object to process an incoming
@@ -131,6 +125,20 @@ public:
 
     void
     disableIntrospection();
+
+    class shutdown {
+    public:
+        virtual ~shutdown() = 0;
+        virtual void
+        doit(std::string const& comment,
+             void *      const  callInfo) const = 0;
+    };
+
+    void
+    setShutdown(const shutdown * const shutdownP);
+
+    void
+    setDialect(xmlrpc_dialect const dialect);
     
     void
     processCall(std::string   const& body,
@@ -145,23 +153,37 @@ public:
 private:
 
     xmlrpc_registry * c_registryP;
-        /* Pointer to the C registry object we use to implement this
-           object.
-        */
+        // Pointer to the C registry object we use to implement this
+        // object.
 
     std::list<xmlrpc_c::methodPtr> methodList;
-        /* This is a list of all the method objects (actually, pointers
-           to them).  But since the real registry is the C registry object,
-           all this list is for is to maintain references to the objects
-           to which the C registry points so that they continue to exist.
-        */
+        // This is a list of all the method objects (actually, pointers
+        // to them).  But since the real registry is the C registry object,
+        // all this list is for is to maintain references to the objects
+        // to which the C registry points so that they continue to exist.
+
     xmlrpc_c::defaultMethodPtr defaultMethodP;
-        /* The real identifier of the default method is the C registry
-           object; this member exists only to maintain a reference to the
-           object to which the C registry points so that it will continue
-           to exist.
-        */
+        // The real identifier of the default method is the C registry
+        // object; this member exists only to maintain a reference to the
+        // object to which the C registry points so that it will continue
+        // to exist.
 };
+
+
+class registryPtr : public girmem::autoObjectPtr {
+
+public:
+    registryPtr();
+
+    registryPtr(xmlrpc_c::registry * const registryP);
+
+    xmlrpc_c::registry *
+    operator->() const;
+
+    xmlrpc_c::registry *
+    get() const;
+};
+
 } // namespace
 
 #endif

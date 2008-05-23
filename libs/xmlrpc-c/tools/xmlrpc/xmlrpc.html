@@ -9,6 +9,9 @@ the response.  <b>xmlrpc</b> runs an XML-RPC client.
 XML-RPC servers.  XML-RPC is such that the RPCs normally need to be made
 by a program rather than a person to be of use.
 
+<p>A similar tool done as a web form is at <a
+href="http://gggeek.damacom.it/debugger/">
+http://gggeek.damacom.it/debugger/</a>
 
 <h2>Examples</h2>
 
@@ -75,7 +78,9 @@ by a program rather than a person to be of use.
 <p>
 <b>i/</b><i>integer</i> |
 <b>s/</b><i>string</i> |
+<b>h/</b><i>hexstring</i> |
 <b>b/</b>{<b>true</b>|<b>false</b>|<b>t</b>|<b>f</b>} |
+<b>d/</b><i>realnum</i> |
 <b>n/</b> |
 <b><i>string</i></b>
 
@@ -115,16 +120,26 @@ possible XML-RPC types, as follows by prefix:
 
 <dl>
 <dt>i/
-<dd>integer (&lt;int4&gt;)
+<dd>integer (&lt;i4&gt;) (32 bit)
 
 <dt>s/
 <dd>string (&lt;string&gt;)
 
+<dt>h/
+<dd>byte string (&lt;base64&gt;).  Specify the value in hexadecimal.
+
 <dt>b/
-<dd>boolean (&lt;boolean&gt;)
+<dd>boolean (&lt;boolean&gt;).  Specify the value as &quot;true&quot; or
+&quot;t&quot; for true; &quot;false&quot; or &quot;f&quot; for false.
+
+<dt>d/
+<dd>double (&lt;double&gt;)  (i.e. real number)
 
 <dt>n/
 <dd>nil (&lt;nil&gt;)
+
+<dt>I/
+<dd>64 bit integer (&lt;i8&gt;)
 
 </dl>
 
@@ -238,5 +253,14 @@ XML transport.  You may not specify any other transport.
 
 
 </dl>
+
+<h2>Limitations</h2>
+
+<p>If you run <b>xmlrpc</b> in an environment in which programs get 
+their arguments encoded some way other than UTF-8, <b>xmlrpc</b>
+will generate garbage for the XML-RPC call and display garbage for
+the XML-RPC response.  Typically, you control this aspect of the
+environment with a <b>LANG</b> environment variable.  One safe value
+for <b>LANG</b> is &quot;C&quot;.
 
 </body>

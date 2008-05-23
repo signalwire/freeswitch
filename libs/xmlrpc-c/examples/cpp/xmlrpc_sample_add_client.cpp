@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <string>
 #include <iostream>
 #include <xmlrpc-c/girerr.hpp>
@@ -28,8 +29,8 @@ main(int argc, char **) {
 
         cout << "Result of RPC (sum of 5 and 7): " << sum << endl;
 
-    } catch (girerr::error const error) {
-        cerr << "Client threw error: " << error.what() << endl;
+    } catch (exception const& e) {
+        cerr << "Client threw error: " << e.what() << endl;
     } catch (...) {
         cerr << "Client threw unexpected error." << endl;
     }

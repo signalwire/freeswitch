@@ -3,15 +3,13 @@
 
 #include <stdarg.h>
 
-/* GNU_PRINTF_ATTR lets the GNU compiler check printf-type
-   calls to be sure the arguments match the format string, thus preventing
-   runtime segmentation faults and incorrect messages.
-*/
-#ifdef __GNUC__
-#define GNU_PRINTF_ATTR(a,b) __attribute__ ((format (printf, a, b)))
-#else
-#define GNU_PRINTF_ATTR(a,b)
+#include "c_util.h"
+
+#ifdef __cplusplus
+extern "C" {
 #endif
+
+extern const char * const strsol;
 
 void
 cvasprintf(const char ** const retvalP,
@@ -23,5 +21,9 @@ casprintf(const char ** const retvalP, const char * const fmt, ...);
 
 void
 strfree(const char * const string);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

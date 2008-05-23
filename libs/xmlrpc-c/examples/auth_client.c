@@ -20,22 +20,26 @@
 #define VERSION    "1.0"
 #define SERVER_URL "http://localhost:8080/RPC2"
 
-static void die_if_fault_occurred (xmlrpc_env *env)
-{
-    if (env->fault_occurred) {
+
+
+static void
+die_if_fault_occurred(xmlrpc_env * const envP) {
+    if (envP->fault_occurred) {
         fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
-                env->fault_string, env->fault_code);
+                envP->fault_string, envP->fault_code);
         exit(1);
     }
 }
+
+
 
 int 
 main(int           const argc, 
      const char ** const argv ATTR_UNUSED) {
 
     xmlrpc_env env;
-    xmlrpc_server_info * server;
-    xmlrpc_value * result;    
+    xmlrpc_server_info * serverP;
+    xmlrpc_value * resultP;
     xmlrpc_int sum;
     
     if (argc-1 > 0) {
@@ -48,29 +52,29 @@ main(int           const argc,
     xmlrpc_env_init(&env);
 
     /* Make a new object to represent our XML-RPC server. */
-    server = xmlrpc_server_info_new(&env, SERVER_URL);
+    serverP = xmlrpc_server_info_new(&env, SERVER_URL);
     die_if_fault_occurred(&env);
 
     /* Set up our authentication information. */
-    xmlrpc_server_info_set_basic_auth(&env, server, "jrandom", "secret");
+    xmlrpc_server_info_set_basic_auth(&env, serverP, "jrandom", "secret");
     die_if_fault_occurred(&env);
 
-    result = 
+    resultP = 
         xmlrpc_client_call_server(
-            &env, server, "sample.add", "(ii)", 
+            &env, serverP, "sample.add", "(ii)", 
             (xmlrpc_int32) 5, (xmlrpc_int32) 7);
     die_if_fault_occurred(&env);
 
     /* Dispose of our server object. */
-    xmlrpc_server_info_free(server);
+    xmlrpc_server_info_free(serverP);
     
     /* Get the authentication information and print it out. */
-    xmlrpc_read_int(&env, result, &sum);
+    xmlrpc_read_int(&env, resultP, &sum);
     die_if_fault_occurred(&env);
-    printf("The sum  is %d\n", sum);
+    printf("The sum is %d\n", sum);
     
     /* Dispose of our result value. */
-    xmlrpc_DECREF(result);
+    xmlrpc_DECREF(resultP);
 
     /* Shut down our XML-RPC client library. */
     xmlrpc_env_clean(&env);

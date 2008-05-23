@@ -2,9 +2,13 @@
 
 #include "xmlrpc-c/girerr.hpp"
 using girerr::error;
+using girerr::throwf;
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
+#include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/base.hpp"
+#include "env_wrap.hpp"
+
 #include "xmlrpc-c/xml.hpp"
 
 using namespace std;
@@ -28,25 +32,23 @@ public:
 xmlrpc_value *
 cArrayFromParamList(paramList const& paramList) {
 
-    xmlrpc_env env;
-
-    xmlrpc_env_init(&env);
+    env_wrap env;
 
     xmlrpc_value * paramArrayP;
 
-    paramArrayP = xmlrpc_array_new(&env);
-    if (!env.fault_occurred) {
+    paramArrayP = xmlrpc_array_new(&env.env_c);
+    if (!env.env_c.fault_occurred) {
         for (unsigned int i = 0;
-             i < paramList.size() && !env.fault_occurred;
+             i < paramList.size() && !env.env_c.fault_occurred;
              ++i) {
             cValueWrapper const param(paramList[i].cValue());
 
-            xmlrpc_array_append_item(&env, paramArrayP, param.valueP);
+            xmlrpc_array_append_item(&env.env_c, paramArrayP, param.valueP);
         }
     }
-    if (env.fault_occurred) {
+    if (env.env_c.fault_occurred) {
         xmlrpc_DECREF(paramArrayP);
-        throw(error(env.fault_string));
+        throw(error(env.env_c.fault_string));
     }
     return paramArrayP;
 }
@@ -59,12 +61,15 @@ namespace xml {
 
 
 void
-generateCall(string    const& methodName,
-             paramList const& paramList,
-             string *  const  callXmlP) {
+generateCall(string         const& methodName,
+             paramList      const& paramList,
+             xmlrpc_dialect const  dialect,
+             string *       const  callXmlP) {
 /*----------------------------------------------------------------------------
    Generate the XML for an XML-RPC call, given a method name and parameter
    list.
+
+   Use dialect 'dialect' of XML-RPC.
 -----------------------------------------------------------------------------*/
     class memblockWrapper {
         xmlrpc_mem_block * const memblockP;
@@ -78,27 +83,36 @@ generateCall(string    const& methodName,
     };
 
     xmlrpc_mem_block * callXmlMP;
-    xmlrpc_env env;
+    env_wrap env;
 
-    xmlrpc_env_init(&env);
-
-    callXmlMP = XMLRPC_MEMBLOCK_NEW(char, &env, 0);
-    if (!env.fault_occurred) {
+    callXmlMP = XMLRPC_MEMBLOCK_NEW(char, &env.env_c, 0);
+    if (!env.env_c.fault_occurred) {
         memblockWrapper callXmlHolder(callXmlMP);
             // Makes callXmlMP get freed at end of scope
 
         xmlrpc_value * const paramArrayP(cArrayFromParamList(paramList));
 
-        xmlrpc_serialize_call(&env, callXmlMP, methodName.c_str(),
-                              paramArrayP);
+        xmlrpc_serialize_call2(&env.env_c, callXmlMP, methodName.c_str(),
+                               paramArrayP, dialect);
         
         *callXmlP = string(XMLRPC_MEMBLOCK_CONTENTS(char, callXmlMP),
                            XMLRPC_MEMBLOCK_SIZE(char, callXmlMP));
         
         xmlrpc_DECREF(paramArrayP);
     }
-    if (env.fault_occurred)
-        throw(error(env.fault_string));
+    if (env.env_c.fault_occurred)
+        throw(error(env.env_c.fault_string));
+}
+
+
+
+void
+generateCall(string    const& methodName,
+             paramList const& paramList,
+             string *  const  callXmlP) {
+
+    generateCall(methodName, paramList, xmlrpc_dialect_i8, callXmlP);
+
 }
 
 
@@ -109,27 +123,29 @@ parseResponse(string       const& responseXml,
 /*----------------------------------------------------------------------------
    Parse the XML for an XML-RPC response into an XML-RPC result value.
 -----------------------------------------------------------------------------*/
-    xmlrpc_env env;
-
-    xmlrpc_env_init(&env);
+    env_wrap env;
 
     xmlrpc_value * c_resultP;
+    int faultCode;
+    const char * faultString;
 
-    c_resultP = 
-        xmlrpc_parse_response(&env, responseXml.c_str(), responseXml.size());
+    xmlrpc_parse_response2(&env.env_c, responseXml.c_str(), responseXml.size(),
+                           &c_resultP, &faultCode, &faultString);
 
-    /* Unfortunately, xmlrpc_parse_response() does not distinguish between
-       unparseable XML and XML that cleanly indicates an RPC failure or
-       other failure on the server end.  We'll fix that some day, but for
-       now, we just assume any failure is an XML-RPC RPC failure.
-    */
-    if (env.fault_occurred)
-        *outcomeP =
-            rpcOutcome(fault(env.fault_string,
-                             static_cast<fault::code_t>(env.fault_code)));
+    if (env.env_c.fault_occurred)
+        throwf("Unable to find XML-RPC response in what server sent back.  %s",
+               env.env_c.fault_string);
     else {
-        *outcomeP = rpcOutcome(value(c_resultP));
-        xmlrpc_DECREF(c_resultP);
+        if (faultString) {
+            *outcomeP =
+                rpcOutcome(fault(faultString,
+                                 static_cast<fault::code_t>(faultCode)));
+            xmlrpc_strfree(faultString);
+        } else {
+            XMLRPC_ASSERT_VALUE_OK(c_resultP);
+            *outcomeP = rpcOutcome(value(c_resultP));
+            xmlrpc_DECREF(c_resultP);
+        }
     }
 }
 
@@ -147,7 +163,8 @@ parseSuccessfulResponse(string  const& responseXml,
     parseResponse(responseXml, &outcome);
 
     if (!outcome.succeeded())
-        throw(error("RPC failed.  " + outcome.getFault().getDescription()));
+        throwf("RPC response indicates it failed.  %s",
+               outcome.getFault().getDescription().c_str());
 
     *resultP = outcome.getResult();
 }

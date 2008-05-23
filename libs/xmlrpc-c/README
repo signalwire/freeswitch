@@ -36,50 +36,16 @@ prerequisite here.  But if you separately obtain Libxml2, you can
 configure the build to use that instead.  There's no really pressing
 reason to do that, though.
 
-Once you have the prerequisite libraries installed, you can issue
-these commands:
+BUILDING, INSTALLING
+--------------------
+
+See the file doc/INSTALL.
+
+In the simplest case, it's just a conventional
 
   $ ./configure
   $ make
   $ make install
-
-(There's supposed to be a 'make check' step in there too, to validate
-that everything built OK, but it's broken right now - 2005.01.07).
-
-To see it work, run a simple server like this:
-
-  $ examples/xmlrpc_sample_add_server 8080
-
-Then run a client that does an RPC to this server:
-
-  $ examples/xmlrpc_sample_add_client
-
-(I don't mean to imply that the above are consecutive shell commands;
-They can't be, because the server program runs indefinitely).
-
-Also try other sample servers and clients, described in examples/README.
-
-
-You may want to pass a '--prefix' argument to 'configure'.  See
-'./configure --help' for details.
-
-You may also want to disable client XML transports that you won't be
-using.  In particular, the Libwww transport can be inconvenient, because
-it typically uses about 20 shared libraries.  Any XML-RPC client
-program that uses Xmlrpc-c, whether or not the program uses any of the
-libwww facilities, must attach all those libraries, and that can take
-a significant amount of time.
-
-See './configure --help' for the options that disable certain transports.
-
-
-
-WINDOWS
--------
-
-All of the above is essentially for Unix-type operating systems.  To
-build and use Xmlrpc-c on Windows, see the file
-Windows/ReadMeWin32.txt.
 
 
 ADDITIONAL INFORMATION

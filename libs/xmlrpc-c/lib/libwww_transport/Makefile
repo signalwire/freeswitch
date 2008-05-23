@@ -1,21 +1,37 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/../..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  LIBDIR := $(call updir,$(CURDIR))
+  SRCDIR := $(call updir,$(LIBDIR))
+  BLDDIR := $(SRCDIR)
 endif
+SUBDIR := lib/libwww_transport
 
-include $(SRCDIR)/Makefile.config
-
-LIBWWW_INCLUDES := $(shell libwww-config --cflags)
-
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-LDFLAGS = -lpthread $(LADD)
-
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/include -I$(SRCDIR)/lib/util/include \
-  $(LIBWWW_INCLUDES)
+include $(BLDDIR)/config.mk
 
 default: all
 
 .PHONY: all
-all: xmlrpc_libwww_transport.lo
+all: xmlrpc_libwww_transport.o xmlrpc_libwww_transport.osh
+
+# Rules for the above dependencies are in common.mk,
+# courtesy of TARGET_MODS.
+
+TARGET_MODS = xmlrpc_libwww_transport
+
+OMIT_LIBWWW_TRANSPORT_RULE=Y
+
+include $(SRCDIR)/common.mk
+
+LIBWWW_INCLUDES := $(shell libwww-config --cflags)
+
+CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
+
+INCLUDES = \
+  -I$(BLDDIR) \
+  -I$(BLDDIR)/include \
+  -I$(SRCDIR)/include \
+  -I$(SRCDIR)/lib/util/include \
+  $(LIBWWW_INCLUDES)
 
 .PHONY: clean
 clean: clean-common
@@ -35,11 +51,8 @@ install:
 .PHONY: dep
 dep: dep-common
 
-include $(SRCDIR)/Makefile.common
-
 include Makefile.depend
 
-xmlrpc_libwww_transport.lo:%.lo:%.c
-	$(LIBTOOL) --mode=compile $(CC) -c $(INCLUDES) $(CFLAGS) $<
-
-
+# Need this dependency for those who don't use Makefile.depend.
+# Without it, version.h doesn't get created.
+xmlrpc_libwww_transport.o xmlrpc_libwww_transport.osh: version.h

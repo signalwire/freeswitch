@@ -14,12 +14,13 @@
   facility.  It is for demonstration purposes.
 =============================================================================*/
 
+#include <cassert>
+#include <cstdlib>
 #include <string>
 #include <iostream>
 #include <xmlrpc-c/girerr.hpp>
 #include <xmlrpc-c/base.hpp>
 #include <xmlrpc-c/client.hpp>
-#include <cassert>
 
 using namespace std;
 
@@ -32,7 +33,11 @@ main(int argc, char **) {
     }
 
     try {
-        xmlrpc_c::clientXmlTransport_curl myTransport;
+        xmlrpc_c::clientXmlTransport_curl myTransport(
+            xmlrpc_c::clientXmlTransport_curl::constrOpt()
+            .no_ssl_verifyhost(true)
+            .user_agent("sample_add/1.0"));
+
         xmlrpc_c::client_xml myClient(&myTransport);
 
         string const methodName("sample.add");
@@ -47,8 +52,6 @@ main(int argc, char **) {
 
         xmlrpc_c::carriageParm_curl0 myCarriageParm(serverUrl);
 
-        xmlrpc_c::value result;
-        
         myRpcP->call(&myClient, &myCarriageParm);
 
         assert(myRpcP->isFinished());
@@ -58,8 +61,8 @@ main(int argc, char **) {
 
         cout << "Result of RPC (sum of 5 and 7): " << sum << endl;
 
-    } catch (girerr::error const error) {
-        cerr << "Client threw error: " << error.what() << endl;
+    } catch (exception const& e) {
+        cerr << "Client threw error: " << e.what() << endl;
     } catch (...) {
         cerr << "Client threw unexpected error." << endl;
     }

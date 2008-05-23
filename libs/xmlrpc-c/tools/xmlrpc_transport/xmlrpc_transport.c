@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "config.h"  /* information about this build environment */
+#include "xmlrpc_config.h"  /* information about this build environment */
 #include "casprintf.h"
 #include "mallocvar.h"
 #include "cmdline_parser.h"

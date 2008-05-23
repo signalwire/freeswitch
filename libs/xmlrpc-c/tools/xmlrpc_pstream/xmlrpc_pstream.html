@@ -1,0 +1,200 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<title>Xmlrpc_pstream User Manual</title>
+<body>
+
+<p><b>xmlrpc_pstream</b> makes a pseudo-XML-RPC remote procedure call
+(RPC) and displays the response.  <b>xmlrpc_pstream</b> runs a
+pseudo-XML-RPC client.
+
+<p>The difference from true XML-RPC is that <b>xmlrpc_pstream</b>
+uses XML-RPC For C/C++'s &quot;pstream&quot; transport mechanism instead
+of HTTP.  The pstream transport uses a simple TCP connection.
+
+<h2>Examples</h2>
+
+<pre>
+<tt>
+
+     $ socketexec -connect \
+         -remote_host=localhost -remote_port=8080 --filedes=3 -- \
+         xmlrpc_pstream --serverfd=3
+
+     &gt;sample.add i/3 i/5
+
+       Result:
+         Integer: 8
+</tt>
+</pre>
+<pre>
+<tt>
+
+     $ socketexec -connect \
+         -remote_host=localhost -remote_port=8080 --filedes=3 -- \
+         xmlrpc_pstream sample.add i/3 i/5
+
+       Result:
+         Integer: 8
+</tt>
+</pre>
+
+<p>See the manual for the program <b>xmlrpc</b> for more examples;
+you specify the RPC arguments the same way.
+
+<h2>Overview</h2>
+<p>
+<b>xmlrpc_pstream</b>
+
+[<b>-serverfd=</b><i>integer</i>]
+[<i>methodName</i> [<i>parameter</i> ...]]
+
+<p><i>parameter</i>:
+
+<p>
+<b>i/</b><i>integer</i> |
+<b>s/</b><i>string</i> |
+<b>h/</b><i>hexstring</i> |
+<b>b/</b>{<b>true</b>|<b>false</b>|<b>t</b>|<b>f</b>} |
+<b>d/</b><i>realnum</i> |
+<b>n/</b> |
+<b><i>string</i></b>
+
+
+<P>Minimum unique abbreviation of option is acceptable.  You may use double
+hyphens instead of single hyphen to denote options.  You may use white
+space in place of the equals sign to separate an option name from its value.
+
+
+<h2>Description</h2>
+
+<p>This program is mainly useful for debugging and learning about
+XML-RPC servers.  XML-RPC is such that the RPCs normally need to be made
+by a program rather than a person to be of use.
+
+<p>You supply a TCP connection to the server as an open file descriptor.
+<b>socketexec</b> is a good way to create that socket and pass it to
+<b>xmlrpc_pstream</b>.
+
+<p>You run <b>xmlrpc_pstream</b> in one of two modes: interactive and
+single RPC.
+
+<p>In interactive mode, which you select by giving no arguments to the
+program, <b>xmlrpc_pstream</b> prompts you for RPCs using the Readline
+library.  You type in an RPC description and <b>xmlrpc_pstream</b>
+executes it, then asks you for another.  This continues until you close
+the readline session (usually by typing Control-D).  Then, the program
+exits, which causes the server file descriptor to close, which causes the
+client-server TCP connection to close, which means the client-server
+XML-RPC connection terminates.
+
+<p>In single RPC mode, you give the RPC information as arguments to
+the program.  <b>xmlrpc_pstream</b> executes one RPC, then exits.
+But note that when you invoke <b>xmlrpc_pstream</b> with
+<b>socketexec</b> in single RPC mode, you can't exploit one of the
+main purposes of a pstream transport: it lets you establish an RPC
+session with the server.  With the single RPC <b>socketexec</b>
+method, <b>socketexec</b> establishes a session with the server (by
+creating the TCP connection), then <b>xmlrpc_pstream</b> performs one
+RPC in that session, then the OS closes the session as
+<b>xmlrpc_pstream</b> exits (by virtue of closing the TCP socket).
+
+
+<h2>Arguments</h2>
+
+<p>There are no arguments in interactive mode.  The fact that there are
+no arguments is what tells <b>xmlrpc_pstream</b> you want interactive mode.
+
+<p>For single RPC mode, the arguments are as follows.
+
+<dl>
+
+<dt><i>methodName</i>
+
+<dd>The name of the XML-RPC method you want to invoke.
+
+<dt><i>parameter</i> ...
+
+<dd>The list of parameters for the RPC.  <b>xmlrpc_pstream</b> turns
+each of these arguments into an XML-RPC parameter, in the order given.
+You may specify no parameters if you like.
+
+<p>You specify the data type of the parameter with a prefix ending in
+a slash.  Example: <b>i/5</b>.  Here, the &quot;i&quot; signifies an
+integer data type.  &quot;5&quot; is the value.
+
+<p><b>xmlrpc</b> is capable of only a subset of the 
+possible XML-RPC types, as follows by prefix:
+
+<dl>
+<dt>i/
+<dd>integer (&lt;i4&gt;) (32 bit)
+
+<dt>s/
+<dd>string (&lt;string&gt;)
+
+<dt>h/
+<dd>byte string (&lt;base64&gt;).  Specify the value in hexadecimal.
+
+<dt>b/
+<dd>boolean (&lt;boolean&gt;).  Specify the value as &quot;true&quot; or
+&quot;t&quot; for true; &quot;false&quot; or &quot;f&quot; for false.
+
+<dt>d/
+<dd>double (&lt;double&gt;)  (i.e. real number)
+
+<dt>n/
+<dd>nil (&lt;nil&gt;)
+
+<dt>I/
+<dd>64 bit integer (&lt;i8&gt;)
+
+</dl>
+
+<p>As a shortcut, if you don't specify a prefix (i.e. your argument does
+not contain a slash), <b>xmlrpc_pstream</b> assumes string data type.
+
+</dl>
+
+
+<h2>Options</h2>
+
+<dl>
+<dt><b>-serverfd=</b><i>integer</i>
+
+<dd>This identifies the client-server connection (and thus identifies the
+server).  It is the file descriptor (an integer file handle) of the socket
+associated with an established TCP connection that you set up before
+invoking <b>xmlrpc_pstream</b>.
+
+<p>In interactive mode, don't use 0 or 1, because those are Standard Input
+and Standard Output and are used to communicate with you.  2 is a bad choice
+any time, because that is Standard Error and <b>xmlrpc_pstream</b> uses
+that to communicate with you.
+
+<p><b>socketexec</b> is a good way to create the required socket.  Use
+the <b>socketexec</b>'s <b>-filedes</b> option to tell it what file descriptor
+to use for the socket, then use that same value on <b>xmlrpc_pstream</b>'s
+<b>-serverfd</b> option.
+
+<P>The default is 3.
+
+</dl>
+
+<h2>Interactive Commands</h2>
+
+<p>Example:
+
+<kbd>
+&gt; sample_add i/5 i/7
+</kbd>
+
+<p>In interactive mode, <b>xmlrpc_pstream</b> prompts you for RPC calls
+with the prompt &quot;&gt;&quot;.
+
+<p>At the prompt, type a series of words, delimited by one or more blanks.
+
+<p>The first word is the XML-RPC method name.
+
+<p>The remaining words are the parameters of the XML-RPC method, in the
+same form as the <b>xmlrpc_pstream</b> arguments for single RPC mode.
+
+</body>

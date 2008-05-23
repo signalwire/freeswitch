@@ -1,18 +1,23 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/../../..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  EXPATDIR := $(call updir,$(CURDIR))
+  LIBDIR := $(call updir,$(EXPATDIR))
+  SRCDIR := $(call updir,$(LIBDIR))
+  BLDDIR := $(SRCDIR)
 endif
+SUBDIR := lib/expat/gennmtab
 
-include $(SRCDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
 
 LDFLAGS = $(LADD)
 
-INCLUDES = -I$(SRCDIR) -I$(SRCDIR)/lib/util/include
+INCLUDES = -I$(BLDDIR) -I$(SRCDIR)/lib/util/include
 
 default: all
 
-include $(SRCDIR)/Makefile.common
+include $(SRCDIR)/common.mk
 
 .PHONY: all
 all: gennmtab
@@ -37,9 +42,9 @@ install:
 dep: dep-common
 
 gennmtab.o:%.o:%.c
-	$(CC) -c $< -o $@ $(CFLAGS) $(INCLUDES)
+	$(BUILDTOOL_CC) -c $< -o $@ $(CFLAGS) $(INCLUDES)
 
 gennmtab:%:%.o
-	$(LINK) -o $@ $(LDFLAGS) $(CFLAGS) $^
+	$(BUILDTOOL_CCLD) -o $@ $(LDFLAGS) $^
 
 include Makefile.depend

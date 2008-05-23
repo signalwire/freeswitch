@@ -2,10 +2,13 @@
 #define ABYSS_TOKEN_H_INCLUDED
 
 void
-NextToken(char ** const p);
+NextToken(const char ** const pP);
 
 char *
-GetToken(char ** const p);
+GetToken(char ** const pP);
 
+void
+GetTokenConst(char **       const pP,
+              const char ** const tokenP);
 
 #endif

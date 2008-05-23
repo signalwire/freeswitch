@@ -35,20 +35,27 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include "xmlrpc-c/abyss.h"
+
+#include "trace.h"
 
 /*********************************************************************
 ** Tracing functions
 *********************************************************************/
 
 static void
-TraceVMsg(char *fmt,va_list argptr) {
+TraceVMsg(const char * const fmt,
+          va_list            argptr) {
+
     vprintf(fmt,argptr);
+
     printf("\n");
 }
 
-void TraceMsg(char *fmt,...)
-{
+
+
+void
+TraceMsg(const char * const fmt, ...) {
+
     va_list argptr;
 
     va_start(argptr,fmt);
@@ -56,12 +63,16 @@ void TraceMsg(char *fmt,...)
     va_end(argptr);
 }
 
-void TraceExit(char *fmt,...)
-{
+
+
+void
+TraceExit(const char * const fmt, ...) {
+
     va_list argptr;
 
     va_start(argptr,fmt);
     TraceVMsg(fmt,argptr);
     va_end(argptr);
-    abort();
+
+    exit(1);
 }

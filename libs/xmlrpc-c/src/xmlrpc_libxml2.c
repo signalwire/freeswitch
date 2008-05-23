@@ -30,7 +30,11 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef WIN32
+#include <xmlparser.h>
+#else
 #include <libxml/parser.h>
+#endif
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
@@ -147,7 +151,7 @@ void xml_element_free (xml_element *elem)
 **  documentation on each function works.
 */
 
-char *xml_element_name (xml_element *elem)
+const char *xml_element_name (const xml_element * const elem)
 {
     XMLRPC_ASSERT_ELEM_OK(elem);
     return elem->_name;
@@ -167,13 +171,13 @@ char *xml_element_cdata (xml_element *elem)
     return XMLRPC_TYPED_MEM_BLOCK_CONTENTS(char, &elem->_cdata);
 }
 
-size_t xml_element_children_size (xml_element *elem)
+size_t xml_element_children_size (const xml_element *const elem)
 {
     XMLRPC_ASSERT_ELEM_OK(elem);
     return XMLRPC_TYPED_MEM_BLOCK_SIZE(xml_element*, &elem->_children);
 }
 
-xml_element **xml_element_children (xml_element *elem)
+xml_element **xml_element_children (const xml_element *const elem)
 {
     XMLRPC_ASSERT_ELEM_OK(elem);
     return XMLRPC_TYPED_MEM_BLOCK_CONTENTS(xml_element*, &elem->_children);
@@ -372,47 +376,52 @@ static xmlSAXHandler sax_handler = {
     NULL       /* serror */
 };
 
-xml_element *xml_parse (xmlrpc_env *env, const char *xml_data, int xml_len)
-{
+
+
+void
+xml_parse(xmlrpc_env *   const envP,
+          const char *   const xmlData,
+          size_t         const xmlDataLen,
+          xml_element ** const resultPP) {
+
     parse_context context;
     xmlParserCtxt *parser;
     int err;
 
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT(xml_data != NULL && xml_len >= 0);
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT(xmlData != NULL && xmlDataLen >= 0);
 
     /* Set up our error-handling preconditions. */
     parser = NULL;
     context.root = NULL;
     
     /* Set up the rest of our parse context. */
-    context.env     = env;
+    context.env     = envP;
     context.current = NULL;
 
     /* Set up our XML parser. */
     parser = xmlCreatePushParserCtxt(&sax_handler, &context, NULL, 0, NULL);
-    XMLRPC_FAIL_IF_NULL(parser, env, XMLRPC_INTERNAL_ERROR,
-			"Could not create expat parser");
+    XMLRPC_FAIL_IF_NULL(parser, envP, XMLRPC_INTERNAL_ERROR,
+                        "Could not create expat parser");
 
     /* Parse our data. */
-    err = xmlParseChunk(parser, xml_data, xml_len, 1);
+    err = xmlParseChunk(parser, xmlData, xmlDataLen, 1);
     if (err)
-        XMLRPC_FAIL(env, XMLRPC_PARSE_ERROR, "XML parsing failed");
-    XMLRPC_FAIL_IF_FAULT(env);
+        XMLRPC_FAIL(envP, XMLRPC_PARSE_ERROR, "XML parsing failed");
+    XMLRPC_FAIL_IF_FAULT(envP);
 
     /* Perform some sanity checks. */
     XMLRPC_ASSERT(context.root != NULL);
     XMLRPC_ASSERT(context.current == NULL);
 
+    *resultPP = context.root;
+
  cleanup:
     if (parser)
         xmlFreeParserCtxt(parser);
 
-    if (env->fault_occurred) {
+    if (envP->fault_occurred) {
         if (context.root)
             xml_element_free(context.root);
-        return NULL;
-    } else {
-        return context.root;
     }
 }

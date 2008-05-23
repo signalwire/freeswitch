@@ -1,6 +1,6 @@
 #include <stddef.h>
 
-#define XML_PROLOGUE "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
+#include "xml_data.h"
 
 #define RAW_STRING_DATA \
     "<value><array><data>\r\n" \
@@ -31,14 +31,6 @@ char const serialized_call[] =
     "</params>\r\n"
     "</methodCall>\r\n";
 
-char const serialized_response[] =
-    XML_PROLOGUE
-    "<methodResponse>\r\n"
-    "<params>\r\n"
-    "<param><value><i4>30</i4></value></param>\r\n"
-    "</params>\r\n"
-    "</methodResponse>\r\n";
-
 char const serialized_fault[] =
     XML_PROLOGUE
     "<methodResponse>\r\n"
@@ -56,8 +48,10 @@ char const expat_data[] = XML_PROLOGUE RAW_STRING_DATA "\r\n";
 char const expat_error_data[] =
     XML_PROLOGUE \
     "<foo><bar>abc</bar><baz></baz>\r\n";
+    /* Invalid because there's no closing </foo> */
 
-char const correct_value[] = 
+
+char const good_response_xml[] = 
     XML_PROLOGUE 
     "<methodResponse><params><param>\r\n" 
     "<value><array><data>\r\n" 
@@ -100,8 +94,12 @@ const char * bad_values[] = {
     VALUE_HEADER"<i4>0 </i4>"VALUE_FOOTER,
     VALUE_HEADER"<boolean>2</boolean>"VALUE_FOOTER,
     VALUE_HEADER"<boolean>-1</boolean>"VALUE_FOOTER,
-    VALUE_HEADER"<double> 0.0</double>"VALUE_FOOTER,
+    VALUE_HEADER"<double></double>"VALUE_FOOTER,
     VALUE_HEADER"<double>0.0 </double>"VALUE_FOOTER,
+    VALUE_HEADER"<double>a</double>"VALUE_FOOTER,
+    VALUE_HEADER"<double>1.1.1</double>"VALUE_FOOTER,
+    VALUE_HEADER"<double>1a</double>"VALUE_FOOTER,
+    VALUE_HEADER"<double>1.1a</double>"VALUE_FOOTER,
     VALUE_HEADER"<array></array>"VALUE_FOOTER,
     VALUE_HEADER"<array><data></data><data></data></array>"VALUE_FOOTER,
     VALUE_HEADER"<array><data></data><data></data></array>"VALUE_FOOTER,

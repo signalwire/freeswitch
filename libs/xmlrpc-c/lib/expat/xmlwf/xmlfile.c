@@ -13,7 +13,7 @@ See the file copying.txt for copying permission.
 #include "xmltchar.h"
 #include "filemap.h"
 
-#ifdef _MSC_VER
+#if MSVCRT
 #include <io.h>
 #endif
 

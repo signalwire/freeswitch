@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<methodCall>
+  <methodName>foo</methodName>
+  <params>
+    <param>
+      <value><struct>
+        <member>
+          <value><i4>0</i4></value>
+          <name>child elements reversed!</name>
+        </member>
+      </struct></value>
+    </param>
+  </params>
+</methodCall>

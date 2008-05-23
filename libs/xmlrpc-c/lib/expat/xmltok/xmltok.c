@@ -8,11 +8,7 @@ See the file copying.txt for copying permission.
 #include "xmltok.h"
 #include "nametab.h"
 
-#ifdef XML_DTD
 #define IGNORE_SECTION_TOK_VTABLE , PREFIX(ignoreSectionTok)
-#else
-#define IGNORE_SECTION_TOK_VTABLE /* as nothing */
-#endif
 
 #define VTABLE1 \
   { PREFIX(prologTok), PREFIX(contentTok), \
@@ -321,7 +317,6 @@ void utf8_toUtf16(const ENCODING *enc,
   *toP = to;
 }
 
-#ifdef XML_NS
 static const struct normal_encoding utf8_encoding_ns = {
   { VTABLE1, utf8_toUtf8, utf8_toUtf16, 1, 1, 0 },
   {
@@ -330,7 +325,6 @@ static const struct normal_encoding utf8_encoding_ns = {
   },
   STANDARD_VTABLE(sb_) NORMAL_VTABLE(utf8_)
 };
-#endif
 
 static const struct normal_encoding utf8_encoding = {
   { VTABLE1, utf8_toUtf8, utf8_toUtf16, 1, 1, 0 },
@@ -343,8 +337,6 @@ static const struct normal_encoding utf8_encoding = {
   STANDARD_VTABLE(sb_) NORMAL_VTABLE(utf8_)
 };
 
-#ifdef XML_NS
-
 static const struct normal_encoding internal_utf8_encoding_ns = {
   { VTABLE1, utf8_toUtf8, utf8_toUtf16, 1, 1, 0 },
   {
@@ -353,8 +345,6 @@ static const struct normal_encoding internal_utf8_encoding_ns = {
   },
   STANDARD_VTABLE(sb_) NORMAL_VTABLE(utf8_)
 };
-
-#endif
 
 static const struct normal_encoding internal_utf8_encoding = {
   { VTABLE1, utf8_toUtf8, utf8_toUtf16, 1, 1, 0 },
@@ -401,8 +391,6 @@ void latin1_toUtf16(const ENCODING *enc ATTR_UNUSED,
     *(*toP)++ = (unsigned char)*(*fromP)++;
 }
 
-#ifdef XML_NS
-
 static const struct normal_encoding latin1_encoding_ns = {
   { VTABLE1, latin1_toUtf8, latin1_toUtf16, 1, 0, 0 },
   {
@@ -411,8 +399,6 @@ static const struct normal_encoding latin1_encoding_ns = {
   },
   STANDARD_VTABLE(sb_) NULL_NORMAL_VTABLE
 };
-
-#endif
 
 static const struct normal_encoding latin1_encoding = {
   { VTABLE1, latin1_toUtf8, latin1_toUtf16, 1, 0, 0 },
@@ -434,18 +420,14 @@ void ascii_toUtf8(const ENCODING *enc ATTR_UNUSED,
     *(*toP)++ = *(*fromP)++;
 }
 
-#ifdef XML_NS
-
 static const struct normal_encoding ascii_encoding_ns = {
   { VTABLE1, ascii_toUtf8, latin1_toUtf16, 1, 1, 0 },
   {
 #include "asciitab.h"
 /* BT_NONXML == 0 */
   },
-  STANDARD_VTABLE(sb_)
+  STANDARD_VTABLE(sb_) NULL_NORMAL_VTABLE
 };
-
-#endif
 
 static const struct normal_encoding ascii_encoding = {
   { VTABLE1, ascii_toUtf8, latin1_toUtf16, 1, 1, 0 },
@@ -651,8 +633,6 @@ int little2_isNmstrtMin(const ENCODING *enc, const char *p)
 
 #endif /* not XML_MIN_SIZE */
 
-#ifdef XML_NS
-
 static const struct normal_encoding little2_encoding_ns = { 
   { VTABLE, 2, 0,
 #if XML_BYTE_ORDER == 12
@@ -667,8 +647,6 @@ static const struct normal_encoding little2_encoding_ns = {
   },
   STANDARD_VTABLE(little2_) NULL_NORMAL_VTABLE
 };
-
-#endif
 
 static const struct normal_encoding little2_encoding = { 
   { VTABLE, 2, 0,
@@ -689,8 +667,6 @@ static const struct normal_encoding little2_encoding = {
 
 #if XML_BYTE_ORDER != 21
 
-#ifdef XML_NS
-
 static const struct normal_encoding internal_little2_encoding_ns = { 
   { VTABLE, 2, 0, 1 },
   {
@@ -699,8 +675,6 @@ static const struct normal_encoding internal_little2_encoding_ns = {
   },
   STANDARD_VTABLE(little2_) NULL_NORMAL_VTABLE
 };
-
-#endif
 
 static const struct normal_encoding internal_little2_encoding = { 
   { VTABLE, 2, 0, 1 },
@@ -790,8 +764,6 @@ int big2_isNmstrtMin(const ENCODING *enc, const char *p)
 
 #endif /* not XML_MIN_SIZE */
 
-#ifdef XML_NS
-
 static const struct normal_encoding big2_encoding_ns = {
   { VTABLE, 2, 0,
 #if XML_BYTE_ORDER == 21
@@ -806,8 +778,6 @@ static const struct normal_encoding big2_encoding_ns = {
   },
   STANDARD_VTABLE(big2_) NULL_NORMAL_VTABLE
 };
-
-#endif
 
 static const struct normal_encoding big2_encoding = {
   { VTABLE, 2, 0,
@@ -828,18 +798,14 @@ static const struct normal_encoding big2_encoding = {
 
 #if XML_BYTE_ORDER != 12
 
-#ifdef XML_NS
-
 static const struct normal_encoding internal_big2_encoding_ns = {
   { VTABLE, 2, 0, 1 },
   {
 #include "iasciitab.h"
 #include "latin1tab.h"
   },
-  STANDARD_VTABLE(big2_)
+  STANDARD_VTABLE(big2_) NULL_NORMAL_VTABLE
 };
-
-#endif
 
 static const struct normal_encoding internal_big2_encoding = {
   { VTABLE, 2, 0, 1 },
@@ -1119,8 +1085,12 @@ int checkCharRefNumber(int result)
   return result;
 }
 
-int XmlUtf8Encode(int c, char *buf)
-{
+
+
+int
+xmlrpc_XmlUtf8Encode(int    const c,
+                     char * const buf) {
+
   enum {
     /* minN is minimum legal resulting value for N byte sequence */
     min2 = 0x80,
@@ -1155,22 +1125,32 @@ int XmlUtf8Encode(int c, char *buf)
   return 0;
 }
 
-int XmlUtf16Encode(int charNum, unsigned short *buf)
-{
-  if (charNum < 0)
+
+
+int
+xmlrpc_XmlUtf16Encode(int              const charNumArg,
+                      unsigned short * const buf) {
+
+    int charNum;
+
+    charNum = charNumArg;  /* initial value */
+
+    if (charNum < 0)
+        return 0;
+    if (charNum < 0x10000) {
+        buf[0] = charNum;
+        return 1;
+    }
+    if (charNum < 0x110000) {
+        charNum -= 0x10000;
+        buf[0] = (charNum >> 10) + 0xD800;
+        buf[1] = (charNum & 0x3FF) + 0xDC00;
+        return 2;
+    }
     return 0;
-  if (charNum < 0x10000) {
-    buf[0] = charNum;
-    return 1;
-  }
-  if (charNum < 0x110000) {
-    charNum -= 0x10000;
-    buf[0] = (charNum >> 10) + 0xD800;
-    buf[1] = (charNum & 0x3FF) + 0xDC00;
-    return 2;
-  }
-  return 0;
 }
+
+
 
 struct unknown_encoding {
   struct normal_encoding normal;
@@ -1180,10 +1160,15 @@ struct unknown_encoding {
   char utf8[256][4];
 };
 
-int XmlSizeOfUnknownEncoding(void)
-{
-  return sizeof(struct unknown_encoding);
+
+
+int
+xmlrpc_XmlSizeOfUnknownEncoding(void) {
+
+    return sizeof(struct unknown_encoding);
 }
+
+
 
 static
 int unknown_isName(const ENCODING *enc, const char *p)
@@ -1229,7 +1214,7 @@ void unknown_toUtf8(const ENCODING *enc,
     if (n == 0) {
       int c = ((const struct unknown_encoding *)enc)
 	      ->convert(((const struct unknown_encoding *)enc)->userData, *fromP);
-      n = XmlUtf8Encode(c, buf);
+      n = xmlrpc_XmlUtf8Encode(c, buf);
       if (n > toLim - *toP)
 	break;
       utf8 = buf;
@@ -1268,11 +1253,11 @@ void unknown_toUtf16(const ENCODING *enc,
 }
 
 ENCODING *
-XmlInitUnknownEncoding(void *mem,
-		       int *table,
-		       int (*convert)(void *userData, const char *p),
-		       void *userData)
-{
+xmlrpc_XmlInitUnknownEncoding(void * const mem,
+                              int *  const table,
+                              int (*convert)(void *userData, const char *p),
+                              void * const userData) {
+
   int i;
   struct unknown_encoding *e = mem;
   for (i = 0; i < (int)sizeof(struct normal_encoding); i++)
@@ -1324,7 +1309,7 @@ XmlInitUnknownEncoding(void *mem,
 	e->normal.type[i] = BT_NAME;
       else
 	e->normal.type[i] = BT_OTHER;
-      e->utf8[i][0] = (char)XmlUtf8Encode(c, e->utf8[i] + 1);
+      e->utf8[i][0] = (char)xmlrpc_XmlUtf8Encode(c, e->utf8[i] + 1);
       e->utf16[i] = c;
     }
   }
@@ -1428,11 +1413,6 @@ int initScan(const ENCODING **encodingTable,
   encPtr = enc->encPtr;
   if (ptr + 1 == end) {
     /* only a single byte available for auto-detection */
-#ifndef XML_DTD /* FIXME */
-    /* a well-formed document entity must have more than one byte */
-    if (state != XML_CONTENT_STATE)
-      return XML_TOK_PARTIAL;
-#endif
     /* so we're parsing an external text entity... */
     /* if UTF-16 was externally specified, then we need at least 2 bytes */
     switch (INIT_ENC_INDEX(enc)) {
@@ -1536,8 +1516,6 @@ int initScan(const ENCODING **encodingTable,
 #undef NS
 #undef ns
 
-#ifdef XML_NS
-
 #define NS(x) x ## NS
 #define ns(x) x ## _ns
 
@@ -1547,15 +1525,14 @@ int initScan(const ENCODING **encodingTable,
 #undef ns
 
 ENCODING *
-XmlInitUnknownEncodingNS(void *mem,
-		         int *table,
-		         int (*convert)(void *userData, const char *p),
-		         void *userData)
-{
-  ENCODING *enc = XmlInitUnknownEncoding(mem, table, convert, userData);
-  if (enc)
-    ((struct normal_encoding *)enc)->type[ASCII_COLON] = BT_COLON;
-  return enc;
-}
+xmlrpc_XmlInitUnknownEncodingNS(void * const mem,
+                                int *  const table,
+                                int (*convert)(void *userData, const char *p),
+                                void * const userData) {
 
-#endif /* XML_NS */
+    ENCODING * const enc =
+        xmlrpc_XmlInitUnknownEncoding(mem, table, convert, userData);
+    if (enc)
+        ((struct normal_encoding *)enc)->type[ASCII_COLON] = BT_COLON;
+    return enc;
+}

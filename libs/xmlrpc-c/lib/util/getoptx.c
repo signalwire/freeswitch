@@ -19,10 +19,6 @@
 
 #include "getoptx.h"
 
-#ifdef _AIX
-#pragma alloca
-#endif
-
 /* Note that on some systems, the header files above declare variables
    for use with their native getopt facilities, and those variables have
    the same names as we'd like to use.  So we use things like optargx
@@ -94,20 +90,25 @@ static void
 exchange(char ** const argv) {
     unsigned int const nonopts_size = 
         (last_nonopt - first_nonopt) * sizeof (char *);
-    char **temp = (char **) alloca (nonopts_size);
+    char **temp = (char **) malloc (nonopts_size);
+
+    if (temp == NULL)
+        abort();
 
     /* Interchange the two blocks of data in argv.  */
 
-    bcopy (&argv[first_nonopt], temp, nonopts_size);
-    bcopy (&argv[last_nonopt], &argv[first_nonopt],
-           (optindx - last_nonopt) * sizeof (char *));
-    bcopy (temp, &argv[first_nonopt + optindx - last_nonopt],
-           nonopts_size);
+    memcpy (temp, &argv[first_nonopt], nonopts_size);
+    memcpy (&argv[first_nonopt], &argv[last_nonopt], 
+            (optindx - last_nonopt) * sizeof (char *));
+    memcpy (&argv[first_nonopt + optindx - last_nonopt], temp, 
+            nonopts_size);
 
     /* Update records for the slots the non-options now occupy.  */
 
     first_nonopt += (optindx - last_nonopt);
     last_nonopt = optindx;
+
+    free(temp);
 }
 
 /* Scan elements of ARGV (whose length is ARGC) for option characters
@@ -243,13 +244,16 @@ getoptx(int          const argc,
         char *s = nextchar;
         int exact = 0;
         int ambig = 0;
-        struct optionx *pfound = 0;
+        struct optionx * pfound;
         int indfound;
 
         while (*s && *s != '=') s++;
 
+        indfound = 0;  /* quite compiler warning */
+
         /* Test all options for either exact match or abbreviated matches.  */
-        for (p = _getopt_long_options, option_index = 0; p->name; 
+        for (p = _getopt_long_options, option_index = 0, pfound = NULL;
+             p->name; 
              p++, option_index++)
             if (!strncmp (p->name, nextchar, s - nextchar))
             {
@@ -261,7 +265,7 @@ getoptx(int          const argc,
                     exact = 1;
                     break;
                 }
-                else if (pfound == 0)
+                else if (!pfound)
                 {
                     /* First nonexact match found.  */
                     pfound = p;
@@ -280,7 +284,7 @@ getoptx(int          const argc,
             return '?';
         }
 
-        if (pfound != 0)
+        if (pfound)
         {
             option_index = indfound;
             optindx++;
@@ -314,7 +318,7 @@ getoptx(int          const argc,
                 *(pfound->flag) = pfound->val;
             return 0;
         }
-        if (argv[optindx][0] == '+' || index (optstring, *nextchar) == 0)
+        if (argv[optindx][0] == '+' || strchr (optstring, *nextchar) == 0)
         {
             if (opterrx != 0)
                 fprintf (stderr, "%s: unrecognized option `%c%s'\n",
@@ -328,7 +332,7 @@ getoptx(int          const argc,
 
     {
         char c = *nextchar++;
-        char *temp = index (optstring, c);
+        char *temp = strchr (optstring, c);
 
         /* Increment `optindx' when we start to process its last character.  */
         if (*nextchar == 0)

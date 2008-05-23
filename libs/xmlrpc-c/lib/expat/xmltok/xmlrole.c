@@ -43,14 +43,10 @@ static const char KW_SYSTEM[] = { ASCII_S, ASCII_Y, ASCII_S, ASCII_T, ASCII_E, A
 #define MIN_BYTES_PER_CHAR(enc) ((enc)->minBytesPerChar)
 #endif
 
-#ifdef XML_DTD
 #define setTopLevel(state) \
   ((state)->handler = ((state)->documentEntity \
                        ? internalSubset \
                        : externalSubset1))
-#else /* not XML_DTD */
-#define setTopLevel(state) ((state)->handler = internalSubset)
-#endif /* not XML_DTD */
 
 typedef int PROLOG_HANDLER(PROLOG_STATE *state,
 			   int tok,
@@ -69,10 +65,8 @@ static PROLOG_HANDLER
   attlist7, attlist8, attlist9,
   element0, element1, element2, element3, element4, element5, element6,
   element7,
-#ifdef XML_DTD
   externalSubset0, externalSubset1,
   condSect0, condSect1, condSect2,
-#endif /* XML_DTD */
   declClose,
   error;
 
@@ -335,7 +329,7 @@ int internalSubset(PROLOG_STATE *state,
   return common(state, tok);
 }
 
-#ifdef XML_DTD
+
 
 static
 int externalSubset0(PROLOG_STATE *state,
@@ -380,7 +374,7 @@ int externalSubset1(PROLOG_STATE *state,
   return common(state, tok);
 }
 
-#endif /* XML_DTD */
+
 
 static
 int entity0(PROLOG_STATE *state,
@@ -1124,7 +1118,7 @@ int element7(PROLOG_STATE *state,
   return common(state, tok);
 }
 
-#ifdef XML_DTD
+
 
 static
 int condSect0(PROLOG_STATE *state,
@@ -1150,42 +1144,46 @@ int condSect0(PROLOG_STATE *state,
   return common(state, tok);
 }
 
-static
-int condSect1(PROLOG_STATE *state,
-	      int tok,
-	      const char *ptr,
-	      const char *end,
-	      const ENCODING *enc)
-{
-  switch (tok) {
-  case XML_TOK_PROLOG_S:
-    return XML_ROLE_NONE;
-  case XML_TOK_OPEN_BRACKET:
-    state->handler = externalSubset1;
-    state->includeLevel += 1;
-    return XML_ROLE_NONE;
-  }
-  return common(state, tok);
+
+
+static int
+condSect1(PROLOG_STATE *  state,
+	      int              tok,
+	      const char *     ptr ATTR_UNUSED,
+	      const char *     end ATTR_UNUSED,
+	      const ENCODING * enc ATTR_UNUSED) {
+
+    switch (tok) {
+    case XML_TOK_PROLOG_S:
+        return XML_ROLE_NONE;
+    case XML_TOK_OPEN_BRACKET:
+        state->handler = externalSubset1;
+        state->includeLevel += 1;
+        return XML_ROLE_NONE;
+    }
+    return common(state, tok);
 }
 
-static
-int condSect2(PROLOG_STATE *state,
-	      int tok,
-	      const char *ptr,
-	      const char *end,
-	      const ENCODING *enc)
-{
-  switch (tok) {
-  case XML_TOK_PROLOG_S:
-    return XML_ROLE_NONE;
-  case XML_TOK_OPEN_BRACKET:
-    state->handler = externalSubset1;
-    return XML_ROLE_IGNORE_SECT;
-  }
-  return common(state, tok);
+
+
+static int
+condSect2(PROLOG_STATE *  state,
+	      int              tok,
+	      const char *     ptr ATTR_UNUSED,
+	      const char *     end ATTR_UNUSED,
+	      const ENCODING * enc ATTR_UNUSED) {
+
+    switch (tok) {
+    case XML_TOK_PROLOG_S:
+        return XML_ROLE_NONE;
+    case XML_TOK_OPEN_BRACKET:
+        state->handler = externalSubset1;
+        return XML_ROLE_IGNORE_SECT;
+    }
+    return common(state, tok);
 }
 
-#endif /* XML_DTD */
+
 
 static
 int declClose(PROLOG_STATE *state,
@@ -1237,30 +1235,28 @@ int error(PROLOG_STATE *state ATTR_UNUSED,
 static
 int common(PROLOG_STATE *state, int tok ATTR_UNUSED)
 {
-#ifdef XML_DTD
   if (!state->documentEntity && tok == XML_TOK_PARAM_ENTITY_REF)
     return XML_ROLE_INNER_PARAM_ENTITY_REF;
-#endif
   state->handler = error;
   return XML_ROLE_ERROR;
 }
 
-void XmlPrologStateInit(PROLOG_STATE *state)
-{
-  state->handler = prolog0;
-#ifdef XML_DTD
-  state->documentEntity = 1;
-  state->includeLevel = 0;
-#endif /* XML_DTD */
+
+
+void
+xmlrpc_XmlPrologStateInit(PROLOG_STATE * const state) {
+
+    state->handler = prolog0;
+    state->documentEntity = 1;
+    state->includeLevel = 0;
 }
 
-#ifdef XML_DTD
 
-void XmlPrologStateInitExternalEntity(PROLOG_STATE *state)
-{
-  state->handler = externalSubset0;
-  state->documentEntity = 0;
-  state->includeLevel = 0;
+
+void
+xmlrpc_XmlPrologStateInitExternalEntity(PROLOG_STATE * const state) {
+
+    state->handler = externalSubset0;
+    state->documentEntity = 0;
+    state->includeLevel = 0;
 }
-
-#endif /* XML_DTD */

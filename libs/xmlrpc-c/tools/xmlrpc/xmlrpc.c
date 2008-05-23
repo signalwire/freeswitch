@@ -40,11 +40,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
+#include <assert.h>
 
-#include "config.h"  /* information about this build environment */
-#include "casprintf.h"
+#include "xmlrpc_config.h"  /* information about this build environment */
+#include "bool.h"
+#include "int.h"
 #include "mallocvar.h"
+#include "girstring.h"
+#include "casprintf.h"
+#include "string_parser.h"
 #include "cmdline_parser.h"
+#include "dumpvalue.h"
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/client.h"
@@ -78,8 +85,7 @@ struct cmdlineInfo {
 static void 
 die_if_fault_occurred (xmlrpc_env * const envP) {
     if (envP->fault_occurred) {
-        fprintf(stderr, "Error: %s (%d)\n",
-                envP->fault_string, envP->fault_code);
+        fprintf(stderr, "Failed.  %s\n", envP->fault_string);
         exit(1);
     }
 }
@@ -191,7 +197,7 @@ parseCommandLine(xmlrpc_env *         const envP,
                 cmd_getOptionValueString(cp, "curluseragent");
 
             if ((!cmdlineP->transport || 
-                 strcmp(cmdlineP->transport, "curl") != 0)
+                 !streq(cmdlineP->transport, "curl"))
                 &&
                 (cmdlineP->curlinterface ||
                  cmdlineP->curlnoverifypeer ||
@@ -235,11 +241,10 @@ static void
 computeUrl(const char *  const urlArg,
            const char ** const urlP) {
 
-    if (strstr(urlArg, "://") != 0) {
-        *urlP = strdup(urlArg);
-    } else {
+    if (strstr(urlArg, "://") != 0)
+        casprintf(urlP, "%s", urlArg);
+    else
         casprintf(urlP, "http://%s/RPC2", urlArg);
-    }        
 }
 
 
@@ -249,7 +254,49 @@ buildString(xmlrpc_env *    const envP,
             const char *    const valueString,
             xmlrpc_value ** const paramPP) {
 
-    *paramPP = xmlrpc_build_value(envP, "s", valueString);
+    *paramPP = xmlrpc_string_new(envP, valueString);
+}
+
+
+
+static void
+buildBytestring(xmlrpc_env *    const envP,
+                const char *    const valueString,
+                xmlrpc_value ** const paramPP) {
+
+    size_t const valueStringSize = strlen(valueString);
+
+    if (valueStringSize / 2 * 2 != valueStringSize)
+        xmlrpc_faultf(envP, "Hexadecimal text is not an even "
+                      "number of characters (it is %u characters)",
+                      strlen(valueString));
+    else {
+        size_t const byteStringSize = strlen(valueString)/2;
+        
+        unsigned char byteString[byteStringSize];
+        size_t bsCursor;
+        size_t strCursor;
+
+        strCursor = 0;
+        bsCursor = 0;
+
+        while (strCursor < valueStringSize && !envP->fault_occurred) {
+            int rc;
+
+            assert(bsCursor < byteStringSize);
+
+            rc = sscanf(&valueString[strCursor], "%2hhx",
+                        &byteString[bsCursor++]);
+
+            if (rc != 1)
+                xmlrpc_faultf(envP, "Invalid hex data '%s'",
+                              &valueString[strCursor]);
+            else
+                strCursor += 2;
+        }
+        if (!envP->fault_occurred)
+            *paramPP = xmlrpc_base64_new(envP, byteStringSize, byteString);
+    }
 }
 
 
@@ -262,19 +309,19 @@ buildInt(xmlrpc_env *    const envP,
     if (strlen(valueString) < 1)
         setError(envP, "Integer argument has nothing after the 'i/'");
     else {
-        long value;
-        char * tailptr;
-        
-        value = strtol(valueString, &tailptr, 10);
+        int value;
+        const char * error;
 
-        if (*tailptr != '\0')
-            setError(envP, 
-                     "Integer argument has non-digit crap in it: '%s'",
-                     tailptr);
-        else
-            *paramPP = xmlrpc_build_value(envP, "i", value);
+        interpretInt(valueString, &value, &error);
+
+        if (error) {
+            setError(envP, "'%s' is not a valid 32-bit integer.  %s",
+                     valueString, error);
+            strfree(error);
+        } else
+            *paramPP = xmlrpc_int_new(envP, value);
     }
-} 
+}
 
 
 
@@ -283,17 +330,39 @@ buildBool(xmlrpc_env *    const envP,
           const char *    const valueString,
           xmlrpc_value ** const paramPP) {
 
-    if (strcmp(valueString, "t") == 0 ||
-        strcmp(valueString, "true") == 0)
-        *paramPP = xmlrpc_build_value(envP, "b", 1);
-    else if (strcmp(valueString, "f") == 0 ||
-        strcmp(valueString, "false") == 0)
-        *paramPP = xmlrpc_build_value(envP, "b", 0);
+    if (streq(valueString, "t") || streq(valueString, "true"))
+        *paramPP = xmlrpc_bool_new(envP, true);
+    else if (streq(valueString, "f") == 0 || streq(valueString, "false"))
+        *paramPP = xmlrpc_bool_new(envP, false);
     else
         setError(envP, "Boolean argument has unrecognized value '%s'.  "
                  "recognized values are 't', 'f', 'true', and 'false'.",
                  valueString);
 } 
+
+
+
+static void
+buildDouble(xmlrpc_env *    const envP,
+            const char *    const valueString,
+            xmlrpc_value ** const paramPP) {
+
+    if (strlen(valueString) < 1)
+        setError(envP, "\"Double\" argument has nothing after the 'd/'");
+    else {
+        double value;
+        char * tailptr;
+
+        value = strtod(valueString, &tailptr);
+
+        if (*tailptr != '\0')
+            setError(envP, 
+                     "\"Double\" argument has non-decimal crap in it: '%s'",
+                     tailptr);
+        else
+            *paramPP = xmlrpc_double_new(envP, value);
+    }
+}
 
 
 
@@ -305,7 +374,31 @@ buildNil(xmlrpc_env *    const envP,
     if (strlen(valueString) > 0)
         setError(envP, "Nil argument has something after the 'n/'");
     else {
-        *paramPP = xmlrpc_build_value(envP, "n");
+        *paramPP = xmlrpc_nil_new(envP);
+    }
+}
+
+
+
+static void
+buildI8(xmlrpc_env *    const envP,
+        const char *    const valueString,
+        xmlrpc_value ** const paramPP) {
+
+    if (strlen(valueString) < 1)
+        setError(envP, "Integer argument has nothing after the 'I/'");
+    else {
+        int64_t value;
+        const char * error;
+
+        interpretLl(valueString, &value, &error);
+
+        if (error) {
+            setError(envP, "'%s' is not a valid 64-bit integer.  %s",
+                     valueString, error);
+            strfree(error);
+        } else
+            *paramPP = xmlrpc_i8_new(envP, value);
     }
 }
 
@@ -318,8 +411,14 @@ computeParameter(xmlrpc_env *    const envP,
 
     if (strncmp(paramArg, "s/", 2) == 0)
         buildString(envP, &paramArg[2], paramPP);
+    else if (strncmp(paramArg, "h/", 2) == 0)
+        buildBytestring(envP, &paramArg[2], paramPP);
     else if (strncmp(paramArg, "i/", 2) == 0) 
         buildInt(envP, &paramArg[2], paramPP);
+    else if (strncmp(paramArg, "I/", 2) == 0) 
+        buildI8(envP, &paramArg[2], paramPP);
+    else if (strncmp(paramArg, "d/", 2) == 0) 
+        buildDouble(envP, &paramArg[2], paramPP);
     else if (strncmp(paramArg, "b/", 2) == 0)
         buildBool(envP, &paramArg[2], paramPP);
     else if (strncmp(paramArg, "n/", 2) == 0)
@@ -344,7 +443,7 @@ computeParamArray(xmlrpc_env *    const envP,
 
     xmlrpc_value * paramArrayP;
 
-    paramArrayP = xmlrpc_build_value(envP, "()");
+    paramArrayP = xmlrpc_array_new(envP);
 
     for (i = 0; i < paramCount && !envP->fault_occurred; ++i) {
         xmlrpc_value * paramP;
@@ -362,366 +461,32 @@ computeParamArray(xmlrpc_env *    const envP,
 
 
 
-/* Forward declaration for recursion */
-static void
-dumpValue(const char *   const prefix,
-          xmlrpc_value * const valueP);
-
-
-
-static void
-dumpInt(const char *   const prefix,
-        xmlrpc_value * const valueP) {
-
-    xmlrpc_env env;
-    xmlrpc_int value;
-    
-    xmlrpc_env_init(&env);
-
-    xmlrpc_parse_value(&env, valueP, "i", &value);
-    
-    if (env.fault_occurred)
-        printf("Unable to parse integer in result.  %s\n",
-               env.fault_string);
-    else
-        printf("%sInteger: %d\n", prefix, value);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-dumpBool(const char *   const prefix,
-         xmlrpc_value * const valueP) {
-
-    xmlrpc_env env;
-    xmlrpc_bool value;
-    
-    xmlrpc_env_init(&env);
-
-    xmlrpc_parse_value(&env, valueP, "b", &value);
-    
-    if (env.fault_occurred)
-        printf("Unable to parse boolean in result.  %s\n",
-               env.fault_string);
-    else
-        printf("%sBoolean: %s\n", prefix, value ? "TRUE" : "FALSE");
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-
-static void
-dumpDouble(const char *   const prefix,
-           xmlrpc_value * const valueP) {
-
-    xmlrpc_env env;
-    xmlrpc_double value;
-    
-    xmlrpc_env_init(&env);
-
-    xmlrpc_parse_value(&env, valueP, "d", &value);
-    
-    if (env.fault_occurred)
-        printf("Unable to parse floating point number in result.  %s\n",
-               env.fault_string);
-    else
-        printf("%sFloating Point: %f\n", prefix, value);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-dumpDatetime(const char *   const prefix,
-             xmlrpc_value * const valueP) {
-
-    printf("%sDon't know how to print datetime value result %p.\n", 
-           prefix, valueP);
-}
-
-
-
-static void
-dumpString(const char *   const prefix,
-           xmlrpc_value * const valueP) {
-
-    xmlrpc_env env;
-    const char * value;
-    
-    xmlrpc_env_init(&env);
-
-    xmlrpc_parse_value(&env, valueP, "s", &value);
-    
-    if (env.fault_occurred)
-        printf("Unable to parse string in result.  %s\n",
-               env.fault_string);
-    else
-        printf("%sString: '%s'\n", prefix, value);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-dumpBase64(const char *   const prefix,
-           xmlrpc_value * const valueP) {
-
-    xmlrpc_env env;
-    const unsigned char * value;
-    size_t length;
-    
-    xmlrpc_env_init(&env);
-
-    xmlrpc_parse_value(&env, valueP, "6", &value, &length);
-    
-    if (env.fault_occurred)
-        printf("Unable to parse base64 bit strnig in result.  %s\n",
-               env.fault_string);
-    else {
-        unsigned int i;
-
-        printf("%sBit string: ", prefix);
-        for (i = 0; i < length; ++i)
-            printf("%02x", value[i]);
-    }
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-dumpArray(const char *   const prefix,
-          xmlrpc_value * const arrayP) {
-
-    xmlrpc_env env;
-    unsigned int arraySize;
-
-    xmlrpc_env_init(&env);
-
-    XMLRPC_ASSERT_ARRAY_OK(arrayP);
-
-    arraySize = xmlrpc_array_size(&env, arrayP);
-    if (env.fault_occurred)
-        printf("Unable to get array size.  %s\n", env.fault_string);
-    else {
-        int const spaceCount = strlen(prefix);
-
-        unsigned int i;
-        const char * blankPrefix;
-
-        printf("%sArray of %u items:\n", prefix, arraySize);
-
-        casprintf(&blankPrefix, "%*s", spaceCount, "");
-
-        for (i = 0; i < arraySize; ++i) {
-            xmlrpc_value * valueP;
-
-            xmlrpc_array_read_item(&env, arrayP, i, &valueP);
-
-            if (env.fault_occurred)
-                printf("Unable to get array item %u\n", i);
-            else {
-                const char * prefix2;
-
-                casprintf(&prefix2, "%s  Index %2u ", blankPrefix, i);
-                dumpValue(prefix2, valueP);
-                strfree(prefix2);
-
-                xmlrpc_DECREF(valueP);
-            }
-        }
-        strfree(blankPrefix);
-    }
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-dumpStructMember(const char *   const prefix,
-                 xmlrpc_value * const structP,
-                 unsigned int   const index) {
-
-    xmlrpc_env env;
-
-    xmlrpc_value * keyP;
-    xmlrpc_value * valueP;
-    
-    xmlrpc_env_init(&env);
-
-    xmlrpc_struct_read_member(&env, structP, index, &keyP, &valueP);
-
-    if (env.fault_occurred)
-        printf("Unable to get struct member %u\n", index);
-    else {
-        int const blankCount = strlen(prefix);
-        const char * prefix2;
-        const char * blankPrefix;
-
-        casprintf(&prefix2, "%s  Key:   ", prefix);
-        dumpValue(prefix2, keyP);
-        strfree(prefix2);
-
-        casprintf(&blankPrefix, "%*s", blankCount, "");
-        
-        casprintf(&prefix2, "%s  Value: ", blankPrefix);
-        dumpValue(prefix2, valueP);
-        strfree(prefix2);
-
-        strfree(blankPrefix);
-
-        xmlrpc_DECREF(keyP);
-        xmlrpc_DECREF(valueP);
-    }
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-dumpStruct(const char *   const prefix,
-           xmlrpc_value * const structP) {
-
-    xmlrpc_env env;
-    unsigned int structSize;
-
-    xmlrpc_env_init(&env);
-
-    structSize = xmlrpc_struct_size(&env, structP);
-    if (env.fault_occurred)
-        printf("Unable to get struct size.  %s\n", env.fault_string);
-    else {
-        unsigned int i;
-
-        printf("%sStruct of %u members:\n", prefix, structSize);
-
-        for (i = 0; i < structSize; ++i) {
-            const char * prefix1;
-
-            if (i == 0)
-                prefix1 = strdup(prefix);
-            else {
-                int const blankCount = strlen(prefix);
-                casprintf(&prefix1, "%*s", blankCount, "");
-            }            
-            dumpStructMember(prefix1, structP, i);
-
-            strfree(prefix1);
-        }
-    }
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-dumpCPtr(const char *   const prefix,
-         xmlrpc_value * const valueP) {
-
-    xmlrpc_env env;
-    const char * value;
-
-    xmlrpc_env_init(&env);
-
-    xmlrpc_parse_value(&env, valueP, "p", &value);
-        
-    if (env.fault_occurred)
-        printf("Unable to parse C pointer in result.  %s\n",
-               env.fault_string);
-    else
-        printf("%sC pointer: '%p'\n", prefix, value);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-dumpNil(const char *   const prefix,
-        xmlrpc_value * const valueP) {
-
-    xmlrpc_env env;
-
-    xmlrpc_env_init(&env);
-
-    xmlrpc_parse_value(&env, valueP, "n");
-        
-    if (env.fault_occurred)
-        printf("Unable to parse nil value in result.  %s\n",
-               env.fault_string);
-    else
-        printf("%sNil\n", prefix);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-dumpUnknown(const char *   const prefix,
-            xmlrpc_value * const valueP) {
-
-    printf("%sDon't recognize the type of the result: %u.\n", 
-           prefix, xmlrpc_value_type(valueP));
-    printf("%sCan't print it.\n", prefix);
-}
-
-
-
-static void
-dumpValue(const char *   const prefix,
-          xmlrpc_value * const valueP) {
-
-    switch (xmlrpc_value_type(valueP)) {
-    case XMLRPC_TYPE_INT:
-        dumpInt(prefix, valueP);
-        break;
-    case XMLRPC_TYPE_BOOL: 
-        dumpBool(prefix, valueP);
-        break;
-    case XMLRPC_TYPE_DOUBLE: 
-        dumpDouble(prefix, valueP);
-        break;
-    case XMLRPC_TYPE_DATETIME:
-        dumpDatetime(prefix, valueP);
-        break;
-    case XMLRPC_TYPE_STRING: 
-        dumpString(prefix, valueP);
-        break;
-    case XMLRPC_TYPE_BASE64:
-        dumpBase64(prefix, valueP);
-        break;
-    case XMLRPC_TYPE_ARRAY: 
-        dumpArray(prefix, valueP);
-        break;
-    case XMLRPC_TYPE_STRUCT:
-        dumpStruct(prefix, valueP);
-        break;
-    case XMLRPC_TYPE_C_PTR:
-        dumpCPtr(prefix, valueP);
-        break;
-    case XMLRPC_TYPE_NIL:
-        dumpNil(prefix, valueP);
-        break;
-    default:
-        dumpUnknown(prefix, valueP);
-    }
-}
-
-
-
 static void
 dumpResult(xmlrpc_value * const resultP) {
 
     printf("Result:\n\n");
 
     dumpValue("", resultP);
+}
+
+
+
+static void
+callWithClient(xmlrpc_env *               const envP,
+               const xmlrpc_server_info * const serverInfoP,
+               const char *               const methodName,
+               xmlrpc_value *             const paramArrayP,
+               xmlrpc_value **            const resultPP) {
+               
+    xmlrpc_env env;
+    xmlrpc_env_init(&env);
+    *resultPP = xmlrpc_client_call_server_params(
+        &env, serverInfoP, methodName, paramArrayP);
+    
+    if (env.fault_occurred)
+        xmlrpc_faultf(envP, "Call failed.  %s.  (XML-RPC fault code %d)",
+                      env.fault_string, env.fault_code);
+    xmlrpc_env_clean(&env);
 }
 
 
@@ -744,7 +509,7 @@ doCall(xmlrpc_env *               const envP,
 
     clientparms.transport = transport;
 
-    if (transport && strcmp(transport, "curl") == 0) {
+    if (transport && streq(transport, "curl")) {
         struct xmlrpc_curl_xportparms * curlXportParmsP;
         MALLOCVAR(curlXportParmsP);
 
@@ -753,8 +518,7 @@ doCall(xmlrpc_env *               const envP,
         curlXportParmsP->no_ssl_verifyhost = curlnoverifyhost;
         curlXportParmsP->user_agent        = curluseragent;
         
-        clientparms.transportparmsP = (struct xmlrpc_xportparms *) 
-            curlXportParmsP;
+        clientparms.transportparmsP    = curlXportParmsP;
         clientparms.transportparm_size = XMLRPC_CXPSIZE(user_agent);
     } else {
         clientparms.transportparmsP = NULL;
@@ -763,13 +527,12 @@ doCall(xmlrpc_env *               const envP,
     xmlrpc_client_init2(envP, XMLRPC_CLIENT_NO_FLAGS, NAME, VERSION, 
                         &clientparms, XMLRPC_CPSIZE(transportparm_size));
     if (!envP->fault_occurred) {
-        *resultPP = xmlrpc_client_call_server_params(
-            envP, serverInfoP, methodName, paramArrayP);
-    
+        callWithClient(envP, serverInfoP, methodName, paramArrayP, resultPP);
+
         xmlrpc_client_cleanup();
     }
     if (clientparms.transportparmsP)
-        free(clientparms.transportparmsP);
+        free((void*)clientparms.transportparmsP);
 }
 
 

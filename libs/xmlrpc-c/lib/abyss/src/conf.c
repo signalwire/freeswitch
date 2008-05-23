@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#if defined(ABYSS_WIN32) && !defined(__BORLANDC__)
+#if defined(WIN32) && !defined(__BORLANDC__)
 #include <direct.h>
 #endif
 
@@ -44,7 +44,15 @@
 #include <pwd.h>
 #endif
 
+#include "xmlrpc_config.h"
+#include "bool.h"
+#include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/abyss.h"
+#include "trace.h"
+#include "file.h"
+#include "server.h"
+#include "http.h"
+#include "handler.h"
 
 /*********************************************************************
 ** Configuration Files Parsing Functions
@@ -52,46 +60,59 @@
 
 
 
-static abyss_bool
-ConfReadLine(TFile *f,char *buffer,uint32_t len) {
-    abyss_bool r=TRUE;
-    char c,*p,*z=buffer;
+static bool
+ConfReadLine(TFile *  const fileP,
+             char *   const buffer,
+             uint32_t const lenArg) {
 
-    while ((--len)>0)
-    {
-        if (FileRead(f,buffer,1)<1)
-        {
-            if (z==buffer)
-                r=FALSE;
+    bool r;
+    char c;
+    char * p;
+    char * z;
+    uint32_t len;
+
+    len = lenArg;  /* initial value */
+    r = TRUE;  /* initial value */
+    z = buffer;  /* initial value */
+
+    while (--len > 0) {
+        int32_t bytesRead;
+        
+        bytesRead = FileRead(fileP, z, 1);
+        if (bytesRead < 1) {
+            if (z == buffer)
+                r = FALSE;
             break;
         };
 
-        if ((*buffer==CR) || (*buffer==LF) )
+        if (*z == CR || *z == LF)
             break;
 
-        buffer++;
-    };
+        ++z;
+    }
 
-    if (len==0)
-        while (FileRead(f,&c,1)==1)
-            if ((c==CR) || (c==LF))
+    if (len == 0)
+        while (FileRead(fileP, &c, 1) == 1)
+            if (c == CR || c == LF)
                 break;
 
-    *buffer='\0';
+    *buffer = '\0';
 
     /* Discard comments */
-    p=strchr(z,'#');
+    p = strchr(z, '#');
     if (p)
-        *p='\0';
+        *p = '\0';
 
     return r;
 }
 
-static abyss_bool
-ConfNextToken(char **p) {
+
+
+static bool
+ConfNextToken(char ** const p) {
+
     while (1)
-        switch (**p)
-        {
+        switch (**p) {
         case '\t':
         case ' ':
             (*p)++;
@@ -130,213 +151,251 @@ ConfGetToken(char **p) {
         };
 }
 
-static abyss_bool
-ConfReadInt(char *p,int32_t *n,int32_t min,int32_t max) {
-    char *e;
+static bool
+ConfReadInt(const char * const p,
+            int32_t *    const n,
+            int32_t      const min,
+            int32_t      const max) {
+/*----------------------------------------------------------------------------
+   Convert string 'p' to integer *n.
 
-    *n=strtol(p,&e,10);
+   If it isn't a valid integer or is not with the bounds [min, max],
+   return FALSE.  Otherwise, return TRUE.
+-----------------------------------------------------------------------------*/
+    char * e;
 
-    if (min!=max)
-        return ((e!=p) && (*n>=min) && (*n<=max));
+    *n = strtol(p, &e, 10);
+
+    if (min != max)
+        return ((e != p) && (*n >= min) && (*n <= max));
     else
-        return (e!=p);
+        return (e != p);
 }
 
-static abyss_bool
-ConfReadBool(char *p, abyss_bool *b) {
-    if (strcasecmp(p,"yes")==0)
-    {
-        *b=TRUE;
-        return TRUE;
-    };
 
-    if (strcasecmp(p,"no")==0)
-    {
-        *b=FALSE;
-        return TRUE;
-    };
 
-    return FALSE;
+static bool
+ConfReadBool(const char * const token,
+             bool *       const bP) {
+
+    bool succeeded;
+
+    if (xmlrpc_strcaseeq(token, "yes")) {
+        *bP = TRUE;
+        succeeded = TRUE;
+    } else if (xmlrpc_strcaseeq(token, "no")) {
+        *bP = FALSE;
+        succeeded = TRUE;
+    } else
+        succeeded = FALSE;
+
+    return succeeded;
 }
 
 /*********************************************************************
 ** MIME Types File
 *********************************************************************/
 
-abyss_bool ConfReadMIMETypes(char *filename)
-{
-    TFile f;
-    char z[512],*p;
-    char *mimetype,*ext;
+static void
+readMIMETypesFile(const char * const filename,
+                  MIMEType **  const MIMETypePP) {
 
-    if (!FileOpen(&f,filename,O_RDONLY))
-        return FALSE;
+    bool success;
+    MIMEType * MIMETypeP;
 
-    while (ConfReadLine(&f,z,512))
-    {
-        p=z;
+    MIMETypeP = MIMETypeCreate();
+    if (MIMETypeP) {
+        TFile * fileP;
+        bool fileOpened;
 
-        if (ConfNextToken(&p)) {
-            mimetype=ConfGetToken(&p);
-            if (mimetype) {
-                while (ConfNextToken(&p)) {
-                    ext=ConfGetToken(&p);
-                    if (ext)
-                        MIMETypeAdd(mimetype,ext);
-                    else
-                        break;
+        fileOpened = FileOpen(&fileP, filename, O_RDONLY);
+        if (fileOpened) {
+            char z[512];
+            while (ConfReadLine(fileP, z, 512)) {
+                char * p;
+                p = &z[0];
+            
+                if (ConfNextToken(&p)) {
+                    const char * mimetype = ConfGetToken(&p);
+                    if (mimetype) {
+                        while (ConfNextToken(&p)) {
+                            const char * const ext = ConfGetToken(&p);
+                            if (ext)
+                                MIMETypeAdd2(MIMETypeP, mimetype, ext);
+                            else
+                                break;
+                        }
+                    }
                 }
             }
-        }
-    };
+            FileClose(fileP);
+            success = TRUE;
+        } else
+            success = FALSE;
+        if (!success)
+            MIMETypeDestroy(MIMETypeP);
+    } else
+        success = FALSE;
 
-    FileClose(&f);
-    return TRUE;
+    if (success)
+        *MIMETypePP = MIMETypeP;
+    else
+        *MIMETypePP = NULL;
 }
 
 /*********************************************************************
 ** Server Configuration File
 *********************************************************************/
 
-abyss_bool ConfReadServerFile(const char *filename,TServer *srv)
-{
-    TFile f;
-    char z[512],*p;
-    char *option;
-    int32_t n,line=0;
+static void
+chdirx(const char * const newdir,
+       bool *       const successP) {
+    
+#if defined(WIN32) && !defined(__BORLANDC__)
+    *successP = _chdir(newdir) == 0;
+#else
+    *successP = chdir(newdir) == 0;
+#endif
+}
+
+
+
+static void
+parseUser(const char *      const p, 
+          struct _TServer * const srvP) {
+#ifdef _UNIX
+    if (p[0] == '#') {
+        int32_t n;
+        
+        if (!ConfReadInt(&p[1], &n, 0, 0))
+            TraceExit("Bad user number '%s'", p);
+        else
+            srvP->uid = n;
+    } else {
+        struct passwd * pwd;
+
+        if (!(pwd = getpwnam(p)))
+            TraceExit("Unknown user '%s'", p);
+        
+        srvP->uid = pwd->pw_uid;
+        if ((int)srvP->gid==(-1))
+            srvP->gid = pwd->pw_gid;
+    };
+#else
+    TraceMsg("User option ignored");
+#endif  /* _UNIX */ 
+}
+
+
+
+static void
+parsePidfile(const char *      const p,
+             struct _TServer * const srvP) {
+#ifdef _UNIX
+    bool succeeded;
+    succeeded = FileOpenCreate(&srvP->pidfileP, p, O_TRUNC | O_WRONLY);
+    if (!succeeded) {
+        srvP->pidfileP = NULL;
+        TraceMsg("Bad PidFile value '%s'", p);
+    };
+#else
+    TraceMsg("PidFile option ignored");
+#endif  /* _UNIX */ 
+}
+
+
+
+abyss_bool
+ConfReadServerFile(const char * const filename,
+                   TServer *    const serverP) {
+
+    struct _TServer * const srvP     = serverP->srvP;
+    BIHandler *       const handlerP = srvP->builtinHandlerP;
+
+    TFile * fileP;
+    char z[512];
+    char * p;
+    unsigned int lineNum;
     TFileStat fs;
 
-    if (!FileOpen(&f,filename,O_RDONLY))
+    if (!FileOpen(&fileP, filename, O_RDONLY))
         return FALSE;
 
-    while (ConfReadLine(&f,z,512))
-    {
-        line++;
-        p=z;
+    lineNum = 0;
+
+    while (ConfReadLine(fileP, z, 512)) {
+        ++lineNum;
+        p = z;
 
         if (ConfNextToken(&p)) {
-            option=ConfGetToken(&p);
-            if (option)
-            {
+            const char * const option = ConfGetToken(&p);
+            if (option) {
                 ConfNextToken(&p);
 
-                if (strcasecmp(option,"port")==0)
-                {
-                    if (ConfReadInt(p,&n,1,65535))
-                        srv->port=n;
+                if (xmlrpc_strcaseeq(option, "port")) {
+                    int32_t n;
+                    if (ConfReadInt(p, &n, 1, 65535))
+                        srvP->port = n;
                     else
-                        TraceExit("Invalid port '%s'",p);
-                }
-                else if (strcasecmp(option,"serverroot")==0)
-                {
-#if defined( ABYSS_WIN32 ) && !defined( __BORLANDC__ )
-                    if (_chdir(p))
-#else
-                    if (chdir(p))
-#endif
+                        TraceExit("Invalid port '%s'", p);
+                } else if (xmlrpc_strcaseeq(option, "serverroot")) {
+                    bool success;
+                    chdirx(p, &success);
+                    if (!success)
                         TraceExit("Invalid server root '%s'",p);
-                }
-                else if (strcasecmp(option,"path")==0)
-                {
-                    if (FileStat(p,&fs))
-                        if (fs.st_mode & S_IFDIR)
-                        {
-                            free(srv->filespath);
-                            srv->filespath=strdup(p);
+                } else if (xmlrpc_strcaseeq(option, "path")) {
+                    if (FileStat(p, &fs))
+                        if (fs.st_mode & S_IFDIR) {
+                            HandlerSetFilesPath(handlerP, p);
                             continue;
-                        };
+                        }
+                    TraceExit("Invalid path '%s'", p);
+                } else if (xmlrpc_strcaseeq(option, "default")) {
+                    const char * filename;
                     
-                    TraceExit("Invalid path '%s'",p);
-                }
-                else if (strcasecmp(option,"default")==0)
-                {
-                    char *filename;
-                    
-                    while ((filename=ConfGetToken(&p)))
-                    {
-                        ListAdd(&srv->defaultfilenames,strdup(filename));
+                    while ((filename = ConfGetToken(&p))) {
+                        HandlerAddDefaultFN(handlerP, filename);
                         if (!ConfNextToken(&p))
                             break;
-                    };
-                }
-                else if (strcasecmp(option,"keepalive")==0)
-                {
-                    if (ConfReadInt(p,&n,1,65535))
-                        srv->keepalivemaxconn=n;
+                    }
+                } else if (xmlrpc_strcaseeq(option, "keepalive")) {
+                    int32_t n;
+                    if (ConfReadInt(p, &n, 1, 65535))
+                        srvP->keepalivemaxconn = n;
                     else
-                        TraceExit("Invalid KeepAlive value '%s'",p);
-                }
-                else if (strcasecmp(option,"timeout")==0)
-                {
-                    if (ConfReadInt(p,&n,1,3600))
-                    {
-                        srv->keepalivetimeout=n;
+                        TraceExit("Invalid KeepAlive value '%s'", p);
+                } else if (xmlrpc_strcaseeq(option, "timeout")) {
+                    int32_t n;
+                    if (ConfReadInt(p, &n, 1, 3600)) {
+                        srvP->keepalivetimeout = n;
                         /* Must see what to do with that */
-                        srv->timeout=n;
-                    }
+                        srvP->timeout = n;
+                    } else
+                        TraceExit("Invalid TimeOut value '%s'", p);
+                } else if (xmlrpc_strcaseeq(option, "mimetypes")) {
+                    MIMEType * mimeTypeP;
+                    readMIMETypesFile(p, &mimeTypeP);
+                    if (!mimeTypeP)
+                        TraceExit("Can't read MIME Types file '%s'", p);
                     else
-                        TraceExit("Invalid TimeOut value '%s'",p);
-                }
-                else if (strcasecmp(option,"mimetypes")==0)
-                {
-                    if (!ConfReadMIMETypes(p))
-                        TraceExit("Can't read MIME Types file '%s'",p);
-                }
-                else if (strcasecmp(option,"logfile")==0)
-                {
-                    LogOpen(srv,p);
-                }
-                else if (strcasecmp(option,"user")==0)
-                {
-#ifdef _UNIX
-                    if (*p=='#')
-                    {
-                        int32_t n;
-
-                        if (!ConfReadInt(p+1,&n,0,0))
-                            TraceExit("Bad user number '%s'",p);
-                        else
-                            srv->uid=n;
-                    }
-                    else
-                    {
-                        struct passwd *pwd;
-
-                        if (!(pwd=getpwnam(p)))
-                            TraceExit("Unknown user '%s'",p);
-        
-                        srv->uid=pwd->pw_uid;
-                        if ((int)srv->gid==(-1))
-                            srv->gid=pwd->pw_gid;
-                    };
-#else
-                    TraceMsg("User option ignored");
-#endif  /* _UNIX */ 
-                }
-                else if (strcasecmp(option,"pidfile")==0)
-                {
-#ifdef _UNIX
-                    if (!FileOpenCreate(&srv->pidfile,p,O_TRUNC | O_WRONLY))
-                    {
-                        srv->pidfile=-1;
-                        TraceMsg("Bad PidFile value '%s'",p);
-                    };
-#else
-                    TraceMsg("PidFile option ignored");
-#endif  /* _UNIX */ 
-                }
-                else if (strcasecmp(option,"advertiseserver")==0)
-                {
-                    if (!ConfReadBool(p,&srv->advertise))
+                        HandlerSetMimeType(handlerP, mimeTypeP);
+                } else if (xmlrpc_strcaseeq(option,"logfile")) {
+                    srvP->logfilename = strdup(p);
+                } else if (xmlrpc_strcaseeq(option,"user")) {
+                    parseUser(p, srvP);
+                } else if (xmlrpc_strcaseeq(option, "pidfile")) {
+                    parsePidfile(p, srvP);
+                } else if (xmlrpc_strcaseeq(option, "advertiseserver")) {
+                    if (!ConfReadBool(p, &srvP->advertise))
                         TraceExit("Invalid boolean value "
                                   "for AdvertiseServer option");
-                }
-                else
-                    TraceExit("Invalid option '%s' at line %d",option,line);
-            };
+                } else
+                    TraceExit("Invalid option '%s' at line %u",
+                              option, lineNum);
+            }
         }
-    };
+    }
 
-    FileClose(&f);
+    FileClose(fileP);
     return TRUE;
 }

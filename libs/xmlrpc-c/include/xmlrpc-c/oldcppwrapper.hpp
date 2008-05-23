@@ -25,6 +25,7 @@
 // -Bryan 2005.03.12.
 
 
+#include <cstdlib>
 #include <string>
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
@@ -87,7 +88,7 @@ public:
     XmlRpcEnv (void) { xmlrpc_env_init(&mEnv); }
     ~XmlRpcEnv (void) { xmlrpc_env_clean(&mEnv); }
     
-    bool         faultOccurred (void) const { return mEnv.fault_occurred; };
+    bool     faultOccurred (void) const {return (mEnv.fault_occurred != 0);};
     bool         hasFaultOccurred (void) const { return faultOccurred(); };
         /* hasFaultOccurred() is for backward compatibility.
            faultOccurred() is a superior name for this.

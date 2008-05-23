@@ -1,177 +1,245 @@
-ifeq ($(SRCDIR)x,x)
-SRCDIR = $(CURDIR)/../..
+ifeq ($(SRCDIR),)
+  updir = $(shell echo $(dir $(1)) | sed 's/.$$//')
+  srcDIR := $(call updir,$(CURDIR))
+  SRCDIR := $(call updir,$(srcDIR))
+  BLDDIR := $(SRCDIR)
 endif
-SUBDIR = src/cpp
-BUILDDIR = $(SRCDIR)
-VPATH = .:$(SRCDIR)
+SUBDIR := src/cpp
 
-include $(BUILDDIR)/Makefile.config
+include $(BLDDIR)/config.mk
 
 default: all
 
-WININET_TRANSPORT_DIR = $(SRCDIR)/lib/wininet_transport
-CURL_TRANSPORT_DIR    = $(SRCDIR)/lib/curl_transport
-LIBWWW_TRANSPORT_DIR  = $(SRCDIR)/lib/libwww_transport
-
-ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
-  LIBXML_INCLUDES = $(LIBXML2_CFLAGS)
-  LIBXML = $(LIBXML2_LIBS)
-else
-  LIBXML_INCLUDES = -I$(SRCDIR)/lib/expat/xmlparse
-  LIBXML = $(BUILDDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la \
-           $(BUILDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la
-endif
-
-ifeq ($(ENABLE_LIBXML2),yes)
-  XMLRPC_XML_PARSER = xmlrpc_libxml2.lo
-else
-  XMLRPC_XML_PARSER = xmlrpc_expat.lo
-endif
-
-LIBXMLRPC = $(BUILDDIR)/src/libxmlrpc.la
-LIBXMLRPC_SERVER = $(BUILDDIR)/src/libxmlrpc_server.la
-LIBXMLRPC_CLIENT = $(BUILDDIR)/src/libxmlrpc_client.la
-
-LIBXMLRPCPP_OBJS = girmem.o value.o fault.o outcome.o param_list.o xml.o
-LIBXMLRPC_SERVERPP_OBJS = registry.o
-LIBXMLRPC_SERVER_ABYSSPP_OBJS = server_abyss.o
-LIBXMLRPC_CLIENTPP_OBJS = client.o client_simple.o
-
-$(LIBXMLRPC_CLIENTPP_OBJS): $(BUILDDIR)/transport_config.h
-
-TRANSPORT_OBJS =
-ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
-  TRANSPORT_OBJS += $(WININET_TRANSPORT_DIR)/xmlrpc_wininet_transport.lo
-endif
-ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
-  TRANSPORT_OBJS += $(CURL_TRANSPORT_DIR)/xmlrpc_curl_transport.lo
-endif
-ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
-  TRANSPORT_OBJS += $(LIBWWW_TRANSPORT_DIR)/xmlrpc_libwww_transport.lo
-endif
-
-TRANSPORT_INCLUDES = \
-  -I$(WININET_TRANSPORT_DIR) \
-  -I$(CURL_TRANSPORT_DIR) \
-  -I$(LIBWWW_TRANSPORT_DIR) \
-
-BASIC_INCLUDES = -I$(SRCDIR)/include -I$(BUILDDIR) -I$(SRCDIR) \
-  -I$(SRCDIR)/lib/util/include
-
-# We always statically-link our C++ code because it's tiny, and C++ is
-# no good at shared libraries, anyway.  It's actually getting bigger,
-# but since I'm determined not to expand the use of libtool (because
-# it obfuscates the build process), I haven't figured out yet how to
-# get the shared libraries to build for all the platforms.
-
-# libxmlrpc_cpp.a is the legacy C++ wrapper library.  The others are the
+# libxmlrpc_cpp is the legacy C++ wrapper library.  The others are the
 # more elaborate replacements.
 
-TARGET_LIBRARIES = \
-  libxmlrpc_cpp.a \
-  libxmlrpc++.a \
-  libxmlrpc_server++.a \
-  libxmlrpc_server_abyss++.a \
-  libxmlrpc_client++.a \
+TARGET_LIB_NAMES_PP := \
+  libxmlrpc_cpp \
+  libxmlrpc++ \
+  libxmlrpc_server++ \
+  libxmlrpc_server_abyss++ \
+  libxmlrpc_server_pstream++ \
+  libxmlrpc_packetsocket \
 
-TARGET_PROGS = cpptest
-
-all: $(TARGET_LIBRARIES)
-
-ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
-  LDFLAGS += $(shell curl-config --libs) -lpthread
-endif
-ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
-  LDFLAGS += $(shell libwww-config --libs)
+ifeq ($(MUST_BUILD_CLIENT),yes)
+  TARGET_LIB_NAMES_PP += libxmlrpc_client++
 endif
 
-LDFLAGS += $(LADD)
+STATIC_LIBRARIES_TO_INSTALL = $(TARGET_STATIC_LIBRARIES)
 
-cpptest:%:%.o libxmlrpc_server_abyss++.a libxmlrpc_server++.a \
-  libxmlrpc_client++.a libxmlrpc++.a libxmlrpc_cpp.a \
-  $(LIBXMLRPC) $(LIBXMLRPC_SERVER) $(LIBXMLRPC_CLIENT) $(LIBXML)
-	$(LIBTOOL) --mode=link $(CXXLD) -o $@ $(LDFLAGS) $^
-
-LIBLDFLAGS = $(LADD)
-
-libxmlrpc_cpp.a: XmlRpcCpp.o
-	-rm -f $@
-	$(AR) cru $@ $^
-	$(RANLIB) $@
-
-libxmlrpc++.a: $(LIBXMLRPCPP_OBJS)
-	-rm -f $@
-	$(AR) cru $@ $^
-	$(RANLIB) $@
-
-libxmlrpc_server++.a: $(LIBXMLRPC_SERVERPP_OBJS)
-	-rm -f $@
-	$(AR) cru $@ $^
-	$(RANLIB) $@
-
-libxmlrpc_server_abyss++.a: $(LIBXMLRPC_SERVER_ABYSSPP_OBJS)
-	-rm -f $@
-	$(AR) cru $@ $^
-	$(RANLIB) $@
-
-libxmlrpc_client++.a: $(LIBXMLRPC_CLIENTPP_OBJS)
-	-rm -f $@
-	$(AR) cru $@ $^
-	$(RANLIB) $@
-
-CXXFLAGS = $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-
-cpptest.o:%.o:%.cpp
-	$(CXX) -c $(BASIC_INCLUDES) $(CXXFLAGS) $<
-
-XmlRpcCpp.o:%.o:%.cpp
-	$(CXX) -c $(BASIC_INCLUDES) $(CXXFLAGS) $<
-
-$(LIBXMLRPCPP_OBJS):%.o:%.cpp
-	$(CXX) -c $(BASIC_INCLUDES) $(CXXFLAGS) $<
-
-SERVER_INCLUDES = $(BASIC_INCLUDES) $(LIBXML_INCLUDES)
-
-$(LIBXMLRPC_SERVERPP_OBJS):%.o:%.cpp
-	$(CXX) -c $(SERVER_INCLUDES) $(CXXFLAGS) $<
-
-SERVER_ABYSS_INCLUDES = $(SERVER_INCLUDES) -I$(SRCDIR)/lib/abyss/src
-
-$(LIBXMLRPC_SERVER_ABYSSPP_OBJS):%.o:%.cpp
-	$(CXX) -c $(SERVER_ABYSS_INCLUDES) $(CXXFLAGS) $<
-
-CLIENT_INCLUDES = $(BASIC_INCLUDES) $(LIBXML_INCLUDES) $(TRANSPORT_INCLUDES)
-
-$(LIBXMLRPC_CLIENTPP_OBJS):%.o:%.cpp
-	$(CXX) -c $(CLIENT_INCLUDES) $(CXXFLAGS) $<
-
-
-
-LIBRARIES_TO_INSTALL = $(TARGET_LIBRARIES)
-
-check: cpptest
-	for tst in $^; do \
-	  ./$$tst; \
-	done;
-
-.PHONY: install
-install: install-common
-
-.PHONY: clean clean-local distclean
-clean: clean-common clean-local
-clean-local:
-	rm -f $(TARGET_PROGS)
-
-distclean: clean distclean-common
+SHARED_LIBS_TO_BUILD := $(TARGET_LIB_NAMES_PP)
+SHARED_LIBS_TO_INSTALL := $(TARGET_LIB_NAMES_PP)
 
 # INCLUDES and DEP_SOURCES are used by dep-common target
 INCLUDES = $(BASIC_INCLUDES) $(CLIENT_INCLUDES) $(LIBXML_INCLUDES) \
   $(SERVER_INCLUDES) $(SERVER_ABYSS_INCLUDES) $(TRANSPORT_INCLUDES)
 DEP_SOURCES = *.cpp
 
-.PHONY: dep
-dep: $(BUILDDIR)/transport_config.h dep-common
+WININET_TRANSPORT_DIR = srcdir/lib/wininet_transport
+CURL_TRANSPORT_DIR    = srcdir/lib/curl_transport
+LIBWWW_TRANSPORT_DIR  = srcdir/lib/libwww_transport
 
-include $(SRCDIR)/Makefile.common
+ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
+  LIBXML_INCLUDES = $(LIBXML2_CFLAGS)
+else
+  LIBXML_INCLUDES = -Isrcdir/lib/expat/xmlparse
+endif
+
+LIBXMLRPCPP_MODS = \
+  base64 env_wrap fault girerr girmem outcome param_list value xml
+LIBXMLRPC_SERVERPP_MODS = registry
+LIBXMLRPC_SERVER_ABYSSPP_MODS = server_abyss
+LIBXMLRPC_SERVER_PSTREAMPP_MODS = server_pstream
+LIBXMLRPC_CLIENTPP_MODS = client client_simple curl libwww wininet pstream
+LIBXMLRPC_PACKETSOCKET_MODS = packetsocket
+
+TARGET_MODS_PP = \
+  XmlRpcCpp \
+  $(LIBXMLRPCPP_MODS) \
+  $(LIBXMLRPC_SERVERPP_MODS) \
+  $(LIBXMLRPC_SERVER_ABYSSPP_MODS) \
+  $(LIBXMLRPC_SERVER_PSTREAMPP_MODS) \
+  $(LIBXMLRPC_CLIENTPP_MODS) \
+  $(LIBXMLRPC_PACKETSOCKET_MODS) \
+
+OMIT_CPP_LIB_RULES = Y
+MAJ=4
+  # Major number of shared libraries in this directory
+
+include $(SRCDIR)/common.mk
+
+
+# This 'common.mk' dependency makes sure the symlinks get built before
+# this make file is used for anything.
+
+$(SRCDIR)/common.mk: srcdir blddir
+
+TRANSPORT_INCLUDES = \
+  -I$(WININET_TRANSPORT_DIR) \
+  -I$(CURL_TRANSPORT_DIR) \
+  -I$(LIBWWW_TRANSPORT_DIR) \
+
+BASIC_INCLUDES = \
+  -Iblddir/include \
+  -Isrcdir/include \
+  -Iblddir \
+  -Isrcdir/lib/util/include
+
+
+# TARGET_STATIC_LIBARIES, etc. are set by common.mk, based on
+# TARGET_LIB_NAMES_PP.
+
+all: \
+  $(TARGET_STATIC_LIBRARIES) \
+  $(TARGET_SHARED_LIBS_PP) \
+  $(TARGET_SHARED_LE_LIBS)
+
+
+#-----------------------------------------------------------------------------
+#  RULES TO LINK LIBRARIES
+#-----------------------------------------------------------------------------
+
+# Rules for these are in common.mk, courtesy of TARGET_LIB_NAMES_PP:
+
+# shlibfn generates e.g. libxmlrpc.so.3.1
+# shliblefn generates e.g. libxmlrpc.so
+
+LIBXMLRPC_CPP = $(call shlibfn, libxmlrpc_cpp)
+
+$(LIBXMLRPC_CPP): XmlRpcCpp.osh
+$(LIBXMLRPC_CPP): LIBOBJECTS = XmlRpcCpp.osh
+
+LIBXMLRPCPP = $(call shlibfn, libxmlrpc++)
+
+$(LIBXMLRPCPP): $(LIBXMLRPCPP_MODS:%=%.osh) \
+  $(LIBXMLRPC)
+$(LIBXMLRPCPP): LIBOBJECTS = $(LIBXMLRPCPP_MODS:%=%.osh)
+$(LIBXMLRPCPP): LIBDEP = -Lblddir/src -lxmlrpc
+
+LIBXMLRPC_SERVERPP = $(call shlibfn, libxmlrpc_server++)
+
+$(LIBXMLRPC_SERVERPP): $(LIBXMLRPC_SERVERPP_MODS:%=%.osh) \
+  $(LIBXMLRPC_SERVER) \
+  $(LIBXMLRPC)
+$(LIBXMLRPC_SERVERPP): LIBOBJECTS = $(LIBXMLRPC_SERVERPP_MODS:%=%.osh)
+$(LIBXMLRPC_SERVERPP): LIBDEP = -Lblddir/src -lxmlrpc_server -lxmlrpc
+
+LIBXMLRPC_SERVER_ABYSSPP = $(call shlibfn, libxmlrpc_server_abyss++)
+
+$(LIBXMLRPC_SERVER_ABYSSPP): $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh) \
+  $(LIBXMLRPC_ABYSS) \
+  $(LIBXMLRPC)
+$(LIBXMLRPC_SERVER_ABYSSPP): LIBOBJECTS = $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.osh)
+$(LIBXMLRPC_SERVER_ABYSSPP): LIBDEP = \
+  -L$(LIBXMLRPC_ABYSS_DIR) -lxmlrpc_abyss -Lblddir/src -lxmlrpc
+
+LIBXMLRPC_SERVER_PSTREAMPP = $(call shlibfn, libxmlrpc_server_pstream++)
+
+$(LIBXMLRPC_SERVER_PSTREAMPP): $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.osh) \
+  $(LIBXMLRPC_SERVER) \
+  $(LIBXMLRPC_PACKETSOCKET)
+$(LIBXMLRPC_SERVER_PSTREAMPP): LIBOBJECTS = $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.osh)
+$(LIBXMLRPC_SERVER_PSTREAMPP): LIBDEP = \
+  -Lblddir/src -lxmlrpc_server -L. -lxmlrpc_packetsocket
+
+LIBXMLRPC_CLIENTPP = $(call shlibfn, libxmlrpc_client++)
+
+$(LIBXMLRPC_CLIENTPP): $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh) \
+  $(LIBXMLRPCPP) \
+  $(LIBXMLRPC_CLIENT)
+$(LIBXMLRPC_CLIENTPP): LIBOBJECTS = $(LIBXMLRPC_CLIENTPP_MODS:%=%.osh)
+$(LIBXMLRPC_CLIENTPP): LIBDEP = \
+  -L. -lxmlrpc++ -Lblddir/src -lxmlrpc_client
+
+LIBXMLRPC_PACKETSOCKET = $(call shlibfn, libxmlrpc_packetsocket)
+
+$(LIBXMLRPC_PACKETSOCKET): $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh)
+$(LIBXMLRPC_PACKETSOCKET): LIBOBJECTS = $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh)
+
+libxmlrpc_cpp.a: XmlRpcCpp.o
+libxmlrpc_cpp.a: LIBOBJECTS = XmlRpcCpp.o
+
+libxmlrpc++.a: $(LIBXMLRPCPP_MODS:%=%.o)
+libxmlrpc++.a: LIBOBJECTS = $(LIBXMLRPCPP_MODS:%=%.o)
+
+libxmlrpc_server++.a: $(LIBXMLRPC_SERVERPP_MODS:%=%.o)
+libxmlrpc_server++.a: LIBOBJECTS = $(LIBXMLRPC_SERVERPP_MODS:%=%.o)
+
+libxmlrpc_server_abyss++.a: $(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o)
+libxmlrpc_server_abyss++.a: LIBOBJECTS=$(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o)
+
+libxmlrpc_server_pstream++.a: $(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.o)
+libxmlrpc_server_pstream++.a: LIBOBJECTS=$(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.o)
+
+libxmlrpc_client++.a: $(LIBXMLRPC_CLIENTPP_MODS:%=%.o)
+libxmlrpc_client++.a: LIBOBJECTS = $(LIBXMLRPC_CLIENTPP_MODS:%=%.o)
+
+libxmlrpc_packetsocket.a: $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.o)
+libxmlrpc_packetsocket.a: LIBOBJECTS = $(LIBXMLRPC_PACKETSOCKET_MODS:%=%.o)
+
+#-----------------------------------------------------------------------------
+#  RULES TO COMPILE OBJECT MODULES FOR LIBRARIES
+#-----------------------------------------------------------------------------
+
+# Rules for these are in common.mk, courtesy of TARGET_MODS_PP:
+
+XmlRpcCpp.o% XmlrpcCpp.osh: \
+  INCLUDES = $(BASIC_INCLUDES)
+
+$(LIBXMLRPCPP_MODS:%=%.o) \
+$(LIBXMLRPCPP_MODS:%=%.osh): \
+  INCLUDES = $(BASIC_INCLUDES)
+
+SERVER_INCLUDES = $(BASIC_INCLUDES) $(LIBXML_INCLUDES)
+
+$(LIBXMLRPC_SERVERPP_MODS:%=%.o) \
+$(LIBXMLRPC_SERVERPP_MODS:%=%.osh): \
+  INCLUDES = $(SERVER_INCLUDES)
+
+$(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o) \
+$(LIBXMLRPC_SERVER_ABYSSPP_MODS:%=%.o): \
+  INCLUDES = $(SERVER_INCLUDES)
+
+$(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.o) \
+$(LIBXMLRPC_SERVER_PSTREAMPP_MODS:%=%.o): \
+  INCLUDES = $(SERVER_INCLUDES)
+
+$(LIBXMLRPC_CLIENTPP_MODS:%=%.o) \
+$(LIBXMLRPC_CLIENTPP_MODS:%=%.osh): \
+  INCLUDES = $(BASIC_INCLUDES) $(LIBXML_INCLUDES) $(TRANSPORT_INCLUDES)
+
+$(LIBXMLRPC_PACKETSOCKET_MODS:%=%.o) \
+$(LIBXMLRPC_PACKETSOCKET_MODS:%=%.osh): \
+  INCLUDES = $(BASIC_INCLUDES)
+
+CXXFLAGS = $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
+
+TRANSPORT_CONFIG_USERS = client curl libwww wininet
+
+$(TRANSPORT_CONFIG_USERS:%=%.o) $(TRANSPORT_CONFIG_USERS:%=%.osh): \
+  $(BLDDIR)/transport_config.h
+
+#-----------------------------------------------------------------------------
+#  MISCELLANEOUS RULES
+#-----------------------------------------------------------------------------
+
+check:
+	$(MAKE) -C test runtests
+
+.PHONY: install
+install: install-common
+
+.PHONY: clean clean-local distclean distclean-local
+clean: clean-common clean-local
+clean-local:
+	$(MAKE) -C test clean
+
+distclean: clean distclean-local distclean-common
+
+distclean-local:
+	$(MAKE) -C test distclean
+
+.PHONY: dep
+dep: dep-common $(BLDDIR)/transport_config.h
 
 include Makefile.depend

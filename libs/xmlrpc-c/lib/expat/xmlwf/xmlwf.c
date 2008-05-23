@@ -13,7 +13,7 @@ See the file copying.txt for copying permission.
 #include "xmlfile.h"
 #include "xmltchar.h"
 
-#ifdef _MSC_VER
+#if MSVCRT
 #include <crtdbg.h>
 #endif
 
@@ -584,7 +584,7 @@ int tmain(int argc, XML_Char **argv)
   int requireStandalone = 0;
   int paramEntityParsing = XML_PARAM_ENTITY_PARSING_NEVER;
 
-#ifdef _MSC_VER
+#if MSVCRT
   _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF|_CRTDBG_LEAK_CHECK_DF);
 #endif
 

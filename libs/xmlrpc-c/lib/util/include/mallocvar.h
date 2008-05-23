@@ -50,14 +50,28 @@ static __inline__ void
 reallocProduct(void **      const blockP,
                unsigned int const factor1,
                unsigned int const factor2) {
+
+    void * const oldBlockP = *blockP;
+
+    void * newBlockP;
     
     if (UINT_MAX / factor2 < factor1) 
-        *blockP = NULL;
+        newBlockP = NULL;
     else 
-        *blockP = realloc(*blockP, factor1 * factor2); 
+        newBlockP = realloc(oldBlockP, factor1 * factor2); 
+
+    if (newBlockP)
+        *blockP = newBlockP;
+    else {
+        free(oldBlockP);
+        *blockP = NULL;
+    }
 }
 
 
+/* IMPLEMENTATION NOTE:  There are huge strict aliasing pitfalls here
+   if you cast pointers, e.g. (void **)
+*/
 
 #define MALLOCARRAY(arrayName, nElements) do { \
     void * array; \
@@ -65,8 +79,11 @@ reallocProduct(void **      const blockP,
     arrayName = array; \
 } while (0)
 
-#define REALLOCARRAY(arrayName, nElements) \
-    reallocProduct((void **)&arrayName, nElements, sizeof(arrayName[0]))
+#define REALLOCARRAY(arrayName, nElements) do { \
+    void * array = arrayName; \
+    reallocProduct(&array, nElements, sizeof(arrayName[0])); \
+    arrayName = array; \
+} while (0)
 
 
 #define MALLOCARRAY_NOFAIL(arrayName, nElements) \

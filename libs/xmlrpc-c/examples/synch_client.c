@@ -11,11 +11,11 @@
 #define NAME "XML-RPC C Test Client synch_client"
 #define VERSION "1.0"
 
-static void die_if_fault_occurred (xmlrpc_env *env)
-{
-    if (env->fault_occurred) {
+static void
+die_if_fault_occurred(xmlrpc_env * const envP) {
+    if (envP->fault_occurred) {
         fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
-                env->fault_string, env->fault_code);
+                envP->fault_string, envP->fault_code);
         exit(1);
     }
 }
@@ -28,7 +28,7 @@ main(int           const argc,
 
     xmlrpc_env env;
     xmlrpc_value * resultP;
-    const char * state_name;
+    const char * stateName;
 
     if (argc-1 > 0) {
         fprintf(stderr, "No arguments");
@@ -48,10 +48,10 @@ main(int           const argc,
     die_if_fault_occurred(&env);
     
     /* Get our state name and print it out. */
-    xmlrpc_read_string(&env, resultP, &state_name);
+    xmlrpc_read_string(&env, resultP, &stateName);
     die_if_fault_occurred(&env);
-    printf("%s\n", state_name);
-    free((char*)state_name);
+    printf("%s\n", stateName);
+    free((char*)stateName);
    
     /* Dispose of our result value. */
     xmlrpc_DECREF(resultP);

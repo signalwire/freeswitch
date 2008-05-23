@@ -51,9 +51,9 @@
 
 #include "config.h"  /* information about this build environment */
 
-#define RETURN_IF_FAULT(env) \
+#define RETURN_IF_FAULT(envP) \
     do { \
-        if ((env)->fault_occurred) \
+        if ((envP)->fault_occurred) \
             return NULL; \
     } while (0)
         
@@ -65,20 +65,19 @@
 
 static xmlrpc_value *
 array_of_structs(xmlrpc_env *   const envP, 
-                 xmlrpc_value * const param_array, 
+                 xmlrpc_value * const paramArrayP, 
                  void *         const user_data ATTR_UNUSED) {
 
-    xmlrpc_value * array;
+    xmlrpc_value * arrayP;
     xmlrpc_value * retval;
 
-    /* Parse our argument array. */
-    xmlrpc_decompose_value(envP, param_array, "(A)", &array);
+    xmlrpc_decompose_value(envP, paramArrayP, "(A)", &arrayP);
     if (envP->fault_occurred)
         retval = NULL;
     else {
         /* Add up all the struct elements named "curly". */
         size_t size;
-        size = xmlrpc_array_size(envP, array);
+        size = xmlrpc_array_size(envP, arrayP);
         if (envP->fault_occurred)
             retval = NULL;
         else {
@@ -86,18 +85,20 @@ array_of_structs(xmlrpc_env *   const envP,
             unsigned int i;
             sum = 0;
             for (i = 0; i < size && !envP->fault_occurred; ++i) {
-                xmlrpc_value * strct;
-                strct = xmlrpc_array_get_item(envP, array, i);
+                xmlrpc_value * strctP;
+                strctP = xmlrpc_array_get_item(envP, arrayP, i);
                 if (!envP->fault_occurred) {
                     xmlrpc_int32 curly;
-                    xmlrpc_decompose_value(envP, strct, "{s:i,*}", 
+                    xmlrpc_decompose_value(envP, strctP, "{s:i,*}", 
                                            "curly", &curly);
                     if (!envP->fault_occurred)
                         sum += curly;
                 }
             }
-            xmlrpc_DECREF(array);
-            if (!envP->fault_occurred)
+            xmlrpc_DECREF(arrayP);
+            if (envP->fault_occurred)
+                retval = NULL;
+            else
                 retval = xmlrpc_build_value(envP, "i", sum);
         }
     }
@@ -111,30 +112,31 @@ array_of_structs(xmlrpc_env *   const envP,
 */
 
 static xmlrpc_value *
-count_entities(xmlrpc_env *   const env, 
-               xmlrpc_value * const param_array, 
+count_entities(xmlrpc_env *   const envP,
+               xmlrpc_value * const paramArrayP, 
                void *         const user_data ATTR_UNUSED) {
-    const char *str;
+
+    const char * str;
     size_t len, i;
     xmlrpc_int32 left, right, amp, apos, quote;
 
-    xmlrpc_decompose_value(env, param_array, "(s#)", &str, &len);
-    RETURN_IF_FAULT(env);
+    xmlrpc_decompose_value(envP, paramArrayP, "(s#)", &str, &len);
+    RETURN_IF_FAULT(envP);
 
     left = right = amp = apos = quote = 0;
-    for (i = 0; i < len; i++) {
+    for (i = 0; i < len; ++i) {
         switch (str[i]) {
-        case '<': left++; break;
-        case '>': right++; break;
-        case '&': amp++; break;
-        case '\'': apos++; break;
-        case '\"': quote++; break;
+        case '<':  ++left;  break;
+        case '>':  ++right; break;
+        case '&':  ++amp;   break;
+        case '\'': ++apos;  break;
+        case '\"': ++quote; break;
         default: break;
         }
     }
     free((void*)str);
 
-    return xmlrpc_build_value(env, "{s:i,s:i,s:i,s:i,s:i}",
+    return xmlrpc_build_value(envP, "{s:i,s:i,s:i,s:i,s:i}",
                               "ctLeftAngleBrackets", left,
                               "ctRightAngleBrackets", right,
                               "ctAmpersands", amp,
@@ -150,22 +152,23 @@ count_entities(xmlrpc_env *   const env,
 */
 
 static xmlrpc_value *
-easy_struct(xmlrpc_env *   const env, 
-            xmlrpc_value * const param_array,
+easy_struct(xmlrpc_env *   const envP,
+            xmlrpc_value * const paramArrayP,
             void *         const user_data ATTR_UNUSED) {
 
     xmlrpc_int32 larry, moe, curly;
 
     /* Parse our argument array and get the stooges. */
-    xmlrpc_decompose_value(env, param_array, "({s:i,s:i,s:i,*})",
+    xmlrpc_decompose_value(envP, paramArrayP, "({s:i,s:i,s:i,*})",
                            "larry", &larry,
                            "moe", &moe,
                            "curly", &curly);
-    RETURN_IF_FAULT(env);
+    RETURN_IF_FAULT(envP);
 
     /* Return our result. */
-    return xmlrpc_build_value(env, "i", larry + moe + curly);
+    return xmlrpc_build_value(envP, "i", larry + moe + curly);
 }
+
 
 
 /*=========================================================================
@@ -174,17 +177,19 @@ easy_struct(xmlrpc_env *   const env,
 */
 
 static xmlrpc_value *
-echo_struct(xmlrpc_env *   const env, 
-            xmlrpc_value * const param_array, 
+echo_struct(xmlrpc_env *   const envP,
+            xmlrpc_value * const paramArrayP, 
             void *         const user_data ATTR_UNUSED) {
-    xmlrpc_value *s;
+
+    xmlrpc_value * sP;
 
     /* Parse our argument array. */
-    xmlrpc_decompose_value(env, param_array, "(S)", &s);
-    RETURN_IF_FAULT(env);
+    xmlrpc_decompose_value(envP, paramArrayP, "(S)", &sP);
+    RETURN_IF_FAULT(envP);
     
-    return s;  /* We transfer our reference on 's' to Caller */
+    return sP;  /* We transfer our reference on '*sP' to Caller */
 }
+
 
 
 /*=========================================================================
@@ -203,6 +208,7 @@ many_types(xmlrpc_env *   const env ATTR_UNUSED,
 }
 
 
+
 /*=========================================================================
 **  validator1.moderateSizeArrayCheck
 **=========================================================================
@@ -214,7 +220,7 @@ concatenate(xmlrpc_env *    const envP,
             size_t          const str1_len,
             const char *    const str2,
             size_t          const str2_len,
-            xmlrpc_value ** const resultP) {
+            xmlrpc_value ** const resultPP) {
 
     /* Concatenate the two strings. */
 
@@ -227,8 +233,8 @@ concatenate(xmlrpc_env *    const envP,
     } else {
         memcpy(buffer, str1, str1_len);
         memcpy(&buffer[str1_len], str2, str2_len);
-        *resultP = xmlrpc_build_value(envP, "s#", 
-                                      buffer, str1_len + str2_len);
+        *resultPP = xmlrpc_build_value(envP, "s#", 
+                                       buffer, str1_len + str2_len);
         free(buffer);
     }
 }
@@ -236,31 +242,34 @@ concatenate(xmlrpc_env *    const envP,
 
 
 static xmlrpc_value *
-moderate_array(xmlrpc_env *   const envP, 
-               xmlrpc_value * const param_array, 
+moderate_array(xmlrpc_env *   const envP,
+               xmlrpc_value * const paramArrayP,
                void *         const user_data ATTR_UNUSED) {
 
-    xmlrpc_value *array, *item, *result;
-    int size;
-    const char * str1;
-    const char * str2;
-    size_t str1_len, str2_len;
     xmlrpc_value * retval;
+    xmlrpc_value * arrayP;
 
     /* Parse our argument array. */
-    xmlrpc_decompose_value(envP, param_array, "(A)", &array);
+    xmlrpc_decompose_value(envP, paramArrayP, "(A)", &arrayP);
     if (!envP->fault_occurred) {
-        size = xmlrpc_array_size(envP, array);
+        int const size = xmlrpc_array_size(envP, arrayP);
         if (!envP->fault_occurred) {
             /* Get our first string. */
-            item = xmlrpc_array_get_item(envP, array, 0);
+            xmlrpc_value * const firstItemP =
+                xmlrpc_array_get_item(envP, arrayP, 0);
             if (!envP->fault_occurred) {
-                xmlrpc_read_string_lp(envP, item, &str1_len, &str1);
+                const char * str1;
+                size_t str1_len;
+                xmlrpc_read_string_lp(envP, firstItemP, &str1_len, &str1);
                 if (!envP->fault_occurred) {
                     /* Get our last string. */
-                    item = xmlrpc_array_get_item(envP, array, size - 1);
+                    xmlrpc_value * const lastItemP =
+                        xmlrpc_array_get_item(envP, arrayP, size - 1);
                     if (!envP->fault_occurred) {
-                        xmlrpc_read_string_lp(envP, item, &str2_len, &str2);
+                        const char * str2;
+                        size_t str2_len;
+                        xmlrpc_read_string_lp(envP, lastItemP,
+                                              &str2_len, &str2);
                         if (!envP->fault_occurred) {
                             concatenate(envP, str1, str1_len, str2, str2_len,
                                         &retval);
@@ -271,10 +280,11 @@ moderate_array(xmlrpc_env *   const envP,
                 }
             }
         }
-        xmlrpc_DECREF(array);
+        xmlrpc_DECREF(arrayP);
     }
-    return result;
+    return retval;
 }
+
 
 
 /*=========================================================================
@@ -284,15 +294,17 @@ moderate_array(xmlrpc_env *   const envP,
 
 static xmlrpc_value *
 nested_struct(xmlrpc_env *   const envP,
-              xmlrpc_value * const param_array, 
+              xmlrpc_value * const paramArrayP,
               void *         const user_data ATTR_UNUSED) {
 
     xmlrpc_value * yearsP;
     xmlrpc_value * retval;
 
     /* Parse our argument array. */
-    xmlrpc_decompose_value(envP, param_array, "(S)", &yearsP);
-    if (!envP->fault_occurred) {
+    xmlrpc_decompose_value(envP, paramArrayP, "(S)", &yearsP);
+    if (envP->fault_occurred)
+        retval = NULL;
+    else {
         /* Get values of larry, moe and curly for 2000-04-01. */
         xmlrpc_int32 larry, moe, curly;
         xmlrpc_decompose_value(envP, yearsP,
@@ -301,12 +313,16 @@ nested_struct(xmlrpc_env *   const envP,
                                "larry", &larry,
                                "moe", &moe,
                                "curly", &curly);               
-        if (!envP->fault_occurred)
+        if (envP->fault_occurred)
+            retval = NULL;
+        else
             retval = xmlrpc_build_value(envP, "i", larry + moe + curly);
+
         xmlrpc_DECREF(yearsP);
     }
     return retval;
 }
+
 
 
 /*=========================================================================
@@ -315,20 +331,21 @@ nested_struct(xmlrpc_env *   const envP,
 */
 
 static xmlrpc_value *
-struct_return(xmlrpc_env *   const env, 
-              xmlrpc_value * const param_array, 
+struct_return(xmlrpc_env *   const envP,
+              xmlrpc_value * const paramArrayP,
               void *         const user_data ATTR_UNUSED) {
 
     xmlrpc_int32 i;
 
-    xmlrpc_decompose_value(env, param_array, "(i)", &i);
-    RETURN_IF_FAULT(env);
+    xmlrpc_decompose_value(envP, paramArrayP, "(i)", &i);
+    RETURN_IF_FAULT(envP);
 
-    return xmlrpc_build_value(env, "{s:i,s:i,s:i}",
+    return xmlrpc_build_value(envP, "{s:i,s:i,s:i}",
                               "times10", (xmlrpc_int32) i * 10,
                               "times100", (xmlrpc_int32) i * 100,
                               "times1000", (xmlrpc_int32) i * 1000);
 }
+
 
 
 /*=========================================================================

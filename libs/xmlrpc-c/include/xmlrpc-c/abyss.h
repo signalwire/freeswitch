@@ -11,635 +11,232 @@
   Copyright information is at the end of the file.
 ****************************************************************************/
 
-#ifndef _ABYSS_H_
-#define _ABYSS_H_
+#ifndef XMLRPC_ABYSS_H_INCLUDED
+#define XMLRPC_ABYSS_H_INCLUDED
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef ABYSS_WIN32
-#include "xmlrpc_config.h"
-#else
-#include <inttypes.h>
-#endif
-/*********************************************************************
-** Paths and so on...
-*********************************************************************/
+#include <sys/types.h>
 
-#ifdef ABYSS_WIN32
-#define DEFAULT_ROOT        "c:\\abyss"
-#define DEFAULT_DOCS        DEFAULT_ROOT"\\htdocs"
-#define DEFAULT_CONF_FILE   DEFAULT_ROOT"\\conf\\abyss.conf"
-#define DEFAULT_LOG_FILE    DEFAULT_ROOT"\\log\\abyss.log"
-#else
-#ifdef __rtems__
-#define DEFAULT_ROOT        "/abyss"
-#else
-#define DEFAULT_ROOT        "/usr/local/abyss"
-#endif
-#define DEFAULT_DOCS        DEFAULT_ROOT"/htdocs"
-#define DEFAULT_CONF_FILE   DEFAULT_ROOT"/conf/abyss.conf"
-#define DEFAULT_LOG_FILE    DEFAULT_ROOT"/log/abyss.log"
-#endif
+#include <xmlrpc-c/inttypes.h>
 
-/*********************************************************************
-** Maximum numer of simultaneous connections
-*********************************************************************/
-
-#define MAX_CONN    4000
-
-/*********************************************************************
-** Server Info Definitions
-*********************************************************************/
-
-#define SERVER_VERSION      "0.3"
-#define SERVER_HVERSION     "ABYSS/0.3"
-#define SERVER_HTML_INFO \
-  "<p><HR><b><i><a href=\"http:\057\057abyss.linuxave.net\">" \
-  "ABYSS Web Server</a></i></b> version "SERVER_VERSION"<br>" \
-  "&copy; <a href=\"mailto:mmoez@bigfoot.com\">Moez Mahfoudh</a> - 2000</p>"
-#define SERVER_PLAIN_INFO \
-  CRLF "----------------------------------------" \
-       "----------------------------------------" \
-  CRLF "ABYSS Web Server version "SERVER_VERSION CRLF"(C) Moez Mahfoudh - 2000"
-
-/*********************************************************************
-** General purpose definitions
-*********************************************************************/
-
-#ifdef ABYSS_WIN32
-#define strcasecmp(a,b) stricmp((a),(b))
-#else
-#define ioctlsocket(a,b,c)  ioctl((a),(b),(c))
-#endif  /* ABYSS_WIN32 */
-
-#ifndef NULL
-#define NULL ((void *)0)
-#endif  /* NULL */
-
-#ifndef TRUE
-#define TRUE    1
-#endif  /* TRUE */
-
-#ifndef FALSE
-#define FALSE    0
-#endif  /* FALSE */
-
-#ifdef ABYSS_WIN32
-#define LBR "\n"
-#else
-#define LBR "\n"
-#endif  /* ABYSS_WIN32 */
+/****************************************************************************
+  STUFF FOR THE OUTER CONTROL PROGRAM TO USE
+****************************************************************************/
 
 typedef int abyss_bool;
 
-/*********************************************************************
-** Buffer
-*********************************************************************/
+/****************************************************************************
+  GLOBAL (STATIC) PROGRAM STUFF
+****************************************************************************/
 
-typedef struct
-{
-    void *data;
-    uint32_t size;
-    uint32_t staticid;
-} TBuffer;
+void
+AbyssInit(const char ** const errorP);
 
-abyss_bool BufferAlloc(TBuffer *buf,uint32_t memsize);
-abyss_bool BufferRealloc(TBuffer *buf,uint32_t memsize);
-void BufferFree(TBuffer *buf);
-
+void
+AbyssTerm(void);
 
 /*********************************************************************
-** String
+** MIMEType
 *********************************************************************/
 
-typedef struct
-{
-    TBuffer buffer;
-    uint32_t size;
-} TString;
+typedef struct MIMEType MIMEType;
 
-abyss_bool StringAlloc(TString *s);
-abyss_bool StringConcat(TString *s,char *s2);
-abyss_bool StringBlockConcat(TString *s,char *s2,char **ref);
-void StringFree(TString *s);
-char *StringData(TString *s);
-
-
-/*********************************************************************
-** List
-*********************************************************************/
-
-typedef struct {
-    void **item;
-    uint16_t size;
-    uint16_t maxsize;
-    abyss_bool autofree;
-} TList;
+MIMEType *
+MIMETypeCreate(void);
 
 void
-ListInit(TList * const listP);
+MIMETypeDestroy(MIMEType * const MIMETypeP);
 
 void
-ListInitAutoFree(TList * const listP);
+MIMETypeInit(void);
 
 void
-ListFree(TList * const listP);
-
-void
-ListFreeItems(TList * const listP);
+MIMETypeTerm(void);
 
 abyss_bool
-ListAdd(TList * const listP,
-        void *  const str);
-
-void
-ListRemove(TList * const listP);
+MIMETypeAdd2(MIMEType *   const MIMETypeP,
+             const char * const type,
+             const char * const ext);
 
 abyss_bool
-ListAddFromString(TList * const listP,
-                  char *  const c);
+MIMETypeAdd(const char * const type,
+            const char * const ext);
 
-abyss_bool
-ListFindString(TList *    const listP,
-               char *     const str,
-               uint16_t * const indexP);
-
-
-/*********************************************************************
-** Table
-*********************************************************************/
-
-typedef struct 
-{
-    char *name,*value;
-    uint16_t hash;
-} TTableItem;
-
-typedef struct
-{
-    TTableItem *item;
-    uint16_t size,maxsize;
-} TTable;
-
-void TableInit(TTable *t);
-void TableFree(TTable *t);
-abyss_bool TableAdd(TTable *t,char *name,char *value);
-abyss_bool TableAddReplace(TTable *t,char *name,char *value);
-abyss_bool TableFindIndex(TTable *t,char *name,uint16_t *index);
-char *TableFind(TTable *t,char *name);
-
-
-/*********************************************************************
-** Thread
-*********************************************************************/
-
-#ifdef ABYSS_WIN32
-#include <windows.h>
-#define  THREAD_ENTRYTYPE  WINAPI
-#else
-#define  THREAD_ENTRYTYPE
-#include <pthread.h>
-#endif  /* ABYSS_WIN32 */
-
-typedef uint32_t (THREAD_ENTRYTYPE *TThreadProc)(void *);
-#ifdef ABYSS_WIN32
-typedef HANDLE TThread;
-#else
-typedef pthread_t TThread;
-typedef void* (*PTHREAD_START_ROUTINE)(void *);
-#endif  /* ABYSS_WIN32 */
-
-abyss_bool ThreadCreate(TThread *t,TThreadProc func,void *arg);
-abyss_bool ThreadRun(TThread *t);
-abyss_bool ThreadStop(TThread *t);
-abyss_bool ThreadKill(TThread *t);
-void ThreadWait(uint32_t ms);
-void ThreadExit( TThread *t, int ret_value );
-void ThreadClose( TThread *t );
-
-/*********************************************************************
-** Mutex
-*********************************************************************/
-
-#ifdef ABYSS_WIN32
-typedef HANDLE TMutex;
-#else
-typedef pthread_mutex_t TMutex;
-#endif  /* ABYSS_WIN32 */
-
-abyss_bool MutexCreate(TMutex *m);
-abyss_bool MutexLock(TMutex *m);
-abyss_bool MutexUnlock(TMutex *m);
-abyss_bool MutexTryLock(TMutex *m);
-void MutexFree(TMutex *m);
-
-
-/*********************************************************************
-** Pool
-*********************************************************************/
-
-typedef struct _TPoolZone
-{
-    char *pos,*maxpos;
-    struct _TPoolZone *next,*prev;
-/*  char data[0]; */
-    char data[1];
-} TPoolZone;
-
-typedef struct
-{
-    TPoolZone *firstzone,*currentzone;
-    uint32_t zonesize;
-    TMutex mutex;
-} TPool;
-
-abyss_bool PoolCreate(TPool *p,uint32_t zonesize);
-void PoolFree(TPool *p);
-
-void *PoolAlloc(TPool *p,uint32_t size);
-char *PoolStrdup(TPool *p,char *s);
-
-
-/*********************************************************************
-** Socket
-*********************************************************************/
-
-#ifdef ABYSS_WIN32
-#include <winsock.h>
-#else
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <errno.h>
-#include <unistd.h>
-
-#ifdef HAVE_SYS_FILIO_H
-#include <sys/filio.h>
-#endif
-#ifdef HAVE_SYS_IOCTL_H
-#include <sys/ioctl.h>
-#endif
-
-#endif  /* ABYSS_WIN32 */
-
-#define TIME_INFINITE   0xffffffff
-
-#ifdef ABYSS_WIN32
-typedef SOCKET TSocket;
-#else
-typedef uint32_t TSocket;
-#endif  /* ABYSS_WIN32 */
-
-typedef struct in_addr TIPAddr;
-
-#define IPB1(x) (((unsigned char *)(&x))[0])
-#define IPB2(x) (((unsigned char *)(&x))[1])
-#define IPB3(x) (((unsigned char *)(&x))[2])
-#define IPB4(x) (((unsigned char *)(&x))[3])
-
-abyss_bool SocketInit(void);
-
-abyss_bool SocketCreate(TSocket *s);
-abyss_bool SocketClose(TSocket *s);
-
-int SocketWrite(TSocket *s, char *buffer, uint32_t len);
-uint32_t SocketRead(TSocket *s, char *buffer, uint32_t len);
-uint32_t SocketPeek(TSocket *s, char *buffer, uint32_t len);
-
-abyss_bool SocketConnect(TSocket *s, TIPAddr *addr, uint16_t port);
-abyss_bool SocketBind(TSocket *s, TIPAddr *addr, uint16_t port);
-
-abyss_bool SocketListen(TSocket *s, uint32_t backlog);
-abyss_bool SocketAccept(TSocket *s, TSocket *ns,TIPAddr *ip);
-
-uint32_t SocketError(void);
-
-uint32_t SocketWait(TSocket *s,abyss_bool rd,abyss_bool wr,uint32_t timems);
-
-abyss_bool SocketBlocking(TSocket *s, abyss_bool b);
-uint32_t SocketAvailableReadBytes(TSocket *s);
-
-
-/*********************************************************************
-** File
-*********************************************************************/
-
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <limits.h>
-
-#ifndef NAME_MAX
-#define NAME_MAX    1024
-#endif
-
-#ifdef ABYSS_WIN32
-#ifndef __BORLANDC__
-#define O_APPEND    _O_APPEND
-#define O_CREAT     _O_CREAT 
-#define O_EXCL      _O_EXCL
-#define O_RDONLY    _O_RDONLY
-#define O_RDWR      _O_RDWR 
-#define O_TRUNC _O_TRUNC
-#define O_WRONLY    _O_WRONLY
-#define O_TEXT      _O_TEXT
-#define O_BINARY    _O_BINARY
-#endif
-
-#define A_HIDDEN    _A_HIDDEN
-#define A_NORMAL    _A_NORMAL
-#define A_RDONLY    _A_RDONLY
-#define A_SUBDIR    _A_SUBDIR
-#else
-#define A_SUBDIR    1
-#define O_BINARY    0
-#define O_TEXT      0
-#endif  /* ABYSS_WIN32 */
-
-#ifdef ABYSS_WIN32
-
-#ifndef __BORLANDC__
-typedef struct _stati64 TFileStat;
-typedef struct _finddata_t TFileInfo;
-typedef long TFileFind;
-
-#else
-
-typedef struct stat TFileStat;
-typedef struct finddata_t
-{
-    char name[NAME_MAX+1];
-    int attrib;
-    uint64_t size;
-    time_t time_write;
-   WIN32_FIND_DATA data;
-} TFileInfo;
-typedef HANDLE TFileFind;
-#endif
-
-#else
-
-#include <unistd.h>
-#include <dirent.h>
-
-typedef struct stat TFileStat;
-
-typedef struct finddata_t
-{
-    char name[NAME_MAX+1];
-    int attrib;
-    uint64_t size;
-    time_t time_write;
-} TFileInfo;
-
-typedef struct 
-{
-    char path[NAME_MAX+1];
-    DIR *handle;
-} TFileFind;
-
-#endif
-
-typedef int TFile;
-
-abyss_bool FileOpen(TFile *f, const char *name,uint32_t attrib);
-abyss_bool FileOpenCreate(TFile *f, const char *name, uint32_t attrib);
-abyss_bool FileClose(TFile *f);
-
-abyss_bool FileWrite(TFile *f, void *buffer, uint32_t len);
-int32_t FileRead(TFile *f, void *buffer, uint32_t len);
-
-abyss_bool FileSeek(TFile *f, uint64_t pos, uint32_t attrib);
-uint64_t FileSize(TFile *f);
-
-abyss_bool FileStat(char *filename,TFileStat *filestat);
-
-abyss_bool FileFindFirst(TFileFind *filefind,char *path,TFileInfo *fileinfo);
-abyss_bool FileFindNext(TFileFind *filefind,TFileInfo *fileinfo);
-void FileFindClose(TFileFind *filefind);
-
-/*********************************************************************
-** Server (1/2)
-*********************************************************************/
-
-typedef struct _TServer
-{
-    TSocket listensock;
-    TFile logfile;
-    TMutex logmutex;
-    char *name;
-    char *filespath;
-    uint16_t port;
-    uint32_t keepalivetimeout,keepalivemaxconn,timeout;
-    TList handlers;
-    TList defaultfilenames;
-    void *defaulthandler;
-    abyss_bool advertise;
-	int running;
-#ifndef _WIN32
-    uid_t uid;
-    gid_t gid;
-    TFile pidfile;
-#endif  
-} TServer;
-
-
-/*********************************************************************
-** Conn
-*********************************************************************/
-
-#define BUFFER_SIZE 4096 
-
-typedef struct _TConn
-{
-    TServer *server;
-    uint32_t buffersize,bufferpos;
-    uint32_t inbytes,outbytes;  
-    TSocket socket;
-    TIPAddr peerip;
-    abyss_bool hasOwnThread;
-    TThread thread;
-    abyss_bool connected;
-    abyss_bool inUse;
-    const char * trace;
-    void (*job)(struct _TConn *);
-    char buffer[BUFFER_SIZE];
-} TConn;
-
-TConn *ConnAlloc(void);
-void ConnFree(TConn *c);
 
 enum abyss_foreback {ABYSS_FOREGROUND, ABYSS_BACKGROUND};
 
-abyss_bool ConnCreate(TConn *c, TSocket *s, void (*func)(TConn *));
-abyss_bool ConnCreate2(TConn *             const connectionP, 
-                       TServer *           const serverP,
-                       TSocket             const connectedSocket,
-                       TIPAddr             const peerIpAddr,
-                       void            ( *       func)(TConn *),
-                       enum abyss_foreback const foregroundBackground);
-abyss_bool ConnProcess(TConn *c);
-abyss_bool ConnKill(TConn *c);
-void ConnClose(TConn *c);
+#define HAVE_CHANSWITCH
 
-abyss_bool ConnWrite(TConn *c,void *buffer,uint32_t size);
-abyss_bool ConnRead(TConn *c, uint32_t timems);
-void ConnReadInit(TConn *c);
-abyss_bool ConnReadLine(TConn *c,char **z,uint32_t timems);
+typedef struct _TChanSwitch TChanSwitch;
+typedef struct _TChannel TChannel;
+typedef struct _TSocket TSocket;
 
-abyss_bool ConnWriteFromFile(TConn *c,TFile *file,uint64_t start,uint64_t end,
-            void *buffer,uint32_t buffersize,uint32_t rate);
+#ifdef WIN32
+  #include <xmlrpc-c/abyss_winsock.h>
+#else
+  #include <xmlrpc-c/abyss_unixsock.h>
+#endif
 
+void
+ChanSwitchInit(const char ** const errorP);
 
-/*********************************************************************
-** Range
-*********************************************************************/
+void
+ChanSwitchTerm(void);
 
-abyss_bool RangeDecode(char *str,uint64_t filesize,uint64_t *start,uint64_t *end);
+/* If you're wondering where the constructors for TChanSwitch,
+   TChannel, and TSocket are: They're implementation-specific, so look
+   in abyss_unixsock.h, etc.
+*/
 
-/*********************************************************************
-** Date
-*********************************************************************/
+void
+ChanSwitchDestroy(TChanSwitch * const chanSwitchP);
 
-#include <time.h>
+void
+ChannelInit(const char ** const errorP);
 
-typedef struct tm TDate;
+void
+ChannelTerm(void);
 
-abyss_bool DateToString(TDate *tm,char *s);
-abyss_bool DateToLogString(TDate *tm,char *s);
+void
+ChannelDestroy(TChannel * const channelP);
 
-abyss_bool DateDecode(char *s,TDate *tm);
-
-int32_t DateCompare(TDate *d1,TDate *d2);
-
-abyss_bool DateFromGMT(TDate *d,time_t t);
-abyss_bool DateFromLocal(TDate *d,time_t t);
-
-abyss_bool DateInit(void);
-
-/*********************************************************************
-** Base64
-*********************************************************************/
-
-void Base64Encode(char *s,char *d);
-
-/*********************************************************************
-** Session
-*********************************************************************/
-
-typedef enum
-{
-    m_unknown,m_get,m_put,m_head,m_post,m_delete,m_trace,m_options
-} TMethod;
-
-typedef struct
-{
-    TMethod method;
-    uint32_t nbfileds;
-    char *uri;
-    char *query;
-    char *host;
-    char *from;
-    char *useragent;
-    char *referer;
-    char *requestline;
-    char *user;
-    uint16_t port;
-    TList cookies;
-    TList ranges;
-
-    uint16_t status;
-    TString header;
-
-    abyss_bool keepalive,cankeepalive;
-    abyss_bool done;
-
-    TServer *server;
-    TConn *conn;
-
-    uint8_t versionminor,versionmajor;
-
-    TTable request_headers,response_headers;
-
-    TDate date;
-
-    abyss_bool chunkedwrite,chunkedwritemode;
-} TSession;
-
-/*********************************************************************
-** Request
-*********************************************************************/
-
-#define CR      '\r'
-#define LF      '\n'
-#define CRLF    "\r\n"
-
-abyss_bool RequestValidURI(TSession *r);
-abyss_bool RequestValidURIPath(TSession *r);
-abyss_bool RequestUnescapeURI(TSession *r);
-
-char *RequestHeaderValue(TSession *r,char *name);
-
-abyss_bool RequestRead(TSession *r);
-void RequestInit(TSession *r,TConn *c);
-void RequestFree(TSession *r);
-
-abyss_bool RequestAuth(TSession *r,char *credential,char *user,char *pass);
-
-/*********************************************************************
-** Response
-*********************************************************************/
-
-abyss_bool ResponseAddField(TSession *r,char *name,char *value);
-void ResponseWrite(TSession *r);
-
-abyss_bool ResponseChunked(TSession *s);
-
-void ResponseStatus(TSession *r,uint16_t code);
-void ResponseStatusErrno(TSession *r);
-
-abyss_bool ResponseContentType(TSession *r,char *type);
-abyss_bool ResponseContentLength(TSession *r,uint64_t len);
-
-void ResponseError(TSession *r);
+void
+SocketDestroy(TSocket * const socketP);
 
 
-/*********************************************************************
-** HTTP
-*********************************************************************/
+typedef struct {
+    /* Before Xmlrpc-c 1.04, the internal server representation,
+       struct _TServer, was exposed to users and was the only way to
+       set certain parameters of the server.  Now, use the (new)
+       ServerSet...() functions.  Use the HAVE_ macros to determine
+       which method you have to use.
+    */
+    struct _TServer * srvP;
+} TServer;
 
-char *HTTPReasonByStatus(uint16_t status);
+typedef struct _TSession TSession;
 
-int32_t HTTPRead(TSession *s,char *buffer,uint32_t len);
+abyss_bool
+ServerCreate(TServer *       const serverP,
+             const char *    const name,
+             xmlrpc_uint16_t const port,
+             const char *    const filespath,
+             const char *    const logfilename);
 
-abyss_bool HTTPWrite(TSession *s,char *buffer,uint32_t len);
-abyss_bool HTTPWriteEnd(TSession *s);
+void
+ServerCreateSwitch(TServer *     const serverP,
+                   TChanSwitch * const chanSwitchP,
+                   const char ** const errorP);
 
-/*********************************************************************
-** Server (2/2)
-*********************************************************************/
+abyss_bool
+ServerCreateSocket(TServer *    const serverP,
+                   const char * const name,
+                   TOsSocket    const socketFd,
+                   const char * const filespath,
+                   const char * const logfilename);
 
-abyss_bool ServerCreate(TServer *srv,
-                        const char *name,
-                        uint16_t port,
-                        const char *filespath,
-                        const char *logfilename);
+#define HAVE_SERVER_CREATE_SOCKET_2
+void
+ServerCreateSocket2(TServer *     const serverP,
+                    TSocket *     const socketP,
+                    const char ** const errorP);
 
-void ServerFree(TServer *srv);
+abyss_bool
+ServerCreateNoAccept(TServer *    const serverP,
+                     const char * const name,
+                     const char * const filespath,
+                     const char * const logfilename);
 
-int ServerInit(TServer *srv);
-void ServerRun(TServer *srv);
-void ServerRunOnce(TServer *srv);
-void ServerRunOnce2(TServer *           const srv,
-                    enum abyss_foreback const foregroundBackground);
+void
+ServerFree(TServer * const serverP);
+
+void
+ServerSetName(TServer *    const serverP,
+              const char * const name);
+
+void
+ServerSetFilesPath(TServer *    const serverP,
+                   const char * const filesPath);
+
+void
+ServerSetLogFileName(TServer *    const serverP,
+                     const char * const logFileName);
+
+#define HAVE_SERVER_SET_KEEPALIVE_TIMEOUT 1
+void
+ServerSetKeepaliveTimeout(TServer *       const serverP,
+                          xmlrpc_uint32_t const keepaliveTimeout);
+
+#define HAVE_SERVER_SET_KEEPALIVE_MAX_CONN 1
+void
+ServerSetKeepaliveMaxConn(TServer *       const serverP,
+                          xmlrpc_uint32_t const keepaliveMaxConn);
+
+#define HAVE_SERVER_SET_TIMEOUT 1
+void
+ServerSetTimeout(TServer *       const serverP,
+                 xmlrpc_uint32_t const timeout);
+
+#define HAVE_SERVER_SET_ADVERTISE 1
+void
+ServerSetAdvertise(TServer *  const serverP,
+                   abyss_bool const advertise);
+
+#define HAVE_SERVER_SET_MIME_TYPE 1
+void
+ServerSetMimeType(TServer *  const serverP,
+                  MIMEType * const MIMETypeP);
+
+void
+ServerInit(TServer * const serverP);
+
+void
+ServerRun(TServer * const serverP);
+
+void
+ServerRunOnce(TServer * const serverP);
+
+/* ServerRunOnce2() is obsolete.  See user's guide. */
+void
+ServerRunOnce2(TServer *           const serverP,
+               enum abyss_foreback const foregroundBackground);
+
+void
+ServerRunChannel(TServer *     const serverP,
+                 TChannel *    const channelP,
+                 void *        const channelInfoP,
+                 const char ** const errorP);
+
+#define HAVE_SERVER_RUN_CONN_2
+void
+ServerRunConn2(TServer *     const serverP,
+               TSocket *     const connectedSocketP,
+               const char ** const errorP);
+
+void
+ServerRunConn(TServer * const serverP,
+              TOsSocket const connectedSocket);
+
+void
+ServerDaemonize(TServer * const serverP);
+
+void
+ServerTerminate(TServer * const serverP);
+
+void
+ServerResetTerminate(TServer * const serverP);
+
+void
+ServerUseSigchld(TServer * const serverP);
+
+#ifndef WIN32
+void
+ServerHandleSigchld(pid_t const pid);
+#endif
 
 typedef abyss_bool (*URIHandler) (TSession *); /* deprecated */
 
@@ -648,7 +245,7 @@ struct URIHandler2;
 typedef void (*initHandlerFn)(struct URIHandler2 *,
                               abyss_bool *);
 
-typedef void (*termHandlerFn)(struct URIHandler2 *);
+typedef void (*termHandlerFn)(void *);
 
 typedef void (*handleReq2Fn)(struct URIHandler2 *,
                              TSession *,
@@ -671,51 +268,247 @@ abyss_bool
 ServerAddHandler(TServer * const srvP,
                  URIHandler const handler);
 
+typedef abyss_bool (*THandlerDflt) (TSession *);
+
+/* Note: 'handler' used to be URIHandler;  THandlerDflt is a newer name
+   for the same type
+*/
+
 void
-ServerDefaultHandler(TServer *  const srvP,
-                     URIHandler const handler);
+ServerDefaultHandler(TServer *    const srvP,
+                     THandlerDflt const handler);
 
-abyss_bool LogOpen(TServer *srv, const char *filename);
-void LogWrite(TServer *srv,char *c);
-void LogClose(TServer *srv);
+/* ConfReadServerFile() is inappropriately named; it was a mistake.
+   But then, so is having this function at all.  The config file is
+   inappropriate for an API.
+*/
 
+abyss_bool
+ConfReadServerFile(const char * const filename,
+                   TServer *    const srvP);
+
+void
+LogWrite(TServer *    const srvP,
+         const char * const c);
+
+/****************************************************************************
+  STUFF FOR HTTP REQUEST HANDLERS TO USE
+****************************************************************************/
+
+typedef enum {
+    m_unknown, m_get, m_put, m_head, m_post, m_delete, m_trace, m_options
+} TMethod;
+
+typedef struct {
+    TMethod method;
+    const char * uri;
+        /* This is NOT the URI.  It is the pathname part of the URI.
+           We really should fix that and put the pathname in another
+           member.  If the URI does not contain a pathname, this is "*".
+        */
+    const char * query;
+        /* The query part of the URI (stuff after '?').  NULL if none. */
+    const char * host;
+        /* NOT the value of the host: header.  Rather, the name of the
+           target host (could be part of the host: value; could be from the
+           URI).  No port number.  NULL if request does not specify a host
+           name.
+        */
+    const char * from;
+    const char * useragent;
+    const char * referer;
+    const char * requestline;
+    const char * user;
+        /* Requesting user (from authorization: header).  NULL if
+           request doesn't specify or handler has not authenticated it.
+        */
+    xmlrpc_uint16_t port;
+        /* The port number from the URI, or default 80 if the URI doesn't
+           specify a port.
+        */
+    abyss_bool keepalive;
+} TRequestInfo;
+
+abyss_bool
+SessionRefillBuffer(TSession * const sessionP);
+
+size_t
+SessionReadDataAvail(TSession * const sessionP);
+
+void
+SessionGetReadData(TSession *    const sessionP, 
+                   size_t        const max, 
+                   const char ** const outStartP, 
+                   size_t *      const outLenP);
+
+void
+SessionGetRequestInfo(TSession *            const sessionP,
+                      const TRequestInfo ** const requestInfoPP);
+
+void
+SessionGetChannelInfo(TSession * const sessionP,
+                      void **    const channelInfoPP);
+
+void *
+SessionGetDefaultHandlerCtx(TSession * const sessionP);
+
+char *
+RequestHeaderValue(TSession *   const sessionP,
+                   const char * const name);
+
+abyss_bool
+ResponseAddField(TSession *   const sessionP,
+                 const char * const name,
+                 const char * const value);
+
+void
+ResponseWriteStart(TSession * const sessionP);
+
+/* For backward compatibility: */
+#define ResponseWrite ResponseWriteStart
+
+abyss_bool
+ResponseWriteBody(TSession *      const sessionP,
+                  const char *    const data,
+                  xmlrpc_uint32_t const len);
+
+abyss_bool
+ResponseWriteEnd(TSession * const sessionP);
+
+abyss_bool
+ResponseChunked(TSession * const sessionP);
+
+xmlrpc_uint16_t
+ResponseStatusFromErrno(int const errnoArg);
+
+void
+ResponseStatus(TSession *      const sessionP,
+               xmlrpc_uint16_t const code);
+
+void
+ResponseStatusErrno(TSession * const sessionP);
+
+abyss_bool
+ResponseContentType(TSession *   const serverP,
+                    const char * const type);
+
+abyss_bool
+ResponseContentLength(TSession *      const sessionP,
+                      xmlrpc_uint64_t const len);
+
+void
+ResponseError2(TSession *   const sessionP,
+               const char * const explanation);
+
+void
+ResponseError(TSession * const sessionP);
+
+const char *
+MIMETypeFromExt(const char * const ext);
+
+const char *
+MIMETypeFromExt2(MIMEType *   const MIMETypeP,
+                 const char * const ext);
+
+const char *
+MIMETypeFromFileName2(MIMEType *   const MIMETypeP,
+                      const char * const fileName);
+
+const char *
+MIMETypeFromFileName(const char * const fileName);
+
+const char *
+MIMETypeGuessFromFile2(MIMEType *   const MIMETypeP,
+                       const char * const fileName);
+
+const char *
+MIMETypeGuessFromFile(const char * const filename);
+
+
+/****************************************************************************
+  STUFF THAT PROBABLY DOESN'T BELONG IN THIS FILE BECAUSE IT IS INTERNAL
+
+  Some day, we sort this out.
+****************************************************************************/
+
+
+#define CR      '\r'
+#define LF      '\n'
+#define CRLF    "\r\n"
 
 /*********************************************************************
-** MIMEType
+** Paths and so on...
 *********************************************************************/
 
-void MIMETypeInit(void);
-abyss_bool MIMETypeAdd(char *type,char *ext);
-char *MIMETypeFromExt(char *ext);
-char *MIMETypeFromFileName(char *filename);
-char *MIMETypeGuessFromFile(char *filename);
-
+#ifdef WIN32
+#define DEFAULT_ROOT        "c:\\abyss"
+#define DEFAULT_DOCS        DEFAULT_ROOT"\\htdocs"
+#define DEFAULT_CONF_FILE   DEFAULT_ROOT"\\conf\\abyss.conf"
+#define DEFAULT_LOG_FILE    DEFAULT_ROOT"\\log\\abyss.log"
+#else
+#ifdef __rtems__
+#define DEFAULT_ROOT        "/abyss"
+#else
+#define DEFAULT_ROOT        "/usr/local/abyss"
+#endif
+#define DEFAULT_DOCS        DEFAULT_ROOT"/htdocs"
+#define DEFAULT_CONF_FILE   DEFAULT_ROOT"/conf/abyss.conf"
+#define DEFAULT_LOG_FILE    DEFAULT_ROOT"/log/abyss.log"
+#endif
 
 /*********************************************************************
-** Conf
+** Maximum number of simultaneous connections
 *********************************************************************/
 
-abyss_bool ConfReadMIMETypes(char *filename);
-abyss_bool ConfReadServerFile(const char *filename,TServer *srv);
-
+#define MAX_CONN    16
 
 /*********************************************************************
-** Trace
+** General purpose definitions
 *********************************************************************/
 
-void TraceMsg(char *fmt,...);
-void TraceExit(char *fmt,...);
+#ifndef NULL
+#define NULL ((void *)0)
+#endif  /* NULL */
 
+#ifndef TRUE
+#define TRUE    1
+#endif  /* TRUE */
+
+#ifndef FALSE
+#define FALSE    0
+#endif  /* FALSE */
+
+/*********************************************************************
+** Range
+*********************************************************************/
+
+abyss_bool
+RangeDecode(char *            const str,
+            xmlrpc_uint64_t   const filesize,
+            xmlrpc_uint64_t * const start,
+            xmlrpc_uint64_t * const end);
+
+abyss_bool DateInit(void);
+
+/*********************************************************************
+** Base64
+*********************************************************************/
+
+void
+Base64Encode(const char * const chars,
+             char *       const base64);
 
 /*********************************************************************
 ** Session
 *********************************************************************/
 
-abyss_bool SessionLog(TSession *s);
+abyss_bool SessionLog(TSession * const s);
 
 
 #ifdef __cplusplus
 }
+
+
 #endif
 
 /*****************************************************************************

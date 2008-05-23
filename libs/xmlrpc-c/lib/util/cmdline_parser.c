@@ -1,14 +1,17 @@
 #include "xmlrpc_config.h"  /* prereq for mallocvar.h -- defines __inline__ */
 
+#include <sys/types.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
 #include <limits.h>
 
-#include "mallocvar.h"
 #include "bool.h"
+#include "int.h"
+#include "mallocvar.h"
 #include "casprintf.h"
 #include "getoptx.h"
+#include "string_parser.h"
 
 #include "cmdline_parser.h"
 
@@ -19,9 +22,11 @@ struct optionDesc {
     enum optiontype type;
     bool            present;
     union {
-        unsigned int u;
-        int          i;
-        const char * s;
+        unsigned int  u;
+        int           i;
+        const char *  s;
+        uint64_t      llu;
+        double        d;
     } value;
 };
 
@@ -72,42 +77,108 @@ createLongOptsArray(struct optionDesc * const optionDescArray,
 
 
 static void
+parseInt(enum optiontype const type,
+         const char *    const optarg,
+         unsigned int *  const valueUintP,
+         int *           const valueIntP,
+         const char **   const errorP) {
+
+    if (optarg == NULL)
+        casprintf(errorP, "Option requires a value");
+    else if (strlen(optarg) == 0)
+        casprintf(errorP, "Numeric option value is null string");
+    else {
+        char * tailptr;
+        long const longvalue = strtol(optarg, &tailptr, 10);
+
+        if (*tailptr != '\0')
+            casprintf(errorP, "Non-numeric value "
+                      "for numeric option value: '%s'", optarg);
+        else if (errno == ERANGE || longvalue > INT_MAX)
+            casprintf(errorP, "Numeric value out of range: %s", optarg);
+        else { 
+            if (type == OPTTYPE_UINT) {
+                if (longvalue < 0)
+                    casprintf(errorP, "Unsigned numeric value is "
+                              "negative: %ld", longvalue);
+                else {
+                    *errorP = NULL;
+                    *valueUintP = (unsigned int) longvalue;
+                }
+            } else {
+                *errorP = NULL;
+                *valueIntP = (int) longvalue;
+            }
+        }
+    }
+}
+
+
+
+static void
+parseBinUint(const char *  const optarg,
+             uint64_t *    const valueP,
+             const char ** const errorP) {
+
+    if (optarg == NULL)
+        casprintf(errorP, "Option requires a value");
+    else if (strlen(optarg) == 0)
+        casprintf(errorP, "Numeric option value is null string");
+    else {
+        const char * error;
+        interpretBinUint(optarg, valueP, &error);
+
+        if (error) {
+            casprintf(errorP, "Invalid numeric option value '%s'.  %s",
+                      optarg, error);
+            strfree(error);
+        }
+    }
+}
+
+
+
+static void
+parseFloat(const char *  const optarg,
+           double *      const valueP,
+           const char ** const errorP) {
+
+    if (optarg == NULL)
+        casprintf(errorP, "Option requires a value");
+    else if (strlen(optarg) == 0)
+        casprintf(errorP, "Numeric option value is null string");
+    else {
+        char * tailptr;
+        double const doublevalue = strtod(optarg, &tailptr);
+
+        if (*tailptr != '\0')
+            casprintf(errorP, "Non-numeric value "
+                      "for numeric option value: '%s'", optarg);
+        else if (errno == ERANGE)
+            casprintf(errorP, "Numeric value out of range: %s", optarg);
+        else { 
+            *errorP = NULL;
+            *valueP = doublevalue;
+        }
+    }
+}
+
+
+
+static void
 parseOptionValue(const char *        const optarg, 
                  struct optionDesc * const optionP,
                  const char **       const errorP) {
     
     switch (optionP->type) {
+    case OPTTYPE_FLAG:
+        *errorP = NULL;
+        break;
+    case OPTTYPE_INT:
     case OPTTYPE_UINT: 
-    case OPTTYPE_INT: {
-        if (optarg == NULL)
-            casprintf(errorP, "Option requires a value");
-        else if (strlen(optarg) == 0)
-            casprintf(errorP, "Numeric option value is null string");
-        else {
-            char * tailptr;
-            long const longvalue = strtol(optarg, &tailptr, 10);
-            if (*tailptr != '\0')
-                casprintf(errorP, "Non-numeric value "
-                         "for numeric option value: '%s'", optarg);
-            else if (errno == ERANGE || longvalue > INT_MAX)
-                casprintf(errorP, "Numeric value out of range: %s", optarg);
-            else { 
-                if (optionP->type == OPTTYPE_UINT) {
-                    if (longvalue < 0)
-                        casprintf(errorP, "Unsigned numeric value is "
-                                  "negative: %ld", longvalue);
-                    else {
-                        *errorP = NULL;
-                        optionP->value.u = (unsigned int) longvalue;
-                    }
-                } else {
-                    *errorP = NULL;
-                    optionP->value.u = (int) longvalue;
-                }
-            }
-        }
-    }
-    break;
+        parseInt(optionP->type, optarg, &optionP->value.u, &optionP->value.i,
+                 errorP);
+        break;
     case OPTTYPE_STRING:
         if (optarg == NULL)
             casprintf(errorP, "Option requires a value");
@@ -116,8 +187,11 @@ parseOptionValue(const char *        const optarg,
             optionP->value.s = strdup(optarg);
         }
         break;
-    case OPTTYPE_FLAG:
-        *errorP = NULL;
+    case OPTTYPE_BINUINT:
+        parseBinUint(optarg, &optionP->value.llu, errorP);
+        break;
+    case OPTTYPE_FLOAT:
+        parseFloat(optarg, &optionP->value.d, errorP);
         break;
     }
 }
@@ -135,7 +209,7 @@ processOption(struct optionDesc * const optionP,
     if (error)
         casprintf(errorP, "Error in '%s' option: %s", optionP->name, error);
     else
-        optionP->present = TRUE;
+        optionP->present = true;
 }
 
 
@@ -149,7 +223,8 @@ extractArguments(struct cmdlineParserCtl * const cpP,
     MALLOCARRAY(cpP->argumentArray, cpP->numArguments);
 
     if (cpP->argumentArray == NULL) {
-        fprintf(stderr, "Unable to allocate memory for argument array\n");
+        fprintf(stderr, "Unable to allocate memory for argument array "
+                "(%u arguments)\n", cpP->numArguments);
         abort();
     } else {
         unsigned int i;
@@ -188,9 +263,9 @@ cmd_processOptions(cmdlineParser   const cpP,
         /* Set up initial assumption:  No options present */
 
         for (i = 0; i < cpP->numOptions; ++i)
-            cpP->optionDescArray[i].present = FALSE;
+            cpP->optionDescArray[i].present = false;
 
-        endOfOptions = FALSE;  /* initial value */
+        endOfOptions = false;  /* initial value */
             
         while (!endOfOptions && !*errorP) {
             int const opterr0 = 0;
@@ -412,6 +487,69 @@ cmd_getOptionValueString(cmdlineParser const cpP,
                 }
             } else
                 retval = NULL;
+        }
+    }
+    return retval;
+}
+
+
+
+uint64_t
+cmd_getOptionValueBinUint(cmdlineParser const cpP,
+                          const char *  const name) {
+
+    struct optionDesc * const optionDescP = findOptionDesc(cpP, name);
+
+    uint64_t retval;
+
+    if (!optionDescP) {
+        fprintf(stderr, "cmdlineParser called incorrectly.  "
+                "cmd_getOptionValueUint() called for undefined option '%s'\n",
+                name);
+        abort();
+    } else {
+        if (optionDescP->type != OPTTYPE_BINUINT) {
+            fprintf(stderr, "cmdlineParser called incorrectly.  "
+                    "cmd_getOptionValueBinUint() called for "
+                    "non-OPTTYPE_BINUINT "
+                    "option '%s'\n", optionDescP->name);
+            abort();
+        } else {
+            if (optionDescP->present) 
+                retval = optionDescP->value.llu;
+            else
+                retval = 0;
+        }
+    }
+    return retval;
+}
+
+
+
+double
+cmd_getOptionValueFloat(cmdlineParser const cpP,
+                        const char *  const name) {
+
+    struct optionDesc * const optionDescP = findOptionDesc(cpP, name);
+
+    double retval;
+
+    if (!optionDescP) {
+        fprintf(stderr, "cmdlineParser called incorrectly.  "
+                "cmd_getOptionValueInt() called for undefined option '%s'\n",
+                name);
+        abort();
+    } else {
+        if (optionDescP->type != OPTTYPE_FLOAT) {
+            fprintf(stderr, "cmdlineParser called incorrectly.  "
+                    "cmd_getOptionValueInt() called for non-float "
+                    "option '%s'\n", optionDescP->name);
+            abort();
+        } else {
+            if (optionDescP->present) 
+                retval = optionDescP->value.d;
+            else
+                retval = 0.0;
         }
     }
     return retval;

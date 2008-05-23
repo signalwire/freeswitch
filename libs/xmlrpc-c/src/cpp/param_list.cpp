@@ -21,10 +21,28 @@ paramList::paramList(unsigned int const paramCount) {
 
 
  
-void
+paramList&
 paramList::add(xmlrpc_c::value const param) {
 
+    // Note: Before Xmlrpc-c 1.10, the return value was void.  Old programs
+    // using this new add() won't notice the difference.  New programs
+    // using this new add() against an old library will, since the old
+    // add() will not return anything.  A new program that wants to get
+    // a link error instead of a crash in this case can use addx() instead.
+
     this->paramVector.push_back(param);
+
+    return *this;
+}
+
+
+
+paramList&
+paramList::addx(xmlrpc_c::value const param) {
+
+    // See add() for an explanation of why this exists.
+
+    return this->add(param);
 }
 
 
@@ -50,8 +68,8 @@ paramList::operator[](unsigned int const subscript) const {
 
 int
 paramList::getInt(unsigned int const paramNumber,
-                   int          const minimum,
-                   int          const maximum) const {
+                  int          const minimum,
+                  int          const maximum) const {
 
     if (paramNumber >= this->paramVector.size())
         throw(fault("Not enough parameters", fault::CODE_TYPE));
@@ -91,8 +109,8 @@ paramList::getBoolean(unsigned int const paramNumber) const {
 
 double
 paramList::getDouble(unsigned int const paramNumber,
-                      double       const minimum,
-                      double       const maximum) const {
+                     double       const minimum,
+                     double       const maximum) const {
 
     if (paramNumber >= this->paramVector.size())
         throw(fault("Not enough parameters", fault::CODE_TYPE));
@@ -243,6 +261,32 @@ paramList::getNil(unsigned int const paramNumber) const {
     if (this->paramVector[paramNumber].type() != value::TYPE_NIL)
         throw(fault("Parameter that is supposed to be nil is not", 
                     fault::CODE_TYPE));
+}
+
+
+
+long long
+paramList::getI8(unsigned int const paramNumber,
+                 long long    const minimum,
+                 long long    const maximum) const {
+
+    if (paramNumber >= this->paramVector.size())
+        throw(fault("Not enough parameters", fault::CODE_TYPE));
+
+    if (this->paramVector[paramNumber].type() != value::TYPE_I8)
+        throw(fault("Parameter that is supposed to be 64-bit integer is not", 
+                    fault::CODE_TYPE));
+
+    long long const longlongvalue(static_cast<long long>(
+        value_i8(this->paramVector[paramNumber])));
+
+    if (longlongvalue < minimum)
+        throw(fault("64-bit integer parameter too low", fault::CODE_TYPE));
+
+    if (longlongvalue > maximum)
+        throw(fault("64-bit integer parameter too high", fault::CODE_TYPE));
+
+    return longlongvalue;
 }
 
 
