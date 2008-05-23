@@ -767,27 +767,29 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt)
 		tech_pvt->remote_sdp_video_ip = switch_core_session_strdup(tech_pvt->session, rip);
 		tech_pvt->remote_sdp_video_port = (switch_port_t) atoi(rvp);
 	}
-
-	if (!strcmp(tech_pvt->remote_sdp_video_ip, rip) && atoi(rvp) == tech_pvt->remote_sdp_video_port) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote video address:port [%s:%d] has not changed.\n", 
-						  tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
-	} else {
-		switch_set_flag_locked(tech_pvt, TFLAG_VIDEO);
-		switch_channel_set_flag(tech_pvt->channel, CF_VIDEO);
-		if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
-			if (switch_rtp_set_remote_address(tech_pvt->video_rtp_session, tech_pvt->remote_sdp_video_ip, tech_pvt->remote_sdp_video_port, &err) !=
-				SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VIDEO RTP REPORTS ERROR: [%s]\n", err);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VIDEO RTP CHANGING DEST TO: [%s:%d]\n",
-								  tech_pvt->remote_sdp_video_ip, tech_pvt->remote_sdp_video_port);
-				/* Reactivate the NAT buster flag. */
-				switch_rtp_set_flag(tech_pvt->video_rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+	
+	if (tech_pvt->remote_sdp_video_ip && tech_pvt->remote_sdp_video_port) {
+		if (!strcmp(tech_pvt->remote_sdp_video_ip, rip) && atoi(rvp) == tech_pvt->remote_sdp_video_port) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote video address:port [%s:%d] has not changed.\n", 
+							  tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
+		} else {
+			switch_set_flag_locked(tech_pvt, TFLAG_VIDEO);
+			switch_channel_set_flag(tech_pvt->channel, CF_VIDEO);
+			if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
+				if (switch_rtp_set_remote_address(tech_pvt->video_rtp_session, tech_pvt->remote_sdp_video_ip, tech_pvt->remote_sdp_video_port, &err) !=
+					SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VIDEO RTP REPORTS ERROR: [%s]\n", err);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VIDEO RTP CHANGING DEST TO: [%s:%d]\n",
+									  tech_pvt->remote_sdp_video_ip, tech_pvt->remote_sdp_video_port);
+					/* Reactivate the NAT buster flag. */
+					switch_rtp_set_flag(tech_pvt->video_rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+				}
 			}
 		}
 	}
 
-	if (!strcmp(tech_pvt->remote_sdp_audio_ip, rip) && atoi(rp) == tech_pvt->remote_sdp_audio_port) {
+	if (tech_pvt->remote_sdp_audio_ip && !strcmp(tech_pvt->remote_sdp_audio_ip, rip) && atoi(rp) == tech_pvt->remote_sdp_audio_port) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote address:port [%s:%d] has not changed.\n", 
 						  tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
 		return SWITCH_STATUS_SUCCESS;
