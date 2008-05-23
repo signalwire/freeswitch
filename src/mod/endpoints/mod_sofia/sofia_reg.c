@@ -439,7 +439,8 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	const char *reg_desc = "Registered";
 	const char *call_id = NULL;
 	char *force_user;
-	
+	char received_data[128] = "";
+
 	/* all callers must confirm that sip, sip->sip_request and sip->sip_contact are not NULL */
 	switch_assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
 
@@ -488,11 +489,19 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			switch_snprintf(new_port, sizeof(new_port), ":%s", port);
 		}
 
+		if (is_nat && (profile->pflags & PFLAG_RECIEVED_IN_NAT_REG_CONTACT)) {
+			switch_snprintf(received_data, sizeof(received_data), ";received=\"%s:%d\"", network_ip, network_port);
+		}
+
 		if (contact->m_url->url_params) {
-			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s%s;%s>%s",
-							display, contact->m_url->url_user, contact_host, new_port, contact->m_url->url_params, is_nat ? ";nat" : "");
+			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s%s;%s>%s%s",
+							display, contact->m_url->url_user, contact_host, new_port, contact->m_url->url_params, 
+							received_data,
+							is_nat ? ";nat" : "");
 		} else {
-			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s%s>%s", display, contact->m_url->url_user, contact_host, new_port, is_nat ? ";nat" : "");
+			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s%s>%s%s", display, contact->m_url->url_user, contact_host, new_port, 
+							received_data,
+							is_nat ? ";nat" : "");
 		}
 	}
 
@@ -534,13 +543,18 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			}
 			
 			if ((v_contact_str = switch_event_get_header(*v_event, "sip-force-contact"))) {
+
+				if (switch_strlen_zero(received_data) && (profile->pflags & PFLAG_RECIEVED_IN_NAT_REG_CONTACT)) {
+					switch_snprintf(received_data, sizeof(received_data), ";received=\"%s:%d\"", network_ip, network_port);
+				}
+
 				if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction") || 
 					!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction") || !strcasecmp(v_contact_str, "NDLB-tls-connectile-dysfunction")) {
 					if (contact->m_url->url_params) {
-						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s>;nat",
-										display, contact->m_url->url_user, network_ip, network_port, contact->m_url->url_params);
+						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s>%s;nat",
+										display, contact->m_url->url_user, network_ip, network_port, contact->m_url->url_params, received_data);
 					} else {
-						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d>;nat", display, contact->m_url->url_user, network_ip, network_port);
+						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d>%s;nat", display, contact->m_url->url_user, network_ip, network_port, received_data);
 					}
 					if (strstr(v_contact_str, "tls")) {
 						reg_desc = "Registered(TLSHACK)";
@@ -705,7 +719,6 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	if (regtype == REG_REGISTER) {
 		char *new_contact = NULL;
 		char new_port[30] = "";
-		char received_data[128] = "";
 		char exp_param[128] = "";
 		
 		if (exptime) {
@@ -717,18 +730,14 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			switch_snprintf(new_port, sizeof(new_port), ":%s", contact->m_url->url_port);
 		}
 
-		if ((is_nat || nat_hack) && (profile->pflags & PFLAG_RECIEVED_IN_NAT_REG_CONTACT)) {
-			switch_snprintf(received_data, sizeof(received_data), ";received=\"%s:%d\"", network_ip, network_port);
-		}
-
 		if (contact->m_url->url_params) {
-			new_contact = switch_mprintf("%s <sip:%s@%s%s;%s>%s%s",
+			new_contact = switch_mprintf("%s <sip:%s@%s%s;%s>%s",
 										 display, contact->m_url->url_user, contact->m_url->url_host, new_port, contact->m_url->url_params,
-										 exp_param, received_data);
+										 exp_param);
 		} else {
-			new_contact = switch_mprintf("%s <sip:%s@%s%s>%s%s",
+			new_contact = switch_mprintf("%s <sip:%s@%s%s>%s",
 										 display, contact->m_url->url_user, contact->m_url->url_host, new_port,
-										 exp_param, received_data);
+										 exp_param);
 		}
 			
 		nua_respond(nh,
