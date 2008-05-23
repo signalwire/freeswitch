@@ -1036,7 +1036,7 @@ SWITCH_DECLARE_NONSTD(switch_status_t) dtmf_callback(switch_core_session_t *sess
 }
 
 
-SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *ret)
+SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *result)
 {
 	
     switch_file_handle_t *fh = NULL;	   
@@ -1044,7 +1044,7 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *ret)
 	this_check(SWITCH_STATUS_FALSE);
 	sanity_check(SWITCH_STATUS_FALSE);
 	
-    if (switch_strlen_zero(ret)) {
+    if (switch_strlen_zero(result)) {
 		return SWITCH_STATUS_SUCCESS;	
     }
 
@@ -1076,10 +1076,10 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *ret)
     }
 
 
-    if (!strncasecmp(ret, "speed", 4)) {
+    if (!strncasecmp(result, "speed", 4)) {
 		char *p;
 
-		if ((p = strchr(ret, ':'))) {
+		if ((p = strchr(result, ':'))) {
 			p++;
 			if (*p == '+' || *p == '-') {
 				int step;
@@ -1096,28 +1096,28 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *ret)
 
 		return SWITCH_STATUS_FALSE;
 
-    } else if (!strcasecmp(ret, "pause")) {
+    } else if (!strcasecmp(result, "pause")) {
 		if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
 			switch_clear_flag(fh, SWITCH_FILE_PAUSE);
 		} else {
 			switch_set_flag(fh, SWITCH_FILE_PAUSE);
 		}
 		return SWITCH_STATUS_SUCCESS;
-    } else if (!strcasecmp(ret, "stop")) {
+    } else if (!strcasecmp(result, "stop")) {
 		return SWITCH_STATUS_FALSE;
-    } else if (!strcasecmp(ret, "restart")) {
+    } else if (!strcasecmp(result, "restart")) {
 		unsigned int pos = 0;
 		fh->speed = 0;
 		switch_core_file_seek(fh, &pos, 0, SEEK_SET);
 		return SWITCH_STATUS_SUCCESS;
-    } else if (!strncasecmp(ret, "seek", 4)) {
+    } else if (!strncasecmp(result, "seek", 4)) {
 		switch_codec_t *codec;
 		unsigned int samps = 0;
 		unsigned int pos = 0;
 		char *p;
 		codec = switch_core_session_get_read_codec(session);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got codec\n");
-		if ((p = strchr(ret, ':'))) {
+		if ((p = strchr(result, ':'))) {
 			p++;
 			if (*p == '+' || *p == '-') {
 				int step;
@@ -1146,7 +1146,7 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *ret)
 		return SWITCH_STATUS_SUCCESS;
     }
 
-    if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
+    if (!strcmp(result, "true") || !strcmp(result, "undefined")) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "return success\n");
 		return SWITCH_STATUS_SUCCESS;
     }
