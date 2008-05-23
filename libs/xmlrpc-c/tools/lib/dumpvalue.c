@@ -5,7 +5,7 @@
    used for debugging purposes in other places.
 */
 
-#define _GNU_SOURCE
+//#define _GNU_SOURCE
 
 #include <stdlib.h>
 #include <stdio.h>
