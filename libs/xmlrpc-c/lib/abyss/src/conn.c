@@ -44,7 +44,7 @@ connJob(void * const userHandle) {
            after we exit.
         */
 
-    ThreadExit(0);
+    //ThreadExit(0);
 }
 
 
