@@ -39,7 +39,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\lib\abyss\src&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\lib\util\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\lib\abyss\src&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\lib\util\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\Windows&quot;"
 				PreprocessorDefinitions="ABYSS_WIN32"
 				UsePrecompiledHeader="0"
 			/>
@@ -103,7 +103,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\lib\abyss\src&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\lib\util\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\lib\abyss\src&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\lib\util\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\Windows&quot;"
 				PreprocessorDefinitions="ABYSS_WIN32"
 				UsePrecompiledHeader="0"
 			/>
