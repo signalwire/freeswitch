@@ -144,8 +144,14 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connecting %s\n", handle->dsn);
 	
-	result = SQLConnect(handle->con, (SQLCHAR *) handle->dsn, SQL_NTS, (SQLCHAR *) handle->username, SQL_NTS, (SQLCHAR *) handle->password, SQL_NTS);
-	
+	if(!strstr(handle->dsn, "DRIVER")) { 
+		result = SQLConnect(handle->con, (SQLCHAR *) handle->dsn, SQL_NTS, (SQLCHAR *) handle->username, SQL_NTS, (SQLCHAR *) handle->password, SQL_NTS); 
+	} else { 
+		SQLCHAR outstr[1024] = {0}; 
+		SQLSMALLINT outstrlen = 0; 
+		result = SQLDriverConnect(handle->con, NULL, (SQLCHAR *) handle->dsn, strlen(handle->dsn), outstr, sizeof(outstr), &outstrlen, SQL_DRIVER_NOPROMPT); 
+	} 
+
 	if ((result != SQL_SUCCESS) && (result != SQL_SUCCESS_WITH_INFO)) {
 		char *err_str;
 		if ((err_str = switch_odbc_handle_get_error(handle, NULL))) {
