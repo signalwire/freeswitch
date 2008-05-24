@@ -149,7 +149,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 	} else { 
 		SQLCHAR outstr[1024] = {0}; 
 		SQLSMALLINT outstrlen = 0; 
-		result = SQLDriverConnect(handle->con, NULL, (SQLCHAR *) handle->dsn, strlen(handle->dsn), outstr, sizeof(outstr), &outstrlen, SQL_DRIVER_NOPROMPT); 
+		result = SQLDriverConnect(handle->con, NULL, (SQLCHAR *) handle->dsn, (SQLSMALLINT)strlen(handle->dsn), outstr, sizeof(outstr), &outstrlen, SQL_DRIVER_NOPROMPT); 
 	} 
 
 	if ((result != SQL_SUCCESS) && (result != SQL_SUCCESS_WITH_INFO)) {
