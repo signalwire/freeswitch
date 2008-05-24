@@ -1141,6 +1141,8 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel
 	if (channel->caller_profile && channel->caller_profile->times) {
 		channel->caller_profile->times->transferred = caller_profile->times->profile_created;
 		caller_profile->times->answered = channel->caller_profile->times->answered;
+		caller_profile->times->progress = channel->caller_profile->times->progress;
+		caller_profile->times->progress_media = channel->caller_profile->times->progress_media;
 		caller_profile->times->created = channel->caller_profile->times->created;
 		caller_profile->times->hungup = channel->caller_profile->times->hungup;
 	} else {
@@ -1373,6 +1375,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_ch
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	if (channel->caller_profile && channel->caller_profile->times) {
+		switch_mutex_lock(channel->profile_mutex);
+		channel->caller_profile->times->progress = switch_timestamp_now();
+		switch_mutex_unlock(channel->profile_mutex);
+	}
+
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -1392,6 +1400,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PROGRESS) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
 			switch_event_fire(&event);
+		}
+
+		if (channel->caller_profile && channel->caller_profile->times) {
+			switch_mutex_lock(channel->profile_mutex);
+			channel->caller_profile->times->progress_media = switch_timestamp_now();
+			switch_mutex_unlock(channel->profile_mutex);
 		}
 
 		/* if we're the child of another channel and the other channel is in a blocking read they will never realize we have answered so send 
@@ -1922,10 +1936,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_caller_profile_t *caller_profile, *ocp;
 	switch_app_log_t *app_log, *ap;
 	char *last_app = NULL, *last_arg = NULL;
-	char start[80] = "", answer[80] = "", end[80] = "", tmp[80] = "", profile_start[80] = "";
+	char start[80] = "", answer[80] = "", progress[80] = "", progress_media[80] = "", end[80] = "", tmp[80] = "", profile_start[80] = "";
 	int32_t duration = 0, legbillsec = 0, billsec = 0, mduration = 0, billmsec = 0, legbillmsec = 0;
 	switch_time_t uduration = 0, legbillusec = 0, billusec = 0;
-	time_t tt_created = 0, tt_answered = 0, tt_hungup = 0, mtt_created = 0, mtt_answered = 0, mtt_hungup = 0, tt_prof_created, mtt_prof_created;
+	time_t tt_created = 0, tt_answered = 0, tt_progress = 0, tt_progress_media = 0, tt_hungup = 0, mtt_created = 0, mtt_answered = 0, mtt_hungup = 0, tt_prof_created, mtt_prof_created, mtt_progress = 0 , mtt_progress_media = 0;
 
 	if (!(caller_profile = switch_channel_get_caller_profile(channel)) || !channel->variables) {
 		return SWITCH_STATUS_FALSE;
@@ -1968,6 +1982,18 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 			switch_channel_set_variable(channel, "answer_stamp", answer);
 		}
 
+		if (caller_profile->times->progress) {
+			switch_time_exp_lt(&tm, caller_profile->times->progress);
+			switch_strftime(progress, &retsize, sizeof(progress), fmt, &tm);
+			switch_channel_set_variable(channel, "progress_stamp", progress);
+		}
+
+		if (caller_profile->times->progress_media) {
+			switch_time_exp_lt(&tm, caller_profile->times->progress_media);
+			switch_strftime(progress_media, &retsize, sizeof(progress_media), fmt, &tm);
+			switch_channel_set_variable(channel, "progress_media_stamp", progress_media);
+		}
+
 		switch_time_exp_lt(&tm, caller_profile->times->hungup);
 		switch_strftime(end, &retsize, sizeof(end), fmt, &tm);
 		switch_channel_set_variable(channel, "end_stamp", end);
@@ -1991,6 +2017,20 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_answered);
 		switch_channel_set_variable(channel, "answer_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);
+		switch_channel_set_variable(channel, "answer_uepoch", tmp);		
+
+		tt_progress = (time_t) (caller_profile->times->progress / 1000000);
+		mtt_progress = (time_t) (caller_profile->times->progress / 1000);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_progress);
+		switch_channel_set_variable(channel, "answer_epoch", tmp);
+		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->progress);
+		switch_channel_set_variable(channel, "answer_uepoch", tmp);		
+
+		tt_progress_media = (time_t) (caller_profile->times->progress_media / 1000000);
+		mtt_progress_media = (time_t) (caller_profile->times->progress_media / 1000);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_progress_media);
+		switch_channel_set_variable(channel, "answer_epoch", tmp);
+		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->progress_media);
 		switch_channel_set_variable(channel, "answer_uepoch", tmp);		
 
 

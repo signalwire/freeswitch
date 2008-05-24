@@ -1583,6 +1583,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->profile_created);
 			switch_xml_set_txt_d(time_tag, tmp);
 
+			if (!(time_tag = switch_xml_add_child_d(x_times, "progress_time", t_off++))) {
+				goto error;
+			}
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->progress);
+			switch_xml_set_txt_d(time_tag, tmp);
+
+
+			if (!(time_tag = switch_xml_add_child_d(x_times, "progress_media_time", t_off++))) {
+				goto error;
+			}
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->progress_media);
+			switch_xml_set_txt_d(time_tag, tmp);
+
 			if (!(time_tag = switch_xml_add_child_d(x_times, "answered_time", t_off++))) {
 				goto error;
 			}

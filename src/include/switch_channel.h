@@ -44,6 +44,8 @@ SWITCH_BEGIN_EXTERN_C struct switch_channel_timetable {
 	switch_time_t profile_created;
 	switch_time_t created;
 	switch_time_t answered;
+	switch_time_t progress;
+	switch_time_t progress_media;
 	switch_time_t hungup;
 	switch_time_t transferred;
 	struct switch_channel_timetable *next;
