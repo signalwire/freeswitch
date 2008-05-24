@@ -268,7 +268,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 			memset(&to, 0, sizeof(to));
 			FD_SET(fd, &can_write);
 			to.tv_sec = 0;
-			to.tv_usec = 5000;
+			to.tv_usec = 100000;
 			if (select(fd+1, NULL, &can_write, NULL, &to) > 0) {
 				aok = FD_ISSET(fd, &can_write);
 			} else {
@@ -298,6 +298,8 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 		node->level = level;
 		node->content = content;
 		node->timestamp = now;
+
+
 		if (switch_queue_trypush(LOG_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
 			free(node->data);
 			if (switch_queue_trypush(LOG_RECYCLE_QUEUE, node) != SWITCH_STATUS_SUCCESS) {

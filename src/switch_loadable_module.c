@@ -1354,8 +1354,11 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 		}
 	}
 
+
 	if (cmd && (api = switch_loadable_module_get_api_interface(cmd)) != 0) {
-		status = api->function(arg, session, stream);
+		if ((status = api->function(arg, session, stream)) != SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "COMMAND RETURNED ERROR!\n");
+		}
 	} else {
 		status = SWITCH_STATUS_FALSE;
 		stream->write_function(stream, "INVALID COMMAND!\n");
