@@ -16,6 +16,7 @@ AC_CONFIG_AUX_DIR(build/config)
 AM_INIT_AUTOMAKE(libfreeswitch,0.1)
 AC_CONFIG_SRCDIR([src/switch.c])
 AC_CONFIG_HEADER([src/include/switch_private.h])
+AC_CONFIG_HEADER([libs/xmlrpc-c/xmlrpc_amconfig.h])
 
 AC_PREFIX_DEFAULT(/usr/local/freeswitch)
 # AC_PREFIX_DEFAULT does not get expanded until too late so we need to do this to use prefix in this script
@@ -186,7 +187,7 @@ AC_SUBST(DYNAMIC_LIB_EXTEN)
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h])
+AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h])
 
 # for xmlrpc-c config.h
 if test x"$ac_cv_header_wchar_h" = xyes; then
@@ -210,9 +211,11 @@ AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
 AC_CHECK_FUNCS([gethostname vasprintf mmap mlock mlockall usleep])
 AC_CHECK_FUNCS([sched_setscheduler setpriority setrlimit setgroups initgroups])
+AC_CHECK_FUNCS([wcsncmp setgroups asprintf setenv pselect gettimeofday localtime_r gmtime_r strcasecmp stricmp _stricmp])
 
 AC_CHECK_LIB(rt, clock_gettime, [AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Define if you have clock_gettime()])])
 AC_CHECK_LIB(rt, clock_nanosleep, [AC_DEFINE(HAVE_CLOCK_NANOSLEEP, 1, [Define if you have clock_nanosleep()])])
+AC_CHECK_FUNC(socket, , AC_CHECK_LIB(socket, socket))
 
 AC_CHECK_DECL([RLIMIT_MEMLOCK],
 	[AC_DEFINE([HAVE_RLIMIT_MEMLOCK],[1],[RLIMIT_MEMLOCK constant for setrlimit])],,
@@ -264,6 +267,45 @@ if test "x${ac_cv_func_sched_setscheduler}" = "xyes" -a \
 then
 	AC_DEFINE([USE_SCHED_SETSCHEDULER],[1],[Enable round-robin scheduler using sched_setscheduler])
 fi
+
+#
+# xmlrpc-c checks
+#
+
+
+HAVE_LIBWWW_SSL_DEFINE=0
+AC_SUBST(HAVE_LIBWWW_SSL_DEFINE)
+
+DIRECTORY_SEPARATOR="/"
+AC_SUBST(DIRECTORY_SEPARATOR)
+
+va_list_is_array=no
+AC_MSG_CHECKING(whether va_list is an array)
+AC_TRY_COMPILE([
+#include <stdarg.h>
+], [va_list list1, list2; list1 = list2;], , 
+va_list_is_array=yes)
+AC_MSG_RESULT($va_list_is_array)
+if test x"$va_list_is_array" = xyes; then
+  VA_LIST_IS_ARRAY_DEFINE=1
+else
+  VA_LIST_IS_ARRAY_DEFINE=0
+fi
+AC_SUBST(VA_LIST_IS_ARRAY_DEFINE)
+
+AC_MSG_CHECKING(whether compiler has __attribute__)
+AC_TRY_COMPILE(, [int x __attribute__((__unused__));],
+compiler_has_attribute=yes,
+compiler_has_attribute=no)
+AC_MSG_RESULT($compiler_has_attribute)
+if test x"$compiler_has_attribute" = xyes; then
+    ATTR_UNUSED="__attribute__((__unused__))"
+else
+    ATTR_UNUSED=
+fi
+AC_SUBST(ATTR_UNUSED)
+
+
 
 
 AC_C_BIGENDIAN(AC_DEFINE([SWITCH_BYTE_ORDER],__BIG_ENDIAN,[Big Endian]),AC_DEFINE([SWITCH_BYTE_ORDER],__LITTLE_ENDIAN,[Little Endian]))
@@ -559,6 +601,7 @@ AC_CONFIG_FILES([Makefile
                 build/getlib.sh
                 build/modmake.rules
                 libs/xmlrpc-c/include/xmlrpc-c/config.h
+                libs/xmlrpc-c/xmlrpc_config.h
                 scripts/gentls_cert])
 
 AM_CONDITIONAL(ISLINUX, [test `uname -s` = Linux])

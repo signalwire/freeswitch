@@ -67,7 +67,7 @@ $(XMLRPC_DIR)/lib/expat/xmltok/xmltok.o
 #XMLRPCLAS += $(XMLRPC_DIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.so $(XMLRPC_DIR)/lib/expat/xmltok/libxmlrpc_xmltok.so
 
 LOCAL_LIBADD =$(XMLRPCLAS)
-LOCAL_CFLAGS=-w -I$(XMLRPC_DIR)/lib/expat/xmlparse -I$(XMLRPC_DIR)/lib/expat/xmltok -I$(XMLRPC_DIR) -I$(XMLRPC_DIR)/include -I../../../../libs/xmlrpc-c/lib/abyss/src -I../../../../libs/xmlrpc-c/lib/util/include
+LOCAL_CFLAGS=-w -I$(XMLRPC_DIR)/lib/expat/xmlparse -I$(XMLRPC_DIR)/lib/expat/xmltok -I$(XMLRPC_DIR) -I$(XMLRPC_DIR)/include -I../../../../libs/xmlrpc-c/lib/abyss/src -I../../../../libs/xmlrpc-c/lib/util/include -D_THREAD
 
 include $(BASE)/build/modmake.rules
 
