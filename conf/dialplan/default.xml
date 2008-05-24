@@ -9,14 +9,6 @@
 	<action application="deflect" data="${destination_number}"/>
       </condition>
     </extension>
-
-    <extension name="set_bind_leg">
-      <condition field="${leg_to_bind}" expression="^$">
-	<action application="set" data="leg_to_bind=a"/>
-      </condition>
-    </extension>
-
-
     <!-- Example of doing things based on time of day. -->
     <extension name="tod_example" continue="true">
       <condition field="${strftime(%H%M)}" expression="^((09|1[0-7])[0-5][0-9]|1800)$">
@@ -148,7 +140,6 @@
       <condition field="destination_number" expression="^(10[01][0-9])$">
 	<action application="set" data="dialed_ext=$1"/>
 	<action application="export" data="dialed_ext=$1"/>
-	<action application="export" data="dialed_ext=$1"/>
       </condition>
       <condition field="destination_number" expression="^${caller_id_number}$">
 	<action application="set" data="voicemail_authorized=${sip_authorized}"/>
@@ -156,9 +147,9 @@
 	<action application="sleep" data="1000"/>
 	<action application="voicemail" data="check default $${domain} ${dialed_ext}"/>
 	<!-- bind_meta_app can have these args <key> [a|b|ab] [a|b|o|s] <app> -->
-	<anti-action application="bind_meta_app" data="1 ${leg_to_bind} s execute_extension::dx XML features"/>
-	<anti-action application="bind_meta_app" data="2 ${leg_to_bind} s record_session::$${base_dir}/recordings/${caller_id_number}.${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
-	<anti-action application="bind_meta_app" data="3 ${leg_to_bind} s execute_extension::cf XML features"/>
+	<anti-action application="bind_meta_app" data="1 b s execute_extension::dx XML features"/>
+	<anti-action application="bind_meta_app" data="2 b s record_session::$${base_dir}/recordings/${caller_id_number}.${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
+	<anti-action application="bind_meta_app" data="3 b s execute_extension::cf XML features"/>
 	<anti-action application="set" data="transfer_ringback=${us-ring}"/>
 	<anti-action application="set" data="call_timeout=30"/>
 	<!-- <anti-action application="set" data="sip_exclude_contact=${network_addr}"/> -->
