@@ -589,6 +589,7 @@ static int teletone_handler(teletone_generation_session_t * ts, teletone_tone_ma
 SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *session, char *script, int32_t loops, switch_input_args_t *args)
 {
 	teletone_generation_session_t ts;
+	switch_dtmf_t dtmf = {0};
 	switch_buffer_t *audio_buffer;
 	switch_frame_t *read_frame = NULL;
 	switch_codec_t *read_codec = NULL, write_codec = { 0 };
@@ -624,6 +625,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 	}
 
 	for(;;) {
+		int done = 0;
 		switch_status_t status;
 		
 		if (!switch_channel_ready(channel)) {
@@ -643,8 +645,37 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 			break;
 		}
 
-		if (args && (args->read_frame_callback)) {
-			if (args->read_frame_callback(session, read_frame, args->user_data) != SWITCH_STATUS_SUCCESS) {
+		if (args && (args->input_callback || args->buf || args->buflen)) {
+			/*
+			   dtmf handler function you can hook up to be executed when a digit is dialed during gentones 
+			   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
+			 */
+			if (switch_channel_has_dtmf(channel)) {
+				if (!args->input_callback && !args->buf) {
+					status = SWITCH_STATUS_BREAK;
+					done = 1;
+					break;
+				}
+				switch_channel_dequeue_dtmf(channel, &dtmf);
+				if (args->input_callback) {
+					status = args->input_callback(session, (void *)&dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
+				} else {
+					*((char *)args->buf) = dtmf.digit;
+					status = SWITCH_STATUS_BREAK;
+				}
+			}
+
+			if (args->input_callback) {
+				switch_event_t *event;
+
+				if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+					status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+					switch_event_destroy(&event);
+				}
+			}
+
+			if (status != SWITCH_STATUS_SUCCESS) {
+				done = 1;
 				break;
 			}
 		}
