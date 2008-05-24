@@ -242,7 +242,6 @@ SWITCH_STANDARD_APP(intercept_function)
 			
 			switch_ivr_intercept_session(session, uuid, bleg);
 		}
-		switch_safe_free(mydata);
 		return;
 	}
 

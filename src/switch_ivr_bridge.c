@@ -960,7 +960,7 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 
 	if (bleg) {
 		if (switch_ivr_find_bridged_uuid(uuid, brto, sizeof(brto)) == SWITCH_STATUS_SUCCESS) {
-			uuid = brto;
+			uuid = switch_core_session_strdup(session, brto);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no uuid bridged to %s\n", uuid);
 			return;
