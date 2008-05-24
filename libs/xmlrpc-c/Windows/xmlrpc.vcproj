@@ -46,7 +46,7 @@
 				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\Debug\xmlrpc/xmlrpc.pch"
 				AssemblerListingLocation=".\Debug\xmlrpc/"
 				ObjectFile=".\Debug\xmlrpc/"
@@ -121,7 +121,7 @@
 				AdditionalIncludeDirectories="../lib,../lib/util/include,../include,..,../lib/expat/xmlparse,../lib/abyss/src,../lib/wininet_transport,."
 				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB"
 				StringPooling="true"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				PrecompiledHeaderFile=".\Release\xmlrpc/xmlrpc.pch"
 				AssemblerListingLocation=".\Release\xmlrpc/"
@@ -1114,11 +1114,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\lib\abyss\src\server.h"
+				RelativePath="..\include\xmlrpc-c\server.h"
 				>
 			</File>
 			<File
-				RelativePath="..\include\xmlrpc-c\server.h"
+				RelativePath="..\lib\abyss\src\server.h"
 				>
 			</File>
 			<File
