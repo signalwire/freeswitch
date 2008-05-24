@@ -440,11 +440,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	switch_event_t *event;
 	switch_unicast_conninfo_t *conninfo = NULL;
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
+	uint32_t rate;
+	uint32_t bpf;
 
 	if (switch_channel_test_flag(channel, CF_CONTROLLED)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot park channels that is under control already.\n");
 		return SWITCH_STATUS_FALSE;
 	}
+
+	if (!read_codec || !read_codec->implementation) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot park channels that has no read codec.\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	rate = read_codec->implementation->actual_samples_per_second;
+	bpf = read_codec->implementation->bytes_per_frame;
 
 	if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Careful, Channel is unanswered. Pre-answering...\n");
@@ -457,7 +467,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 		switch_event_fire(&event);
 	}
 
-	while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_CONTROLLED)) {
+	while (read_codec && switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_CONTROLLED)) {
 
 		if ((status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -479,14 +489,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 					switch_size_t len = 0;
 					uint32_t flags = 0;
 					switch_byte_t decoded[SWITCH_RECOMMENDED_BUFFER_SIZE];
-					uint32_t rate = read_codec->implementation->actual_samples_per_second;
 					uint32_t dlen = sizeof(decoded);
 					switch_status_t tstatus;
 					switch_byte_t *sendbuf = NULL;
 					uint32_t sendlen = 0;
 
 					if (switch_test_flag(read_frame, SFF_CNG)) {
-						sendlen = read_codec->implementation->bytes_per_frame;
+						sendlen = bpf;
 						switch_assert(sendlen <= SWITCH_RECOMMENDED_BUFFER_SIZE);
 						memset(decoded, 255, sendlen);
 						sendbuf = decoded;
@@ -558,6 +567,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 		}
 
 	}
+
 	switch_channel_clear_flag(channel, CF_CONTROLLED);
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNPARK) == SWITCH_STATUS_SUCCESS) {
