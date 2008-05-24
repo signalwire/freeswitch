@@ -765,7 +765,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 	}
 
 	if (!tx_port) {
-		*err = "Missing local port";
+		*err = "Missing remote port";
 		goto end;
 	}
 	

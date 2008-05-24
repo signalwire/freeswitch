@@ -71,7 +71,7 @@ clean:
 	dh_testroot
 	rm -f build-stamp 
 
-	-$(MAKE) clean megaclean
+	-$(MAKE) update-clean
 ifneq "$(wildcard /usr/share/misc/config.sub)" ""
 	cp -f /usr/share/misc/config.sub build/config/config.sub
 endif

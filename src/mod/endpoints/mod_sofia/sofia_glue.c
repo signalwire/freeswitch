@@ -522,8 +522,10 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, in
 	switch_port_t sdp_port;
 	char tmp[50];
 	
-	if ((!force && (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) || switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA))) || tech_pvt->adv_sdp_video_port) {
-		return SWITCH_STATUS_SUCCESS;
+	if (!force) {
+		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) || switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA) || tech_pvt->local_sdp_video_port) {
+			return SWITCH_STATUS_SUCCESS;
+		}
 	}
 
 	if (tech_pvt->local_sdp_video_port) {
@@ -1753,9 +1755,9 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 		sofia_glue_check_video_codecs(tech_pvt);
 
-		if (switch_test_flag(tech_pvt, TFLAG_VIDEO) && tech_pvt->video_rm_encoding) {
+		if (switch_test_flag(tech_pvt, TFLAG_VIDEO) && tech_pvt->video_rm_encoding && tech_pvt->remote_sdp_video_port) {
 			if (!tech_pvt->local_sdp_video_port) {
-				sofia_glue_tech_choose_video_port(tech_pvt, 0);
+				sofia_glue_tech_choose_video_port(tech_pvt, 1);
 			}
 
 			flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_AUTOADJ | 

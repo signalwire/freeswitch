@@ -2048,6 +2048,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							goto done;
 						}
 					}
+
 					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
 						&& (other_session = switch_core_session_locate(uuid))) {
 						other_channel = switch_core_session_get_channel(other_session);
