@@ -929,11 +929,43 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 	return status;
 }
 
-SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session, const char *uuid)
+SWITCH_DECLARE(switch_status_t) switch_ivr_find_bridged_uuid(const char *uuid, char *b_uuid, switch_size_t blen)
+{
+	switch_core_session_t *rsession;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_assert(uuid);
+	
+	if ((rsession = switch_core_session_locate(uuid))) {
+		switch_channel_t *rchannel = switch_core_session_get_channel(rsession);
+		const char *brto;
+
+		if ((brto = switch_channel_get_variable(rchannel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+			switch_copy_string(b_uuid, brto, blen);
+			status = SWITCH_STATUS_SUCCESS;
+		}
+		switch_core_session_rwunlock(rsession);
+	}
+	
+	return status;
+
+}
+
+SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session, const char *uuid, switch_bool_t bleg)
 {
 	switch_core_session_t *rsession, *bsession = NULL;
 	switch_channel_t *channel, *rchannel, *bchannel;
 	const char *buuid;
+	char brto[SWITCH_UUID_FORMATTED_LENGTH + 1] = "";
+
+	if (bleg) {
+		if (switch_ivr_find_bridged_uuid(uuid, brto, sizeof(brto)) == SWITCH_STATUS_SUCCESS) {
+			uuid = brto;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no uuid bridged to %s\n", uuid);
+			return;
+		}
+	}
 
 	if (switch_strlen_zero(uuid) || !(rsession = switch_core_session_locate(uuid))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no uuid %s\n", uuid);

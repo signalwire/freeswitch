@@ -217,10 +217,36 @@ SWITCH_STANDARD_APP(dtmf_bind_function)
 	}
 }
 
-#define INTERCEPT_SYNTAX "<uuid>"
+#define INTERCEPT_SYNTAX "[-bleg] <uuid>"
 SWITCH_STANDARD_APP(intercept_function)
 {
-	switch_ivr_intercept_session(session, data);
+	int argc;
+	char *argv[4] = { 0 };
+	char *mydata;
+	char *uuid;
+	switch_bool_t bleg = SWITCH_FALSE;
+
+	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
+		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
+			if (!strcasecmp(argv[0], "-bleg")) {
+				if (argv[1]) {
+					uuid = argv[1];
+					bleg = SWITCH_TRUE;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", INTERCEPT_SYNTAX);
+					return;
+				}
+			} else {
+				uuid = argv[0];
+			}
+			
+			switch_ivr_intercept_session(session, uuid, bleg);
+		}
+		switch_safe_free(mydata);
+		return;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", INTERCEPT_SYNTAX);
 }
 
 #define MAX_SPY 3000
