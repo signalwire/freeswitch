@@ -1532,8 +1532,8 @@ SWITCH_STANDARD_API(pa_cmd)
 	char cmd_buf[1024] = "";
 	char *http = NULL;
 
-	if (stream->event) {
-		http = switch_event_get_header(stream->event, "http-host");
+	if (stream->param_event) {
+		http = switch_event_get_header(stream->param_event, "http-host");
 	}
 
 	
@@ -1553,7 +1553,7 @@ SWITCH_STANDARD_API(pa_cmd)
 #if 0
 		switch_event_header_t *hp;
 		stream->write_function(stream, "<pre>");
-		for (hp = stream->event->headers; hp; hp = hp->next) {
+		for (hp = stream->param_event->headers; hp; hp = hp->next) {
 			stream->write_function(stream, "[%s]=[%s]\n", hp->name, hp->value);
 		}
 		stream->write_function(stream, "</pre>");
@@ -1561,8 +1561,8 @@ SWITCH_STANDARD_API(pa_cmd)
 
 		stream->write_function(stream, "Content-type: text/html\n\n");
 
-		wcmd = switch_str_nil(switch_event_get_header(stream->event, "wcmd"));
-		action = switch_event_get_header(stream->event, "action");
+		wcmd = switch_str_nil(switch_event_get_header(stream->param_event, "wcmd"));
+		action = switch_event_get_header(stream->param_event, "action");
 
 		if (action) {
 			if (strlen(action) == 1) {

@@ -196,7 +196,7 @@ static JSBool request_add_header(JSContext *cx, JSObject *obj, uintN argc, jsval
 	if (argc > 1) {
 		char *hname = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		char *hval = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
-		switch_event_add_header(ro->stream->event, SWITCH_STACK_BOTTOM, hname, "%s", hval);
+		switch_event_add_header(ro->stream->param_event, SWITCH_STACK_BOTTOM, hname, "%s", hval);
 		*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
 		return JS_TRUE;
 	}
@@ -217,7 +217,7 @@ static JSBool request_get_header(JSContext * cx, JSObject * obj, uintN argc, jsv
 
 	if (argc > 0) {
 		char *hname = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-		char *val = switch_event_get_header(ro->stream->event, hname);
+		char *val = switch_event_get_header(ro->stream->param_event, hname);
 		*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, val));
 		return JS_TRUE;
 	}
@@ -243,14 +243,14 @@ static JSBool request_dump_env(JSContext *cx, JSObject *obj, uintN argc, jsval *
 	if (!strcasecmp(how, "xml")) {
 		switch_xml_t xml;
 		char *xmlstr;
-		if ((xml = switch_event_xmlize(ro->stream->event, SWITCH_VA_NONE))) {
+		if ((xml = switch_event_xmlize(ro->stream->param_event, SWITCH_VA_NONE))) {
             xmlstr = switch_xml_toxml(xml, SWITCH_FALSE);
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, xmlstr));
 			return JS_TRUE;
         } 
 	} else {
 		char *buf;
-		switch_event_serialize(ro->stream->event, &buf, SWITCH_TRUE);
+		switch_event_serialize(ro->stream->param_event, &buf, SWITCH_TRUE);
 		if (buf) {
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, buf));
 			free(buf);
@@ -3406,8 +3406,8 @@ SWITCH_STANDARD_API(jsapi_function)
 	struct request_obj ro = {0};
 	char *path_info = NULL;
 
-    if (stream->event) {
-		path_info = switch_event_get_header(stream->event, "http-path-info");
+    if (stream->param_event) {
+		path_info = switch_event_get_header(stream->param_event, "http-path-info");
 	}
 
 	if (switch_strlen_zero(cmd) && path_info) {

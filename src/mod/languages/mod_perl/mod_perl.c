@@ -266,8 +266,8 @@ static void *SWITCH_THREAD_FUNC perl_thread_run(switch_thread_t *thread, void *o
 	if (cmd) {
 		if (stream) {
 			mod_perl_conjure_stream(my_perl, stream, "stream");
-			if (stream->event) {
-				mod_perl_conjure_event(my_perl, stream->event, "env");
+			if (stream->param_event) {
+				mod_perl_conjure_event(my_perl, stream->param_event, "env");
 			}
 		}
 		//Perl_safe_eval(my_perl, cmd);

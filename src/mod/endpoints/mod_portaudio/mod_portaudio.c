@@ -1542,15 +1542,15 @@ SWITCH_STANDARD_API(pa_cmd)
 		"pa outdev #<num>|<partial name>\n"
 		"pa ringdev #<num>|<partial name>\n" "--------------------------------------------------------------------------------\n";
 
-	if (stream->event) {
-		http = switch_event_get_header(stream->event, "http-host");
+	if (stream->param_event) {
+		http = switch_event_get_header(stream->param_event, "http-host");
 	}
 
 	if (http) {
 		stream->write_function(stream, "Content-type: text/html\n\n");
 
-		wcmd = switch_str_nil(switch_event_get_header(stream->event, "wcmd"));
-		action = switch_event_get_header(stream->event, "action");
+		wcmd = switch_str_nil(switch_event_get_header(stream->param_event, "wcmd"));
+		action = switch_event_get_header(stream->param_event, "action");
 
 		if (action) {
 			if (strlen(action) == 1) {

@@ -114,9 +114,9 @@ static switch_status_t _find_user(const char *cmd, switch_core_session_t *sessio
 	char *host = NULL;
 	const char *err = NULL;
 
-	if (stream->event && (host = switch_event_get_header(stream->event, "http-host"))) {
+	if (stream->param_event && (host = switch_event_get_header(stream->param_event, "http-host"))) {
 		stream->write_function(stream,  "Content-Type: text/xml\r\n\r\n");
-		if ((path_info = switch_event_get_header(stream->event, "http-path-info"))) {
+		if ((path_info = switch_event_get_header(stream->param_event, "http-path-info"))) {
 			cmd = path_info;
 			delim = '/';
 		}
@@ -200,9 +200,9 @@ SWITCH_STANDARD_API(xml_locate_function)
 	char *host = NULL;
 	const char *err = NULL;
 
-	if (stream->event && (host = switch_event_get_header(stream->event, "http-host"))) {
+	if (stream->param_event && (host = switch_event_get_header(stream->param_event, "http-host"))) {
 		stream->write_function(stream,  "Content-Type: text/xml\r\n\r\n");
-		if ((path_info = switch_event_get_header(stream->event, "http-path-info"))) {
+		if ((path_info = switch_event_get_header(stream->param_event, "http-path-info"))) {
 			cmd = path_info;
 			delim = '/';
 		}
@@ -522,8 +522,8 @@ SWITCH_STANDARD_API(status_function)
 
 	switch_core_measure_time(switch_core_uptime(), &duration);
 
-	if (stream->event) {
-		http = switch_event_get_header(stream->event, "http-host");
+	if (stream->param_event) {
+		http = switch_event_get_header(stream->param_event, "http-host");
 	}
 
 	if (http || (cmd && strstr(cmd, "html"))) {
@@ -1943,8 +1943,8 @@ SWITCH_STANDARD_API(show_function)
 		}
 	}
 
-	if (stream->event) {
-		holder.http = switch_event_get_header(stream->event, "http-host");
+	if (stream->param_event) {
+		holder.http = switch_event_get_header(stream->param_event, "http-host");
 	}
 
 	holder.print_title = 1;

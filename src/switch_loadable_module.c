@@ -1341,16 +1341,16 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 	switch_assert(stream->data != NULL);
 	switch_assert(stream->write_function != NULL);
 
-	if (!stream->event) {
-		switch_event_create(&stream->event, SWITCH_EVENT_API);
+	if (!stream->param_event) {
+		switch_event_create(&stream->param_event, SWITCH_EVENT_API);
 	}
 
-	if (stream->event) {
+	if (stream->param_event) {
 		if (cmd) {
-			switch_event_add_header(stream->event, SWITCH_STACK_BOTTOM, "API-Command", "%s", cmd);
+			switch_event_add_header(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command", "%s", cmd);
 		}
 		if (arg) {
-			switch_event_add_header(stream->event, SWITCH_STACK_BOTTOM, "API-Command-Argument", "%s", arg);
+			switch_event_add_header(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command-Argument", "%s", arg);
 		}
 	}
 
@@ -1361,8 +1361,8 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 		stream->write_function(stream, "INVALID COMMAND!\n");
 	}
 
-	if (stream->event) {
-		switch_event_fire(&stream->event);
+	if (stream->param_event) {
+		switch_event_fire(&stream->param_event);
 	}
 
 

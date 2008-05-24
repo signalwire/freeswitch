@@ -3663,8 +3663,8 @@ SWITCH_STANDARD_API(conf_api_main)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (stream->event) {
-		http = switch_event_get_header(stream->event, "http-host");
+	if (stream->param_event) {
+		http = switch_event_get_header(stream->param_event, "http-host");
 	}
 
 	if (http) {

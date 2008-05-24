@@ -92,7 +92,7 @@ struct switch_stream_handle {
 	switch_size_t data_len;
 	switch_size_t alloc_len;
 	switch_size_t alloc_chunk;
-	switch_event_t *event;
+	switch_event_t *param_event;
 };
 
 struct switch_io_event_hooks;

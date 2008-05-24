@@ -2417,8 +2417,8 @@ static void do_del(vm_profile_t *profile, char *user, char *domain, char *file, 
 	struct holder holder;
 	char *ref = NULL;
 
-	if (stream->event) {
-		ref = switch_event_get_header(stream->event, "http-referer");
+	if (stream->param_event) {
+		ref = switch_event_get_header(stream->param_event, "http-referer");
 	}
 
 	sql = switch_mprintf("select * from voicemail_msgs where username='%s' and domain='%s' and file_path like '%%%s'", user, domain, file);
@@ -2766,13 +2766,13 @@ SWITCH_STANDARD_API(voicemail_api_function)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (stream->event) {
-		host = switch_event_get_header(stream->event, "http-host");
-		port = switch_event_get_header(stream->event, "http-port");
-		uri = switch_event_get_header(stream->event, "http-uri");
-		user = switch_event_get_header(stream->event, "freeswitch-user");
-		domain = switch_event_get_header(stream->event, "freeswitch-domain");
-		path_info = switch_event_get_header(stream->event, "http-path-info");
+	if (stream->param_event) {
+		host = switch_event_get_header(stream->param_event, "http-host");
+		port = switch_event_get_header(stream->param_event, "http-port");
+		uri = switch_event_get_header(stream->param_event, "http-uri");
+		user = switch_event_get_header(stream->param_event, "freeswitch-user");
+		domain = switch_event_get_header(stream->param_event, "freeswitch-domain");
+		path_info = switch_event_get_header(stream->param_event, "http-path-info");
 	}
 
 	if (!switch_strlen_zero(cmd)) {

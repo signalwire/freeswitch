@@ -1032,7 +1032,7 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
 
 void do_telecast(switch_stream_handle_t *stream)
 {
-    char *path_info = switch_event_get_header(stream->event, "http-path-info");
+    char *path_info = switch_event_get_header(stream->param_event, "http-path-info");
     char *uuid = strdup(path_info + 4);
     switch_core_session_t *tsession;
     char *fname = "stream.mp3";
@@ -1042,7 +1042,7 @@ void do_telecast(switch_stream_handle_t *stream)
     }
 
     if (!(tsession = switch_core_session_locate(uuid))) {
-        char *ref = switch_event_get_header(stream->event, "http-referer");
+        char *ref = switch_event_get_header(stream->param_event, "http-referer");
         stream->write_function(stream,"Content-type: text/html\r\n\r\n<h2>Not Found!</h2>\n"
                                "<META http-equiv=\"refresh\" content=\"1;URL=%s\">",  ref);
     } else {
@@ -1140,7 +1140,7 @@ void do_telecast(switch_stream_handle_t *stream)
 
 void do_broadcast(switch_stream_handle_t *stream)
 {
-    char *path_info = switch_event_get_header(stream->event, "http-path-info");
+    char *path_info = switch_event_get_header(stream->param_event, "http-path-info");
     char *file;
     lame_global_flags *gfp = NULL;
     switch_file_handle_t fh = {0};
@@ -1254,9 +1254,9 @@ void do_index(switch_stream_handle_t *stream)
     struct holder holder;
     char *errmsg;
 
-    holder.host = switch_event_get_header(stream->event, "http-host");
-    holder.port = switch_event_get_header(stream->event, "http-port");
-    holder.uri = switch_event_get_header(stream->event, "http-uri");
+    holder.host = switch_event_get_header(stream->param_event, "http-host");
+    holder.port = switch_event_get_header(stream->param_event, "http-port");
+    holder.uri = switch_event_get_header(stream->param_event, "http-uri");
     holder.stream = stream;
     
     stream->write_function(stream, "Content-type: text/html\r\n\r\n");
@@ -1286,11 +1286,11 @@ SWITCH_STANDARD_API(telecast_api_function)
 		return SWITCH_STATUS_FALSE;
 	}
 
-    if (stream->event) {
-        host = switch_event_get_header(stream->event, "http-host");
-        port = switch_event_get_header(stream->event, "http-port");
-        uri = switch_event_get_header(stream->event, "http-uri");
-        path_info = switch_event_get_header(stream->event, "http-path-info");
+    if (stream->param_event) {
+        host = switch_event_get_header(stream->param_event, "http-host");
+        port = switch_event_get_header(stream->param_event, "http-port");
+        uri = switch_event_get_header(stream->param_event, "http-uri");
+        path_info = switch_event_get_header(stream->param_event, "http-path-info");
     }
 
     if (!path_info) {
