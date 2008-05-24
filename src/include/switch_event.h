@@ -167,6 +167,7 @@ _Ret_opt_z_ SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event
 */
 SWITCH_DECLARE(char *) switch_event_get_body(switch_event_t *event);
 
+#ifndef SWIG
 /*!
   \brief Add a header to an event
   \param event the event to add the header to
@@ -177,7 +178,7 @@ SWITCH_DECLARE(char *) switch_event_get_body(switch_event_t *event);
 */
 SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, switch_stack_t stack,
 														const char *header_name, const char *fmt, ...) PRINTF_FUNCTION(4, 5);
-
+#endif
 /*!
   \brief Add a string header to an event
   \param event the event to add the header to
@@ -262,6 +263,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(const cha
 */
 SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, char **str, switch_bool_t encode);
 
+#ifndef SWIG
 /*!
   \brief Render a XML representation of an event sutable for printing or network transport
   \param event the event to render
@@ -270,6 +272,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
   \note the body supplied by this function will supersede an existing body the event may have
 */
 SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const char *fmt, ...) PRINTF_FUNCTION(2, 3);
+#endif
 
 /*!
   \brief Determine if the event system has been initilized
@@ -277,6 +280,7 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 */
 SWITCH_DECLARE(switch_status_t) switch_event_running(void);
 
+#ifndef SWIG
 /*!
   \brief Add a body to an event
   \param event the event to add to body to
@@ -285,6 +289,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_running(void);
   \note the body parameter can be shadowed by the switch_event_reserve_subclass_detailed function
 */
 SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, const char *fmt, ...) PRINTF_FUNCTION(2, 3);
+#endif
 SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const char *in);
 
 SWITCH_DECLARE(switch_status_t) switch_event_create_pres_in_detailed(_In_z_ char *file, _In_z_ char *func, _In_ int line, 

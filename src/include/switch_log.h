@@ -82,7 +82,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_init(_In_ switch_memory_pool_t *pool)
 */
 SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void);
 
-
+#ifndef SWIG
 /*! 
   \brief Write log data to the logging engine
   \param channel the log channel to write to
@@ -98,7 +98,7 @@ SWITCH_DECLARE(void) switch_log_printf(_In_ switch_text_channel_t channel, _In_z
 									   _In_z_ const char *func, _In_ int line,
 									   _In_opt_z_ const char *userdata, _In_ switch_log_level_t level,
 									   _In_z_ _Printf_format_string_ const char *fmt, ...) PRINTF_FUNCTION(7, 8);
-
+#endif
 /*! 
   \brief Shut down  the logging engine
   \note to be called at application termination by the core

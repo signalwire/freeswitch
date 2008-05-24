@@ -58,18 +58,22 @@ SWITCH_BEGIN_EXTERN_C
 */
 SWITCH_DECLARE(void) switch_console_loop(void);
 
+#ifndef SWIG
 /*!
   \brief A method akin to printf that allows you to redirect output to a specific console "channel"
 */
 SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const char *file, const char *func, int line,
 										   const char *fmt, ...) PRINTF_FUNCTION(5, 6);
+#endif
 
 SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_raw_write(switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen);
 
+#ifndef SWIG
 /*!
   \brief A method akin to printf for dealing with api streams
 */
 SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_write(switch_stream_handle_t *handle, const char *fmt, ...) PRINTF_FUNCTION(2, 3);
+#endif
 
 SWITCH_END_EXTERN_C
 #endif
