@@ -65,9 +65,10 @@ $(XMLRPC_DIR)/lib/expat/xmltok/xmltok.o
 #XMLRPCLAS += $(XMLRPC_DIR)/src/libxmlrpc_server.so $(XMLRPC_DIR)/src/libxmlrpc.so
 #XMLRPCLAS += $(XMLRPC_DIR)/src/libxmlrpc_server_abyss.so $(XMLRPC_DIR)/lib/abyss/src/libxmlrpc_abyss.so
 #XMLRPCLAS += $(XMLRPC_DIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.so $(XMLRPC_DIR)/lib/expat/xmltok/libxmlrpc_xmltok.so
+#LOCAL_LIBADD =$(XMLRPCLAS)
 
-LOCAL_LIBADD =$(XMLRPCLAS)
-LOCAL_CFLAGS=-w -I$(XMLRPC_DIR)/lib/expat/xmlparse -I$(XMLRPC_DIR)/lib/expat/xmltok -I$(XMLRPC_DIR) -I$(XMLRPC_DIR)/include -I../../../../libs/xmlrpc-c/lib/abyss/src -I../../../../libs/xmlrpc-c/lib/util/include -D_THREAD
+LOCAL_CFLAGS = -w -I$(XMLRPC_DIR)/lib/expat/xmlparse -I$(XMLRPC_DIR)/lib/expat/xmltok -I$(XMLRPC_DIR) -I$(XMLRPC_DIR)/include
+LOCAL_CFLAGS+= -I$(XMLRPC_DIR)/libs/xmlrpc-c/lib/abyss/src -I$(XMLRPC_DIR)/lib/util/include -D_THREAD
 
 include $(BASE)/build/modmake.rules
 
@@ -75,4 +76,8 @@ $(XMLRPCLAS): $(XMLRPC_DIR) $(XMLRPC_DIR)/.update
 	cd $(XMLRPC_DIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
+$(XMLRPC_DIR)/lib/expat/xmltok/xmltok.o: $(XMLRPC_DIR)/lib/expat/xmltok/nametab.h
 
+$(XMLRPC_DIR)/lib/expat/xmltok/nametab.h:
+	cd $(XMLRPC_DIR)/lib/expat/gennmtab && $(MAKE)
+	cd $(XMLRPC_DIR)/lib/expat/xmltok   && ../gennmtab/gennmtab > nametab.h
