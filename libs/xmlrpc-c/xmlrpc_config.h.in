@@ -65,10 +65,15 @@
 #ifndef HAVE__STRICMP
 #define HAVE__STRICMP 0
 #endif
-
-#define HAVE_WCHAR_H @HAVE_WCHAR_H_DEFINE@
-#define HAVE_SYS_FILIO_H @HAVE_SYS_FILIO_H_DEFINE@
-#define HAVE_SYS_IOCTL_H @HAVE_SYS_IOCTL_H_DEFINE@
+#ifndef HAVE_WCHAR_H
+#define HAVE_WCHAR_H 0
+#endif
+#ifndef HAVE_SYS_FILIO_H
+#define HAVE_SYS_FILIO_H 0
+#endif
+#ifndef HAVE_SYS_IOCTL_H
+#define HAVE_SYS_IOCTL_H 0
+#endif
 
 #define VA_LIST_IS_ARRAY @VA_LIST_IS_ARRAY_DEFINE@
 
