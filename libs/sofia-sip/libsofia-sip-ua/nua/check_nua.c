@@ -54,7 +54,7 @@ void check_nua_tcase_add_test(TCase *tc, TFun tf, char const *name)
   for (patterns = test_patterns; *patterns; patterns++) {
     if (!fnmatch(*patterns, name, 0)) {
       if (strcmp(*patterns, "*")) {
-	printf("%s: match with %s\n", name, *patterns);
+	printf("%s: running\n", name);
       }
       _tcase_add_test(tc, tf, name, 0, 0, 1);
       return;
@@ -64,14 +64,13 @@ void check_nua_tcase_add_test(TCase *tc, TFun tf, char const *name)
   for (patterns = test_patterns; *patterns; patterns++) {
     if (!strcmp(*patterns, name) || !strcmp(*patterns, "*")) {
       if (strcmp(*patterns, "*")) {
-	printf("%s: match with %s\n", name, *patterns);
+	printf("%s: running\n", name);
       }
       _tcase_add_test(tc, tf, name, 0, 0, 1);
       return;
     }
   }
 #endif
-  printf("%s: no match\n", name);
 }
 
 int main(int argc, char *argv[])
@@ -91,6 +90,7 @@ int main(int argc, char *argv[])
 
     patterns = calloc(i, sizeof *patterns);
 
+    /* Split by commas */
     for (i = 0, s = cases;; i++) {
       patterns[i] = s;
       if (s == NULL)
