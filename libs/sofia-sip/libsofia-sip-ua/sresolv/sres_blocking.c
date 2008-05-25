@@ -111,7 +111,7 @@ int sres_blocking_update(sres_blocking_t *b,
 			 sres_socket_t new_socket,
 			 sres_socket_t old_socket)
 {
-  int i, N = b->n_sockets;
+  int i, N;
 
   if (b == NULL)
     return -1;
@@ -122,6 +122,8 @@ int sres_blocking_update(sres_blocking_t *b,
     }
     return 0;
   }
+
+  N = b->n_sockets;
 
   if (old_socket != INVALID_SOCKET) {
     for (i = 0; i < N; i++) {
