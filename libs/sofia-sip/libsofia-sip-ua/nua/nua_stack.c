@@ -543,8 +543,6 @@ void nua_stack_signal(nua_t *nua, su_msg_r msg, nua_ee_data_t *ee)
   nua_event_t event;
   int error = 0;
 
-  assert(tags);
-
   if (nh) {
     if (!nh->nh_prev)
       nh_append(nua, nh);
@@ -1043,7 +1041,7 @@ nua_handle_t *nua_stack_incoming_handle(nua_t *nua,
 		 SIPTAG_FROM(from), /* Remote AoR */
 		 TAG_END());
 
-  if (nua_stack_init_handle(nh->nh_nua, nh, NULL) < 0)
+  if (nh && nua_stack_init_handle(nua, nh, NULL) < 0)
     nh_destroy(nua, nh), nh = NULL;
 
   if (nh && create_dialog) {
@@ -1859,8 +1857,6 @@ int nua_base_server_report(nua_server_request_t *sr, tagi_t const *tags)
 
   int terminated;
   int handle_can_be_terminated = initial && !sr->sr_event;
-
-  assert(nh);
 
   if (sr->sr_application) {
     /* There was an error sending response */
@@ -2811,9 +2807,11 @@ int nua_client_check_restart(nua_client_request_t *cr,
 			     char const *phrase,
 			     sip_t const *sip)
 {
-  nua_handle_t *nh = cr->cr_owner;
+  nua_handle_t *nh;
 
   assert(cr && status >= 200 && phrase && sip);
+
+  nh = cr->cr_owner;
 
   if (cr->cr_retry_count > NH_PGET(nh, retry_count))
     return 0;
