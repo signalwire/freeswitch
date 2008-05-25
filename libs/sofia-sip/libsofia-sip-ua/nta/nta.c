@@ -10668,9 +10668,9 @@ nta_outgoing_t *nta_outgoing_prack(nta_leg_t *leg,
     }
 
     if (rack) {
-      rack->ra_cseq = orq->orq_cseq->cs_seq;
-      rack->ra_method = orq->orq_cseq->cs_method;
-      rack->ra_method_name = orq->orq_cseq->cs_method_name;
+      rack->ra_cseq = oorq->orq_cseq->cs_seq;
+      rack->ra_method = oorq->orq_cseq->cs_method;
+      rack->ra_method_name = oorq->orq_cseq->cs_method_name;
     }
   }
 
