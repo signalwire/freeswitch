@@ -2010,7 +2010,6 @@ int nua_client_create(nua_handle_t *nh,
 			   NULL);
   }
 
-  cr->cr_owner = nh;
   cr->cr_methods = methods;
   cr->cr_event = event;
   cr->cr_method = method;
@@ -2020,16 +2019,24 @@ int nua_client_create(nua_handle_t *nh,
   cr->cr_auto = 1;
 
   if (su_msg_is_non_null(nh->nh_nua->nua_signal)) {
-    nua_event_data_t const *e = su_msg_data(nh->nh_nua->nua_signal)->ee_data;
+    nua_event_data_t *e = su_msg_data(nh->nh_nua->nua_signal)->ee_data;
 
     if (tags == e->e_tags && event == e->e_event) {
       cr->cr_auto = 0;
+
       if (tags) {
 	nua_move_signal(cr->cr_signal, nh->nh_nua->nua_signal);
-	cr->cr_tags = tags;
+	if (cr->cr_signal) {
+	  /* Steal reference from signal */
+	  cr->cr_owner = e->e_nh, e->e_nh = NULL;
+	  cr->cr_tags = tags;
+	}
       }
     }
   }
+
+  if (cr->cr_owner == NULL)
+    cr->cr_owner = nua_handle_ref(nh);
 
   if (tags && cr->cr_tags == NULL)
     cr->cr_tags = tl_tlist(nh->nh_home, TAG_NEXT(tags));
@@ -2099,6 +2106,7 @@ nua_client_request_t *nua_client_request_remove(nua_client_request_t *cr)
 
 void nua_client_request_complete(nua_client_request_t *cr)
 {
+  nua_client_request_remove(cr);
   if (cr && cr->cr_methods->crm_complete)
     cr->cr_methods->crm_complete(cr);
 }
@@ -2116,7 +2124,6 @@ void nua_client_request_destroy(nua_client_request_t *cr)
 
   nua_destroy_signal(cr->cr_signal);
 
-  nua_client_request_remove(cr);
   nua_client_bind(cr, NULL);
   
   if (cr->cr_msg)
@@ -2125,7 +2132,6 @@ void nua_client_request_destroy(nua_client_request_t *cr)
 
   if (cr->cr_orq)
     nta_outgoing_destroy(cr->cr_orq);
-
   cr->cr_orq = NULL;
 
   if (cr->cr_timer)
@@ -2135,6 +2141,8 @@ void nua_client_request_destroy(nua_client_request_t *cr)
     su_free(nh->nh_home, cr->cr_target);
 
   su_free(nh->nh_home, cr);
+
+  nua_handle_unref(nh);
 }
 
 /** Bind client request to a dialog usage */ 
@@ -3075,6 +3083,7 @@ int nua_base_client_response(nua_client_request_t *cr,
   nua_handle_t *nh = cr->cr_owner;
   sip_method_t method = cr->cr_method;
   nua_dialog_usage_t *du;
+  nua_client_request_t *cr_next;
 
   cr->cr_reporting = 1, nh->nh_ds->ds_reporting = 1;
 
@@ -3132,14 +3141,15 @@ int nua_base_client_response(nua_client_request_t *cr,
   cr->cr_phrase = NULL;
   cr->cr_reporting = 0, nh->nh_ds->ds_reporting = 0;
 
+  cr_next = nh->nh_ds->ds_cr;
+
   if (!nua_client_is_queued(cr) && !nua_client_is_bound(cr))
     nua_client_request_destroy(cr);
 
   if (method == sip_method_cancel)
     return 1;
 
-  return
-    nua_client_next_request(nh->nh_ds->ds_cr, method == sip_method_invite);
+  return nua_client_next_request(cr_next, method == sip_method_invite);
 }
 
 /** Send event, zap transaction but leave cr in list */

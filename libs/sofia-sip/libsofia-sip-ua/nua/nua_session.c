@@ -245,10 +245,12 @@ void nua_session_usage_remove(nua_handle_t *nh,
 {
   nua_session_usage_t *ss = nua_dialog_usage_private(du);
   nua_client_request_t *cr, *cr_next;
+  nua_server_request_t *sr;
 
   cr = du->du_cr;
 
-  if (cr != cr0 && cr && cr->cr_orq && cr->cr_status >= 200) {
+  if (cr != cr0 && cr && cr->cr_orq && cr->cr_status >= 200 && 
+      cr->cr_method == sip_method_invite) {
     ss->ss_reporting = 1;
     nua_invite_client_ack(cr, NULL);
     ss->ss_reporting = 0;
@@ -267,11 +269,13 @@ void nua_session_usage_remove(nua_handle_t *nh,
     if (cr == du->du_cr && cr->cr_orq)
       continue;
 
-    nua_stack_event(nh->nh_nua, nh, 
-   	      NULL,
-          cr->cr_event,
-	      SIP_481_NO_TRANSACTION,
-		  NULL);
+    if (cr->cr_status < 200) {
+      nua_stack_event(nh->nh_nua, nh, 
+		      NULL,
+		      cr->cr_event,
+		      SIP_481_NO_TRANSACTION,
+		      NULL);
+    }
 
     nua_client_request_destroy(cr);
 
@@ -289,6 +293,12 @@ void nua_session_usage_remove(nua_handle_t *nh,
       status = sr0->sr_status, phrase = sr0->sr_phrase;
 
     signal_call_state_change(nh, ss, status, phrase, nua_callstate_terminated);
+  }
+
+  /* Application can respond to BYE after the session usage has terminated */
+  for (sr = ds->ds_sr; sr; sr = sr->sr_next) {
+    if (sr->sr_usage == du && sr->sr_method == sip_method_bye)
+      sr->sr_usage = NULL;
   }
 
   ds->ds_has_session = 0;
@@ -724,10 +734,15 @@ static int nua_invite_client_init(nua_client_request_t *cr,
   if (!du)
     return -1;
 
+  ss = nua_dialog_usage_private(du);
+
+  if (ss->ss_state >= nua_callstate_terminating)
+    return nua_client_return(cr, 900, "Session is terminating", msg);
+
   if (nua_client_bind(cr, du) < 0)
     return nua_client_return(cr, 900, "INVITE already in progress", msg);
 
-  ss = nua_dialog_usage_private(du);
+  cr->cr_neutral = 0;
 
   session_timer_preferences(ss->ss_timer,
 			    sip,
@@ -736,8 +751,6 @@ static int nua_invite_client_init(nua_client_request_t *cr,
 			    NUA_PISSET(nh->nh_nua, nh, session_timer),
 			    NH_PGET(nh, refresher),
 			    NH_PGET(nh, min_se));
-
-  cr->cr_neutral = 0;
 
   return 0;
 }
@@ -754,6 +767,9 @@ static int nua_invite_client_request(nua_client_request_t *cr,
 
   if (du == NULL)		/* Call terminated */ 
     return nua_client_return(cr, SIP_481_NO_TRANSACTION, msg);
+
+  if (ss->ss_state >= nua_callstate_terminating)
+    return nua_client_return(cr, 900, "Session is terminating", msg);
 
   assert(ss);
 
@@ -1167,7 +1183,7 @@ int nua_stack_ack(nua_t *nua, nua_handle_t *nh, nua_event_t e,
   if (error < 0) {
     if (ss->ss_reason == NULL)
       ss->ss_reason = "SIP;cause=500;text=\"Internal Error\"";
-    ss->ss_reporting = 1;	/* We report state here if BYE fails */
+    ss->ss_reporting = 1;	/* We report terminated state here if BYE fails */
     error = nua_client_create(nh, nua_r_bye, &nua_bye_client_methods, NULL);
     ss->ss_reporting = 0;
     signal_call_state_change(nh, ss, 500, "Internal Error", 
@@ -1212,6 +1228,7 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
   char const *invite_branch;
 
   assert(cr->cr_orq);
+  assert(cr->cr_method == sip_method_invite);
 
 
   if (!ds->ds_leg) {
@@ -1675,6 +1692,8 @@ static int nua_prack_client_request(nua_client_request_t *cr,
   if (du == NULL)		/* Call terminated */
     return nua_client_return(cr, SIP_481_NO_TRANSACTION, msg);
   assert(ss);
+  if (ss->ss_state >= nua_callstate_terminating)
+    return nua_client_return(cr, 900, "Session is terminating", msg);
 
   cri = du->du_cr;
 
@@ -2465,7 +2484,7 @@ int process_ack(nua_server_request_t *sr,
       nua_stack_event(nh->nh_nua, nh, NULL,
 		      nua_i_media_error, status, phrase, NULL);
 
-      ss->ss_reporting = 1;	/* We report state here if BYE fails */
+      ss->ss_reporting = 1;	/* We report terminated state here if BYE fails */
       error = nua_client_create(nh, nua_r_bye, &nua_bye_client_methods, NULL);
       ss->ss_reporting = 0;
 
@@ -2562,7 +2581,7 @@ int process_timeout(nua_server_request_t *sr,
   /* send BYE, too, if 200 OK (or 183 to re-INVITE) timeouts  */
   ss->ss_reason = reason;
 
-  ss->ss_reporting = 1;		/* We report state here if BYE fails */
+  ss->ss_reporting = 1;		/* We report terminated state here if BYE fails */
   error = nua_client_create(nh, nua_r_bye, &nua_bye_client_methods, NULL);
   ss->ss_reporting = 0;
 
@@ -3134,6 +3153,8 @@ static int nua_update_client_request(nua_client_request_t *cr,
   if (du == NULL)		/* Call terminated */
     return nua_client_return(cr, SIP_481_NO_TRANSACTION, msg);
   assert(ss);
+  if (ss->ss_state >= nua_callstate_terminating)
+    return nua_client_return(cr, 900, "Session is terminating", msg);
 
   cri = du->du_cr;
 
@@ -3592,7 +3613,9 @@ static int nua_bye_client_init(nua_client_request_t *cr,
 
   if (nh->nh_soa)
     soa_terminate(nh->nh_soa, 0);
-  cr->cr_usage = du;
+
+  du->du_cr = NULL;
+  nua_client_bind(cr, du);
 
   return 0;
 }
@@ -3605,15 +3628,34 @@ static int nua_bye_client_request(nua_client_request_t *cr,
   nua_session_usage_t *ss;
   char const *reason = NULL;
 
+  int error;
+  nua_server_request_t *sr;
+
   if (du == NULL)
     return nua_client_return(cr, SIP_481_NO_TRANSACTION, msg);
 
   ss = nua_dialog_usage_private(du);
   reason = ss->ss_reason;
 
-  return nua_base_client_trequest(cr, msg, sip,
-				  SIPTAG_REASON_STR(reason),
-				  TAG_NEXT(tags));
+  error = nua_base_client_trequest(cr, msg, sip,
+				    SIPTAG_REASON_STR(reason),
+				    TAG_NEXT(tags));
+
+  if (error == 0) {
+    nua_dialog_usage_reset_refresh(du);
+    ss->ss_timer->timer_set = 0;
+
+    /* Terminate server transactions associated with session, too. */
+    for (sr = du->du_dialog->ds_sr; sr; sr = sr->sr_next) {
+      if (sr->sr_usage == du && nua_server_request_is_pending(sr) &&
+	  sr->sr_method != sip_method_bye) {
+	sr_status(sr, SIP_486_BUSY_HERE);
+	nua_server_respond(sr, 0);
+      }
+    }
+  }
+
+  return error;
 }
 
 /** @NUA_EVENT nua_r_bye
@@ -3663,18 +3705,28 @@ static int nua_bye_client_report(nua_client_request_t *cr,
   }
   else {
     nua_session_usage_t *ss = nua_dialog_usage_private(du);
+    nua_client_request_t *cri;
+
+    if (ss->ss_reporting) {
+      return 1;			/* Somebody else's problem */
+    }
+    else if (cr->cr_waiting) {
+      return 1; /* Application problem */
+    }
+
+    nua_client_bind(cr, NULL);
 
     signal_call_state_change(nh, ss, status, "to BYE", 
 			     nua_callstate_terminated);
 
-    if (ss && !ss->ss_reporting) {
-      if (du->du_cr == NULL ||
-	  !nua_client_is_queued(du->du_cr) ||
-	  du->du_cr->cr_status >= 200) {
-	/* INVITE is completed, we can zap the session... */;
-	cr->cr_usage = NULL;
-	nua_session_usage_destroy(nh, ss);
-      }
+    for (cri = du->du_dialog->ds_cr; cri; cri = cri->cr_next) {
+      if (cri->cr_method == sip_method_invite)
+	break;
+    }
+
+    if (!cri || cri->cr_status >= 200) {
+      /* INVITE is completed, we can zap the session... */;
+      nua_session_usage_destroy(nh, ss);
     }
   }
 
