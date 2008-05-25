@@ -364,17 +364,17 @@ sip_sanity_check(sip_t const *sip)
  */
 issize_t sip_header_field_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
 {
-  assert(SIP_HDR_TEST(h));
-
   if (h && s && s[slen] == '\0') {
     size_t n = span_lws(s);
     s += n; slen -= n;
-    
+
     for (n = slen; n >= 1 && IS_LWS(s[n - 1]); n--)
       ;
     
     s[n] = '\0';
     
+    assert(SIP_HDR_TEST(h));
+
     return h->sh_class->hc_parse(home, h, s, slen);
   }
   else
