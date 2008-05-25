@@ -189,7 +189,6 @@ int su_wait_destroy(su_wait_t *waitobj)
   if (*waitobj)
     WSACloseEvent(*waitobj);
 #else
-  su_wait_t w0 = NULL;
   su_wait_t w0 = { INVALID_SOCKET, 0, 0 };
   assert(waitobj != NULL);
   *waitobj = w0;
