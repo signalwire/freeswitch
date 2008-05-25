@@ -685,10 +685,10 @@ tag_typedef_t ntatag_graylist = UINTTAG_TYPEDEF(graylist);
  *     unsigned int
  *
  * @par Values
- *    - Value of @i delta-seconds in @RetryAfter header, from 0 to 86400
+ *    - Value of @a delta-seconds in @RetryAfter header, from 0 to 86400
  *
  * @par Default Value
- *    - 0 (no Retry-After is included)
+ *    - 0 (no @RetryAfter header is included)
  *
  * @sa NTATAG_TIMEOUT_408()
  */
