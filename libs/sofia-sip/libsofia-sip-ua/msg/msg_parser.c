@@ -1312,8 +1312,8 @@ issize_t msg_extract_payload(msg_t *msg, msg_pub_t *mo,
 			     char b[], isize_t bsiz,
 			     int eos)
 {
-  msg_mclass_t const *mc = msg->m_class;
-  msg_href_t const *hr = mc->mc_payload;
+  msg_mclass_t const *mc;
+  msg_href_t const *hr;
   msg_header_t *h, *h0;
   msg_payload_t *pl;
   char *x;
@@ -1322,6 +1322,8 @@ issize_t msg_extract_payload(msg_t *msg, msg_pub_t *mo,
     return -1;
 
   assert(!msg->m_chunk);
+  mc = msg->m_class;
+  hr = mc->mc_payload;
 
   if (return_payload == NULL)
     return_payload = &h0;
@@ -1334,7 +1336,7 @@ issize_t msg_extract_payload(msg_t *msg, msg_pub_t *mo,
     return -1;
 
   append_parsed(msg, mo, hr, h, 0);
-  pl = h->sh_payload;
+  pl = (msg_payload_t*)h;
   *return_payload = h;
 
   if (bsiz >= body_len) {
@@ -1832,9 +1834,15 @@ char *msg_as_string(su_home_t *home, msg_t *msg, msg_pub_t *pub, int flags,
       else
 	bsiz = used + n + 1;
 
+      if (bsiz < msg_min_size) {
+	errno = ENOMEM;
+	su_free(home, b);
+	return NULL;
+      }
+
       b2 = su_realloc(home, b, bsiz);
 
-      if (b2 == NULL || bsiz < msg_min_size) {
+      if (b2 == NULL) {
 	errno = ENOMEM; 
 	su_free(home, b);
 	return NULL;
@@ -1896,7 +1904,7 @@ int msg_serialize(msg_t *msg, msg_pub_t *pub)
   msg_header_t **separator;
   msg_header_t **payload;
   msg_header_t **multipart;
-  msg_mclass_t const *mc = msg->m_class;
+  msg_mclass_t const *mc;
   msg_header_t **tail, ***ptail;
 
   if (!msg)
@@ -1914,6 +1922,7 @@ int msg_serialize(msg_t *msg, msg_pub_t *pub)
 
   serialize_first(msg, h);
 
+  mc = msg->m_class;
   separator = (msg_header_t **)((char *)pub + mc->mc_separator->hr_offset);
   payload = (msg_header_t **)((char *)pub + mc->mc_payload->hr_offset);
   if (mc->mc_multipart->hr_class)
@@ -2115,13 +2124,14 @@ void msg_insert_chain(msg_t *msg,
 		      msg_header_t **head,
 		      msg_header_t *h)
 {
-  msg_mclass_t const *mc = msg->m_class;
+  msg_mclass_t const *mc;
   msg_header_t **hh;
   msg_header_t **separator;
   msg_header_t **payload;
   
   assert(msg && pub && head && h);
 
+  mc = msg->m_class;
   separator = (msg_header_t **)((char *)pub + mc->mc_separator->hr_offset);
   payload = (msg_header_t **)((char *)pub + mc->mc_payload->hr_offset);
 
