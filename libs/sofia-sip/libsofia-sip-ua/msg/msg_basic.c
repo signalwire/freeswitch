@@ -212,10 +212,11 @@ MSG_HEADER_CLASS(msg_, payload, NULL, "", pl_common, append,
 msg_payload_t *msg_payload_create(su_home_t *home, void const *data, usize_t len)
 {
   msg_header_t *h = msg_header_alloc(home, msg_payload_class, len + 1);
-  msg_payload_t *pl = h->sh_payload;
 
-  if (pl) {
+  if (h) {
+    msg_payload_t *pl = (msg_payload_t *)h;
     char *b = msg_header_data(h->sh_common);
+
     if (data)
       memcpy(b, data, len);
     else
@@ -227,6 +228,7 @@ msg_payload_t *msg_payload_create(su_home_t *home, void const *data, usize_t len
 
     return pl;
   }
+
   return NULL;
 }
 
