@@ -42,7 +42,7 @@ MACRO       SYMBIAN
 SOURCEPATH 			..\..\libsofia-sip-ua\su
 SOURCE              memmem.c
 
-SOURCEPATH 			..\..\libsofia-sip-ua\nua
+SOURCEPATH 			..\..\tests
 SOURCE              test_nua.c
 SOURCE          test_ops.c
 SOURCE          test_init.c
