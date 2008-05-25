@@ -185,11 +185,11 @@ int su_wait_create(su_wait_t *newwait, su_socket_t socket, int events)
 int su_wait_destroy(su_wait_t *waitobj)
 {
 #if SU_HAVE_WINSOCK
-  su_wait_t w0 = NULL;
   assert(waitobj != NULL);
   if (*waitobj)
     WSACloseEvent(*waitobj);
 #else
+  su_wait_t w0 = NULL;
   su_wait_t w0 = { INVALID_SOCKET, 0, 0 };
   assert(waitobj != NULL);
   *waitobj = w0;
