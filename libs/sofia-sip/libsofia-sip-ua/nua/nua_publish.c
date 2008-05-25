@@ -110,7 +110,7 @@ void nua_publish_usage_remove(nua_handle_t *nh,
 			      nua_server_request_t *sr
 )
 {
-  struct publish_usage *pu = nua_dialog_usage_private(du);
+  struct publish_usage *pu = NUA_DIALOG_USAGE_PRIVATE(du);
 
   su_free(nh->nh_home, pu->pu_etag);
 
