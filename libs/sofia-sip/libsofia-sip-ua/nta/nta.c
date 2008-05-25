@@ -987,7 +987,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
   void *smime         = agent->sa_smime;
   uint32_t flags      = agent->sa_flags;
   int rport           = agent->sa_rport;
-  int server_rport    = agent->sa_server_rport;
+  unsigned server_rport    = agent->sa_server_rport;
   int tcp_rport       = agent->sa_tcp_rport;
   unsigned preload         = agent->sa_preload;
   unsigned threadpool      = agent->sa_tport_threadpool;
@@ -2579,7 +2579,7 @@ int agent_check_request_via(nta_agent_t *agent,
     rport = su_sprintf(msg_home(msg), "rport=%u", ntohs(from->su_port));
     msg_header_replace_param(msg_home(msg), v->v_common, rport);
   }
-  else {
+  else if (agent->sa_server_rport == 2) {
     rport = su_sprintf(msg_home(msg), "rport=%u", ntohs(from->su_port));
     msg_header_replace_param(msg_home(msg), v->v_common, rport);
   } 

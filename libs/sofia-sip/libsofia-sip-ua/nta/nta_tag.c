@@ -1334,7 +1334,7 @@ tag_typedef_t ntatag_client_rport = BOOLTAG_TYPEDEF(client_rport);
  *
  * @sa @RFC3581, NTATAG_CLIENT_RPORT(), NTATAG_TCP_RPORT(), @Via
  */
-tag_typedef_t ntatag_server_rport = BOOLTAG_TYPEDEF(server_rport);
+tag_typedef_t ntatag_server_rport = UINTTAG_TYPEDEF(server_rport);
 
 
 /**@def NTATAG_TCP_RPORT(x)

@@ -544,6 +544,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 							TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), NUTAG_CERTIFICATE_DIR(profile->tls_cert_dir)),
 							TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), TPTAG_TLS_VERSION(profile->tls_version)),
 							NTATAG_UDP_MTU(65536),
+							NTATAG_SERVER_RPORT(2),
 							TAG_IF(tportlog, TPTAG_LOG(1)),
 							TAG_END());	/* Last tag should always finish the sequence */
 
@@ -586,6 +587,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		node->nua = nua_create(profile->s_root,	/* Event loop */
 								sofia_event_callback,	/* Callback for processing events */
 								profile,	/* Additional data to pass to callback */
+								NTATAG_SERVER_RPORT(2),
 								NUTAG_URL(node->url), TAG_END());	/* Last tag should always finish the sequence */
 
 		nua_set_params(node->nua,
