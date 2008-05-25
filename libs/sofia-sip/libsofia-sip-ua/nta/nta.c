@@ -3310,7 +3310,7 @@ int nta_msg_request_complete(msg_t *msg,
   url_t reg_url[1];
   url_string_t const *original = request_uri;
 
-  if (!leg || !msg)
+  if (!leg || !msg || !sip)
     return -1;
 
   if (!sip->sip_route && leg->leg_route) {
@@ -4722,7 +4722,7 @@ nta_incoming_t *incoming_create(nta_agent_t *agent,
       irq->irq_record_route = 
 	sip_record_route_copy(home, sip->sip_record_route);
     }
-    irq->irq_branch  = irq->irq_via->v_branch;
+    irq->irq_branch  = sip->sip_via->v_branch;
     irq->irq_reliable_tp = tport_is_reliable(tport);
 
     if (sip->sip_timestamp)
@@ -5822,7 +5822,7 @@ msg_t *nta_incoming_create_response(nta_incoming_t *irq,
     msg = nta_msg_create(irq->irq_agent, 0);
     sip = sip_object(msg);
 
-    if (status != 0)
+    if (sip && status != 0)
       sip->sip_status = sip_status_create(msg_home(msg), status, phrase, NULL);
 
     if (nta_incoming_response_headers(irq, msg, sip) < 0)
@@ -5905,7 +5905,7 @@ int nta_incoming_mreply(nta_incoming_t *irq, msg_t *msg)
     return -1;
   }
 
-  if (msg == NULL)
+  if (msg == NULL || sip == NULL)
     return -1;
 
   if (msg == irq->irq_response)
@@ -8403,6 +8403,8 @@ int outgoing_recv(nta_outgoing_t *orq,
   if (!internal && orq->orq_delay == UINT_MAX)
     outgoing_estimate_delay(orq, sip);
 
+  assert(!internal || status >= 300);
+
   if (orq->orq_cc)
     agent_accept_compressed(orq->orq_agent, msg, orq->orq_cc);
 
@@ -9548,6 +9550,9 @@ void outgoing_answer_naptr(sres_context_t *orq,
 
     rlen = strlen(na->na_replace) + 1;
     sq = su_zalloc(home, (sizeof *sq) + rlen);
+
+    if (sq == NULL)
+      continue;
 
     *tail = sq, tail = &sq->sq_next;    
     sq->sq_otype = sres_type_naptr;
