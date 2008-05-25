@@ -103,6 +103,8 @@ SU_DLL int su_home_has_parent(su_home_t const *home);
 
 SU_DLL void su_home_check(su_home_t const *home);
 
+SU_DLL int su_home_check_alloc(su_home_t const *home, void const *data);
+
 SU_DLL int su_home_mutex_lock(su_home_t *home);
 
 SU_DLL int su_home_mutex_unlock(su_home_t *home);

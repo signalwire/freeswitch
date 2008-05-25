@@ -283,7 +283,7 @@ size_t su_block_find_collision, su_block_find_collision_used,
   su_block_find_collision_size;
 #endif
 
-su_inline su_alloc_t *su_block_find(su_block_t *b, void const *p)
+su_inline su_alloc_t *su_block_find(su_block_t const *b, void const *p)
 {
   size_t h, h0, probe;
 
@@ -306,8 +306,10 @@ su_inline su_alloc_t *su_block_find(su_block_t *b, void const *p)
   probe = (b->sub_n > SUB_P) ? SUB_P : 1;
 
   do {
-    if (b->sub_nodes[h].sua_data == p)
-      return &b->sub_nodes[h];
+    if (b->sub_nodes[h].sua_data == p) {
+      su_alloc_t const *retval = &b->sub_nodes[h];
+      return (su_alloc_t *)retval; /* discard const */
+    }
     h += probe;
     if (h >= b->sub_n)
       h -= b->sub_n;
@@ -463,7 +465,7 @@ void *sub_alloc(su_home_t *home,
     home->suh_blocks = b2;
 
     if (sub && !sub->sub_auto)
-      safefree(sub);
+      free(sub);
     sub = b2;
   }
 
@@ -834,6 +836,27 @@ void su_free(su_home_t *home, void *data)
   }
 
   safefree(data);
+}
+
+/** Check if pointer has been allocated through home.
+ *
+ * @param home   pointer to a memory home
+ * @param data   pointer to a memory area possibly allocated though home
+ */
+int su_home_check_alloc(su_home_t const *home, void const *data)
+{
+  int retval = 0;
+
+  if (home && data) {
+    su_block_t const *sub = MEMLOCK(home);
+    su_alloc_t *allocation = su_block_find(sub, data);
+
+    retval = allocation != NULL;
+
+    UNLOCK(home);
+  }
+
+  return retval;
 }
 
 /** Check home consistency.
