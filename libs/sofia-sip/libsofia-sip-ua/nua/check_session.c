@@ -1138,7 +1138,7 @@ TCase *invite_error_tcase(void)
 /* ====================================================================== */
 /* Weird call termination cases */
 
-START_TEST(terminating_re_invite)
+START_TEST(bye_4_1_1)
 {
   nua_handle_t *nh;
   struct message *bye, *r481;
@@ -1180,7 +1180,7 @@ START_TEST(terminating_re_invite)
 END_TEST
 
 
-START_TEST(bye_invite_glare)
+START_TEST(bye_4_1_2)
 {
   nua_handle_t *nh;
   struct message *bye, *r481;
@@ -1215,7 +1215,7 @@ START_TEST(bye_invite_glare)
 }
 END_TEST
 
-START_TEST(call_4_1_3)
+START_TEST(bye_4_1_3)
 {
   nua_handle_t *nh;
   struct message *bye;
@@ -1256,7 +1256,7 @@ START_TEST(call_4_1_3)
 END_TEST
 
 
-START_TEST(call_4_1_4)
+START_TEST(bye_4_1_4)
 {
   nua_handle_t *nh;
   struct message *bye;
@@ -1295,7 +1295,7 @@ START_TEST(call_4_1_4)
 END_TEST
 
 
-START_TEST(call_4_1_5)
+START_TEST(bye_4_1_5)
 {
   nua_handle_t *nh;
   struct message *bye;
@@ -1332,7 +1332,7 @@ START_TEST(call_4_1_5)
 END_TEST
 
 
-START_TEST(bye_invite_glare2)
+START_TEST(bye_4_1_6)
 {
   nua_handle_t *nh;
   struct message *bye, *r486;
@@ -1370,7 +1370,7 @@ START_TEST(bye_invite_glare2)
 END_TEST
 
 
-START_TEST(bye_invite_glare3)
+START_TEST(bye_4_1_7)
 {
   nua_handle_t *nh;
   struct message *bye, *r486;
@@ -1407,7 +1407,7 @@ START_TEST(bye_invite_glare3)
 }
 END_TEST
 
-START_TEST(bye_then_respond)
+START_TEST(bye_4_1_8)
 {
   nua_handle_t *nh;
   struct message *bye, *r486;
@@ -1446,7 +1446,102 @@ START_TEST(bye_then_respond)
 END_TEST
 
 
-START_TEST(bye_with_timer)
+START_TEST(bye_4_1_9)
+{
+  nua_handle_t *nh;
+  struct message *bye;
+  struct event *i_bye;
+
+  s2_case("4.1.6", "Send BYE, receive BYE, destroy",
+	  "NUA sends BYE, receives BYE and handle gets destroyed");
+
+  nh = invite_to_nua(TAG_END());
+
+  mark_point();
+
+  s2_flush_events();
+
+  nua_bye(nh, TAG_END());
+  bye = s2_wait_for_request(SIP_METHOD_BYE);
+  fail_if(!bye);
+
+  s2_request_to(dialog, SIP_METHOD_BYE, NULL, TAG_END());
+  i_bye = s2_wait_for_event(nua_i_bye, 200);
+  fail_if(!i_bye);
+  s2_free_event(i_bye), i_bye = NULL;
+  fail_unless(s2_check_callstate(nua_callstate_terminated));
+  fail_unless(s2_check_response(200, SIP_METHOD_BYE));
+  nua_handle_destroy(nh);
+  mark_point();
+
+  su_root_step(s2->root, 10);
+  su_root_step(s2->root, 10);
+  su_root_step(s2->root, 10);
+
+  mark_point();
+  s2_respond_to(bye, dialog, SIP_200_OK, TAG_END());
+  s2_free_message(bye);
+
+  mark_point();
+  while (su_home_check_alloc((su_home_t *)nua, (void *)nh)) {
+    su_root_step(s2->root, 10);
+  }
+}
+END_TEST
+
+
+START_TEST(bye_4_1_10)
+{
+  nua_handle_t *nh;
+  struct message *invite, *bye;
+  struct event *i_bye;
+
+  s2_case("4.1.6", "Send auto-BYE upon receiving 501, receive BYE, destroy",
+	  "NUA sends BYE, receives BYE and handle gets destroyed");
+
+  nh = invite_to_nua(TAG_END());
+
+  mark_point();
+
+  s2_flush_events();
+
+  nua_invite(nh, TAG_END());
+  invite = s2_wait_for_request(SIP_METHOD_INVITE);
+  fail_if(!invite);
+  s2_respond_to(invite, dialog, SIP_501_NOT_IMPLEMENTED, TAG_END());
+  s2_free_message(invite);
+
+  fail_unless(s2_check_request(SIP_METHOD_ACK));
+
+  bye = s2_wait_for_request(SIP_METHOD_BYE);
+  fail_if(!bye);
+
+  fail_unless(s2_check_callstate(nua_callstate_calling));
+  fail_unless(s2_check_event(nua_r_invite, 501));
+  fail_unless(s2_check_callstate(nua_callstate_terminating));
+
+  s2_request_to(dialog, SIP_METHOD_BYE, NULL, TAG_END());
+  i_bye = s2_wait_for_event(nua_i_bye, 200);
+  fail_if(!i_bye);
+  s2_free_event(i_bye), i_bye = NULL;
+  fail_unless(s2_check_callstate(nua_callstate_terminated));
+  fail_unless(s2_check_response(200, SIP_METHOD_BYE));
+  nua_handle_destroy(nh);
+
+  su_root_step(s2->root, 10);
+  su_root_step(s2->root, 10);
+  su_root_step(s2->root, 10);
+
+  s2_respond_to(bye, dialog, SIP_200_OK, TAG_END());
+  s2_free_message(bye);
+
+  while (su_home_check_alloc((su_home_t *)nua, (void *)nh)) {
+    su_root_step(s2->root, 10);
+  }
+}
+END_TEST
+
+START_TEST(bye_4_2_1)
 {
   nua_handle_t *nh;
   struct message *bye;
@@ -1490,12 +1585,12 @@ START_TEST(bye_with_timer)
 }
 END_TEST
 
-START_TEST(bye_with_timer2)
+START_TEST(bye_4_2_2)
 {
   nua_handle_t *nh;
   struct message *bye;
 
-  s2_case("4.2.1", "BYE in progress while call timer expires",
+  s2_case("4.2.2", "BYE in progress while call timer expires",
 	  "NUA receives INVITE, "
 	  "activates call timers, "
 	  "sends BYE, BYE challenged, "
@@ -1541,16 +1636,18 @@ TCase *termination_tcase(void)
   TCase *tc = tcase_create("4 - Call Termination");
   tcase_add_checked_fixture(tc, call_setup, call_teardown);
   {
-    tcase_add_test(tc, terminating_re_invite);
-    tcase_add_test(tc, bye_invite_glare);
-    tcase_add_test(tc, call_4_1_3);
-    tcase_add_test(tc, call_4_1_4);
-    tcase_add_test(tc, call_4_1_5);
-    tcase_add_test(tc, bye_invite_glare2);
-    tcase_add_test(tc, bye_invite_glare3);
-    tcase_add_test(tc, bye_with_timer);
-    tcase_add_test(tc, bye_with_timer2);
-    tcase_add_test(tc, bye_then_respond);
+    tcase_add_test(tc, bye_4_1_1);
+    tcase_add_test(tc, bye_4_1_2);
+    tcase_add_test(tc, bye_4_1_3);
+    tcase_add_test(tc, bye_4_1_4);
+    tcase_add_test(tc, bye_4_1_5);
+    tcase_add_test(tc, bye_4_1_6);
+    tcase_add_test(tc, bye_4_1_7);
+    tcase_add_test(tc, bye_4_1_8);
+    tcase_add_test(tc, bye_4_1_9);
+    tcase_add_test(tc, bye_4_1_10);
+    tcase_add_test(tc, bye_4_2_1);
+    tcase_add_test(tc, bye_4_2_2);
     tcase_set_timeout(tc, 5);
   }
   return tc;
