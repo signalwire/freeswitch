@@ -560,10 +560,17 @@ static void su_base_port_clone_break(su_root_magic_t *m,
   su_root_destroy(task->sut_root);
 }
 
+/**Wait for the clone to exit.
+ * @internal
+ *
+ * Called by su_port_wait() and su_clone_wait()
+ */ 
 void su_base_port_wait(su_clone_r rclone)
 {
   su_port_t *self;
   su_root_t *root_to_wait;
+
+  assert(*rclone);
 
   self = su_msg_from(rclone)->sut_port;
   assert(self == su_msg_to(rclone)->sut_port);

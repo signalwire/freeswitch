@@ -427,9 +427,17 @@ int su_clone_resume(su_clone_r rclone)
 #endif
 }
 
+/** Wait for clone to exit.
+ *
+ * @internal
+ *
+ * Called by su_clone_wait().
+ */
 void su_port_wait(su_clone_r rclone)
 {
   su_port_t *cloneport;
+
+  assert(*rclone);
 
   cloneport = su_msg_to(rclone)->sut_port;
   cloneport->sup_vtable->su_port_wait(rclone);

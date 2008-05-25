@@ -388,12 +388,16 @@ static void su_pthread_port_clone_break(su_root_magic_t *m,
 
 /** Wait for the pthread clone to exit.
  * @internal
+ *
+ * Called by su_port_wait() and su_clone_wait().
  */
 void su_pthread_port_wait(su_clone_r rclone)
 {
   su_port_t *clone, *parent;
   struct su_pthread_port_waiting_parent mom[1];
   pthread_t tid;
+
+  assert(*rclone);
 
   clone = su_msg_to(rclone)->sut_port;
   parent = su_msg_from(rclone)->sut_port;
