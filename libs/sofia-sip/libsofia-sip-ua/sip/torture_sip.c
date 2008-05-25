@@ -2227,7 +2227,6 @@ static int test_accept(void)
 
 static int test_content_disposition(void)
 {
-  /* Test Accept header */
   sip_content_disposition_t *cd, *cd0;
   su_home_t *home;
 
@@ -2246,6 +2245,38 @@ static int test_content_disposition(void)
   su_home_unref(home);
   END();
 }
+
+
+static int test_content_type(void)
+{
+  sip_content_type_t *c;
+  sip_content_type_t c0[1];
+  su_home_t *home;
+
+  BEGIN();
+
+  TEST_1(home = su_home_create());
+  TEST_1(c = sip_content_type_make(home, "application/sdp ; charset = utf-8"));
+  TEST_S(c->c_type, "application/sdp");
+  TEST_S(c->c_subtype, "sdp");
+  TEST_1(c->c_params && c->c_params[0] && !c->c_params[1]);
+  TEST_S(c->c_params[0], "charset=utf-8");
+  TEST_P(c->c_params[1], NULL);
+
+  sip_content_type_init(c0);
+  c = sip_content_type_dup(home, c0);
+  TEST_P(c->c_type, NULL);
+  TEST_P(c->c_subtype, NULL);
+
+  c0->c_type = "text";
+  c = sip_content_type_dup(home, c0);
+  TEST_S(c->c_type, "text");
+  TEST_P(c->c_subtype, NULL);
+
+  su_home_unref(home);
+  END();
+}
+
 
 static int test_www_authenticate(void)
 {
@@ -3570,6 +3601,7 @@ int main(int argc, char *argv[])
   retval |= test_refer(); fflush(stdout);
   retval |= test_route(); fflush(stdout);
   retval |= test_request_disposition(); fflush(stdout);
+  retval |= test_content_type(); fflush(stdout);
   retval |= test_caller_prefs(); fflush(stdout);
   retval |= test_callerpref_scoring(); fflush(stdout);
   retval |= test_warning(); fflush(stdout);
