@@ -1088,7 +1088,7 @@ int su_home_move(su_home_t *dst, su_home_t *src)
       else
 	used = s->sub_used;
 
-      if ((used && d == NULL) || 3 * used > 2 * d->sub_n) {
+      if (used && (d == NULL || 3 * used > 2 * d->sub_n)) {
 	if (d)
 	  for (n = n2 = d->sub_n; 3 * used > 2 * n2; n2 = 4 * n2 + 3)
 	    ;
@@ -1122,7 +1122,9 @@ int su_home_move(su_home_t *dst, su_home_t *src)
 	d = d2;
       }
 
-      if ((n = s->sub_n)) {
+      if (s->sub_used) {
+	n = s->sub_n;
+
 	for (i = 0; i < n; i++)
 	  if (s->sub_nodes[i].sua_data) {
 	    su_block_add(d, s->sub_nodes[i].sua_data)[0] = s->sub_nodes[i];
@@ -1134,6 +1136,7 @@ int su_home_move(su_home_t *dst, su_home_t *src)
       }
 
       if (s->sub_stats) {
+				/* XXX */
       }
     }
 
@@ -1649,7 +1652,7 @@ void su_home_init_stats(su_home_t *home)
 /** Retrieve statistics from memory home.
  */
 void su_home_get_stats(su_home_t *home, int include_clones, 
-		       su_home_stat_t hs[1],
+		       su_home_stat_t *hs,
 		       isize_t size)
 {
   su_block_t *sub;
@@ -1657,7 +1660,7 @@ void su_home_get_stats(su_home_t *home, int include_clones,
   if (hs == NULL || size < (sizeof hs->hs_size))
     return;
 
-  memset(hs, 0, size);
+  memset((void *)hs, 0, size);
 
   sub = MEMLOCK(home);
 
