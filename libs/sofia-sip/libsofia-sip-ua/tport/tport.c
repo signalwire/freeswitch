@@ -1178,7 +1178,6 @@ int tport_get_params(tport_t const *self,
   ta_list ta;
   int n;
   tport_params_t const *tpp;
-  tport_primary_t const *pri = self->tp_pri;
   int connect;
 
   if (self == NULL)
@@ -1207,7 +1206,9 @@ int tport_get_params(tport_t const *self,
 	       TPTAG_THRPRQSIZE(tpp->tpp_thrprqsize),
 	       TPTAG_SIGCOMP_LIFETIME(tpp->tpp_sigcomp_lifetime),
 	       TPTAG_STUN_SERVER(tpp->tpp_stun_server),
-	       TAG_IF(pri, TPTAG_PUBLIC(pri ? pri->pri_public : 0)),
+	       TAG_IF(self->tp_pri,
+		      TPTAG_PUBLIC(self->tp_pri ?
+				   self->tp_pri->pri_public : 0)),
 	       TPTAG_TOS(tpp->tpp_tos),
 	       TAG_END());
 
@@ -2956,7 +2957,7 @@ void tport_deliver(tport_t *self,
 #if SU_HAVE_IN6
     if (su->su_family == AF_INET6) {
       ipaddr[0] = '[';
-      su_inet_ntop(su->su_family, SU_ADDR(su), ipaddr + 1, sizeof(ipaddr) - 1);
+      su_inet_ntop(su->su_family, SU_ADDR(su), ipaddr + 1, SU_ADDRSIZE);
       strcat(ipaddr, "]");
     }
     else {
@@ -4680,7 +4681,9 @@ int tport_name_dup(su_home_t *home,
     n_canon = 0;
 
   s = su_alloc(home, n_proto + n_canon + n_host + n_port + n_comp);
-  
+  if (s == NULL)
+    return -1;
+
   if (n_proto)
     dst->tpn_proto = memcpy(s, src->tpn_proto, n_proto), s += n_proto;
   else
