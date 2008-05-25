@@ -728,6 +728,9 @@ int auc_basic_authorization(auth_client_t *ca,
   else
     basic = malloc(basiclen + 1);
 
+  if (basic == NULL)
+    return -1;
+
   /*
    * Basic authentication consists of username and password separated by
    * colon and then base64 encoded.
