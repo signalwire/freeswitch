@@ -2694,19 +2694,22 @@ int nua_prack_server_init(nua_server_request_t *sr)
     return sr->sr_status;
 
   if (sr->sr_sdp) {
-    nua_session_usage_t *ss = nua_dialog_usage_private(sr->sr_usage);
+    nua_session_usage_t *ss = NUA_DIALOG_USAGE_PRIVATE(sr->sr_usage);
+    char const *offeranswer;
 
     /* XXX - check for overlap? */
     
-    if (sri->sr_offer_sent)
-      sr->sr_answer_recv = 1, ss->ss_oa_recv = Answer;
-    else 
-      sr->sr_offer_recv = 1, ss->ss_oa_recv = Offer;
+    if (sri->sr_offer_sent && !sri->sr_answer_recv)
+      sr->sr_answer_recv = 1, sri->sr_answer_recv = 1, offeranswer = Answer;
+    else
+      sr->sr_offer_recv = 1, offeranswer = Offer;
+
+    ss->ss_oa_recv = offeranswer;
 
     if (nh->nh_soa &&
 	soa_set_remote_sdp(nh->nh_soa, NULL, sr->sr_sdp, sr->sr_sdp_len) < 0) {
       SU_DEBUG_5(("nua(%p): %s server: error parsing %s\n", (void *)nh,
-		  "PRACK", Offer));
+		  "PRACK", offeranswer));
       return 
 	sr->sr_status = soa_error_as_sip_response(nh->nh_soa, &sr->sr_phrase);
     }
