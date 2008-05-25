@@ -4086,6 +4086,10 @@ nta_leg_t *leg_find_call_id(nta_agent_t const *sa,
 
 /** Get dialog leg by @CallID.
  *
+ * @note Usually there should be only single dialog per @CallID on
+ * User-Agents. However, proxies may fork requests initiating the dialog and
+ * result in multiple calls per @CallID.
+ *
  * @since New in @VERSION_1_12_9.
  */
 SOFIAPUBFUN

@@ -411,7 +411,7 @@ bye_to_nua(nua_handle_t *nh,
 
 /* 2.1 - Basic call cases */
 
-START_TEST(basic_call_with_bye_by_nua)
+START_TEST(call_2_1_1)
 {
   nua_handle_t *nh;
 
@@ -429,7 +429,7 @@ START_TEST(basic_call_with_bye_by_nua)
 END_TEST
 
 
-START_TEST(basic_call_with_bye_to_nua)
+START_TEST(call_2_1_2)
 {
   nua_handle_t *nh;
 
@@ -447,7 +447,7 @@ START_TEST(basic_call_with_bye_to_nua)
 END_TEST
 
 
-START_TEST(call_to_nua_with_bye_to_nua)
+START_TEST(call_2_1_3)
 {
   nua_handle_t *nh;
 
@@ -463,7 +463,7 @@ START_TEST(call_to_nua_with_bye_to_nua)
 END_TEST
 
 
-START_TEST(call_to_nua_with_bye_by_nua)
+START_TEST(call_2_1_4)
 {
   nua_handle_t *nh;
 
@@ -479,7 +479,7 @@ START_TEST(call_to_nua_with_bye_by_nua)
 END_TEST
 
 
-START_TEST(call_to_nua_with_bye_by_nua_challenged)
+START_TEST(call_2_1_5)
 {
   nua_handle_t *nh;
 
@@ -572,17 +572,51 @@ START_TEST(call_2_1_6)
 END_TEST
 
 
+START_TEST(call_2_1_7)
+{
+  nua_handle_t *nh, *nh2;
+  sip_replaces_t *replaces;
+
+  s2_case("2.1.7", "Call lookup",
+	  "Test dialog and call-id lookup");
+
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+
+  invite_by_nua(nh, TAG_END());
+
+  nh2 = nua_handle_by_call_id(nua, dialog->call_id->i_id);
+  fail_if(!nh2); fail_if(nh != nh2); nua_handle_unref(nh2);
+
+  replaces = sip_replaces_format(NULL, "%s;from-tag=%s;to-tag=%s",
+				 dialog->call_id->i_id,
+				 dialog->local->a_tag,
+				 dialog->remote->a_tag);
+  fail_if(!replaces);
+
+  nh2 = nua_handle_by_replaces(nua, replaces);
+  fail_if(!nh2); fail_if(nh != nh2); nua_handle_unref(nh2);
+
+  msg_header_free_all(NULL, (msg_header_t *)replaces);
+
+  bye_by_nua(nh, TAG_END());
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
+
 TCase *invite_tcase(void)
 {
   TCase *tc = tcase_create("2.1 - Basic INVITE");
   tcase_add_checked_fixture(tc, call_setup, call_teardown);
   {
-    tcase_add_test(tc, basic_call_with_bye_by_nua);
-    tcase_add_test(tc, basic_call_with_bye_to_nua);
-    tcase_add_test(tc, call_to_nua_with_bye_to_nua);
-    tcase_add_test(tc, call_to_nua_with_bye_by_nua);
-    tcase_add_test(tc, call_to_nua_with_bye_by_nua_challenged);
+    tcase_add_test(tc, call_2_1_1);
+    tcase_add_test(tc, call_2_1_2);
+    tcase_add_test(tc, call_2_1_3);
+    tcase_add_test(tc, call_2_1_4);
+    tcase_add_test(tc, call_2_1_5);
     tcase_add_test(tc, call_2_1_6);
+    tcase_add_test(tc, call_2_1_7);
   }
   return tc;
 }

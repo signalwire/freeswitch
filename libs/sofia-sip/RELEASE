@@ -9,6 +9,14 @@ Changes since last release
  and in less than 10 lines, written in 3rd person English, with
  complete sentences />
 
+Bugs with BYE handling and event fetch/poll (SUBSCRIBE with Expires: 0) have
+been fixed in nua. Bugs with timer handling, RFC2543 dialog/transaction
+matching and gray list handling have been fixed in nta, all introduced by
+release 1.12.8.
+
+Stack now supports some load control with NTATAG_MAX_PROCEEDING(), limiting
+number of initial INVITE transactions being served concurrently.
+
 Bugs in blaa and foo have been fixed. The stack now supports
 use of foobar...
 
@@ -24,7 +32,17 @@ API/ABI changes and versioning
 **template**: New features in API are marked with Doxytag macro @VERSION_1_XX_X.
 
 libsofia-sip-ua:
-- **template**: Added foobar() function (sofia-sip/foobar.h).
+- Added nta_outgoing_bind() to <sofia-sip/nta.h>.
+- Allow changing TPTAG_LOG() and TPTAG_DUMP() values after tport_create()
+- Added NUTAG_SHUTDOWN_EVENTS(). If NUTAG_SHUTDOWN_EVENTS(1) nua setting is
+  used, nua sends events to application normally during shutdown, too.
+- Added NUTAG_SUB_EXPIRES() - default expiration time of subscription
+- Added NTATAG_MAX_PROCEEDING() - limit number of requests accepted in 
+  proceeding queue.
+- Using NUTAG_PROXY()/NTATAG_DEFAULT_PROXY() as handle-specific tag. 
+  Previously, NUTAG_PROXY() was ignored if given with nua_set_hparams(),
+  nua_invite(), nua_respond(), etc.
+- Added nua_handle_by_call_id(), nta_leg_by_call_id().
 - This release is ABI/API compatible with applications linked against 
   any 1.12.x release. However, applications built against this release won't 
   work against an older library. The ABI has been tested with the nua module 
@@ -37,6 +55,12 @@ libsofia-sip-ua-glib:
 
 Contributors to this release
 ----------------------------
+
+- Michael Jerris: fixes, new features NTATAG_MAX_PROCEEDING(),
+  nua_handle_by_call_id(), nta_leg_by_call_id()
+- Colin Whittaker: re-calculating subscription duration when receiving NOTIFY
+- Jerry Richards: fix to sip_header_as_string()
+- Jussi Mutanen: fix to soa handling within nua
 
 <list of people who contributed to _this_ release
  - update as people's patches are added, or when you commit stuff
@@ -63,6 +87,37 @@ Notes on new features
 
 Bugs fixed in this release
 --------------------------
+
+- Fixed sf.net bug #1827511: BYE can now be authenticated with 
+  nua_authenticate().
+- Fixed problems re-calculating the subscription duration upon NOTIFY.
+  Thanks to Colin Whittaker for reporting the problem and proposing a fix to
+  the problem.
+- Fixed crash when SOATAG_ORDERED_USER(1) was used and multiple m= lines were
+  added to the session.
+- Fixed problem with an error response terminating the session usage but
+  not triggering nua_i_state event reporting that to application.
+  Thanks to AlienPenguin for reporting the problem
+- Fixed crash and general lossage with event fetch (SUBSCRIBE with Expires: 0)
+  Thanks to Jarkko Riekki for reporting the problem.
+- Handle NULL argument to su_free() gracefully even if free() does not.
+  Thanks for Michael Jerris for submitting the patch.
+- Do not use PT 9 (G722) as invalid PT (currently use 19).
+- Fixed problems handling míllisecond timers in nta on 64-bit platforms.
+  Thanks to David Knell and Michael Jerris for reporting it.
+- Allow-Events is now included by nua in messages initiating dialogs.
+  Thanks to Jerry Richards for pointing out the problem.
+- Now checking that pointer is not NULL before calling free()
+  Thanks to Michail Jerris for submitting patch.
+- Fixed bug in sip_header_as_string() converting longish header to string
+  Thanks to Jerry Richards for submitting a patch
+- Fixed problem with soa session activation.
+  Thanks to Jussi Mutanen for patch.
+- Fixed problems handling host:port in user-supplied Via headers.
+- Fixed sf.net bug #1930055: nat detection did not un-REGISTER natted contact
+  if fist response to REGISTER was 200 OK.
+- Fixed crashes in soa if m= lines were removed from user sdp.
+
 
 < notable bugs fixed in this release
  - check the sf.net bug tracker; see closed bugs,

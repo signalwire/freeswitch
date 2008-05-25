@@ -1036,7 +1036,7 @@ nua_handle_t *nua_handle_by_replaces(nua_t *nua, sip_replaces_t const *r)
   if (nua) {
 #if HAVE_OPEN_C
     struct nua_stack_handle_by_replaces_args a;
-	a.retval = NULL;
+    a.retval = NULL;
     a.nua = nua;
     a.r = r;
 #else

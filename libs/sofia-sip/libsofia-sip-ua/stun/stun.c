@@ -81,7 +81,7 @@ static char const __func__[] = "stun";
 /** STUN log. */
 su_log_t stun_log[] = { SU_LOG_INIT("stun", "STUN_DEBUG", SU_DEBUG) }; 
 
-/**@var STUN_DEBUG
+/**@var char const STUN_DEBUG[]
  *
  * Environment variable determining the debug log level for @b stun module.
  *
@@ -90,7 +90,7 @@ su_log_t stun_log[] = { SU_LOG_INIT("stun", "STUN_DEBUG", SU_DEBUG) };
  * 
  * @sa <sofia-sip/su_debug.h>, stun_log, SOFIA_DEBUG
  */
-extern char const STUN__DEBUG[];
+extern char const STUN_DEBUG[];
 
 enum {
   STUN_SENDTO_TIMEOUT = 1000,
