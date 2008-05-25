@@ -5,7 +5,7 @@
     <menu name="demo_ivr"
           greet-long="phrase:demo_ivr_main_menu"
           greet-short="phrase:demo_ivr_main_menu_short"
-          invalid-sound="voicemail/vm-hello.wav"
+          invalid-sound="ivr/ivr-that_was_an_invalid_entry.wav"
           exit-sound="voicemail/vm-goodbye.wav"
           timeout ="10000"
 	  inter-digit-timeout="2000"
@@ -23,7 +23,7 @@
     <menu name="demo_ivr_submenu"
         greet-long="phrase:demo_ivr_sub_menu"
         greet-short="phrase:demo_ivr_sub_menu_short"
-        invalid-sound="voicemail/vm-hello.wav"
+        invalid-sound="ivr/ivr-that_was_an_invalid_entry.wav"
         exit-sound="voicemail/vm-goodbye.wav"
         timeout="15000"
         max-failures="3">
