@@ -554,46 +554,18 @@ SIP_HEADER_CLASS(content_type, "Content-Type", "c", c_params,
 
 issize_t sip_content_type_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
 {
-  sip_content_type_t *c;
-
-  assert(h);
-
-  c = h->sh_content_type;
-
-  /* "Content-type:" type/subtyp *(; parameter))) */
-  if (/* Parse protocol */
-      sip_version_d(&s, &c->c_type) == -1 || /* compacts token / token */
-      (c->c_subtype = strchr(c->c_type, '/')) == NULL ||
-      (*s == ';' && msg_params_d(home, &s, &c->c_params) == -1) ||
-      (*s != '\0'))
-    return -1;
-
-  c->c_subtype++;
-
-  return 0;
+  return msg_content_type_d(home, (msg_header_t *)h, s, slen);
 }
 
 issize_t sip_content_type_e(char b[], isize_t bsiz, sip_header_t const *h, int flags)
 {
-  char *b0 = b, *end = b + bsiz;
-  sip_content_type_t const *c = h->sh_content_type;
-
-  MSG_STRING_E(b, end, c->c_type);
-  MSG_PARAMS_E(b, end, c->c_params, flags);
-  MSG_TERM_E(b, end);
-
-  return b - b0;
+  return msg_content_type_e(b, bsiz, (msg_header_t const *)h, flags);
 }
 
 static
 isize_t sip_content_type_dup_xtra(sip_header_t const *h, isize_t offset)
 {
-  sip_content_type_t const *c = h->sh_content_type;
-
-  MSG_PARAMS_SIZE(offset, c->c_params);
-  offset += MSG_STRING_SIZE(c->c_type);
-
-  return offset;
+  return msg_content_type_dup_xtra((msg_header_t *)h, offset);
 }
 
 /** Duplicate one #sip_content_type_t object */ 
@@ -601,18 +573,9 @@ static
 char *sip_content_type_dup_one(sip_header_t *dst, sip_header_t const *src,
 			       char *b, isize_t xtra)
 {
-  sip_content_type_t *c = dst->sh_content_type;
-  sip_content_type_t const *o = src->sh_content_type;
-  char *end = b + xtra;
-
-  b = msg_params_dup(&c->c_params, o->c_params, b, xtra);
-  MSG_STRING_DUP(b, c->c_type, o->c_type);
-  c->c_subtype = strchr(c->c_type, '/');
-  c->c_subtype++;
-
-  assert(b <= end); (void)end;
-
-  return b;
+  return msg_content_type_dup_one((msg_header_t *)dst,
+				  (msg_header_t const *)src,
+				  b, xtra);
 }
 
 /* ====================================================================== */
