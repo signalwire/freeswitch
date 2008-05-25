@@ -1871,8 +1871,10 @@ char *msg_content_type_dup_one(msg_header_t *dst, msg_header_t const *src,
 
   b = msg_params_dup(&c->c_params, o->c_params, b, xtra);
   MSG_STRING_DUP(b, c->c_type, o->c_type);
-  c->c_subtype = strchr(c->c_type, '/');
-  c->c_subtype++;
+
+  c->c_subtype = c->c_type ? strchr(c->c_type, '/') : NULL;
+  if (c->c_subtype)
+    c->c_subtype++;
 
   assert(b <= end); (void)end;
 
