@@ -115,6 +115,20 @@ Requires:	 %{name} = %{version}-%{release}
 
 %description spidermonkey
 
+%package lua
+Summary:	Lua support for the FreeSWITCH open source telephony platform
+Group:		System/Libraries
+Requires:	%{name} = %{version}-%{release}
+
+%description	lua
+
+%package	perl
+Summary:	Perl support for the FreeSWITCH open source telephony platform
+Group:		System/Libraries
+Requires:	%{name} = %{version}-%{release}
+
+%description	perl
+
 %package lang-en
 Summary:	Provides english language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
 Group:          System/Libraries
@@ -122,22 +136,6 @@ Requires:        %{name} = %{version}-%{release}
 
 %description lang-en
 English language phrases module and directory structure for say module and voicemail
-
-%package lang-de
-Summary:        Provides german language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
-Group:          System/Libraries
-Requires:        %{name} = %{version}-%{release}
-
-%description lang-de
-German language phrases module and directory structure for say module and voicemail
-
-%package lang-fr
-Summary:        Provides french language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
-Group:          System/Libraries
-Requires:        %{name} = %{version}-%{release}
-
-%description lang-fr
-French language phrases module and directory structure for say module and voicemail
 
 %prep
 %setup -q
@@ -163,15 +161,16 @@ DOTNET_MODULES=
 ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_iax endpoints/mod_portaudio endpoints/mod_sofia endpoints/mod_woomera ../../libs/openzap/mod_openzap"
 EVENT_HANDLERS_MODULES="event_handlers/mod_event_multicast event_handlers/mod_event_socket event_handlers/mod_cdr_csv"
 FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_sndfile formats/mod_tone_stream"
-LANGUAGES_MODULES=
+LANGUAGES_MODULES="languages/mod_perl languages/mod_lua"
 LOGGERS_MODULES="loggers/mod_console loggers/mod_logfile loggers/mod_syslog"
-SAY_MODULES="say/mod_say_en say/mod_say_fr say/mod_say_de"
+SAY_MODULES="say/mod_say_en"
 TIMERS_MODULES=
 DISABLED_MODULES="applications/mod_sountouch directories/mod_ldap languages/mod_java languages/mod_python languages/mod_spidermonkey_skel ast_tts/mod_cepstral asr_tts/mod_lumenvox endpoints/mod_wanpipe event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf formats/mod_shout say/mod_say_it say/mod_say_es say/mod_say_nl"
 XML_INT_MODULES="xml_int/mod_xml_rpc  xml_int/mod_xml_curl xml_int/mod_xml_cdr"
 MYMODULES="$PASSTHRU_CODEC_MODULES $SPIDERMONKEY_MODULES $APPLICATIONS_MODULES $ASR_TTS_MODULES $CODECS_MODULES $DIALPLANS_MODULES $DIRECTORIES_MODULES $DOTNET_MODULES $ENDPOINTS_MODULES $EVENT_HANDLERS_MODULES $FORMATS_MODULES $LANGUAGES_MODULES $LOGGERS_MODULES $SAY_MODULES $TIMERS_MODULES $XML_INT_MODULES"
 
 export MODULES=$MYMODULES
+rm modules.conf
 touch modules.conf
 for i in $MODULES; do echo $i >> modules.conf; done
 export VERBOSE=yes
@@ -179,8 +178,13 @@ export DESTDIR=$RPM_BUILD_ROOT/
 export PKG_CONFIG_PATH=/usr/bin/pkg-config:$PKG_CONFIG_PATH
 export ACLOCAL_FLAGS="-I /usr/share/aclocal"
 
-./bootstrap.sh
-%configure -C \
+if test ! -f Makefile.in 
+then 
+   bootstrap.sh
+fi
+
+
+	%configure -C \
                 --prefix=%{prefix} \
 		--bindir=%{prefix}/bin \
 		--libdir=%{prefix}/lib \
@@ -205,6 +209,12 @@ touch .noversion
 %{__make}
 
 %install
+# delete unsupported langugages for now
+rm -rf conf/lang/de
+rm -rf conf/lang/fr
+rm -rf $RPM_BUILD_ROOT%{prefix}/conf/lang/de
+rm -rf $RPM_BUILD_ROOT%{prefix}/conf/lang/fr
+
 %{__make} DESTDIR=$RPM_BUILD_ROOT install
 
 # Create a log dir
@@ -286,6 +296,7 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/*.ttml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/*.conf
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/acl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/alsa.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/conference.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/console.conf.xml
@@ -321,8 +332,8 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/directory/default/*
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/mrcp_profiles/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/*.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/default/*.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/outbound/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/internal/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/external/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/nat/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/jingle_profiles/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/htdocs/*
@@ -397,6 +408,19 @@ userdel freeswitch
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/spidermonkey.conf.xml
 
+%files lua
+%defattr(-,freeswitch,daemon)
+%{prefix}/mod/mod_lua*.so*
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/autoload_configs
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/lua.conf.xml
+
+%files perl
+%defattr(-,freeswitch,daemon)
+%{prefix}/mod/mod_perl*.so*
+%{prefix}/perl/*
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/autoload_configs
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/perl.conf.xml
+
 %files devel
 %defattr(-, freeswitch, daemon)
 %{prefix}/lib/*.a
@@ -414,25 +438,13 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/en/vm/*.xml
 %{prefix}/mod/mod_say_en.so*
 
-%files lang-de
-%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/de
-%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/de/demo
-%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/de/vm
-%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/de/*.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/de/demo/*.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/de/vm/*.xml
-%{prefix}/mod/mod_say_de.so*
-
-%files lang-fr
-%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/fr
-%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/fr/demo
-%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/fr/vm
-%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/fr/*.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/fr/demo/*.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/fr/vm/*.xml
-%{prefix}/mod/mod_say_fr.so*
-
 %changelog
+* Thu May 22 2008 - michal.bielicki@voiceworks.pl
+- disabled beta class language stuff
+- bumped revision up to rc6
+- added mod_lua
+- added mod_perl
+- Only bootstrap if no Makfile.in exists
 * Mon Feb 04 2008 - michal.bielicki@voiceworks.pl
 - More fixes to specfile
 - First go at SFE files
@@ -443,7 +455,7 @@ userdel freeswitch
 * Fri Jan 18 2008 - michal.bielicki@voiceworks.pl
 - fixes, fixes and more fixes in preparation for rc1
 * Thu Dec 5 2007 - michal.bielicki@voiceworks.pl
-	- put in detail configfiles in to split of spidermonkey configs
+- put in detail configfiles in to split of spidermonkey configs
 - created link from /opt/freesxwitch/conf to /etc%{prefix}
 * Thu Nov 29 2007 - michal.bielicki@voiceworks.pl
 - Added ifdefs for susealities
