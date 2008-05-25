@@ -681,17 +681,15 @@ static void print_text_list(sdp_printer_t *p,
 static void printing_error(sdp_printer_t *p, const char *fmt, ...)
 {
   va_list ap;
-  va_start(ap, fmt); 
-  
+
   if (p->pr_ok) {
     int n;
-
+    va_start(ap, fmt);
     n = vsnprintf(p->pr_buffer, p->pr_bsiz, fmt, ap);
-    
-    p->pr_ok = 0;
+    va_end(ap);
   }
 
-  va_end(ap);
+  p->pr_ok = 0;
 }
 
 static void sdp_printf(sdp_printer_t *p, const char *fmt, ...)

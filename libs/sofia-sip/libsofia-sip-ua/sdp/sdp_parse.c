@@ -98,7 +98,7 @@ static const struct sdp_parser_s no_mem_error =
 
 /* Internal prototypes */
 static void parse_message(sdp_parser_t *p);
-static void parsing_error(sdp_parser_t *p, char const *fmt, ...);
+static int parsing_error(sdp_parser_t *p, char const *fmt, ...);
 
 /** Parse an SDP message.
  *
@@ -357,7 +357,7 @@ static void parse_message(sdp_parser_t *p)
   if (!STRICT(p))
     strip = SPACE TAB;		/* skip initial whitespace */
   else
-    strip = NULL;
+    strip = "";
 
   p->pr_ok = 1;
   p->pr_session->sdp_size = sizeof(p->pr_session);
@@ -550,18 +550,15 @@ int sdp_sanity_check(sdp_parser_t *p)
   sdp_media_t *m;
 
   if (!p || !p->pr_ok)
-    ;
-  else if (sdp->sdp_version[0] != 0)
-    parsing_error(p, "Incorrect version");
-  else if (!sdp->sdp_origin)
-    parsing_error(p, "No o= present");
-  else if (p->pr_strict && !sdp->sdp_subject)
-    parsing_error(p, "No s= present");
-  else if (p->pr_strict && !sdp->sdp_time)
-    parsing_error(p, "No t= present");
-
-  if (!p->pr_ok)
     return -1;
+  else if (sdp->sdp_version[0] != 0)
+    return parsing_error(p, "Incorrect version");
+  else if (!sdp->sdp_origin)
+    return parsing_error(p, "No o= present");
+  else if (p->pr_strict && !sdp->sdp_subject)
+    return parsing_error(p, "No s= present");
+  else if (p->pr_strict && !sdp->sdp_time)
+    return parsing_error(p, "No t= present");
 
   /* If there is no session level c= check that one exists for all media */
   /* c= line may be missing if this is a RTSP description */
@@ -1707,7 +1704,7 @@ static void parse_descs(sdp_parser_t *p,
   if (!STRICT(p))
     strip = SPACE TAB;		/* skip initial whitespace */
   else
-    strip = NULL;
+    strip = "";
   
   for (;
        record && p->pr_ok;
@@ -1846,7 +1843,7 @@ static char *next(char **message, const char *sep, const char *strip)
   size_t n;
   char *retval = *message;
 
-  if (strip)
+  if (strip[0])
     retval += strspn(retval, strip);
 
   n = strcspn(retval, sep);
@@ -1867,7 +1864,7 @@ static char *next(char **message, const char *sep, const char *strip)
   return retval;
 }
 
-static void parsing_error(sdp_parser_t *p, char const *fmt, ...)
+static int parsing_error(sdp_parser_t *p, char const *fmt, ...)
 {
   int n;
   va_list ap;
@@ -1878,6 +1875,8 @@ static void parsing_error(sdp_parser_t *p, char const *fmt, ...)
   va_end(ap);
 
   p->pr_ok = 0;
+
+  return -1;
 }
 
 static void parse_alloc_error(sdp_parser_t *p, const char *typename)
