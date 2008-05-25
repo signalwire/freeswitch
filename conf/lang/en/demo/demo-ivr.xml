@@ -15,8 +15,6 @@
     <input pattern="(.*)">
       <match>
         <!-- string together several existing sound files to create one long greeting -->
-        <action function="execute" data="answer"/>
-        <action function="execute" data="sleep(1000)"/>
         <action function="play-file" data="ivr/ivr-welcome_to_freeswitch.wav"/>
         <action function="execute" data="sleep(250)"/>
         <action function="play-file" data="ivr/ivr-this_ivr_will_let_you_test_features.wav"/>
