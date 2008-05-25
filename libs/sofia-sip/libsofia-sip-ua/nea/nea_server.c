@@ -1493,8 +1493,9 @@ int nea_server_add_irq(nea_server_t *nes,
 		       nta_incoming_t *irq, 
 		       sip_t const *sip)
 {
-  nea_sub_t *s = NULL;
-  s = nea_sub_create(nes);
+  nea_sub_t *s = nea_sub_create(nes);
+  if (s == NULL)
+    return 500;
 
   s->s_from = sip_from_dup(nes->nes_home, sip->sip_from);
 
