@@ -152,12 +152,16 @@ void tport_stamp(tport_t const *self, msg_t *msg,
   char label[24] = "";
   char *comp = "";
   char name[SU_ADDRSIZE] = "";
-  su_sockaddr_t const *su = msg_addr(msg);
+  su_sockaddr_t const *su;
   unsigned short second, minute, hour;
+
+  assert(self); assert(msg);
 
   second = (unsigned short)(now.tv_sec % 60);
   minute = (unsigned short)((now.tv_sec / 60) % 60);
   hour = (unsigned short)((now.tv_sec / 3600) % 24);
+
+  su = msg_addr(msg);
 
 #if SU_HAVE_IN6
   if (su->su_family == AF_INET6) {
@@ -183,10 +187,13 @@ void tport_dump_iovec(tport_t const *self, msg_t *msg,
 		      size_t n, su_iovec_t const iov[], size_t iovused,
 		      char const *what, char const *how)
 {
-  tport_master_t *mr = self->tp_master;
+  tport_master_t *mr;
   char stamp[128];
   size_t i;
 
+  assert(self); assert(msg);
+
+  mr = self->tp_master;
   if (!mr->mr_dump_file)
     return;
 
