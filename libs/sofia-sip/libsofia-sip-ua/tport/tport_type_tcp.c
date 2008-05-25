@@ -277,7 +277,8 @@ int tport_recv_stream(tport_t *self)
     if (n <= 0)
       return (int)n;
 
-    SU_DEBUG_7(("%s(%p): received keepalive\n", __func__, (void *)self));
+    SU_DEBUG_7(("%s(%p): received keepalive (total %u)\n", __func__,
+		(void *)self, self->tp_ping));
 
     N -= n, self->tp_ping += n;
 
@@ -449,7 +450,9 @@ void tport_keepalive_timer(tport_t *self, su_time_t now)
 		  __func__, (void *)self,
 		  "closing connection", TPN_ARGS(self->tp_name), 
 		  " because of PONG timeout"));
-      tport_close(self);
+      tport_error_report(self, EPIPE, NULL);
+      if (!self->tp_closed)
+	tport_close(self);
       return;
     }
   }

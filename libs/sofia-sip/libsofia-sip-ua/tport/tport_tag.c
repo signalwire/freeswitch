@@ -226,7 +226,7 @@ tag_typedef_t tptag_pingpong = UINTTAG_TYPEDEF(pingpong);
  * If true, respond with PONG to PING. Default value is 0 (false).
  *
  * If set, the ping-pong protocol is used on TCP connections. If a ping (at
- * least 4 whitespace characters) is received within messages, a pong
+ * least 4 whitespace characters) is received between messages, a pong
  * (CR-LF) is sent in response.
  *
  * Use with tport_tcreate(), tport_tbind(), tport_set_params(), nua_create(),
