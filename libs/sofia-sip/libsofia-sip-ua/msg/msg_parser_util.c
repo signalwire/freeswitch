@@ -191,9 +191,9 @@ issize_t msg_any_list_d(su_home_t *home,
 			issize_t (*scanner)(char *s), 
 			int sep)
 {
-  char const *auto_list[MSG_N_PARAMS];
-  char const **list = auto_list, **re_list;
-  int N = MSG_N_PARAMS, n = 0;
+  char const *stack[MSG_N_PARAMS];
+  char const **list = stack, **re_list;
+  size_t N = MSG_N_PARAMS, n = 0;
   issize_t tlen;
   char *s = *ss;
   char const **start;
@@ -221,7 +221,7 @@ issize_t msg_any_list_d(su_home_t *home,
     if (tlen > 0) {
       if (n + 1 == N) {		/* Reallocate list? */
 	N = MSG_PARAMS_NUM(N + 1);
-	if (list == auto_list || list == *append_list) {
+	if (list == stack || list == *append_list) {
 	  re_list = su_alloc(home, N * sizeof(*list));
 	  if (re_list)
 	    memcpy(re_list, list, n * sizeof(*list));
@@ -247,23 +247,25 @@ issize_t msg_any_list_d(su_home_t *home,
 
   *ss = s;
 
-  if (n > 0 && list == auto_list) {
+  if (n == 0) {
+    *append_list = NULL;
+    return 0;
+  }
+
+  if (list == stack) {
     size_t size = sizeof(*list) * MSG_PARAMS_NUM(n + 1);
     list = su_alloc(home, size);
     if (!list) return -1;
-    memcpy((void *)list, auto_list, n * sizeof(*list));
+    memcpy((void *)list, stack, n * sizeof(*list));
   }
 
   list[n] = NULL;
-  if (n == 0)
-    list = NULL;
-
   *append_list = list;
   return 0;
 
  error:
   *start = NULL;
-  if (list != auto_list && list != *append_list)
+  if (list != stack && list != *append_list)
     su_free(home, list);
   return -1;
 }
@@ -362,7 +364,8 @@ issize_t msg_avlist_d(su_home_t *home,
     for (n = 0; params[n]; n++)
       ;
     N = MSG_PARAMS_NUM(n + 1);
-  } else {
+  }
+  else {
     params = stack;
     N = MSG_PARAMS_NUM(1);
   }
