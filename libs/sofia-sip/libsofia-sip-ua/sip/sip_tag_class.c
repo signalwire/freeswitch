@@ -158,7 +158,8 @@ tagi_t *siptag_filter(tagi_t *dst,
 			(msg_pub_t *)sip, hc);
 
     /* Is header present in the SIP message? */
-    if ((char *)hh >= ((char *)sip + sip->sip_size) ||
+    if (hh == NULL ||
+	(char *)hh >= ((char *)sip + sip->sip_size) ||
 	(char *)hh < (char *)&sip->sip_request)
       return dst;
 
@@ -234,8 +235,12 @@ int sip_add_tagis(msg_t *msg, sip_t *sip, tagi_t const **inout_list)
 
       if (h == SIP_NONE) {	/* Remove header */
 	hh = msg_hclass_offset(msg_mclass(msg), (msg_pub_t *)sip, hc);
-	while (*hh)
-	  msg_header_remove(msg, (msg_pub_t *)sip, *hh);
+	if (hh != NULL &&
+	    (char *)hh < ((char *)sip + sip->sip_size) &&
+	    (char *)hh >= (char *)&sip->sip_request) {
+	  while (*hh)
+	    msg_header_remove(msg, (msg_pub_t *)sip, *hh);
+	}
 	continue;
       } 
 
@@ -441,18 +446,21 @@ tagi_t *sip_url_query_as_taglist(su_home_t *home, char const *query,
     msg_hclass_t *hc = NULL;
 
     hnv = su_strlst_item(l, i);
-    n = strcspn(hnv, "=");
+    n = hnv ? strcspn(hnv, "=") : 0;
     if (n == 0)
       break;
 
     if (n == 4 && strncasecmp(hnv, "body", 4) == 0)
       t = siptag_payload, hc = sip_payload_class;
-    else for (j = 0; (t = sip_tag_list[j]); j++) {
-      hc = (msg_hclass_t *)sip_tag_list[j]->tt_magic;
-      if (n == 1 && strncasecmp(hnv, hc->hc_short, 1) == 0)
-	break;
-      else if (n == (size_t)hc->hc_len && strncasecmp(hnv, hc->hc_name, n) == 0)
-	break;
+    else {
+      for (j = 0; (t = sip_tag_list[j]); j++) {
+	hc = (msg_hclass_t *)sip_tag_list[j]->tt_magic;
+	if (n == 1 && strncasecmp(hnv, hc->hc_short, 1) == 0)
+	  break;
+	else if (n == (size_t)hc->hc_len &&
+		 strncasecmp(hnv, hc->hc_name, n) == 0)
+	  break;
+      }
     }
 
     value = (char *)hnv + n;
