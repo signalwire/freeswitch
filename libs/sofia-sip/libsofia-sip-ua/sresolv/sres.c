@@ -1026,7 +1026,10 @@ sres_search(sres_resolver_t *res,
   if (res->res_n_servers == 0)
     return (void)su_seterrno(ENETDOWN), (sres_query_t *)NULL;
 
-  if (sres_has_search_domain(res))
+  if (domain[dlen - 1] == '.')
+    /* Domain ends with dot - do not search */
+    dots = res->res_config->c_opt.ndots;
+  else if (sres_has_search_domain(res))
     for (dots = 0, dot = strchr(domain, '.');
 	 dots < res->res_config->c_opt.ndots && dot; 
 	 dots++, dot = strchr(dot + 1, '.'))
@@ -1045,6 +1048,8 @@ sres_search(sres_resolver_t *res,
       char const *const *domains = res->res_config->c_search;
       char search[SRES_MAXDNAME + 1];
 
+      assert(dlen < SRES_MAXDNAME);
+
       memcpy(search, domain, dlen);
       search[dlen++] = '.';
       search[dlen] = '\0';
@@ -1062,7 +1067,9 @@ sres_search(sres_resolver_t *res,
 	  sub = sres_query_alloc(res, sres_answer_subquery, (void *)query,
 				 type, search);
 
-	  if (sres_send_dns_query(res, sub) == 0) {
+	  if (sub == NULL) {
+	  }
+	  else if (sres_send_dns_query(res, sub) == 0) {
 	    query->q_subqueries[i] = sub;
 	  }
 	  else {
@@ -1430,7 +1437,10 @@ sres_filter_answers(sres_resolver_t *res,
 {		    
   int i, n;
 
-  for (n = 0, i = 0; answers && answers[i]; i++) {
+  if (res == NULL || answers == NULL)
+    return su_seterrno(EFAULT);
+
+  for (n = 0, i = 0; answers[i]; i++) {
     if (answers[i]->sr_record->r_status ||
 	answers[i]->sr_record->r_class != sres_class_in ||
 	(type != 0 && answers[i]->sr_record->r_type != type)) {
@@ -2010,6 +2020,10 @@ static int sres_parse_win32_reg_parse_dnsserver(sres_config_t *c, HKEY key, LPCT
     if (name_servers_length > MAX_DATALEN) break;
 
     name_servers = su_realloc(home, name_servers, name_servers_length);
+    if (name_servers == NULL) {
+      ret = ERROR_BUFFER_OVERFLOW;
+      break;
+    }
   }
 
   /* if reading the key was succesful, continue */
@@ -3411,23 +3425,26 @@ void sres_log_response(sres_resolver_t const *res,
 #define ADDRSIZE 48
 #endif
     char host[ADDRSIZE] = "*";
+    uint16_t port = 0;
 
     if (from == NULL)
       ;
     else if (from->ss_family == AF_INET) {
       struct sockaddr_in const *sin = (void *)from;
       su_inet_ntop(AF_INET, &sin->sin_addr, host, sizeof host);
+      port = sin->sin_port;
     } 
 #if HAVE_SIN6
     else if (from->ss_family == AF_INET6) {
       struct sockaddr_in6 const *sin6 = (void *)from;
       su_inet_ntop(AF_INET6, &sin6->sin6_addr, host, sizeof host);
+      port = sin6->sin6_port;
     }
 #endif
 
     SU_DEBUG_5(("sres_resolver_receive(%p, %p) id=%u (from [%s]:%u)\n", 
 		(void *)res, (void *)query, m->m_id, 
-		host, ntohs(((struct sockaddr_in *)from)->sin_port)));
+		host, ntohs(port)));
   }
 }
 
@@ -3447,7 +3464,7 @@ sres_decode_msg(sres_resolver_t *res,
 {
   sres_record_t *rr = NULL, **answers = NULL, *error = NULL;
   sres_query_t *query = NULL, **hq;
-  su_home_t *chome = CHOME(res->res_cache);
+  su_home_t *chome;
   hash_value_t hash;
   int err;
   unsigned i, total, errorcount = 0;
@@ -3455,6 +3472,7 @@ sres_decode_msg(sres_resolver_t *res,
   assert(res && m && return_answers);
 
   time(&res->res_now);
+  chome = CHOME(res->res_cache);
 
   *qq = NULL;
   *return_answers = NULL;
@@ -3737,8 +3755,9 @@ static sres_record_t *sres_init_rr_a6(sres_cache_t *cache,
     a6->a6_suffix.u6_addr[i] = m_get_uint8(m);
 
   if (a6->a6_prelen > 0) {
-    /* Zero pad bits */
-    a6->a6_suffix.u6_addr[16 - suffixlen] &= 0xff >> (a6->a6_prelen & 7);
+    if (suffixlen > 0)
+      /* Zero pad bits */
+      a6->a6_suffix.u6_addr[16 - suffixlen] &= 0xff >> (a6->a6_prelen & 7);
 
     offset = m->m_offset, prefixlen = m_get_domain(NULL, 0, m, 0) + 1;
 
