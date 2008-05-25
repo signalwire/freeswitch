@@ -723,6 +723,9 @@ static int create_keepalive_message(outbound_t *ob, sip_t const *regsip)
 
   unsigned d = ob->ob_keepalive.interval;
 
+  if (msg == NULL)
+    return -1;
+
   assert(regsip); assert(regsip->sip_request);
 
   if (m && m->m_params) {
@@ -841,6 +844,13 @@ static int response_to_keepalive_options(outbound_t *ob,
 
   if (status < 200)
     return 0;
+
+  if (sip == NULL) {
+    SU_DEBUG_3(("outbound(%p): keepalive %u %s\n", (void *)ob->ob_owner,
+		status, phrase));
+    ob->ob_oo->oo_keepalive_error(ob->ob_owner, ob, status, phrase, TAG_END());
+    return 0;
+  }
 
   if (status == 401 || status == 407) {
     if (sip->sip_www_authenticate)
