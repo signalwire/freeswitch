@@ -3232,6 +3232,10 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\..\libsofia-sip-ua\nua\nua_types.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\libsofia-sip-ua\nua\outbound.c"
 					>
 					<FileConfiguration

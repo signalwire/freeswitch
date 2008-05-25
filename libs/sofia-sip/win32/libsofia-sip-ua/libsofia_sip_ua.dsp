@@ -725,6 +725,10 @@ SOURCE="..\..\libsofia-sip-ua\nua\nua_tag_ref.c"
 # End Source File
 # Begin Source File
 
+SOURCE="..\..\libsofia-sip-ua\nua\nua_types.h"
+# End Source File
+# Begin Source File
+
 SOURCE="..\..\libsofia-sip-ua\nua\outbound.c"
 # End Source File
 # Begin Source File
