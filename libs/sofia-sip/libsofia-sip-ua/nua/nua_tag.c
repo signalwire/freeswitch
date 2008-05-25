@@ -107,7 +107,7 @@
  *   #nua_i_info, #nua_i_update, #nua_i_message, #nua_i_subscribe,
  *   #nua_i_notify, #nua_i_method, #nua_i_register
  *  Settings:
- * - NUTAG_APPL_METHOD()
+ * - NUTAG_APPL_METHOD(), NUTAG_PROXY()
  * - NUTAG_ALLOW(), SIPTAG_ALLOW(), and SIPTAG_ALLOW_STR()
  * - NUTAG_SUPPORTED(), SIPTAG_SUPPORTED(), and SIPTAG_SUPPORTED_STR()
  *
@@ -838,6 +838,8 @@ tag_typedef_t nutag_substate = INTTAG_TYPEDEF(substate);
  * #nua_i_notify.
  *
  * Corresponding tag taking reference parameter is NUTAG_SUB_EXPIRES_REF().
+ *
+ * @NEW_1_12_9.
  */
 tag_typedef_t nutag_sub_expires = UINTTAG_TYPEDEF(substate);
 
@@ -873,7 +875,7 @@ tag_typedef_t nutag_sub_expires = UINTTAG_TYPEDEF(substate);
  *
  * Corresponding tag taking reference parameter is NUTAG_NEWSUB_REF().
  *
- * @since @NEW_1_12_5.
+ * @NEW_1_12_5.
  */
 tag_typedef_t nutag_newsub = BOOLTAG_TYPEDEF(newsub);
 
@@ -2738,7 +2740,7 @@ tag_typedef_t nutag_dialog = UINTTAG_TYPEDEF(dialog);
 
 /**@def NUTAG_PROXY(x)
  *
- * Outbound proxy URL
+ * Outbound proxy URL.
  *
  * Same tag as NTATAG_DEFAULT_PROXY()
  *
@@ -2746,11 +2748,23 @@ tag_typedef_t nutag_dialog = UINTTAG_TYPEDEF(dialog);
  *    nua_set_params() \n
  *    nua_get_params() \n
  *    nua_create()
+ * @note
+ * Since @VERSION_1_12_9, NUTAG_PROXY()/NTATAG_DEFAULT_PROXY() can be used
+ * to set handle-specific outbound route. The route is set with \n
+ *    nua_set_hparams(), \n
+ *    nua_invite(), nua_prack(), nua_ack(), nua_update(), nua_respond(), \n
+ *    nua_info(), nua_cancel(), nua_bye(), \n
+ *    nua_register(), nua_unregister(), nua_publish(), nua_unpublish(), \n
+ *    nua_subscribe(), nua_unsubscribe(), nua_refer(), nua_notify(), \n
+ *    nua_options(), nua_message(), nua_method()
  *
  * @par Parameter type
  *    url_string_t const * (either char const * or url_t *)
  *
  * @par Values
+ *    NULL implies routing based on request-URI or Route header.
+ *    Non-NULL is used as invisible routing URI, ie., routing URI that is
+ *    not included in the request.
  *
  * Corresponding tag taking reference parameter is NUTAG_PROXY_REF().
  */
