@@ -1117,6 +1117,8 @@ static int offer_answer_step(soa_session_t *ss,
 
   if (action == generate_offer)
     remote = NULL;
+  else if (remote == NULL)
+    return soa_set_status(ss, 500, "No remote SDP");
 
   /* Pre-negotiation Step: Expand truncated remote SDP */
   if (local && remote) switch (action) {
@@ -1127,6 +1129,8 @@ static int offer_answer_step(soa_session_t *ss,
       SU_DEBUG_5(("%s: remote %s is truncated: expanding\n",
 		  by, action == generate_answer ? "offer" : "answer"));
       remote = soa_sdp_expand_media(tmphome, remote, local);
+      if (remote == NULL)
+	return soa_set_status(ss, 500, "Cannot expand remote session");
     }
   default:
     break;
