@@ -501,6 +501,9 @@ nua_dialog_usage_t *nua_dialog_usage_public(void const *p)
 #define nua_dialog_usage_public(p) ((p) ? (nua_dialog_usage_t*)(p) - 1 : NULL)
 #endif
 
+#define NUA_DIALOG_USAGE_PRIVATE(du) ((void *)((du) + 1))
+#define NUA_DIALOG_USAGE_PUBLIC(pu) ((void *)((nua_dialog_usage_t *)(pu) - 1))
+
 /* ---------------------------------------------------------------------- */
 
 int nua_client_create(nua_owner_t *owner,
