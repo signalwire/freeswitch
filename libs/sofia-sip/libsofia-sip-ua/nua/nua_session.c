@@ -223,7 +223,7 @@ int nua_session_usage_add(nua_handle_t *nh,
 			   nua_dialog_state_t *ds,
 			   nua_dialog_usage_t *du)
 {
-  nua_session_usage_t *ss = nua_dialog_usage_private(du);  
+  nua_session_usage_t *ss = NUA_DIALOG_USAGE_PRIVATE(du);
 
   if (ds->ds_has_session)
     return -1;
@@ -243,7 +243,7 @@ void nua_session_usage_remove(nua_handle_t *nh,
 			      nua_client_request_t *cr0,
 			      nua_server_request_t *sr0)
 {
-  nua_session_usage_t *ss = nua_dialog_usage_private(du);
+  nua_session_usage_t *ss = NUA_DIALOG_USAGE_PRIVATE(du);
   nua_client_request_t *cr, *cr_next;
   nua_server_request_t *sr;
 
@@ -1478,7 +1478,7 @@ static void nua_session_usage_refresh(nua_handle_t *nh,
 				      nua_dialog_usage_t *du,
 				      sip_time_t now)
 {
-  nua_session_usage_t *ss = nua_dialog_usage_private(du);
+  nua_session_usage_t *ss = NUA_DIALOG_USAGE_PRIVATE(du);
   nua_client_request_t const *cr = du->du_cr;
   nua_server_request_t const *sr;
 
@@ -1525,7 +1525,7 @@ static int nua_session_usage_shutdown(nua_handle_t *nh,
 				      nua_dialog_state_t *ds,
 				      nua_dialog_usage_t *du)
 {
-  nua_session_usage_t *ss = nua_dialog_usage_private(du);
+  nua_session_usage_t *ss = NUA_DIALOG_USAGE_PRIVATE(du);
   nua_server_request_t *sr, *sr_next;
   nua_client_request_t *cri;
 
@@ -2729,7 +2729,7 @@ int nua_prack_server_respond(nua_server_request_t *sr, tagi_t const *tags)
 
     if (nh->nh_soa == NULL) {
       if (sr->sr_offer_recv && session_get_description(sip, NULL, NULL))
-	sr->sr_answer_sent = 1, ss->ss_oa_sent = Answer;
+	sr->sr_answer_sent = 1, ss ? ss->ss_oa_sent = Answer : Answer;
     }
     else if ((sr->sr_offer_recv && soa_generate_answer(nh->nh_soa, NULL) < 0) ||
 	     (sr->sr_answer_recv && soa_process_answer(nh->nh_soa, NULL) < 0)) {
@@ -2743,7 +2743,7 @@ int nua_prack_server_respond(nua_server_request_t *sr, tagi_t const *tags)
       if (session_include_description(nh->nh_soa, 1, msg, sip) < 0)
 	sr_status(sr, SIP_500_INTERNAL_SERVER_ERROR);
       else
-      sr->sr_answer_sent = 1, ss->ss_oa_sent = Answer;
+	sr->sr_answer_sent = 1, ss ? ss->ss_oa_sent = Answer : Answer;
     }
   }
 
@@ -3398,7 +3398,7 @@ int nua_update_server_init(nua_server_request_t *sr)
     }
 
     sr->sr_offer_recv = 1;
-    ss->ss_oa_recv = Offer;
+    ss ? ss->ss_oa_recv = Offer : Offer;
   }
 
   return 0;
@@ -3416,7 +3416,7 @@ int nua_update_server_respond(nua_server_request_t *sr, tagi_t const *tags)
 
   if (200 <= sr->sr_status && sr->sr_status < 300 && sr->sr_sdp) {
     if (nh->nh_soa == NULL) {
-      sr->sr_answer_sent = 1, ss->ss_oa_sent = Answer;
+      sr->sr_answer_sent = 1, ss ? ss->ss_oa_sent = Answer : Answer;
     }
     else if (soa_generate_answer(nh->nh_soa, NULL) < 0) {
       SU_DEBUG_5(("nua(%p): %s server: %s %s\n", 
