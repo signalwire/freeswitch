@@ -236,13 +236,18 @@ int su_vector_empty(su_vector_t *vector)
  */
 int su_vector_append(su_vector_t *vector, void *item)
 {
-  size_t index = vector->v_len;
+  size_t index;
 
-  if (vector && su_vector_make_place(vector, index)) {
-    vector->v_list[index] = item;
-    return 0;
-  }
-  return -1;
+  if (vector == 0)
+    return -1;
+
+  index = vector->v_len;
+
+  if (su_vector_make_place(vector, index) <= 0)
+    return -1;
+
+  vector->v_list[index] = item;
+  return 0;
 }
 
 /**Get a numbered item from list. 
