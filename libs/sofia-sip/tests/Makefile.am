@@ -32,19 +32,12 @@ libtestproxy_a_SOURCES = test_proxy.h test_proxy.c
 
 libtestnat_a_SOURCES =	test_nat.h test_nat.c test_nat_tags.c
 
-#
-# Install in special test package
-#
-testsdir = 		${libdir}/tests/libsofia-sip-ua-tests
-tests_PROGRAMS =
-
 if HAVE_CHECK
 TESTS += check_sofia
-tests_PROGRAMS += check_sofia
+check_PROGRAMS += check_sofia
 endif
 
 check_sofia_CFLAGS = @CHECK_CFLAGS@
-
 
 check_sofia_SOURCES = check_sofia.c check_sofia.h \
 	suite_for_nua.c
