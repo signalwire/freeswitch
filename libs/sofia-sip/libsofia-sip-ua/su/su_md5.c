@@ -332,7 +332,7 @@ su_md5_digest(su_md5_t const *context, uint8_t digest[16])
   p = ctx->in + count;
   *p++ = 0x80;
   
-  /* Bytes of padding needde to make 64 bytes */
+  /* Bytes of padding needed to make 64 bytes */
   count = 64 - 1 - count;
   
   /* Pad out to 56 mod 64 */
