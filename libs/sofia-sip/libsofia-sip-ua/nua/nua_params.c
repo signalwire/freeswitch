@@ -1103,7 +1103,6 @@ int nhp_save_params(nua_handle_t *nh,
 
   if (nh == dnh || nh->nh_prefs != dnh->nh_prefs) {
     dst = nh->nh_prefs, *old = *dst;
-    assert(dst);
   }
   else {
     dst = su_zalloc(home, sizeof *dst), memset(old, 0, sizeof *old);
