@@ -155,7 +155,7 @@ int t_snprintf(tagi_t const *t, char b[], size_t size)
   if (m < 0)
     return m;
 
-  if (m == 0 && (size_t)n < size)
+  if (m == 0 && 0 < n && (size_t)n < size)
     b[--n] = '\0';
 
   return n + m;
@@ -756,6 +756,8 @@ tagi_t *tl_vllist(tag_type_t tag, tag_value_t value, va_list ap)
   va_end(aq);
 
   t = rv = malloc(size);
+  if (rv == NULL)
+    return rv;
 
   tagi[0].t_tag = tag;
   tagi[0].t_value = value;
