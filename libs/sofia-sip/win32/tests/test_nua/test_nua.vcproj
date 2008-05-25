@@ -234,7 +234,7 @@
 			>
 		</File>
 		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_100rel.c"
+			RelativePath="..\..\..\tests\test_100rel.c"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -256,7 +256,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_basic_call.c"
+			RelativePath="..\..\..\tests\test_basic_call.c"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -278,7 +278,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_call_hold.c"
+			RelativePath="..\..\..\tests\test_call_hold.c"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -300,7 +300,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_call_reject.c"
+			RelativePath="..\..\..\tests\test_call_reject.c"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -322,7 +322,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_cancel_bye.c"
+			RelativePath="..\..\..\tests\test_cancel_bye.c"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -344,7 +344,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_extension.c"
+			RelativePath="..\..\..\tests\test_extension.c"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -366,7 +366,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_init.c"
+			RelativePath="..\..\..\tests\test_init.c"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -388,7 +388,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_nat.c"
+			RelativePath="..\..\..\tests\test_nat.c"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -410,7 +410,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_nat.h"
+			RelativePath="..\..\..\tests\test_nat.h"
 			>
 		</File>
 		<File
@@ -436,7 +436,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_nua.c"
+			RelativePath="..\..\..\tests\test_nua.c"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -458,33 +458,11 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_nua.h"
+			RelativePath="..\..\..\tests\test_nua.h"
 			>
 		</File>
 		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_nua_api.c"
-			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions=""
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions=""
-				/>
-			</FileConfiguration>
-		</File>
-		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_nua_params.c"
+			RelativePath="..\..\..\tests\test_nua_api.c"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -506,11 +484,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_offer_answer.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_ops.c"
+			RelativePath="..\..\..\tests\test_nua_params.c"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -532,7 +506,11 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_proxy.c"
+			RelativePath="..\..\..\tests\test_offer_answer.c"
+			>
+		</File>
+		<File
+			RelativePath="..\..\..\tests\test_ops.c"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -554,11 +532,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_proxy.h"
-			>
-		</File>
-		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_refer.c"
+			RelativePath="..\..\..\tests\test_proxy.c"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -580,7 +554,11 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_register.c"
+			RelativePath="..\..\..\tests\test_proxy.h"
+			>
+		</File>
+		<File
+			RelativePath="..\..\..\tests\test_refer.c"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -602,7 +580,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_session_timer.c"
+			RelativePath="..\..\..\tests\test_register.c"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -624,7 +602,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_simple.c"
+			RelativePath="..\..\..\tests\test_session_timer.c"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -646,7 +624,29 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\..\libsofia-sip-ua\nua\test_sip_events.c"
+			RelativePath="..\..\..\tests\test_simple.c"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions=""
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions=""
+				/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\..\..\tests\test_sip_events.c"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"

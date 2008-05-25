@@ -89,39 +89,39 @@ SOURCE="..\..\..\libsofia-sip-ua\su\memmem.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_100rel.c"
+SOURCE="..\..\..\tests\test_100rel.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_basic_call.c"
+SOURCE="..\..\..\tests\test_basic_call.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_call_hold.c"
+SOURCE="..\..\..\tests\test_call_hold.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_call_reject.c"
+SOURCE="..\..\..\tests\test_call_reject.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_cancel_bye.c"
+SOURCE="..\..\..\tests\test_cancel_bye.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_extension.c"
+SOURCE="..\..\..\tests\test_extension.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_init.c"
+SOURCE="..\..\..\tests\test_init.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_nat.c"
+SOURCE="..\..\..\tests\test_nat.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_nat.h"
+SOURCE="..\..\..\tests\test_nat.h"
 # End Source File
 # Begin Source File
 
@@ -129,55 +129,55 @@ SOURCE=.\test_nat_tags.cpp
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_nua.c"
+SOURCE="..\..\..\tests\test_nua.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_nua.h"
+SOURCE="..\..\..\tests\test_nua.h"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_nua_api.c"
+SOURCE="..\..\..\tests\test_nua_api.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_nua_params.c"
+SOURCE="..\..\..\tests\test_nua_params.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_offer_answer.c"
+SOURCE="..\..\..\tests\test_offer_answer.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_ops.c"
+SOURCE="..\..\..\tests\test_ops.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_proxy.c"
+SOURCE="..\..\..\tests\test_proxy.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_proxy.h"
+SOURCE="..\..\..\tests\test_proxy.h"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_refer.c"
+SOURCE="..\..\..\tests\test_refer.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_register.c"
+SOURCE="..\..\..\tests\test_register.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_session_timer.c"
+SOURCE="..\..\..\tests\test_session_timer.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_simple.c"
+SOURCE="..\..\..\tests\test_simple.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\..\libsofia-sip-ua\nua\test_sip_events.c"
+SOURCE="..\..\..\tests\test_sip_events.c"
 # End Source File
 # Begin Source File
 
