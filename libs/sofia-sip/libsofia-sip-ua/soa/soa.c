@@ -881,37 +881,41 @@ int soa_set_capability_sdp(soa_session_t *ss,
 
 /** Set capabilities */
 int 
-soa_base_set_capability_sdp(soa_session_t *ss, 
-			    sdp_session_t *sdp, char const *str0, isize_t len0)
+soa_base_set_capability_sdp(soa_session_t *ss,
+			    sdp_session_t *_sdp,
+			    char const *str0, isize_t len0)
 {
+  sdp_session_t sdp[1];
   sdp_origin_t o[1] = {{ sizeof(o) }};
   sdp_connection_t *c, c0[1] = {{ sizeof(c0) }};
   char c_address[64];
   sdp_time_t t[1] = {{ sizeof(t) }};
   sdp_media_t *m;
 
+  *sdp = *_sdp;
+
   if (sdp->sdp_origin)
     *o = *sdp->sdp_origin;
   else
     o->o_address = c0;
 
-  sdp->sdp_origin = o;
-
   if (soa_init_sdp_origin(ss, o, c_address) < 0)
     return -1;
 
-  if (!sdp->sdp_subject)
-    sdp->sdp_subject = "-";
+  sdp->sdp_origin = o;
 
-  sdp->sdp_time = t;
+  if (!sdp->sdp_subject)
+    sdp->sdp_subject = "-";	/* s=- */
+
+  sdp->sdp_time = t;		/* t=0 0 */
 
   /* Set port to zero - or should we check that port is already zero? */
   for (m = sdp->sdp_media; m; m = m->m_next)
     m->m_port = 0;
 
-  c = sdp->sdp_origin->o_address;
-
   if (sdp->sdp_connection == NULL) {
+    c = sdp->sdp_origin->o_address;
+
     for (m = sdp->sdp_media; m; m = m->m_next)
       if (m->m_connections == NULL)
 	break;
@@ -1977,6 +1981,9 @@ int soa_set_sdp(soa_session_t *ss,
   sdp_parser_t *parser = NULL;
   sdp_session_t sdp[1];
 
+  if (ss == NULL)
+    return -1;
+
   switch (what) {
   case soa_capability_sdp_kind:
     ssd = ss->ss_caps;
@@ -1994,15 +2001,16 @@ int soa_set_sdp(soa_session_t *ss,
     return -1;
   }
 
-  if (sdp_str && str_len == -1)
-    str_len = strlen(sdp_str);
-
-  if (sdp0)
+  if (sdp0) {
     new_version = sdp_session_cmp(sdp0, ssd->ssd_sdp) != 0;
-  else if (sdp_str)
+    sdp_str = NULL, str_len = -1;
+  }
+  else if (sdp_str) {
+    if (str_len == -1)
+      str_len = strlen(sdp_str);
     new_version = !ssd->ssd_unparsed ||
-      str0ncmp(sdp_str, ssd->ssd_unparsed, str_len) != 0 ||
-      ssd->ssd_unparsed[str_len] != '\0';
+      str0ncmp(sdp_str, ssd->ssd_unparsed, str_len + 1) != 0;
+  }
   else
     return (void)su_seterrno(EINVAL), -1;
 
