@@ -145,7 +145,7 @@ nea_event_t *nh_notifier_event(nua_handle_t *nh,
 
   if (ev == NULL) {
     char *o_type = su_strdup(home, event->o_type);
-    char *o_subtype = strchr(o_type, '.');
+    char *o_subtype = o_type ? strchr(o_type, '.') : NULL;
 
     if (o_subtype)
       *o_subtype++ = '\0';
