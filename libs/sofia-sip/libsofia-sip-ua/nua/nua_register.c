@@ -188,7 +188,7 @@ static int nua_register_usage_add(nua_handle_t *nh,
 				  nua_dialog_state_t *ds,
 				  nua_dialog_usage_t *du)
 {
-  nua_registration_t *nr = nua_dialog_usage_private(du);
+  nua_registration_t *nr = NUA_DIALOG_USAGE_PRIVATE(du);
 
   if (ds->ds_has_register)
     return -1;			/* There can be only one usage */
@@ -207,7 +207,7 @@ static void nua_register_usage_remove(nua_handle_t *nh,
 				      nua_client_request_t *cr,
 				      nua_server_request_t *sr)
 {
-  nua_registration_t *nr = nua_dialog_usage_private(du);
+  nua_registration_t *nr = NUA_DIALOG_USAGE_PRIVATE(du);
 
   if (nr->nr_list)
     nua_registration_remove(nr);	/* Remove from list of registrations */
@@ -236,7 +236,7 @@ static void nua_register_usage_peer_info(nua_dialog_usage_t *du,
 					 nua_dialog_state_t const *ds,
 					 sip_t const *sip)
 {
-  nua_registration_t *nr = nua_dialog_usage_private(du);
+  nua_registration_t *nr = NUA_DIALOG_USAGE_PRIVATE(du);
   if (nr->nr_ob)
     outbound_peer_info(nr->nr_ob, sip);
 }
@@ -1016,16 +1016,18 @@ void nua_register_connection_closed(tp_stack_t *sip_stack,
 				    msg_t *msg,
 				    int error)
 {
-  nua_dialog_usage_t *du = nua_dialog_usage_public(nr);
+  nua_dialog_usage_t *du;
   tp_name_t const *tpn;
-  int pending = nr->nr_error_report_id;
+  int pending;
 
-  assert(tport == nr->nr_tport);
-
-  if (!nr->nr_tport)
+  assert(nr && tport == nr->nr_tport);
+  if (nr == NULL || tport != nr->nr_tport)
     return;
 
-  if (tport_release(nr->nr_tport, pending, NULL, NULL, nr, 0) < 0)
+  du = NUA_DIALOG_USAGE_PUBLIC(nr);
+  pending = nr->nr_error_report_id;
+
+  if (tport_release(tport, pending, NULL, NULL, nr, 0) < 0)
     SU_DEBUG_1(("nua_register: tport_release() failed\n"));
   nr->nr_error_report_id = 0;
 
@@ -1110,7 +1112,7 @@ static int nua_register_usage_shutdown(nua_handle_t *nh,
 				       nua_dialog_usage_t *du)
 {
   nua_client_request_t *cr = du->du_cr;
-  nua_registration_t *nr = nua_dialog_usage_private(du);
+  nua_registration_t *nr = NUA_DIALOG_USAGE_PRIVATE(du);
 
   if (cr) {
     if (nua_client_is_queued(cr)) /* Already registering. */
