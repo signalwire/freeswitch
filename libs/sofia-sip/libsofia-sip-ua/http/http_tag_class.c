@@ -117,10 +117,13 @@ tagi_t *httptag_filter(tagi_t *dst,
     http_header_t const *h, **hh;
 
     http = (http_t const *)src->t_value;
+    if (http == NULL)
+      return dst;
+
     mc = (void *)http->http_common->h_class;
     hh = (void *)msg_hclass_offset(mc, http, hc);
 
-    if (http == NULL ||
+    if (hh == NULL ||
 	(char *)hh >= ((char *)http + http->http_size) ||
 	(char *)hh < (char *)&http->http_request)
       return dst;
