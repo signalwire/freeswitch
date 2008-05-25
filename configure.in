@@ -540,6 +540,15 @@ then
 			PYTHON_CFLAGS="`$PYTHON -c 'from distutils import sysconfig; flags = [[\"-I\" + sysconfig.get_python_inc(0), \"-I\" + sysconfig.get_python_inc(1), \" \".join(sysconfig.get_config_var(\"CFLAGS\").split())]]; print \" \".join(flags);'`"
 			PYTHON_LDFLAGS="`$PYTHON -c 'from distutils import sysconfig; libs = sysconfig.get_config_var(\"LIBS\").split() + sysconfig.get_config_var(\"SYSLIBS\").split(); libs.append(\"-lpython\"+sysconfig.get_config_var(\"VERSION\")); print \" \".join(libs);'`"
 			PYTHON_LIB="`$PYTHON -c 'from distutils import sysconfig; print \"python\" + sysconfig.get_config_var(\"VERSION\");'`"
+			PYTHON_LIBDIR="`$PYTHON -c 'from distutils import sysconfig; print sysconfig.get_config_var(\"LIBDIR\");'`"
+
+			# handle python being installed into /usr/local
+			AC_MSG_CHECKING([python libdir])
+			if test -z "`echo $PYTHON_LIBDIR | grep "/usr/lib"`" ; then
+				PYTHON_LDFLAGS="-L$PYTHON_LIBDIR $PYTHON_LDFLAGS"
+				LIBS="-L$PYTHON_LIBDIR $LIBS"
+			fi
+			AC_MSG_RESULT([$PYTHON_LIBDIR])
 
 			# check libpython
 			AC_CHECK_LIB([$PYTHON_LIB], [main], [has_libpython="yes"], [has_libpython="no"])
