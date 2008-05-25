@@ -54,5 +54,7 @@ ALIASES = \
  "EXP_1_12_7=@since Experimental in <a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.7.txt\">1.12.7</a>, available if --enable-experimental configuration option is given" \
  "VERSION_1_12_8=<a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.8.txt\">1.12.8</a>" \
  "NEW_1_12_8=@since New in <a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.8.txt\">1.12.8</a>" \
+ "VERSION_1_12_9=<a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.9.txt\">1.12.9</a>" \
+ "NEW_1_12_9=@since New in <a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.9.txt\">1.12.9</a>" \
 
 
