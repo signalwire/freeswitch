@@ -56,9 +56,9 @@ SWITCH_MODULE_DEFINITION(mod_xml_cdr, mod_xml_cdr_load, NULL, NULL);
  * and the default curl activity is to print to stdout, something not as desirable
  * so we have a dummy function here
  */
-static void httpCallBack()
+static size_t httpCallBack(char *buffer, size_t size, size_t nitems, void *outstream)
 {
-	return;
+	return size * nitems;
 }
 
 static switch_status_t my_on_hangup(switch_core_session_t *session)
