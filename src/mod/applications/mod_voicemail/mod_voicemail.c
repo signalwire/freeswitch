@@ -952,8 +952,10 @@ record_file:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "failed to delete file [%s]\n", file_path);
 			}
             if (switch_channel_ready(channel)) {
+                /* TODO Rel 1.0 : Add Playback of Prompt <message is too short, please rerecord your message>, then go back at record_file */
                 goto record_file;
             } else {
+                status = SWITCH_STATUS_BREAK;
                 goto end;
             }
         } else {
@@ -1741,7 +1743,9 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	switch_file_handle_t fh = { 0 };
 	switch_input_args_t args = { 0 };
 	char *email_vm = NULL;
+    char *email_vm_notify = NULL;
 	int send_mail = 0;
+    int send_mail_only = 0;
 	cc_t cc = { 0 };
 	char *read_flags = NORMAL_FLAG_STRING;
 	int priority = 3;
@@ -1804,8 +1808,12 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 
 						if (!strcasecmp(var, "vm-mailto")) {
 							email_vm = switch_core_session_strdup(session, val);
+                        } else if (!strcasecmp(var, "vm-mailto-notify")) {
+                            email_vm_notify = switch_core_session_strdup(session, val);
 						} else if (!strcasecmp(var, "email-addr")) {
 							email_addr = val;
+                        } else if (!strcasecmp(var, "vm-email-only")) {
+                            send_mail_only = switch_true(val);
 						} else if (!strcasecmp(var, "vm-email-all-messages")) {
 							send_mail = switch_true(val);
 						} else if (!strcasecmp(var, "vm-delete-file")) {
@@ -1944,7 +1952,7 @@ greet:
 		}
 	}
 
-	if (!send_mail && switch_file_exists(file_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+	if (!send_mail_only && switch_file_exists(file_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 		char *usql;
 		switch_event_t *event;
 		char *mwi_id = NULL;
@@ -1979,7 +1987,7 @@ greet:
 
 end:
 
-	if (send_mail && !switch_strlen_zero(email_vm)) {
+	if (send_mail && !switch_strlen_zero(email_vm) && switch_file_exists(file_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 		switch_event_t *event;
 		char *from;
 		char *body;
@@ -2080,10 +2088,13 @@ end:
 		} else {
 			switch_simple_email(email_vm, from, header_string, body, NULL);
 		}
+        if (!switch_strlen_zero(email_vm_notify)) {
+            switch_simple_email(email_vm_notify, from, header_string, body, NULL);
+        }
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending message to %s\n", email_vm);
 		switch_safe_free(body);
-		if (email_delete) {
+		if (email_delete && send_mail_only) {
 			if (unlink(file_path) != 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "failed to delete file [%s]\n", file_path);
 			}

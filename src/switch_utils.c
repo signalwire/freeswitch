@@ -373,11 +373,10 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
             if ((ifd = open(file, O_RDONLY)) < 1) {
                 return SWITCH_FALSE;
             }
-
-            switch_snprintf(buf, B64BUFFLEN, "MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"%s\"\n", bound);
-            if (!write_buf(fd, buf)) {
-                return SWITCH_FALSE;
-            }
+        }
+        switch_snprintf(buf, B64BUFFLEN, "MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"%s\"\n", bound);
+        if (!write_buf(fd, buf)) {
+            return SWITCH_FALSE;
         }
 
         if (headers && !write_buf(fd, headers))
@@ -386,15 +385,13 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
         if (!write_buf(fd, "\n\n"))
             return SWITCH_FALSE;
 
-        if (file) {
-			if (body && switch_stristr("content-type", body)) {
-				switch_snprintf(buf, B64BUFFLEN, "--%s\n", bound);
-			} else {
-				switch_snprintf(buf, B64BUFFLEN, "--%s\nContent-Type: text/plain\n\n", bound);
-			}
-            if (!write_buf(fd, buf))
-                return SWITCH_FALSE;
-        }
+		if (body && switch_stristr("content-type", body)) {
+			switch_snprintf(buf, B64BUFFLEN, "--%s\n", bound);
+		} else {
+			switch_snprintf(buf, B64BUFFLEN, "--%s\nContent-Type: text/plain\n\n", bound);
+		}
+        if (!write_buf(fd, buf))
+            return SWITCH_FALSE;
 
         if (body) {
             if (!write_buf(fd, body)) {
@@ -456,11 +453,9 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 
         }
 
-        if (file) {
-            switch_snprintf(buf, B64BUFFLEN, "\n\n--%s--\n.\n", bound);
-            if (!write_buf(fd, buf))
-                return SWITCH_FALSE;
-        }
+        switch_snprintf(buf, B64BUFFLEN, "\n\n--%s--\n.\n", bound);
+        if (!write_buf(fd, buf))
+            return SWITCH_FALSE;
     }
 
     if (fd) {
@@ -477,7 +472,6 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 	if (unlink(filename) != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "failed to delete file [%s]\n", filename);
 	}
-
 
     if (file) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Emailed file [%s] to [%s]\n", filename, to);
