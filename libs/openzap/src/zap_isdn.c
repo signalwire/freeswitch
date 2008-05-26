@@ -599,13 +599,10 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		break;
 	case ZAP_CHANNEL_STATE_RESTART:
 		{
-			if (zchan->last_state != ZAP_CHANNEL_STATE_HANGUP && zchan->last_state != ZAP_CHANNEL_STATE_DOWN) {
-				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
-			} else {
-				sig.event_id = ZAP_SIGEVENT_RESTART;
-				status = isdn_data->sig_cb(&sig);
-				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
-			}
+			zchan->caller_data.hangup_cause = ZAP_CAUSE_NORMAL_UNSPECIFIED;
+			sig.event_id = ZAP_SIGEVENT_RESTART;
+			status = isdn_data->sig_cb(&sig);
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
 		}
 		break;
 	case ZAP_CHANNEL_STATE_PROGRESS_MEDIA:

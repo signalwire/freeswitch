@@ -1351,6 +1351,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 		}
 		break;
     case ZAP_SIGEVENT_STOP:
+    case ZAP_SIGEVENT_RESTART:
 		{	
 			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
 				//switch_core_session_signal_lock(session);
