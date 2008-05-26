@@ -274,23 +274,21 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 	switch_safe_free(sql);
 
 	
-	if (h.total) {
-		sql = switch_mprintf("select sip_user,sip_host,contact,'%q' from sip_registrations where sip_user='%q' and sip_host='%q'", 
-							 stream.data, user, host);
+
+	sql = switch_mprintf("select sip_user,sip_host,contact,'%q' from sip_registrations where sip_user='%q' and sip_host='%q'", 
+						 stream.data, user, host);
 	
 
 		
-		switch_assert (sql != NULL);
-		sofia_glue_execute_sql_callback(profile,
-										SWITCH_FALSE,
-										profile->ireg_mutex,
-										sql,
-										sofia_presence_mwi_callback2,
-										&h);
-		
-		switch_safe_free(sql);
-	}
-
+	switch_assert (sql != NULL);
+	sofia_glue_execute_sql_callback(profile,
+									SWITCH_FALSE,
+									profile->ireg_mutex,
+									sql,
+									sofia_presence_mwi_callback2,
+									&h);
+	
+	switch_safe_free(sql);
 
 	switch_safe_free(stream.data);
 
