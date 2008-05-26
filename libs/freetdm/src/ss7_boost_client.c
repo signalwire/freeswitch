@@ -74,7 +74,7 @@ static int create_conn_socket(ss7bc_connection_t *mcon, char *local_ip, int loca
 	int rc;
 	struct hostent *result, *local_result;
 	char buf[512], local_buf[512];
-	int err = 0;
+	int err = 0, local_err = 0;
 
 	memset(&mcon->remote_hp, 0, sizeof(mcon->remote_hp));
 	memset(&mcon->local_hp, 0, sizeof(mcon->local_hp));
@@ -91,9 +91,15 @@ static int create_conn_socket(ss7bc_connection_t *mcon, char *local_ip, int loca
 		int flag;
 
 		flag = 1;
+#ifdef HAVE_GETHOSTBYNAME_R_FIVE
+		gethostbyname_r(ip, &mcon->remote_hp, buf, sizeof(buf), &err);
+		gethostbyname_r(local_ip, &mcon->local_hp, local_buf, sizeof(local_buf), &local_err);
+		if (!err && !local_err) {
+#else
 		gethostbyname_r(ip, &mcon->remote_hp, buf, sizeof(buf), &result, &err);
-		gethostbyname_r(local_ip, &mcon->local_hp, local_buf, sizeof(local_buf), &local_result, &err);
+		gethostbyname_r(local_ip, &mcon->local_hp, local_buf, sizeof(local_buf), &local_result, &local_err);
 		if (result && local_result) {
+#endif
 			mcon->remote_addr.sin_family = mcon->remote_hp.h_addrtype;
 			memcpy((char *) &mcon->remote_addr.sin_addr.s_addr, mcon->remote_hp.h_addr_list[0], mcon->remote_hp.h_length);
 			mcon->remote_addr.sin_port = htons(port);
