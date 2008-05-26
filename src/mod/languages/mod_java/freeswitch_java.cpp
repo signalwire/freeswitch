@@ -215,7 +215,7 @@ switch_status_t JavaSession::run_dtmf_callback(void *input, switch_input_type_t 
         const char *callbackResultUTF = env->GetStringUTFChars(callbackResult, NULL);
         if (callbackResultUTF)
         {
-            status = process_callback_result((char*) callbackResultUTF, &cb_state, session);
+            status = process_callback_result((char*) callbackResultUTF);
             env->ReleaseStringUTFChars(callbackResult, callbackResultUTF);
         }
         else
@@ -303,7 +303,7 @@ switch_status_t JavaSession::run_dtmf_callback(void *input, switch_input_type_t 
         callbackResultUTF = env->GetStringUTFChars(callbackResult, NULL);
         if (callbackResultUTF)
         {
-            status = process_callback_result((char*) callbackResultUTF, &cb_state, session);
+            status = process_callback_result((char*) callbackResultUTF);
             env->ReleaseStringUTFChars(callbackResult, callbackResultUTF);
         }
         else
