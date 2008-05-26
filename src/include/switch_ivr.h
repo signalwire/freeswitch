@@ -207,15 +207,41 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_unload_grammar(switch_c
   \brief Record a session to disk
   \param session the session to record
   \param file the path to the file
+  \param limit stop recording after this amount of time (in ms, 0 = never stop)
   \param fh file handle to use (NULL for builtin one)
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t *session, char *file, uint32_t limit, switch_file_handle_t *fh);
+
+/*!
+  \brief Eavesdrop on a another session
+  \param session our session
+  \param uuid the uuid of the session to spy on
+  \param require_group - NEEDDESC -
+  \param flags - NEEDDESC -
+  \return SWITCH_STATUS_SUCESS if all is well
+*/
 SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session_t *session, 
 															 const char *uuid, 
 															 const char *require_group, 
 															 switch_eavesdrop_flag_t flags);
+
+/*!
+  \brief - NEEDDESC -
+  \param session the session to displace
+  \param file
+  \param limit
+  \param flags
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
 SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_t *session, const char *file, uint32_t limit, const char *flags);
+
+/*!
+  \brief Stop displacing a session
+  \param session the session
+  \param file - NEEDDESC -
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
 SWITCH_DECLARE(switch_status_t) switch_ivr_stop_displace_session(switch_core_session_t *session, const char *file);
 
 /*!
@@ -244,6 +270,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_inband_dtmf_session(switch_core_
 /*!
   \brief Start generating DTMF inband
   \param session the session to generate on
+  \param read_stream - NEEDDESC -
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_generate_session(switch_core_session_t *session, switch_bool_t read_stream);
@@ -256,7 +283,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_generate_session(switch_c
 SWITCH_DECLARE(switch_status_t) switch_ivr_stop_inband_dtmf_generate_session(switch_core_session_t *session);
 
 /*!
-  \brief XXX DESCRIBE ME
+  \brief - NEEDDESC -
   \param session the session to act on
   \return SWITCH_STATUS_SUCCESS if all is well - maybe more XXX FIXME
 */
@@ -464,6 +491,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
   \brief Signal the session with a protocol specific hold message.
   \param uuid the uuid of the session to hold
   \param message optional message
+  \param moh play music-on-hold
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_hold_uuid(const char *uuid, const char *message, switch_bool_t moh);
@@ -479,6 +507,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unhold_uuid(const char *uuid);
   \brief Signal the session with a protocol specific hold message.
   \param session the session to hold
   \param message optional message
+  \param moh play music-on-hold
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session, const char *message, switch_bool_t moh);
@@ -638,8 +667,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\param name A pointer to the name of this menu.
  *\param greeting_sound Optional pointer to a main sound (press 1 for this 2 for that).
  *\param short_greeting_sound Optional pointer to a shorter main sound for subsequent loops.
- *\param exit_sound Optional pointer to a sound to play upon exiting the menu.
  *\param invalid_sound Optional pointer to a sound to play after invalid input.
+ *\param exit_sound Optional pointer to a sound to play upon exiting the menu.
+ *\param confirm_macro - NEEDDESC -
+ *\param confirm_key   - NEEDDESC -
+ *\param confirm_attempts - NEEDDESC -
+ *\param inter_timeout - NEEDDESC -
+ *\param digit_len     - NEEDDESC -
  *\param timeout A number of milliseconds to pause before looping.
  *\param max_failures Maximum number of failures to withstand before hangingup This resets everytime you enter the menu.
  *\param pool memory pool (NULL to create one).

@@ -124,6 +124,7 @@ struct switch_core_port_allocator;
   \param session the session to add the bug to
   \param callback a callback for events
   \param user_data arbitrary user data
+  \param stop_time absolute time at which the bug is automatically removed
   \param flags flags to choose the stream
   \param new_bug pointer to assign new bug to
   \return SWITCH_STATUS_SUCCESS if the operation was a success
@@ -214,22 +215,29 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(_In_ switch_media_bug
   \brief Initilize the port allocator
   \param start the starting port
   \param end the ending port
-  \param inc the amount to increment each port
+  \param flags flags to change allocator behaviour (e.g. only even/odd portnumbers)
   \param new_allocator new pointer for the return value
   \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
 SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(_In_ switch_port_t start,
-															   _In_ switch_port_t end,
-															   _In_ switch_port_flag_t flags,
-															   _Out_ switch_core_port_allocator_t **new_allocator);
+								   _In_ switch_port_t end,
+								   _In_ switch_port_flag_t flags,
+								   _Out_ switch_core_port_allocator_t **new_allocator);
 
 /*!
   \brief Get a port from the port allocator
   \param alloc the allocator object
-  \param port a pointer to the port
+  \param port_ptr a pointer to the port
   \return SUCCESS
 */
 SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(_In_ switch_core_port_allocator_t *alloc, _Out_ switch_port_t *port_ptr);
+
+/*!
+  \brief Return unused port to the port allocator
+  \param alloc the allocator object
+  \param port the port
+  \return SUCCESS
+*/
 SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_free_port(_In_ switch_core_port_allocator_t *alloc, _In_ switch_port_t port);
 
 /*!
@@ -724,6 +732,7 @@ SWITCH_DECLARE(void) switch_core_service_session(_In_ switch_core_session_t *ses
 /*! 
   \brief Request an outgoing session spawned from an existing session using a desired endpoing module
   \param session the originating session
+  \param var_event - NEEDDESC -
   \param endpoint_name the name of the module to use for the new session
   \param caller_profile the originator's caller profile
   \param new_session a NULL pointer to aim at the newly created session
@@ -800,24 +809,49 @@ SWITCH_DECLARE(uint32_t) switch_core_session_private_event_count(_In_ switch_cor
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(_In_ switch_core_session_t *session, _Out_ switch_event_t **event);
 
+
+/*!
+  \brief Flush the private event queue of a session
+  \param session the session to flush
+  \return SWITCH_STATUS_SUCCESS if the events have been flushed
+*/
 SWITCH_DECLARE(uint32_t) switch_core_session_flush_private_events(switch_core_session_t *session);
+
 
 /*! 
   \brief Read a frame from a session
   \param session the session to read from
   \param frame a NULL pointer to a frame to aim at the newly read frame
-  \param timeout number of milliseconds to wait for data
+  \param flags - NEEDDESC -
   \param stream_id which logical media channel to use
   \return SWITCH_STATUS_SUCCESS a the frame was read
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(_In_ switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
 
+/*! 
+  \brief Read a video frame from a session
+  \param session the session to read from
+  \param frame a NULL pointer to a frame to aim at the newly read frame
+  \param flags - NEEDDESC -
+  \param stream_id which logical media channel to use
+  \return SWITCH_STATUS_SUCCESS a if the frame was read
+*/
 SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(_In_ switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
+
+/*! 
+  \brief Write a video frame to a session
+  \param session the session to write to
+  \param frame a pointer to a frame to write
+  \param flags - NEEDDESC -
+  \param stream_id which logical media channel to use
+  \return SWITCH_STATUS_SUCCESS a if the frame was written
+*/
 SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(_In_ switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 
 /*! 
   \brief Reset the buffers and resampler on a session
   \param session the session to reset
+  \param flush_dtmf flush all queued dtmf events too
 */
 SWITCH_DECLARE(void) switch_core_session_reset(_In_ switch_core_session_t *session, switch_bool_t flush_dtmf);
 
@@ -825,7 +859,7 @@ SWITCH_DECLARE(void) switch_core_session_reset(_In_ switch_core_session_t *sessi
   \brief Write a frame to a session
   \param session the session to write to
   \param frame the frame to write
-  \param timeout number of milliseconds to wait for data
+  \param flags - NEEDDESC -
   \param stream_id which logical media channel to use
   \return SWITCH_STATUS_SUCCESS a the frame was written
 */
@@ -834,7 +868,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(_In_ switch_core
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(_In_ switch_core_session_t *session,
 																		 const char *file, const char *func, int line, switch_signal_t sig);
-/*! 
+/*!
   \brief Send a signal to a channel
   \param session session to send signal to
   \param sig signal to send

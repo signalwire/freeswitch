@@ -227,8 +227,6 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable(switch_channel_t *chann
 /*!
  * Start iterating over the entries in the channel variable list.
  * @param channel the channel to intterate the variales for
- * @param pool The pool to allocate the switch_hash_index_t iterator. If this
- *          pool is NULL, then an internal, non-thread-safe iterator is used.
  * @remark  Use switch_hash_next and switch_hash_this with this function to iterate all the channel variables
  */
 SWITCH_DECLARE(switch_event_header_t *) switch_channel_variable_first(switch_channel_t *channel);

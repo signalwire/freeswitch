@@ -189,8 +189,17 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_get(switch_xml_t xml,...);
 ///\brief Converts an switch_xml structure back to xml. Returns a string of xml data that
 ///\ must be freed.
 ///\param xml the xml node
+///\param prn_header add <?xml version..> header too
 ///\return the xml text string
 SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml, switch_bool_t prn_header);
+
+///\brief Converts an switch_xml structure back to xml using the buffer passed in the parameters.
+///\param xml the xml node
+///\param buf buffer to use
+///\param buflen size of buffer
+///\param offset offset to start at
+///\param prn_header add <?xml version..> header too
+///\return the xml text string
 SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_size_t buflen, switch_size_t offset, switch_bool_t prn_header);
 
 ///\brief returns a NULL terminated array of processing instructions for the given

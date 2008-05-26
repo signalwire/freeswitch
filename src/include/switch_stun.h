@@ -226,6 +226,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 /*!
   \brief Increment an attribute pointer to the next attribute in it's packet
   \param attribute the pointer to increment
+  \param end pointer to the end of the buffer
   \return true or false depending on if there are any more attributes
 */
 #define switch_stun_packet_next_attribute(attribute, end) (attribute && (attribute = (switch_stun_packet_attribute_t *) (attribute->value +  switch_stun_attribute_padded_length(attribute))) && ((void *)attribute < end) && attribute->length && ((void *)(attribute +  switch_stun_attribute_padded_length(attribute)) < end))

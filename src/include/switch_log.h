@@ -89,6 +89,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void);
   \param file the current file
   \param func the current function
   \param line the current line
+  \param userdata ununsed
   \param level the current log level
   \param fmt desired format
   \param ... variable args

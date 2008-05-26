@@ -197,9 +197,9 @@ class CoreSession {
 	SWITCH_DECLARE(void) sayPhrase(const char *phrase_name, const char *phrase_data = "", const char *phrase_lang = NULL);
 
 	/** \brief Record to a file
-	 * \param filename 
+	 * \param file_name 
 	 * \param <[max_len]> maximum length of the recording in seconds
-     * \param <[silence_threshold]> energy level audio must fall below 
+	 * \param <[silence_threshold]> energy level audio must fall below 
 	 *        to be considered silence (500 is a good starting point).
 	 * \param <[silence_secs]> seconds of silence to interrupt the record.
 	 */
@@ -214,12 +214,13 @@ class CoreSession {
 
 	/** \brief Originate a call to a destination
 	 *
-	 * \param a_leg_sessoin - the session where the call is originating from 
-     *                        and also the session in which _this_ session was 
-     *                        created
+	 * \param a_leg_session - the session where the call is originating from 
+	 *                        and also the session in which _this_ session was 
+	 *                        created
 	 * \param dest - a string representing destination, eg, sofia/mydomain.com/foo@bar.com
+	 * \param timeout - time to wait for call to be answered
 	 * \return an int status code indicating success or failure
-     *
+	 *
 	 */
 	SWITCH_DECLARE(int) originate(CoreSession *a_leg_session, 
 				  char *dest, 
@@ -227,12 +228,12 @@ class CoreSession {
 
 
 	/** \brief set a DTMF callback function
-     * 
-     * The DTMF callback function will be set and persist
-     * for the life of the session, and be called when a dtmf
-     * is pressed by user during streamfile(), collectDigits(), and 
-     * certain other methods are executing.
-     *
+	 * 
+	 * The DTMF callback function will be set and persist
+	 * for the life of the session, and be called when a dtmf
+	 * is pressed by user during streamfile(), collectDigits(), and 
+	 * certain other methods are executing.
+	 *
 	 */
 	SWITCH_DECLARE(void) setDTMFCallback(void *cbfunc, char *funcargs);
 
@@ -240,14 +241,14 @@ class CoreSession {
 	SWITCH_DECLARE(void) set_tts_parms(char *tts_name, char *voice_name);
 
 	/**
-     * For timeout milliseconds, call the dtmf function set previously
+	 * For timeout milliseconds, call the dtmf function set previously
 	 * by setDTMFCallback whenever a dtmf or event is received
 	 */
 	SWITCH_DECLARE(int) collectDigits(int timeout);
 
 	/** 
-     * Collect up to maxdigits digits worth of digits
-     * and store them in dtmf_buf.  In the case of mod_python, the 
+	 * Collect up to maxdigits digits worth of digits
+	 * and store them in dtmf_buf.  In the case of mod_python, the 
 	 * dtmf_buf parameter is configured to act as a _return_ value,
 	 * (see mod_python.i).  This does NOT call any callbacks upon
 	 * receiving dtmf digits.  For that, use collectDigits.
@@ -268,12 +269,12 @@ class CoreSession {
 	
 	/** \brief Play a file into channel and collect dtmfs
 	 * 
-     * See API docs in switch_ivr.h: switch_play_and_get_digits(..)
-     *
-     * NOTE: this does not call any dtmf callbacks set by 
-     *       setDTMFCallback(..) as it uses its own internal callback
-     *       handler.
-     */
+	 * See API docs in switch_ivr.h: switch_play_and_get_digits(..)
+	 *
+	 * NOTE: this does not call any dtmf callbacks set by 
+	 *       setDTMFCallback(..) as it uses its own internal callback
+	 *       handler.
+	 */
 	SWITCH_DECLARE(char *) playAndGetDigits(int min_digits, 
 						 int max_digits, 
 						 int max_tries, 
@@ -287,7 +288,7 @@ class CoreSession {
 	 *
 	 * \param file - the path to the .wav/.mp3 to be played
 	 * \param starting_sample_count - the index of the sample to 
-     *                                start playing from
+	 *                                start playing from
 	 * \return an int status code indicating success or failure
 	 *
 	 */

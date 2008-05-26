@@ -293,6 +293,7 @@ SWITCH_DECLARE(void) switch_rtp_set_invald_handler(switch_rtp_t *rtp_session, sw
   \param datalen a pointer to the datalen
   \param payload_type the IANA payload of the packet
   \param flags flags
+  \param io_flags i/o flags
   \return the number of bytes read
 */
 SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void *data, uint32_t * datalen,
@@ -301,10 +302,17 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void 
 /*! 
   \brief Queue RFC2833 DTMF data into an RTP Session
   \param rtp_session the rtp session to use
-  \param digits the digit string to queue
-  \param duration the duration of the dtmf
+  \param dtmf the dtmf digits to queue
+  \return SWITCH_STATUS_SUCCESS on success
 */
 SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833(switch_rtp_t *rtp_session, const switch_dtmf_t *dtmf);
+
+/*! 
+  \brief Queue RFC2833 DTMF data into an RTP Session - NEEDDESC -
+  \param rtp_session the rtp session to use
+  \param dtmf the dtmf digits to queue
+  \return SWITCH_STATUS_SUCCESS on success
+*/
 SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833_in(switch_rtp_t *rtp_session, const switch_dtmf_t *dtmf);
 
 /*!
@@ -329,6 +337,7 @@ SWITCH_DECLARE(switch_size_t) switch_rtp_dequeue_dtmf(switch_rtp_t *rtp_session,
   \param datalen a pointer to the datalen
   \param payload_type the IANA payload of the packet
   \param flags flags
+  \param io_flags i/o flags
   \return the number of bytes read
 */
 SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_session,
@@ -338,9 +347,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_sessi
   \brief Read data from a given RTP session without copying
   \param rtp_session the RTP session to read from
   \param frame a frame to populate with information
+  \param io_flags i/o flags
   \return the number of bytes read
 */
-SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp_session, switch_frame_t *frame, switch_io_flag_t io_flagsm);
+SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp_session, switch_frame_t *frame, switch_io_flag_t io_flags);
 
 /*!
   \brief Enable VAD on an RTP Session
@@ -376,7 +386,6 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
   \param m set mark bit or not
   \param payload the IANA payload number
   \param ts then number of bytes to increment the timestamp by
-  \param ssrc the ssrc
   \param flags frame flags
   \return the number of bytes written
 */
