@@ -728,7 +728,7 @@ SWITCH_DECLARE(void) switch_core_service_session(_In_ switch_core_session_t *ses
   \param caller_profile the originator's caller profile
   \param new_session a NULL pointer to aim at the newly created session
   \param pool optional existing memory pool to donate to the session
-  \paeam flags flags to use
+  \param flags flags to use
   \return the cause code of the attempted call
 */
 SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(_In_opt_ switch_core_session_t *session,
@@ -1498,13 +1498,14 @@ SWITCH_DECLARE(int32_t) set_high_priority(void);
 
 /*! 
   \brief Change user and/or group of the running process
-  \long Several possible combinations:
-  - user only (group NULL): switch to user and his primary group (and supplementary groups, if supported)
-  - user and group: switch to user and specified group (only)
-  - group only (user NULL): switch group only
   \param user name of the user to switch to (or NULL)
   \param group name of the group to switch to (or NULL)
   \return 0 on success, -1 otherwise
+
+  Several possible combinations:
+  - user only (group NULL): switch to user and his primary group (and supplementary groups, if supported)
+  - user and group: switch to user and specified group (only)
+  - group only (user NULL): switch group only
 */
 SWITCH_DECLARE(int32_t) change_user_group(const char *user, const char *group);
 
