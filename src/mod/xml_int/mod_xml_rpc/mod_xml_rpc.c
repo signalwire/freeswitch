@@ -162,13 +162,13 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
     p = RequestHeaderValue(r, "authorization");
 
     if (p) {
-        NextToken((const char **)&p);
+        NextToken((const char ** const)&p);
         x = GetToken(&p);
         if (x) {
             if (!strcasecmp(x, "basic")) {
 
 
-                NextToken((const char **)&p);
+                NextToken((const char ** const)&p);
 				switch_b64_decode(p, user, sizeof(user));
 				if ((pass = strchr(user, ':'))) {
 					*pass++ = '\0';
