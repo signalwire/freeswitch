@@ -227,11 +227,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 															 switch_eavesdrop_flag_t flags);
 
 /*!
-  \brief - NEEDDESC -
+  \brief displace the media for a session with the audio from a file
   \param session the session to displace
-  \param file
-  \param limit
-  \param flags
+  \param file filename
+  \param limit time limit in ms
+  \param flags m (mux) l (loop) or r(read session instead of write session)
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_t *session, const char *file, uint32_t limit, const char *flags);
@@ -239,7 +239,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 /*!
   \brief Stop displacing a session
   \param session the session
-  \param file - NEEDDESC -
+  \param file file name from the switch_ivr_displace_session call
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_stop_displace_session(switch_core_session_t *session, const char *file);

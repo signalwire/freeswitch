@@ -732,7 +732,7 @@ SWITCH_DECLARE(void) switch_core_service_session(_In_ switch_core_session_t *ses
 /*! 
   \brief Request an outgoing session spawned from an existing session using a desired endpoing module
   \param session the originating session
-  \param var_event - NEEDDESC -
+  \param var_event switch_event_t containing paramaters
   \param endpoint_name the name of the module to use for the new session
   \param caller_profile the originator's caller profile
   \param new_session a NULL pointer to aim at the newly created session
@@ -822,7 +822,7 @@ SWITCH_DECLARE(uint32_t) switch_core_session_flush_private_events(switch_core_se
   \brief Read a frame from a session
   \param session the session to read from
   \param frame a NULL pointer to a frame to aim at the newly read frame
-  \param flags - NEEDDESC -
+  \param flags I/O flags to modify behavior (i.e. non blocking)
   \param stream_id which logical media channel to use
   \return SWITCH_STATUS_SUCCESS a the frame was read
 */
@@ -832,7 +832,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(_In_ switch_core_
   \brief Read a video frame from a session
   \param session the session to read from
   \param frame a NULL pointer to a frame to aim at the newly read frame
-  \param flags - NEEDDESC -
+  \param flags I/O flags to modify behavior (i.e. non blocking)
   \param stream_id which logical media channel to use
   \return SWITCH_STATUS_SUCCESS a if the frame was read
 */
@@ -842,7 +842,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(_In_ switch
   \brief Write a video frame to a session
   \param session the session to write to
   \param frame a pointer to a frame to write
-  \param flags - NEEDDESC -
+  \param flags I/O flags to modify behavior (i.e. non blocking)
   \param stream_id which logical media channel to use
   \return SWITCH_STATUS_SUCCESS a if the frame was written
 */
@@ -859,7 +859,7 @@ SWITCH_DECLARE(void) switch_core_session_reset(_In_ switch_core_session_t *sessi
   \brief Write a frame to a session
   \param session the session to write to
   \param frame the frame to write
-  \param flags - NEEDDESC -
+  \param flags I/O flags to modify behavior (i.e. non blocking)
   \param stream_id which logical media channel to use
   \return SWITCH_STATUS_SUCCESS a the frame was written
 */
