@@ -497,7 +497,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_perl_load)
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	SWITCH_ADD_APP(app_interface, "perl", NULL, NULL, perl_function, NULL, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "perl", NULL, NULL, perl_function, NULL, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_API(api_interface, "perlrun", "run a script", perlrun_api_function, "<script>");
 	SWITCH_ADD_API(api_interface, "perl", "run a script", perl_api_function, "<script>");
 	/* indicate that the module should continue to be loaded */
