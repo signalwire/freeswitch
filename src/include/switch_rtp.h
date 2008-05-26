@@ -308,7 +308,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void 
 SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833(switch_rtp_t *rtp_session, const switch_dtmf_t *dtmf);
 
 /*! 
-  \brief Queue RFC2833 DTMF data into an RTP Session - NEEDDESC -
+  \brief Queue RFC2833 DTMF data into an RTP Session
   \param rtp_session the rtp session to use
   \param dtmf the dtmf digits to queue
   \return SWITCH_STATUS_SUCCESS on success

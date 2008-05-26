@@ -217,8 +217,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
   \brief Eavesdrop on a another session
   \param session our session
   \param uuid the uuid of the session to spy on
-  \param require_group - NEEDDESC -
-  \param flags - NEEDDESC -
+  \param require_group group name to use to limit by group
+  \param flags tweak read-mux, write-mux and dtmf
   \return SWITCH_STATUS_SUCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session_t *session, 
@@ -270,7 +270,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_inband_dtmf_session(switch_core_
 /*!
   \brief Start generating DTMF inband
   \param session the session to generate on
-  \param read_stream - NEEDDESC -
+  \param read_stream true to use the session we are reading from, false for the session we are writing to.
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_generate_session(switch_core_session_t *session, switch_bool_t read_stream);
@@ -669,11 +669,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\param short_greeting_sound Optional pointer to a shorter main sound for subsequent loops.
  *\param invalid_sound Optional pointer to a sound to play after invalid input.
  *\param exit_sound Optional pointer to a sound to play upon exiting the menu.
- *\param confirm_macro - NEEDDESC -
- *\param confirm_key   - NEEDDESC -
- *\param confirm_attempts - NEEDDESC -
- *\param inter_timeout - NEEDDESC -
- *\param digit_len     - NEEDDESC -
+ *\param confirm_macro phrase macro name to confirm input
+ *\param confirm_key the dtmf key required for positive confirmation
+ *\param confirm_attempts number of times to prompt to confirm input before failure
+ *\param inter_timeout inter-digit timeout
+ *\param digit_len max number of digits
  *\param timeout A number of milliseconds to pause before looping.
  *\param max_failures Maximum number of failures to withstand before hangingup This resets everytime you enter the menu.
  *\param pool memory pool (NULL to create one).
