@@ -669,7 +669,7 @@ static int zap_parse_state_map(zap_channel_t *zchan, zap_channel_state_t state, 
 
 zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state, int lock)
 {
-	int ok = 0;
+	int ok = 1;
 	
 	if (!zap_test_flag(zchan, ZAP_CHANNEL_READY)) {
 		return ZAP_FAIL;
