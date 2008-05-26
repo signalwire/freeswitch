@@ -2174,8 +2174,15 @@ static JSBool session_hangup(JSContext * cx, JSObject * obj, uintN argc, jsval *
 	CHANNEL_SANITY_CHECK();
 
 	if (argc > 1) {
-		cause_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-		cause = switch_channel_str2cause(cause_name);
+		if(JSVAL_IS_INT(argv[0])) {
+			int32 i = 0;
+			JS_ValueToInt32(cx, argv[0], &i);
+			cause = i;
+		}
+		else {
+			cause_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+			cause = switch_channel_str2cause(cause_name);
+		}
 	}
 
 	switch_channel_hangup(channel, cause);
@@ -2424,7 +2431,7 @@ static JSBool js_fetchurl(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 enum session_tinyid {
 	SESSION_NAME, SESSION_STATE,
 	PROFILE_DIALPLAN, PROFILE_CID_NAME, PROFILE_CID_NUM, PROFILE_IP, PROFILE_ANI, PROFILE_ANI_II, PROFILE_DEST,
-	SESSION_UUID, SESSION_CAUSE
+	SESSION_UUID, SESSION_CAUSE, SESSION_CAUSECODE
 };
 
 static JSFunctionSpec session_methods[] = {
@@ -2469,6 +2476,7 @@ static JSPropertySpec session_props[] = {
 	{"destination", PROFILE_DEST, JSPROP_READONLY | JSPROP_PERMANENT},
 	{"uuid", SESSION_UUID, JSPROP_READONLY | JSPROP_PERMANENT},
 	{"cause", SESSION_CAUSE, JSPROP_READONLY | JSPROP_PERMANENT},
+	{"causecode", SESSION_CAUSECODE, JSPROP_READONLY | JSPROP_PERMANENT},
 	{0}
 };
 
@@ -2501,6 +2509,11 @@ static JSBool session_getProperty(JSContext * cx, JSObject * obj, jsval id, jsva
 				*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, switch_channel_cause2str(jss->cause)));
 			}
 			break;
+		case SESSION_CAUSECODE:
+			if (jss) {
+				*vp = INT_TO_JSVAL(jss->cause);
+			}
+			break;
 		default:
 			*vp = BOOLEAN_TO_JSVAL(JS_FALSE);
 		}
@@ -2510,6 +2523,9 @@ static JSBool session_getProperty(JSContext * cx, JSObject * obj, jsval id, jsva
 	switch (param) {
 	case SESSION_CAUSE:
 		*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, switch_channel_cause2str(switch_channel_get_cause(channel))));
+		break;
+	case SESSION_CAUSECODE:
+		*vp = INT_TO_JSVAL(switch_channel_get_cause(channel));
 		break;
 	case SESSION_NAME:
 		*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, switch_channel_get_name(channel)));
