@@ -99,8 +99,8 @@ class API {
  public:
 	SWITCH_DECLARE_CONSTRUCTOR API(void);
 	virtual SWITCH_DECLARE_CONSTRUCTOR ~API();
-	SWITCH_DECLARE(char *) execute(const char *command, const char *data);
-	SWITCH_DECLARE(char *) executeString(const char *command);
+	SWITCH_DECLARE(const char *) execute(const char *command, const char *data);
+	SWITCH_DECLARE(const char *) executeString(const char *command);
 };
 
 
@@ -144,7 +144,7 @@ class Event {
 	virtual SWITCH_DECLARE_CONSTRUCTOR ~Event();
 	SWITCH_DECLARE(const char *)serialize(const char *format=NULL);
 	SWITCH_DECLARE(bool) setPriority(switch_priority_t priority = SWITCH_PRIORITY_NORMAL);
-	SWITCH_DECLARE(char *)getHeader(char *header_name);
+	SWITCH_DECLARE(const char *)getHeader(char *header_name);
 	SWITCH_DECLARE(char *)getBody(void);
 	SWITCH_DECLARE(const char *)getType(void);
 	SWITCH_DECLARE(bool) addBody(const char *value);

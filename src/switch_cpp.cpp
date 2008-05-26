@@ -104,7 +104,7 @@ SWITCH_DECLARE_CONSTRUCTOR API::~API()
 }
 
 
-SWITCH_DECLARE(char *) API::execute(const char *cmd, const char *arg)
+SWITCH_DECLARE(const char *) API::execute(const char *cmd, const char *arg)
 {
 	switch_stream_handle_t stream = { 0 };
 	this_check("");
@@ -114,7 +114,7 @@ SWITCH_DECLARE(char *) API::execute(const char *cmd, const char *arg)
 	return last_data;
 }
 
-SWITCH_DECLARE(char *) API::executeString(const char *cmd)
+SWITCH_DECLARE(const char *) API::executeString(const char *cmd)
 {
 	char *arg;
 	switch_stream_handle_t stream = { 0 };
@@ -238,7 +238,7 @@ SWITCH_DECLARE(bool) Event::setPriority(switch_priority_t priority)
 	return false;
 }
 
-SWITCH_DECLARE(char *)Event::getHeader(char *header_name)
+SWITCH_DECLARE(const char *)Event::getHeader(char *header_name)
 {
 	this_check("");
 
