@@ -212,13 +212,16 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	}
 
 	if (g_template_str != a_template_str) {
-		if (log_line && log_line != a_template_str) {
+		if (log_line != a_template_str) {
 			switch_safe_free(log_line);
 		}
 		log_line = switch_channel_expand_variables(channel, g_template_str);
 	}
 
-
+	if (!log_line) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating cdr\n");
+		return SWITCH_STATUS_FALSE;
+	}
 
 	path = switch_mprintf("%s%sMaster.csv", log_dir, SWITCH_PATH_SEPARATOR);
 	assert(path);
@@ -226,7 +229,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	free(path);
 
 
-	if (log_line && log_line != g_template_str) {
+	if (log_line != g_template_str) {
 		free(log_line);
 	}
 
