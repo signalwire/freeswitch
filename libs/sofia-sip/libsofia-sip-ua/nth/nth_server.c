@@ -688,6 +688,8 @@ static char const * const http_tports[] =
     "tcp", "tls", NULL
   };
 
+static char const * const http_no_tls_tports[] = { "tcp", NULL };
+
 static tp_stack_class_t nth_server_class[1] =
   {{
     sizeof(nth_server_class),
@@ -738,6 +740,8 @@ server_t *server_create(url_t const *url,
   srv->srv_max_bodylen = 1 << 30; /* 1 GB */
 
   if (tport_tbind(srv->srv_tports, tpn, http_tports,
+		  TAG_END()) >= 0 ||
+      tport_tbind(srv->srv_tports, tpn, http_no_tls_tports,
 		  TAG_END()) >= 0) {
     srv->srv_root = root;
     srv->srv_mclass = mclass ? mclass : http_default_mclass();
