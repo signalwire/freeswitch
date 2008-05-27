@@ -39,6 +39,7 @@
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
  * Michael B. Murdock <mike@mmurdock.org>
+ * Daniel Swarbrick <daniel.swarbrick@gmail.com>
  *
  * mod_say_de.c -- Say for German
  *
@@ -101,11 +102,21 @@ static switch_status_t play_group(switch_say_method_t method, int a, int b, int 
 
 	if (b) {
 		if (b > 1) {
-			say_file("digits/%d0.wav", b);
+			say_file("digits/%d.wav", c);
+			say_file("currency/and.wav");
+			if (method == SSM_COUNTED) {
+				say_file("digits/h-%d0.wav", b);
+			} else {
+				say_file("digits/%d0.wav", b);
+			}
 		} else {
-			say_file("digits/%d%d.wav", b, c);
-			c = 0;
+			if (method == SSM_COUNTED) {
+				say_file("digits/h-%d%d.wav", b, c);
+			} else {
+				say_file("digits/%d%d.wav", b, c);
+			}
 		}
+		c = 0;
 	}
 
 	if (c) {
@@ -395,14 +406,13 @@ static switch_status_t de_say_time(switch_core_session_t *session, char *tosay, 
 		}
 
 		say_num(hour, SSM_PRONOUNCED);
+		say_file("time/oclock.wav");
 
 		if (tm.tm_min > 9) {
 			say_num(tm.tm_min, SSM_PRONOUNCED);
 		} else if (tm.tm_min) {
 			say_file("time/oh.wav");
 			say_num(tm.tm_min, SSM_PRONOUNCED);
-		} else {
-			say_file("time/oclock.wav");
 		}
 
 		say_file("time/%s.wav", pm ? "p-m" : "a-m");
