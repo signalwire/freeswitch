@@ -159,7 +159,7 @@ static switch_status_t switch_speex_encode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *decoded_data,
 										   uint32_t decoded_data_len,
-										   uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
+										   uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
 										   unsigned int *flag)
 {
 	struct speex_context *context = codec->private_info;
@@ -211,7 +211,7 @@ static switch_status_t switch_speex_decode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *encoded_data,
 										   uint32_t encoded_data_len,
-										   uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
+										   uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
 										   unsigned int *flag)
 {
 	struct speex_context *context = codec->private_info;
@@ -264,24 +264,24 @@ static switch_status_t switch_speex_destroy(switch_codec_t *codec)
 SWITCH_MODULE_LOAD_FUNCTION(mod_speex_load)
 {
 	switch_codec_interface_t *codec_interface;
-    int mpf = 20000, spf = 160, bpf = 320, ebpf = 0, rate = 8000, counta, countb;
-    switch_payload_t ianacode[4] = { 0, 98, 99, 103};
-    int bps[4] = { 0, 24600, 42200, 44000 };
+	int mpf = 20000, spf = 160, bpf = 320, ebpf = 0, rate = 8000, counta, countb;
+	switch_payload_t ianacode[4] = { 0, 98, 99, 103 };
+	int bps[4] = { 0, 24600, 42200, 44000 };
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_CODEC(codec_interface, "Speex");
-    for (counta = 1; counta <= 3; counta++) {
-        for (countb = 1; countb > 0; countb--) {
-            switch_core_codec_add_implementation(pool, codec_interface,
-                                                 SWITCH_CODEC_TYPE_AUDIO, ianacode[counta], "SPEEX", NULL, rate, rate, bps[counta],
-                                                 mpf * countb, spf * countb, bpf * countb, ebpf * countb, 1, 1, 6,
-                                                 switch_speex_init, switch_speex_encode, switch_speex_decode, switch_speex_destroy);
-        }
-        rate = rate * 2;
-        spf = spf * 2;
-        bpf = bpf * 2;
-        ebpf = ebpf * 2;
-    }
+	for (counta = 1; counta <= 3; counta++) {
+		for (countb = 1; countb > 0; countb--) {
+			switch_core_codec_add_implementation(pool, codec_interface,
+												 SWITCH_CODEC_TYPE_AUDIO, ianacode[counta], "SPEEX", NULL, rate, rate, bps[counta],
+												 mpf * countb, spf * countb, bpf * countb, ebpf * countb, 1, 1, 6,
+												 switch_speex_init, switch_speex_encode, switch_speex_decode, switch_speex_destroy);
+		}
+		rate = rate * 2;
+		spf = spf * 2;
+		bpf = bpf * 2;
+		ebpf = ebpf * 2;
+	}
 
 
 

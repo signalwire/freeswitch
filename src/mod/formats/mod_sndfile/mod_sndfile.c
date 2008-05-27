@@ -147,7 +147,7 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 
 	alt_len = strlen(path) + 10;
 	switch_zmalloc(alt_path, alt_len);
-	
+
 	switch_copy_string(alt_path, path, alt_len);
 	if ((last = strrchr(alt_path, '/'))) {
 		next = ++last;
@@ -177,7 +177,6 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 			goto end;
 		}
 	}
-
 	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opening File [%s] rate %dhz\n", path, context->sfinfo.samplerate);
 	handle->samples = (unsigned int) context->sfinfo.frames;
 	handle->samplerate = context->sfinfo.samplerate;
@@ -188,8 +187,8 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	handle->speed = 0;
 	handle->private_info = context;
 
- end:
-	
+  end:
+
 	switch_safe_free(alt_path);
 	switch_safe_free(ldup);
 
@@ -334,7 +333,7 @@ static switch_status_t setup_formats(void)
 			char *p;
 			struct format_map *map = switch_core_permanent_alloc(sizeof(*map));
 			switch_assert(map);
-	
+
 			map->ext = switch_core_permanent_strdup(info.extension);
 			map->uext = switch_core_permanent_strdup(info.extension);
 			map->format = info.format;

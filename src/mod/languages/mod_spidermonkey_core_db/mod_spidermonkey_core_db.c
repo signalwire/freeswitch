@@ -73,10 +73,10 @@ static JSBool db_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * a
 	return JS_FALSE;
 }
 
-static JSBool db_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+static JSBool db_close(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct db_obj *dbo = JS_GetPrivate(cx, obj);
-	
+
 	if (dbo) {
 		if (dbo->stmt) {
 			switch_core_db_finalize(dbo->stmt);
@@ -91,7 +91,7 @@ static JSBool db_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 	return JS_TRUE;
 }
 
-static void db_destroy(JSContext *cx, JSObject *obj)
+static void db_destroy(JSContext * cx, JSObject * obj)
 {
 	struct db_obj *dbo = JS_GetPrivate(cx, obj);
 
@@ -215,7 +215,7 @@ static JSBool db_fetch(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 	}
 	for (x = 0; x < colcount; x++) {
 		switch_snprintf(code, sizeof(code), "~_dB_RoW_DaTa_[\"%s\"] = \"%s\"",
-				 (char *) switch_core_db_column_name(dbo->stmt, x), (char *) switch_core_db_column_text(dbo->stmt, x));
+						(char *) switch_core_db_column_name(dbo->stmt, x), (char *) switch_core_db_column_text(dbo->stmt, x));
 
 		eval_some_js(code, dbo->cx, dbo->obj, rval);
 		if (*rval == JS_FALSE) {
@@ -275,7 +275,7 @@ static JSPropertySpec db_props[] = {
 };
 
 
-static JSBool db_setProperty(JSContext * cx, JSObject * obj, jsval id, jsval *vp)
+static JSBool db_setProperty(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
 {
 	char *name = JS_GetStringBytes(JS_ValueToString(cx, id));
 
@@ -332,7 +332,7 @@ const sm_module_interface_t DB_module_interface = {
 	/*.next */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) spidermonkey_init(const sm_module_interface_t ** module_interface)
+SWITCH_MOD_DECLARE(switch_status_t) spidermonkey_init(const sm_module_interface_t **module_interface)
 {
 	*module_interface = &DB_module_interface;
 	return SWITCH_STATUS_SUCCESS;

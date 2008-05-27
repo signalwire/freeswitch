@@ -37,7 +37,7 @@ struct cdr_fd {
 };
 typedef struct cdr_fd cdr_fd_t;
 
-const char *default_template = 
+const char *default_template =
 	"\"${caller_id_name}\",\"${caller_id_number}\",\"${destination_number}\",\"${context}\",\"${start_stamp}\","
 	"\"${answer_stamp}\",\"${end_stamp}\",\"${duration}\",\"${billsec}\",\"${hangup_cause}\",\"${uuid}\",\"${bleg_uuid}\", \"${accountcode}\"\n";
 
@@ -58,12 +58,12 @@ SWITCH_MODULE_DEFINITION(mod_cdr_csv, mod_cdr_csv_load, NULL, NULL);
 
 static off_t fd_size(int fd)
 {
-	struct stat s = {0};
+	struct stat s = { 0 };
 	fstat(fd, &s);
 	return s.st_size;
 }
 
-static void do_reopen(cdr_fd_t *fd) 
+static void do_reopen(cdr_fd_t *fd)
 {
 	int x = 0;
 
@@ -72,7 +72,7 @@ static void do_reopen(cdr_fd_t *fd)
 		fd->fd = -1;
 	}
 
-	for (x = 0 ; x < 10; x++) {
+	for (x = 0; x < 10; x++) {
 		if ((fd->fd = open(fd->path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR)) > -1) {
 			fd->bytes = fd_size(fd->fd);
 			break;
@@ -95,7 +95,7 @@ static void do_rotate(cdr_fd_t *fd)
 	if (globals.rotate) {
 		switch_time_exp_lt(&tm, switch_timestamp_now());
 		switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d-%H-%M-%S", &tm);
-	
+
 		len = strlen(fd->path) + strlen(date) + 2;
 		p = switch_mprintf("%s.%s", fd->path, date);
 		assert(p);
@@ -104,7 +104,7 @@ static void do_rotate(cdr_fd_t *fd)
 	}
 
 	do_reopen(fd);
-	
+
 	if (fd->fd < 0) {
 		switch_event_t *event;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error opening %s\n", fd->path);
@@ -115,14 +115,14 @@ static void do_rotate(cdr_fd_t *fd)
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "%s CDR logfile %s\n", globals.rotate ? "Rotated" : "Re-opened", fd->path);
 	}
-	
+
 }
 
 static void write_cdr(const char *path, const char *log_line)
 {
 	cdr_fd_t *fd = NULL;
 	unsigned int bytes_in, bytes_out;
-	
+
 	if (!(fd = switch_core_hash_find(globals.fd_hash, path))) {
 		fd = switch_core_alloc(globals.pool, sizeof(*fd));
 		switch_assert(fd);
@@ -132,10 +132,10 @@ static void write_cdr(const char *path, const char *log_line)
 		fd->path = switch_core_strdup(globals.pool, path);
 		switch_core_hash_insert(globals.fd_hash, path, fd);
 	}
-	
+
 	switch_mutex_lock(fd->mutex);
-	bytes_out = (unsigned)strlen(log_line);
-	
+	bytes_out = (unsigned) strlen(log_line);
+
 	if (fd->fd < 0) {
 		do_reopen(fd);
 		if (fd->fd < 0) {
@@ -143,18 +143,18 @@ static void write_cdr(const char *path, const char *log_line)
 			goto end;
 		}
 	}
-	
+
 	if (fd->bytes + bytes_out > UINT_MAX) {
 		do_rotate(fd);
 	}
-	
+
 	if ((bytes_in = write(fd->fd, log_line, bytes_out)) != bytes_out) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write error to file %s %d/%d\n", path, (int)bytes_in, (int)bytes_out);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write error to file %s %d/%d\n", path, (int) bytes_in, (int) bytes_out);
 	}
 
 	fd->bytes += bytes_in;
 
- end:
+  end:
 
 	switch_mutex_unlock(fd->mutex);
 }
@@ -164,7 +164,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	const char *log_dir = NULL, *accountcode = NULL, *a_template_str = NULL, *g_template_str = NULL;
-	char *log_line, *path = NULL;	
+	char *log_line, *path = NULL;
 
 	if (switch_channel_get_originator_caller_profile(channel)) {
 		return SWITCH_STATUS_SUCCESS;
@@ -173,7 +173,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	if (!(log_dir = switch_channel_get_variable(channel, "cdr_csv_base"))) {
 		log_dir = globals.log_dir;
 	}
-	
+
 	if (switch_dir_make_recursive(log_dir, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", log_dir);
 		return SWITCH_STATUS_FALSE;
@@ -193,15 +193,15 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	}
 
 	g_template_str = (const char *) switch_core_hash_find(globals.template_hash, globals.default_template);
-	
+
 	if ((accountcode = switch_channel_get_variable(channel, "ACCOUNTCODE"))) {
 		a_template_str = (const char *) switch_core_hash_find(globals.template_hash, accountcode);
 	}
-	
+
 	if (!a_template_str) {
 		a_template_str = g_template_str;
 	}
-	
+
 	log_line = switch_channel_expand_variables(channel, a_template_str);
 
 	if (accountcode) {
@@ -210,21 +210,21 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 		write_cdr(path, log_line);
 		free(path);
 	}
-		
+
 	if (g_template_str != a_template_str) {
 		if (log_line && log_line != a_template_str) {
 			switch_safe_free(log_line);
 		}
 		log_line = switch_channel_expand_variables(channel, g_template_str);
 	}
-	
-		
+
+
 
 	path = switch_mprintf("%s%sMaster.csv", log_dir, SWITCH_PATH_SEPARATOR);
 	assert(path);
 	write_cdr(path, log_line);
 	free(path);
-	
+
 
 	if (log_line && log_line != g_template_str) {
 		free(log_line);
@@ -237,7 +237,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 static void event_handler(switch_event_t *event)
 {
 	const char *sig = switch_event_get_header(event, "Trapped-Signal");
-    switch_hash_index_t *hi;
+	switch_hash_index_t *hi;
 	void *val;
 	cdr_fd_t *fd;
 
@@ -269,18 +269,18 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 	char *cf = "cdr_csv.conf";
 	switch_xml_t cfg, xml, settings, param;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	
-	memset(&globals,0,sizeof(globals));
+
+	memset(&globals, 0, sizeof(globals));
 	switch_core_hash_init(&globals.fd_hash, pool);
 	switch_core_hash_init(&globals.template_hash, pool);
-	
+
 	globals.pool = pool;
-	
+
 	switch_core_hash_insert(globals.template_hash, "default", default_template);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding default template.\n");
 
 	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-		
+
 		if ((settings = switch_xml_child(cfg, "settings"))) {
 			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -317,7 +317,7 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 		}
 		switch_xml_free(xml);
 	}
-	
+
 
 	if (switch_strlen_zero(globals.default_template)) {
 		globals.default_template = switch_core_strdup(pool, "default");
@@ -326,7 +326,7 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 	if (!globals.log_dir) {
 		globals.log_dir = switch_core_sprintf(pool, "%s%scdr-csv", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 	}
-	
+
 	return status;
 }
 
@@ -344,20 +344,20 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_csv_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	load_config(pool);
-	
+
 	if ((status = switch_dir_make_recursive(globals.log_dir, SWITCH_DEFAULT_DIR_PERMS, pool)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", globals.log_dir);
 	}
-	
+
 	return status;
 }
 
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cdr_csv_shutdown)
 {
-	
-	globals.shutdown=1;
-    return SWITCH_STATUS_SUCCESS;
+
+	globals.shutdown = 1;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 

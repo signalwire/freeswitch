@@ -96,17 +96,15 @@ SWITCH_STANDARD_API(xml_ldap_function)
 	}
 
 	if (!strcasecmp(cmd, "debug_on")) {
-	}
-	else if (!strcasecmp(cmd, "debug_off")) {
-	}
-	else {
+	} else if (!strcasecmp(cmd, "debug_off")) {
+	} else {
 		goto usage;
 	}
 
 	stream->write_function(stream, "OK\n");
 	return SWITCH_STATUS_SUCCESS;
 
-usage:
+  usage:
 	stream->write_function(stream, "USAGE: %s\n", XML_LDAP_SYNTAX);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -144,11 +142,10 @@ static switch_status_t xml_ldap_directory_result(void *ldap_connection, xml_bind
 			ldap->val = ldap_first_attribute(ldap->ld, ldap->entry, &ldap->berval);
 			do {
 				if (strstr(ldap->val, "value")) {
-					if (strstr(ldap->val, ldap->key) && strcmp(ldap->val, ldap->key) ) {
+					if (strstr(ldap->val, ldap->key) && strcmp(ldap->val, ldap->key)) {
 						if (!strcmp(ldap->key, "param")) {
 							params = switch_xml_add_child_d(asdf, "params", loff++);
-						}
-						else if (!strcmp(ldap->key, "variable")) {
+						} else if (!strcmp(ldap->key, "variable")) {
 							variables = switch_xml_add_child_d(asdf, "variables", loff++);
 						}
 
@@ -162,8 +159,7 @@ static switch_status_t xml_ldap_directory_result(void *ldap_connection, xml_bind
 										param = switch_xml_add_child_d(params, "param", loff++);
 										switch_xml_set_attr_d(param, "name", ldap->keyvals[i]);
 										switch_xml_set_attr_d(param, "value", ldap->valvals[i]);
-									}
-									else if (!strcmp(ldap->key, "variable")) {
+									} else if (!strcmp(ldap->key, "variable")) {
 										variable = switch_xml_add_child_d(variables, "variable", loff++);
 										switch_xml_set_attr_d(variable, "name", ldap->keyvals[i]);
 										switch_xml_set_attr_d(variable, "value", ldap->valvals[i]);
@@ -177,9 +173,9 @@ static switch_status_t xml_ldap_directory_result(void *ldap_connection, xml_bind
 								if (ldap->valvals) {
 									ldap_value_free(ldap->valvals);
 								}
-							}
-							else {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "seems the values %d and %d are not the same??\n",ldap_count_values(ldap->valvals), ldap_count_values(ldap->keyvals));
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "seems the values %d and %d are not the same??\n",
+												  ldap_count_values(ldap->valvals), ldap_count_values(ldap->keyvals));
 							}
 						}
 					}
@@ -200,7 +196,7 @@ static switch_status_t xml_ldap_directory_result(void *ldap_connection, xml_bind
 				ber_free(ldap->berval, 0);
 			}
 
-			ldap->key = ldap_next_attribute(ldap->ld, ldap->entry, ldap->berkey );
+			ldap->key = ldap_next_attribute(ldap->ld, ldap->entry, ldap->berkey);
 
 		} while (ldap->key != NULL);
 
@@ -212,9 +208,10 @@ static switch_status_t xml_ldap_directory_result(void *ldap_connection, xml_bind
 }
 
 
-static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, const char *key_name, const char *key_value, switch_event_t	*params, void *user_data)
+static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,
+									void *user_data)
 {
-	xml_binding_t *binding = (xml_binding_t *)user_data;
+	xml_binding_t *binding = (xml_binding_t *) user_data;
 	switch_event_header_t *hi;
 
 	switch_xml_t xml = NULL, sub = NULL;
@@ -222,7 +219,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 	struct ldap_c ldap_connection;
 	struct ldap_c *ldap = &ldap_connection;
 
-	int auth_method     = LDAP_AUTH_SIMPLE;
+	int auth_method = LDAP_AUTH_SIMPLE;
 	int desired_version = LDAP_VERSION3;
 	xml_ldap_query_type_t query_type;
 	char *dir_exten = NULL, *dir_domain = NULL;
@@ -237,16 +234,13 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 		return NULL;
 	}
 
-	if (!strcmp(section,"configuration")) {
+	if (!strcmp(section, "configuration")) {
 		query_type = XML_LDAP_CONFIG;
-	}
-	else if (!strcmp(section,"directory")) {
+	} else if (!strcmp(section, "directory")) {
 		query_type = XML_LDAP_DIRECTORY;
-	}
-	else if (!strcmp(section,"dialplan")) {
+	} else if (!strcmp(section, "dialplan")) {
 		query_type = XML_LDAP_DIALPLAN;
-	}
-	else if (!strcmp(section,"phrases")) {
+	} else if (!strcmp(section, "phrases")) {
 		query_type = XML_LDAP_PHRASE;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid section\n");
@@ -256,15 +250,14 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 	if (params) {
 		if ((hi = params->headers)) {
 			for (; hi; hi = hi->next) {
-				switch(query_type) {
+				switch (query_type) {
 				case XML_LDAP_CONFIG:
 					break;
 
 				case XML_LDAP_DIRECTORY:
-					if (!strcmp(hi->name,"user")) {
+					if (!strcmp(hi->name, "user")) {
 						dir_exten = strdup(hi->value);
-					}
-					else if (!strcmp(hi->name,"domain")) {
+					} else if (!strcmp(hi->name, "domain")) {
 						dir_domain = strdup(hi->value);
 					}
 					break;
@@ -274,7 +267,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 					break;
 				}
 			}
-			switch(query_type) {
+			switch (query_type) {
 			case XML_LDAP_CONFIG:
 				break;
 
@@ -282,7 +275,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 				if (dir_exten && dir_domain) {
 					if ((xml = switch_xml_new("directory"))) {
 						switch_xml_set_attr_d(xml, "type", "freeswitch/xml");
-						
+
 						if ((sub = switch_xml_add_child_d(xml, "section", off++))) {
 							switch_xml_set_attr_d(sub, "name", "directory");
 						}
@@ -290,21 +283,23 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 						if ((sub = switch_xml_add_child_d(sub, "domain", off++))) {
 							switch_xml_set_attr_d(sub, "name", dir_domain);
 						}
-						
+
 						if ((sub = switch_xml_add_child_d(sub, "user", off++))) {
 							switch_xml_set_attr_d(sub, "id", dir_exten);
 						}
 					}
 
 					search_base = switch_mprintf(binding->queryfmt, dir_exten, dir_domain, binding->ldap_base);
-						
+
 					free(dir_exten);
 					dir_exten = NULL;
 
 					free(dir_domain);
 					dir_domain = NULL;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "something bad happened during the query construction phase likely exten(%s) or domain(%s) is null\n", dir_exten, dir_domain);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+									  "something bad happened during the query construction phase likely exten(%s) or domain(%s) is null\n", dir_exten,
+									  dir_domain);
 					goto cleanup;
 				}
 				break;
@@ -325,8 +320,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 			case XML_LDAP_PHRASE:
 				break;
 			}
-		}
-		else {
+		} else {
 			goto cleanup;
 		}
 	}
@@ -359,7 +353,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 		goto cleanup;
 	}
 
-cleanup:
+  cleanup:
 	if (ldap->msg) {
 		ldap_msgfree(ldap->msg);
 	}
@@ -409,28 +403,25 @@ static switch_status_t do_config(void)
 				if (val) {
 					binding->queryfmt = strdup(val);
 				}
-			}
-			else if (!strcasecmp(var, "base")) {
+			} else if (!strcasecmp(var, "base")) {
 				binding->ldap_base = strdup(val);
-			}
-			else if (!strcasecmp(var, "binddn")) {
+			} else if (!strcasecmp(var, "binddn")) {
 				binding->binddn = strdup(val);
-			}
-			else if (!strcasecmp(var, "bindpass")) {
+			} else if (!strcasecmp(var, "bindpass")) {
 				binding->bindpass = strdup(val);
-			}
-			else if (!strcasecmp(var, "host")) {
+			} else if (!strcasecmp(var, "host")) {
 				binding->host = strdup(val);
 			}
 		}
 
 		if (!binding->ldap_base || !binding->binddn || !binding->bindpass || !binding->queryfmt) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "You must define \"base\", \"binddn\", \"bindpass\", and \"queryfmt\" in mod_xml_ldap.conf.xml\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+							  "You must define \"base\", \"binddn\", \"bindpass\", and \"queryfmt\" in mod_xml_ldap.conf.xml\n");
 			continue;
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding [%s] XML Fetch Function [%s] [%s]\n",
-				switch_strlen_zero(bname) ? "N/A" : bname, binding->ldap_base, binding->bindings ? binding->bindings : "all");
+						  switch_strlen_zero(bname) ? "N/A" : bname, binding->ldap_base, binding->bindings ? binding->bindings : "all");
 
 		switch_xml_bind_search_function(xml_ldap_search, switch_xml_parse_section_string(bname), binding);
 
@@ -438,7 +429,7 @@ static switch_status_t do_config(void)
 		binding = NULL;
 	}
 
-done:
+  done:
 	switch_xml_free(xml);
 
 	return SWITCH_STATUS_SUCCESS;

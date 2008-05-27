@@ -56,7 +56,7 @@ typedef struct {
 	switch_mutex_t *flag_mutex;
 } lumenvox_t;
 
-static void log_callback(const char* message, void* userdata)
+static void log_callback(const char *message, void *userdata)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s\n", message);
 }
@@ -72,50 +72,47 @@ static const char *state_names[] = {
 	"BEEP"
 };
 
-std::ostream& operator << (std::ostream& os ,const LVSemanticData& Data)
+std::ostream & operator <<(std::ostream & os, const LVSemanticData & Data)
 {
 	int i;
 	LVSemanticObject Obj;
-	switch (Data.Type())
-		{
-		case SI_TYPE_BOOL:
-			os << Data.GetBool();
-			break;
-		case SI_TYPE_INT:
-			os << Data.GetInt();
-			break;
-		case SI_TYPE_DOUBLE:
-			os << Data.GetDouble();
-			break;
-		case SI_TYPE_STRING:
-			os << Data.GetString();
-			break;
-		case SI_TYPE_OBJECT:
-			Obj = Data.GetSemanticObject();
-			for (i = 0; i < Obj.NumberOfProperties(); ++i)
-				{
-					os << "<" << Obj.PropertyName(i) << ">";
-					os << Obj.PropertyValue(i);
-					os << "</" << Obj.PropertyName(i) << ">";
-				}
-			break;
-		case SI_TYPE_ARRAY:
-			for (i = 0; i < Data.GetSemanticArray().Size(); ++i)
-				{
-					os << Data.GetArray().At(i);
-				}
-			break;
+	switch (Data.Type()) {
+	case SI_TYPE_BOOL:
+		os << Data.GetBool();
+		break;
+	case SI_TYPE_INT:
+		os << Data.GetInt();
+		break;
+	case SI_TYPE_DOUBLE:
+		os << Data.GetDouble();
+		break;
+	case SI_TYPE_STRING:
+		os << Data.GetString();
+		break;
+	case SI_TYPE_OBJECT:
+		Obj = Data.GetSemanticObject();
+		for (i = 0; i < Obj.NumberOfProperties(); ++i) {
+			os << "<" << Obj.PropertyName(i) << ">";
+			os << Obj.PropertyValue(i);
+			os << "</" << Obj.PropertyName(i) << ">";
 		}
+		break;
+	case SI_TYPE_ARRAY:
+		for (i = 0; i < Data.GetSemanticArray().Size(); ++i) {
+			os << Data.GetArray().At(i);
+		}
+		break;
+	}
 	return os;
 }
 
 //==============================================================================================
 // code to plug LVInterpretation into any standard stream
-std::ostream& operator << (std::ostream& os, const LVInterpretation& Interp)
+std::ostream & operator <<(std::ostream & os, const LVInterpretation & Interp)
 {
-	os << "<interpretation grammar=\""<<Interp.GrammarLabel()
-	   <<"\" score=\""<<Interp.Score()<<"\">";
-	os << "<result name=\""<<Interp.ResultName()<<"\">";
+	os << "<interpretation grammar=\"" << Interp.GrammarLabel()
+		<< "\" score=\"" << Interp.Score() << "\">";
+	os << "<result name=\"" << Interp.ResultName() << "\">";
 	os << Interp.ResultData();
 	os << "</result>";
 	os << "<input>";
@@ -126,30 +123,26 @@ std::ostream& operator << (std::ostream& os, const LVInterpretation& Interp)
 }
 
 
-static void state_change_callback(long new_state, unsigned long total_bytes,
-				   unsigned long recorded_bytes, void *user_data)
+static void state_change_callback(long new_state, unsigned long total_bytes, unsigned long recorded_bytes, void *user_data)
 {
 	lumenvox_t *lv = (lumenvox_t *) user_data;
-	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "State: [%s] total bytes: [%ld] recorded bytes: [%ld]\n",
-					  state_names[new_state],
-					  total_bytes,
-					  recorded_bytes);
 
-	switch (new_state)
-		{
-		case STREAM_STATUS_READY:
-			break;
-		case STREAM_STATUS_STOPPED:
-			switch_clear_flag_locked(lv, LVFLAG_READY);
-			break;
-		case STREAM_STATUS_END_SPEECH:
-			switch_set_flag_locked(lv, LVFLAG_HAS_TEXT);
-			break;
-		case STREAM_STATUS_BARGE_IN:
-			switch_set_flag_locked(lv, LVFLAG_BARGE);
-			break;
-		}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "State: [%s] total bytes: [%ld] recorded bytes: [%ld]\n",
+					  state_names[new_state], total_bytes, recorded_bytes);
+
+	switch (new_state) {
+	case STREAM_STATUS_READY:
+		break;
+	case STREAM_STATUS_STOPPED:
+		switch_clear_flag_locked(lv, LVFLAG_READY);
+		break;
+	case STREAM_STATUS_END_SPEECH:
+		switch_set_flag_locked(lv, LVFLAG_HAS_TEXT);
+		break;
+	case STREAM_STATUS_BARGE_IN:
+		switch_set_flag_locked(lv, LVFLAG_BARGE);
+		break;
+	}
 }
 
 static switch_status_t lumenvox_asr_pause(switch_asr_handle_t *ah)
@@ -177,20 +170,20 @@ static switch_status_t lumenvox_asr_resume(switch_asr_handle_t *ah)
 			lv->port.ClosePort();
 			return SWITCH_STATUS_GENERR;
 		}
-		switch_set_flag_locked(lv, LVFLAG_READY);		
+		switch_set_flag_locked(lv, LVFLAG_READY);
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	return SWITCH_STATUS_GENERR;
 }
 
 /*! function to open the asr interface */
-static switch_status_t lumenvox_asr_open(switch_asr_handle_t *ah, char *codec, int rate, char *dest, switch_asr_flag_t *flags) 
+static switch_status_t lumenvox_asr_open(switch_asr_handle_t *ah, char *codec, int rate, char *dest, switch_asr_flag_t *flags)
 {
-	
+
 	lumenvox_t *lv;
 	int error_code;
-	
+
 	if (!(lv = (lumenvox_t *) switch_core_alloc(ah->memory_pool, sizeof(*lv)))) {
 		return SWITCH_STATUS_MEMERR;
 	}
@@ -199,7 +192,7 @@ static switch_status_t lumenvox_asr_open(switch_asr_handle_t *ah, char *codec, i
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Rate: Pick 8000 or 16000\n");
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	if (!strcasecmp(codec, "PCMU")) {
 		switch (rate) {
 		case 8000:
@@ -238,36 +231,35 @@ static switch_status_t lumenvox_asr_open(switch_asr_handle_t *ah, char *codec, i
 	if (!lv->sound_format) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot negotiate sound format.\n");
 		return SWITCH_STATUS_FALSE;
-	}	
+	}
 
 	ah->rate = rate;
 	ah->codec = switch_core_strdup(ah->memory_pool, codec);
-	
+
 	lv->port.OpenPort(log_callback, NULL, 5);
 	error_code = lv->port.GetOpenPortStatus();
-	
-	switch(error_code)
-		{
-		case LV_FAILURE:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Licenses Exceeded!\n");
-			return SWITCH_STATUS_GENERR;
-		case LV_OPEN_PORT_FAILED__PRIMARY_SERVER_NOT_RESPONDING:
-		case LV_NO_SERVER_RESPONDING:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SRE Server Unavailable!\n");
-			return SWITCH_STATUS_GENERR;
-		case LV_SUCCESS:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Port Opened %d %dkhz.\n", lv->sound_format, rate);
-			break;
-		}
+
+	switch (error_code) {
+	case LV_FAILURE:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Licenses Exceeded!\n");
+		return SWITCH_STATUS_GENERR;
+	case LV_OPEN_PORT_FAILED__PRIMARY_SERVER_NOT_RESPONDING:
+	case LV_NO_SERVER_RESPONDING:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SRE Server Unavailable!\n");
+		return SWITCH_STATUS_GENERR;
+	case LV_SUCCESS:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Port Opened %d %dkhz.\n", lv->sound_format, rate);
+		break;
+	}
 
 
 	// turn on sound and response file logging
 	/*
-	  int save_sound_files = 1;
-	  lv->port.SetPropertyEx(PROP_EX_SAVE_SOUND_FILES,
-						   PROP_EX_VALUE_TYPE_INT_PTR,
-						   &save_sound_files);
-	*/
+	   int save_sound_files = 1;
+	   lv->port.SetPropertyEx(PROP_EX_SAVE_SOUND_FILES,
+	   PROP_EX_VALUE_TYPE_INT_PTR,
+	   &save_sound_files);
+	 */
 	lv->channel = 1;
 	lv->flags = *flags;
 	lv->port.StreamSetParameter(STREAM_PARM_DETECT_BARGE_IN, 1);
@@ -275,9 +267,9 @@ static switch_status_t lumenvox_asr_open(switch_asr_handle_t *ah, char *codec, i
 	lv->port.StreamSetParameter(STREAM_PARM_AUTO_DECODE, 1);
 	lv->port.StreamSetParameter(STREAM_PARM_DECODE_FLAGS, LV_DECODE_SEMANTIC_INTERPRETATION);
 	lv->port.StreamSetParameter(STREAM_PARM_VOICE_CHANNEL, lv->channel);
-	lv->port.StreamSetParameter(STREAM_PARM_GRAMMAR_SET, (long unsigned int) LV_ACTIVE_GRAMMAR_SET); 
+	lv->port.StreamSetParameter(STREAM_PARM_GRAMMAR_SET, (long unsigned int) LV_ACTIVE_GRAMMAR_SET);
 
-	
+
 	lv->port.StreamSetStateChangeCallBack(state_change_callback, lv);
 	lv->port.StreamSetParameter(STREAM_PARM_SOUND_FORMAT, lv->sound_format);
 
@@ -292,7 +284,7 @@ static switch_status_t lumenvox_asr_open(switch_asr_handle_t *ah, char *codec, i
 		lv->port.ClosePort();
 		return SWITCH_STATUS_GENERR;
 	}
-	
+
 	ah->private_info = lv;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -347,13 +339,13 @@ static switch_status_t lumenvox_asr_feed(switch_asr_handle_t *ah, void *data, un
 {
 
 	lumenvox_t *lv = (lumenvox_t *) ah->private_info;
-	
+
 	if (!switch_test_flag(lv, LVFLAG_HAS_TEXT) && switch_test_flag(lv, LVFLAG_READY)) {
 		if (lv->port.StreamSendData(data, len)) {
-			return SWITCH_STATUS_FALSE;		
+			return SWITCH_STATUS_FALSE;
 		}
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -384,21 +376,21 @@ static switch_status_t lumenvox_asr_get_results(switch_asr_handle_t *ah, char **
 
 		lv->port.StreamStop();
 		code = lv->port.WaitForEngineToIdle(3000, lv->channel);
-	
+
 		if (code == LV_TIME_OUT) {
 			return SWITCH_STATUS_FALSE;
 		}
-		
+
 		numInterp = lv->port.GetNumberOfInterpretations(lv->channel);
-		
+
 		for (int t = 0; t < numInterp; ++t) {
 			ss << lv->port.GetInterpretation(lv->channel, t);
 		}
-		
-		*xmlstr = strdup((char *)ss.str().c_str());
+
+		*xmlstr = strdup((char *) ss.str().c_str());
 		switch_clear_flag_locked(lv, LVFLAG_HAS_TEXT);
 
-		
+
 		if (switch_test_flag(lv, SWITCH_ASR_FLAG_AUTO_RESUME)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Auto Resuming\n");
 			switch_set_flag_locked(lv, LVFLAG_READY);
@@ -410,21 +402,21 @@ static switch_status_t lumenvox_asr_get_results(switch_asr_handle_t *ah, char **
 
 		ret = SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	return ret;
 }
 
 static const switch_asr_interface_t lumenvox_asr_interface = {
-	/*.interface_name*/			"lumenvox",
-	/*.asr_open*/				lumenvox_asr_open,
-	/*.asr_load_grammar*/		lumenvox_asr_load_grammar,
-	/*.asr_unload_grammar*/		lumenvox_asr_unload_grammar,
-	/*.asr_close*/				lumenvox_asr_close,
-	/*.asr_feed*/				lumenvox_asr_feed,
-	/*.asr_resume*/				lumenvox_asr_resume,
-	/*.asr_pause*/				lumenvox_asr_pause,
-	/*.asr_check_results*/		lumenvox_asr_check_results,
-	/*.asr_get_results*/		lumenvox_asr_get_results
+	/*.interface_name */ "lumenvox",
+	/*.asr_open */ lumenvox_asr_open,
+	/*.asr_load_grammar */ lumenvox_asr_load_grammar,
+	/*.asr_unload_grammar */ lumenvox_asr_unload_grammar,
+	/*.asr_close */ lumenvox_asr_close,
+	/*.asr_feed */ lumenvox_asr_feed,
+	/*.asr_resume */ lumenvox_asr_resume,
+	/*.asr_pause */ lumenvox_asr_pause,
+	/*.asr_check_results */ lumenvox_asr_check_results,
+	/*.asr_get_results */ lumenvox_asr_get_results
 };
 
 static const switch_loadable_module_interface_t lumenvox_module_interface = {
@@ -447,7 +439,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lumenvox_load)
 {
 	LVSpeechPort::RegisterAppLogMsg(log_callback, NULL, 5);
 	//LVSpeechPort::SetClientPropertyEx(PROP_EX_SRE_SERVERS, PROP_EX_VALUE_TYPE_STRING, (void *)"127.0.0.1");
-	
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &lumenvox_module_interface;
 

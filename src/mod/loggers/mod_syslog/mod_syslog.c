@@ -54,16 +54,16 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ident, globals.ident);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_format, globals.format);
 
 static switch_loadable_module_interface_t console_module_interface = {
-    /*.module_name */ modname,
-    /*.endpoint_interface */ NULL,
-    /*.timer_interface */ NULL,
-    /*.dialplan_interface */ NULL,
-    /*.codec_interface */ NULL,
-    /*.application_interface */ NULL,
-    /*.api_interface */ NULL,
-    /*.file_interface */ NULL,
-    /*.speech_interface */ NULL,
-    /*.directory_interface */ NULL
+	/*.module_name */ modname,
+	/*.endpoint_interface */ NULL,
+	/*.timer_interface */ NULL,
+	/*.dialplan_interface */ NULL,
+	/*.codec_interface */ NULL,
+	/*.application_interface */ NULL,
+	/*.api_interface */ NULL,
+	/*.file_interface */ NULL,
+	/*.speech_interface */ NULL,
+	/*.directory_interface */ NULL
 };
 
 static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_log_level_t level)
@@ -72,30 +72,30 @@ static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_l
 	int syslog_level;
 
 	switch (level) {
-		case SWITCH_LOG_DEBUG:
-			syslog_level = LOG_DEBUG;
-			break;
-		case SWITCH_LOG_INFO:
-			syslog_level = LOG_INFO;
-			break;
-		case SWITCH_LOG_NOTICE:
-			syslog_level = LOG_NOTICE;
-			break;
-		case SWITCH_LOG_WARNING:
-			syslog_level = LOG_WARNING;
-			break;
-		case SWITCH_LOG_ERROR:
-			syslog_level = LOG_ERR;
-			break;
-		case SWITCH_LOG_CRIT:
-			syslog_level = LOG_CRIT;
-			break;
-		case SWITCH_LOG_ALERT:
-			syslog_level = LOG_ALERT;
-			break;
-		default:
-			syslog_level = LOG_NOTICE;
-			break;
+	case SWITCH_LOG_DEBUG:
+		syslog_level = LOG_DEBUG;
+		break;
+	case SWITCH_LOG_INFO:
+		syslog_level = LOG_INFO;
+		break;
+	case SWITCH_LOG_NOTICE:
+		syslog_level = LOG_NOTICE;
+		break;
+	case SWITCH_LOG_WARNING:
+		syslog_level = LOG_WARNING;
+		break;
+	case SWITCH_LOG_ERROR:
+		syslog_level = LOG_ERR;
+		break;
+	case SWITCH_LOG_CRIT:
+		syslog_level = LOG_CRIT;
+		break;
+	case SWITCH_LOG_ALERT:
+		syslog_level = LOG_ALERT;
+		break;
+	default:
+		syslog_level = LOG_NOTICE;
+		break;
 	}
 
 	if (!switch_strlen_zero(message)) {

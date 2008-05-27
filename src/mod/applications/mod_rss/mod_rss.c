@@ -91,7 +91,7 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 {
 	switch (itype) {
 	case SWITCH_INPUT_TYPE_DTMF:{
-		switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
+			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
 			struct dtmf_buffer *dtb;
 			dtb = (struct dtmf_buffer *) buf;
 
@@ -175,7 +175,8 @@ SWITCH_STANDARD_APP(rss_function)
 	uint32_t last;
 	char *mydata = NULL;
 	char *filename = NULL;
-	char *argv[3], *feed_list[TTS_MAX_ENTRIES] = { 0 }, *feed_names[TTS_MAX_ENTRIES] = {0};
+	char *argv[3], *feed_list[TTS_MAX_ENTRIES] = { 0 }, *feed_names[TTS_MAX_ENTRIES] = {
+	0};
 	int argc, feed_index = 0;
 	const char *cf = "rss.conf";
 	switch_xml_t cfg, cxml, feeds, feed;
@@ -311,12 +312,12 @@ SWITCH_STANDARD_APP(rss_function)
 			switch_core_speech_flush_tts(&sh);
 #ifdef MATCH_COUNT
 			switch_snprintf(buf + len, sizeof(buf) - len, "%s",
-					 ",<break time=\"500ms\"/>Main Menu. <break time=\"600ms\"/> "
-					 "Select one of the following news sources, or press 0 to exit. " ",<break time=\"600ms\"/>");
+							",<break time=\"500ms\"/>Main Menu. <break time=\"600ms\"/> "
+							"Select one of the following news sources, or press 0 to exit. " ",<break time=\"600ms\"/>");
 #else
 			switch_snprintf(buf + len, sizeof(buf) - len, "%s",
-					 ",<break time=\"500ms\"/>Main Menu. <break time=\"600ms\"/> "
-					 "Select one of the following news sources, followed by the pound key or press 0 to exit. " ",<break time=\"600ms\"/>");
+							",<break time=\"500ms\"/>Main Menu. <break time=\"600ms\"/> "
+							"Select one of the following news sources, followed by the pound key or press 0 to exit. " ",<break time=\"600ms\"/>");
 #endif
 			len = (int32_t) strlen(buf);
 
@@ -482,8 +483,8 @@ SWITCH_STANDARD_APP(rss_function)
 
 
 			switch_snprintf(buf, sizeof(buf),
-					 ",<break time=\"500ms\"/>%s. %s. %s. local time: %s, Press 0 for options, 5 to change voice, or pound to return to the main menu. ",
-					 title_txt, description_txt, rights_txt, date);
+							",<break time=\"500ms\"/>%s. %s. %s. local time: %s, Press 0 for options, 5 to change voice, or pound to return to the main menu. ",
+							title_txt, description_txt, rights_txt, date);
 			args.input_callback = NULL;
 			args.buf = dtmf;
 			args.buflen = sizeof(dtmf);
@@ -539,7 +540,8 @@ SWITCH_STANDARD_APP(rss_function)
 					}
 					if (switch_test_flag(&dtb, SFLAG_INFO)) {
 						switch_clear_flag(&dtb, SFLAG_INFO);
-						switch_snprintf(tmpbuf + tmplen, sizeof(tmpbuf) - tmplen, "%s %s. I am speaking at %u words per minute. ", sh.engine, sh.voice, dtb.speed);
+						switch_snprintf(tmpbuf + tmplen, sizeof(tmpbuf) - tmplen, "%s %s. I am speaking at %u words per minute. ", sh.engine, sh.voice,
+										dtb.speed);
 						tmplen = (uint32_t) strlen(tmpbuf);
 					}
 
@@ -547,12 +549,12 @@ SWITCH_STANDARD_APP(rss_function)
 						switch_clear_flag(&dtb, SFLAG_INSTRUCT);
 						cont = 1;
 						switch_snprintf(tmpbuf + tmplen, sizeof(tmpbuf) - tmplen, "%s",
-								 "Press star to pause or resume speech. "
-								 "To go to the next item, press six. "
-								 "To go back, press 4. "
-								 "Press two to go faster, eight to slow down, or 7 to resume normal speed. "
-								 "To change voices, press five. To restore the original voice press 9. "
-								 "To hear these options again, press zero or press pound to return to the main menu. ");
+										"Press star to pause or resume speech. "
+										"To go to the next item, press six. "
+										"To go back, press 4. "
+										"Press two to go faster, eight to slow down, or 7 to resume normal speed. "
+										"To change voices, press five. To restore the original voice press 9. "
+										"To hear these options again, press zero or press pound to return to the main menu. ");
 					} else {
 						switch_snprintf(tmpbuf + tmplen, sizeof(tmpbuf) - tmplen, "Story %d. ", dtb.index + 1);
 						tmplen = (uint32_t) strlen(tmpbuf);

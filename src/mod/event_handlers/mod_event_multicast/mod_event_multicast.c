@@ -283,10 +283,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 		uint64_t host_hash = 0;
 		switch_status_t status;
 		memset(buf, 0, len);
-		
+
 		switch_sockaddr_ip_get(&myaddr, globals.addr);
 		status = switch_socket_recvfrom(addr, globals.udp_socket, 0, buf, &len);
-		
+
 		if (!len) {
 			if (SWITCH_STATUS_IS_BREAK(status)) {
 				switch_yield(100000);
@@ -334,7 +334,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 			switch_event_fire(&local_event);
 
 		}
-		
+
 	}
 
 	globals.running = 0;

@@ -200,16 +200,16 @@ static char *reverse_number(char *in, char *root)
 	return out;
 }
 
-static void dnserror(enum_query_t * q, int errnum)
+static void dnserror(enum_query_t *q, int errnum)
 {
-	
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "unable to lookup %s record for %s: %s\n",
 					  dns_typename(q->qtyp), dns_dntosp(q->dn), dns_strerror(errnum));
 	q->errs++;
 }
 
 
-static void add_result(enum_query_t * q, int order, int preference, char *service, char *route, int supported)
+static void add_result(enum_query_t *q, int order, int preference, char *service, char *route, int supported)
 {
 	enum_record_t *new_result, *rp, *prev = NULL;
 
@@ -255,7 +255,7 @@ static void add_result(enum_query_t * q, int order, int preference, char *servic
 }
 
 
-static void free_results(enum_record_t ** results)
+static void free_results(enum_record_t **results)
 {
 	enum_record_t *fp, *rp;
 
@@ -269,7 +269,7 @@ static void free_results(enum_record_t ** results)
 	*results = NULL;
 }
 
-static void parse_rr(const struct dns_parse *p, enum_query_t * q, struct dns_rr *rr)
+static void parse_rr(const struct dns_parse *p, enum_query_t *q, struct dns_rr *rr)
 {
 	const unsigned char *pkt = p->dnsp_pkt;
 	const unsigned char *end = p->dnsp_end;
@@ -287,17 +287,17 @@ static void parse_rr(const struct dns_parse *p, enum_query_t * q, struct dns_rr 
 	int argc = 0;
 	char *argv[4] = { 0 };
 	int n;
-	char string_arg[3][256] = {{0}};
+	char string_arg[3][256] = { {0} };
 
 	switch (rr->dnsrr_typ) {
-	case DNS_T_NAPTR:/* prio weight port targetDN */
+	case DNS_T_NAPTR:			/* prio weight port targetDN */
 		c = dptr;
-		c += 4; /* order, pref */
+		c += 4;					/* order, pref */
 
 		for (n = 0; n < 3; ++n) {
 			if (c >= dend) {
 				goto xperr;
-			} else { 
+			} else {
 				c += *c + 1;
 			}
 		}
@@ -307,18 +307,18 @@ static void parse_rr(const struct dns_parse *p, enum_query_t * q, struct dns_rr 
 		}
 
 		c = dptr;
-		order = dns_get16(c+0);
-		preference = dns_get16(c+2);
+		order = dns_get16(c + 0);
+		preference = dns_get16(c + 2);
 		flags = (char) dns_get16(c + 4);
 		c += 4;
 
-		for(n = 0; n < 3; n++) {
+		for (n = 0; n < 3; n++) {
 			uint32_t len = *c++, cpylen = len;
 			switch_assert(string_arg[n]);
 			if (len > sizeof(string_arg[n]) - 1) {
 				cpylen = sizeof(string_arg[n]) - 1;
 			}
-			strncpy(string_arg[n], (char *)c, cpylen);
+			strncpy(string_arg[n], (char *) c, cpylen);
 			*(string_arg[n] + len) = '\0';
 			c += len;
 		}
@@ -357,7 +357,7 @@ static void parse_rr(const struct dns_parse *p, enum_query_t * q, struct dns_rr 
 				}
 
 				switch_mutex_lock(MUTEX);
-				for(route = globals.route_order; route; route = route->next) {
+				for (route = globals.route_order; route; route = route->next) {
 					if (strcasecmp(service, route->service)) {
 						continue;
 					}
@@ -377,9 +377,9 @@ static void parse_rr(const struct dns_parse *p, enum_query_t * q, struct dns_rr 
 				if (!supported) {
 					add_result(q, order, preference, service, uri, 0);
 				}
-			} 
+			}
 			switch_mutex_unlock(MUTEX);
-			
+
 
 			switch_regex_safe_free(re);
 		}
@@ -392,7 +392,7 @@ static void parse_rr(const struct dns_parse *p, enum_query_t * q, struct dns_rr 
 
 	return;
 
-	xperr:
+  xperr:
 	//printf("<parse error>\n");
 	return;
 }
@@ -452,7 +452,7 @@ static void dnscb(struct dns_ctx *ctx, void *result, void *data)
 }
 
 
-static switch_status_t enum_lookup(char *root, char *in, enum_record_t ** results)
+static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results)
 {
 	switch_status_t sstatus = SWITCH_STATUS_SUCCESS;
 	char *name = NULL;
@@ -467,7 +467,7 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t ** result
 	char *num, *mnum = NULL, *mroot = NULL, *p;
 
 	mnum = switch_mprintf("%s%s", *in == '+' ? "" : "+", in);
-	
+
 	if ((p = strchr(mnum, '*'))) {
 		*p++ = '\0';
 		mroot = switch_mprintf("%s.%s", p, root ? root : globals.isn_root);
@@ -587,15 +587,15 @@ SWITCH_STANDARD_DIALPLAN(enum_dialplan_hunt)
 		}
 		switch_channel_set_variable(channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
 
-		
+
 		for (rp = results; rp; rp = rp->next) {
 			if (!rp->supported) {
 				continue;
 			}
 
-			switch_caller_extension_add_application(session, extension, "bridge", rp->route);			
+			switch_caller_extension_add_application(session, extension, "bridge", rp->route);
 		}
-		
+
 
 		free_results(&results);
 	}
@@ -644,7 +644,7 @@ SWITCH_STANDARD_APP(enum_app_function)
 					continue;
 				}
 				switch_snprintf(vbuf, sizeof(vbuf), "enum_route_%d", cnt++);
-				switch_channel_set_variable(channel, vbuf, rp->route);						
+				switch_channel_set_variable(channel, vbuf, rp->route);
 				if (rp->preference == last_pref && rp->order == last_order) {
 					*last_delim = ',';
 				}
@@ -656,7 +656,7 @@ SWITCH_STANDARD_APP(enum_app_function)
 				rbp += l;
 				rbl -= l;
 			}
-			
+
 			switch_snprintf(vbuf, sizeof(vbuf), "%d", cnt);
 			switch_channel_set_variable(channel, "enum_route_count", vbuf);
 			*(rbuf + strlen(rbuf) - 1) = '\0';
@@ -681,7 +681,7 @@ SWITCH_STANDARD_API(enum_api)
 	int last_order = -1, last_pref = -2;
 	char *last_delim = "|";
 	int ok = 0;
-	
+
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "%s", "none");
 		return SWITCH_STATUS_SUCCESS;
@@ -709,7 +709,7 @@ SWITCH_STANDARD_API(enum_api)
 				l = strlen(rp->route) + 1;
 				rbp += l;
 				rbl -= l;
-			
+
 			}
 			*(rbuf + strlen(rbuf) - 1) = '\0';
 			stream->write_function(stream, "%s", rbuf);
@@ -738,7 +738,7 @@ static void do_load(void)
 	memset(&globals, 0, sizeof(globals));
 	switch_core_new_memory_pool(&globals.pool);
 	globals.timeout = 10;
-    load_config();
+	load_config();
 	switch_mutex_unlock(MUTEX);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ENUM Reloaded\n");
 
@@ -772,7 +772,7 @@ SWITCH_STANDARD_API(enum_function)
 		if (!strcasecmp(dest, "reload")) {
 			do_load();
 			stream->write_function(stream, "+OK ENUM Reloaded.\n");
-            return SWITCH_STATUS_SUCCESS;
+			return SWITCH_STATUS_SUCCESS;
 
 		}
 
@@ -843,10 +843,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_enum_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_API(api_interface, "enum", "ENUM", enum_function, "");
 	SWITCH_ADD_API(api_interface, "enum_auto", "ENUM", enum_api, "");
-	SWITCH_ADD_APP(app_interface, "enum", "Perform an ENUM lookup", "Perform an ENUM lookup", enum_app_function, "[reload | <number> [<root>]]", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "enum", "Perform an ENUM lookup", "Perform an ENUM lookup", enum_app_function, "[reload | <number> [<root>]]",
+				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_DIALPLAN(dp_interface, "enum", enum_dialplan_hunt);
 
-	
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

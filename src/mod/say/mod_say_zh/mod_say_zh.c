@@ -185,8 +185,8 @@ static switch_status_t zh_say_general_count(switch_core_session_t *session,
 	if (in != 0) {
 		for (x = 8; x >= 0; x--) {
 			int num = (int) pow(10, x);
-			if ((places[(uint32_t)x] = in / num)) {
-				in -= places[(uint32_t)x] * num;
+			if ((places[(uint32_t) x] = in / num)) {
+				in -= places[(uint32_t) x] * num;
 			}
 		}
 

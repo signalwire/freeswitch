@@ -103,8 +103,8 @@ static struct {
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_ip, prefs.ip);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_pass, prefs.password);
 
-static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj);
-static void launch_listener_thread(listener_t * listener);
+static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj);
+static void launch_listener_thread(listener_t *listener);
 
 static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
@@ -117,7 +117,7 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 			if (data) {
 				if (switch_queue_trypush(l->log_queue, data) == SWITCH_STATUS_SUCCESS) {
 					if (l->lost_logs) {
-						int ll =  l->lost_logs;
+						int ll = l->lost_logs;
 						switch_event_t *event;
 						l->lost_logs = 0;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Lost %d log lines!\n", ll);
@@ -158,7 +158,7 @@ static void event_handler(switch_event_t *event)
 		if (!switch_test_flag(l, LFLAG_EVENTS)) {
 			continue;
 		}
-		
+
 		if (l->event_list[SWITCH_EVENT_ALL]) {
 			send = 1;
 		} else if ((l->event_list[event->event_id])) {
@@ -300,7 +300,7 @@ SWITCH_STANDARD_APP(socket_function)
 }
 
 
-static void close_socket(switch_socket_t ** sock)
+static void close_socket(switch_socket_t **sock)
 {
 	switch_mutex_lock(listen_list.sock_mutex);
 	if (*sock) {
@@ -320,7 +320,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown)
 
 	close_socket(&listen_list.sock);
 
-	while(prefs.threads) {
+	while (prefs.threads) {
 		switch_yield(10000);
 		if (++sanity == 1000) {
 			break;
@@ -350,7 +350,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void add_listener(listener_t * listener)
+static void add_listener(listener_t *listener)
 {
 	/* add me to the listeners so I get events */
 	switch_mutex_lock(listen_list.mutex);
@@ -359,7 +359,7 @@ static void add_listener(listener_t * listener)
 	switch_mutex_unlock(listen_list.mutex);
 }
 
-static void remove_listener(listener_t * listener)
+static void remove_listener(listener_t *listener)
 {
 	listener_t *l, *last = NULL;
 
@@ -385,7 +385,7 @@ static void strip_cr(char *s)
 	}
 }
 
-static switch_status_t read_packet(listener_t * listener, switch_event_t **event, uint32_t timeout)
+static switch_status_t read_packet(listener_t *listener, switch_event_t **event, uint32_t timeout)
 {
 	switch_size_t mlen, bytes = 0;
 	char mbuf[2048] = "";
@@ -543,8 +543,8 @@ static switch_status_t read_packet(listener_t * listener, switch_event_t **event
 					switch_socket_send(listener->sock, listener->ebuf, &len);
 
 					switch_safe_free(listener->ebuf);
-					
-				endloop:
+
+				  endloop:
 					switch_event_destroy(&pevent);
 				}
 			}
@@ -569,7 +569,7 @@ struct api_command_struct {
 	switch_memory_pool_t *pool;
 };
 
-static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t * thread, void *obj)
+static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 {
 
 	struct api_command_struct *acs = (struct api_command_struct *) obj;
@@ -630,7 +630,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t * thread, void *obj)
 		switch_thread_rwlock_unlock(acs->listener->rwlock);
 	}
 
- done:
+  done:
 	if (acs && acs->bg) {
 		switch_memory_pool_t *pool = acs->pool;
 		acs = NULL;
@@ -640,7 +640,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t * thread, void *obj)
 	return NULL;
 
 }
-static switch_status_t parse_command(listener_t * listener, switch_event_t *event, char *reply, uint32_t reply_len)
+static switch_status_t parse_command(listener_t *listener, switch_event_t *event, char *reply, uint32_t reply_len)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *cmd = switch_event_get_header(event, "command");
@@ -866,7 +866,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 		switch_snprintf(reply, reply_len, "+OK Job-UUID: %s", acs->uuid_str);
 
 		switch_thread_create(&thread, thd_attr, api_exec, acs, acs->pool);
-		
+
 		return SWITCH_STATUS_SUCCESS;
 	} else if (!strncasecmp(cmd, "log", 3)) {
 
@@ -950,7 +950,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 					}
 				}
 
-			end:
+			  end:
 				cur = next;
 			}
 		}
@@ -1039,7 +1039,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 		}
 	}
 
- done:
+  done:
 	if (event) {
 		switch_event_destroy(&event);
 	}
@@ -1051,7 +1051,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 	return status;
 }
 
-static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj)
+static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 {
 	listener_t *listener = (listener_t *) obj;
 	char buf[1024];
@@ -1071,13 +1071,13 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj
 
 	if (prefs.acl_count && listener->sa && !switch_strlen_zero(listener->remote_ip)) {
 		uint32_t x = 0;
-		
-		for (x = 0 ; x < prefs.acl_count; x++) {
+
+		for (x = 0; x < prefs.acl_count; x++) {
 			if (!switch_check_network_list_ip(listener->remote_ip, prefs.acl[x])) {
 				const char message[] = "Access Denied, go away.\n";
 				int mlen = strlen(message);
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl %s\n", listener->remote_ip,  prefs.acl[x]);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl %s\n", listener->remote_ip, prefs.acl[x]);
 
 				switch_snprintf(buf, sizeof(buf), "Content-Type: rude/rejection\nContent-Length %d\n\n", mlen);
 				len = strlen(buf);
@@ -1203,7 +1203,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj
 
 	}
 
- done:
+  done:
 
 	remove_listener(listener);
 
@@ -1234,7 +1234,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj
 
 
 /* Create a thread for the socket and launch it */
-static void launch_listener_thread(listener_t * listener)
+static void launch_listener_thread(listener_t *listener)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
@@ -1333,7 +1333,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 			goto sock_fail;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Socket up listening on %s:%u\n", prefs.ip, prefs.port);
 		break;
-	sock_fail:
+	  sock_fail:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error! Could not listen on %s:%u\n", prefs.ip, prefs.port);
 		switch_yield(100000);
 	}
@@ -1348,7 +1348,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 	switch_log_bind_logger(socket_logger, SWITCH_LOG_DEBUG);
 
 
-	for(;;) {
+	for (;;) {
 		if (switch_core_new_memory_pool(&listener_pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
 			goto fail;
@@ -1396,11 +1396,11 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 	}
 
 
-	for (x = 0 ; x < prefs.acl_count; x++) {
+	for (x = 0; x < prefs.acl_count; x++) {
 		switch_safe_free(prefs.acl[x]);
 	}
 
- fail:
+  fail:
 	return SWITCH_STATUS_TERM;
 }
 

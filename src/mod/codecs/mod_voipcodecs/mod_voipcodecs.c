@@ -81,7 +81,7 @@ static switch_status_t switch_lpc10_encode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *decoded_data,
 										   uint32_t decoded_data_len,
-										   uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
+										   uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
 										   unsigned int *flag)
 {
 	struct lpc10_context *context = codec->private_info;
@@ -99,7 +99,7 @@ static switch_status_t switch_lpc10_decode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *encoded_data,
 										   uint32_t encoded_data_len,
-										   uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
+										   uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
 										   unsigned int *flag)
 {
 	struct lpc10_context *context = codec->private_info;
@@ -138,8 +138,8 @@ static switch_status_t switch_gsm_init(switch_codec_t *codec, switch_codec_flag_
 		}
 		if (decoding) {
 			gsm0610_init(&context->decoder_object, GSM0610_PACKING_VOIP);
- 		}
-		
+		}
+
 		codec->private_info = context;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -149,8 +149,7 @@ static switch_status_t switch_gsm_encode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *decoded_data,
 										 uint32_t decoded_data_len,
-										 uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
-										 unsigned int *flag)
+										 uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag)
 {
 	struct gsm_context *context = codec->private_info;
 
@@ -167,8 +166,7 @@ static switch_status_t switch_gsm_decode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *encoded_data,
 										 uint32_t encoded_data_len,
-										 uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
-										 unsigned int *flag)
+										 uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
 {
 	struct gsm_context *context = codec->private_info;
 
@@ -187,6 +185,7 @@ static switch_status_t switch_gsm_destroy(switch_codec_t *codec)
 	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
+
 /*  GSM       - END */
 
 #ifdef ENABLE_G711
@@ -209,7 +208,7 @@ static switch_status_t switch_g711u_encode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *decoded_data,
 										   uint32_t decoded_data_len,
-										   uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
+										   uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
 										   unsigned int *flag)
 {
 	short *dbuf;
@@ -232,7 +231,7 @@ static switch_status_t switch_g711u_decode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *encoded_data,
 										   uint32_t encoded_data_len,
-										   uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
+										   uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
 										   unsigned int *flag)
 {
 	short *dbuf;
@@ -280,7 +279,7 @@ static switch_status_t switch_g711a_encode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *decoded_data,
 										   uint32_t decoded_data_len,
-										   uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
+										   uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
 										   unsigned int *flag)
 {
 	short *dbuf;
@@ -303,7 +302,7 @@ static switch_status_t switch_g711a_decode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *encoded_data,
 										   uint32_t encoded_data_len,
-										   uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
+										   uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
 										   unsigned int *flag)
 {
 	short *dbuf;
@@ -370,7 +369,7 @@ static switch_status_t switch_g722_encode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
 										  void *decoded_data,
 										  uint32_t decoded_data_len,
-										  uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
+										  uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
 										  unsigned int *flag)
 {
 	struct g722_context *context = codec->private_info;
@@ -388,7 +387,7 @@ static switch_status_t switch_g722_decode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
 										  void *encoded_data,
 										  uint32_t encoded_data_len,
-										  uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
+										  uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
 										  unsigned int *flag)
 {
 	struct g722_context *context = codec->private_info;
@@ -416,8 +415,8 @@ static switch_status_t switch_g722_destroy(switch_codec_t *codec)
 static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	uint32_t encoding, decoding;
-    int packing = G726_PACKING_RIGHT;
-    g726_state_t *context;
+	int packing = G726_PACKING_RIGHT;
+	g726_state_t *context;
 
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
@@ -426,10 +425,10 @@ static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag
 		return SWITCH_STATUS_FALSE;
 	} else {
 		if ((flags & SWITCH_CODEC_FLAG_AAL2 || strstr(codec->implementation->iananame, "AAL2"))) {
-            packing = G726_PACKING_LEFT;
-        } 
+			packing = G726_PACKING_LEFT;
+		}
 
-        g726_init(context, codec->implementation->bits_per_second, G726_ENCODING_LINEAR, packing);
+		g726_init(context, codec->implementation->bits_per_second, G726_ENCODING_LINEAR, packing);
 
 		codec->private_info = context;
 		return SWITCH_STATUS_SUCCESS;
@@ -446,7 +445,7 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
 										  void *decoded_data,
 										  uint32_t decoded_data_len,
-										  uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
+										  uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
 										  unsigned int *flag)
 {
 	g726_state_t *context = codec->private_info;
@@ -455,7 +454,7 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-    *encoded_data_len = g726_encode(context, (uint8_t *) encoded_data, (int16_t *) decoded_data, decoded_data_len / 2);
+	*encoded_data_len = g726_encode(context, (uint8_t *) encoded_data, (int16_t *) decoded_data, decoded_data_len / 2);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -464,16 +463,16 @@ static switch_status_t switch_g726_decode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
 										  void *encoded_data,
 										  uint32_t encoded_data_len,
-										  uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
+										  uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
 										  unsigned int *flag)
 {
-    g726_state_t *context = codec->private_info;
+	g726_state_t *context = codec->private_info;
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-    *decoded_data_len = (2 * g726_decode(context, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len));
+	*decoded_data_len = (2 * g726_decode(context, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len));
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -503,8 +502,8 @@ static switch_status_t switch_adpcm_init(switch_codec_t *codec, switch_codec_fla
 		}
 		if (decoding) {
 			ima_adpcm_init(&context->decoder_object, IMA_ADPCM_DVI4, 0);
- 		}
-		
+		}
+
 		codec->private_info = context;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -514,7 +513,7 @@ static switch_status_t switch_adpcm_encode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *decoded_data,
 										   uint32_t decoded_data_len,
-										   uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
+										   uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
 										   unsigned int *flag)
 {
 	struct ima_adpcm_context *context = codec->private_info;
@@ -532,7 +531,7 @@ static switch_status_t switch_adpcm_decode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *encoded_data,
 										   uint32_t encoded_data_len,
-										   uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
+										   uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
 										   unsigned int *flag)
 {
 	struct ima_adpcm_context *context = codec->private_info;
@@ -559,7 +558,7 @@ static switch_status_t switch_adpcm_destroy(switch_codec_t *codec)
 SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 {
 	switch_codec_interface_t *codec_interface;
-    int mpf, spf, bpf, ebpf, count;
+	int mpf, spf, bpf, ebpf, count;
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -567,134 +566,133 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 	/* IMA_ADPCM */
 	mpf = 10000, spf = 80, bpf = 160, ebpf = 80;
 	SWITCH_ADD_CODEC(codec_interface, "ADPCM (IMA)");
-    for (count = 12; count > 0; count--) {
-        switch_core_codec_add_implementation(pool, codec_interface,
-                                             SWITCH_CODEC_TYPE_AUDIO, 5, "DVI4", NULL, 8000, 8000, 32000,
-                                             mpf * count, spf * count, bpf * count, (ebpf * count) + 4, 1, 1, 12,
-                                             switch_adpcm_init, switch_adpcm_encode, switch_adpcm_decode, switch_adpcm_destroy);
-    }
+	for (count = 12; count > 0; count--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 5, "DVI4", NULL, 8000, 8000, 32000,
+											 mpf * count, spf * count, bpf * count, (ebpf * count) + 4, 1, 1, 12,
+											 switch_adpcm_init, switch_adpcm_encode, switch_adpcm_decode, switch_adpcm_destroy);
+	}
 	mpf = 10000, spf = 160, bpf = 320, ebpf = 160;
-    for (count = 12; count > 0; count--) {
-        switch_core_codec_add_implementation(pool, codec_interface,
-                                             SWITCH_CODEC_TYPE_AUDIO, 6, "DVI4", NULL, 16000, 16000, 64000,
-                                             mpf * count, spf * count, bpf * count, (ebpf * count) + 4, 1, 1, 12,
-                                             switch_adpcm_init, switch_adpcm_encode, switch_adpcm_decode, switch_adpcm_destroy);
-    }
+	for (count = 12; count > 0; count--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 6, "DVI4", NULL, 16000, 16000, 64000,
+											 mpf * count, spf * count, bpf * count, (ebpf * count) + 4, 1, 1, 12,
+											 switch_adpcm_init, switch_adpcm_encode, switch_adpcm_decode, switch_adpcm_destroy);
+	}
 
 	/* G726 */
 	mpf = 10000, spf = 80, bpf = 160, ebpf = 20;
 	SWITCH_ADD_CODEC(codec_interface, "G.726 16k (AAL2)");
-    for (count = 12; count > 0; count--) {
-        switch_core_codec_add_implementation(pool, codec_interface,
-                                             SWITCH_CODEC_TYPE_AUDIO, 124, "AAL2-G726-16", NULL, 8000, 8000, 16000,
-                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
-                                             switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
-    }
+	for (count = 12; count > 0; count--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 124, "AAL2-G726-16", NULL, 8000, 8000, 16000,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
+	}
 	SWITCH_ADD_CODEC(codec_interface, "G.726 16k");
-    for (count = 12; count > 0; count--) {
-        switch_core_codec_add_implementation(pool, codec_interface,
-                                             SWITCH_CODEC_TYPE_AUDIO, 127, "G726-16", NULL, 8000, 8000, 16000,
-                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
-                                             switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
-    }
-    /* Increase encoded bytes per frame by 10 */
-    ebpf = ebpf + 10;
+	for (count = 12; count > 0; count--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 127, "G726-16", NULL, 8000, 8000, 16000,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
+	}
+	/* Increase encoded bytes per frame by 10 */
+	ebpf = ebpf + 10;
 
 	SWITCH_ADD_CODEC(codec_interface, "G.726 24k (AAL2)");
-    for (count = 12; count > 0; count--) {
-        switch_core_codec_add_implementation(pool, codec_interface,
-                                             SWITCH_CODEC_TYPE_AUDIO, 123, "AAL2-G726-24", NULL, 8000, 8000, 24000,
-                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
-                                             switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
-    }
+	for (count = 12; count > 0; count--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 123, "AAL2-G726-24", NULL, 8000, 8000, 24000,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
+	}
 	SWITCH_ADD_CODEC(codec_interface, "G.726 24k");
-    for (count = 12; count > 0; count--) {
-        switch_core_codec_add_implementation(pool, codec_interface,
-                                             SWITCH_CODEC_TYPE_AUDIO, 126, "G726-24", NULL, 8000, 8000, 24000,
-                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
-                                             switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
-    }
-    /* Increase encoded bytes per frame by 10 */
-    ebpf = ebpf + 10;
+	for (count = 12; count > 0; count--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 126, "G726-24", NULL, 8000, 8000, 24000,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
+	}
+	/* Increase encoded bytes per frame by 10 */
+	ebpf = ebpf + 10;
 
 	SWITCH_ADD_CODEC(codec_interface, "G.726 32k (AAL2)");
-    for (count = 12; count > 0; count--) {
-        switch_core_codec_add_implementation(pool, codec_interface,
-                                             SWITCH_CODEC_TYPE_AUDIO, 2, "AAL2-G726-32", NULL, 8000, 8000, 32000,
-                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
-                                             switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
-    }
+	for (count = 12; count > 0; count--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 2, "AAL2-G726-32", NULL, 8000, 8000, 32000,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
+	}
 	SWITCH_ADD_CODEC(codec_interface, "G.726 32k");
-    for (count = 12; count > 0; count--) {
-        switch_core_codec_add_implementation(pool, codec_interface,
-                                             SWITCH_CODEC_TYPE_AUDIO, 2, "G726-32", NULL, 8000, 8000, 32000,
-                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
-                                             switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
-    }
-    /* Increase encoded bytes per frame by 10 */
-    ebpf = ebpf + 10;
+	for (count = 12; count > 0; count--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 2, "G726-32", NULL, 8000, 8000, 32000,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
+	}
+	/* Increase encoded bytes per frame by 10 */
+	ebpf = ebpf + 10;
 
 	SWITCH_ADD_CODEC(codec_interface, "G.726 40k (AAL2)");
-    for (count = 12; count > 0; count--) {
-        switch_core_codec_add_implementation(pool, codec_interface,
-                                             SWITCH_CODEC_TYPE_AUDIO, 122, "AAL2-G726-40", NULL, 8000, 8000, 40000,
-                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
-                                             switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
-    }
+	for (count = 12; count > 0; count--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 122, "AAL2-G726-40", NULL, 8000, 8000, 40000,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
+	}
 	SWITCH_ADD_CODEC(codec_interface, "G.726 40k");
-    for (count = 12; count > 0; count--) {
-        switch_core_codec_add_implementation(pool, codec_interface,
-                                             SWITCH_CODEC_TYPE_AUDIO, 125, "G726-40", NULL, 8000, 8000, 40000,
-                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
-                                             switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
-    }
+	for (count = 12; count > 0; count--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 125, "G726-40", NULL, 8000, 8000, 40000,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
+	}
 
 	/* G722 */
 	mpf = 10000, spf = 80, bpf = 320, ebpf = 80;
 	SWITCH_ADD_CODEC(codec_interface, "G.722");
-    for (count = 12; count > 0; count--) {
-        switch_core_codec_add_implementation(pool, codec_interface,
-                                             SWITCH_CODEC_TYPE_AUDIO, 9, "G722", NULL, 8000, 16000, 64000,
-                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
-                                             switch_g722_init, switch_g722_encode, switch_g722_decode, switch_g722_destroy);
-    }
+	for (count = 12; count > 0; count--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 9, "G722", NULL, 8000, 16000, 64000,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 switch_g722_init, switch_g722_encode, switch_g722_decode, switch_g722_destroy);
+	}
 
 #ifdef ENABLE_G711
 	/* G711 */
 	mpf = 10000, spf = 80, bpf = 160, ebpf = 80;
 	SWITCH_ADD_CODEC(codec_interface, "G.711 ulaw");
-    for (count = 12; count > 0; count--) {
-        switch_core_codec_add_implementation(pool, codec_interface,
-                                             SWITCH_CODEC_TYPE_AUDIO, 0, "PCMU", NULL, 8000, 8000, 64000,
-                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
-                                             switch_g711u_init, switch_g711u_encode, switch_g711u_decode, switch_g711u_destroy);
-    }
-    
+	for (count = 12; count > 0; count--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 0, "PCMU", NULL, 8000, 8000, 64000,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 switch_g711u_init, switch_g711u_encode, switch_g711u_decode, switch_g711u_destroy);
+	}
+
 	SWITCH_ADD_CODEC(codec_interface, "G.711 alaw");
-    for (count = 12; count > 0; count--) {
-        switch_core_codec_add_implementation(pool, codec_interface,
-                                             SWITCH_CODEC_TYPE_AUDIO, 8, "PCMA", NULL, 8000, 8000, 64000,
-                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
-                                             switch_g711a_init, switch_g711a_encode, switch_g711a_decode, switch_g711a_destroy);
-    }
+	for (count = 12; count > 0; count--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 8, "PCMA", NULL, 8000, 8000, 64000,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 switch_g711a_init, switch_g711a_encode, switch_g711a_decode, switch_g711a_destroy);
+	}
 #endif
 
 	/* GSM */
 	mpf = 20000, spf = 160, bpf = 320, ebpf = 33;
 	SWITCH_ADD_CODEC(codec_interface, "GSM");
-    for (count = 6; count > 0; count--) {
-        switch_core_codec_add_implementation(pool, codec_interface,
-                                             SWITCH_CODEC_TYPE_AUDIO, 3, "GSM", NULL, 8000, 8000, 13200,
-                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 6,
-                                             switch_gsm_init, switch_gsm_encode, switch_gsm_decode, switch_gsm_destroy);
-    }
+	for (count = 6; count > 0; count--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 3, "GSM", NULL, 8000, 8000, 13200,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 6,
+											 switch_gsm_init, switch_gsm_encode, switch_gsm_decode, switch_gsm_destroy);
+	}
 	/* LPC10 */
 #if SWITCH_MAX_INTERVAL >= 90
 	SWITCH_ADD_CODEC(codec_interface, "LPC-10");
 	switch_core_codec_add_implementation(pool, codec_interface,
 										 SWITCH_CODEC_TYPE_AUDIO, 7, "LPC", NULL, 8000, 8000, 2400,
-										 90000, 720, 1440, 28, 1, 1, 1,
-										 switch_lpc10_init, switch_lpc10_encode, switch_lpc10_decode, switch_lpc10_destroy);
+										 90000, 720, 1440, 28, 1, 1, 1, switch_lpc10_init, switch_lpc10_encode, switch_lpc10_decode, switch_lpc10_destroy);
 #endif
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

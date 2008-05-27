@@ -42,7 +42,7 @@ struct odbc_obj {
 	SQLCHAR *code;
 	int32 codelen;
 };
-typedef struct odbc_obj  odbc_obj_t;
+typedef struct odbc_obj odbc_obj_t;
 
 static odbc_obj_t *new_odbc_obj(char *dsn, char *username, char *password)
 {
@@ -56,7 +56,7 @@ static odbc_obj_t *new_odbc_obj(char *dsn, char *username, char *password)
 	if (!(new_obj->handle = switch_odbc_handle_new(dsn, username, password))) {
 		goto err;
 	}
-	
+
 	return new_obj;
 
   err:
@@ -72,29 +72,30 @@ static odbc_obj_t *new_odbc_obj(char *dsn, char *username, char *password)
 
 switch_odbc_status_t odbc_obj_connect(odbc_obj_t *obj)
 {
-	
+
 	return switch_odbc_handle_connect(obj->handle);
 }
 
-static void destroy_odbc_obj(odbc_obj_t ** objp)
+static void destroy_odbc_obj(odbc_obj_t **objp)
 {
 	odbc_obj_t *obj = *objp;
-    if (obj == NULL) return;
+	if (obj == NULL)
+		return;
 	if (obj->stmt) {
 		SQLFreeHandle(SQL_HANDLE_STMT, obj->stmt);
 	}
-    if (obj->handle) {
-    	switch_odbc_handle_destroy(&obj->handle);
-    }
-    switch_safe_free(obj->colbuf);
-    switch_safe_free(obj->code);
+	if (obj->handle) {
+		switch_odbc_handle_destroy(&obj->handle);
+	}
+	switch_safe_free(obj->colbuf);
+	switch_safe_free(obj->code);
 	switch_safe_free(obj);
 }
 
 
 /* ODBC Object */
 /*********************************************************************************/
-static JSBool odbc_construct(JSContext * cx, JSObject * obj, uintN argc, jsval *argv, jsval *rval)
+static JSBool odbc_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	odbc_obj_t *odbc_obj = NULL;
 	char *dsn, *username, *password;
@@ -156,16 +157,17 @@ static JSBool odbc_construct(JSContext * cx, JSObject * obj, uintN argc, jsval *
 
 static void odbc_destroy(JSContext * cx, JSObject * obj)
 {
-    odbc_obj_t *odbc_obj;
-	if (obj == NULL) return;
+	odbc_obj_t *odbc_obj;
+	if (obj == NULL)
+		return;
 	odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
 	if (odbc_obj) {
 		destroy_odbc_obj(&odbc_obj);
-	    JS_SetPrivate(cx, obj, NULL);
-    }
+		JS_SetPrivate(cx, obj, NULL);
+	}
 }
 
-static JSBool odbc_connect(JSContext * cx, JSObject * obj, uintN argc, jsval *argv, jsval *rval)
+static JSBool odbc_connect(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
 	JSBool tf = JS_TRUE;
@@ -183,7 +185,7 @@ static JSBool odbc_connect(JSContext * cx, JSObject * obj, uintN argc, jsval *ar
 	return JS_TRUE;
 }
 
-static JSBool odbc_execute(JSContext * cx, JSObject * obj, uintN argc, jsval *argv, jsval *rval)
+static JSBool odbc_execute(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
 	char *sql;
@@ -217,7 +219,7 @@ static JSBool odbc_execute(JSContext * cx, JSObject * obj, uintN argc, jsval *ar
 	return JS_TRUE;
 }
 
-static JSBool odbc_exec(JSContext * cx, JSObject * obj, uintN argc, jsval *argv, jsval *rval)
+static JSBool odbc_exec(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
 	char *sql;
@@ -253,7 +255,7 @@ static JSBool odbc_exec(JSContext * cx, JSObject * obj, uintN argc, jsval *argv,
 	return JS_TRUE;
 }
 
-static JSBool odbc_num_rows(JSContext * cx, JSObject * obj, uintN argc, jsval *argv, jsval *rval)
+static JSBool odbc_num_rows(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
 
@@ -277,7 +279,7 @@ static JSBool odbc_num_rows(JSContext * cx, JSObject * obj, uintN argc, jsval *a
 }
 
 
-static JSBool odbc_next_row(JSContext * cx, JSObject * obj, uintN argc, jsval *argv, jsval *rval)
+static JSBool odbc_next_row(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
 	int result = 0;
@@ -285,8 +287,8 @@ static JSBool odbc_next_row(JSContext * cx, JSObject * obj, uintN argc, jsval *a
 
 	if (switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database is not connected!\n");
-        goto done;
-    }
+		goto done;
+	}
 
 
 	if (odbc_obj->stmt) {
@@ -345,7 +347,7 @@ static char *escape_data(char *in, char escapeChar)
 }
 
 
-static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval *argv, jsval *rval)
+static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 
 	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
@@ -353,8 +355,8 @@ static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval *a
 
 	if (switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database is not connected!\n");
-        goto done;
-    }
+		goto done;
+	}
 
 	if (odbc_obj->stmt) {
 		SQLSMALLINT c = 0, x = 0;
@@ -374,7 +376,7 @@ static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval *a
 				SQLCHAR name[1024] = "";
 				SQLCHAR *data = odbc_obj->colbuf;
 				SQLCHAR *esc = NULL;
-				
+
 				SQLDescribeCol(odbc_obj->stmt, x, name, sizeof(name), &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
 				SQLGetData(odbc_obj->stmt, x, SQL_C_CHAR, odbc_obj->colbuf, odbc_obj->cblen, NULL);
 
@@ -407,10 +409,10 @@ static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval *a
 
 }
 
-static JSBool odbc_close(JSContext * cx, JSObject * obj, uintN argc, jsval *argv, jsval *rval)
+static JSBool odbc_close(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
-     odbc_destroy(cx, obj);
-     return JS_TRUE;
+	odbc_destroy(cx, obj);
+	return JS_TRUE;
 }
 
 enum odbc_tinyid {
@@ -425,17 +427,17 @@ static JSFunctionSpec odbc_methods[] = {
 	{"numRows", odbc_num_rows, 1},
 	{"nextRow", odbc_next_row, 1},
 	{"getData", odbc_get_data, 1},
-    {"close", odbc_close, 1},
+	{"close", odbc_close, 1},
 	{0}
 };
 
 
 static JSPropertySpec odbc_props[] = {
-	{"name", odbc_NAME, JSPROP_READONLY|JSPROP_PERMANENT}, 
+	{"name", odbc_NAME, JSPROP_READONLY | JSPROP_PERMANENT},
 	{0}
 };
 
-static JSBool odbc_setProperty(JSContext * cx, JSObject * obj, jsval id, jsval *vp)
+static JSBool odbc_setProperty(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
 {
 	char *name = JS_GetStringBytes(JS_ValueToString(cx, id));
 
@@ -446,11 +448,11 @@ static JSBool odbc_setProperty(JSContext * cx, JSObject * obj, jsval id, jsval *
 	return JS_TRUE;
 }
 
-static JSBool odbc_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval *vp)
+static JSBool odbc_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
 {
 	int param;
 	char *name = JS_GetStringBytes(JS_ValueToString(cx, id));
-	
+
 	/* numbers are our props anything else is a method */
 	if (name[0] >= 48 && name[0] <= 57) {
 		param = atoi(name);
@@ -483,7 +485,7 @@ const sm_module_interface_t odbc_module_interface = {
 	/*.next */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) spidermonkey_init(const sm_module_interface_t ** module_interface)
+SWITCH_MOD_DECLARE(switch_status_t) spidermonkey_init(const sm_module_interface_t **module_interface)
 {
 	*module_interface = &odbc_module_interface;
 	return SWITCH_STATUS_SUCCESS;

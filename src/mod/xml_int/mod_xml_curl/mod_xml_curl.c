@@ -43,8 +43,8 @@ struct xml_binding {
 	char *cred;
 	int disable100continue;
 	uint32_t ignore_cacert_check;
-	switch_hash_t* vars_map;
-	switch_memory_pool_t* vars_map_pool;
+	switch_hash_t *vars_map;
+	switch_memory_pool_t *vars_map_pool;
 };
 
 static int keep_files_around = 0;
@@ -78,7 +78,7 @@ SWITCH_STANDARD_API(xml_curl_function)
 	stream->write_function(stream, "OK\n");
 	return SWITCH_STATUS_SUCCESS;
 
-usage:
+  usage:
 	stream->write_function(stream, "USAGE: %s\n", XML_CURL_SYNTAX);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -89,7 +89,7 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	struct config_data *config_data = data;
 	int x;
 	x = write(config_data->fd, ptr, realsize);
-	if ( x != (int)realsize) {
+	if (x != (int) realsize) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write! %d out of %d\n", x, realsize);
 	}
 	return x;
@@ -130,13 +130,9 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	}
 
 	switch_snprintf(basic_data, sizeof(basic_data), "hostname=%s&section=%s&tag_name=%s&key_name=%s&key_value=%s",
-					hostname,
-					section,
-					switch_str_nil(tag_name),
-					switch_str_nil(key_name),
-					switch_str_nil(key_value));
+					hostname, section, switch_str_nil(tag_name), switch_str_nil(key_name), switch_str_nil(key_value));
 
-	data = switch_event_build_param_string(params, basic_data,binding->vars_map);
+	data = switch_event_build_param_string(params, basic_data, binding->vars_map);
 	switch_assert(data);
 
 	switch_uuid_get(&uuid);
@@ -166,8 +162,8 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
 
 		if (binding->disable100continue) {
-			slist = curl_slist_append(slist, "Expect:"); 
-			curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, slist); 
+			slist = curl_slist_append(slist, "Expect:");
+			curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, slist);
 		}
 
 		if (binding->ignore_cacert_check) {
@@ -206,6 +202,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 
 	return xml;
 }
+
 #define ENABLE_PARAM_VALUE "enabled"
 static switch_status_t do_config(void)
 {
@@ -214,9 +211,9 @@ static switch_status_t do_config(void)
 	xml_binding_t *binding = NULL;
 	int x = 0;
 	int need_vars_map = 0;
-	switch_hash_t* vars_map = NULL;
-	switch_memory_pool_t* vars_map_pool = NULL;
-	
+	switch_hash_t *vars_map = NULL;
+	switch_memory_pool_t *vars_map_pool = NULL;
+
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
@@ -249,29 +246,29 @@ static switch_status_t do_config(void)
 				disable100continue = 1;
 			} else if (!strcasecmp(var, "ignore-cacert-check") && switch_true(val)) {
 				ignore_cacert_check = 1;
-			} else if(!strcasecmp(var, "enable-post-var")) {
+			} else if (!strcasecmp(var, "enable-post-var")) {
 				if (!vars_map && need_vars_map == 0) {
-				    if (switch_core_new_memory_pool(&vars_map_pool) != SWITCH_STATUS_SUCCESS) {
-					need_vars_map = -1;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cant create memory pool!\n");
-					continue;
-				    }
-	
-				    if (switch_core_hash_init(&vars_map,vars_map_pool) != SWITCH_STATUS_SUCCESS) {
-					need_vars_map = -1;
-					switch_core_destroy_memory_pool(&vars_map_pool);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cant init params hash!\n");
-					continue;
-				    }
-				    need_vars_map = 1;
+					if (switch_core_new_memory_pool(&vars_map_pool) != SWITCH_STATUS_SUCCESS) {
+						need_vars_map = -1;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cant create memory pool!\n");
+						continue;
+					}
+
+					if (switch_core_hash_init(&vars_map, vars_map_pool) != SWITCH_STATUS_SUCCESS) {
+						need_vars_map = -1;
+						switch_core_destroy_memory_pool(&vars_map_pool);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cant init params hash!\n");
+						continue;
+					}
+					need_vars_map = 1;
 				}
-				
+
 				if (vars_map && val)
-				    if (switch_core_hash_insert(vars_map, val, ENABLE_PARAM_VALUE) != SWITCH_STATUS_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cant add %s to params hash!\n",val);
-				    }
-				
-		        }	
+					if (switch_core_hash_insert(vars_map, val, ENABLE_PARAM_VALUE) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cant add %s to params hash!\n", val);
+					}
+
+			}
 		}
 
 		if (!url) {
@@ -296,7 +293,7 @@ static switch_status_t do_config(void)
 
 		binding->disable100continue = disable100continue;
 		binding->ignore_cacert_check = ignore_cacert_check;
-		
+
 		binding->vars_map = vars_map;
 		binding->vars_map_pool = vars_map_pool;
 
@@ -307,7 +304,7 @@ static switch_status_t do_config(void)
 		binding = NULL;
 	}
 
- done:
+  done:
 	switch_xml_free(xml);
 
 	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;

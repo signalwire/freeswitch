@@ -257,7 +257,7 @@ static void cepstral_speech_flush_tts(switch_speech_handle_t *sh)
 	swift_port_stop(cepstral->port, SWIFT_ASYNC_ANY, SWIFT_EVENT_NOW);
 }
 
-static switch_status_t cepstral_speech_read_tts(switch_speech_handle_t *sh, void *data, size_t *datalen, uint32_t * rate, switch_speech_flag_t *flags)
+static switch_status_t cepstral_speech_read_tts(switch_speech_handle_t *sh, void *data, size_t *datalen, uint32_t *rate, switch_speech_flag_t *flags)
 {
 	cepstral_t *cepstral;
 	size_t desired = *datalen;

@@ -41,7 +41,7 @@ SWITCH_MODULE_DEFINITION(mod_skel, mod_skel_load, NULL, NULL);
 SWITCH_MODULE_LOAD_FUNCTION(mod_skel_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
-    *module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hello World!\n");
 

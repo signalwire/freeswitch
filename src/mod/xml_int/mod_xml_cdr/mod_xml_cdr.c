@@ -99,10 +99,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	}
 
 	if (!switch_strlen_zero(logdir)) {
-		if ((path = switch_mprintf("%s%s%s.cdr.xml", 
-								   logdir, 
-								   SWITCH_PATH_SEPARATOR,
-								   switch_core_session_get_uuid(session)))) {
+		if ((path = switch_mprintf("%s%s%s.cdr.xml", logdir, SWITCH_PATH_SEPARATOR, switch_core_session_get_uuid(session)))) {
 			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 				int wrote;
 				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
@@ -124,7 +121,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	/* try to post it to the web server */
 	if (!switch_strlen_zero(globals.url)) {
 		curl_handle = curl_easy_init();
-		
+
 		if (globals.encode) {
 			switch_size_t need_bytes = strlen(xml_text) * 3;
 
@@ -136,14 +133,14 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 				switch_url_encode(xml_text, xml_text_escaped, need_bytes);
 			} else {
 				headers = curl_slist_append(headers, "Content-Type: application/x-www-form-base64-encoded");
-				switch_b64_encode((unsigned char *)xml_text, need_bytes / 3, (unsigned char *)xml_text_escaped, need_bytes);
+				switch_b64_encode((unsigned char *) xml_text, need_bytes / 3, (unsigned char *) xml_text_escaped, need_bytes);
 			}
 			switch_safe_free(xml_text);
 			xml_text = xml_text_escaped;
 		} else {
 			headers = curl_slist_append(headers, "Content-Type: application/x-www-form-plaintext");
 		}
-		
+
 		if (!(curl_xml_text = switch_mprintf("cdr=%s", xml_text))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 			goto error;
@@ -165,15 +162,15 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			slist = curl_slist_append(slist, "Expect:");
 			curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, slist);
 		}
-		
+
 		if (globals.ignore_cacert_check) {
 			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
 		}
 
 		/* these were used for testing, optionally they may be enabled if someone desires
-		curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 120); // tcp timeout
-		curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1); // 302 recursion level
-		*/
+		   curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 120); // tcp timeout
+		   curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1); // 302 recursion level
+		 */
 
 		for (cur_try = 0; cur_try < globals.retries; cur_try++) {
 			if (cur_try > 0) {
@@ -184,7 +181,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			if (httpRes == 200) {
 				goto success;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got error [%ld] posting to web server [%s]\n",httpRes, globals.url);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got error [%ld] posting to web server [%s]\n", httpRes, globals.url);
 			}
 		}
 		curl_easy_cleanup(curl_handle);
@@ -197,10 +194,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 		/* if we are here the web post failed for some reason */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to post to web server, writing to file\n");
 
-		if ((path = switch_mprintf("%s%s%s.cdr.xml", 
-								   globals.err_log_dir, 
-								   SWITCH_PATH_SEPARATOR,
-								   switch_core_session_get_uuid(session)))) {
+		if ((path = switch_mprintf("%s%s%s.cdr.xml", globals.err_log_dir, SWITCH_PATH_SEPARATOR, switch_core_session_get_uuid(session)))) {
 			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 				int wrote;
 				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
@@ -218,11 +212,11 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 		}
 	}
 
-success:
+  success:
 	status = SWITCH_STATUS_SUCCESS;
 
-error:
-	if (curl_handle) {	
+  error:
+	if (curl_handle) {
 		curl_easy_cleanup(curl_handle);
 	}
 	if (headers) {
@@ -259,7 +253,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	memset(&globals,0,sizeof(globals));
+	memset(&globals, 0, sizeof(globals));
 	globals.log_b = 1;
 	globals.disable100continue = 0;
 
@@ -294,32 +288,22 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				globals.retries = (uint32_t) atoi(val);
 			} else if (!strcasecmp(var, "log-dir")) {
 				if (switch_strlen_zero(val)) {
-					globals.log_dir = switch_mprintf("%s%sxml_cdr", 
-													 SWITCH_GLOBAL_dirs.log_dir,
-													 SWITCH_PATH_SEPARATOR);
+					globals.log_dir = switch_mprintf("%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 				} else {
 					if (switch_is_file_path(val)) {
 						globals.log_dir = strdup(val);
 					} else {
-						globals.log_dir = switch_mprintf("%s%s%s", 
-														 SWITCH_GLOBAL_dirs.log_dir, 
-														 SWITCH_PATH_SEPARATOR,
-														 val);
+						globals.log_dir = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, val);
 					}
 				}
 			} else if (!strcasecmp(var, "err-log-dir")) {
 				if (switch_strlen_zero(val)) {
-					globals.err_log_dir = switch_mprintf("%s%sxml_cdr", 
-														 SWITCH_GLOBAL_dirs.log_dir,
-														 SWITCH_PATH_SEPARATOR);
+					globals.err_log_dir = switch_mprintf("%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 				} else {
 					if (switch_is_file_path(val)) {
 						globals.err_log_dir = strdup(val);
 					} else {
-						globals.err_log_dir = switch_mprintf("%s%s%s", 
-															 SWITCH_GLOBAL_dirs.log_dir, 
-															 SWITCH_PATH_SEPARATOR,
-															 val);
+						globals.err_log_dir = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, val);
 					}
 				}
 			} else if (!strcasecmp(var, "ignore-cacert-check") && switch_true(val)) {
@@ -330,9 +314,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				if (!switch_strlen_zero(globals.log_dir)) {
 					globals.err_log_dir = strdup(globals.log_dir);
 				} else {
-					globals.err_log_dir = switch_mprintf("%s%sxml_cdr", 
-														 SWITCH_GLOBAL_dirs.log_dir,
-														 SWITCH_PATH_SEPARATOR);
+					globals.err_log_dir = switch_mprintf("%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 				}
 			}
 		}
@@ -342,7 +324,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 		globals.retries = 0;
 	}
 
-	if (globals.retries && globals.delay<=0) {
+	if (globals.retries && globals.delay <= 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "retries set but delay 0 setting to 5000ms\n");
 		globals.delay = 5000;
 	}
@@ -355,9 +337,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_cdr_shutdown)
 {
-	
-	globals.shutdown=1;
-    return SWITCH_STATUS_SUCCESS;
+
+	globals.shutdown = 1;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 /* For Emacs:

@@ -47,7 +47,7 @@ mutex_status_t iax_mutex_create(mutex_t **mutex)
 #endif
 	mutex_t *check = NULL;
 
-	check = (mutex_t *)malloc(sizeof(**mutex));
+	check = (mutex_t *) malloc(sizeof(**mutex));
 	if (!check)
 		goto done;
 #ifdef WIN32
@@ -64,16 +64,16 @@ mutex_status_t iax_mutex_create(mutex_t **mutex)
 
 	goto success;
 
-fail:
-        pthread_mutexattr_destroy(&attr);
-		goto done;
+  fail:
+	pthread_mutexattr_destroy(&attr);
+	goto done;
 
-success:
+  success:
 #endif
 	*mutex = check;
 	status = MUTEX_SUCCESS;
 
-done:
+  done:
 	return status;
 }
 

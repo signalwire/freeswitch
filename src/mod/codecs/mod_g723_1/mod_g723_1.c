@@ -110,7 +110,7 @@ static switch_status_t switch_g723_encode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
 										  void *decoded_data,
 										  uint32_t decoded_data_len,
-										  uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
+										  uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
 										  unsigned int *flag)
 {
 #ifdef G723_PASSTHROUGH
@@ -141,7 +141,7 @@ static switch_status_t switch_g723_decode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
 										  void *encoded_data,
 										  uint32_t encoded_data_len,
-										  uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
+										  uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
 										  unsigned int *flag)
 {
 #ifdef G723_PASSTHROUGH
@@ -170,16 +170,16 @@ static switch_status_t switch_g723_decode(switch_codec_t *codec,
 SWITCH_MODULE_LOAD_FUNCTION(mod_g723_1_load)
 {
 	switch_codec_interface_t *codec_interface;
-    int mpf = 30000, spf = 240, bpf = 480, ebpf = 24, count;
+	int mpf = 30000, spf = 240, bpf = 480, ebpf = 24, count;
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_CODEC(codec_interface, "G.723.1 6.3k");
-    for (count = 1; count > 0; count--) {
-        switch_core_codec_add_implementation(pool, codec_interface,
-                                             SWITCH_CODEC_TYPE_AUDIO, 4, "G723", NULL, 8000, 8000, 6300,
-                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 4, 
-                                             switch_g723_init, switch_g723_encode, switch_g723_decode, switch_g723_destroy);
-    }
+	for (count = 1; count > 0; count--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 4, "G723", NULL, 8000, 8000, 6300,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 4,
+											 switch_g723_init, switch_g723_encode, switch_g723_decode, switch_g723_destroy);
+	}
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

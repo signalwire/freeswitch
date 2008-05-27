@@ -185,15 +185,14 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 	return proceed;
 }
 
-static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t * root,
-										   switch_xml_t * node)
+static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t *root, switch_xml_t *node)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_GENERR;
 	switch_event_t *params = NULL;
 
 	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
-    switch_assert(params);
+	switch_assert(params);
 
 	switch_channel_event_set_data(channel, params);
 
@@ -215,7 +214,7 @@ SWITCH_STANDARD_DIALPLAN(dialplan_hunt)
 			goto done;
 		}
 	}
-	
+
 	if (!caller_profile->context) {
 		caller_profile->context = "default";
 	}
@@ -265,7 +264,7 @@ SWITCH_STANDARD_DIALPLAN(dialplan_hunt)
 
 		proceed = parse_exten(session, caller_profile, xexten, &extension);
 
-		if (proceed && !switch_true(cont)) { 
+		if (proceed && !switch_true(cont)) {
 			break;
 		}
 

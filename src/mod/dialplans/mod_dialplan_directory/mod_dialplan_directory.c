@@ -96,7 +96,7 @@ SWITCH_STANDARD_DIALPLAN(directory_dialplan_hunt)
 	if (!caller_profile) {
 		caller_profile = switch_channel_get_caller_profile(channel);
 	}
-	
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Hello %s You Dialed %s!\n", caller_profile->caller_id_name,
 					  caller_profile->destination_number);
 
@@ -134,7 +134,7 @@ SWITCH_STANDARD_DIALPLAN(directory_dialplan_hunt)
 			}
 		}
 	}
- out:
+  out:
 
 	switch_core_directory_close(&dh);
 

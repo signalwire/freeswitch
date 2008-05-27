@@ -56,7 +56,7 @@ static struct ss7boost_client_map ss7boost_client_table[] = {
 
 
 
-static switch_status_t create_udp_socket(ss7boost_client_connection_t * mcon, char *local_ip, int local_port, char *ip, int port)
+static switch_status_t create_udp_socket(ss7boost_client_connection_t *mcon, char *local_ip, int local_port, char *ip, int port)
 {
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "connect %s:%d->%s:%d\n", local_ip, local_port, ip, port);
@@ -88,7 +88,7 @@ static switch_status_t create_udp_socket(ss7boost_client_connection_t * mcon, ch
 
 
 
-SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_close(ss7boost_client_connection_t * mcon)
+SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_close(ss7boost_client_connection_t *mcon)
 {
 	switch_socket_close(mcon->socket);
 	mcon->socket = NULL;
@@ -97,7 +97,7 @@ SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_close(ss7boost_client
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_open(ss7boost_client_connection_t * mcon,
+SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_open(ss7boost_client_connection_t *mcon,
 																char *local_ip, int local_port, char *ip, int port, switch_memory_pool_t *pool)
 {
 	memset(mcon, 0, sizeof(*mcon));
@@ -112,7 +112,7 @@ SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_open(ss7boost_client_
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_read(ss7boost_client_connection_t * mcon, ss7boost_client_event_t ** event)
+SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_read(ss7boost_client_connection_t *mcon, ss7boost_client_event_t **event)
 {
 	unsigned int fromlen = sizeof(struct sockaddr_in);
 	switch_size_t bytes = 0;
@@ -138,7 +138,7 @@ SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_read(ss7boost_client_
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_write(ss7boost_client_connection_t * mcon, ss7boost_client_event_t * event)
+SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_write(ss7boost_client_connection_t *mcon, ss7boost_client_event_t *event)
 {
 	int err;
 	switch_size_t len;
@@ -200,7 +200,7 @@ SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_write(ss7boost_client
 	return err ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(void) ss7boost_client_call_init(ss7boost_client_event_t * event, char *calling, char *called, int setup_id)
+SWITCH_DECLARE(void) ss7boost_client_call_init(ss7boost_client_event_t *event, char *calling, char *called, int setup_id)
 {
 	memset(event, 0, sizeof(ss7boost_client_event_t));
 	event->event_id = SIGBOOST_EVENT_CALL_START;
@@ -219,7 +219,7 @@ SWITCH_DECLARE(void) ss7boost_client_call_init(ss7boost_client_event_t * event, 
 
 }
 
-SWITCH_DECLARE(void) ss7boost_client_event_init(ss7boost_client_event_t * event, ss7boost_client_event_id_t event_id, int chan, int span)
+SWITCH_DECLARE(void) ss7boost_client_event_init(ss7boost_client_event_t *event, ss7boost_client_event_id_t event_id, int chan, int span)
 {
 	memset(event, 0, sizeof(ss7boost_client_event_t));
 	event->event_id = event_id;

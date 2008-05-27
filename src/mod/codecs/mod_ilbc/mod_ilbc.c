@@ -97,7 +97,7 @@ static switch_status_t switch_ilbc_encode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
 										  void *decoded_data,
 										  uint32_t decoded_data_len,
-										  uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
+										  uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
 										  unsigned int *flag)
 {
 	struct ilbc_context *context = codec->private_info;
@@ -137,7 +137,7 @@ static switch_status_t switch_ilbc_decode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
 										  void *encoded_data,
 										  uint32_t encoded_data_len,
-										  uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
+										  uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
 										  unsigned int *flag)
 {
 	struct ilbc_context *context = codec->private_info;
@@ -187,31 +187,31 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_ilbc_load)
 
 	SWITCH_ADD_CODEC(codec_interface, "iLBC");
 
-    switch_core_codec_add_implementation(pool, codec_interface,
-                                         SWITCH_CODEC_TYPE_AUDIO, 97, "iLBC", "mode=20", 8000, 8000, NO_OF_BYTES_20MS * 8 * 8000 / BLOCKL_20MS,
-                                         20000, 160, 320, NO_OF_BYTES_20MS, 1, 1, 1,
-                                         switch_ilbc_init, switch_ilbc_encode, switch_ilbc_decode, switch_ilbc_destroy);
-    switch_core_codec_add_implementation(pool, codec_interface,
-                                         SWITCH_CODEC_TYPE_AUDIO, 102, "iLBC", "mode=20", 8000, 8000, NO_OF_BYTES_20MS * 8 * 8000 / BLOCKL_20MS,
-                                         20000, 160, 320, NO_OF_BYTES_20MS, 1, 1, 1,
-                                         switch_ilbc_init, switch_ilbc_encode, switch_ilbc_decode, switch_ilbc_destroy);
-    switch_core_codec_add_implementation(pool, codec_interface,
-                                         SWITCH_CODEC_TYPE_AUDIO, 102, "iLBC102", "mode=20", 8000, 8000, NO_OF_BYTES_20MS * 8 * 8000 / BLOCKL_20MS,
-                                         20000, 160, 320, NO_OF_BYTES_20MS, 1, 1, 1,
-                                         switch_ilbc_init, switch_ilbc_encode, switch_ilbc_decode, switch_ilbc_destroy);
-    switch_core_codec_add_implementation(pool, codec_interface,
-                                         SWITCH_CODEC_TYPE_AUDIO, 102, "iLBC20ms", "mode=20", 8000, 8000, NO_OF_BYTES_20MS * 8 * 8000 / BLOCKL_20MS,
-                                         20000, 160, 320, NO_OF_BYTES_20MS, 1, 1, 1,
-                                         switch_ilbc_init, switch_ilbc_encode, switch_ilbc_decode, switch_ilbc_destroy);
-    /* 30ms variants */
-    switch_core_codec_add_implementation(pool, codec_interface,
-                                         SWITCH_CODEC_TYPE_AUDIO, 98, "iLBC", "mode=30", 8000, 8000, NO_OF_BYTES_30MS * 8 * 8000 / BLOCKL_30MS,
-                                         30000, 240, 480, NO_OF_BYTES_30MS, 1, 1, 1,
-                                         switch_ilbc_init, switch_ilbc_encode, switch_ilbc_decode, switch_ilbc_destroy);
-    switch_core_codec_add_implementation(pool, codec_interface,
-                                         SWITCH_CODEC_TYPE_AUDIO, 102, "iLBC", "mode=30", 8000, 8000, NO_OF_BYTES_30MS * 8 * 8000 / BLOCKL_30MS,
-                                         30000, 240, 480, NO_OF_BYTES_30MS, 1, 1, 1,
-                                         switch_ilbc_init, switch_ilbc_encode, switch_ilbc_decode, switch_ilbc_destroy);
+	switch_core_codec_add_implementation(pool, codec_interface,
+										 SWITCH_CODEC_TYPE_AUDIO, 97, "iLBC", "mode=20", 8000, 8000, NO_OF_BYTES_20MS * 8 * 8000 / BLOCKL_20MS,
+										 20000, 160, 320, NO_OF_BYTES_20MS, 1, 1, 1,
+										 switch_ilbc_init, switch_ilbc_encode, switch_ilbc_decode, switch_ilbc_destroy);
+	switch_core_codec_add_implementation(pool, codec_interface,
+										 SWITCH_CODEC_TYPE_AUDIO, 102, "iLBC", "mode=20", 8000, 8000, NO_OF_BYTES_20MS * 8 * 8000 / BLOCKL_20MS,
+										 20000, 160, 320, NO_OF_BYTES_20MS, 1, 1, 1,
+										 switch_ilbc_init, switch_ilbc_encode, switch_ilbc_decode, switch_ilbc_destroy);
+	switch_core_codec_add_implementation(pool, codec_interface,
+										 SWITCH_CODEC_TYPE_AUDIO, 102, "iLBC102", "mode=20", 8000, 8000, NO_OF_BYTES_20MS * 8 * 8000 / BLOCKL_20MS,
+										 20000, 160, 320, NO_OF_BYTES_20MS, 1, 1, 1,
+										 switch_ilbc_init, switch_ilbc_encode, switch_ilbc_decode, switch_ilbc_destroy);
+	switch_core_codec_add_implementation(pool, codec_interface,
+										 SWITCH_CODEC_TYPE_AUDIO, 102, "iLBC20ms", "mode=20", 8000, 8000, NO_OF_BYTES_20MS * 8 * 8000 / BLOCKL_20MS,
+										 20000, 160, 320, NO_OF_BYTES_20MS, 1, 1, 1,
+										 switch_ilbc_init, switch_ilbc_encode, switch_ilbc_decode, switch_ilbc_destroy);
+	/* 30ms variants */
+	switch_core_codec_add_implementation(pool, codec_interface,
+										 SWITCH_CODEC_TYPE_AUDIO, 98, "iLBC", "mode=30", 8000, 8000, NO_OF_BYTES_30MS * 8 * 8000 / BLOCKL_30MS,
+										 30000, 240, 480, NO_OF_BYTES_30MS, 1, 1, 1,
+										 switch_ilbc_init, switch_ilbc_encode, switch_ilbc_decode, switch_ilbc_destroy);
+	switch_core_codec_add_implementation(pool, codec_interface,
+										 SWITCH_CODEC_TYPE_AUDIO, 102, "iLBC", "mode=30", 8000, 8000, NO_OF_BYTES_30MS * 8 * 8000 / BLOCKL_30MS,
+										 30000, 240, 480, NO_OF_BYTES_30MS, 1, 1, 1,
+										 switch_ilbc_init, switch_ilbc_encode, switch_ilbc_decode, switch_ilbc_destroy);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

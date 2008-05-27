@@ -180,16 +180,16 @@ static switch_status_t woomera_read_frame(switch_core_session_t *session, switch
 static switch_status_t woomera_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t woomera_kill_channel(switch_core_session_t *session, int sig);
 static void tech_destroy(private_object * tech_pvt);
-static void woomera_printf(woomera_profile * profile, switch_socket_t * socket, char *fmt, ...);
+static void woomera_printf(woomera_profile * profile, switch_socket_t *socket, char *fmt, ...);
 static char *woomera_message_header(woomera_message * wmsg, char *key);
 static int woomera_enqueue_event(woomera_event_queue * event_queue, woomera_message * wmsg);
 static int woomera_dequeue_event(woomera_event_queue * event_queue, woomera_message * wmsg);
-static int woomera_message_parse(switch_socket_t * fd, woomera_message * wmsg, int timeout, woomera_profile * profile, woomera_event_queue * event_queue);
-static int connect_woomera(switch_socket_t ** new_sock, woomera_profile * profile, int flags);
+static int woomera_message_parse(switch_socket_t *fd, woomera_message * wmsg, int timeout, woomera_profile * profile, woomera_event_queue * event_queue);
+static int connect_woomera(switch_socket_t **new_sock, woomera_profile * profile, int flags);
 static int woomera_profile_thread_running(woomera_profile * profile, int set, int new);
-static int woomera_locate_socket(woomera_profile * profile, switch_socket_t ** woomera_socket);
+static int woomera_locate_socket(woomera_profile * profile, switch_socket_t **woomera_socket);
 static int tech_create_read_socket(private_object * tech_pvt);
-static void *woomera_channel_thread_run(switch_thread_t * thread, void *obj);
+static void *woomera_channel_thread_run(switch_thread_t *thread, void *obj);
 static void *woomera_thread_run(void *obj);
 static int tech_activate(private_object * tech_pvt);
 
@@ -264,7 +264,7 @@ static switch_status_t woomera_on_hangup(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void woomera_socket_close(switch_socket_t ** socket)
+static void woomera_socket_close(switch_socket_t **socket)
 {
 	if (*socket) {
 		switch_socket_close(*socket);
@@ -330,7 +330,7 @@ static switch_status_t woomera_read_frame(switch_core_session_t *session, switch
 
 	switch_assert(tech_pvt != NULL);
 
-	for(;;) {
+	for (;;) {
 		if (switch_test_flag(tech_pvt, TFLAG_ABORT) || !tech_pvt->udp_socket) {
 			return SWITCH_STATUS_GENERR;
 		}
@@ -364,7 +364,7 @@ static switch_status_t woomera_write_frame(switch_core_session_t *session, switc
 	switch_size_t len;
 
 	switch_assert(tech_pvt != NULL);
-	
+
 	if (switch_test_flag(tech_pvt, TFLAG_ABORT) || !tech_pvt->udp_socket) {
 		return SWITCH_STATUS_GENERR;
 	}
@@ -469,7 +469,7 @@ static void tech_destroy(private_object * tech_pvt)
 }
 
 
-static void woomera_printf(woomera_profile * profile, switch_socket_t * socket, char *fmt, ...)
+static void woomera_printf(woomera_profile * profile, switch_socket_t *socket, char *fmt, ...)
 {
 	char *stuff = NULL;
 	size_t res = 0, len = 0;
@@ -558,7 +558,7 @@ static int woomera_dequeue_event(woomera_event_queue * event_queue, woomera_mess
 	return 0;
 }
 
-static int woomera_message_parse(switch_socket_t * fd, woomera_message * wmsg, int timeout, woomera_profile * profile, woomera_event_queue * event_queue)
+static int woomera_message_parse(switch_socket_t *fd, woomera_message * wmsg, int timeout, woomera_profile * profile, woomera_event_queue * event_queue)
 {
 	char *cur, *cr, *next = NULL;
 	char buf[2048] = "", *ptr;
@@ -719,7 +719,7 @@ static int woomera_message_parse(switch_socket_t * fd, woomera_message * wmsg, i
 }
 
 
-static int connect_woomera(switch_socket_t ** new_sock, woomera_profile * profile, int flags)
+static int connect_woomera(switch_socket_t **new_sock, woomera_profile * profile, int flags)
 {
 
 	switch_sockaddr_t *sa;
@@ -764,7 +764,7 @@ static int woomera_profile_thread_running(woomera_profile * profile, int set, in
 
 }
 
-static int woomera_locate_socket(woomera_profile * profile, switch_socket_t ** woomera_socket)
+static int woomera_locate_socket(woomera_profile * profile, switch_socket_t **woomera_socket)
 {
 	woomera_message wmsg;
 
@@ -823,7 +823,7 @@ static int tech_create_read_socket(private_object * tech_pvt)
 	} else {
 		switch_set_flag_locked(tech_pvt, TFLAG_ABORT);
 	}
-	
+
 	return 0;
 }
 
@@ -872,7 +872,7 @@ static int tech_activate(private_object * tech_pvt)
 
 
 
-static void *woomera_channel_thread_run(switch_thread_t * thread, void *obj)
+static void *woomera_channel_thread_run(switch_thread_t *thread, void *obj)
 {
 	switch_core_session_t *session = obj;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -976,15 +976,7 @@ static void *woomera_channel_thread_run(switch_thread_t * thread, void *obj)
 				if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																		  NULL,
 																		  tech_pvt->profile->dialplan,
-																		  cid_name,
-																		  cid_num,
-																		  ip,
-																		  NULL,
-																		  NULL,
-																		  NULL,
-																		  modname,
-																		  NULL,
-																		  exten)) != 0) {
+																		  cid_name, cid_num, ip, NULL, NULL, NULL, modname, NULL, exten)) != 0) {
 					char name[128];
 					switch_snprintf(name, sizeof(name), "Woomera/%s-%04x", tech_pvt->caller_profile->destination_number, rand() & 0xffff);
 					switch_channel_set_name(channel, name);

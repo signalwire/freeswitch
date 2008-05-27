@@ -139,8 +139,8 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_timer_name, globals.timer_name);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_device_name, globals.device_name);
 
 #define is_master(t) switch_test_flag(t, TFLAG_MASTER)
-static void add_pvt(private_t * tech_pvt, int master);
-static void remove_pvt(private_t * tech_pvt);
+static void add_pvt(private_t *tech_pvt, int master);
+static void remove_pvt(private_t *tech_pvt);
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
 static switch_status_t channel_on_routing(switch_core_session_t *session);
@@ -356,7 +356,7 @@ static void deactivate_audio_device(void)
 
 
 
-static void add_pvt(private_t * tech_pvt, int master)
+static void add_pvt(private_t *tech_pvt, int master)
 {
 	private_t *tp;
 	uint8_t in_list = 0;
@@ -399,7 +399,7 @@ static void add_pvt(private_t * tech_pvt, int master)
 	switch_mutex_unlock(globals.pvt_lock);
 }
 
-static void remove_pvt(private_t * tech_pvt)
+static void remove_pvt(private_t *tech_pvt)
 {
 	private_t *tp, *last = NULL;
 
@@ -562,8 +562,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 										  tech_pvt->hold_file,
 										  globals.read_codec.implementation->number_of_channels,
 										  globals.read_codec.implementation->actual_samples_per_second,
-										  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
-										  NULL) != SWITCH_STATUS_SUCCESS) {
+										  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 					switch_core_codec_destroy(&tech_pvt->write_codec);
 					tech_pvt->hold_file = NULL;
 					goto cng;
@@ -578,12 +577,12 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 			goto hold;
 		}
-	cng:
+	  cng:
 		switch_yield(globals.read_codec.implementation->microseconds_per_frame);
 		*frame = &globals.cng_frame;
 		return SWITCH_STATUS_SUCCESS;
 
-	hold:
+	  hold:
 
 		{
 			switch_size_t olen = globals.read_codec.implementation->samples_per_frame;
@@ -612,7 +611,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 	switch_mutex_lock(globals.device_lock);
-	if ((samples = snd_pcm_readi (globals.audio_stream_in, globals.read_frame.data, globals.read_codec.implementation->samples_per_frame)) > 0) {
+	if ((samples = snd_pcm_readi(globals.audio_stream_in, globals.read_frame.data, globals.read_codec.implementation->samples_per_frame)) > 0) {
 		globals.read_frame.datalen = samples * 2;
 		globals.read_frame.samples = samples;
 
@@ -887,7 +886,7 @@ static switch_status_t load_config(void)
 					globals.codec_ms = tmp;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-									  "codec-ms must be multipe of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL); 
+									  "codec-ms must be multipe of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL);
 				}
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
@@ -951,18 +950,18 @@ static switch_status_t engage_device(unsigned int sample_rate, int codec_ms)
 	int err = 0;
 	snd_pcm_hw_params_t *hw_params = NULL;
 	char *device = globals.device_name;
-	
+
 	if (globals.audio_stream_in && globals.audio_stream_out) {
 		return SWITCH_STATUS_SUCCESS;
-	} 
+	}
 
 	if (globals.audio_stream_in) {
-		snd_pcm_close (globals.audio_stream_in);
+		snd_pcm_close(globals.audio_stream_in);
 		globals.audio_stream_in = NULL;
 	}
 
 	if (globals.audio_stream_out) {
-		snd_pcm_close (globals.audio_stream_out);
+		snd_pcm_close(globals.audio_stream_out);
 		globals.audio_stream_out = NULL;
 	}
 
@@ -976,33 +975,30 @@ static switch_status_t engage_device(unsigned int sample_rate, int codec_ms)
 
 	if (switch_core_codec_init(&globals.read_codec,
 							   "L16",
-							   NULL, sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
-							   NULL) != SWITCH_STATUS_SUCCESS) {
+							   NULL, sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 		return SWITCH_STATUS_FALSE;
 	} else {
 		if (switch_core_codec_init(&globals.write_codec,
 								   "L16",
 								   NULL,
-								   sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
-								   NULL) != SWITCH_STATUS_SUCCESS) {
+								   sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 			switch_core_codec_destroy(&globals.read_codec);
 			return SWITCH_STATUS_FALSE;
 		}
 	}
-	
+
 	if (switch_core_timer_init(&globals.timer,
-							   globals.timer_name, codec_ms, globals.read_codec.implementation->samples_per_frame,
-							   module_pool) != SWITCH_STATUS_SUCCESS) {
+							   globals.timer_name, codec_ms, globals.read_codec.implementation->samples_per_frame, module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup timer failed!\n");
 		switch_core_codec_destroy(&globals.read_codec);
 		switch_core_codec_destroy(&globals.write_codec);
 		return SWITCH_STATUS_FALSE;
 	}
 
-	
-	
+
+
 	globals.read_frame.rate = sample_rate;
 	globals.read_frame.codec = &globals.read_codec;
 
@@ -1011,176 +1007,152 @@ static switch_status_t engage_device(unsigned int sample_rate, int codec_ms)
 	switch_mutex_lock(globals.device_lock);
 	/* LOCKED ************************************************************************************************** */
 
-		
-	if ((err = snd_pcm_open (&globals.audio_stream_out, device, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot open audio device %s (%s)\n", 
-						  device,
-						  snd_strerror (err));
+
+	if ((err = snd_pcm_open(&globals.audio_stream_out, device, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot open audio device %s (%s)\n", device, snd_strerror(err));
 		goto fail;
 	}
 
-	if ((err = snd_pcm_hw_params_malloc (&hw_params)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot allocate hardware parameter structure (%s)\n",
-						  snd_strerror (err));
+	if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot allocate hardware parameter structure (%s)\n", snd_strerror(err));
 		goto fail;
 	}
-	 
-	if ((err = snd_pcm_hw_params_any (globals.audio_stream_out, hw_params)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot initialize hardware parameter structure (%s)\n",
-						  snd_strerror (err));
+
+	if ((err = snd_pcm_hw_params_any(globals.audio_stream_out, hw_params)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot initialize hardware parameter structure (%s)\n", snd_strerror(err));
 		goto fail;
 	}
-	
-	if ((err = snd_pcm_hw_params_set_access (globals.audio_stream_out, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot set access type (%s)\n",
-						  snd_strerror (err));
+
+	if ((err = snd_pcm_hw_params_set_access(globals.audio_stream_out, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set access type (%s)\n", snd_strerror(err));
 		goto fail;
 	}
-	
-	if ((err = snd_pcm_hw_params_set_format (globals.audio_stream_out, hw_params, SND_PCM_FORMAT_S16_LE)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot set sample format (%s)\n",
-						  snd_strerror (err));
+
+	if ((err = snd_pcm_hw_params_set_format(globals.audio_stream_out, hw_params, SND_PCM_FORMAT_S16_LE)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set sample format (%s)\n", snd_strerror(err));
 		goto fail;
 	}
-	
-	if ((err = snd_pcm_hw_params_set_rate_near (globals.audio_stream_out, hw_params, &sample_rate, 0)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot set sample rate (%s)\n",
-						  snd_strerror (err));
+
+	if ((err = snd_pcm_hw_params_set_rate_near(globals.audio_stream_out, hw_params, &sample_rate, 0)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set sample rate (%s)\n", snd_strerror(err));
 		goto fail;
 	}
-	
-	if ((err = snd_pcm_hw_params_set_channels (globals.audio_stream_out, hw_params, 1)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot set channel count (%s)\n",
-						  snd_strerror (err));
+
+	if ((err = snd_pcm_hw_params_set_channels(globals.audio_stream_out, hw_params, 1)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set channel count (%s)\n", snd_strerror(err));
 		goto fail;
 	}
-	
-	if ((err = snd_pcm_hw_params (globals.audio_stream_out, hw_params)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot set parameters (%s)\n",
-						  snd_strerror (err));
+
+	if ((err = snd_pcm_hw_params(globals.audio_stream_out, hw_params)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set parameters (%s)\n", snd_strerror(err));
 		goto fail;
 	}
-	
-	
-	snd_pcm_hw_params_free (hw_params);
+
+
+	snd_pcm_hw_params_free(hw_params);
 	hw_params = NULL;
 
 
-	if ((err = snd_pcm_open (&globals.audio_stream_in, device, SND_PCM_STREAM_CAPTURE, 0)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot open audio device %s (%s)\n", 
-						  device,
-						  snd_strerror (err));
-		goto fail;
-	} 
-
-	if ((err = snd_pcm_hw_params_malloc (&hw_params)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot allocate hardware parameter structure (%s)\n",
-						  snd_strerror (err));
-		goto fail;
-	}
-	 
-	if ((err = snd_pcm_hw_params_any (globals.audio_stream_in, hw_params)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot initialize hardware parameter structure (%s)\n",
-						  snd_strerror (err));
-		goto fail;
-	}
-	
-	if ((err = snd_pcm_hw_params_set_access (globals.audio_stream_in, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot set access type (%s)\n",
-						  snd_strerror (err));
-		goto fail;
-	}
-	
-	if ((err = snd_pcm_hw_params_set_format (globals.audio_stream_in, hw_params, SND_PCM_FORMAT_S16_LE)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot set sample format (%s)\n",
-						  snd_strerror (err));
-		goto fail;
-	}
-	
-	if ((err = snd_pcm_hw_params_set_rate_near (globals.audio_stream_in, hw_params, &sample_rate, 0)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot set sample rate (%s)\n",
-						  snd_strerror (err));
-		goto fail;
-	}
-	
-	if ((err = snd_pcm_hw_params_set_channels (globals.audio_stream_in, hw_params, 1)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot set channel count (%s)\n",
-						  snd_strerror (err));
+	if ((err = snd_pcm_open(&globals.audio_stream_in, device, SND_PCM_STREAM_CAPTURE, 0)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot open audio device %s (%s)\n", device, snd_strerror(err));
 		goto fail;
 	}
 
-	if ((err = snd_pcm_hw_params_set_period_time (globals.audio_stream_in, hw_params, globals.read_codec.implementation->microseconds_per_frame, 0)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot set period time (%s)\n",
-						  snd_strerror (err));
+	if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot allocate hardware parameter structure (%s)\n", snd_strerror(err));
 		goto fail;
 	}
 
-	if ((err = snd_pcm_hw_params_set_period_size (globals.audio_stream_in, hw_params, globals.read_codec.implementation->samples_per_frame, 0)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot set period size (%s)\n",
-						  snd_strerror (err));
+	if ((err = snd_pcm_hw_params_any(globals.audio_stream_in, hw_params)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot initialize hardware parameter structure (%s)\n", snd_strerror(err));
 		goto fail;
 	}
 
-	if ((err = snd_pcm_hw_params (globals.audio_stream_in, hw_params)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot set parameters (%s)\n",
-						  snd_strerror (err));
+	if ((err = snd_pcm_hw_params_set_access(globals.audio_stream_in, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set access type (%s)\n", snd_strerror(err));
 		goto fail;
 	}
-	
+
+	if ((err = snd_pcm_hw_params_set_format(globals.audio_stream_in, hw_params, SND_PCM_FORMAT_S16_LE)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set sample format (%s)\n", snd_strerror(err));
+		goto fail;
+	}
+
+	if ((err = snd_pcm_hw_params_set_rate_near(globals.audio_stream_in, hw_params, &sample_rate, 0)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set sample rate (%s)\n", snd_strerror(err));
+		goto fail;
+	}
+
+	if ((err = snd_pcm_hw_params_set_channels(globals.audio_stream_in, hw_params, 1)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set channel count (%s)\n", snd_strerror(err));
+		goto fail;
+	}
+
+	if ((err = snd_pcm_hw_params_set_period_time(globals.audio_stream_in, hw_params, globals.read_codec.implementation->microseconds_per_frame, 0)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set period time (%s)\n", snd_strerror(err));
+		goto fail;
+	}
+
+	if ((err = snd_pcm_hw_params_set_period_size(globals.audio_stream_in, hw_params, globals.read_codec.implementation->samples_per_frame, 0)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set period size (%s)\n", snd_strerror(err));
+		goto fail;
+	}
+
+	if ((err = snd_pcm_hw_params(globals.audio_stream_in, hw_params)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set parameters (%s)\n", snd_strerror(err));
+		goto fail;
+	}
+
 	if (hw_params) {
-		snd_pcm_hw_params_free (hw_params);
+		snd_pcm_hw_params_free(hw_params);
 		hw_params = NULL;
 	}
 
-	if ((err = snd_pcm_prepare (globals.audio_stream_out)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot prepare audio interface for use (%s)\n",
-						  snd_strerror (err));
+	if ((err = snd_pcm_prepare(globals.audio_stream_out)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot prepare audio interface for use (%s)\n", snd_strerror(err));
 		goto fail;
 	}
 
-	if ((err = snd_pcm_start (globals.audio_stream_out)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot start audio interface for use (%s)\n",
-						  snd_strerror (err));
+	if ((err = snd_pcm_start(globals.audio_stream_out)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot start audio interface for use (%s)\n", snd_strerror(err));
 		goto fail;
 	}
 
-	if ((err = snd_pcm_prepare (globals.audio_stream_in)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot prepare audio interface for use (%s)\n",
-						  snd_strerror (err));
+	if ((err = snd_pcm_prepare(globals.audio_stream_in)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot prepare audio interface for use (%s)\n", snd_strerror(err));
 		goto fail;
 	}
 
-	if ((err = snd_pcm_start (globals.audio_stream_in)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "cannot start audio interface for use (%s)\n",
-						  snd_strerror (err));
+	if ((err = snd_pcm_start(globals.audio_stream_in)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot start audio interface for use (%s)\n", snd_strerror(err));
 		goto fail;
 	}
-		
+
 	switch_mutex_unlock(globals.device_lock);
 	return SWITCH_STATUS_SUCCESS;
 
- fail:
+  fail:
 
 	if (hw_params) {
-		snd_pcm_hw_params_free (hw_params);
+		snd_pcm_hw_params_free(hw_params);
 		hw_params = NULL;
 	}
 
 	switch_mutex_unlock(globals.device_lock);
 
 	if (globals.audio_stream_in) {
-		snd_pcm_close (globals.audio_stream_in);
+		snd_pcm_close(globals.audio_stream_in);
 	}
 
 	if (globals.audio_stream_out) {
-		snd_pcm_close (globals.audio_stream_out);
+		snd_pcm_close(globals.audio_stream_out);
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open audio device!\n");
 	switch_core_codec_destroy(&globals.read_codec);
 	switch_core_codec_destroy(&globals.write_codec);
-	
-	return SWITCH_STATUS_FALSE;	
+
+	return SWITCH_STATUS_FALSE;
 
 
 
@@ -1189,8 +1161,8 @@ static switch_status_t engage_device(unsigned int sample_rate, int codec_ms)
 static switch_status_t dtmf_call(char **argv, int argc, switch_stream_handle_t *stream)
 {
 	char *dtmf_str = argv[0];
-	switch_dtmf_t dtmf = {0, switch_core_default_dtmf_duration(0)};
-	
+	switch_dtmf_t dtmf = { 0, switch_core_default_dtmf_duration(0) };
+
 	if (switch_strlen_zero(dtmf_str)) {
 		stream->write_function(stream, "No DTMF Supplied!\n");
 	} else {
@@ -1198,7 +1170,7 @@ static switch_status_t dtmf_call(char **argv, int argc, switch_stream_handle_t *
 		if (globals.call_list) {
 			switch_channel_t *channel = switch_core_session_get_channel(globals.call_list->session);
 			char *p = dtmf_str;
-			while(p && *p) {
+			while (p && *p) {
 				dtmf.digit = *p;
 				switch_channel_queue_dtmf(channel, &dtmf);
 				p++;
@@ -1250,7 +1222,7 @@ static switch_status_t switch_call(char **argv, int argc, switch_stream_handle_t
 		stream->write_function(stream, "NO SUCH CALL\n");
 	}
 
- done:
+  done:
 	switch_mutex_unlock(globals.pvt_lock);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1317,7 +1289,7 @@ static switch_status_t answer_call(char **argv, int argc, switch_stream_handle_t
 			break;
 		}
 	}
- done:
+  done:
 	switch_mutex_unlock(globals.pvt_lock);
 
 	stream->write_function(stream, "Answered %d channels.\n", x);
@@ -1371,7 +1343,7 @@ static switch_status_t do_flags(char **argv, int argc, switch_stream_handle_t *s
 		goto bad;
 	}
 
- desc:
+  desc:
 	x = 0;
 	stream->write_function(stream, "FLAGS: ");
 	if (switch_test_flag((&globals), GFLAG_EAR)) {
@@ -1388,9 +1360,9 @@ static switch_status_t do_flags(char **argv, int argc, switch_stream_handle_t *s
 
 	goto done;
 
- bad:
+  bad:
 	stream->write_function(stream, "Usage: flags [on|off] <flags>\n");
- done:
+  done:
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1487,12 +1459,9 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 
 		if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																  NULL,
-																  dialplan, cid_name, cid_num,
-																  ip, NULL, NULL, NULL, (char *) modname, NULL,
-																  dest)) != 0) {
+																  dialplan, cid_name, cid_num, ip, NULL, NULL, NULL, (char *) modname, NULL, dest)) != 0) {
 			char name[128];
-			snprintf(name, sizeof(name), "Alsa/%s",
-					 tech_pvt->caller_profile->destination_number ? tech_pvt->caller_profile->destination_number : modname);
+			snprintf(name, sizeof(name), "Alsa/%s", tech_pvt->caller_profile->destination_number ? tech_pvt->caller_profile->destination_number : modname);
 			switch_channel_set_name(channel, name);
 
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
@@ -1504,7 +1473,7 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 			switch_channel_set_state(channel, CS_INIT);
 
 			if (switch_core_session_thread_launch(tech_pvt->session) != SWITCH_STATUS_SUCCESS) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
 				switch_core_session_destroy(&session);
 				stream->write_function(stream, "FAIL:Thread Error!\n");
 			} else {
@@ -1536,7 +1505,7 @@ SWITCH_STANDARD_API(pa_cmd)
 		http = switch_event_get_header(stream->param_event, "http-host");
 	}
 
-	
+
 	const char *usage_string = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
 		"alsa help\n"
@@ -1546,8 +1515,7 @@ SWITCH_STANDARD_API(pa_cmd)
 		"alsa list\n"
 		"alsa switch [<call_id>|none]\n"
 		"alsa dtmf <digit string>\n"
-		"alsa flags [on|off] [ear] [mouth]\n"
-		"--------------------------------------------------------------------------------\n";
+		"alsa flags [on|off] [ear] [mouth]\n" "--------------------------------------------------------------------------------\n";
 
 	if (http) {
 #if 0
@@ -1638,14 +1606,13 @@ SWITCH_STANDARD_API(pa_cmd)
 		stream->write_function(stream, "Unknown Command [%s]\n", argv[0]);
 	}
 
- done:
+  done:
 
 	if (http) {
 
 		stream->write_function(stream,
 							   "<br><br><table align=center><tr><td><center><form method=post>\n"
 							   "<input type=text name=wcmd size=40><br><br>\n"
-
 							   "<input name=action type=submit value=\"call\"> "
 							   "<input name=action type=submit value=\"hangup\"> "
 							   "<input name=action type=submit value=\"list\"> "
@@ -1658,25 +1625,18 @@ SWITCH_STANDARD_API(pa_cmd)
 							   "<td><input name=action type=submit value=\"2\"></td>"
 							   "<td><input name=action type=submit value=\"3\"></td>\n"
 							   "<td><input name=action type=submit value=\"A\"></td></tr>\n"
-
 							   "<tr><td><input name=action type=submit value=\"4\"></td>"
 							   "<td><input name=action type=submit value=\"5\"></td>"
 							   "<td><input name=action type=submit value=\"6\"></td>\n"
 							   "<td><input name=action type=submit value=\"B\"></td></tr>\n"
-
 							   "<tr><td><input name=action type=submit value=\"7\"></td>"
 							   "<td><input name=action type=submit value=\"8\"></td>"
 							   "<td><input name=action type=submit value=\"9\"></td>\n"
 							   "<td><input name=action type=submit value=\"C\"></td></tr>\n"
-
 							   "<tr><td><input name=action type=submit value=\"*\"></td>"
 							   "<td><input name=action type=submit value=\"0\"></td>"
 							   "<td><input name=action type=submit value=\"#\"></td>\n"
-							   "<td><input name=action type=submit value=\"D\"></td></tr>\n"
-							   "</table>"
-							   
-							   "</form><br></center></td></tr></table>\n"
-							   );
+							   "<td><input name=action type=submit value=\"D\"></td></tr>\n" "</table>" "</form><br></center></td></tr></table>\n");
 	}
 
 

@@ -58,31 +58,31 @@ SWITCH_STANDARD_APP(dial_function)
 		if ((argc = switch_separate_string(mydata, '|', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
 			goto error;
 		}
-		
+
 		if (argc > 1) {
 			switch_channel_set_variable(channel, "call_timeout", argv[1]);
 		}
-		
-		switch_replace_char(argv[0], '&',',', SWITCH_FALSE);
-		
+
+		switch_replace_char(argv[0], '&', ',', SWITCH_FALSE);
+
 		if (exec_app(session, "bridge", argv[0]) != SWITCH_STATUS_SUCCESS) {
 			goto error;
 		}
-		
+
 		goto ok;
 	}
-	
- error:
+
+  error:
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
 
- ok:
-	
+  ok:
+
 	return;
 }
 
 SWITCH_STANDARD_APP(avoid_function)
 {
-    void *y = NULL;
+	void *y = NULL;
 	int x = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -92,7 +92,7 @@ SWITCH_STANDARD_APP(avoid_function)
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "I should never be called!.\n");
-    memset((void *) y, 0, 1000);
+	memset((void *) y, 0, 1000);
 }
 
 SWITCH_STANDARD_APP(goto_function)
@@ -105,16 +105,16 @@ SWITCH_STANDARD_APP(goto_function)
 		if ((argc = switch_separate_string(mydata, '|', argv, (sizeof(argv) / sizeof(argv[0])))) < 1) {
 			goto error;
 		}
-		
+
 		switch_ivr_session_transfer(session, argv[1], "asterisk", argv[0]);
 		goto ok;
 	}
-	
- error:
+
+  error:
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
 
- ok:
-	
+  ok:
+
 	return;
 }
 
@@ -134,14 +134,14 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 	if (!caller_profile) {
 		caller_profile = switch_channel_get_caller_profile(channel);
 	}
-	
+
 	if (!caller_profile || switch_strlen_zero(caller_profile->destination_number)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Obtaining Profile!\n");
 		return NULL;
 	}
 
 	context = caller_profile->context ? caller_profile->context : "default";
-	
+
 	if (!switch_config_open_file(&cfg, cf)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -166,11 +166,11 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				const char *field_data = caller_profile->destination_number;
 				int proceed = 0;
 				switch_regex_t *re = NULL;
-				int ovector[30] = {0};
+				int ovector[30] = { 0 };
 				char *cid = NULL;
 
 				expression = expression_buf;
-						
+
 				argc = switch_separate_string(val, ',', argv, (sizeof(argv) / sizeof(argv[0])));
 				if (argc < 3) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "parse error line %d!\n", cfg.lineno);
@@ -178,14 +178,14 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				}
 
 				pattern = argv[0];
-				
+
 				if (!strcasecmp(var, "exten")) {
 					char *p;
 					if (pattern && (p = strchr(pattern, '/'))) {
 						*p++ = '\0';
 						cid = pattern;
 						pattern = p;
-					}	
+					}
 				} else {
 					if (strchr(var, '$')) {
 						if ((field_expanded = switch_channel_expand_variables(channel, var)) == var) {
@@ -198,19 +198,19 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 						field_data = switch_caller_get_field_by_name(caller_profile, var);
 					}
 				}
-				
+
 				if (pattern && (*pattern == '_' || *pattern == '~')) {
 					if (*pattern == '_') {
 						pattern++;
 						if (switch_ast2regex(pattern, expression_buf, sizeof(expression_buf))) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "converting [%s] to real regex [%s] you should try them!\n", 
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "converting [%s] to real regex [%s] you should try them!\n",
 											  pattern, expression_buf);
 						}
 					} else {
 						pattern++;
 						expression = pattern;
 					}
-					
+
 					if (!field_data) {
 						field_data = "";
 					}
@@ -225,7 +225,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 						continue;
 					}
 				}
-				
+
 				if (cid) {
 					if (strcasecmp(cid, caller_profile->caller_id_number)) {
 						continue;
@@ -235,21 +235,21 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				switch_channel_set_variable(channel, "EXTEN", caller_profile->destination_number);
 				switch_channel_set_variable(channel, "CHANNEL", switch_channel_get_name(channel));
 				switch_channel_set_variable(channel, "UNIQUEID", switch_core_session_get_uuid(session));
-				
+
 				pri = argv[1];
 				app = argv[2];
-				
+
 				if ((argument = strchr(app, '('))) {
 					char *p;
 					*argument++ = '\0';
 					p = strrchr(argument, ')');
 					if (p) {
-							*p = '\0';
+						*p = '\0';
 					}
 				} else if ((argument = strchr(app, ','))) {
 					*argument++ = '\0';
 				}
-				
+
 				if (!argument) {
 					argument = "";
 				}
@@ -274,10 +274,10 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 						break;
 					}
 				}
-				
+
 				switch_caller_extension_add_application(session, extension, app, argument);
 			}
-			
+
 			switch_safe_free(field_expanded);
 		}
 	}
@@ -291,18 +291,14 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 switch_endpoint_interface_t *sip_endpoint_interface;
 static switch_call_cause_t sip_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 												switch_caller_profile_t *outbound_profile,
-												switch_core_session_t **new_session, 
-												switch_memory_pool_t **pool,
-												switch_originate_flag_t flags);
+												switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags);
 switch_io_routines_t sip_io_routines = {
 	/*.outgoing_channel */ sip_outgoing_channel
 };
 
 static switch_call_cause_t sip_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 												switch_caller_profile_t *outbound_profile,
-												switch_core_session_t **new_session, 
-												switch_memory_pool_t **pool,
-												switch_originate_flag_t flags)
+												switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
 {
 	const char *profile;
 
@@ -326,18 +322,14 @@ static switch_call_cause_t sip_outgoing_channel(switch_core_session_t *session, 
 switch_endpoint_interface_t *iax2_endpoint_interface;
 static switch_call_cause_t iax2_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 												 switch_caller_profile_t *outbound_profile,
-												 switch_core_session_t **new_session, 
-												 switch_memory_pool_t **pool,
-												 switch_originate_flag_t flags);
+												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags);
 switch_io_routines_t iax2_io_routines = {
 	/*.outgoing_channel */ iax2_outgoing_channel
 };
 
 static switch_call_cause_t iax2_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 												 switch_caller_profile_t *outbound_profile,
-												 switch_core_session_t **new_session, 
-												 switch_memory_pool_t **pool,
-												 switch_originate_flag_t flags)
+												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
 {
 	return switch_core_session_outgoing_channel(session, var_event, "iax", outbound_profile, new_session, pool, SOF_NONE);
 }
@@ -346,7 +338,7 @@ static switch_call_cause_t iax2_outgoing_channel(switch_core_session_t *session,
 #define WE_DONT_NEED_NO_STINKIN_KEY "true"
 static char *key()
 {
-    return WE_DONT_NEED_NO_STINKIN_KEY;
+	return WE_DONT_NEED_NO_STINKIN_KEY;
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_asterisk_load)
@@ -359,7 +351,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_asterisk_load)
 	if ((mykey = key())) {
 		mykey = NULL;
 	}
-	
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	/* add a dialplan interface */
@@ -369,7 +361,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_asterisk_load)
 	SWITCH_ADD_APP(app_interface, "Dial", "Dial", "Dial", dial_function, "Dial", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "Goto", "Goto", "Goto", goto_function, "Goto", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "AvoidingDeadlock", "Avoid", "Avoid", avoid_function, "Avoid", SAF_SUPPORT_NOMEDIA);
-	
+
 	/* fake chan_sip facade */
 	sip_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	sip_endpoint_interface->interface_name = "SIP";
@@ -379,7 +371,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_asterisk_load)
 	iax2_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	iax2_endpoint_interface->interface_name = "IAX2";
 	iax2_endpoint_interface->io_routines = &iax2_io_routines;
-	
+
 	if (getenv("FAITHFUL_EMULATION")) {
 		for (x = 0; x < 10; x++) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Avoiding Deadlock.\n");

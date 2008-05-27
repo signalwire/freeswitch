@@ -53,11 +53,7 @@ switch_endpoint_interface_t *dingaling_endpoint_interface;
 
 static char sub_sql[] =
 	"CREATE TABLE jabber_subscriptions (\n"
-	"   sub_from      VARCHAR(255),\n" 
-	"   sub_to        VARCHAR(255),\n" 
-	"   show_pres     VARCHAR(255),\n" 
-	"   status        VARCHAR(255)\n"
-	");\n";
+	"   sub_from      VARCHAR(255),\n" "   sub_to        VARCHAR(255),\n" "   show_pres     VARCHAR(255),\n" "   status        VARCHAR(255)\n" ");\n";
 
 
 typedef enum {
@@ -215,9 +211,9 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
 
-static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlsession, ldl_signal_t dl_signal,
+static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t dl_signal,
 									char *to, char *from, char *subject, char *msg);
-static ldl_status handle_response(ldl_handle_t * handle, char *id);
+static ldl_status handle_response(ldl_handle_t *handle, char *id);
 static switch_status_t load_config(void);
 static int sin_callback(void *pArg, int argc, char **argv, char **columnNames);
 
@@ -270,9 +266,8 @@ static void mdl_execute_sql(mdl_profile_t *profile, char *sql, switch_mutex_t *m
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
-
 #ifdef SWITCH_HAVE_ODBC
-    if (profile->odbc_dsn) {
+	if (profile->odbc_dsn) {
 		SQLHSTMT stmt;
 		if (switch_odbc_handle_exec(profile->master_odbc, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
 			char *err_str;
@@ -292,11 +287,11 @@ static void mdl_execute_sql(mdl_profile_t *profile, char *sql, switch_mutex_t *m
 		switch_core_db_close(db);
 
 #ifdef SWITCH_HAVE_ODBC
-    }
+	}
 #endif
 
 
- end:
+  end:
 	if (mutex) {
 		switch_mutex_unlock(mutex);
 	}
@@ -304,22 +299,18 @@ static void mdl_execute_sql(mdl_profile_t *profile, char *sql, switch_mutex_t *m
 
 
 static switch_bool_t mdl_execute_sql_callback(mdl_profile_t *profile,
-											  switch_mutex_t *mutex,
-											  char *sql,
-											  switch_core_db_callback_func_t callback,
-											  void *pdata)
+											  switch_mutex_t *mutex, char *sql, switch_core_db_callback_func_t callback, void *pdata)
 {
 	switch_bool_t ret = SWITCH_FALSE;
 	switch_core_db_t *db;
 	char *errmsg = NULL;
-	
-	if (mutex) {
-        switch_mutex_lock(mutex);
-    }
 
+	if (mutex) {
+		switch_mutex_lock(mutex);
+	}
 
 #ifdef SWITCH_HAVE_ODBC
-    if (profile->odbc_dsn) {
+	if (profile->odbc_dsn) {
 		switch_odbc_handle_callback_exec(profile->master_odbc, sql, callback, pdata);
 	} else {
 #endif
@@ -331,7 +322,7 @@ static switch_bool_t mdl_execute_sql_callback(mdl_profile_t *profile,
 			goto end;
 		}
 
-	
+
 		switch_core_db_exec(db, sql, callback, pdata, &errmsg);
 
 		if (errmsg) {
@@ -342,18 +333,17 @@ static switch_bool_t mdl_execute_sql_callback(mdl_profile_t *profile,
 		if (db) {
 			switch_core_db_close(db);
 		}
-
 #ifdef SWITCH_HAVE_ODBC
-    }
+	}
 #endif
 
 
- end:
+  end:
 
 	if (mutex) {
-        switch_mutex_unlock(mutex);
-    }
-	
+		switch_mutex_unlock(mutex);
+	}
+
 
 
 	return ret;
@@ -418,11 +408,11 @@ static void pres_event_handler(switch_event_t *event)
 	char *rpid = switch_event_get_header(event, "rpid");
 	char *type = switch_event_get_header(event, "event_subtype");
 	char *sql;
-    
-    if (globals.running != 1) {
-        return;
-    }
-    
+
+	if (globals.running != 1) {
+		return;
+	}
+
 	if (!proto) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Missing 'proto' header\n");
 		return;
@@ -481,7 +471,8 @@ static void pres_event_handler(switch_event_t *event)
 	}
 
 
-	sql = switch_mprintf("select sub_from, sub_to,'%q','%q','%q','%q' from jabber_subscriptions where sub_to like '%%%q'", type, rpid, status, proto, from);
+	sql =
+		switch_mprintf("select sub_from, sub_to,'%q','%q','%q','%q' from jabber_subscriptions where sub_to like '%%%q'", type, rpid, status, proto, from);
 
 
 	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
@@ -495,7 +486,7 @@ static void pres_event_handler(switch_event_t *event)
 
 		if (sql) {
 			switch_bool_t worked = mdl_execute_sql_callback(profile, profile->mutex, sql, sub_callback, profile);
-			
+
 			if (!worked) {
 				continue;
 			}
@@ -564,9 +555,9 @@ static void roster_event_handler(switch_event_t *event)
 	void *val;
 	char *sql;
 
-    if (globals.running != 1) {
-        return;
-    }
+	if (globals.running != 1) {
+		return;
+	}
 
 	if (status && !strcasecmp(status, "n/a")) {
 		status = NULL;
@@ -697,7 +688,7 @@ static void terminate_session(switch_core_session_t **session, int line, switch_
 
 		tech_pvt = switch_core_session_get_private(*session);
 
-		
+
 		if (tech_pvt && tech_pvt->profile && tech_pvt->profile->ip && tech_pvt->local_port) {
 			switch_rtp_release_port(tech_pvt->profile->ip, tech_pvt->local_port);
 		}
@@ -748,8 +739,7 @@ static void dl_logger(char *file, const char *func, int line, int level, char *f
 						xml = switch_xml_parse_str(xmltxt, strlen(xmltxt));
 						form = switch_xml_toxml(xml, SWITCH_FALSE);
 						switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, level,
-										  "%s:\n-------------------------------------------------------------------------------\n"
-										  "%s\n", ll, form);
+										  "%s:\n-------------------------------------------------------------------------------\n" "%s\n", ll, form);
 						switch_xml_free(xml);
 						free(data);
 					}
@@ -774,8 +764,7 @@ static int get_codecs(struct private_object *tech_pvt)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO codecs?\n");
 				return 0;
 			}
-		} else if (((tech_pvt->num_codecs =
-					 switch_loadable_module_get_codecs(tech_pvt->codecs, SWITCH_MAX_CODECS))) <= 0) {
+		} else if (((tech_pvt->num_codecs = switch_loadable_module_get_codecs(tech_pvt->codecs, SWITCH_MAX_CODECS))) <= 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO codecs?\n");
 			return 0;
 		}
@@ -786,7 +775,7 @@ static int get_codecs(struct private_object *tech_pvt)
 
 
 
-static void *SWITCH_THREAD_FUNC handle_thread_run(switch_thread_t * thread, void *obj)
+static void *SWITCH_THREAD_FUNC handle_thread_run(switch_thread_t *thread, void *obj)
 {
 	ldl_handle_t *handle = obj;
 	mdl_profile_t *profile = NULL;
@@ -805,7 +794,7 @@ static void *SWITCH_THREAD_FUNC handle_thread_run(switch_thread_t * thread, void
 	return NULL;
 }
 
-static void handle_thread_launch(ldl_handle_t * handle)
+static void handle_thread_launch(ldl_handle_t *handle)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
@@ -873,7 +862,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SETUP RTP %s:%d -> %s:%d\n", tech_pvt->profile->ip,
 					  tech_pvt->local_port, tech_pvt->remote_ip, tech_pvt->remote_port);
-	
+
 	flags = SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_GOOGLEHACK | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_RAW_WRITE | SWITCH_RTP_FLAG_AUTO_CNG;
 
 	if (switch_test_flag(tech_pvt->profile, TFLAG_TIMER)) {
@@ -1089,8 +1078,7 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 	while (!(switch_test_flag(tech_pvt, TFLAG_CODEC_READY) &&
 			 switch_test_flag(tech_pvt, TFLAG_RTP_READY) &&
 			 switch_test_flag(tech_pvt, TFLAG_ANSWER) && switch_test_flag(tech_pvt, TFLAG_TRANSPORT_ACCEPT) &&
-			 tech_pvt->remote_ip && tech_pvt->remote_port
-			 && switch_test_flag(tech_pvt, TFLAG_TRANSPORT))) {
+			 tech_pvt->remote_ip && tech_pvt->remote_port && switch_test_flag(tech_pvt, TFLAG_TRANSPORT))) {
 		now = switch_timestamp_now();
 		elapsed = (unsigned int) ((now - started) / 1000);
 
@@ -1140,9 +1128,9 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 
 	goto done;
 
- out:
+  out:
 	terminate_session(&session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
- done:
+  done:
 
 	return ret;
 }
@@ -1222,7 +1210,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	/* Dunno why, but if googletalk calls us for the first time, as soon as the call ends
 	   they think we are offline for no reason so we send this presence packet to stop it from happening
 	   We should find out why.....
-	*/
+	 */
 	if ((tech_pvt->profile->user_flags & LDL_FLAG_COMPONENT) && is_special(tech_pvt->them)) {
 		ldl_handle_send_presence(tech_pvt->profile->handle, tech_pvt->them, tech_pvt->us, NULL, NULL, "Click To Call", tech_pvt->profile->avatar);
 	}
@@ -1497,21 +1485,21 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		break;
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
 		/*
-		if (tech_pvt->rtp_session && switch_test_flag(tech_pvt->profile, TFLAG_TIMER)) {
-			switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "De-activate timed RTP!\n");
-			//switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_TIMER_RECLOCK);
-		}
-		*/
+		   if (tech_pvt->rtp_session && switch_test_flag(tech_pvt->profile, TFLAG_TIMER)) {
+		   switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+		   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "De-activate timed RTP!\n");
+		   //switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_TIMER_RECLOCK);
+		   }
+		 */
 		break;
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
 		/*
-		if (tech_pvt->rtp_session && switch_test_flag(tech_pvt->profile, TFLAG_TIMER)) {
-			switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-activate timed RTP!\n");
-			//switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_TIMER_RECLOCK);
-		}
-		*/
+		   if (tech_pvt->rtp_session && switch_test_flag(tech_pvt->profile, TFLAG_TIMER)) {
+		   switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+		   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-activate timed RTP!\n");
+		   //switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_TIMER_RECLOCK);
+		   }
+		 */
 		break;
 	default:
 		break;
@@ -1618,7 +1606,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			} else {
 				if (!user) {
 					const char *id_num;
-					
+
 					if (!(id_num = outbound_profile->caller_id_number)) {
 						if (!(id_num = outbound_profile->caller_id_name)) {
 							id_num = "nobody";
@@ -1810,7 +1798,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static ldl_status handle_loop(ldl_handle_t * handle)
+static ldl_status handle_loop(ldl_handle_t *handle)
 {
 	if (!globals.running) {
 		return LDL_STATUS_FALSE;
@@ -1829,7 +1817,7 @@ static switch_status_t init_profile(mdl_profile_t *profile, uint8_t login)
 
 	if (!(profile->login && profile->password && profile->dialplan && profile->message && profile->ip && profile->name && profile->exten)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-						  "Invalid Profile\n" "login[%s]\n" "pass[%s]\n" "dialplan[%s]\n" 
+						  "Invalid Profile\n" "login[%s]\n" "pass[%s]\n" "dialplan[%s]\n"
 						  "message[%s]\n" "rtp-ip[%s]\n" "name[%s]\n" "exten[%s]\n",
 						  profile->login, profile->password, profile->dialplan, profile->message, profile->ip, profile->name, profile->exten);
 
@@ -1886,7 +1874,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dingaling_shutdown)
 
 static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 {
-	if (!var) return;
+	if (!var)
+		return;
 
 	if (!strcasecmp(var, "login")) {
 		profile->login = switch_core_strdup(module_pool, val);
@@ -1903,8 +1892,7 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 				*profile->odbc_pass++ = '\0';
 			}
 		}
-		
-		
+
 #else
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 #endif
@@ -1912,7 +1900,7 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 		switch_set_flag(profile, TFLAG_TIMER);
 	} else if (!strcasecmp(var, "dialplan") && !switch_strlen_zero(val)) {
 		profile->dialplan = switch_core_strdup(module_pool, val);
-#ifdef AUTO_REPLY // gotta fix looping on this
+#ifdef AUTO_REPLY				// gotta fix looping on this
 	} else if (!strcasecmp(var, "auto-reply")) {
 		profile->auto_reply = switch_core_strdup(module_pool, val);
 #endif
@@ -2182,7 +2170,7 @@ static switch_status_t load_config(void)
 				if (!(profile->master_odbc = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
 					continue;
-					
+
 				}
 				if (switch_odbc_handle_connect(profile->master_odbc) != SWITCH_ODBC_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
@@ -2292,7 +2280,7 @@ static void do_vcard(ldl_handle_t *handle, char *to, char *from, char *id)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 	}
 
- end:
+  end:
 
 	switch_event_destroy(&params);
 
@@ -2307,8 +2295,7 @@ static void do_vcard(ldl_handle_t *handle, char *to, char *from, char *id)
 	switch_safe_free(xmlstr);
 }
 
-static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlsession, ldl_signal_t dl_signal, char *to, char *from, char *subject,
-									char *msg)
+static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t dl_signal, char *to, char *from, char *subject, char *msg)
 {
 	mdl_profile_t *profile = NULL;
 	switch_core_session_t *session = NULL;
@@ -2350,11 +2337,8 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 						mdl_execute_sql(profile, sql, NULL);
 						switch_core_db_free(sql);
 					}
-					if ((sql = switch_mprintf("insert into jabber_subscriptions values('%q','%q','%q','%q');\n", 
-											  switch_str_nil(from),
-											  switch_str_nil(to),
-											  switch_str_nil(msg),
-											  switch_str_nil(subject)))) {
+					if ((sql = switch_mprintf("insert into jabber_subscriptions values('%q','%q','%q','%q');\n",
+											  switch_str_nil(from), switch_str_nil(to), switch_str_nil(msg), switch_str_nil(subject)))) {
 						mdl_execute_sql(profile, sql, NULL);
 						switch_core_db_free(sql);
 					}
@@ -2362,7 +2346,8 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 					if (is_special(to)) {
 						ldl_handle_send_presence(profile->handle, to, from, NULL, NULL, "Click To Call", profile->avatar);
 					} else {
-						ldl_handle_send_presence(profile->handle, to, from, NULL, NULL, "Authenticated.\nCome to ClueCon!\nhttp://www.cluecon.com", profile->avatar);
+						ldl_handle_send_presence(profile->handle, to, from, NULL, NULL, "Authenticated.\nCome to ClueCon!\nhttp://www.cluecon.com",
+												 profile->avatar);
 					}
 #if 0
 					if (is_special(to)) {
@@ -2400,7 +2385,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 				break;
 			case LDL_SIGNAL_PRESENCE_IN:
 
-				if ((sql = switch_mprintf("update jabber_subscriptions set show_pres='%q', status='%q' where sub_from='%q'", 
+				if ((sql = switch_mprintf("update jabber_subscriptions set show_pres='%q', status='%q' where sub_from='%q'",
 										  switch_str_nil(msg), switch_str_nil(subject), switch_str_nil(from)))) {
 					mdl_execute_sql(profile, sql, profile->mutex);
 					switch_core_db_free(sql);
@@ -2435,7 +2420,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 
 			case LDL_SIGNAL_PRESENCE_OUT:
 
-				if ((sql = switch_mprintf("update jabber_subscriptions set show_pres='%q', status='%q' where sub_from='%q'", 
+				if ((sql = switch_mprintf("update jabber_subscriptions set show_pres='%q', status='%q' where sub_from='%q'",
 										  switch_str_nil(msg), switch_str_nil(subject), switch_str_nil(from)))) {
 					mdl_execute_sql(profile, sql, profile->mutex);
 					switch_core_db_free(sql);
@@ -2454,45 +2439,45 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 
 		switch (dl_signal) {
 		case LDL_SIGNAL_MSG:{
-			switch_chat_interface_t *ci;
-			char *proto = MDL_CHAT_PROTO;
-			char *pproto = NULL, *ffrom = NULL;
-			char *hint;
+				switch_chat_interface_t *ci;
+				char *proto = MDL_CHAT_PROTO;
+				char *pproto = NULL, *ffrom = NULL;
+				char *hint;
 #ifdef AUTO_REPLY
-			if (profile->auto_reply) {
-				ldl_handle_send_msg(handle,
-									(profile->user_flags & LDL_FLAG_COMPONENT) ? to : ldl_handle_get_login(profile->handle), from, "",
-									profile->auto_reply);
-			}
+				if (profile->auto_reply) {
+					ldl_handle_send_msg(handle,
+										(profile->user_flags & LDL_FLAG_COMPONENT) ? to : ldl_handle_get_login(profile->handle), from, "",
+										profile->auto_reply);
+				}
 #endif
 
-			if (strchr(to, '+')) {
-				pproto = strdup(to);
-				if ((to = strchr(pproto, '+'))) {
-					*to++ = '\0';
+				if (strchr(to, '+')) {
+					pproto = strdup(to);
+					if ((to = strchr(pproto, '+'))) {
+						*to++ = '\0';
+					}
+					proto = pproto;
 				}
-				proto = pproto;
-			}
 
-			hint = from;
+				hint = from;
 
-			if (strchr(from, '/') && (ffrom = strdup(from))) {
-				char *p;
-				if ((p = strchr(ffrom, '/'))) {
-					*p = '\0';
+				if (strchr(from, '/') && (ffrom = strdup(from))) {
+					char *p;
+					if ((p = strchr(ffrom, '/'))) {
+						*p = '\0';
+					}
+					from = ffrom;
 				}
-				from = ffrom;
-			}
 
-			if ((ci = switch_loadable_module_get_chat_interface(proto))) {
-				ci->chat_send(MDL_CHAT_PROTO, from, to, subject, msg, hint);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Chat Interface [%s]!\n", proto);
-			}
+				if ((ci = switch_loadable_module_get_chat_interface(proto))) {
+					ci->chat_send(MDL_CHAT_PROTO, from, to, subject, msg, hint);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Chat Interface [%s]!\n", proto);
+				}
 
-			switch_safe_free(pproto);
-			switch_safe_free(ffrom);
-		}
+				switch_safe_free(pproto);
+				switch_safe_free(ffrom);
+			}
 			break;
 		case LDL_SIGNAL_LOGIN_SUCCESS:
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, DL_EVENT_LOGIN_SUCCESS) == SWITCH_STATUS_SUCCESS) {
@@ -2547,7 +2532,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 		}
 		if ((session = switch_core_session_request(dingaling_endpoint_interface, NULL)) != 0) {
 			switch_core_session_add_stream(session, NULL);
-			
+
 			if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object))) != 0) {
 				char *exten;
 				char *context;
@@ -2641,10 +2626,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 																			  ldl_session_get_ip(dlsession),
 																			  ldl_session_get_value(dlsession, "ani"),
 																			  ldl_session_get_value(dlsession, "aniii"),
-																			  ldl_session_get_value(dlsession, "rdnis"),
-																			  modname,
-																			  context,
-																			  exten)) != 0) {
+																			  ldl_session_get_value(dlsession, "rdnis"), modname, context, exten)) != 0) {
 						char name[128];
 						switch_snprintf(name, sizeof(name), "DingaLing/%s", tech_pvt->caller_profile->destination_number);
 						switch_channel_set_name(channel, name);
@@ -2669,8 +2651,8 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 			if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
 				terminate_session(&session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-                status = LDL_STATUS_FALSE;
-                goto done;
+				status = LDL_STATUS_FALSE;
+				goto done;
 			}
 		} else {
 			status = LDL_STATUS_FALSE;
@@ -2832,7 +2814,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%u candidates\n", len);
-			
+
 			if (profile->acl_count) {
 				for (x = 0; x < len; x++) {
 					uint32_t y = 0;
@@ -2843,18 +2825,18 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 						}
 
 						if (ok) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "candidate %s:%d PASS ACL %s\n", 
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "candidate %s:%d PASS ACL %s\n",
 											  candidates[x].address, candidates[x].port, profile->acl[y]);
 							break;
 						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "candidate %s:%d FAIL ACL %s\n", 
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "candidate %s:%d FAIL ACL %s\n",
 											  candidates[x].address, candidates[x].port, profile->acl[y]);
 						}
 					}
 				}
 			} else {
 				for (x = 0; x < len; x++) {
-					
+
 					if (profile->lanaddr) {
 						lanaddr = strncasecmp(candidates[x].address, profile->lanaddr, strlen(profile->lanaddr)) ? 0 : 1;
 					}
@@ -2879,9 +2861,8 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 									   strncasecmp(candidates[x].address, "172.2", 5) &&
 									   strncasecmp(candidates[x].address, "172.30.", 7) &&
 									   strncasecmp(candidates[x].address, "172.31.", 7) &&
-									   strncasecmp(candidates[x].address, "192.0.2.", 8) &&
-									   strncasecmp(candidates[x].address, "169.254.", 8)
-									   ))) {
+									   strncasecmp(candidates[x].address, "192.0.2.", 8) && strncasecmp(candidates[x].address, "169.254.", 8)
+						 ))) {
 						choice = x;
 						ok = 1;
 					}
@@ -2893,7 +2874,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 
 				memset(payloads, 0, sizeof(payloads));
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 								  "Acceptable Candidate %s:%d\n", candidates[choice].address, candidates[choice].port);
 
 				if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
@@ -2934,7 +2915,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 				status = LDL_STATUS_SUCCESS;
 			}
 
-			goto done;				
+			goto done;
 
 		}
 		break;
@@ -2961,14 +2942,14 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 		break;
 	}
 
-	
- done:
+
+  done:
 
 
 	return status;
 }
 
-static ldl_status handle_response(ldl_handle_t * handle, char *id)
+static ldl_status handle_response(ldl_handle_t *handle, char *id)
 {
 	return LDL_STATUS_SUCCESS;
 }

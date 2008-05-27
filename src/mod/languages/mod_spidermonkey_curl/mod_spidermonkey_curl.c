@@ -41,7 +41,7 @@ struct curl_obj {
 	JSFunction *function;
 	JSObject *user_data;
 	jsrefcount saveDepth;
-	jsval ret;	
+	jsval ret;
 };
 
 
@@ -51,21 +51,21 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	struct curl_obj *co = data;
 	uintN argc = 0;
 	jsval argv[4];
-	
+
 
 	if (!co) {
 		return 0;
 	}
 	if (co->function) {
 		char *ret;
-		argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(co->cx, (char *)ptr));
+		argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(co->cx, (char *) ptr));
 		if (co->user_data) {
 			argv[argc++] = OBJECT_TO_JSVAL(co->user_data);
 		}
 		JS_ResumeRequest(co->cx, co->saveDepth);
 		JS_CallFunction(co->cx, co->obj, co->function, argc, argv, &co->ret);
 		co->saveDepth = JS_SuspendRequest(co->cx);
-		
+
 		if ((ret = JS_GetStringBytes(JS_ValueToString(co->cx, co->ret)))) {
 			if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
 				return realsize;
@@ -81,7 +81,7 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 
 /* Curl Object */
 /*********************************************************************************/
-static JSBool curl_construct(JSContext *cx, JSObject *obj, uintN argc, jsval * argv, jsval * rval)
+static JSBool curl_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct curl_obj *co = NULL;
 
@@ -98,14 +98,14 @@ static JSBool curl_construct(JSContext *cx, JSObject *obj, uintN argc, jsval * a
 	return JS_TRUE;
 }
 
-static void curl_destroy(JSContext *cx, JSObject *obj)
+static void curl_destroy(JSContext * cx, JSObject * obj)
 {
 	struct curl_obj *co = JS_GetPrivate(cx, obj);
 	switch_safe_free(co);
 	JS_SetPrivate(cx, obj, NULL);
 }
 
-static JSBool curl_run(JSContext *cx, JSObject *obj, uintN argc, jsval * argv, jsval * rval)
+static JSBool curl_run(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct curl_obj *co = JS_GetPrivate(cx, obj);
 	char *method = NULL, *url, *cred = NULL;
@@ -127,11 +127,11 @@ static JSBool curl_run(JSContext *cx, JSObject *obj, uintN argc, jsval * argv, j
 		curl_easy_setopt(co->curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 	}
 	headers = curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
-		
+
 	if (argc > 2) {
 		data = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
 	}
-		
+
 	if (argc > 3) {
 		co->function = JS_ValueToFunction(cx, argv[3]);
 	}
@@ -148,7 +148,7 @@ static JSBool curl_run(JSContext *cx, JSObject *obj, uintN argc, jsval * argv, j
 		}
 	}
 
-		
+
 	curl_easy_setopt(co->curl_handle, CURLOPT_HTTPHEADER, headers);
 
 	url_p = url;
@@ -164,7 +164,7 @@ static JSBool curl_run(JSContext *cx, JSObject *obj, uintN argc, jsval * argv, j
 		url_p = durl;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Running: method: [%s] url: [%s] data: [%s] cred=[%s] cb: [%s]\n", 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Running: method: [%s] url: [%s] data: [%s] cred=[%s] cb: [%s]\n",
 					  method, url_p, data, switch_str_nil(cred), co->function ? "yes" : "no");
 
 	curl_easy_setopt(co->curl_handle, CURLOPT_URL, url_p);
@@ -172,7 +172,7 @@ static JSBool curl_run(JSContext *cx, JSObject *obj, uintN argc, jsval * argv, j
 	curl_easy_setopt(co->curl_handle, CURLOPT_WRITEDATA, (void *) co);
 
 	curl_easy_setopt(co->curl_handle, CURLOPT_USERAGENT, "freeswitch-spidermonkey-curl/1.0");
-	
+
 	co->saveDepth = JS_SuspendRequest(cx);
 	curl_easy_perform(co->curl_handle);
 
@@ -183,7 +183,7 @@ static JSBool curl_run(JSContext *cx, JSObject *obj, uintN argc, jsval * argv, j
 	co->function = NULL;
 	JS_ResumeRequest(cx, co->saveDepth);
 	switch_safe_free(durl);
-	
+
 
 	return JS_TRUE;
 }
@@ -198,7 +198,7 @@ static JSPropertySpec curl_props[] = {
 	{0}
 };
 
-static JSBool curl_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval * vp)
+static JSBool curl_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
 {
 	JSBool res = JS_TRUE;
 	return res;
@@ -212,7 +212,7 @@ JSClass curl_class = {
 };
 
 
-switch_status_t curl_load(JSContext *cx, JSObject *obj)
+switch_status_t curl_load(JSContext * cx, JSObject * obj)
 {
 	JS_InitClass(cx, obj, NULL, &curl_class, curl_construct, 3, curl_props, curl_methods, curl_props, curl_methods);
 	return SWITCH_STATUS_SUCCESS;
@@ -225,7 +225,7 @@ const sm_module_interface_t curl_module_interface = {
 	/*.next */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) spidermonkey_init(const sm_module_interface_t ** module_interface)
+SWITCH_MOD_DECLARE(switch_status_t) spidermonkey_init(const sm_module_interface_t **module_interface)
 {
 	curl_global_init(CURL_GLOBAL_ALL);
 	*module_interface = &curl_module_interface;

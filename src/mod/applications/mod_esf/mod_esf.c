@@ -63,7 +63,7 @@ SWITCH_STANDARD_APP(bcast_function)
 	switch_status_t status;
 	switch_size_t bytes;
 	ls_control_packet_t control_packet;
-	switch_codec_t codec = { 0}, *read_codec, *orig_codec = NULL;
+	switch_codec_t codec = { 0 }, *read_codec, *orig_codec = NULL;
 	uint32_t flags = 0;
 	const char *err;
 	switch_rtp_t *rtp_session = NULL;
@@ -71,7 +71,7 @@ SWITCH_STANDARD_APP(bcast_function)
 	char guess_ip[25];
 	ls_how_t ready = SEND_TYPE_UNKNOWN;
 	int argc;
-    char *mydata, *argv[5];
+	char *mydata, *argv[5];
 	char *mcast_ip = "224.168.168.168";
 	switch_port_t mcast_port = 34567;
 	switch_port_t mcast_control_port = 6061;
@@ -84,7 +84,7 @@ SWITCH_STANDARD_APP(bcast_function)
 		assert(mydata != NULL);
 
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-	
+
 		if ((var = switch_channel_get_variable(channel, "esf_multicast_ip"))) {
 			mcast_ip = switch_core_session_strdup(session, var);
 		}
@@ -95,23 +95,23 @@ SWITCH_STANDARD_APP(bcast_function)
 
 		if (!switch_strlen_zero(argv[1])) {
 			mcast_port_str = argv[1];
-			mcast_port = (switch_port_t)atoi(mcast_port_str);
+			mcast_port = (switch_port_t) atoi(mcast_port_str);
 		}
 
 		if (!switch_strlen_zero(argv[2])) {
-			mcast_control_port = (switch_port_t)atoi(argv[2]);
+			mcast_control_port = (switch_port_t) atoi(argv[2]);
 		}
 	}
 
-	
+
 	if (switch_true(switch_channel_get_variable(channel, SWITCH_BYPASS_MEDIA_VARIABLE))) {
 		switch_core_session_message_t msg = { 0 };
 
 		ready = SEND_TYPE_NOMEDIA;
-		
+
 		switch_channel_set_variable(channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, mcast_ip);
 		switch_channel_set_variable(channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, mcast_port_str);
-		
+
 		/* special answer with the mcast addr */
 		msg.from = __FILE__;
 		msg.string_arg = "recvonly";
@@ -119,7 +119,7 @@ SWITCH_STANDARD_APP(bcast_function)
 		switch_core_session_receive_message(session, &msg);
 	} else {
 		switch_channel_answer(channel);
-	} 
+	}
 
 	read_codec = switch_core_session_get_read_codec(session);
 
@@ -128,14 +128,14 @@ SWITCH_STANDARD_APP(bcast_function)
 		goto fail;
 	}
 
-	if (switch_sockaddr_info_get(&control_packet_addr, mcast_ip, SWITCH_UNSPEC, 
+	if (switch_sockaddr_info_get(&control_packet_addr, mcast_ip, SWITCH_UNSPEC,
 								 mcast_control_port, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error 3\n");
 		goto fail;
 	}
 
 
-	while(!ready) {
+	while (!ready) {
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		if (read_frame && switch_test_flag(read_frame, SFF_CNG)) {
 			continue;
@@ -144,7 +144,7 @@ SWITCH_STANDARD_APP(bcast_function)
 		if (!SWITCH_READ_ACCEPTABLE(status) || !read_frame) {
 			goto fail;
 		}
-		
+
 		if (read_frame->packet && read_frame->packetlen && read_codec->implementation->ianacode == 0) {
 			ready = SEND_TYPE_RAW;
 		} else {
@@ -153,23 +153,23 @@ SWITCH_STANDARD_APP(bcast_function)
 	}
 
 	if (ready == SEND_TYPE_RTP) {
-        if (read_codec->implementation->ianacode != 0) {
-            if (switch_core_codec_init(&codec,
-                                       "PCMU",
-                                       NULL,
-                                       8000,
-                                       20,
-                                       1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, 
-                                       NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
-                orig_codec = read_codec;
-                read_codec = &codec;
-                switch_core_session_set_read_codec(session, read_codec);
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec Activation Success\n");
-            } else {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Activation Fail\n");
-                goto fail;
-            }
-        }
+		if (read_codec->implementation->ianacode != 0) {
+			if (switch_core_codec_init(&codec,
+									   "PCMU",
+									   NULL,
+									   8000,
+									   20,
+									   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+									   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+				orig_codec = read_codec;
+				read_codec = &codec;
+				switch_core_session_set_read_codec(session, read_codec);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec Activation Success\n");
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Activation Fail\n");
+				goto fail;
+			}
+		}
 
 		if ((var = switch_channel_get_variable(channel, "esf_broadcast_ip"))) {
 			esf_broadcast_ip = switch_core_session_strdup(session, var);
@@ -191,9 +191,8 @@ SWITCH_STANDARD_APP(bcast_function)
 									 read_codec->implementation->ianacode,
 									 read_codec->implementation->samples_per_frame,
 									 read_codec->implementation->microseconds_per_frame,
-									 (switch_rtp_flag_t) flags,
-									 "soft", &err, switch_core_session_get_pool(session));
-	
+									 (switch_rtp_flag_t) flags, "soft", &err, switch_core_session_get_pool(session));
+
 		if (!switch_rtp_ready(rtp_session)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP Error\n");
 			goto fail;
@@ -207,23 +206,23 @@ SWITCH_STANDARD_APP(bcast_function)
 		}
 	}
 
-	control_packet.unique_id = htonl((u_long)switch_timestamp(NULL));
+	control_packet.unique_id = htonl((u_long) switch_timestamp(NULL));
 	control_packet.command = htonl(LS_START_BCAST);
 	control_packet.ip = inet_addr(mcast_ip);
 	control_packet.port = htonl(mcast_port);
 
 	bytes = 16;
-	switch_socket_sendto(socket, control_packet_addr, 0, (void *)&control_packet, &bytes);
+	switch_socket_sendto(socket, control_packet_addr, 0, (void *) &control_packet, &bytes);
 	bytes = 16;
-	switch_socket_sendto(socket, control_packet_addr, 0, (void *)&control_packet, &bytes);
+	switch_socket_sendto(socket, control_packet_addr, 0, (void *) &control_packet, &bytes);
 
-	for(;;) {
+	for (;;) {
 
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
-        if (!SWITCH_READ_ACCEPTABLE(status)) {
-            break;
-        }
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			break;
+		}
 		if (switch_test_flag(read_frame, SFF_CNG)) {
 			continue;
 		}
@@ -235,23 +234,23 @@ SWITCH_STANDARD_APP(bcast_function)
 		}
 	}
 
-	control_packet.unique_id = htonl((u_long)switch_timestamp(NULL));
+	control_packet.unique_id = htonl((u_long) switch_timestamp(NULL));
 	control_packet.command = htonl(LS_STOP_BCAST);
 	bytes = 8;
-	switch_socket_sendto(socket, control_packet_addr, 0, (void *)&control_packet, &bytes);
+	switch_socket_sendto(socket, control_packet_addr, 0, (void *) &control_packet, &bytes);
 	bytes = 8;
-	switch_socket_sendto(socket, control_packet_addr, 0, (void *)&control_packet, &bytes);
+	switch_socket_sendto(socket, control_packet_addr, 0, (void *) &control_packet, &bytes);
 
- fail:
+  fail:
 
-    if (orig_codec) {
-        switch_core_session_set_read_codec(session, orig_codec);
-        switch_core_codec_destroy(&codec);
-    }
+	if (orig_codec) {
+		switch_core_session_set_read_codec(session, orig_codec);
+		switch_core_codec_destroy(&codec);
+	}
 
 	if (rtp_session && ready == SEND_TYPE_RTP && switch_rtp_ready(rtp_session)) {
 		switch_rtp_destroy(&rtp_session);
-	}	
+	}
 
 	if (socket) {
 		switch_socket_close(socket);

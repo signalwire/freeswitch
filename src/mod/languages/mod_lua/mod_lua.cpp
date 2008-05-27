@@ -45,23 +45,23 @@ static struct {
 	char *xml_handler;
 } globals;
 
-int luaopen_freeswitch(lua_State* L);
+int luaopen_freeswitch(lua_State * L);
 
-static int panic (lua_State *L) 
+static int panic(lua_State * L)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "unprotected error in call to Lua API (%s)\n",
-					  lua_tostring(L, -1));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "unprotected error in call to Lua API (%s)\n", lua_tostring(L, -1));
 
 	return 0;
 }
 
-static void lua_uninit(lua_State *L) 
+static void lua_uninit(lua_State * L)
 {
 	lua_gc(L, LUA_GCCOLLECT, 0);
 	lua_close(L);
 }
 
-static int traceback (lua_State *L) {
+static int traceback(lua_State * L)
+{
 	lua_getfield(L, LUA_GLOBALSINDEX, "debug");
 	if (!lua_istable(L, -1)) {
 		lua_pop(L, 1);
@@ -72,30 +72,32 @@ static int traceback (lua_State *L) {
 		lua_pop(L, 2);
 		return 1;
 	}
-	lua_pushvalue(L, 1);  /* pass error message */
-	lua_pushinteger(L, 2);	/* skip this function and traceback */
-	lua_call(L, 2, 1);	/* call debug.traceback */
+	lua_pushvalue(L, 1);		/* pass error message */
+	lua_pushinteger(L, 2);		/* skip this function and traceback */
+	lua_call(L, 2, 1);			/* call debug.traceback */
 	return 1;
 }
 
-static int docall (lua_State *L, int narg, int clear) {
+static int docall(lua_State * L, int narg, int clear)
+{
 	int status;
-	int base = lua_gettop(L) - narg;  /* function index */
- 
-	lua_pushcfunction(L, traceback);  /* push traceback function */
-	lua_insert(L, base);  /* put it under chunk and args */
+	int base = lua_gettop(L) - narg;	/* function index */
+
+	lua_pushcfunction(L, traceback);	/* push traceback function */
+	lua_insert(L, base);		/* put it under chunk and args */
 
 	status = lua_pcall(L, narg, (clear ? 0 : LUA_MULTRET), base);
 
-	lua_remove(L, base);  /* remove traceback function */
+	lua_remove(L, base);		/* remove traceback function */
 	/* force a complete garbage collection in case of errors */
-	if (status != 0) lua_gc(L, LUA_GCCOLLECT, 0);
+	if (status != 0)
+		lua_gc(L, LUA_GCCOLLECT, 0);
 	return status;
 }
 
 
 
-static lua_State *lua_init(void) 
+static lua_State *lua_init(void)
 {
 	lua_State *L = lua_open();
 	int error = 0;
@@ -108,12 +110,12 @@ static lua_State *lua_init(void)
 		lua_gc(L, LUA_GCRESTART, 0);
 		lua_atpanic(L, panic);
 		error = luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 1);
- 	}
+	}
 	return L;
 }
 
 
-static int lua_parse_and_execute(lua_State *L, char *input_code)
+static int lua_parse_and_execute(lua_State * L, char *input_code)
 {
 	int error = 0;
 
@@ -124,7 +126,7 @@ static int lua_parse_and_execute(lua_State *L, char *input_code)
 
 	if (*input_code == '~') {
 		char *buff = input_code + 1;
-		error = luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 1); //lua_pcall(L, 0, 0, 0);
+		error = luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 1);	//lua_pcall(L, 0, 0, 0);
 	} else {
 		char *args = strchr(input_code, ' ');
 		if (args) {
@@ -136,13 +138,13 @@ static int lua_parse_and_execute(lua_State *L, char *input_code)
 			if ((argc = switch_separate_string(args, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 				switch_stream_handle_t stream = { 0 };
 				SWITCH_STANDARD_STREAM(stream);
-				
+
 				stream.write_function(&stream, " argv = { ");
 				for (x = 0; x < argc; x++) {
-					stream.write_function(&stream, "'%s'%s", argv[x], x == argc-1 ? "" : ", ");
+					stream.write_function(&stream, "'%s'%s", argv[x], x == argc - 1 ? "" : ", ");
 				}
 				stream.write_function(&stream, " };");
-				code = (char *)stream.data;
+				code = (char *) stream.data;
 			} else {
 				code = switch_mprintf("argv = {};");
 			}
@@ -154,7 +156,7 @@ static int lua_parse_and_execute(lua_State *L, char *input_code)
 		}
 		if (!error) {
 			char *file = input_code, *fdup = NULL;
-			
+
 			if (!switch_is_file_path(file)) {
 				fdup = switch_mprintf("%s/%s", SWITCH_GLOBAL_dirs.script_dir, file);
 				switch_assert(fdup);
@@ -170,7 +172,7 @@ static int lua_parse_and_execute(lua_State *L, char *input_code)
 		if (!switch_strlen_zero(err)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err);
 		}
-		lua_pop(L, 1);	/* pop error message from the stack */
+		lua_pop(L, 1);			/* pop error message from the stack */
 	}
 
 	return error;
@@ -179,10 +181,10 @@ static int lua_parse_and_execute(lua_State *L, char *input_code)
 static void *SWITCH_THREAD_FUNC lua_thread_run(switch_thread_t *thread, void *obj)
 {
 	char *input_code = (char *) obj;
-	lua_State *L = lua_init();	 /* opens Lua */
+	lua_State *L = lua_init();	/* opens Lua */
 
 	lua_parse_and_execute(L, input_code);
-	
+
 	if (input_code) {
 		free(input_code);
 	}
@@ -193,12 +195,8 @@ static void *SWITCH_THREAD_FUNC lua_thread_run(switch_thread_t *thread, void *ob
 }
 
 
-static switch_xml_t lua_fetch(const char *section, 
-							  const char *tag_name, 
-							  const char *key_name, 
-							  const char *key_value, 
-							  switch_event_t *params,
-							  void *user_data)
+static switch_xml_t lua_fetch(const char *section,
+							  const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params, void *user_data)
 {
 
 	switch_xml_t xml = NULL;
@@ -238,11 +236,11 @@ static switch_xml_t lua_fetch(const char *section,
 		if (str) {
 			if (switch_strlen_zero(str)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Result\n");
-			} else if (!(xml = switch_xml_parse_str((char *)str, strlen(str)))) {
+			} else if (!(xml = switch_xml_parse_str((char *) str, strlen(str)))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing XML Result!\n");
 			}
 		}
-		
+
 		lua_uninit(L);
 		free(mycmd);
 	}
@@ -304,13 +302,13 @@ SWITCH_STANDARD_APP(lua_function)
 
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no args specified!\n");
-        return;
-    }
+		return;
+	}
 
 	snprintf(code, sizeof(code), "~session = freeswitch.Session(\"%s\");", switch_core_session_get_uuid(session));
 	error = lua_parse_and_execute(L, code);
 
-	mycmd = strdup((char *)data);
+	mycmd = strdup((char *) data);
 	switch_assert(mycmd);
 
 	lua_parse_and_execute(L, mycmd);
@@ -319,8 +317,9 @@ SWITCH_STANDARD_APP(lua_function)
 
 }
 
-SWITCH_STANDARD_API(luarun_api_function) {
-	
+SWITCH_STANDARD_API(luarun_api_function)
+{
+
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "-ERR no args specified!\n");
 	} else {
@@ -332,7 +331,8 @@ SWITCH_STANDARD_API(luarun_api_function) {
 }
 
 
-SWITCH_STANDARD_API(lua_api_function) {
+SWITCH_STANDARD_API(lua_api_function)
+{
 
 	lua_State *L = lua_init();
 	char *mycmd;
@@ -370,13 +370,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	
+
 	SWITCH_ADD_API(api_interface, "luarun", "run a script", luarun_api_function, "<script>");
 	SWITCH_ADD_API(api_interface, "lua", "run a script as an api function", lua_api_function, "<script>");
 	SWITCH_ADD_APP(app_interface, "lua", "Launch LUA ivr", "Run a lua ivr on a channel", lua_function, "<script>", SAF_SUPPORT_NOMEDIA);
 
 
-	
+
 	globals.pool = pool;
 	do_config();
 
@@ -385,7 +385,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 }
 
 SWITCH_END_EXTERN_C
-
 /* For Emacs:
  * Local Variables:
  * mode:c

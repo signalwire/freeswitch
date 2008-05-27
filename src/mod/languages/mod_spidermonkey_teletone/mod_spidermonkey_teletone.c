@@ -56,7 +56,7 @@ struct teletone_obj {
 };
 
 
-static int teletone_handler(teletone_generation_session_t * ts, teletone_tone_map_t * map)
+static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map_t *map)
 {
 	struct teletone_obj *tto = ts->user_data;
 	int wrote;
@@ -249,7 +249,7 @@ static JSBool teletone_generate(JSContext * cx, JSObject * obj, uintN argc, jsva
 			if (switch_test_flag(tto, TTF_DTMF)) {
 				char dtmf[128];
 				char *ret;
-				
+
 				if (switch_channel_has_dtmf(channel)) {
 					uintN aargc = 0;
 					jsval aargv[4];
@@ -345,7 +345,7 @@ const sm_module_interface_t teletone_module_interface = {
 	/*.next */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) spidermonkey_init(const sm_module_interface_t ** module_interface)
+SWITCH_MOD_DECLARE(switch_status_t) spidermonkey_init(const sm_module_interface_t **module_interface)
 {
 	*module_interface = &teletone_module_interface;
 	return SWITCH_STATUS_SUCCESS;

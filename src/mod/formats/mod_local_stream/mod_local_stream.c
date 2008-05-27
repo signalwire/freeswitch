@@ -50,7 +50,7 @@ struct local_stream_context {
 	struct local_stream_source *source;
 	switch_mutex_t *audio_mutex;
 	switch_buffer_t *audio_buffer;
-	int err;	
+	int err;
 	const char *file;
 	const char *func;
 	int line;
@@ -86,18 +86,18 @@ static int do_rand(void)
 	double r;
 	int index;
 	srand(getpid() + ++S);
-	r = ((double)rand() / ((double)(RAND_MAX)+(double)(1)));
-	index = (int)(r * 9) + 1;
+	r = ((double) rand() / ((double) (RAND_MAX) + (double) (1)));
+	index = (int) (r * 9) + 1;
 	return index;
 }
 
 static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void *obj)
 {
 	local_stream_source_t *source = obj;
-	switch_file_handle_t fh = {0};
+	switch_file_handle_t fh = { 0 };
 	local_stream_context_t *cp;
 	char file_buf[128] = "", path_buf[512] = "";
-	switch_timer_t timer = {0};
+	switch_timer_t timer = { 0 };
 	int fd = -1;
 	switch_buffer_t *audio_buffer;
 	switch_byte_t *dist_buf;
@@ -110,12 +110,12 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 	switch_buffer_create_dynamic(&audio_buffer, 1024, source->prebuf + 10, 0);
 	dist_buf = switch_core_alloc(source->pool, source->prebuf + 10);
-	
+
 	if (source->shuffle) {
 		skip = do_rand();
 	}
 
-	while(RUNNING) {
+	while (RUNNING) {
 		const char *fname;
 
 		if (switch_dir_open(&source->dir_handle, source->location, source->pool) != SWITCH_STATUS_SUCCESS) {
@@ -125,15 +125,14 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 		switch_yield(1000000);
 
-		while(RUNNING) {
+		while (RUNNING) {
 			switch_size_t olen;
-			uint8_t abuf[SWITCH_RECOMMENDED_BUFFER_SIZE] =  {0};
+			uint8_t abuf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 
 			if (fd > -1) {
 				char *p;
 				if (switch_fd_read_line(fd, path_buf, sizeof(path_buf))) {
-					if ((p = strchr(path_buf, '\r')) ||
-						(p = strchr(path_buf, '\n'))) {
+					if ((p = strchr(path_buf, '\r')) || (p = strchr(path_buf, '\n'))) {
 						*p = '\0';
 					}
 				} else {
@@ -164,20 +163,18 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 			fname = path_buf;
 			fh.prebuf = source->prebuf;
-			
+
 			if (switch_core_file_open(&fh,
-									  (char *)fname,
-									  source->channels,
-									  source->rate,
-									  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+									  (char *) fname,
+									  source->channels, source->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open %s\n", fname);
 				switch_yield(1000000);
 				continue;
 			}
-			
+
 			source->rate = fh.samplerate;
 			source->samples = switch_samples_per_frame(fh.native_rate, source->interval);
-			
+
 			if (switch_core_timer_init(&timer, source->timer_name, source->interval, source->samples, source->pool) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't start timer.\n");
 				switch_dir_close(source->dir_handle);
@@ -196,11 +193,11 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 				switch_buffer_write(audio_buffer, abuf, olen * 2);
 				used = switch_buffer_inuse(audio_buffer);
-				
+
 				if (used >= source->prebuf || (source->total && used > source->samples * 2)) {
 					used = switch_buffer_read(audio_buffer, dist_buf, source->samples * 2);
 					if (source->total) {
-						
+
 						switch_mutex_lock(source->mutex);
 						for (cp = source->context_list; cp; cp = cp->next) {
 							if (switch_test_flag(cp->handle, SWITCH_FILE_CALLBACK)) {
@@ -208,7 +205,8 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 							}
 							switch_mutex_lock(cp->audio_mutex);
 							if (switch_buffer_inuse(cp->audio_buffer) > source->samples * 768) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Leaking stream handle! [%s() %s:%d]\n", cp->func, cp->file, cp->line);
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Leaking stream handle! [%s() %s:%d]\n", cp->func, cp->file,
+												  cp->line);
 								switch_buffer_zero(cp->audio_buffer);
 							} else {
 								switch_buffer_write(cp->audio_buffer, dist_buf, used);
@@ -230,13 +228,13 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 		source->dir_handle = NULL;
 	}
 
-done:
+  done:
 	switch_buffer_destroy(&audio_buffer);
 
 	if (fd > -1) {
 		close(fd);
 	}
-	
+
 	switch_core_destroy_memory_pool(&source->pool);
 
 	return NULL;
@@ -248,12 +246,12 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 	local_stream_source_t *source;
 	char *alt_path = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	
+
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This format does not support writing!\n");
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	alt_path = switch_mprintf("%s/%d", path, handle->samplerate);
 
 	switch_mutex_lock(globals.mutex);
@@ -273,7 +271,7 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 	if ((context = switch_core_alloc(handle->memory_pool, sizeof(*context))) == 0) {
 		status = SWITCH_STATUS_MEMERR;
 		goto end;
-	}	
+	}
 
 	handle->samples = 0;
 	handle->samplerate = source->rate;
@@ -285,14 +283,14 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 	handle->private_info = context;
 	handle->interval = source->interval;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opening Stream [%s] %dhz\n", path, handle->samplerate);
-	
+
 	switch_mutex_init(&context->audio_mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
 	if (switch_buffer_create_dynamic(&context->audio_buffer, 512, 1024, 0) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
 		status = SWITCH_STATUS_MEMERR;
 		goto end;
 	}
-	
+
 	context->source = source;
 	context->file = handle->file;
 	context->func = handle->func;
@@ -304,7 +302,7 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 	source->total++;
 	switch_mutex_unlock(source->mutex);
 
- end:
+  end:
 	switch_safe_free(alt_path);
 	return status;
 }
@@ -328,29 +326,29 @@ static switch_status_t local_stream_file_close(switch_file_handle_t *handle)
 	context->source->total--;
 	switch_mutex_unlock(context->source->mutex);
 	switch_buffer_destroy(&context->audio_buffer);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t local_stream_file_read(switch_file_handle_t *handle, void *data, size_t *len)
 {
-    local_stream_context_t *context = handle->private_info;
-    switch_size_t bytes = 0;
-    size_t need = *len * 2;
+	local_stream_context_t *context = handle->private_info;
+	switch_size_t bytes = 0;
+	size_t need = *len * 2;
 
-    switch_mutex_lock(context->audio_mutex);
-    if ((bytes = switch_buffer_read(context->audio_buffer, data, need))) {
-        *len = bytes / 2;
-    } else {
-        if (need > 2560) {
-            need = 2560;
-        }
-        memset(data, 255, need);
-        *len = need / 2;
-    }
-    switch_mutex_unlock(context->audio_mutex);
-    handle->sample_count += *len;
-    return SWITCH_STATUS_SUCCESS;
+	switch_mutex_lock(context->audio_mutex);
+	if ((bytes = switch_buffer_read(context->audio_buffer, data, need))) {
+		*len = bytes / 2;
+	} else {
+		if (need > 2560) {
+			need = 2560;
+		}
+		memset(data, 255, need);
+		*len = need / 2;
+	}
+	switch_mutex_unlock(context->audio_mutex);
+	handle->sample_count += *len;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 /* Registration */
@@ -374,7 +372,7 @@ static void launch_threads(void)
 	for (directory = switch_xml_child(cfg, "directory"); directory; directory = directory->next) {
 		char *path = (char *) switch_xml_attr(directory, "path");
 		char *name = (char *) switch_xml_attr(directory, "name");
-		
+
 		if (!(name && path)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid config!\n");
 			continue;
@@ -388,7 +386,7 @@ static void launch_threads(void)
 		source = switch_core_alloc(pool, sizeof(*source));
 		assert(source != NULL);
 		source->pool = pool;
-		
+
 		source->name = switch_core_strdup(source->pool, name);
 		source->location = switch_core_strdup(source->pool, path);
 		source->rate = 8000;
@@ -396,7 +394,7 @@ static void launch_threads(void)
 		source->channels = 1;
 		source->timer_name = "soft";
 		source->prebuf = DEFAULT_PREBUFFER_SIZE;
-		
+
 		for (param = switch_xml_child(directory, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
@@ -416,7 +414,7 @@ static void launch_threads(void)
 			} else if (!strcasecmp(var, "channels")) {
 				int tmp = atoi(val);
 				if (tmp == 1 || tmp == 2) {
-					source->channels = (uint8_t)tmp;
+					source->channels = (uint8_t) tmp;
 				}
 			} else if (!strcasecmp(var, "interval")) {
 				int tmp = atoi(val);
@@ -424,19 +422,19 @@ static void launch_threads(void)
 					source->interval = tmp;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-								  "Interval must be multipe of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL); 
+									  "Interval must be multipe of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL);
 				}
 			} else if (!strcasecmp(var, "timer-name")) {
 				source->timer_name = switch_core_strdup(source->pool, val);
 			}
 		}
-		
+
 		source->samples = switch_samples_per_frame(source->rate, source->interval);
 
 		switch_core_hash_insert(globals.source_hash, source->name, source);
-		
+
 		switch_mutex_init(&source->mutex, SWITCH_MUTEX_NESTED, source->pool);
-		
+
 		switch_threadattr_create(&thd_attr, source->pool);
 		switch_threadattr_detach_set(thd_attr, 1);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
@@ -450,7 +448,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load)
 {
 	switch_file_interface_t *file_interface;
 	supported_formats[0] = "local_stream";
-	
+
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 	file_interface->interface_name = modname;
@@ -463,7 +461,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load)
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_core_hash_init(&globals.source_hash, pool);
 	launch_threads();
-	
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

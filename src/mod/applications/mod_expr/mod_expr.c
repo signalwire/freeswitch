@@ -33,145 +33,145 @@
 
 /* Breaker function to break out of long expression functions
    such as the 'for' function */
-int breaker(exprObj *o)
+int breaker(exprObj * o)
 {
-    /* Return nonzero to break out */
-    return -1;
+	/* Return nonzero to break out */
+	return -1;
 }
 
 
 SWITCH_STANDARD_API(expr_function)
 {
-    exprObj *e = NULL;
-    exprFuncList *f = NULL;
-    exprValList *v = NULL;
-    exprValList *c = NULL;
-    EXPRTYPE last_expr;
+	exprObj *e = NULL;
+	exprFuncList *f = NULL;
+	exprValList *v = NULL;
+	exprValList *c = NULL;
+	EXPRTYPE last_expr;
 	const char *expr;
 	int err;
-    char val[512] = "", *p;
-    char *m_cmd = NULL;
-    size_t len;
+	char val[512] = "", *p;
+	char *m_cmd = NULL;
+	size_t len;
 
-    if (switch_strlen_zero(cmd)) {
-        goto error;
-    }
+	if (switch_strlen_zero(cmd)) {
+		goto error;
+	}
 
-    len = strlen(cmd) + 3;
+	len = strlen(cmd) + 3;
 
 
-    m_cmd = malloc(len);
-    switch_assert(m_cmd);
-    switch_copy_string(m_cmd, cmd, len);
-    
-    for (p = m_cmd; p && *p; p++) {
-        if (*p == '|') {
-            *p = ';';
-        }
-    }
+	m_cmd = malloc(len);
+	switch_assert(m_cmd);
+	switch_copy_string(m_cmd, cmd, len);
 
-    p = m_cmd + (strlen(m_cmd) - 1);
-    if (*p != ';') {
-        p++;
-        *p = ';';
-        p++;
-        *p = '\0';
-    }
+	for (p = m_cmd; p && *p; p++) {
+		if (*p == '|') {
+			*p = ';';
+		}
+	}
 
-    expr = m_cmd;
+	p = m_cmd + (strlen(m_cmd) - 1);
+	if (*p != ';') {
+		p++;
+		*p = ';';
+		p++;
+		*p = '\0';
+	}
 
-    /* Create function list */
-    err = exprFuncListCreate(&f);
-    if (err != EXPR_ERROR_NOERROR)
-        goto error;
+	expr = m_cmd;
 
-    /* Init function list with internal functions */
-    err = exprFuncListInit(f);
-    if (err != EXPR_ERROR_NOERROR)
-        goto error;
+	/* Create function list */
+	err = exprFuncListCreate(&f);
+	if (err != EXPR_ERROR_NOERROR)
+		goto error;
 
-    /* Add custom function */
-    //err = exprFuncListAdd(f, my_func, "myfunc", 1, 1, 1, 1);
-    //if (err != EXPR_ERROR_NOERROR)
+	/* Init function list with internal functions */
+	err = exprFuncListInit(f);
+	if (err != EXPR_ERROR_NOERROR)
+		goto error;
+
+	/* Add custom function */
+	//err = exprFuncListAdd(f, my_func, "myfunc", 1, 1, 1, 1);
+	//if (err != EXPR_ERROR_NOERROR)
 	//goto error;
 
-    /* Create constant list */
-    err = exprValListCreate(&c);
-    if (err != EXPR_ERROR_NOERROR)
-        goto error;
+	/* Create constant list */
+	err = exprValListCreate(&c);
+	if (err != EXPR_ERROR_NOERROR)
+		goto error;
 
-    /* Init constant list with internal constants */
-    err = exprValListInit(c);
-    if (err != EXPR_ERROR_NOERROR)
-        goto error;
+	/* Init constant list with internal constants */
+	err = exprValListInit(c);
+	if (err != EXPR_ERROR_NOERROR)
+		goto error;
 
-    /* Create variable list */
-    err = exprValListCreate(&v);
-    if (err != EXPR_ERROR_NOERROR)
-        goto error;
+	/* Create variable list */
+	err = exprValListCreate(&v);
+	if (err != EXPR_ERROR_NOERROR)
+		goto error;
 
-    /* Create expression object */
-    err = exprCreate(&e, f, v, c, breaker, NULL);
-    if (err != EXPR_ERROR_NOERROR)
-        goto error;
+	/* Create expression object */
+	err = exprCreate(&e, f, v, c, breaker, NULL);
+	if (err != EXPR_ERROR_NOERROR)
+		goto error;
 
-    /* Parse expression */
-    err = exprParse(e, (char *)expr);
+	/* Parse expression */
+	err = exprParse(e, (char *) expr);
 
-    if (err != EXPR_ERROR_NOERROR)
-        goto error;
+	if (err != EXPR_ERROR_NOERROR)
+		goto error;
 
-    /* Enable soft errors */
-    //exprSetSoftErrors(e, 1);
-    
+	/* Enable soft errors */
+	//exprSetSoftErrors(e, 1);
+
 	do {
 		err = exprEval(e, &last_expr);
 	} while (err);
 
-    switch_snprintf(val, sizeof(val), "%0.10f", last_expr);
-    for (p = (val + strlen(val) - 1); p != val; p--) {
-        if (*p != '0') {
-            *(p+1) = '\0';
-            break;
-        } 
-    }
+	switch_snprintf(val, sizeof(val), "%0.10f", last_expr);
+	for (p = (val + strlen(val) - 1); p != val; p--) {
+		if (*p != '0') {
+			*(p + 1) = '\0';
+			break;
+		}
+	}
 
-    p = val + strlen(val) - 1;
-    if (*p == '.') {
-        *p = '\0';
-    }
+	p = val + strlen(val) - 1;
+	if (*p == '.') {
+		*p = '\0';
+	}
 
-    stream->write_function(stream, "%s", val);
-
-
-    goto done;
-
- error:
-    /* Alert user of error */
-    stream->write_function(stream, "!err!");
+	stream->write_function(stream, "%s", val);
 
 
- done:
-    /* Do cleanup */
-    if (e) {
-        exprFree(e); 
-    }
+	goto done;
 
-    if (f) {
-        exprFuncListFree(f);
-    }
+  error:
+	/* Alert user of error */
+	stream->write_function(stream, "!err!");
 
-    if (v) {
-        exprValListFree(v);
-    }
 
-    if (c) {
-        exprValListFree(c);
-    }
+  done:
+	/* Do cleanup */
+	if (e) {
+		exprFree(e);
+	}
 
-    switch_safe_free(m_cmd);
+	if (f) {
+		exprFuncListFree(f);
+	}
 
-    return SWITCH_STATUS_SUCCESS;
+	if (v) {
+		exprValListFree(v);
+	}
+
+	if (c) {
+		exprValListFree(c);
+	}
+
+	switch_safe_free(m_cmd);
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
@@ -181,10 +181,10 @@ SWITCH_MODULE_DEFINITION(mod_expr, mod_expr_load, NULL, NULL);
 SWITCH_MODULE_LOAD_FUNCTION(mod_expr_load)
 {
 	switch_api_interface_t *commands_api_interface;
-    
+
 	/* connect my internal structure to the blank pointer passed to me */
-    *module_interface = switch_loadable_module_create_module_interface(pool, modname);
-    
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
 	SWITCH_ADD_API(commands_api_interface, "expr", "Eval an expession", expr_function, "<expr>");
 
 

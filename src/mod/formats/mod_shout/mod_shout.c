@@ -64,15 +64,15 @@ struct shout_context {
 	int samplerate;
 	uint8_t thread_running;
 	uint8_t shout_init;
-    uint32_t prebuf;
-    int lame_ready;
+	uint32_t prebuf;
+	int lame_ready;
 };
 
 typedef struct shout_context shout_context_t;
 
-static size_t decode_fd(shout_context_t * context, void *data, size_t bytes);
+static size_t decode_fd(shout_context_t *context, void *data, size_t bytes);
 
-static inline void free_context(shout_context_t * context)
+static inline void free_context(shout_context_t *context)
 {
 	int ret;
 
@@ -210,7 +210,7 @@ static void log_msg(char const *fmt, va_list ap)
 	}
 }
 
-static size_t decode_fd(shout_context_t * context, void *data, size_t bytes)
+static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 {
 	int decode_status = 0;
 	int dlen = 0;
@@ -278,7 +278,7 @@ static size_t decode_fd(shout_context_t * context, void *data, size_t bytes)
 				}
 
 				dlen = 0;
-				continue;				
+				continue;
 			}
 
 			context->mp3err = 0;
@@ -309,7 +309,7 @@ static size_t decode_fd(shout_context_t * context, void *data, size_t bytes)
 
 	return 0;
 
- error:
+  error:
 	switch_mutex_lock(context->audio_mutex);
 	context->err++;
 	switch_mutex_unlock(context->audio_mutex);
@@ -340,9 +340,9 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 
 	error_check();
 
-    if (context->prebuf) {
-        buf_size = context->prebuf;
-    }
+	if (context->prebuf) {
+		buf_size = context->prebuf;
+	}
 
 	/* make sure we aren't over zealous by slowing down the stream when the buffer is too full */
 	for (;;) {
@@ -358,7 +358,7 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 		switch_mutex_unlock(context->audio_mutex);
 
 		if (used < buf_size) {
-            //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Buffered %u/%u!\n", used, buf_size);
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Buffered %u/%u!\n", used, buf_size);
 			break;
 		}
 
@@ -421,7 +421,7 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 
 	return realsize;
 
- error:
+  error:
 	switch_mutex_lock(context->audio_mutex);
 	context->err++;
 	switch_mutex_unlock(context->audio_mutex);
@@ -431,7 +431,7 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 
 #define MY_BUF_LEN 1024 * 32
 #define MY_BLOCK_SIZE MY_BUF_LEN
-static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t * thread, void *obj)
+static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void *obj)
 {
 	CURL *curl_handle = NULL;
 	shout_context_t *context = (shout_context_t *) obj;
@@ -451,7 +451,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t * thread, voi
 	return NULL;
 }
 
-static void launch_read_stream_thread(shout_context_t * context)
+static void launch_read_stream_thread(shout_context_t *context)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
@@ -467,7 +467,7 @@ static void launch_read_stream_thread(shout_context_t * context)
 	switch_thread_create(&thread, thd_attr, read_stream_thread, context, context->memory_pool);
 }
 
-static void *SWITCH_THREAD_FUNC write_stream_thread(switch_thread_t * thread, void *obj)
+static void *SWITCH_THREAD_FUNC write_stream_thread(switch_thread_t *thread, void *obj)
 {
 	shout_context_t *context = (shout_context_t *) obj;
 
@@ -513,13 +513,13 @@ static void *SWITCH_THREAD_FUNC write_stream_thread(switch_thread_t * thread, vo
 		switch_yield(100000);
 	}
 
- error:
+  error:
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Thread Done\n");
 	context->thread_running = 0;
 	return NULL;
 }
 
-static void launch_write_stream_thread(shout_context_t * context)
+static void launch_write_stream_thread(shout_context_t *context)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
@@ -565,7 +565,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 		InitMP3(&context->mp, OUTSCALE, context->samplerate);
 		if (handle->handler) {
 			context->stream_url = switch_core_sprintf(context->memory_pool, "http://%s", path);
-            context->prebuf = handle->prebuf;
+			context->prebuf = handle->prebuf;
 			launch_read_stream_thread(context);
 		} else {
 			if (switch_file_open(&context->fd, path, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, handle->memory_pool) !=
@@ -580,25 +580,25 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 			goto error;
 		}
 
-        if (!handle->handler) {
-            id3tag_init(context->gfp);
-            id3tag_v2_only(context->gfp);
-            id3tag_pad_v2(context->gfp);
+		if (!handle->handler) {
+			id3tag_init(context->gfp);
+			id3tag_v2_only(context->gfp);
+			id3tag_pad_v2(context->gfp);
 
-        }
+		}
 
 		lame_set_brate(context->gfp, 24 * (handle->samplerate / 8000) * handle->channels);
 		lame_set_num_channels(context->gfp, handle->channels);
 		lame_set_in_samplerate(context->gfp, handle->samplerate);
 		lame_set_out_samplerate(context->gfp, handle->samplerate);
 
-        if (handle->channels == 2) {
-            lame_set_mode(context->gfp, STEREO);
-        } else {
-            lame_set_mode(context->gfp, MONO);
-        }
+		if (handle->channels == 2) {
+			lame_set_mode(context->gfp, STEREO);
+		} else {
+			lame_set_mode(context->gfp, MONO);
+		}
 		lame_set_quality(context->gfp, 2);	/* 2=high  5 = medium  7=low */
-        
+
 		lame_set_errorf(context->gfp, log_error);
 		lame_set_debugf(context->gfp, log_debug);
 		lame_set_msgf(context->gfp, log_msg);
@@ -716,7 +716,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 
 	return SWITCH_STATUS_SUCCESS;
 
- error:
+  error:
 	if (err) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: %s\n", err);
 	}
@@ -750,8 +750,8 @@ static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned in
 				*cur_sample = fseek(context->fp, *cur_sample, whence);
 			}
 
-            ExitMP3(&context->mp);
-            InitMP3(&context->mp, OUTSCALE, context->samplerate);
+			ExitMP3(&context->mp);
+			InitMP3(&context->mp, OUTSCALE, context->samplerate);
 			switch_buffer_zero(context->audio_buffer);
 
 		} else {
@@ -833,35 +833,35 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
 		}
 	} else {
 
-        if (!context->lame_ready) {
-            lame_init_params(context->gfp);
-            lame_print_config(context->gfp);
-            context->lame_ready = 1;
-        }
+		if (!context->lame_ready) {
+			lame_init_params(context->gfp);
+			lame_print_config(context->gfp);
+			context->lame_ready = 1;
+		}
 
-        if (handle->channels == 2) {
-            int16_t l[4096] = {0};
-            int16_t r[4096] = {0};
-            int i, j = 0;
-            
-            for(i = 0; i < nsamples; i++) {
-                l[i] = audio[j++];
-                r[i] = audio[j++];
-            }
+		if (handle->channels == 2) {
+			int16_t l[4096] = { 0 };
+			int16_t r[4096] = { 0 };
+			int i, j = 0;
 
-            if ((rlen = lame_encode_buffer(context->gfp, l, r, nsamples, mp3buf, sizeof(mp3buf))) < 0) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
-                return SWITCH_STATUS_FALSE;
-            }
+			for (i = 0; i < nsamples; i++) {
+				l[i] = audio[j++];
+				r[i] = audio[j++];
+			}
 
-        } else if (handle->channels == 1) {
-            if ((rlen = lame_encode_buffer(context->gfp, audio, NULL, nsamples, mp3buf, sizeof(mp3buf))) < 0) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
-                return SWITCH_STATUS_FALSE;
-            }
-        } else {
-            rlen = 0;
-        }
+			if ((rlen = lame_encode_buffer(context->gfp, l, r, nsamples, mp3buf, sizeof(mp3buf))) < 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
+				return SWITCH_STATUS_FALSE;
+			}
+
+		} else if (handle->channels == 1) {
+			if ((rlen = lame_encode_buffer(context->gfp, audio, NULL, nsamples, mp3buf, sizeof(mp3buf))) < 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
+				return SWITCH_STATUS_FALSE;
+			}
+		} else {
+			rlen = 0;
+		}
 
 		if (rlen) {
 			int ret = fwrite(mp3buf, 1, rlen, context->fp);
@@ -879,55 +879,55 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
 static switch_status_t shout_file_set_string(switch_file_handle_t *handle, switch_audio_col_t col, const char *string)
 {
 	shout_context_t *context = handle->private_info;
-    switch_status_t status = SWITCH_STATUS_FALSE;
-    
-    if (!context->shout) {
-        switch (col) {
-        case SWITCH_AUDIO_COL_STR_TITLE:
-            id3tag_set_title(context->gfp, string);
-            break;
-        case SWITCH_AUDIO_COL_STR_COMMENT:
-            id3tag_set_comment(context->gfp, string);
-            break;
-        case SWITCH_AUDIO_COL_STR_ARTIST:
-            id3tag_set_artist(context->gfp, string);
-            break;
-        case SWITCH_AUDIO_COL_STR_DATE:
-            id3tag_set_year(context->gfp, string);
-            break;
-        case SWITCH_AUDIO_COL_STR_SOFTWARE:
-            break;
-            id3tag_set_album(context->gfp, string);
-        case SWITCH_AUDIO_COL_STR_COPYRIGHT:
-            id3tag_set_genre(context->gfp, string);
-            break;
-        default:
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Value Ignored\n");
-            break;
-        }
-        
-        return status;
-    }
-    
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (!context->shout) {
+		switch (col) {
+		case SWITCH_AUDIO_COL_STR_TITLE:
+			id3tag_set_title(context->gfp, string);
+			break;
+		case SWITCH_AUDIO_COL_STR_COMMENT:
+			id3tag_set_comment(context->gfp, string);
+			break;
+		case SWITCH_AUDIO_COL_STR_ARTIST:
+			id3tag_set_artist(context->gfp, string);
+			break;
+		case SWITCH_AUDIO_COL_STR_DATE:
+			id3tag_set_year(context->gfp, string);
+			break;
+		case SWITCH_AUDIO_COL_STR_SOFTWARE:
+			break;
+			id3tag_set_album(context->gfp, string);
+		case SWITCH_AUDIO_COL_STR_COPYRIGHT:
+			id3tag_set_genre(context->gfp, string);
+			break;
+		default:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Value Ignored\n");
+			break;
+		}
+
+		return status;
+	}
+
 	switch (col) {
 	case SWITCH_AUDIO_COL_STR_TITLE:
 		if (shout_set_name(context->shout, string) == SHOUTERR_SUCCESS) {
-            status = SWITCH_STATUS_SUCCESS;
-        } else {
+			status = SWITCH_STATUS_SUCCESS;
+		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n", shout_get_error(context->shout));
 		}
 		break;
 	case SWITCH_AUDIO_COL_STR_COMMENT:
 		if (shout_set_url(context->shout, string) == SHOUTERR_SUCCESS) {
-            status = SWITCH_STATUS_SUCCESS;
-        } else {
+			status = SWITCH_STATUS_SUCCESS;
+		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n", shout_get_error(context->shout));
 		}
 		break;
 	case SWITCH_AUDIO_COL_STR_ARTIST:
 		if (shout_set_description(context->shout, string) == SHOUTERR_SUCCESS) {
-            status = SWITCH_STATUS_SUCCESS;
-        } else {
+			status = SWITCH_STATUS_SUCCESS;
+		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n", shout_get_error(context->shout));
 		}
 		break;
@@ -946,7 +946,7 @@ static switch_status_t shout_file_get_string(switch_file_handle_t *handle, switc
 
 static switch_bool_t telecast_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
-    switch_buffer_t *buffer = (switch_buffer_t *) user_data;
+	switch_buffer_t *buffer = (switch_buffer_t *) user_data;
 	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	switch_frame_t frame = { 0 };
 
@@ -961,18 +961,18 @@ static switch_bool_t telecast_callback(switch_media_bug_t *bug, void *user_data,
 	case SWITCH_ABC_TYPE_READ_PING:
 		if (buffer) {
 			if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
-                switch_buffer_lock(buffer);
-                switch_buffer_write(buffer, frame.data, frame.datalen);
-                switch_buffer_unlock(buffer);
+				switch_buffer_lock(buffer);
+				switch_buffer_write(buffer, frame.data, frame.datalen);
+				switch_buffer_unlock(buffer);
 			}
 		} else {
-            return SWITCH_FALSE;
-        }
+			return SWITCH_FALSE;
+		}
 		break;
 
 	case SWITCH_ABC_TYPE_READ:
 	case SWITCH_ABC_TYPE_WRITE:
-        
+
 	default:
 		break;
 	}
@@ -981,357 +981,344 @@ static switch_bool_t telecast_callback(switch_media_bug_t *bug, void *user_data,
 }
 
 struct holder {
-    switch_stream_handle_t *stream;
-    switch_memory_pool_t *pool;
-    char *host;
-    char *port;
-    char *uri;
+	switch_stream_handle_t *stream;
+	switch_memory_pool_t *pool;
+	char *host;
+	char *port;
+	char *uri;
 };
 
 static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
-    struct holder *holder = (struct holder *) pArg;
-    char title_b4[128] = "";
-    char title_aft[128*3] = "";
-    char *mp3, *m3u;
+	struct holder *holder = (struct holder *) pArg;
+	char title_b4[128] = "";
+	char title_aft[128 * 3] = "";
+	char *mp3, *m3u;
 
-    /*
-      0  uuid  VARCHAR(255),
-      1  created  VARCHAR(255),
-      2  name  VARCHAR(255),
-      3  state  VARCHAR(255),
-      4  cid_name  VARCHAR(255),
-      5  cid_num  VARCHAR(255),
-      6  ip_addr  VARCHAR(255),
-      7  dest  VARCHAR(255),
-      8  application  VARCHAR(255),
-      9  application_data  VARCHAR(255),
-      10 read_codec  VARCHAR(255),
-      11 read_rate  VARCHAR(255),
-      12 write_codec  VARCHAR(255),
-      13 write_rate  VARCHAR(255)
-    */
-    
-    holder->stream->write_function(holder->stream, 
-                                   "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>", 
-                                   argv[1], argv[4], argv[5], argv[7], argv[8] ? argv[8] : "N/A", argv[9] ? argv[9] : "N/A", argv[10], argv[11]);
-    
-    snprintf(title_b4, sizeof(title_b4), "%s <%s>", argv[4], argv[5]);
-    switch_url_encode(title_b4, title_aft, sizeof(title_aft));
+	/*
+	   0  uuid  VARCHAR(255),
+	   1  created  VARCHAR(255),
+	   2  name  VARCHAR(255),
+	   3  state  VARCHAR(255),
+	   4  cid_name  VARCHAR(255),
+	   5  cid_num  VARCHAR(255),
+	   6  ip_addr  VARCHAR(255),
+	   7  dest  VARCHAR(255),
+	   8  application  VARCHAR(255),
+	   9  application_data  VARCHAR(255),
+	   10 read_codec  VARCHAR(255),
+	   11 read_rate  VARCHAR(255),
+	   12 write_codec  VARCHAR(255),
+	   13 write_rate  VARCHAR(255)
+	 */
 
-    mp3 = switch_mprintf("http://%s:%s%s/mp3/%s/%s.mp3", holder->host, holder->port, holder->uri, argv[0], argv[5]);
-    m3u = switch_mprintf("http://%s:%s%s/m3u/mp3/%s/%s.mp3.m3u", holder->host, holder->port, holder->uri, argv[0], argv[5]);
+	holder->stream->write_function(holder->stream,
+								   "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>",
+								   argv[1], argv[4], argv[5], argv[7], argv[8] ? argv[8] : "N/A", argv[9] ? argv[9] : "N/A", argv[10], argv[11]);
 
-    holder->stream->write_function(holder->stream, "[<a href=%s>mp3</a>] ", mp3);
-    holder->stream->write_function(holder->stream, "[<a href=%s>m3u</a>]</td></tr>\n", m3u);
-    
-    switch_safe_free(mp3);
-    switch_safe_free(m3u);
-    return 0;
+	snprintf(title_b4, sizeof(title_b4), "%s <%s>", argv[4], argv[5]);
+	switch_url_encode(title_b4, title_aft, sizeof(title_aft));
+
+	mp3 = switch_mprintf("http://%s:%s%s/mp3/%s/%s.mp3", holder->host, holder->port, holder->uri, argv[0], argv[5]);
+	m3u = switch_mprintf("http://%s:%s%s/m3u/mp3/%s/%s.mp3.m3u", holder->host, holder->port, holder->uri, argv[0], argv[5]);
+
+	holder->stream->write_function(holder->stream, "[<a href=%s>mp3</a>] ", mp3);
+	holder->stream->write_function(holder->stream, "[<a href=%s>m3u</a>]</td></tr>\n", m3u);
+
+	switch_safe_free(mp3);
+	switch_safe_free(m3u);
+	return 0;
 }
 
 void do_telecast(switch_stream_handle_t *stream)
 {
-    char *path_info = switch_event_get_header(stream->param_event, "http-path-info");
-    char *uuid = strdup(path_info + 4);
-    switch_core_session_t *tsession;
-    char *fname = "stream.mp3";
+	char *path_info = switch_event_get_header(stream->param_event, "http-path-info");
+	char *uuid = strdup(path_info + 4);
+	switch_core_session_t *tsession;
+	char *fname = "stream.mp3";
 
-    if ((fname = strchr(uuid, '/'))) {
-        *fname++ = '\0';
-    }
+	if ((fname = strchr(uuid, '/'))) {
+		*fname++ = '\0';
+	}
 
-    if (!(tsession = switch_core_session_locate(uuid))) {
-        char *ref = switch_event_get_header(stream->param_event, "http-referer");
-        stream->write_function(stream,"Content-type: text/html\r\n\r\n<h2>Not Found!</h2>\n"
-                               "<META http-equiv=\"refresh\" content=\"1;URL=%s\">",  ref);
-    } else {
-        switch_media_bug_t *bug = NULL;
-        switch_buffer_t *buffer;
-        switch_mutex_t *mutex;
-        switch_channel_t *channel = switch_core_session_get_channel(tsession);
-        lame_global_flags *gfp = NULL;
-        switch_codec_t *read_codec;
-        
-        if (!(gfp = lame_init())) {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate lame\n");
-            goto end;
-        }
-        read_codec = switch_core_session_get_read_codec(tsession);
-            
-        lame_set_num_channels(gfp, read_codec->implementation->number_of_channels);
-        lame_set_in_samplerate(gfp, read_codec->implementation->actual_samples_per_second);
-        lame_set_brate(gfp, 24);
-        lame_set_mode(gfp, 3);
-        lame_set_quality(gfp, 2);
-        lame_set_errorf(gfp, log_error);
-        lame_set_debugf(gfp, log_debug);
-        lame_set_msgf(gfp, log_msg);
-        lame_set_bWriteVbrTag(gfp, 0);
-        lame_mp3_tags_fid(gfp, NULL);
-        lame_init_params(gfp);
-        lame_print_config(gfp);
-            
-        switch_mutex_init(&mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
-        switch_buffer_create_dynamic(&buffer, 1024, 2048, 0);
-        switch_buffer_add_mutex(buffer, mutex);
-        
-        if (switch_core_media_bug_add(tsession, telecast_callback, buffer, 0, 
-                                      SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_READ_PING, &bug) != SWITCH_STATUS_SUCCESS) {
-            goto end;
-        }
+	if (!(tsession = switch_core_session_locate(uuid))) {
+		char *ref = switch_event_get_header(stream->param_event, "http-referer");
+		stream->write_function(stream, "Content-type: text/html\r\n\r\n<h2>Not Found!</h2>\n" "<META http-equiv=\"refresh\" content=\"1;URL=%s\">", ref);
+	} else {
+		switch_media_bug_t *bug = NULL;
+		switch_buffer_t *buffer;
+		switch_mutex_t *mutex;
+		switch_channel_t *channel = switch_core_session_get_channel(tsession);
+		lame_global_flags *gfp = NULL;
+		switch_codec_t *read_codec;
 
-        stream->write_function(stream, 
-                               "Content-type: audio/mpeg\r\n"
-                               "Content-Disposition: inline; filename=\"%s\"\r\n\r\n", 
-                               fname);
-            
-        while(switch_channel_ready(channel)) {
-            unsigned char mp3buf[TC_BUFFER_SIZE] = "";
-            int rlen;
-            uint8_t buf[1024];
-            switch_size_t bytes = 0;
+		if (!(gfp = lame_init())) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate lame\n");
+			goto end;
+		}
+		read_codec = switch_core_session_get_read_codec(tsession);
 
-            if (switch_buffer_inuse(buffer) >= 1024) {
-                switch_buffer_lock(buffer);
-                bytes = switch_buffer_read(buffer, buf, sizeof(buf));
-                switch_buffer_unlock(buffer);
-            } else {
-                if (!bytes) {
-                    switch_yield(1000);
-                    continue;
-                }
-                memset(buf, 0, bytes);
-            }
-            
-            if ((rlen = lame_encode_buffer(gfp, (void *)buf, NULL, bytes / 2, mp3buf, sizeof(mp3buf))) < 0) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
-                goto end;
-            }
+		lame_set_num_channels(gfp, read_codec->implementation->number_of_channels);
+		lame_set_in_samplerate(gfp, read_codec->implementation->actual_samples_per_second);
+		lame_set_brate(gfp, 24);
+		lame_set_mode(gfp, 3);
+		lame_set_quality(gfp, 2);
+		lame_set_errorf(gfp, log_error);
+		lame_set_debugf(gfp, log_debug);
+		lame_set_msgf(gfp, log_msg);
+		lame_set_bWriteVbrTag(gfp, 0);
+		lame_mp3_tags_fid(gfp, NULL);
+		lame_init_params(gfp);
+		lame_print_config(gfp);
 
-            if (rlen) {
-                if (stream->raw_write_function(stream, mp3buf, rlen)) {
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Disconnected\n");
-                    goto end;
-                }
-            }
-        }
+		switch_mutex_init(&mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
+		switch_buffer_create_dynamic(&buffer, 1024, 2048, 0);
+		switch_buffer_add_mutex(buffer, mutex);
 
-    end:
+		if (switch_core_media_bug_add(tsession, telecast_callback, buffer, 0,
+									  SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_READ_PING, &bug) != SWITCH_STATUS_SUCCESS) {
+			goto end;
+		}
 
-        switch_safe_free(uuid);
+		stream->write_function(stream, "Content-type: audio/mpeg\r\n" "Content-Disposition: inline; filename=\"%s\"\r\n\r\n", fname);
 
-        if (gfp) {
-            lame_close(gfp);
-            gfp = NULL;
-        }
-            
-        if (bug) {
-            switch_core_media_bug_remove(tsession, &bug);
-        }
+		while (switch_channel_ready(channel)) {
+			unsigned char mp3buf[TC_BUFFER_SIZE] = "";
+			int rlen;
+			uint8_t buf[1024];
+			switch_size_t bytes = 0;
 
-        if (buffer) {
-            switch_buffer_destroy(&buffer);
-        }
+			if (switch_buffer_inuse(buffer) >= 1024) {
+				switch_buffer_lock(buffer);
+				bytes = switch_buffer_read(buffer, buf, sizeof(buf));
+				switch_buffer_unlock(buffer);
+			} else {
+				if (!bytes) {
+					switch_yield(1000);
+					continue;
+				}
+				memset(buf, 0, bytes);
+			}
 
-        switch_core_session_rwunlock(tsession);
-    }
+			if ((rlen = lame_encode_buffer(gfp, (void *) buf, NULL, bytes / 2, mp3buf, sizeof(mp3buf))) < 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
+				goto end;
+			}
+
+			if (rlen) {
+				if (stream->raw_write_function(stream, mp3buf, rlen)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Disconnected\n");
+					goto end;
+				}
+			}
+		}
+
+	  end:
+
+		switch_safe_free(uuid);
+
+		if (gfp) {
+			lame_close(gfp);
+			gfp = NULL;
+		}
+
+		if (bug) {
+			switch_core_media_bug_remove(tsession, &bug);
+		}
+
+		if (buffer) {
+			switch_buffer_destroy(&buffer);
+		}
+
+		switch_core_session_rwunlock(tsession);
+	}
 }
 
 void do_broadcast(switch_stream_handle_t *stream)
 {
-    char *path_info = switch_event_get_header(stream->param_event, "http-path-info");
-    char *file;
-    lame_global_flags *gfp = NULL;
-    switch_file_handle_t fh = {0};
-    unsigned char mp3buf[TC_BUFFER_SIZE] = "";
-    uint8_t buf[1024];
-    int rlen;
-    int is_local = 0;
-    uint32_t interval = 20000;
+	char *path_info = switch_event_get_header(stream->param_event, "http-path-info");
+	char *file;
+	lame_global_flags *gfp = NULL;
+	switch_file_handle_t fh = { 0 };
+	unsigned char mp3buf[TC_BUFFER_SIZE] = "";
+	uint8_t buf[1024];
+	int rlen;
+	int is_local = 0;
+	uint32_t interval = 20000;
 
-    if (strstr(path_info + 7, "://")) {
-        file = strdup(path_info + 7);
-        is_local++;
-    } else {
-        file = switch_mprintf("%s/streamfiles/%s", SWITCH_GLOBAL_dirs.base_dir, path_info + 7);
-    }
-    assert(file);
+	if (strstr(path_info + 7, "://")) {
+		file = strdup(path_info + 7);
+		is_local++;
+	} else {
+		file = switch_mprintf("%s/streamfiles/%s", SWITCH_GLOBAL_dirs.base_dir, path_info + 7);
+	}
+	assert(file);
 
-	if (switch_core_file_open(&fh,
-							  file,
-							  0,
-							  0,
-							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
-        memset(&fh, 0, sizeof(fh));
-        stream->write_function(stream, "Content-type: text/html\r\n\r\n<h2>File not found</h2>\n");
-        goto end;
+	if (switch_core_file_open(&fh, file, 0, 0, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+		memset(&fh, 0, sizeof(fh));
+		stream->write_function(stream, "Content-type: text/html\r\n\r\n<h2>File not found</h2>\n");
+		goto end;
 	}
 
-    if (switch_test_flag((&fh), SWITCH_FILE_NATIVE)) {
-        stream->write_function(stream, "Content-type: text/html\r\n\r\n<h2>File format not supported</h2>\n");
-        goto end;
-    }
+	if (switch_test_flag((&fh), SWITCH_FILE_NATIVE)) {
+		stream->write_function(stream, "Content-type: text/html\r\n\r\n<h2>File format not supported</h2>\n");
+		goto end;
+	}
 
-    if (!(gfp = lame_init())) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate lame\n");
-        goto end;
-    }
-            
-    lame_set_num_channels(gfp, fh.channels);
-    lame_set_in_samplerate(gfp, fh.samplerate);
-    lame_set_brate(gfp, 24);
-    lame_set_mode(gfp, 3);
-    lame_set_quality(gfp, 2);
-    lame_set_errorf(gfp, log_error);
-    lame_set_debugf(gfp, log_debug);
-    lame_set_msgf(gfp, log_msg);
-    lame_set_bWriteVbrTag(gfp, 0);
-    lame_mp3_tags_fid(gfp, NULL);
-    lame_init_params(gfp);
-    lame_print_config(gfp);
-    
-    stream->write_function(stream, 
-                           "Content-type: audio/mpeg\r\n"
-                           "Content-Disposition: inline; filename=\"%s.mp3\"\r\n\r\n", 
-                           path_info + 7);
+	if (!(gfp = lame_init())) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate lame\n");
+		goto end;
+	}
 
-    if (fh.interval) {
-        interval = fh.interval * 1000;
-    }
+	lame_set_num_channels(gfp, fh.channels);
+	lame_set_in_samplerate(gfp, fh.samplerate);
+	lame_set_brate(gfp, 24);
+	lame_set_mode(gfp, 3);
+	lame_set_quality(gfp, 2);
+	lame_set_errorf(gfp, log_error);
+	lame_set_debugf(gfp, log_debug);
+	lame_set_msgf(gfp, log_msg);
+	lame_set_bWriteVbrTag(gfp, 0);
+	lame_mp3_tags_fid(gfp, NULL);
+	lame_init_params(gfp);
+	lame_print_config(gfp);
 
-    for(;;) {
-        switch_size_t samples = sizeof(buf) / 2;
+	stream->write_function(stream, "Content-type: audio/mpeg\r\n" "Content-Disposition: inline; filename=\"%s.mp3\"\r\n\r\n", path_info + 7);
 
-        switch_core_file_read(&fh, buf, &samples);
+	if (fh.interval) {
+		interval = fh.interval * 1000;
+	}
 
-        if (is_local) {
-            switch_yield(interval);
-        }
+	for (;;) {
+		switch_size_t samples = sizeof(buf) / 2;
 
-        if (!samples) {
-            break;
-        }
+		switch_core_file_read(&fh, buf, &samples);
 
-        if ((rlen = lame_encode_buffer(gfp, (void *)buf, NULL, samples, mp3buf, sizeof(mp3buf))) < 0) {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
-            goto end;
-        }
-        
-        if (rlen) {
-            if (stream->raw_write_function(stream, mp3buf, rlen)) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Disconnected\n");
-                goto end;
-            }
-        }
-    }
+		if (is_local) {
+			switch_yield(interval);
+		}
 
-    while ((rlen = lame_encode_flush(gfp, mp3buf, sizeof(mp3buf))) > 0) {
-        if (stream->raw_write_function(stream, mp3buf, rlen)) {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Disconnected\n");
-            goto end;
-        }
-    }
+		if (!samples) {
+			break;
+		}
 
- end:
+		if ((rlen = lame_encode_buffer(gfp, (void *) buf, NULL, samples, mp3buf, sizeof(mp3buf))) < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
+			goto end;
+		}
 
-    if (fh.channels) {
-        switch_core_file_close(&fh);
-    }
+		if (rlen) {
+			if (stream->raw_write_function(stream, mp3buf, rlen)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Disconnected\n");
+				goto end;
+			}
+		}
+	}
 
-    switch_safe_free(file);
+	while ((rlen = lame_encode_flush(gfp, mp3buf, sizeof(mp3buf))) > 0) {
+		if (stream->raw_write_function(stream, mp3buf, rlen)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Disconnected\n");
+			goto end;
+		}
+	}
 
-    if (gfp) {
-        lame_close(gfp);
-        gfp = NULL;
-    }            
+  end:
+
+	if (fh.channels) {
+		switch_core_file_close(&fh);
+	}
+
+	switch_safe_free(file);
+
+	if (gfp) {
+		lame_close(gfp);
+		gfp = NULL;
+	}
 }
 
 void do_index(switch_stream_handle_t *stream)
 {
-    switch_core_db_t *db = switch_core_db_handle();
-    const char *sql = "select * from channels";
-    struct holder holder;
-    char *errmsg;
+	switch_core_db_t *db = switch_core_db_handle();
+	const char *sql = "select * from channels";
+	struct holder holder;
+	char *errmsg;
 
-    holder.host = switch_event_get_header(stream->param_event, "http-host");
-    holder.port = switch_event_get_header(stream->param_event, "http-port");
-    holder.uri = switch_event_get_header(stream->param_event, "http-uri");
-    holder.stream = stream;
-    
-    stream->write_function(stream, "Content-type: text/html\r\n\r\n");
-    stream->write_function(stream,
-                           "<table align=center border=1 cellpadding=6 cellspacing=0>"
-                           "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n",
-                           "Created", "CID Name", "CID Num", "Ext", "App", "Data", "Codec", "Rate", "Listen"
-                           );
-    
-    switch_core_db_exec(db, sql, web_callback, &holder, &errmsg);
-    
-    stream->write_function(stream,
-                           "</table>");
-    
-    if (errmsg) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error [%s]\n", errmsg);    
-        switch_safe_free(errmsg);
-    }
+	holder.host = switch_event_get_header(stream->param_event, "http-host");
+	holder.port = switch_event_get_header(stream->param_event, "http-port");
+	holder.uri = switch_event_get_header(stream->param_event, "http-uri");
+	holder.stream = stream;
+
+	stream->write_function(stream, "Content-type: text/html\r\n\r\n");
+	stream->write_function(stream,
+						   "<table align=center border=1 cellpadding=6 cellspacing=0>"
+						   "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n",
+						   "Created", "CID Name", "CID Num", "Ext", "App", "Data", "Codec", "Rate", "Listen");
+
+	switch_core_db_exec(db, sql, web_callback, &holder, &errmsg);
+
+	stream->write_function(stream, "</table>");
+
+	if (errmsg) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error [%s]\n", errmsg);
+		switch_safe_free(errmsg);
+	}
 }
 
 #define TELECAST_SYNTAX ""
 SWITCH_STANDARD_API(telecast_api_function)
 {
-    char *host = NULL, *port = NULL, *uri = NULL, *path_info = NULL;
+	char *host = NULL, *port = NULL, *uri = NULL, *path_info = NULL;
 
-   	if (session) {
+	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-    if (stream->param_event) {
-        host = switch_event_get_header(stream->param_event, "http-host");
-        port = switch_event_get_header(stream->param_event, "http-port");
-        uri = switch_event_get_header(stream->param_event, "http-uri");
-        path_info = switch_event_get_header(stream->param_event, "http-path-info");
-    }
+	if (stream->param_event) {
+		host = switch_event_get_header(stream->param_event, "http-host");
+		port = switch_event_get_header(stream->param_event, "http-port");
+		uri = switch_event_get_header(stream->param_event, "http-uri");
+		path_info = switch_event_get_header(stream->param_event, "http-path-info");
+	}
 
-    if (!path_info) {
-        return SWITCH_STATUS_FALSE;
-    } else {
-        if (!strncmp(path_info, "index", 5)) {
-            do_index(stream);
-            return SWITCH_STATUS_SUCCESS;
-        }
+	if (!path_info) {
+		return SWITCH_STATUS_FALSE;
+	} else {
+		if (!strncmp(path_info, "index", 5)) {
+			do_index(stream);
+			return SWITCH_STATUS_SUCCESS;
+		}
 
-        if (!strncmp(path_info, "m3u/", 4)) {
-            char *p;
+		if (!strncmp(path_info, "m3u/", 4)) {
+			char *p;
 
-            if ((p = strstr(path_info, ".m3u"))) {
-                *p = '\0';
-            }
+			if ((p = strstr(path_info, ".m3u"))) {
+				*p = '\0';
+			}
 
-            stream->write_function(stream, "Content-type: audio/x-mpegurl\r\n\r\nhttp://%s:%s%s/%s\n", host, port, uri, path_info + 4);
-            return SWITCH_STATUS_SUCCESS;
-        }
+			stream->write_function(stream, "Content-type: audio/x-mpegurl\r\n\r\nhttp://%s:%s%s/%s\n", host, port, uri, path_info + 4);
+			return SWITCH_STATUS_SUCCESS;
+		}
 
-        if (!strncmp(path_info, "mp3/", 4)) {
-            do_telecast(stream);
-            return SWITCH_STATUS_SUCCESS;
-        }
+		if (!strncmp(path_info, "mp3/", 4)) {
+			do_telecast(stream);
+			return SWITCH_STATUS_SUCCESS;
+		}
 
-        if (!strncmp(path_info, "stream/", 7)) {
-            do_broadcast(stream);
-            return SWITCH_STATUS_SUCCESS;
-        }
-    }
-    
-    stream->write_function(stream, "Content-type: text/html\r\n\r\n<h2>Invalid URL</h2>\n");
+		if (!strncmp(path_info, "stream/", 7)) {
+			do_broadcast(stream);
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
 
-    return SWITCH_STATUS_SUCCESS;
+	stream->write_function(stream, "Content-type: text/html\r\n\r\n<h2>Invalid URL</h2>\n");
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 {
-    switch_api_interface_t *shout_api_interface;
-    switch_file_interface_t *file_interface;
+	switch_api_interface_t *shout_api_interface;
+	switch_file_interface_t *file_interface;
 
 	supported_formats[0] = "shout";
 	supported_formats[1] = "mp3";
@@ -1339,16 +1326,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 	curl_global_init(CURL_GLOBAL_ALL);
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-    file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
-    file_interface->interface_name = modname;
-    file_interface->extens = supported_formats;
-    file_interface->file_open = shout_file_open;
-    file_interface->file_close = shout_file_close;
-    file_interface->file_read = shout_file_read;
-    file_interface->file_write = shout_file_write;
-    file_interface->file_seek = shout_file_seek;
-    file_interface->file_set_string = shout_file_set_string;
-    file_interface->file_get_string = shout_file_get_string;
+	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
+	file_interface->interface_name = modname;
+	file_interface->extens = supported_formats;
+	file_interface->file_open = shout_file_open;
+	file_interface->file_close = shout_file_close;
+	file_interface->file_read = shout_file_read;
+	file_interface->file_write = shout_file_write;
+	file_interface->file_seek = shout_file_seek;
+	file_interface->file_set_string = shout_file_set_string;
+	file_interface->file_get_string = shout_file_get_string;
 
 	/* connect my internal structure to the blank pointer passed to me */
 	//*module_interface = &shout_module_interface;
@@ -1356,7 +1343,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 	shout_init();
 	InitMP3Constants();
 
-    SWITCH_ADD_API(shout_api_interface, "telecast", "telecast", telecast_api_function, TELECAST_SYNTAX);
+	SWITCH_ADD_API(shout_api_interface, "telecast", "telecast", telecast_api_function, TELECAST_SYNTAX);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

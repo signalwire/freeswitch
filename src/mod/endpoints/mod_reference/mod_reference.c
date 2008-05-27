@@ -34,7 +34,7 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_reference_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_reference_shutdown);
 //SWITCH_MODULE_RUNTIME_FUNCTION(mod_reference_runtime);
-SWITCH_MODULE_DEFINITION(mod_reference, mod_reference_load, mod_reference_shutdown, NULL);//mod_reference_runtime);
+SWITCH_MODULE_DEFINITION(mod_reference, mod_reference_load, mod_reference_shutdown, NULL);	//mod_reference_runtime);
 
 
 switch_endpoint_interface_t *reference_endpoint_interface;
@@ -112,7 +112,7 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 
 
 
-static void tech_init(private_t * tech_pvt, switch_core_session_t *session)
+static void tech_init(private_t *tech_pvt, switch_core_session_t *session)
 {
 	tech_pvt->read_frame.data = tech_pvt->databuf;
 	tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
@@ -140,9 +140,9 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	switch_set_flag_locked(tech_pvt, TFLAG_IO);
 
 	/* Move channel's state machine to ROUTING. This means the call is trying
-       to get from the initial start where the call because, to the point
-       where a destination has been identified. If the channel is simply
-       left in the initial state, nothing will happen. */
+	   to get from the initial start where the call because, to the point
+	   where a destination has been identified. If the channel is simply
+	   left in the initial state, nothing will happen. */
 	switch_channel_set_state(channel, CS_ROUTING);
 	switch_mutex_lock(globals.mutex);
 	globals.calls++;
@@ -315,7 +315,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	return SWITCH_STATUS_FALSE;
 
- cng:
+  cng:
 	data = (switch_byte_t *) tech_pvt->read_frame.data;
 	data[0] = 65;
 	data[1] = 0;
@@ -346,7 +346,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		switch_swap_linear(frame->data, (int) frame->datalen / 2);
 	}
 #endif
-	
+
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -363,7 +363,7 @@ static switch_status_t channel_answer_channel(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -375,7 +375,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
-			
+
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
@@ -471,7 +471,7 @@ switch_io_routines_t reference_io_routines = {
 	/*.write_frame */ channel_write_frame,
 	/*.kill_channel */ channel_kill_channel,
 	/*.send_dtmf */ channel_send_dtmf,
-	/*.receive_message*/ channel_receive_message,
+	/*.receive_message */ channel_receive_message,
 	/*.receive_event */ channel_receive_event
 };
 
@@ -531,7 +531,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_reference_load)
 {
 
 	module_pool = pool;
-	
+
 	load_config();
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -540,7 +540,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_reference_load)
 	reference_endpoint_interface->io_routines = &reference_io_routines;
 	reference_endpoint_interface->state_handler = &reference_state_handlers;
 
-	
+
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

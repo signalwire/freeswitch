@@ -34,7 +34,7 @@ static const char modname[] = "Socket";
 struct js_socket_obj {
 	switch_socket_t *socket;
 	switch_memory_pool_t *pool;
-	char* read_buffer;
+	char *read_buffer;
 	switch_size_t buffer_size;
 	int state;
 };
@@ -44,20 +44,18 @@ typedef struct js_socket_obj js_socket_obj_t;
 /*********************************************************************************/
 static JSBool socket_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
-	js_socket_obj_t* js_socket_obj = 0;
+	js_socket_obj_t *js_socket_obj = 0;
 	switch_memory_pool_t *pool;
 	switch_socket_t *socket;
 	switch_status_t ret;
 
 	switch_core_new_memory_pool(&pool);
 	ret = switch_socket_create(&socket, AF_INET, SOCK_STREAM, SWITCH_PROTO_TCP, pool);
-	if (ret != SWITCH_STATUS_SUCCESS)
-	{
+	if (ret != SWITCH_STATUS_SUCCESS) {
 		switch_core_destroy_memory_pool(&pool);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Failed to create socket, reason: %d.\n", ret);
 		return JS_FALSE;
 	}
-
 	// allocate information needed by JS to be able to write to the log.
 	// (needed since multitple js sessions can write to the same log)
 	js_socket_obj = switch_core_alloc(pool, sizeof(js_socket_obj_t));
@@ -73,8 +71,7 @@ static void socket_destroy(JSContext * cx, JSObject * obj)
 	if (socket == NULL)
 		return;
 
-	if (socket->socket != 0)
-	{
+	if (socket->socket != 0) {
 		switch_socket_shutdown(socket->socket, SWITCH_SHUTDOWN_READWRITE);
 		switch_socket_close(socket->socket);
 		switch_core_destroy_memory_pool(&socket->pool);
@@ -84,14 +81,12 @@ static void socket_destroy(JSContext * cx, JSObject * obj)
 static JSBool socket_connect(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	js_socket_obj_t *socket = JS_GetPrivate(cx, obj);
-	if (socket == NULL)
-	{
+	if (socket == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to find js object.\n");
 		return JS_FALSE;
 	}
 
-	if (argc == 2)
-	{
+	if (argc == 2) {
 		char *host = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		int32 port;
 		switch_sockaddr_t *addr;
@@ -99,21 +94,18 @@ static JSBool socket_connect(JSContext * cx, JSObject * obj, uintN argc, jsval *
 
 		JS_ValueToInt32(cx, argv[1], &port);
 
-		ret = switch_sockaddr_info_get(&addr, host, AF_INET, (switch_port_t)port, 0, socket->pool);
-		if (ret != SWITCH_STATUS_SUCCESS)
-		{
+		ret = switch_sockaddr_info_get(&addr, host, AF_INET, (switch_port_t) port, 0, socket->pool);
+		if (ret != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "switch_sockaddr_info_get failed: %d.\n", ret);
 			return JS_FALSE;
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Connecting to: %s:%d.\n", host, port);
 		ret = switch_socket_connect(socket->socket, addr);
-		if (ret != SWITCH_STATUS_SUCCESS)
-		{
+		if (ret != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "switch_socket_connect failed: %d.\n", ret);
 			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		}
-		else
+		} else
 			*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
 
 	}
@@ -124,23 +116,19 @@ static JSBool socket_connect(JSContext * cx, JSObject * obj, uintN argc, jsval *
 static JSBool socket_send(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	js_socket_obj_t *socket = JS_GetPrivate(cx, obj);
-	if (socket == NULL)
-	{
+	if (socket == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to find js object.\n");
 		return JS_FALSE;
 	}
 
-	if (argc == 1)
-	{
+	if (argc == 1) {
 		char *buffer = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		switch_size_t len = strlen(buffer);
 		switch_status_t ret = switch_socket_send(socket->socket, buffer, &len);
-		if (ret != SWITCH_STATUS_SUCCESS)
-		{
+		if (ret != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "switch_socket_send failed: %d.\n", ret);
 			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		}
-		else
+		} else
 			*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
 	}
 
@@ -150,35 +138,29 @@ static JSBool socket_send(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 static JSBool socket_read_bytes(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	js_socket_obj_t *socket = JS_GetPrivate(cx, obj);
-	if (socket == NULL)
-	{
+	if (socket == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to find js object.\n");
 		return JS_FALSE;
 	}
 
-	if (argc == 1)
-	{
+	if (argc == 1) {
 		int32 bytes_to_read;
 		switch_status_t ret;
 		switch_size_t len;
 
 		JS_ValueToInt32(cx, argv[0], &bytes_to_read);
-		len = (switch_size_t)bytes_to_read;
+		len = (switch_size_t) bytes_to_read;
 
-		if (socket->buffer_size < len)
-		{
-			socket->read_buffer = switch_core_alloc(socket->pool, len+1);
+		if (socket->buffer_size < len) {
+			socket->read_buffer = switch_core_alloc(socket->pool, len + 1);
 			socket->buffer_size = bytes_to_read + 1;
 		}
 
 		ret = switch_socket_recv(socket->socket, socket->read_buffer, &len);
-		if (ret != SWITCH_STATUS_SUCCESS)
-		{
+		if (ret != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "switch_socket_send failed: %d.\n", ret);
 			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		}
-		else
-		{
+		} else {
 			socket->read_buffer[len] = 0;
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, socket->read_buffer));
 		}
@@ -190,15 +172,13 @@ static JSBool socket_read_bytes(JSContext * cx, JSObject * obj, uintN argc, jsva
 static JSBool socket_read(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	js_socket_obj_t *socket = JS_GetPrivate(cx, obj);
-	if (socket == NULL)
-	{
+	if (socket == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to find js object.\n");
 		return JS_FALSE;
 	}
 
-	if (argc >= 0)
-	{
-		char* delimiter = "\n";
+	if (argc >= 0) {
+		char *delimiter = "\n";
 		switch_status_t ret = SWITCH_STATUS_FALSE;
 		switch_size_t len = 1;
 		switch_size_t total_length = 0;
@@ -212,8 +192,7 @@ static JSBool socket_read(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 		if (socket->read_buffer == 0)
 			socket->read_buffer = switch_core_alloc(socket->pool, socket->buffer_size);
 
-		while (can_run == TRUE)
-		{
+		while (can_run == TRUE) {
 			ret = switch_socket_recv(socket->socket, tempbuf, &len);
 			if (ret != SWITCH_STATUS_SUCCESS)
 				break;
@@ -223,13 +202,11 @@ static JSBool socket_read(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 				break;
 			else if (tempbuf[0] == '\r' && delimiter[0] == '\n')
 				continue;
-			else
-			{
+			else {
 				// Buffer is full, let's increase it.
-				if (total_length == socket->buffer_size - 1)
-				{
+				if (total_length == socket->buffer_size - 1) {
 					switch_size_t new_size = socket->buffer_size + 4196;
-					char* new_buffer = switch_core_alloc(socket->pool, socket->buffer_size);
+					char *new_buffer = switch_core_alloc(socket->pool, socket->buffer_size);
 					memcpy(new_buffer, socket->read_buffer, total_length);
 					socket->buffer_size = new_size;
 					socket->read_buffer = new_buffer;
@@ -238,13 +215,10 @@ static JSBool socket_read(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 				++total_length;
 			}
 		}
-		if (ret != SWITCH_STATUS_SUCCESS)
-		{
+		if (ret != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "socket receive failed: %d.\n", ret);
 			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		}
-		else
-		{
+		} else {
 			socket->read_buffer[total_length] = 0;
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, socket->read_buffer));
 		}
@@ -256,8 +230,7 @@ static JSBool socket_read(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 static JSBool socket_close(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	js_socket_obj_t *socket = JS_GetPrivate(cx, obj);
-	if (socket == NULL)
-	{
+	if (socket == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to find js object.\n");
 		return JS_FALSE;
 	}
@@ -290,7 +263,7 @@ static JSPropertySpec socket_props[] = {
 static JSBool socket_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
 {
 	JSBool res = JS_TRUE;
-//	js_socket_obj_t *socket = JS_GetPrivate(cx, obj);
+//  js_socket_obj_t *socket = JS_GetPrivate(cx, obj);
 	char *name;
 	int param = 0;
 
@@ -335,7 +308,7 @@ const sm_module_interface_t socket_module_interface = {
 	/*.next */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) spidermonkey_init(const sm_module_interface_t ** module_interface)
+SWITCH_MOD_DECLARE(switch_status_t) spidermonkey_init(const sm_module_interface_t **module_interface)
 {
 	*module_interface = &socket_module_interface;
 	return SWITCH_STATUS_SUCCESS;

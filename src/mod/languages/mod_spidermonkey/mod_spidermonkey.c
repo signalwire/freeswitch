@@ -184,7 +184,7 @@ static JSBool request_write(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	return JS_TRUE;
 }
 
-static JSBool request_add_header(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+static JSBool request_add_header(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct request_obj *ro = JS_GetPrivate(cx, obj);
 
@@ -226,7 +226,7 @@ static JSBool request_get_header(JSContext * cx, JSObject * obj, uintN argc, jsv
 	return JS_TRUE;
 }
 
-static JSBool request_dump_env(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+static JSBool request_dump_env(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct request_obj *ro = JS_GetPrivate(cx, obj);
 	char *how = "text";
@@ -244,10 +244,10 @@ static JSBool request_dump_env(JSContext *cx, JSObject *obj, uintN argc, jsval *
 		switch_xml_t xml;
 		char *xmlstr;
 		if ((xml = switch_event_xmlize(ro->stream->param_event, SWITCH_VA_NONE))) {
-            xmlstr = switch_xml_toxml(xml, SWITCH_FALSE);
+			xmlstr = switch_xml_toxml(xml, SWITCH_FALSE);
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, xmlstr));
 			return JS_TRUE;
-        } 
+		}
 	} else {
 		char *buf;
 		switch_event_serialize(ro->stream->param_event, &buf, SWITCH_TRUE);
@@ -264,7 +264,7 @@ static JSBool request_dump_env(JSContext *cx, JSObject *obj, uintN argc, jsval *
 
 static void request_destroy(JSContext * cx, JSObject * obj)
 {
-	
+
 }
 
 enum request_tinyid {
@@ -284,7 +284,7 @@ static JSPropertySpec request_props[] = {
 	{0}
 };
 
-static JSBool request_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+static JSBool request_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
 {
 	JSBool res = JS_TRUE;
 	struct request_obj *ro = JS_GetPrivate(cx, obj);
@@ -320,12 +320,11 @@ JSClass request_class = {
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, request_destroy, NULL, NULL, NULL, NULL
 };
 
-static JSObject *new_request(JSContext *cx, JSObject *obj, struct request_obj *ro)
+static JSObject *new_request(JSContext * cx, JSObject * obj, struct request_obj *ro)
 {
 	JSObject *Request;
 	if ((Request = JS_DefineObject(cx, obj, "request", &request_class, NULL, 0))) {
-		if ((JS_SetPrivate(cx, Request, ro) &&
-			 JS_DefineProperties(cx, Request, request_props) && JS_DefineFunctions(cx, Request, request_methods))) {
+		if ((JS_SetPrivate(cx, Request, ro) && JS_DefineProperties(cx, Request, request_props) && JS_DefineFunctions(cx, Request, request_methods))) {
 			return Request;
 		}
 	}
@@ -375,12 +374,12 @@ static JSBool pcre_compile(JSContext * cx, JSObject * obj, uintN argc, jsval * a
 	char *string, *regex_string;
 
 	if (argc > 1) {
-        string = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-        regex_string = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		string = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		regex_string = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 		switch_regex_safe_free(pcre_obj->re);
 		switch_safe_free(pcre_obj->string);
 		pcre_obj->string = strdup(string);
-		pcre_obj->proceed = switch_regex_perform(pcre_obj->string, regex_string, &pcre_obj->re, pcre_obj->ovector, 
+		pcre_obj->proceed = switch_regex_perform(pcre_obj->string, regex_string, &pcre_obj->re, pcre_obj->ovector,
 												 sizeof(pcre_obj->ovector) / sizeof(pcre_obj->ovector[0]));
 		*rval = BOOLEAN_TO_JSVAL(pcre_obj->proceed ? JS_TRUE : JS_FALSE);
 	} else {
@@ -401,10 +400,10 @@ static JSBool pcre_substitute(JSContext * cx, JSObject * obj, uintN argc, jsval 
 		eval_some_js("~throw new Error(\"REGEX is not compiled or has no matches\");", cx, obj, rval);
 		return JS_FALSE;
 	}
-	
+
 	if (argc > 0) {
 		uint32_t len;
-        subst_string = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		subst_string = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		len = (uint32_t) (strlen(pcre_obj->string) + strlen(subst_string) + 10);
 		substituted = malloc(len);
 		switch_assert(substituted != NULL);
@@ -841,7 +840,7 @@ static JSBool dtmf_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval *
 
 	case DTMF_DURATION:
 		{
-			*vp = INT_TO_JSVAL((int)dtmf->duration);
+			*vp = INT_TO_JSVAL((int) dtmf->duration);
 		}
 		break;
 	}
@@ -1097,10 +1096,10 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 	uintN argc = 0;
 	jsval argv[4];
 	JSObject *Event = NULL;
-	jsval nval , *rval = &nval; 
+	jsval nval, *rval = &nval;
 	JSContext *cx = cb_state->cx;
 	JSObject *obj = cb_state->obj;
-	
+
 	METHOD_SANITY_CHECK();
 
 	jss->stack_depth++;
@@ -1126,10 +1125,10 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 			return SWITCH_STATUS_FALSE;
 		}
 		break;
-	case SWITCH_INPUT_TYPE_DTMF: 
+	case SWITCH_INPUT_TYPE_DTMF:
 		{
 			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
-			
+
 			if (dtmf) {
 				if ((Event = new_js_dtmf(dtmf, "_XX_DTMF_XX_", cb_state->cx, cb_state->obj))) {
 					argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(cb_state->cx, "dtmf"));
@@ -1624,7 +1623,7 @@ static JSBool session_streamfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	switch_input_args_t args = { 0 };
 	const char *prebuf;
 	char posbuf[35] = "";
-	
+
 	METHOD_SANITY_CHECK();
 	channel = switch_core_session_get_channel(jss->session);
 	CHANNEL_SANITY_CHECK();
@@ -1660,13 +1659,13 @@ static JSBool session_streamfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 		JS_ValueToInt32(cx, argv[3], &samps);
 		fh.samples = samps;
 	}
-	
-    if ((prebuf = switch_channel_get_variable(channel, "stream_prebuffer"))) {
-        int maybe = atoi(prebuf);
-        if (maybe > 0) {
-            fh.prebuf = maybe;
-        }
-    }
+
+	if ((prebuf = switch_channel_get_variable(channel, "stream_prebuffer"))) {
+		int maybe = atoi(prebuf);
+		if (maybe > 0) {
+			fh.prebuf = maybe;
+		}
+	}
 
 	cb_state.extra = &fh;
 	cb_state.ret = BOOLEAN_TO_JSVAL(JS_FALSE);
@@ -1825,7 +1824,7 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	if (jss->speech && strcasecmp(jss->speech->sh.name, tts_name)) {
 		destroy_speech_engine(jss);
 	}
-	
+
 	if (jss->speech) {
 		switch_core_speech_text_param_tts(&jss->speech->sh, "voice", voice_name);
 	} else {
@@ -1861,7 +1860,7 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	args.input_callback = dtmf_func;
 	args.buf = bp;
 	args.buflen = len;
-	
+
 	switch_core_speech_flush_tts(&jss->speech->sh);
 	switch_ivr_speak_text_handle(jss->session, &jss->speech->sh, &jss->speech->codec, NULL, text, &args);
 	JS_ResumeRequest(cx, cb_state.saveDepth);
@@ -2174,12 +2173,11 @@ static JSBool session_hangup(JSContext * cx, JSObject * obj, uintN argc, jsval *
 	CHANNEL_SANITY_CHECK();
 
 	if (argc > 1) {
-		if(JSVAL_IS_INT(argv[0])) {
+		if (JSVAL_IS_INT(argv[0])) {
 			int32 i = 0;
 			JS_ValueToInt32(cx, argv[0], &i);
 			cause = i;
-		}
-		else {
+		} else {
 			cause_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 			cause = switch_channel_str2cause(cause_name);
 		}
@@ -2204,7 +2202,7 @@ struct fetch_url_data {
 	JSObject *obj;
 	switch_size_t buffer_size;
 	switch_size_t data_len;
-	char* buffer;
+	char *buffer;
 };
 
 static size_t hash_callback(void *ptr, size_t size, size_t nmemb, void *data)
@@ -2257,7 +2255,7 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	register unsigned int realsize = (unsigned int) (size * nmemb);
 	struct config_data *config_data = data;
 
-	if ((write(config_data->fd, ptr, realsize) != (int)realsize)) {
+	if ((write(config_data->fd, ptr, realsize) != (int) realsize)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to write all bytes!\n");
 	}
 	return realsize;
@@ -2412,7 +2410,7 @@ static JSBool js_fetchurl(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, config_data.buffer));
 		} else {
 			char errmsg[256];
-			switch_snprintf(errmsg, 256, "~throw new Error(\"Curl returned error %u.\");", (unsigned)code);
+			switch_snprintf(errmsg, 256, "~throw new Error(\"Curl returned error %u.\");", (unsigned) code);
 			eval_some_js(errmsg, cx, obj, rval);
 		}
 
@@ -2593,7 +2591,7 @@ static JSObject *new_js_session(JSContext * cx, JSObject * obj, switch_core_sess
 		*jss = malloc(sizeof(**jss));
 		switch_assert(*jss);
 		memset(*jss, 0, sizeof(**jss));
-		
+
 		(*jss)->session = session;
 		(*jss)->flags = flags;
 		(*jss)->cx = cx;
@@ -2628,7 +2626,7 @@ static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsva
 	jss->cx = cx;
 	jss->obj = obj;
 	JS_SetPrivate(cx, obj, jss);
-	
+
 	if (argc > 0) {
 		char *uuid = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		if (uuid) {
@@ -2649,7 +2647,7 @@ static JSBool session_set_callerdata(JSContext * cx, JSObject * obj, uintN argc,
 		char *var, *val, **toset = NULL;
 		var = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		val = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
-		
+
 		if (!strcasecmp(var, "dialplan")) {
 			toset = &jss->dialplan;
 		} else if (!strcasecmp(var, "username")) {
@@ -2670,15 +2668,15 @@ static JSBool session_set_callerdata(JSContext * cx, JSObject * obj, uintN argc,
 			toset = &jss->destination_number;
 		} else if (!strcasecmp(var, "context")) {
 			toset = &jss->context;
-		} 
-		
+		}
+
 		if (toset) {
 			switch_safe_free(*toset);
 			*toset = strdup(val);
 		}
 
 	}
-	
+
 	return JS_TRUE;
 }
 
@@ -2727,14 +2725,22 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 			}
 		}
 
-		if (!switch_strlen_zero(jss->dialplan)) dialplan = jss->dialplan;
-		if (!switch_strlen_zero(jss->caller_id_name)) cid_name = jss->caller_id_name;
-		if (!switch_strlen_zero(jss->caller_id_number)) cid_num = jss->caller_id_number;
-		if (!switch_strlen_zero(jss->ani)) ani = jss->ani;
-		if (!switch_strlen_zero(jss->aniii)) aniii = jss->aniii;
-		if (!switch_strlen_zero(jss->rdnis)) rdnis = jss->rdnis;
-		if (!switch_strlen_zero(jss->context)) context = jss->context;
-		if (!switch_strlen_zero(jss->username)) username = jss->username;
+		if (!switch_strlen_zero(jss->dialplan))
+			dialplan = jss->dialplan;
+		if (!switch_strlen_zero(jss->caller_id_name))
+			cid_name = jss->caller_id_name;
+		if (!switch_strlen_zero(jss->caller_id_number))
+			cid_num = jss->caller_id_number;
+		if (!switch_strlen_zero(jss->ani))
+			ani = jss->ani;
+		if (!switch_strlen_zero(jss->aniii))
+			aniii = jss->aniii;
+		if (!switch_strlen_zero(jss->rdnis))
+			rdnis = jss->rdnis;
+		if (!switch_strlen_zero(jss->context))
+			context = jss->context;
+		if (!switch_strlen_zero(jss->username))
+			username = jss->username;
 
 		dest = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 
@@ -2747,16 +2753,15 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
 			if (!switch_strlen_zero(tmp)) {
 				to = tmp;
-			}	
+			}
 		}
-		
+
 		if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
 			return JS_FALSE;
 		}
 
-		caller_profile = switch_caller_profile_new(pool,username, dialplan, cid_name, cid_num, network_addr,
-												   ani, aniii, rdnis, modname, context, dest);
+		caller_profile = switch_caller_profile_new(pool, username, dialplan, cid_name, cid_num, network_addr, ani, aniii, rdnis, modname, context, dest);
 
 		saveDepth = JS_SuspendRequest(cx);
 		status = switch_ivr_originate(session, &peer_session, &jss->cause, dest, to ? atoi(to) : 60, NULL, NULL, NULL, caller_profile, SOF_NONE);
@@ -2766,7 +2771,7 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot Create Outgoing Channel! [%s]\n", dest);
 			goto done;
 		}
-		
+
 		jss->session = peer_session;
 		switch_set_flag(jss, S_HUP);
 		*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
@@ -2783,21 +2788,21 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 static void session_destroy(JSContext * cx, JSObject * obj)
 {
 	struct js_session *jss;
-	
+
 	if (cx && obj) {
 		if ((jss = JS_GetPrivate(cx, obj))) {
 			JS_SetPrivate(cx, obj, NULL);
 			if (jss->speech && *jss->speech->sh.name) {
 				destroy_speech_engine(jss);
 			}
-			
+
 			if (jss->session) {
 				switch_core_session_t *session = jss->session;
 				switch_channel_t *channel = switch_core_session_get_channel(session);
-				
+
 				switch_channel_set_private(channel, "jss", NULL);
 				switch_core_event_hook_remove_state_change(session, hanguphook);
-				
+
 				if (switch_test_flag(jss, S_HUP)) {
 					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				}
@@ -2816,7 +2821,7 @@ static void session_destroy(JSContext * cx, JSObject * obj)
 			}
 
 			free(jss);
-			
+
 		}
 	}
 
@@ -3025,7 +3030,7 @@ JSClass fileio_class = {
 static JSBool js_exit(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	char *supplied_error, code_buf[256] = "";
-	
+
 	if (argc > 0 && (supplied_error = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
 		switch_snprintf(code_buf, sizeof(code_buf), "~throw new Error(\"%s\");", supplied_error);
 		eval_some_js(code_buf, cx, obj, rval);
@@ -3078,7 +3083,7 @@ static JSBool js_global_set(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	char *var_name = NULL, *val = NULL;
 	if (argc > 1) {
 		var_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-		val =  JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		val = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 		switch_core_set_variable(var_name, val);
 		return JS_TRUE;
 	}
@@ -3153,7 +3158,7 @@ static JSBool js_api_execute(JSContext * cx, JSObject * obj, uintN argc, jsval *
 		if (argc > 1) {
 			arg = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 		}
-		
+
 		if (argc > 2) {
 			JSObject *session_obj;
 			struct js_session *jss;
@@ -3384,7 +3389,7 @@ SWITCH_STANDARD_APP(js_dp_function)
 	js_parse_and_execute(session, data, NULL);
 }
 
-static void *SWITCH_THREAD_FUNC js_thread_run(switch_thread_t * thread, void *obj)
+static void *SWITCH_THREAD_FUNC js_thread_run(switch_thread_t *thread, void *obj)
 {
 	char *input_code = obj;
 
@@ -3419,17 +3424,17 @@ static void js_thread_launch(const char *text)
 
 SWITCH_STANDARD_API(jsapi_function)
 {
-	struct request_obj ro = {0};
+	struct request_obj ro = { 0 };
 	char *path_info = NULL;
 
-    if (stream->param_event) {
+	if (stream->param_event) {
 		path_info = switch_event_get_header(stream->param_event, "http-path-info");
 	}
 
 	if (switch_strlen_zero(cmd) && path_info) {
 		cmd = path_info;
 	}
-	
+
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", jsapi_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
@@ -3456,14 +3461,14 @@ SWITCH_STANDARD_API(launch_async)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void  message_query_handler(switch_event_t *event)
+static void message_query_handler(switch_event_t *event)
 {
 	char *account = switch_event_get_header(event, "message-account");
 
 	if (account) {
 		char *path, *cmd;
 
-		path  = switch_mprintf("%s%smwi.js", SWITCH_GLOBAL_dirs.script_dir, SWITCH_PATH_SEPARATOR);
+		path = switch_mprintf("%s%smwi.js", SWITCH_GLOBAL_dirs.script_dir, SWITCH_PATH_SEPARATOR);
 		switch_assert(path != NULL);
 
 		if (switch_file_exists(path, NULL) == SWITCH_STATUS_SUCCESS) {
@@ -3497,7 +3502,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_API(api_interface, "jsrun", "run a script", launch_async, "jsrun <script> [additional_vars [...]]");
 	SWITCH_ADD_API(api_interface, "jsapi", "execute an api call", jsapi_function, "jsapi <script> [additional_vars [...]]");
-	SWITCH_ADD_APP(app_interface, "javascript", "Launch JS ivr", "Run a javascript ivr on a channel", js_dp_function, "<script> [additional_vars [...]]", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "javascript", "Launch JS ivr", "Run a javascript ivr on a channel", js_dp_function, "<script> [additional_vars [...]]",
+				   SAF_SUPPORT_NOMEDIA);
 
 	curl_global_init(CURL_GLOBAL_ALL);
 

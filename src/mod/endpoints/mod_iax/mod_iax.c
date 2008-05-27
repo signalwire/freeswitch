@@ -110,14 +110,14 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ip, globals.ip);
 
 
 static char *IAXNAMES[] = { "IAX_EVENT_CONNECT", "IAX_EVENT_ACCEPT", "IAX_EVENT_HANGUP", "IAX_EVENT_REJECT", "IAX_EVENT_VOICE",
-							"IAX_EVENT_DTMF", "IAX_EVENT_TIMEOUT", "IAX_EVENT_LAGRQ", "IAX_EVENT_LAGRP", "IAX_EVENT_RINGA",
-							"IAX_EVENT_PING", "IAX_EVENT_PONG", "IAX_EVENT_BUSY", "IAX_EVENT_ANSWER", "IAX_EVENT_IMAGE",
-							"IAX_EVENT_AUTHRQ", "IAX_EVENT_AUTHRP", "IAX_EVENT_REGREQ", "IAX_EVENT_REGACK",
-							"IAX_EVENT_URL", "IAX_EVENT_LDCOMPLETE", "IAX_EVENT_TRANSFER", "IAX_EVENT_DPREQ",
-							"IAX_EVENT_DPREP", "IAX_EVENT_DIAL", "IAX_EVENT_QUELCH", "IAX_EVENT_UNQUELCH",
-							"IAX_EVENT_UNLINK", "IAX_EVENT_LINKREJECT", "IAX_EVENT_TEXT", "IAX_EVENT_REGREJ",
-							"IAX_EVENT_LINKURL", "IAX_EVENT_CNG", "IAX_EVENT_REREQUEST", "IAX_EVENT_TXREPLY",
-							"IAX_EVENT_TXREJECT", "IAX_EVENT_TXACCEPT", "IAX_EVENT_TXREADY"
+	"IAX_EVENT_DTMF", "IAX_EVENT_TIMEOUT", "IAX_EVENT_LAGRQ", "IAX_EVENT_LAGRP", "IAX_EVENT_RINGA",
+	"IAX_EVENT_PING", "IAX_EVENT_PONG", "IAX_EVENT_BUSY", "IAX_EVENT_ANSWER", "IAX_EVENT_IMAGE",
+	"IAX_EVENT_AUTHRQ", "IAX_EVENT_AUTHRP", "IAX_EVENT_REGREQ", "IAX_EVENT_REGACK",
+	"IAX_EVENT_URL", "IAX_EVENT_LDCOMPLETE", "IAX_EVENT_TRANSFER", "IAX_EVENT_DPREQ",
+	"IAX_EVENT_DPREP", "IAX_EVENT_DIAL", "IAX_EVENT_QUELCH", "IAX_EVENT_UNQUELCH",
+	"IAX_EVENT_UNLINK", "IAX_EVENT_LINKREJECT", "IAX_EVENT_TEXT", "IAX_EVENT_REGREJ",
+	"IAX_EVENT_LINKURL", "IAX_EVENT_CNG", "IAX_EVENT_REREQUEST", "IAX_EVENT_TXREPLY",
+	"IAX_EVENT_TXREJECT", "IAX_EVENT_TXACCEPT", "IAX_EVENT_TXREADY"
 };
 
 
@@ -129,24 +129,24 @@ struct ast_iana {
 
 //999 means it's wrong nad i dont know the real one 
 static struct ast_iana AST_IANA[] = { {AST_FORMAT_G723_1, 4, "g723.1"},
-									  {AST_FORMAT_GSM, 3, "gsm"},
-									  {AST_FORMAT_ULAW, 0, "ulaw"},
-									  {AST_FORMAT_ALAW, 8, "alaw"},
-									  {AST_FORMAT_G726, 999, "g726"},
-									  {AST_FORMAT_ADPCM, 999, "adpcm"},
-									  {AST_FORMAT_SLINEAR, 10, "slinear"},
-									  {AST_FORMAT_LPC10, 7, "lpc10"},
-									  {AST_FORMAT_G729A, 18, "g729"},
-									  {AST_FORMAT_SPEEX, 97, "speex"},
-									  {AST_FORMAT_SPEEX, 98, "speex"},
-									  {AST_FORMAT_ILBC, 102, "ilbc"},
-									  {AST_FORMAT_MAX_AUDIO, 999, ""},
-									  {AST_FORMAT_JPEG, 999, ""},
-									  {AST_FORMAT_PNG, 999, ""},
-									  {AST_FORMAT_H261, 999, ""},
-									  {AST_FORMAT_H263, 999, ""},
-									  {AST_FORMAT_MAX_VIDEO, 999, ""},
-									  {0, 0}
+{AST_FORMAT_GSM, 3, "gsm"},
+{AST_FORMAT_ULAW, 0, "ulaw"},
+{AST_FORMAT_ALAW, 8, "alaw"},
+{AST_FORMAT_G726, 999, "g726"},
+{AST_FORMAT_ADPCM, 999, "adpcm"},
+{AST_FORMAT_SLINEAR, 10, "slinear"},
+{AST_FORMAT_LPC10, 7, "lpc10"},
+{AST_FORMAT_G729A, 18, "g729"},
+{AST_FORMAT_SPEEX, 97, "speex"},
+{AST_FORMAT_SPEEX, 98, "speex"},
+{AST_FORMAT_ILBC, 102, "ilbc"},
+{AST_FORMAT_MAX_AUDIO, 999, ""},
+{AST_FORMAT_JPEG, 999, ""},
+{AST_FORMAT_PNG, 999, ""},
+{AST_FORMAT_H261, 999, ""},
+{AST_FORMAT_H263, 999, ""},
+{AST_FORMAT_MAX_VIDEO, 999, ""},
+{0, 0}
 };
 
 static char *ast2str(int ast)
@@ -214,7 +214,7 @@ typedef enum {
 	IAX_QUERY = 2
 } iax_io_t;
 
-static switch_status_t iax_set_codec(private_t * tech_pvt, struct iax_session *iax_session,
+static switch_status_t iax_set_codec(private_t *tech_pvt, struct iax_session *iax_session,
 									 unsigned int *format, unsigned int *cababilities, unsigned short *samprate, iax_io_t io)
 {
 	char *dname = NULL;
@@ -281,8 +281,8 @@ static switch_status_t iax_set_codec(private_t * tech_pvt, struct iax_session *i
 			char pref_str[256] = "(";
 
 			for (x = 0; x < len; x++) {
-				strncat(pref_str, ast2str(prefs[x]), sizeof(pref_str)-1);
-				strncat(pref_str, x == len - 1 ? ")" : ",", sizeof(pref_str)-1);
+				strncat(pref_str, ast2str(prefs[x]), sizeof(pref_str) - 1);
+				strncat(pref_str, x == len - 1 ? ")" : ",", sizeof(pref_str) - 1);
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec Prefs Detected: %s\n", pref_str);
@@ -439,7 +439,7 @@ static void iax_out_cb(const char *s)
 	}
 }
 
-static void tech_init(private_t * tech_pvt, switch_core_session_t *session)
+static void tech_init(private_t *tech_pvt, switch_core_session_t *session)
 {
 	tech_pvt->read_frame.data = tech_pvt->databuf;
 	tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
@@ -619,7 +619,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	return SWITCH_STATUS_FALSE;
 
- cng:
+  cng:
 	data = (switch_byte_t *) tech_pvt->read_frame.data;
 	data[0] = 65;
 	data[1] = 0;
@@ -791,7 +791,7 @@ switch_io_routines_t iax_io_routines = {
 	/*.write_frame */ channel_write_frame,
 	/*.kill_channel */ channel_kill_channel,
 	/*.send_dtmf */ channel_send_dtmf,
-	/*.receive_message*/ channel_receive_message,
+	/*.receive_message */ channel_receive_message,
 	/*.receive_event */ channel_receive_event
 };
 
@@ -867,7 +867,7 @@ static switch_status_t load_config(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t tech_media(private_t * tech_pvt, struct iax_event *iaxevent)
+static switch_status_t tech_media(private_t *tech_pvt, struct iax_event *iaxevent)
 {
 	unsigned int cap = iax_session_get_capability(iaxevent->session);
 	unsigned int format = iaxevent->ies.format;
@@ -1025,8 +1025,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 																				  NULL,
 																				  NULL,
 																				  modname,
-																				  iaxevent->ies.called_context,
-																				  iaxevent->ies.called_number)) != 0) {
+																				  iaxevent->ies.called_context, iaxevent->ies.called_number)) != 0) {
 							char name[128];
 							switch_snprintf(name, sizeof(name), "IAX/%s-%04x", tech_pvt->caller_profile->destination_number, rand() & 0xffff);
 							switch_channel_set_name(channel, name);
@@ -1062,7 +1061,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 					switch_clear_flag(tech_pvt, TFLAG_VOICE);
 					switch_mutex_unlock(tech_pvt->flag_mutex);
 
-					
+
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hangup %s\n", switch_channel_get_name(channel));
 					switch_set_flag_locked(tech_pvt, TFLAG_HANGUP);
 					switch_channel_hangup(channel, iaxevent->etype == IAX_EVENT_HANGUP ? SWITCH_CAUSE_NORMAL_CLEARING : SWITCH_CAUSE_FACILITY_REJECTED);
@@ -1102,7 +1101,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 				break;
 			case IAX_EVENT_DTMF:
 				if (channel) {
-					switch_dtmf_t dtmf = { (char) iaxevent->subclass , switch_core_default_dtmf_duration(0) };
+					switch_dtmf_t dtmf = { (char) iaxevent->subclass, switch_core_default_dtmf_duration(0) };
 					if (globals.debug) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%c DTMF %s\n", dtmf.digit, switch_channel_get_name(channel));
 					}
@@ -1118,7 +1117,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 				break;
 			}
 			iax_event_free(iaxevent);
-			switch_mutex_unlock(globals.mutex);			
+			switch_mutex_unlock(globals.mutex);
 			if (tech_pvt && tech_pvt->session) {
 				switch_core_session_signal_unlock(tech_pvt->session);
 			}

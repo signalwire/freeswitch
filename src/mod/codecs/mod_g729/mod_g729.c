@@ -95,7 +95,7 @@ static switch_status_t switch_g729_encode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
 										  void *decoded_data,
 										  uint32_t decoded_data_len,
-										  uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
+										  uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
 										  unsigned int *flag)
 {
 #ifdef G729_PASSTHROUGH
@@ -138,7 +138,7 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
 										  void *encoded_data,
 										  uint32_t encoded_data_len,
-										  uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
+										  uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
 										  unsigned int *flag)
 {
 #ifdef G729_PASSTHROUGH
@@ -154,7 +154,7 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 	}
 
 	if (encoded_data_len % 2 == 0) {
-		
+
 		if (encoded_data_len == 2 || encoded_data_len % 12 == 0) {
 			return SWITCH_STATUS_BREAK;
 			//divisor = 12;
@@ -209,18 +209,18 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 SWITCH_MODULE_LOAD_FUNCTION(mod_g729_load)
 {
 	switch_codec_interface_t *codec_interface;
-    int mpf = 10000, spf = 80, bpf = 160, ebpf = 10, count;
+	int mpf = 10000, spf = 80, bpf = 160, ebpf = 10, count;
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_CODEC(codec_interface, "G.729");
-    for (count = 12; count > 0; count--) { 
-        switch_core_codec_add_implementation(pool, codec_interface,
-                                             SWITCH_CODEC_TYPE_AUDIO, 18, "G729", NULL, 8000, 8000, 8000,
-                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
-                                             switch_g729_init, switch_g729_encode, switch_g729_decode, switch_g729_destroy);
-    }
+	for (count = 12; count > 0; count--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 18, "G729", NULL, 8000, 8000, 8000,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 switch_g729_init, switch_g729_encode, switch_g729_decode, switch_g729_destroy);
+	}
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

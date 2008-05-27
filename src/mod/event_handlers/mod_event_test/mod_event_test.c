@@ -77,7 +77,7 @@ static void event_handler(switch_event_t *event)
 #define TTHREADS 500
 static int THREADS = 0;
 
-static void *torture_thread(switch_thread_t * thread, void *obj)
+static void *torture_thread(switch_thread_t *thread, void *obj)
 {
 	int y = 0;
 	int z = 0;

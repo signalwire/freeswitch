@@ -72,7 +72,7 @@ static int blockingIOCallback(const void *inputBuffer, void *outputBuffer,
 {
 	PABLIO_Stream *data = (PABLIO_Stream *) userData;
 	long numBytes = data->bytesPerFrame * framesPerBuffer;
-	
+
 	/* This may get called with NULL inputBuffer during initial setup. */
 	if (inputBuffer != NULL) {
 		if (PaUtil_WriteRingBuffer(&data->inFIFO, inputBuffer, numBytes) != numBytes) {
@@ -146,26 +146,26 @@ long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switch
 	long bytesRead = 0;
 	char *p = (char *) data;
 	long avail, totalBytes = 0, neededBytes = aStream->bytesPerFrame * numFrames;
-	
-	for(;;) {
+
+	for (;;) {
 		avail = PaUtil_GetRingBufferReadAvailable(&aStream->inFIFO);
-		
+
 		if (switch_core_timer_check(timer, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 			break;
 		}
-		
-		if (avail >= neededBytes * 6) { 
+
+		if (avail >= neededBytes * 6) {
 			PaUtil_FlushRingBuffer(&aStream->inFIFO);
 			avail = 0;
 		}
-		
+
 		bytesRead = 0;
 
 		if (totalBytes < neededBytes && avail >= neededBytes) {
 			bytesRead = PaUtil_ReadRingBuffer(&aStream->inFIFO, p, neededBytes);
 			totalBytes += bytesRead;
 		}
-		
+
 		if (bytesRead) {
 			p += bytesRead;
 		} else {
@@ -201,7 +201,7 @@ static unsigned long RoundUpToNextPowerOf2(unsigned long n)
 {
 	long numBits = 0;
 	if (((n - 1) & n) == 0)
-		return n;				
+		return n;
 	while (n > 0) {
 		n = n >> 1;
 		numBits++;
@@ -217,11 +217,8 @@ static unsigned long RoundUpToNextPowerOf2(unsigned long n)
  *
  */
 PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
-						const PaStreamParameters *inputParameters,
-						const PaStreamParameters *outputParameters,
-						double sampleRate,
-						PaStreamFlags streamFlags,
-						long samples_per_frame)
+						const PaStreamParameters * inputParameters,
+						const PaStreamParameters * outputParameters, double sampleRate, PaStreamFlags streamFlags, long samples_per_frame)
 {
 	long bytesPerSample = 2;
 	PaError err;

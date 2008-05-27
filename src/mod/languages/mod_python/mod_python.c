@@ -58,7 +58,7 @@ static void eval_some_python(char *uuid, char *args, switch_core_session_t *sess
 {
 	PyThreadState *tstate = NULL;
 	char *dupargs = NULL;
-	char *argv[128] = {0};
+	char *argv[128] = { 0 };
 	int argc;
 	int lead = 0;
 	char *script = NULL;
@@ -68,16 +68,16 @@ static void eval_some_python(char *uuid, char *args, switch_core_session_t *sess
 	PyObject *result = NULL;
 
 	if (args) {
-	    dupargs = strdup(args);
+		dupargs = strdup(args);
 	} else {
-	    return;
+		return;
 	}
 
 	assert(dupargs != NULL);
-	
+
 	if (!(argc = switch_separate_string(dupargs, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No module name specified!\n");
-	    goto done;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No module name specified!\n");
+		goto done;
 	}
 
 	script = argv[0];
@@ -87,80 +87,76 @@ static void eval_some_python(char *uuid, char *args, switch_core_session_t *sess
 
 	tstate = PyThreadState_New(mainThreadState->interp);
 	if (!tstate) {
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error acquiring tstate\n");
-	    goto done;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error acquiring tstate\n");
+		goto done;
 	}
-
 	// swap in thread state
 	PyEval_AcquireThread(tstate);
 	if (session) {
-	    // record the fact that thread state is swapped in
-	    switch_channel_t *channel = switch_core_session_get_channel(session);
-	    switch_channel_set_private(channel, "SwapInThreadState", NULL);
+		// record the fact that thread state is swapped in
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		switch_channel_set_private(channel, "SwapInThreadState", NULL);
 	}
-	init_freeswitch(); 
+	init_freeswitch();
 
 	// import the module
-	module = PyImport_ImportModule( (char *) script);
+	module = PyImport_ImportModule((char *) script);
 	if (!module) {
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error importing module\n");
-	    PyErr_Print();
-	    PyErr_Clear();
-	    goto done_swap_out;
-	}	        
-
-	// reload the module
-	module = PyImport_ReloadModule(module);
-	if (!module) {
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error reloading module\n");
-	    PyErr_Print();
-	    PyErr_Clear();
-	    goto done_swap_out;
-	}	        
-
-	// get the handler function to be called
-	function = PyObject_GetAttrString(module, "handler");
-	if (!function) {
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Module does not define handler(uuid)\n");
-	    PyErr_Print();
-	    PyErr_Clear();
-	    goto done_swap_out;
-	}	        
-
-	if (uuid) {
-	    // build a tuple to pass the args, the uuid of session
-	    arg = Py_BuildValue("(s)", uuid);
-	    if (!arg) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error building args\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error importing module\n");
 		PyErr_Print();
 		PyErr_Clear();
 		goto done_swap_out;
-	    }
 	}
-	else {
-	    arg = PyTuple_New(1);
-	    PyObject *nada = Py_BuildValue("");
-	    PyTuple_SetItem(arg, 0, nada);
+	// reload the module
+	module = PyImport_ReloadModule(module);
+	if (!module) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error reloading module\n");
+		PyErr_Print();
+		PyErr_Clear();
+		goto done_swap_out;
+	}
+	// get the handler function to be called
+	function = PyObject_GetAttrString(module, "handler");
+	if (!function) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Module does not define handler(uuid)\n");
+		PyErr_Print();
+		PyErr_Clear();
+		goto done_swap_out;
+	}
+
+	if (uuid) {
+		// build a tuple to pass the args, the uuid of session
+		arg = Py_BuildValue("(s)", uuid);
+		if (!arg) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error building args\n");
+			PyErr_Print();
+			PyErr_Clear();
+			goto done_swap_out;
+		}
+	} else {
+		arg = PyTuple_New(1);
+		PyObject *nada = Py_BuildValue("");
+		PyTuple_SetItem(arg, 0, nada);
 	}
 
 	// invoke the handler 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call python script \n");
-	result = PyEval_CallObjectWithKeywords(function, arg, (PyObject *)NULL);
+	result = PyEval_CallObjectWithKeywords(function, arg, (PyObject *) NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Finished calling python script \n");
 
 	// check the result and print out any errors
 	if (!result) {
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error calling python script\n");
-	    PyErr_Print();
-	    PyErr_Clear();
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error calling python script\n");
+		PyErr_Print();
+		PyErr_Clear();
 	}
 
 	goto done_swap_out;
 
- done:
+  done:
 	switch_safe_free(dupargs);
 
- done_swap_out:
+  done_swap_out:
 	// decrement ref counts 
 	Py_XDECREF(module);
 	Py_XDECREF(function);
@@ -183,14 +179,12 @@ static void eval_some_python(char *uuid, char *args, switch_core_session_t *sess
 			PyThreadState *cur_tstate = PyThreadState_Get();
 			PyThreadState_Clear(cur_tstate);
 			PyEval_ReleaseThread(cur_tstate);
-			PyThreadState_Delete(cur_tstate); 
-		}
-		else {
+			PyThreadState_Delete(cur_tstate);
+		} else {
 			// thread state is already swapped out, so, nothing for us to do
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "according to chan priv data, already swapped out \n");
 		}
-	}
-	else {
+	} else {
 		// they ran python script from cmd line, behave a bit differently (untested)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No session: Threadstate mod_python.c swap-out! \n");
 		PyEval_ReleaseThread(tstate);
@@ -203,8 +197,8 @@ static void eval_some_python(char *uuid, char *args, switch_core_session_t *sess
 
 SWITCH_STANDARD_APP(python_function)
 {
-	eval_some_python(switch_core_session_get_uuid(session), (char *)data, session);
-	
+	eval_some_python(switch_core_session_get_uuid(session), (char *) data, session);
+
 }
 
 struct switch_py_thread {
@@ -228,7 +222,7 @@ static void *SWITCH_THREAD_FUNC py_thread_run(switch_thread_t *thread, void *obj
 SWITCH_STANDARD_API(launch_python)
 {
 	switch_thread_t *thread;
-    switch_threadattr_t *thd_attr = NULL;
+	switch_threadattr_t *thd_attr = NULL;
 	switch_memory_pool_t *pool;
 	struct switch_py_thread *pt;
 
@@ -236,7 +230,7 @@ SWITCH_STANDARD_API(launch_python)
 		stream->write_function(stream, "USAGE: %s\n", python_run_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	switch_core_new_memory_pool(&pool);
 	assert(pool != NULL);
 
@@ -245,11 +239,11 @@ SWITCH_STANDARD_API(launch_python)
 
 	pt->pool = pool;
 	pt->args = switch_core_strdup(pt->pool, cmd);
-	
-    switch_threadattr_create(&thd_attr, pt->pool);
-    switch_threadattr_detach_set(thd_attr, 1);
-    switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-    switch_thread_create(&thread, thd_attr, py_thread_run, pt, pt->pool);
+
+	switch_threadattr_create(&thd_attr, pt->pool);
+	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_thread_create(&thread, thd_attr, py_thread_run, pt, pt->pool);
 
 	stream->write_function(stream, "OK\n");
 	return SWITCH_STATUS_SUCCESS;
@@ -290,7 +284,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &python_module_interface;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Python Framework Loading...\n");
-	
+
 	if (!Py_IsInitialized()) {
 
 		// initialize python system
@@ -302,13 +296,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 		// save threadstate since it's interp field will be needed
 		// to create new threadstates, and will be needed for shutdown
 		mainThreadState = PyThreadState_Get();
-	    
+
 		// swap out threadstate since the call threads will create
 		// their own and swap in their threadstate
-		PyThreadState_Swap(NULL); 
+		PyThreadState_Swap(NULL);
 
 		// release GIL
-		PyEval_ReleaseLock();	
+		PyEval_ReleaseLock();
 	}
 
 	/* indicate that the module should continue to be loaded */
@@ -319,18 +313,18 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
   Called when the system shuts down*/
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown)
 {
-    PyInterpreterState *mainInterpreterState;
-    PyThreadState *myThreadState;
+	PyInterpreterState *mainInterpreterState;
+	PyThreadState *myThreadState;
 
-    PyEval_AcquireLock();
-    mainInterpreterState = mainThreadState->interp;
-    myThreadState = PyThreadState_New(mainInterpreterState);
-    PyThreadState_Swap(myThreadState);
-    PyEval_ReleaseLock();
+	PyEval_AcquireLock();
+	mainInterpreterState = mainThreadState->interp;
+	myThreadState = PyThreadState_New(mainInterpreterState);
+	PyThreadState_Swap(myThreadState);
+	PyEval_ReleaseLock();
 
-    Py_Finalize();
-    PyEval_ReleaseLock();
-    return SWITCH_STATUS_SUCCESS;
+	Py_Finalize();
+	PyEval_ReleaseLock();
+	return SWITCH_STATUS_SUCCESS;
 
 }
 

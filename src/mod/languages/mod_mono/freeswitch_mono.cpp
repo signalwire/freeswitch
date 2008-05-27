@@ -27,8 +27,8 @@
  * 
  * freeswitch_mono.cpp -- Mono-specific CoreSession subclass
  *
- */
-
+ */  
+	
 #include <switch.h>
 #include <switch_cpp.h>
 #include <glib.h>
@@ -38,77 +38,71 @@
 #include <mono/metadata/threads.h>
 #include <mono/metadata/metadata.h>
 #include "freeswitch_mono.h"
-
-MonoSession::MonoSession() : CoreSession() 
+MonoSession::MonoSession():CoreSession() 
 {
-}
-
-MonoSession::MonoSession(char *uuid) : CoreSession(uuid)
+} MonoSession::MonoSession(char *uuid):CoreSession(uuid) 
 {
-}
-
-MonoSession::MonoSession(switch_core_session_t *session) : CoreSession(session)
+} MonoSession::MonoSession(switch_core_session_t *session):CoreSession(session) 
 {
-}
-
-MonoSession::~MonoSession()
+} MonoSession::~MonoSession() 
 {
-	mono_thread_attach(globals.domain);
-	if (dtmfDelegateHandle) mono_gchandle_free(dtmfDelegateHandle);
-	if (hangupDelegateHandle) mono_gchandle_free(hangupDelegateHandle);
-}
+	mono_thread_attach(globals.domain);
+	if (dtmfDelegateHandle)
+		mono_gchandle_free(dtmfDelegateHandle);
+	if (hangupDelegateHandle)
+		mono_gchandle_free(hangupDelegateHandle);
+}
 
-bool MonoSession::begin_allow_threads()
+bool MonoSession::begin_allow_threads() 
 {
-    return true;
-}
+	return true;
+}
 
-bool MonoSession::end_allow_threads()
+bool MonoSession::end_allow_threads() 
 {
-    return true;
-}
-
-void MonoSession::check_hangup_hook()  
+	return true;
+}
+void MonoSession::check_hangup_hook() 
 {
-	mono_thread_attach(globals.domain);
-	if (!hangupDelegateHandle) {
-		return;
-	}
-	MonoObject *hangupDelegate = mono_gchandle_get_target(hangupDelegateHandle);
-	if (!hangupDelegate) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hangupDelegateHandle didn't get an object.");
-		return;
-	}
-	MonoObject *ex = NULL;
-	mono_runtime_delegate_invoke(hangupDelegate, NULL, &ex);
-	if (ex) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hangupDelegate threw an exception.");
-	}
-}
-
-switch_status_t MonoSession::run_dtmf_callback(void *input, switch_input_type_t itype)
+	mono_thread_attach(globals.domain);
+	if (!hangupDelegateHandle) {
+		return;
+	}
+	MonoObject * hangupDelegate = mono_gchandle_get_target(hangupDelegateHandle);
+	if (!hangupDelegate) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hangupDelegateHandle didn't get an object.");
+		return;
+	}
+	MonoObject * ex = NULL;
+	mono_runtime_delegate_invoke(hangupDelegate, NULL, &ex);
+	if (ex) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hangupDelegate threw an exception.");
+	}
+}
+switch_status_t MonoSession::run_dtmf_callback(void *input, switch_input_type_t itype) 
 {
-	mono_thread_attach(globals.domain);
-	if (!dtmfDelegateHandle) {
-		return SWITCH_STATUS_SUCCESS;
-	}
-	MonoObject *dtmfDelegate = mono_gchandle_get_target(dtmfDelegateHandle);
-	if (!dtmfDelegate) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "dtmfDelegateHandle didn't get an object.");
-		return SWITCH_STATUS_SUCCESS;
-	}
-	void *args[2];
-	args[0] = &input;
-	args[1] = &itype;
-	MonoObject *ex = NULL;
-	MonoObject *res = mono_runtime_delegate_invoke(dtmfDelegate, args, &ex);
-	if (ex) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "dtmfDelegate threw an exception.");
-		return SWITCH_STATUS_FALSE;
-	}
-	char *resPtr = mono_string_to_utf8((MonoString*)res);
-	switch_status_t status = process_callback_result(resPtr);
+	mono_thread_attach(globals.domain);
+	if (!dtmfDelegateHandle) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+	MonoObject * dtmfDelegate = mono_gchandle_get_target(dtmfDelegateHandle);
+	if (!dtmfDelegate) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "dtmfDelegateHandle didn't get an object.");
+		return SWITCH_STATUS_SUCCESS;
+	}
+	void *args[2];
+	args[0] = &input;
+	args[1] = &itype;
+	MonoObject * ex = NULL;
+	MonoObject * res = mono_runtime_delegate_invoke(dtmfDelegate, args, &ex);
+	if (ex) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "dtmfDelegate threw an exception.");
+		return SWITCH_STATUS_FALSE;
+	}
+	char *resPtr = mono_string_to_utf8((MonoString *) res);
+	switch_status_t status = process_callback_result(resPtr);
+	g_free(resPtr);
+	return status;
+}
 
-	g_free(resPtr);
-	return status;
-}
+

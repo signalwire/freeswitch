@@ -84,14 +84,14 @@ static void add_mapping(char *var, char *val, int cumlative)
 	} else {
 		m = switch_log_str2mask(val);
 	}
-	
+
 	if (!strcasecmp(var, "all")) {
 		all_level |= m;
 		return;
 	}
 
 	del_mapping(var);
-	switch_core_hash_insert(log_hash, var, (void *)(intptr_t) m);
+	switch_core_hash_insert(log_hash, var, (void *) (intptr_t) m);
 }
 
 static switch_status_t config_logger(void)
@@ -149,7 +149,7 @@ static switch_status_t config_logger(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static int can_write(FILE *handle, int ms)
+static int can_write(FILE * handle, int ms)
 {
 #ifndef WIN32
 	int aok = 1;
@@ -166,14 +166,14 @@ static int can_write(FILE *handle, int ms)
 	FD_SET(fd, &can_write);
 	to.tv_sec = sec;
 	to.tv_usec = usec;
-	if (select(fd+1, NULL, &can_write, NULL, &to) > 0) {
+	if (select(fd + 1, NULL, &can_write, NULL, &to) > 0) {
 		aok = FD_ISSET(fd, &can_write);
 	} else {
 		aok = 0;
 	}
-			
+
 	return aok;
-#else 
+#else
 	return 1;
 #endif
 }
@@ -182,11 +182,10 @@ static int can_write(FILE *handle, int ms)
 static switch_status_t switch_console_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
 	FILE *handle;
-	
+
 	if (!RUNNING) {
 		return SWITCH_STATUS_SUCCESS;
 	}
-
 #if 0
 	if (failed_write) {
 		if ((handle = switch_core_data_channel(SWITCH_CHANNEL_ID_LOG))) {
@@ -197,7 +196,7 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s", msg);
 #else
 				if (COLORIZE) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s%s",  COLORS[1], msg, SWITCH_SEQ_DEFAULT_COLOR);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s%s", COLORS[1], msg, SWITCH_SEQ_DEFAULT_COLOR);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s", msg);
 				}
@@ -213,11 +212,11 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 	}
 
 	if ((handle = switch_core_data_channel(SWITCH_CHANNEL_ID_LOG))) {
-        size_t mask = 0;
-        size_t ok = 0;
-		
-        ok = switch_log_check_mask(all_level, level);
-        
+		size_t mask = 0;
+		size_t ok = 0;
+
+		ok = switch_log_check_mask(all_level, level);
+
 		if (log_hash) {
 			if (!ok) {
 				mask = (size_t) switch_core_hash_find(log_hash, node->file);
@@ -233,7 +232,7 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 		if (ok) {
 #ifndef WIN32
 			int aok = can_write(handle, 10000);
-			
+
 			if (!aok) {
 				//hard_log_level = 0;
 				//failed_write++;
@@ -261,18 +260,18 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 SWITCH_STANDARD_API(console_api_function)
 {
 	int argc;
-    char *mydata = NULL, *argv[3];
+	char *mydata = NULL, *argv[3];
 	const char *err = NULL;
 
 	if (!cmd) {
 		err = "bad args";
-        goto end;
-    }
+		goto end;
+	}
 
-    mydata = strdup(cmd);
-    assert(mydata);
-	
-    argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	mydata = strdup(cmd);
+	assert(mydata);
+
+	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 	if (argc > 0) {
 
@@ -283,7 +282,7 @@ SWITCH_STANDARD_API(console_api_function)
 
 		if (!strcasecmp(argv[0], "loglevel")) {
 			int level = hard_log_level;
-			
+
 			if (argc > 1) {
 				if (*argv[1] > 47 && *argv[1] < 58) {
 					level = atoi(argv[1]);
@@ -296,26 +295,26 @@ SWITCH_STANDARD_API(console_api_function)
 				stream->write_function(stream, "-ERR syntax error, console log level not set!\n");
 			} else {
 				hard_log_level = level;
-				stream->write_function(stream,  "+OK console log level set to %s\n", switch_log_level2str(hard_log_level));
+				stream->write_function(stream, "+OK console log level set to %s\n", switch_log_level2str(hard_log_level));
 			}
 			goto end;
 		} else if (!strcasecmp(argv[0], "colorize")) {
 			if (argc > 1) {
 				COLORIZE = switch_true(argv[1]);
 			}
-			stream->write_function(stream,  "+OK console color %s\n", COLORIZE ? "enabled" : "disabled");
+			stream->write_function(stream, "+OK console color %s\n", COLORIZE ? "enabled" : "disabled");
 			goto end;
 		}
-		
+
 		err = "invalid command";
 
 	}
 
 
- end:
-	
+  end:
+
 	if (err) {
-		stream->write_function(stream,  "-Error %s\n", err);
+		stream->write_function(stream, "-Error %s\n", err);
 	}
 
 
@@ -328,10 +327,10 @@ SWITCH_STANDARD_API(console_api_function)
 SWITCH_MODULE_LOAD_FUNCTION(mod_console_load)
 {
 	switch_api_interface_t *api_interface;
-	
+
 
 	module_pool = pool;
-	
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 

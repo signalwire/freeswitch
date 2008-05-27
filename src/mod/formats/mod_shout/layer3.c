@@ -37,7 +37,7 @@ static inline real find_pow(int i)
 {
 
 	return (i > 0 && i < 8207) ? __ispow[i] : 1;
-	
+
 }
 
 
@@ -854,9 +854,9 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], in
 				if (!mc) {
 					unsigned sanity;
 					mc = *m++;
-					if ((unsigned)*scf < 100 && (unsigned)*pretab < 100) {
+					if ((unsigned) *scf < 100 && (unsigned) *pretab < 100) {
 						sanity = (((*scf++) + (*pretab++)) << shift);
-					
+
 						//v = gr_info->pow2gain[((*scf++) + (*pretab++)) << shift];
 						if (sanity < 100) {
 							v = gr_info->pow2gain[sanity];
@@ -993,8 +993,8 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], in
 
 #if 0
 static int III_dequantize_sample_ms(real xr[2][SBLIMIT][SSLIMIT], int *scf, struct gr_info_s *gr_info, int sfreq, int part2bits)
-{ma
-	int shift = 1 + gr_info->scalefac_scale;
+{
+	ma int shift = 1 + gr_info->scalefac_scale;
 	real *xrpnt = (real *) xr[1];
 	real *xr0pnt = (real *) xr[0];
 	int l[3], l3;

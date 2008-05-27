@@ -136,8 +136,8 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_hold_file, globals.hold_file);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_timer_name, globals.timer_name);
 #define is_master(t) switch_test_flag(t, TFLAG_MASTER)
 
-static void add_pvt(private_t * tech_pvt, int master);
-static void remove_pvt(private_t * tech_pvt);
+static void add_pvt(private_t *tech_pvt, int master);
+static void remove_pvt(private_t *tech_pvt);
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
 static switch_status_t channel_on_routing(switch_core_session_t *session);
@@ -234,7 +234,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 		while (switch_channel_get_state(channel) == CS_INIT && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
 			switch_size_t olen = globals.timer.samples;
-				
+
 			if (switch_timestamp_now() - last >= waitsec) {
 				char buf[512];
 				switch_event_t *event;
@@ -250,7 +250,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s\n", buf);
 				last = switch_timestamp_now();
 			}
-			
+
 			if (ring_file) {
 				if (switch_core_timer_next(&globals.timer) != SWITCH_STATUS_SUCCESS) {
 					switch_core_file_close(&fh);
@@ -324,7 +324,7 @@ static void deactivate_ring_device(void)
 
 
 
-static void add_pvt(private_t * tech_pvt, int master)
+static void add_pvt(private_t *tech_pvt, int master)
 {
 	private_t *tp;
 	uint8_t in_list = 0;
@@ -367,7 +367,7 @@ static void add_pvt(private_t * tech_pvt, int master)
 	switch_mutex_unlock(globals.pvt_lock);
 }
 
-static void remove_pvt(private_t * tech_pvt)
+static void remove_pvt(private_t *tech_pvt)
 {
 	private_t *tp, *last = NULL;
 
@@ -485,8 +485,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 										  tech_pvt->hold_file,
 										  globals.read_codec.implementation->number_of_channels,
 										  globals.read_codec.implementation->actual_samples_per_second,
-										  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
-										  NULL) != SWITCH_STATUS_SUCCESS) {
+										  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 					tech_pvt->hold_file = NULL;
 					goto cng;
 				}
@@ -500,12 +499,12 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 			goto hold;
 		}
-	cng:
+	  cng:
 		switch_yield(globals.read_codec.implementation->microseconds_per_frame);
 		*frame = &globals.cng_frame;
 		return SWITCH_STATUS_SUCCESS;
 
-	hold:
+	  hold:
 		{
 			switch_size_t olen = globals.read_codec.implementation->samples_per_frame;
 			if (switch_core_timer_next(&globals.timer) != SWITCH_STATUS_SUCCESS) {
@@ -531,13 +530,12 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	switch_mutex_lock(globals.device_lock);
 
- get_samples:
+  get_samples:
 
-	if ((samples = ReadAudioStream(globals.audio_stream, globals.read_frame.data, 
-								   globals.read_codec.implementation->samples_per_frame, 
-								   &globals.timer)) == 0) {
-        switch_yield(1000);
-        goto get_samples;
+	if ((samples = ReadAudioStream(globals.audio_stream, globals.read_frame.data,
+								   globals.read_codec.implementation->samples_per_frame, &globals.timer)) == 0) {
+		switch_yield(1000);
+		goto get_samples;
 	} else {
 		globals.read_frame.datalen = samples * 2;
 		globals.read_frame.samples = samples;
@@ -576,8 +574,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 	if (globals.audio_stream) {
 		if (switch_test_flag((&globals), GFLAG_EAR)) {
-			WriteAudioStream(globals.audio_stream, (short *) frame->data, (int) (frame->datalen / sizeof(SAMPLE)),
-							 &globals.timer);
+			WriteAudioStream(globals.audio_stream, (short *) frame->data, (int) (frame->datalen / sizeof(SAMPLE)), &globals.timer);
 		}
 		status = SWITCH_STATUS_SUCCESS;
 	}
@@ -667,7 +664,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			if (outbound_profile->destination_number && !strcasecmp(outbound_profile->destination_number, "auto_answer")) {
 				switch_set_flag(tech_pvt, TFLAG_ANSWER);
 			}
-			
+
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Doh! no caller profile\n");
 			switch_core_session_destroy(new_session);
@@ -775,7 +772,7 @@ static switch_status_t load_config(void)
 					globals.codec_ms = tmp;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-									  "codec-ms must be multipe of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL); 
+									  "codec-ms must be multipe of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL);
 				}
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
@@ -936,7 +933,8 @@ static void PrintSupportedStandardSampleRates(const PaStreamParameters * inputPa
 	int i, printCount, cr = 7;
 	PaError err;
 	static double standardSampleRates[] = { 8000.0, 9600.0, 11025.0, 12000.0, 16000.0, 22050.0, 24000.0, 32000.0,
-											44100.0, 48000.0, 88200.0, 96000.0, 192000.0, -1};
+		44100.0, 48000.0, 88200.0, 96000.0, 192000.0, -1
+	};
 
 	printCount = cr;
 	for (i = 0; standardSampleRates[i] > 0; i++) {
@@ -1077,7 +1075,7 @@ static int dump_info(void)
 
 	return 0;
 
- error:
+  error:
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "An error occured while using the portaudio stream\n");
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "Error number: %d\n", err);
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "Error message: %s\n", Pa_GetErrorText(err));
@@ -1140,7 +1138,7 @@ static switch_status_t engage_device(int sample_rate, int codec_ms)
 		outputParameters.sampleFormat = SAMPLE_TYPE;
 		outputParameters.suggestedLatency = Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
 		outputParameters.hostApiSpecificStreamInfo = NULL;
-		err = OpenAudioStream(&globals.audio_stream, &inputParameters, &outputParameters, sample_rate, paClipOff, 
+		err = OpenAudioStream(&globals.audio_stream, &inputParameters, &outputParameters, sample_rate, paClipOff,
 							  globals.read_codec.implementation->samples_per_frame);
 		/* UNLOCKED ************************************************************************************************* */
 		switch_mutex_unlock(globals.device_lock);
@@ -1174,8 +1172,7 @@ static switch_status_t engage_ring_device(int sample_rate, int channels)
 		outputParameters.sampleFormat = SAMPLE_TYPE;
 		outputParameters.suggestedLatency = Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
 		outputParameters.hostApiSpecificStreamInfo = NULL;
-		err = OpenAudioStream(&globals.ring_stream, NULL, &outputParameters, sample_rate, paClipOff,
-							  globals.read_codec.implementation->samples_per_frame);
+		err = OpenAudioStream(&globals.ring_stream, NULL, &outputParameters, sample_rate, paClipOff, globals.read_codec.implementation->samples_per_frame);
 		/* UNLOCKED ************************************************************************************************* */
 		switch_mutex_unlock(globals.device_lock);
 
@@ -1192,8 +1189,8 @@ static switch_status_t engage_ring_device(int sample_rate, int channels)
 static switch_status_t dtmf_call(char **argv, int argc, switch_stream_handle_t *stream)
 {
 	char *dtmf_str = argv[0];
-	switch_dtmf_t dtmf = {0, switch_core_default_dtmf_duration(0)};
-	
+	switch_dtmf_t dtmf = { 0, switch_core_default_dtmf_duration(0) };
+
 	if (switch_strlen_zero(dtmf_str)) {
 		stream->write_function(stream, "No DTMF Supplied!\n");
 	} else {
@@ -1201,7 +1198,7 @@ static switch_status_t dtmf_call(char **argv, int argc, switch_stream_handle_t *
 		if (globals.call_list) {
 			switch_channel_t *channel = switch_core_session_get_channel(globals.call_list->session);
 			char *p = dtmf_str;
-			while(p && *p) {
+			while (p && *p) {
 				dtmf.digit = *p;
 				switch_channel_queue_dtmf(channel, &dtmf);
 				p++;
@@ -1253,7 +1250,7 @@ static switch_status_t switch_call(char **argv, int argc, switch_stream_handle_t
 		stream->write_function(stream, "NO SUCH CALL\n");
 	}
 
- done:
+  done:
 	switch_mutex_unlock(globals.pvt_lock);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1317,7 +1314,7 @@ static switch_status_t answer_call(char **argv, int argc, switch_stream_handle_t
 			break;
 		}
 	}
- done:
+  done:
 	switch_mutex_unlock(globals.pvt_lock);
 	stream->write_function(stream, "Answered %d channels.\n", x);
 
@@ -1368,7 +1365,7 @@ static switch_status_t do_flags(char **argv, int argc, switch_stream_handle_t *s
 		goto bad;
 	}
 
- desc:
+  desc:
 	x = 0;
 	stream->write_function(stream, "FLAGS: ");
 	if (switch_test_flag((&globals), GFLAG_EAR)) {
@@ -1385,9 +1382,9 @@ static switch_status_t do_flags(char **argv, int argc, switch_stream_handle_t *s
 
 	goto done;
 
- bad:
+  bad:
 	stream->write_function(stream, "Usage: flags [on|off] <flags>\n");
- done:
+  done:
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1474,20 +1471,18 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 		if (!switch_strlen_zero(argv[4])) {
 			tech_pvt->sample_rate = atoi(argv[4]);
 		}
-		
+
 		if (!switch_strlen_zero(argv[5])) {
 			tech_pvt->codec_ms = atoi(argv[5]);
 		}
-		
+
 		switch_find_local_ip(ip, sizeof(ip), AF_INET);
 
 		if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
-																  NULL, dialplan, cid_name, cid_num,
-																  ip, NULL, NULL, NULL, modname, NULL,
-																  dest)) != 0) {
+																  NULL, dialplan, cid_name, cid_num, ip, NULL, NULL, NULL, modname, NULL, dest)) != 0) {
 			char name[128];
 			switch_snprintf(name, sizeof(name), "PortAudio/%s",
-					 tech_pvt->caller_profile->destination_number ? tech_pvt->caller_profile->destination_number : modname);
+							tech_pvt->caller_profile->destination_number ? tech_pvt->caller_profile->destination_number : modname);
 			switch_channel_set_name(channel, name);
 
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
@@ -1498,7 +1493,7 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 			switch_channel_mark_answered(channel);
 			switch_channel_set_state(channel, CS_INIT);
 			if (switch_core_session_thread_launch(tech_pvt->session) != SWITCH_STATUS_SUCCESS) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
 				switch_core_session_destroy(&session);
 				stream->write_function(stream, "FAIL:Thread Error!\n");
 			} else {
@@ -1674,7 +1669,7 @@ SWITCH_STANDARD_API(pa_cmd)
 		}
 	}
 
- done:
+  done:
 	if (http) {
 		stream->write_function(stream,
 							   "<br><br><table align=center><tr><td><center><form method=post>\n"
@@ -1691,25 +1686,18 @@ SWITCH_STANDARD_API(pa_cmd)
 							   "<td><input name=action type=submit value=\"2\"></td>"
 							   "<td><input name=action type=submit value=\"3\"></td>\n"
 							   "<td><input name=action type=submit value=\"A\"></td></tr>\n"
-
 							   "<tr><td><input name=action type=submit value=\"4\"></td>"
 							   "<td><input name=action type=submit value=\"5\"></td>"
 							   "<td><input name=action type=submit value=\"6\"></td>\n"
 							   "<td><input name=action type=submit value=\"B\"></td></tr>\n"
-
 							   "<tr><td><input name=action type=submit value=\"7\"></td>"
 							   "<td><input name=action type=submit value=\"8\"></td>"
 							   "<td><input name=action type=submit value=\"9\"></td>\n"
 							   "<td><input name=action type=submit value=\"C\"></td></tr>\n"
-
 							   "<tr><td><input name=action type=submit value=\"*\"></td>"
 							   "<td><input name=action type=submit value=\"0\"></td>"
 							   "<td><input name=action type=submit value=\"#\"></td>\n"
-							   "<td><input name=action type=submit value=\"D\"></td></tr>\n"
-							   "</table>"
-							   
-							   "</form><br></center></td></tr></table>\n"
-							   );
+							   "<td><input name=action type=submit value=\"D\"></td></tr>\n" "</table>" "</form><br></center></td></tr></table>\n");
 	}
 
 	switch_safe_free(mycmd);

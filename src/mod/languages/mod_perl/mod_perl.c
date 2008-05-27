@@ -58,7 +58,7 @@ static struct {
 
 
 
-static int Perl_safe_eval(PerlInterpreter *my_perl, const char *string)
+static int Perl_safe_eval(PerlInterpreter * my_perl, const char *string)
 {
 	char *err = NULL;
 
@@ -73,7 +73,7 @@ static int Perl_safe_eval(PerlInterpreter *my_perl, const char *string)
 
 
 
-static int perl_parse_and_execute(PerlInterpreter *my_perl, char *input_code, char *setup_code)
+static int perl_parse_and_execute(PerlInterpreter * my_perl, char *input_code, char *setup_code)
 {
 	int error = 0;
 
@@ -103,10 +103,10 @@ static int perl_parse_and_execute(PerlInterpreter *my_perl, char *input_code, ch
 			if ((argc = switch_separate_string(args, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 				switch_stream_handle_t stream = { 0 };
 				SWITCH_STANDARD_STREAM(stream);
-				
+
 				stream.write_function(&stream, " @ARGV = ( ");
 				for (x = 0; x < argc; x++) {
-					stream.write_function(&stream, "'%s'%s", argv[x], x == argc-1 ? "" : ", ");
+					stream.write_function(&stream, "'%s'%s", argv[x], x == argc - 1 ? "" : ", ");
 				}
 				stream.write_function(&stream, " );");
 				code = stream.data;
@@ -130,7 +130,7 @@ static int perl_parse_and_execute(PerlInterpreter *my_perl, char *input_code, ch
 				file = switch_mprintf("require '%s';", file);
 				switch_assert(file);
 			}
-			
+
 			error = Perl_safe_eval(my_perl, file);
 			switch_safe_free(file);
 		}
@@ -154,14 +154,15 @@ static PerlInterpreter *clone_perl(void)
 }
 
 #if 0
-static perl_parse_and_execute (PerlInterpreter *my_perl, char *input_code, char *setup_code)
+static perl_parse_and_execute(PerlInterpreter * my_perl, char *input_code, char *setup_code)
 {
 	int error = 0;
 
 	if (*input_code == '~') {
 		char *buff = input_code + 1;
 		perl_parse(my_perl, xs_init, 3, embedding, NULL);
-		if (setup_code) Perl_safe_eval(my_perl, setup_code);
+		if (setup_code)
+			Perl_safe_eval(my_perl, setup_code);
 		Perl_safe_eval(my_perl, buff);
 	} else {
 		int argc = 0;
@@ -169,43 +170,38 @@ static perl_parse_and_execute (PerlInterpreter *my_perl, char *input_code, char 
 		char *err;
 		argv[0] = "FreeSWITCH";
 		argc++;
-		
+
 		argc += switch_separate_string(input_code, ' ', &argv[1], (sizeof(argv) / sizeof(argv[0])) - 1);
-		if (!perl_parse(my_perl, xs_init, argc, argv, (char **)NULL)) {
+		if (!perl_parse(my_perl, xs_init, argc, argv, (char **) NULL)) {
 			if (setup_code) {
 				if (!Perl_safe_eval(my_perl, setup_code)) {
 					perl_run(my_perl);
 				}
 			}
 		}
-		
+
 		if ((err = SvPV(get_sv("@", TRUE), n_a)) && !switch_strlen_zero(err)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err);
 		}
-		
+
 
 	}
 }
-#endif 
+#endif
 
 static void perl_function(switch_core_session_t *session, char *data)
 {
 	char *uuid = switch_core_session_get_uuid(session);
 	PerlInterpreter *my_perl = clone_perl();
 	char code[1024];
-	
+
 	perl_parse(my_perl, xs_init, 3, embedding, NULL);
 	Perl_safe_eval(my_perl, code);
 
-	switch_snprintf(code, sizeof(code), 
-			"use lib '%s/perl';\n"
-			"use freeswitch;\n"
-			"$SWITCH_ENV{UUID} = \"%s\";\n"
-			"$session = new freeswitch::Session(\"%s\")"
-			, 
-			SWITCH_GLOBAL_dirs.base_dir,
-			uuid,
-			uuid);
+	switch_snprintf(code, sizeof(code),
+					"use lib '%s/perl';\n"
+					"use freeswitch;\n"
+					"$SWITCH_ENV{UUID} = \"%s\";\n" "$session = new freeswitch::Session(\"%s\")", SWITCH_GLOBAL_dirs.base_dir, uuid, uuid);
 
 	perl_parse_and_execute(my_perl, data, code);
 	Perl_safe_eval(my_perl, "undef $session;");
@@ -244,16 +240,10 @@ static void *SWITCH_THREAD_FUNC perl_thread_run(switch_thread_t *thread, void *o
 	if (session) {
 		uuid = switch_core_session_get_uuid(session);
 	}
-	
-	switch_snprintf(code, sizeof(code), 
-					"use lib '%s/perl';\n"
-					"use freeswitch;\n"			
-					"$SWITCH_ENV{UUID} = \"%s\";\n"
-					,
 
-					SWITCH_GLOBAL_dirs.base_dir,
-					switch_str_nil(uuid)
-					);
+	switch_snprintf(code, sizeof(code),
+					"use lib '%s/perl';\n" "use freeswitch;\n" "$SWITCH_ENV{UUID} = \"%s\";\n", SWITCH_GLOBAL_dirs.base_dir, switch_str_nil(uuid)
+		);
 
 	perl_parse(my_perl, xs_init, 3, embedding, NULL);
 	Perl_safe_eval(my_perl, code);
@@ -273,7 +263,7 @@ static void *SWITCH_THREAD_FUNC perl_thread_run(switch_thread_t *thread, void *o
 		//Perl_safe_eval(my_perl, cmd);
 		perl_parse_and_execute(my_perl, cmd, NULL);
 	}
-	
+
 	if (uuid) {
 		switch_snprintf(code, sizeof(code), "undef $session;", uuid);
 		Perl_safe_eval(my_perl, code);
@@ -301,7 +291,7 @@ int perl_thread(const char *text)
 	memset(po, 0, sizeof(*po));
 	po->cmd = strdup(text);
 	po->d = 1;
-	
+
 	switch_threadattr_create(&thd_attr, globals.pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
@@ -310,7 +300,8 @@ int perl_thread(const char *text)
 	return 0;
 }
 
-SWITCH_STANDARD_API(perlrun_api_function) {
+SWITCH_STANDARD_API(perlrun_api_function)
+{
 
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "-ERR Missing args.\n");
@@ -322,7 +313,8 @@ SWITCH_STANDARD_API(perlrun_api_function) {
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_STANDARD_API(perl_api_function) {
+SWITCH_STANDARD_API(perl_api_function)
+{
 
 	struct perl_o po = { 0 };
 
@@ -337,12 +329,8 @@ SWITCH_STANDARD_API(perl_api_function) {
 	perl_thread_run(NULL, &po);
 }
 
-static switch_xml_t perl_fetch(const char *section, 
-							   const char *tag_name, 
-							   const char *key_name, 
-							   const char *key_value, 
-							   switch_event_t *params,
-							   void *user_data)
+static switch_xml_t perl_fetch(const char *section,
+							   const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params, void *user_data)
 {
 
 	char *argv[128] = { 0 };
@@ -359,10 +347,10 @@ static switch_xml_t perl_fetch(const char *section,
 
 		argv[argc++] = "FreeSWITCH";
 		argv[argc++] = globals.xml_handler;
-		
+
 		PERL_SET_CONTEXT(my_perl);
-		
-		if (perl_parse(my_perl, xs_init, argc, argv, (char **)NULL)) {
+
+		if (perl_parse(my_perl, xs_init, argc, argv, (char **) NULL)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing Result!\n");
 			return NULL;
 		}
@@ -375,15 +363,15 @@ static switch_xml_t perl_fetch(const char *section,
 			section = "";
 		}
 
-		this = newSV(strlen(section)+1);
+		this = newSV(strlen(section) + 1);
 		sv_setpv(this, section);
 		hv_store(hash, "section", 7, this, 0);
-		
+
 		if (switch_strlen_zero(tag_name)) {
 			tag_name = "";
 		}
 
-		this = newSV(strlen(tag_name)+1);
+		this = newSV(strlen(tag_name) + 1);
 		sv_setpv(this, tag_name);
 		hv_store(hash, "tag_name", 8, this, 0);
 
@@ -391,7 +379,7 @@ static switch_xml_t perl_fetch(const char *section,
 			key_name = "";
 		}
 
-		this = newSV(strlen(key_name)+1);
+		this = newSV(strlen(key_name) + 1);
 		sv_setpv(this, key_name);
 		hv_store(hash, "key_name", 8, this, 0);
 
@@ -399,28 +387,23 @@ static switch_xml_t perl_fetch(const char *section,
 			key_value = "";
 		}
 
-		this = newSV(strlen(key_value)+1);
+		this = newSV(strlen(key_value) + 1);
 		sv_setpv(this, key_value);
 		hv_store(hash, "key_value", 9, this, 0);
-		
+
 		if (!(hash = get_hv("XML_DATA", TRUE))) {
 			abort();
 		}
 
 		if (params) {
 			for (hp = params->headers; hp; hp = hp->next) {
-				this = newSV(strlen(hp->value)+1);
+				this = newSV(strlen(hp->value) + 1);
 				sv_setpv(this, hp->value);
 				hv_store(hash, hp->name, strlen(hp->name), this, 0);
 			}
 		}
 
-		switch_snprintf(code, sizeof(code), 
-						"use lib '%s/perl';\n"
-						"use freeswitch;\n"			
-						,
-						SWITCH_GLOBAL_dirs.base_dir
-						);
+		switch_snprintf(code, sizeof(code), "use lib '%s/perl';\n" "use freeswitch;\n", SWITCH_GLOBAL_dirs.base_dir);
 		Perl_safe_eval(my_perl, code);
 
 		if (params) {
@@ -437,7 +420,7 @@ static switch_xml_t perl_fetch(const char *section,
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing XML Result!\n");
 			}
 		}
-		
+
 		destroy_perl(&my_perl);
 	}
 

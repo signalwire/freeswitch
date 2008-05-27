@@ -79,9 +79,9 @@ static switch_status_t tone_stream_file_open(switch_file_handle_t *handle, const
 	}
 
 	teletone_init_session(&ts, 0, teletone_handler, audio_buffer);
-    ts.rate = handle->samplerate;
-    ts.channels = 1;
-	
+	ts.rate = handle->samplerate;
+	ts.channels = 1;
+
 	if (!strncasecmp(tonespec, "path=", 5)) {
 		tmp = tonespec + 5;
 		if ((fd = open(tmp, O_RDONLY)) < 0) {
@@ -89,7 +89,7 @@ static switch_status_t tone_stream_file_open(switch_file_handle_t *handle, const
 			return SWITCH_STATUS_FALSE;
 		}
 
-		while((len = switch_fd_read_line(fd, buf, sizeof(buf)))) {
+		while ((len = switch_fd_read_line(fd, buf, sizeof(buf)))) {
 			teletone_run(&ts, buf);
 		}
 		close(fd);
@@ -99,7 +99,7 @@ static switch_status_t tone_stream_file_open(switch_file_handle_t *handle, const
 	}
 
 	teletone_destroy_session(&ts);
-	
+
 	handle->private_info = audio_buffer;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -108,7 +108,7 @@ static switch_status_t tone_stream_file_open(switch_file_handle_t *handle, const
 static switch_status_t tone_stream_file_close(switch_file_handle_t *handle)
 {
 	switch_buffer_t *audio_buffer = handle->private_info;
-	
+
 	switch_buffer_destroy(&audio_buffer);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -117,7 +117,7 @@ static switch_status_t tone_stream_file_read(switch_file_handle_t *handle, void 
 {
 	switch_buffer_t *audio_buffer = handle->private_info;
 	switch_size_t bytes;
-	
+
 	if ((bytes = switch_buffer_read_loop(audio_buffer, data, *len * 2)) <= 0) {
 		*len = 0;
 		return SWITCH_STATUS_FALSE;
@@ -135,7 +135,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_tone_stream_load)
 {
 	switch_file_interface_t *file_interface;
 	supported_formats[0] = "tone_stream";
-	
+
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 	file_interface->interface_name = modname;

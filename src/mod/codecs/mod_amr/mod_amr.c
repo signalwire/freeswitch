@@ -139,8 +139,8 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 
 	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(struct amr_context))))) {
 		return SWITCH_STATUS_FALSE;
-	} else {	
-	
+	} else {
+
 		context->dtx_mode = AMR_DTX_ENABLED;
 		if (codec->fmtp_in) {
 			argc = switch_separate_string(codec->fmtp_in, ';', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -207,7 +207,8 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 			context->enc_mode = globals.default_bitrate;
 		}
 
-		switch_snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d", switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0, context->enc_mode);
+		switch_snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d", switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0,
+						context->enc_mode);
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, fmtptmp);
 
 		context->enc_mode = AMR_DEFAULT_BITRATE;
@@ -249,8 +250,7 @@ static switch_status_t switch_amr_encode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *decoded_data,
 										 uint32_t decoded_data_len,
-										 uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
-										 unsigned int *flag)
+										 uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag)
 {
 #ifdef AMR_PASSTHROUGH
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
@@ -272,8 +272,7 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *encoded_data,
 										 uint32_t encoded_data_len,
-										 uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
-										 unsigned int *flag)
+										 uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
 {
 #ifdef AMR_PASSTHROUGH
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
@@ -320,10 +319,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_CODEC(codec_interface, "AMR");
-    switch_core_codec_add_implementation(pool, codec_interface,
-                                         SWITCH_CODEC_TYPE_AUDIO, 96, "AMR", "octet-align=0", 8000, 8000, 12200,
-                                         20000, 160, 320, 0, 1, 1, 1,
-                                         switch_amr_init, switch_amr_encode, switch_amr_decode, switch_amr_destroy);
+	switch_core_codec_add_implementation(pool, codec_interface,
+										 SWITCH_CODEC_TYPE_AUDIO, 96, "AMR", "octet-align=0", 8000, 8000, 12200,
+										 20000, 160, 320, 0, 1, 1, 1, switch_amr_init, switch_amr_encode, switch_amr_decode, switch_amr_destroy);
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
