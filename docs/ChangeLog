@@ -1,4 +1,33 @@
+freeswitch (1.0.0)
+
+	Enhanced sofia sip nat handling
+	Many fixes found by Klockwork (www.klocwork.com)
+	Added disable_app_log variable
+	Fixed mod_local_stream with rates on windows
+	Fixed finding of files in rate dirs on windows
+	Fixed memory corruption from sofia_contact function
+	Added sofia profile param NDLB-received-in-nat-reg-contact
+	Added sofia profile param aggressive-nat-detection
+	Fixed video sip calls in proxy media mode
+	Added bridge_terminate_key var
+	Update xmlrpc-c lib to trunk revision from upstream, fix windows xmlrpc
+	Enhanced nat handling in proxy media mode in sip
+	Add progress media to timetable so you can calculate pdd
+	Fixed seg when using unicast on socket when call has no read_codec
+	Fixed missed log events on busy box
+	Added -bleg to intercept
+	Enhance configure detection of python
+	Fixed build on solaris and freebsd for several modules
+	Added param "vm-email-only" to make voicemail sent by email only (previously default behavior)
+	Added param "vm-mailto-notify" to allow sending a notification email
+	Fixed mod_java build
+	Fixed mwi failures for some devices that don't subscribe
+	Removed fsapi functions (killchan, transfer, session_displace, reject)
+	Removed fsapi functions (session_record, broadcast, hold, media)
+	Many updates to sofia-sip library including over 100 fixes
+	
 freeswitch (1.0.rc6)
+
 	Changed to not allow pass_2833 on transcoded calls (it never worked, now it will tell you)
 	Enhanced sofia sip nat handling
 	Fix libedit build on solaris
