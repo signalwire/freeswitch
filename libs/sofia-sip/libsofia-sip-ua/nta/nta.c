@@ -1176,6 +1176,10 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
     progress = 60 * 1000;
   agent->sa_progress = progress;
 
+  if (server_rport > 2)
+    server_rport = 1;
+  agent->sa_server_rport = server_rport;
+
   agent->sa_bad_req_mask = bad_req_mask;
   agent->sa_bad_resp_mask = bad_resp_mask;
 
@@ -1197,7 +1201,6 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
   agent->sa_smime = smime;
   agent->sa_flags = flags & MSG_FLG_USERMASK;
   agent->sa_rport = rport != 0;
-  agent->sa_server_rport = server_rport != 0;
   agent->sa_tcp_rport = tcp_rport != 0;
   agent->sa_preload = preload;
   agent->sa_tport_threadpool = threadpool;
