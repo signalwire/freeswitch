@@ -8,7 +8,7 @@ AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [0])
 AC_SUBST(SWITCH_VERSION_MICRO, [pre4])
 #AC_SUBST(SWITCH_VERSION_REVISION, [svn-revision-here])
-AC_SUBST(SOUNDS_VERSION, [1.0.1])
+AC_SUBST(SOUNDS_VERSION, [1.0.2])
 
 AC_CONFIG_FILES([src/include/switch_version.h.in:src/include/switch_version.h.template])
 
