@@ -213,10 +213,10 @@ int main(int argc, char *argv[])
 	char *usageDesc;
 	int alt_dirs = 0;
 	int known_opt;
- 	int high_prio = 0;
+	int high_prio = 0;
 	switch_core_flag_t flags = SCF_USE_SQL;
 	int ret;
-    switch_file_t *fd;
+	switch_file_t *fd;
 	switch_memory_pool_t *pool = NULL;
 
 	usageDesc = "these are the optional arguments you can pass to freeswitch\n"
@@ -505,7 +505,7 @@ int main(int argc, char *argv[])
 	}
 
 	switch_core_setrlimits();
-	
+
 #ifndef WIN32
 	if (runas_user || runas_group) {
 		if (change_user_group(runas_user, runas_group) < 0) {
@@ -526,12 +526,12 @@ int main(int argc, char *argv[])
 
 	apr_pool_create(&pool, NULL);
 	if (switch_file_open(&fd,
-						 pid_path,
-						 SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE,
-						 SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE,
-						 pool) != SWITCH_STATUS_SUCCESS) {
-		fprintf(stderr, "Cannot open pid file %s.\n", pid_path);
-		return 255;
+		pid_path,
+		SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE,
+		SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE,
+		pool) != SWITCH_STATUS_SUCCESS) {
+			fprintf(stderr, "Cannot open pid file %s.\n", pid_path);
+			return 255;
 	}
 
 	if (switch_file_lock(fd, SWITCH_FLOCK_EXCLUSIVE | SWITCH_FLOCK_NONBLOCK) != SWITCH_STATUS_SUCCESS) {

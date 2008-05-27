@@ -56,7 +56,7 @@ static switch_status_t switch_core_db_persistant_execute_trans(switch_core_db_t 
 		retries = 1000;
 	}
 
-  again:
+again:
 
 	while (begin_retries > 0) {
 		again = 0;
@@ -107,7 +107,7 @@ static switch_status_t switch_core_db_persistant_execute_trans(switch_core_db_t 
 		}
 	}
 
-  done:
+done:
 
 	switch_core_db_exec(db, "end transaction", NULL, NULL, NULL);
 
@@ -293,7 +293,7 @@ static void core_event_handler(switch_event_t *event)
 			if (!switch_strlen_zero(state)) {
 				state_i = atoi(state);
 			}
-		
+
 			switch (state_i) {
 			case CS_HANGUP:
 			case CS_DONE:
@@ -474,7 +474,7 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 	}
 
 	switch_queue_create(&sql_manager.sql_queue, SWITCH_SQL_QUEUE_LEN, sql_manager.memory_pool);
-	
+
 	switch_threadattr_create(&thd_attr, sql_manager.memory_pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);

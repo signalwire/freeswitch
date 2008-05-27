@@ -164,7 +164,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 	menu->confirm_attempts = confirm_attempts;
 
 	menu->inlen = digit_len;
-	
+
 	menu->max_failures = max_failures;
 
 	menu->timeout = timeout;
@@ -250,8 +250,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_free(switch_ivr_menu_t * s
 	if (stack != NULL && stack->pool != NULL) {
 		if (switch_test_flag(stack, SWITCH_IVR_MENU_FLAG_STACK)
 			&& switch_test_flag(stack, SWITCH_IVR_MENU_FLAG_FREEPOOL)) {
-			switch_memory_pool_t *pool = stack->pool;
-			status = switch_core_destroy_memory_pool(&pool);
+				switch_memory_pool_t *pool = stack->pool;
+				status = switch_core_destroy_memory_pool(&pool);
 		} else {
 			status = SWITCH_STATUS_SUCCESS;
 		}
@@ -313,7 +313,7 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 			if (menu->confirm_key) {
 				ap = &confirm_args;
 			}
-			
+
 			switch_ivr_phrase_macro(session, menu->confirm_macro, menu->buf, NULL, ap);
 
 			if (menu->confirm_key && *buf == '\0') {
@@ -398,17 +398,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 				int ok = 0;
 				char substituted[1024];
 				char *use_arg = ap->arg;
-				
+
 				if (ap->re) {
 					switch_regex_t *re = NULL;
 					int ovector[30];
-					
+
 					if ((ok = switch_regex_perform(menu->buf, ap->bind, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 						switch_perform_substitution(re, ok, ap->arg, menu->buf, substituted, sizeof(substituted), ovector);
 						use_arg = substituted;
 					}
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "action regex [%s] [%s] [%d]\n", menu->buf, ap->bind, ok);
-					
+
 					switch_regex_safe_free(re);
 				} else {
 					ok = !strcmp(menu->buf, ap->bind);
@@ -696,7 +696,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 		const char *confirm_attempts = switch_xml_attr_soft(xml_menu, "confirm-attempts");
 		const char *digit_len = switch_xml_attr_soft(xml_menu, "digit-len");
 		const char *inter_timeout = switch_xml_attr_soft(xml_menu, "inter-digit-timeout");
-		
+
 		switch_ivr_menu_t *menu = NULL;
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "building menu '%s'\n", menu_name);
