@@ -43,7 +43,7 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
-#if (_MSC_VER = 1400) /* fix for broken header files with msvc 2005*/
+#if (_MSC_VER == 1400) /* fix for broken header files with msvc 2005*/
 #if !defined (_M_IA64) && !defined (_M_AMD64)
 #undef logf
 #define logf(x)     ((float)log((double)(x)))
