@@ -395,59 +395,70 @@ SWITCH_DECLARE(void) switch_core_session_run(_In_ switch_core_session_t *session
 */
 SWITCH_DECLARE(unsigned int) switch_core_session_running(_In_ switch_core_session_t *session);
 
+SWITCH_DECLARE(void *) switch_core_perform_permanent_alloc(_In_ switch_size_t memory, _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
+
 /*! 
   \brief Allocate memory from the main pool with no intention of returning it
-  \param memory the number of bytes to allocate
+  \param _memory the number of bytes to allocate
   \return a void pointer to the allocated memory
   \note this memory never goes out of scope until the core is destroyed
 */
-SWITCH_DECLARE(void *) switch_core_perform_permanent_alloc(_In_ switch_size_t memory, _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
-#define switch_core_permanent_alloc(m) switch_core_perform_permanent_alloc(m, __FILE__, __SWITCH_FUNC__, __LINE__)
+#define switch_core_permanent_alloc(_memory) switch_core_perform_permanent_alloc(_memory, __FILE__, __SWITCH_FUNC__, __LINE__)
+
+
+SWITCH_DECLARE(void *) switch_core_perform_alloc(_In_ switch_memory_pool_t *pool, _In_ switch_size_t memory, _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
 
 /*! 
   \brief Allocate memory directly from a memory pool
-  \param pool the memory pool to allocate from
-  \param memory the number of bytes to allocate
+  \param _pool the memory pool to allocate from
+  \param _mem the number of bytes to allocate
   \return a void pointer to the allocated memory
 */
-SWITCH_DECLARE(void *) switch_core_perform_alloc(_In_ switch_memory_pool_t *pool, _In_ switch_size_t memory, _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
-#define switch_core_alloc(p, m) switch_core_perform_alloc(p, m, __FILE__, __SWITCH_FUNC__, __LINE__)
+#define switch_core_alloc(_pool, _mem) switch_core_perform_alloc(_pool, _mem, __FILE__, __SWITCH_FUNC__, __LINE__)
+
+_Ret_ SWITCH_DECLARE(void *) switch_core_perform_session_alloc(_In_ switch_core_session_t *session, _In_ switch_size_t memory, const char *file, const char *func, int line);
+
 /*! 
   \brief Allocate memory from a session's pool
-  \param session the session to request memory from
-  \param memory the amount of memory to allocate
+  \param _session the session to request memory from
+  \param _memory the amount of memory to allocate
   \return a void pointer to the newly allocated memory
   \note the memory will be in scope as long as the session exists
 */
-_Ret_ SWITCH_DECLARE(void *) switch_core_perform_session_alloc(_In_ switch_core_session_t *session, _In_ switch_size_t memory, const char *file, const char *func, int line);
-#define switch_core_session_alloc(s, m) switch_core_perform_session_alloc(s, m, __FILE__, __SWITCH_FUNC__, __LINE__)
+#define switch_core_session_alloc(_session, _memory) switch_core_perform_session_alloc(_session, _memory, __FILE__, __SWITCH_FUNC__, __LINE__)
 
+
+
+SWITCH_DECLARE(char *) switch_core_perform_permanent_strdup(_In_z_ const char *todup,  _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
 
 /*! 
   \brief Copy a string using permanent memory allocation
-  \param todup the string to duplicate
+  \param _todup the string to duplicate
   \return a pointer to the newly duplicated string
 */
-SWITCH_DECLARE(char *) switch_core_perform_permanent_strdup(_In_z_ const char *todup,  _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
-#define switch_core_permanent_strdup(t) switch_core_perform_permanent_strdup(t, __FILE__, __SWITCH_FUNC__, __LINE__)
+#define switch_core_permanent_strdup(_todup) switch_core_perform_permanent_strdup(_todup, __FILE__, __SWITCH_FUNC__, __LINE__)
+
+
+SWITCH_DECLARE(char *) switch_core_perform_session_strdup(_In_ switch_core_session_t *session, _In_z_ const char *todup, _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
 
 /*! 
   \brief Copy a string using memory allocation from a session's pool
-  \param session a session to use for allocation
-  \param todup the string to duplicate
+  \param _session a session to use for allocation
+  \param _todup the string to duplicate
   \return a pointer to the newly duplicated string
 */
-SWITCH_DECLARE(char *) switch_core_perform_session_strdup(_In_ switch_core_session_t *session, _In_z_ const char *todup, _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
-#define switch_core_session_strdup(s, t) switch_core_perform_session_strdup(s, t, __FILE__, __SWITCH_FUNC__, __LINE__)
+#define switch_core_session_strdup(_session, _todup) switch_core_perform_session_strdup(_session, _todup, __FILE__, __SWITCH_FUNC__, __LINE__)
+
+
+SWITCH_DECLARE(char *) switch_core_perform_strdup(_In_ switch_memory_pool_t *pool, _In_z_ const char *todup, _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
 
 /*! 
   \brief Copy a string using memory allocation from a given pool
-  \param pool the pool to use for allocation
-  \param todup the string to duplicate
+  \param _pool the pool to use for allocation
+  \param _todup the string to duplicate
   \return a pointer to the newly duplicated string
 */
-SWITCH_DECLARE(char *) switch_core_perform_strdup(_In_ switch_memory_pool_t *pool, _In_z_ const char *todup, _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
-#define switch_core_strdup(p, t)  switch_core_perform_strdup(p, t, __FILE__, __SWITCH_FUNC__, __LINE__)
+#define switch_core_strdup(_pool, _todup)  switch_core_perform_strdup(_pool, _todup, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 /*!
   \brief printf-style style printing routine.  The data is output to a string allocated from the session
@@ -1198,17 +1209,7 @@ SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *te
 ///\defgroup Media File Functions
 ///\ingroup core1
 ///\{
-/*! 
-  \brief Open a media file using file format modules
-  \param fh a file handle to use
-  \param file_path the path to the file
-  \param channels the number of channels
-  \param rate the sample rate
-  \param flags read/write flags
-  \param pool the pool to use (NULL for new pool)
-  \return SWITCH_STATUS_SUCCESS if the file is opened
-  \note the loadable module used is chosen based on the file extension
-*/
+
 SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, const char *func, int line,
 															  _In_ switch_file_handle_t *fh,
 															  _In_z_ const char *file_path,
@@ -1216,6 +1217,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 															  _In_ uint32_t rate,
 															  _In_ unsigned int flags,
 															  _In_opt_ switch_memory_pool_t *pool);
+
+/*! 
+  \brief Open a media file using file format modules
+  \param _fh a file handle to use
+  \param _file_path the path to the file
+  \param _channels the number of channels
+  \param _rate the sample rate
+  \param _flags read/write flags
+  \param _pool the pool to use (NULL for new pool)
+  \return SWITCH_STATUS_SUCCESS if the file is opened
+  \note the loadable module used is chosen based on the file extension
+*/
 #define switch_core_file_open(_fh, _file_path, _channels, _rate, _flags, _pool) \
 	switch_core_perform_file_open(__FILE__, __SWITCH_FUNC__, __LINE__, _fh, _file_path, _channels, _rate, _flags, _pool)
 

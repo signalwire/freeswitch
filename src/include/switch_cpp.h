@@ -217,7 +217,7 @@ class CoreSession {
 	 * \param a_leg_session - the session where the call is originating from 
 	 *                        and also the session in which _this_ session was 
 	 *                        created
-	 * \param dest - a string representing destination, eg, sofia/mydomain.com/foo@bar.com
+	 * \param dest - a string representing destination, eg, sofia/mydomain.com/foo\@bar.com
 	 * \param timeout - time to wait for call to be answered
 	 * \return an int status code indicating success or failure
 	 *

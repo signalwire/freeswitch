@@ -238,7 +238,7 @@ NEW_HOOK_DECL_REM_P(kill_channel);
 NEW_HOOK_DECL_REM_P(send_dtmf);
 NEW_HOOK_DECL_REM_P(recv_dtmf);
 NEW_HOOK_DECL_REM_P(resurrect_session);
-///\}
+
 
 SWITCH_END_EXTERN_C
 #endif
