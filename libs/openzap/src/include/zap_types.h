@@ -437,7 +437,7 @@ typedef zap_status_t (*zio_write_t) ZIO_WRITE_ARGS ;
 #define ZIO_WRITE_FUNCTION(name) zap_status_t name ZIO_WRITE_ARGS
 
 #ifndef __FUNCTION__
-#define __FUNCTION__ ""
+#define __FUNCTION__ (const char *)__func__
 #endif
 
 #define ZAP_PRE __FILE__, __FUNCTION__, __LINE__
