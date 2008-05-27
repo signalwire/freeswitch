@@ -951,7 +951,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_find_bridged_uuid(const char *uuid, c
 SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session, const char *uuid, switch_bool_t bleg)
 {
 	switch_core_session_t *rsession, *bsession = NULL;
-	switch_channel_t *channel, *rchannel, *bchannel;
+	switch_channel_t *channel, *rchannel, *bchannel = NULL;
 	const char *buuid;
 	char brto[SWITCH_UUID_FORMATTED_LENGTH + 1] = "";
 
@@ -976,24 +976,31 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 
 	if ((buuid = switch_channel_get_variable(rchannel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 		bsession = switch_core_session_locate(buuid);
+		bchannel = switch_core_session_get_channel(bsession);
 	}
 
 	if (!switch_channel_test_flag(rchannel, CF_ANSWERED)) {
 		switch_channel_answer(rchannel);
 	}
-	//switch_ivr_park_session(rsession);
+
 	switch_channel_set_state_flag(rchannel, CF_TRANSFER);
-	switch_channel_set_state(rchannel, CS_RESET);
+	switch_channel_set_state(rchannel, CS_PARK);
+	
+	if (bchannel) {
+		switch_channel_set_state_flag(bchannel, CF_TRANSFER);
+		switch_channel_set_state(bchannel, CS_PARK);
+	}
+
+	switch_ivr_uuid_bridge(switch_core_session_get_uuid(session), uuid);
+	switch_core_session_rwunlock(rsession);
 
 	if (bsession) {
-		bchannel = switch_core_session_get_channel(bsession);
 		switch_channel_hangup(bchannel, SWITCH_CAUSE_PICKED_OFF);
 		switch_core_session_rwunlock(bsession);
 	}
 
-	switch_core_session_rwunlock(rsession);
+	
 
-	switch_ivr_uuid_bridge(switch_core_session_get_uuid(session), uuid);
 }
 
 /* For Emacs:
