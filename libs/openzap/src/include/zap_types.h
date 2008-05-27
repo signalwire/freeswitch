@@ -436,6 +436,10 @@ typedef zap_status_t (*zio_write_t) ZIO_WRITE_ARGS ;
 #define ZIO_READ_FUNCTION(name) zap_status_t name ZIO_READ_ARGS
 #define ZIO_WRITE_FUNCTION(name) zap_status_t name ZIO_WRITE_ARGS
 
+#ifndef __FUNCTION__
+#define __FUNCTION__ ""
+#endif
+
 #define ZAP_PRE __FILE__, __FUNCTION__, __LINE__
 #define ZAP_LOG_LEVEL_DEBUG 7
 #define ZAP_LOG_LEVEL_INFO 6
