@@ -1,35 +1,29 @@
-==============================================
-Release notes for current version of Sofia-SIP
-==============================================
+======================================
+Release notes for Sofia-SIP 1.12.9pre1
+======================================
 
 Changes since last release
 --------------------------
 
-<changes since last written in freshmeat.net "Changes:" style;
- and in less than 10 lines, written in 3rd person English, with
- complete sentences />
-
-Bugs with BYE handling and event fetch/poll (SUBSCRIBE with Expires: 0) have
-been fixed in nua. Bugs with timer handling, RFC2543 dialog/transaction
-matching and gray list handling have been fixed in nta, all introduced by
-release 1.12.8.
-
 Stack now supports some load control with NTATAG_MAX_PROCEEDING(), limiting
 number of initial INVITE transactions being served concurrently.
 
-Bugs in blaa and foo have been fixed. The stack now supports
-use of foobar...
+The NAT traversal support in NUA has been improved. It is now possible to
+force rport use at server end with NTATAG_SERVER_RPORT(2), and fource
+routing of requests to a natted transport address detected by application
+with NTATAG_DEFAULT_PROXY().
+
+Bugs with SDP offer/answer overlap, BYE handling and event fetch/poll
+(SUBSCRIBE with Expires: 0) have been fixed in nua. Bugs with timer
+handling, RFC2543 dialog/transaction matching and gray list handling have
+been fixed in nta.
+
+Problems with SDP session handling by soa when media lines are deleted or
+their type is changes have been fixed.
+
 
 API/ABI changes and versioning
 ------------------------------
-
-<see previous release notes at
- http://sofia-sip.sourceforge.net/relnotes/ for examples ;
- - should include all changes to public headers, and 
-   other important information to developers; 
- - and should be updated _continuously_! />
-
-**template**: New features in API are marked with Doxytag macro @VERSION_1_XX_X.
 
 libsofia-sip-ua:
 - Added nta_outgoing_bind() to <sofia-sip/nta.h>.
@@ -40,9 +34,8 @@ libsofia-sip-ua:
 - Added NTATAG_MAX_PROCEEDING() - limit number of requests accepted in 
   proceeding queue.
 - Using NUTAG_PROXY()/NTATAG_DEFAULT_PROXY() as handle-specific tag. 
-  Previously, NUTAG_PROXY() was ignored if given with nua_set_hparams(),
-  nua_invite(), nua_respond(), etc.
 - Added nua_handle_by_call_id(), nta_leg_by_call_id().
+- Using NTATAG_SERVER_RPORT(2) to force rport usage on server side
 - This release is ABI/API compatible with applications linked against 
   any 1.12.x release. However, applications built against this release won't 
   work against an older library. The ABI has been tested with the nua module 
@@ -57,33 +50,27 @@ Contributors to this release
 ----------------------------
 
 - Michael Jerris: fixes, new features NTATAG_MAX_PROCEEDING(),
-  nua_handle_by_call_id(), nta_leg_by_call_id()
+  NTATAG_SERVER_RPORT(2), nua_handle_by_call_id(), nta_leg_by_call_id()
 - Colin Whittaker: re-calculating subscription duration when receiving NOTIFY
 - Jerry Richards: fix to sip_header_as_string()
 - Jussi Mutanen: fix to soa handling within nua
-
-<list of people who contributed to _this_ release
- - update as people's patches are added, or when you commit stuff
- - current development team members (see AUTHORS) may be omitted,
-   or listed at the end of the contribur list (depending on the scope 
-   of the work done since the last release)
- - name of the contributor should be enough (email addresses in AUTHORS),
-   plus a _brief_ description of what was contributed
- - roughly sorted by number of patches accepted
-/> 
-
-- **template**: First Surname (patch to nua/soa/msg)
+- Bernhard Suttner: fix to Replaces URI handling
 
 See the AUTHORS file in the distribution package.
+
 
 Notes on new features
 ---------------------
 
-<information about major new features
- - new/changed/removed functionality
- - links to further documentation
- - section may be omitted for minor releases
-/> 
+The NUTAG_PROXY()/NTATAG_DEFAULT_PROXY() is now handle-specific. Previously,
+it was ignored on nua calls except nua_create() and nua_set_params(). Now it
+is stored per-handle and used for all outgoing requests.
+
+The NTATAG_SERVER_RPORT() used to accept only boolean values (0 or 1) and
+the binary code compiled agains older Sofia SIP versions foces the tag value
+to boolean. The updated tag function in version 1.12.9 accepts values 0, 1
+or 2, however.
+
 
 Bugs fixed in this release
 --------------------------
@@ -117,12 +104,3 @@ Bugs fixed in this release
 - Fixed sf.net bug #1930055: nat detection did not un-REGISTER natted contact
   if fist response to REGISTER was 200 OK.
 - Fixed crashes in soa if m= lines were removed from user sdp.
-
-
-< notable bugs fixed in this release
- - check the sf.net bug tracker; see closed bugs,
-   sorted by closing date
- - other bugs as fixed in CVS/darcs
-/>
-
-- **template**: #9499652 sf.net bug item title
