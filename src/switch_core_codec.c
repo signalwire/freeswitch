@@ -50,7 +50,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 	char tmp[30];
 
 	switch_assert(codec->implementation);
-	
+
 	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-read-codec-name", "%s", codec->implementation->iananame);
@@ -92,7 +92,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-write-codec-name", "%s", codec->implementation->iananame);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-write-codec-rate", "%d", codec->implementation->actual_samples_per_second);
 		if (codec->implementation->actual_samples_per_second != codec->implementation->samples_per_second) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-reported-write-codec-rate", "%d", codec->implementation->actual_samples_per_second);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-reported-write-codec-rate", "%d",
+									codec->implementation->actual_samples_per_second);
 		}
 		switch_event_fire(&event);
 	}
@@ -185,14 +186,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, sw
 	new_codec->codec_interface = codec->codec_interface;
 	new_codec->implementation = codec->implementation;
 	new_codec->flags = codec->flags;
-	
+
 	if (codec->fmtp_in) {
 		new_codec->fmtp_in = switch_core_strdup(new_codec->memory_pool, codec->fmtp_in);
 	}
-	
+
 	new_codec->implementation->init(new_codec, new_codec->flags, NULL);
-	
-	return SWITCH_STATUS_SUCCESS;	
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, char *codec_name, char *fmtp,
@@ -286,7 +287,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode(switch_codec_t *codec,
 														 void *decoded_data,
 														 uint32_t decoded_data_len,
 														 uint32_t decoded_rate,
-														 void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
+														 void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag)
 {
 	switch_assert(codec != NULL);
 	switch_assert(encoded_data != NULL);
@@ -311,7 +312,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 														 void *encoded_data,
 														 uint32_t encoded_data_len,
 														 uint32_t encoded_rate,
-														 void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
+														 void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
 {
 	switch_assert(codec != NULL);
 	switch_assert(encoded_data != NULL);

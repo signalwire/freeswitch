@@ -156,7 +156,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_set_priority(switch_event_t *event,
   \param header_name the name of the header to read
   \return the value of the requested header
 */
-_Ret_opt_z_ SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event, char *header_name);
+	 _Ret_opt_z_ SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event, char *header_name);
 
 #define switch_event_get_header_nil(e, h) switch_str_nil(switch_event_get_header(e,h))
 
@@ -292,7 +292,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, con
 #endif
 SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const char *in);
 
-SWITCH_DECLARE(switch_status_t) switch_event_create_pres_in_detailed(_In_z_ char *file, _In_z_ char *func, _In_ int line, 
+SWITCH_DECLARE(switch_status_t) switch_event_create_pres_in_detailed(_In_z_ char *file, _In_z_ char *func, _In_ int line,
 																	 _In_z_ const char *proto, _In_z_ const char *login,
 																	 _In_z_ const char *from, _In_z_ const char *from_domain,
 																	 _In_z_ const char *status, _In_z_ const char *event_type,
@@ -344,7 +344,7 @@ SWITCH_DECLARE(void) switch_event_deliver(switch_event_t **event);
 */
 #define switch_event_fire_data(event, data) switch_event_fire_detailed(__FILE__, (char * )__SWITCH_FUNC__, __LINE__, event, data)
 
-SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, const char *prefix,switch_hash_t* vars_map);
+SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, const char *prefix, switch_hash_t *vars_map);
 
 ///\}
 

@@ -184,7 +184,7 @@ SWITCH_DECLARE(const char *) switch_xml_attr_soft(switch_xml_t xml, const char *
 ///\ Returns NULL if not found.
 ///\param xml the xml node
 ///\return an xml node or NULL
-SWITCH_DECLARE(switch_xml_t) switch_xml_get(switch_xml_t xml,...);
+SWITCH_DECLARE(switch_xml_t) switch_xml_get(switch_xml_t xml, ...);
 
 ///\brief Converts an switch_xml structure back to xml. Returns a string of xml data that
 ///\ must be freed.
@@ -234,7 +234,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name);
 ///\param name the name of the tag
 ///\param off the offset
 ///\return an xml node or NULL
-	 SWITCH_DECLARE(switch_xml_t) switch_xml_add_child(switch_xml_t xml, const char *name, switch_size_t off);
+SWITCH_DECLARE(switch_xml_t) switch_xml_add_child(switch_xml_t xml, const char *name, switch_size_t off);
 
 ///\brief wrapper for switch_xml_add_child() that strdup()s name
 ///\param xml the xml node
@@ -247,7 +247,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name);
 ///\param xml the xml node
 ///\param txt the text
 ///\return an xml node or NULL
-	 SWITCH_DECLARE(switch_xml_t) switch_xml_set_txt(switch_xml_t xml, const char *txt);
+SWITCH_DECLARE(switch_xml_t) switch_xml_set_txt(switch_xml_t xml, const char *txt);
 
 ///\brief wrapper for switch_xml_set_txt() that strdup()s txt
 ///\ sets the character content for the given tag and returns the tag
@@ -324,25 +324,22 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_root(void);
 ///\return SWITCH_STATUS_SUCCESS if successful root and node will be assigned
 SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 												  const char *tag_name,
-												  const char *key_name, const char *key_value, switch_xml_t * root, switch_xml_t * node,
+												  const char *key_name, const char *key_value, switch_xml_t *root, switch_xml_t *node,
 												  switch_event_t *params);
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name, switch_event_t *params, switch_xml_t *root, switch_xml_t *domain);
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
-													   const char *user_name, 
-													   const char *domain_name, 
-													   const char *ip, 
-													   switch_xml_t *root,
-													   switch_xml_t *domain,
-													   switch_xml_t *user,
-													   switch_event_t *params);
+													   const char *user_name,
+													   const char *domain_name,
+													   const char *ip,
+													   switch_xml_t *root, switch_xml_t *domain, switch_xml_t *user, switch_event_t *params);
 
 ///\brief open a config in the core registry
 ///\param file_path the name of the config section e.g. modules.conf
 ///\param node a pointer to point to the node if it is found
 ///\param params optional URL formatted params to pass to external gateways
 ///\return the root xml node associated with the current request or NULL
-SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_xml_t * node, switch_event_t *params);
+SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_xml_t *node, switch_event_t *params);
 
 ///\brief bind a search function to an external gateway
 ///\param function the search function to bind

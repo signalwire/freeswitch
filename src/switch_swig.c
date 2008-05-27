@@ -243,7 +243,7 @@ int fs_switch_ivr_originate(switch_core_session_t *session, switch_core_session_
 		return;
 	} else {
 		switch_ivr_multi_threaded_bridge(session, peer_session, NULL, NULL, NULL);
-        switch_core_session_rwunlock(peer_session);
+		switch_core_session_rwunlock(peer_session);
 	}
 }
 

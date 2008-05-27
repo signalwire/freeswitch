@@ -43,7 +43,7 @@
 
 static struct {
 	switch_mutex_t *mem_lock;
-	switch_queue_t *pool_queue; /* 8 ball break */
+	switch_queue_t *pool_queue;	/* 8 ball break */
 	switch_queue_t *pool_recycle_queue;
 	switch_memory_pool_t *memory_pool;
 	int pool_thread_running;
@@ -58,7 +58,8 @@ SWITCH_DECLARE(switch_memory_pool_t *) switch_core_session_get_pool(switch_core_
 
 /* **ONLY** alloc things with this function that **WILL NOT** outlive
    the session itself or expect an earth shattering KABOOM!*/
-SWITCH_DECLARE(void *) switch_core_perform_session_alloc(switch_core_session_t *session, switch_size_t memory, const char *file, const char *func, int line)
+SWITCH_DECLARE(void *) switch_core_perform_session_alloc(switch_core_session_t *session, switch_size_t memory, const char *file, const char *func,
+														 int line)
 {
 	void *ptr = NULL;
 	switch_assert(session != NULL);
@@ -70,14 +71,14 @@ SWITCH_DECLARE(void *) switch_core_perform_session_alloc(switch_core_session_t *
 
 #ifdef DEBUG_ALLOC
 	if (memory > 500)
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Session Allocate %d\n", (int)memory);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Session Allocate %d\n", (int) memory);
 #endif
 
 	ptr = apr_palloc(session->pool, memory);
 	switch_assert(ptr != NULL);
 
 	memset(ptr, 0, memory);
-	
+
 #ifdef LOCK_MORE
 	switch_mutex_unlock(memory_manager.mem_lock);
 #endif
@@ -98,7 +99,7 @@ SWITCH_DECLARE(void *) switch_core_perform_permanent_alloc(switch_size_t memory,
 #endif
 
 #ifdef DEBUG_ALLOC
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Perm Allocate %d\n", (int)memory);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Perm Allocate %d\n", (int) memory);
 #endif
 
 	ptr = apr_palloc(memory_manager.memory_pool, memory);
@@ -131,7 +132,7 @@ SWITCH_DECLARE(char *) switch_core_perform_permanent_strdup(const char *todup, c
 	switch_assert(duped != NULL);
 
 #ifdef DEBUG_ALLOC
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Perm Allocate %d\n", (int)len);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Perm Allocate %d\n", (int) len);
 #endif
 
 #ifdef LOCK_MORE
@@ -153,7 +154,7 @@ SWITCH_DECLARE(char *) switch_core_session_sprintf(switch_core_session_t *sessio
 	switch_assert(session != NULL);
 	switch_assert(session->pool != NULL);
 	va_start(ap, fmt);
-	
+
 	result = apr_pvsprintf(session->pool, fmt, ap);
 	switch_assert(result != NULL);
 	va_end(ap);
@@ -199,7 +200,6 @@ SWITCH_DECLARE(char *) switch_core_perform_session_strdup(switch_core_session_t 
 	if (!todup) {
 		return NULL;
 	}
-
 #ifdef LOCK_MORE
 	switch_mutex_lock(memory_manager.mem_lock);
 #endif
@@ -208,7 +208,7 @@ SWITCH_DECLARE(char *) switch_core_perform_session_strdup(switch_core_session_t 
 
 #ifdef DEBUG_ALLOC
 	if (len > 500)
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Sess Strdup Allocate %d\n", (int)len);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Sess Strdup Allocate %d\n", (int) len);
 #endif
 
 	duped = apr_pstrmemdup(session->pool, todup, len);
@@ -231,7 +231,6 @@ SWITCH_DECLARE(char *) switch_core_perform_strdup(switch_memory_pool_t *pool, co
 	if (!todup) {
 		return NULL;
 	}
-
 #ifdef LOCK_MORE
 	switch_mutex_lock(memory_manager.mem_lock);
 #endif
@@ -240,7 +239,7 @@ SWITCH_DECLARE(char *) switch_core_perform_strdup(switch_memory_pool_t *pool, co
 
 #ifdef DEBUG_ALLOC
 	if (len > 500)
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "core strdup Allocate %d\n", (int)len);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "core strdup Allocate %d\n", (int) len);
 #endif
 
 	duped = apr_pstrmemdup(pool, todup, len);
@@ -262,10 +261,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memor
 {
 	char *tmp;
 #ifdef PER_POOL_LOCK
-		apr_allocator_t *my_allocator = NULL;
-        apr_thread_mutex_t *my_mutex;
+	apr_allocator_t *my_allocator = NULL;
+	apr_thread_mutex_t *my_mutex;
 #else
-		void *pop = NULL;
+	void *pop = NULL;
 #endif
 
 	switch_mutex_lock(memory_manager.mem_lock);
@@ -322,7 +321,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(switch_m
 		apr_pool_destroy(*pool);
 	}
 	*pool = NULL;
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -338,8 +337,8 @@ SWITCH_DECLARE(void *) switch_core_perform_alloc(switch_memory_pool_t *pool, swi
 
 #ifdef DEBUG_ALLOC
 	if (memory > 500)
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Core Allocate %d\n", (int)memory);
-	/*switch_assert(memory < 20000);*/
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Core Allocate %d\n", (int) memory);
+	/*switch_assert(memory < 20000); */
 #endif
 
 	ptr = apr_palloc(pool, memory);
@@ -357,9 +356,9 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim(void)
 {
 	switch_memory_pool_t *pool;
 	void *pop = NULL;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled memory pool(s)\n", 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled memory pool(s)\n",
 					  switch_queue_size(memory_manager.pool_recycle_queue) + switch_queue_size(memory_manager.pool_queue));
-	
+
 	while (switch_queue_trypop(memory_manager.pool_recycle_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 		pool = (switch_memory_pool_t *) pop;
 		if (!pool) {
@@ -369,7 +368,7 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim(void)
 	}
 }
 
-static void *SWITCH_THREAD_FUNC pool_thread(switch_thread_t * thread, void *obj)
+static void *SWITCH_THREAD_FUNC pool_thread(switch_thread_t *thread, void *obj)
 {
 	memory_manager.pool_thread_running = 1;
 
@@ -388,7 +387,6 @@ static void *SWITCH_THREAD_FUNC pool_thread(switch_thread_t * thread, void *obj)
 					break;
 				}
 
-			
 #if defined(PER_POOL_LOCK) || defined(DESTROY_POOLS)
 				apr_pool_destroy(pop);
 #else
@@ -408,7 +406,7 @@ static void *SWITCH_THREAD_FUNC pool_thread(switch_thread_t * thread, void *obj)
 		}
 	}
 
- done:
+  done:
 	switch_core_memory_reclaim();
 
 	{
@@ -428,7 +426,7 @@ void switch_core_memory_stop(void)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping memory pool queue.\n");
 	memory_manager.pool_thread_running = -1;
-	while(memory_manager.pool_thread_running) {
+	while (memory_manager.pool_thread_running) {
 		switch_yield(1000);
 	}
 }
@@ -436,7 +434,7 @@ void switch_core_memory_stop(void)
 switch_memory_pool_t *switch_core_memory_init(void)
 {
 	switch_thread_t *thread;
-    switch_threadattr_t *thd_attr;
+	switch_threadattr_t *thd_attr;
 #ifdef PER_POOL_LOCK
 	apr_allocator_t *my_allocator = NULL;
 	apr_thread_mutex_t *my_mutex;
@@ -445,22 +443,22 @@ switch_memory_pool_t *switch_core_memory_init(void)
 	memset(&memory_manager, 0, sizeof(memory_manager));
 
 #ifdef PER_POOL_LOCK
-		if ((apr_allocator_create(&my_allocator)) != APR_SUCCESS) {
-			abort();
-		}
+	if ((apr_allocator_create(&my_allocator)) != APR_SUCCESS) {
+		abort();
+	}
 
-		if ((apr_pool_create_ex(&memory_manager.memory_pool, NULL, NULL, my_allocator)) != APR_SUCCESS) {
-			apr_allocator_destroy(my_allocator);
-			my_allocator = NULL;
-			abort();
-		}
+	if ((apr_pool_create_ex(&memory_manager.memory_pool, NULL, NULL, my_allocator)) != APR_SUCCESS) {
+		apr_allocator_destroy(my_allocator);
+		my_allocator = NULL;
+		abort();
+	}
 
-		if ((apr_thread_mutex_create(&my_mutex, APR_THREAD_MUTEX_DEFAULT, memory_manager.memory_pool)) != APR_SUCCESS) {
-			abort();
-		}
+	if ((apr_thread_mutex_create(&my_mutex, APR_THREAD_MUTEX_DEFAULT, memory_manager.memory_pool)) != APR_SUCCESS) {
+		abort();
+	}
 
-		apr_allocator_mutex_set(my_allocator, my_mutex);
-		apr_allocator_owner_set(my_allocator, memory_manager.memory_pool);
+	apr_allocator_mutex_set(my_allocator, my_mutex);
+	apr_allocator_owner_set(my_allocator, memory_manager.memory_pool);
 #else
 	apr_pool_create(&memory_manager.memory_pool, NULL);
 	switch_assert(memory_manager.memory_pool != NULL);
@@ -475,7 +473,7 @@ switch_memory_pool_t *switch_core_memory_init(void)
 
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, pool_thread, NULL, memory_manager.memory_pool);
-	
+
 	while (!memory_manager.pool_thread_running) {
 		switch_yield(1000);
 	}

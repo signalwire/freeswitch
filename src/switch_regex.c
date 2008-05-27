@@ -34,11 +34,10 @@
 #include <pcre.h>
 
 SWITCH_DECLARE(switch_regex_t *) switch_regex_compile(const char *pattern,
-														 int options, const char **errorptr, int *erroroffset, 
-const unsigned char *tables) 
+													  int options, const char **errorptr, int *erroroffset, const unsigned char *tables)
 {
-	
-return pcre_compile(pattern, options, errorptr, erroroffset, tables);
+
+	return pcre_compile(pattern, options, errorptr, erroroffset, tables);
 
 }
 
@@ -51,7 +50,7 @@ SWITCH_DECLARE(void) switch_regex_free(void *data)
 {
 	pcre_free(data);
 
-} 
+}
 
 SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expression, switch_regex_t **new_re, int *ovector, uint32_t olen)
 {
@@ -87,7 +86,7 @@ SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expressi
 	}
 
 	re = pcre_compile(expression,	/* the pattern */
-					  flags,		/* default options */
+					  flags,	/* default options */
 					  &error,	/* for error message */
 					  &erroffset,	/* for error offset */
 					  NULL);	/* use default character tables */
@@ -114,7 +113,7 @@ SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expressi
 
 	*new_re = (switch_regex_t *) re;
 
- end:
+  end:
 	switch_safe_free(tmp);
 	return match_count;
 }

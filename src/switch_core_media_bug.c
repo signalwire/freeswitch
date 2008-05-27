@@ -100,7 +100,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	if ((bug->raw_read_buffer && bug->raw_write_buffer) && (!rlen && !wlen)) {
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	maxlen = SWITCH_RECOMMENDED_BUFFER_SIZE > frame->buflen ? frame->buflen : SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 	if ((rdlen = rlen > wlen ? wlen : rlen) > maxlen) {
@@ -128,11 +128,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 
 
 	bytes = (datalen > frame->datalen) ? datalen : frame->datalen;
-	switch_assert( bytes <= maxlen );
-	
+	switch_assert(bytes <= maxlen);
+
 	if (bytes) {
 		int16_t *tp = bug->tmp;
-		
+
 		dp = (int16_t *) bug->data;
 		fp = (int16_t *) frame->data;
 		rlen = frame->datalen / 2;
@@ -171,10 +171,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		frame->datalen = bytes;
 		frame->samples = bytes / sizeof(int16_t);
 		frame->rate = read_codec->implementation->actual_samples_per_second;
-		
+
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -183,7 +183,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 														  switch_media_bug_callback_t callback,
 														  void *user_data, time_t stop_time, switch_media_bug_flag_t flags, switch_media_bug_t **new_bug)
 {
-	switch_media_bug_t *bug;//, *bp;
+	switch_media_bug_t *bug;	//, *bp;
 	switch_size_t bytes;
 
 	if (flags & SMBF_WRITE_REPLACE) {
@@ -287,7 +287,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_ses
 		switch_thread_rwlock_unlock(session->bug_rwlock);
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	if (session->bug_codec.implementation) {
 		switch_core_codec_destroy(&session->bug_codec);
 	}
@@ -313,7 +313,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(switch_media_bug_t *
 		*bug = NULL;
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -350,7 +350,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 	if (!session->bugs && session->bug_codec.implementation) {
 		switch_core_codec_destroy(&session->bug_codec);
 	}
-	
+
 	return status;
 }
 

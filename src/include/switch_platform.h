@@ -59,21 +59,16 @@ SWITCH_BEGIN_EXTERN_C
  * C4610: struct  can never be instantiated - user defined constructor required
  */
 #pragma warning(disable:4100 4200 4204 4706 4819 4132 4510 4512 4610 4996)
-
 #define SWITCH_HAVE_ODBC 1
-
 #ifdef _MSC_VER
 #  pragma comment(lib, "odbc32.lib")
 #endif
-
 #pragma include_alias(<libteletone.h>,				<../../libs/libteletone/src/libteletone.h>)
 #pragma include_alias(<libteletone_generate.h>,		<../../libs/libteletone/src/libteletone_generate.h>)
 #pragma include_alias(<libteletone_detect.h>,		<../../libs/libteletone/src/libteletone_detect.h>)
-
 #if (_MSC_VER >= 1400)			// VC8+
 #define switch_assert(expr) assert(expr);__analysis_assume( expr )
 #endif
-
 #if (_MSC_VER >= 1400)			// VC8+
 #ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE
@@ -90,7 +85,7 @@ SWITCH_BEGIN_EXTERN_C
 #undef inline
 #define inline __inline
 #ifndef uint32_t
-typedef unsigned __int8 uint8_t;
+	typedef unsigned __int8 uint8_t;
 typedef unsigned __int16 uint16_t;
 typedef unsigned __int32 uint32_t;
 typedef unsigned __int64 uint64_t;
@@ -187,9 +182,9 @@ typedef int gid_t;
 #define PRINTF_FUNCTION(fmtstr,vars)
 #endif
 #ifdef SWITCH_INT32
-	typedef SWITCH_INT32 switch_int32_t;
+typedef SWITCH_INT32 switch_int32_t;
 #else
-	typedef int32_t switch_int32_t;
+typedef int32_t switch_int32_t;
 #endif
 
 #ifdef SWITCH_SIZE_T
@@ -298,10 +293,9 @@ SWITCH_END_EXTERN_C
 #ifndef switch_assert
 #define switch_assert(expr) assert(expr)
 #endif
-
 #ifndef __ATTR_SAL
- /* used for msvc code analysis */
- /* http://msdn2.microsoft.com/en-us/library/ms235402.aspx */
+	/* used for msvc code analysis */
+	/* http://msdn2.microsoft.com/en-us/library/ms235402.aspx */
 #define _In_
 #define _In_z_
 #define _In_opt_z_
@@ -324,8 +318,6 @@ SWITCH_END_EXTERN_C
 #define _Out_ptrdiff_cap_(x)
 #define _Out_opt_ptrdiff_cap_(x)
 #endif
-
-
 /* For Emacs:
  * Local Variables:
  * mode:c

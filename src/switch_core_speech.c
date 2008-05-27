@@ -37,11 +37,8 @@
 
 SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *sh,
 														const char *module_name,
-														const char *voice_name, 
-														unsigned int rate,
-														unsigned int interval,
-														switch_speech_flag_t *flags, 
-														switch_memory_pool_t *pool)
+														const char *voice_name,
+														unsigned int rate, unsigned int interval, switch_speech_flag_t *flags, switch_memory_pool_t *pool)
 {
 	switch_status_t status;
 	char buf[256] = "";
@@ -130,7 +127,7 @@ SWITCH_DECLARE(void) switch_core_speech_float_param_tts(switch_speech_handle_t *
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle_t *sh,
-															void *data, switch_size_t *datalen, uint32_t * rate, switch_speech_flag_t *flags)
+															void *data, switch_size_t *datalen, uint32_t *rate, switch_speech_flag_t *flags)
 {
 	switch_assert(sh != NULL);
 

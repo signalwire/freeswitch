@@ -130,7 +130,7 @@ SWITCH_DECLARE(const char *) switch_channel_cause2str(switch_call_cause_t cause)
 	uint8_t x;
 	const char *str = "UNKNOWN";
 
-	for (x = 0; x < (sizeof(CAUSE_CHART) / sizeof(struct switch_cause_table)) -1 ; x++) {
+	for (x = 0; x < (sizeof(CAUSE_CHART) / sizeof(struct switch_cause_table)) - 1; x++) {
 		if (CAUSE_CHART[x].cause == cause) {
 			str = CAUSE_CHART[x].name;
 			break;
@@ -214,12 +214,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 	switch_status_t status;
 	void *pop;
 	switch_dtmf_t new_dtmf;
-	
+
 	switch_assert(dtmf);
 
-	switch_mutex_lock(channel->dtmf_mutex);	
+	switch_mutex_lock(channel->dtmf_mutex);
 	new_dtmf = *dtmf;
-	
+
 	if ((status = switch_core_session_recv_dtmf(channel->session, dtmf) != SWITCH_STATUS_SUCCESS)) {
 		goto done;
 	}
@@ -229,13 +229,13 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 		int x = 0;
 
 		if (new_dtmf.duration > switch_core_max_dtmf_duration(0)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXECSSIVE DTMF DIGIT [%c] LEN [%d]\n", 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXECSSIVE DTMF DIGIT [%c] LEN [%d]\n",
 							  switch_channel_get_name(channel), new_dtmf.digit, new_dtmf.duration);
 			new_dtmf.duration = switch_core_max_dtmf_duration(0);
 		} else if (!new_dtmf.duration) {
 			new_dtmf.duration = switch_core_default_dtmf_duration(0);
 		}
-		
+
 		switch_zmalloc(dt, sizeof(*dt));
 		*dt = new_dtmf;
 
@@ -251,7 +251,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 
 	status = SWITCH_STATUS_SUCCESS;
 
-done:
+  done:
 
 	switch_mutex_unlock(channel->dtmf_mutex);
 
@@ -261,7 +261,7 @@ done:
 SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_t *channel, const char *dtmf_string)
 {
 	char *p;
-	switch_dtmf_t dtmf = {0, switch_core_default_dtmf_duration(0)};
+	switch_dtmf_t dtmf = { 0, switch_core_default_dtmf_duration(0) };
 	int sent = 0, dur;
 	char *string;
 	int i, argc;
@@ -274,7 +274,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_
 	string = switch_core_session_strdup(channel->session, dtmf_string);
 	argc = switch_separate_string(string, '+', argv, (sizeof(argv) / sizeof(argv[0])));
 
-	for(i = 0; i < argc; i++) {
+	for (i = 0; i < argc; i++) {
 		dtmf.duration = switch_core_default_dtmf_duration(0);
 		dur = switch_core_default_dtmf_duration(0) / 8;
 		if ((p = strchr(argv[i], '@'))) {
@@ -297,7 +297,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_
 				dtmf.digit = *p;
 				if (switch_channel_queue_dtmf(channel, &dtmf) == SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Queue dtmf\ndigit=%c ms=%u samples=%u\n",
-						switch_channel_get_name(channel), dtmf.digit, dur, dtmf.duration);
+									  switch_channel_get_name(channel), dtmf.digit, dur, dtmf.duration);
 					sent++;
 				}
 			}
@@ -323,7 +323,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(switch_channel_t *ch
 		free(dt);
 
 		if (dtmf->duration > switch_core_max_dtmf_duration(0)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXECSSIVE DTMF DIGIT [%c] LEN [%d]\n", 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXECSSIVE DTMF DIGIT [%c] LEN [%d]\n",
 							  switch_channel_get_name(channel), dtmf->digit, dtmf->duration);
 			dtmf->duration = switch_core_max_dtmf_duration(0);
 		} else if (!dtmf->duration) {
@@ -347,11 +347,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(switch_channel_t *ch
 SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf_string(switch_channel_t *channel, char *dtmf_str, switch_size_t len)
 {
 	switch_size_t x = 0;
-	switch_dtmf_t dtmf = {0};
+	switch_dtmf_t dtmf = { 0 };
 
 	memset(dtmf_str, 0, len);
 
-	while(x < len - 1 && switch_channel_dequeue_dtmf(channel, &dtmf) == SWITCH_STATUS_SUCCESS) {
+	while (x < len - 1 && switch_channel_dequeue_dtmf(channel, &dtmf) == SWITCH_STATUS_SUCCESS) {
 		dtmf_str[x++] = dtmf.digit;
 	}
 
@@ -363,7 +363,7 @@ SWITCH_DECLARE(void) switch_channel_flush_dtmf(switch_channel_t *channel)
 {
 	void *pop;
 	switch_mutex_lock(channel->dtmf_mutex);
-	while(switch_queue_trypop(channel->dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+	while (switch_queue_trypop(channel->dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 		switch_safe_free(pop);
 	}
 	switch_mutex_unlock(channel->dtmf_mutex);
@@ -426,7 +426,7 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable(switch_channel_t *chann
 	switch_assert(channel != NULL);
 
 	switch_mutex_lock(channel->profile_mutex);
-	if (!channel->variables || !(v = switch_event_get_header(channel->variables, (char*)varname))) {
+	if (!channel->variables || !(v = switch_event_get_header(channel->variables, (char *) varname))) {
 		switch_caller_profile_t *cp = channel->caller_profile;
 
 		if (cp) {
@@ -551,7 +551,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *ch
 		switch_event_del_header(channel->variables, varname);
 		if (!switch_strlen_zero(value)) {
 			switch_event_add_header(channel->variables, SWITCH_STACK_BOTTOM, varname, "%s", value);
-		} 
+		}
 		switch_mutex_unlock(channel->profile_mutex);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -634,7 +634,7 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, sw
 	switch_channel_state_t state, mystate, ostate;
 	ostate = switch_channel_get_state(channel);
 
-	for(;;) {
+	for (;;) {
 		state = switch_channel_get_running_state(other_channel);
 		mystate = switch_channel_get_running_state(channel);
 
@@ -652,7 +652,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *c
 		to++;
 	}
 
-	for(;;) {
+	for (;;) {
 		if (pres) {
 			if (switch_test_flag(channel, want_flag)) {
 				break;
@@ -723,9 +723,9 @@ SWITCH_DECLARE(uint8_t) switch_channel_ready(switch_channel_t *channel)
 
 	switch_assert(channel != NULL);
 
-	if (!channel->hangup_cause && channel->state > CS_ROUTING && channel->state < CS_HANGUP && channel->state != CS_RESET && 
+	if (!channel->hangup_cause && channel->state > CS_ROUTING && channel->state < CS_HANGUP && channel->state != CS_RESET &&
 		!switch_test_flag(channel, CF_TRANSFER)) {
-			ret++;
+		ret++;
 	}
 
 	return ret;
@@ -769,8 +769,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 																				const char *file, const char *func, int line)
 {
 	switch_mutex_lock(channel->flag_mutex);
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "%s Running State Change %s\n",
-		channel->name, state_names[state]);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "%s Running State Change %s\n", channel->name, state_names[state]);
 	channel->running_state = state;
 
 	if (channel->state_flags) {
@@ -797,7 +796,8 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", "%s", (char *) state_num);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", "%s", channel->name);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", "%s", switch_core_session_get_uuid(channel->session));
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Call-Direction", "%s", switch_channel_test_flag(channel, CF_OUTBOUND) ? "outbound" : "inbound");
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Call-Direction", "%s",
+										switch_channel_test_flag(channel, CF_OUTBOUND) ? "outbound" : "inbound");
 				if (switch_channel_test_flag(channel, CF_ANSWERED)) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Answer-State", "answered");
 				} else if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
@@ -837,172 +837,172 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 	}
 
 	/* STUB for more dev
-	case CS_INIT:
-	switch(state) {
+	   case CS_INIT:
+	   switch(state) {
 
-	case CS_NEW:
-	case CS_INIT:
-	case CS_EXCHANGE_MEDIA:
-	case CS_SOFT_EXECUTE:
-	case CS_ROUTING:
-	case CS_EXECUTE:
-	case CS_HANGUP:
-	case CS_DONE:
+	   case CS_NEW:
+	   case CS_INIT:
+	   case CS_EXCHANGE_MEDIA:
+	   case CS_SOFT_EXECUTE:
+	   case CS_ROUTING:
+	   case CS_EXECUTE:
+	   case CS_HANGUP:
+	   case CS_DONE:
 
-	default:
-	break;
-	}
-	break;
-	*/
+	   default:
+	   break;
+	   }
+	   break;
+	 */
 
 	switch (last_state) {
-case CS_NEW:
-case CS_RESET:
-	switch (state) {
-default:
-	ok++;
-	break;
-	}
-	break;
+	case CS_NEW:
+	case CS_RESET:
+		switch (state) {
+		default:
+			ok++;
+			break;
+		}
+		break;
 
-case CS_INIT:
-	switch (state) {
-case CS_EXCHANGE_MEDIA:
-case CS_SOFT_EXECUTE:
-case CS_ROUTING:
-case CS_EXECUTE:
-case CS_PARK:
-case CS_CONSUME_MEDIA:
-case CS_HIBERNATE:
-case CS_RESET:
-	ok++;
-default:
-	break;
-	}
-	break;
+	case CS_INIT:
+		switch (state) {
+		case CS_EXCHANGE_MEDIA:
+		case CS_SOFT_EXECUTE:
+		case CS_ROUTING:
+		case CS_EXECUTE:
+		case CS_PARK:
+		case CS_CONSUME_MEDIA:
+		case CS_HIBERNATE:
+		case CS_RESET:
+			ok++;
+		default:
+			break;
+		}
+		break;
 
-case CS_EXCHANGE_MEDIA:
-	switch (state) {
-case CS_SOFT_EXECUTE:
-case CS_ROUTING:
-case CS_EXECUTE:
-case CS_PARK:
-case CS_CONSUME_MEDIA:
-case CS_HIBERNATE:
-case CS_RESET:
-	ok++;
-default:
-	break;
-	}
-	break;
+	case CS_EXCHANGE_MEDIA:
+		switch (state) {
+		case CS_SOFT_EXECUTE:
+		case CS_ROUTING:
+		case CS_EXECUTE:
+		case CS_PARK:
+		case CS_CONSUME_MEDIA:
+		case CS_HIBERNATE:
+		case CS_RESET:
+			ok++;
+		default:
+			break;
+		}
+		break;
 
-case CS_SOFT_EXECUTE:
-	switch (state) {
-case CS_EXCHANGE_MEDIA:
-case CS_ROUTING:
-case CS_EXECUTE:
-case CS_PARK:
-case CS_CONSUME_MEDIA:
-case CS_HIBERNATE:
-case CS_RESET:
-	ok++;
-default:
-	break;
-	}
-	break;
+	case CS_SOFT_EXECUTE:
+		switch (state) {
+		case CS_EXCHANGE_MEDIA:
+		case CS_ROUTING:
+		case CS_EXECUTE:
+		case CS_PARK:
+		case CS_CONSUME_MEDIA:
+		case CS_HIBERNATE:
+		case CS_RESET:
+			ok++;
+		default:
+			break;
+		}
+		break;
 
-case CS_PARK:
-	switch (state) {
-case CS_EXCHANGE_MEDIA:
-case CS_ROUTING:
-case CS_EXECUTE:
-case CS_SOFT_EXECUTE:
-case CS_HIBERNATE:
-case CS_RESET:
-case CS_CONSUME_MEDIA:
-	ok++;
-default:
-	break;
-	}
-	break;
+	case CS_PARK:
+		switch (state) {
+		case CS_EXCHANGE_MEDIA:
+		case CS_ROUTING:
+		case CS_EXECUTE:
+		case CS_SOFT_EXECUTE:
+		case CS_HIBERNATE:
+		case CS_RESET:
+		case CS_CONSUME_MEDIA:
+			ok++;
+		default:
+			break;
+		}
+		break;
 
-case CS_CONSUME_MEDIA:
-	switch (state) {
-case CS_EXCHANGE_MEDIA:
-case CS_ROUTING:
-case CS_EXECUTE:
-case CS_SOFT_EXECUTE:
-case CS_HIBERNATE:
-case CS_RESET:
-case CS_PARK:
-	ok++;
-default:
-	break;
-	}
-	break;
-case CS_HIBERNATE:
-	switch (state) {
-case CS_EXCHANGE_MEDIA:
-case CS_INIT:
-case CS_ROUTING:
-case CS_EXECUTE:
-case CS_SOFT_EXECUTE:
-case CS_PARK:
-case CS_CONSUME_MEDIA:
-case CS_RESET:
-	ok++;
-default:
-	break;
-	}
-	break;
+	case CS_CONSUME_MEDIA:
+		switch (state) {
+		case CS_EXCHANGE_MEDIA:
+		case CS_ROUTING:
+		case CS_EXECUTE:
+		case CS_SOFT_EXECUTE:
+		case CS_HIBERNATE:
+		case CS_RESET:
+		case CS_PARK:
+			ok++;
+		default:
+			break;
+		}
+		break;
+	case CS_HIBERNATE:
+		switch (state) {
+		case CS_EXCHANGE_MEDIA:
+		case CS_INIT:
+		case CS_ROUTING:
+		case CS_EXECUTE:
+		case CS_SOFT_EXECUTE:
+		case CS_PARK:
+		case CS_CONSUME_MEDIA:
+		case CS_RESET:
+			ok++;
+		default:
+			break;
+		}
+		break;
 
-case CS_ROUTING:
-	switch (state) {
-case CS_EXCHANGE_MEDIA:
-case CS_EXECUTE:
-case CS_SOFT_EXECUTE:
-case CS_PARK:
-case CS_CONSUME_MEDIA:
-case CS_HIBERNATE:
-case CS_RESET:
-	ok++;
-default:
-	break;
-	}
-	break;
+	case CS_ROUTING:
+		switch (state) {
+		case CS_EXCHANGE_MEDIA:
+		case CS_EXECUTE:
+		case CS_SOFT_EXECUTE:
+		case CS_PARK:
+		case CS_CONSUME_MEDIA:
+		case CS_HIBERNATE:
+		case CS_RESET:
+			ok++;
+		default:
+			break;
+		}
+		break;
 
-case CS_EXECUTE:
-	switch (state) {
-case CS_EXCHANGE_MEDIA:
-case CS_SOFT_EXECUTE:
-case CS_ROUTING:
-case CS_PARK:
-case CS_CONSUME_MEDIA:
-case CS_HIBERNATE:
-case CS_RESET:
-	ok++;
-default:
-	break;
-	}
-	break;
+	case CS_EXECUTE:
+		switch (state) {
+		case CS_EXCHANGE_MEDIA:
+		case CS_SOFT_EXECUTE:
+		case CS_ROUTING:
+		case CS_PARK:
+		case CS_CONSUME_MEDIA:
+		case CS_HIBERNATE:
+		case CS_RESET:
+			ok++;
+		default:
+			break;
+		}
+		break;
 
-case CS_HANGUP:
-	switch (state) {
-case CS_DONE:
-	ok++;
-default:
-	break;
-	}
-	break;
+	case CS_HANGUP:
+		switch (state) {
+		case CS_DONE:
+			ok++;
+		default:
+			break;
+		}
+		break;
 
-default:
-	break;
+	default:
+		break;
 
 	}
 
 	if (ok) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "%s State Change %s -> %s\n",
-			channel->name, state_names[last_state], state_names[state]);
+						  channel->name, state_names[last_state], state_names[state]);
 		switch_mutex_lock(channel->flag_mutex);
 		channel->state = state;
 		switch_mutex_unlock(channel->flag_mutex);
@@ -1016,12 +1016,12 @@ default:
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_WARNING,
-			"%s Invalid State Change %s -> %s\n", channel->name, state_names[last_state], state_names[state]);
+						  "%s Invalid State Change %s -> %s\n", channel->name, state_names[last_state], state_names[state]);
 		/* we won't tolerate an invalid state change so we can make sure we are as robust as a nice cup of dark coffee! */
 		/* not cool lets crash this bad boy and figure out wtf is going on */
 		switch_assert(channel->state >= CS_HANGUP);
 	}
-done:
+  done:
 
 	switch_mutex_unlock(channel->flag_mutex);
 	return channel->state;
@@ -1081,7 +1081,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 		/* Index Originator's Profile */
 		if (originator_caller_profile) {
 			switch_caller_profile_event_set_data(originator_caller_profile, "Other-Leg", event);
-		} else if (originatee_caller_profile) { /* Index Originatee's Profile */
+		} else if (originatee_caller_profile) {	/* Index Originatee's Profile */
 			switch_caller_profile_event_set_data(originatee_caller_profile, "Other-Leg", event);
 		}
 	}
@@ -1152,7 +1152,7 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel
 	caller_profile->next = channel->caller_profile;
 	channel->caller_profile = caller_profile;
 	caller_profile->profile_index = switch_core_sprintf(caller_profile->pool, "%d", ++channel->profile_index);
-	
+
 	switch_mutex_unlock(channel->profile_mutex);
 }
 
@@ -1190,7 +1190,7 @@ SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel
 		channel->caller_profile->originatee_caller_profile = caller_profile;
 	}
 	switch_assert(channel->caller_profile->originatee_caller_profile->next != channel->caller_profile->originatee_caller_profile);
-	switch_mutex_unlock(channel->profile_mutex);		
+	switch_mutex_unlock(channel->profile_mutex);
 }
 
 SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_originator_caller_profile(switch_channel_t *channel)
@@ -1249,7 +1249,7 @@ SWITCH_DECLARE(int) switch_channel_add_state_handler(switch_channel_t *channel, 
 
 	channel->state_handlers[index] = state_handler;
 
-end:
+  end:
 	switch_mutex_unlock(channel->flag_mutex);
 	return index;
 }
@@ -1347,7 +1347,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		channel->state = CS_HANGUP;
 		channel->hangup_cause = hangup_cause;
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n",
-			channel->name, state_names[last_state], switch_channel_cause2str(channel->hangup_cause));
+						  channel->name, state_names[last_state], switch_channel_cause2str(channel->hangup_cause));
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_HANGUP) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Hangup-Cause", "%s", switch_channel_cause2str(channel->hangup_cause));
 			switch_channel_event_set_data(channel, event);
@@ -1408,12 +1408,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 		}
 
 		/* if we're the child of another channel and the other channel is in a blocking read they will never realize we have answered so send 
-		a SWITCH_SIG_BREAK to interrupt any blocking reads on that channel
-		*/
+		   a SWITCH_SIG_BREAK to interrupt any blocking reads on that channel
+		 */
 		if ((uuid = switch_channel_get_variable(channel, SWITCH_ORIGINATOR_VARIABLE))
 			&& (other_session = switch_core_session_locate(uuid))) {
-				switch_core_session_kill_channel(other_session, SWITCH_SIG_BREAK);
-				switch_core_session_rwunlock(other_session);
+			switch_core_session_kill_channel(other_session, SWITCH_SIG_BREAK);
+			switch_core_session_rwunlock(other_session);
 		}
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1443,7 +1443,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 	msg.message_id = SWITCH_MESSAGE_INDICATE_PROGRESS;
 	msg.from = channel->name;
 	status = switch_core_session_receive_message(channel->session, &msg);
-	
+
 	if (status == SWITCH_STATUS_SUCCESS) {
 		switch_channel_perform_mark_pre_answered(channel, file, func, line);
 	} else {
@@ -1515,12 +1515,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	}
 
 	/* if we're the child of another channel and the other channel is in a blocking read they will never realize we have answered so send 
-	a SWITCH_SIG_BREAK to interrupt any blocking reads on that channel
-	*/
+	   a SWITCH_SIG_BREAK to interrupt any blocking reads on that channel
+	 */
 	if ((uuid = switch_channel_get_variable(channel, SWITCH_ORIGINATOR_VARIABLE))
 		&& (other_session = switch_core_session_locate(uuid))) {
-			switch_core_session_kill_channel(other_session, SWITCH_SIG_BREAK);
-			switch_core_session_rwunlock(other_session);
+		switch_core_session_kill_channel(other_session, SWITCH_SIG_BREAK);
+		switch_core_session_rwunlock(other_session);
 	}
 
 	switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
@@ -1588,16 +1588,16 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 	int nv = 0;
 
 	if (switch_strlen_zero(in)) {
-		return (char *)in;
+		return (char *) in;
 	}
 
 	q = in;
-	while(q && *q) {
+	while (q && *q) {
 		if (!(p = strchr(q, '$'))) {
 			break;
 		}
 
-		if (*(p+1) != '{') {
+		if (*(p + 1) != '{') {
 			q = p + 1;
 			continue;
 		}
@@ -1607,10 +1607,10 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 	}
 
 	if (!nv) {
-		return (char *)in;
+		return (char *) in;
 	}
 
-	
+
 	nv = 0;
 	olen = strlen(in) + 1;
 	indup = strdup(in);
@@ -1633,8 +1633,8 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 			}
 
 			if (*p == '$' && !nv) {
-				if (*(p+1)) {
-					if (*(p+1) == '{') {
+				if (*(p + 1)) {
+					if (*(p + 1) == '{') {
 						vtype = 1;
 					} else {
 						nv = 1;
@@ -1686,12 +1686,12 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 				if ((vval = strchr(vname, '('))) {
 					e = vval - 1;
 					*vval++ = '\0';
-					while(*e == ' ') {
+					while (*e == ' ') {
 						*e-- = '\0';
 					}
 					e = vval;
 					br = 1;
-					while(e && *e) {
+					while (e && *e) {
 						if (*e == '(') {
 							br++;
 						} else if (br > 1 && *e == ')') {
@@ -1712,7 +1712,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 					int ooffset = 0;
 					char *ptr;
 
-					if ((expanded = switch_channel_expand_variables(channel, (char *)vname)) == vname) {
+					if ((expanded = switch_channel_expand_variables(channel, (char *) vname)) == vname) {
 						expanded = NULL;
 					} else {
 						vname = expanded;
@@ -1735,12 +1735,12 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 
 						if (offset >= 0) {
 							sub_val += offset;
-						} else if ((size_t)abs(offset) <= strlen(sub_val)) {
+						} else if ((size_t) abs(offset) <= strlen(sub_val)) {
 							sub_val = cloned_sub_val + (strlen(cloned_sub_val) + offset);
 						}
 
-						if (ooffset > 0 && (size_t)ooffset < strlen(sub_val)) {
-							if ((ptr = (char *)sub_val + ooffset)) {
+						if (ooffset > 0 && (size_t) ooffset < strlen(sub_val)) {
+							if ((ptr = (char *) sub_val + ooffset)) {
 								*ptr = '\0';
 							}
 						}
@@ -1756,7 +1756,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 					if (stream.data) {
 						char *expanded_vname = NULL;
 
-						if ((expanded_vname = switch_channel_expand_variables(channel, (char *)vname)) == vname) {
+						if ((expanded_vname = switch_channel_expand_variables(channel, (char *) vname)) == vname) {
 							expanded_vname = NULL;
 						} else {
 							vname = expanded_vname;
@@ -1782,7 +1782,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 						free(data);
 						free(indup);
-						return (char *)in;
+						return (char *) in;
 					}
 				}
 				if ((nlen = sub_val ? strlen(sub_val) : 0)) {
@@ -1830,7 +1830,8 @@ SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *chann
 	switch_stream_handle_t stream = { 0 };
 	switch_size_t encode_len = 1024, new_len = 0;
 	char *encode_buf = NULL;
-	const char *prof[12] = { 0 }, *prof_names[12] = {0};
+	const char *prof[12] = { 0 }, *prof_names[12] = {
+	0};
 	char *e = NULL;
 	switch_event_header_t *hi;
 	uint32_t x = 0;
@@ -1938,7 +1939,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	char start[80] = "", answer[80] = "", progress[80] = "", progress_media[80] = "", end[80] = "", tmp[80] = "", profile_start[80] = "";
 	int32_t duration = 0, legbillsec = 0, billsec = 0, mduration = 0, billmsec = 0, legbillmsec = 0, progressmsec = 0, progress_mediamsec = 0;
 	switch_time_t uduration = 0, legbillusec = 0, billusec = 0, progresssec = 0, progressusec = 0, progress_mediasec = 0, progress_mediausec = 0;
-	time_t tt_created = 0, tt_answered = 0, tt_progress = 0, tt_progress_media = 0, tt_hungup = 0, mtt_created = 0, mtt_answered = 0, mtt_hungup = 0, tt_prof_created, mtt_prof_created, mtt_progress = 0 , mtt_progress_media = 0;
+	time_t tt_created = 0, tt_answered = 0, tt_progress = 0, tt_progress_media = 0, tt_hungup = 0, mtt_created = 0, mtt_answered = 0, mtt_hungup =
+		0, tt_prof_created, mtt_prof_created, mtt_progress = 0, mtt_progress_media = 0;
 
 	if (!(caller_profile = switch_channel_get_caller_profile(channel)) || !channel->variables) {
 		return SWITCH_STATUS_FALSE;
@@ -1949,13 +1951,13 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		last_app = ap->app;
 		last_arg = ap->arg;
 	}
-	
+
 	if (!(ocp = switch_channel_get_originatee_caller_profile(channel))) {
 		ocp = switch_channel_get_originator_caller_profile(channel);
 	}
 
 	if (!switch_strlen_zero(caller_profile->caller_id_name)) {
-		cid_buf = switch_core_session_sprintf(channel->session, "\"%s\" <%s>", caller_profile->caller_id_name, 
+		cid_buf = switch_core_session_sprintf(channel->session, "\"%s\" <%s>", caller_profile->caller_id_name,
 											  switch_str_nil(caller_profile->caller_id_number));
 	} else {
 		cid_buf = caller_profile->caller_id_number;
@@ -2016,21 +2018,21 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_answered);
 		switch_channel_set_variable(channel, "answer_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);
-		switch_channel_set_variable(channel, "answer_uepoch", tmp);		
+		switch_channel_set_variable(channel, "answer_uepoch", tmp);
 
 		tt_progress = (time_t) (caller_profile->times->progress / 1000000);
 		mtt_progress = (time_t) (caller_profile->times->progress / 1000);
 		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_progress);
 		switch_channel_set_variable(channel, "answer_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->progress);
-		switch_channel_set_variable(channel, "answer_uepoch", tmp);		
+		switch_channel_set_variable(channel, "answer_uepoch", tmp);
 
 		tt_progress_media = (time_t) (caller_profile->times->progress_media / 1000000);
 		mtt_progress_media = (time_t) (caller_profile->times->progress_media / 1000);
 		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_progress_media);
 		switch_channel_set_variable(channel, "answer_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->progress_media);
-		switch_channel_set_variable(channel, "answer_uepoch", tmp);		
+		switch_channel_set_variable(channel, "answer_uepoch", tmp);
 
 
 		tt_hungup = (time_t) (caller_profile->times->hungup / 1000000);
@@ -2041,28 +2043,28 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		switch_channel_set_variable(channel, "end_uepoch", tmp);
 
 		uduration = caller_profile->times->hungup - caller_profile->times->created;
-		duration = (int32_t)(tt_hungup - tt_created);
-		mduration = (int32_t)(mtt_hungup - mtt_created);
+		duration = (int32_t) (tt_hungup - tt_created);
+		mduration = (int32_t) (mtt_hungup - mtt_created);
 
 		if (caller_profile->times->answered) {
-			billsec = (int32_t)(tt_hungup - tt_answered);
-			billmsec = (int32_t)(mtt_hungup - mtt_answered);
+			billsec = (int32_t) (tt_hungup - tt_answered);
+			billmsec = (int32_t) (mtt_hungup - mtt_answered);
 			billusec = caller_profile->times->hungup - caller_profile->times->answered;
 
-			legbillsec = (int32_t)(tt_hungup - tt_prof_created);
-			legbillmsec = (int32_t)(mtt_hungup - mtt_prof_created);
+			legbillsec = (int32_t) (tt_hungup - tt_prof_created);
+			legbillmsec = (int32_t) (mtt_hungup - mtt_prof_created);
 			legbillusec = caller_profile->times->hungup - caller_profile->times->profile_created;
 		}
 
 		if (caller_profile->times->progress) {
-			progresssec = (int32_t)(tt_progress - tt_created);
-			progressmsec = (int32_t)(mtt_progress - mtt_created);
+			progresssec = (int32_t) (tt_progress - tt_created);
+			progressmsec = (int32_t) (mtt_progress - mtt_created);
 			progressusec = caller_profile->times->progress - caller_profile->times->created;
 		}
 
 		if (caller_profile->times->progress_media) {
-			progress_mediasec = (int32_t)(tt_progress - tt_created);
-			progress_mediamsec = (int32_t)(mtt_progress - mtt_created);
+			progress_mediasec = (int32_t) (tt_progress - tt_created);
+			progress_mediamsec = (int32_t) (mtt_progress - mtt_created);
 			progress_mediausec = caller_profile->times->progress - caller_profile->times->created;
 		}
 

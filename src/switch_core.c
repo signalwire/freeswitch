@@ -172,7 +172,7 @@ SWITCH_DECLARE(char *) switch_core_get_uuid(void)
 }
 
 
-static void *switch_core_service_thread(switch_thread_t * thread, void *obj)
+static void *switch_core_service_thread(switch_thread_t *thread, void *obj)
 {
 	switch_core_thread_session_t *data = obj;
 	switch_core_session_t *session = data->objs[0];
@@ -362,7 +362,7 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 #endif
 #endif
 	}
-	
+
 	dir_path = switch_mprintf("%s%ssounds", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
 	switch_dir_make_recursive(dir_path,
 							  SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE | SWITCH_FPROT_UEXECUTE | SWITCH_FPROT_GREAD | SWITCH_FPROT_GEXECUTE,
@@ -436,8 +436,7 @@ SWITCH_DECLARE(int32_t) set_high_priority(void)
 	 * So let's try to remove the mlock limit here...
 	 */
 	if (setrlimit(RLIMIT_MEMLOCK, &lim) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
-			 "Failed to disable memlock limit, application may crash if run as non-root user!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to disable memlock limit, application may crash if run as non-root user!\n");
 	}
 #endif
 
@@ -463,7 +462,7 @@ SWITCH_DECLARE(int32_t) change_user_group(const char *user, const char *group)
 		/*
 		 * Lookup user information in the system's db
 		 */
-		runas_pw = getpwnam( user );
+		runas_pw = getpwnam(user);
 		if (!runas_pw) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unknown user \"%s\"\n", user);
 			return -1;
@@ -477,7 +476,7 @@ SWITCH_DECLARE(int32_t) change_user_group(const char *user, const char *group)
 		/*
 		 * Lookup group information in the system's db
 		 */
-		gr = getgrnam( group );
+		gr = getgrnam(group);
 		if (!gr) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unknown group \"%s\"\n", group);
 			return -1;
@@ -514,7 +513,6 @@ SWITCH_DECLARE(int32_t) change_user_group(const char *user, const char *group)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to change gid!\n");
 				return -1;
 			}
-
 #ifdef HAVE_INITGROUPS
 			/*
 			 * Set all the other groups the user is a member of
@@ -573,7 +571,7 @@ SWITCH_DECLARE(const char *) switch_core_mime_ext2type(const char *ext)
 	return (const char *) switch_core_hash_find(runtime.mime_types, ext);
 }
 
-                         
+
 SWITCH_DECLARE(switch_hash_index_t *) switch_core_mime_index(void)
 {
 	return switch_hash_first(NULL, runtime.mime_types);
@@ -605,17 +603,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_mime_add_type(const char *type, cons
 					switch_core_hash_insert(runtime.mime_types, argv[x], ptype);
 				}
 			}
-			
+
 			status = SWITCH_STATUS_SUCCESS;
 		}
-		
+
 		free(ext_list);
 	}
 
 	return status;
 }
 
-static void load_mime_types(void) 
+static void load_mime_types(void)
 {
 	char *cf = "mime.types";
 	int fd = -1;
@@ -630,7 +628,7 @@ static void load_mime_types(void)
 		return;
 	}
 
-	while((switch_fd_read_line(fd, line_buf, sizeof(line_buf)))) {
+	while ((switch_fd_read_line(fd, line_buf, sizeof(line_buf)))) {
 		char *p;
 		char *type = line_buf;
 
@@ -645,20 +643,20 @@ static void load_mime_types(void)
 		if ((p = strchr(type, '\t')) || (p = strchr(type, ' '))) {
 			*p++ = '\0';
 
-			while(*p == ' ' || *p == '\t') {
+			while (*p == ' ' || *p == '\t') {
 				p++;
 			}
 
 			switch_core_mime_add_type(type, p);
 		}
-		
+
 	}
 
 	if (fd > -1) {
 		close(fd);
 		fd = -1;
 	}
-}	
+}
 
 SWITCH_DECLARE(void) switch_core_setrlimits(void)
 {
@@ -667,10 +665,10 @@ SWITCH_DECLARE(void) switch_core_setrlimits(void)
 
 	/* 
 	   Setting the stack size on FreeBSD results in an instant crash.
-		 
+
 	   If anyone knows how to fix this,
 	   feel free to submit a patch to http://jira.freeswitch.org 
-	*/
+	 */
 
 #ifndef __FreeBSD__
 	memset(&rlp, 0, sizeof(rlp));
@@ -710,10 +708,10 @@ SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip(const char *ip_str, c
 	switch_network_list_t *list;
 	uint32_t ip, net, mask, bits;
 	switch_bool_t ok = SWITCH_FALSE;
-	
+
 	switch_mutex_lock(runtime.global_mutex);
 	switch_inet_pton(AF_INET, ip_str, &ip);
-	
+
 	if ((list = switch_core_hash_find(IP_LIST.hash, list_name))) {
 		ok = switch_network_list_validate_ip(list, ip);
 	} else if (strchr(list_name, '/')) {
@@ -721,7 +719,7 @@ SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip(const char *ip_str, c
 		ok = switch_test_subnet(ip, net, mask);
 	}
 	switch_mutex_unlock(runtime.global_mutex);
-	
+
 	return ok;
 }
 
@@ -741,11 +739,11 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	if (IP_LIST.pool) {
 		switch_core_destroy_memory_pool(&IP_LIST.pool);
 	}
-	
+
 	memset(&IP_LIST, 0, sizeof(IP_LIST));
 	switch_core_new_memory_pool(&IP_LIST.pool);
 	switch_core_hash_init(&IP_LIST.hash, IP_LIST.pool);
-	
+
 	if ((xml = switch_xml_open_cfg("acl.conf", &cfg, NULL))) {
 		if ((x_lists = switch_xml_child(cfg, "network-lists"))) {
 			for (x_list = switch_xml_child(x_lists, "list"); x_list; x_list = x_list->next) {
@@ -760,7 +758,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 				if (dft) {
 					default_type = switch_true(dft);
 				}
-				
+
 				if (switch_network_list_create(&list, default_type, IP_LIST.pool) != SWITCH_STATUS_SUCCESS) {
 					abort();
 				}
@@ -779,35 +777,36 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 
 					if (type) {
 						ok = switch_true(type);
-					}					
+					}
 
 					cidr = switch_xml_attr(x_node, "cidr");
 					host = switch_xml_attr(x_node, "host");
 					mask = switch_xml_attr(x_node, "mask");
-					
+
 					if (cidr) {
 						if (switch_network_list_add_cidr(list, cidr, ok) == SWITCH_STATUS_SUCCESS) {
 							if (reload) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s (%s) to list %s\n", cidr, ok ? "allow" : "deny", name);
 							} else {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Adding %s (%s) to list %s\n", cidr, ok ? "allow" : "deny", name);
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Adding %s (%s) to list %s\n", cidr, ok ? "allow" : "deny",
+												  name);
 							}
 						} else {
 							if (reload) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 												  "Error Adding %s (%s) to list %s\n", cidr, ok ? "allow" : "deny", name);
 							} else {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, 
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
 												  "Error Adding %s (%s) to list %s\n", cidr, ok ? "allow" : "deny", name);
 							}
 						}
 					} else if (host && mask) {
 						if (switch_network_list_add_host_mask(list, host, mask, ok) == SWITCH_STATUS_SUCCESS) {
 							if (reload) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 												  "Adding %s/%s (%s) to list %s\n", host, mask, ok ? "allow" : "deny", name);
 							} else {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, 
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
 												  "Adding %s/%s (%s) to list %s\n", host, mask, ok ? "allow" : "deny", name);
 							}
 						}
@@ -855,8 +854,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	memset(&runtime, 0, sizeof(runtime));
 
 	runtime.dummy_cng_frame.data = runtime.dummy_data;
-	runtime.dummy_cng_frame.datalen= sizeof(runtime.dummy_data);
-	runtime.dummy_cng_frame.buflen= sizeof(runtime.dummy_data);
+	runtime.dummy_cng_frame.datalen = sizeof(runtime.dummy_data);
+	runtime.dummy_cng_frame.buflen = sizeof(runtime.dummy_data);
 	runtime.dummy_cng_frame.flags = SFF_CNG;
 
 	switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
@@ -914,17 +913,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 						switch_set_flag((&runtime), SCF_CRASH_PROT);
 					}
 				} else if (!strcasecmp(var, "loglevel")) {
-                    int level;                                                                                                                                  
-                    if (*val > 47 && *val < 58) {
-                        level = atoi(val);
-                    } else {
-                        level = switch_log_str2level(val);
-                    }
+					int level;
+					if (*val > 47 && *val < 58) {
+						level = atoi(val);
+					} else {
+						level = switch_log_str2level(val);
+					}
 
 					if (level != SWITCH_LOG_INVALID) {
-	                    switch_core_session_ctl(SCSC_LOGLEVEL, &level);
+						switch_core_session_ctl(SCSC_LOGLEVEL, &level);
 					}
-					
 #ifdef HAVE_SETRLIMIT
 				} else if (!strcasecmp(var, "dump-cores")) {
 					struct rlimit rlp;
@@ -942,23 +940,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 				} else if (!strcasecmp(var, "max_dtmf_duration")) {
 					int tmp = atoi(val);
 					if (tmp > 0) {
-						switch_core_max_dtmf_duration((uint32_t)tmp);
+						switch_core_max_dtmf_duration((uint32_t) tmp);
 					}
 				} else if (!strcasecmp(var, "default_dtmf_duration")) {
 					int tmp = atoi(val);
 					if (tmp > 0) {
-						switch_core_default_dtmf_duration((uint32_t)tmp);
+						switch_core_default_dtmf_duration((uint32_t) tmp);
 					}
 				} else if (!strcasecmp(var, "disable-monotonic-timing")) {
 					switch_time_set_monotonic(SWITCH_FALSE);
 				} else if (!strcasecmp(var, "max-sessions")) {
 					switch_core_session_limit(atoi(val));
-				}
-				else if (!strcasecmp(var, "rtp-start-port")) {
-					switch_rtp_set_start_port((switch_port_t)atoi(val));
-				}
-				else if (!strcasecmp(var, "rtp-end-port")) {
-					switch_rtp_set_end_port((switch_port_t)atoi(val));
+				} else if (!strcasecmp(var, "rtp-start-port")) {
+					switch_rtp_set_start_port((switch_port_t) atoi(val));
+				} else if (!strcasecmp(var, "rtp-end-port")) {
+					switch_rtp_set_end_port((switch_port_t) atoi(val));
 				}
 			}
 		}
@@ -1059,7 +1055,7 @@ static void handle_SIGHUP(int sig)
 {
 	if (sig) {
 		switch_event_t *event;
-		
+
 		if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Trapped-Signal", "HUP");
 			switch_event_fire(&event);
@@ -1094,7 +1090,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 #endif
 
 	signal(SIGHUP, handle_SIGHUP);
-	switch_load_network_lists(SWITCH_FALSE);	
+	switch_load_network_lists(SWITCH_FALSE);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bringing up environment.\n");
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Loading Modules.\n");
@@ -1110,12 +1106,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
-					  "\nFreeSWITCH Version %s Started.\nCrash Protection [%s]\nMax Sessions[%u]\nSession Rate[%d]\nSQL [%s]\n", SWITCH_VERSION_FULL, 
+					  "\nFreeSWITCH Version %s Started.\nCrash Protection [%s]\nMax Sessions[%u]\nSession Rate[%d]\nSQL [%s]\n", SWITCH_VERSION_FULL,
 					  switch_test_flag((&runtime), SCF_CRASH_PROT) ? "Enabled" : "Disabled",
 					  switch_core_session_limit(0),
-					  switch_core_sessions_per_second(0),
-					  switch_test_flag((&runtime), SCF_USE_SQL) ? "Enabled" : "Disabled"
-					  );
+					  switch_core_sessions_per_second(0), switch_test_flag((&runtime), SCF_USE_SQL) ? "Enabled" : "Disabled");
 
 	switch_clear_flag((&runtime), SCF_NO_NEW_SESSIONS);
 
@@ -1145,7 +1139,7 @@ SWITCH_DECLARE(switch_time_t) switch_core_uptime(void)
 	return switch_timestamp_now() - runtime.initiated;
 }
 
-SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_t * val)
+SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_t *val)
 {
 	if (switch_test_flag((&runtime), SCF_SHUTTING_DOWN)) {
 		return -1;
@@ -1292,7 +1286,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_management_exec(char *relative_oid, 
 
 SWITCH_DECLARE(void) switch_core_memory_reclaim_all(void)
 {
-	switch_core_memory_reclaim_logger();	
+	switch_core_memory_reclaim_logger();
 	switch_core_memory_reclaim_events();
 	switch_core_memory_reclaim();
 }

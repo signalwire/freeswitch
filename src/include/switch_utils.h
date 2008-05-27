@@ -54,15 +54,12 @@ SWITCH_BEGIN_EXTERN_C
 #else
 #define switch_is_file_path(file) (file && ((*file == '/') || strstr(file, SWITCH_URL_SEPARATOR)))
 #endif
-
 /*!
   \brief Test for NULL or zero length string
   \param s the string to test
   \return true value if the string is NULL or zero length
 */
 #define switch_strlen_zero(s) (!s || *s == '\0')
-
-
 static inline switch_bool_t switch_is_moh(const char *s)
 {
 	if (switch_strlen_zero(s) || !strcasecmp(s, "silence") || !strcasecmp(s, "indicate_hold")) {
@@ -78,9 +75,10 @@ SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size
 SWITCH_DECLARE(switch_size_t) switch_b64_decode(char *in, char *out, switch_size_t olen);
 SWITCH_DECLARE(char *) switch_amp_encode(char *s, char *buf, switch_size_t len);
 
-static inline switch_bool_t switch_is_digit_string(const char *s) {
+	 static inline switch_bool_t switch_is_digit_string(const char *s)
+{
 
-	while(s && *s) {
+	while (s && *s) {
 		if (*s < 48 || *s > 57) {
 			return SWITCH_FALSE;
 		}
@@ -113,7 +111,8 @@ atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE
   \param family the address family to return (AF_INET or AF_INET6)
   \return SWITCH_STATUS_SUCCESSS for success, otherwise failure
 */
-SWITCH_DECLARE(switch_status_t) switch_find_local_ip(_Out_opt_bytecapcount_(len) char *buf, _In_ int len, _In_ int family);
+SWITCH_DECLARE(switch_status_t) switch_find_local_ip(_Out_opt_bytecapcount_(len)
+													 char *buf, _In_ int len, _In_ int family);
 
 /*!
   \brief find the char representation of an ip adress
@@ -205,7 +204,7 @@ switch_mutex_unlock(obj->flag_mutex);
 
 #define switch_set_string(_dst, _src) switch_copy_string(_dst, _src, sizeof(_dst))
 
-static inline char *switch_clean_string(char *s)
+	 static inline char *switch_clean_string(char *s)
 {
 	char *p;
 	for (p = s; p && *p; p++) {
@@ -247,11 +246,11 @@ static inline switch_bool_t switch_strstr(char *s, char *q)
 	}
 
 	S = strdup(s);
-	
+
 	assert(S != NULL);
 
 	for (p = S; p && *p; p++) {
-		*p = (char)toupper(*p);
+		*p = (char) toupper(*p);
 	}
 
 	if (strstr(S, q)) {
@@ -263,9 +262,9 @@ static inline switch_bool_t switch_strstr(char *s, char *q)
 	assert(Q != NULL);
 
 	for (p = Q; p && *p; p++) {
-		*p = (char)toupper(*p);
+		*p = (char) toupper(*p);
 	}
-	
+
 	if (strstr(s, Q)) {
 		tf = SWITCH_TRUE;
 		goto done;
@@ -275,8 +274,8 @@ static inline switch_bool_t switch_strstr(char *s, char *q)
 		tf = SWITCH_TRUE;
 		goto done;
 	}
-	
- done:
+
+  done:
 	switch_safe_free(S);
 	switch_safe_free(Q);
 
@@ -345,7 +344,7 @@ SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t *pool, char *in, 
   \param ms the number of milliseconds to wait
   \return the requested condition
 */
-SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t * poll, int ms);
+SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms);
 
 /*!
   \brief Create a pointer to the file name in a given file path eliminating the directory name
@@ -369,7 +368,7 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network
 SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip(switch_network_list_t *list, uint32_t ip);
 #define switch_test_subnet(_ip, _net, _mask) (_mask ? ((_net & _mask) == (_ip & _mask)) : _net ? _net == _ip : 1)
 
-int switch_inet_pton(int af, const char *src, void *dst);
+	 int switch_inet_pton(int af, const char *src, void *dst);
 
 /* malloc or DIE macros */
 #ifdef NDEBUG

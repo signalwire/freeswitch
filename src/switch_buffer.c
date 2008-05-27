@@ -280,7 +280,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_zwrite(switch_buffer_t *buffer, cons
 
 SWITCH_DECLARE(void) switch_buffer_destroy(switch_buffer_t **buffer)
 {
-	if (buffer && *buffer) { 
+	if (buffer && *buffer) {
 		if ((switch_test_flag((*buffer), SWITCH_BUFFER_FLAG_DYNAMIC))) {
 			switch_safe_free((*buffer)->data);
 			free(*buffer);

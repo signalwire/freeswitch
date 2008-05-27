@@ -91,11 +91,9 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_SEQ_CLEARLINE SWITCH_SEQ_ESC SWITCH_SEQ_CLEARLINE_CHAR_STR
 #define SWITCH_SEQ_CLEARLINEEND SWITCH_SEQ_ESC SWITCH_SEQ_CLEARLINEEND_CHAR
 #define SWITCH_SEQ_CLEARSCR SWITCH_SEQ_ESC SWITCH_SEQ_CLEARSCR_CHAR SWITCH_SEQ_HOME
-
 #define SWITCH_DEFAULT_DTMF_DURATION 2000
 #define SWITCH_MAX_DTMF_DURATION 192000
 #define SWITCH_DEFAULT_DIR_PERMS SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE | SWITCH_FPROT_UEXECUTE | SWITCH_FPROT_GREAD | SWITCH_FPROT_GEXECUTE
-
 #ifdef WIN32
 #define SWITCH_PATH_SEPARATOR "\\"
 #else
@@ -144,7 +142,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_SPEECH_KEY "speech"
 #define SWITCH_UUID_BRIDGE "uuid_bridge"
 #define SWITCH_BITS_PER_BYTE 8
-typedef uint8_t switch_byte_t;
+	typedef uint8_t switch_byte_t;
 
 typedef struct {
 	char digit;
@@ -168,7 +166,7 @@ typedef enum {
 typedef enum {
 	SOF_NONE = 0,
 	SOF_NOBLOCK = (1 << 0),
-	SOF_FORKED_DIAL = (1 << 1) 
+	SOF_FORKED_DIAL = (1 << 1)
 } switch_originate_flag_t;
 
 typedef enum {
@@ -185,7 +183,7 @@ typedef enum {
 
 typedef enum {
 	SCF_NONE = 0,
-	SCF_USE_SQL = ( 1 << 0),
+	SCF_USE_SQL = (1 << 0),
 	SCF_NO_NEW_SESSIONS = (1 << 1),
 	SCF_SHUTTING_DOWN = (1 << 2),
 	SCF_CRASH_PROT = (1 << 3)
@@ -320,10 +318,10 @@ SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
 
 #define SWITCH_MAX_STACKS 32
 #define SWITCH_THREAD_STACKSIZE 240 * 1024
-#define SWITCH_MAX_INTERVAL 120 /* we only do up to 120ms */
-#define SWITCH_INTERVAL_PAD 10 /* A little extra buffer space to be safe */
+#define SWITCH_MAX_INTERVAL 120	/* we only do up to 120ms */
+#define SWITCH_INTERVAL_PAD 10	/* A little extra buffer space to be safe */
 #define SWITCH_MAX_SAMPLE_LEN 32
-#define SWITCH_BYTES_PER_SAMPLE 2 /* slin is 2 bytes per sample */
+#define SWITCH_BYTES_PER_SAMPLE 2	/* slin is 2 bytes per sample */
 #define SWITCH_RECOMMENDED_BUFFER_SIZE (SWITCH_BYTES_PER_SAMPLE * SWITCH_MAX_SAMPLE_LEN * (SWITCH_MAX_INTERVAL + SWITCH_INTERVAL_PAD))
 #define SWITCH_MAX_CODECS 30
 #define SWITCH_MAX_STATE_HANDLERS 30
@@ -425,29 +423,29 @@ typedef enum {
 
 #if __BYTE_ORDER == __BIG_ENDIAN
 typedef struct {
-	unsigned version:2;   /* protocol version       */
-	unsigned p:1;     /* padding flag           */
-	unsigned x:1;     /* header extension flag  */
-	unsigned cc:4;    /* CSRC count             */
-	unsigned m:1;     /* marker bit             */
-	unsigned pt:7;    /* payload type           */
-	unsigned seq:16;      /* sequence number        */
-	unsigned ts:32;       /* timestamp              */
-	unsigned ssrc:32; /* synchronization source */
+	unsigned version:2;			/* protocol version       */
+	unsigned p:1;				/* padding flag           */
+	unsigned x:1;				/* header extension flag  */
+	unsigned cc:4;				/* CSRC count             */
+	unsigned m:1;				/* marker bit             */
+	unsigned pt:7;				/* payload type           */
+	unsigned seq:16;			/* sequence number        */
+	unsigned ts:32;				/* timestamp              */
+	unsigned ssrc:32;			/* synchronization source */
 } switch_rtp_hdr_t;
 
 #else /*  BIG_ENDIAN */
 
 typedef struct {
-	unsigned cc:4;    /* CSRC count             */
-	unsigned x:1;     /* header extension flag  */
-	unsigned p:1;     /* padding flag           */
-	unsigned version:2;   /* protocol version       */
-	unsigned pt:7;    /* payload type           */
-	unsigned m:1;     /* marker bit             */
-	unsigned seq:16;      /* sequence number        */
-	unsigned ts:32;       /* timestamp              */
-	unsigned ssrc:32; /* synchronization source */
+	unsigned cc:4;				/* CSRC count             */
+	unsigned x:1;				/* header extension flag  */
+	unsigned p:1;				/* padding flag           */
+	unsigned version:2;			/* protocol version       */
+	unsigned pt:7;				/* payload type           */
+	unsigned m:1;				/* marker bit             */
+	unsigned seq:16;			/* sequence number        */
+	unsigned ts:32;				/* timestamp              */
+	unsigned ssrc:32;			/* synchronization source */
 } switch_rtp_hdr_t;
 
 #endif
@@ -1210,25 +1208,19 @@ typedef switch_bool_t (*switch_media_bug_callback_t) (switch_media_bug_t *, void
 
 
 typedef switch_status_t (*switch_core_codec_encode_func_t) (switch_codec_t *codec,
-                                                            switch_codec_t *other_codec,
-                                                            void *decoded_data,
-                                                            uint32_t decoded_data_len,
-                                                            uint32_t decoded_rate, 
-                                                            void *encoded_data, 
-                                                            uint32_t * encoded_data_len, 
-                                                            uint32_t * encoded_rate, 
-                                                            unsigned int *flag);
+															switch_codec_t *other_codec,
+															void *decoded_data,
+															uint32_t decoded_data_len,
+															uint32_t decoded_rate,
+															void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag);
 
 
 typedef switch_status_t (*switch_core_codec_decode_func_t) (switch_codec_t *codec,
-                                                            switch_codec_t *other_codec,
-                                                            void *encoded_data,
-                                                            uint32_t encoded_data_len,
-                                                            uint32_t encoded_rate, 
-                                                            void *decoded_data, 
-                                                            uint32_t * decoded_data_len, 
-                                                            uint32_t * decoded_rate, 
-                                                            unsigned int *flag);
+															switch_codec_t *other_codec,
+															void *encoded_data,
+															uint32_t encoded_data_len,
+															uint32_t encoded_rate,
+															void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag);
 
 typedef switch_status_t (*switch_core_codec_init_func_t) (switch_codec_t *, switch_codec_flag_t, const switch_codec_settings_t *codec_settings);
 typedef switch_status_t (*switch_core_codec_destroy_func_t) (switch_codec_t *);
@@ -1255,7 +1247,8 @@ typedef struct switch_stream_handle switch_stream_handle_t;
 typedef switch_status_t (*switch_stream_handle_write_function_t) (switch_stream_handle_t *handle, const char *fmt, ...);
 typedef switch_status_t (*switch_stream_handle_raw_write_function_t) (switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen);
 
-typedef switch_status_t (*switch_api_function_t) (_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream);
+typedef switch_status_t (*switch_api_function_t) (_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session,
+												  _In_ switch_stream_handle_t *stream);
 
 #define SWITCH_STANDARD_API(name) static switch_status_t name (_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream)
 
@@ -1274,9 +1267,9 @@ typedef switch_status_t (*switch_say_callback_t) (switch_core_session_t *session
 												  char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args);
 typedef struct switch_xml *switch_xml_t;
 typedef struct switch_core_time_duration switch_core_time_duration_t;
-typedef switch_xml_t(*switch_xml_search_function_t) (const char *section,
-													 const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,
-													 void *user_data);
+typedef switch_xml_t (*switch_xml_search_function_t) (const char *section,
+													  const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,
+													  void *user_data);
 
 typedef struct switch_hash switch_hash_t;
 struct HashElem;
@@ -1290,9 +1283,9 @@ typedef struct switch_network_list switch_network_list_t;
 #define SWITCH_MODULE_LOAD_ARGS (switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool)
 #define SWITCH_MODULE_RUNTIME_ARGS (void)
 #define SWITCH_MODULE_SHUTDOWN_ARGS (void)
-typedef switch_status_t (*switch_module_load_t) SWITCH_MODULE_LOAD_ARGS ;
-typedef switch_status_t (*switch_module_runtime_t) SWITCH_MODULE_RUNTIME_ARGS ;
-typedef switch_status_t (*switch_module_shutdown_t) SWITCH_MODULE_SHUTDOWN_ARGS ;
+typedef switch_status_t (*switch_module_load_t) SWITCH_MODULE_LOAD_ARGS;
+typedef switch_status_t (*switch_module_runtime_t) SWITCH_MODULE_RUNTIME_ARGS;
+typedef switch_status_t (*switch_module_shutdown_t) SWITCH_MODULE_SHUTDOWN_ARGS;
 #define SWITCH_MODULE_LOAD_FUNCTION(name) switch_status_t name SWITCH_MODULE_LOAD_ARGS
 #define SWITCH_MODULE_RUNTIME_FUNCTION(name) switch_status_t name SWITCH_MODULE_RUNTIME_ARGS
 #define SWITCH_MODULE_SHUTDOWN_FUNCTION(name) switch_status_t name SWITCH_MODULE_SHUTDOWN_ARGS

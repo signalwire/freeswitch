@@ -102,7 +102,7 @@ static int MONO = 0;
 #endif
 
 
-SWITCH_DECLARE(void) switch_time_set_monotonic(switch_bool_t enable) 
+SWITCH_DECLARE(void) switch_time_set_monotonic(switch_bool_t enable)
 {
 	MONO = enable ? 1 : 0;
 	switch_time_sync();
@@ -116,7 +116,7 @@ static switch_time_t time_now(int64_t offset)
 	if (MONO) {
 		struct timespec ts;
 		clock_gettime(CLOCK_MONOTONIC, &ts);
-		now = ts.tv_sec * APR_USEC_PER_SEC + (ts.tv_nsec/1000) + offset;
+		now = ts.tv_sec * APR_USEC_PER_SEC + (ts.tv_nsec / 1000) + offset;
 	} else {
 #endif
 		now = switch_time_now();
@@ -138,13 +138,13 @@ SWITCH_DECLARE(void) switch_time_sync(void)
 SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 {
 
-#if defined(HAVE_CLOCK_NANOSLEEP) && defined(SWITCH_USE_CLOCK_FUNCS)	
+#if defined(HAVE_CLOCK_NANOSLEEP) && defined(SWITCH_USE_CLOCK_FUNCS)
 	struct timespec ts;
 	ts.tv_sec = t / APR_USEC_PER_SEC;
 	ts.tv_nsec = (t % APR_USEC_PER_SEC) * 1000;
-	
+
 	clock_nanosleep(CLOCK_REALTIME, 0, &ts, NULL);
-	
+
 #elif defined(HAVE_USLEEP)
 	usleep(t);
 #elif defined(WIN32)
@@ -161,7 +161,7 @@ static switch_status_t timer_init(switch_timer_t *timer)
 	timer_private_t *private_info;
 	int sanity = 0;
 
-	while(globals.STARTED == 0) {
+	while (globals.STARTED == 0) {
 		switch_yield(100000);
 		if (++sanity == 10) {
 			break;
@@ -193,8 +193,8 @@ static switch_status_t timer_init(switch_timer_t *timer)
 		private_info->roll++;											\
 		private_info->reference = private_info->start = TIMER_MATRIX[timer->interval].tick;	\
 	}																	\
-	
-	
+
+
 static switch_status_t timer_step(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
@@ -203,7 +203,7 @@ static switch_status_t timer_step(switch_timer_t *timer)
 	if (globals.RUNNING != 1 || private_info->ready == 0) {
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	check_roll();
 	samples = timer->samples * (private_info->reference - private_info->start);
 
@@ -214,7 +214,7 @@ static switch_status_t timer_step(switch_timer_t *timer)
 
 	timer->samplecount = (uint32_t) samples;
 	private_info->reference++;
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -234,7 +234,7 @@ static switch_status_t timer_sync(switch_timer_t *timer)
 		/* push the reference into the future 2 more intervals to prevent collision */
 		private_info->reference += 2;
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -249,7 +249,7 @@ static switch_status_t timer_next(switch_timer_t *timer)
 		check_roll();
 		switch_yield(1000);
 	}
-	
+
 	if (globals.RUNNING == 1) {
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -275,8 +275,8 @@ static switch_status_t timer_check(switch_timer_t *timer, switch_bool_t step)
 	} else {
 		timer->diff = 0;
 	}
-	
-	if (timer->diff) {		
+
+	if (timer->diff) {
 		status = SWITCH_STATUS_FALSE;
 	} else if (step) {
 		timer_step(timer);
@@ -311,7 +311,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
-	
+
 	globals.STARTED = globals.RUNNING = 1;
 	switch_mutex_lock(runtime.throttle_mutex);
 	runtime.sps = runtime.sps_total;
@@ -319,9 +319,9 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 
 	if (MONO) {
 		int loops;
-		for(loops = 0; loops < 3; loops++) {
+		for (loops = 0; loops < 3; loops++) {
 			ts = time_now(0);
-			/* if it returns the same value every time it won't be of much use.*/
+			/* if it returns the same value every time it won't be of much use. */
 			if (ts == last) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Broken MONOTONIC Clock Detected!, Support Disabled.\n");
 				MONO = 0;
@@ -337,7 +337,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	ts = 0;
 	last = 0;
 	fwd_errs = rev_errs = 0;
-	
+
 	while (globals.RUNNING == 1) {
 		runtime.reference += STEP_MIC;
 		while ((ts = time_now(runtime.offset)) < runtime.reference) {
@@ -346,7 +346,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Virtual Migration Detected! Syncing Clock\n");
 					switch_time_sync();
 				} else {
-					int64_t diff = (int64_t)(ts - last);
+					int64_t diff = (int64_t) (ts - last);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Reverse Clock Skew Detected!\n");
 					runtime.reference = switch_time_now();
 					current_ms = 0;
@@ -359,8 +359,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			}
 			switch_yield(STEP_MIC);
 			last = ts;
-		} 
-		
+		}
+
 
 		if (ts > (runtime.reference + too_late)) {
 			if (MONO) {
@@ -378,7 +378,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 		} else {
 			fwd_errs = 0;
 		}
-		
+
 		if (fwd_errs > 9 || rev_errs > 9) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Auto Re-Syncing clock.\n");
 			switch_time_sync();
@@ -388,7 +388,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 		runtime.timestamp = ts;
 		current_ms += STEP_MS;
 		tick += STEP_MS;
-		
+
 		if (tick >= 1000) {
 			if (runtime.sps <= 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Rate of %d!\n", runtime.sps_total);
@@ -457,7 +457,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown)
 			switch_yield(10000);
 		}
 	}
-
 #if defined(WIN32)
 	timeEndPeriod(1);
 #endif

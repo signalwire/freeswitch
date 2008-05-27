@@ -33,7 +33,7 @@
 #include <switch.h>
 #include <switch_config.h>
 
-SWITCH_DECLARE(int) switch_config_open_file(switch_config_t * cfg, char *file_path)
+SWITCH_DECLARE(int) switch_config_open_file(switch_config_t *cfg, char *file_path)
 {
 	FILE *f;
 	char *path = NULL;
@@ -88,7 +88,7 @@ SWITCH_DECLARE(int) switch_config_open_file(switch_config_t * cfg, char *file_pa
 	}
 }
 
-SWITCH_DECLARE(void) switch_config_close_file(switch_config_t * cfg)
+SWITCH_DECLARE(void) switch_config_close_file(switch_config_t *cfg)
 {
 
 	if (cfg->file) {
@@ -98,7 +98,7 @@ SWITCH_DECLARE(void) switch_config_close_file(switch_config_t * cfg)
 	memset(cfg, 0, sizeof(*cfg));
 }
 
-SWITCH_DECLARE(int) switch_config_next_pair(switch_config_t * cfg, char **var, char **val)
+SWITCH_DECLARE(int) switch_config_next_pair(switch_config_t *cfg, char **var, char **val)
 {
 	int ret = 0;
 	char *p, *end;

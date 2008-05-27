@@ -137,7 +137,7 @@ SWITCH_DECLARE(void) switch_stun_random_string(char *buf, uint16_t len, char *se
   \param len the length of the data
   \return a stun packet pointer to buf to use as an access point
 */
-SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t * buf, uint32_t len);
+SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, uint32_t len);
 
 /*!
   \brief Obtain a printable string form of a given value
@@ -155,7 +155,7 @@ SWITCH_DECLARE(const char *) switch_stun_value_to_name(int32_t type, uint32_t va
   \param port the port
   \return true or false
 */
-SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_mapped_address(switch_stun_packet_attribute_t *attribute, char *ipstr, uint16_t * port);
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_mapped_address(switch_stun_packet_attribute_t *attribute, char *ipstr, uint16_t *port);
 
 /*!
   \brief Extract a username from a packet attribute
@@ -174,7 +174,7 @@ SWITCH_DECLARE(char *) switch_stun_packet_attribute_get_username(switch_stun_pac
   \param buf a pointer to data to use for the packet
   \return a pointer to a ready-to-use stun packet
 */
-SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_build_header(switch_stun_message_t type, char *id, uint8_t * buf);
+SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_build_header(switch_stun_message_t type, char *id, uint8_t *buf);
 
 /*!
   \brief Add a username packet attribute

@@ -106,7 +106,7 @@ static inline void pack_check_over(switch_bitpack_t *pack)
 			pack->cur++;
 		} else {
 			switch_byte_t mask = SWITCH_BITS_PER_BYTE - pack->over;
-			switch_assert(mask < 8); /* if pack->over this will allways be true */
+			switch_assert(mask < 8);	/* if pack->over this will allways be true */
 			this_byte &= SWITCH_REVERSE_BITPACKED_MASKS[mask];
 			this_byte >>= mask;
 

@@ -52,7 +52,6 @@ SWITCH_BEGIN_EXTERN_C
 	s.raw_write_function = switch_console_stream_raw_write;				\
 	s.alloc_len = SWITCH_CMD_CHUNK_LEN;									\
 	s.alloc_chunk = SWITCH_CMD_CHUNK_LEN
-
 /*!
   \brief A simple comand loop that reads input from the terminal
 */

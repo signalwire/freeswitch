@@ -145,7 +145,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(switch_log_function_t fun
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t * thread, void *obj)
+static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *thread, void *obj)
 {
 
 	if (!obj) {
@@ -174,7 +174,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t * thread, void *obj)
 			}
 		}
 		switch_mutex_unlock(BINDLOCK);
-		
+
 		switch_safe_free(node->data);
 		if (switch_queue_trypush(LOG_RECYCLE_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
 			free(node);
@@ -263,13 +263,13 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 			fd_set can_write;
 			int fd;
 			struct timeval to;
-					
+
 			fd = fileno(handle);
 			memset(&to, 0, sizeof(to));
 			FD_SET(fd, &can_write);
 			to.tv_sec = 0;
 			to.tv_usec = 100000;
-			if (select(fd+1, NULL, &can_write, NULL, &to) > 0) {
+			if (select(fd + 1, NULL, &can_write, NULL, &to) > 0) {
 				aok = FD_ISSET(fd, &can_write);
 			} else {
 				aok = 0;
@@ -287,7 +287,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 			node = (switch_log_node_t *) pop;
 		} else {
 			node = malloc(sizeof(*node));
-			switch_assert(node);			
+			switch_assert(node);
 		}
 
 		node->data = data;
@@ -308,8 +308,8 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 			node = NULL;
 		}
 	}
-	
- end:
+
+  end:
 
 	switch_safe_free(data);
 	switch_safe_free(new_fmt);
@@ -347,7 +347,8 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim_logger(void)
 {
 	void *pop;
 	int size = switch_queue_size(LOG_RECYCLE_QUEUE);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled log node(s) %d bytes\n", size, (int)sizeof(switch_log_node_t) * size);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled log node(s) %d bytes\n", size,
+					  (int) sizeof(switch_log_node_t) * size);
 	while (switch_queue_trypop(LOG_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
 		free(pop);
 	}
@@ -362,7 +363,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void)
 		switch_yield(1000);
 	}
 	switch_core_memory_reclaim_logger();
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

@@ -45,8 +45,7 @@
 SWITCH_BEGIN_EXTERN_C
 /*! \brief A table of functions to execute at various states 
 */
-
-typedef enum {
+	typedef enum {
 	SWITCH_SHN_ON_INIT,
 	SWITCH_SHN_ON_ROUTING,
 	SWITCH_SHN_ON_EXECUTE,
@@ -100,7 +99,31 @@ struct switch_io_event_hooks;
 
 
 typedef switch_call_cause_t (*switch_io_outgoing_channel_t)
-(switch_core_session_t *, switch_event_t *, switch_caller_profile_t *, switch_core_session_t **, switch_memory_pool_t **, switch_originate_flag_t);
+ 
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	    (switch_core_session_t *, switch_event_t *, switch_caller_profile_t *, switch_core_session_t **, switch_memory_pool_t **, switch_originate_flag_t);
 typedef switch_status_t (*switch_io_read_frame_t) (switch_core_session_t *, switch_frame_t **, switch_io_flag_t, int);
 typedef switch_status_t (*switch_io_write_frame_t) (switch_core_session_t *, switch_frame_t *, switch_io_flag_t, int);
 typedef switch_status_t (*switch_io_kill_channel_t) (switch_core_session_t *, int);
@@ -108,9 +131,9 @@ typedef switch_status_t (*switch_io_send_dtmf_t) (switch_core_session_t *, const
 typedef switch_status_t (*switch_io_receive_message_t) (switch_core_session_t *, switch_core_session_message_t *);
 typedef switch_status_t (*switch_io_receive_event_t) (switch_core_session_t *, switch_event_t *);
 typedef switch_status_t (*switch_io_state_change_t) (switch_core_session_t *);
-typedef	switch_status_t (*switch_io_read_video_frame_t) (switch_core_session_t *, switch_frame_t **, switch_io_flag_t, int);
+typedef switch_status_t (*switch_io_read_video_frame_t) (switch_core_session_t *, switch_frame_t **, switch_io_flag_t, int);
 typedef switch_status_t (*switch_io_write_video_frame_t) (switch_core_session_t *, switch_frame_t *, switch_io_flag_t, int);
-typedef switch_call_cause_t (*switch_io_resurrect_session_t)(switch_core_session_t **, switch_memory_pool_t **, void *);
+typedef switch_call_cause_t (*switch_io_resurrect_session_t) (switch_core_session_t **, switch_memory_pool_t **, void *);
 
 typedef enum {
 	SWITCH_IO_OUTGOING_CHANNEL,
@@ -192,7 +215,7 @@ struct switch_timer {
 	switch_memory_pool_t *memory_pool;
 	/*! private data for loadable modules to store information */
 	void *private_info;
-	/*! remaining time from last call to _check()*/
+	/*! remaining time from last call to _check() */
 	switch_size_t diff;
 	switch_size_t tick;
 };
@@ -346,7 +369,7 @@ struct switch_asr_handle {
 	/*! The Rate */
 	uint32_t rate;
 	char *grammar;
-	/*! module specific param*/
+	/*! module specific param */
 	char *param;
 	/*! the handle's memory pool */
 	switch_memory_pool_t *memory_pool;
@@ -365,7 +388,7 @@ struct switch_speech_interface {
 	/*! function to feed audio to the ASR */
 	switch_status_t (*speech_feed_tts) (switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags);
 	/*! function to read audio from the TTS */
-	switch_status_t (*speech_read_tts) (switch_speech_handle_t *sh, void *data, switch_size_t *datalen, uint32_t * rate, switch_speech_flag_t *flags);
+	switch_status_t (*speech_read_tts) (switch_speech_handle_t *sh, void *data, switch_size_t *datalen, uint32_t *rate, switch_speech_flag_t *flags);
 	void (*speech_flush_tts) (switch_speech_handle_t *sh);
 	void (*speech_text_param_tts) (switch_speech_handle_t *sh, char *param, const char *val);
 	void (*speech_numeric_param_tts) (switch_speech_handle_t *sh, char *param, int val);
@@ -389,7 +412,7 @@ struct switch_speech_handle {
 	uint32_t samples;
 	char voice[80];
 	char *engine;
-	/*! module specific param*/
+	/*! module specific param */
 	char *param;
 	/*! the handle's memory pool */
 	switch_memory_pool_t *memory_pool;
@@ -526,7 +549,7 @@ struct switch_codec_implementation {
 	char *fmtp;
 	/*! samples transferred per second */
 	uint32_t samples_per_second;
-	/*! actual samples transferred per second for those who are not moron g722 RFC writers*/
+	/*! actual samples transferred per second for those who are not moron g722 RFC writers */
 	uint32_t actual_samples_per_second;
 	/*! bits transferred per second */
 	int bits_per_second;
@@ -545,13 +568,13 @@ struct switch_codec_implementation {
 	/*! max number of frames to send in one network packet */
 	int max_frames_per_packet;
 	/*! function to initialize a codec handle using this implementation */
-    switch_core_codec_init_func_t init;
+	switch_core_codec_init_func_t init;
 	/*! function to encode raw data into encoded data */
-    switch_core_codec_encode_func_t encode;
+	switch_core_codec_encode_func_t encode;
 	/*! function to decode encoded data into raw data */
-    switch_core_codec_decode_func_t decode;
+	switch_core_codec_decode_func_t decode;
 	/*! deinitalize a codec handle using this implementation */
-    switch_core_codec_destroy_func_t destroy;
+	switch_core_codec_destroy_func_t destroy;
 	uint32_t codec_id;
 	struct switch_codec_implementation *next;
 };

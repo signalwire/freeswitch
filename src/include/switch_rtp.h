@@ -45,9 +45,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_RTP_KEY_LEN 30
 #define SWITCH_RTP_CRYPTO_KEY_32 "AES_CM_128_HMAC_SHA1_32"
 #define SWITCH_RTP_CRYPTO_KEY_80 "AES_CM_128_HMAC_SHA1_80"
-
-
-typedef enum {
+	typedef enum {
 	SWITCH_RTP_CRYPTO_SEND,
 	SWITCH_RTP_CRYPTO_RECV,
 	SWITCH_RTP_CRYPTO_MAX
@@ -72,16 +70,13 @@ typedef struct switch_rtp_crypto_key switch_rtp_crypto_key_t;
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_session,
 														  switch_rtp_crypto_direction_t direction,
-														  uint32_t index,
-														  switch_rtp_crypto_key_type_t type,
-														  unsigned char *key,
-														  switch_size_t keylen);
+														  uint32_t index, switch_rtp_crypto_key_type_t type, unsigned char *key, switch_size_t keylen);
 
 ///\defgroup rtp RTP (RealTime Transport Protocol)
 ///\ingroup core1
 ///\{
-typedef void (*switch_rtp_invalid_handler_t) (switch_rtp_t *rtp_session,
-											  switch_socket_t * sock, void *data, switch_size_t datalen, switch_sockaddr_t * from_addr);
+	 typedef void (*switch_rtp_invalid_handler_t) (switch_rtp_t *rtp_session,
+												   switch_socket_t *sock, void *data, switch_size_t datalen, switch_sockaddr_t *from_addr);
 
 
 SWITCH_DECLARE(void) switch_rtp_get_random(void *buf, uint32_t len);
@@ -130,10 +125,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 												  switch_payload_t payload,
 												  uint32_t samples_per_interval,
 												  uint32_t ms_per_packet,
-												  switch_rtp_flag_t flags,
-												  char *timer_name, 
-												  const char **err,
-												  switch_memory_pool_t *pool);
+												  switch_rtp_flag_t flags, char *timer_name, const char **err, switch_memory_pool_t *pool);
 
 
 /*!
@@ -158,10 +150,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 											  switch_payload_t payload,
 											  uint32_t samples_per_interval,
 											  uint32_t ms_per_packet,
-											  switch_rtp_flag_t flags,
-											  char *timer_name,
-											  const char **err,
-											  switch_memory_pool_t *pool);
+											  switch_rtp_flag_t flags, char *timer_name, const char **err, switch_memory_pool_t *pool);
 
 
 /*! 
@@ -296,7 +285,7 @@ SWITCH_DECLARE(void) switch_rtp_set_invald_handler(switch_rtp_t *rtp_session, sw
   \param io_flags i/o flags
   \return the number of bytes read
 */
-SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void *data, uint32_t * datalen,
+SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void *data, uint32_t *datalen,
 												switch_payload_t *payload_type, switch_frame_flag_t *flags, switch_io_flag_t io_flags);
 
 /*! 
@@ -341,7 +330,8 @@ SWITCH_DECLARE(switch_size_t) switch_rtp_dequeue_dtmf(switch_rtp_t *rtp_session,
   \return the number of bytes read
 */
 SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_session,
-														 void **data, uint32_t * datalen, switch_payload_t *payload_type, switch_frame_flag_t *flags, switch_io_flag_t io_flags);
+														 void **data, uint32_t *datalen, switch_payload_t *payload_type, switch_frame_flag_t *flags,
+														 switch_io_flag_t io_flags);
 
 /*! 
   \brief Read data from a given RTP session without copying
@@ -390,9 +380,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
   \return the number of bytes written
 */
 SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
-											void *data,
-											uint32_t datalen,
-											uint8_t m, switch_payload_t payload, uint32_t ts, switch_frame_flag_t *flags);
+											void *data, uint32_t datalen, uint8_t m, switch_payload_t payload, uint32_t ts, switch_frame_flag_t *flags);
 
 /*! 
   \brief Retrieve the SSRC from a given RTP session

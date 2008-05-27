@@ -50,7 +50,7 @@ SWITCH_DECLARE(switch_odbc_handle_t *) switch_odbc_handle_new(char *dsn, char *u
 	if (!(new_handle = malloc(sizeof(*new_handle)))) {
 		goto err;
 	}
-	
+
 	memset(new_handle, 0, sizeof(*new_handle));
 
 	if (!(new_handle->dsn = strdup(dsn))) {
@@ -96,7 +96,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_disconnect(switch_odbc_h
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Disconnectiong [%s]\n", handle->dsn);
 		}
-	} 
+	}
 
 	handle->state = SWITCH_ODBC_STATE_DOWN;
 
@@ -143,19 +143,21 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connecting %s\n", handle->dsn);
-	
-	if(!strstr(handle->dsn, "DRIVER")) { 
-		result = SQLConnect(handle->con, (SQLCHAR *) handle->dsn, SQL_NTS, (SQLCHAR *) handle->username, SQL_NTS, (SQLCHAR *) handle->password, SQL_NTS); 
-	} else { 
-		SQLCHAR outstr[1024] = {0}; 
-		SQLSMALLINT outstrlen = 0; 
-		result = SQLDriverConnect(handle->con, NULL, (SQLCHAR *) handle->dsn, (SQLSMALLINT)strlen(handle->dsn), outstr, sizeof(outstr), &outstrlen, SQL_DRIVER_NOPROMPT); 
-	} 
+
+	if (!strstr(handle->dsn, "DRIVER")) {
+		result = SQLConnect(handle->con, (SQLCHAR *) handle->dsn, SQL_NTS, (SQLCHAR *) handle->username, SQL_NTS, (SQLCHAR *) handle->password, SQL_NTS);
+	} else {
+		SQLCHAR outstr[1024] = { 0 };
+		SQLSMALLINT outstrlen = 0;
+		result =
+			SQLDriverConnect(handle->con, NULL, (SQLCHAR *) handle->dsn, (SQLSMALLINT) strlen(handle->dsn), outstr, sizeof(outstr), &outstrlen,
+							 SQL_DRIVER_NOPROMPT);
+	}
 
 	if ((result != SQL_SUCCESS) && (result != SQL_SUCCESS_WITH_INFO)) {
 		char *err_str;
 		if ((err_str = switch_odbc_handle_get_error(handle, NULL))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n",err_str);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err_str);
 			free(err_str);
 		} else {
 			SQLGetDiagRec(SQL_HANDLE_DBC, handle->con, 1, stat, &err, msg, 100, &mlen);
@@ -165,10 +167,10 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 		return SWITCH_ODBC_FAIL;
 	}
 
-	result = SQLGetInfo(handle->con, SQL_DRIVER_NAME, (SQLCHAR*)handle->odbc_driver, 255, &valueLength);
-	if ( result == SQL_SUCCESS || result == SQL_SUCCESS_WITH_INFO) {
+	result = SQLGetInfo(handle->con, SQL_DRIVER_NAME, (SQLCHAR *) handle->odbc_driver, 255, &valueLength);
+	if (result == SQL_SUCCESS || result == SQL_SUCCESS_WITH_INFO) {
 		for (i = 0; i < valueLength; ++i)
-			handle->odbc_driver[i] = (char)toupper(handle->odbc_driver[i]);
+			handle->odbc_driver[i] = (char) toupper(handle->odbc_driver[i]);
 	}
 
 	if (strstr(handle->odbc_driver, "FIREBIRD") != 0 || strstr(handle->odbc_driver, "FB32") != 0 || strstr(handle->odbc_driver, "FB64") != 0) {
@@ -194,28 +196,28 @@ static int db_is_up(switch_odbc_handle_t *handle)
 	SQLCHAR sql[255] = "";
 	int max_tries = 120;
 
- top:
-	
+  top:
+
 	if (!handle) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No DB Handle\n");
 		goto done;
 	}
 
 	if (handle->is_firebird) {
-		strcpy((char*)sql, "select first 1 * from RDB$RELATIONS");
+		strcpy((char *) sql, "select first 1 * from RDB$RELATIONS");
 	} else {
-		strcpy((char*)sql, "select 1");
+		strcpy((char *) sql, "select 1");
 	}
 
-    if (SQLAllocHandle(SQL_HANDLE_STMT, handle->con, &stmt) != SQL_SUCCESS) {
-        goto error;
-    }
-	
-    if (SQLPrepare(stmt, sql, SQL_NTS) != SQL_SUCCESS) {
-        goto error;
-    }
-	
-    result = SQLExecute(stmt);
+	if (SQLAllocHandle(SQL_HANDLE_STMT, handle->con, &stmt) != SQL_SUCCESS) {
+		goto error;
+	}
+
+	if (SQLPrepare(stmt, sql, SQL_NTS) != SQL_SUCCESS) {
+		goto error;
+	}
+
+	result = SQLExecute(stmt);
 
 	SQLRowCount(stmt, &m);
 	ret = (int) m;
@@ -226,14 +228,14 @@ static int db_is_up(switch_odbc_handle_t *handle)
 
 	goto done;
 
- error:
+  error:
 	err_str = switch_odbc_handle_get_error(handle, stmt);
 	recon = switch_odbc_handle_connect(handle);
 
 	max_tries--;
 
 	if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Failure-Message", "The sql server is not responding for DSN %s [%s]", 
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Failure-Message", "The sql server is not responding for DSN %s [%s]",
 								switch_str_nil(handle->dsn), switch_str_nil(err_str));
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "The sql server is not responding for DSN %s [%s]\n",
 						  switch_str_nil(handle->dsn), switch_str_nil(err_str));
@@ -260,8 +262,8 @@ static int db_is_up(switch_odbc_handle_t *handle)
 	switch_safe_free(err_str);
 	switch_yield(1000000);
 	goto top;
-	
- done:
+
+  done:
 
 	switch_safe_free(err_str);
 
@@ -269,10 +271,10 @@ static int db_is_up(switch_odbc_handle_t *handle)
 		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 	}
 
-	return ret;	
+	return ret;
 }
 
-SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_t *handle, char *sql, SQLHSTMT *rstmt)
+SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_t *handle, char *sql, SQLHSTMT * rstmt)
 {
 	SQLHSTMT stmt = NULL;
 	int result;
@@ -280,7 +282,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
 	if (!db_is_up(handle)) {
 		goto error;
 	}
-	
+
 	if (SQLAllocHandle(SQL_HANDLE_STMT, handle->con, &stmt) != SQL_SUCCESS) {
 		goto error;
 	}
@@ -303,13 +305,13 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
 
 	return SWITCH_ODBC_SUCCESS;
 
- error:
+  error:
 	if (rstmt) {
-        *rstmt = stmt;
-    } else if (stmt) {
+		*rstmt = stmt;
+	} else if (stmt) {
 		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 	}
-	return SWITCH_ODBC_FAIL;	
+	return SWITCH_ODBC_FAIL;
 }
 
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odbc_handle_t *handle,
@@ -349,14 +351,14 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odb
 			char **names;
 			char **vals;
 			int y = 0;
-		
+
 			if (!(result = SQLFetch(stmt)) == SQL_SUCCESS) {
 				goto error;
 			}
-		
+
 			names = calloc(c, sizeof(*names));
 			vals = calloc(c, sizeof(*vals));
-		
+
 			switch_assert(names && vals);
 
 			for (x = 1; x <= c; x++) {
@@ -365,7 +367,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odb
 				names[y] = malloc(name_len);
 				memset(names[y], 0, name_len);
 
-				SQLDescribeCol(stmt, x, (SQLCHAR *) names[y], (SQLSMALLINT)name_len, &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
+				SQLDescribeCol(stmt, x, (SQLCHAR *) names[y], (SQLSMALLINT) name_len, &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
 				ColumnSize++;
 
 				vals[y] = malloc(ColumnSize);
@@ -373,7 +375,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odb
 				SQLGetData(stmt, x, SQL_C_CHAR, (SQLCHAR *) vals[y], ColumnSize, NULL);
 				y++;
 			}
-		
+
 			if (callback(pdata, y, vals, names)) {
 				break;
 			}
@@ -435,8 +437,8 @@ SWITCH_DECLARE(char *) switch_odbc_handle_get_error(switch_odbc_handle_t *handle
 	SQLSMALLINT length;
 	char *ret = NULL;
 
-	if (SQLError(handle->env, handle->con, stmt, (SQLCHAR *)sqlstate, &sqlcode, (SQLCHAR *)buffer, sizeof(buffer), &length) == SQL_SUCCESS) {
-		ret = switch_mprintf("STATE: %s CODE %ld ERROR: %s\n", sqlstate,  sqlcode, buffer);
+	if (SQLError(handle->env, handle->con, stmt, (SQLCHAR *) sqlstate, &sqlcode, (SQLCHAR *) buffer, sizeof(buffer), &length) == SQL_SUCCESS) {
+		ret = switch_mprintf("STATE: %s CODE %ld ERROR: %s\n", sqlstate, sqlcode, buffer);
 	};
 
 	return ret;

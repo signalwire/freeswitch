@@ -128,9 +128,8 @@ SWITCH_DECLARE(switch_dialplan_interface_t *) switch_loadable_module_get_dialpla
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filename,
 																	 switch_module_load_t switch_module_load,
 																	 switch_module_runtime_t switch_module_runtime,
-																	 switch_module_shutdown_t switch_module_shutdown,
-																	 switch_bool_t runtime);
-																	 
+																	 switch_module_shutdown_t switch_module_shutdown, switch_bool_t runtime);
+
 
 /*!
   \brief Retrieve the timer interface by it's registered name
@@ -259,7 +258,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
   \param filename the path to the module's dll or so file
   \return SWITCH_STATUS_SUCCESS on a successful load
 */
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load( switch_loadable_module_interface_t **module_interface, char *filename);
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(switch_loadable_module_interface_t **module_interface, char *filename);
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void);
 
 /*!
@@ -317,44 +316,43 @@ SWITCH_DECLARE(uint32_t) switch_core_codec_next_id(void);
 	}
 
 
-static inline void switch_core_codec_add_implementation(switch_memory_pool_t *pool,
-                                                        switch_codec_interface_t *codec_interface,
-                                                        /*! enumeration defining the type of the codec */
-                                                        const switch_codec_type_t codec_type,
-                                                        /*! the IANA code number */
-                                                        switch_payload_t ianacode,
-                                                        /*! the IANA code name */
-                                                        const char *iananame,
-                                                        /*! default fmtp to send (can be overridden by the init function) */
-                                                        char *fmtp,
-                                                        /*! samples transferred per second */
-                                                        uint32_t samples_per_second,
-                                                        /*! actual samples transferred per second for those who are not moron g722 RFC writers*/
-                                                        uint32_t actual_samples_per_second,
-                                                        /*! bits transferred per second */
-                                                        int bits_per_second,
-                                                        /*! number of microseconds that denote one frame */
-                                                        int microseconds_per_frame,
-                                                        /*! number of samples that denote one frame */
-                                                        uint32_t samples_per_frame,
-                                                        /*! number of bytes that denote one frame decompressed */
-                                                        uint32_t bytes_per_frame,
-                                                        /*! number of bytes that denote one frame compressed */
-                                                        uint32_t encoded_bytes_per_frame,
-                                                        /*! number of channels represented */
-                                                        uint8_t number_of_channels,
-                                                        /*! number of frames to send in one netowrk packet */
-                                                        int pref_frames_per_packet,
-                                                        /*! max number of frames to send in one network packet */
-                                                        int max_frames_per_packet,
-                                                        /*! function to initialize a codec handle using this implementation */
-                                                        switch_core_codec_init_func_t init,
-                                                        /*! function to encode raw data into encoded data */
-                                                        switch_core_codec_encode_func_t encode,
-                                                        /*! function to decode encoded data into raw data */
-                                                        switch_core_codec_decode_func_t decode,
-                                                        /*! deinitalize a codec handle using this implementation */
-                                                        switch_core_codec_destroy_func_t destroy)
+	 static inline void switch_core_codec_add_implementation(switch_memory_pool_t *pool, switch_codec_interface_t *codec_interface,
+															 /*! enumeration defining the type of the codec */
+															 const switch_codec_type_t codec_type,
+															 /*! the IANA code number */
+															 switch_payload_t ianacode,
+															 /*! the IANA code name */
+															 const char *iananame,
+															 /*! default fmtp to send (can be overridden by the init function) */
+															 char *fmtp,
+															 /*! samples transferred per second */
+															 uint32_t samples_per_second,
+															 /*! actual samples transferred per second for those who are not moron g722 RFC writers */
+															 uint32_t actual_samples_per_second,
+															 /*! bits transferred per second */
+															 int bits_per_second,
+															 /*! number of microseconds that denote one frame */
+															 int microseconds_per_frame,
+															 /*! number of samples that denote one frame */
+															 uint32_t samples_per_frame,
+															 /*! number of bytes that denote one frame decompressed */
+															 uint32_t bytes_per_frame,
+															 /*! number of bytes that denote one frame compressed */
+															 uint32_t encoded_bytes_per_frame,
+															 /*! number of channels represented */
+															 uint8_t number_of_channels,
+															 /*! number of frames to send in one netowrk packet */
+															 int pref_frames_per_packet,
+															 /*! max number of frames to send in one network packet */
+															 int max_frames_per_packet,
+															 /*! function to initialize a codec handle using this implementation */
+															 switch_core_codec_init_func_t init,
+															 /*! function to encode raw data into encoded data */
+															 switch_core_codec_encode_func_t encode,
+															 /*! function to decode encoded data into raw data */
+															 switch_core_codec_decode_func_t decode,
+															 /*! deinitalize a codec handle using this implementation */
+															 switch_core_codec_destroy_func_t destroy)
 {
 	if (codec_type == SWITCH_CODEC_TYPE_VIDEO || SWITCH_ACCEPTABLE_INTERVAL(microseconds_per_frame / 1000)) {
 		switch_codec_implementation_t *impl = (switch_codec_implementation_t *) switch_core_alloc(pool, sizeof(*impl));

@@ -54,7 +54,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t sta
 	switch_memory_pool_t *pool;
 	switch_core_port_allocator_t *alloc;
 	int even, odd;
-	
+
 	if ((status = switch_core_new_memory_pool(&pool)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
@@ -63,7 +63,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t sta
 		switch_core_destroy_memory_pool(&pool);
 		return SWITCH_STATUS_MEMERR;
 	}
-	
+
 	alloc->flags = flags;
 	even = switch_test_flag(alloc, SPF_EVEN);
 	odd = switch_test_flag(alloc, SPF_ODD);
@@ -90,14 +90,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t sta
 		}
 	}
 
-	alloc->track_len = (end - start) + 2;	
+	alloc->track_len = (end - start) + 2;
 
 	if (!(even && odd)) {
 		alloc->track_len /= 2;
 	}
-	
+
 	alloc->track = switch_core_alloc(pool, (alloc->track_len + 2) * sizeof(switch_byte_t));
-	
+
 	alloc->start = start;
 	alloc->next = start;
 	alloc->end = end;
@@ -118,20 +118,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 	int odd = switch_test_flag(alloc, SPF_ODD);
 
 	switch_mutex_lock(alloc->mutex);
-	srand(getpid() + (unsigned)switch_timestamp(NULL));
-	
-	while(alloc->track_used < alloc->track_len) {
+	srand(getpid() + (unsigned) switch_timestamp(NULL));
+
+	while (alloc->track_used < alloc->track_len) {
 		double r;
 		uint32_t index;
 		int tries = 0;
 
 		do {
-			r = ((double)rand() / ((double)(RAND_MAX)+(double)(1)));
+			r = ((double) rand() / ((double) (RAND_MAX) + (double) (1)));
 			index = (int) (r * alloc->track_len);
 			tries++;
-		} while((alloc->track[index] || index >= alloc->track_len) && tries < 10000);
-		
-		while(alloc->track[index]) {
+		} while ((alloc->track[index] || index >= alloc->track_len) && tries < 10000);
+
+		while (alloc->track[index]) {
 			if (++index >= alloc->track_len) {
 				index = 0;
 			}
@@ -143,29 +143,29 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 			status = SWITCH_STATUS_SUCCESS;
 
 			if ((even && odd)) {
-				port = (switch_port_t)(index + alloc->start);
+				port = (switch_port_t) (index + alloc->start);
 			} else {
-				port = (switch_port_t)(index + (alloc->start / 2));
+				port = (switch_port_t) (index + (alloc->start / 2));
 				port *= 2;
-			} 
+			}
 			goto end;
 		}
 	}
-	
-	
- end:
+
+
+  end:
 
 	switch_mutex_unlock(alloc->mutex);
-	
+
 	if (status == SWITCH_STATUS_SUCCESS) {
 		*port_ptr = port;
 	} else {
 		*port_ptr = 0;
 	}
 
-	
+
 	return status;
-	
+
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_free_port(switch_core_port_allocator_t *alloc, switch_port_t port)
@@ -174,7 +174,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_free_port(switch_core
 	int even = switch_test_flag(alloc, SPF_EVEN);
 	int odd = switch_test_flag(alloc, SPF_ODD);
 	int index = port - alloc->start;
-	
+
 	if (!(even && odd)) {
 		index /= 2;
 	}

@@ -63,7 +63,7 @@ int switch_inet_pton(int af, const char *src, void *dst)
 SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t **list, switch_bool_t default_type, switch_memory_pool_t *pool)
 {
 	switch_network_list_t *new_list;
-	
+
 	if (!pool) {
 		switch_core_new_memory_pool(&pool);
 	}
@@ -82,7 +82,7 @@ SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip(switch_network_lis
 	switch_network_node_t *node;
 	switch_bool_t ok = list->default_type;
 	uint32_t bits = 0;
-	
+
 	for (node = list->node_head; node; node = node->next) {
 		if (node->bits > bits && switch_test_subnet(ip, node->ip, node->mask)) {
 			if (node->ok) {
@@ -93,7 +93,7 @@ SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip(switch_network_lis
 			bits = node->bits;
 		}
 	}
-	
+
 	return ok;
 }
 
@@ -102,11 +102,11 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr(switch_network_list
 {
 	uint32_t ip, mask, bits;
 	switch_network_node_t *node;
-	
+
 	if (switch_parse_cidr(cidr_str, &ip, &mask, &bits)) {
 		return SWITCH_STATUS_GENERR;
 	}
-	
+
 	node = switch_core_alloc(list->pool, sizeof(*node));
 
 	node->ip = ip;
@@ -116,7 +116,7 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr(switch_network_list
 
 	node->next = list->node_head;
 	list->node_head = node;
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -128,21 +128,21 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network
 
 	switch_inet_pton(AF_INET, host, &ip);
 	switch_inet_pton(AF_INET, mask_str, &mask);
-	
+
 	node = switch_core_alloc(list->pool, sizeof(*node));
-	
+
 	node->ip = ip;
 	node->mask = mask;
 	node->ok = ok;
 
 	/* http://graphics.stanford.edu/~seander/bithacks.html */
 	mask = mask - ((mask >> 1) & 0x55555555);
-    mask = (mask & 0x33333333) + ((mask >> 2) & 0x33333333);
+	mask = (mask & 0x33333333) + ((mask >> 2) & 0x33333333);
 	node->bits = (((mask + (mask >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
-	
+
 	node->next = list->node_head;
 	list->node_head = node;
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -162,7 +162,7 @@ SWITCH_DECLARE(int) switch_parse_cidr(const char *string, uint32_t *ip, uint32_t
 
 	*bit_str++ = '\0';
 	bits = atoi(bit_str);
-	
+
 	if (bits < 0 || bits > 32) {
 		return -2;
 	}
@@ -180,7 +180,7 @@ SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char clos
 {
 	const char *e = NULL;
 	int depth = 0;
-	
+
 	while (s && *s && *s == ' ') {
 		s++;
 	}
@@ -199,7 +199,7 @@ SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char clos
 		}
 	}
 
-	return (char *)e;
+	return (char *) e;
 }
 
 SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size_t len)
@@ -230,10 +230,10 @@ SWITCH_DECLARE(char *) switch_amp_encode(char *s, char *buf, switch_size_t len)
 
 	q = buf;
 
-	for(p = s; x < len; p++) {
-		switch(*p) {
+	for (p = s; x < len; p++) {
+		switch (*p) {
 		case '<':
-			if (x + 4 > len -1) {
+			if (x + 4 > len - 1) {
 				goto end;
 			}
 			*q++ = '&';
@@ -243,7 +243,7 @@ SWITCH_DECLARE(char *) switch_amp_encode(char *s, char *buf, switch_size_t len)
 			x += 4;
 			break;
 		case '>':
-			if (x + 4 > len -1) {
+			if (x + 4 > len - 1) {
 				goto end;
 			}
 			*q++ = '&';
@@ -253,7 +253,7 @@ SWITCH_DECLARE(char *) switch_amp_encode(char *s, char *buf, switch_size_t len)
 			x += 4;
 			break;
 		default:
-			if (x + 1 > len -1) {
+			if (x + 1 > len - 1) {
 				goto end;
 			}
 			*q++ = *p;
@@ -265,7 +265,7 @@ SWITCH_DECLARE(char *) switch_amp_encode(char *s, char *buf, switch_size_t len)
 		}
 	}
 
- end:
+  end:
 
 	return buf;
 }
@@ -274,33 +274,33 @@ static const char switch_b64_table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijkl
 #define B64BUFFLEN 1024
 SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size_t ilen, unsigned char *out, switch_size_t olen)
 {
-    int y = 0, bytes = 0;
-    size_t x = 0;
-    unsigned int b = 0,l = 0;
+	int y = 0, bytes = 0;
+	size_t x = 0;
+	unsigned int b = 0, l = 0;
 
-    for(x = 0; x < ilen; x++) {
-        b = (b<<8) + in[x];
-        l += 8;
-        while (l >= 6) {
-            out[bytes++] = switch_b64_table[(b>>(l-=6))%64];
-            if (++y != 72) {
-                continue;
-            }
-            //out[bytes++] = '\n';
-            y=0;
-        }
-    }
+	for (x = 0; x < ilen; x++) {
+		b = (b << 8) + in[x];
+		l += 8;
+		while (l >= 6) {
+			out[bytes++] = switch_b64_table[(b >> (l -= 6)) % 64];
+			if (++y != 72) {
+				continue;
+			}
+			//out[bytes++] = '\n';
+			y = 0;
+		}
+	}
 
-    if (l > 0) {
-        out[bytes++] = switch_b64_table[((b%16)<<(6-l))%64];
-    }
-    if (l != 0) {
+	if (l > 0) {
+		out[bytes++] = switch_b64_table[((b % 16) << (6 - l)) % 64];
+	}
+	if (l != 0) {
 		while (l < 6) {
 			out[bytes++] = '=', l += 2;
 		}
 	}
 
-    return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(switch_size_t) switch_b64_decode(char *in, char *out, switch_size_t olen)
@@ -311,16 +311,16 @@ SWITCH_DECLARE(switch_size_t) switch_b64_decode(char *in, char *out, switch_size
 	char *ip, *op = out;
 	size_t ol = 0;
 
-	for (i=0; i<256; i++) {
+	for (i = 0; i < 256; i++) {
 		l64[i] = -1;
 	}
 
-	for (i=0; i<64; i++) {
-		l64[(int)switch_b64_table[i]] = (char)i;
+	for (i = 0; i < 64; i++) {
+		l64[(int) switch_b64_table[i]] = (char) i;
 	}
 
 	for (ip = in; ip && *ip; ip++) {
-		c = l64[(int)*ip];
+		c = l64[(int) *ip];
 		if (c == -1) {
 			continue;
 		}
@@ -329,14 +329,14 @@ SWITCH_DECLARE(switch_size_t) switch_b64_decode(char *in, char *out, switch_size
 		l += 6;
 
 		while (l >= 8) {
-			op[ol++] = (char)((b >> (l -= 8)) % 256);
-			if (ol >= olen -2) {
+			op[ol++] = (char) ((b >> (l -= 8)) % 256);
+			if (ol >= olen - 2) {
 				goto end;
 			}
 		}
 	}
 
- end:
+  end:
 
 	op[ol++] = '\0';
 
@@ -366,40 +366,40 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 	unsigned char in[B64BUFFLEN];
 	unsigned char out[B64BUFFLEN + 512];
 
-    switch_snprintf(filename, 80, "%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, (int)switch_timestamp(NULL), rand() & 0xffff);
-    
-    if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644))) {
-        if (file) {
-            if ((ifd = open(file, O_RDONLY)) < 1) {
-                return SWITCH_FALSE;
-            }
-        }
-        switch_snprintf(buf, B64BUFFLEN, "MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"%s\"\n", bound);
-        if (!write_buf(fd, buf)) {
-            return SWITCH_FALSE;
-        }
+	switch_snprintf(filename, 80, "%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, (int) switch_timestamp(NULL), rand() & 0xffff);
 
-        if (headers && !write_buf(fd, headers))
-            return SWITCH_FALSE;
+	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644))) {
+		if (file) {
+			if ((ifd = open(file, O_RDONLY)) < 1) {
+				return SWITCH_FALSE;
+			}
+		}
+		switch_snprintf(buf, B64BUFFLEN, "MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"%s\"\n", bound);
+		if (!write_buf(fd, buf)) {
+			return SWITCH_FALSE;
+		}
 
-        if (!write_buf(fd, "\n\n"))
-            return SWITCH_FALSE;
+		if (headers && !write_buf(fd, headers))
+			return SWITCH_FALSE;
+
+		if (!write_buf(fd, "\n\n"))
+			return SWITCH_FALSE;
 
 		if (body && switch_stristr("content-type", body)) {
 			switch_snprintf(buf, B64BUFFLEN, "--%s\n", bound);
 		} else {
 			switch_snprintf(buf, B64BUFFLEN, "--%s\nContent-Type: text/plain\n\n", bound);
 		}
-        if (!write_buf(fd, buf))
-            return SWITCH_FALSE;
+		if (!write_buf(fd, buf))
+			return SWITCH_FALSE;
 
-        if (body) {
-            if (!write_buf(fd, body)) {
-                return SWITCH_FALSE;
-            }
-        }
+		if (body) {
+			if (!write_buf(fd, body)) {
+				return SWITCH_FALSE;
+			}
+		}
 
-        if (file) {
+		if (file) {
 			const char *stipped_file = switch_cut_path(file);
 			const char *new_type;
 			char *ext;
@@ -412,82 +412,81 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 			}
 
 			switch_snprintf(buf, B64BUFFLEN,
-					 "\n\n--%s\nContent-Type: %s; name=\"%s\"\n"
-					 "Content-ID: <ATTACHED@freeswitch.org>\n"
-					 "Content-Transfer-Encoding: base64\n"
-					 "Content-Description: Sound attachment.\n"
-					 "Content-Disposition: attachment; filename=\"%s\"\n\n",
-					 bound, mime_type, stipped_file, stipped_file);
-            if (!write_buf(fd, buf))
-                return SWITCH_FALSE;
+							"\n\n--%s\nContent-Type: %s; name=\"%s\"\n"
+							"Content-ID: <ATTACHED@freeswitch.org>\n"
+							"Content-Transfer-Encoding: base64\n"
+							"Content-Description: Sound attachment.\n"
+							"Content-Disposition: attachment; filename=\"%s\"\n\n", bound, mime_type, stipped_file, stipped_file);
+			if (!write_buf(fd, buf))
+				return SWITCH_FALSE;
 
-            while ((ilen = read(ifd, in, B64BUFFLEN))) {
-                for (x = 0; x < ilen; x++) {
-                    b = (b << 8) + in[x];
-                    l += 8;
-                    while (l >= 6) {
-                        out[bytes++] = switch_b64_table[(b >> (l -= 6)) % 64];
-                        if (++y != 72)
-                            continue;
-                        out[bytes++] = '\n';
-                        y = 0;
-                    }
-                }
-                if (write(fd, &out, bytes) != bytes) {
-                    return -1;
-                } else
-                    bytes = 0;
+			while ((ilen = read(ifd, in, B64BUFFLEN))) {
+				for (x = 0; x < ilen; x++) {
+					b = (b << 8) + in[x];
+					l += 8;
+					while (l >= 6) {
+						out[bytes++] = switch_b64_table[(b >> (l -= 6)) % 64];
+						if (++y != 72)
+							continue;
+						out[bytes++] = '\n';
+						y = 0;
+					}
+				}
+				if (write(fd, &out, bytes) != bytes) {
+					return -1;
+				} else
+					bytes = 0;
 
-            }
+			}
 
-            if (l > 0) {
-                out[bytes++] = switch_b64_table[((b % 16) << (6 - l)) % 64];
-            }
-            if (l != 0)
-                while (l < 6) {
-                    out[bytes++] = '=', l += 2;
-                }
-            if (write(fd, &out, bytes) != bytes) {
-                return -1;
-            }
+			if (l > 0) {
+				out[bytes++] = switch_b64_table[((b % 16) << (6 - l)) % 64];
+			}
+			if (l != 0)
+				while (l < 6) {
+					out[bytes++] = '=', l += 2;
+				}
+			if (write(fd, &out, bytes) != bytes) {
+				return -1;
+			}
 
-        }
+		}
 
-        switch_snprintf(buf, B64BUFFLEN, "\n\n--%s--\n.\n", bound);
-        if (!write_buf(fd, buf))
-            return SWITCH_FALSE;
-    }
+		switch_snprintf(buf, B64BUFFLEN, "\n\n--%s--\n.\n", bound);
+		if (!write_buf(fd, buf))
+			return SWITCH_FALSE;
+	}
 
-    if (fd) {
-        close(fd);
-    }
-    if (ifd) {
-        close(ifd);
-    }
-    switch_snprintf(buf, B64BUFFLEN, "/bin/cat %s | %s %s %s", filename, runtime.mailer_app, runtime.mailer_app_args, to);
-    if (system(buf)) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to execute command: %s\n", buf);
-    }
+	if (fd) {
+		close(fd);
+	}
+	if (ifd) {
+		close(ifd);
+	}
+	switch_snprintf(buf, B64BUFFLEN, "/bin/cat %s | %s %s %s", filename, runtime.mailer_app, runtime.mailer_app_args, to);
+	if (system(buf)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to execute command: %s\n", buf);
+	}
 
 	if (unlink(filename) != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "failed to delete file [%s]\n", filename);
 	}
 
-    if (file) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Emailed file [%s] to [%s]\n", filename, to);
-    } else {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Emailed data to [%s]\n", to);
-    }
+	if (file) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Emailed file [%s] to [%s]\n", filename, to);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Emailed data to [%s]\n", to);
+	}
 
-    return SWITCH_TRUE;
+	return SWITCH_TRUE;
 }
 
 SWITCH_DECLARE(switch_bool_t) switch_is_lan_addr(const char *ip)
 {
-	if (switch_strlen_zero(ip)) return SWITCH_FALSE;
+	if (switch_strlen_zero(ip))
+		return SWITCH_FALSE;
 
-	return (
-			strncmp(ip, "10.", 3) &&
+	return (strncmp(ip, "10.", 3) &&
 			strncmp(ip, "192.168.", 8) &&
 			strncmp(ip, "127.", 4) &&
 			strncmp(ip, "255.", 4) &&
@@ -498,12 +497,8 @@ SWITCH_DECLARE(switch_bool_t) switch_is_lan_addr(const char *ip)
 			strncmp(ip, "172.17.", 7) &&
 			strncmp(ip, "172.18.", 7) &&
 			strncmp(ip, "172.19.", 7) &&
-			strncmp(ip, "172.2", 5) &&
-			strncmp(ip, "172.30.", 7) &&
-			strncmp(ip, "172.31.", 7) &&
-			strncmp(ip, "192.0.2.", 8) &&
-			strncmp(ip, "169.254.", 8)
-			) ? SWITCH_FALSE : SWITCH_TRUE;	
+			strncmp(ip, "172.2", 5) && strncmp(ip, "172.30.", 7) && strncmp(ip, "172.31.", 7) && strncmp(ip, "192.0.2.", 8) && strncmp(ip, "169.254.", 8)
+		)? SWITCH_FALSE : SWITCH_TRUE;
 }
 
 SWITCH_DECLARE(switch_bool_t) switch_ast2regex(char *pat, char *rbuf, size_t len)
@@ -515,10 +510,10 @@ SWITCH_DECLARE(switch_bool_t) switch_ast2regex(char *pat, char *rbuf, size_t len
 	}
 
 	memset(rbuf, 0, len);
-	
+
 	*(rbuf + strlen(rbuf)) = '^';
 
-	while(p && *p) {
+	while (p && *p) {
 		if (*p == 'N') {
 			strncat(rbuf, "[2-9]", len - strlen(rbuf));
 		} else if (*p == 'X') {
@@ -534,7 +529,7 @@ SWITCH_DECLARE(switch_bool_t) switch_ast2regex(char *pat, char *rbuf, size_t len
 	}
 	*(rbuf + strlen(rbuf)) = '$';
 
-	return strcmp(pat,rbuf) ? SWITCH_TRUE : SWITCH_FALSE;
+	return strcmp(pat, rbuf) ? SWITCH_TRUE : SWITCH_FALSE;
 }
 
 SWITCH_DECLARE(char *) switch_replace_char(char *str, char from, char to, switch_bool_t dup)
@@ -548,7 +543,7 @@ SWITCH_DECLARE(char *) switch_replace_char(char *str, char from, char to, switch
 		p = str;
 	}
 
-	for(;p && *p; p++) {
+	for (; p && *p; p++) {
 		if (*p == from) {
 			*p = to;
 		}
@@ -561,23 +556,25 @@ SWITCH_DECLARE(char *) switch_strip_spaces(const char *str)
 {
 	const char *sp = str;
 	char *p, *s = NULL;
-	
-	if (!sp) return NULL;
 
-	while(*sp == ' ') {
+	if (!sp)
+		return NULL;
+
+	while (*sp == ' ') {
 		sp++;
 	}
-	
+
 	s = strdup(sp);
 
-	if (!s) return NULL;
+	if (!s)
+		return NULL;
 
 	p = s + (strlen(s) - 1);
 
-	while(*p == ' ') {
+	while (*p == ' ') {
 		*p-- = '\0';
 	}
-	
+
 	return s;
 }
 
@@ -589,12 +586,12 @@ SWITCH_DECLARE(char *) switch_separate_paren_args(char *str)
 	if ((args = strchr(str, '('))) {
 		e = args - 1;
 		*args++ = '\0';
-		while(*e == ' ') {
+		while (*e == ' ') {
 			*e-- = '\0';
 		}
 		e = args;
 		br = 1;
-		while(e && *e) {
+		while (e && *e) {
 			if (*e == '(') {
 				br++;
 			} else if (br > 1 && *e == ')') {
@@ -642,7 +639,7 @@ SWITCH_DECLARE(const char *) switch_stristr(const char *instr, const char *str)
 
 	for (start = str; *start; start++) {
 		/* find start of pattern in string */
-		for ( ; ((*start) && (toupper(*start) != toupper(*instr))); start++);
+		for (; ((*start) && (toupper(*start) != toupper(*instr))); start++);
 
 		if (!*start)
 			return NULL;
@@ -709,8 +706,9 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
 	getaddrinfo(base, NULL, NULL, &address_info);
 
 	if (!address_info || WSAIoctl(tmp_socket,
-				 SIO_ROUTING_INTERFACE_QUERY,
-				 address_info->ai_addr, (DWORD) address_info->ai_addrlen, &l_address, sizeof(l_address), (LPDWORD) & l_address_len, NULL, NULL)) {
+								  SIO_ROUTING_INTERFACE_QUERY,
+								  address_info->ai_addr, (DWORD) address_info->ai_addrlen, &l_address, sizeof(l_address), (LPDWORD) & l_address_len, NULL,
+								  NULL)) {
 
 		closesocket(tmp_socket);
 		if (address_info)
@@ -921,8 +919,7 @@ static const char *switch_inet_ntop6(const unsigned char *src, char *dst, size_t
  * author:
  *	Paul Vixie, 1996.
  */
-const char *
-switch_inet_ntop(int af, void const *src, char *dst, size_t size)
+const char *switch_inet_ntop(int af, void const *src, char *dst, size_t size)
 {
 
 	switch (af) {
@@ -949,14 +946,12 @@ switch_inet_ntop(int af, void const *src, char *dst, size_t size)
  * author:
  *	Paul Vixie, 1996.
  */
-static const char *
-switch_inet_ntop4(const unsigned char *src, char *dst, size_t size)
+static const char *switch_inet_ntop4(const unsigned char *src, char *dst, size_t size)
 {
 	static const char fmt[] = "%u.%u.%u.%u";
 	char tmp[sizeof "255.255.255.255"];
 
-	if (switch_snprintf(tmp, sizeof tmp, fmt,
-		     src[0], src[1], src[2], src[3]) >= (int)size) {
+	if (switch_snprintf(tmp, sizeof tmp, fmt, src[0], src[1], src[2], src[3]) >= (int) size) {
 		return NULL;
 	}
 
@@ -970,8 +965,7 @@ switch_inet_ntop4(const unsigned char *src, char *dst, size_t size)
  * author:
  *	Paul Vixie, 1996.
  */
-static const char *
-switch_inet_ntop6(unsigned char const *src, char *dst, size_t size)
+static const char *switch_inet_ntop6(unsigned char const *src, char *dst, size_t size)
 {
 	/*
 	 * Note that int32_t and int16_t need only be "at least" large enough
@@ -981,14 +975,18 @@ switch_inet_ntop6(unsigned char const *src, char *dst, size_t size)
 	 * to use pointer overlays.  All the world's not a VAX.
 	 */
 	char tmp[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"], *tp;
-	struct { int base, len; } best = { -1 , 0 }, cur = { -1, 0 };
+	struct {
+		int base, len;
+	} best = {
+	-1, 0}, cur = {
+	-1, 0};
 	unsigned int words[8];
 	int i;
 
 	/*
 	 * Preprocess:
-	 *	Copy the input (bytewise) array into a wordwise array.
-	 *	Find the longest run of 0x00's in src[] for :: shorthanding.
+	 *  Copy the input (bytewise) array into a wordwise array.
+	 *  Find the longest run of 0x00's in src[] for :: shorthanding.
 	 */
 	for (i = 0; i < 16; i += 2)
 		words[i / 2] = (src[i] << 8) | (src[i + 1]);
@@ -1021,8 +1019,7 @@ switch_inet_ntop6(unsigned char const *src, char *dst, size_t size)
 	tp = tmp;
 	for (i = 0; i < 8; i++) {
 		/* Are we inside the best run of 0x00's? */
-		if (best.base != -1 && i >= best.base &&
-		    i < (best.base + best.len)) {
+		if (best.base != -1 && i >= best.base && i < (best.base + best.len)) {
 			if (i == best.base)
 				*tp++ = ':';
 			continue;
@@ -1031,9 +1028,8 @@ switch_inet_ntop6(unsigned char const *src, char *dst, size_t size)
 		if (i != 0)
 			*tp++ = ':';
 		/* Is this address an encapsulated IPv4? */
-		if (i == 6 && best.base == 0 &&
-		    (best.len == 6 || (best.len == 5 && words[5] == 0xffff))) {
-			if (!inet_ntop4(src+12, tp, sizeof tmp - (tp - tmp)))
+		if (i == 6 && best.base == 0 && (best.len == 6 || (best.len == 5 && words[5] == 0xffff))) {
+			if (!inet_ntop4(src + 12, tp, sizeof tmp - (tp - tmp)))
 				return (NULL);
 			tp += strlen(tp);
 			break;
@@ -1048,7 +1044,7 @@ switch_inet_ntop6(unsigned char const *src, char *dst, size_t size)
 	/*
 	 * Check for overflow, copy, and we're done.
 	 */
-	if ((size_t)(tp - tmp) >= size) {
+	if ((size_t) (tp - tmp) >= size) {
 		return NULL;
 	}
 
@@ -1144,20 +1140,20 @@ static char unescape_char(char escaped)
 	char unescaped;
 
 	switch (escaped) {
-		case 'n':
-			unescaped = '\n';
-			break;
-		case 'r':
-			unescaped = '\r';
-			break;
-		case 't':
-			unescaped = '\t';
-			break;
-		case 's':
-			unescaped = ' ';
-			break;
-		default:
-			unescaped = escaped;
+	case 'n':
+		unescaped = '\n';
+		break;
+	case 'r':
+		unescaped = '\r';
+		break;
+	case 't':
+		unescaped = '\t';
+		break;
+	case 's':
+		unescaped = ' ';
+		break;
+	default:
+		unescaped = escaped;
 	}
 	return unescaped;
 }
@@ -1181,8 +1177,8 @@ static char *cleanup_separated_string(char *str, char delim)
 		int esc = 0;
 
 		if (*ptr == ESCAPE_META) {
-			e = *(ptr+1);
-			if (e == '\'' || e == '"' || (delim && e == delim) || (e = unescape_char(*(ptr+1))) != *(ptr+1)) {
+			e = *(ptr + 1);
+			if (e == '\'' || e == '"' || (delim && e == delim) || (e = unescape_char(*(ptr + 1))) != *(ptr + 1)) {
 				++ptr;
 				*dest++ = e;
 				end = dest;
@@ -1216,28 +1212,28 @@ static unsigned int separate_string_char_delim(char *buf, char delim, char **arr
 
 	unsigned int count = 0;
 	char *ptr = buf;
-	int  inside_quotes = 0;
+	int inside_quotes = 0;
 	unsigned int i;
-	
+
 	while (*ptr && count < arraylen) {
 		switch (state) {
-			case START:
-				array[count++] = ptr;
-				state = FIND_DELIM;
-				break;
+		case START:
+			array[count++] = ptr;
+			state = FIND_DELIM;
+			break;
 
-			case FIND_DELIM:
-				/* escaped characters are copied verbatim to the destination string */
-				if (*ptr == ESCAPE_META) {
-					++ptr;
-				} else if (*ptr == '\'') {
-					inside_quotes = (1 - inside_quotes);
-				} else if (*ptr == delim && !inside_quotes) {
-					*ptr = '\0';
-					state = START;
-				}
+		case FIND_DELIM:
+			/* escaped characters are copied verbatim to the destination string */
+			if (*ptr == ESCAPE_META) {
 				++ptr;
-				break;
+			} else if (*ptr == '\'') {
+				inside_quotes = (1 - inside_quotes);
+			} else if (*ptr == delim && !inside_quotes) {
+				*ptr = '\0';
+				state = START;
+			}
+			++ptr;
+			break;
 		}
 	}
 	/* strip quotes, escaped chars and leading / trailing spaces */
@@ -1259,43 +1255,43 @@ static unsigned int separate_string_blank_delim(char *buf, char **array, unsigne
 
 	unsigned int count = 0;
 	char *ptr = buf;
-	int  inside_quotes = 0;
+	int inside_quotes = 0;
 	unsigned int i;
 
 	while (*ptr && count < arraylen) {
 		switch (state) {
-			case START:
-				array[count++] = ptr;
-				state = SKIP_INITIAL_SPACE;
-				break;
+		case START:
+			array[count++] = ptr;
+			state = SKIP_INITIAL_SPACE;
+			break;
 
-			case SKIP_INITIAL_SPACE:
-				if (*ptr == ' ') {
-					++ptr;
-				} else {
-					state = FIND_DELIM;
-				}
-				break;
-
-			case FIND_DELIM:
-				if (*ptr == ESCAPE_META) {
-					++ptr;
-				} else if (*ptr == '\'') {
-					inside_quotes = (1 - inside_quotes);
-				} else if (*ptr == ' ' && !inside_quotes) {
-					*ptr = '\0';
-					state = SKIP_ENDING_SPACE;
-				}
+		case SKIP_INITIAL_SPACE:
+			if (*ptr == ' ') {
 				++ptr;
-				break;
+			} else {
+				state = FIND_DELIM;
+			}
+			break;
 
-			case SKIP_ENDING_SPACE:
-				if (*ptr == ' ') {
-					++ptr;
-				} else {
-					state = START;
-				}
-				break;
+		case FIND_DELIM:
+			if (*ptr == ESCAPE_META) {
+				++ptr;
+			} else if (*ptr == '\'') {
+				inside_quotes = (1 - inside_quotes);
+			} else if (*ptr == ' ' && !inside_quotes) {
+				*ptr = '\0';
+				state = SKIP_ENDING_SPACE;
+			}
+			++ptr;
+			break;
+
+		case SKIP_ENDING_SPACE:
+			if (*ptr == ' ') {
+				++ptr;
+			} else {
+				state = START;
+			}
+			break;
 		}
 	}
 	/* strip quotes, escaped chars and leading / trailing spaces */
@@ -1311,11 +1307,9 @@ SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char 
 		return 0;
 	}
 
-	memset(array, 0, arraylen * sizeof (*array));
+	memset(array, 0, arraylen * sizeof(*array));
 
-	return (delim == ' ' ?
-			separate_string_blank_delim(buf, array, arraylen) :
-			separate_string_char_delim(buf, delim, array, arraylen));
+	return (delim == ' ' ? separate_string_blank_delim(buf, array, arraylen) : separate_string_char_delim(buf, delim, array, arraylen));
 }
 
 SWITCH_DECLARE(const char *) switch_cut_path(const char *in)
@@ -1389,7 +1383,7 @@ SWITCH_DECLARE(char *) switch_string_replace(const char *string, const char *sea
 	return dest;
 }
 
-SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t * poll, int ms)
+SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms)
 {
 	int nsds = 0;
 

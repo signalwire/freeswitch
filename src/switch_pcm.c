@@ -58,11 +58,10 @@ static switch_status_t switch_raw_encode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *decoded_data,
 										 uint32_t decoded_data_len,
-										 uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
-										 unsigned int *flag)
+										 uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag)
 {
 	/* NOOP indicates that the audio in is already the same as the audio out, so no conversion was necessary. */
-	if (codec && other_codec && codec->implementation && other_codec->implementation && 
+	if (codec && other_codec && codec->implementation && other_codec->implementation &&
 		codec->implementation->actual_samples_per_second != other_codec->implementation->actual_samples_per_second) {
 		memcpy(encoded_data, decoded_data, decoded_data_len);
 		*encoded_data_len = decoded_data_len;
@@ -75,8 +74,7 @@ static switch_status_t switch_raw_decode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *encoded_data,
 										 uint32_t encoded_data_len,
-										 uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
-										 unsigned int *flag)
+										 uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
 {
 	if (codec && other_codec && codec->implementation && other_codec->implementation &&
 		codec->implementation->actual_samples_per_second != other_codec->implementation->actual_samples_per_second) {
@@ -100,21 +98,21 @@ static switch_status_t switch_proxy_init(switch_codec_t *codec, switch_codec_fla
 }
 
 static switch_status_t switch_proxy_encode(switch_codec_t *codec,
-										 switch_codec_t *other_codec,
-										 void *decoded_data,
-										 uint32_t decoded_data_len,
-										 uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
-										 unsigned int *flag)
+										   switch_codec_t *other_codec,
+										   void *decoded_data,
+										   uint32_t decoded_data_len,
+										   uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
+										   unsigned int *flag)
 {
 	return SWITCH_STATUS_FALSE;
 }
 
 static switch_status_t switch_proxy_decode(switch_codec_t *codec,
-										 switch_codec_t *other_codec,
-										 void *encoded_data,
-										 uint32_t encoded_data_len,
-										 uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
-										 unsigned int *flag)
+										   switch_codec_t *other_codec,
+										   void *encoded_data,
+										   uint32_t encoded_data_len,
+										   uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
+										   unsigned int *flag)
 {
 	return SWITCH_STATUS_FALSE;
 }
@@ -143,7 +141,7 @@ static switch_status_t switch_g711u_encode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *decoded_data,
 										   uint32_t decoded_data_len,
-										   uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
+										   uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
 										   unsigned int *flag)
 {
 	short *dbuf;
@@ -166,7 +164,7 @@ static switch_status_t switch_g711u_decode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *encoded_data,
 										   uint32_t encoded_data_len,
-										   uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
+										   uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
 										   unsigned int *flag)
 {
 	short *dbuf;
@@ -214,7 +212,7 @@ static switch_status_t switch_g711a_encode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *decoded_data,
 										   uint32_t decoded_data_len,
-										   uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
+										   uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
 										   unsigned int *flag)
 {
 	short *dbuf;
@@ -237,7 +235,7 @@ static switch_status_t switch_g711a_decode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *encoded_data,
 										   uint32_t encoded_data_len,
-										   uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
+										   uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
 										   unsigned int *flag)
 {
 	short *dbuf;
@@ -270,40 +268,39 @@ static switch_status_t switch_g711a_destroy(switch_codec_t *codec)
 static void mod_g711_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool)
 {
 	switch_codec_interface_t *codec_interface;
-    int mpf = 10000, spf = 80, bpf = 160, ebpf = 80, count;
+	int mpf = 10000, spf = 80, bpf = 160, ebpf = 80, count;
 
 	SWITCH_ADD_CODEC(codec_interface, "G.711 ulaw");
-    for (count = 12; count > 0; count--) {
-        switch_core_codec_add_implementation(pool, codec_interface,
-                                             SWITCH_CODEC_TYPE_AUDIO, 0, "PCMU", NULL, 8000, 8000, 64000,
-                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
-                                             switch_g711u_init, switch_g711u_encode, switch_g711u_decode, switch_g711u_destroy);
-    }
-    
+	for (count = 12; count > 0; count--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 0, "PCMU", NULL, 8000, 8000, 64000,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 switch_g711u_init, switch_g711u_encode, switch_g711u_decode, switch_g711u_destroy);
+	}
+
 	SWITCH_ADD_CODEC(codec_interface, "G.711 alaw");
-    for (count = 12; count > 0; count--) {
-        switch_core_codec_add_implementation(pool, codec_interface,
-                                             SWITCH_CODEC_TYPE_AUDIO, 8, "PCMA", NULL, 8000, 8000, 64000,
-                                             mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
-                                             switch_g711a_init, switch_g711a_encode, switch_g711a_decode, switch_g711a_destroy);
-    }
+	for (count = 12; count > 0; count--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 8, "PCMA", NULL, 8000, 8000, 64000,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 switch_g711a_init, switch_g711a_encode, switch_g711a_decode, switch_g711a_destroy);
+	}
 
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 {
 	switch_codec_interface_t *codec_interface;
-    int mpf = 10000, spf = 80, bpf = 160, ebpf = 160, bps = 128000, rate = 8000, counta = 1, countb = 12;
-    switch_payload_t ianacode[4] = { 0, 10, 117, 119 };
+	int mpf = 10000, spf = 80, bpf = 160, ebpf = 160, bps = 128000, rate = 8000, counta = 1, countb = 12;
+	switch_payload_t ianacode[4] = { 0, 10, 117, 119 };
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_CODEC(codec_interface, "PROXY VIDEO PASS-THROUGH");
-    switch_core_codec_add_implementation(pool, codec_interface,
-                                         SWITCH_CODEC_TYPE_VIDEO, 31, "PROXY-VID", NULL, 90000, 90000, 0,
-                                         0, 0, 0, 0, 1, 1, 1,
-										 switch_proxy_init, switch_proxy_encode, switch_proxy_decode, switch_proxy_destroy);
+	switch_core_codec_add_implementation(pool, codec_interface,
+										 SWITCH_CODEC_TYPE_VIDEO, 31, "PROXY-VID", NULL, 90000, 90000, 0,
+										 0, 0, 0, 0, 1, 1, 1, switch_proxy_init, switch_proxy_encode, switch_proxy_decode, switch_proxy_destroy);
 
 
 	SWITCH_ADD_CODEC(codec_interface, "PROXY PASS-THROUGH");
@@ -311,34 +308,32 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 										 SWITCH_CODEC_TYPE_AUDIO, 0, "PROXY", NULL, 8000, 8000, 0,
 										 20000, 160, 320, 320, 1, 1, 12,
 										 switch_proxy_init, switch_proxy_encode, switch_proxy_decode, switch_proxy_destroy);
-	
+
 	SWITCH_ADD_CODEC(codec_interface, "RAW Signed Linear (16 bit)");
 
-    for (counta = 1; counta <= 3; counta++) {
-        for (countb = 12; countb > 0; countb--) {
-            switch_core_codec_add_implementation(pool, codec_interface,
-                                                 SWITCH_CODEC_TYPE_AUDIO, ianacode[counta], "L16", NULL, rate, rate, bps,
-                                                 mpf * countb, spf * countb, bpf * countb, ebpf * countb, 1, 1, 12,
-                                                 switch_raw_init, switch_raw_encode, switch_raw_decode, switch_raw_destroy);
-        }
-        rate = rate * 2;
-        bps = bps * 2;
-        spf = spf * 2;
-        bpf = bpf * 2;
-        ebpf = ebpf * 2;
-    }
+	for (counta = 1; counta <= 3; counta++) {
+		for (countb = 12; countb > 0; countb--) {
+			switch_core_codec_add_implementation(pool, codec_interface,
+												 SWITCH_CODEC_TYPE_AUDIO, ianacode[counta], "L16", NULL, rate, rate, bps,
+												 mpf * countb, spf * countb, bpf * countb, ebpf * countb, 1, 1, 12,
+												 switch_raw_init, switch_raw_encode, switch_raw_decode, switch_raw_destroy);
+		}
+		rate = rate * 2;
+		bps = bps * 2;
+		spf = spf * 2;
+		bpf = bpf * 2;
+		ebpf = ebpf * 2;
+	}
 	/* these formats below are for file playing. */
 
-    switch_core_codec_add_implementation(pool, codec_interface,
-                                         SWITCH_CODEC_TYPE_AUDIO, 118, "L16", NULL, 22050, 22050, 352800,
-                                         20000, 441, 882, 882, 1, 1, 1,
-                                         switch_raw_init, switch_raw_encode, switch_raw_decode, switch_raw_destroy);
+	switch_core_codec_add_implementation(pool, codec_interface,
+										 SWITCH_CODEC_TYPE_AUDIO, 118, "L16", NULL, 22050, 22050, 352800,
+										 20000, 441, 882, 882, 1, 1, 1, switch_raw_init, switch_raw_encode, switch_raw_decode, switch_raw_destroy);
 
-    switch_core_codec_add_implementation(pool, codec_interface,
-                                         SWITCH_CODEC_TYPE_AUDIO, 118, "L16", NULL, 11025, 11025, 176400,
-                                         40000, 441, 882, 882, 1, 1, 1,
-                                         switch_raw_init, switch_raw_encode, switch_raw_decode, switch_raw_destroy);
-    
+	switch_core_codec_add_implementation(pool, codec_interface,
+										 SWITCH_CODEC_TYPE_AUDIO, 118, "L16", NULL, 11025, 11025, 176400,
+										 40000, 441, 882, 882, 1, 1, 1, switch_raw_init, switch_raw_encode, switch_raw_decode, switch_raw_destroy);
+
 
 
 	/* indicate that the module should continue to be loaded */

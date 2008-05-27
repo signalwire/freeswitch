@@ -75,7 +75,7 @@ struct switch_loadable_module_container {
 static struct switch_loadable_module_container loadable_modules;
 static void do_shutdown(switch_loadable_module_t *module);
 
-static void *switch_loadable_module_exec(switch_thread_t * thread, void *obj)
+static void *switch_loadable_module_exec(switch_thread_t *thread, void *obj)
 {
 
 
@@ -126,7 +126,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 	switch_event_t *event;
 
 	new_module->key = switch_core_strdup(new_module->pool, key);
-	
+
 	switch_mutex_lock(loadable_modules.mutex);
 	switch_core_hash_insert(loadable_modules.module_hash, key, new_module);
 
@@ -155,13 +155,15 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					if (!impl->iananame) {
 						load_interface = 0;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
-									  "Failed to load codec interface %s from %s due to no iana name in an implementation.\n", ptr->interface_name, key);
+										  "Failed to load codec interface %s from %s due to no iana name in an implementation.\n", ptr->interface_name,
+										  key);
 						break;
 					}
 					if (impl->bytes_per_frame > SWITCH_RECOMMENDED_BUFFER_SIZE) {
 						load_interface = 0;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
-									  "Failed to load codec interface %s from %s due to bytes per frame exceeding buffer size.\n", ptr->interface_name, key);
+										  "Failed to load codec interface %s from %s due to bytes per frame exceeding buffer size.\n", ptr->interface_name,
+										  key);
 						break;
 					}
 				}
@@ -590,7 +592,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 		const switch_chat_interface_t *ptr;
 
 		for (ptr = old_module->module_interface->chat_interface; ptr; ptr = ptr->next) {
-			if (ptr->interface_name) {				
+			if (ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Chat interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "chat");
@@ -718,12 +720,12 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 		}
 
 		if (status == SWITCH_STATUS_NOUNLOAD) {
-            module->perm++;
-        }
-		
+			module->perm++;
+		}
+
 		loading = 0;
 	}
-	
+
 
 	if (err) {
 		if (pool) {
@@ -778,7 +780,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
 
 	if (switch_is_file_path(file)) {
 		path = switch_core_strdup(loadable_modules.pool, file);
-		file = (char *)switch_cut_path(file);
+		file = (char *) switch_cut_path(file);
 		if ((dot = strchr(file, '.'))) {
 			dot = '\0';
 		}
@@ -841,8 +843,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filename,
 																	 switch_module_load_t switch_module_load,
 																	 switch_module_runtime_t switch_module_runtime,
-																	 switch_module_shutdown_t switch_module_shutdown,
-																	 switch_bool_t runtime)
+																	 switch_module_shutdown_t switch_module_shutdown, switch_bool_t runtime)
 {
 	switch_loadable_module_t *module = NULL;
 	switch_module_load_t load_func_ptr = NULL;
@@ -851,7 +852,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filen
 	switch_loadable_module_interface_t *module_interface = NULL;
 	switch_memory_pool_t *pool;
 
-	
+
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
 		abort();
@@ -1058,7 +1059,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 		}
 		apr_dir_close(module_dir_handle);
 	}
-	
+
 	switch_loadable_module_runtime();
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1093,7 +1094,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 	switch_hash_index_t *hi;
 	void *val;
 	switch_loadable_module_t *module;
-	
+
 	for (hi = switch_hash_first(NULL, loadable_modules.module_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		module = (switch_loadable_module_t *) val;
@@ -1227,7 +1228,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 		/* oh well we will use what we have */
 		array[i++] = codec_interface->implementations;
 
-	found:
+	  found:
 
 		if (i > arraylen) {
 			break;
@@ -1235,7 +1236,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 	}
 
 	switch_mutex_unlock(loadable_modules.mutex);
-	
+
 	return i;
 
 }
@@ -1247,7 +1248,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 	const switch_codec_implementation_t *imp;
 
 	switch_mutex_lock(loadable_modules.mutex);
-	
+
 	for (x = 0; x < preflen; x++) {
 		char *cur, *last = NULL, *next = NULL, *name, *p, buf[256];
 		uint32_t interval = 0, rate = 8000;
@@ -1259,7 +1260,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 			if (!next) {
 				break;
 			}
-			
+
 			if ((p = strchr(next, '@'))) {
 				*p++ = '\0';
 			}
@@ -1318,7 +1319,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 				}
 			}
 
-		found:
+		  found:
 
 			if (i > arraylen) {
 				break;
@@ -1327,7 +1328,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 	}
 
 	switch_mutex_unlock(loadable_modules.mutex);
-	
+
 
 	return i;
 }
@@ -1383,7 +1384,7 @@ SWITCH_DECLARE(switch_loadable_module_interface_t *) switch_loadable_module_crea
 	mod->pool = pool;
 
 	mod->module_name = switch_core_strdup(mod->pool, name);
-	
+
 	return mod;
 }
 
@@ -1404,46 +1405,46 @@ SWITCH_DECLARE(switch_loadable_module_interface_t *) switch_loadable_module_crea
 SWITCH_DECLARE(void *) switch_loadable_module_create_interface(switch_loadable_module_interface_t *mod, switch_module_interface_name_t iname)
 {
 
-	switch(iname) {
+	switch (iname) {
 	case SWITCH_ENDPOINT_INTERFACE:
 		ALLOC_INTERFACE(endpoint)
 
 	case SWITCH_TIMER_INTERFACE:
 		ALLOC_INTERFACE(timer)
-		
+
 	case SWITCH_DIALPLAN_INTERFACE:
 		ALLOC_INTERFACE(dialplan)
-		
+
 	case SWITCH_CODEC_INTERFACE:
 		ALLOC_INTERFACE(codec)
-		
+
 	case SWITCH_APPLICATION_INTERFACE:
 		ALLOC_INTERFACE(application)
-		
+
 	case SWITCH_API_INTERFACE:
 		ALLOC_INTERFACE(api)
-		
+
 	case SWITCH_FILE_INTERFACE:
 		ALLOC_INTERFACE(file)
-		
+
 	case SWITCH_SPEECH_INTERFACE:
 		ALLOC_INTERFACE(speech)
-		
+
 	case SWITCH_DIRECTORY_INTERFACE:
 		ALLOC_INTERFACE(directory)
-		
+
 	case SWITCH_CHAT_INTERFACE:
 		ALLOC_INTERFACE(chat)
-		
+
 	case SWITCH_SAY_INTERFACE:
 		ALLOC_INTERFACE(say)
-		
+
 	case SWITCH_ASR_INTERFACE:
 		ALLOC_INTERFACE(asr)
-		
+
 	case SWITCH_MANAGEMENT_INTERFACE:
 		ALLOC_INTERFACE(management)
-		
+
 	default:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid Module Type!\n");
 		return NULL;

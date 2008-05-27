@@ -114,7 +114,7 @@ SWITCH_DECLARE(void) switch_stun_random_string(char *buf, uint16_t len, char *se
 }
 
 
-SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t * buf, uint32_t len)
+SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, uint32_t len)
 {
 	switch_stun_packet_t *packet;
 	switch_stun_packet_attribute_t *attr;
@@ -133,7 +133,7 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t * buf, u
 	/*
 	 * Check packet type (RFC3489(bis?) values)
 	 */
-	switch(packet->header.type) {
+	switch (packet->header.type) {
 	case SWITCH_STUN_BINDING_REQUEST:
 	case SWITCH_STUN_BINDING_RESPONSE:
 	case SWITCH_STUN_BINDING_ERROR_RESPONSE:
@@ -180,7 +180,7 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t * buf, u
 	do {
 		attr->length = ntohs(attr->length);
 		attr->type = ntohs(attr->type);
-		bytes_left -= 4;	/* attribute header consumed */
+		bytes_left -= 4;		/* attribute header consumed */
 
 		if (!attr->length || switch_stun_attribute_padded_length(attr) > bytes_left) {
 			/*
@@ -195,7 +195,7 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t * buf, u
 		 * Handle STUN attributes
 		 */
 		switch (attr->type) {
-		case SWITCH_STUN_ATTR_MAPPED_ADDRESS:		/* Address, we only care about this one, but parse the others too */
+		case SWITCH_STUN_ATTR_MAPPED_ADDRESS:	/* Address, we only care about this one, but parse the others too */
 		case SWITCH_STUN_ATTR_RESPONSE_ADDRESS:
 		case SWITCH_STUN_ATTR_SOURCE_ADDRESS:
 		case SWITCH_STUN_ATTR_CHANGED_ADDRESS:
@@ -231,7 +231,7 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t * buf, u
 			}
 			break;
 
-		case SWITCH_STUN_ATTR_CHANGE_REQUEST:		/* UInt32 */
+		case SWITCH_STUN_ATTR_CHANGE_REQUEST:	/* UInt32 */
 		case SWITCH_STUN_ATTR_LIFETIME:
 		case SWITCH_STUN_ATTR_BANDWIDTH:
 		case SWITCH_STUN_ATTR_OPTIONS:
@@ -247,16 +247,16 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t * buf, u
 			}
 			break;
 
-		case SWITCH_STUN_ATTR_USERNAME:			/* ByteString, multiple of 4 bytes */
-		case SWITCH_STUN_ATTR_PASSWORD:			/* ByteString, multiple of 4 bytes */
+		case SWITCH_STUN_ATTR_USERNAME:	/* ByteString, multiple of 4 bytes */
+		case SWITCH_STUN_ATTR_PASSWORD:	/* ByteString, multiple of 4 bytes */
 			if (attr->length % 4 != 0) {
 				/* Invalid */
 				return NULL;
 			}
 			break;
 
-		case SWITCH_STUN_ATTR_DATA:			/* ByteString */
-		case SWITCH_STUN_ATTR_ERROR_CODE:		/* ErrorCode */
+		case SWITCH_STUN_ATTR_DATA:	/* ByteString */
+		case SWITCH_STUN_ATTR_ERROR_CODE:	/* ErrorCode */
 		case SWITCH_STUN_ATTR_TRANSPORT_PREFERENCES:	/* TransportPrefs */
 			/*
 			 * No length checking here, since we already checked against the padded length
@@ -271,7 +271,7 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t * buf, u
 			}
 			break;
 
-		case SWITCH_STUN_ATTR_MAGIC_COOKIE:		/* ByteString, 4 bytes */
+		case SWITCH_STUN_ATTR_MAGIC_COOKIE:	/* ByteString, 4 bytes */
 			if (attr->length != 4) {
 				/* Invalid */
 				return NULL;
@@ -295,12 +295,12 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t * buf, u
 
 	} while (bytes_left >= SWITCH_STUN_ATTRIBUTE_MIN_LEN && switch_stun_packet_next_attribute(attr, end_buf));
 
-	if ((uint32_t)(packet->header.length + 20) > (uint32_t)(len - bytes_left)) {
+	if ((uint32_t) (packet->header.length + 20) > (uint32_t) (len - bytes_left)) {
 		/*
 		 * the packet length is longer than the length of all attributes?
 		 * for now simply decrease the packet size
 		 */
-		packet->header.length = (uint16_t)((len - bytes_left) - 20);
+		packet->header.length = (uint16_t) ((len - bytes_left) - 20);
 	}
 
 	return packet;
@@ -336,14 +336,14 @@ SWITCH_DECLARE(const char *) switch_stun_value_to_name(int32_t type, uint32_t va
 	return "INVALID";
 }
 
-SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_mapped_address(switch_stun_packet_attribute_t *attribute, char *ipstr, uint16_t * port)
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_mapped_address(switch_stun_packet_attribute_t *attribute, char *ipstr, uint16_t *port)
 {
 	switch_stun_ip_t *ip;
 	uint8_t x, *i;
 	char *p = ipstr;
 
 	ip = (switch_stun_ip_t *) attribute->value;
-	i = (uint8_t *) & ip->address;
+	i = (uint8_t *) &ip->address;
 	*ipstr = 0;
 	for (x = 0; x < 4; x++) {
 		sprintf(p, "%u%s", i[x], x == 3 ? "" : ".");
@@ -361,7 +361,7 @@ SWITCH_DECLARE(char *) switch_stun_packet_attribute_get_username(switch_stun_pac
 	return memcpy(username, attribute->value, cpylen);
 }
 
-SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_build_header(switch_stun_message_t type, char *id, uint8_t * buf)
+SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_build_header(switch_stun_message_t type, char *id, uint8_t *buf)
 {
 	switch_stun_packet_header_t *header;
 
@@ -386,14 +386,14 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_binded_address(switch_s
 	uint8_t *i, x;
 	char *p = ipstr;
 
-	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) & packet->first_attribute + ntohs(packet->header.length));
+	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) &packet->first_attribute + ntohs(packet->header.length));
 	attribute->type = htons(SWITCH_STUN_ATTR_MAPPED_ADDRESS);
 	attribute->length = htons(8);
 	ip = (switch_stun_ip_t *) attribute->value;
 
 	ip->port = htons(port);
 	ip->family = 1;
-	i = (uint8_t *) & ip->address;
+	i = (uint8_t *) &ip->address;
 
 	for (x = 0; x < 4; x++) {
 		i[x] = (uint8_t) atoi(p);
@@ -415,7 +415,7 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_username(switch_stun_pa
 	if (ulen % 4 != 0) {
 		return 0;
 	}
-	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) & packet->first_attribute + ntohs(packet->header.length));
+	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) &packet->first_attribute + ntohs(packet->header.length));
 	attribute->type = htons(SWITCH_STUN_ATTR_USERNAME);
 	attribute->length = htons(ulen);
 	if (username) {

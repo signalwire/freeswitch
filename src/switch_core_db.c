@@ -81,7 +81,7 @@ SWITCH_DECLARE(int) switch_core_db_exec(switch_core_db_t *db, const char *sql, s
 	int sane = 100;
 	char *err = NULL;
 
-	while(--sane > 0) {
+	while (--sane > 0) {
 		ret = sqlite3_exec(db, sql, callback, data, &err);
 		if (ret == SQLITE_BUSY || ret == SQLITE_LOCKED) {
 			if (sane > 1) {
@@ -165,8 +165,9 @@ SWITCH_DECLARE(void) switch_core_db_free(char *z)
 	sqlite3_free(z);
 }
 
-SWITCH_DECLARE(int) switch_core_db_changes(switch_core_db_t *db) {
-    return sqlite3_changes(db);
+SWITCH_DECLARE(int) switch_core_db_changes(switch_core_db_t *db)
+{
+	return sqlite3_changes(db);
 }
 
 SWITCH_DECLARE(char *) switch_mprintf(const char *zFormat, ...)
@@ -212,7 +213,7 @@ SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *te
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\n", errmsg, reactive_sql);
 					switch_core_db_free(errmsg);
 					errmsg = NULL;
-				} 
+				}
 				switch_core_db_exec(db, reactive_sql, NULL, NULL, &errmsg);
 				if (errmsg) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\n", errmsg, reactive_sql);

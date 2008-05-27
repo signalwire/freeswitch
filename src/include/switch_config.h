@@ -88,13 +88,13 @@ struct switch_config {
   \param file_path path to the file
   \return 1 (true) on success 0 (false) on failure
 */
-SWITCH_DECLARE(int) switch_config_open_file(switch_config_t * cfg, char *file_path);
+SWITCH_DECLARE(int) switch_config_open_file(switch_config_t *cfg, char *file_path);
 
 /*!
   \brief Close a previously opened configuration file
   \param cfg (switch_config_t *) config handle to use
 */
-SWITCH_DECLARE(void) switch_config_close_file(switch_config_t * cfg);
+SWITCH_DECLARE(void) switch_config_close_file(switch_config_t *cfg);
 
 /*!
   \brief Retrieve next name/value pair from configuration file
@@ -102,7 +102,7 @@ SWITCH_DECLARE(void) switch_config_close_file(switch_config_t * cfg);
   \param var pointer to aim at the new variable name
   \param val pointer to aim at the new value
 */
-SWITCH_DECLARE(int) switch_config_next_pair(switch_config_t * cfg, char **var, char **val);
+SWITCH_DECLARE(int) switch_config_next_pair(switch_config_t *cfg, char **var, char **val);
 
 SWITCH_END_EXTERN_C
 /** @} */

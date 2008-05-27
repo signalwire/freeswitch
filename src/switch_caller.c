@@ -44,16 +44,14 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 																	const char *network_addr,
 																	const char *ani,
 																	const char *aniii,
-																	const char *rdnis, 
-																	const char *source, 
-																	const char *context,
-																	const char *destination_number)
+																	const char *rdnis,
+																	const char *source, const char *context, const char *destination_number)
 {
 	switch_caller_profile_t *profile = NULL;
 
 	profile = switch_core_alloc(pool, sizeof(*profile));
 	switch_assert(profile != NULL);
-		
+
 	if (!context) {
 		context = "default";
 	}
@@ -276,7 +274,8 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER) ? "yes" : "no");
 }
 
-SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(switch_core_session_t *session, const char *extension_name, const char *extension_number)
+SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(switch_core_session_t *session, const char *extension_name,
+																		const char *extension_number)
 {
 	switch_caller_extension_t *caller_extension = NULL;
 
@@ -290,7 +289,8 @@ SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(switch_c
 }
 
 SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session_t *session,
-															 switch_caller_extension_t *caller_extension, const char *application_name, const char *application_data)
+															 switch_caller_extension_t *caller_extension, const char *application_name,
+															 const char *application_data)
 {
 	switch_caller_application_t *caller_application = NULL;
 

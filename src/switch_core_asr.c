@@ -37,11 +37,7 @@
 
 SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
 													 const char *module_name,
-													 const char *codec,
-													 int rate,
-													 const char *dest,
-													 switch_asr_flag_t *flags,
-													 switch_memory_pool_t *pool)
+													 const char *codec, int rate, const char *dest, switch_asr_flag_t *flags, switch_memory_pool_t *pool)
 {
 	switch_status_t status;
 	char buf[256] = "";

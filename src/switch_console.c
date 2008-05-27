@@ -53,12 +53,12 @@ static switch_status_t console_xml_config(void)
 	char *cf = "switch.conf";
 	switch_xml_t cfg, xml, settings, param;
 
-    /* clear the keybind array */
-    int i;
+	/* clear the keybind array */
+	int i;
 
-    for (i = 0; i < 12; i++) {
-        console_fnkeys[i] = NULL;
-    }
+	for (i = 0; i < 12; i++) {
+		console_fnkeys[i] = NULL;
+	}
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
@@ -69,13 +69,13 @@ static switch_status_t console_xml_config(void)
 		for (param = switch_xml_child(settings, "key"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
-            int i = atoi(var);
-            if ((i < 1) || (i > 12)) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "keybind %s is invalid, range is from 1 to 12\n", var);
-            } else {
-                // Add the command to the fnkey array
-                console_fnkeys[i - 1] = switch_core_permanent_strdup(val);
-            }
+			int i = atoi(var);
+			if ((i < 1) || (i > 12)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "keybind %s is invalid, range is from 1 to 12\n", var);
+			} else {
+				// Add the command to the fnkey array
+				console_fnkeys[i - 1] = switch_core_permanent_strdup(val);
+			}
 		}
 	}
 
@@ -169,7 +169,7 @@ char *expand_alias(char *cmd, char *arg)
 	char *exp = NULL;
 	switch_core_db_t *db = switch_core_db_handle();
 	int full = 0;
-	
+
 	sql = switch_mprintf("select command from aliases where alias='%q'", cmd);
 
 	switch_core_db_exec(db, sql, alias_callback, &r, &errmsg);
@@ -181,9 +181,9 @@ char *expand_alias(char *cmd, char *arg)
 
 	if (!r) {
 		sql = switch_mprintf("select command from aliases where alias='%q %q'", cmd, arg);
-		
+
 		switch_core_db_exec(db, sql, alias_callback, &r, &errmsg);
-		
+
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error [%s][%s]\n", sql, errmsg);
 			free(errmsg);
@@ -270,7 +270,7 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const 
 	if (ret == -1) {
 		fprintf(stderr, "Memory Error\n");
 		goto done;
-	} 
+	}
 
 	if (channel == SWITCH_CHANNEL_ID_LOG_CLEAN) {
 		fprintf(handle, "%s", data);
@@ -283,11 +283,10 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const 
 	if (channel == SWITCH_CHANNEL_ID_LOG) {
 		fprintf(handle, "[%d] %s %s:%d %s() %s", (int) getpid(), date, filep, line, func, data);
 		goto done;
-	} 
+	}
 
 	if (channel == SWITCH_CHANNEL_ID_EVENT &&
-		switch_event_running() == SWITCH_STATUS_SUCCESS && 
-		switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
+		switch_event_running() == SWITCH_STATUS_SUCCESS && switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
 
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Data", "%s", data);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-File", "%s", filep);
@@ -296,7 +295,7 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const 
 		switch_event_fire(&event);
 	}
 
-done:
+  done:
 	if (data) {
 		free(data);
 	}
@@ -313,71 +312,85 @@ static char prompt_str[512] = "";
 /*
  * If a fnkey is configured then process the command
  */
-static unsigned char console_fnkey_pressed(int i) {
+static unsigned char console_fnkey_pressed(int i)
+{
 	char *c, *cmd;
 
-    assert((i > 0) && (i <= 12));
+	assert((i > 0) && (i <= 12));
 
-    c = console_fnkeys[i-1];
+	c = console_fnkeys[i - 1];
 
-    // This new line is necessary to avoid output to begin after the ">" of the CLI's prompt
-	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE,"\n");
+	// This new line is necessary to avoid output to begin after the ">" of the CLI's prompt
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "\n");
 
-    if (c == NULL) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "FUNCTION KEY F%d IS NOT BOUND, please edit switch.conf XML file\n", i);
-        return CC_REDISPLAY;
-    }
-	
+	if (c == NULL) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "FUNCTION KEY F%d IS NOT BOUND, please edit switch.conf XML file\n", i);
+		return CC_REDISPLAY;
+	}
+
 	cmd = strdup(c);
 	switch_console_process(cmd, 0);
 	free(cmd);
 
-    return CC_REDISPLAY;
+	return CC_REDISPLAY;
 }
 
-static unsigned char console_f1key(EditLine *el, int ch) {
-    return console_fnkey_pressed(1);
+static unsigned char console_f1key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(1);
 }
-static unsigned char console_f2key(EditLine *el, int ch) {
-    return console_fnkey_pressed(2);
+static unsigned char console_f2key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(2);
 }
-static unsigned char console_f3key(EditLine *el, int ch) {
-    return console_fnkey_pressed(3);
+static unsigned char console_f3key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(3);
 }
-static unsigned char console_f4key(EditLine *el, int ch) {
-    return console_fnkey_pressed(4);
+static unsigned char console_f4key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(4);
 }
-static unsigned char console_f5key(EditLine *el, int ch) {
-    return console_fnkey_pressed(5);
+static unsigned char console_f5key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(5);
 }
-static unsigned char console_f6key(EditLine *el, int ch) {
-    return console_fnkey_pressed(6);
+static unsigned char console_f6key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(6);
 }
-static unsigned char console_f7key(EditLine *el, int ch) {
-    return console_fnkey_pressed(7);
+static unsigned char console_f7key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(7);
 }
-static unsigned char console_f8key(EditLine *el, int ch) {
-    return console_fnkey_pressed(8);
+static unsigned char console_f8key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(8);
 }
-static unsigned char console_f9key(EditLine *el, int ch) {
-    return console_fnkey_pressed(9);
+static unsigned char console_f9key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(9);
 }
-static unsigned char console_f10key(EditLine *el, int ch) {
-    return console_fnkey_pressed(10);
+static unsigned char console_f10key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(10);
 }
-static unsigned char console_f11key(EditLine *el, int ch) {
-    return console_fnkey_pressed(11);
+static unsigned char console_f11key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(11);
 }
-static unsigned char console_f12key(EditLine *el, int ch) {
-    return console_fnkey_pressed(12);
+static unsigned char console_f12key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(12);
 }
 
 
-char * prompt(EditLine *e) {
+char *prompt(EditLine * e)
+{
 	if (*prompt_str == '\0') {
 		gethostname(hostname, sizeof(hostname));
 		switch_snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", hostname);
-	}	
+	}
 
 	return prompt_str;
 }
@@ -408,22 +421,22 @@ static void *SWITCH_THREAD_FUNC console_thread(switch_thread_t *thread, void *ob
 				char *cmd = strdup(line);
 				char *p;
 				const LineInfo *lf = el_line(el);
-				char *foo = (char *)lf->buffer;
+				char *foo = (char *) lf->buffer;
 				if ((p = strrchr(cmd, '\r')) || (p = strrchr(cmd, '\n'))) {
 					*p = '\0';
 				}
 				assert(cmd != NULL);
 				history(myhistory, &ev, H_ENTER, line);
 				running = switch_console_process(cmd, 0);
-				el_deletestr(el, strlen(foo)+1);
+				el_deletestr(el, strlen(foo) + 1);
 				memset(foo, 0, strlen(foo));
 				free(cmd);
 			}
 		}
 		switch_yield(1000);
 	}
-	
-  	switch_core_destroy_memory_pool(&pool);	
+
+	switch_core_destroy_memory_pool(&pool);
 	return NULL;
 }
 
@@ -441,7 +454,7 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	struct helper *h = (struct helper *) pArg;
 	char *target = NULL;
-	
+
 	target = argv[0];
 
 	if (!target) {
@@ -449,17 +462,17 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 	}
 
 	fprintf(h->out, "%20s\t", target);
-	
+
 	switch_copy_string(h->last, target, sizeof(h->last));
 
 	if ((++h->hits % 4) == 0) {
 		fprintf(h->out, "\n");
 	}
-	
+
 	return 0;
 }
 
-static unsigned char complete(EditLine *el, int ch)
+static unsigned char complete(EditLine * el, int ch)
 {
 	switch_core_db_t *db = switch_core_db_handle();
 	char *sql;
@@ -475,13 +488,13 @@ static unsigned char complete(EditLine *el, int ch)
 
 	if ((p = strchr(buf, '\r')) || (p = strchr(buf, '\n'))) {
 		*p = '\0';
-	}	
-	
-	while(*buf == ' ') {
+	}
+
+	while (*buf == ' ') {
 		buf++;
 	}
 
-	for(p = buf; p && *p; p++) {
+	for (p = buf; p && *p; p++) {
 		if (*p == ' ') {
 			lp = p;
 			h.words++;
@@ -491,9 +504,9 @@ static unsigned char complete(EditLine *el, int ch)
 	if (lp) {
 		buf = lp + 1;
 	}
-	
+
 	h.len = strlen(buf);
-	
+
 	fprintf(h.out, "\n\n");
 
 	if (h.words == 0) {
@@ -503,7 +516,7 @@ static unsigned char complete(EditLine *el, int ch)
 	}
 
 	switch_core_db_exec(db, sql, comp_callback, &h, &errmsg);
-	
+
 	if (errmsg) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error [%s][%s]\n", sql, errmsg);
 		free(errmsg);
@@ -515,28 +528,25 @@ static unsigned char complete(EditLine *el, int ch)
 		char *dupdup = strdup(dup);
 		switch_assert(dupdup);
 		int x, argc = 0;
-		char *argv[10] = {0};
+		char *argv[10] = { 0 };
 		switch_stream_handle_t stream = { 0 };
 		SWITCH_STANDARD_STREAM(stream);
 
-		
+
 		argc = switch_separate_string(dupdup, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 		if (h.words == 0) {
-			stream.write_function(&stream, 
-								  "select distinct a1 from complete where "
-								  "a1 not in (select name from interfaces) %s ", argc ? "and" : "");
+			stream.write_function(&stream, "select distinct a1 from complete where " "a1 not in (select name from interfaces) %s ", argc ? "and" : "");
 		} else {
-			stream.write_function(&stream, 
-								  "select distinct a%d from complete where ", h.words + 1);
-								  
+			stream.write_function(&stream, "select distinct a%d from complete where ", h.words + 1);
+
 		}
 
-		for(x = 0; x < argc; x++) {
-			stream.write_function(&stream, "(a%d = '' or a%d like '%s%%')%s", x+1, x+1, switch_str_nil(argv[x]), x == argc -1 ? "" : " and ");
+		for (x = 0; x < argc; x++) {
+			stream.write_function(&stream, "(a%d = '' or a%d like '%s%%')%s", x + 1, x + 1, switch_str_nil(argv[x]), x == argc - 1 ? "" : " and ");
 		}
-		
-		switch_core_db_exec(db, stream.data, comp_callback, &h, &errmsg);	
+
+		switch_core_db_exec(db, stream.data, comp_callback, &h, &errmsg);
 
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error [%s][%s]\n", (char *) stream.data, errmsg);
@@ -546,20 +556,20 @@ static unsigned char complete(EditLine *el, int ch)
 
 		switch_safe_free(dupdup);
 		switch_safe_free(stream.data);
-		
+
 		if (ret == CC_ERROR) {
 			goto end;
 		}
 	}
 
 	fprintf(h.out, "\n\n");
-	
+
 	if (h.hits == 1) {
 		el_deletestr(el, h.len);
 		el_insertstr(el, h.last);
 	}
 
- end:
+  end:
 
 	fflush(h.out);
 
@@ -567,14 +577,14 @@ static unsigned char complete(EditLine *el, int ch)
 	switch_safe_free(dup);
 
 	switch_core_db_close(db);
-	
+
 	return (ret);
 }
 
 
 SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 {
-	char *mydata = NULL, *argv[11] = {0};
+	char *mydata = NULL, *argv[11] = { 0 };
 	int argc, x;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -587,26 +597,26 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 
 			if (!strcasecmp(argv[0], "stickyadd")) {
 				mystream.write_function(&mystream, "insert into complete values (1,");
-				for(x = 0; x < 10; x++) {
-					mystream.write_function(&mystream, "'%s'%s", switch_str_nil(argv[x+1]), x == 9 ? ")" : ", ");
+				for (x = 0; x < 10; x++) {
+					mystream.write_function(&mystream, "'%s'%s", switch_str_nil(argv[x + 1]), x == 9 ? ")" : ", ");
 				}
 				switch_core_db_persistant_execute(db, mystream.data, 5);
 				status = SWITCH_STATUS_SUCCESS;
 			} else if (!strcasecmp(argv[0], "add")) {
 				mystream.write_function(&mystream, "insert into complete values (0,");
-				for(x = 0; x < 10; x++) {
-					mystream.write_function(&mystream, "'%s'%s", switch_str_nil(argv[x+1]), x == 9 ? ")" : ", ");
+				for (x = 0; x < 10; x++) {
+					mystream.write_function(&mystream, "'%s'%s", switch_str_nil(argv[x + 1]), x == 9 ? ")" : ", ");
 				}
 				switch_core_db_persistant_execute(db, mystream.data, 5);
 				status = SWITCH_STATUS_SUCCESS;
 			} else if (!strcasecmp(argv[0], "del")) {
 				char *what = argv[1];
-                if (!strcasecmp(what, "*")) {
+				if (!strcasecmp(what, "*")) {
 					switch_core_db_persistant_execute(db, "delete from complete", 1);
 				} else {
 					mystream.write_function(&mystream, "delete from complete where ");
-					for(x = 0; x < argc - 1; x++) {
-						mystream.write_function(&mystream, "a%d = '%s'%s", x+1, switch_str_nil(argv[x+1]), x == argc - 2 ? "" : " and ");
+					for (x = 0; x < argc - 1; x++) {
+						mystream.write_function(&mystream, "a%d = '%s'%s", x + 1, switch_str_nil(argv[x + 1]), x == argc - 2 ? "" : " and ");
 					}
 					switch_core_db_persistant_execute(db, mystream.data, 1);
 				}
@@ -626,10 +636,10 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 
 SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
 {
-	char *mydata = NULL, *argv[3] = {0};
+	char *mydata = NULL, *argv[3] = { 0 };
 	int argc;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	
+
 	if (string && (mydata = strdup(string))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
 			switch_core_db_t *db = switch_core_db_handle();
@@ -652,7 +662,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
 				status = SWITCH_STATUS_SUCCESS;
 			} else if (!strcasecmp(argv[0], "del") && argc == 2) {
 				char *what = argv[1];
-                if (!strcasecmp(what, "*")) {
+				if (!strcasecmp(what, "*")) {
 					switch_core_db_persistant_execute(db, "delete from aliases", 1);
 				} else {
 					sql = switch_mprintf("delete from aliases where alias='%q'", argv[1]);
@@ -664,7 +674,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
 			switch_core_db_close(db);
 		}
 	}
-	
+
 	switch_safe_free(mydata);
 
 	return status;
@@ -686,44 +696,44 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 	el = el_init(__FILE__, switch_core_get_console(), switch_core_get_console(), switch_core_get_console());
 	el_set(el, EL_PROMPT, &prompt);
 	el_set(el, EL_EDITOR, "emacs");
-    /* AGX: Bind Keyboard function keys. This has been tested with:
-     * - linux console keyabord
-     * - putty.exe connected via ssh to linux
-     */
-    /* Load/Init the config first */
-    console_xml_config();
-    /* Bind the functions to the key */
-    el_set(el, EL_ADDFN, "f1-key", "F1 KEY PRESS", console_f1key );
-    el_set(el, EL_ADDFN, "f2-key", "F2 KEY PRESS", console_f2key );
-    el_set(el, EL_ADDFN, "f3-key", "F3 KEY PRESS", console_f3key );
-    el_set(el, EL_ADDFN, "f4-key", "F4 KEY PRESS", console_f4key );
-    el_set(el, EL_ADDFN, "f5-key", "F5 KEY PRESS", console_f5key );
-    el_set(el, EL_ADDFN, "f6-key", "F6 KEY PRESS", console_f6key );
-    el_set(el, EL_ADDFN, "f7-key", "F7 KEY PRESS", console_f7key );
-    el_set(el, EL_ADDFN, "f8-key", "F8 KEY PRESS", console_f8key );
-    el_set(el, EL_ADDFN, "f9-key", "F9 KEY PRESS", console_f9key );
-    el_set(el, EL_ADDFN, "f10-key", "F10 KEY PRESS", console_f10key );
-    el_set(el, EL_ADDFN, "f11-key", "F11 KEY PRESS", console_f11key );
-    el_set(el, EL_ADDFN, "f12-key", "F12 KEY PRESS", console_f12key );
+	/* AGX: Bind Keyboard function keys. This has been tested with:
+	 * - linux console keyabord
+	 * - putty.exe connected via ssh to linux
+	 */
+	/* Load/Init the config first */
+	console_xml_config();
+	/* Bind the functions to the key */
+	el_set(el, EL_ADDFN, "f1-key", "F1 KEY PRESS", console_f1key);
+	el_set(el, EL_ADDFN, "f2-key", "F2 KEY PRESS", console_f2key);
+	el_set(el, EL_ADDFN, "f3-key", "F3 KEY PRESS", console_f3key);
+	el_set(el, EL_ADDFN, "f4-key", "F4 KEY PRESS", console_f4key);
+	el_set(el, EL_ADDFN, "f5-key", "F5 KEY PRESS", console_f5key);
+	el_set(el, EL_ADDFN, "f6-key", "F6 KEY PRESS", console_f6key);
+	el_set(el, EL_ADDFN, "f7-key", "F7 KEY PRESS", console_f7key);
+	el_set(el, EL_ADDFN, "f8-key", "F8 KEY PRESS", console_f8key);
+	el_set(el, EL_ADDFN, "f9-key", "F9 KEY PRESS", console_f9key);
+	el_set(el, EL_ADDFN, "f10-key", "F10 KEY PRESS", console_f10key);
+	el_set(el, EL_ADDFN, "f11-key", "F11 KEY PRESS", console_f11key);
+	el_set(el, EL_ADDFN, "f12-key", "F12 KEY PRESS", console_f12key);
 
-    el_set(el, EL_BIND, "\033OP", "f1-key", NULL);
-    el_set(el, EL_BIND, "\033OQ", "f2-key", NULL);
-    el_set(el, EL_BIND, "\033OR", "f3-key", NULL);
-    el_set(el, EL_BIND, "\033OS", "f4-key", NULL);
+	el_set(el, EL_BIND, "\033OP", "f1-key", NULL);
+	el_set(el, EL_BIND, "\033OQ", "f2-key", NULL);
+	el_set(el, EL_BIND, "\033OR", "f3-key", NULL);
+	el_set(el, EL_BIND, "\033OS", "f4-key", NULL);
 
-	
-    el_set(el, EL_BIND, "\033[11~", "f1-key", NULL);
-    el_set(el, EL_BIND, "\033[12~", "f2-key", NULL);
-    el_set(el, EL_BIND, "\033[13~", "f3-key", NULL);
-    el_set(el, EL_BIND, "\033[14~", "f4-key", NULL);
-    el_set(el, EL_BIND, "\033[15~", "f5-key", NULL);
-    el_set(el, EL_BIND, "\033[17~", "f6-key", NULL);
-    el_set(el, EL_BIND, "\033[18~", "f7-key", NULL);
-    el_set(el, EL_BIND, "\033[19~", "f8-key", NULL);
-    el_set(el, EL_BIND, "\033[20~", "f9-key", NULL);
-    el_set(el, EL_BIND, "\033[21~", "f10-key", NULL);
-    el_set(el, EL_BIND, "\033[23~", "f11-key", NULL);
-    el_set(el, EL_BIND, "\033[24~", "f12-key", NULL);
+
+	el_set(el, EL_BIND, "\033[11~", "f1-key", NULL);
+	el_set(el, EL_BIND, "\033[12~", "f2-key", NULL);
+	el_set(el, EL_BIND, "\033[13~", "f3-key", NULL);
+	el_set(el, EL_BIND, "\033[14~", "f4-key", NULL);
+	el_set(el, EL_BIND, "\033[15~", "f5-key", NULL);
+	el_set(el, EL_BIND, "\033[17~", "f6-key", NULL);
+	el_set(el, EL_BIND, "\033[18~", "f7-key", NULL);
+	el_set(el, EL_BIND, "\033[19~", "f8-key", NULL);
+	el_set(el, EL_BIND, "\033[20~", "f9-key", NULL);
+	el_set(el, EL_BIND, "\033[21~", "f10-key", NULL);
+	el_set(el, EL_BIND, "\033[23~", "f11-key", NULL);
+	el_set(el, EL_BIND, "\033[24~", "f12-key", NULL);
 
 
 	el_set(el, EL_ADDFN, "ed-complete", "Complete argument", complete);
@@ -746,7 +756,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, console_thread, pool, pool);
-	
+
 	while (running) {
 		int32_t arg = 0;
 		switch_core_session_ctl(SCSC_CHECK_RUNNING, &arg);
@@ -758,7 +768,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 
 	history(myhistory, &ev, H_SAVE, hfile);
 	free(hfile);
-	
+
 	/* Clean up our memory */
 	history_end(myhistory);
 	el_end(el);

@@ -50,8 +50,7 @@ static void switch_core_standard_on_hangup(switch_core_session_t *session)
 static void switch_core_standard_on_reset(switch_core_session_t *session)
 {
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard RESET %s\n",
-					  switch_channel_get_name(session->channel));	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard RESET %s\n", switch_channel_get_name(session->channel));
 }
 
 static void switch_core_standard_on_routing(switch_core_session_t *session)
@@ -71,7 +70,7 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 	} else {
 		char *dp[25];
 		int argc, x, count = 0;
-		
+
 		if (!switch_strlen_zero(caller_profile->dialplan)) {
 			if ((dpstr = switch_core_session_strdup(session, caller_profile->dialplan))) {
 				expanded = switch_channel_expand_variables(session->channel, dpstr);
@@ -79,7 +78,7 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 				for (x = 0; x < argc; x++) {
 					char *dpname = dp[x];
 					char *dparg = NULL;
-					
+
 					if (dpname) {
 						if ((dparg = strchr(dpname, ':'))) {
 							*dparg++ = '\0';
@@ -90,7 +89,7 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 					if (!(dialplan_interface = switch_loadable_module_get_dialplan_interface(dpname))) {
 						continue;
 					}
-					
+
 					count++;
 
 					if ((extension = dialplan_interface->hunt_function(session, dparg, NULL)) != 0) {
@@ -115,8 +114,8 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No Route, Aborting\n");
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_NO_ROUTE_DESTINATION);
 	}
-	
- end:
+
+  end:
 
 	if (expanded && dpstr && expanded != dpstr) {
 		free(expanded);
@@ -129,7 +128,7 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard EXECUTE\n");
 
- top:
+  top:
 	switch_channel_clear_flag(session->channel, CF_RESET);
 
 	if ((extension = switch_channel_get_caller_extension(session->channel)) == 0) {
@@ -141,12 +140,12 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Execute %s(%s)\n", switch_channel_get_name(session->channel),
 						  extension->current_application->application_name, switch_str_nil(extension->current_application->application_data));
 
-		if (switch_core_session_execute_application(session, 
+		if (switch_core_session_execute_application(session,
 													extension->current_application->application_name,
 													extension->current_application->application_data) != SWITCH_STATUS_SUCCESS) {
 			return;
 		}
-		
+
 		if (switch_channel_test_flag(session->channel, CF_RESET)) {
 			goto top;
 		}
@@ -249,7 +248,7 @@ static void handle_fatality(int sig)
 
 void switch_core_state_machine_init(switch_memory_pool_t *pool)
 {
-	
+
 	if (switch_test_flag((&runtime), SCF_CRASH_PROT)) {
 		sqlite3HashInit(&stack_table, SQLITE_HASH_BINARY, 0);
 	}
@@ -320,7 +319,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Thread has crashed for channel %s\n", switch_channel_get_name(session->channel));
 			switch_channel_hangup(session->channel, SWITCH_CAUSE_CRASH);
 		} else {
-			sqlite3HashInsert(&stack_table, &thread_id, sizeof(thread_id), (void *)&env);
+			sqlite3HashInsert(&stack_table, &thread_id, sizeof(thread_id), (void *) &env);
 			//apr_hash_set(stack_table, &thread_id, sizeof(thread_id), &env);
 		}
 	}
@@ -361,7 +360,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 		if (state != switch_channel_get_running_state(session->channel) || state == CS_HANGUP || exception) {
 			int index = 0;
 			int proceed = 1;
-			int do_extra_handlers = 1;			
+			int do_extra_handlers = 1;
 
 			switch_channel_set_running_state(session->channel, state);
 
@@ -372,7 +371,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			case CS_DONE:
 				goto done;
 				/* HANGUP INIT ROUTING and RESET are all short term so we signal lock during their callbacks */
-			case CS_HANGUP:	    /* Deactivate and end the thread */
+			case CS_HANGUP:	/* Deactivate and end the thread */
 				{
 					const char *var = switch_channel_get_variable(session->channel, SWITCH_PROCESS_CDR_VARIABLE);
 					const char *hook_var;
@@ -387,7 +386,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 								do_extra_handlers = 0;
 							}
 						} else if (!switch_true(var)) {
-                            do_extra_handlers = 0;
+							do_extra_handlers = 0;
 						}
 					}
 					switch_core_session_signal_lock(session);
@@ -405,50 +404,51 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 						}
 						SWITCH_STANDARD_STREAM(stream);
 						switch_api_execute(cmd, arg, NULL, &stream);
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hangup Command %s(%s):\n%s\n", cmd, arg, switch_str_nil((char *) stream.data));
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hangup Command %s(%s):\n%s\n", cmd, arg,
+										  switch_str_nil((char *) stream.data));
 						switch_safe_free(stream.data);
 					}
 				}
 				goto done;
-			case CS_INIT: /* Basic setup tasks */
+			case CS_INIT:		/* Basic setup tasks */
 				switch_core_session_signal_lock(session);
 				STATE_MACRO(init, "INIT");
 				switch_core_session_signal_unlock(session);
 				break;
-			case CS_ROUTING: /* Look for a dialplan and find something to do */
+			case CS_ROUTING:	/* Look for a dialplan and find something to do */
 				switch_core_session_signal_lock(session);
 				STATE_MACRO(routing, "ROUTING");
 				switch_core_session_signal_unlock(session);
 				break;
-			case CS_RESET: /* Reset */
+			case CS_RESET:		/* Reset */
 				switch_core_session_signal_lock(session);
 				STATE_MACRO(reset, "RESET");
 				switch_core_session_signal_unlock(session);
 				break;
 				/* These other states are intended for prolonged durations so we do not signal lock for them */
-			case CS_EXECUTE: /* Execute an Operation */
+			case CS_EXECUTE:	/* Execute an Operation */
 				STATE_MACRO(execute, "EXECUTE");
 				break;
-			case CS_EXCHANGE_MEDIA: /* loop all data back to source */
+			case CS_EXCHANGE_MEDIA:	/* loop all data back to source */
 				STATE_MACRO(exchange_media, "EXCHANGE_MEDIA");
 				break;
-			case CS_SOFT_EXECUTE: /* send/recieve data to/from another channel */
+			case CS_SOFT_EXECUTE:	/* send/recieve data to/from another channel */
 				STATE_MACRO(soft_execute, "SOFT_EXECUTE");
 				break;
-			case CS_PARK: /* wait in limbo */
+			case CS_PARK:		/* wait in limbo */
 				STATE_MACRO(park, "PARK");
 				break;
-			case CS_CONSUME_MEDIA: /* wait in limbo */
+			case CS_CONSUME_MEDIA:	/* wait in limbo */
 				STATE_MACRO(consume_media, "CONSUME_MEDIA");
 				break;
-			case CS_HIBERNATE: /* sleep */
+			case CS_HIBERNATE:	/* sleep */
 				STATE_MACRO(hibernate, "HIBERNATE");
 				break;
 			case CS_NONE:
 				abort();
 				break;
 			}
-			
+
 			if (midstate == CS_DONE) {
 				break;
 			}
@@ -456,7 +456,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 		}
 
 		endstate = switch_channel_get_state(session->channel);
-		
+
 		if (endstate == switch_channel_get_running_state(session->channel)) {
 			if (endstate == CS_NEW) {
 				switch_yield(1000);

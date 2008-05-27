@@ -37,13 +37,13 @@ static const switch_state_handler_table_t originate_state_handlers;
 static switch_status_t originate_on_consume_media_transmit(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	
+
 	if (!switch_channel_test_flag(channel, CF_PROXY_MODE)) {
-		while(switch_channel_get_state(channel) == CS_CONSUME_MEDIA && !switch_channel_test_flag(channel, CF_TAGGED)) {
+		while (switch_channel_get_state(channel) == CS_CONSUME_MEDIA && !switch_channel_test_flag(channel, CF_TAGGED)) {
 			switch_ivr_sleep(session, 10);
 		}
 	}
-	
+
 	switch_channel_clear_state_handler(channel, &originate_state_handlers);
 
 	return SWITCH_STATUS_FALSE;
@@ -81,7 +81,7 @@ struct key_collect {
 	switch_core_session_t *session;
 };
 
-static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t * thread, void *obj)
+static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void *obj)
 {
 	struct key_collect *collect = (struct key_collect *) obj;
 	switch_channel_t *channel = switch_core_session_get_channel(collect->session);
@@ -117,7 +117,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t * thread, voi
 
 		switch_channel_set_state(channel, CS_SOFT_EXECUTE);
 		switch_core_session_exec(collect->session, application_interface, app_data);
-		
+
 		if (switch_channel_get_state(channel) < CS_HANGUP) {
 			switch_channel_set_flag(channel, CF_WINNER);
 		}
@@ -166,13 +166,14 @@ static void launch_collect_thread(struct key_collect *collect)
 
 static uint8_t check_channel_status(switch_channel_t **peer_channels,
 									switch_core_session_t **peer_sessions,
-									uint32_t len, int32_t *idx, uint32_t * hups, char *file, char *key, uint8_t early_ok, uint8_t *ring_ready, uint8_t return_ring_ready)
+									uint32_t len, int32_t *idx, uint32_t *hups, char *file, char *key, uint8_t early_ok, uint8_t *ring_ready,
+									uint8_t return_ring_ready)
 {
 
 	uint32_t i;
 	*hups = 0;
 	*idx = IDX_NADA;
-	
+
 	for (i = 0; i < len; i++) {
 		switch_channel_state_t state;
 		if (!peer_channels[i]) {
@@ -183,17 +184,16 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 		}
 
 		state = switch_channel_get_state(peer_channels[i]);
-		if (state >= CS_HANGUP || state == CS_RESET || switch_channel_test_flag(peer_channels[i], CF_TRANSFER) || 
-			switch_channel_test_flag(peer_channels[i], CF_BRIDGED) ||
-			!switch_channel_test_flag(peer_channels[i], CF_ORIGINATING)
+		if (state >= CS_HANGUP || state == CS_RESET || switch_channel_test_flag(peer_channels[i], CF_TRANSFER) ||
+			switch_channel_test_flag(peer_channels[i], CF_BRIDGED) || !switch_channel_test_flag(peer_channels[i], CF_ORIGINATING)
 			) {
 			(*hups)++;
 		} else if ((switch_channel_test_flag(peer_channels[i], CF_ANSWERED) ||
 					(early_ok && len == 1 && switch_channel_test_flag(peer_channels[i], CF_EARLY_MEDIA)) ||
 					(*ring_ready && return_ring_ready && len == 1 && switch_channel_test_flag(peer_channels[i], CF_RING_READY))
-					)
+				   )
 				   && !switch_channel_test_flag(peer_channels[i], CF_TAGGED)
-				   ) {
+			) {
 
 			if (!switch_strlen_zero(key)) {
 				struct key_collect *collect;
@@ -236,7 +236,7 @@ struct ringback {
 
 typedef struct ringback ringback_t;
 
-static int teletone_handler(teletone_generation_session_t * ts, teletone_tone_map_t * map)
+static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map_t *map)
 {
 	ringback_t *tto = ts->user_data;
 	int wrote;
@@ -255,7 +255,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 {
 	switch_channel_t *caller_channel = switch_core_session_get_channel(session);
 	switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
-	const char *ringback_data = NULL;	
+	const char *ringback_data = NULL;
 	switch_frame_t write_frame = { 0 };
 	switch_codec_t write_codec = { 0 };
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
@@ -267,7 +267,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	int timelimit = 60;
 	const char *var = switch_channel_get_variable(caller_channel, "call_timeout");
 	switch_time_t start = 0;
-	
+
 	if ((switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA))) {
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -287,14 +287,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 
 	if (switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
 		ringback_data = switch_channel_get_variable(caller_channel, "transfer_ringback");
-	} 
-			
+	}
+
 	if (!ringback_data) {
 		ringback_data = switch_channel_get_variable(caller_channel, "ringback");
 	}
-		
-	
-	if (read_codec && (ringback_data || 
+
+
+	if (read_codec && (ringback_data ||
 					   (!(switch_channel_test_flag(caller_channel, CF_PROXY_MODE) && switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA))))) {
 		if (!(pass = (uint8_t) switch_test_flag(read_codec, SWITCH_CODEC_FLAG_PASSTHROUGH))) {
 			if (switch_core_codec_init(&write_codec,
@@ -302,14 +302,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 									   NULL,
 									   read_codec->implementation->actual_samples_per_second,
 									   read_codec->implementation->microseconds_per_frame / 1000,
-									   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, 
+									   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 									   switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 								  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
 								  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
-				
+
 				write_frame.codec = &write_codec;
 				write_frame.datalen = read_codec->implementation->bytes_per_frame;
 				write_frame.samples = write_frame.datalen / 2;
@@ -317,13 +317,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 
 				if (ringback_data) {
 					char *tmp_data = NULL;
-					
+
 					switch_buffer_create_dynamic(&ringback.audio_buffer, 512, 1024, 0);
 					switch_buffer_set_loops(ringback.audio_buffer, -1);
-							
+
 					if (switch_is_file_path(ringback_data)) {
 						char *ext;
-								
+
 						if (strrchr(ringback_data, '.') || strstr(ringback_data, SWITCH_URL_SEPARATOR)) {
 							switch_core_session_set_read_codec(session, &write_codec);
 						} else {
@@ -342,8 +342,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 												  ringback_data,
 												  read_codec->implementation->number_of_channels,
 												  read_codec->implementation->actual_samples_per_second,
-												  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
-												  NULL) != SWITCH_STATUS_SUCCESS) {
+												  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing File\n");
 							switch_safe_free(tmp_data);
 							goto done;
@@ -370,9 +369,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 		}
 	}
 
-	while (switch_channel_ready(peer_channel) && !(switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA))) {
-		int diff = (int)(switch_timestamp_now() - start);
-		
+	while (switch_channel_ready(peer_channel)
+		   && !(switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA))) {
+		int diff = (int) (switch_timestamp_now() - start);
+
 		if (diff > timelimit) {
 			status = SWITCH_STATUS_TIMEOUT;
 			goto done;
@@ -390,7 +390,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 			break;
 		}
 
-		
+
 		if (read_frame && !pass) {
 			if (ringback.fh) {
 				switch_size_t mlen, olen;
@@ -431,8 +431,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 		}
 	}
 
- done:
-	
+  done:
+
 	if (ringback.fh) {
 		switch_core_file_close(ringback.fh);
 		ringback.fh = NULL;
@@ -461,10 +461,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 													 const char *bridgeto,
 													 uint32_t timelimit_sec,
 													 const switch_state_handler_table_t *table,
-													 const char *cid_name_override, 
-													 const char *cid_num_override, 
-													 switch_caller_profile_t *caller_profile_override,
-													 switch_originate_flag_t flags)
+													 const char *cid_name_override,
+													 const char *cid_num_override,
+													 switch_caller_profile_t *caller_profile_override, switch_originate_flag_t flags)
 {
 	switch_originate_flag_t myflags = SOF_NONE;
 	char *pipe_names[MAX_PEERS] = { 0 };
@@ -516,10 +515,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	while (data && *data && *data == ' ') {
 		data++;
 	}
-	
+
 	if (*data == '{') {
 		char *e = switch_find_end_paren(data, '{', '}');
-		
+
 		if (e) {
 			vars = data + 1;
 			*e++ = '\0';
@@ -558,47 +557,47 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		if ((hi = switch_channel_variable_first(caller_channel))) {
 			for (; hi; hi = hi->next) {
 				int ok = 0;
-				if (!strcasecmp((char *)hi->name, "group_confirm_key")) {
+				if (!strcasecmp((char *) hi->name, "group_confirm_key")) {
 					ok = 1;
-				} else if (!strcasecmp((char *)hi->name, "group_confirm_file")) {
+				} else if (!strcasecmp((char *) hi->name, "group_confirm_file")) {
 					ok = 1;
-				} else if (!strcasecmp((char *)hi->name, "forked_dial")) {
+				} else if (!strcasecmp((char *) hi->name, "forked_dial")) {
 					ok = 1;
-				} else if (!strcasecmp((char *)hi->name, "fail_on_single_reject")) {
+				} else if (!strcasecmp((char *) hi->name, "fail_on_single_reject")) {
 					ok = 1;
-				} else if (!strcasecmp((char *)hi->name, "ignore_early_media")) {
+				} else if (!strcasecmp((char *) hi->name, "ignore_early_media")) {
 					ok = 1;
-				} else if (!strcasecmp((char *)hi->name, "return_ring_ready")) {
+				} else if (!strcasecmp((char *) hi->name, "return_ring_ready")) {
 					ok = 1;
-				} else if (!strcasecmp((char *)hi->name, "originate_retries")) {
+				} else if (!strcasecmp((char *) hi->name, "originate_retries")) {
 					ok = 1;
-				} else if (!strcasecmp((char *)hi->name, "originate_timeout")) {
+				} else if (!strcasecmp((char *) hi->name, "originate_timeout")) {
 					ok = 1;
-				} else if (!strcasecmp((char *)hi->name, "originate_retry_sleep_ms")) {
+				} else if (!strcasecmp((char *) hi->name, "originate_retry_sleep_ms")) {
 					ok = 1;
-				} else if (!strcasecmp((char *)hi->name, "origination_caller_id_name")) {
+				} else if (!strcasecmp((char *) hi->name, "origination_caller_id_name")) {
 					ok = 1;
-				} else if (!strcasecmp((char *)hi->name, "origination_caller_id_number")) {
+				} else if (!strcasecmp((char *) hi->name, "origination_caller_id_number")) {
 					ok = 1;
 				}
 
 				if (ok) {
-					switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, (char *)hi->name, "%s", (char *) hi->value);
+					switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, (char *) hi->name, "%s", (char *) hi->value);
 				}
 			}
 			switch_channel_variable_last(caller_channel);
 		}
 		/*
-		if ((hi = switch_channel_variable_first(caller_channel))) {
-			for (; hi; hi = switch_hash_next(hi)) {
-				switch_hash_this(hi, &vvar, NULL, &vval);
-				if (vvar && vval) {
-					switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, (void *) vvar, "%s", (char *) vval);
-				}
-			}
-			switch_channel_variable_last(caller_channel);
-		}
-		*/
+		   if ((hi = switch_channel_variable_first(caller_channel))) {
+		   for (; hi; hi = switch_hash_next(hi)) {
+		   switch_hash_this(hi, &vvar, NULL, &vval);
+		   if (vvar && vval) {
+		   switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, (void *) vvar, "%s", (char *) vval);
+		   }
+		   }
+		   switch_channel_variable_last(caller_channel);
+		   }
+		 */
 	}
 
 	if (vars) {					/* Parse parameters specified from the dialstring */
@@ -609,7 +608,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			for (x = 0; x < var_count; x++) {
 				char *inner_var_array[2] = { 0 };
 				int inner_var_count;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"variable string %d = [%s]\n", x, var_array[x]);				
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "variable string %d = [%s]\n", x, var_array[x]);
 				if ((inner_var_count =
 					 switch_separate_string(var_array[x], '=', inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
 
@@ -624,12 +623,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		if (switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
 			ringback_data = switch_channel_get_variable(caller_channel, "transfer_ringback");
-		} 
-			
+		}
+
 		if (!ringback_data) {
 			ringback_data = switch_channel_get_variable(caller_channel, "ringback");
 		}
-		
+
 		switch_channel_set_variable(caller_channel, "originate_disposition", "failure");
 	}
 
@@ -736,7 +735,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Only calling the first element in the list in this mode.\n");
 				and_argc = 1;
 			}
-			
+
 			for (i = 0; i < and_argc; i++) {
 				char *vdata;
 				char *e = NULL;
@@ -748,7 +747,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				vdata = chan_type;
 				e = switch_find_end_paren(vdata, '[', ']');
-				
+
 				if (e) {
 					vdata++;
 					*e++ = '\0';
@@ -756,7 +755,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				} else {
 					vdata = NULL;
 				}
-				
+
 				if ((chan_data = strchr(chan_type, '/')) != 0) {
 					*chan_data = '\0';
 					chan_data++;
@@ -801,18 +800,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						new_profile = switch_caller_profile_new(pool,
 																NULL,
 																NULL,
-																cid_name_override,
-																cid_num_override,
-																NULL, NULL, NULL, NULL, __FILE__, NULL,
-																chan_data);
+																cid_name_override, cid_num_override, NULL, NULL, NULL, NULL, __FILE__, NULL, chan_data);
 					}
 				}
-				
+
 				caller_profiles[i] = NULL;
 				peer_channels[i] = NULL;
 				peer_sessions[i] = NULL;
 				new_session = NULL;
-				
+
 				if (and_argc > 1 || or_argc > 1) {
 					myflags |= SOF_FORKED_DIAL;
 				} else if (var_event) {
@@ -821,9 +817,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						myflags |= SOF_FORKED_DIAL;
 					}
 				}
-				if ((reason = switch_core_session_outgoing_channel(session, var_event, chan_type, new_profile, &new_session, &pool, myflags)) != SWITCH_CAUSE_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot create outgoing channel of type [%s] cause: [%s]\n", 
-									  chan_type, switch_channel_cause2str(reason));
+				if ((reason =
+					 switch_core_session_outgoing_channel(session, var_event, chan_type, new_profile, &new_session, &pool,
+														  myflags)) != SWITCH_CAUSE_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot create outgoing channel of type [%s] cause: [%s]\n", chan_type,
+									  switch_channel_cause2str(reason));
 					if (pool) {
 						switch_core_destroy_memory_pool(&pool);
 					}
@@ -837,7 +835,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				peer_sessions[i] = new_session;
 				peer_channels[i] = switch_core_session_get_channel(new_session);
 				switch_channel_set_flag(peer_channels[i], CF_ORIGINATING);
-				
+
 				if (vdata) {
 					char *var_array[1024] = { 0 };
 					int var_count = 0;
@@ -847,15 +845,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							char *inner_var_array[2] = { 0 };
 							int inner_var_count;
 							if ((inner_var_count =
-								 switch_separate_string(var_array[x], '=', 
+								 switch_separate_string(var_array[x], '=',
 														inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
-								
+
 								switch_channel_set_variable(peer_channels[i], inner_var_array[0], inner_var_array[1]);
 							}
 						}
 					}
 				}
-				
+
 				if (var_event) {
 					switch_event_t *event;
 					switch_event_header_t *header;
@@ -883,15 +881,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					*cause = SWITCH_CAUSE_SUCCESS;
 					goto outer_for;
 				}
-				
+
 				if (!switch_core_session_running(peer_sessions[i])) {
 					//if (!(flags & SOF_NOBLOCK)) {
-                    //switch_channel_set_state(peer_channels[i], CS_ROUTING);
+					//switch_channel_set_state(peer_channels[i], CS_ROUTING);
 					//}
-                    //} else {
+					//} else {
 					switch_core_session_thread_launch(peer_sessions[i]);
 				}
-			}			
+			}
 
 			switch_timestamp(&start);
 
@@ -928,7 +926,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 					switch_yield(10000);
 				}
-				
+
 				if (valid_channels == 0) {
 					status = SWITCH_STATUS_GENERR;
 					goto done;
@@ -936,7 +934,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			}
 
-		endfor1:
+		  endfor1:
 
 			if (ringback_data && !switch_channel_test_flag(caller_channel, CF_ANSWERED)
 				&& !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
@@ -947,7 +945,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 
 			if (session && (read_codec = switch_core_session_get_read_codec(session)) &&
-				(ringback_data || 
+				(ringback_data ||
 				 (!(switch_channel_test_flag(caller_channel, CF_PROXY_MODE) && switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA))))) {
 
 				if (!(pass = (uint8_t) switch_test_flag(read_codec, SWITCH_CODEC_FLAG_PASSTHROUGH))) {
@@ -956,13 +954,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 											   NULL,
 											   read_codec->implementation->actual_samples_per_second,
 											   read_codec->implementation->microseconds_per_frame / 1000,
-											   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, 
+											   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 											   switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 
 
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 										  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
-										  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
+										  read_codec->implementation->actual_samples_per_second,
+										  read_codec->implementation->microseconds_per_frame / 1000);
 						write_frame.codec = &write_codec;
 						write_frame.datalen = read_codec->implementation->bytes_per_frame;
 						write_frame.samples = write_frame.datalen / 2;
@@ -973,10 +972,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 							switch_buffer_create_dynamic(&ringback.audio_buffer, 512, 1024, 0);
 							switch_buffer_set_loops(ringback.audio_buffer, -1);
-							
+
 							if (switch_is_file_path(ringback_data)) {
 								char *ext;
-								
+
 								if (strrchr(ringback_data, '.') || strstr(ringback_data, SWITCH_URL_SEPARATOR)) {
 									switch_core_session_set_read_codec(session, &write_codec);
 								} else {
@@ -995,8 +994,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 														  ringback_data,
 														  read_codec->implementation->number_of_channels,
 														  read_codec->implementation->actual_samples_per_second,
-														  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
-														  NULL) != SWITCH_STATUS_SUCCESS) {
+														  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing File\n");
 									switch_safe_free(tmp_data);
 									goto notready;
@@ -1038,7 +1036,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_channel_ring_ready(caller_channel);
 					sent_ring = 1;
 				}
-
 				// When the AND operator is being used, and fail_on_single_reject is set, a hangup indicates that the call should fail.
 				if ((to = (uint8_t) ((switch_timestamp(NULL) - start) >= (time_t) timelimit_sec))
 					|| (fail_on_single_reject && hups)) {
@@ -1059,23 +1056,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 				}
 
-				/* read from the channel while we wait if the audio is up on it */				
-				if (session && 
-					!switch_channel_test_flag(caller_channel, CF_PROXY_MODE) && 
-					!switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA) && 
-					(ringback_data || (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)))) {
-					 
+				/* read from the channel while we wait if the audio is up on it */
+				if (session &&
+					!switch_channel_test_flag(caller_channel, CF_PROXY_MODE) &&
+					!switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA) &&
+					(ringback_data
+					 || (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)))) {
+
 					switch_status_t tstatus = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-					
+
 					if (!SWITCH_READ_ACCEPTABLE(tstatus)) {
 						break;
 					}
-					
+
 					if (ring_ready && read_frame && !pass) {
 						if (ringback.fh) {
 							switch_size_t mlen, olen;
 							unsigned int pos = 0;
-							
+
 
 							if (ringback.asis) {
 								mlen = write_frame.codec->implementation->encoded_bytes_per_frame;
@@ -1103,7 +1101,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								break;
 							}
 						}
-						
+
 						if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 							break;
 						}
@@ -1121,19 +1119,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				idx = IDX_CANCEL;
 			}
 
-			if (session && (ringback_data || !(switch_channel_test_flag(caller_channel, CF_PROXY_MODE) && 
+			if (session && (ringback_data || !(switch_channel_test_flag(caller_channel, CF_PROXY_MODE) &&
 											   switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)))) {
 				switch_core_session_reset(session, SWITCH_FALSE);
 			}
-			
+
 			for (i = 0; i < and_argc; i++) {
 				if (!peer_channels[i]) {
 					continue;
 				}
-				
+
 				if (switch_channel_test_flag(peer_channels[i], CF_TRANSFER) || switch_channel_test_flag(peer_channels[i], CF_BRIDGED) ||
-					switch_channel_get_state(peer_channels[i]) == CS_RESET ||
-					!switch_channel_test_flag(peer_channels[i], CF_ORIGINATING)
+					switch_channel_get_state(peer_channels[i]) == CS_RESET || !switch_channel_test_flag(peer_channels[i], CF_ORIGINATING)
 					) {
 					continue;
 				}
@@ -1194,8 +1191,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 			}
 
-			if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || 
-				(early_ok && switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) || 
+			if (switch_channel_test_flag(peer_channel, CF_ANSWERED) ||
+				(early_ok && switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) ||
 				(return_ring_ready && switch_channel_test_flag(peer_channel, CF_RING_READY))
 				) {
 				*bleg = peer_session;
@@ -1275,7 +1272,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 				switch_core_codec_destroy(&write_codec);
 			}
-			
+
 
 			for (i = 0; i < and_argc; i++) {
 				if (!peer_channels[i]) {
@@ -1287,7 +1284,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 				switch_core_session_rwunlock(peer_sessions[i]);
 			}
-			
+
 			if (status == SWITCH_STATUS_SUCCESS) {
 				goto outer_for;
 			}
@@ -1301,7 +1298,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		*bleg = NULL;
 	}
 
-	
+
 	if (var_event) {
 		switch_event_destroy(&var_event);
 	}

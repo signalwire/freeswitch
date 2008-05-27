@@ -53,7 +53,7 @@ static struct {
 	switch_memory_pool_t *memory_pool;
 } globals;
 
-static void switch_scheduler_execute(switch_scheduler_task_container_t * tp)
+static void switch_scheduler_execute(switch_scheduler_task_container_t *tp)
 {
 	switch_event_t *event;
 	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Executing task %u %s (%s)\n", tp->task.task_id, tp->desc, switch_str_nil(tp->task.group));
@@ -81,7 +81,7 @@ static void switch_scheduler_execute(switch_scheduler_task_container_t * tp)
 	}
 }
 
-static void *SWITCH_THREAD_FUNC task_own_thread(switch_thread_t * thread, void *obj)
+static void *SWITCH_THREAD_FUNC task_own_thread(switch_thread_t *thread, void *obj)
 {
 	switch_scheduler_task_container_t *tp = (switch_scheduler_task_container_t *) obj;
 	switch_memory_pool_t *pool;
@@ -109,7 +109,7 @@ static int task_thread_loop(int done)
 		} else {
 			int64_t now = switch_timestamp(NULL);
 			if (now >= tp->task.runtime && !tp->in_thread) {
-				int32_t diff = (int32_t)(now - tp->task.runtime);
+				int32_t diff = (int32_t) (now - tp->task.runtime);
 				if (diff > 1) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Task was executed late by %d seconds %u %s (%s)\n",
 									  diff, tp->task.task_id, tp->desc, switch_str_nil(tp->task.group));
@@ -158,7 +158,7 @@ static int task_thread_loop(int done)
 	return done;
 }
 
-static void *SWITCH_THREAD_FUNC switch_scheduler_task_thread(switch_thread_t * thread, void *obj)
+static void *SWITCH_THREAD_FUNC switch_scheduler_task_thread(switch_thread_t *thread, void *obj)
 {
 
 	globals.task_thread_running = 1;
@@ -234,7 +234,7 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_id(uint32_t task_id)
 	for (tp = globals.task_list; tp; tp = tp->next) {
 		if (tp->task.task_id == task_id) {
 			if (switch_test_flag(tp, SSHF_NO_DEL)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Attempt made to delete undeleteable task #%u (group %s)\n", 
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Attempt made to delete undeleteable task #%u (group %s)\n",
 								  tp->task.task_id, tp->task.group);
 				break;
 			}

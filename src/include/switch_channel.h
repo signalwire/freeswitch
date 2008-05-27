@@ -438,7 +438,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(_In_ switch_cha
 */
 SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(_In_ switch_channel_t *channel, _In_ switch_dtmf_t *dtmf);
 SWITCH_DECLARE(void) switch_channel_flush_dtmf(_In_ switch_channel_t *channel);
-SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf_string(_In_ switch_channel_t *channel, _Out_opt_bytecapcount_(len) char *dtmf_str, _In_ switch_size_t len);
+SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf_string(_In_ switch_channel_t *channel, _Out_opt_bytecapcount_(len)
+																 char *dtmf_str, _In_ switch_size_t len);
 
 /*!
   \brief Render the name of the provided state enum
@@ -469,7 +470,8 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(_In_ switch_channel_t *channe
   \note it's necessary to test if the return val is the same as the input and free the string if it is not.
 */
 SWITCH_DECLARE(char *) switch_channel_expand_variables(_In_ switch_channel_t *channel, _In_ const char *in);
-SWITCH_DECLARE(char *) switch_channel_build_param_string(_In_ switch_channel_t *channel, _In_opt_ switch_caller_profile_t *caller_profile, _In_opt_ const char *prefix);
+SWITCH_DECLARE(char *) switch_channel_build_param_string(_In_ switch_channel_t *channel, _In_opt_ switch_caller_profile_t *caller_profile,
+														 _In_opt_ const char *prefix);
 SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(_In_ switch_channel_t *channel);
 
 #define switch_channel_stop_broadcast(_channel)	if (switch_channel_test_flag(_channel, CF_BROADCAST)) switch_channel_set_flag(_channel, CF_BREAK | CF_STOP_BROADCAST)

@@ -90,17 +90,17 @@ static void *SWITCH_THREAD_FUNC unicast_thread_run(switch_thread_t *thread, void
 	}
 
 	channel = switch_core_session_get_channel(conninfo->session);
-	
-	while(switch_test_flag(conninfo, SUF_READY) && switch_test_flag(conninfo, SUF_THREAD_RUNNING)) {
+
+	while (switch_test_flag(conninfo, SUF_READY) && switch_test_flag(conninfo, SUF_THREAD_RUNNING)) {
 		len = conninfo->write_frame.buflen;
 		if (switch_socket_recv(conninfo->socket, conninfo->write_frame.data, &len) != SWITCH_STATUS_SUCCESS || len == 0) {
 			break;
 		}
-		conninfo->write_frame.datalen = (uint32_t)len;
+		conninfo->write_frame.datalen = (uint32_t) len;
 		conninfo->write_frame.samples = conninfo->write_frame.datalen / 2;
 		switch_core_session_write_frame(conninfo->session, &conninfo->write_frame, SWITCH_IO_FLAG_NONE, conninfo->stream_id);
 	}
-	
+
 	switch_clear_flag_locked(conninfo, SUF_READY);
 	switch_clear_flag_locked(conninfo, SUF_THREAD_RUNNING);
 
@@ -126,14 +126,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_deactivate_unicast(switch_core_sessio
 	int sanity = 0;
 
 	if (!switch_channel_test_flag(channel, CF_UNICAST)) {
-			return SWITCH_STATUS_FALSE;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if ((conninfo = switch_channel_get_private(channel, "unicast"))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Shutting down unicast connection\n");
 		switch_clear_flag_locked(conninfo, SUF_READY);
 		switch_socket_shutdown(conninfo->socket, SWITCH_SHUTDOWN_READWRITE);
-		while(switch_test_flag(conninfo, SUF_THREAD_RUNNING)) {
+		while (switch_test_flag(conninfo, SUF_THREAD_RUNNING)) {
 			switch_yield(10000);
 			if (++sanity >= 10000) {
 				break;
@@ -148,13 +148,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_deactivate_unicast(switch_core_sessio
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_t *session, 
+SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_t *session,
 															char *local_ip,
 															switch_port_t local_port,
-															char *remote_ip,
-															switch_port_t remote_port,
-															char *transport,
-															char *flags)
+															char *remote_ip, switch_port_t remote_port, char *transport, char *flags)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_unicast_conninfo_t *conninfo = switch_core_session_alloc(session, sizeof(*conninfo));
@@ -168,7 +165,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_
 	conninfo->remote_ip = switch_core_session_strdup(session, remote_ip);
 	conninfo->remote_port = remote_port;
 	conninfo->session = session;
-	
+
 	if (!strcasecmp(transport, "udp")) {
 		conninfo->type = AF_INET;
 		conninfo->transport = SOCK_DGRAM;
@@ -187,9 +184,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_
 	}
 
 	switch_mutex_init(&conninfo->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
-	
+
 	read_codec = switch_core_session_get_read_codec(session);
-	
+
 	if (!switch_test_flag(conninfo, SUF_NATIVE)) {
 		if (switch_core_codec_init(&conninfo->read_codec,
 								   "L16",
@@ -216,17 +213,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_
 					  conninfo->local_ip, conninfo->local_port, conninfo->remote_ip, conninfo->remote_port);
 
 	if (switch_sockaddr_info_get(&conninfo->local_addr,
-								 conninfo->local_ip, SWITCH_UNSPEC, conninfo->local_port, 0, 
+								 conninfo->local_ip, SWITCH_UNSPEC, conninfo->local_port, 0,
 								 switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		goto fail;
 	}
-	
-	if (switch_sockaddr_info_get(&conninfo->remote_addr, 
+
+	if (switch_sockaddr_info_get(&conninfo->remote_addr,
 								 conninfo->remote_ip, SWITCH_UNSPEC, conninfo->remote_port, 0,
 								 switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		goto fail;
 	}
-	
+
 	if (switch_socket_create(&conninfo->socket, AF_INET, SOCK_DGRAM, 0, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 		if (switch_socket_bind(conninfo->socket, conninfo->local_addr) != SWITCH_STATUS_SUCCESS) {
 			goto fail;
@@ -242,11 +239,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_
 	switch_set_flag_locked(conninfo, SUF_READY);
 	return SWITCH_STATUS_SUCCESS;
 
- fail:
+  fail:
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failure creating unicast connection %s:%d->%s:%d\n",
 					  conninfo->local_ip, conninfo->local_port, conninfo->remote_ip, conninfo->remote_port);
-	return SWITCH_STATUS_FALSE;	
+	return SWITCH_STATUS_FALSE;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *session, switch_event_t *event)
@@ -280,8 +277,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 		switch_frame_t *read_frame;
 		int frame_count = atoi(lead_frames);
 		int max_frames = frame_count * 2;
-		
-		while(frame_count > 0 && --max_frames > 0) {
+
+		while (frame_count > 0 && --max_frames > 0) {
 			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				goto done;
@@ -310,7 +307,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 					int x;
 					const char *b_uuid = NULL;
 					switch_core_session_t *b_session = NULL;
-					
+
 					switch_channel_clear_flag(channel, CF_STOP_BROADCAST);
 					switch_channel_set_flag(channel, CF_BROADCAST);
 					if (hold_bleg && switch_true(hold_bleg)) {
@@ -336,8 +333,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 					}
 					for (x = 0; x < loops || loops < 0; x++) {
 						switch_time_t b4, aftr;
-						
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Command Execute %s(%s)\n", 
+
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Command Execute %s(%s)\n",
 										  switch_channel_get_name(channel), app_name, app_arg);
 						b4 = switch_timestamp_now();
 						switch_core_session_exec(session, application_interface, app_arg);
@@ -356,7 +353,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 						}
 					}
 
-					switch_channel_clear_flag(channel, CF_BROADCAST);					
+					switch_channel_clear_flag(channel, CF_BROADCAST);
 				}
 			}
 		}
@@ -384,7 +381,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 			transport = "udp";
 		}
 
-		switch_ivr_activate_unicast(session, local_ip, (switch_port_t)atoi(local_port), remote_ip, (switch_port_t)atoi(remote_port), transport, flags);
+		switch_ivr_activate_unicast(session, local_ip, (switch_port_t) atoi(local_port), remote_ip, (switch_port_t) atoi(remote_port), transport, flags);
 
 	} else if (cmd_hash == CMD_HANGUP) {
 		char *cause_name = switch_event_get_header(event, "hangup-cause");
@@ -402,7 +399,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 
 	status = SWITCH_STATUS_SUCCESS;
 
- done:
+  done:
 	switch_channel_clear_flag(channel, CF_EVENT_PARSE);
 	switch_channel_clear_flag(channel, CF_EVENT_LOCK);
 
@@ -473,18 +470,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
 			}
-			
+
 			if (switch_channel_test_flag(channel, CF_UNICAST)) {
 				if (!conninfo) {
 					if (!(conninfo = switch_channel_get_private(channel, "unicast"))) {
 						switch_channel_clear_flag(channel, CF_UNICAST);
 					}
-					
+
 					if (conninfo) {
 						unicast_thread_launch(conninfo);
 					}
 				}
-				
+
 				if (conninfo) {
 					switch_size_t len = 0;
 					uint32_t flags = 0;
@@ -504,13 +501,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 						if (switch_test_flag(conninfo, SUF_NATIVE)) {
 							tstatus = SWITCH_STATUS_NOOP;
 						} else {
-							tstatus = switch_core_codec_decode(
-															  read_codec,
-															  &conninfo->read_codec,
-															  read_frame->data,
-															  read_frame->datalen,
-															  read_codec->implementation->actual_samples_per_second,
-															  decoded, &dlen, &rate, &flags);
+							tstatus = switch_core_codec_decode(read_codec,
+															   &conninfo->read_codec,
+															   read_frame->data,
+															   read_frame->datalen,
+															   read_codec->implementation->actual_samples_per_second, decoded, &dlen, &rate, &flags);
 						}
 						switch (tstatus) {
 						case SWITCH_STATUS_NOOP:
@@ -533,19 +528,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 
 					if (tstatus == SWITCH_STATUS_SUCCESS) {
 						len = sendlen;
-						if (switch_socket_sendto(conninfo->socket, conninfo->remote_addr, 0, (void *)sendbuf, &len) != SWITCH_STATUS_SUCCESS) {
+						if (switch_socket_sendto(conninfo->socket, conninfo->remote_addr, 0, (void *) sendbuf, &len) != SWITCH_STATUS_SUCCESS) {
 							switch_ivr_deactivate_unicast(session);
 						}
 					}
 				}
 			}
-			
+
 			if (switch_core_session_private_event_count(session)) {
 				switch_ivr_parse_all_events(session);
 			}
 
 			if (switch_channel_has_dtmf(channel)) {
-				switch_dtmf_t dtmf = {0};
+				switch_dtmf_t dtmf = { 0 };
 				switch_channel_dequeue_dtmf(channel, &dtmf);
 				if (args && args->input_callback) {
 					if ((status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen)) != SWITCH_STATUS_SUCCESS) {
@@ -600,7 +595,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 	while (switch_channel_ready(channel)) {
 		switch_frame_t *read_frame = NULL;
 		switch_event_t *event;
-		switch_dtmf_t dtmf = {0};
+		switch_dtmf_t dtmf = { 0 };
 
 		if (switch_channel_test_flag(channel, CF_BREAK)) {
 			switch_channel_clear_flag(channel, CF_BREAK);
@@ -616,12 +611,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 		}
 
 		if (switch_core_session_private_event_count(session)) {
-            switch_ivr_parse_all_events(session);
-        }
+			switch_ivr_parse_all_events(session);
+		}
 
 		if (switch_channel_has_dtmf(channel)) {
 			switch_channel_dequeue_dtmf(channel, &dtmf);
-			status = args->input_callback(session, (void *)&dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
+			status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 		}
 
 		if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
@@ -656,11 +651,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_session_t *session,
 																char *buf,
 																switch_size_t buflen,
-																switch_size_t maxdigits, 
-																const char *terminators, char *terminator, 
-																uint32_t first_timeout,
-																uint32_t digit_timeout,
-																uint32_t abs_timeout)
+																switch_size_t maxdigits,
+																const char *terminators, char *terminator,
+																uint32_t first_timeout, uint32_t digit_timeout, uint32_t abs_timeout)
 {
 	switch_size_t i = 0, x = strlen(buf);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -693,7 +686,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 	} else if (first_timeout) {
 		digit_timeout = eff_timeout = first_timeout;
 	}
-	
+
 
 	if (eff_timeout) {
 		digit_started = switch_timestamp_now();
@@ -701,7 +694,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 
 	while (switch_channel_ready(channel)) {
 		switch_frame_t *read_frame;
-		
+
 		if (abs_timeout) {
 			abs_elapsed = (uint32_t) ((switch_timestamp_now() - started) / 1000);
 			if (abs_elapsed >= abs_timeout) {
@@ -709,9 +702,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 			}
 		}
 
-        if (switch_core_session_private_event_count(session)) {
-            switch_ivr_parse_all_events(session);
-        }
+		if (switch_core_session_private_event_count(session)) {
+			switch_ivr_parse_all_events(session);
+		}
 
 
 		if (eff_timeout) {
@@ -722,9 +715,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 		}
 
 		if (switch_channel_has_dtmf(channel)) {
-			switch_dtmf_t dtmf = {0};
+			switch_dtmf_t dtmf = { 0 };
 			switch_size_t y;
-			
+
 			if (eff_timeout) {
 				eff_timeout = digit_timeout;
 				digit_started = switch_timestamp_now();
@@ -739,8 +732,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 					*terminator = dtmf.digit;
 					return SWITCH_STATUS_SUCCESS;
 				}
-				
-				
+
+
 				buf[x++] = dtmf.digit;
 				buf[x] = '\0';
 				if (x >= buflen || x >= maxdigits) {
@@ -777,13 +770,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session, 
 	switch_channel_set_flag(channel, CF_SUSPEND);
 
 	switch_core_session_receive_message(session, &msg);
-	
+
 	if (moh && (stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
 		if ((other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 			switch_ivr_broadcast(other_uuid, stream, SMF_ECHO_ALEG | SMF_LOOP);
 		}
 	}
-	
+
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -848,7 +841,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 	switch_status_t status = SWITCH_STATUS_GENERR;
 	uint8_t swap = 0;
 	switch_frame_t *read_frame = NULL;
-	
+
 	msg.message_id = SWITCH_MESSAGE_INDICATE_MEDIA;
 	msg.from = __FILE__;
 
@@ -865,7 +858,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 
 			switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000);
 			switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-			
+
 			if ((flags & SMF_REBRIDGE)
 				&& (other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE))
 				&& (other_session = switch_core_session_locate(other_uuid))) {
@@ -881,7 +874,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 				switch_channel_clear_state_handler(channel, NULL);
 			}
 		}
-		
+
 		switch_core_session_rwunlock(session);
 
 		if (other_channel) {
@@ -906,7 +899,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 	switch_core_session_message_t msg = { 0 };
 	switch_status_t status = SWITCH_STATUS_GENERR;
 	uint8_t swap = 0;
-	
+
 	msg.message_id = SWITCH_MESSAGE_INDICATE_NOMEDIA;
 	msg.from = __FILE__;
 
@@ -920,7 +913,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 
 		if ((flags & SMF_FORCE) || !switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 			switch_core_session_receive_message(session, &msg);
-			
+
 			if ((flags & SMF_REBRIDGE) && (other_uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) &&
 				(other_session = switch_core_session_locate(other_uuid))) {
 				other_channel = switch_core_session_get_channel(other_session);
@@ -947,7 +940,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, const char *extension, const char *dialplan, const char *context)
+SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, const char *extension, const char *dialplan,
+															const char *context)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_caller_profile_t *profile, *new_profile;
@@ -960,7 +954,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	int forwardval = 70;
 
 	if (!switch_strlen_zero(forwardvar)) {
-		forwardval =  atoi(forwardvar) - 1;
+		forwardval = atoi(forwardvar) - 1;
 	}
 	if (forwardval <= 0) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_EXCHANGE_ROUTING_ERROR);
@@ -981,7 +975,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		if (switch_strlen_zero(dialplan)) {
 			dialplan = profile->dialplan;
 		}
-	
+
 		if (switch_strlen_zero(context)) {
 			context = profile->context;
 		}
@@ -989,7 +983,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		if (switch_strlen_zero(dialplan)) {
 			dialplan = "XML";
 		}
-	
+
 		if (switch_strlen_zero(context)) {
 			context = "default";
 		}
@@ -997,7 +991,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		if (switch_strlen_zero(extension)) {
 			extension = "service";
 		}
-		
+
 		new_profile = switch_caller_profile_clone(session, profile);
 
 		new_profile->dialplan = switch_core_strdup(new_profile->pool, dialplan);
@@ -1015,7 +1009,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		if (!uuid) {
 			uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE);
 		}
-		
+
 		if (uuid && (other_session = switch_core_session_locate(uuid))) {
 			other_channel = switch_core_session_get_channel(other_session);
 			switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BOND_VARIABLE, NULL);
@@ -1028,7 +1022,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 
 			switch_channel_set_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
 			switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
-			
+
 			switch_channel_set_variable(channel, SWITCH_BRIDGE_VARIABLE, NULL);
 			switch_channel_set_variable(other_channel, SWITCH_BRIDGE_VARIABLE, NULL);
 
@@ -1045,7 +1039,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		switch_channel_set_flag(channel, CF_TRANSFER);
 
 		switch_channel_set_state(channel, CS_ROUTING);
-		
+
 		msg.message_id = SWITCH_MESSAGE_INDICATE_TRANSFER;
 		msg.from = __FILE__;
 		switch_core_session_receive_message(session, &msg);
@@ -1108,7 +1102,7 @@ struct switch_ivr_digit_stream {
 	switch_time_t last_digit_time;
 };
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory_pool_t *pool, switch_ivr_digit_stream_parser_t ** parser)
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory_pool_t *pool, switch_ivr_digit_stream_parser_t **parser)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -1148,7 +1142,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_destroy(switch_ivr_digit_stream_parser_t * parser)
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_destroy(switch_ivr_digit_stream_parser_t *parser)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -1166,7 +1160,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_destroy(switch_iv
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_new(switch_ivr_digit_stream_parser_t * parser, switch_ivr_digit_stream_t ** stream)
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_new(switch_ivr_digit_stream_parser_t *parser, switch_ivr_digit_stream_t **stream)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -1182,7 +1176,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_new(switch_ivr_digit_str
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_destroy(switch_ivr_digit_stream_t * stream)
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_destroy(switch_ivr_digit_stream_t *stream)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -1195,7 +1189,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_destroy(switch_ivr_digit
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_event(switch_ivr_digit_stream_parser_t * parser, char *digits, void *data)
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_event(switch_ivr_digit_stream_parser_t *parser, char *digits, void *data)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -1231,7 +1225,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_event(switch_
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_del_event(switch_ivr_digit_stream_parser_t * parser, char *digits)
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_del_event(switch_ivr_digit_stream_parser_t *parser, char *digits)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -1246,7 +1240,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_del_event(switch_
 	return status;
 }
 
-SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stream_parser_t * parser, switch_ivr_digit_stream_t * stream, char digit)
+SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stream_parser_t *parser, switch_ivr_digit_stream_t *stream, char digit)
 {
 	void *result = NULL;
 
@@ -1297,7 +1291,7 @@ SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stre
 	return result;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_reset(switch_ivr_digit_stream_t * stream)
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_reset(switch_ivr_digit_stream_t *stream)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -1311,7 +1305,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_reset(switch_ivr_digit_s
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(switch_ivr_digit_stream_parser_t * parser, char digit)
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(switch_ivr_digit_stream_parser_t *parser, char digit)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -1403,13 +1397,14 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_chan_vars(switch_xml_t xml, switch_channe
 	switch_xml_t variable;
 	switch_event_header_t *hi = switch_channel_variable_first(channel);
 
-	if (!hi) return off;
+	if (!hi)
+		return off;
 
 	for (; hi; hi = hi->next) {
 		if (!switch_strlen_zero(hi->name) && !switch_strlen_zero(hi->value) && ((variable = switch_xml_add_child_d(xml, hi->name, off++)))) {
 			char *data;
 			switch_size_t dlen = strlen(hi->value) * 3;
-			
+
 			if ((data = malloc(dlen))) {
 				memset(data, 0, dlen);
 				switch_url_encode(hi->value, data, dlen);
@@ -1423,11 +1418,11 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_chan_vars(switch_xml_t xml, switch_channe
 	return off;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_t *session, switch_xml_t * xml_cdr)
+SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_t *session, switch_xml_t *xml_cdr)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_caller_profile_t *caller_profile;
-	switch_xml_t variables, cdr, x_main_cp, x_caller_profile, x_caller_extension, x_times, time_tag, 
+	switch_xml_t variables, cdr, x_main_cp, x_caller_profile, x_caller_extension, x_times, time_tag,
 		x_application, x_callflow, x_inner_extension, x_apps, x_o;
 	switch_app_log_t *app_log;
 	char tmp[512];
@@ -1444,23 +1439,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 	if ((app_log = switch_core_session_get_app_log(session))) {
 		int app_off = 0;
 		switch_app_log_t *ap;
-		
+
 		if (!(x_apps = switch_xml_add_child_d(cdr, "app_log", cdr_off++))) {
 			goto error;
 		}
-		for(ap = app_log; ap; ap = ap->next) {
+		for (ap = app_log; ap; ap = ap->next) {
 
 			if (!(x_application = switch_xml_add_child_d(x_apps, "application", app_off++))) {
 				goto error;
 			}
-			
+
 			switch_xml_set_attr_d(x_application, "app_name", ap->app);
 			switch_xml_set_attr_d(x_application, "app_data", ap->arg);
 		}
 	}
 
 	switch_ivr_set_xml_chan_vars(variables, channel, v_off);
-	
+
 	caller_profile = switch_channel_get_caller_profile(channel);
 
 	while (caller_profile) {
@@ -1486,7 +1481,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 			if (!(x_caller_extension = switch_xml_add_child_d(x_callflow, "extension", cf_off++))) {
 				goto error;
 			}
-			
+
 			switch_xml_set_attr_d(x_caller_extension, "name", caller_profile->caller_extension->extension_name);
 			switch_xml_set_attr_d(x_caller_extension, "number", caller_profile->caller_extension->extension_number);
 			if (caller_profile->caller_extension->current_application) {
@@ -1509,13 +1504,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 				int i_off = 0;
 				for (cp = caller_profile->caller_extension->children; cp; cp = cp->next) {
 					app_off = 0;
-					
+
 					if (!cp->caller_extension) {
 						continue;
 					}
 					if (!(x_inner_extension = switch_xml_add_child_d(x_caller_extension, "sub_extensions", i_off++))) {
 						goto error;
-					}				
+					}
 
 					if (!(x_caller_extension = switch_xml_add_child_d(x_inner_extension, "extension", cf_off++))) {
 						goto error;
@@ -1526,7 +1521,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 					if (cp->caller_extension->current_application) {
 						switch_xml_set_attr_d(x_caller_extension, "current_app", cp->caller_extension->current_application->application_name);
 					}
-				
+
 					for (ap = cp->caller_extension->applications; ap; ap = ap->next) {
 						if (!(x_application = switch_xml_add_child_d(x_caller_extension, "application", app_off++))) {
 							goto error;
@@ -1675,7 +1670,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 
 	write_frame.codec = read_codec;
 
-	while(switch_channel_ready(channel)) {
+	while (switch_channel_ready(channel)) {
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
@@ -1686,7 +1681,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 
 		if ((jb_frame = stfu_n_read_a_frame(jb))) {
 			write_frame.data = jb_frame->data;
-			write_frame.datalen = (uint32_t)jb_frame->dlen;
+			write_frame.datalen = (uint32_t) jb_frame->dlen;
 			status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
@@ -1697,14 +1692,15 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 	stfu_n_destroy(&jb);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, const char *tosay, const char *module_name, const char *say_type, const char *say_method, switch_input_args_t *args)
+SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, const char *tosay, const char *module_name, const char *say_type,
+											   const char *say_method, switch_input_args_t *args)
 {
 	switch_say_interface_t *si;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if ((si = switch_loadable_module_get_say_interface(module_name))) {
 		// should go back and proto all the say mods to const....
-		status = si->say_function(session, (char *)tosay, switch_ivr_get_say_type_by_name(say_type), switch_ivr_get_say_method_by_name(say_method), args);
+		status = si->say_function(session, (char *) tosay, switch_ivr_get_say_type_by_name(say_type), switch_ivr_get_say_method_by_name(say_method), args);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", module_name);
 		status = SWITCH_STATUS_FALSE;

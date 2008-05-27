@@ -122,7 +122,8 @@ SWITCH_DECLARE(void) switch_buffer_set_loops(_In_ switch_buffer_t *buffer, _In_ 
  * \param datalen amount of data to be written
  * \return int amount of buffer used after the write, or 0 if no space available
  */
-SWITCH_DECLARE(switch_size_t) switch_buffer_write(_In_ switch_buffer_t *buffer, _In_bytecount_(datalen) const void *data, _In_ switch_size_t datalen);
+SWITCH_DECLARE(switch_size_t) switch_buffer_write(_In_ switch_buffer_t *buffer, _In_bytecount_(datalen)
+												  const void *data, _In_ switch_size_t datalen);
 
 /*! \brief Remove data from the buffer
  * \param buffer any buffer of type switch_buffer_t
@@ -142,7 +143,8 @@ SWITCH_DECLARE(void) switch_buffer_zero(_In_ switch_buffer_t *buffer);
  */
 SWITCH_DECLARE(void) switch_buffer_destroy(switch_buffer_t **buffer);
 
-SWITCH_DECLARE(switch_size_t) switch_buffer_zwrite(_In_ switch_buffer_t *buffer, _In_bytecount_(datalen) const void *data, _In_ switch_size_t datalen);
+SWITCH_DECLARE(switch_size_t) switch_buffer_zwrite(_In_ switch_buffer_t *buffer, _In_bytecount_(datalen)
+												   const void *data, _In_ switch_size_t datalen);
 
 /** @} */
 

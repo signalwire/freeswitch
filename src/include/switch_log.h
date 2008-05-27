@@ -111,7 +111,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(_In_ switch_log_function_
   \param level the level
   \return the name of the log level
 */
-_Ret_z_  SWITCH_DECLARE(const char *) switch_log_level2str(_In_ switch_log_level_t level);
+	 _Ret_z_ SWITCH_DECLARE(const char *) switch_log_level2str(_In_ switch_log_level_t level);
 
 /*! 
   \brief Return the level number of the specified log level name
