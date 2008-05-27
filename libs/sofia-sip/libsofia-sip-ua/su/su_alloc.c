@@ -970,7 +970,7 @@ int su_home_init(su_home_t *home)
 
   return 0;
 }
-#define safe_free(it) if (it) { free(it); it = NULL; }
+
 /** Internal deinitialization */
 static
 void _su_home_deinit(su_home_t *home)
@@ -1006,17 +1006,16 @@ void _su_home_deinit(su_home_t *home)
 	}
 	else if (su_is_preloaded(b, b->sub_nodes[i].sua_data))
 	  continue;
-
 	safefree(b->sub_nodes[i].sua_data);
       }
     }
 
     if (b->sub_preload && !b->sub_preauto)
-      safe_free(b->sub_preload);
+      free(b->sub_preload);
     if (b->sub_stats)
-		safe_free(b->sub_stats);
+      free(b->sub_stats);
     if (!b->sub_auto)
-      safe_free(b);
+      free(b);
 
     home->suh_blocks = NULL;
 
