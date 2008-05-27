@@ -2721,8 +2721,11 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if (sip->sip_contact && sip->sip_contact->m_url) {
 		char tmp[35] = "";
-		tech_pvt->record_route = switch_core_session_sprintf(session, "sip:%s@%s:%d",
-															 sip->sip_contact->m_url->url_user, tech_pvt->remote_ip, tech_pvt->remote_port);
+		sofia_transport_t transport = sofia_glue_url2transport(sip->sip_contact->m_url);
+
+		tech_pvt->record_route = switch_core_session_sprintf(session, "sip:%s@%s:%d;transport=%s",
+															 sip->sip_contact->m_url->url_user, tech_pvt->remote_ip, 
+															 tech_pvt->remote_port, sofia_glue_transport2str(transport));
 		switch_channel_set_variable(channel, "sip_received_ip", tech_pvt->remote_ip);
 		snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_port);
 		switch_channel_set_variable(channel, "sip_received_port", tmp);
