@@ -532,6 +532,11 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 						}
 					}
 
+					if (!listener->ebuf) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No event data (allocation error?)\n");
+						goto endloop;
+					}
+
 					len = strlen(listener->ebuf);
 
 					switch_snprintf(hbuf, sizeof(hbuf), "Content-Length: %" SWITCH_SSIZE_T_FMT "\n" "Content-Type: text/event-%s\n" "\n", len, etype);
@@ -576,6 +581,11 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 	switch_stream_handle_t stream = { 0 };
 	char *reply, *freply = NULL;
 	switch_status_t status;
+
+	if (!acs) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Internal error.\n");
+		return NULL;
+	}
 
 	if (!acs->listener || !acs->listener->rwlock || switch_thread_rwlock_tryrdlock(acs->listener->rwlock) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! cannot get read lock.\n");
@@ -631,7 +641,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 	}
 
   done:
-	if (acs && acs->bg) {
+	if (acs->bg) {
 		switch_memory_pool_t *pool = acs->pool;
 		acs = NULL;
 		switch_core_destroy_memory_pool(&pool);
