@@ -463,11 +463,11 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 
 		if (contact->m_url->url_params) {
-			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s%s;%s>%s%s",
-							display, contact->m_url->url_user, contact_host, new_port, contact->m_url->url_params, received_data, is_nat ? ";nat" : "");
+			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s%s;%s%s%s>",
+							display, contact->m_url->url_user, contact_host, new_port, contact->m_url->url_params, received_data, is_nat ? ";nat=yes" : "");
 		} else {
-			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s%s>%s%s", display, contact->m_url->url_user, contact_host, new_port,
-							received_data, is_nat ? ";nat" : "");
+			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s%s%s%s>", display, contact->m_url->url_user, contact_host, new_port,
+							received_data, is_nat ? ";nat=yes" : "");
 		}
 	}
 
@@ -517,10 +517,10 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction") ||
 					!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction") || !strcasecmp(v_contact_str, "NDLB-tls-connectile-dysfunction")) {
 					if (contact->m_url->url_params) {
-						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s>%s;nat",
+						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s%s;nat=yes>",
 										display, contact->m_url->url_user, network_ip, network_port, contact->m_url->url_params, received_data);
 					} else {
-						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d>%s;nat", display, contact->m_url->url_user, network_ip,
+						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d%s;nat=yes>", display, contact->m_url->url_user, network_ip,
 										network_port, received_data);
 					}
 					if (strstr(v_contact_str, "tls")) {

@@ -1055,7 +1055,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 								  NUTAG_URL(url_str), SIPTAG_TO_STR(to_str), SIPTAG_FROM_STR(from_str), SIPTAG_CONTACT_STR(invite_contact), TAG_END());
 
 
-		if (strstr(tech_pvt->dest, ";nat") || ((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val))) {
+		if (strstr(tech_pvt->dest, ";nat") || strstr(tech_pvt->dest, ";received") 
+			|| ((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val))) {
 			switch_set_flag(tech_pvt, TFLAG_NAT);
 			tech_pvt->record_route = switch_core_session_strdup(tech_pvt->session, url_str);
 			sticky = tech_pvt->record_route;
