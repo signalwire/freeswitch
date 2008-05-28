@@ -35,6 +35,7 @@
  *
  */
 #include "mod_sofia.h"
+#include "nua_stack.h"
 
 static void sofia_reg_kill_reg(sofia_gateway_t *gateway_ptr, int unreg)
 {
@@ -679,28 +680,14 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	 */
 
 	if (regtype == REG_REGISTER) {
-		char *new_contact = NULL;
-		char new_port[30] = "";
 		char exp_param[128] = "";
 
 		if (exptime) {
-			switch_snprintf(exp_param, sizeof(exp_param), ";expires=%ld", exptime);
+			switch_snprintf(exp_param, sizeof(exp_param), "expires=%ld", exptime);
+			sip_contact_add_param(nh->nh_home, sip->sip_contact, exp_param);
 		}
 
-
-		if (contact->m_url->url_port) {
-			switch_snprintf(new_port, sizeof(new_port), ":%s", contact->m_url->url_port);
-		}
-
-		if (contact->m_url->url_params) {
-			new_contact = switch_mprintf("%s <sip:%s@%s%s;%s>%s",
-										 display, contact->m_url->url_user, contact->m_url->url_host, new_port, contact->m_url->url_params, exp_param);
-		} else {
-			new_contact = switch_mprintf("%s <sip:%s@%s%s>%s", display, contact->m_url->url_user, contact->m_url->url_host, new_port, exp_param);
-		}
-
-		nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT_STR(new_contact), NUTAG_WITH_THIS(nua), TAG_END());
-		switch_safe_free(new_contact);
+		nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT(sip->sip_contact), NUTAG_WITH_THIS(nua), TAG_END());
 
 		if (exptime) {
 			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
