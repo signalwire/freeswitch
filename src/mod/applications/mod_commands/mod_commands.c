@@ -2295,6 +2295,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_kill", "Kill Channel", kill_function, KILL_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_park", "Park Channel", park_function, PARK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "reloadacl", "Reload ACL", reload_acl_function, "[reloadxml]");
+	switch_console_set_complete("add reloadacl reloadxml");
 	SWITCH_ADD_API(commands_api_interface, "reloadxml", "Reload XML", reload_function, "");
 	SWITCH_ADD_API(commands_api_interface, "unload", "Unload Module", unload_function, LOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "load", "Load Module", load_function, LOAD_SYNTAX);
@@ -2314,7 +2315,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add show aliases");
 	switch_console_set_complete("add show complete");
 	SWITCH_ADD_API(commands_api_interface, "complete", "Complete", complete_function, COMPLETE_SYNTAX);
+	switch_console_set_complete("add complete add");
+	switch_console_set_complete("add complete del");
 	SWITCH_ADD_API(commands_api_interface, "alias", "Alias", alias_function, ALIAS_SYNTAX);
+	switch_console_set_complete("add alias add");
+	switch_console_set_complete("add alias del");
 	SWITCH_ADD_API(commands_api_interface, "status", "status", status_function, "");
 	SWITCH_ADD_API(commands_api_interface, "uuid_bridge", "uuid_bridge", uuid_bridge_function, "");
 	SWITCH_ADD_API(commands_api_interface, "uuid_setvar", "uuid_setvar", uuid_setvar_function, SETVAR_SYNTAX);
@@ -2329,6 +2334,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_display", "change display", uuid_display_function, DISPLAY_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_media", "media", uuid_media_function, MEDIA_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "fsctl", "control messages", ctl_function, CTL_SYNTAX);
+	switch_console_set_complete("add fsctl hupall");
+	switch_console_set_complete("add fsctl pause");
+	switch_console_set_complete("add fsctl resume");
+	switch_console_set_complete("add fsctl shutdown");
+	switch_console_set_complete("add fsctl sync_clock");
+	switch_console_set_complete("add fsctl reclaim_mem");
+	switch_console_set_complete("add fsctl max_sessions");
+	switch_console_set_complete("add fsctl max_dtmf_duration");
 	SWITCH_ADD_API(commands_api_interface, "help", "Show help for all the api commands", help_function, "");
 	SWITCH_ADD_API(commands_api_interface, "version", "Show version of the switch", version_function, "");
 	SWITCH_ADD_API(commands_api_interface, "sched_hangup", "Schedule a running call to hangup", sched_hangup_function, SCHED_HANGUP_SYNTAX);
