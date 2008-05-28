@@ -180,7 +180,7 @@ export ACLOCAL_FLAGS="-I /usr/share/aclocal"
 
 if test ! -f Makefile.in 
 then 
-   bootstrap.sh
+   ./bootstrap.sh
 fi
 
 
