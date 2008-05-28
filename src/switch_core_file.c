@@ -133,6 +133,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 	}
 
 	if ((status = fh->file_interface->file_read(fh, data, len)) != SWITCH_STATUS_SUCCESS) {
+		*len = 0;
 		goto done;
 	}
 

@@ -1021,7 +1021,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			if (!asis) {
 				olen /= 2;
 			}
-			switch_core_file_read(fh, abuf, &olen);
+			if (switch_core_file_read(fh, abuf, &olen) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
 			switch_buffer_write(fh->audio_buffer, abuf, asis ? olen : olen * 2);
 			olen = switch_buffer_read(fh->audio_buffer, abuf, framelen);
 			if (!asis) {

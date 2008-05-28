@@ -75,6 +75,8 @@ struct local_stream_source {
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
 	int shuffle;
+	switch_thread_rwlock_t *rwlock;
+	int ready;
 };
 
 typedef struct local_stream_source local_stream_source_t;
@@ -115,11 +117,18 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 		skip = do_rand();
 	}
 
-	switch_core_hash_insert(globals.source_hash, source->name, source);
+	switch_thread_rwlock_create(&source->rwlock, source->pool);
+	
+	if (RUNNING) {
+		switch_mutex_lock(globals.mutex);
+		switch_core_hash_insert(globals.source_hash, source->name, source);
+		switch_mutex_unlock(globals.mutex);
+		source->ready = 1;
+	}
 
 	while (RUNNING) {
 		const char *fname;
-
+		
 		if (switch_dir_open(&source->dir_handle, source->location, source->pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't open directory: %s\n", source->location);
 			goto done;
@@ -231,8 +240,14 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	}
 
   done:
+	source->ready = 0;
+	switch_mutex_lock(globals.mutex);
 	switch_core_hash_delete(globals.source_hash, source->name);
+	switch_mutex_unlock(globals.mutex);
 
+	switch_thread_rwlock_wrlock(source->rwlock);
+	switch_thread_rwlock_unlock(source->rwlock);
+	
 	switch_buffer_destroy(&audio_buffer);
 
 	if (fd > -1) {
@@ -263,6 +278,11 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 		path = alt_path;
 	} else {
 		source = switch_core_hash_find(globals.source_hash, path);
+	}
+	if (source) {
+		if (switch_thread_rwlock_tryrdlock(source->rwlock) != SWITCH_STATUS_SUCCESS) {
+			source = NULL;
+		}
 	}
 	switch_mutex_unlock(globals.mutex);
 
@@ -330,7 +350,8 @@ static switch_status_t local_stream_file_close(switch_file_handle_t *handle)
 	context->source->total--;
 	switch_mutex_unlock(context->source->mutex);
 	switch_buffer_destroy(&context->audio_buffer);
-
+	switch_thread_rwlock_unlock(context->source->rwlock);
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -339,6 +360,11 @@ static switch_status_t local_stream_file_read(switch_file_handle_t *handle, void
 	local_stream_context_t *context = handle->private_info;
 	switch_size_t bytes = 0;
 	size_t need = *len * 2;
+
+	if (!context->source->ready) {
+		*len = 0;
+		return SWITCH_STATUS_FALSE;
+	}
 
 	switch_mutex_lock(context->audio_mutex);
 	if ((bytes = switch_buffer_read(context->audio_buffer, data, need))) {
