@@ -743,6 +743,50 @@ static char *translate_rpid(char *in)
 }
 
 
+static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *rpid, char *prpid, char *status, char *note, const char **ct)
+{
+	if (switch_stristr("polycom", user_agent)) {
+		*ct = "application/xpidf+xml";
+		return switch_mprintf(
+							  "<?xml version=\"1.0\"?>\n"
+							  "<!DOCTYPE presence PUBLIC \"-//IETF//DTD RFCxxxx XPIDF 1.0//EN\" \"xpidf.dtd\">\n"
+							  "<presence>\n"
+							  " <presentity uri=\"%s;method=SUBSCRIBE\" />\n"
+							  " <atom id=\"%s\">\n"
+							  "  <address uri=\"%s;user=ip\" priority=\"0.800000\">\n"
+							  "   <status status=\"%s\" />\n"
+							  "   <msnsubstatus substatus=\"%s\" />\n"
+							  "  </address>\n"
+							  " </atom>\n"
+							  "</presence>\n", id, id, url, open, prpid
+							  );
+	} else {
+		*ct = "application/pidf+xml";
+		return switch_mprintf(
+							  "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n"
+							  "<presence xmlns='urn:ietf:params:xml:ns:pidf'\n"
+							  "xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model'\n"
+							  "xmlns:rpid='urn:ietf:params:xml:ns:pidf:rpid'\n"
+							  "xmlns:c='urn:ietf:params:xml:ns:pidf:cipid'\n"
+							  "entity='pres:%s'>\n"
+							  " <status>\n"
+							  "  <note>%s</note>\n"
+							  " </status>\n"
+							  " <tuple id='t6a5ed77e'>\n"
+							  "  <status>\r\n"
+							  "   <basic>%s</basic>\n"
+							  "  </status>\n"
+							  " </tuple>\n"
+							  " <dm:person id='p06360c4a'>\n"
+							  "  <rpid:activities>\r\n" 
+							  "   <rpid:%s/>\n"
+							  "  </rpid:activities>"
+							  " </dm:person>\n"
+							  "</presence>", id, status, prpid, rpid);				  
+	}
+}
+
+
 static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	struct presence_helper *helper = (struct presence_helper *) pArg;
@@ -761,6 +805,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char *event = argv[5];
 	char *call_id = argv[7];
 	char *expires = argv[10];
+	char *user_agent = argv[11];
 	//char *accept = argv[12];
 	nua_handle_t *nh;
 	char *to = NULL;
@@ -974,30 +1019,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			}
 
 			prpid = translate_rpid(rpid);
-			pl = switch_mprintf("<?xml version='1.0' encoding='UTF-8'?>\r\n"
-								"<presence xmlns='urn:ietf:params:xml:ns:pidf'\r\n"
-								"xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model'\r\n"
-								"xmlns:rpid='urn:ietf:params:xml:ns:pidf:rpid'\r\n"
-								"xmlns:c='urn:ietf:params:xml:ns:pidf:cipid'\r\n"
-								"entity='pres:%s'>\r\n"
-								"<presentity uri=\"%s;method=SUBSCRIBE\"/>\r\n"
-								"<atom id=\"1002\">\r\n"
-								"<address uri=\"%s\" priority=\"0.800000\">\r\n"
-								"<status status=\"%s\">\r\n"
-								"<note>%s</note>\r\n"
-								"</status>\r\n"
-								"<msnsubstatus substatus=\"%s\"/>\r\n"
-								"</address>\r\n"
-								"</atom>\r\n"
-								"<tuple id='t6a5ed77e'>\r\n"
-								"<status>\r\n"
-								"<basic>%s</basic>\r\n"
-								"</status>\r\n"
-								"</tuple>\r\n"
-								"<dm:person id='p06360c4a'>\r\n"
-								"<rpid:activities>\r\n" "<rpid:%s/>\r\n"
-								"</rpid:activities>%s</dm:person>\r\n" "</presence>", id, id, profile->url, open, status, prpid, open, rpid, note);
-			ct = "application/pidf+xml";
+			pl = gen_pidf(user_agent, id, profile->url, open, rpid, prpid, status, note, &ct);
 		}
 
 	} else {
@@ -1008,31 +1030,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			note = NULL;
 			open = "closed";
 		}
-
-		pl = switch_mprintf("<?xml version='1.0' encoding='UTF-8'?>\r\n"
-							"<presence xmlns='urn:ietf:params:xml:ns:pidf'\r\n"
-							"xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model'\r\n"
-							"xmlns:rpid='urn:ietf:params:xml:ns:pidf:rpid'\r\n"
-							"xmlns:c='urn:ietf:params:xml:ns:pidf:cipid'\r\n"
-							"entity='pres:%s'>\r\n"
-							"<presentity uri=\"%s;method=SUBSCRIBE\"/>\r\n"
-							"<atom id=\"1002\">\r\n"
-							"<address uri=\"%s\" priority=\"0.800000\">\r\n"
-							"<status status=\"%s\">\r\n"
-							"<note>%s</note>\r\n"
-							"</status>\r\n"
-							"<msnsubstatus substatus=\"%s\"/>\r\n"
-							"</address>\r\n"
-							"</atom>\r\n"
-							"<tuple id='t6a5ed77e'>\r\n"
-							"<status>\r\n"
-							"<basic>%s</basic>\r\n"
-							"</status>\r\n"
-							"</tuple>\r\n"
-							"<dm:person id='p06360c4a'>\r\n"
-							"<rpid:activities>\r\n" "<rpid:%s/>\r\n"
-							"</rpid:activities>%s</dm:person>\r\n" "</presence>", id, id, profile->url, open, status, prpid, open, rpid, note);
-		ct = "application/pidf+xml";
+		prpid = translate_rpid(rpid);
+		pl = gen_pidf(user_agent, id, profile->url, open, rpid, prpid, status, note, &ct);
 	}
 
 	switch_snprintf(exp, sizeof(exp), "active;expires=%ld", (long) exptime);

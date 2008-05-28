@@ -2471,7 +2471,9 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   sip_host        VARCHAR(255),\n"
 		"   contact         VARCHAR(1024),\n"
 		"   status          VARCHAR(255),\n"
-		"   rpid            VARCHAR(255),\n" "   expires         INTEGER,\n" "   user_agent      VARCHAR(255)\n" ");\n";
+		"   rpid            VARCHAR(255),\n" 
+		"   expires         INTEGER,\n" 
+		"   user_agent      VARCHAR(255)\n" ");\n";
 
 	char dialog_sql[] =
 		"CREATE TABLE sip_dialogs (\n"
@@ -2483,7 +2485,10 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   sip_from_host   VARCHAR(255),\n"
 		"   contact_user    VARCHAR(255),\n"
 		"   contact_host    VARCHAR(255),\n"
-		"   state           VARCHAR(255),\n" "   direction       VARCHAR(255),\n" "   user_agent      VARCHAR(255)\n" ");\n";
+		"   state           VARCHAR(255),\n" 
+		"   direction       VARCHAR(255),\n" 
+		"   user_agent      VARCHAR(255)\n" 
+		");\n";
 
 	char sub_sql[] =
 		"CREATE TABLE sip_subscriptions (\n"
@@ -2497,10 +2502,15 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   call_id         VARCHAR(255),\n"
 		"   full_from       VARCHAR(255),\n"
 		"   full_via        VARCHAR(255),\n"
-		"   expires         INTEGER,\n" "   user_agent      VARCHAR(255),\n" "   accept          VARCHAR(255)\n" ");\n";
+		"   expires         INTEGER,\n" 
+		"   user_agent      VARCHAR(255),\n" 
+		"   accept          VARCHAR(255)\n" 
+		");\n";
 
-
-	char auth_sql[] = "CREATE TABLE sip_authentication (\n" "   nonce           VARCHAR(255),\n" "   expires         INTEGER" ");\n";
+	char auth_sql[] = 
+		"CREATE TABLE sip_authentication (\n" 
+		"   nonce           VARCHAR(255),\n" 
+		"   expires         INTEGER" ");\n";
 
 	if (profile->odbc_dsn) {
 #ifdef SWITCH_HAVE_ODBC
