@@ -318,6 +318,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_curl_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_API(xml_curl_api_interface, "xml_curl", "XML Curl", xml_curl_function, XML_CURL_SYNTAX);
+	switch_console_set_complete("add xml_curl debug_on");
+	switch_console_set_complete("add xml_curl debug_off");
+
 
 	if (do_config() == SWITCH_STATUS_SUCCESS) {
 		curl_global_init(CURL_GLOBAL_ALL);

@@ -1194,6 +1194,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_APP(app_interface, "fifo", "Park with FIFO", FIFO_DESC, fifo_function, FIFO_USAGE, SAF_NONE);
 	SWITCH_ADD_API(commands_api_interface, "fifo", "Return data about a fifo", fifo_api_function, FIFO_API_SYNTAX);
+	switch_console_set_complete("add fifo list");
+	switch_console_set_complete("add fifo list_verbose");
+	switch_console_set_complete("add fifo count");
+	switch_console_set_complete("add fifo importance");
+
 	globals.running = 1;
 
 	return SWITCH_STATUS_SUCCESS;

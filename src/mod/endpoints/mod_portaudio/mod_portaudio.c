@@ -729,7 +729,19 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 	portaudio_endpoint_interface->state_handler = &portaudio_event_handlers;
 
 	SWITCH_ADD_API(api_interface, "pa", "PortAudio", pa_cmd, "<command> [<args>]");
-
+	switch_console_set_complete("add pa help");
+	switch_console_set_complete("add pa dump");
+	switch_console_set_complete("add pa call");
+	switch_console_set_complete("add pa answer");
+	switch_console_set_complete("add pa hangup");
+	switch_console_set_complete("add pa list");
+	switch_console_set_complete("add pa switch");
+	switch_console_set_complete("add pa dtmf");
+	switch_console_set_complete("add pa flags");
+	switch_console_set_complete("add pa devlist");
+	switch_console_set_complete("add pa indev");
+	switch_console_set_complete("add pa outdev");
+	switch_console_set_complete("add pa ringdev");
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
