@@ -2302,6 +2302,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "pause", "Pause", pause_function, PAUSE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "break", "Break", break_function, BREAK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "show", "Show", show_function, SHOW_SYNTAX);
+	switch_console_set_complete("add show channels");
+	switch_console_set_complete("add show codec");
+	switch_console_set_complete("add show application");
+	switch_console_set_complete("add show api");
+	switch_console_set_complete("add show dialplan");
+	switch_console_set_complete("add show file");
+	switch_console_set_complete("add show timer");
+	switch_console_set_complete("add show calls");
+	switch_console_set_complete("add show channels");
+	switch_console_set_complete("add show aliases");
+	switch_console_set_complete("add show complete");
 	SWITCH_ADD_API(commands_api_interface, "complete", "Complete", complete_function, COMPLETE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "alias", "Alias", alias_function, ALIAS_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "status", "status", status_function, "");
