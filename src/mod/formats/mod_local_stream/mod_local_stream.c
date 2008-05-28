@@ -115,6 +115,8 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 		skip = do_rand();
 	}
 
+	switch_core_hash_insert(globals.source_hash, source->name, source);
+
 	while (RUNNING) {
 		const char *fname;
 
@@ -229,6 +231,8 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	}
 
   done:
+	switch_core_hash_delete(globals.source_hash, source->name);
+
 	switch_buffer_destroy(&audio_buffer);
 
 	if (fd > -1) {
@@ -430,8 +434,6 @@ static void launch_threads(void)
 		}
 
 		source->samples = switch_samples_per_frame(source->rate, source->interval);
-
-		switch_core_hash_insert(globals.source_hash, source->name, source);
 
 		switch_mutex_init(&source->mutex, SWITCH_MUTEX_NESTED, source->pool);
 
