@@ -672,42 +672,35 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		switch_event_fire(&event);
 	}
 
-
-	/*
-	   if (call_id) {
-	   su_free(profile->home, call_id);
-	   }
-	 */
-
 	if (regtype == REG_REGISTER) {
 		char exp_param[128] = "";
+		s_event = NULL;
 
 		if (exptime) {
 			switch_snprintf(exp_param, sizeof(exp_param), "expires=%ld", exptime);
 			sip_contact_add_param(nh->nh_home, sip->sip_contact, exp_param);
-		}
 
-		nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT(sip->sip_contact), NUTAG_WITH_THIS(nua), TAG_END());
-
-		if (exptime) {
-			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", to_user, to_host);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "VM-Sofia-Profile", "%s", profile->name);
-				switch_event_fire(&event);
-			} else {
-				if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile-name", "%s", profile->name);
-					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-user", "%s", to_user);
-					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-host", "%s", to_host);
-					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s", contact_str);
-					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "call-id", "%s", call_id);
-					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "rpid", "%s", rpid);
-					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
-					switch_event_fire(&s_event);
-				}
+			if (switch_event_create(&s_event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", to_user, to_host);
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "VM-Sofia-Profile", "%s", profile->name);
+			}
+		} else {
+			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile-name", "%s", profile->name);
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-user", "%s", to_user);
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-host", "%s", to_host);
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s", contact_str);
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "call-id", "%s", call_id);
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "rpid", "%s", rpid);
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
 			}
 		}
+		
+		nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT(sip->sip_contact), NUTAG_WITH_THIS(nua), TAG_END());
 
+		if (s_event) {
+			switch_event_fire(&s_event);
+		}
 
 		return 1;
 	}
