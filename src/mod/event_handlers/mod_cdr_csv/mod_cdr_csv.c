@@ -173,7 +173,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	char *log_line, *path = NULL;
 
 	if (!((globals.legs & CDR_LEG_A) && (globals.legs & CDR_LEG_B))) {
-		if ((globals.legs && CDR_LEG_A)) {
+		if ((globals.legs & CDR_LEG_A)) {
 			if (switch_channel_get_originator_caller_profile(channel)) {
 				return SWITCH_STATUS_SUCCESS;
 			}
