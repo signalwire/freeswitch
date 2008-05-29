@@ -5,7 +5,7 @@ Name:         freeswitch
 Summary:      FreeSWITCH open source telephony platform
 License:      MPL
 Group:        Productivity/Telephony/Servers
-Version:      1.0.rc6
+Version:      1.0
 Release:      1
 URL:          http://www.freeswitch.org/
 Packager:     Michal Bielicki
