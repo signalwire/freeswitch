@@ -102,7 +102,7 @@ do { \
 
 
 #define MALLOCVAR(varName) \
-    varName = malloc(sizeof(*varName))
+    if (varName = malloc(sizeof(*varName))) memset(varName, 0, sizeof(*varName))
 
 #define MALLOCVAR_NOFAIL(varName) \
     do {if ((varName = malloc(sizeof(*varName))) == NULL) abort();} while(0)
