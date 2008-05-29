@@ -118,6 +118,8 @@
     <!-- disable register and transfer which may be undesirable in a public switch -->
     <!--<param name="disable-transfer" value="true"/>-->
     <!--<param name="disable-register" value="true"/>-->
+    <!--<param name="enable-3pcc" value="true"/>-->
+
   </settings>
 </profile>
 

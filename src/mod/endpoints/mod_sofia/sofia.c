@@ -1244,6 +1244,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_BLIND_REG;
 						}
+					} else if (!strcasecmp(var, "enable-3pcc")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_3PCC;
+						}
 					} else if (!strcasecmp(var, "accept-blind-auth")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_BLIND_AUTH;
@@ -1877,15 +1881,20 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 					goto done;
 				} else {
-					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_NOSDP");
-					sofia_glue_tech_choose_port(tech_pvt, 0);
-					sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
-					switch_channel_set_state(channel, CS_HIBERNATE);
-					nua_respond(tech_pvt->nh, SIP_200_OK,
-								SIPTAG_CONTACT_STR(tech_pvt->profile->url),
-								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-								SOATAG_REUSE_REJECTED(1),
-								SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
+					if (profile->pflags & PFLAG_3PCC) {
+						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_NOSDP");
+						sofia_glue_tech_choose_port(tech_pvt, 0);
+						sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
+						switch_channel_set_state(channel, CS_HIBERNATE);
+						nua_respond(tech_pvt->nh, SIP_200_OK,
+									SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+									SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+									SOATAG_REUSE_REJECTED(1),
+									SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
+					} else {
+						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "3PCC DISABLED");
+						switch_channel_hangup(channel, SWITCH_CAUSE_MANDATORY_IE_MISSING);
+					}
 					goto done;
 				}
 			}
