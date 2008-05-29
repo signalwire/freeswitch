@@ -29,6 +29,11 @@
 #include <sys/stat.h>
 #include <switch.h>
 
+typedef enum {
+	CDR_LEG_A = (1 << 0),
+	CDR_LEG_B = (1 << 1)
+} cdr_leg_t;
+
 struct cdr_fd {
 	int fd;
 	char *path;
@@ -50,6 +55,7 @@ static struct {
 	int shutdown;
 	int rotate;
 	int debug;
+	cdr_leg_t legs;
 } globals;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_csv_load);
@@ -166,8 +172,16 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	const char *log_dir = NULL, *accountcode = NULL, *a_template_str = NULL, *g_template_str = NULL;
 	char *log_line, *path = NULL;
 
-	if (switch_channel_get_originator_caller_profile(channel)) {
-		return SWITCH_STATUS_SUCCESS;
+	if (!((globals.legs && CDR_LEG_A) && (globals.legs & CDR_LEG_B))) {
+		if ((globals.legs && CDR_LEG_A)) {
+			if (switch_channel_get_originator_caller_profile(channel)) {
+				return SWITCH_STATUS_SUCCESS;
+			}
+		} else {
+			if (switch_channel_get_originatee_caller_profile(channel)) {
+				return SWITCH_STATUS_SUCCESS;
+			}
+		}
 	}
 
 	if (!(log_dir = switch_channel_get_variable(channel, "cdr_csv_base"))) {
@@ -278,10 +292,11 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 	switch_core_hash_init(&globals.template_hash, pool);
 
 	globals.pool = pool;
-
+	
 	switch_core_hash_insert(globals.template_hash, "default", default_template);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding default template.\n");
-
+	globals.legs = CDR_LEG_A;
+	
 	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 
 		if ((settings = switch_xml_child(cfg, "settings"))) {
@@ -290,6 +305,16 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 				if (!strcasecmp(var, "debug")) {
 					globals.debug = switch_true(val);
+				} else if (!strcasecmp(var, "legs")) {
+					globals.legs = 0;
+
+					if (strchr(val, 'a')) {
+						globals.legs |= CDR_LEG_A;
+					}
+
+					if (strchr(val, 'a')) {
+						globals.legs |= CDR_LEG_B;
+					}
 				} else if (!strcasecmp(var, "log-base")) {
 					globals.log_dir = switch_core_sprintf(pool, "%s%scdr-csv", val, SWITCH_PATH_SEPARATOR);
 				} else if (!strcasecmp(var, "rotate-on-hup")) {

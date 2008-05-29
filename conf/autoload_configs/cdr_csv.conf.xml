@@ -6,6 +6,8 @@
     <!-- This is like the info app but after the call is hung up -->
     <!--<param name="debug" value="true"/>-->
     <param name="rotate-on-hup" value="true"/>
+    <!-- may be a b or ab -->
+    <param name="legs" value="a"/>
   </settings>
   <templates>
     <template name="sql">INSERT INTO cdr VALUES ("${caller_id_name}","${caller_id_number}","${destination_number}","${context}","${start_stamp}","${answer_stamp}","${end_stamp}","${duration}","${billsec}","${hangup_cause}","${uuid}","${bleg_uuid}", "${accountcode}");</template>
