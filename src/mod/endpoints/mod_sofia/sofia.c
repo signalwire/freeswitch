@@ -2056,7 +2056,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		break;
 	case nua_callstate_terminating:
 		if (session) {
-			if (!switch_test_flag(tech_pvt, TFLAG_BYE)) {
+			if (status == 488 || switch_channel_get_state(channel) == CS_HIBERNATE) {
+				tech_pvt->q850_cause = SWITCH_CAUSE_MANDATORY_IE_MISSING;
+			} else if (!switch_test_flag(tech_pvt, TFLAG_BYE)) {
 				switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 			}
 		}
