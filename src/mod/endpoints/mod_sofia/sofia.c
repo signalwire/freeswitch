@@ -1923,6 +1923,18 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						msg.from = __FILE__;
 						msg.string_arg = (char *) r_sdp;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Passing SDP to other leg.\n%s\n", r_sdp);
+						
+						if (switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
+							if (!switch_stristr("sendonly", r_sdp)) {
+								switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+								switch_channel_presence(tech_pvt->channel, "unknown", "unhold");
+							}
+						} else if (switch_stristr("sendonly", r_sdp)) {
+							switch_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+							switch_channel_presence(tech_pvt->channel, "unknown", "hold");
+						}
+					
+
 						if (switch_core_session_receive_message(other_session, &msg) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Other leg is not available\n");
 							nua_respond(tech_pvt->nh, 403, "Hangup in progress", TAG_END());

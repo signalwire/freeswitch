@@ -706,7 +706,7 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 			}
 		}
 	}
-	printf("WTF [%s] %d\n", new_uri, uri_only);
+
 	return new_uri;
 }
 
