@@ -312,7 +312,7 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 						globals.legs |= CDR_LEG_A;
 					}
 
-					if (strchr(val, 'a')) {
+					if (strchr(val, 'b')) {
 						globals.legs |= CDR_LEG_B;
 					}
 				} else if (!strcasecmp(var, "log-base")) {
