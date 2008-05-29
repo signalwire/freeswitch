@@ -697,12 +697,16 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 		}
 	} else {
 		if (params) {
-			new_uri = switch_core_session_sprintf(session, "%s;%s", stripped, params);
+			new_uri = switch_core_session_sprintf(session, "%s%s;%s%s", uri_only ? "" : "<", stripped, params, uri_only ? "" : ">");
 		} else {
-			new_uri = stripped;
+			if (uri_only) {
+				new_uri = stripped;
+			} else {
+				new_uri = switch_core_session_sprintf(session, "<%s>", stripped);
+			}
 		}
 	}
-
+	printf("WTF [%s] %d\n", new_uri, uri_only);
 	return new_uri;
 }
 
@@ -1040,7 +1044,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		url_str = sofia_overcome_sip_uri_weakness(session, url, tech_pvt->transport, SWITCH_TRUE, invite_params);
 		invite_contact = sofia_overcome_sip_uri_weakness(session, tech_pvt->invite_contact, tech_pvt->transport, SWITCH_FALSE, NULL);
-		from_str = sofia_overcome_sip_uri_weakness(session, use_from_str, 0, SWITCH_FALSE, NULL);
+		from_str = sofia_overcome_sip_uri_weakness(session, use_from_str, 0, SWITCH_TRUE, NULL);
 		to_str = sofia_overcome_sip_uri_weakness(session, tech_pvt->dest_to, 0, SWITCH_FALSE, invite_params);
 
 
@@ -1050,7 +1054,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		 */
 		use_from_str = from_str;
 		from_str = switch_core_session_sprintf(session, "\"%s\" <%s>", tech_pvt->caller_profile->caller_id_name, use_from_str);
-
+		
 		tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
 								  NUTAG_URL(url_str), SIPTAG_TO_STR(to_str), SIPTAG_FROM_STR(from_str), SIPTAG_CONTACT_STR(invite_contact), TAG_END());
 
