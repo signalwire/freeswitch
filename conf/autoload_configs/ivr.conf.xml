@@ -17,7 +17,7 @@
       <entry action="menu-sub" digits="4" param="demo_ivr_submenu"/>  <!-- demo sub menu -->
       <entry action="menu-exec-app" digits="5" param="transfer 1234*256 enum"/>    <!-- Screaming monkeys -->
       <entry action="menu-exec-app" digits="/^(10[01][0-9])$/" param="transfer $1 XML default"/> 
-      <entry action="menu-top" digits="9" param="demo_ivr"/>          <!-- Repeat this menu -->
+      <entry action="menu-top" digits="9"/>          <!-- Repeat this menu -->
     </menu>
     <!-- Demo IVR, Sub Menu -->
     <menu name="demo_ivr_submenu"
