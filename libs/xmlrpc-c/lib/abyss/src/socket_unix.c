@@ -40,7 +40,7 @@
 
 #include "socket_unix.h"
 
-
+#define sane_close(_it) if (_it > 0) {close(_it) ; _it = -1; }
 
 typedef struct {
     int interruptorFd;
@@ -50,19 +50,19 @@ typedef struct {
 
 
 static void
-initInterruptPipe(interruptPipe * const pipeP,
+initInterruptPipe(interruptPipe * pipeP,
                   const char **   const errorP) {
 
-    int pipeFd[2];
+    int pipeFd[2] = {-1, -1};
     int rc;
 
     rc = pipe(pipeFd);
 
-    if (rc != 0)
+    if (rc != 0) {
         xmlrpc_asprintf(errorP, "Unable to create a pipe to use to interrupt "
                         "waits.  pipe() failed with errno %d (%s)",
                         errno, strerror(errno));
-    else {
+	} else {
         *errorP = NULL;
         pipeP->interruptorFd = pipeFd[1];
         pipeP->interrupteeFd = pipeFd[0];
@@ -72,10 +72,14 @@ initInterruptPipe(interruptPipe * const pipeP,
 
 
 static void
-termInterruptPipe(interruptPipe const pipe) {
+termInterruptPipe(interruptPipe pipe) {
 
-    close(pipe.interruptorFd);
-    close(pipe.interrupteeFd);
+	if (pipe.interruptorFd) {
+		sane_close(pipe.interruptorFd);
+	}
+	if (pipe.interrupteeFd) {
+		sane_close(pipe.interrupteeFd);
+	}
 }
 
 
@@ -153,7 +157,7 @@ channelDestroy(TChannel * const channelP) {
     termInterruptPipe(socketUnixP->interruptPipe);
 
     if (!socketUnixP->userSuppliedFd)
-        close(socketUnixP->fd);
+        sane_close(socketUnixP->fd);
 
     free(socketUnixP);
 }
@@ -484,13 +488,13 @@ makeChannelFromFd(int           const fd,
     struct socketUnix * socketUnixP;
 
     MALLOCVAR(socketUnixP);
-    
+
     if (socketUnixP == NULL)
         xmlrpc_asprintf(errorP, "Unable to allocate memory for Unix "
                         "channel descriptor");
     else {
         TChannel * channelP;
-        
+
         socketUnixP->fd = fd;
         socketUnixP->userSuppliedFd = TRUE;
 
@@ -498,7 +502,6 @@ makeChannelFromFd(int           const fd,
 
         if (!*errorP) {
             ChannelCreate(&channelVtbl, socketUnixP, &channelP);
-        
             if (channelP == NULL)
                 xmlrpc_asprintf(errorP, "Unable to allocate memory for "
                                 "channel descriptor.");
@@ -564,7 +567,7 @@ chanSwitchDestroy(TChanSwitch * const chanSwitchP) {
     termInterruptPipe(socketUnixP->interruptPipe);
 
     if (!socketUnixP->userSuppliedFd)
-        close(socketUnixP->fd);
+        sane_close(socketUnixP->fd);
 
     free(socketUnixP);
 }
@@ -728,13 +731,13 @@ chanSwitchAccept(TChanSwitch * const chanSwitchP,
             rc = accept(listenSocketP->fd, &peerAddr, &size);
 
             if (rc >= 0) {
-                int const acceptedFd = rc;
+                int acceptedFd = rc;
 
                 createChannelForAccept(acceptedFd, peerAddr,
                                        &channelP, channelInfoPP, errorP);
 
                 if (*errorP)
-                    close(acceptedFd);
+                    sane_close(acceptedFd);
             } else if (errno == EINTR)
                 interrupted = TRUE;
             else
@@ -884,7 +887,7 @@ ChanSwitchUnixCreate(unsigned short const portNumber,
         xmlrpc_asprintf(errorP, "socket() failed with errno %d (%s)",
                         errno, strerror(errno));
     else {
-        int const socketFd = rc;
+        int socketFd = rc;
 
         setSocketOptions(socketFd, errorP);
         if (!*errorP) {
@@ -896,7 +899,7 @@ ChanSwitchUnixCreate(unsigned short const portNumber,
             }
         }
         if (*errorP)
-            close(socketFd);
+            sane_close(socketFd);
     }
 }
 
