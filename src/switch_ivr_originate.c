@@ -1202,6 +1202,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 
 		  done:
+			
 			*cause = SWITCH_CAUSE_UNALLOCATED;
 
 			if (caller_channel && !switch_channel_ready(caller_channel)) {
@@ -1216,8 +1217,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				*cause = SWITCH_CAUSE_SUCCESS;
 
 			} else {
+				const char *cdr_var = NULL;
+				int cdr_total = 0;
+				switch_xml_t cdr;
+				char *xml_text;
+				char buf[128] = "", buf2[128] = "";
+
+				if (caller_channel) {
+					cdr_var = switch_channel_get_variable(caller_channel, "failed_xml_cdr_prefix");
+				}
+
 				if (peer_channel) {
-					*cause = switch_channel_get_cause(peer_channel);
+					*cause = switch_channel_get_cause(peer_channel);					
 				} else {
 					for (i = 0; i < and_argc; i++) {
 						if (!peer_channels[i]) {
@@ -1226,6 +1237,28 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						*cause = switch_channel_get_cause(peer_channels[i]);
 						break;
 					}
+				}
+				
+				if (cdr_var) {
+					for (i = 0; i < and_argc; i++) {
+						if (!peer_sessions[i]) {
+                            continue;
+                        }
+						
+						if (switch_ivr_generate_xml_cdr(peer_sessions[i], &cdr) == SWITCH_STATUS_SUCCESS) {
+							if ((xml_text = switch_xml_toxml(cdr, SWITCH_FALSE))) {
+								switch_snprintf(buf, sizeof(buf), "%s_%d", cdr_var, ++cdr_total);
+								switch_channel_set_variable(caller_channel, buf, xml_text);
+								switch_safe_free(xml_text);
+							}
+							switch_xml_free(cdr);
+							cdr = NULL;
+						}
+
+					}
+					switch_snprintf(buf, sizeof(buf), "%s_total", cdr_var);
+					switch_snprintf(buf2, sizeof(buf2), "%d", cdr_total ? cdr_total : 0);
+					switch_channel_set_variable(caller_channel, buf, buf2);
 				}
 
 				if (!*cause) {
