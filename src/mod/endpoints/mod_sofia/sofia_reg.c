@@ -35,7 +35,6 @@
  *
  */
 #include "mod_sofia.h"
-#include "nua_stack.h"
 
 static void sofia_reg_kill_reg(sofia_gateway_t *gateway_ptr, int unreg)
 {

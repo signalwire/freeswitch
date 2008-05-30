@@ -988,7 +988,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				}
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Overlap Dial with %d %s\n", code, reason);
-				nua_respond(tech_pvt->nh, code, reason, TAG_IF(to_uri, SIPTAG_CONTACT_STR(to_uri)),
+				nua_respond(tech_pvt->nh, code, su_strdup(tech_pvt->nh->nh_home, reason), TAG_IF(to_uri, SIPTAG_CONTACT_STR(to_uri)),
 							SIPTAG_SUPPORTED_STR(NULL), SIPTAG_ACCEPT_STR(NULL),
 							TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)), TAG_END());
 				if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
@@ -1003,12 +1003,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						sofia_glue_tech_patch_sdp(tech_pvt);
 						sofia_glue_tech_proxy_remote_addr(tech_pvt);
 					}
-					nua_respond(tech_pvt->nh, code, reason, SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+					nua_respond(tech_pvt->nh, code, su_strdup(tech_pvt->nh->nh_home, reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 								SOATAG_REUSE_REJECTED(1),
 								SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
 				} else {
-					nua_respond(tech_pvt->nh, code, reason, SIPTAG_CONTACT_STR(tech_pvt->reply_contact), TAG_END());
+					nua_respond(tech_pvt->nh, code, su_strdup(tech_pvt->nh->nh_home, reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact), TAG_END());
 				}
 				if (!switch_channel_test_flag(channel, CF_ANSWERED) && code >= 300) {
 					switch_set_flag_locked(tech_pvt, TFLAG_BYE);

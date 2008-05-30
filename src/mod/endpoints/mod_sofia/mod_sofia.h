@@ -91,6 +91,7 @@ typedef struct private_object private_object_t;
 #include <sofia-sip/su_log.h>
 #include <sofia-sip/nea.h>
 #include <sofia-sip/msg_addr.h>
+#include "nua_stack.h"
 
 typedef enum {
 	DTMF_2833,
