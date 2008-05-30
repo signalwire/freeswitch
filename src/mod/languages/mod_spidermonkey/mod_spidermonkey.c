@@ -2619,7 +2619,8 @@ static JSObject *new_js_session(JSContext * cx, JSObject * obj, switch_core_sess
 static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct js_session *jss = NULL;
-
+	JSObject *session_obj = NULL;
+	
 	jss = malloc(sizeof(*jss));
 	switch_assert(jss);
 	memset(jss, 0, sizeof(*jss));
@@ -2627,10 +2628,31 @@ static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsva
 	jss->obj = obj;
 	JS_SetPrivate(cx, obj, jss);
 
+	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+	
 	if (argc > 0) {
 		char *uuid = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-		if (uuid) {
+
+		if (!strchr(uuid, '/')) {
 			jss->session = switch_core_session_locate(uuid);
+			switch_set_flag(jss, S_HUP);
+			*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
+		} else {
+			struct js_session *old_jss = NULL;
+
+			if (argc > 1) {
+				if (JS_ValueToObject(cx, argv[1], &session_obj) && session_obj) {
+					old_jss = JS_GetPrivate(cx, session_obj);
+				}
+			}
+			if (switch_ivr_originate(old_jss ? old_jss->session : NULL, 
+									 &jss->session, &jss->cause, uuid, 60, NULL, NULL, NULL, NULL, SOF_NONE) == SWITCH_STATUS_SUCCESS) {
+				switch_set_flag(jss, S_HUP);
+				switch_channel_set_state(switch_core_session_get_channel(jss->session), CS_SOFT_EXECUTE);
+				*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
+			} else {
+				*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, switch_channel_cause2str(jss->cause)));
+			}
 		}
 	}
 
