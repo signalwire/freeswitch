@@ -2246,7 +2246,7 @@ SWITCH_STANDARD_API(uuid_dump_function)
 #define GLOBAL_SETVAR_SYNTAX "<var> <value>"
 SWITCH_STANDARD_API(global_setvar_function)
 {
-	char *mycmd = NULL, *argv[3] = { 0 };
+	char *mycmd = NULL, *argv[2] = { 0 };
 	int argc = 0;
 
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
