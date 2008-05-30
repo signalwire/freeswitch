@@ -152,7 +152,7 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 static switch_status_t engage_device(int samplerate, int codec_ms);
 static switch_status_t engage_ring_device(int sample_rate, int channels);
 static void deactivate_ring_device(void);
-static int dump_info(void);
+static int dump_info(int verbose);
 static switch_status_t load_config(void);
 static int get_dev_by_name(char *name, int in);
 static int get_dev_by_number(int number, int in);
@@ -690,7 +690,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 
 	Pa_Initialize();
 
-	if (dump_info()) {
+	if (dump_info(0)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't find any audio devices!\n");
 		return SWITCH_STATUS_TERM;
 	}
@@ -987,7 +987,7 @@ static switch_status_t devlist(char **argv, int argc, switch_stream_handle_t *st
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static int dump_info(void)
+static int dump_info(int verbose)
 {
 	int i, numDevices, defaultDisplayed;
 	const PaDeviceInfo *deviceInfo;
@@ -1010,6 +1010,11 @@ static int dump_info(void)
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "Number of devices = %d\n", numDevices);
+
+	if (!verbose) {
+		return 0;
+	}
+
 	for (i = 0; i < numDevices; i++) {
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "%s", line);
 		deviceInfo = Pa_GetDeviceInfo(i);
@@ -1082,7 +1087,7 @@ static int dump_info(void)
 			PrintSupportedStandardSampleRates(&inputParameters, &outputParameters);
 		}
 	}
-
+	
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "%s", line);
 
 	return 0;
@@ -1615,7 +1620,7 @@ SWITCH_STANDARD_API(pa_cmd)
 	} else if (!strcasecmp(argv[0], "devlist")) {
 		func = devlist;
 	} else if (!strcasecmp(argv[0], "dump")) {
-		dump_info();
+		dump_info(1);
 		goto done;
 	} else if (!strcasecmp(argv[0], "list")) {
 		func = list_calls;
