@@ -146,6 +146,7 @@ struct js_session {
 	char *rdnis;
 	char *context;
 	char *username;
+	int check_state;
 	struct js_session_speech *speech;
 };
 
