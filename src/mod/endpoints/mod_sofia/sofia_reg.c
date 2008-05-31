@@ -225,13 +225,13 @@ int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames
 
 	if (argc >= 3) {
 		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_EXPIRE) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile-name", "%s", argv[6]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile-name", "%s", argv[8]);
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "call-id", "%s", argv[0]);
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "user", "%s", argv[1]);
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "host", "%s", argv[2]);
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s", argv[3]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%s", argv[4]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "user-agent", "%s", argv[5]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%s", argv[6]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "user-agent", "%s", argv[7]);
 			switch_event_fire(&s_event);
 		}
 	}
