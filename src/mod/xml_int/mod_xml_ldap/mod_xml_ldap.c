@@ -42,6 +42,8 @@
 #else
 #include <lber.h>
 #include <ldap.h>
+#include <sasl/sasl.h>
+#include "lutil_ldap.h"
 #endif
 
 typedef enum {
@@ -55,18 +57,18 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_ldap_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_ldap_shutdown);
 SWITCH_MODULE_DEFINITION(mod_xml_ldap, mod_xml_ldap_load, mod_xml_ldap_shutdown, NULL);
 
-struct xml_binding {
+typedef struct xml_binding {
 	char *bindings;
 	char *host;
-	char *ldap_base;
+	char *basedn;
 	char *binddn;
 	char *bindpass;
-	char *queryfmt;
-};
+	char *filter;
+	char **attrs;
+	lutilSASLdefaults *defaults;
+} xml_binding_t;
 
-typedef struct xml_binding xml_binding_t;
-
-struct ldap_c {
+typedef struct ldap_c {
 	LDAP *ld;
 	LDAPMessage *msg;
 	LDAPMessage *entry;
@@ -76,8 +78,8 @@ struct ldap_c {
 	char *val;
 	char **keyvals;
 	char **valvals;
-
-};
+	char *sp;
+} ldap_ctx;
 
 static switch_status_t xml_ldap_directory_result(void *ldap_connection, xml_binding_t *binding, switch_xml_t *xml, int *off);
 static switch_status_t xml_ldap_dialplan_result(void *ldap_connection, xml_binding_t *binding, switch_xml_t *xml, int *off);
@@ -223,10 +225,12 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 	int desired_version = LDAP_VERSION3;
 	xml_ldap_query_type_t query_type;
 	char *dir_exten = NULL, *dir_domain = NULL;
-	char *filter = "(objectClass=*)";
 
-	char *search_base = NULL;
-	int off = 0;
+	char *search_filter = NULL, *search_base = NULL;
+	int off = 0, ret = 1;
+
+	//char *buf;
+	//buf = malloc(4096);
 
 
 	if (!binding) {
@@ -287,15 +291,18 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 						if ((sub = switch_xml_add_child_d(sub, "user", off++))) {
 							switch_xml_set_attr_d(sub, "id", dir_exten);
 						}
+
 					}
 
-					search_base = switch_mprintf(binding->queryfmt, dir_exten, dir_domain, binding->ldap_base);
+					search_filter = switch_mprintf(binding->filter, dir_exten);
+					search_base = switch_mprintf(binding->basedn, dir_domain);
 
 					free(dir_exten);
 					dir_exten = NULL;
 
 					free(dir_domain);
 					dir_domain = NULL;
+
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 									  "something bad happened during the query construction phase likely exten(%s) or domain(%s) is null\n", dir_exten,
@@ -314,7 +321,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 
 					sub = switch_xml_add_child_d(xml, "context", off++);
 				}
-				search_base = switch_mprintf(binding->queryfmt, dir_exten, dir_domain, binding->ldap_base);
+
 				break;
 
 			case XML_LDAP_PHRASE:
@@ -327,7 +334,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 
 
 
-	if ((ldap->ld = ldap_init(binding->host, LDAP_PORT)) == NULL) {
+	if ((ldap->ld = (LDAP*)ldap_init(binding->host, LDAP_PORT)) == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to connect to ldap server.%s\n", binding->host);
 		goto cleanup;
 	}
@@ -336,12 +343,24 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 		goto cleanup;
 	}
 
-	if (ldap_bind_s(ldap->ld, binding->binddn, binding->bindpass, auth_method) != LDAP_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to bind to ldap server %s as %s\n", binding->host, binding->binddn);
-		goto cleanup;
+	ldap_set_option( ldap->ld, LDAP_OPT_X_SASL_SECPROPS, &ldap->sp );
+
+
+
+	if (binding->binddn) {
+		if (ldap_bind_s(ldap->ld, binding->binddn, binding->bindpass, auth_method) != LDAP_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to bind to ldap server %s as %s\n", binding->host, binding->binddn);
+			goto cleanup;
+		}
+	} else {
+		if (ldap_sasl_interactive_bind_s( ldap->ld, NULL, binding->defaults->mech, NULL, NULL,(unsigned)LDAP_SASL_SIMPLE, lutil_sasl_interact , binding->defaults ) != LDAP_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to sasl_bind to ldap server %s as %s\n", binding->host, binding->defaults->authcid);
+			goto cleanup;
+		}
 	}
 
-	if (ldap_search_s(ldap->ld, search_base, LDAP_SCOPE_SUBTREE, filter, NULL, 0, &ldap->msg) != LDAP_SUCCESS) {
+	if (ldap_search_s(ldap->ld, search_base, LDAP_SCOPE_SUBTREE, search_filter, NULL, 0, &ldap->msg) != LDAP_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Query failed: -b \"%s\" \"%s\"\n", search_base, search_filter);
 		goto cleanup;
 	}
 
@@ -353,6 +372,8 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 		goto cleanup;
 	}
 
+	ret = 0;
+
   cleanup:
 	if (ldap->msg) {
 		ldap_msgfree(ldap->msg);
@@ -362,7 +383,16 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 		ldap_unbind_s(ldap->ld);
 	}
 
+	switch_safe_free(search_filter);
 	switch_safe_free(search_base);
+
+	//switch_xml_toxml_buf(xml,buf,0,0,1);
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "providing:\n%s\n", buf);
+
+	if(ret) {
+		switch_xml_free(xml);
+		return NULL;
+	}
 
 	return xml;
 }
@@ -393,35 +423,50 @@ static switch_status_t do_config(void)
 		}
 		memset(binding, 0, sizeof(*binding));
 
+		if (!(binding->defaults = malloc(sizeof(lutilSASLdefaults)))) {
+			goto done;
+		}
+		memset(binding->defaults, 0, sizeof(lutilSASLdefaults));
+
 		for (param = switch_xml_child(binding_tag, "param"); param; param = param->next) {
 
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 
-			if (!strcasecmp(var, "queryfmt")) {
+			if (!strcasecmp(var, "filter")) {
 				binding->bindings = (char *) switch_xml_attr_soft(param, "bindings");
 				if (val) {
-					binding->queryfmt = strdup(val);
+					binding->filter = strdup(val);
 				}
-			} else if (!strcasecmp(var, "base")) {
-				binding->ldap_base = strdup(val);
+			} else if (!strcasecmp(var, "basedn")) {
+				binding->basedn = strdup(val);
 			} else if (!strcasecmp(var, "binddn")) {
 				binding->binddn = strdup(val);
 			} else if (!strcasecmp(var, "bindpass")) {
 				binding->bindpass = strdup(val);
 			} else if (!strcasecmp(var, "host")) {
 				binding->host = strdup(val);
+			} else if (!strcasecmp(var, "mech")) {
+				binding->defaults->mech = strdup(val);
+			} else if (!strcasecmp(var, "realm")) {
+				binding->defaults->realm = strdup(val);
+			} else if (!strcasecmp(var, "authcid")) {
+				binding->defaults->authcid = strdup(val);
+			} else if (!strcasecmp(var, "authzid")) {
+				binding->defaults->authzid = strdup(val);
 			}
+
 		}
 
-		if (!binding->ldap_base || !binding->binddn || !binding->bindpass || !binding->queryfmt) {
+		if (!binding->basedn || !binding->filter) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-							  "You must define \"base\", \"binddn\", \"bindpass\", and \"queryfmt\" in mod_xml_ldap.conf.xml\n");
+							  "You must define \"basedn\", and \"filter\" in mod_xml_ldap.conf.xml\n");
 			continue;
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding [%s] XML Fetch Function [%s] [%s]\n",
-						  switch_strlen_zero(bname) ? "N/A" : bname, binding->ldap_base, binding->bindings ? binding->bindings : "all");
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding [%s] XML Fetch Function [%s] (%s) [%s]\n",
+						  switch_strlen_zero(bname) ? "N/A" : bname, binding->basedn, binding->filter, binding->bindings ? binding->bindings : "all");
 
 		switch_xml_bind_search_function(xml_ldap_search, switch_xml_parse_section_string(bname), binding);
 
