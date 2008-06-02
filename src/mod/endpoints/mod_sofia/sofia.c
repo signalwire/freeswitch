@@ -1520,6 +1520,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ping success %s\n", gateway->name);
 			if (gateway->state == REG_STATE_FAILED) {
 				gateway->state = REG_STATE_UNREGED;
+				gateway->retry = 0;
 			}
 			gateway->status = SOFIA_GATEWAY_UP;
 		} else {
