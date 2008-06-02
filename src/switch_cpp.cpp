@@ -761,6 +761,20 @@ SWITCH_DECLARE(bool) CoreSession::ready() {
 	return switch_channel_ready(channel) != 0;
 }
 
+SWITCH_DECLARE(bool) CoreSession::mediaReady() {
+
+	this_check(false);
+	sanity_check(false);	
+	return switch_channel_media_ready(channel) != 0;
+}
+
+SWITCH_DECLARE(bool) CoreSession::answered() {
+
+	this_check(false);
+	sanity_check(false);	
+	return switch_channel_test_flag(channel, CF_ANSWERED) != 0;
+}
+
 SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, char *dest, int timeout)
 {
 
