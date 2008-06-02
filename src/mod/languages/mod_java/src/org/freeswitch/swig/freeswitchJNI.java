@@ -107,6 +107,9 @@ class freeswitchJNI {
   public final static native int CoreSession_setAutoHangup(long jarg1, CoreSession jarg1_, boolean jarg2);
   public final static native void CoreSession_setHangupHook(long jarg1, CoreSession jarg1_, long jarg2);
   public final static native boolean CoreSession_ready(long jarg1, CoreSession jarg1_);
+  public final static native boolean CoreSession_answered(long jarg1, CoreSession jarg1_);
+  public final static native boolean CoreSession_mediaReady(long jarg1, CoreSession jarg1_);
+  public final static native void CoreSession_waitForAnswer(long jarg1, CoreSession jarg1_, long jarg2, CoreSession jarg2_);
   public final static native void CoreSession_execute__SWIG_0(long jarg1, CoreSession jarg1_, String jarg2, String jarg3);
   public final static native void CoreSession_execute__SWIG_1(long jarg1, CoreSession jarg1_, String jarg2);
   public final static native void CoreSession_sendEvent(long jarg1, CoreSession jarg1_, long jarg2, Event jarg2_);

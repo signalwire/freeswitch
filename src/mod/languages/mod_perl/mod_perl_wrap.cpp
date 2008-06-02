@@ -6547,6 +6547,99 @@ XS(_wrap_CoreSession_ready) {
 }
 
 
+XS(_wrap_CoreSession_answered) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    bool result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: CoreSession_answered(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_answered" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    result = (bool)(arg1)->answered();
+    ST(argvi) = SWIG_From_bool  SWIG_PERL_CALL_ARGS_1(static_cast< bool >(result)); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_CoreSession_mediaReady) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    bool result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: CoreSession_mediaReady(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_mediaReady" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    result = (bool)(arg1)->mediaReady();
+    ST(argvi) = SWIG_From_bool  SWIG_PERL_CALL_ARGS_1(static_cast< bool >(result)); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_CoreSession_waitForAnswer) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    CoreSession *arg2 = (CoreSession *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    void *argp2 = 0 ;
+    int res2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: CoreSession_waitForAnswer(self,calling_session);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_waitForAnswer" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    res2 = SWIG_ConvertPtr(ST(1), &argp2,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_waitForAnswer" "', argument " "2"" of type '" "CoreSession *""'"); 
+    }
+    arg2 = reinterpret_cast< CoreSession * >(argp2);
+    (arg1)->waitForAnswer(arg2);
+    
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_CoreSession_execute__SWIG_0) {
   {
     CoreSession *arg1 = (CoreSession *) 0 ;
@@ -8290,6 +8383,9 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::CoreSession_setAutoHangup", _wrap_CoreSession_setAutoHangup},
 {"freeswitchc::CoreSession_setHangupHook", _wrap_CoreSession_setHangupHook},
 {"freeswitchc::CoreSession_ready", _wrap_CoreSession_ready},
+{"freeswitchc::CoreSession_answered", _wrap_CoreSession_answered},
+{"freeswitchc::CoreSession_mediaReady", _wrap_CoreSession_mediaReady},
+{"freeswitchc::CoreSession_waitForAnswer", _wrap_CoreSession_waitForAnswer},
 {"freeswitchc::CoreSession_execute", _wrap_CoreSession_execute},
 {"freeswitchc::CoreSession_sendEvent", _wrap_CoreSession_sendEvent},
 {"freeswitchc::CoreSession_setEventData", _wrap_CoreSession_setEventData},

@@ -4907,6 +4907,87 @@ fail:
 }
 
 
+static int _wrap_CoreSession_answered(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  bool result;
+  
+  SWIG_check_num_args("answered",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("answered",1,"CoreSession *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_answered",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  result = (bool)(arg1)->answered();
+  SWIG_arg=0;
+  lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_CoreSession_mediaReady(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  bool result;
+  
+  SWIG_check_num_args("mediaReady",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("mediaReady",1,"CoreSession *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_mediaReady",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  result = (bool)(arg1)->mediaReady();
+  SWIG_arg=0;
+  lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_CoreSession_waitForAnswer(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  CoreSession *arg2 = (CoreSession *) 0 ;
+  
+  SWIG_check_num_args("waitForAnswer",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("waitForAnswer",1,"CoreSession *");
+  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("waitForAnswer",2,"CoreSession *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_waitForAnswer",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_waitForAnswer",2,SWIGTYPE_p_CoreSession);
+  }
+  
+  (arg1)->waitForAnswer(arg2);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_CoreSession_execute__SWIG_0(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -5306,6 +5387,9 @@ static swig_lua_method swig_CoreSession_methods[] = {
     {"setAutoHangup", _wrap_CoreSession_setAutoHangup}, 
     {"setHangupHook", _wrap_CoreSession_setHangupHook}, 
     {"ready", _wrap_CoreSession_ready}, 
+    {"answered", _wrap_CoreSession_answered}, 
+    {"mediaReady", _wrap_CoreSession_mediaReady}, 
+    {"waitForAnswer", _wrap_CoreSession_waitForAnswer}, 
     {"execute", _wrap_CoreSession_execute}, 
     {"sendEvent", _wrap_CoreSession_sendEvent}, 
     {"setEventData", _wrap_CoreSession_setEventData}, 

@@ -282,6 +282,8 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 		 SWITCH_DECLARE(bool) answered();
 		 SWITCH_DECLARE(bool) mediaReady();
 
+		 SWITCH_DECLARE(void) waitForAnswer(CoreSession *calling_session);
+
 		 SWITCH_DECLARE(void) execute(char *app, char *data = NULL);
 
 		 SWITCH_DECLARE(void) sendEvent(Event * sendME);

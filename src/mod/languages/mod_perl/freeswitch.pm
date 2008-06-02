@@ -327,6 +327,9 @@ sub DESTROY {
 *setAutoHangup = *freeswitchc::CoreSession_setAutoHangup;
 *setHangupHook = *freeswitchc::CoreSession_setHangupHook;
 *ready = *freeswitchc::CoreSession_ready;
+*answered = *freeswitchc::CoreSession_answered;
+*mediaReady = *freeswitchc::CoreSession_mediaReady;
+*waitForAnswer = *freeswitchc::CoreSession_waitForAnswer;
 *execute = *freeswitchc::CoreSession_execute;
 *sendEvent = *freeswitchc::CoreSession_sendEvent;
 *setEventData = *freeswitchc::CoreSession_setEventData;

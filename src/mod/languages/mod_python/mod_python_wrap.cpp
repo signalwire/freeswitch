@@ -6760,6 +6760,80 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_CoreSession_answered(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  bool result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:CoreSession_answered",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_answered" "', argument " "1"" of type '" "CoreSession *""'"); 
+  }
+  arg1 = reinterpret_cast< CoreSession * >(argp1);
+  result = (bool)(arg1)->answered();
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_CoreSession_mediaReady(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  bool result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:CoreSession_mediaReady",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_mediaReady" "', argument " "1"" of type '" "CoreSession *""'"); 
+  }
+  arg1 = reinterpret_cast< CoreSession * >(argp1);
+  result = (bool)(arg1)->mediaReady();
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_CoreSession_waitForAnswer(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  CoreSession *arg2 = (CoreSession *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:CoreSession_waitForAnswer",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_waitForAnswer" "', argument " "1"" of type '" "CoreSession *""'"); 
+  }
+  arg1 = reinterpret_cast< CoreSession * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_p_CoreSession, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_waitForAnswer" "', argument " "2"" of type '" "CoreSession *""'"); 
+  }
+  arg2 = reinterpret_cast< CoreSession * >(argp2);
+  (arg1)->waitForAnswer(arg2);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_CoreSession_execute__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -7736,6 +7810,9 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"CoreSession_setAutoHangup", _wrap_CoreSession_setAutoHangup, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_setHangupHook", _wrap_CoreSession_setHangupHook, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_ready", _wrap_CoreSession_ready, METH_VARARGS, NULL},
+	 { (char *)"CoreSession_answered", _wrap_CoreSession_answered, METH_VARARGS, NULL},
+	 { (char *)"CoreSession_mediaReady", _wrap_CoreSession_mediaReady, METH_VARARGS, NULL},
+	 { (char *)"CoreSession_waitForAnswer", _wrap_CoreSession_waitForAnswer, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_execute", _wrap_CoreSession_execute, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_sendEvent", _wrap_CoreSession_sendEvent, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_setEventData", _wrap_CoreSession_setEventData, METH_VARARGS, NULL},

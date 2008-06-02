@@ -225,6 +225,18 @@ public class CoreSession {
     return freeswitchJNI.CoreSession_ready(swigCPtr, this);
   }
 
+  public boolean answered() {
+    return freeswitchJNI.CoreSession_answered(swigCPtr, this);
+  }
+
+  public boolean mediaReady() {
+    return freeswitchJNI.CoreSession_mediaReady(swigCPtr, this);
+  }
+
+  public void waitForAnswer(CoreSession calling_session) {
+    freeswitchJNI.CoreSession_waitForAnswer(swigCPtr, this, CoreSession.getCPtr(calling_session), calling_session);
+  }
+
   public void execute(String app, String data) {
     freeswitchJNI.CoreSession_execute__SWIG_0(swigCPtr, this, app, data);
   }

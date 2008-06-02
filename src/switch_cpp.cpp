@@ -890,6 +890,15 @@ SWITCH_DECLARE(int) CoreSession::setAutoHangup(bool val)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(void) CoreSession::waitForAnswer(CoreSession *calling_session) 
+{
+	this_check_void();
+	sanity_check_noreturn;
+	
+	switch_ivr_wait_for_answer(calling_session ? calling_session->session : NULL, session);
+
+}
+
 SWITCH_DECLARE(void) CoreSession::setCallerData(char *var, char *val) {
 
 	this_check_void();
