@@ -616,12 +616,14 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 							  "Register:\nFrom:    [%s@%s]\nContact: [%s]\nExpires: [%ld]\n", to_user, to_host, contact_str, (long) exptime);
 		}
 
-		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "sip");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->url);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "%s", rpid);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, to_host);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "to", "%s@%s", to_user, to_host);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Registered");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_subtype", "probe");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 			switch_event_fire(&event);
 		}
@@ -664,12 +666,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 	}
 
-
-	if (switch_event_create(&event, SWITCH_EVENT_ROSTER) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "sip");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, to_host);
-		switch_event_fire(&event);
-	}
 
 	if (regtype == REG_REGISTER) {
 		char exp_param[128] = "";

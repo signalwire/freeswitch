@@ -888,7 +888,14 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		const char *clean_to_user = NULL;
 		const char *clean_from_user = NULL;
 		const char *p_to_user = switch_str_nil(switch_event_get_header(helper->event, "to-user"));
-		
+#if 0
+		char *buf;
+		switch_event_serialize(helper->event, &buf, SWITCH_FALSE);
+		switch_assert(buf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "CHANNEL_DATA:\n%s\n", buf);
+		free(buf);
+#endif
+
 		if (is_dialog) {
 			SWITCH_STANDARD_STREAM(stream);
 		}
@@ -923,12 +930,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			if (!strcasecmp(state, "cs_hangup")) {
 				astate = "terminated";
 			} else if (switch_strlen_zero(astate)) {
-				//char *buf;
-				//switch_event_serialize(helper->event, &buf, SWITCH_FALSE);
-				//switch_assert(buf);
-				//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "CHANNEL_DATA:\n%s\n", buf);
-				//free(buf);
-
 				astate = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
 				if (switch_strlen_zero(astate)) {
 					if (is_dialog) {
@@ -1065,11 +1066,11 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		prpid = translate_rpid(rpid);
 		pl = gen_pidf(user_agent, clean_id, profile->url, open, rpid, prpid, status, &ct);
 	}
-
+	
 	switch_snprintf(exp, sizeof(exp), "active;expires=%ld", (long) exptime);
 	nua_handle_bind(nh, &mod_sofia_globals.keep_private);
 	nua_notify(nh, SIPTAG_SUBSCRIPTION_STATE_STR(exp), SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR(ct), SIPTAG_PAYLOAD_STR(pl), TAG_END());
-
+	
   end:
 
 	switch_safe_free(id);
