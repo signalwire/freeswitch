@@ -413,7 +413,8 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 
 			if (probe_euser && probe_host && (profile = sofia_glue_find_profile(probe_host))) {
 				sql = switch_mprintf("select sip_registrations.sip_user, sip_registrations.sip_host, sip_registrations.status, "
-									 "sip_registrations.rpid,'', sip_dialogs.uuid, sip_dialogs.state, sip_dialogs.direction "
+									 "sip_registrations.rpid,'', sip_dialogs.uuid, sip_dialogs.state, sip_dialogs.direction, "
+									 "sip_dialogs.sip_to_user, sip_dialogs.sip_to_host "
 									 "from sip_registrations left join sip_dialogs on "
 									 "(sip_dialogs.sip_from_user = sip_registrations.sip_user) "
 									 "and sip_dialogs.sip_from_host = sip_registrations.sip_host "
@@ -668,15 +669,22 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 	char *status = argv[2];
 	char *rpid = argv[3];
 	char *proto = argv[4];
+	char *to_user = NULL;
 	char *uuid = NULL;
 	char *state = NULL;
 	char *direction = NULL;
 	switch_event_t *event;
+	char to_buf[128] = "";
 
 	if (argc > 5) {
 		uuid = switch_str_nil(argv[5]);
 		state = switch_str_nil(argv[6]);
 		direction = switch_str_nil(argv[7]);
+		if (argc > 8) {
+			switch_set_string(to_buf, argv[8]);
+			switch_url_decode(to_buf);
+			to_user = to_buf;
+		}
 	}
 
 	if (switch_strlen_zero(proto)) {
@@ -692,6 +700,10 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", 0);
+
+		if (!switch_strlen_zero(to_user)) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "to-user", "%s", to_user);
+		}
 
 		if (switch_strlen_zero(state)) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", SOFIA_CHAT_PROTO);
@@ -875,8 +887,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		const char *from_user = switch_str_nil(switch_event_get_header(helper->event, "variable_sip_from_user"));
 		const char *clean_to_user = NULL;
 		const char *clean_from_user = NULL;
-
-
+		const char *p_to_user = switch_str_nil(switch_event_get_header(helper->event, "to-user"));
+		
 		if (is_dialog) {
 			SWITCH_STANDARD_STREAM(stream);
 		}
@@ -1011,6 +1023,10 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 						from_id = dest;
 					}
 
+					if (switch_strlen_zero(from_id)) {
+						from_id = p_to_user;
+					}
+					
 					if (switch_strlen_zero(from_id)) {
 						switch_snprintf(status_line, sizeof(status_line), "On The Phone");
 					} else {
