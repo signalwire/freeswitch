@@ -2000,6 +2000,16 @@ static JSBool session_ready(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	return JS_TRUE;
 }
 
+
+static JSBool session_answered(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	struct js_session *jss = JS_GetPrivate(cx, obj);
+
+	*rval = BOOLEAN_TO_JSVAL((jss && jss->session && switch_channel_test_flag(switch_core_session_get_channel(jss->session), CF_ANSWERED)) ? JS_TRUE : JS_FALSE);
+
+	return JS_TRUE;
+}
+
 static JSBool session_wait_for_media(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
@@ -2461,6 +2471,7 @@ static JSFunctionSpec session_methods[] = {
 	{"preAnswer", session_pre_answer, 0},
 	{"generateXmlCdr", session_cdr, 0},
 	{"ready", session_ready, 0},
+	{"answered", session_answered, 0},
 	{"waitForAnswer", session_wait_for_answer, 0},
 	{"waitForMedia", session_wait_for_media, 0},
 	{"getEvent", session_get_event, 0},
@@ -3152,6 +3163,24 @@ static JSBool js_include(JSContext * cx, JSObject * obj, uintN argc, jsval * arg
 	return JS_FALSE;
 }
 
+static JSBool js_api_sleep(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	int32 msec = 0;
+
+	if (argc > 0) {
+		JS_ValueToInt32(cx, argv[0], &msec);
+	} 
+
+	if (msec) {
+		switch_yield(msec * 1000);
+	} else {
+		eval_some_js("~throw new Error(\"No Time specified\");", cx, obj, rval);
+	}
+
+	return JS_TRUE;
+
+}
+
 static JSBool js_api_use(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	char *mod_name = NULL;
@@ -3322,6 +3351,7 @@ static JSFunctionSpec fs_functions[] = {
 	{"bridge", js_bridge, 2},
 	{"apiExecute", js_api_execute, 2},
 	{"use", js_api_use, 1},
+	{"msleep", js_api_sleep, 1},
 	{"fileDelete", js_file_unlink, 1},
 	{"system", js_system, 1},
 #ifdef HAVE_CURL
