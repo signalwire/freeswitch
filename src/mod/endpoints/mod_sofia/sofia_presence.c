@@ -743,7 +743,7 @@ static char *translate_rpid(char *in)
 }
 
 
-static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *rpid, char *prpid, char *status, char *note, const char **ct)
+static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *rpid, char *prpid, char *status, const char **ct)
 {
 	if (switch_stristr("polycom", user_agent)) {
 		*ct = "application/xpidf+xml";
@@ -751,6 +751,9 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 							  "<?xml version=\"1.0\"?>\n"
 							  "<!DOCTYPE presence PUBLIC \"-//IETF//DTD RFCxxxx XPIDF 1.0//EN\" \"xpidf.dtd\">\n"
 							  "<presence>\n"
+							  " <status>\n"
+							  "  <note>%s</note>\n"
+							  " </status>\n"
 							  " <presentity uri=\"%s;method=SUBSCRIBE\" />\n"
 							  " <atom id=\"%s\">\n"
 							  "  <address uri=\"%s;user=ip\" priority=\"0.800000\">\n"
@@ -758,20 +761,17 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 							  "   <msnsubstatus substatus=\"%s\" />\n"
 							  "  </address>\n"
 							  " </atom>\n"
-							  "</presence>\n", id, id, url, open, prpid
+							  "</presence>\n", status, id, id, url, open, prpid
 							  );
 	} else {
 		*ct = "application/pidf+xml";
 		return switch_mprintf(
-							  "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n"
-							  "<presence xmlns='urn:ietf:params:xml:ns:pidf'\n"
-							  "xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model'\n"
-							  "xmlns:rpid='urn:ietf:params:xml:ns:pidf:rpid'\n"
-							  "xmlns:c='urn:ietf:params:xml:ns:pidf:cipid'\n"
-							  "entity='pres:%s'>\n"
-							  " <status>\n"
-							  "  <note>%s</note>\n"
-							  " </status>\n"
+							  "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?> \n"
+							  "<presence xmlns='urn:ietf:params:xml:ns:pidf' \n"
+							  "xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model' \n"
+							  "xmlns:rpid='urn:ietf:params:xml:ns:pidf:rpid' \n"
+							  "xmlns:c='urn:ietf:params:xml:ns:pidf:cipid' entity='%s'>\n"
+							  
 							  " <tuple id='t6a5ed77e'>\n"
 							  "  <status>\r\n"
 							  "   <basic>%s</basic>\n"
@@ -780,9 +780,10 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 							  " <dm:person id='p06360c4a'>\n"
 							  "  <rpid:activities>\r\n" 
 							  "   <rpid:%s/>\n"
-							  "  </rpid:activities>"
+							  "  </rpid:activities>\n"
+							  "  <dm:note>%s</dm:note>"
 							  " </dm:person>\n"
-							  "</presence>", id, status, prpid, rpid);				  
+							  "</presence>", id, prpid, rpid, status);
 	}
 }
 
@@ -792,7 +793,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	struct presence_helper *helper = (struct presence_helper *) pArg;
 	sofia_profile_t *profile = helper->profile;
 	char *pl = NULL;
-	char *clean_id = NULL, *id = NULL, *note = NULL;
+	char *clean_id = NULL, *id = NULL;
 	uint32_t in = atoi(argv[13]);
 	char *status = argv[14];
 	char *rpid = argv[15];
@@ -910,9 +911,19 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			if (!strcasecmp(state, "cs_hangup")) {
 				astate = "terminated";
 			} else if (switch_strlen_zero(astate)) {
+				//char *buf;
+				//switch_event_serialize(helper->event, &buf, SWITCH_FALSE);
+				//switch_assert(buf);
+				//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "CHANNEL_DATA:\n%s\n", buf);
+				//free(buf);
+
 				astate = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
 				if (switch_strlen_zero(astate)) {
-					astate = dft_state;
+					if (is_dialog) {
+						astate = dft_state;
+					} else {
+						astate = "terminated";
+					}
 				}
 			}
 
@@ -989,11 +1000,10 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 
 		if (!is_dialog) {
+			char status_line[256] = "";
 			if (in) {
-				char status_line[256] = "";
-
 				if (!strcmp(astate, "early")) {
-					switch_snprintf(status_line, sizeof(status_line), "R %s", switch_str_nil(from_id));
+					switch_snprintf(status_line, sizeof(status_line), "Ring %s", switch_str_nil(from_id));
 					rpid = "on-the-phone";
 				} else if (!strcmp(astate, "confirmed")) {
 					char *dest = switch_event_get_header(helper->event, "Caller-Destination-Number");
@@ -1002,36 +1012,42 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 					}
 
 					if (switch_strlen_zero(from_id)) {
-						switch_snprintf(status_line, sizeof(status_line), "Available");
+						switch_snprintf(status_line, sizeof(status_line), "On The Phone");
 					} else {
-						switch_snprintf(status_line, sizeof(status_line), "T %s", switch_str_nil(from_id));
-						rpid = "on-the-phone";
+						switch_snprintf(status_line, sizeof(status_line), "Talk %s", switch_str_nil(from_id));
 					}
+					rpid = "on-the-phone";
 				} else if (!strcmp(astate, "terminated")) {
-					switch_snprintf(status_line, sizeof(status_line), "Available");
+					if (!strcasecmp(rpid, "on-the-phone")) {
+						switch_snprintf(status_line, sizeof(status_line), "Dialing");
+					} else {
+						switch_snprintf(status_line, sizeof(status_line), "Available");
+					}
+				} else {
+					switch_set_string(status_line, status);
 				}
 
-				note = switch_mprintf("<dm:note>%s</dm:note>", status_line);
 				open = "open";
 			} else {
-				note = NULL;
 				open = "closed";
+			}
+			
+			if (!strncasecmp(status_line, "registered", 10)) {
+				switch_snprintf(status_line, sizeof(status_line), "Available");
 			}
 
 			prpid = translate_rpid(rpid);
-			pl = gen_pidf(user_agent, id, profile->url, open, rpid, prpid, status, note, &ct);
+			pl = gen_pidf(user_agent, clean_id, profile->url, open, rpid, prpid, status_line, &ct);
 		}
 
 	} else {
 		if (in) {
-			note = switch_mprintf("<dm:note>%s</dm:note>", status);
 			open = "open";
 		} else {
-			note = NULL;
 			open = "closed";
 		}
 		prpid = translate_rpid(rpid);
-		pl = gen_pidf(user_agent, id, profile->url, open, rpid, prpid, status, note, &ct);
+		pl = gen_pidf(user_agent, clean_id, profile->url, open, rpid, prpid, status, &ct);
 	}
 
 	switch_snprintf(exp, sizeof(exp), "active;expires=%ld", (long) exptime);
@@ -1042,7 +1058,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 	switch_safe_free(id);
 	switch_safe_free(clean_id);
-	switch_safe_free(note);
 	switch_safe_free(pl);
 	switch_safe_free(to);
 
