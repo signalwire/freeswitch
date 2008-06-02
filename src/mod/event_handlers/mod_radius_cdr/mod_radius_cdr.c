@@ -48,6 +48,7 @@ static char my_servers[SERVER_MAX][255];
 
 static rc_handle *my_radius_init(void)
 {
+	int i = 0;
 	rc_handle *rad_config;
 
 	rad_config = rc_new();
@@ -81,7 +82,7 @@ static rc_handle *my_radius_init(void)
 
 	/* Add the module configs to initialize rad_config */
 
-	for (int i = 0; i < SERVER_MAX && my_servers[i][0] != '\0'; i++) {
+	for (i = 0; i < SERVER_MAX && my_servers[i][0] != '\0'; i++) {
 		if (rc_add_config(rad_config, "acctserver", my_servers[i], cf, 0) != 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setting acctserver = %s failed\n", my_servers[i]);
 			rc_destroy(rad_config);
@@ -604,6 +605,7 @@ static switch_status_t load_config(void)
 	switch_xml_t cfg, xml, settings, param;
 
 	int num_servers = 0;
+	int i = 0;
 
 	my_timeout = "5";
 	my_retries = "3";
@@ -611,7 +613,7 @@ static switch_status_t load_config(void)
 	strncpy(my_seqfile, "/var/run/radius.seq", PATH_MAX - 1);
 	strncpy(my_dictionary, "/usr/local/freeswitch/conf/radius/dictionary", PATH_MAX - 1);
 
-	for (int i = 0; i < SERVER_MAX; i++) {
+	for (i = 0; i < SERVER_MAX; i++) {
 		my_servers[i][0] = '\0';
 	}
 
