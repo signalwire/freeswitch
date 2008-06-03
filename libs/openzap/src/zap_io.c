@@ -1105,6 +1105,7 @@ zap_status_t zap_channel_close(zap_channel_t **zchan)
 				*zchan = NULL;
 			}
 		}
+		check->ring_count = 0;
 		zap_mutex_unlock(check->mutex);
 	}
 	
