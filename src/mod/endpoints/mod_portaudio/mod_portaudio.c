@@ -107,6 +107,7 @@ static struct {
 	switch_mutex_t *device_lock;
 	switch_mutex_t *pvt_lock;
 	switch_mutex_t *flag_mutex;
+	switch_mutex_t *pa_mutex;
 	int sample_rate;
 	int codec_ms;
 	PABLIO_Stream *audio_stream;
@@ -332,10 +333,12 @@ static void add_pvt(private_t *tech_pvt, int master)
 	switch_mutex_lock(globals.pvt_lock);
 
 	if (*tech_pvt->call_id == '\0') {
+		switch_mutex_lock(globals.pa_mutex);
 		switch_snprintf(tech_pvt->call_id, sizeof(tech_pvt->call_id), "%d", ++globals.call_id);
 		switch_core_hash_insert(globals.call_hash, tech_pvt->call_id, tech_pvt);
 		switch_core_session_set_read_codec(tech_pvt->session, &globals.read_codec);
 		switch_core_session_set_write_codec(tech_pvt->session, &globals.write_codec);
+		switch_mutex_unlock(globals.pa_mutex);
 	}
 
 	for (tp = globals.call_list; tp; tp = tp->next) {
@@ -398,13 +401,15 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 {
 	private_t *tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
-
-	remove_pvt(tech_pvt);
+	
+	switch_mutex_lock(globals.pa_mutex);
+	switch_core_hash_delete(globals.call_hash, tech_pvt->call_id);
+	switch_mutex_unlock(globals.pa_mutex);
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	switch_set_flag_locked(tech_pvt, TFLAG_HUP);
 
-	switch_core_hash_delete(globals.call_hash, tech_pvt->call_id);
+	remove_pvt(tech_pvt);
 
 	if (tech_pvt->hfh) {
 		tech_pvt->hfh = NULL;
@@ -708,6 +713,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 	switch_mutex_init(&globals.device_lock, SWITCH_MUTEX_NESTED, module_pool);
 	switch_mutex_init(&globals.pvt_lock, SWITCH_MUTEX_NESTED, module_pool);
 	switch_mutex_init(&globals.flag_mutex, SWITCH_MUTEX_NESTED, module_pool);
+	switch_mutex_init(&globals.pa_mutex, SWITCH_MUTEX_NESTED, module_pool);
 
 	if (switch_event_reserve_subclass(MY_EVENT_RINGING) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
@@ -1554,6 +1560,9 @@ SWITCH_STANDARD_API(pa_cmd)
 		"pa outdev #<num>|<partial name>\n"
 		"pa ringdev #<num>|<partial name>\n" "--------------------------------------------------------------------------------\n";
 
+
+	switch_mutex_lock(globals.pa_mutex);
+
 	if (stream->param_event) {
 		http = switch_event_get_header(stream->param_event, "http-host");
 	}
@@ -1717,6 +1726,8 @@ SWITCH_STANDARD_API(pa_cmd)
 							   "<td><input name=action type=submit value=\"D\"></td></tr>\n" "</table>" "</form><br></center></td></tr></table>\n");
 	}
 
+	switch_mutex_lock(globals.pa_mutex);
+	
 	switch_safe_free(mycmd);
 	return status;
 }
