@@ -94,6 +94,8 @@ struct vm_profile {
 	char *callback_context;
 	char *email_body;
 	char *email_headers;
+	char *notify_email_body;
+	char *notify_email_headers;
 	char *web_head;
 	char *web_tail;
 	char *email_from;
@@ -272,6 +274,8 @@ static switch_status_t load_config(void)
 		char *callback_context = "default";
 		char *email_body = NULL;
 		char *email_headers = NULL;
+		char *notify_email_body = NULL;
+		char *notify_email_headers = NULL;
 		char *email_from = "";
 		char *date_fmt = "%A, %B %d %Y, %I %M %p";
 		char *web_head = NULL;
@@ -335,6 +339,36 @@ static switch_status_t load_config(void)
 						} else if ((email_body = strstr(email_headers, "\r\n\r\n"))) {
 							*email_body = '\0';
 							email_body += 4;
+						}
+					}
+					switch_safe_free(dpath);
+				} else if (!strcasecmp(var, "notify-template-file") && !switch_strlen_zero(val)) {
+					switch_stream_handle_t stream = { 0 };
+					int fd;
+					char *dpath = NULL;
+					char *path;
+
+					if (switch_is_file_path(val)) {
+						path = val;
+					} else {
+						dpath = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, val);
+						path = dpath;
+					}
+
+					if ((fd = open(path, O_RDONLY)) > -1) {
+						char buf[2048];
+						SWITCH_STANDARD_STREAM(stream);
+						while (switch_fd_read_line(fd, buf, sizeof(buf))) {
+							stream.write_function(&stream, "%s", buf);
+						}
+						close(fd);
+						notify_email_headers = stream.data;
+						if ((notify_email_body = strstr(notify_email_headers, "\n\n"))) {
+							*notify_email_body = '\0';
+							notify_email_body += 2;
+						} else if ((notify_email_body = strstr(notify_email_headers, "\r\n\r\n"))) {
+							*notify_email_body = '\0';
+							notify_email_body += 4;
 						}
 					}
 					switch_safe_free(dpath);
@@ -614,6 +648,13 @@ static switch_status_t load_config(void)
 
 			profile->email_body = email_body;
 			profile->email_headers = email_headers;
+			if (notify_email_headers) {
+				profile->notify_email_body = notify_email_body;
+				profile->notify_email_headers = notify_email_headers;
+			} else {
+				profile->notify_email_body = email_body;
+				profile->notify_email_headers = email_headers;
+			}
 			profile->email_from = switch_core_strdup(globals.pool, email_from);
 			profile->date_fmt = switch_core_strdup(globals.pool, date_fmt);
 
@@ -1676,7 +1717,6 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 	}
 }
 
-
 static switch_status_t voicemail_leave_main(switch_core_session_t *session, const char *profile_name, const char *domain_name, const char *id)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -1692,14 +1732,12 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	switch_file_handle_t fh = { 0 };
 	switch_input_args_t args = { 0 };
 	char *email_vm = NULL;
-	char *email_vm_notify = NULL;
+	char *email_notify_vm = NULL;
 	int send_mail = 0;
-	int send_mail_only = 0;
 	cc_t cc = { 0 };
 	char *read_flags = NORMAL_FLAG_STRING;
 	int priority = 3;
 	int email_attach = 1;
-	int email_delete = 1;
 	char buf[2];
 	char *greet_path = NULL;
 	const char *voicemail_greeting_number = NULL;
@@ -1709,6 +1747,9 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	switch_size_t retsize;
 	switch_time_t ts = switch_timestamp_now();
 	char *dbuf = NULL;
+	int send_main = 0;
+	int send_notify = 0;
+	int insert_db = 1;
 
 	memset(&cbt, 0, sizeof(cbt));
 	if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
@@ -1749,26 +1790,48 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 
 					if (!strcasecmp(var, "vm-mailto")) {
 						email_vm = switch_core_session_strdup(session, val);
-					} else if (!strcasecmp(var, "vm-mailto-notify")) {
-						email_vm_notify = switch_core_session_strdup(session, val);
+					} else if (!strcasecmp(var, "vm-notify-mailto")) {
+						email_notify_vm = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "email-addr")) {
-						email_addr = val;
-					} else if (!strcasecmp(var, "vm-email-only")) {
-						send_mail_only = switch_true(val);
+						email_addr = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-email-all-messages")) {
-						send_mail = switch_true(val);
-					} else if (!strcasecmp(var, "vm-delete-file")) {
-						email_delete = switch_true(val);
+						send_main = send_mail = switch_true(val);
+					} else if (!strcasecmp(var, "vm-notify-email-all-messages")) {
+						send_notify = send_mail = switch_true(val);
+					} else if (!strcasecmp(var, "vm-keep-local-after-email")) {
+						insert_db = switch_true(val);
 					} else if (!strcasecmp(var, "vm-attach-file")) {
 						email_attach = switch_true(val);
 					}
 				}
 			}
 
-			if (send_mail && switch_strlen_zero(email_vm) && !switch_strlen_zero(email_addr)) {
+			if (send_main && switch_strlen_zero(email_vm) && !switch_strlen_zero(email_addr)) {
 				email_vm = switch_core_session_strdup(session, email_addr);
+				if (switch_strlen_zero(email_vm)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No email address, not going to send email.\n");
+					send_main = 0;
+				}
 			}
 
+			if (send_notify && switch_strlen_zero(email_notify_vm)) {
+				email_notify_vm = email_vm;
+				if (switch_strlen_zero(email_notify_vm)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No notify email address, not going to notify.\n");
+					send_notify = 0;
+				}
+			}
+			
+			if (send_mail && (!(send_main || send_notify))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Falling back to leaving message locally due to too many misconfigurations.\n");
+				send_mail = 0;
+				insert_db = 1;
+			}
+
+			if (send_notify && !send_main) {
+				insert_db = 1;
+			}
+			
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", id, domain_name);
 			ok = 0;
@@ -1888,7 +1951,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 		}
 	}
 
-	if (!send_mail_only && switch_file_exists(file_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+	if (insert_db && switch_file_exists(file_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 		char *usql;
 		switch_event_t *event;
 		char *mwi_id = NULL;
@@ -1979,50 +2042,99 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 			from = switch_channel_expand_variables(channel, profile->email_headers);
 		}
 
-		if (switch_strlen_zero(profile->email_headers)) {
-			headers = switch_core_session_sprintf(session,
-												  "From: FreeSWITCH mod_voicemail <%s@%s>\n"
-												  "Subject: Voicemail from %s %s\nX-Priority: %d",
-												  id, domain_name, caller_profile->caller_id_name, caller_profile->caller_id_number, priority);
-		} else {
-			headers = switch_channel_expand_variables(channel, profile->email_headers);
-		}
-
-		p = headers + (strlen(headers) - 1);
-
-		if (*p == '\n') {
-			if (*(p - 1) == '\r') {
-				p--;
+		
+		if (send_main) {
+			if (switch_strlen_zero(profile->email_headers)) {
+				headers = switch_mprintf(
+										 "From: FreeSWITCH mod_voicemail <%s@%s>\n"
+										 "Subject: Voicemail from %s %s\nX-Priority: %d",
+										 id, domain_name, caller_profile->caller_id_name, caller_profile->caller_id_number, priority);
+			} else {
+				headers = switch_channel_expand_variables(channel, profile->email_headers);
 			}
-			*p = '\0';
+
+			p = headers + (strlen(headers) - 1);
+			
+			if (*p == '\n') {
+				if (*(p - 1) == '\r') {
+					p--;
+				}
+				*p = '\0';
+			}
+			
+			header_string = switch_core_session_sprintf(session, "%s\nX-Voicemail-Length: %u", headers, message_len);
+			
+			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_event_set_data(channel, event);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Message-Type", "voicemail");
+				switch_event_fire(&event);
+			}
+			
+			if (profile->email_body) {
+				body = switch_channel_expand_variables(channel, profile->email_body);
+			} else {
+				body = switch_mprintf("%u second Voicemail from %s %s", message_len, caller_profile->caller_id_name, caller_profile->caller_id_number);
+			}
+
+			if (email_attach) {
+				switch_simple_email(email_vm, from, header_string, body, file_path);
+			} else {
+				switch_simple_email(email_vm, from, header_string, body, NULL);
+			}
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending message to %s\n", email_vm);
+			switch_safe_free(body);
+
+			if (headers != profile->email_headers) {
+				switch_safe_free(headers);
+			}
 		}
 
-		header_string = switch_core_session_sprintf(session, "%s\nX-Voicemail-Length: %u", headers, message_len);
 
-		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-			switch_channel_event_set_data(channel, event);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Message-Type", "voicemail");
-			switch_event_fire(&event);
+		if (send_notify) {
+			if (switch_strlen_zero(profile->notify_email_headers)) {
+				headers = switch_mprintf(
+										 "From: FreeSWITCH mod_voicemail <%s@%s>\n"
+										 "Subject: Voicemail from %s %s\nX-Priority: %d",
+										 id, domain_name, caller_profile->caller_id_name, caller_profile->caller_id_number, priority);
+			} else {
+				headers = switch_channel_expand_variables(channel, profile->notify_email_headers);
+			}
+
+			p = headers + (strlen(headers) - 1);
+			
+			if (*p == '\n') {
+				if (*(p - 1) == '\r') {
+					p--;
+				}
+				*p = '\0';
+			}
+			
+			header_string = switch_core_session_sprintf(session, "%s\nX-Voicemail-Length: %u", headers, message_len);
+			
+			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_event_set_data(channel, event);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Message-Type", "voicemail-notify");
+				switch_event_fire(&event);
+			}
+			
+			if (profile->notify_email_body) {
+				body = switch_channel_expand_variables(channel, profile->notify_email_body);
+			} else {
+				body = switch_mprintf("%u second Voicemail from %s %s", message_len, caller_profile->caller_id_name, caller_profile->caller_id_number);
+			}
+
+			switch_simple_email(email_notify_vm, from, header_string, body, NULL);
+			
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending notify message to %s\n", email_notify_vm);
+			switch_safe_free(body);
+
+			if (headers != profile->notify_email_headers) {
+				switch_safe_free(headers);
+			}
 		}
 
-		if (profile->email_body) {
-			body = switch_channel_expand_variables(channel, profile->email_body);
-		} else {
-			body = switch_mprintf("%u second Voicemail from %s %s", message_len, caller_profile->caller_id_name, caller_profile->caller_id_number);
-		}
-
-		if (email_attach) {
-			switch_simple_email(email_vm, from, header_string, body, file_path);
-		} else {
-			switch_simple_email(email_vm, from, header_string, body, NULL);
-		}
-		if (!switch_strlen_zero(email_vm_notify)) {
-			switch_simple_email(email_vm_notify, from, header_string, body, NULL);
-		}
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending message to %s\n", email_vm);
-		switch_safe_free(body);
-		if (email_delete && send_mail_only) {
+		if (!insert_db) {
 			if (unlink(file_path) != 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "failed to delete file [%s]\n", file_path);
 			}
