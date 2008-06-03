@@ -5405,14 +5405,8 @@ static nta_incoming_t *incoming_find(nta_agent_t const *agent,
 
       /* From tag, Call-ID, and CSeq number has been matched above */
 
-      /* Match To tag  */
-      if (str0casecmp(irq->irq_to->a_tag, to->a_tag) &&
-	  /* Ignore failing match if tag has been set */
-	  /* and retransmitted request had no to tag */
-	  !(irq->irq_tag_set && to->a_tag == NULL))
-	;
       /* Match top Via header field */
-      else if (str0casecmp(irq->irq_via->v_branch, v->v_branch) != 0 ||
+      if (str0casecmp(irq->irq_via->v_branch, v->v_branch) != 0 ||
 	       strcasecmp(irq->irq_via->v_host, v->v_host) != 0 ||
 	       str0cmp(irq->irq_via->v_port, v->v_port) != 0)
 	;
@@ -5423,10 +5417,18 @@ static nta_incoming_t *incoming_find(nta_agent_t const *agent,
 	/* Match CSeq */
 	if (irq->irq_method == cseq->cs_method &&
 	    strcmp(irq->irq_cseq->cs_method_name, 
-		   cseq->cs_method_name) == 0)
-	  return irq;		/* found */
-
-	if (return_ack && irq->irq_method == sip_method_invite)
+		   cseq->cs_method_name) == 0) {
+	  /* Match To tag  */
+	  if (!str0casecmp(irq->irq_to->a_tag, to->a_tag))
+	    return irq;		/* found */
+	}
+	else if (
+	  /* Tag set by UAS */
+	  str0casecmp(irq->irq_tag, to->a_tag) &&
+	  /* Original tag */
+	  str0casecmp(irq->irq_to->a_tag, to->a_tag))
+	  ;
+	else if (return_ack && irq->irq_method == sip_method_invite)
 	  return *return_ack = irq, NULL;
 	else if (return_cancel && irq->irq_method != sip_method_ack)
 	  return *return_cancel = irq, NULL;
