@@ -43,6 +43,7 @@
       <param name="vmain-key" value="*"/>
       <email>
 	<param name="template-file" value="voicemail.tpl"/>
+	<param name="notify-template-file" value="notify-voicemail.tpl"/>
 	<!-- this is the format voicemail_time will have -->
         <param name="date-fmt" value="%A, %B %d %Y, %I %M %p"/>
         <param name="email-from" value="${voicemail_account}@${voicemail_domain}"/>
