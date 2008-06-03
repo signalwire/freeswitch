@@ -220,8 +220,8 @@ static switch_status_t consumer_read_frame_callback(switch_core_session_t *sessi
 {
 	fifo_node_t *node, **node_list = (fifo_node_t **) user_data;
 	int x = 0, total = 0, i = 0;
-
-	for (i = 0;; i++) {
+	
+	for (i = 0 ;; i++) {
 		if (!(node = node_list[i])) {
 			break;
 		}
@@ -448,8 +448,9 @@ SWITCH_STANDARD_APP(fifo_function)
 
 	check_string(announce);
 	check_string(moh);
+	switch_assert(node);
 
-	if (!consumer && node) {
+	if (!consumer) {
 		switch_core_session_t *other_session;
 		switch_channel_t *other_channel;
 		const char *uuid = switch_core_session_get_uuid(session);
@@ -740,11 +741,11 @@ SWITCH_STANDARD_APP(fifo_function)
 			pop = NULL;
 
 			if (moh && do_wait) {
-				switch_status_t moh_status = switch_ivr_play_file(session, NULL, moh, &args);
+				switch_status_t moh_status;
 				memset(&args, 0, sizeof(args));
 				args.read_frame_callback = consumer_read_frame_callback;
 				args.user_data = node_list;
-				switch_ivr_play_file(session, NULL, moh, &args);
+				moh_status = switch_ivr_play_file(session, NULL, moh, &args);
 
 				if (!SWITCH_READ_ACCEPTABLE(moh_status)) {
 					break;
