@@ -454,6 +454,29 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	return status;
 }
 
+static void process_import(switch_core_session_t *session, switch_channel_t *peer_channel)
+{
+	const char *import, *val;
+	switch_channel_t *caller_channel;
+
+	switch_assert(session && peer_channel);
+	caller_channel = switch_core_session_get_channel(session);
+	
+	if ((import = switch_channel_get_variable(caller_channel, "import"))) {
+		char *mydata = switch_core_session_strdup(session, import);
+		int i, argc;
+		char *argv[64] = { 0 };
+
+		if ((argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+			for(i = 0; i < argc; i++) {
+				if ((val = switch_channel_get_variable(peer_channel, argv[i]))) {
+					switch_channel_set_variable(caller_channel, argv[i], val);
+				}
+			}
+		}
+	}
+}
+
 #define MAX_PEERS 128
 SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *session,
 													 switch_core_session_t **bleg,
@@ -1172,6 +1195,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				peer_channel = peer_channels[idx];
 			} else {
 				status = SWITCH_STATUS_FALSE;
+				if (caller_channel) {
+					process_import(session, peer_channel);
+				}
 				peer_channel = NULL;
 				goto done;
 			}
@@ -1212,6 +1238,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			if (status == SWITCH_STATUS_SUCCESS) {
 				if (caller_channel) {
 					switch_channel_set_variable(caller_channel, "originate_disposition", "call accepted");
+					process_import(session, peer_channel);
 				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Resulted in Success: [%s]\n", switch_channel_get_name(peer_channel));
 				*cause = SWITCH_CAUSE_SUCCESS;
