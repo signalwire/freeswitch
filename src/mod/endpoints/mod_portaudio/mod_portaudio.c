@@ -1561,8 +1561,6 @@ SWITCH_STANDARD_API(pa_cmd)
 		"pa ringdev #<num>|<partial name>\n" "--------------------------------------------------------------------------------\n";
 
 
-	switch_mutex_lock(globals.pa_mutex);
-
 	if (stream->param_event) {
 		http = switch_event_get_header(stream->param_event, "http-host");
 	}
@@ -1679,7 +1677,11 @@ SWITCH_STANDARD_API(pa_cmd)
 		if (http) {
 			stream->write_function(stream, "<pre>");
 		}
+
+		switch_mutex_lock(globals.pa_mutex);
 		status = func(&argv[lead], argc - lead, stream);
+		switch_mutex_unlock(globals.pa_mutex);
+
 		if (http) {
 			stream->write_function(stream, "\n\n</pre>");
 		}
@@ -1726,8 +1728,6 @@ SWITCH_STANDARD_API(pa_cmd)
 							   "<td><input name=action type=submit value=\"D\"></td></tr>\n" "</table>" "</form><br></center></td></tr></table>\n");
 	}
 
-	switch_mutex_lock(globals.pa_mutex);
-	
 	switch_safe_free(mycmd);
 	return status;
 }
