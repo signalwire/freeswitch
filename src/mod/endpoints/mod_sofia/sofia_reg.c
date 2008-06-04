@@ -1033,14 +1033,15 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		domain_name = realm;
 	}
 
-	if (switch_xml_locate_user("id", username, domain_name, ip, &xml, &domain, &user, params) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user("id", switch_strlen_zero(username) ? "nobody" : username, 
+							   domain_name, ip, &xml, &domain, &user, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", username, domain_name);
 		ret = AUTH_FORBIDDEN;
 		goto end;
 	}
 	
 	if (!(mailbox = (char *) switch_xml_attr(user, "mailbox"))) {
-		mailbox = username;
+		mailbox = switch_strlen_zero(username) ? "nobody" : username;
 	}
 
 	dparams = switch_xml_child(domain, "params");
