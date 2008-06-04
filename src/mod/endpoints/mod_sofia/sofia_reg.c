@@ -1060,7 +1060,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 				passwd = val;
 			}
 
-			if (!strcasecmp(var, "auth_acl")) {
+			if (!strcasecmp(var, "auth-acl")) {
 				auth_acl = val;
 			}
 
@@ -1079,7 +1079,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 				passwd = val;
 			}
 
-			if (!strcasecmp(var, "auth_acl")) {
+			if (!strcasecmp(var, "auth-acl")) {
 				auth_acl = val;
 			}
 
