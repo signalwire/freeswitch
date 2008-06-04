@@ -785,8 +785,6 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 		if (ok && !(profile->pflags & PFLAG_BLIND_REG)) {
 			type = REG_AUTO_REGISTER;
 		} else if (!ok) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl %s\n", network_ip, profile->reg_acl[x]);
-			nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
 			goto end;
 		}
 	}
@@ -933,6 +931,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1] = "";
 	char *domain_name = NULL;
 	switch_event_t *params = NULL;
+	const char *auth_acl = NULL;
 
 	username = realm = nonce = uri = qop = cnonce = nc = response = NULL;
 
@@ -1037,7 +1036,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		ret = AUTH_FORBIDDEN;
 		goto end;
 	}
-
+	
 	if (!(mailbox = (char *) switch_xml_attr(user, "mailbox"))) {
 		mailbox = username;
 	}
@@ -1059,6 +1058,10 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 				passwd = val;
 			}
 
+			if (!strcasecmp(var, "auth_acl")) {
+				auth_acl = val;
+			}
+
 			if (!strcasecmp(var, "a1-hash")) {
 				a1_hash = val;
 			}
@@ -1074,9 +1077,21 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 				passwd = val;
 			}
 
+			if (!strcasecmp(var, "auth_acl")) {
+				auth_acl = val;
+			}
+
 			if (!strcasecmp(var, "a1-hash")) {
 				a1_hash = val;
 			}
+		}
+	}
+
+	if (auth_acl) {
+		if (!switch_check_network_list_ip(ip, auth_acl)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by user acl %s\n", ip, auth_acl);
+			ret = AUTH_FORBIDDEN;
+			goto end;
 		}
 	}
 
