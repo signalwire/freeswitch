@@ -613,7 +613,7 @@ int test_nua_params(struct context *ctx)
     TEST(refer_expires, (unsigned)-1);
     TEST(refer_with_id, -1);
     TEST(substate, -1);
-    TEST(sub_expires, -1);
+    TEST(sub_expires, (unsigned)-1);
 
     TEST_P(allow, NONE);
     TEST_S(allow_str, "NONE");
