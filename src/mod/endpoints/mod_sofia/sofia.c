@@ -1082,7 +1082,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							profile->dtmf_type = DTMF_NONE;
 						}
 					} else if (!strcasecmp(var, "NDLB-force-rport")) {
-						profile->rport_level = 2;
+						if (switch_true(val)) {
+							profile->rport_level = 2;
+						}
 					} else if (!strcasecmp(var, "record-template")) {
 						profile->record_template = switch_core_strdup(profile->pool, val);;
 					} else if (!strcasecmp(var, "inbound-no-media") && switch_true(val)) {
