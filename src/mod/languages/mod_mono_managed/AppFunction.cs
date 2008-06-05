@@ -46,6 +46,7 @@ namespace FreeSWITCH
         void hangupCallback()
         {
             Log.WriteLine(LogLevel.Debug, "AppFunction is in hangupCallback.");
+            abortRun();
             var f = HangupFunction;
             if (f != null) f();
         }
@@ -103,6 +104,18 @@ namespace FreeSWITCH
             }
         }
 
+        protected virtual bool AbortOnHangup { get { return false; } }
+        bool abortable = false;
+        readonly object abortLock = new object();
+        Thread runThread;
+        void abortRun()
+        {
+            if (!AbortOnHangup) return;
+            lock (abortLock) {
+                if (abortable) runThread.Abort();
+            }
+        }
+
         protected Guid Uuid { get; private set; }
 
         internal void RunInternal(FreeSWITCH.Native.MonoSession session, string args)
@@ -112,7 +125,19 @@ namespace FreeSWITCH
             Session.SetDelegates(this.inputCallback, this.hangupCallback);
             try { this.Uuid = new Guid(Session.GetUuid()); }
             catch { }
-            Run();
+            try {
+                runThread = Thread.CurrentThread;
+                lock (abortLock) abortable = true;
+                Run();
+            }
+            catch (ThreadAbortException) {
+                Log.WriteLine(LogLevel.Debug, "Run thread aborted.");
+                Thread.ResetAbort();
+            }
+            finally {
+                lock (abortLock) { abortable = false; }
+                Thread.ResetAbort();
+            }
         }
 
         protected abstract void Run();
