@@ -156,7 +156,8 @@ typedef enum {
 	SBF_EXEC_BLEG = (1 << 3),
 	SBF_EXEC_OPPOSITE = (1 << 4),
 	SBF_EXEC_SAME = (1 << 5)
-} switch_bind_flag_t;
+} switch_bind_flag_enum_t;
+typedef uint32_t switch_bind_flag_t;
 
 typedef enum {
 	SWITCH_DTMF_RECV = 0,
@@ -167,19 +168,22 @@ typedef enum {
 	SOF_NONE = 0,
 	SOF_NOBLOCK = (1 << 0),
 	SOF_FORKED_DIAL = (1 << 1)
-} switch_originate_flag_t;
+} switch_originate_flag_enum_t;
+typedef uint32_t switch_originate_flag_t;
 
 typedef enum {
 	SPF_NONE = 0,
 	SPF_ODD = (1 << 0),
 	SPF_EVEN = (1 << 1)
-} switch_port_flag_t;
+} switch_port_flag_enum_t;
+typedef uint32_t switch_port_flag_t;
 
 typedef enum {
 	ED_MUX_READ = (1 << 0),
 	ED_MUX_WRITE = (1 << 1),
 	ED_DTMF = (1 << 2)
-} switch_eavesdrop_flag_t;
+} switch_eavesdrop_flag_enum_t;
+typedef uint32_t switch_eavesdrop_flag_t;
 
 typedef enum {
 	SCF_NONE = 0,
@@ -187,7 +191,8 @@ typedef enum {
 	SCF_NO_NEW_SESSIONS = (1 << 1),
 	SCF_SHUTTING_DOWN = (1 << 2),
 	SCF_CRASH_PROT = (1 << 3)
-} switch_core_flag_t;
+} switch_core_flag_enum_t;
+typedef uint32_t switch_core_flag_t;
 
 typedef enum {
 	SWITCH_ENDPOINT_INTERFACE,
@@ -210,7 +215,8 @@ typedef enum {
 	SUF_THREAD_RUNNING = (1 << 0),
 	SUF_READY = (1 << 1),
 	SUF_NATIVE = (1 << 2)
-} switch_unicast_flag_t;
+} switch_unicast_flag_enum_t;
+typedef uint32_t switch_unicast_flag_t;
 
 typedef enum {
 	SWITCH_FALSE = 0,
@@ -256,7 +262,8 @@ typedef enum {
 	SSHF_OWN_THREAD = (1 << 0),
 	SSHF_FREE_ARG = (1 << 1),
 	SSHF_NO_DEL = (1 << 2)
-} switch_scheduler_flag_t;
+} switch_scheduler_flag_enum_t;
+typedef uint32_t switch_scheduler_flag_t;
 
 typedef enum {
 	SMF_NONE = 0,
@@ -266,7 +273,8 @@ typedef enum {
 	SMF_FORCE = (1 << 3),
 	SMF_LOOP = (1 << 4),
 	SMF_HOLD_BLEG = (1 << 5)
-} switch_media_flag_t;
+} switch_media_flag_enum_t;
+typedef uint32_t switch_media_flag_t;
 
 typedef enum {
 	SWITCH_BITPACK_MODE_RFC3551,
@@ -334,7 +342,8 @@ typedef enum {
 	SWITCH_CPF_SCREEN = (1 << 0),
 	SWITCH_CPF_HIDE_NAME = (1 << 1),
 	SWITCH_CPF_HIDE_NUMBER = (1 << 2)
-} switch_caller_profile_flag_t;
+} switch_caller_profile_flag_enum_t;
+typedef uint32_t switch_caller_profile_flag_t;
 
 typedef enum {
 	SWITCH_AUDIO_COL_STR_TITLE = 0x01,
@@ -351,7 +360,8 @@ typedef enum {
 	SWITCH_XML_SECTION_DIRECTORY = (1 << 1),
 	SWITCH_XML_SECTION_DIALPLAN = (1 << 2),
 	SWITCH_XML_SECTION_PHRASES = (1 << 3)
-} switch_xml_section_t;
+} switch_xml_section_enum_t;
+typedef uint32_t switch_xml_section_t;
 
 /*!
   \enum switch_vad_flag_t
@@ -368,7 +378,8 @@ typedef enum {
 	SWITCH_VAD_FLAG_EVENTS_TALK = (1 << 1),
 	SWITCH_VAD_FLAG_EVENTS_NOTALK = (1 << 2),
 	SWITCH_VAD_FLAG_CNG = (1 << 3)
-} switch_vad_flag_t;
+} switch_vad_flag_enum_t;
+typedef uint32_t switch_vad_flag_t;
 
 #define SWITCH_RTP_CNG_PAYLOAD 13
 
@@ -414,7 +425,8 @@ typedef enum {
 	SWITCH_RTP_FLAG_SECURE_RECV_RESET = (1 << 17),
 	SWITCH_RTP_FLAG_PROXY_MEDIA = (1 << 18),
 	SWITCH_RTP_FLAG_SHUTDOWN = (1 << 19)
-} switch_rtp_flag_t;
+} switch_rtp_flag_enum_t;
+typedef uint32_t switch_rtp_flag_t;
 
 
 #ifdef _MSC_VER
@@ -482,7 +494,8 @@ typedef enum {
 	SWITCH_IVR_OPTION_NONE = 0,
 	SWITCH_IVR_OPTION_ASYNC = (1 << 0),
 	SWITCH_IVR_OPTION_FILE = (1 << 1)
-} switch_ivr_option_t;
+} switch_ivr_option_enum_t;
+typedef uint32_t switch_ivr_option_t;
 
 /*!
   \enum switch_core_session_message_types_t
@@ -634,7 +647,8 @@ typedef enum {
 
 typedef enum {
 	SCSMF_DYNAMIC = (1 << 0)
-} switch_core_session_message_flag_t;
+} switch_core_session_message_flag_enum_t;
+typedef uint32_t switch_core_session_message_flag_t;
 
 #define SWITCH_CHANNEL_LOG SWITCH_CHANNEL_ID_LOG, __FILE__, __SWITCH_FUNC__, __LINE__, NULL
 #define SWITCH_CHANNEL_LOG_CLEAN SWITCH_CHANNEL_ID_LOG_CLEAN, __FILE__, __SWITCH_FUNC__, __LINE__, NULL
@@ -741,7 +755,8 @@ typedef enum {
 	CF_PROXY_MEDIA = (1 << 27),
 	CF_INNER_BRIDGE = (1 << 28),
 	CF_REQ_MEDIA = (1 << 29)
-} switch_channel_flag_t;
+} switch_channel_flag_enum_t;
+typedef uint32_t switch_channel_flag_t;
 
 
 /*!
@@ -764,13 +779,15 @@ typedef enum {
 	SFF_PLC = (1 << 3),
 	SFF_RFC2833 = (1 << 4),
 	SFF_PROXY_PACKET = (1 << 5)
-} switch_frame_flag_t;
+} switch_frame_flag_enum_t;
+typedef uint32_t switch_frame_flag_t;
 
 
 typedef enum {
 	SAF_NONE = 0,
 	SAF_SUPPORT_NOMEDIA = (1 << 0)
-} switch_application_flag_t;
+} switch_application_flag_enum_t;
+typedef uint32_t switch_application_flag_t;
 
 /*!
   \enum switch_signal_t
@@ -811,7 +828,8 @@ typedef enum {
 	SWITCH_CODEC_FLAG_FREE_POOL = (1 << 5),
 	SWITCH_CODEC_FLAG_AAL2 = (1 << 6),
 	SWITCH_CODEC_FLAG_PASSTHROUGH = (1 << 7)
-} switch_codec_flag_t;
+} switch_codec_flag_enum_t;
+typedef uint32_t switch_codec_flag_t;
 
 
 /*!
@@ -832,8 +850,8 @@ typedef enum {
 	SWITCH_SPEECH_FLAG_FREE_POOL = (1 << 2),
 	SWITCH_SPEECH_FLAG_BLOCKING = (1 << 3),
 	SWITCH_SPEECH_FLAG_PAUSE = (1 << 4)
-
-} switch_speech_flag_t;
+} switch_speech_flag_enum_t;
+typedef uint32_t switch_speech_flag_t;
 
 /*!
   \enum switch_asr_flag_t
@@ -853,7 +871,9 @@ typedef enum {
 	SWITCH_ASR_FLAG_CLOSED = (1 << 2),
 	SWITCH_ASR_FLAG_FIRE_EVENTS = (1 << 3),
 	SWITCH_ASR_FLAG_AUTO_RESUME = (1 << 4)
-} switch_asr_flag_t;
+
+} switch_asr_flag_enum_t;
+typedef uint32_t switch_asr_flag_t;
 
 /*!
   \enum switch_directory_flag_t
@@ -865,7 +885,8 @@ SWITCH_DIRECTORY_FLAG_FREE_POOL =		(1 <<  0) - Free interface's pool on destruct
 typedef enum {
 	SWITCH_DIRECTORY_FLAG_FREE_POOL = (1 << 0)
 
-} switch_directory_flag_t;
+} switch_directory_flag_enum_t;
+typedef uint32_t switch_directory_flag_t;
 
 /*!
   \enum switch_codec_type_t
@@ -894,7 +915,8 @@ SWITCH_TIMER_FLAG_FREE_POOL =		(1 <<  0) - Free timer's pool on destruction
 */
 typedef enum {
 	SWITCH_TIMER_FLAG_FREE_POOL = (1 << 0)
-} switch_timer_flag_t;
+} switch_timer_flag_enum_t;
+typedef uint32_t switch_timer_flag_t;
 
 
 /*!
@@ -920,7 +942,8 @@ typedef enum {
 	SMBF_STEREO = (1 << 5),
 	SMBF_RECORD_ANSWER_REQ = (1 << 6),
 	SMBF_THREAD_LOCK = (1 << 7)
-} switch_media_bug_flag_t;
+} switch_media_bug_flag_enum_t;
+typedef uint32_t switch_media_bug_flag_t;
 
 /*!
   \enum switch_file_flag_t
@@ -954,12 +977,14 @@ typedef enum {
 	SWITCH_FILE_SEEK = (1 << 10),
 	SWITCH_FILE_OPEN = (1 << 11),
 	SWITCH_FILE_CALLBACK = (1 << 12)
-} switch_file_flag_t;
+} switch_file_flag_enum_t;
+typedef uint32_t switch_file_flag_t;
 
 typedef enum {
 	SWITCH_IO_FLAG_NONE = 0,
 	SWITCH_IO_FLAG_NOBLOCK = (1 << 0)
-} switch_io_flag_t;
+} switch_io_flag_enum_t;
+typedef uint32_t switch_io_flag_t;
 
 /* make sure this is synced with the EVENT_NAMES array in switch_event.c
    also never put any new ones before EVENT_ALL
