@@ -735,7 +735,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 		while (switch_channel_ready(channel)) {
 			int x = 0, winner = -1;
-			switch_time_t longest = 0xFFFFFFFFFFFFFFFF / 2;
+			switch_time_t longest = (0xFFFFFFFFFFFFFFFFULL / 2);
 			uint32_t importance = 0, waiting = 0, most_waiting = 0;
 
 			pop = NULL;
