@@ -567,7 +567,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		node->nua = nua_create(profile->s_root,	/* Event loop */
 							   sofia_event_callback,	/* Callback for processing events */
 							   profile,	/* Additional data to pass to callback */
-							   NTATAG_SERVER_RPORT(2), NUTAG_URL(node->url), TAG_END());	/* Last tag should always finish the sequence */
+							   NTATAG_SERVER_RPORT(profile->rport_level), NUTAG_URL(node->url), TAG_END());	/* Last tag should always finish the sequence */
 
 		nua_set_params(node->nua,
 					   NUTAG_APPL_METHOD("OPTIONS"),
