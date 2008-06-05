@@ -761,17 +761,17 @@ static int nua_invite_client_request(nua_client_request_t *cr,
 {
   nua_handle_t *nh = cr->cr_owner;
   nua_dialog_usage_t *du = cr->cr_usage;
-  nua_session_usage_t *ss = nua_dialog_usage_private(du);
+  nua_session_usage_t *ss;
   int offer_sent = 0, retval;
   sip_time_t invite_timeout;
 
   if (du == NULL)		/* Call terminated */ 
     return nua_client_return(cr, SIP_481_NO_TRANSACTION, msg);
 
+  ss = NUA_DIALOG_USAGE_PRIVATE(du);
+
   if (ss->ss_state >= nua_callstate_terminating)
     return nua_client_return(cr, 900, "Session is terminating", msg);
-
-  assert(ss);
 
   invite_timeout = NH_PGET(nh, invite_timeout);
   if (invite_timeout == 0)
@@ -868,7 +868,7 @@ static int nua_invite_client_preliminary(nua_client_request_t *cr,
   nua_dialog_usage_t *du = cr->cr_usage;
   nua_session_usage_t *ss = nua_dialog_usage_private(du);
 
-  assert(sip); assert(ss);
+  assert(sip);
 
   if (ss && sip && sip->sip_rseq) {
     /* Handle 100rel responses */
@@ -1683,7 +1683,7 @@ static int nua_prack_client_request(nua_client_request_t *cr,
 {
   nua_handle_t *nh = cr->cr_owner;
   nua_dialog_usage_t *du = cr->cr_usage;
-  nua_session_usage_t *ss = nua_dialog_usage_private(du);
+  nua_session_usage_t *ss;
   nua_client_request_t *cri;
   int offer_sent = 0, answer_sent = 0, retval;
   int status = 0; char const *phrase = "PRACK Sent";
@@ -1691,7 +1691,8 @@ static int nua_prack_client_request(nua_client_request_t *cr,
 
   if (du == NULL)		/* Call terminated */
     return nua_client_return(cr, SIP_481_NO_TRANSACTION, msg);
-  assert(ss);
+
+  ss = NUA_DIALOG_USAGE_PRIVATE(du);
   if (ss->ss_state >= nua_callstate_terminating)
     return nua_client_return(cr, 900, "Session is terminating", msg);
 
@@ -2370,8 +2371,6 @@ int nua_invite_server_report(nua_server_request_t *sr, tagi_t const *tags)
     }
     return retval;
   }
-
-  assert(ss);
 
   /* Update session state */
   if (status < 300 || application != 0) {
@@ -3148,14 +3147,15 @@ static int nua_update_client_request(nua_client_request_t *cr,
 {
   nua_handle_t *nh = cr->cr_owner;
   nua_dialog_usage_t *du = cr->cr_usage;
-  nua_session_usage_t *ss = nua_dialog_usage_private(du);
+  nua_session_usage_t *ss;
   nua_server_request_t *sr;
   nua_client_request_t *cri;
   int offer_sent = 0, retval;
   
   if (du == NULL)		/* Call terminated */
     return nua_client_return(cr, SIP_481_NO_TRANSACTION, msg);
-  assert(ss);
+
+  ss = NUA_DIALOG_USAGE_PRIVATE(du);
   if (ss->ss_state >= nua_callstate_terminating)
     return nua_client_return(cr, 900, "Session is terminating", msg);
 
