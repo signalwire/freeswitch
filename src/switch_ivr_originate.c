@@ -1195,7 +1195,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				peer_channel = peer_channels[idx];
 			} else {
 				status = SWITCH_STATUS_FALSE;
-				if (caller_channel) {
+				if (caller_channel && peer_channel) {
 					process_import(session, peer_channel);
 				}
 				peer_channel = NULL;
@@ -1238,7 +1238,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			if (status == SWITCH_STATUS_SUCCESS) {
 				if (caller_channel) {
 					switch_channel_set_variable(caller_channel, "originate_disposition", "call accepted");
-					process_import(session, peer_channel);
+					if (peer_channel) {
+						process_import(session, peer_channel);
+					}
 				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Resulted in Success: [%s]\n", switch_channel_get_name(peer_channel));
 				*cause = SWITCH_CAUSE_SUCCESS;
