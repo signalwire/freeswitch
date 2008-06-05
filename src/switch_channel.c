@@ -1490,6 +1490,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	switch_event_t *event;
 	const char *uuid;
 	switch_core_session_t *other_session;
+	const char *var;
+	char *app;
 
 	switch_assert(channel != NULL);
 
@@ -1525,7 +1527,17 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 
 	switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Channel [%s] has been answered\n", channel->name);
+	if ((var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE))) {
+		char *arg = NULL;
 
+		app = switch_core_session_strdup(channel->session, var);
+
+		if ((arg = strchr(app, ' '))) {
+			*arg++ = '\0';
+		}
+
+		switch_core_session_execute_application(channel->session, app, arg);
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1549,17 +1561,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 	status = switch_core_session_receive_message(channel->session, &msg);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
-		const char *var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE);
-		char *app;
 		switch_channel_perform_mark_answered(channel, file, func, line);
-		if (var) {
-			char *arg = NULL;
-			app = switch_core_session_strdup(channel->session, var);
-			if ((arg = strchr(app, ' '))) {
-				*arg++ = '\0';
-			}
-			switch_core_session_execute_application(channel->session, app, arg);
-		}
 	} else {
 		switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 	}
