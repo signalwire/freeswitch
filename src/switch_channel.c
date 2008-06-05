@@ -1369,6 +1369,9 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_channel_t *channel, const char *file, const char *func, int line)
 {
+	const char *var;
+	char *app;
+
 	if (!switch_channel_test_flag(channel, CF_RING_READY)) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Ring-Ready %s!\n", channel->name);
 		switch_channel_set_flag(channel, CF_RING_READY);
@@ -1377,6 +1380,18 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_ch
 			channel->caller_profile->times->progress = switch_timestamp_now();
 			switch_mutex_unlock(channel->profile_mutex);
 		}
+
+		var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE);
+		if (var) {
+			char *arg = NULL;
+			app = switch_core_session_strdup(channel->session, var);
+			if ((arg = strchr(app, ' '))) {
+				*arg++ = '\0';
+			}
+			switch_core_session_execute_application(channel->session, app, arg);
+		}
+
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 
