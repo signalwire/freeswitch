@@ -82,7 +82,9 @@ SWITCH_STANDARD_APP(dial_function)
 
 SWITCH_STANDARD_APP(avoid_function)
 {
+#if 0
 	void *y = NULL;
+#endif
 	int x = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -92,7 +94,9 @@ SWITCH_STANDARD_APP(avoid_function)
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "I should never be called!.\n");
+#if 0
 	memset((void *) y, 0, 1000);
+#endif
 }
 
 SWITCH_STANDARD_APP(goto_function)
