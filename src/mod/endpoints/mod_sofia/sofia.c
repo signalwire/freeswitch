@@ -526,7 +526,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	profile->nua = nua_create(profile->s_root,	/* Event loop */
 							  sofia_event_callback,	/* Callback for processing events */
 							  profile,	/* Additional data to pass to callback */
-							  NUTAG_URL(profile->bindurl), TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), NUTAG_SIPS_URL(profile->tls_bindurl)), TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), NUTAG_CERTIFICATE_DIR(profile->tls_cert_dir)), TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), TPTAG_TLS_VERSION(profile->tls_version)), NTATAG_UDP_MTU(65536), NTATAG_SERVER_RPORT(2), TAG_IF(tportlog, TPTAG_LOG(1)), TAG_END());	/* Last tag should always finish the sequence */
+							  NUTAG_URL(profile->bindurl), TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), NUTAG_SIPS_URL(profile->tls_bindurl)), TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), NUTAG_CERTIFICATE_DIR(profile->tls_cert_dir)), TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), TPTAG_TLS_VERSION(profile->tls_version)), NTATAG_UDP_MTU(65536), NTATAG_SERVER_RPORT(profile->rport_level), TAG_IF(tportlog, TPTAG_LOG(1)), TAG_END());	/* Last tag should always finish the sequence */
 
 	if (!profile->nua) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s\n", profile->name);
@@ -1047,7 +1047,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				profile->dtmf_duration = 100;
 				profile->tls_version = 0;
 				profile->mflags = MFLAG_REFER | MFLAG_REGISTER;
-
+				profile->rport_level = 1;
+				
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
 					char *val = (char *) switch_xml_attr_soft(param, "value");
@@ -1080,6 +1081,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else {
 							profile->dtmf_type = DTMF_NONE;
 						}
+					} else if (!strcasecmp(var, "NDLB-force-rport")) {
+						profile->rport_level = 2;
 					} else if (!strcasecmp(var, "record-template")) {
 						profile->record_template = switch_core_strdup(profile->pool, val);;
 					} else if (!strcasecmp(var, "inbound-no-media") && switch_true(val)) {

@@ -338,7 +338,7 @@ struct sofia_profile {
 	uint32_t reg_acl_count;
 	char *nat_acl[SOFIA_MAX_ACL];
 	uint32_t nat_acl_count;
-
+	int rport_level;
 };
 
 struct private_object {
