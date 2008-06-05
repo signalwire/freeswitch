@@ -729,6 +729,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		for (r = 0; r < or_argc; r++) {
 			uint32_t hups;
+			char *p,*e = NULL;
+
 			reason = SWITCH_CAUSE_UNALLOCATED;
 			memset(peer_names, 0, sizeof(peer_names));
 			peer_session = NULL;
@@ -751,7 +753,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Originate attempt %d/%d in %d ms\n", try + 1, retries, sleep_ms);
 				switch_yield(sleep_ms * 1000);
 			}
+			
+			p = pipe_names[r];
+			while(p && *p) {
+				if (*p == '[') {
+					e = switch_find_end_paren(p, '[', ']');
+				}
 
+				if (e && p && *p == ',') {
+					*p = '|';
+				}
+
+				if (p == e) {
+					e = NULL;
+				}
+
+				p++;
+			}
+			
 			and_argc = switch_separate_string(pipe_names[r], ',', peer_names, (sizeof(peer_names) / sizeof(peer_names[0])));
 
 			if ((flags & SOF_NOBLOCK) && and_argc > 1) {
@@ -761,7 +780,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			for (i = 0; i < and_argc; i++) {
 				char *vdata;
-				char *e = NULL;
+				e = NULL;
 				chan_type = peer_names[i];
 
 				while (chan_type && *chan_type && *chan_type == ' ') {
@@ -862,7 +881,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				if (vdata) {
 					char *var_array[1024] = { 0 };
 					int var_count = 0;
-					if ((var_count = switch_separate_string(vdata, ',', var_array, (sizeof(var_array) / sizeof(var_array[0]))))) {
+					if ((var_count = switch_separate_string(vdata, '|', var_array, (sizeof(var_array) / sizeof(var_array[0]))))) {
 						int x = 0;
 						for (x = 0; x < var_count; x++) {
 							char *inner_var_array[2] = { 0 };
