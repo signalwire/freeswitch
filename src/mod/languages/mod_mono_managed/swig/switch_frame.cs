@@ -184,12 +184,12 @@ public class switch_frame : IDisposable {
     } 
   }
 
-  public switch_frame_flag_t flags {
+  public uint flags {
     set {
-      freeswitchPINVOKE.switch_frame_flags_set(swigCPtr, (int)value);
+      freeswitchPINVOKE.switch_frame_flags_set(swigCPtr, value);
     } 
     get {
-      switch_frame_flag_t ret = (switch_frame_flag_t)freeswitchPINVOKE.switch_frame_flags_get(swigCPtr);
+      uint ret = freeswitchPINVOKE.switch_frame_flags_get(swigCPtr);
       return ret;
     } 
   }

@@ -157,8 +157,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_core_media_bug_add(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_media_bug_p_void_enum_switch_abc_type_t__switch_bool_t callback, SWIGTYPE_p_void user_data, SWIGTYPE_p_time_t stop_time, switch_media_bug_flag_t flags, SWIGTYPE_p_p_switch_media_bug new_bug) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_media_bug_add(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_media_bug_p_void_enum_switch_abc_type_t__switch_bool_t.getCPtr(callback), SWIGTYPE_p_void.getCPtr(user_data), SWIGTYPE_p_time_t.getCPtr(stop_time), (int)flags, SWIGTYPE_p_p_switch_media_bug.getCPtr(new_bug));
+  public static switch_status_t switch_core_media_bug_add(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_media_bug_p_void_enum_switch_abc_type_t__switch_bool_t callback, SWIGTYPE_p_void user_data, SWIGTYPE_p_time_t stop_time, uint flags, SWIGTYPE_p_p_switch_media_bug new_bug) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_media_bug_add(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_media_bug_p_void_enum_switch_abc_type_t__switch_bool_t.getCPtr(callback), SWIGTYPE_p_void.getCPtr(user_data), SWIGTYPE_p_time_t.getCPtr(stop_time), flags, SWIGTYPE_p_p_switch_media_bug.getCPtr(new_bug));
     if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
@@ -220,8 +220,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_core_port_allocator_new(ushort start, ushort end, switch_port_flag_t flags, SWIGTYPE_p_p_switch_core_port_allocator new_allocator) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_port_allocator_new(start, end, (int)flags, SWIGTYPE_p_p_switch_core_port_allocator.getCPtr(new_allocator));
+  public static switch_status_t switch_core_port_allocator_new(ushort start, ushort end, uint flags, SWIGTYPE_p_p_switch_core_port_allocator new_allocator) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_port_allocator_new(start, end, flags, SWIGTYPE_p_p_switch_core_port_allocator.getCPtr(new_allocator));
     return ret;
   }
 
@@ -239,13 +239,13 @@ public class freeswitch {
     freeswitchPINVOKE.switch_core_port_allocator_destroy(SWIGTYPE_p_p_switch_core_port_allocator.getCPtr(alloc));
   }
 
-  public static switch_status_t switch_core_init(switch_core_flag_t flags, switch_bool_t console, SWIGTYPE_p_p_char err) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_init((int)flags, (int)console, SWIGTYPE_p_p_char.getCPtr(err));
+  public static switch_status_t switch_core_init(uint flags, switch_bool_t console, SWIGTYPE_p_p_char err) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_init(flags, (int)console, SWIGTYPE_p_p_char.getCPtr(err));
     return ret;
   }
 
-  public static switch_status_t switch_core_init_and_modload(switch_core_flag_t flags, switch_bool_t console, SWIGTYPE_p_p_char err) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_init_and_modload((int)flags, (int)console, SWIGTYPE_p_p_char.getCPtr(err));
+  public static switch_status_t switch_core_init_and_modload(uint flags, switch_bool_t console, SWIGTYPE_p_p_char err) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_init_and_modload(flags, (int)console, SWIGTYPE_p_p_char.getCPtr(err));
     return ret;
   }
 
@@ -543,8 +543,8 @@ public class freeswitch {
     freeswitchPINVOKE.switch_core_service_session(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_core_thread_session.getCPtr(thread_session), stream_id);
   }
 
-  public static switch_call_cause_t switch_core_session_outgoing_channel(SWIGTYPE_p_switch_core_session session, switch_event var_event, string endpoint_name, switch_caller_profile caller_profile, SWIGTYPE_p_p_switch_core_session new_session, SWIGTYPE_p_p_apr_pool_t pool, switch_originate_flag_t flags) {
-    switch_call_cause_t ret = (switch_call_cause_t)freeswitchPINVOKE.switch_core_session_outgoing_channel(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_event.getCPtr(var_event), endpoint_name, switch_caller_profile.getCPtr(caller_profile), SWIGTYPE_p_p_switch_core_session.getCPtr(new_session), SWIGTYPE_p_p_apr_pool_t.getCPtr(pool), (int)flags);
+  public static switch_call_cause_t switch_core_session_outgoing_channel(SWIGTYPE_p_switch_core_session session, switch_event var_event, string endpoint_name, switch_caller_profile caller_profile, SWIGTYPE_p_p_switch_core_session new_session, SWIGTYPE_p_p_apr_pool_t pool, uint flags) {
+    switch_call_cause_t ret = (switch_call_cause_t)freeswitchPINVOKE.switch_core_session_outgoing_channel(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_event.getCPtr(var_event), endpoint_name, switch_caller_profile.getCPtr(caller_profile), SWIGTYPE_p_p_switch_core_session.getCPtr(new_session), SWIGTYPE_p_p_apr_pool_t.getCPtr(pool), flags);
     return ret;
   }
 
@@ -593,18 +593,18 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_core_session_read_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_p_switch_frame frame, switch_io_flag_t flags, int stream_id) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_read_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_p_switch_frame.getCPtr(frame), (int)flags, stream_id);
+  public static switch_status_t switch_core_session_read_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_p_switch_frame frame, uint flags, int stream_id) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_read_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_p_switch_frame.getCPtr(frame), flags, stream_id);
     return ret;
   }
 
-  public static switch_status_t switch_core_session_read_video_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_p_switch_frame frame, switch_io_flag_t flags, int stream_id) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_read_video_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_p_switch_frame.getCPtr(frame), (int)flags, stream_id);
+  public static switch_status_t switch_core_session_read_video_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_p_switch_frame frame, uint flags, int stream_id) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_read_video_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_p_switch_frame.getCPtr(frame), flags, stream_id);
     return ret;
   }
 
-  public static switch_status_t switch_core_session_write_video_frame(SWIGTYPE_p_switch_core_session session, switch_frame frame, switch_io_flag_t flags, int stream_id) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_write_video_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_frame.getCPtr(frame), (int)flags, stream_id);
+  public static switch_status_t switch_core_session_write_video_frame(SWIGTYPE_p_switch_core_session session, switch_frame frame, uint flags, int stream_id) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_write_video_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_frame.getCPtr(frame), flags, stream_id);
     return ret;
   }
 
@@ -612,8 +612,8 @@ public class freeswitch {
     freeswitchPINVOKE.switch_core_session_reset(SWIGTYPE_p_switch_core_session.getCPtr(session), (int)flush_dtmf);
   }
 
-  public static switch_status_t switch_core_session_write_frame(SWIGTYPE_p_switch_core_session session, switch_frame frame, switch_io_flag_t flags, int stream_id) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_write_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_frame.getCPtr(frame), (int)flags, stream_id);
+  public static switch_status_t switch_core_session_write_frame(SWIGTYPE_p_switch_core_session session, switch_frame frame, uint flags, int stream_id) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_write_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_frame.getCPtr(frame), flags, stream_id);
     return ret;
   }
 
@@ -844,13 +844,13 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_core_speech_open(switch_speech_handle sh, string module_name, string voice_name, uint rate, uint interval, SWIGTYPE_p_switch_speech_flag_t flags, SWIGTYPE_p_apr_pool_t pool) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_speech_open(switch_speech_handle.getCPtr(sh), module_name, voice_name, rate, interval, SWIGTYPE_p_switch_speech_flag_t.getCPtr(flags), SWIGTYPE_p_apr_pool_t.getCPtr(pool));
+  public static switch_status_t switch_core_speech_open(switch_speech_handle sh, string module_name, string voice_name, uint rate, uint interval, SWIGTYPE_p_unsigned_long flags, SWIGTYPE_p_apr_pool_t pool) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_speech_open(switch_speech_handle.getCPtr(sh), module_name, voice_name, rate, interval, SWIGTYPE_p_unsigned_long.getCPtr(flags), SWIGTYPE_p_apr_pool_t.getCPtr(pool));
     return ret;
   }
 
-  public static switch_status_t switch_core_speech_feed_tts(switch_speech_handle sh, string text, SWIGTYPE_p_switch_speech_flag_t flags) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_speech_feed_tts(switch_speech_handle.getCPtr(sh), text, SWIGTYPE_p_switch_speech_flag_t.getCPtr(flags));
+  public static switch_status_t switch_core_speech_feed_tts(switch_speech_handle sh, string text, SWIGTYPE_p_unsigned_long flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_speech_feed_tts(switch_speech_handle.getCPtr(sh), text, SWIGTYPE_p_unsigned_long.getCPtr(flags));
     return ret;
   }
 
@@ -870,38 +870,38 @@ public class freeswitch {
     freeswitchPINVOKE.switch_core_speech_float_param_tts(switch_speech_handle.getCPtr(sh), param, val);
   }
 
-  public static switch_status_t switch_core_speech_read_tts(switch_speech_handle sh, SWIGTYPE_p_void data, SWIGTYPE_p_switch_size_t datalen, SWIGTYPE_p_unsigned_long rate, SWIGTYPE_p_switch_speech_flag_t flags) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_speech_read_tts(switch_speech_handle.getCPtr(sh), SWIGTYPE_p_void.getCPtr(data), SWIGTYPE_p_switch_size_t.getCPtr(datalen), SWIGTYPE_p_unsigned_long.getCPtr(rate), SWIGTYPE_p_switch_speech_flag_t.getCPtr(flags));
+  public static switch_status_t switch_core_speech_read_tts(switch_speech_handle sh, SWIGTYPE_p_void data, SWIGTYPE_p_switch_size_t datalen, SWIGTYPE_p_unsigned_long rate, SWIGTYPE_p_unsigned_long flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_speech_read_tts(switch_speech_handle.getCPtr(sh), SWIGTYPE_p_void.getCPtr(data), SWIGTYPE_p_switch_size_t.getCPtr(datalen), SWIGTYPE_p_unsigned_long.getCPtr(rate), SWIGTYPE_p_unsigned_long.getCPtr(flags));
     return ret;
   }
 
-  public static switch_status_t switch_core_speech_close(switch_speech_handle sh, SWIGTYPE_p_switch_speech_flag_t flags) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_speech_close(switch_speech_handle.getCPtr(sh), SWIGTYPE_p_switch_speech_flag_t.getCPtr(flags));
+  public static switch_status_t switch_core_speech_close(switch_speech_handle sh, SWIGTYPE_p_unsigned_long flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_speech_close(switch_speech_handle.getCPtr(sh), SWIGTYPE_p_unsigned_long.getCPtr(flags));
     return ret;
   }
 
-  public static switch_status_t switch_core_asr_open(switch_asr_handle ah, string module_name, string codec, int rate, string dest, SWIGTYPE_p_switch_asr_flag_t flags, SWIGTYPE_p_apr_pool_t pool) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_asr_open(switch_asr_handle.getCPtr(ah), module_name, codec, rate, dest, SWIGTYPE_p_switch_asr_flag_t.getCPtr(flags), SWIGTYPE_p_apr_pool_t.getCPtr(pool));
+  public static switch_status_t switch_core_asr_open(switch_asr_handle ah, string module_name, string codec, int rate, string dest, SWIGTYPE_p_unsigned_long flags, SWIGTYPE_p_apr_pool_t pool) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_asr_open(switch_asr_handle.getCPtr(ah), module_name, codec, rate, dest, SWIGTYPE_p_unsigned_long.getCPtr(flags), SWIGTYPE_p_apr_pool_t.getCPtr(pool));
     return ret;
   }
 
-  public static switch_status_t switch_core_asr_close(switch_asr_handle ah, SWIGTYPE_p_switch_asr_flag_t flags) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_asr_close(switch_asr_handle.getCPtr(ah), SWIGTYPE_p_switch_asr_flag_t.getCPtr(flags));
+  public static switch_status_t switch_core_asr_close(switch_asr_handle ah, SWIGTYPE_p_unsigned_long flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_asr_close(switch_asr_handle.getCPtr(ah), SWIGTYPE_p_unsigned_long.getCPtr(flags));
     return ret;
   }
 
-  public static switch_status_t switch_core_asr_feed(switch_asr_handle ah, SWIGTYPE_p_void data, uint len, SWIGTYPE_p_switch_asr_flag_t flags) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_asr_feed(switch_asr_handle.getCPtr(ah), SWIGTYPE_p_void.getCPtr(data), len, SWIGTYPE_p_switch_asr_flag_t.getCPtr(flags));
+  public static switch_status_t switch_core_asr_feed(switch_asr_handle ah, SWIGTYPE_p_void data, uint len, SWIGTYPE_p_unsigned_long flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_asr_feed(switch_asr_handle.getCPtr(ah), SWIGTYPE_p_void.getCPtr(data), len, SWIGTYPE_p_unsigned_long.getCPtr(flags));
     return ret;
   }
 
-  public static switch_status_t switch_core_asr_check_results(switch_asr_handle ah, SWIGTYPE_p_switch_asr_flag_t flags) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_asr_check_results(switch_asr_handle.getCPtr(ah), SWIGTYPE_p_switch_asr_flag_t.getCPtr(flags));
+  public static switch_status_t switch_core_asr_check_results(switch_asr_handle ah, SWIGTYPE_p_unsigned_long flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_asr_check_results(switch_asr_handle.getCPtr(ah), SWIGTYPE_p_unsigned_long.getCPtr(flags));
     return ret;
   }
 
-  public static switch_status_t switch_core_asr_get_results(switch_asr_handle ah, SWIGTYPE_p_p_char xmlstr, SWIGTYPE_p_switch_asr_flag_t flags) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_asr_get_results(switch_asr_handle.getCPtr(ah), SWIGTYPE_p_p_char.getCPtr(xmlstr), SWIGTYPE_p_switch_asr_flag_t.getCPtr(flags));
+  public static switch_status_t switch_core_asr_get_results(switch_asr_handle ah, SWIGTYPE_p_p_char xmlstr, SWIGTYPE_p_unsigned_long flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_asr_get_results(switch_asr_handle.getCPtr(ah), SWIGTYPE_p_p_char.getCPtr(xmlstr), SWIGTYPE_p_unsigned_long.getCPtr(flags));
     return ret;
   }
 
@@ -961,8 +961,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_core_flag_t switch_core_flags() {
-    switch_core_flag_t ret = (switch_core_flag_t)freeswitchPINVOKE.switch_core_flags();
+  public static uint switch_core_flags() {
+    uint ret = freeswitchPINVOKE.switch_core_flags();
     return ret;
   }
 
@@ -1371,8 +1371,8 @@ public class freeswitch {
     freeswitchPINVOKE.switch_channel_wait_for_state(SWIGTYPE_p_switch_channel.getCPtr(channel), SWIGTYPE_p_switch_channel.getCPtr(other_channel), (int)want_state);
   }
 
-  public static switch_status_t switch_channel_wait_for_flag(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t want_flag, switch_bool_t pres, uint to) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_wait_for_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)want_flag, (int)pres, to);
+  public static switch_status_t switch_channel_wait_for_flag(SWIGTYPE_p_switch_channel channel, uint want_flag, switch_bool_t pres, uint to) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_wait_for_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), want_flag, (int)pres, to);
     return ret;
   }
 
@@ -1500,31 +1500,31 @@ public class freeswitch {
     return ret;
   }
 
-  public static uint switch_channel_test_flag(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t flags) {
-    uint ret = freeswitchPINVOKE.switch_channel_test_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)flags);
+  public static uint switch_channel_test_flag(SWIGTYPE_p_switch_channel channel, uint flags) {
+    uint ret = freeswitchPINVOKE.switch_channel_test_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), flags);
     return ret;
   }
 
-  public static void switch_channel_set_flag(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t flags) {
-    freeswitchPINVOKE.switch_channel_set_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)flags);
+  public static void switch_channel_set_flag(SWIGTYPE_p_switch_channel channel, uint flags) {
+    freeswitchPINVOKE.switch_channel_set_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), flags);
   }
 
-  public static switch_bool_t switch_channel_set_flag_partner(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t flags) {
-    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_channel_set_flag_partner(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)flags);
+  public static switch_bool_t switch_channel_set_flag_partner(SWIGTYPE_p_switch_channel channel, uint flags) {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_channel_set_flag_partner(SWIGTYPE_p_switch_channel.getCPtr(channel), flags);
     return ret;
   }
 
-  public static switch_bool_t switch_channel_clear_flag_partner(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t flags) {
-    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_channel_clear_flag_partner(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)flags);
+  public static switch_bool_t switch_channel_clear_flag_partner(SWIGTYPE_p_switch_channel channel, uint flags) {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_channel_clear_flag_partner(SWIGTYPE_p_switch_channel.getCPtr(channel), flags);
     return ret;
   }
 
-  public static void switch_channel_set_state_flag(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t flags) {
-    freeswitchPINVOKE.switch_channel_set_state_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)flags);
+  public static void switch_channel_set_state_flag(SWIGTYPE_p_switch_channel channel, uint flags) {
+    freeswitchPINVOKE.switch_channel_set_state_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), flags);
   }
 
-  public static void switch_channel_clear_flag(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t flags) {
-    freeswitchPINVOKE.switch_channel_clear_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)flags);
+  public static void switch_channel_clear_flag(SWIGTYPE_p_switch_channel channel, uint flags) {
+    freeswitchPINVOKE.switch_channel_clear_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), flags);
   }
 
   public static switch_status_t switch_channel_perform_answer(SWIGTYPE_p_switch_channel channel, string file, string func, int line) {
@@ -1995,8 +1995,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_ivr_eavesdrop_session(SWIGTYPE_p_switch_core_session session, string uuid, string require_group, switch_eavesdrop_flag_t flags) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_eavesdrop_session(SWIGTYPE_p_switch_core_session.getCPtr(session), uuid, require_group, (int)flags);
+  public static switch_status_t switch_ivr_eavesdrop_session(SWIGTYPE_p_switch_core_session session, string uuid, string require_group, uint flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_eavesdrop_session(SWIGTYPE_p_switch_core_session.getCPtr(session), uuid, require_group, flags);
     return ret;
   }
 
@@ -2084,8 +2084,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_ivr_originate(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_p_switch_core_session bleg, SWIGTYPE_p_switch_call_cause_t cause, string bridgeto, uint timelimit_sec, switch_state_handler_table table, string cid_name_override, string cid_num_override, switch_caller_profile caller_profile_override, switch_originate_flag_t flags) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_originate(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_p_switch_core_session.getCPtr(bleg), SWIGTYPE_p_switch_call_cause_t.getCPtr(cause), bridgeto, timelimit_sec, switch_state_handler_table.getCPtr(table), cid_name_override, cid_num_override, switch_caller_profile.getCPtr(caller_profile_override), (int)flags);
+  public static switch_status_t switch_ivr_originate(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_p_switch_core_session bleg, SWIGTYPE_p_switch_call_cause_t cause, string bridgeto, uint timelimit_sec, switch_state_handler_table table, string cid_name_override, string cid_num_override, switch_caller_profile caller_profile_override, uint flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_originate(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_p_switch_core_session.getCPtr(bleg), SWIGTYPE_p_switch_call_cause_t.getCPtr(cause), bridgeto, timelimit_sec, switch_state_handler_table.getCPtr(table), cid_name_override, cid_num_override, switch_caller_profile.getCPtr(caller_profile_override), flags);
     return ret;
   }
 
@@ -2121,13 +2121,13 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_ivr_media(string uuid, switch_media_flag_t flags) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_media(uuid, (int)flags);
+  public static switch_status_t switch_ivr_media(string uuid, uint flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_media(uuid, flags);
     return ret;
   }
 
-  public static switch_status_t switch_ivr_nomedia(string uuid, switch_media_flag_t flags) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_nomedia(uuid, (int)flags);
+  public static switch_status_t switch_ivr_nomedia(string uuid, uint flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_nomedia(uuid, flags);
     return ret;
   }
 
@@ -2151,14 +2151,14 @@ public class freeswitch {
     return ret;
   }
 
-  public static uint switch_ivr_schedule_broadcast(SWIGTYPE_p_time_t runtime, string uuid, string path, switch_media_flag_t flags) {
-    uint ret = freeswitchPINVOKE.switch_ivr_schedule_broadcast(SWIGTYPE_p_time_t.getCPtr(runtime), uuid, path, (int)flags);
+  public static uint switch_ivr_schedule_broadcast(SWIGTYPE_p_time_t runtime, string uuid, string path, uint flags) {
+    uint ret = freeswitchPINVOKE.switch_ivr_schedule_broadcast(SWIGTYPE_p_time_t.getCPtr(runtime), uuid, path, flags);
     if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
-  public static switch_status_t switch_ivr_broadcast(string uuid, string path, switch_media_flag_t flags) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_broadcast(uuid, path, (int)flags);
+  public static switch_status_t switch_ivr_broadcast(string uuid, string path, uint flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_broadcast(uuid, path, flags);
     return ret;
   }
 
@@ -2292,8 +2292,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_ivr_bind_dtmf_meta_session(SWIGTYPE_p_switch_core_session session, uint key, switch_bind_flag_t bind_flags, string app) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_bind_dtmf_meta_session(SWIGTYPE_p_switch_core_session.getCPtr(session), key, (int)bind_flags, app);
+  public static switch_status_t switch_ivr_bind_dtmf_meta_session(SWIGTYPE_p_switch_core_session session, uint key, uint bind_flags, string app) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_bind_dtmf_meta_session(SWIGTYPE_p_switch_core_session.getCPtr(session), key, bind_flags, app);
     return ret;
   }
 
@@ -2359,13 +2359,13 @@ public class freeswitch {
     freeswitchPINVOKE.switch_rtp_release_port(ip, port);
   }
 
-  public static switch_status_t switch_rtp_create(SWIGTYPE_p_p_switch_rtp new_rtp_session, byte payload, uint samples_per_interval, uint ms_per_packet, switch_rtp_flag_t flags, string timer_name, SWIGTYPE_p_p_char err, SWIGTYPE_p_apr_pool_t pool) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_create(SWIGTYPE_p_p_switch_rtp.getCPtr(new_rtp_session), payload, samples_per_interval, ms_per_packet, (int)flags, timer_name, SWIGTYPE_p_p_char.getCPtr(err), SWIGTYPE_p_apr_pool_t.getCPtr(pool));
+  public static switch_status_t switch_rtp_create(SWIGTYPE_p_p_switch_rtp new_rtp_session, byte payload, uint samples_per_interval, uint ms_per_packet, uint flags, string timer_name, SWIGTYPE_p_p_char err, SWIGTYPE_p_apr_pool_t pool) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_create(SWIGTYPE_p_p_switch_rtp.getCPtr(new_rtp_session), payload, samples_per_interval, ms_per_packet, flags, timer_name, SWIGTYPE_p_p_char.getCPtr(err), SWIGTYPE_p_apr_pool_t.getCPtr(pool));
     return ret;
   }
 
-  public static SWIGTYPE_p_switch_rtp switch_rtp_new(string rx_host, ushort rx_port, string tx_host, ushort tx_port, byte payload, uint samples_per_interval, uint ms_per_packet, switch_rtp_flag_t flags, string timer_name, SWIGTYPE_p_p_char err, SWIGTYPE_p_apr_pool_t pool) {
-    IntPtr cPtr = freeswitchPINVOKE.switch_rtp_new(rx_host, rx_port, tx_host, tx_port, payload, samples_per_interval, ms_per_packet, (int)flags, timer_name, SWIGTYPE_p_p_char.getCPtr(err), SWIGTYPE_p_apr_pool_t.getCPtr(pool));
+  public static SWIGTYPE_p_switch_rtp switch_rtp_new(string rx_host, ushort rx_port, string tx_host, ushort tx_port, byte payload, uint samples_per_interval, uint ms_per_packet, uint flags, string timer_name, SWIGTYPE_p_p_char err, SWIGTYPE_p_apr_pool_t pool) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_rtp_new(rx_host, rx_port, tx_host, tx_port, payload, samples_per_interval, ms_per_packet, flags, timer_name, SWIGTYPE_p_p_char.getCPtr(err), SWIGTYPE_p_apr_pool_t.getCPtr(pool));
     SWIGTYPE_p_switch_rtp ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_rtp(cPtr, false);
     return ret;
   }
@@ -2411,17 +2411,17 @@ public class freeswitch {
     return ret;
   }
 
-  public static void switch_rtp_set_flag(SWIGTYPE_p_switch_rtp rtp_session, switch_rtp_flag_t flags) {
-    freeswitchPINVOKE.switch_rtp_set_flag(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), (int)flags);
+  public static void switch_rtp_set_flag(SWIGTYPE_p_switch_rtp rtp_session, uint flags) {
+    freeswitchPINVOKE.switch_rtp_set_flag(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), flags);
   }
 
-  public static uint switch_rtp_test_flag(SWIGTYPE_p_switch_rtp rtp_session, switch_rtp_flag_t flags) {
-    uint ret = freeswitchPINVOKE.switch_rtp_test_flag(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), (int)flags);
+  public static uint switch_rtp_test_flag(SWIGTYPE_p_switch_rtp rtp_session, uint flags) {
+    uint ret = freeswitchPINVOKE.switch_rtp_test_flag(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), flags);
     return ret;
   }
 
-  public static void switch_rtp_clear_flag(SWIGTYPE_p_switch_rtp rtp_session, switch_rtp_flag_t flags) {
-    freeswitchPINVOKE.switch_rtp_clear_flag(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), (int)flags);
+  public static void switch_rtp_clear_flag(SWIGTYPE_p_switch_rtp rtp_session, uint flags) {
+    freeswitchPINVOKE.switch_rtp_clear_flag(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), flags);
   }
 
   public static SWIGTYPE_p_switch_socket_t switch_rtp_get_rtp_socket(SWIGTYPE_p_switch_rtp rtp_session) {
@@ -2452,8 +2452,8 @@ public class freeswitch {
     freeswitchPINVOKE.switch_rtp_set_invald_handler(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), SWIGTYPE_p_f_p_switch_rtp_p_switch_socket_t_p_void_switch_size_t_p_switch_sockaddr_t__void.getCPtr(on_invalid));
   }
 
-  public static switch_status_t switch_rtp_read(SWIGTYPE_p_switch_rtp rtp_session, SWIGTYPE_p_void data, SWIGTYPE_p_unsigned_long datalen, SWIGTYPE_p_unsigned_char payload_type, SWIGTYPE_p_switch_frame_flag_t flags, switch_io_flag_t io_flags) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_read(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), SWIGTYPE_p_void.getCPtr(data), SWIGTYPE_p_unsigned_long.getCPtr(datalen), SWIGTYPE_p_unsigned_char.getCPtr(payload_type), SWIGTYPE_p_switch_frame_flag_t.getCPtr(flags), (int)io_flags);
+  public static switch_status_t switch_rtp_read(SWIGTYPE_p_switch_rtp rtp_session, SWIGTYPE_p_void data, SWIGTYPE_p_unsigned_long datalen, SWIGTYPE_p_unsigned_char payload_type, SWIGTYPE_p_unsigned_long flags, uint io_flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_read(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), SWIGTYPE_p_void.getCPtr(data), SWIGTYPE_p_unsigned_long.getCPtr(datalen), SWIGTYPE_p_unsigned_char.getCPtr(payload_type), SWIGTYPE_p_unsigned_long.getCPtr(flags), io_flags);
     return ret;
   }
 
@@ -2477,18 +2477,18 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_rtp_zerocopy_read(SWIGTYPE_p_switch_rtp rtp_session, SWIGTYPE_p_p_void data, SWIGTYPE_p_unsigned_long datalen, SWIGTYPE_p_unsigned_char payload_type, SWIGTYPE_p_switch_frame_flag_t flags, switch_io_flag_t io_flags) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_zerocopy_read(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), SWIGTYPE_p_p_void.getCPtr(data), SWIGTYPE_p_unsigned_long.getCPtr(datalen), SWIGTYPE_p_unsigned_char.getCPtr(payload_type), SWIGTYPE_p_switch_frame_flag_t.getCPtr(flags), (int)io_flags);
+  public static switch_status_t switch_rtp_zerocopy_read(SWIGTYPE_p_switch_rtp rtp_session, SWIGTYPE_p_p_void data, SWIGTYPE_p_unsigned_long datalen, SWIGTYPE_p_unsigned_char payload_type, SWIGTYPE_p_unsigned_long flags, uint io_flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_zerocopy_read(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), SWIGTYPE_p_p_void.getCPtr(data), SWIGTYPE_p_unsigned_long.getCPtr(datalen), SWIGTYPE_p_unsigned_char.getCPtr(payload_type), SWIGTYPE_p_unsigned_long.getCPtr(flags), io_flags);
     return ret;
   }
 
-  public static switch_status_t switch_rtp_zerocopy_read_frame(SWIGTYPE_p_switch_rtp rtp_session, switch_frame frame, switch_io_flag_t io_flagsm) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_zerocopy_read_frame(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), switch_frame.getCPtr(frame), (int)io_flagsm);
+  public static switch_status_t switch_rtp_zerocopy_read_frame(SWIGTYPE_p_switch_rtp rtp_session, switch_frame frame, uint io_flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_zerocopy_read_frame(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), switch_frame.getCPtr(frame), io_flags);
     return ret;
   }
 
-  public static switch_status_t switch_rtp_enable_vad(SWIGTYPE_p_switch_rtp rtp_session, SWIGTYPE_p_switch_core_session session, switch_codec codec, switch_vad_flag_t flags) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_enable_vad(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), SWIGTYPE_p_switch_core_session.getCPtr(session), switch_codec.getCPtr(codec), (int)flags);
+  public static switch_status_t switch_rtp_enable_vad(SWIGTYPE_p_switch_rtp rtp_session, SWIGTYPE_p_switch_core_session session, switch_codec codec, uint flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_enable_vad(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), SWIGTYPE_p_switch_core_session.getCPtr(session), switch_codec.getCPtr(codec), flags);
     return ret;
   }
 
@@ -2502,8 +2502,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static int switch_rtp_write_manual(SWIGTYPE_p_switch_rtp rtp_session, SWIGTYPE_p_void data, uint datalen, byte m, byte payload, uint ts, SWIGTYPE_p_switch_frame_flag_t flags) {
-    int ret = freeswitchPINVOKE.switch_rtp_write_manual(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), SWIGTYPE_p_void.getCPtr(data), datalen, m, payload, ts, SWIGTYPE_p_switch_frame_flag_t.getCPtr(flags));
+  public static int switch_rtp_write_manual(SWIGTYPE_p_switch_rtp rtp_session, SWIGTYPE_p_void data, uint datalen, byte m, byte payload, uint ts, SWIGTYPE_p_unsigned_long flags) {
+    int ret = freeswitchPINVOKE.switch_rtp_write_manual(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), SWIGTYPE_p_void.getCPtr(data), datalen, m, payload, ts, SWIGTYPE_p_unsigned_long.getCPtr(flags));
     return ret;
   }
 
@@ -2732,18 +2732,18 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_xml_bind_search_function(SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_q_const__char_p_switch_event_t_p_void__p_switch_xml function, switch_xml_section_t sections, SWIGTYPE_p_void user_data) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_xml_bind_search_function(SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_q_const__char_p_switch_event_t_p_void__p_switch_xml.getCPtr(function), (int)sections, SWIGTYPE_p_void.getCPtr(user_data));
+  public static switch_status_t switch_xml_bind_search_function(SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_q_const__char_p_switch_event_t_p_void__p_switch_xml function, uint sections, SWIGTYPE_p_void user_data) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_xml_bind_search_function(SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_q_const__char_p_switch_event_t_p_void__p_switch_xml.getCPtr(function), sections, SWIGTYPE_p_void.getCPtr(user_data));
     return ret;
   }
 
-  public static switch_xml_section_t switch_xml_parse_section_string(string str) {
-    switch_xml_section_t ret = (switch_xml_section_t)freeswitchPINVOKE.switch_xml_parse_section_string(str);
+  public static uint switch_xml_parse_section_string(string str) {
+    uint ret = freeswitchPINVOKE.switch_xml_parse_section_string(str);
     return ret;
   }
 
-  public static switch_status_t switch_core_event_hook_add_outgoing_channel(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_switch_event_p_switch_caller_profile_p_switch_core_session_enum_switch_originate_flag_t__switch_status_t outgoing_channel) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_add_outgoing_channel(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_switch_event_p_switch_caller_profile_p_switch_core_session_enum_switch_originate_flag_t__switch_status_t.getCPtr(outgoing_channel));
+  public static switch_status_t switch_core_event_hook_add_outgoing_channel(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_switch_event_p_switch_caller_profile_p_switch_core_session_unsigned_long__switch_status_t outgoing_channel) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_add_outgoing_channel(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_switch_event_p_switch_caller_profile_p_switch_core_session_unsigned_long__switch_status_t.getCPtr(outgoing_channel));
     return ret;
   }
 
@@ -2762,23 +2762,23 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_core_event_hook_add_read_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t read_frame) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_add_read_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t.getCPtr(read_frame));
+  public static switch_status_t switch_core_event_hook_add_read_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t read_frame) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_add_read_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t.getCPtr(read_frame));
     return ret;
   }
 
-  public static switch_status_t switch_core_event_hook_add_write_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t write_frame) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_add_write_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t.getCPtr(write_frame));
+  public static switch_status_t switch_core_event_hook_add_write_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_unsigned_long_int__switch_status_t write_frame) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_add_write_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_unsigned_long_int__switch_status_t.getCPtr(write_frame));
     return ret;
   }
 
-  public static switch_status_t switch_core_event_hook_add_video_read_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t video_read_frame) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_add_video_read_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t.getCPtr(video_read_frame));
+  public static switch_status_t switch_core_event_hook_add_video_read_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t video_read_frame) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_add_video_read_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t.getCPtr(video_read_frame));
     return ret;
   }
 
-  public static switch_status_t switch_core_event_hook_add_video_write_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t video_write_frame) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_add_video_write_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t.getCPtr(video_write_frame));
+  public static switch_status_t switch_core_event_hook_add_video_write_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_unsigned_long_int__switch_status_t video_write_frame) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_add_video_write_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_unsigned_long_int__switch_status_t.getCPtr(video_write_frame));
     return ret;
   }
 
@@ -2802,8 +2802,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_core_event_hook_remove_outgoing_channel(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_switch_event_p_switch_caller_profile_p_switch_core_session_enum_switch_originate_flag_t__switch_status_t outgoing_channel) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_remove_outgoing_channel(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_switch_event_p_switch_caller_profile_p_switch_core_session_enum_switch_originate_flag_t__switch_status_t.getCPtr(outgoing_channel));
+  public static switch_status_t switch_core_event_hook_remove_outgoing_channel(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_switch_event_p_switch_caller_profile_p_switch_core_session_unsigned_long__switch_status_t outgoing_channel) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_remove_outgoing_channel(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_switch_event_p_switch_caller_profile_p_switch_core_session_unsigned_long__switch_status_t.getCPtr(outgoing_channel));
     return ret;
   }
 
@@ -2822,23 +2822,23 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_core_event_hook_remove_read_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t read_frame) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_remove_read_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t.getCPtr(read_frame));
+  public static switch_status_t switch_core_event_hook_remove_read_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t read_frame) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_remove_read_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t.getCPtr(read_frame));
     return ret;
   }
 
-  public static switch_status_t switch_core_event_hook_remove_write_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t write_frame) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_remove_write_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t.getCPtr(write_frame));
+  public static switch_status_t switch_core_event_hook_remove_write_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_unsigned_long_int__switch_status_t write_frame) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_remove_write_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_unsigned_long_int__switch_status_t.getCPtr(write_frame));
     return ret;
   }
 
-  public static switch_status_t switch_core_event_hook_remove_video_read_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t video_read_frame) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_remove_video_read_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t.getCPtr(video_read_frame));
+  public static switch_status_t switch_core_event_hook_remove_video_read_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t video_read_frame) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_remove_video_read_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t.getCPtr(video_read_frame));
     return ret;
   }
 
-  public static switch_status_t switch_core_event_hook_remove_video_write_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t video_write_frame) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_remove_video_write_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t.getCPtr(video_write_frame));
+  public static switch_status_t switch_core_event_hook_remove_video_write_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_unsigned_long_int__switch_status_t video_write_frame) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_remove_video_write_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_unsigned_long_int__switch_status_t.getCPtr(video_write_frame));
     return ret;
   }
 
@@ -2862,8 +2862,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static uint switch_scheduler_add_task(SWIGTYPE_p_time_t task_runtime, SWIGTYPE_p_f_p_switch_scheduler_task__void func, string desc, string group, uint cmd_id, SWIGTYPE_p_void cmd_arg, switch_scheduler_flag_t flags) {
-    uint ret = freeswitchPINVOKE.switch_scheduler_add_task(SWIGTYPE_p_time_t.getCPtr(task_runtime), SWIGTYPE_p_f_p_switch_scheduler_task__void.getCPtr(func), desc, group, cmd_id, SWIGTYPE_p_void.getCPtr(cmd_arg), (int)flags);
+  public static uint switch_scheduler_add_task(SWIGTYPE_p_time_t task_runtime, SWIGTYPE_p_f_p_switch_scheduler_task__void func, string desc, string group, uint cmd_id, SWIGTYPE_p_void cmd_arg, uint flags) {
+    uint ret = freeswitchPINVOKE.switch_scheduler_add_task(SWIGTYPE_p_time_t.getCPtr(task_runtime), SWIGTYPE_p_f_p_switch_scheduler_task__void.getCPtr(func), desc, group, cmd_id, SWIGTYPE_p_void.getCPtr(cmd_arg), flags);
     if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }

@@ -49,46 +49,46 @@ public class switch_speech_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_f_p_switch_speech_handle_p_q_const__char_int_p_enum_switch_speech_flag_t__switch_status_t speech_open {
+  public SWIGTYPE_p_f_p_switch_speech_handle_p_q_const__char_int_p_unsigned_long__switch_status_t speech_open {
     set {
-      freeswitchPINVOKE.switch_speech_interface_speech_open_set(swigCPtr, SWIGTYPE_p_f_p_switch_speech_handle_p_q_const__char_int_p_enum_switch_speech_flag_t__switch_status_t.getCPtr(value));
+      freeswitchPINVOKE.switch_speech_interface_speech_open_set(swigCPtr, SWIGTYPE_p_f_p_switch_speech_handle_p_q_const__char_int_p_unsigned_long__switch_status_t.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_speech_interface_speech_open_get(swigCPtr);
-      SWIGTYPE_p_f_p_switch_speech_handle_p_q_const__char_int_p_enum_switch_speech_flag_t__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_speech_handle_p_q_const__char_int_p_enum_switch_speech_flag_t__switch_status_t(cPtr, false);
+      SWIGTYPE_p_f_p_switch_speech_handle_p_q_const__char_int_p_unsigned_long__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_speech_handle_p_q_const__char_int_p_unsigned_long__switch_status_t(cPtr, false);
       return ret;
     } 
   }
 
-  public SWIGTYPE_p_f_p_switch_speech_handle_p_enum_switch_speech_flag_t__switch_status_t speech_close {
+  public SWIGTYPE_p_f_p_switch_speech_handle_p_unsigned_long__switch_status_t speech_close {
     set {
-      freeswitchPINVOKE.switch_speech_interface_speech_close_set(swigCPtr, SWIGTYPE_p_f_p_switch_speech_handle_p_enum_switch_speech_flag_t__switch_status_t.getCPtr(value));
+      freeswitchPINVOKE.switch_speech_interface_speech_close_set(swigCPtr, SWIGTYPE_p_f_p_switch_speech_handle_p_unsigned_long__switch_status_t.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_speech_interface_speech_close_get(swigCPtr);
-      SWIGTYPE_p_f_p_switch_speech_handle_p_enum_switch_speech_flag_t__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_speech_handle_p_enum_switch_speech_flag_t__switch_status_t(cPtr, false);
+      SWIGTYPE_p_f_p_switch_speech_handle_p_unsigned_long__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_speech_handle_p_unsigned_long__switch_status_t(cPtr, false);
       return ret;
     } 
   }
 
-  public SWIGTYPE_p_f_p_switch_speech_handle_p_char_p_enum_switch_speech_flag_t__switch_status_t speech_feed_tts {
+  public SWIGTYPE_p_f_p_switch_speech_handle_p_char_p_unsigned_long__switch_status_t speech_feed_tts {
     set {
-      freeswitchPINVOKE.switch_speech_interface_speech_feed_tts_set(swigCPtr, SWIGTYPE_p_f_p_switch_speech_handle_p_char_p_enum_switch_speech_flag_t__switch_status_t.getCPtr(value));
+      freeswitchPINVOKE.switch_speech_interface_speech_feed_tts_set(swigCPtr, SWIGTYPE_p_f_p_switch_speech_handle_p_char_p_unsigned_long__switch_status_t.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_speech_interface_speech_feed_tts_get(swigCPtr);
-      SWIGTYPE_p_f_p_switch_speech_handle_p_char_p_enum_switch_speech_flag_t__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_speech_handle_p_char_p_enum_switch_speech_flag_t__switch_status_t(cPtr, false);
+      SWIGTYPE_p_f_p_switch_speech_handle_p_char_p_unsigned_long__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_speech_handle_p_char_p_unsigned_long__switch_status_t(cPtr, false);
       return ret;
     } 
   }
 
-  public SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long_p_enum_switch_speech_flag_t__switch_status_t speech_read_tts {
+  public SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long_p_unsigned_long__switch_status_t speech_read_tts {
     set {
-      freeswitchPINVOKE.switch_speech_interface_speech_read_tts_set(swigCPtr, SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long_p_enum_switch_speech_flag_t__switch_status_t.getCPtr(value));
+      freeswitchPINVOKE.switch_speech_interface_speech_read_tts_set(swigCPtr, SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long_p_unsigned_long__switch_status_t.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_speech_interface_speech_read_tts_get(swigCPtr);
-      SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long_p_enum_switch_speech_flag_t__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long_p_enum_switch_speech_flag_t__switch_status_t(cPtr, false);
+      SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long_p_unsigned_long__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long_p_unsigned_long__switch_status_t(cPtr, false);
       return ret;
     } 
   }

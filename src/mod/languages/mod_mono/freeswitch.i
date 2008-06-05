@@ -23,6 +23,7 @@
 %ignore setDTMFCallback;
 
 // Rename some things to make them more .NET-like
+//%csmethodmodifiers CoreSession::hangup "internal";
 %rename (Answer) CoreSession::answer;
 %rename (Hangup) CoreSession::hangup;
 %rename (Ready) CoreSession::ready;

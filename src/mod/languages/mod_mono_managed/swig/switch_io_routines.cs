@@ -39,35 +39,35 @@ public class switch_io_routines : IDisposable {
     }
   }
 
-  public SWIGTYPE_p_f_p_switch_core_session_p_switch_event_p_switch_caller_profile_p_p_switch_core_session_p_p_apr_pool_t_enum_switch_originate_flag_t__switch_call_cause_t outgoing_channel {
+  public SWIGTYPE_p_f_p_switch_core_session_p_switch_event_p_switch_caller_profile_p_p_switch_core_session_p_p_apr_pool_t_unsigned_long__switch_call_cause_t outgoing_channel {
     set {
-      freeswitchPINVOKE.switch_io_routines_outgoing_channel_set(swigCPtr, SWIGTYPE_p_f_p_switch_core_session_p_switch_event_p_switch_caller_profile_p_p_switch_core_session_p_p_apr_pool_t_enum_switch_originate_flag_t__switch_call_cause_t.getCPtr(value));
+      freeswitchPINVOKE.switch_io_routines_outgoing_channel_set(swigCPtr, SWIGTYPE_p_f_p_switch_core_session_p_switch_event_p_switch_caller_profile_p_p_switch_core_session_p_p_apr_pool_t_unsigned_long__switch_call_cause_t.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_io_routines_outgoing_channel_get(swigCPtr);
-      SWIGTYPE_p_f_p_switch_core_session_p_switch_event_p_switch_caller_profile_p_p_switch_core_session_p_p_apr_pool_t_enum_switch_originate_flag_t__switch_call_cause_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_core_session_p_switch_event_p_switch_caller_profile_p_p_switch_core_session_p_p_apr_pool_t_enum_switch_originate_flag_t__switch_call_cause_t(cPtr, false);
+      SWIGTYPE_p_f_p_switch_core_session_p_switch_event_p_switch_caller_profile_p_p_switch_core_session_p_p_apr_pool_t_unsigned_long__switch_call_cause_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_core_session_p_switch_event_p_switch_caller_profile_p_p_switch_core_session_p_p_apr_pool_t_unsigned_long__switch_call_cause_t(cPtr, false);
       return ret;
     } 
   }
 
-  public SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t read_frame {
+  public SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t read_frame {
     set {
-      freeswitchPINVOKE.switch_io_routines_read_frame_set(swigCPtr, SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t.getCPtr(value));
+      freeswitchPINVOKE.switch_io_routines_read_frame_set(swigCPtr, SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_io_routines_read_frame_get(swigCPtr);
-      SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t(cPtr, false);
+      SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t(cPtr, false);
       return ret;
     } 
   }
 
-  public SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t write_frame {
+  public SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_unsigned_long_int__switch_status_t write_frame {
     set {
-      freeswitchPINVOKE.switch_io_routines_write_frame_set(swigCPtr, SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t.getCPtr(value));
+      freeswitchPINVOKE.switch_io_routines_write_frame_set(swigCPtr, SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_unsigned_long_int__switch_status_t.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_io_routines_write_frame_get(swigCPtr);
-      SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t(cPtr, false);
+      SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_unsigned_long_int__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_unsigned_long_int__switch_status_t(cPtr, false);
       return ret;
     } 
   }
@@ -127,24 +127,24 @@ public class switch_io_routines : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t read_video_frame {
+  public SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t read_video_frame {
     set {
-      freeswitchPINVOKE.switch_io_routines_read_video_frame_set(swigCPtr, SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t.getCPtr(value));
+      freeswitchPINVOKE.switch_io_routines_read_video_frame_set(swigCPtr, SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_io_routines_read_video_frame_get(swigCPtr);
-      SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t(cPtr, false);
+      SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t(cPtr, false);
       return ret;
     } 
   }
 
-  public SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t write_video_frame {
+  public SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_unsigned_long_int__switch_status_t write_video_frame {
     set {
-      freeswitchPINVOKE.switch_io_routines_write_video_frame_set(swigCPtr, SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t.getCPtr(value));
+      freeswitchPINVOKE.switch_io_routines_write_video_frame_set(swigCPtr, SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_unsigned_long_int__switch_status_t.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_io_routines_write_video_frame_get(swigCPtr);
-      SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t(cPtr, false);
+      SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_unsigned_long_int__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_unsigned_long_int__switch_status_t(cPtr, false);
       return ret;
     } 
   }

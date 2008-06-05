@@ -179,13 +179,13 @@ public class switch_codec_implementation : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_flag_t_p_q_const__switch_codec_settings__switch_status_t init {
+  public SWIGTYPE_p_f_p_switch_codec_unsigned_long_p_q_const__switch_codec_settings__switch_status_t init {
     set {
-      freeswitchPINVOKE.switch_codec_implementation_init_set(swigCPtr, SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_flag_t_p_q_const__switch_codec_settings__switch_status_t.getCPtr(value));
+      freeswitchPINVOKE.switch_codec_implementation_init_set(swigCPtr, SWIGTYPE_p_f_p_switch_codec_unsigned_long_p_q_const__switch_codec_settings__switch_status_t.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_codec_implementation_init_get(swigCPtr);
-      SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_flag_t_p_q_const__switch_codec_settings__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_codec_enum_switch_codec_flag_t_p_q_const__switch_codec_settings__switch_status_t(cPtr, false);
+      SWIGTYPE_p_f_p_switch_codec_unsigned_long_p_q_const__switch_codec_settings__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_codec_unsigned_long_p_q_const__switch_codec_settings__switch_status_t(cPtr, false);
       return ret;
     } 
   }

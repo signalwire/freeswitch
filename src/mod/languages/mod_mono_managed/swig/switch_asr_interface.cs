@@ -49,13 +49,13 @@ public class switch_asr_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_f_p_switch_asr_handle_p_q_const__char_int_p_q_const__char_p_enum_switch_asr_flag_t__switch_status_t asr_open {
+  public SWIGTYPE_p_f_p_switch_asr_handle_p_q_const__char_int_p_q_const__char_p_unsigned_long__switch_status_t asr_open {
     set {
-      freeswitchPINVOKE.switch_asr_interface_asr_open_set(swigCPtr, SWIGTYPE_p_f_p_switch_asr_handle_p_q_const__char_int_p_q_const__char_p_enum_switch_asr_flag_t__switch_status_t.getCPtr(value));
+      freeswitchPINVOKE.switch_asr_interface_asr_open_set(swigCPtr, SWIGTYPE_p_f_p_switch_asr_handle_p_q_const__char_int_p_q_const__char_p_unsigned_long__switch_status_t.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_asr_interface_asr_open_get(swigCPtr);
-      SWIGTYPE_p_f_p_switch_asr_handle_p_q_const__char_int_p_q_const__char_p_enum_switch_asr_flag_t__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_asr_handle_p_q_const__char_int_p_q_const__char_p_enum_switch_asr_flag_t__switch_status_t(cPtr, false);
+      SWIGTYPE_p_f_p_switch_asr_handle_p_q_const__char_int_p_q_const__char_p_unsigned_long__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_asr_handle_p_q_const__char_int_p_q_const__char_p_unsigned_long__switch_status_t(cPtr, false);
       return ret;
     } 
   }
@@ -82,24 +82,24 @@ public class switch_asr_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_f_p_switch_asr_handle_p_enum_switch_asr_flag_t__switch_status_t asr_close {
+  public SWIGTYPE_p_f_p_switch_asr_handle_p_unsigned_long__switch_status_t asr_close {
     set {
-      freeswitchPINVOKE.switch_asr_interface_asr_close_set(swigCPtr, SWIGTYPE_p_f_p_switch_asr_handle_p_enum_switch_asr_flag_t__switch_status_t.getCPtr(value));
+      freeswitchPINVOKE.switch_asr_interface_asr_close_set(swigCPtr, SWIGTYPE_p_f_p_switch_asr_handle_p_unsigned_long__switch_status_t.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_asr_interface_asr_close_get(swigCPtr);
-      SWIGTYPE_p_f_p_switch_asr_handle_p_enum_switch_asr_flag_t__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_asr_handle_p_enum_switch_asr_flag_t__switch_status_t(cPtr, false);
+      SWIGTYPE_p_f_p_switch_asr_handle_p_unsigned_long__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_asr_handle_p_unsigned_long__switch_status_t(cPtr, false);
       return ret;
     } 
   }
 
-  public SWIGTYPE_p_f_p_switch_asr_handle_p_void_unsigned_int_p_enum_switch_asr_flag_t__switch_status_t asr_feed {
+  public SWIGTYPE_p_f_p_switch_asr_handle_p_void_unsigned_int_p_unsigned_long__switch_status_t asr_feed {
     set {
-      freeswitchPINVOKE.switch_asr_interface_asr_feed_set(swigCPtr, SWIGTYPE_p_f_p_switch_asr_handle_p_void_unsigned_int_p_enum_switch_asr_flag_t__switch_status_t.getCPtr(value));
+      freeswitchPINVOKE.switch_asr_interface_asr_feed_set(swigCPtr, SWIGTYPE_p_f_p_switch_asr_handle_p_void_unsigned_int_p_unsigned_long__switch_status_t.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_asr_interface_asr_feed_get(swigCPtr);
-      SWIGTYPE_p_f_p_switch_asr_handle_p_void_unsigned_int_p_enum_switch_asr_flag_t__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_asr_handle_p_void_unsigned_int_p_enum_switch_asr_flag_t__switch_status_t(cPtr, false);
+      SWIGTYPE_p_f_p_switch_asr_handle_p_void_unsigned_int_p_unsigned_long__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_asr_handle_p_void_unsigned_int_p_unsigned_long__switch_status_t(cPtr, false);
       return ret;
     } 
   }
@@ -126,24 +126,24 @@ public class switch_asr_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_f_p_switch_asr_handle_p_enum_switch_asr_flag_t__switch_status_t asr_check_results {
+  public SWIGTYPE_p_f_p_switch_asr_handle_p_unsigned_long__switch_status_t asr_check_results {
     set {
-      freeswitchPINVOKE.switch_asr_interface_asr_check_results_set(swigCPtr, SWIGTYPE_p_f_p_switch_asr_handle_p_enum_switch_asr_flag_t__switch_status_t.getCPtr(value));
+      freeswitchPINVOKE.switch_asr_interface_asr_check_results_set(swigCPtr, SWIGTYPE_p_f_p_switch_asr_handle_p_unsigned_long__switch_status_t.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_asr_interface_asr_check_results_get(swigCPtr);
-      SWIGTYPE_p_f_p_switch_asr_handle_p_enum_switch_asr_flag_t__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_asr_handle_p_enum_switch_asr_flag_t__switch_status_t(cPtr, false);
+      SWIGTYPE_p_f_p_switch_asr_handle_p_unsigned_long__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_asr_handle_p_unsigned_long__switch_status_t(cPtr, false);
       return ret;
     } 
   }
 
-  public SWIGTYPE_p_f_p_switch_asr_handle_p_p_char_p_enum_switch_asr_flag_t__switch_status_t asr_get_results {
+  public SWIGTYPE_p_f_p_switch_asr_handle_p_p_char_p_unsigned_long__switch_status_t asr_get_results {
     set {
-      freeswitchPINVOKE.switch_asr_interface_asr_get_results_set(swigCPtr, SWIGTYPE_p_f_p_switch_asr_handle_p_p_char_p_enum_switch_asr_flag_t__switch_status_t.getCPtr(value));
+      freeswitchPINVOKE.switch_asr_interface_asr_get_results_set(swigCPtr, SWIGTYPE_p_f_p_switch_asr_handle_p_p_char_p_unsigned_long__switch_status_t.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_asr_interface_asr_get_results_get(swigCPtr);
-      SWIGTYPE_p_f_p_switch_asr_handle_p_p_char_p_enum_switch_asr_flag_t__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_asr_handle_p_p_char_p_enum_switch_asr_flag_t__switch_status_t(cPtr, false);
+      SWIGTYPE_p_f_p_switch_asr_handle_p_p_char_p_unsigned_long__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_asr_handle_p_p_char_p_unsigned_long__switch_status_t(cPtr, false);
       return ret;
     } 
   }

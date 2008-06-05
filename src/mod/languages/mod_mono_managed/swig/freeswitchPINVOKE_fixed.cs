@@ -1680,10 +1680,10 @@ return _res; }
   public static extern IntPtr switch_core_session_message_pointer_reply_size_get(HandleRef jarg1);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_core_session_message_flags_set")]
-  public static extern void switch_core_session_message_flags_set(HandleRef jarg1, int jarg2);
+  public static extern void switch_core_session_message_flags_set(HandleRef jarg1, uint jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_core_session_message_flags_get")]
-  public static extern int switch_core_session_message_flags_get(HandleRef jarg1);
+  public static extern uint switch_core_session_message_flags_get(HandleRef jarg1);
 
   [DllImport("mod_mono", EntryPoint="CSharp_new_switch_core_session_message")]
   public static extern IntPtr new_switch_core_session_message();
@@ -1728,7 +1728,7 @@ return _res; }
   public static extern void delete_switch_core_thread_session(HandleRef jarg1);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_core_media_bug_add")]
-  public static extern int switch_core_media_bug_add(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, int jarg5, HandleRef jarg6);
+  public static extern int switch_core_media_bug_add(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, uint jarg5, HandleRef jarg6);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_core_media_bug_get_user_data")]
   public static extern IntPtr switch_core_media_bug_get_user_data(HandleRef jarg1);
@@ -1764,7 +1764,7 @@ return _res; }
   public static extern int switch_core_media_bug_read(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_core_port_allocator_new")]
-  public static extern int switch_core_port_allocator_new(ushort jarg1, ushort jarg2, int jarg3, HandleRef jarg4);
+  public static extern int switch_core_port_allocator_new(ushort jarg1, ushort jarg2, uint jarg3, HandleRef jarg4);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_core_port_allocator_request_port")]
   public static extern int switch_core_port_allocator_request_port(HandleRef jarg1, HandleRef jarg2);
@@ -1776,10 +1776,10 @@ return _res; }
   public static extern void switch_core_port_allocator_destroy(HandleRef jarg1);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_core_init")]
-  public static extern int switch_core_init(int jarg1, int jarg2, HandleRef jarg3);
+  public static extern int switch_core_init(uint jarg1, int jarg2, HandleRef jarg3);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_core_init_and_modload")]
-  public static extern int switch_core_init_and_modload(int jarg1, int jarg2, HandleRef jarg3);
+  public static extern int switch_core_init_and_modload(uint jarg1, int jarg2, HandleRef jarg3);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_core_session_limit")]
   public static extern uint switch_core_session_limit(uint jarg1);
@@ -1996,7 +1996,7 @@ return _res; }
   public static extern void switch_core_service_session(HandleRef jarg1, HandleRef jarg2, int jarg3);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_core_session_outgoing_channel")]
-  public static extern int switch_core_session_outgoing_channel(HandleRef jarg1, HandleRef jarg2, string jarg3, HandleRef jarg4, HandleRef jarg5, HandleRef jarg6, int jarg7);
+  public static extern int switch_core_session_outgoing_channel(HandleRef jarg1, HandleRef jarg2, string jarg3, HandleRef jarg4, HandleRef jarg5, HandleRef jarg6, uint jarg7);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_core_session_resurrect_channel")]
   public static extern int switch_core_session_resurrect_channel(string jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4);
@@ -2026,19 +2026,19 @@ return _res; }
   public static extern uint switch_core_session_flush_private_events(HandleRef jarg1);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_core_session_read_frame")]
-  public static extern int switch_core_session_read_frame(HandleRef jarg1, HandleRef jarg2, int jarg3, int jarg4);
+  public static extern int switch_core_session_read_frame(HandleRef jarg1, HandleRef jarg2, uint jarg3, int jarg4);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_core_session_read_video_frame")]
-  public static extern int switch_core_session_read_video_frame(HandleRef jarg1, HandleRef jarg2, int jarg3, int jarg4);
+  public static extern int switch_core_session_read_video_frame(HandleRef jarg1, HandleRef jarg2, uint jarg3, int jarg4);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_core_session_write_video_frame")]
-  public static extern int switch_core_session_write_video_frame(HandleRef jarg1, HandleRef jarg2, int jarg3, int jarg4);
+  public static extern int switch_core_session_write_video_frame(HandleRef jarg1, HandleRef jarg2, uint jarg3, int jarg4);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_core_session_reset")]
   public static extern void switch_core_session_reset(HandleRef jarg1, int jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_core_session_write_frame")]
-  public static extern int switch_core_session_write_frame(HandleRef jarg1, HandleRef jarg2, int jarg3, int jarg4);
+  public static extern int switch_core_session_write_frame(HandleRef jarg1, HandleRef jarg2, uint jarg3, int jarg4);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_core_session_perform_kill_channel")]
   public static extern int switch_core_session_perform_kill_channel(HandleRef jarg1, string jarg2, string jarg3, int jarg4, int jarg5);
@@ -2253,7 +2253,7 @@ return _res; }
   public static extern int switch_core_ready();
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_core_flags")]
-  public static extern int switch_core_flags();
+  public static extern uint switch_core_flags();
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_core_management_exec")]
   public static extern int switch_core_management_exec(string jarg1, int jarg2, string jarg3, HandleRef jarg4);
@@ -2747,10 +2747,10 @@ System.Runtime.InteropServices.Marshal.FreeCoTaskMem(_ptr);
 return _res; }
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_caller_profile_flags_set")]
-  public static extern void switch_caller_profile_flags_set(HandleRef jarg1, int jarg2);
+  public static extern void switch_caller_profile_flags_set(HandleRef jarg1, uint jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_caller_profile_flags_get")]
-  public static extern int switch_caller_profile_flags_get(HandleRef jarg1);
+  public static extern uint switch_caller_profile_flags_get(HandleRef jarg1);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_caller_profile_originator_caller_profile_set")]
   public static extern void switch_caller_profile_originator_caller_profile_set(HandleRef jarg1, HandleRef jarg2);
@@ -3008,10 +3008,10 @@ return _res; }
   public static extern int switch_frame_m_get(HandleRef jarg1);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_frame_flags_set")]
-  public static extern void switch_frame_flags_set(HandleRef jarg1, int jarg2);
+  public static extern void switch_frame_flags_set(HandleRef jarg1, uint jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_frame_flags_get")]
-  public static extern int switch_frame_flags_get(HandleRef jarg1);
+  public static extern uint switch_frame_flags_get(HandleRef jarg1);
 
   [DllImport("mod_mono", EntryPoint="CSharp_new_switch_frame")]
   public static extern IntPtr new_switch_frame();
@@ -4721,7 +4721,7 @@ return _res; }
   public static extern void switch_channel_wait_for_state(HandleRef jarg1, HandleRef jarg2, int jarg3);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_channel_wait_for_flag")]
-  public static extern int switch_channel_wait_for_flag(HandleRef jarg1, int jarg2, int jarg3, uint jarg4);
+  public static extern int switch_channel_wait_for_flag(HandleRef jarg1, uint jarg2, int jarg3, uint jarg4);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_channel_perform_set_state")]
   public static extern int switch_channel_perform_set_state(HandleRef jarg1, string jarg2, string jarg3, int jarg4, int jarg5);
@@ -4819,22 +4819,22 @@ return _res; }
   public static extern IntPtr switch_channel_get_caller_extension(HandleRef jarg1);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_channel_test_flag")]
-  public static extern uint switch_channel_test_flag(HandleRef jarg1, int jarg2);
+  public static extern uint switch_channel_test_flag(HandleRef jarg1, uint jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_channel_set_flag")]
-  public static extern void switch_channel_set_flag(HandleRef jarg1, int jarg2);
+  public static extern void switch_channel_set_flag(HandleRef jarg1, uint jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_channel_set_flag_partner")]
-  public static extern int switch_channel_set_flag_partner(HandleRef jarg1, int jarg2);
+  public static extern int switch_channel_set_flag_partner(HandleRef jarg1, uint jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_channel_clear_flag_partner")]
-  public static extern int switch_channel_clear_flag_partner(HandleRef jarg1, int jarg2);
+  public static extern int switch_channel_clear_flag_partner(HandleRef jarg1, uint jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_channel_set_state_flag")]
-  public static extern void switch_channel_set_state_flag(HandleRef jarg1, int jarg2);
+  public static extern void switch_channel_set_state_flag(HandleRef jarg1, uint jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_channel_clear_flag")]
-  public static extern void switch_channel_clear_flag(HandleRef jarg1, int jarg2);
+  public static extern void switch_channel_clear_flag(HandleRef jarg1, uint jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_channel_perform_answer")]
   public static extern int switch_channel_perform_answer(HandleRef jarg1, string jarg2, string jarg3, int jarg4);
@@ -5533,7 +5533,7 @@ return _res; }
   public static extern int switch_ivr_record_session(HandleRef jarg1, string jarg2, uint jarg3, HandleRef jarg4);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_ivr_eavesdrop_session")]
-  public static extern int switch_ivr_eavesdrop_session(HandleRef jarg1, string jarg2, string jarg3, int jarg4);
+  public static extern int switch_ivr_eavesdrop_session(HandleRef jarg1, string jarg2, string jarg3, uint jarg4);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_ivr_displace_session")]
   public static extern int switch_ivr_displace_session(HandleRef jarg1, string jarg2, uint jarg3, string jarg4);
@@ -5587,7 +5587,7 @@ return _res; }
   public static extern int switch_ivr_speak_text(HandleRef jarg1, string jarg2, string jarg3, string jarg4, HandleRef jarg5);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_ivr_originate")]
-  public static extern int switch_ivr_originate(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, string jarg4, uint jarg5, HandleRef jarg6, string jarg7, string jarg8, HandleRef jarg9, int jarg10);
+  public static extern int switch_ivr_originate(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, string jarg4, uint jarg5, HandleRef jarg6, string jarg7, string jarg8, HandleRef jarg9, uint jarg10);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_ivr_multi_threaded_bridge")]
   public static extern int switch_ivr_multi_threaded_bridge(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, HandleRef jarg5);
@@ -5608,10 +5608,10 @@ return _res; }
   public static extern int switch_ivr_uuid_bridge(string jarg1, string jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_ivr_media")]
-  public static extern int switch_ivr_media(string jarg1, int jarg2);
+  public static extern int switch_ivr_media(string jarg1, uint jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_ivr_nomedia")]
-  public static extern int switch_ivr_nomedia(string jarg1, int jarg2);
+  public static extern int switch_ivr_nomedia(string jarg1, uint jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_ivr_hold_uuid")]
   public static extern int switch_ivr_hold_uuid(string jarg1, string jarg2, int jarg3);
@@ -5626,10 +5626,10 @@ return _res; }
   public static extern int switch_ivr_unhold(HandleRef jarg1);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_ivr_schedule_broadcast")]
-  public static extern uint switch_ivr_schedule_broadcast(HandleRef jarg1, string jarg2, string jarg3, int jarg4);
+  public static extern uint switch_ivr_schedule_broadcast(HandleRef jarg1, string jarg2, string jarg3, uint jarg4);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_ivr_broadcast")]
-  public static extern int switch_ivr_broadcast(string jarg1, string jarg2, int jarg3);
+  public static extern int switch_ivr_broadcast(string jarg1, string jarg2, uint jarg3);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_ivr_transfer_variable")]
   public static extern int switch_ivr_transfer_variable(HandleRef jarg1, HandleRef jarg2, string jarg3);
@@ -5710,7 +5710,7 @@ return _res; }
   public static extern int switch_ivr_read(HandleRef jarg1, uint jarg2, uint jarg3, string jarg4, string jarg5, string jarg6, HandleRef jarg7, uint jarg8, string jarg9);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_ivr_bind_dtmf_meta_session")]
-  public static extern int switch_ivr_bind_dtmf_meta_session(HandleRef jarg1, uint jarg2, int jarg3, string jarg4);
+  public static extern int switch_ivr_bind_dtmf_meta_session(HandleRef jarg1, uint jarg2, uint jarg3, string jarg4);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_ivr_unbind_dtmf_meta_session")]
   public static extern int switch_ivr_unbind_dtmf_meta_session(HandleRef jarg1);
@@ -5813,10 +5813,10 @@ return _res; }
   public static extern void switch_rtp_release_port(string jarg1, ushort jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_rtp_create")]
-  public static extern int switch_rtp_create(HandleRef jarg1, byte jarg2, uint jarg3, uint jarg4, int jarg5, string jarg6, HandleRef jarg7, HandleRef jarg8);
+  public static extern int switch_rtp_create(HandleRef jarg1, byte jarg2, uint jarg3, uint jarg4, uint jarg5, string jarg6, HandleRef jarg7, HandleRef jarg8);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_rtp_new")]
-  public static extern IntPtr switch_rtp_new(string jarg1, ushort jarg2, string jarg3, ushort jarg4, byte jarg5, uint jarg6, uint jarg7, int jarg8, string jarg9, HandleRef jarg10, HandleRef jarg11);
+  public static extern IntPtr switch_rtp_new(string jarg1, ushort jarg2, string jarg3, ushort jarg4, byte jarg5, uint jarg6, uint jarg7, uint jarg8, string jarg9, HandleRef jarg10, HandleRef jarg11);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_rtp_set_remote_address")]
   public static extern int switch_rtp_set_remote_address(HandleRef jarg1, string jarg2, ushort jarg3, HandleRef jarg4);
@@ -5846,13 +5846,13 @@ return _res; }
   public static extern int switch_rtp_activate_jitter_buffer(HandleRef jarg1, uint jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_rtp_set_flag")]
-  public static extern void switch_rtp_set_flag(HandleRef jarg1, int jarg2);
+  public static extern void switch_rtp_set_flag(HandleRef jarg1, uint jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_rtp_test_flag")]
-  public static extern uint switch_rtp_test_flag(HandleRef jarg1, int jarg2);
+  public static extern uint switch_rtp_test_flag(HandleRef jarg1, uint jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_rtp_clear_flag")]
-  public static extern void switch_rtp_clear_flag(HandleRef jarg1, int jarg2);
+  public static extern void switch_rtp_clear_flag(HandleRef jarg1, uint jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_rtp_get_rtp_socket")]
   public static extern IntPtr switch_rtp_get_rtp_socket(HandleRef jarg1);
@@ -5873,7 +5873,7 @@ return _res; }
   public static extern void switch_rtp_set_invald_handler(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_rtp_read")]
-  public static extern int switch_rtp_read(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, HandleRef jarg5, int jarg6);
+  public static extern int switch_rtp_read(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, HandleRef jarg5, uint jarg6);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_rtp_queue_rfc2833")]
   public static extern int switch_rtp_queue_rfc2833(HandleRef jarg1, HandleRef jarg2);
@@ -5888,13 +5888,13 @@ return _res; }
   public static extern IntPtr switch_rtp_dequeue_dtmf(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_rtp_zerocopy_read")]
-  public static extern int switch_rtp_zerocopy_read(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, HandleRef jarg5, int jarg6);
+  public static extern int switch_rtp_zerocopy_read(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, HandleRef jarg5, uint jarg6);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_rtp_zerocopy_read_frame")]
-  public static extern int switch_rtp_zerocopy_read_frame(HandleRef jarg1, HandleRef jarg2, int jarg3);
+  public static extern int switch_rtp_zerocopy_read_frame(HandleRef jarg1, HandleRef jarg2, uint jarg3);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_rtp_enable_vad")]
-  public static extern int switch_rtp_enable_vad(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, int jarg4);
+  public static extern int switch_rtp_enable_vad(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, uint jarg4);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_rtp_disable_vad")]
   public static extern int switch_rtp_disable_vad(HandleRef jarg1);
@@ -6228,10 +6228,10 @@ return _res; }
   public static extern IntPtr switch_xml_open_cfg(string jarg1, HandleRef jarg2, HandleRef jarg3);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_xml_bind_search_function")]
-  public static extern int switch_xml_bind_search_function(HandleRef jarg1, int jarg2, HandleRef jarg3);
+  public static extern int switch_xml_bind_search_function(HandleRef jarg1, uint jarg2, HandleRef jarg3);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_xml_parse_section_string")]
-  public static extern int switch_xml_parse_section_string(string jarg1);
+  public static extern uint switch_xml_parse_section_string(string jarg1);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_io_event_hook_outgoing_channel_outgoing_channel_set")]
   public static extern void switch_io_event_hook_outgoing_channel_outgoing_channel_set(HandleRef jarg1, HandleRef jarg2);
@@ -6647,7 +6647,7 @@ return _res; }
   public static extern void delete_switch_scheduler_task(HandleRef jarg1);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_scheduler_add_task")]
-  public static extern uint switch_scheduler_add_task(HandleRef jarg1, HandleRef jarg2, string jarg3, string jarg4, uint jarg5, HandleRef jarg6, int jarg7);
+  public static extern uint switch_scheduler_add_task(HandleRef jarg1, HandleRef jarg2, string jarg3, string jarg4, uint jarg5, HandleRef jarg6, uint jarg7);
 
   [DllImport("mod_mono", EntryPoint="CSharp_switch_scheduler_del_task_id")]
   public static extern uint switch_scheduler_del_task_id(uint jarg1);
@@ -7054,6 +7054,15 @@ return _res; }
 
   [DllImport("mod_mono", EntryPoint="CSharp_CoreSession_Ready")]
   public static extern bool CoreSession_Ready(HandleRef jarg1);
+
+  [DllImport("mod_mono", EntryPoint="CSharp_CoreSession_answered")]
+  public static extern bool CoreSession_answered(HandleRef jarg1);
+
+  [DllImport("mod_mono", EntryPoint="CSharp_CoreSession_mediaReady")]
+  public static extern bool CoreSession_mediaReady(HandleRef jarg1);
+
+  [DllImport("mod_mono", EntryPoint="CSharp_CoreSession_waitForAnswer")]
+  public static extern void CoreSession_waitForAnswer(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_CoreSession_Execute")]
   public static extern void CoreSession_Execute(HandleRef jarg1, string jarg2, string jarg3);

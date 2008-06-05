@@ -46,9 +46,15 @@ namespace FreeSWITCH
         void hangupCallback()
         {
             Log.WriteLine(LogLevel.Debug, "AppFunction is in hangupCallback.");
-            abortRun();
-            var f = HangupFunction;
-            if (f != null) f();
+            try {
+               abortRun();
+                var f = HangupFunction;
+                if (f != null) f();
+            }
+            catch (Exception ex) {
+                Log.WriteLine(LogLevel.Warning, "Exception in hangupCallback: {0}", ex.ToString());
+                throw;
+            }
         }
 
         protected Action HangupFunction { get; set; }
@@ -104,6 +110,7 @@ namespace FreeSWITCH
             }
         }
 
+        /// <summary>Determines if the thread used for Run will have Abort called on it on hangup. Defaults to false.</summary>
         protected virtual bool AbortOnHangup { get { return false; } }
         bool abortable = false;
         readonly object abortLock = new object();
@@ -111,8 +118,15 @@ namespace FreeSWITCH
         void abortRun()
         {
             if (!AbortOnHangup) return;
+            if (runThread == Thread.CurrentThread) {
+                Log.WriteLine(LogLevel.Warning, "Thread will not be aborted because Hangup was called from the Run thread.");
+                return;
+            }
             lock (abortLock) {
-                if (abortable) runThread.Abort();
+                if (abortable) {
+                    Log.WriteLine(LogLevel.Critical, "Aborting run thread.");
+                    runThread.Abort();
+                }
             }
         }
 
@@ -131,12 +145,15 @@ namespace FreeSWITCH
                 Run();
             }
             catch (ThreadAbortException) {
-                Log.WriteLine(LogLevel.Debug, "Run thread aborted.");
+                Log.WriteLine(LogLevel.Critical, "Run thread aborted.");
                 Thread.ResetAbort();
             }
             finally {
                 lock (abortLock) { abortable = false; }
-                Thread.ResetAbort();
+                if (runThread.ThreadState == ThreadState.AbortRequested) {
+                    try { Thread.ResetAbort(); }
+                    catch { }
+                }
             }
         }
 

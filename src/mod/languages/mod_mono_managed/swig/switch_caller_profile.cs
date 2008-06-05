@@ -259,12 +259,12 @@ public class switch_caller_profile : IDisposable {
     } 
   }
 
-  public switch_caller_profile_flag_t flags {
+  public uint flags {
     set {
-      freeswitchPINVOKE.switch_caller_profile_flags_set(swigCPtr, (int)value);
+      freeswitchPINVOKE.switch_caller_profile_flags_set(swigCPtr, value);
     } 
     get {
-      switch_caller_profile_flag_t ret = (switch_caller_profile_flag_t)freeswitchPINVOKE.switch_caller_profile_flags_get(swigCPtr);
+      uint ret = freeswitchPINVOKE.switch_caller_profile_flags_get(swigCPtr);
       return ret;
     } 
   }

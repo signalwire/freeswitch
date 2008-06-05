@@ -42,13 +42,13 @@ namespace FreeSWITCH.Demo
     {
         new protected static bool Load()
         {
-            Log.WriteLine(LogLevel.Debug, "Inside AppDemo::Load.");
+            Log.WriteLine(LogLevel.Info, "Inside AppDemo::Load.");
             return true;
         }
 
         new protected static void Unload()
         {
-            Log.WriteLine(LogLevel.Debug, "Inside AppDemo::Unload.");
+            Log.WriteLine(LogLevel.Info, "Inside AppDemo::Unload.");
         }
 
         protected override void Run()
@@ -59,9 +59,9 @@ namespace FreeSWITCH.Demo
                 Log.WriteLine(LogLevel.Info, "Received {0} for {1}.", d, t);
                 return "";
             };
-            Log.WriteLine(LogLevel.Debug, "Inside AppDemo.Run (args '{0}'); HookState is {1}.", Arguments, Session.HookState);
-            Session.CollectDigits(5000);
-            if (!IsAvailable) return; // Hungup
+            Log.WriteLine(LogLevel.Info, "Inside AppDemo.Run (args '{0}'); HookState is {1}.", Arguments, Session.HookState);
+            Session.CollectDigits(5000); // Hanging up here will cause an abort and the next line won't be written
+            Log.WriteLine(LogLevel.Info, "AppDemo is finishing its run and will now hang up.");
             Session.Hangup("USER_BUSY");
         }
         
@@ -69,6 +69,8 @@ namespace FreeSWITCH.Demo
         {
             Log.WriteLine(LogLevel.Debug, "AppDemo hanging up, UUID: {0}.", this.Uuid);
         }
+
+        protected override bool AbortOnHangup { get { return true; } } 
     }
 
     public class ApiDemo : ApiFunction

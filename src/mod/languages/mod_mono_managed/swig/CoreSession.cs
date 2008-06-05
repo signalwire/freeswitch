@@ -216,6 +216,20 @@ public class CoreSession : IDisposable {
     return ret;
   }
 
+  public bool answered() {
+    bool ret = freeswitchPINVOKE.CoreSession_answered(swigCPtr);
+    return ret;
+  }
+
+  public bool mediaReady() {
+    bool ret = freeswitchPINVOKE.CoreSession_mediaReady(swigCPtr);
+    return ret;
+  }
+
+  public void waitForAnswer(CoreSession calling_session) {
+    freeswitchPINVOKE.CoreSession_waitForAnswer(swigCPtr, CoreSession.getCPtr(calling_session));
+  }
+
   public void Execute(string app, string data) {
     freeswitchPINVOKE.CoreSession_Execute(swigCPtr, app, data);
   }

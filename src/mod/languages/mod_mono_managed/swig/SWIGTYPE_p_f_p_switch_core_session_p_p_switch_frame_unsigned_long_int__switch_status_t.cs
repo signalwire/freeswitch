@@ -11,18 +11,18 @@ namespace FreeSWITCH.Native {
 using System;
 using System.Runtime.InteropServices;
 
-public class SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t {
+public class SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t {
   private HandleRef swigCPtr;
 
-  internal SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t(IntPtr cPtr, bool futureUse) {
+  internal SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t(IntPtr cPtr, bool futureUse) {
     swigCPtr = new HandleRef(this, cPtr);
   }
 
-  protected SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t() {
+  protected SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t() {
     swigCPtr = new HandleRef(null, IntPtr.Zero);
   }
 
-  internal static HandleRef getCPtr(SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t obj) {
+  internal static HandleRef getCPtr(SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t obj) {
     return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
   }
 }

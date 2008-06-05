@@ -169,12 +169,12 @@ public class switch_core_session_message : IDisposable {
     } 
   }
 
-  public switch_core_session_message_flag_t flags {
+  public uint flags {
     set {
-      freeswitchPINVOKE.switch_core_session_message_flags_set(swigCPtr, (int)value);
+      freeswitchPINVOKE.switch_core_session_message_flags_set(swigCPtr, value);
     } 
     get {
-      switch_core_session_message_flag_t ret = (switch_core_session_message_flag_t)freeswitchPINVOKE.switch_core_session_message_flags_get(swigCPtr);
+      uint ret = freeswitchPINVOKE.switch_core_session_message_flags_get(swigCPtr);
       return ret;
     } 
   }

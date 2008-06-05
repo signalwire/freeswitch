@@ -39,13 +39,13 @@ public class switch_io_event_hook_read_frame : IDisposable {
     }
   }
 
-  public SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t read_frame {
+  public SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t read_frame {
     set {
-      freeswitchPINVOKE.switch_io_event_hook_read_frame_read_frame_set(swigCPtr, SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t.getCPtr(value));
+      freeswitchPINVOKE.switch_io_event_hook_read_frame_read_frame_set(swigCPtr, SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_io_event_hook_read_frame_read_frame_get(swigCPtr);
-      SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_enum_switch_io_flag_t_int__switch_status_t(cPtr, false);
+      SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t(cPtr, false);
       return ret;
     } 
   }

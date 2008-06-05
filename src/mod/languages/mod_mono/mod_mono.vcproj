@@ -211,6 +211,10 @@
 			RelativePath=".\freeswitch.i"
 			>
 		</File>
+		<File
+			RelativePath=".\switch_platform.i"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
