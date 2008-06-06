@@ -1126,7 +1126,7 @@ SWITCH_STANDARD_API(fifo_api_function)
 		switch_safe_free(xml_text);
 
 	} else if (!strcasecmp(argv[0], "importance")) {
-		if ((node = switch_core_hash_find(globals.fifo_hash, argv[1]))) {
+		if (argv[1] && (node = switch_core_hash_find(globals.fifo_hash, argv[1]))) {
 			int importance = 0;
 			if (argc > 2) {
 				importance = atoi(argv[2]);
