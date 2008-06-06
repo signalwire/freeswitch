@@ -342,34 +342,13 @@ SWITCH_DECLARE(const char *)Stream::get_data()
 
 SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession()
 {
-	session = NULL;
-	channel = NULL;
-	uuid = NULL;
-	tts_name = NULL;
-	voice_name = NULL;
-	memset(&args, 0, sizeof(args));
-	ap = NULL;
-	on_hangup = NULL;
-	cb_state.function = NULL;
-	
-	memset(&caller_profile, 0, sizeof(caller_profile)); 
-	caller_profile.source = "mod_unknown";
-	caller_profile.dialplan = "";
-	caller_profile.context = "";
-	caller_profile.caller_id_name = "";
-	caller_profile.caller_id_number = "";
-	caller_profile.network_addr = "";
-	caller_profile.ani = "";
-	caller_profile.aniii = "";
-	caller_profile.rdnis = "";
-	caller_profile.username = "";
-		
+	init_vars();
 }
 
 SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession(char *nuuid)
 {
-	memset(&caller_profile, 0, sizeof(caller_profile)); 	
 	init_vars();
+
 	if (!strchr(nuuid, '/') && (session = switch_core_session_locate(nuuid))) {
 		uuid = strdup(nuuid);
 		channel = switch_core_session_get_channel(session);
@@ -388,8 +367,8 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession(char *nuuid)
 
 SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession(switch_core_session_t *new_session)
 {
-	memset(&caller_profile, 0, sizeof(caller_profile)); 
 	init_vars();
+
 	if (new_session) {
 		session = new_session;
 		channel = switch_core_session_get_channel(session);
@@ -403,14 +382,12 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::~CoreSession()
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::~CoreSession desctructor\n");
 	switch_channel_t *channel = NULL;
 	
-	init_vars();
 	this_check_void();
-	
 	switch_safe_free(xml_cdr_text);
 	switch_safe_free(uuid);	
 	switch_safe_free(tts_name);
 	switch_safe_free(voice_name);
-	
+
 	if (session) {
 		channel = switch_core_session_get_channel(session);
 		if (switch_test_flag(this, S_HUP) && !switch_channel_test_flag(channel, CF_TRANSFER)) {
