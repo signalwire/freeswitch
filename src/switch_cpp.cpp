@@ -402,7 +402,15 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::~CoreSession()
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::~CoreSession desctructor\n");
 	switch_channel_t *channel = NULL;
-
+	
+	init_vars();
+	this_check_void();
+	
+	switch_safe_free(xml_cdr_text);
+	switch_safe_free(uuid);	
+	switch_safe_free(tts_name);
+	switch_safe_free(voice_name);
+	
 	if (session) {
 		channel = switch_core_session_get_channel(session);
 		if (switch_test_flag(this, S_HUP) && !switch_channel_test_flag(channel, CF_TRANSFER)) {
@@ -411,10 +419,7 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::~CoreSession()
 		switch_core_session_rwunlock(session);
 	}
 
-	switch_safe_free(xml_cdr_text);
-	switch_safe_free(uuid);	
-	switch_safe_free(tts_name);
-	switch_safe_free(voice_name);
+	
 }
 
 SWITCH_DECLARE(char *) CoreSession::getXMLCDR()
@@ -783,7 +788,6 @@ SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, char *des
 	switch_call_cause_t cause;
 
 	this_check(0);
-	sanity_check(0);
 
 	cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 
