@@ -729,8 +729,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		for (r = 0; r < or_argc; r++) {
 			uint32_t hups;
-			char *p,*e = NULL;
-
+			char *p, *e = NULL;
+			const char *var_begin, *var_end;
+			
 			reason = SWITCH_CAUSE_UNALLOCATED;
 			memset(peer_names, 0, sizeof(peer_names));
 			peer_session = NULL;
@@ -859,6 +860,31 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						myflags |= SOF_FORKED_DIAL;
 					}
 				}
+
+				if (vdata && (var_begin = switch_stristr("effective_caller_id_number=", vdata))) {
+					char tmp[512] = "";
+					var_begin += strlen("effective_caller_id_number=");
+					var_end = strchr(var_begin, '|');
+					if (var_end) {
+						strncpy(tmp, var_begin, var_end-var_begin);
+					} else {
+						strncpy(tmp, var_begin, strlen(var_begin));
+					}
+					new_profile->caller_id_number = switch_core_strdup(new_profile->pool, tmp);
+				}
+
+				if (vdata && (var_begin = switch_stristr("effective_caller_id_name=", vdata))) {
+					char tmp[512] = "";
+					var_begin += strlen("effective_caller_id_name=");
+					var_end = strchr(var_begin, '|');
+					if (var_end) {
+						strncpy(tmp, var_begin, var_end-var_begin);
+					} else {
+						strncpy(tmp, var_begin, strlen(var_begin));
+					}
+					new_profile->caller_id_name = switch_core_strdup(new_profile->pool, tmp);
+				}
+
 				if ((reason =
 					 switch_core_session_outgoing_channel(session, var_event, chan_type, new_profile, &new_session, &pool,
 														  myflags)) != SWITCH_CAUSE_SUCCESS) {
