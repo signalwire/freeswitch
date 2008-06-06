@@ -1453,8 +1453,8 @@ static int contact_callback(void *pArg, int argc, char **argv, char **columnName
 	struct cb_helper *cb = (struct cb_helper *) pArg;
 	char *contact;
 
-	if (!switch_strlen_zero(argv[0]) && (contact = sofia_glue_get_url_from_contact(argv[0], 1))) {
-		cb->stream->write_function(cb->stream, "sofia/%s/%s,", cb->profile->name, contact + 4);
+	if (!switch_strlen_zero(argv[0]) && (contact = sofia_glue_get_url_from_contact(argv[0], 1)) ) {
+		cb->stream->write_function(cb->stream, "%ssofia/%s/%s,", argv[1], cb->profile->name, contact + 4);
 		free(contact);
 	}
 
@@ -1466,6 +1466,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	char *data;
 	char *user = NULL;
 	char *domain = NULL;
+	char *concat = NULL;
 	char *profile_name = NULL;
 	char *p;
 	sofia_profile_t *profile = NULL;
@@ -1496,6 +1497,14 @@ SWITCH_STANDARD_API(sofia_contact_function)
 
 	if ((domain = strchr(user, '@'))) {
 		*domain++ = '\0';
+		if ( (concat = strchr( domain, '/')) ) {
+		    *concat++ = '\0';
+		}
+	}
+	else {
+		if ( (concat = strchr( user, '/')) ) {
+		    *concat++ = '\0';
+		}
 	}
 
 	if (!profile_name && domain) {
@@ -1528,10 +1537,11 @@ SWITCH_STANDARD_API(sofia_contact_function)
 			cb.stream = &mystream;
 
 			if (exclude_contact) {
-				sql = switch_mprintf("select contact from sip_registrations where sip_user='%q' and sip_host='%q' and contact not like '%%%s%%'",
-									 user, domain, exclude_contact);
+				sql = switch_mprintf("select contact, '%q' from sip_registrations where sip_user='%q' and sip_host='%q' and contact not like '%%%s%%'",
+									 ( concat != NULL ) ? concat : "", user, domain, exclude_contact);
 			} else {
-				sql = switch_mprintf("select contact from sip_registrations where sip_user='%q' and sip_host='%q'", user, domain);
+				sql = switch_mprintf("select contact, '%q' from sip_registrations where sip_user='%q' and sip_host='%q'", 
+									 ( concat != NULL ) ? concat : "", user, domain);
 			}
 
 			switch_assert(sql);
