@@ -873,8 +873,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 			switch_uuid_get(&uuid);
 			switch_uuid_format(acs->uuid_str, &uuid);
 		}
-		switch_snprintf(reply, reply_len, "+OK Job-UUID: %s", acs->uuid_str);
-
+		switch_snprintf(reply, reply_len, "~Reply-Text: +OK Job-UUID: %s\nJob-UUID: %s\n\n", acs->uuid_str, acs->uuid_str);
 		switch_thread_create(&thread, thd_attr, api_exec, acs, acs->pool);
 
 		return SWITCH_STATUS_SUCCESS;
@@ -1143,7 +1142,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		switch_caller_profile_event_set_data(switch_channel_get_caller_profile(channel), "Channel", call_event);
 		switch_channel_event_set_data(channel, call_event);
 		switch_event_add_header(call_event, SWITCH_STACK_BOTTOM, "Content-Type", "command/reply");
-
+		switch_event_add_header(call_event, SWITCH_STACK_BOTTOM, "Reply-Text", "+OK\n");
 		switch_event_add_header(call_event, SWITCH_STACK_BOTTOM, "Socket-Mode", switch_test_flag(listener, LFLAG_ASYNC) ? "async" : "static");
 		switch_event_add_header(call_event, SWITCH_STACK_BOTTOM, "Control", switch_test_flag(listener, LFLAG_FULL) ? "full" : "single-channel");
 
@@ -1177,7 +1176,11 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 				goto done;
 			}
 			if (*reply != '\0') {
-				switch_snprintf(buf, sizeof(buf), "Content-Type: command/reply\nReply-Text: %s\n\n", reply);
+				if (*reply == '~') {
+					switch_snprintf(buf, sizeof(buf), "Content-Type: command/reply\n%s", reply + 1);
+				} else {
+					switch_snprintf(buf, sizeof(buf), "Content-Type: command/reply\nReply-Text: %s\n\n", reply);
+				}
 				len = strlen(buf);
 				switch_socket_send(listener->sock, buf, &len);
 			}
@@ -1206,7 +1209,11 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		}
 
 		if (*reply != '\0') {
-			switch_snprintf(buf, sizeof(buf), "Content-Type: command/reply\nReply-Text: %s\n\n", reply);
+			if (*reply == '~') {
+				switch_snprintf(buf, sizeof(buf), "Content-Type: command/reply\n%s", reply + 1);
+			} else {
+				switch_snprintf(buf, sizeof(buf), "Content-Type: command/reply\nReply-Text: %s\n\n", reply);
+			}
 			len = strlen(buf);
 			switch_socket_send(listener->sock, buf, &len);
 		}
