@@ -2990,6 +2990,7 @@ public class freeswitch {
   public static readonly string SWITCH_URL_SEPARATOR = freeswitchPINVOKE.SWITCH_URL_SEPARATOR_get();
   public static readonly string SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE = freeswitchPINVOKE.SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE_get();
   public static readonly string SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE = freeswitchPINVOKE.SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE_get();
+  public static readonly string SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE = freeswitchPINVOKE.SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE_get();
   public static readonly string SWITCH_CALL_TIMEOUT_VARIABLE = freeswitchPINVOKE.SWITCH_CALL_TIMEOUT_VARIABLE_get();
   public static readonly string SWITCH_HOLDING_UUID_VARIABLE = freeswitchPINVOKE.SWITCH_HOLDING_UUID_VARIABLE_get();
   public static readonly string SWITCH_API_BRIDGE_END_VARIABLE = freeswitchPINVOKE.SWITCH_API_BRIDGE_END_VARIABLE_get();

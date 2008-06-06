@@ -8,10 +8,13 @@
 
 namespace FreeSWITCH.Native {
 
-[System.Flags] public enum session_flag_t {
-  S_HUP = (1 << 0),
-  S_FREE = (1 << 1),
-  S_RDLOCK = (1 << 2)
+[System.Flags] public enum switch_asr_flag_enum_t {
+  SWITCH_ASR_FLAG_NONE = 0,
+  SWITCH_ASR_FLAG_DATA = (1 << 0),
+  SWITCH_ASR_FLAG_FREE_POOL = (1 << 1),
+  SWITCH_ASR_FLAG_CLOSED = (1 << 2),
+  SWITCH_ASR_FLAG_FIRE_EVENTS = (1 << 3),
+  SWITCH_ASR_FLAG_AUTO_RESUME = (1 << 4)
 }
 
 }

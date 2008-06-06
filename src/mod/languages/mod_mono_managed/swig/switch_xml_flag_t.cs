@@ -8,7 +8,7 @@
 
 namespace FreeSWITCH.Native {
 
-public enum switch_xml_flag_t {
+[System.Flags] public enum switch_xml_flag_t {
   SWITCH_XML_ROOT = (1 << 0),
   SWITCH_XML_NAMEM = (1 << 1),
   SWITCH_XML_TXTM = (1 << 2),

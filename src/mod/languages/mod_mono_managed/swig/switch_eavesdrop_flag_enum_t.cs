@@ -8,13 +8,10 @@
 
 namespace FreeSWITCH.Native {
 
-public enum switch_asr_flag_t {
-  SWITCH_ASR_FLAG_NONE = 0,
-  SWITCH_ASR_FLAG_DATA = (1 << 0),
-  SWITCH_ASR_FLAG_FREE_POOL = (1 << 1),
-  SWITCH_ASR_FLAG_CLOSED = (1 << 2),
-  SWITCH_ASR_FLAG_FIRE_EVENTS = (1 << 3),
-  SWITCH_ASR_FLAG_AUTO_RESUME = (1 << 4)
+[System.Flags] public enum switch_eavesdrop_flag_enum_t {
+  ED_MUX_READ = (1 << 0),
+  ED_MUX_WRITE = (1 << 1),
+  ED_DTMF = (1 << 2)
 }
 
 }

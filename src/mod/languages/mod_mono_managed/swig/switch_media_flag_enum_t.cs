@@ -8,10 +8,14 @@
 
 namespace FreeSWITCH.Native {
 
-[System.Flags] public enum session_flag_t {
-  S_HUP = (1 << 0),
-  S_FREE = (1 << 1),
-  S_RDLOCK = (1 << 2)
+[System.Flags] public enum switch_media_flag_enum_t {
+  SMF_NONE = 0,
+  SMF_REBRIDGE = (1 << 0),
+  SMF_ECHO_ALEG = (1 << 1),
+  SMF_ECHO_BLEG = (1 << 2),
+  SMF_FORCE = (1 << 3),
+  SMF_LOOP = (1 << 4),
+  SMF_HOLD_BLEG = (1 << 5)
 }
 
 }

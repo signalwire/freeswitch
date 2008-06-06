@@ -8,10 +8,11 @@
 
 namespace FreeSWITCH.Native {
 
-[System.Flags] public enum session_flag_t {
-  S_HUP = (1 << 0),
-  S_FREE = (1 << 1),
-  S_RDLOCK = (1 << 2)
+[System.Flags] public enum switch_vad_flag_enum_t {
+  SWITCH_VAD_FLAG_TALKING = (1 << 0),
+  SWITCH_VAD_FLAG_EVENTS_TALK = (1 << 1),
+  SWITCH_VAD_FLAG_EVENTS_NOTALK = (1 << 2),
+  SWITCH_VAD_FLAG_CNG = (1 << 3)
 }
 
 }

@@ -8,10 +8,13 @@
 
 namespace FreeSWITCH.Native {
 
-[System.Flags] public enum session_flag_t {
-  S_HUP = (1 << 0),
-  S_FREE = (1 << 1),
-  S_RDLOCK = (1 << 2)
+[System.Flags] public enum switch_bind_flag_enum_t {
+  SBF_DIAL_ALEG = (1 << 0),
+  SBF_EXEC_ALEG = (1 << 1),
+  SBF_DIAL_BLEG = (1 << 2),
+  SBF_EXEC_BLEG = (1 << 3),
+  SBF_EXEC_OPPOSITE = (1 << 4),
+  SBF_EXEC_SAME = (1 << 5)
 }
 
 }

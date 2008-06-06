@@ -362,6 +362,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_mono", EntryPoint="CSharp_SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE_get")]
   public static extern string SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE_get();
 
+  [DllImport("mod_mono", EntryPoint="CSharp_SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE_get")]
+  public static extern string SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE_get();
+
   [DllImport("mod_mono", EntryPoint="CSharp_SWITCH_CALL_TIMEOUT_VARIABLE_get")]
   public static extern string SWITCH_CALL_TIMEOUT_VARIABLE_get();
 

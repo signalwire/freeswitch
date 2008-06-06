@@ -617,6 +617,14 @@ var _res = System.Runtime.InteropServices.Marshal.PtrToStringAnsi(_ptr);
 System.Runtime.InteropServices.Marshal.FreeCoTaskMem(_ptr); 
 return _res; }
 
+  [DllImport("mod_mono", EntryPoint="CSharp_SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE_get")]
+  public static extern IntPtr __SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE_get();
+  public static  string SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE_get(){ 
+var _ptr = __SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE_get(); 
+var _res = System.Runtime.InteropServices.Marshal.PtrToStringAnsi(_ptr); 
+System.Runtime.InteropServices.Marshal.FreeCoTaskMem(_ptr); 
+return _res; }
+
   [DllImport("mod_mono", EntryPoint="CSharp_SWITCH_CALL_TIMEOUT_VARIABLE_get")]
   public static extern IntPtr __SWITCH_CALL_TIMEOUT_VARIABLE_get();
   public static  string SWITCH_CALL_TIMEOUT_VARIABLE_get(){ 

@@ -8,10 +8,10 @@
 
 namespace FreeSWITCH.Native {
 
-[System.Flags] public enum session_flag_t {
-  S_HUP = (1 << 0),
-  S_FREE = (1 << 1),
-  S_RDLOCK = (1 << 2)
+[System.Flags] public enum switch_caller_profile_flag_enum_t {
+  SWITCH_CPF_SCREEN = (1 << 0),
+  SWITCH_CPF_HIDE_NAME = (1 << 1),
+  SWITCH_CPF_HIDE_NUMBER = (1 << 2)
 }
 
 }

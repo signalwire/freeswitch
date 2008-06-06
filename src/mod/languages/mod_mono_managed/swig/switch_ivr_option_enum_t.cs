@@ -8,10 +8,10 @@
 
 namespace FreeSWITCH.Native {
 
-[System.Flags] public enum session_flag_t {
-  S_HUP = (1 << 0),
-  S_FREE = (1 << 1),
-  S_RDLOCK = (1 << 2)
+public enum switch_ivr_option_enum_t {
+  SWITCH_IVR_OPTION_NONE = 0,
+  SWITCH_IVR_OPTION_ASYNC = (1 << 0),
+  SWITCH_IVR_OPTION_FILE = (1 << 1)
 }
 
 }

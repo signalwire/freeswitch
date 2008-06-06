@@ -8,10 +8,14 @@
 
 namespace FreeSWITCH.Native {
 
-[System.Flags] public enum session_flag_t {
-  S_HUP = (1 << 0),
-  S_FREE = (1 << 1),
-  S_RDLOCK = (1 << 2)
+[System.Flags] public enum switch_frame_flag_enum_t {
+  SFF_NONE = 0,
+  SFF_CNG = (1 << 0),
+  SFF_RAW_RTP = (1 << 1),
+  SFF_RTP_HEADER = (1 << 2),
+  SFF_PLC = (1 << 3),
+  SFF_RFC2833 = (1 << 4),
+  SFF_PROXY_PACKET = (1 << 5)
 }
 
 }

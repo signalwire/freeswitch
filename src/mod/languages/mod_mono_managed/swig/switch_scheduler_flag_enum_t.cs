@@ -8,10 +8,11 @@
 
 namespace FreeSWITCH.Native {
 
-[System.Flags] public enum session_flag_t {
-  S_HUP = (1 << 0),
-  S_FREE = (1 << 1),
-  S_RDLOCK = (1 << 2)
+[System.Flags] public enum switch_scheduler_flag_enum_t {
+  SSHF_NONE = 0,
+  SSHF_OWN_THREAD = (1 << 0),
+  SSHF_FREE_ARG = (1 << 1),
+  SSHF_NO_DEL = (1 << 2)
 }
 
 }

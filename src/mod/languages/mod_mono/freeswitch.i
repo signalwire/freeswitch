@@ -11,6 +11,35 @@
 %typemap(csclassmodifiers) Event "public partial class"
 %typemap(csclassmodifiers) Stream "public partial class"
 
+// Allow bitwise compare on flag fields
+%typemap(csclassmodifiers) session_flag_t "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_application_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_asr_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_bind_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_caller_profile_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_channel_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_codec_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_core_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_core_session_message_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_directory_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_eavesdrop_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_file_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_frame_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_io_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_media_bug_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_media_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_originate_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_port_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_rtp_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_scheduler_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_speech_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_timer_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_unicast_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_vad_flag_enum_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_xml_flag_t  "[System.Flags] public enum"
+%typemap(csclassmodifiers) switch_xml_section_enum_t  "[System.Flags] public enum"
+
+
 // Some things we dont want exposed to managed users directly, since 
 // we're gonna handle them with our own internalcall methods
 %ignore dtmfDelegateHandle;

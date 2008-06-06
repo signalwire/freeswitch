@@ -8,10 +8,12 @@
 
 namespace FreeSWITCH.Native {
 
-[System.Flags] public enum session_flag_t {
-  S_HUP = (1 << 0),
-  S_FREE = (1 << 1),
-  S_RDLOCK = (1 << 2)
+[System.Flags] public enum switch_xml_section_enum_t {
+  SWITCH_XML_SECTION_RESULT = 0,
+  SWITCH_XML_SECTION_CONFIG = (1 << 0),
+  SWITCH_XML_SECTION_DIRECTORY = (1 << 1),
+  SWITCH_XML_SECTION_DIALPLAN = (1 << 2),
+  SWITCH_XML_SECTION_PHRASES = (1 << 3)
 }
 
 }

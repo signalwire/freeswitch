@@ -8,10 +8,12 @@
 
 namespace FreeSWITCH.Native {
 
-[System.Flags] public enum session_flag_t {
-  S_HUP = (1 << 0),
-  S_FREE = (1 << 1),
-  S_RDLOCK = (1 << 2)
+[System.Flags] public enum switch_core_flag_enum_t {
+  SCF_NONE = 0,
+  SCF_USE_SQL = (1 << 0),
+  SCF_NO_NEW_SESSIONS = (1 << 1),
+  SCF_SHUTTING_DOWN = (1 << 2),
+  SCF_CRASH_PROT = (1 << 3)
 }
 
 }

@@ -8,10 +8,13 @@
 
 namespace FreeSWITCH.Native {
 
-[System.Flags] public enum session_flag_t {
-  S_HUP = (1 << 0),
-  S_FREE = (1 << 1),
-  S_RDLOCK = (1 << 2)
+[System.Flags] public enum switch_speech_flag_enum_t {
+  SWITCH_SPEECH_FLAG_NONE = 0,
+  SWITCH_SPEECH_FLAG_HASTEXT = (1 << 0),
+  SWITCH_SPEECH_FLAG_PEEK = (1 << 1),
+  SWITCH_SPEECH_FLAG_FREE_POOL = (1 << 2),
+  SWITCH_SPEECH_FLAG_BLOCKING = (1 << 3),
+  SWITCH_SPEECH_FLAG_PAUSE = (1 << 4)
 }
 
 }

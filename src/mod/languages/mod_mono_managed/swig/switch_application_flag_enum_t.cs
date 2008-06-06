@@ -8,10 +8,9 @@
 
 namespace FreeSWITCH.Native {
 
-[System.Flags] public enum session_flag_t {
-  S_HUP = (1 << 0),
-  S_FREE = (1 << 1),
-  S_RDLOCK = (1 << 2)
+[System.Flags] public enum switch_application_flag_enum_t {
+  SAF_NONE = 0,
+  SAF_SUPPORT_NOMEDIA = (1 << 0)
 }
 
 }

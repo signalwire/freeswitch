@@ -8,10 +8,16 @@
 
 namespace FreeSWITCH.Native {
 
-[System.Flags] public enum session_flag_t {
-  S_HUP = (1 << 0),
-  S_FREE = (1 << 1),
-  S_RDLOCK = (1 << 2)
+[System.Flags] public enum switch_media_bug_flag_enum_t {
+  SMBF_BOTH = 0,
+  SMBF_READ_STREAM = (1 << 0),
+  SMBF_WRITE_STREAM = (1 << 1),
+  SMBF_WRITE_REPLACE = (1 << 2),
+  SMBF_READ_REPLACE = (1 << 3),
+  SMBF_READ_PING = (1 << 4),
+  SMBF_STEREO = (1 << 5),
+  SMBF_RECORD_ANSWER_REQ = (1 << 6),
+  SMBF_THREAD_LOCK = (1 << 7)
 }
 
 }
