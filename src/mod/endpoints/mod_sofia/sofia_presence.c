@@ -427,6 +427,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			}
 
 			switch_safe_free(user);
+			switch_safe_free(probe_user);
 		}
 		return;
 	case SWITCH_EVENT_PRESENCE_IN:
