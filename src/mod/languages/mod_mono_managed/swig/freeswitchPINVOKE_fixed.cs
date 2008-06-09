@@ -7012,11 +7012,11 @@ return _res; }
   [DllImport("mod_mono", EntryPoint="CSharp_CoreSession_Originate")]
   public static extern int CoreSession_Originate(HandleRef jarg1, HandleRef jarg2, string jarg3, int jarg4);
 
-  [DllImport("mod_mono", EntryPoint="CSharp_CoreSession_speak")]
-  public static extern int CoreSession_speak(HandleRef jarg1, string jarg2);
+  [DllImport("mod_mono", EntryPoint="CSharp_CoreSession_Speak")]
+  public static extern int CoreSession_Speak(HandleRef jarg1, string jarg2);
 
-  [DllImport("mod_mono", EntryPoint="CSharp_CoreSession_set_tts_parms")]
-  public static extern void CoreSession_set_tts_parms(HandleRef jarg1, string jarg2, string jarg3);
+  [DllImport("mod_mono", EntryPoint="CSharp_CoreSession_SetTtsParameters")]
+  public static extern void CoreSession_SetTtsParameters(HandleRef jarg1, string jarg2, string jarg3);
 
   [DllImport("mod_mono", EntryPoint="CSharp_CoreSession_CollectDigits")]
   public static extern int CoreSession_CollectDigits(HandleRef jarg1, int jarg2);
@@ -7057,8 +7057,8 @@ return _res; }
   [DllImport("mod_mono", EntryPoint="CSharp_CoreSession_flushDigits")]
   public static extern int CoreSession_flushDigits(HandleRef jarg1);
 
-  [DllImport("mod_mono", EntryPoint="CSharp_CoreSession_setAutoHangup")]
-  public static extern int CoreSession_setAutoHangup(HandleRef jarg1, bool jarg2);
+  [DllImport("mod_mono", EntryPoint="CSharp_CoreSession_SetAutoHangup")]
+  public static extern int CoreSession_SetAutoHangup(HandleRef jarg1, bool jarg2);
 
   [DllImport("mod_mono", EntryPoint="CSharp_CoreSession_Ready")]
   public static extern bool CoreSession_Ready(HandleRef jarg1);

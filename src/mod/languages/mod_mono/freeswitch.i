@@ -74,6 +74,10 @@
 %rename (GetUuid) CoreSession::get_uuid;
 %rename (HookState) CoreSession::hook_state;
 %rename (InternalSession) CoreSession::session;
+%rename (Speak) CoreSession::speak;
+%rename (SetTtsParameters) CoreSession::set_tts_parms;
+%rename (SetAutoHangup) CoreSession::setAutoHangup;
+
 
 %rename (Serialize) Event::serialize;
 %rename (SetPriority) Event::setPriority;

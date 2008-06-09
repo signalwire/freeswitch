@@ -227,7 +227,7 @@ namespace FreeSWITCH
             if (fType == null) return false;
 
             using (var session = new Native.MonoSession(new Native.SWIGTYPE_p_switch_core_session(sessionHandle, false))) {
-                session.setAutoHangup(false);
+                session.SetAutoHangup(false);
                 try {
                     var f = (AppFunction)Activator.CreateInstance(fType);
                     f.RunInternal(session, args);

@@ -157,13 +157,13 @@ public class CoreSession : IDisposable {
     return ret;
   }
 
-  public int speak(string text) {
-    int ret = freeswitchPINVOKE.CoreSession_speak(swigCPtr, text);
+  public int Speak(string text) {
+    int ret = freeswitchPINVOKE.CoreSession_Speak(swigCPtr, text);
     return ret;
   }
 
-  public void set_tts_parms(string tts_name, string voice_name) {
-    freeswitchPINVOKE.CoreSession_set_tts_parms(swigCPtr, tts_name, voice_name);
+  public void SetTtsParameters(string tts_name, string voice_name) {
+    freeswitchPINVOKE.CoreSession_SetTtsParameters(swigCPtr, tts_name, voice_name);
   }
 
   public int CollectDigits(int timeout) {
@@ -206,8 +206,8 @@ public class CoreSession : IDisposable {
     return ret;
   }
 
-  public int setAutoHangup(bool val) {
-    int ret = freeswitchPINVOKE.CoreSession_setAutoHangup(swigCPtr, val);
+  public int SetAutoHangup(bool val) {
+    int ret = freeswitchPINVOKE.CoreSession_SetAutoHangup(swigCPtr, val);
     return ret;
   }
 

@@ -74,6 +74,8 @@ MonoSession::~MonoSession()
 			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 			setAutoHangup(0);
 		}
+		// Don't let any callbacks use this CoreSession anymore
+		switch_channel_set_private(channel, "CoreSession", NULL);
 	}
 }
 

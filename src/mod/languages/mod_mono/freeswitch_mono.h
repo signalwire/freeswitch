@@ -64,7 +64,7 @@ public:
 	MonoSession();
 	MonoSession(char *uuid);
 	MonoSession(switch_core_session_t *session);
-	~MonoSession();        
+	virtual ~MonoSession();        
 
 	virtual bool begin_allow_threads();
 	virtual bool end_allow_threads();
