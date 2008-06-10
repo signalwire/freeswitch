@@ -1751,7 +1751,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 						}
 
 						if (offset >= 0) {
-							if (offset > strlen(sub_val)) {
+							if ((size_t)offset > strlen(sub_val)) {
 								*sub_val = '\0';
 							} else {
 								sub_val += offset;
