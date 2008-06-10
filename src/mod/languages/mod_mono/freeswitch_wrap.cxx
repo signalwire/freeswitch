@@ -24139,7 +24139,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_Originate(void * jarg1, void * jar
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_speak(void * jarg1, char * jarg2) {
+SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_Speak(void * jarg1, char * jarg2) {
   int jresult ;
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -24153,7 +24153,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_speak(void * jarg1, char * jarg2) 
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_set_tts_parms(void * jarg1, char * jarg2, char * jarg3) {
+SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_SetTtsParameters(void * jarg1, char * jarg2, char * jarg3) {
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
@@ -24305,7 +24305,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_flushDigits(void * jarg1) {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_setAutoHangup(void * jarg1, unsigned int jarg2) {
+SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_SetAutoHangup(void * jarg1, unsigned int jarg2) {
   int jresult ;
   CoreSession *arg1 = (CoreSession *) 0 ;
   bool arg2 ;

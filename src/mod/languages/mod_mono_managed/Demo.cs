@@ -53,13 +53,12 @@ namespace FreeSWITCH.Demo
 
         protected override void Run()
         {
-            HangupFunction = hangupHook;
             Session.Answer();
-            this.DtmfReceivedFunction = (d, t) => {
+            Session.DtmfReceivedFunction = (d, t) => {
                 Log.WriteLine(LogLevel.Info, "Received {0} for {1}.", d, t);
                 return "";
             };
-            Log.WriteLine(LogLevel.Info, "Inside AppDemo.Run (args '{0}'); HookState is {1}.", Arguments, Session.HookState);
+            Log.WriteLine(LogLevel.Info, "Inside AppDemo.Run (args '{0}'); HookState is {1}. Now will collect digits.", Arguments, Session.HookState);
             Session.CollectDigits(5000); // Hanging up here will cause an abort and the next line won't be written
             Log.WriteLine(LogLevel.Info, "AppDemo is finishing its run and will now hang up.");
             Session.Hangup("USER_BUSY");

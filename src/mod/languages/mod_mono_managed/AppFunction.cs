@@ -43,60 +43,6 @@ namespace FreeSWITCH
 
         protected static void Unload() { }
 
-        void hangupCallback()
-        {
-            Log.WriteLine(LogLevel.Debug, "AppFunction is in hangupCallback.");
-            try {
-               abortRun();
-                var f = HangupFunction;
-                if (f != null) f();
-            }
-            catch (Exception ex) {
-                Log.WriteLine(LogLevel.Warning, "Exception in hangupCallback: {0}", ex.ToString());
-                throw;
-            }
-        }
-
-        protected Action HangupFunction { get; set; }
-
-        protected Func<Char, TimeSpan, string> DtmfReceivedFunction { get; set; }
-
-        protected Func<Native.Event, string> EventReceivedFunction { get; set; }
-
-        string inputCallback(IntPtr input, Native.switch_input_type_t inputType)
-        {
-            switch (inputType) {
-                case FreeSWITCH.Native.switch_input_type_t.SWITCH_INPUT_TYPE_DTMF:
-                    using (var dtmf = new Native.switch_dtmf_t(input, false)) {
-                        return dtmfCallback(dtmf);
-                    }
-                case FreeSWITCH.Native.switch_input_type_t.SWITCH_INPUT_TYPE_EVENT:
-                    using (var swevt = new Native.switch_event(input, false)) {
-                        return eventCallback(swevt);
-                    }
-                default: 
-                    return "";
-            }
-        }
-
-        string dtmfCallback(Native.switch_dtmf_t dtmf)
-        {
-            var f = DtmfReceivedFunction;
-            return f == null ?
-                "-ERR No DtmfReceivedFunction set." :
-                f(((char)(byte)dtmf.digit), TimeSpan.FromMilliseconds(dtmf.duration));
-        }
-
-        string eventCallback(Native.switch_event swevt)
-        {
-            using (var evt = new FreeSWITCH.Native.Event(swevt, 0)) {
-                var f = EventReceivedFunction;
-                return f == null ?
-                    "-ERR No EventReceivedFunction set." :
-                    f(evt);
-            }
-        }
-
         protected Native.MonoSession Session { get; private set; }
 
         protected string Arguments { get; private set; }
@@ -115,7 +61,7 @@ namespace FreeSWITCH
         bool abortable = false;
         readonly object abortLock = new object();
         Thread runThread;
-        void abortRun()
+        internal void AbortRun()
         {
             if (!AbortOnHangup) return;
             if (runThread == Thread.CurrentThread) {
@@ -136,7 +82,7 @@ namespace FreeSWITCH
         {
             this.Session = session;
             this.Arguments = args;
-            Session.SetDelegates(this.inputCallback, this.hangupCallback);
+            Session.AppToAbort = this;
             try { this.Uuid = new Guid(Session.GetUuid()); }
             catch { }
             try {
