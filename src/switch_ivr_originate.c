@@ -700,7 +700,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	if ((var_val = switch_event_get_header(var_event, "originate_retry_sleep_ms")) && switch_true(var_val)) {
 		int32_t tmp;
 		tmp = atoi(var_val);
-		if (tmp > 500 && tmp < 60000) {
+		if (tmp >= 500 && tmp <= 60000) {
 			sleep_ms = tmp;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
