@@ -2338,7 +2338,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl pause");
 	switch_console_set_complete("add fsctl resume");
 	switch_console_set_complete("add fsctl shutdown");
-	switch_console_set_complete("add fsctl sync_clock");
+	switch_console_set_complete("add fsctl sps");
+ 	switch_console_set_complete("add fsctl sync_clock");
 	switch_console_set_complete("add fsctl reclaim_mem");
 	switch_console_set_complete("add fsctl max_sessions");
 	switch_console_set_complete("add fsctl max_dtmf_duration");
