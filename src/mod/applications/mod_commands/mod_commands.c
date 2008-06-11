@@ -562,7 +562,7 @@ SWITCH_STANDARD_API(status_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define CTL_SYNTAX "[hupall|pause|resume|shutdown|sync_clock|reclaim_mem|max_sessions|max_dtmf_duration [num]|loglevel [level]]"
+#define CTL_SYNTAX "[hupall|pause|resume|shutdown|sps|sync_clock|reclaim_mem|max_sessions|max_dtmf_duration [num]|loglevel [level]]"
 SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
