@@ -3178,7 +3178,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "LUKE'S VOICE: Artoo, see what you can do with it. Hang on back there....\n"
 						  "Green laserfire moves past the beeping little robot as his head turns.  "
 						  "After a few beeps and a twist of his mechanical arm,\n"
-						  "Artoo reduces the max sessions to %d thus, saving the switch from certian doom.\n", sess_count - 10);
+						  "Artoo reduces the max sessions to %d thus, saving the switch from certain doom.\n", sess_count - 10);
 
 		switch_mutex_unlock(profile->flag_mutex);
 	}
