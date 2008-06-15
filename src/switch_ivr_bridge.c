@@ -682,7 +682,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA) ||
 		switch_channel_test_flag(peer_channel, CF_RING_READY)) {
 		switch_core_session_message_t msg = { 0 };
-		const switch_application_interface_t *application_interface;
 		const char *app, *data;
 
 		switch_channel_set_state(peer_channel, CS_CONSUME_MEDIA);
@@ -748,16 +747,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 			if ((app = switch_channel_get_variable(caller_channel, "bridge_pre_execute_aleg_app"))) {
 				data = switch_channel_get_variable(caller_channel, "bridge_pre_execute_aleg_data");
-				if ((application_interface = switch_loadable_module_get_application_interface(app))) {
-					switch_core_session_exec(session, application_interface, data);
-				}
+				switch_core_session_execute_application(session, app, data);
 			}
 
 			if ((app = switch_channel_get_variable(caller_channel, "bridge_pre_execute_bleg_app"))) {
 				data = switch_channel_get_variable(caller_channel, "bridge_pre_execute_bleg_data");
-				if ((application_interface = switch_loadable_module_get_application_interface(app))) {
-					switch_core_session_exec(peer_session, application_interface, data);
-				}
+				switch_core_session_execute_application(peer_session, app, data);
 			}
 
 			switch_channel_set_private(peer_channel, "_bridge_", b_leg);
