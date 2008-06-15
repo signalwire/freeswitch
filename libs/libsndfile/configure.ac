@@ -7,7 +7,7 @@ AC_INIT([libsndfile],[1.0.17],[erikd@mega-nerd.com])
 AC_CONFIG_SRCDIR([src/sndfile.c])
 AC_CANONICAL_TARGET([])
 
-AM_INIT_AUTOMAKE($PACKAGE_NAME,$PACKAGE_VERSION)
+AM_INIT_AUTOMAKE(libsndfile,1.0)
 AC_CONFIG_HEADERS([src/config.h])
 
 AC_LANG([C])
