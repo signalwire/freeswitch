@@ -1115,7 +1115,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 				if (!switch_strlen_zero(tx_host) && switch_sockaddr_get_port(rtp_session->from_addr) > 0) {
 					if (++rtp_session->autoadj_tally >= 10) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 										  "Auto Changing port from %s:%u to %s:%u\n", old_host, old, tx_host,
 										  switch_sockaddr_get_port(rtp_session->from_addr));
 						switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(rtp_session->from_addr), &err);
