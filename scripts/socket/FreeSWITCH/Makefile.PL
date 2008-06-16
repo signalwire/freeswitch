@@ -4,7 +4,7 @@ WriteMakefile(
 	NAME => 'FreeSWITCH::Client',
 	VERSION_FROM => 'Client.pm',
 	PREREQ_PM => {
-		'IO::Socket::INET' => 1.17,
-		'IO::Select' => 1.17,
+		'IO::Socket::INET' => 1.16,
+		'IO::Select' => 1.16,
 	},
 );
