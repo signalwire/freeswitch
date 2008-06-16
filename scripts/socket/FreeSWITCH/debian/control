@@ -1,0 +1,16 @@
+Source: libfreeswitch-client-perl
+Section: perl
+Priority: optional
+Build-Depends: debhelper (>= 6)
+Build-Depends-Indep: perl (>= 5.8.0-7), libmodule-install-perl,
+ libmodule-scandeps-perl (>= 0.66), libarchive-zip-perl,
+ libpar-dist-perl (>= 0.22), libdigest-sha1-perl, libmodule-signature-perl,
+ libgetopt-argvfile-perl (>= 1.07), gnupg, libinline-perl, libtest-pod-perl
+Maintainer: Massimo Cetra <devel@navynet.it>
+
+Package: libfreeswitch-client-perl
+Architecture: all
+Depends: ${perl:Depends}, ${misc:Depends}, libmodule-scandeps-perl (>=  0.66), libio-socket-ssl-perl (>= 1.02-1)
+Recommends: gnupg, libmodule-signature-perl, libpar-packer-perl
+Description: FreeSWITCH Client perl library
+    FreeSWITCH perl client library

@@ -1,0 +1,63 @@
+#!/usr/bin/make -f
+# This debian/rules file is provided as a template for normal perl
+# packages. It was created by Marc Brockschmidt <marc@dch-faq.de> for
+# the Debian Perl Group (http://pkg-perl.alioth.debian.org/) but may
+# be used freely wherever it is useful.
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+# If set to a true value then MakeMaker's prompt function will
+# always return the default without waiting for user input.
+export PERL_MM_USE_DEFAULT=1
+
+PERL   ?= /usr/bin/perl
+PACKAGE = $(shell dh_listpackages)
+TMP     = $(CURDIR)/debian/$(PACKAGE)
+
+build: build-stamp
+build-stamp: $(QUILT_STAMPFN)
+	dh_testdir
+	$(PERL) Makefile.PL INSTALLDIRS=vendor
+	$(MAKE)
+	PERL_TEST_POD=1 $(MAKE) test
+	touch $@
+
+clean:
+	dh_testdir
+	dh_testroot
+	dh_clean build-stamp install-stamp
+	[ ! -f Makefile ] || $(MAKE) realclean
+
+install: install-stamp
+install-stamp: build-stamp
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	$(MAKE) install DESTDIR=$(TMP) PREFIX=/usr
+	# lintian override for a long line with a hash
+	# dh_installdirs /usr/share/lintian/overrides/
+	#install -m 644 $(CURDIR)/debian/lintian-overrides $(TMP)/usr/share/lintian/overrides/$(PACKAGE)
+	#[ ! -d $(TMP)/usr/lib/perl5 ] || \
+	#	rmdir --ignore-fail-on-non-empty --parents --verbose \
+	#	$(TMP)/usr/lib/perl5
+	touch $@
+
+binary-arch:
+# We have nothing to do here for an architecture-independent package
+
+binary-indep: build install
+	dh_testdir
+	dh_testroot
+	dh_installdocs README
+	dh_installchangelogs ChangeLog
+	dh_perl
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install
