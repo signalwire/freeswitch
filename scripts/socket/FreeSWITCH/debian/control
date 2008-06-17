@@ -10,7 +10,7 @@ Maintainer: Massimo Cetra <devel@navynet.it>
 
 Package: libfreeswitch-client-perl
 Architecture: all
-Depends: ${perl:Depends}, ${misc:Depends}, libmodule-scandeps-perl (>=  0.51), libio-socket-ssl-perl (>= 1.02-1)
+Depends: ${perl:Depends}, ${misc:Depends}, libmodule-scandeps-perl (>=  0.51), libio-socket-ssl-perl (>= 0.97)
 Recommends: gnupg, libmodule-signature-perl, libpar-packer-perl
 Description: FreeSWITCH Client perl library
     FreeSWITCH perl client library
