@@ -17,12 +17,12 @@
  * The Original Code is FreeSWITCH Modular Media Switching Software Library / G722 codec module
  *
  * The Initial Developer of the Original Code is
- * Brian K. West <brian.west@mac.com>
+ * Brian K. West <brian@freeswitch.org>
  * Portions created by the Initial Developer are Copyright (C)
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * Brian K. West <brian.west@mac.com>
+ * Brian K. West <brian@freeswitch.org>
  * Anthony Minessale II <anthmct@yahoo.com>
  * Michael Jerris <mike@jerris.com>
  *

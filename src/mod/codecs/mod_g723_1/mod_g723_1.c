@@ -24,7 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
- * Brian K. West <brian.west@mac.com>
+ * Brian K. West <brian@freeswitch.org>
  *
  * The g723.1 codec itself is not distributed with this module.
  *

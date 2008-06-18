@@ -23,7 +23,7 @@
  *
  * Contributor(s):
  * 
- * Brian West <brian.west@mac.com>
+ * Brian West <brian@freeswitch.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Justin Cassidy <xachenant@hotmail.com>
  *
