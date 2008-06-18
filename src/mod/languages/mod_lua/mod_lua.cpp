@@ -363,10 +363,37 @@ SWITCH_STANDARD_API(lua_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void message_query_handler(switch_event_t *event)
+{
+	char *account = switch_event_get_header(event, "message-account");
+
+	if (account) {
+		char *path, *cmd;
+
+		path = switch_mprintf("%s%smwi.lua", SWITCH_GLOBAL_dirs.script_dir, SWITCH_PATH_SEPARATOR);
+		switch_assert(path != NULL);
+
+		if (switch_file_exists(path, NULL) == SWITCH_STATUS_SUCCESS) {
+			cmd = switch_mprintf("%s %s", path, account);
+			switch_assert(cmd != NULL);
+			lua_thread(cmd);
+			switch_safe_free(cmd);
+		}
+
+		switch_safe_free(path);
+	}
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 {
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
+
+	if (switch_event_bind(modname, SWITCH_EVENT_MESSAGE_QUERY, SWITCH_EVENT_SUBCLASS_ANY, message_query_handler, NULL)
+		!= SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
+	}
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
