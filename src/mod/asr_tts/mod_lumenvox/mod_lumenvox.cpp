@@ -178,7 +178,7 @@ static switch_status_t lumenvox_asr_resume(switch_asr_handle_t *ah)
 }
 
 /*! function to open the asr interface */
-static switch_status_t lumenvox_asr_open(switch_asr_handle_t *ah, char *codec, int rate, char *dest, switch_asr_flag_t *flags)
+static switch_status_t lumenvox_asr_open(switch_asr_handle_t *ah, const char *codec, int rate, const char *dest, switch_asr_flag_t *flags)
 {
 
 	lumenvox_t *lv;
@@ -291,7 +291,7 @@ static switch_status_t lumenvox_asr_open(switch_asr_handle_t *ah, char *codec, i
 }
 
 /*! function to load a grammar to the asr interface */
-static switch_status_t lumenvox_asr_load_grammar(switch_asr_handle_t *ah, char *grammar, char *path)
+static switch_status_t lumenvox_asr_load_grammar(switch_asr_handle_t *ah, const char *grammar, const char *path)
 {
 	lumenvox_t *lv = (lumenvox_t *) ah->private_info;
 
@@ -312,7 +312,7 @@ static switch_status_t lumenvox_asr_load_grammar(switch_asr_handle_t *ah, char *
 
 
 /*! function to unload a grammar to the asr interface */
-static switch_status_t lumenvox_asr_unload_grammar(switch_asr_handle_t *ah, char *grammar)
+static switch_status_t lumenvox_asr_unload_grammar(switch_asr_handle_t *ah, const char *grammar)
 {
 	lumenvox_t *lv = (lumenvox_t *) ah->private_info;
 
