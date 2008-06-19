@@ -35,6 +35,8 @@ BuildRequires: perl
 BuildRequires: pkgconfig
 BuildRequires: termcap
 BuildRequires: unixODBC-devel
+BuildRequires: gdbm-devel
+BuildRequires: db4-devel
 
 %if %{?suse_version:1}0
 %if 0%{?suse_version} > 910
@@ -170,7 +172,7 @@ XML_INT_MODULES="xml_int/mod_xml_rpc  xml_int/mod_xml_curl xml_int/mod_xml_cdr"
 MYMODULES="$PASSTHRU_CODEC_MODULES $SPIDERMONKEY_MODULES $APPLICATIONS_MODULES $ASR_TTS_MODULES $CODECS_MODULES $DIALPLANS_MODULES $DIRECTORIES_MODULES $DOTNET_MODULES $ENDPOINTS_MODULES $EVENT_HANDLERS_MODULES $FORMATS_MODULES $LANGUAGES_MODULES $LOGGERS_MODULES $SAY_MODULES $TIMERS_MODULES $XML_INT_MODULES"
 
 export MODULES=$MYMODULES
-rm modules.conf
+rm -f modules.conf
 touch modules.conf
 for i in $MODULES; do echo $i >> modules.conf; done
 export VERBOSE=yes
