@@ -529,7 +529,7 @@ processDataFromClient(TConn *  const connectionP,
                       uint32_t const timeout,
                       bool *   const keepAliveP) {
 
-    TSession session;
+    TSession session = {0};  /* initilization, an afforadble alternative to random memory being misinterpreted! */
 
     RequestInit(&session, connectionP);
 

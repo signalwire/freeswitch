@@ -868,9 +868,11 @@ readAndProcessHeaders(TSession * const sessionP,
 -----------------------------------------------------------------------------*/
     bool endOfHeaders;
 
-    assert(!sessionP->validRequest);
-        /* Calling us doesn't make sense if there is already a valid request */
-
+    /* Calling us doesn't make sense if there is already a valid request */
+    if (sessionP->validRequest) {
+       return;
+    }
+	
     *httpErrorCodeP = 0;  /* initial assumption */
     endOfHeaders = false;  /* Caller assures us there is at least one header */
 
