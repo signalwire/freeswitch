@@ -1789,6 +1789,7 @@ struct holder {
 	int print_title;
 	switch_xml_t xml;
 	int rows;
+	int justcount;
 };
 
 static int show_as_xml_callback(void *pArg, int argc, char **argv, char **columnNames)
@@ -1803,7 +1804,12 @@ static int show_as_xml_callback(void *pArg, int argc, char **argv, char **column
 			return -1;
 		}
 	}
-
+	
+	if (holder->justcount) {
+	    holder->count++;
+	    return 0;
+	}
+		
 	if (!(row = switch_xml_add_child_d(holder->xml, "row", holder->rows++))) {
 		return -1;
 	}
@@ -1836,7 +1842,12 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	struct holder *holder = (struct holder *) pArg;
 	int x;
-
+	
+	if (holder->justcount) {
+	    holder->count++;
+	    return 0;
+	}
+	
 	if (holder->print_title && holder->count == 0) {
 		if (holder->http) {
 			holder->stream->write_function(holder->stream, "\n<tr>");
@@ -1911,7 +1922,7 @@ SWITCH_STANDARD_API(alias_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define SHOW_SYNTAX "codec|application|api|dialplan|file|timer|calls|channels|aliases|complete"
+#define SHOW_SYNTAX "codec|application|api|dialplan|file|timer|calls [count]|channels [count]|aliases|complete"
 SWITCH_STANDARD_API(show_function)
 {
 	char sql[1024];
@@ -1929,13 +1940,16 @@ SWITCH_STANDARD_API(show_function)
 	}
 
 	db = switch_core_db_handle();
-
+	
+	holder.justcount = 0;
+	
 	if (cmd && (mydata = strdup(cmd))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 		command = argv[0];
 		if (argv[2] && !strcasecmp(argv[1], "as")) {
 			as = argv[2];
 		}
+		
 	}
 
 	if (stream->param_event) {
@@ -1962,8 +1976,20 @@ SWITCH_STANDARD_API(show_function)
 		sprintf(sql, "select name, description, syntax from interfaces where type = '%s' and description != '' order by type,name", command);
 	} else if (!strcasecmp(command, "calls")) {
 		sprintf(sql, "select * from calls order by created_epoch");
+		if (argv[1] && !strcasecmp(argv[1],"count")) {
+		    holder.justcount = 1;
+		    if (argv[3] && !strcasecmp(argv[2], "as")) {
+			as = argv[3];
+		    }
+		}
 	} else if (!strcasecmp(command, "channels")) {
 		sprintf(sql, "select * from channels order by created_epoch");
+		if (argv[1] && !strcasecmp(argv[1],"count")) {
+		    holder.justcount = 1;
+		    if (argv[3] && !strcasecmp(argv[2], "as")) {
+			as = argv[3];
+		    }
+		}
 	} else if (!strcasecmp(command, "aliases")) {
 		sprintf(sql, "select * from aliases order by alias");
 	} else if (!strcasecmp(command, "complete")) {
