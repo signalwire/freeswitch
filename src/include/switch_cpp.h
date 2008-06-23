@@ -234,7 +234,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 	 * receiving dtmf digits.  For that, use collectDigits.
 	 */
 		 SWITCH_DECLARE(char *) getDigits(int maxdigits, char *terminators, int timeout);
-		 SWITCH_DECLARE(char *) getDigits(int maxdigits, char *terminators, int timeout, int interdigit = 0);
+		 SWITCH_DECLARE(char *) getDigits(int maxdigits, char *terminators, int timeout, int interdigit);
 		 SWITCH_DECLARE(int) transfer(char *extensions, char *dialplan, char *context);
 
 
