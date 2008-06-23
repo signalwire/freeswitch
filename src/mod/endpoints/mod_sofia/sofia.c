@@ -1695,6 +1695,12 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			NUTAG_OFFER_SENT_REF(offer_sent),
 			NUTAG_ANSWER_SENT_REF(answer_sent),
 			SIPTAG_REPLACES_STR_REF(replaces_str), SOATAG_LOCAL_SDP_STR_REF(l_sdp), SOATAG_REMOTE_SDP_STR_REF(r_sdp), TAG_END());
+	
+	if (ss_state == nua_callstate_terminated) {
+		if (sofia_private) {
+			sofia_private->destroy_me = 1;
+		}
+	}
 
 	if (session) {
 		channel = switch_core_session_get_channel(session);
@@ -1704,7 +1710,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel %s entering state [%s]\n",
 						  switch_channel_get_name(channel), nua_callstate_name(ss_state));
-
+		
 		if (r_sdp) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote SDP:\n%s\n", r_sdp);
 			tech_pvt->remote_sdp_str = switch_core_session_strdup(session, r_sdp);
@@ -2123,16 +2129,10 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			}
 
 			if (tech_pvt->sofia_private) {
-				sofia_private = tech_pvt->sofia_private;
 				tech_pvt->sofia_private = NULL;
-				sofia_private->destroy_me = 1;
 			}
 
 			tech_pvt->nh = NULL;
-
-
-		} else if (sofia_private) {
-			sofia_private->destroy_me = 1;
 		}
 
 		if (nh) {
@@ -3098,13 +3098,14 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				}
 			}
 		}
-
+		
 		switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 	}
 
 	if (!(sofia_private = malloc(sizeof(*sofia_private)))) {
 		abort();
 	}
+
 	memset(sofia_private, 0, sizeof(*sofia_private));
 	tech_pvt->sofia_private = sofia_private;
 
@@ -3192,7 +3193,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	}
 
 	nua_handle_bind(nh, NULL);
-	free(tech_pvt->sofia_private);
+	free(sofia_private);
 	switch_core_session_destroy(&session);
 	nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 }
