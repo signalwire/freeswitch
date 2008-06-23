@@ -50,6 +50,8 @@
       <!--<param name="vm-email-all-messages" value="true"/>-->
       <!-- optionally use this instead if you want to store the hash of user:domain:pass-->
       <!--<param name="a1-hash" value="c6440e5de50b403206989679159de89a"/>-->
+      <!-- What this user is allowed to acces --> 
+      <!--<param name="http-allowed-api" value="crap,jsapi,voicemail,status"/> -->
     </params>
     <variables>
       <!--all variables here will be set on all inbound calls that originate from this user -->
