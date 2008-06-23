@@ -166,7 +166,8 @@ static void launch_collect_thread(struct key_collect *collect)
 
 static uint8_t check_channel_status(switch_channel_t **peer_channels,
 									switch_core_session_t **peer_sessions,
-									uint32_t len, int32_t *idx, uint32_t *hups, char *file, char *key, uint8_t early_ok, uint8_t *ring_ready,
+									uint32_t len, int32_t *idx, uint32_t *hups, char *file, char *key, uint8_t early_ok, 
+									uint8_t *ring_ready, uint8_t *progress,
 									uint8_t return_ring_ready)
 {
 
@@ -181,6 +182,9 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 		}
 		if (!*ring_ready && switch_channel_test_flag(peer_channels[i], CF_RING_READY)) {
 			*ring_ready = 1;
+		}
+		if (!*ring_ready && switch_channel_test_flag(peer_channels[i], CF_EARLY_MEDIA)) {
+			*progress = 1;
 		}
 
 		state = switch_channel_get_state(peer_channels[i]);
@@ -513,12 +517,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	char *var_val, *vars = NULL;
 	const char *ringback_data = NULL;
 	switch_codec_t *read_codec = NULL;
-	uint8_t sent_ring = 0, early_ok = 1, return_ring_ready = 0;
+	uint8_t sent_ring = 0, early_ok = 1, return_ring_ready = 0, progress = 0;
 	switch_core_session_message_t *message = NULL;
 	switch_event_t *var_event = NULL;
 	uint8_t fail_on_single_reject = 0;
 	uint8_t ring_ready = 0;
 	char *loop_data = NULL;
+	uint32_t progress_timelimit_sec = 0;
 
 	switch_zmalloc(write_frame.data, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
@@ -595,6 +600,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				} else if (!strcasecmp((char *) hi->name, "originate_retries")) {
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "originate_timeout")) {
+					ok = 1;
+				} else if (!strcasecmp((char *) hi->name, "progress_timeout")) {
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "originate_retry_sleep_ms")) {
 					ok = 1;
@@ -679,10 +686,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		return_ring_ready = 1;
 	}
 
-	if ((var_val = switch_event_get_header(var_event, "originate_timeout")) && switch_true(var_val)) {
+	if ((var_val = switch_event_get_header(var_event, "originate_timeout"))) {
 		int tmp = atoi(var_val);
 		if (tmp > 0) {
 			timelimit_sec = (uint32_t) tmp;
+		}
+	}
+
+	if ((var_val = switch_event_get_header(var_event, "progress_timeout"))) {
+		int tmp = atoi(var_val);
+		if (tmp > 0) {
+			progress_timelimit_sec = (uint32_t) tmp;
 		}
 	}
 
@@ -720,6 +734,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		cid_num_override = switch_event_get_header(var_event, "origination_caller_id_number");
 	}
 
+	if (!progress_timelimit_sec) {
+		progress_timelimit_sec = timelimit_sec;
+	}
+
 	for (try = 0; try < retries; try++) {
 		switch_safe_free(loop_data);
 		loop_data = strdup(data);
@@ -753,6 +771,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			pass = 0;
 			var = NULL;
 			to = 0;
+			progress_timelimit_sec = 0;
+			sent_ring = 0;
+			progress = 0;
 
 			if (try > 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Originate attempt %d/%d in %d ms\n", try + 1, retries, sleep_ms);
@@ -996,6 +1017,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						goto notready;
 					}
 
+					if (!sent_ring && !progress && (switch_timestamp(NULL) - start) > (time_t) progress_timelimit_sec) {
+						to++;
+						idx = IDX_TIMEOUT;
+						goto notready;
+					}
+
 					switch_yield(10000);
 				}
 
@@ -1102,8 +1129,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 
 			while ((!caller_channel || switch_channel_ready(caller_channel)) &&
-				   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, &hups, file, key, early_ok, &ring_ready, return_ring_ready)) {
-
+				   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, &hups, file, key, early_ok, &ring_ready, &progress, return_ring_ready)) {
+				
 				if (caller_channel && !sent_ring && ring_ready && !return_ring_ready) {
 					switch_channel_ring_ready(caller_channel);
 					sent_ring = 1;
