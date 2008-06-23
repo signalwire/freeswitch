@@ -1895,7 +1895,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 		}
 	}
 
-	if (sendonly) {
+	if (sendonly && switch_channel_test_flag(channel, CF_ANSWERED)) {
 		if (!switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
 			const char *stream;
 
