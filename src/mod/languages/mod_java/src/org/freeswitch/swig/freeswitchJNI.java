@@ -96,7 +96,8 @@ class freeswitchJNI {
   public final static native int CoreSession_speak(long jarg1, CoreSession jarg1_, String jarg2);
   public final static native void CoreSession_set_tts_parms(long jarg1, CoreSession jarg1_, String jarg2, String jarg3);
   public final static native int CoreSession_collectDigits(long jarg1, CoreSession jarg1_, int jarg2);
-  public final static native String CoreSession_getDigits(long jarg1, CoreSession jarg1_, int jarg2, String jarg3, int jarg4);
+  public final static native String CoreSession_getDigits__SWIG_0(long jarg1, CoreSession jarg1_, int jarg2, String jarg3, int jarg4);
+  public final static native String CoreSession_getDigits__SWIG_1(long jarg1, CoreSession jarg1_, int jarg2, String jarg3, int jarg4, int jarg5);
   public final static native int CoreSession_transfer(long jarg1, CoreSession jarg1_, String jarg2, String jarg3, String jarg4);
   public final static native String CoreSession_read(long jarg1, CoreSession jarg1_, int jarg2, int jarg3, String jarg4, int jarg5, String jarg6);
   public final static native String CoreSession_playAndGetDigits(long jarg1, CoreSession jarg1_, int jarg2, int jarg3, int jarg4, int jarg5, String jarg6, String jarg7, String jarg8, String jarg9);

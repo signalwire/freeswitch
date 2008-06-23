@@ -4505,7 +4505,7 @@ fail:
 }
 
 
-static int _wrap_CoreSession_getDigits(lua_State* L) {
+static int _wrap_CoreSession_getDigits__SWIG_0(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
   int arg2 ;
@@ -4536,6 +4536,119 @@ static int _wrap_CoreSession_getDigits(lua_State* L) {
 fail:
   lua_error(L);
   return SWIG_arg;
+}
+
+
+static int _wrap_CoreSession_getDigits__SWIG_1(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  int arg2 ;
+  char *arg3 = (char *) 0 ;
+  int arg4 ;
+  int arg5 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("getDigits",5,5)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("getDigits",1,"CoreSession *");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("getDigits",2,"int");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("getDigits",3,"char *");
+  if(!lua_isnumber(L,4)) SWIG_fail_arg("getDigits",4,"int");
+  if(!lua_isnumber(L,5)) SWIG_fail_arg("getDigits",5,"int");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_getDigits",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg2 = (int)lua_tonumber(L, 2);
+  arg3 = (char *)lua_tostring(L, 3);
+  arg4 = (int)lua_tonumber(L, 4);
+  arg5 = (int)lua_tonumber(L, 5);
+  result = (char *)(arg1)->getDigits(arg2,arg3,arg4,arg5);
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_CoreSession_getDigits(lua_State* L) {
+  int argc;
+  int argv[6]={
+    1,2,3,4,5,6
+  };
+  
+  argc = lua_gettop(L);
+  if (argc == 4) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = lua_isnumber(L,argv[1]);
+      }
+      if (_v) {
+        {
+          _v = lua_isstring(L,argv[2]);
+        }
+        if (_v) {
+          {
+            _v = lua_isnumber(L,argv[3]);
+          }
+          if (_v) {
+            return _wrap_CoreSession_getDigits__SWIG_0(L);
+          }
+        }
+      }
+    }
+  }
+  if (argc == 5) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = lua_isnumber(L,argv[1]);
+      }
+      if (_v) {
+        {
+          _v = lua_isstring(L,argv[2]);
+        }
+        if (_v) {
+          {
+            _v = lua_isnumber(L,argv[3]);
+          }
+          if (_v) {
+            {
+              _v = lua_isnumber(L,argv[4]);
+            }
+            if (_v) {
+              return _wrap_CoreSession_getDigits__SWIG_1(L);
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  lua_pushstring(L,"No matching function for overloaded 'CoreSession_getDigits'");
+  lua_error(L);return 0;
 }
 
 
