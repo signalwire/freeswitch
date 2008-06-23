@@ -144,6 +144,10 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	if ((tmp = sofia_glue_get_unknown_header(sip, "rtp-rxstat"))) {
 		switch_channel_set_variable(channel, "sip_rtp_rxstat", tmp);
 	}
+	if ((tmp = sofia_glue_get_unknown_header(sip, "P-RTP-Stat"))) {
+		switch_channel_set_variable(channel, "sip_p_rtp_stat", tmp);
+	}
+
 	return;
 }
 
