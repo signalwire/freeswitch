@@ -708,11 +708,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 	}
 
-	if (!cid_name_override) {
+	if (cid_name_override) {
+		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_name", cid_name_override);
+	} else {
 		cid_name_override = switch_event_get_header(var_event, "origination_caller_id_name");
 	}
 
-	if (!cid_num_override) {
+	if (cid_num_override) {
+		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_number", cid_num_override);
+	} else {
 		cid_num_override = switch_event_get_header(var_event, "origination_caller_id_number");
 	}
 
@@ -861,9 +865,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 				}
 
-				if (vdata && (var_begin = switch_stristr("effective_caller_id_number=", vdata))) {
+				if (vdata && (var_begin = switch_stristr("origination_caller_id_number=", vdata))) {
 					char tmp[512] = "";
-					var_begin += strlen("effective_caller_id_number=");
+					var_begin += strlen("origination_caller_id_number=");
 					var_end = strchr(var_begin, '|');
 					if (var_end) {
 						strncpy(tmp, var_begin, var_end-var_begin);
@@ -873,9 +877,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					new_profile->caller_id_number = switch_core_strdup(new_profile->pool, tmp);
 				}
 
-				if (vdata && (var_begin = switch_stristr("effective_caller_id_name=", vdata))) {
+				if (vdata && (var_begin = switch_stristr("origination_caller_id_name=", vdata))) {
 					char tmp[512] = "";
-					var_begin += strlen("effective_caller_id_name=");
+					var_begin += strlen("origination_caller_id_name=");
 					var_end = strchr(var_begin, '|');
 					if (var_end) {
 						strncpy(tmp, var_begin, var_end-var_begin);

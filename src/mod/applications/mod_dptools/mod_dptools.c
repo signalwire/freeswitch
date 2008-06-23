@@ -1961,6 +1961,13 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		char *d_dest = NULL;
 		switch_channel_t *channel;
 		switch_originate_flag_t myflags = SOF_NONE;
+		char *cid_name_override = NULL;
+		char *cid_num_override = NULL;
+		
+		if (var_event) {
+			cid_name_override = switch_event_get_header(var_event, "origination_caller_id_name");
+			cid_num_override = switch_event_get_header(var_event, "origination_caller_id_number");
+		}
 
 		if (session) {
 			channel = switch_core_session_get_channel(session);
@@ -1992,7 +1999,8 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 			myflags |= SOF_NOBLOCK;
 		}
 
-		if (switch_ivr_originate(session, new_session, &cause, d_dest, timelimit, NULL, NULL, NULL, NULL, myflags) == SWITCH_STATUS_SUCCESS) {
+		if (switch_ivr_originate(session, new_session, &cause, d_dest, timelimit, NULL, 
+								 cid_name_override, cid_num_override, NULL, myflags) == SWITCH_STATUS_SUCCESS) {
 			const char *context;
 			switch_caller_profile_t *cp;
 
