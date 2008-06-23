@@ -315,7 +315,15 @@ static switch_status_t zh_say_time(switch_core_session_t *session, char *tosay, 
 		}
 
 		if (hours) {
-			say_num(hours, SSM_PRONOUNCED);
+
+            if (hours == 2) 
+            {
+                say_file("time/specialtwo.wav");
+            }
+            else
+            {
+			    say_num(hours, SSM_PRONOUNCED);
+            }
 			if (hours == 1) {
 				say_file("time/hour.wav");
 			} else {
@@ -375,11 +383,15 @@ static switch_status_t zh_say_time(switch_core_session_t *session, char *tosay, 
 	}
 
 	if (say_date) {
-		say_file("time/day-%d.wav", tm.tm_wday);
+        say_num(tm.tm_year + 1900, SSM_ITERATED);
+		say_file("time/year.wav");
 		say_file("time/mon-%d.wav", tm.tm_mon);
-		say_num(tm.tm_mday, SSM_COUNTED);
-		say_num(tm.tm_year + 1900, SSM_PRONOUNCED);
+		say_num(tm.tm_mday, SSM_PRONOUNCED);
+		say_file("time/day.wav");
+		say_file("time/day-%d.wav", tm.tm_wday);
+	
 	}
+
 
 	if (say_time) {
 		int32_t hour = tm.tm_hour, pm = 0;
@@ -394,18 +406,14 @@ static switch_status_t zh_say_time(switch_core_session_t *session, char *tosay, 
 			pm = 0;
 		}
 
+        say_file("time/%s.wav", pm ? "p-m" : "a-m");
+
 		say_num(hour, SSM_PRONOUNCED);
+        say_file("time/clock-hour.wav");
+        say_num(tm.tm_min, SSM_PRONOUNCED);
+        say_file("time/clock-minute.wav");  
 
-		if (tm.tm_min > 9) {
-			say_num(tm.tm_min, SSM_PRONOUNCED);
-		} else if (tm.tm_min) {
-			say_file("time/oh.wav");
-			say_num(tm.tm_min, SSM_PRONOUNCED);
-		} else {
-			say_file("time/oclock.wav");
-		}
-
-		say_file("time/%s.wav", pm ? "p-m" : "a-m");
+		
 	}
 
 	return SWITCH_STATUS_SUCCESS;
