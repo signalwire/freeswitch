@@ -270,6 +270,15 @@
       </condition>
     </extension>
 
+    <extension name="show_info">
+      <condition field="destination_number" expression="^9992$">
+	<action application="answer"/>
+	<action application="info"/>
+	<action application="sleep" data="250"/>
+	<action application="hangup"/>
+      </condition>
+    </extension>
+
     <extension name="video_record">
       <condition field="destination_number" expression="^9993$">
 	<action application="answer"/>
