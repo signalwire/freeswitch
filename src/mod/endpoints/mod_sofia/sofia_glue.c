@@ -132,9 +132,9 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 
 	if (tech_pvt->rm_encoding) {
 		rate = tech_pvt->rm_rate;
-		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", tech_pvt->pt, tech_pvt->rm_encoding, rate);
+		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", tech_pvt->agreed_pt, tech_pvt->rm_encoding, rate);
 		if (tech_pvt->fmtp_out) {
-			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->pt, tech_pvt->fmtp_out);
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->agreed_pt, tech_pvt->fmtp_out);
 		}
 		if (tech_pvt->read_codec.implementation && !ptime) {
 			ptime = tech_pvt->read_codec.implementation->microseconds_per_frame / 1000;
@@ -229,7 +229,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 			/*****************************/
 			if (tech_pvt->video_rm_encoding) {
 				sofia_glue_tech_set_video_codec(tech_pvt, 0);
-				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->video_pt);
+				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->video_agreed_pt);
 			} else if (tech_pvt->num_codecs) {
 				int i;
 				int already_did[128] = { 0 };
