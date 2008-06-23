@@ -583,9 +583,15 @@ SWITCH_DECLARE(int) CoreSession::collectDigits(int timeout) {
     return SWITCH_STATUS_SUCCESS;
 } 
 
+SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits, char *terminators, int timeout)
+{
+    return getDigits(maxdigits, terminators, timeout, 0);
+}
+
 SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits, 
 											  char *terminators, 
-											  int timeout)
+											  int timeout,
+											  int interdigit)
 {
     switch_status_t status;
 	this_check((char *)"");
@@ -600,7 +606,7 @@ SWITCH_DECLARE(char *) CoreSession::getDigits(int maxdigits,
 											 maxdigits, 
 											 terminators, 
 											 &terminator, 
-											 (uint32_t) timeout, 0, 0);
+											 (uint32_t) timeout, (uint32_t)interdigit, 0);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "getDigits dtmf_buf: %s\n", dtmf_buf);
 	end_allow_threads();
