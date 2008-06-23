@@ -625,9 +625,9 @@ static void load_mime_types(void)
 
 	fd = open(mime_path, O_RDONLY);
 	if (fd <= 0) {
-		return;
+		goto end;
 	}
-
+	
 	while ((switch_fd_read_line(fd, line_buf, sizeof(line_buf)))) {
 		char *p;
 		char *type = line_buf;
@@ -656,6 +656,11 @@ static void load_mime_types(void)
 		close(fd);
 		fd = -1;
 	}
+
+ end:
+
+	switch_safe_free(mime_path);
+
 }
 
 SWITCH_DECLARE(void) switch_core_setrlimits(void)
