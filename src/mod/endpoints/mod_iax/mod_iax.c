@@ -574,6 +574,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 {
 	private_t *tech_pvt = switch_core_session_get_private(session);
 	switch_byte_t *data;
+	int ms_count = 0;
 
 	switch_assert(tech_pvt != NULL);
 	tech_pvt->read_frame.flags = SFF_NONE;
@@ -615,6 +616,9 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		}
 
 		switch_yield(1000);
+		if (++ms_count >= 30000) {
+			break;
+		}
 	}
 
 	return SWITCH_STATUS_FALSE;
