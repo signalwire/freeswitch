@@ -49,6 +49,14 @@
 PaWinDsDSoundEntryPoints paWinDsDSoundEntryPoints = { 0, 0, 0, 0, 0, 0, 0 };
 
 
+static HRESULT WINAPI DummyDllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
+{
+    (void)rclsid; /* unused parameter */
+    (void)riid; /* unused parameter */
+    (void)ppv; /* unused parameter */
+    return CLASS_E_CLASSNOTAVAILABLE;
+}
+
 static HRESULT WINAPI DummyDirectSoundCreate(LPGUID lpcGuidDevice, LPDIRECTSOUND *ppDS, LPUNKNOWN pUnkOuter)
 {
     (void)lpcGuidDevice; /* unused parameter */
@@ -99,6 +107,12 @@ void PaWinDs_InitializeDSoundEntryPoints(void)
     paWinDsDSoundEntryPoints.hInstance_ = LoadLibrary("dsound.dll");
     if( paWinDsDSoundEntryPoints.hInstance_ != NULL )
     {
+        paWinDsDSoundEntryPoints.DllGetClassObject =
+                (HRESULT (WINAPI *)(REFCLSID, REFIID , LPVOID *))
+                GetProcAddress( paWinDsDSoundEntryPoints.hInstance_, "DllGetClassObject" );
+        if( paWinDsDSoundEntryPoints.DllGetClassObject == NULL )
+            paWinDsDSoundEntryPoints.DllGetClassObject = DummyDllGetClassObject;
+
         paWinDsDSoundEntryPoints.DirectSoundCreate =
                 (HRESULT (WINAPI *)(LPGUID, LPDIRECTSOUND *, LPUNKNOWN))
                 GetProcAddress( paWinDsDSoundEntryPoints.hInstance_, "DirectSoundCreate" );

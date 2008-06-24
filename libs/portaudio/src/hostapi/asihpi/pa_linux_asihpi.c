@@ -1,10 +1,10 @@
 /*
  * PortAudio Portable Real-Time Audio Library
  * Latest Version at: http://www.portaudio.com
- * 
+ *
  * PortAudio v18 version of AudioScience HPI driver by Fred Gleason <fredg@salemradiolabs.com>
  * PortAudio v19 version of AudioScience HPI driver by Ludwig Schwardt <schwardt@sun.ac.za>
- * 
+ *
  * Copyright (c) 2003 Fred Gleason
  * Copyright (c) 2005,2006 Ludwig Schwardt
  *
@@ -29,13 +29,13 @@
  */
 
 /*
- * The text above constitutes the entire PortAudio license; however, 
+ * The text above constitutes the entire PortAudio license; however,
  * the PortAudio community also makes the following non-binding requests:
  *
  * Any person wishing to distribute modifications to the Software is
  * requested to send the modifications to the original developer so that
- * they can be incorporated into the canonical version. It is also 
- * requested that these non-binding requests be included along with the 
+ * they can be incorporated into the canonical version. It is also
+ * requested that these non-binding requests be included along with the
  * license above.
  */
 
@@ -47,45 +47,45 @@
 
 /** @file
  @ingroup hostapi_src
- @brief Host API implementation supporting AudioScience cards 
+ @brief Host API implementation supporting AudioScience cards
         via the Linux HPI interface.
- 
+
  <h3>Overview</h3>
- 
+
  This is a PortAudio implementation for the AudioScience HPI Audio API
  on the Linux platform. AudioScience makes a range of audio adapters customised
  for the broadcasting industry, with support for both Windows and Linux.
  More information on their products can be found on their website:
- 
+
      http://www.audioscience.com
- 
+
  Documentation for the HPI API can be found at:
- 
+
      http://www.audioscience.com/internet/download/sdk/spchpi.pdf
- 
+
  The Linux HPI driver itself (a kernel module + library) can be downloaded from:
- 
+
      http://www.audioscience.com/internet/download/linux_drivers.htm
- 
+
  <h3>Implementation strategy</h3>
- 
- *Note* Ideally, AudioScience cards should be handled by the PortAudio ALSA 
+
+ *Note* Ideally, AudioScience cards should be handled by the PortAudio ALSA
  implementation on Linux, as ALSA is the preferred Linux soundcard API. The existence
- of this host API implementation might therefore seem a bit flawed. Unfortunately, at 
- the time of the creation of this implementation (June 2006), the PA ALSA implementation 
- could not make use of the existing AudioScience ALSA driver. PA ALSA uses the 
- "memory-mapped" (mmap) ALSA access mode to interact with the ALSA library, while the 
+ of this host API implementation might therefore seem a bit flawed. Unfortunately, at
+ the time of the creation of this implementation (June 2006), the PA ALSA implementation
+ could not make use of the existing AudioScience ALSA driver. PA ALSA uses the
+ "memory-mapped" (mmap) ALSA access mode to interact with the ALSA library, while the
  AudioScience ALSA driver only supports the "read-write" access mode. The appropriate
  solution to this problem is to add "read-write" support to PortAudio ALSA, thereby
  extending the range of soundcards it supports (AudioScience cards are not the only
- ones with this problem). Given the author's limited knowledge of ALSA and the 
+ ones with this problem). Given the author's limited knowledge of ALSA and the
  simplicity of the HPI API, the second-best solution was born...
- 
+
  The following mapping between HPI and PA was followed:
  HPI subsystem => PortAudio host API
  HPI adapter => nothing specific
  HPI stream => PortAudio device
- 
+
  Each HPI stream is either input or output (not both), and can support
  different channel counts, sampling rates and sample formats. It is therefore
  a more natural fit to a PA device. A PA stream can therefore combine two
@@ -93,19 +93,19 @@
  HPI streams can even be on different physical adapters. The two streams ought to be
  sample-synchronised when they reside on the same adapter, as most AudioScience adapters
  derive their ADC and DAC clocks from one master clock. When combining two adapters
- into one full-duplex stream, however, the use of a word clock connection between the 
+ into one full-duplex stream, however, the use of a word clock connection between the
  adapters is strongly recommended.
-  
+
  The HPI interface is inherently blocking, making use of read and write calls to
  transfer data between user buffers and driver buffers. The callback interface therefore
  requires a helper thread ("callback engine") which periodically transfers data (one thread
- per PA stream, in fact). The current implementation explicitly sleeps via Pa_Sleep() until 
- enough samples can be transferred (select() or poll() would be better, but currently seems 
+ per PA stream, in fact). The current implementation explicitly sleeps via Pa_Sleep() until
+ enough samples can be transferred (select() or poll() would be better, but currently seems
  impossible...). The thread implementation makes use of the Unix thread helper functions
- and some pthread calls here and there. If a unified PA thread exists, this host API 
- implementation might also compile on Windows, as this is the only real Linux-specific 
+ and some pthread calls here and there. If a unified PA thread exists, this host API
+ implementation might also compile on Windows, as this is the only real Linux-specific
  part of the code.
- 
+
  There is no inherent fixed buffer size in the HPI interface, as in some other host APIs.
  The PortAudio implementation contains a buffer that is allocated during OpenStream and
  used to transfer data between the callback and the HPI driver buffer. The size of this
@@ -113,28 +113,28 @@
  requested callback buffer size as far as possible. It can become quite huge, as the
  AudioScience cards are typically geared towards higher-latency applications and contain
  large hardware buffers.
- 
+
  The HPI interface natively supports most common sample formats and sample rates (some
  conversion is done on the adapter itself).
- 
+
  Stream time is measured based on the number of processed frames, which is adjusted by the
  number of frames currently buffered by the HPI driver.
- 
+
  There is basic support for detecting overflow and underflow. The HPI interface does not
  explicitly indicate this, so thresholds on buffer levels are used in combination with
  stream state. Recovery from overflow and underflow is left to the PA client.
- 
+
  Blocking streams are also implemented. It makes use of the same polling routines that
  the callback interface uses, in order to prevent the allocation of variable-sized
- buffers during reading and writing. The framesPerBuffer parameter is therefore still 
+ buffers during reading and writing. The framesPerBuffer parameter is therefore still
  relevant, and this can be increased in the blocking case to improve efficiency.
- 
+
  The implementation contains extensive reporting macros (slightly modified PA_ENSURE and
  PA_UNLESS versions) and a useful stream dump routine to provide debugging feedback.
- 
+
  Output buffer priming via the user callback (i.e. paPrimeOutputBuffersUsingStreamCallback
  and friends) is not implemented yet. All output is primed with silence.
- 
+
  Please send bug reports etc. to Ludwig Schwardt <schwardt@sun.ac.za>
  */
 
@@ -157,6 +157,7 @@
 #include "pa_cpuload.h"      /* CPU load measurer */
 #include "pa_process.h"      /* Buffer processor */
 #include "pa_converters.h"   /* PaUtilZeroer */
+#include "pa_debugprint.h"
 
 /* -------------------------------------------------------------------------- */
 
@@ -305,9 +306,9 @@ PaAsiHpiDeviceInfo;
  during the Active state of PortAudio (due to underruns) and also during CallBackFinished in
  the case of an output stream. Similarly, HPI_STATE_STOPPED mostly coincides with the Stopped
  PortAudio state, by may also occur in the CallbackFinished state when recording is finished.
- 
+
  Here is a rough match-up:
- 
+
  PortAudio state   =>     HPI state
  ---------------          ---------
  Active            =>     HPI_STATE_RECORDING, HPI_STATE_PLAYING, (HPI_STATE_DRAINED)
@@ -328,7 +329,7 @@ typedef struct PaAsiHpiStreamComponent
     /** Device information (HPI handles, etc) */
     PaAsiHpiDeviceInfo *hpiDevice;
     /** Stream handle, as passed to HPI interface.
-     HACK: we assume types HPI_HISTREAM and HPI_HOSTREAM are the same... 
+     HACK: we assume types HPI_HISTREAM and HPI_HOSTREAM are the same...
      (both are HW32 up to version 3.00 of ASIHPI, and hopefully they stay that way) */
     HPI_HISTREAM hpiStream;
     /** Stream format, as passed to HPI interface */
@@ -377,7 +378,7 @@ typedef struct PaAsiHpiStream
     int neverDropInput;
     /** Contains copy of user buffers, used by blocking interface to transfer non-interleaved data.
      It went here instead of to each stream component, as the stream component buffer setup in
-     PaAsiHpi_SetupBuffers doesn't know the stream details such as callbackMode. 
+     PaAsiHpi_SetupBuffers doesn't know the stream details such as callbackMode.
      (Maybe a problem later if ReadStream and WriteStream happens concurrently on same stream.) */
     void **blockingUserBufferCopy;
 
@@ -408,7 +409,7 @@ typedef struct PaAsiHpiStreamInfo
     /** Number of frames played/recorded since last stream reset */
     HW32 frameCounter;
     /** Amount of data (in bytes) in hardware (on-card) buffer.
-     This differs from dataSize if bus mastering (BBM) is used, which introduces another 
+     This differs from dataSize if bus mastering (BBM) is used, which introduces another
      driver-level buffer to which dataSize/bufferSize then refers. */
     HW32 auxDataSize;
     /** Total number of data frames currently buffered by HPI driver (host + hw buffers) */
@@ -517,9 +518,9 @@ static PaError PaAsiHpi_EndProcessing( PaAsiHpiStream *stream, unsigned long num
  This compiles a list of all HPI adapters, and registers a PA device for each input and
  output stream it finds. Most errors are ignored, as missing or erroneous devices are
  simply skipped.
- 
+
  @param hpiHostApi Pointer to HPI host API struct
- 
+
  @return PortAudio error code (only paInsufficientMemory in practice)
  */
 static PaError PaAsiHpi_BuildDeviceList( PaAsiHpiHostApiRepresentation *hpiHostApi )
@@ -726,11 +727,11 @@ error:
  This is the only function exported beyond this file. It is called by PortAudio to initialize
  the host API. It stores API info, finds and registers all devices, and sets up callback and
  blocking interfaces.
- 
+
  @param hostApi Pointer to host API struct
- 
+
  @param hostApiIndex Index of current (HPI) host API
- 
+
  @return PortAudio error code
  */
 PaError PaAsiHpi_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiIndex hostApiIndex )
@@ -807,7 +808,7 @@ error:
 /** Terminate host API implementation.
  This closes all HPI adapters and frees the HPI subsystem. It also frees the host API struct
  memory. It should be called once for every PaAsiHpi_Initialize call.
- 
+
  @param Pointer to host API struct
  */
 static void Terminate( struct PaUtilHostApiRepresentation *hostApi )
@@ -853,9 +854,9 @@ error:
 
 
 /** Converts PortAudio sample format to equivalent HPI format.
- 
+
  @param paFormat PortAudio sample format
- 
+
  @return HPI sample format
  */
 static HW16 PaAsiHpi_PaToHpiFormat( PaSampleFormat paFormat )
@@ -887,9 +888,9 @@ static HW16 PaAsiHpi_PaToHpiFormat( PaSampleFormat paFormat )
 
 
 /** Converts HPI sample format to equivalent PortAudio format.
- 
+
  @param paFormat HPI sample format
- 
+
  @return PortAudio sample format
  */
 static PaSampleFormat PaAsiHpi_HpiToPaFormat( HW16 hpiFormat )
@@ -919,20 +920,20 @@ static PaSampleFormat PaAsiHpi_HpiToPaFormat( HW16 hpiFormat )
 
 
 /** Creates HPI format struct based on PortAudio parameters.
- This also does some checks to see whether the desired format is valid, and whether 
+ This also does some checks to see whether the desired format is valid, and whether
  the device allows it. This only checks the format of one half (input or output) of the
  PortAudio stream.
- 
+
  @param hostApi Pointer to host API struct
- 
+
  @param parameters Pointer to stream parameter struct
- 
+
  @param sampleRate Desired sample rate
- 
+
  @param hpiDevice Pointer to HPI device struct
- 
+
  @param hpiFormat Resulting HPI format returned here
-  
+
  @return PortAudio error code (typically indicating a problem with stream format)
  */
 static PaError PaAsiHpi_CreateFormat( struct PaUtilHostApiRepresentation *hostApi,
@@ -1005,13 +1006,13 @@ static PaError PaAsiHpi_CreateFormat( struct PaUtilHostApiRepresentation *hostAp
 /** Open HPI input stream with given format.
  This attempts to open HPI input stream with desired format. If the format is not supported
  or the device is unavailable, the stream is closed and a PortAudio error code is returned.
- 
+
  @param hostApi Pointer to host API struct
- 
+
  @param hpiDevice Pointer to HPI device struct
- 
+
  @param hpiFormat Pointer to HPI format struct
-  
+
  @return PortAudio error code (typically indicating a problem with stream format or device)
 */
 static PaError PaAsiHpi_OpenInput( struct PaUtilHostApiRepresentation *hostApi,
@@ -1060,13 +1061,13 @@ error:
 /** Open HPI output stream with given format.
  This attempts to open HPI output stream with desired format. If the format is not supported
  or the device is unavailable, the stream is closed and a PortAudio error code is returned.
- 
+
  @param hostApi Pointer to host API struct
- 
+
  @param hpiDevice Pointer to HPI device struct
- 
+
  @param hpiFormat Pointer to HPI format struct
-  
+
  @return PortAudio error code (typically indicating a problem with stream format or device)
 */
 static PaError PaAsiHpi_OpenOutput( struct PaUtilHostApiRepresentation *hostApi,
@@ -1115,15 +1116,15 @@ error:
 /** Checks whether the desired stream formats and devices are supported
  (for both input and output).
  This is done by actually opening the appropriate HPI streams and closing them again.
- 
+
  @param hostApi Pointer to host API struct
-  
+
  @param inputParameters Pointer to stream parameter struct for input side of stream
- 
+
  @param outputParameters Pointer to stream parameter struct for output side of stream
- 
+
  @param sampleRate Desired sample rate
- 
+
  @return PortAudio error code (paFormatIsSupported on success)
  */
 static PaError IsFormatSupported( struct PaUtilHostApiRepresentation *hostApi,
@@ -1177,11 +1178,11 @@ error:
 /** Obtain HPI stream information.
  This obtains info such as stream state and available data/space in buffers. It also
  estimates whether an underflow or overflow occurred.
- 
+
  @param streamComp Pointer to stream component (input or output) to query
- 
+
  @param info Pointer to stream info struct that will contain result
-  
+
  @return PortAudio error code (either paNoError, paDeviceUnavailable or paUnanticipatedHostError)
  */
 static PaError PaAsiHpi_GetStreamInfo( PaAsiHpiStreamComponent *streamComp, PaAsiHpiStreamInfo *info )
@@ -1262,9 +1263,9 @@ error:
 
 
 /** Display stream component information for debugging purposes.
- 
+
  @param streamComp Pointer to stream component (input or output) to query
- 
+
  @param stream Pointer to stream struct which contains the component above
  */
 static void PaAsiHpi_StreamComponentDump( PaAsiHpiStreamComponent *streamComp,
@@ -1391,7 +1392,7 @@ static void PaAsiHpi_StreamComponentDump( PaAsiHpiStreamComponent *streamComp,
 
 
 /** Display stream information for debugging purposes.
- 
+
  @param stream Pointer to stream to query
  */
 static void PaAsiHpi_StreamDump( PaAsiHpiStream *stream )
@@ -1457,25 +1458,25 @@ static void PaAsiHpi_StreamDump( PaAsiHpiStream *stream )
 
 
 /** Determine buffer sizes and allocate appropriate stream buffers.
- This attempts to allocate a BBM (host) buffer for the HPI stream component (either input 
+ This attempts to allocate a BBM (host) buffer for the HPI stream component (either input
  or output, as both have similar buffer needs). Not all AudioScience adapters support BBM,
- in which case the hardware buffer has to suffice. The size of the HPI host buffer is chosen 
- as a multiple of framesPerPaHostBuffer, and also influenced by the suggested latency and the 
- estimated minimum polling interval. The HPI host and hardware buffer sizes are stored, and an 
- appropriate cap for the hardware buffer is also calculated. Finally, the temporary stream 
+ in which case the hardware buffer has to suffice. The size of the HPI host buffer is chosen
+ as a multiple of framesPerPaHostBuffer, and also influenced by the suggested latency and the
+ estimated minimum polling interval. The HPI host and hardware buffer sizes are stored, and an
+ appropriate cap for the hardware buffer is also calculated. Finally, the temporary stream
  buffer which serves as the PortAudio host buffer for this implementation is allocated.
  This buffer contains an integer number of user buffers, to simplify buffer adaption in the
  buffer processor. The function returns paBufferTooBig if the HPI interface cannot allocate
  an HPI host buffer of the desired size.
- 
+
  @param streamComp Pointer to stream component struct
-  
+
  @param pollingInterval Polling interval for stream, in milliseconds
- 
+
  @param framesPerPaHostBuffer Size of PortAudio host buffer, in frames
- 
+
  @param suggestedLatency Suggested latency for stream component, in seconds
- 
+
  @return PortAudio error code (possibly paBufferTooBig or paInsufficientMemory)
  */
 static PaError PaAsiHpi_SetupBuffers( PaAsiHpiStreamComponent *streamComp, HW32 pollingInterval,
@@ -1532,7 +1533,7 @@ static PaError PaAsiHpi_SetupBuffers( PaAsiHpiStreamComponent *streamComp, HW32 
             }
         }
         /* Choose closest memory block boundary (HPI API document states that
-        "a buffer size of Nx4096 - 20 makes the best use of memory" 
+        "a buffer size of Nx4096 - 20 makes the best use of memory"
         (under the entry for HPI_StreamEstimateBufferSize)) */
         bbmBufferSize = ((HW32)ceil((bbmBufferSize + 20)/4096.0))*4096 - 20;
         streamComp->hostBufferSize = bbmBufferSize;
@@ -1646,28 +1647,28 @@ error:
  based on the suggested latency. It then opens each requested stream direction with the
  appropriate stream format, and allocates the required stream buffers. It sets up the
  various PortAudio structures dealing with streams, and estimates the stream latency.
- 
+
  See pa_hostapi.h for a list of validity guarantees made about OpenStream parameters.
- 
+
  @param hostApi Pointer to host API struct
- 
+
  @param s List of open streams, where successfully opened stream will go
- 
+
  @param inputParameters Pointer to stream parameter struct for input side of stream
- 
+
  @param outputParameters Pointer to stream parameter struct for output side of stream
- 
+
  @param sampleRate Desired sample rate
- 
- @param framesPerBuffer Desired number of frames per buffer passed to user callback 
+
+ @param framesPerBuffer Desired number of frames per buffer passed to user callback
                         (or chunk size for blocking stream)
- 
+
  @param streamFlags Stream flags
- 
+
  @param streamCallback Pointer to user callback function (zero for blocking interface)
- 
+
  @param userData Pointer to user data that will be passed to callback function along with data
- 
+
  @return PortAudio error code
 */
 static PaError OpenStream( struct PaUtilHostApiRepresentation *hostApi,
@@ -1860,12 +1861,12 @@ error:
 
 
 /** Close PortAudio stream.
- When CloseStream() is called, the multi-api layer ensures that the stream has already 
+ When CloseStream() is called, the multi-api layer ensures that the stream has already
  been stopped or aborted. This closes the underlying HPI streams and deallocates stream
  buffers and structs.
- 
+
  @param s Pointer to PortAudio stream
- 
+
  @return PortAudio error code
 */
 static PaError CloseStream( PaStream *s )
@@ -1919,9 +1920,9 @@ error:
  This resets the output stream and uses PortAudio helper routines to fill the
  temp buffer with silence. It then writes two host buffers to the stream. This is supposed
  to be called before the stream is started. It has no effect on input-only streams.
- 
+
  @param stream Pointer to stream struct
- 
+
  @return PortAudio error code
  */
 static PaError PaAsiHpi_PrimeOutputWithSilence( PaAsiHpiStream *stream )
@@ -1962,14 +1963,14 @@ error:
 /** Start HPI streams (both input + output).
  This starts all HPI streams in the PortAudio stream. Output streams are first primed with
  silence, if required. After this call the PA stream is in the Active state.
- 
+
  @todo Implement priming via the user callback
- 
+
  @param stream Pointer to stream struct
- 
+
  @param outputPrimed True if output is already primed (if false, silence will be loaded before starting)
- 
- @return PortAudio error code 
+
+ @return PortAudio error code
  */
 static PaError PaAsiHpi_StartStream( PaAsiHpiStream *stream, int outputPrimed )
 {
@@ -2006,10 +2007,10 @@ error:
  The thread will then take care of starting the HPI streams, and this function will block
  until the streams actually start. In the case of a blocking interface, the HPI streams
  are simply started.
- 
+
  @param s Pointer to PortAudio stream
- 
- @return PortAudio error code 
+
+ @return PortAudio error code
 */
 static PaError StartStream( PaStream *s )
 {
@@ -2025,7 +2026,7 @@ static PaError StartStream( PaStream *s )
     {
         /* Create and start callback engine thread */
         /* Also waits 1 second for stream to be started by engine thread (otherwise aborts) */
-        PA_ENSURE_( PaUnixThread_New( &stream->thread, &CallbackThreadFunc, stream, 1. ) );
+        PA_ENSURE_( PaUnixThread_New( &stream->thread, &CallbackThreadFunc, stream, 1., 0 ) );
     }
     else
     {
@@ -2040,15 +2041,15 @@ error:
 /** Stop HPI streams (input + output), either softly or abruptly.
  If abort is false, the function blocks until the output stream is drained, otherwise it
  stops immediately and discards data in the stream hardware buffers.
- 
+
  This function is safe to call from the callback engine thread as well as the main thread.
- 
+
  @param stream Pointer to stream struct
- 
+
  @param abort True if samples in output buffer should be discarded (otherwise blocks until stream is done)
- 
- @return PortAudio error code 
- 
+
+ @return PortAudio error code
+
  */
 static PaError PaAsiHpi_StopStream( PaAsiHpiStream *stream, int abort )
 {
@@ -2098,20 +2099,20 @@ error:
 
 
 /** Stop or abort PortAudio stream.
- 
+
  This function is used to explicitly stop the PortAudio stream (via StopStream/AbortStream),
- as opposed to the situation when the callback finishes with a result other than paContinue. 
- If a stream is in callback mode we will have to inspect whether the background thread has 
- finished, or we will have to take it out. In either case we join the thread before returning. 
- In blocking mode, we simply tell HPI to stop abruptly (abort) or finish buffers (drain). 
+ as opposed to the situation when the callback finishes with a result other than paContinue.
+ If a stream is in callback mode we will have to inspect whether the background thread has
+ finished, or we will have to take it out. In either case we join the thread before returning.
+ In blocking mode, we simply tell HPI to stop abruptly (abort) or finish buffers (drain).
  The PortAudio stream will be in the Stopped state after a call to this function.
- 
- Don't call this from the callback engine thread! 
- 
+
+ Don't call this from the callback engine thread!
+
  @param stream Pointer to stream struct
- 
+
  @param abort True if samples in output buffer should be discarded (otherwise blocks until stream is done)
- 
+
  @return PortAudio error code
 */
 static PaError PaAsiHpi_ExplicitStop( PaAsiHpiStream *stream, int abort )
@@ -2151,10 +2152,10 @@ error:
 
 /** Stop PortAudio stream.
  This blocks until the output buffers are drained.
- 
+
  @param s Pointer to PortAudio stream
- 
- @return PortAudio error code 
+
+ @return PortAudio error code
 */
 static PaError StopStream( PaStream *s )
 {
@@ -2164,10 +2165,10 @@ static PaError StopStream( PaStream *s )
 
 /** Abort PortAudio stream.
  This discards any existing data in output buffers and stops the stream immediately.
- 
+
  @param s Pointer to PortAudio stream
- 
- @return PortAudio error code 
+
+ @return PortAudio error code
 */
 static PaError AbortStream( PaStream *s )
 {
@@ -2176,14 +2177,14 @@ static PaError AbortStream( PaStream *s )
 
 
 /** Determine whether the stream is stopped.
- A stream is considered to be stopped prior to a successful call to StartStream and after 
- a successful call to StopStream or AbortStream. If a stream callback returns a value other 
+ A stream is considered to be stopped prior to a successful call to StartStream and after
+ a successful call to StopStream or AbortStream. If a stream callback returns a value other
  than paContinue the stream is NOT considered to be stopped (it is in CallbackFinished state).
- 
+
  @param s Pointer to PortAudio stream
- 
+
  @return Returns one (1) when the stream is stopped, zero (0) when the stream is running, or
-         a PaErrorCode (which are always negative) if PortAudio is not initialized or an 
+         a PaErrorCode (which are always negative) if PortAudio is not initialized or an
          error is encountered.
 */
 static PaError IsStreamStopped( PaStream *s )
@@ -2196,14 +2197,14 @@ static PaError IsStreamStopped( PaStream *s )
 
 
 /** Determine whether the stream is active.
- A stream is active after a successful call to StartStream(), until it becomes inactive either 
- as a result of a call to StopStream() or AbortStream(), or as a result of a return value 
- other than paContinue from the stream callback. In the latter case, the stream is considered 
+ A stream is active after a successful call to StartStream(), until it becomes inactive either
+ as a result of a call to StopStream() or AbortStream(), or as a result of a return value
+ other than paContinue from the stream callback. In the latter case, the stream is considered
  inactive after the last buffer has finished playing.
- 
+
  @param s Pointer to PortAudio stream
- 
- @return Returns one (1) when the stream is active (i.e. playing or recording audio), 
+
+ @return Returns one (1) when the stream is active (i.e. playing or recording audio),
          zero (0) when not playing, or a PaErrorCode (which are always negative)
          if PortAudio is not initialized or an error is encountered.
 */
@@ -2217,12 +2218,12 @@ static PaError IsStreamActive( PaStream *s )
 
 
 /** Returns current stream time.
- This corresponds to the system clock. The clock should run continuously while the stream 
+ This corresponds to the system clock. The clock should run continuously while the stream
  is open, i.e. between calls to OpenStream() and CloseStream(), therefore a frame counter
  is not good enough.
- 
+
  @param s Pointer to PortAudio stream
- 
+
  @return Stream time, in seconds
  */
 static PaTime GetStreamTime( PaStream *s )
@@ -2232,9 +2233,9 @@ static PaTime GetStreamTime( PaStream *s )
 
 
 /** Returns CPU load.
- 
+
  @param s Pointer to PortAudio stream
- 
+
  @return CPU load (0.0 if blocking interface is used)
  */
 static double GetStreamCpuLoad( PaStream *s )
@@ -2251,8 +2252,8 @@ static double GetStreamCpuLoad( PaStream *s )
  abruptly). It also calls the user-supplied StreamFinished callback, and sets the
  stream state to CallbackFinished if it was reached via a non-paContinue return from
  the user callback function.
- 
- @param userData A pointer to an open stream previously created with Pa_OpenStream 
+
+ @param userData A pointer to an open stream previously created with Pa_OpenStream
  */
 static void PaAsiHpi_OnThreadExit( void *userData )
 {
@@ -2273,7 +2274,7 @@ static void PaAsiHpi_OnThreadExit( void *userData )
     }
 
     /* Unfortunately both explicit calls to Stop/AbortStream (leading to Stopped state)
-     and implicit stops via paComplete/paAbort (leading to CallbackFinished state) 
+     and implicit stops via paComplete/paAbort (leading to CallbackFinished state)
      end up here - need another flag to remind us which is the case */
     if( stream->callbackFinished )
         stream->state = paAsiHpiCallbackFinishedState;
@@ -2281,20 +2282,20 @@ static void PaAsiHpi_OnThreadExit( void *userData )
 
 
 /** Wait until there is enough frames to fill a host buffer.
- The routine attempts to sleep until at least a full host buffer can be retrieved from the 
+ The routine attempts to sleep until at least a full host buffer can be retrieved from the
  input HPI stream and passed to the output HPI stream. It will first sleep until enough
  output space is available, as this is usually easily achievable. If it is an output-only
  stream, it will also sleep if the hardware buffer is too full, thereby throttling the
  filling of the output buffer and reducing output latency. The routine then blocks until
  enough input samples are available, unless this will cause an output underflow. In the
  process, input overflows and output underflows are indicated.
- 
+
  @param stream Pointer to stream struct
-  
+
  @param framesAvail Returns the number of available frames
- 
+
  @param cbFlags Overflows and underflows indicated in here
- 
+
  @return PortAudio error code (only paUnanticipatedHostError expected)
  */
 static PaError PaAsiHpi_WaitForFrames( PaAsiHpiStream *stream, unsigned long *framesAvail,
@@ -2369,9 +2370,9 @@ static PaError PaAsiHpi_WaitForFrames( PaAsiHpiStream *stream, unsigned long *fr
             /** @todo The paInputOverflow flag should be set in the callback containing the
              first input sample following the overflow. That means the block currently sitting
              at the fore-front of recording, i.e. typically the one containing the newest (last)
-             sample in the HPI buffer system. This is most likely not the same as the current 
-             block of data being passed to the callback. The current overflow should ideally 
-             be noted in an overflow list of sorts, with an indication of when it should be 
+             sample in the HPI buffer system. This is most likely not the same as the current
+             block of data being passed to the callback. The current overflow should ideally
+             be noted in an overflow list of sorts, with an indication of when it should be
              reported. The trouble starts if there are several separate overflow incidents,
              given a big input buffer. Oh well, something to try out later... */
             if( info.overflow )
@@ -2402,18 +2403,18 @@ error:
 
 /** Obtain recording, current and playback timestamps of stream.
  The current time is determined by the system clock. This "now" timestamp occurs at the
- forefront of recording (and playback in the full-duplex case), which happens later than the 
+ forefront of recording (and playback in the full-duplex case), which happens later than the
  input timestamp by an amount equal to the total number of recorded frames in the input buffer.
- The output timestamp indicates when the next generated sample will actually be played. This 
+ The output timestamp indicates when the next generated sample will actually be played. This
  happens after all the samples currently in the output buffer are played. The output timestamp
  therefore follows the current timestamp by an amount equal to the number of frames yet to be
  played back in the output buffer.
- 
+
  If the current timestamp is the present, the input timestamp is in the past and the output
  timestamp is in the future.
- 
+
  @param stream Pointer to stream struct
- 
+
  @param timeInfo Pointer to timeInfo struct that will contain timestamps
  */
 static void PaAsiHpi_CalculateTimeInfo( PaAsiHpiStream *stream, PaStreamCallbackTimeInfo *timeInfo )
@@ -2448,16 +2449,16 @@ static void PaAsiHpi_CalculateTimeInfo( PaAsiHpiStream *stream, PaStreamCallback
 
 /** Read from HPI input stream and register buffers.
  This reads data from the HPI input stream (if it exists) and registers the temp stream
- buffers of both input and output streams with the buffer processor. In the process it also 
+ buffers of both input and output streams with the buffer processor. In the process it also
  handles input underflows in the full-duplex case.
- 
+
  @param stream Pointer to stream struct
-  
- @param numFrames On entrance the number of available frames, on exit the number of 
+
+ @param numFrames On entrance the number of available frames, on exit the number of
                   received frames
- 
+
  @param cbFlags Indicates overflows and underflows
- 
+
  @return PortAudio error code
  */
 static PaError PaAsiHpi_BeginProcessing( PaAsiHpiStream *stream, unsigned long *numFrames,
@@ -2531,11 +2532,11 @@ error:
  This completes the processing cycle by writing the temp buffer to the HPI interface.
  Additional output underflows are caught before data is written to the stream, as this
  action typically remedies the underflow and hides it in the process.
- 
+
  @param stream Pointer to stream struct
-  
+
  @param numFrames The number of frames to write to the output stream
- 
+
  @param cbFlags Indicates overflows and underflows
  */
 static PaError PaAsiHpi_EndProcessing( PaAsiHpiStream *stream, unsigned long numFrames,
@@ -2573,11 +2574,11 @@ error:
 
 /** Main callback engine.
  This function runs in a separate thread and does all the work of fetching audio data from
- the AudioScience card via the HPI interface, feeding it to the user callback via the buffer 
+ the AudioScience card via the HPI interface, feeding it to the user callback via the buffer
  processor, and delivering the resulting output data back to the card via HPI calls.
  It is started and terminated when the PortAudio stream is started and stopped, and starts
  the HPI streams on startup.
- 
+
  @param userData A pointer to an open stream previously created with Pa_OpenStream.
 */
 static void *CallbackThreadFunc( void *userData )
@@ -2720,16 +2721,16 @@ error:
  functions can be guaranteed to only be called for blocking streams. */
 
 /** Read data from input stream.
- This reads the indicated number of frames into the supplied buffer from an input stream, 
+ This reads the indicated number of frames into the supplied buffer from an input stream,
  and blocks until this is done.
- 
+
  @param s Pointer to PortAudio stream
-  
+
  @param buffer Pointer to buffer that will receive interleaved data (or an array of pointers
                to a buffer for each non-interleaved channel)
- 
+
  @param frames Number of frames to read from stream
- 
+
  @return PortAudio error code (also indicates overflow via paInputOverflowed)
  */
 static PaError ReadStream( PaStream *s,
@@ -2787,16 +2788,16 @@ error:
 
 
 /** Write data to output stream.
- This writes the indicated number of frames from the supplied buffer to an output stream, 
+ This writes the indicated number of frames from the supplied buffer to an output stream,
  and blocks until this is done.
- 
+
  @param s Pointer to PortAudio stream
-  
+
  @param buffer Pointer to buffer that provides interleaved data (or an array of pointers
                to a buffer for each non-interleaved channel)
- 
+
  @param frames Number of frames to write to stream
- 
+
  @return PortAudio error code (also indicates underflow via paOutputUnderflowed)
  */
 static PaError WriteStream( PaStream *s,
@@ -2854,9 +2855,9 @@ error:
 
 
 /** Number of frames that can be read from input stream without blocking.
- 
+
  @param s Pointer to PortAudio stream
-  
+
  @return Number of frames, or PortAudio error code
  */
 static signed long GetStreamReadAvailable( PaStream *s )
@@ -2882,9 +2883,9 @@ error:
 
 
 /** Number of frames that can be written to output stream without blocking.
- 
+
  @param s Pointer to PortAudio stream
-  
+
  @return Number of frames, or PortAudio error code
  */
 static signed long GetStreamWriteAvailable( PaStream *s )

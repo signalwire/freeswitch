@@ -1,5 +1,5 @@
 /*
- * $Id: pa_win_util.c 1097 2006-08-26 08:27:53Z rossb $
+ * $Id: pa_win_util.c 1197 2007-05-04 13:07:10Z gordon_gidluck $
  * Portable Audio I/O Library
  * Win32 platform-specific support functions
  *
@@ -138,6 +138,10 @@ double PaUtil_GetTime( void )
     }
     else
     {
+#ifndef UNDER_CE    	
         return timeGetTime() * .001;
+#else
+        return GetTickCount() * .001;
+#endif                
     }
 }

@@ -1,5 +1,5 @@
 /*
- * $Id: pa_unix_util.c 1097 2006-08-26 08:27:53Z rossb $
+ * $Id: pa_unix_util.c 1232 2007-06-16 14:49:43Z rossb $
  * Portable Audio I/O Library
  * UNIX platform-specific support functions
  *
@@ -53,6 +53,7 @@
 
 #include "pa_util.h"
 #include "pa_unix_util.h"
+#include "pa_debugprint.h"
 
 /*
    Track memory allocations to avoid leaks.

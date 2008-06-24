@@ -16,7 +16,7 @@ bindir = @bindir@
 libdir = @libdir@
 includedir = @includedir@
 CC = @CC@
-CFLAGS = @CFLAGS@ -I$(top_srcdir)/include -I$(top_srcdir)/src/common -I$(top_srcdir)/src/os/unix @DEFS@
+CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/src/common -I$(top_srcdir)/src/os/unix @CFLAGS@ @DEFS@
 LIBS = @LIBS@
 AR = @AR@
 RANLIB = @RANLIB@
@@ -56,62 +56,62 @@ COMMON_OBJS = \
 	src/common/pa_trace.o
 
 TESTS = \
-	test/paqa_devs \
-	test/paqa_errs \
-	test/patest1 \
-	test/patest_buffer \
-	test/patest_callbackstop \
-	test/patest_clip \
-	test/patest_dither \
-	test/patest_hang \
-	test/patest_in_overflow \
-	test/patest_latency \
-	test/patest_leftright \
-	test/patest_longsine \
-	test/patest_many \
-	test/patest_maxsines \
-	test/patest_multi_sine \
-	test/patest_out_underflow \
-	test/patest_pink \
-	test/patest_prime \
-	test/patest_read_record \
-	test/patest_read_write_wire \
-	test/patest_record \
-	test/patest_ringmix \
-	test/patest_saw \
-	test/patest_sine8 \
-	test/patest_sine \
-  test/patest_sine_channelmaps \
-	test/patest_sine_formats \
-	test/patest_sine_time \
-	test/patest_start_stop \
-	test/patest_stop \
-	test/patest_stop_playout \
-	test/patest_toomanysines \
-	test/patest_underflow \
-	test/patest_wire \
-	test/patest_write_sine \
-	test/pa_devs \
-	test/pa_fuzz \
-	test/pa_minlat
+	bin/paqa_devs \
+	bin/paqa_errs \
+	bin/patest1 \
+	bin/patest_buffer \
+	bin/patest_callbackstop \
+	bin/patest_clip \
+	bin/patest_dither \
+	bin/patest_hang \
+	bin/patest_in_overflow \
+	bin/patest_latency \
+	bin/patest_leftright \
+	bin/patest_longsine \
+	bin/patest_many \
+	bin/patest_maxsines \
+	bin/patest_multi_sine \
+	bin/patest_out_underflow \
+	bin/patest_pink \
+	bin/patest_prime \
+	bin/patest_read_record \
+	bin/patest_read_write_wire \
+	bin/patest_record \
+	bin/patest_ringmix \
+	bin/patest_saw \
+	bin/patest_sine8 \
+	bin/patest_sine \
+	bin/patest_sine_channelmaps \
+	bin/patest_sine_formats \
+	bin/patest_sine_time \
+	bin/patest_start_stop \
+	bin/patest_stop \
+	bin/patest_stop_playout \
+	bin/patest_toomanysines \
+	bin/patest_underflow \
+	bin/patest_wire \
+	bin/patest_write_sine \
+	bin/pa_devs \
+	bin/pa_fuzz \
+	bin/pa_minlat
 
 # Most of these don't compile yet.  Put them in TESTS, above, if
 # you want to try to compile them...
 ALL_TESTS = \
 	$(TESTS) \
-	test/patest_sync \
-	test/debug_convert \
-	test/debug_dither_calc \
-	test/debug_dual \
-	test/debug_multi_in \
-	test/debug_multi_out \
-	test/debug_record \
-	test/debug_record_reuse \
-	test/debug_sine_amp \
-	test/debug_sine \
-	test/debug_sine_formats \
-	test/debug_srate \
-	test/debug_test1
+	bin/patest_sync \
+	bin/debug_convert \
+	bin/debug_dither_calc \
+	bin/debug_dual \
+	bin/debug_multi_in \
+	bin/debug_multi_out \
+	bin/debug_record \
+	bin/debug_record_reuse \
+	bin/debug_sine_amp \
+	bin/debug_sine \
+	bin/debug_sine_formats \
+	bin/debug_srate \
+	bin/debug_test1
 
 OBJS = $(COMMON_OBJS) $(OTHER_OBJS)
 
@@ -120,7 +120,7 @@ LTOBJS:= $(OBJS:.o=.lo)
 SUBDIRS =
 @ENABLE_CXX_TRUE@SUBDIRS += bindings/cpp
 
-all: lib/$(PALIB) all-recursive
+all: lib/$(PALIB) all-recursive tests
 
 tests: bin-stamp $(TESTS)
 
@@ -128,8 +128,9 @@ tests: bin-stamp $(TESTS)
 lib/$(PALIB): lib-stamp $(LTOBJS) $(MAKEFILE) $(PAINC)
 	$(LIBTOOL) --mode=link $(CC) $(PA_LDFLAGS) -o lib/$(PALIB) $(LTOBJS) $(DLL_LIBS)
 
-$(ALL_TESTS): lib/$(PALIB) $(MAKEFILE) $(PAINC)
-	$(LIBTOOL) --mode=link $(CC) -o $@ $(CFLAGS) $(top_srcdir)/$@.c lib/$(PALIB) $(LIBS)
+$(ALL_TESTS): bin/%: lib/$(PALIB) $(MAKEFILE) $(PAINC) test/%.c
+	$(LIBTOOL) --mode=link $(CC) -o $@ $(CFLAGS) $(top_srcdir)/test/$*.c lib/$(PALIB) $(LIBS)
+
 
 install: lib/$(PALIB) portaudio-2.0.pc
 	$(INSTALL) -d $(DESTDIR)$(libdir)
@@ -163,19 +164,16 @@ clean:
 distclean: clean
 	rm -f config.log config.status Makefile libtool portaudio-2.0.pc
 
-.SUFFIXES:
-.SUFFIXES: .c .lo .o .cpp
-
-.c.o: $(MAKEFILE) $(PAINC)
+%.o: %.c $(MAKEFILE) $(PAINC)
 	$(CC) -c $(CFLAGS) $< -o $@
 
-.c.lo: $(MAKEFILE) $(PAINC)
+%.lo: %.c $(MAKEFILE) $(PAINC)
 	$(LIBTOOL) --mode=compile $(CC) -c $(CFLAGS) $< -o $@
 
-.cpp.o: $(MAKEFILE) $(PAINC)
+%.o: %.cpp $(MAKEFILE) $(PAINC)
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-.asm.o:
+%.o: %.asm
 	$(NASM) $(NASMOPT) -o $@ $<
 
 bin-stamp:
@@ -184,9 +182,21 @@ bin-stamp:
 
 lib-stamp:
 	-mkdir lib
-	-mkdir -p src/os/win src/os/unix src/os/mac_osx src/common \
-src/hostapi/oss src/hostapi/alsa src/hostapi/jack src/hostapi/asihpi \
-src/hostapi/wmme src/hostapi/wdmks src/hostapi/dsound src/hostapi/wasapi
+	-mkdir -p \
+		src/common \
+		src/hostapi/alsa \
+		src/hostapi/asihpi \
+		src/hostapi/asio \
+		src/hostapi/coreaudio \
+		src/hostapi/dsound \
+		src/hostapi/jack \
+		src/hostapi/oss \
+		src/hostapi/wasapi \
+		src/hostapi/wdmks \
+		src/hostapi/wmme \
+		src/os/mac_osx \
+		src/os/unix \
+		src/os/win
 	touch $@
 
 Makefile: Makefile.in config.status

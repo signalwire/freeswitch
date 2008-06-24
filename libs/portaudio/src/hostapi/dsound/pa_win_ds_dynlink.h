@@ -48,7 +48,7 @@
 #define INCLUDED_PA_DSOUND_DYNLINK_H
 
 /* on Borland compilers, WIN32 doesn't seem to be defined by default, which
-    breaks DSound.h. Adding the define here fixes the problem. - rossb. */
+    breaks dsound.h. Adding the define here fixes the problem. - rossb. */
 #ifdef __BORLANDC__
 #if !defined(WIN32)
 #define WIN32
@@ -59,8 +59,7 @@
   We are only using DX3 in here, no need to polute the namespace - davidv
 */
 #define DIRECTSOUND_VERSION 0x0300
-
-#include <DSound.h>
+#include <dsound.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -72,6 +71,8 @@ typedef struct
 {
     HINSTANCE hInstance_;
     
+    HRESULT (WINAPI *DllGetClassObject)(REFCLSID , REFIID , LPVOID *);
+
     HRESULT (WINAPI *DirectSoundCreate)(LPGUID, LPDIRECTSOUND *, LPUNKNOWN);
     HRESULT (WINAPI *DirectSoundEnumerateW)(LPDSENUMCALLBACKW, LPVOID);
     HRESULT (WINAPI *DirectSoundEnumerateA)(LPDSENUMCALLBACKA, LPVOID);

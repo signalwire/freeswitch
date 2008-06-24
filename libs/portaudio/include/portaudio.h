@@ -1,8 +1,7 @@
-
 #ifndef PORTAUDIO_H
 #define PORTAUDIO_H
 /*
- * $Id: portaudio.h 1149 2006-11-27 01:42:26Z leland_lucius $
+ * $Id: portaudio.h 1247 2007-08-11 16:29:09Z rossb $
  * PortAudio Portable Real-Time Audio Library
  * PortAudio API Header File
  * Latest version available at: http://www.portaudio.com/

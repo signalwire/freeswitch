@@ -1,10 +1,10 @@
-#ifndef PA_LINUX_ALSA_H
-#define PA_LINUX_ALSA_H
+#ifndef PA_JACK_H
+#define PA_JACK_H
 
 /*
- * $Id: pa_linux_alsa.h 1236 2007-06-24 20:39:26Z aknudsen $
+ * $Id:
  * PortAudio Portable Real-Time Audio Library
- * ALSA-specific extensions
+ * JACK-specific extensions
  *
  * Copyright (c) 1999-2000 Ross Bencina and Phil Burk
  *
@@ -40,7 +40,7 @@
  */
 
 /** @file
- * ALSA-specific PortAudio API extension header file.
+ * JACK-specific PortAudio API extension header file.
  */
 #include "portaudio.h"
 
@@ -48,43 +48,25 @@
 extern "C" {
 #endif
 
-typedef struct PaAlsaStreamInfo
-{
-    unsigned long size;
-    PaHostApiTypeId hostApiType;
-    unsigned long version;
-
-    const char *deviceString;
-}
-PaAlsaStreamInfo;
-
-/** Initialize host API specific structure, call this before setting relevant attributes. */
-void PaAlsa_InitializeStreamInfo( PaAlsaStreamInfo *info );
-
-/** Instruct whether to enable real-time priority when starting the audio thread.
+/** Set the JACK client name.
  *
- * If this is turned on by the stream is started, the audio callback thread will be created
- * with the FIFO scheduling policy, which is suitable for realtime operation.
- **/
-void PaAlsa_EnableRealtimeScheduling( PaStream *s, int enable );
-
-#if 0
-void PaAlsa_EnableWatchdog( PaStream *s, int enable );
-#endif
-
-/** Get the ALSA-lib card index of this stream's input device. */
-PaError PaAlsa_GetStreamInputCard( PaStream *s, int *card );
-
-/** Get the ALSA-lib card index of this stream's output device. */
-PaError PaAlsa_GetStreamOutputCard( PaStream *s, int *card );
-
-/** Set the number of periods (buffer fragments) to configure devices with.
+ * During Pa_Initialize, When PA JACK connects as a client of the JACK server, it requests a certain
+ * name, which is for instance prepended to port names. By default this name is "PortAudio". The
+ * JACK server may append a suffix to the client name, in order to avoid clashes among clients that
+ * try to connect with the same name (e.g., different PA JACK clients).
  *
- * By default the number of periods is 4, this is the lowest number of periods that works well on
- * the author's soundcard.
- * @param numPeriods The number of periods.
+ * This function must be called before Pa_Initialize, otherwise it won't have any effect. Note that
+ * the string is not copied, but instead referenced directly, so it must not be freed for as long as
+ * PA might need it.
+ * @sa PaJack_GetClientName
  */
-PaError PaAlsa_SetNumPeriods( int numPeriods );
+PaError PaJack_SetClientName( const char* name );
+
+/** Get the JACK client name used by PA JACK.
+ *
+ * The caller is responsible for freeing the returned pointer.
+ */
+PaError PaJack_GetClientName(const char** clientName);
 
 #ifdef __cplusplus
 }

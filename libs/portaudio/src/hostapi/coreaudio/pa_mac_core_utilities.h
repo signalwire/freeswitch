@@ -199,7 +199,7 @@ PaError setBestSampleRateForDevice( const AudioDeviceID device,
    not usually catastrophic.
 */
 PaError setBestFramesPerBuffer( const AudioDeviceID device,
-                                       const bool isOutput,
-                                       unsigned long requestedFramesPerBuffer, 
-                                       unsigned long *actualFramesPerBuffer );
+                                const bool isOutput,
+                                UInt32 requestedFramesPerBuffer, 
+                                UInt32 *actualFramesPerBuffer );
 #endif /* PA_MAC_CORE_UTILITIES_H__*/

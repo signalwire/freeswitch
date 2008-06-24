@@ -64,7 +64,7 @@ env.Append(CPPPATH=[os.path.join("#", "include"), "common"])
 env.SConsignFile(os.path.join(sconsDir, ".sconsign"))
 
 env.SConscriptChdir(False)
-sources, sharedLib, staticLib, tests, portEnv = env.SConscript(os.path.join("src", "SConscript"),
+sources, sharedLib, staticLib, tests, portEnv, hostApis = env.SConscript(os.path.join("src", "SConscript"),
         build_dir=buildDir, duplicate=False, exports=["env"])
 
 if Platform in Posix:
@@ -133,6 +133,7 @@ if env["enableStatic"]:
 
 env.Install(includeDir, os.path.join("include", "portaudio.h"))
 
+
 if env["enableCxx"]:
     env.SConscriptChdir(True)
     cxxEnv = env.Copy()
@@ -145,3 +146,49 @@ if env["enableCxx"]:
         env.Default(sharedLibs)
         env.Install(libDir, sharedLibs)
     env.Install(os.path.join(includeDir, "portaudiocpp"), headers)
+
+# Generate portaudio_config.h header with compile-time definitions of which PA
+# back-ends are available, and which includes back-end extension headers
+
+# Host-specific headers
+hostApiHeaders = {"ALSA": "pa_linux_alsa.h",
+                    "ASIO": "pa_asio.h",
+                    "COREAUDIO": "pa_mac_core.h",
+                    "JACK": "pa_jack.h",
+                    "WMME": "pa_winwmme.h",
+                    }
+
+def buildConfigH(target, source, env):
+    """builder for portaudio_config.h"""
+    global hostApiHeaders, hostApis
+    out = ""
+    for hostApi in hostApis:
+        out += "#define PA_HAVE_%s\n" % hostApi
+
+        hostApiSpecificHeader = hostApiHeaders.get(hostApi, None)
+        if hostApiSpecificHeader:
+            out += "#include \"%s\"\n" % hostApiSpecificHeader
+
+        out += "\n"
+    # Strip the last newline
+    if out[-1] == "\n":
+        out = out[:-1]
+
+    f = file(str(target[0]), 'w')
+    try: f.write(out)
+    finally: f.close()
+    return 0
+
+# Define the builder for the config header
+env.Append(BUILDERS={"portaudioConfig": env.Builder(action=Action(buildConfigH,
+        "generating '$TARGET'"), target_factory=env.fs.File,)})
+
+confH = env.portaudioConfig(File("portaudio_config.h", "include"),
+        File("portaudio.h", "include"))
+env.Default(confH)
+env.Install(os.path.join(includeDir, "portaudio"), confH)
+
+for api in hostApis:
+    if api in hostApiHeaders:
+        env.Install(os.path.join(includeDir, "portaudio"),
+                File(hostApiHeaders[api], "include"))

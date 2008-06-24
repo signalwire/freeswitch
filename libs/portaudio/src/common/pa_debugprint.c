@@ -74,7 +74,7 @@ void PaUtil_SetDebugPrintFunction(PaUtilLogCallback cb)
  VERY dangerous alternative, vsprintf (with no n)
  */
 
-#if (_MSC_VER) && (_MSC_VER < 1400)
+#if (_MSC_VER) && (_MSC_VER <= 1400)
 #define VSNPRINTF  _vsnprintf
 #else
 #define VSNPRINTF  vsnprintf

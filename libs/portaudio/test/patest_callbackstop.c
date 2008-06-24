@@ -4,7 +4,7 @@
 	@author Ross Bencina <rossb@audiomulch.com>
 */
 /*
- * $Id: patest_callbackstop.c 1162 2006-12-18 20:40:35Z bjornroche $
+ * $Id: patest_callbackstop.c 1294 2007-10-24 20:51:22Z bjornroche $
  *
  * This program uses the PortAudio Portable Audio Library.
  * For more information see: http://www.portaudio.com/
@@ -62,6 +62,7 @@ typedef struct
     unsigned long generatedFramesCount;
     volatile int callbackReturnedPaComplete;
     volatile int callbackInvokedAfterReturningPaComplete;
+    char message[100];
 }
 TestData;
 
@@ -113,6 +114,16 @@ static int TestCallback( const void *input, void *output,
     }
 }
 
+/*
+ * This routine is called by portaudio when playback is done.
+ */
+static void StreamFinished( void* userData )
+{
+   TestData *data = (TestData *) userData;
+   printf( "Stream Completed: %s\n", data->message );
+}
+
+
 /*----------------------------------------------------------------------------*/
 int main(void);
 int main(void)
@@ -153,6 +164,10 @@ int main(void)
               &data );
     if( err != paNoError ) goto error;
 
+    sprintf( data.message, "Loop: XX" );
+    err = Pa_SetStreamFinishedCallback( stream, &StreamFinished );
+    if( err != paNoError ) goto error;
+
     printf("Repeating test %d times.\n", NUM_LOOPS );
     
     for( i=0; i < NUM_LOOPS; ++i )
@@ -161,6 +176,7 @@ int main(void)
         data.generatedFramesCount = 0;
         data.callbackReturnedPaComplete = 0;
         data.callbackInvokedAfterReturningPaComplete = 0;
+        sprintf( data.message, "Loop: %d", i );
 
         err = Pa_StartStream( stream );
         if( err != paNoError ) goto error;

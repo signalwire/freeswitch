@@ -1,7 +1,7 @@
 #ifndef PA_UTIL_H
 #define PA_UTIL_H
 /*
- * $Id: pa_util.h 1097 2006-08-26 08:27:53Z rossb $
+ * $Id: pa_util.h 1229 2007-06-15 16:11:11Z rossb $
  * Portable Audio I/O Library implementation utilities header
  * common implementation utilities and interfaces
  *
@@ -113,23 +113,6 @@ void PaUtil_SetLastHostErrorInfo( PaHostApiTypeId hostApiType, long errorCode,
 
 
         
-/** PA_DEBUG() provides a simple debug message printing facility. The macro
- passes it's argument to a printf-like function called PaUtil_DebugPrint()
- which prints to stderr and always flushes the stream after printing.
- Because preprocessor macros cannot directly accept variable length argument
- lists, calls to the macro must include an additional set of parenthesis, eg:
- PA_DEBUG(("errorno: %d", 1001 ));
-*/
-
-void PaUtil_DebugPrint( const char *format, ... );
-
-#ifdef PA_ENABLE_DEBUG_OUTPUT
-#define PA_DEBUG(x) PaUtil_DebugPrint x ;
-#else
-#define PA_DEBUG(x)
-#endif
-
-
 /* the following functions are implemented in a platform platform specific
  .c file
 */

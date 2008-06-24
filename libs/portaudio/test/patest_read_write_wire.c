@@ -45,6 +45,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <strings.h>
 #include "portaudio.h"
 
 /* #define SAMPLE_RATE  (17932) // Test failure to open with this value. */
@@ -55,25 +56,39 @@
 #define DITHER_FLAG     (0) /**/
 
 /* Select sample format. */
-#if 1
+#if 0
 #define PA_SAMPLE_TYPE  paFloat32
-typedef float SAMPLE;
+#define SAMPLE_SIZE (4)
 #define SAMPLE_SILENCE  (0.0f)
+#define CLEAR(a) bzero( (a),  FRAMES_PER_BUFFER * NUM_CHANNELS * SAMPLE_SIZE )
 #define PRINTF_S_FORMAT "%.8f"
-#elif 1
+#elif 0
 #define PA_SAMPLE_TYPE  paInt16
-typedef short SAMPLE;
+#define SAMPLE_SIZE (2)
 #define SAMPLE_SILENCE  (0)
+#define CLEAR(a) bzero( (a),  FRAMES_PER_BUFFER * NUM_CHANNELS * SAMPLE_SIZE )
+#define PRINTF_S_FORMAT "%d"
+#elif 1
+#define PA_SAMPLE_TYPE  paInt24
+#define SAMPLE_SIZE (3)
+#define SAMPLE_SILENCE  (0)
+#define CLEAR(a) bzero( (a),  FRAMES_PER_BUFFER * NUM_CHANNELS * SAMPLE_SIZE )
 #define PRINTF_S_FORMAT "%d"
 #elif 0
 #define PA_SAMPLE_TYPE  paInt8
-typedef char SAMPLE;
+#define SAMPLE_SIZE (1)
 #define SAMPLE_SILENCE  (0)
+#define CLEAR(a) bzero( (a),  FRAMES_PER_BUFFER * NUM_CHANNELS * SAMPLE_SIZE )
 #define PRINTF_S_FORMAT "%d"
 #else
 #define PA_SAMPLE_TYPE  paUInt8
-typedef unsigned char SAMPLE;
+#define SAMPLE_SIZE (1)
 #define SAMPLE_SILENCE  (128)
+#define CLEAR( a ) { \
+    int i; \
+    for( i=0; i<FRAMES_PER_BUFFER*NUM_CHANNELS; i++ ) \
+        ((unsigned char *)a)[i] = (SAMPLE_SILENCE); \
+}
 #define PRINTF_S_FORMAT "%d"
 #endif
 
@@ -85,22 +100,21 @@ int main(void)
     PaStreamParameters inputParameters, outputParameters;
     PaStream *stream = NULL;
     PaError err;
-    SAMPLE *sampleBlock;
+    char *sampleBlock;
     int i;
     int numBytes;
     
     
     printf("patest_read_write_wire.c\n"); fflush(stdout);
 
-    numBytes = FRAMES_PER_BUFFER * NUM_CHANNELS * sizeof(SAMPLE);
-    sampleBlock = (SAMPLE *) malloc( numBytes );
+    numBytes = FRAMES_PER_BUFFER * NUM_CHANNELS * SAMPLE_SIZE ;
+    sampleBlock = (char *) malloc( numBytes );
     if( sampleBlock == NULL )
     {
         printf("Could not allocate record array.\n");
         exit(1);
     }
-    for( i=0; i<FRAMES_PER_BUFFER*NUM_CHANNELS; i++ )
-        sampleBlock[i] = (SAMPLE_SILENCE);
+    CLEAR( sampleBlock );
 
     err = Pa_Initialize();
     if( err != paNoError ) goto error;
@@ -150,8 +164,7 @@ int main(void)
     err = Pa_StopStream( stream );
     if( err != paNoError ) goto error;
 
-    for( i=0; i<FRAMES_PER_BUFFER*NUM_CHANNELS; i++ )
-        sampleBlock[i] = (SAMPLE_SILENCE);
+    CLEAR( sampleBlock );
 
     err = Pa_StartStream( stream );
     if( err != paNoError ) goto error;

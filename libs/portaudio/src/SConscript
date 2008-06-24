@@ -202,4 +202,10 @@ testNames = ["patest_sine", "paqa_devs", "paqa_errs", "patest1", "patest_buffer"
 tests = [env.Program(target=os.path.join("#", "bin", name), source=[os.path.join("#", "test", name + ".c"),
         staticLib]) for name in testNames]
 
-Return("sources", "sharedLib", "staticLib", "tests", "env")
+# Detect host APIs
+hostApis = []
+for cppdef in env["CPPDEFINES"]:
+    if cppdef.startswith("PA_USE_"):
+        hostApis.append(cppdef[7:-2])
+
+Return("sources", "sharedLib", "staticLib", "tests", "env", "hostApis")

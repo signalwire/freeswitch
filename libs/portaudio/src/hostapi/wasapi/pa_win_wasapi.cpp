@@ -1,6 +1,6 @@
 /*
  * Portable Audio I/O Library WASAPI implementation
- * Copyright (c) 2006 David Viens
+ * Copyright (c) 2006-2007 David Viens
  *
  * Based on the Open Source API proposed by Ross Bencina
  * Copyright (c) 1999-2002 Ross Bencina, Phil Burk
@@ -40,14 +40,9 @@
  @ingroup hostaip_src
  @brief WASAPI implementation of support for a host API.
 
- @note This file is provided as a starting point for implementing support for
- a new host API. IMPLEMENT ME comments are used to indicate functionality
- which much be customised for each implementation.
+ @note pa_wasapi currently requires VC 2005, and the latest Vista SDK
 */
 
-
-
-//these headers are only in Windows SDK CTP Feb 2006 and only work in VC 2005!
 #if _MSC_VER >= 1400
 #include <windows.h>
 #include <MMReg.h>  //must be before other Wasapi headers
@@ -55,11 +50,11 @@
 #include <mmdeviceapi.h>
 #include <Avrt.h>
 #include <audioclient.h>
+#include <Endpointvolume.h>
+
 #include <KsMedia.h>
 #include <functiondiscoverykeys.h>  // PKEY_Device_FriendlyName
 #endif
-
-
 
 #include "pa_util.h"
 #include "pa_allocation.h"
@@ -67,6 +62,16 @@
 #include "pa_stream.h"
 #include "pa_cpuload.h"
 #include "pa_process.h"
+#include "pa_debugprint.h"
+
+
+/*
+  davidv : work in progress. try using with 48000 , then 44100
+  and shared mode FIRST.
+ */
+
+#define PORTAUDIO_SHAREMODE     AUDCLNT_SHAREMODE_SHARED
+//#define PORTAUDIO_SHAREMODE   AUDCLNT_SHAREMODE_EXCLUSIVE
 
 
 
@@ -217,17 +222,18 @@ typedef struct PaWinWasapiStream
     //input
 	PaWinWasapiSubStream in;
     IAudioCaptureClient *cclient;
-    
+    IAudioEndpointVolume *inVol;
 	//output
 	PaWinWasapiSubStream out;
     IAudioRenderClient  *rclient;
-
+	IAudioEndpointVolume *outVol;
 
     bool running;
     bool closeRequest;
 
     DWORD dwThreadId;
     HANDLE hThread;
+	HANDLE hNotificationEvent; 
 
     GUID  session;
 
@@ -315,6 +321,8 @@ FAvRtWaitOnThreadOrderingGroup pAvRtWaitOnThreadOrderingGroup=0;
 FAvSetMmThreadCharacteristics  pAvSetMmThreadCharacteristics=0;
 FAvSetMmThreadPriority         pAvSetMmThreadPriority=0;
 
+
+
 #define setupPTR(fun, type, name)  {                                                        \
                                         fun = (type) GetProcAddress(hDInputDLL,name);       \
                                         if(fun == NULL) {                                   \
@@ -378,11 +386,6 @@ PaError PaWinWasapi_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApi
     HRESULT hResult = S_OK;
     IMMDeviceCollection* spEndpoints=0;
     paWasapi->enumerator = 0;
-
-    if (!setupAVRT()){
-        PRINT(("Windows WASAPI : No AVRT! (not VISTA?)"));
-        goto error;
-    }
 
     hResult = CoCreateInstance(
              __uuidof(MMDeviceEnumerator), NULL,CLSCTX_INPROC_SERVER,
@@ -452,6 +455,7 @@ PaError PaWinWasapi_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApi
 
         for( UINT i=0; i < paWasapi->deviceCount; ++i ){
 
+			PA_DEBUG(("i:%d\n",i));
             PaDeviceInfo *deviceInfo = &deviceInfoArray[i];
             deviceInfo->structVersion = 2;
             deviceInfo->hostApi = hostApiIndex;
@@ -585,7 +589,14 @@ PaError PaWinWasapi_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApi
 
                 hResult = myClient->GetMixFormat(&paWasapi->devInfo[i].MixFormat);
 
-                IF_FAILED_JUMP(hResult, error);
+				if (hResult != S_OK){
+					/*davidv: this happened with my hardware, previously for that same device in DirectSound:
+					  Digital Output (Realtek AC'97 Audio)'s GUID: {0x38f2cf50,0x7b4c,0x4740,0x86,0xeb,0xd4,0x38,0x66,0xd8,0xc8, 0x9f} 
+					  so something must be _really_ wrong with this device, TODO handle this better. We kind of need GetMixFormat*/
+					logAUDCLNT_E(hResult);
+					goto error;
+				}
+
                 myClient->Release();
             }
 
@@ -690,37 +701,37 @@ static void Terminate( struct PaUtilHostApiRepresentation *hostApi )
 }
 
 static void
-LogWAVEFORMATEXTENSIBLE(const WAVEFORMATEXTENSIBLE &in){
+LogWAVEFORMATEXTENSIBLE(const WAVEFORMATEXTENSIBLE *in){
 
-    const WAVEFORMATEX *old = (WAVEFORMATEX *)&in;
+    const WAVEFORMATEX *old = (WAVEFORMATEX *)in;
 
 	switch (old->wFormatTag){
 		case WAVE_FORMAT_EXTENSIBLE:{
 
 			PRINT(("wFormatTag=WAVE_FORMAT_EXTENSIBLE\n"));
 
-			if (in.SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT){
+			if (in->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT){
 				PRINT(("SubFormat=KSDATAFORMAT_SUBTYPE_IEEE_FLOAT\n"));
 			}
-			else if (in.SubFormat == KSDATAFORMAT_SUBTYPE_PCM){
+			else if (in->SubFormat == KSDATAFORMAT_SUBTYPE_PCM){
 				PRINT(("SubFormat=KSDATAFORMAT_SUBTYPE_PCM\n"));
 			}
 			else{
 				PRINT(("SubFormat=CUSTOM GUID{%d:%d:%d:%d%d%d%d%d%d%d%d}\n",	
-											in.SubFormat.Data1,
-											in.SubFormat.Data2,
-											in.SubFormat.Data3,
-											(int)in.SubFormat.Data4[0],
-											(int)in.SubFormat.Data4[1],
-											(int)in.SubFormat.Data4[2],
-											(int)in.SubFormat.Data4[3],
-											(int)in.SubFormat.Data4[4],
-											(int)in.SubFormat.Data4[5],
-											(int)in.SubFormat.Data4[6],
-											(int)in.SubFormat.Data4[7]));
+											in->SubFormat.Data1,
+											in->SubFormat.Data2,
+											in->SubFormat.Data3,
+											(int)in->SubFormat.Data4[0],
+											(int)in->SubFormat.Data4[1],
+											(int)in->SubFormat.Data4[2],
+											(int)in->SubFormat.Data4[3],
+											(int)in->SubFormat.Data4[4],
+											(int)in->SubFormat.Data4[5],
+											(int)in->SubFormat.Data4[6],
+											(int)in->SubFormat.Data4[7]));
 			}
-			PRINT(("Samples.wValidBitsPerSample=%d\n",  in.Samples.wValidBitsPerSample));
-			PRINT(("dwChannelMask=0x%X\n",in.dwChannelMask));
+			PRINT(("Samples.wValidBitsPerSample=%d\n",  in->Samples.wValidBitsPerSample));
+			PRINT(("dwChannelMask=0x%X\n",in->dwChannelMask));
 		}break;
 		
 		case WAVE_FORMAT_PCM:        PRINT(("wFormatTag=WAVE_FORMAT_PCM\n")); break;
@@ -742,21 +753,21 @@ LogWAVEFORMATEXTENSIBLE(const WAVEFORMATEXTENSIBLE &in){
  WAVEFORMATXXX is always interleaved
  */
 static PaSampleFormat
-waveformatToPaFormat(const WAVEFORMATEXTENSIBLE &in){
+waveformatToPaFormat(const WAVEFORMATEXTENSIBLE *in){
 
-    const WAVEFORMATEX *old = (WAVEFORMATEX *)&in;
+    const WAVEFORMATEX *old = (WAVEFORMATEX*)in;
 
     switch (old->wFormatTag){
 
         case WAVE_FORMAT_EXTENSIBLE:
         {
-            if (in.SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT){
-                if (in.Samples.wValidBitsPerSample == 32)
+            if (in->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT){
+                if (in->Samples.wValidBitsPerSample == 32)
                     return paFloat32;
                 else
                     return paCustomFormat;
             }
-            else if (in.SubFormat == KSDATAFORMAT_SUBTYPE_PCM){
+            else if (in->SubFormat == KSDATAFORMAT_SUBTYPE_PCM){
                 switch (old->wBitsPerSample){
                     case 32: return paInt32; break;
                     case 24: return paInt24;break;
@@ -797,7 +808,7 @@ waveformatToPaFormat(const WAVEFORMATEXTENSIBLE &in){
 
 
 static PaError
-waveformatFromParams(WAVEFORMATEXTENSIBLE &wav,
+waveformatFromParams(WAVEFORMATEXTENSIBLE*wavex,
                           const PaStreamParameters * params,
                           double sampleRate){
 
@@ -813,13 +824,13 @@ waveformatFromParams(WAVEFORMATEXTENSIBLE &wav,
         default: return paSampleFormatNotSupported;break;
     }
 
-    memset(&wav,0,sizeof(WAVEFORMATEXTENSIBLE));
+    memset(wavex,0,sizeof(WAVEFORMATEXTENSIBLE));
 
-    WAVEFORMATEX *old    = (WAVEFORMATEX *)&wav;
+    WAVEFORMATEX *old    = (WAVEFORMATEX *)wavex;
     old->nChannels       = (WORD)params->channelCount;
     old->nSamplesPerSec  = (DWORD)sampleRate;
-    old->wBitsPerSample  = bytesPerSample*8;
-    old->nAvgBytesPerSec = old->nSamplesPerSec * old->nChannels * bytesPerSample;
+    old->wBitsPerSample  = (WORD)(bytesPerSample*8);
+    old->nAvgBytesPerSec = (DWORD)(old->nSamplesPerSec * old->nChannels * bytesPerSample);
     old->nBlockAlign     = (WORD)(old->nChannels * bytesPerSample);
 
     //WAVEFORMATEX
@@ -834,19 +845,19 @@ waveformatFromParams(WAVEFORMATEXTENSIBLE &wav,
         old->cbSize = sizeof (WAVEFORMATEXTENSIBLE) - sizeof (WAVEFORMATEX);
 
         if ((params->sampleFormat & ~paNonInterleaved) == paFloat32)
-            wav.SubFormat = KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
+            wavex->SubFormat = KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
         else
-            wav.SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
+            wavex->SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
 
-        wav.Samples.wValidBitsPerSample = old->wBitsPerSample; //no extra padding!
+        wavex->Samples.wValidBitsPerSample = old->wBitsPerSample; //no extra padding!
 
         switch(params->channelCount){
-            case 1:  wav.dwChannelMask = SPEAKER_FRONT_CENTER; break;
-            case 2:  wav.dwChannelMask = 0x1 | 0x2; break;
-            case 4:  wav.dwChannelMask = 0x1 | 0x2 | 0x10 | 0x20; break;
-            case 6:  wav.dwChannelMask = 0x1 | 0x2 | 0x4 | 0x8 | 0x10 | 0x20; break;
-            case 8:  wav.dwChannelMask = 0x1 | 0x2 | 0x4 | 0x8 | 0x10 | 0x20 | 0x40 | 0x80; break;
-            default: wav.dwChannelMask = 0; break;
+            case 1:  wavex->dwChannelMask = SPEAKER_FRONT_CENTER; break;
+            case 2:  wavex->dwChannelMask = 0x1 | 0x2; break;
+            case 4:  wavex->dwChannelMask = 0x1 | 0x2 | 0x10 | 0x20; break;
+            case 6:  wavex->dwChannelMask = 0x1 | 0x2 | 0x4 | 0x8 | 0x10 | 0x20; break;
+            case 8:  wavex->dwChannelMask = 0x1 | 0x2 | 0x4 | 0x8 | 0x10 | 0x20 | 0x40 | 0x80; break;
+            default: wavex->dwChannelMask = 0; break;
         }
     }
 
@@ -854,36 +865,160 @@ waveformatFromParams(WAVEFORMATEXTENSIBLE &wav,
 }
 
 
-enum PaWasapiFormatAnswer {PWFA_OK,PWFA_NO,PWFA_SUGGESTED};
 
 
-static PaWasapiFormatAnswer 
-IsFormatSupportedInternal(IAudioClient * myClient, WAVEFORMATEXTENSIBLE &wavex){
 
-	PaWasapiFormatAnswer answer = PWFA_OK;
 
-    WAVEFORMATEX *closestMatch=0;
-    HRESULT hResult = myClient->IsFormatSupported(
-        //AUDCLNT_SHAREMODE_EXCLUSIVE,
-        AUDCLNT_SHAREMODE_SHARED,
-        (WAVEFORMATEX*)&wavex,&closestMatch);
+/*
+#define paFloat32        ((PaSampleFormat) 0x00000001) 
+#define paInt32          ((PaSampleFormat) 0x00000002)
+#define paInt24          ((PaSampleFormat) 0x00000004) 
+#define paInt16          ((PaSampleFormat) 0x00000008) 
+*/
+//lifted from pa_wdmks
+static void wasapiFillWFEXT( WAVEFORMATEXTENSIBLE* pwfext, PaSampleFormat sampleFormat, double sampleRate, int channelCount)
+{
+    PA_DEBUG(( "sampleFormat = %lx\n" , sampleFormat ));
+    PA_DEBUG(( "sampleRate = %f\n" , sampleRate ));
+    PA_DEBUG(( "chanelCount = %d\n", channelCount ));
+
+    pwfext->Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
+    pwfext->Format.nChannels = channelCount;
+    pwfext->Format.nSamplesPerSec = (int)sampleRate;
+    if(channelCount == 1)
+        pwfext->dwChannelMask = KSAUDIO_SPEAKER_DIRECTOUT;
+    else
+        pwfext->dwChannelMask = KSAUDIO_SPEAKER_STEREO;
+    if(sampleFormat == paFloat32)
+    {
+        pwfext->Format.nBlockAlign = channelCount * 4;
+        pwfext->Format.wBitsPerSample = 32;
+        pwfext->Format.cbSize = sizeof(WAVEFORMATEXTENSIBLE)-sizeof(WAVEFORMATEX);
+        pwfext->Samples.wValidBitsPerSample = 32;
+        pwfext->SubFormat = KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
+    }
+    else if(sampleFormat == paInt32)
+    {
+        pwfext->Format.nBlockAlign = channelCount * 4;
+        pwfext->Format.wBitsPerSample = 32;
+        pwfext->Format.cbSize = sizeof(WAVEFORMATEXTENSIBLE)-sizeof(WAVEFORMATEX);
+        pwfext->Samples.wValidBitsPerSample = 32;
+        pwfext->SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
+    }
+    else if(sampleFormat == paInt24)
+    {
+        pwfext->Format.nBlockAlign = channelCount * 3;
+        pwfext->Format.wBitsPerSample = 24;
+        pwfext->Format.cbSize = sizeof(WAVEFORMATEXTENSIBLE)-sizeof(WAVEFORMATEX);
+        pwfext->Samples.wValidBitsPerSample = 24;
+        pwfext->SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
+    }
+    else if(sampleFormat == paInt16)
+    {
+        pwfext->Format.nBlockAlign = channelCount * 2;
+        pwfext->Format.wBitsPerSample = 16;
+        pwfext->Format.cbSize = sizeof(WAVEFORMATEXTENSIBLE)-sizeof(WAVEFORMATEX);
+        pwfext->Samples.wValidBitsPerSample = 16;
+        pwfext->SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
+    }
+    pwfext->Format.nAvgBytesPerSec = pwfext->Format.nSamplesPerSec * pwfext->Format.nBlockAlign;
+}
+
+
+
+/*
+#define FORMATTESTS 4
+const int BestToWorst[FORMATTESTS]={paFloat32,paInt32,paInt24,paInt16};
+*/
+
+#define FORMATTESTS 3
+const int BestToWorst[FORMATTESTS]={paFloat32,paInt24,paInt16};
+
+
+static PaError
+GetClosestFormat(IAudioClient * myClient, double sampleRate,const  PaStreamParameters * params, 
+				 AUDCLNT_SHAREMODE *shareMode, WAVEFORMATEXTENSIBLE *outWavex)
+{
+	//TODO we should try exclusive first and shared after
+	*shareMode = PORTAUDIO_SHAREMODE;
+
+	PaError answer = paInvalidSampleRate;
+
+    waveformatFromParams(outWavex,params,sampleRate);
+	WAVEFORMATEX *sharedClosestMatch=0;
+	HRESULT hResult=!S_OK;
+
+	if (*shareMode == AUDCLNT_SHAREMODE_EXCLUSIVE)
+		hResult = myClient->IsFormatSupported(AUDCLNT_SHAREMODE_EXCLUSIVE,(WAVEFORMATEX*)outWavex,NULL);
+	else
+		hResult = myClient->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED,   (WAVEFORMATEX*)&outWavex,&sharedClosestMatch);
 
 	if (hResult == S_OK)
-		answer = PWFA_OK;
-    else if (closestMatch){
-        WAVEFORMATEXTENSIBLE* ext = (WAVEFORMATEXTENSIBLE*)closestMatch;
+		answer = paFormatIsSupported;
+    else if (sharedClosestMatch){
+        WAVEFORMATEXTENSIBLE* ext = (WAVEFORMATEXTENSIBLE*)sharedClosestMatch;
 		
-		if (closestMatch->wFormatTag == WAVE_FORMAT_EXTENSIBLE)
-			memcpy(&wavex,closestMatch,sizeof(WAVEFORMATEXTENSIBLE));
-		else
-			memcpy(&wavex,closestMatch,sizeof(WAVEFORMATEX));
+		int closestMatchSR = (int)sharedClosestMatch->nSamplesPerSec;
 
-        CoTaskMemFree(closestMatch);
-		answer = PWFA_SUGGESTED;
+		if (sharedClosestMatch->wFormatTag == WAVE_FORMAT_EXTENSIBLE)
+			memcpy(outWavex,sharedClosestMatch,sizeof(WAVEFORMATEXTENSIBLE));
+		else
+			memcpy(outWavex,sharedClosestMatch,sizeof(WAVEFORMATEX));
+
+        CoTaskMemFree(sharedClosestMatch);
+
+		if ((int)sampleRate == closestMatchSR)
+		answer = paFormatIsSupported;
+		else
+			answer = paInvalidSampleRate;
 	
-	}else if (hResult != S_OK){
+	}else {
+
+		//it doesnt suggest anything?? ok lets show it the MENU!
+
+		//ok fun time as with pa_win_mme, we know only a refusal of the user-requested
+		//sampleRate+num Channel is disastrous, as the portaudio buffer processor converts between anything
+		//so lets only use the number 
+		for (int i=0;i<FORMATTESTS;++i){
+			WAVEFORMATEXTENSIBLE ext;
+			wasapiFillWFEXT(&ext,BestToWorst[i],sampleRate,params->channelCount);		
+			if (*shareMode == AUDCLNT_SHAREMODE_EXCLUSIVE)
+				hResult = myClient->IsFormatSupported(AUDCLNT_SHAREMODE_EXCLUSIVE,(WAVEFORMATEX*)&ext,NULL);
+			else
+				hResult = myClient->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED,   (WAVEFORMATEX*)&ext,&sharedClosestMatch);
+
+			if (hResult == S_OK){
+				memcpy(outWavex,&ext,sizeof(WAVEFORMATEXTENSIBLE));
+				answer = paFormatIsSupported;
+				break;
+			}
+		}
+
+		if (answer!=paFormatIsSupported) {
+			//try MIX format?
+			//why did it HAVE to come to this ....
+			WAVEFORMATEX pcm16WaveFormat;
+			memset(&pcm16WaveFormat,0,sizeof(WAVEFORMATEX));
+			pcm16WaveFormat.wFormatTag = WAVE_FORMAT_PCM; 
+			pcm16WaveFormat.nChannels = 2; 
+			pcm16WaveFormat.nSamplesPerSec = (DWORD)sampleRate; 
+			pcm16WaveFormat.nBlockAlign = 4; 
+			pcm16WaveFormat.nAvgBytesPerSec = pcm16WaveFormat.nSamplesPerSec*pcm16WaveFormat.nBlockAlign; 
+			pcm16WaveFormat.wBitsPerSample = 16; 
+			pcm16WaveFormat.cbSize = 0;
+
+			if (*shareMode == AUDCLNT_SHAREMODE_EXCLUSIVE)
+				hResult = myClient->IsFormatSupported(AUDCLNT_SHAREMODE_EXCLUSIVE,(WAVEFORMATEX*)&pcm16WaveFormat,NULL);
+			else
+				hResult = myClient->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED,   (WAVEFORMATEX*)&pcm16WaveFormat,&sharedClosestMatch);
+
+			if (hResult == S_OK){
+				memcpy(outWavex,&pcm16WaveFormat,sizeof(WAVEFORMATEX));
+				answer = paFormatIsSupported;
+			}
+		}
+
 		logAUDCLNT_E(hResult);
-		answer = PWFA_NO;
 	}
 
 	return answer;
@@ -891,10 +1026,11 @@ IsFormatSupportedInternal(IAudioClient * myClient, WAVEFORMATEXTENSIBLE &wavex){
 
 
 static PaError IsFormatSupported( struct PaUtilHostApiRepresentation *hostApi,
-                                  const PaStreamParameters *inputParameters,
-                                  const PaStreamParameters *outputParameters,
+                                  const  PaStreamParameters *inputParameters,
+                                  const  PaStreamParameters *outputParameters,
                                   double sampleRate )
 {
+
     int inputChannelCount, outputChannelCount;
     PaSampleFormat inputSampleFormat, outputSampleFormat;
 
@@ -925,9 +1061,7 @@ static PaError IsFormatSupported( struct PaUtilHostApiRepresentation *hostApi,
 
         PaWinWasapiHostApiRepresentation *paWasapi = (PaWinWasapiHostApiRepresentation*)hostApi;
 
-        WAVEFORMATEXTENSIBLE wavex;
-        waveformatFromParams(wavex,inputParameters,sampleRate);
-	
+
 		IAudioClient *myClient=0;
 		HRESULT hResult = paWasapi->devInfo[inputParameters->device].device->Activate(
 			__uuidof(IAudioClient), CLSCTX_INPROC_SERVER, NULL, (void**)&myClient);
@@ -936,26 +1070,13 @@ static PaError IsFormatSupported( struct PaUtilHostApiRepresentation *hostApi,
 			return paInvalidDevice;
 		}
 
-		PaWasapiFormatAnswer answer = IsFormatSupportedInternal(myClient,wavex);
+        WAVEFORMATEXTENSIBLE wavex;
+		AUDCLNT_SHAREMODE shareMode;
+		PaError answer = GetClosestFormat(myClient,sampleRate,inputParameters,&shareMode,&wavex);
 		myClient->Release();
 
-		switch (answer){
-			case PWFA_OK: break;
-			case PWFA_NO: return paSampleFormatNotSupported;
-			case PWFA_SUGGESTED:
-			{
-				PRINT(("Suggested format:"));
-				LogWAVEFORMATEXTENSIBLE(wavex);
-				if (wavex.Format.nSamplesPerSec == (DWORD)sampleRate){
-					//no problem its a format issue only
-				}
-				else{
-					return paInvalidSampleRate;
-				}
-			}
-		}
-
-
+		if (answer !=paFormatIsSupported)
+			return answer;
     }
     else
     {
@@ -989,9 +1110,6 @@ static PaError IsFormatSupported( struct PaUtilHostApiRepresentation *hostApi,
 
         PaWinWasapiHostApiRepresentation *paWasapi = (PaWinWasapiHostApiRepresentation*)hostApi;
 
-        WAVEFORMATEXTENSIBLE wavex;
-        waveformatFromParams(wavex,outputParameters,sampleRate);
-	
 		IAudioClient *myClient=0;
 		HRESULT hResult = paWasapi->devInfo[outputParameters->device].device->Activate(
 			__uuidof(IAudioClient), CLSCTX_INPROC_SERVER, NULL, (void**)&myClient);
@@ -1000,26 +1118,13 @@ static PaError IsFormatSupported( struct PaUtilHostApiRepresentation *hostApi,
 			return paInvalidDevice;
 		}
 
-		PaWasapiFormatAnswer answer = IsFormatSupportedInternal(myClient,wavex);
+        WAVEFORMATEXTENSIBLE wavex;
+		AUDCLNT_SHAREMODE shareMode;
+		PaError answer = GetClosestFormat(myClient,sampleRate,outputParameters,&shareMode,&wavex);
 		myClient->Release();
 
-		switch (answer){
-			case PWFA_OK: break;
-			case PWFA_NO: return paSampleFormatNotSupported;
-			case PWFA_SUGGESTED:
-			{
-				PRINT(("Suggested format:"));
-				LogWAVEFORMATEXTENSIBLE(wavex);
-				if (wavex.Format.nSamplesPerSec == (DWORD)sampleRate){
-					//no problem its a format issue only
-				}
-				else{
-					return paInvalidSampleRate;
-				}
-			}
-		}
-
-
+		if (answer !=paFormatIsSupported)
+			return answer;		
     }
     else
     {
@@ -1087,35 +1192,26 @@ static PaError OpenStream( struct PaUtilHostApiRepresentation *hostApi,
         if (hResult != S_OK)
             return paInvalidDevice;
 
-        waveformatFromParams(stream->in.wavex,outputParameters,sampleRate);
-		
-		PaWasapiFormatAnswer answer = IsFormatSupportedInternal(stream->in.client,
-			                                                    stream->in.wavex);
+        hResult = info.device->Activate(
+            __uuidof(IAudioEndpointVolume), CLSCTX_INPROC_SERVER, NULL,
+            (void**)&stream->inVol);
 
-		switch (answer){
-			case PWFA_OK: break;
-			case PWFA_NO: return paSampleFormatNotSupported;
-			case PWFA_SUGGESTED:
-			{
-				PRINT(("Suggested format:"));
-				LogWAVEFORMATEXTENSIBLE(stream->in.wavex);
-				if (stream->in.wavex.Format.nSamplesPerSec == (DWORD)sampleRate){
-					//no problem its a format issue only
-				}
-				else{
-					return paInvalidSampleRate;
-				}
-			}
-		}
+        if (hResult != S_OK)
+            return paInvalidDevice;
+	
+		AUDCLNT_SHAREMODE shareMode;
+		PaError answer = GetClosestFormat(stream->in.client,sampleRate,inputParameters,&shareMode,&stream->in.wavex);
+		
+		if (answer !=paFormatIsSupported)
+			return answer;
 
         //stream->out.period = info.DefaultDevicePeriod;
         stream->in.period = info.MinimumDevicePeriod;
 
         hResult = stream->in.client->Initialize(
-            AUDCLNT_SHAREMODE_SHARED,
-            //AUDCLNT_SHAREMODE_EXCLUSIVE,
+            shareMode,
             0,  //no flags
-            stream->in.period*3, //tripple buffer
+            stream->in.period,
             0,//stream->out.period,
             (WAVEFORMATEX*)&stream->in.wavex,
             &stream->session
@@ -1142,7 +1238,7 @@ static PaError OpenStream( struct PaUtilHostApiRepresentation *hostApi,
 
         /* IMPLEMENT ME - establish which  host formats are available */
         hostInputSampleFormat =
-            PaUtil_SelectClosestAvailableFormat( waveformatToPaFormat(stream->in.wavex), inputSampleFormat );
+            PaUtil_SelectClosestAvailableFormat( waveformatToPaFormat(&stream->in.wavex), inputSampleFormat );
 	}
     else
     {
@@ -1179,44 +1275,52 @@ static PaError OpenStream( struct PaUtilHostApiRepresentation *hostApi,
         if (hResult != S_OK)
             return paInvalidDevice;
 
-        waveformatFromParams(stream->out.wavex,outputParameters,sampleRate);
+		AUDCLNT_SHAREMODE shareMode;
+		PaError answer = GetClosestFormat(stream->out.client,sampleRate,outputParameters,&shareMode,&stream->out.wavex);
 		
-		PaWasapiFormatAnswer answer = IsFormatSupportedInternal(stream->out.client,
-			                                                    stream->out.wavex);
+		if (answer !=paFormatIsSupported)
+			return answer;
+		LogWAVEFORMATEXTENSIBLE(&stream->out.wavex);
 
-		switch (answer){
-			case PWFA_OK: break;
-			case PWFA_NO: return paSampleFormatNotSupported;
-			case PWFA_SUGGESTED:
-			{
-				PRINT(("Suggested format:"));
-				LogWAVEFORMATEXTENSIBLE(stream->out.wavex);
-				if (stream->out.wavex.Format.nSamplesPerSec == (DWORD)sampleRate){
-					//no problem its a format issue only
-				}
-				else{
-					return paInvalidSampleRate;
-				}
-			}
-		}
-
-        //stream->out.period = info.DefaultDevicePeriod;
+       // stream->out.period = info.DefaultDevicePeriod;
         stream->out.period = info.MinimumDevicePeriod;
 
-        hResult = stream->out.client->Initialize(
-            AUDCLNT_SHAREMODE_SHARED,
-            //AUDCLNT_SHAREMODE_EXCLUSIVE,
-            0,  //no flags
-            stream->out.period*3, //tripple buffer
-            0,//stream->out.period,
-            (WAVEFORMATEX*)&stream->out.wavex,
-            &stream->session
-            );
+		/*For an exclusive-mode stream that uses event-driven buffering, 
+		the caller must specify nonzero values for hnsPeriodicity and hnsBufferDuration, 
+		and the values of these two parameters must be equal */
+		if (shareMode == AUDCLNT_SHAREMODE_EXCLUSIVE){
+			hResult = stream->out.client->Initialize(
+				shareMode,
+				AUDCLNT_STREAMFLAGS_EVENTCALLBACK, 
+				stream->out.period,
+				stream->out.period,
+				(WAVEFORMATEX*)&stream->out.wavex,
+				&stream->session
+				);
+		}
+		else{
+			hResult = stream->out.client->Initialize(
+				shareMode,
+				AUDCLNT_STREAMFLAGS_EVENTCALLBACK, 
+				0,
+				0,
+				(WAVEFORMATEX*)&stream->out.wavex,
+				&stream->session
+				);
+		}
+	
 
         if (hResult != S_OK){
             logAUDCLNT_E(hResult);
             return paInvalidDevice;
         }
+
+        hResult = info.device->Activate(
+            __uuidof(IAudioEndpointVolume), CLSCTX_INPROC_SERVER, NULL,
+            (void**)&stream->outVol);
+
+        if (hResult != S_OK)
+            return paInvalidDevice;
 
         hResult = stream->out.client->GetBufferSize(&stream->out.bufferSize);
         if (hResult != S_OK)
@@ -1225,16 +1329,15 @@ static PaError OpenStream( struct PaUtilHostApiRepresentation *hostApi,
         hResult = stream->out.client->GetStreamLatency(&stream->out.latency);
         if (hResult != S_OK)
             return paInvalidDevice;
-
+		
         double periodsPerSecond = 1.0/nano100ToSeconds(stream->out.period);
         double samplesPerPeriod = (double)(stream->out.wavex.Format.nSamplesPerSec)/periodsPerSecond;
 
         //this is the number of samples that are required at each period
-        stream->out.framesPerHostCallback = (unsigned long)samplesPerPeriod;//unrelated to channels
+        stream->out.framesPerHostCallback = stream->out.bufferSize; //(unsigned long)samplesPerPeriod;//unrelated to channels
 
         /* IMPLEMENT ME - establish which  host formats are available */
-        hostOutputSampleFormat =
-            PaUtil_SelectClosestAvailableFormat( waveformatToPaFormat(stream->out.wavex), outputSampleFormat );
+        hostOutputSampleFormat = PaUtil_SelectClosestAvailableFormat( waveformatToPaFormat(&stream->out.wavex), outputSampleFormat );
     }
     else
     {
@@ -1376,7 +1479,10 @@ static PaError CloseStream( PaStream* s )
     SAFE_RELEASE(stream->in.client);
     SAFE_RELEASE(stream->cclient);
     SAFE_RELEASE(stream->rclient);
+	SAFE_RELEASE(stream->inVol);
+	SAFE_RELEASE(stream->outVol);
     CloseHandle(stream->hThread);
+	CloseHandle(stream->hNotificationEvent);
 
     PaUtil_TerminateBufferProcessor( &stream->bufferProcessor );
     PaUtil_TerminateStreamRepresentation( &stream->streamRepresentation );
@@ -1385,7 +1491,7 @@ static PaError CloseStream( PaStream* s )
     return result;
 }
 
-VOID ProcThread(void *client);
+DWORD WINAPI ProcThread(void *client);
 
 static PaError StartStream( PaStream *s )
 {
@@ -1414,7 +1520,7 @@ static PaError StartStream( PaStream *s )
     stream->hThread = CreateThread(
         NULL,              // no security attribute
         0,                 // default stack size
-        (LPTHREAD_START_ROUTINE) ProcThread,
+        ProcThread,
         (LPVOID) stream,    // thread parameter
         0,                 // not suspended
         &stream->dwThreadId);      // returns thread ID
@@ -1667,11 +1773,8 @@ static void WaspiHostProcessingLoop( void *inputBuffer,  long inputFrames,
 }
 
 
-
-VOID
-ProcThread(void *param){
-
-	HRESULT hResult;
+void 
+MMCSS_activate(){
 
     DWORD stuff=0;
     HANDLE thCarac = pAvSetMmThreadCharacteristics("Pro Audio",&stuff);
@@ -1684,31 +1787,6 @@ ProcThread(void *param){
         PRINT(("AvSetMmThreadPriority failed!\n"));
     }
 
-
-    PaWinWasapiStream *stream = (PaWinWasapiStream*)param;
-
-    HANDLE context;
-    GUID threadOrderGUID;
-    memset(&threadOrderGUID,0,sizeof(GUID));
-    LARGE_INTEGER large;
-
-    large.QuadPart = stream->out.period;
-
-    BOOL ok = pAvRtCreateThreadOrderingGroup(&context,
-        &large,
-        &threadOrderGUID,
-#ifdef _DEBUG
-        0 //THREAD_ORDER_GROUP_INFINITE_TIMEOUT
-#else
-        0 //default is 5 times the 2nd param
-#endif
-        //TEXT("Audio")
-        );
-
-    if (!ok){
-        PRINT(("AvRtCreateThreadOrderingGroup failed!\n"));
-    }
-
 	//debug
     {
         HANDLE hh       = GetCurrentThread();
@@ -1716,9 +1794,23 @@ ProcThread(void *param){
         DWORD currclass = GetPriorityClass(GetCurrentProcess());
         PRINT(("currprio 0x%X currclass 0x%X\n",currprio,currclass));
     }
+}
 
 
-    //fill up initial buffer latency??
+DWORD WINAPI
+ProcThread(void* param){
+	HRESULT hResult;
+	MMCSS_activate();
+
+    PaWinWasapiStream *stream = (PaWinWasapiStream*)param;
+
+	stream->hNotificationEvent = CreateEvent(NULL, 
+	                                         FALSE,  //bManualReset are we sure??
+											 FALSE, 
+											 "PAWASA");
+	hResult = stream->out.client->SetEventHandle(stream->hNotificationEvent);
+	if (hResult != S_OK)
+		logAUDCLNT_E(hResult);
 
 	if (stream->out.client){
 		hResult = stream->out.client->Start();
@@ -1726,67 +1818,94 @@ ProcThread(void *param){
 			logAUDCLNT_E(hResult);
 	}
 
-    stream->running = true;
+	stream->running = true;
+	bool bOne = false;
 
-    while(!stream->closeRequest){
-        BOOL answer = pAvRtWaitOnThreadOrderingGroup(context);
-        if (!answer){
-            PRINT(("AvRtWaitOnThreadOrderingGroup failed\n"));
+	while( !stream->closeRequest ) 
+    { 
+	    //lets wait but have a 1 second timeout
+        DWORD dwResult = WaitForSingleObject(stream->hNotificationEvent, 1000);
+        switch( dwResult ) {
+		case WAIT_OBJECT_0: {
+
+			unsigned long usingBS = stream->out.framesPerHostCallback;
+
+			BYTE* indata  = 0;
+			BYTE* outdata = 0;
+
+			hResult = stream->rclient->GetBuffer(usingBS, &outdata);
+
+			if (hResult != S_OK || !outdata) {
+				//logAUDCLNT_E(hResult);
+				//most probably shared mode and hResult=AUDCLNT_E_BUFFER_TOO_LARGE
+				UINT32 padding = 0;
+				hResult = stream->out.client->GetCurrentPadding(&padding);
+				if (padding == 0)
+					break;	
+				usingBS = usingBS-padding;
+				if (usingBS == 0)
+					break;//huh?
+				hResult = stream->rclient->GetBuffer(usingBS, &outdata);
+				if (hResult != S_OK)//what can we do NOW??
+					break;
+				//logAUDCLNT_E(hResult);			
+			}
+	
+			WaspiHostProcessingLoop(indata, usingBS ,outdata, usingBS, stream);
+
+			hResult = stream->rclient->ReleaseBuffer(usingBS, 0);
+			if (hResult != S_OK)
+				logAUDCLNT_E(hResult);
+
+			 /*	This was suggested, but in my tests it doesnt seem to improve the 
+                locking behaviour some drivers have running in exclusive mode.
+                if(!ResetEvent(stream->hNotificationEvent)){
+					logAUDCLNT_E(hResult);
+				}
+             */
+
+		} 
+		break;
+
         }
-
-        unsigned long usingBS = stream->out.framesPerHostCallback;
-
-        UINT32 padding=0;
-        hResult = stream->out.client->GetCurrentPadding(&padding);
-        logAUDCLNT_E(hResult);
-
-        //buffer full dont pursue
-        if (padding == stream->out.bufferSize)
-            continue;
-
-        //if something is already inside
-        if (padding > 0){
-            usingBS = stream->out.bufferSize-padding;
-            if (usingBS > stream->out.framesPerHostCallback){
-                //PRINT(("underflow! %d\n",usingBS));
-            }
-            else if (usingBS < stream->out.framesPerHostCallback){
-                //PRINT(("overflow! %d\n",usingBS));
-            }
-        }
-        else
-            usingBS = stream->out.framesPerHostCallback;
-
-
-        BYTE*indata =0;
-        BYTE*outdata=0;
-
-        hResult = stream->rclient->GetBuffer(usingBS,&outdata);
-
-        if (hResult != S_OK || !outdata) {
-            logAUDCLNT_E(hResult);
-			continue;
-        }
-
-        WaspiHostProcessingLoop(indata, usingBS
-			                   ,outdata,usingBS,stream);
-
-        hResult = stream->rclient->ReleaseBuffer(usingBS,0);
-        if (hResult != S_OK)
-            logAUDCLNT_E(hResult);
-
     }
-
-
-    BOOL bRes = pAvRtDeleteThreadOrderingGroup(context);
-    if (!bRes){
-        PRINT(("AvRtDeleteThreadOrderingGroup failure\n"));
-    }
-
+	stream->out.client->Stop();
     stream->closeRequest = false;
+    
+	return 0; 
 }
 
 
 
 
 #endif //VC 2005
+
+
+
+
+#if 0
+			if(bFirst) {			
+				float masteur;
+				hResult = stream->outVol->GetMasterVolumeLevelScalar(&masteur);
+				if (hResult != S_OK)
+					logAUDCLNT_E(hResult);
+				float chan1, chan2;
+				hResult = stream->outVol->GetChannelVolumeLevelScalar(0, &chan1);
+				if (hResult != S_OK)
+					logAUDCLNT_E(hResult);
+				hResult = stream->outVol->GetChannelVolumeLevelScalar(1, &chan2);
+				if (hResult != S_OK)
+					logAUDCLNT_E(hResult);
+
+				BOOL bMute;
+				hResult = stream->outVol->GetMute(&bMute);
+				if (hResult != S_OK)
+					logAUDCLNT_E(hResult);
+
+				stream->outVol->SetMasterVolumeLevelScalar(0.5, NULL);
+				stream->outVol->SetChannelVolumeLevelScalar(0, 0.5, NULL);
+				stream->outVol->SetChannelVolumeLevelScalar(1, 0.5, NULL);
+				stream->outVol->SetMute(FALSE, NULL);
+				bFirst = false;
+			}
+#endif

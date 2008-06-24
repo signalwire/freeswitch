@@ -199,10 +199,19 @@ PaError PaMacCore_SetError(OSStatus error, int line, int isError)
     else
         errorType = "Warning";
 
-    if ((int)error < -99999 || (int)error > 99999)
-        DBUG(("%s on line %d: err='%4s', msg='%s'\n", errorType, line, (const char *)&error, errorText));
-    else
-        DBUG(("%s on line %d: err=%d, 0x%x, msg='%s'\n", errorType, line, (int)error, (unsigned)error, errorText));
+    char str[20];
+    // see if it appears to be a 4-char-code
+    *(UInt32 *)(str + 1) = CFSwapInt32HostToBig(error);
+    if (isprint(str[1]) && isprint(str[2]) && isprint(str[3]) && isprint(str[4]))
+    {
+        str[0] = str[5] = '\'';
+        str[6] = '\0';
+    } else {
+        // no, format it as an integer
+        sprintf(str, "%d", (int)error);
+    }
+
+    DBUG(("%s on line %d: err='%s', msg=%s\n", errorType, line, str, errorText));
 
     PaUtil_SetLastHostErrorInfo( paCoreAudio, error, errorText );
 
@@ -520,9 +529,9 @@ PaError setBestSampleRateForDevice( const AudioDeviceID device,
    not usually catastrophic.
 */
 PaError setBestFramesPerBuffer( const AudioDeviceID device,
-                                       const bool isOutput,
-                                       unsigned long requestedFramesPerBuffer, 
-                                       unsigned long *actualFramesPerBuffer )
+                                const bool isOutput,
+                                UInt32 requestedFramesPerBuffer, 
+                                UInt32 *actualFramesPerBuffer )
 {
    UInt32 afpb;
    const bool isInput = !isOutput;

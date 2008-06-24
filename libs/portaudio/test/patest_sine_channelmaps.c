@@ -1,11 +1,13 @@
 /** @file patest_sine.c
 	@ingroup test_src
-	@brief Play a sine wave for several seconds.
-	@author Ross Bencina <rossb@audiomulch.com>
-    @author Phil Burk <philburk@softsynth.com>
+	@brief Plays sine waves using sme simple channel maps.
+          Designed for use with COreAudio, but should made to work with other APIs
+	@author Bjorn Roche <bjorn@xowave.com>
+   @author Ross Bencina <rossb@audiomulch.com>
+   @author Phil Burk <philburk@softsynth.com>
 */
 /*
- * $Id: patest_sine.c 1294 2007-10-24 20:51:22Z bjornroche $
+ * $Id: patest_sine.c 1097 2006-08-26 08:27:53Z rossb $
  *
  * This program uses the PortAudio Portable Audio Library.
  * For more information see: http://www.portaudio.com/
@@ -45,6 +47,10 @@
 #include <math.h>
 #include "portaudio.h"
 
+#ifdef __APPLE__
+#include "pa_mac_core.h"
+#endif
+
 #define NUM_SECONDS   (5)
 #define SAMPLE_RATE   (44100)
 #define FRAMES_PER_BUFFER  (64)
@@ -59,7 +65,6 @@ typedef struct
     float sine[TABLE_SIZE];
     int left_phase;
     int right_phase;
-    char message[20];
 }
 paTestData;
 
@@ -94,15 +99,6 @@ static int patestCallback( const void *inputBuffer, void *outputBuffer,
     return paContinue;
 }
 
-/*
- * This routine is called by portaudio when playback is done.
- */
-static void StreamFinished( void* userData )
-{
-   paTestData *data = (paTestData *) userData;
-   printf( "Stream Completed: %s\n", data->message );
-}
-
 /*******************************************************************/
 int main(void);
 int main(void)
@@ -111,10 +107,15 @@ int main(void)
     PaStream *stream;
     PaError err;
     paTestData data;
+#ifdef __APPLE__
+    PaMacCoreStreamInfo macInfo;
+    const SInt32 channelMap[4] = { -1, -1, 0, 1 };
+#endif
     int i;
 
     
     printf("PortAudio Test: output sine wave. SR = %d, BufSize = %d\n", SAMPLE_RATE, FRAMES_PER_BUFFER);
+    printf("Output will be mapped to channels 2 and 3 instead of 0 and 1.\n");
     
     /* initialise sinusoidal wavetable */
     for( i=0; i<TABLE_SIZE; i++ )
@@ -126,11 +127,26 @@ int main(void)
     err = Pa_Initialize();
     if( err != paNoError ) goto error;
 
+    /** setup host specific info */
+#ifdef __APPLE__
+    PaMacCore_SetupStreamInfo( &macInfo, paMacCorePlayNice );
+    PaMacCore_SetupChannelMap( &macInfo, channelMap, 4 );
+
+    for( i=0; i<4; ++i )
+       printf( "channel %d name: %s\n", i, PaMacCore_GetChannelName( Pa_GetDefaultOutputDevice(), i, false ) );
+#else
+    printf( "Channel mapping not supported on this platform. Reverting to normal sine test.\n" );
+#endif
+
     outputParameters.device = Pa_GetDefaultOutputDevice(); /* default output device */
     outputParameters.channelCount = 2;       /* stereo output */
     outputParameters.sampleFormat = paFloat32; /* 32 bit floating point output */
     outputParameters.suggestedLatency = Pa_GetDeviceInfo( outputParameters.device )->defaultLowOutputLatency;
+#ifdef __APPLE__
+    outputParameters.hostApiSpecificStreamInfo = &macInfo;
+#else
     outputParameters.hostApiSpecificStreamInfo = NULL;
+#endif
 
     err = Pa_OpenStream(
               &stream,
@@ -141,10 +157,6 @@ int main(void)
               paClipOff,      /* we won't output out of range samples so don't bother clipping them */
               patestCallback,
               &data );
-    if( err != paNoError ) goto error;
-
-    sprintf( data.message, "No Message" );
-    err = Pa_SetStreamFinishedCallback( stream, &StreamFinished );
     if( err != paNoError ) goto error;
 
     err = Pa_StartStream( stream );

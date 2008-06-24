@@ -4,7 +4,7 @@
 	@author Phil Burk  http://www.softsynth.com
 */
 /*
- * $Id: patest_record.c 1097 2006-08-26 08:27:53Z rossb $
+ * $Id: patest_record.c 1281 2007-09-16 11:06:51Z aknudsen $
  *
  * This program uses the PortAudio Portable Audio Library.
  * For more information see: http://www.portaudio.com

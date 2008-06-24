@@ -50,8 +50,8 @@ extern "C" {
  * A pointer to a paMacCoreStreamInfo may be passed as
  * the hostApiSpecificStreamInfo in the PaStreamParameters struct
  * when opening a stream or querying the format. Use NULL, for the
- * defaults. Note that for duplex streams, both infos should be the
- * same or behaviour is undefined.
+ * defaults. Note that for duplex streams, flags for input and output
+ * should be the same or behaviour is undefined.
  */
 typedef struct
 {
@@ -59,7 +59,7 @@ typedef struct
     PaHostApiTypeId hostApiType;  /**host API for which this data is intended */
     unsigned long version;        /**structure version */
     unsigned long flags;          /* flags to modify behaviour */
-    long const * channelMap;             /* Channel map for HAL channel mapping , if not needed, use NULL;*/ 
+    SInt32 const * channelMap;    /* Channel map for HAL channel mapping , if not needed, use NULL;*/ 
     unsigned long channelMapSize; /* Channel map size for HAL channel mapping , if not needed, use 0;*/ 
 } PaMacCoreStreamInfo;
 
@@ -81,7 +81,7 @@ void PaMacCore_SetupStreamInfo( PaMacCoreStreamInfo *data, unsigned long flags )
  * @param channelMap The channel map array, as described in notes.txt. This array pointer will be used directly (ie the underlying data will not be copied), so the caller should not free the array until after the stream has been opened.
  * @param channelMapSize The size of the channel map array.
  */
-void PaMacCore_SetupChannelMap( PaMacCoreStreamInfo *data, const long * const channelMap, unsigned long channelMapSize );
+void PaMacCore_SetupChannelMap( PaMacCoreStreamInfo *data, const SInt32 * const channelMap, unsigned long channelMapSize );
 
 /*
  * Retrieve the AudioDeviceID of the input device assigned to an open stream

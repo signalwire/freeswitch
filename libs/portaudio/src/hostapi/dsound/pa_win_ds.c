@@ -1,10 +1,10 @@
 /*
- * $Id: pa_win_ds.c 1116 2006-09-06 15:47:03Z rossb $
+ * $Id: pa_win_ds.c 1286 2007-09-26 21:34:23Z rossb $
  * Portable Audio I/O Library DirectSound implementation
  *
  * Authors: Phil Burk, Robert Marsanyi & Ross Bencina
  * Based on the Open Source API proposed by Ross Bencina
- * Copyright (c) 1999-2006 Ross Bencina, Phil Burk, Robert Marsanyi
+ * Copyright (c) 1999-2007 Ross Bencina, Phil Burk, Robert Marsanyi
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files
@@ -55,20 +55,34 @@
 
     @todo implement IsFormatSupported
 
-    @todo check that CoInitialize() CoUninitialize() are always correctly
-        paired, even in error cases.
-
     @todo call PaUtil_SetLastHostErrorInfo with a specific error string (currently just "DSound error").
 
     @todo make sure all buffers have been played before stopping the stream
         when the stream callback returns paComplete
 
+    @todo retrieve default devices using the DRVM_MAPPER_PREFERRED_GET functions used in the wmme api
+        these wave device ids can be aligned with the directsound devices either by retrieving
+        the system interface device name using DRV_QUERYDEVICEINTERFACE or by using the wave device
+        id retrieved in KsPropertySetEnumerateCallback.
+
     old TODOs from phil, need to work out if these have been done:
         O- fix "patest_stop.c"
 */
 
+
 #include <stdio.h>
 #include <string.h> /* strlen() */
+#include <windows.h>
+#include <objbase.h>
+
+/*
+  We are only using DX3 in here, no need to polute the namespace - davidv
+*/
+#define DIRECTSOUND_VERSION 0x0300
+#include <dsound.h>
+#ifdef PAWIN_USE_WDMKS_DEVICE_INFO
+#include <dsconf.h>
+#endif /* PAWIN_USE_WDMKS_DEVICE_INFO */
 
 #include "pa_util.h"
 #include "pa_allocation.h"
@@ -76,8 +90,13 @@
 #include "pa_stream.h"
 #include "pa_cpuload.h"
 #include "pa_process.h"
+#include "pa_debugprint.h"
 
+#include "pa_win_ds.h"
 #include "pa_win_ds_dynlink.h"
+#include "pa_win_waveformat.h"
+#include "pa_win_wdmks_utils.h"
+
 
 #if (defined(WIN32) && (defined(_MSC_VER) && (_MSC_VER >= 1200))) /* MSC version 6 and above */
 #pragma comment( lib, "dsound.lib" )
@@ -168,9 +187,12 @@ static BOOL CALLBACK CollectGUIDsProc(LPGUID lpGUID,
 
 typedef struct PaWinDsDeviceInfo
 {
-    GUID                             guid;
-    GUID                            *lpGUID;
-    double                           sampleRates[3];
+    PaDeviceInfo        inheritedDeviceInfo;
+    GUID                guid;
+    GUID                *lpGUID;
+    double              sampleRates[3];
+    char deviceInputChannelCountIsKnown; /**<< if the system returns 0xFFFF then we don't really know the number of supported channels (1=>known, 0=>unknown)*/
+    char deviceOutputChannelCountIsKnown; /**<< if the system returns 0xFFFF then we don't really know the number of supported channels (1=>known, 0=>unknown)*/
 } PaWinDsDeviceInfo;
 
 typedef struct
@@ -182,7 +204,8 @@ typedef struct
     PaUtilAllocationGroup   *allocations;
 
     /* implementation specific data goes here */
-    PaWinDsDeviceInfo       *winDsDeviceInfos;
+
+    char                    comWasInitialized;
 
 } PaWinDsHostApiRepresentation;
 
@@ -269,6 +292,7 @@ typedef struct DSDeviceNameAndGUID{
     char *name; // allocated from parent's allocations, never deleted by this structure
     GUID guid;
     LPGUID lpGUID;
+    void *pnpInterface;  // wchar_t* interface path, allocated using the DS host api's allocation group
 } DSDeviceNameAndGUID;
 
 typedef struct DSDeviceNameAndGUIDVector{
@@ -279,6 +303,12 @@ typedef struct DSDeviceNameAndGUIDVector{
     int free;
     DSDeviceNameAndGUID *items; // Allocated using LocalAlloc()
 } DSDeviceNameAndGUIDVector;
+
+typedef struct DSDeviceNamesAndGUIDs{
+    PaWinDsHostApiRepresentation *winDsHostApi;
+    DSDeviceNameAndGUIDVector inputNamesAndGUIDs;
+    DSDeviceNameAndGUIDVector outputNamesAndGUIDs;
+} DSDeviceNamesAndGUIDs;
 
 static PaError InitializeDSDeviceNameAndGUIDVector(
         DSDeviceNameAndGUIDVector *guidVector, PaUtilAllocationGroup *allocations )
@@ -326,6 +356,7 @@ static PaError ExpandDSDeviceNameAndGUIDVector( DSDeviceNameAndGUIDVector *guidV
                 newItems[i].lpGUID = &newItems[i].guid;
                 memcpy( &newItems[i].guid, guidVector->items[i].lpGUID, sizeof(GUID) );;
             }
+            newItems[i].pnpInterface = guidVector->items[i].pnpInterface;
         }
 
         LocalFree( guidVector->items );
@@ -397,11 +428,152 @@ static BOOL CALLBACK CollectGUIDsProc(LPGUID lpGUID,
         return FALSE;
     }
 
+    namesAndGUIDs->items[namesAndGUIDs->count].pnpInterface = 0;
+
     ++namesAndGUIDs->count;
     --namesAndGUIDs->free;
     
     return TRUE;
 }
+
+#ifdef PAWIN_USE_WDMKS_DEVICE_INFO
+
+static void *DuplicateWCharString( PaUtilAllocationGroup *allocations, wchar_t *source )
+{
+    size_t len;
+    wchar_t *result;
+
+    len = wcslen( source );
+    result = (wchar_t*)PaUtil_GroupAllocateMemory( allocations, (long) ((len+1) * sizeof(wchar_t)) );
+    wcscpy( result, source );
+    return result;
+}
+
+static BOOL CALLBACK KsPropertySetEnumerateCallback( PDSPROPERTY_DIRECTSOUNDDEVICE_DESCRIPTION_W_DATA data, LPVOID context )
+{
+    int i;
+    DSDeviceNamesAndGUIDs *deviceNamesAndGUIDs = (DSDeviceNamesAndGUIDs*)context;
+
+    if( data->DataFlow == DIRECTSOUNDDEVICE_DATAFLOW_RENDER )
+    {
+        for( i=0; i < deviceNamesAndGUIDs->outputNamesAndGUIDs.count; ++i )
+        {
+            if( deviceNamesAndGUIDs->outputNamesAndGUIDs.items[i].lpGUID
+                && memcmp( &data->DeviceId, deviceNamesAndGUIDs->outputNamesAndGUIDs.items[i].lpGUID, sizeof(GUID) ) == 0 )
+            {
+                deviceNamesAndGUIDs->outputNamesAndGUIDs.items[i].pnpInterface = 
+                        (char*)DuplicateWCharString( deviceNamesAndGUIDs->winDsHostApi->allocations, data->Interface );
+                break;
+            }
+        }
+    }
+    else if( data->DataFlow == DIRECTSOUNDDEVICE_DATAFLOW_CAPTURE )
+    {
+        for( i=0; i < deviceNamesAndGUIDs->inputNamesAndGUIDs.count; ++i )
+        {
+            if( deviceNamesAndGUIDs->inputNamesAndGUIDs.items[i].lpGUID
+                && memcmp( &data->DeviceId, deviceNamesAndGUIDs->inputNamesAndGUIDs.items[i].lpGUID, sizeof(GUID) ) == 0 )
+            {
+                deviceNamesAndGUIDs->inputNamesAndGUIDs.items[i].pnpInterface = 
+                        (char*)DuplicateWCharString( deviceNamesAndGUIDs->winDsHostApi->allocations, data->Interface );
+                break;
+            }
+        }
+    }
+
+    return TRUE;
+}
+
+
+static GUID pawin_CLSID_DirectSoundPrivate = 
+{ 0x11ab3ec0, 0x25ec, 0x11d1, 0xa4, 0xd8, 0x00, 0xc0, 0x4f, 0xc2, 0x8a, 0xca };
+
+static GUID pawin_DSPROPSETID_DirectSoundDevice = 
+{ 0x84624f82, 0x25ec, 0x11d1, 0xa4, 0xd8, 0x00, 0xc0, 0x4f, 0xc2, 0x8a, 0xca };
+
+static GUID pawin_IID_IKsPropertySet = 
+{ 0x31efac30, 0x515c, 0x11d0, 0xa9, 0xaa, 0x00, 0xaa, 0x00, 0x61, 0xbe, 0x93 };
+
+
+/*
+    FindDevicePnpInterfaces fills in the pnpInterface fields in deviceNamesAndGUIDs
+    with UNICODE file paths to the devices. The DS documentation mentions
+    at least two techniques by which these Interface paths can be found using IKsPropertySet on
+    the DirectSound class object. One is using the DSPROPERTY_DIRECTSOUNDDEVICE_DESCRIPTION 
+    property, and the other is using DSPROPERTY_DIRECTSOUNDDEVICE_ENUMERATE.
+    I tried both methods and only the second worked. I found two postings on the
+    net from people who had the same problem with the first method, so I think the method used here is 
+    more common/likely to work. The probem is that IKsPropertySet_Get returns S_OK
+    but the fields of the device description are not filled in.
+
+    The mechanism we use works by registering an enumeration callback which is called for 
+    every DSound device. Our callback searches for a device in our deviceNamesAndGUIDs list
+    with the matching GUID and copies the pointer to the Interface path.
+    Note that we could have used this enumeration callback to perform the original 
+    device enumeration, however we choose not to so we can disable this step easily.
+
+    Apparently the IKsPropertySet mechanism was added in DirectSound 9c 2004
+    http://www.tech-archive.net/Archive/Development/microsoft.public.win32.programmer.mmedia/2004-12/0099.html
+
+        -- rossb
+*/
+static void FindDevicePnpInterfaces( DSDeviceNamesAndGUIDs *deviceNamesAndGUIDs )
+{
+    IClassFactory *pClassFactory;
+   
+    if( paWinDsDSoundEntryPoints.DllGetClassObject(&pawin_CLSID_DirectSoundPrivate, &IID_IClassFactory, (PVOID *) &pClassFactory) == S_OK ){
+        IKsPropertySet *pPropertySet;
+        if( pClassFactory->lpVtbl->CreateInstance( pClassFactory, NULL, &pawin_IID_IKsPropertySet, (PVOID *) &pPropertySet) == S_OK ){
+            
+            DSPROPERTY_DIRECTSOUNDDEVICE_ENUMERATE_W_DATA data;
+            ULONG bytesReturned;
+
+            data.Callback = KsPropertySetEnumerateCallback;
+            data.Context = deviceNamesAndGUIDs;
+
+            IKsPropertySet_Get( pPropertySet,
+                &pawin_DSPROPSETID_DirectSoundDevice,
+                DSPROPERTY_DIRECTSOUNDDEVICE_ENUMERATE_W,
+                NULL,
+                0,
+                &data,
+                sizeof(data),
+                &bytesReturned
+            );
+            
+            IKsPropertySet_Release( pPropertySet );
+        }
+        pClassFactory->lpVtbl->Release( pClassFactory );
+    }
+
+    /*
+        The following code fragment, which I chose not to use, queries for the 
+        device interface for a device with a specific GUID:
+
+        ULONG BytesReturned;
+        DSPROPERTY_DIRECTSOUNDDEVICE_DESCRIPTION_W_DATA Property;
+
+        memset (&Property, 0, sizeof(Property));
+        Property.DataFlow = DIRECTSOUNDDEVICE_DATAFLOW_RENDER;
+        Property.DeviceId = *lpGUID;  
+
+        hr = IKsPropertySet_Get( pPropertySet,
+            &pawin_DSPROPSETID_DirectSoundDevice,
+            DSPROPERTY_DIRECTSOUNDDEVICE_DESCRIPTION_W,
+            NULL,
+            0,
+            &Property,
+            sizeof(Property),
+            &BytesReturned
+        );
+
+        if( hr == S_OK )
+        {
+            //pnpInterface = Property.Interface;
+        }
+    */
+}
+#endif /* PAWIN_USE_WDMKS_DEVICE_INFO */
 
 
 /* 
@@ -418,7 +590,6 @@ static double defaultSampleRateSearchOrder_[] =
     { 44100.0, 48000.0, 32000.0, 24000.0, 22050.0, 88200.0, 96000.0, 192000.0,
         16000.0, 12000.0, 11025.0, 9600.0, 8000.0 };
 
-
 /************************************************************************************
 ** Extract capabilities from an output device, and add it to the device info list
 ** if successful. This function assumes that there is enough room in the
@@ -427,18 +598,18 @@ static double defaultSampleRateSearchOrder_[] =
 ** The device will not be added to the device list if any errors are encountered.
 */
 static PaError AddOutputDeviceInfoFromDirectSound(
-        PaWinDsHostApiRepresentation *winDsHostApi, char *name, LPGUID lpGUID )
+        PaWinDsHostApiRepresentation *winDsHostApi, char *name, LPGUID lpGUID, char *pnpInterface )
 {
     PaUtilHostApiRepresentation  *hostApi = &winDsHostApi->inheritedHostApiRep;
-    PaDeviceInfo                 *deviceInfo = hostApi->deviceInfos[hostApi->info.deviceCount];
-    PaWinDsDeviceInfo            *winDsDeviceInfo = &winDsHostApi->winDsDeviceInfos[hostApi->info.deviceCount];
+    PaWinDsDeviceInfo            *winDsDeviceInfo = (PaWinDsDeviceInfo*) hostApi->deviceInfos[hostApi->info.deviceCount];
+    PaDeviceInfo                 *deviceInfo = &winDsDeviceInfo->inheritedDeviceInfo;
     HRESULT                       hr;
     LPDIRECTSOUND                 lpDirectSound;
     DSCAPS                        caps;
     int                           deviceOK = TRUE;
     PaError                       result = paNoError;
     int                           i;
-    
+
     /* Copy GUID to the device info structure. Set pointer. */
     if( lpGUID == NULL )
     {
@@ -449,7 +620,6 @@ static PaError AddOutputDeviceInfoFromDirectSound(
         memcpy( &winDsDeviceInfo->guid, lpGUID, sizeof(GUID) );
         winDsDeviceInfo->lpGUID = &winDsDeviceInfo->guid;
     }
-
     
     if( lpGUID )
     {
@@ -529,8 +699,39 @@ static PaError AddOutputDeviceInfoFromDirectSound(
             if( deviceOK )
             {
                 deviceInfo->maxInputChannels = 0;
-                /* Mono or stereo device? */
-                deviceInfo->maxOutputChannels = ( caps.dwFlags & DSCAPS_PRIMARYSTEREO ) ? 2 : 1;
+                winDsDeviceInfo->deviceInputChannelCountIsKnown = 1;
+
+                /* DS output capabilities only indicate supported number of channels
+                   using two flags which indicate mono and/or stereo.
+                   We assume that stereo devices may support more than 2 channels
+                   (as is the case with 5.1 devices for example) and so
+                   set deviceOutputChannelCountIsKnown to 0 (unknown).
+                   In this case OpenStream will try to open the device
+                   when the user requests more than 2 channels, rather than
+                   returning an error. 
+                */
+                if( caps.dwFlags & DSCAPS_PRIMARYSTEREO )
+                {
+                    deviceInfo->maxOutputChannels = 2;
+                    winDsDeviceInfo->deviceOutputChannelCountIsKnown = 0;
+                }
+                else
+                {
+                    deviceInfo->maxOutputChannels = 1;
+                    winDsDeviceInfo->deviceOutputChannelCountIsKnown = 1;
+                }
+
+#ifdef PAWIN_USE_WDMKS_DEVICE_INFO
+                if( pnpInterface )
+                {
+                    int count = PaWin_WDMKS_QueryFilterMaximumChannelCount( pnpInterface, /* isInput= */ 0  );
+                    if( count > 0 )
+                    {
+                        deviceInfo->maxOutputChannels = count;
+                        winDsDeviceInfo->deviceOutputChannelCountIsKnown = 1;
+                    }
+                }
+#endif /* PAWIN_USE_WDMKS_DEVICE_INFO */
 
                 deviceInfo->defaultLowInputLatency = 0.;    /** @todo IMPLEMENT ME */
                 deviceInfo->defaultLowOutputLatency = 0.;   /** @todo IMPLEMENT ME */
@@ -547,8 +748,8 @@ static PaError AddOutputDeviceInfoFromDirectSound(
                     for( i = 0; i < PA_DEFAULTSAMPLERATESEARCHORDER_COUNT_; ++i )
                     {
                         if( defaultSampleRateSearchOrder_[i] >= caps.dwMinSecondarySampleRate
-                                && defaultSampleRateSearchOrder_[i] <= caps.dwMaxSecondarySampleRate ){
-
+                                && defaultSampleRateSearchOrder_[i] <= caps.dwMaxSecondarySampleRate )
+                        {
                             deviceInfo->defaultSampleRate = defaultSampleRateSearchOrder_[i];
                             break;
                         }
@@ -614,11 +815,11 @@ static PaError AddOutputDeviceInfoFromDirectSound(
 ** The device will not be added to the device list if any errors are encountered.
 */
 static PaError AddInputDeviceInfoFromDirectSoundCapture(
-        PaWinDsHostApiRepresentation *winDsHostApi, char *name, LPGUID lpGUID )
+        PaWinDsHostApiRepresentation *winDsHostApi, char *name, LPGUID lpGUID, char *pnpInterface )
 {
     PaUtilHostApiRepresentation  *hostApi = &winDsHostApi->inheritedHostApiRep;
-    PaDeviceInfo                 *deviceInfo = hostApi->deviceInfos[hostApi->info.deviceCount];
-    PaWinDsDeviceInfo            *winDsDeviceInfo = &winDsHostApi->winDsDeviceInfos[hostApi->info.deviceCount];
+    PaWinDsDeviceInfo            *winDsDeviceInfo = (PaWinDsDeviceInfo*) hostApi->deviceInfos[hostApi->info.deviceCount];
+    PaDeviceInfo                 *deviceInfo = &winDsDeviceInfo->inheritedDeviceInfo;
     HRESULT                       hr;
     LPDIRECTSOUNDCAPTURE          lpDirectSoundCapture;
     DSCCAPS                       caps;
@@ -635,7 +836,6 @@ static PaError AddInputDeviceInfoFromDirectSoundCapture(
         winDsDeviceInfo->lpGUID = &winDsDeviceInfo->guid;
         memcpy( &winDsDeviceInfo->guid, lpGUID, sizeof(GUID) );
     }
-
 
     hr = paWinDsDSoundEntryPoints.DirectSoundCaptureCreate( lpGUID, &lpDirectSoundCapture, NULL );
 
@@ -678,7 +878,22 @@ static PaError AddInputDeviceInfoFromDirectSoundCapture(
             if( deviceOK )
             {
                 deviceInfo->maxInputChannels = caps.dwChannels;
+                winDsDeviceInfo->deviceInputChannelCountIsKnown = 1;
+
                 deviceInfo->maxOutputChannels = 0;
+                winDsDeviceInfo->deviceOutputChannelCountIsKnown = 1;
+
+#ifdef PAWIN_USE_WDMKS_DEVICE_INFO
+                if( pnpInterface )
+                {
+                    int count = PaWin_WDMKS_QueryFilterMaximumChannelCount( pnpInterface, /* isInput= */ 1  );
+                    if( count > 0 )
+                    {
+                        deviceInfo->maxInputChannels = count;
+                        winDsDeviceInfo->deviceInputChannelCountIsKnown = 1;
+                    }
+                }
+#endif /* PAWIN_USE_WDMKS_DEVICE_INFO */
 
                 deviceInfo->defaultLowInputLatency = 0.;    /** @todo IMPLEMENT ME */
                 deviceInfo->defaultLowOutputLatency = 0.;   /** @todo IMPLEMENT ME */
@@ -770,17 +985,30 @@ PaError PaWinDs_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiInde
     PaError result = paNoError;
     int i, deviceCount;
     PaWinDsHostApiRepresentation *winDsHostApi;
-    DSDeviceNameAndGUIDVector inputNamesAndGUIDs, outputNamesAndGUIDs;
-    PaDeviceInfo *deviceInfoArray;
+    DSDeviceNamesAndGUIDs deviceNamesAndGUIDs;
 
-    HRESULT hr = CoInitialize(NULL);        /** @todo: should uninitialize too */
-    if( FAILED(hr) ){
+    PaWinDsDeviceInfo *deviceInfoArray;
+    char comWasInitialized = 0;
+
+    /*
+        If COM is already initialized CoInitialize will either return
+        FALSE, or RPC_E_CHANGED_MODE if it was initialised in a different
+        threading mode. In either case we shouldn't consider it an error
+        but we need to be careful to not call CoUninitialize() if 
+        RPC_E_CHANGED_MODE was returned.
+    */
+
+    HRESULT hr = CoInitialize(NULL);
+    if( FAILED(hr) && hr != RPC_E_CHANGED_MODE )
         return paUnanticipatedHostError;
-    }            
+
+    if( hr != RPC_E_CHANGED_MODE )
+        comWasInitialized = 1;
 
     /* initialise guid vectors so they can be safely deleted on error */
-    inputNamesAndGUIDs.items = NULL;
-    outputNamesAndGUIDs.items = NULL;
+    deviceNamesAndGUIDs.winDsHostApi = NULL;
+    deviceNamesAndGUIDs.inputNamesAndGUIDs.items = NULL;
+    deviceNamesAndGUIDs.outputNamesAndGUIDs.items = NULL;
 
     PaWinDs_InitializeDSoundEntryPoints();
 
@@ -790,6 +1018,8 @@ PaError PaWinDs_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiInde
         result = paInsufficientMemory;
         goto error;
     }
+
+    winDsHostApi->comWasInitialized = comWasInitialized;
 
     winDsHostApi->allocations = PaUtil_CreateAllocationGroup();
     if( !winDsHostApi->allocations )
@@ -810,32 +1040,39 @@ PaError PaWinDs_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiInde
     
 /* DSound - enumerate devices to count them and to gather their GUIDs */
 
-
-    result = InitializeDSDeviceNameAndGUIDVector( &inputNamesAndGUIDs, winDsHostApi->allocations );
+    result = InitializeDSDeviceNameAndGUIDVector( &deviceNamesAndGUIDs.inputNamesAndGUIDs, winDsHostApi->allocations );
     if( result != paNoError )
         goto error;
 
-    result = InitializeDSDeviceNameAndGUIDVector( &outputNamesAndGUIDs, winDsHostApi->allocations );
+    result = InitializeDSDeviceNameAndGUIDVector( &deviceNamesAndGUIDs.outputNamesAndGUIDs, winDsHostApi->allocations );
     if( result != paNoError )
         goto error;
 
-    paWinDsDSoundEntryPoints.DirectSoundCaptureEnumerate( (LPDSENUMCALLBACK)CollectGUIDsProc, (void *)&inputNamesAndGUIDs );
+    paWinDsDSoundEntryPoints.DirectSoundCaptureEnumerate( (LPDSENUMCALLBACK)CollectGUIDsProc, (void *)&deviceNamesAndGUIDs.inputNamesAndGUIDs );
 
-    paWinDsDSoundEntryPoints.DirectSoundEnumerate( (LPDSENUMCALLBACK)CollectGUIDsProc, (void *)&outputNamesAndGUIDs );
+    paWinDsDSoundEntryPoints.DirectSoundEnumerate( (LPDSENUMCALLBACK)CollectGUIDsProc, (void *)&deviceNamesAndGUIDs.outputNamesAndGUIDs );
 
-    if( inputNamesAndGUIDs.enumerationError != paNoError )
+    if( deviceNamesAndGUIDs.inputNamesAndGUIDs.enumerationError != paNoError )
     {
-        result = inputNamesAndGUIDs.enumerationError;
+        result = deviceNamesAndGUIDs.inputNamesAndGUIDs.enumerationError;
         goto error;
     }
 
-    if( outputNamesAndGUIDs.enumerationError != paNoError )
+    if( deviceNamesAndGUIDs.outputNamesAndGUIDs.enumerationError != paNoError )
     {
-        result = outputNamesAndGUIDs.enumerationError;
+        result = deviceNamesAndGUIDs.outputNamesAndGUIDs.enumerationError;
         goto error;
     }
 
-    deviceCount = inputNamesAndGUIDs.count + outputNamesAndGUIDs.count;
+    deviceCount = deviceNamesAndGUIDs.inputNamesAndGUIDs.count + deviceNamesAndGUIDs.outputNamesAndGUIDs.count;
+
+#ifdef PAWIN_USE_WDMKS_DEVICE_INFO
+    if( deviceCount > 0 )
+    {
+        deviceNamesAndGUIDs.winDsHostApi = winDsHostApi;
+        FindDevicePnpInterfaces( &deviceNamesAndGUIDs );
+    }
+#endif /* PAWIN_USE_WDMKS_DEVICE_INFO */
 
     if( deviceCount > 0 )
     {
@@ -849,18 +1086,9 @@ PaError PaWinDs_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiInde
         }
 
         /* allocate all PaDeviceInfo structs in a contiguous block */
-        deviceInfoArray = (PaDeviceInfo*)PaUtil_GroupAllocateMemory(
-                winDsHostApi->allocations, sizeof(PaDeviceInfo) * deviceCount );
-        if( !deviceInfoArray )
-        {
-            result = paInsufficientMemory;
-            goto error;
-        }
-
-        /* allocate all DSound specific info structs in a contiguous block */
-        winDsHostApi->winDsDeviceInfos = (PaWinDsDeviceInfo*)PaUtil_GroupAllocateMemory(
+        deviceInfoArray = (PaWinDsDeviceInfo*)PaUtil_GroupAllocateMemory(
                 winDsHostApi->allocations, sizeof(PaWinDsDeviceInfo) * deviceCount );
-        if( !winDsHostApi->winDsDeviceInfos )
+        if( !deviceInfoArray )
         {
             result = paInsufficientMemory;
             goto error;
@@ -868,37 +1096,39 @@ PaError PaWinDs_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiInde
 
         for( i=0; i < deviceCount; ++i )
         {
-            PaDeviceInfo *deviceInfo = &deviceInfoArray[i];
+            PaDeviceInfo *deviceInfo = &deviceInfoArray[i].inheritedDeviceInfo;
             deviceInfo->structVersion = 2;
             deviceInfo->hostApi = hostApiIndex;
             deviceInfo->name = 0;
             (*hostApi)->deviceInfos[i] = deviceInfo;
         }
 
-        for( i=0; i< inputNamesAndGUIDs.count; ++i )
+        for( i=0; i < deviceNamesAndGUIDs.inputNamesAndGUIDs.count; ++i )
         {
             result = AddInputDeviceInfoFromDirectSoundCapture( winDsHostApi,
-                    inputNamesAndGUIDs.items[i].name,
-                    inputNamesAndGUIDs.items[i].lpGUID );
+                    deviceNamesAndGUIDs.inputNamesAndGUIDs.items[i].name,
+                    deviceNamesAndGUIDs.inputNamesAndGUIDs.items[i].lpGUID,
+                    deviceNamesAndGUIDs.inputNamesAndGUIDs.items[i].pnpInterface );
             if( result != paNoError )
                 goto error;
         }
 
-        for( i=0; i< outputNamesAndGUIDs.count; ++i )
+        for( i=0; i < deviceNamesAndGUIDs.outputNamesAndGUIDs.count; ++i )
         {
             result = AddOutputDeviceInfoFromDirectSound( winDsHostApi,
-                    outputNamesAndGUIDs.items[i].name,
-                    outputNamesAndGUIDs.items[i].lpGUID );
+                    deviceNamesAndGUIDs.outputNamesAndGUIDs.items[i].name,
+                    deviceNamesAndGUIDs.outputNamesAndGUIDs.items[i].lpGUID,
+                    deviceNamesAndGUIDs.outputNamesAndGUIDs.items[i].pnpInterface );
             if( result != paNoError )
                 goto error;
         }
     }    
 
-    result = TerminateDSDeviceNameAndGUIDVector( &inputNamesAndGUIDs );
+    result = TerminateDSDeviceNameAndGUIDVector( &deviceNamesAndGUIDs.inputNamesAndGUIDs );
     if( result != paNoError )
         goto error;
 
-    result = TerminateDSDeviceNameAndGUIDVector( &outputNamesAndGUIDs );
+    result = TerminateDSDeviceNameAndGUIDVector( &deviceNamesAndGUIDs.outputNamesAndGUIDs );
     if( result != paNoError )
         goto error;
 
@@ -932,8 +1162,11 @@ error:
         PaUtil_FreeMemory( winDsHostApi );
     }
 
-    TerminateDSDeviceNameAndGUIDVector( &inputNamesAndGUIDs );
-    TerminateDSDeviceNameAndGUIDVector( &outputNamesAndGUIDs );
+    TerminateDSDeviceNameAndGUIDVector( &deviceNamesAndGUIDs.inputNamesAndGUIDs );
+    TerminateDSDeviceNameAndGUIDVector( &deviceNamesAndGUIDs.outputNamesAndGUIDs );
+
+    if( comWasInitialized )
+        CoUninitialize();
 
     return result;
 }
@@ -943,6 +1176,7 @@ error:
 static void Terminate( struct PaUtilHostApiRepresentation *hostApi )
 {
     PaWinDsHostApiRepresentation *winDsHostApi = (PaWinDsHostApiRepresentation*)hostApi;
+    char comWasInitialized = winDsHostApi->comWasInitialized;
 
     /*
         IMPLEMENT ME:
@@ -959,7 +1193,8 @@ static void Terminate( struct PaUtilHostApiRepresentation *hostApi )
 
     PaWinDs_TerminateDSoundEntryPoints();
 
-    CoUninitialize();
+    if( comWasInitialized )
+        CoUninitialize();
 }
 
 
@@ -994,17 +1229,40 @@ static int PaWinDS_GetMinSystemLatency( void )
     return minLatencyMsec;
 }
 
+static PaError ValidateWinDirectSoundSpecificStreamInfo(
+        const PaStreamParameters *streamParameters,
+        const PaWinDirectSoundStreamInfo *streamInfo )
+{
+	if( streamInfo )
+	{
+	    if( streamInfo->size != sizeof( PaWinDirectSoundStreamInfo )
+	            || streamInfo->version != 1 )
+	    {
+	        return paIncompatibleHostApiSpecificStreamInfo;
+	    }
+	}
+
+	return paNoError;
+}
+
 /***********************************************************************************/
 static PaError IsFormatSupported( struct PaUtilHostApiRepresentation *hostApi,
                                   const PaStreamParameters *inputParameters,
                                   const PaStreamParameters *outputParameters,
                                   double sampleRate )
 {
+    PaError result;
+    PaWinDsDeviceInfo *inputWinDsDeviceInfo, *outputWinDsDeviceInfo;
+    PaDeviceInfo *inputDeviceInfo, *outputDeviceInfo;
     int inputChannelCount, outputChannelCount;
     PaSampleFormat inputSampleFormat, outputSampleFormat;
-    
+    PaWinDirectSoundStreamInfo *inputStreamInfo, *outputStreamInfo;
+
     if( inputParameters )
     {
+        inputWinDsDeviceInfo = (PaWinDsDeviceInfo*) hostApi->deviceInfos[ inputParameters->device ];
+        inputDeviceInfo = &inputWinDsDeviceInfo->inheritedDeviceInfo;
+
         inputChannelCount = inputParameters->channelCount;
         inputSampleFormat = inputParameters->sampleFormat;
 
@@ -1015,12 +1273,14 @@ static PaError IsFormatSupported( struct PaUtilHostApiRepresentation *hostApi,
             return paInvalidDevice;
 
         /* check that input device can support inputChannelCount */
-        if( inputChannelCount > hostApi->deviceInfos[ inputParameters->device ]->maxInputChannels )
+        if( inputWinDsDeviceInfo->deviceInputChannelCountIsKnown
+                && inputChannelCount > inputDeviceInfo->maxInputChannels )
             return paInvalidChannelCount;
 
         /* validate inputStreamInfo */
-        if( inputParameters->hostApiSpecificStreamInfo )
-            return paIncompatibleHostApiSpecificStreamInfo; /* this implementation doesn't use custom stream info */
+        inputStreamInfo = (PaWinDirectSoundStreamInfo*)inputParameters->hostApiSpecificStreamInfo;
+		result = ValidateWinDirectSoundSpecificStreamInfo( inputParameters, inputStreamInfo );
+		if( result != paNoError ) return result;
     }
     else
     {
@@ -1029,6 +1289,9 @@ static PaError IsFormatSupported( struct PaUtilHostApiRepresentation *hostApi,
 
     if( outputParameters )
     {
+        outputWinDsDeviceInfo = (PaWinDsDeviceInfo*) hostApi->deviceInfos[ outputParameters->device ];
+        outputDeviceInfo = &outputWinDsDeviceInfo->inheritedDeviceInfo;
+
         outputChannelCount = outputParameters->channelCount;
         outputSampleFormat = outputParameters->sampleFormat;
         
@@ -1039,12 +1302,14 @@ static PaError IsFormatSupported( struct PaUtilHostApiRepresentation *hostApi,
             return paInvalidDevice;
 
         /* check that output device can support inputChannelCount */
-        if( outputChannelCount > hostApi->deviceInfos[ outputParameters->device ]->maxOutputChannels )
+        if( outputWinDsDeviceInfo->deviceOutputChannelCountIsKnown
+                && outputChannelCount > outputDeviceInfo->maxOutputChannels )
             return paInvalidChannelCount;
 
         /* validate outputStreamInfo */
-        if( outputParameters->hostApiSpecificStreamInfo )
-            return paIncompatibleHostApiSpecificStreamInfo; /* this implementation doesn't use custom stream info */
+        outputStreamInfo = (PaWinDirectSoundStreamInfo*)outputParameters->hostApiSpecificStreamInfo;
+		result = ValidateWinDirectSoundSpecificStreamInfo( outputParameters, outputStreamInfo );
+		if( result != paNoError ) return result;
     }
     else
     {
@@ -1115,22 +1380,14 @@ static int PaWinDs_GetMinLatencyFrames( double sampleRate )
 }
 
 
-static HRESULT InitInputBuffer( PaWinDsStream *stream, unsigned long nFrameRate, WORD nChannels, int bytesPerBuffer )
+static HRESULT InitInputBuffer( PaWinDsStream *stream, PaSampleFormat sampleFormat, unsigned long nFrameRate, WORD nChannels, int bytesPerBuffer, PaWinWaveFormatChannelMask channelMask )
 {
     DSCBUFFERDESC  captureDesc;
-    WAVEFORMATEX   wfFormat;
+    PaWinWaveFormat waveFormat;
     HRESULT        result;
     
-    stream->bytesPerInputFrame = nChannels * sizeof(short);
+    stream->bytesPerInputFrame = nChannels * Pa_GetSampleSize(sampleFormat);
 
-    // Define the buffer format
-    wfFormat.wFormatTag      = WAVE_FORMAT_PCM;
-    wfFormat.nChannels       = nChannels;
-    wfFormat.nSamplesPerSec  = nFrameRate;
-    wfFormat.wBitsPerSample  = 8 * sizeof(short);
-    wfFormat.nBlockAlign     = (WORD)(wfFormat.nChannels * (wfFormat.wBitsPerSample / 8));
-    wfFormat.nAvgBytesPerSec = wfFormat.nSamplesPerSec * wfFormat.nBlockAlign;
-    wfFormat.cbSize          = 0;   /* No extended format info. */
     stream->inputSize = bytesPerBuffer;
     // ----------------------------------------------------------------------
     // Setup the secondary buffer description
@@ -1138,34 +1395,50 @@ static HRESULT InitInputBuffer( PaWinDsStream *stream, unsigned long nFrameRate,
     captureDesc.dwSize = sizeof(DSCBUFFERDESC);
     captureDesc.dwFlags =  0;
     captureDesc.dwBufferBytes = bytesPerBuffer;
-    captureDesc.lpwfxFormat = &wfFormat;
+    captureDesc.lpwfxFormat = (WAVEFORMATEX*)&waveFormat;
+    
     // Create the capture buffer
-    if ((result = IDirectSoundCapture_CreateCaptureBuffer( stream->pDirectSoundCapture,
-                  &captureDesc, &stream->pDirectSoundInputBuffer, NULL)) != DS_OK) return result;
+
+    // first try WAVEFORMATEXTENSIBLE. if this fails, fall back to WAVEFORMATEX
+    PaWin_InitializeWaveFormatExtensible( &waveFormat, nChannels, 
+                sampleFormat, nFrameRate, channelMask );
+
+    if( IDirectSoundCapture_CreateCaptureBuffer( stream->pDirectSoundCapture,
+                  &captureDesc, &stream->pDirectSoundInputBuffer, NULL) != DS_OK )
+    {
+        PaWin_InitializeWaveFormatEx( &waveFormat, nChannels, sampleFormat, nFrameRate );
+
+        if ((result = IDirectSoundCapture_CreateCaptureBuffer( stream->pDirectSoundCapture,
+                    &captureDesc, &stream->pDirectSoundInputBuffer, NULL)) != DS_OK) return result;
+    }
+
     stream->readOffset = 0;  // reset last read position to start of buffer
     return DS_OK;
 }
 
 
-static HRESULT InitOutputBuffer( PaWinDsStream *stream, unsigned long nFrameRate, WORD nChannels, int bytesPerBuffer )
+static HRESULT InitOutputBuffer( PaWinDsStream *stream, PaSampleFormat sampleFormat, unsigned long nFrameRate, WORD nChannels, int bytesPerBuffer, PaWinWaveFormatChannelMask channelMask )
 {
+    /** @todo FIXME: if InitOutputBuffer returns an error I'm not sure it frees all resources cleanly */
+
     DWORD          dwDataLen;
     DWORD          playCursor;
     HRESULT        result;
     LPDIRECTSOUNDBUFFER pPrimaryBuffer;
     HWND           hWnd;
     HRESULT        hr;
-    WAVEFORMATEX   wfFormat;
+    PaWinWaveFormat waveFormat;
     DSBUFFERDESC   primaryDesc;
     DSBUFFERDESC   secondaryDesc;
     unsigned char* pDSBuffData;
     LARGE_INTEGER  counterFrequency;
+    int bytesPerSample = Pa_GetSampleSize(sampleFormat);
 
     stream->outputBufferSizeBytes = bytesPerBuffer;
     stream->outputIsRunning = FALSE;
     stream->outputUnderflowCount = 0;
     stream->dsw_framesWritten = 0;
-    stream->bytesPerOutputFrame = nChannels * sizeof(short);
+    stream->bytesPerOutputFrame = nChannels * bytesPerSample;
 
     // We were using getForegroundWindow() but sometimes the ForegroundWindow may not be the
     // applications's window. Also if that window is closed before the Buffer is closed
@@ -1199,16 +1472,19 @@ static HRESULT InitOutputBuffer( PaWinDsStream *stream, unsigned long nFrameRate
     // Create the buffer
     if ((result = IDirectSound_CreateSoundBuffer( stream->pDirectSound,
                   &primaryDesc, &pPrimaryBuffer, NULL)) != DS_OK) return result;
-    // Define the buffer format
-    wfFormat.wFormatTag = WAVE_FORMAT_PCM;
-    wfFormat.nChannels = nChannels;
-    wfFormat.nSamplesPerSec = nFrameRate;
-    wfFormat.wBitsPerSample = 8 * sizeof(short);
-    wfFormat.nBlockAlign = (WORD)(wfFormat.nChannels * (wfFormat.wBitsPerSample / 8));
-    wfFormat.nAvgBytesPerSec = wfFormat.nSamplesPerSec * wfFormat.nBlockAlign;
-    wfFormat.cbSize = 0;  /* No extended format info. */
+
     // Set the primary buffer's format
-    if((result = IDirectSoundBuffer_SetFormat( pPrimaryBuffer, &wfFormat)) != DS_OK) return result;
+
+    // first try WAVEFORMATEXTENSIBLE. if this fails, fall back to WAVEFORMATEX
+    PaWin_InitializeWaveFormatExtensible( &waveFormat, nChannels, 
+                sampleFormat, nFrameRate, channelMask );
+
+    if( IDirectSoundBuffer_SetFormat( pPrimaryBuffer, (WAVEFORMATEX*)&waveFormat) != DS_OK )
+    {
+        PaWin_InitializeWaveFormatEx( &waveFormat, nChannels, sampleFormat, nFrameRate );
+
+        if((result = IDirectSoundBuffer_SetFormat( pPrimaryBuffer, (WAVEFORMATEX*)&waveFormat)) != DS_OK) return result;
+    }
 
     // ----------------------------------------------------------------------
     // Setup the secondary buffer description
@@ -1216,7 +1492,7 @@ static HRESULT InitOutputBuffer( PaWinDsStream *stream, unsigned long nFrameRate
     secondaryDesc.dwSize = sizeof(DSBUFFERDESC);
     secondaryDesc.dwFlags =  DSBCAPS_GLOBALFOCUS | DSBCAPS_GETCURRENTPOSITION2;
     secondaryDesc.dwBufferBytes = bytesPerBuffer;
-    secondaryDesc.lpwfxFormat = &wfFormat;
+    secondaryDesc.lpwfxFormat = (WAVEFORMATEX*)&waveFormat;
     // Create the secondary buffer
     if ((result = IDirectSound_CreateSoundBuffer( stream->pDirectSound,
                   &secondaryDesc, &stream->pDirectSoundOutputBuffer, NULL)) != DS_OK) return result;
@@ -1229,7 +1505,7 @@ static HRESULT InitOutputBuffer( PaWinDsStream *stream, unsigned long nFrameRate
     if ((result = IDirectSoundBuffer_Unlock( stream->pDirectSoundOutputBuffer, pDSBuffData, dwDataLen, NULL, 0)) != DS_OK) return result;
     if( QueryPerformanceFrequency( &counterFrequency ) )
     {
-        int framesInBuffer = bytesPerBuffer / (nChannels * sizeof(short));
+        int framesInBuffer = bytesPerBuffer / (nChannels * bytesPerSample);
         stream->perfCounterTicksPerBuffer.QuadPart = (counterFrequency.QuadPart * framesInBuffer) / nFrameRate;
     }
     else
@@ -1249,7 +1525,6 @@ static HRESULT InitOutputBuffer( PaWinDsStream *stream, unsigned long nFrameRate
     return DS_OK;
 }
 
-
 /***********************************************************************************/
 /* see pa_hostapi.h for a list of validity guarantees made about OpenStream parameters */
 
@@ -1266,13 +1541,20 @@ static PaError OpenStream( struct PaUtilHostApiRepresentation *hostApi,
     PaError result = paNoError;
     PaWinDsHostApiRepresentation *winDsHostApi = (PaWinDsHostApiRepresentation*)hostApi;
     PaWinDsStream *stream = 0;
+    PaWinDsDeviceInfo *inputWinDsDeviceInfo, *outputWinDsDeviceInfo;
+    PaDeviceInfo *inputDeviceInfo, *outputDeviceInfo;
     int inputChannelCount, outputChannelCount;
     PaSampleFormat inputSampleFormat, outputSampleFormat;
     PaSampleFormat hostInputSampleFormat, hostOutputSampleFormat;
     unsigned long suggestedInputLatencyFrames, suggestedOutputLatencyFrames;
+    PaWinDirectSoundStreamInfo *inputStreamInfo, *outputStreamInfo;
+    PaWinWaveFormatChannelMask inputChannelMask, outputChannelMask;
 
     if( inputParameters )
     {
+        inputWinDsDeviceInfo = (PaWinDsDeviceInfo*) hostApi->deviceInfos[ inputParameters->device ];
+        inputDeviceInfo = &inputWinDsDeviceInfo->inheritedDeviceInfo;
+
         inputChannelCount = inputParameters->channelCount;
         inputSampleFormat = inputParameters->sampleFormat;
         suggestedInputLatencyFrames = (unsigned long)(inputParameters->suggestedLatency * sampleRate);
@@ -1286,12 +1568,19 @@ static PaError OpenStream( struct PaUtilHostApiRepresentation *hostApi,
             return paInvalidDevice;
 
         /* check that input device can support inputChannelCount */
-        if( inputChannelCount > hostApi->deviceInfos[ inputParameters->device ]->maxInputChannels )
+        if( inputWinDsDeviceInfo->deviceInputChannelCountIsKnown
+                && inputChannelCount > inputDeviceInfo->maxInputChannels )
             return paInvalidChannelCount;
             
         /* validate hostApiSpecificStreamInfo */
-        if( inputParameters->hostApiSpecificStreamInfo )
-            return paIncompatibleHostApiSpecificStreamInfo; /* this implementation doesn't use custom stream info */
+        inputStreamInfo = (PaWinDirectSoundStreamInfo*)inputParameters->hostApiSpecificStreamInfo;
+		result = ValidateWinDirectSoundSpecificStreamInfo( inputParameters, inputStreamInfo );
+		if( result != paNoError ) return result;
+
+        if( inputStreamInfo && inputStreamInfo->flags & paWinDirectSoundUseChannelMask )
+            inputChannelMask = inputStreamInfo->channelMask;
+        else
+            inputChannelMask = PaWin_DefaultChannelMask( inputChannelCount );
     }
     else
     {
@@ -1303,6 +1592,9 @@ static PaError OpenStream( struct PaUtilHostApiRepresentation *hostApi,
 
     if( outputParameters )
     {
+        outputWinDsDeviceInfo = (PaWinDsDeviceInfo*) hostApi->deviceInfos[ outputParameters->device ];
+        outputDeviceInfo = &outputWinDsDeviceInfo->inheritedDeviceInfo;
+
         outputChannelCount = outputParameters->channelCount;
         outputSampleFormat = outputParameters->sampleFormat;
         suggestedOutputLatencyFrames = (unsigned long)(outputParameters->suggestedLatency * sampleRate);
@@ -1312,13 +1604,20 @@ static PaError OpenStream( struct PaUtilHostApiRepresentation *hostApi,
         if( outputParameters->device == paUseHostApiSpecificDeviceSpecification )
             return paInvalidDevice;
 
-        /* check that output device can support inputChannelCount */
-        if( outputChannelCount > hostApi->deviceInfos[ outputParameters->device ]->maxOutputChannels )
+        /* check that output device can support outputChannelCount */
+        if( outputWinDsDeviceInfo->deviceOutputChannelCountIsKnown
+                && outputChannelCount > outputDeviceInfo->maxOutputChannels )
             return paInvalidChannelCount;
 
         /* validate hostApiSpecificStreamInfo */
-        if( outputParameters->hostApiSpecificStreamInfo )
-            return paIncompatibleHostApiSpecificStreamInfo; /* this implementation doesn't use custom stream info */            
+        outputStreamInfo = (PaWinDirectSoundStreamInfo*)outputParameters->hostApiSpecificStreamInfo;
+		result = ValidateWinDirectSoundSpecificStreamInfo( outputParameters, outputStreamInfo );
+		if( result != paNoError ) return result;   
+
+        if( outputStreamInfo && outputStreamInfo->flags & paWinDirectSoundUseChannelMask )
+            outputChannelMask = outputStreamInfo->channelMask;
+        else
+            outputChannelMask = PaWin_DefaultChannelMask( outputChannelCount );
     }
     else
     {
@@ -1384,8 +1683,11 @@ static PaError OpenStream( struct PaUtilHostApiRepresentation *hostApi,
     if( inputParameters )
     {
         /* IMPLEMENT ME - establish which  host formats are available */
+        PaSampleFormat nativeInputFormats = paInt16;
+        //PaSampleFormat nativeFormats = paUInt8 | paInt16 | paInt24 | paInt32 | paFloat32;
+
         hostInputSampleFormat =
-            PaUtil_SelectClosestAvailableFormat( paInt16 /* native formats */, inputParameters->sampleFormat );
+            PaUtil_SelectClosestAvailableFormat( nativeInputFormats, inputParameters->sampleFormat );
     }
 	else
 	{
@@ -1395,8 +1697,11 @@ static PaError OpenStream( struct PaUtilHostApiRepresentation *hostApi,
     if( outputParameters )
     {
         /* IMPLEMENT ME - establish which  host formats are available */
+        PaSampleFormat nativeOutputFormats = paInt16;
+        //PaSampleFormat nativeOutputFormats = paUInt8 | paInt16 | paInt24 | paInt32 | paFloat32;
+
         hostOutputSampleFormat =
-            PaUtil_SelectClosestAvailableFormat( paInt16 /* native formats */, outputParameters->sampleFormat );
+            PaUtil_SelectClosestAvailableFormat( nativeOutputFormats, outputParameters->sampleFormat );
     }
     else
 	{
@@ -1474,7 +1779,8 @@ static PaError OpenStream( struct PaUtilHostApiRepresentation *hostApi,
             DBUG(("PaHost_OpenStream: deviceID = 0x%x\n", outputParameters->device));
             */
             
-            bytesPerDirectSoundBuffer = stream->framesPerDSBuffer * outputParameters->channelCount * sizeof(short);
+            int bytesPerSample = Pa_GetSampleSize(hostOutputSampleFormat);
+            bytesPerDirectSoundBuffer = stream->framesPerDSBuffer * outputParameters->channelCount * bytesPerSample;
             if( bytesPerDirectSoundBuffer < DSBSIZE_MIN )
             {
                 result = paBufferTooSmall;
@@ -1486,9 +1792,10 @@ static PaError OpenStream( struct PaUtilHostApiRepresentation *hostApi,
                 goto error;
             }
 
+            hr = paWinDsDSoundEntryPoints.DirectSoundCreate( 
+                ((PaWinDsDeviceInfo*)hostApi->deviceInfos[outputParameters->device])->lpGUID,
+                &stream->pDirectSound, NULL );
 
-            hr = paWinDsDSoundEntryPoints.DirectSoundCreate( winDsHostApi->winDsDeviceInfos[outputParameters->device].lpGUID,
-                        &stream->pDirectSound, NULL );
             if( hr != DS_OK )
             {
                 ERR_RPT(("PortAudio: DirectSoundCreate() failed!\n"));
@@ -1497,8 +1804,10 @@ static PaError OpenStream( struct PaUtilHostApiRepresentation *hostApi,
                 goto error;
             }
             hr = InitOutputBuffer( stream,
+                                       hostOutputSampleFormat,
                                        (unsigned long) (sampleRate + 0.5),
-                                       (WORD)outputParameters->channelCount, bytesPerDirectSoundBuffer );
+                                       (WORD)outputParameters->channelCount, bytesPerDirectSoundBuffer,
+                                       outputChannelMask );
             DBUG(("InitOutputBuffer() returns %x\n", hr));
             if( hr != DS_OK )
             {
@@ -1520,7 +1829,8 @@ static PaError OpenStream( struct PaUtilHostApiRepresentation *hostApi,
             DBUG(("PaHost_OpenStream: deviceID = 0x%x\n", inputParameters->device));
             */
             
-            bytesPerDirectSoundBuffer = stream->framesPerDSBuffer * inputParameters->channelCount * sizeof(short);
+            int bytesPerSample = Pa_GetSampleSize(hostInputSampleFormat);
+            bytesPerDirectSoundBuffer = stream->framesPerDSBuffer * inputParameters->channelCount * bytesPerSample;
             if( bytesPerDirectSoundBuffer < DSBSIZE_MIN )
             {
                 result = paBufferTooSmall;
@@ -1532,8 +1842,9 @@ static PaError OpenStream( struct PaUtilHostApiRepresentation *hostApi,
                 goto error;
             }
 
-            hr = paWinDsDSoundEntryPoints.DirectSoundCaptureCreate( winDsHostApi->winDsDeviceInfos[inputParameters->device].lpGUID,
-                        &stream->pDirectSoundCapture,   NULL );
+            hr = paWinDsDSoundEntryPoints.DirectSoundCaptureCreate( 
+                    ((PaWinDsDeviceInfo*)hostApi->deviceInfos[inputParameters->device])->lpGUID,
+                    &stream->pDirectSoundCapture, NULL );
             if( hr != DS_OK )
             {
                 ERR_RPT(("PortAudio: DirectSoundCaptureCreate() failed!\n"));
@@ -1542,8 +1853,10 @@ static PaError OpenStream( struct PaUtilHostApiRepresentation *hostApi,
                 goto error;
             }
             hr = InitInputBuffer( stream,
+                                      hostInputSampleFormat,
                                       (unsigned long) (sampleRate + 0.5),
-                                      (WORD)inputParameters->channelCount, bytesPerDirectSoundBuffer );
+                                      (WORD)inputParameters->channelCount, bytesPerDirectSoundBuffer,
+                                      inputChannelMask );
             DBUG(("InitInputBuffer() returns %x\n", hr));
             if( hr != DS_OK )
             {
@@ -1885,7 +2198,8 @@ static void CALLBACK Pa_TimerCallback(UINT uID, UINT uMsg, DWORD_PTR dwUser, DWO
             }
         }
 
-        if( !stream->isActive ){
+        if( !stream->isActive )
+        {
             if( stream->streamRepresentation.streamFinishedCallback != 0 )
                 stream->streamRepresentation.streamFinishedCallback( stream->streamRepresentation.userData );
         }

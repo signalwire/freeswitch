@@ -73,17 +73,24 @@ the stream with it. See below for creating a channel map.
 
 Known issues:
 
-- Latency: Latency settings are ignored in most cases. Exceptions are when
-doing I/O between different devices and as a hint for selecting a realtively
-low or relatively high latency in conjunction with
-paHostFramesPerBufferUnspecified. Latency settings are always automatically
-bound to "safe" values, however, so setting extreme values here should not be
+- Buffering: No buffering beyond that provided by core audio is provided
+except where absolutely needed for the implementation to work. This may cause
+issues with large framesPerBuffer settings and it also means that no additional
+latency will be provided even if a large latency setting is selected.
+
+- Latency: Latency settings are generally ignored. They may be used as a
+hint for buffer size in paHostFramesPerBufferUnspecified, or the value may
+be used in cases where additional buffering is needed, such as doing input and
+output on seperate devices. Latency settings are always automatically bound
+to "safe" values, however, so setting extreme values here should not be
 an issue.
 
 - Buffer Size: paHostFramesPerBufferUnspecified and specific host buffer sizes
 are supported. paHostFramesPerBufferUnspecified works best in "pro" mode,
 where the buffer size and sample rate of the audio device is most likely
-to match the expected values.
+to match the expected values. In the case of paHostFramesPerBuffer, an
+appropriate framesPerBuffer value will be used that guarantees minimum
+requested latency if that's possible.
 
 - Timing info. It reports on stream time, but I'm probably doing something
 wrong since patest_sine_time often reports negative latency numbers. Also,
@@ -111,8 +118,7 @@ render quyality property is used to set the sample rate conversion quality
 as "documented" here:
 http://lists.apple.com/archives/coreaudio-api/2004/Jan/msg00141.html
 
-- x86/Universal Binary: to build a universal binary, be sure to use
-the darwin makefile and not the usual configure && make combo.
+- x86/Universal Binary: Universal binaries can be build.
 
 
 
