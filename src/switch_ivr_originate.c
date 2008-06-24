@@ -771,7 +771,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			pass = 0;
 			var = NULL;
 			to = 0;
-			progress_timelimit_sec = 0;
 			sent_ring = 0;
 			progress = 0;
 
@@ -1017,7 +1016,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						goto notready;
 					}
 
-					if (!sent_ring && !progress && (switch_timestamp(NULL) - start) > (time_t) progress_timelimit_sec) {
+					if (!sent_ring && !progress && progress_timelimit_sec && (switch_timestamp(NULL) - start) > (time_t) progress_timelimit_sec) {
 						to++;
 						idx = IDX_TIMEOUT;
 						goto notready;
@@ -1417,9 +1416,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					continue;
 				}
 				switch_channel_clear_flag(peer_channels[i], CF_ORIGINATING);
-				if (status == SWITCH_STATUS_SUCCESS && bleg && *bleg && *bleg == peer_sessions[i]) {
-					continue;
+				if (status == SWITCH_STATUS_SUCCESS) { 
+					if (bleg && *bleg && *bleg == peer_sessions[i]) {
+						continue;
+					}
+				} else if (switch_channel_get_state(switch_core_session_get_channel(peer_sessions[i])) < CS_HANGUP) {
+					switch_channel_hangup(switch_core_session_get_channel(peer_sessions[i]), *cause);
 				}
+
 				switch_core_session_rwunlock(peer_sessions[i]);
 			}
 
