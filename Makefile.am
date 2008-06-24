@@ -329,6 +329,7 @@ libs/openzap/Makefile:
 update-clean: clean modwipe uninstall libs/openzap/Makefile
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/openzap && $(MAKE) clean
+	cd libs/portaudio && $(MAKE) clean
 
 swigall:
 	@echo reswigging all
@@ -340,6 +341,11 @@ speedy-sure: update-clean
 	$(MAKE) -j core
 	cd libs/sofia-sip && $(MAKE) -j
 	$(MAKE) -j modules
+
+pa-reconf:
+	cd libs/portaudio && $(MAKE) clean
+	cd libs/portaudio && sh ./configure.gnu
+	$(MAKE) mod_portaudio-clean
 
 sofia-reconf:
 	cd libs/sofia-sip && sh ./autogen.sh
