@@ -149,7 +149,7 @@ long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switch
 
 	for (;;) {
 		avail = PaUtil_GetRingBufferReadAvailable(&aStream->inFIFO);
-
+		
 		if (switch_core_timer_check(timer, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 			break;
 		}

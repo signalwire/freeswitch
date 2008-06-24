@@ -122,6 +122,7 @@ static struct {
 	int ring_interval;
 	GFLAGS flags;
 	switch_timer_t timer;
+	switch_timer_t hold_timer;
 } globals;
 
 
@@ -397,6 +398,14 @@ static void remove_pvt(private_t *tech_pvt)
 	switch_mutex_unlock(globals.pvt_lock);
 }
 
+static void tech_close_file(private_t *tech_pvt)
+{
+	if (tech_pvt->hfh) {
+		tech_pvt->hfh = NULL;
+		switch_core_file_close(&tech_pvt->fh);
+	}
+}
+
 static switch_status_t channel_on_hangup(switch_core_session_t *session)
 {
 	private_t *tech_pvt = switch_core_session_get_private(session);
@@ -411,10 +420,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 	remove_pvt(tech_pvt);
 
-	if (tech_pvt->hfh) {
-		tech_pvt->hfh = NULL;
-		switch_core_file_close(&tech_pvt->fh);
-	}
+	tech_close_file(tech_pvt);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 
@@ -471,19 +477,21 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	switch_assert(tech_pvt != NULL);
 
 	if (!globals.audio_stream) {
-		return SWITCH_STATUS_FALSE;
+		goto normal_return;
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_HUP)) {
-		return SWITCH_STATUS_FALSE;
+		goto normal_return;
 	}
 
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
-		goto cng;
+		goto cng_wait;
 	}
-
+	
 	if (!is_master(tech_pvt)) {
 		if (tech_pvt->hold_file) {
+			switch_size_t olen = globals.read_codec.implementation->samples_per_frame;
+			
 			if (!tech_pvt->hfh) {
 				int sample_rate = tech_pvt->sample_rate ? tech_pvt->sample_rate : globals.sample_rate;
 				if (switch_core_file_open(&tech_pvt->fh,
@@ -492,7 +500,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 										  globals.read_codec.implementation->actual_samples_per_second,
 										  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 					tech_pvt->hold_file = NULL;
-					goto cng;
+					goto cng_wait;
 				}
 
 				tech_pvt->hfh = &tech_pvt->fh;
@@ -502,46 +510,39 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 				tech_pvt->hold_frame.codec = &globals.write_codec;
 			}
 
-			goto hold;
-		}
-	  cng:
-		switch_yield(globals.read_codec.implementation->microseconds_per_frame);
-		*frame = &globals.cng_frame;
-		return SWITCH_STATUS_SUCCESS;
-
-	  hold:
-		{
-			switch_size_t olen = globals.read_codec.implementation->samples_per_frame;
-			if (switch_core_timer_next(&globals.timer) != SWITCH_STATUS_SUCCESS) {
+			if (switch_core_timer_next(&globals.hold_timer) != SWITCH_STATUS_SUCCESS) {
 				switch_core_file_close(&tech_pvt->fh);
-				goto cng;
+				goto cng_nowait;
 			}
 			switch_core_file_read(tech_pvt->hfh, tech_pvt->hold_frame.data, &olen);
 
 			if (olen == 0) {
 				unsigned int pos = 0;
 				switch_core_file_seek(tech_pvt->hfh, &pos, 0, SEEK_SET);
-				goto cng;
+				goto cng_nowait;
 			}
 
 			tech_pvt->hold_frame.datalen = (uint32_t) (olen * sizeof(int16_t));
 			tech_pvt->hold_frame.samples = (uint32_t) olen;
 			*frame = &tech_pvt->hold_frame;
 
+			status = SWITCH_STATUS_SUCCESS;
+			goto normal_return;
 		}
 
-		return SWITCH_STATUS_SUCCESS;
+		goto cng_wait;
 	}
 
+	if (tech_pvt->hfh) {
+		tech_close_file(tech_pvt);
+	}
+	
 	switch_mutex_lock(globals.device_lock);
-
-  get_samples:
-
-	if ((samples = ReadAudioStream(globals.audio_stream, globals.read_frame.data,
-								   globals.read_codec.implementation->samples_per_frame, &globals.timer)) == 0) {
-		switch_yield(1000);
-		goto get_samples;
-	} else {
+	samples = ReadAudioStream(globals.audio_stream, globals.read_frame.data,
+							  globals.read_codec.implementation->samples_per_frame, &globals.timer);
+	switch_mutex_unlock(globals.device_lock);
+	
+	if (samples) {
 		globals.read_frame.datalen = samples * 2;
 		globals.read_frame.samples = samples;
 
@@ -551,12 +552,23 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		if (!switch_test_flag((&globals), GFLAG_MOUTH)) {
 			memset(globals.read_frame.data, 255, globals.read_frame.datalen);
 		}
-
 		status = SWITCH_STATUS_SUCCESS;
+	} else {
+		goto cng_nowait;
 	}
-	switch_mutex_unlock(globals.device_lock);
-
+	
+ normal_return:
 	return status;
+
+ cng_nowait:
+	*frame = &globals.cng_frame;
+	return SWITCH_STATUS_SUCCESS;
+
+ cng_wait:
+	switch_core_timer_next(&globals.hold_timer);
+	*frame = &globals.cng_frame;
+	return SWITCH_STATUS_SUCCESS;
+	
 }
 
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
@@ -883,6 +895,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_portaudio_shutdown)
 	}
 
 	switch_core_timer_destroy(&globals.timer);
+	switch_core_timer_destroy(&globals.hold_timer);
 	Pa_Terminate();
 	switch_core_hash_destroy(&globals.call_hash);
 
@@ -1145,6 +1158,16 @@ static switch_status_t engage_device(int sample_rate, int codec_ms)
 			return SWITCH_STATUS_FALSE;
 		}
 
+		if (switch_core_timer_init(&globals.hold_timer,
+									   globals.timer_name, codec_ms, globals.read_codec.implementation->samples_per_frame,
+								   module_pool) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup hold timer failed!\n");
+			switch_core_codec_destroy(&globals.read_codec);
+			switch_core_codec_destroy(&globals.write_codec);
+			switch_core_timer_destroy(&globals.timer);
+			return SWITCH_STATUS_FALSE;
+		}
+
 		globals.read_frame.rate = sample_rate;
 		globals.read_frame.codec = &globals.read_codec;
 
@@ -1180,7 +1203,7 @@ static switch_status_t engage_device(int sample_rate, int codec_ms)
 
 static switch_status_t engage_ring_device(int sample_rate, int channels)
 {
-	PaStreamParameters outputParameters;
+	PaStreamParameters outputParameters = {0};
 	PaError err;
 
 	if (!globals.ring_stream) {
@@ -1196,6 +1219,7 @@ static switch_status_t engage_ring_device(int sample_rate, int channels)
 		outputParameters.suggestedLatency = Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
 		outputParameters.hostApiSpecificStreamInfo = NULL;
 		err = OpenAudioStream(&globals.ring_stream, NULL, &outputParameters, sample_rate, paClipOff, globals.read_codec.implementation->samples_per_frame);
+
 		/* UNLOCKED ************************************************************************************************* */
 		switch_mutex_unlock(globals.device_lock);
 
