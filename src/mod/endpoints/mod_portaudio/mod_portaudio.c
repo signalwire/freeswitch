@@ -317,10 +317,10 @@ static void deactivate_audio_device(void)
 static void deactivate_ring_device(void)
 {
 	switch_mutex_lock(globals.device_lock);
-	if (globals.ring_stream) {
+	if (globals.ringdev != globals.outdev && globals.ring_stream) {
 		CloseAudioStream(globals.ring_stream);
-		globals.ring_stream = NULL;
 	}
+	globals.ring_stream = NULL;
 	switch_mutex_unlock(globals.device_lock);
 }
 
@@ -712,6 +712,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 		return SWITCH_STATUS_TERM;
 	}
 
+	memset(&globals, 0, sizeof(globals));
+
 	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
@@ -776,7 +778,6 @@ static switch_status_t load_config(void)
 		return SWITCH_STATUS_TERM;
 	}
 
-	memset(&globals, 0, sizeof(globals));
 	globals.indev = globals.outdev = globals.ringdev = -1;
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
@@ -1021,6 +1022,14 @@ static int dump_info(int verbose)
 		return 0;
 	}
 
+	if (verbose < 0) {
+		Pa_Terminate();
+		Pa_Initialize();
+		load_config();
+		verbose = 0;
+	}
+
+
 	numDevices = Pa_GetDeviceCount();
 	if (numDevices < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "ERROR: Pa_CountDevices returned 0x%x\n", numDevices);
@@ -1207,25 +1216,29 @@ static switch_status_t engage_ring_device(int sample_rate, int channels)
 	PaError err;
 
 	if (!globals.ring_stream) {
-		if (!sample_rate) {
-			sample_rate = globals.sample_rate;
-		}
+		if (globals.ringdev == globals.outdev) {
+			globals.ring_stream = globals.audio_stream;
+		} else {
+			if (!sample_rate) {
+				sample_rate = globals.sample_rate;
+			}
 
-		switch_mutex_lock(globals.device_lock);
-		/* LOCKED ************************************************************************************************** */
-		outputParameters.device = globals.ringdev;
-		outputParameters.channelCount = channels;
-		outputParameters.sampleFormat = SAMPLE_TYPE;
-		outputParameters.suggestedLatency = Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
-		outputParameters.hostApiSpecificStreamInfo = NULL;
-		err = OpenAudioStream(&globals.ring_stream, NULL, &outputParameters, sample_rate, paClipOff, globals.read_codec.implementation->samples_per_frame);
+			switch_mutex_lock(globals.device_lock);
+			/* LOCKED ************************************************************************************************** */
+			outputParameters.device = globals.ringdev;
+			outputParameters.channelCount = channels;
+			outputParameters.sampleFormat = SAMPLE_TYPE;
+			outputParameters.suggestedLatency = Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
+			outputParameters.hostApiSpecificStreamInfo = NULL;
+			err = OpenAudioStream(&globals.ring_stream, NULL, &outputParameters, sample_rate, paClipOff, globals.read_codec.implementation->samples_per_frame);
 
-		/* UNLOCKED ************************************************************************************************* */
-		switch_mutex_unlock(globals.device_lock);
+			/* UNLOCKED ************************************************************************************************* */
+			switch_mutex_unlock(globals.device_lock);
 
-		if (err != paNoError) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open ring device!\n");
-			return SWITCH_STATUS_FALSE;
+			if (err != paNoError) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open ring device!\n");
+				return SWITCH_STATUS_FALSE;
+			}
 		}
 	}
 
@@ -1572,6 +1585,7 @@ SWITCH_STANDARD_API(pa_cmd)
 		"--------------------------------------------------------------------------------\n"
 		"pa help\n"
 		"pa dump\n"
+		"pa rescan\n"
 		"pa call <dest> [<dialplan> <cid_name> <cid_num> <rate>]\n"
 		"pa answer [<call_id>]\n"
 		"pa hangup [<call_id>]\n"
@@ -1650,6 +1664,10 @@ SWITCH_STANDARD_API(pa_cmd)
 		goto done;
 	} else if (!strcasecmp(argv[0], "devlist")) {
 		func = devlist;
+	} else if (!strcasecmp(argv[0], "rescan")) {
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "Looking for new devices.\n");
+		dump_info(-1);
+		goto done;
 	} else if (!strcasecmp(argv[0], "dump")) {
 		dump_info(1);
 		goto done;
