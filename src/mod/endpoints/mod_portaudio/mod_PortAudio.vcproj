@@ -31,6 +31,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:LIMBCTD"
+				AdditionalDependencies="ksuser.lib"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\portaudio\winvc\Lib&quot;"
 			/>
 		</Configuration>
@@ -49,6 +50,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="ksuser.lib"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\portaudio\winvc\Lib&quot;"
 			/>
 		</Configuration>
