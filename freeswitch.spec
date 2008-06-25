@@ -281,7 +281,7 @@ userdel freeswitch
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/autoload_configs
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/dialplan
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/directory
-%dir %attr(0750, freeswitch. daemon) %{prefix}/conf/directory/default
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/directory/default
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/mrcp_profiles
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/sip_profiles
