@@ -730,8 +730,9 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thre
 	const char *val;
 
 	session->thread = thread;
-
+	
 	switch_core_session_run(session);
+	switch_core_media_bug_remove_all(session);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session %" SWITCH_SIZE_T_FMT " (%s) Locked, Waiting on external entities\n",
 					  session->id, switch_channel_get_name(session->channel));
 	switch_core_session_write_lock(session);
