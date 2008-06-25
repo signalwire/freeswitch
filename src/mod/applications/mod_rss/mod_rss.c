@@ -367,7 +367,7 @@ SWITCH_STANDARD_APP(rss_function)
 			x = atoi(cmd) - 1;
 
 			if (x > -1 && x < feed_index) {
-				filename = feed_list[i];
+				filename = feed_list[x];
 			} else if (matches > 1) {
 
 			} else {
