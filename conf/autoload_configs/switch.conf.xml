@@ -33,12 +33,6 @@
     <!--<param name="rtp-start-port" value="16384"/>-->
     <!--<param name="rtp-end-port" value="32768"/>-->
   </settings>
-  <!--Any variables defined here will be available in every channel, in the dialplan etc -->
-  <variables>
-    <variable name="uk-ring" value="%(400,200,400,450);%(400,2200,400,450)"/>
-    <variable name="us-ring" value="%(2000, 4000, 440.0, 480.0)"/>
-    <variable name="fr-ring" value="%(1500, 3500, 440.0, 0.0)"/>
-    <variable name="bong-ring" value="v=-7;%(100,0,941.0,1477.0);v=-7;>=2;+=.1;%(1400,0,350,440)"/>
-  </variables>
+
 </configuration>
 
