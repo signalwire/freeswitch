@@ -170,7 +170,6 @@ SWITCH_STANDARD_APP(rss_function)
 	switch_speech_handle_t sh;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	switch_core_thread_session_t thread_session;
-	uint32_t rate, interval = 20;
 	switch_timer_t timer = { 0 }, *timerp = NULL;
 	uint32_t last;
 	char *mydata = NULL;
@@ -186,6 +185,8 @@ SWITCH_STANDARD_APP(rss_function)
 	switch_input_args_t args = { 0 };
 	const char *vcf = NULL;
 	char *chanvars = switch_channel_build_param_string(channel, NULL, NULL);
+	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
+	uint32_t rate, interval = read_codec->implementation->microseconds_per_frame / 1000;
 
 	if ((vcf = switch_channel_get_variable(channel, "rss_alt_config"))) {
 		cf = vcf;
