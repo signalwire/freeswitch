@@ -929,8 +929,9 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	uint32_t session_timeout = 0;
 	const char *val;
 	const char *rep;
-	char *sticky = NULL;
 	const char *call_id = NULL;
+	char *route = NULL;
+	char *route_uri = NULL;
 
 	rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
 
@@ -1056,15 +1057,20 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		use_from_str = from_str;
 		from_str = switch_core_session_sprintf(session, "\"%s\" <%s>", tech_pvt->caller_profile->caller_id_name, use_from_str);
 		
-		tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
-								  NUTAG_URL(url_str), SIPTAG_TO_STR(to_str), SIPTAG_FROM_STR(from_str), SIPTAG_CONTACT_STR(invite_contact), TAG_END());
 
+		tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
+								  NUTAG_URL(url_str),
+								  SIPTAG_TO_STR(to_str), 
+								  SIPTAG_FROM_STR(from_str),
+								  SIPTAG_CONTACT_STR(invite_contact),
+								  TAG_END());
+		
 
 		if (strstr(tech_pvt->dest, ";nat") || strstr(tech_pvt->dest, ";received") 
 			|| ((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val))) {
 			switch_set_flag(tech_pvt, TFLAG_NAT);
 			tech_pvt->record_route = switch_core_session_strdup(tech_pvt->session, url_str);
-			sticky = tech_pvt->record_route;
+			route_uri = tech_pvt->record_route;
 			session_timeout = SOFIA_NAT_SESSION_TIMEOUT;
 			switch_channel_set_variable(channel, "sip_nat_detected", "true");
 		}
@@ -1159,6 +1165,31 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	call_id = switch_channel_get_variable(channel, "sip_outgoing_call_id");
 
+	if ((route = strstr(tech_pvt->dest, ";path="))) {
+		char *p;
+		route = switch_core_session_strdup(tech_pvt->session, route + 6);
+		for (p = route; p && *p ; p++) {
+			if (*p == '>' || *p == ';') {
+				*p = '\0';
+				break;
+			}
+		}
+		switch_url_decode(route);
+		route_uri = switch_core_session_strdup(tech_pvt->session, route);
+		if ((p = strchr(route_uri, ','))) {
+			while (*(p-1) == ' ') {
+				p--;
+			}
+			if (*p) {
+				*p = '\0';
+			}
+		}
+		
+		route_uri = sofia_overcome_sip_uri_weakness(tech_pvt->session, route_uri, 0, SWITCH_TRUE, NULL);
+	}
+	
+	
+
 	nua_invite(tech_pvt->nh,
 			   NUTAG_AUTOANSWER(0),
 			   NUTAG_SESSION_TIMER(session_timeout),
@@ -1166,8 +1197,9 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			   TAG_IF(!switch_strlen_zero(alert_info), SIPTAG_HEADER_STR(alert_info)),
 			   TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 			   TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
-			   TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
 			   TAG_IF(call_id, SIPTAG_CALL_ID_STR(call_id)),
+			   TAG_IF(route_uri, NUTAG_PROXY(route_uri)),
+			   TAG_IF(route, SIPTAG_ROUTE_STR(route)),
 			   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 			   SOATAG_REUSE_REJECTED(1),
 			   SOATAG_ORDERED_USER(1),
