@@ -333,14 +333,14 @@ static void cepstral_text_param_tts(switch_speech_handle_t *sh, char *param, con
 	assert(cepstral != NULL);
 
 	if (!strcasecmp(param, "voice")) {
-		char *voice_name = val;
+		const char *voice_name = val;
 		if (!strcasecmp(voice_name, "next")) {
 			if ((cepstral->voice = swift_port_find_next_voice(cepstral->port))) {
 				if (SWIFT_FAILED(swift_port_set_voice(cepstral->port, cepstral->voice))) {
 					cepstral->done = cepstral->done_gen = 1;
 					return;
 				}
-				voice_name = (char *) swift_voice_get_attribute(cepstral->voice, "name");
+				voice_name = swift_voice_get_attribute(cepstral->voice, "name");
 			} else {
 				voice_name = NULL;
 			}
@@ -366,7 +366,7 @@ static void cepstral_text_param_tts(switch_speech_handle_t *sh, char *param, con
 				return;
 			}
 
-			voice_name = (char *) swift_voice_get_attribute(cepstral->voice, "name");
+			voice_name = swift_voice_get_attribute(cepstral->voice, "name");
 		}
 
 		if (voice_name) {
