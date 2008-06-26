@@ -100,6 +100,9 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
         *darwin*)
             SOLINK="-dynamic -bundle -force-flat-namespace"
         ;;
+        *-solaris2*)
+            SOLINK="-shared -Xlinker"
+        ;;
         *)
             SOLINK="-shared -Xlinker -x"
         ;;
