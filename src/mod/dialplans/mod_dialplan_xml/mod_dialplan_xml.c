@@ -147,7 +147,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 			}
 
 			if (field && strchr(expression, '(')) {
-				len = (uint32_t) (strlen(data) + strlen(field_data) + 10);
+				len = (uint32_t) (strlen(data) + strlen(field_data) + 10) * proceed;
 				if (!(substituted = malloc(len))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
 					proceed = 0;
