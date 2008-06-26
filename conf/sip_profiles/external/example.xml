@@ -28,5 +28,7 @@
   <!--<param name="caller-id-in-from" value="false"/>-->
   <!--extra sip params to send in the contact-->
   <!--<param name="contact-params" value="tport=tcp"/>-->
+  <!--/// ping gateway to see if it is alive: *optional* /// -->
+  <!--<param name="ping" value="15"/>-->
   <!--</gateway>-->
 </include>
