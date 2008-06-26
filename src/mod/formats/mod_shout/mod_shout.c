@@ -471,6 +471,12 @@ static void *SWITCH_THREAD_FUNC write_stream_thread(switch_thread_t *thread, voi
 {
 	shout_context_t *context = (shout_context_t *) obj;
 
+	if (!context->lame_ready) {
+		lame_init_params(context->gfp);
+		lame_print_config(context->gfp);
+		context->lame_ready = 1;
+	}
+
 	while (!context->err && context->thread_running) {
 		unsigned char mp3buf[8192] = "";
 		unsigned char audio[8192] = "";
