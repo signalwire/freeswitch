@@ -23,7 +23,7 @@
 			>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;C:\Program Files\Cepstral\sdk\include&quot;"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\Cepstral\sdk\lib\winnt&quot;;&quot;C:\Program Files\Cepstral\sdk\lib\windows&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -40,7 +40,7 @@
 			>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;C:\Program Files\Cepstral\sdk\include&quot;"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\Cepstral\sdk\lib\winnt&quot;;&quot;C:\Program Files\Cepstral\sdk\lib\windows&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
