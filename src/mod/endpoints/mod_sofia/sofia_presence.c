@@ -1680,7 +1680,8 @@ void sofia_presence_set_chat_hash(private_object_t *tech_pvt, sip_t const *sip)
 	char buf[512];
 	su_home_t *home = NULL;
 
-	if (tech_pvt->hash_key || !sip || !sip->sip_from || !sip->sip_from->a_url || !sip->sip_from->a_url->url_user || !sip->sip_from->a_url->url_host) {
+	if (!tech_pvt || tech_pvt->hash_key || !sip || !sip->sip_from || !sip->sip_from->a_url || 
+		!sip->sip_from->a_url->url_user || !sip->sip_from->a_url->url_host) {
 		return;
 	}
 
