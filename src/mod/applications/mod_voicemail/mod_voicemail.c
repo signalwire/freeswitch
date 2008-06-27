@@ -1272,7 +1272,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 {
 	vm_check_state_t vm_check_state = VM_CHECK_START;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_caller_profile_t *caller_profile;
+	switch_caller_profile_t *caller_profile = switch_channel_get_caller_profile(channel);
 	vm_profile_t *profile;
 	switch_xml_t x_domain = NULL, x_domain_root = NULL, x_user = NULL, x_params, x_param;
 	switch_status_t status;
@@ -1291,6 +1291,16 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 	char *vm_email = NULL;
 	char foo[2] = "";
 	switch_input_args_t args = { 0 };
+	const char *caller_id_name = NULL;
+	const char *caller_id_number = NULL;
+	
+	if (!(caller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
+		caller_id_name = caller_profile->caller_id_name;
+	}
+
+	if (!(caller_id_number = switch_channel_get_variable(channel, "effective_caller_id_number"))) {
+		caller_id_number = caller_profile->caller_id_number;
+	}
 
 	if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error invalid profile %s\n", profile_name);
@@ -1607,13 +1617,13 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 				if (!x_user) {
 					switch_event_t *params;
 					int ok = 1;
-					caller_profile = switch_channel_get_caller_profile(channel);
+
 
 					switch_event_create(&params, SWITCH_EVENT_MESSAGE);
 					switch_assert(params);
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "mailbox", myid);
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "destination_number", caller_profile->destination_number);
-					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "caller_id_number", caller_profile->caller_id_number);
+					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "caller_id_number", caller_id_number);
 
 
 					if (switch_xml_locate_user("id", myid, domain_name, switch_channel_get_variable(channel, "network_addr"),
@@ -1750,6 +1760,17 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	int send_main = 0;
 	int send_notify = 0;
 	int insert_db = 1;
+	const char *caller_id_name = NULL;
+	const char *caller_id_number = NULL;
+
+
+	if (!(caller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
+		caller_id_name = caller_profile->caller_id_name;
+	}
+
+	if (!(caller_id_number = switch_channel_get_variable(channel, "effective_caller_id_number"))) {
+		caller_id_number = caller_profile->caller_id_number;
+	}
 
 	memset(&cbt, 0, sizeof(cbt));
 	if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
@@ -1922,7 +1943,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	cc.noexit = 1;
 	args.buf = &cc;
 
-	dbuf = switch_mprintf("%s (%s)", caller_profile->caller_id_name, caller_profile->caller_id_number);
+	dbuf = switch_mprintf("%s (%s)", caller_id_name, caller_id_number);
 	switch_channel_set_variable(channel, "RECORD_ARTIST", dbuf);
 	free(dbuf);
 
@@ -1961,7 +1982,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 		int total_saved_urgent_messages = 0;
 
 		usql = switch_mprintf("insert into voicemail_msgs values(%ld,0,'%q','%q','%q','%q','%q','%q','%q','%u','','%q')", (long) switch_timestamp(NULL),
-							  id, domain_name, uuid, caller_profile->caller_id_name, caller_profile->caller_id_number,
+							  id, domain_name, uuid, caller_id_name, caller_id_number,
 							  myfolder, file_path, message_len, read_flags);
 		vm_execute_sql(profile, usql, profile->mutex);
 		switch_safe_free(usql);
@@ -2019,8 +2040,8 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 		switch_channel_set_variable(channel, "voicemail_urgent_saved_messages", tmp);
 		switch_channel_set_variable(channel, "voicemail_account", id);
 		switch_channel_set_variable(channel, "voicemail_domain", domain_name);
-		switch_channel_set_variable(channel, "voicemail_caller_id_number", caller_profile->caller_id_number);
-		switch_channel_set_variable(channel, "voicemail_caller_id_name", caller_profile->caller_id_name);
+		switch_channel_set_variable(channel, "voicemail_caller_id_number", caller_id_number);
+		switch_channel_set_variable(channel, "voicemail_caller_id_name", caller_id_name);
 		switch_channel_set_variable(channel, "voicemail_file_path", file_path);
 		switch_channel_set_variable(channel, "voicemail_read_flags", read_flags);
 		switch_channel_set_variable(channel, "voicemail_time", date);
@@ -2052,7 +2073,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 				headers = switch_mprintf(
 										 "From: FreeSWITCH mod_voicemail <%s@%s>\n"
 										 "Subject: Voicemail from %s %s\nX-Priority: %d",
-										 id, domain_name, caller_profile->caller_id_name, caller_profile->caller_id_number, priority);
+										 id, domain_name, caller_id_name, caller_id_number, priority);
 			} else {
 				headers = switch_channel_expand_variables(channel, profile->email_headers);
 			}
@@ -2077,7 +2098,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 			if (profile->email_body) {
 				body = switch_channel_expand_variables(channel, profile->email_body);
 			} else {
-				body = switch_mprintf("%u second Voicemail from %s %s", message_len, caller_profile->caller_id_name, caller_profile->caller_id_number);
+				body = switch_mprintf("%u second Voicemail from %s %s", message_len, caller_id_name, caller_id_number);
 			}
 
 			if (email_attach) {
@@ -2100,7 +2121,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 				headers = switch_mprintf(
 										 "From: FreeSWITCH mod_voicemail <%s@%s>\n"
 										 "Subject: Voicemail from %s %s\nX-Priority: %d",
-										 id, domain_name, caller_profile->caller_id_name, caller_profile->caller_id_number, priority);
+										 id, domain_name, caller_id_name, caller_id_number, priority);
 			} else {
 				headers = switch_channel_expand_variables(channel, profile->notify_email_headers);
 			}
@@ -2125,7 +2146,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 			if (profile->notify_email_body) {
 				body = switch_channel_expand_variables(channel, profile->notify_email_body);
 			} else {
-				body = switch_mprintf("%u second Voicemail from %s %s", message_len, caller_profile->caller_id_name, caller_profile->caller_id_number);
+				body = switch_mprintf("%u second Voicemail from %s %s", message_len, caller_id_name, caller_id_number);
 			}
 
 			switch_simple_email(vm_notify_email, from, header_string, body, NULL);
