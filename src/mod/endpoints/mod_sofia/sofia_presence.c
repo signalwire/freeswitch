@@ -52,14 +52,16 @@ struct presence_helper {
 switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint)
 {
 	char buf[256];
-	char *user, *host;
+	char *user = NULL, *host = NULL;
 	sofia_profile_t *profile = NULL;
 	char *ffrom = NULL;
 	nua_handle_t *msg_nh;
 	char *contact;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (!to) {
-		return SWITCH_STATUS_SUCCESS;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing To: header.\n");
+		goto end;
 	}
 
 	user = strdup(to);
@@ -73,21 +75,22 @@ switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 						  "Chat proto [%s]\nfrom [%s]\nto [%s]\n%s\nInvalid Profile %s\n", proto, from, to,
 						  body ? body : "[no body]", host ? host : "NULL");
-		return SWITCH_STATUS_FALSE;
+		goto end;
 	}
 
 	if (!sofia_reg_find_reg_url(profile, user, host, buf, sizeof(buf))) {
-		return SWITCH_STATUS_FALSE;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find user. [%s][%s]\n", user, host);
+		goto end;
 	}
 
-	if (!strcmp(proto, SOFIA_CHAT_PROTO)) {
+	if (!strcasecmp(proto, SOFIA_CHAT_PROTO)) {
 		from = hint;
 	} else {
 		char *fp, *p, *fu = NULL;
 		fp = strdup(from);
 		if (!fp) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-			return SWITCH_STATUS_FALSE;
+			goto end;
 		}
 
 		if ((p = strchr(fp, '@'))) {
@@ -96,27 +99,33 @@ switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char
 			*p = '+';
 		}
 
-		ffrom = switch_mprintf("\"%s\" <sip:%s+%s@%s>", fu, proto, fp, profile->name);
+		ffrom = switch_mprintf("\"%s\" <sip:%s+%s@%s>", fu, proto, fp, profile->domain_name);
 		from = ffrom;
 		switch_safe_free(fu);
 		switch_safe_free(fp);
 	}
 
+	status = SWITCH_STATUS_SUCCESS;
 	contact = sofia_glue_get_url_from_contact(buf, 1);
-	msg_nh = nua_handle(profile->nua, NULL, SIPTAG_FROM_STR(from), NUTAG_URL(contact), SIPTAG_TO_STR(buf),	// if this cries, add contact here too, change the 1 to 0 and omit the safe_free
+	// if this cries, add contact here too, change the 1 to 0 and omit the safe_free
+	msg_nh = nua_handle(profile->nua, NULL, SIPTAG_FROM_STR(from), NUTAG_URL(contact), SIPTAG_TO_STR(buf),	
 						SIPTAG_CONTACT_STR(profile->url), TAG_END());
 
 	switch_safe_free(contact);
 	nua_message(msg_nh, SIPTAG_CONTENT_TYPE_STR("text/html"), SIPTAG_PAYLOAD_STR(body), TAG_END());
 
+
+ end:
+
 	switch_safe_free(ffrom);
-	free(user);
+	switch_safe_free(user);
+
 
 	if (profile) {
 		switch_thread_rwlock_unlock(profile->rwlock);
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 void sofia_presence_cancel(void)

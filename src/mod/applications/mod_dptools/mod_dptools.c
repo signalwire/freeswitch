@@ -1080,8 +1080,11 @@ SWITCH_STANDARD_API(chat_api_function)
 		switch_chat_interface_t *ci;
 
 		if ((ci = switch_loadable_module_get_chat_interface(argv[0]))) {
-			ci->chat_send("dp", argv[1], argv[2], "", argv[3], "");
-			stream->write_function(stream, "Sent");
+			if (ci->chat_send("dp", argv[1], argv[2], "", argv[3], "") == SWITCH_STATUS_SUCCESS) {
+				stream->write_function(stream, "Sent");
+			} else {
+				stream->write_function(stream, "Error! Message Not Sent");
+			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Chat Interface [%s]!\n", argv[0]);
 		}
