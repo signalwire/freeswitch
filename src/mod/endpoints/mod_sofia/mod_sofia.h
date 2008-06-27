@@ -47,6 +47,11 @@
 #endif
 #define SOFIA_NAT_SESSION_TIMEOUT 20
 #define SOFIA_MAX_ACL 100
+#ifdef _MSC_VER
+#define HAVE_FUNCTION 1
+#else
+#define HAVE_FUNC 1
+#endif
 
 #define MODNAME "mod_sofia"
 static const switch_state_handler_table_t noop_state_handler = { 0 };
