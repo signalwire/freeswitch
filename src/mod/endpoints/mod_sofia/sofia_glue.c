@@ -225,7 +225,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 
 		if ((v_port = tech_pvt->adv_sdp_video_port)) {
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "m=video %d RTP/AVP", v_port);
-
+			
 			/*****************************/
 			if (tech_pvt->video_rm_encoding) {
 				sofia_glue_tech_set_video_codec(tech_pvt, 0);
@@ -2879,6 +2879,18 @@ int sofia_glue_get_user_host(char *in, char **user, char **host)
 
 	return 1;
 }
+
+const char *sofia_glue_strip_proto(const char *uri)
+{
+	char *p;
+
+	if ((p = strchr(uri, ':'))) {
+		return p+1;
+	}
+
+	return uri;
+}
+
 
 /* For Emacs:
  * Local Variables:

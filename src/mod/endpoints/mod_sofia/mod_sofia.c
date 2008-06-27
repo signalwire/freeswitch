@@ -224,8 +224,8 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	int sip_cause = hangup_cause_to_sip(cause);
 	const char *ps_cause = switch_channel_get_variable(channel, SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE);
 
-	if (!switch_strlen_zero(ps_cause) && !strncasecmp(ps_cause, "sip:", 4)) {
-		int new_cause = atoi(ps_cause + 4);
+	if (!switch_strlen_zero(ps_cause) && (!strncasecmp(ps_cause, "sip:", 4) || !strncasecmp(ps_cause, "sips:", 5))) {
+		int new_cause = atoi(sofia_glue_strip_proto(ps_cause));
 		if (new_cause) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Overriding SIP cause %d with %d from the other leg\n",
 							  switch_channel_get_name(channel), sip_cause, new_cause);
@@ -1454,7 +1454,7 @@ static int contact_callback(void *pArg, int argc, char **argv, char **columnName
 	char *contact;
 
 	if (!switch_strlen_zero(argv[0]) && (contact = sofia_glue_get_url_from_contact(argv[0], 1)) ) {
-		cb->stream->write_function(cb->stream, "%ssofia/%s/%s,", argv[1], cb->profile->name, contact + 4);
+		cb->stream->write_function(cb->stream, "%ssofia/%s/%s,", argv[1], cb->profile->name, sofia_glue_strip_proto(contact));
 		free(contact);
 	}
 
@@ -1773,7 +1773,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 
 		if (!strchr(dest, '@')) {
-			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s@%s", dest, gateway_ptr->register_proxy + 4);
+			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s@%s", dest, sofia_glue_strip_proto(gateway_ptr->register_proxy));
 		} else {
 			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s", dest);
 		}
