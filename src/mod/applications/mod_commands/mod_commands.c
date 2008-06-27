@@ -178,6 +178,45 @@ static switch_status_t _find_user(const char *cmd, switch_core_session_t *sessio
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(url_decode_function)
+{
+	char *reply = "";
+	char *data = NULL;
+
+	if (!switch_strlen_zero(cmd)) {
+		data = strdup(cmd);
+		switch_url_decode(data);
+		reply = data;
+	}
+	
+	stream->write_function(stream, "%s", reply);
+
+	switch_safe_free(data);
+    return SWITCH_STATUS_SUCCESS;
+	
+}
+
+SWITCH_STANDARD_API(url_encode_function)
+{
+	char *reply = "";
+	char *data = NULL;
+	int len = 0 ;
+
+	if (!switch_strlen_zero(cmd)) {
+		len = (strlen(cmd) * 3) + 1;
+		switch_zmalloc(data, len);
+		switch_url_encode(cmd, data, len);
+		reply = data;
+	}
+
+	stream->write_function(stream, "%s", reply);
+
+	switch_safe_free(data);
+    return SWITCH_STATUS_SUCCESS;
+
+}
+
+
 SWITCH_STANDARD_API(user_exists_function)
 {
 	return _find_user(cmd, session, stream, SWITCH_TRUE);
@@ -2390,6 +2429,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "user_exists", "find a user", user_exists_function, "<key> <user> <domain>");
 	SWITCH_ADD_API(commands_api_interface, "xml_locate", "find some xml", xml_locate_function, "[root | <section> <tag> <tag_attr_name> <tag_attr_val>]");
 	SWITCH_ADD_API(commands_api_interface, "user_data", "find user data", user_data_function, "<user>@<domain> [var|param] <name>");
+	SWITCH_ADD_API(commands_api_interface, "url_encode", "url encode a string", url_encode_function, "<string>");
+	SWITCH_ADD_API(commands_api_interface, "url_decode", "url decode a string", url_decode_function, "<string>");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
