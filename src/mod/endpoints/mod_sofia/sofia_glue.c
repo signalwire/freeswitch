@@ -669,8 +669,15 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 {
 	char *stripped = switch_core_session_strdup(session, uri);
 	char *new_uri = NULL;
+	char *p;
 
 	stripped = sofia_glue_get_url_from_contact(stripped, 0);
+
+	/* remove our params so we don't make any whiny moronic device piss it's pants and forget who it is for a half-hour */
+	if ((p = (char *)switch_stristr(";fs_", stripped))) {
+		*p = '\0'; 
+	}
+
 	if (transport && transport != SOFIA_TRANSPORT_UDP) {
 
 		if (switch_stristr("port=", stripped)) {
@@ -1066,7 +1073,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 								  TAG_END());
 		
 
-		if (strstr(tech_pvt->dest, ";nat") || strstr(tech_pvt->dest, ";received") 
+		if (strstr(tech_pvt->dest, ";fs_nat") || strstr(tech_pvt->dest, ";received") 
 			|| ((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val))) {
 			switch_set_flag(tech_pvt, TFLAG_NAT);
 			tech_pvt->record_route = switch_core_session_strdup(tech_pvt->session, url_str);
@@ -1165,9 +1172,11 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	call_id = switch_channel_get_variable(channel, "sip_outgoing_call_id");
 
-	if ((route = strstr(tech_pvt->dest, ";path="))) {
+	if ((route = strstr(tech_pvt->dest, ";fs_path="))) {
 		char *p;
-		route = switch_core_session_strdup(tech_pvt->session, route + 6);
+
+		route = switch_core_session_strdup(tech_pvt->session, route + 9);
+
 		for (p = route; p && *p ; p++) {
 			if (*p == '>' || *p == ';') {
 				*p = '\0';
@@ -1187,8 +1196,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		
 		route_uri = sofia_overcome_sip_uri_weakness(tech_pvt->session, route_uri, 0, SWITCH_TRUE, NULL);
 	}
-	
-	
 
 	nua_invite(tech_pvt->nh,
 			   NUTAG_AUTOANSWER(0),

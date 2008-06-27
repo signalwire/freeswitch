@@ -517,15 +517,10 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		tportlog = 1;
 	}
 
-	if (use_100rel && use_timer) {
-		supported = "100rel, precondition, timer";
-	} else if (use_100rel) {
-		supported = "100rel, precondition";
-	} else if (use_timer) {
-		supported = "timer, precondition";
-	} else {
-		supported = "precondition";
-	}
+	supported = switch_core_sprintf(profile->pool, "%s%sprecondition, path", 
+									use_100rel ? "100rel, " : "",
+									use_timer ? "timer, " : ""
+									);
 
 	profile->nua = nua_create(profile->s_root,	/* Event loop */
 							  sofia_event_callback,	/* Callback for processing events */

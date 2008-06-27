@@ -462,8 +462,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			path_val = sip_header_as_string(nh->nh_home, (void *) sip->sip_path);
 			path_encoded_len = (strlen(path_val) * 3) + 1;
 			switch_zmalloc(path_encoded, path_encoded_len);
-			switch_copy_string(path_encoded, ";path=", 7);
-			switch_url_encode(path_val, path_encoded + 6, path_encoded_len - 6);
+			switch_copy_string(path_encoded, ";fs_path=", 10);
+			switch_url_encode(path_val, path_encoded + 9, path_encoded_len - 9);
 		}
 
 		if (port) {
@@ -477,10 +477,10 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		if (contact->m_url->url_params) {
 			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s%s;%s%s%s%s>",
 							display, contact->m_url->url_user, contact_host, new_port, 
-							contact->m_url->url_params, received_data, is_nat ? ";nat=yes" : "", path_encoded ? path_encoded : "");
+							contact->m_url->url_params, received_data, is_nat ? ";fs_nat=yes" : "", path_encoded ? path_encoded : "");
 		} else {
 			switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s%s%s%s%s>", display, contact->m_url->url_user, contact_host, new_port,
-							received_data, is_nat ? ";nat=yes" : "", path_encoded ? path_encoded : "");
+							received_data, is_nat ? ";fs_nat=yes" : "", path_encoded ? path_encoded : "");
 		}
 
 		switch_safe_free(path_encoded);
@@ -532,10 +532,10 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction") ||
 					!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction") || !strcasecmp(v_contact_str, "NDLB-tls-connectile-dysfunction")) {
 					if (contact->m_url->url_params) {
-						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s%s;nat=yes>",
+						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s%s;fs_nat=yes>",
 										display, contact->m_url->url_user, network_ip, network_port, contact->m_url->url_params, received_data);
 					} else {
-						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d%s;nat=yes>", display, contact->m_url->url_user, network_ip,
+						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d%s;fs_nat=yes>", display, contact->m_url->url_user, network_ip,
 										network_port, received_data);
 					}
 					if (strstr(v_contact_str, "tls")) {
