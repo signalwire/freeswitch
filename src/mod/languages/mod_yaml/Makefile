@@ -10,7 +10,7 @@ include $(BASE)/build/modmake.rules
 local_depend: $(LIBYAML_A)
 
 $(LIBYAML_A):
-	cd $(YAMLLIB) && ./configure $(DEFAULT_ARGS) --disable-shared
+	cd $(YAMLLIB) && ./configure $(DEFAULT_ARGS) --disable-shared --with-pic
 	cd $(YAMLLIB) && $(MAKE)
 
 yamlclean:

@@ -46,11 +46,11 @@ static void print_error(yaml_parser_t *parser)
         case YAML_READER_ERROR:
             if (parser->problem_value != -1) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Reader error: %s: #%X at %d\n", parser->problem,
-								  parser->problem_value, parser->problem_offset);
+								  parser->problem_value, (int) parser->problem_offset);
             }
             else {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Reader error: %s at %d\n", parser->problem,
-								  parser->problem_offset);
+								  (int) parser->problem_offset);
             }
             break;
 
@@ -58,14 +58,14 @@ static void print_error(yaml_parser_t *parser)
             if (parser->context) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Scanner error: %s at line %d, column %d\n"
 								  "%s at line %d, column %d\n", parser->context,
-								  parser->context_mark.line+1, parser->context_mark.column+1,
-								  parser->problem, parser->problem_mark.line+1,
-								  parser->problem_mark.column+1);
+								  (int)parser->context_mark.line+1, (int)parser->context_mark.column+1,
+								  parser->problem, (int)parser->problem_mark.line+1,
+								  (int)parser->problem_mark.column+1);
             }
             else {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Scanner error: %s at line %d, column %d\n",
-								  parser->problem, parser->problem_mark.line+1,
-								  parser->problem_mark.column+1);
+								  parser->problem, (int)parser->problem_mark.line+1,
+								  (int)parser->problem_mark.column+1);
             }
             break;
 
@@ -73,14 +73,14 @@ static void print_error(yaml_parser_t *parser)
             if (parser->context) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parser error: %s at line %d, column %d\n"
 								  "%s at line %d, column %d\n", parser->context,
-								  parser->context_mark.line+1, parser->context_mark.column+1,
-								  parser->problem, parser->problem_mark.line+1,
-								  parser->problem_mark.column+1);
+								  (int)parser->context_mark.line+1, (int)parser->context_mark.column+1,
+								  parser->problem, (int)parser->problem_mark.line+1,
+								  (int)parser->problem_mark.column+1);
             }
             else {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parser error: %s at line %d, column %d\n",
-								  parser->problem, parser->problem_mark.line+1,
-								  parser->problem_mark.column+1);
+								  parser->problem, (int)parser->problem_mark.line+1,
+								  (int)parser->problem_mark.column+1);
             }
             break;
 
@@ -339,6 +339,11 @@ static switch_caller_extension_t *parse_dp(FILE *input, switch_core_session_t *s
 							uint32_t len = 0;
 							char *substituted = NULL;
 							char *app_data;
+
+							if (!strcasecmp(name, "exit")) {
+								yaml_event_delete(&event);
+								goto end;
+							}
 							
 							if (!extension) {
 								extension = switch_caller_extension_new(session, "YAML", caller_profile->destination_number);
@@ -353,9 +358,8 @@ static switch_caller_extension_t *parse_dp(FILE *input, switch_core_session_t *s
 							} else {
 								app_data = value;
 							}
-
+							
 							switch_caller_extension_add_application(session, extension, name, app_data);
-							printf("TEST [%s][%s][%s]\n", category, name, app_data);
 							switch_safe_free(substituted);
 						}
 					}
@@ -370,6 +374,8 @@ static switch_caller_extension_t *parse_dp(FILE *input, switch_core_session_t *s
 
 		yaml_event_delete(&event);
 	}
+
+ end:
 
 	switch_safe_free(last_field);
 	switch_regex_safe_free(re);
