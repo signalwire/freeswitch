@@ -268,7 +268,6 @@ SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void 
 
 SWITCH_DECLARE(void) switch_core_set_globals(void)
 {
-	char *dir_path;
 #define BUFSIZE 1024
 #ifdef WIN32
 	char lpPathBuffer[BUFSIZE];
@@ -363,12 +362,6 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 #endif
 	}
 
-	dir_path = switch_mprintf("%s%ssounds", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
-	switch_dir_make_recursive(dir_path,
-							  SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE | SWITCH_FPROT_UEXECUTE | SWITCH_FPROT_GREAD | SWITCH_FPROT_GEXECUTE,
-							  runtime.memory_pool);
-	switch_safe_free(dir_path);
-
 	switch_assert(SWITCH_GLOBAL_dirs.base_dir);
 	switch_assert(SWITCH_GLOBAL_dirs.mod_dir);
 	switch_assert(SWITCH_GLOBAL_dirs.conf_dir);
@@ -378,16 +371,6 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 	switch_assert(SWITCH_GLOBAL_dirs.htdocs_dir);
 	switch_assert(SWITCH_GLOBAL_dirs.grammar_dir);
 	switch_assert(SWITCH_GLOBAL_dirs.temp_dir);
-
-	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.base_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
-	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.mod_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
-	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.conf_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
-	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.log_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
-	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.db_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
-	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.script_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
-	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.htdocs_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
-	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
-	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.temp_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 }
 
 SWITCH_DECLARE(int32_t) set_high_priority(void)
@@ -855,6 +838,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_xml_t xml = NULL, cfg = NULL;
 	switch_uuid_t uuid;
 	char guess_ip[256];
+	char *dir_path;
 
 	memset(&runtime, 0, sizeof(runtime));
 
@@ -881,6 +865,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		return SWITCH_STATUS_MEMERR;
 	}
 	switch_assert(runtime.memory_pool != NULL);
+
+	dir_path = switch_mprintf("%s%ssounds", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
+	switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
+	switch_safe_free(dir_path);
+	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.base_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
+	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.mod_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
+	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.conf_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
+	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.log_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
+	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.db_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
+	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.script_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
+	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.htdocs_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
+	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
+	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.temp_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
+
+
 	switch_mutex_init(&runtime.throttle_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
 	switch_mutex_init(&runtime.global_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
 	switch_core_set_globals();
