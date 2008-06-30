@@ -132,7 +132,7 @@ static switch_status_t native_file_file_get_string(switch_file_handle_t *handle,
 
 /* Registration */
 
-static char *supported_formats[SWITCH_MAX_CODECS] = { 0 };
+static char *supported_formats[SWITCH_MAX_CODECS + 1] = { 0 };
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_native_file_load)
 {
