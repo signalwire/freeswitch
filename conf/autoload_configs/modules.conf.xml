@@ -6,6 +6,8 @@
     <load module="mod_logfile"/>
     <!-- <load module="mod_syslog"/> -->
 
+    <!--<load module="mod_yaml"/>-->
+
     <!-- Multi-Faceted -->
     <!-- mod_enum is a dialplan interface, an application interface and an api command interface -->
     <load module="mod_enum"/>

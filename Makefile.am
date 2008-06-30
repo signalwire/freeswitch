@@ -191,6 +191,11 @@ $(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool modul
 $(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
 	@cat libtool | sed -e 's|$$show "$$command"|if test -z "$$suppress_output" ; then $$show "Compiling $$srcfile ..." ; fi|' > quiet_libtool
 
+
+yaml-files:
+	@echo `mkdir $(DESTDIR)$(prefix)/conf/yaml 2>/dev/null`
+	$(INSTALL) -m 644 conf/yaml/*.yaml $(DESTDIR)$(prefix)/conf/yaml
+
 vm-sync:
 	test -d $(DESTDIR)$(prefix)/conf || $(mkinstalldirs) $(DESTDIR)$(prefix)/conf
 	test -d $(DESTDIR)$(prefix)/conf/lang || $(mkinstalldirs) $(DESTDIR)$(prefix)/conf/lang
