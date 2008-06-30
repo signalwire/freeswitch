@@ -426,19 +426,14 @@ readRequestHeader(TSession * const sessionP,
    are not able to read the request header, or 0 if we can.
    If we can't, *requestLineP is meaningless.
 -----------------------------------------------------------------------------*/
-    char * line;
-    bool error;
-    bool endOfHeaders;
+    char * line = NULL;
+    bool error = FALSE;
+    bool endOfHeaders = FALSE;
 
     skipToNonemptyLine(sessionP->conn, deadline, &error);
 
     if (!error)
         readHeader(sessionP->conn, deadline, &endOfHeaders, &line, &error);
-
-    /* End of headers is delimited by an empty line, and we skipped all
-       the empty lines above, so we could not have encountered EOH:
-    */
-    assert(!endOfHeaders);
 
     if (error)
         *httpErrorCodeP = 408;  /* Request Timeout */
