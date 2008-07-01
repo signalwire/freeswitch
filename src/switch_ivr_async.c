@@ -495,6 +495,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
+	int codec_initialized = 0;
 
 	if ((tsession = switch_core_session_locate(uuid))) {
 		struct eavesdrop_pvt *ep = NULL;
@@ -553,6 +554,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			switch_core_session_rwunlock(tsession);
 			goto end;
 		}
+
+		codec_initialized = 1;
 
 		switch_core_session_set_read_codec(session, &codec);
 		write_frame.codec = &codec;
@@ -683,8 +686,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		}
 
 	  end:
-
-		switch_core_codec_destroy(&codec);
+		if ( codec_initialized )
+			switch_core_codec_destroy(&codec);
 
 		if (bug) {
 			switch_core_media_bug_remove(tsession, &bug);
