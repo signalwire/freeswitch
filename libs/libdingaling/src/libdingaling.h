@@ -54,7 +54,7 @@ extern "C" {
 }
 #endif
 
-#ifdef __sunos__
+#if defined (__SVR4) && defined (__sun)
 #define __EXTENSIONS__ 1
 #include <strings.h>
 #endif
