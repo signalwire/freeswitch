@@ -241,6 +241,7 @@ static mrcp_status_t openmrcp_recog_start(mrcp_client_context_t *context, openmr
 	apr_finfo_t finfo;
 	char *buf1;
 	apr_size_t bytes2read = 0;
+	mrcp_recognizer_header_t *recognizer_header;
 
 	mrcp_message_t *mrcp_message =
 		mrcp_client_context_message_get(context, asr_session->client_session, asr_session->control_channel, RECOGNIZER_RECOGNIZE);
@@ -263,14 +264,25 @@ static mrcp_status_t openmrcp_recog_start(mrcp_client_context_t *context, openmr
 	rv = apr_file_read(fp, buf1, &bytes2read);
 	buf1[bytes2read] = '\0';
 
+	recognizer_header = mrcp_resource_header_prepare(mrcp_message);
+
+	if(!recognizer_header) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not prepare resource_header\n");
+		return MRCP_STATUS_FAILURE;
+	}
+	recognizer_header->cancel_if_queue = FALSE;
+	mrcp_resource_header_property_add(mrcp_message,RECOGNIZER_HEADER_CANCEL_IF_QUEUE);
+
 	generic_header = mrcp_generic_header_prepare(mrcp_message);
 	if (!generic_header) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not prepare generic_header\n");
 		return MRCP_STATUS_FAILURE;
 	}
 
-	generic_header->content_type = "application/srgs+xml";
+	generic_header->content_type = " application/srgs+xml";
 	mrcp_generic_header_property_add(mrcp_message, GENERIC_HEADER_CONTENT_TYPE);
+	generic_header->content_id = " <request1@form-level.store>";
+	mrcp_generic_header_property_add(mrcp_message,GENERIC_HEADER_CONTENT_ID);
 	mrcp_message->body = buf1;
 
 	/* send the MRCP RECOGNIZE message to MRCP server */
