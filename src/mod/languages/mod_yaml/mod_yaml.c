@@ -330,6 +330,10 @@ static switch_caller_extension_t *parse_dp(FILE *input, switch_core_session_t *s
 					break;
 				case 3:
 					if (nv == 0) {
+						if (!strcasecmp(scalar_data, "exit")) {
+							yaml_event_delete(&event);
+							goto end;
+						}
 						switch_set_string(name, scalar_data);
 						nv++;
 					} else {
@@ -340,10 +344,6 @@ static switch_caller_extension_t *parse_dp(FILE *input, switch_core_session_t *s
 							char *substituted = NULL;
 							char *app_data;
 
-							if (!strcasecmp(name, "exit")) {
-								yaml_event_delete(&event);
-								goto end;
-							}
 							
 							if (!extension) {
 								extension = switch_caller_extension_new(session, "YAML", caller_profile->destination_number);
