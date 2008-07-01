@@ -346,7 +346,7 @@ L3INT Q931Rx23(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT Size)
 	/* Protocol Discriminator */
     m->ProtDisc = Mes[IOff++];
 
-    /* CRV */add 
+    /* CRV */
     m->CRVFlag = Mes[IOff + 1] & 0x80;
     m->CRV = Q931Uie_CRV(pTrunk, Mes, m->buf, &IOff, &ISize);
 
