@@ -528,8 +528,30 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 
 
 		if (!switch_strlen_zero(require_group)) {
+			int argc, i;
+			int ok = 0;
+			char *argv[10] = { 0 };
+			char *data;
+
 			const char *group_name = switch_channel_get_variable(tchannel, "eavesdrop_group");
-			if (!group_name || strcmp(group_name, require_group)) {
+			/* If we don't have a group, then return */
+			if (!group_name) {
+				status = SWITCH_STATUS_BREAK;
+				goto end;
+			}
+			/* Separate the group */
+			data = strdup(group_name);
+			if ( (argc = switch_separate_string(data, ',', argv, (sizeof(argv) / sizeof(argv[0])))) ) {
+				for ( i = 0; i < argc; i++ ) {
+					/* If one of the group matches, then ok */
+					if ( !strcmp(argv[i], require_group)) {
+						ok = 1;
+					}
+				}
+			}
+			switch_safe_free(data);
+			/* If we didn't find any match, then end */
+			if ( !ok ) {
 				status = SWITCH_STATUS_BREAK;
 				goto end;
 			}
