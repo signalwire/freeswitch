@@ -599,6 +599,9 @@ SWITCH_DECLARE(void) switch_core_set_variable(_In_z_ const char *varname, _In_op
 */
 SWITCH_DECLARE(void) switch_core_session_hupall(_In_ switch_call_cause_t cause);
 
+SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(_In_ const char *var_name, _In_ const char *var_val, _In_ switch_call_cause_t cause);
+SWITCH_DECLARE(void) switch_core_session_hupall_endpoint(const switch_endpoint_interface_t *endpoint_interface, switch_call_cause_t cause);
+
 /*! 
   \brief Send a message to another session using it's uuid
   \param uuid_str the unique id of the session you want to send a message to

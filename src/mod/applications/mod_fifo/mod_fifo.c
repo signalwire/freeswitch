@@ -242,6 +242,7 @@ static struct {
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
 	int running;
+	switch_event_node_t *node;
 } globals;
 
 
@@ -1182,7 +1183,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load)
 	}
 
 	/* Subscribe to presence request events */
-	if (switch_event_bind(modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY, pres_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_bind_removable(modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY, 
+									pres_event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't subscribe to presence request events!\n");
 		return SWITCH_STATUS_GENERR;
 	}
@@ -1215,7 +1217,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fifo_shutdown)
 	fifo_node_t *node;
 	switch_memory_pool_t *pool = globals.pool;
 	switch_mutex_t *mutex = globals.mutex;
-
+	
+	switch_event_unbind(&globals.node);
+	switch_event_free_subclass(FIFO_EVENT);
+	
 	switch_mutex_lock(mutex);
 
 	globals.running = 0;
@@ -1229,6 +1234,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fifo_shutdown)
 				free(pop);
 			}
 		}
+
 		switch_core_hash_destroy(&node->caller_hash);
 		switch_core_hash_destroy(&node->consumer_hash);
 	}

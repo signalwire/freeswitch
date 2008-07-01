@@ -147,7 +147,7 @@ static void event_handler(switch_event_t *event)
 		return;
 	}
 
-	if (event->subclass && !strcmp(event->subclass->name, MULTICAST_EVENT)) {
+	if (event->subclass_name && !strcmp(event->subclass_name, MULTICAST_EVENT)) {
 		/* ignore our own events to avoid ping pong */
 		return;
 	}
@@ -155,7 +155,7 @@ static void event_handler(switch_event_t *event)
 	if (globals.event_list[(uint8_t) SWITCH_EVENT_ALL]) {
 		send = 1;
 	} else if ((globals.event_list[(uint8_t) event->event_id])) {
-		if (event->event_id != SWITCH_EVENT_CUSTOM || (event->subclass && switch_core_hash_find(globals.event_hash, event->subclass->name))) {
+		if (event->event_id != SWITCH_EVENT_CUSTOM || (event->subclass_name && switch_core_hash_find(globals.event_hash, event->subclass_name))) {
 			send = 1;
 		}
 	}

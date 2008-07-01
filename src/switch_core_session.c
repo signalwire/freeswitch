@@ -72,6 +72,50 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(const char *u
 	return session;
 }
 
+
+SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(const char *var_name, const char *var_val, switch_call_cause_t cause)
+{
+	switch_hash_index_t *hi;
+	void *val;
+	switch_core_session_t *session;
+
+	switch_mutex_lock(runtime.throttle_mutex);
+	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, NULL, NULL, &val);
+		if (val) {
+			const char *this_val;
+			session = (switch_core_session_t *) val;
+			switch_core_session_read_lock(session);
+			if ((this_val = switch_channel_get_variable(session->channel, var_name)) && (!strcmp(this_val, var_val))) {
+				switch_channel_hangup(switch_core_session_get_channel(session), cause);
+			}
+			switch_core_session_rwunlock(session);
+		}
+	}
+	switch_mutex_unlock(runtime.throttle_mutex);
+}	
+
+SWITCH_DECLARE(void) switch_core_session_hupall_endpoint(const switch_endpoint_interface_t *endpoint_interface, switch_call_cause_t cause)
+{
+	switch_hash_index_t *hi;
+	void *val;
+	switch_core_session_t *session;
+
+	switch_mutex_lock(runtime.throttle_mutex);
+	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, NULL, NULL, &val);
+		if (val) {
+			session = (switch_core_session_t *) val;
+			switch_core_session_read_lock(session);
+			if (session->endpoint_interface == endpoint_interface) {
+				switch_channel_hangup(switch_core_session_get_channel(session), cause);
+			}
+			switch_core_session_rwunlock(session);
+		}
+	}
+	switch_mutex_unlock(runtime.throttle_mutex);
+}	
+
 SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 {
 	switch_hash_index_t *hi;
@@ -686,6 +730,8 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 {
 	switch_memory_pool_t *pool;
 	switch_event_t *event;
+	const switch_endpoint_interface_t *endpoint_interface = (*session)->endpoint_interface;
+
 
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Close Channel %s [%s]\n",
 					  switch_channel_get_name((*session)->channel), switch_channel_state_name(switch_channel_get_state((*session)->channel)));
@@ -719,6 +765,8 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	//#endif
 	*session = NULL;
 	switch_core_destroy_memory_pool(&pool);
+
+	switch_thread_rwlock_unlock(endpoint_interface->rwlock);
 
 }
 
@@ -826,6 +874,8 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Limit!\n");
 		return NULL;
 	}
+
+	switch_thread_rwlock_rdlock(endpoint_interface->rwlock);
 
 	if (pool && *pool) {
 		usepool = *pool;
@@ -1047,8 +1097,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 
 	switch_assert(application_interface->application_function);
 
-	application_interface->application_function(session, arg);
+	switch_channel_set_variable(session->channel, SWITCH_CURRENT_APPLICATION_VARIABLE, application_interface->interface_name);
 
+	switch_thread_rwlock_rdlock(application_interface->rwlock);
+	application_interface->application_function(session, arg);
+	switch_thread_rwlock_unlock(application_interface->rwlock);
+	
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application", "%s", application_interface->interface_name);

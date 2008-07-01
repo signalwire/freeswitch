@@ -412,8 +412,16 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 	if (old_module->module_interface->endpoint_interface) {
 		const switch_endpoint_interface_t *ptr;
+
 		for (ptr = old_module->module_interface->endpoint_interface; ptr; ptr = ptr->next) {
 			if (ptr->interface_name) {
+
+				switch_core_session_hupall_endpoint(ptr, SWITCH_CAUSE_SYSTEM_SHUTDOWN);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
+				switch_thread_rwlock_wrlock(ptr->rwlock);
+				switch_thread_rwlock_unlock(ptr->rwlock);
+			
+
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Endpoint '%s'\n", ptr->interface_name);
 				switch_core_hash_delete(loadable_modules.endpoint_hash, ptr->interface_name);
 			}
@@ -486,10 +494,14 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 	if (old_module->module_interface->application_interface) {
 		const switch_application_interface_t *ptr;
-
 		for (ptr = old_module->module_interface->application_interface; ptr; ptr = ptr->next) {
 			if (ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Application '%s'\n", ptr->interface_name);
+				switch_core_session_hupall_matching_var(SWITCH_CURRENT_APPLICATION_VARIABLE, ptr->interface_name, SWITCH_CAUSE_SYSTEM_SHUTDOWN);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
+				switch_thread_rwlock_wrlock(ptr->rwlock);
+				switch_thread_rwlock_unlock(ptr->rwlock);
+
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "application");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
@@ -508,6 +520,11 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 		for (ptr = old_module->module_interface->api_interface; ptr; ptr = ptr->next) {
 			if (ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting API Function '%s'\n", ptr->interface_name);
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
+				switch_thread_rwlock_wrlock(ptr->rwlock);
+				switch_thread_rwlock_unlock(ptr->rwlock);
+
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "%s", "api");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
@@ -1357,9 +1374,11 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 
 
 	if (cmd && (api = switch_loadable_module_get_api_interface(cmd)) != 0) {
+		switch_thread_rwlock_rdlock(api->rwlock);
 		if ((status = api->function(arg, session, stream)) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "COMMAND RETURNED ERROR!\n");
 		}
+		switch_thread_rwlock_unlock(api->rwlock);
 	} else {
 		status = SWITCH_STATUS_FALSE;
 		stream->write_function(stream, "INVALID COMMAND!\n");
@@ -1398,7 +1417,7 @@ SWITCH_DECLARE(switch_loadable_module_interface_t *) switch_loadable_module_crea
 		} else {														\
 			mod->_TYPE_##_interface = i;								\
 		}																\
-																		\
+		switch_thread_rwlock_create(&i->rwlock, mod->pool);				\
 		return i; }
 
 

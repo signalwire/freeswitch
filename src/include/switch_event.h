@@ -70,14 +70,6 @@ SWITCH_BEGIN_EXTERN_C
 	struct switch_event_header *next;
 };
 
-/*! \brief A registered custom event subclass  */
-struct switch_event_subclass {
-	/*! the owner of the subclass */
-	char *owner;
-	/*! the subclass name */
-	char *name;
-};
-
 /*! \brief Representation of an event */
 struct switch_event {
 	/*! the event id (descriptor) */
@@ -87,7 +79,7 @@ struct switch_event {
 	/*! the owner of the event */
 	char *owner;
 	/*! the subclass of the event */
-	switch_event_subclass_t *subclass;
+	char *subclass_name;
 	/*! the event headers */
 	switch_event_header_t *headers;
 	/*! the event headers tail pointer */
@@ -103,20 +95,7 @@ struct switch_event {
 	struct switch_event *next;
 };
 
-/*! \brief A node to store binded events */
-struct switch_event_node {
-	/*! the id of the node */
-	char *id;
-	/*! the event id enumeration to bind to */
-	switch_event_types_t event_id;
-	/*! the event subclass to bind to for custom events */
-	switch_event_subclass_t *subclass;
-	/*! a callback function to execute when the event is triggered */
-	switch_event_callback_t callback;
-	/*! private data */
-	void *user_data;
-	struct switch_event_node *next;
-};
+struct switch_event_node;
 
 #define SWITCH_EVENT_SUBCLASS_ANY NULL
 
@@ -229,6 +208,25 @@ SWITCH_DECLARE(switch_status_t) switch_event_bind(const char *id, switch_event_t
 												  void *user_data);
 
 /*!
+  \brief Bind an event callback to a specific event
+  \param id an identifier token of the binder
+  \param event the event enumeration to bind to
+  \param subclass_name the event subclass to bind to in the case if SWITCH_EVENT_CUSTOM
+  \param callback the callback functon to bind
+  \param user_data optional user specific data to pass whenever the callback is invoked
+  \param node bind handle to later remove the binding.
+  \return SWITCH_STATUS_SUCCESS if the event was binded
+*/
+SWITCH_DECLARE(switch_status_t) switch_event_bind_removable(const char *id, switch_event_types_t event, const char *subclass_name, 
+															switch_event_callback_t callback, void *user_data, switch_event_node_t **node);
+/*!
+  \brief Unbind a bound event consumer
+  \param node node to unbind
+  \return SWITCH_STATUS_SUCCESS if the consumer was unbinded
+*/
+SWITCH_DECLARE(switch_status_t) switch_event_unbind(switch_event_node_t **node);
+
+/*!
   \brief Render the name of an event id enumeration
   \param event the event id to render the name of
   \return the rendered name
@@ -252,6 +250,8 @@ SWITCH_DECLARE(switch_status_t) switch_name_event(const char *name, switch_event
 
 */
 SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(const char *owner, const char *subclass_name);
+
+SWITCH_DECLARE(switch_status_t) switch_event_free_subclass_detailed(const char *owner, const char *subclass_name);
 
 /*!
   \brief Render a string representation of an event sutable for printing or network transport 
@@ -311,6 +311,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_pres_in_detailed(_In_z_ char
   \note the body supplied by this function will supersede an existing body the event may have
 */
 #define switch_event_reserve_subclass(subclass_name) switch_event_reserve_subclass_detailed(__FILE__, subclass_name)
+#define switch_event_free_subclass(subclass_name) switch_event_free_subclass_detailed(__FILE__, subclass_name)
 
 /*!
   \brief Create a new event assuming it will not be custom event and therefore hiding the unused parameters
