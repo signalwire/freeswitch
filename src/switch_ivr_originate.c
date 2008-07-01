@@ -1200,8 +1200,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							}
 						}
 
-						if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
-							break;
+						if ((ringback.fh || ringback.audio_buffer) && write_frame.codec && write_frame.datalen) {
+							if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+								break;
+							}
 						}
 					}
 
