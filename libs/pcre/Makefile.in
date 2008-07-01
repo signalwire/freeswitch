@@ -107,7 +107,7 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) -c $(CXXFLAGS) -I. -I$(top_srcdi
 @ON_WINDOWS@LINK = $(CC) $(LDFLAGS) -I. -I$(top_srcdir) -L.libs
 @NOT_ON_WINDOWS@LINK = $(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) -I. -I$(top_srcdir)
 LINKLIB = $(LIBTOOL) --mode=link $(CC) -export-symbols-regex '^[^_]' $(LDFLAGS) -I. -I$(top_srcdir)
-LINK_FOR_BUILD = $(LIBTOOL) --mode=link $(CC_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) -I. -I$(top_srcdir)
+LINK_FOR_BUILD = $(LIBTOOL) --mode=link --tag=CC $(CC_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) -I. -I$(top_srcdir) 
 @ON_WINDOWS@CXXLINK = $(CXX) $(LDFLAGS) -I. -I$(top_srcdir) -L.libs
 @NOT_ON_WINDOWS@CXXLINK = $(LIBTOOL) --mode=link $(CXX) $(CXXFLAGS) $(CXXLDFLAGS) -I. -I$(top_srcdir)
 CXXLINKLIB = $(LIBTOOL) --mode=link $(CXX) $(LDFLAGS) -I. -I$(top_srcdir)
