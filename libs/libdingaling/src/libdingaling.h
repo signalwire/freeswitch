@@ -53,8 +53,11 @@ extern "C" {
 #ifdef __STUPIDFORMATBUG__
 }
 #endif
+
+#ifdef __sunos__
 #define __EXTENSIONS__ 1
 #include <strings.h>
+#endif
 
 #define LDL_HANDLE_QLEN 2000
 #define LDL_MAX_CANDIDATES 10
