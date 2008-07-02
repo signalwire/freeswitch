@@ -541,15 +541,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass(switch_event_t **ev
 	(*event)->event_id = event_id;
 
 	if (subclass_name) {
-		switch_event_subclass_t *subclass;
-
-		if (!(subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name))) {
-			switch_event_reserve_subclass((char *) subclass_name);
-			subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name);
-		}
-
 		(*event)->subclass_name = DUP(subclass_name);
-
 		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Subclass", subclass_name);
 	}
 

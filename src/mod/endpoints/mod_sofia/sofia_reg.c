@@ -112,7 +112,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			break;
 		case REG_STATE_UNREGED:
 			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
-			sofia_reg_kill_reg(gateway_ptr, 1);
+			sofia_reg_kill_reg(gateway_ptr, 0);
 
 			if ((gateway_ptr->nh = nua_handle(gateway_ptr->profile->nua, NULL,
 											  NUTAG_URL(gateway_ptr->register_proxy),

@@ -1532,7 +1532,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 			gateway->status = SOFIA_GATEWAY_DOWN;
 			if (gateway->state == REG_STATE_REGED) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "unregister %s\n", gateway->name);
-				gateway->state = REG_STATE_UNREGISTER;
+				gateway->state = REG_STATE_FAILED;
 			}
 		}
 		gateway->ping = switch_timestamp(NULL) + gateway->ping_freq;

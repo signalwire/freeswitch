@@ -136,6 +136,16 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 
 	 };
 
+     class EventConsumer {
+	 protected:
+		 switch_event_types_t e_event_id;
+		 switch_event_node_t *node;
+		 char *e_callback;
+		 char *e_subclass_name;
+	 public:
+		 SWITCH_DECLARE_CONSTRUCTOR EventConsumer(switch_event_types_t event_id, const char *subclass_name = "", const char *callback = "event_consumer");
+		 SWITCH_DECLARE_CONSTRUCTOR ~ EventConsumer();
+	 };
 
 	 class CoreSession {
 	   protected:

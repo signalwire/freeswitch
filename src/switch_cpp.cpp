@@ -37,6 +37,40 @@
 #pragma warning(disable:4127 4003)
 #endif
 
+static void event_handler(switch_event_t *event)
+{
+}
+
+SWITCH_DECLARE_CONSTRUCTOR EventConsumer::EventConsumer(switch_event_types_t event_id, const char *subclass_name, const char *callback)
+{
+	e_event_id = event_id;
+
+	if (!switch_strlen_zero(subclass_name)) {
+		e_subclass_name = strdup(subclass_name);
+	} else {
+		e_subclass_name = "";
+	}
+
+	if (switch_strlen_zero(callback)) {
+		callback = "event_consumer";
+	}
+
+	e_callback = strdup(callback);
+
+	
+	switch_event_bind_removable(__FILE__, e_event_id, subclass_name, event_handler, this, &node);
+}
+
+
+SWITCH_DECLARE_CONSTRUCTOR EventConsumer::~EventConsumer()
+{
+	switch_safe_free(e_subclass_name);
+	switch_safe_free(e_callback);
+
+	if (node) {
+		switch_event_unbind(&node);
+	}
+}
 
 SWITCH_DECLARE_CONSTRUCTOR IVRMenu::IVRMenu(IVRMenu *main,
 											const char *name,
