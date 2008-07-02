@@ -342,7 +342,7 @@ typedef enum {
 
 #define MAX_NODES_PER_CONSUMER 25
 #define FIFO_DESC "Fifo for stacking parked calls."
-#define FIFO_USAGE "<fifo name> [in [<announce file>|undef] [<music file>|undef] | out [wait|nowait] [<announce file>|undef] [<music file>|undef]]"
+#define FIFO_USAGE "<fifo name>[!<importance_number>] [in [<announce file>|undef] [<music file>|undef] | out [wait|nowait] [<announce file>|undef] [<music file>|undef]]"
 SWITCH_STANDARD_APP(fifo_function)
 {
 	int argc;
