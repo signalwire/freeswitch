@@ -39,37 +39,65 @@
 
 static void event_handler(switch_event_t *event)
 {
-}
-
-SWITCH_DECLARE_CONSTRUCTOR EventConsumer::EventConsumer(switch_event_types_t event_id, const char *subclass_name, const char *callback)
-{
-	e_event_id = event_id;
-
-	if (!switch_strlen_zero(subclass_name)) {
-		e_subclass_name = strdup(subclass_name);
-	} else {
-		e_subclass_name = "";
-	}
-
-	if (switch_strlen_zero(callback)) {
-		callback = "event_consumer";
-	}
-
-	e_callback = strdup(callback);
-
+	EventConsumer *E = (EventConsumer *) event->bind_user_data;
+	switch_event_t *dup;
 	
-	switch_event_bind_removable(__FILE__, e_event_id, subclass_name, event_handler, this, &node);
+	switch_event_dup(&dup, event);
+
+	if (switch_queue_trypush(E->events, dup) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot queue any more events.....\n");
+	}
+
 }
 
+SWITCH_DECLARE_CONSTRUCTOR EventConsumer::EventConsumer(const char *event_name, const char *subclass_name)
+{
+	switch_name_event(event_name, &e_event_id);
+	switch_core_new_memory_pool(&pool);
+	
+	if (!switch_strlen_zero(subclass_name)) {
+		e_subclass_name = switch_core_strdup(pool, subclass_name);
+	} else {
+		e_subclass_name = NULL;
+	}
+
+	switch_queue_create(&events, 5000, pool);
+	
+	if (switch_event_bind_removable(__FILE__, e_event_id, e_subclass_name, event_handler, this, &node) == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "bound to %s %s\n", event_name, switch_str_nil(e_subclass_name));
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind to %s %s\n", event_name, switch_str_nil(e_subclass_name));
+	}
+
+}
+
+
+SWITCH_DECLARE(Event *) EventConsumer::pop(int block)
+{
+	void *pop = NULL;
+	Event *ret = NULL;
+	switch_event_t *event;
+	
+	if (block) {
+		switch_queue_pop(events, &pop);
+	} else {
+		switch_queue_trypop(events, &pop);
+	}
+
+	if ((event = (switch_event_t *) pop)) {
+		ret = new Event(event);
+	}
+
+	return ret;
+}
 
 SWITCH_DECLARE_CONSTRUCTOR EventConsumer::~EventConsumer()
 {
-	switch_safe_free(e_subclass_name);
-	switch_safe_free(e_callback);
-
 	if (node) {
 		switch_event_unbind(&node);
 	}
+
+	switch_core_destroy_memory_pool(&pool);
 }
 
 SWITCH_DECLARE_CONSTRUCTOR IVRMenu::IVRMenu(IVRMenu *main,
@@ -210,10 +238,9 @@ SWITCH_DECLARE(const char *)Event::serialize(const char *format)
 
 	this_check("");
 
-	if (serialized_string) {
-		free(serialized_string);
-	}
 
+	switch_safe_free(serialized_string);
+	
 	if (!event) {
 		return "";
 	}
@@ -233,6 +260,7 @@ SWITCH_DECLARE(const char *)Event::serialize(const char *format)
 		}
 	} else {
 		if (switch_event_serialize(event, &serialized_string, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+			serialized_string = switch_mprintf("'%s'", serialized_string);
 			return serialized_string;
 		}
 	}

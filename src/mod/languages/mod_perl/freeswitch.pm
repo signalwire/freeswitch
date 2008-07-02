@@ -270,6 +270,56 @@ sub ACQUIRE {
 }
 
 
+############# Class : freeswitch::EventConsumer ##############
+
+package freeswitch::EventConsumer;
+use vars qw(@ISA %OWNER %ITERATORS %BLESSEDMEMBERS);
+@ISA = qw( freeswitch );
+%OWNER = ();
+%ITERATORS = ();
+*swig_events_get = *freeswitchc::EventConsumer_events_get;
+*swig_events_set = *freeswitchc::EventConsumer_events_set;
+*swig_e_event_id_get = *freeswitchc::EventConsumer_e_event_id_get;
+*swig_e_event_id_set = *freeswitchc::EventConsumer_e_event_id_set;
+*swig_node_get = *freeswitchc::EventConsumer_node_get;
+*swig_node_set = *freeswitchc::EventConsumer_node_set;
+*swig_e_callback_get = *freeswitchc::EventConsumer_e_callback_get;
+*swig_e_callback_set = *freeswitchc::EventConsumer_e_callback_set;
+*swig_e_subclass_name_get = *freeswitchc::EventConsumer_e_subclass_name_get;
+*swig_e_subclass_name_set = *freeswitchc::EventConsumer_e_subclass_name_set;
+*swig_e_cb_arg_get = *freeswitchc::EventConsumer_e_cb_arg_get;
+*swig_e_cb_arg_set = *freeswitchc::EventConsumer_e_cb_arg_set;
+sub new {
+    my $pkg = shift;
+    my $self = freeswitchc::new_EventConsumer(@_);
+    bless $self, $pkg if defined($self);
+}
+
+sub DESTROY {
+    return unless $_[0]->isa('HASH');
+    my $self = tied(%{$_[0]});
+    return unless defined $self;
+    delete $ITERATORS{$self};
+    if (exists $OWNER{$self}) {
+        freeswitchc::delete_EventConsumer($self);
+        delete $OWNER{$self};
+    }
+}
+
+*pop = *freeswitchc::EventConsumer_pop;
+sub DISOWN {
+    my $self = shift;
+    my $ptr = tied(%$self);
+    delete $OWNER{$ptr};
+}
+
+sub ACQUIRE {
+    my $self = shift;
+    my $ptr = tied(%$self);
+    $OWNER{$ptr} = 1;
+}
+
+
 ############# Class : freeswitch::CoreSession ##############
 
 package freeswitch::CoreSession;

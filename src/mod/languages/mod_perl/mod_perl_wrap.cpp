@@ -1449,25 +1449,29 @@ SWIG_Perl_SetModule(swig_module_info *module) {
 #define SWIGTYPE_p_API swig_types[0]
 #define SWIGTYPE_p_CoreSession swig_types[1]
 #define SWIGTYPE_p_Event swig_types[2]
-#define SWIGTYPE_p_IVRMenu swig_types[3]
-#define SWIGTYPE_p_PERL__Session swig_types[4]
-#define SWIGTYPE_p_PerlInterpreter swig_types[5]
-#define SWIGTYPE_p_Stream swig_types[6]
-#define SWIGTYPE_p_char swig_types[7]
-#define SWIGTYPE_p_input_callback_state swig_types[8]
-#define SWIGTYPE_p_session_flag_t swig_types[9]
-#define SWIGTYPE_p_switch_channel_state_t swig_types[10]
-#define SWIGTYPE_p_switch_channel_t swig_types[11]
-#define SWIGTYPE_p_switch_core_session_t swig_types[12]
-#define SWIGTYPE_p_switch_event_t swig_types[13]
-#define SWIGTYPE_p_switch_input_args_t swig_types[14]
-#define SWIGTYPE_p_switch_input_type_t swig_types[15]
-#define SWIGTYPE_p_switch_priority_t swig_types[16]
-#define SWIGTYPE_p_switch_status_t swig_types[17]
-#define SWIGTYPE_p_switch_stream_handle_t swig_types[18]
-#define SWIGTYPE_p_void swig_types[19]
-static swig_type_info *swig_types[21];
-static swig_module_info swig_module = {swig_types, 20, 0, 0, 0, 0};
+#define SWIGTYPE_p_EventConsumer swig_types[3]
+#define SWIGTYPE_p_IVRMenu swig_types[4]
+#define SWIGTYPE_p_PERL__Session swig_types[5]
+#define SWIGTYPE_p_PerlInterpreter swig_types[6]
+#define SWIGTYPE_p_Stream swig_types[7]
+#define SWIGTYPE_p_char swig_types[8]
+#define SWIGTYPE_p_input_callback_state swig_types[9]
+#define SWIGTYPE_p_session_flag_t swig_types[10]
+#define SWIGTYPE_p_switch_channel_state_t swig_types[11]
+#define SWIGTYPE_p_switch_channel_t swig_types[12]
+#define SWIGTYPE_p_switch_core_session_t swig_types[13]
+#define SWIGTYPE_p_switch_event_node_t swig_types[14]
+#define SWIGTYPE_p_switch_event_t swig_types[15]
+#define SWIGTYPE_p_switch_event_types_t swig_types[16]
+#define SWIGTYPE_p_switch_input_args_t swig_types[17]
+#define SWIGTYPE_p_switch_input_type_t swig_types[18]
+#define SWIGTYPE_p_switch_priority_t swig_types[19]
+#define SWIGTYPE_p_switch_queue_t swig_types[20]
+#define SWIGTYPE_p_switch_status_t swig_types[21]
+#define SWIGTYPE_p_switch_stream_handle_t swig_types[22]
+#define SWIGTYPE_p_void swig_types[23]
+static swig_type_info *swig_types[25];
+static swig_module_info swig_module = {swig_types, 24, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -3866,6 +3870,727 @@ XS(_wrap_Event_fire) {
     
     SWIG_croak_null();
   }
+}
+
+
+XS(_wrap_EventConsumer_events_set) {
+  {
+    EventConsumer *arg1 = (EventConsumer *) 0 ;
+    switch_queue_t *arg2 = (switch_queue_t *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    void *argp2 = 0 ;
+    int res2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: EventConsumer_events_set(self,events);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_EventConsumer, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_events_set" "', argument " "1"" of type '" "EventConsumer *""'"); 
+    }
+    arg1 = reinterpret_cast< EventConsumer * >(argp1);
+    res2 = SWIG_ConvertPtr(ST(1), &argp2,SWIGTYPE_p_switch_queue_t, SWIG_POINTER_DISOWN |  0 );
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "EventConsumer_events_set" "', argument " "2"" of type '" "switch_queue_t *""'"); 
+    }
+    arg2 = reinterpret_cast< switch_queue_t * >(argp2);
+    if (arg1) (arg1)->events = arg2;
+    
+    
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_EventConsumer_events_get) {
+  {
+    EventConsumer *arg1 = (EventConsumer *) 0 ;
+    switch_queue_t *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: EventConsumer_events_get(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_EventConsumer, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_events_get" "', argument " "1"" of type '" "EventConsumer *""'"); 
+    }
+    arg1 = reinterpret_cast< EventConsumer * >(argp1);
+    result = (switch_queue_t *) ((arg1)->events);
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_switch_queue_t, 0 | 0); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_EventConsumer_e_event_id_set) {
+  {
+    EventConsumer *arg1 = (EventConsumer *) 0 ;
+    switch_event_types_t arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    void *argp2 ;
+    int res2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: EventConsumer_e_event_id_set(self,e_event_id);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_EventConsumer, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_e_event_id_set" "', argument " "1"" of type '" "EventConsumer *""'"); 
+    }
+    arg1 = reinterpret_cast< EventConsumer * >(argp1);
+    {
+      res2 = SWIG_ConvertPtr(ST(1), &argp2, SWIGTYPE_p_switch_event_types_t,  0 );
+      if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "EventConsumer_e_event_id_set" "', argument " "2"" of type '" "switch_event_types_t""'"); 
+      }  
+      if (!argp2) {
+        SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "EventConsumer_e_event_id_set" "', argument " "2"" of type '" "switch_event_types_t""'");
+      } else {
+        arg2 = *(reinterpret_cast< switch_event_types_t * >(argp2));
+      }
+    }
+    if (arg1) (arg1)->e_event_id = arg2;
+    
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_EventConsumer_e_event_id_get) {
+  {
+    EventConsumer *arg1 = (EventConsumer *) 0 ;
+    switch_event_types_t result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: EventConsumer_e_event_id_get(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_EventConsumer, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_e_event_id_get" "', argument " "1"" of type '" "EventConsumer *""'"); 
+    }
+    arg1 = reinterpret_cast< EventConsumer * >(argp1);
+    result =  ((arg1)->e_event_id);
+    ST(argvi) = SWIG_NewPointerObj((new switch_event_types_t(static_cast< const switch_event_types_t& >(result))), SWIGTYPE_p_switch_event_types_t, SWIG_POINTER_OWN | 0); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_EventConsumer_node_set) {
+  {
+    EventConsumer *arg1 = (EventConsumer *) 0 ;
+    switch_event_node_t *arg2 = (switch_event_node_t *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    void *argp2 = 0 ;
+    int res2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: EventConsumer_node_set(self,node);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_EventConsumer, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_node_set" "', argument " "1"" of type '" "EventConsumer *""'"); 
+    }
+    arg1 = reinterpret_cast< EventConsumer * >(argp1);
+    res2 = SWIG_ConvertPtr(ST(1), &argp2,SWIGTYPE_p_switch_event_node_t, SWIG_POINTER_DISOWN |  0 );
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "EventConsumer_node_set" "', argument " "2"" of type '" "switch_event_node_t *""'"); 
+    }
+    arg2 = reinterpret_cast< switch_event_node_t * >(argp2);
+    if (arg1) (arg1)->node = arg2;
+    
+    
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_EventConsumer_node_get) {
+  {
+    EventConsumer *arg1 = (EventConsumer *) 0 ;
+    switch_event_node_t *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: EventConsumer_node_get(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_EventConsumer, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_node_get" "', argument " "1"" of type '" "EventConsumer *""'"); 
+    }
+    arg1 = reinterpret_cast< EventConsumer * >(argp1);
+    result = (switch_event_node_t *) ((arg1)->node);
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_switch_event_node_t, 0 | 0); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_EventConsumer_e_callback_set) {
+  {
+    EventConsumer *arg1 = (EventConsumer *) 0 ;
+    char *arg2 = (char *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: EventConsumer_e_callback_set(self,e_callback);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_EventConsumer, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_e_callback_set" "', argument " "1"" of type '" "EventConsumer *""'"); 
+    }
+    arg1 = reinterpret_cast< EventConsumer * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "EventConsumer_e_callback_set" "', argument " "2"" of type '" "char *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    if (arg1->e_callback) delete[] arg1->e_callback;
+    if (arg2) {
+      size_t size = strlen(reinterpret_cast< const char * >(arg2)) + 1;
+      arg1->e_callback = (char *)reinterpret_cast< char* >(memcpy((new char[size]), reinterpret_cast< const char * >(arg2), sizeof(char)*(size)));
+    } else {
+      arg1->e_callback = 0;
+    }
+    
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_EventConsumer_e_callback_get) {
+  {
+    EventConsumer *arg1 = (EventConsumer *) 0 ;
+    char *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: EventConsumer_e_callback_get(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_EventConsumer, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_e_callback_get" "', argument " "1"" of type '" "EventConsumer *""'"); 
+    }
+    arg1 = reinterpret_cast< EventConsumer * >(argp1);
+    result = (char *) ((arg1)->e_callback);
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_EventConsumer_e_subclass_name_set) {
+  {
+    EventConsumer *arg1 = (EventConsumer *) 0 ;
+    char *arg2 = (char *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: EventConsumer_e_subclass_name_set(self,e_subclass_name);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_EventConsumer, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_e_subclass_name_set" "', argument " "1"" of type '" "EventConsumer *""'"); 
+    }
+    arg1 = reinterpret_cast< EventConsumer * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "EventConsumer_e_subclass_name_set" "', argument " "2"" of type '" "char *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    if (arg1->e_subclass_name) delete[] arg1->e_subclass_name;
+    if (arg2) {
+      size_t size = strlen(reinterpret_cast< const char * >(arg2)) + 1;
+      arg1->e_subclass_name = (char *)reinterpret_cast< char* >(memcpy((new char[size]), reinterpret_cast< const char * >(arg2), sizeof(char)*(size)));
+    } else {
+      arg1->e_subclass_name = 0;
+    }
+    
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_EventConsumer_e_subclass_name_get) {
+  {
+    EventConsumer *arg1 = (EventConsumer *) 0 ;
+    char *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: EventConsumer_e_subclass_name_get(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_EventConsumer, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_e_subclass_name_get" "', argument " "1"" of type '" "EventConsumer *""'"); 
+    }
+    arg1 = reinterpret_cast< EventConsumer * >(argp1);
+    result = (char *) ((arg1)->e_subclass_name);
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_EventConsumer_e_cb_arg_set) {
+  {
+    EventConsumer *arg1 = (EventConsumer *) 0 ;
+    char *arg2 = (char *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: EventConsumer_e_cb_arg_set(self,e_cb_arg);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_EventConsumer, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_e_cb_arg_set" "', argument " "1"" of type '" "EventConsumer *""'"); 
+    }
+    arg1 = reinterpret_cast< EventConsumer * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "EventConsumer_e_cb_arg_set" "', argument " "2"" of type '" "char *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    if (arg1->e_cb_arg) delete[] arg1->e_cb_arg;
+    if (arg2) {
+      size_t size = strlen(reinterpret_cast< const char * >(arg2)) + 1;
+      arg1->e_cb_arg = (char *)reinterpret_cast< char* >(memcpy((new char[size]), reinterpret_cast< const char * >(arg2), sizeof(char)*(size)));
+    } else {
+      arg1->e_cb_arg = 0;
+    }
+    
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_EventConsumer_e_cb_arg_get) {
+  {
+    EventConsumer *arg1 = (EventConsumer *) 0 ;
+    char *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: EventConsumer_e_cb_arg_get(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_EventConsumer, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_e_cb_arg_get" "', argument " "1"" of type '" "EventConsumer *""'"); 
+    }
+    arg1 = reinterpret_cast< EventConsumer * >(argp1);
+    result = (char *) ((arg1)->e_cb_arg);
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_new_EventConsumer__SWIG_0) {
+  {
+    char *arg1 = (char *) 0 ;
+    char *arg2 = (char *) 0 ;
+    EventConsumer *result = 0 ;
+    int res1 ;
+    char *buf1 = 0 ;
+    int alloc1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: new_EventConsumer(event_name,subclass_name);");
+    }
+    res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_EventConsumer" "', argument " "1"" of type '" "char const *""'");
+    }
+    arg1 = reinterpret_cast< char * >(buf1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_EventConsumer" "', argument " "2"" of type '" "char const *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    result = (EventConsumer *)new EventConsumer((char const *)arg1,(char const *)arg2);
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_EventConsumer, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    XSRETURN(argvi);
+  fail:
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_new_EventConsumer__SWIG_1) {
+  {
+    char *arg1 = (char *) 0 ;
+    EventConsumer *result = 0 ;
+    int res1 ;
+    char *buf1 = 0 ;
+    int alloc1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: new_EventConsumer(event_name);");
+    }
+    res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_EventConsumer" "', argument " "1"" of type '" "char const *""'");
+    }
+    arg1 = reinterpret_cast< char * >(buf1);
+    result = (EventConsumer *)new EventConsumer((char const *)arg1);
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_EventConsumer, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    XSRETURN(argvi);
+  fail:
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_new_EventConsumer) {
+  dXSARGS;
+  
+  {
+    unsigned long _index = 0;
+    SWIG_TypeRank _rank = 0; 
+    if (items == 1) {
+      SWIG_TypeRank _ranki = 0;
+      SWIG_TypeRank _rankm = 0;
+      SWIG_TypeRank _pi = 1;
+      int _v = 0;
+      {
+        int res = SWIG_AsCharPtrAndSize(ST(0), 0, NULL, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_1;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      if (!_index || (_ranki < _rank)) {
+        _rank = _ranki; _index = 1;
+        if (_rank == _rankm) goto dispatch;
+      }
+    }
+  check_1:
+    
+    if (items == 2) {
+      SWIG_TypeRank _ranki = 0;
+      SWIG_TypeRank _rankm = 0;
+      SWIG_TypeRank _pi = 1;
+      int _v = 0;
+      {
+        int res = SWIG_AsCharPtrAndSize(ST(0), 0, NULL, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_2;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      {
+        int res = SWIG_AsCharPtrAndSize(ST(1), 0, NULL, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_2;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      if (!_index || (_ranki < _rank)) {
+        _rank = _ranki; _index = 2;
+        if (_rank == _rankm) goto dispatch;
+      }
+    }
+  check_2:
+    
+  dispatch:
+    switch(_index) {
+    case 1:
+      ++PL_markstack_ptr; SWIG_CALLXS(_wrap_new_EventConsumer__SWIG_1); return;
+    case 2:
+      ++PL_markstack_ptr; SWIG_CALLXS(_wrap_new_EventConsumer__SWIG_0); return;
+    }
+  }
+  
+  croak("No matching function for overloaded 'new_EventConsumer'");
+  XSRETURN(0);
+}
+
+
+XS(_wrap_delete_EventConsumer) {
+  {
+    EventConsumer *arg1 = (EventConsumer *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: delete_EventConsumer(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_EventConsumer, SWIG_POINTER_DISOWN |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_EventConsumer" "', argument " "1"" of type '" "EventConsumer *""'"); 
+    }
+    arg1 = reinterpret_cast< EventConsumer * >(argp1);
+    delete arg1;
+    
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_EventConsumer_pop__SWIG_0) {
+  {
+    EventConsumer *arg1 = (EventConsumer *) 0 ;
+    int arg2 ;
+    Event *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: EventConsumer_pop(self,block);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_EventConsumer, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_pop" "', argument " "1"" of type '" "EventConsumer *""'"); 
+    }
+    arg1 = reinterpret_cast< EventConsumer * >(argp1);
+    ecode2 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "EventConsumer_pop" "', argument " "2"" of type '" "int""'");
+    } 
+    arg2 = static_cast< int >(val2);
+    result = (Event *)(arg1)->pop(arg2);
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, 0 | SWIG_SHADOW); argvi++ ;
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_EventConsumer_pop__SWIG_1) {
+  {
+    EventConsumer *arg1 = (EventConsumer *) 0 ;
+    Event *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: EventConsumer_pop(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_EventConsumer, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_pop" "', argument " "1"" of type '" "EventConsumer *""'"); 
+    }
+    arg1 = reinterpret_cast< EventConsumer * >(argp1);
+    result = (Event *)(arg1)->pop();
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, 0 | SWIG_SHADOW); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_EventConsumer_pop) {
+  dXSARGS;
+  
+  {
+    unsigned long _index = 0;
+    SWIG_TypeRank _rank = 0; 
+    if (items == 1) {
+      SWIG_TypeRank _ranki = 0;
+      SWIG_TypeRank _rankm = 0;
+      SWIG_TypeRank _pi = 1;
+      int _v = 0;
+      {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(ST(0), &vptr, SWIGTYPE_p_EventConsumer, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_1;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      if (!_index || (_ranki < _rank)) {
+        _rank = _ranki; _index = 1;
+        if (_rank == _rankm) goto dispatch;
+      }
+    }
+  check_1:
+    
+    if (items == 2) {
+      SWIG_TypeRank _ranki = 0;
+      SWIG_TypeRank _rankm = 0;
+      SWIG_TypeRank _pi = 1;
+      int _v = 0;
+      {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(ST(0), &vptr, SWIGTYPE_p_EventConsumer, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_2;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      {
+        {
+          int res = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(1), NULL);
+          _v = SWIG_CheckState(res);
+        }
+      }
+      if (!_v) goto check_2;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      if (!_index || (_ranki < _rank)) {
+        _rank = _ranki; _index = 2;
+        if (_rank == _rankm) goto dispatch;
+      }
+    }
+  check_2:
+    
+  dispatch:
+    switch(_index) {
+    case 1:
+      ++PL_markstack_ptr; SWIG_CALLXS(_wrap_EventConsumer_pop__SWIG_1); return;
+    case 2:
+      ++PL_markstack_ptr; SWIG_CALLXS(_wrap_EventConsumer_pop__SWIG_0); return;
+    }
+  }
+  
+  croak("No matching function for overloaded 'EventConsumer_pop'");
+  XSRETURN(0);
 }
 
 
@@ -8401,6 +9126,7 @@ static void *_p_PERL__SessionTo_p_CoreSession(void *x, int *newmemory) {
 static swig_type_info _swigt__p_API = {"_p_API", "API *", 0, 0, (void*)"freeswitch::API", 0};
 static swig_type_info _swigt__p_CoreSession = {"_p_CoreSession", "CoreSession *", 0, 0, (void*)"freeswitch::CoreSession", 0};
 static swig_type_info _swigt__p_Event = {"_p_Event", "Event *", 0, 0, (void*)"freeswitch::Event", 0};
+static swig_type_info _swigt__p_EventConsumer = {"_p_EventConsumer", "EventConsumer *", 0, 0, (void*)"freeswitch::EventConsumer", 0};
 static swig_type_info _swigt__p_IVRMenu = {"_p_IVRMenu", "IVRMenu *", 0, 0, (void*)"freeswitch::IVRMenu", 0};
 static swig_type_info _swigt__p_PERL__Session = {"_p_PERL__Session", "PERL::Session *", 0, 0, (void*)"freeswitch::Session", 0};
 static swig_type_info _swigt__p_PerlInterpreter = {"_p_PerlInterpreter", "PerlInterpreter *", 0, 0, (void*)0, 0};
@@ -8411,10 +9137,13 @@ static swig_type_info _swigt__p_session_flag_t = {"_p_session_flag_t", "enum ses
 static swig_type_info _swigt__p_switch_channel_state_t = {"_p_switch_channel_state_t", "switch_channel_state_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_channel_t = {"_p_switch_channel_t", "switch_channel_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_core_session_t = {"_p_switch_core_session_t", "switch_core_session_t *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_switch_event_node_t = {"_p_switch_event_node_t", "switch_event_node_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_event_t = {"_p_switch_event_t", "switch_event_t *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_switch_event_types_t = {"_p_switch_event_types_t", "switch_event_types_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_input_args_t = {"_p_switch_input_args_t", "switch_input_args_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_input_type_t = {"_p_switch_input_type_t", "switch_input_type_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_priority_t = {"_p_switch_priority_t", "switch_priority_t *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_switch_queue_t = {"_p_switch_queue_t", "switch_queue_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_status_t = {"_p_switch_status_t", "switch_status_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_stream_handle_t = {"_p_switch_stream_handle_t", "switch_stream_handle_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_void = {"_p_void", "void *", 0, 0, (void*)0, 0};
@@ -8423,6 +9152,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_API,
   &_swigt__p_CoreSession,
   &_swigt__p_Event,
+  &_swigt__p_EventConsumer,
   &_swigt__p_IVRMenu,
   &_swigt__p_PERL__Session,
   &_swigt__p_PerlInterpreter,
@@ -8433,10 +9163,13 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_switch_channel_state_t,
   &_swigt__p_switch_channel_t,
   &_swigt__p_switch_core_session_t,
+  &_swigt__p_switch_event_node_t,
   &_swigt__p_switch_event_t,
+  &_swigt__p_switch_event_types_t,
   &_swigt__p_switch_input_args_t,
   &_swigt__p_switch_input_type_t,
   &_swigt__p_switch_priority_t,
+  &_swigt__p_switch_queue_t,
   &_swigt__p_switch_status_t,
   &_swigt__p_switch_stream_handle_t,
   &_swigt__p_void,
@@ -8445,6 +9178,7 @@ static swig_type_info *swig_type_initial[] = {
 static swig_cast_info _swigc__p_API[] = {  {&_swigt__p_API, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_CoreSession[] = {  {&_swigt__p_CoreSession, 0, 0, 0},  {&_swigt__p_PERL__Session, _p_PERL__SessionTo_p_CoreSession, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Event[] = {  {&_swigt__p_Event, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_EventConsumer[] = {  {&_swigt__p_EventConsumer, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_IVRMenu[] = {  {&_swigt__p_IVRMenu, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_PERL__Session[] = {  {&_swigt__p_PERL__Session, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_PerlInterpreter[] = {  {&_swigt__p_PerlInterpreter, 0, 0, 0},{0, 0, 0, 0}};
@@ -8455,10 +9189,13 @@ static swig_cast_info _swigc__p_session_flag_t[] = {  {&_swigt__p_session_flag_t
 static swig_cast_info _swigc__p_switch_channel_state_t[] = {  {&_swigt__p_switch_channel_state_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_channel_t[] = {  {&_swigt__p_switch_channel_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_core_session_t[] = {  {&_swigt__p_switch_core_session_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_switch_event_node_t[] = {  {&_swigt__p_switch_event_node_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_event_t[] = {  {&_swigt__p_switch_event_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_switch_event_types_t[] = {  {&_swigt__p_switch_event_types_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_input_args_t[] = {  {&_swigt__p_switch_input_args_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_input_type_t[] = {  {&_swigt__p_switch_input_type_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_priority_t[] = {  {&_swigt__p_switch_priority_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_switch_queue_t[] = {  {&_swigt__p_switch_queue_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_status_t[] = {  {&_swigt__p_switch_status_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_stream_handle_t[] = {  {&_swigt__p_switch_stream_handle_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_void[] = {  {&_swigt__p_void, 0, 0, 0},{0, 0, 0, 0}};
@@ -8467,6 +9204,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_API,
   _swigc__p_CoreSession,
   _swigc__p_Event,
+  _swigc__p_EventConsumer,
   _swigc__p_IVRMenu,
   _swigc__p_PERL__Session,
   _swigc__p_PerlInterpreter,
@@ -8477,10 +9215,13 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_switch_channel_state_t,
   _swigc__p_switch_channel_t,
   _swigc__p_switch_core_session_t,
+  _swigc__p_switch_event_node_t,
   _swigc__p_switch_event_t,
+  _swigc__p_switch_event_types_t,
   _swigc__p_switch_input_args_t,
   _swigc__p_switch_input_type_t,
   _swigc__p_switch_priority_t,
+  _swigc__p_switch_queue_t,
   _swigc__p_switch_status_t,
   _swigc__p_switch_stream_handle_t,
   _swigc__p_void,
@@ -8540,6 +9281,21 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::Event_addHeader", _wrap_Event_addHeader},
 {"freeswitchc::Event_delHeader", _wrap_Event_delHeader},
 {"freeswitchc::Event_fire", _wrap_Event_fire},
+{"freeswitchc::EventConsumer_events_set", _wrap_EventConsumer_events_set},
+{"freeswitchc::EventConsumer_events_get", _wrap_EventConsumer_events_get},
+{"freeswitchc::EventConsumer_e_event_id_set", _wrap_EventConsumer_e_event_id_set},
+{"freeswitchc::EventConsumer_e_event_id_get", _wrap_EventConsumer_e_event_id_get},
+{"freeswitchc::EventConsumer_node_set", _wrap_EventConsumer_node_set},
+{"freeswitchc::EventConsumer_node_get", _wrap_EventConsumer_node_get},
+{"freeswitchc::EventConsumer_e_callback_set", _wrap_EventConsumer_e_callback_set},
+{"freeswitchc::EventConsumer_e_callback_get", _wrap_EventConsumer_e_callback_get},
+{"freeswitchc::EventConsumer_e_subclass_name_set", _wrap_EventConsumer_e_subclass_name_set},
+{"freeswitchc::EventConsumer_e_subclass_name_get", _wrap_EventConsumer_e_subclass_name_get},
+{"freeswitchc::EventConsumer_e_cb_arg_set", _wrap_EventConsumer_e_cb_arg_set},
+{"freeswitchc::EventConsumer_e_cb_arg_get", _wrap_EventConsumer_e_cb_arg_get},
+{"freeswitchc::new_EventConsumer", _wrap_new_EventConsumer},
+{"freeswitchc::delete_EventConsumer", _wrap_delete_EventConsumer},
+{"freeswitchc::EventConsumer_pop", _wrap_EventConsumer_pop},
 {"freeswitchc::delete_CoreSession", _wrap_delete_CoreSession},
 {"freeswitchc::CoreSession_session_set", _wrap_CoreSession_session_set},
 {"freeswitchc::CoreSession_session_get", _wrap_CoreSession_session_get},
@@ -8930,6 +9686,7 @@ XS(SWIG_init) {
   } while(0) /*@SWIG@*/;
   SWIG_TypeClientData(SWIGTYPE_p_Stream, (void*) "freeswitch::Stream");
   SWIG_TypeClientData(SWIGTYPE_p_Event, (void*) "freeswitch::Event");
+  SWIG_TypeClientData(SWIGTYPE_p_EventConsumer, (void*) "freeswitch::EventConsumer");
   SWIG_TypeClientData(SWIGTYPE_p_CoreSession, (void*) "freeswitch::CoreSession");
   SWIG_TypeClientData(SWIGTYPE_p_PERL__Session, (void*) "freeswitch::Session");
   ST(0) = &PL_sv_yes;

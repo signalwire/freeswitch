@@ -164,6 +164,40 @@ class Event(_object):
 Event_swigregister = _freeswitch.Event_swigregister
 Event_swigregister(Event)
 
+class EventConsumer(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, EventConsumer, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, EventConsumer, name)
+    __repr__ = _swig_repr
+    __swig_setmethods__["events"] = _freeswitch.EventConsumer_events_set
+    __swig_getmethods__["events"] = _freeswitch.EventConsumer_events_get
+    if _newclass:events = _swig_property(_freeswitch.EventConsumer_events_get, _freeswitch.EventConsumer_events_set)
+    __swig_setmethods__["e_event_id"] = _freeswitch.EventConsumer_e_event_id_set
+    __swig_getmethods__["e_event_id"] = _freeswitch.EventConsumer_e_event_id_get
+    if _newclass:e_event_id = _swig_property(_freeswitch.EventConsumer_e_event_id_get, _freeswitch.EventConsumer_e_event_id_set)
+    __swig_setmethods__["node"] = _freeswitch.EventConsumer_node_set
+    __swig_getmethods__["node"] = _freeswitch.EventConsumer_node_get
+    if _newclass:node = _swig_property(_freeswitch.EventConsumer_node_get, _freeswitch.EventConsumer_node_set)
+    __swig_setmethods__["e_callback"] = _freeswitch.EventConsumer_e_callback_set
+    __swig_getmethods__["e_callback"] = _freeswitch.EventConsumer_e_callback_get
+    if _newclass:e_callback = _swig_property(_freeswitch.EventConsumer_e_callback_get, _freeswitch.EventConsumer_e_callback_set)
+    __swig_setmethods__["e_subclass_name"] = _freeswitch.EventConsumer_e_subclass_name_set
+    __swig_getmethods__["e_subclass_name"] = _freeswitch.EventConsumer_e_subclass_name_get
+    if _newclass:e_subclass_name = _swig_property(_freeswitch.EventConsumer_e_subclass_name_get, _freeswitch.EventConsumer_e_subclass_name_set)
+    __swig_setmethods__["e_cb_arg"] = _freeswitch.EventConsumer_e_cb_arg_set
+    __swig_getmethods__["e_cb_arg"] = _freeswitch.EventConsumer_e_cb_arg_get
+    if _newclass:e_cb_arg = _swig_property(_freeswitch.EventConsumer_e_cb_arg_get, _freeswitch.EventConsumer_e_cb_arg_set)
+    def __init__(self, *args): 
+        this = _freeswitch.new_EventConsumer(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _freeswitch.delete_EventConsumer
+    __del__ = lambda self : None;
+    def pop(*args): return _freeswitch.EventConsumer_pop(*args)
+EventConsumer_swigregister = _freeswitch.EventConsumer_swigregister
+EventConsumer_swigregister(EventConsumer)
+
 class CoreSession(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, CoreSession, name, value)

@@ -138,13 +138,17 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 
      class EventConsumer {
 	 protected:
+		 switch_memory_pool_t *pool;
+	 public:
+		 switch_queue_t *events;
 		 switch_event_types_t e_event_id;
 		 switch_event_node_t *node;
 		 char *e_callback;
 		 char *e_subclass_name;
-	 public:
-		 SWITCH_DECLARE_CONSTRUCTOR EventConsumer(switch_event_types_t event_id, const char *subclass_name = "", const char *callback = "event_consumer");
+		 char *e_cb_arg;
+		 SWITCH_DECLARE_CONSTRUCTOR EventConsumer(const char *event_name, const char *subclass_name = "");
 		 SWITCH_DECLARE_CONSTRUCTOR ~ EventConsumer();
+		 SWITCH_DECLARE(Event *) pop(int block = 0);
 	 };
 
 	 class CoreSession {
