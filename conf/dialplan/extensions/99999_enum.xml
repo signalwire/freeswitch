@@ -1,0 +1,7 @@
+<include>
+  <extension name="enum">
+    <condition field="destination_number" expression="^(.*)$">
+      <action application="transfer" data="$1 enum"/>
+    </condition>
+  </extension>
+</include>

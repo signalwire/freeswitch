@@ -370,11 +370,6 @@
       </condition>
     </extension>
     -->
-    <extension name="enum">
-      <condition field="destination_number" expression="^(.*)$">
-	<action application="transfer" data="$1 enum"/>
-      </condition>
-    </extension>
 
   </context>
 </include>
