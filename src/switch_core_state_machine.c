@@ -198,7 +198,7 @@ static void switch_core_standard_on_hibernate(switch_core_session_t *session)
 //static switch_hash_t *stack_table = NULL;
 static Hash stack_table;
 
-#if defined (__GNUC__) && defined (LINUX)
+#if defined (__GNUC__) && defined (LINUX) && defined (HAVE_EXECINFO_H)
 #include <execinfo.h>
 #include <stdio.h>
 #include <stdlib.h>

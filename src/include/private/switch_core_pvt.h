@@ -60,6 +60,10 @@ typedef apr_os_thread_t switch_thread_id_t;
 #include <sys/mman.h>
 #endif
 
+#ifdef HAVE_NETDB_H
+#include <netdb.h>
+#endif
+
 #ifndef WIN32
 /* setuid, setgid */
 #include <unistd.h>

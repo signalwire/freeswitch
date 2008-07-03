@@ -190,7 +190,7 @@ AC_SUBST(DYNAMIC_LIB_EXTEN)
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h])
+AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h netdb.h execinfo.h])
 
 # for xmlrpc-c config.h
 if test x"$ac_cv_header_wchar_h" = xyes; then
