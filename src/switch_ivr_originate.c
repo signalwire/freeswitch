@@ -512,7 +512,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_frame_t write_frame = { 0 };
 	uint8_t pass = 0;
 	char key[80] = SWITCH_BLANK_STRING, file[512] = SWITCH_BLANK_STRING, *odata, *var;
-	switch_call_cause_t reason = SWITCH_CAUSE_UNALLOCATED;
+	switch_call_cause_t reason = SWITCH_CAUSE_NONE;
 	uint8_t to = 0;
 	char *var_val, *vars = NULL;
 	const char *ringback_data = NULL;
@@ -754,7 +754,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			char *p, *e = NULL;
 			const char *var_begin, *var_end;
 			
-			reason = SWITCH_CAUSE_UNALLOCATED;
+			reason = SWITCH_CAUSE_NONE;
 			memset(peer_names, 0, sizeof(peer_names));
 			peer_session = NULL;
 			memset(peer_sessions, 0, sizeof(peer_sessions));
@@ -1306,7 +1306,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		  done:
 			
-			*cause = SWITCH_CAUSE_UNALLOCATED;
+			*cause = SWITCH_CAUSE_NONE;
 
 			if (caller_channel && !switch_channel_ready(caller_channel)) {
 				status = SWITCH_STATUS_FALSE;
@@ -1377,7 +1377,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 				}
 
-				if (*cause == SWITCH_CAUSE_SUCCESS || *cause == SWITCH_CAUSE_UNALLOCATED) {
+				if (*cause == SWITCH_CAUSE_SUCCESS || *cause == SWITCH_CAUSE_NONE) {
 					*cause = SWITCH_CAUSE_ORIGINATOR_CANCEL;
 				}
 

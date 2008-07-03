@@ -40,8 +40,8 @@ struct switch_cause_table {
 };
 
 static struct switch_cause_table CAUSE_CHART[] = {
+	{"NONE", SWITCH_CAUSE_NONE},
 	{"UNALLOCATED", SWITCH_CAUSE_UNALLOCATED},
-	{"SUCCESS", SWITCH_CAUSE_SUCCESS},
 	{"NO_ROUTE_TRANSIT_NET", SWITCH_CAUSE_NO_ROUTE_TRANSIT_NET},
 	{"NO_ROUTE_DESTINATION", SWITCH_CAUSE_NO_ROUTE_DESTINATION},
 	{"CHANNEL_UNACCEPTABLE", SWITCH_CAUSE_CHANNEL_UNACCEPTABLE},
@@ -89,6 +89,7 @@ static struct switch_cause_table CAUSE_CHART[] = {
 	{"MANDATORY_IE_LENGTH_ERROR", SWITCH_CAUSE_MANDATORY_IE_LENGTH_ERROR},
 	{"PROTOCOL_ERROR", SWITCH_CAUSE_PROTOCOL_ERROR},
 	{"INTERWORKING", SWITCH_CAUSE_INTERWORKING},
+	{"SUCCESS", SWITCH_CAUSE_SUCCESS},
 	{"ORIGINATOR_CANCEL", SWITCH_CAUSE_ORIGINATOR_CANCEL},
 	{"CRASH", SWITCH_CAUSE_CRASH},
 	{"SYSTEM_SHUTDOWN", SWITCH_CAUSE_SYSTEM_SHUTDOWN},
@@ -143,7 +144,7 @@ SWITCH_DECLARE(const char *) switch_channel_cause2str(switch_call_cause_t cause)
 SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2cause(const char *str)
 {
 	uint8_t x;
-	switch_call_cause_t cause = SWITCH_CAUSE_UNALLOCATED;
+	switch_call_cause_t cause = SWITCH_CAUSE_NONE;
 
 	if (*str > 47 && *str < 58) {
 		cause = atoi(str);
@@ -192,7 +193,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
 	switch_mutex_init(&(*channel)->dtmf_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&(*channel)->flag_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&(*channel)->profile_mutex, SWITCH_MUTEX_NESTED, pool);
-	(*channel)->hangup_cause = SWITCH_CAUSE_UNALLOCATED;
+	(*channel)->hangup_cause = SWITCH_CAUSE_NONE;
 	(*channel)->name = "";
 
 	return SWITCH_STATUS_SUCCESS;
