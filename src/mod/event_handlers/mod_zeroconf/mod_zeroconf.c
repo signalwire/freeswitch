@@ -46,6 +46,8 @@ static struct {
 	sw_discovery discovery;
 	sw_discovery_publish_id disc_id;
 	switch_mutex_t *zc_lock;
+	switch_event_node_t *publish_node;
+	switch_event_node_t *unpublish_node;
 } globals;
 
 
@@ -218,12 +220,12 @@ static switch_status_t load_config(void)
 					return SWITCH_STATUS_MEMERR;
 				}
 			} else if (!strcasecmp(var, "publish") && !strcasecmp(val, "yes")) {
-				if (switch_event_bind(modname, SWITCH_EVENT_PUBLISH, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+				if (switch_event_bind_removable(modname, SWITCH_EVENT_PUBLISH, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL, &globals.publish_node) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 					return SWITCH_STATUS_GENERR;
 				}
 
-				if (switch_event_bind(modname, SWITCH_EVENT_UNPUBLISH, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+				if (switch_event_bind_removable(modname, SWITCH_EVENT_UNPUBLISH, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL, &globals.unpublish_node) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 					return SWITCH_STATUS_GENERR;
 				}
@@ -248,6 +250,12 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_zeroconf_shutdown)
 		RUNNING = -1;
 		switch_yield(100000);
 	}
+
+	switch_event_unbind(&globals.publish_node);
+	switch_event_unbind(&globals.unpublish_node);
+	switch_event_free_subclass(MY_EVENT_PUBLISH);
+	switch_event_free_subclass(MY_EVENT_UNPUBLISH);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -265,10 +273,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_zeroconf_load)
 		return SWITCH_STATUS_TERM;
 	}
 
-	if (load_config() != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_TERM;
-	}
-
 	if (switch_event_reserve_subclass(MY_EVENT_PUBLISH) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
 		return SWITCH_STATUS_GENERR;
@@ -277,6 +281,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_zeroconf_load)
 	if (switch_event_reserve_subclass(MY_EVENT_UNPUBLISH) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
 		return SWITCH_STATUS_GENERR;
+	}
+
+	if (load_config() != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_TERM;
 	}
 
 	/* connect my internal structure to the blank pointer passed to me */

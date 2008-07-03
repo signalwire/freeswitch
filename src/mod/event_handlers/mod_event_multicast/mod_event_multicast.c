@@ -54,6 +54,7 @@ static struct {
 	switch_hash_t *event_hash;
 	uint8_t event_list[SWITCH_EVENT_ALL + 1];
 	int running;
+	switch_event_node_t *node;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_address, globals.address);
@@ -260,6 +261,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown)
 		switch_socket_close(globals.udp_socket);
 		globals.udp_socket = NULL;
 	}
+
+	switch_event_unbind(&globals.node);
+	switch_event_free_subclass(MULTICAST_EVENT);
 
 	switch_core_hash_destroy(&globals.event_hash);
 

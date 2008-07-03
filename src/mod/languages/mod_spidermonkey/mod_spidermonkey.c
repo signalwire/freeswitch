@@ -95,8 +95,8 @@ static struct {
 	FILE *gOutFile;
 	int stackDummy;
 	JSRuntime *rt;
+	switch_event_node_t *node;
 } globals;
-
 
 static JSClass global_class = {
 	"Global", JSCLASS_HAS_PRIVATE,
@@ -3564,7 +3564,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 		return status;
 	}
 
-	if (switch_event_bind(modname, SWITCH_EVENT_MESSAGE_QUERY, SWITCH_EVENT_SUBCLASS_ANY, message_query_handler, NULL)
+	if (switch_event_bind_removable(modname, SWITCH_EVENT_MESSAGE_QUERY, SWITCH_EVENT_SUBCLASS_ANY, message_query_handler, NULL, &globals.node)
 		!= SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
@@ -3586,6 +3586,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spidermonkey_shutdown)
 {
 	curl_global_cleanup();
+	switch_event_unbind(&globals.node);
 	switch_core_hash_destroy(&module_manager.mod_hash);
 	switch_core_hash_destroy(&module_manager.load_hash);
 	return SWITCH_STATUS_SUCCESS;

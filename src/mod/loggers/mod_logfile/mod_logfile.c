@@ -46,6 +46,7 @@ static switch_hash_t *profile_hash = NULL;
 static struct {
 	int rotate;
 	switch_mutex_t *mutex;
+	switch_event_node_t *node;
 } globals;
 
 struct logfile_profile {
@@ -341,7 +342,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_logfile_load)
 	}
 	switch_core_hash_init(&profile_hash, module_pool);
 
-	if (switch_event_bind(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_bind_removable(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
@@ -383,6 +384,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_logfile_shutdown)
 	/* TODO:  Need to finish processing pending log messages before we close the file handle */
 
 	//switch_file_close(globals->log_afd);
+	switch_event_unbind(&globals.node);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

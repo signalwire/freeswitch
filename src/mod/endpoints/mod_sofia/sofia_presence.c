@@ -1413,7 +1413,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			char *sticky = NULL;
 
 			if (is_nat) {
-				const char *ipv6 = strchr(network_ip, ':');
+				ipv6 = strchr(network_ip, ':');
 				sticky = switch_mprintf("sip:%s@%s%s%s:%d",
 										contact_user,
 										ipv6 ? "[" : "",

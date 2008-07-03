@@ -38,11 +38,14 @@ SWITCH_BEGIN_EXTERN_C
 #include <lualib.h>
 #include "mod_lua_extra.h"
 SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load);
-SWITCH_MODULE_DEFINITION(mod_lua, mod_lua_load, NULL, NULL);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lua_shutdown);
+
+SWITCH_MODULE_DEFINITION(mod_lua, mod_lua_load, mod_lua_shutdown, NULL);
 
 static struct {
 	switch_memory_pool_t *pool;
 	char *xml_handler;
+	switch_event_node_t *node;
 } globals;
 
 int luaopen_freeswitch(lua_State * L);
@@ -389,7 +392,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
 
-	if (switch_event_bind(modname, SWITCH_EVENT_MESSAGE_QUERY, SWITCH_EVENT_SUBCLASS_ANY, message_query_handler, NULL)
+	if (switch_event_bind_removable(modname, SWITCH_EVENT_MESSAGE_QUERY, SWITCH_EVENT_SUBCLASS_ANY, message_query_handler, NULL, &globals.node)
 		!= SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
@@ -410,6 +413,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
+
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lua_shutdown)
+{
+	switch_event_unbind(&globals.node);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 SWITCH_END_EXTERN_C
 /* For Emacs:

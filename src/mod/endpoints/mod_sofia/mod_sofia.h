@@ -209,6 +209,12 @@ struct mod_sofia_globals {
 	switch_queue_t *mwi_queue;
 	struct sofia_private destroy_private;
 	struct sofia_private keep_private;
+	switch_event_node_t *in_node;
+	switch_event_node_t *probe_node;
+	switch_event_node_t *out_node;
+	switch_event_node_t *roster_node;
+	switch_event_node_t *custom_node;
+	switch_event_node_t *mwi_node;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 

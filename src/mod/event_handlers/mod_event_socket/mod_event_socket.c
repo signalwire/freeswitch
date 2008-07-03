@@ -106,6 +106,11 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_pass, prefs.password);
 static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj);
 static void launch_listener_thread(listener_t *listener);
 
+static struct {
+	switch_event_node_t *node;
+} globals;
+
+
 static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
 	listener_t *l;
@@ -326,6 +331,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown)
 			break;
 		}
 	}
+	switch_event_unbind(&globals.node);
 
 	switch_mutex_lock(listen_list.mutex);
 	for (l = listen_list.listeners; l; l = l->next) {
@@ -1357,7 +1363,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 
 	listen_list.ready = 1;
 
-	if (switch_event_bind(modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_bind_removable(modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}

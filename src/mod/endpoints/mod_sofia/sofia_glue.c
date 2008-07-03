@@ -1184,6 +1184,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		char *p;
 
 		route = switch_core_session_strdup(tech_pvt->session, route + 9);
+		switch_assert(route);
 
 		for (p = route; p && *p ; p++) {
 			if (*p == '>' || *p == ';') {
