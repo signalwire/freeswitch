@@ -157,5 +157,5 @@ SWITCH_DECLARE(void) switch_hash_this(switch_hash_index_t *hi, const void **key,
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */

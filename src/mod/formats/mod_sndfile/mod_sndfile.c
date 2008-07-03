@@ -420,5 +420,5 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sndfile_shutdown)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */

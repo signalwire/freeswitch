@@ -213,5 +213,5 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match(const char *target, const cha
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */

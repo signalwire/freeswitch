@@ -2047,5 +2047,5 @@ SWITCH_DECLARE(void *) switch_rtp_get_private(switch_rtp_t *rtp_session)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */

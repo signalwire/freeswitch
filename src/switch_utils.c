@@ -1500,5 +1500,5 @@ SWITCH_DECLARE(char *) switch_url_decode(char *s)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */

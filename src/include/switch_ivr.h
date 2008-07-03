@@ -792,5 +792,5 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */

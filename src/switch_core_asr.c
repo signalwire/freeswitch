@@ -164,5 +164,5 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_get_results(switch_asr_handle_t 
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */

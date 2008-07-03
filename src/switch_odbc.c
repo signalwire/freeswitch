@@ -453,5 +453,5 @@ SWITCH_DECLARE(char *) switch_odbc_handle_get_error(switch_odbc_handle_t *handle
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */

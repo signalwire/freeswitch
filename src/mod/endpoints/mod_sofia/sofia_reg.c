@@ -1374,5 +1374,5 @@ switch_status_t sofia_reg_add_gateway(char *key, sofia_gateway_t *gateway)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */

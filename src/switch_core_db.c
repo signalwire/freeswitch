@@ -234,5 +234,5 @@ SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *te
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */
