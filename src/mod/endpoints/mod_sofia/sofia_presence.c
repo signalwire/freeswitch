@@ -1203,13 +1203,14 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		char *port;
 		char new_port[25] = "";
 		char *is_nat = NULL;
+		const char *ipv6;
 
 		if (!(contact && sip->sip_contact->m_url)) {
 			nua_respond(nh, 481, "INVALID SUBSCRIPTION", TAG_END());
 			return;
 		}
 
-		get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
+		get_addr(network_ip, sizeof(network_ip), my_addrinfo->ai_addr, my_addrinfo->ai_addrlen);
 		network_port = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
 
 		tl_gets(tags, NUTAG_SUBSTATE_REF(sub_state), TAG_END());
@@ -1279,11 +1280,25 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			switch_snprintf(new_port, sizeof(new_port), ":%s", port);
 		}
 
+		ipv6 = strchr(contact_host, ':');
 		if (contact->m_url->url_params) {
-			contact_str = switch_mprintf("%s <sip:%s@%s%s;%s>%s",
-										 display, contact->m_url->url_user, contact_host, new_port, contact->m_url->url_params, is_nat ? ";nat" : "");
+			contact_str = switch_mprintf("%s <sip:%s@%s%s%s%s;%s>%s",
+										display, contact->m_url->url_user,
+										ipv6 ? "[" : "",
+										contact_host,
+										ipv6 ? "]" : "",
+										new_port,
+										contact->m_url->url_params,
+										is_nat ? ";nat" : "");
 		} else {
-			contact_str = switch_mprintf("%s <sip:%s@%s%s>%s", display, contact->m_url->url_user, contact_host, new_port, is_nat ? ";nat" : "");
+			contact_str = switch_mprintf("%s <sip:%s@%s%s%s%s>%s",
+										display,
+										contact->m_url->url_user,
+										ipv6 ? "[" : "",
+										contact_host,
+										ipv6 ? "]" : "",
+										new_port,
+										is_nat ?  ";nat" : "");
 		}
 
 
@@ -1398,7 +1413,13 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			char *sticky = NULL;
 
 			if (is_nat) {
-				sticky = switch_mprintf("sip:%s@%s:%d", contact_user, network_ip, network_port);
+				const char *ipv6 = strchr(network_ip, ':');
+				sticky = switch_mprintf("sip:%s@%s%s%s:%d",
+										contact_user,
+										ipv6 ? "[" : "",
+										network_ip,
+										ipv6 ? "]" : "",
+										network_port);
 			}
 
 			nua_respond(nh, SIP_202_ACCEPTED, NUTAG_WITH_THIS(nua), SIPTAG_SUBSCRIPTION_STATE_STR(sstr), TAG_IF(sticky, NUTAG_PROXY(sticky)),

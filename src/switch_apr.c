@@ -630,7 +630,7 @@ SWITCH_DECLARE(const char *) switch_get_addr(char *buf, switch_size_t len, switc
 	if (!in) {
 		return "";
 	}
-	return get_addr(buf, len, &in->sa.sin.sin_addr);
+	return get_addr(buf, len, (struct sockaddr*)&in->sa, in->salen);
 }
 
 SWITCH_DECLARE(uint16_t) switch_sockaddr_get_port(switch_sockaddr_t *sa)

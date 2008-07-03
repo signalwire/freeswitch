@@ -118,10 +118,44 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(_Out_opt_bytecapcount_(len)
   \brief find the char representation of an ip adress
   \param buf the buffer to write the ip adress found into
   \param len the length of the buf
-  \param in the struct in_addr * to get the adress from
+  \param sa the struct sockaddr * to get the adress from
+  \param salen the length of sa
   \return the ip adress string
 */
-SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct in_addr *in);
+SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct sockaddr *sa, socklen_t salen);
+
+/*!
+  \brief get the port number of an ip address
+  \param sa the struct sockaddr * to get the port from
+  \return the ip adress string
+*/
+SWITCH_DECLARE(unsigned short) get_port(struct sockaddr *sa);
+
+/*!
+  \brief flags to be used with switch_build_uri()
+ */
+enum switch_uri_flags {
+	SWITCH_URI_NUMERIC_HOST = 1,
+	SWITCH_URI_NUMERIC_PORT = 2,
+	SWITCH_URI_NO_SCOPE = 4,
+};
+
+/*!
+  \brief build a URI string from components
+  \param uri output string
+  \param size maximum size of output string (including trailing null)
+  \param scheme URI scheme
+  \param user user part or null if none
+  \param sa host address
+  \param flags logical OR-ed combination of flags from \ref switch_uri_flags
+  \return number of characters printed (not including the trailing null)
+ */
+SWITCH_DECLARE(int) switch_build_uri(char *uri,
+									 switch_size_t size,
+									 const char *scheme,
+									 const char *user,
+									 const switch_sockaddr_t *sa,
+									 int flags);
 
 #define SWITCH_STATUS_IS_BREAK(x) (x == SWITCH_STATUS_BREAK || x == 730035 || x == 35)
 

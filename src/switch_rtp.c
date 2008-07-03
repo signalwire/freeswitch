@@ -121,7 +121,13 @@ struct switch_rtp_rfc2833_data {
 };
 
 struct switch_rtp {
-	switch_socket_t *sock;
+	/* 
+	 * Two sockets are needed because we might be transcoding protocol families
+	 * (e.g. receive over IPv4 and send over IPv6). In case the protocol
+	 * families are equal, sock_input == sock_output and only one socket is
+	 * used.
+	 */
+	switch_socket_t *sock_input, *sock_output;
 
 	switch_sockaddr_t *local_addr;
 	rtp_msg_t send_msg;
@@ -220,7 +226,7 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session)
 	packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, buf);
 	switch_stun_packet_attribute_add_username(packet, rtp_session->ice_user, 32);
 	bytes = switch_stun_packet_length(packet);
-	switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void *) packet, &bytes);
+	switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, (void *) packet, &bytes);
 	rtp_session->stuncount = 25;
 
   end:
@@ -296,7 +302,7 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 		remote_ip = switch_get_addr(ipbuf, sizeof(ipbuf), rtp_session->from_addr);
 		switch_stun_packet_attribute_add_binded_address(rpacket, (char *) remote_ip, switch_sockaddr_get_port(rtp_session->from_addr));
 		bytes = switch_stun_packet_length(rpacket);
-		switch_socket_sendto(rtp_session->sock, rtp_session->from_addr, 0, (void *) rpacket, &bytes);
+		switch_socket_sendto(rtp_session->sock_output, rtp_session->from_addr, 0, (void *) rpacket, &bytes);
 	}
 
   end:
@@ -440,11 +446,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 		goto done;
 	}
 
-	if (rtp_session->sock) {
+	if (rtp_session->sock_input) {
 		switch_rtp_kill_socket(rtp_session);
 	}
 
-	if (switch_socket_create(&new_sock, AF_INET, SOCK_DGRAM, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_socket_create(&new_sock, switch_sockaddr_get_family(rtp_session->local_addr), SOCK_DGRAM, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS) {
 		*err = "Socket Error!";
 		goto done;
 	}
@@ -483,12 +489,12 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 
 #endif
 
-	old_sock = rtp_session->sock;
-	rtp_session->sock = new_sock;
+	old_sock = rtp_session->sock_input;
+	rtp_session->sock_input = new_sock;
 	new_sock = NULL;
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK)) {
-		switch_socket_opt_set(rtp_session->sock, SWITCH_SO_NONBLOCK, TRUE);
+		switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, TRUE);
 		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 	}
 
@@ -522,6 +528,7 @@ SWITCH_DECLARE(void) switch_rtp_set_max_missed_packets(switch_rtp_t *rtp_session
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, const char **err)
 {
 	switch_sockaddr_t *remote_addr;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	*err = "Success";
 
 	if (switch_sockaddr_info_get(&remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS || !remote_addr) {
@@ -530,11 +537,32 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 	}
 
 	switch_mutex_lock(rtp_session->write_mutex);
+
 	rtp_session->remote_addr = remote_addr;
 	rtp_session->remote_port = port;
+
+	if (rtp_session->sock_input &&
+		switch_sockaddr_get_family(rtp_session->remote_addr) ==
+		switch_sockaddr_get_family(rtp_session->local_addr)) {
+			rtp_session->sock_output = rtp_session->sock_input;
+	}
+	else {
+		if (rtp_session->sock_output &&
+			rtp_session->sock_output != rtp_session->sock_input) {
+				switch_socket_close(rtp_session->sock_output);
+		}
+		if ((status = switch_socket_create(&rtp_session->sock_output,
+			switch_sockaddr_get_family(rtp_session->remote_addr),
+			SOCK_DGRAM, 0, rtp_session->pool)) !=
+			SWITCH_STATUS_SUCCESS)
+		{
+			*err = "Socket Error!";
+		}
+	}
+
 	switch_mutex_unlock(rtp_session->write_mutex);
 
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_session,
@@ -829,9 +857,9 @@ SWITCH_DECLARE(void) switch_rtp_break(switch_rtp_t *rtp_session)
 
 	switch_assert(rtp_session != NULL);
 	switch_mutex_lock(rtp_session->flag_mutex);
-	if (rtp_session->sock) {
+	if (rtp_session->sock_input) {
 		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
-		switch_socket_sendto(rtp_session->sock, rtp_session->local_addr, 0, (void *) &o, &len);
+		switch_socket_sendto(rtp_session->sock_input, rtp_session->local_addr, 0, (void *) &o, &len);
 	}
 	switch_mutex_unlock(rtp_session->flag_mutex);
 }
@@ -842,8 +870,11 @@ SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp_t *rtp_session)
 	switch_mutex_lock(rtp_session->flag_mutex);
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
 		switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_IO);
-		if (rtp_session->sock) {
-			switch_socket_shutdown(rtp_session->sock, SWITCH_SHUTDOWN_READWRITE);
+		if (rtp_session->sock_input) {
+			switch_socket_shutdown(rtp_session->sock_input, SWITCH_SHUTDOWN_READWRITE);
+		}
+		if (rtp_session->sock_output && rtp_session->sock_output != rtp_session->sock_input) {
+			switch_socket_shutdown(rtp_session->sock_output, SWITCH_SHUTDOWN_READWRITE);
 		}
 	}
 	switch_mutex_unlock(rtp_session->flag_mutex);
@@ -858,7 +889,7 @@ SWITCH_DECLARE(uint8_t) switch_rtp_ready(switch_rtp_t *rtp_session)
 	}
 
 	switch_mutex_lock(rtp_session->flag_mutex);
-	ret = (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) && rtp_session->sock && rtp_session->remote_addr && rtp_session->ready == 2) ? 1 : 0;
+	ret = (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) && rtp_session->sock_input && rtp_session->sock_output && rtp_session->remote_addr && rtp_session->ready == 2) ? 1 : 0;
 	switch_mutex_unlock(rtp_session->flag_mutex);
 
 	return ret;
@@ -899,10 +930,15 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 		stfu_n_destroy(&(*rtp_session)->jb);
 	}
 
-	sock = (*rtp_session)->sock;
-	(*rtp_session)->sock = NULL;
+	sock = (*rtp_session)->sock_input;
+	(*rtp_session)->sock_input = NULL;
 	switch_socket_close(sock);
 
+	if ( (*rtp_session)->sock_output != sock ) {
+		sock = (*rtp_session)->sock_output;
+		(*rtp_session)->sock_output = NULL;
+		switch_socket_close(sock);
+	}
 
 	if (switch_test_flag((*rtp_session), SWITCH_RTP_FLAG_VAD)) {
 		switch_rtp_disable_vad(*rtp_session);
@@ -932,7 +968,7 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 
 SWITCH_DECLARE(switch_socket_t *) switch_rtp_get_rtp_socket(switch_rtp_t *rtp_session)
 {
-	return rtp_session->sock;
+	return rtp_session->sock_input;
 }
 
 SWITCH_DECLARE(void) switch_rtp_set_default_samples_per_interval(switch_rtp_t *rtp_session, uint16_t samples_per_interval)
@@ -1096,7 +1132,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		int do_cng = 0;
 
 		bytes = sizeof(rtp_msg_t);
-		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *) &rtp_session->recv_msg, &bytes);
+		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, &bytes);
 
 		if (bytes < 0) {
 			ret = (int) bytes;
@@ -1184,7 +1220,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 
 			if (rtp_session->invalid_handler) {
-				rtp_session->invalid_handler(rtp_session, rtp_session->sock, (void *) &rtp_session->recv_msg, bytes, rtp_session->from_addr);
+				rtp_session->invalid_handler(rtp_session, rtp_session->sock_input, (void *) &rtp_session->recv_msg, bytes, rtp_session->from_addr);
 			}
 
 			memset(data, 0, 2);
@@ -1783,7 +1819,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			bytes = sbytes;
 		}
 
-		if (switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void *) send_msg, &bytes) != SWITCH_STATUS_SUCCESS) {
+		if (switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, (void *) send_msg, &bytes) != SWITCH_STATUS_SUCCESS) {
 			rtp_session->seq--;
 			ret = -1;
 			goto end;
@@ -1889,7 +1925,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 			return 0;
 		}
 		bytes = frame->packetlen;
-		if (switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, frame->packet, &bytes) != SWITCH_STATUS_SUCCESS) {
+		if (switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, frame->packet, &bytes) != SWITCH_STATUS_SUCCESS) {
 			return -1;
 		}
 		return (int) bytes;
@@ -1971,7 +2007,7 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 		bytes = sbytes;
 	}
 
-	if (switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void *) &rtp_session->write_msg, &bytes) != SWITCH_STATUS_SUCCESS) {
+	if (switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, (void *) &rtp_session->write_msg, &bytes) != SWITCH_STATUS_SUCCESS) {
 		rtp_session->seq--;
 		ret = -1;
 		goto end;

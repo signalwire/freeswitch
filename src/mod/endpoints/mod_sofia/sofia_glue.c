@@ -44,6 +44,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	uint32_t v_port;
 	int use_cng = 1;
 	const char *val;
+	const char *family;
 	const char *pass_fmtp = switch_channel_get_variable(tech_pvt->channel, "sip_video_fmtp");
 	const char *ov_fmtp = switch_channel_get_variable(tech_pvt->channel, "sip_force_video_fmtp");
 
@@ -82,13 +83,14 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 
 	tech_pvt->session_id++;
 
+	family = strchr(ip, ':') ? "IP6" : "IP4";
 	switch_snprintf(buf, sizeof(buf),
 					"v=0\n"
-					"o=FreeSWITCH %010u %010u IN IP4 %s\n"
+					"o=FreeSWITCH %010u %010u IN %s %s\n"
 					"s=FreeSWITCH\n"
-					"c=IN IP4 %s\n" "t=0 0\n"
+					"c=IN %s %s\n" "t=0 0\n"
 					"a=%s\n"
-					"m=audio %d RTP/%sAVP", tech_pvt->owner_id, tech_pvt->session_id, ip, ip, sr, port,
+					"m=audio %d RTP/%sAVP", tech_pvt->owner_id, tech_pvt->session_id, family, ip, family, ip, sr, port,
 					(!switch_strlen_zero(tech_pvt->local_crypto_key) && switch_test_flag(tech_pvt, TFLAG_SECURE)) ? "S" : "");
 
 
@@ -730,7 +732,8 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if ((p = (char *) switch_stristr("c=IN IP4 ", tech_pvt->remote_sdp_str))) {
+	if ((p = (char *) switch_stristr("c=IN IP4 ", tech_pvt->remote_sdp_str)) ||
+		(p = (char *) switch_stristr("c=IN IP6 ", tech_pvt->remote_sdp_str))) {
 		ip_ptr = p + 9;
 	}
 
@@ -833,7 +836,8 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 
 	len = strlen(tech_pvt->local_sdp_str) + 384;
 
-	if ((p = (char *) switch_stristr("c=IN IP4 ", tech_pvt->local_sdp_str))) {
+	if ((p = (char *) switch_stristr("c=IN IP4 ", tech_pvt->local_sdp_str)) ||
+		(p = (char *) switch_stristr("c=IN IP6 ", tech_pvt->local_sdp_str))) {
 		ip_ptr = p + 9;
 	}
 
@@ -956,11 +960,15 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	check_decode(cid_num, session);
 
 	if (!tech_pvt->from_str) {
-		tech_pvt->from_str = switch_core_session_sprintf(tech_pvt->session, "\"%s\" <sip:%s%s%s>",
-														 cid_name,
-														 cid_num,
-														 !switch_strlen_zero(cid_num) ? "@" : "",
-														 tech_pvt->profile->extsipip ? tech_pvt->profile->extsipip : tech_pvt->profile->sipip);
+		const char* sipip = tech_pvt->profile->extsipip ? tech_pvt->profile->extsipip : tech_pvt->profile->sipip;
+		const char* format = strchr(sipip, ':') ? "\"%s\" <sip:%s%s[%s]>" : "\"%s\" <sip:%s%s%s>";
+		tech_pvt->from_str = 
+			switch_core_session_sprintf(tech_pvt->session,
+										format,
+										cid_name,
+										cid_num,
+										!switch_strlen_zero(cid_num) ? "@" : "",
+										sipip);
 	}
 
 	if ((alertbuf = switch_channel_get_variable(channel, "alert_info"))) {
@@ -1223,15 +1231,17 @@ void sofia_glue_do_xfer_invite(switch_core_session_t *session)
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_caller_profile_t *caller_profile;
+	const char *sipip, *format; 
 
 	switch_assert(tech_pvt != NULL);
 
 	caller_profile = switch_channel_get_caller_profile(channel);
 
-	if ((tech_pvt->from_str = switch_core_session_sprintf(session, "\"%s\" <sip:%s@%s>",
-														  caller_profile->caller_id_name,
-														  caller_profile->caller_id_number,
-														  tech_pvt->profile->extsipip ? tech_pvt->profile->extsipip : tech_pvt->profile->sipip))) {
+	sipip = tech_pvt->profile->extsipip ? tech_pvt->profile->extsipip : tech_pvt->profile->sipip;
+	format = strchr(sipip, ':') ? "\"%s\" <sip:%s@[%s]>" : "\"%s\" <sip:%s@%s>";
+	if ((tech_pvt->from_str = switch_core_session_sprintf(session, format,
+															caller_profile->caller_id_name,
+															caller_profile->caller_id_number, sipip))) {
 
 		const char *rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
 
@@ -1637,7 +1647,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	}
 
 	if (!switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AUDIO RTP [%s] %s:%d->%s:%d codec: %u ms: %d\n",
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AUDIO RTP [%s] %s port %d -> %s port %d codec: %u ms: %d\n",
 						  switch_channel_get_name(tech_pvt->channel),
 						  tech_pvt->local_sdp_audio_ip,
 						  tech_pvt->local_sdp_audio_port,

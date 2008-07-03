@@ -757,7 +757,7 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
 				goto doh;
 			}
 
-			switch_copy_string(buf, get_addr(abuf, sizeof(abuf), &iface_out.sin_addr), len);
+			switch_copy_string(buf, get_addr(abuf, sizeof(abuf), (struct sockaddr*)&iface_out, sizeof(iface_out)), len);
 			status = SWITCH_STATUS_SUCCESS;
 		}
 		break;
@@ -768,17 +768,13 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
 			memset(&remote, 0, sizeof(struct sockaddr_in6));
 
 			remote.sin6_family = AF_INET6;
-			switch_inet_pton(AF_INET6, buf, &remote.sin6_addr);
+			switch_inet_pton(AF_INET6, base, &remote.sin6_addr);
 			remote.sin6_port = htons(4242);
 
 			memset(&iface_out, 0, sizeof(iface_out));
 			tmp_socket = socket(AF_INET6, SOCK_DGRAM, 0);
 
-			if (setsockopt(tmp_socket, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on)) == -1) {
-				goto doh;
-			}
-
-			if (connect(tmp_socket, (struct sockaddr *) &remote, sizeof(struct sockaddr_in)) == -1) {
+			if (connect(tmp_socket, (struct sockaddr *) &remote, sizeof(remote)) == -1) {
 				goto doh;
 			}
 
@@ -1054,14 +1050,64 @@ static const char *switch_inet_ntop6(unsigned char const *src, char *dst, size_t
 
 #endif
 
-SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct in_addr *in)
+SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct sockaddr *sa, socklen_t salen)
 {
 	switch_assert(buf);
 	*buf = '\0';
-	if (in) {
-		switch_inet_ntop(AF_INET, in, buf, len);
+	if (sa) {
+		getnameinfo(sa, salen, buf, len, NULL, 0, NI_NUMERICHOST);
 	}
 	return buf;
+}
+
+SWITCH_DECLARE(unsigned short) get_port(struct sockaddr *sa)
+{
+	unsigned short port = 0;
+	if (sa) {
+		switch (sa->sa_family) {
+			case AF_INET:
+				port = ntohs(((struct sockaddr_in*)sa)->sin_port);
+				break;
+			case AF_INET6:
+				port = ntohs(((struct sockaddr_in6*)sa)->sin6_port);
+				break;
+		}
+	}
+	return port;
+}
+
+SWITCH_DECLARE(int) switch_build_uri(char *uri,
+									 switch_size_t size,
+									 const char *scheme,
+									 const char *user,
+									 const switch_sockaddr_t *sa,
+									 int flags)
+{
+	char host[NI_MAXHOST], serv[NI_MAXSERV];
+	struct sockaddr_storage ss;
+	const struct sockaddr *addr;
+	const char *colon;
+
+	if (flags & SWITCH_URI_NO_SCOPE && sa->family == AF_INET6) {
+		memcpy(&ss, &sa->sa, sa->salen);
+		((struct sockaddr_in6*) &ss)->sin6_scope_id = 0;
+		addr = (const struct sockaddr*) &ss;
+	} else {
+		addr = (const struct sockaddr*) &sa->sa;
+	}
+
+	if (getnameinfo(addr, sa->salen, host, sizeof(host), serv, sizeof(serv),
+		(flags & SWITCH_URI_NUMERIC_HOST) ? NI_NUMERICHOST : 0 |
+		(flags & SWITCH_URI_NUMERIC_PORT) ? NI_NUMERICSERV : 0) != 0) {
+			return 0;
+	}
+
+	colon = strchr(host, ':');
+
+	return switch_snprintf(uri, size, "%s:%s%s%s%s%s%s%s", scheme,
+		user ? user : "", user ? "@" : "",
+		colon ? "[" : "", host, colon ? "]" : "",
+		serv[0] ? ":" : "", serv[0] ? serv : "");
 }
 
 SWITCH_DECLARE(char) switch_rfc2833_to_char(int event)

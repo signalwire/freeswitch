@@ -215,7 +215,8 @@ void sofia_event_callback(nua_event_t event,
 
 		if (authorization) {
 			char network_ip[80];
-			get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_addr);
+			su_addrinfo_t *addrinfo = msg_addrinfo(nua_current_request(nua));
+			get_addr(network_ip, sizeof(network_ip), addrinfo->ai_addr, addrinfo->ai_addrlen);
 			auth_res = sofia_reg_parse_auth(profile, authorization, sip,
 											(char *) sip->sip_request->rq_method_name, tech_pvt->key, strlen(tech_pvt->key), network_ip, NULL, 0,
 											REG_INVITE, NULL);
@@ -749,6 +750,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 		switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 
 		if ((gateway = switch_core_alloc(profile->pool, sizeof(*gateway)))) {
+			const char *sipip, *format;
 			char *register_str = "true", *scheme = "Digest",
 				*realm = NULL,
 				*username = NULL,
@@ -893,8 +895,11 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 
 			gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s;transport=%s", register_proxy, register_transport);
 			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>", from_user, from_domain, register_transport);
-			gateway->register_contact = switch_core_sprintf(gateway->pool, "<sip:%s@%s:%d%s>", extension,
-															profile->extsipip ? profile->extsipip : profile->sipip,
+
+			sipip = profile->extsipip ?  profile->extsipip : profile->sipip;
+			format = strchr(sipip, ':') ? "<sip:%s@[%s]:%d%s>" : "<sip:%s@%s:%d%s>";
+			gateway->register_contact = switch_core_sprintf(gateway->pool, format, extension,
+															sipip,
 															sofia_glue_transport_has_tls(gateway->register_transport) ? profile->tls_sip_port : profile->
 															sip_port, params);
 
@@ -1389,10 +1394,22 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					profile->sipdomain = switch_core_strdup(profile->pool, profile->sipip);
 				}
 				if (profile->extsipip) {
-					profile->url = switch_core_sprintf(profile->pool, "sip:mod_sofia@%s:%d", profile->extsipip, profile->sip_port);
+					char *ipv6 = strchr(profile->extsipip, ':');
+					profile->url = switch_core_sprintf(profile->pool,
+														"sip:mod_sofia@%s%s%s:%d",
+														ipv6 ? "[" : "",
+														profile->extsipip,
+														ipv6 ? "]" : "",
+														profile->sip_port);
 					profile->bindurl = switch_core_sprintf(profile->pool, "%s;maddr=%s", profile->url, profile->sipip);
 				} else {
-					profile->url = switch_core_sprintf(profile->pool, "sip:mod_sofia@%s:%d", profile->sipip, profile->sip_port);
+					char *ipv6 = strchr(profile->sipip, ':');
+					profile->url = switch_core_sprintf(profile->pool,
+														"sip:mod_sofia@%s%s%s:%d",
+														ipv6 ? "[" : "",
+														profile->sipip,
+														ipv6 ? "]" : "",
+														profile->sip_port);
 					profile->bindurl = profile->url;
 				}
 
@@ -1410,12 +1427,37 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					}
 
 					if (profile->extsipip) {
-						profile->tls_url = switch_core_sprintf(profile->pool, "sip:mod_sofia@%s:%d", profile->extsipip, profile->tls_sip_port);
+						char *ipv6 = strchr(profile->extsipip, ':');
+						profile->tls_url = 
+							switch_core_sprintf(profile->pool,
+												"sip:mod_sofia@%s%s%s:%d",
+												ipv6 ? "[" : "",
+												profile->extsipip, ipv6 ? "]" : "",
+												profile->tls_sip_port);
 						profile->tls_bindurl =
-							switch_core_sprintf(profile->pool, "sips:mod_sofia@%s:%d;maddr=%s", profile->extsipip, profile->tls_sip_port, profile->sipip);
+							switch_core_sprintf(profile->pool,
+												"sips:mod_sofia@%s%s%s:%d;maddr=%s",
+												ipv6 ? "[" : "",
+												profile->extsipip,
+												ipv6 ? "]" : "",
+												profile->tls_sip_port,
+												profile->sipip);
 					} else {
-						profile->tls_url = switch_core_sprintf(profile->pool, "sip:mod_sofia@%s:%d", profile->sipip, profile->tls_sip_port);
-						profile->tls_bindurl = switch_core_sprintf(profile->pool, "sips:mod_sofia@%s:%d", profile->sipip, profile->tls_sip_port);
+						char *ipv6 = strchr(profile->sipip, ':');
+						profile->tls_url = 
+							switch_core_sprintf(profile->pool,
+												"sip:mod_sofia@%s%s%s:%d",
+												ipv6 ? "[" : "",
+												profile->sipip,
+												ipv6 ? "]" : "",
+												profile->tls_sip_port);
+						profile->tls_bindurl =
+							switch_core_sprintf(profile->pool,
+												"sips:mod_sofia@%s%s%s:%d",
+												ipv6 ? "[" : "",
+												profile->sipip,
+												ipv6 ? "]" : "",
+												profile->tls_sip_port);
 					}
 
 					if (profile->tls_bind_params) {
@@ -2637,7 +2679,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		return;
 	}
 
-	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
+	get_addr(network_ip, sizeof(network_ip), my_addrinfo->ai_addr, my_addrinfo->ai_addrlen);
 	network_port = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
 
 	if ((profile->pflags & PFLAG_AGGRESSIVE_NAT_DETECTION)) {
@@ -2754,9 +2796,17 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		char tmp[35] = "";
 		sofia_transport_t transport = sofia_glue_url2transport(sip->sip_contact->m_url);
 
-		tech_pvt->record_route = switch_core_session_sprintf(session, "sip:%s@%s:%d;transport=%s",
-															 sip->sip_contact->m_url->url_user, tech_pvt->remote_ip, 
-															 tech_pvt->remote_port, sofia_glue_transport2str(transport));
+		const char *ipv6 = strchr(tech_pvt->remote_ip, ':');
+		tech_pvt->record_route =
+			switch_core_session_sprintf(session,
+			"sip:%s@%s%s%s:%d;transport=%s",
+			sip->sip_contact->m_url->url_user,
+			ipv6 ? "[" : "",
+			tech_pvt->remote_ip,
+			ipv6 ? "]" : "",
+			tech_pvt->remote_port,
+			sofia_glue_transport2str(transport));
+
 		switch_channel_set_variable(channel, "sip_received_ip", tech_pvt->remote_ip);
 		snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_port);
 		switch_channel_set_variable(channel, "sip_received_port", tmp);
@@ -2871,6 +2921,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 		url_set_chanvars(session, sip->sip_to->a_url, sip_to);
 		if (switch_channel_get_variable(channel, "sip_to_uri")) {
+			const char *ipv6;
 
 			host = switch_channel_get_variable(channel, "sip_to_host");
 			user = switch_channel_get_variable(channel, "sip_to_user");
@@ -2887,7 +2938,14 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				port = sofia_glue_transport_has_tls(transport) ? profile->tls_sip_port : profile->sip_port;
 			}
 
-			tech_pvt->to_uri = switch_core_session_sprintf(session, "sip:%s@%s:%d;transport=%s", user, host, port, sofia_glue_transport2str(transport));
+			ipv6 = strchr(host, ':');
+			tech_pvt->to_uri =
+				switch_core_session_sprintf(session,
+					"sip:%s@%s%s%s:%d;transport=%s",
+					user, ipv6 ? "[" : "",
+					host, ipv6 ? "]" : "",
+					port,
+					sofia_glue_transport2str(transport));
 
 			if (profile->ndlb & PFLAG_NDLB_TO_IN_200_CONTACT) {
 				if (strchr(tech_pvt->to_uri, '>')) {

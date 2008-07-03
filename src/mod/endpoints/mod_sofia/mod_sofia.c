@@ -926,7 +926,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			char ref_to[128] = "";
 
 			if (!strstr(msg->string_arg, "sip:")) {
-				switch_snprintf(ref_to, sizeof(ref_to), "sip:%s@%s", msg->string_arg, tech_pvt->profile->sipip);
+				const char *format = strchr(tech_pvt->profile->sipip, ':') ? "sip:%s@[%s]" : "sip:%s@%s";
+				switch_snprintf(ref_to, sizeof(ref_to), format, msg->string_arg, tech_pvt->profile->sipip);
 			} else {
 				switch_set_string(ref_to, msg->string_arg);
 			}

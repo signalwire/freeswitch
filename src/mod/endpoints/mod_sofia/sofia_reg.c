@@ -403,6 +403,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	const char *rpid = "unknown";
 	const char *display = "\"user\"";
 	char network_ip[80];
+	char url_ip[80];
 	char *register_gateway = NULL;
 	int network_port;
 	const char *reg_desc = "Registered";
@@ -410,12 +411,15 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	char *force_user;
 	char received_data[128] = "";
 	char *path_val = NULL;
-	
+	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
+
 	/* all callers must confirm that sip, sip->sip_request and sip->sip_contact are not NULL */
 	switch_assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
 
-	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_addr);
-	network_port = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
+	get_addr(network_ip, sizeof(network_ip), my_addrinfo->ai_addr,my_addrinfo->ai_addrlen);
+	network_port = get_port(my_addrinfo->ai_addr);
+
+	snprintf(url_ip, sizeof(url_ip), my_addrinfo->ai_addr->sa_family == AF_INET6 ? "[%s]" : "%s", network_ip);
 
 	expires = sip->sip_expires;
 	authorization = sip->sip_authorization;
@@ -466,7 +470,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			} else {
 				reg_desc = "Registered(UDP-NAT)";
 			}
-			contact_host = network_ip;
+			contact_host = url_ip;
 			switch_snprintf(new_port, sizeof(new_port), ":%d", network_port);
 			port = NULL;
 		} else {
@@ -501,7 +505,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 
 		if (is_nat && (profile->pflags & PFLAG_RECIEVED_IN_NAT_REG_CONTACT)) {
-			switch_snprintf(received_data, sizeof(received_data), ";received=\"%s:%d\"", network_ip, network_port);
+			switch_snprintf(received_data, sizeof(received_data), ";received=\"%s:%d\"", url_ip, network_port);
 		}
 
 		if (contact->m_url->url_params) {
@@ -556,16 +560,16 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			if ((v_contact_str = switch_event_get_header(*v_event, "sip-force-contact"))) {
 
 				if (*received_data && (profile->pflags & PFLAG_RECIEVED_IN_NAT_REG_CONTACT)) {
-					switch_snprintf(received_data, sizeof(received_data), ";received=\"%s:%d\"", network_ip, network_port);
+					switch_snprintf(received_data, sizeof(received_data), ";received=\"%s:%d\"", url_ip, network_port);
 				}
 
 				if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction") ||
 					!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction") || !strcasecmp(v_contact_str, "NDLB-tls-connectile-dysfunction")) {
 					if (contact->m_url->url_params) {
 						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s%s;fs_nat=yes>",
-										display, contact->m_url->url_user, network_ip, network_port, contact->m_url->url_params, received_data);
+										display, contact->m_url->url_user, url_ip, network_port, contact->m_url->url_params, received_data);
 					} else {
-						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d%s;fs_nat=yes>", display, contact->m_url->url_user, network_ip,
+						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d%s;fs_nat=yes>", display, contact->m_url->url_user, url_ip,
 										network_port, received_data);
 					}
 					if (strstr(v_contact_str, "tls")) {
@@ -762,8 +766,8 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 	char *is_nat = NULL;
 
 
-	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
-	network_port = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
+	get_addr(network_ip, sizeof(network_ip), my_addrinfo->ai_addr, my_addrinfo->ai_addrlen);
+	network_port = get_port(msg_addrinfo(nua_current_request(nua))->ai_addr);
 
 
 	if (!(sip->sip_contact && sip->sip_contact->m_url)) {
