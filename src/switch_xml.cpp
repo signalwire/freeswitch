@@ -1545,7 +1545,9 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 {
 	const char *e = NULL;
 	int immune = 0;
-	
+
+	if (!s && *s) return *dst;	
+
 	if (len) {
 		e = s + len;
 	}
