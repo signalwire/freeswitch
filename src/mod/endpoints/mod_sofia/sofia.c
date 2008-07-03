@@ -1347,7 +1347,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					}
 				}
 
-				if (!profile->cng_pt) {
+				if ((!profile->cng_pt) && (!sofia_test_pflag(profile, PFLAG_SUPRESS_CNG))) {
 					profile->cng_pt = SWITCH_RTP_CNG_PAYLOAD;
 				}
 
