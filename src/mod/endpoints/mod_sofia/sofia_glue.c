@@ -1073,8 +1073,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 								  TAG_END());
 		
 
-		if (strstr(tech_pvt->dest, ";fs_nat") || strstr(tech_pvt->dest, ";received") 
-			|| ((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val))) {
+		if (tech_pvt->dest && (strstr(tech_pvt->dest, ";fs_nat") || strstr(tech_pvt->dest, ";received") 
+							   || ((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val)))) {
 			switch_set_flag(tech_pvt, TFLAG_NAT);
 			tech_pvt->record_route = switch_core_session_strdup(tech_pvt->session, url_str);
 			route_uri = tech_pvt->record_route;
@@ -1172,7 +1172,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	call_id = switch_channel_get_variable(channel, "sip_outgoing_call_id");
 
-	if ((route = strstr(tech_pvt->dest, ";fs_path="))) {
+	if (tech_pvt->dest && (route = strstr(tech_pvt->dest, ";fs_path="))) {
 		char *p;
 
 		route = switch_core_session_strdup(tech_pvt->session, route + 9);
