@@ -1092,9 +1092,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 #ifdef TRAP_BUS
 	signal(SIGBUS, handle_SIGBUS);
 #endif
-
-	signal(SIGHUP, handle_SIGHUP);
+#ifdef SIGUSR1
 	signal(SIGUSR1, handle_SIGHUP);
+#endif
+	signal(SIGHUP, handle_SIGHUP);
 	switch_load_network_lists(SWITCH_FALSE);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bringing up environment.\n");
