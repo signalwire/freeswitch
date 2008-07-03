@@ -175,9 +175,11 @@ SWITCH_STANDARD_APP(dtmf_bind_function)
 		if (strchr(argv[1], 'a')) {
 			bind_flags |= SBF_DIAL_ALEG;
 		}
+
 		if (strchr(argv[1], 'b')) {
 			bind_flags |= SBF_DIAL_BLEG;
 		}
+
 		if (strchr(argv[2], 'a')) {
 			if ((bind_flags & SBF_EXEC_BLEG)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind execute to multiple legs\n");
@@ -185,11 +187,20 @@ SWITCH_STANDARD_APP(dtmf_bind_function)
 				bind_flags |= SBF_EXEC_ALEG;
 			}
 		}
+
 		if (strchr(argv[2], 'b')) {
 			if ((bind_flags & SBF_EXEC_ALEG)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind execute to multiple legs\n");
 			} else {
 				bind_flags |= SBF_EXEC_BLEG;
+			}
+		}
+
+		if (strchr(argv[2], 'a')) {
+			if ((bind_flags & SBF_EXEC_BLEG)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind execute to multiple legs\n");
+			} else {
+				bind_flags |= SBF_EXEC_ALEG;
 			}
 		}
 
