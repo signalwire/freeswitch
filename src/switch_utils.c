@@ -1097,8 +1097,7 @@ SWITCH_DECLARE(int) switch_build_uri(char *uri,
 	}
 
 	if (getnameinfo(addr, sa->salen, host, sizeof(host), serv, sizeof(serv),
-		(flags & SWITCH_URI_NUMERIC_HOST) ? NI_NUMERICHOST : 0 |
-		(flags & SWITCH_URI_NUMERIC_PORT) ? NI_NUMERICSERV : 0) != 0) {
+		((flags & SWITCH_URI_NUMERIC_HOST) ? NI_NUMERICHOST : 0) | ((flags & SWITCH_URI_NUMERIC_PORT) ? NI_NUMERICSERV : 0)) != 0) {
 			return 0;
 	}
 

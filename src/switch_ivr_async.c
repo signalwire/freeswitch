@@ -544,7 +544,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			if ( (argc = switch_separate_string(data, ',', argv, (sizeof(argv) / sizeof(argv[0])))) ) {
 				for ( i = 0; i < argc; i++ ) {
 					/* If one of the group matches, then ok */
-					if ( !strcmp(argv[i], require_group)) {
+					if (argv[i] && !strcmp(argv[i], require_group)) {
 						ok = 1;
 					}
 				}
