@@ -318,7 +318,7 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
 
 
 	if (now) {
-		switch_snprintf(sql, sizeof(sql), "select * from sip_registrations where status like '%%AUTO-NAT%%'");
+		switch_snprintf(sql, sizeof(sql), "select * from sip_registrations where status like '%%AUTO-NAT%%' or status like '%%UDP-NAT%%'");
 		sofia_glue_execute_sql_callback(profile, SWITCH_TRUE, NULL, sql, sofia_reg_nat_callback, profile);
 	}
 
@@ -440,18 +440,43 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		char *path_encoded = NULL;
 		int path_encoded_len = 0;
 		const char *proto = "sip";
+		int is_tls = 0, is_tcp = 0;
+
+
+		if (switch_stristr("transport=tls", sip->sip_contact->m_url->url_params)) {
+			is_tls += 1;
+		}
 		
 		if (sip->sip_contact->m_url->url_type == url_sips) {
 			proto = "sips";
+			is_tls += 2;
 		}
-
+		
+		if (switch_stristr("transport=tcp", sip->sip_contact->m_url->url_params)) {
+			is_tcp = 1;
+		}
+		
 		display = contact->m_display;
 
 		if (is_nat) {
-			reg_desc = "Registered(AUTO-NAT)";
+			if (is_tls) {
+				reg_desc = "Registered(TLS-NAT)";
+			} else if (is_tcp) {
+				reg_desc = "Registered(TCP-NAT)";
+			} else {
+				reg_desc = "Registered(UDP-NAT)";
+			}
 			contact_host = network_ip;
 			switch_snprintf(new_port, sizeof(new_port), ":%d", network_port);
 			port = NULL;
+		} else {
+			if (is_tls) {
+				reg_desc = "Registered(TLS)";
+			} else if (is_tcp) {
+				reg_desc = "Registered(TCP)";
+			} else {
+				reg_desc = "Registered(UDP)";
+			}
 		}
 
 		if (switch_strlen_zero(display)) {
@@ -735,7 +760,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 	sofia_regtype_t type = REG_REGISTER;
 	int network_port = 0;
 	char *is_nat = NULL;
-	int is_tls = 0, is_tcp = 0;
+
 
 	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
 	network_port = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
@@ -752,59 +777,45 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 		goto end;
 	}
 
-	if (switch_stristr("transport=tls", sip->sip_contact->m_url->url_params)) {
-		is_tls += 1;
-	}
-
-	if (sip->sip_contact->m_url->url_type == url_sips) {
-		is_tls += 2;
-	}
-
-	if (switch_stristr("transport=tcp", sip->sip_contact->m_url->url_params)) {
-		is_tcp = 1;
-	}
-
-	if (!is_tls && !is_tcp) {
-		if ((profile->pflags & PFLAG_AGGRESSIVE_NAT_DETECTION)) {
-			if (sip && sip->sip_via) {
-				const char *port = sip->sip_via->v_port;
-				const char *host = sip->sip_via->v_host;
+	if ((profile->pflags & PFLAG_AGGRESSIVE_NAT_DETECTION)) {
+		if (sip && sip->sip_via) {
+			const char *port = sip->sip_via->v_port;
+			const char *host = sip->sip_via->v_host;
 					
-				if (host && sip->sip_via->v_received) {
-					is_nat = "via received";
-				} else if (host && strcmp(network_ip, host)) {
-					is_nat = "via host";
-				} else if (port && atoi(port) != network_port) {
-					is_nat = "via port";
-				}
-			}
-		}
-
-		if (!is_nat && profile->nat_acl_count) {
-			uint32_t x = 0;
-			int ok = 1;
-			char *last_acl = NULL;
-			const char *contact_host = NULL;
-
-			if (sip && sip->sip_contact && sip->sip_contact->m_url) {
-				contact_host = sip->sip_contact->m_url->url_host;
-			}
-
-			if (!switch_strlen_zero(contact_host)) {
-				for (x = 0; x < profile->nat_acl_count; x++) {
-					last_acl = profile->nat_acl[x];
-					if (!(ok = switch_check_network_list_ip(contact_host, last_acl))) {
-						break;
-					}
-				}
-				
-				if (ok) {
-					is_nat = last_acl;
-				}
+			if (host && sip->sip_via->v_received) {
+				is_nat = "via received";
+			} else if (host && strcmp(network_ip, host)) {
+				is_nat = "via host";
+			} else if (port && atoi(port) != network_port) {
+				is_nat = "via port";
 			}
 		}
 	}
-		
+
+	if (!is_nat && profile->nat_acl_count) {
+		uint32_t x = 0;
+		int ok = 1;
+		char *last_acl = NULL;
+		const char *contact_host = NULL;
+
+		if (sip && sip->sip_contact && sip->sip_contact->m_url) {
+			contact_host = sip->sip_contact->m_url->url_host;
+		}
+
+		if (!switch_strlen_zero(contact_host)) {
+			for (x = 0; x < profile->nat_acl_count; x++) {
+				last_acl = profile->nat_acl[x];
+				if (!(ok = switch_check_network_list_ip(contact_host, last_acl))) {
+					break;
+				}
+			}
+				
+			if (ok) {
+				is_nat = last_acl;
+			}
+		}
+	}
+			
 	if (profile->reg_acl_count) {
 		uint32_t x = 0;
 		int ok = 1;
