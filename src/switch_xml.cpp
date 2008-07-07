@@ -159,6 +159,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function(switch_xml_bin
 			status = SWITCH_STATUS_SUCCESS;
 			break;
 		}
+		last = ptr;
 	}
 	switch_mutex_unlock(XML_LOCK);
 
