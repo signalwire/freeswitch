@@ -1074,7 +1074,11 @@ SWITCH_DECLARE(switch_status_t) switch_event_unbind(switch_event_node_t **node)
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	n = *node;
-	
+
+	if (!n) {
+		return status;
+	}
+
 	switch_thread_rwlock_wrlock(RWLOCK);
 	switch_mutex_lock(BLOCK);
 	/* <LOCKED> ----------------------------------------------- */
