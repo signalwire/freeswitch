@@ -1233,7 +1233,7 @@ typedef struct switch_management_interface switch_management_interface_t;
 typedef struct switch_core_port_allocator switch_core_port_allocator_t;
 typedef struct switch_media_bug switch_media_bug_t;
 typedef switch_bool_t (*switch_media_bug_callback_t) (switch_media_bug_t *, void *, switch_abc_type_t);
-
+typedef struct switch_xml_binding switch_xml_binding_t;
 
 typedef switch_status_t (*switch_core_codec_encode_func_t) (switch_codec_t *codec,
 															switch_codec_t *other_codec,

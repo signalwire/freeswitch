@@ -97,7 +97,7 @@ struct switch_xml_binding {
 	struct switch_xml_binding *next;
 };
 
-typedef struct switch_xml_binding switch_xml_binding_t;
+
 static switch_xml_binding_t *BINDINGS = NULL;
 static switch_xml_t MAIN_XML_ROOT = NULL;
 static switch_memory_pool_t *XML_MEMORY_POOL;
@@ -141,6 +141,28 @@ SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(const char 
 		}
 	}
 	return (switch_xml_section_t) sections;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function(switch_xml_binding_t **binding)
+{
+	switch_xml_binding_t *ptr, *last = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_mutex_lock(XML_LOCK);
+	for (ptr = BINDINGS; ptr; ptr = ptr->next) {
+		if (ptr == *binding) {
+			if (last) {
+				last->next = (*binding)->next;
+			} else {
+				BINDINGS = (*binding)->next;
+			}
+			status = SWITCH_STATUS_SUCCESS;
+			break;
+		}
+	}
+	switch_mutex_unlock(XML_LOCK);
+
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_search_function_t function, switch_xml_section_t sections, void *user_data)
