@@ -121,23 +121,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 	srand(getpid() + (unsigned) switch_timestamp(NULL));
 
 	while (alloc->track_used < alloc->track_len) {
-		double r;
 		uint32_t index;
-		int tries = 0;
+		uint32_t tries = 0;
 
-		do {
-			r = ((double) rand() / ((double) (RAND_MAX) + (double) (1)));
-			index = (int) (r * alloc->track_len);
+		/* randomly pick a port */
+		index = rand() % alloc->track_len;
+
+		/* if it is used walk up the list to find a free one */
+		while (alloc->track[index] && tries < alloc->track_len)
+		{
 			tries++;
-		} while ((alloc->track[index] || index >= alloc->track_len) && tries < 10000);
-
-		while (alloc->track[index]) {
-			if (++index >= alloc->track_len) {
-				index = 0;
-			}
+			if(++index >= alloc->track_len) index = 0;
 		}
 
-		if (index < alloc->track_len) {
+		if (tries < alloc->track_len) {
 			alloc->track[index] = 1;
 			alloc->track_used++;
 			status = SWITCH_STATUS_SUCCESS;
