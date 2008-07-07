@@ -363,7 +363,7 @@ SWITCH_STANDARD_APP(conference_function);
 static void launch_conference_thread(conference_obj_t *conference);
 static void launch_conference_video_thread(conference_obj_t *conference);
 static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *obj);
-static switch_status_t conference_local_play_file(conference_obj_t *conference, switch_core_session_t *session, char *path, uint32_t leadin);
+static switch_status_t conference_local_play_file(conference_obj_t *conference, switch_core_session_t *session, char *path, uint32_t leadin, void *buf, uint32_t buflen);
 static switch_status_t conference_member_play_file(conference_member_t *member, char *file, uint32_t leadin);
 static switch_status_t conference_member_say(conference_member_t *member, char *text, uint32_t leadin);
 static uint32_t conference_member_stop_file(conference_member_t *member, file_stop_t stop);
@@ -3953,12 +3953,19 @@ static switch_status_t conference_outcall_bg(conference_obj_t *conference,
 }
 
 /* Play a file */
-static switch_status_t conference_local_play_file(conference_obj_t *conference, switch_core_session_t *session, char *path, uint32_t leadin)
+static switch_status_t conference_local_play_file(conference_obj_t *conference, switch_core_session_t *session, char *path, uint32_t leadin, void *buf, uint32_t buflen)
 {
 	uint32_t x = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *channel;
 	char *expanded = NULL;
+	switch_input_args_t args = { 0 }, *ap = NULL;
+
+	if (buf) {
+		args.buf = buf;
+		args.buflen = buflen;
+		ap = &args;
+	}
 
 	/* generate some space infront of the file to be played */
 	for (x = 0; x < leadin; x++) {
@@ -3985,7 +3992,7 @@ static switch_status_t conference_local_play_file(conference_obj_t *conference, 
 			if (!(conference->tts_engine && conference->tts_voice)) {
 				status = SWITCH_STATUS_FALSE;
 			} else {
-				status = switch_ivr_speak_text(session, conference->tts_engine, conference->tts_voice, path + 4, NULL);
+				status = switch_ivr_speak_text(session, conference->tts_engine, conference->tts_voice, path + 4, ap);
 			}
 			goto done;
 		}
@@ -3998,7 +4005,7 @@ static switch_status_t conference_local_play_file(conference_obj_t *conference, 
 			path = dpath;
 		}
 
-		status = switch_ivr_play_file(session, NULL, path, NULL);
+		status = switch_ivr_play_file(session, NULL, path, ap);
 		switch_safe_free(dpath);
 	}
 
@@ -4312,7 +4319,7 @@ SWITCH_STANDARD_APP(conference_function)
 
 				/* be friendly */
 				if (conference->pin_sound) {
-					conference_local_play_file(conference, session, conference->pin_sound, 20);
+					conference_local_play_file(conference, session, conference->pin_sound, 20, pin_buf, sizeof(pin_buf));
 				}
 				/* wait for them if neccessary */
 				if (strlen(pin_buf) < strlen(conference->pin)) {
@@ -4332,7 +4339,7 @@ SWITCH_STANDARD_APP(conference_function)
 
 					/* more friendliness */
 					if (conference->bad_pin_sound) {
-						conference_local_play_file(conference, session, conference->bad_pin_sound, 20);
+						conference_local_play_file(conference, session, conference->bad_pin_sound, 20, pin_buf, sizeof(pin_buf));
 					}
 				}
 				pin_retries--;
@@ -4344,7 +4351,7 @@ SWITCH_STANDARD_APP(conference_function)
 		}
 
 		if (conference->special_announce) {
-			conference_local_play_file(conference, session, conference->special_announce, CONF_DEFAULT_LEADIN);
+			conference_local_play_file(conference, session, conference->special_announce, CONF_DEFAULT_LEADIN, NULL, 0);
 		}
 
 		/* don't allow more callers if the conference is locked, unless we invited them */
@@ -4353,7 +4360,7 @@ SWITCH_STANDARD_APP(conference_function)
 			if (conference->locked_sound) {
 				/* Answer the channel */
 				switch_channel_answer(channel);
-				conference_local_play_file(conference, session, conference->locked_sound, 20);
+				conference_local_play_file(conference, session, conference->locked_sound, 20, NULL, 0);
 			}
 			goto done;
 		}
@@ -4367,7 +4374,7 @@ SWITCH_STANDARD_APP(conference_function)
 			if (conference->maxmember_sound) {
 				/* Answer the channel */
 				switch_channel_answer(channel);
-				conference_local_play_file(conference, session, conference->maxmember_sound, 20);
+				conference_local_play_file(conference, session, conference->maxmember_sound, 20, NULL, 0);
 			}
 			goto done;
 		}
