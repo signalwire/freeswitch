@@ -73,6 +73,8 @@ typedef struct route enum_route_t;
 
 static enum dns_class qcls = DNS_C_IN;
 
+static switch_event_node_t *NODE = NULL;
+
 static struct {
 	char *root;
 	char *isn_root;
@@ -80,7 +82,6 @@ static struct {
 	switch_memory_pool_t *pool;
 	int auto_reload;
 	int timeout;
-	switch_event_node_t *node;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_root, globals.root);
@@ -827,19 +828,18 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_enum_load)
 
 	switch_mutex_init(&MUTEX, SWITCH_MUTEX_NESTED, pool);
 
+	if ((switch_event_bind_removable(modname, SWITCH_EVENT_RELOADXML, NULL, event_handler, NULL, &NODE) != SWITCH_STATUS_SUCCESS)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_TERM;
+	}
+
 	if (dns_init(0) < 0) {
 		return SWITCH_STATUS_FALSE;
 	}
 
 	memset(&globals, 0, sizeof(globals));
 	do_load();
-
-
-	if (switch_event_bind_removable(modname, SWITCH_EVENT_RELOADXML, NULL, event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
-		return SWITCH_STATUS_TERM;
-	}
-
+	
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_API(api_interface, "enum", "ENUM", enum_function, "");
@@ -856,13 +856,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_enum_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_enum_shutdown)
 {
 
-	switch_event_unbind(&globals.node);
+	switch_event_unbind(&NODE);
 
 	if (globals.pool) {
 		switch_core_destroy_memory_pool(&globals.pool);
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_UNLOAD;
 }
 
 /* For Emacs:
