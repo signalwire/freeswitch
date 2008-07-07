@@ -601,6 +601,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 	case AES_CM_128_HMAC_SHA1_32:
 		crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy->rtp);
 		break;
+	case AES_CM_128_NULL_AUTH:
+		crypto_policy_set_aes_cm_128_null_auth(&policy->rtp);
+		break;
 	default:
 		break;
 	}

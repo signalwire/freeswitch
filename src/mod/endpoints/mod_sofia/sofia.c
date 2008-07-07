@@ -1103,6 +1103,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->pflags |= PFLAG_RECIEVED_IN_NAT_REG_CONTACT;
 					} else if (!strcasecmp(var, "aggressive-nat-detection") && switch_true(val)) {
 						profile->pflags |= PFLAG_AGGRESSIVE_NAT_DETECTION;
+					} else if (!strcasecmp(var, "disable-rtp-auto-adjust") && switch_true(val)) {
+						profile->pflags |= PFLAG_DISABLE_RTP_AUTOADJ;
+					} else if (!strcasecmp(var, "NDLB-support-asterisk-missing-srtp-auth") && switch_true(val)) {
+						profile->pflags |= PFLAG_DISABLE_SRTP_AUTH;
 					} else if (!strcasecmp(var, "rfc2833-pt")) {
 						profile->te = (switch_payload_t) atoi(val);
 					} else if (!strcasecmp(var, "cng-pt")) {
