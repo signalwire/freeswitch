@@ -166,6 +166,28 @@ SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function(switch_xml_bin
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function_ptr(switch_xml_search_function_t function)
+{
+	switch_xml_binding_t *ptr, *last = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_mutex_lock(XML_LOCK);
+	for (ptr = BINDINGS; ptr; ptr = ptr->next) {
+		if (ptr->function == function) {
+			if (last) {
+				last->next = ptr->next;
+			} else {
+				BINDINGS = ptr->next;
+			}
+			status = SWITCH_STATUS_SUCCESS;
+		}
+		last = ptr;
+	}
+	switch_mutex_unlock(XML_LOCK);
+
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_search_function_t function, switch_xml_section_t sections, void *user_data)
 {
 	switch_xml_binding_t *binding = NULL, *ptr = NULL;

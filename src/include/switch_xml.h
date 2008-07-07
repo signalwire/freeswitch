@@ -362,6 +362,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function_removable(switch
 																		  switch_xml_section_t sections, void *user_data, switch_xml_binding_t **binding);
 
 SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function(switch_xml_binding_t **binding);
+SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function_ptr(switch_xml_search_function_t function);
 
 ///\brief parse a string for a list of sections
 ///\param str a | delimited list of section names
