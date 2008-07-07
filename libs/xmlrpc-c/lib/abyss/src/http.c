@@ -175,7 +175,7 @@ getLineInBuffer(TConn * const connectionP,
 
     while (!error && !lfPos) {
         int const timeLeft = (int)(deadline - time(NULL));
-        assert(timeLeft == deadline - time(NULL));
+
         if (timeLeft <= 0)
             error = TRUE;
         else {
