@@ -1518,6 +1518,49 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 				goto done;
 			}
 
+			if (status == SWITCH_STATUS_SUCCESS && switch_true(switch_channel_get_variable(channel, "asr_intercept_dtmf"))) {
+				const char *p;
+
+				if ((p = switch_stristr("<input>", xmlstr))) {
+					p += 7;
+				}
+				
+				while(p && *p) {
+					char c;
+
+					if (*p == '<') {
+						break;
+					}
+					
+					if (!strncasecmp(p, "pound", 5)) {
+						c = '#';
+						p += 5;
+					} else if (!strncasecmp(p, "hash", 4)) {
+						c = '#';
+						p += 4;
+					} else if (!strncasecmp(p, "star", 4)) {
+						c = '*';
+						p += 4;
+					} else if (!strncasecmp(p, "asterisk", 8)) {
+						c = '*';
+						p += 8;
+					} else {
+						c = *p;
+						p++;
+					}
+					
+					if (is_dtmf(c)) {
+						switch_dtmf_t dtmf;
+						dtmf.digit = c;
+						dtmf.duration = switch_core_default_dtmf_duration(0);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queue speech detected dtmf %c\n", c);
+						switch_channel_queue_dtmf(channel, &dtmf);						
+					}
+					
+				}
+				switch_ivr_resume_detect_speech(sth->session);
+			}
+
 			if (switch_event_create(&event, SWITCH_EVENT_DETECTED_SPEECH) == SWITCH_STATUS_SUCCESS) {
 				if (status == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Speech-Type", "detected-speech");
