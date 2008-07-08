@@ -952,6 +952,78 @@ static void parse_domain_tag(sofia_profile_t *profile, switch_xml_t x_domain_tag
 }
 
 
+switch_status_t reconfig_sofia(sofia_profile_t *profile)
+{
+	switch_xml_t cfg, xml = NULL, xprofile, profiles, gateways_tag, domain_tag, domains_tag;
+	char *cf = "sofia.conf";
+	switch_event_t *params = NULL;;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+	switch_assert(params);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile", profile->name);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "reconfig", "true");
+
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, params))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		status = SWITCH_STATUS_FALSE;
+		goto done;
+	}
+	
+	if ((profiles = switch_xml_child(cfg, "profiles"))) {
+		for (xprofile = switch_xml_child(profiles, "profile"); xprofile; xprofile = xprofile->next) {
+			char *xprofilename = (char *) switch_xml_attr_soft(xprofile, "name");
+			//char *xprofiledomain = (char *) switch_xml_attr(xprofile, "domain");
+			if (strcasecmp(profile->name, xprofilename)) {
+				continue;
+			}
+
+			if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
+				parse_gateways(profile, gateways_tag);
+			}
+			
+			status = SWITCH_STATUS_SUCCESS;
+
+			if ((domains_tag = switch_xml_child(xprofile, "domains"))) {
+				for (domain_tag = switch_xml_child(domains_tag, "domain"); domain_tag; domain_tag = domain_tag->next) {
+					switch_xml_t droot, x_domain_tag;
+					const char *dname = switch_xml_attr_soft(domain_tag, "name");
+					const char *parse = switch_xml_attr_soft(domain_tag, "parse");
+					const char *alias = switch_xml_attr_soft(domain_tag, "alias");
+
+					if (!switch_strlen_zero(dname)) {
+						if (!strcasecmp(dname, "all")) {
+							switch_xml_t xml_root, x_domains;
+							if (switch_xml_locate("directory", NULL, NULL, NULL, &xml_root, &x_domains, NULL) == SWITCH_STATUS_SUCCESS) {
+								for (x_domain_tag = switch_xml_child(x_domains, "domain"); x_domain_tag; x_domain_tag = x_domain_tag->next) {
+									dname = switch_xml_attr_soft(x_domain_tag, "name");
+									parse_domain_tag(profile, x_domain_tag, dname, parse, alias);
+								}
+								switch_xml_free(xml_root);
+							}
+						} else if (switch_xml_locate_domain(dname, NULL, &droot, &x_domain_tag) == SWITCH_STATUS_SUCCESS) {
+							parse_domain_tag(profile, x_domain_tag, dname, parse, alias);
+							switch_xml_free(droot);
+						}
+					}
+				}
+			}
+			
+		}
+	}
+
+ done:
+
+	if (xml) {
+        switch_xml_free(xml);
+    }
+
+	switch_event_destroy(&params);
+
+	return status;
+
+}
+
 switch_status_t config_sofia(int reload, char *profile_name)
 {
 	char *cf = "sofia.conf";

@@ -2517,6 +2517,18 @@ switch_status_t sofia_glue_add_profile(char *key, sofia_profile_t *profile)
 	return status;
 }
 
+void sofia_glue_del_gateway(sofia_gateway_t *gp)
+{
+	if (!gp->deleted) {
+		if (gp->state != REG_STATE_NOREG) {
+			gp->retry = 0;
+			gp->state = REG_STATE_UNREGISTER;
+		}
+
+		gp->deleted = 1;
+	}
+}
+
 void sofia_glue_del_profile(sofia_profile_t *profile)
 {
 	sofia_gateway_t *gp;
@@ -2545,9 +2557,7 @@ void sofia_glue_del_profile(sofia_profile_t *profile)
 		}
 
 		for (gp = profile->gateways; gp; gp = gp->next) {
-			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->name);
-			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->register_from);
-			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->register_contact);
+			sofia_glue_del_gateway(gp);
 		}
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);

@@ -70,7 +70,25 @@ void sofia_reg_unregister(sofia_profile_t *profile)
 
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 {
-	sofia_gateway_t *gateway_ptr;
+	sofia_gateway_t *gateway_ptr, *last = NULL;
+
+	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
+		if (gateway_ptr->deleted && gateway_ptr->state == REG_STATE_NOREG) {
+			if (last) {
+				last->next = gateway_ptr->next;
+			} else {
+				profile->gateways = gateway_ptr->next;
+			}
+
+			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->name);
+			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->register_from);
+			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->register_contact);
+
+			last = gateway_ptr;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "deleted gateway %s\n", gateway_ptr->name);
+		}
+	}
+
 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
 		int ss_state = nua_callstate_authenticating;
 		reg_state_t ostate = gateway_ptr->state;
@@ -1325,7 +1343,7 @@ sofia_gateway_t *sofia_reg_find_gateway__(const char *file, const char *func, in
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if ((gateway = (sofia_gateway_t *) switch_core_hash_find(mod_sofia_globals.gateway_hash, key))) {
-		if (!(gateway->profile->pflags & PFLAG_RUNNING)) {
+		if (!(gateway->profile->pflags & PFLAG_RUNNING) || gateway->deleted) {
 			gateway = NULL;
 			goto done;
 		}
@@ -1362,6 +1380,10 @@ switch_status_t sofia_reg_add_gateway(char *key, sofia_gateway_t *gateway)
 		status = switch_core_hash_insert(mod_sofia_globals.gateway_hash, key, gateway);
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Added gateway '%s' to profile '%s'\n", gateway->name, gateway->profile->name);
+	}
 
 	return status;
 }

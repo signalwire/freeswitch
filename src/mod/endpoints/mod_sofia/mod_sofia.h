@@ -278,6 +278,7 @@ struct sofia_gateway {
 	int32_t retry_seconds;
 	reg_state_t state;
 	switch_memory_pool_t *pool;
+	int deleted;
 	struct sofia_gateway *next;
 };
 
@@ -654,4 +655,5 @@ void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id);
 switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, int force);
 switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int force);
 const char *sofia_glue_strip_proto(const char *uri);
-
+switch_status_t reconfig_sofia(sofia_profile_t *profile);
+void sofia_glue_del_gateway(sofia_gateway_t *gp);

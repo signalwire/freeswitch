@@ -1346,6 +1346,41 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	if (!strcasecmp(argv[1], "killgw")) {
+		sofia_gateway_t *gateway_ptr;
+		if (argc < 2) {
+			stream->write_function(stream, "-ERR missing gw name\n");
+			goto done;
+		}
+
+		if ((gateway_ptr = sofia_reg_find_gateway(argv[2]))) { 			
+			sofia_glue_del_gateway(gateway_ptr);
+			sofia_reg_release_gateway(gateway_ptr);
+			stream->write_function(stream, "+OK gateway marked for deletion.\n");
+		} else {
+			stream->write_function(stream, "-ERR no such gateway.\n");
+		}
+
+		goto done;
+	}
+
+	if (!strcasecmp(argv[1], "rescan")) {
+
+		if (argc > 2 && !strcasecmp(argv[2], "reloadxml")) {
+			if ((xml_root = switch_xml_open_root(1, &err))) {
+				switch_xml_free(xml_root);
+			}
+			stream->write_function(stream, "Reload XML [%s]\n", err);
+		}
+			
+		if (reconfig_sofia(profile) == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "+OK scan complete\n");
+		} else {
+			stream->write_function(stream, "-ERR cannot find config for profile %s\n", profile->name);
+		}
+		goto done;
+	}
+
 	if (!strcasecmp(argv[1], "flush_inbound_reg")) {
 		if (argc > 2) {
 			sofia_reg_expire_call_id(profile, argv[2]);
