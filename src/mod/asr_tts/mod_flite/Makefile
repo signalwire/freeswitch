@@ -1,10 +1,10 @@
 FLITE=flite-1.3-current
 FLITE_DIR=$(switch_srcdir)/libs/$(FLITE)
 FLITE_LIBDIR=$(FLITE_DIR)/build/libs
-FLITE_A=$(FLITE_LIBDIR)/libflite.a $(FLITE_LIBDIR)/libflite_cmu_time_awb.a $(FLITE_LIBDIR)/libflite_cmu_us_kal.a $(FLITE_LIBDIR)/libflite_cmu_us_kal16.a $(FLITE_LIBDIR)/libflite_cmulex.a $(FLITE_LIBDIR)/libflite_usenglish.a
+FLITE_A=$(FLITE_LIBDIR)/libflite_cmu_us_kal.a $(FLITE_LIBDIR)/libflite_cmu_us_kal16.a $(FLITE_LIBDIR)/libflite_cmulex.a $(FLITE_LIBDIR)/libflite_usenglish.a $(FLITE_LIBDIR)/libflite.a
 
 LOCAL_CFLAGS=
-LOCAL_LIBADD=$(FLITE_A)
+LOCAL_LIBADD=$(FLITE_A) -lm
 
 BASE=../../../..
 include $(BASE)/build/modmake.rules
