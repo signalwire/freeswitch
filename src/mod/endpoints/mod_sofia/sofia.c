@@ -1091,9 +1091,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "record-template")) {
 						profile->record_template = switch_core_strdup(profile->pool, val);;
-					} else if (!strcasecmp(var, "inbound-no-media") && switch_true(val)) {
-						switch_set_flag(profile, TFLAG_INB_NOMEDIA);
-					} else if (!strcasecmp(var, "inbound-bypass-media") && switch_true(val)) {
+					} else if ((!strcasecmp(var, "inbound-no-media") || !strcasecmp(var, "inbound-bypass-media")) && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_INB_NOMEDIA);
 					} else if (!strcasecmp(var, "inbound-late-negotiation") && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_LATE_NEGOTIATION);
