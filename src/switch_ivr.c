@@ -481,14 +481,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	int stream_id = 0;
 	switch_event_t *event;
 	switch_unicast_conninfo_t *conninfo = NULL;
-	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
+	switch_codec_t *read_codec;
 	uint32_t rate;
 	uint32_t bpf;
 
 	if (switch_channel_test_flag(channel, CF_CONTROLLED)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot park channels that is under control already.\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot park channels that are under control already.\n");
 		return SWITCH_STATUS_FALSE;
 	}
+
+	if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Careful, Channel is unanswered. Pre-answering...\n");
+		if ((status = switch_channel_pre_answer(channel)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot establish media.\n");
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+
+	read_codec = switch_core_session_get_read_codec(session);
 
 	if (!read_codec || !read_codec->implementation) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot park channels that have no read codec.\n");
@@ -497,11 +507,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 
 	rate = read_codec->implementation->actual_samples_per_second;
 	bpf = read_codec->implementation->bytes_per_frame;
-
-	if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Careful, Channel is unanswered. Pre-answering...\n");
-		switch_channel_pre_answer(channel);
-	}
 
 	switch_channel_set_flag(channel, CF_CONTROLLED);
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PARK) == SWITCH_STATUS_SUCCESS) {
