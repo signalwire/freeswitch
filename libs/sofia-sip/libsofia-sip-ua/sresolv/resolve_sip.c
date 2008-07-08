@@ -221,7 +221,7 @@ void answer_to_a_query(sres_context_t *sr, sres_query_t *q,
     if (a->a_record->r_status)
       continue;			      /* There was an error */
 
-    inet_ntop(AF_INET, &a->a_addr, addr, sizeof(addr));
+    su_inet_ntop(AF_INET, &a->a_addr, addr, sizeof(addr));
     printf("%s@%s:%u\n", sr->sr_tport, addr, sr->sr_port);
     sr->sr_exitcode = 0;
   }

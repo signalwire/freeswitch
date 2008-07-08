@@ -223,7 +223,7 @@ getaddrinfo(hostname, servname, hints, res)
 		/* translator hack */
 		{
 			char *q = getenv("GAI");
-			if (q && inet_pton(AF_INET6, q, &faith_prefix) == 1)
+			if (q && su_inet_pton(AF_INET6, q, &faith_prefix) == 1)
 				translate = YES;
 		}
 		firsttime = 0;
@@ -411,7 +411,7 @@ getaddrinfo(hostname, servname, hints, res)
 	
 	/* hostname as numeric name */
 	for (i = 0; gai_afdl[i].a_af; i++) {
-		if (inet_pton(gai_afdl[i].a_af, hostname, pton)) {
+		if (su_inet_pton(gai_afdl[i].a_af, hostname, pton)) {
 			u_long v4a;
 			u_char pfx;
 
@@ -752,7 +752,7 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
 	if (host == NULL || hostlen == 0) {
 		/* what should we do? */
 	} else if (flags & NI_NUMERICHOST) {
-		if (inet_ntop(gni_afd->a_af, addr, numaddr, sizeof(numaddr))
+		if (su_inet_ntop(gni_afd->a_af, addr, numaddr, sizeof(numaddr))
 		    == NULL)
 			return ENI_SYSTEM;
 		if (strlen(numaddr) > hostlen)
@@ -784,7 +784,8 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
 		} else {
 			if (flags & NI_NAMEREQD)
 				return ENI_NOHOSTNAME;
-			if (inet_ntop(gni_afd->a_af, addr, numaddr, sizeof(numaddr))
+			if (su_inet_ntop(gni_afd->a_af, addr,
+					 numaddr, sizeof(numaddr))
 			    == NULL)
 				return ENI_NOHOSTNAME;
 			if (strlen(numaddr) > hostlen)

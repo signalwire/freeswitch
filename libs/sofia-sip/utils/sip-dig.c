@@ -134,13 +134,6 @@
 
 #include "config.h"
 
-#if !defined(HAVE_WIN32)
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#endif
-
 #include "sofia-sip/su.h"
 
 #include "sofia-resolv/sres.h"
@@ -803,7 +796,7 @@ print_addr_results(struct transport const *tports,
     if (answers[i]->sr_record->r_status != 0)
       continue;
 
-    inet_ntop(af, &answers[i]->sr_a->a_addr, addr, sizeof addr);
+    su_inet_ntop(af, &answers[i]->sr_a->a_addr, addr, sizeof addr);
 
     for (j = 0; tports[j].name; j++) {
       if (strcasecmp(tport, tports[j].name) == 0)

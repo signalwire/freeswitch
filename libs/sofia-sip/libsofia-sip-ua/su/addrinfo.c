@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
 #endif
 
       port = ntohs(su->su_port);
-      inet_ntop(ai->ai_family, SU_ADDR(su), buffer, sizeof(buffer));
+      su_inet_ntop(ai->ai_family, SU_ADDR(su), buffer, sizeof(buffer));
       printf("%d@[%s]:%u", ai->ai_protocol, buffer, port);
 
       if (ai->ai_flags & AI_CANONNAME)

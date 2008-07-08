@@ -373,7 +373,7 @@ int forwarder_accept(proxy_t *pr, su_wait_t *w, forwarder_t *f0)
       char buf[SU_ADDRSIZE];
       
       SU_DEBUG_3(("accept: connection from %s:%u\n",
-		  inet_ntop(su->su_family, SU_ADDR(su), buf, sizeof(buf)),
+		  su_inet_ntop(su->su_family, SU_ADDR(su), buf, sizeof(buf)),
 		  ntohs(su->su_port)));
 
       if (!su_wait_create(f->f_wait, f->f_socket, SU_WAIT_IN) &&
@@ -628,7 +628,7 @@ int forwarder_shutdown(forwarder_t *f)
   char buf[SU_ADDRSIZE];
   
   SU_DEBUG_3(("forwarder_shutdown: shutdown from %s:%u\n",
-	      inet_ntop(su->su_family, SU_ADDR(su), buf, sizeof(buf)),
+	      su_inet_ntop(su->su_family, SU_ADDR(su), buf, sizeof(buf)),
 	      ntohs(su->su_port)));
   
   if (su_root_unregister(f->f_pr->pr_root, f->f_wait, forwarder_recv, f) < 0) {
@@ -663,9 +663,9 @@ void forwarder_close(forwarder_t *f)
     su2 = f->f_dest, su1 = f->f_peer->f_dest, d2 = "up", d1 = "down";
 
   SU_DEBUG_3(("forwarder_close: connection from %s:%u to %s:%d\n",
-	      inet_ntop(su1->su_family, SU_ADDR(su1), buf1, sizeof(buf1)),
+	      su_inet_ntop(su1->su_family, SU_ADDR(su1), buf1, sizeof(buf1)),
 	      ntohs(su1->su_port),
-	      inet_ntop(su2->su_family, SU_ADDR(su2), buf2, sizeof(buf2)),
+	      su_inet_ntop(su2->su_family, SU_ADDR(su2), buf2, sizeof(buf2)),
 	      ntohs(su2->su_port)));
 
   forwarder_destroy(f);

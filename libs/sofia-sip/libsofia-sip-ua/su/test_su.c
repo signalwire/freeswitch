@@ -116,7 +116,7 @@ static su_socket_t udpsocket(void)
 
   if (opt_verbatim)
     printf("udpsocket: using address [%s]:%u\n",
-	   inet_ntop(su.su_family, SU_ADDR(&su), nbuf, sizeof(nbuf)),
+	   su_inet_ntop(su.su_family, SU_ADDR(&su), nbuf, sizeof(nbuf)),
 	   ntohs(su.su_sin.sin_port));
 
   return s;
@@ -183,7 +183,7 @@ do_rtt(struct pinger *p, su_wait_t *w, void *p0)
 
   if (opt_verbatim)
     printf("do_rtt: %d bytes from [%s]:%u: \"%s\", rtt = %lg ms\n",
-	   n, inet_ntop(su.su_family, SU_ADDR(&su), nbuf, sizeof(nbuf)),
+	   n, su_inet_ntop(su.su_family, SU_ADDR(&su), nbuf, sizeof(nbuf)),
 	   ntohs(su.su_sin.sin_port), buf, rtt / 1000);
 
   do_ping(p, p->t, NULL);
@@ -237,7 +237,7 @@ do_recv(struct pinger *p, su_wait_t *w, void *p0)
 
   if (opt_verbatim)
     printf("do_recv: %d bytes from [%s]:%u: \"%s\" at %s\n",
-	   n, inet_ntop(su.su_family, SU_ADDR(&su), nbuf, sizeof(nbuf)),
+	   n, su_inet_ntop(su.su_family, SU_ADDR(&su), nbuf, sizeof(nbuf)),
 	   ntohs(su.su_sin.sin_port), buf, snow(now));
 
   fflush(stdout);

@@ -276,8 +276,8 @@ void stunc_bind_cb(stunc_t *stunc,
     }
 
     SU_DEBUG_0(("%s: local address NATed as %s:%u\n", __func__,
-		inet_ntop(sa->su_family, SU_ADDR(sa),
-			  ipaddr, sizeof(ipaddr)),
+		su_inet_ntop(sa->su_family, SU_ADDR(sa),
+			     ipaddr, sizeof(ipaddr)),
 		(unsigned) ntohs(sa->su_port)));
 
   break;
@@ -428,8 +428,8 @@ int main(int argc, char *argv[])
     err = bind(s, (struct sockaddr *)&sockaddr, socklen);
     if (err < 0) {
       SU_DEBUG_1(("%s: Error %d binding to %s:%u\n", __func__, err,
-		  inet_ntop(sockaddr.su_family, SU_ADDR(&sockaddr), 
-			    ipaddr, sizeof(ipaddr)),
+		  su_inet_ntop(sockaddr.su_family, SU_ADDR(&sockaddr),
+			       ipaddr, sizeof(ipaddr)),
 		  (unsigned) ntohs(sockaddr.su_port)));
       return -1;
     }

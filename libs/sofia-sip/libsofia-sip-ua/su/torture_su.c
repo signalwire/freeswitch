@@ -177,7 +177,7 @@ int test_sendrecv(void)
   memset(&su, 0, sulen);
   su.su_len = sulen;
   su.su_family = AF_INET;
-  TEST(inet_pton(AF_INET, "127.0.0.1", &su.su_sin.sin_addr), 1);
+  TEST(su_inet_pton(AF_INET, "127.0.0.1", &su.su_sin.sin_addr), 1);
 
   TEST(bind(s, &su.su_sa, sulen), 0);
   TEST(getsockname(s, &su.su_sa, &sulen), 0);
@@ -197,7 +197,7 @@ int test_sendrecv(void)
   memset(&su, 0, sulen);
   su.su_len = sulen;
   su.su_family = AF_INET;
-  TEST(inet_pton(AF_INET, "127.0.0.1", &su.su_sin.sin_addr), 1);
+  TEST(su_inet_pton(AF_INET, "127.0.0.1", &su.su_sin.sin_addr), 1);
 
   TEST(bind(l, &su.su_sa, sulen), 0);
   TEST(bind(s, &su.su_sa, sulen), 0);
@@ -304,7 +304,7 @@ int test_select(void)
   memset(&su, 0, sulen);
   su.su_len = sulen;
   su.su_family = AF_INET;
-  TEST(inet_pton(AF_INET, "127.0.0.1", &su.su_sin.sin_addr), 1);
+  TEST(su_inet_pton(AF_INET, "127.0.0.1", &su.su_sin.sin_addr), 1);
   TEST(bind(s, &su.su_sa, sulen), 0);
   TEST(getsockname(s, &su.su_sa, &sulen), 0);
   

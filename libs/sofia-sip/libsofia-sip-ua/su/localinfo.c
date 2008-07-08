@@ -167,8 +167,8 @@ int main(int argc, char *argv[])
         fputs(li->li_canonname, stdout);
       }
       else {
-        inet_ntop(li->li_family, SU_ADDR(li->li_addr), 
-		  buffer, sizeof(buffer));
+        su_inet_ntop(li->li_family, SU_ADDR(li->li_addr),
+		     buffer, sizeof(buffer));
         printf("%s maddr=[%s]", li->li_canonname, buffer);
       }
       if (li->li_scope & LI_SCOPE_GLOBAL)

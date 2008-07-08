@@ -144,7 +144,7 @@ int tport_udp_init_primary(tport_primary_t *pri,
     imr->imr_multiaddr = su->su_sin.sin_addr;
 
     if (host_is_ip4_address(tpn->tpn_canon) &&
-	inet_pton(AF_INET, tpn->tpn_canon, &iface) > 0) {
+	su_inet_pton(AF_INET, tpn->tpn_canon, &iface) > 0) {
       imr->imr_interface = iface;
     }
 
@@ -506,8 +506,8 @@ int tport_udp_error(tport_t const *self, su_sockaddr_t name[1])
 		  origin, info));
       if (from->su_family != AF_UNSPEC)
 	SU_DEBUG_3(("\treported by [%s]:%u\n",
-		    inet_ntop(from->su_family, SU_ADDR(from), 
-			      info, sizeof(info)),
+		    su_inet_ntop(from->su_family, SU_ADDR(from),
+				 info, sizeof(info)),
 		    ntohs(from->su_port)));
 
       if (msg->msg_namelen == 0)

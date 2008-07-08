@@ -217,7 +217,7 @@ int test_nua_init(struct context *ctx,
     else if (su->su_family == AF_INET6) {
       a_uri = (void *)
 	su_sprintf(ctx->home, "sip:[%s]:%u",
-		   inet_ntop(su->su_family, SU_ADDR(su), b, sizeof b),
+		   su_inet_ntop(su->su_family, SU_ADDR(su), b, sizeof b),
 		   ntohs(su->su_port));
       a_bind = "sip:[::]:*";
     }
@@ -225,7 +225,7 @@ int test_nua_init(struct context *ctx,
     else if (su->su_family == AF_INET) {
       a_uri = (void *)
 	su_sprintf(ctx->home, "sip:%s:%u",
-		   inet_ntop(su->su_family, SU_ADDR(su), b, sizeof b),
+		   su_inet_ntop(su->su_family, SU_ADDR(su), b, sizeof b),
 		   ntohs(su->su_port));
     }
 
@@ -234,15 +234,15 @@ int test_nua_init(struct context *ctx,
       su->su_len = sulen = (sizeof su->su_sin6), su->su_family = AF_INET6;
       len = strcspn(p_uri->url_host + 1, "]"); assert(len < sizeof b);
       memcpy(b, p_uri->url_host + 1, len); b[len] = '\0';
-      inet_pton(su->su_family, b, SU_ADDR(su));
+      su_inet_pton(su->su_family, b, SU_ADDR(su));
     }
     else {
       su->su_len = sulen = (sizeof su->su_sin), su->su_family = AF_INET;
-      inet_pton(su->su_family, p_uri->url_host, SU_ADDR(su));
+      su_inet_pton(su->su_family, p_uri->url_host, SU_ADDR(su));
     }
 #else
     su->su_len = sulen = (sizeof su->su_sin), su->su_family = AF_INET;
-    inet_pton(su->su_family, p_uri->url_host, SU_ADDR(su));
+    su_inet_pton(su->su_family, p_uri->url_host, SU_ADDR(su));
 #endif
 
     su->su_port = htons(strtoul(url_port(p_uri), NULL, 10));

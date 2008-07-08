@@ -3958,7 +3958,7 @@ tport_resolve(tport_t *self, msg_t *msg, tp_name_t const *tpn)
 #else
   SU_DEBUG_9(("tport_resolve addrinfo = %s%s%s:%d\n", 
 	      "",
-              inet_ntop(su->su_family, SU_ADDR(su), ipaddr, sizeof(ipaddr)),
+              su_inet_ntop(su->su_family, SU_ADDR(su), ipaddr, sizeof(ipaddr)),
 	      "",
               htons(su->su_port)));
 #endif

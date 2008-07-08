@@ -636,16 +636,16 @@ int test_init(agent_t *ag, char const *resolv_conf)
     *m->m_url = *ag->ag_contact->m_url;
 
     if (host_is_ip4_address(m->m_url->url_host)) {
-      inet_pton(su->su_family = AF_INET,
-		m->m_url->url_host,
-		&su->su_sin.sin_addr);
+      su_inet_pton(su->su_family = AF_INET,
+		   m->m_url->url_host,
+		   &su->su_sin.sin_addr);
       ag->ag_su_nta_len = (sizeof su->su_sin);
     }
     else {
       TEST_1(host_is_ip_address(m->m_url->url_host));
-      inet_pton(su->su_family = AF_INET6,
-		m->m_url->url_host,
-		&su->su_sin6.sin6_addr);
+      su_inet_pton(su->su_family = AF_INET6,
+		   m->m_url->url_host,
+		   &su->su_sin6.sin6_addr);
       ag->ag_su_nta_len = (sizeof su->su_sin6);
     }
 

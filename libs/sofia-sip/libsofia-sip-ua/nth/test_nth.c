@@ -185,7 +185,7 @@ static int init_test(tester_t *t)
   t->t_addr->su_len = (sizeof t->t_addr->su_sin);
   s = su_socket(t->t_addr->su_family = AF_INET, SOCK_STREAM, 0);
   TEST_1(s != INVALID_SOCKET);
-  TEST_1(inet_pton(AF_INET, "127.0.0.1", &t->t_addr->su_sin.sin_addr) >= 0);
+  TEST_1(su_inet_pton(AF_INET, "127.0.0.1", &t->t_addr->su_sin.sin_addr) >= 0);
   TEST_1(bind(s, &t->t_addr->su_sa, 
 	      t->t_addrlen = (sizeof t->t_addr->su_sin)) != -1);
   TEST_1(getsockname(s, &t->t_addr->su_sa, &t->t_addrlen) != -1);

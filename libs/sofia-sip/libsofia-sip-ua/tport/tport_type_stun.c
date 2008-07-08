@@ -197,7 +197,8 @@ void tport_stun_bind_done(tport_primary_t *pri,
 
     SU_DEBUG_5(("%s: stun_bind() ok: local address NATed as %s:%u\n", 
 		__func__,
-		inet_ntop(su->su_family, SU_ADDR(su), ipname, sizeof(ipname)),
+		su_inet_ntop(su->su_family, SU_ADDR(su),
+			     ipname, sizeof(ipname)),
 		(unsigned) ntohs(su->su_port)));
   }
 

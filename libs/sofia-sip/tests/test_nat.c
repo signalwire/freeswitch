@@ -531,13 +531,13 @@ static int binding_init(struct binding *b,
     }
 
   getpeername(b->in_socket, (void *)addr, &addrlen);
-  inet_ntop(addr->su_family, SU_ADDR(addr), ipname, sizeof ipname);
+  su_inet_ntop(addr->su_family, SU_ADDR(addr), ipname, sizeof ipname);
   snprintf(b->in_name, sizeof b->in_name,
 	   addr->su_family == AF_INET6 ? "[%s]:%u" : "%s:%u",
 	   ipname, ntohs(addr->su_port));
 
   getsockname(out_socket, (void *)addr, &addrlen);
-  inet_ntop(addr->su_family, SU_ADDR(addr), ipname, sizeof ipname);
+  su_inet_ntop(addr->su_family, SU_ADDR(addr), ipname, sizeof ipname);
   snprintf(b->out_name, sizeof b->out_name,
 	   addr->su_family == AF_INET6 ? "[%s]:%u" : "%s:%u",
 	   ipname, ntohs(addr->su_port));
@@ -617,7 +617,7 @@ static struct binding *nat_binding_find(struct nat *nat,
   size_t namelen;
   struct binding *b;
 				       
-  inet_ntop(from->su_family, SU_ADDR(from), ipname, sizeof ipname);
+  su_inet_ntop(from->su_family, SU_ADDR(from), ipname, sizeof ipname);
   snprintf(name, sizeof name,
 	   from->su_family == AF_INET6 ? "[%s]:%u" : "%s:%u",
 	   ipname, ntohs(from->su_port));
@@ -915,7 +915,7 @@ static int invalidate_binding(struct binding *b)
   b->out_register = out_register;
 
   getsockname(out, (void *)addr, &addrlen);
-  inet_ntop(addr->su_family, SU_ADDR(addr), name, sizeof name);
+  su_inet_ntop(addr->su_family, SU_ADDR(addr), name, sizeof name);
   snprintf(b->out_name, sizeof b->out_name,
 	   addr->su_family == AF_INET6 ? "[%s]:%u" : "%s:%u",
 	   name, ntohs(addr->su_port));

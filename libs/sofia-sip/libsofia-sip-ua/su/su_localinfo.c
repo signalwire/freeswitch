@@ -1047,7 +1047,7 @@ int localinfo6(su_localinfo_t const *hints, su_localinfo_t **rresult)
 	sa = calloc(1, sizeof(su_sockaddr_t));
 
 	sa->su_family = AF_INET6;
-	if (inet_pton(AF_INET6, addr, &sa->su_sin6.sin6_addr) <= 0)
+	if (su_inet_pton(AF_INET6, addr, &sa->su_sin6.sin6_addr) <= 0)
 	  goto err;
 	
 	s = su_socket(AF_INET6, SOCK_DGRAM, 0);
@@ -1105,7 +1105,7 @@ int localinfo6(su_localinfo_t const *hints, su_localinfo_t **rresult)
       li->li_addrlen = sizeof(*su);
       li->li_addr = su = (su_sockaddr_t *)(li + 1);
       su->su_family = li->li_family = AF_INET6;
-      if (inet_pton(AF_INET6, addr, &su->su_sin6.sin6_addr) <= 0)
+      if (su_inet_pton(AF_INET6, addr, &su->su_sin6.sin6_addr) <= 0)
 	goto err;
       if (li->li_flags & LI_IFNAME) 
 	li->li_ifname = ifname;

@@ -184,6 +184,11 @@ struct sockaddr_storage {
 #endif
 #endif
 #endif
+
+SOFIAPUBFUN int su_inet_pton(int af, char const *src, void *dst);
+SOFIAPUBFUN const char *su_inet_ntop(int af, void const *src,
+				  char *dst, size_t size);
+
 #else
 
 #define sres_send(s,b,len,flags) send((s),(b),(len),(flags))
@@ -195,6 +200,10 @@ struct sockaddr_storage {
 #define SOCKET_ERROR   (-1)
 #define INVALID_SOCKET ((sres_socket_t)-1)
 #define sres_socket(x,y,z) socket((x),(y),(z))
+
+#define su_inet_pton inet_pton
+#define su_inet_ntop inet_ntop
+
 #endif
 
 #if 1
@@ -264,8 +273,8 @@ int test_socket(sres_context_t *ctx)
       a1len = a2len = a3len = a4len = sizeof (struct sockaddr_in6);
 
     if (af == AF_INET) {
-      TEST_1(inet_pton(af, "127.0.0.1", &sin3->sin_addr) > 0);
-      TEST_1(inet_pton(af, "127.0.0.1", &sin4->sin_addr) > 0);
+      TEST_1(su_inet_pton(af, "127.0.0.1", &sin3->sin_addr) > 0);
+      TEST_1(su_inet_pton(af, "127.0.0.1", &sin4->sin_addr) > 0);
     } else {
     }
 
@@ -734,7 +743,7 @@ int test_a6(sres_context_t *ctx)
   TEST(rr_a6->a6_record->r_ttl, 60);
   TEST(rr_a6->a6_prelen, 0);
 
-  TEST_S(inet_ntop(AF_INET6, &rr_a6->a6_suffix, buf, sizeof(buf)), 
+  TEST_S(su_inet_ntop(AF_INET6, &rr_a6->a6_suffix, buf, sizeof(buf)),
 	 "3ffe:1200:3012:c000:210:a4ff:fe8d:6a46");
 
   TEST_P(rr_a6->a6_prename, NULL);
@@ -748,7 +757,7 @@ int test_a6(sres_context_t *ctx)
   TEST(rr_a6->a6_record->r_ttl, 60);
   TEST(rr_a6->a6_prelen, 0);
 
-  TEST_S(inet_ntop(AF_INET6, &rr_a6->a6_suffix, buf, sizeof(buf)), 
+  TEST_S(su_inet_ntop(AF_INET6, &rr_a6->a6_suffix, buf, sizeof(buf)),
 	 "3ffe:1200:3012:c000:210:a4ff:fe8d:6a46");
 
   TEST_P(rr_a6->a6_prename, NULL);
@@ -778,7 +787,7 @@ int test_a6_prefix(sres_context_t *ctx)
   TEST(rr_a6->a6_record->r_ttl, 60);
   TEST(rr_a6->a6_prelen, 64);
 
-  TEST_S(inet_ntop(AF_INET6, &rr_a6->a6_suffix, buf, sizeof(buf)), 
+  TEST_S(su_inet_ntop(AF_INET6, &rr_a6->a6_suffix, buf, sizeof(buf)),
 	 "::a08:20ff:fe7d:e7ac");
 
   TEST_S(rr_a6->a6_prename, "mynet.example.com.");
@@ -795,7 +804,7 @@ int test_a6_prefix(sres_context_t *ctx)
   TEST(rr_a6->a6_record->r_class, sres_class_in);
   TEST(rr_a6->a6_record->r_ttl, 60);
   TEST(rr_a6->a6_prelen, 0);
-  TEST_S(inet_ntop(AF_INET6, &rr_a6->a6_suffix, buf, sizeof(buf)), 
+  TEST_S(su_inet_ntop(AF_INET6, &rr_a6->a6_suffix, buf, sizeof(buf)),
 	 "3ff0:12:3012:c006:a08:20ff:fe7d:e7ac");
   TEST_P(rr_a6->a6_prename, NULL);
  
@@ -811,7 +820,7 @@ int test_a6_prefix(sres_context_t *ctx)
   TEST(rr_a6->a6_record->r_class, sres_class_in);
   TEST(rr_a6->a6_record->r_ttl, 60);
   TEST(rr_a6->a6_prelen, 128);
-  TEST_S(inet_ntop(AF_INET6, &rr_a6->a6_suffix, buf, sizeof(buf)), "::");
+  TEST_S(su_inet_ntop(AF_INET6, &rr_a6->a6_suffix, buf, sizeof(buf)), "::");
   TEST_S(rr_a6->a6_prename, "a6.example.com.");
  
   sres_free_answers(res, ctx->result), ctx->result = NULL;
@@ -824,7 +833,7 @@ int test_a6_prefix(sres_context_t *ctx)
   TEST(rr_a6->a6_record->r_ttl, 60);
   TEST(rr_a6->a6_prelen, 64);
 
-  TEST_S(inet_ntop(AF_INET6, &rr_a6->a6_suffix, buf, sizeof(buf)), 
+  TEST_S(su_inet_ntop(AF_INET6, &rr_a6->a6_suffix, buf, sizeof(buf)),
 	 "::a08:20ff:fe7d:e7ac");
 
   TEST_S(rr_a6->a6_prename, "mynet.example.com.");
@@ -853,7 +862,7 @@ int test_aaaa(sres_context_t *ctx)
   TEST(rr_aaaa->aaaa_record->r_class, sres_class_in);
   TEST(rr_aaaa->aaaa_record->r_ttl, 60);
 
-  TEST_S(inet_ntop(AF_INET6, &rr_aaaa->aaaa_addr, buf, sizeof(buf)), 
+  TEST_S(su_inet_ntop(AF_INET6, &rr_aaaa->aaaa_addr, buf, sizeof(buf)),
 	 "3ffe:1200:3012:c000:206:5bff:fe55:4630");
 
   sres_free_answers(res, ctx->result), ctx->result = NULL;
@@ -865,7 +874,7 @@ int test_aaaa(sres_context_t *ctx)
   TEST(rr_aaaa->aaaa_record->r_class, sres_class_in);
   TEST(rr_aaaa->aaaa_record->r_ttl, 60);
 
-  TEST_S(inet_ntop(AF_INET6, &rr_aaaa->aaaa_addr, buf, sizeof(buf)), 
+  TEST_S(su_inet_ntop(AF_INET6, &rr_aaaa->aaaa_addr, buf, sizeof(buf)),
 	 "3ffe:1200:3012:c000:206:5bff:fe55:4630");
 
   sres_free_answers(res, result), result = NULL;
@@ -1027,7 +1036,7 @@ int test_ptr_ipv4_sockaddr(sres_context_t *ctx)
   const sres_ptr_record_t *rr;
   struct sockaddr_in sin = {0};
   
-  inet_pton(AF_INET, "127.0.0.1", &sin.sin_addr);
+  su_inet_pton(AF_INET, "127.0.0.1", &sin.sin_addr);
   sin.sin_family = AF_INET;
 
   BEGIN();
@@ -1089,8 +1098,8 @@ int test_ptr_ipv6_sockaddr(sres_context_t *ctx)
 
   BEGIN();
 
-  inet_pton(AF_INET6, "3ffe:1200:3012:c000:0a08:20ff:fe7d:e7ac", 
-            &sin6.sin6_addr);
+  su_inet_pton(AF_INET6, "3ffe:1200:3012:c000:0a08:20ff:fe7d:e7ac", 
+	       &sin6.sin6_addr);
 
   sin6.sin6_family = AF_INET6;
 
@@ -1154,9 +1163,9 @@ int test_cache(sres_context_t *ctx)
   sres_query(res, test_answer_multi, ctx,
 	     sres_type_aaaa, "mgw02.example.com");
 
-  inet_pton(AF_INET6, 
-            "3ffe:1200:3012:c000:0a08:20ff:fe7d:e7ac", 
-            &sin6.sin6_addr);
+  su_inet_pton(AF_INET6,
+	       "3ffe:1200:3012:c000:0a08:20ff:fe7d:e7ac",
+	       &sin6.sin6_addr);
 
   sin6.sin6_family = AF_INET6;
 
@@ -1361,7 +1370,7 @@ int test_cache(sres_context_t *ctx)
   TEST(rr_a6->a6_record->r_ttl, 60);
   TEST(rr_a6->a6_prelen, 0);
 
-  TEST_S(inet_ntop(AF_INET6, &rr_a6->a6_suffix, buf, sizeof(buf)), "3ff0::");
+  TEST_S(su_inet_ntop(AF_INET6, &rr_a6->a6_suffix, buf, sizeof(buf)), "3ff0::");
 
   TEST_P(rr_a6->a6_prename, NULL);
 
@@ -1373,7 +1382,7 @@ int test_cache(sres_context_t *ctx)
   TEST(rr_aaaa->aaaa_record->r_type, sres_type_aaaa);
   TEST(rr_aaaa->aaaa_record->r_class, sres_class_in);
   TEST(rr_aaaa->aaaa_record->r_ttl, 60);
-  TEST_S(inet_ntop(AF_INET6, &rr_aaaa->aaaa_addr, buf, sizeof(buf)), 
+  TEST_S(su_inet_ntop(AF_INET6, &rr_aaaa->aaaa_addr, buf, sizeof(buf)),
 	 "3ffe:1200:3012:c000:206:5bff:fe55:462f");
   sres_free_answers(res, result);
 
@@ -1416,7 +1425,7 @@ int test_query_one_type(sres_context_t *ctx)
   TEST(rr_aaaa->aaaa_record->r_type, sres_type_aaaa);
   TEST(rr_aaaa->aaaa_record->r_class, sres_class_in);
   TEST(rr_aaaa->aaaa_record->r_ttl, 60);
-  TEST_S(inet_ntop(AF_INET6, &rr_aaaa->aaaa_addr, buf, sizeof(buf)), 
+  TEST_S(su_inet_ntop(AF_INET6, &rr_aaaa->aaaa_addr, buf, sizeof(buf)),
 	 "3ffe:1200:3012:c000:206:5bff:fe55:462f");
 
   TEST_P(result[1], NULL);

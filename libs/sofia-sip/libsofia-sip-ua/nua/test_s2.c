@@ -1365,7 +1365,7 @@ void s2_dns_domain(char const *domain, int use_naptr,
 
   assert(s2->dns.reg != 0);
 
-  inet_pton(AF_INET, "127.0.0.1", &localhost);
+  su_inet_pton(AF_INET, "127.0.0.1", &localhost);
 
   va_start(va0, use_naptr);
 

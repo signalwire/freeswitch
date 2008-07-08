@@ -239,9 +239,9 @@ int init_test(root_test_t *rt,
     TEST_1(su_wait_create(ep->wait, ep->s, SU_WAIT_IN|SU_WAIT_ERR) != -1);
     TEST_1(getsockname(ep->s, &ep->addr->su_sa, &ep->addrlen) != -1);
     if (SU_HAS_INADDR_ANY(ep->addr)) {
-      inet_pton(su->su_family, 
-	        su->su_family == AF_INET ? "127.0.0.1" : "::1",
-		SU_ADDR(ep->addr));
+      su_inet_pton(su->su_family,
+		   su->su_family == AF_INET ? "127.0.0.1" : "::1",
+		   SU_ADDR(ep->addr));
     }
   }
 
