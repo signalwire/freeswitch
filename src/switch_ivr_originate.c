@@ -193,7 +193,7 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 			) {
 			(*hups)++;
 		} else if ((switch_channel_test_flag(peer_channels[i], CF_ANSWERED) ||
-					(early_ok && len == 1 && switch_channel_test_flag(peer_channels[i], CF_EARLY_MEDIA)) ||
+					(early_ok && switch_channel_test_flag(peer_channels[i], CF_EARLY_MEDIA)) ||
 					(*ring_ready && return_ring_ready && len == 1 && switch_channel_test_flag(peer_channels[i], CF_RING_READY))
 				   )
 				   && !switch_channel_test_flag(peer_channels[i], CF_TAGGED)
