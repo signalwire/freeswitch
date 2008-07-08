@@ -481,7 +481,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\switch_xml.cpp"
+				RelativePath="..\..\src\switch_xml.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
