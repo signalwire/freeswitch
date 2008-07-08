@@ -518,7 +518,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		tportlog = 1;
 	}
 
-	supported = switch_core_sprintf(profile->pool, "%s%sprecondition, path, Replaces", 
+	supported = switch_core_sprintf(profile->pool, "%s%sprecondition, path, replaces", 
 									use_100rel ? "100rel, " : "",
 									use_timer ? "timer, " : ""
 									);
