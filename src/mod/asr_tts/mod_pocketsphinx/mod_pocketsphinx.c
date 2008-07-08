@@ -226,11 +226,9 @@ static switch_bool_t stop_detect(pocketsphinx_t *ps, int16_t *data, unsigned int
 	return SWITCH_FALSE;
 }
 
-
 /*! function to feed audio to the ASR */
 static switch_status_t pocketsphinx_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len, switch_asr_flag_t *flags)
 {
-	// we really should put ps_start_utt(ps->ps, NULL); here when we start to feed it.
 	pocketsphinx_t *ps = (pocketsphinx_t *) ah->private_info;
 	int rv = 0;
 
@@ -309,7 +307,6 @@ static switch_status_t pocketsphinx_asr_resume(switch_asr_handle_t *ah)
 	}
 	switch_mutex_unlock(ps->flag_mutex);		
 
-
 	return status;
 }
 
@@ -337,7 +334,6 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 		switch_clear_flag(ps, PSFLAG_HAS_TEXT);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recognized: %s, Score: %d\n", ps->hyp, ps->score);
 		switch_mutex_unlock(ps->flag_mutex); 
-		//*xmlstr = strdup((char *)ps->hyp ); 
 		
 		*xmlstr = switch_mprintf("<interpretation grammar=\"%s\" score=\"%d\">\n"
 								 "  <result name=\"%s\">%s</result>\n"
@@ -360,7 +356,6 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 
 		status = SWITCH_STATUS_SUCCESS;
 	}
-
 
 	return status;
 }
@@ -393,3 +388,15 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_pocketsphinx_shutdown)
 {
 	return SWITCH_STATUS_UNLOAD;
 }
+
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */
