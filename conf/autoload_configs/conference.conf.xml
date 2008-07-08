@@ -94,6 +94,11 @@
       <!-- <param name="suppress-events" value="start-talking,stop-talking"/> -->
       <!-- enable comfort noise generation -->
       <param name="comfort-noise" value="true"/>
+      <!-- Uncomment auto-record to toggle recording every conference call. -->
+      <!-- Another valid value is   shout://user:pass@server.com/live.mp3   -->
+      <!--
+      <param name="auto-record" value="/usr/local/freeswitch/sounds/conference/${conference-name}_${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
+      -->
     </profile>
 
     <profile name="wideband">
