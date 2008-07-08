@@ -1,6 +1,6 @@
-======================================
-Release notes for Sofia-SIP 1.12.9pre1
-======================================
+==================================
+Release notes for Sofia-SIP 1.12.9
+==================================
 
 Changes since last release
 --------------------------
@@ -104,3 +104,5 @@ Bugs fixed in this release
 - Fixed sf.net bug #1930055: nat detection did not un-REGISTER natted contact
   if fist response to REGISTER was 200 OK.
 - Fixed crashes in soa if m= lines were removed from user sdp.
+- Fixed problem detecting CANCEL with To-tag copied from a provisional
+  response
