@@ -1710,9 +1710,10 @@ static JSBool session_sleep(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 
 	if (argc > 0) {
 		JS_ValueToInt32(cx, argv[0], &ms);
-		if (ms <= 0) {
-			return JS_FALSE;
-		}
+	}
+
+	if (ms <= 0) {
+		return JS_FALSE;
 	}
 
 	if (argc > 1) {
