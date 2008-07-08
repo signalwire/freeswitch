@@ -332,15 +332,16 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 	if (switch_test_flag(ps, PSFLAG_HAS_TEXT)) {
 		switch_mutex_lock(ps->flag_mutex); 
 		switch_clear_flag(ps, PSFLAG_HAS_TEXT);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recognized: %s, Score: %d\n", ps->hyp, ps->score);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recognized: %s, Score: 300\n", ps->hyp);
 		switch_mutex_unlock(ps->flag_mutex); 
+
+		/* ps->score isn't a confidence score. PocketSphinx doesn't support that yet. */
 		
-		*xmlstr = switch_mprintf("<interpretation grammar=\"%s\" score=\"%d\">\n"
+		*xmlstr = switch_mprintf("<interpretation grammar=\"%s\" score=\"300\">\n"
 								 "  <result name=\"%s\">%s</result>\n"
 								 "  <input>%s</input>\n"
 								 "</interpretation>",
-								 
-								 ps->grammar, ps->score,
+								 ps->grammar,
  								 "match", 
 								 ps->hyp, 
 								 ps->hyp
