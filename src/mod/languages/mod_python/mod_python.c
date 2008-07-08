@@ -249,40 +249,11 @@ SWITCH_STANDARD_API(launch_python)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_application_interface_t python_application_interface = {
-	/*.interface_name */ "python",
-	/*.application_function */ python_function,
-	NULL, NULL, NULL,
-	/* flags */ SAF_NONE,
-	/* should we support no media mode here?  If so, we need to detect the mode, and either disable the media functions or indicate media if/when we need */
-	/*.next */ NULL
-};
-
-static switch_api_interface_t python_run_interface = {
-	/*.interface_name */ "python",
-	/*.desc */ "run a python script",
-	/*.function */ launch_python,
-	/*.syntax */ "python </path/to/script>",
-	/*.next */ NULL
-};
-
-static switch_loadable_module_interface_t python_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ &python_application_interface,
-	/*.api_interface */ &python_run_interface,
-	/*.file_interface */ NULL,
-	/*.speech_interface */ NULL,
-	/*.directory_interface */ NULL
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 {
-	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &python_module_interface;
+	switch_api_interface_t *api_interface;
+	switch_application_interface_t *app_interface;
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Python Framework Loading...\n");
 
 	if (!Py_IsInitialized()) {
@@ -304,6 +275,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 		// release GIL
 		PyEval_ReleaseLock();
 	}
+
+
+	/* connect my internal structure to the blank pointer passed to me */
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_API(api_interface, "python", "run a python script", launch_python, "python </path/to/script>");
+	SWITCH_ADD_APP(app_interface, "python", "Launch python ivr", "Run a python ivr on a channel", python_function, "<script> [additional_vars [...]]",
+				   SAF_SUPPORT_NOMEDIA);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

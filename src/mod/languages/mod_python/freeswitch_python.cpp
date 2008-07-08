@@ -1,6 +1,6 @@
 #include "freeswitch_python.h"
 
-#define sanity_check(x) do { if (!session) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return x;}} while(0)
+#define py_sanity_check(x) do { if (!session) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return x;}} while(0)
 #define py_init_vars() do { caller_profile.source = "mod_python"; swapstate = S_SWAPPED_IN; } while(0)
 
 PySession::PySession():CoreSession()
@@ -21,7 +21,7 @@ PySession::PySession(switch_core_session_t *new_session):CoreSession(new_session
 
 void PySession::setDTMFCallback(PyObject * pyfunc, char *funcargs)
 {
-	sanity_check();
+	py_sanity_check();
 
 	if (!PyCallable_Check(pyfunc)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "DTMF function is not a python function.\n");
@@ -51,10 +51,12 @@ void PySession::setHangupHook(PyObject * pyfunc)
 
 void PySession::check_hangup_hook()
 {
+#if 0
 	PyObject *func;
 	PyObject *result;
 	char *resultStr;
 	bool did_swap_in = false;
+#endif
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 					  "check_hangup_hook has been DISABLED, please do not use hangup hooks in python code until further notice!\n");

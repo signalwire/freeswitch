@@ -32,7 +32,6 @@
 
 #include <switch.h>
 #include <pocketsphinx.h>
-#define MODELDIR "/usr/local/share/pocketsphinx/model"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_pocketsphinx_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_pocketsphinx_shutdown);
