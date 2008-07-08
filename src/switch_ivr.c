@@ -55,6 +55,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 			status = SWITCH_STATUS_FALSE;
 			break;
 		}
+		
+		if (switch_channel_test_flag(channel, CF_BREAK)) {
+			switch_channel_clear_flag(channel, CF_BREAK);
+			status = SWITCH_STATUS_BREAK;
+			break;
+		}
 
 		if (now > done || left <= 0) {
 			break;
