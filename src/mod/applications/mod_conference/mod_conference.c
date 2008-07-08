@@ -4274,7 +4274,7 @@ SWITCH_STANDARD_APP(conference_function)
 			goto done;
 		}
 
-		switch_channel_set_variable(channel, "conference-name", conference->name);
+		switch_channel_set_variable(channel, "conference_name", conference->name);
 
 		/* Set the minimum number of members (once you go above it you cannot go below it) */
 		conference->min = 2;
@@ -4306,7 +4306,7 @@ SWITCH_STANDARD_APP(conference_function)
 				conference->pin = switch_core_strdup(conference->pool, dpin);
 			}
 		
-			switch_channel_set_variable(channel, "conference-name", conference->name);
+			switch_channel_set_variable(channel, "conference_name", conference->name);
 
 			/* Set the minimum number of members (once you go above it you cannot go below it) */
 			conference->min = 1;
@@ -4317,7 +4317,7 @@ SWITCH_STANDARD_APP(conference_function)
 			/* Start the conference thread for this conference */
 			launch_conference_thread(conference);
 		} else { /* setup user variable */
-			switch_channel_set_variable(channel, "conference-name", conference->name);
+			switch_channel_set_variable(channel, "conference_name", conference->name);
 		}
 
 		/* acquire a read lock on the thread so it can't leave without us */

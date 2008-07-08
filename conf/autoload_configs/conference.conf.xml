@@ -97,7 +97,7 @@
       <!-- Uncomment auto-record to toggle recording every conference call. -->
       <!-- Another valid value is   shout://user:pass@server.com/live.mp3   -->
       <!--
-      <param name="auto-record" value="/usr/local/freeswitch/sounds/conference/${conference-name}_${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
+      <param name="auto-record" value="/usr/local/freeswitch/sounds/conference/${conference_name}_${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
       -->
     </profile>
 
