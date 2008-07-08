@@ -1357,11 +1357,10 @@ L3INT Q931Uie_DateTime(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR 
 
     *pIE=0;
 
-    pie->IEId        = IBuf[Octet];
-    IESize = IBuf[Octet ++];
+    pie->IEId = IBuf[Octet++];
     
     /* Octet 2 */
-    IESize = IBuf[Octet ++]; 
+    IESize    = IBuf[Octet++]; 
 
     /* Octet 3 - Year */
     pie->Year = IBuf[Octet++];
@@ -1375,23 +1374,24 @@ L3INT Q931Uie_DateTime(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR 
     /*******************************************************************
         The remaining part of the IE are optioinal, but only the length 
         can now tell us wherever these fields are present or not
+        (always remember: IESize does not include ID and Size octet)
     ********************************************************************/
     pie->Format=0;
 
     /* Octet 6 - Hour (optional)*/
-    if(IESize >= 6)
+    if(IESize >= 4)
     {
         pie->Format = 1;
         pie->Hour = IBuf[Octet++];
 
         /* Octet 7 - Minute (optional)*/
-        if(IESize >= 7)
+        if(IESize >= 5)
         {
             pie->Format = 2;
             pie->Minute = IBuf[Octet++];
 
             /* Octet 8 - Second (optional)*/
-            if(IESize >= 8)
+            if(IESize >= 6)
             {
                 pie->Format = 3;
                 pie->Second = IBuf[Octet++];
