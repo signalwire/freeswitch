@@ -359,45 +359,44 @@ static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	}
 
 	if (odbc_obj->stmt) {
-		SQLSMALLINT c = 0, x = 0;
-		SQLLEN m = 0;
+		SQLSMALLINT nColumns = 0, x = 0;
 
 		eval_some_js("~var _oDbC_dB_RoW_DaTa_ = {}", cx, obj, rval);
 		if (*rval == JS_FALSE) {
 			return JS_TRUE;
 		}
 
-		SQLNumResultCols(odbc_obj->stmt, &c);
-		SQLRowCount(odbc_obj->stmt, &m);
-		if (m > 0) {
-			for (x = 1; x <= c; x++) {
-				SQLSMALLINT NameLength, DataType, DecimalDigits, Nullable;
-				SQLULEN ColumnSize;
-				SQLCHAR name[1024] = "";
-				SQLCHAR *data = odbc_obj->colbuf;
-				SQLCHAR *esc = NULL;
+		if ( SQLNumResultCols( odbc_obj->stmt, &nColumns ) != SQL_SUCCESS )
+			return JS_FALSE;
 
-				SQLDescribeCol(odbc_obj->stmt, x, name, sizeof(name), &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
-				SQLGetData(odbc_obj->stmt, x, SQL_C_CHAR, odbc_obj->colbuf, odbc_obj->cblen, NULL);
+		for (x = 1; x <= nColumns; x++) {
+			SQLSMALLINT NameLength, DataType, DecimalDigits, Nullable;
+			SQLULEN ColumnSize;
+			SQLCHAR name[1024] = "";
+			SQLCHAR *data = odbc_obj->colbuf;
+			SQLCHAR *esc = NULL;
 
-				if (strchr((char *) odbc_obj->colbuf, '"')) {	/* please don't */
-					esc = (SQLCHAR *) escape_data((char *) odbc_obj->colbuf, '\\');
-					data = esc;
-				}
+			SQLDescribeCol(odbc_obj->stmt, x, name, sizeof(name), &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
+			SQLGetData(odbc_obj->stmt, x, SQL_C_CHAR, odbc_obj->colbuf, odbc_obj->cblen, NULL);
 
-				switch_snprintf((char *) odbc_obj->code, odbc_obj->codelen, "~_oDbC_dB_RoW_DaTa_[\"%s\"] = \"%s\"", name, data);
-				switch_safe_free(esc);
-
-				eval_some_js((char *) odbc_obj->code, cx, obj, rval);
-
-				if (*rval == JS_FALSE) {
-					return JS_TRUE;
-				}
+			if (strchr((char *) odbc_obj->colbuf, '"')) {	/* please don't */
+				esc = (SQLCHAR *) escape_data((char *) odbc_obj->colbuf, '\\');
+				data = esc;
 			}
 
-			JS_GetProperty(cx, obj, "_oDbC_dB_RoW_DaTa_", rval);
-			return JS_TRUE;
+			switch_snprintf((char *) odbc_obj->code, odbc_obj->codelen, "~_oDbC_dB_RoW_DaTa_[\"%s\"] = \"%s\"", name, data);
+			switch_safe_free(esc);
+
+			eval_some_js((char *) odbc_obj->code, cx, obj, rval);
+
+			if (*rval == JS_FALSE) {
+				return JS_TRUE;
+			}
 		}
+
+		JS_GetProperty(cx, obj, "_oDbC_dB_RoW_DaTa_", rval);
+		return JS_TRUE;
+		
 
 	}
 

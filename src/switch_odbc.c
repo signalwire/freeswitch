@@ -196,6 +196,9 @@ static int db_is_up(switch_odbc_handle_t *handle)
 	SQLCHAR sql[255] = "";
 	int max_tries = 120;
 
+	SQLRETURN rc;
+	SQLSMALLINT nresultcols;
+
   top:
 
 	if (!handle) {
@@ -219,10 +222,15 @@ static int db_is_up(switch_odbc_handle_t *handle)
 
 	result = SQLExecute(stmt);
 
-	SQLRowCount(stmt, &m);
-	ret = (int) m;
-
-	if (result < 0 || m < 0) {
+	SQLRowCount (stmt, &m);
+	rc = SQLNumResultCols (stmt, &nresultcols);
+	if (rc != SQL_SUCCESS){
+		goto error;
+	}
+	ret = (int) nresultcols;
+	/* determine statement type */
+	if (nresultcols <= 0) {
+		/* statement is not a select statement */
 		goto error;
 	}
 
