@@ -44,7 +44,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..,..\..\..\libsofia-sip-ua\su,..\..\..\libsofia-sip-ua\ipt,..\..\..\libsofia-sip-ua\sresolv,..\..\..\libsofia-sip-ua\bnf,..\..\..\libsofia-sip-ua\url,..\..\..\libsofia-sip-ua\msg,..\..\..\libsofia-sip-ua\sip,..\..\..\libsofia-sip-ua\nta,..\..\..\libsofia-sip-ua\nua,..\..\..\libsofia-sip-ua\iptsec,..\..\..\libsofia-sip-ua\http,..\..\..\libsofia-sip-ua\nth,..\..\..\libsofia-sip-ua\nea,..\..\..\libsofia-sip-ua\sdp,..\..\..\libsofia-sip-ua\soa,..\..\..\libsofia-sip-ua\stun,..\..\..\libsofia-sip-ua\tport,include,."
+				AdditionalIncludeDirectories="..\..,..\..\..\libsofia-sip-ua\su,..\..\..\libsofia-sip-ua\ipt,..\..\..\libsofia-sip-ua\sresolv,..\..\..\libsofia-sip-ua\bnf,..\..\..\libsofia-sip-ua\url,..\..\..\libsofia-sip-ua\msg,..\..\..\libsofia-sip-ua\sip,..\..\..\libsofia-sip-ua\nta,..\..\..\libsofia-sip-ua\nua,..\..\..\libsofia-sip-ua\iptsec,..\..\..\libsofia-sip-ua\http,..\..\..\libsofia-sip-ua\nth,..\..\..\libsofia-sip-ua\nea,..\..\..\libsofia-sip-ua\sdp,..\..\..\libsofia-sip-ua\soa,..\..\..\libsofia-sip-ua\stun,..\..\..\libsofia-sip-ua\tport,..\..\..\tests,."
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -140,7 +140,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\..,..\..\..\libsofia-sip-ua\su,..\..\..\libsofia-sip-ua\ipt,..\..\..\libsofia-sip-ua\sresolv,..\..\..\libsofia-sip-ua\bnf,..\..\..\libsofia-sip-ua\url,..\..\..\libsofia-sip-ua\msg,..\..\..\libsofia-sip-ua\sip,..\..\..\libsofia-sip-ua\nta,..\..\..\libsofia-sip-ua\nua,..\..\..\libsofia-sip-ua\iptsec,..\..\..\libsofia-sip-ua\http,..\..\..\libsofia-sip-ua\nth,..\..\..\libsofia-sip-ua\nea,..\..\..\libsofia-sip-ua\sdp,..\..\..\libsofia-sip-ua\soa,..\..\..\libsofia-sip-ua\stun,..\..\..\libsofia-sip-ua\tport,include,."
+				AdditionalIncludeDirectories="..\..,..\..\..\libsofia-sip-ua\su,..\..\..\libsofia-sip-ua\ipt,..\..\..\libsofia-sip-ua\sresolv,..\..\..\libsofia-sip-ua\bnf,..\..\..\libsofia-sip-ua\url,..\..\..\libsofia-sip-ua\msg,..\..\..\libsofia-sip-ua\sip,..\..\..\libsofia-sip-ua\nta,..\..\..\libsofia-sip-ua\nua,..\..\..\libsofia-sip-ua\iptsec,..\..\..\libsofia-sip-ua\http,..\..\..\libsofia-sip-ua\nth,..\..\..\libsofia-sip-ua\nea,..\..\..\libsofia-sip-ua\sdp,..\..\..\libsofia-sip-ua\soa,..\..\..\libsofia-sip-ua\stun,..\..\..\libsofia-sip-ua\tport,..\..\..\tests,."
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				StringPooling="true"
 				RuntimeLibrary="2"
