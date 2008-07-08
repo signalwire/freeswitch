@@ -209,6 +209,10 @@ public class CoreSession {
     return freeswitchJNI.CoreSession_streamFile__SWIG_1(swigCPtr, this, file);
   }
 
+  public int sleep(String file, int ms) {
+    return freeswitchJNI.CoreSession_sleep(swigCPtr, this, file, ms);
+  }
+
   public int flushEvents() {
     return freeswitchJNI.CoreSession_flushEvents(swigCPtr, this);
   }

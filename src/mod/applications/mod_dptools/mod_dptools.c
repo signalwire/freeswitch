@@ -586,16 +586,6 @@ SWITCH_STANDARD_APP(sched_broadcast_function)
 	}
 }
 
-SWITCH_STANDARD_APP(sleep_function)
-{
-	if (switch_strlen_zero(data)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No timeout specified.\n");
-	} else {
-		uint32_t ms = atoi(data);
-		switch_ivr_sleep(session, ms);
-	}
-}
-
 SWITCH_STANDARD_APP(delay_function)
 {
 	uint32_t len = 0;
@@ -1322,6 +1312,26 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 
 	return SWITCH_STATUS_SUCCESS;
 }
+
+
+SWITCH_STANDARD_APP(sleep_function)
+{	
+	if (switch_strlen_zero(data)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No timeout specified.\n");
+	} else {
+		uint32_t ms = atoi(data);
+		char buf[10];
+		switch_input_args_t args = { 0 };
+
+		args.input_callback = on_dtmf;
+		args.buf = buf;
+		args.buflen = sizeof(buf);
+		
+		switch_ivr_sleep(session, ms, &args);
+	}
+}
+
+
 
 SWITCH_STANDARD_APP(clear_speech_cache_function)
 {

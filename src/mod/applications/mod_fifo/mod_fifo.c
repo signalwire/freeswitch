@@ -855,7 +855,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				if (announce) {
 					switch_ivr_play_file(session, NULL, announce, NULL);
 				} else {
-					switch_ivr_sleep(session, 500);
+					switch_ivr_sleep(session, 500, NULL);
 				}
 
 

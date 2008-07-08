@@ -1314,7 +1314,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 	status = switch_ivr_phrase_macro(session, VM_HELLO_MACRO, NULL, NULL, &args);
 
 	while (switch_channel_ready(channel)) {
-		switch_ivr_sleep(session, 100);
+		switch_ivr_sleep(session, 100, NULL);
 
 		switch (vm_check_state) {
 		case VM_CHECK_START:

@@ -247,6 +247,7 @@ class CoreSession(_object):
     def read(*args): return _freeswitch.CoreSession_read(*args)
     def playAndGetDigits(*args): return _freeswitch.CoreSession_playAndGetDigits(*args)
     def streamFile(*args): return _freeswitch.CoreSession_streamFile(*args)
+    def sleep(*args): return _freeswitch.CoreSession_sleep(*args)
     def flushEvents(*args): return _freeswitch.CoreSession_flushEvents(*args)
     def flushDigits(*args): return _freeswitch.CoreSession_flushDigits(*args)
     def setAutoHangup(*args): return _freeswitch.CoreSession_setAutoHangup(*args)

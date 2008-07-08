@@ -1689,6 +1689,64 @@ static JSBool session_streamfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	return JS_TRUE;
 }
 
+
+
+static JSBool session_sleep(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	struct js_session *jss = JS_GetPrivate(cx, obj);
+	switch_channel_t *channel;
+	void *bp = NULL;
+	int len = 0;
+	switch_input_callback_function_t dtmf_func = NULL;
+	struct input_callback_state cb_state = { 0 };
+	JSFunction *function;
+	switch_input_args_t args = { 0 };
+	int32 ms;
+
+	METHOD_SANITY_CHECK();
+	channel = switch_core_session_get_channel(jss->session);
+	CHANNEL_SANITY_CHECK();
+	CHANNEL_MEDIA_SANITY_CHECK();
+
+	if (argc > 0) {
+		JS_ValueToInt32(cx, argv[0], &ms);
+		if (ms <= 0) {
+			return JS_FALSE;
+		}
+	}
+
+	if (argc > 1) {
+		if ((function = JS_ValueToFunction(cx, argv[1]))) {
+			memset(&cb_state, 0, sizeof(cb_state));
+			cb_state.function = function;
+
+			if (argc > 2) {
+				cb_state.arg = argv[2];
+			}
+
+			cb_state.session_state = jss;
+			cb_state.cx = cx;
+			cb_state.obj = obj;
+			dtmf_func = js_stream_input_callback;
+			bp = &cb_state;
+			len = sizeof(cb_state);
+		}
+	}
+
+	cb_state.ret = BOOLEAN_TO_JSVAL(JS_FALSE);
+	cb_state.saveDepth = JS_SuspendRequest(cx);
+	args.input_callback = dtmf_func;
+	args.buf = bp;
+	args.buflen = len;
+	check_hangup_hook(jss);
+	switch_ivr_sleep(jss->session, ms, &args);
+	check_hangup_hook(jss);
+	JS_ResumeRequest(cx, cb_state.saveDepth);
+	*rval = cb_state.ret;
+
+	return JS_TRUE;
+}
+
 static JSBool session_set_variable(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
@@ -2488,6 +2546,7 @@ static JSFunctionSpec session_methods[] = {
 	{"sendEvent", session_send_event, 0},
 	{"hangup", session_hangup, 0},
 	{"execute", session_execute, 0},
+	{"sleep", session_sleep, 1},
 	{0}
 };
 

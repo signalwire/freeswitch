@@ -38,7 +38,7 @@
 #include <switch_ivr.h>
 #include "stfu.h"
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session, uint32_t ms)
+SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session, uint32_t ms, switch_input_args_t *args)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -58,6 +58,41 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 
 		if (now > done || left <= 0) {
 			break;
+		}
+		
+		if (args && (args->input_callback || args->buf || args->buflen)) {
+			switch_dtmf_t dtmf;
+			
+			/*
+			   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
+			   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
+			 */
+			if (switch_channel_has_dtmf(channel)) {
+				if (!args->input_callback && !args->buf) {
+					status = SWITCH_STATUS_BREAK;
+					break;
+				}
+				switch_channel_dequeue_dtmf(channel, &dtmf);
+				if (args->input_callback) {
+					status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
+				} else {
+					switch_copy_string((char *) args->buf, (void *) &dtmf, args->buflen);
+					status = SWITCH_STATUS_BREAK;
+				}
+			}
+
+			if (args->input_callback) {
+				switch_event_t *event = NULL;
+
+				if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+					status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+					switch_event_destroy(&event);
+				}
+			}
+
+			if (status != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
 		}
 
 		if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {

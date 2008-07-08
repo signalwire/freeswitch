@@ -804,6 +804,21 @@ SWITCH_DECLARE(int) CoreSession::streamFile(char *file, int starting_sample_coun
 
 }
 
+SWITCH_DECLARE(int) CoreSession::sleep(char *file, int ms) {
+
+    switch_status_t status;
+
+	this_check(-1);
+    sanity_check(-1);
+	
+    begin_allow_threads();
+    status = switch_ivr_sleep(session, ms, ap);
+    end_allow_threads();
+
+    return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+
+}
+
 SWITCH_DECLARE(bool) CoreSession::ready() {
 
 	this_check(false);

@@ -372,6 +372,7 @@ sub DESTROY {
 *read = *freeswitchc::CoreSession_read;
 *playAndGetDigits = *freeswitchc::CoreSession_playAndGetDigits;
 *streamFile = *freeswitchc::CoreSession_streamFile;
+*sleep = *freeswitchc::CoreSession_sleep;
 *flushEvents = *freeswitchc::CoreSession_flushEvents;
 *flushDigits = *freeswitchc::CoreSession_flushDigits;
 *setAutoHangup = *freeswitchc::CoreSession_setAutoHangup;

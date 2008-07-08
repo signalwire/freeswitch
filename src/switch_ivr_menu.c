@@ -501,7 +501,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 			}
 			errs++;
 			if (status == SWITCH_STATUS_SUCCESS) {
-				status = switch_ivr_sleep(session, 1000);
+				status = switch_ivr_sleep(session, 1000, NULL);
 			}
 			/* breaks are ok too */
 			if (SWITCH_STATUS_IS_BREAK(status)) {
