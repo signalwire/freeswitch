@@ -1,21 +1,21 @@
 #include "freeswitch_python.h"
 
 #define sanity_check(x) do { if (!session) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return x;}} while(0)
-#define init_vars() do { caller_profile.source = "mod_python"; swapstate = S_SWAPPED_IN; } while(0)
+#define py_init_vars() do { caller_profile.source = "mod_python"; swapstate = S_SWAPPED_IN; } while(0)
 
 PySession::PySession():CoreSession()
 {
-	init_vars();
+	py_init_vars();
 }
 
 PySession::PySession(char *uuid):CoreSession(uuid)
 {
-	init_vars();
+	py_init_vars();
 }
 
 PySession::PySession(switch_core_session_t *new_session):CoreSession(new_session)
 {
-	init_vars();
+	py_init_vars();
 }
 
 
