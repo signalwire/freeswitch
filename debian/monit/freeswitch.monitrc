@@ -2,7 +2,10 @@
    group voice
    start program = "/etc/init.d/freeswitch start"
    stop  program = "/etc/init.d/freeswitch stop"
-   if failed port 5060 type UDP then restart
+# Checks sip port on localhost, not wlways suitable
+#   if failed port 5060 type UDP then restart
+# Checks mod_event_socket on localhost. Maybe more suitable
+   if failed port 8021 type TCP then restart
    if 5 restarts within 5 cycles then timeout
    depends on freeswitch_bin
    depends on freeswitch_rc
@@ -10,9 +13,9 @@
  check file freeswitch_bin with path /opt/freeswitch/bin/freeswitch
    group voice
    if failed checksum then unmonitor
-   if failed permission 755 then unmonitor
+   if failed permission 750 then unmonitor
    if failed uid freeswitch then unmonitor
-   if failed gid daemon then unmonitor
+#   if failed gid daemon then unmonitor
 
  check file freeswitch_rc with path /etc/init.d/freeswitch
    group voice

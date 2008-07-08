@@ -1,7 +1,0 @@
-# Startup settings fffor freeswitch
-# In this package install if monit is instaled it will automatically control 
-# start and stop of freeswitch
-
-# Enable initd (let init handle start and stop of freeswitch)
-
-USE_INIT="false"

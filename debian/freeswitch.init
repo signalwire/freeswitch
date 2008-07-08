@@ -19,26 +19,20 @@ PATH=/sbin:/usr/sbin:/bin:/usr/bin:/opt/freeswitch/bin
 DESC="FreeSwitch Voice Switching System"
 NAME=freeswitch
 DAEMON=/opt/freeswitch/bin/$NAME
-DAEMON_ARGS="-nc"
 USER=freeswitch
 PIDFILE=/opt/freeswitch/log/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 
 # Check if we are being executed by init
 
-. /etc/default/$NAME
 CALLEDSCRIPT=`basename $0`
-echo $CALLEDSCRIPT
-case "$CALLEDSCRIPT" in
-	freeswitch)
-	;;
-	*)
-	  if [ "$USE_INIT" != "TRUE" ]; then 
-	    echo "FreeSwitch disabled" ; 
-	    exit 0 ;
-	  fi
-	;;
-esac
+
+if [ -r /etc/default/$NAME ]; then . /etc/default/$NAME; fi                                           
+
+if [ "$FREESWITCH_ENABLED" != "true" ]; then 
+    echo "$DESC not enabled yet. Edit /etc/default/$NAME first."
+    exit 0 ;
+fi
 
 # Exit if the package is not installed
 # [ -x "$DAEMON" ] || exit 0
@@ -65,7 +59,7 @@ do_start()
 	start-stop-daemon -c $USER --start --quiet --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
 		|| return 1
 	start-stop-daemon -c $USER --start --quiet --pidfile $PIDFILE --exec $DAEMON -- \
-		$DAEMON_ARGS \
+		$FREESWITCH_PARAMS \
 		|| return 2
 	# Add code here, if necessary, that waits for the process to be ready
 	# to handle requests from services started subsequently which depend

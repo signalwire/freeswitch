@@ -16,13 +16,13 @@ export DIALPLANS_MODULES=dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_
 export DIRECTORIES_MODULES=
 export DOTNET_MODULES=
 export ENDPOINTS_MODULES=endpoints/mod_dingaling endpoints/mod_iax endpoints/mod_portaudio endpoints/mod_sofia endpoints/mod_woomera ../../libs/openzap/mod_openzap
-export EVENT_HANDLERS_MODULES=event_handlers/mod_event_multicast event_handlers/mod_event_socket
+export EVENT_HANDLERS_MODULES=event_handlers/mod_event_multicast event_handlers/mod_event_socket event_handlers/mod_cdr_csv
 export FORMATS_MODULES=formats/mod_local_stream formats/mod_native_file formats/mod_sndfile formats/mod_tone_stream formats/mod_shout
 export LANGUAGES_MODULES=languages/mod_perl languages/mod_lua
 export LOGGERS_MODULES=loggers/mod_console loggers/mod_logfile loggers/mod_syslog
-export SAY_MODULES=say/mod_say_de say/mod_say_en say/mod_say_fr say/mod_say_it
+export SAY_MODULES=say/mod_say_en say/mod_say_it say/mod_say_de say/mod_say_fr say/mod_say_es say/mod_say_nl
 export TIMERS_MODULES=
-export DISABLED_MODULES=applications/mod_soundtouch directories/mod_ldap languages/mod_java languages/mod_python languages/mod_spidermonkey_skel ast_tts/mod_cepstral asr_tts/mod_lumenvox endpoints/mod_wanpipe event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf say/mod_say_es say/mod_say_nl
+export DISABLED_MODULES=applications/mod_soundtouch directories/mod_ldap languages/mod_java languages/mod_python languages/mod_spidermonkey_skel ast_tts/mod_cepstral asr_tts/mod_lumenvox endpoints/mod_wanpipe event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf
 export XML_INT_MODULES=xml_int/mod_xml_rpc  xml_int/mod_xml_curl xml_int/mod_xml_cdr
 export MYMODULES=$(PASSTHRU_CODEC_MODULES) $(SPIDERMONKEY_MODULES) $(APPLICATIONS_MODULES) $(ASR_TTS_MODULES) $(CODECS_MODULES) $(DIALPLANS_MODULES) $(DIRECTORIES_MODULES) $(DOTNET_MODULES) $(ENDPOINTS_MODULES) $(EVENT_HANDLERS_MODULES) $(FORMATS_MODULES) $(LANGUAGES_MODULES) $(LOGGERS_MODULES) $(SAY_MODULES) $(TIMERS_MODULES) $(XML_INT_MODULES)
 export MODULES=$(MYMODULES)
@@ -49,14 +49,21 @@ endif
 
 config.status: configure
 	dh_testdir
-	rm modules.conf
+	rm -f modules.conf
 	touch modules.conf
 	echo $(MODULES)
 	for i in $(MODULES); do echo $$i >> modules.conf; done
 	./configure --prefix=/opt/freeswitch --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) ${FEATURES}
 
-configure: bootstrap.sh
-	AUTOCONF=${AUTOCONF} ./bootstrap.sh
+configure:
+	if test ! -f Makefile.in ;  then \
+	    if test -f ./bootstrap.sh ; then \
+		AUTOCONF=${AUTOCONF} ./bootstrap.sh ; \
+	    else \
+		echo "No Makefile.in and no known way to bootstrap." ; \
+		exit 1; \
+	    fi; \
+	fi;
 
 build: build-stamp
 build-stamp:  config.status
@@ -89,7 +96,7 @@ install: build
 	dh_clean -k 
 	dh_installdirs -A --sourcedir=debian/tmp
 
-	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install uhd-sounds-install moh-install
 
 
 # Build architecture-independent files here.
@@ -116,8 +123,7 @@ binary-arch: build install
 #	dh_installinfo
 #	dh_undocumented
 #	dh_installman
-	cp debian/monit/freeswitch.monitrc debian/freeswitch/etc/monit/freswitch.monitrc
-	cp debian/default/freeswitch debian/freeswitch/etc/default
+	cp debian/monit/freeswitch.monitrc debian/freeswitch/etc/monit/freeswitch.monitrc
 	dh_install --sourcedir=debian/tmp
 	dh_strip
 	dh_compress

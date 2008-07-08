@@ -1,3 +1,19 @@
+freeswitch (1.0.1~trunk) unstable; urgency=low
+
+   * Updated revision number
+   * Fixed init problem reported by Jay Binks (FSSCRIPTS-1)
+   * Added a patch to the debian build system add more features (thanks to Hadley Rich) (FSBUILD-45)
+     - Added en-us-callie sounds and music on hold packages
+     - Added recommends and suggests
+     - Added mod_say_es and mod_say_nl
+     - Updated descriptions
+     - Added mod_cdr_csv
+   * Fixed typos and some errors in the previus patch.
+   * Modified monit script. Now it should work.
+   * The debian build system now bootstrap automagically if it's necessary and all scripts are in place.
+
+ -- Massimo Cetra <devel@navynet.it>  Sun, 6 Jul 2008 16:30:00 +0100
+
 freeswitch (1.0.0-1) unstable; urgency=low
 
    * Enhanced sofia sip nat handling

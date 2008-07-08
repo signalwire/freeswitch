@@ -2,14 +2,15 @@ Source: freeswitch
 Maintainer: Michal Bielicki <michal.bielicki@voiceworks.pl>
 Section: net
 Priority: extra
-Build-Depends: debhelper (>= 5), automake1.9, autoconf, libtool, unixodbc-dev, libasound2-dev, libcurl3-dev|libcurl4-openssl-dev, libssl-dev, ncurses-dev, libogg-dev, libvorbis-dev, libperl-dev, libgdbm-dev, libdb4.4-dev, libgnutls-dev
-Standards-Version: 3.7.2
+Build-Depends: debhelper (>= 5), fakeroot, automake1.9, autoconf, libtool, unixodbc-dev, libasound2-dev, libcurl3-dev|libcurl4-openssl-dev, libssl-dev, ncurses-dev, libogg-dev, libvorbis-dev, libperl-dev, libgdbm-dev, libdb-dev, libgnutls-dev
+Standards-Version: 3.7.3
 
 Package: freeswitch
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, unixodbc, libasound2, libcurl3, openssl, libncurses5
-Suggests: monit
-Description: A telephony platform that really kicks some ass...
+Recommends: freeswitch-lang-en
+Suggests: freeswitch-spidermonkey, freeswitch-lua, freeswitch-perl, freeswitch-sounds-music-8000, monit 
+Description: The FreeSWITCH open source telephony platform
  FreeSWITCH is an open source telephony platform designed to facilitate the
  creation of voice and chat driven products scaling from a soft-phone up to
  a soft-switch.  It can be used as a simple switching engine, a media gateway
@@ -19,22 +20,22 @@ Description: A telephony platform that really kicks some ass...
 Package: freeswitch-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
-Description: Development Package for the FreeSwitch open source telephony platform
+Description: Development Package for the FreeSWITCH open source telephony platform
 
 Package: freeswitch-spidermonkey
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
-Description: A Javascript engine for freeswitch
+Description: A Javascript engine for FreeSWITCH
 
 Package: freeswitch-perl
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
-Description: A perl engine for freeswitch
+Description: A perl engine for FreeSWITCH
 
 Package: freeswitch-lua
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
-Description: A lua engine for freeswitch
+Description: A lua engine for FreeSWITCH
 
 Package: freeswitch-codec-passthru-g7231
 Architecture: any
@@ -54,7 +55,29 @@ Description: Pass through g729 Codec support for the FreeSWITCH open source tele
 Package: freeswitch-lang-en
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Recommends: freeswitch-sounds-en-us-callie-8000
+Suggests: freeswitch-sounds-en-us-callie-16000, freeswitch-sounds-en-us-callie-32000
 Description: English language files for the FreeSWITCH open source telephony platform
+
+Package: freeswitch-sounds-en-us-callie-8000
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: English language files for the FreeSWITCH open source telephony platform
+
+Package: freeswitch-sounds-en-us-callie-16000
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: English language files for the FreeSWITCH open source telephony platform (16000)
+
+Package: freeswitch-sounds-en-us-callie-32000
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: English language files for the FreeSWITCH open source telephony platform (32000)
+
+Package: freeswitch-sounds-music-8000
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: Music on hold files for the FreeSWITCH open source telephony platform
 
 Package: freeswitch-lang-de
 Architecture: any
@@ -70,3 +93,13 @@ Package: freeswitch-lang-it
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Description: Italian language files for the FreeSWITCH open source telephony platform
+
+Package: freeswitch-lang-es
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: Spanish language files for the FreeSWITCH open source telephony platform
+
+Package: freeswitch-lang-nl
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: Dutch language files for the FreeSWITCH open source telephony platform

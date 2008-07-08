@@ -3,6 +3,7 @@ opt/freeswitch/bin/freeswitch
 opt/freeswitch/bin/scripts/*
 opt/freeswitch/lib/libfreeswitch*.so*
 opt/freeswitch/mod/mod_shout*
+opt/freeswitch/mod/mod_cdr_csv.so*
 opt/freeswitch/mod/mod_console.so*
 opt/freeswitch/mod/mod_expr.so*
 opt/freeswitch/mod/mod_rss.so*
