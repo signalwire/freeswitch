@@ -33,7 +33,7 @@ case "$CALLEDSCRIPT" in
 	freeswitch)
 	;;
 	*)
-	  if [ "USE_INIT" != "TRUE" ]; then 
+	  if [ "$USE_INIT" != "TRUE" ]; then 
 	    echo "FreeSwitch disabled" ; 
 	    exit 0 ;
 	  fi
