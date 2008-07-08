@@ -1716,6 +1716,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			return;
 		}
 
+
 		if ((status == 180 || status == 183 || status == 200)) {
 			const char *astate = "early";
 			url_t *from = NULL, *to = NULL, *contact = NULL;
@@ -1780,6 +1781,28 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 			}
 		}
+
+		if (channel && sip && (status >= 300 || status < 399) && switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			sip_contact_t * p_contact = sip->sip_contact;
+			int i = 0;
+			char var_name[80];	
+
+			while (p_contact) {
+				if (p_contact->m_url) {
+					if (p_contact->m_url->url_user) {
+						switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_user_%d", i);
+						switch_channel_set_variable_partner(channel, var_name, p_contact->m_url->url_user);
+					}
+					if (p_contact->m_url->url_host) {
+						switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_host_%d", i);
+						switch_channel_set_variable_partner(channel, var_name, p_contact->m_url->url_host);
+					}
+					p_contact = p_contact->m_next;
+					i++;
+				}
+			}
+		}
+
 	}
 }
 
