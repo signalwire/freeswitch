@@ -66,6 +66,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 			break;
 		}
 		
+		if (switch_core_session_private_event_count(session)) {
+			switch_ivr_parse_all_events(session);
+		}
+
 		if (args && (args->input_callback || args->buf || args->buflen)) {
 			switch_dtmf_t dtmf;
 			
@@ -86,7 +90,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 					status = SWITCH_STATUS_BREAK;
 				}
 			}
-
+			
 			if (args->input_callback) {
 				switch_event_t *event = NULL;
 
