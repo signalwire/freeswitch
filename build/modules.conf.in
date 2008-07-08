@@ -13,6 +13,8 @@ applications/mod_esf
 applications/mod_fsv
 #applications/mod_soundtouch
 #applications/mod_rss
+#asr_tts/mod_flite
+#asr_tts/mod_pocketsphinx
 #asr_tts/mod_cepstral
 #asr_tts/mod_openmrcp
 codecs/mod_g723_1
