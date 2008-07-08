@@ -371,7 +371,7 @@ typedef L3USHORT ie;                /* Special data type to hold a dynamic  */
 #define Q931mes_RESTART              0x46 /* 0100 0110                   */
 #define Q931mes_RESTART_ACKNOWLEDGE  0x4e /* 0100 1110                   */
 #define Q931mes_CONGESTION_CONTROL   0x79 /* 0111 1001                   */
-#define Q931mes_INFORMATION          0x7a /* 0111 1011                   */
+#define Q931mes_INFORMATION          0x7b /* 0111 1011                   */
 #define Q931mes_NOTIFY               0x6e /* 0110 1110                   */
 #define Q931mes_STATUS               0x7d /* 0111 1101                   */
 #define Q931mes_STATUS_ENQUIRY       0x75 /* 0111 0101                   */
