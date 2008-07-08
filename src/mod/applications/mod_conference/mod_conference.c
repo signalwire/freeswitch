@@ -27,7 +27,7 @@
  * Neal Horman <neal at wanlink dot com>
  * Bret McDanel <trixter at 0xdecafbad dot com>
  * Dale Thatcher <freeswitch at dalethatcher dot com>
- *
+ * Chris Danielson <chris at maxpowersoft dot com>
  *
  * mod_conference.c -- Software Conference Bridge
  *
@@ -230,6 +230,7 @@ typedef struct conference_obj {
 	char *caller_id_number;
 	char *sound_prefix;
 	char *special_announce;
+	char *auto_record;
 	uint32_t max_members;
 	char *maxmember_sound;
 	uint32_t anounce_count;
@@ -880,6 +881,21 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	switch_mutex_lock(globals.hash_mutex);
 	globals.threads++;
 	switch_mutex_unlock(globals.hash_mutex);
+	
+	if (conference->auto_record) {
+		imember = conference->members;
+		if (imember) {
+			switch_channel_t *channel = switch_core_session_get_channel(imember->session);
+			char *rfile = switch_channel_expand_variables(channel, conference->auto_record); 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Auto recording file: %s\n", rfile);
+			launch_conference_record_thread(conference, rfile);
+			if (rfile != conference->auto_record) {
+				switch_safe_free(rfile);
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Auto Record Failed.  No members in conference.\n");
+		}
+	}
 
 	while (globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT)) {
 		switch_size_t file_sample_len = samples;
@@ -4258,6 +4274,8 @@ SWITCH_STANDARD_APP(conference_function)
 			goto done;
 		}
 
+		switch_channel_set_variable(channel, "conference-name", conference->name);
+
 		/* Set the minimum number of members (once you go above it you cannot go below it) */
 		conference->min = 2;
 
@@ -4287,6 +4305,8 @@ SWITCH_STANDARD_APP(conference_function)
 			if (dpin) {
 				conference->pin = switch_core_strdup(conference->pool, dpin);
 			}
+		
+			switch_channel_set_variable(channel, "conference-name", conference->name);
 
 			/* Set the minimum number of members (once you go above it you cannot go below it) */
 			conference->min = 1;
@@ -4296,6 +4316,8 @@ SWITCH_STANDARD_APP(conference_function)
 
 			/* Start the conference thread for this conference */
 			launch_conference_thread(conference);
+		} else { /* setup user variable */
+			switch_channel_set_variable(channel, "conference-name", conference->name);
 		}
 
 		/* acquire a read lock on the thread so it can't leave without us */
@@ -4806,6 +4828,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	switch_status_t status;
 	int comfort_noise_level = 0;
 	char *suppress_events = NULL;
+	char *auto_record = NULL;
 
 	/* Validate the conference name */
 	if (switch_strlen_zero(name)) {
@@ -4923,6 +4946,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 			}
 		} else if (!strcasecmp(var, "suppress-events") && !switch_strlen_zero(val)) {
 			suppress_events = val;
+		} else if (!strcasecmp(var, "auto-record") && !switch_strlen_zero(val)) {
+			auto_record = val;
 		}
 	}
 
@@ -5078,6 +5103,10 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 		clear_eflags(suppress_events, &conference->eflags);
 	}
 
+	if (!switch_strlen_zero(auto_record)) {
+		conference->auto_record = switch_core_strdup(conference->pool, auto_record);
+	}
+	
 	/* caller control configuration chores */
 	if (switch_ivr_digit_stream_parser_new(conference->pool, &conference->dtmf_parser) == SWITCH_STATUS_SUCCESS) {
 
