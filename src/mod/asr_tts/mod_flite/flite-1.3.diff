@@ -1,0 +1,73 @@
+diff -ur /usr/src/flite-1.3-current/lang/cmu_us_kal/cmu_us_kal.c flite-1.3-current/lang/cmu_us_kal/cmu_us_kal.c
+--- /usr/src/flite-1.3-current/lang/cmu_us_kal/cmu_us_kal.c	2004-12-31 17:22:10.000000000 -0600
++++ flite-1.3-current/lang/cmu_us_kal/cmu_us_kal.c	2008-07-08 14:14:57.000000000 -0500
+@@ -50,8 +50,14 @@
+ 
+ cst_voice *register_cmu_us_kal(const char *voxdir)
+ {
+-    cst_voice *v = new_voice();
++    cst_voice *v;
+ 
++    if (cmu_us_kal_diphone) {
++		return cmu_us_kal_diphone;
++	}
++
++	v = new_voice();
++	
+     /* Set up basic values for synthesizing with this voice */
+     usenglish_init(v);
+     feat_set_string(v->features,"name","cmu_us_kal_diphone");
+diff -ur /usr/src/flite-1.3-current/lang/cmu_us_kal16/cmu_us_kal16.c flite-1.3-current/lang/cmu_us_kal16/cmu_us_kal16.c
+--- /usr/src/flite-1.3-current/lang/cmu_us_kal16/cmu_us_kal16.c	2005-01-03 08:08:06.000000000 -0600
++++ flite-1.3-current/lang/cmu_us_kal16/cmu_us_kal16.c	2008-07-08 14:14:20.000000000 -0500
+@@ -46,16 +46,22 @@
+ static cst_utterance *cmu_us_kal_postlex(cst_utterance *u);
+ extern cst_diphone_db cmu_us_kal16_db;
+ 
+-cst_voice *cmu_us_kal_diphone = NULL;
++cst_voice *cmu_us_kal16_diphone = NULL;
+ 
+-cst_voice *register_cmu_us_kal(const char *voxdir)
++cst_voice *register_cmu_us_kal16(const char *voxdir)
+ {
+-    cst_voice *v = new_voice();
++    cst_voice *v;
++
++    if (cmu_us_kal16_diphone) {
++		return cmu_us_kal16_diphone;
++	}
++
++	v = new_voice();
+ 
+     usenglish_init(v);
+ 
+     /* Set up basic values for synthesizing with this voice */
+-    feat_set_string(v->features,"name","cmu_us_kal_diphone");
++    feat_set_string(v->features,"name","cmu_us_kal16_diphone");
+ 
+     /* Lexicon */
+     cmu_lex_init();
+@@ -78,17 +84,17 @@
+     feat_set_string(v->features,"resynth_type","fixed");
+     feat_set_string(v->features,"join_type","modified_lpc");
+ 
+-    cmu_us_kal_diphone = v;
++    cmu_us_kal16_diphone = v;
+ 
+-    return cmu_us_kal_diphone;
++    return cmu_us_kal16_diphone;
+ }
+ 
+-void unregister_cmu_us_kal(cst_voice *v)
++void unregister_cmu_us_kal16(cst_voice *v)
+ {
+-    if (v != cmu_us_kal_diphone)
++    if (v != cmu_us_kal16_diphone)
+ 	return;
+     delete_voice(v);
+-    cmu_us_kal_diphone = NULL;
++    cmu_us_kal16_diphone = NULL;
+ }
+ 
+ static void fix_ah(cst_utterance *u)
+Only in flite-1.3-current/: lib
