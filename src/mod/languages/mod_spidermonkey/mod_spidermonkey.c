@@ -1701,7 +1701,7 @@ static JSBool session_sleep(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	struct input_callback_state cb_state = { 0 };
 	JSFunction *function;
 	switch_input_args_t args = { 0 };
-	int32 ms;
+	int32 ms = 0;
 
 	METHOD_SANITY_CHECK();
 	channel = switch_core_session_get_channel(jss->session);

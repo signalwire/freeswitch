@@ -956,7 +956,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 {
 	switch_xml_t cfg, xml = NULL, xprofile, profiles, gateways_tag, domain_tag, domains_tag;
 	char *cf = "sofia.conf";
-	switch_event_t *params = NULL;;
+	switch_event_t *params = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
