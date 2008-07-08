@@ -44,7 +44,6 @@ struct xml_binding {
 	int disable100continue;
 	uint32_t ignore_cacert_check;
 	switch_hash_t *vars_map;
-	switch_memory_pool_t *vars_map_pool;
 };
 
 static int keep_files_around = 0;
@@ -55,6 +54,17 @@ struct config_data {
 	char *name;
 	int fd;
 };
+
+typedef struct hash_node {
+    switch_hash_t* hash;
+    struct hash_node* next;
+} hash_node_t;
+
+static struct {
+    switch_memory_pool_t* pool;
+    hash_node_t* hash_root;
+    hash_node_t* hash_tail;
+} globals;
 
 #define XML_CURL_SYNTAX "[debug_on|debug_off]"
 SWITCH_STANDARD_API(xml_curl_function)
@@ -212,7 +222,6 @@ static switch_status_t do_config(void)
 	int x = 0;
 	int need_vars_map = 0;
 	switch_hash_t *vars_map = NULL;
-	switch_memory_pool_t *vars_map_pool = NULL;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
@@ -231,6 +240,9 @@ static switch_status_t do_config(void)
 		char *bind_mask = NULL;
 		int disable100continue = 0;
 		uint32_t ignore_cacert_check = 0;
+		hash_node_t* hash_node;
+		need_vars_map = 0;
+		vars_map = NULL;
 
 		for (param = switch_xml_child(binding_tag, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -248,15 +260,8 @@ static switch_status_t do_config(void)
 				ignore_cacert_check = 1;
 			} else if (!strcasecmp(var, "enable-post-var")) {
 				if (!vars_map && need_vars_map == 0) {
-					if (switch_core_new_memory_pool(&vars_map_pool) != SWITCH_STATUS_SUCCESS) {
+					if (switch_core_hash_init(&vars_map, globals.pool) != SWITCH_STATUS_SUCCESS) {
 						need_vars_map = -1;
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cant create memory pool!\n");
-						continue;
-					}
-
-					if (switch_core_hash_init(&vars_map, vars_map_pool) != SWITCH_STATUS_SUCCESS) {
-						need_vars_map = -1;
-						switch_core_destroy_memory_pool(&vars_map_pool);
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cant init params hash!\n");
 						continue;
 					}
@@ -267,16 +272,19 @@ static switch_status_t do_config(void)
 					if (switch_core_hash_insert(vars_map, val, ENABLE_PARAM_VALUE) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cant add %s to params hash!\n", val);
 					}
-
 			}
 		}
 
 		if (!url) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Binding has no url!\n");
+			if (vars_map)
+			    switch_core_hash_destroy(&vars_map);
 			continue;
 		}
 
 		if (!(binding = malloc(sizeof(*binding)))) {
+			if (vars_map)
+			    switch_core_hash_destroy(&vars_map);
 			goto done;
 		}
 		memset(binding, 0, sizeof(*binding));
@@ -295,7 +303,23 @@ static switch_status_t do_config(void)
 		binding->ignore_cacert_check = ignore_cacert_check;
 
 		binding->vars_map = vars_map;
-		binding->vars_map_pool = vars_map_pool;
+		
+		if(vars_map) {
+		    switch_zmalloc(hash_node,sizeof(hash_node_t));
+		    hash_node->hash = vars_map;
+		    hash_node->next = NULL;
+		    
+		    if(!globals.hash_root) {
+			globals.hash_root = hash_node;
+			globals.hash_tail = globals.hash_root;
+		    }
+		    
+		    else {
+			globals.hash_tail->next = hash_node;
+			globals.hash_tail = globals.hash_tail->next;
+		    }
+			
+		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding [%s] XML Fetch Function [%s] [%s]\n",
 						  switch_strlen_zero(bname) ? "N/A" : bname, binding->url, binding->bindings ? binding->bindings : "all");
@@ -321,6 +345,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_curl_load)
 	switch_console_set_complete("add xml_curl debug_on");
 	switch_console_set_complete("add xml_curl debug_off");
 
+	memset(&globals,0,sizeof(globals));
+	globals.pool = pool;
+	globals.hash_root = NULL;
+	globals.hash_tail = NULL;
 
 	if (do_config() == SWITCH_STATUS_SUCCESS) {
 		curl_global_init(CURL_GLOBAL_ALL);
@@ -334,6 +362,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_curl_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_curl_shutdown)
 {
+	hash_node_t* ptr = NULL;
+
+	while(globals.hash_root) {
+	    ptr = globals.hash_root;
+	    switch_core_hash_destroy(&ptr->hash);
+	    globals.hash_root = ptr->next;
+	    switch_safe_free(ptr);
+	}
+	
+	switch_xml_unbind_search_function_ptr(xml_url_fetch);
 	curl_global_cleanup();
 	return SWITCH_STATUS_SUCCESS;
 }
