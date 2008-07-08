@@ -9,6 +9,7 @@ Currently, the provided workspace/solution files will create both
 shared and static libraries for libsofia-sip-ua, and a few test 
 programs. The test programs can be run with the script check.cmd.
 
+
 Preparing the build tree
 ------------------------
 
@@ -23,28 +24,34 @@ for instance at:
   - plus many sites, a web search for "win32 awk" will
     provide you many more links
 
-Notes pthread support
----------------------
+
+Notes for pthread support
+-------------------------
 
 There is a pthread implementation for Visual C on Win32 included.
 Source code and documentation for the pthread library can also be
 downloaded from http://sources.redhat.com/pthreads-win32/.
+
 
 MS-VC6 specific notes
 ---------------------
 
 The MSVC6 workspace file is "SofiaSIP.dsw".
 
-With Visual Studio 6, and Windows 2000 or older Platform SDK, you 
-need to have so called "IPv6 Technology Preview for Windows 2000" 
-installed, in order to compile Sofia-SIP. This is required even
-if IPv6 support is disabled (the socket APIs of older Platfrom SDKs
-are insufficient).
+With Visual Studio 6, and Windows 2000 or older Platform SDK, you need to
+have the header files from the so called "IPv6 Technology Preview for
+Windows 2000" installed, in order to compile Sofia-SIP. This is required
+even if IPv6 support is disabled (the socket APIs of older Platfrom SDKs are
+insufficient).
 
-You can download the preview SDK from:
-http://msdn.microsoft.com/downloads/sdks/platform/tpipv6.asp
+You can download the preview SDK from Microsoft Download Center:
+
+http://www.microsoft.com/downloads/
+
+Search for "IPv6 Technology Preview for Windows 2000".
 
 With newer Platform SDKs, the IPv6 Preview SDK is not needed.
+
 
 MSVC2005 specific notes
 ------------------------
