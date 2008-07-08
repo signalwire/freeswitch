@@ -34,6 +34,9 @@
 #include "openzap.h"
 #include "ss7_boost_client.h"
 #include "zap_ss7_boost.h"
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
 
 typedef enum {
 	SFLAG_FREE_REQ_ID = (1 << 0),
