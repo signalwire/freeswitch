@@ -38,3 +38,13 @@ $(POCKETSPHINX_DIR)/buildstamp: $(POCKETSPHINX_DIR)/Makefile
 $(POCKETSPHINX_LA): $(POCKETSPHINX_DIR)/Makefile 
 	cd $(POCKETSPHINX_DIR) && $(MAKE)
 	$(TOUCH_TARGET)
+
+$(DESTDIR)$(PREFIX)/grammar/model:
+	mkdir $(DESTDIR)$(PREFIX)/grammar/model
+
+$(DESTDIR)$(PREFIX)/grammar/model/communicator:
+	$(GETLIB) $(SPHINXMODEL).tar.gz
+	mkdir $(DESTDIR)$(PREFIX)/grammar/model/communicator
+	mv $(BASE)/libs/Communicator_semi_40.cd_semi_6000/* $(DESTDIR)$(PREFIX)/grammar/model/communicator
+
+local_install: $(DESTDIR)$(PREFIX)/grammar/model $(DESTDIR)$(PREFIX)/grammar/model/communicator
