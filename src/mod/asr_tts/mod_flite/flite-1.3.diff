@@ -1,6 +1,17 @@
-diff -ur /usr/src/flite-1.3-current/lang/cmu_us_kal/cmu_us_kal.c flite-1.3-current/lang/cmu_us_kal/cmu_us_kal.c
+diff -ru /usr/src/flite-1.3-current/include/cst_val.h flite-1.3-current/include/cst_val.h
+--- /usr/src/flite-1.3-current/include/cst_val.h	2004-12-19 14:34:19.000000000 -0600
++++ flite-1.3-current/include/cst_val.h	2008-07-09 12:44:26.000000000 -0500
+@@ -145,6 +145,6 @@
+ 
+ /* Generic pointer vals */
+ typedef void cst_userdata;
+-CST_VAL_USER_TYPE_DCLS(userdata,cst_userdata);
++CST_VAL_USER_TYPE_DCLS(userdata,cst_userdata)
+ 
+ #endif
+diff -ru /usr/src/flite-1.3-current/lang/cmu_us_kal/cmu_us_kal.c flite-1.3-current/lang/cmu_us_kal/cmu_us_kal.c
 --- /usr/src/flite-1.3-current/lang/cmu_us_kal/cmu_us_kal.c	2004-12-31 17:22:10.000000000 -0600
-+++ flite-1.3-current/lang/cmu_us_kal/cmu_us_kal.c	2008-07-08 14:14:57.000000000 -0500
++++ flite-1.3-current/lang/cmu_us_kal/cmu_us_kal.c	2008-07-09 12:36:53.000000000 -0500
 @@ -50,8 +50,14 @@
  
  cst_voice *register_cmu_us_kal(const char *voxdir)
@@ -17,9 +28,9 @@ diff -ur /usr/src/flite-1.3-current/lang/cmu_us_kal/cmu_us_kal.c flite-1.3-curre
      /* Set up basic values for synthesizing with this voice */
      usenglish_init(v);
      feat_set_string(v->features,"name","cmu_us_kal_diphone");
-diff -ur /usr/src/flite-1.3-current/lang/cmu_us_kal16/cmu_us_kal16.c flite-1.3-current/lang/cmu_us_kal16/cmu_us_kal16.c
+diff -ru /usr/src/flite-1.3-current/lang/cmu_us_kal16/cmu_us_kal16.c flite-1.3-current/lang/cmu_us_kal16/cmu_us_kal16.c
 --- /usr/src/flite-1.3-current/lang/cmu_us_kal16/cmu_us_kal16.c	2005-01-03 08:08:06.000000000 -0600
-+++ flite-1.3-current/lang/cmu_us_kal16/cmu_us_kal16.c	2008-07-08 14:14:20.000000000 -0500
++++ flite-1.3-current/lang/cmu_us_kal16/cmu_us_kal16.c	2008-07-09 12:36:53.000000000 -0500
 @@ -46,16 +46,22 @@
  static cst_utterance *cmu_us_kal_postlex(cst_utterance *u);
  extern cst_diphone_db cmu_us_kal16_db;
@@ -70,4 +81,3 @@ diff -ur /usr/src/flite-1.3-current/lang/cmu_us_kal16/cmu_us_kal16.c flite-1.3-c
  }
  
  static void fix_ah(cst_utterance *u)
-Only in flite-1.3-current/: lib
