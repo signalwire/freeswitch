@@ -35,15 +35,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_tone_stream_load);
 SWITCH_MODULE_DEFINITION(mod_tone_stream, mod_tone_stream_load, NULL, NULL);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_tone_stream_shutdown);
 
-struct sleep_handle {
+struct silence_handle {
 	int32_t samples;
 	int silence;
 };
 
-static switch_status_t sleep_stream_file_open(switch_file_handle_t *handle, const char *path)
+static switch_status_t silence_stream_file_open(switch_file_handle_t *handle, const char *path)
 {
 
-	struct sleep_handle *sh;
+	struct silence_handle *sh;
 	int ms;
 
 	sh = switch_core_alloc(handle->memory_pool, sizeof(*sh));
@@ -72,14 +72,14 @@ static switch_status_t sleep_stream_file_open(switch_file_handle_t *handle, cons
 	return SWITCH_STATUS_GENERR;
 }
 
-static switch_status_t sleep_stream_file_close(switch_file_handle_t *handle)
+static switch_status_t silence_stream_file_close(switch_file_handle_t *handle)
 {
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t sleep_stream_file_read(switch_file_handle_t *handle, void *data, size_t *len)
+static switch_status_t silence_stream_file_read(switch_file_handle_t *handle, void *data, size_t *len)
 {
-	struct sleep_handle *sh = handle->private_info;
+	struct silence_handle *sh = handle->private_info;
 	
 	if (sh->samples <= 0) {
 		return SWITCH_STATUS_FALSE;
@@ -196,13 +196,13 @@ static switch_status_t tone_stream_file_read(switch_file_handle_t *handle, void 
 /* Registration */
 
 static char *supported_formats[SWITCH_MAX_CODECS] = { 0 };
-static char *sleep_supported_formats[SWITCH_MAX_CODECS] = { 0 };
+static char *silence_supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_tone_stream_load)
 {
 	switch_file_interface_t *file_interface;
 	supported_formats[0] = "tone_stream";
-	sleep_supported_formats[0] = "sleep_stream";
+	silence_supported_formats[0] = "silence_stream";
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
@@ -214,10 +214,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_tone_stream_load)
 
 	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 	file_interface->interface_name = modname;
-	file_interface->extens = sleep_supported_formats;
-	file_interface->file_open = sleep_stream_file_open;
-	file_interface->file_close = sleep_stream_file_close;
-	file_interface->file_read = sleep_stream_file_read;
+	file_interface->extens = silence_supported_formats;
+	file_interface->file_open = silence_stream_file_open;
+	file_interface->file_close = silence_stream_file_close;
+	file_interface->file_read = silence_stream_file_read;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
