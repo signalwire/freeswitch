@@ -701,10 +701,13 @@ SWITCH_STANDARD_APP(deflect_function)
 SWITCH_STANDARD_APP(set_function)
 {
 	char *var, *val = NULL;
-
+	
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
 	} else {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		char *expanded = NULL;
+
 		var = switch_core_session_strdup(session, data);
 		val = strchr(var, '=');
 
@@ -715,8 +718,16 @@ SWITCH_STANDARD_APP(set_function)
 			}
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SET [%s]=[%s]\n", var, val ? val : "UNDEF");
-		switch_channel_set_variable(switch_core_session_get_channel(session), var, val);
+		if (val) {
+			expanded = switch_channel_expand_variables(channel, val);
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SET [%s]=[%s]\n", var, expanded ? expanded : "UNDEF");
+		switch_channel_set_variable(channel, var, expanded);
+
+		if (expanded && expanded != val) {
+			switch_safe_free(expanded);
+		}
 	}
 }
 
