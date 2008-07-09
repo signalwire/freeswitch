@@ -194,7 +194,6 @@ function SpeechDetect(session, mod, ip) {
 					rv.push("_no_idea_");
 				}
 
-				console_log("debug", "dammit: " + rv + "\n");
 				delete interp;
 				return rv;
 			}
@@ -284,6 +283,14 @@ function SpeechObtainer(asr, req, wait_time) {
 		var x;
 		for (x = 0; x < ia.length; x++) {
 			this.items[this.index++] = ia[x];
+		}
+	}
+
+	this.addItemAlias = function(item,alias) {
+		ia = item.split(",");
+		var x;
+		for (x = 0; x < ia.length; x++) {
+			this.items[this.index++] = ia[x]  + ":::" + alias;
 		}
 	}
 
@@ -404,29 +411,41 @@ function SpeechObtainer(asr, req, wait_time) {
 						if (this.debug) {
 							console_log("debug", "----Testing [" + y + "] [" + x + "] " + items[y] + " =~ [" + this.items[x] + "]\n");
 						}
-						var re = new RegExp(this.items[x]);
+						str = this.items[x];
+						
+						ab = str.split(":::");
+
+						var re = new RegExp(ab[0], "i");
 						match = re.exec(items[y]);
+
 						if (match) {
+							
 							for (i = 0; i < match.length; i++) {
+								if (ab.length == 1) {
+									rep = match[i];
+								} else {
+									rep = ab[1];
+								}
+
 								dup = false;
 								for(z = 0; z < this.collected_items.length; z++) {
-									if (this.collected_items[z] == match[i]) {
+									if (this.collected_items[z] == rep) {
 										dup = true;
 										break;
 									}
 								}
 								if (dup) {
 									if (this.dup_sound) {
-										rv = this.react(this.dup_sound + " " + match[i], this.dup_sound + "," + match[i]);
+										rv = this.react(this.dup_sound + " " + rep, this.dup_sound + "," + rep);
 									}
 								} else {
 									if (this.debug) {
-										console_log("debug", "----Adding " + match[i] + "\n");
+										console_log("debug", "----Adding " + rep + "\n");
 									}
-									this.collected_items[this.collected_index++] = match[i];
+									this.collected_items[this.collected_index++] = rep;
 									hit = true;
 									if (this.add_sound) {
-										rv = this.react(this.add_sound + " " + match[i], this.add_sound + "," + match[i]);
+										rv = this.react(this.add_sound + " " + rep, this.add_sound + "," + rep);
 									}
 								}
 							}
