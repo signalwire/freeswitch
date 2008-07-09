@@ -382,6 +382,20 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 	}
 
+	if (switch_true(switch_channel_get_variable(channel, SWITCH_COPY_XML_CDR_VARIABLE))) {
+		switch_xml_t cdr;
+		char *xml_text;
+
+		if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
+			if ((xml_text = switch_xml_toxml(cdr, SWITCH_FALSE))) {
+				switch_channel_set_variable_partner(channel, "b_leg_cdr", xml_text);
+				switch_safe_free(xml_text);
+			}
+			switch_xml_free(cdr);
+		}
+	}
+
+
 	return SWITCH_STATUS_FALSE;
 }
 
