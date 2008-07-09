@@ -32,7 +32,7 @@
 
 #include <switch.h>
 #include <pocketsphinx.h>
-#include <sphinxbase/err.h>
+#include <err.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_pocketsphinx_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_pocketsphinx_shutdown);
