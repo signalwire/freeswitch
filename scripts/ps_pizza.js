@@ -87,7 +87,7 @@ pizza.typeObtainer.setGrammar("pizza_type", "", "result", dft_min, dft_confirm, 
 pizza.typeObtainer.setTopSound("GP-SpecialtyorCustom");
 pizza.typeObtainer.setBadSound("GP-NI");
 pizza.typeObtainer.addItemAlias("^Specialty$,^Specialty\\s*pizza$", "Specialty");
-pizza.typeObtainer.addItemAlias("^pick\\s*my\\s*", "Custom");
+pizza.typeObtainer.addItemAlias("^pick", "Custom");
 
 
 /***************** Which Specialty? *****************/
@@ -107,7 +107,7 @@ pizza.toppingsObtainer = new SpeechObtainer(asr, 1, 5000);
 pizza.toppingsObtainer.setGrammar("pizza_toppings", "", "result", dft_min, 400, true);
 pizza.toppingsObtainer.setTopSound("GP-Toppings");
 pizza.toppingsObtainer.setBadSound("GP-NI");
-pizza.toppingsObtainer.addItemAlias("anchovie,anchovies", "anchovie");
+pizza.toppingsObtainer.addItemAlias("anchovie,anchovies", "anchovies");
 pizza.toppingsObtainer.addItemAlias("artichoke,artichockes", "artichoke");
 pizza.toppingsObtainer.addItemAlias("canadian\\s*bacon", "canadianbacon");
 pizza.toppingsObtainer.addItemAlias("everything", "everything");
