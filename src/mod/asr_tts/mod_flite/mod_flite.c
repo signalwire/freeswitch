@@ -32,7 +32,7 @@
  */
 
 #include <switch.h>
-#include <flite/flite.h>
+#include <flite.h>
 
 cst_voice *register_cmu_us_kal(void);
 void unregister_cmu_us_kal(cst_voice * v);
