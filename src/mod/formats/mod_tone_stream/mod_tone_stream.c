@@ -85,7 +85,7 @@ static switch_status_t silence_stream_file_read(switch_file_handle_t *handle, vo
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (*len > sh->samples) {
+	if (*len > (size_t)sh->samples) {
 		*len = sh->samples;
 	}
 
