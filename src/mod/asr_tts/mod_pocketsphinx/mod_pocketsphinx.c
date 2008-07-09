@@ -168,7 +168,6 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 	status = SWITCH_STATUS_SUCCESS;
 
  end:
-
 	
 	switch_safe_free(lm);
 	switch_safe_free(dic);
@@ -180,7 +179,6 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 /*! function to unload a grammar to the asr interface */
 static switch_status_t pocketsphinx_asr_unload_grammar(switch_asr_handle_t *ah, const char *grammar)
 {
-	// not sure an unload exists.
 	return SWITCH_STATUS_SUCCESS;
 }
 
