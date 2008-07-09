@@ -1130,6 +1130,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(_In_ switch_c
 SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_read_codec(_In_ switch_core_session_t *session);
 
 /*! 
+  \brief Retrieve the effevtive read codec from a given session
+  \param session session to retrieve from
+  \return a pointer to the codec
+*/
+SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_effective_read_codec(_In_ switch_core_session_t *session);
+
+/*! 
   \brief Assign the write codec to a given session
   \param session session to add the codec to
   \param codec the codec to add
@@ -1143,6 +1150,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(_In_ switch_
   \return a pointer to the codec
 */
 SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_write_codec(_In_ switch_core_session_t *session);
+
+/*! 
+  \brief Retrieve the effevtive write codec from a given session
+  \param session session to retrieve from
+  \return a pointer to the codec
+*/
+SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_effective_write_codec(_In_ switch_core_session_t *session);
 
 /*! 
   \brief Assign the video_read codec to a given session

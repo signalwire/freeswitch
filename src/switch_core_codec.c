@@ -49,7 +49,30 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char tmp[30];
 
-	switch_assert(codec->implementation);
+	if (!codec || !codec->implementation) {
+		if (session->real_read_codec) {
+			session->read_codec = session->real_read_codec;
+			session->real_read_codec = NULL;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set NULL codec!\n");
+			return SWITCH_STATUS_FALSE;
+		}
+	} else if (session->read_codec) {
+		if (session->real_read_codec) {
+			if (codec == session->real_read_codec) {
+				session->read_codec = codec;
+				session->real_read_codec = NULL;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot double-set codec!\n");
+				return SWITCH_STATUS_FALSE;
+			}
+		} else {
+			session->real_read_codec = session->read_codec;
+			session->read_codec = codec;
+		}
+	} else {
+		session->read_codec = codec;
+	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);
@@ -65,7 +88,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 	switch_snprintf(tmp, sizeof(tmp), "%d", codec->implementation->actual_samples_per_second);
 	switch_channel_set_variable(channel, "read_rate", tmp);
 
-	session->read_codec = codec;
+
 	session->raw_read_frame.codec = session->read_codec;
 	session->raw_write_frame.codec = session->read_codec;
 	session->enc_read_frame.codec = session->read_codec;
@@ -74,9 +97,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_read_codec(switch_core_session_t *session)
+SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_effective_read_codec(switch_core_session_t *session)
 {
 	return session->read_codec;
+}
+
+SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_read_codec(switch_core_session_t *session)
+{
+	return session->real_read_codec ? session->real_read_codec : session->read_codec;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_session_t *session, switch_codec_t *codec)
@@ -85,7 +113,30 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char tmp[30];
 
-	switch_assert(codec->implementation);
+	if (!codec || !codec->implementation) {
+		if (session->real_write_codec) {
+			session->write_codec = session->real_write_codec;
+			session->real_write_codec = NULL;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set NULL codec!\n");
+			return SWITCH_STATUS_FALSE;
+		}
+	} else if (session->write_codec) {
+		if (session->real_write_codec) {
+			if (codec == session->real_write_codec) {
+				session->write_codec = codec;
+				session->real_write_codec = NULL;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot double-set codec!\n");
+				return SWITCH_STATUS_FALSE;
+			}
+		} else {
+			session->real_write_codec = session->write_codec;
+			session->write_codec = codec;
+		}
+	} else {
+		session->write_codec = codec;
+	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);
@@ -102,13 +153,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 	switch_snprintf(tmp, sizeof(tmp), "%d", codec->implementation->actual_samples_per_second);
 	switch_channel_set_variable(channel, "write_rate", tmp);
 
-	session->write_codec = codec;
 	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_effective_write_codec(switch_core_session_t *session)
+{
+	return session->write_codec;
 }
 
 SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_write_codec(switch_core_session_t *session)
 {
-	return session->write_codec;
+	return session->real_write_codec ? session->real_write_codec : session->write_codec;
 }
 
 

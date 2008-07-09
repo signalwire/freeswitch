@@ -105,7 +105,9 @@ struct switch_core_session {
 
 	switch_io_event_hooks_t event_hooks;
 	switch_codec_t *read_codec;
+	switch_codec_t *real_read_codec;
 	switch_codec_t *write_codec;
+	switch_codec_t *real_write_codec;
 	switch_codec_t *video_read_codec;
 	switch_codec_t *video_write_codec;
 
