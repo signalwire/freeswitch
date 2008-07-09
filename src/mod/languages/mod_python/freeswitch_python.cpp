@@ -121,7 +121,6 @@ switch_status_t PySession::run_dtmf_callback(void *input, switch_input_type_t it
 
 	char *resultStr;
 	char *funcargs;
-	switch_file_handle_t *fh = NULL;
 	bool did_swap_in = false;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "run_dtmf_callback\n");
