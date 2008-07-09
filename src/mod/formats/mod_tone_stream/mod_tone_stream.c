@@ -35,6 +35,72 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_tone_stream_load);
 SWITCH_MODULE_DEFINITION(mod_tone_stream, mod_tone_stream_load, NULL, NULL);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_tone_stream_shutdown);
 
+struct sleep_handle {
+	int32_t samples;
+	int silence;
+};
+
+static switch_status_t sleep_stream_file_open(switch_file_handle_t *handle, const char *path)
+{
+
+	struct sleep_handle *sh;
+	int ms;
+
+	sh = switch_core_alloc(handle->memory_pool, sizeof(*sh));
+
+	ms = atoi(path);
+
+	if (ms > 0) {
+		char *p;
+
+		sh->samples = (handle->samplerate / 1000) * ms;
+		
+		if ((p = strchr(path, ','))) {
+			p++;
+			ms = atoi(p);
+			if (ms > 0) {
+				sh->silence = ms;
+			}
+		}
+
+		handle->private_info = sh;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid format!\n");
+	
+	return SWITCH_STATUS_GENERR;
+}
+
+static switch_status_t sleep_stream_file_close(switch_file_handle_t *handle)
+{
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t sleep_stream_file_read(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	struct sleep_handle *sh = handle->private_info;
+	
+	if (sh->samples <= 0) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (*len > sh->samples) {
+		*len = sh->samples;
+	}
+
+	sh->samples -= *len;
+	
+	if (sh->silence) {
+		switch_generate_sln_silence((int16_t *) data, *len, sh->silence);
+	} else {
+		memset(data, 0, *len);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map_t *map)
 {
 	switch_buffer_t *audio_buffer = ts->user_data;
@@ -130,11 +196,13 @@ static switch_status_t tone_stream_file_read(switch_file_handle_t *handle, void 
 /* Registration */
 
 static char *supported_formats[SWITCH_MAX_CODECS] = { 0 };
+static char *sleep_supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_tone_stream_load)
 {
 	switch_file_interface_t *file_interface;
 	supported_formats[0] = "tone_stream";
+	sleep_supported_formats[0] = "sleep_stream";
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
@@ -143,6 +211,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_tone_stream_load)
 	file_interface->file_open = tone_stream_file_open;
 	file_interface->file_close = tone_stream_file_close;
 	file_interface->file_read = tone_stream_file_read;
+
+	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
+	file_interface->interface_name = modname;
+	file_interface->extens = sleep_supported_formats;
+	file_interface->file_open = sleep_stream_file_open;
+	file_interface->file_close = sleep_stream_file_close;
+	file_interface->file_read = sleep_stream_file_read;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
