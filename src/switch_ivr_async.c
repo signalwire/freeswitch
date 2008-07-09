@@ -1490,6 +1490,7 @@ struct speech_thread_handle {
 	switch_mutex_t *mutex;
 	switch_thread_cond_t *cond;
 	switch_memory_pool_t *pool;
+	int ready;
 };
 
 static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj)
@@ -1504,6 +1505,8 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 
 	switch_core_session_read_lock(sth->session);
 	switch_mutex_lock(sth->mutex);
+
+	sth->ready = 1;
 
 	while (switch_channel_ready(channel) && !switch_test_flag(sth->ah, SWITCH_ASR_FLAG_CLOSED)) {
 		char *xmlstr = NULL;
@@ -1619,9 +1622,11 @@ static switch_bool_t speech_callback(switch_media_bug_t *bug, void *user_data, s
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:{
 			switch_core_asr_close(sth->ah, &flags);
-			switch_mutex_lock(sth->mutex);
-			switch_thread_cond_signal(sth->cond);
-			switch_mutex_unlock(sth->mutex);
+			if (sth->mutex && sth->cond && sth->ready) {
+				switch_mutex_lock(sth->mutex);
+				switch_thread_cond_signal(sth->cond);
+				switch_mutex_unlock(sth->mutex);
+			}
 		}
 		break;
 	case SWITCH_ABC_TYPE_READ:
