@@ -463,7 +463,11 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 	if (ifd) {
 		close(ifd);
 	}
+#ifdef WIN32
+	switch_snprintf(buf, B64BUFFLEN, "type %s | %s %s %s", filename, runtime.mailer_app, runtime.mailer_app_args, to);
+#else
 	switch_snprintf(buf, B64BUFFLEN, "/bin/cat %s | %s %s %s", filename, runtime.mailer_app, runtime.mailer_app_args, to);
+#endif
 	if (system(buf)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to execute command: %s\n", buf);
 	}

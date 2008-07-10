@@ -26,6 +26,32 @@
     <param name="crash-protection" value="false"/>
     <!--<param name="max_dtmf_duration" value="192000"/>-->
     <!--<param name="default_dtmf_duration" value="8000"/>-->
+    <!--
+         If you want to send out voicemail notifications via Windows you'll need to change the mailer-app
+         variable to the setting below:
+     
+       <param name="mailer-app" value="msmtp"/>
+ 
+         Donot change mailer-app-args.
+         You will also need to download a sendmail clone for Windows (msmtp). This version works without issue:
+         http://msmtp.sourceforge.net/index.html. Download and copy the .exe to %winddir%\system32.
+         You'll need to create a small config file for smtp credentials (host name, authentication, tls, etc.) in
+         %USERPROFILE%\Application Data\ called "msmtprc.txt". Below is a sample copy of this file:
+ 
+         ###################################
+         # The SMTP server of the provider.
+         account provider
+         host smtp.myisp.com
+         from john@myisp.com
+         auth login
+         user johndoe
+         password mypassword
+ 
+         # Set a default account
+         account default : provider
+       ###################################
+         
+ -->    
     <param name="mailer-app" value="sendmail"/>
     <param name="mailer-app-args" value="-t"/>
     <param name="dump-cores" value="yes"/>
