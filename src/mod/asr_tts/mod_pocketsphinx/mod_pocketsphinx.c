@@ -142,11 +142,6 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 							 "-hmm", model,
 							 "-lm", lm, 
 							 "-dict", dic,
-							 "-bestpath", "10",
-							 "-maxhmmpf", "2000",
-							 "-maxcdsenpf", "500",
-							 "-maxwpf", "3",
-							 "-ds", "2",
 #if 0
 							 "-agc", "noise",
 							 "-beam", "1e-60",
