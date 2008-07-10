@@ -167,7 +167,7 @@ LANGUAGES_MODULES="languages/mod_perl languages/mod_lua"
 LOGGERS_MODULES="loggers/mod_console loggers/mod_logfile loggers/mod_syslog"
 SAY_MODULES="say/mod_say_en"
 TIMERS_MODULES=
-DISABLED_MODULES="applications/mod_sountouch directories/mod_ldap languages/mod_java languages/mod_python languages/mod_spidermonkey_skel ast_tts/mod_cepstral asr_tts/mod_lumenvox endpoints/mod_wanpipe event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf formats/mod_shout say/mod_say_it say/mod_say_es say/mod_say_nl"
+DISABLED_MODULES="applications/mod_soundtouch directories/mod_ldap languages/mod_java languages/mod_python languages/mod_spidermonkey_skel ast_tts/mod_cepstral asr_tts/mod_lumenvox endpoints/mod_wanpipe event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf formats/mod_shout say/mod_say_it say/mod_say_es say/mod_say_nl"
 XML_INT_MODULES="xml_int/mod_xml_rpc  xml_int/mod_xml_curl xml_int/mod_xml_cdr"
 MYMODULES="$PASSTHRU_CODEC_MODULES $SPIDERMONKEY_MODULES $APPLICATIONS_MODULES $ASR_TTS_MODULES $CODECS_MODULES $DIALPLANS_MODULES $DIRECTORIES_MODULES $DOTNET_MODULES $ENDPOINTS_MODULES $EVENT_HANDLERS_MODULES $FORMATS_MODULES $LANGUAGES_MODULES $LOGGERS_MODULES $SAY_MODULES $TIMERS_MODULES $XML_INT_MODULES"
 
