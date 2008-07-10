@@ -69,6 +69,8 @@ typedef struct {
 	char *hyp;
 	char *grammar;
 	int32_t score;
+	int32_t confidence;
+	char const *uttid;
 	cmd_ln_t *config;
 } pocketsphinx_t;
 
@@ -135,19 +137,21 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 	
 	ps->config = cmd_ln_init(ps->config, ps_args(), FALSE,
 							 "-samprate", "8000",
+							 "-adcin", "yes",
 							 "-hmm", model,
 							 "-lm", lm, 
 							 "-dict", dic,
+							 "-bestpath", "20",
+							 "-maxhmmpf", "2000",
+							 "-maxcdsenpf", "500",
+							 "-maxwpf", "3",
+							 "-ds", "3",
 #if 0
 							 "-agc", "noise",
 							 "-beam", "1e-60",
 							 "-wbeam", "1e-40",
 							 "-ci_pbeam", "1e-8",
 							 "-subvqbeam", "1e-2",
-							 "-maxhmmpf", "10000",
-							 "-maxcdsenpf", "1000",
-							 "-maxwpf", "8",
-							 "-ds", "2",
 #endif
 							 NULL);
 	  
@@ -192,7 +196,7 @@ static switch_status_t pocketsphinx_asr_unload_grammar(switch_asr_handle_t *ah, 
 /*! function to close the asr interface */
 static switch_status_t pocketsphinx_asr_close(switch_asr_handle_t *ah, switch_asr_flag_t *flags)
 {
-	char const *hyp, *uttid;
+	char const *hyp;
 	int32_t score;	
 	pocketsphinx_t *ps = (pocketsphinx_t *) ah->private_info;
 
@@ -200,7 +204,7 @@ static switch_status_t pocketsphinx_asr_close(switch_asr_handle_t *ah, switch_as
 	if (switch_test_flag(ps, PSFLAG_ALLOCATED)) {
 		if (switch_test_flag(ps, PSFLAG_READY)) {
 			ps_end_utt(ps->ps);
-			hyp = ps_get_hyp(ps->ps, &score, &uttid);
+			hyp = ps_get_hyp(ps->ps, &score, &ps->uttid);
 		}
 		ps_free(ps->ps);
 		ps->ps = NULL;
@@ -272,14 +276,14 @@ static switch_status_t pocketsphinx_asr_feed(switch_asr_handle_t *ah, void *data
 		}
 
 		if (stop_detect(ps, (int16_t *)data, len / 2)) {
-			char const *hyp, *uttid;
+			char const *hyp;
 
 			switch_mutex_lock(ps->flag_mutex); 
-			if ((hyp = ps_get_hyp(ps->ps, &ps->score, &uttid))) {
+			if ((hyp = ps_get_hyp(ps->ps, &ps->score, &ps->uttid))) {
 				if (!switch_strlen_zero(hyp)) {
 					ps_end_utt(ps->ps);
 					switch_clear_flag(ps, PSFLAG_READY);
-					if ((hyp = ps_get_hyp(ps->ps, &ps->score, &uttid))) {
+					if ((hyp = ps_get_hyp(ps->ps, &ps->score, &ps->uttid))) {
 						if (switch_strlen_zero(hyp)) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Lost the text, nevermind....\n");   
 							ps_start_utt(ps->ps, NULL);
@@ -350,6 +354,7 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 {
 	pocketsphinx_t *ps = (pocketsphinx_t *) ah->private_info; 
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	int32_t score;
 
 	if (switch_test_flag(ps, PSFLAG_BARGE)) {
 		switch_clear_flag_locked(ps, PSFLAG_BARGE);
@@ -359,12 +364,11 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 	if (switch_test_flag(ps, PSFLAG_HAS_TEXT)) {
 		switch_mutex_lock(ps->flag_mutex); 
 		switch_clear_flag(ps, PSFLAG_HAS_TEXT);
+		
+		score = ps_get_prob(ps->ps, &ps->uttid);
+		ps->confidence = score - score - score / 1000;
 
-		if (ps->score < 0) {
-			ps->score = 600;
-		}
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recognized: %s, Score: %d\n", ps->hyp, ps->score);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recognized: %s, Score: %d\n", ps->hyp, ps->confidence);
 		switch_mutex_unlock(ps->flag_mutex); 
 
 		/* ps->score isn't a confidence score. PocketSphinx doesn't support that yet. */
@@ -373,7 +377,7 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 								 "  <result name=\"%s\">%s</result>\n"
 								 "  <input>%s</input>\n"
 								 "</interpretation>",
-								 ps->grammar, ps->score,
+								 ps->grammar, ps->confidence,
  								 "match", 
 								 ps->hyp, 
 								 ps->hyp

@@ -1,6 +1,6 @@
-SPHINXBASE=sphinxbase-0.4
+SPHINXBASE=sphinxbase-0.4.99
 SPHINXBASE_DIR=$(switch_srcdir)/libs/$(SPHINXBASE)
-POCKETSPHINX=pocketsphinx-0.5
+POCKETSPHINX=pocketsphinx-0.5.99
 POCKETSPHINX_DIR=$(switch_srcdir)/libs/$(POCKETSPHINX)
 SPHINXBASE_LA=$(SPHINXBASE_DIR)/src/libsphinxbase/libsphinxbase.la
 SPHINXBASE_LA2=$(SPHINXBASE_DIR)/src/libsphinxad/libsphinxad.la
