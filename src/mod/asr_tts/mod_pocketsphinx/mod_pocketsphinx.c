@@ -369,7 +369,7 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 		conf = ps_get_prob(ps->ps, &ps->uttid);
 		lconf = logmath_log_to_ln(ps_get_logmath(ps->ps), conf);
 		ps->confidence = lconf - lconf - lconf;
-		/* 0(confident) to 100(not confident) score */ 
+
 		if (ps->confidence > 100) {
 			ps->confidence = 100;
 		}
@@ -377,8 +377,6 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recognized: %s, Score: %d\n", ps->hyp, ps->confidence);
 		switch_mutex_unlock(ps->flag_mutex); 
 
-		/* ps->score isn't a confidence score. PocketSphinx doesn't support that yet. */
-		
 		*xmlstr = switch_mprintf("<interpretation grammar=\"%s\" score=\"%d\">\n"
 								 "  <result name=\"%s\">%s</result>\n"
 								 "  <input>%s</input>\n"
