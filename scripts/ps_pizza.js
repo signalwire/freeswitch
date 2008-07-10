@@ -69,7 +69,7 @@ pizza.sizeObtainer.addItemAlias("^Extra\\s*Large", "ExtraLarge");
 pizza.sizeObtainer.addItemAlias("^Large$", "Large");
 pizza.sizeObtainer.addItemAlias("^Medium$", "Medium");
 pizza.sizeObtainer.addItemAlias("^Small$", "Small");
-pizza.sizeObtainer.addItemAlias("^Humongous$,^Huge$,^Totally\\s*Humongous$", "TotallyHumongous");
+pizza.sizeObtainer.addItemAlias("^Humongous$,^Huge$,^Totally\\s*Humongous$,^Totally", "TotallyHumongous");
 
 /***************** What Type Of Crust? *****************/
 pizza.crustObtainer = new SpeechObtainer(asr, 1, 5000);
