@@ -403,6 +403,7 @@ static switch_status_t load_config(void)
 	globals.thresh = 400;
 	globals.silence_hits = 35;
 	globals.listen_hits = 5;
+	globals.auto_reload = 1;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
