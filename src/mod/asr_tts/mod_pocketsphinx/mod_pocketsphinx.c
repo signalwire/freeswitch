@@ -372,6 +372,8 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 
 		if (ps->confidence > 100) {
 			ps->confidence = 100;
+		} else if (ps->confidence < 0) {
+			ps->confidence = 0;
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recognized: %s, Score: %d\n", ps->hyp, ps->confidence);
