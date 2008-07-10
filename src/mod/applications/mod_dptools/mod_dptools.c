@@ -2102,6 +2102,31 @@ SWITCH_STANDARD_APP(unhold_function)
 	switch_ivr_unhold_uuid(switch_core_session_get_uuid(session));
 }
 
+#define WAIT_FOR_SILENCE_SYNTAX "<tresh> <silence hits> <listen hits> [<file>]"
+SWITCH_STANDARD_APP(wait_for_silence_function)
+{
+	char *argv[4] = { 0 };
+	uint32_t thresh, silence_hits, listen_hits;
+	int argc;
+	char *lbuf = NULL;
+	
+	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
+		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 3) {
+		thresh = atoi(argv[0]);
+		silence_hits = atoi(argv[1]);
+		listen_hits = atoi(argv[2]);
+
+		if (thresh > 0 && silence_hits > 0 && listen_hits > 0) {
+			switch_ivr_wait_for_silence(session, thresh, silence_hits, listen_hits, argv[3]);
+			return;
+		}
+
+	} 
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", WAIT_FOR_SILENCE_SYNTAX);
+
+}
+
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
 #define DISPLACE_DESC "Displace audio from a file to the channels input"
 #define SESS_REC_DESC "Starts a background recording of the entire session"
@@ -2225,6 +2250,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "system", "Execute a system command", "Execute a system command", system_session_function, "<command>",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "say", "say", "say", say_function, SAY_SYNTAX, SAF_NONE);
+
+	SWITCH_ADD_APP(app_interface, "wait_for_silence", "wait_for_silence", "wait_for_silence", wait_for_silence_function, WAIT_FOR_SILENCE_SYNTAX, SAF_NONE);
 
 	SWITCH_ADD_DIALPLAN(dp_interface, "inline", inline_dialplan_hunt);
 

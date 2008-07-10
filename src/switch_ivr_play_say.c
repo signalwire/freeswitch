@@ -1195,6 +1195,125 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_t *session, uint32_t thresh, uint32_t silence_hits, uint32_t listen_hits, const char *file)
+{
+	uint32_t score, count = 0, j = 0;
+	double energy = 0;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	int divisor = 0;
+	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
+	uint32_t org_silence_hits = silence_hits;
+	uint32_t channels;
+	switch_frame_t *read_frame;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	int16_t *data;
+	int listening = 0;
+	int countdown = 0;
+	switch_codec_t raw_codec = {0};
+	int16_t *abuf = NULL;
+	switch_frame_t write_frame = {0};
+	switch_file_handle_t fh = {0};
+
+	switch_assert(read_codec);
+
+	if (file) {
+		if (switch_core_file_open(&fh,
+								  file,
+								  read_codec->implementation->number_of_channels,
+								  read_codec->implementation->actual_samples_per_second,
+								  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_core_session_reset(session, SWITCH_TRUE);
+			return SWITCH_STATUS_NOTFOUND;
+		}
+		switch_zmalloc(abuf, SWITCH_RECOMMENDED_BUFFER_SIZE);
+		write_frame.data = abuf;
+		write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+	}
+
+
+	if (switch_core_codec_init(&raw_codec,
+							   "L16",
+							   NULL,
+							   read_codec->implementation->actual_samples_per_second,
+							   read_codec->implementation->microseconds_per_frame / 1000,
+							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+							   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+
+		status = SWITCH_STATUS_FALSE;
+		goto end;
+	}
+
+	write_frame.codec = &raw_codec;
+
+	divisor = read_codec->implementation->actual_samples_per_second / 8000;
+	channels = read_codec->implementation->number_of_channels;
+
+	switch_core_session_set_read_codec(session, &raw_codec);
+
+	while (switch_channel_ready(channel)) {
+
+		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+		
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			break;
+		}
+
+		if (abuf) {
+			switch_size_t olen = raw_codec.implementation->samples_per_frame;
+			
+			if (switch_core_file_read(&fh, abuf, &olen) != SWITCH_STATUS_SUCCESS) {
+                break;
+            }
+			
+			write_frame.samples = olen;
+			write_frame.datalen = olen * sizeof(int16_t);
+			if ((status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0)) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
+		}
+		
+		if (countdown) {
+			if (!--countdown) {
+				break;
+			} else {
+				continue;
+			}
+		}
+
+		data = (int16_t *) read_frame->data;
+		
+		for (energy = 0, j = 0, count = 0; count < read_frame->samples; count++) {
+			energy += abs(data[j++]);
+			j += channels;
+		}
+		
+		score = (uint32_t) (energy / (read_frame->samples / divisor));
+		
+		if (score >= thresh) {
+			listening++;
+		}
+
+		if (listening > listen_hits && score < thresh) {
+			if (!--silence_hits) {
+				countdown = 25;
+			}
+		} else {
+			silence_hits = org_silence_hits;
+		}
+	}
+
+	switch_core_session_set_read_codec(session, NULL);
+	switch_core_codec_destroy(&raw_codec);
+
+ end:
+
+	if (abuf) {
+		switch_core_file_close(&fh);
+	}
+
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 												uint32_t min_digits,
 												uint32_t max_digits,
