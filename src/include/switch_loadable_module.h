@@ -242,6 +242,13 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, char *fname, switch_bool_t runtime, const char **err);
 
 /*!
+  \brief Check if a module is loaded
+  \param mod the module name
+  \return the status
+*/
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_exists(const char *mod);
+
+/*!
   \brief Unoad a module
   \param dir the directory where the module resides
   \param fname the file name of the module

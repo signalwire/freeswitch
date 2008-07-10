@@ -830,7 +830,24 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_exists(const char *mod)
+{
+	switch_status_t status;  
 
+	if (switch_strlen_zero(mod)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_mutex_lock(loadable_modules.mutex);
+	if (switch_core_hash_find(loadable_modules.module_hash, mod)) {
+		status = SWITCH_STATUS_SUCCESS;
+	} else {
+		status = SWITCH_STATUS_FALSE;
+	}
+	switch_mutex_unlock(loadable_modules.mutex);
+
+	return status;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, char *fname, const char **err)
 {

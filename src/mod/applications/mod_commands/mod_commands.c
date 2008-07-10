@@ -196,6 +196,21 @@ SWITCH_STANDARD_API(url_decode_function)
 	
 }
 
+SWITCH_STANDARD_API(module_exists_function)
+{
+	if (!switch_strlen_zero(cmd)) {
+		if(switch_loadable_module_exists(cmd) == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "true");
+		} else {
+			stream->write_function(stream, "false");
+
+		}		
+	}
+
+    return SWITCH_STATUS_SUCCESS;
+}
+
+
 SWITCH_STANDARD_API(url_encode_function)
 {
 	char *reply = "";
@@ -2431,6 +2446,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "user_data", "find user data", user_data_function, "<user>@<domain> [var|param] <name>");
 	SWITCH_ADD_API(commands_api_interface, "url_encode", "url encode a string", url_encode_function, "<string>");
 	SWITCH_ADD_API(commands_api_interface, "url_decode", "url decode a string", url_decode_function, "<string>");
+	SWITCH_ADD_API(commands_api_interface, "module_exists", "check if module exists", module_exists_function, "<module>");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
