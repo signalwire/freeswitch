@@ -78,7 +78,7 @@ pizza.crustObtainer.setTopSound("GP-Crust");
 pizza.crustObtainer.setBadSound("GP-NI");
 pizza.crustObtainer.addItemAlias("^Hand\\s*Tossed$,^Tossed$", "HandTossed");
 pizza.crustObtainer.addItemAlias("^Chicago\\s*style$,^Chicago$", "Pan");
-pizza.crustObtainer.addItemAlias("^Deep,^Pan", "Pan");
+pizza.crustObtainer.addItemAlias("^Deep,^Pan,^Baked", "Pan");
 pizza.crustObtainer.addItemAlias("^New\\s*York,^Thin", "Thin");
 
 /***************** Specialty Or Custom? *****************/
