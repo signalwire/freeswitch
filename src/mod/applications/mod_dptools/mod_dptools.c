@@ -2102,11 +2102,11 @@ SWITCH_STANDARD_APP(unhold_function)
 	switch_ivr_unhold_uuid(switch_core_session_get_uuid(session));
 }
 
-#define WAIT_FOR_SILENCE_SYNTAX "<silence_thresh> <silence_hits> <listen_hits> [<file>]"
+#define WAIT_FOR_SILENCE_SYNTAX "<silence_thresh> <silence_hits> <listen_hits> <timeout_ms> [<file>]"
 SWITCH_STANDARD_APP(wait_for_silence_function)
 {
-	char *argv[4] = { 0 };
-	uint32_t thresh, silence_hits, listen_hits;
+	char *argv[5] = { 0 };
+	uint32_t thresh, silence_hits, listen_hits, timeout_ms = 0;
 	int argc;
 	char *lbuf = NULL;
 	
@@ -2116,8 +2116,14 @@ SWITCH_STANDARD_APP(wait_for_silence_function)
 		silence_hits = atoi(argv[1]);
 		listen_hits = atoi(argv[2]);
 
+		if (argv[3]) {
+			if ((timeout_ms = atoi(argv[3])) < 0) {
+				timeout_ms = 0;
+			}
+		}
+
 		if (thresh > 0 && silence_hits > 0 && listen_hits > 0) {
-			switch_ivr_wait_for_silence(session, thresh, silence_hits, listen_hits, argv[3]);
+			switch_ivr_wait_for_silence(session, thresh, silence_hits, listen_hits, timeout_ms, argv[4]);
 			return;
 		}
 

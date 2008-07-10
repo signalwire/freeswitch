@@ -1195,7 +1195,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_t *session, uint32_t thresh, uint32_t silence_hits, uint32_t listen_hits, const char *file)
+SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_t *session, uint32_t thresh,
+															uint32_t silence_hits, uint32_t listen_hits, uint32_t timeout_ms, const char *file)
 {
 	uint32_t score, count = 0, j = 0;
 	double energy = 0;
@@ -1213,8 +1214,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 	int16_t *abuf = NULL;
 	switch_frame_t write_frame = {0};
 	switch_file_handle_t fh = {0};
+	int32_t sample_count = 0;
 
 	switch_assert(read_codec);
+
+	if (timeout_ms) {
+		sample_count = (read_codec->implementation->actual_samples_per_second / 1000) * timeout_ms;
+	}
 
 	if (file) {
 		if (switch_core_file_open(&fh,
@@ -1258,6 +1264,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 			break;
 		}
 
+		if (sample_count) {
+			sample_count -= raw_codec.implementation->samples_per_frame;
+			if (sample_count <= 0) {
+				break;
+			}
+		}
+		
 		if (abuf) {
 			switch_size_t olen = raw_codec.implementation->samples_per_frame;
 			
