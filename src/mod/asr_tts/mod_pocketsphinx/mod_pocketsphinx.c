@@ -33,6 +33,7 @@
 #include <switch.h>
 #include <pocketsphinx.h>
 #include <err.h>
+#include <logmath.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_pocketsphinx_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_pocketsphinx_shutdown);
@@ -354,7 +355,7 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 {
 	pocketsphinx_t *ps = (pocketsphinx_t *) ah->private_info; 
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	int32_t score;
+	int32_t conf, lconf;
 
 	if (switch_test_flag(ps, PSFLAG_BARGE)) {
 		switch_clear_flag_locked(ps, PSFLAG_BARGE);
@@ -365,8 +366,13 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 		switch_mutex_lock(ps->flag_mutex); 
 		switch_clear_flag(ps, PSFLAG_HAS_TEXT);
 		
-		score = ps_get_prob(ps->ps, &ps->uttid);
-		ps->confidence = score - score - score / 1000;
+		conf = ps_get_prob(ps->ps, &ps->uttid);
+		lconf = logmath_log_to_ln(ps_get_logmath(ps->ps), conf);
+		ps->confidence = lconf - lconf - lconf;
+		/* 0(confident) to 100(not confident) score */ 
+		if (ps->confidence > 100) {
+			ps->confidence = 100;
+		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recognized: %s, Score: %d\n", ps->hyp, ps->confidence);
 		switch_mutex_unlock(ps->flag_mutex); 
