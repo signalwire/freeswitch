@@ -2102,7 +2102,7 @@ SWITCH_STANDARD_APP(unhold_function)
 	switch_ivr_unhold_uuid(switch_core_session_get_uuid(session));
 }
 
-#define WAIT_FOR_SILENCE_SYNTAX "<tresh> <silence hits> <listen hits> [<file>]"
+#define WAIT_FOR_SILENCE_SYNTAX "<silence_tresh> <silence hits> <listen hits> [<file>]"
 SWITCH_STANDARD_APP(wait_for_silence_function)
 {
 	char *argv[4] = { 0 };
