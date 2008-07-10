@@ -38,8 +38,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_pocketsphinx_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_pocketsphinx_shutdown);
 SWITCH_MODULE_DEFINITION(mod_pocketsphinx, mod_pocketsphinx_load, mod_pocketsphinx_shutdown, NULL);
 
+static switch_mutex_t *MUTEX = NULL;
+static switch_event_node_t *NODE = NULL;
+
 static struct {
 	char *model;
+	uint32_t thresh;
+    uint32_t silence_hits;
+	uint32_t listen_hits;
+	int auto_reload;
 } globals;
 
 typedef enum {
@@ -84,10 +91,10 @@ static switch_status_t pocketsphinx_asr_open(switch_asr_handle_t *ah, const char
 	ah->codec = switch_core_strdup(ah->memory_pool, codec); 
 
 	
-	ps->thresh = 400;
-	ps->silence_hits = 35;
+	ps->thresh = globals.thresh;
+	ps->silence_hits = globals.silence_hits;
+	ps->listen_hits = globals.listen_hits;
 	ps->org_silence_hits = ps->silence_hits;
-	ps->listen_hits = 5;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -386,9 +393,74 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 	return status;
 }
 
+static switch_status_t load_config(void)
+{
+	char *cf = "pocketsphinx.conf";
+	switch_xml_t cfg, xml = NULL, param, settings;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	/* Set defaults */
+	globals.thresh = 400;
+	globals.silence_hits = 35;
+	globals.listen_hits = 5;
+
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		status = SWITCH_STATUS_FALSE;
+		goto done;
+	}
+
+	if ((settings = switch_xml_child(cfg, "settings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+			if (!strcasecmp(var, "threshold")) {
+				globals.thresh = atoi(val);
+			} else if (!strcasecmp(var, "silence-hits")) {
+				globals.silence_hits = atoi(val);
+			} else if (!strcasecmp(var, "listen-hits")) {
+				globals.listen_hits = atoi(val);
+			} else if (!strcasecmp(var, "auto-reload")) {
+				globals.auto_reload = switch_true(val);
+			}
+		}
+	}
+ done:
+	if (xml) {
+		switch_xml_free(xml);
+	}
+
+	return status;
+}
+
+static void do_load(void)
+{
+	switch_mutex_lock(MUTEX);
+	memset(&globals, 0, sizeof(globals));
+	load_config();
+	switch_mutex_unlock(MUTEX);
+}
+
+static void event_handler(switch_event_t *event)
+{
+	if (globals.auto_reload) {
+		do_load();
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "PocketSphinx Reloaded\n");
+	}
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_pocketsphinx_load)
 {
 	switch_asr_interface_t *asr_interface;
+
+	switch_mutex_init(&MUTEX, SWITCH_MUTEX_NESTED, pool);\
+
+	if ((switch_event_bind_removable(modname, SWITCH_EVENT_RELOADXML, NULL, event_handler, NULL, &NODE) != SWITCH_STATUS_SUCCESS)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+	}
+
+	do_load();
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -413,6 +485,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_pocketsphinx_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_pocketsphinx_shutdown)
 {
+	switch_event_unbind(&NODE);
 	return SWITCH_STATUS_UNLOAD;
 }
 

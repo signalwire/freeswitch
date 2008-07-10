@@ -1,0 +1,8 @@
+<configuration name="pocketsphinx.conf" description="PocketSphinx ASR Configuration">
+  <settings>
+    <param name="threshold" value="400"/>
+    <param name="silence-hits" value="35"/>
+    <param name="listen-hits" value="5"/>
+    <param name="auto-reload" value="true"/>
+  </settings>
+</configuration>

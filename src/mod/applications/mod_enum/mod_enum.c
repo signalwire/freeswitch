@@ -742,7 +742,6 @@ static void do_load(void)
 	globals.timeout = 10;
 	load_config();
 	switch_mutex_unlock(MUTEX);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ENUM Reloaded\n");
 
 }
 
@@ -811,11 +810,11 @@ SWITCH_STANDARD_API(enum_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 static void event_handler(switch_event_t *event)
 {
 	if (globals.auto_reload) {
 		do_load();
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ENUM Reloaded\n");
 	}
 }
 
