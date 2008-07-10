@@ -40,11 +40,11 @@ $(POCKETSPHINX_LA): $(POCKETSPHINX_DIR)/Makefile
 	$(TOUCH_TARGET)
 
 $(DESTDIR)$(PREFIX)/grammar/model:
-	mkdir $(DESTDIR)$(PREFIX)/grammar/model
+	mkdir -p $(DESTDIR)$(PREFIX)/grammar/model
 
 $(DESTDIR)$(PREFIX)/grammar/model/communicator:
 	$(GETLIB) $(SPHINXMODEL).tar.gz
-	mkdir $(DESTDIR)$(PREFIX)/grammar/model/communicator
+	mkdir -p $(DESTDIR)$(PREFIX)/grammar/model/communicator
 	mv $(BASE)/libs/Communicator_semi_40.cd_semi_6000/* $(DESTDIR)$(PREFIX)/grammar/model/communicator
 
 local_install: $(DESTDIR)$(PREFIX)/grammar/model $(DESTDIR)$(PREFIX)/grammar/model/communicator
