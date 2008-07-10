@@ -33,8 +33,8 @@ include("js_modules/SpeechTools.jm");
 
 function on_dtmf(a, b, c) {}
 
-var dft_min = 100;
-var dft_confirm = 600;
+var dft_min = 10;
+var dft_confirm = 50;
 
 /***************** Initialize The Speech Detector  *****************/
 var asr = new SpeechDetect(session, "pocketsphinx");
@@ -104,7 +104,7 @@ pizza.specialtyObtainer.addItemAlias("^Veg", "Vegetarian");
 
 /***************** What Toppings? *****************/
 pizza.toppingsObtainer = new SpeechObtainer(asr, 1, 5000);
-pizza.toppingsObtainer.setGrammar("pizza_toppings", "", "result", dft_min, 400, true);
+pizza.toppingsObtainer.setGrammar("pizza_toppings", "", "result", dft_min, dft_confirm, true);
 pizza.toppingsObtainer.setTopSound("GP-Toppings");
 pizza.toppingsObtainer.setBadSound("GP-NI");
 pizza.toppingsObtainer.addItemAlias("anchovie,anchovies", "anchovies");
@@ -130,7 +130,7 @@ pizza.toppingsObtainer.addItemAlias("ham", "ham");
 
 /***************** Change Delivery Or Size Or Crust, Add/Rem Toppings Or Start Over  *****************/
 pizza.arsoObtainer = new SpeechObtainer(asr, 1, 5000);
-pizza.arsoObtainer.setGrammar("pizza_arso", "", "result", 500, 250, true);
+pizza.arsoObtainer.setGrammar("pizza_arso", "", "result", dft_min, dft_confirm, true);
 pizza.arsoObtainer.setTopSound("GP-ARSO");
 pizza.arsoObtainer.setBadSound("GP-NI");
 pizza.arsoObtainer.addItemAlias("^delivery$", "delivery");
@@ -142,7 +142,7 @@ pizza.arsoObtainer.addItemAlias("^remove\\s*", "rem_topping");
 
 /***************** Yes? No? Maybe So?  *****************/
 pizza.yesnoObtainer = new SpeechObtainer(asr, 1, 5000);
-pizza.yesnoObtainer.setGrammar("pizza_yesno", "", "result", 500, 250, true);
+pizza.yesnoObtainer.setGrammar("pizza_yesno", "", "result", dft_min, dft_confirm, true);
 pizza.yesnoObtainer.setBadSound("GP-NI");
 pizza.yesnoObtainer.addItemAlias("^yes,^correct", "yes");
 pizza.yesnoObtainer.addItemAlias("^no", "no");
