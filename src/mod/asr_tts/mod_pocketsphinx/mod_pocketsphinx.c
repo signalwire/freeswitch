@@ -437,7 +437,6 @@ static switch_status_t load_config(void)
 static void do_load(void)
 {
 	switch_mutex_lock(MUTEX);
-	memset(&globals, 0, sizeof(globals));
 	load_config();
 	switch_mutex_unlock(MUTEX);
 }
