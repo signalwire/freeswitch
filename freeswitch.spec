@@ -330,6 +330,7 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/xml_rpc.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/zeroconf.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/extensions/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/directory/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/directory/default/*
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/mrcp_profiles/*.xml

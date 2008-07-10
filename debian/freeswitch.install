@@ -46,6 +46,7 @@ opt/freeswitch/conf/dialplan/public.xml
 opt/freeswitch/conf/dialplan/default.xml
 opt/freeswitch/conf/dialplan/features.xml
 opt/freeswitch/conf/dialplan/extensions
+opt/freeswitch/conf/dialplan/extensions/*.xml
 opt/freeswitch/conf/sip_profiles/external.xml
 opt/freeswitch/conf/sip_profiles/nat.xml
 opt/freeswitch/conf/sip_profiles/nat/example.xml
