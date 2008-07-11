@@ -38,8 +38,12 @@ class Session : public CoreSession {
 	PyObject *hangup_func;
 	PyObject *hangup_func_arg;
 
+	/* keep a pointer to parent module, internal use only*/
 	void setPython(PyObject *state);
+
+	/* keeps the PyObject * version of the Session so it can be used as args to the callback */
 	void setSelf(PyObject *state);
+
 };
 }
 #endif

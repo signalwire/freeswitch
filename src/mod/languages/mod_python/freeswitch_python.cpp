@@ -102,6 +102,12 @@ bool Session::ready()
 
 	sanity_check(false);
 	r = switch_channel_ready(channel) != 0;
+
+	/*! this is called every time ready is called as a workaround to
+	  make it threadsafe.  it sets a flag, and all the places where it
+	  comes in and out of threadswap, check it.  so the end result is 
+	  you still get the hangup hook executed pretty soon after you
+	  hangup.  */
 	do_hangup_hook();
 
 	return r;
