@@ -54,7 +54,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown);
 SWITCH_MODULE_DEFINITION(mod_python, mod_python_load, mod_python_shutdown, NULL);
 
-static void eval_some_python(char *uuid, char *args, switch_core_session_t *session)
+static void eval_some_python(char *args, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	PyThreadState *tstate = NULL;
 	char *dupargs = NULL;
@@ -62,10 +62,11 @@ static void eval_some_python(char *uuid, char *args, switch_core_session_t *sess
 	int argc;
 	int lead = 0;
 	char *script = NULL;
-	PyObject *module = NULL, *sp = NULL;
+	PyObject *module = NULL, *sp = NULL, *stp = NULL, *eve = NULL;
 	PyObject *function = NULL;
 	PyObject *arg = NULL;
 	PyObject *result = NULL;
+	char *uuid = NULL;
 
 	if (args) {
 		dupargs = strdup(args);
@@ -93,6 +94,7 @@ static void eval_some_python(char *uuid, char *args, switch_core_session_t *sess
 	// swap in thread state
 	PyEval_AcquireThread(tstate);
 	if (session) {
+		uuid = switch_core_session_get_uuid(session);
 		// record the fact that thread state is swapped in
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		switch_channel_set_private(channel, "SwapInThreadState", NULL);
@@ -115,6 +117,17 @@ static void eval_some_python(char *uuid, char *args, switch_core_session_t *sess
 		PyErr_Clear();
 		goto done_swap_out;
 	}
+
+	if (stream) {
+		printf("doh\n\n\n");
+		stp = mod_python_conjure_stream(module, stream, "stream");
+		if (stream->param_event) {
+			eve = mod_python_conjure_event(module, stream->param_event, "env");
+		}
+	}
+
+
+
 	// get the handler function to be called
 	function = PyObject_GetAttrString(module, "handler");
 	if (!function) {
@@ -161,43 +174,45 @@ static void eval_some_python(char *uuid, char *args, switch_core_session_t *sess
 	if (sp) {
 		Py_XDECREF(sp);
 	}
+
+	if (stp) {
+		Py_XDECREF(stp);
+	}
+
+	if (eve) {
+		Py_XDECREF(eve);
+	}
 	
   done_swap_out:
 
+    // swap out thread state
+    if (session) {
+		//switch_core_session_rwunlock(session);
+        // record the fact that thread state is swapped in
+        switch_channel_t *channel = switch_core_session_get_channel(session);
+        PyThreadState *swapin_tstate = (PyThreadState *) switch_channel_get_private(channel, "SwapInThreadState");
+        // so lets assume nothing in the python script swapped any thread state in
+        // or out .. thread state will currently be swapped in, and the SwapInThreadState
+        // will be null
+        if (swapin_tstate == NULL) {
+            // clear out threadstate
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "clear threadstate \n");
+            // we know we are swapped in because swapin_tstate is NULL, and therefore we have the GIL, so
+            // it is safe to call PyThreadState_Get.
+            PyThreadState *cur_tstate = PyThreadState_Get();
+            PyThreadState_Clear(cur_tstate);
+            PyEval_ReleaseThread(cur_tstate);
+            PyThreadState_Delete(cur_tstate);
+        } else {
+            // thread state is already swapped out, so, nothing for us to do
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "according to chan priv data, already swapped out \n");
+        }
+    } else {
+        // they ran python script from cmd line, behave a bit differently (untested)
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No session: Threadstate mod_python.c swap-out! \n");
+        PyEval_ReleaseThread(tstate);
+    }
 
-	// decrement ref counts 
-	Py_XDECREF(module);
-	Py_XDECREF(function);
-	Py_XDECREF(arg);
-	Py_XDECREF(result);
-	
-	// swap out thread state
-	if (session) {
-			//switch_core_session_rwunlock(session);
-		// record the fact that thread state is swapped in
-		switch_channel_t *channel = switch_core_session_get_channel(session);
-		PyThreadState *swapin_tstate = (PyThreadState *) switch_channel_get_private(channel, "SwapInThreadState");
-		// so lets assume nothing in the python script swapped any thread state in
-		// or out .. thread state will currently be swapped in, and the SwapInThreadState 
-		// will be null
-		if (swapin_tstate == NULL) {
-			// clear out threadstate
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "clear threadstate \n");
-			// we know we are swapped in because swapin_tstate is NULL, and therefore we have the GIL, so
-			// it is safe to call PyThreadState_Get.
-			PyThreadState *cur_tstate = PyThreadState_Get();
-			PyThreadState_Clear(cur_tstate);
-			PyEval_ReleaseThread(cur_tstate);
-			PyThreadState_Delete(cur_tstate);
-		} else {
-			// thread state is already swapped out, so, nothing for us to do
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "according to chan priv data, already swapped out \n");
-		}
-	} else {
-		// they ran python script from cmd line, behave a bit differently (untested)
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No session: Threadstate mod_python.c swap-out! \n");
-		PyEval_ReleaseThread(tstate);
-	}
 	
 	switch_safe_free(dupargs);
 
@@ -206,7 +221,7 @@ static void eval_some_python(char *uuid, char *args, switch_core_session_t *sess
 
 SWITCH_STANDARD_APP(python_function)
 {
-	eval_some_python(switch_core_session_get_uuid(session), (char *) data, session);
+	eval_some_python((char *) data, session, NULL);
 
 }
 
@@ -220,12 +235,20 @@ static void *SWITCH_THREAD_FUNC py_thread_run(switch_thread_t *thread, void *obj
 	switch_memory_pool_t *pool;
 	struct switch_py_thread *pt = (struct switch_py_thread *) obj;
 
-	eval_some_python(NULL, strdup(pt->args), NULL);
+	eval_some_python(pt->args, NULL, NULL);
 
 	pool = pt->pool;
 	switch_core_destroy_memory_pool(&pool);
 
 	return NULL;
+}
+
+SWITCH_STANDARD_API(api_python)
+{
+	
+	eval_some_python((char *) cmd, session, stream);
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_STANDARD_API(launch_python)
@@ -288,7 +311,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	SWITCH_ADD_API(api_interface, "python", "run a python script", launch_python, "python </path/to/script>");
+	SWITCH_ADD_API(api_interface, "pyrun", "run a python script", launch_python, "python </path/to/script>");
+	SWITCH_ADD_API(api_interface, "python", "run a python script", api_python, "python </path/to/script>");
 	SWITCH_ADD_APP(app_interface, "python", "Launch python ivr", "Run a python ivr on a channel", python_function, "<script> [additional_vars [...]]",
 				   SAF_SUPPORT_NOMEDIA);
 

@@ -8,7 +8,6 @@ PyObject *mod_python_conjure_event(PyObject *module, switch_event_t *event, cons
 	obj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, SWIG_POINTER_OWN );
 	if (module && name) {
 		PyDict_SetItem(PyModule_GetDict(module), Py_BuildValue("s", name), obj);
-		Py_DECREF(obj);
 	}
 
 	return obj;
@@ -24,7 +23,6 @@ PyObject *mod_python_conjure_stream(PyObject *module, switch_stream_handle_t *st
 
 	if (module && name) {
 		PyDict_SetItem(PyModule_GetDict(module), Py_BuildValue("s", name), obj);
-		Py_DECREF(obj);
 	}
 
 	return obj;
