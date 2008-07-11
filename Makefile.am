@@ -331,7 +331,7 @@ libs/openzap/Makefile:
 	cd libs/openzap && autoconf
 	cd libs/openzap && ./configure
 
-update-clean: clean modwipe uninstall libs/openzap/Makefile
+update-clean: clean modwipe uninstall libs/openzap/Makefile python-reconf
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/openzap && $(MAKE) clean
 	cd libs/portaudio && $(MAKE) clean
@@ -346,6 +346,10 @@ speedy-sure: update-clean
 	$(MAKE) -j core
 	cd libs/sofia-sip && $(MAKE) -j
 	$(MAKE) -j modules
+
+python-reconf:
+	rm -f src/mod/languages/mod_python/Makefile
+	./config.status
 
 pa-reconf:
 	cd libs/portaudio && $(MAKE) clean

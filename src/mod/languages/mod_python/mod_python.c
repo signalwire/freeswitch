@@ -42,7 +42,7 @@
 #endif
 
 #include <switch.h>
-
+#include "mod_python_extra.h"
 
 PyThreadState *mainThreadState = NULL;
 
@@ -62,7 +62,7 @@ static void eval_some_python(char *uuid, char *args, switch_core_session_t *sess
 	int argc;
 	int lead = 0;
 	char *script = NULL;
-	PyObject *module = NULL;
+	PyObject *module = NULL, *sp = NULL;
 	PyObject *function = NULL;
 	PyObject *arg = NULL;
 	PyObject *result = NULL;
@@ -139,6 +139,10 @@ static void eval_some_python(char *uuid, char *args, switch_core_session_t *sess
 		PyTuple_SetItem(arg, 0, nada);
 	}
 
+	if (session) {
+		sp = mod_python_conjure_session(module, session, "session");
+	}
+
 	// invoke the handler 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call python script \n");
 	result = PyEval_CallObjectWithKeywords(function, arg, (PyObject *) NULL);
@@ -150,21 +154,26 @@ static void eval_some_python(char *uuid, char *args, switch_core_session_t *sess
 		PyErr_Print();
 		PyErr_Clear();
 	}
-
-	goto done_swap_out;
-
+	
   done:
 	switch_safe_free(dupargs);
 
+	if (sp) {
+		Py_XDECREF(sp);
+	}
+	
   done_swap_out:
+
+
 	// decrement ref counts 
 	Py_XDECREF(module);
 	Py_XDECREF(function);
 	Py_XDECREF(arg);
 	Py_XDECREF(result);
-
+	
 	// swap out thread state
 	if (session) {
+			//switch_core_session_rwunlock(session);
 		// record the fact that thread state is swapped in
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		PyThreadState *swapin_tstate = (PyThreadState *) switch_channel_get_private(channel, "SwapInThreadState");
@@ -189,7 +198,7 @@ static void eval_some_python(char *uuid, char *args, switch_core_session_t *sess
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No session: Threadstate mod_python.c swap-out! \n");
 		PyEval_ReleaseThread(tstate);
 	}
-
+	
 	switch_safe_free(dupargs);
 
 

@@ -2497,15 +2497,15 @@ SWIG_Python_MustGetPtr(PyObject *obj, swig_type_info *ty, int argnum, int flags)
 
 #define SWIGTYPE_p_API swig_types[0]
 #define SWIGTYPE_p_CoreSession swig_types[1]
-#define SWIGTYPE_p_Event swig_types[2]
-#define SWIGTYPE_p_EventConsumer swig_types[3]
-#define SWIGTYPE_p_IVRMenu swig_types[4]
-#define SWIGTYPE_p_PySession swig_types[5]
-#define SWIGTYPE_p_Stream swig_types[6]
-#define SWIGTYPE_p_char swig_types[7]
-#define SWIGTYPE_p_input_callback_state swig_types[8]
-#define SWIGTYPE_p_session_flag_t swig_types[9]
-#define SWIGTYPE_p_swap_state_t swig_types[10]
+#define SWIGTYPE_p_DTMF swig_types[2]
+#define SWIGTYPE_p_Event swig_types[3]
+#define SWIGTYPE_p_EventConsumer swig_types[4]
+#define SWIGTYPE_p_IVRMenu swig_types[5]
+#define SWIGTYPE_p_PYTHON__Session swig_types[6]
+#define SWIGTYPE_p_Stream swig_types[7]
+#define SWIGTYPE_p_char swig_types[8]
+#define SWIGTYPE_p_input_callback_state swig_types[9]
+#define SWIGTYPE_p_session_flag_t swig_types[10]
 #define SWIGTYPE_p_switch_channel_state_t swig_types[11]
 #define SWIGTYPE_p_switch_channel_t swig_types[12]
 #define SWIGTYPE_p_switch_core_session_t swig_types[13]
@@ -2518,9 +2518,10 @@ SWIG_Python_MustGetPtr(PyObject *obj, swig_type_info *ty, int argnum, int flags)
 #define SWIGTYPE_p_switch_queue_t swig_types[20]
 #define SWIGTYPE_p_switch_status_t swig_types[21]
 #define SWIGTYPE_p_switch_stream_handle_t swig_types[22]
-#define SWIGTYPE_p_void swig_types[23]
-static swig_type_info *swig_types[25];
-static swig_module_info swig_module = {swig_types, 24, 0, 0, 0, 0};
+#define SWIGTYPE_p_uint32_t swig_types[23]
+#define SWIGTYPE_p_void swig_types[24]
+static swig_type_info *swig_types[26];
+static swig_module_info swig_module = {swig_types, 25, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -2860,6 +2861,56 @@ SWIGINTERNINLINE PyObject *
 SWIG_From_int  (int value)
 {    
   return SWIG_From_long  (value);
+}
+
+
+SWIGINTERN int
+SWIG_AsCharArray(PyObject * obj, char *val, size_t size)
+{ 
+  char* cptr = 0; size_t csize = 0; int alloc = SWIG_OLDOBJ;
+  int res = SWIG_AsCharPtrAndSize(obj, &cptr, &csize, &alloc);
+  if (SWIG_IsOK(res)) {
+    if ((csize == size + 1) && cptr && !(cptr[csize-1])) --csize;
+    if (csize <= size) {
+      if (val) {
+	if (csize) memcpy(val, cptr, csize*sizeof(char));
+	if (csize < size) memset(val + csize, 0, (size - csize)*sizeof(char));
+      }
+      if (alloc == SWIG_NEWOBJ) {
+	delete[] cptr;
+	res = SWIG_DelNewMask(res);
+      }      
+      return res;
+    }
+    if (alloc == SWIG_NEWOBJ) delete[] cptr;
+  }
+  return SWIG_TypeError;
+}
+
+
+SWIGINTERN int
+SWIG_AsVal_char (PyObject * obj, char *val)
+{    
+  int res = SWIG_AsCharArray(obj, val, 1);
+  if (!SWIG_IsOK(res)) {
+    long v;
+    res = SWIG_AddCast(SWIG_AsVal_long (obj, &v));
+    if (SWIG_IsOK(res)) {
+      if ((CHAR_MIN <= v) && (v <= CHAR_MAX)) {
+	if (val) *val = static_cast< char >(v);
+      } else {
+	res = SWIG_OverflowError;
+      }
+    }
+  }
+  return res;
+}
+
+
+SWIGINTERNINLINE PyObject *
+SWIG_From_char  (char c) 
+{ 
+  return SWIG_FromCharPtrAndSize(&c,1);
 }
 
 
@@ -3672,6 +3723,254 @@ SWIGINTERN PyObject *input_callback_state_t_swigregister(PyObject *SWIGUNUSEDPAR
   PyObject *obj;
   if (!PyArg_ParseTuple(args,(char*)"O:swigregister", &obj)) return NULL;
   SWIG_TypeNewClientData(SWIGTYPE_p_input_callback_state, SWIG_NewClientData(obj));
+  return SWIG_Py_Void();
+}
+
+SWIGINTERN PyObject *_wrap_DTMF_digit_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  DTMF *arg1 = (DTMF *) 0 ;
+  char arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  char val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:DTMF_digit_set",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_DTMF, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "DTMF_digit_set" "', argument " "1"" of type '" "DTMF *""'"); 
+  }
+  arg1 = reinterpret_cast< DTMF * >(argp1);
+  ecode2 = SWIG_AsVal_char(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "DTMF_digit_set" "', argument " "2"" of type '" "char""'");
+  } 
+  arg2 = static_cast< char >(val2);
+  if (arg1) (arg1)->digit = arg2;
+  
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_DTMF_digit_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  DTMF *arg1 = (DTMF *) 0 ;
+  char result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:DTMF_digit_get",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_DTMF, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "DTMF_digit_get" "', argument " "1"" of type '" "DTMF *""'"); 
+  }
+  arg1 = reinterpret_cast< DTMF * >(argp1);
+  result = (char) ((arg1)->digit);
+  resultobj = SWIG_From_char(static_cast< char >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_DTMF_duration_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  DTMF *arg1 = (DTMF *) 0 ;
+  uint32_t arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:DTMF_duration_set",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_DTMF, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "DTMF_duration_set" "', argument " "1"" of type '" "DTMF *""'"); 
+  }
+  arg1 = reinterpret_cast< DTMF * >(argp1);
+  {
+    res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_uint32_t,  0  | 0);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "DTMF_duration_set" "', argument " "2"" of type '" "uint32_t""'"); 
+    }  
+    if (!argp2) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "DTMF_duration_set" "', argument " "2"" of type '" "uint32_t""'");
+    } else {
+      uint32_t * temp = reinterpret_cast< uint32_t * >(argp2);
+      arg2 = *temp;
+      if (SWIG_IsNewObj(res2)) delete temp;
+    }
+  }
+  if (arg1) (arg1)->duration = arg2;
+  
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_DTMF_duration_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  DTMF *arg1 = (DTMF *) 0 ;
+  uint32_t result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:DTMF_duration_get",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_DTMF, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "DTMF_duration_get" "', argument " "1"" of type '" "DTMF *""'"); 
+  }
+  arg1 = reinterpret_cast< DTMF * >(argp1);
+  result =  ((arg1)->duration);
+  resultobj = SWIG_NewPointerObj((new uint32_t(static_cast< const uint32_t& >(result))), SWIGTYPE_p_uint32_t, SWIG_POINTER_OWN |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_DTMF__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  char arg1 ;
+  uint32_t arg2 ;
+  DTMF *result = 0 ;
+  char val1 ;
+  int ecode1 = 0 ;
+  void *argp2 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:new_DTMF",&obj0,&obj1)) SWIG_fail;
+  ecode1 = SWIG_AsVal_char(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_DTMF" "', argument " "1"" of type '" "char""'");
+  } 
+  arg1 = static_cast< char >(val1);
+  {
+    res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_uint32_t,  0  | 0);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_DTMF" "', argument " "2"" of type '" "uint32_t""'"); 
+    }  
+    if (!argp2) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_DTMF" "', argument " "2"" of type '" "uint32_t""'");
+    } else {
+      uint32_t * temp = reinterpret_cast< uint32_t * >(argp2);
+      arg2 = *temp;
+      if (SWIG_IsNewObj(res2)) delete temp;
+    }
+  }
+  result = (DTMF *)new DTMF(arg1,arg2);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_DTMF, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_DTMF__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  char arg1 ;
+  DTMF *result = 0 ;
+  char val1 ;
+  int ecode1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:new_DTMF",&obj0)) SWIG_fail;
+  ecode1 = SWIG_AsVal_char(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_DTMF" "', argument " "1"" of type '" "char""'");
+  } 
+  arg1 = static_cast< char >(val1);
+  result = (DTMF *)new DTMF(arg1);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_DTMF, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_DTMF(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[3];
+  int ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = (int)PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 2); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 1) {
+    int _v;
+    {
+      int res = SWIG_AsVal_char(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      return _wrap_new_DTMF__SWIG_1(self, args);
+    }
+  }
+  if (argc == 2) {
+    int _v;
+    {
+      int res = SWIG_AsVal_char(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      int res = SWIG_ConvertPtr(argv[1], 0, SWIGTYPE_p_uint32_t, 0);
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        return _wrap_new_DTMF__SWIG_0(self, args);
+      }
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'new_DTMF'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    DTMF(char,uint32_t)\n"
+    "    DTMF(char)\n");
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_delete_DTMF(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  DTMF *arg1 = (DTMF *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:delete_DTMF",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_DTMF, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_DTMF" "', argument " "1"" of type '" "DTMF *""'"); 
+  }
+  arg1 = reinterpret_cast< DTMF * >(argp1);
+  delete arg1;
+  
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *DTMF_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *obj;
+  if (!PyArg_ParseTuple(args,(char*)"O:swigregister", &obj)) return NULL;
+  SWIG_TypeNewClientData(SWIGTYPE_p_DTMF, SWIG_NewClientData(obj));
   return SWIG_Py_Void();
 }
 
@@ -8151,36 +8450,36 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_new_PySession__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_new_Session__SWIG_0(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
-  PySession *result = 0 ;
+  PYTHON::Session *result = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)":new_PySession")) SWIG_fail;
-  result = (PySession *)new PySession();
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PySession, SWIG_POINTER_NEW |  0 );
+  if (!PyArg_ParseTuple(args,(char *)":new_Session")) SWIG_fail;
+  result = (PYTHON::Session *)new PYTHON::Session();
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 ); result->setPython(self);
   return resultobj;
 fail:
   return NULL;
 }
 
 
-SWIGINTERN PyObject *_wrap_new_PySession__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_new_Session__SWIG_1(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   char *arg1 = (char *) 0 ;
-  PySession *result = 0 ;
+  PYTHON::Session *result = 0 ;
   int res1 ;
   char *buf1 = 0 ;
   int alloc1 = 0 ;
   PyObject * obj0 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"O:new_PySession",&obj0)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"O:new_Session",&obj0)) SWIG_fail;
   res1 = SWIG_AsCharPtrAndSize(obj0, &buf1, NULL, &alloc1);
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_PySession" "', argument " "1"" of type '" "char *""'");
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_Session" "', argument " "1"" of type '" "char *""'");
   }
   arg1 = reinterpret_cast< char * >(buf1);
-  result = (PySession *)new PySession(arg1);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PySession, SWIG_POINTER_NEW |  0 );
+  result = (PYTHON::Session *)new PYTHON::Session(arg1);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 ); result->setPython(self);
   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
   return resultobj;
 fail:
@@ -8189,29 +8488,29 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_new_PySession__SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_new_Session__SWIG_2(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
-  PySession *result = 0 ;
+  PYTHON::Session *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject * obj0 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"O:new_PySession",&obj0)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"O:new_Session",&obj0)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_switch_core_session_t, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_PySession" "', argument " "1"" of type '" "switch_core_session_t *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_Session" "', argument " "1"" of type '" "switch_core_session_t *""'"); 
   }
   arg1 = reinterpret_cast< switch_core_session_t * >(argp1);
-  result = (PySession *)new PySession(arg1);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PySession, SWIG_POINTER_NEW |  0 );
+  result = (PYTHON::Session *)new PYTHON::Session(arg1);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 ); result->setPython(self);
   return resultobj;
 fail:
   return NULL;
 }
 
 
-SWIGINTERN PyObject *_wrap_new_PySession(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_new_Session(PyObject *self, PyObject *args) {
   int argc;
   PyObject *argv[2];
   int ii;
@@ -8222,7 +8521,7 @@ SWIGINTERN PyObject *_wrap_new_PySession(PyObject *self, PyObject *args) {
     argv[ii] = PyTuple_GET_ITEM(args,ii);
   }
   if (argc == 0) {
-    return _wrap_new_PySession__SWIG_0(self, args);
+    return _wrap_new_Session__SWIG_0(self, args);
   }
   if (argc == 1) {
     int _v;
@@ -8230,7 +8529,7 @@ SWIGINTERN PyObject *_wrap_new_PySession(PyObject *self, PyObject *args) {
     int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_switch_core_session_t, 0);
     _v = SWIG_CheckState(res);
     if (_v) {
-      return _wrap_new_PySession__SWIG_2(self, args);
+      return _wrap_new_Session__SWIG_2(self, args);
     }
   }
   if (argc == 1) {
@@ -8238,33 +8537,33 @@ SWIGINTERN PyObject *_wrap_new_PySession(PyObject *self, PyObject *args) {
     int res = SWIG_AsCharPtrAndSize(argv[0], 0, NULL, 0);
     _v = SWIG_CheckState(res);
     if (_v) {
-      return _wrap_new_PySession__SWIG_1(self, args);
+      return _wrap_new_Session__SWIG_1(self, args);
     }
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'new_PySession'.\n"
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'new_Session'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    PySession()\n"
-    "    PySession(char *)\n"
-    "    PySession(switch_core_session_t *)\n");
+    "    PYTHON::Session()\n"
+    "    PYTHON::Session(char *)\n"
+    "    PYTHON::Session(switch_core_session_t *)\n");
   return NULL;
 }
 
 
-SWIGINTERN PyObject *_wrap_delete_PySession(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_delete_Session(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  PySession *arg1 = (PySession *) 0 ;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject * obj0 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"O:delete_PySession",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PySession, SWIG_POINTER_DISOWN |  0 );
+  if (!PyArg_ParseTuple(args,(char *)"O:delete_Session",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_DISOWN |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_PySession" "', argument " "1"" of type '" "PySession *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_Session" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
   }
-  arg1 = reinterpret_cast< PySession * >(argp1);
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
   delete arg1;
   
   resultobj = SWIG_Py_Void();
@@ -8274,134 +8573,20 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_PySession_setDTMFCallback(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_Session_begin_allow_threads(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  PySession *arg1 = (PySession *) 0 ;
-  PyObject *arg2 = (PyObject *) 0 ;
-  char *arg3 = (char *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  int res3 ;
-  char *buf3 = 0 ;
-  int alloc3 = 0 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  PyObject * obj2 = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"OOO:PySession_setDTMFCallback",&obj0,&obj1,&obj2)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PySession, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PySession_setDTMFCallback" "', argument " "1"" of type '" "PySession *""'"); 
-  }
-  arg1 = reinterpret_cast< PySession * >(argp1);
-  arg2 = obj1;
-  res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "PySession_setDTMFCallback" "', argument " "3"" of type '" "char *""'");
-  }
-  arg3 = reinterpret_cast< char * >(buf3);
-  (arg1)->setDTMFCallback(arg2,arg3);
-  resultobj = SWIG_Py_Void();
-  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
-  return resultobj;
-fail:
-  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_PySession_setHangupHook(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  PySession *arg1 = (PySession *) 0 ;
-  PyObject *arg2 = (PyObject *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"OO:PySession_setHangupHook",&obj0,&obj1)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PySession, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PySession_setHangupHook" "', argument " "1"" of type '" "PySession *""'"); 
-  }
-  arg1 = reinterpret_cast< PySession * >(argp1);
-  arg2 = obj1;
-  (arg1)->setHangupHook(arg2);
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_PySession_check_hangup_hook(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  PySession *arg1 = (PySession *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:PySession_check_hangup_hook",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PySession, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PySession_check_hangup_hook" "', argument " "1"" of type '" "PySession *""'"); 
-  }
-  arg1 = reinterpret_cast< PySession * >(argp1);
-  (arg1)->check_hangup_hook();
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_PySession_hangup(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  PySession *arg1 = (PySession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  int res2 ;
-  char *buf2 = 0 ;
-  int alloc2 = 0 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"OO:PySession_hangup",&obj0,&obj1)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PySession, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PySession_hangup" "', argument " "1"" of type '" "PySession *""'"); 
-  }
-  arg1 = reinterpret_cast< PySession * >(argp1);
-  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "PySession_hangup" "', argument " "2"" of type '" "char *""'");
-  }
-  arg2 = reinterpret_cast< char * >(buf2);
-  (arg1)->hangup(arg2);
-  resultobj = SWIG_Py_Void();
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  return resultobj;
-fail:
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_PySession_begin_allow_threads(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  PySession *arg1 = (PySession *) 0 ;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
   bool result;
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject * obj0 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"O:PySession_begin_allow_threads",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PySession, 0 |  0 );
+  if (!PyArg_ParseTuple(args,(char *)"O:Session_begin_allow_threads",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PySession_begin_allow_threads" "', argument " "1"" of type '" "PySession *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_begin_allow_threads" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
   }
-  arg1 = reinterpret_cast< PySession * >(argp1);
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
   result = (bool)(arg1)->begin_allow_threads();
   resultobj = SWIG_From_bool(static_cast< bool >(result));
   return resultobj;
@@ -8410,20 +8595,20 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_PySession_end_allow_threads(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_Session_end_allow_threads(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  PySession *arg1 = (PySession *) 0 ;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
   bool result;
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject * obj0 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"O:PySession_end_allow_threads",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PySession, 0 |  0 );
+  if (!PyArg_ParseTuple(args,(char *)"O:Session_end_allow_threads",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PySession_end_allow_threads" "', argument " "1"" of type '" "PySession *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_end_allow_threads" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
   }
-  arg1 = reinterpret_cast< PySession * >(argp1);
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
   result = (bool)(arg1)->end_allow_threads();
   resultobj = SWIG_From_bool(static_cast< bool >(result));
   return resultobj;
@@ -8432,9 +8617,30 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_PySession_run_dtmf_callback(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_Session_check_hangup_hook(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  PySession *arg1 = (PySession *) 0 ;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Session_check_hangup_hook",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_check_hangup_hook" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
+  }
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
+  (arg1)->check_hangup_hook();
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Session_run_dtmf_callback(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
   void *arg2 = (void *) 0 ;
   switch_input_type_t arg3 ;
   switch_status_t result;
@@ -8447,23 +8653,23 @@ SWIGINTERN PyObject *_wrap_PySession_run_dtmf_callback(PyObject *SWIGUNUSEDPARM(
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"OOO:PySession_run_dtmf_callback",&obj0,&obj1,&obj2)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PySession, 0 |  0 );
+  if (!PyArg_ParseTuple(args,(char *)"OOO:Session_run_dtmf_callback",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PySession_run_dtmf_callback" "', argument " "1"" of type '" "PySession *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_run_dtmf_callback" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
   }
-  arg1 = reinterpret_cast< PySession * >(argp1);
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
   res2 = SWIG_ConvertPtr(obj1,SWIG_as_voidptrptr(&arg2), 0, 0);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "PySession_run_dtmf_callback" "', argument " "2"" of type '" "void *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Session_run_dtmf_callback" "', argument " "2"" of type '" "void *""'"); 
   }
   {
     res3 = SWIG_ConvertPtr(obj2, &argp3, SWIGTYPE_p_switch_input_type_t,  0  | 0);
     if (!SWIG_IsOK(res3)) {
-      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "PySession_run_dtmf_callback" "', argument " "3"" of type '" "switch_input_type_t""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "Session_run_dtmf_callback" "', argument " "3"" of type '" "switch_input_type_t""'"); 
     }  
     if (!argp3) {
-      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "PySession_run_dtmf_callback" "', argument " "3"" of type '" "switch_input_type_t""'");
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "Session_run_dtmf_callback" "', argument " "3"" of type '" "switch_input_type_t""'");
     } else {
       switch_input_type_t * temp = reinterpret_cast< switch_input_type_t * >(argp3);
       arg3 = *temp;
@@ -8478,10 +8684,464 @@ fail:
 }
 
 
-SWIGINTERN PyObject *PySession_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_Session_setInputCallback__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
+  PyObject *arg2 = (PyObject *) 0 ;
+  PyObject *arg3 = (PyObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:Session_setInputCallback",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_setInputCallback" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
+  }
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
+  arg2 = obj1;
+  arg3 = obj2;
+  (arg1)->setInputCallback(arg2,arg3);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Session_setInputCallback__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
+  PyObject *arg2 = (PyObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:Session_setInputCallback",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_setInputCallback" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
+  }
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
+  arg2 = obj1;
+  (arg1)->setInputCallback(arg2);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Session_setInputCallback(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[4];
+  int ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = (int)PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 3); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 2) {
+    int _v;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_PYTHON__Session, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      _v = (argv[1] != 0);
+      if (_v) {
+        return _wrap_Session_setInputCallback__SWIG_1(self, args);
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_PYTHON__Session, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      _v = (argv[1] != 0);
+      if (_v) {
+        _v = (argv[2] != 0);
+        if (_v) {
+          return _wrap_Session_setInputCallback__SWIG_0(self, args);
+        }
+      }
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'Session_setInputCallback'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    setInputCallback(PYTHON::Session *,PyObject *,PyObject *)\n"
+    "    setInputCallback(PYTHON::Session *,PyObject *)\n");
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Session_setHangupHook__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
+  PyObject *arg2 = (PyObject *) 0 ;
+  PyObject *arg3 = (PyObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:Session_setHangupHook",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_setHangupHook" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
+  }
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
+  arg2 = obj1;
+  arg3 = obj2;
+  (arg1)->setHangupHook(arg2,arg3);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Session_setHangupHook__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
+  PyObject *arg2 = (PyObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:Session_setHangupHook",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_setHangupHook" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
+  }
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
+  arg2 = obj1;
+  (arg1)->setHangupHook(arg2);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Session_setHangupHook(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[4];
+  int ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = (int)PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 3); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 2) {
+    int _v;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_PYTHON__Session, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      _v = (argv[1] != 0);
+      if (_v) {
+        return _wrap_Session_setHangupHook__SWIG_1(self, args);
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_PYTHON__Session, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      _v = (argv[1] != 0);
+      if (_v) {
+        _v = (argv[2] != 0);
+        if (_v) {
+          return _wrap_Session_setHangupHook__SWIG_0(self, args);
+        }
+      }
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'Session_setHangupHook'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    setHangupHook(PYTHON::Session *,PyObject *,PyObject *)\n"
+    "    setHangupHook(PYTHON::Session *,PyObject *)\n");
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Session_ready(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
+  bool result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Session_ready",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_ready" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
+  }
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
+  result = (bool)(arg1)->ready();
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Session_cb_function_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
+  PyObject *arg2 = (PyObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:Session_cb_function_set",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_cb_function_set" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
+  }
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
+  arg2 = obj1;
+  if (arg1) (arg1)->cb_function = arg2;
+  
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Session_cb_function_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
+  PyObject *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Session_cb_function_get",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_cb_function_get" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
+  }
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
+  result = (PyObject *) ((arg1)->cb_function);
+  resultobj = result;
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Session_cb_arg_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
+  PyObject *arg2 = (PyObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:Session_cb_arg_set",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_cb_arg_set" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
+  }
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
+  arg2 = obj1;
+  if (arg1) (arg1)->cb_arg = arg2;
+  
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Session_cb_arg_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
+  PyObject *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Session_cb_arg_get",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_cb_arg_get" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
+  }
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
+  result = (PyObject *) ((arg1)->cb_arg);
+  resultobj = result;
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Session_hangup_func_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
+  PyObject *arg2 = (PyObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:Session_hangup_func_set",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_hangup_func_set" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
+  }
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
+  arg2 = obj1;
+  if (arg1) (arg1)->hangup_func = arg2;
+  
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Session_hangup_func_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
+  PyObject *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Session_hangup_func_get",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_hangup_func_get" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
+  }
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
+  result = (PyObject *) ((arg1)->hangup_func);
+  resultobj = result;
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Session_hangup_func_arg_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
+  PyObject *arg2 = (PyObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:Session_hangup_func_arg_set",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_hangup_func_arg_set" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
+  }
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
+  arg2 = obj1;
+  if (arg1) (arg1)->hangup_func_arg = arg2;
+  
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Session_hangup_func_arg_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
+  PyObject *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Session_hangup_func_arg_get",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_hangup_func_arg_get" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
+  }
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
+  result = (PyObject *) ((arg1)->hangup_func_arg);
+  resultobj = result;
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Session_setPython(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
+  PyObject *arg2 = (PyObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:Session_setPython",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_setPython" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
+  }
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
+  arg2 = obj1;
+  (arg1)->setPython(arg2);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Session_setSelf(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
+  PyObject *arg2 = (PyObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:Session_setSelf",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_setSelf" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
+  }
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
+  arg2 = obj1;
+  (arg1)->setSelf(arg2);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *Session_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *obj;
   if (!PyArg_ParseTuple(args,(char*)"O:swigregister", &obj)) return NULL;
-  SWIG_TypeNewClientData(SWIGTYPE_p_PySession, SWIG_NewClientData(obj));
+  SWIG_TypeNewClientData(SWIGTYPE_p_PYTHON__Session, SWIG_NewClientData(obj));
   return SWIG_Py_Void();
 }
 
@@ -8509,6 +9169,13 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"new_input_callback_state_t", _wrap_new_input_callback_state_t, METH_VARARGS, NULL},
 	 { (char *)"delete_input_callback_state_t", _wrap_delete_input_callback_state_t, METH_VARARGS, NULL},
 	 { (char *)"input_callback_state_t_swigregister", input_callback_state_t_swigregister, METH_VARARGS, NULL},
+	 { (char *)"DTMF_digit_set", _wrap_DTMF_digit_set, METH_VARARGS, NULL},
+	 { (char *)"DTMF_digit_get", _wrap_DTMF_digit_get, METH_VARARGS, NULL},
+	 { (char *)"DTMF_duration_set", _wrap_DTMF_duration_set, METH_VARARGS, NULL},
+	 { (char *)"DTMF_duration_get", _wrap_DTMF_duration_get, METH_VARARGS, NULL},
+	 { (char *)"new_DTMF", _wrap_new_DTMF, METH_VARARGS, NULL},
+	 { (char *)"delete_DTMF", _wrap_delete_DTMF, METH_VARARGS, NULL},
+	 { (char *)"DTMF_swigregister", DTMF_swigregister, METH_VARARGS, NULL},
 	 { (char *)"new_Stream", _wrap_new_Stream, METH_VARARGS, NULL},
 	 { (char *)"delete_Stream", _wrap_delete_Stream, METH_VARARGS, NULL},
 	 { (char *)"Stream_write", _wrap_Stream_write, METH_VARARGS, NULL},
@@ -8608,36 +9275,46 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"bridge", _wrap_bridge, METH_VARARGS, NULL},
 	 { (char *)"hanguphook", _wrap_hanguphook, METH_VARARGS, NULL},
 	 { (char *)"dtmf_callback", _wrap_dtmf_callback, METH_VARARGS, NULL},
-	 { (char *)"new_PySession", _wrap_new_PySession, METH_VARARGS, NULL},
-	 { (char *)"delete_PySession", _wrap_delete_PySession, METH_VARARGS, NULL},
-	 { (char *)"PySession_setDTMFCallback", _wrap_PySession_setDTMFCallback, METH_VARARGS, NULL},
-	 { (char *)"PySession_setHangupHook", _wrap_PySession_setHangupHook, METH_VARARGS, NULL},
-	 { (char *)"PySession_check_hangup_hook", _wrap_PySession_check_hangup_hook, METH_VARARGS, NULL},
-	 { (char *)"PySession_hangup", _wrap_PySession_hangup, METH_VARARGS, NULL},
-	 { (char *)"PySession_begin_allow_threads", _wrap_PySession_begin_allow_threads, METH_VARARGS, NULL},
-	 { (char *)"PySession_end_allow_threads", _wrap_PySession_end_allow_threads, METH_VARARGS, NULL},
-	 { (char *)"PySession_run_dtmf_callback", _wrap_PySession_run_dtmf_callback, METH_VARARGS, NULL},
-	 { (char *)"PySession_swigregister", PySession_swigregister, METH_VARARGS, NULL},
+	 { (char *)"new_Session", _wrap_new_Session, METH_VARARGS, NULL},
+	 { (char *)"delete_Session", _wrap_delete_Session, METH_VARARGS, NULL},
+	 { (char *)"Session_begin_allow_threads", _wrap_Session_begin_allow_threads, METH_VARARGS, NULL},
+	 { (char *)"Session_end_allow_threads", _wrap_Session_end_allow_threads, METH_VARARGS, NULL},
+	 { (char *)"Session_check_hangup_hook", _wrap_Session_check_hangup_hook, METH_VARARGS, NULL},
+	 { (char *)"Session_run_dtmf_callback", _wrap_Session_run_dtmf_callback, METH_VARARGS, NULL},
+	 { (char *)"Session_setInputCallback", _wrap_Session_setInputCallback, METH_VARARGS, NULL},
+	 { (char *)"Session_setHangupHook", _wrap_Session_setHangupHook, METH_VARARGS, NULL},
+	 { (char *)"Session_ready", _wrap_Session_ready, METH_VARARGS, NULL},
+	 { (char *)"Session_cb_function_set", _wrap_Session_cb_function_set, METH_VARARGS, NULL},
+	 { (char *)"Session_cb_function_get", _wrap_Session_cb_function_get, METH_VARARGS, NULL},
+	 { (char *)"Session_cb_arg_set", _wrap_Session_cb_arg_set, METH_VARARGS, NULL},
+	 { (char *)"Session_cb_arg_get", _wrap_Session_cb_arg_get, METH_VARARGS, NULL},
+	 { (char *)"Session_hangup_func_set", _wrap_Session_hangup_func_set, METH_VARARGS, NULL},
+	 { (char *)"Session_hangup_func_get", _wrap_Session_hangup_func_get, METH_VARARGS, NULL},
+	 { (char *)"Session_hangup_func_arg_set", _wrap_Session_hangup_func_arg_set, METH_VARARGS, NULL},
+	 { (char *)"Session_hangup_func_arg_get", _wrap_Session_hangup_func_arg_get, METH_VARARGS, NULL},
+	 { (char *)"Session_setPython", _wrap_Session_setPython, METH_VARARGS, NULL},
+	 { (char *)"Session_setSelf", _wrap_Session_setSelf, METH_VARARGS, NULL},
+	 { (char *)"Session_swigregister", Session_swigregister, METH_VARARGS, NULL},
 	 { NULL, NULL, 0, NULL }
 };
 
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
-static void *_p_PySessionTo_p_CoreSession(void *x, int *newmemory) {
-    return (void *)((CoreSession *)  ((PySession *) x));
+static void *_p_PYTHON__SessionTo_p_CoreSession(void *x, int *newmemory) {
+    return (void *)((CoreSession *)  ((PYTHON::Session *) x));
 }
 static swig_type_info _swigt__p_API = {"_p_API", "API *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_CoreSession = {"_p_CoreSession", "CoreSession *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_DTMF = {"_p_DTMF", "DTMF *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_Event = {"_p_Event", "Event *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_EventConsumer = {"_p_EventConsumer", "EventConsumer *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_IVRMenu = {"_p_IVRMenu", "IVRMenu *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_PySession = {"_p_PySession", "PySession *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_PYTHON__Session = {"_p_PYTHON__Session", "PYTHON::Session *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_Stream = {"_p_Stream", "Stream *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_input_callback_state = {"_p_input_callback_state", "input_callback_state_t *|input_callback_state *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_session_flag_t = {"_p_session_flag_t", "enum session_flag_t *|session_flag_t *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_swap_state_t = {"_p_swap_state_t", "enum swap_state_t *|swap_state_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_channel_state_t = {"_p_switch_channel_state_t", "switch_channel_state_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_channel_t = {"_p_switch_channel_t", "switch_channel_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_core_session_t = {"_p_switch_core_session_t", "switch_core_session_t *", 0, 0, (void*)0, 0};
@@ -8650,20 +9327,21 @@ static swig_type_info _swigt__p_switch_priority_t = {"_p_switch_priority_t", "sw
 static swig_type_info _swigt__p_switch_queue_t = {"_p_switch_queue_t", "switch_queue_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_status_t = {"_p_switch_status_t", "switch_status_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_stream_handle_t = {"_p_switch_stream_handle_t", "switch_stream_handle_t *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_uint32_t = {"_p_uint32_t", "uint32_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_void = {"_p_void", "void *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_API,
   &_swigt__p_CoreSession,
+  &_swigt__p_DTMF,
   &_swigt__p_Event,
   &_swigt__p_EventConsumer,
   &_swigt__p_IVRMenu,
-  &_swigt__p_PySession,
+  &_swigt__p_PYTHON__Session,
   &_swigt__p_Stream,
   &_swigt__p_char,
   &_swigt__p_input_callback_state,
   &_swigt__p_session_flag_t,
-  &_swigt__p_swap_state_t,
   &_swigt__p_switch_channel_state_t,
   &_swigt__p_switch_channel_t,
   &_swigt__p_switch_core_session_t,
@@ -8676,20 +9354,21 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_switch_queue_t,
   &_swigt__p_switch_status_t,
   &_swigt__p_switch_stream_handle_t,
+  &_swigt__p_uint32_t,
   &_swigt__p_void,
 };
 
 static swig_cast_info _swigc__p_API[] = {  {&_swigt__p_API, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_CoreSession[] = {  {&_swigt__p_CoreSession, 0, 0, 0},  {&_swigt__p_PySession, _p_PySessionTo_p_CoreSession, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_CoreSession[] = {  {&_swigt__p_CoreSession, 0, 0, 0},  {&_swigt__p_PYTHON__Session, _p_PYTHON__SessionTo_p_CoreSession, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_DTMF[] = {  {&_swigt__p_DTMF, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Event[] = {  {&_swigt__p_Event, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_EventConsumer[] = {  {&_swigt__p_EventConsumer, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_IVRMenu[] = {  {&_swigt__p_IVRMenu, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_PySession[] = {  {&_swigt__p_PySession, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_PYTHON__Session[] = {  {&_swigt__p_PYTHON__Session, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Stream[] = {  {&_swigt__p_Stream, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_input_callback_state[] = {  {&_swigt__p_input_callback_state, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_session_flag_t[] = {  {&_swigt__p_session_flag_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_swap_state_t[] = {  {&_swigt__p_swap_state_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_channel_state_t[] = {  {&_swigt__p_switch_channel_state_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_channel_t[] = {  {&_swigt__p_switch_channel_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_core_session_t[] = {  {&_swigt__p_switch_core_session_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -8702,20 +9381,21 @@ static swig_cast_info _swigc__p_switch_priority_t[] = {  {&_swigt__p_switch_prio
 static swig_cast_info _swigc__p_switch_queue_t[] = {  {&_swigt__p_switch_queue_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_status_t[] = {  {&_swigt__p_switch_status_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_stream_handle_t[] = {  {&_swigt__p_switch_stream_handle_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_uint32_t[] = {  {&_swigt__p_uint32_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_void[] = {  {&_swigt__p_void, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_API,
   _swigc__p_CoreSession,
+  _swigc__p_DTMF,
   _swigc__p_Event,
   _swigc__p_EventConsumer,
   _swigc__p_IVRMenu,
-  _swigc__p_PySession,
+  _swigc__p_PYTHON__Session,
   _swigc__p_Stream,
   _swigc__p_char,
   _swigc__p_input_callback_state,
   _swigc__p_session_flag_t,
-  _swigc__p_swap_state_t,
   _swigc__p_switch_channel_state_t,
   _swigc__p_switch_channel_t,
   _swigc__p_switch_core_session_t,
@@ -8728,6 +9408,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_switch_queue_t,
   _swigc__p_switch_status_t,
   _swigc__p_switch_stream_handle_t,
+  _swigc__p_uint32_t,
   _swigc__p_void,
 };
 
@@ -9261,7 +9942,6 @@ SWIGEXPORT void SWIG_init(void) {
   SWIG_Python_SetConstant(d, "S_HUP",SWIG_From_int(static_cast< int >(S_HUP)));
   SWIG_Python_SetConstant(d, "S_FREE",SWIG_From_int(static_cast< int >(S_FREE)));
   SWIG_Python_SetConstant(d, "S_RDLOCK",SWIG_From_int(static_cast< int >(S_RDLOCK)));
-  SWIG_Python_SetConstant(d, "S_SWAPPED_IN",SWIG_From_int(static_cast< int >(S_SWAPPED_IN)));
-  SWIG_Python_SetConstant(d, "S_SWAPPED_OUT",SWIG_From_int(static_cast< int >(S_SWAPPED_OUT)));
 }
 
+#include "mod_python_extra.c"

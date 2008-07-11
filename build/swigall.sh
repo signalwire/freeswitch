@@ -9,7 +9,8 @@ make mod_perl_wrap.cpp
 cd ../../../..
 
 cd src/mod/languages/mod_python
-make reswig
+make swigclean
+make mod_python_wrap.cpp
 cd ../../../..
 
 cd src/mod/languages/mod_java

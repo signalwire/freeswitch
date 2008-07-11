@@ -1,0 +1,53 @@
+--- mod_python_wrap.cpp	2008-07-10 13:14:21.000000000 -0500
++++ old.cpp	2008-07-10 13:13:57.000000000 -0500
+@@ -8150,20 +8150,20 @@
+ }
+ 
+ 
+-SWIGINTERN PyObject *_wrap_new_Session__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
++SWIGINTERN PyObject *_wrap_new_Session__SWIG_0(PyObject *self, PyObject *args) {
+   PyObject *resultobj = 0;
+   PYTHON::Session *result = 0 ;
+   
+   if (!PyArg_ParseTuple(args,(char *)":new_Session")) SWIG_fail;
+   result = (PYTHON::Session *)new PYTHON::Session();
+-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 );
++  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 ); result->setPython(self);
+   return resultobj;
+ fail:
+   return NULL;
+ }
+ 
+ 
+-SWIGINTERN PyObject *_wrap_new_Session__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
++SWIGINTERN PyObject *_wrap_new_Session__SWIG_1(PyObject *self, PyObject *args) {
+   PyObject *resultobj = 0;
+   char *arg1 = (char *) 0 ;
+   PYTHON::Session *result = 0 ;
+@@ -8179,7 +8179,7 @@
+   }
+   arg1 = reinterpret_cast< char * >(buf1);
+   result = (PYTHON::Session *)new PYTHON::Session(arg1);
+-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 );
++  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 ); result->setPython(self);
+   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+   return resultobj;
+ fail:
+@@ -8188,7 +8188,7 @@
+ }
+ 
+ 
+-SWIGINTERN PyObject *_wrap_new_Session__SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
++SWIGINTERN PyObject *_wrap_new_Session__SWIG_2(PyObject *self, PyObject *args) {
+   PyObject *resultobj = 0;
+   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+   PYTHON::Session *result = 0 ;
+@@ -8203,7 +8203,7 @@
+   }
+   arg1 = reinterpret_cast< switch_core_session_t * >(argp1);
+   result = (PYTHON::Session *)new PYTHON::Session(arg1);
+-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 );
++  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 ); result->setPython(self);
+   return resultobj;
+ fail:
+   return NULL;

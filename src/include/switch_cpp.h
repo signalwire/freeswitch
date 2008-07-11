@@ -101,6 +101,14 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 		 S_RDLOCK = (1 << 2)
 	 } session_flag_t;
 
+     class DTMF {
+	 public:
+		 char digit;
+		 uint32_t duration;
+		 SWITCH_DECLARE_CONSTRUCTOR DTMF(char idigit, uint32_t iduration = SWITCH_DEFAULT_DTMF_DURATION);
+		 virtual SWITCH_DECLARE_CONSTRUCTOR ~DTMF();
+     };
+
 	 class Stream {
 	   protected:
 		 switch_stream_handle_t mystream;
@@ -172,7 +180,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 		 SWITCH_DECLARE_CONSTRUCTOR CoreSession();
 		 SWITCH_DECLARE_CONSTRUCTOR CoreSession(char *uuid);
 		 SWITCH_DECLARE_CONSTRUCTOR CoreSession(switch_core_session_t *new_session);
-		 SWITCH_DECLARE_CONSTRUCTOR ~ CoreSession();
+		 virtual SWITCH_DECLARE_CONSTRUCTOR ~ CoreSession();
 		 switch_core_session_t *session;
 		 switch_channel_t *channel;
 		 unsigned int flags;

@@ -32,6 +32,13 @@ class freeswitchJNI {
   public final static native int S_HUP_get();
   public final static native int S_FREE_get();
   public final static native int S_RDLOCK_get();
+  public final static native void DTMF_digit_set(long jarg1, DTMF jarg1_, char jarg2);
+  public final static native char DTMF_digit_get(long jarg1, DTMF jarg1_);
+  public final static native void DTMF_duration_set(long jarg1, DTMF jarg1_, long jarg2);
+  public final static native long DTMF_duration_get(long jarg1, DTMF jarg1_);
+  public final static native long new_DTMF__SWIG_0(char jarg1, long jarg2);
+  public final static native long new_DTMF__SWIG_1(char jarg1);
+  public final static native void delete_DTMF(long jarg1);
   public final static native long new_Stream__SWIG_0();
   public final static native long new_Stream__SWIG_1(long jarg1);
   public final static native void delete_Stream(long jarg1);

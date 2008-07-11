@@ -179,6 +179,47 @@ sub ACQUIRE {
 }
 
 
+############# Class : freeswitch::DTMF ##############
+
+package freeswitch::DTMF;
+use vars qw(@ISA %OWNER %ITERATORS %BLESSEDMEMBERS);
+@ISA = qw( freeswitch );
+%OWNER = ();
+%ITERATORS = ();
+*swig_digit_get = *freeswitchc::DTMF_digit_get;
+*swig_digit_set = *freeswitchc::DTMF_digit_set;
+*swig_duration_get = *freeswitchc::DTMF_duration_get;
+*swig_duration_set = *freeswitchc::DTMF_duration_set;
+sub new {
+    my $pkg = shift;
+    my $self = freeswitchc::new_DTMF(@_);
+    bless $self, $pkg if defined($self);
+}
+
+sub DESTROY {
+    return unless $_[0]->isa('HASH');
+    my $self = tied(%{$_[0]});
+    return unless defined $self;
+    delete $ITERATORS{$self};
+    if (exists $OWNER{$self}) {
+        freeswitchc::delete_DTMF($self);
+        delete $OWNER{$self};
+    }
+}
+
+sub DISOWN {
+    my $self = shift;
+    my $ptr = tied(%$self);
+    delete $OWNER{$ptr};
+}
+
+sub ACQUIRE {
+    my $self = shift;
+    my $ptr = tied(%$self);
+    $OWNER{$ptr} = 1;
+}
+
+
 ############# Class : freeswitch::Stream ##############
 
 package freeswitch::Stream;

@@ -1448,30 +1448,32 @@ SWIG_Perl_SetModule(swig_module_info *module) {
 
 #define SWIGTYPE_p_API swig_types[0]
 #define SWIGTYPE_p_CoreSession swig_types[1]
-#define SWIGTYPE_p_Event swig_types[2]
-#define SWIGTYPE_p_EventConsumer swig_types[3]
-#define SWIGTYPE_p_IVRMenu swig_types[4]
-#define SWIGTYPE_p_PERL__Session swig_types[5]
-#define SWIGTYPE_p_PerlInterpreter swig_types[6]
-#define SWIGTYPE_p_Stream swig_types[7]
-#define SWIGTYPE_p_char swig_types[8]
-#define SWIGTYPE_p_input_callback_state swig_types[9]
-#define SWIGTYPE_p_session_flag_t swig_types[10]
-#define SWIGTYPE_p_switch_channel_state_t swig_types[11]
-#define SWIGTYPE_p_switch_channel_t swig_types[12]
-#define SWIGTYPE_p_switch_core_session_t swig_types[13]
-#define SWIGTYPE_p_switch_event_node_t swig_types[14]
-#define SWIGTYPE_p_switch_event_t swig_types[15]
-#define SWIGTYPE_p_switch_event_types_t swig_types[16]
-#define SWIGTYPE_p_switch_input_args_t swig_types[17]
-#define SWIGTYPE_p_switch_input_type_t swig_types[18]
-#define SWIGTYPE_p_switch_priority_t swig_types[19]
-#define SWIGTYPE_p_switch_queue_t swig_types[20]
-#define SWIGTYPE_p_switch_status_t swig_types[21]
-#define SWIGTYPE_p_switch_stream_handle_t swig_types[22]
-#define SWIGTYPE_p_void swig_types[23]
-static swig_type_info *swig_types[25];
-static swig_module_info swig_module = {swig_types, 24, 0, 0, 0, 0};
+#define SWIGTYPE_p_DTMF swig_types[2]
+#define SWIGTYPE_p_Event swig_types[3]
+#define SWIGTYPE_p_EventConsumer swig_types[4]
+#define SWIGTYPE_p_IVRMenu swig_types[5]
+#define SWIGTYPE_p_PERL__Session swig_types[6]
+#define SWIGTYPE_p_PerlInterpreter swig_types[7]
+#define SWIGTYPE_p_Stream swig_types[8]
+#define SWIGTYPE_p_char swig_types[9]
+#define SWIGTYPE_p_input_callback_state swig_types[10]
+#define SWIGTYPE_p_session_flag_t swig_types[11]
+#define SWIGTYPE_p_switch_channel_state_t swig_types[12]
+#define SWIGTYPE_p_switch_channel_t swig_types[13]
+#define SWIGTYPE_p_switch_core_session_t swig_types[14]
+#define SWIGTYPE_p_switch_event_node_t swig_types[15]
+#define SWIGTYPE_p_switch_event_t swig_types[16]
+#define SWIGTYPE_p_switch_event_types_t swig_types[17]
+#define SWIGTYPE_p_switch_input_args_t swig_types[18]
+#define SWIGTYPE_p_switch_input_type_t swig_types[19]
+#define SWIGTYPE_p_switch_priority_t swig_types[20]
+#define SWIGTYPE_p_switch_queue_t swig_types[21]
+#define SWIGTYPE_p_switch_status_t swig_types[22]
+#define SWIGTYPE_p_switch_stream_handle_t swig_types[23]
+#define SWIGTYPE_p_uint32_t swig_types[24]
+#define SWIGTYPE_p_void swig_types[25]
+static swig_type_info *swig_types[27];
+static swig_module_info swig_module = {swig_types, 26, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1723,6 +1725,56 @@ SWIGINTERNINLINE SV *
 SWIG_From_int  SWIG_PERL_DECL_ARGS_1(int value)
 {    
   return SWIG_From_long  SWIG_PERL_CALL_ARGS_1(value);
+}
+
+
+SWIGINTERN int
+SWIG_AsCharArray(SV * obj, char *val, size_t size)
+{ 
+  char* cptr = 0; size_t csize = 0; int alloc = SWIG_OLDOBJ;
+  int res = SWIG_AsCharPtrAndSize(obj, &cptr, &csize, &alloc);
+  if (SWIG_IsOK(res)) {
+    if ((csize == size + 1) && cptr && !(cptr[csize-1])) --csize;
+    if (csize <= size) {
+      if (val) {
+	if (csize) memcpy(val, cptr, csize*sizeof(char));
+	if (csize < size) memset(val + csize, 0, (size - csize)*sizeof(char));
+      }
+      if (alloc == SWIG_NEWOBJ) {
+	delete[] cptr;
+	res = SWIG_DelNewMask(res);
+      }      
+      return res;
+    }
+    if (alloc == SWIG_NEWOBJ) delete[] cptr;
+  }
+  return SWIG_TypeError;
+}
+
+
+SWIGINTERN int
+SWIG_AsVal_char SWIG_PERL_DECL_ARGS_2(SV * obj, char *val)
+{    
+  int res = SWIG_AsCharArray(obj, val, 1);
+  if (!SWIG_IsOK(res)) {
+    long v;
+    res = SWIG_AddCast(SWIG_AsVal_long SWIG_PERL_CALL_ARGS_2(obj, &v));
+    if (SWIG_IsOK(res)) {
+      if ((CHAR_MIN <= v) && (v <= CHAR_MAX)) {
+	if (val) *val = static_cast< char >(v);
+      } else {
+	res = SWIG_OverflowError;
+      }
+    }
+  }
+  return res;
+}
+
+
+SWIGINTERNINLINE SV *
+SWIG_From_char  SWIG_PERL_DECL_ARGS_1(char c) 
+{ 
+  return SWIG_FromCharPtrAndSize(&c,1);
 }
 
 
@@ -2652,6 +2704,313 @@ XS(_wrap_delete_input_callback_state_t) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_input_callback_state_t" "', argument " "1"" of type '" "input_callback_state_t *""'"); 
     }
     arg1 = reinterpret_cast< input_callback_state_t * >(argp1);
+    delete arg1;
+    
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_DTMF_digit_set) {
+  {
+    DTMF *arg1 = (DTMF *) 0 ;
+    char arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    char val2 ;
+    int ecode2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: DTMF_digit_set(self,digit);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_DTMF, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "DTMF_digit_set" "', argument " "1"" of type '" "DTMF *""'"); 
+    }
+    arg1 = reinterpret_cast< DTMF * >(argp1);
+    ecode2 = SWIG_AsVal_char SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "DTMF_digit_set" "', argument " "2"" of type '" "char""'");
+    } 
+    arg2 = static_cast< char >(val2);
+    if (arg1) (arg1)->digit = arg2;
+    
+    
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_DTMF_digit_get) {
+  {
+    DTMF *arg1 = (DTMF *) 0 ;
+    char result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: DTMF_digit_get(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_DTMF, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "DTMF_digit_get" "', argument " "1"" of type '" "DTMF *""'"); 
+    }
+    arg1 = reinterpret_cast< DTMF * >(argp1);
+    result = (char) ((arg1)->digit);
+    ST(argvi) = SWIG_From_char  SWIG_PERL_CALL_ARGS_1(static_cast< char >(result)); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_DTMF_duration_set) {
+  {
+    DTMF *arg1 = (DTMF *) 0 ;
+    uint32_t arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    void *argp2 ;
+    int res2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: DTMF_duration_set(self,duration);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_DTMF, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "DTMF_duration_set" "', argument " "1"" of type '" "DTMF *""'"); 
+    }
+    arg1 = reinterpret_cast< DTMF * >(argp1);
+    {
+      res2 = SWIG_ConvertPtr(ST(1), &argp2, SWIGTYPE_p_uint32_t,  0 );
+      if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "DTMF_duration_set" "', argument " "2"" of type '" "uint32_t""'"); 
+      }  
+      if (!argp2) {
+        SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "DTMF_duration_set" "', argument " "2"" of type '" "uint32_t""'");
+      } else {
+        arg2 = *(reinterpret_cast< uint32_t * >(argp2));
+      }
+    }
+    if (arg1) (arg1)->duration = arg2;
+    
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_DTMF_duration_get) {
+  {
+    DTMF *arg1 = (DTMF *) 0 ;
+    uint32_t result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: DTMF_duration_get(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_DTMF, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "DTMF_duration_get" "', argument " "1"" of type '" "DTMF *""'"); 
+    }
+    arg1 = reinterpret_cast< DTMF * >(argp1);
+    result =  ((arg1)->duration);
+    ST(argvi) = SWIG_NewPointerObj((new uint32_t(static_cast< const uint32_t& >(result))), SWIGTYPE_p_uint32_t, SWIG_POINTER_OWN | 0); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_new_DTMF__SWIG_0) {
+  {
+    char arg1 ;
+    uint32_t arg2 ;
+    DTMF *result = 0 ;
+    char val1 ;
+    int ecode1 = 0 ;
+    void *argp2 ;
+    int res2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: new_DTMF(idigit,iduration);");
+    }
+    ecode1 = SWIG_AsVal_char SWIG_PERL_CALL_ARGS_2(ST(0), &val1);
+    if (!SWIG_IsOK(ecode1)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_DTMF" "', argument " "1"" of type '" "char""'");
+    } 
+    arg1 = static_cast< char >(val1);
+    {
+      res2 = SWIG_ConvertPtr(ST(1), &argp2, SWIGTYPE_p_uint32_t,  0 );
+      if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_DTMF" "', argument " "2"" of type '" "uint32_t""'"); 
+      }  
+      if (!argp2) {
+        SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_DTMF" "', argument " "2"" of type '" "uint32_t""'");
+      } else {
+        arg2 = *(reinterpret_cast< uint32_t * >(argp2));
+      }
+    }
+    result = (DTMF *)new DTMF(arg1,arg2);
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_DTMF, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_new_DTMF__SWIG_1) {
+  {
+    char arg1 ;
+    DTMF *result = 0 ;
+    char val1 ;
+    int ecode1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: new_DTMF(idigit);");
+    }
+    ecode1 = SWIG_AsVal_char SWIG_PERL_CALL_ARGS_2(ST(0), &val1);
+    if (!SWIG_IsOK(ecode1)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_DTMF" "', argument " "1"" of type '" "char""'");
+    } 
+    arg1 = static_cast< char >(val1);
+    result = (DTMF *)new DTMF(arg1);
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_DTMF, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_new_DTMF) {
+  dXSARGS;
+  
+  {
+    unsigned long _index = 0;
+    SWIG_TypeRank _rank = 0; 
+    if (items == 1) {
+      SWIG_TypeRank _ranki = 0;
+      SWIG_TypeRank _rankm = 0;
+      SWIG_TypeRank _pi = 1;
+      int _v = 0;
+      {
+        {
+          int res = SWIG_AsVal_char SWIG_PERL_CALL_ARGS_2(ST(0), NULL);
+          _v = SWIG_CheckState(res);
+        }
+      }
+      if (!_v) goto check_1;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      if (!_index || (_ranki < _rank)) {
+        _rank = _ranki; _index = 1;
+        if (_rank == _rankm) goto dispatch;
+      }
+    }
+  check_1:
+    
+    if (items == 2) {
+      SWIG_TypeRank _ranki = 0;
+      SWIG_TypeRank _rankm = 0;
+      SWIG_TypeRank _pi = 1;
+      int _v = 0;
+      {
+        {
+          int res = SWIG_AsVal_char SWIG_PERL_CALL_ARGS_2(ST(0), NULL);
+          _v = SWIG_CheckState(res);
+        }
+      }
+      if (!_v) goto check_2;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(ST(1), &vptr, SWIGTYPE_p_uint32_t, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_2;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      if (!_index || (_ranki < _rank)) {
+        _rank = _ranki; _index = 2;
+        if (_rank == _rankm) goto dispatch;
+      }
+    }
+  check_2:
+    
+  dispatch:
+    switch(_index) {
+    case 1:
+      ++PL_markstack_ptr; SWIG_CALLXS(_wrap_new_DTMF__SWIG_1); return;
+    case 2:
+      ++PL_markstack_ptr; SWIG_CALLXS(_wrap_new_DTMF__SWIG_0); return;
+    }
+  }
+  
+  croak("No matching function for overloaded 'new_DTMF'");
+  XSRETURN(0);
+}
+
+
+XS(_wrap_delete_DTMF) {
+  {
+    DTMF *arg1 = (DTMF *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: delete_DTMF(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_DTMF, SWIG_POINTER_DISOWN |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_DTMF" "', argument " "1"" of type '" "DTMF *""'"); 
+    }
+    arg1 = reinterpret_cast< DTMF * >(argp1);
     delete arg1;
     
     
@@ -9174,6 +9533,7 @@ static void *_p_PERL__SessionTo_p_CoreSession(void *x, int *newmemory) {
 }
 static swig_type_info _swigt__p_API = {"_p_API", "API *", 0, 0, (void*)"freeswitch::API", 0};
 static swig_type_info _swigt__p_CoreSession = {"_p_CoreSession", "CoreSession *", 0, 0, (void*)"freeswitch::CoreSession", 0};
+static swig_type_info _swigt__p_DTMF = {"_p_DTMF", "DTMF *", 0, 0, (void*)"freeswitch::DTMF", 0};
 static swig_type_info _swigt__p_Event = {"_p_Event", "Event *", 0, 0, (void*)"freeswitch::Event", 0};
 static swig_type_info _swigt__p_EventConsumer = {"_p_EventConsumer", "EventConsumer *", 0, 0, (void*)"freeswitch::EventConsumer", 0};
 static swig_type_info _swigt__p_IVRMenu = {"_p_IVRMenu", "IVRMenu *", 0, 0, (void*)"freeswitch::IVRMenu", 0};
@@ -9195,11 +9555,13 @@ static swig_type_info _swigt__p_switch_priority_t = {"_p_switch_priority_t", "sw
 static swig_type_info _swigt__p_switch_queue_t = {"_p_switch_queue_t", "switch_queue_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_status_t = {"_p_switch_status_t", "switch_status_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_stream_handle_t = {"_p_switch_stream_handle_t", "switch_stream_handle_t *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_uint32_t = {"_p_uint32_t", "uint32_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_void = {"_p_void", "void *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_API,
   &_swigt__p_CoreSession,
+  &_swigt__p_DTMF,
   &_swigt__p_Event,
   &_swigt__p_EventConsumer,
   &_swigt__p_IVRMenu,
@@ -9221,11 +9583,13 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_switch_queue_t,
   &_swigt__p_switch_status_t,
   &_swigt__p_switch_stream_handle_t,
+  &_swigt__p_uint32_t,
   &_swigt__p_void,
 };
 
 static swig_cast_info _swigc__p_API[] = {  {&_swigt__p_API, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_CoreSession[] = {  {&_swigt__p_CoreSession, 0, 0, 0},  {&_swigt__p_PERL__Session, _p_PERL__SessionTo_p_CoreSession, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_DTMF[] = {  {&_swigt__p_DTMF, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Event[] = {  {&_swigt__p_Event, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_EventConsumer[] = {  {&_swigt__p_EventConsumer, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_IVRMenu[] = {  {&_swigt__p_IVRMenu, 0, 0, 0},{0, 0, 0, 0}};
@@ -9247,11 +9611,13 @@ static swig_cast_info _swigc__p_switch_priority_t[] = {  {&_swigt__p_switch_prio
 static swig_cast_info _swigc__p_switch_queue_t[] = {  {&_swigt__p_switch_queue_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_status_t[] = {  {&_swigt__p_switch_status_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_stream_handle_t[] = {  {&_swigt__p_switch_stream_handle_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_uint32_t[] = {  {&_swigt__p_uint32_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_void[] = {  {&_swigt__p_void, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_API,
   _swigc__p_CoreSession,
+  _swigc__p_DTMF,
   _swigc__p_Event,
   _swigc__p_EventConsumer,
   _swigc__p_IVRMenu,
@@ -9273,6 +9639,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_switch_queue_t,
   _swigc__p_switch_status_t,
   _swigc__p_switch_stream_handle_t,
+  _swigc__p_uint32_t,
   _swigc__p_void,
 };
 
@@ -9309,6 +9676,12 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::input_callback_state_t_funcargs_get", _wrap_input_callback_state_t_funcargs_get},
 {"freeswitchc::new_input_callback_state_t", _wrap_new_input_callback_state_t},
 {"freeswitchc::delete_input_callback_state_t", _wrap_delete_input_callback_state_t},
+{"freeswitchc::DTMF_digit_set", _wrap_DTMF_digit_set},
+{"freeswitchc::DTMF_digit_get", _wrap_DTMF_digit_get},
+{"freeswitchc::DTMF_duration_set", _wrap_DTMF_duration_set},
+{"freeswitchc::DTMF_duration_get", _wrap_DTMF_duration_get},
+{"freeswitchc::new_DTMF", _wrap_new_DTMF},
+{"freeswitchc::delete_DTMF", _wrap_delete_DTMF},
 {"freeswitchc::new_Stream", _wrap_new_Stream},
 {"freeswitchc::delete_Stream", _wrap_delete_Stream},
 {"freeswitchc::Stream_write", _wrap_Stream_write},
@@ -9734,6 +10107,7 @@ XS(SWIG_init) {
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_RDLOCK)));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
+  SWIG_TypeClientData(SWIGTYPE_p_DTMF, (void*) "freeswitch::DTMF");
   SWIG_TypeClientData(SWIGTYPE_p_Stream, (void*) "freeswitch::Stream");
   SWIG_TypeClientData(SWIGTYPE_p_Event, (void*) "freeswitch::Event");
   SWIG_TypeClientData(SWIGTYPE_p_EventConsumer, (void*) "freeswitch::EventConsumer");

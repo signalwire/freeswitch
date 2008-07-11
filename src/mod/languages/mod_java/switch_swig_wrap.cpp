@@ -643,6 +643,117 @@ SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_S_1RDLOCK_1get(JN
 }
 
 
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_DTMF_1digit_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jchar jarg2) {
+  DTMF *arg1 = (DTMF *) 0 ;
+  char arg2 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(DTMF **)&jarg1; 
+  arg2 = (char)jarg2; 
+  if (arg1) (arg1)->digit = arg2;
+  
+}
+
+
+SWIGEXPORT jchar JNICALL Java_org_freeswitch_swig_freeswitchJNI_DTMF_1digit_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jchar jresult = 0 ;
+  DTMF *arg1 = (DTMF *) 0 ;
+  char result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(DTMF **)&jarg1; 
+  result = (char) ((arg1)->digit);
+  jresult = (jchar)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_DTMF_1duration_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+  DTMF *arg1 = (DTMF *) 0 ;
+  uint32_t arg2 ;
+  uint32_t *argp2 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(DTMF **)&jarg1; 
+  argp2 = *(uint32_t **)&jarg2; 
+  if (!argp2) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "Attempt to dereference null uint32_t");
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->duration = arg2;
+  
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_DTMF_1duration_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jlong jresult = 0 ;
+  DTMF *arg1 = (DTMF *) 0 ;
+  uint32_t result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(DTMF **)&jarg1; 
+  result =  ((arg1)->duration);
+  *(uint32_t **)&jresult = new uint32_t((uint32_t &)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1DTMF_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jchar jarg1, jlong jarg2) {
+  jlong jresult = 0 ;
+  char arg1 ;
+  uint32_t arg2 ;
+  DTMF *result = 0 ;
+  uint32_t *argp2 ;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = (char)jarg1; 
+  argp2 = *(uint32_t **)&jarg2; 
+  if (!argp2) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "Attempt to dereference null uint32_t");
+    return 0;
+  }
+  arg2 = *argp2; 
+  result = (DTMF *)new DTMF(arg1,arg2);
+  *(DTMF **)&jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1DTMF_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jchar jarg1) {
+  jlong jresult = 0 ;
+  char arg1 ;
+  DTMF *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = (char)jarg1; 
+  result = (DTMF *)new DTMF(arg1);
+  *(DTMF **)&jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_delete_1DTMF(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+  DTMF *arg1 = (DTMF *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = *(DTMF **)&jarg1; 
+  delete arg1;
+  
+}
+
+
 SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1Stream_1_1SWIG_10(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   Stream *result = 0 ;

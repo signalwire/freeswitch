@@ -26,5 +26,3 @@
 %include switch_swigable_cpp.h
 %include freeswitch_python.h
 
-
-

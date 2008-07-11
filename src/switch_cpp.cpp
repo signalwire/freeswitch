@@ -367,6 +367,24 @@ SWITCH_DECLARE(const char *)Event::getType(void)
 	return (char *) "invalid";
 }
 
+
+SWITCH_DECLARE_CONSTRUCTOR DTMF::DTMF(char idigit, uint32_t iduration)
+{
+	digit = idigit;
+
+	if (iduration == 0) {
+		iduration == SWITCH_DEFAULT_DTMF_DURATION;
+	}
+
+	duration = iduration;
+}
+
+SWITCH_DECLARE_CONSTRUCTOR DTMF::~DTMF()
+{
+	
+}
+
+
 SWITCH_DECLARE_CONSTRUCTOR Stream::Stream()
 {
 	SWITCH_STANDARD_STREAM(mystream);
@@ -457,8 +475,6 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::~CoreSession()
 		}
 		switch_core_session_rwunlock(session);
 	}
-
-	
 }
 
 SWITCH_DECLARE(char *) CoreSession::getXMLCDR()
@@ -601,11 +617,6 @@ SWITCH_DECLARE(int) CoreSession::speak(char *text)
 
 	this_check(-1);
 	sanity_check(-1);
-
-	// create and store an empty filehandle in callback args 
-	// to workaround a bug in the presumptuous process_callback_result()
-    switch_file_handle_t fh = { 0 };
-	store_file_handle(&fh);
 
 	if (!tts_name) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No TTS engine specified\n");
@@ -793,13 +804,12 @@ SWITCH_DECLARE(int) CoreSession::streamFile(char *file, int starting_sample_coun
         }
 	}
 
-
-	store_file_handle(&local_fh);
-
     begin_allow_threads();
     status = switch_ivr_play_file(session, fhp, file, ap);
     end_allow_threads();
 
+	fhp = NULL;
+	
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 
 }
@@ -895,18 +905,22 @@ SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, char *des
 
 SWITCH_DECLARE(int) CoreSession::recordFile(char *file_name, int max_len, int silence_threshold, int silence_secs) 
 {
-	switch_file_handle_t fh = { 0 };
 	switch_status_t status;
 
 	this_check(-1);
 	sanity_check(-1);
 
-	fh.thresh = silence_threshold;
-	fh.silence_hits = silence_secs;
-	store_file_handle(&fh);
+	memset(&local_fh, 0, sizeof(local_fh));
+	fhp = &local_fh;
+	local_fh.thresh = silence_threshold;
+	local_fh.silence_hits = silence_secs;
+
 	begin_allow_threads();
-	status = switch_ivr_record_file(session, &fh, file_name, &args, max_len);
+	status = switch_ivr_record_file(session, &local_fh, file_name, &args, max_len);
 	end_allow_threads();
+
+	fhp = NULL;
+
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 
 }
@@ -1011,22 +1025,6 @@ SWITCH_DECLARE(void) CoreSession::setHangupHook(void *hangup_func) {
     switch_channel_set_private(channel, "CoreSession", this);
     switch_core_event_hook_add_state_change(session, hanguphook);
 }
-
-/** \brief Store a file handle in the callback args
- * 
- * In a few of the methods like playFile and streamfile,
- * an empty switch_file_handle_t is created and passed
- * to core, and stored in callback args so that the callback
- * handler can retrieve it for pausing, ff, rewinding file ptr. 
- * 
- * \param fh - a switch_file_handle_t
- */
-void CoreSession::store_file_handle(switch_file_handle_t *fh) {
-    cb_state.extra = fh;  // set a file handle so callback handler can pause
-    args.buf = &cb_state;     
-    ap = &args;
-}
-
 
 /* ---- methods not bound to CoreSession instance ---- */
 
@@ -1137,13 +1135,6 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *resul
 
 	if (fhp) {
 		fh = fhp;
-	} else {
-		if (!cb_state.extra) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because cb_state.extra is null\n");
-			return SWITCH_STATUS_FALSE;	
-		}
-		
-		fh = (switch_file_handle_t *) cb_state.extra;    
 	}
 
 

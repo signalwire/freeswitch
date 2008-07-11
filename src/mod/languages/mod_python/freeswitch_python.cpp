@@ -1,320 +1,301 @@
+
+#include <switch.h>
 #include "freeswitch_python.h"
+using namespace PYTHON;
 
-#define py_sanity_check(x) do { if (!session) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return x;}} while(0)
-#define py_init_vars() do { caller_profile.source = "mod_python"; swapstate = S_SWAPPED_IN; } while(0)
+#define py_init_vars() cb_function = cb_arg = hangup_func = hangup_func_arg = NULL; hh = mark = 0; TS = NULL
 
-PySession::PySession():CoreSession()
+Session::Session():CoreSession()
 {
 	py_init_vars();
 }
 
-PySession::PySession(char *uuid):CoreSession(uuid)
+Session::Session(char *uuid):CoreSession(uuid)
 {
 	py_init_vars();
 }
 
-PySession::PySession(switch_core_session_t *new_session):CoreSession(new_session)
+Session::Session(switch_core_session_t *new_session):CoreSession(new_session)
 {
 	py_init_vars();
 }
+static switch_status_t python_hanguphook(switch_core_session_t *session_hungup);
 
-
-void PySession::setDTMFCallback(PyObject * pyfunc, char *funcargs)
+Session::~Session()
 {
-	py_sanity_check();
-
-	if (!PyCallable_Check(pyfunc)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "DTMF function is not a python function.\n");
-		return;
+	
+	if (hangup_func) {
+		if (session) {
+			switch_core_event_hook_remove_state_change(session, python_hanguphook);
+		}
+		Py_XDECREF(hangup_func);
+		hangup_func = NULL;
 	}
-	Py_XINCREF(pyfunc);
-	CoreSession::setDTMFCallback((void *) pyfunc, funcargs);
+	
+	if (hangup_func_arg) {
+		Py_XDECREF(hangup_func_arg);
+		hangup_func_arg = NULL;
+	}
 
+	if (cb_function) {
+		Py_XDECREF(cb_function);
+		cb_function = NULL;
+	}
+
+	if (cb_arg) {
+		Py_XDECREF(cb_arg);
+		cb_arg = NULL;
+	}
+
+	if (Self) {
+		Py_XDECREF(Self);
+	}
+}
+
+bool Session::begin_allow_threads()
+{
+
+	do_hangup_hook();
+
+	if (!TS) {
+		TS = PyEval_SaveThread();
+		return true;
+	}
+
+	return false;
+}
+
+bool Session::end_allow_threads()
+{
+
+	if (!TS) {
+		return false;
+	}
+
+	PyEval_RestoreThread(TS);
+	TS = NULL;
+
+	do_hangup_hook();
+
+	return true;
+}
+
+void Session::setPython(PyObject *state)
+{
+	Py = state;
+}
+
+void Session::setSelf(PyObject *state)
+{
+	Self = state;
+}
+
+PyObject *Session::getPython()
+{
+	return Py;
+}
+
+
+bool Session::ready()
+{
+	bool r;
+
+	sanity_check(false);
+	r = switch_channel_ready(channel) != 0;
+	do_hangup_hook();
+
+	return r;
+}
+
+void Session::check_hangup_hook()
+{
+	if (hangup_func && (hook_state == CS_HANGUP || hook_state == CS_ROUTING)) {
+		hh++;
+	}
+}
+
+void Session::do_hangup_hook()
+{
+	PyObject *result, *arglist;
+	const char *what = hook_state == CS_HANGUP ? "hangup" : "transfer";
+
+	if (hh && !mark) {
+		mark++;
+
+		if (hangup_func) {
+			
+			if (!PyCallable_Check(hangup_func)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "function not callable\n");
+				return;
+			}
+
+			if (!Self) {
+				mod_python_conjure_session(NULL, session, NULL);
+			}
+			
+			if (hangup_func_arg) {
+				arglist = Py_BuildValue("(OsO)", Self, what, hangup_func_arg);
+			} else {
+				arglist = Py_BuildValue("(Os)", Self, what);
+			}
+
+			if (!(result = PyEval_CallObject(hangup_func, arglist))) {
+				PyErr_Print();
+			}
+			
+			Py_XDECREF(arglist);
+			Py_XDECREF(hangup_func_arg);
+		}
+	}
 
 }
 
-void PySession::setHangupHook(PyObject * pyfunc)
+static switch_status_t python_hanguphook(switch_core_session_t *session_hungup)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session_hungup);
+	CoreSession *coresession = NULL;
+	switch_channel_state_t state = switch_channel_get_state(channel);
+
+	if ((coresession = (CoreSession *) switch_channel_get_private(channel, "CoreSession"))) {
+		if (coresession->hook_state != state) {
+			coresession->hook_state = state;
+			coresession->check_hangup_hook();
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+void Session::setHangupHook(PyObject *pyfunc, PyObject *arg)
 {
 
 	if (!PyCallable_Check(pyfunc)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Hangup hook is not a python function.\n");
 		return;
 	}
-	// without this Py_XINCREF, there will be segfaults.  basically the python
-	// interpreter will not know that it should not GC this object.
-	// callback example: http://docs.python.org/ext/callingPython.html
-	Py_XINCREF(pyfunc);
-	CoreSession::setHangupHook((void *) pyfunc);
+
+	if (hangup_func) {
+		if (session) {
+			switch_core_event_hook_remove_state_change(session, python_hanguphook);
+		}
+		Py_XDECREF(hangup_func);
+		hangup_func = NULL;
+	}
+
+	if (hangup_func_arg) {
+		Py_XDECREF(hangup_func_arg);
+		hangup_func_arg = NULL;
+	}
+	
+	hangup_func = pyfunc;
+	hangup_func_arg = arg;
+
+	Py_XINCREF(hangup_func);
+
+	if (hangup_func_arg) {
+		Py_XINCREF(hangup_func_arg);
+	}
+
+	switch_channel_set_private(channel, "CoreSession", this);
+	hook_state = switch_channel_get_state(channel);
+	switch_core_event_hook_add_state_change(session, python_hanguphook);
 
 }
 
-
-void PySession::check_hangup_hook()
+void Session::setInputCallback(PyObject *cbfunc, PyObject *funcargs)
 {
-#if 0
-	PyObject *func;
-	PyObject *result;
-	char *resultStr;
-	bool did_swap_in = false;
-#endif
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-					  "check_hangup_hook has been DISABLED, please do not use hangup hooks in python code until further notice!\n");
-
-	if (!session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No valid session\n");
+	if (!PyCallable_Check(cbfunc)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Hangup hook is not a python function.\n");
 		return;
 	}
 
-	return;
+	if (cb_function) {
+		Py_XDECREF(cb_function);
+		cb_function = NULL;
+	}
 
-	/*! NEEDS TO BE FIXED:
+	if (cb_arg) {
+		Py_XDECREF(cb_arg);
+		cb_arg = NULL;
+	}
 
-	   // The did_swap_in boolean was added to fix the following problem:
-	   // Design flaw - we swap in threadstate based on the assumption that thread state 
-	   // is currently _swapped out_ when this hangup hook is called.  However, nothing known to 
-	   // guarantee that, and  if thread state is already swapped in when this is invoked, 
-	   // bad things will happen.
-	   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "check hangup hook end_allow_threads\n");
-	   did_swap_in = end_allow_threads();
+	cb_function = cbfunc;
+	cb_arg = funcargs;
+	args.buf = this;
+    switch_channel_set_private(channel, "CoreSession", this);
 
-	   if (on_hangup == NULL) {
-	   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "on_hangup is null\n");
-	   return;
-	   }
+	Py_XINCREF(cb_function);
 
-	   func = (PyObject *) on_hangup;
+	if (cb_arg) {
+		Py_XINCREF(cb_arg);
+	}
 
-	   // TODO: to match js implementation, should pass the _python_ PySession 
-	   // object instance wrapping this C++ PySession instance. but how do we do that?
-	   // for now, pass the uuid since its better than nothing
-	   PyObject* func_arg = Py_BuildValue("(s)", uuid);
+    args.input_callback = dtmf_callback;
+    ap = &args;
 
-	   result = PyEval_CallObject(func, func_arg);
-	   Py_XDECREF(func_arg);
-
-	   if (result) {
-	   resultStr = (char *) PyString_AsString(result);
-	   // currently just ignore the result
-	   }
-	   else {
-	   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to call python hangup callback\n");
-	   PyErr_Print();
-	   PyErr_Clear();
-	   }
-
-	   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "check hangup hook begin_allow_threads\n");
-	   if (did_swap_in) {
-	   begin_allow_threads();
-	   }
-
-	   Py_XDECREF(result);
-	 */
 }
 
-switch_status_t PySession::run_dtmf_callback(void *input, switch_input_type_t itype)
+switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t itype)
 {
 
-	PyObject *func, *arglist;
-	PyObject *pyresult;
-	PyObject *headerdict;
+	PyObject *pyresult, *arglist, *io = NULL;
+	int ts = 0;
+	char *str = NULL, *what = "";
 
-	char *resultStr;
-	char *funcargs;
-	bool did_swap_in = false;
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "run_dtmf_callback\n");
-
-
-	if (!cb_state.function) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "cb_state->function is null\n");
-		return SWITCH_STATUS_FALSE;
+	if (TS) {
+		ts++;
+		end_allow_threads();
 	}
 
-	func = (PyObject *) cb_state.function;
-	if (!func) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "cb_state->function is null\n");
-		return SWITCH_STATUS_FALSE;
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cb_state->function is NOT null\n");
-	}
-	if (!PyCallable_Check(func)) {
+	if (!PyCallable_Check(cb_function)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "function not callable\n");
 		return SWITCH_STATUS_FALSE;
 	}
-
-	funcargs = (char *) cb_state.funcargs;
-
+	
 	if (itype == SWITCH_INPUT_TYPE_DTMF) {
-
-		arglist = Py_BuildValue("(sis)", input, itype, funcargs);
-	} else if (itype == SWITCH_INPUT_TYPE_EVENT) {
-		// DUNNO if this is correct in the case we have an event
-		// will be of type switch_event_t *event;
-		// http://www.freeswitch.org/docs/structswitch__event.html
-		switch_event_t *event = (switch_event_t *) input;
-		arglist = Py_BuildValue("({s:s}is)", "body", event->body, itype, funcargs);
-
-		// build a dictionary with all the headers
-
-		switch_event_header_t *hp;
-		headerdict = PyDict_New();
-		for (hp = event->headers; hp; hp = hp->next) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding event header to result");
-
-			// TODO: create PyObject pointers for name and value
-			// and explicitly decref them.  all ref counting stuff is 
-			// a mess and needs to be tested and looked at closer.
-			PyDict_SetItem(headerdict, Py_BuildValue("s", hp->name), Py_BuildValue("s", hp->value));
-
-		}
-
-		// add it to the main event dictionary (first arg in list)
-		// under key 'headers'
-		PyObject *dict = PyTuple_GetItem(arglist, 0);
-		PyDict_SetItemString(dict, "headers", headerdict);
-
-		Py_XDECREF(headerdict);
-
-
+		switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
+		io = mod_python_conjure_DTMF(dtmf->digit, dtmf->duration);
+		what = "dtmf";
+	} else if (itype == SWITCH_INPUT_TYPE_EVENT){
+		what = "event";
+		io = mod_python_conjure_event(NULL, (switch_event_t *) input, NULL);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown input type: %d\n", itype);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unsupported type!\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
-
-	if (!arglist) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error building arglist");
-		return SWITCH_STATUS_FALSE;
+	if (!Self) {
+		mod_python_conjure_session(NULL, session, NULL);
+	}
+	
+	if (cb_arg) {
+		arglist = Py_BuildValue("(OsOO)", Self, what, io, cb_arg);
+	} else {
+		arglist = Py_BuildValue("(OsO)", Self, what, io);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "run_dtmf_callback end_allow_threads\n");
-	did_swap_in = end_allow_threads();
-
-	pyresult = PyEval_CallObject(func, arglist);
-
-
-	Py_XDECREF(arglist);		// Trash arglist
-
-	if (pyresult && pyresult != Py_None) {
-		resultStr = (char *) PyString_AsString(pyresult);
-		switch_status_t cbresult = process_callback_result(resultStr);
-		return cbresult;
+	if ((pyresult = PyEval_CallObject(cb_function, arglist))) {
+		str = (char *) PyString_AsString(pyresult);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Python callback\n returned None");
 		PyErr_Print();
-		PyErr_Clear();
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "run_dtmf_callback begin_allow_threads\n");
-	if (did_swap_in) {
+	Py_XDECREF(arglist);
+	Py_XDECREF(io);
+
+	if (cb_arg) {
+		Py_XDECREF(cb_arg);
+	}
+
+	if (ts) {
 		begin_allow_threads();
 	}
 
-	Py_XDECREF(pyresult);
-
-	return SWITCH_STATUS_SUCCESS;
-
-}
-
-bool PySession::begin_allow_threads(void)
-{
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "PySession::begin_allow_threads() called\n");
-
-	if (!session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No valid session\n");
-		return false;
-	}
-	// swap out threadstate and store in instance variable 
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	PyThreadState *swapin_tstate = (PyThreadState *) switch_channel_get_private(channel, "SwapInThreadState");
-	// so lets assume the thread state was swapped in when the python script was started,
-	// therefore swapin_tstate will be NULL (because there is nothing to swap in, since its 
-	// _already_ swapped in.)
-	if (swapin_tstate == NULL) {
-		// currently swapped in
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Threadstate swap-out!\n");
-		swapin_tstate = PyEval_SaveThread();
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "swapin_tstate: %p\n", swapin_tstate);
-		// give future swapper-inners something to actually swap in
-		switch_channel_set_private(channel, "SwapInThreadState", (void *) swapin_tstate);
-		cb_state.threadState = threadState;	// TODO: get rid of this
-		args.buf = &cb_state;
-		ap = &args;
-		return true;
-
-	} else {
-		// currently swapped out
-		return false;
+	if (str) {
+		return process_callback_result(str);
 	}
 
-}
-
-bool PySession::end_allow_threads(void)
-{
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "PySession::end_allow_threads() called\n");
-	// swap in threadstate from instance variable saved earlier
-	if (!session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No valid session\n");
-		return false;
-	}
-
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	PyThreadState *swapin_tstate = (PyThreadState *) switch_channel_get_private(channel, "SwapInThreadState");
-	if (swapin_tstate == NULL) {
-		// currently swapped in
-		return false;
-	} else {
-		// currently swapped out
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Threadstate swap-in!\n");
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "swapin_tstate: %p\n", swapin_tstate);
-		PyEval_RestoreThread(swapin_tstate);
-		// dont give any swapper-inners the opportunity to do a double swap
-		switch_channel_set_private(channel, "SwapInThreadState", NULL);
-		return true;
-	}
-
-
-}
-
-void PySession::hangup(char *cause)
-{
-
-
-	// since we INCREF'd this function pointer earlier (so the py gc didnt reclaim it)
-	// we have to DECREF it, or else the PySession dtor will never get called and
-	// a zombie channel will be left over using up resources
-
-	if (cb_state.function != NULL) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "xdecref on cb_state_function\n");
-		PyObject *func = (PyObject *) cb_state.function;
-		Py_XDECREF(func);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cb_state.function is null\n");
-	}
-
-
-	CoreSession::hangup(cause);
-
-}
-
-
-PySession::~PySession()
-{
-	// Should we do any cleanup here?
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "PySession::~PySession started\n");
-
-	if (on_hangup) {
-		PyObject *func = (PyObject *) on_hangup;
-		Py_XDECREF(func);
-	}
-
-
-	if (cb_state.function != NULL) {
-		PyObject *func = (PyObject *) cb_state.function;
-		Py_XDECREF(func);
-	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "PySession::~PySession finished\n");
-
+	return SWITCH_STATUS_FALSE;
 }
