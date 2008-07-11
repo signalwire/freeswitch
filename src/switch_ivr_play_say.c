@@ -1208,7 +1208,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 	switch_frame_t *read_frame;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int16_t *data;
-	int listening = 0;
+	uint32_t listening = 0;
 	int countdown = 0;
 	switch_codec_t raw_codec = {0};
 	int16_t *abuf = NULL;
