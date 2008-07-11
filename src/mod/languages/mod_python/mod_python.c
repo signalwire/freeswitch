@@ -54,7 +54,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown);
 SWITCH_MODULE_DEFINITION(mod_python, mod_python_load, mod_python_shutdown, NULL);
 
-static void eval_some_python(char *args, switch_core_session_t *session, switch_stream_handle_t *stream)
+
+static struct {
+	switch_memory_pool_t *pool;
+	char *xml_handler;
+	switch_event_node_t *node;
+} globals;
+
+
+static void eval_some_python(char *args, switch_core_session_t *session, switch_stream_handle_t *stream, switch_event_t *params, char **str)
 {
 	PyThreadState *tstate = NULL;
 	char *dupargs = NULL;
@@ -67,6 +75,10 @@ static void eval_some_python(char *args, switch_core_session_t *session, switch_
 	PyObject *arg = NULL;
 	PyObject *result = NULL;
 	char *uuid = NULL;
+
+	if (str) {
+		*str = NULL;
+	}
 
 	if (args) {
 		dupargs = strdup(args);
@@ -118,15 +130,16 @@ static void eval_some_python(char *args, switch_core_session_t *session, switch_
 		goto done_swap_out;
 	}
 
+	if (params) {
+		eve = mod_python_conjure_event(module, params, "params");
+	}
+
 	if (stream) {
-		printf("doh\n\n\n");
 		stp = mod_python_conjure_stream(module, stream, "stream");
 		if (stream->param_event) {
 			eve = mod_python_conjure_event(module, stream->param_event, "env");
 		}
 	}
-
-
 
 	// get the handler function to be called
 	function = PyObject_GetAttrString(module, "handler");
@@ -162,28 +175,22 @@ static void eval_some_python(char *args, switch_core_session_t *session, switch_
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Finished calling python script \n");
 
 	// check the result and print out any errors
-	if (!result) {
+	if (result) {
+		if (str) {
+			*str = strdup((char *) PyString_AsString(result));
+		}
+	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error calling python script\n");
 		PyErr_Print();
 		PyErr_Clear();
 	}
 	
-  done:
-	switch_safe_free(dupargs);
-
+ done:
+ done_swap_out:
+	
 	if (sp) {
 		Py_XDECREF(sp);
 	}
-
-	if (stp) {
-		Py_XDECREF(stp);
-	}
-
-	if (eve) {
-		Py_XDECREF(eve);
-	}
-	
-  done_swap_out:
 
     // swap out thread state
     if (session) {
@@ -219,9 +226,71 @@ static void eval_some_python(char *args, switch_core_session_t *session, switch_
 
 }
 
+
+static switch_xml_t python_fetch(const char *section,
+							  const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params, void *user_data)
+{
+
+	switch_xml_t xml = NULL;
+	char *str = NULL;
+
+	if (!switch_strlen_zero(globals.xml_handler)) {
+		char *mycmd = strdup(globals.xml_handler);
+
+		switch_assert(mycmd);
+
+		eval_some_python(mycmd, NULL, NULL, params, &str);
+
+		if (str) {
+			if (switch_strlen_zero(str)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Result\n");
+			} else if (!(xml = switch_xml_parse_str((char *) str, strlen(str)))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing XML Result!\n");
+			}
+			switch_safe_free(str);
+		}
+
+		free(mycmd);
+	}
+
+	return xml;
+}
+
+
+static switch_status_t do_config(void)
+{
+	char *cf = "python.conf";
+	switch_xml_t cfg, xml, settings, param;
+
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if ((settings = switch_xml_child(cfg, "settings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+
+			if (!strcmp(var, "xml-handler-script")) {
+				globals.xml_handler = switch_core_strdup(globals.pool, val);
+			} else if (!strcmp(var, "xml-handler-bindings")) {
+				if (!switch_strlen_zero(globals.xml_handler)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "binding '%s' to '%s'\n", globals.xml_handler, val);
+					switch_xml_bind_search_function(python_fetch, switch_xml_parse_section_string(val), NULL);
+				}
+			}
+		}
+	}
+
+	switch_xml_free(xml);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_APP(python_function)
 {
-	eval_some_python((char *) data, session, NULL);
+	eval_some_python((char *) data, session, NULL, NULL, NULL);
 
 }
 
@@ -235,7 +304,7 @@ static void *SWITCH_THREAD_FUNC py_thread_run(switch_thread_t *thread, void *obj
 	switch_memory_pool_t *pool;
 	struct switch_py_thread *pt = (struct switch_py_thread *) obj;
 
-	eval_some_python(pt->args, NULL, NULL);
+	eval_some_python(pt->args, NULL, NULL, NULL, NULL);
 
 	pool = pt->pool;
 	switch_core_destroy_memory_pool(&pool);
@@ -246,7 +315,7 @@ static void *SWITCH_THREAD_FUNC py_thread_run(switch_thread_t *thread, void *obj
 SWITCH_STANDARD_API(api_python)
 {
 	
-	eval_some_python((char *) cmd, session, stream);
+	eval_some_python((char *) cmd, session, stream, NULL, NULL);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -287,6 +356,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 	switch_application_interface_t *app_interface;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Python Framework Loading...\n");
+
+	globals.pool = pool;
+	do_config();
 
 	if (!Py_IsInitialized()) {
 
@@ -335,7 +407,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown)
 
 	Py_Finalize();
 	PyEval_ReleaseLock();
-	return SWITCH_STATUS_SUCCESS;
+	switch_event_unbind(&globals.node);
+	return SWITCH_STATUS_UNLOAD;
 
 }
 
