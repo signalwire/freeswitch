@@ -42,7 +42,7 @@ static int COLORIZE = 0;
 static HANDLE hStdout;
 static WORD wOldColorAttrs;
 static CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
-static WORD COLORS[] = { FOREGROUND_RED | FOREGROUND_INTENSITY,
+static WORD COLORS[] = { FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
 	FOREGROUND_RED | FOREGROUND_INTENSITY,
 	FOREGROUND_RED | FOREGROUND_INTENSITY,
 	FOREGROUND_RED | FOREGROUND_INTENSITY,
@@ -53,7 +53,7 @@ static WORD COLORS[] = { FOREGROUND_RED | FOREGROUND_INTENSITY,
 	FOREGROUND_GREEN | FOREGROUND_INTENSITY
 };
 #else
-static const char *COLORS[] = { SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FMAGEN, SWITCH_SEQ_FCYAN,
+static const char *COLORS[] = { SWITCH_SEQ_FWHITE, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FMAGEN, SWITCH_SEQ_FCYAN,
 	SWITCH_SEQ_FGREEN, SWITCH_SEQ_FYELLOW, ""
 };
 #endif
@@ -338,7 +338,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_console_load)
 
 
 	/* setup my logger function */
-	switch_log_bind_logger(switch_console_logger, SWITCH_LOG_DEBUG);
+	switch_log_bind_logger(switch_console_logger, SWITCH_LOG_DEBUG, SWITCH_TRUE);
 
 	config_logger();
 	RUNNING = 1;
@@ -348,10 +348,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_console_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_console_shutdown)
 {
-	//switch_core_hash_destroy(&log_hash);
-	//switch_core_hash_destroy(&name_hash);
+
+	switch_log_unbind_logger(switch_console_logger);
+	switch_core_hash_destroy(&log_hash);
+
 	RUNNING = 0;
-	return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_UNLOAD;
 }
 
 /* For Emacs:

@@ -374,9 +374,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_logfile_load)
 		switch_xml_free(xml);
 	}
 
-	switch_log_bind_logger(mod_logfile_logger, SWITCH_LOG_DEBUG);
+	switch_log_bind_logger(mod_logfile_logger, SWITCH_LOG_DEBUG, SWITCH_FALSE);
 
-	return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_NOUNLOAD;
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_logfile_shutdown)

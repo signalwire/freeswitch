@@ -16,6 +16,8 @@
   </cli-keybindings> 
   
   <settings>
+    <!--Colorize the Console -->
+    <param name="colorize-console" value="true"/>
     <!--Most channels to allow at once -->
     <param name="max-sessions" value="1000"/>
     <!--Most channels to create per second -->

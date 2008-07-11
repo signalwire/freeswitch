@@ -195,6 +195,7 @@ struct switch_runtime {
 	uint32_t default_dtmf_duration;
 	switch_frame_t dummy_cng_frame;
 	char dummy_data[5];
+	switch_bool_t colorize_console;
 };
 
 extern struct switch_runtime runtime;

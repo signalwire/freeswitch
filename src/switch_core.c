@@ -896,7 +896,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_core_set_variable("local_ip_v6", guess_ip);
 	switch_core_set_variable("base_dir", SWITCH_GLOBAL_dirs.base_dir);
 
-	switch_log_init(runtime.memory_pool);
+
 	switch_event_init(runtime.memory_pool);
 
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
@@ -935,6 +935,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 					rlp.rlim_max = RLIM_INFINITY;
 					setrlimit(RLIMIT_CORE, &rlp);
 #endif
+				} else if (!strcasecmp(var, "colorize-console") && switch_true(val)) {
+					runtime.colorize_console = SWITCH_TRUE;
 				} else if (!strcasecmp(var, "mailer-app")) {
 					runtime.mailer_app = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "mailer-app-args")) {
@@ -978,6 +980,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		switch_xml_free(xml);
 	}
 
+	switch_log_init(runtime.memory_pool, runtime.colorize_console);
 	switch_core_state_machine_init(runtime.memory_pool);
 
 	*err = NULL;

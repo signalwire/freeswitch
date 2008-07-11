@@ -74,7 +74,7 @@ typedef switch_status_t (*switch_log_function_t) (const switch_log_node_t *node,
   \param pool the memory pool to use
   \note to be called at application startup by the core
 */
-SWITCH_DECLARE(switch_status_t) switch_log_init(_In_ switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_log_init(_In_ switch_memory_pool_t *pool, _In_ switch_bool_t colorize);
 
 /*! 
   \brief Shut down the logging engine
@@ -104,7 +104,8 @@ SWITCH_DECLARE(void) switch_log_printf(_In_ switch_text_channel_t channel, _In_z
   \brief Shut down  the logging engine
   \note to be called at application termination by the core
 */
-SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(_In_ switch_log_function_t function, _In_ switch_log_level_t level);
+SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(_In_ switch_log_function_t function, _In_ switch_log_level_t level, _In_ switch_bool_t is_console);
+SWITCH_DECLARE(switch_status_t) switch_log_unbind_logger(_In_ switch_log_function_t function);
 
 /*! 
   \brief Return the name of the specified log level

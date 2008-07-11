@@ -323,6 +323,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown)
 
 	prefs.done = 1;
 
+	switch_log_unbind_logger(socket_logger);
+
 	close_socket(&listen_list.sock);
 
 	while (prefs.threads) {
@@ -1368,7 +1370,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		return SWITCH_STATUS_GENERR;
 	}
 
-	switch_log_bind_logger(socket_logger, SWITCH_LOG_DEBUG);
+	switch_log_bind_logger(socket_logger, SWITCH_LOG_DEBUG, SWITCH_FALSE);
 
 
 	for (;;) {

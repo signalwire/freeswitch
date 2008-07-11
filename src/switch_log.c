@@ -48,6 +48,7 @@ static const char *LEVELS[] = {
 struct switch_log_binding {
 	switch_log_function_t function;
 	switch_log_level_t level;
+	int is_console;
 	struct switch_log_binding *next;
 };
 
@@ -60,6 +61,29 @@ static switch_queue_t *LOG_QUEUE = NULL;
 static switch_queue_t *LOG_RECYCLE_QUEUE = NULL;
 static int8_t THREAD_RUNNING = 0;
 static uint8_t MAX_LEVEL = 0;
+static int mods_loaded = 0;
+static switch_bool_t COLORIZE = SWITCH_FALSE;
+
+#ifdef WIN32
+static HANDLE hStdout;
+static WORD wOldColorAttrs;
+static CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
+static WORD COLORS[] = { FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
+	FOREGROUND_RED | FOREGROUND_INTENSITY,
+	FOREGROUND_RED | FOREGROUND_INTENSITY,
+	FOREGROUND_RED | FOREGROUND_INTENSITY,
+	FOREGROUND_BLUE | FOREGROUND_INTENSITY,
+	FOREGROUND_BLUE | FOREGROUND_INTENSITY,
+	FOREGROUND_GREEN | FOREGROUND_INTENSITY,
+	FOREGROUND_GREEN | FOREGROUND_INTENSITY,
+	FOREGROUND_GREEN | FOREGROUND_INTENSITY
+};
+#else
+static const char *COLORS[] = { SWITCH_SEQ_FWHITE, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FMAGEN, SWITCH_SEQ_FCYAN,
+	SWITCH_SEQ_FGREEN, SWITCH_SEQ_FYELLOW, ""
+};
+#endif
+
 
 SWITCH_DECLARE(const char *) switch_log_level2str(switch_log_level_t level)
 {
@@ -116,7 +140,33 @@ SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(const char *str)
 	return level;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(switch_log_function_t function, switch_log_level_t level)
+SWITCH_DECLARE(switch_status_t) switch_log_unbind_logger(switch_log_function_t function)
+{
+	switch_log_binding_t *ptr = NULL, *last = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_mutex_lock(BINDLOCK);
+	for (ptr = BINDINGS; ptr; ptr = ptr->next) {
+		if (ptr->function == function) {
+			if (last) {
+				last->next = ptr->next;
+			} else {
+				BINDINGS = ptr->next;
+			}
+			status = SWITCH_STATUS_SUCCESS;
+			if (ptr->is_console) {
+				mods_loaded--;
+			}
+			break;
+		}
+		last = ptr;
+	}
+	switch_mutex_unlock(BINDLOCK);
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(switch_log_function_t function, switch_log_level_t level, switch_bool_t is_console)
 {
 	switch_log_binding_t *binding = NULL, *ptr = NULL;
 	switch_assert(function != NULL);
@@ -131,6 +181,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(switch_log_function_t fun
 
 	binding->function = function;
 	binding->level = level;
+	binding->is_console = is_console;
 
 	switch_mutex_lock(BINDLOCK);
 	for (ptr = BINDINGS; ptr && ptr->next; ptr = ptr->next);
@@ -139,6 +190,9 @@ SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(switch_log_function_t fun
 		ptr->next = binding;
 	} else {
 		BINDINGS = binding;
+	}
+	if (is_console) {
+		mods_loaded++;
 	}
 	switch_mutex_unlock(BINDLOCK);
 
@@ -255,7 +309,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 		goto end;
 	}
 
-	if (level == SWITCH_LOG_CONSOLE || !LOG_QUEUE || !THREAD_RUNNING) {
+	if (level == SWITCH_LOG_CONSOLE || mods_loaded == 0 || !LOG_QUEUE || !THREAD_RUNNING) {
 		if (handle) {
 			int aok = 1;
 #ifndef WIN32
@@ -276,7 +330,11 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 			}
 #endif
 			if (aok) {
-				fprintf(handle, "%s", data);
+				if (COLORIZE) {
+					fprintf(handle, "%s%s%s", COLORS[level], data, SWITCH_SEQ_DEFAULT_COLOR);
+				} else {
+					fprintf(handle, "%s", data);
+				}
 			}
 		}
 	} else if (level <= MAX_LEVEL) {
@@ -318,11 +376,11 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 	}
 }
 
-SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool, switch_bool_t colorize)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;
-
+	
 	switch_assert(pool != NULL);
 
 	LOG_POOL = pool;
@@ -340,6 +398,20 @@ SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool)
 	while (!THREAD_RUNNING) {
 		switch_yield(1000);
 	}
+
+	if (colorize) {
+#ifdef WIN32
+				hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+				if (switch_core_get_console() == stdout && hStdout != INVALID_HANDLE_VALUE && GetConsoleScreenBufferInfo(hStdout, &csbiInfo)) {
+					wOldColorAttrs = csbiInfo.wAttributes;
+					COLORIZE = SWITCH_TRUE;
+				}
+#else
+				COLORIZE = SWITCH_TRUE;
+#endif
+	}
+
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

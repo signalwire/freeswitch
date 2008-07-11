@@ -152,7 +152,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_syslog_load)
 
 	openlog(globals.ident, LOG_PID, LOG_USER);
 
-	switch_log_bind_logger(mod_syslog_logger, SWITCH_LOG_DEBUG);
+	switch_log_bind_logger(mod_syslog_logger, SWITCH_LOG_DEBUG, SWITCH_FALSE);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -160,6 +160,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_syslog_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_syslog_shutdown)
 {
 	closelog();
+	switch_log_unbind_logger(mod_syslog_logger);
 
 	return SWITCH_STATUS_SUCCESS;
 }
