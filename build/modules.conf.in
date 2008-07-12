@@ -51,7 +51,7 @@ languages/mod_spidermonkey_teletone
 languages/mod_spidermonkey_core_db
 languages/mod_spidermonkey_socket
 #languages/mod_spidermonkey_odbc
-#languages/mod_lua
+languages/mod_lua
 #languages/mod_perl
 #languages/mod_yaml
 xml_int/mod_xml_rpc

@@ -77,7 +77,7 @@
     <!-- <load module="mod_perl"/> -->
     <!-- <load module="mod_python"/> -->
     <!-- <load module="mod_java"/> -->
-    <!-- <load module="mod_lua"/> -->
+    <load module="mod_lua"/>
 
     <!-- ASR /TTS -->
     <!-- <load module="mod_flite"/> -->
