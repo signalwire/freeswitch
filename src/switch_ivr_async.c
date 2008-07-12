@@ -1637,9 +1637,11 @@ static switch_bool_t speech_callback(switch_media_bug_t *bug, void *user_data, s
 					return SWITCH_FALSE;
 				}
 				if (switch_core_asr_check_results(sth->ah, &flags) == SWITCH_STATUS_SUCCESS) {
-					switch_mutex_lock(sth->mutex);
-					switch_thread_cond_signal(sth->cond);
-					switch_mutex_unlock(sth->mutex);
+					if (sth->mutex && sth->cond && sth->ready) {
+						switch_mutex_lock(sth->mutex);
+						switch_thread_cond_signal(sth->cond);
+						switch_mutex_unlock(sth->mutex);
+					}
 				}
 			}
 		}
