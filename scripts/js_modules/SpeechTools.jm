@@ -181,7 +181,7 @@ function SpeechDetect(session, mod, ip) {
 					console_log("debug", "----Hit score " + interp.@score + "/" + grammar_object.min_score + "/" + grammar_object.confirm_score + "\n");
 				}
 
-				if (this.mod == "pocketsphinx") {
+				if (_this.mod == "pocketsphinx") {
 					/* pocketsphinx scores 0 best to 100 worst. */
 					if (interp.@score >= grammar_object.min_score) {
 						if (interp.@score >= grammar_object.confirm_score) {
