@@ -7674,46 +7674,35 @@ XS(_wrap_CoreSession_streamFile) {
 XS(_wrap_CoreSession_sleep) {
   {
     CoreSession *arg1 = (CoreSession *) 0 ;
-    char *arg2 = (char *) 0 ;
-    int arg3 ;
+    int arg2 ;
     int result;
     void *argp1 = 0 ;
     int res1 = 0 ;
-    int res2 ;
-    char *buf2 = 0 ;
-    int alloc2 = 0 ;
-    int val3 ;
-    int ecode3 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 3) || (items > 3)) {
-      SWIG_croak("Usage: CoreSession_sleep(self,file,ms);");
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: CoreSession_sleep(self,ms);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_sleep" "', argument " "1"" of type '" "CoreSession *""'"); 
     }
     arg1 = reinterpret_cast< CoreSession * >(argp1);
-    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
-    if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_sleep" "', argument " "2"" of type '" "char *""'");
-    }
-    arg2 = reinterpret_cast< char * >(buf2);
-    ecode3 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(2), &val3);
-    if (!SWIG_IsOK(ecode3)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "CoreSession_sleep" "', argument " "3"" of type '" "int""'");
+    ecode2 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "CoreSession_sleep" "', argument " "2"" of type '" "int""'");
     } 
-    arg3 = static_cast< int >(val3);
-    result = (int)(arg1)->sleep(arg2,arg3);
+    arg2 = static_cast< int >(val2);
+    result = (int)(arg1)->sleep(arg2);
     ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
     
-    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     
     XSRETURN(argvi);
   fail:
     
-    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     
     SWIG_croak_null();
   }

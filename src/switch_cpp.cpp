@@ -724,13 +724,13 @@ SWITCH_DECLARE(char *) CoreSession::read(int min_digits,
 }
 
 SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits, 
-												  int max_digits, 
-												  int max_tries, 
-												  int timeout, 
-												  char *terminators, 
-												  char *audio_files, 
-												  char *bad_input_audio_files, 
-												  char *digits_regex)
+													 int max_digits, 
+													 int max_tries, 
+													 int timeout, 
+													 char *terminators, 
+													 char *audio_files, 
+													 char *bad_input_audio_files, 
+													 char *digits_regex)
 {
     switch_status_t status;
 	sanity_check((char *)"");
@@ -814,7 +814,7 @@ SWITCH_DECLARE(int) CoreSession::streamFile(char *file, int starting_sample_coun
 
 }
 
-SWITCH_DECLARE(int) CoreSession::sleep(char *file, int ms) {
+SWITCH_DECLARE(int) CoreSession::sleep(int ms) {
 
     switch_status_t status;
 
@@ -1091,10 +1091,10 @@ SWITCH_DECLARE_NONSTD(switch_status_t) hanguphook(switch_core_session_t *session
 
 
 SWITCH_DECLARE_NONSTD(switch_status_t) dtmf_callback(switch_core_session_t *session_cb, 
-							  void *input, 
-							  switch_input_type_t itype, 
-							  void *buf,  
-							  unsigned int buflen) {
+													 void *input, 
+													 switch_input_type_t itype, 
+													 void *buf,  
+													 unsigned int buflen) {
 	
 	switch_channel_t *channel = switch_core_session_get_channel(session_cb);
 	CoreSession *coresession = NULL;
@@ -1137,93 +1137,87 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *resul
 		fh = fhp;
 	}
 
-
-    if (!fh) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because fh is null\n");
-		return SWITCH_STATUS_FALSE;	
-    }
-
-    if (!fh->file_interface) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because fh->file_interface is null\n");
-		return SWITCH_STATUS_FALSE;	
-    }
-
-    if (!session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because session is null\n");
-		return SWITCH_STATUS_FALSE;	
-    }
-
-
-    if (!strncasecmp(result, "speed", 4)) {
-		char *p;
-
-		if ((p = strchr(result, ':'))) {
-			p++;
-			if (*p == '+' || *p == '-') {
-				int step;
-				if (!(step = atoi(p))) {
-					step = 1;
+	if (fh) {
+		if (!fh) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because fh is null\n");
+			return SWITCH_STATUS_FALSE;	
+		}
+		
+		if (!fh->file_interface) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because fh->file_interface is null\n");
+			return SWITCH_STATUS_FALSE;	
+		}
+		
+		if (!strncasecmp(result, "speed", 4)) {
+			char *p;
+		
+			if ((p = strchr(result, ':'))) {
+				p++;
+				if (*p == '+' || *p == '-') {
+					int step;
+					if (!(step = atoi(p))) {
+						step = 1;
+					}
+					fh->speed += step;
+				} else {
+					int speed = atoi(p);
+					fh->speed = speed;
 				}
-				fh->speed += step;
+				return SWITCH_STATUS_SUCCESS;
+			}
+
+			return SWITCH_STATUS_FALSE;
+
+		} else if (!strcasecmp(result, "pause")) {
+			if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
+				switch_clear_flag(fh, SWITCH_FILE_PAUSE);
 			} else {
-				int speed = atoi(p);
-				fh->speed = speed;
+				switch_set_flag(fh, SWITCH_FILE_PAUSE);
 			}
 			return SWITCH_STATUS_SUCCESS;
-		}
-
-		return SWITCH_STATUS_FALSE;
-
-    } else if (!strcasecmp(result, "pause")) {
-		if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
-			switch_clear_flag(fh, SWITCH_FILE_PAUSE);
-		} else {
-			switch_set_flag(fh, SWITCH_FILE_PAUSE);
-		}
-		return SWITCH_STATUS_SUCCESS;
-    } else if (!strcasecmp(result, "stop")) {
-		return SWITCH_STATUS_FALSE;
-    } else if (!strcasecmp(result, "restart")) {
-		unsigned int pos = 0;
-		fh->speed = 0;
-		switch_core_file_seek(fh, &pos, 0, SEEK_SET);
-		return SWITCH_STATUS_SUCCESS;
-    } else if (!strncasecmp(result, "seek", 4)) {
-		switch_codec_t *codec;
-		unsigned int samps = 0;
-		unsigned int pos = 0;
-		char *p;
-		codec = switch_core_session_get_read_codec(session);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got codec\n");
-		if ((p = strchr(result, ':'))) {
-			p++;
-			if (*p == '+' || *p == '-') {
-				int step;
-				if (!(step = atoi(p))) {
-					step = 1000;
-				}
-				if (step > 0) {
-					samps = step * (codec->implementation->samples_per_second / 1000);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "going to seek\n");
-					switch_core_file_seek(fh, &pos, samps, SEEK_CUR);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done seek\n");
+		} else if (!strcasecmp(result, "stop")) {
+			return SWITCH_STATUS_FALSE;
+		} else if (!strcasecmp(result, "restart")) {
+			unsigned int pos = 0;
+			fh->speed = 0;
+			switch_core_file_seek(fh, &pos, 0, SEEK_SET);
+			return SWITCH_STATUS_SUCCESS;
+		} else if (!strncasecmp(result, "seek", 4)) {
+			switch_codec_t *codec;
+			unsigned int samps = 0;
+			unsigned int pos = 0;
+			char *p;
+			codec = switch_core_session_get_read_codec(session);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got codec\n");
+			if ((p = strchr(result, ':'))) {
+				p++;
+				if (*p == '+' || *p == '-') {
+					int step;
+					if (!(step = atoi(p))) {
+						step = 1000;
+					}
+					if (step > 0) {
+						samps = step * (codec->implementation->samples_per_second / 1000);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "going to seek\n");
+						switch_core_file_seek(fh, &pos, samps, SEEK_CUR);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done seek\n");
+					} else {
+						samps = step * (codec->implementation->samples_per_second / 1000);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "going to seek\n");
+						switch_core_file_seek(fh, &pos, fh->pos - samps, SEEK_SET);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done seek\n");
+					}
 				} else {
-					samps = step * (codec->implementation->samples_per_second / 1000);
+					samps = atoi(p) * (codec->implementation->samples_per_second / 1000);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "going to seek\n");
-					switch_core_file_seek(fh, &pos, fh->pos - samps, SEEK_SET);
+					switch_core_file_seek(fh, &pos, samps, SEEK_SET);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done seek\n");
 				}
-			} else {
-				samps = atoi(p) * (codec->implementation->samples_per_second / 1000);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "going to seek\n");
-				switch_core_file_seek(fh, &pos, samps, SEEK_SET);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done seek\n");
 			}
+
+			return SWITCH_STATUS_SUCCESS;
 		}
-
-		return SWITCH_STATUS_SUCCESS;
-    }
-
+	}
     if (!strcmp(result, "true") || !strcmp(result, "undefined")) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "return success\n");
 		return SWITCH_STATUS_SUCCESS;

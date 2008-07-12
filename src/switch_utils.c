@@ -370,7 +370,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 
 	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644))) {
 		if (file) {
-			if ((ifd = open(file, O_RDONLY)) < 1) {
+			if ((ifd = open(file, O_RDONLY | O_BINARY)) < 1) {
 				return SWITCH_FALSE;
 			}
 		}

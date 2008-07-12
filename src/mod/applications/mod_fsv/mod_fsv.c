@@ -231,7 +231,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	aud_buffer = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	vid_buffer = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
 
-	if ((fd = open((char *) data, O_RDONLY)) < 0) {
+	if ((fd = open((char *) data, O_RDONLY | O_BINARY)) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error opening file %s\n", (char *) data);
 		return;
 	}

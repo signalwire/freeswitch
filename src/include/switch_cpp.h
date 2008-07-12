@@ -284,7 +284,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 	 *
 	 */
 		 SWITCH_DECLARE(int) streamFile(char *file, int starting_sample_count = 0);
-		 SWITCH_DECLARE(int) sleep(char *file, int ms);
+		 SWITCH_DECLARE(int) sleep(int ms);
 
 	/** \brief flush any pending events
 	 */

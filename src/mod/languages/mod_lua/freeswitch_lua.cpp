@@ -51,6 +51,8 @@ bool Session::end_allow_threads()
 void Session::setLUA(lua_State * state)
 {
 	L = state;
+	lua_setglobal(L, uuid);
+	lua_getfield(L, LUA_GLOBALSINDEX, uuid);
 }
 
 lua_State *Session::getLUA()
@@ -180,9 +182,11 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 		{
 			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
 			char str[2] = "";
-			int arg_count = 2;
+			int arg_count = 3;
 
 			lua_getfield(L, LUA_GLOBALSINDEX, (char *) cb_function);
+			lua_getfield(L, LUA_GLOBALSINDEX, uuid);
+
 			lua_pushstring(L, "dtmf");
 
 			lua_newtable(L);
@@ -210,9 +214,11 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 	case SWITCH_INPUT_TYPE_EVENT:
 		{
 			switch_event_t *event = (switch_event_t *) input;
-			int arg_count = 2;
+			int arg_count = 3;
+
 
 			lua_getfield(L, LUA_GLOBALSINDEX, (char *) cb_function);
+			lua_getfield(L, LUA_GLOBALSINDEX, uuid);
 			lua_pushstring(L, "event");
 			mod_lua_conjure_event(L, event, "__Input_Event__", 1);
 			lua_getfield(L, LUA_GLOBALSINDEX, "__Input_Event__");
@@ -222,8 +228,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 				arg_count++;
 			}
 
-			lua_call(L, 2, 1);
-
+			lua_call(L, arg_count, 1);
 			ret = lua_tostring(L, -1);
 			lua_pop(L, 1);
 

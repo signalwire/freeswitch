@@ -163,6 +163,7 @@ typedef int gid_t;
 #endif
 #define SWITCH_THREAD_FUNC  __stdcall
 #else //not win32
+#define O_BINARY 0
 #define SWITCH_DECLARE(type) type
 #define SWITCH_DECLARE_NONSTD(type) type
 #define SWITCH_MOD_DECLARE(type) type

@@ -29,7 +29,7 @@ class Session : public CoreSession {
 	virtual void check_hangup_hook();
 
 	virtual switch_status_t run_dtmf_callback(void *input, switch_input_type_t itype);
-	void setInputCallback(char *cbfunc, char *funcargs);
+	void setInputCallback(char *cbfunc, char *funcargs = NULL);
 	void setHangupHook(char *func, char *arg = NULL);
 	bool ready();
 	
