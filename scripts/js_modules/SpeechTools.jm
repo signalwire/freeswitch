@@ -63,7 +63,7 @@ function SpeechDetect(session, mod, ip) {
 	this.AutoUnload = false;
 	this.debug = false;
 
-	/* Set the TTS info*/
+	/* Set the TTS info */
 	this.setTTS = function (tts_eng, tts_voice) {
 		this.tts_eng = tts_eng;
 		this.tts_voice = tts_voice;		
@@ -79,7 +79,7 @@ function SpeechDetect(session, mod, ip) {
 		this.audio_ext = audio_ext;
 	}
 	
-	/* Add a grammar to be used*/
+	/* Add a grammar to be used */
 	this.addGrammar = function(grammar_object) {
 		this.grammar_hash[grammar_object.grammar_name] = grammar_object;
 	}
@@ -180,18 +180,36 @@ function SpeechDetect(session, mod, ip) {
 					console_log("debug", "----Heard [" + interp.input + "]\n");
 					console_log("debug", "----Hit score " + interp.@score + "/" + grammar_object.min_score + "/" + grammar_object.confirm_score + "\n");
 				}
-				
-				if (interp.@score >= grammar_object.min_score) {
-					if (interp.@score < grammar_object.confirm_score) {
-						rv.push("_confirm_");
-					}
 
-					eval("xo = interp." + grammar_object.obj_path + ";");
-					for (x = 0; x < xo.length(); x++) {
-						rv.push(xo[x]);
+				if (this.mod == "pocketsphinx") {
+					/* pocketsphinx scores 0 best to 100 worst. */
+					if (interp.@score >= grammar_object.min_score) {
+						if (interp.@score >= grammar_object.confirm_score) {
+							rv.push("_confirm_");
+						}
+						
+						eval("xo = interp." + grammar_object.obj_path + ";");
+						for (x = 0; x < xo.length(); x++) {
+							rv.push(xo[x]);
+							console_log("info", "----" +xo[x] + "\n"); 
+						}
+					} else {
+						rv.push("_no_idea_");
 					}
 				} else {
-					rv.push("_no_idea_");
+					if (interp.@score >= grammar_object.min_score) {
+						if (interp.@score < grammar_object.confirm_score) {
+							rv.push("_confirm_");
+						}
+						
+						eval("xo = interp." + grammar_object.obj_path + ";");
+						for (x = 0; x < xo.length(); x++) {
+							rv.push(xo[x]);
+							console_log("info", "----" +xo[x] + "\n"); 
+						}
+					} else {
+						rv.push("_no_idea_");
+					}
 				}
 
 				delete interp;
@@ -234,7 +252,7 @@ function SpeechObtainer(asr, req, wait_time) {
 
 	this.waitTime = wait_time + 0;
 
-	/* Set the TTS info*/
+	/* Set the TTS info */
 	this.setTTS = function (tts_eng, tts_voice) {
 		this.tts_eng = tts_eng;
 		this.tts_voice = tts_voice;		
@@ -277,7 +295,7 @@ function SpeechObtainer(asr, req, wait_time) {
 		this.add_sound = add_sound;		
 	}
 
-	/* Add acceptable items (comma sep list)*/
+	/* Add acceptable items (comma sep list) */
 	this.addItem = function(item) {
 		ia = item.split(",");
 		var x;
