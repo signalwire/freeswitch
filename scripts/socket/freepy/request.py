@@ -70,7 +70,7 @@ class FreepyRequest(object):
         self.deferred.callback(cbval)
 
     def errbackDeferred(self, result):
-        self.deferred.errback(result)
+        self.deferred.errback(Exception(str(result)))
 
     def process(self, line):
         """

@@ -43,28 +43,28 @@ Default
 		nil			
 		{ 
 		setRequestFinished();
-		errbackDeferred("Protocol failure");		
+		errbackDeferred("Protocol failure - was not expecting blank line");		
 		}
 
     	CommandReply		
 		nil			
 		{ 
 		setRequestFinished();
-		errbackDeferred("Protocol failure");		
+		errbackDeferred("Protocol failure - was not expecting command reply");		
 		}
 
     	ReplyText
 		nil			
 		{ 
 		setRequestFinished();
-		errbackDeferred("Protocol failure");		
+		errbackDeferred("Protocol failure - was not expecting reply text");		
 		}
 
         ProcessLine(line)
 		nil			
 		{ 
 		setRequestFinished();
-		errbackDeferred("Protocol failure");		
+		errbackDeferred("Protocol failure - was not expecting line needing to be processed");		
 		}
 
 }

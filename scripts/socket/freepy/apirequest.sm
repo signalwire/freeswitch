@@ -61,35 +61,35 @@ Default
 		nil			
 		{ 
 		setRequestFinished();
-		errbackDeferred("Protocol failure");		
+		errbackDeferred("Protocol failure - was not expecting blank line");		
 		}
 
     	ContentFinished		
 		nil			
 		{ 
 		setRequestFinished();
-		errbackDeferred("Protocol failure");		
+		errbackDeferred("Protocol failure - was not expecting content to be finished");		
 		}
 
     	ContentLength
 		nil			
 		{ 
 		setRequestFinished();
-		errbackDeferred("Protocol failure");		
+		errbackDeferred("Protocol failure - was not expecting content-length header");		
 		}
 
     	ApiResponse			
 		nil			
 		{ 
 		setRequestFinished();
-		errbackDeferred("Protocol failure");		
+		errbackDeferred("Protocol failure - was not expecting api response");		
 		}
 
         ProcessLine(line)
 		nil			
 		{ 
 		setRequestFinished();
-		errbackDeferred("Protocol failure");		
+		errbackDeferred("Protocol failure - was not expecting needing to process a line");		
 		}
 }
 
