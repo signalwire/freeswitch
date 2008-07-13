@@ -54,20 +54,20 @@ class FreepyDispatcher(LineReceiver):
         self.active_request = None # the current active (de-queued) request
 
     def connectionMade(self):
-        print "Connection made"
+        self.log("Connection made")
         self.conncb(self)
         
     def connectionLost(self, reason):
         if self.discocb:
             self.discocb(reason)        
-        print "connectionLost: %s" % reason
+        self.log("connectionLost: %s" % reason)
 
 
     def log(self, msg):
         """
         print a message to stdout if debug enabled
         """
-        if freepy.globals.DEBUG_ON:
+        if freepy.globals.FREEPY_DEBUG_ON:
             print msg
             
     def login(self, passwd):
@@ -166,7 +166,6 @@ class FreepyDispatcher(LineReceiver):
 
                   TODO: add this        
         """
-        print "confdtmf called"        
         if bgapi == True:
             msg = "bgapi conference %s dtmf %s %s" % \
                   (conf_name, member_id, dtmf)
@@ -296,7 +295,7 @@ class FreepyDispatcher(LineReceiver):
             msg = "api sofia status profile %s as xml" % (profile_name)
             req = request.ApiRequest()
         self.requestq.put(req)
-        print "sending to fs: %s" % msg
+        self.log("sending to fs: %s" % msg)
         self.transport.write("%s\n\n" % msg)
         return req.getDeferred()
         
@@ -357,9 +356,15 @@ class FreepyDispatcher(LineReceiver):
     def lineReceived(self, line):
         self.log("<< %s" % line)                                
         if not self.active_request:
+
+            # if no active request pending, we ignore
+            # blank lines
+            if not line.strip():
+                return
+            
             # if no active request, dequeue a new one
             if self.requestq.empty():
-                # we are receiving data from fs without an
+                # we are receiving non-empty data from fs without an
                 # active request pending.  that means that
                 # there is a bug in the protocol handler
                 # (or possibly in fs)                

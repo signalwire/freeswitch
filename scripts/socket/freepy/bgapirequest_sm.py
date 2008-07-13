@@ -19,6 +19,9 @@ class BgApiRequestState(statemap.State):
     def CommandReply(self, fsm):
         self.Default(fsm)
 
+    def JobUuid(self, fsm):
+        self.Default(fsm)
+
     def ProcessLine(self, fsm, line):
         self.Default(fsm)
 
@@ -82,7 +85,7 @@ class MainMap_Default(BgApiRequestState):
         fsm.clearState()
         try:
             ctxt.setRequestFinished()
-            ctxt.errbackDeferred("Protocol failure - was not expecting line needing to be processed")
+            ctxt.errbackDeferred("Protocol failure handling bgapi response - was not expecting line needing to be processed")
         finally:
             fsm.setState(endState)
 
@@ -109,9 +112,14 @@ class MainMap_ApiResponseStarted(MainMap_Default):
 class MainMap_GotReplyText(MainMap_Default):
 
     def BlankLine(self, fsm):
-        ctxt = fsm.getOwner()
         if fsm.getDebugFlag() == True:
             fsm.getDebugStream().write("TRANSITION   : MainMap.GotReplyText.BlankLine()\n")
+
+
+    def JobUuid(self, fsm):
+        ctxt = fsm.getOwner()
+        if fsm.getDebugFlag() == True:
+            fsm.getDebugStream().write("TRANSITION   : MainMap.GotReplyText.JobUuid()\n")
 
         fsm.getState().Exit(fsm)
         fsm.clearState()
@@ -145,6 +153,11 @@ class BgApiRequest_sm(statemap.FSMContext):
     def CommandReply(self):
         self._transition = 'CommandReply'
         self.getState().CommandReply(self)
+        self._transition = None
+
+    def JobUuid(self):
+        self._transition = 'JobUuid'
+        self.getState().JobUuid(self)
         self._transition = None
 
     def ProcessLine(self, *arglist):

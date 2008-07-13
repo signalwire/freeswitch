@@ -83,7 +83,7 @@ class FreepyRequest(object):
 
         otherwise, if the fs response is incomplete, just buffer the data
         """
-        if not line or len(line) == 0:
+        if not line.strip() or len(line.strip()) == 0:
             self._fsm.BlankLine()
             return self.isRequestFinished()
         
@@ -110,6 +110,16 @@ class FreepyRequest(object):
             self._fsm.ReplyText()
             return self.isRequestFinished()
 
+        matchstr = re.compile("Job-UUID", re.I)
+        result = matchstr.search(line)
+        if (result != None):
+            fields = line.split(":") # eg, ['Job-UUID','c9eee07e-508-..']
+            endfields = fields[1:]
+            # ignore job uuid given on this line, take the one sent
+            # in Reply-Text response line
+            # self.response_content = "".join(endfields)
+            self._fsm.JobUuid()
+            return self.isRequestFinished()
 
         matchstr = re.compile("api/response", re.I)
         result = matchstr.search(line)
@@ -124,7 +134,6 @@ class FreepyRequest(object):
             self.content_length = int(line.split(":")[1].strip())
             self._fsm.ContentLength()
             return self.isRequestFinished()
-
 
         self._fsm.ProcessLine(line)
         return self.isRequestFinished()
@@ -194,35 +203,10 @@ class BgApiRequest(FreepyRequest):
     linereceived: 
 
     """
-    
     def __init__(self):
         super(BgApiRequest, self).__init__()
         import bgapirequest_sm
         self._fsm = bgapirequest_sm.BgApiRequest_sm(self)
-
-
-    def processOLD(self, line):
-
-        if not line or len(line) == 0:
-            self._fsm.BlankLine()
-            return self.isRequestFinished()
-        
-        matchstr = re.compile("command/reply", re.I)
-        result = matchstr.search(line)
-        if (result != None):
-            self._fsm.CommandReply()
-            return self.isRequestFinished()
-
-        matchstr = re.compile("Reply-Text", re.I)
-        result = matchstr.search(line)
-        if (result != None):
-            self.response_content = line.split(":")[1]
-            self._fsm.ReplyText()
-            return self.isRequestFinished()
-
-        self._fsm.ProcessLine(line)
-        return self.isRequestFinished()
-
 
 
     def getResponse(self):
@@ -252,28 +236,6 @@ class ApiRequest(FreepyRequest):
         self._fsm = apirequest_sm.ApiRequest_sm(self)
         self.response_content = ""
 
-    def processOLD(self, line):
-
-        if not line or len(line) == 0:
-            self._fsm.BlankLine()
-            return self.isRequestFinished()
-        
-        matchstr = re.compile("api/response", re.I)
-        result = matchstr.search(line)
-        if (result != None):
-            self._fsm.ApiResponse()
-            return self.isRequestFinished()
-
-        matchstr = re.compile("Content-Length", re.I)
-        result = matchstr.search(line)
-        if (result != None):
-            # line: Content-Length: 34
-            self.content_length = int(line.split(":")[1].strip())
-            self._fsm.ContentLength()
-            return self.isRequestFinished()
-
-        self._fsm.ProcessLine(line)
-        return self.isRequestFinished()
 
     def doNothing(self):
         # weird smc issue workaround attempt

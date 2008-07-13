@@ -25,11 +25,16 @@ ApiResponseStarted
 GotReplyText
 {
         BlankLine
-		Startup                
+				nil                
                 {
-		setRequestFinished(); callOrErrback();		
+				
                 }
 
+		JobUuid
+				Startup
+				{
+				setRequestFinished(); callOrErrback();			
+				}
 
 }
 
@@ -43,8 +48,7 @@ Default
 		nil			
 		{ 
 		setRequestFinished();
-		errbackDeferred("Protocol failure - was not expecting blank line");		
-		}
+		errbackDeferred("Protocol failure - was not expecting blank line");			   }
 
     	CommandReply		
 		nil			
@@ -64,7 +68,7 @@ Default
 		nil			
 		{ 
 		setRequestFinished();
-		errbackDeferred("Protocol failure - was not expecting line needing to be processed");		
+		errbackDeferred("Protocol failure handling bgapi response - was not expecting line needing to be processed");		
 		}
 
 }

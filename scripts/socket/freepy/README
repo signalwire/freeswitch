@@ -9,8 +9,18 @@ Install
 
 See INSTALL
 
+Debugging
+=========
+
+Set FREEPY_DEBUG_ON = True in globals.py
+
+TODO: pull this from an environment variable or a config file
+
 Rebulding State Machines
 ========================
+
+(you only need to do this if you changed an .sm file)
+
 for each .sm file:
 
 java -jar /usr/src/smc/bin/Smc.jar -python -g THE.sm
