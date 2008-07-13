@@ -25,9 +25,7 @@
  * 
  * Brian West <brian@freeswitch.org>
  *
- *
  * mod_flite.c -- Flite Interface
- * 
  *
  */
 
@@ -49,7 +47,6 @@ static struct {
 	cst_voice *v16;
 } globals;
 
-
 struct flite_data {
 	cst_voice *v;
 	cst_wave *w;
@@ -62,7 +59,6 @@ typedef struct flite_data flite_t;
 
 static switch_status_t flite_speech_open(switch_speech_handle_t *sh, const char *voice_name, int rate, switch_speech_flag_t *flags)
 {
-	
 	flite_t *flite = switch_core_alloc(sh->memory_pool, sizeof(*flite));
 	
 	if (rate == 8000) {
@@ -96,7 +92,6 @@ static switch_status_t flite_speech_close(switch_speech_handle_t *sh, switch_spe
 
 static switch_status_t flite_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags)
 {
-	
 	flite_t *flite = (flite_t *) sh->private_info;
 	
 	flite->w = flite_text_to_wave(text, flite->v);
