@@ -373,7 +373,7 @@ SWITCH_DECLARE_CONSTRUCTOR DTMF::DTMF(char idigit, uint32_t iduration)
 	digit = idigit;
 
 	if (iduration == 0) {
-		iduration == SWITCH_DEFAULT_DTMF_DURATION;
+		iduration = SWITCH_DEFAULT_DTMF_DURATION;
 	}
 
 	duration = iduration;
