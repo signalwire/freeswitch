@@ -331,7 +331,14 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 #endif
 			if (aok) {
 				if (COLORIZE) {
+
+#ifdef WIN32
+					SetConsoleTextAttribute(hStdout, COLORS[node->level]);
+					WriteFile(hStdout, node->data, (DWORD) strlen(node->data), NULL, NULL);
+					SetConsoleTextAttribute(hStdout, wOldColorAttrs);
+#else
 					fprintf(handle, "%s%s%s", COLORS[level], data, SWITCH_SEQ_DEFAULT_COLOR);
+#endif
 				} else {
 					fprintf(handle, "%s", data);
 				}
