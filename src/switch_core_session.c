@@ -667,12 +667,12 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, s
 	switch_size_t has;
 
 	/* clear resamplers */
+	switch_mutex_lock(session->resample_mutex);
 	switch_resample_destroy(&session->read_resampler);
 	switch_resample_destroy(&session->write_resampler);
-
+	switch_mutex_unlock(session->resample_mutex);
 	/* clear indications */
 	switch_core_session_flush_message(session);
-
 	/* wipe theese, they will be recreated if need be */
 	switch_buffer_destroy(&session->raw_read_buffer);
 	switch_buffer_destroy(&session->raw_write_buffer);
@@ -736,6 +736,9 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Close Channel %s [%s]\n",
 					  switch_channel_get_name((*session)->channel), switch_channel_state_name(switch_channel_get_state((*session)->channel)));
 
+
+	switch_core_session_reset(*session, TRUE);
+	
 	switch_core_media_bug_remove_all(*session);
 	switch_ivr_deactivate_unicast(*session);
 

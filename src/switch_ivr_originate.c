@@ -115,7 +115,6 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 			goto wbreak;
 		}
 
-		switch_channel_set_state(channel, CS_SOFT_EXECUTE);
 		switch_core_session_exec(collect->session, application_interface, app_data);
 
 		if (switch_channel_get_state(channel) < CS_HANGUP) {
