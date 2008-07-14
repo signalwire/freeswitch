@@ -1227,34 +1227,46 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 
 			if ((profile = sofia_glue_find_profile(argv[1]))) {
 				stream->write_function(stream, "%s\n", line);
-				stream->write_function(stream, "Name       \t%s\n", switch_str_nil(argv[1]));
-				stream->write_function(stream, "Domain Name\t%s\n", switch_str_nil(profile->domain_name));
+				stream->write_function(stream, "Name          \t%s\n", switch_str_nil(argv[1]));
+				stream->write_function(stream, "Domain Name   \t%s\n", switch_str_nil(profile->domain_name));
 				if (strcasecmp(argv[1], profile->name)) {
-					stream->write_function(stream, "Alias Of   \t%s\n", switch_str_nil(profile->name));
+					stream->write_function(stream, "Alias Of      \t%s\n", switch_str_nil(profile->name));
 				}
-				stream->write_function(stream, "DBName     \t%s\n", switch_str_nil(profile->dbname));
-				stream->write_function(stream, "Dialplan   \t%s\n", switch_str_nil(profile->dialplan));
-				stream->write_function(stream, "RTP-IP     \t%s\n", switch_str_nil(profile->rtpip));
+				stream->write_function(stream, "DBName        \t%s\n", switch_str_nil(profile->dbname));
+				stream->write_function(stream, "Dialplan      \t%s\n", switch_str_nil(profile->dialplan));
+				stream->write_function(stream, "Context       \t%s\n", switch_str_nil(profile->context));
+				stream->write_function(stream, "RTP-IP        \t%s\n", switch_str_nil(profile->rtpip));
 				if (profile->extrtpip) {
-					stream->write_function(stream, "Ext-RTP-IP \t%s\n", profile->extrtpip);
+					stream->write_function(stream, "Ext-RTP-IP    \t%s\n", profile->extrtpip);
 				}
 
-				stream->write_function(stream, "SIP-IP     \t%s\n", switch_str_nil(profile->sipip));
+				stream->write_function(stream, "SIP-IP        \t%s\n", switch_str_nil(profile->sipip));
 				if (profile->extsipip) {
-					stream->write_function(stream, "Ext-SIP-IP \t%s\n", profile->extsipip);
+					stream->write_function(stream, "Ext-SIP-IP    \t%s\n", profile->extsipip);
 				}
-				stream->write_function(stream, "URL        \t%s\n", switch_str_nil(profile->url));
-				stream->write_function(stream, "BIND-URL   \t%s\n", switch_str_nil(profile->bindurl));
+				stream->write_function(stream, "URL           \t%s\n", switch_str_nil(profile->url));
+				stream->write_function(stream, "BIND-URL      \t%s\n", switch_str_nil(profile->bindurl));
 				if (sofia_test_pflag(profile, PFLAG_TLS)) {
-					stream->write_function(stream, "TLS-URL   \t%s\n", switch_str_nil(profile->tls_url));
-					stream->write_function(stream, "TLS-BIND-URL   \t%s\n", switch_str_nil(profile->tls_bindurl));
+					stream->write_function(stream, "TLS-URL      \t%s\n", switch_str_nil(profile->tls_url));
+					stream->write_function(stream, "TLS-BIND-URL      \t%s\n", switch_str_nil(profile->tls_bindurl));
 				}
-				stream->write_function(stream, "HOLD-MUSIC \t%s\n", switch_str_nil(profile->hold_music));
-				stream->write_function(stream, "CODECS     \t%s\n", switch_str_nil(profile->codec_string));
-				stream->write_function(stream, "TEL-EVENT  \t%d\n", profile->te);
-				stream->write_function(stream, "CNG        \t%d\n", profile->cng_pt);
-				stream->write_function(stream, "SESSION-TO \t%d\n", profile->session_timeout);
-				stream->write_function(stream, "MAX-DIALOG \t%d\n", profile->max_proceeding);
+				stream->write_function(stream, "HOLD-MUSIC    \t%s\n", switch_str_nil(profile->hold_music));
+				stream->write_function(stream, "CODECS        \t%s\n", switch_str_nil(profile->codec_string));
+				stream->write_function(stream, "TEL-EVENT     \t%d\n", profile->te);
+				if (profile->dtmf_type == DTMF_2833) {
+					stream->write_function(stream, "DTMF-MODE     \trfc2833\n");
+				} else if (profile->dtmf_type == DTMF_INFO) {
+					stream->write_function(stream, "DTMF-MODE     \tinfo\n");
+				} else {
+					stream->write_function(stream, "DTMF-MODE     \tnone\n");
+				}
+				stream->write_function(stream, "CNG           \t%d\n", profile->cng_pt);
+				stream->write_function(stream, "SESSION-TO    \t%d\n", profile->session_timeout);
+				stream->write_function(stream, "MAX-DIALOG    \t%d\n", profile->max_proceeding);
+				stream->write_function(stream, "NOMEDIA       \t%s\n", switch_test_flag(profile, TFLAG_INB_NOMEDIA) ? "true" : "false");
+				stream->write_function(stream, "LATENEG       \t%s\n", switch_test_flag(profile, TFLAG_LATE_NEGOTIATION) ? "true" : "false");
+				stream->write_function(stream, "PROXYMEDIA    \t%s\n", switch_test_flag(profile, TFLAG_PROXY_MEDIA) ? "true" : "false");
+				stream->write_function(stream, "AGGRESSIVENAT \t%s\n", sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) ? "true" : "false");
 				stream->write_function(stream, "\nRegistrations:\n%s\n", line);
 
 				cb.profile = profile;

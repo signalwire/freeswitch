@@ -954,7 +954,7 @@ static void parse_domain_tag(sofia_profile_t *profile, switch_xml_t x_domain_tag
 
 switch_status_t reconfig_sofia(sofia_profile_t *profile)
 {
-	switch_xml_t cfg, xml = NULL, xprofile, profiles, gateways_tag, domain_tag, domains_tag;
+	switch_xml_t cfg, xml = NULL, xprofile, profiles, gateways_tag, domain_tag, domains_tag, aliases_tag, alias_tag, settings, param;
 	char *cf = "sofia.conf";
 	switch_event_t *params = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -973,11 +973,198 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 	if ((profiles = switch_xml_child(cfg, "profiles"))) {
 		for (xprofile = switch_xml_child(profiles, "profile"); xprofile; xprofile = xprofile->next) {
 			char *xprofilename = (char *) switch_xml_attr_soft(xprofile, "name");
-			//char *xprofiledomain = (char *) switch_xml_attr(xprofile, "domain");
+
 			if (strcasecmp(profile->name, xprofilename)) {
 				continue;
 			}
 
+			/* you could change profile->foo here if it was a minor change like context or dialplan ... */
+			profile->rport_level = 1; /* default setting */
+
+			if ((settings = switch_xml_child(xprofile, "settings"))) {
+				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+					char *var = (char *) switch_xml_attr_soft(param, "name");
+					char *val = (char *) switch_xml_attr_soft(param, "value");
+					if (!strcasecmp(var, "debug")) {
+						profile->debug = atoi(val);
+					} else if (!strcasecmp(var, "user-agent-string")) { 
+						profile->user_agent = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "dtmf-type")) {
+						if (!strcasecmp(val, "rfc2833")) {
+							profile->dtmf_type = DTMF_2833;
+						} else if (!strcasecmp(val, "info")) {
+							profile->dtmf_type = DTMF_INFO;
+						} else {
+							profile->dtmf_type = DTMF_NONE;
+						}
+					} else if (!strcasecmp(var, "NDLB-force-rport")) {
+						if (switch_true(val)) {
+							profile->rport_level = 2;
+						}
+					} else if (!strcasecmp(var, "record-template")) {
+						profile->record_template = switch_core_strdup(profile->pool, val);;
+					} else if ((!strcasecmp(var, "inbound-no-media") || !strcasecmp(var, "inbound-bypass-media"))) {
+						if (switch_true(val)) {
+							switch_set_flag(profile, TFLAG_INB_NOMEDIA);
+						} else {
+							switch_clear_flag(profile, TFLAG_INB_NOMEDIA);
+						}
+					} else if (!strcasecmp(var, "inbound-late-negotiation")) {
+						if (switch_true(val)) {
+							switch_set_flag(profile, TFLAG_LATE_NEGOTIATION);
+						} else {
+							switch_clear_flag(profile, TFLAG_LATE_NEGOTIATION);
+						}
+					} else if (!strcasecmp(var, "inbound-proxy-media")) {
+						if (switch_true(val)) { 
+							switch_set_flag(profile, TFLAG_PROXY_MEDIA);
+						} else {
+							switch_clear_flag(profile, TFLAG_PROXY_MEDIA);
+						}
+					} else if (!strcasecmp(var, "NDLB-received-in-nat-reg-contact")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_RECIEVED_IN_NAT_REG_CONTACT;
+						} else {
+							profile->pflags &= ~PFLAG_RECIEVED_IN_NAT_REG_CONTACT;
+						}
+					} else if (!strcasecmp(var, "aggressive-nat-detection")) {
+						if (switch_true(val)) { 
+							profile->pflags |= PFLAG_AGGRESSIVE_NAT_DETECTION;
+						} else {
+							profile->pflags &= ~PFLAG_AGGRESSIVE_NAT_DETECTION;
+						}
+					} else if (!strcasecmp(var, "disable-rtp-auto-adjust")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_DISABLE_RTP_AUTOADJ;
+						} else {
+							profile->pflags &= ~PFLAG_DISABLE_RTP_AUTOADJ;
+						}
+					} else if (!strcasecmp(var, "NDLB-support-asterisk-missing-srtp-auth")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_DISABLE_SRTP_AUTH; 
+						} else {
+							profile->pflags &= ~PFLAG_DISABLE_SRTP_AUTH; 
+						}
+					} else if (!strcasecmp(var, "rfc2833-pt")) {
+						profile->te = (switch_payload_t) atoi(val);
+					} else if (!strcasecmp(var, "cng-pt")) {
+						profile->cng_pt = (switch_payload_t) atoi(val);
+					} else if (!strcasecmp(var, "vad")) {
+						if (!strcasecmp(val, "in")) {
+							switch_set_flag(profile, TFLAG_VAD_IN);
+						} else if (!strcasecmp(val, "out")) {
+							switch_set_flag(profile, TFLAG_VAD_OUT);
+						} else if (!strcasecmp(val, "both")) {
+							switch_set_flag(profile, TFLAG_VAD_IN);
+							switch_set_flag(profile, TFLAG_VAD_OUT);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invald option %s for VAD\n", val);
+						}
+					} else if (!strcasecmp(var, "unregister-on-options-fail")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_UNREG_OPTIONS_FAIL;
+						} else {
+							profile->pflags &= ~PFLAG_UNREG_OPTIONS_FAIL;
+						}
+					} else if (!strcasecmp(var, "require-secure-rtp")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_SECURE;
+						} else {
+							profile->pflags &= ~PFLAG_SECURE;
+						}
+					} else if (!strcasecmp(var, "multiple-registrations")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_MULTIREG;
+						} else {
+							profile->pflags &= ~PFLAG_MULTIREG;
+						}
+					} else if (!strcasecmp(var, "supress-cng")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_SUPRESS_CNG;
+						} else {
+							profile->pflags &= ~PFLAG_SUPRESS_CNG;
+						}
+					} else if (!strcasecmp(var, "NDLB-to-in-200-contact")) {
+						if (switch_true(val)) {
+							profile->ndlb |= PFLAG_NDLB_TO_IN_200_CONTACT;
+						} else {
+							profile->ndlb &= ~PFLAG_NDLB_TO_IN_200_CONTACT;
+						}
+					} else if (!strcasecmp(var, "NDLB-broken-auth-hash")) {
+						if (switch_true(val)) {
+							profile->ndlb |= PFLAG_NDLB_BROKEN_AUTH_HASH;
+						} else {
+							profile->ndlb &= ~PFLAG_NDLB_BROKEN_AUTH_HASH;
+						}
+					} else if (!strcasecmp(var, "pass-rfc2833")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_PASS_RFC2833;
+						} else {
+							profile->pflags &= ~PFLAG_PASS_RFC2833;
+						}
+					} else if (!strcasecmp(var, "inbound-codec-negotiation")) {
+						if (!strcasecmp(val, "greedy")) {
+							profile->pflags |= PFLAG_GREEDY;
+						} else {
+							profile->pflags &= ~PFLAG_GREEDY;
+						}
+					} else if (!strcasecmp(var, "disable-transcoding")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_DISABLE_TRANSCODING;
+						} else {
+							profile->pflags &= ~PFLAG_DISABLE_TRANSCODING;
+						}
+					} else if (!strcasecmp(var, "rtp-rewrite-timestamps")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_REWRITE_TIMESTAMPS;
+						} else {
+							profile->pflags &= ~PFLAG_REWRITE_TIMESTAMPS;
+						}
+					} else if (!strcasecmp(var, "auth-calls")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_AUTH_CALLS;
+						} else {
+							profile->pflags &= ~PFLAG_AUTH_CALLS;
+						}
+					} else if (!strcasecmp(var, "force-register-domain")) {
+						profile->reg_domain = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "hold-music")) {
+						profile->hold_music = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "session-timeout")) {
+						int v_session_timeout = atoi(val);
+						if (v_session_timeout >= 0) {
+							profile->session_timeout = v_session_timeout;
+						}
+					} else if (!strcasecmp(var, "rtp-timeout-sec")) {
+						int v = atoi(val);
+						if (v >= 0) {
+							profile->rtp_timeout_sec = v;
+						}
+					} else if (!strcasecmp(var, "rtp-hold-timeout-sec")) {
+						int v = atoi(val);
+						if (v >= 0) {
+							profile->rtp_hold_timeout_sec = v;
+						}
+					} else if (!strcasecmp(var, "nonce-ttl")) {
+						profile->nonce_ttl = atoi(val);
+					} else if (!strcasecmp(var, "dialplan")) {
+						profile->dialplan = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "max-calls")) {
+						profile->max_calls = atoi(val);
+					} else if (!strcasecmp(var, "codec-prefs")) {
+						profile->codec_string = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "dtmf-duration")) {
+						int dur = atoi(val);
+						if (dur > 10 && dur < 8000) {
+							profile->dtmf_duration = dur;
+						} else {
+							profile->dtmf_duration = SWITCH_DEFAULT_DTMF_DURATION;
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Duration out of bounds, using default of %d!\n", SWITCH_DEFAULT_DTMF_DURATION);
+						}
+					}
+				}
+			}
+			
 			if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
 				parse_gateways(profile, gateways_tag);
 			}
@@ -1008,7 +1195,21 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 					}
 				}
 			}
-			
+
+			if ((aliases_tag = switch_xml_child(xprofile, "aliases"))) {
+				for (alias_tag = switch_xml_child(aliases_tag, "alias"); alias_tag; alias_tag = alias_tag->next) {
+					char *aname = (char *) switch_xml_attr_soft(alias_tag, "name");
+					if (!switch_strlen_zero(aname)) {
+						
+						if (sofia_glue_add_profile(switch_core_strdup(profile->pool, aname), profile) == SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Alias [%s] for profile [%s]\n", aname, profile->name);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Alias [%s] for profile [%s] (already exists)\n",
+											  aname, profile->name);
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -1148,7 +1349,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 #endif
 					} else if (!strcasecmp(var, "user-agent-string")) {
-						profile->user_agent = switch_core_strdup(profile->pool, val);;
+						profile->user_agent = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "dtmf-type")) {
 						if (!strcasecmp(val, "rfc2833")) {
 							profile->dtmf_type = DTMF_2833;
@@ -1400,7 +1601,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (dur > 10 && dur < 8000) {
 							profile->dtmf_duration = dur;
 						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Duration out of bounds!\n");
+							profile->dtmf_duration = SWITCH_DEFAULT_DTMF_DURATION;
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Duration out of bounds, using default of %d!\n", SWITCH_DEFAULT_DTMF_DURATION);
 						}
 
 						/*
@@ -1637,7 +1839,6 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 
 	if (gateway) {
 		if (status == 200 || status == 404) {
-			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ping success %s\n", gateway->name);
 			if (gateway->state == REG_STATE_FAILED) {
 				gateway->state = REG_STATE_UNREGED;
 				gateway->retry = 0;
