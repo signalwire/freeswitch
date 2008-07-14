@@ -259,6 +259,8 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 		return;
 	}
 
+	switch_assert(level < SWITCH_LOG_INVALID);
+
 	va_start(ap, fmt);
 
 	handle = switch_core_data_channel(channel);
@@ -333,8 +335,8 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 				if (COLORIZE) {
 
 #ifdef WIN32
-					SetConsoleTextAttribute(hStdout, COLORS[node->level]);
-					WriteFile(hStdout, node->data, (DWORD) strlen(node->data), NULL, NULL);
+					SetConsoleTextAttribute(hStdout, COLORS[level]);
+					WriteFile(hStdout, data, (DWORD) strlen(data), NULL, NULL);
 					SetConsoleTextAttribute(hStdout, wOldColorAttrs);
 #else
 					fprintf(handle, "%s%s%s", COLORS[level], data, SWITCH_SEQ_DEFAULT_COLOR);

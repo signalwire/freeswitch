@@ -937,29 +937,29 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 #endif
 				} else if (!strcasecmp(var, "colorize-console") && switch_true(val)) {
 					runtime.colorize_console = SWITCH_TRUE;
-				} else if (!strcasecmp(var, "mailer-app")) {
+				} else if (!strcasecmp(var, "mailer-app") && !switch_strlen_zero(val)) {
 					runtime.mailer_app = switch_core_strdup(runtime.memory_pool, val);
-				} else if (!strcasecmp(var, "mailer-app-args")) {
+				} else if (!strcasecmp(var, "mailer-app-args") && !switch_strlen_zero(val)) {
 					runtime.mailer_app_args = switch_core_strdup(runtime.memory_pool, val);
-				} else if (!strcasecmp(var, "sessions-per-second")) {
+				} else if (!strcasecmp(var, "sessions-per-second") && !switch_strlen_zero(val)) {
 					switch_core_sessions_per_second(atoi(val));
-				} else if (!strcasecmp(var, "max_dtmf_duration")) {
+				} else if (!strcasecmp(var, "max_dtmf_duration") && !switch_strlen_zero(val)) {
 					int tmp = atoi(val);
 					if (tmp > 0) {
 						switch_core_max_dtmf_duration((uint32_t) tmp);
 					}
-				} else if (!strcasecmp(var, "default_dtmf_duration")) {
+				} else if (!strcasecmp(var, "default_dtmf_duration") && !switch_strlen_zero(val)) {
 					int tmp = atoi(val);
 					if (tmp > 0) {
 						switch_core_default_dtmf_duration((uint32_t) tmp);
 					}
 				} else if (!strcasecmp(var, "disable-monotonic-timing")) {
 					switch_time_set_monotonic(SWITCH_FALSE);
-				} else if (!strcasecmp(var, "max-sessions")) {
+				} else if (!strcasecmp(var, "max-sessions") && !switch_strlen_zero(val)) {
 					switch_core_session_limit(atoi(val));
-				} else if (!strcasecmp(var, "rtp-start-port")) {
+				} else if (!strcasecmp(var, "rtp-start-port") && !switch_strlen_zero(val)) {
 					switch_rtp_set_start_port((switch_port_t) atoi(val));
-				} else if (!strcasecmp(var, "rtp-end-port")) {
+				} else if (!strcasecmp(var, "rtp-end-port") && !switch_strlen_zero(val)) {
 					switch_rtp_set_end_port((switch_port_t) atoi(val));
 				}
 			}
