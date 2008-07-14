@@ -25,6 +25,7 @@ class Session : public CoreSession {
 	PerlInterpreter *my_perl;
 	int hh;
 	int mark;
+	SV *me;
  public:
     Session();
     Session(char *uuid);
@@ -36,10 +37,11 @@ class Session : public CoreSession {
 	virtual void check_hangup_hook();
 
 	virtual switch_status_t run_dtmf_callback(void *input, switch_input_type_t itype);
-	void setInputCallback(char *cbfunc, char *funcargs);
+	void setME(SV *p);
+	void setInputCallback(char *cbfunc = "on_input", char *funcargs = NULL);
 	void setHangupHook(char *func, char *arg=NULL);
 	bool ready();
-	
+	char *suuid;
 	char *cb_function;
 	char *cb_arg;
 	char *hangup_func_str;

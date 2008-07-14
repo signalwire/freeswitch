@@ -139,8 +139,11 @@ static int perl_parse_and_execute(PerlInterpreter * my_perl, char *input_code, c
 	return error;
 }
 
+#define HACK_CLEAN_CODE "foreach my $kl(keys %main::) {undef($$kl) if (defined($$kl) && ($kl =~ /^\\w+[\\w\\d_]+$/))}"
+
 static void destroy_perl(PerlInterpreter ** to_destroy)
 {
+	Perl_safe_eval(*to_destroy, HACK_CLEAN_CODE);
 	perl_destruct(*to_destroy);
 	perl_free(*to_destroy);
 	*to_destroy = NULL;
@@ -189,14 +192,20 @@ static perl_parse_and_execute(PerlInterpreter * my_perl, char *input_code, char 
 }
 #endif
 
+
+
+
+
+
+
+
 static void perl_function(switch_core_session_t *session, char *data)
 {
 	char *uuid = switch_core_session_get_uuid(session);
 	PerlInterpreter *my_perl = clone_perl();
-	char code[1024];
+	char code[1024] = "";
 
 	perl_parse(my_perl, xs_init, 3, embedding, NULL);
-	Perl_safe_eval(my_perl, code);
 
 	switch_snprintf(code, sizeof(code),
 					"use lib '%s/perl';\n"
@@ -204,8 +213,6 @@ static void perl_function(switch_core_session_t *session, char *data)
 					"$SWITCH_ENV{UUID} = \"%s\";\n" "$session = new freeswitch::Session(\"%s\")", SWITCH_GLOBAL_dirs.base_dir, uuid, uuid);
 
 	perl_parse_and_execute(my_perl, data, code);
-	Perl_safe_eval(my_perl, "undef $session;");
-	Perl_safe_eval(my_perl, "undef (*);");
 	destroy_perl(&my_perl);
 }
 
@@ -264,12 +271,6 @@ static void *SWITCH_THREAD_FUNC perl_thread_run(switch_thread_t *thread, void *o
 		perl_parse_and_execute(my_perl, cmd, NULL);
 	}
 
-	if (uuid) {
-		switch_snprintf(code, sizeof(code), "undef $session;", uuid);
-		Perl_safe_eval(my_perl, code);
-	}
-
-	Perl_safe_eval(my_perl, "undef(*);");
 	destroy_perl(&my_perl);
 
 	switch_safe_free(cmd);
@@ -277,7 +278,7 @@ static void *SWITCH_THREAD_FUNC perl_thread_run(switch_thread_t *thread, void *o
 	if (po->d) {
 		free(po);
 	}
-
+	
 	return NULL;
 }
 

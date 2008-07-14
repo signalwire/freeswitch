@@ -391,6 +391,12 @@ sub DESTROY {
 *swig_cb_state_set = *freeswitchc::CoreSession_cb_state_set;
 *swig_hook_state_get = *freeswitchc::CoreSession_hook_state_get;
 *swig_hook_state_set = *freeswitchc::CoreSession_hook_state_set;
+*swig_uuid_get = *freeswitchc::CoreSession_uuid_get;
+*swig_uuid_set = *freeswitchc::CoreSession_uuid_set;
+*swig_tts_name_get = *freeswitchc::CoreSession_tts_name_get;
+*swig_tts_name_set = *freeswitchc::CoreSession_tts_name_set;
+*swig_voice_name_get = *freeswitchc::CoreSession_voice_name_get;
+*swig_voice_name_set = *freeswitchc::CoreSession_voice_name_set;
 *answer = *freeswitchc::CoreSession_answer;
 *preAnswer = *freeswitchc::CoreSession_preAnswer;
 *hangup = *freeswitchc::CoreSession_hangup;
@@ -473,9 +479,12 @@ sub DESTROY {
 *end_allow_threads = *freeswitchc::Session_end_allow_threads;
 *check_hangup_hook = *freeswitchc::Session_check_hangup_hook;
 *run_dtmf_callback = *freeswitchc::Session_run_dtmf_callback;
+*setME = *freeswitchc::Session_setME;
 *setInputCallback = *freeswitchc::Session_setInputCallback;
 *setHangupHook = *freeswitchc::Session_setHangupHook;
 *ready = *freeswitchc::Session_ready;
+*swig_suuid_get = *freeswitchc::Session_suuid_get;
+*swig_suuid_set = *freeswitchc::Session_suuid_set;
 *swig_cb_function_get = *freeswitchc::Session_cb_function_get;
 *swig_cb_function_set = *freeswitchc::Session_cb_function_set;
 *swig_cb_arg_get = *freeswitchc::Session_cb_arg_get;

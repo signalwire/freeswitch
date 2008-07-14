@@ -16,11 +16,26 @@ Session::Session():CoreSession()
 Session::Session(char *uuid):CoreSession(uuid)
 {
 	init_me();
+	suuid = switch_core_session_sprintf(session, "main::uuid_%s\n", switch_core_session_get_uuid(session));
+	for (char *p = suuid; p && *p; p++) {
+		if (*p == '-') {
+			*p = '_';
+		}
+		if (*p == '\n') {
+			*p = '\0';
+		}
+	}
 }
 
 Session::Session(switch_core_session_t *new_session):CoreSession(new_session)
 {
 	init_me();
+	suuid = switch_core_session_sprintf(session, "main::uuid_%s\n", switch_core_session_get_uuid(session));
+	for (char *p = suuid; p && *p; p++) {
+		if (*p == '-') {
+			*p = '_';
+		}
+	}
 }
 static switch_status_t perl_hanguphook(switch_core_session_t *session_hungup);
 Session::~Session()
@@ -52,6 +67,11 @@ bool Session::end_allow_threads()
 void Session::setPERL(PerlInterpreter * pi)
 {
 	my_perl = pi;
+}
+
+void Session::setME(SV *p)
+{
+	me = p;
 }
 
 PerlInterpreter *Session::getPERL()
@@ -92,13 +112,13 @@ void Session::do_hangup_hook()
 		}
 
 		if (hangup_func_arg) {
-			code = switch_mprintf("%s(%s,%s)", hangup_func_str, hook_state == CS_HANGUP ? "hangup" : "transfer", hangup_func_arg);
-		} else {
-			code = switch_mprintf("%s(%s)", hangup_func_str, hook_state == CS_HANGUP ? "hangup" : "transfer");
-		}
+            code = switch_mprintf("%s($%s,\"%s\",%s)", hangup_func_str, suuid, hook_state == CS_HANGUP ? "hangup" : "transfer", hangup_func_arg);
+        } else {
+            code = switch_mprintf("%s($%s,\"%s\")", hangup_func_str, suuid, hook_state == CS_HANGUP ? "hangup" : "transfer");
+        }
 
-		Perl_eval_pv(my_perl, code, TRUE);
-		free(code);
+        Perl_eval_pv(my_perl, code, TRUE);
+        free(code);
 	}
 }
 
@@ -189,7 +209,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 			sv_setpv(this_sv, str);
 			hv_store(hash, "duration", 8, this_sv, 0);
 
-			code = switch_mprintf("$__RV = %s('dtmf', \\%%__dtmf, %s);", cb_function, switch_str_nil(cb_arg));
+			code = switch_mprintf("$__RV = %s($%s, 'dtmf', \\%%__dtmf, %s);", cb_function, suuid, switch_str_nil(cb_arg));
 			Perl_eval_pv(my_perl, code, FALSE);
 			free(code);
 
@@ -204,7 +224,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 
 			mod_perl_conjure_event(my_perl, event, "__Input_Event__");
 
-			code = switch_mprintf("$__RV = %s('event', $__Input_Event__, %s);", cb_function, switch_str_nil(cb_arg));
+			code = switch_mprintf("$__RV = %s($%s, 'event', $__Input_Event__, %s);", cb_function, suuid, switch_str_nil(cb_arg));
 			Perl_eval_pv(my_perl, code, TRUE);
 			free(code);
 

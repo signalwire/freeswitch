@@ -10,13 +10,15 @@ VERBOSE=1
 include $(BASE)/build/modmake.rules
 
 
+reswig:	swigclean mod_perl_wrap.cpp
+
 swigclean: clean
 	rm -f mod_perl_wrap.* freeswitch.so freeswitch.pm
 
 mod_perl_wrap.cpp:
 	swig -static -shadow -perl5 -c++ -DMULTIPLICITY -I../../../../src/include -o mod_perl_wrap.cpp freeswitch.i
 	echo "#include \"mod_perl_extra.c\"" >> mod_perl_wrap.cpp
-	#	patch -s -p0 -i hack.diff
+	patch -s -p0 -i hack.diff
 
 
 
