@@ -138,7 +138,6 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 	
 	ps->config = cmd_ln_init(ps->config, ps_args(), FALSE,
 							 "-samprate", "8000",
-							 "-adcin", "yes",
 							 "-hmm", model,
 							 "-lm", lm, 
 							 "-dict", dic,
