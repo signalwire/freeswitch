@@ -38,7 +38,7 @@
 #include <curl/curl.h>
 #endif
 static int foo = 0;
-static void check_hangup_hook(struct js_session *jss);
+static jsval check_hangup_hook(struct js_session *jss, jsval *rp);
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spidermonkey_shutdown);
@@ -48,7 +48,7 @@ SWITCH_MODULE_DEFINITION(mod_spidermonkey, mod_spidermonkey_load, mod_spidermonk
 		eval_some_js("~throw new Error(\"You must call the session.originate method before calling this method!\");", cx, obj, rval); \
 		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);								\
 		return JS_FALSE;												\
-	} else check_hangup_hook(jss)
+	} else check_hangup_hook(jss, NULL)
 
 #define CHANNEL_SANITY_CHECK() do {										\
 		if (!switch_channel_ready(channel)) {							\
@@ -1147,12 +1147,15 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 		jss->stack_depth--;
 		return SWITCH_STATUS_FALSE;
 	}
-	check_hangup_hook(jss);
-	JS_ResumeRequest(cb_state->cx, cb_state->saveDepth);
-	JS_CallFunction(cb_state->cx, cb_state->obj, cb_state->function, argc, argv, &cb_state->ret);
-	cb_state->saveDepth = JS_SuspendRequest(cb_state->cx);
-	check_hangup_hook(jss);
-	jss->stack_depth--;
+
+	if (check_hangup_hook(jss, &cb_state->ret) == JS_TRUE) {
+		JS_ResumeRequest(cb_state->cx, cb_state->saveDepth);
+		JS_CallFunction(cb_state->cx, cb_state->obj, cb_state->function, argc, argv, &cb_state->ret);
+		cb_state->saveDepth = JS_SuspendRequest(cb_state->cx);
+		check_hangup_hook(jss, &cb_state->ret);
+		jss->stack_depth--;
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1367,6 +1370,7 @@ static JSBool session_recordfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	JSFunction *function;
 	int32 limit = 0;
 	switch_input_args_t args = { 0 };
+	jsval ret = JS_TRUE;
 
 	METHOD_SANITY_CHECK();
 	channel = switch_core_session_get_channel(jss->session);
@@ -1419,13 +1423,16 @@ static JSBool session_recordfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	args.input_callback = dtmf_func;
 	args.buf = bp;
 	args.buflen = len;
-	check_hangup_hook(jss);
+	if (check_hangup_hook(jss, NULL) != JS_TRUE) {
+		return JS_FALSE;
+
+	}
 	switch_ivr_record_file(jss->session, &fh, file_name, &args, limit);
-	check_hangup_hook(jss);
+	check_hangup_hook(jss, &ret);
 	JS_ResumeRequest(cx, cb_state.saveDepth);
 	*rval = cb_state.ret;
 
-	return JS_TRUE;
+	return ret;
 }
 
 static JSBool session_collect_input(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
@@ -1439,6 +1446,8 @@ static JSBool session_collect_input(JSContext * cx, JSObject * obj, uintN argc, 
 	struct input_callback_state cb_state = { 0 };
 	JSFunction *function;
 	switch_input_args_t args = { 0 };
+	jsval ret = JS_TRUE;
+
 
 	METHOD_SANITY_CHECK();
 	channel = switch_core_session_get_channel(jss->session);
@@ -1471,14 +1480,18 @@ static JSBool session_collect_input(JSContext * cx, JSObject * obj, uintN argc, 
 	args.input_callback = dtmf_func;
 	args.buf = bp;
 	args.buflen = len;
-	check_hangup_hook(jss);
+
+	if (check_hangup_hook(jss, NULL) != JS_TRUE) {
+		return JS_FALSE;
+	}
+
 	switch_ivr_collect_digits_callback(jss->session, &args, to);
-	check_hangup_hook(jss);
+	check_hangup_hook(jss, &ret);
 	JS_ResumeRequest(cx, cb_state.saveDepth);
 
 	*rval = cb_state.ret;
 
-	return JS_TRUE;
+	return ret;
 }
 
 /* session.sayphrase(phrase_name, phrase_data, language, dtmf_callback, dtmf_callback_args)*/
@@ -1498,6 +1511,7 @@ static JSBool session_sayphrase(JSContext * cx, JSObject * obj, uintN argc, jsva
 	struct input_callback_state cb_state = { 0 };
 	JSFunction *function;
 	switch_input_args_t args = { 0 };
+	jsval ret = JS_TRUE;
 
 	METHOD_SANITY_CHECK();
 	channel = switch_core_session_get_channel(jss->session);
@@ -1547,20 +1561,23 @@ static JSBool session_sayphrase(JSContext * cx, JSObject * obj, uintN argc, jsva
 	args.input_callback = dtmf_func;
 	args.buf = bp;
 	args.buflen = len;
-	check_hangup_hook(jss);
+	if (check_hangup_hook(jss, NULL) != JS_TRUE) {
+		return JS_FALSE;
+	}
 	switch_ivr_phrase_macro(jss->session, phrase_name, phrase_data, phrase_lang, &args);
-	check_hangup_hook(jss);
+	check_hangup_hook(jss, &ret);
 	JS_ResumeRequest(cx, cb_state.saveDepth);
 	*rval = cb_state.ret;
 
-	return JS_TRUE;
+	return ret;
 }
 
-static void check_hangup_hook(struct js_session *jss)
+static jsval check_hangup_hook(struct js_session *jss, jsval *rp)
 {
 	jsval argv[3] = { 0 };
 	int argc = 0;
-	jsval ret;
+	jsval ret = JS_TRUE;
+	char *resp;
 
 	if (!jss->check_state && jss->on_hangup && (jss->hook_state == CS_HANGUP || jss->hook_state == CS_ROUTING)) {
 		jss->check_state++;
@@ -1571,7 +1588,15 @@ static void check_hangup_hook(struct js_session *jss)
 			argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(jss->cx, "transfer"));
 		}
 		JS_CallFunction(jss->cx, jss->obj, jss->on_hangup, argc, argv, &ret);
+		resp = JS_GetStringBytes(JS_ValueToString(jss->cx, ret));
+		ret = !strcasecmp(resp, "exit") ? JS_FALSE : JS_TRUE;
 	}
+
+	if (rp) {
+		*rp = ret;
+	}
+
+	return ret;
 }
 
 static switch_status_t hanguphook(switch_core_session_t *session)
@@ -1627,6 +1652,7 @@ static JSBool session_streamfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	switch_input_args_t args = { 0 };
 	const char *prebuf;
 	char posbuf[35] = "";
+	jsval ret = JS_TRUE;
 
 	METHOD_SANITY_CHECK();
 	channel = switch_core_session_get_channel(jss->session);
@@ -1677,16 +1703,19 @@ static JSBool session_streamfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	args.input_callback = dtmf_func;
 	args.buf = bp;
 	args.buflen = len;
-	check_hangup_hook(jss);
+	if (check_hangup_hook(jss, NULL) != JS_TRUE) {
+		return JS_FALSE;
+	}
 	switch_ivr_play_file(jss->session, &fh, file_name, &args);
-	check_hangup_hook(jss);
+	check_hangup_hook(jss, &ret);
+
 	JS_ResumeRequest(cx, cb_state.saveDepth);
 	*rval = cb_state.ret;
 
 	switch_snprintf(posbuf, sizeof(posbuf), "%u", fh.offset_pos);
 	switch_channel_set_variable(channel, "last_file_position", posbuf);
 
-	return JS_TRUE;
+	return ret;
 }
 
 
@@ -1702,6 +1731,7 @@ static JSBool session_sleep(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	JSFunction *function;
 	switch_input_args_t args = { 0 };
 	int32 ms = 0;
+	jsval ret = JS_TRUE;
 
 	METHOD_SANITY_CHECK();
 	channel = switch_core_session_get_channel(jss->session);
@@ -1739,13 +1769,15 @@ static JSBool session_sleep(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	args.input_callback = dtmf_func;
 	args.buf = bp;
 	args.buflen = len;
-	check_hangup_hook(jss);
+	if (check_hangup_hook(jss, NULL) != JS_TRUE) {
+		return JS_FALSE;
+	}
 	switch_ivr_sleep(jss->session, ms, &args);
-	check_hangup_hook(jss);
+	check_hangup_hook(jss, &ret);
 	JS_ResumeRequest(cx, cb_state.saveDepth);
 	*rval = cb_state.ret;
 
-	return JS_TRUE;
+	return ret;
 }
 
 static JSBool session_set_variable(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
@@ -1859,6 +1891,7 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	switch_input_callback_function_t dtmf_func = NULL;
 	JSFunction *function;
 	switch_input_args_t args = { 0 };
+	jsval ret = JS_TRUE;
 
 	METHOD_SANITY_CHECK();
 
@@ -1927,13 +1960,15 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	args.buflen = len;
 
 	switch_core_speech_flush_tts(&jss->speech->sh);
-	check_hangup_hook(jss);
+	if (check_hangup_hook(jss, NULL) != JS_TRUE) {
+		return JS_FALSE;
+	}
 	switch_ivr_speak_text_handle(jss->session, &jss->speech->sh, &jss->speech->codec, NULL, text, &args);
-	check_hangup_hook(jss);
+	check_hangup_hook(jss, &ret);
 	JS_ResumeRequest(cx, cb_state.saveDepth);
 	*rval = cb_state.ret;
 
-	return JS_TRUE;
+	return ret;
 }
 
 static JSBool session_get_digits(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
@@ -2086,6 +2121,7 @@ static JSBool session_wait_for_media(JSContext * cx, JSObject * obj, uintN argc,
 	unsigned int elapsed;
 	int32 timeout = 60;
 	jsrefcount saveDepth;
+	jsval ret = JS_TRUE;
 
 	METHOD_SANITY_CHECK();
 
@@ -2097,7 +2133,9 @@ static JSBool session_wait_for_media(JSContext * cx, JSObject * obj, uintN argc,
 	if (argc > 0) {
 		JS_ValueToInt32(cx, argv[0], &timeout);
 	}
-	check_hangup_hook(jss);
+	if (check_hangup_hook(jss, NULL) != JS_TRUE) {
+		return JS_FALSE;
+	}
 	saveDepth = JS_SuspendRequest(cx);
 	for (;;) {
 		if (((elapsed = (unsigned int) ((switch_timestamp_now() - started) / 1000)) > (switch_time_t) timeout)
@@ -2115,8 +2153,9 @@ static JSBool session_wait_for_media(JSContext * cx, JSObject * obj, uintN argc,
 		switch_yield(1000);
 	}
 	JS_ResumeRequest(cx, saveDepth);
-	check_hangup_hook(jss);
-	return JS_TRUE;
+	check_hangup_hook(jss, &ret);
+
+	return ret;
 }
 
 static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
@@ -2127,7 +2166,8 @@ static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc
 	unsigned int elapsed;
 	int32 timeout = 60;
 	jsrefcount saveDepth;
-
+	jsval ret = JS_TRUE;
+	
 	METHOD_SANITY_CHECK();
 	channel = switch_core_session_get_channel(jss->session);
 
@@ -2136,7 +2176,11 @@ static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc
 	if (argc > 0) {
 		JS_ValueToInt32(cx, argv[0], &timeout);
 	}
-	check_hangup_hook(jss);
+
+	if (check_hangup_hook(jss, NULL) != JS_TRUE) {
+        return JS_FALSE;
+    }
+
 	saveDepth = JS_SuspendRequest(cx);
 	for (;;) {
 		if (((elapsed = (unsigned int) ((switch_timestamp_now() - started) / 1000)) > (switch_time_t) timeout)
@@ -2153,8 +2197,8 @@ static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc
 		switch_yield(1000);
 	}
 	JS_ResumeRequest(cx, saveDepth);
-	check_hangup_hook(jss);
-	return JS_TRUE;
+	check_hangup_hook(jss, &ret);
+	return ret;
 }
 
 static JSBool session_execute(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
@@ -2162,6 +2206,7 @@ static JSBool session_execute(JSContext * cx, JSObject * obj, uintN argc, jsval 
 	JSBool retval = JS_FALSE;
 	switch_channel_t *channel;
 	struct js_session *jss = JS_GetPrivate(cx, obj);
+	jsval ret = JS_TRUE;
 
 	METHOD_SANITY_CHECK();
 
@@ -2182,10 +2227,13 @@ static JSBool session_execute(JSContext * cx, JSObject * obj, uintN argc, jsval 
 
 		if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
 			if (application_interface->application_function) {
+				if (check_hangup_hook(jss, NULL) != JS_TRUE) {
+					return JS_FALSE;
+				}
+				
 				saveDepth = JS_SuspendRequest(cx);
-				check_hangup_hook(jss);
 				switch_core_session_exec(jss->session, application_interface, app_arg);
-				check_hangup_hook(jss);
+				check_hangup_hook(jss, &ret);
 				JS_ResumeRequest(cx, saveDepth);
 				retval = JS_TRUE;
 			}
@@ -2193,7 +2241,7 @@ static JSBool session_execute(JSContext * cx, JSObject * obj, uintN argc, jsval 
 	}
 
 	*rval = BOOLEAN_TO_JSVAL(retval);
-	return JS_TRUE;
+	return ret;
 }
 
 static JSBool session_get_event(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
@@ -3148,7 +3196,6 @@ static JSBool js_exit(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, 
 		switch_snprintf(code_buf, sizeof(code_buf), "~throw new Error(\"%s\");", supplied_error);
 		eval_some_js(code_buf, cx, obj, rval);
 	}
-
 	return JS_FALSE;
 }
 
