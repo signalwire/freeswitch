@@ -1589,7 +1589,9 @@ static jsval check_hangup_hook(struct js_session *jss, jsval *rp)
 		}
 		JS_CallFunction(jss->cx, jss->obj, jss->on_hangup, argc, argv, &ret);
 		resp = JS_GetStringBytes(JS_ValueToString(jss->cx, ret));
-		ret = !strcasecmp(resp, "exit") ? JS_FALSE : JS_TRUE;
+		if (!switch_strlen_zero(resp)) {
+			ret = !strcasecmp(resp, "exit") ? JS_FALSE : JS_TRUE;
+		}
 	}
 
 	if (rp) {
