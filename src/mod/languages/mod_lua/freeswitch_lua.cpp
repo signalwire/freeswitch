@@ -86,7 +86,7 @@ void Session::do_hangup_hook()
 {
 	if (hh && !mark) {
 		const char *err = NULL;
-		int arg_count = 1;
+		int arg_count = 2;
 		mark++;
 
 		if (!getLUA()) {
@@ -94,6 +94,7 @@ void Session::do_hangup_hook()
 		}
 
 		lua_getfield(L, LUA_GLOBALSINDEX, (char *) hangup_func_str);
+		lua_getfield(L, LUA_GLOBALSINDEX, uuid);
 
 		lua_pushstring(L, hook_state == CS_HANGUP ? "hangup" : "transfer");
 
