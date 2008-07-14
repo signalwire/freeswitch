@@ -169,7 +169,10 @@ SWITCH_DECLARE(int) switch_parse_cidr(const char *string, uint32_t *ip, uint32_t
 
 	bits = atoi(bit_str);
 	switch_inet_pton(AF_INET, host, ip);
-	*mask = 0xFFFFFFFF & ~(0xFFFFFFFF << bits);
+	*ip = htonl(*ip);
+
+	*mask = 0xFFFFFFFF & ~(0xFFFFFFFF >> bits);
+
 	*bitp = bits;
 
 	return 0;
