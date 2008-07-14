@@ -264,7 +264,6 @@ static switch_status_t pocketsphinx_asr_feed(switch_asr_handle_t *ah, void *data
 		/* only feed ps_process_raw when we are listening */
 		if (ps->listening) {
 			switch_mutex_lock(ps->flag_mutex);
-			printf(".");
 			rv = ps_process_raw(ps->ps, (int16 *)data, len / 2 , FALSE, FALSE);
 			switch_mutex_unlock(ps->flag_mutex);
 		}
