@@ -167,9 +167,6 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 		 switch_caller_profile_t caller_profile;	// avoid passing so many args to originate, 
 		 // instead set them here first
 		 char *xml_cdr_text;
-		 char *uuid;
-		 char *tts_name;
-		 char *voice_name;
 		 void store_file_handle(switch_file_handle_t *fh);
 		 void *on_hangup;		// language specific callback function, cast as void * 
 		 switch_file_handle_t local_fh;
@@ -188,6 +185,10 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 		 input_callback_state cb_state;	// callback state, always pointed to by the buf
 		 // field in this->args
 		 switch_channel_state_t hook_state;	// store hookstate for on_hangup callback
+
+		 char *uuid;
+		 char *tts_name;
+		 char *voice_name;
 
 		 SWITCH_DECLARE(int) answer();
 		 SWITCH_DECLARE(int) preAnswer();
