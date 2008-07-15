@@ -1116,7 +1116,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			write_frame.timestamp = timer.samplecount;
 		}
 #ifndef WIN32
-#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+#if 0 // don't seem to need it, maybe only on mac?
+//#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
 		if (!asis) {
 			switch_swap_linear(write_frame.data, (int) write_frame.datalen / 2);
 		}
