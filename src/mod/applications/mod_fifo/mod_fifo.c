@@ -65,8 +65,15 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
 			switch_channel_t *bchan = switch_core_session_get_channel(bleg);
 			switch_channel_t *channel = switch_core_session_get_channel(session);
+
+			const char *consumer_exit_key = switch_channel_get_variable(channel, "fifo_consumer_exit_key");
+
 			if (switch_channel_test_flag(switch_core_session_get_channel(session), CF_ORIGINATOR)) {
-				if (dtmf->digit == '*') {
+				if ( consumer_exit_key && dtmf->digit == *consumer_exit_key ) {
+					switch_channel_hangup(bchan, SWITCH_CAUSE_NORMAL_CLEARING);
+					return SWITCH_STATUS_BREAK;
+				}
+				else if ( !consumer_exit_key && dtmf->digit == '*' ) {
 					switch_channel_hangup(bchan, SWITCH_CAUSE_NORMAL_CLEARING);
 					return SWITCH_STATUS_BREAK;
 				} else if (dtmf->digit == '0') {
