@@ -1122,6 +1122,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(_In_ switch_core_session_t *session, switch_codec_t *codec);
 
+SWITCH_DECLARE(void) switch_core_session_unset_read_codec(_In_ switch_core_session_t *session);
+
 /*! 
   \brief Retrieve the read codec from a given session
   \param session session to retrieve from

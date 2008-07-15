@@ -567,7 +567,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		}
 	}
 
-	switch_core_session_set_read_codec(session, read_codec);
 	switch_core_file_close(fh);
 	switch_core_session_reset(session, SWITCH_TRUE);
 	return status;
@@ -1316,7 +1315,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 		}
 	}
 
-	switch_core_session_set_read_codec(session, NULL);
+	switch_core_session_reset(session, SWITCH_FALSE);
 	switch_core_codec_destroy(&raw_codec);
 
  end:

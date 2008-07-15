@@ -732,7 +732,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		switch_core_session_rwunlock(tsession);
 		status = SWITCH_STATUS_SUCCESS;
 
-		switch_core_session_set_read_codec(session, read_codec);
 		switch_core_session_reset(session, SWITCH_TRUE);
 	}
 

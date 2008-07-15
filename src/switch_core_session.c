@@ -666,6 +666,8 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, s
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_size_t has;
 
+	switch_core_session_set_read_codec(session, NULL);
+	
 	/* clear resamplers */
 	switch_mutex_lock(session->resample_mutex);
 	switch_resample_destroy(&session->read_resampler);

@@ -42,6 +42,11 @@ SWITCH_DECLARE(uint32_t) switch_core_codec_next_id(void)
 	return CODEC_ID++;
 }
 
+SWITCH_DECLARE(void) switch_core_session_unset_read_codec(switch_core_session_t *session)
+{
+	session->real_read_codec = session->read_codec = NULL;
+}
+
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_session_t *session, switch_codec_t *codec)
 {
@@ -49,52 +54,55 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char tmp[30];
 
-	if (!codec || !codec->implementation) {
+	if (codec && !codec->implementation) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set ININITILIZED codec!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!codec || codec == session->real_read_codec) {
 		if (session->real_read_codec) {
 			session->read_codec = session->real_read_codec;
-			session->real_read_codec = NULL;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set NULL codec!\n");
 			return SWITCH_STATUS_FALSE;
 		}
-	} else if (session->read_codec) {
-		if (session->real_read_codec) {
-			if (codec == session->real_read_codec) {
-				session->read_codec = codec;
-				session->real_read_codec = NULL;
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot double-set codec!\n");
-				return SWITCH_STATUS_FALSE;
-			}
-		} else {
-			session->real_read_codec = session->read_codec;
-			session->read_codec = codec;
+	} else if (codec) {
+		if (session->read_codec != session->real_read_codec) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot double-set codec!\n");
+			return SWITCH_STATUS_FALSE;
 		}
-	} else {
+
 		session->read_codec = codec;
-	}
 
-	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
-		switch_channel_event_set_data(session->channel, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-read-codec-name", "%s", session->read_codec->implementation->iananame);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-read-codec-rate", "%d", session->read_codec->implementation->actual_samples_per_second);
-		if (session->read_codec->implementation->actual_samples_per_second != session->read_codec->implementation->samples_per_second) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-reported-read-codec-rate", "%d", session->read_codec->implementation->samples_per_second);
+		if (!session->real_read_codec) {
+			session->real_read_codec = session->read_codec;
 		}
-		switch_event_fire(&event);
 	}
 
-	switch_channel_set_variable(channel, "read_codec", session->read_codec->implementation->iananame);
-	switch_snprintf(tmp, sizeof(tmp), "%d", session->read_codec->implementation->actual_samples_per_second);
-	switch_channel_set_variable(channel, "read_rate", tmp);
+	if (session->read_codec && session->read_codec->implementation) {
+		if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(session->channel, event);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-read-codec-name", "%s", session->read_codec->implementation->iananame);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-read-codec-rate", "%d", session->read_codec->implementation->actual_samples_per_second);
+			if (session->read_codec->implementation->actual_samples_per_second != session->read_codec->implementation->samples_per_second) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-reported-read-codec-rate", "%d", session->read_codec->implementation->samples_per_second);
+			}
+			switch_event_fire(&event);
+		}
+
+		switch_channel_set_variable(channel, "read_codec", session->read_codec->implementation->iananame);
+		switch_snprintf(tmp, sizeof(tmp), "%d", session->read_codec->implementation->actual_samples_per_second);
+		switch_channel_set_variable(channel, "read_rate", tmp);
 
 
-	session->raw_read_frame.codec = session->read_codec;
-	session->raw_write_frame.codec = session->read_codec;
-	session->enc_read_frame.codec = session->read_codec;
-	session->enc_write_frame.codec = session->read_codec;
+		session->raw_read_frame.codec = session->read_codec;
+		session->raw_write_frame.codec = session->read_codec;
+		session->enc_read_frame.codec = session->read_codec;
+		session->enc_write_frame.codec = session->read_codec;
+		return SWITCH_STATUS_SUCCESS;
+	}
 
-	return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_FALSE;
+
 }
 
 SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_effective_read_codec(switch_core_session_t *session)
