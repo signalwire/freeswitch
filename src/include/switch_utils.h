@@ -104,6 +104,22 @@ SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size
 !strcasecmp(expr, "active") ||\
 !strcasecmp(expr, "allow") ||\
 atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE
+
+/*!
+  \brief Evaluate the falsefullness of a string expression
+  \param expr a string expression
+  \return true or false 
+*/
+#define switch_false(expr)\
+(expr && ( !strcasecmp(expr, "no") ||\
+!strcasecmp(expr, "off") ||\
+!strcasecmp(expr, "false") ||\
+!strcasecmp(expr, "disabled") ||\
+!strcasecmp(expr, "inactive") ||\
+!strcasecmp(expr, "disallow") ||\
+!atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE
+
+
 /*!
   \brief find local ip of the box
   \param buf the buffer to write the ip adress found into

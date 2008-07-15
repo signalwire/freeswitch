@@ -413,6 +413,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	const char *to_host = NULL;
 	char contact_str[1024] = "";
 	int nat_hack = 0;
+	uint8_t multi_reg = 0, avoid_multi_reg = 0;
 	//char buf[512];
 	uint8_t stale = 0, forbidden = 0;
 	auth_res_t auth_res;
@@ -564,6 +565,12 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 		if (exptime && v_event && *v_event) {
 			char *exp_var;
+			char *allow_multireg = NULL;
+
+			allow_multireg = switch_event_get_header(*v_event, "sip-allow-multiple-registrations");
+			if ( allow_multireg && switch_false(allow_multireg) ) {
+				avoid_multi_reg = 1;
+			}
 
 			register_gateway = switch_event_get_header(*v_event, "sip-register-gateway");
 
@@ -643,6 +650,16 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	call_id = sip->sip_call_id->i_id;	//sip_header_as_string(profile->home, (void *) sip->sip_call_id);
 	switch_assert(call_id);
 
+	/* Does this profile supports multiple registrations ? */
+	multi_reg = ( sofia_test_pflag(profile, PFLAG_MULTIREG) ) ? 1 : 0;
+
+	if ( multi_reg && avoid_multi_reg ) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+					"Disabling multiple registrations on a per-user basis for %s@%s\n", 
+					switch_str_nil(to_user), switch_str_nil(to_host) );
+		multi_reg = 0;
+	}
+
 	if (exptime) {
 		const char *agent = "dunno";
 
@@ -650,7 +667,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			agent = sip->sip_user_agent->g_string;
 		}
 
-		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
+		if (multi_reg) {
 			sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
 		} else {
 			sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", to_user, to_host);
@@ -695,7 +712,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_event_fire(&event);
 		}
 	} else {
-		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
+		if (multi_reg) {
 			char *icontact, *p;
 			icontact = sofia_glue_get_url_from_contact(contact_str, 1);
 			if ((p = strchr(icontact, ';'))) {
