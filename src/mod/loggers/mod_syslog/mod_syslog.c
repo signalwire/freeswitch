@@ -44,6 +44,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_syslog_shutdown);
 SWITCH_MODULE_DEFINITION(mod_syslog, mod_syslog_load, mod_syslog_shutdown, NULL);
 
 static switch_status_t load_config(void);
+static switch_log_level_t log_level;
 
 static struct {
 	char *ident;
@@ -68,7 +69,6 @@ static switch_loadable_module_interface_t console_module_interface = {
 
 static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
-	char *message = NULL;
 	int syslog_level;
 
 	switch (level) {
@@ -98,7 +98,7 @@ static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_l
 		break;
 	}
 
-	if (!switch_strlen_zero(message)) {
+	if (!switch_strlen_zero(node->data)) {
 		syslog(syslog_level, "%s", node->data);
 	}
 
@@ -111,6 +111,9 @@ static switch_status_t load_config(void)
 {
 	char *cf = "syslog.conf";
 	switch_xml_t cfg, xml, settings, param;
+    
+    /* default log level */
+    log_level = SWITCH_LOG_WARNING;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
@@ -124,7 +127,13 @@ static switch_status_t load_config(void)
 					set_global_ident(val);
 				} else if (!strcmp(var, "format")) {
 					set_global_format(val);
-				}
+                } else if (!strcasecmp(var, "loglevel") && !switch_strlen_zero(val)) {
+                    log_level = switch_log_str2level(val);
+                    if(log_level == SWITCH_LOG_INVALID)
+                    {
+                        log_level = SWITCH_LOG_WARNING;
+                    }
+                }
 
 			}
 		}
@@ -152,7 +161,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_syslog_load)
 
 	openlog(globals.ident, LOG_PID, LOG_USER);
 
-	switch_log_bind_logger(mod_syslog_logger, SWITCH_LOG_DEBUG, SWITCH_FALSE);
+	setlogmask(LOG_UPTO(LOG_DEBUG));
+	switch_log_bind_logger(mod_syslog_logger, log_level, SWITCH_FALSE);
 
 	return SWITCH_STATUS_SUCCESS;
 }
