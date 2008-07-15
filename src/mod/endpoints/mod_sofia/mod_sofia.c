@@ -1264,8 +1264,8 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				stream->write_function(stream, "SESSION-TO    \t%d\n", profile->session_timeout);
 				stream->write_function(stream, "MAX-DIALOG    \t%d\n", profile->max_proceeding);
 				stream->write_function(stream, "NOMEDIA       \t%s\n", switch_test_flag(profile, TFLAG_INB_NOMEDIA) ? "true" : "false");
-				stream->write_function(stream, "LATENEG       \t%s\n", switch_test_flag(profile, TFLAG_LATE_NEGOTIATION) ? "true" : "false");
-				stream->write_function(stream, "PROXYMEDIA    \t%s\n", switch_test_flag(profile, TFLAG_PROXY_MEDIA) ? "true" : "false");
+				stream->write_function(stream, "LATE-NEG      \t%s\n", switch_test_flag(profile, TFLAG_LATE_NEGOTIATION) ? "true" : "false");
+				stream->write_function(stream, "PROXY-MEDIA   \t%s\n", switch_test_flag(profile, TFLAG_PROXY_MEDIA) ? "true" : "false");
 				stream->write_function(stream, "AGGRESSIVENAT \t%s\n", sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) ? "true" : "false");
 				stream->write_function(stream, "\nRegistrations:\n%s\n", line);
 
