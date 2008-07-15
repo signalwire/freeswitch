@@ -1632,7 +1632,7 @@ static void sch_api_callback(switch_scheduler_task_t *task)
 
 	SWITCH_STANDARD_STREAM(stream);
 	switch_api_execute(cmd, arg, NULL, &stream);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Command %s(%s):\n%s\n", cmd, arg, switch_str_nil((char *) stream.data));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Command %s(%s):\n%s\n", cmd, switch_str_nil(arg), switch_str_nil((char *) stream.data));
 	switch_safe_free(stream.data);
 }
 
