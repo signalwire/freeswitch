@@ -1890,14 +1890,14 @@ L3INT Q931Pmes_ServiceAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	
-	/* Display */
+	if(Q931IsIEPresent(pMes->ChangeStatus))
+		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_CHANGE_STATUS](pTrunk, Q931GetIEPtr(pMes->ChangeStatus,pMes->buf), OBuf, &Octet))!=0)
+			return rc;
+
 	if(Q931IsIEPresent(pMes->ChanID))
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_CHANNEL_IDENTIFICATION](pTrunk, Q931GetIEPtr(pMes->ChanID,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
 
-	if(Q931IsIEPresent(pMes->ChangeStatus))
-		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_CHANGE_STATUS](pTrunk, Q931GetIEPtr(pMes->ChangeStatus,pMes->buf), OBuf, &Octet))!=0)
-			return rc;
 
 	*OSize = Octet;	
 
