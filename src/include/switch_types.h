@@ -445,7 +445,7 @@ typedef uint32_t switch_rtp_flag_t;
 #pragma pack(push, r1, 1)
 #endif
 
-#if __BYTE_ORDER == __BIG_ENDIAN
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
 typedef struct {
 	unsigned version:2;			/* protocol version       */
 	unsigned p:1;				/* padding flag           */
