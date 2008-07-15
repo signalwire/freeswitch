@@ -62,6 +62,7 @@ static switch_queue_t *LOG_RECYCLE_QUEUE = NULL;
 static int8_t THREAD_RUNNING = 0;
 static uint8_t MAX_LEVEL = 0;
 static int mods_loaded = 0;
+static int console_mods_loaded = 0;
 static switch_bool_t COLORIZE = SWITCH_FALSE;
 
 #ifdef WIN32
@@ -144,8 +145,9 @@ SWITCH_DECLARE(switch_status_t) switch_log_unbind_logger(switch_log_function_t f
 				BINDINGS = ptr->next;
 			}
 			status = SWITCH_STATUS_SUCCESS;
+			mods_loaded--;
 			if (ptr->is_console) {
-				mods_loaded--;
+				console_mods_loaded--;
 			}
 			break;
 		}
@@ -182,8 +184,9 @@ SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(switch_log_function_t fun
 		BINDINGS = binding;
 	}
 	if (is_console) {
-		mods_loaded++;
+		console_mods_loaded++;
 	}
+	mods_loaded++;
 	switch_mutex_unlock(BINDLOCK);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -230,6 +233,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *thread, void *obj)
 	return NULL;
 }
 
+#define do_mods (LOG_QUEUE && THREAD_RUNNING)
 SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char *file, const char *func, int line,
 									   const char *userdata, switch_log_level_t level, const char *fmt, ...)
 {
@@ -300,8 +304,8 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 
 		goto end;
 	}
-
-	if (level == SWITCH_LOG_CONSOLE || mods_loaded == 0 || !LOG_QUEUE || !THREAD_RUNNING) {
+	
+	if (console_mods_loaded == 0 || !do_mods) {
 		if (handle) {
 			int aok = 1;
 #ifndef WIN32
@@ -336,7 +340,9 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 				}
 			}
 		}
-	} else if (level <= MAX_LEVEL) {
+	} 
+
+	if (do_mods && level <= MAX_LEVEL) {
 		switch_log_node_t *node;
 		void *pop = NULL;
 
