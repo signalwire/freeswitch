@@ -30,7 +30,7 @@
         <map name="mod_local_stream.c" value="warning,debug"/>
         <map name="mod_sndfile.c" value="warning,info,debug"/>
      -->
-    <map name="all" value="debug,info,notice,warning,err,crit,alert"/>
+    <map name="all" value="console,debug,info,notice,warning,err,crit,alert"/>
     
     <!--
       You can use or modify this sample set of mappings.  It turns on higher
