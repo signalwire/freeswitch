@@ -78,7 +78,7 @@ static void add_mapping(char *var, char *val, int cumlative)
 	}
 
 	if (!strcasecmp(var, "all")) {
-		all_level |= m;
+		all_level = m | switch_log_str2mask("console");
 		return;
 	}
 
