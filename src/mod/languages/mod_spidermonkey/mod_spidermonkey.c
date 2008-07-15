@@ -1148,11 +1148,10 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (check_hangup_hook(jss, &cb_state->ret) == JS_TRUE) {
+	if (check_hangup_hook(jss, NULL) == JS_TRUE) {
 		JS_ResumeRequest(cb_state->cx, cb_state->saveDepth);
 		JS_CallFunction(cb_state->cx, cb_state->obj, cb_state->function, argc, argv, &cb_state->ret);
 		cb_state->saveDepth = JS_SuspendRequest(cb_state->cx);
-		check_hangup_hook(jss, &cb_state->ret);
 		jss->stack_depth--;
 	}
 
@@ -1483,12 +1482,12 @@ static JSBool session_collect_input(JSContext * cx, JSObject * obj, uintN argc, 
 
 	if (check_hangup_hook(jss, NULL) != JS_TRUE) {
 		return JS_FALSE;
+
 	}
 
 	switch_ivr_collect_digits_callback(jss->session, &args, to);
 	check_hangup_hook(jss, &ret);
 	JS_ResumeRequest(cx, cb_state.saveDepth);
-
 	*rval = cb_state.ret;
 
 	return ret;
