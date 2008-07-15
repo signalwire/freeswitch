@@ -941,7 +941,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 					runtime.colorize_console = SWITCH_TRUE;
 				} else if (!strcasecmp(var, "mailer-app") && !switch_strlen_zero(val)) {
 					runtime.mailer_app = switch_core_strdup(runtime.memory_pool, val);
-				} else if (!strcasecmp(var, "mailer-app-args") && !switch_strlen_zero(val)) {
+				} else if (!strcasecmp(var, "mailer-app-args") && val) {
 					runtime.mailer_app_args = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "sessions-per-second") && !switch_strlen_zero(val)) {
 					switch_core_sessions_per_second(atoi(val));
