@@ -1124,8 +1124,6 @@ SWITCH_DECLARE_NONSTD(switch_status_t) dtmf_callback(switch_core_session_t *sess
 SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *result)
 {
 	
-    switch_file_handle_t *fh = NULL;	   
-
 	this_check(SWITCH_STATUS_FALSE);
 	sanity_check(SWITCH_STATUS_FALSE);
 	
@@ -1134,20 +1132,6 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *resul
     }
 
 	if (fhp) {
-		fh = fhp;
-	}
-
-	if (fh) {
-		if (!fh) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because fh is null\n");
-			return SWITCH_STATUS_FALSE;	
-		}
-		
-		if (!fh->file_interface) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because fh->file_interface is null\n");
-			return SWITCH_STATUS_FALSE;	
-		}
-		
 		if (!strncasecmp(result, "speed", 4)) {
 			char *p;
 		
@@ -1158,10 +1142,10 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *resul
 					if (!(step = atoi(p))) {
 						step = 1;
 					}
-					fh->speed += step;
+					fhp->speed += step;
 				} else {
 					int speed = atoi(p);
-					fh->speed = speed;
+					fhp->speed = speed;
 				}
 				return SWITCH_STATUS_SUCCESS;
 			}
@@ -1169,18 +1153,18 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *resul
 			return SWITCH_STATUS_FALSE;
 
 		} else if (!strcasecmp(result, "pause")) {
-			if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
-				switch_clear_flag(fh, SWITCH_FILE_PAUSE);
+			if (switch_test_flag(fhp, SWITCH_FILE_PAUSE)) {
+				switch_clear_flag(fhp, SWITCH_FILE_PAUSE);
 			} else {
-				switch_set_flag(fh, SWITCH_FILE_PAUSE);
+				switch_set_flag(fhp, SWITCH_FILE_PAUSE);
 			}
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strcasecmp(result, "stop")) {
 			return SWITCH_STATUS_FALSE;
 		} else if (!strcasecmp(result, "restart")) {
 			unsigned int pos = 0;
-			fh->speed = 0;
-			switch_core_file_seek(fh, &pos, 0, SEEK_SET);
+			fhp->speed = 0;
+			switch_core_file_seek(fhp, &pos, 0, SEEK_SET);
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strncasecmp(result, "seek", 4)) {
 			switch_codec_t *codec;
@@ -1199,18 +1183,18 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *resul
 					if (step > 0) {
 						samps = step * (codec->implementation->samples_per_second / 1000);
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "going to seek\n");
-						switch_core_file_seek(fh, &pos, samps, SEEK_CUR);
+						switch_core_file_seek(fhp, &pos, samps, SEEK_CUR);
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done seek\n");
 					} else {
 						samps = step * (codec->implementation->samples_per_second / 1000);
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "going to seek\n");
-						switch_core_file_seek(fh, &pos, fh->pos - samps, SEEK_SET);
+						switch_core_file_seek(fhp, &pos, fhp->pos - samps, SEEK_SET);
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done seek\n");
 					}
 				} else {
 					samps = atoi(p) * (codec->implementation->samples_per_second / 1000);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "going to seek\n");
-					switch_core_file_seek(fh, &pos, samps, SEEK_SET);
+					switch_core_file_seek(fhp, &pos, samps, SEEK_SET);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done seek\n");
 				}
 			}
@@ -1218,6 +1202,7 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *resul
 			return SWITCH_STATUS_SUCCESS;
 		}
 	}
+
     if (!strcmp(result, "true") || !strcmp(result, "undefined")) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "return success\n");
 		return SWITCH_STATUS_SUCCESS;
