@@ -1401,7 +1401,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				switch_buffer_destroy(&ringback.audio_buffer);
 			}
 
-			switch_core_session_reset(session, SWITCH_FALSE);
+			if (session) {
+				switch_core_session_reset(session, SWITCH_FALSE);
+			}
 
 			if (write_codec.implementation) {
 				switch_core_codec_destroy(&write_codec);
