@@ -261,17 +261,6 @@ static switch_status_t pocketsphinx_asr_feed(switch_asr_handle_t *ah, void *data
 	if (switch_test_flag(ah, SWITCH_ASR_FLAG_CLOSED)) return SWITCH_STATUS_BREAK; 
 	
 	if (!switch_test_flag(ps, PSFLAG_HAS_TEXT) && switch_test_flag(ps, PSFLAG_READY)) {
-		/* only feed ps_process_raw when we are listening */
-		if (ps->listening) {
-			switch_mutex_lock(ps->flag_mutex);
-			rv = ps_process_raw(ps->ps, (int16 *)data, len / 2 , FALSE, FALSE);
-			switch_mutex_unlock(ps->flag_mutex);
-		}
-
-		if (rv < 0) {
-			return SWITCH_STATUS_FALSE;
-		}
-
 		if (stop_detect(ps, (int16_t *)data, len / 2)) {
 			char const *hyp;
 
@@ -293,6 +282,17 @@ static switch_status_t pocketsphinx_asr_feed(switch_asr_handle_t *ah, void *data
 				}
 			}
 			switch_mutex_unlock(ps->flag_mutex);
+		}
+
+		/* only feed ps_process_raw when we are listening */
+		if (ps->listening) {
+			switch_mutex_lock(ps->flag_mutex);
+			rv = ps_process_raw(ps->ps, (int16 *)data, len / 2 , FALSE, FALSE);
+			switch_mutex_unlock(ps->flag_mutex);
+		}
+
+		if (rv < 0) {
+			return SWITCH_STATUS_FALSE;
 		}
 	}
 
