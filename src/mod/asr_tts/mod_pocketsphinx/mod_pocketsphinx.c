@@ -408,7 +408,7 @@ static switch_status_t load_config(void)
 	/* Set defaults */
 	globals.thresh = 400;
 	globals.silence_hits = 35;
-	globals.listen_hits = 5;
+	globals.listen_hits = 1;
 	globals.auto_reload = 1;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
