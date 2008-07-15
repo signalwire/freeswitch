@@ -407,8 +407,13 @@ static void *SWITCH_THREAD_FUNC console_thread(switch_thread_t *thread, void *ob
 	switch_memory_pool_t *pool = (switch_memory_pool_t *) obj;
 
 	while (running) {
-		int32_t arg;
+		int32_t arg = 0;
 
+		if (getppid() == 1) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "We've become an orphan, no more console for us.\n");
+			break;
+		}
+		
 		switch_core_session_ctl(SCSC_CHECK_RUNNING, &arg);
 		if (!arg) {
 			break;
@@ -437,6 +442,7 @@ static void *SWITCH_THREAD_FUNC console_thread(switch_thread_t *thread, void *ob
 	}
 
 	switch_core_destroy_memory_pool(&pool);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Editline thread exiting\n");
 	return NULL;
 }
 
@@ -680,7 +686,6 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
 	return status;
 
 }
-
 
 SWITCH_DECLARE(void) switch_console_loop(void)
 {
