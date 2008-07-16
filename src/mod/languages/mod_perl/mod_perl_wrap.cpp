@@ -8859,7 +8859,8 @@ XS(_wrap_new_Session__SWIG_0) {
       SWIG_croak("Usage: new_Session();");
     }
     result = (PERL::Session *)new PERL::Session(); 
-	foo = get_sv("foo", TRUE);
+	result->setPERL(my_perl);
+	foo = sv_newmortal();
 	SWIG_MakePtr(foo, SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW);
 	result->setME(foo);	
 	ST(argvi) = foo; argvi++ ;
@@ -8889,10 +8890,16 @@ XS(_wrap_new_Session__SWIG_1) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_Session" "', argument " "1"" of type '" "char *""'");
     }
     arg1 = reinterpret_cast< char * >(buf1);
-    result = (PERL::Session *)new PERL::Session(arg1); result->setPERL(my_perl);
-	foo = get_sv(result->suuid, TRUE);
-	SWIG_MakePtr(foo, SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW);
-	result->setME(foo);	
+    result = (PERL::Session *)new PERL::Session(arg1); 
+	if (result->allocated) {
+		result->setPERL(my_perl);
+		foo = get_sv(result->suuid, TRUE);
+		SWIG_MakePtr(foo, SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW);
+		result->setME(foo);	
+	} else {
+		foo = sv_newmortal();
+		SWIG_MakePtr(foo, SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW);
+	}
 	ST(argvi) = foo; argvi++ ;
     if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
 
@@ -8923,9 +8930,16 @@ XS(_wrap_new_Session__SWIG_2) {
     }
     arg1 = reinterpret_cast< switch_core_session_t * >(argp1);
     result = (PERL::Session *)new PERL::Session(arg1);
-	foo = get_sv(result->suuid, TRUE);
-	SWIG_MakePtr(foo, SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW);
-	result->setME(foo);	
+	if (result->allocated) {
+		result->setPERL(my_perl);
+		foo = get_sv(result->suuid, TRUE);
+		SWIG_MakePtr(foo, SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW);
+		result->setME(foo);	
+	} else {
+		foo = sv_newmortal();
+		SWIG_MakePtr(foo, SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW);
+	}
+
 	ST(argvi) = foo; argvi++ ;
 	
     XSRETURN(argvi);

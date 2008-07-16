@@ -4292,6 +4292,186 @@ fail:
 }
 
 
+static int _wrap_CoreSession_uuid_set(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  SWIG_check_num_args("uuid",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("uuid",1,"CoreSession *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("uuid",2,"char *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_uuid_set",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  {
+    if (arg1->uuid) delete [] arg1->uuid;
+    if (arg2) {
+      arg1->uuid = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->uuid, (const char *)arg2);
+    } else {
+      arg1->uuid = 0;
+    }
+  }
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_CoreSession_uuid_get(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("uuid",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("uuid",1,"CoreSession *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_uuid_get",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  result = (char *) ((arg1)->uuid);
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_CoreSession_tts_name_set(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  SWIG_check_num_args("tts_name",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("tts_name",1,"CoreSession *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("tts_name",2,"char *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_tts_name_set",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  {
+    if (arg1->tts_name) delete [] arg1->tts_name;
+    if (arg2) {
+      arg1->tts_name = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->tts_name, (const char *)arg2);
+    } else {
+      arg1->tts_name = 0;
+    }
+  }
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_CoreSession_tts_name_get(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("tts_name",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("tts_name",1,"CoreSession *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_tts_name_get",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  result = (char *) ((arg1)->tts_name);
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_CoreSession_voice_name_set(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  SWIG_check_num_args("voice_name",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("voice_name",1,"CoreSession *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("voice_name",2,"char *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_voice_name_set",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  {
+    if (arg1->voice_name) delete [] arg1->voice_name;
+    if (arg2) {
+      arg1->voice_name = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->voice_name, (const char *)arg2);
+    } else {
+      arg1->voice_name = 0;
+    }
+  }
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_CoreSession_voice_name_get(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("voice_name",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("voice_name",1,"CoreSession *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_voice_name_get",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  result = (char *) ((arg1)->voice_name);
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_CoreSession_answer(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -6387,6 +6567,9 @@ static swig_lua_attribute swig_CoreSession_attributes[] = {
     { "allocated", _wrap_CoreSession_allocated_get, _wrap_CoreSession_allocated_set},
     { "cb_state", _wrap_CoreSession_cb_state_get, _wrap_CoreSession_cb_state_set},
     { "hook_state", _wrap_CoreSession_hook_state_get, _wrap_CoreSession_hook_state_set},
+    { "uuid", _wrap_CoreSession_uuid_get, _wrap_CoreSession_uuid_set},
+    { "tts_name", _wrap_CoreSession_tts_name_get, _wrap_CoreSession_tts_name_set},
+    { "voice_name", _wrap_CoreSession_voice_name_get, _wrap_CoreSession_voice_name_set},
     {0,0,0}
 };
 static swig_lua_class *swig_CoreSession_bases[] = {0};

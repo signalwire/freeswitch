@@ -16,7 +16,7 @@ Session::Session():CoreSession()
 Session::Session(char *uuid):CoreSession(uuid)
 {
 	init_me();
-	if (session) {
+	if (session && allocated) {
 		suuid = switch_core_session_sprintf(session, "main::uuid_%s\n", switch_core_session_get_uuid(session));
 		for (char *p = suuid; p && *p; p++) {
 			if (*p == '-') {
@@ -26,8 +26,6 @@ Session::Session(char *uuid):CoreSession(uuid)
 				*p = '\0';
 			}
 		}
-	} else {
-		//handle failure
 	}
 }
 
@@ -74,11 +72,14 @@ bool Session::end_allow_threads()
 
 void Session::setPERL(PerlInterpreter * pi)
 {
+	sanity_check_noreturn;
 	my_perl = pi;
 }
 
 void Session::setME(SV *p)
 {
+	sanity_check_noreturn;
+
 	me = p;
 }
 

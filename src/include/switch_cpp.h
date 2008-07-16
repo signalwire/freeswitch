@@ -346,7 +346,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 	 * \return the uuid of this session
 	 */
 		 char *get_uuid() const {
-			 return uuid;
+			 return uuid ? uuid : (char *) "uninitialized";
 		 };
 
 	/** \brief Get the callback function arguments associated with this session

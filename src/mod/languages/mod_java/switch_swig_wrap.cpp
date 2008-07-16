@@ -1720,6 +1720,129 @@ SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1hoo
 }
 
 
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1uuid_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(CoreSession **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return ;
+  }
+  {
+    if (arg1->uuid) delete [] arg1->uuid;
+    if (arg2) {
+      arg1->uuid = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->uuid, (const char *)arg2);
+    } else {
+      arg1->uuid = 0;
+    }
+  }
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+}
+
+
+SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1uuid_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jstring jresult = 0 ;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(CoreSession **)&jarg1; 
+  result = (char *) ((arg1)->uuid);
+  if(result) jresult = jenv->NewStringUTF((const char *)result);
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1tts_1name_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(CoreSession **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return ;
+  }
+  {
+    if (arg1->tts_name) delete [] arg1->tts_name;
+    if (arg2) {
+      arg1->tts_name = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->tts_name, (const char *)arg2);
+    } else {
+      arg1->tts_name = 0;
+    }
+  }
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+}
+
+
+SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1tts_1name_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jstring jresult = 0 ;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(CoreSession **)&jarg1; 
+  result = (char *) ((arg1)->tts_name);
+  if(result) jresult = jenv->NewStringUTF((const char *)result);
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1voice_1name_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(CoreSession **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return ;
+  }
+  {
+    if (arg1->voice_name) delete [] arg1->voice_name;
+    if (arg2) {
+      arg1->voice_name = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->voice_name, (const char *)arg2);
+    } else {
+      arg1->voice_name = 0;
+    }
+  }
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+}
+
+
+SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1voice_1name_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jstring jresult = 0 ;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(CoreSession **)&jarg1; 
+  result = (char *) ((arg1)->voice_name);
+  if(result) jresult = jenv->NewStringUTF((const char *)result);
+  return jresult;
+}
+
+
 SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1answer(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jint jresult = 0 ;
   CoreSession *arg1 = (CoreSession *) 0 ;

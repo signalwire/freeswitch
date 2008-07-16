@@ -1061,12 +1061,35 @@ SWITCH_DECLARE(void) bridge(CoreSession &session_a, CoreSession &session_b)
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "bridge called, session_a uuid: %s\n", session_a.get_uuid());
 	switch_input_callback_function_t dtmf_func = NULL;
 	switch_input_args_t args;
+	switch_channel_t *channel_a = NULL, *channel_b = NULL;
+	const char *err = "Channels not ready\n";
+	
+	if (session_a.allocated && session_a.session && session_b.allocated && session_b.session) {
+		channel_a = switch_core_session_get_channel(session_a.session);
+		channel_b = switch_core_session_get_channel(session_b.session);
 
-	session_a.begin_allow_threads();
-	args = session_a.get_cb_args();  // get the cb_args data structure for session a
-	dtmf_func = args.input_callback;   // get the call back function
-	switch_ivr_multi_threaded_bridge(session_a.session, session_b.session, dtmf_func, args.buf, args.buf);
-	session_a.end_allow_threads();
+		if (switch_channel_ready(channel_a) && switch_channel_ready(channel_b)) {
+			session_a.begin_allow_threads();
+			if (!switch_channel_test_flag(channel_a, CF_ANSWERED)) {
+				switch_channel_answer(channel_a);
+			}
+			if (!switch_channel_test_flag(channel_b, CF_ANSWERED)) {
+				switch_channel_answer(channel_b);
+			}
+			if (switch_channel_ready(channel_a) && switch_channel_ready(channel_b)) {
+				args = session_a.get_cb_args();  // get the cb_args data structure for session a
+				dtmf_func = args.input_callback;   // get the call back function
+				err = NULL;
+				switch_ivr_multi_threaded_bridge(session_a.session, session_b.session, dtmf_func, args.buf, args.buf);
+				session_a.end_allow_threads();
+			}
+		}
+	}
+
+	if (err) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s", err);
+	}
+
 
 }
 

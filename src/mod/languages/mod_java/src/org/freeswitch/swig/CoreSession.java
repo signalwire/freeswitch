@@ -84,6 +84,30 @@ public class CoreSession {
     return new SWIGTYPE_p_switch_channel_state_t(freeswitchJNI.CoreSession_hook_state_get(swigCPtr, this), true);
   }
 
+  public void setUuid(String value) {
+    freeswitchJNI.CoreSession_uuid_set(swigCPtr, this, value);
+  }
+
+  public String getUuid() {
+    return freeswitchJNI.CoreSession_uuid_get(swigCPtr, this);
+  }
+
+  public void setTts_name(String value) {
+    freeswitchJNI.CoreSession_tts_name_set(swigCPtr, this, value);
+  }
+
+  public String getTts_name() {
+    return freeswitchJNI.CoreSession_tts_name_get(swigCPtr, this);
+  }
+
+  public void setVoice_name(String value) {
+    freeswitchJNI.CoreSession_voice_name_set(swigCPtr, this, value);
+  }
+
+  public String getVoice_name() {
+    return freeswitchJNI.CoreSession_voice_name_get(swigCPtr, this);
+  }
+
   public int answer() {
     return freeswitchJNI.CoreSession_answer(swigCPtr, this);
   }

@@ -96,6 +96,12 @@ class freeswitchJNI {
   public final static native long CoreSession_cb_state_get(long jarg1, CoreSession jarg1_);
   public final static native void CoreSession_hook_state_set(long jarg1, CoreSession jarg1_, long jarg2);
   public final static native long CoreSession_hook_state_get(long jarg1, CoreSession jarg1_);
+  public final static native void CoreSession_uuid_set(long jarg1, CoreSession jarg1_, String jarg2);
+  public final static native String CoreSession_uuid_get(long jarg1, CoreSession jarg1_);
+  public final static native void CoreSession_tts_name_set(long jarg1, CoreSession jarg1_, String jarg2);
+  public final static native String CoreSession_tts_name_get(long jarg1, CoreSession jarg1_);
+  public final static native void CoreSession_voice_name_set(long jarg1, CoreSession jarg1_, String jarg2);
+  public final static native String CoreSession_voice_name_get(long jarg1, CoreSession jarg1_);
   public final static native int CoreSession_answer(long jarg1, CoreSession jarg1_);
   public final static native int CoreSession_preAnswer(long jarg1, CoreSession jarg1_);
   public final static native void CoreSession_hangup__SWIG_0(long jarg1, CoreSession jarg1_, String jarg2);
