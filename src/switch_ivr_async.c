@@ -127,6 +127,7 @@ typedef struct {
 	switch_file_handle_t fh;
 	int mux;
 	int loop;
+	char *file;
 } displace_helper_t;
 
 static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
@@ -182,6 +183,12 @@ static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user
 					uint32_t pos = 0;
 					switch_core_file_seek(&dh->fh, &pos, 0, SEEK_SET);
 				} else {
+					switch_core_session_t *session = switch_core_media_bug_get_session(bug);
+					switch_channel_t *channel;
+
+					if (session && (channel = switch_core_session_get_channel(session))) {
+						switch_channel_set_private(channel, dh->file, NULL);
+					}
 					return SWITCH_FALSE;
 				}
 			}
@@ -249,6 +256,12 @@ static switch_bool_t read_displace_callback(switch_media_bug_t *bug, void *user_
 					uint32_t pos = 0;
 					switch_core_file_seek(&dh->fh, &pos, 0, SEEK_SET);
 				} else {
+					switch_core_session_t *session = switch_core_media_bug_get_session(bug);
+					switch_channel_t *channel;
+
+					if (session && (channel = switch_core_session_get_channel(session))) {
+						switch_channel_set_private(channel, dh->file, NULL);
+					}
 					return SWITCH_FALSE;
 				}
 			}
@@ -302,6 +315,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 
 	dh->fh.channels = read_codec->implementation->number_of_channels;
 	dh->fh.samplerate = read_codec->implementation->actual_samples_per_second;
+	dh->file = switch_core_session_strdup(session, file);
 
 	if (switch_core_file_open(&dh->fh,
 							  file,
