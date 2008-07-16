@@ -404,6 +404,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 								  uint32_t keylen, switch_event_t **v_event, const char *is_nat)
 {
 	sip_to_t const *to = NULL;
+	sip_from_t const *from = NULL;
 	sip_expires_t const *expires = NULL;
 	sip_authorization_t const *authorization = NULL;
 	sip_contact_t const *contact = NULL;
@@ -411,6 +412,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	switch_event_t *s_event;
 	const char *to_user = NULL;
 	const char *to_host = NULL;
+	const char *from_user = NULL;
+	const char *from_host = NULL;
 	char contact_str[1024] = "";
 	int nat_hack = 0;
 	uint8_t multi_reg = 0, avoid_multi_reg = 0;
@@ -454,6 +457,13 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can not do authorization without a complete from header\n");
 		nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), TAG_END());
 		return 1;
+	}
+
+	from = sip->sip_from;
+
+	if (from) {
+		from_user = from->a_url->url_user;
+		from_host = from->a_url->url_host;
 	}
 
 	if (contact->m_url) {
@@ -675,8 +685,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		switch_mutex_lock(profile->ireg_mutex);
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 
-		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','%q', '%q', %ld, '%q')", call_id,
-							 to_user, to_host, contact_str, reg_desc, rpid, (long) switch_timestamp(NULL) + (long) exptime * 2, agent);
+		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q')", call_id,
+							 to_user, to_host, contact_str, reg_desc, rpid, (long) switch_timestamp(NULL) + (long) exptime * 2, agent, from_user, from_host);
 		if (sql) {
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
@@ -690,6 +700,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "call-id", "%s", call_id);
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "rpid", "%s", rpid);
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "to-user", "%s", from_user);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "to-host", "%s", from_host);
 			switch_event_fire(&s_event);
 		}
 

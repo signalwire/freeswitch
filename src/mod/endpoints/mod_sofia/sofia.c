@@ -378,6 +378,8 @@ void event_handler(switch_event_t *event)
 		char *user_agent = switch_event_get_header(event, "user-agent");
 		long expires = (long) switch_timestamp(NULL);
 		char *profile_name = switch_event_get_header(event, "orig-profile-name");
+		char *to_user = switch_event_get_header(event, "orig-to-user");
+		char *to_host = switch_event_get_header(event, "orig-to-host");
 		sofia_profile_t *profile = NULL;
 
 		if (exp_str) {
@@ -401,8 +403,8 @@ void event_handler(switch_event_t *event)
 		switch_mutex_lock(profile->ireg_mutex);
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 
-		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','Registered', '%q', %ld, '%q')",
-							 call_id, from_user, from_host, contact_str, rpid, expires, user_agent);
+		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','Registered', '%q', %ld, '%q', '%q', '%q')",
+							 call_id, from_user, from_host, contact_str, rpid, expires, user_agent, to_user, to_host);
 
 		if (sql) {
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
