@@ -5843,6 +5843,189 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_CoreSession_uuid_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:CoreSession_uuid_set",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_uuid_set" "', argument " "1"" of type '" "CoreSession *""'"); 
+  }
+  arg1 = reinterpret_cast< CoreSession * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_uuid_set" "', argument " "2"" of type '" "char *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  if (arg1->uuid) delete[] arg1->uuid;
+  if (arg2) {
+    size_t size = strlen(reinterpret_cast< const char * >(arg2)) + 1;
+    arg1->uuid = (char *)reinterpret_cast< char* >(memcpy((new char[size]), reinterpret_cast< const char * >(arg2), sizeof(char)*(size)));
+  } else {
+    arg1->uuid = 0;
+  }
+  resultobj = SWIG_Py_Void();
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return resultobj;
+fail:
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_CoreSession_uuid_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:CoreSession_uuid_get",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_uuid_get" "', argument " "1"" of type '" "CoreSession *""'"); 
+  }
+  arg1 = reinterpret_cast< CoreSession * >(argp1);
+  result = (char *) ((arg1)->uuid);
+  resultobj = SWIG_FromCharPtr((const char *)result);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_CoreSession_tts_name_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:CoreSession_tts_name_set",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_tts_name_set" "', argument " "1"" of type '" "CoreSession *""'"); 
+  }
+  arg1 = reinterpret_cast< CoreSession * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_tts_name_set" "', argument " "2"" of type '" "char *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  if (arg1->tts_name) delete[] arg1->tts_name;
+  if (arg2) {
+    size_t size = strlen(reinterpret_cast< const char * >(arg2)) + 1;
+    arg1->tts_name = (char *)reinterpret_cast< char* >(memcpy((new char[size]), reinterpret_cast< const char * >(arg2), sizeof(char)*(size)));
+  } else {
+    arg1->tts_name = 0;
+  }
+  resultobj = SWIG_Py_Void();
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return resultobj;
+fail:
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_CoreSession_tts_name_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:CoreSession_tts_name_get",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_tts_name_get" "', argument " "1"" of type '" "CoreSession *""'"); 
+  }
+  arg1 = reinterpret_cast< CoreSession * >(argp1);
+  result = (char *) ((arg1)->tts_name);
+  resultobj = SWIG_FromCharPtr((const char *)result);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_CoreSession_voice_name_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:CoreSession_voice_name_set",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_voice_name_set" "', argument " "1"" of type '" "CoreSession *""'"); 
+  }
+  arg1 = reinterpret_cast< CoreSession * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_voice_name_set" "', argument " "2"" of type '" "char *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  if (arg1->voice_name) delete[] arg1->voice_name;
+  if (arg2) {
+    size_t size = strlen(reinterpret_cast< const char * >(arg2)) + 1;
+    arg1->voice_name = (char *)reinterpret_cast< char* >(memcpy((new char[size]), reinterpret_cast< const char * >(arg2), sizeof(char)*(size)));
+  } else {
+    arg1->voice_name = 0;
+  }
+  resultobj = SWIG_Py_Void();
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return resultobj;
+fail:
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_CoreSession_voice_name_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:CoreSession_voice_name_get",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_voice_name_get" "', argument " "1"" of type '" "CoreSession *""'"); 
+  }
+  arg1 = reinterpret_cast< CoreSession * >(argp1);
+  result = (char *) ((arg1)->voice_name);
+  resultobj = SWIG_FromCharPtr((const char *)result);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_CoreSession_answer(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -9216,6 +9399,12 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"CoreSession_cb_state_get", _wrap_CoreSession_cb_state_get, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_hook_state_set", _wrap_CoreSession_hook_state_set, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_hook_state_get", _wrap_CoreSession_hook_state_get, METH_VARARGS, NULL},
+	 { (char *)"CoreSession_uuid_set", _wrap_CoreSession_uuid_set, METH_VARARGS, NULL},
+	 { (char *)"CoreSession_uuid_get", _wrap_CoreSession_uuid_get, METH_VARARGS, NULL},
+	 { (char *)"CoreSession_tts_name_set", _wrap_CoreSession_tts_name_set, METH_VARARGS, NULL},
+	 { (char *)"CoreSession_tts_name_get", _wrap_CoreSession_tts_name_get, METH_VARARGS, NULL},
+	 { (char *)"CoreSession_voice_name_set", _wrap_CoreSession_voice_name_set, METH_VARARGS, NULL},
+	 { (char *)"CoreSession_voice_name_get", _wrap_CoreSession_voice_name_get, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_answer", _wrap_CoreSession_answer, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_preAnswer", _wrap_CoreSession_preAnswer, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_hangup", _wrap_CoreSession_hangup, METH_VARARGS, NULL},

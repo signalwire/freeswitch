@@ -28,27 +28,27 @@ Session::~Session()
 		if (session) {
 			switch_core_event_hook_remove_state_change(session, python_hanguphook);
 		}
-		Py_XDECREF(hangup_func);
+		Py_DECREF(hangup_func);
 		hangup_func = NULL;
 	}
 	
 	if (hangup_func_arg) {
-		Py_XDECREF(hangup_func_arg);
+		Py_DECREF(hangup_func_arg);
 		hangup_func_arg = NULL;
 	}
 
 	if (cb_function) {
-		Py_XDECREF(cb_function);
+		Py_DECREF(cb_function);
 		cb_function = NULL;
 	}
 
 	if (cb_arg) {
-		Py_XDECREF(cb_arg);
+		Py_DECREF(cb_arg);
 		cb_arg = NULL;
 	}
 
 	if (Self) {
-		Py_XDECREF(Self);
+		Py_DECREF(Self);
 	}
 }
 
@@ -136,7 +136,7 @@ void Session::do_hangup_hook()
 			}
 
 			if (!Self) {
-				mod_python_conjure_session(NULL, session, NULL);
+				mod_python_conjure_session(NULL, session);
 			}
 			
 			if (hangup_func_arg) {
@@ -266,14 +266,14 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 		what = "dtmf";
 	} else if (itype == SWITCH_INPUT_TYPE_EVENT){
 		what = "event";
-		io = mod_python_conjure_event(NULL, (switch_event_t *) input, NULL);
+		io = mod_python_conjure_event((switch_event_t *) input);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unsupported type!\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (!Self) {
-		mod_python_conjure_session(NULL, session, NULL);
+		mod_python_conjure_session(NULL, session);
 	}
 	
 	if (cb_arg) {

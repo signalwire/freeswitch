@@ -246,6 +246,15 @@ class CoreSession(_object):
     __swig_setmethods__["hook_state"] = _freeswitch.CoreSession_hook_state_set
     __swig_getmethods__["hook_state"] = _freeswitch.CoreSession_hook_state_get
     if _newclass:hook_state = _swig_property(_freeswitch.CoreSession_hook_state_get, _freeswitch.CoreSession_hook_state_set)
+    __swig_setmethods__["uuid"] = _freeswitch.CoreSession_uuid_set
+    __swig_getmethods__["uuid"] = _freeswitch.CoreSession_uuid_get
+    if _newclass:uuid = _swig_property(_freeswitch.CoreSession_uuid_get, _freeswitch.CoreSession_uuid_set)
+    __swig_setmethods__["tts_name"] = _freeswitch.CoreSession_tts_name_set
+    __swig_getmethods__["tts_name"] = _freeswitch.CoreSession_tts_name_get
+    if _newclass:tts_name = _swig_property(_freeswitch.CoreSession_tts_name_get, _freeswitch.CoreSession_tts_name_set)
+    __swig_setmethods__["voice_name"] = _freeswitch.CoreSession_voice_name_set
+    __swig_getmethods__["voice_name"] = _freeswitch.CoreSession_voice_name_get
+    if _newclass:voice_name = _swig_property(_freeswitch.CoreSession_voice_name_get, _freeswitch.CoreSession_voice_name_set)
     def answer(*args): return _freeswitch.CoreSession_answer(*args)
     def preAnswer(*args): return _freeswitch.CoreSession_preAnswer(*args)
     def hangup(*args): return _freeswitch.CoreSession_hangup(*args)
