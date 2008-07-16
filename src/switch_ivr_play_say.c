@@ -1278,8 +1278,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
                 break;
             }
 			
-			write_frame.samples = olen;
-			write_frame.datalen = olen * sizeof(int16_t);
+			write_frame.samples = (uint32_t)olen;
+			write_frame.datalen = (uint32_t)(olen * sizeof(int16_t));
 			if ((status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0)) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
