@@ -20,8 +20,8 @@
       <node type="allow" cidr="208.102.123.124/32"/>
     </list>
 
-    <list name="sip_acl" default="deny">
-      <node type="allow" cidr="192.168.0.234/32"/>
+    <list name="domains" default="deny">
+      <node type="allow" domain="$${domain}"/>
     </list>
 
   </network-lists>
