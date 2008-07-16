@@ -59,3 +59,32 @@ def fsapi(session, stream, env, args):
 def runtime(args):
 
 	print args + "\n"
+
+# BIND TO AN XML LOOKUP
+#
+# default name for binding to an XML lookup is "xml_fetch" it can be overridden with <modname>::<function>
+# params a switch_event with all the relevant data about what is being searched for in the XML registry.
+#
+def xml_fetch(params):
+
+	xml = '''
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="freeswitch/xml">
+  <section name="dialplan" description="RE Dial Plan For FreeSWITCH">
+    <context name="default">
+      <extension name="generated">
+        <condition>
+         <action application="answer"/>
+         <action application="playback" data="${hold_music}"/>
+        </condition>
+      </extension>
+    </context>
+  </section>
+</document>
+'''
+
+	return xml
+
+
+
+
