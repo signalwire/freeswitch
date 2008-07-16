@@ -16,25 +16,33 @@ Session::Session():CoreSession()
 Session::Session(char *uuid):CoreSession(uuid)
 {
 	init_me();
-	suuid = switch_core_session_sprintf(session, "main::uuid_%s\n", switch_core_session_get_uuid(session));
-	for (char *p = suuid; p && *p; p++) {
-		if (*p == '-') {
-			*p = '_';
+	if (session) {
+		suuid = switch_core_session_sprintf(session, "main::uuid_%s\n", switch_core_session_get_uuid(session));
+		for (char *p = suuid; p && *p; p++) {
+			if (*p == '-') {
+				*p = '_';
+			}
+			if (*p == '\n') {
+				*p = '\0';
+			}
 		}
-		if (*p == '\n') {
-			*p = '\0';
-		}
+	} else {
+		//handle failure
 	}
 }
 
 Session::Session(switch_core_session_t *new_session):CoreSession(new_session)
 {
 	init_me();
-	suuid = switch_core_session_sprintf(session, "main::uuid_%s\n", switch_core_session_get_uuid(session));
-	for (char *p = suuid; p && *p; p++) {
-		if (*p == '-') {
-			*p = '_';
+	if (session) {
+		suuid = switch_core_session_sprintf(session, "main::uuid_%s\n", switch_core_session_get_uuid(session));
+		for (char *p = suuid; p && *p; p++) {
+			if (*p == '-') {
+				*p = '_';
+			}
 		}
+	} else {
+		//handle failure
 	}
 }
 static switch_status_t perl_hanguphook(switch_core_session_t *session_hungup);

@@ -50,9 +50,13 @@ bool Session::end_allow_threads()
 
 void Session::setLUA(lua_State * state)
 {
-	L = state;
-	lua_setglobal(L, uuid);
-	lua_getfield(L, LUA_GLOBALSINDEX, uuid);
+	if (uuid) {
+		L = state;
+		lua_setglobal(L, uuid);
+		lua_getfield(L, LUA_GLOBALSINDEX, uuid);
+	} else {
+		//did we fail to make a session?
+	}
 }
 
 lua_State *Session::getLUA()
