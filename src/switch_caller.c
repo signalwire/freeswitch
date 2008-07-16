@@ -56,6 +56,14 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 		context = "default";
 	}
 
+	if (switch_strlen_zero(caller_id_name)) {
+		caller_id_name = "FreeSWITCH";
+	}
+
+	if (switch_strlen_zero(caller_id_number)) {
+		caller_id_number = "0000000000";
+	}
+
 	profile_dup_clean(username, profile->username, pool);
 	profile_dup_clean(dialplan, profile->dialplan, pool);
 	profile_dup_clean(caller_id_name, profile->caller_id_name, pool);
