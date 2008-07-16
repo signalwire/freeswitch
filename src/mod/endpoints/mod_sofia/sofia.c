@@ -3026,7 +3026,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		uint32_t x = 0;
 		int ok = 1;
 		char *last_acl = NULL;
-		const char *token;
+		const char *token = NULL;
 
 		for (x = 0; x < profile->acl_count; x++) {
 			last_acl = profile->acl[x];
