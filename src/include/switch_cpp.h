@@ -199,7 +199,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 
 	   public:
 		 SWITCH_DECLARE_CONSTRUCTOR CoreSession();
-		 SWITCH_DECLARE_CONSTRUCTOR CoreSession(char *uuid);
+		 SWITCH_DECLARE_CONSTRUCTOR CoreSession(char *nuuid, CoreSession *a_leg = NULL);
 		 SWITCH_DECLARE_CONSTRUCTOR CoreSession(switch_core_session_t *new_session);
 		 virtual SWITCH_DECLARE_CONSTRUCTOR ~ CoreSession();
 		 switch_core_session_t *session;

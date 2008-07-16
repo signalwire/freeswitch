@@ -8637,6 +8637,40 @@ fail:
 SWIGINTERN PyObject *_wrap_new_Session__SWIG_1(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   char *arg1 = (char *) 0 ;
+  CoreSession *arg2 = (CoreSession *) 0 ;
+  PYTHON::Session *result = 0 ;
+  int res1 ;
+  char *buf1 = 0 ;
+  int alloc1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:new_Session",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_AsCharPtrAndSize(obj0, &buf1, NULL, &alloc1);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_Session" "', argument " "1"" of type '" "char *""'");
+  }
+  arg1 = reinterpret_cast< char * >(buf1);
+  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_p_CoreSession, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_Session" "', argument " "2"" of type '" "CoreSession *""'"); 
+  }
+  arg2 = reinterpret_cast< CoreSession * >(argp2);
+  result = (PYTHON::Session *)new PYTHON::Session(arg1,arg2);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 ); result->setPython(self);
+  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+  return resultobj;
+fail:
+  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_Session__SWIG_2(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  char *arg1 = (char *) 0 ;
   PYTHON::Session *result = 0 ;
   int res1 ;
   char *buf1 = 0 ;
@@ -8659,7 +8693,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_new_Session__SWIG_2(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_new_Session__SWIG_3(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
   PYTHON::Session *result = 0 ;
@@ -8683,12 +8717,12 @@ fail:
 
 SWIGINTERN PyObject *_wrap_new_Session(PyObject *self, PyObject *args) {
   int argc;
-  PyObject *argv[2];
+  PyObject *argv[3];
   int ii;
   
   if (!PyTuple_Check(args)) SWIG_fail;
   argc = (int)PyObject_Length(args);
-  for (ii = 0; (ii < argc) && (ii < 1); ii++) {
+  for (ii = 0; (ii < argc) && (ii < 2); ii++) {
     argv[ii] = PyTuple_GET_ITEM(args,ii);
   }
   if (argc == 0) {
@@ -8700,7 +8734,7 @@ SWIGINTERN PyObject *_wrap_new_Session(PyObject *self, PyObject *args) {
     int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_switch_core_session_t, 0);
     _v = SWIG_CheckState(res);
     if (_v) {
-      return _wrap_new_Session__SWIG_2(self, args);
+      return _wrap_new_Session__SWIG_3(self, args);
     }
   }
   if (argc == 1) {
@@ -8708,7 +8742,20 @@ SWIGINTERN PyObject *_wrap_new_Session(PyObject *self, PyObject *args) {
     int res = SWIG_AsCharPtrAndSize(argv[0], 0, NULL, 0);
     _v = SWIG_CheckState(res);
     if (_v) {
-      return _wrap_new_Session__SWIG_1(self, args);
+      return _wrap_new_Session__SWIG_2(self, args);
+    }
+  }
+  if (argc == 2) {
+    int _v;
+    int res = SWIG_AsCharPtrAndSize(argv[0], 0, NULL, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      void *vptr = 0;
+      int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_CoreSession, 0);
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        return _wrap_new_Session__SWIG_1(self, args);
+      }
     }
   }
   
@@ -8716,6 +8763,7 @@ fail:
   SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'new_Session'.\n"
     "  Possible C/C++ prototypes are:\n"
     "    PYTHON::Session()\n"
+    "    PYTHON::Session(char *,CoreSession *)\n"
     "    PYTHON::Session(char *)\n"
     "    PYTHON::Session(switch_core_session_t *)\n");
   return NULL;

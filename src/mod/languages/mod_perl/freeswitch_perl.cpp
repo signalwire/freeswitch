@@ -13,7 +13,7 @@ Session::Session():CoreSession()
 	init_me();
 }
 
-Session::Session(char *uuid):CoreSession(uuid)
+Session::Session(char *uuid, CoreSession *a_leg):CoreSession(uuid, a_leg)
 {
 	init_me();
 	if (session && allocated) {

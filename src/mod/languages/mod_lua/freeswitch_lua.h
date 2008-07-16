@@ -20,7 +20,7 @@ class Session : public CoreSession {
 	int mark;
  public:
     Session();
-    Session(char *uuid);
+    Session(char *uuid, CoreSession *a_leg = NULL);
     Session(switch_core_session_t *session);
     ~Session();        
 	

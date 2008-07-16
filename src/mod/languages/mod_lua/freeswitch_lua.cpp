@@ -9,7 +9,7 @@ Session::Session():CoreSession()
 	hh = mark = 0;
 }
 
-Session::Session(char *uuid):CoreSession(uuid)
+Session::Session(char *nuuid, CoreSession *a_leg):CoreSession(nuuid, a_leg)
 {
 	cb_function = cb_arg = hangup_func_str = hangup_func_arg = NULL;
 	hh = mark = 0;

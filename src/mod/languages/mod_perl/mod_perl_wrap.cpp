@@ -8874,6 +8874,55 @@ XS(_wrap_new_Session__SWIG_0) {
 XS(_wrap_new_Session__SWIG_1) {
   {
     char *arg1 = (char *) 0 ;
+    CoreSession *arg2 = (CoreSession *) 0 ;
+    PERL::Session *result = 0 ;
+    int res1 ;
+    char *buf1 = 0 ;
+    int alloc1 = 0 ;
+    void *argp2 = 0 ;
+    int res2 = 0 ;
+    int argvi = 0;
+	SV *foo;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: new_Session(uuid,a_leg);");
+    }
+    res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_Session" "', argument " "1"" of type '" "char *""'");
+    }
+    arg1 = reinterpret_cast< char * >(buf1);
+    res2 = SWIG_ConvertPtr(ST(1), &argp2,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_Session" "', argument " "2"" of type '" "CoreSession *""'"); 
+    }
+    arg2 = reinterpret_cast< CoreSession * >(argp2);
+    result = (PERL::Session *)new PERL::Session(arg1,arg2);
+	if (result->allocated) {
+		result->setPERL(my_perl);
+		foo = get_sv(result->suuid, TRUE);
+		SWIG_MakePtr(foo, SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW);
+		result->setME(foo);	
+	} else {
+		foo = sv_newmortal();
+		SWIG_MakePtr(foo, SWIG_as_voidptr(result), SWIGTYPE_p_PERL__Session, SWIG_OWNER | SWIG_SHADOW);
+	}
+	ST(argvi) = foo; argvi++ ;
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    
+    XSRETURN(argvi);
+  fail:
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_new_Session__SWIG_2) {
+  {
+    char *arg1 = (char *) 0 ;
     PERL::Session *result = 0 ;
     int res1 ;
     char *buf1 = 0 ;
@@ -8911,7 +8960,7 @@ XS(_wrap_new_Session__SWIG_1) {
 }
 
 
-XS(_wrap_new_Session__SWIG_2) {
+XS(_wrap_new_Session__SWIG_3) {
   {
     switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
     PERL::Session *result = 0 ;
@@ -9005,13 +9054,44 @@ XS(_wrap_new_Session) {
     }
   check_3:
     
+    if (items == 2) {
+      SWIG_TypeRank _ranki = 0;
+      SWIG_TypeRank _rankm = 0;
+      SWIG_TypeRank _pi = 1;
+      int _v = 0;
+      {
+        int res = SWIG_AsCharPtrAndSize(ST(0), 0, NULL, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_4;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(ST(1), &vptr, SWIGTYPE_p_CoreSession, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_4;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      if (!_index || (_ranki < _rank)) {
+        _rank = _ranki; _index = 4;
+        if (_rank == _rankm) goto dispatch;
+      }
+    }
+  check_4:
+    
   dispatch:
     switch(_index) {
     case 1:
       ++PL_markstack_ptr; SWIG_CALLXS(_wrap_new_Session__SWIG_0); return;
     case 2:
-      ++PL_markstack_ptr; SWIG_CALLXS(_wrap_new_Session__SWIG_2); return;
+      ++PL_markstack_ptr; SWIG_CALLXS(_wrap_new_Session__SWIG_3); return;
     case 3:
+      ++PL_markstack_ptr; SWIG_CALLXS(_wrap_new_Session__SWIG_2); return;
+    case 4:
       ++PL_markstack_ptr; SWIG_CALLXS(_wrap_new_Session__SWIG_1); return;
     }
   }

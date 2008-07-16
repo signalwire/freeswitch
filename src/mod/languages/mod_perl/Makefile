@@ -20,7 +20,8 @@ mod_perl_wrap.cpp:
 	echo "#include \"mod_perl_extra.c\"" >> mod_perl_wrap.cpp
 	patch -s -p0 -i hack.diff
 
-
+orig: mod_perl_wrap.cpp
+	patch -R -s -p0 -i hack.diff
 
 freeswitch.$(DYNAMIC_LIB_EXTEN): $(LOCAL_OBJS) $(LOCAL_LIBADD)
 	$(LINK) $(SOLINK) -o freeswitch.$(DYNAMIC_LIB_EXTEN)  $(LOCAL_OBJS) $(LOCAL_LIBADD) $(LDFLAGS)

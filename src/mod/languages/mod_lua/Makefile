@@ -13,6 +13,8 @@ local_depend: $(LOCAL_OBJS)
 $(LIBLUA_A):
 	cd lua && $(MAKE) CC="$(CC)" CFLAGS="$(ALL_CFLAGS) -DLUA_USE_LINUX -w" liblua.a
 
+reswig: swigclean mod_lua_wrap.cpp
+
 luaclean:
 	cd lua && $(MAKE) clean
 

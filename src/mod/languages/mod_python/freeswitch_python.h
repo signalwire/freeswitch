@@ -20,7 +20,7 @@ class Session : public CoreSession {
 	PyThreadState *TS;
  public:
     Session();
-    Session(char *uuid);
+    Session(char *nuuid, CoreSession *a_leg = NULL);
     Session(switch_core_session_t *session);
     virtual ~Session();        
 	

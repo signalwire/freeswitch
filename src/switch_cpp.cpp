@@ -425,7 +425,7 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession()
 	init_vars();
 }
 
-SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession(char *nuuid)
+SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession(char *nuuid, CoreSession *a_leg)
 {
 	init_vars();
 
@@ -435,7 +435,7 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession(char *nuuid)
 		allocated = 1;
     } else {
 		switch_call_cause_t cause;
-		if (switch_ivr_originate(NULL, &session, &cause, nuuid, 60, NULL, NULL, NULL, NULL, SOF_NONE) == SWITCH_STATUS_SUCCESS) {
+		if (switch_ivr_originate(a_leg ? a_leg->session : NULL, &session, &cause, nuuid, 60, NULL, NULL, NULL, NULL, SOF_NONE) == SWITCH_STATUS_SUCCESS) {
 			channel = switch_core_session_get_channel(session);
 			allocated = 1;
 			switch_set_flag(this, S_HUP);
@@ -1081,8 +1081,8 @@ SWITCH_DECLARE(void) bridge(CoreSession &session_a, CoreSession &session_b)
 				dtmf_func = args.input_callback;   // get the call back function
 				err = NULL;
 				switch_ivr_multi_threaded_bridge(session_a.session, session_b.session, dtmf_func, args.buf, args.buf);
-				session_a.end_allow_threads();
 			}
+			session_a.end_allow_threads();
 		}
 	}
 

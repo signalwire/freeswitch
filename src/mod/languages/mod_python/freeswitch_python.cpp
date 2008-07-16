@@ -10,7 +10,7 @@ Session::Session():CoreSession()
 	py_init_vars();
 }
 
-Session::Session(char *uuid):CoreSession(uuid)
+Session::Session(char *nuuid, CoreSession *a_leg):CoreSession(nuuid, a_leg)
 {
 	py_init_vars();
 }
@@ -59,6 +59,9 @@ bool Session::begin_allow_threads()
 
 	if (!TS) {
 		TS = PyEval_SaveThread();
+		if (channel) {
+			switch_channel_set_private(channel, "SwapInThreadState", TS);
+		}
 		return true;
 	}
 
@@ -74,6 +77,10 @@ bool Session::end_allow_threads()
 
 	PyEval_RestoreThread(TS);
 	TS = NULL;
+
+	if (channel) {
+		switch_channel_set_private(channel, "SwapInThreadState", NULL);
+	}
 
 	do_hangup_hook();
 

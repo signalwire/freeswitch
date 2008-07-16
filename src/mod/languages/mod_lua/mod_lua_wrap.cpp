@@ -6745,6 +6745,34 @@ fail:
 static int _wrap_new_Session__SWIG_1(lua_State* L) {
   int SWIG_arg = -1;
   char *arg1 = (char *) 0 ;
+  CoreSession *arg2 = (CoreSession *) 0 ;
+  LUA::Session *result = 0 ;
+  
+  SWIG_check_num_args("LUA::Session",2,2)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("LUA::Session",1,"char *");
+  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("LUA::Session",2,"CoreSession *");
+  arg1 = (char *)lua_tostring(L, 1);
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("new_Session",2,SWIGTYPE_p_CoreSession);
+  }
+  
+  result = (LUA::Session *)new LUA::Session(arg1,arg2);
+  SWIG_arg=0;
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; result->setLUA(L);
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_new_Session__SWIG_2(lua_State* L) {
+  int SWIG_arg = -1;
+  char *arg1 = (char *) 0 ;
   LUA::Session *result = 0 ;
   
   SWIG_check_num_args("LUA::Session",1,1)
@@ -6763,7 +6791,7 @@ fail:
 }
 
 
-static int _wrap_new_Session__SWIG_2(lua_State* L) {
+static int _wrap_new_Session__SWIG_3(lua_State* L) {
   int SWIG_arg = -1;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
   LUA::Session *result = 0 ;
@@ -6790,8 +6818,8 @@ fail:
 
 static int _wrap_new_Session(lua_State* L) {
   int argc;
-  int argv[2]={
-    1,2
+  int argv[3]={
+    1,2,3
   };
   
   argc = lua_gettop(L);
@@ -6809,7 +6837,7 @@ static int _wrap_new_Session(lua_State* L) {
       }
     }
     if (_v) {
-      return _wrap_new_Session__SWIG_2(L);
+      return _wrap_new_Session__SWIG_3(L);
     }
   }
   if (argc == 1) {
@@ -6818,7 +6846,26 @@ static int _wrap_new_Session(lua_State* L) {
       _v = lua_isstring(L,argv[0]);
     }
     if (_v) {
-      return _wrap_new_Session__SWIG_1(L);
+      return _wrap_new_Session__SWIG_2(L);
+    }
+  }
+  if (argc == 2) {
+    int _v;
+    {
+      _v = lua_isstring(L,argv[0]);
+    }
+    if (_v) {
+      {
+        void *ptr;
+        if (SWIG_isptrtype(L,argv[1])==0 || SWIG_ConvertPtr(L,argv[1], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
+          _v = 0;
+        } else {
+          _v = 1;
+        }
+      }
+      if (_v) {
+        return _wrap_new_Session__SWIG_1(L);
+      }
     }
   }
   
