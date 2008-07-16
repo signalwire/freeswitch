@@ -29,6 +29,7 @@
  * Paul Tinsley <jackhammer@gmail.com>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  * Bret McDanel <trixter AT 0xdecafbad.com>
+ * Cesar Cepeda <cesar@auronix.com>
  *
  * 
  * mod_commands.c -- Misc. Command Module
@@ -2258,6 +2259,57 @@ SWITCH_STANDARD_API(uuid_getvar_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define UUID_SEND_DTMF_SYNTAX "<uuid> <dtmf_data>"
+SWITCH_STANDARD_API(uuid_send_dtmf_function)
+{
+	switch_core_session_t *psession = NULL;
+	char *mycmd = NULL, *argv[2] = { 0 };
+	char *uuid = NULL, *dtmf_data = NULL;
+	int argc = 0;
+
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_strlen_zero(cmd)) {
+		goto usage;
+	}
+
+	if (!(mycmd = strdup(cmd))) {
+		goto usage;
+	}
+
+	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+		goto usage;
+	}
+
+	uuid = argv[0];
+	dtmf_data = argv[1];
+	if (switch_strlen_zero(uuid) || switch_strlen_zero(dtmf_data)) {
+		goto usage;
+	}
+
+	if (!(psession = switch_core_session_locate(uuid))) {
+		stream->write_function(stream, "-ERR Cannot locate session!\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_core_session_send_dtmf_string(psession, (const char *) dtmf_data);
+	goto done;
+
+usage:
+	stream->write_function(stream, "-USAGE: %s\n", UUID_SEND_DTMF_SYNTAX);
+	switch_safe_free(mycmd);
+
+done:
+	if (psession) {
+		switch_core_session_rwunlock(psession);
+	}
+
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define DUMP_SYNTAX "<uuid> [format]"
 SWITCH_STANDARD_API(uuid_dump_function)
 {
@@ -2447,6 +2499,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "url_encode", "url encode a string", url_encode_function, "<string>");
 	SWITCH_ADD_API(commands_api_interface, "url_decode", "url decode a string", url_decode_function, "<string>");
 	SWITCH_ADD_API(commands_api_interface, "module_exists", "check if module exists", module_exists_function, "<module>");
+	SWITCH_ADD_API(commands_api_interface, "uuid_send_dtmf", "send dtmf digits", uuid_send_dtmf_function, UUID_SEND_DTMF_SYNTAX);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
