@@ -1082,7 +1082,7 @@ SWITCH_STANDARD_API(sched_hangup_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define MEDIA_SYNTAX "<uuid>"
+#define MEDIA_SYNTAX "[off] <uuid>"
 SWITCH_STANDARD_API(uuid_media_function)
 {
 	char *mycmd = NULL, *argv[4] = { 0 };
