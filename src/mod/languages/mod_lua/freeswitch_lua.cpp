@@ -53,8 +53,10 @@ void Session::setLUA(lua_State * state)
 	sanity_check_noreturn;
 
 	L = state;
-	lua_setglobal(L, uuid);
-	lua_getfield(L, LUA_GLOBALSINDEX, uuid ? uuid : "");
+	if (uuid) {
+		lua_setglobal(L, uuid);
+		lua_getfield(L, LUA_GLOBALSINDEX, uuid);
+	}
 
 }
 
