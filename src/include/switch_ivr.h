@@ -783,7 +783,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
 
 	 SWITCH_DECLARE(switch_say_method_t) switch_ivr_get_say_method_by_name(const char *name);
 	 SWITCH_DECLARE(switch_say_type_t) switch_ivr_get_say_type_by_name(const char *name);
-
+     SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *session, const char *data);
 /** @} */
 
 	 SWITCH_END_EXTERN_C

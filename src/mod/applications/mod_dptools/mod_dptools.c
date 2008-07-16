@@ -365,54 +365,7 @@ SWITCH_STANDARD_APP(three_way_function)
 #define SET_USER_SYNTAX "<user>@<domain>"
 SWITCH_STANDARD_APP(set_user_function)
 {
-	switch_xml_t x_domain, xml = NULL, x_user, x_param, x_params;
-	char *user, *mailbox, *domain;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-
-	if (switch_strlen_zero(data)) {
-		goto error;
-	}
-
-	user = switch_core_session_strdup(session, data);
-
-	if (!(domain = strchr(user, '@'))) {
-		goto error;
-	}
-
-	*domain++ = '\0';
-
-	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain);
-		goto done;
-	}
-
-	if ((mailbox = (char *) switch_xml_attr(x_user, "mailbox"))) {
-		switch_channel_set_variable(channel, "mailbox", mailbox);
-	}
-
-	if ((x_params = switch_xml_child(x_user, "variables"))) {
-		for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
-			const char *var = switch_xml_attr(x_param, "name");
-			const char *val = switch_xml_attr(x_param, "value");
-
-			if (var && val) {
-				switch_channel_set_variable(channel, var, val);
-			}
-		}
-	}
-
-	switch_channel_set_variable(channel, "user_name", user);
-	switch_channel_set_variable(channel, "domain_name", domain);
-
-	goto done;
-
-  error:
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No user@domain specified.\n");
-
-  done:
-	if (xml) {
-		switch_xml_free(xml);
-	}
+	switch_ivr_set_user(session, data);
 }
 
 SWITCH_STANDARD_APP(ring_ready_function)

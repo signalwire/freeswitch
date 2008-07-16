@@ -691,7 +691,7 @@ typedef struct {
 
 static switch_ip_list_t IP_LIST = { 0 };
 
-SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip(const char *ip_str, const char *list_name)
+SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_token(const char *ip_str, const char *list_name, const char **token)
 {
 	switch_network_list_t *list;
 	uint32_t ip, net, mask, bits;
@@ -703,7 +703,7 @@ SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip(const char *ip_str, c
 	ip = htonl(ip);
 
 	if ((list = switch_core_hash_find(IP_LIST.hash, list_name))) {
-		ok = switch_network_list_validate_ip(list, ip);
+		ok = switch_network_list_validate_ip_token(list, ip, token);
 	} else if (strchr(list_name, '/')) {
 		switch_parse_cidr(list_name, &net, &mask, &bits);
 		ok = switch_test_subnet(ip, net, mask);
@@ -761,7 +761,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 
 
 				for (x_node = switch_xml_child(x_list, "node"); x_node; x_node = x_node->next) {
-					const char *cidr = NULL, *host = NULL, *mask = NULL;
+					const char *cidr = NULL, *host = NULL, *mask = NULL, *domain = NULL;
 					switch_bool_t ok = default_type;
 					const char *type = switch_xml_attr(x_node, "type");
 
@@ -772,35 +772,55 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 					cidr = switch_xml_attr(x_node, "cidr");
 					host = switch_xml_attr(x_node, "host");
 					mask = switch_xml_attr(x_node, "mask");
+					domain = switch_xml_attr(x_node, "domain");
 
-					if (cidr) {
+					if (domain) {
+						switch_event_t *my_params = NULL;
+						switch_xml_t x_domain, xml_root;
+						switch_xml_t ut;
+
+						switch_event_create(&my_params, SWITCH_EVENT_MESSAGE);
+						switch_assert(my_params);
+						switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "domain", domain);
+						switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "purpose", "network-list");
+						
+						if (switch_xml_locate_domain(domain, my_params, &xml_root, &x_domain) != SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate domain %s\n", domain);
+							continue;
+						}
+						
+						for (ut = switch_xml_child(x_domain, "user"); ut; ut = ut->next) {
+							const char *user_cidr = switch_xml_attr(ut, "cidr");
+							const char *id = switch_xml_attr(ut, "id");
+
+							if (id && user_cidr) {
+								char *token = switch_mprintf("%s@%s", id, domain);
+								switch_assert(token);
+								
+								if (switch_network_list_add_cidr_token(list, user_cidr, ok, token) == SWITCH_STATUS_SUCCESS) {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s (%s) [%s] to list %s\n", 
+													  user_cidr, ok ? "allow" : "deny", switch_str_nil(token), name);
+								} else {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Adding %s (%s) [%s] to list %s\n",
+													  user_cidr, ok ? "allow" : "deny", switch_str_nil(token), name);
+								}
+								free(token);
+							}
+						}
+						switch_xml_free(xml_root);
+					} else if (cidr) {
 						if (switch_network_list_add_cidr(list, cidr, ok) == SWITCH_STATUS_SUCCESS) {
-							if (reload) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s (%s) to list %s\n", cidr, ok ? "allow" : "deny", name);
-							} else {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Adding %s (%s) to list %s\n", cidr, ok ? "allow" : "deny",
-												  name);
-							}
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s (%s) to list %s\n", cidr, ok ? "allow" : "deny", name);
 						} else {
-							if (reload) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-												  "Error Adding %s (%s) to list %s\n", cidr, ok ? "allow" : "deny", name);
-							} else {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
-												  "Error Adding %s (%s) to list %s\n", cidr, ok ? "allow" : "deny", name);
-							}
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+											  "Error Adding %s (%s) to list %s\n", cidr, ok ? "allow" : "deny", name);
 						}
 					} else if (host && mask) {
 						if (switch_network_list_add_host_mask(list, host, mask, ok) == SWITCH_STATUS_SUCCESS) {
-							if (reload) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-												  "Adding %s/%s (%s) to list %s\n", host, mask, ok ? "allow" : "deny", name);
-							} else {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
-												  "Adding %s/%s (%s) to list %s\n", host, mask, ok ? "allow" : "deny", name);
-							}
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
+											  "Adding %s/%s (%s) to list %s\n", host, mask, ok ? "allow" : "deny", name);
 						}
-					}
+					} 
 
 					switch_core_hash_insert(IP_LIST.hash, name, list);
 				}

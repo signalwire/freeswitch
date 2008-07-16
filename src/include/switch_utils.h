@@ -413,12 +413,17 @@ SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char clos
 
 SWITCH_DECLARE(int) switch_parse_cidr(const char *string, uint32_t *ip, uint32_t *mask, uint32_t *bitp);
 SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t **list, switch_bool_t default_type, switch_memory_pool_t *pool);
-SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok);
+SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_token(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok, const char *token);
+#define switch_network_list_add_cidr(_list, _cidr_str, _ok) switch_network_list_add_cidr_token(_list, _cidr_str, _ok, NULL)
+
+
 SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network_list_t *list, const char *host, const char *mask_str, switch_bool_t ok);
-SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip(switch_network_list_t *list, uint32_t ip);
+SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_token(switch_network_list_t *list, uint32_t ip, const char **token);
+#define switch_network_list_validate_ip(_list, _ip) switch_network_list_validate_ip_token(_list, _ip, NULL);
+
 #define switch_test_subnet(_ip, _net, _mask) (_mask ? ((_net & _mask) == (_ip & _mask)) : _net ? _net == _ip : 1)
 
-	 int switch_inet_pton(int af, const char *src, void *dst);
+int switch_inet_pton(int af, const char *src, void *dst);
 
 /* malloc or DIE macros */
 #ifdef NDEBUG

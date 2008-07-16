@@ -43,6 +43,7 @@ struct switch_network_node {
 	uint32_t mask;
 	uint32_t bits;
 	switch_bool_t ok;
+	char *token;
 	struct switch_network_node *next;
 };
 typedef struct switch_network_node switch_network_node_t;
@@ -77,7 +78,7 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip(switch_network_list_t *list, uint32_t ip)
+SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_token(switch_network_list_t *list, uint32_t ip, const char **token)
 {
 	switch_network_node_t *node;
 	switch_bool_t ok = list->default_type;
@@ -90,15 +91,19 @@ SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip(switch_network_lis
 			} else {
 				ok = SWITCH_FALSE;
 			}
+
 			bits = node->bits;
+
+			if (token) {
+				*token = node->token;
+			}
 		}
 	}
 
 	return ok;
 }
 
-
-SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok)
+SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_token(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok, const char *token)
 {
 	uint32_t ip, mask, bits;
 	switch_network_node_t *node;
@@ -114,12 +119,15 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr(switch_network_list
 	node->ok = ok;
 	node->bits = bits;
 
+	if (!switch_strlen_zero(token)) {
+		node->token = switch_core_strdup(list->pool, token);
+	}
+	
 	node->next = list->node_head;
 	list->node_head = node;
 
-	return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_SUCCESS;	
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network_list_t *list, const char *host, const char *mask_str, switch_bool_t ok)
 {
