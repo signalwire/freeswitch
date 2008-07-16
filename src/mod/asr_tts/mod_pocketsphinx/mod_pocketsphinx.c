@@ -363,7 +363,7 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 		switch_clear_flag(ps, PSFLAG_HAS_TEXT);
 		
 		conf = ps_get_prob(ps->ps, &ps->uttid);
-		lconf = logmath_log_to_ln(ps_get_logmath(ps->ps), conf);
+		lconf = (int32_t)logmath_log_to_ln(ps_get_logmath(ps->ps), conf);
 		ps->confidence = lconf - lconf - lconf;
 
 		if (ps->confidence > 100) {
