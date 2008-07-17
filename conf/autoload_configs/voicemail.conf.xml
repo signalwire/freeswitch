@@ -2,7 +2,7 @@
   <settings>
   </settings>
   <profiles>
-    <profile name="default">
+    <profile name="$${domain}">
       <param name="file-extension" value="wav"/>
       <param name="terminator-key" value="#"/>
       <param name="max-login-attempts" value="3"/>
