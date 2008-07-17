@@ -43,7 +43,8 @@ static switch_mutex_t *MUTEX = NULL;
 static switch_event_node_t *NODE = NULL;
 
 static struct {
-	char *model;
+	char *model8k;
+	char *model16k;
 	uint32_t thresh;
     uint32_t silence_hits;
 	uint32_t listen_hits;
@@ -78,19 +79,25 @@ typedef struct {
 /*! function to open the asr interface */
 static switch_status_t pocketsphinx_asr_open(switch_asr_handle_t *ah, const char *codec, int rate, const char *dest, switch_asr_flag_t *flags)
 {
-
 	pocketsphinx_t *ps;
 
 	if (!(ps = (pocketsphinx_t *) switch_core_alloc(ah->memory_pool, sizeof(*ps)))) {
 		return SWITCH_STATUS_MEMERR;
 	}
 	
-
 	switch_mutex_init(&ps->flag_mutex, SWITCH_MUTEX_NESTED, ah->memory_pool);
 	ah->private_info = ps;
 
+	if (rate == 8000) { 
+		ah->rate = 8000;
+	} else if (rate == 16000) {
+		ah->rate = 16000;
+	} else {  
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid rate %d. Only 8000 and 16000 are supported.\n", rate);
+	}
+
 	codec = "L16";
-	ah->rate = 8000;
+
 	ah->codec = switch_core_strdup(ah->memory_pool, codec); 
 
 	
@@ -105,7 +112,7 @@ static switch_status_t pocketsphinx_asr_open(switch_asr_handle_t *ah, const char
 /*! function to load a grammar to the asr interface */
 static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, const char *grammar, const char *path)
 {
-	char *lm, *dic, *model;
+	char *lm, *dic, *model, *rate = NULL;
 	pocketsphinx_t *ps = (pocketsphinx_t *) ah->private_info;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -122,8 +129,11 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 		dic = switch_mprintf("%s%s%s%s%s.dic", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, grammar, SWITCH_PATH_SEPARATOR, grammar);
 	}
 
-	model = switch_mprintf("%s%smodel%s%s", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, SWITCH_PATH_SEPARATOR, globals.model);
-
+	if (ah->rate == 8000) {
+		model = switch_mprintf("%s%smodel%s%s", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, SWITCH_PATH_SEPARATOR, globals.model8k);
+	} else {
+		model = switch_mprintf("%s%smodel%s%s", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, SWITCH_PATH_SEPARATOR, globals.model16k);
+	}
 	if (switch_file_exists(dic, ah->memory_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open dictionary %s.\n", dic); 
 		goto end;
@@ -134,10 +144,12 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 		goto end;
 	}
 
+	rate = switch_mprintf("%d", ah->rate); 
+
 	switch_assert(lm && dic && model);
 	
 	ps->config = cmd_ln_init(ps->config, ps_args(), FALSE,
-							 "-samprate", "8000",
+							 "-samprate", rate,
 							 "-hmm", model,
 							 "-lm", lm, 
 							 "-dict", dic,
@@ -175,6 +187,7 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 
  end:
 	
+	switch_safe_free(rate);
 	switch_safe_free(lm);
 	switch_safe_free(dic);
 	switch_safe_free(model);
@@ -366,8 +379,8 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 		lconf = (int32_t)logmath_log_to_ln(ps_get_logmath(ps->ps), conf);
 		ps->confidence = lconf - lconf - lconf;
 
-		if (ps->confidence > 100) {
-			ps->confidence = 100;
+		if (ps->confidence > 1000) {
+			ps->confidence = 1000;
 		} else if (ps->confidence < 0) {
 			ps->confidence = 0;
 		}
@@ -482,7 +495,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_pocketsphinx_load)
 	asr_interface->asr_check_results = pocketsphinx_asr_check_results;
 	asr_interface->asr_get_results = pocketsphinx_asr_get_results;
 
-	globals.model = switch_core_strdup(pool, "communicator");
+	globals.model8k = switch_core_strdup(pool, "communicator");
+	globals.model16k = switch_core_strdup(pool, "wsj1");
+
 	err_set_logfp(NULL);
 
 	/* indicate that the module should continue to be loaded */
