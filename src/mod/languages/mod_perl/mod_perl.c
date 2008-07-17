@@ -451,8 +451,9 @@ static switch_status_t do_config(void)
 					switch_xml_bind_search_function(perl_fetch, switch_xml_parse_section_string(val), NULL);
 				}
 			} else if (!strcmp(var, "startup-script")) {
-				if ( val )
+				if (val) {
 					perl_thread(val);
+				}
 			}
 		}
 	}
