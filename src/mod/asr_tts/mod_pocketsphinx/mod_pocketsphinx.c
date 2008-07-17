@@ -443,9 +443,9 @@ static switch_status_t load_config(void)
 				globals.listen_hits = atoi(val);
 			} else if (!strcasecmp(var, "auto-reload")) {
 				globals.auto_reload = switch_true(val);
-			} else if (!strcasecmp(var, "narrowband_model")) {
+			} else if (!strcasecmp(var, "narrowband-model")) {
 				globals.model8k = switch_core_strdup(globals.pool, val);
-			} else if (!strcasecmp(var, "wideband_model")) {
+			} else if (!strcasecmp(var, "wideband-model")) {
 				globals.model16k = switch_core_strdup(globals.pool, val);
 			}
 		}
