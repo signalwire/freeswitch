@@ -450,6 +450,9 @@ static switch_status_t do_config(void)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "binding '%s' to '%s'\n", globals.xml_handler, var);
 					switch_xml_bind_search_function(perl_fetch, switch_xml_parse_section_string(val), NULL);
 				}
+			} else if (!strcmp(var, "startup-script")) {
+				if ( val )
+					perl_thread(val);
 			}
 		}
 	}
@@ -469,7 +472,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_perl_load)
 	globals.pool = pool;
 
 	if (!(my_perl = perl_alloc())) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate perl intrepreter\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate perl interpreter\n");
 		return SWITCH_STATUS_MEMERR;
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Allocated perl intrepreter.\n");
