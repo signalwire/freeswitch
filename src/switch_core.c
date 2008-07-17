@@ -786,9 +786,12 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 						
 						if (switch_xml_locate_domain(domain, my_params, &xml_root, &x_domain) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate domain %s\n", domain);
+							switch_event_destroy(&my_params);
 							continue;
 						}
 						
+						switch_event_destroy(&my_params);
+
 						for (ut = switch_xml_child(x_domain, "user"); ut; ut = ut->next) {
 							const char *user_cidr = switch_xml_attr(ut, "cidr");
 							const char *id = switch_xml_attr(ut, "id");

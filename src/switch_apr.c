@@ -294,6 +294,15 @@ SWITCH_DECLARE(switch_status_t) switch_file_seek(switch_file_t *thefile, switch_
 	return rv;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_file_copy(const char *from_path, 
+												 const char *to_path,
+												 switch_fileperms_t perms,
+												 switch_memory_pool_t *pool)
+{
+	return apr_file_copy(from_path, to_path, perms, pool);
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_file_close(switch_file_t *thefile)
 {
 	return apr_file_close(thefile);

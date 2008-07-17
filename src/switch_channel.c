@@ -1951,6 +1951,15 @@ SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *chann
 	return stream.data;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_get_variables(switch_channel_t *channel, switch_event_t **event)
+{
+	switch_status_t status;
+	switch_mutex_lock(channel->profile_mutex);
+	status = switch_event_dup(event, channel->variables);
+	switch_mutex_lock(channel->profile_mutex);
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *channel)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
