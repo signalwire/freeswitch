@@ -47,20 +47,18 @@
 PyThreadState *mainThreadState = NULL;
 
 void init_freeswitch(void);
+int py_thread(const char *text);
 static switch_api_interface_t python_run_interface;
-
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_python_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown);
 SWITCH_MODULE_DEFINITION(mod_python, mod_python_load, mod_python_shutdown, NULL);
-
 
 static struct {
 	switch_memory_pool_t *pool;
 	char *xml_handler;
 	switch_event_node_t *node;
 } globals;
-
 
 static void eval_some_python(const char *funcname, char *args, switch_core_session_t *session, switch_stream_handle_t *stream, switch_event_t *params, char **str)
 {
@@ -241,7 +239,6 @@ static switch_xml_t python_fetch(const char *section,
 	return xml;
 }
 
-
 static switch_status_t do_config(void)
 {
 	char *cf = "python.conf";
@@ -263,6 +260,10 @@ static switch_status_t do_config(void)
 				if (!switch_strlen_zero(globals.xml_handler)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "binding '%s' to '%s'\n", globals.xml_handler, val);
 					switch_xml_bind_search_function(python_fetch, switch_xml_parse_section_string(val), NULL);
+				}
+			} else if (!strcmp(var, "startup-script")) {
+				if (val) {
+					py_thread(val);
 				}
 			}
 		}
@@ -305,17 +306,12 @@ SWITCH_STANDARD_API(api_python)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_STANDARD_API(launch_python)
+int py_thread(const char *text)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 	switch_memory_pool_t *pool;
 	struct switch_py_thread *pt;
-
-	if (switch_strlen_zero(cmd)) {
-		stream->write_function(stream, "USAGE: %s\n", python_run_interface.syntax);
-		return SWITCH_STATUS_SUCCESS;
-	}
 
 	switch_core_new_memory_pool(&pool);
 	assert(pool != NULL);
@@ -324,13 +320,45 @@ SWITCH_STANDARD_API(launch_python)
 	assert(pt != NULL);
 
 	pt->pool = pool;
-	pt->args = switch_core_strdup(pt->pool, cmd);
+	pt->args = switch_core_strdup(pt->pool, text);
 
 	switch_threadattr_create(&thd_attr, pt->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, py_thread_run, pt, pt->pool);
 
+	return 0;
+}
+
+static void message_query_handler(switch_event_t *event)
+{
+	char *account = switch_event_get_header(event, "message-account");
+
+	if (account) {
+		char *path, *cmd;
+		
+		path = switch_mprintf("%s%smwi.py", SWITCH_GLOBAL_dirs.script_dir, SWITCH_PATH_SEPARATOR);
+		switch_assert(path != NULL);
+		
+		if (switch_file_exists(path, NULL) == SWITCH_STATUS_SUCCESS) {
+			cmd = switch_mprintf("%s %s", path, account);
+			switch_assert(cmd != NULL);
+			py_thread(cmd);
+			switch_safe_free(cmd);
+		}
+		switch_safe_free(path);
+	}
+}
+
+SWITCH_STANDARD_API(launch_python)
+{
+
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "USAGE: %s\n", python_run_interface.syntax);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	py_thread(cmd);
 	stream->write_function(stream, "OK\n");
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -340,6 +368,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
 	char *pp = getenv("PYTHONPATH");
+
+	if (switch_event_bind_removable(modname, SWITCH_EVENT_MESSAGE_QUERY, SWITCH_EVENT_SUBCLASS_ANY, message_query_handler, NULL, &globals.node)
+		!= SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
+	}
 
 	if (pp) {
 		char *path = switch_mprintf("%s:%s", pp, SWITCH_GLOBAL_dirs.script_dir);
