@@ -449,7 +449,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 
 		if (++loops >= 100) {
 			if (++ireg_loops >= IREG_SECONDS) {
-				sofia_reg_check_expire(profile, switch_timestamp(NULL));
+				sofia_reg_check_expire(profile, switch_timestamp(NULL), 0);
 				ireg_loops = 0;
 			}
 

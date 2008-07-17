@@ -1160,7 +1160,7 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 
 	nua_notify(nh,
 			   NUTAG_NEWSUB(1),
-			   TAG_IF(strstr(o_contact, ";nat"), NUTAG_PROXY(contact)),
+			   TAG_IF(strstr(o_contact, ";fs_nat"), NUTAG_PROXY(contact)),
 			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"), SIPTAG_PAYLOAD_STR(body), TAG_END());
 
 	switch_safe_free(contact);

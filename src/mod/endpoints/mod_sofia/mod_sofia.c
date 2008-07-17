@@ -1394,12 +1394,25 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 	}
 
 	if (!strcasecmp(argv[1], "flush_inbound_reg")) {
+		int reboot = 0;
+
 		if (argc > 2) {
-			sofia_reg_expire_call_id(profile, argv[2]);
-			stream->write_function(stream, "+OK flushing all registrations matching specified call_id\n");
+			if (!strcasecmp(argv[2], "reboot")) {
+				reboot = 1;
+				argc = 2;
+			}
+		}
+
+		if (argc > 2) {
+			if (argc > 3 && !strcasecmp(argv[3], "reboot")) {
+				reboot = 1;
+			}
+
+			sofia_reg_expire_call_id(profile, argv[2], reboot);
+			stream->write_function(stream, "+OK %s all registrations matching specified call_id\n", reboot ? "rebooting" : "flushing");
 		} else {
-			sofia_reg_check_expire(profile, 0);
-			stream->write_function(stream, "+OK flushing all registrations\n");
+			sofia_reg_check_expire(profile, 0, reboot);
+			stream->write_function(stream, "+OK %s all registrations\n", reboot ? "rebooting" : "flushing");
 		}
 
 		goto done;

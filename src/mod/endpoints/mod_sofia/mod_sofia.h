@@ -563,7 +563,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t sql_already_dynamic);
 void sofia_glue_actually_execute_sql(sofia_profile_t *profile, switch_bool_t master, char *sql, switch_mutex_t *mutex);
-void sofia_reg_check_expire(sofia_profile_t *profile, time_t now);
+void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot);
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now);
 void sofia_reg_unregister(sofia_profile_t *profile);
 switch_status_t sofia_glue_ext_address_lookup(char **ip, switch_port_t *port, char *sourceip, switch_memory_pool_t *pool);
@@ -651,9 +651,10 @@ switch_status_t sofia_glue_build_crypto(private_object_t *tech_pvt, int index, s
 void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt);
 switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt);
 void sofia_presence_event_thread_start(void);
-void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id);
+void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id, int reboot);
 switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, int force);
 switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int force);
 const char *sofia_glue_strip_proto(const char *uri);
 switch_status_t reconfig_sofia(sofia_profile_t *profile);
 void sofia_glue_del_gateway(sofia_gateway_t *gp);
+void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const char *host, const char *contact, const char *user_agent);

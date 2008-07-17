@@ -237,9 +237,57 @@ int sofia_sub_del_callback(void *pArg, int argc, char **argv, char **columnNames
 	return 0;
 }
 
+void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const char *host, const char *contact, const char *user_agent)
+{
+	const char *event = "check-sync";
+	nua_handle_t *nh;
+	char *contact_url = NULL;
+	char *id = NULL;
+
+	if (switch_stristr("snom", user_agent)) {
+		event = "check-sync;reboot=true";
+	} else if (switch_stristr("linksys", user_agent)) {
+		event = "reboot_now";
+	}
+
+	if ((contact_url = sofia_glue_get_url_from_contact((char *)contact, 1))) {
+		char *p;
+		id = switch_mprintf("sip:%s@%s", user, host);
+
+		if ((p = strstr(contact_url, ";fs_"))) {
+			*p = '\0';
+		}
+		
+		nh = nua_handle(profile->nua, NULL, 
+						NUTAG_URL(contact_url), 
+						SIPTAG_FROM_STR(id), 
+						SIPTAG_TO_STR(id), 
+						SIPTAG_CONTACT_STR(profile->url), 
+						TAG_END());
+
+		nua_notify(nh,
+				   NUTAG_NEWSUB(1),
+				   SIPTAG_EVENT_STR(event), 
+				   SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"),
+				   SIPTAG_PAYLOAD_STR(""),
+				   TAG_END());
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Sending reboot command to %s\n", contact_url);
+		free(contact_url);
+	}
+
+	switch_safe_free(id);
+}
+
+
 int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	switch_event_t *s_event;
+	sofia_profile_t *profile = (sofia_profile_t *) pArg;
+	
+	if (argc > 10 && atoi(argv[10]) == 1) {
+		sofia_reg_send_reboot(profile, argv[1], argv[2], argv[3], argv[7]);
+	}
 
 	if (argc >= 3) {
 		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_EXPIRE) == SWITCH_STATUS_SUCCESS) {
@@ -256,21 +304,39 @@ int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames
 	return 0;
 }
 
-void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id)
+void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id, int reboot)
 {
 	char sql[1024];
 	char *psql = sql;
+	char *user = strdup(call_id);
+	char *host = NULL;
 
-	switch_snprintf(sql, sizeof(sql), "select *,'%s' from sip_registrations where call_id='%s'", profile->name, call_id);
+	switch_assert(user);
+
+	if ((host = strchr(user, '@'))) {
+		*host++ = '\0';
+	}
+	
+	if (!host) {
+		host = "none";
+	}
+
+	switch_snprintf(sql, sizeof(sql), "select *,%d from sip_registrations where call_id='%s' or (sip_user='%s' && sip_host='%s')", 
+					reboot, call_id, user, host);
+	
 	switch_mutex_lock(profile->ireg_mutex);
-	sofia_glue_execute_sql_callback(profile, SWITCH_TRUE, NULL, sql, sofia_reg_del_callback, NULL);
+	sofia_glue_execute_sql_callback(profile, SWITCH_TRUE, NULL, sql, sofia_reg_del_callback, profile);
 	switch_mutex_unlock(profile->ireg_mutex);
 
-	switch_snprintf(sql, sizeof(sql), "delete from sip_registrations where call_id='%s'", call_id);
+	switch_snprintf(sql, sizeof(sql), "delete from sip_registrations where call_id='%s' or (sip_user='%s' && sip_host='%s')", 
+					call_id, user, host);
 	sofia_glue_execute_sql(profile, &psql, SWITCH_FALSE);
+
+	switch_safe_free(user);
+
 }
 
-void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
+void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 {
 	char sql[1024];
 
@@ -294,12 +360,12 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
 	switch_mutex_lock(profile->ireg_mutex);
 
 	if (now) {
-		switch_snprintf(sql, sizeof(sql), "select *,'%s' from sip_registrations where expires > 0 and expires <= %ld", profile->name, (long) now);
+		switch_snprintf(sql, sizeof(sql), "select *,%d from sip_registrations where expires > 0 and expires <= %ld", reboot, (long) now);
 	} else {
-		switch_snprintf(sql, sizeof(sql), "select *,'%s' from sip_registrations where expires > 0", profile->name);
+		switch_snprintf(sql, sizeof(sql), "select *,%d from sip_registrations where expires > 0", reboot);
 	}
 
-	sofia_glue_execute_sql_callback(profile, SWITCH_TRUE, NULL, sql, sofia_reg_del_callback, NULL);
+	sofia_glue_execute_sql_callback(profile, SWITCH_TRUE, NULL, sql, sofia_reg_del_callback, profile);
 	if (now) {
 		switch_snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and expires <= %ld", (long) now);
 	} else {
