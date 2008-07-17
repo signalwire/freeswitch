@@ -112,6 +112,7 @@ static JSBool curl_run(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 	char *url_p = NULL, *data = NULL, *durl = NULL;
 	long httpRes = 0;
 	struct curl_slist *headers = NULL;
+	int32 timeout = 0;
 
 	if (argc < 2 || !co) {
 		return JS_FALSE;
@@ -147,6 +148,14 @@ static JSBool curl_run(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 			curl_easy_setopt(co->curl_handle, CURLOPT_USERPWD, cred);
 		}
 	}
+
+	if (argc > 6) {
+		JS_ValueToInt32(cx, argv[6], &timeout);
+		if (timeout > 0) {
+			curl_easy_setopt(co->curl_handle, CURLOPT_TIMEOUT, timeout);
+		}
+	}
+
 
 
 	curl_easy_setopt(co->curl_handle, CURLOPT_HTTPHEADER, headers);
