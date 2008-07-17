@@ -54,6 +54,7 @@ static struct {
 	PerlInterpreter *my_perl;
 	switch_memory_pool_t *pool;
 	char *xml_handler;
+	switch_event_node_t *node;
 } globals;
 
 
@@ -428,6 +429,26 @@ static switch_xml_t perl_fetch(const char *section,
 	return xml;
 }
 
+static void message_query_handler(switch_event_t *event)
+{
+	char *account = switch_event_get_header(event, "message-account");
+	
+	if (account) {
+		char *path, *cmd;
+
+		path = switch_mprintf("%s%smwi.pl", SWITCH_GLOBAL_dirs.script_dir, SWITCH_PATH_SEPARATOR);
+		switch_assert(path != NULL);
+
+		if (switch_file_exists(path, NULL) == SWITCH_STATUS_SUCCESS) {
+			cmd = switch_mprintf("%s %s", path, account);
+			switch_assert(cmd != NULL);
+			perl_thread(cmd);
+			switch_safe_free(cmd);
+		}
+		switch_safe_free(path);
+	}
+}
+
 static switch_status_t do_config(void)
 {
 	char *cf = "perl.conf";
@@ -472,10 +493,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_perl_load)
 
 	globals.pool = pool;
 
+	if (switch_event_bind_removable(modname, SWITCH_EVENT_MESSAGE_QUERY, SWITCH_EVENT_SUBCLASS_ANY, message_query_handler, NULL, &globals.node)
+		!= SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
 	if (!(my_perl = perl_alloc())) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate perl interpreter\n");
 		return SWITCH_STATUS_MEMERR;
 	}
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Allocated perl intrepreter.\n");
 
 	perl_construct(my_perl);
