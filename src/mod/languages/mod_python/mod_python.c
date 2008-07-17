@@ -206,6 +206,7 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
  done:
 
 	switch_safe_free(dupargs);
+	switch_safe_free(script);
 
 
 }
