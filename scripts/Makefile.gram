@@ -1,0 +1,13 @@
+
+main: grammar
+
+grammar: 
+	@echo "Creating Grammar files..."
+	@../bin/mklm
+	@echo "Done."
+
+clean:
+	@echo "Cleaning Grammar files..."
+	@rm -f *.fsg *.words *.dic *~ \#*
+	@../bin/mklm clean
+	@echo "Done."

@@ -1,0 +1,95 @@
+#!/usr/bin/perl
+# mklm - builds LM's from all avaliable sentence files.
+#
+# Processes all .sent files in the current directory.
+#
+
+use Data::Dumper;
+
+@sent = <*.sent>;
+
+if ($ARGV[0] eq "clean") {
+    foreach $file (@sent) {
+	my($base,$ext) = split(/\./, $file);
+	system("rm -rf $base");
+    }
+    exit;
+}
+
+
+
+open(DIC,"<../conf/cmudict.0.6d");
+@dic = <DIC>;
+close(DIC);
+
+
+
+foreach $file (@sent) {
+    my($base,$ext) = split(/\./, $file);
+    system("rm -rf $base");
+    system("mkdir -p $base");
+    system("../bin/quick_lm.pl -s $file -o $base/$base.lm 2>/dev/null");
+}
+
+foreach $file (@sent) {
+    my($word_file,$ext) = split(/\./, $file);
+    open(SENT,"<$file");
+    @lines = <SENT>;
+    close(SENT);
+    undef @in;
+    undef @out;
+    open(WORDS,">$word_file.words");
+    foreach $line (@lines) {
+	chomp($line);
+	$line =~ s/<(.*?)>//gi;;
+	$line =~ s/^\s*//;
+	$line =~ s/\s*$//;
+	@tmp = split(' ', $line);
+	foreach $tmp (@tmp) {
+	    push(@in, uc($tmp));
+
+	}
+    }
+    print Dumpzer \@in;
+    undef %saw;
+    @saw{@in} = ();
+    @out = sort keys %saw;
+    foreach $line (@out) {
+	print WORDS "$line\n";
+
+    }
+    close(WORDS);
+}
+
+@word_files = <*.words>;
+
+foreach $file (@word_files) {
+  my($dic,$ext) = split(/\./, $file);
+
+  open(WORDS,"<$file");
+  @words = <WORDS>;
+  close(WORDS);
+  unlink($file);
+  unlink("$dic.words");
+  open(DIC, ">$dic/$dic.dic");
+  foreach $line (@dic) {
+    chomp $line;
+    if ($line =~ m/(.*)\s\s(.*)/) {
+      local $word = $1; 
+      local $pron = $2;
+      $word =~ s/^\s*//;
+      $word =~ s/\s*$//;                                                                                                                      
+      $pron =~ s/^\s*//;
+      $pron =~ s/\s*$//;  
+      foreach $myword (@words) {
+	chomp $myword;
+	$string = $word;
+	$string =~ s/\(\d\)//g;
+	if ($myword eq $string) {
+	  print DIC "$word\t$pron\n";
+	}
+      }
+    }
+  }
+  close(DIC);
+}

@@ -47,4 +47,12 @@ $(DESTDIR)$(PREFIX)/grammar/model/communicator:
 	mkdir -p $(DESTDIR)$(PREFIX)/grammar/model/communicator
 	mv $(BASE)/libs/Communicator_semi_40.cd_semi_6000/* $(DESTDIR)$(PREFIX)/grammar/model/communicator
 
-local_install: $(DESTDIR)$(PREFIX)/grammar/model $(DESTDIR)$(PREFIX)/grammar/model/communicator
+grammar_maker:
+	@cp -f $(BASE)/scripts/mklm $(DESTDIR)$(PREFIX)/bin/mklm
+	@cp -f $(BASE)/scripts/quick_lm.pl $(DESTDIR)$(PREFIX)/bin/quick_lm.pl
+	@chmod 755 $(DESTDIR)$(PREFIX)/bin/mklm
+	@chmod 755 $(DESTDIR)$(PREFIX)/bin/quick_lm.pl
+	@cp -f $(BASE)/scripts/Makefile.gram $(DESTDIR)$(PREFIX)/grammar/Makefile
+	@cp -f $(POCKETSPHINX_DIR)/model/lm/cmudict.0.6d $(DESTDIR)$(PREFIX)/conf/cmudict.0.6d
+
+local_install: $(DESTDIR)$(PREFIX)/grammar/model $(DESTDIR)$(PREFIX)/grammar/model/communicator grammar_maker
