@@ -40,7 +40,7 @@
     <!--<param name="enable-timer" value="false"/>-->
     <!--<param name="enable-100rel" value="false"/>-->
     <param name="apply-inbound-acl" value="domains"/>
-    <param name="apply-register-acl" value="domains"/>
+    <!--<param name="apply-register-acl" value="domains"/>-->
     <!--<param name="dtmf-type" value="info"/>-->
     <param name="record-template" value="$${base_dir}/recordings/${caller_id_number}.${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
     <!--enable to use presense and mwi -->
