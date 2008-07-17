@@ -965,22 +965,6 @@ void sofia_reg_handle_sip_r_challenge(int status,
 		gw_name = switch_channel_get_variable(channel, "sip_use_gateway");
 	}
 
-	if (!gateway) {
-		if (gw_name) {
-			var_gateway = sofia_reg_find_gateway((char *)gw_name);
-		}
-
-#if __FINISHED__
-		if (!var_gateway) {
-			// look for it in the params of the contact or req uri etc.
-		}
-#endif
-
-		if (var_gateway) {
-			gateway = var_gateway;
-		}
-	}
-
 
 	if (sip->sip_www_authenticate) {
 		authenticate = sip->sip_www_authenticate;
@@ -999,6 +983,36 @@ void sofia_reg_handle_sip_r_challenge(int status,
 			}
 		}
 	}
+
+	if (!gateway) {
+		if (gw_name) {
+			var_gateway = sofia_reg_find_gateway((char *)gw_name);
+		}
+
+
+		if (!var_gateway && realm) {
+			char rb[512] = "";
+			char *p = (char *) realm;
+			while((*p == '"')) {
+				p++;
+			}
+			switch_set_string(rb, p);
+			if ((p = strchr(rb, '"'))) {
+				*p = '\0';
+			}
+			var_gateway = sofia_reg_find_gateway(rb);
+		}
+
+		if (!var_gateway && sip && sip->sip_to) {
+			var_gateway = sofia_reg_find_gateway(sip->sip_to->a_url->url_host);
+		}
+		
+		if (var_gateway) {
+			gateway = var_gateway;
+		}
+	}
+
+
 
 	if (!(scheme && realm)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No scheme and realm!\n");
@@ -1398,7 +1412,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 }
 
 
-sofia_gateway_t *sofia_reg_find_gateway__(const char *file, const char *func, int line, char *key)
+sofia_gateway_t *sofia_reg_find_gateway__(const char *file, const char *func, int line, const char *key)
 {
 	sofia_gateway_t *gateway = NULL;
 
