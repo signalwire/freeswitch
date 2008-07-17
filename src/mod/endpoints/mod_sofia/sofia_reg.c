@@ -950,12 +950,34 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	char *cur;
 	char authentication[256] = "";
 	int ss_state;
+	sofia_gateway_t *var_gateway = NULL;
+	const char *gw_name = NULL;
 
 	if (session) {
 		private_object_t *tech_pvt;
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+
 		if ((tech_pvt = switch_core_session_get_private(session)) && switch_test_flag(tech_pvt, TFLAG_REFER)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "received reply from refer\n");
-			return;
+			goto end;
+		}
+
+		gw_name = switch_channel_get_variable(channel, "sip_use_gateway");
+	}
+
+	if (!gateway) {
+		if (gw_name) {
+			var_gateway = sofia_reg_find_gateway((char *)gw_name);
+		}
+
+#if __FINISHED__
+		if (!var_gateway) {
+			// look for it in the params of the contact or req uri etc.
+		}
+#endif
+
+		if (var_gateway) {
+			gateway = var_gateway;
 		}
 	}
 
@@ -966,7 +988,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 		authenticate = sip->sip_proxy_authenticate;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Missing Authenticate Header!\n");
-		return;
+		goto end;
 	}
 	scheme = (char const *) authenticate->au_scheme;
 	if (authenticate->au_params) {
@@ -980,7 +1002,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 	if (!(scheme && realm)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No scheme and realm!\n");
-		return;
+		goto end;
 	}
 
 	if (!gateway) {
@@ -999,7 +1021,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 	nua_authenticate(nh, SIPTAG_EXPIRES_STR(gateway->expires_str), NUTAG_AUTH(authentication), TAG_END());
 
-	return;
+	goto end;
 
   cancel:
 
@@ -1008,6 +1030,16 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	} else {
 		nua_cancel(nh, TAG_END());
 	}
+
+ end:
+
+	if (var_gateway) {
+		sofia_reg_release_gateway(var_gateway);
+	}
+
+	return;
+
+
 
 }
 
