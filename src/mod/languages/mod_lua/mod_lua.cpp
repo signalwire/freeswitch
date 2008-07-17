@@ -49,6 +49,7 @@ static struct {
 } globals;
 
 int luaopen_freeswitch(lua_State * L);
+int lua_thread(const char *text);
 
 static int panic(lua_State * L)
 {
@@ -273,6 +274,10 @@ static switch_status_t do_config(void)
 				if (!switch_strlen_zero(globals.xml_handler)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "binding '%s' to '%s'\n", globals.xml_handler, val);
 					switch_xml_bind_search_function(lua_fetch, switch_xml_parse_section_string(val), NULL);
+				}
+			} else if (!strcmp(var, "startup-script")) {
+				if (val) {
+					lua_thread(val);
 				}
 			}
 		}
