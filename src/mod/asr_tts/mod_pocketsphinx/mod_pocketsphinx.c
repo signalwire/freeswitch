@@ -49,6 +49,7 @@ static struct {
     uint32_t silence_hits;
 	uint32_t listen_hits;
 	int auto_reload;
+	switch_memory_pool_t *pool;
 } globals;
 
 typedef enum {
@@ -442,9 +443,22 @@ static switch_status_t load_config(void)
 				globals.listen_hits = atoi(val);
 			} else if (!strcasecmp(var, "auto-reload")) {
 				globals.auto_reload = switch_true(val);
+			} else if (!strcasecmp(var, "narrowband_model")) {
+				globals.model8k = switch_core_strdup(globals.pool, val);
+			} else if (!strcasecmp(var, "wideband_model")) {
+				globals.model16k = switch_core_strdup(globals.pool, val);
 			}
 		}
 	}
+
+	if (!globals.model8k) {
+		globals.model8k = switch_core_strdup(globals.pool, "communicator");
+	}
+
+	if (!globals.model16k) {
+		globals.model16k = switch_core_strdup(globals.pool, "wsj1");
+	}
+
  done:
 	if (xml) {
 		switch_xml_free(xml);
@@ -473,6 +487,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_pocketsphinx_load)
 	switch_asr_interface_t *asr_interface;
 
 	switch_mutex_init(&MUTEX, SWITCH_MUTEX_NESTED, pool);
+	
+	globals.pool = pool;
 
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_RELOADXML, NULL, event_handler, NULL, &NODE) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
@@ -494,9 +510,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_pocketsphinx_load)
 	asr_interface->asr_pause = pocketsphinx_asr_pause;
 	asr_interface->asr_check_results = pocketsphinx_asr_check_results;
 	asr_interface->asr_get_results = pocketsphinx_asr_get_results;
-
-	globals.model8k = switch_core_strdup(pool, "communicator");
-	globals.model16k = switch_core_strdup(pool, "wsj1");
 
 	err_set_logfp(NULL);
 
