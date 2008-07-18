@@ -1642,7 +1642,7 @@ SWITCH_STANDARD_API(sofia_function)
 	const char *usage_string = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
 		"sofia help\n"
-		"sofia profile <profile_name> [start|stop|restart|flush_inbound_reg [<call_id>]|[register|unregister] [<gateway name>|all]] [reloadxml]\n"
+		"sofia profile <profile_name> [start|stop|restart|rescan|flush_inbound_reg [<call_id>]|[register|unregister|killgw] [<gateway name>|all]] [reloadxml]\n"
 		"sofia status [[profile | gateway] <name>]\n"
 		"sofia loglevel [0-9]\n" "--------------------------------------------------------------------------------\n";
 
