@@ -207,7 +207,7 @@ static switch_status_t do_stun_ping(switch_rtp_t *rtp_session)
 	uint8_t buf[256] = { 0 };
 	uint8_t *start = buf;
 	switch_stun_packet_t *packet;
-	unsigned int elapsed;
+	//unsigned int elapsed;
 	switch_size_t bytes;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
@@ -220,6 +220,7 @@ static switch_status_t do_stun_ping(switch_rtp_t *rtp_session)
 		goto end;
 	}
 
+#if 0
 	if (rtp_session->last_stun) {
 		elapsed = (unsigned int) ((switch_timestamp_now() - rtp_session->last_stun) / 1000);
 		
@@ -229,6 +230,7 @@ static switch_status_t do_stun_ping(switch_rtp_t *rtp_session)
 			goto end;
 		}
 	}
+#endif
 
 	if (rtp_session->funny_stun) {
 		*start++ = 0;
@@ -239,6 +241,13 @@ static switch_status_t do_stun_ping(switch_rtp_t *rtp_session)
 
 	packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, start);
 	bytes = switch_stun_packet_length(packet);
+
+	if (rtp_session->funny_stun) {
+		packet = (switch_stun_packet_t *) buf;
+		bytes += 4;
+	}
+
+
 	switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_stun_addr, 0, (void *) packet, &bytes);
 	rtp_session->stuncount = rtp_session->default_stuncount;
 	
