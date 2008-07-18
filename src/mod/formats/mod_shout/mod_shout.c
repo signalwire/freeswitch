@@ -86,13 +86,15 @@ static inline void free_context(shout_context_t *context)
 
 		if (context->fp) {
 			unsigned char mp3buffer[8192];
-			int16_t blank[1024] = {0}, *r = NULL;
 			int len;
+			int16_t blank[2048] = {0}, *r = NULL;
+			
+			len = lame_encode_buffer(context->gfp, blank, r, sizeof(blank) / 2, mp3buffer, sizeof(mp3buffer));
 
-			if ((len = lame_encode_buffer(context->gfp, blank, r, sizeof(blank) / 2, mp3buffer, sizeof(mp3buffer)))) {
+			if (len) {
 				ret = fwrite(mp3buffer, 1, len, context->fp);
 			}
-			
+
 			while ((len = lame_encode_flush(context->gfp, mp3buffer, sizeof(mp3buffer))) > 0) {
 				ret = fwrite(mp3buffer, 1, len, context->fp);
 				if (ret < 0) {
