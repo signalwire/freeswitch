@@ -2211,8 +2211,8 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	const char *caller_id_number = NULL;
 	switch_xml_t x_domain = NULL, x_domain_root = NULL, x_user = NULL, x_params = NULL, x_param = NULL;
 	switch_event_t *vars = NULL;
-	const char *vm_cc = NULL;
-
+	const char *vm_cc = NULL, *vtmp, *vm_ext = NULL;
+	
 	if (!(caller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
 		caller_id_name = caller_profile->caller_id_name;
 	}
@@ -2315,7 +2315,12 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	switch_snprintf(sql, sizeof(sql), "select * from voicemail_prefs where username='%s' and domain='%s'", id, domain_name);
 	vm_execute_sql_callback(profile, profile->mutex, sql, prefs_callback, &cbt);
 
-	file_path = switch_mprintf("%s%smsg_%s.%s", dir_path, SWITCH_PATH_SEPARATOR, uuid, profile->file_ext);
+	vm_ext = profile->file_ext;
+	if ((vtmp = switch_channel_get_variable(channel, "vm_message_ext"))) {
+		vm_ext = vtmp;
+	}
+
+	file_path = switch_mprintf("%s%smsg_%s.%s", dir_path, SWITCH_PATH_SEPARATOR, uuid, vm_ext);
 
 	if ((voicemail_greeting_number = switch_channel_get_variable(channel, "voicemail_greeting_number"))) {
 		int num = atoi(voicemail_greeting_number);
