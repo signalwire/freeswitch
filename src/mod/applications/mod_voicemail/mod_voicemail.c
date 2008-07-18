@@ -2106,7 +2106,7 @@ static switch_status_t voicemail_inject(const char *data)
 	}
 
 	if (switch_stristr("tag=", user)) {
-		user += 3;
+		user += 4;
 		istag++;
 	} else if (user == domain) {
 		isall++;
