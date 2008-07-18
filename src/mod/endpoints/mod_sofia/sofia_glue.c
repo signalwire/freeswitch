@@ -425,11 +425,14 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	switch_channel_set_name(tech_pvt->channel, name);
 }
 
-switch_status_t sofia_glue_ext_address_lookup(char **ip, switch_port_t *port, char *sourceip, switch_memory_pool_t *pool)
+switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_object_t *tech_pvt, char **ip, switch_port_t *port, char *sourceip, switch_memory_pool_t *pool)
 {
 	char *error = "";
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int x;
+	switch_port_t myport = *port;
+	const char *var;
+	int funny = 0;
 
 	if (!sourceip) {
 		return status;
@@ -442,6 +445,11 @@ switch_status_t sofia_glue_ext_address_lookup(char **ip, switch_port_t *port, ch
 			return status;
 		}
 		for (x = 0; x < 5; x++) {
+			if ((profile->pflags & PFLAG_FUNNY_STUN) || 
+				(tech_pvt && (var = switch_channel_get_variable(tech_pvt->channel, "funny_stun")) && switch_true(var))) {
+				error = "funny";
+				funny++;
+			}
 			if ((status = switch_stun_lookup(ip, port, stun_ip, SWITCH_STUN_DEFAULT_PORT, &error, pool)) != SWITCH_STATUS_SUCCESS) {
 				switch_yield(100000);
 			} else {
@@ -456,7 +464,18 @@ switch_status_t sofia_glue_ext_address_lookup(char **ip, switch_port_t *port, ch
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! No IP returned\n");
 			return SWITCH_STATUS_FALSE;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Success [%s]:[%d]\n", *ip, *port);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Success [%s]:[%d] [%s][%d]\n", *ip, *port, tech_pvt->profile->rtpip, myport);
+		if (tech_pvt) {
+			if (myport == *port && !strcmp(*ip, tech_pvt->profile->rtpip)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Not Required ip and port match. [%s]:[%d]\n", *ip, *port);
+			} else {
+				tech_pvt->stun_ip = switch_core_session_strdup(tech_pvt->session, stun_ip);
+				tech_pvt->stun_flags |= STUN_FLAG_SET;
+				if (funny) {
+					tech_pvt->stun_flags |= STUN_FLAG_FUNNY;
+				}
+			}
+		}
 	} else {
 		*ip = sourceip;
 	}
@@ -482,6 +501,7 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 	char *ip = tech_pvt->profile->rtpip;
 	switch_port_t sdp_port;
 	char tmp[50];
+	const char *use_ip = NULL;
 
 	if (!force) {
 		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) ||
@@ -502,12 +522,19 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 	}
 	sdp_port = tech_pvt->local_sdp_audio_port;
 
-	if (tech_pvt->profile->extrtpip) {
-		if (sofia_glue_ext_address_lookup(&ip, &sdp_port, tech_pvt->profile->extrtpip, switch_core_session_get_pool(tech_pvt->session)) !=
-			SWITCH_STATUS_SUCCESS) {
+	if (!(use_ip = switch_channel_get_variable(tech_pvt->channel, "rtp_adv_audio_ip"))) {
+		if (tech_pvt->profile->extrtpip) {
+			use_ip = tech_pvt->profile->extrtpip;
+		}
+	}
+
+	if (use_ip) {
+		tech_pvt->extrtpip = switch_core_session_strdup(tech_pvt->session, use_ip);
+		if (sofia_glue_ext_address_lookup(tech_pvt->profile, tech_pvt, &ip, &sdp_port, tech_pvt->extrtpip, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
 		}
 	}
+	
 
 	tech_pvt->adv_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, ip);
 	tech_pvt->adv_sdp_audio_port = sdp_port;
@@ -544,7 +571,7 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, in
 
 
 	if (tech_pvt->profile->extrtpip) {
-		if (sofia_glue_ext_address_lookup(&ip, &sdp_port, tech_pvt->profile->extrtpip, switch_core_session_get_pool(tech_pvt->session)) !=
+		if (sofia_glue_ext_address_lookup(tech_pvt->profile, tech_pvt, &ip, &sdp_port, tech_pvt->profile->extrtpip, switch_core_session_get_pool(tech_pvt->session)) !=
 			SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
 		}
@@ -1730,7 +1757,8 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		uint8_t vad_in = switch_test_flag(tech_pvt, TFLAG_VAD_IN) ? 1 : 0;
 		uint8_t vad_out = switch_test_flag(tech_pvt, TFLAG_VAD_OUT) ? 1 : 0;
 		uint8_t inb = switch_test_flag(tech_pvt, TFLAG_OUTBOUND) ? 0 : 1;
-
+		uint32_t stun_ping = 0;
+		
 		if ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_enable_vad_in")) && switch_true(val)) {
 			vad_in = 1;
 		}
@@ -1745,6 +1773,18 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			vad_out = 0;
 		}
 
+		if ((tech_pvt->stun_flags & STUN_FLAG_SET) && (val = switch_channel_get_variable(tech_pvt->channel, "rtp_stun_ping"))) {
+			int ival = atoi(val);
+			
+			if (ival <= 0) {
+				if (switch_true(val)) {
+					ival = 6;
+				}
+			}
+
+			stun_ping = (ival * tech_pvt->read_codec.implementation->samples_per_second) / tech_pvt->read_codec.implementation->samples_per_frame;
+		}
+
 		tech_pvt->ssrc = switch_rtp_get_ssrc(tech_pvt->rtp_session);
 		switch_set_flag(tech_pvt, TFLAG_RTP);
 		switch_set_flag(tech_pvt, TFLAG_IO);
@@ -1754,6 +1794,11 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			switch_set_flag(tech_pvt, TFLAG_VAD);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AUDIO RTP Engage VAD for %s ( %s %s )\n",
 							  switch_channel_get_name(switch_core_session_get_channel(tech_pvt->session)), vad_in ? "in" : "", vad_out ? "out" : "");
+		}
+
+		if (stun_ping) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting stun ping to %s:%d\n", tech_pvt->stun_ip, stun_ping);
+			switch_rtp_activate_stun_ping(tech_pvt->rtp_session, tech_pvt->stun_ip, stun_ping, (tech_pvt->stun_flags & STUN_FLAG_FUNNY) ? 1 : 0);
 		}
 
 		if ((val = switch_channel_get_variable(tech_pvt->channel, "jitterbuffer_msec"))) {

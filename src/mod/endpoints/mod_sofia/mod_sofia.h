@@ -156,13 +156,20 @@ typedef enum {
 	PFLAG_RECIEVED_IN_NAT_REG_CONTACT = (1 << 22),
 	PFLAG_3PCC = (1 << 23),
 	PFLAG_DISABLE_RTP_AUTOADJ = (1 << 24),
-	PFLAG_DISABLE_SRTP_AUTH = (1 << 25)
+	PFLAG_DISABLE_SRTP_AUTH = (1 << 25),
+	PFLAG_FUNNY_STUN = (1 << 26)
 } PFLAGS;
 
 typedef enum {
 	PFLAG_NDLB_TO_IN_200_CONTACT = (1 << 0),
 	PFLAG_NDLB_BROKEN_AUTH_HASH = (1 << 1)
 } sofia_NDLB_t;
+
+typedef enum {
+	STUN_FLAG_SET = (1 << 0),
+	STUN_FLAG_PING = (1 << 1),
+	STUN_FLAG_FUNNY = (1 << 2)
+} STUNFLAGS;
 
 typedef enum {
 	TFLAG_IO = (1 << 0),
@@ -417,6 +424,9 @@ struct private_object {
 	char *local_crypto_key;
 	char *remote_crypto_key;
 	char *record_route;
+	char *extrtpip;
+	char *stun_ip;
+	uint32_t stun_flags;
 	int crypto_tag;
 	unsigned char local_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
 	unsigned char remote_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
@@ -566,7 +576,7 @@ void sofia_glue_actually_execute_sql(sofia_profile_t *profile, switch_bool_t mas
 void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot);
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now);
 void sofia_reg_unregister(sofia_profile_t *profile);
-switch_status_t sofia_glue_ext_address_lookup(char **ip, switch_port_t *port, char *sourceip, switch_memory_pool_t *pool);
+switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_object_t *tech_pvt, char **ip, switch_port_t *port, char *sourceip, switch_memory_pool_t *pool);
 
 void sofia_glue_pass_sdp(private_object_t *tech_pvt, char *sdp);
 int sofia_glue_get_user_host(char *in, char **user, char **host);

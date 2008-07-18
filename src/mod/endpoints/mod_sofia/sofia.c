@@ -1047,6 +1047,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							profile->pflags &= ~PFLAG_DISABLE_SRTP_AUTH; 
 						}
+					} else if (!strcasecmp(var, "NDLB-funny-stun")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_FUNNY_STUN; 
+						} else {
+							profile->pflags &= ~PFLAG_FUNNY_STUN; 
+						}
 					} else if (!strcasecmp(var, "rfc2833-pt")) {
 						profile->te = (switch_payload_t) atoi(val);
 					} else if (!strcasecmp(var, "cng-pt")) {
@@ -1380,6 +1386,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->pflags |= PFLAG_DISABLE_RTP_AUTOADJ;
 					} else if (!strcasecmp(var, "NDLB-support-asterisk-missing-srtp-auth") && switch_true(val)) {
 						profile->pflags |= PFLAG_DISABLE_SRTP_AUTH;
+					} else if (!strcasecmp(var, "NDLB-funny-stun")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_FUNNY_STUN; 
+						} else {
+							profile->pflags &= ~PFLAG_FUNNY_STUN; 
+						}
 					} else if (!strcasecmp(var, "rfc2833-pt")) {
 						profile->te = (switch_payload_t) atoi(val);
 					} else if (!strcasecmp(var, "cng-pt")) {
@@ -1435,7 +1447,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invald IP 0.0.0.0 replaced with %s\n", mod_sofia_globals.guess_ip);
 						} else if (strcasecmp(val, "auto")) {
 							switch_port_t port = 0;
-							if (sofia_glue_ext_address_lookup(&myip, &port, val, profile->pool) == SWITCH_STATUS_SUCCESS) {
+							if (sofia_glue_ext_address_lookup(profile, NULL, &myip, &port, val, profile->pool) == SWITCH_STATUS_SUCCESS) {
 								ip = myip;
 							} else {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to get external ip.\n");

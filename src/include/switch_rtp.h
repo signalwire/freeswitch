@@ -418,6 +418,8 @@ SWITCH_DECLARE(void) switch_rtp_set_cng_pt(switch_rtp_t *rtp_session, switch_pay
 */
 SWITCH_DECLARE(void *) switch_rtp_get_private(switch_rtp_t *rtp_session);
 
+SWITCH_DECLARE(switch_status_t) switch_rtp_activate_stun_ping(switch_rtp_t *rtp_session, const char *stun_ip, uint32_t packet_count, switch_bool_t funny);
+
 /*!
   \}
 */

@@ -135,6 +135,9 @@ struct switch_rtp {
 	switch_sockaddr_t *remote_addr;
 	rtp_msg_t recv_msg;
 
+
+	switch_sockaddr_t *remote_stun_addr;
+
 	uint32_t autoadj_window;
 	uint32_t autoadj_tally;
 
@@ -169,7 +172,9 @@ struct switch_rtp {
 	uint32_t rsamples_per_interval;
 	uint32_t ms_per_packet;
 	uint32_t remote_port;
-	uint8_t stuncount;
+	uint32_t stuncount;
+	uint32_t funny_stun;
+	uint32_t default_stuncount;
 	struct switch_rtp_vad_data vad_data;
 	struct switch_rtp_rfc2833_data dtmf_data;
 	switch_payload_t te;
@@ -188,12 +193,59 @@ struct switch_rtp {
 	switch_rtp_crypto_key_t *crypto_keys[SWITCH_RTP_CRYPTO_MAX];
 	int reading;
 	int writing;
+	char *stun_ip;
 };
 
 static int global_init = 0;
 static int rtp_common_write(switch_rtp_t *rtp_session,
 							rtp_msg_t *send_msg, void *data, uint32_t datalen, switch_payload_t payload, uint32_t timestamp, switch_frame_flag_t *flags);
 
+
+static switch_status_t do_stun_ping(switch_rtp_t *rtp_session)
+{
+	uint8_t buf[256] = { 0 };
+	uint8_t *start = buf;
+	switch_stun_packet_t *packet;
+	unsigned int elapsed;
+	switch_size_t bytes;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	switch_assert(rtp_session != NULL);
+
+	WRITE_INC(rtp_session);
+
+	if (rtp_session->stuncount != 0) {
+		rtp_session->stuncount--;
+		goto end;
+	}
+
+	if (rtp_session->last_stun) {
+		elapsed = (unsigned int) ((switch_timestamp_now() - rtp_session->last_stun) / 1000);
+		
+		if (elapsed > 30000) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No stun for a long time (PUNT!)\n");
+			status = SWITCH_STATUS_FALSE;
+			goto end;
+		}
+	}
+
+	if (rtp_session->funny_stun) {
+		*start++ = 0;
+		*start++ = 0;
+		*start++ = 0x22;
+		*start++ = 0x22;
+	}
+
+	packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, start);
+	bytes = switch_stun_packet_length(packet);
+	switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_stun_addr, 0, (void *) packet, &bytes);
+	rtp_session->stuncount = rtp_session->default_stuncount;
+	
+  end:
+	WRITE_DEC(rtp_session);
+
+	return status;
+}
 
 static switch_status_t ice_out(switch_rtp_t *rtp_session)
 {
@@ -214,7 +266,7 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session)
 	}
 
 	if (rtp_session->last_stun) {
-		elapsed = (unsigned int) ((switch_time_now() - rtp_session->last_stun) / 1000);
+		elapsed = (unsigned int) ((switch_timestamp_now() - rtp_session->last_stun) / 1000);
 
 		if (elapsed > 30000) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No stun for a long time (PUNT!)\n");
@@ -227,12 +279,22 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session)
 	switch_stun_packet_attribute_add_username(packet, rtp_session->ice_user, 32);
 	bytes = switch_stun_packet_length(packet);
 	switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, (void *) packet, &bytes);
-	rtp_session->stuncount = 25;
+	rtp_session->stuncount = rtp_session->default_stuncount;
 
   end:
 	WRITE_DEC(rtp_session);
 
-	return SWITCH_STATUS_SUCCESS;
+	return status;
+}
+
+
+static void handle_stun_ping_reply(switch_rtp_t *rtp_session, void *data, switch_size_t len)
+{
+	if (!switch_rtp_ready(rtp_session)) {
+		return;
+	}
+
+	rtp_session->last_stun = switch_timestamp_now();
 }
 
 static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
@@ -268,7 +330,7 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 	}
 	end_buf = buf + ((sizeof(buf) > packet->header.length) ? packet->header.length : sizeof(buf));
 
-	rtp_session->last_stun = switch_time_now();
+	rtp_session->last_stun = switch_timestamp_now();
 
 	switch_stun_packet_first_attribute(packet, attr);
 
@@ -828,6 +890,26 @@ SWITCH_DECLARE(void) switch_rtp_set_cng_pt(switch_rtp_t *rtp_session, switch_pay
 	rtp_session->cng_pt = pt;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_rtp_activate_stun_ping(switch_rtp_t *rtp_session, const char *stun_ip, uint32_t packet_count, switch_bool_t funny)
+{
+	
+	if (switch_sockaddr_info_get(&rtp_session->remote_stun_addr, stun_ip, SWITCH_UNSPEC, 
+								 SWITCH_STUN_DEFAULT_PORT, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS || !rtp_session->remote_stun_addr) {
+		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error resolving stun ping addr\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (funny) {
+		rtp_session->funny_stun++;
+	}
+
+	rtp_session->default_stuncount = packet_count;
+
+	rtp_session->stun_ip = switch_core_strdup(rtp_session->pool, stun_ip);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *rtp_session, uint32_t queue_frames)
 {
 	rtp_session->jb = stfu_n_init(queue_frames);
@@ -843,6 +925,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	switch_snprintf(user_ice, sizeof(user_ice), "%s%s", rlogin, login);
 	rtp_session->ice_user = switch_core_strdup(rtp_session->pool, ice_user);
 	rtp_session->user_ice = switch_core_strdup(rtp_session->pool, user_ice);
+	rtp_session->default_stuncount = 25;
 
 	if (rtp_session->ice_user) {
 		if (ice_out(rtp_session) != SWITCH_STATUS_SUCCESS) {
@@ -1218,8 +1301,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (bytes && rtp_session->recv_msg.header.version != 2) {
 			uint8_t *data = (uint8_t *) rtp_session->recv_msg.body;
-			if (rtp_session->recv_msg.header.version == 0 && rtp_session->ice_user) {
-				handle_ice(rtp_session, (void *) &rtp_session->recv_msg, bytes);
+			if (rtp_session->recv_msg.header.version == 0) {
+				if (rtp_session->ice_user) {
+					handle_ice(rtp_session, (void *) &rtp_session->recv_msg, bytes);
+				} else if (rtp_session->remote_stun_addr) {
+					handle_stun_ping_reply(rtp_session, (void *) &rtp_session->recv_msg, bytes);
+				}
 			}
 
 			if (rtp_session->invalid_handler) {
@@ -1832,6 +1919,10 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			rtp_session->last_write_samplecount = rtp_session->timer.samplecount;
 		}
 		rtp_session->last_write_ts = this_ts;
+	}
+
+	if (rtp_session->remote_stun_addr) {
+		do_stun_ping(rtp_session);
 	}
 
 	if (rtp_session->ice_user) {

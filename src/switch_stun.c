@@ -433,7 +433,8 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 {
 	switch_sockaddr_t *local_addr = NULL, *remote_addr = NULL, *from_addr = NULL;
 	switch_socket_t *sock = NULL;
-	uint8_t buf[256] = { 0 };
+	uint8_t buf[260] = { 0 };
+	uint8_t *start = buf;
 	void *end_buf;
 	switch_stun_packet_t *packet;
 	switch_stun_packet_attribute_t *attr;
@@ -443,6 +444,14 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 	uint16_t rport = 0;
 	switch_time_t started = 0;
 	unsigned int elapsed = 0;
+	int funny = 0;
+	int size = sizeof(buf);
+
+	switch_assert(err);
+
+	if (!strcmp(*err, "funny")) {
+		funny = 1;
+	}
 
 	*err = "Success";
 
@@ -468,8 +477,15 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (funny) {
+		*start++ = 0;
+		*start++ = 0;
+		*start++ = 0x22;
+		*start++ = 0x22;
+	}
+
 	switch_socket_opt_set(sock, SWITCH_SO_NONBLOCK, TRUE);
-	packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, buf);
+	packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, start);
 	switch_stun_random_string(username, 32, NULL);
 	switch_stun_packet_attribute_add_username(packet, username, 32);
 	bytes = switch_stun_packet_length(packet);
@@ -496,7 +512,11 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 	}
 	switch_socket_close(sock);
 
-	packet = switch_stun_packet_parse(buf, sizeof(buf));
+	if (funny) {
+		size -= 4;
+	}
+
+	packet = switch_stun_packet_parse(start, size);
 	if (!packet) {
 		*err = "Invalid STUN/ICE packet";
 		return SWITCH_STATUS_FALSE;
