@@ -464,7 +464,7 @@ switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! No IP returned\n");
 			return SWITCH_STATUS_FALSE;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Success [%s]:[%d] [%s][%d]\n", *ip, *port, tech_pvt->profile->rtpip, myport);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Success [%s]:[%d]\n", *ip, *port);
 		if (tech_pvt) {
 			if (myport == *port && !strcmp(*ip, tech_pvt->profile->rtpip)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Not Required ip and port match. [%s]:[%d]\n", *ip, *port);
