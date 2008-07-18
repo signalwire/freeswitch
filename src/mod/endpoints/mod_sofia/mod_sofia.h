@@ -426,6 +426,7 @@ struct private_object {
 	char *record_route;
 	char *extrtpip;
 	char *stun_ip;
+	switch_port_t stun_port;
 	uint32_t stun_flags;
 	int crypto_tag;
 	unsigned char local_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];

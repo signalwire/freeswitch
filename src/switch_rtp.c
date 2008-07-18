@@ -194,6 +194,7 @@ struct switch_rtp {
 	int reading;
 	int writing;
 	char *stun_ip;
+	switch_port_t stun_port;
 };
 
 static int global_init = 0;
@@ -890,11 +891,12 @@ SWITCH_DECLARE(void) switch_rtp_set_cng_pt(switch_rtp_t *rtp_session, switch_pay
 	rtp_session->cng_pt = pt;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_rtp_activate_stun_ping(switch_rtp_t *rtp_session, const char *stun_ip, uint32_t packet_count, switch_bool_t funny)
+SWITCH_DECLARE(switch_status_t) switch_rtp_activate_stun_ping(switch_rtp_t *rtp_session, const char *stun_ip, switch_port_t stun_port,
+															  uint32_t packet_count, switch_bool_t funny)
 {
 	
 	if (switch_sockaddr_info_get(&rtp_session->remote_stun_addr, stun_ip, SWITCH_UNSPEC, 
-								 SWITCH_STUN_DEFAULT_PORT, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS || !rtp_session->remote_stun_addr) {
+								 rtp_session->stun_port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS || !rtp_session->remote_stun_addr) {
 		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error resolving stun ping addr\n");
 		return SWITCH_STATUS_FALSE;
@@ -903,6 +905,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_stun_ping(switch_rtp_t *rtp_
 	if (funny) {
 		rtp_session->funny_stun++;
 	}
+
+	rtp_session->stun_port = stun_port;
 
 	rtp_session->default_stuncount = packet_count;
 

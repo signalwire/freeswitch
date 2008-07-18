@@ -433,24 +433,38 @@ switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_
 	switch_port_t myport = *port;
 	const char *var;
 	int funny = 0;
+	switch_port_t stun_port = SWITCH_STUN_DEFAULT_PORT;
+	char *stun_ip = NULL;
 
 	if (!sourceip) {
 		return status;
 	}
 
 	if (!strncasecmp(sourceip, "stun:", 5)) {
-		char *stun_ip = sourceip + 5;
-		if (!stun_ip) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! NO STUN SERVER\n");
-			return status;
+		char *p;
+		stun_ip = strdup(sourceip + 5);
+
+		if ((p = strchr(stun_ip, ':'))) {
+			int iport;
+			*p++ = '\0';
+			iport = atoi(p);
+			if (iport > 0) {
+				stun_port = iport;
+			}
 		}
+
+		if (switch_strlen_zero(stun_ip)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! NO STUN SERVER\n");
+			goto out;
+		}
+
 		for (x = 0; x < 5; x++) {
 			if ((profile->pflags & PFLAG_FUNNY_STUN) || 
 				(tech_pvt && (var = switch_channel_get_variable(tech_pvt->channel, "funny_stun")) && switch_true(var))) {
 				error = "funny";
 				funny++;
 			}
-			if ((status = switch_stun_lookup(ip, port, stun_ip, SWITCH_STUN_DEFAULT_PORT, &error, pool)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = switch_stun_lookup(ip, port, stun_ip, stun_port, &error, pool)) != SWITCH_STATUS_SUCCESS) {
 				switch_yield(100000);
 			} else {
 				break;
@@ -458,18 +472,20 @@ switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_
 		}
 		if (status != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, error);
-			return status;
+			goto out;
 		}
 		if (!*ip) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! No IP returned\n");
-			return SWITCH_STATUS_FALSE;
+			goto out;
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Success [%s]:[%d]\n", *ip, *port);
+		status = SWITCH_STATUS_SUCCESS;
 		if (tech_pvt) {
 			if (myport == *port && !strcmp(*ip, tech_pvt->profile->rtpip)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Not Required ip and port match. [%s]:[%d]\n", *ip, *port);
 			} else {
 				tech_pvt->stun_ip = switch_core_session_strdup(tech_pvt->session, stun_ip);
+				tech_pvt->stun_port = stun_port;
 				tech_pvt->stun_flags |= STUN_FLAG_SET;
 				if (funny) {
 					tech_pvt->stun_flags |= STUN_FLAG_FUNNY;
@@ -478,8 +494,14 @@ switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_
 		}
 	} else {
 		*ip = sourceip;
+		status = SWITCH_STATUS_SUCCESS;
 	}
-	return SWITCH_STATUS_SUCCESS;
+
+ out:
+
+	switch_safe_free(stun_ip);
+
+	return status;
 }
 
 
@@ -1804,7 +1826,8 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 		if (stun_ping) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting stun ping to %s:%d\n", tech_pvt->stun_ip, stun_ping);
-			switch_rtp_activate_stun_ping(tech_pvt->rtp_session, tech_pvt->stun_ip, stun_ping, (tech_pvt->stun_flags & STUN_FLAG_FUNNY) ? 1 : 0);
+			switch_rtp_activate_stun_ping(tech_pvt->rtp_session, tech_pvt->stun_ip, tech_pvt->stun_port, 
+										  stun_ping, (tech_pvt->stun_flags & STUN_FLAG_FUNNY) ? 1 : 0);
 		}
 
 		if ((val = switch_channel_get_variable(tech_pvt->channel, "jitterbuffer_msec"))) {
