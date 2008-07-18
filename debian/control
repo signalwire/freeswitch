@@ -2,7 +2,7 @@ Source: freeswitch
 Maintainer: Michal Bielicki <michal.bielicki@voiceworks.pl>
 Section: net
 Priority: extra
-Build-Depends: debhelper (>= 5), fakeroot, automake1.9, autoconf, libtool, unixodbc-dev, libasound2-dev, libcurl3-openssl-dev, libssl-dev, ncurses-dev, libogg-dev, libvorbis-dev, libperl-dev, libgdbm-dev, libdb-dev, libgnutls-dev
+Build-Depends: debhelper (>= 5), fakeroot, automake1.9, autoconf, libtool, unixodbc-dev, libasound2-dev, libcurl3-openssl-dev|libcurl4-openssl-dev, libssl-dev, ncurses-dev, libogg-dev, libvorbis-dev, libperl-dev, libgdbm-dev, libdb-dev, libgnutls-dev
 Standards-Version: 3.7.3
 
 Package: freeswitch
