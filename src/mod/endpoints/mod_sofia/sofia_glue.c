@@ -448,8 +448,8 @@ switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_
 			int iport;
 			*p++ = '\0';
 			iport = atoi(p);
-			if (iport > 0) {
-				stun_port = iport;
+			if (iport > 0 && iport < 0xFFFF) {
+				stun_port = (switch_port_t) iport;
 			}
 		}
 
