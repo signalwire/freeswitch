@@ -471,7 +471,7 @@ switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_
 			}
 		}
 		if (status != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, error);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! %s:%d [%s]\n", stun_ip, stun_port, error);
 			goto out;
 		}
 		if (!*ip) {

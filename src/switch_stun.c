@@ -489,6 +489,12 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 	switch_stun_random_string(username, 32, NULL);
 	switch_stun_packet_attribute_add_username(packet, username, 32);
 	bytes = switch_stun_packet_length(packet);
+
+	if (funny) {
+		packet = (switch_stun_packet_t *) buf;
+		bytes += 4;
+	}
+	
 	switch_socket_sendto(sock, remote_addr, 0, (void *) packet, &bytes);
 	started = switch_timestamp_now();
 
