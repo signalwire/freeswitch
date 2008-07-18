@@ -2001,7 +2001,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 		}
 	}
 
-	if (((m = sdp->sdp_media)) && m->m_mode == sdp_sendonly) {
+	if (((m = sdp->sdp_media)) && (m->m_mode == sdp_sendonly || m->m_mode == sdp_inactive)) {
 		sendonly = 2;			/* global sendonly always wins */
 	}
 
