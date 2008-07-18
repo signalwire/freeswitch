@@ -552,7 +552,8 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 
 	if (use_ip) {
 		tech_pvt->extrtpip = switch_core_session_strdup(tech_pvt->session, use_ip);
-		if (sofia_glue_ext_address_lookup(tech_pvt->profile, tech_pvt, &ip, &sdp_port, tech_pvt->extrtpip, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+		if (sofia_glue_ext_address_lookup(tech_pvt->profile, tech_pvt, &ip, &sdp_port, 
+										  tech_pvt->extrtpip, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
 		}
 	}
