@@ -779,7 +779,7 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt)
 
 	p = ip_ptr;
 	x = 0;
-	while (x < sizeof(rip) && p && *p && ((*p >= '0' && *p <= '9') || *p == '.')) {
+	while (x < sizeof(rip) && p && *p && ((*p >= '0' && *p <= '9') || *p == '.' || *p == ':' || (*p >= 'a' && *p <= 'f') || (*p >= 'A' && *p <= 'F'))) {
 		rip[x++] = *p;
 		p++;
 	}
@@ -861,8 +861,10 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt)
 void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 {
 	switch_size_t len;
-	char *p, *q, *ip_ptr = NULL, *port_ptr = NULL, *vport_ptr = NULL;
-	int x;
+	char *p, *q;
+	int has_video=0,has_audio=0,has_ip=0;
+	char port_buf[25] = "";
+	char vport_buf[25] = "";
 
 	if (switch_strlen_zero(tech_pvt->local_sdp_str)) {
 		return;
@@ -870,39 +872,13 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 
 	len = strlen(tech_pvt->local_sdp_str) + 384;
 
-	if ((p = (char *) switch_stristr("c=IN IP4 ", tech_pvt->local_sdp_str)) ||
-		(p = (char *) switch_stristr("c=IN IP6 ", tech_pvt->local_sdp_str))) {
-		ip_ptr = p + 9;
+	if (switch_stristr("sendonly", tech_pvt->local_sdp_str) || switch_stristr("0.0.0.0", tech_pvt->local_sdp_str)) {
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Skip patch on hold SDP\n");
+	    return;
 	}
-
-	if ((ip_ptr && !strncmp(ip_ptr, "0.0.0.0", 7)) || switch_stristr("sendonly", tech_pvt->local_sdp_str)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Skip patch on hold SDP\n");
-		return;
-	}
-
-	if ((p = (char *) switch_stristr("m=audio ", tech_pvt->local_sdp_str))) {
-		port_ptr = p + 8;
-	}
-
-	if ((p = (char *) switch_stristr("m=video ", tech_pvt->local_sdp_str))) {
-		vport_ptr = p + 8;
-	}
-
-	if (!(ip_ptr && port_ptr)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SDP has no audio in it.\n%s\n",
-						  switch_channel_get_name(tech_pvt->channel), tech_pvt->local_sdp_str);
-		return;
-	}
-
-	if (vport_ptr) {
-		sofia_glue_tech_choose_video_port(tech_pvt, 1);
-		tech_pvt->video_rm_encoding = "PROXY-VID";
-		tech_pvt->video_rm_rate = 90000;
-		tech_pvt->video_codec_ms = 0;
-	}
-
+	
 	if (switch_strlen_zero(tech_pvt->adv_sdp_audio_ip) || !tech_pvt->adv_sdp_audio_port) {
-		if (sofia_glue_tech_choose_port(tech_pvt, 1) != SWITCH_STATUS_SUCCESS) {
+	    if (sofia_glue_tech_choose_port(tech_pvt, 1) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s I/O Error\n", switch_channel_get_name(tech_pvt->channel));
 			return;
 		}
@@ -910,47 +886,77 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 		tech_pvt->rm_rate = 8000;
 		tech_pvt->codec_ms = 20;
 	}
-
+	
+	switch_snprintf(port_buf, sizeof(port_buf), "%u", tech_pvt->adv_sdp_audio_port);
 	tech_pvt->orig_local_sdp_str = tech_pvt->local_sdp_str;
 	tech_pvt->local_sdp_str = switch_core_session_alloc(tech_pvt->session, len);
 
-	q = tech_pvt->local_sdp_str;
 	p = tech_pvt->orig_local_sdp_str;
+	q = tech_pvt->local_sdp_str;
 
-	while (p && *p) {
-		if (p == ip_ptr) {
+	while(p && *p) {
+	    if (!strncmp("c=IN IP", p, 7)) {
+			strncpy(q, p, 9);
+			p += 9;
+			q += 9;
 			strncpy(q, tech_pvt->adv_sdp_audio_ip, strlen(tech_pvt->adv_sdp_audio_ip));
 			q += strlen(tech_pvt->adv_sdp_audio_ip);
-			x = 0;
-			while (p && *p && ((*p >= '0' && *p <= '9') || *p == '.')) {
+
+			while(p && *p && ((*p >= '0' && *p <= '9') || *p == '.' || *p == ':' || (*p >= 'A' && *p <= 'F') || (*p >= 'a' && *p <= 'f'))) {
 				p++;
 			}
 
-		} else if (p == port_ptr) {
-			char port_buf[25] = "";
+	    	has_ip++;
 
-			switch_snprintf(port_buf, sizeof(port_buf), "%u", tech_pvt->adv_sdp_audio_port);
+		} else if (!strncmp("m=audio ", p, 8)) {
+			strncpy(q,p,8);
+			p += 8;
+			q += 8;
 			strncpy(q, port_buf, strlen(port_buf));
 			q += strlen(port_buf);
-			x = 0;
+
 			while (p && *p && (*p >= '0' && *p <= '9')) {
 				p++;
 			}
-		} else if (vport_ptr && tech_pvt->adv_sdp_video_port && p == vport_ptr) {
-			char port_buf[25] = "";
 
-			switch_snprintf(port_buf, sizeof(port_buf), "%u", tech_pvt->adv_sdp_video_port);
-			strncpy(q, port_buf, strlen(port_buf));
-			q += strlen(port_buf);
-			x = 0;
+			has_audio++;		
+
+	    } else if (!strncmp("m=video ", p, 8)) {
+			if (!has_video) {
+				sofia_glue_tech_choose_video_port(tech_pvt, 1);
+				tech_pvt->video_rm_encoding = "PROXY-VID";
+				tech_pvt->video_rm_rate = 90000;
+				tech_pvt->video_codec_ms = 0;
+				switch_snprintf(vport_buf, sizeof(vport_buf), "%u", tech_pvt->adv_sdp_video_port);
+			}
+
+			strncpy(q, p, 8);
+			p += 8;
+			q += 8;
+			strncpy(q, vport_buf, strlen(vport_buf));
+			q += strlen(vport_buf);
+
 			while (p && *p && (*p >= '0' && *p <= '9')) {
 				p++;
 			}
-		}
 
-		*q++ = *p++;
+			has_video++;
+	    }
+	    
+	    while (p && *p && *p != '\n') {
+			*q++ = *p++;
+	    }
+
+	    *q++ = *p++;
 	}
 
+	if (!has_ip && !has_audio) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SDP has no audio in it.\n%s\n",
+						  switch_channel_get_name(tech_pvt->channel), tech_pvt->local_sdp_str);
+		tech_pvt->local_sdp_str = tech_pvt->orig_local_sdp_str;
+		return;
+	}
+	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Patched SDP\n---\n%s\n+++\n%s\n",
 					  switch_channel_get_name(tech_pvt->channel), tech_pvt->orig_local_sdp_str, tech_pvt->local_sdp_str);
 }
