@@ -48,7 +48,7 @@ $(DESTDIR)$(PREFIX)/grammar/model/communicator:
 	mv $(BASE)/libs/Communicator_semi_40.cd_semi_6000/* $(DESTDIR)$(PREFIX)/grammar/model/communicator
 
 $(DESTDIR)$(PREFIX)/grammar/model/wsj1:
-	mkdir -p $(DESTDIR)$(PREFIX)/grammar/model/wjs1
+	mkdir -p $(DESTDIR)$(PREFIX)/grammar/model/wsj1
 	mv $(POCKETSPHINX_DIR)/model/hmm/wsj1/* $(DESTDIR)$(PREFIX)/grammar/model/communicator/wsj1
 
 grammar_maker:
