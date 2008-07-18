@@ -256,7 +256,7 @@ static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t *session, switch_core_session_t *peer_session)
 {
-	switch_channel_t *caller_channel = switch_core_session_get_channel(session);
+	switch_channel_t *caller_channel = NULL;
 	switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
 	const char *ringback_data = NULL;
 	switch_frame_t write_frame = { 0 };
@@ -270,6 +270,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	int timelimit = 60;
 	const char *var = switch_channel_get_variable(caller_channel, "call_timeout");
 	switch_time_t start = 0;
+
+	if (session) {
+		caller_channel = switch_core_session_get_channel(session);
+	}
 
 	if ((switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA))) {
 		return SWITCH_STATUS_SUCCESS;
@@ -288,17 +292,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	timelimit *= 1000000;
 	start = switch_timestamp_now();
 
-	if (switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
-		ringback_data = switch_channel_get_variable(caller_channel, "transfer_ringback");
+	if (caller_channel) {
+		if (switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
+			ringback_data = switch_channel_get_variable(caller_channel, "transfer_ringback");
+		}
+		
+		if (!ringback_data) {
+			ringback_data = switch_channel_get_variable(caller_channel, "ringback");
+		}
+
+
+		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) || switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)) {
+			ringback_data = NULL;
+		}
 	}
 
-	if (!ringback_data) {
-		ringback_data = switch_channel_get_variable(caller_channel, "ringback");
-	}
 
-
-	if (read_codec && (ringback_data ||
-					   (!(switch_channel_test_flag(caller_channel, CF_PROXY_MODE) && switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA))))) {
+	if (read_codec && ringback_data) {
 		if (!(pass = (uint8_t) switch_test_flag(read_codec, SWITCH_CODEC_FLAG_PASSTHROUGH))) {
 			if (switch_core_codec_init(&write_codec,
 									   "L16",
@@ -366,7 +376,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Error!\n");
-				switch_channel_hangup(caller_channel, SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE);
+				if (caller_channel) {
+					switch_channel_hangup(caller_channel, SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE);
+				}
 				read_codec = NULL;
 			}
 		}
@@ -1031,6 +1043,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		  endfor1:
 
+			if (caller_channel) {
+				if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) || switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)) {
+					ringback_data = NULL;
+				}
+			}
+
 			if (ringback_data && !switch_channel_test_flag(caller_channel, CF_ANSWERED)
 				&& !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
 				if ((status = switch_channel_pre_answer(caller_channel)) != SWITCH_STATUS_SUCCESS) {
@@ -1039,10 +1057,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 			}
 
-			if (session && (read_codec = switch_core_session_get_read_codec(session)) &&
-				(ringback_data ||
-				 (!(switch_channel_test_flag(caller_channel, CF_PROXY_MODE) && switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA))))) {
-
+			if (session && (read_codec = switch_core_session_get_read_codec(session)) && ringback_data) {
 				if (!(pass = (uint8_t) switch_test_flag(read_codec, SWITCH_CODEC_FLAG_PASSTHROUGH))) {
 					if (switch_core_codec_init(&write_codec,
 											   "L16",
