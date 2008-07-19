@@ -255,7 +255,7 @@ static switch_xml_t lua_fetch(const char *section,
 
 static switch_status_t do_config(void)
 {
-	char *cf = "lua.conf";
+	const char *cf = "lua.conf";
 	switch_xml_t cfg, xml, settings, param;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
