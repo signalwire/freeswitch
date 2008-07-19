@@ -78,6 +78,8 @@
       <!--<variable name="sip-force-contact" value="NDLB-connectile-dysfunction"/>-->
       <!--<variable name="sip-force-expires" value="10"/>-->
       <!--<variable name="sip-register-gateway" value="cluecon.com"/>-->
+      <!-- Set the file format for a specific user -->
+      <!--<variable name="vm_message_ext" value=".mp3"/> -->
     </variables>
 
     <vcard>
