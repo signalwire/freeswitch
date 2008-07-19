@@ -49,7 +49,7 @@ $(DESTDIR)$(PREFIX)/grammar/model/communicator:
 
 $(DESTDIR)$(PREFIX)/grammar/model/wsj1:
 	mkdir -p $(DESTDIR)$(PREFIX)/grammar/model/wsj1
-	mv $(POCKETSPHINX_DIR)/model/hmm/wsj1/* $(DESTDIR)$(PREFIX)/grammar/model/communicator/wsj1
+	mv $(POCKETSPHINX_DIR)/model/hmm/wsj1/* $(DESTDIR)$(PREFIX)/grammar/model/wsj1
 
 grammar_maker:
 	@cp -f $(BASE)/scripts/mklm $(DESTDIR)$(PREFIX)/bin/mklm
