@@ -555,7 +555,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_set_priority(switch_event_t *event,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event, char *header_name)
+SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event, const char *header_name)
 {
 	switch_event_header_t *hp;
 	switch_assert(event);

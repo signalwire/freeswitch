@@ -1901,7 +1901,7 @@ static void deliver_vm(vm_profile_t *profile,
 		char *body;
 		char *headers;
 		char *header_string;
-		char tmp[50] = "";
+		char tmpvar[50] = "";
 		int total_new_messages = 0;
 		int total_saved_messages = 0;
 		int total_new_urgent_messages = 0;
@@ -1921,14 +1921,14 @@ static void deliver_vm(vm_profile_t *profile,
 		switch_strftime(date, &retsize, sizeof(date), profile->date_fmt, &tm);
 
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_current_folder", myfolder);
-		switch_snprintf(tmp, sizeof(tmp), "%d", total_new_messages);
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_total_new_messages", tmp);
-		switch_snprintf(tmp, sizeof(tmp), "%d", total_saved_messages);
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_total_saved_messages", tmp);
-		switch_snprintf(tmp, sizeof(tmp), "%d", total_new_urgent_messages);
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_urgent_new_messages", tmp);
-		switch_snprintf(tmp, sizeof(tmp), "%d", total_saved_urgent_messages);
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_urgent_saved_messages", tmp);
+		switch_snprintf(tmpvar, sizeof(tmpvar), "%d", total_new_messages);
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_total_new_messages", tmpvar);
+		switch_snprintf(tmpvar, sizeof(tmpvar), "%d", total_saved_messages);
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_total_saved_messages", tmpvar);
+		switch_snprintf(tmpvar, sizeof(tmpvar), "%d", total_new_urgent_messages);
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_urgent_new_messages", tmpvar);
+		switch_snprintf(tmpvar, sizeof(tmpvar), "%d", total_saved_urgent_messages);
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_urgent_saved_messages", tmpvar);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_account", myid);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_domain", domain_name);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_caller_id_number", caller_id_number);
@@ -1936,8 +1936,8 @@ static void deliver_vm(vm_profile_t *profile,
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_file_path", file_path);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_read_flags", read_flags);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_time", date);
-		switch_snprintf(tmp, sizeof(tmp), "%d", priority);
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_priority", tmp);
+		switch_snprintf(tmpvar, sizeof(tmpvar), "%d", priority);
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_priority", tmpvar);
 		if (vm_email) {
 			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_email", vm_email);
 		}

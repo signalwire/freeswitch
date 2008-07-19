@@ -918,7 +918,7 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 	q = tech_pvt->local_sdp_str;
 
 	while(p && *p) {
-	    if (!strncmp("c=IN IP", p, 7)) {
+	    if (tech_pvt->adv_sdp_audio_ip && !strncmp("c=IN IP", p, 7)) {
 			strncpy(q, p, 9);
 			p += 9;
 			q += 9;
