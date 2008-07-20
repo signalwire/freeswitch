@@ -3,9 +3,9 @@
       <input pattern="(.*)">
 	<match>
 	  <action function="execute" data="sleep(1000)"/>
-	  <action function="play-file" data="vm-youhave.wav"/>
+	  <action function="play-file" data="voicemail/vm-you_have.wav"/>
 	  <action function="say" data="$1" method="pronounced" type="items"/>
-	  <action function="play-file" data="vm-messages.wav"/>
+	  <action function="play-file" data="voicemail/vm-messages.wav"/>
 	  <!-- or -->
 	  <!--<action function="speak-text" data="Sie haben $1 Nachrichten"/>-->
 	</match>
