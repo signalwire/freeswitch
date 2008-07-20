@@ -1,0 +1,185 @@
+<language>
+  <en>
+    <ascii>
+      <prompt phrase="空" filename="32.wav"/>
+      <prompt phrase="Pound" filename="35.wav"/>
+      <prompt phrase="星" filename="42.wav"/>
+      <prompt phrase="點" filename="46.wav"/>
+      <prompt phrase="A" filename="97.wav"/>
+      <prompt phrase="B" filename="98.wav"/>
+      <prompt phrase="C" filename="99.wav"/>
+      <prompt phrase="D" filename="100.wav"/>
+      <prompt phrase="E" filename="101.wav"/>
+      <prompt phrase="F" filename="102.wav"/>
+      <prompt phrase="G" filename="103.wav"/>
+      <prompt phrase="H" filename="104.wav"/>
+      <prompt phrase="I" filename="105.wav"/>
+      <prompt phrase="J" filename="106.wav"/>
+      <prompt phrase="K" filename="107.wav"/>
+      <prompt phrase="L" filename="108.wav"/>
+      <prompt phrase="M" filename="109.wav"/>
+      <prompt phrase="N" filename="110.wav"/>
+      <prompt phrase="O" filename="111.wav"/>
+      <prompt phrase="P" filename="112.wav"/>
+      <prompt phrase="Q" filename="113.wav"/>
+      <prompt phrase="R" filename="114.wav"/>
+      <prompt phrase="S" filename="115.wav"/>
+      <prompt phrase="T" filename="116.wav"/>
+      <prompt phrase="U" filename="117.wav"/>
+      <prompt phrase="V" filename="118.wav"/>
+      <prompt phrase="W" filename="119.wav"/>
+      <prompt phrase="X" filename="120.wav"/>
+      <prompt phrase="Y" filename="121.wav"/>
+      <prompt phrase="Z" filename="122.wav"/>
+    </ascii>
+    <phonetic-ascii>
+      <prompt phrase="Space" filename="32.wav"/>
+      <prompt phrase="Dot" filename="46.wav"/>
+      <prompt phrase="Alpha" filename="97.wav"/>
+      <prompt phrase="Bravo" filename="98.wav"/>
+      <prompt phrase="Charlie" filename="99.wav"/>
+      <prompt phrase="Delta" filename="100.wav"/>
+      <prompt phrase="Echo" filename="101.wav"/>
+      <prompt phrase="Foxtrot" filename="102.wav"/>
+      <prompt phrase="Golf" filename="103.wav"/>
+      <prompt phrase="Hotel" filename="104.wav"/>
+      <prompt phrase="India" filename="105.wav"/>
+      <prompt phrase="Juliet" filename="106.wav"/>
+      <prompt phrase="Kilo" filename="107.wav"/>
+      <prompt phrase="Lima" filename="108.wav"/>
+      <prompt phrase="Mike" filename="109.wav"/>
+      <prompt phrase="November" filename="110.wav"/>
+      <prompt phrase="Oscar" filename="111.wav"/>
+      <prompt phrase="Papa" filename="112.wav"/>
+      <prompt phrase="Quebec" filename="113.wav"/>
+      <prompt phrase="Romeo" filename="114.wav"/>
+      <prompt phrase="Sierra" filename="115.wav"/>
+      <prompt phrase="Tango" filename="116.wav"/>
+      <prompt phrase="Unifor" filename="117.wav"/>
+      <prompt phrase="Victor" filename="118.wav"/>
+      <prompt phrase="Whiskey" filename="119.wav"/>
+      <prompt phrase="Xray" filename="120.wav"/>
+      <prompt phrase="Yankee" filename="121.wav"/>
+      <prompt phrase="Zulu" filename="122.wav"/>
+    </phonetic-ascii>
+    <digits>
+      <prompt phrase="零" filename="0.wav"/>
+      <prompt phrase="一" filename="1.wav"/>
+      <prompt phrase="二" filename="2.wav"/>
+      <prompt phrase="兩" filename="2s.wav"/>
+      <prompt phrase="三" filename="3.wav"/>
+      <prompt phrase="四" filename="4.wav"/>
+      <prompt phrase="五" filename="5.wav"/>
+      <prompt phrase="六" filename="6.wav"/>
+      <prompt phrase="七" filename="7.wav"/>
+      <prompt phrase="八" filename="8.wav"/>
+      <prompt phrase="九" filename="9.wav"/>
+      <prompt phrase="十" filename="10.wav"/>
+      <prompt phrase="百" filename="100.wav"/>
+      <prompt phrase="千" filename="1000.wav"/>
+      <prompt phrase="萬" filename="10000.wav"/>
+      <prompt phrase="憶" filename="100000000.wav"/>
+      <prompt phrase="點" filename="dot.wav"/>
+      <prompt phrase="第" filename="ordinal.wav"/>
+      <prompt phrase="Period" filename="period.wav"/>
+      <prompt phrase="點" filename="point.wav"/>
+      <prompt phrase="Pound" filename="pound.wav"/>
+      <prompt phrase="星" filename="star.wav"/>
+    </digits>
+    <currency>
+      <prompt phrase="Cent" filename="cent.wav"/>
+      <prompt phrase="Central" filename="central.wav"/>
+      <prompt phrase="Cents 每一分鐘" filename="cents-per-minute.wav"/>
+      <prompt phrase="Dollar" filename="dollar.wav"/>
+      <prompt phrase="Minus" filename="minus.wav"/>
+      <prompt phrase="Negative" filename="negative.wav"/>
+    </currency>
+    <time>
+      <prompt phrase="上午" filename="a-m.wav"/>
+      <prompt phrase="星期日" filename="day-0.wav"/>
+      <prompt phrase="星期一" filename="day-1.wav"/>
+      <prompt phrase="星期二" filename="day-2.wav"/>
+      <prompt phrase="星期三" filename="day-3.wav"/>
+      <prompt phrase="星期四" filename="day-4.wav"/>
+      <prompt phrase="星期五" filename="day-5.wav"/>
+      <prompt phrase="星期六" filename="day-6.wav"/>
+      <prompt phrase="日" filename="day.wav"/>
+      <prompt phrase="晚上" filename="evening.wav"/>
+      <prompt phrase="時" filename="hour.wav"/>
+      <prompt phrase="分鐘" filename="minutes.wav"/>
+      <prompt phrase="分鐘" filename="minute.wav"/>
+      <prompt phrase="月" filename="month.wav"/>
+      <prompt phrase="早上" filename="morning.wav"/>
+      <prompt phrase="上午" filename="p-m.wav"/>
+      <prompt phrase="秒鐘" filename="seconds.wav"/>
+      <prompt phrase="今日" filename="today.wav"/>
+      <prompt phrase="聽日" filename="tomorrow.wav"/>
+      <prompt phrase="年" filename="year"/>
+      <prompt phrase="噙日" filename="yesterday.wav"/>
+    </time>
+    <voicemail>
+      <prompt phrase="The person at extension" filename="vm-person.wav"/>
+      <prompt phrase="marked urgent" filename="vm-marked_urgent.wav"/>
+      <prompt phrase="emailed" filename="vm-emailed.wav"/>
+      <prompt phrase="you have" filename="vm-you_have.wav"/>
+      <prompt phrase="請輸入你 i d, followed by" filename="vm-enter_id.wav"/>
+      <prompt phrase="請輸入你密碼, followed by" filename="vm-enter_pass.wav"/>
+      <prompt phrase="login incorrect" filename="vm-fail_auth.wav"/>
+      <prompt phrase="welcome to your voicemail" filename="vm-hello.wav"/>
+      <prompt phrase="byebye" filename="vm-goodbye.wav"/>
+      <prompt phrase="at the tone please record your name, press any key or stop talking to end the recording." filename="vm-record_name1.wav"/>
+      <prompt phrase="choose a greeting between 一至九" filename="vm-choose_greeting_choose.wav"/>
+      <prompt phrase="輸入錯" filename="vm-choose_greeting_fail.wav"/>
+      <prompt phrase="太多 failed attempts" filename="vm-abort.wav"/>
+      <prompt phrase="record your greeting at the tone, press any key or stop talking to end the recording" filename="vm-record_greeting.wav"/>
+      <prompt phrase="record your message at the tone, press any key or stop talking to end the recording" filename="vm-record_message.wav"/>
+      <prompt phrase="唔喺度" filename="vm-play_greeting.wav"/>
+      <prompt phrase="urgent 新" filename="vm-urgent-new.wav"/>
+      <prompt phrase="新" filename="vm-new.wav"/>
+      <prompt phrase="urgent saved" filename="vm-urgent-saved.wav"/>
+      <prompt phrase="saved" filename="vm-saved.wav"/>
+      <prompt phrase="口訊" filename="vm-message.wav"/>
+      <prompt phrase="按" filename="vm-press.wav"/>
+      <prompt phrase="to listen to 新口訊" filename="vm-listen_new.wav"/>
+      <prompt phrase="to listen to saved 口訊" filename="vm-listen_saved.wav"/>
+      <prompt phrase="for advanced options" filename="vm-advanced.wav"/>
+      <prompt phrase="to exit" filename="vm-to_exit.wav"/>
+      <prompt phrase="to record a greeting" filename="vm-record_greeting.wav"/>
+      <prompt phrase="to choose greeting" filename="vm-choose_greeting.wav"/>
+      <prompt phrase="to record your name" filename="vm-record_name2.wav"/>
+      <prompt phrase="for the main menu" filename="vm-main_menu.wav"/>
+      <prompt phrase="to listen to the recording" filename="vm-listen_to_recording.wav"/>
+      <prompt phrase="to save the recording" filename="vm-save_recording.wav"/>
+      <prompt phrase="to rerecord" filename="vm-rerecord.wav"/>
+      <prompt phrase="to mark this message urgent" filename="vm-mark_urgent.wav"/>
+      <prompt phrase="to continue" filename="vm-continue.wav"/>
+      <prompt phrase="to listen to the recording again" filename="vm-listen_to_recording_again.wav"/>
+      <prompt phrase="to delete the recording" filename="vm-delete_recording.wav"/>
+      <prompt phrase="to forward the recording to your email" filename="vm-forward_to_email.wav"/>
+      <prompt phrase="greeting" filename="vm-greeting.wav"/>
+      <prompt phrase="selected" filename="vm-selected.wav"/>
+      <prompt phrase="唔喺度" filename="vm-not_available.wav"/>
+      <prompt phrase="口訊號碼" filename="vm-message_number.wav"/>
+      <prompt phrase="deleted" filename="vm-deleted.wav"/>
+      <prompt phrase="in folder inbox" filename="vm-in_folder.wav"/>
+      <prompt phrase="to return the call now" filename="vm-return_call.wav"/>
+      <prompt phrase="urgent" filename="vm-urgent.wav"/>
+    </voicemail>
+    <conference>
+      <prompt phrase="NULL" filename="ack.wav" type="tone"/>
+      <prompt phrase="NULL" filename="nack.wav" type="tone"/>
+      <prompt phrase="You are now muted." filename="mute.wav"/>
+      <prompt phrase="You are now unmuted." filename="unmuted.wav"/>
+      <prompt phrase="You are currently the only person in this conference." filename="alone.wav"/>
+      <prompt phrase="NULL" filename="perpetual.wav" type="music"/>
+      <prompt phrase="NULL" filename="enter.wav" type="tone"/>
+      <prompt phrase="NULL" filename="exit.wav" type="tone"/>
+      <prompt phrase="You have been kicked from this conference." filename="kicked.wav"/>
+      <prompt phrase="This conference is locked." filename="locked.wav"/>
+      <prompt phrase="The conference is now locked." filename="is-locked.wav"/>
+      <prompt phrase="The conference is now unlocked." filename="is-unlocked.wav"/>
+      <prompt phrase="Please enter the conference 密碼." filename="pin.wav"/>
+      <prompt phrase="輸入錯, try again." filename="bad-pin.wav"/>
+    </conference>
+  </en>
+</language>
