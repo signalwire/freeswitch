@@ -37,16 +37,23 @@
  *
  * Contributor(s):
  * 
+ * Anthony Minessale II <anthmct@yahoo.com>
  * PeteDao <petekay@gmail.com>
+ * Steve Underwood 0.0.1 <steveu@coppice.org>
  * 
  *
- * mod_say_zh.c -- Say for Mandarin
+ * mod_say_zh.c -- Say for Mandarin, Cantonese, and probably any other Chinese
+ *                 dialect.
  *
  */
 
 #include <switch.h>
 #include <math.h>
 #include <ctype.h>
+
+/*  SSM_COUNTED means ordinal number
+	SSM_PRONOUNCED
+    SSM_ITERATED */
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_say_zh_load);
 SWITCH_MODULE_DEFINITION(mod_say_zh, mod_say_zh_load, NULL, NULL);
@@ -57,7 +64,8 @@ SWITCH_MODULE_DEFINITION(mod_say_zh, mod_say_zh_load, NULL, NULL);
 		switch_snprintf(tmp, sizeof(tmp), "%u", (unsigned)num);				\
 	if ((tstatus = zh_say_general_count(session, tmp, SST_ITEMS, t, args)) != SWITCH_STATUS_SUCCESS) {\
 		return tstatus;\
-	}}\
+	}\
+}\
 
 #define say_file(...) {\
 		char tmp[80];\
@@ -68,7 +76,8 @@ SWITCH_MODULE_DEFINITION(mod_say_zh, mod_say_zh_load, NULL, NULL);
 		}\
 		if (!switch_channel_ready(switch_core_session_get_channel(session))) {\
 			return SWITCH_STATUS_FALSE;\
-		}}\
+		}\
+}\
 
 
 static switch_status_t zh_spell(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
@@ -77,8 +86,8 @@ static switch_status_t zh_spell(switch_core_session_t *session, char *tosay, swi
 
 	for (p = tosay; p && *p; p++) {
 		int a = tolower((int) *p);
-		if (a >= 48 && a <= 57) {
-			say_file("digits/%d.wav", a - 48);
+		if (a >= '0' && a <= '9') {
+			say_file("digits/%d.wav", a - '0');
 		} else {
 			if (type == SST_NAME_SPELLED) {
 				say_file("ascii/%d.wav", a);
@@ -91,46 +100,15 @@ static switch_status_t zh_spell(switch_core_session_t *session, char *tosay, swi
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t play_group(switch_say_method_t method, int a, int b, int c, char *what, switch_core_session_t *session, switch_input_args_t *args)
-{
-
-	if (a) {
-		say_file("digits/%d.wav", a);
-		say_file("digits/hundred.wav");
-	}
-
-	if (b) {
-		if (b > 1) {
-			say_file("digits/%d0.wav", b);
-		} else {
-			say_file("digits/%d%d.wav", b, c);
-			c = 0;
-		}
-	}
-
-	if (c) {
-		if (method == SSM_COUNTED) {
-			say_file("digits/h-%d.wav", c);
-		} else {
-			say_file("digits/%d.wav", c);
-		}
-	}
-
-	if (what && (a || b || c)) {
-		say_file(what);
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
 static char *strip_commas(char *in, char *out, switch_size_t len)
 {
-	char *p = in, *q = out;
+	char *p = in;
+    char *q = out;
 	char *ret = out;
 	switch_size_t x = 0;
 
-	for (; p && *p; p++) {
-		if ((*p > 47 && *p < 58)) {
+	for ( ; p && *p; p++) {
+		if ((*p >= '0' && *p <= '9')) {
 			*q++ = *p;
 		} else if (*p != ',') {
 			ret = NULL;
@@ -148,12 +126,14 @@ static char *strip_commas(char *in, char *out, switch_size_t len)
 
 static char *strip_nonnumerics(char *in, char *out, switch_size_t len)
 {
-	char *p = in, *q = out;
+	char *p = in;
+    char *q = out;
 	char *ret = out;
 	switch_size_t x = 0;
-	// valid are 0 - 9, period (.), minus (-), and plus (+) - remove all others
+
+	/* valid are 0 - 9, period (.), minus (-), and plus (+) - remove all others */
 	for (; p && *p; p++) {
-		if ((*p > 47 && *p < 58) || *p == '.' || *p == '-' || *p == '+') {
+		if ((*p >= '0' && *p <= '9') || *p == '.' || *p == '-' || *p == '+') {
 			*q++ = *p;
 		}
 
@@ -170,10 +150,9 @@ static switch_status_t zh_say_general_count(switch_core_session_t *session,
 											char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
 {
 	int in;
-	int x = 0;
-	int places[9] = { 0 };
 	char sbuf[13] = "";
-	switch_status_t status;
+    char digits[11];
+    int i;
 
 	if (!(tosay = strip_commas(tosay, sbuf, sizeof(sbuf))) || strlen(tosay) > 9) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
@@ -183,29 +162,118 @@ static switch_status_t zh_say_general_count(switch_core_session_t *session,
 	in = atoi(tosay);
 
 	if (in != 0) {
-		for (x = 8; x >= 0; x--) {
-			int num = (int) pow(10, x);
-			if ((places[(uint32_t) x] = in / num)) {
-				in -= places[(uint32_t) x] * num;
-			}
-		}
-
+		snprintf(digits, sizeof(digits), "%10.10d", in);
 		switch (method) {
 		case SSM_COUNTED:
+			say_file("digits/ordinal.wav");
+			/* Fall through */
 		case SSM_PRONOUNCED:
-			if ((status = play_group(SSM_PRONOUNCED, places[8], places[7], places[6], "digits/million.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
-				return status;
-			}
-			if ((status = play_group(SSM_PRONOUNCED, places[5], places[4], places[3], "digits/thousand.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
-				return status;
-			}
-			if ((status = play_group(method, places[2], places[1], places[0], NULL, session, args)) != SWITCH_STATUS_SUCCESS) {
-				return status;
-			}
+            for (i = 0;  i <= 9;  i++)
+            {
+                switch (i)
+                {
+                case 0:
+                    /* Billions column */
+                    if (digits[i] != '0')
+                    {
+                        if (digits[i] != '1')
+                    		say_file("digits/%c.wav", digits[i]);
+                  		say_file("digits/10.wav");
+                    }
+                    break;
+                case 1:
+                    /* Hundred millions columns */
+                    if (digits[i] != '0')
+                   		say_file("digits/%c.wav", digits[i]);
+                    if (memcmp (digits, "00", 2) != 0)
+                  		say_file("digits/100000000.wav");
+                    break;
+                case 2:
+                case 6:
+                    /* Ten millions or thousands column */
+                    if (digits[i] != '0')
+                    {
+                   		say_file("digits/%c.wav", digits[i]);
+                  		say_file("digits/1000.wav");
+                    }
+                    break;
+                case 3:
+                case 7:
+                    /* Millions or hundreds column */
+                    if (digits[i] != '0')
+                    {
+                   		say_file("digits/%c.wav", digits[i]);
+                   		say_file("digits/100.wav");
+                    }
+                    break;
+                case 4:
+                    /* Hundred thousands column */
+                    if (digits[i] != '0')
+                    {
+                        if (digits[i] != '1'
+                            ||
+                            memcmp (digits, "0000", 4) != 0)
+                        {
+                       		say_file("digits/%c.wav", digits[i]);
+                        }
+                    }
+                    else
+                    {
+                        if (digits[i + 1] != '0'
+                            &&
+                            memcmp (digits, "0000", 4) != 0)
+                        {
+                       		say_file("digits/%c.wav", digits[i]);
+                        }
+                    }
+                    if (digits[i] != '0')
+                   		say_file("digits/10.wav");
+                    break;
+        
+                case 5:
+                    /* Ten thousands column */
+                    if (digits[i] != '0')
+                    {
+                   		say_file("digits/%c.wav", digits[i]);
+                        if (memcmp (digits + 2, "0000", 4) != 0)
+                       		say_file("digits/10000.wav");
+                    }
+                    break;
+                case 8:
+                    /* Tens column */
+                    if (digits[i] != '0')
+                    {
+                        if (digits[i] != '1'
+                            ||
+                            memcmp (digits, "00000000", 8) != 0)
+                        {
+                       		say_file("digits/%c.wav", digits[i]);
+                        }
+                    }
+                    else
+                    {
+                        if (digits[9] != '0'
+                            &&
+                            memcmp (digits, "00000000", 8) != 0)
+                        {
+                       		say_file("digits/%c.wav", digits[i]);
+                        }
+                    }
+                    if (digits[8] != '0')
+                   		say_file("digits/10.wav");
+                    break;
+                case 9:
+                    /* Units column */
+                    if (digits[9] != '0')
+                   		say_file("digits/%c.wav", digits[i]);
+                    break;
+                }
+            }
 			break;
 		case SSM_ITERATED:
 			{
 				char *p;
+
 				for (p = tosay; p && *p; p++) {
 					say_file("digits/%c.wav", *p);
 				}
@@ -224,7 +292,11 @@ static switch_status_t zh_say_general_count(switch_core_session_t *session,
 
 static switch_status_t zh_ip(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
 {
-	char *a, *b, *c, *d;
+	char *a;
+    char *b;
+    char *c;
+    char *d;
+
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	if (!(a = strdup(tosay))) {
 		return SWITCH_STATUS_FALSE;
@@ -259,19 +331,22 @@ static switch_status_t zh_ip(switch_core_session_t *session, char *tosay, switch
 	say_file("digits/dot.wav");
 	say_num(atoi(d), method);
 
-  done:
+done:
 	switch_safe_free(a);
 	return status;
 }
 
-
-static switch_status_t zh_say_time(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method,
+static switch_status_t zh_say_time(switch_core_session_t *session,
+								   char *tosay,
+								   switch_say_type_t type,
+								   switch_say_method_t method,
 								   switch_input_args_t *args)
 {
 	int32_t t;
 	switch_time_t target = 0;
 	switch_time_exp_t tm;
-	uint8_t say_date = 0, say_time = 0;
+	uint8_t say_date = 0;
+    uint8_t say_time = 0;
 
 	if (type == SST_TIME_MEASUREMENT) {
 		int64_t hours = 0;
@@ -315,62 +390,54 @@ static switch_status_t zh_say_time(switch_core_session_t *session, char *tosay, 
 		}
 
 		if (hours) {
-
-            if (hours == 2) 
-            {
-                say_file("time/specialtwo.wav");
-            }
-            else
-            {
+			if (hours == 2) {
+				say_file("time/2s.wav");
+ 			} else {
 			    say_num(hours, SSM_PRONOUNCED);
-            }
-			if (hours == 1) {
-				say_file("time/hour.wav");
-			} else {
-				say_file("time/hours.wav");
 			}
-		} else {
-			say_file("digits/0.wav");
 			say_file("time/hours.wav");
 		}
-
 		if (minutes) {
-			say_num(minutes, SSM_PRONOUNCED);
-			if (minutes == 1) {
-				say_file("time/minute.wav");
-			} else {
-				say_file("time/minutes.wav");
+			if (minutes == 2) {
+				say_file("time/2s.wav");
+ 			} else {
+			    say_num(minutes, SSM_PRONOUNCED);
 			}
+			say_file("time/minute.wav");
 		} else {
-			say_file("digits/0.wav");
-			say_file("time/minutes.wav");
+			if (hours) {
+				say_file("digits/0.wav");
+				say_file("time/minute.wav");
+			}
 		}
 
 		if (seconds) {
-			say_num(seconds, SSM_PRONOUNCED);
-			if (seconds == 1) {
-				say_file("time/second.wav");
-			} else {
+			if (seconds == 2) {
+				say_file("time/2s.wav");
+ 			} else {
+			    say_num(hours, SSM_PRONOUNCED);
+			}
+			say_file("time/seconds.wav");
+		} else {
+			if (hours  ||  minutes) {
+				say_file("digits/0.wav");
 				say_file("time/seconds.wav");
 			}
-		} else {
-			say_file("digits/0.wav");
-			say_file("time/seconds.wav");
 		}
 
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if ((t = atoi(tosay)) > 0) {
+	if ((t = atoi(tosay)) > 0)
 		target = switch_time_make(t, 0);
-	} else {
+	else
 		target = switch_timestamp_now();
-	}
 	switch_time_exp_lt(&tm, target);
 
 	switch (type) {
 	case SST_CURRENT_DATE_TIME:
-		say_date = say_time = 1;
+		say_date =
+		say_time = 1;
 		break;
 	case SST_CURRENT_DATE:
 		say_date = 1;
@@ -385,40 +452,45 @@ static switch_status_t zh_say_time(switch_core_session_t *session, char *tosay, 
 	if (say_date) {
         say_num(tm.tm_year + 1900, SSM_ITERATED);
 		say_file("time/year.wav");
-		say_file("time/mon-%d.wav", tm.tm_mon);
+		say_num(tm.tm_mon + 1, SSM_PRONOUNCED);
+		say_file("time/month.wav");
 		say_num(tm.tm_mday, SSM_PRONOUNCED);
 		say_file("time/day.wav");
 		say_file("time/day-%d.wav", tm.tm_wday);
-	
 	}
-
 
 	if (say_time) {
-		int32_t hour = tm.tm_hour, pm = 0;
+		int32_t hour = tm.tm_hour;
 
-		if (hour > 12) {
-			hour -= 12;
-			pm = 1;
-		} else if (hour == 12) {
-			pm = 1;
-		} else if (hour == 0) {
-			hour = 12;
-			pm = 0;
+		if (hour < 6) {
+            say_file("time/morning.wav");
+		} else if (hour < 12) {
+            say_file("time/a-m.wav");
+		} else if (tm.tm_hour < 18) {
+            say_file("time/p-m.wav");
+		} else {
+            say_file("time/evening.wav");
 		}
+		if (hour > 12)
+			hour -= 12;
+		if (hour == 0)
+			hour = 12;
 
-        say_file("time/%s.wav", pm ? "p-m" : "a-m");
-
-		say_num(hour, SSM_PRONOUNCED);
-        say_file("time/clock-hour.wav");
-        say_num(tm.tm_min, SSM_PRONOUNCED);
-        say_file("time/clock-minute.wav");  
-
-		
+		if (hour == 2) {
+			say_file("time/2s.wav");
+		} else {
+			say_num(hour, SSM_PRONOUNCED);
+		}
+		say_file("time/hour.wav");
+		if (tm.tm_min == 2) {
+			say_file("time/2s.wav");
+		} else {
+			say_num(tm.tm_min, SSM_PRONOUNCED);
+		}
+		say_file("time/minute.wav");  
 	}
-
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 static switch_status_t zh_say_money(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method,
 									switch_input_args_t *args)
@@ -454,36 +526,21 @@ static switch_status_t zh_say_money(switch_core_session_t *session, char *tosay,
 
 	/* Say dollar amount */
 	zh_say_general_count(session, dollars, type, method, args);
-	if (atoi(dollars) == 1) {
-		say_file("currency/dollar.wav");
-	} else {
-		say_file("currency/dollars.wav");
-	}
-
-	/* Say "and" */
-	say_file("currency/and.wav");
+	say_file("currency/dollar.wav");
 
 	/* Say cents */
 	if (cents) {
 		zh_say_general_count(session, cents, type, method, args);
-		if (atoi(cents) == 1) {
-			say_file("currency/cent.wav");
-		} else {
-			say_file("currency/cents.wav");
-		}
 	} else {
 		say_file("digits/0.wav");
-		say_file("currency/cents.wav");
 	}
+	say_file("currency/cent.wav");
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
-
 static switch_status_t zh_say(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
 {
-
 	switch_say_callback_t say_cb = NULL;
 
 	switch (type) {
