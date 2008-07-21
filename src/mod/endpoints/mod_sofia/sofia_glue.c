@@ -2642,7 +2642,11 @@ void sofia_glue_del_profile(sofia_profile_t *profile)
 		}
 
 		for (gp = profile->gateways; gp; gp = gp->next) {
-			sofia_glue_del_gateway(gp);
+			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->name);
+			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->register_from);
+			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->register_contact);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "deleted gateway %s\n", gp->name);
+			profile->gateways = NULL;
 		}
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
