@@ -122,7 +122,11 @@
     <!--<param name="disable-transfer" value="true"/>-->
     <!--<param name="disable-register" value="true"/>-->
     <!--<param name="enable-3pcc" value="true"/>-->
-
+    <!-- use stun when specified (default is true) -->
+    <!--<param name="stun-enabled" value="true"/>-->
+    <!-- use stun when specified (default is true) -->
+    <!-- set to true to have the profile determine stun is not useful and turn it off globally-->
+    <!--<param name="stun-auto-disable" value="true"/>-->
   </settings>
 </profile>
 

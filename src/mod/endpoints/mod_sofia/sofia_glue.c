@@ -442,6 +442,12 @@ switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_
 
 	if (!strncasecmp(sourceip, "stun:", 5)) {
 		char *p;
+
+		if (!(profile->pflags & PFLAG_STUN_ENABLED)) {
+			*ip = switch_core_strdup(pool, tech_pvt->profile->rtpip);
+			return SWITCH_STATUS_SUCCESS;
+		}
+		
 		stun_ip = strdup(sourceip + 5);
 
 		if ((p = strchr(stun_ip, ':'))) {
@@ -483,6 +489,10 @@ switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_
 		if (tech_pvt) {
 			if (myport == *port && !strcmp(*ip, tech_pvt->profile->rtpip)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Not Required ip and port match. [%s]:[%d]\n", *ip, *port);
+				if (profile->pflags & PFLAG_STUN_AUTO_DISABLE) {
+					profile->pflags &= ~PFLAG_STUN_ENABLED;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun completely disabled.\n");
+				}
 			} else {
 				tech_pvt->stun_ip = switch_core_session_strdup(tech_pvt->session, stun_ip);
 				tech_pvt->stun_port = stun_port;

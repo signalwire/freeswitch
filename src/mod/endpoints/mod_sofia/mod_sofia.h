@@ -157,7 +157,9 @@ typedef enum {
 	PFLAG_3PCC = (1 << 23),
 	PFLAG_DISABLE_RTP_AUTOADJ = (1 << 24),
 	PFLAG_DISABLE_SRTP_AUTH = (1 << 25),
-	PFLAG_FUNNY_STUN = (1 << 26)
+	PFLAG_FUNNY_STUN = (1 << 26),
+	PFLAG_STUN_ENABLED = (1 << 27),
+	PFLAG_STUN_AUTO_DISABLE = (1 << 28)
 } PFLAGS;
 
 typedef enum {

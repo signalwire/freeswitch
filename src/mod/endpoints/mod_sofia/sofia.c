@@ -982,6 +982,8 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 
 			/* you could change profile->foo here if it was a minor change like context or dialplan ... */
 			profile->rport_level = 1; /* default setting */
+			profile->acl_count = 0;
+			profile->pflags |= PFLAG_STUN_ENABLED;
 
 			if ((settings = switch_xml_child(xprofile, "settings"))) {
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -1052,6 +1054,36 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 							profile->pflags |= PFLAG_FUNNY_STUN; 
 						} else {
 							profile->pflags &= ~PFLAG_FUNNY_STUN; 
+						}
+					} else if (!strcasecmp(var, "stun-enabled")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_STUN_ENABLED;
+						} else {
+							profile->pflags &= ~PFLAG_STUN_ENABLED; 
+						}
+					} else if (!strcasecmp(var, "stun-auto-disable")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_STUN_AUTO_DISABLE;
+						} else {
+							profile->pflags &= ~PFLAG_STUN_AUTO_DISABLE; 
+						}
+					} else if (!strcasecmp(var, "apply-nat-acl")) {
+						if (profile->acl_count < SOFIA_MAX_ACL) {
+							profile->nat_acl[profile->nat_acl_count++] = switch_core_strdup(profile->pool, val);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
+						}
+					} else if (!strcasecmp(var, "apply-inbound-acl")) {
+						if (profile->acl_count < SOFIA_MAX_ACL) {
+							profile->acl[profile->acl_count++] = switch_core_strdup(profile->pool, val);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
+						}
+					} else if (!strcasecmp(var, "apply-register-acl")) {
+						if (profile->reg_acl_count < SOFIA_MAX_ACL) {
+							profile->reg_acl[profile->reg_acl_count++] = switch_core_strdup(profile->pool, val);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
 						}
 					} else if (!strcasecmp(var, "rfc2833-pt")) {
 						profile->te = (switch_payload_t) atoi(val);
@@ -1173,6 +1205,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 				}
 			}
 			
+
 			if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
 				parse_gateways(profile, gateways_tag);
 			}
@@ -1333,6 +1366,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				profile->tls_version = 0;
 				profile->mflags = MFLAG_REFER | MFLAG_REGISTER;
 				profile->rport_level = 1;
+				profile->pflags |= PFLAG_STUN_ENABLED;
 				
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -1391,6 +1425,18 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							profile->pflags |= PFLAG_FUNNY_STUN; 
 						} else {
 							profile->pflags &= ~PFLAG_FUNNY_STUN; 
+						}
+					} else if (!strcasecmp(var, "stun-enabled")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_STUN_ENABLED;
+						} else {
+							profile->pflags &= ~PFLAG_STUN_ENABLED; 
+						}
+					} else if (!strcasecmp(var, "stun-auto-disable")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_STUN_AUTO_DISABLE;
+						} else {
+							profile->pflags &= ~PFLAG_STUN_AUTO_DISABLE; 
 						}
 					} else if (!strcasecmp(var, "rfc2833-pt")) {
 						profile->te = (switch_payload_t) atoi(val);
@@ -1678,6 +1724,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 				if (!profile->dialplan) {
 					profile->dialplan = switch_core_strdup(profile->pool, "XML");
+				}
+
+				if (!profile->context) {
+					profile->context = switch_core_strdup(profile->pool, "default");
 				}
 
 				if (!profile->sipdomain) {
