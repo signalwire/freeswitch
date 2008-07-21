@@ -860,6 +860,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Module is not unloadable.\n");
 			*err = "Module is not unloadable";
 			status = SWITCH_STATUS_NOUNLOAD;
+			goto end;
 		} else {
 			do_shutdown(module);
 		}
@@ -868,6 +869,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
 		*err = "No such module!";
 		status = SWITCH_STATUS_FALSE;
 	}
+ end:
 	switch_mutex_unlock(loadable_modules.mutex);
 
 	return status;
