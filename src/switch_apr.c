@@ -230,6 +230,11 @@ SWITCH_DECLARE(switch_status_t) switch_time_exp_lt(switch_time_exp_t *result, sw
 	return apr_time_exp_lt((apr_time_exp_t *) result, input);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_time_exp_tz(switch_time_exp_t *result, switch_time_t input, switch_int32_t offs)
+{
+	return apr_time_exp_tz((apr_time_exp_t *) result, input, (apr_int32_t )offs);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_time_exp_gmt(switch_time_exp_t *result, switch_time_t input)
 {
 	return apr_time_exp_gmt((apr_time_exp_t *) result, input);

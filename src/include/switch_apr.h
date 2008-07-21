@@ -303,6 +303,13 @@ SWITCH_DECLARE(switch_status_t) switch_time_exp_get(switch_time_t *result, switc
 SWITCH_DECLARE(switch_status_t) switch_time_exp_lt(switch_time_exp_t *result, switch_time_t input);
 
 /**
+ * convert a time to its human readable components in a specific timezone with offset
+ * @param result the exploded time
+ * @param input the time to explode
+ */
+SWITCH_DECLARE(switch_status_t) switch_time_exp_tz(switch_time_exp_t *result, switch_time_t input, switch_int32_t offs);
+
+/**
  * Sleep for the specified number of micro-seconds.
  * @param t desired amount of time to sleep.
  * @warning May sleep for longer than the specified time. 
