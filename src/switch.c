@@ -179,6 +179,8 @@ void WINAPI service_main(DWORD numArgs, char **args)
 	/* update the service status */
 	SetServiceStatus(hStatus, &status);
 
+	switch_core_set_globals();
+
 	/* attempt to initialize freeswitch and load modules */
 	if (switch_core_init_and_modload(flags, SWITCH_FALSE, &err) != SWITCH_STATUS_SUCCESS) {
 		/* freeswitch did not start sucessfully */
