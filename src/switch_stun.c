@@ -493,6 +493,10 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 	if (funny) {
 		packet = (switch_stun_packet_t *) buf;
 		bytes += 4;
+		buf[bytes++] = 0;
+		buf[bytes++] = 0;
+		buf[bytes++] = 0;
+		buf[bytes++] = 0;
 	}
 	
 	switch_socket_sendto(sock, remote_addr, 0, (void *) packet, &bytes);
@@ -534,6 +538,10 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 		switch (attr->type) {
 		case SWITCH_STUN_ATTR_MAPPED_ADDRESS:
 			if (attr->type) {
+				if(funny)
+				{
+					((switch_stun_ip_t *) attr->value)->address ^= ntohl(0xabcdabcd);
+				}
 				switch_stun_packet_attribute_get_mapped_address(attr, rip, &rport);
 			}
 			break;
