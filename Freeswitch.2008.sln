@@ -40,16 +40,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Default", "Default", "{3B08
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Release", "Release", "{7BFD517E-7F8F-4A40-A78E-8D3632738227}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\freeswitch.xml = release\conf\freeswitch.xml
-		release\conf\vars.xml = release\conf\vars.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Debug", "Debug", "{6374D55C-FABE-4A02-9CF1-4145308A56C5}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\freeswitch.xml = debug\conf\freeswitch.xml
-		debug\conf\vars.xml = debug\conf\vars.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Build System", "_Build System", "{DB1024A8-41BF-4AD7-9AE6-13202230D1F3}"
 	ProjectSection(SolutionItems) = preProject
@@ -182,135 +174,40 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vm", "vm", "{3DAF028C-AB5B-
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "autoload_configs", "autoload_configs", "{4833F8E3-ABBF-4260-9DB1-B34015676CFC}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\autoload_configs\alsa.conf.xml = debug\conf\autoload_configs\alsa.conf.xml
-		debug\conf\autoload_configs\conference.conf.xml = debug\conf\autoload_configs\conference.conf.xml
-		debug\conf\autoload_configs\console.conf.xml = debug\conf\autoload_configs\console.conf.xml
-		debug\conf\autoload_configs\dialplan_directory.conf.xml = debug\conf\autoload_configs\dialplan_directory.conf.xml
-		debug\conf\autoload_configs\dingaling.conf.xml = debug\conf\autoload_configs\dingaling.conf.xml
-		debug\conf\autoload_configs\enum.conf.xml = debug\conf\autoload_configs\enum.conf.xml
-		debug\conf\autoload_configs\event_multicast.conf.xml = debug\conf\autoload_configs\event_multicast.conf.xml
-		debug\conf\autoload_configs\event_socket.conf.xml = debug\conf\autoload_configs\event_socket.conf.xml
-		debug\conf\autoload_configs\iax.conf.xml = debug\conf\autoload_configs\iax.conf.xml
-		debug\conf\autoload_configs\ivr.conf.xml = debug\conf\autoload_configs\ivr.conf.xml
-		debug\conf\autoload_configs\java.conf.xml = debug\conf\autoload_configs\java.conf.xml
-		debug\conf\autoload_configs\limit.conf.xml = debug\conf\autoload_configs\limit.conf.xml
-		debug\conf\autoload_configs\local_stream.conf.xml = debug\conf\autoload_configs\local_stream.conf.xml
-		debug\conf\autoload_configs\logfile.conf.xml = debug\conf\autoload_configs\logfile.conf.xml
-		debug\conf\autoload_configs\modules.conf.xml = debug\conf\autoload_configs\modules.conf.xml
-		debug\conf\autoload_configs\openmrcp.conf.xml = debug\conf\autoload_configs\openmrcp.conf.xml
-		debug\conf\autoload_configs\portaudio.conf.xml = debug\conf\autoload_configs\portaudio.conf.xml
-		debug\conf\autoload_configs\rss.conf.xml = debug\conf\autoload_configs\rss.conf.xml
-		debug\conf\autoload_configs\sofia.conf.xml = debug\conf\autoload_configs\sofia.conf.xml
-		debug\conf\autoload_configs\spidermonkey.conf.xml = debug\conf\autoload_configs\spidermonkey.conf.xml
-		debug\conf\autoload_configs\switch.conf.xml = debug\conf\autoload_configs\switch.conf.xml
-		debug\conf\autoload_configs\syslog.conf.xml = debug\conf\autoload_configs\syslog.conf.xml
-		debug\conf\autoload_configs\voicemail.conf.xml = debug\conf\autoload_configs\voicemail.conf.xml
-		debug\conf\autoload_configs\wanpipe.conf.xml = debug\conf\autoload_configs\wanpipe.conf.xml
-		debug\conf\autoload_configs\woomera.conf.xml = debug\conf\autoload_configs\woomera.conf.xml
-		debug\conf\autoload_configs\xml_cdr.conf.xml = debug\conf\autoload_configs\xml_cdr.conf.xml
-		debug\conf\autoload_configs\xml_curl.conf.xml = debug\conf\autoload_configs\xml_curl.conf.xml
-		debug\conf\autoload_configs\xml_rpc.conf.xml = debug\conf\autoload_configs\xml_rpc.conf.xml
-		debug\conf\autoload_configs\zeroconf.conf.xml = debug\conf\autoload_configs\zeroconf.conf.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dialplan", "dialplan", "{D44DD429-FE98-42AA-B5B7-4B4EBE33AEFD}"
 	ProjectSection(SolutionItems) = preProject
-		debug\conf\dialplan\default.xml = debug\conf\dialplan\default.xml
 		debug\conf\dialplan\US.conf.xml = debug\conf\dialplan\US.conf.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "directory", "directory", "{471110C9-A7ED-4966-98E1-8EA667BF0EEA}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\directory\default.xml = debug\conf\directory\default.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sip_profiles", "sip_profiles", "{4DF5199E-F7F5-4347-97DD-22078FCDB371}"
 	ProjectSection(SolutionItems) = preProject
 		debug\conf\sip_profiles\default.xml = debug\conf\sip_profiles\default.xml
-		debug\conf\sip_profiles\nat.xml = debug\conf\sip_profiles\nat.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lang", "lang", "{B487BEBE-4A5C-434F-8D30-39465412F84F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "de", "de", "{2003189F-0E69-4FF7-A11D-3BFB3F03D558}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\lang\de\de.xml = debug\conf\lang\de\de.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "en", "en", "{C8EA69FA-365E-4897-9BB0-08022509E18B}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\lang\en\en.xml = debug\conf\lang\en\en.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fr", "fr", "{1240C217-6674-43C1-B099-B0290D84F28B}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\lang\fr\fr.xml = debug\conf\lang\fr\fr.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{03517B06-98A1-46DD-9347-BFFFED7DD8A4}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\lang\de\demo\demo.xml = debug\conf\lang\de\demo\demo.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vm", "vm", "{1D339A14-FFC2-4F6E-BEF2-D5D6DF14AC88}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\lang\de\vm\tts.xml = debug\conf\lang\de\vm\tts.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{B4C6D0B5-5F39-4546-820D-4BCAA6C3E301}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\lang\en\demo\demo.xml = debug\conf\lang\en\demo\demo.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vm", "vm", "{3041F86C-51D4-4D9E-8A00-91BA4B7C51D4}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\lang\en\vm\sounds.xml = debug\conf\lang\en\vm\sounds.xml
-		debug\conf\lang\en\vm\tts.xml = debug\conf\lang\en\vm\tts.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{DFE96A6E-5C9A-4C74-959A-9C485A7AD95C}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\lang\fr\demo\demo.xml = debug\conf\lang\fr\demo\demo.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vm", "vm", "{80A4CA5C-7208-4134-8EFD-C147B03C8AA1}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\lang\fr\vm\sounds.xml = debug\conf\lang\fr\vm\sounds.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "autoload_configs", "autoload_configs", "{8D29085B-952D-4594-9BB9-5781CE552D0A}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\autoload_configs\alsa.conf.xml = release\conf\autoload_configs\alsa.conf.xml
-		release\conf\autoload_configs\conference.conf.xml = release\conf\autoload_configs\conference.conf.xml
-		release\conf\autoload_configs\console.conf.xml = release\conf\autoload_configs\console.conf.xml
-		release\conf\autoload_configs\dialplan_directory.conf.xml = release\conf\autoload_configs\dialplan_directory.conf.xml
-		release\conf\autoload_configs\dingaling.conf.xml = release\conf\autoload_configs\dingaling.conf.xml
-		release\conf\autoload_configs\enum.conf.xml = release\conf\autoload_configs\enum.conf.xml
-		release\conf\autoload_configs\event_multicast.conf.xml = release\conf\autoload_configs\event_multicast.conf.xml
-		release\conf\autoload_configs\event_socket.conf.xml = release\conf\autoload_configs\event_socket.conf.xml
-		release\conf\autoload_configs\iax.conf.xml = release\conf\autoload_configs\iax.conf.xml
-		release\conf\autoload_configs\ivr.conf.xml = release\conf\autoload_configs\ivr.conf.xml
-		release\conf\autoload_configs\java.conf.xml = release\conf\autoload_configs\java.conf.xml
-		release\conf\autoload_configs\limit.conf.xml = release\conf\autoload_configs\limit.conf.xml
-		release\conf\autoload_configs\local_stream.conf.xml = release\conf\autoload_configs\local_stream.conf.xml
-		release\conf\autoload_configs\logfile.conf.xml = release\conf\autoload_configs\logfile.conf.xml
-		release\conf\autoload_configs\modules.conf.xml = release\conf\autoload_configs\modules.conf.xml
-		release\conf\autoload_configs\openmrcp.conf.xml = release\conf\autoload_configs\openmrcp.conf.xml
-		release\conf\autoload_configs\portaudio.conf.xml = release\conf\autoload_configs\portaudio.conf.xml
-		release\conf\autoload_configs\rss.conf.xml = release\conf\autoload_configs\rss.conf.xml
-		release\conf\autoload_configs\sofia.conf.xml = release\conf\autoload_configs\sofia.conf.xml
-		release\conf\autoload_configs\spidermonkey.conf.xml = release\conf\autoload_configs\spidermonkey.conf.xml
-		release\conf\autoload_configs\switch.conf.xml = release\conf\autoload_configs\switch.conf.xml
-		release\conf\autoload_configs\syslog.conf.xml = release\conf\autoload_configs\syslog.conf.xml
-		release\conf\autoload_configs\voicemail.conf.xml = release\conf\autoload_configs\voicemail.conf.xml
-		release\conf\autoload_configs\wanpipe.conf.xml = release\conf\autoload_configs\wanpipe.conf.xml
-		release\conf\autoload_configs\woomera.conf.xml = release\conf\autoload_configs\woomera.conf.xml
-		release\conf\autoload_configs\xml_cdr.conf.xml = release\conf\autoload_configs\xml_cdr.conf.xml
-		release\conf\autoload_configs\xml_curl.conf.xml = release\conf\autoload_configs\xml_curl.conf.xml
-		release\conf\autoload_configs\xml_rpc.conf.xml = release\conf\autoload_configs\xml_rpc.conf.xml
-		release\conf\autoload_configs\zeroconf.conf.xml = release\conf\autoload_configs\zeroconf.conf.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dialplan", "dialplan", "{23874F4B-C0AF-4587-9F7E-DB0F06DE8CB4}"
 	ProjectSection(SolutionItems) = preProject
@@ -318,63 +215,31 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dialplan", "dialplan", "{23
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "directory", "directory", "{19ED97F6-30D8-4FCE-AE1D-8B7FCB170D40}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\directory\default.xml = release\conf\directory\default.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sip_profiles", "sip_profiles", "{99E79D76-FCFC-466B-965B-273CCACF99B0}"
 	ProjectSection(SolutionItems) = preProject
 		release\conf\sip_profiles\default.xml = release\conf\sip_profiles\default.xml
-		release\conf\sip_profiles\nat.xml = release\conf\sip_profiles\nat.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lang", "lang", "{8FADAC7F-CA9E-49D9-B957-A5F5605D238C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "de", "de", "{58A56014-DEA7-4172-8C26-BAD8D499A1E8}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\lang\de\de.xml = release\conf\lang\de\de.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "en", "en", "{EB577858-8284-4DEA-ADDA-DD046BCA0126}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\lang\en\en.xml = release\conf\lang\en\en.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fr", "fr", "{89A94241-1DA6-44E8-A685-AED1E665C2AD}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\lang\fr\fr.xml = release\conf\lang\fr\fr.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{2D74F635-AB18-43B3-A87E-A71F3EA24DDB}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\lang\de\demo\demo.xml = release\conf\lang\de\demo\demo.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vm", "vm", "{A721E646-07E9-4E16-A92D-B97F654B2BAC}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\lang\de\vm\tts.xml = release\conf\lang\de\vm\tts.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{50331CA0-7038-4341-B92D-C34E1601EFF0}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\lang\en\demo\demo.xml = release\conf\lang\en\demo\demo.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vm", "vm", "{FC0DB2A2-B1A3-426E-9E37-BE28FE8FE01B}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\lang\en\vm\sounds.xml = release\conf\lang\en\vm\sounds.xml
-		release\conf\lang\en\vm\tts.xml = release\conf\lang\en\vm\tts.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{91C6DEDE-CE4A-47D1-A84B-3E828F82E2B0}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\lang\fr\demo\demo.xml = release\conf\lang\fr\demo\demo.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vm", "vm", "{8F5A511B-F716-4D07-9657-55B9E4F1D3E9}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\lang\fr\vm\sounds.xml = release\conf\lang\fr\vm\sounds.xml
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FreeSwitchConsole", "w32\Console\FreeSwitchConsole.2008.vcproj", "{1AF3A893-F7BE-43DD-B697-8AB2397C0D67}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -863,6 +728,57 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xmlparse", "libs\xmlrpc-c\W
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xmltok", "libs\xmlrpc-c\Windows\xmltok.2008.vcproj", "{B535402E-38D2-4D54-8360-423ACBD17192}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download sphinxbase", "libs\win32\Download sphinxbase.2008.vcproj", "{4F92B672-DADB-4047-8D6A-4BB3796733FD}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download sphinxmodel", "libs\win32\Download sphinxmodel.2008.vcproj", "{2DEE4895-1134-439C-B688-52203E57D878}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download pocketsphinx", "libs\win32\Download pocketsphinx.2008.vcproj", "{AF8163EE-FA76-4904-A11D-7D70A1B5BA2E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sphinxbase", "libs\win32\sphinxbase\sphinxbase.2008.vcproj", "{2F025EAD-99BD-40F5-B2CC-F0A28CAD7F2D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4F92B672-DADB-4047-8D6A-4BB3796733FD} = {4F92B672-DADB-4047-8D6A-4BB3796733FD}
+		{2DEE4895-1134-439C-B688-52203E57D878} = {2DEE4895-1134-439C-B688-52203E57D878}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pocketsphinx", "libs\win32\pocketsphinx\pocketsphinx.2008.vcproj", "{94001A0E-A837-445C-8004-F918F10D0226}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2F025EAD-99BD-40F5-B2CC-F0A28CAD7F2D} = {2F025EAD-99BD-40F5-B2CC-F0A28CAD7F2D}
+		{AF8163EE-FA76-4904-A11D-7D70A1B5BA2E} = {AF8163EE-FA76-4904-A11D-7D70A1B5BA2E}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_pocketsphinx", "src\mod\asr_tts\mod_pocketsphinx\mod_pocketsphinx.2008.vcproj", "{2286DA73-9FC5-45BC-A508-85994C3317AB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{94001A0E-A837-445C-8004-F918F10D0226} = {94001A0E-A837-445C-8004-F918F10D0226}
+		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
+		{4F92B672-DADB-4047-8D6A-4BB3796733FD} = {4F92B672-DADB-4047-8D6A-4BB3796733FD}
+		{2DEE4895-1134-439C-B688-52203E57D878} = {2DEE4895-1134-439C-B688-52203E57D878}
+		{2F025EAD-99BD-40F5-B2CC-F0A28CAD7F2D} = {2F025EAD-99BD-40F5-B2CC-F0A28CAD7F2D}
+		{AF8163EE-FA76-4904-A11D-7D70A1B5BA2E} = {AF8163EE-FA76-4904-A11D-7D70A1B5BA2E}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download 8khzsound", "libs\win32\Download 8khz Sounds.2008.vcproj", "{3CE1DC99-8246-4DB1-A709-74F19F08EC67}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sound Files", "Sound Files", "{4F227C26-768F-46A3-8684-1D08A46FB374}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download 16khzsound", "libs\win32\Download 16khz Sounds.2008.vcproj", "{87A1FE3D-F410-4C8E-9591-8C625985BC70}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "8khz", "libs\win32\Sound_Files\8khz.2008.vcproj", "{7A8D8174-B355-4114-AFC1-04777CB9DE0A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3CE1DC99-8246-4DB1-A709-74F19F08EC67} = {3CE1DC99-8246-4DB1-A709-74F19F08EC67}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "16khz", "libs\win32\Sound_Files\16khz.2008.vcproj", "{7EB71250-F002-4ED8-92CA-CA218114537A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{87A1FE3D-F410-4C8E-9591-8C625985BC70} = {87A1FE3D-F410-4C8E-9591-8C625985BC70}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download 32khzsound", "libs\win32\Dowload 32khz Sounds.2008.vcproj", "{6E49F6C2-ADDA-4BFB-81FE-AB9AF51B455F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "32khz", "libs\win32\Sound_Files\32khz.2008.vcproj", "{464AAB78-5489-4916-BE51-BF8D61822311}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6E49F6C2-ADDA-4BFB-81FE-AB9AF51B455F} = {6E49F6C2-ADDA-4BFB-81FE-AB9AF51B455F}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -974,6 +890,7 @@ Global
 		{692F6330-4D87-4C82-81DF-40DB5892636E}.Debug|Win32.ActiveCfg = Debug|Win32
 		{692F6330-4D87-4C82-81DF-40DB5892636E}.Debug|x64.ActiveCfg = Debug|Win32
 		{692F6330-4D87-4C82-81DF-40DB5892636E}.Release|Win32.ActiveCfg = Release|Win32
+		{692F6330-4D87-4C82-81DF-40DB5892636E}.Release|Win32.Build.0 = Release|Win32
 		{692F6330-4D87-4C82-81DF-40DB5892636E}.Release|x64.ActiveCfg = Release|Win32
 		{D3EC0AFF-76FC-4210-A825-9A17410660A3}.Debug|Win32.ActiveCfg = Debug|Win32
 		{D3EC0AFF-76FC-4210-A825-9A17410660A3}.Debug|Win32.Build.0 = Debug|Win32
@@ -1449,6 +1366,74 @@ Global
 		{B535402E-38D2-4D54-8360-423ACBD17192}.Release|Win32.ActiveCfg = Release|Win32
 		{B535402E-38D2-4D54-8360-423ACBD17192}.Release|Win32.Build.0 = Release|Win32
 		{B535402E-38D2-4D54-8360-423ACBD17192}.Release|x64.ActiveCfg = Release|Win32
+		{4F92B672-DADB-4047-8D6A-4BB3796733FD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4F92B672-DADB-4047-8D6A-4BB3796733FD}.Debug|Win32.Build.0 = Debug|Win32
+		{4F92B672-DADB-4047-8D6A-4BB3796733FD}.Debug|x64.ActiveCfg = Debug|Win32
+		{4F92B672-DADB-4047-8D6A-4BB3796733FD}.Release|Win32.ActiveCfg = Release|Win32
+		{4F92B672-DADB-4047-8D6A-4BB3796733FD}.Release|Win32.Build.0 = Release|Win32
+		{4F92B672-DADB-4047-8D6A-4BB3796733FD}.Release|x64.ActiveCfg = Release|Win32
+		{2DEE4895-1134-439C-B688-52203E57D878}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2DEE4895-1134-439C-B688-52203E57D878}.Debug|Win32.Build.0 = Debug|Win32
+		{2DEE4895-1134-439C-B688-52203E57D878}.Debug|x64.ActiveCfg = Debug|Win32
+		{2DEE4895-1134-439C-B688-52203E57D878}.Release|Win32.ActiveCfg = Release|Win32
+		{2DEE4895-1134-439C-B688-52203E57D878}.Release|Win32.Build.0 = Release|Win32
+		{2DEE4895-1134-439C-B688-52203E57D878}.Release|x64.ActiveCfg = Release|Win32
+		{AF8163EE-FA76-4904-A11D-7D70A1B5BA2E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AF8163EE-FA76-4904-A11D-7D70A1B5BA2E}.Debug|Win32.Build.0 = Debug|Win32
+		{AF8163EE-FA76-4904-A11D-7D70A1B5BA2E}.Debug|x64.ActiveCfg = Debug|Win32
+		{AF8163EE-FA76-4904-A11D-7D70A1B5BA2E}.Release|Win32.ActiveCfg = Release|Win32
+		{AF8163EE-FA76-4904-A11D-7D70A1B5BA2E}.Release|Win32.Build.0 = Release|Win32
+		{AF8163EE-FA76-4904-A11D-7D70A1B5BA2E}.Release|x64.ActiveCfg = Release|Win32
+		{2F025EAD-99BD-40F5-B2CC-F0A28CAD7F2D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2F025EAD-99BD-40F5-B2CC-F0A28CAD7F2D}.Debug|Win32.Build.0 = Debug|Win32
+		{2F025EAD-99BD-40F5-B2CC-F0A28CAD7F2D}.Debug|x64.ActiveCfg = Debug|Win32
+		{2F025EAD-99BD-40F5-B2CC-F0A28CAD7F2D}.Release|Win32.ActiveCfg = Release|Win32
+		{2F025EAD-99BD-40F5-B2CC-F0A28CAD7F2D}.Release|Win32.Build.0 = Release|Win32
+		{2F025EAD-99BD-40F5-B2CC-F0A28CAD7F2D}.Release|x64.ActiveCfg = Release|Win32
+		{94001A0E-A837-445C-8004-F918F10D0226}.Debug|Win32.ActiveCfg = Debug|Win32
+		{94001A0E-A837-445C-8004-F918F10D0226}.Debug|Win32.Build.0 = Debug|Win32
+		{94001A0E-A837-445C-8004-F918F10D0226}.Debug|x64.ActiveCfg = Debug|Win32
+		{94001A0E-A837-445C-8004-F918F10D0226}.Release|Win32.ActiveCfg = Release|Win32
+		{94001A0E-A837-445C-8004-F918F10D0226}.Release|Win32.Build.0 = Release|Win32
+		{94001A0E-A837-445C-8004-F918F10D0226}.Release|x64.ActiveCfg = Release|Win32
+		{2286DA73-9FC5-45BC-A508-85994C3317AB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2286DA73-9FC5-45BC-A508-85994C3317AB}.Debug|Win32.Build.0 = Debug|Win32
+		{2286DA73-9FC5-45BC-A508-85994C3317AB}.Debug|x64.ActiveCfg = Debug|Win32
+		{2286DA73-9FC5-45BC-A508-85994C3317AB}.Release|Win32.ActiveCfg = Release|Win32
+		{2286DA73-9FC5-45BC-A508-85994C3317AB}.Release|Win32.Build.0 = Release|Win32
+		{2286DA73-9FC5-45BC-A508-85994C3317AB}.Release|x64.ActiveCfg = Release|Win32
+		{3CE1DC99-8246-4DB1-A709-74F19F08EC67}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3CE1DC99-8246-4DB1-A709-74F19F08EC67}.Debug|Win32.Build.0 = Debug|Win32
+		{3CE1DC99-8246-4DB1-A709-74F19F08EC67}.Debug|x64.ActiveCfg = Debug|Win32
+		{3CE1DC99-8246-4DB1-A709-74F19F08EC67}.Release|Win32.ActiveCfg = Release|Win32
+		{3CE1DC99-8246-4DB1-A709-74F19F08EC67}.Release|Win32.Build.0 = Release|Win32
+		{3CE1DC99-8246-4DB1-A709-74F19F08EC67}.Release|x64.ActiveCfg = Release|Win32
+		{87A1FE3D-F410-4C8E-9591-8C625985BC70}.Debug|Win32.ActiveCfg = Debug|Win32
+		{87A1FE3D-F410-4C8E-9591-8C625985BC70}.Debug|x64.ActiveCfg = Debug|Win32
+		{87A1FE3D-F410-4C8E-9591-8C625985BC70}.Release|Win32.ActiveCfg = Release|Win32
+		{87A1FE3D-F410-4C8E-9591-8C625985BC70}.Release|Win32.Build.0 = Release|Win32
+		{87A1FE3D-F410-4C8E-9591-8C625985BC70}.Release|x64.ActiveCfg = Release|Win32
+		{7A8D8174-B355-4114-AFC1-04777CB9DE0A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7A8D8174-B355-4114-AFC1-04777CB9DE0A}.Debug|Win32.Build.0 = Debug|Win32
+		{7A8D8174-B355-4114-AFC1-04777CB9DE0A}.Debug|x64.ActiveCfg = Debug|Win32
+		{7A8D8174-B355-4114-AFC1-04777CB9DE0A}.Release|Win32.ActiveCfg = Release|Win32
+		{7A8D8174-B355-4114-AFC1-04777CB9DE0A}.Release|Win32.Build.0 = Release|Win32
+		{7A8D8174-B355-4114-AFC1-04777CB9DE0A}.Release|x64.ActiveCfg = Release|Win32
+		{7EB71250-F002-4ED8-92CA-CA218114537A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7EB71250-F002-4ED8-92CA-CA218114537A}.Debug|x64.ActiveCfg = Debug|Win32
+		{7EB71250-F002-4ED8-92CA-CA218114537A}.Release|Win32.ActiveCfg = Release|Win32
+		{7EB71250-F002-4ED8-92CA-CA218114537A}.Release|Win32.Build.0 = Release|Win32
+		{7EB71250-F002-4ED8-92CA-CA218114537A}.Release|x64.ActiveCfg = Release|Win32
+		{6E49F6C2-ADDA-4BFB-81FE-AB9AF51B455F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{6E49F6C2-ADDA-4BFB-81FE-AB9AF51B455F}.Debug|x64.ActiveCfg = Debug|Win32
+		{6E49F6C2-ADDA-4BFB-81FE-AB9AF51B455F}.Release|Win32.ActiveCfg = Release|Win32
+		{6E49F6C2-ADDA-4BFB-81FE-AB9AF51B455F}.Release|Win32.Build.0 = Release|Win32
+		{6E49F6C2-ADDA-4BFB-81FE-AB9AF51B455F}.Release|x64.ActiveCfg = Release|Win32
+		{464AAB78-5489-4916-BE51-BF8D61822311}.Debug|Win32.ActiveCfg = Debug|Win32
+		{464AAB78-5489-4916-BE51-BF8D61822311}.Debug|x64.ActiveCfg = Debug|Win32
+		{464AAB78-5489-4916-BE51-BF8D61822311}.Release|Win32.ActiveCfg = Release|Win32
+		{464AAB78-5489-4916-BE51-BF8D61822311}.Release|Win32.Build.0 = Release|Win32
+		{464AAB78-5489-4916-BE51-BF8D61822311}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1499,6 +1484,7 @@ Global
 		{7B077E7F-1BE7-4291-AB86-55E527B25CAC} = {0C808854-54D1-4230-BFF5-77B5FD905000}
 		{692F6330-4D87-4C82-81DF-40DB5892636E} = {4CF6A6AC-07DE-4B9E-ABE1-7F98B64E0BB0}
 		{E7116F50-2B10-472F-92BD-C8667AA9C1AE} = {4CF6A6AC-07DE-4B9E-ABE1-7F98B64E0BB0}
+		{2286DA73-9FC5-45BC-A508-85994C3317AB} = {4CF6A6AC-07DE-4B9E-ABE1-7F98B64E0BB0}
 		{1C453396-D912-4213-89FD-9B489162B7B5} = {A7AB4405-FDB7-4853-9FBB-1516B1C3D80A}
 		{D0BCAC02-D94B-46B8-9B49-CDDCC2BD7909} = {A7AB4405-FDB7-4853-9FBB-1516B1C3D80A}
 		{CBEC7225-0C21-4DA8-978E-1F158F8AD950} = {F69A4A6B-9360-4EBB-A280-22AA3C455AC5}
@@ -1532,8 +1518,16 @@ Global
 		{CEE544A9-0303-44C2-8ECE-EFA7D7BCBBBA} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
 		{0D108721-EAE8-4BAF-8102-D8960EC93647} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
 		{B535402E-38D2-4D54-8360-423ACBD17192} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
+		{2F025EAD-99BD-40F5-B2CC-F0A28CAD7F2D} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
+		{94001A0E-A837-445C-8004-F918F10D0226} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
 		{5927104D-C14C-4AC8-925C-4AB681762E75} = {C120A020-773F-4EA3-923F-B67AF28B750D}
 		{8B3B4C4C-13C2-446C-BEB0-F412CC2CFB9A} = {C120A020-773F-4EA3-923F-B67AF28B750D}
+		{4F92B672-DADB-4047-8D6A-4BB3796733FD} = {C120A020-773F-4EA3-923F-B67AF28B750D}
+		{2DEE4895-1134-439C-B688-52203E57D878} = {C120A020-773F-4EA3-923F-B67AF28B750D}
+		{AF8163EE-FA76-4904-A11D-7D70A1B5BA2E} = {C120A020-773F-4EA3-923F-B67AF28B750D}
+		{3CE1DC99-8246-4DB1-A709-74F19F08EC67} = {C120A020-773F-4EA3-923F-B67AF28B750D}
+		{87A1FE3D-F410-4C8E-9591-8C625985BC70} = {C120A020-773F-4EA3-923F-B67AF28B750D}
+		{6E49F6C2-ADDA-4BFB-81FE-AB9AF51B455F} = {C120A020-773F-4EA3-923F-B67AF28B750D}
 		{988CACF7-3FCB-4992-BE69-77872AE67DC8} = {6CD61A1D-797C-470A-BE08-8C31B68BB336}
 		{5BC072DB-3826-48EA-AF34-FE32AA01E83B} = {6CD61A1D-797C-470A-BE08-8C31B68BB336}
 		{FA429E98-8B03-45E6-A096-A4BC5E821DE4} = {6CD61A1D-797C-470A-BE08-8C31B68BB336}
@@ -1595,5 +1589,8 @@ Global
 		{FC0DB2A2-B1A3-426E-9E37-BE28FE8FE01B} = {EB577858-8284-4DEA-ADDA-DD046BCA0126}
 		{91C6DEDE-CE4A-47D1-A84B-3E828F82E2B0} = {89A94241-1DA6-44E8-A685-AED1E665C2AD}
 		{8F5A511B-F716-4D07-9657-55B9E4F1D3E9} = {89A94241-1DA6-44E8-A685-AED1E665C2AD}
+		{7A8D8174-B355-4114-AFC1-04777CB9DE0A} = {4F227C26-768F-46A3-8684-1D08A46FB374}
+		{7EB71250-F002-4ED8-92CA-CA218114537A} = {4F227C26-768F-46A3-8684-1D08A46FB374}
+		{464AAB78-5489-4916-BE51-BF8D61822311} = {4F227C26-768F-46A3-8684-1D08A46FB374}
 	EndGlobalSection
 EndGlobal

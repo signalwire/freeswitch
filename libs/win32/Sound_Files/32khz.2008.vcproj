@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="9.00"
+	Name="32khz"
+	ProjectGUID="{464AAB78-5489-4916-BE51-BF8D61822311}"
+	RootNamespace="My32khz"
+	TargetFrameworkVersion="196613"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="if not exist &quot;$(OutDir)\sounds\en\us\callie\voicemail\32000&quot; xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\voicemail\32000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\voicemail\32000&quot; /C /D /Y /S /I&#x0D;&#x0A;if not exist &quot;$(OutDir)\sounds\music\32000&quot; xcopy &quot;$(SolutionDir)libs\sounds\music\32000\*.*&quot; &quot;$(OutDir)\sounds\music\32000&quot; /C /D /Y /S /I&#x0D;&#x0A;"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="if not exist &quot;$(OutDir)\sounds\en\us\callie\voicemail\32000&quot; xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\voicemail\32000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\voicemail\32000&quot; /C /D /Y /S /I&#x0D;&#x0A;if not exist &quot;$(OutDir)\sounds\music\32000&quot; xcopy &quot;$(SolutionDir)libs\sounds\music\32000\*.*&quot; &quot;$(OutDir)\sounds\music\32000&quot; /C /D /Y /S /I&#x0D;&#x0A;"
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>
