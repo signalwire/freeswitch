@@ -1035,6 +1035,12 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	if (!tech_pvt->from_str) {
 		const char* sipip = tech_pvt->profile->extsipip ? tech_pvt->profile->extsipip : tech_pvt->profile->sipip;
 		const char* format = strchr(sipip, ':') ? "\"%s\" <sip:%s%s[%s]>" : "\"%s\" <sip:%s%s%s>";
+		const char *alt = NULL;
+
+		if ((alt = switch_channel_get_variable(channel, "sip_invite_domain"))) {
+			sipip = alt;
+		}
+			
 		tech_pvt->from_str = 
 			switch_core_session_sprintf(tech_pvt->session,
 										format,
