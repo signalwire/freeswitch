@@ -44,6 +44,7 @@ SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs = { 0 };
 
 /* The main runtime obj we keep this hidden for ourselves */
 struct switch_runtime runtime;
+static void switch_load_core_config(const char *file);
 
 static void send_heartbeat(void)
 {
@@ -860,7 +861,6 @@ SWITCH_DECLARE(uint32_t) switch_core_default_dtmf_duration(uint32_t duration)
 
 SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switch_bool_t console, const char **err)
 {
-	switch_xml_t xml = NULL, cfg = NULL;
 	switch_uuid_t uuid;
 	char guess_ip[256];
 	char *dir_path;
@@ -929,81 +929,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	if ((xml = switch_xml_open_cfg("switch.conf", &cfg, NULL))) {
-		switch_xml_t settings, param;
-
-		if ((settings = switch_xml_child(cfg, "settings"))) {
-			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
-				const char *var = switch_xml_attr_soft(param, "name");
-				const char *val = switch_xml_attr_soft(param, "value");
-
-				if (!strcasecmp(var, "crash-protection")) {
-					if (switch_true(val)) {
-						switch_set_flag((&runtime), SCF_CRASH_PROT);
-					}
-				} else if (!strcasecmp(var, "loglevel")) {
-					int level;
-					if (*val > 47 && *val < 58) {
-						level = atoi(val);
-					} else {
-						level = switch_log_str2level(val);
-					}
-
-					if (level != SWITCH_LOG_INVALID) {
-						switch_core_session_ctl(SCSC_LOGLEVEL, &level);
-					}
-#ifdef HAVE_SETRLIMIT
-				} else if (!strcasecmp(var, "dump-cores")) {
-					struct rlimit rlp;
-					memset(&rlp, 0, sizeof(rlp));
-					rlp.rlim_cur = RLIM_INFINITY;
-					rlp.rlim_max = RLIM_INFINITY;
-					setrlimit(RLIMIT_CORE, &rlp);
-#endif
-				} else if (!strcasecmp(var, "colorize-console") && switch_true(val)) {
-					runtime.colorize_console = SWITCH_TRUE;
-				} else if (!strcasecmp(var, "mailer-app") && !switch_strlen_zero(val)) {
-					runtime.mailer_app = switch_core_strdup(runtime.memory_pool, val);
-				} else if (!strcasecmp(var, "mailer-app-args") && val) {
-					runtime.mailer_app_args = switch_core_strdup(runtime.memory_pool, val);
-				} else if (!strcasecmp(var, "sessions-per-second") && !switch_strlen_zero(val)) {
-					switch_core_sessions_per_second(atoi(val));
-				} else if (!strcasecmp(var, "max_dtmf_duration") && !switch_strlen_zero(val)) {
-					int tmp = atoi(val);
-					if (tmp > 0) {
-						switch_core_max_dtmf_duration((uint32_t) tmp);
-					}
-				} else if (!strcasecmp(var, "default_dtmf_duration") && !switch_strlen_zero(val)) {
-					int tmp = atoi(val);
-					if (tmp > 0) {
-						switch_core_default_dtmf_duration((uint32_t) tmp);
-					}
-				} else if (!strcasecmp(var, "disable-monotonic-timing")) {
-					switch_time_set_monotonic(SWITCH_FALSE);
-				} else if (!strcasecmp(var, "max-sessions") && !switch_strlen_zero(val)) {
-					switch_core_session_limit(atoi(val));
-				} else if (!strcasecmp(var, "rtp-start-port") && !switch_strlen_zero(val)) {
-					switch_rtp_set_start_port((switch_port_t) atoi(val));
-				} else if (!strcasecmp(var, "rtp-end-port") && !switch_strlen_zero(val)) {
-					switch_rtp_set_end_port((switch_port_t) atoi(val));
-				}
-			}
-		}
-
-		if ((settings = switch_xml_child(cfg, "variables"))) {
-			for (param = switch_xml_child(settings, "variable"); param; param = param->next) {
-				const char *var = switch_xml_attr_soft(param, "name");
-				const char *val = switch_xml_attr_soft(param, "value");
-				char *varr = NULL, *vall = NULL;
-
-				varr = switch_core_strdup(runtime.memory_pool, var);
-				vall = switch_core_strdup(runtime.memory_pool, val);
-				switch_core_hash_insert(runtime.global_vars, varr, vall);
-			}
-		}
-
-		switch_xml_free(xml);
-	}
+	switch_load_core_config("switch.conf");
 
 	switch_log_init(runtime.memory_pool, runtime.colorize_console);
 	switch_core_state_machine_init(runtime.memory_pool);
@@ -1096,9 +1022,95 @@ static void handle_SIGHUP(int sig)
 	return;
 }
 
+
+static void switch_load_core_config(const char *file)
+{
+	switch_xml_t xml = NULL, cfg = NULL;
+	
+	if ((xml = switch_xml_open_cfg(file, &cfg, NULL))) {
+		switch_xml_t settings, param;
+		
+		if ((settings = switch_xml_child(cfg, "settings"))) {
+			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+				const char *var = switch_xml_attr_soft(param, "name");
+				const char *val = switch_xml_attr_soft(param, "value");
+
+				if (!strcasecmp(var, "crash-protection")) {
+					if (switch_true(val)) {
+						switch_set_flag((&runtime), SCF_CRASH_PROT);
+					}
+				} else if (!strcasecmp(var, "loglevel")) {
+					int level;
+					if (*val > 47 && *val < 58) {
+						level = atoi(val);
+					} else {
+						level = switch_log_str2level(val);
+					}
+
+					if (level != SWITCH_LOG_INVALID) {
+						switch_core_session_ctl(SCSC_LOGLEVEL, &level);
+					}
+#ifdef HAVE_SETRLIMIT
+				} else if (!strcasecmp(var, "dump-cores")) {
+					struct rlimit rlp;
+					memset(&rlp, 0, sizeof(rlp));
+					rlp.rlim_cur = RLIM_INFINITY;
+					rlp.rlim_max = RLIM_INFINITY;
+					setrlimit(RLIMIT_CORE, &rlp);
+#endif
+				} else if (!strcasecmp(var, "colorize-console") && switch_true(val)) {
+					runtime.colorize_console = SWITCH_TRUE;
+				} else if (!strcasecmp(var, "mailer-app") && !switch_strlen_zero(val)) {
+					runtime.mailer_app = switch_core_strdup(runtime.memory_pool, val);
+				} else if (!strcasecmp(var, "mailer-app-args") && val) {
+					runtime.mailer_app_args = switch_core_strdup(runtime.memory_pool, val);
+				} else if (!strcasecmp(var, "sessions-per-second") && !switch_strlen_zero(val)) {
+					switch_core_sessions_per_second(atoi(val));
+				} else if (!strcasecmp(var, "max_dtmf_duration") && !switch_strlen_zero(val)) {
+					int tmp = atoi(val);
+					if (tmp > 0) {
+						switch_core_max_dtmf_duration((uint32_t) tmp);
+					}
+				} else if (!strcasecmp(var, "default_dtmf_duration") && !switch_strlen_zero(val)) {
+					int tmp = atoi(val);
+					if (tmp > 0) {
+						switch_core_default_dtmf_duration((uint32_t) tmp);
+					}
+				} else if (!strcasecmp(var, "disable-monotonic-timing")) {
+					switch_time_set_monotonic(SWITCH_FALSE);
+				} else if (!strcasecmp(var, "max-sessions") && !switch_strlen_zero(val)) {
+					switch_core_session_limit(atoi(val));
+				} else if (!strcasecmp(var, "rtp-start-port") && !switch_strlen_zero(val)) {
+					switch_rtp_set_start_port((switch_port_t) atoi(val));
+				} else if (!strcasecmp(var, "rtp-end-port") && !switch_strlen_zero(val)) {
+					switch_rtp_set_end_port((switch_port_t) atoi(val));
+				}
+			}
+		}
+
+		if ((settings = switch_xml_child(cfg, "variables"))) {
+			for (param = switch_xml_child(settings, "variable"); param; param = param->next) {
+				const char *var = switch_xml_attr_soft(param, "name");
+				const char *val = switch_xml_attr_soft(param, "value");
+				char *varr = NULL, *vall = NULL;
+
+				varr = switch_core_strdup(runtime.memory_pool, var);
+				vall = switch_core_strdup(runtime.memory_pool, val);
+				switch_core_hash_insert(runtime.global_vars, varr, vall);
+			}
+		}
+
+		switch_xml_free(xml);
+	}
+
+
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t flags, switch_bool_t console, const char **err)
 {
 	switch_event_t *event;
+
 	if (switch_core_init(flags, console, err) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
@@ -1124,7 +1136,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 	signal(SIGUSR1, handle_SIGHUP);
 #endif
 	signal(SIGHUP, handle_SIGHUP);
-	switch_load_network_lists(SWITCH_FALSE);
+
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bringing up environment.\n");
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Loading Modules.\n");
@@ -1133,6 +1145,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error: %s\n", *err);
 		return SWITCH_STATUS_GENERR;
 	}
+
+	switch_load_network_lists(SWITCH_FALSE);
+
+	switch_load_core_config("post_load_switch.conf");
 
 	if (switch_event_create(&event, SWITCH_EVENT_STARTUP) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Info", "System Ready");
