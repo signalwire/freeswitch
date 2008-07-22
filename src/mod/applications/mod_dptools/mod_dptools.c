@@ -1192,7 +1192,9 @@ SWITCH_STANDARD_APP(tone_detect_session_function)
 			}
 		} else {
 			if ((to = atol(argv[3])) < switch_timestamp(NULL)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
+				if (to >= 1) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
+				}
 				to = 0;
 			}
 		}
