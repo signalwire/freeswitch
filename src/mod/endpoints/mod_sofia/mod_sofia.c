@@ -284,6 +284,28 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 	if (tech_pvt->nh && !switch_test_flag(tech_pvt, TFLAG_BYE)) {
 		char reason[128] = "";
+		switch_stream_handle_t stream = { 0 };
+		switch_event_header_t *hi;
+		char *bye_headers = NULL;
+
+		SWITCH_STANDARD_STREAM(stream);
+		if ((hi = switch_channel_variable_first(channel))) {
+			for (; hi; hi = hi->next) {
+				const char *name = (char *) hi->name;
+				char *value = (char *) hi->value;
+				
+				if (!strncasecmp(name, SOFIA_SIP_BYE_HEADER_PREFIX, strlen(SOFIA_SIP_BYE_HEADER_PREFIX))) {
+					const char *hname = name + strlen(SOFIA_SIP_BYE_HEADER_PREFIX);
+					stream.write_function(&stream, "%s: %s\r\n", hname, value);
+				}
+			}
+			switch_channel_variable_last(channel);
+		}
+
+		if (stream.data) {
+			bye_headers = stream.data;
+		}
+		
 		if (cause > 1 && cause < 128) {
 			switch_snprintf(reason, sizeof(reason), "Q.850;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
 		} else if (cause == SWITCH_CAUSE_PICKED_OFF) {
@@ -294,17 +316,28 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 		if (switch_test_flag(tech_pvt, TFLAG_ANS)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending BYE to %s\n", switch_channel_get_name(channel));
-			nua_bye(tech_pvt->nh, SIPTAG_REASON_STR(reason), TAG_END());
+			nua_bye(tech_pvt->nh, 
+					SIPTAG_REASON_STR(reason),
+					TAG_IF(!switch_strlen_zero(bye_headers), SIPTAG_HEADER_STR(bye_headers)),
+					TAG_END());
 		} else {
 			if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending CANCEL to %s\n", switch_channel_get_name(channel));
-				nua_cancel(tech_pvt->nh, SIPTAG_REASON_STR(reason), TAG_END());
+				nua_cancel(tech_pvt->nh, 
+						   SIPTAG_REASON_STR(reason), 
+						   TAG_IF(!switch_strlen_zero(bye_headers), SIPTAG_HEADER_STR(bye_headers)),
+						   TAG_IF(!switch_strlen_zero(bye_headers), SIPTAG_HEADER_STR(bye_headers)),
+						   TAG_END());
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding to INVITE with: %d\n", sip_cause);
-				nua_respond(tech_pvt->nh, sip_cause, sip_status_phrase(sip_cause), SIPTAG_REASON_STR(reason), TAG_END());
+				nua_respond(tech_pvt->nh, sip_cause, sip_status_phrase(sip_cause), 
+							SIPTAG_REASON_STR(reason), 
+							TAG_IF(!switch_strlen_zero(bye_headers), SIPTAG_HEADER_STR(bye_headers)),
+							TAG_END());
 			}
 		}
 		switch_set_flag(tech_pvt, TFLAG_BYE);
+		switch_safe_free(stream.data);
 	}
 
 	switch_clear_flag(tech_pvt, TFLAG_IO);

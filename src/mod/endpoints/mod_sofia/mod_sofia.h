@@ -78,6 +78,7 @@ typedef struct private_object private_object_t;
 #define SOFIA_USER_AGENT "FreeSWITCH-mod_sofia/" SWITCH_VERSION_MAJOR "." SWITCH_VERSION_MINOR "." SWITCH_VERSION_MICRO "-" SWITCH_VERSION_REVISION
 #define SOFIA_CHAT_PROTO "sip"
 #define SOFIA_SIP_HEADER_PREFIX "sip_h_"
+#define SOFIA_SIP_BYE_HEADER_PREFIX "sip_bye_h_"
 #define SOFIA_SIP_HEADER_PREFIX_T "~sip_h_"
 #define SOFIA_DEFAULT_PORT "5060"
 #define SOFIA_DEFAULT_TLS_PORT "5061"
