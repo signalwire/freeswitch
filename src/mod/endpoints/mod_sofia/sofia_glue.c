@@ -2549,7 +2549,7 @@ char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup)
 	return url;
 }
 
-sofia_profile_t *sofia_glue_find_profile__(const char *file, const char *func, int line, char *key)
+sofia_profile_t *sofia_glue_find_profile__(const char *file, const char *func, int line, const char *key)
 {
 	sofia_profile_t *profile;
 
@@ -2618,6 +2618,34 @@ void sofia_glue_del_gateway(sofia_gateway_t *gp)
 
 		gp->deleted = 1;
 	}
+}
+
+void sofia_glue_restart_all_profiles(void) 
+{
+	switch_hash_index_t *hi;
+	const void *var;
+    void *val;
+    sofia_profile_t *pptr;
+	switch_xml_t xml_root;
+	const char *err;
+
+	if ((xml_root = switch_xml_open_root(1, &err))) {
+		switch_xml_free(xml_root);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Reload XML [%s]\n", err);
+	}
+
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	if (mod_sofia_globals.profile_hash) {
+        for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+			switch_hash_this(hi, &var, NULL, &val);
+            if ((pptr = (sofia_profile_t *) val)) {
+				sofia_set_pflag_locked(pptr, PFLAG_RESPAWN);
+				sofia_clear_pflag_locked(pptr, PFLAG_RUNNING);
+			}
+		}
+	}
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
 }
 
 void sofia_glue_del_profile(sofia_profile_t *profile)

@@ -408,6 +408,8 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 	uint8_t crcount = 0;
 	uint32_t max_len = sizeof(mbuf);
 	switch_channel_t *channel = NULL;
+	int clen = 0;
+	
 	*event = NULL;
 	start = switch_timestamp(NULL);
 	ptr = mbuf;
@@ -480,16 +482,50 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 							}
 							if (var && val) {
 								switch_event_add_header(*event, SWITCH_STACK_BOTTOM, var, "%s", val);
+								if (!strcasecmp(var, "content-length")) {
+									clen = atoi(val);
+									
+									if (clen > 0) {
+										char *body = malloc(clen + 1);
+										char *ptr = body;
+										
+										switch_assert(body);
+
+										while(clen > 0) {
+											mlen = clen;
+											
+											status = switch_socket_recv(listener->sock, ptr, &mlen);
+
+											if (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS) {
+												return SWITCH_STATUS_FALSE;
+											}
+				
+											if (channel && !switch_channel_ready(channel)) {
+												status = SWITCH_STATUS_FALSE;
+												break;
+											}
+
+											clen -= (int) mlen;
+											ptr += mlen;
+										}
+
+										switch_event_add_body(*event, "%s", body);
+										free(body);
+									}
+
+
+
+								}
 							}
 						}
 					}
-
+					
 					cur = next;
 				}
 				break;
 			}
 		}
-
+		
 		if (timeout) {
 			elapsed = (uint32_t) (switch_timestamp(NULL) - start);
 			if (elapsed >= timeout) {

@@ -610,7 +610,7 @@ switch_status_t sofia_glue_add_profile(char *key, sofia_profile_t *profile);
 void sofia_glue_release_profile__(const char *file, const char *func, int line, sofia_profile_t *profile);
 #define sofia_glue_release_profile(x) sofia_glue_release_profile__(__FILE__, __SWITCH_FUNC__, __LINE__,  x)
 
-sofia_profile_t *sofia_glue_find_profile__(const char *file, const char *func, int line, char *key);
+sofia_profile_t *sofia_glue_find_profile__(const char *file, const char *func, int line, const char *key);
 #define sofia_glue_find_profile(x) sofia_glue_find_profile__(__FILE__, __SWITCH_FUNC__, __LINE__,  x)
 
 switch_status_t sofia_reg_add_gateway(char *key, sofia_gateway_t *gateway);
@@ -672,3 +672,4 @@ const char *sofia_glue_strip_proto(const char *uri);
 switch_status_t reconfig_sofia(sofia_profile_t *profile);
 void sofia_glue_del_gateway(sofia_gateway_t *gp);
 void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const char *host, const char *contact, const char *user_agent);
+void sofia_glue_restart_all_profiles(void);

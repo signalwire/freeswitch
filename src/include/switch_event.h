@@ -225,6 +225,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_bind_removable(const char *id, swit
   \return SWITCH_STATUS_SUCCESS if the consumer was unbinded
 */
 SWITCH_DECLARE(switch_status_t) switch_event_unbind(switch_event_node_t **node);
+SWITCH_DECLARE(switch_status_t) switch_event_unbind_callback(switch_event_callback_t callback);
 
 /*!
   \brief Render the name of an event id enumeration

@@ -155,6 +155,8 @@ static char *EVENT_NAMES[] = {
 	"EXE_SCHEDULE",
 	"RE_SCHEDULE",
 	"RELOADXML",
+	"NOTIFY",
+	"SEND_MESSAGE",
 	"ALL"
 };
 
@@ -1066,6 +1068,46 @@ SWITCH_DECLARE(switch_status_t) switch_event_bind(const char *id, switch_event_t
 {
 	return switch_event_bind_removable(id, event, subclass_name, callback, user_data, NULL);
 }
+
+
+SWITCH_DECLARE(switch_status_t) switch_event_unbind_callback(switch_event_callback_t callback)
+{
+	switch_event_node_t *n, *np, *lnp = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	int id;
+
+	switch_thread_rwlock_wrlock(RWLOCK);
+	switch_mutex_lock(BLOCK);
+	/* <LOCKED> ----------------------------------------------- */
+	for (id = 0; id < SWITCH_EVENT_ALL; id++) {
+		lnp = NULL;
+
+		for (np = EVENT_NODES[id]; np;) {
+			n = np;
+			np = np->next;
+			if (n->callback == callback) {
+				if (lnp) {
+					lnp->next = n->next;
+				} else {
+					EVENT_NODES[n->event_id] = n->next;
+				}
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Event Binding deleted for %s:%s\n", n->id, switch_event_name(n->event_id));
+				n->subclass = NULL;
+				FREE(n->id);
+				FREE(n);
+				status = SWITCH_STATUS_SUCCESS;
+			} else {
+				lnp = n;
+			}
+		}
+	}
+	switch_mutex_unlock(BLOCK);
+	switch_thread_rwlock_unlock(RWLOCK);
+	/* </LOCKED> ----------------------------------------------- */
+
+	return status;
+}
+
 
 
 SWITCH_DECLARE(switch_status_t) switch_event_unbind(switch_event_node_t **node)

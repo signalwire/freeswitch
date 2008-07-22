@@ -528,7 +528,14 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	profile->nua = nua_create(profile->s_root,	/* Event loop */
 							  sofia_event_callback,	/* Callback for processing events */
 							  profile,	/* Additional data to pass to callback */
-							  NUTAG_URL(profile->bindurl), TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), NUTAG_SIPS_URL(profile->tls_bindurl)), TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), NUTAG_CERTIFICATE_DIR(profile->tls_cert_dir)), TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), TPTAG_TLS_VERSION(profile->tls_version)), NTATAG_UDP_MTU(65536), NTATAG_SERVER_RPORT(profile->rport_level), TAG_IF(tportlog, TPTAG_LOG(1)), TAG_END());	/* Last tag should always finish the sequence */
+							  NUTAG_URL(profile->bindurl),
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), NUTAG_SIPS_URL(profile->tls_bindurl)), 
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), NUTAG_CERTIFICATE_DIR(profile->tls_cert_dir)), 
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), TPTAG_TLS_VERSION(profile->tls_version)), 
+							  NTATAG_UDP_MTU(65536), 
+							  NTATAG_SERVER_RPORT(profile->rport_level), 
+							  TAG_IF(tportlog, TPTAG_LOG(1)), 
+							  TAG_END());	/* Last tag should always finish the sequence */
 
 	if (!profile->nua) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s\n", profile->name);

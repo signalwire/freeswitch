@@ -467,12 +467,14 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 		return -1;
 	}
 
-	fprintf(h->out, "%20s\t", target);
+	fprintf(h->out, "[%20s]\t", target);
 
 	switch_copy_string(h->last, target, sizeof(h->last));
 
-	if ((++h->hits % 4) == 0) {
-		fprintf(h->out, "\n");
+	if (!switch_strlen_zero(target)) {
+		if ((++h->hits % 4) == 0) {
+			fprintf(h->out, "\n");
+		}
 	}
 
 	return 0;
