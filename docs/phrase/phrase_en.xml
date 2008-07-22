@@ -232,5 +232,53 @@
       <prompt phrase="Please enter the conference pin number." filename="pin.wav"/>
       <prompt phrase="Invalid pin number, try again." filename="bad-pin.wav"/>
     </conference>
+    <ivr>
+      <prompt phrase="Account number" filename="ivr-account_number.wav"/>
+      <prompt phrase="Connect to caller" filename="ivr-connect_to_caller.wav"/>
+      <prompt phrase="If you know your party's extension, please enter it now" filename="ivr-enter_ext_pound.wav"/>
+      <prompt phrase="Please enter an extension followed by the pound sign" filename="ivr-enter_ext.wav"/>
+      <prompt phrase="For this person" filename="ivr-for_this_person.wav"/>
+      <prompt phrase="Please hold while I connect your call" filename="ivr-hold_connect_call.wav"/>
+      <prompt phrase="I'm sorry" filename="ivr-im_sorry.wav"/>
+      <prompt phrase="Please" filename="ivr-please.wav"/>
+      <prompt phrase="Please return our call at" filename="ivr-please_return_our_call_at.wav"/>
+      <prompt phrase="Regarding reference number" filename="ivr-regarding_reference_number.wav"/>
+      <prompt phrase="This is a sample IVR submenu..." filename="ivr-sample_submenu.wav"/>
+      <prompt phrase="Please say your name after the tone" filename="ivr-say_name.wav"/>
+      <prompt phrase="Send this caller to voicemail" filename="ivr-send_to_voicemail.wav"/>
+      <prompt phrase="To speak to a customer service representative" filename="ivr-speak_to_a_customer_service_representative.wav"/>
+      <prompt phrase="Take a message" filename="ivr-take_a_message.wav"/>
+      <prompt phrase="Thank you" filename="ivr-thank_you.wav"/>
+      <prompt phrase="That was an invalid entry" filename="ivr-that_was_an_invalid_entry.wav"/>
+      <prompt phrase="This is a call from" filename="ivr-this_is_a_call_from.wav"/>
+      <prompt phrase="This IVR will let you test some of the features..." filename="ivr-this_ivr_will_let_you_test_features.wav"/>
+      <prompt phrase="To call the FreeSWITCH conference" filename="ivr-to_call_the_freeswitch_conference.wav"/>
+      <prompt phrase="To do a FreeSWITCH echo test" filename="ivr-to_do_a_freeswitch_echo_test.wav"/>
+      <prompt phrase="To do a fwd echo test" filename="ivr-to_do_a_fwd_echo_test.wav"/>
+      <prompt phrase="To hear a sample IVR submenu" filename="ivr-to_hear_sample_submenu.wav"/>
+      <prompt phrase="To hear screaming monkeys" filename="ivr-to_hear_screaming_monkeys.wav"/>
+      <prompt phrase="To list to music on hold" filename="ivr-to_listen_to_moh.wav"/>
+      <prompt phrase="To repeat these options" filename="ivr-to_repeat_these_options.wav"/>
+      <prompt phrase="To return to the previous menu" filename="ivr-to_return_to_previous_menu.wav"/>
+      <prompt phrase="To speak with an operator" filename="ivr-to_speak_with_an_operator.wav"/>
+      <prompt phrase="Welcome to FreeSWITCH, the future of telephony" filename="ivr-welcome_to_freeswitch.wav"/>
+      <prompt phrase="You may exit at any time by simply hanging up" filename="ivr-you_may_exit_by_hanging_up.wav"/>
+      <!-- Suggested additions
+       <prompt phrase="or" filename ="ivr-or.wav"/>
+       <prompt phrase="not" filename ="ivr-not.wav"/>
+       <prompt phrase="call" filename ="ivr-call.wav"/>
+       <prompt phrase="You may" filename ="ivr-you_may.wav"/>
+       -->
+    </ivr>
+    <misc>
+      <prompt phrase="This call has been secured" filename="call_secured.wav"/>
+      <prompt phrase="Followed by pound" filename="followed.wav"/>
+      <prompt phrase="If you are this person" filename="if_you_are_this_person.wav"/>
+      <prompt phrase="If you would like to" filename="if_you_would_like_to.wav"/>
+      <prompt phrase="Provide reference number" filename="provide_reference_number.wav"/>
+      <prompt phrase="Please enter extension you want to transfer to" filename="transfer1.wav"/>
+      <prompt phrase="Transfer" filename="transfer2.wav"/>
+      <prompt phrase="We are trying to reach" filename="we_are_trying_to_reach.wav"/>
+    </misc>
   </en>
 </language>
