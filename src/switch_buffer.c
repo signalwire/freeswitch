@@ -229,6 +229,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, const
 	if (switch_test_flag(buffer, SWITCH_BUFFER_FLAG_DYNAMIC)) {
 		if (freespace < datalen && (!buffer->max_len || (buffer->used + datalen <= buffer->max_len))) {
 			switch_size_t new_size, new_block_size;
+			void *data;
 
 			new_size = buffer->datalen + datalen;
 			new_block_size = buffer->datalen + buffer->blocksize;
@@ -237,9 +238,10 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, const
 				new_size = new_block_size;
 			}
 			buffer->head = buffer->data;
-			if (!(buffer->data = realloc(buffer->data, new_size))) {
+			if (!(data = realloc(buffer->data, new_size))) {
 				return 0;
 			}
+			buffer->data = data;
 			buffer->head = buffer->data;
 			buffer->datalen = new_size;
 		}
