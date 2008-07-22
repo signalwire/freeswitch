@@ -1082,16 +1082,21 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 #endif
 				}
 			}
-			/* Go back and write each member his dedicated copy of the audio frame that does not contain his own audio. */
-			for (imember = conference->members; imember; imember = imember->next) {
-				if (switch_test_flag(imember, MFLAG_RUNNING)) {
-					switch_mutex_lock(imember->audio_out_mutex);
-					switch_buffer_write(imember->mux_buffer, imember->mux_frame, bytes);
-					switch_mutex_unlock(imember->audio_out_mutex);
+			if (bytes) {
+				/* Go back and write each member his dedicated copy of the audio frame that does not contain his own audio. */
+				for (imember = conference->members; imember; imember = imember->next) {
+					if (switch_test_flag(imember, MFLAG_RUNNING)) {
+						switch_size_t ok = 1;
+						switch_mutex_lock(imember->audio_out_mutex);
+						ok = switch_buffer_write(imember->mux_buffer, imember->mux_frame, bytes);
+						switch_mutex_unlock(imember->audio_out_mutex);
+						if (!ok) {
+							goto end;
+						}
+					}
 				}
 			}
 		}
-
 		if (conference->async_fnode && conference->async_fnode->done) {
 			switch_memory_pool_t *pool;
 			switch_core_file_close(&conference->async_fnode->fh);
@@ -1117,7 +1122,9 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		}
 
 		switch_mutex_unlock(conference->mutex);
-	}							/* Rinse ... Repeat */
+	}
+	/* Rinse ... Repeat */
+ end:
 
 	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
@@ -1646,7 +1653,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			switch_audio_resampler_t *read_resampler = member->read_resampler;
 			void *data;
 			uint32_t datalen;
-
+			
 			if (read_resampler) {
 				int16_t *bptr = (int16_t *) read_frame->data;
 				int len = (int) read_frame->datalen;
@@ -1670,10 +1677,17 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				switch_change_sln_volume(data, datalen / 2, member->volume_in_level);
 			}
 
-			/* Write the audio into the input buffer */
-			switch_mutex_lock(member->audio_in_mutex);
-			switch_buffer_write(member->audio_buffer, data, datalen);
-			switch_mutex_unlock(member->audio_in_mutex);
+			if (datalen) {
+				switch_size_t ok = 1;
+
+				/* Write the audio into the input buffer */
+				switch_mutex_lock(member->audio_in_mutex);
+				ok = switch_buffer_write(member->audio_buffer, data, datalen);
+				switch_mutex_unlock(member->audio_in_mutex);
+				if (!ok) {
+					break;
+				}
+			}
 		}
 	}
 
