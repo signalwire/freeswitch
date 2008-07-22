@@ -1244,7 +1244,11 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 
 	if (switch_xml_locate_user("id", switch_strlen_zero(username) ? "nobody" : username, 
 							   domain_name, ip, &xml, &domain, &user, params) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", username, domain_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n"
+						  "You must define a domain called '%s' in your directory and add a user with the id=\"%s\" attribute\n"
+						  "and you must configure your device to use the proper domain in it's authentication credentials.\n"
+						  , username, domain_name, domain_name, username);
+
 		ret = AUTH_FORBIDDEN;
 		goto end;
 	}
