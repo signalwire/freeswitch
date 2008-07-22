@@ -593,6 +593,8 @@ SWITCH_DECLARE(char *) switch_core_get_variable(_In_z_ const char *varname);
 */
 SWITCH_DECLARE(void) switch_core_set_variable(_In_z_ const char *varname, _In_opt_z_ const char *value);
 
+SWITCH_DECLARE(void) switch_core_dump_variables(_In_ switch_stream_handle_t *stream);
+
 /*! 
   \brief Hangup All Sessions
   \param cause the hangup cause to apply to the hungup channels

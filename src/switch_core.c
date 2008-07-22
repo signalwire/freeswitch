@@ -139,6 +139,22 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_core_get_state_handl
 	return runtime.state_handlers[index];
 }
 
+SWITCH_DECLARE(void) switch_core_dump_variables(switch_stream_handle_t *stream)
+{
+	switch_hash_index_t *hi;
+	const void *var;
+	void *val;
+	switch_mutex_lock(runtime.global_mutex);
+	for (hi = switch_hash_first(NULL, runtime.global_vars); hi; hi = switch_hash_next(hi)) {
+		char *vvar, *vval;
+		switch_hash_this(hi, &var, NULL, &val);
+		vvar = (char *) var;
+		vval = (char *) val;
+		stream->write_function(stream, "%s=%s\n", vvar, vval);
+	}
+	switch_mutex_unlock(runtime.global_mutex);
+}
+
 SWITCH_DECLARE(char *) switch_core_get_variable(const char *varname)
 {
 	char *val;

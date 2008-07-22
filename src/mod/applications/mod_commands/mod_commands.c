@@ -1977,7 +1977,7 @@ SWITCH_STANDARD_API(alias_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define SHOW_SYNTAX "codec|application|api|dialplan|file|timer|calls [count]|channels [count]|aliases|complete"
+#define SHOW_SYNTAX "codec|application|api|dialplan|file|timer|calls [count]|channels [count]|aliases|complete|chat|endpoint|management|say|interfaces|interface_types"
 SWITCH_STANDARD_API(show_function)
 {
 	char sql[1024];
@@ -2018,13 +2018,28 @@ SWITCH_STANDARD_API(show_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+
 	/* If you change the field qty or order of any of these select */
 	/* statmements, you must also change show_callback and friends to match! */
 	if (!command) {
 		stream->write_function(stream, "-USAGE: %s\n", SHOW_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
-	} else if (!strcasecmp(command, "codec") || !strcasecmp(command, "dialplan") || !strcasecmp(command, "file") || !strcasecmp(command, "timer")) {
+	} else if (!strncasecmp(command, "codec", 5) || 
+			   !strncasecmp(command, "dialplan", 8) || 
+			   !strncasecmp(command, "file", 4) || 
+			   !strncasecmp(command, "timer", 5) || 
+			   !strncasecmp(command, "chat", 4) || 
+			   !strncasecmp(command, "say", 3) || 
+			   !strncasecmp(command, "management", 10) || 
+			   !strncasecmp(command, "endpoint", 8)) {
+		if (end_of(command) == 's') {
+			end_of(command) = '\0';
+		}
 		sprintf(sql, "select type, name from interfaces where type = '%s' order by type,name", command);
+	} else if (!strcasecmp(command, "interfaces")) {
+		sprintf(sql, "select type, name from interfaces order by type,name");
+	} else if (!strcasecmp(command, "interface_types")) {
+		sprintf(sql, "select type,count(type) as total from interfaces group by type order by type");
 	} else if (!strcasecmp(command, "tasks")) {
 		sprintf(sql, "select * from %s", command);
 	} else if (!strcasecmp(command, "application") || !strcasecmp(command, "api")) {
@@ -2407,13 +2422,11 @@ SWITCH_STANDARD_API(global_setvar_function)
 SWITCH_STANDARD_API(global_getvar_function)
 {
 
-	if (!switch_strlen_zero(cmd)) {
+	if (switch_strlen_zero(cmd)) {
+		switch_core_dump_variables(stream);
+	} else {
 		stream->write_function(stream, "%s", switch_str_nil(switch_core_get_variable(cmd)));
-		goto done;
 	}
-
-	stream->write_function(stream, "-USAGE: %s\n", GLOBAL_GETVAR_SYNTAX);
-  done:
 	return SWITCH_STATUS_SUCCESS;
 }
 

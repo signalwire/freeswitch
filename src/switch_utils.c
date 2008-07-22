@@ -701,13 +701,14 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
 		return status;
 	}
 
-	switch_copy_string(buf, "127.0.0.1", len);
-
+	
 	switch (family) {
 	case AF_INET:
+		switch_copy_string(buf, "127.0.0.1", len);
 		base = "82.45.148.209";
 		break;
 	case AF_INET6:
+		switch_copy_string(buf, "::1", len);
 		base = "2001:503:BA3E::2:30"; // DNS Root server A 
 		break;
 	default:
