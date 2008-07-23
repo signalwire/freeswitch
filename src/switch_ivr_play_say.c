@@ -1012,15 +1012,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			do_speed = 0;
 		} else if (fh->sp_audio_buffer && (eof || (switch_buffer_inuse(fh->sp_audio_buffer) > (switch_size_t) (framelen)))) {
 			if (!(bread = switch_buffer_read(fh->sp_audio_buffer, abuf, framelen))) {
-				break; 
+				if (eof) {
+					continue;
+				} else {
+					break; 
+				}
 			}
-			olen = asis ? bread : bread / 2;
+
+			if (bread < framelen) {
+				memset(abuf + bread, 0, framelen - bread);
+			}
+
+			olen = asis ? framelen : ilen;
 			do_speed = 0;
 		} else if (fh->audio_buffer && (eof || (switch_buffer_inuse(fh->audio_buffer) > (switch_size_t) (framelen)))) {
 			if (!(bread = switch_buffer_read(fh->audio_buffer, abuf, framelen))) {
-				break; 
+				if (eof) {
+					break; 
+				} else {
+					continue;
+				}
 			}
-			olen = asis ? bread : bread / 2;
+
+			if (bread < framelen) {
+				memset(abuf + bread, 0, framelen - bread);
+			}
+
+			olen = asis ? framelen : ilen;
 		} else {
 			if (eof) {
 				break;
