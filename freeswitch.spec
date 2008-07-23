@@ -288,6 +288,10 @@ userdel freeswitch
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/sip_profiles/internal
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/sip_profiles/external
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/jingle_profiles
+%dir %attr(0750, freeswitch, daemon) %{prefix}/grammar
+%dir %attr(0750, freeswitch, daemon) %{prefix}/grammar/model
+%dir %attr(0750, freeswitch, daemon) %{prefix}/grammar/model/communicator
+%dir %attr(0750, freeswitch, daemon) %{prefix}/grammar/model/wsj1
 %ifos linux
 %config(noreplace) %attr(0644, freeswitch, daemon) /etc/monit.d/freeswitch.monitrc
 %endif
@@ -296,6 +300,7 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/*.ttml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/*.conf
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/cmudict.0.6d
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/acl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/alsa.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/conference.conf.xml
@@ -317,6 +322,7 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/pocketsphinx.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/portaudio.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/post_load_modules.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/python.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/rss.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/sofia.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/switch.conf.xml
@@ -338,6 +344,9 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/external/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/nat/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/jingle_profiles/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/Makefile
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/model/communicator/*
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/model/wsj1/*
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/htdocs/*
 %ifos linux
 /etc/ld.so.conf.d/*
