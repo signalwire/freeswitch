@@ -105,14 +105,14 @@
 
     <extension name="call-group-simo">
       <condition field="destination_number" expression="^82(\d{2})$">
-	<action application="bridge" data="${group(call:$1)}"/>
+	<action application="bridge" data="{ignore_early_media=true}${group(call:$1)}"/>
       </condition>
     </extension>
 
     <extension name="call-group-order">
       <condition field="destination_number" expression="^83(\d{2})$">
 	<action application="set" data="call_timeout=10"/>
-	<action application="bridge" data="${group(call:$1:order)}"/>
+	<action application="bridge" data="{ignore_early_media=true}${group(call:$1:order)}"/>
       </condition>
     </extension>
 
