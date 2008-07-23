@@ -2134,6 +2134,11 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		status = 180;
 	}
 
+	if (channel && (status == 180 || status == 183 || status == 200) && 
+		sip && sip->sip_user_agent && sip->sip_user_agent->g_string && switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		switch_channel_set_variable(channel, "sip_user_agent", sip->sip_user_agent->g_string);
+	}
+
 	if (channel && (status == 180 || status == 183) && switch_channel_test_flag(channel, CF_OUTBOUND)) {
 		const char *val;
 		if ((val = switch_channel_get_variable(channel, "sip_auto_answer")) && switch_true(val)) {
@@ -3652,6 +3657,14 @@ static void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_ses
 	char message[256] = "";
 
 	if (aleg && bleg && switch_core_session_compare(aleg, bleg)) {
+		switch_channel_t *channel = switch_core_session_get_channel(bleg);
+		const char *ua = switch_channel_get_variable(channel, "sip_user_agent");
+		
+		if (ua && switch_stristr("cisco", ua)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "If you were using some other phone besides a Cisco, we would have updated the caller id display on your phone for you!\n");
+			return;
+		}
+
 		a_tech_pvt = (private_object_t *) switch_core_session_get_private(aleg);
 		b_tech_pvt = (private_object_t *) switch_core_session_get_private(bleg);
 
