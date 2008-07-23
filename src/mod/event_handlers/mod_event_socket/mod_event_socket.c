@@ -486,11 +486,12 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 									clen = atoi(val);
 									
 									if (clen > 0) {
-										char *body = malloc(clen + 1);
-										char *ptr = body;
+										char *body;
+										char *ptr;
 										
-										switch_assert(body);
+										switch_zmalloc(body, clen + 1);
 
+										ptr = body;
 										while(clen > 0) {
 											mlen = clen;
 											
