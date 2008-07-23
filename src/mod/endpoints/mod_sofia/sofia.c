@@ -551,6 +551,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   NUTAG_APPL_METHOD("INFO"),
 				   NUTAG_AUTOANSWER(0),
 				   NUTAG_AUTOALERT(0),
+				   NUTAG_ENABLEMESSENGER(1),
 				   TAG_IF((profile->mflags & MFLAG_REGISTER), NUTAG_ALLOW("REGISTER")),
 				   TAG_IF((profile->mflags & MFLAG_REFER), NUTAG_ALLOW("REFER")),
 				   NUTAG_ALLOW("INFO"),

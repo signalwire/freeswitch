@@ -157,6 +157,7 @@ static char *EVENT_NAMES[] = {
 	"RELOADXML",
 	"NOTIFY",
 	"SEND_MESSAGE",
+	"RECV_MESSAGE",
 	"ALL"
 };
 

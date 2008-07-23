@@ -2120,10 +2120,16 @@ static void general_event_handler(switch_event_t *event)
 			sofia_profile_t *profile;
 			nua_handle_t *nh;
 
-			if (profile_name && ct && body && user && host && (profile = sofia_glue_find_profile(profile_name))) {
+			if (profile_name && ct && body && user && host) {
 				char *id = NULL;
 				char *contact, *p;
 				char buf[512] = "";
+
+				if (!(profile = sofia_glue_find_profile(profile_name))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find profile %s\n", profile_name);
+					return;
+				}
+
 
 				if (!sofia_reg_find_reg_url(profile, user, host, buf, sizeof(buf))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find user %s@%s\n", user, host);

@@ -13,6 +13,7 @@ applications/mod_esf
 applications/mod_fsv
 #applications/mod_soundtouch
 #applications/mod_rss
+#applications/mod_snom
 #asr_tts/mod_flite
 #asr_tts/mod_pocketsphinx
 #asr_tts/mod_cepstral

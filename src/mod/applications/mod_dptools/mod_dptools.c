@@ -2088,6 +2088,74 @@ SWITCH_STANDARD_APP(wait_for_silence_function)
 
 }
 
+static switch_status_t event_chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint)
+{
+	switch_event_t *event;
+
+	if (switch_event_create(&event, SWITCH_EVENT_RECV_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+		if (proto) switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Proto", "%s", proto);
+		if (from) switch_event_add_header(event, SWITCH_STACK_BOTTOM, "From", "%s", from);
+		if (subject) switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Subject", "%s", subject);
+		if (hint) switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Hint", "%s", hint);
+		if (body) switch_event_add_body(event, "%s", body);
+		if (to) { 
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "To", "%s", to);
+			const char *v;
+			if ((v = switch_core_get_variable(to))) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Command", "%s", v);
+			}
+		}
+
+		if (switch_event_fire(&event) == SWITCH_STATUS_SUCCESS) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+		switch_event_destroy(&event);
+	}
+	
+	return SWITCH_STATUS_MEMERR;
+}
+
+
+static switch_status_t api_chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint)
+{
+
+	if (to) { 
+		const char *v;
+		switch_stream_handle_t stream = { 0 };
+		char *cmd, *arg;
+		switch_chat_interface_t *ci;
+
+		if (!(v = switch_core_get_variable(to))) {
+			v = to;
+		}
+
+		cmd = strdup(v);
+		switch_assert(cmd);
+
+		switch_url_decode(cmd);
+
+		if ((arg = strchr(cmd, ' '))) {
+			*arg++ = '\0';
+		}
+
+		SWITCH_STANDARD_STREAM(stream);
+		switch_api_execute(cmd, arg, NULL, &stream);
+
+		if (proto && (ci = switch_loadable_module_get_chat_interface(proto))) {
+			ci->chat_send("api", to, hint && strchr(hint, '/') ? hint : from, "text/plain", (char *) stream.data, NULL);
+		}
+
+		switch_safe_free(stream.data);
+		
+		free(cmd);
+
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
 #define DISPLACE_DESC "Displace audio from a file to the channels input"
 #define SESS_REC_DESC "Starts a background recording of the entire session"
@@ -2108,6 +2176,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
 	switch_dialplan_interface_t *dp_interface;
+	switch_chat_interface_t *chat_interface;
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -2115,6 +2184,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	user_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	user_endpoint_interface->interface_name = "USER";
 	user_endpoint_interface->io_routines = &user_io_routines;
+
+
+	SWITCH_ADD_CHAT(chat_interface, "event", event_chat_send);
+	SWITCH_ADD_CHAT(chat_interface, "api", api_chat_send);
 
 	SWITCH_ADD_API(api_interface, "strepoch", "Convert a date string into epoch time", strepoch_api_function, "<string>");
 	SWITCH_ADD_API(api_interface, "chat", "chat", chat_api_function, "<proto>|<from>|<to>|<message>");
