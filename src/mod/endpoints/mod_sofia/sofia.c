@@ -137,7 +137,10 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 
 	if (sip->sip_user_agent && !switch_strlen_zero(sip->sip_user_agent->g_string)) {
 		switch_channel_set_variable(channel, "sip_user_agent", sip->sip_user_agent->g_string);
+	} else if (sip->sip_user_agent && !switch_strlen_zero(sip->sip_server->g_string)) {
+		switch_channel_set_variable(channel, "sip_user_agent", sip->sip_server->g_string);
 	}
+
 	if ((tmp = sofia_glue_get_unknown_header(sip, "rtp-txstat"))) {
 		switch_channel_set_variable(channel, "sip_rtp_txstat", tmp);
 	}
@@ -2134,9 +2137,12 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		status = 180;
 	}
 
-	if (channel && (status == 180 || status == 183 || status == 200) && 
-		sip && sip->sip_user_agent && sip->sip_user_agent->g_string && switch_channel_test_flag(channel, CF_OUTBOUND)) {
-		switch_channel_set_variable(channel, "sip_user_agent", sip->sip_user_agent->g_string);
+	if (sip && channel && (status == 180 || status == 183 || status == 200) && switch_channel_test_flag(channel, CF_OUTBOUND)) { 
+		if (sip->sip_user_agent && sip->sip_user_agent->g_string) {
+			switch_channel_set_variable(channel, "sip_user_agent", sip->sip_user_agent->g_string);
+		} else if (sip->sip_user_agent && sip->sip_server->g_string) {
+			switch_channel_set_variable(channel, "sip_user_agent", sip->sip_server->g_string);
+		}
 	}
 
 	if (channel && (status == 180 || status == 183) && switch_channel_test_flag(channel, CF_OUTBOUND)) {
