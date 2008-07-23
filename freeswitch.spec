@@ -16,11 +16,9 @@ Prefix:       %{prefix}
 #AutoReqProv:  no
 
 %if 0%{?suse_version} > 100
-BuildRequires: alsa-devel
 #BuildRequires: openldap2-devel
 BuildRequires: lzo-devel
 %else
-BuildRequires: alsa-lib-devel
 BuildRequires: openldap-devel
 %endif
 BuildRequires: autoconf
@@ -155,7 +153,7 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 PASSTHRU_CODEC_MODULES="codecs/mod_g729 codecs/mod_g723_1 codecs/mod_amr"
 SPIDERMONKEY_MODULES="languages/mod_spidermonkey languages/mod_spidermonkey_curl languages/mod_spidermonkey_core_db languages/mod_spidermonkey_odbc languages/mod_spidermonkey_socket languages/mod_spidermonkey_teletone"
 APPLICATIONS_MODULES="applications/mod_commands applications/mod_conference applications/mod_dptools applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_limit applications/mod_rss applications/mod_voicemail applications/mod_fsv"
-ASR_TTS_MODULES="asr_tts/mod_openmrcp"
+ASR_TTS_MODULES="asr_tts/mod_openmrcp asr_tts/mod_pocketsphinx asr_tts/mod_flite"
 CODECS_MODULES="codecs/mod_ilbc codecs/mod_h26x codecs/mod_voipcodecs codecs/mod_speex"
 DIALPLANS_MODULES="dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml"
 DIRECTORIES_MODULES=
@@ -365,6 +363,8 @@ userdel freeswitch
 %{prefix}/mod/mod_rss.so*
 %{prefix}/mod/mod_voicemail.so*
 %{prefix}/mod/mod_openmrcp.so*
+%{prefix}/mod/mod_pocketsphinx.so*
+%{prefix}/mod/mod_flite.so*
 %{prefix}/mod/mod_ilbc.so* 
 %{prefix}/mod/mod_h26x.so*
 %{prefix}/mod/mod_voipcodecs.so* 
