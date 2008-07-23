@@ -2071,7 +2071,7 @@ static void general_event_handler(switch_event_t *event)
 
 			if (profile_name && ct && es && body && user && host && (profile = sofia_glue_find_profile(profile_name))) {
 				char *id = NULL;
-				char *contact;
+				char *contact, *p;
 				char buf[512] = "";
 
 				if (!sofia_reg_find_reg_url(profile, user, host, buf, sizeof(buf))) {
@@ -2084,6 +2084,10 @@ static void general_event_handler(switch_event_t *event)
 				switch_assert(id);
 				contact = sofia_glue_get_url_from_contact(buf, 0);
 				
+				if ((p = strstr(contact, ";fs_"))) {
+					*p = '\0';
+				}
+
 				nh = nua_handle(profile->nua, 
 								NULL, 
 								NUTAG_URL(contact), 
@@ -2118,7 +2122,7 @@ static void general_event_handler(switch_event_t *event)
 
 			if (profile_name && ct && body && user && host && (profile = sofia_glue_find_profile(profile_name))) {
 				char *id = NULL;
-				char *contact;
+				char *contact, *p;
 				char buf[512] = "";
 
 				if (!sofia_reg_find_reg_url(profile, user, host, buf, sizeof(buf))) {
@@ -2130,6 +2134,10 @@ static void general_event_handler(switch_event_t *event)
 
 				switch_assert(id);
 				contact = sofia_glue_get_url_from_contact(buf, 0);
+
+				if ((p = strstr(contact, ";fs_"))) {
+					*p = '\0';
+				}
 				
 				nh = nua_handle(profile->nua, 
 								NULL, 
