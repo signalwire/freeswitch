@@ -1,4 +1,4 @@
-FLITE=flite-1.3-current
+FLITE=flite-1.3.99
 FLITE_DIR=$(switch_srcdir)/libs/$(FLITE)
 FLITE_LIBDIR=$(FLITE_DIR)/build/libs
 FLITE_A=$(FLITE_LIBDIR)/libflite_cmu_us_kal.a $(FLITE_LIBDIR)/libflite_cmu_us_kal16.a $(FLITE_LIBDIR)/libflite_cmulex.a $(FLITE_LIBDIR)/libflite_usenglish.a $(FLITE_LIBDIR)/libflite.a
@@ -11,8 +11,6 @@ include $(BASE)/build/modmake.rules
 
 $(FLITE_DIR):
 	$(GETLIB) $(FLITE).tar.gz
-	cp flite-1.3.diff $(FLITE_DIR)
-	cd $(FLITE_DIR) && patch -p1 -i flite-1.3.diff 
 
 $(FLITE_DIR)/Makefile: $(FLITE_DIR)
 	cd $(FLITE_DIR) && CFLAGS="-fPIC" ./configure
