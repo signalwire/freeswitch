@@ -729,6 +729,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	const char *timer_name;
 	const char *prebuf;
 	const char *alt = NULL;
+	int eof = 0;
+	switch_size_t bread = 0;
 
 	switch_channel_pre_answer(channel);
 
@@ -953,13 +955,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 		if (!switch_channel_ready(channel)) {
 			status = SWITCH_STATUS_FALSE;
-			break;
+			break; 
 		}
 
 		if (switch_channel_test_flag(channel, CF_BREAK)) {
 			switch_channel_clear_flag(channel, CF_BREAK);
 			status = SWITCH_STATUS_BREAK;
-			break;
+			break; 
 		}
 
 		if (switch_core_session_private_event_count(session)) {
@@ -975,7 +977,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				if (!args->input_callback && !args->buf) {
 					status = SWITCH_STATUS_BREAK;
 					done = 1;
-					break;
+					break; 
 				}
 				switch_channel_dequeue_dtmf(channel, &dtmf);
 				if (args->input_callback) {
@@ -997,7 +999,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 			if (status != SWITCH_STATUS_SUCCESS) {
 				done = 1;
-				break;
+				break; 
 			}
 		}
 
@@ -1008,20 +1010,28 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			memset(abuf, 0, framelen);
 			olen = ilen;
 			do_speed = 0;
-		} else if (fh->sp_audio_buffer && (switch_buffer_inuse(fh->sp_audio_buffer) > (switch_size_t) (framelen))) {
-			switch_buffer_read(fh->sp_audio_buffer, abuf, framelen);
-			olen = asis ? framelen : ilen;
+		} else if (fh->sp_audio_buffer && (eof || (switch_buffer_inuse(fh->sp_audio_buffer) > (switch_size_t) (framelen)))) {
+			if (!(bread = switch_buffer_read(fh->sp_audio_buffer, abuf, framelen))) {
+				break; 
+			}
+			olen = asis ? bread : bread / 2;
 			do_speed = 0;
-		} else if (fh->audio_buffer && (switch_buffer_inuse(fh->audio_buffer) > (switch_size_t) (framelen))) {
-			switch_buffer_read(fh->audio_buffer, abuf, framelen);
-			olen = asis ? framelen : ilen;
+		} else if (fh->audio_buffer && (eof || (switch_buffer_inuse(fh->audio_buffer) > (switch_size_t) (framelen)))) {
+			if (!(bread = switch_buffer_read(fh->audio_buffer, abuf, framelen))) {
+				break; 
+			}
+			olen = asis ? bread : bread / 2;
 		} else {
+			if (eof) {
+				break;
+			}
 			olen = FILE_STARTSAMPLES;
 			if (!asis) {
 				olen /= 2;
 			}
 			if (switch_core_file_read(fh, abuf, &olen) != SWITCH_STATUS_SUCCESS) {
-				break;
+				eof++;
+				continue;
 			}
 			switch_buffer_write(fh->audio_buffer, abuf, asis ? olen : olen * 2);
 			olen = switch_buffer_read(fh->audio_buffer, abuf, framelen);
@@ -1031,7 +1041,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		}
 
 		if (done || olen <= 0) {
-			break;
+			break; 
 		}
 
 		if (!asis) {
@@ -1134,16 +1144,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			continue;
 		} else if (status != SWITCH_STATUS_SUCCESS) {
 			done = 1;
-			break;
+			break; 
 		}
 
 		if (done) {
-			break;
+			break; 
 		}
 
 		if (timer_name) {
 			if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
-				break;
+				break; 
 			}
 		} else {				/* time off the channel (if you must) */
 			switch_frame_t *read_frame;
@@ -1155,7 +1165,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			tstatus = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 			if (!SWITCH_READ_ACCEPTABLE(tstatus)) {
-				break;
+				break; 
 			}
 
 			if (args && (args->read_frame_callback)) {
@@ -1166,7 +1176,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				}
 				switch_clear_flag(fh, SWITCH_FILE_CALLBACK);
 				if (!ok) {
-					break;
+					break; 
 				}
 			}
 		}

@@ -248,6 +248,7 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 		x = 0;
 
 		if (inlen < bytes) {
+			bytes = inlen;
 			done = 1;
 		}
 
