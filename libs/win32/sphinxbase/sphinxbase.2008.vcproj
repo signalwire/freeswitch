@@ -167,7 +167,7 @@
 				OutputFile="$(OutDir)\$(ProjectName).dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\..\Release"
+				AdditionalLibraryDirectories="..\..\..\Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\../../lib/Debug/sphinxbase.pdb"
 				RandomizedBaseAddress="1"

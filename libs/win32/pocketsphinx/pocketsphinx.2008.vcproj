@@ -166,7 +166,7 @@
 				OutputFile="$(OutDir)\$(ProjectName).dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\..\Release"
+				AdditionalLibraryDirectories="..\..\..\Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\..\..\..\bin\Debug/pocketsphinx.pdb"
 				RandomizedBaseAddress="1"
