@@ -487,15 +487,15 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 									
 									if (clen > 0) {
 										char *body;
-										char *ptr;
+										char *p;
 										
 										switch_zmalloc(body, clen + 1);
 
-										ptr = body;
+										p = body;
 										while(clen > 0) {
 											mlen = clen;
 											
-											status = switch_socket_recv(listener->sock, ptr, &mlen);
+											status = switch_socket_recv(listener->sock, p, &mlen);
 
 											if (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS) {
 												return SWITCH_STATUS_FALSE;
@@ -507,7 +507,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 											}
 
 											clen -= (int) mlen;
-											ptr += mlen;
+											p += mlen;
 										}
 
 										switch_event_add_body(*event, "%s", body);

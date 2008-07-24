@@ -2099,8 +2099,8 @@ static switch_status_t event_chat_send(char *proto, char *from, char *to, char *
 		if (hint) switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Hint", "%s", hint);
 		if (body) switch_event_add_body(event, "%s", body);
 		if (to) { 
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "To", "%s", to);
 			const char *v;
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "To", "%s", to);
 			if ((v = switch_core_get_variable(to))) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Command", "%s", v);
 			}
