@@ -223,13 +223,13 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 	int dlen = 0;
 	int x = 0;
 	char *in;
-	int inlen;
+	int inlen = 0;
 	char *out;
 	int outlen;
 	int usedlen;
 	char inbuf[MP3_SCACHE];
 	int done = 0;
-
+	size_t used;
 	size_t lp;
 	size_t rb = 0;
 
@@ -248,10 +248,9 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 		x = 0;
 
 		if (inlen < bytes) {
-			bytes = inlen;
 			done = 1;
 		}
-
+		
 		do {
 			decode_status = decodeMP3(&context->mp, in, inlen, out, outlen, &dlen);
 
@@ -310,8 +309,10 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 		}
 	}
 
-	if (done || switch_buffer_inuse(context->audio_buffer) >= bytes) {
-		rb = switch_buffer_read(context->audio_buffer, data, bytes);
+	used = switch_buffer_inuse(context->audio_buffer);
+	
+	if (done || used >= bytes) {
+		rb = switch_buffer_read(context->audio_buffer, data, used);
 		return rb;
 	}
 
