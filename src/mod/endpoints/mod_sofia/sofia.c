@@ -2140,7 +2140,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	if (sip && channel && (status == 180 || status == 183 || status == 200) && switch_channel_test_flag(channel, CF_OUTBOUND)) { 
 		if (sip->sip_user_agent && sip->sip_user_agent->g_string) {
 			switch_channel_set_variable(channel, "sip_user_agent", sip->sip_user_agent->g_string);
-		} else if (sip->sip_user_agent && sip->sip_server->g_string) {
+		} else if (sip->sip_server && sip->sip_server->g_string) {
 			switch_channel_set_variable(channel, "sip_user_agent", sip->sip_server->g_string);
 		}
 	}
