@@ -581,7 +581,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
 			} else {
-				gen->MesType = Q931mes_PROGRESS;
+				gen->MesType = Q931mes_CALL_PROCEEDING;
 				Q931Rx43(&isdn_data->q931, (void *)gen, gen->Size);
 			}
 		}
