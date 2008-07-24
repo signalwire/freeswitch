@@ -1,3 +1,6 @@
+#ifndef MPG123_DEFINED
+#define MPG123_DEFINED
+
 #include        <stdio.h>
 #include        <string.h>
 #include        <signal.h>
@@ -127,3 +130,5 @@ struct pcm_workingsample {
 extern long freqs[9];
 extern struct parameter param;
 extern real *pnts[5];
+
+#endif

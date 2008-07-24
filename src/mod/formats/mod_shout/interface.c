@@ -13,7 +13,7 @@ void InitMP3Constants(void)
 }
 
 
-BOOL InitMP3(struct mpstr *mp, long outscale, int samplerate)
+MPGLIB_BOOL InitMP3(struct mpstr *mp, long outscale, int samplerate)
 {
 	/* quiet 4096 med 8192 */
 

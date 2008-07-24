@@ -75,7 +75,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading 8khzsound."
-					CommandLine="if not exist &quot;$(ProjectDir)..\sounds\en\us\callie\voicemail\8000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-en-us-callie-8000-1.0.2.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\sounds\music\8000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-music-8000-1.0.2.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\sounds\en\us\callie\voicemail\8000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-en-us-callie-8000-1.0.2.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\sounds\music\8000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-music-8000-1.0.2.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\sounds\en\us\callie\voicemail\8000"
 				/>
 			</FileConfiguration>

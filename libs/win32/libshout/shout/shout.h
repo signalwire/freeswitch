@@ -24,6 +24,22 @@
 #include <sys/types.h>
 #ifdef WIN32
 #include <os.h>
+# ifdef _MSC_VER
+#  undef inline
+#  define inline __inline
+#if (_MSC_VER >= 1400)			// VC8+
+#ifndef _CRT_SECURE_NO_DEPRECATE
+#define _CRT_SECURE_NO_DEPRECATE
+#endif
+#ifndef _CRT_NONSTDC_NO_DEPRECATE
+#define _CRT_NONSTDC_NO_DEPRECATE
+#endif
+#endif // VC8+
+# endif
+#ifndef __MINGW32__
+#define va_copy(ap1, ap2) memcpy(&ap1, &ap2, sizeof(va_list))
+#endif
+
 #endif
 
 #define SHOUTERR_SUCCESS	(0)

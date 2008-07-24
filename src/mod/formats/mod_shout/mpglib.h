@@ -5,6 +5,10 @@
 #endif
 #define NTOM_MUL (32768)
 
+#ifdef _WIN32
+#include "mpg123.h"
+#endif
+
 struct buf {
 	unsigned char *pnt;
 	long size;
@@ -44,7 +48,7 @@ struct mpstr {
 	unsigned long ntom_step;
 };
 
-#define BOOL int
+#define MPGLIB_BOOL int
 
 #define MP3_ERR -1
 #define MP3_OK  0
@@ -52,7 +56,7 @@ struct mpstr {
 #define MP3_TOOSMALL 2
 
 void InitMP3Constants(void);
-BOOL InitMP3(struct mpstr *mp, long outscale, int samplerate);
+MPGLIB_BOOL InitMP3(struct mpstr *mp, long outscale, int samplerate);
 int decodeMP3(struct mpstr *mp, char *inmemory, int inmemsize, char *outmemory, int outmemsize, int *done);
 void ExitMP3(struct mpstr *mp);
 

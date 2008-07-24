@@ -32,8 +32,11 @@ struct bandInfoStruct {
 	short shortDiff[13];
 };
 
-
+#ifndef _WIN32
 static inline real find_pow(int i)
+#else
+static real find_pow(int i)
+#endif
 {
 
 	return (i > 0 && i < 8207) ? __ispow[i] : 1;
