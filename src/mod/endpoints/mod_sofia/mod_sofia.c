@@ -1258,7 +1258,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 		} else if (!strcasecmp(argv[0], "profile")) {
 			struct cb_helper cb;
 
-			if ((profile = sofia_glue_find_profile(argv[1]))) {
+			if ((argv[1]) && (profile = sofia_glue_find_profile(argv[1]))) {
 				stream->write_function(stream, "%s\n", line);
 				stream->write_function(stream, "Name          \t\t%s\n", switch_str_nil(argv[1]));
 				stream->write_function(stream, "Domain Name   \t\t%s\n", switch_str_nil(profile->domain_name));
