@@ -1,3 +1,130 @@
+freeswitch (1.0.1)
+
+	FIX: prevent intercept race condition that can also be solved with continue_on_fail=originator_cancel
+	FIX: NULL dereference detected by klockwork (www.klockwork.com)
+	FIX: don't open failed local stream (MODFORM-9)
+	FIX: instability in mod_local_stream in failure scenarios
+	FIX: xmlrpc-c build on OS X 10.4 (FSBUILD-47)
+	ENHANCEMENT: Added tab completion on many api commands in console
+	ENHANCEMENT: polycom BLF support
+	FIX: many sip NAT related fixes in mod_sofia
+	FIX: support sip unregister with Contact: *
+	FIX: multiple segfaults in xmlrpc-c
+	FIX: sip unregister event being skipped
+	FIX: hangup properly on malformed sip 3pcc calls being used as a way to ping
+	ADD: enable-3pcc sofia profile param, it is now disabled by default.
+	ADD: presence events to sip proxy mode
+	ADD: legs param to cdr_csv 
+	ADD: support for perl as an embedded lanugage
+	ENHANCEMENT: many new api's and functions to the embedded languages including api support, xml interface support, auto start scripts,  and many new objects
+	CHANGE: python embedded language api changed to match perl, lua, java
+	FIX: many stability fixes in embedded langauges perl, lua, java, python
+	ADD: failed_xml_cdr magic channel variable
+	FIX: access free memory error in mod_sofia when using respond app
+	ENHNACEMENT: make global_setvar only have 2 fields so you can set foo=bar=blah w/o quotes
+	FIX: mod_spidermonkey keep hangup hook in the session thread
+	ENHANCEMENT: mod_ldap added sasl support and search filters
+	ADD: answered, waitForAnswer and mediaReady methods to embedded language Session object
+	ENHANCEMENT: mod_voicemail param change to allow notification emails using templates
+	ADD: per user acl in sofia
+	FIX: deadlock in mod_portaudio
+	ENHANCEMENT: blank username in sip will trigger a lookup for the user "nobody"
+	ADD: import variable to import variables from a peer channel at time of originate
+	FIX: api type fix for c++ modules when incorrectly using enums
+	FIX: eliminate need for escaped , in [] on originate
+	ADD: NDLB-force-rport option to force behavior as if rport was sent in the via
+	ENHANCEMENT: honor execute_on_answer on outbound legs too
+	ADD: execute_on_ring variable
+	FIX: Seg fault in CoreSession() class destructor
+	ADD: per channel caller id in originate
+	ADD: sip_outgoing_call_id variable
+	FIX: multiple memory leaks in mod_sofia
+	FIX: find_local_ip IPv6 support
+	ADD: variable expansion to on execute vars.(FSCORE-114)
+	ADD: count optional arg to show calls and show channels (MODAPP-103)
+	FIX: MODEVENT-25 (WSAWOULDBLOCK error on socket send in windows) in event socket
+	FIX: multiple fixes to the logic in mod_say_zh
+	ADD: inter digit timeout to swigged embedded languages getDigits method. (MODLANG-65)
+	ADD: Linksys P-RTP-Stat SIP header values (SFSIP-66)
+	FIX: small leak in core
+	ADD: progress_timeout var to originate
+	UPDATE: portaudio library
+	FIX: added timeout to iax read
+	ADD: 'pa rescan' to portaudio to look for new devices
+	FIX: wait for broadcast to start when starting async hold to avoid race
+	FIX: mod_rss, don't always play the first news feed
+	FIX: mod_rss inverval to use the session inteval (audio problems on 30ms channels)
+	ADD: Path: support in mod_sofia on register
+	FIX: mod_shout record stream
+	ENHANCEMENT: mod_voicemail support for effective_caller_id_name/number
+	ADD: url encode/decode api calls
+	FIX: "nua()" in debug information in sofia instead of the real function name
+	FIX: better handling of sips: uris
+	FIX: don't seg when using more than SWITCH_MAX_CODECS and bump SWITCH_MAX_CODECS to 50 (we have more than 30 in tree) (MODFORM-10)
+	ADD: mod_yaml
+	FIX: segfault on freeswitch startup if installed directories are removed
+	FIX: segfault when intercept with inbound_late_negotiation=true set
+	FIX: dont flood logs with eavesdrop messages (MODAPP-101)
+	FIX: don't destroy a codec that has not been created (MODAPP-101)
+	ENHANCEMENT: allows the "eavesdrop_group" variable to contain several groups, comma separated.  (MODAPP-101)
+	FIX: cross compile (FSBUILD-53)
+	FIX: add header that Nuaunce considers mandatory (MODASRTTS-5)
+	ADD: write locks to the core and a function to unregister event bindings (adds better ability to unload modules)
+	ENHANCEMENT: make modules unbind events and un-reserve subclasses on module unload
+	ADD: removable xml hook bindings
+	ADD: EventConsumer object to embedded languages so you can make event handlers
+	FIX: sending CN with supress-cng true
+	FIX: segfault in the event system when trying to remove NULL event
+	ADD: flags to turn off srtp auth and rtp auto adj (FSCORE-149 && MODENDP-115)
+	FIX: use lighter math and avoid infinite loop in port allocator  (FSCORE-148)
+	ENHANCEMENT: let conference pin entry start during prompt (MODAPP-111)
+	ADD: mod_pocketsphinx
+	FIX: Misuse of SQLRowCount, issues with MSSQL (MODAPP-105)
+	FIX: segfaults in mod_python with dtmf callback
+	ENHANCEMENT: mod_conference auto-record parameter  (MODAPP-112)
+	ENHANCEMENT: reload support to many modules
+	FIX: mod_sofia add replaces to supported header
+	ENHANCEMENT: add args callback to sleep so you can process dtmf and events while "sleeping"
+	ADD: mod_flite
+	ENHANCEMENT: switch_xml converted back to c code and support double globs on windows
+	ENHANCEMENT: mod_sofia support for adding and removing gateways without restarting profiles
+	ADD: extract contact header info into A channel when unhandled 3xx response is received (MODENDP-116)
+	FIX: outbound event_socket + late negotiation
+	ADD: copy_xml_cdr variable
+	ADD: silence_stream (like tone_stream but silent)
+	ADD: module_exists api call
+	ADD: emailer implementation for windows
+	ADD: wait_for_silence application
+	FIX: no error message generated if OS is unable to load a module ( due to dependency/installation issues )
+	FIX: segfault in media bugs
+	FIX: acl lists not correctly matching all ip adresses
+	FIX: mod_spidermonkey exit() does not stop script when called from the hangup callback (return "exit" from the callback)
+	FIX: mod_syslog works again
+	FIX: crash on terminal resize
+	FIX: audio problems on big endian
+	ENHANCEMENT: Disable multiple registrations on a per-device basis (MODENDP-117)
+	ADD: fifo_consumer_exit_key variable (MODAPP-100)
+	ADD: cidr based user auth in mod_sofia
+	ADD: uuid_send_dtmf fsapi command (MODAPP-114)
+	ADD: server registration fiels to sip_registration database (MODENDP-118)
+	FIX: use a variable, realm or to host to find gateway when it's not obvious (handles challenged REFER)
+	ADD: timeout to curl run in javascript
+	ADD: voicemail_inject fsapi command
+	ADD: reboot option for sip phones to flush_inboud_reg sofia profile api command
+	FIX: add small padding to end of mp3 to avoid cut off mp3 recording
+	FIX: patch multiple SDP connection lines in sdp for proxy media mode (MODENDP-109)
+	FIX: don't parse ringback varable in proxy situations
+	ADD: per call vm recording ext with vm_message_ext variable
+	ADD: sip_bye_h prefix to add headers to bye
+	ENHANCEMENT: more interfaces available in show fsapi command
+	FIX: don't leak in buffers on realloc fail
+	FIX: fail out of a conference call if write fails
+	ADD: auto ip-change detection
+	ADD: mod_snom
+	FIX: mod_sofia don't send sipfrag on transfer to cisco so they don't hang up the call
+
+
+
 freeswitch (1.0.0)
 
 	Enhanced sofia sip nat handling
