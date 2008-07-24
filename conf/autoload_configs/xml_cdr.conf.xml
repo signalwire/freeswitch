@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="Windows-1252"?>
 <configuration name="xml_cdr.conf" description="XML CDR CURL logger">
   <settings>
     <!-- the url to post to if blank web posting is disabled  -->

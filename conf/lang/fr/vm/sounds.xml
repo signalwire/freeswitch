@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="Windows-1252"?>
 <include><!--This line will be ignored it's here to validate the xml and is optional -->
   <macro name="voicemail_enter_id">
     <input pattern="(.*)">
