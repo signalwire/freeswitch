@@ -66,6 +66,7 @@ struct shout_context {
 	uint8_t shout_init;
 	uint32_t prebuf;
 	int lame_ready;
+	int eof;
 };
 
 typedef struct shout_context shout_context_t;
@@ -232,11 +233,12 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 	size_t used;
 	size_t lp;
 	size_t rb = 0;
-
-	while (switch_buffer_inuse(context->audio_buffer) < bytes) {
+	
+	while (!context->eof && switch_buffer_inuse(context->audio_buffer) < bytes) {
 		lp = sizeof(inbuf);
 		if ((switch_file_read(context->fd, inbuf, &lp) != SWITCH_STATUS_SUCCESS) || lp == 0) {
-			goto error;
+			context->eof++;
+			goto end;
 		}
 
 		inlen = (int) lp;
@@ -253,7 +255,7 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 		
 		do {
 			decode_status = decodeMP3(&context->mp, in, inlen, out, outlen, &dlen);
-
+			
 			if (context->err) {
 				goto error;
 			}
@@ -274,22 +276,20 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 				out = context->decode_buf;
 				outlen = sizeof(context->decode_buf);
 				usedlen = 0;
+				
 				continue;
-
-			}
-
-			if (decode_status == MP3_ERR) {
+				
+			} else if (decode_status == MP3_ERR) {
 				if (++context->mp3err >= 5) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decoder Error!\n");
-					goto error;
+					context->eof++;
+					goto end;
 				}
-
-				dlen = 0;
 				continue;
 			}
 
 			context->mp3err = 0;
-
+			
 			usedlen += dlen;
 			out += dlen;
 			outlen -= dlen;
@@ -309,16 +309,20 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 		}
 	}
 
+ end:
+	
 	used = switch_buffer_inuse(context->audio_buffer);
 	
-	if (done || used >= bytes) {
-		rb = switch_buffer_read(context->audio_buffer, data, used);
+	if (context->eof || done || used >= bytes) {
+		if (!(rb = switch_buffer_read(context->audio_buffer, data, bytes))) {
+			goto error;
+		}
 		return rb;
 	}
 
 	return 0;
 
-  error:
+ error:
 	switch_mutex_lock(context->audio_mutex);
 	context->err++;
 	switch_mutex_unlock(context->audio_mutex);

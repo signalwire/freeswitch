@@ -985,12 +985,15 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], in
 		getbits(mp, 16);		/* Dismiss stuffing Bits */
 		part2remain -= 16;
 	}
+
 	if (part2remain > 0)
 		getbits(mp, part2remain);
+#if 0
 	else if (part2remain < 0) {
 		debug_printf("mpg123: %d Can't rewind stream by %d bits!\n", -part2remain, __LINE__);
 		return 1;				/* -> error */
 	}
+#endif
 	return 0;
 }
 
