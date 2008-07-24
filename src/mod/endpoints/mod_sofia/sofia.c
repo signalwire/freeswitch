@@ -1956,6 +1956,14 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 		switch_channel_clear_flag(channel, CF_REQ_MEDIA);
 
+		if ((status == 180 || status == 183 || status == 200)) { 
+			if (sip->sip_user_agent && sip->sip_user_agent->g_string) {
+				switch_channel_set_variable(channel, "sip_user_agent", sip->sip_user_agent->g_string);
+			} else if (sip->sip_server && sip->sip_server->g_string) {
+				switch_channel_set_variable(channel, "sip_user_agent", sip->sip_server->g_string);
+			}
+		}
+
 		if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 
 			if (!switch_test_flag(tech_pvt, TFLAG_SENT_UPDATE)) {
@@ -2135,14 +2143,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 	if (status == 183 && !r_sdp) {
 		status = 180;
-	}
-
-	if (sip && channel && (status == 180 || status == 183 || status == 200) && switch_channel_test_flag(channel, CF_OUTBOUND)) { 
-		if (sip->sip_user_agent && sip->sip_user_agent->g_string) {
-			switch_channel_set_variable(channel, "sip_user_agent", sip->sip_user_agent->g_string);
-		} else if (sip->sip_server && sip->sip_server->g_string) {
-			switch_channel_set_variable(channel, "sip_user_agent", sip->sip_server->g_string);
-		}
 	}
 
 	if (channel && (status == 180 || status == 183) && switch_channel_test_flag(channel, CF_OUTBOUND)) {
@@ -3686,7 +3686,6 @@ static void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_ses
 		}
 	}
 }
-
 /*
  * This subroutine will take the a_params of a sip_addr_s structure and spin through them.
  * Each param will be used to create a channel variable.
