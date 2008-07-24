@@ -495,7 +495,12 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 			}
 
 			if (!ready_b) {
-				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				const char *cid = switch_channel_get_variable(other_channel, "rdnis");
+				if (ready_a && cid) {
+					switch_ivr_session_transfer(session, cid, NULL, NULL);
+				} else {
+					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				}
 			}
 			switch_core_session_rwunlock(other_session);
 			return SWITCH_STATUS_FALSE;
@@ -825,6 +830,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 	switch_channel_t *originator_channel, *originatee_channel, *swap_channel;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_caller_profile_t *cp, *originator_cp, *originatee_cp;
+	char *p;
 
 	if ((originator_session = switch_core_session_locate(originator_uuid))) {
 		if ((originatee_session = switch_core_session_locate(originatee_uuid))) {
@@ -895,6 +901,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			cp->destination_number = switch_core_strdup(cp->pool, originator_cp->caller_id_number);
 			cp->caller_id_number = switch_core_strdup(cp->pool, originator_cp->caller_id_number);
 			cp->caller_id_name = switch_core_strdup(cp->pool, originator_cp->caller_id_name);
+			cp->rdnis = switch_core_strdup(cp->pool, originatee_cp->destination_number);
+			if ((p = strchr(cp->rdnis, '@'))) {
+				*p = '\0';
+			}
 			switch_channel_set_caller_profile(originatee_channel, cp);
 			switch_channel_set_originator_caller_profile(originatee_channel, switch_caller_profile_clone(originatee_session, originator_cp));
 
@@ -902,6 +912,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			cp->destination_number = switch_core_strdup(cp->pool, originatee_cp->caller_id_number);
 			cp->caller_id_number = switch_core_strdup(cp->pool, originatee_cp->caller_id_number);
 			cp->caller_id_name = switch_core_strdup(cp->pool, originatee_cp->caller_id_name);
+			cp->rdnis = switch_core_strdup(cp->pool, originator_cp->destination_number);
+			if ((p = strchr(cp->rdnis, '@'))) {
+				*p = '\0';
+			}
 			switch_channel_set_caller_profile(originator_channel, cp);
 			switch_channel_set_originatee_caller_profile(originator_channel, switch_caller_profile_clone(originator_session, originatee_cp));
 
