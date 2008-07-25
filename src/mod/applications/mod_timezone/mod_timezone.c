@@ -204,7 +204,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_timezone_load)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-//  Called when the system shuts down
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_timezone_shutdown)
 {
 
@@ -218,7 +217,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_timezone_shutdown)
 
 	return SWITCH_STATUS_UNLOAD;
 }
-
 
 /* For Emacs:
  * Local Variables:
