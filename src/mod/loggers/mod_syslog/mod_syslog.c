@@ -98,11 +98,10 @@ static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_l
 		break;
 	}
 
-	if (!switch_strlen_zero(node->data)) {
+	/* don't log blank lines */
+	if(!switch_strlen_zero(node->data) && (strspn(node->data, " \t\r\n") < strlen(node->data))) {
 		syslog(syslog_level, "%s", node->data);
 	}
-
-
 
 	return SWITCH_STATUS_SUCCESS;
 }
