@@ -232,7 +232,7 @@
 
     <!-- a sample IVR  -->
     <extension name="ivr_demo">
-      <condition field="destination_number" expression="5000">
+      <condition field="destination_number" expression="^5000$">
         <action application="answer"/>
         <action application="sleep" data="2000"/>
 	<action application="ivr" data="demo_ivr"/>
