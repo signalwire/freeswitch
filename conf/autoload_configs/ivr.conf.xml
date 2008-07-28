@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="Windows-1252"?>
 <configuration name="ivr.conf" description="IVR menus">
   <menus>
     <!-- demo IVR setup -->
