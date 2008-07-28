@@ -1033,7 +1033,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_c
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Application %s Requires media on channel %s!\n",
 						  app, switch_channel_get_name(session->channel));
 	} else if (!switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA) && !switch_channel_media_ready(session->channel)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Application %s Requires media! pre_answering channel %s\n",
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Application %s Requires media! pre_anyswering channel %s\n",
 						  app, switch_channel_get_name(session->channel));
 		if (switch_channel_pre_answer(session->channel) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Well, that didn't work very well did it? ...\n");
@@ -1048,7 +1048,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_c
 	if (switch_channel_get_variable(session->channel, "presence_id")) {
 		char *myarg = NULL;
 		if (expanded) {
-			switch_mprintf("%s(%s)", app, expanded);
+			myarg = switch_mprintf("%s(%s)", app, expanded);
+		} else if (!switch_strlen_zero(arg)) {
+			myarg = switch_mprintf("%s(%s)", app, arg);
+		} else {
+			myarg = switch_mprintf("%s", app);
 		}
 		if (myarg) {
 			switch_channel_presence(session->channel, "unknown", myarg);
