@@ -1131,10 +1131,24 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		}
 
 		if (switch_strlen_zero(tech_pvt->invite_contact)) {
-			if (sofia_glue_transport_has_tls(tech_pvt->transport)) {
-				tech_pvt->invite_contact = tech_pvt->profile->tls_url;
+			const char * contact;
+			if ((contact = switch_channel_get_variable(channel, "sip_contact_user"))) {
+				char *ip_addr = (tech_pvt->profile->extsipip) ? tech_pvt->profile->extsipip : tech_pvt->profile->sipip;
+				char *ipv6 = strchr(ip_addr, ':');
+				if (sofia_glue_transport_has_tls(tech_pvt->transport)) {
+					tech_pvt->invite_contact = switch_core_session_sprintf(session, "sip:%s@%s%s%s:%d", contact, 
+																		   ipv6 ? "[" : "", ip_addr, ipv6 ? "]" : "", 
+																		   tech_pvt->profile->tls_sip_port);
+				} else {
+					tech_pvt->invite_contact = switch_core_session_sprintf(session, "sip:%s@%s%s%s", contact, 
+																		   ipv6 ? "[" : "", ip_addr, ipv6 ? "]" : "");
+				}
 			} else {
-				tech_pvt->invite_contact = tech_pvt->profile->url;
+				if (sofia_glue_transport_has_tls(tech_pvt->transport)) {
+					tech_pvt->invite_contact = tech_pvt->profile->tls_url;
+				} else {
+					tech_pvt->invite_contact = tech_pvt->profile->url;
+				}
 			}
 		}
 
