@@ -76,7 +76,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading Flite."
-					CommandLine="if not exist &quot;$(ProjectDir)..\flite-1.3.99&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://www.freeswitch.org/downloads/libs/flite-1.3.99.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\flite-1.3.99&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/flite-1.3.99.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\flite-1.3.99"
         />
       </FileConfiguration>
@@ -86,7 +86,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading Flite."
-					CommandLine="if not exist &quot;$(ProjectDir)..\flite-1.3.99&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://www.freeswitch.org/downloads/libs/flite-1.3.99.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\flite-1.3.99&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/flite-1.3.99.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\flite-1.3.99"
 				/>
 			</FileConfiguration>
