@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="Windows-1252"?>
 <include>
   <language name="en" sound-path="$${base_dir}/sounds/en/us/callie" tts-engine="cepstral" tts-voice="callie">
     <X-PRE-PROCESS cmd="include" data="demo/*.xml"/> <!-- Note: this now grabs whole subdir, previously grabbed only demo.xml -->
