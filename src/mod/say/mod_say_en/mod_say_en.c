@@ -225,28 +225,24 @@ static switch_status_t en_say_general_count(switch_core_session_t *session,
 static switch_status_t en_ip(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
 {
 	char *a, *b, *c, *d;
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	if (!(a = strdup(tosay))) {
+	if (!(a = switch_core_session_strdup(session, tosay))) {
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (!(b = strchr(a, '.'))) {
-		status = SWITCH_STATUS_FALSE;
-		goto done;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	*b++ = '\0';
 
 	if (!(c = strchr(b, '.'))) {
-		status = SWITCH_STATUS_FALSE;
-		goto done;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	*c++ = '\0';
 
 	if (!(d = strchr(c, '.'))) {
-		status = SWITCH_STATUS_FALSE;
-		goto done;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	*d++ = '\0';
@@ -259,9 +255,7 @@ static switch_status_t en_ip(switch_core_session_t *session, char *tosay, switch
 	say_file("digits/dot.wav");
 	say_num(atoi(d), method);
 
-  done:
-	switch_safe_free(a);
-	return status;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
