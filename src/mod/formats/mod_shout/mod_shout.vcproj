@@ -49,6 +49,7 @@
 				WarningLevel="3"
 				WarnAsError="false"
 				DebugInformationFormat="4"
+				EnablePREfast="false"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
