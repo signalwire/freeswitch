@@ -365,7 +365,7 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 {
 	pocketsphinx_t *ps = (pocketsphinx_t *) ah->private_info; 
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	int32_t conf, lconf;
+	int32_t conf;
 
 	if (switch_test_flag(ps, PSFLAG_BARGE)) {
 		switch_clear_flag_locked(ps, PSFLAG_BARGE);
@@ -375,14 +375,11 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 	if (switch_test_flag(ps, PSFLAG_HAS_TEXT)) {
 		switch_mutex_lock(ps->flag_mutex); 
 		switch_clear_flag(ps, PSFLAG_HAS_TEXT);
-		
 		conf = ps_get_prob(ps->ps, &ps->uttid);
-		lconf = (int32_t)logmath_log_to_ln(ps_get_logmath(ps->ps), conf);
-		ps->confidence = lconf - lconf - lconf;
 
-		if (ps->confidence > 1000) {
-			ps->confidence = 1000;
-		} else if (ps->confidence < 0) {
+		ps->confidence = (conf + 20000) / 200;
+
+		if (ps->confidence < 0) {
 			ps->confidence = 0;
 		}
 

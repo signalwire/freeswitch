@@ -33,8 +33,8 @@ include("js_modules/SpeechTools.jm");
 
 function on_dtmf(a, b, c) {}
 
-var dft_min = 0;
-var dft_confirm = 78;
+var dft_min = 40;
+var dft_confirm = 70;
 
 /***************** Initialize The Speech Detector  *****************/
 var asr = new SpeechDetect(session, "pocketsphinx");
@@ -142,7 +142,7 @@ pizza.arsoObtainer.addItemAlias("^remove\\s*", "rem_topping");
 
 /***************** Yes? No? Maybe So?  *****************/
 pizza.yesnoObtainer = new SpeechObtainer(asr, 1, 5000);
-pizza.yesnoObtainer.setGrammar("pizza_yesno", "", "result", dft_min, 40, true);
+pizza.yesnoObtainer.setGrammar("pizza_yesno", "", "result", dft_min, 20, true);
 pizza.yesnoObtainer.setBadSound("GP-NI");
 pizza.yesnoObtainer.addItemAlias("^yes,^correct", "yes");
 pizza.yesnoObtainer.addItemAlias("^no", "no");

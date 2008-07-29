@@ -181,43 +181,26 @@ function SpeechDetect(session, mod, ip) {
 					console_log("debug", "----Hit score " + interp.@score + "/" + grammar_object.min_score + "/" + grammar_object.confirm_score + "\n");
 				}
 
-				if (_this.mod == "pocketsphinx") {
-					/* pocketsphinx scores 0 best to 100 worst. */
-					if (interp.@score >= grammar_object.min_score) {
-						if (interp.@score >= grammar_object.confirm_score) {
-							rv.push("_confirm_");
-						}
+				if (interp.@score >= grammar_object.min_score) {
+					if (interp.@score < grammar_object.confirm_score) {
+						rv.push("_confirm_");
+					}
 						
-						eval("xo = interp." + grammar_object.obj_path + ";");
-						for (x = 0; x < xo.length(); x++) {
-							rv.push(xo[x]);
-							console_log("info", "----" +xo[x] + "\n"); 
-						}
-					} else {
-						rv.push("_no_idea_");
+					eval("xo = interp." + grammar_object.obj_path + ";");
+					for (x = 0; x < xo.length(); x++) {
+						rv.push(xo[x]);
+						console_log("info", "----" +xo[x] + "\n"); 
 					}
 				} else {
-					if (interp.@score >= grammar_object.min_score) {
-						if (interp.@score < grammar_object.confirm_score) {
-							rv.push("_confirm_");
-						}
-						
-						eval("xo = interp." + grammar_object.obj_path + ";");
-						for (x = 0; x < xo.length(); x++) {
-							rv.push(xo[x]);
-							console_log("info", "----" +xo[x] + "\n"); 
-						}
-					} else {
-						rv.push("_no_idea_");
-					}
+					rv.push("_no_idea_");
 				}
 
-				delete interp;
-				return rv;
 			}
+			delete interp;
+			return rv;
 		}
 	}
-} 
+}
 
 /* Constructor for SpeechObtainer Class (Class to collect data from a SpeechDetect Class) */
 function SpeechObtainer(asr, req, wait_time) {
