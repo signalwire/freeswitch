@@ -300,7 +300,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void);
 	app_int->short_desc = short_descript; \
 	app_int->long_desc = long_descript; \
 	app_int->syntax = syntax_string; \
-	app_interface->flags = app_flags; \
+	app_int->flags = app_flags; \
 	break; \
 	}
 
