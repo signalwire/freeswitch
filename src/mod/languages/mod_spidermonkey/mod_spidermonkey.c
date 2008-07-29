@@ -1095,10 +1095,10 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 	uintN argc = 0;
 	jsval argv[4];
 	JSObject *Event = NULL;
-	jsval nval, *rval = &nval;
+	jsval ret, nval, *rval = &nval;
 	JSContext *cx = cb_state->cx;
 	JSObject *obj = cb_state->obj;
-
+	
 	METHOD_SANITY_CHECK();
 
 	jss->stack_depth++;
@@ -1148,7 +1148,11 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (check_hangup_hook(jss, NULL) == JS_TRUE) {
+	JS_ResumeRequest(cb_state->cx, cb_state->saveDepth);
+	check_hangup_hook(jss, &ret);
+	cb_state->saveDepth = JS_SuspendRequest(cb_state->cx);
+
+	if (ret == JS_TRUE) {
 		JS_ResumeRequest(cb_state->cx, cb_state->saveDepth);
 		JS_CallFunction(cb_state->cx, cb_state->obj, cb_state->function, argc, argv, &cb_state->ret);
 		cb_state->saveDepth = JS_SuspendRequest(cb_state->cx);
@@ -1422,13 +1426,10 @@ static JSBool session_recordfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	args.input_callback = dtmf_func;
 	args.buf = bp;
 	args.buflen = len;
-	if (check_hangup_hook(jss, NULL) != JS_TRUE) {
-		return JS_FALSE;
-
-	}
+	
 	switch_ivr_record_file(jss->session, &fh, file_name, &args, limit);
-	check_hangup_hook(jss, &ret);
 	JS_ResumeRequest(cx, cb_state.saveDepth);
+	check_hangup_hook(jss, &ret);
 	*rval = cb_state.ret;
 
 	return ret;
@@ -1480,14 +1481,9 @@ static JSBool session_collect_input(JSContext * cx, JSObject * obj, uintN argc, 
 	args.buf = bp;
 	args.buflen = len;
 
-	if (check_hangup_hook(jss, NULL) != JS_TRUE) {
-		return JS_FALSE;
-
-	}
-
 	switch_ivr_collect_digits_callback(jss->session, &args, to);
-	check_hangup_hook(jss, &ret);
 	JS_ResumeRequest(cx, cb_state.saveDepth);
+	check_hangup_hook(jss, &ret);
 	*rval = cb_state.ret;
 
 	return ret;
@@ -1560,12 +1556,10 @@ static JSBool session_sayphrase(JSContext * cx, JSObject * obj, uintN argc, jsva
 	args.input_callback = dtmf_func;
 	args.buf = bp;
 	args.buflen = len;
-	if (check_hangup_hook(jss, NULL) != JS_TRUE) {
-		return JS_FALSE;
-	}
+
 	switch_ivr_phrase_macro(jss->session, phrase_name, phrase_data, phrase_lang, &args);
-	check_hangup_hook(jss, &ret);
 	JS_ResumeRequest(cx, cb_state.saveDepth);
+	check_hangup_hook(jss, &ret);
 	*rval = cb_state.ret;
 
 	return ret;
@@ -1704,13 +1698,9 @@ static JSBool session_streamfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	args.input_callback = dtmf_func;
 	args.buf = bp;
 	args.buflen = len;
-	if (check_hangup_hook(jss, NULL) != JS_TRUE) {
-		return JS_FALSE;
-	}
 	switch_ivr_play_file(jss->session, &fh, file_name, &args);
-	check_hangup_hook(jss, &ret);
-
 	JS_ResumeRequest(cx, cb_state.saveDepth);
+	check_hangup_hook(jss, &ret);
 	*rval = cb_state.ret;
 
 	switch_snprintf(posbuf, sizeof(posbuf), "%u", fh.offset_pos);
@@ -1770,12 +1760,9 @@ static JSBool session_sleep(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	args.input_callback = dtmf_func;
 	args.buf = bp;
 	args.buflen = len;
-	if (check_hangup_hook(jss, NULL) != JS_TRUE) {
-		return JS_FALSE;
-	}
 	switch_ivr_sleep(jss->session, ms, &args);
-	check_hangup_hook(jss, &ret);
 	JS_ResumeRequest(cx, cb_state.saveDepth);
+	check_hangup_hook(jss, &ret);
 	*rval = cb_state.ret;
 
 	return ret;
@@ -1961,12 +1948,9 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	args.buflen = len;
 
 	switch_core_speech_flush_tts(&jss->speech->sh);
-	if (check_hangup_hook(jss, NULL) != JS_TRUE) {
-		return JS_FALSE;
-	}
 	switch_ivr_speak_text_handle(jss->session, &jss->speech->sh, &jss->speech->codec, NULL, text, &args);
-	check_hangup_hook(jss, &ret);
 	JS_ResumeRequest(cx, cb_state.saveDepth);
+	check_hangup_hook(jss, &ret);
 	*rval = cb_state.ret;
 
 	return ret;
@@ -2234,8 +2218,8 @@ static JSBool session_execute(JSContext * cx, JSObject * obj, uintN argc, jsval 
 				
 				saveDepth = JS_SuspendRequest(cx);
 				switch_core_session_exec(jss->session, application_interface, app_arg);
-				check_hangup_hook(jss, &ret);
 				JS_ResumeRequest(cx, saveDepth);
+				check_hangup_hook(jss, &ret);
 				retval = JS_TRUE;
 			}
 		}
