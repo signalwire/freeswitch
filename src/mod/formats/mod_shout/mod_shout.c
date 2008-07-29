@@ -451,6 +451,8 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 	curl_handle = curl_easy_init();
 	curl_easy_setopt(curl_handle, CURLOPT_URL, context->stream_url);
+	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, stream_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) context);
 	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "FreeSWITCH(mod_shout)/1.0");

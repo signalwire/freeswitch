@@ -2439,6 +2439,8 @@ static JSBool js_fetchurl_hash(JSContext * cx, JSObject * obj, uintN argc, jsval
 			config_data.name = name;
 		}
 		curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+		curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+		curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, hash_callback);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
 		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-js/1.0");
@@ -2481,6 +2483,8 @@ static JSBool js_fetchurl_file(JSContext * cx, JSObject * obj, uintN argc, jsval
 		config_data.name = filename;
 		if ((config_data.fd = open(filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 			curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+			curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+			curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 			curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
 			curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
 			curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-js/1.0");
@@ -2532,6 +2536,8 @@ static JSBool js_fetchurl(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 		}
 
 		curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+		curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+		curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, fetch_url_callback);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
 		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-js/1.0");

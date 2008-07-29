@@ -165,6 +165,8 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		}
 		curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 		curl_easy_setopt(curl_handle, CURLOPT_POST, 1);
+		curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+		curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, data);
 		curl_easy_setopt(curl_handle, CURLOPT_URL, binding->url);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
