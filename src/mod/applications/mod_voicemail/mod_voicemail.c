@@ -2076,14 +2076,19 @@ static void deliver_vm(vm_profile_t *profile,
 static switch_status_t voicemail_inject(const char *data)
 {
 	vm_profile_t *profile;
-	char *dup, *user = NULL, *domain = NULL;
-	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *dup = NULL, *user = NULL, *domain = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int istag = 0, isall = 0;
 	int argc = 0;
     char *argv[4];
 	char *box, *path, *cid_num, *cid_name;
 	switch_memory_pool_t *pool = NULL;
 
+	if (switch_strlen_zero(data)) {
+		status = SWITCH_STATUS_FALSE;
+		goto end;
+	}
+	
 	dup = strdup(data);
 	switch_assert(dup);
 
@@ -2163,16 +2168,13 @@ static switch_status_t voicemail_inject(const char *data)
 		switch_core_destroy_memory_pool(&pool);
 
 		switch_xml_free(xml_root);
-
 	}
 
-	
  end:
 
 	switch_safe_free(dup);
 
 	return status;
-
 }
 
 static switch_status_t voicemail_leave_main(switch_core_session_t *session, const char *profile_name, const char *domain_name, const char *id)
@@ -3090,13 +3092,14 @@ static void do_web(vm_profile_t *profile, char *user, char *domain, char *host, 
 	}
 }
 
-
-
+#define VM_INJECT_USAGE "[tag=]<box> <sound_file> [<cid_num>] [<cid_name>]"
 SWITCH_STANDARD_API(voicemail_inject_api_function)
 {
-	voicemail_inject(cmd);
-
-	stream->write_function(stream, "%s", "+OK\n");
+	if (voicemail_inject(cmd) == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "%s", "+OK\n");
+	} else {
+		stream->write_function(stream, "Error: %s\n", VM_INJECT_USAGE);
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -3226,7 +3229,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load)
 	}
 
 	SWITCH_ADD_API(commands_api_interface, "voicemail", "voicemail", voicemail_api_function, VOICEMAIL_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "voicemail_inject", "voicemail", voicemail_inject_api_function, "");
+	SWITCH_ADD_API(commands_api_interface, "voicemail_inject", "voicemail_inject", voicemail_inject_api_function, VM_INJECT_USAGE);
 	SWITCH_ADD_API(commands_api_interface, "vm_boxcount", "vm_boxcount", boxcount_api_function, BOXCOUNT_SYNTAX);
 
 	/* indicate that the module should continue to be loaded */
