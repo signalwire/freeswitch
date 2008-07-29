@@ -1455,53 +1455,65 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 													   switch_xml_t *user,
 													   switch_event_t *params)
 {
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_event_t *my_params = NULL;
+
 	*root = NULL;
 	*user = NULL;
 	*domain = NULL;
 
-	if (params) {
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "key", key);
+	if (!params) {
+		switch_event_create(&my_params, SWITCH_EVENT_MESSAGE);
+		switch_assert(my_params);
+		params = my_params;
+	}
 
-		if (user_name) {
-			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "user", user_name);
-		}
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "key", key);
 
-		if (domain_name) {
-			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain_name);
-		}
+	if (user_name) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "user", user_name);
+	}
 
-		if (ip) {
-			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "ip", ip);
-		}
+	if (domain_name) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain_name);
+	}
+
+	if (ip) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "ip", ip);
 	}
 	
-
 	if ((status = switch_xml_locate_domain(domain_name, params, root, domain)) != SWITCH_STATUS_SUCCESS) {
-		return status;
+		goto end;
 	}
 	
 	if (ip) {
 		if ((*user = switch_xml_find_child(*domain, "user", "ip", ip))) {
-			return SWITCH_STATUS_SUCCESS;
+			status = SWITCH_STATUS_SUCCESS;
+			goto end;
 		}
 	} 
 
 	if (user_name) {
-		
-		if (params && switch_event_get_header(params, (char *) "mailbox")) {
+		if (params != my_params && switch_event_get_header(params, (char *) "mailbox")) {
 			if ((*user = switch_xml_find_child(*domain, "user", "mailbox", user_name))) {
-				return SWITCH_STATUS_SUCCESS;
+				status = SWITCH_STATUS_SUCCESS;
+				goto end;
 			}
 		}
 
 		if ((*user = switch_xml_find_child(*domain, "user", key, user_name))) {
-			return SWITCH_STATUS_SUCCESS;
+			status = SWITCH_STATUS_SUCCESS;
+			goto end;
 		}
-		
 	}
 
-	return SWITCH_STATUS_FALSE;
+ end:
+
+	if (my_params) {
+		switch_event_destroy(&my_params);
+	}
+
+	return status;
 }
 
 SWITCH_DECLARE(switch_xml_t) switch_xml_root(void)
