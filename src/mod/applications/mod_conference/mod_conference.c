@@ -1820,21 +1820,23 @@ static void conference_loop_output(conference_member_t *member)
 
 
 		if (switch_core_session_dequeue_event(member->session, &event) == SWITCH_STATUS_SUCCESS) {
-			char *from = switch_event_get_header(event, "from");
-			char *to = switch_event_get_header(event, "to");
-			char *proto = switch_event_get_header(event, "proto");
-			char *subject = switch_event_get_header(event, "subject");
-			char *hint = switch_event_get_header(event, "hint");
-			char *body = switch_event_get_body(event);
-			char *p, *freeme = NULL;
+			if (event->event_id == SWITCH_EVENT_MESSAGE) {
+				char *from = switch_event_get_header(event, "from");
+				char *to = switch_event_get_header(event, "to");
+				char *proto = switch_event_get_header(event, "proto");
+				char *subject = switch_event_get_header(event, "subject");
+				char *hint = switch_event_get_header(event, "hint");
+				char *body = switch_event_get_body(event);
+				char *p, *freeme = NULL;
 
-			if (to && from && body) {
-				if ((p = strchr(to, '+')) && strncmp(to, CONF_CHAT_PROTO, strlen(CONF_CHAT_PROTO))) {
-					freeme = switch_mprintf("%s+%s@%s", CONF_CHAT_PROTO, member->conference->name, member->conference->domain);
-					to = freeme;
+				if (to && from && body) {
+					if ((p = strchr(to, '+')) && strncmp(to, CONF_CHAT_PROTO, strlen(CONF_CHAT_PROTO))) {
+						freeme = switch_mprintf("%s+%s@%s", CONF_CHAT_PROTO, member->conference->name, member->conference->domain);
+						to = freeme;
+					}
+					chat_send(proto, from, to, subject, body, hint);
+					switch_safe_free(freeme);
 				}
-				chat_send(proto, from, to, subject, body, hint);
-				switch_safe_free(freeme);
 			}
 			switch_event_destroy(&event);
 		}
