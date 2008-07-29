@@ -454,6 +454,10 @@ SWITCH_STANDARD_APP(fifo_function)
 		}
 	}
 
+	if (moh && !strcasecmp(moh, "silence")) {
+		moh = NULL;
+	}
+
 	check_string(announce);
 	check_string(moh);
 	switch_assert(node);
