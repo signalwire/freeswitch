@@ -205,6 +205,8 @@ void sofia_event_callback(nua_event_t event,
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already hungup.\n");
 			goto done;
 		}
+	} else if (sofia_private && sofia_private->is_call) {
+		sofia_private->destroy_me = 22;
 	}
 
 	if ((profile->pflags & PFLAG_AUTH_ALL) && tech_pvt && tech_pvt->key && sip) {
@@ -353,6 +355,7 @@ void sofia_event_callback(nua_event_t event,
 			nua_handle_bind(nh, NULL);
 		}
 		sofia_private->destroy_me = 12;
+
 		free(sofia_private);
 		sofia_private = NULL;
 	}
@@ -3559,6 +3562,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	}
 
 	memset(sofia_private, 0, sizeof(*sofia_private));
+	sofia_private->is_call++;
 	tech_pvt->sofia_private = sofia_private;
 
 	if ((profile->pflags & PFLAG_PRESENCE)) {

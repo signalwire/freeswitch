@@ -111,6 +111,7 @@ struct sofia_private {
 	char gateway_name[512];
 	int destroy_nh;
 	int destroy_me;
+	int is_call;
 };
 
 #define set_param(ptr,val) if (ptr) {free(ptr) ; ptr = NULL;} if (val) {ptr = strdup(val);}

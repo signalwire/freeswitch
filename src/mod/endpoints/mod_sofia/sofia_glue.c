@@ -1206,7 +1206,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		if (!(sofia_private = malloc(sizeof(*sofia_private)))) {
 			abort();
 		}
+
 		memset(sofia_private, 0, sizeof(*sofia_private));
+		sofia_private->is_call++;
+
 		tech_pvt->sofia_private = sofia_private;
 		switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));
 		nua_handle_bind(tech_pvt->nh, tech_pvt->sofia_private);
