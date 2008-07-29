@@ -1389,25 +1389,6 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 					continue;
 				}
 
-				if (total_saved_urgent_messages > 0) {
-					switch_snprintf(msg_count, sizeof(msg_count), "%d:urgent-saved", total_saved_urgent_messages);
-					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL));
-					informed++;
-				}
-
-				if (total_saved_messages > 0 && total_saved_messages != total_saved_urgent_messages) {
-					switch_snprintf(msg_count, sizeof(msg_count), "%d:saved", total_saved_messages);
-					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL));
-					informed++;
-				}
-
-				if (!heard_auto_saved && total_saved_messages + total_saved_urgent_messages > 0) {
-					heard_auto_saved = 1;
-					play_msg_type = MSG_SAVED;
-					vm_check_state = VM_CHECK_PLAY_MESSAGES;
-					continue;
-				}
-
 				if (!informed) {
 					switch_snprintf(msg_count, sizeof(msg_count), "0:new");
 					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL));
@@ -2433,8 +2414,11 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 
 	if ((vm_cc = switch_channel_get_variable(channel, "vm_cc"))) {
 		char *cmd = switch_core_session_sprintf(session, "%s %s %s %s", vm_cc, file_path, caller_id_number, caller_id_name);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc);
-		voicemail_inject(cmd);
+		if (voicemail_inject(cmd) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to Carbon Copy to %s\n", vm_cc);
+		}
 	}
 
  end:
