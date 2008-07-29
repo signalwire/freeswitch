@@ -38,6 +38,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_tone_stream_shutdown);
 struct silence_handle {
 	int32_t samples;
 	int silence;
+	int forever;
 };
 
 static switch_status_t silence_stream_file_open(switch_file_handle_t *handle, const char *path)
@@ -45,31 +46,30 @@ static switch_status_t silence_stream_file_open(switch_file_handle_t *handle, co
 
 	struct silence_handle *sh;
 	int ms;
+	char *p;
 
 	sh = switch_core_alloc(handle->memory_pool, sizeof(*sh));
 
 	ms = atoi(path);
 
 	if (ms > 0) {
-		char *p;
-
 		sh->samples = (handle->samplerate / 1000) * ms;
+	} else {
+		sh->samples = 0;
+		sh->forever = 1;
+	}
 		
-		if ((p = strchr(path, ','))) {
-			p++;
-			ms = atoi(p);
-			if (ms > 0) {
-				sh->silence = ms;
-			}
+	if ((p = strchr(path, ','))) {
+		p++;
+		ms = atoi(p);
+		if (ms > 0) {
+			sh->silence = ms;
 		}
-
-		handle->private_info = sh;
-		return SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid format!\n");
-	
-	return SWITCH_STATUS_GENERR;
+	handle->private_info = sh;
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t silence_stream_file_close(switch_file_handle_t *handle)
@@ -81,15 +81,17 @@ static switch_status_t silence_stream_file_read(switch_file_handle_t *handle, vo
 {
 	struct silence_handle *sh = handle->private_info;
 	
-	if (sh->samples <= 0) {
-		return SWITCH_STATUS_FALSE;
-	}
+	if (!sh->forever) {
+		if (sh->samples <= 0) {
+			return SWITCH_STATUS_FALSE;
+		}
 
-	if (*len > (size_t)sh->samples) {
-		*len = sh->samples;
-	}
+		if (*len > (size_t)sh->samples) {
+			*len = sh->samples;
+		}
 
-	sh->samples -= *len;
+		sh->samples -= *len;
+	}
 	
 	if (sh->silence) {
 		switch_generate_sln_silence((int16_t *) data, *len, sh->silence);
