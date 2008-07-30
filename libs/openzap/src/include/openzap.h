@@ -595,6 +595,18 @@ static __inline__ void zap_set_state_all(zap_span_t *span, zap_channel_state_t s
 	zap_mutex_unlock(span->mutex);
 }
 
+static __inline__ int zap_check_state_all(zap_span_t *span, zap_channel_state_t state)
+{
+	uint32_t j;
+	for(j = 1; j <= span->chan_count; j++) {
+		if (span->channels[j].state != state || zap_test_flag((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE)) {
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 static __inline__ void zap_set_flag_all(zap_span_t *span, uint32_t flag)
 {
 	uint32_t j;

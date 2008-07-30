@@ -1,5 +1,5 @@
 /****************************************************************************
- * sigboost.h     $Revision: 1.3 $
+ * sigboost.h     $Revision: 1.5 $
  *
  * Definitions for the sigboost interface.
  *
@@ -33,12 +33,12 @@ enum	e_sigboost_event_id_values
 	SIGBOOST_EVENT_INSERT_CHECK_LOOP		= 0x8a, /*138*/
 	SIGBOOST_EVENT_REMOVE_CHECK_LOOP		= 0x8b, /*139*/
 	SIGBOOST_EVENT_AUTO_CALL_GAP_ABATE		= 0x8c, /*140*/
+	SIGBOOST_EVENT_DIGIT_IN					= 0x8d, /*141*/
 };
 enum	e_sigboost_release_cause_values
 {
 	SIGBOOST_RELEASE_CAUSE_UNDEFINED		= 0,
 	SIGBOOST_RELEASE_CAUSE_NORMAL			= 16,
-	SIGBOOST_RELEASE_CAUSE_BUSY			= 17,
 	/* probable elimination */
 	//SIGBOOST_RELEASE_CAUSE_BUSY			= 0x91, /* 145 */
 	//SIGBOOST_RELEASE_CAUSE_CALLED_NOT_EXIST	= 0x92, /* 146 */
@@ -59,7 +59,6 @@ enum	e_sigboost_call_setup_ack_nack_cause_values
 };
 
 #define MAX_DIALED_DIGITS	31
-#define MAX_CALLING_NAME	31
 
 /* Next two defines are used to create the range of values for call_setup_id
  * in the t_sigboost structure.
@@ -68,37 +67,63 @@ enum	e_sigboost_call_setup_ack_nack_cause_values
 #define CORE_MAX_CHAN_PER_SPAN 	30
 #define MAX_PENDING_CALLS 	CORE_MAX_SPANS * CORE_MAX_CHAN_PER_SPAN
 /* 0..(MAX_PENDING_CALLS-1) is range of call_setup_id below */
-#define SIZE_RDNIS		80
-
-//#undef MSGWINDOW
-#define MSGWINDOW
+#define SIZE_RDNIS		128
 
 #pragma pack(1)
 typedef struct
 {
 	uint32_t	event_id;
+	/* delete sequence numbers - SCTP does not need them */
 	uint32_t	fseqno;
-#ifdef MSGWINDOW
 	uint32_t	bseqno;
-#endif
 	uint16_t	call_setup_id;
 	uint32_t	trunk_group;
-	uint32_t	span;
-	uint32_t	chan;
+	uint8_t		span;
+	uint8_t		chan;
+	struct timeval  tv;
 	uint8_t		called_number_digits_count;
 	char		called_number_digits [MAX_DIALED_DIGITS + 1]; /* it's a null terminated string */
 	uint8_t		calling_number_digits_count; /* it's an array */
 	char		calling_number_digits [MAX_DIALED_DIGITS + 1]; /* it's a null terminated string */
-	uint8_t		release_cause;
-	struct timeval  tv;
 	/* ref. Q.931 Table 4-11 and Q.951 Section 3 */
 	uint8_t		calling_number_screening_ind;
 	uint8_t		calling_number_presentation;
+	char		calling_name[MAX_DIALED_DIGITS + 1];
+	uint16_t	redirection_string_size;
 	char		redirection_string [SIZE_RDNIS]; /* it's a null terminated string */
 	/* redir string format: 
 	 * http://www.ss7box.com/wiki/tiki-index.php?page=Call+Redirection
 	 * */
-} t_sigboost;
+} t_sigboost_callstart;
+
+#define MIN_SIZE_CALLSTART_MSG  (sizeof(t_sigboost_callstart) - SIZE_RDNIS)
+
+typedef struct
+{
+	uint32_t	event_id;
+	/* delete sequence numbers - SCTP does not need them */
+	uint32_t	fseqno;
+	uint32_t	bseqno;
+	uint16_t	call_setup_id;
+	uint32_t	trunk_group;
+	uint8_t		span;
+	uint8_t		chan;
+	struct timeval  tv;
+	uint8_t		release_cause;
+} t_sigboost_short;
 #pragma pack()
+
+static inline int boost_full_event(int event_id)
+{
+	switch (event_id) {
+	case SIGBOOST_EVENT_CALL_START:
+	case SIGBOOST_EVENT_DIGIT_IN:
+		return 1;
+	default:
+		return 0;
+	}
+
+	return 0;
+}
 
 #endif

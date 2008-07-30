@@ -70,7 +70,8 @@
 		(dest)->flags |= ((src)->flags & (flagz));	\
 	} while (0)
 
-typedef  t_sigboost ss7bc_event_t;
+typedef  t_sigboost_callstart ss7bc_event_t;
+typedef  t_sigboost_short ss7bc_short_event_t;
 typedef uint32_t ss7bc_event_id_t;
 
 typedef struct ss7bc_ip_cfg
@@ -117,14 +118,19 @@ static inline void sctp_no_nagle(int socket)
 
 int ss7bc_connection_close(ss7bc_connection_t *mcon);
 int ss7bc_connection_open(ss7bc_connection_t *mcon, char *local_ip, int local_port, char *ip, int port);
-ss7bc_event_t *ss7bc_connection_read(ss7bc_connection_t *mcon, int iteration);
-ss7bc_event_t *ss7bc_connection_readp(ss7bc_connection_t *mcon, int iteration);
+ss7bc_event_t *__ss7bc_connection_read(ss7bc_connection_t *mcon, int iteration, const char *file, const char *func, int line);
+ss7bc_event_t *__ss7bc_connection_readp(ss7bc_connection_t *mcon, int iteration, const char *file, const char *func, int line);
 int __ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event, const char *file, const char *func, int line);
+int __ss7bc_connection_writep(ss7bc_connection_t *mcon, ss7bc_event_t *event, const char *file, const char *func, int line);
 #define ss7bc_connection_write(_m,_e) __ss7bc_connection_write(_m, _e, __FILE__, __func__, __LINE__)
-void ss7bc_event_init(ss7bc_event_t *event, ss7bc_event_id_t event_id, int chan, int span);
+#define ss7bc_connection_writep(_m,_e) __ss7bc_connection_writep(_m, _e, __FILE__, __func__, __LINE__)
+#define ss7bc_connection_read(_m,_e) __ss7bc_connection_read(_m, _e, __FILE__, __func__, __LINE__)
+#define ss7bc_connection_readp(_m,_e) __ss7bc_connection_readp(_m, _e, __FILE__, __func__, __LINE__)
+void ss7bc_event_init(ss7bc_short_event_t *event, ss7bc_event_id_t event_id, int chan, int span);
 void ss7bc_call_init(ss7bc_event_t *event, const char *calling, const char *called, int setup_id);
 const char *ss7bc_event_id_name(uint32_t event_id);
 int ss7bc_exec_command(ss7bc_connection_t *mcon, int span, int chan, int id, int cmd, int cause);
+int ss7bc_exec_commandp(ss7bc_connection_t *pcon, int span, int chan, int id, int cmd, int cause);
 
 #endif
 
