@@ -204,6 +204,7 @@ zap_size_t zap_buffer_write(zap_buffer_t *buffer, const void *data, zap_size_t d
 	
 	if (freespace < datalen) {
 		zap_size_t new_size, new_block_size;
+		void *data;
 		
 		new_size = buffer->datalen + datalen;
 		new_block_size = buffer->datalen + buffer->blocksize;
@@ -212,10 +213,11 @@ zap_size_t zap_buffer_write(zap_buffer_t *buffer, const void *data, zap_size_t d
 			new_size = new_block_size;
 		}
 		buffer->head = buffer->data;
-		buffer->data = realloc(buffer->data, new_size);
-		if (!buffer->data) {
+		data = realloc(buffer->data, new_size);
+		if (!data) {
 			return 0;
 		}
+		buffer->data = data;
 		buffer->head = buffer->data;
 		buffer->datalen = new_size;
 	}

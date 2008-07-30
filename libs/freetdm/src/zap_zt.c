@@ -377,6 +377,32 @@ static ZIO_COMMAND_FUNCTION(zt_command)
 	memset(&ztp, 0, sizeof(ztp));
 
 	switch(command) {
+	case ZAP_COMMAND_ENABLE_ECHOCANCEL:
+		{
+			int level = ZAP_COMMAND_OBJ_INT;
+			err = ioctl(zchan->sockfd, ZT_ECHOCANCEL, &level);
+			ZAP_COMMAND_OBJ_INT = level;
+		}
+	case ZAP_COMMAND_DISABLE_ECHOCANCEL:
+		{
+			int level = 0;
+			err = ioctl(zchan->sockfd, ZT_ECHOCANCEL, &level);
+			ZAP_COMMAND_OBJ_INT = level;
+		}
+		break;
+	case ZAP_COMMAND_ENABLE_ECHOTRAIN:
+		{
+			int level = ZAP_COMMAND_OBJ_INT;
+			err = ioctl(zchan->sockfd, ZT_ECHOTRAIN, &level);
+			ZAP_COMMAND_OBJ_INT = level;
+		}
+	case ZAP_COMMAND_DISABLE_ECHOTRAIN:
+		{
+			int level = 0;
+			err = ioctl(zchan->sockfd, ZT_ECHOTRAIN, &level);
+			ZAP_COMMAND_OBJ_INT = level;
+		}
+		break;
 	case ZAP_COMMAND_OFFHOOK:
 		{
 			int command = ZT_OFFHOOK;
