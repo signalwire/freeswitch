@@ -1848,10 +1848,28 @@ SWITCH_STANDARD_API(oz_function)
 }
 
 
+SWITCH_STANDARD_APP(disable_ec_function)
+{
+	private_t *tech_pvt;
+	int x = 0;
+
+	if (!switch_core_session_check_interface(session, openzap_endpoint_interface)) {
+		zap_log(ZAP_LOG_ERROR, "This application is only for OpenZAP channels.\n");
+		return;
+	}
+	
+	tech_pvt = switch_core_session_get_private(session);
+	zap_channel_command(tech_pvt->zchan, ZAP_COMMAND_DISABLE_ECHOCANCEL, &x);
+	zap_channel_command(tech_pvt->zchan, ZAP_COMMAND_DISABLE_ECHOTRAIN, &x);
+	zap_log(ZAP_LOG_ERROR, "Echo Canceller Disabled\n");
+}
+
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load)
 {
 
 	switch_api_interface_t *commands_api_interface;
+	switch_application_interface_t *app_interface;
 
 	module_pool = pool;
 
@@ -1874,6 +1892,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load)
 	openzap_endpoint_interface->state_handler = &openzap_state_handlers;
 	
 	SWITCH_ADD_API(commands_api_interface, "oz", "OpenZAP commands", oz_function, OZ_SYNTAX);
+
+	SWITCH_ADD_APP(app_interface, "disable_ec", "Disable Echo Canceller", "Disable Echo Canceller", disable_ec_function, "", SAF_NONE);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
