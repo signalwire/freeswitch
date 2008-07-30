@@ -54,7 +54,7 @@ typedef enum {
 
 typedef struct {
 	ss7_boost_request_status_t status;
-	ss7bc_event_t event;
+	ss7bc_short_event_t event;
 	zap_span_t *span;
 	zap_channel_t *zchan;
 } ss7_boost_request_t;
@@ -136,7 +136,7 @@ static ss7_boost_request_id_t __next_request_id(const char *func, int line)
 }
 #define next_request_id() __next_request_id(__FUNCTION__, __LINE__)
 
-static zap_channel_t *find_zchan(zap_span_t *span, ss7bc_event_t *event, int force)
+static zap_channel_t *find_zchan(zap_span_t *span, ss7bc_short_event_t *event, int force)
 {
 	int i;
 	zap_channel_t *zchan = NULL;
@@ -273,7 +273,7 @@ static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(ss7_boost_outgoing_call)
 	return status;
 }
 
-static void handle_call_start_ack(ss7bc_connection_t *mcon, ss7bc_event_t *event)
+static void handle_call_start_ack(ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
 {
 	zap_channel_t *zchan;
 
@@ -316,7 +316,7 @@ static void handle_call_start_ack(ss7bc_connection_t *mcon, ss7bc_event_t *event
 	
 }
 
-static void handle_call_done(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_event_t *event)
+static void handle_call_done(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
 {
 	zap_channel_t *zchan;
 	int r = 0;
@@ -346,7 +346,7 @@ static void handle_call_done(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_e
 	release_request_id_span_chan(event->span, event->chan);
 }
 
-static void handle_call_start_nack(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_event_t *event)
+static void handle_call_start_nack(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
 {
 	zap_channel_t *zchan;
 
@@ -395,7 +395,7 @@ static void handle_call_start_nack(zap_span_t *span, ss7bc_connection_t *mcon, s
 
 }
 
-static void handle_call_stop(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_event_t *event)
+static void handle_call_stop(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
 {
 	zap_channel_t *zchan;
 	
@@ -434,7 +434,7 @@ static void handle_call_stop(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_e
 	release_request_id_span_chan(event->span, event->chan);	
 }
 
-static void handle_call_answer(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_event_t *event)
+static void handle_call_answer(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
 {
 	zap_channel_t *zchan;
 	
@@ -465,7 +465,7 @@ static void handle_call_start(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_
 {
 	zap_channel_t *zchan;
 
-	if (!(zchan = find_zchan(span, event, 0))) {
+	if (!(zchan = find_zchan(span, (ss7bc_short_event_t*)event, 0))) {
 		goto error;
 	}
 
@@ -498,12 +498,11 @@ static void handle_call_start(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_
 }
 
 
-static void handle_heartbeat(ss7bc_connection_t *mcon, ss7bc_event_t *event)
+static void handle_heartbeat(ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
 {
 	int err;
-
 	
-	err = ss7bc_connection_write(mcon, event);
+	err = ss7bc_connection_writep(mcon, (ss7bc_event_t*)event);
 	
 	if (err <= 0) {
 		zap_log(ZAP_LOG_CRIT, "Failed to tx on ISUP socket [%s]: %s\n", strerror(errno));
@@ -514,16 +513,64 @@ static void handle_heartbeat(ss7bc_connection_t *mcon, ss7bc_event_t *event)
     return;
 }
 
-static void handle_restart_ack(ss7bc_connection_t *mcon, zap_span_t *span, ss7bc_event_t *event)
+static void handle_restart_ack(ss7bc_connection_t *mcon, zap_span_t *span, ss7bc_short_event_t *event)
 {
-    mcon->rxseq_reset = 0;
+#if 0
+/* NC: Clear suspended on RESTART ACK */
+	mcon->rxseq_reset = 0;
 	mcon->up = 1;
 	zap_set_state_all(span, ZAP_CHANNEL_STATE_RESTART);
 	zap_clear_flag_locked(span, ZAP_SPAN_SUSPENDED);
+#endif
 	mcon->hb_elapsed = 0;
 }
 
-static int parse_ss7_event(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_event_t *event)
+
+static void handle_restart(ss7bc_connection_t *mcon, zap_span_t *span, ss7bc_short_event_t *event)
+{
+	zap_ss7_boost_data_t *ss7_boost_data = span->signal_data;
+
+    mcon->rxseq_reset = 0;
+	mcon->up = 1;
+
+	zap_set_flag_locked(span, ZAP_SPAN_SUSPENDED);
+	zap_set_state_all(span, ZAP_CHANNEL_STATE_RESTART);
+	zap_set_flag(ss7_boost_data, ZAP_SS7_BOOST_RESTARTING);
+	
+	mcon->hb_elapsed = 0;
+}
+
+static void handle_incoming_digit(ss7bc_connection_t *mcon, zap_span_t *span, ss7bc_event_t *event)
+{
+	zap_channel_t *zchan = NULL;
+	char digits[MAX_DIALED_DIGITS + 2] = "";
+	
+	if (!(zchan = find_zchan(span, (ss7bc_short_event_t *)event, 1))) {
+		zap_log(ZAP_LOG_ERROR, "Invalid channel\n");
+		return;
+	}
+	
+	if (event->called_number_digits_count == 0) {
+		zap_log(ZAP_LOG_WARNING, "Error Incoming digit with len %s %d [w%dg%d]\n",
+			   	event->called_number_digits,
+			   	event->called_number_digits_count,
+			   	event->span+1, event->chan+1);
+		return;
+	}
+
+	zap_log(ZAP_LOG_WARNING, "Incoming digit with len %s %d [w%dg%d]\n",
+			   	event->called_number_digits,
+			   	event->called_number_digits_count,
+			   	event->span+1, event->chan+1);
+
+	memcpy(digits, event->called_number_digits, event->called_number_digits_count);
+	zap_channel_queue_dtmf(zchan, digits);
+
+	return;
+}
+
+
+static int parse_ss7_event(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_short_event_t *event)
 {
 	zap_mutex_lock(signal_mutex);
 	
@@ -532,47 +579,19 @@ static int parse_ss7_event(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_eve
 		goto end;
 	}
 
-
 	if (zap_test_flag(span, ZAP_SPAN_SUSPENDED) && 
-		event->event_id != SIGBOOST_EVENT_SYSTEM_RESTART_ACK && event->event_id != SIGBOOST_EVENT_HEARTBEAT) {
-
-		zap_log(ZAP_LOG_WARNING,
-				"INVALID EVENT: %s:(%X) [w%dg%d] Rc=%i CSid=%i Seq=%i Cd=[%s] Ci=[%s]\n",
-				ss7bc_event_id_name(event->event_id),
-				event->event_id,
-				event->span+1,
-				event->chan+1,
-				event->release_cause,
-				event->call_setup_id,
-				event->fseqno,
-				(event->called_number_digits_count ? (char *) event->called_number_digits : "N/A"),
-				(event->calling_number_digits_count ? (char *) event->calling_number_digits : "N/A")
-				);
-		
+		event->event_id != SIGBOOST_EVENT_SYSTEM_RESTART_ACK &&
+		event->event_id != SIGBOOST_EVENT_HEARTBEAT &&
+	    event->event_id != SIGBOOST_EVENT_SYSTEM_RESTART) {
 		goto end;
 	}
-
-
-	zap_log(ZAP_LOG_DEBUG,
-			"RX EVENT: %s:(%X) [w%dg%d] Rc=%i CSid=%i Seq=%i Cd=[%s] Ci=[%s]\n",
-			   ss7bc_event_id_name(event->event_id),
-			   event->event_id,
-			   event->span+1,
-			   event->chan+1,
-			   event->release_cause,
-			   event->call_setup_id,
-			   event->fseqno,
-			   (event->called_number_digits_count ? (char *) event->called_number_digits : "N/A"),
-			   (event->calling_number_digits_count ? (char *) event->calling_number_digits : "N/A")
-			   );
-
 
 	assert(event->call_setup_id <= MAX_REQ_ID);
 	
     switch(event->event_id) {
 
     case SIGBOOST_EVENT_CALL_START:
-		handle_call_start(span, mcon, event);
+		handle_call_start(span, mcon, (ss7bc_event_t*)event);
 		break;
     case SIGBOOST_EVENT_CALL_STOPPED:
 		handle_call_stop(span, mcon, event);
@@ -605,8 +624,14 @@ static int parse_ss7_event(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_eve
     case SIGBOOST_EVENT_SYSTEM_RESTART_ACK:
 		handle_restart_ack(mcon, span, event);
 		break;
+	case SIGBOOST_EVENT_SYSTEM_RESTART:
+		handle_restart(mcon, span, event);
+		break;
     case SIGBOOST_EVENT_AUTO_CALL_GAP_ABATE:
 		//handle_gap_abate(event);
+		break;
+	case SIGBOOST_EVENT_DIGIT_IN:
+		handle_incoming_digit(mcon, span, (ss7bc_event_t*)event);
 		break;
     default:
 		zap_log(ZAP_LOG_WARNING, "No handler implemented for [%s]\n", ss7bc_event_id_name(event->event_id));
@@ -681,11 +706,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		break;
 	case ZAP_CHANNEL_STATE_RESTART:
 		{
-			if (zchan->last_state != ZAP_CHANNEL_STATE_HANGUP && zchan->last_state != ZAP_CHANNEL_STATE_DOWN) {
-				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
-			} else {
-				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
-			}
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
 		}
 		break;
 	case ZAP_CHANNEL_STATE_UP:
@@ -789,6 +810,8 @@ static __inline__ void init_outgoing_array(void)
 
 static __inline__ void check_state(zap_span_t *span)
 {
+	zap_ss7_boost_data_t *ss7_boost_data = span->signal_data;
+	
     if (zap_test_flag(span, ZAP_SPAN_STATE_CHANGE)) {
         uint32_t j;
         zap_clear_flag_locked(span, ZAP_SPAN_STATE_CHANGE);
@@ -802,6 +825,22 @@ static __inline__ void check_state(zap_span_t *span)
             }
         }
     }
+
+	if (zap_test_flag(ss7_boost_data, ZAP_SS7_BOOST_RESTARTING)) {
+		if (zap_check_state_all(span, ZAP_CHANNEL_STATE_DOWN)) {
+			ss7bc_exec_command(&ss7_boost_data->mcon,
+							   0,
+							   0,
+							   -1,
+							   SIGBOOST_EVENT_SYSTEM_RESTART_ACK,
+							   0);	
+			zap_clear_flag(ss7_boost_data, ZAP_SS7_BOOST_RESTARTING);
+			zap_clear_flag_locked(span, ZAP_SPAN_SUSPENDED);
+			ss7_boost_data->mcon.hb_elapsed = 0;
+		}
+	}
+
+
 }
 
 
@@ -810,7 +849,7 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
     zap_span_t *span = (zap_span_t *) obj;
     zap_ss7_boost_data_t *ss7_boost_data = span->signal_data;
 	ss7bc_connection_t *mcon, *pcon;
-	uint32_t ms = 10;//, too_long = 60000;
+	uint32_t ms = 10, too_long = 5000;
 		
 
 	ss7_boost_data->pcon = ss7_boost_data->mcon;
@@ -823,12 +862,12 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 		zap_log(ZAP_LOG_DEBUG, "Error: Opening MCON Socket [%d] %s\n", ss7_boost_data->mcon.socket, strerror(errno));
 		goto end;
     }
-
+ 
 	if (ss7bc_connection_open(&ss7_boost_data->pcon,
 							  ss7_boost_data->pcon.cfg.local_ip,
 							  ++ss7_boost_data->pcon.cfg.local_port,
 							  ss7_boost_data->pcon.cfg.remote_ip,
-							  ss7_boost_data->pcon.cfg.remote_port) < 0) {
+							  ++ss7_boost_data->pcon.cfg.remote_port) < 0) {
 		zap_log(ZAP_LOG_DEBUG, "Error: Opening PCON Socket [%d] %s\n", ss7_boost_data->pcon.socket, strerror(errno));
 		goto end;
     }
@@ -841,7 +880,7 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 	
 	init_outgoing_array();		
 
-	ss7bc_exec_command(mcon,
+	ss7bc_exec_commandp(pcon,
 					   0,
 					   0,
 					   -1,
@@ -855,7 +894,7 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 		ss7bc_event_t *event = NULL;
 		
 		if (!zap_running()) {
-			ss7bc_exec_command(mcon,
+			ss7bc_exec_commandp(pcon,
 							   0,
 							   0,
 							   -1,
@@ -884,27 +923,26 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 
 			if (FD_ISSET(pcon->socket, &rfds)) {
 				if ((event = ss7bc_connection_readp(pcon, i))) {
-					parse_ss7_event(span, mcon, event);
+					parse_ss7_event(span, pcon, (ss7bc_short_event_t*)event);
 				} //else goto top;
 			}
 
 			if (FD_ISSET(mcon->socket, &rfds)) {
 				if ((event = ss7bc_connection_read(mcon, i))) {
-					parse_ss7_event(span, mcon, event);
+					parse_ss7_event(span, mcon, (ss7bc_short_event_t*)event);
 				} //else goto top;
 			}
 		}
 		
 		check_state(span);
-		mcon->hb_elapsed += ms;
-#if 0
-		if (mcon->hb_elapsed >= too_long && (mcon->up || !zap_test_flag(span, ZAP_SPAN_SUSPENDED))) {
+		pcon->hb_elapsed += ms;
+
+		if (pcon->hb_elapsed >= too_long && (mcon->up || !zap_test_flag(span, ZAP_SPAN_SUSPENDED))) {
 			zap_set_state_all(span, ZAP_CHANNEL_STATE_RESTART);
 			zap_set_flag_locked(span, ZAP_SPAN_SUSPENDED);
 			mcon->up = 0;
 			zap_log(ZAP_LOG_CRIT, "Lost Heartbeat!\n");
 		}
-#endif
 
 	}
 

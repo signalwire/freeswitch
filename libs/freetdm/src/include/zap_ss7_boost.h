@@ -37,7 +37,8 @@
 #include "openzap.h"
 
 typedef enum {
-	ZAP_SS7_BOOST_RUNNING = (1 << 0)
+	ZAP_SS7_BOOST_RUNNING = (1 << 0),
+	ZAP_SS7_BOOST_RESTARTING = (1 << 1)
 } zap_ss7_boost_flag_t;
 
 typedef struct zap_ss7_boost_data {
