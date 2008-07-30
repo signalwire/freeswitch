@@ -215,6 +215,7 @@ SWITCH_DECLARE(const char **) switch_xml_pi(switch_xml_t xml, const char *target
 ///\param xml the xml node
 ///\note in the case of the root node the readlock will be lifted
 SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml);
+SWITCH_DECLARE(void) switch_xml_free_in_thread(switch_xml_t xml, int stacksize);
 
 ///\brief returns parser error message or empty string if none
 ///\param xml the xml node

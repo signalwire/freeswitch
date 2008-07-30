@@ -1523,6 +1523,43 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_root(void)
 	return MAIN_XML_ROOT;
 }
 
+
+struct destroy_xml {
+	switch_xml_t xml;
+	switch_memory_pool_t *pool;
+};
+
+static void *SWITCH_THREAD_FUNC destroy_thread(switch_thread_t *thread, void *obj)
+{
+	struct destroy_xml *dx = (struct destroy_xml *) obj;
+	switch_memory_pool_t *pool = dx->pool;
+	switch_xml_free(dx->xml);
+	switch_core_destroy_memory_pool(&pool);
+	return NULL;
+}
+
+SWITCH_DECLARE(void) switch_xml_free_in_thread(switch_xml_t xml, int stacksize)
+{
+	switch_thread_t *thread;
+    switch_threadattr_t *thd_attr;
+	switch_memory_pool_t *pool = NULL;
+	struct destroy_xml *dx;
+
+	switch_core_new_memory_pool(&pool);
+
+	switch_threadattr_create(&thd_attr, pool);
+    switch_threadattr_detach_set(thd_attr, 1);
+	// TBD figure out how much space we need by looking at the xml_t when stacksize == 0
+    switch_threadattr_stacksize_set(thd_attr, stacksize);
+
+	dx = switch_core_alloc(pool, sizeof(*dx));
+	dx->pool = pool;
+	dx->xml = xml;
+
+	switch_thread_create(&thread, thd_attr, destroy_thread, dx, pool);
+
+}
+
 static char not_so_threadsafe_error_buffer[256] = "";
 
 SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **err)
@@ -1559,6 +1596,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 			MAIN_XML_ROOT = new_main;
 			switch_set_flag(MAIN_XML_ROOT, SWITCH_XML_ROOT);
 			switch_xml_free(old_root);
+			//switch_xml_free_in_thread(old_root);
 		}
 	} else {
 		*err = "Cannot Open log directory or XML Root!";
