@@ -1953,7 +1953,10 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		}
 	}
 
-	if (dest) {
+	if (!dest) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No dial-string available, please check your user directory.\n");
+		cause = SWITCH_CAUSE_MANDATORY_IE_MISSING;
+	} else {
 		const char *var;
 		char *d_dest = NULL;
 		switch_channel_t *channel;
