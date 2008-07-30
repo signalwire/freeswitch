@@ -968,6 +968,14 @@ SWITCH_DECLARE(uint8_t) switch_core_session_compare(switch_core_session_t *a, sw
 	return (uint8_t) (a->endpoint_interface == b->endpoint_interface);
 }
 
+SWITCH_DECLARE(uint8_t) switch_core_session_check_interface(switch_core_session_t *session, const switch_endpoint_interface_t *endpoint_interface)
+{
+	switch_assert(session != NULL);
+	switch_assert(endpoint_interface != NULL);
+
+	return (uint8_t) (session->endpoint_interface == endpoint_interface);
+}
+
 SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session_t *session)
 {
 	return session->uuid_str;
