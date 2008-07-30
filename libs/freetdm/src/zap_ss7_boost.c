@@ -214,8 +214,8 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 	}
 
 	ss7bc_call_init(&event, caller_data->cid_num.digits, caller_data->ani.digits, r);
+	zap_set_string(event.calling_name, caller_data->cid_name);
 	zap_set_string(event.redirection_string, caller_data->rdnis.digits);
-	
 
 	OUTBOUND_REQUESTS[r].status = BST_WAITING;
 	OUTBOUND_REQUESTS[r].span = span;
@@ -476,6 +476,9 @@ static void handle_call_start(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_
 	zchan->sflags = 0;
 	zap_set_string(zchan->caller_data.cid_num.digits, (char *)event->calling_number_digits);
 	zap_set_string(zchan->caller_data.cid_name, (char *)event->calling_number_digits);
+	if (strlen(event->calling_name)) {
+		zap_set_string(zchan->caller_data.cid_name, (char *)event->calling_name);
+	}
 	zap_set_string(zchan->caller_data.ani.digits, (char *)event->calling_number_digits);
 	zap_set_string(zchan->caller_data.dnis.digits, (char *)event->called_number_digits);
 	zap_set_string(zchan->caller_data.rdnis.digits, (char *)event->redirection_string);
