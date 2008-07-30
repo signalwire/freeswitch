@@ -24,7 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
- * Ken Rice, krice@suspicious.org  (work sponsored by CopperCom, Inc and Asteria Solutions Group, Inc)
+ * Ken Rice, <krice at cometsig.com>  (work sponsored by Comet Signaling LLC, CopperCom, Inc and Asteria Solutions Group, Inc)
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
@@ -738,6 +738,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 	if (exptime) {
 		const char *agent = "dunno";
+		char guess_ip4[256];
 
 		if (sip->sip_user_agent) {
 			agent = sip->sip_user_agent->g_string;
@@ -750,9 +751,10 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 		switch_mutex_lock(profile->ireg_mutex);
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
-
+		
+		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), AF_INET);
 		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q')", call_id,
-							 to_user, to_host, contact_str, reg_desc, rpid, (long) switch_timestamp(NULL) + (long) exptime * 2, agent, from_user, from_host);
+							 to_user, to_host, contact_str, reg_desc, rpid, (long) switch_timestamp(NULL) + (long) exptime * 2, agent, from_user,  guess_ip4);
 		if (sql) {
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
