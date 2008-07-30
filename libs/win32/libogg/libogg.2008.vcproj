@@ -50,7 +50,7 @@
 				AssemblerListingLocation=".\Static_Release/"
 				ObjectFile=".\Static_Release/"
 				ProgramDataBaseFileName=".\Static_Release/"
-				WarningLevel="3"
+				WarningLevel="0"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -121,9 +121,9 @@
 				AssemblerListingLocation=".\Static_Debug/"
 				ObjectFile=".\Static_Debug/"
 				ProgramDataBaseFileName=".\Static_Debug/"
-				WarningLevel="3"
+				WarningLevel="0"
 				SuppressStartupBanner="true"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

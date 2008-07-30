@@ -112,45 +112,45 @@ void init_layer3_const(void)
 	int i, j, k, l;
 
 	for (i = -256; i < 118 + 4; i++)
-		gainpow2[i + 256] = pow((double) 2.0, -0.25 * (double) (i + 210));
+		gainpow2[i + 256] = (real)pow((double) 2.0, -0.25 * (double) (i + 210));
 
 	for (i = 0; i < 8207; i++)
-		__ispow[i] = pow((double) i, (double) 4.0 / 3.0);
+		__ispow[i] = (real)pow((double) i, (double) 4.0 / 3.0);
 
 	for (i = 0; i < 8; i++) {
 		static double Ci[8] = { -0.6, -0.535, -0.33, -0.185, -0.095, -0.041, -0.0142, -0.0037 };
 		double sq = sqrt(1.0 + Ci[i] * Ci[i]);
-		aa_cs[i] = 1.0 / sq;
-		aa_ca[i] = Ci[i] / sq;
+		aa_cs[i] = (real)(1.0 / sq);
+		aa_ca[i] = (real)(Ci[i] / sq);
 	}
 
 	for (i = 0; i < 18; i++) {
-		win[0][i] = win[1][i] = 0.5 * sin(M_PI / 72.0 * (double) (2 * (i + 0) + 1)) / cos(M_PI * (double) (2 * (i + 0) + 19) / 72.0);
-		win[0][i + 18] = win[3][i + 18] = 0.5 * sin(M_PI / 72.0 * (double) (2 * (i + 18) + 1)) / cos(M_PI * (double) (2 * (i + 18) + 19) / 72.0);
+		win[0][i] = win[1][i] = (real)(0.5 * sin(M_PI / 72.0 * (double) (2 * (i + 0) + 1)) / cos(M_PI * (double) (2 * (i + 0) + 19) / 72.0));
+		win[0][i + 18] = win[3][i + 18] = (real)(0.5 * sin(M_PI / 72.0 * (double) (2 * (i + 18) + 1)) / cos(M_PI * (double) (2 * (i + 18) + 19) / 72.0));
 	}
 	for (i = 0; i < 6; i++) {
-		win[1][i + 18] = 0.5 / cos(M_PI * (double) (2 * (i + 18) + 19) / 72.0);
-		win[3][i + 12] = 0.5 / cos(M_PI * (double) (2 * (i + 12) + 19) / 72.0);
-		win[1][i + 24] = 0.5 * sin(M_PI / 24.0 * (double) (2 * i + 13)) / cos(M_PI * (double) (2 * (i + 24) + 19) / 72.0);
-		win[1][i + 30] = win[3][i] = 0.0;
-		win[3][i + 6] = 0.5 * sin(M_PI / 24.0 * (double) (2 * i + 1)) / cos(M_PI * (double) (2 * (i + 6) + 19) / 72.0);
+		win[1][i + 18] = (real)(0.5 / cos(M_PI * (double) (2 * (i + 18) + 19) / 72.0));
+		win[3][i + 12] = (real)(0.5 / cos(M_PI * (double) (2 * (i + 12) + 19) / 72.0));
+		win[1][i + 24] = (real)(0.5 * sin(M_PI / 24.0 * (double) (2 * i + 13)) / cos(M_PI * (double) (2 * (i + 24) + 19) / 72.0));
+		win[1][i + 30] = win[3][i] = (real)(0.0);
+		win[3][i + 6] = (real)(0.5 * sin(M_PI / 24.0 * (double) (2 * i + 1)) / cos(M_PI * (double) (2 * (i + 6) + 19) / 72.0));
 	}
 
 	for (i = 0; i < 9; i++)
-		COS9[i] = cos(M_PI / 18.0 * (double) i);
+		COS9[i] = (real)(cos(M_PI / 18.0 * (double) i));
 
 	for (i = 0; i < 9; i++)
-		tfcos36[i] = 0.5 / cos(M_PI * (double) (i * 2 + 1) / 36.0);
+		tfcos36[i] = (real)(0.5 / cos(M_PI * (double) (i * 2 + 1) / 36.0));
 	for (i = 0; i < 3; i++)
-		tfcos12[i] = 0.5 / cos(M_PI * (double) (i * 2 + 1) / 12.0);
+		tfcos12[i] = (real)(0.5 / cos(M_PI * (double) (i * 2 + 1) / 12.0));
 
-	COS6_1 = cos(M_PI / 6.0 * (double) 1);
-	COS6_2 = cos(M_PI / 6.0 * (double) 2);
+	COS6_1 = (real)(cos(M_PI / 6.0 * (double) 1));
+	COS6_2 = (real)(cos(M_PI / 6.0 * (double) 2));
 
 	for (i = 0; i < 12; i++) {
-		win[2][i] = 0.5 * sin(M_PI / 24.0 * (double) (2 * i + 1)) / cos(M_PI * (double) (2 * i + 7) / 24.0);
+		win[2][i] = (real)(0.5 * sin(M_PI / 24.0 * (double) (2 * i + 1)) / cos(M_PI * (double) (2 * i + 7) / 24.0));
 		for (j = 0; j < 6; j++)
-			COS1[i][j] = cos(M_PI / 24.0 * (double) ((2 * i + 7) * (2 * j + 1)));
+			COS1[i][j] = (real)(cos(M_PI / 24.0 * (double) ((2 * i + 7) * (2 * j + 1))));
 	}
 
 	for (j = 0; j < 4; j++) {
@@ -163,10 +163,10 @@ void init_layer3_const(void)
 
 	for (i = 0; i < 16; i++) {
 		double t = tan((double) i * M_PI / 12.0);
-		tan1_1[i] = t / (1.0 + t);
-		tan2_1[i] = 1.0 / (1.0 + t);
-		tan1_2[i] = M_SQRT2 * t / (1.0 + t);
-		tan2_2[i] = M_SQRT2 / (1.0 + t);
+		tan1_1[i] = (real)(t / (1.0 + t));
+		tan2_1[i] = (real)(1.0 / (1.0 + t));
+		tan1_2[i] = (real)(M_SQRT2 * t / (1.0 + t));
+		tan2_2[i] = (real)(M_SQRT2 / (1.0 + t));
 
 		for (j = 0; j < 2; j++) {
 			double base = pow(2.0, -0.25 * (j + 1.0));
@@ -177,10 +177,10 @@ void init_layer3_const(void)
 				else
 					p2 = pow(base, i * 0.5);
 			}
-			pow1_1[j][i] = p1;
-			pow2_1[j][i] = p2;
-			pow1_2[j][i] = M_SQRT2 * p1;
-			pow2_2[j][i] = M_SQRT2 * p2;
+			pow1_1[j][i] = (real)p1;
+			pow2_1[j][i] = (real)p2;
+			pow1_2[j][i] = (real)(M_SQRT2 * p1);
+			pow2_2[j][i] = (real)(M_SQRT2 * p2);
 		}
 	}
 
@@ -1827,7 +1827,7 @@ static void III_hybrid(struct mpstr *mp, real fsIn[SBLIMIT][SSLIMIT], real tsOut
 	int *blc = mp->hybrid_blc;
 	real *rawout1, *rawout2;
 	int bt;
-	int sb = 0;
+	unsigned int sb = 0;
 
 	{
 		int b = blc[ch];
@@ -1981,7 +1981,7 @@ int do_layer3(struct mpstr *mp, unsigned char *pcm_sample, int *pcm_point)
 			switch (single) {
 			case 3:
 				{
-					register int i;
+					register unsigned int i;
 					register real *in0 = (real *) hybridIn[0], *in1 = (real *) hybridIn[1];
 					for (i = 0; i < SSLIMIT * gr_info->maxb; i++, in0++)
 						*in0 = (*in0 + *in1++);	/* *0.5 done by pow-scale */
@@ -1989,7 +1989,7 @@ int do_layer3(struct mpstr *mp, unsigned char *pcm_sample, int *pcm_point)
 				break;
 			case 1:
 				{
-					register int i;
+					register unsigned int i;
 					register real *in0 = (real *) hybridIn[0], *in1 = (real *) hybridIn[1];
 					for (i = 0; i < SSLIMIT * gr_info->maxb; i++)
 						*in0++ = *in1++;

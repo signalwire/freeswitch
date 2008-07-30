@@ -18,7 +18,7 @@
 #define WRITE_SAMPLE(samples,sum,clip) \
   if( (sum) > 32767.0) { *(samples) = 0x7fff; (clip)++; } \
   else if( (sum) < -32768.0) { *(samples) = -0x8000; (clip)++; } \
-  else { *(samples) = sum; }
+  else { *(samples) = (short)sum; }
 
 
 //static unsigned long ntom_val[2] = { NTOM_MUL >> 1, NTOM_MUL >> 1 };

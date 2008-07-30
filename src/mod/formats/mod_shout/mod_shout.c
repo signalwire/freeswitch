@@ -249,7 +249,7 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 		usedlen = 0;
 		x = 0;
 
-		if (inlen < bytes) {
+		if (lp < bytes) {
 			done = 1;
 		}
 		
@@ -1067,7 +1067,7 @@ void do_telecast(switch_stream_handle_t *stream)
 		stream->write_function(stream, "Content-type: text/html\r\n\r\n<h2>Not Found!</h2>\n" "<META http-equiv=\"refresh\" content=\"1;URL=%s\">", ref);
 	} else {
 		switch_media_bug_t *bug = NULL;
-		switch_buffer_t *buffer;
+		switch_buffer_t *buffer = NULL;
 		switch_mutex_t *mutex;
 		switch_channel_t *channel = switch_core_session_get_channel(tsession);
 		lame_global_flags *gfp = NULL;

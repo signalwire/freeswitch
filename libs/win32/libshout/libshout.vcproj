@@ -52,7 +52,7 @@
 				AssemblerListingLocation=".$(ConfigurationName)"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName="$(ConfigurationName)"
-				WarningLevel="3"
+				WarningLevel="0"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -126,9 +126,9 @@
 				AssemblerListingLocation="$(ConfigurationName)"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName="$(ConfigurationName)"
-				WarningLevel="3"
+				WarningLevel="0"
 				SuppressStartupBanner="true"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
