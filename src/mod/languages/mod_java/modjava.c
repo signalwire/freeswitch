@@ -111,29 +111,6 @@ SWITCH_STANDARD_APP(java_function)
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error attaching thread to Java VM!\n");
 }
 
-
-static switch_application_interface_t java_application_interface = {
-	/*.interface_name */ "java",
-	/*.application_function */ java_function,
-	NULL, NULL, NULL,
-	/* flags */ SAF_NONE,
-	/* should we support no media mode here?  If so, we need to detect the mode, and either disable the media functions or indicate media if/when we need */
-	/*.next */ NULL
-};
-
-static switch_loadable_module_interface_t java_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ &java_application_interface,
-	/*.api_interface */ NULL,
-	/*.file_interface */ NULL,
-	/*.speech_interface */ NULL,
-	/*.directory_interface */ NULL
-};
-
 static switch_status_t load_config(JavaVMOption **javaOptions, int *optionCount)
 {
     switch_xml_t cfg, xml;
@@ -259,9 +236,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_java_load)
     switch_status_t status;
     JavaVMOption *options = NULL;
     int optionCount = 0;
+	switch_application_interface_t *app_interface;
 
-    /* connect my internal structure to the blank pointer passed to me */
-    *module_interface = &java_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_APP(app_interface, "java", NULL, NULL, java_function, NULL, SAF_SUPPORT_NOMEDIA);
+
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Java Framework Loading...\n");
 
     if (javaVM != NULL)
