@@ -1254,6 +1254,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 										  "Auto Changing port from %s:%u to %s:%u\n", old_host, old, tx_host,
 										  switch_sockaddr_get_port(rtp_session->from_addr));
 						switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(rtp_session->from_addr), &err);
+						switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 					}
 				}
 			}
