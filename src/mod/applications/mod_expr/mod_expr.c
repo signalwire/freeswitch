@@ -52,6 +52,7 @@ SWITCH_STANDARD_API(expr_function)
 	char val[512] = "", *p;
 	char *m_cmd = NULL;
 	size_t len;
+	int ec = 0;
 
 	if (switch_strlen_zero(cmd)) {
 		goto error;
@@ -126,7 +127,16 @@ SWITCH_STANDARD_API(expr_function)
 
 	do {
 		err = exprEval(e, &last_expr);
-	} while (err);
+		if (err) {
+			ec++;
+		} else {
+			ec = 0;
+		}
+	} while (err && ec < 3);
+
+	if (err) {
+		goto error;
+	}
 
 	switch_snprintf(val, sizeof(val), "%0.10f", last_expr);
 	for (p = (val + strlen(val) - 1); p != val; p--) {
