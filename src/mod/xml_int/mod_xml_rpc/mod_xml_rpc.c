@@ -158,6 +158,7 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 	const char *box;
 	int at = 0;
 	switch_event_t *params = NULL;
+	char *dp;
 
 	p = RequestHeaderValue(r, "authorization");
 
@@ -166,17 +167,20 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 		x = GetToken(&p);
 		if (x) {
 			if (!strcasecmp(x, "basic")) {
-
-
 				NextToken((const char **const) &p);
 				switch_b64_decode(p, user, sizeof(user));
 				if ((pass = strchr(user, ':'))) {
 					*pass++ = '\0';
 				}
-
+				
+				if ((dp = strchr(user, '@'))) {
+					*dp++ = '\0';
+					domain_name = dp;
+				}
+				
 				if (!domain_name) {
-					if ((domain_name = strchr(user, '@'))) {
-						*domain_name++ = '\0';
+					if (dp) {
+						domain_name = dp;
 						at++;
 					} else {
 						domain_name = (char *) r->requestInfo.host;
@@ -209,7 +213,7 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 
 				switch_event_destroy(&params);
 				box = switch_xml_attr_soft(x_user, "mailbox");
-
+				
 				for (x_param = switch_xml_child(x_domain, "param"); x_param; x_param = x_param->next) {
 					const char *var = switch_xml_attr_soft(x_param, "name");
 					const char *val = switch_xml_attr_soft(x_param, "value");
@@ -224,6 +228,7 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 				}
 
 				if (!(x_params = switch_xml_child(x_user, "params"))) {
+					r->requestInfo.user = strdup(user);
 					goto authed;
 				}
 
@@ -306,15 +311,17 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 				goto fail;
 
 			  authed:
+				
+				if (r->requestInfo.user && domain_name) {
+					ResponseAddField(r, "freeswitch-user", r->requestInfo.user);
+					ResponseAddField(r, "freeswitch-domain", domain_name);
 
-				ResponseAddField(r, "freeswitch-user", r->requestInfo.user);
-				ResponseAddField(r, "freeswitch-domain", domain_name);
+					if (x_domain_root) {
+						switch_xml_free(x_domain_root);
+					}
 
-				if (x_domain_root) {
-					switch_xml_free(x_domain_root);
+					return TRUE;
 				}
-
-				return TRUE;
 			}
 		}
 	}
@@ -437,7 +444,7 @@ abyss_bool handler_hook(TSession * r)
 	char *fs_user = NULL, *fs_domain = NULL;
 	char *path_info = NULL;
 	abyss_bool ret = TRUE;
-	int html = 0;
+	int html = 0, text = 0;
 
 	stream.data = r;
 	stream.write_function = http_stream_write;
@@ -452,6 +459,9 @@ abyss_bool handler_hook(TSession * r)
 	} else if ((command = strstr(r->requestInfo.uri, "/webapi/"))) {
 		command += 8;
 		html++;
+	} else if ((command = strstr(r->requestInfo.uri, "/txtapi/"))) {
+		command += 8;
+		text++;
 	} else {
 		return FALSE;
 	}
@@ -509,7 +519,11 @@ abyss_bool handler_hook(TSession * r)
 
 	if (switch_event_create(&stream.param_event, SWITCH_EVENT_API) == SWITCH_STATUS_SUCCESS) {
 		const char *const content_length = RequestHeaderValue(r, "content-length");
-
+		
+		if (html)
+			switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, "Content-type", "%s", "text/html");
+		else if (text)
+			switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, "Content-type", "%s", "text/plain");
 		if (fs_user)
 			switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, "FreeSWITCH-User", "%s", fs_user);
 		if (fs_domain)
@@ -633,6 +647,8 @@ abyss_bool handler_hook(TSession * r)
 
 	if (html) {
 		ResponseAddField(r, "Content-Type", "text/html");
+	} else if (text) {
+		ResponseAddField(r, "Content-Type", "text/plain");
 	}
 
 	for (i = 0; i < r->response_headers.size; i++) {
@@ -646,7 +662,7 @@ abyss_bool handler_hook(TSession * r)
 	switch_snprintf(buf, sizeof(buf), "Connection: close\r\n");
 	ConnWrite(r->conn, buf, (uint32_t) strlen(buf));
 
-	if (html) {
+	if (html || text) {
 		ConnWrite(r->conn, "\r\n", 2);
 	}
 

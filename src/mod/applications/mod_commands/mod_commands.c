@@ -570,6 +570,7 @@ SWITCH_STANDARD_API(status_function)
 	switch_core_time_duration_t duration = { 0 };
 	char *http = NULL;
 	int sps = 0, last_sps = 0;
+	const char *var;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
@@ -579,6 +580,14 @@ SWITCH_STANDARD_API(status_function)
 
 	if (stream->param_event) {
 		http = switch_event_get_header(stream->param_event, "http-host");
+	}
+
+	if ((var = switch_event_get_header(stream->param_event, "content-type"))) {
+		if (!strcasecmp(var, "text/plain")) {
+			http = NULL;
+		}
+	} else {
+		stream->write_function(stream, "%s", "Content-Type: text/html\n\n");
 	}
 
 	if (http || (cmd && strstr(cmd, "html"))) {
@@ -2008,7 +2017,17 @@ SWITCH_STANDARD_API(show_function)
 	}
 
 	if (stream->param_event) {
+		const char *var;
 		holder.http = switch_event_get_header(stream->param_event, "http-host");
+		
+		if ((var = switch_event_get_header(stream->param_event, "content-type"))) {
+			if (!strcasecmp(var, "text/plain")) {
+				holder.http = NULL;
+			}
+		} else {
+			stream->write_function(stream, "%s", "Content-Type: text/html\n\n");
+		}
+
 	}
 
 	holder.print_title = 1;
