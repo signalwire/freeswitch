@@ -122,16 +122,16 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 {
 	const char *tmp;
 	switch_channel_t *channel;
+	private_object_t *tech_pvt;
 
 	if (!session)
 		return;
 
 	channel = switch_core_session_get_channel(session);
-
+	tech_pvt = switch_core_session_get_private(session);
 
 	if (sip->sip_reason && sip->sip_reason->re_protocol &&
 		(!strcasecmp(sip->sip_reason->re_protocol, "Q.850") || !strcasecmp(sip->sip_reason->re_protocol, "FreeSWITCH")) && sip->sip_reason->re_cause) {
-		private_object_t *tech_pvt = switch_core_session_get_private(session);
 		tech_pvt->q850_cause = atoi(sip->sip_reason->re_cause);
 	}
 
@@ -150,7 +150,10 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	if ((tmp = sofia_glue_get_unknown_header(sip, "P-RTP-Stat"))) {
 		switch_channel_set_variable(channel, "sip_p_rtp_stat", tmp);
 	}
-
+	
+	tech_pvt->got_bye = 1;
+	switch_channel_set_variable(channel, "sip_hangup_disposition", "recv_bye");
+	
 	return;
 }
 

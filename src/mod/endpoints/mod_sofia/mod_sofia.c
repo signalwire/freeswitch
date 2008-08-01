@@ -315,6 +315,9 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		}
 
 		if (switch_test_flag(tech_pvt, TFLAG_ANS)) {
+			if (!tech_pvt->got_bye) {
+				switch_channel_set_variable(channel, "sip_hangup_disposition", "send_bye");
+			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending BYE to %s\n", switch_channel_get_name(channel));
 			nua_bye(tech_pvt->nh, 
 					SIPTAG_REASON_STR(reason),
@@ -323,6 +326,9 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		} else {
 			if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending CANCEL to %s\n", switch_channel_get_name(channel));
+				if (!tech_pvt->got_bye) {
+					switch_channel_set_variable(channel, "sip_hangup_disposition", "send_cancel");
+				}
 				nua_cancel(tech_pvt->nh, 
 						   SIPTAG_REASON_STR(reason), 
 						   TAG_IF(!switch_strlen_zero(bye_headers), SIPTAG_HEADER_STR(bye_headers)),
@@ -330,6 +336,9 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 						   TAG_END());
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding to INVITE with: %d\n", sip_cause);
+				if (!tech_pvt->got_bye) {
+					switch_channel_set_variable(channel, "sip_hangup_disposition", "send_refuse");
+				}
 				nua_respond(tech_pvt->nh, sip_cause, sip_status_phrase(sip_cause), 
 							SIPTAG_REASON_STR(reason), 
 							TAG_IF(!switch_strlen_zero(bye_headers), SIPTAG_HEADER_STR(bye_headers)),

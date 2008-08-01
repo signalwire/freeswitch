@@ -474,6 +474,7 @@ struct private_object {
 	int q850_cause;
 	char *remote_ip;
 	int remote_port;
+	int got_bye;
 };
 
 struct callback_t {
