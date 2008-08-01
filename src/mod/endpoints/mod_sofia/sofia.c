@@ -886,8 +886,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				from_domain = realm;
 			}
 
-			if (switch_strlen_zero(register_proxy)) {
-				register_proxy = proxy;
+			if (!switch_strlen_zero(register_proxy)) {
+				gateway->register_sticky_proxy = switch_core_strdup(gateway->pool, register_proxy);
 			}
 
 			gateway->retry_seconds = atoi(retry_seconds);
@@ -914,7 +914,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				params = switch_core_sprintf(gateway->pool, ";transport=%s", register_transport);
 			}
 
-			gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s;transport=%s", register_proxy, register_transport);
+			gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s;transport=%s", proxy, register_transport);
 			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>", from_user, from_domain, register_transport);
 
 			sipip = profile->extsipip ?  profile->extsipip : profile->sipip;

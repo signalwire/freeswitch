@@ -150,6 +150,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 				if (now) {
 					nua_register(gateway_ptr->nh,
 								 NUTAG_URL(gateway_ptr->register_url),
+								 TAG_IF(gateway_ptr->register_sticky_proxy, NUTAG_PROXY(gateway_ptr->register_sticky_proxy)),
 								 SIPTAG_TO_STR(gateway_ptr->register_from),
 								 SIPTAG_FROM_STR(gateway_ptr->register_from),
 								 SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
