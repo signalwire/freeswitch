@@ -1088,7 +1088,11 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						}
 					} else if (!strcasecmp(var, "apply-nat-acl")) {
 						if (profile->acl_count < SOFIA_MAX_ACL) {
-							profile->nat_acl[profile->nat_acl_count++] = switch_core_strdup(profile->pool, val);
+							if (!profile->extsipip && switch_check_network_list_ip(profile->sipip, val)) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not adding acl %s because it's the local network\n", val);
+							} else {
+								profile->nat_acl[profile->nat_acl_count++] = switch_core_strdup(profile->pool, val);
+							}
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
 						}
@@ -1645,7 +1649,11 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->context = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "apply-nat-acl")) {
 						if (profile->acl_count < SOFIA_MAX_ACL) {
-							profile->nat_acl[profile->nat_acl_count++] = switch_core_strdup(profile->pool, val);
+							if (!profile->extsipip && switch_check_network_list_ip(profile->sipip, val)) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not adding acl %s because it's the local network\n", val);
+							} else {
+								profile->nat_acl[profile->nat_acl_count++] = switch_core_strdup(profile->pool, val);
+							}
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
 						}
