@@ -1653,7 +1653,7 @@ void sofia_presence_handle_sip_i_message(int status,
 				switch_copy_string(proto, to_user, sizeof(proto));
 				p = strchr(proto, '+');
 				*p++ = '\0';
-
+				
 				if ((to_addr = strdup(p))) {
 					if ((p = strchr(to_addr, '+'))) {
 						*p = '@';
@@ -1665,18 +1665,21 @@ void sofia_presence_handle_sip_i_message(int status,
 
 			from_addr = switch_mprintf("%s@%s", from_user, from_host);
 
+
 			sofia_presence_set_hash_key(hash_key, sizeof(hash_key), sip);
 			if ((tech_pvt = (private_object_t *) switch_core_hash_find(profile->chat_hash, hash_key))) {
 				channel = switch_core_session_get_channel(tech_pvt->session);
 				if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->url);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", tech_pvt->hash_key);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from_addr);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "hint", "%s", full_from);
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "to", "%s", to_addr);
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
 					if (msg) {
 						switch_event_add_body(event, "%s", msg);
 					}
+					
 					if (switch_core_session_queue_event(tech_pvt->session, &event) != SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
 						switch_event_fire(&event);
@@ -1684,7 +1687,6 @@ void sofia_presence_handle_sip_i_message(int status,
 				}
 			} else {
 				switch_chat_interface_t *ci;
-
 				if ((ci = switch_loadable_module_get_chat_interface(proto))) {
 					ci->chat_send(SOFIA_CHAT_PROTO, from_addr, to_addr, "", msg, full_from);
 				} else {

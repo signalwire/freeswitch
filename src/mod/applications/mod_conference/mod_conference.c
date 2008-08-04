@@ -4718,8 +4718,11 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 		}
 #endif
 	}
+
 	switch_safe_free(lbuf);
-	ci->chat_send(CONF_CHAT_PROTO, to, from, "", stream.data, NULL);
+	
+	ci->chat_send(CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", stream.data, NULL);
+	//ci->chat_send(CONF_CHAT_PROTO, to, from, "", stream.data, NULL);
 	switch_safe_free(stream.data);
 
 	return SWITCH_STATUS_SUCCESS;
