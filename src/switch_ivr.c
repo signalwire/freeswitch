@@ -760,6 +760,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 		if (eff_timeout) {
 			digit_elapsed = (uint32_t) ((switch_timestamp_now() - digit_started) / 1000);
 			if (digit_elapsed >= eff_timeout) {
+				status = SWITCH_STATUS_TIMEOUT;
 				break;
 			}
 		}
