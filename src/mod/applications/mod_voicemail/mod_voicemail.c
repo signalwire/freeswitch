@@ -25,6 +25,7 @@
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
  * Bret McDanel <trixter AT 0xdecafbad.com>
+ * John Wehle (john@feith.com)
  *
  * mod_voicemail.c -- Voicemail Module
  *
@@ -2785,8 +2786,8 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
 	char read_date[80] = "";
 	char rss_date[80] = "";
 	switch_size_t retsize;
-	long l_created = 0;
-	long l_read = 0;
+	switch_time_t l_created = 0;
+	switch_time_t l_read = 0;
 	long l_duration = 0;
 	switch_core_time_duration_t duration;
 	char duration_str[80];
@@ -2796,11 +2797,11 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
 	char title_aft[128 * 3] = "";
 
 	if (argc > 0) {
-		l_created = atol(argv[0]) * 1000000;
+		l_created = switch_time_make (atol(argv[0]), 0);
 	}
 
 	if (argc > 1) {
-		l_read = atol(argv[1]) * 1000000;
+		l_read = switch_time_make (atol(argv[1]), 0);
 	}
 
 	if (argc > 9) {
@@ -2877,8 +2878,8 @@ static int rss_callback(void *pArg, int argc, char **argv, char **columnNames)
 	char *fname;
 	switch_size_t flen;
 	switch_file_t *fd;
-	long l_created = 0;
-	long l_read = 0;
+	switch_time_t l_created = 0;
+	switch_time_t l_read = 0;
 	long l_duration = 0;
 	switch_core_time_duration_t duration;
 	char duration_str[80];
@@ -2886,11 +2887,11 @@ static int rss_callback(void *pArg, int argc, char **argv, char **columnNames)
 	char heard[80];
 
 	if (argc > 0) {
-		l_created = atol(argv[0]) * 1000000;
+		l_created = switch_time_make (atol(argv[0]), 0);
 	}
 
 	if (argc > 1) {
-		l_read = atol(argv[1]) * 1000000;
+		l_read = switch_time_make (atol(argv[1]), 0);
 	}
 
 	if (argc > 9) {
