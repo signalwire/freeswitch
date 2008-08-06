@@ -1486,6 +1486,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 		goto end;
 	}
 	
+	status = SWITCH_STATUS_FALSE;
+
 	if (ip) {
 		if ((*user = switch_xml_find_child(*domain, "user", "ip", ip))) {
 			status = SWITCH_STATUS_SUCCESS;
