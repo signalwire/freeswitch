@@ -411,7 +411,7 @@ static switch_status_t zh_say_time(switch_core_session_t *session,
 		} else {
 			if (hours  ||  minutes) {
 				say_file("digits/0.wav");
-				say_file("time/seconds.wav");
+				say_file("time/second.wav");
 			}
 		}
 
@@ -455,9 +455,9 @@ static switch_status_t zh_say_time(switch_core_session_t *session,
 		if (hour < 6) {
             say_file("time/morning.wav");
 		} else if (hour < 12) {
-            say_file("time/a-m.wav");
+            say_file("time/am.wav");
 		} else if (tm.tm_hour < 18) {
-            say_file("time/p-m.wav");
+            say_file("time/pm.wav");
 		} else {
             say_file("time/evening.wav");
 		}
