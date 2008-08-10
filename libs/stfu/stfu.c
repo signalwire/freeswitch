@@ -125,7 +125,7 @@ static int32_t stfu_n_measure_interval(stfu_queue_t *queue)
 	}
 
 	for(index = 0; index < STFU_MAX_TRACK; index++) {
-		if (track[index] > most) {
+		if (track[index] > track[most]) {
 			most = index;
 		}
 	}
