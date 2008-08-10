@@ -162,6 +162,7 @@ static switch_status_t sofia_on_execute(switch_core_session_t *session)
 static int hangup_cause_to_sip(switch_call_cause_t cause)
 {
 	switch (cause) {
+	case SWITCH_CAUSE_UNALLOCATED_NUMBER:
 	case SWITCH_CAUSE_NO_ROUTE_TRANSIT_NET:
 	case SWITCH_CAUSE_NO_ROUTE_DESTINATION:
 		return 404;
@@ -170,7 +171,6 @@ static int hangup_cause_to_sip(switch_call_cause_t cause)
 	case SWITCH_CAUSE_NO_USER_RESPONSE:
 		return 408;
 	case SWITCH_CAUSE_NO_ANSWER:
-		return 480;
 	case SWITCH_CAUSE_SUBSCRIBER_ABSENT:
 		return 480;
 	case SWITCH_CAUSE_CALL_REJECTED:
