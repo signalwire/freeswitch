@@ -791,6 +791,10 @@ chanSwitchInterrupt(TChanSwitch * const chanSwitchP) {
   Actually, this is just a no-op because we don't yet know how to
   accomplish that.
 -----------------------------------------------------------------------------*/
+    struct socketWin * const socketWinP = chanSwitchP->implP;
+
+    if (!socketWinP->userSuppliedWinsock)
+        closesocket(socketWinP->winsock);
 
 }
 
