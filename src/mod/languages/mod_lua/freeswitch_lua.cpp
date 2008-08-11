@@ -50,14 +50,19 @@ bool Session::end_allow_threads()
 
 void Session::setLUA(lua_State * state)
 {
-	sanity_check_noreturn;
-
 	L = state;
-	if (uuid) {
+
+	if (session && allocated && uuid) {
 		lua_setglobal(L, uuid);
 		lua_getfield(L, LUA_GLOBALSINDEX, uuid);
 	}
 
+}
+
+void Session::originate(CoreSession *a_leg_session, char *dest, int timeout)
+{
+	CoreSession::originate(a_leg_session, dest, timeout);
+	setLUA(L);
 }
 
 lua_State *Session::getLUA()

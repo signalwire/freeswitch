@@ -72,7 +72,7 @@ bool Session::end_allow_threads()
 
 void Session::setPERL(PerlInterpreter * pi)
 {
-	sanity_check_noreturn;
+
 	my_perl = pi;
 }
 

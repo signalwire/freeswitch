@@ -7264,6 +7264,43 @@ fail:
 }
 
 
+static int _wrap_Session_originate(lua_State* L) {
+  int SWIG_arg = -1;
+  LUA::Session *arg1 = (LUA::Session *) 0 ;
+  CoreSession *arg2 = (CoreSession *) 0 ;
+  char *arg3 = (char *) 0 ;
+  int arg4 ;
+  
+  SWIG_check_num_args("originate",4,4)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("originate",1,"LUA::Session *");
+  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("originate",2,"CoreSession *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("originate",3,"char *");
+  if(!lua_isnumber(L,4)) SWIG_fail_arg("originate",4,"int");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Session,0))){
+    SWIG_fail_ptr("Session_originate",1,SWIGTYPE_p_LUA__Session);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("Session_originate",2,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg3 = (char *)lua_tostring(L, 3);
+  arg4 = (int)lua_tonumber(L, 4);
+  (arg1)->originate(arg2,arg3,arg4);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_Session_cb_function_set(lua_State* L) {
   int SWIG_arg = -1;
   LUA::Session *arg1 = (LUA::Session *) 0 ;
@@ -7542,6 +7579,7 @@ static swig_lua_method swig_LUA_Session_methods[] = {
     {"setInputCallback", _wrap_Session_setInputCallback}, 
     {"setHangupHook", _wrap_Session_setHangupHook}, 
     {"ready", _wrap_Session_ready}, 
+    {"originate", _wrap_Session_originate}, 
     {"setLUA", _wrap_Session_setLUA}, 
     {0,0}
 };

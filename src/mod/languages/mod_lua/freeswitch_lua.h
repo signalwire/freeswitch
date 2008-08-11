@@ -32,6 +32,7 @@ class Session : public CoreSession {
 	void setInputCallback(char *cbfunc, char *funcargs = NULL);
 	void setHangupHook(char *func, char *arg = NULL);
 	bool ready();
+	void originate(CoreSession *a_leg_session, char *dest, int timeout);
 	
 	char *cb_function;
 	char *cb_arg;
