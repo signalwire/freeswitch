@@ -309,9 +309,6 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 
 	switch_time_sync();
 
-	memset(&globals, 0, sizeof(globals));
-	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
-
 	globals.STARTED = globals.RUNNING = 1;
 	switch_mutex_lock(runtime.throttle_mutex);
 	runtime.sps = runtime.sps_total;
@@ -429,6 +426,9 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 {
 	switch_timer_interface_t *timer_interface;
 	module_pool = pool;
+
+	memset(&globals, 0, sizeof(globals));
+	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
