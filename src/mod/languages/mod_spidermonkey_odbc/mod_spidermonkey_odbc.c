@@ -178,6 +178,8 @@ static JSBool odbc_connect(JSContext * cx, JSObject * obj, uintN argc, jsval * a
 		} else {
 			tf = JS_FALSE;
 		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database handle is not initialized!\n");
 	}
 
 	*rval = BOOLEAN_TO_JSVAL(tf);
@@ -196,7 +198,7 @@ static JSBool odbc_execute(JSContext * cx, JSObject * obj, uintN argc, jsval * a
 		goto done;
 	}
 
-	if (switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
+	if (!odbc_obj || switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database is not connected!\n");
 		goto done;
 	}
@@ -229,7 +231,7 @@ static JSBool odbc_exec(JSContext * cx, JSObject * obj, uintN argc, jsval * argv
 		goto done;
 	}
 
-	if (switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
+	if (!odbc_obj || switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database is not connected!\n");
 		goto done;
 	}
@@ -261,7 +263,7 @@ static JSBool odbc_num_rows(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 
 	SQLSMALLINT rows = 0;
 
-	if (switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
+	if (!odbc_obj || switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database is not connected!\n");
 		goto done;
 	}
@@ -285,7 +287,7 @@ static JSBool odbc_next_row(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	int result = 0;
 	JSBool tf = JS_FALSE;
 
-	if (switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
+	if (!odbc_obj || switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database is not connected!\n");
 		goto done;
 	}
@@ -353,7 +355,7 @@ static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
 	JSBool tf = JS_FALSE;
 
-	if (switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
+	if (!odbc_obj || switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database is not connected!\n");
 		goto done;
 	}
@@ -414,12 +416,35 @@ static JSBool odbc_close(JSContext * cx, JSObject * obj, uintN argc, jsval * arg
 	return JS_TRUE;
 }
 
+
+static JSBool odbc_disconnect(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
+
+	if (!odbc_obj) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database handle is not initialized!\n");
+		goto done;
+	}
+
+	if (switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database is not connected!\n");
+		goto done;
+	}
+
+	switch_odbc_handle_disconnect(odbc_obj->handle);
+
+ done:
+
+	return JS_TRUE;
+}
+
 enum odbc_tinyid {
 	odbc_NAME
 };
 
 static JSFunctionSpec odbc_methods[] = {
 	{"connect", odbc_connect, 1},
+	{"disconnect", odbc_disconnect, 1},
 	{"exec", odbc_exec, 1},
 	{"query", odbc_exec, 1},
 	{"execute", odbc_execute, 1},
