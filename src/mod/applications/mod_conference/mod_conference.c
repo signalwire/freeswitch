@@ -2384,7 +2384,9 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 		expanded = NULL;
 	}
 	if (!strncasecmp(file, "say:", 4)) {
-		status = conference_member_say(member, file + 4, leadin);
+		if (!switch_strlen_zero(file + 4)) {
+			status = conference_member_say(member, file + 4, leadin);
+		}
 		goto done;
 	}
 	if (!switch_is_file_path(file)) {
@@ -2393,7 +2395,7 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 				goto done;
 			}
 			file = dfile;
-		} else {
+		} else if (!switch_strlen_zero(file)) {
 			status = conference_member_say(member, file, leadin);
 			goto done;
 		}
@@ -2721,7 +2723,7 @@ static switch_status_t conf_api_sub_mute(conference_member_t *member, switch_str
 		return SWITCH_STATUS_GENERR;
 
 	switch_clear_flag_locked(member, MFLAG_CAN_SPEAK);
-	if (member->conference->muted_sound) {
+	if (!switch_strlen_zero(member->conference->muted_sound)) {
 		conference_member_play_file(member, member->conference->muted_sound, 0);
 	} else {
 		char msg[512];
@@ -2753,7 +2755,7 @@ static switch_status_t conf_api_sub_unmute(conference_member_t *member, switch_s
 	if (stream != NULL) {
 		stream->write_function(stream, "OK unmute %u\n", member->id);
 	}
-	if (member->conference->unmuted_sound) {
+	if (!switch_strlen_zero(member->conference->unmuted_sound)) {
 		conference_member_play_file(member, member->conference->unmuted_sound, 0);
 	} else {
 		char msg[512];
