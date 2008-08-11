@@ -1219,7 +1219,7 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 	nv = 0;
 	olen = strlen(in) + 1;
 	indup = strdup(in);
-	endof_indup = end_of_p(indup);
+	endof_indup = end_of_p(indup) + 1;
 
 	if ((data = malloc(olen))) {
 		memset(data, 0, olen);
