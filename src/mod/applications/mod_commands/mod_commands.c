@@ -2024,7 +2024,7 @@ SWITCH_STANDARD_API(show_function)
 			if (!strcasecmp(var, "text/plain")) {
 				holder.http = NULL;
 			}
-		} else {
+		} else if (holder.http) {
 			stream->write_function(stream, "%s", "Content-Type: text/html\n\n");
 		}
 
