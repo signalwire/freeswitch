@@ -1616,8 +1616,8 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	char *p;
 	sofia_profile_t *profile = NULL;
 	const char *exclude_contact = NULL;
-	char *reply = "";
-
+	char *reply = "error/facility_not_subscribed";
+	
 	if (!cmd) {
 		stream->write_function(stream, "%s", "");
 		return SWITCH_STATUS_SUCCESS;
@@ -1696,8 +1696,14 @@ SWITCH_STANDARD_API(sofia_contact_function)
 			if (!switch_strlen_zero(reply) && end_of(reply) == ',') {
 				end_of(reply) = '\0';
 			}
+
+			if (switch_strlen_zero(reply)) {
+				reply = "error/user_not_registered";
+			}
+
 			stream->write_function(stream, "%s", reply);
 			reply = NULL;
+			
 			switch_safe_free(mystream.data);
 		}
 	}
@@ -1960,7 +1966,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				tech_pvt->local_url = switch_core_session_sprintf(nsession, "%s@%s", dest, host);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", dest, host);
-				cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
+				cause = SWITCH_CAUSE_USER_NOT_REGISTERED;
 				goto error;
 			}
 		} else if (!(host = strchr(dest, '@'))) {
@@ -1972,7 +1978,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				host = profile_name;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", dest, profile_name);
-				cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
+				cause = SWITCH_CAUSE_USER_NOT_REGISTERED;
 				goto error;
 			}
 		} else {
