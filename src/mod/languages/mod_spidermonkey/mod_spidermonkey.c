@@ -83,8 +83,8 @@ static void session_destroy(JSContext * cx, JSObject * obj);
 static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval);
 static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval);
 static JSBool session_set_callerdata(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval);
-static switch_api_interface_t js_run_interface;
-static switch_api_interface_t jsapi_interface;
+static switch_api_interface_t *js_run_interface = NULL;
+static switch_api_interface_t *jsapi_interface = NULL;
 
 static struct {
 	size_t gStackChunkSize;
@@ -3559,37 +3559,50 @@ SWITCH_STANDARD_APP(js_dp_function)
 	js_parse_and_execute(session, data, NULL);
 }
 
+struct js_task {
+	switch_memory_pool_t *pool;
+	char *code;
+};
+
 static void *SWITCH_THREAD_FUNC js_thread_run(switch_thread_t *thread, void *obj)
 {
-	char *input_code = obj;
+	struct js_task *task = (struct js_task *) obj;
+	switch_memory_pool_t *pool;
 
-	js_parse_and_execute(NULL, input_code, NULL);
+	js_parse_and_execute(NULL, task->code, NULL);
 
-	if (input_code) {
-		free(input_code);
+	if ((pool = task->pool)) {
+		switch_core_destroy_memory_pool(&pool);
 	}
 
 	return NULL;
 }
 
-static switch_memory_pool_t *module_pool = NULL;
-
 static void js_thread_launch(const char *text)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
+	struct js_task *task;
+	switch_memory_pool_t *pool;
 
-	if (!module_pool) {
-		if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
-			return;
-		}
+	if (switch_strlen_zero(text)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "missing required input!\n");
+		return;
 	}
 
-	switch_threadattr_create(&thd_attr, module_pool);
+	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
+		return;
+	}
+
+	task = switch_core_alloc(pool, sizeof(*task));
+	task->pool = pool;
+	task->code = switch_core_strdup(pool, text);
+
+	switch_threadattr_create(&thd_attr, pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_thread_create(&thread, thd_attr, js_thread_run, strdup(text), module_pool);
+	switch_thread_create(&thread, thd_attr, js_thread_run, task, pool);
 }
 
 SWITCH_STANDARD_API(jsapi_function)
@@ -3606,7 +3619,7 @@ SWITCH_STANDARD_API(jsapi_function)
 	}
 
 	if (switch_strlen_zero(cmd)) {
-		stream->write_function(stream, "USAGE: %s\n", jsapi_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", jsapi_interface->syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -3622,7 +3635,7 @@ SWITCH_STANDARD_API(jsapi_function)
 SWITCH_STANDARD_API(launch_async)
 {
 	if (switch_strlen_zero(cmd)) {
-		stream->write_function(stream, "USAGE: %s\n", js_run_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", js_run_interface->syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -3654,7 +3667,6 @@ static void message_query_handler(switch_event_t *event)
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 {
-	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
 	switch_status_t status;
 
@@ -3670,8 +3682,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	SWITCH_ADD_API(api_interface, "jsrun", "run a script", launch_async, "jsrun <script> [additional_vars [...]]");
-	SWITCH_ADD_API(api_interface, "jsapi", "execute an api call", jsapi_function, "jsapi <script> [additional_vars [...]]");
+	SWITCH_ADD_API(js_run_interface, "jsrun", "run a script", launch_async, "jsrun <script> [additional_vars [...]]");
+	SWITCH_ADD_API(jsapi_interface, "jsapi", "execute an api call", jsapi_function, "jsapi <script> [additional_vars [...]]");
 	SWITCH_ADD_APP(app_interface, "javascript", "Launch JS ivr", "Run a javascript ivr on a channel", js_dp_function, "<script> [additional_vars [...]]",
 				   SAF_SUPPORT_NOMEDIA);
 
