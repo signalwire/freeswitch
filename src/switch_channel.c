@@ -1598,7 +1598,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel, const char *in)
 {
 	char *p, *c = NULL;
-	char *data, *indup;
+	char *data, *indup, *endof_indup;
 	size_t sp = 0, len = 0, olen = 0, vtype = 0, br = 0, cpos, block = 128;
 	const char *q;
 	char *cloned_sub_val = NULL, *sub_val = NULL;
@@ -1632,11 +1632,12 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 	nv = 0;
 	olen = strlen(in) + 1;
 	indup = strdup(in);
+	endof_indup = end_of_p(indup);
 
 	if ((data = malloc(olen))) {
 		memset(data, 0, olen);
 		c = data;
-		for (p = indup; p && *p; p++) {
+		for (p = indup; p && p < endof_indup && *p; p++) {
 			vtype = 0;
 
 			if (*p == '\\') {
@@ -1699,7 +1700,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 
 					e++;
 				}
-				p = e;
+				p = e > endof_indup ? endof_indup : e;
 
 				if ((vval = strchr(vname, '('))) {
 					e = vval - 1;
