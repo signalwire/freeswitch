@@ -60,6 +60,7 @@ SWITCH_BEGIN_EXTERN_C
 	int to_rate;
 	/*! the factor to resample by (from / to) */
 	double factor;
+	double rfactor;
 	/*! a pointer to store a float buffer for data to be resampled */
 	float *from;
 	/*! the size of the from buffer used */
