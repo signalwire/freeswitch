@@ -181,7 +181,9 @@ typedef enum {
 typedef enum {
 	SOF_NONE = 0,
 	SOF_NOBLOCK = (1 << 0),
-	SOF_FORKED_DIAL = (1 << 1)
+	SOF_FORKED_DIAL = (1 << 1),
+	SOF_NO_EFFECTIVE_CID_NUM = (1 << 2),
+	SOF_NO_EFFECTIVE_CID_NAME = (1 << 3)
 } switch_originate_flag_enum_t;
 typedef uint32_t switch_originate_flag_t;
 

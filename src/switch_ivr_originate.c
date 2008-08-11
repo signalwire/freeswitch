@@ -506,7 +506,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 													 const char *cid_num_override,
 													 switch_caller_profile_t *caller_profile_override, switch_originate_flag_t flags)
 {
-	switch_originate_flag_t myflags = SOF_NONE;
+	switch_originate_flag_t dftflags = SOF_NONE, myflags = dftflags;
 	char *pipe_names[MAX_PEERS] = { 0 };
 	char *data = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -538,6 +538,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	uint8_t ring_ready = 0;
 	char *loop_data = NULL;
 	uint32_t progress_timelimit_sec = 0;
+	const char *cid_tmp;
 
 	*bleg = NULL;
 
@@ -742,16 +743,32 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 	}
 
+	if ((cid_tmp = switch_event_get_header(var_event, "origination_caller_id_name"))) {
+		cid_name_override = cid_tmp;
+	}
+
 	if (cid_name_override) {
 		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_name", cid_name_override);
 	} else {
 		cid_name_override = switch_event_get_header(var_event, "origination_caller_id_name");
 	}
 
+	if ((cid_tmp = switch_event_get_header(var_event, "origination_caller_id_number"))) {
+		cid_num_override = cid_tmp;
+	}
+
 	if (cid_num_override) {
 		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_number", cid_num_override);
 	} else {
 		cid_num_override = switch_event_get_header(var_event, "origination_caller_id_number");
+	}
+
+	if (cid_num_override) {
+		dftflags |= SOF_NO_EFFECTIVE_CID_NUM;
+	}
+
+	if (cid_name_override) {
+		dftflags |= SOF_NO_EFFECTIVE_CID_NAME;
 	}
 
 	if (!progress_timelimit_sec) {
@@ -793,7 +810,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			to = 0;
 			sent_ring = 0;
 			progress = 0;
-
+			myflags = dftflags;
+			
 			if (try > 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Originate attempt %d/%d in %d ms\n", try + 1, retries, sleep_ms);
 				switch_yield(sleep_ms * 1000);
@@ -915,6 +933,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						strncpy(tmp, var_begin, strlen(var_begin));
 					}
 					new_profile->caller_id_number = switch_core_strdup(new_profile->pool, tmp);
+					myflags |= SOF_NO_EFFECTIVE_CID_NUM;
 				}
 
 				if (vdata && (var_begin = switch_stristr("origination_caller_id_name=", vdata))) {
@@ -927,7 +946,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						strncpy(tmp, var_begin, strlen(var_begin));
 					}
 					new_profile->caller_id_name = switch_core_strdup(new_profile->pool, tmp);
+					myflags |= SOF_NO_EFFECTIVE_CID_NAME;
 				}
+
 
 				if ((reason =
 					 switch_core_session_outgoing_channel(session, var_event, chan_type, new_profile, &new_session, &pool,
