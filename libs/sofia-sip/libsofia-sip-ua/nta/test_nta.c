@@ -46,12 +46,11 @@ typedef struct client_t client_t;
 #define NTA_AGENT_MAGIC_T    agent_t
 #define NTA_LEG_MAGIC_T      agent_t
 #define NTA_OUTGOING_MAGIC_T client_t
-#define NTA_OUTGOING_MAGIC_T0 agent_t
 #define NTA_INCOMING_MAGIC_T agent_t
 #define NTA_RELIABLE_MAGIC_T agent_t
 
 #include "sofia-sip/nta.h"
-#include "nta_internal.h"
+#include "sofia-sip/nta_tport.h"
 #include <sofia-sip/sip_header.h>
 #include <sofia-sip/sip_tag.h>
 #include <sofia-sip/sip_status.h>
@@ -120,6 +119,13 @@ struct client_t {
   int c_errors;
 };
 
+struct invite_client_t {
+  client_t ic_client[1];
+  nta_outgoing_t *ic_orq;	/* Original INVITE transaction */
+  int ic_tag_status;		/* Status for current branch */
+  char *ic_tag;
+};
+
 struct agent_t {
   su_home_t       ag_home[1];
   int             ag_flags;
@@ -164,9 +170,6 @@ struct agent_t {
   nta_leg_t      *ag_expect_leg;
   nta_leg_t      *ag_latest_leg;
   nta_leg_t      *ag_call_leg;
-  nta_leg_t      *ag_tag_remote; /**< If this is set, outgoing_callback()
-				  *   tags it with the tag from remote.
-				  */
   nta_reliable_t *ag_reliable;
 
   sip_via_t      *ag_in_via;	/**< Incoming via */
@@ -393,6 +396,7 @@ static client_check_f * const no_default_checks[] = {
   NULL
 };
 
+/** Callback from client transaction */
 int outgoing_callback(client_t *ctx,
 		      nta_outgoing_t *orq,
 		      sip_t const *sip)
@@ -2204,7 +2208,6 @@ int test_dialog(agent_t *ag)
 
     /* Send message from Alice to Bob establishing the dialog */
     ag->ag_expect_leg = ag->ag_server_leg;
-    ag->ag_tag_remote = ag->ag_alice_leg;
     ctx->c_orq = 
       nta_outgoing_tcreate(ag->ag_alice_leg, outgoing_callback, ctx,
 			   ag->ag_obp,
@@ -2862,13 +2865,6 @@ int bob_leg_callback(agent_t *ag,
   END();
 }
 
-struct invite_client_t {
-  client_t ic_client[1];
-  nta_outgoing_t *ic_orq;	/* Original INVITE transaction */
-  int ic_tag_status;		/* Status for current branch */
-  char *ic_tag;
-};
-
 static
 int invite_client_deinit(client_t *c)
 {
@@ -3001,8 +2997,8 @@ int test_call(agent_t *ag)
   BEGIN();
 
   {
-    invite_client_t ic[1] = {{ 
-	{{ ag, "Call 1", NULL, checks_for_invite, invite_client_deinit }} }}; 
+    invite_client_t ic[1] =
+      {{{{ ag, "Call 1", NULL, checks_for_invite, invite_client_deinit }}}};
     client_t *ctx = ic->ic_client;
 
     /*
@@ -3041,7 +3037,7 @@ int test_call(agent_t *ag)
     /* Try to CANCEL it immediately */
     TEST_1(nta_outgoing_cancel(ctx->c_orq) == 0);
     /* As Bob immediately answers INVITE with 200 Ok, 
-       cancel should be answered with 481 and 200 Ok is teruned to INVITE. */
+       cancel should be answered with 481 and 200 Ok is returned to INVITE. */
     TEST_1(!client_run(ctx, 200));
 
     TEST_P(ag->ag_latest_leg, ag->ag_server_leg);
@@ -3049,16 +3045,21 @@ int test_call(agent_t *ag)
   }
 
   TEST_1(r1 = nta_leg_make_replaces(ag->ag_alice_leg, ag->ag_home, 0));
-  TEST_1(r2 = sip_replaces_format(ag->ag_home, "%s;from-tag=%s;to-tag=%s",
-				  r1->rp_call_id, r1->rp_to_tag, r1->rp_from_tag));
+  TEST_1(r2 = sip_replaces_format(ag->ag_home,
+				  "%s;from-tag=%s;to-tag=%s",
+				  r1->rp_call_id,
+				  r1->rp_to_tag,
+				  r1->rp_from_tag));
 
   TEST_P(ag->ag_alice_leg, nta_leg_by_replaces(ag->ag_agent, r2));
   TEST_P(ag->ag_bob_leg, nta_leg_by_replaces(ag->ag_agent, r1));
 
   {
-    invite_client_t ic[1] = {{ 
-	{{ ag, "Re-INVITE in Call 1", NULL, checks_for_reinvite, invite_client_deinit }} 
-      }}; 
+    invite_client_t ic[1] =
+      {{{{
+	      ag, "Re-INVITE in Call 1",
+	      NULL, checks_for_reinvite, invite_client_deinit
+      }}}};
     client_t *ctx = ic->ic_client;
 
     /* Re-INVITE from Bob to Alice.
@@ -3116,7 +3117,7 @@ int test_call(agent_t *ag)
   END();
 }
 
-/* ============================================================================ */
+/* ========================================================================== */
 /* Test early dialogs, PRACK */
 
 int test_for_ack_or_timeout(agent_t *ag,
@@ -3254,7 +3255,8 @@ int check_orq_tagging(client_t *ctx,
 			      ic->ic_tag,
 			      sip->sip_rseq);
     TEST_1(orq);
-    nta_outgoing_destroy(ctx->c_orq);
+    if (ic->ic_orq != ctx->c_orq)
+      nta_outgoing_destroy(ctx->c_orq);
     ctx->c_orq = orq;
 
     TEST_1(ctx->c_checks && ctx->c_checks[0] == check_orq_tagging);
@@ -3413,7 +3415,8 @@ int test_prack(agent_t *ag)
 
   /* Send INVITE */
   {
-    invite_client_t ic[1] = {{ {{ ag, "Call 2",  NULL, checks_for_100rel, invite_client_deinit }} }};
+    invite_client_t ic[1] =
+      {{{{ ag, "Call 2",  NULL, checks_for_100rel, invite_client_deinit }}}};
     client_t *ctx = ic->ic_client;
 
     nta_leg_bind(ag->ag_server_leg, bob_leg_callback2, ag);
@@ -3477,7 +3480,11 @@ int test_prack(agent_t *ag)
   TEST_1(nta_leg_tag(ag->ag_alice_leg, NULL));
 
   {
-    invite_client_t ic[1] = {{ {{ ag, "Call 2b",  cancel_invite, checks_for_invite, invite_client_deinit }} }};
+    invite_client_t ic[1] =
+      {{{{
+	      ag, "Call 2b",
+	      cancel_invite, checks_for_invite, invite_client_deinit
+      }}}};
     client_t *ctx = ic->ic_client;
 
     /* Send INVITE */
@@ -3525,7 +3532,8 @@ int test_prack(agent_t *ag)
     TEST_1(nta_leg_tag(ag->ag_alice_leg, NULL));
 
     {
-      invite_client_t ic[1] = {{ {{ ag, "Call 3",  NULL,  checks_for_invite, invite_client_deinit }} }};
+      invite_client_t ic[1] =
+	{{{{ ag, "Call 3",  NULL, checks_for_invite, invite_client_deinit }}}};
       client_t *ctx = ic->ic_client;
 
       /* Send INVITE, 
@@ -3570,9 +3578,8 @@ int test_prack(agent_t *ag)
      * client timeouts after timer C
      */
 
-    invite_client_t ic[1] = {{ 
-	{{ ag, "Call 4",  NULL, checks_for_100rel, invite_client_deinit }}
-      }};
+    invite_client_t ic[1] =
+      {{{{ ag, "Call 4",  NULL, checks_for_100rel, invite_client_deinit }}}};
     client_t *ctx = ic->ic_client;
 
     printf("%s: starting timer C, test will complete in 1 seconds\n",
@@ -3726,9 +3733,8 @@ int test_fix_467(agent_t *ag)
   ag->ag_bob_leg = NULL;
 
   {
-    invite_client_t ic[1] = {{
-	{{ ag, "Call 5",  NULL, checks_for_100rel, invite_client_deinit }}
-      }};
+    invite_client_t ic[1] =
+      {{{{ ag, "Call 5",  NULL, checks_for_100rel, invite_client_deinit }}}};
     client_t *ctx = ic->ic_client;
 
     /* Send INVITE */
