@@ -1484,8 +1484,7 @@ int soa_base_generate_offer(soa_session_t *ss,
  * @param completed  pointer to callback function which is invoked when
  *                   operation is completed (currently not in use)
  *
- * @retval 1 when operation is successful
- * @retval 0 when operation was not needed
+ * @retval 0 when operation is successful
  * @retval -1 upon an error
  *
  * @ERRORS
