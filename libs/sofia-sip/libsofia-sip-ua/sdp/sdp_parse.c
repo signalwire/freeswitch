@@ -250,6 +250,7 @@ void sdp_parser_free(sdp_parser_t *p)
 #define CRLF  "\015\012"
 #define ALPHA "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 #define DIGIT "0123456789"
+#define TOKEN ALPHA DIGIT "-!#$%&'*+.^_`{|}~"
 
 /* ========================================================================= */
 /* Parsing functions */
@@ -891,9 +892,7 @@ static void parse_bandwidth(sdp_parser_t *p, char *r, sdp_bandwidth_t **result)
 {
   /*
    bandwidth-fields =    *("b=" bwtype ":" bandwidth CRLF)
-
-   bwtype =              1*(alpha-numeric)
-                         ; CT or AS
+   bwtype =              token
    bandwidth =           1*(DIGIT)
    */
   /* NOTE: bwtype can also be like X-barf */
@@ -901,7 +900,7 @@ static void parse_bandwidth(sdp_parser_t *p, char *r, sdp_bandwidth_t **result)
   char *name;
   unsigned long value;
 
-  name = token(&r, ":", ALPHA DIGIT "-", SPACE TAB);
+  name = token(&r, ":", TOKEN, SPACE TAB);
 
   if (name == NULL || parse_ul(p, &r, &value, 0)) {
     parsing_error(p, "invalid bandwidth");
@@ -941,16 +940,21 @@ static void parse_bandwidth(sdp_parser_t *p, char *r, sdp_bandwidth_t **result)
 static void parse_time(sdp_parser_t *p, char *r, sdp_time_t **result)
 {
   /*
-   time-fields =         1*( "t=" start-time space stop-time
+   time-fields =         1*( "t=" start-time SP stop-time
                          *(CRLF repeat-fields) CRLF)
                          [zone-adjustments CRLF]
 
-   start-time =          time | "0"
+   start-time =          time / "0"
 
-   stop-time =           time | "0"
+   stop-time =           time / "0"
 
-   time =                POS-DIGIT 9*(DIGIT)
-                         ;sufficient for 2 more centuries
+   time =                POS-DIGIT 9*DIGIT
+                         ; Decimal representation of NTP time in
+                         ; seconds since 1900.  The representation
+                         ; of NTP time is an unbounded length field
+                         ; containing at least 10 digits.  Unlike the
+                         ; 64-bit representation used elsewhere, time
+                         ; in SDP does not wrap in the year 2036.
    */
   PARSE_ALLOC(p, sdp_time_t, t);
   *result = t;
@@ -975,14 +979,13 @@ static void parse_time(sdp_parser_t *p, char *r, sdp_time_t **result)
 static void parse_repeat(sdp_parser_t *p, char *d, sdp_repeat_t **result)
 {
   /*
-   repeat-fields =       "r=" repeat-interval space typed-time
-                         1*(space typed-time)
+   repeat-fields =       %x72 "=" repeat-interval 2*(SP typed-time)
 
-   repeat-interval =     typed-time
+   repeat-interval =     POS-DIGIT *DIGIT [fixed-len-time-unit]
 
-   typed-time =          1*(DIGIT) [fixed-len-time-unit]
+   typed-time =          1*DIGIT [fixed-len-time-unit]
 
-   fixed-len-time-unit = "d" | "h" | "m" | "s"
+   fixed-len-time-unit = %x64 / %x68 / %x6d / %x73 ; "d" | "h" | "m" | "s"
    */
 
   unsigned long tt, *interval;
@@ -1129,17 +1132,15 @@ static void parse_key(sdp_parser_t *p, char *r, sdp_key_t **result)
   /*
    key-field =           ["k=" key-type CRLF]
 
-
    key-type =            "prompt" |
                          "clear:" key-data |
                          "base64:" key-data |
                          "uri:" uri
 
-
    key-data =            email-safe | "~" | "
    */
 
-  s = token(&r, ":", ALPHA DIGIT "-", SPACE TAB);
+  s = token(&r, ":", TOKEN, SPACE TAB);
   if (!s) {
     parsing_error(p, "invalid key method");
     return;
@@ -1149,16 +1150,24 @@ static void parse_key(sdp_parser_t *p, char *r, sdp_key_t **result)
     PARSE_ALLOC(p, sdp_key_t, k);
     *result = k;
 
-    if (strcasecmp(s, "clear") == 0)
+    /* These are defined as key-sensitive in RFC 4566 */
+#define MATCH(s, tok) \
+    (STRICT(p) ? strcmp((s), (tok)) == 0 : strcasecmp((s), (tok)) == 0)
+
+    if (MATCH(s, "clear"))
       k->k_method = sdp_key_clear, k->k_method_name = "clear";
-    else if (strcasecmp(s, "base64") == 0)
+    else if (MATCH(s, "base64"))
       k->k_method = sdp_key_base64, k->k_method_name = "base64";
-    else if (strcasecmp(s, "uri") == 0)
+    else if (MATCH(s, "uri"))
       k->k_method = sdp_key_uri, k->k_method_name = "uri";
-    else if (strcasecmp(s, "prompt") == 0)
+    else if (MATCH(s, "prompt"))
       k->k_method = sdp_key_prompt, k->k_method_name = "prompt";
-    else
+    else if (!STRICT(p))
       k->k_method = sdp_key_x, k->k_method_name = s;
+    else {
+      parsing_error(p, "invalid key method");
+      return;
+    }
 
     k->k_material = r;
   }
@@ -1180,16 +1189,16 @@ static void parse_session_attr(sdp_parser_t *p, char *r, sdp_attribute_t **resul
   /*
    attribute-fields =    *("a=" attribute CRLF)
 
-   attribute =           (att-field ":" att-value) | att-field
+   attribute =           (att-field ":" att-value) / att-field
 
-   att-field =           1*(alpha-numeric)
+   att-field =           token
 
    att-value =           byte-string
    */
 
   char *name = NULL, *value = NULL;
 
-  if (!(name = token(&r, ":", ALPHA DIGIT "-", SPACE TAB))) {
+  if (!(name = token(&r, ":", TOKEN, SPACE TAB))) {
     parsing_error(p,"invalid attribute name");
     return;
   }
@@ -1248,15 +1257,15 @@ static void parse_media(sdp_parser_t *p, char *r, sdp_media_t **result)
    media-field =         "m=" media space port ["/" integer]
                          space proto 1*(space fmt) CRLF
 
-   media =               1*(alpha-numeric)
+   media =               token
                          ;typically "audio", "video", "application"
                          ;or "data"
 
-   fmt =                 1*(alpha-numeric)
+   fmt =                 token
                          ;typically an RTP payload type for audio
                          ;and video media
 
-   proto =               1*(alpha-numeric)
+   proto =               token *("/" token)
                          ;typically "RTP/AVP" or "udp" for IP4
 
    port =                1*(DIGIT)
@@ -1270,9 +1279,7 @@ static void parse_media(sdp_parser_t *p, char *r, sdp_media_t **result)
 
   m->m_mode = sdp_sendrecv;
 
-  s = token(&r, SPACE, ALPHA DIGIT, NULL);
-  if (s == NULL && p->pr_config)
-    s = token(&r, SPACE, "*", NULL);
+  s = token(&r, SPACE, TOKEN, NULL);
   if (!s) {
     parsing_error(p, "m= invalid media field");
     return;
@@ -1304,10 +1311,7 @@ static void parse_media(sdp_parser_t *p, char *r, sdp_media_t **result)
     m->m_number_of_ports = value;
   }
 
-  /* alpha-numeric and "/" */
-  s = token(&r, SPACE, ALPHA DIGIT "/", SPACE);
-  if (s == NULL && p->pr_config) 
-    s = token(&r, SPACE, "*", SPACE);
+  s = token(&r, SPACE, "/" TOKEN, SPACE);
   if (s == NULL) {
     parsing_error(p, "m= missing protocol");
     return;
@@ -1331,7 +1335,7 @@ static void parse_media(sdp_parser_t *p, char *r, sdp_media_t **result)
     while (r && *r) {
       PARSE_ALLOC(p, sdp_list_t, l);
       *fmt = l;
-      l->l_text = next(&r, SPACE TAB, SPACE TAB);
+      l->l_text = token(&r, SPACE TAB, TOKEN, SPACE TAB);
       fmt = &l->l_next;
     }
   }
@@ -1536,9 +1540,9 @@ static void parse_media_attr(sdp_parser_t *p, char *r, sdp_media_t *m,
   /*
    attribute-fields =    *("a=" attribute CRLF)
 
-   attribute =           (att-field ":" att-value) | att-field
+   attribute =           (att-field ":" att-value) / att-field
 
-   att-field =           1*(alpha-numeric) 
+   att-field =           token
 
    att-value =           byte-string
 
@@ -1549,7 +1553,7 @@ static void parse_media_attr(sdp_parser_t *p, char *r, sdp_media_t *m,
   char *name = NULL, *value = NULL;
   int n;
 
-  if (!(name = token(&r, ":", ALPHA DIGIT "-", SPACE TAB))) {
+  if (!(name = token(&r, ":", TOKEN, SPACE TAB))) {
     parsing_error(p,"invalid attribute name");
     return;
   }
@@ -1623,7 +1627,7 @@ static int parse_rtpmap(sdp_parser_t *p, char *r, sdp_media_t *m)
     return -1;
   }
 
-  encoding = token(&r, "/", ALPHA DIGIT "-", NULL);
+  encoding = token(&r, "/", TOKEN, NULL);
   if (!r) {
     parsing_error(p, "a=rtpmap:%lu: missing <clock rate>", pt);
     return -2;
