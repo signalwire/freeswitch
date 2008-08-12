@@ -442,6 +442,10 @@ AC_ARG_WITH(rt,
 if test "${with_rt}" != no; then
 	AC_SEARCH_LIBS(clock_gettime, rt)
         AC_CHECK_FUNCS([clock_gettime clock_getcpuclockid])
+        AC_CHECK_DECL([CLOCK_MONOTONIC],
+AC_DEFINE([HAVE_CLOCK_MONOTONIC], 1,
+[Define to 1 if you have CLOCK_MONOTONIC]),,[
+#include <time.h>])
 fi
 
 # No GLib path explicitly defined, use pkg-config

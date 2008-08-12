@@ -179,7 +179,7 @@ su_nanotime_t su_nanotime(su_nanotime_t *return_time)
  */
 su_nanotime_t su_monotime(su_nanotime_t *return_time)
 {
-#if HAVE_CLOCK_GETTIME
+#if HAVE_CLOCK_GETTIME && CLOCK_MONOTONIC
   {
     struct timespec tv;
   
