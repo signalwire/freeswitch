@@ -87,6 +87,9 @@ typedef struct soa_static_session
   int  *sss_u2s;
   /** Mapping from session SDP m= lines to user SDP m= lines */
   int *sss_s2u;
+
+  /** Our latest offer or answer */
+  sdp_session_t *sss_latest;
 }
 soa_static_session_t;
 
@@ -1103,6 +1106,8 @@ static int offer_answer_step(soa_session_t *ss,
 
   int *u2s = NULL, *s2u = NULL, *tbf;
 
+  sdp_session_t *latest = NULL, *previous = NULL;
+
   char const *phrase = "Internal Media Error";
 
   su_home_t tmphome[SU_HOME_AUTO_SIZE(8192)];
@@ -1327,10 +1332,27 @@ static int offer_answer_step(soa_session_t *ss,
 
   if (ss->ss_local->ssd_sdp != local &&
       sdp_session_cmp(ss->ss_local->ssd_sdp, local)) {
-    /* We have modified local session: update origin-line */
-    if (local->sdp_origin != o)
-      *o = *local->sdp_origin, local->sdp_origin = o;
-    o->o_version++;
+    int bump;
+
+    switch (action) {
+    case generate_offer:
+      bump = sdp_session_cmp(local, sss->sss_latest);
+      break;
+    case generate_answer:
+      bump = 1;
+      break;
+    case process_answer:
+    default:
+      bump = 0;
+      break;
+    }
+
+    if (bump) {
+      /* Upgrade the version number */
+      if (local->sdp_origin != o)
+	*o = *local->sdp_origin, local->sdp_origin = o;
+      o->o_version++;
+    }
 
     /* Do sanity checks for the created SDP */
     if (!local->sdp_subject)	/* s= is mandatory */
@@ -1362,6 +1384,11 @@ static int offer_answer_step(soa_session_t *ss,
 
       goto internal_error;
     }
+
+    if (bump) {
+      latest = sdp_session_dup(ss->ss_home, ss->ss_local->ssd_sdp);
+      previous = sss->sss_latest;
+    }
   }
 
   if (u2s) {
@@ -1373,16 +1400,21 @@ static int offer_answer_step(soa_session_t *ss,
   switch (action) {
   case generate_offer:
     ss->ss_local_user_version = user_version;
+    sss->sss_latest = latest;
     break;
   case generate_answer:
     ss->ss_local_user_version = user_version;
     ss->ss_local_remote_version = remote_version;
+    sss->sss_latest = latest;
     break;
   case process_answer:
     ss->ss_local_remote_version = remote_version;
   default:
     break;
   }
+
+  if (previous)
+    su_free(ss->ss_home, previous);
 
   su_home_deinit(tmphome);
   return 0;
