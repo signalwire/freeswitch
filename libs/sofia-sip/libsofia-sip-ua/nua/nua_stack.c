@@ -1716,7 +1716,8 @@ int nua_server_respond(nua_server_request_t *sr, tagi_t const *tags)
 			NH_PGET(nh, user_agent)) < 0)
     ;
   else if (!sip->sip_organization && NH_PGET(nh, organization) &&
-	   sip_add_dup(msg, sip, (void *)NH_PGET(nh, organization)) < 0)
+	   sip_add_make(msg, sip, sip_organization_class,
+			NH_PGET(nh, organization)) < 0)
     ;
   else if (!sip->sip_allow && NH_PGET(nh, allow) &&
 	   sip_add_dup(msg, sip, (void *)NH_PGET(nh, allow)) < 0)
@@ -2561,7 +2562,7 @@ int nua_client_request_sendmsg(nua_client_request_t *cr, msg_t *msg, sip_t *sip)
     sip_add_make(msg, sip, sip_supported_class, "path");
   
   if (!sip->sip_organization && NH_PGET(nh, organization))
-    sip_add_dup(msg, sip, (sip_header_t *)NH_PGET(nh, organization));
+    sip_add_make(msg, sip, sip_organization_class, NH_PGET(nh, organization));
 
   if (!sip->sip_user_agent && NH_PGET(nh, user_agent))
     sip_add_make(msg, sip, sip_user_agent_class, NH_PGET(nh, user_agent));
