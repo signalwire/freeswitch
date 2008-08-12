@@ -86,8 +86,8 @@ Uploading the release to sourceforge.net
 
 - use the the 'Admin' -> 'File releases' tool for
   creating a new release
-- to upload the file, you can use for example ncftpput:
-  ncftpput -u anonymous -p USER@users.sourceforge.net upload.sourceforge.net /incoming/ sofia-sip-x.y.z.tar.gz
+- to upload the file, you can use for example rsync:
+  rsync -avP -e ssh sofia-sip-x.y.z.tar.gz USER@frs.sourceforge.net:uploads/
 - attach the release notes (relnotes-sofia-sip-x.y.z.txt)
   to the file release
 
