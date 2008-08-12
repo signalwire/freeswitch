@@ -44,6 +44,7 @@ foreach $file (@sent) {
 	$line =~ s/<(.*?)>//gi;;
 	$line =~ s/^\s*//;
 	$line =~ s/\s*$//;
+	$line =~ s/_/ /g;
 	@tmp = split(' ', $line);
 	foreach $tmp (@tmp) {
 	    push(@in, uc($tmp));
