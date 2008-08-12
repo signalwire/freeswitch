@@ -325,7 +325,7 @@ AC_REQUIRE([SAC_TOOL_CC])
 AC_ARG_ENABLE(ndebug,
 [  --enable-ndebug         compile with NDEBUG [[disabled]]],
  , enable_ndebug=no)
-AM_CONDITIONAL(NDEBUG, test x$enable_ndebug = yes)
+AM_CONDITIONAL(NDEBUG, test x$enable_ndebug = xyes)
 ])
 
 dnl ======================================================================
@@ -336,10 +336,10 @@ AC_ARG_ENABLE(expensive-checks,
 [  --enable-expensive-checks
                           run also expensive checks [[disabled]]],
  , enable_expensive_checks=no)
-if test $enable_expensive_checks != no; then
+if test x$enable_expensive_checks != xno; then
 AC_SUBST([TESTS_ENVIRONMENT], [EXPENSIVE_CHECKS=1])
 fi
-AM_CONDITIONAL(EXPENSIVE_CHECKS, test x$enable_expensive_checks != no)
+AM_CONDITIONAL(EXPENSIVE_CHECKS, test x$enable_expensive_checks != xno)
 ])
 
 
