@@ -338,7 +338,7 @@ tag_typedef_t nutag_url = URLTAG_TYPEDEF(url);
  */
 tag_typedef_t nutag_method = STRTAG_TYPEDEF(method);
 
-/**@def NUTAG_METHOD_REF(x) 
+/**@def NUTAG_METHOD_REF(x)
  * Reference tag for NUTAG_METHOD().
  */
 
@@ -349,7 +349,7 @@ tag_typedef_t nutag_method = STRTAG_TYPEDEF(method);
  */
 tag_typedef_t nutag_uicc = STRTAG_TYPEDEF(uicc);
 
-/*#@def NUTAG_UICC_REF(x) 
+/*#@def NUTAG_UICC_REF(x)
  * Reference tag for NUTAG_UICC().
  */
 
@@ -367,11 +367,11 @@ tag_typedef_t nutag_uicc = STRTAG_TYPEDEF(uicc);
  * - nua_invite()
  *
  * @par Parameter type
- *    int
+ *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
- *    @c 0   Do not add @AcceptContact \n
- *    @c !=0 Add @AcceptContact with media tags
+ *    - 0 (false) - Do not add @AcceptContact
+ *    - 1 (true) - Add @AcceptContact with media tags
  *
  * Corresponding tag taking reference parameter is NUTAG_MEDIA_FEATURES_REF()
  *
@@ -380,13 +380,13 @@ tag_typedef_t nutag_uicc = STRTAG_TYPEDEF(uicc);
  */
 tag_typedef_t nutag_media_features = BOOLTAG_TYPEDEF(media_features);
 
-/**@def NUTAG_MEDIA_FEATURES_REF(x) 
+/**@def NUTAG_MEDIA_FEATURES_REF(x)
  * Reference tag for NUTAG_MEDIA_FEATURES().
  */
 
 
-/**@def NUTAG_CALLEE_CAPS(x) 
- * 
+/**@def NUTAG_CALLEE_CAPS(x)
+ *
  * Add methods parameter and media feature parameter to the @Contact headers
  * generated for REGISTER request.
  *
@@ -399,8 +399,8 @@ tag_typedef_t nutag_media_features = BOOLTAG_TYPEDEF(media_features);
  *    int
  *
  * @par Values
- *    @c 0   Do not include methods and media feature paramete \n
- *    @c !=0 Include media tags in 
+ *    - 0 (false) - Do not include methods and media feature parameters
+ *    - 1 (true) - Include media tags in @Contact
  *
  * Corresponding tag taking reference parameter is NUTAG_MEDIA_FEATURES_REF().
  *
@@ -409,7 +409,7 @@ tag_typedef_t nutag_media_features = BOOLTAG_TYPEDEF(media_features);
  */
 tag_typedef_t nutag_callee_caps = BOOLTAG_TYPEDEF(callee_caps);
 
-/**@def NUTAG_CALLEE_CAPS_REF(x) 
+/**@def NUTAG_CALLEE_CAPS_REF(x)
  * Reference tag for NUTAG_CALLEE_CAPS().
  */
 
@@ -424,11 +424,11 @@ tag_typedef_t nutag_callee_caps = BOOLTAG_TYPEDEF(callee_caps);
  * - nua_invite(), nua_respond()
  *
  * @par Parameter type
- *    int (boolean)
+ *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
- *    @c 0   False - do not try to use early media \n
- *    @c !=0 True - try to use early media
+ *    - 0 (false) -  do not try to use early media
+ *    - 1 (true) - try to use early media
  *
  * @sa NUTAG_EARLY_ANSWER()
  *
@@ -436,7 +436,7 @@ tag_typedef_t nutag_callee_caps = BOOLTAG_TYPEDEF(callee_caps);
  */
 tag_typedef_t nutag_early_media = BOOLTAG_TYPEDEF(early_media);
 
-/**@def NUTAG_EARLY_MEDIA_REF(x) 
+/**@def NUTAG_EARLY_MEDIA_REF(x)
  * Reference tag for NUTAG_EARLY_MEDIA().
  */
 
@@ -459,13 +459,18 @@ tag_typedef_t nutag_early_media = BOOLTAG_TYPEDEF(early_media);
  *    nua_respond()
  *
  * @par Parameter type
- *    int (boolean)
+ *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
- *    @c 0   False \n
- *    @c !=0 True
+ *    - 0 (false) - include 100rel in all preliminary responses 
+ *    - 1 (true) - include 100rel only in 183 responses
+ *
+ * @note 
+ * This tag takes only effect when NUTAG_EARLY_MEDIA(1) has been used, too.
  *
  * Corresponding tag taking reference parameter is NUTAG_ONLY183_100REL_REF().
+ *
+ * @sa 
  */
 tag_typedef_t nutag_only183_100rel = BOOLTAG_TYPEDEF(only183_100rel);
 
@@ -493,7 +498,7 @@ tag_typedef_t nutag_only183_100rel = BOOLTAG_TYPEDEF(only183_100rel);
  * @note Requires that @soa is enabled with NUTAG_MEDIA_ENABLE(1).
  *
  * @sa NUTAG_EARLY_MEDIA(), NUTAG_AUTOALERT(), NUTAG_MEDIA_ENABLE()
- * 
+ *
  * @since New in @VERSION_1_12_2.
  */
 tag_typedef_t nutag_early_answer = BOOLTAG_TYPEDEF(early_answer);
@@ -586,7 +591,7 @@ tag_typedef_t nutag_media_enable = BOOLTAG_TYPEDEF(media_enable);
  */
 tag_typedef_t nutag_soa_name = STRTAG_TYPEDEF(soa_name);
 
-/**@def NUTAG_SOA_NAME_REF(x) 
+/**@def NUTAG_SOA_NAME_REF(x)
  * Reference tag for NUTAG_SOA_NAME().
  */
 
@@ -700,7 +705,7 @@ tag_typedef_t nutag_callstate = INTTAG_TYPEDEF(callstate);
  *    #nua_i_state
  *
  * @par Parameter type
- *    boolean
+ *    int (boolean: nonzero is true, zero is false)
  *
  * Corresponding tag taking reference parameter is NUTAG_OFFER_RECV_REF().
  */
@@ -719,7 +724,7 @@ tag_typedef_t nutag_offer_recv = BOOLTAG_TYPEDEF(offer_recv);
  *    #nua_i_state
  *
  * @par Parameter type
- *    boolean
+ *    int (boolean: nonzero is true, zero is false)
  *
  * Corresponding tag taking reference parameter is NUTAG_ANSWER_RECV_REF().
  */
@@ -738,7 +743,7 @@ tag_typedef_t nutag_answer_recv = BOOLTAG_TYPEDEF(answer_recv);
  *    #nua_i_state
  *
  * @par Parameter type
- *    boolean
+ *    int (boolean: nonzero is true, zero is false)
  *
  * Corresponding tag taking reference parameter is NUTAG_OFFER_SENT_REF().
  */
@@ -980,14 +985,14 @@ tag_typedef_t nutag_invite_timer = UINTTAG_TYPEDEF(invite_timer);
  *    unsigned int
  *
  * @par Values
- *    @c 0  disable \n
- *    @c >0 interval in seconds
+ *    - 0  disable
+ *    - >0 interval in seconds
  *
  * Corresponding tag taking reference parameter is NUTAG_SESSION_TIMER_REF().
  *
  * @sa NUTAG_SUPPORTED(), NUTAG_MIN_SE(), NUTAG_SESSION_REFRESHER(),
- * nua_invite(), #nua_r_invite, #nua_i_invite, nua_respond(), 
- * nua_update(), #nua_r_update, #nua_i_update, 
+ * nua_invite(), #nua_r_invite, #nua_i_invite, nua_respond(),
+ * nua_update(), #nua_r_update, #nua_i_update,
  * NUTAG_UPDATE_REFRESH(), @RFC4028, @SessionExpires, @MinSE
  */
 tag_typedef_t nutag_session_timer = UINTTAG_TYPEDEF(session_timer);
@@ -1169,7 +1174,7 @@ tag_typedef_t nutag_refer_expires = UINTTAG_TYPEDEF(refer_expires);
  */
 tag_typedef_t nutag_refer_with_id = BOOLTAG_TYPEDEF(refer_with_id);
 
-/**@def NUTAG_REFER_WITH_ID_REF(x) 
+/**@def NUTAG_REFER_WITH_ID_REF(x)
  * Reference tag for NUTAG_REFER_WITH_ID().
  */
 
@@ -1211,8 +1216,8 @@ tag_typedef_t nutag_autoalert = BOOLTAG_TYPEDEF(autoAlert);
  *    int (boolean)
  *
  * @par Values
- *    @c 0    No automatic sending of "200 Ok" \n
- *    @c !=0 "200 Ok" sent automatically
+ *    - 0 (false) - No automatic sending of "200 Ok"
+ *    - 1 (true) - "200 Ok" sent automatically
  *
  * Corresponding tag taking reference parameter is NUTAG_AUTOANSWER_REF().
  *
@@ -2569,7 +2574,7 @@ tag_typedef_t nutag_supported = STRTAG_TYPEDEF(supported);
  */
 tag_typedef_t nutag_path_enable = BOOLTAG_TYPEDEF(path_enable);
 
-/**@def NUTAG_PATH_ENABLE_REF(x) 
+/**@def NUTAG_PATH_ENABLE_REF(x)
  * Reference tag for NUTAG_PATH_ENABLE().
  */
 
@@ -2812,8 +2817,8 @@ tag_typedef_t nutag_dialog = UINTTAG_TYPEDEF(dialog);
  *    int (boolean)
  *
  * @par Values
- *    @c 0   False \n
- *    @c !=0 True
+ *    - 0 (false) - pass only #nua_r_shutdown events to application during shutdown
+ *    - 1 (true) - pass all events to application during shutdown
  *
  * Corresponding tag taking reference parameter is NUTAG_SHUTDOWN_EVENTS_REF().
  *

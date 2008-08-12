@@ -1126,7 +1126,7 @@ follows:
     <td>
    If there was a failure in SDP negotiation or other failure with media,
    the stack will automatically terminate the call. The BYE follows
-   immediatelhy after the ACK.
+   immediately after the ACK.
 </td></tr>
 <tr><td>C6a</td>
     <td>calling</td>
