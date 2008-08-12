@@ -647,6 +647,11 @@ static int keepalive_options_with_registration_probe(outbound_t *ob);
 static int response_to_keepalive_options(outbound_t *ob,
 					 nta_outgoing_t *orq,
 					 sip_t const *sip);
+static int process_response_to_keepalive_options(outbound_t *ob,
+						 nta_outgoing_t *orq,
+						 sip_t const *sip,
+						 int status,
+						 char const *phrase);
 
 static void keepalive_timer(su_root_magic_t *root_magic,
 			    su_timer_t *t,
@@ -828,10 +833,6 @@ static int response_to_keepalive_options(outbound_t *ob,
 {
   int status = 408;
   char const *phrase = sip_408_Request_timeout;
-  int binding_check;
-  int challenged = 0, credentials = 0;
-  msg_t *_reqmsg = nta_outgoing_getrequest(orq);
-  sip_t *request = sip_object(_reqmsg); msg_destroy(_reqmsg);
 
   if (sip && sip->sip_status) {
     status = sip->sip_status->st_status;
@@ -842,8 +843,26 @@ static int response_to_keepalive_options(outbound_t *ob,
     /* This probably means that we are in trouble. whattodo, whattodo */
   }
 
-  if (status < 200)
-    return 0;
+  if (status >= 200) {
+    if (orq == ob->ob_keepalive.orq)
+      ob->ob_keepalive.orq = NULL;
+    process_response_to_keepalive_options(ob, orq, sip, status, phrase);
+    nta_outgoing_destroy(orq);
+  }
+
+  return 0;
+}
+
+static int process_response_to_keepalive_options(outbound_t *ob,
+						 nta_outgoing_t *orq,
+						 sip_t const *sip,
+						 int status,
+						 char const *phrase)
+{
+  int binding_check;
+  int challenged = 0, credentials = 0;
+  msg_t *_reqmsg = nta_outgoing_getrequest(orq);
+  sip_t *request = sip_object(_reqmsg); msg_destroy(_reqmsg);
 
   if (sip == NULL) {
     SU_DEBUG_3(("outbound(%p): keepalive %u %s\n", (void *)ob->ob_owner,
@@ -869,10 +888,6 @@ static int response_to_keepalive_options(outbound_t *ob,
   }
 
   binding_check = outbound_nat_detect(ob, request, sip);
-
-  if (orq == ob->ob_keepalive.orq)
-    ob->ob_keepalive.orq = NULL;
-  nta_outgoing_destroy(orq);
 
   if (binding_check > 1) {
     /* Bindings have changed */
