@@ -106,7 +106,7 @@ size_t increment_sdp_version(char buf[], size_t bsize,
   }
   else {
     fprintf(stderr, "increment_sdp_version: %s\n", 
-            sdp_parsing_error(p));
+            sdp_parsing_error(parser));
   }
 
   sdp_parser_free(parser);
