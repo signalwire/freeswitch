@@ -1120,6 +1120,34 @@ START_TEST(reinvite_too_many_retrys)
 END_TEST
 
 
+START_TEST(call_error_3_2_3)
+{
+  nua_handle_t *nh;
+  struct message *invite;
+
+  s2_case("3.2.3", "Re-INVITE failure", "Re-INVITE fails with 491 response");
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local),
+		  TAG_END());
+
+  invite_by_nua(nh, TAG_END());
+
+  nua_invite(nh, TAG_END());
+
+  fail_unless(s2_check_callstate(nua_callstate_calling));
+
+  invite = s2_wait_for_request(SIP_METHOD_INVITE);
+  fail_if(!invite);
+  s2_respond_to(invite, NULL, SIP_491_REQUEST_PENDING, TAG_END());
+  s2_free_message(invite);
+  fail_unless(s2_check_request(SIP_METHOD_ACK));
+  fail_unless(s2_check_event(nua_r_invite, 491));
+  /* Return to previous state */
+  fail_unless(s2_check_callstate(nua_callstate_ready));
+
+  bye_by_nua(nh, TAG_END());
+}
+END_TEST
+
 TCase *invite_error_tcase(void)
 {
   TCase *tc = tcase_create("3 - Call Errors");
@@ -1129,6 +1157,7 @@ TCase *invite_error_tcase(void)
     tcase_add_test(tc, too_many_retrys);
     tcase_add_test(tc, reinvite_forbidden);
     tcase_add_test(tc, reinvite_too_many_retrys);
+    tcase_add_test(tc, call_error_3_2_3);
     tcase_set_timeout(tc, 5);
   }
   return tc;
