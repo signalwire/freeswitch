@@ -203,8 +203,10 @@ if test -r $pidfile ; then
     kill $(cat $pidfile)
     rm $pidfile $zonefile $resolvfile $namedfile 2>/dev/null
     exit $exit
+else
+    echo "$0: cannot start named (check apparmor/selinux)"
+    exit 77
 fi
-exit $?
 
 else # not having BIND and portbind
 
