@@ -731,6 +731,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	const char *alt = NULL;
 	int eof = 0;
 	switch_size_t bread = 0;
+	int l16 = 0;
 
 	switch_channel_pre_answer(channel);
 
@@ -738,6 +739,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	timer_name = switch_channel_get_variable(channel, "timer_name");
 
 	read_codec = switch_core_session_get_read_codec(session);
+
+	if (!strcasecmp(read_codec->implementation->iananame, "l16")) {
+		l16++;
+	}
 
 	if (switch_strlen_zero(file) || !read_codec) {
 		status = SWITCH_STATUS_FALSE;
@@ -1143,12 +1148,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			write_frame.timestamp = timer.samplecount;
 		}
 #ifndef WIN32
-#if 0 // don't seem to need it, maybe only on mac?
-//#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
-		if (!asis) {
+		//#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+		if (!asis && l16) {
 			switch_swap_linear(write_frame.data, (int) write_frame.datalen / 2);
 		}
-#endif
+		//#endif
 #endif
 		if (fh->vol) {
 			switch_change_sln_volume(write_frame.data, write_frame.datalen / 2, fh->vol);
