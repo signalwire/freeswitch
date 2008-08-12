@@ -421,7 +421,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 
 				olen = mlen;
 				if (ringback.fh->resampler) {
-					olen *= ringback.fh->resampler->rfactor;
+					olen = (switch_size_t) (olen * ringback.fh->resampler->rfactor);
 				}
 				switch_core_file_read(ringback.fh, write_frame.data, &olen);
 
@@ -1220,7 +1220,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 							olen = mlen;
 							if (ringback.fh->resampler) {
-								olen *= ringback.fh->resampler->rfactor;
+								olen = (switch_size_t) (olen * ringback.fh->resampler->rfactor);
 							}
 							
 							switch_core_file_read(ringback.fh, write_frame.data, &olen);
