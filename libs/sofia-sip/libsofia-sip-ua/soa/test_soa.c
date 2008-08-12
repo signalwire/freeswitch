@@ -1188,6 +1188,109 @@ int test_codec_selection(struct context *ctx)
   END();
 }
 
+int test_media_mode(struct context *ctx)
+{
+  BEGIN();
+  int n;
+
+  soa_session_t *a, *b;
+
+  char const *offer = NONE, *answer = NONE;
+  isize_t offerlen = (isize_t)-1;
+  isize_t answerlen = (isize_t)-1;
+
+  su_home_t home[1] = { SU_HOME_INIT(home) };
+
+  char const a_caps[] = "m=audio 5008 RTP/AVP 0 8\r\n";
+  char const b_caps[] = "m=audio 5004 RTP/AVP 8 0\n";
+
+  TEST_1(a = soa_clone(ctx->a, ctx->root, ctx));
+  TEST_1(b = soa_clone(ctx->b, ctx->root, ctx));
+
+  TEST(soa_set_user_sdp(a, 0, a_caps, -1), 1);
+  TEST(soa_set_user_sdp(b, 0, b_caps, -1), 1);
+
+  n = soa_generate_offer(a, 1, test_completed); TEST(n, 0);
+  n = soa_get_local_sdp(a, NULL, &offer, &offerlen); TEST(n, 1);
+  TEST_1(offer != NULL && offer != NONE);
+
+  n = soa_set_remote_sdp(b, 0, offer, offerlen); TEST(n, 1);
+  n = soa_generate_answer(b, test_completed); TEST(n, 0);
+  TEST_1(soa_is_complete(b));
+  TEST(soa_activate(b, NULL), 0);
+
+  n = soa_get_local_sdp(b, NULL, &answer, &answerlen); TEST(n, 1);
+  TEST_1(answer != NULL && answer != NONE);
+
+  n = soa_set_remote_sdp(a, 0, answer, -1); TEST(n, 1);
+  n = soa_process_answer(a, test_completed); TEST(n, 0);
+  TEST_1(soa_is_complete(a));
+  TEST(soa_activate(a, NULL), 0);
+
+  TEST(soa_is_audio_active(a), SOA_ACTIVE_SENDRECV);
+  TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_SENDRECV);
+
+  /* 'A' will put call on hold */
+  offer = NONE;
+  TEST(soa_set_params(a, SOATAG_HOLD("*"), TAG_END()), 1);
+  TEST(soa_generate_offer(a, 1, test_completed), 0);
+  TEST(soa_get_local_sdp(a, NULL, &offer, &offerlen), 1);
+  TEST_1(offer != NULL && offer != NONE);
+  TEST_1(strstr(offer, "a=sendonly"));
+
+  TEST(soa_set_user_sdp(b, 0,
+			"m=audio 5004 RTP/AVP 8 0\n"
+			"a=inactive\n", -1), 1);
+  TEST(soa_set_remote_sdp(b, 0, offer, offerlen), 1);
+  TEST(soa_generate_answer(b, test_completed), 0);
+  TEST_1(soa_is_complete(b));
+  TEST(soa_activate(b, NULL), 0);
+  TEST(soa_get_local_sdp(b, NULL, &answer, &answerlen), 1);
+  TEST_1(answer != NULL && answer != NONE);
+  TEST_1(strstr(answer, "a=inactive"));
+  TEST(soa_set_remote_sdp(a, 0, answer, -1), 1);
+  TEST(soa_process_answer(a, test_completed), 0);
+  TEST(soa_activate(a, NULL), 0);
+
+  TEST(soa_is_audio_active(a), SOA_ACTIVE_INACTIVE);
+  TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_INACTIVE);
+
+  /* 'A' will retrieve call, 'B' will keep call on hold */
+  offer = NONE;
+  TEST(soa_set_params(a, SOATAG_HOLD(NULL), TAG_END()), 1);
+  TEST(soa_generate_offer(a, 1, test_completed), 0);
+  TEST(soa_get_local_sdp(a, NULL, &offer, &offerlen), 1);
+  TEST_1(offer != NULL && offer != NONE);
+  TEST_1(!strstr(offer, "a=sendonly"));
+
+  TEST(soa_set_user_sdp(b, 0,
+			"m=audio 5004 RTP/AVP 8 0\n"
+			"a=sendonly\n", -1), 1);
+  TEST(soa_set_remote_sdp(b, 0, offer, offerlen), 1);
+  TEST(soa_generate_answer(b, test_completed), 0);
+  TEST_1(soa_is_complete(b));
+  TEST(soa_activate(b, NULL), 0);
+  TEST(soa_get_local_sdp(b, NULL, &answer, &answerlen), 1);
+  TEST_1(answer != NULL && answer != NONE);
+  TEST_1(strstr(answer, "a=sendonly"));
+  TEST(soa_set_remote_sdp(a, 0, answer, -1), 1);
+  TEST(soa_process_answer(a, test_completed), 0);
+  TEST(soa_activate(a, NULL), 0);
+
+  TEST(soa_is_audio_active(a), SOA_ACTIVE_RECVONLY);
+  TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_RECVONLY);
+
+  TEST_VOID(soa_terminate(a, NULL));
+  TEST_VOID(soa_terminate(b, NULL));
+
+  TEST_VOID(soa_destroy(a));
+  TEST_VOID(soa_destroy(b));
+
+  su_home_deinit(home);
+
+  END();
+}
+
 int test_media_replace(struct context *ctx)
 {
   BEGIN();
@@ -1875,7 +1978,6 @@ int main(int argc, char *argv[])
   retval |= test_soa_tags(ctx); SINGLE_FAILURE_CHECK();
   retval |= test_init(ctx, argv + i); SINGLE_FAILURE_CHECK();
   if (retval == 0) {
-    retval |= test_media_replace2(ctx); SINGLE_FAILURE_CHECK();
 
     retval |= test_params(ctx); SINGLE_FAILURE_CHECK();
     retval |= test_static_offer_answer(ctx); SINGLE_FAILURE_CHECK();
@@ -1883,6 +1985,8 @@ int main(int argc, char *argv[])
     retval |= test_media_replace(ctx); SINGLE_FAILURE_CHECK();
     retval |= test_media_removal(ctx); SINGLE_FAILURE_CHECK();
     retval |= test_media_reject(ctx); SINGLE_FAILURE_CHECK();
+    retval |= test_media_replace2(ctx); SINGLE_FAILURE_CHECK();
+    retval |= test_media_mode(ctx); SINGLE_FAILURE_CHECK();
 
     retval |= test_asynch_offer_answer(ctx); SINGLE_FAILURE_CHECK();
   }
