@@ -102,6 +102,8 @@ char const s2_auth3_digest_str[] =
 
 char const s2_auth3_credentials[] = "Digest:\"s2test3\":abc:abc";
 
+int s2_nua_thread = 0;
+
 /* -- Delay scenarios --------------------------------------------------- */
 
 static unsigned long time_offset;
@@ -863,8 +865,6 @@ void s2_setup_base(char const *hostname)
 
   assert(s2->root != NULL);
 
-  su_root_threading(s2->root, 0);	/* disable multithreading */
-
   s2->local = sip_from_format(s2->home, "Bob <sip:bob@%s>",
 			     hostname ? hostname : "example.net");
   
@@ -1484,6 +1484,9 @@ nua_t *s2_nua_setup(tag_type_t tag, tag_value_t value, ...)
   s2_setup_logs(0);
   s2_setup_tport(NULL, TPTAG_LOG(0), TAG_END());
   assert(s2->contact);
+
+  /* enable/disable multithreading */
+  su_root_threading(s2->root, s2_nua_thread);
 
   s2_dns_domain("example.org", 1,
 		"s2", 1, s2->udp.contact->m_url,
