@@ -196,31 +196,31 @@ int tport_is_secondary(tport_t const *self)
 /** Test if transport has been registered to su_root_t */
 int tport_is_registered(tport_t const *self)
 {
-  return self->tp_index != 0;
+  return self && self->tp_index != 0;
 }
 
 /** Test if transport is stream. */
 int tport_is_stream(tport_t const *self)
 {
-  return self->tp_addrinfo->ai_socktype == SOCK_STREAM;
+  return self && self->tp_addrinfo->ai_socktype == SOCK_STREAM;
 }
  
 /** Test if transport is dgram. */
 int tport_is_dgram(tport_t const *self)
 {
-  return self->tp_addrinfo->ai_socktype == SOCK_DGRAM;
+  return self && self->tp_addrinfo->ai_socktype == SOCK_DGRAM;
 }
  
 /** Test if transport is udp. */
 int tport_is_udp(tport_t const *self)
 {
-  return self->tp_addrinfo->ai_protocol == IPPROTO_UDP;
+  return self && self->tp_addrinfo->ai_protocol == IPPROTO_UDP;
 }
  
 /** Test if transport is tcp. */
 int tport_is_tcp(tport_t const *self)
 {
-  return self->tp_addrinfo->ai_protocol == IPPROTO_TCP;
+  return self && self->tp_addrinfo->ai_protocol == IPPROTO_TCP;
 }
  
 /** Return 1 if transport is reliable, 0 otherwise.
@@ -242,7 +242,7 @@ int tport_is_reliable(tport_t const *self)
  */
 int tport_is_public(tport_t const *self)
 {
-  return self->tp_pri->pri_public;
+  return self && self->tp_pri->pri_public;
 }
 
 /** Return true if transport supports IPv4 */
