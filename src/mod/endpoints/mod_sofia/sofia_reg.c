@@ -414,6 +414,7 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const char *host, char *val, switch_size_t len)
 {
 	struct callback_t cbt = { 0 };
+	char sql[512] = "";
 
 	if (!user) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Called with null user!\n");
@@ -424,13 +425,13 @@ char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const c
 	cbt.len = len;
 
 	if (host) {
-		switch_snprintf(val, len, "select contact from sip_registrations where sip_user='%s' and sip_host='%s'", user, host);
+		switch_snprintf(sql, sizeof(sql), "select contact from sip_registrations where sip_user='%s' and sip_host='%s'", user, host);
 	} else {
-		switch_snprintf(val, len, "select contact from sip_registrations where sip_user='%s'", user);
+		switch_snprintf(sql, sizeof(sql), "select contact from sip_registrations where sip_user='%s'", user);
 	}
 
 
-	sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, val, sofia_reg_find_callback, &cbt);
+	sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, sofia_reg_find_callback, &cbt);
 
 
 	if (cbt.matches) {
