@@ -1273,6 +1273,11 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 			const char *var = switch_xml_attr_soft(param, "name");
 			const char *val = switch_xml_attr_soft(param, "value");
 
+			if (!strcasecmp(var, "sip-forbid-register") && switch_true(val)) {
+				ret = AUTH_FORBIDDEN;
+				goto end;
+			}
+
 			if (!strcasecmp(var, "password")) {
 				passwd = val;
 			}
@@ -1291,6 +1296,11 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		for (param = switch_xml_child(uparams, "param"); param; param = param->next) {
 			const char *var = switch_xml_attr_soft(param, "name");
 			const char *val = switch_xml_attr_soft(param, "value");
+
+			if (!strcasecmp(var, "sip-forbid-register") && switch_true(val)) {
+				ret = AUTH_FORBIDDEN;
+				goto end;
+			}
 
 			if (!strcasecmp(var, "password")) {
 				passwd = val;
