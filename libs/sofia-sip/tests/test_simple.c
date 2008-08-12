@@ -954,7 +954,10 @@ int test_subscribe_notify(struct context *ctx)
   TEST(e->data->e_status, 200);
   r_tags = e->data->e_tags;
   TEST_1(tl_find(r_tags, nutag_substate));
-  TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_terminated);
+  if (en1 == a->events->head)
+    TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_terminated);
+  else
+    TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_active);
   TEST_1(sip = sip_object(e->data->e_msg));
   TEST_1(sip->sip_expires);
   TEST_1(sip->sip_expires->ex_delta == 0);

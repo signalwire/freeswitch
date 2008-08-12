@@ -249,7 +249,7 @@ static int nua_subscribe_client_request(nua_client_request_t *cr,
   nua_dialog_usage_t *du = cr->cr_usage; 
   sip_time_t expires = 0;
 
-  if (cr->cr_event != nua_r_subscribe || !du || du->du_shutdown)
+  if (cr->cr_event == nua_r_destroy || !du || du->du_shutdown)
     cr->cr_terminating = 1;
 
   if (du) {
@@ -281,7 +281,7 @@ static int nua_subscribe_client_request(nua_client_request_t *cr,
 
     nua_dialog_usage_reset_refresh(du); /* during SUBSCRIBE transaction */
     
-    if (cr->cr_terminating)
+    if (cr->cr_terminating || cr->cr_event != nua_r_subscribe)
       expires = eu->eu_delta = 0;
     else if (sip->sip_expires)
       /* Use value specified by application or negotiated with Min-Expires */
