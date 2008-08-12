@@ -1882,6 +1882,31 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	}
 }
 
+
+/* fake chan_error */
+switch_endpoint_interface_t *error_endpoint_interface;
+static switch_call_cause_t error_outgoing_channel(switch_core_session_t *session,
+												 switch_event_t *var_event,
+												 switch_caller_profile_t *outbound_profile,
+												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags);
+switch_io_routines_t error_io_routines = {
+	/*.outgoing_channel */ error_outgoing_channel
+};
+
+static switch_call_cause_t error_outgoing_channel(switch_core_session_t *session,
+												 switch_event_t *var_event,
+												 switch_caller_profile_t *outbound_profile,
+												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
+{
+	switch_call_cause_t cause = switch_channel_str2cause(outbound_profile->destination_number);
+	if (cause == SWITCH_CAUSE_NONE) {
+		cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+	}
+
+	return cause;
+}
+
+
 /* fake chan_user */
 switch_endpoint_interface_t *user_endpoint_interface;
 static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
@@ -2188,6 +2213,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
+	error_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+	error_endpoint_interface->interface_name = "ERROR";
+	error_endpoint_interface->io_routines = &error_io_routines;
 
 	user_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	user_endpoint_interface->interface_name = "USER";

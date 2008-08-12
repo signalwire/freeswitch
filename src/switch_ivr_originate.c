@@ -542,11 +542,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	*bleg = NULL;
 
-	if (!strncasecmp(bridgeto, "error/", 6)) {
-		*cause = switch_channel_str2cause(bridgeto + 6);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
 	switch_zmalloc(write_frame.data, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
