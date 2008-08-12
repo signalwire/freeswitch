@@ -82,6 +82,14 @@ typedef struct {
   va_list ap;
 } ta_list;
 
+#if defined(va_copy)
+#define su_va_copy(dst, src) va_copy((dst), (src))
+#elif defined(__va_copy)
+#define su_va_copy(dst, src) __va_copy((dst), (src))
+#else
+#define su_va_copy(dst, src) (memcpy(&(dst), &(src), sizeof (va_list)))
+#endif
+
 /**Macro initializing a ta_list object.
  *
  * The ta_start() macro initializes @a ta for subsequent use by ta_args(),
@@ -143,7 +151,7 @@ typedef struct {
 	ta_start__tag != tag_null &&					\
 	ta_start__tag != tag_next) {					\
       va_list ta_start__ap;						\
-      va_copy(ta_start__ap, (ta).ap);					\
+      su_va_copy(ta_start__ap, (ta).ap);				\
       (ta).tl[1].t_tag = tag_next;					\
       (ta).tl[1].t_value = (tag_value_t)tl_vlist(ta_start__ap);		\
       va_end(ta_start__ap);						\
