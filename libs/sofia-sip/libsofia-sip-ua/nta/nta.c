@@ -7343,6 +7343,12 @@ outgoing_send_via(nta_outgoing_t *orq, tport_t *tp)
 
   orq->orq_tport = tport_ref(tp);
 
+  if (orq->orq_pending && tp != old_tp) {
+    tport_release(old_tp, orq->orq_pending,
+		  orq->orq_request, NULL, orq, 0);
+    orq->orq_pending = 0;
+  }
+
   if (old_tp) tport_unref(old_tp);
 
   if (outgoing_insert_via(orq, agent_tport_via(tp)) < 0) {
@@ -7441,6 +7447,12 @@ outgoing_send(nta_outgoing_t *orq, int retransmit)
     if (orq->orq_try_udp_instead)
       tag = tptag_mtu, value = 65535;
 
+    if (orq->orq_pending) {
+      tport_release(orq->orq_tport, orq->orq_pending,
+		    orq->orq_request, NULL, orq, 0);
+      orq->orq_pending = 0;
+    }
+
     tp = tport_tsend(orq->orq_tport, msg, tpn, 
 		     tag, value,
 		     IF_SIGCOMP_TPTAG_COMPARTMENT(cc)
@@ -7476,12 +7488,6 @@ outgoing_send(nta_outgoing_t *orq, int retransmit)
 	continue;
       }
     }
-
-    if (orq->orq_pending && orq->orq_tport)
-      tport_release(orq->orq_tport, orq->orq_pending, orq->orq_request, 
-		    NULL, orq, 0);
-
-    orq->orq_pending = 0;
 
     outgoing_tport_error(agent, orq, NULL, orq->orq_request, err);
 
@@ -7548,6 +7554,8 @@ outgoing_try_tcp_instead(nta_outgoing_t *orq)
   tport_t *tp;
   tp_name_t tpn[1];
 
+  assert(orq->orq_pending == 0);
+
   *tpn = *orq->orq_tpn;
   tpn->tpn_proto = "tcp";
   orq->orq_try_tcp_instead = 1;
@@ -7568,8 +7576,9 @@ outgoing_try_tcp_instead(nta_outgoing_t *orq)
     return;
   }
 
+  /* No TCP - try again with UDP without SIP MTU limit */
   tpn->tpn_proto = "udp";
-  orq->orq_try_udp_instead = 1;	/* Try again without SIP MTU limit */
+  orq->orq_try_udp_instead = 1;
 
   tp = tport_by_name(orq->orq_agent->sa_tports, tpn);
   if (tp && tp != orq->orq_tport) {
@@ -7586,6 +7595,12 @@ outgoing_try_udp_instead(nta_outgoing_t *orq)
 {
   tport_t *tp;
   tp_name_t tpn[1];
+
+  if (orq->orq_pending) {
+    tport_release(orq->orq_tport, orq->orq_pending,
+		  orq->orq_request, NULL, orq, 0);
+    orq->orq_pending = 0;
+  }
 
   *tpn = *orq->orq_tpn;
   tpn->tpn_proto = "udp";
