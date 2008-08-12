@@ -987,7 +987,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
   void *smime         = agent->sa_smime;
   uint32_t flags      = agent->sa_flags;
   int rport           = agent->sa_rport;
-  unsigned server_rport    = agent->sa_server_rport;
+  int server_rport    = agent->sa_server_rport;
   int tcp_rport       = agent->sa_tcp_rport;
   unsigned preload         = agent->sa_preload;
   unsigned threadpool      = agent->sa_tport_threadpool;
@@ -1178,6 +1178,8 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
 
   if (server_rport > 2)
     server_rport = 1;
+  else if (server_rport < 0)
+    server_rport = 1;
   agent->sa_server_rport = server_rport;
 
   agent->sa_bad_req_mask = bad_req_mask;
@@ -1295,7 +1297,7 @@ int agent_get_params(nta_agent_t *agent, tagi_t *tags)
 	     NTATAG_PRELOAD(agent->sa_preload),
 	     NTATAG_PROGRESS(agent->sa_progress),
 	     NTATAG_REL100(agent->sa_invite_100rel),
-	     NTATAG_SERVER_RPORT(agent->sa_server_rport),
+	     NTATAG_SERVER_RPORT((int)(agent->sa_server_rport)),
 	     NTATAG_SIGCOMP_ALGORITHM(agent->sa_algorithm),
 	     NTATAG_SIGCOMP_OPTIONS(agent->sa_sigcomp_options ?
 				    agent->sa_sigcomp_options :

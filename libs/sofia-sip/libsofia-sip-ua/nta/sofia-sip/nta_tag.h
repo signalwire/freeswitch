@@ -358,10 +358,10 @@ NTA_DLL extern tag_typedef_t ntatag_client_rport_ref;
 #define NTATAG_RPORT_REF(x) ntatag_client_rport_ref, tag_bool_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_server_rport;
-#define NTATAG_SERVER_RPORT(x) ntatag_server_rport, tag_uint_v((x))
+#define NTATAG_SERVER_RPORT(x) ntatag_server_rport, tag_int_v((x))
 
 NTA_DLL extern tag_typedef_t ntatag_server_rport_ref;
-#define NTATAG_SERVER_RPORT_REF(x) ntatag_server_rport_ref, tag_uint_vr(&(x))
+#define NTATAG_SERVER_RPORT_REF(x) ntatag_server_rport_ref, tag_int_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_tcp_rport;
 #define NTATAG_TCP_RPORT(x) ntatag_tcp_rport, tag_bool_v((x))

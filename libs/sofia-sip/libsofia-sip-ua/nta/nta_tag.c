@@ -1329,12 +1329,13 @@ tag_typedef_t ntatag_client_rport = BOOLTAG_TYPEDEF(client_rport);
  *          or false (zero or NULL pointer)
  *
  * @par Values
- *    - true - use "rport" parameter (default)
- *    - false - do not use "rport" parameterx
+ *    - 2 - add "rport" parameter even if was not present in request
+ *    - 1 - use "rport" parameter (default)
+ *    - 0 - do not use "rport" parameter
  *
  * @sa @RFC3581, NTATAG_CLIENT_RPORT(), NTATAG_TCP_RPORT(), @Via
  */
-tag_typedef_t ntatag_server_rport = UINTTAG_TYPEDEF(server_rport);
+tag_typedef_t ntatag_server_rport = INTTAG_TYPEDEF(server_rport);
 
 
 /**@def NTATAG_TCP_RPORT(x)
