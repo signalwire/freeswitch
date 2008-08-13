@@ -1274,7 +1274,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 			if ((argv[1]) && (profile = sofia_glue_find_profile(argv[1]))) {
 				stream->write_function(stream, "%s\n", line);
 				stream->write_function(stream, "Name          \t\t%s\n", switch_str_nil(argv[1]));
-				stream->write_function(stream, "Domain Name   \t\t%s\n", switch_str_nil(profile->domain_name));
+				stream->write_function(stream, "Domain Name   \t\t%s\n", profile->domain_name ? profile->domain_name : "N/A");
 				if (strcasecmp(argv[1], profile->name)) {
 					stream->write_function(stream, "Alias Of      \t\t%s\n", switch_str_nil(profile->name));
 				}
@@ -1296,7 +1296,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					stream->write_function(stream, "TLS-URL      \t\t%s\n", switch_str_nil(profile->tls_url));
 					stream->write_function(stream, "TLS-BIND-URL      \t%s\n", switch_str_nil(profile->tls_bindurl));
 				}
-				stream->write_function(stream, "HOLD-MUSIC    \t\t%s\n", switch_strlen_zero(profile->hold_music) ? "NONE" : profile->hold_music);
+				stream->write_function(stream, "HOLD-MUSIC    \t\t%s\n", switch_strlen_zero(profile->hold_music) ? "N/A" : profile->hold_music);
 				stream->write_function(stream, "CODECS        \t\t%s\n", switch_str_nil(profile->codec_string));
 				stream->write_function(stream, "TEL-EVENT     \t\t%d\n", profile->te);
 				if (profile->dtmf_type == DTMF_2833) {

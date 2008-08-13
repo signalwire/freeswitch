@@ -994,6 +994,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 	if ((profiles = switch_xml_child(cfg, "profiles"))) {
 		for (xprofile = switch_xml_child(profiles, "profile"); xprofile; xprofile = xprofile->next) {
 			char *xprofilename = (char *) switch_xml_attr_soft(xprofile, "name");
+			char *xprofiledomain = (char *) switch_xml_attr(xprofile, "domain");
 
 			if (strcasecmp(profile->name, xprofilename)) {
 				continue;
@@ -1003,6 +1004,10 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 			profile->rport_level = 1; /* default setting */
 			profile->acl_count = 0;
 			profile->pflags |= PFLAG_STUN_ENABLED;
+
+			if (xprofiledomain) {
+				profile->domain_name = switch_core_strdup(profile->pool, xprofiledomain);
+			}
 
 			if ((settings = switch_xml_child(xprofile, "settings"))) {
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -1377,8 +1382,6 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 				if (xprofiledomain) {
 					profile->domain_name = switch_core_strdup(profile->pool, xprofiledomain);
-				} else {
-					profile->domain_name = profile->name;
 				}
 
 				profile->dbname = switch_core_strdup(profile->pool, url);

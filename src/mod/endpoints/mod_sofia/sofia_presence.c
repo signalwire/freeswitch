@@ -248,7 +248,7 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 		}
 	}
 
-	if (profile->domain_name && profile->domain_name != host) {
+	if (profile->domain_name && strcasecmp(profile->domain_name, host)) {
 		host = profile->domain_name;
 	}
 
