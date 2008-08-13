@@ -282,6 +282,56 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER) ? "yes" : "no");
 }
 
+SWITCH_DECLARE(switch_status_t) switch_caller_extension_clone(switch_caller_extension_t **new_ext, switch_caller_extension_t *orig, 
+															  switch_memory_pool_t *pool)
+{
+	switch_caller_extension_t *caller_extension = NULL;
+	switch_caller_application_t *caller_application = NULL, *ap = NULL;
+
+	*new_ext = NULL;
+
+	if ((caller_extension = switch_core_alloc(pool, sizeof(switch_caller_extension_t))) != 0) {
+		int match = 0;
+
+        caller_extension->extension_name = switch_core_strdup(pool, orig->extension_name);
+        caller_extension->extension_number = switch_core_strdup(pool, orig->extension_number);
+
+		for(ap = orig->applications; ap; ap = ap->next) {
+
+			if (!match) {
+				if (ap == orig->current_application) {
+					match++;
+				} else {
+					continue;
+				}
+			}
+			caller_application = switch_core_alloc(pool, sizeof(switch_caller_application_t));
+			
+			caller_application->application_name = switch_core_strdup(pool, ap->application_name);
+			caller_application->application_data = switch_core_strdup(pool, ap->application_data);
+
+			if (!caller_extension->applications) {
+				caller_extension->applications = caller_application;
+			} else if (caller_extension->last_application) {
+				caller_extension->last_application->next = caller_application;
+			}
+			
+			caller_extension->last_application = caller_application;
+
+			if (ap == orig->current_application) {
+				caller_extension->current_application = caller_application;
+			}
+		}
+
+		*new_ext = caller_extension;
+
+		return SWITCH_STATUS_SUCCESS;
+    }
+	
+
+	return SWITCH_STATUS_MEMERR;
+}
+
 SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(switch_core_session_t *session, const char *extension_name,
 																		const char *extension_number)
 {

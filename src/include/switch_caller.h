@@ -142,6 +142,9 @@ struct switch_caller_extension {
 SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(_In_ switch_core_session_t *session,
 																		_In_z_ const char *extension_name, _In_z_ const char *extension_number);
 
+SWITCH_DECLARE(switch_status_t) switch_caller_extension_clone(switch_caller_extension_t **new_ext, switch_caller_extension_t *orig, 
+															  switch_memory_pool_t *pool);
+
 /*!
   \brief Add an application (instruction) to the given extension
   \param session session associated with the extension (bound by scope)

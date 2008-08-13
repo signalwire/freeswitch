@@ -1147,6 +1147,9 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel
 		caller_profile->times->progress_media = channel->caller_profile->times->progress_media;
 		caller_profile->times->created = channel->caller_profile->times->created;
 		caller_profile->times->hungup = channel->caller_profile->times->hungup;
+		if (channel->caller_profile->caller_extension) {
+			switch_caller_extension_clone(&caller_profile->caller_extension, channel->caller_profile->caller_extension, caller_profile->pool);
+		}
 	} else {
 		caller_profile->times->created = switch_timestamp_now();
 	}
