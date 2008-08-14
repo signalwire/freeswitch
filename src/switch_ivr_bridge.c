@@ -522,6 +522,9 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 		}
 
 		switch_ivr_multi_threaded_bridge(session, other_session, NULL, NULL, NULL);
+		if (switch_channel_get_state(channel) < CS_HANGUP) {
+			switch_channel_set_state(channel, CS_EXECUTE);
+		}
 		switch_core_session_rwunlock(other_session);
 	} else {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -819,12 +822,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			 switch_true(switch_channel_get_variable(caller_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE)))) {
 			switch_channel_hangup(caller_channel, switch_channel_get_cause(peer_channel));
 		}
-	}
-
-	state = switch_channel_get_state(caller_channel);
-
-	if (state == CS_SOFT_EXECUTE || state == CS_PARK) {
-		switch_channel_set_state(caller_channel, CS_EXECUTE);
 	}
 
 	return status;
