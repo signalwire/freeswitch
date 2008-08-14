@@ -398,9 +398,9 @@ void nua_dialog_usage_remove_at(nua_owner_t *own,
     for (sr = ds->ds_sr; sr; sr = sr_next) {
       sr_next = sr->sr_next;
       if (sr->sr_usage == du) {
+	sr->sr_usage = NULL;
 	if (sr != sr0)
 	  nua_server_request_destroy(sr);
-	sr->sr_usage = NULL;
       }
     }
 
