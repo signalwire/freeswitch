@@ -1330,6 +1330,8 @@ zap_status_t pika_destroy(void)
 	if ((status = PKH_SYSTEM_Close(globals.system_handle)) != PK_SUCCESS) {
 		zap_log(ZAP_LOG_ERROR, "Error: PKH_SYSTEM_Close failed(%s)!\n",
 				PKH_ERROR_GetText(status, error_text, sizeof(error_text)));
+	} else {
+		zap_log(ZAP_LOG_INFO, "Closing system handle\n");
 	}
 
 	hashtable_destroy(globals.profile_hash, 0, 1);
