@@ -197,6 +197,7 @@ static void signal_call_state_change(nua_handle_t *nh,
 				      int status, char const *phrase,
 				      enum nua_callstate next_state);
 
+static int nua_invite_client_should_ack(nua_client_request_t const *cr);
 static int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags);
 static int nua_invite_client_complete(nua_client_request_t *cr);
 
@@ -247,15 +248,6 @@ void nua_session_usage_remove(nua_handle_t *nh,
   nua_client_request_t *cr, *cr_next;
   nua_server_request_t *sr;
 
-  cr = du->du_cr;
-
-  if (cr != cr0 && cr && cr->cr_orq && cr->cr_status >= 200 && 
-      cr->cr_method == sip_method_invite) {
-    ss->ss_reporting = 1;
-    nua_invite_client_ack(cr, NULL);
-    ss->ss_reporting = 0;
-  }
-
   /* Destroy queued INVITE transactions */
   for (cr = ds->ds_cr; cr; cr = cr_next) {
     cr_next = cr->cr_next;
@@ -265,6 +257,13 @@ void nua_session_usage_remove(nua_handle_t *nh,
 
     if (cr == cr0)
       continue;
+
+    if (nua_invite_client_should_ack(cr)) {
+      ss->ss_reporting = 1;
+      nua_invite_client_ack(cr, NULL);
+      ss->ss_reporting = 0;
+      nua_client_request_clean(cr);
+    }
 
     if (cr == du->du_cr && cr->cr_orq)
       continue;
@@ -1180,6 +1179,8 @@ int nua_stack_ack(nua_t *nua, nua_handle_t *nh, nua_event_t e,
 
   error = nua_invite_client_ack(cr, tags);
 
+  nua_client_request_clean(cr);
+
   if (error < 0) {
     if (ss->ss_reason == NULL)
       ss->ss_reason = "SIP;cause=500;text=\"Internal Error\"";
@@ -1229,7 +1230,6 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
 
   assert(cr->cr_orq);
   assert(cr->cr_method == sip_method_invite);
-
 
   if (!ds->ds_leg) {
     /* XXX - fix nua_dialog_usage_remove_at() instead! */
@@ -1366,10 +1366,18 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
   if (error == -1)
     msg_destroy(msg);
 
-  nta_outgoing_destroy(cr->cr_orq), cr->cr_orq = NULL;
   nua_client_request_remove(cr);
+  cr->cr_acked = 1;		/* ... or we have at least tried */
   
   return error;
+}
+
+static int
+nua_invite_client_should_ack(nua_client_request_t const *cr)
+{
+  return
+    cr && cr->cr_orq && !cr->cr_acked &&
+    200 <= cr->cr_status && cr->cr_status < 300;
 }
 
 /** Complete client request */
@@ -1379,7 +1387,7 @@ static int nua_invite_client_complete(nua_client_request_t *cr)
     /* Xyzzy */;
   else if (cr->cr_status < 200)
     nta_outgoing_cancel(cr->cr_orq);
-  else
+  else if (cr->cr_status < 300 && !cr->cr_acked)
     nua_invite_client_ack(cr, NULL);
 
   return 0;
@@ -1560,10 +1568,13 @@ static int nua_session_usage_shutdown(nua_handle_t *nh,
   case nua_callstate_completed:
   case nua_callstate_ready:
     if (cri && cri->cr_orq) {
-      if (cri->cr_status < 200)
+      if (cri->cr_status < 200) {
 	nua_client_create(nh, nua_r_cancel, &nua_cancel_client_methods, NULL);
-      else if (cri->cr_status < 300)
+      }
+      else if (cri->cr_status < 300 && !cri->cr_acked) {
 	nua_invite_client_ack(cri, NULL);
+	nua_client_request_clean(cri);
+      }
     }
     if (nua_client_create(nh, nua_r_bye, &nua_bye_client_methods, NULL) != 0)
       break;
@@ -1796,7 +1807,7 @@ static int nua_prack_client_report(nua_client_request_t *cr,
 
     if (status < 200)
       ;
-    else if (du->du_cr && du->du_cr->cr_orq && du->du_cr->cr_status >= 200) {
+    else if (nua_invite_client_should_ack(du->du_cr)) {
       /* There is an un-ACK-ed INVITE there */
       assert(du->du_cr->cr_method == sip_method_invite);
       if (NH_PGET(nh, auto_ack) || 
@@ -1807,6 +1818,7 @@ static int nua_prack_client_report(nua_client_request_t *cr,
 	  next_state = nua_callstate_ready;
 	else
 	  next_state = nua_callstate_terminating;
+	nua_client_request_clean(du->du_cr);
       }
     }
 
@@ -3300,7 +3312,7 @@ static int nua_update_client_report(nua_client_request_t *cr,
 
     if (status < 200)
       ;
-    else if (du->du_cr && du->du_cr->cr_orq && du->du_cr->cr_status >= 200) {
+    else if (nua_invite_client_should_ack(du->du_cr)) {
       /* There is an un-ACK-ed INVITE there */
       assert(du->du_cr->cr_method == sip_method_invite);
 
@@ -3311,6 +3323,7 @@ static int nua_update_client_report(nua_client_request_t *cr,
 	  next_state = nua_callstate_ready;
 	else
 	  next_state = nua_callstate_terminating;
+	nua_client_request_clean(du->du_cr);
       }
     }
 

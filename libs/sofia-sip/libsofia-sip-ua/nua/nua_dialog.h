@@ -296,6 +296,7 @@ struct nua_client_request
   unsigned cr_dialog:1;		/**< Request can initiate dialog */
 
   /* Current state */
+  unsigned cr_acked:1;		/**< Final response to the request has been ACKed */
   unsigned cr_waiting:1;	/**< Request is waiting */
   unsigned cr_challenged:1;	/**< Request was challenged */
   unsigned cr_wait_for_cred:1;	/**< Request is pending authentication */
@@ -523,7 +524,6 @@ void *nua_private_client_request(nua_client_request_t const *cr)
 }
 
 void nua_client_request_complete(nua_client_request_t *);
-
 void nua_client_request_destroy(nua_client_request_t *);
 
 int nua_client_request_queue(nua_client_request_t *cr);
@@ -533,8 +533,8 @@ su_inline int nua_client_is_queued(nua_client_request_t const *cr)
   return cr && cr->cr_prev;
 }
 
-nua_client_request_t *nua_client_request_remove(nua_client_request_t *cr);
-
+void nua_client_request_remove(nua_client_request_t *cr);
+void nua_client_request_clean(nua_client_request_t *cr);
 int nua_client_bind(nua_client_request_t *cr, nua_dialog_usage_t *du);
 
 su_inline int nua_client_is_bound(nua_client_request_t const *cr)

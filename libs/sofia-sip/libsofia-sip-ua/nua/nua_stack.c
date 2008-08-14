@@ -2092,13 +2092,17 @@ int nua_client_request_queue(nua_client_request_t *cr)
   return queued;
 }
 
-nua_client_request_t *nua_client_request_remove(nua_client_request_t *cr)
+void nua_client_request_remove(nua_client_request_t *cr)
 {
   if (cr->cr_prev)
     if ((*cr->cr_prev = cr->cr_next))
       cr->cr_next->cr_prev = cr->cr_prev;
   cr->cr_prev = NULL, cr->cr_next = NULL;
-  return cr;
+}
+
+void nua_client_request_clean(nua_client_request_t *cr)
+{
+  nta_outgoing_destroy(cr->cr_orq), cr->cr_orq = NULL, cr->cr_acked = 0;
 }
 
 void nua_client_request_complete(nua_client_request_t *cr)
@@ -3106,13 +3110,13 @@ int nua_base_client_response(nua_client_request_t *cr,
 
   if (status < 200 ||
       /* Un-ACKed 2XX response to INVITE */
-      (method == sip_method_invite && status < 300 && cr->cr_orq)) {
+      (method == sip_method_invite && status < 300 && !cr->cr_acked)) {
     cr->cr_reporting = 0, nh->nh_ds->ds_reporting = 0;
     return 1;
   }
 
   if (cr->cr_orq)
-    nta_outgoing_destroy(cr->cr_orq), cr->cr_orq = NULL;
+    nta_outgoing_destroy(cr->cr_orq), cr->cr_orq = NULL, cr->cr_acked = 0;
 
   du = cr->cr_usage;
 
