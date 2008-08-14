@@ -139,7 +139,17 @@ static int complete_response(msg_t *response,
 			     int status, char const *phrase, 
 			     msg_t *request);
 
-#define IF_SIGCOMP_TPTAG_COMPARTMENT(cc)     TAG_IF(cc, TPTAG_COMPARTMENT(cc)),
+static int mreply(nta_agent_t *agent,
+		  msg_t *reply,
+		  int status, char const *phrase,
+		  msg_t *req_msg,
+		  tport_t *tport,
+		  int incomplete,
+		  int sdwn_after,
+		  char const *to_tag,
+		  tag_type_t tag, tag_value_t value, ...);
+
+#define IF_SIGCOMP_TPTAG_COMPARTMENT(cc)     TAG_IF(cc && cc != NONE, TPTAG_COMPARTMENT(cc)),
 #define IF_SIGCOMP_TPTAG_COMPARTMENT_REF(cc) TPTAG_COMPARTMENT_REF(cc),
 
 struct sigcomp_compartment;
@@ -2301,11 +2311,9 @@ void agent_recv_request(nta_agent_t *agent,
     SU_DEBUG_5(("nta: %s (%u) is %s\n", 
 		method_name, cseq, sip_413_Request_too_large));
     agent->sa_stats->as_bad_request++;
-    nta_msg_treply(agent, msg, SIP_413_REQUEST_TOO_LARGE,
-		   NTATAG_TPORT(tport),
-		   NTATAG_INCOMPLETE(1),		   
-		   TPTAG_SDWN_AFTER(stream),
-		   TAG_END());
+    mreply(agent, NULL, SIP_413_REQUEST_TOO_LARGE, msg,
+	   tport, 1, stream, NULL,
+	   TAG_END());
     return;
   }
 
@@ -2346,25 +2354,19 @@ void agent_recv_request(nta_agent_t *agent,
 
     if (sip->sip_via && method != sip_method_ack) {
       msg_t *reply = nta_msg_create(agent, 0);
-      
-      if (reply) {
-	agent_check_request_via(agent, msg, sip, sip->sip_via, tport);
 
-	if (badname)
-	  phrase = su_sprintf(msg_home(reply), "Bad %s Header", badname);
-	else
-	  phrase = sip_400_Bad_request;
+      agent_check_request_via(agent, msg, sip, sip->sip_via, tport);
 
-	SU_DEBUG_5(("nta: %s (%u) is %s\n", method_name, cseq, phrase));
+      if (badname && reply)
+	phrase = su_sprintf(msg_home(reply), "Bad %s Header", badname);
+      else
+	phrase = sip_400_Bad_request;
+
+      SU_DEBUG_5(("nta: %s (%u) is %s\n", method_name, cseq, phrase));
 	
-	nta_msg_mreply(agent, reply, sip_object(reply),
-		       400, phrase,
-		       msg,
-		       NTATAG_TPORT(tport), 
-		       NTATAG_INCOMPLETE(1), 
-		       TPTAG_SDWN_AFTER(stream),
-		       TAG_END());
-      }
+      mreply(agent, reply, 400, phrase, msg,
+	     tport, 1, stream, NULL,
+	     TAG_END());
     }
     else {
       msg_destroy(msg);
@@ -2382,10 +2384,9 @@ void agent_recv_request(nta_agent_t *agent,
     SU_DEBUG_5(("nta: bad version %s for %s (%u)\n",
 		sip->sip_request->rq_version, method_name, cseq));
 
-    nta_msg_treply(agent, msg, SIP_505_VERSION_NOT_SUPPORTED,
-		   NTATAG_TPORT(tport), 
-		   TPTAG_SDWN_AFTER(stream),
-		   TAG_END());
+    mreply(agent, NULL, SIP_505_VERSION_NOT_SUPPORTED, msg,
+	   tport, 0, stream, NULL,
+	   TAG_END());
 
     return;
   }
@@ -2475,9 +2476,9 @@ void agent_recv_request(nta_agent_t *agent,
 	agent->sa_in.proceeding->q_length >= agent->sa_max_proceeding) {
       SU_DEBUG_5(("nta: proceeding queue full for %s (%u)\n",
 		  method_name, cseq));
-      nta_msg_treply(agent, msg, SIP_503_SERVICE_UNAVAILABLE,
-		     NTATAG_TPORT(tport),
-		     TAG_END());
+      mreply(agent, NULL, SIP_503_SERVICE_UNAVAILABLE, msg,
+	     tport, 0, 0, NULL,
+	     TAG_END());
       return;
     }
     else {
@@ -2499,9 +2500,9 @@ void agent_recv_request(nta_agent_t *agent,
 		method_name, cseq, 
 		"not processed by application: returning 501"));
     if (method != sip_method_ack)
-      nta_msg_treply(agent, msg, SIP_501_NOT_IMPLEMENTED,
-		     NTATAG_TPORT(tport),
-		     TAG_END());
+      mreply(agent, NULL, SIP_501_NOT_IMPLEMENTED, msg,
+	     tport, 0, 0, NULL,
+	     TAG_END());
     else
       msg_destroy(msg);
   }
@@ -3007,8 +3008,9 @@ int nta_msg_treply(nta_agent_t *agent,
 
   ta_start(ta, tag, value);
 
-  retval = nta_msg_mreply(agent, NULL, NULL, status, phrase, req_msg, 
-			  ta_tags(ta));
+  retval = mreply(agent, NULL, status, phrase, req_msg,
+		  NULL, 0, 0, NULL,
+		  ta_tags(ta));
   ta_end(ta);
 
   return retval;
@@ -3026,13 +3028,36 @@ int nta_msg_mreply(nta_agent_t *agent,
 		   msg_t *req_msg,
 		   tag_type_t tag, tag_value_t value, ...)
 {
+  int retval = -1;
   ta_list ta;
+
+  ta_start(ta, tag, value);
+
+  retval = mreply(agent, reply, status, phrase, req_msg,
+		  NULL, 0, 0, NULL,
+		  ta_tags(ta));
+  ta_end(ta);
+
+  return retval;
+}
+
+static
+int mreply(nta_agent_t *agent,
+	   msg_t *reply,
+	   int status, char const *phrase,
+	   msg_t *req_msg,
+	   tport_t *tport,
+	   int incomplete,
+	   int sdwn_after,
+	   char const *to_tag,
+	   tag_type_t tag, tag_value_t value, ...)
+{
+  ta_list ta;
+  sip_t *sip;
+  int *use_rport = NULL;
+  int retry_without_rport = 0;
   tp_name_t tpn[1];
   int retval = -1;
-  tport_t *tport = NULL;
-  struct sigcomp_compartment *cc = NONE;
-  int *use_rport = NULL;
-  int retry_without_rport = 0, incomplete = 0;
 
   if (!agent)
     return -1;
@@ -3042,20 +3067,15 @@ int nta_msg_mreply(nta_agent_t *agent,
 
   ta_start(ta, tag, value);
 
-  tl_gets(ta_args(ta),
-	  NTATAG_TPORT_REF(tport),
-	  NTATAG_INCOMPLETE_REF(incomplete),
-	  TPTAG_COMPARTMENT_REF(cc),
-	  /* XXX - should also check ntatag_sigcomp_close() */
-	  TAG_END());
+  tl_gets(ta_args(ta), NTATAG_TPORT_REF(tport), TAG_END());
 
   if (reply == NULL) {
     reply = nta_msg_create(agent, 0);
-    sip = sip_object(reply);
   }
+  sip = sip_object(reply);
 
   if (!sip) {
-    SU_DEBUG_3(("%s: no msg\n", __func__));
+    SU_DEBUG_3(("%s: cannot create response msg\n", __func__));
   }
   else if (sip_add_tl(reply, sip, ta_tags(ta)) < 0) {
     SU_DEBUG_3(("%s: cannot add user headers\n", __func__));
@@ -3066,15 +3086,19 @@ int nta_msg_mreply(nta_agent_t *agent,
   }
   else if (sip->sip_status && sip->sip_status->st_status > 100 &&
 	   sip->sip_to && !sip->sip_to->a_tag &&
-	   sip->sip_cseq && sip->sip_cseq->cs_method != sip_method_cancel &&
-	   sip_to_tag(msg_home(reply), sip->sip_to,
-		      nta_agent_newtag(msg_home(reply), "tag=%s", agent)) < 0) {
+	   (to_tag == NONE ? 0 :
+	    to_tag != NULL
+	    ? sip_to_tag(msg_home(reply), sip->sip_to, to_tag) < 0
+	    : sip_to_tag(msg_home(reply), sip->sip_to,
+			 nta_agent_newtag(msg_home(reply), "tag=%s", agent)) < 0)) {
     SU_DEBUG_3(("%s: cannot add To tag\n", __func__));
   }
   else if (nta_tpn_by_via(tpn, sip->sip_via, use_rport) < 0) {
     SU_DEBUG_3(("%s: no Via\n", __func__));
   }
   else {
+    struct sigcomp_compartment *cc = NONE;
+
     if (tport == NULL)
       tport = tport_delivered_by(agent->sa_tports, req_msg);
 
@@ -3091,6 +3115,9 @@ int nta_msg_mreply(nta_agent_t *agent,
       tpn->tpn_port = sip_via_port(sip->sip_via, NULL);
 
     if (tport && tpn->tpn_comp) {
+      tl_gets(ta_args(ta), TPTAG_COMPARTMENT_REF(cc),
+	      /* XXX - should also check ntatag_sigcomp_close() */
+	      TAG_END());
       if (cc == NONE)
 	cc = agent_compression_compartment(agent, tport, tpn, -1);
 
@@ -3102,7 +3129,9 @@ int nta_msg_mreply(nta_agent_t *agent,
 
     if (tport_tsend(tport, reply, tpn, 
 		    IF_SIGCOMP_TPTAG_COMPARTMENT(cc)
-		    TPTAG_MTU(INT_MAX), ta_tags(ta))) {
+		    TPTAG_MTU(INT_MAX),
+		    TPTAG_SDWN_AFTER(sdwn_after),
+		    ta_tags(ta))) {
       agent->sa_stats->as_sent_msg++;
       agent->sa_stats->as_sent_response++;
       retval = 0;			/* Success! */
@@ -4153,20 +4182,18 @@ void leg_recv(nta_leg_t *leg, msg_t *msg, sip_t *sip, tport_t *tport)
 
   /* RFC-3262 section 3 (page 4) */
   if (agent->sa_is_a_uas && method == sip_method_prack) {
-    nta_msg_treply(agent, msg,
-		   481, "No such response", 
-		   NTATAG_TPORT(tport),
-		   TAG_END());
+    mreply(agent, NULL, 481, "No such response", msg,
+	   tport, 0, 0, NULL,
+	   TAG_END());
     return;
   }
 
   if (!(irq = incoming_create(agent, msg, sip, tport, tag))) {
     SU_DEBUG_3(("nta: leg_recv(%p): cannot create transaction for %s\n",
 		(void *)leg, method_name));
-    nta_msg_treply(agent, msg,
-		   SIP_500_INTERNAL_SERVER_ERROR,
-		   NTATAG_TPORT(tport),
-		   TAG_END());
+    mreply(agent, NULL, SIP_500_INTERNAL_SERVER_ERROR, msg,
+	   tport, 0, 0, NULL,
+	   TAG_END());
     return;
   }
 
@@ -5532,19 +5559,23 @@ int incoming_cancel(nta_incoming_t *irq, msg_t *msg, sip_t *sip,
 {
   nta_agent_t *agent = irq->irq_agent;
 
-  /* According to the spec, this INVITE has been destroyed */
+  /* According to the RFC 3261, this INVITE has been destroyed */
   if (irq->irq_method == sip_method_invite && 
       200 <= irq->irq_status && irq->irq_status < 300) {
-    nta_msg_treply(agent, msg, SIP_481_NO_TRANSACTION, 
-		   NTATAG_TPORT(tport),
-		   TAG_END());
+    mreply(agent, NULL, SIP_481_NO_TRANSACTION, msg,
+	   tport, 0, 0, NULL,
+	   TAG_END());
     return 0;
   }
 
-  nta_msg_treply(agent, msg_ref_create(msg), SIP_200_OK, 
-		 NTATAG_TPORT(tport),
-		 SIPTAG_TO(irq->irq_to),
-		 TAG_END());
+  /* UAS MUST use same tag in final response to CANCEL and INVITE */
+  if (agent->sa_is_a_uas && irq->irq_tag == NULL) {
+    nta_incoming_tag(irq, NULL);
+  }
+
+  mreply(agent, NULL, SIP_200_OK, msg_ref_create(msg),
+	 tport, 0, 0, irq->irq_tag,
+	 TAG_END());
 
   /* We have already sent final response */
   if (irq->irq_completed || irq->irq_method != sip_method_invite) {
@@ -5585,9 +5616,9 @@ void request_merge(nta_agent_t *agent,
   } else {
     SU_DEBUG_3(("nta: request_merge(): cannot create transaction for %s\n",
 		sip->sip_request->rq_method_name));
-    nta_msg_treply(agent, msg, 482, "Request merged", 
-		   NTATAG_TPORT(tport),
-		   TAG_END());
+    mreply(agent, NULL, 482, "Request merged", msg,
+	   tport, 0, 0, NULL,
+	   TAG_END());
   }
 }
 
@@ -10251,10 +10282,10 @@ int reliable_recv(nta_reliable_t *rel, msg_t *msg, sip_t *sip, tport_t *tp)
 
   pr_irq = incoming_create(irq->irq_agent, msg, sip, tp, irq->irq_tag);
   if (!pr_irq) {
-    nta_msg_treply(irq->irq_agent, msg,
-		   SIP_500_INTERNAL_SERVER_ERROR, 
-		   NTATAG_TPORT(tp),
-		   TAG_END());
+    mreply(irq->irq_agent, NULL,
+	   SIP_500_INTERNAL_SERVER_ERROR, msg,
+	   tp, 0, 0, NULL,
+	   TAG_END());
     return 0;
   }
 
