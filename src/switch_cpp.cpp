@@ -1070,12 +1070,10 @@ SWITCH_DECLARE(void) bridge(CoreSession &session_a, CoreSession &session_b)
 
 		if (switch_channel_ready(channel_a) && switch_channel_ready(channel_b)) {
 			session_a.begin_allow_threads();
-			if (!switch_channel_test_flag(channel_a, CF_ANSWERED)) {
-				switch_channel_answer(channel_a);
+			if (!switch_channel_media_ready(channel_a)) {
+				switch_channel_pre_answer(channel_a);
 			}
-			if (!switch_channel_test_flag(channel_b, CF_ANSWERED)) {
-				switch_channel_answer(channel_b);
-			}
+
 			if (switch_channel_ready(channel_a) && switch_channel_ready(channel_b)) {
 				args = session_a.get_cb_args();  // get the cb_args data structure for session a
 				dtmf_func = args.input_callback;   // get the call back function
