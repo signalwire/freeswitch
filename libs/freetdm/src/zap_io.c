@@ -2102,6 +2102,8 @@ zap_status_t zap_global_init(void)
 {
 	int modcount;
 
+	memset(&globals, 0, sizeof(globals));
+
 	time_init();
 	zap_isdn_init();
 	zap_ss7_boost_init();
@@ -2224,6 +2226,8 @@ zap_status_t zap_global_destroy(void)
 	hashtable_destroy(globals.interface_hash, 0, 0);
 	zap_mutex_unlock(globals.mutex);
 	zap_mutex_destroy(&globals.mutex);
+
+	memset(&globals, 0, sizeof(globals));
 	return ZAP_SUCCESS;
 }
 
