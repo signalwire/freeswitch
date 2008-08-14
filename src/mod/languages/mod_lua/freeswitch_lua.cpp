@@ -158,6 +158,16 @@ void Session::setHangupHook(char *func, char *arg)
 	}
 }
 
+void Session::unsetInputCallback(void)
+{
+	sanity_check_noreturn;
+	switch_safe_free(cb_function);
+	switch_safe_free(cb_arg);
+	args.input_callback = NULL;
+	switch_channel_set_private(channel, "CoreSession", NULL);
+	ap = NULL;
+}
+
 void Session::setInputCallback(char *cbfunc, char *funcargs)
 {
 

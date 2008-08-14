@@ -39,6 +39,7 @@ class Session : public CoreSession {
 	virtual switch_status_t run_dtmf_callback(void *input, switch_input_type_t itype);
 	void setME(SV *p);
 	void setInputCallback(char *cbfunc = "on_input", char *funcargs = NULL);
+	void unsetInputCallback(void);
 	void setHangupHook(char *func, char *arg=NULL);
 	bool ready();
 	char *suuid;

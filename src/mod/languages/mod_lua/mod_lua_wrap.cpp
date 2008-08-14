@@ -7157,6 +7157,30 @@ fail:
 }
 
 
+static int _wrap_Session_unsetInputCallback(lua_State* L) {
+  int SWIG_arg = -1;
+  LUA::Session *arg1 = (LUA::Session *) 0 ;
+  
+  SWIG_check_num_args("unsetInputCallback",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("unsetInputCallback",1,"LUA::Session *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Session,0))){
+    SWIG_fail_ptr("Session_unsetInputCallback",1,SWIGTYPE_p_LUA__Session);
+  }
+  
+  (arg1)->unsetInputCallback();
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_Session_setInputCallback__SWIG_0(lua_State* L) {
   int SWIG_arg = -1;
   LUA::Session *arg1 = (LUA::Session *) 0 ;
@@ -7720,6 +7744,7 @@ static swig_lua_method swig_LUA_Session_methods[] = {
     {"end_allow_threads", _wrap_Session_end_allow_threads}, 
     {"check_hangup_hook", _wrap_Session_check_hangup_hook}, 
     {"run_dtmf_callback", _wrap_Session_run_dtmf_callback}, 
+    {"unsetInputCallback", _wrap_Session_unsetInputCallback}, 
     {"setInputCallback", _wrap_Session_setInputCallback}, 
     {"setHangupHook", _wrap_Session_setHangupHook}, 
     {"ready", _wrap_Session_ready}, 

@@ -9153,6 +9153,27 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_Session_unsetInputCallback(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Session_unsetInputCallback",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PYTHON__Session, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_unsetInputCallback" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
+  }
+  arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
+  (arg1)->unsetInputCallback();
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_Session_setHangupHook__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   PYTHON::Session *arg1 = (PYTHON::Session *) 0 ;
@@ -9659,6 +9680,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"Session_check_hangup_hook", _wrap_Session_check_hangup_hook, METH_VARARGS, NULL},
 	 { (char *)"Session_run_dtmf_callback", _wrap_Session_run_dtmf_callback, METH_VARARGS, NULL},
 	 { (char *)"Session_setInputCallback", _wrap_Session_setInputCallback, METH_VARARGS, NULL},
+	 { (char *)"Session_unsetInputCallback", _wrap_Session_unsetInputCallback, METH_VARARGS, NULL},
 	 { (char *)"Session_setHangupHook", _wrap_Session_setHangupHook, METH_VARARGS, NULL},
 	 { (char *)"Session_ready", _wrap_Session_ready, METH_VARARGS, NULL},
 	 { (char *)"Session_cb_function_set", _wrap_Session_cb_function_set, METH_VARARGS, NULL},

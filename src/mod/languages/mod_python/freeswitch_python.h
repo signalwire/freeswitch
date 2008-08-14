@@ -30,6 +30,7 @@ class Session : public CoreSession {
 
 	virtual switch_status_t run_dtmf_callback(void *input, switch_input_type_t itype);
 	void setInputCallback(PyObject *cbfunc, PyObject *funcargs = NULL);
+	void unsetInputCallback(void);
 	void setHangupHook(PyObject *pyfunc, PyObject *arg = NULL);
 	bool ready();
 	

@@ -481,6 +481,7 @@ sub DESTROY {
 *run_dtmf_callback = *freeswitchc::Session_run_dtmf_callback;
 *setME = *freeswitchc::Session_setME;
 *setInputCallback = *freeswitchc::Session_setInputCallback;
+*unsetInputCallback = *freeswitchc::Session_unsetInputCallback;
 *setHangupHook = *freeswitchc::Session_setHangupHook;
 *ready = *freeswitchc::Session_ready;
 *swig_suuid_get = *freeswitchc::Session_suuid_get;

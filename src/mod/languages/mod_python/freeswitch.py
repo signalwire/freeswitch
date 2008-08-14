@@ -323,6 +323,7 @@ class Session(CoreSession):
     def check_hangup_hook(*args): return _freeswitch.Session_check_hangup_hook(*args)
     def run_dtmf_callback(*args): return _freeswitch.Session_run_dtmf_callback(*args)
     def setInputCallback(*args): return _freeswitch.Session_setInputCallback(*args)
+    def unsetInputCallback(*args): return _freeswitch.Session_unsetInputCallback(*args)
     def setHangupHook(*args): return _freeswitch.Session_setHangupHook(*args)
     def ready(*args): return _freeswitch.Session_ready(*args)
     __swig_setmethods__["cb_function"] = _freeswitch.Session_cb_function_set

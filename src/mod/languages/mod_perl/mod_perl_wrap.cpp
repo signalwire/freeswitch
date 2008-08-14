@@ -9738,6 +9738,33 @@ XS(_wrap_Session_setInputCallback) {
 }
 
 
+XS(_wrap_Session_unsetInputCallback) {
+  {
+    PERL::Session *arg1 = (PERL::Session *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: Session_unsetInputCallback(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_PERL__Session, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_unsetInputCallback" "', argument " "1"" of type '" "PERL::Session *""'"); 
+    }
+    arg1 = reinterpret_cast< PERL::Session * >(argp1);
+    (arg1)->unsetInputCallback();
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_Session_setHangupHook__SWIG_0) {
   {
     PERL::Session *arg1 = (PERL::Session *) 0 ;
@@ -10602,6 +10629,7 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::Session_run_dtmf_callback", _wrap_Session_run_dtmf_callback},
 {"freeswitchc::Session_setME", _wrap_Session_setME},
 {"freeswitchc::Session_setInputCallback", _wrap_Session_setInputCallback},
+{"freeswitchc::Session_unsetInputCallback", _wrap_Session_unsetInputCallback},
 {"freeswitchc::Session_setHangupHook", _wrap_Session_setHangupHook},
 {"freeswitchc::Session_ready", _wrap_Session_ready},
 {"freeswitchc::Session_suuid_set", _wrap_Session_suuid_set},

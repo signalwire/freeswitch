@@ -216,6 +216,24 @@ void Session::setHangupHook(PyObject *pyfunc, PyObject *arg)
 
 }
 
+void Session::unsetInputCallback(void)
+{
+	if (cb_function) {
+        Py_XDECREF(cb_function);
+        cb_function = NULL;
+    }
+
+    if (cb_arg) {
+        Py_XDECREF(cb_arg);
+        cb_arg = NULL;
+    }
+	
+	switch_channel_set_private(channel, "CoreSession", NULL);
+	args.input_callback = NULL;
+	ap = NULL;
+	
+}
+
 void Session::setInputCallback(PyObject *cbfunc, PyObject *funcargs)
 {
 
