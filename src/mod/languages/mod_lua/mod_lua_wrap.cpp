@@ -7438,6 +7438,7 @@ static int _wrap_Session_originate(lua_State* L) {
   CoreSession *arg2 = (CoreSession *) 0 ;
   char *arg3 = (char *) 0 ;
   int arg4 ;
+  int result;
   
   SWIG_check_num_args("originate",4,4)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("originate",1,"LUA::Session *");
@@ -7456,9 +7457,9 @@ static int _wrap_Session_originate(lua_State* L) {
   
   arg3 = (char *)lua_tostring(L, 3);
   arg4 = (int)lua_tonumber(L, 4);
-  (arg1)->originate(arg2,arg3,arg4);
+  result = (int)(arg1)->originate(arg2,arg3,arg4);
   SWIG_arg=0;
-  
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
   
   if(0) SWIG_fail;

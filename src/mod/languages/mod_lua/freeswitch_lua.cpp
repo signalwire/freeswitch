@@ -59,10 +59,15 @@ void Session::setLUA(lua_State * state)
 
 }
 
-void Session::originate(CoreSession *a_leg_session, char *dest, int timeout)
+int Session::originate(CoreSession *a_leg_session, char *dest, int timeout)
 {
-	CoreSession::originate(a_leg_session, dest, timeout);
-	setLUA(L);
+	int x = CoreSession::originate(a_leg_session, dest, timeout);
+
+	if (x) {
+		setLUA(L);
+	}
+
+	return x;
 }
 
 lua_State *Session::getLUA()
