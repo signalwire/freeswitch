@@ -2230,9 +2230,10 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						match = strcasecmp(switch_str_nil(map->rm_encoding), tech_pvt->iananame) ? 0 : 1;
 					}
 
-					if (match) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Our existing codec [%s] is still good, let's keep it\n",
-										  tech_pvt->rm_encoding);
+					if (match && connection->c_address && tech_pvt->remote_sdp_audio_ip && 
+						!strcmp(connection->c_address, tech_pvt->remote_sdp_audio_ip) && m->m_port == tech_pvt->remote_sdp_audio_port) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Our existing sdp is still good [%s %s:%d], let's keep it.\n",
+										  tech_pvt->rm_encoding, tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
 						got_audio = 1;
 						break;
 					}
