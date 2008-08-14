@@ -282,7 +282,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 	 */
 		 SWITCH_DECLARE(char *) getDigits(int maxdigits, char *terminators, int timeout);
 		 SWITCH_DECLARE(char *) getDigits(int maxdigits, char *terminators, int timeout, int interdigit);
-		 SWITCH_DECLARE(int) transfer(char *extensions, char *dialplan, char *context);
+		 SWITCH_DECLARE(int) transfer(char *extension, char *dialplan = NULL, char *context = NULL);
 
 
 		 SWITCH_DECLARE(char *) read(int min_digits, int max_digits, const char *prompt_audio_file, int timeout, const char *valid_terminators);

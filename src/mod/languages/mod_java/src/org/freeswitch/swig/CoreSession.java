@@ -213,8 +213,16 @@ public class CoreSession {
     return freeswitchJNI.CoreSession_getDigits__SWIG_1(swigCPtr, this, maxdigits, terminators, timeout, interdigit);
   }
 
-  public int transfer(String extensions, String dialplan, String context) {
-    return freeswitchJNI.CoreSession_transfer(swigCPtr, this, extensions, dialplan, context);
+  public int transfer(String extension, String dialplan, String context) {
+    return freeswitchJNI.CoreSession_transfer__SWIG_0(swigCPtr, this, extension, dialplan, context);
+  }
+
+  public int transfer(String extension, String dialplan) {
+    return freeswitchJNI.CoreSession_transfer__SWIG_1(swigCPtr, this, extension, dialplan);
+  }
+
+  public int transfer(String extension) {
+    return freeswitchJNI.CoreSession_transfer__SWIG_2(swigCPtr, this, extension);
   }
 
   public String read(int min_digits, int max_digits, String prompt_audio_file, int timeout, String valid_terminators) {
