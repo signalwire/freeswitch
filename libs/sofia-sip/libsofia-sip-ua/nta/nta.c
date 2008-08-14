@@ -8261,7 +8261,8 @@ int outgoing_complete(nta_outgoing_t *orq)
     return outgoing_terminate(orq);
 
   if (orq->orq_method == sip_method_invite) {
-    outgoing_queue(orq->orq_agent->sa_out.inv_completed, orq); /* Timer D */
+    if (orq->orq_queue != orq->orq_agent->sa_out.inv_completed)
+      outgoing_queue(orq->orq_agent->sa_out.inv_completed, orq); /* Timer D */
   }
   else {
     outgoing_queue(orq->orq_agent->sa_out.completed, orq); /* Timer K */
