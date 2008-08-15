@@ -289,13 +289,17 @@ static switch_status_t timer_check(switch_timer_t *timer, switch_bool_t step)
 static switch_status_t timer_destroy(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
-	switch_mutex_lock(globals.mutex);
-	TIMER_MATRIX[timer->interval].count--;
-	if (TIMER_MATRIX[timer->interval].count == 0) {
-		TIMER_MATRIX[timer->interval].tick = 0;
+	if (timer->interval < MAX_ELEMENTS) {
+		switch_mutex_lock(globals.mutex);
+		TIMER_MATRIX[timer->interval].count--;
+		if (TIMER_MATRIX[timer->interval].count == 0) {
+			TIMER_MATRIX[timer->interval].tick = 0;
+		}
+		switch_mutex_unlock(globals.mutex);
 	}
-	switch_mutex_unlock(globals.mutex);
-	private_info->ready = 0;
+	if (private_info) {
+		private_info->ready = 0;
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
