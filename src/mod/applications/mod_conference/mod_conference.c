@@ -2828,11 +2828,12 @@ static switch_status_t conf_api_sub_kick(conference_member_t *member, switch_str
 	if (stream != NULL) {
 		stream->write_function(stream, "OK kicked %u\n", member->id);
 	}
-	if (test_eflag(member->conference, EFLAG_KICK_MEMBER) &&
-		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "kick-member");
-		switch_event_fire(&event);
+	if (member->conference && test_eflag(member->conference, EFLAG_KICK_MEMBER)) {
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+			conference_add_event_member_data(member, event);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "kick-member");
+			switch_event_fire(&event);
+		}
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -3662,7 +3663,7 @@ switch_status_t conf_api_dispatch(conference_obj_t *conference, switch_stream_ha
 						conference_member_t *member = conference_member_get(conference, id);
 
 						if (member != NULL) {
-							pfn(conference_member_get(conference, id), stream, argv[argn + 2]);
+							pfn(member, stream, argv[argn + 2]);
 						} else {
 							stream->write_function(stream, "Non-Existant ID %u\n", id);
 						}
