@@ -700,6 +700,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_local_stream", "src\mod
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mediaframe", "libs\openmrcp\mediaframe\mediaframe.2008.vcproj", "{AA91F0AC-6562-435E-814C-5C94689FEFA2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F6C55D93-B927-4483-BB69-15AEF3DD2DFF} = {F6C55D93-B927-4483-BB69-15AEF3DD2DFF}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mrcpcore", "libs\openmrcp\mrcpcore\mrcpcore.2008.vcproj", "{829A9309-3B94-43C0-846B-7EC9D6D35F8B}"
 	ProjectSection(ProjectDependencies) = postProject
