@@ -2258,11 +2258,11 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_cut(switch_xml_t xml)
 #endif
 
 static int	 compare(const void *, const void *);
-static int	 glob0(const char *, glob_t *, int *);
-static int	 glob1(char *, glob_t *, int *);
-static int	 glob2(char *, char *, char *, char *, glob_t *, int *);
-static int	 glob3(char *, char *, char *, char *, char *, glob_t *, int *);
-static int	 globextend(const char *, glob_t *, int *);
+static int	 glob0(const char *, glob_t *, size_t *);
+static int	 glob1(char *, glob_t *, size_t *);
+static int	 glob2(char *, char *, char *, char *, glob_t *, size_t *);
+static int	 glob3(char *, char *, char *, char *, char *, glob_t *, size_t *);
+static int	 globextend(const char *, glob_t *, size_t *);
 static int	 match(char *, char *, char *);
 
 #pragma warning(push)
@@ -2271,7 +2271,7 @@ static int	 match(char *, char *, char *);
 int glob(const char *pattern, int flags, int (*errfunc)(const char *, int), glob_t *pglob)
 {
 	const unsigned char *patnext;
-	int limit;
+	size_t limit;
 	char c;
 	char *bufnext, *bufend, patbuf[MAXPATHLEN];
 	
@@ -2307,11 +2307,11 @@ int glob(const char *pattern, int flags, int (*errfunc)(const char *, int), glob
  * sorts the list (unless unsorted operation is requested).  Returns 0
  * if things went well, nonzero if errors occurred.
  */
-static int glob0(const char *pattern, glob_t *pglob, int *limit)
+static int glob0(const char *pattern, glob_t *pglob, size_t *limit)
 {
 	const char *qpatnext;
 	int c, err;
-	unsigned int oldpathc;
+	size_t oldpathc;
 	char *bufnext, patbuf[MAXPATHLEN];
 	
 	qpatnext = pattern;
@@ -2398,7 +2398,7 @@ static int compare(const void *p, const void *q)
 	return(strcmp(*(char **)p, *(char **)q));
 }
 
-static int glob1(char *pattern, glob_t *pglob, int *limit)
+static int glob1(char *pattern, glob_t *pglob, size_t *limit)
 {
 	char pathbuf[MAXPATHLEN];
 	
@@ -2414,7 +2414,7 @@ static int glob1(char *pattern, glob_t *pglob, int *limit)
  * of recursion for each segment in the pattern that contains one or more
  * meta characters.
  */
-static int glob2(char *pathbuf, char *pathend, char *pathend_last, char *pattern, glob_t *pglob, int *limit)
+static int glob2(char *pathbuf, char *pathend, char *pathend_last, char *pattern, glob_t *pglob, size_t *limit)
 {
 	struct stat sb;
 	char *p, *q;
@@ -2466,7 +2466,7 @@ static int glob2(char *pathbuf, char *pathend, char *pathend_last, char *pattern
 	/* NOTREACHED */
 }
 
-static int glob3(char *pathbuf, char *pathend, char *pathend_last, char *pattern, char *restpattern, glob_t *pglob, int *limit)
+static int glob3(char *pathbuf, char *pathend, char *pathend_last, char *pattern, char *restpattern, glob_t *pglob, size_t *limit)
 {
 	int err;
 	apr_dir_t * dirp;
@@ -2543,12 +2543,12 @@ static int glob3(char *pathbuf, char *pathend, char *pathend_last, char *pattern
  *	Either gl_pathc is zero and gl_pathv is NULL; or gl_pathc > 0 and
  *	gl_pathv points to (gl_offs + gl_pathc + 1) items.
  */
-static int globextend(const char *path, glob_t *pglob, int *limit)
+static int globextend(const char *path, glob_t *pglob, size_t *limit)
 {
 	char **pathv;
 	char * copy;
-	int i;
-	unsigned int newsize, len;
+	size_t i;
+	size_t newsize, len;
 	const char *p;
 	
 	if (*limit && pglob->gl_pathc > (unsigned int)(*limit)) {
@@ -2644,7 +2644,7 @@ static int match(char *name, char *pat, char *patend)
 /* Free allocated data belonging to a glob_t structure. */
 void globfree(glob_t *pglob)
 {
-	int i;
+	size_t i;
 	char **pp;
 	
 	if (pglob->gl_pathv != NULL) {
