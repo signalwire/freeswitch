@@ -197,6 +197,52 @@ SWITCH_STANDARD_API(url_decode_function)
 	
 }
 
+
+SWITCH_STANDARD_API(eval_function)
+{
+	char *expanded;
+	switch_event_t *event;
+	char uuid[80] = "";
+	const char *p, *input = cmd;
+
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "%s", "");
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	if (!strncasecmp(cmd, "uuid:", 5)) {
+		p = cmd + 5;
+		if ((input = strchr(p, ' ')) && *input++) {
+			switch_copy_string(uuid, p, input - p);
+		}
+	}
+	
+	if (switch_strlen_zero(input)) {
+		stream->write_function(stream, "%s", "");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	
+	switch_event_create(&event, SWITCH_EVENT_MESSAGE);
+	if (*uuid) {
+		if ((session = switch_core_session_locate(uuid))) {
+			switch_channel_event_set_data(switch_core_session_get_channel(session), event);
+			switch_core_session_rwunlock(session);
+		}
+	}
+
+	expanded = switch_event_expand_headers(event, input);
+	
+	stream->write_function(stream, "%s", expanded);
+
+	if (expanded != input) {
+		free(expanded);
+	}
+
+    return SWITCH_STATUS_SUCCESS;
+	
+}
+
 SWITCH_STANDARD_API(module_exists_function)
 {
 	if (!switch_strlen_zero(cmd)) {
@@ -2535,6 +2581,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "url_decode", "url decode a string", url_decode_function, "<string>");
 	SWITCH_ADD_API(commands_api_interface, "module_exists", "check if module exists", module_exists_function, "<module>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_dtmf", "send dtmf digits", uuid_send_dtmf_function, UUID_SEND_DTMF_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "eval", "eval (noop)", eval_function, "<expression>");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
