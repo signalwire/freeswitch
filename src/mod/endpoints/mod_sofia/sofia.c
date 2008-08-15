@@ -775,6 +775,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			char *register_str = "true", *scheme = "Digest",
 				*realm = NULL,
 				*username = NULL,
+				*auth_username = NULL,
 				*password = NULL,
 				*caller_id_in_from = "false",
 				*extension = NULL,
@@ -807,6 +808,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					realm = val;
 				} else if (!strcmp(var, "username")) {
 					username = val;
+				} else if (!strcmp(var, "auth-username")) {
+					auth_username = val;
 				} else if (!strcmp(var, "password")) {
 					password = val;
 				} else if (!strcmp(var, "caller-id-in-from")) {
@@ -886,6 +889,10 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				from_domain = realm;
 			}
 
+			if (switch_strlen_zero(auth_username)) {
+				auth_username = username;
+			}
+			
 			if (!switch_strlen_zero(register_proxy)) {
 				gateway->register_sticky_proxy = switch_core_strdup(gateway->pool, register_proxy);
 			}
@@ -899,6 +906,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->register_context = switch_core_strdup(gateway->pool, context);
 			gateway->register_realm = switch_core_strdup(gateway->pool, realm);
 			gateway->register_username = switch_core_strdup(gateway->pool, username);
+			gateway->auth_username = switch_core_strdup(gateway->pool, auth_username);
 			gateway->register_password = switch_core_strdup(gateway->pool, password);
 			if (switch_true(caller_id_in_from)) {
 				switch_set_flag(gateway, REG_FLAG_CALLERID);

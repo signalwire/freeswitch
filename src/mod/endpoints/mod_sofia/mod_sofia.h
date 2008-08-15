@@ -269,6 +269,7 @@ struct sofia_gateway {
 	char *register_scheme;
 	char *register_realm;
 	char *register_username;
+	char *auth_username;
 	char *register_password;
 	char *register_from;
 	char *register_contact;

@@ -1094,7 +1094,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 		goto cancel;
 	}
 
-	switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->register_username, gateway->register_password);
+	switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->auth_username, gateway->register_password);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n", profile->username, authentication);
 
