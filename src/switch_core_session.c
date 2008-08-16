@@ -1110,8 +1110,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application", "%s", application_interface->interface_name);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", "%s", arg);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", application_interface->interface_name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", arg);
 		switch_event_fire(&event);
 	}
 
@@ -1127,8 +1127,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application", "%s", application_interface->interface_name);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", "%s", arg);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", application_interface->interface_name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", arg);
 		switch_event_fire(&event);
 	}
 

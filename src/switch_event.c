@@ -554,7 +554,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass(switch_event_t **ev
 SWITCH_DECLARE(switch_status_t) switch_event_set_priority(switch_event_t *event, switch_priority_t priority)
 {
 	event->priority = priority;
-	switch_event_add_header(event, SWITCH_STACK_TOP, "priority", "%s", switch_priority_name(priority));
+	switch_event_add_header_string(event, SWITCH_STACK_TOP, "priority", switch_priority_name(priority));
 	return SWITCH_STATUS_SUCCESS;
 }
 

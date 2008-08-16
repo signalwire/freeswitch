@@ -628,7 +628,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 
 				if (ok) {
-					switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, (char *) hi->name, "%s", (char *) hi->value);
+					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, (char *) hi->name, (char *) hi->value);
 				}
 			}
 			switch_channel_variable_last(caller_channel);
@@ -638,7 +638,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		   for (; hi; hi = switch_hash_next(hi)) {
 		   switch_hash_this(hi, &vvar, NULL, &vval);
 		   if (vvar && vval) {
-		   switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, (void *) vvar, "%s", (char *) vval);
+		   switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, (void *) vvar, (char *) vval);
 		   }
 		   }
 		   switch_channel_variable_last(caller_channel);
@@ -658,7 +658,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				if ((inner_var_count =
 					 switch_separate_string(var_array[x], '=', inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
 
-					switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, inner_var_array[0], "%s", inner_var_array[1]);
+					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
 				}
 			}
 		}

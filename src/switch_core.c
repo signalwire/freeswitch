@@ -111,10 +111,10 @@ static void check_ip(void) {
 		if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "condition", "network-address-change");
 			if (!ok4) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "network-address-change-v4", "%s", main_ip4);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-address-change-v4", main_ip4);
 			}
 			if (!ok6) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "network-address-change-v6", "%s", main_ip6);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-address-change-v6", main_ip6);
 			}
 			switch_event_fire(&event);
 		}

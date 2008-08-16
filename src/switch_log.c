@@ -293,9 +293,9 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 	if (channel == SWITCH_CHANNEL_ID_EVENT) {
 		switch_event_t *event;
 		if (switch_event_running() == SWITCH_STATUS_SUCCESS && switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Data", "%s", data);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-File", "%s", filep);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Function", "%s", funcp);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Log-Data", data);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Log-File", filep);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Log-Function", funcp);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Line", "%d", line);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Level", "%d", (int) level);
 			switch_event_fire(&event);

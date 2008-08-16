@@ -64,16 +64,16 @@ static void switch_scheduler_execute(switch_scheduler_task_container_t *tp)
 		tp->executed = 0;
 		if (switch_event_create(&event, SWITCH_EVENT_RE_SCHEDULE) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-ID", "%u", tp->task.task_id);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Desc", "%s", tp->desc);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Group", "%s", switch_str_nil(tp->task.group));
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Task-Desc", tp->desc);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Task-Group", switch_str_nil(tp->task.group));
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Runtime", "%" SWITCH_INT64_T_FMT, tp->task.runtime);
 			switch_event_fire(&event);
 		}
 	} else {
 		if (switch_event_create(&event, SWITCH_EVENT_DEL_SCHEDULE) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-ID", "%u", tp->task.task_id);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Desc", "%s", tp->desc);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Group", "%s", switch_str_nil(tp->task.group));
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Task-Desc", tp->desc);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Task-Group", switch_str_nil(tp->task.group));
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Runtime", "%" SWITCH_INT64_T_FMT, tp->task.runtime);
 			switch_event_fire(&event);
 		}
@@ -216,8 +216,8 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,
 
 	if (switch_event_create(&event, SWITCH_EVENT_ADD_SCHEDULE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-ID", "%u", tp->task.task_id);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Desc", "%s", tp->desc);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Group", "%s", switch_str_nil(tp->task.group));
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Task-Desc", tp->desc);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Task-Group", switch_str_nil(tp->task.group));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Runtime", "%" SWITCH_INT64_T_FMT, tp->task.runtime);
 		switch_event_fire(&event);
 	}
@@ -241,8 +241,8 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_id(uint32_t task_id)
 			tp->destroyed++;
 			if (switch_event_create(&event, SWITCH_EVENT_DEL_SCHEDULE) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-ID", "%u", tp->task.task_id);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Desc", "%s", tp->desc);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Group", "%s", switch_str_nil(tp->task.group));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Task-Desc", tp->desc);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Task-Group", switch_str_nil(tp->task.group));
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Runtime", "%" SWITCH_INT64_T_FMT, tp->task.runtime);
 				switch_event_fire(&event);
 			}
@@ -271,8 +271,8 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_group(const char *group)
 			}
 			if (switch_event_create(&event, SWITCH_EVENT_DEL_SCHEDULE) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-ID", "%u", tp->task.task_id);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Desc", "%s", tp->desc);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Group", "%s", switch_str_nil(tp->task.group));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Task-Desc", tp->desc);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Task-Group", switch_str_nil(tp->task.group));
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Runtime", "%" SWITCH_INT64_T_FMT, tp->task.runtime);
 				switch_event_fire(&event);
 			}

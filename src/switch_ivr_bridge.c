@@ -511,15 +511,15 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 		/* fire events that will change the data table from "show channels" */
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application", "uuid_bridge");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", "%s", switch_core_session_get_uuid(other_session));
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", "uuid_bridge");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", switch_core_session_get_uuid(other_session));
 			switch_event_fire(&event);
 		}
 
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(other_channel, event);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application", "uuid_bridge");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", "%s", switch_core_session_get_uuid(session));
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", "uuid_bridge");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", switch_core_session_get_uuid(session));
 			switch_event_fire(&event);
 		}
 
@@ -638,15 +638,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 	/* fire events that will change the data table from "show channels" */
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(caller_channel, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application", "signal_bridge");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", "%s", switch_core_session_get_uuid(peer_session));
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", "signal_bridge");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", switch_core_session_get_uuid(peer_session));
 		switch_event_fire(&event);
 	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(peer_channel, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application", "signal_bridge");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", "%s", switch_core_session_get_uuid(session));
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", "signal_bridge");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", switch_core_session_get_uuid(session));
 		switch_event_fire(&event);
 	}
 
