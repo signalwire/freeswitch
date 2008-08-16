@@ -64,6 +64,12 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		switch_safe_free(field_expanded);
 		switch_safe_free(expression_expanded);
 
+		if (switch_xml_child(xcond, "condition")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Nested conditions are not allowed!\n");
+			proceed = 1;
+			goto done;
+		}
+
 		field = (char *) switch_xml_attr(xcond, "field");
 
 		if ((xexpression = switch_xml_child(xcond, "expression"))) {
