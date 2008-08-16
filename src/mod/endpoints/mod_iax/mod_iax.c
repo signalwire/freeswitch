@@ -908,7 +908,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IAX Ready Port %d\n", globals.port);
 
 	if (switch_event_create(&s_event, SWITCH_EVENT_PUBLISH) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_iax2._udp");
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "service", "_iax2._udp");
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", globals.port);
 		switch_event_fire(&s_event);
 	}

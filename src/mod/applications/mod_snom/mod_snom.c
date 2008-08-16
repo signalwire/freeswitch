@@ -47,10 +47,10 @@ static switch_bool_t snom_bind_key(const char *key,
 
 	if (user && host && profile) {
 		if (switch_event_create(&event, SWITCH_EVENT_SEND_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "user", "%s", user);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "host", "%s", host);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "profile", "%s", profile);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "content-type", "application/x-buttons");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "user", user);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "host", host);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "profile", profile);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "content-type", "application/x-buttons");
 			if (action && action_name) {
 				switch_event_add_body(event, "k=%s\nc=%s\nl=%s\nn=%s\na=%s\n", key, light, label, action, action_name);
 			} else {

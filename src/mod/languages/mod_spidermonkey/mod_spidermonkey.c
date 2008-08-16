@@ -195,7 +195,7 @@ static JSBool request_add_header(JSContext * cx, JSObject * obj, uintN argc, jsv
 	if (argc > 1) {
 		char *hname = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		char *hval = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
-		switch_event_add_header(ro->stream->param_event, SWITCH_STACK_BOTTOM, hname, "%s", hval);
+		switch_event_add_header_string(ro->stream->param_event, SWITCH_STACK_BOTTOM, hname, hval);
 		*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
 		return JS_TRUE;
 	}
@@ -547,7 +547,7 @@ static JSBool event_add_header(JSContext * cx, JSObject * obj, uintN argc, jsval
 	if (argc > 1) {
 		char *hname = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		char *hval = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
-		switch_event_add_header(eo->event, SWITCH_STACK_BOTTOM, hname, "%s", hval);
+		switch_event_add_header_string(eo->event, SWITCH_STACK_BOTTOM, hname, hval);
 		*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
 		return JS_TRUE;
 	}

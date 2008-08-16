@@ -1263,7 +1263,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 						/* this isnt done?  it was in the other place
 						 * switch_channel_event_set_data(channel, event);
 						 */
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Message-Type", "forwarded-voicemail");
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Message-Type", "forwarded-voicemail");
 						switch_event_fire(&event);
 					}
 
@@ -1462,8 +1462,8 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 					}
 					mwi_id = switch_mprintf("%s@%s", myid, domain_name);
 					switch_assert(mwi_id);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", "%s", yn);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", mwi_id);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", yn);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", mwi_id);
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)",
 											total_new_messages, total_saved_messages, total_new_urgent_messages, total_saved_urgent_messages);
 					switch_event_fire(&event);
@@ -1868,8 +1868,8 @@ static void deliver_vm(vm_profile_t *profile,
 				yn = "yes";
 			}
 			mwi_id = switch_mprintf("%s@%s", myid, domain_name);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", "%s", yn);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", mwi_id);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", yn);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", mwi_id);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)",
 									total_new_messages, total_saved_messages, total_new_urgent_messages, total_saved_urgent_messages);
 			switch_event_fire(&event);
@@ -1965,7 +1965,7 @@ static void deliver_vm(vm_profile_t *profile,
 			switch_event_dup(&event, params);
 
 			if (event) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Message-Type", "voicemail");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Message-Type", "voicemail");
 				switch_event_fire(&event);
 			}
 
@@ -2014,7 +2014,7 @@ static void deliver_vm(vm_profile_t *profile,
 			switch_event_dup(&event, params);
 
 			if (event) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Message-Type", "voicemail-notify");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Message-Type", "voicemail-notify");
 				switch_event_fire(&event);
 			}
 
@@ -2622,8 +2622,8 @@ static void message_query_handler(switch_event_t *event)
 						if (total_new_messages || total_new_urgent_messages) {
 							yn = "yes";
 						}
-						switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", "%s", yn);
-						switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", account);
+						switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", yn);
+						switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", account);
 						switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)",
 												total_new_messages, total_saved_messages, total_new_urgent_messages, total_saved_urgent_messages);
 						created++;
@@ -2638,8 +2638,8 @@ static void message_query_handler(switch_event_t *event)
 
 	if (!created) {
 		if (switch_event_create(&new_event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", "no");
-			switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", account);
+			switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", "no");
+			switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", account);
 		}
 	}
 
@@ -2648,7 +2648,7 @@ static void message_query_handler(switch_event_t *event)
 
 		for (hp = event->headers; hp; hp = hp->next) {
 			if (!strncasecmp(hp->name, "vm-", 3)) {
-				switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, hp->name + 3, hp->value);
+				switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, hp->name + 3, hp->value);
 			}
 		}
 

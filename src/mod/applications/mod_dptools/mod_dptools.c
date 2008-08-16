@@ -1024,14 +1024,14 @@ SWITCH_STANDARD_API(presence_api_function)
 		}
 
 		if (switch_event_create(&event, type) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "dp");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", __FILE__);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", argv[1]);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "dp");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", __FILE__);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", argv[1]);
 			if (type == SWITCH_EVENT_PRESENCE_IN) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "%s", argv[2]);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "%s", argv[3]);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", argv[2]);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", argv[3]);
 			}
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 			switch_event_fire(&event);
 		}
 		stream->write_function(stream, "Event Sent");
@@ -2126,16 +2126,16 @@ static switch_status_t event_chat_send(char *proto, char *from, char *to, char *
 	switch_event_t *event;
 
 	if (switch_event_create(&event, SWITCH_EVENT_RECV_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-		if (proto) switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Proto", "%s", proto);
-		if (from) switch_event_add_header(event, SWITCH_STACK_BOTTOM, "From", "%s", from);
-		if (subject) switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Subject", "%s", subject);
-		if (hint) switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Hint", "%s", hint);
+		if (proto) switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Proto", proto);
+		if (from) switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "From", from);
+		if (subject) switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Subject", subject);
+		if (hint) switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Hint", hint);
 		if (body) switch_event_add_body(event, "%s", body);
 		if (to) { 
 			const char *v;
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "To", "%s", to);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "To", to);
 			if ((v = switch_core_get_variable(to))) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Command", "%s", v);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Command", v);
 			}
 		}
 

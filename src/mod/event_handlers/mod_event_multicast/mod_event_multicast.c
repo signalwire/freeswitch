@@ -168,7 +168,7 @@ static void event_handler(switch_event_t *event)
 		case SWITCH_EVENT_LOG:
 			return;
 		default:
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Multicast-Sender", "%s", globals.hostname);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Multicast-Sender", globals.hostname);
 			if (switch_event_serialize(event, &packet, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 				size_t len = strlen(packet) + sizeof(globals.host_hash);
 				char *buf = malloc(len + 1);
@@ -309,7 +309,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT %d\n--------------------------------\n%s\n", (int) len, packet);
 		if (switch_event_create_subclass(&local_event, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT) == SWITCH_STATUS_SUCCESS) {
 			char *var, *val, *term = NULL, tmpname[128];
-			switch_event_add_header(local_event, SWITCH_STACK_BOTTOM, "Multicast", "yes");
+			switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, "Multicast", "yes");
 			var = packet;
 			while (*var) {
 				if ((val = strchr(var, ':')) != 0) {
@@ -324,7 +324,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 						}
 					}
 					switch_snprintf(tmpname, sizeof(tmpname), "Orig-%s", var);
-					switch_event_add_header(local_event, SWITCH_STACK_BOTTOM, tmpname, "%s", val);
+					switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, tmpname, val);
 					var = term + 1;
 				} else {
 					break;

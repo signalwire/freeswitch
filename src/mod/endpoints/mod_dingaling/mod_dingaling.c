@@ -624,11 +624,11 @@ static int sin_callback(void *pArg, int argc, char **argv, char **columnNames)
 
 	if (is_special(sub_to)) {
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", sub_to);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "available");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Online");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->login);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", sub_to);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "available");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", "Online");
 			switch_event_fire(&event);
 		}
 	}
@@ -2367,11 +2367,11 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 #if 0
 					if (is_special(to)) {
 						if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
-							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
-							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", to);
-							//switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
-							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Click To Call");
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->login);
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", to);
+							//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", "Click To Call");
 							switch_event_fire(&event);
 						}
 					}
@@ -2380,8 +2380,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				break;
 			case LDL_SIGNAL_ROSTER:
 				if (switch_event_create(&event, SWITCH_EVENT_ROSTER) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", from);
 					switch_event_fire(&event);
 				}
 				break;
@@ -2390,10 +2390,10 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					ldl_handle_send_presence(profile->handle, to, from, NULL, NULL, "Click To Call", profile->avatar);
 				} else {
 					if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "to", "%s", to);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->login);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", from);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", to);
 						switch_event_fire(&event);
 					}
 				}
@@ -2407,11 +2407,11 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				}
 
 				if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "%s", msg);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "%s", subject);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->login);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", from);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", msg);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", subject);
 					switch_event_fire(&event);
 				}
 
@@ -2422,11 +2422,11 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 #if 0
 				if (is_special(to)) {
 					if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", to);
-						//switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Click To Call");
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->login);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", to);
+						//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", "Click To Call");
 						switch_event_fire(&event);
 					}
 				}
@@ -2441,9 +2441,9 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					switch_core_db_free(sql);
 				}
 				if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->login);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", from);
 					switch_event_fire(&event);
 				}
 				break;
@@ -2496,7 +2496,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			break;
 		case LDL_SIGNAL_LOGIN_SUCCESS:
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, DL_EVENT_LOGIN_SUCCESS) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", ldl_handle_get_login(profile->handle));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", ldl_handle_get_login(profile->handle));
 				switch_event_fire(&event);
 			}
 			if (profile->user_flags & LDL_FLAG_COMPONENT) {
@@ -2506,13 +2506,13 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			break;
 		case LDL_SIGNAL_LOGIN_FAILURE:
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, DL_EVENT_LOGIN_FAILURE) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", ldl_handle_get_login(profile->handle));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", ldl_handle_get_login(profile->handle));
 				switch_event_fire(&event);
 			}
 			break;
 		case LDL_SIGNAL_CONNECTED:
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, DL_EVENT_CONNECTED) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", ldl_handle_get_login(profile->handle));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", ldl_handle_get_login(profile->handle));
 				switch_event_fire(&event);
 			}
 			break;
@@ -2706,17 +2706,17 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				from = freeme;
 			}
 
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", ldl_handle_get_login(profile->handle));
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "hint", "%s", hint);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "to", "%s", to);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "subject", "%s", subject);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", ldl_handle_get_login(profile->handle));
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", hint);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", from);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", to);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", subject);
 			if (msg) {
 				switch_event_add_body(event, "%s", msg);
 			}
 			if (switch_core_session_queue_event(tech_pvt->session, &event) != SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
 				switch_event_fire(&event);
 			}
 

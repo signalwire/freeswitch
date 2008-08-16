@@ -521,30 +521,30 @@ abyss_bool handler_hook(TSession * r)
 		const char *const content_length = RequestHeaderValue(r, "content-length");
 		
 		if (html)
-			switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, "Content-type", "%s", "text/html");
+			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "Content-type", "text/html");
 		else if (text)
-			switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, "Content-type", "%s", "text/plain");
+			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "Content-type", "text/plain");
 		if (fs_user)
-			switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, "FreeSWITCH-User", "%s", fs_user);
+			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "FreeSWITCH-User", fs_user);
 		if (fs_domain)
-			switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Domain", "%s", fs_domain);
+			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Domain", fs_domain);
 		if (path_info)
-			switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-Path-Info", "%s", path_info);
-		switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-URI", "%s", r->requestInfo.uri);
+			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-Path-Info", path_info);
+		switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-URI", r->requestInfo.uri);
 		if (r->requestInfo.query)
-			switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-QUERY", "%s", r->requestInfo.query);
+			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-QUERY", r->requestInfo.query);
 		if (r->requestInfo.host)
-			switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-HOST", "%s", r->requestInfo.host);
+			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-HOST", r->requestInfo.host);
 		if (r->requestInfo.from)
-			switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-FROM", "%s", r->requestInfo.from);
+			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-FROM", r->requestInfo.from);
 		if (r->requestInfo.useragent)
-			switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-USER-AGENT", "%s", r->requestInfo.useragent);
+			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-USER-AGENT", r->requestInfo.useragent);
 		if (r->requestInfo.referer)
-			switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-REFERER", "%s", r->requestInfo.referer);
+			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-REFERER", r->requestInfo.referer);
 		if (r->requestInfo.requestline)
-			switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-REQUESTLINE", "%s", r->requestInfo.requestline);
+			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-REQUESTLINE", r->requestInfo.requestline);
 		if (r->requestInfo.user)
-			switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-USER", "%s", r->requestInfo.user);
+			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-USER", r->requestInfo.user);
 		if (r->requestInfo.port)
 			switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-PORT", "%u", r->requestInfo.port);
 		if (r->requestInfo.query || content_length) {
@@ -586,7 +586,7 @@ abyss_bool handler_hook(TSession * r)
 				}
 			}
 			if (query) {
-				switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-QUERY", "%s", query);
+				switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-QUERY", query);
 
 				qd = strdup(query);
 				switch_assert(qd != NULL);
@@ -612,7 +612,7 @@ abyss_bool handler_hook(TSession * r)
 					name = q;
 					if ((val = strchr(name, '='))) {
 						*val++ = '\0';
-						switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, name, "%s", val);
+						switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, name, val);
 					}
 					q = next;
 				} while (q != NULL);

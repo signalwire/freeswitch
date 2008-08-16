@@ -613,13 +613,13 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 								(sofia_test_pflag(profile, PFLAG_TLS)) ? ",_sips._tcp" : "");
 
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", profile->sip_port);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "module_name", "%s", "mod_sofia");
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_name", "%s", profile->name);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_uri", "%s", profile->url);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "module_name", "mod_sofia");
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile_name", profile->name);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile_uri", profile->url);
 
 		if (sofia_test_pflag(profile, PFLAG_TLS)) {
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "tls_port", "%d", profile->tls_sip_port);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_tls_uri", "%s", profile->tls_url);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile_tls_uri", profile->tls_url);
 		}
 		switch_event_fire(&s_event);
 	}
@@ -673,13 +673,13 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 								(sofia_test_pflag(profile, PFLAG_TLS)) ? ",_sips._tcp" : "");
 
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", profile->sip_port);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "module_name", "%s", "mod_sofia");
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_name", "%s", profile->name);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_uri", "%s", profile->url);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "module_name", "mod_sofia");
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile_name", profile->name);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile_uri", profile->url);
 
 		if (sofia_test_pflag(profile, PFLAG_TLS)) {
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "tls_port", "%d", profile->tls_sip_port);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_tls_uri", "%s", profile->tls_url);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile_tls_uri", profile->tls_url);
 		}
 		switch_event_fire(&s_event);
 	}

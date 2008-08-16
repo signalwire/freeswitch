@@ -1845,10 +1845,10 @@ static void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
 	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_BACKGROUND_JOB) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-UUID", "%s", job->uuid_str);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-Command", "%s", job->cmd);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-UUID", job->uuid_str);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-Command", job->cmd);
 		if (arg) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-Command-Arg", "%s", arg);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-Command-Arg", arg);
 		}
 
 		switch_event_add_body(event, "%s", reply);

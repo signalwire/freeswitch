@@ -289,23 +289,23 @@ static void send_presence(fifo_node_t *node)
 	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "%s", "park");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", node->name);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", node->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "park");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", node->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", node->name);
 		if ((wait_count = node_consumer_wait_count(node)) > 0) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Active (%d waiting)", wait_count);
 		} else {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Idle");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", "Idle");
 		}
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "%s", "unknown");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", 0);
 
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", wait_count > 0 ? "CS_ROUTING" : "CS_HANGUP");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", node->name);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", wait_count > 0 ? "early" : "terminated");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", "inbound");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", wait_count > 0 ? "CS_ROUTING" : "CS_HANGUP");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", node->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", wait_count > 0 ? "early" : "terminated");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
 		switch_event_fire(&event);
 	}
 }
@@ -540,8 +540,8 @@ SWITCH_STANDARD_APP(fifo_function)
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Name", "%s", argv[0]);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "push");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "push");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Slot", "%d", p);
 			switch_event_fire(&event);
 		}
@@ -633,8 +633,8 @@ SWITCH_STANDARD_APP(fifo_function)
 
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
 				switch_channel_event_set_data(channel, event);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Name", "%s", argv[0]);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Action", cd.do_orbit ? "timeout" : "abort");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", cd.do_orbit ? "timeout" : "abort");
 				switch_event_fire(&event);
 			}
 			switch_mutex_lock(node->mutex);
@@ -716,8 +716,8 @@ SWITCH_STANDARD_APP(fifo_function)
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Name", "%s", argv[0]);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "consumer_start");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "consumer_start");
 			switch_event_fire(&event);
 		}
 
@@ -847,15 +847,15 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
 					switch_channel_event_set_data(other_channel, event);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Name", "%s", argv[0]);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "caller_pop");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "caller_pop");
 					switch_event_fire(&event);
 				}
 
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
 					switch_channel_event_set_data(channel, event);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Name", "%s", argv[0]);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "consumer_pop");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "consumer_pop");
 					switch_event_fire(&event);
 				}
 
@@ -979,8 +979,8 @@ SWITCH_STANDARD_APP(fifo_function)
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Name", "%s", argv[0]);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "consumer_stop");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "consumer_stop");
 			switch_event_fire(&event);
 		}
 

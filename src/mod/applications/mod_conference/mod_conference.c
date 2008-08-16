@@ -388,9 +388,9 @@ static switch_status_t conference_add_event_data(conference_obj_t *conference, s
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", "%s", conference->name);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Size", "%u", conference->count);
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Profile-Name", "%s", conference->profile_name);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Profile-Name", conference->profile_name);
 
 	return status;
 }
@@ -580,17 +580,17 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	if (!switch_test_flag(member, MFLAG_NOCHANNEL)) {
 		conference->count++;
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", conference->name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Active (%d caller%s)", conference->count, conference->count == 1 ? "" : "s");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", conference->name);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_ROUTING");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", conference->count == 1 ? "early" : "confirmed");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", conference->count == 1 ? "outbound" : "inbound");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", conference->name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", conference->count == 1 ? "early" : "confirmed");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", conference->count == 1 ? "outbound" : "inbound");
 			switch_event_fire(&event);
 		}
 
@@ -640,7 +640,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		if (test_eflag(conference, EFLAG_ADD_MEMBER) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_add_event_member_data(member, event);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "add-member");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "add-member");
 			switch_event_fire(&event);
 		}
 
@@ -723,17 +723,17 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 	if (!switch_test_flag(member, MFLAG_NOCHANNEL)) {
 		conference->count--;
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", conference->name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Active (%d caller%s)", conference->count, conference->count == 1 ? "" : "s");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", conference->name);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_ROUTING");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", conference->count == 1 ? "early" : "confirmed");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", conference->count == 1 ? "outbound" : "inbound");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", conference->name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", conference->count == 1 ? "early" : "confirmed");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", conference->count == 1 ? "outbound" : "inbound");
 			switch_event_fire(&event);
 		}
 
@@ -757,7 +757,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_add_event_member_data(member, event);
 			conference_add_event_data(conference, event);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "del-member");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "del-member");
 			switch_event_fire(&event);
 		}
 	}
@@ -1127,18 +1127,18 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
  end:
 
 	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", conference->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Inactive");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", "Inactive");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", conference->name);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_HANGUP");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", "terminated");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", "inbound");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", conference->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
 		switch_event_fire(&event);
 	}
 
@@ -1286,7 +1286,7 @@ static void conference_loop_fn_energy_up(conference_member_t *member, caller_con
 	if (test_eflag(member->conference, EFLAG_ENERGY_LEVEL) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->energy_level);
 		switch_event_fire(&event);
 	}
@@ -1310,7 +1310,7 @@ static void conference_loop_fn_energy_equ_conf(conference_member_t *member, call
 	if (test_eflag(member->conference, EFLAG_ENERGY_LEVEL) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->energy_level);
 		switch_event_fire(&event);
 	}
@@ -1337,7 +1337,7 @@ static void conference_loop_fn_energy_dn(conference_member_t *member, caller_con
 	if (test_eflag(member->conference, EFLAG_ENERGY_LEVEL) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->energy_level);
 		switch_event_fire(&event);
 	}
@@ -1362,7 +1362,7 @@ static void conference_loop_fn_volume_talk_up(conference_member_t *member, calle
 	if (test_eflag(member->conference, EFLAG_VOLUME_LEVEL) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_out_level);
 		switch_event_fire(&event);
 	}
@@ -1386,7 +1386,7 @@ static void conference_loop_fn_volume_talk_zero(conference_member_t *member, cal
 	if (test_eflag(member->conference, EFLAG_VOLUME_LEVEL) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_out_level);
 		switch_event_fire(&event);
 	}
@@ -1411,7 +1411,7 @@ static void conference_loop_fn_volume_talk_dn(conference_member_t *member, calle
 	if (test_eflag(member->conference, EFLAG_VOLUME_LEVEL) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_out_level);
 		switch_event_fire(&event);
 	}
@@ -1436,7 +1436,7 @@ static void conference_loop_fn_volume_listen_up(conference_member_t *member, cal
 	if (test_eflag(member->conference, EFLAG_GAIN_LEVEL) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_in_level);
 		switch_event_fire(&event);
 	}
@@ -1460,7 +1460,7 @@ static void conference_loop_fn_volume_listen_zero(conference_member_t *member, c
 	if (test_eflag(member->conference, EFLAG_GAIN_LEVEL) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_in_level);
 		switch_event_fire(&event);
 	}
@@ -1485,7 +1485,7 @@ static void conference_loop_fn_volume_listen_dn(conference_member_t *member, cal
 	if (test_eflag(member->conference, EFLAG_GAIN_LEVEL) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_in_level);
 		switch_event_fire(&event);
 	}
@@ -1500,8 +1500,8 @@ static void conference_loop_fn_event(conference_member_t *member, caller_control
 	switch_event_t *event;
 	if (test_eflag(member->conference, EFLAG_DTMF) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "dtmf");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Key", "%s", action->binded_dtmf);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "dtmf");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "DTMF-Key", action->binded_dtmf);
 		switch_event_fire(&event);
 	}
 }
@@ -1557,7 +1557,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 					if (test_eflag(member->conference, EFLAG_STOP_TALKING) &&
 						switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 						conference_add_event_member_data(member, event);
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "stop-talking");
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "stop-talking");
 						switch_event_fire(&event);
 					}
 				}
@@ -1609,7 +1609,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 							if (test_eflag(member->conference, EFLAG_FLOOR_CHANGE) &&
 								switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 								conference_add_event_member_data(member, event);
-								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "floor-change");
+								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "floor-change");
 								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-ID", "%d",
 														member->conference->floor_holder ? member->conference->floor_holder->id : 0);
 								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-ID", "%d", member->conference->floor_holder ? member->id : 0);
@@ -1622,7 +1622,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 						if (test_eflag(member->conference, EFLAG_START_TALKING) &&
 							switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 							conference_add_event_member_data(member, event);
-							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "start-talking");
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "start-talking");
 							switch_event_fire(&event);
 						}
 					}
@@ -1640,7 +1640,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 						if (test_eflag(member->conference, EFLAG_STOP_TALKING) &&
 							switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 							conference_add_event_member_data(member, event);
-							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "stop-talking");
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "stop-talking");
 							switch_event_fire(&event);
 						}
 					}
@@ -2737,7 +2737,7 @@ static switch_status_t conf_api_sub_mute(conference_member_t *member, switch_str
 	if (test_eflag(member->conference, EFLAG_MUTE_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "mute-member");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "mute-member");
 		switch_event_fire(&event);
 	}
 
@@ -2766,7 +2766,7 @@ static switch_status_t conf_api_sub_unmute(conference_member_t *member, switch_s
 	if (test_eflag(member->conference, EFLAG_UNMUTE_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "unmute-member");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "unmute-member");
 		switch_event_fire(&event);
 	}
 
@@ -2786,7 +2786,7 @@ static switch_status_t conf_api_sub_deaf(conference_member_t *member, switch_str
 	}
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "deaf-member");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "deaf-member");
 		switch_event_fire(&event);
 	}
 
@@ -2806,7 +2806,7 @@ static switch_status_t conf_api_sub_undeaf(conference_member_t *member, switch_s
 	}
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "undeaf-member");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "undeaf-member");
 		switch_event_fire(&event);
 	}
 
@@ -2831,7 +2831,7 @@ static switch_status_t conf_api_sub_kick(conference_member_t *member, switch_str
 	if (member->conference && test_eflag(member->conference, EFLAG_KICK_MEMBER)) {
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_add_event_member_data(member, event);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "kick-member");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "kick-member");
 			switch_event_fire(&event);
 		}
 	}
@@ -2866,8 +2866,8 @@ static switch_status_t conf_api_sub_dtmf(conference_member_t *member, switch_str
 	if (test_eflag(member->conference, EFLAG_DTMF_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "dtmf-member");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Digits", "%s", dtmf);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "dtmf-member");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Digits", dtmf);
 		switch_event_fire(&event);
 	}
 
@@ -2892,7 +2892,7 @@ static switch_status_t conf_api_sub_energy(conference_member_t *member, switch_s
 	if (test_eflag(member->conference, EFLAG_ENERGY_LEVEL_MEMBER) &&
 		data && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "energy-level-member");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "energy-level-member");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Energy-Level", "%d", member->energy_level);
 		switch_event_fire(&event);
 	}
@@ -2919,7 +2919,7 @@ static switch_status_t conf_api_sub_volume_in(conference_member_t *member, switc
 	if (test_eflag(member->conference, EFLAG_VOLUME_IN_MEMBER) &&
 		data && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-in-member");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "volume-in-member");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Volume-Level", "%u", member->volume_in_level);
 		switch_event_fire(&event);
 	}
@@ -2946,7 +2946,7 @@ static switch_status_t conf_api_sub_volume_out(conference_member_t *member, swit
 	if (test_eflag(member->conference, EFLAG_VOLUME_OUT_MEMBER) && data &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-out-member");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "volume-out-member");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Volume-Level", "%u", member->volume_out_level);
 		switch_event_fire(&event);
 	}
@@ -3036,8 +3036,8 @@ static switch_status_t conf_api_sub_play(conference_obj_t *conference, switch_st
 			if (test_eflag(conference, EFLAG_PLAY_FILE) &&
 				switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 				conference_add_event_data(conference, event);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "play-file");
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "File", "%s", argv[2]);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", argv[2]);
 				switch_event_fire(&event);
 			}
 		} else {
@@ -3054,8 +3054,8 @@ static switch_status_t conf_api_sub_play(conference_obj_t *conference, switch_st
 				if (test_eflag(conference, EFLAG_PLAY_FILE_MEMBER) &&
 					switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 					conference_add_event_member_data(member, event);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "play-file-member");
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "File", "%s", argv[2]);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-member");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", argv[2]);
 					switch_event_fire(&event);
 				}
 			} else {
@@ -3087,8 +3087,8 @@ static switch_status_t conf_api_sub_say(conference_obj_t *conference, switch_str
 	stream->write_function(stream, "(say) OK\n");
 	if (test_eflag(conference, EFLAG_SPEAK_TEXT) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_data(conference, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "speak-text");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Text", "%s", text);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "speak-text");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Text", text);
 		switch_event_fire(&event);
 	}
 	return SWITCH_STATUS_SUCCESS;
@@ -3146,8 +3146,8 @@ static switch_status_t conf_api_sub_saymember(conference_obj_t *conference, swit
 	if (test_eflag(member->conference, EFLAG_SPEAK_TEXT_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "speak-text-member");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Text", "%s", text);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "speak-text-member");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Text", text);
 		switch_event_fire(&event);
 	}
 	ret_status = SWITCH_STATUS_SUCCESS;
@@ -3276,7 +3276,7 @@ static switch_status_t conf_api_sub_lock(conference_obj_t *conference, switch_st
 	stream->write_function(stream, "OK %s locked\n", argv[0]);
 	if (test_eflag(conference, EFLAG_LOCK) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_data(conference, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "lock");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "lock");
 		switch_event_fire(&event);
 	}
 
@@ -3298,7 +3298,7 @@ static switch_status_t conf_api_sub_unlock(conference_obj_t *conference, switch_
 	stream->write_function(stream, "OK %s unlocked\n", argv[0]);
 	if (test_eflag(conference, EFLAG_UNLOCK) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_data(conference, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "unlock");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "unlock");
 		switch_event_fire(&event);
 	}
 
@@ -3458,9 +3458,9 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 			if (test_eflag(conference, EFLAG_TRANSFER) &&
 				switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 				conference_add_event_member_data(member, event);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-Conference-Name", "%s", conference->name);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Conference-Name", "%s", argv[3]);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "transfer");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Old-Conference-Name", conference->name);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "New-Conference-Name", argv[3]);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "transfer");
 				switch_event_fire(&event);
 			}
 		}
@@ -3930,8 +3930,8 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, 
 		if (test_eflag(call->conference, EFLAG_BGDIAL_RESULT) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_add_event_data(call->conference, event);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "bgdial-result");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Result", "%s", switch_channel_cause2str(cause));
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "bgdial-result");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Result", switch_channel_cause2str(cause));
 			switch_event_fire(&event);
 		}
 		switch_safe_free(call->bridgeto);
@@ -5181,32 +5181,32 @@ static void pres_event_handler(switch_event_t *event)
 
 	if ((conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, conf_name))) {
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", conference->name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Active (%d caller%s)", conference->count, conference->count == 1 ? "" : "s");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", conf_name);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_ROUTING");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", conference->count == 1 ? "early" : "confirmed");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", conference->count == 1 ? "outbound" : "inbound");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", conf_name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", conference->count == 1 ? "early" : "confirmed");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", conference->count == 1 ? "outbound" : "inbound");
 			switch_event_fire(&event);
 		}
 	} else if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", conf_name);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", to);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Idle");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conf_name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", to);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", "Idle");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "unique-id", "%s", conf_name);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-state", "%s", "CS_HANGUP");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "answer-state", "%s", "terminated");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-direction", "%s", "inbound");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", conf_name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
 		switch_event_fire(&event);
 	}
 
@@ -5236,12 +5236,12 @@ static void send_presence(switch_event_types_t id)
 			switch_event_t *event;
 
 			if (name && switch_event_create(&event, id) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", name);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", name);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "%s", status ? status : "Available");
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", name);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", name);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", status ? status : "Available");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 				switch_event_fire(&event);
 			}
 		}

@@ -292,13 +292,13 @@ int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames
 
 	if (argc >= 3) {
 		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_EXPIRE) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile-name", "%s", argv[8]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "call-id", "%s", argv[0]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "user", "%s", argv[1]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "host", "%s", argv[2]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s", argv[3]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%s", argv[6]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "user-agent", "%s", argv[7]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", argv[8]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", argv[0]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user", argv[1]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "host", argv[2]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", argv[3]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "expires", argv[6]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user-agent", argv[7]);
 			switch_event_fire(&s_event);
 		}
 	}
@@ -763,15 +763,15 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		switch_mutex_unlock(profile->ireg_mutex);
 
 		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_REGISTER) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile-name", "%s", profile->name);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-user", "%s", to_user);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-host", "%s", to_host);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s", contact_str);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "call-id", "%s", call_id);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "rpid", "%s", rpid);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-user", to_user);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-host", to_host);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", contact_str);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", call_id);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", rpid);
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "to-user", "%s", from_user);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "to-host", "%s", from_host);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-user", from_user);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-host", from_host);
 			switch_event_fire(&s_event);
 		}
 
@@ -783,14 +783,14 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "sip");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->url);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "%s", rpid);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "sip");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, to_host);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "to", "%s@%s", to_user, to_host);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Registered");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_subtype", "probe");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", "Registered");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_subtype", "probe");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 			switch_event_fire(&event);
 		}
 	} else {
@@ -821,13 +821,13 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			}
 		}
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "sip");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->url);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "sip");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s+%s@%s", SOFIA_CHAT_PROTO, to_user, to_host);
 
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "unavailable");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "%s", rpid);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", "unavailable");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 			switch_event_fire(&event);
 		}
 	}
@@ -843,16 +843,16 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 			if (switch_event_create(&s_event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", to_user, to_host);
-				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "VM-Sofia-Profile", "%s", profile->name);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "VM-Sofia-Profile", profile->name);
 			}
 		} else {
 			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile-name", "%s", profile->name);
-				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-user", "%s", to_user);
-				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-host", "%s", to_host);
-				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s", contact_str);
-				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "call-id", "%s", call_id);
-				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "rpid", "%s", rpid);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-user", to_user);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-host", to_host);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", contact_str);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", call_id);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", rpid);
 				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
 			}
 		}
@@ -1391,12 +1391,12 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 			switch_xml_t xparams[2];
 			int i = 0;
 
-			switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, "sip_mailbox", "%s", mailbox);
-			switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, "sip_auth_username", "%s", username);
-			switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, "sip_auth_realm", "%s", realm);
-			switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, "mailbox", "%s", mailbox);
-			switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, "user_name", "%s", username);
-			switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, "domain_name", "%s", realm);
+			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "sip_mailbox", mailbox);
+			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "sip_auth_username", username);
+			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "sip_auth_realm", realm);
+			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "mailbox", mailbox);
+			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "user_name", username);
+			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "domain_name", realm);
 
 			if ((dparams = switch_xml_child(domain, "variables"))) {
 				xparams[i++] = dparams;
@@ -1416,7 +1416,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 						sofia_gateway_t *gateway_ptr = NULL;
 
 						if (!switch_strlen_zero(var) && !switch_strlen_zero(val)) {
-							switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, var, "%s", val);
+							switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, var, val);
 
 							if (!strcasecmp(var, "register-gateway")) {
 								if (!strcasecmp(val, "all")) {

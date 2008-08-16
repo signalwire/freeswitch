@@ -481,7 +481,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 								}
 							}
 							if (var && val) {
-								switch_event_add_header(*event, SWITCH_STACK_BOTTOM, var, "%s", val);
+								switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, var, val);
 								if (!strcasecmp(var, "content-length")) {
 									clen = atoi(val);
 									
@@ -655,10 +655,10 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 		switch_event_t *event;
 
 		if (switch_event_create(&event, SWITCH_EVENT_BACKGROUND_JOB) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-UUID", "%s", acs->uuid_str);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-Command", "%s", acs->api_cmd);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-UUID", acs->uuid_str);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-Command", acs->api_cmd);
 			if (acs->arg) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-Command-Arg", "%s", acs->arg);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-Command-Arg", acs->arg);
 			}
 			switch_event_add_body(event, "%s", reply);
 			switch_event_fire(&event);
@@ -1186,10 +1186,10 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 		switch_caller_profile_event_set_data(switch_channel_get_caller_profile(channel), "Channel", call_event);
 		switch_channel_event_set_data(channel, call_event);
-		switch_event_add_header(call_event, SWITCH_STACK_BOTTOM, "Content-Type", "command/reply");
-		switch_event_add_header(call_event, SWITCH_STACK_BOTTOM, "Reply-Text", "+OK\n");
-		switch_event_add_header(call_event, SWITCH_STACK_BOTTOM, "Socket-Mode", switch_test_flag(listener, LFLAG_ASYNC) ? "async" : "static");
-		switch_event_add_header(call_event, SWITCH_STACK_BOTTOM, "Control", switch_test_flag(listener, LFLAG_FULL) ? "full" : "single-channel");
+		switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Content-Type", "command/reply");
+		switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Reply-Text", "+OK\n");
+		switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Socket-Mode", switch_test_flag(listener, LFLAG_ASYNC) ? "async" : "static");
+		switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Control", switch_test_flag(listener, LFLAG_FULL) ? "full" : "single-channel");
 
 		switch_event_serialize(call_event, &event_str, SWITCH_TRUE);
 		if (!event_str) {
