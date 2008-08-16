@@ -225,7 +225,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 			lua_pushnumber(L, dtmf->duration);
 			lua_rawset(L, -3);
 
-			if (cb_arg) {
+			if (!switch_strlen_zero(cb_arg)) {
 				lua_getfield(L, LUA_GLOBALSINDEX, (char *) cb_arg);
 				arg_count++;
 			}
@@ -249,7 +249,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 			mod_lua_conjure_event(L, event, "__Input_Event__", 1);
 			lua_getfield(L, LUA_GLOBALSINDEX, "__Input_Event__");
 
-			if (cb_arg) {
+			if (!switch_strlen_zero(cb_arg)) {
 				lua_getfield(L, LUA_GLOBALSINDEX, (char *) cb_arg);
 				arg_count++;
 			}
