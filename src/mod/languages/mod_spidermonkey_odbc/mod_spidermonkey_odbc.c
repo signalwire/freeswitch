@@ -260,8 +260,31 @@ static JSBool odbc_exec(JSContext * cx, JSObject * obj, uintN argc, jsval * argv
 static JSBool odbc_num_rows(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
+	SQLLEN row_count;
+	
+	if (!odbc_obj || switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database is not connected!\n");
+		goto done;
+	}
 
-	SQLSMALLINT rows = 0;
+	if (odbc_obj->stmt) {
+		SQLRowCount(odbc_obj->stmt, &row_count);
+	}
+
+  done:
+
+	*rval = INT_TO_JSVAL(row_count);
+
+	return JS_TRUE;
+
+}
+
+
+static JSBool odbc_num_cols(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
+
+	SQLSMALLINT cols = 0;
 
 	if (!odbc_obj || switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database is not connected!\n");
@@ -269,12 +292,12 @@ static JSBool odbc_num_rows(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	}
 
 	if (odbc_obj->stmt) {
-		SQLNumResultCols(odbc_obj->stmt, &rows);
+		SQLNumResultCols(odbc_obj->stmt, &cols);
 	}
 
   done:
 
-	*rval = INT_TO_JSVAL(rows);
+	*rval = INT_TO_JSVAL(cols);
 
 	return JS_TRUE;
 
@@ -449,6 +472,7 @@ static JSFunctionSpec odbc_methods[] = {
 	{"query", odbc_exec, 1},
 	{"execute", odbc_execute, 1},
 	{"numRows", odbc_num_rows, 1},
+	{"numCols", odbc_num_cols, 1},
 	{"nextRow", odbc_next_row, 1},
 	{"getData", odbc_get_data, 1},
 	{"close", odbc_close, 1},
