@@ -2551,7 +2551,7 @@ static int globextend(const char *path, glob_t *pglob, size_t *limit)
 	size_t newsize, len;
 	const char *p;
 	
-	if (*limit && pglob->gl_pathc > (unsigned int)(*limit)) {
+	if (*limit && pglob->gl_pathc > *limit) {
 		errno = 0;
 		return (GLOB_NOSPACE);
 	}
@@ -2571,7 +2571,7 @@ static int globextend(const char *path, glob_t *pglob, size_t *limit)
 	if (pglob->gl_pathv == NULL && pglob->gl_offs > 0) {
 		/* first time around -- clear initial gl_offs items */
 		pathv += pglob->gl_offs;
-		for (i = pglob->gl_offs; --i >= 0; )
+		for (i = pglob->gl_offs; i-- > 0; )
 			*--pathv = NULL;
 	}
 	pglob->gl_pathv = pathv;
