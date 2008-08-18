@@ -260,7 +260,7 @@ static JSBool odbc_exec(JSContext * cx, JSObject * obj, uintN argc, jsval * argv
 static JSBool odbc_num_rows(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
-	SQLLEN row_count;
+	SQLLEN row_count = 0;
 	
 	if (!odbc_obj || switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database is not connected!\n");
