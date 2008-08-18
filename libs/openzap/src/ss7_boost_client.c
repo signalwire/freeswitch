@@ -22,8 +22,8 @@
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
  * A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER
- * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
  * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
  * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
@@ -40,10 +40,10 @@
 
 
 #ifndef HAVE_GETHOSTBYNAME_R
-extern int gethostbyname_r (const char *__name,
-							struct hostent *__result_buf,
-							char *__buf, size_t __buflen,
-							struct hostent **__result,
+extern int gethostbyname_r (const char *__name, 
+							struct hostent *__result_buf, 
+							char *__buf, size_t __buflen, 
+							struct hostent **__result, 
 							int *__h_errnop);
 #endif
 
@@ -53,53 +53,53 @@ struct ss7bc_map {
 };
 
 static struct ss7bc_map ss7bc_table[] = {
-	{SIGBOOST_EVENT_CALL_START, "CALL_START"},
-	{SIGBOOST_EVENT_CALL_START_ACK, "CALL_START_ACK"},
-	{SIGBOOST_EVENT_CALL_START_NACK, "CALL_START_NACK"},
-	{SIGBOOST_EVENT_CALL_START_NACK_ACK, "CALL_START_NACK_ACK"},
-	{SIGBOOST_EVENT_CALL_ANSWERED, "CALL_ANSWERED"},
-	{SIGBOOST_EVENT_CALL_STOPPED, "CALL_STOPPED"},
-	{SIGBOOST_EVENT_CALL_STOPPED_ACK, "CALL_STOPPED_ACK"},
-	{SIGBOOST_EVENT_SYSTEM_RESTART, "SYSTEM_RESTART"},
-	{SIGBOOST_EVENT_SYSTEM_RESTART_ACK, "SYSTEM_RESTART_ACK"},
-	{SIGBOOST_EVENT_HEARTBEAT, "HEARTBEAT"},
-	{SIGBOOST_EVENT_INSERT_CHECK_LOOP, "LOOP START"},
+	{SIGBOOST_EVENT_CALL_START, "CALL_START"}, 
+	{SIGBOOST_EVENT_CALL_START_ACK, "CALL_START_ACK"}, 
+	{SIGBOOST_EVENT_CALL_START_NACK, "CALL_START_NACK"}, 
+	{SIGBOOST_EVENT_CALL_START_NACK_ACK, "CALL_START_NACK_ACK"}, 
+	{SIGBOOST_EVENT_CALL_ANSWERED, "CALL_ANSWERED"}, 
+	{SIGBOOST_EVENT_CALL_STOPPED, "CALL_STOPPED"}, 
+	{SIGBOOST_EVENT_CALL_STOPPED_ACK, "CALL_STOPPED_ACK"}, 
+	{SIGBOOST_EVENT_SYSTEM_RESTART, "SYSTEM_RESTART"}, 
+	{SIGBOOST_EVENT_SYSTEM_RESTART_ACK, "SYSTEM_RESTART_ACK"}, 
+	{SIGBOOST_EVENT_HEARTBEAT, "HEARTBEAT"}, 
+	{SIGBOOST_EVENT_INSERT_CHECK_LOOP, "LOOP START"}, 
 	{SIGBOOST_EVENT_REMOVE_CHECK_LOOP, "LOOP STOP"} 
 }; 
 
 
 
-static void ss7bc_print_event_call(ss7bc_connection_t *mcon, ss7bc_event_t *event, int priority, int dir,const char *file, const char *func, int line)
+static void ss7bc_print_event_call(ss7bc_connection_t *mcon, ss7bc_event_t *event, int priority, int dir, const char *file, const char *func, int line)
 {
 	if (event->event_id == SIGBOOST_EVENT_HEARTBEAT)
 		return;
-	zap_log(file, func, line, ZAP_LOG_LEVEL_DEBUG, "%s EVENT: %s:(%X) [w%dg%d] CSid=%i Seq=%i Cn=[%s] Cd=[%s] Ci=[%s]\n",
-		    dir ? "TX":"RX",
-			ss7bc_event_id_name(event->event_id),
-			event->event_id,
-			event->span+1,
-			event->chan+1,
-			event->call_setup_id,
-			event->fseqno,
-			strlen(event->calling_name)?event->calling_name:"N/A",
-			(event->called_number_digits_count ? (char *) event->called_number_digits : "N/A"),
+	zap_log(file, func, line, ZAP_LOG_LEVEL_DEBUG, "%s EVENT: %s:(%X) [w%dg%d] CSid=%i Seq=%i Cn=[%s] Cd=[%s] Ci=[%s]\n", 
+		    dir ? "TX":"RX", 
+			ss7bc_event_id_name(event->event_id), 
+			event->event_id, 
+			event->span+1, 
+			event->chan+1, 
+			event->call_setup_id, 
+			event->fseqno, 
+			strlen(event->calling_name)?event->calling_name:"N/A", 
+			(event->called_number_digits_count ? (char *) event->called_number_digits : "N/A"), 
 			(event->calling_number_digits_count ? (char *) event->calling_number_digits : "N/A")
 			);
 
 }
-static void ss7bc_print_event_short(ss7bc_connection_t *mcon,ss7bc_short_event_t *event, int priority, int dir,const char *file, const char *func, int line)
+static void ss7bc_print_event_short(ss7bc_connection_t *mcon, ss7bc_short_event_t *event, int priority, int dir, const char *file, const char *func, int line)
 {
 	if (event->event_id == SIGBOOST_EVENT_HEARTBEAT)
 		return;
-	zap_log(file, func, line, ZAP_LOG_LEVEL_DEBUG, "%s EVENT (%s): %s:(%X) [w%dg%d] Rc=%i CSid=%i Seq=%i \n",
-			   dir ? "TX":"RX",
-			   priority ? "P":"N",	
-                           ss7bc_event_id_name(event->event_id),
-                           event->event_id,
-                           event->span+1,
-                           event->chan+1,
-                           event->release_cause,
-                           event->call_setup_id,
+	zap_log(file, func, line, ZAP_LOG_LEVEL_DEBUG, "%s EVENT (%s): %s:(%X) [w%dg%d] Rc=%i CSid=%i Seq=%i \n", 
+			   dir ? "TX":"RX", 
+			   priority ? "P":"N", 	
+                           ss7bc_event_id_name(event->event_id), 
+                           event->event_id, 
+                           event->span+1, 
+                           event->chan+1, 
+                           event->release_cause, 
+                           event->call_setup_id, 
                            event->fseqno);
 }
 
@@ -119,8 +119,8 @@ static int create_conn_socket(ss7bc_connection_t *mcon, char *local_ip, int loca
 	mcon->socket = socket(AF_INET, SOCK_DGRAM, 0);
 #endif
  
-	zap_log(ZAP_LOG_DEBUG, "Creating L=%s:%d R=%s:%d\n",
-			local_ip,local_port,ip,port);
+	zap_log(ZAP_LOG_DEBUG, "Creating L=%s:%d R=%s:%d\n", 
+			local_ip, local_port, ip, port);
 
 	if (mcon->socket >= 0) {
 		int flag;
@@ -149,13 +149,13 @@ static int create_conn_socket(ss7bc_connection_t *mcon, char *local_ip, int loca
 #endif
 
 			if ((rc = bind(mcon->socket, 
-						   (struct sockaddr *) &mcon->local_addr,
+						   (struct sockaddr *) &mcon->local_addr, 
 						   sizeof(mcon->local_addr))) < 0) {
 				close(mcon->socket);
 				mcon->socket = -1;
 			} else {
 #ifdef HAVE_NETINET_SCTP_H
-				rc=listen(mcon->socket,100);
+				rc=listen(mcon->socket, 100);
 				if (rc) {
 					close(mcon->socket);
 					mcon->socket = -1;
@@ -252,8 +252,6 @@ int ss7bc_exec_commandp(ss7bc_connection_t *pcon, int span, int chan, int id, in
     return 0;
 }
 
-
-
 ss7bc_event_t *__ss7bc_connection_read(ss7bc_connection_t *mcon, int iteration, const char *file, const char *func, int line)
 {
 	unsigned int fromlen = sizeof(struct sockaddr_in);
@@ -279,20 +277,30 @@ ss7bc_event_t *__ss7bc_connection_read(ss7bc_connection_t *mcon, int iteration, 
 
 	if (msg_ok){
 
-		if  (boost_full_event(mcon->event.event_id)) {
-			ss7bc_print_event_call(mcon,&mcon->event, 0, 0, file,func,line);
-		} else {
-			ss7bc_print_event_short(mcon,(ss7bc_short_event_t*)&mcon->event, 0, 0, file,func,line);
+		if (ss7bc_test_flag(mcon, MSU_FLAG_DOWN)) {
+			if (mcon->event.event_id != SIGBOOST_EVENT_SYSTEM_RESTART && 
+				mcon->event.event_id != SIGBOOST_EVENT_SYSTEM_RESTART_ACK && 
+				mcon->event.event_id != SIGBOOST_EVENT_HEARTBEAT) {
+				zap_log(file, func, line, ZAP_LOG_LEVEL_WARNING, "Not reading packets when connection is down. [%s]\n", 
+						ss7bc_event_id_name(mcon->event.event_id));
+				return NULL;
+			}
 		}
 
-#if 0
+		if  (boost_full_event(mcon->event.event_id)) {
+			ss7bc_print_event_call(mcon, &mcon->event, 0, 0, file, func, line);
+		} else {
+			ss7bc_print_event_short(mcon, (ss7bc_short_event_t*)&mcon->event, 0, 0, file, func, line);
+		}
+
+#if 1
 /* NC: NOT USED ANY MORE */
 		if (mcon->rxseq_reset) {
-			if (mcon->event.event_id == SIGBOOST_EVENT_SYSTEM_RESTART_ACK) {
+			//if (mcon->event.event_id == SIGBOOST_EVENT_SYSTEM_RESTART_ACK) {
 				zap_log(ZAP_LOG_DEBUG, "Rx sync ok\n");
 				mcon->rxseq = mcon->event.fseqno;
 				return &mcon->event;
-			}
+				//}
 			errno=EAGAIN;
 			zap_log(ZAP_LOG_DEBUG, "Waiting for rx sync...\n");
 			return NULL;
@@ -328,9 +336,9 @@ ss7bc_event_t *__ss7bc_connection_readp(ss7bc_connection_t *mcon, int iteration,
 	if (bytes == sizeof(ss7bc_short_event_t)) {
 
 		if  (boost_full_event(mcon->event.event_id)) {
-			ss7bc_print_event_call(mcon,&mcon->event, 1, 0, file,func,line);
+			ss7bc_print_event_call(mcon, &mcon->event, 1, 0, file, func, line);
 		} else {
-			ss7bc_print_event_short(mcon,(ss7bc_short_event_t*)&mcon->event, 1, 0, file,func,line);
+			ss7bc_print_event_short(mcon, (ss7bc_short_event_t*)&mcon->event, 1, 0, file, func, line);
 		}
 
 		return &mcon->event;
@@ -349,15 +357,15 @@ int __ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event, con
 {
 	int err;
 	int event_size=sizeof(ss7bc_event_t);
-
+ 
 	if (!event || mcon->socket < 0 || !mcon->mutex) {
-		zap_log(file, func, line, ZAP_LOG_LEVEL_CRIT,  "Critical Error: No Event Device\n");
+		zap_log(file, func, line, ZAP_LOG_LEVEL_CRIT, "Critical Error: No Event Device\n");
 		return -EINVAL;
 		abort();
 	}
 
 	if (event->span > 16 || event->chan > 31) {
-		zap_log(file, func, line, ZAP_LOG_LEVEL_CRIT, "Critical Error: TX Cmd=%s Invalid Span=%i Chan=%i\n", ss7bc_event_id_name(event->event_id), event->span,event->chan);
+		zap_log(file, func, line, ZAP_LOG_LEVEL_CRIT, "Critical Error: TX Cmd=%s Invalid Span=%i Chan=%i\n", ss7bc_event_id_name(event->event_id), event->span, event->chan);
 		abort();
 		return -1;
 	}
@@ -366,7 +374,17 @@ int __ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event, con
 		event_size=sizeof(ss7bc_short_event_t);
 	}	
 
-	gettimeofday(&event->tv,NULL);
+	if (ss7bc_test_flag(mcon, MSU_FLAG_DOWN)) {
+		if (event->event_id != SIGBOOST_EVENT_SYSTEM_RESTART && 
+			event->event_id != SIGBOOST_EVENT_SYSTEM_RESTART_ACK && 
+			event->event_id != SIGBOOST_EVENT_HEARTBEAT) {
+			zap_log(file, func, line, ZAP_LOG_LEVEL_WARNING, "Not writing packets when connection is down. [%s]\n",
+					ss7bc_event_id_name(event->event_id));
+			return 0;
+		}
+	}
+
+	gettimeofday(&event->tv, NULL);
 	
 	zap_mutex_lock(mcon->mutex);
 	if (event->event_id == SIGBOOST_EVENT_SYSTEM_RESTART_ACK) {
@@ -387,9 +405,9 @@ int __ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event, con
 	}
 
 	if (boost_full_event(event->event_id)) {
-		ss7bc_print_event_call(mcon,event, 0, 1,file,func,line);
+		ss7bc_print_event_call(mcon, event, 0, 1, file, func, line);
 	} else {
-		ss7bc_print_event_short(mcon,(ss7bc_short_event_t*)event, 0, 1,file,func,line);
+		ss7bc_print_event_short(mcon, (ss7bc_short_event_t*)event, 0, 1, file, func, line);
 	}
 
 	return err;
@@ -402,7 +420,7 @@ int __ss7bc_connection_writep(ss7bc_connection_t *mcon, ss7bc_event_t *event, co
 	int event_size=sizeof(ss7bc_event_t);
 
 	if (!event || mcon->socket < 0 || !mcon->mutex) {
-		zap_log(file, func, line, ZAP_LOG_LEVEL_CRIT,  "Critical Error: No Event Device\n");
+		zap_log(file, func, line, ZAP_LOG_LEVEL_CRIT, "Critical Error: No Event Device\n");
 		return -EINVAL;
 		abort();
 	}
@@ -411,7 +429,7 @@ int __ss7bc_connection_writep(ss7bc_connection_t *mcon, ss7bc_event_t *event, co
 		event_size=sizeof(ss7bc_short_event_t);
 	}	
 
-	gettimeofday(&event->tv,NULL);
+	gettimeofday(&event->tv, NULL);
 	
 	zap_mutex_lock(mcon->mutex);
 	err = sendto(mcon->socket, event, event_size, 0, (struct sockaddr *) &mcon->remote_addr, sizeof(mcon->remote_addr));
@@ -423,9 +441,9 @@ int __ss7bc_connection_writep(ss7bc_connection_t *mcon, ss7bc_event_t *event, co
 	}
 
 	if (boost_full_event(event->event_id)) {
-		ss7bc_print_event_call(mcon,event, 1, 1,file,func,line);
+		ss7bc_print_event_call(mcon, event, 1, 1, file, func, line);
 	} else {
-		ss7bc_print_event_short(mcon,(ss7bc_short_event_t*)event, 1, 1,file,func,line);
+		ss7bc_print_event_short(mcon, (ss7bc_short_event_t*)event, 1, 1, file, func, line);
 	}
 
 	return err;

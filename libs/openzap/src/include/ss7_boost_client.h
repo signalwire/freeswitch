@@ -82,6 +82,12 @@ typedef struct ss7bc_ip_cfg
 	int remote_port;
 }ss7bc_ip_cfg_t;
 
+typedef enum {
+	MSU_FLAG_EVENT = (1 << 0),
+	MSU_FLAG_DOWN = (1 << 1)
+} ss7bc_flag_t;
+
+
 struct ss7bc_connection {
 	zap_socket_t socket;
 	struct sockaddr_in local_addr;
@@ -98,12 +104,7 @@ struct ss7bc_connection {
 	unsigned int rxseq_reset;
 	ss7bc_ip_cfg_t cfg;
 	uint32_t hb_elapsed;
-	int up;
 };
-
-typedef enum {
-	MSU_FLAG_EVENT = (1 << 0)
-} ss7bc_flag_t;
 
 typedef struct ss7bc_connection ss7bc_connection_t;
 
