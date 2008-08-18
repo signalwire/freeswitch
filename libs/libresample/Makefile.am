@@ -20,16 +20,16 @@ testresample_SOURCES = tests/testresample.c
 testresample_CFLAGS = $(AM_CFLAGS)
 testresample_LDADD = ${top_builddir}/libresample.la
 
-if SAMPLE
-bin_PROGRAMS += compareresample
-compareresample_SOURCES = tests/compareresample.c
-compareresample_CFLAGS = $(AM_CFLAGS)
-compareresample_LDADD = ${top_builddir}/libresample.la -lsamplerate
-endif
+#if SAMPLE
+#bin_PROGRAMS += compareresample
+#compareresample_SOURCES = tests/compareresample.c
+#compareresample_CFLAGS = $(AM_CFLAGS)
+#compareresample_LDADD = ${top_builddir}/libresample.la -lsamplerate
+#endif
 
-if SNDFILE
-bin_PROGRAMS += resample_sndfile
-resample_sndfile_SOURCES = tests/resample-sndfile.c
-resample_sndfile_CFLAGS = $(AM_CFLAGS)
-resample_sndfile_LDADD = ${top_builddir}/libresample.la -lsndfile
-endif
+#if SNDFILE
+#bin_PROGRAMS += resample_sndfile
+#resample_sndfile_SOURCES = tests/resample-sndfile.c
+#resample_sndfile_CFLAGS = $(AM_CFLAGS)
+#resample_sndfile_LDADD = ${top_builddir}/libresample.la -lsndfile
+#endif

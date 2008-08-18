@@ -128,13 +128,13 @@ AC_SUBST(DYNAMIC_LIB_EXTEN)
 AC_DEFINE_UNQUOTED([__FUNCTION__],[$FUNC_DEF],[define it the right way ;)])
 AC_DEFINE_UNQUOTED([inline],[$IN_LINE],[sunpro is bad at inline])
 
-AC_CHECK_LIB(sndfile, sf_open, have_libsndfile=yes, have_libsndfile=no)
+#AC_CHECK_LIB(sndfile, sf_open, have_libsndfile=yes, have_libsndfile=no)
 
-AC_CHECK_LIB(samplerate, src_simple, have_libsamplerate=yes, have_libsamplerate=no)
+#AC_CHECK_LIB(samplerate, src_simple, have_libsamplerate=yes, have_libsamplerate=no)
 
 
-AM_CONDITIONAL([SAMPLE], [test $have_libsamplerate = "yes"])
-AM_CONDITIONAL([SNDFILE],[test $have_libsndfile = "yes"])
+#AM_CONDITIONAL([SAMPLE], [test $have_libsamplerate = "yes"])
+#AM_CONDITIONAL([SNDFILE],[test $have_libsndfile = "yes"])
 
 
 AC_CHECK_HEADERS(inttypes.h)
@@ -144,24 +144,24 @@ AC_OUTPUT([Makefile])
 
 echo ""
 
-if [[ $have_libsamplerate = "yes" ]] ; then
-	echo "Configured to build tests/resample-sndfile using libsndfile"
-	echo ""
-else
-	echo "Could not find libsndfile - needed if you want to"
-	echo "compile tests/resample-sndfile"
-	echo ""
-fi
+#if [[ $have_libsamplerate = "yes" ]] ; then
+#	echo "Configured to build tests/resample-sndfile using libsndfile"
+#	echo ""
+#else
+#	echo "Could not find libsndfile - needed if you want to"
+#	echo "compile tests/resample-sndfile"
+#	echo ""
+#fi
 
-if [[ $have_libsamplerate = "yes" ]] ; then
-	echo "Configured to build tests/compareresample to compare against"
-   echo "Erik de Castro Lopo's libsamplerate library."
-	echo ""
-else
-	echo "Could not find libsamplerate - only needed if you want to"
-	echo "compile tests/compareresample to compare their performance."
-	echo ""
-fi
+#if [[ $have_libsamplerate = "yes" ]] ; then
+#	echo "Configured to build tests/compareresample to compare against"
+#   echo "Erik de Castro Lopo's libsamplerate library."
+#	echo ""
+#else
+#	echo "Could not find libsamplerate - only needed if you want to"
+#	echo "compile tests/compareresample to compare their performance."
+#	echo ""
+#fi
 
 echo "Type 'configure --help' to see options."
 echo ""
