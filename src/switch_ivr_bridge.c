@@ -466,6 +466,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 		switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
 		switch_event_t *event;
 		uint8_t ready_a, ready_b;
+		switch_channel_state_t state;
 
 		switch_channel_set_variable(channel, SWITCH_UUID_BRIDGE, NULL);
 
@@ -524,7 +525,9 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 		}
 
 		switch_ivr_multi_threaded_bridge(session, other_session, NULL, NULL, NULL);
-		if (switch_channel_get_state(channel) < CS_HANGUP) {
+
+		state = switch_channel_get_state(channel);
+		if (state < CS_HANGUP && state != CS_ROUTING && state != CS_PARK) {
 			switch_channel_set_state(channel, CS_EXECUTE);
 		}
 		switch_core_session_rwunlock(other_session);
