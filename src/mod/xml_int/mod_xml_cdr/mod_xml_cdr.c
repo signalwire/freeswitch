@@ -141,6 +141,11 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			headers = curl_slist_append(headers, "Content-Type: application/x-www-form-plaintext");
 		}
 
+		if (!strncasecmp(globals.url, "https", 5)) {
+			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+		}
+
 		if (!(curl_xml_text = switch_mprintf("cdr=%s", xml_text))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 			goto error;
