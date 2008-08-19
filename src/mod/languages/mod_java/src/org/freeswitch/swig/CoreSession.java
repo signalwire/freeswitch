@@ -161,16 +161,16 @@ public class CoreSession {
     freeswitchJNI.CoreSession_sayPhrase__SWIG_2(swigCPtr, this, phrase_name);
   }
 
-  public int recordFile(String file_name, int max_len, int silence_threshold, int silence_secs) {
-    return freeswitchJNI.CoreSession_recordFile__SWIG_0(swigCPtr, this, file_name, max_len, silence_threshold, silence_secs);
+  public int recordFile(String file_name, int time_limit, int silence_threshold, int silence_hits) {
+    return freeswitchJNI.CoreSession_recordFile__SWIG_0(swigCPtr, this, file_name, time_limit, silence_threshold, silence_hits);
   }
 
-  public int recordFile(String file_name, int max_len, int silence_threshold) {
-    return freeswitchJNI.CoreSession_recordFile__SWIG_1(swigCPtr, this, file_name, max_len, silence_threshold);
+  public int recordFile(String file_name, int time_limit, int silence_threshold) {
+    return freeswitchJNI.CoreSession_recordFile__SWIG_1(swigCPtr, this, file_name, time_limit, silence_threshold);
   }
 
-  public int recordFile(String file_name, int max_len) {
-    return freeswitchJNI.CoreSession_recordFile__SWIG_2(swigCPtr, this, file_name, max_len);
+  public int recordFile(String file_name, int time_limit) {
+    return freeswitchJNI.CoreSession_recordFile__SWIG_2(swigCPtr, this, file_name, time_limit);
   }
 
   public int recordFile(String file_name) {

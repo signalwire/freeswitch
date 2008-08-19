@@ -232,7 +232,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 	 *        to be considered silence (500 is a good starting point).
 	 * \param <[silence_secs]> seconds of silence to interrupt the record.
 	 */
-		 SWITCH_DECLARE(int) recordFile(char *file_name, int max_len = 0, int silence_threshold = 0, int silence_secs = 0);
+		 SWITCH_DECLARE(int) recordFile(char *file_name, int time_limit = 0, int silence_threshold = 0, int silence_hits = 0);
 
 
 	/** \brief Set attributes of caller data for purposes of outgoing calls

@@ -903,7 +903,7 @@ SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, char *des
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(int) CoreSession::recordFile(char *file_name, int max_len, int silence_threshold, int silence_secs) 
+SWITCH_DECLARE(int) CoreSession::recordFile(char *file_name, int time_limit, int silence_threshold, int silence_hits) 
 {
 	switch_status_t status;
 
@@ -913,10 +913,10 @@ SWITCH_DECLARE(int) CoreSession::recordFile(char *file_name, int max_len, int si
 	memset(&local_fh, 0, sizeof(local_fh));
 	fhp = &local_fh;
 	local_fh.thresh = silence_threshold;
-	local_fh.silence_hits = silence_secs;
+	local_fh.silence_hits = silence_hits;
 
 	begin_allow_threads();
-	status = switch_ivr_record_file(session, &local_fh, file_name, &args, max_len);
+	status = switch_ivr_record_file(session, &local_fh, file_name, &args, time_limit);
 	end_allow_threads();
 
 	fhp = NULL;

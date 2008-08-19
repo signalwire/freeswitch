@@ -6374,7 +6374,7 @@ XS(_wrap_CoreSession_recordFile__SWIG_0) {
     dXSARGS;
     
     if ((items < 5) || (items > 5)) {
-      SWIG_croak("Usage: CoreSession_recordFile(self,file_name,max_len,silence_threshold,silence_secs);");
+      SWIG_croak("Usage: CoreSession_recordFile(self,file_name,time_limit,silence_threshold,silence_hits);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -6440,7 +6440,7 @@ XS(_wrap_CoreSession_recordFile__SWIG_1) {
     dXSARGS;
     
     if ((items < 4) || (items > 4)) {
-      SWIG_croak("Usage: CoreSession_recordFile(self,file_name,max_len,silence_threshold);");
+      SWIG_croak("Usage: CoreSession_recordFile(self,file_name,time_limit,silence_threshold);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -6496,7 +6496,7 @@ XS(_wrap_CoreSession_recordFile__SWIG_2) {
     dXSARGS;
     
     if ((items < 3) || (items > 3)) {
-      SWIG_croak("Usage: CoreSession_recordFile(self,file_name,max_len);");
+      SWIG_croak("Usage: CoreSession_recordFile(self,file_name,time_limit);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
