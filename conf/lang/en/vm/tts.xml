@@ -71,10 +71,10 @@
 
 
   <macro name="voicemail_config_menu">
-    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
+    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="To record a greeting, press $1, To choose a greeting, press $2, To record your name, press $3, to return to the main menu, press $4."/>
+		data="To record a greeting, press $1, To choose a greeting, press $2, To record your name, press $3, to change your password, press $5, to return to the main menu, press $5."/>
       </match>
     </input>
   </macro>

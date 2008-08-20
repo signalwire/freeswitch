@@ -69,6 +69,7 @@ struct vm_profile {
 	char record_greeting_key[2];
 	char choose_greeting_key[2];
 	char record_name_key[2];
+	char change_pass_key[2];
 
 	char record_file_key[2];
 	char listen_file_key[2];
@@ -203,12 +204,20 @@ static char vm_sql[] =
 	"   cid_name      VARCHAR(255),\n"
 	"   cid_number    VARCHAR(255),\n"
 	"   in_folder     VARCHAR(255),\n"
-	"   file_path     VARCHAR(255),\n" "   message_len   INTEGER,\n" "   flags         VARCHAR(255),\n" "   read_flags    VARCHAR(255)\n" ");\n";
+	"   file_path     VARCHAR(255),\n" 
+	"   message_len   INTEGER,\n" 
+	"   flags         VARCHAR(255),\n" 
+	"   read_flags    VARCHAR(255)\n" 
+	");\n";
 
 static char vm_pref_sql[] =
 	"CREATE TABLE voicemail_prefs (\n"
 	"   username        VARCHAR(255),\n"
-	"   domain          VARCHAR(255),\n" "   name_path       VARCHAR(255),\n" "   greeting_path VARCHAR(255)\n" ");\n";
+	"   domain          VARCHAR(255),\n" 
+	"   name_path       VARCHAR(255),\n" 
+	"   greeting_path VARCHAR(255)\n" 
+	"   password VARCHAR(255)\n" 
+	");\n";
 
 static switch_status_t load_config(void)
 {
@@ -252,6 +261,7 @@ static switch_status_t load_config(void)
 		char *record_greeting_key = "1";
 		char *choose_greeting_key = "2";
 		char *record_name_key = "3";
+		char *change_pass_key = "6";
 
 		char *record_file_key = "3";
 		char *listen_file_key = "1";
@@ -430,6 +440,8 @@ static switch_status_t load_config(void)
 				choose_greeting_key = val;
 			} else if (!strcasecmp(var, "record-name-key") && !switch_strlen_zero(val)) {
 				record_name_key = val;
+			} else if (!strcasecmp(var, "change-pass-key") && !switch_strlen_zero(val)) {
+				change_pass_key = val;
 			} else if (!strcasecmp(var, "listen-file-key") && !switch_strlen_zero(val)) {
 				listen_file_key = val;
 			} else if (!strcasecmp(var, "save-file-key") && !switch_strlen_zero(val)) {
@@ -596,6 +608,10 @@ static switch_status_t load_config(void)
 					switch_odbc_handle_exec(profile->master_odbc, vm_pref_sql, NULL);
 				}
 
+				if (switch_odbc_handle_exec(profile->master_odbc, "select count(password) from voicemail_prefs", NULL) != SWITCH_ODBC_SUCCESS) {
+					switch_odbc_handle_exec(profile->master_odbc, "alter table voicemail_prefs add password varchar(255)", NULL);
+				}
+
 				if (switch_odbc_handle_exec(profile->master_odbc, "select count(message_len) from voicemail_data", NULL) == SWITCH_ODBC_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Old table voicemail_data found, migrating data!\n");
 					/* XXX: Old table found.. migrating data into new table */
@@ -638,6 +654,8 @@ static switch_status_t load_config(void)
 
 
 					switch_core_db_test_reactive(db, "select count(username) from voicemail_prefs", "drop table voicemail_prefs", vm_pref_sql);
+					switch_core_db_test_reactive(db, "select count(password) from voicemail_prefs", NULL, 
+												 "alter table voicemail_prefs add password varchar(255)");
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
 					continue;
@@ -672,6 +690,7 @@ static switch_status_t load_config(void)
 			*profile->record_greeting_key = *record_greeting_key;
 			*profile->choose_greeting_key = *choose_greeting_key;
 			*profile->record_name_key = *record_name_key;
+			*profile->change_pass_key = *change_pass_key;
 			*profile->record_file_key = *record_file_key;
 			*profile->listen_file_key = *listen_file_key;
 			*profile->save_file_key = *save_file_key;
@@ -805,6 +824,7 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
 struct prefs_callback {
 	char name_path[255];
 	char greeting_path[255];
+	char password[255];
 };
 typedef struct prefs_callback prefs_callback_t;
 
@@ -814,7 +834,8 @@ static int prefs_callback(void *pArg, int argc, char **argv, char **columnNames)
 
 	switch_copy_string(cbt->name_path, argv[2], sizeof(cbt->name_path));
 	switch_copy_string(cbt->greeting_path, argv[3], sizeof(cbt->greeting_path));
-
+	switch_copy_string(cbt->password, argv[4], sizeof(cbt->password));
+	
 	return 0;
 }
 
@@ -1315,7 +1336,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 	int total_saved_urgent_messages = 0;
 	int heard_auto_saved = 0, heard_auto_new = 0;
 	char *vm_email = NULL;
-	char foo[2] = "";
+	char global_buf[2] = "";
 	switch_input_args_t args = { 0 };
 	const char *caller_id_name = NULL;
 	const char *caller_id_number = NULL;
@@ -1335,9 +1356,10 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 
 	timeout = profile->digit_timeout;
 	attempts = profile->max_login_attempts;
-	args.buf = &foo;
-	args.buflen = sizeof(foo);
+	args.buf = &global_buf;
+	args.buflen = sizeof(global_buf);
 	status = switch_ivr_phrase_macro(session, VM_HELLO_MACRO, NULL, NULL, &args);
+	*global_buf = '\0';
 
 	while (switch_channel_ready(channel)) {
 		switch_ivr_sleep(session, 100, NULL);
@@ -1367,6 +1389,11 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 			{
 				int informed = 0;
 				char msg_count[80] = "";
+				switch_input_args_t args = { 0 };
+
+				args.input_callback = cancel_on_dtmf;
+				args.buf = &global_buf;
+				args.buflen = sizeof(global_buf);
 
 				switch_channel_set_variable(channel, "voicemail_current_folder", myfolder);
 				message_count(profile, myid, domain_name, myfolder, &total_new_messages, &total_saved_messages,
@@ -1374,13 +1401,21 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 
 				if (total_new_urgent_messages > 0) {
 					switch_snprintf(msg_count, sizeof(msg_count), "%d:urgent-new", total_new_urgent_messages);
-					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL));
+					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, &args));
 					informed++;
+					if (!switch_strlen_zero(global_buf)) {
+						vm_check_state = VM_CHECK_MENU;
+						continue;
+					}
 				}
 				if (total_new_messages > 0 && total_new_messages != total_new_urgent_messages) {
 					switch_snprintf(msg_count, sizeof(msg_count), "%d:new", total_new_messages);
-					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL));
+					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, &args));
 					informed++;
+					if (!switch_strlen_zero(global_buf)) {
+						vm_check_state = VM_CHECK_MENU;
+						continue;
+					}
 				}
 
 				if (!heard_auto_new && total_new_messages + total_new_urgent_messages > 0) {
@@ -1392,7 +1427,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 
 				if (!informed) {
 					switch_snprintf(msg_count, sizeof(msg_count), "0:new");
-					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL));
+					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, &args));
 					informed++;
 				}
 
@@ -1487,14 +1522,18 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 				vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &cbt);
 				switch_safe_free(sql);
 				if (*msg_count == '\0' || !atoi(msg_count)) {
-					sql = switch_mprintf("insert into voicemail_prefs values('%q','%q','','')", myid, domain_name);
+					sql = switch_mprintf("insert into voicemail_prefs values('%q','%q','','','')", myid, domain_name);
 					vm_execute_sql(profile, sql, profile->mutex);
 					switch_safe_free(sql);
 				}
 
-				switch_snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s",
-								profile->record_greeting_key, profile->choose_greeting_key, profile->record_name_key, profile->main_menu_key);
-
+				switch_snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s:%s",
+								profile->record_greeting_key, 
+								profile->choose_greeting_key, 
+								profile->record_name_key, 
+								profile->change_pass_key, 
+								profile->main_menu_key);
+				
 
 				TRY_CODE(vm_macro_get(session, VM_CONFIG_MENU_MACRO, key_buf, input, sizeof(input), 1, "", &term, timeout));
 				if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
@@ -1555,6 +1594,17 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 						switch_safe_free(file_path);
 					}
 
+				} else if (!strcmp(input, profile->change_pass_key)) {
+					char buf[256] = "";
+					char macro[256] = "";
+
+					switch_snprintf(macro, sizeof(macro), "phrase:%s:%s", VM_ENTER_PASS_MACRO, profile->terminator_key);
+					TRY_CODE(switch_ivr_read(session, 1, 255, macro, NULL, buf, sizeof(buf), 10000, profile->terminator_key));
+					sql = switch_mprintf("update voicemail_prefs set password='%s' where username='%s' and domain='%s'", buf, myid, domain_name);
+					vm_execute_sql(profile, sql, profile->mutex);
+					switch_safe_free(file_path);
+					switch_safe_free(sql);
+
 				} else if (!strcmp(input, profile->record_name_key)) {
 					file_path = switch_mprintf("%s%srecorded_name.%s", dir_path, SWITCH_PATH_SEPARATOR, profile->file_ext);
 					TRY_CODE(create_file(session, profile, VM_RECORD_NAME_MACRO, file_path, &message_len, SWITCH_FALSE));
@@ -1571,11 +1621,16 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 				char input[10] = "";
 				char key_buf[80] = "";
 				play_msg_type = MSG_NONE;
+				if (!switch_strlen_zero(global_buf)) {
+					switch_set_string(input, global_buf);
+					*global_buf = '\0';
+					status = SWITCH_STATUS_SUCCESS;
+				} else {
+					switch_snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s",
+									profile->play_new_messages_key, profile->play_saved_messages_key, profile->config_menu_key, profile->terminator_key);
 
-				switch_snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s",
-								profile->play_new_messages_key, profile->play_saved_messages_key, profile->config_menu_key, profile->terminator_key);
-
-				status = vm_macro_get(session, VM_MENU_MACRO, key_buf, input, sizeof(input), 1, "", &term, timeout);
+					status = vm_macro_get(session, VM_MENU_MACRO, key_buf, input, sizeof(input), 1, "", &term, timeout);
+				}
 
 				if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 					goto end;
@@ -1600,6 +1655,9 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 			break;
 		case VM_CHECK_AUTH:
 			{
+				prefs_callback_t cbt = {{0}};
+				char sql[512] = "";
+
 				if (!attempts) {
 					failed = 1;
 					goto end;
@@ -1638,7 +1696,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", myid, domain_name);
 						ok = 0;
 					}
-
+					
 					switch_event_destroy(&params);
 
 					if (!ok) {
@@ -1669,6 +1727,8 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 				}
 
 				thepass = NULL;
+				switch_snprintf(sql, sizeof(sql), "select * from voicemail_prefs where username='%s' and domain='%s'", myid, domain_name);
+				vm_execute_sql_callback(profile, profile->mutex, sql, prefs_callback, &cbt);
 				for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
 					const char *var = switch_xml_attr_soft(x_param, "name");
 					const char *val = switch_xml_attr_soft(x_param, "value");
@@ -1679,12 +1739,15 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 						thepass = val;
 					} else if (!strcasecmp(var, "vm-mailto")) {
 						vm_email = switch_core_session_strdup(session, val);
+					} else if (!switch_strlen_zero(cbt.password) && !thepass) {
+						thepass = cbt.password;
 					}
 				}
 				switch_xml_free(x_domain_root);
 				x_domain_root = NULL;
 
-				if (auth || !thepass || (thepass && mypass && !strcmp(thepass, mypass))) {
+				if (auth || !thepass || (thepass && mypass && !strcmp(thepass, mypass)) || 
+					(!switch_strlen_zero(cbt.password) && !strcmp(cbt.password, mypass))) {
 					if (!dir_path) {
 						if (switch_strlen_zero(profile->storage_dir)) {
 							dir_path = switch_core_session_sprintf(session, "%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir,
