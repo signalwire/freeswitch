@@ -523,7 +523,7 @@ SWITCH_DECLARE(int) CoreSession::preAnswer()
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-SWITCH_DECLARE(void) CoreSession::hangup(char *cause)
+SWITCH_DECLARE(void) CoreSession::hangup(const char *cause)
 {
 	this_check_void();
 	sanity_check_noreturn;	

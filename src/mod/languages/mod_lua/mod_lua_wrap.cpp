@@ -4529,14 +4529,14 @@ static int _wrap_CoreSession_hangup__SWIG_0(lua_State* L) {
   
   SWIG_check_num_args("hangup",2,2)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("hangup",1,"CoreSession *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("hangup",2,"char *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("hangup",2,"char const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
     SWIG_fail_ptr("CoreSession_hangup",1,SWIGTYPE_p_CoreSession);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
-  (arg1)->hangup(arg2);
+  (arg1)->hangup((char const *)arg2);
   SWIG_arg=0;
   
   return SWIG_arg;

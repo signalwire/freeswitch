@@ -216,7 +216,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 
 		 SWITCH_DECLARE(int) answer();
 		 SWITCH_DECLARE(int) preAnswer();
-		 SWITCH_DECLARE(void) hangup(char *cause = "normal_clearing");
+		 SWITCH_DECLARE(void) hangup(const char *cause = "normal_clearing");
 		 SWITCH_DECLARE(void) setVariable(char *var, char *val);
 		 SWITCH_DECLARE(void) setPrivate(char *var, void *val);
 		 SWITCH_DECLARE(void *) getPrivate(char *var);

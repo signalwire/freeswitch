@@ -5675,10 +5675,10 @@ XS(_wrap_CoreSession_hangup__SWIG_0) {
     arg1 = reinterpret_cast< CoreSession * >(argp1);
     res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
     if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_hangup" "', argument " "2"" of type '" "char *""'");
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_hangup" "', argument " "2"" of type '" "char const *""'");
     }
     arg2 = reinterpret_cast< char * >(buf2);
-    (arg1)->hangup(arg2);
+    (arg1)->hangup((char const *)arg2);
     
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;

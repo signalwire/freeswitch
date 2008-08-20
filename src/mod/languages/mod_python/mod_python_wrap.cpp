@@ -6090,10 +6090,10 @@ SWIGINTERN PyObject *_wrap_CoreSession_hangup__SWIG_0(PyObject *SWIGUNUSEDPARM(s
   arg1 = reinterpret_cast< CoreSession * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_hangup" "', argument " "2"" of type '" "char *""'");
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_hangup" "', argument " "2"" of type '" "char const *""'");
   }
   arg2 = reinterpret_cast< char * >(buf2);
-  (arg1)->hangup(arg2);
+  (arg1)->hangup((char const *)arg2);
   resultobj = SWIG_Py_Void();
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return resultobj;
@@ -6160,7 +6160,7 @@ SWIGINTERN PyObject *_wrap_CoreSession_hangup(PyObject *self, PyObject *args) {
 fail:
   SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'CoreSession_hangup'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    hangup(CoreSession *,char *)\n"
+    "    hangup(CoreSession *,char const *)\n"
     "    hangup(CoreSession *)\n");
   return NULL;
 }
