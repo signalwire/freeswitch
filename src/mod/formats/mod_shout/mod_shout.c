@@ -67,6 +67,7 @@ struct shout_context {
 	uint32_t prebuf;
 	int lame_ready;
 	int eof;
+	int channels;
 };
 
 typedef struct shout_context shout_context_t;
@@ -494,9 +495,9 @@ static void *SWITCH_THREAD_FUNC write_stream_thread(switch_thread_t *thread, voi
 
 	while (!context->err && context->thread_running) {
 		unsigned char mp3buf[8192] = "";
-		unsigned char audio[8192] = "";
+		int16_t audio[9600] = { 0 };
 		switch_size_t audio_read = 0;
-		int rlen;
+		int rlen = 0;
 		long ret = 0;
 
 		switch_mutex_lock(context->audio_mutex);
@@ -514,9 +515,26 @@ static void *SWITCH_THREAD_FUNC write_stream_thread(switch_thread_t *thread, voi
 			memset(audio, 255, sizeof(audio));
 		}
 
-		if ((rlen = lame_encode_buffer(context->gfp, (void *) audio, NULL, audio_read / sizeof(int16_t), mp3buf, sizeof(mp3buf))) < 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
-			goto error;
+		if (context->channels == 2) {
+			int16_t l[4800] = { 0 };
+			int16_t r[4800] = { 0 };
+			int i, j = 0;
+
+			for (i = 0; i < audio_read / 4; i++) {
+				l[i] = audio[j++];
+				r[i] = audio[j++];
+			}
+
+			if ((rlen = lame_encode_buffer(context->gfp, l, r, audio_read / 4, mp3buf, sizeof(mp3buf))) < 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
+				goto error;
+			}
+
+		} else if (context->channels == 1) {
+			if ((rlen = lame_encode_buffer(context->gfp, (void *) audio, NULL, audio_read / sizeof(int16_t), mp3buf, sizeof(mp3buf))) < 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
+				goto error;
+			}
 		}
 
 		if (rlen) {
@@ -607,7 +625,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 			id3tag_pad_v2(context->gfp);
 
 		}
-
+		context->channels = handle->channels;
 		lame_set_brate(context->gfp, 24 * (handle->samplerate / 8000) * handle->channels);
 		lame_set_num_channels(context->gfp, handle->channels);
 		lame_set_in_samplerate(context->gfp, handle->samplerate);
@@ -841,7 +859,7 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
 	if (handle->handler) {
 		switch_mutex_lock(context->audio_mutex);
 		if (context->audio_buffer) {
-			if (!switch_buffer_write(context->audio_buffer, data, nsamples * sizeof(int16_t))) {
+			if (!switch_buffer_write(context->audio_buffer, data, (nsamples * sizeof(int16_t) * handle->channels))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Buffer error\n");
 				context->err++;
 			}
