@@ -34,9 +34,7 @@
    and use switch_* functions for the output.
 */
 
-static void tm2switchtime( tm, xt ) 
-	struct tm 		*tm;
-switch_time_exp_t 	*xt;
+static void tm2switchtime(struct tm * tm, switch_time_exp_t *xt ) 
 {
 
 	if (!xt || !tm) {
@@ -53,7 +51,9 @@ switch_time_exp_t 	*xt;
 	xt->tm_wday 	= tm->tm_wday;
 	xt->tm_yday 	= tm->tm_yday;
 	xt->tm_isdst 	= tm->tm_isdst;
+#ifndef WIN32
 	xt->tm_gmtoff 	= tm->tm_gmtoff;
+#endif
 
 	return;
 }
@@ -70,12 +70,12 @@ typedef struct {
 static switch_timezones_list_t TIMEZONES_LIST = { 0 };
 static switch_event_node_t *NODE = NULL;
 
-const char *switch_lookup_timezone( const char *tzname )
+const char *switch_lookup_timezone( const char *tz_name )
 {
 	char *value = NULL;
 
-	if ( tzname && (value = switch_core_hash_find(TIMEZONES_LIST.hash, tzname))==NULL ) {
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timezone '%s' not found!\n", tzname);
+	if ( tz_name && (value = switch_core_hash_find(TIMEZONES_LIST.hash, tz_name))==NULL ) {
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timezone '%s' not found!\n", tz_name);
 	}
 	
 	return value;
@@ -135,7 +135,7 @@ SWITCH_STANDARD_API(strftime_tz_api_function)
 	time_t timep;
 
 	char *format = NULL;
-	const char *tzname;
+	const char *tz_name;
 	const char *tzdef;
 
 	switch_size_t retsize;
@@ -150,15 +150,15 @@ SWITCH_STANDARD_API(strftime_tz_api_function)
 
 	if (!switch_strlen_zero(cmd)) {
 		format = strchr(cmd, ' ');
-		tzname = cmd;
+		tz_name = cmd;
 		if (format) {
 			*format++ = '\0';
 		}
 
-		tzdef = switch_lookup_timezone( tzname );
+		tzdef = switch_lookup_timezone( tz_name );
 	} else {
 		/* We set the default timezone to GMT. */
-		tzname="GMT";
+		tz_name="GMT";
 		tzdef="GMT";
 	}
 	

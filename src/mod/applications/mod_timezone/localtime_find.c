@@ -139,6 +139,9 @@
 #endif /* defined __GNUC__ */
 #endif /* !defined lint */
 #endif /* !defined GNUC_or_lint */
+#ifdef WIN32
+#define GNUC_or_lint
+#endif
 
 #ifndef INITIALIZE
 #ifdef GNUC_or_lint
@@ -241,10 +244,9 @@ static const int	year_lengths[2] = {
     character.
 */
 
-static const char *getzname(strp)
-register const char *	strp;
+static const char *getzname(register const char *strp)
 {
-	register char	c;
+	register char c;
 
 	while ((c = *strp) != '\0' && !is_digit(c) && c != ',' && c != '-' &&
 		c != '+')
@@ -260,11 +262,7 @@ register const char *	strp;
     Otherwise, return a pointer to the first character not part of the number.
 */
 
-static const char *getnum(strp, nump, min, max)
-	register const char *	strp;
-	int * const		nump;
-	const int		min;
-	const int		max;
+static const char *getnum(register const char *strp, int * const nump, const int min, const int max)
 {
 	register char	c;
 	register int	num;
@@ -292,9 +290,7 @@ static const char *getnum(strp, nump, min, max)
     of seconds.
 */
 
-static const char *getsecs(strp, secsp)
-	register const char *	strp;
-	long * const		secsp;
+static const char *getsecs(register const char *strp, long * const secsp)
 {
 	int	num;
 
@@ -333,9 +329,7 @@ static const char *getsecs(strp, secsp)
     Otherwise, return a pointer to the first character not part of the time.
 */
 
-static const char *getoffset(strp, offsetp)
-	register const char *	strp;
-	long * const		offsetp;
+static const char *getoffset(register const char *strp, long * const offsetp)
 {
 	register int	neg = 0;
 
@@ -359,9 +353,7 @@ static const char *getoffset(strp, offsetp)
     Otherwise, return a pointer to the first character not part of the rule.
 */
 
-static const char *getrule(strp, rulep)
-        const char *			strp;
-	register struct rule * const	rulep;
+static const char *getrule(const char *strp, register struct rule * const rulep)
 {
 	if (*strp == 'J') {
 		/*
@@ -413,11 +405,7 @@ static const char *getrule(strp, rulep)
     calculate the Epoch-relative time that rule takes effect.
 */
 
-static time_t transtime(janfirst, year, rulep, offset)
-        const time_t			janfirst;
-	const int				year;
-        register const struct rule * const	rulep;
-	const long				offset;
+static time_t transtime(const time_t janfirst, const int year, register const struct rule * const rulep, const long offset)
 {
 	register int	leapyear;
 	register time_t	value;
@@ -509,10 +497,7 @@ static time_t transtime(janfirst, year, rulep, offset)
     appropriate.
 */
 
-static int tzparse(name, sp, lastditch)
-	const char *			name;
-        register struct state * const	sp;
-        const int				lastditch;
+static int tzparse(const char *name, register struct state * const sp, const int lastditch)
 {
 	const char *			stdname;
 	const char *			dstname;
@@ -666,7 +651,7 @@ static int tzparse(name, sp, lastditch)
 			*/
 			for (i = 0; i < sp->timecnt; ++i) {
 				j = sp->types[i];
-				sp->types[i] = sp->ttis[j].tt_isdst;
+				sp->types[i] = (unsigned char)sp->ttis[j].tt_isdst;
 				if (sp->ttis[j].tt_ttisgmt) {
 					/* No adjustment to transition time */
 				} else {
@@ -737,12 +722,13 @@ static int tzparse(name, sp, lastditch)
 /* **************************************************************************
 	    
    ************************************************************************** */
+#if (_MSC_VER >= 1400)			// VC8+
+#define switch_assert(expr) assert(expr);__analysis_assume( expr )
+#else
+#define switch_assert(expr) assert(expr)
+#endif
 
-static void timesub(timep, offset, sp, tmp)
-        const time_t * const			timep;
-        const long					offset;
-        register const struct state * const		sp;
-        register struct tm * const			tmp;
+static void timesub(const time_t * const timep, const long offset, register const struct state * const sp, register struct tm * const tmp)
 {
 	register const struct lsinfo *	lp;
 	register long			days;
@@ -754,9 +740,9 @@ static void timesub(timep, offset, sp, tmp)
 	register int			hit;
 	register int			i;
 
-	assert(timep != NULL);
-	assert(sp != NULL);
-	assert(tmp != NULL);
+	switch_assert(timep != NULL);
+	switch_assert(sp != NULL);
+	switch_assert(tmp != NULL);
 
 	corr = 0;
 	hit = 0;
@@ -782,7 +768,7 @@ static void timesub(timep, offset, sp, tmp)
 			break;
 		}
 	}
-	days = *timep / SECSPERDAY;
+	days = (long)(*timep / SECSPERDAY);
 	rem = *timep % SECSPERDAY;
 
 
@@ -846,17 +832,16 @@ static void timesub(timep, offset, sp, tmp)
 
 	tmp->tm_mday = (int) (days + 1);
 	tmp->tm_isdst = 0;
+#ifndef WIN32
 	tmp->tm_gmtoff = offset;
+#endif
 }
 
 /* **************************************************************************
 	    
    ************************************************************************** */
 
-void tztime( timep, tzstring, tmp )
-        const time_t * const		timep;
-        const char			*tzstring;
-        struct tm * const		tmp;
+void tztime(const time_t * const timep, const char *tzstring, struct tm * const tmp )
 {
 	struct state 			*tzptr, 
 					*sp;
@@ -903,7 +888,9 @@ void tztime( timep, tzstring, tmp )
 		{
 	    		timesub( &t, ttisp->tt_gmtoff, sp, tmp);
 			tmp->tm_isdst = ttisp->tt_isdst;
+#ifndef WIN32
 			tmp->tm_zone = &sp->chars[ttisp->tt_abbrind];
+#endif
 		}
 
 		free(tzptr);
