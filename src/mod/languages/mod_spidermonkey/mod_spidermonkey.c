@@ -1811,7 +1811,7 @@ static JSBool session_get_variable(JSContext * cx, JSObject * obj, uintN argc, j
 		if (val) {
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, val));
 		} else {
-			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, ""));
 		}
 	} else {
 		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
