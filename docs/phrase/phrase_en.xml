@@ -181,6 +181,7 @@
       <prompt phrase="choose a greeting between 1 and 9" filename="vm-choose_greeting_choose.wav"/>
       <prompt phrase="invalid value" filename="vm-choose_greeting_fail.wav"/>
       <prompt phrase="too many failed attempts" filename="vm-abort.wav"/>
+      <prompt phrase="to change your password" filename="vm-change_password.wav"/>
       <prompt phrase="record your greeting at the tone, press any key or stop talking to end the recording" filename="vm-record_greeting.wav"/>
       <prompt phrase="record your message at the tone, press any key or stop talking to end the recording" filename="vm-record_message.wav"/>
       <prompt phrase="is not available" filename="vm-play_greeting.wav"/>
