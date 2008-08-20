@@ -1093,7 +1093,11 @@ SWITCH_DECLARE(switch_status_t) switch_event_unbind_callback(switch_event_callba
 					EVENT_NODES[n->event_id] = n->next;
 				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Event Binding deleted for %s:%s\n", n->id, switch_event_name(n->event_id));
-				n->subclass = NULL;
+				if (n->subclass) {
+					FREE(n->subclass->owner);
+					FREE(n->subclass->name);
+					FREE(n->subclass);
+				}
 				FREE(n->id);
 				FREE(n);
 				status = SWITCH_STATUS_SUCCESS;

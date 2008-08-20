@@ -1115,7 +1115,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	char reply[512] = "";
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
-
+	switch_event_t *revent = NULL;
 
 	switch_mutex_lock(listen_list.mutex);
 	prefs.threads++;
@@ -1234,8 +1234,6 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	}
 
 	while (switch_test_flag(listener, LFLAG_RUNNING) && listen_list.ready) {
-		switch_event_t *revent;
-
 		len = sizeof(buf);
 		memset(buf, 0, len);
 		status = read_packet(listener, &revent, 0);
@@ -1253,6 +1251,8 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 			break;
 		}
 
+		switch_event_destroy(&revent);
+
 		if (*reply != '\0') {
 			if (*reply == '~') {
 				switch_snprintf(buf, sizeof(buf), "Content-Type: command/reply\n%s", reply + 1);
@@ -1266,6 +1266,10 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	}
 
   done:
+	
+	if (revent) {
+		switch_event_destroy(&revent);			
+	}
 
 	remove_listener(listener);
 
