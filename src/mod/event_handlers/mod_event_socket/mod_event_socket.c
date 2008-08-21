@@ -1255,7 +1255,9 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 			break;
 		}
 
-		switch_event_safe_destroy((&revent));
+		if (revent) {
+			switch_event_destroy(&revent);
+		}
 
 		if (*reply != '\0') {
 			if (*reply == '~') {
@@ -1271,7 +1273,9 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
   done:
 	
-	switch_event_safe_destroy((&revent));
+	if (revent) {
+		switch_event_destroy(&revent);
+	}
 
 	remove_listener(listener);
 
