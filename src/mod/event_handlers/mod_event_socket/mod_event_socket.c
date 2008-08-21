@@ -695,10 +695,10 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 	return NULL;
 
 }
-static switch_status_t parse_command(listener_t *listener, switch_event_t *event, char *reply, uint32_t reply_len)
+static switch_status_t parse_command(listener_t *listener, switch_event_t **event, char *reply, uint32_t reply_len)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	char *cmd = switch_event_get_header(event, "command");
+	char *cmd = switch_event_get_header(*event, "command");
 
 	*reply = '\0';
 
@@ -738,13 +738,13 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 			goto done;
 		} else if (!strncasecmp(cmd, "sendmsg", 7)) {
 			if (switch_test_flag(listener, LFLAG_ASYNC)) {
-				if ((status = switch_core_session_queue_private_event(listener->session, &event)) == SWITCH_STATUS_SUCCESS) {
+				if ((status = switch_core_session_queue_private_event(listener->session, event)) == SWITCH_STATUS_SUCCESS) {
 					switch_snprintf(reply, reply_len, "+OK");
 				} else {
 					switch_snprintf(reply, reply_len, "-ERR memory error");
 				}
 			} else {
-				switch_ivr_parse_event(listener->session, event);
+				switch_ivr_parse_event(listener->session, *event);
 				switch_snprintf(reply, reply_len, "+OK");
 			}
 			goto done;
@@ -813,11 +813,11 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 		if (ename) {
 			switch_event_types_t etype;
 			if (switch_name_event(ename, &etype) == SWITCH_STATUS_SUCCESS) {
-				event->event_id = etype;
+				(*event)->event_id = etype;
 			}
 		}
 
-		switch_event_fire(&event);
+		switch_event_fire(event);
 		switch_snprintf(reply, reply_len, "+OK");
 		goto done;
 	} else if (!strncasecmp(cmd, "sendmsg", 7)) {
@@ -837,7 +837,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 		}
 
 		if (!uuid) {
-			uuid = switch_event_get_header(event, "session-id");
+			uuid = switch_event_get_header(*event, "session-id");
 		}
 
 		if ((session = switch_core_session_locate(uuid))) {
@@ -848,7 +848,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 		}
 
 		if (session) {
-			if ((status = switch_core_session_queue_private_event(session, &event)) == SWITCH_STATUS_SUCCESS) {
+			if ((status = switch_core_session_queue_private_event(session, event)) == SWITCH_STATUS_SUCCESS) {
 				switch_snprintf(reply, reply_len, "+OK");
 			} else {
 				switch_snprintf(reply, reply_len, "-ERR memory error");
@@ -876,9 +876,9 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 		acs.bg = 0;
 
 		api_exec(NULL, (void *) &acs);
-		//switch_snprintf(reply, reply_len, "+OK");
 
-		return SWITCH_STATUS_SUCCESS;
+		status = SWITCH_STATUS_SUCCESS;
+		goto done_noreply;
 	} else if (!strncasecmp(cmd, "bgapi ", 6)) {
 		struct api_command_struct *acs = NULL;
 		char *api_cmd = cmd + 6;
@@ -912,7 +912,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 		switch_threadattr_detach_set(thd_attr, 1);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 
-		if ((uuid_str = switch_event_get_header(event, "job-uuid"))) {
+		if ((uuid_str = switch_event_get_header(*event, "job-uuid"))) {
 			switch_copy_string(acs->uuid_str, uuid_str, sizeof(acs->uuid_str));
 		} else {
 			switch_uuid_get(&uuid);
@@ -921,7 +921,8 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 		switch_snprintf(reply, reply_len, "~Reply-Text: +OK Job-UUID: %s\nJob-UUID: %s\n\n", acs->uuid_str, acs->uuid_str);
 		switch_thread_create(&thread, thd_attr, api_exec, acs, acs->pool);
 
-		return SWITCH_STATUS_SUCCESS;
+		status = SWITCH_STATUS_SUCCESS;
+		goto done_noreply;
 	} else if (!strncasecmp(cmd, "log", 3)) {
 
 		char *level_s;
@@ -1093,13 +1094,16 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 		}
 	}
 
-  done:
-	if (event) {
-		switch_event_destroy(&event);
-	}
+ done:
 
 	if (switch_strlen_zero(reply)) {
 		switch_snprintf(reply, reply_len, "-ERR command not found");
+	}
+
+ done_noreply:
+
+	if (event) {
+		switch_event_destroy(event);
 	}
 
 	return status;
@@ -1179,7 +1183,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 			goto done;
 		}
 
-		if (parse_command(listener, ievent, reply, sizeof(reply)) != SWITCH_STATUS_SUCCESS) {
+		if (parse_command(listener, &ievent, reply, sizeof(reply)) != SWITCH_STATUS_SUCCESS) {
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			goto done;
 		}
@@ -1216,7 +1220,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 				continue;
 			}
 
-			if (parse_command(listener, event, reply, sizeof(reply)) != SWITCH_STATUS_SUCCESS) {
+			if (parse_command(listener, &event, reply, sizeof(reply)) != SWITCH_STATUS_SUCCESS) {
 				switch_clear_flag_locked(listener, LFLAG_RUNNING);
 				goto done;
 			}
@@ -1246,12 +1250,12 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 			continue;
 		}
 
-		if (parse_command(listener, revent, reply, sizeof(reply)) != SWITCH_STATUS_SUCCESS) {
+		if (parse_command(listener, &revent, reply, sizeof(reply)) != SWITCH_STATUS_SUCCESS) {
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			break;
 		}
 
-		switch_event_destroy(&revent);
+		switch_event_safe_destroy((&revent));
 
 		if (*reply != '\0') {
 			if (*reply == '~') {
@@ -1267,9 +1271,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
   done:
 	
-	if (revent) {
-		switch_event_destroy(&revent);			
-	}
+	switch_event_safe_destroy((&revent));
 
 	remove_listener(listener);
 
