@@ -280,8 +280,8 @@ ATTRIBUTE	Freeswitch-Callenddate			23	string  Freeswitch
 #
 #  Freeswitch-Hangupcause
 #
-VALUE		Freeswitch-Hangupcause		Unallocated			0
-VALUE		Freeswitch-Hangupcause		Success				1
+VALUE		Freeswitch-Hangupcause		None				0
+VALUE		Freeswitch-Hangupcause		Unallocated-Number		1
 VALUE		Freeswitch-Hangupcause		No-Route-Transit-Net		2
 VALUE		Freeswitch-Hangupcause		No-Route-Destination		3
 VALUE		Freeswitch-Hangupcause		Channel-Unacceptable		6
@@ -327,9 +327,10 @@ VALUE		Freeswitch-Hangupcause		IE-Nonexist			99
 VALUE		Freeswitch-Hangupcause		Invalid-IE-Contents		100
 VALUE		Freeswitch-Hangupcause		Wrong-Call-State		101
 VALUE		Freeswitch-Hangupcause		Recovery-On-Timer-Expire	102
-VALUE		Freeswitch-Hangupcause		Mandatory-ID-Length-Error	103
+VALUE		Freeswitch-Hangupcause		Mandatory-IE-Length-Error	103
 VALUE		Freeswitch-Hangupcause		Protocol-Error			111
 VALUE		Freeswitch-Hangupcause		Interworking			127
+VALUE		Freeswitch-Hangupcause		Success				142
 VALUE		Freeswitch-Hangupcause		Originator-Cancel		487
 VALUE		Freeswitch-Hangupcause		Crash				500
 VALUE		Freeswitch-Hangupcause		System-Shutdown			501
@@ -340,12 +341,11 @@ VALUE		Freeswitch-Hangupcause		Attended-Transfer		601
 VALUE		Freeswitch-Hangupcause		Allotted-Timeout		602
 VALUE		Freeswitch-Hangupcause		User-Challenge			603
 VALUE		Freeswitch-Hangupcause		Media-Timeout			604
-
-
+VALUE		Freeswitch-Hangupcause		Picked-Off			605
+VALUE		Freeswitch-Hangupcause		User-Not-Registered		606
 
 #
 #
 #
-
 
 END-VENDOR	Freeswitch
