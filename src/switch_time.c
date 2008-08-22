@@ -466,7 +466,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown)
 #endif
 
 
-	return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_NOUNLOAD;
 }
 
 /* For Emacs:

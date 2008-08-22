@@ -38,7 +38,8 @@
 #define SWITCH_MOD_DECLARE_DATA __declspec(dllexport)
 #endif
 SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load);
-SWITCH_MODULE_DEFINITION(CORE_PCM_MODULE, core_pcm_load, NULL, NULL);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(core_pcm_shutdown);
+SWITCH_MODULE_DEFINITION(CORE_PCM_MODULE, core_pcm_load, core_pcm_shutdown, NULL);
 
 static switch_status_t switch_raw_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
@@ -341,6 +342,11 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 	mod_g711_load(module_interface, pool);
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_MODULE_SHUTDOWN_FUNCTION(core_pcm_shutdown)
+{
+	return SWITCH_STATUS_NOUNLOAD;
 }
 
 /* For Emacs:
