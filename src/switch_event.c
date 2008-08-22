@@ -417,6 +417,9 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim_events(void)
 SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 {
 	int x = 0, last = 0;
+	switch_hash_index_t *hi;
+	const void *var;
+    void *val;
 
 	switch_mutex_lock(EVENT_QUEUE_MUTEX);
 	SYSTEM_RUNNING = 0;
@@ -440,6 +443,15 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 		last = THREAD_COUNT;
 	}
 
+	for (hi = switch_hash_first(NULL, CUSTOM_HASH); hi; hi = switch_hash_next(hi)) {
+		switch_event_subclass_t *subclass;
+		switch_hash_this(hi, &var, NULL, &val);;
+		if ((subclass = (switch_event_subclass_t *) val)) {
+			FREE(subclass->name);
+			FREE(subclass->owner);
+			FREE(subclass);
+		}
+	}
 
 	switch_core_hash_destroy(&CUSTOM_HASH);
 	switch_core_memory_reclaim_events();

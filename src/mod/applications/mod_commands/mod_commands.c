@@ -2047,6 +2047,7 @@ SWITCH_STANDARD_API(show_function)
 	int argc;
 	char *command = NULL, *as = NULL;
 	switch_core_flag_t cflags = switch_core_flags();
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
@@ -2083,7 +2084,7 @@ SWITCH_STANDARD_API(show_function)
 
 	if (!(cflags & SCF_USE_SQL) && command && !strcasecmp(command, "channels")) {
 		stream->write_function(stream, "-ERR SQL DISABLED NO CHANNEL DATA AVAILABLE!\n");
-		return SWITCH_STATUS_SUCCESS;
+		goto end;
 	}
 
 
@@ -2091,7 +2092,7 @@ SWITCH_STANDARD_API(show_function)
 	/* statmements, you must also change show_callback and friends to match! */
 	if (!command) {
 		stream->write_function(stream, "-USAGE: %s\n", SHOW_SYNTAX);
-		return SWITCH_STATUS_SUCCESS;
+		goto end;
 	} else if (!strncasecmp(command, "codec", 5) || 
 			   !strncasecmp(command, "dialplan", 8) || 
 			   !strncasecmp(command, "file", 4) || 
@@ -2146,7 +2147,7 @@ SWITCH_STANDARD_API(show_function)
 		}
 	} else {
 		stream->write_function(stream, "-USAGE: %s\n", SHOW_SYNTAX);
-		return SWITCH_STATUS_SUCCESS;
+		goto end;
 	}
 
 	holder.stream = stream;
@@ -2212,9 +2213,15 @@ SWITCH_STANDARD_API(show_function)
 		holder.stream->write_function(holder.stream, "-ERR Cannot find format %s\n", as);
 	}
 
+ end:
+
 	switch_safe_free(mydata);
-	switch_core_db_close(db);
-	return SWITCH_STATUS_SUCCESS;
+
+	if (db) {
+		switch_core_db_close(db);
+	}
+
+	return status;
 }
 
 SWITCH_STANDARD_API(version_function)

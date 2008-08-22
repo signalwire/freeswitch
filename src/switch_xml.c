@@ -1099,6 +1099,7 @@ static int preprocess_glob(const char *cwd, const char *pattern, int write_fd, i
 			}
 			fprintf(stderr, "Error including %s (%s)\n", pattern, reason);
 		}
+		free(dir_path);
 	}
     globfree(&glob_data);
 
