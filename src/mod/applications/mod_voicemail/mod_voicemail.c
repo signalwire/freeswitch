@@ -1403,7 +1403,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 					switch_snprintf(msg_count, sizeof(msg_count), "%d:urgent-new", total_new_urgent_messages);
 					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, &args));
 					informed++;
-					if ((*global_buf =! '\0')) {
+					if (!switch_strlen_zero_buf(global_buf) {
 						vm_check_state = VM_CHECK_MENU;
 						continue;
 					}
@@ -1412,7 +1412,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 					switch_snprintf(msg_count, sizeof(msg_count), "%d:new", total_new_messages);
 					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, &args));
 					informed++;
-					if ((*global_buf =! '\0')) {
+					if (!switch_strlen_zero_buf(global_buf) {
 						vm_check_state = VM_CHECK_MENU;
 						continue;
 					}
@@ -1621,7 +1621,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 				char input[10] = "";
 				char key_buf[80] = "";
 				play_msg_type = MSG_NONE;
-				if (!switch_strlen_zero(global_buf)) {
+				if (!switch_strlen_zero_buf(global_buf)) {
 					switch_set_string(input, global_buf);
 					*global_buf = '\0';
 					status = SWITCH_STATUS_SUCCESS;
