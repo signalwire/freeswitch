@@ -206,7 +206,8 @@ typedef enum {
 	SCF_USE_SQL = (1 << 0),
 	SCF_NO_NEW_SESSIONS = (1 << 1),
 	SCF_SHUTTING_DOWN = (1 << 2),
-	SCF_CRASH_PROT = (1 << 3)
+	SCF_CRASH_PROT = (1 << 3),
+	SCF_VG = (1 << 4)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 

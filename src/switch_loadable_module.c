@@ -1109,8 +1109,9 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 
 static void do_shutdown(switch_loadable_module_t *module, switch_bool_t shutdown, switch_bool_t unload)
 {
+	int32_t flags = switch_core_flags();
 	switch_assert(module != NULL);
-
+	
 	if (shutdown) {
 		switch_loadable_module_unprocess(module);
 		if (module->switch_module_shutdown) {
@@ -1121,7 +1122,7 @@ static void do_shutdown(switch_loadable_module_t *module, switch_bool_t shutdown
 		}
 	}
 
-	if (unload && module->status != SWITCH_STATUS_NOUNLOAD) {
+	if (unload && module->status != SWITCH_STATUS_NOUNLOAD 	&& !(flags & SCF_VG)) {
 		switch_memory_pool_t *pool;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s unloaded.\n", module->module_interface->module_name);
 		switch_dso_unload(module->lib);

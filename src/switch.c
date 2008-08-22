@@ -236,6 +236,7 @@ int main(int argc, char *argv[])
 		"\t-core            -- dump cores\n"
 #endif
 		"\t-hp              -- enable high priority settings\n"
+		"\t-vg              -- run under valgrind\n"
 		"\t-nosql           -- disable internal sql scoreboard\n"
 		"\t-stop            -- stop freeswitch\n"
 		"\t-nc              -- do not output to a console and background\n"
@@ -384,6 +385,11 @@ int main(int argc, char *argv[])
 
 		if (argv[x] && !strcmp(argv[x], "-nosql")) {
 			flags &= ~SCF_USE_SQL;
+			known_opt++;
+		}
+
+		if (argv[x] && !strcmp(argv[x], "-vg")) {
+			flags |= SCF_VG;
 			known_opt++;
 		}
 
