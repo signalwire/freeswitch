@@ -355,6 +355,15 @@ static void core_event_handler(switch_event_t *event)
 			}
 			break;
 		}
+	case SWITCH_EVENT_MODULE_UNLOAD:
+		{
+			const char *type = switch_event_get_header_nil(event, "type");
+			const char *name = switch_event_get_header_nil(event, "name");
+			if (!switch_strlen_zero(type) && !switch_strlen_zero(name)) {
+				sql = switch_mprintf("delete from interfaces where type='%q' and name='%q'", type, name);
+			}
+			break;
+		}
 	default:
 		break;
 	}
