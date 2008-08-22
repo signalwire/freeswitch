@@ -170,10 +170,11 @@ static switch_bool_t stress_callback(switch_media_bug_t *bug, void *user_data, s
 
             if (sth->stress) {
                 switch_event_t *event, *dup;
-                
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stress %0.2f\n");
+
                 if (switch_event_create(&event, SWITCH_EVENT_DETECTED_SPEECH) == SWITCH_STATUS_SUCCESS) {
                     switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Speech-Type", "stress-level");
-                    switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Stress-Level", "%02f", sth->stress);
+                    switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Stress-Level", "%0.2f", sth->stress);
                     if (switch_event_dup(&dup, event) == SWITCH_STATUS_SUCCESS) {
                         switch_event_fire(&dup);
                     }
