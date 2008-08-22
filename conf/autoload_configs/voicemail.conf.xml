@@ -18,6 +18,7 @@
       <param name="config-menu-key" value="5"/>
       <param name="record-greeting-key" value="1"/>
       <param name="choose-greeting-key" value="2"/>
+      <param name="change-pass-key" value="6"/>
       <param name="record-name-key" value="3"/>
       <param name="record-file-key" value="3"/>
       <param name="listen-file-key" value="1"/>
