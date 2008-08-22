@@ -215,7 +215,7 @@ static char vm_pref_sql[] =
 	"   username        VARCHAR(255),\n"
 	"   domain          VARCHAR(255),\n" 
 	"   name_path       VARCHAR(255),\n" 
-	"   greeting_path VARCHAR(255)\n" 
+	"   greeting_path VARCHAR(255),\n" 
 	"   password VARCHAR(255)\n" 
 	");\n";
 
@@ -1621,7 +1621,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 				char input[10] = "";
 				char key_buf[80] = "";
 				play_msg_type = MSG_NONE;
-				if ((*global_buf =! '\0')) {
+				if (!switch_strlen_zero(global_buf)) {
 					switch_set_string(input, global_buf);
 					*global_buf = '\0';
 					status = SWITCH_STATUS_SUCCESS;
