@@ -304,35 +304,16 @@ SWITCH_STANDARD_APP(soundtouch_start_function)
 	switch_channel_set_private(channel, "_soundtouch_", bug);
 
 }
-static switch_application_interface_t soundtouch_application_interface = {
-	/*.interface_name */ "soundtouch",
-	/*.application_function */ soundtouch_start_function,
-	/* long_desc */ "Alter the audio stream",
-	/* short_desc */ "Alter the audio stream",
-	/* syntax */ "[send|recv] [-]<X>s [.]<X>p",
-	/* flags */ SAF_NONE,
-	/* next */
-
-};
-
-static switch_loadable_module_interface_t soundtouch_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ &soundtouch_application_interface,
-	/*.api_interface */ NULL,
-	/*.file_interface */ NULL,
-	/*.speech_interface */ NULL,
-	/*.directory_interface */ NULL
-};
-
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_soundtouch_load)
 {
+    switch_application_interface_t *app_interface;
+
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &soundtouch_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname); 
+
+	SWITCH_ADD_APP(app_interface, "soundtouch", "Alter the audio stream", "Alter the audio stream", 
+                   soundtouch_start_function, "[send|recv] [-]<X>s [.]<X>p", SAF_NONE);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
