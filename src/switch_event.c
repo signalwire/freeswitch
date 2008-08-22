@@ -445,7 +445,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 
 	for (hi = switch_hash_first(NULL, CUSTOM_HASH); hi; hi = switch_hash_next(hi)) {
 		switch_event_subclass_t *subclass;
-		switch_hash_this(hi, &var, NULL, &val);;
+		switch_hash_this(hi, &var, NULL, &val);
 		if ((subclass = (switch_event_subclass_t *) val)) {
 			FREE(subclass->name);
 			FREE(subclass->owner);

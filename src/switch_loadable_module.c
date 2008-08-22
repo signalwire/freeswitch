@@ -51,6 +51,7 @@ struct switch_loadable_module {
 	switch_module_runtime_t switch_module_runtime;
 	switch_module_shutdown_t switch_module_shutdown;
 	switch_memory_pool_t *pool;
+	switch_status_t status;
 };
 
 struct switch_loadable_module_container {
@@ -73,7 +74,7 @@ struct switch_loadable_module_container {
 };
 
 static struct switch_loadable_module_container loadable_modules;
-static void do_shutdown(switch_loadable_module_t *module);
+static void do_shutdown(switch_loadable_module_t *module, switch_bool_t shutdown, switch_bool_t unload);
 
 static void *switch_loadable_module_exec(switch_thread_t *thread, void *obj)
 {
@@ -867,7 +868,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
 			status = SWITCH_STATUS_NOUNLOAD;
 			goto end;
 		} else {
-			do_shutdown(module);
+			do_shutdown(module, SWITCH_TRUE, SWITCH_TRUE);
 		}
 		switch_core_hash_delete(loadable_modules.module_hash, fname);
 	} else {
@@ -1106,28 +1107,31 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void do_shutdown(switch_loadable_module_t *module)
+static void do_shutdown(switch_loadable_module_t *module, switch_bool_t shutdown, switch_bool_t unload)
 {
 	switch_assert(module != NULL);
 
-	switch_loadable_module_unprocess(module);
-	if (module->switch_module_shutdown) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping: %s\n", module->module_interface->module_name);
-		if (module->switch_module_shutdown() == SWITCH_STATUS_UNLOAD) {
-			switch_memory_pool_t *pool;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s unloaded.\n", module->module_interface->module_name);
-			switch_dso_unload(module->lib);
-			module->lib = NULL;
-			if ((pool = module->pool)) {
-				module = NULL;
-				switch_core_destroy_memory_pool(&pool);
-			}
+	if (shutdown) {
+		switch_loadable_module_unprocess(module);
+		if (module->switch_module_shutdown) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping: %s\n", module->module_interface->module_name);
+			module->status = module->switch_module_shutdown();
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s shutdown.\n", module->module_interface->module_name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s has no shutdown routine\n", module->module_interface->module_name);
 		}
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s has no shutdown routine\n", module->module_interface->module_name);
 	}
+
+	if (unload && module->status != SWITCH_STATUS_NOUNLOAD) {
+		switch_memory_pool_t *pool;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s unloaded.\n", module->module_interface->module_name);
+		switch_dso_unload(module->lib);
+		module->lib = NULL;
+		if ((pool = module->pool)) {
+			module = NULL;
+			switch_core_destroy_memory_pool(&pool);
+		}
+	}
+	
 }
 
 SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
@@ -1139,7 +1143,17 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 	for (hi = switch_hash_first(NULL, loadable_modules.module_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		module = (switch_loadable_module_t *) val;
-		do_shutdown(module);
+		if (!module->perm) {
+			do_shutdown(module, SWITCH_TRUE, SWITCH_FALSE);
+		}
+	}
+
+	for (hi = switch_hash_first(NULL, loadable_modules.module_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, NULL, NULL, &val);
+		module = (switch_loadable_module_t *) val;
+		if (!module->perm) {
+			do_shutdown(module, SWITCH_FALSE, SWITCH_TRUE);
+		}
 	}
 
 	switch_core_hash_destroy(&loadable_modules.module_hash);

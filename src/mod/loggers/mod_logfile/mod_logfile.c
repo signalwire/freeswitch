@@ -376,15 +376,29 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_logfile_load)
 
 	switch_log_bind_logger(mod_logfile_logger, SWITCH_LOG_DEBUG, SWITCH_FALSE);
 
-	return SWITCH_STATUS_NOUNLOAD;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_logfile_shutdown)
 {
-	/* TODO:  Need to finish processing pending log messages before we close the file handle */
+	switch_hash_index_t *hi;
+	const void *var;
+    void *val;
 
-	//switch_file_close(globals->log_afd);
+	switch_log_unbind_logger(mod_logfile_logger);
 	switch_event_unbind(&globals.node);
+
+	for (hi = switch_hash_first(NULL, profile_hash); hi; hi = switch_hash_next(hi)) {
+		logfile_profile_t *profile;
+		switch_hash_this(hi, &var, NULL, &val);
+		if ((profile = (logfile_profile_t *) val)) {
+			switch_file_close(profile->log_afd);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Closing %s\n", profile->logfile);
+			printf("WTF\n");
+		}
+	}
+
+
 
 	return SWITCH_STATUS_SUCCESS;
 }
