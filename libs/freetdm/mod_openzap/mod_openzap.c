@@ -1906,7 +1906,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_openzap_shutdown)
 {
 	zap_global_destroy();
-	return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_NOUNLOAD;
 }
 
 /* For Emacs:
