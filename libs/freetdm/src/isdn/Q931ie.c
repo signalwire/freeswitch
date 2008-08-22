@@ -318,73 +318,74 @@ L3INT Q931Pie_BearerCap(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
     L3INT Beg=*Octet;/* remember current offset */
     L3INT li;
 
+	Q931Log(pTrunk, Q931_LOG_DEBUG, "Encoding Bearer Capability IE\n");
+
     OBuf[(*Octet)++] = Q931ie_BEARER_CAPABILITY ;
     li=(*Octet)++;    /* remember length position */
 
     /* Octet 3 - Coding standard / Information transfer capability */
-    OBuf[(*Octet)++] = 0x80 | (pIE->CodStand<<5) | (pIE->ITC & 0x1f);
+	OBuf[(*Octet)++] = 0x80 | ((pIE->CodStand << 5) & 0x60) | (pIE->ITC & 0x1f);
 
     /* Octet 4 - Transfer mode / Information transfer rate */
-	OBuf[(*Octet)++] = 0x80 | (pIE->TransMode<<5) | (pIE->ITR & 0x1f);
+	OBuf[(*Octet)++] = 0x80 | ((pIE->TransMode << 5) & 0x60) | (pIE->ITR & 0x1f);
+
     if(pIE->ITR == 0x18)
     {
         /* Octet 4.1 - Rate Multiplier */
-        OBuf[(*Octet)++] = 0x80 | pIE->RateMul;
+		OBuf[(*Octet)++] = 0x80 | (pIE->RateMul & 0x7f);
     }
 
-    /* Octet 5 - Layer 1 Ident / User information layer 1 protocol*/
+	/* Octet 5 - Layer 1 Ident / User information layer 1 protocol */
     if(pIE->Layer1Ident == 0x01)
     {
-        if(((pIE->ITC == 0x08) && (pIE->UIL1Prot == 0x01 || pIE->UIL1Prot == 0x08))
-        || ((pIE->ITC == 0x10) && (pIE->UIL1Prot == 0x02 || pIE->UIL1Prot == 0x03)))
+		if(((pIE->ITC == 0x08) && (pIE->UIL1Prot == 0x01 || pIE->UIL1Prot == 0x08)) ||
+		   ((pIE->ITC == 0x10) && (pIE->UIL1Prot == 0x02 || pIE->UIL1Prot == 0x03)))
         {
-            OBuf[(*Octet)++] = 0x00 | (pIE->Layer1Ident<<5) | (pIE->UIL1Prot & 0x15);
+			OBuf[(*Octet)++] = 0x00 | ((pIE->Layer1Ident << 5) & 0x60) | (pIE->UIL1Prot & 0x15);
             
             /* Octet 5a - SyncAsync/Negot/UserRate */
-            OBuf[(*Octet)++] = 0x00 | (pIE->SyncAsync<<6) | (pIE->Negot<<5) | (pIE->UserRate&0x1f);
+			OBuf[(*Octet)++] = 0x00 | ((pIE->SyncAsync << 6) & 0x40) | ((pIE->Negot << 5) & 0x20) | (pIE->UserRate & 0x1f);
 
             /* Octet 5b - one of two types */
             if(pIE->UIL1Prot == 0x01) /* ITU V.110, I.460 and X.30           */
             {
                 /* Octet 5b - Intermed rate/ Nic on Tx/Nix on Rx/FlowCtlTx/FlowCtlRx */
                 OBuf[(*Octet)++] = 0x00 
-                                | (pIE->InterRate<<6)
-                                | (pIE->NIConTx << 4)
-                                | (pIE->NIConRx << 3)
-                                | (pIE->FlowCtlTx << 2)
-                                | (pIE->FlowCtlRx << 1);
+						| ((pIE->InterRate << 6) & 0x60)
+						| ((pIE->NIConTx   << 4) & 0x10)
+						| ((pIE->NIConRx   << 3) & 0x08)
+						| ((pIE->FlowCtlTx << 2) & 0x04)
+						| ((pIE->FlowCtlRx << 1) & 0x02);
             }
             else if(pIE->UIL1Prot == 0x08) /* ITU V.120                      */
             {
                 /* Octet 5b - HDR/Multiframe/Mode/LLINegot/Assignor/Inbandneg*/
                 OBuf[(*Octet)++] = 0x00
-                                | (pIE->InterRate << 6)
-                                | (pIE->MultiFrame << 5)
-                                | (pIE->Mode << 4)
-                                | (pIE->LLInegot << 3)
-                                | (pIE->Assignor << 2)
-                                | (pIE->InBandNeg << 1);
+						| ((pIE->InterRate  << 6) & 0x60)
+						| ((pIE->MultiFrame << 5) & 0x20)
+						| ((pIE->Mode       << 4) & 0x10)
+						| ((pIE->LLInegot   << 3) & 0x08)
+						| ((pIE->Assignor   << 2) & 0x04)
+						| ((pIE->InBandNeg  << 1) & 0x02);
             }
 
             /* Octet 5c - NumStopBits/NumStartBits/Parity                    */
             OBuf[(*Octet)++] = 0x00 
-                            | (pIE->NumStopBits << 5 )
-                            | (pIE->NumDataBits << 3 )
-                            | (pIE->Parity);
+					| ((pIE->NumStopBits << 5) & 0x60)
+					| ((pIE->NumDataBits << 3) & 0x18)
+					| (pIE->Parity & 0x07);
 
             /* Octet 5d - Duplex Mode/Modem Type */
-            OBuf[(*Octet)++] = 0x80 | (pIE->DuplexMode<<6) | (pIE->ModemType);
+			OBuf[(*Octet)++] = 0x80 | ((pIE->DuplexMode << 6) & 0x40) | (pIE->ModemType & 0x3f);
         }
-        else
-        {
-            OBuf[(*Octet)++] = 0x80 | (pIE->Layer1Ident<<5) | (pIE->UIL1Prot & 0x1F);
+		else {
+			OBuf[(*Octet)++] = 0x80 | ((pIE->Layer1Ident << 5) & 0x60) | (pIE->UIL1Prot & 0x1f);
         }
     }
 
     /* Octet 6 - Layer2Ident/User information layer 2 prtocol */
-    if(pIE->Layer2Ident == 0x02)
-    {
-        OBuf[(*Octet)++] = 0x80 | (pIE->Layer2Ident<<5) | (pIE->UIL2Prot);
+	if(pIE->Layer2Ident == 0x02) {
+		OBuf[(*Octet)++] = 0x80 | ((pIE->Layer2Ident << 5) & 0x60) | (pIE->UIL2Prot & 0x1f);
     }
 
     /* Octet 7 - Layer 3 Ident/ User information layer 3 protocol */
@@ -392,17 +393,16 @@ L3INT Q931Pie_BearerCap(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
     {
         if(pIE->UIL3Prot == 0x0c)
         {
-            OBuf[(*Octet)++] = 0x00 | (pIE->Layer3Ident<<5) | (pIE->UIL3Prot);
+			OBuf[(*Octet)++] = 0x00 | ((pIE->Layer3Ident << 5) & 0x60) | (pIE->UIL3Prot & 0x1f);
 
             /* Octet 7a - Additional information layer 3 msb */
-            OBuf[(*Octet)++] = 0x00 | (pIE->AL3Info1);
+			OBuf[(*Octet)++] = 0x00 | (pIE->AL3Info1 & 0x0f);
 
             /* Octet 7b - Additional information layer 3 lsb */
-            OBuf[(*Octet)++] = 0x80 | (pIE->AL3Info2);
+			OBuf[(*Octet)++] = 0x80 | (pIE->AL3Info2 & 0x0f);
         }
-        else
-        {
-            OBuf[(*Octet)++] = 0x80 | (pIE->Layer3Ident<<5) | (pIE->UIL3Prot);
+		else {
+			OBuf[(*Octet)++] = 0x80 | ((pIE->Layer3Ident << 5) & 0x60) | (pIE->UIL3Prot & 0x1f);
         }
     }
 
@@ -1152,76 +1152,107 @@ L3INT Q931Pie_CongLevel(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
 *****************************************************************************/
 L3INT Q931Uie_ChanID(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * IBuf, L3UCHAR *OBuf, L3INT *IOff, L3INT *OOff)
 {
-    Q931ie_ChanID * pie = (Q931ie_ChanID*)OBuf;
+	Q931ie_ChanID *pie = (Q931ie_ChanID*)OBuf;
 	ie *pIE = &pMsg->ChanID;
-    L3INT Off = 0;
-    L3INT Octet = 0;
-    L3INT IESize;
+	L3INT Off = 0;
+	L3INT Octet = 0;
+	L3INT IESize;
 //18 04 e1 80 83 01
-    *pIE=0;
+	*pIE = 0;
 
-    /* Octet 1 */
-    pie->IEId        = IBuf[Octet];
-    Octet ++;
+	Q931Log(pTrunk, Q931_LOG_DEBUG, "Decoding ChanID IE\n");
 
-    /* Octet 2 */
-    IESize = IBuf[Octet ++]; 
+	/* Octet 1 */
+	pie->IEId = IBuf[Octet++];
 
-    /* Octet 3 */
-    pie->IntIDPresent    = (IBuf[Octet] >> 6) & 0x01;
-    pie->IntType        = (IBuf[Octet] >> 5) & 0x01;
-    pie->PrefExcl        = (IBuf[Octet] >> 3) & 0x01;
-    pie->DChanInd        = (IBuf[Octet] >> 2) & 0x01;
-    pie->InfoChanSel    = IBuf[Octet] & 0x03;
+	/* Octet 2 */
+	IESize    = IBuf[Octet++]; 
 
-    Off = Q931ReadExt(&IBuf[Octet+Off], Off);
-    Octet++;
+	/* Octet 3 */
+	pie->IntIDPresent = (IBuf[Octet] >> 6) & 0x01;
+	pie->IntType      = (IBuf[Octet] >> 5) & 0x01;
+	pie->PrefExcl     = (IBuf[Octet] >> 3) & 0x01;
+	pie->DChanInd     = (IBuf[Octet] >> 2) & 0x01;
+	pie->InfoChanSel  =  IBuf[Octet] & 0x03;
 
-    /* Octet 3.1 */
+	Off = Q931ReadExt(&IBuf[Octet++], Off);
 
-    if(pie->IntIDPresent)
-    {
-        pie->InterfaceID    = IBuf[Octet+Off] & 0x7f;
+	/* Octet 3.1 */
+	if(pie->IntIDPresent)
+	{
+		pie->InterfaceID = IBuf[Octet+Off] & 0x7f;
 
-        /* Temp fix. Interface id can be extended using the extension bit */
-        /* this will read the octets, but do nothing with them. this is done */
-        /* because the usage of this field is a little unclear */
-        /* 30.jan.2001/JVB */
-        Off = Q931ReadExt(&IBuf[Octet+Off], Off);
-        Off++;
-    }
+		/* Temp fix. Interface id can be extended using the extension bit */
+		/* this will read the octets, but do nothing with them. this is done */
+		/* because the usage of this field is a little unclear */
+		/* 30.jan.2001/JVB */
+		Off = Q931ReadExt(&IBuf[Octet+Off], Off);
+		Off++;
+	}
 
-    if (Octet + Off -2 != IESize) {
-        /* Octet 3.2 */
-        if(pie->IntType == 1)        /* PRI etc */
-        {
-            pie->CodStand    = (IBuf[Octet + Off] >> 5) & 0x03;
-            pie->NumMap        = (IBuf[Octet + Off] >> 4) & 0x01;
-            pie->ChanMapType= IBuf[Octet + Off] & 0x0f;
+	if ((Octet + Off - 2) != IESize) {
+		/* Octet 3.2 */
+		if(pie->IntType == 1)        /* PRI etc */
+		{
+			pie->CodStand    = (IBuf[Octet + Off] >> 5) & 0x03;
+			pie->NumMap      = (IBuf[Octet + Off] >> 4) & 0x01;
+			pie->ChanMapType =  IBuf[Octet + Off] & 0x0f;
+			Off++;
 
-            Off ++;
+			/* Octet 3.3 */
+			/* Temp fix. Assume B channel. H channels not supported */
+			pie->ChanSlot = IBuf[Octet+Off] & 0x7f;
 
-
-            /* Octet 3.3 */
-            /* Temp fix. Assume B channel. H channels not supported */
-            pie->ChanSlot = IBuf[Octet+Off] & 0x7f;
 			/* Some dialects don't follow the extension coding properly for this, but this should be safe for all */
-			if (Octet + Off -1 != IESize) {
+			if((Octet + Off - 1) != IESize) {
 				Off = Q931ReadExt(&IBuf[Octet+Off], Off);
 			}
-            Off++;
-        }
-    }
+			Off++;
+		}
+	}
 
-    Q931IESizeTest(Q931E_CHANID);
+	Q931IESizeTest(Q931E_CHANID);
 
-    Q931SetIE(*pIE, *OOff);
+	Q931SetIE(*pIE, *OOff);
 
-    *IOff = (*IOff) + Octet + Off;
-    *OOff = (*OOff) + sizeof(Q931ie_BearerCap);
-    pie->Size = sizeof(Q931ie_BearerCap);
+	*IOff = (*IOff) + Octet + Off;
+	*OOff = (*OOff) + sizeof(Q931ie_ChanID);
+	pie->Size = sizeof(Q931ie_ChanID);
 
-    return Q931E_NO_ERROR;
+	if(pTrunk->loglevel == Q931_LOG_DEBUG)
+	{
+		const char *iface;
+		char tmp[100] = "";
+
+		if(!pie->IntType) {
+			switch(pie->InfoChanSel) {
+			case 0x0:
+				iface = "None";
+				break;
+			case 0x1:
+				iface = "B1";
+				break;
+			case 0x2:
+				iface = "B2";
+				break;
+			default:
+				iface = "Any Channel";
+			}
+
+			snprintf(tmp, sizeof(tmp)-1, "InfoChanSel: %d (%s)", pie->InfoChanSel, iface);
+		}
+
+		Q931Log(pTrunk, Q931_LOG_DEBUG,
+			"\n-------------------------- Q.931 Channel ID ------------------------\n"
+			"    Pref/Excl: %s, Interface Type: %s\n"
+			"    %s\n"
+			"--------------------------------------------------------------------\n\n",
+			((pie->PrefExcl) ? "Preferred" : "Exclusive"),
+			((pie->IntType) ? "PRI/Other" : "BRI"),
+			tmp);
+	}
+
+	return Q931E_NO_ERROR;
 }
 
 /*****************************************************************************
@@ -1238,24 +1269,24 @@ L3INT Q931Uie_ChanID(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * 
 L3INT Q931Pie_ChanID(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_ChanID * pIE = (Q931ie_ChanID*)IBuf;
-    L3INT rc=Q931E_NO_ERROR;
-    L3INT Beg=*Octet;/* remember current offset */
+	L3INT rc = Q931E_NO_ERROR;
+	L3INT Beg = *Octet;	/* remember current offset */
     L3INT li;
 
     OBuf[(*Octet)++] = Q931ie_CHANNEL_IDENTIFICATION;
-    li=(*Octet)++;    /* remember length position */
+	li = (*Octet)++;	/* remember length position */
 
     /* Octet 3 flags & BRI chan # */
     OBuf[(*Octet)++] = 0x80 
-                    | (pIE->IntIDPresent << 6) 
-                    | (pIE->IntType<<5)
-                    | (pIE->PrefExcl<<3) 
-                    | pIE->InfoChanSel;
+			| ((pIE->IntIDPresent << 6) & 0x40)
+			| ((pIE->IntType << 5) & 0x20)
+			| ((pIE->PrefExcl << 3) & 0x08)
+			|  (pIE->InfoChanSel & 0x03);
 
     /* Octet 3.1 - Interface Identifier */
     if(pIE->IntIDPresent)
     {
-        OBuf[(*Octet)++] = 0x80 | pIE->InterfaceID;
+		OBuf[(*Octet)++] = 0x80 | (pIE->InterfaceID & 0x7f);
     }
     else
     {
@@ -1263,12 +1294,21 @@ L3INT Q931Pie_ChanID(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
         if(pIE->IntType == 1)
         {
             OBuf[(*Octet)++]  = 0x80
-                            | (pIE->CodStand << 5)
-                            | (pIE->NumMap << 4)
-                            | pIE->ChanMapType;
+					| ((pIE->CodStand << 5) & 0x60)
+					| ((pIE->NumMap << 4) & 0x10)
+					|  (pIE->ChanMapType & 0x0f);		/* TODO: support all possible channel map types */
 
-            /* Octet 3.2 Channel number/slot map */
-            OBuf[(*Octet)++] = 0x80 | pIE->ChanSlot;
+			/* Octet 3.3 Channel number */
+			switch(pIE->ChanMapType) {
+			case 0x6:	/* Slot map: H0 Channel Units */	/* unsupported, Octets 3.3.1 - 3.3.3 */
+				return Q931E_CHANID;
+
+			case 0x8:	/* Slot map: H11 Channel Units */
+			case 0x9:	/* Slot map: H12 Channel Units */
+			default:	/* Channel number */
+				OBuf[(*Octet)++] = 0x80 | (pIE->ChanSlot & 0x7f);
+				break;
+			}
         }
     }
 
@@ -1302,28 +1342,25 @@ L3INT Q931Pie_ChanID(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
 *****************************************************************************/
 L3USHORT Q931Uie_CRV(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *IOff, L3INT *OOff)
 {
+    L3USHORT CRV = 0;
     L3INT Octet = *IOff;
-    L3INT l = IBuf[Octet]; 
-    L3USHORT CRV;
-    Octet++; /*Octet 2 is length indicator */
+    L3INT l = IBuf[Octet++]; 
 
-    if(l == 1) /* One octet CRV */
+    if(l == 1)	/* One octet CRV */
     {
-        CRV = IBuf[Octet] & 0x7F;
-        Octet++;
+        CRV = IBuf[Octet++] & 0x7F;
     }
-    else if(l==2) /* two octet CRV */
+    else if(l == 2)	/* two octet CRV */
     {
-        CRV = (IBuf[Octet] & 0x7f) << 8;
-        CRV = CRV + IBuf[Octet+1];
-        Octet += 2;
+        CRV  = (IBuf[Octet++] & 0x7f) << 8;
+        CRV |=  IBuf[Octet++];
     }
     else
     {
-		/* Long CRV is not used, so we skip this */
-		/* TODO: is it right to set to 0 here? */
-		CRV = 0;
-        Octet+=l;
+	/* Long CRV is not used, so we skip this */
+	/* TODO: is it right to set to 0 here? */
+	CRV = 0;
+        Octet += l;
     }
 
     *IOff = Octet;
@@ -1634,7 +1671,7 @@ L3INT Q931Pie_HLComp(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
     li=(*Octet)++;
 
     /* Octet 3 */
-    OBuf[(*Octet)++] = 0x80 | (pIE->CodStand << 5) | (pIE->Interpret << 2) | pIE->PresMeth;
+    OBuf[(*Octet)++] = 0x80 | ((pIE->CodStand << 5) & 0x60) | ((pIE->Interpret << 2) & 0x1c) | (pIE->PresMeth & 0x03);
 
     /* Octet 4 */
     OBuf[(*Octet)++] = pIE->HLCharID;
@@ -1642,11 +1679,11 @@ L3INT Q931Pie_HLComp(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
     /* Octet 4a */
     if(pIE->HLCharID == 0x5e || pIE->HLCharID == 0x5f)
     {
-        OBuf[(*Octet)++] = 0x80 | pIE->EHLCharID;
+        OBuf[(*Octet)++] = 0x80 | (pIE->EHLCharID & 0x7f);
     }
     else if( pIE->HLCharID >= 0xc3 && pIE->HLCharID <= 0xcf)
     {
-        OBuf[(*Octet)++] = 0x80 | pIE->EVideoTlfCharID;
+        OBuf[(*Octet)++] = 0x80 | (pIE->EVideoTlfCharID & 0x7f);
     }
     else
     {
@@ -3150,4 +3187,30 @@ L3INT Q931Pie_ChangeStatus(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBu
 
     OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
+}
+
+
+
+L3INT Q931Uie_Generic(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *IOff, L3INT *OOff)
+{
+	L3INT Octet = 0;
+	L3UCHAR id = 0;
+
+	/* id */
+	id = IBuf[Octet++];
+
+	/* Length */
+	Octet += IBuf[Octet];
+	Octet++;
+
+	Q931Log(pTrunk, Q931_LOG_DEBUG, "Discarding IE %#hhx with length %d\n", id, Octet - 2);
+
+	*IOff += Octet;
+	return Q931E_NO_ERROR;
+}
+
+L3INT Q931Pie_Generic(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+{
+	/* do nothing */
+	return Q931E_NO_ERROR;
 }

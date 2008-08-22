@@ -244,23 +244,35 @@ typedef L3USHORT ie;                /* Special data type to hold a dynamic  */
 
 *****************************************************************************/
 
-#define Q931L4BUF  1000             /* size of message buffer               */
+#define	Q931_LOGBUFSIZE	1024		/* size of logging buffer		*/
 
-#define Q931L2BUF	300				/* size of message buffer				*/
+#define Q931L4BUF	1000		/* size of message buffer		*/
 
-#define Q931MAXTRUNKS	4			/* Total number of trunks that will be	*/
-									/* processed by this instance of the	*/
-									/* stack								*/
+#define Q931L2BUF	300		/* size of message buffer		*/
 
-#define Q931MAXCHPERTRUNK	32		/* Number of channels per trunk. The	*/
-									/* stack uses a static set of 32		*/
-									/* channels regardless if it is E1, T1	*/
-									/* or BRI that actually is used.		*/
+#define Q931MAXTRUNKS	4		/* Total number of trunks that will be	*/
+					/* processed by this instance of the	*/
+					/* stack				*/
 
-#define Q931MAXCALLPERTRUNK (Q931MAXCHPERTRUNK * 2)
-                                    /* Number of max active CRV per trunk.  */
-									/* Q.931 can have more calls than there */
-									/* are channels.						*/
+#define Q931MAXCHPERTRUNK	32	/* Number of channels per trunk. The	*/
+					/* stack uses a static set of 32	*/
+					/* channels regardless if it is E1, T1	*/
+					/* or BRI that actually is used.	*/
+
+#define Q931MAXCALLPERTRUNK	(Q931MAXCHPERTRUNK * 2)
+					/* Number of max active CRV per trunk.  */
+					/* Q.931 can have more calls than there */
+					/* are channels.			*/
+
+
+#define Q931_IS_BRI(x)		((x)->TrunkType == Q931_TrType_BRI || (x)->TrunkType == Q931_TrType_BRI_PTMP)
+#define Q931_IS_PRI(x)		(!Q931_IS_BRI(x))
+
+#define Q931_IS_PTP(x)		((x)->TrunkType != Q931_TrType_BRI_PTMP)
+#define Q931_IS_PTMP(X)		((x)->TrunkType == Q931_TrType_BRI_PTMP)
+
+#define Q931_BRI_MAX_CRV	127
+#define Q931_PRI_MAX_CRV	32767
 
 /*****************************************************************************
 
@@ -280,24 +292,19 @@ typedef L3USHORT ie;                /* Special data type to hold a dynamic  */
 
 *****************************************************************************/
 
-/* WARNING! Initialize Q931CreateDialectCB[] will NULL when increasing the  */
-/* Q931MAXDLCT value to avoid Q931Initialize from crashing if one entry is  */
-/* not used.																*/
-#define Q931MAXDLCT 8           /* Max dialects included in this        */
-                                /* compile. User and Network count as   */
-                                /* one dialect each.                    */
+/* WARNING! Initialize Q931CreateDialectCB[] will NULL when increasing the */
+/* Q931MAXDLCT value to avoid Q931Initialize from crashing if one entry is */
+/* not used.								   */
+#define Q931MAXDLCT	8	/* Max dialects included in this        */
+				/* compile. User and Network count as   */
+				/* one dialect each.                    */
 
-
-#define Q931MAXMES  128         /* Number of messages							*/
-
-#define Q931MAXIE  255          /* Number of IE									*/
-
-#define Q931MAXUSEDIE 50		/* Maximum number of ie types per Dialect		*/
-
-#define Q931MAXCODESETS 7		/* Maximum number of codests (by spec, 0-7)		*/
-
-#define Q931MAXSTATE 100		/* Size of state tables					        */
-
+#define Q931MAXMES	128		/* Number of messages				*/
+#define Q931MAXIE	255		/* Number of IE					*/
+#define Q931MAXUSEDIE	50		/* Maximum number of ie types per Dialect	*/
+#define Q931MAXCODESETS	7		/* Maximum number of codests (by spec, 0-7)	*/
+#define Q931MAXSTATE	100		/* Size of state tables			        */
+#define Q931MAXTIMER	25		/* Maximum number of timers 			*/
 
 /*****************************************************************************
 
@@ -380,6 +387,155 @@ typedef L3USHORT ie;                /* Special data type to hold a dynamic  */
 #define Q931mes_SERVICE              0x0f /* 0000 1111                   */
 #define Q931mes_SERVICE_ACKNOWLEDGE  0x07 /* 0000 0111                   */
 
+
+/**
+ * Generic Q.931 Timers
+ */
+enum {
+	Q931_TIMER_T300	= 1,		/* */
+	Q931_TIMER_T301,
+	Q931_TIMER_T302,
+	Q931_TIMER_T303,
+	Q931_TIMER_T304,
+	Q931_TIMER_T305,
+	Q931_TIMER_T306,
+	Q931_TIMER_T307,
+	Q931_TIMER_T308,
+	Q931_TIMER_T309,
+	Q931_TIMER_T310,
+	Q931_TIMER_T311,
+	Q931_TIMER_T312,
+	Q931_TIMER_T313,
+	Q931_TIMER_T314,
+	Q931_TIMER_T315,
+	Q931_TIMER_T316,
+	Q931_TIMER_T317,
+	Q931_TIMER_T318,
+	Q931_TIMER_T319,
+	Q931_TIMER_T320,
+	Q931_TIMER_T321,
+	Q931_TIMER_T322,
+};
+
+/**
+ * Q.931 ToN
+ */
+enum {
+	Q931_TON_UNKNOWN		= 0x00,
+	Q931_TON_INTERNATIONAL		= 0x01,
+	Q931_TON_NATIONAL		= 0x02,
+	Q931_TON_NETWORK_SPECIFIC	= 0x03,
+	Q931_TON_SUBSCRIBER_NUMBER	= 0x04,
+	Q931_TON_ABBREVIATED_NUMBER	= 0x06,
+	Q931_TON_RESERVED		= 0x07
+};
+
+/**
+ * Q.931 Numbering Plan
+ */
+enum {
+	Q931_NUMPLAN_UNKNOWN		= 0x00,
+	Q931_NUMPLAN_E164		= 0x01,
+	Q931_NUMPLAN_X121		= 0x03,
+	Q931_NUMPLAN_F69		= 0x04,
+	Q931_NUMPLAN_NATIONAL		= 0x08,
+	Q931_NUMPLAN_PRIVATE		= 0x09,
+	Q931_NUMPLAN_RESERVED		= 0x0e
+};
+
+/**
+ * Q.931 Presentation Indicator
+ */
+enum {
+	Q931_PRES_ALLOWED		= 0x00,
+	Q931_PRES_RESTRICTED		= 0x01,
+	Q931_PRES_NOT_AVAILABLE		= 0x02,
+	Q931_PRES_RESERVED		= 0x03
+};
+
+/**
+ * Q.931 Screening Indicator
+ */
+enum {
+	Q931_SCREEN_USER_NOT_SCREENED		= 0x00,
+	Q931_SCREEN_USER_VERIFIED_PASSED	= 0x01,
+	Q931_SCREEN_USER_VERIFIED_FAILED	= 0x02,
+	Q931_SCREEN_NETWORK			= 0x03
+};
+
+/**
+ * Q.931 Coding Standard
+ */
+enum {
+	Q931_CODING_ITU		= 0x00,
+	Q931_CODING_ISO		= 0x01,
+	Q931_CODING_NATIONAL	= 0x02,
+	Q931_CODING_NETWORK	= 0x03
+};
+
+/**
+ * Q.931 High layer characteristik id
+ */
+enum {
+	Q931_HLCHAR_TELEPHONY	= 0x01,
+	Q931_HLCHAR_FAX_G23	= 0x04,
+	Q931_HLCHAR_FAX_G4	= 0x21,
+	Q931_HLCHAR_FAX_G4II	= 0x24,
+	Q931_HLCHAR_T102	= 0x32,
+	Q931_HLCHAR_T101	= 0x33,
+	Q931_HLCHAR_F60		= 0x35,
+	Q931_HLCHAR_X400	= 0x38,
+	Q931_HLCHAR_X200	= 0x41
+};
+
+/**
+ * Q.931 User information layer 1 protocol
+ */
+enum {
+	Q931_UIL1P_V110		= 0x01,
+	Q931_UIL1P_I460		= 0x01,
+	Q931_UIL1P_X30		= 0x01,
+
+	Q931_UIL1P_G711U	= 0x02,
+	Q931_UIL1P_G711A	= 0x03,
+	Q931_UIL1P_G721		= 0x04,
+
+	Q931_UIL1P_H221		= 0x05,
+	Q931_UIL1P_H242		= 0x05,
+
+	Q931_UIL1P_H223		= 0x06,
+	Q931_UIL1P_H245		= 0x06,
+
+	Q931_UIL1P_RATE_ADAP	= 0x07,
+
+	Q931_UIL1P_V120		= 0x08,
+	Q931_UIL1P_X31		= 0x09
+};
+
+/**
+ * Q.931 Information Transfer Capability
+ */
+enum {
+	Q931_ITC_SPEECH			= 0x00,
+	Q931_ITC_UNRESTRICTED		= 0x08,
+	Q931_ITC_RESTRICTED		= 0x09,
+	Q931_ITC_3K1_AUDIO		= 0x10,
+	Q931_ITC_UNRESTRICTED_TONES	= 0x11,
+	Q931_ITC_VIDEO			= 0x18
+};
+
+/**
+ * Q.931 Information transfer rate
+ */
+enum {
+	Q931_ITR_PACKET	= 0x00,
+	Q931_ITR_64K	= 0x10,
+	Q931_ITR_128K	= 0x11,
+	Q931_ITR_384K	= 0x13,
+	Q931_ITR_1536K	= 0x15,
+	Q931_ITR_1920K	= 0x17,
+	Q931_ITR_MULTI	= 0x18
+};
 
 /*****************************************************************************
 
@@ -479,33 +635,46 @@ typedef struct
 *****************************************************************************/
 typedef struct Q931_TrunkInfo Q931_TrunkInfo_t;
 
-typedef L3INT (*Q931TxCB_t) (void *,L3UCHAR *, L3INT);
-typedef L3INT (*Q931ErrorCB_t) (void *,L3INT,L3INT,L3INT);
-
-typedef enum						/* Network/User Mode.                   */
+typedef enum
 {
-	Q931_TE=0,						/*  0 : User Mode                       */
-    Q931_NT=1						/*  1 : Network Mode                    */
+	Q931_LOG_NONE = 0,
+	Q931_LOG_ERROR,
+	Q931_LOG_WARNING,
+	Q931_LOG_NOTICE,
+	Q931_LOG_INFO,
+	Q931_LOG_DEBUG
+} Q931LogLevel_t;
+
+typedef L3INT (*Q931Tx34CB_t) (void *,L3UCHAR *, L3INT);
+typedef L3INT (*Q931Tx32CB_t) (void *, L3INT, L3UCHAR, L3UCHAR *, L3INT);
+typedef L3INT (*Q931ErrorCB_t) (void *,L3INT,L3INT,L3INT);
+typedef L3INT (*Q931LogCB_t) (void *, Q931LogLevel_t, char *, L3INT);
+
+typedef enum					/* Network/User Mode.			*/
+{
+	Q931_TE=0,				/*  0 : User Mode			*/
+	Q931_NT=1				/*  1 : Network Mode			*/
 } Q931NetUser_t;
 
-typedef enum						/* Dialect enum                         */
+typedef enum					/* Dialect enum                         */
 {
 	Q931_Dialect_Q931     = 0,
 	Q931_Dialect_National = 2,
 	Q931_Dialect_DMS      = 4,
-	Q931_Dialect_5ESS     = 6,      /* Coming soon to a PRI stack near you! */
+	Q931_Dialect_5ESS     = 6,		/* Coming soon to a PRI stack near you! */
 
 	Q931_Dialect_Count
 } Q931Dialect_t;
-#define DIALECT_STRINGS "q931", "", "national", "", "dms","","5ess",""
+#define DIALECT_STRINGS "q931", "", "national", "", "dms", "", "5ess", ""
 Q931_STR2ENUM_P(q931_str2Q931Dialect_type, q931_Q931Dialect_type2str, Q931Dialect_t)
 
-typedef enum						/* Trunk Line Type.                     */
+typedef enum					/* Trunk Line Type.			*/
 {
-	Q931_TrType_E1=0,				/*  0 : E1 Trunk                        */
-    Q931_TrType_T1=1,				/*  1 : T1 Trunk                        */
-    Q931_TrType_J1=2,				/*  2 : J1 Trunk                        */
-    Q931_TrType_BRI=3				/*  3 : BRI Trunk                       */
+	Q931_TrType_E1 = 0,			/*  0 : E1 Trunk			*/
+	Q931_TrType_T1 = 1,			/*  1 : T1 Trunk			*/
+	Q931_TrType_J1 = 2,			/*  2 : J1 Trunk			*/
+	Q931_TrType_BRI	= 3,			/*  3 : BRI Trunk			*/
+	Q931_TrType_BRI_PTMP = 4		/*  4 : BRI PTMP Trunk			*/
 } Q931_TrunkType_t;
 
 typedef enum						/* Trunk State							*/
@@ -522,19 +691,51 @@ typedef enum {
 	Q931_ChType_Sync=3				/* Sync Channel							*/
 } Q931_ChanType_t;
 
+struct Q931_Call
+{
+	L3UCHAR InUse;			/* Indicate if entry is in use.         */
+					/*  0 = Not in Use                      */
+					/*  1 = Active Call.                    */
+
+	L3UCHAR Tei;			/* Associated TEI 			*/
+
+	L3UCHAR BChan;			/* Associated B Channel.                */
+					/* 0 - 31 valid B chan			*/
+					/* 255 = Not allocated			*/
+
+	L3INT   CRV;			/* Associated CRV.                      */
+
+	L3UINT  State;			/* Call State.                          */
+					/*  0 is Idle, but other values are	*/
+					/*  defined per dialect.		*/
+					/*  Default usage is 1-99 for TE and    */
+					/*  101 - 199 for NT.			*/
+        
+	L3ULONG Timer;			/* Timer in ms. The TimeTick will check		*/
+					/* if this has exceeded the timeout, and	*/
+					/* if so call the timers timeout proc.		*/
+
+	L3USHORT TimerID;		/* Timer Identification/State           */
+					/* actual values defined by dialect	*/
+					/*  0 : No timer running                */
+					/*  ITU-T Q.931:301 - 322 Timer running */
+};
+
 struct Q931_TrunkInfo
 {
 	Q931NetUser_t NetUser;			/* Network/User Mode.                   */
-
-    Q931Dialect_t Dialect;			/* Q.931 Based dialect index.           */
-
 	Q931_TrunkType_t TrunkType;		/* Trunk Line Type.                     */
+	Q931Dialect_t Dialect;			/* Q.931 Based dialect index.           */
 
-	Q931TxCB_t	Q931Tx34CBProc;
-	Q931TxCB_t	Q931Tx32CBProc;
+	Q931Tx34CB_t	Q931Tx34CBProc;
+	Q931Tx32CB_t	Q931Tx32CBProc;
 	Q931ErrorCB_t Q931ErrorCBProc;
+	Q931LogCB_t	Q931LogCBProc;
 	void *PrivateData32;
 	void *PrivateData34;
+	void *PrivateDataLog;
+
+	Q931LogLevel_t	loglevel;
 
 	L3UCHAR     Enabled;            /* Enabled/Disabled                     */
                                     /*  0 = Disabled                        */
@@ -580,37 +781,9 @@ struct Q931_TrunkInfo
 
     }ch[Q931MAXCHPERTRUNK];
 
-    /* Active Call information indentified by CRV. See Q931AllocateCRV for  */
-	/* initialization of call table.										*/
-    struct _ccarray
-    {
-        L3UCHAR InUse;              /* Indicate if entry is in use.         */
-                                    /*  0 = Not in Use                      */
-                                    /*  1 = Active Call.                    */
-
-        L3UCHAR BChan;              /* Associated B Channel.                */
-									/* 0 - 31 valid B chan					*/
-									/* 255 = Not allocated					*/
-
-        L3INT   CRV;                /* Associated CRV.                      */
-
-        L3UINT  State;              /* Call State.                          */
-									/*  0 is Idle, but other values are		*/
-									/*  defined per dialect.				*/
-									/*  Default usage is 1-99 for TE and    */
-									/*  101 - 199 for NT.					*/
-        
-        L3ULONG Timer;              /* Timer in ms. The TimeTick will check */
-									/* if this has exceeded the timeout, and*/
-									/* if so call the timers timeout proc.	*/
-
-        L3USHORT TimerID;           /* Timer Identification/State           */
-									/* actual values defined by dialect		*/
-                                    /*  0 : No timer running                */
-                                    /*  ITU-T Q.931:301 - 322 Timer running */
-
-    }call[Q931MAXCALLPERTRUNK];
-
+	/* Active Call information indentified by CRV. See Q931AllocateCRV for  */
+	/* initialization of call table.					*/
+	struct Q931_Call	call[Q931MAXCALLPERTRUNK];
 };
 
 /*****************************************************************************
@@ -646,6 +819,9 @@ typedef L3INT (q931pmes_func_t) (Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf
 typedef L3INT (q931uie_func_t) (Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
 typedef L3INT (q931pie_func_t) (Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
 
+typedef L3INT (q931timeout_func_t) (Q931_TrunkInfo_t *pTrunk, L3INT callIndex);
+typedef L3ULONG q931timer_t;
+
 extern q931proc_func_t *Q931Proc[Q931MAXDLCT][Q931MAXMES];
 
 extern q931umes_func_t *Q931Umes[Q931MAXDLCT][Q931MAXMES];
@@ -653,6 +829,10 @@ extern q931pmes_func_t *Q931Pmes[Q931MAXDLCT][Q931MAXMES];
 
 extern q931uie_func_t *Q931Uie[Q931MAXDLCT][Q931MAXIE];
 extern q931pie_func_t *Q931Pie[Q931MAXDLCT][Q931MAXIE];
+
+extern q931timeout_func_t *Q931Timeout[Q931MAXDLCT][Q931MAXTIMER];
+extern q931timer_t         Q931Timer[Q931MAXDLCT][Q931MAXTIMER];
+
 
 /*****************************************************************************
     
@@ -893,9 +1073,9 @@ L3INT Q931ProcUnexpectedMessage(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFro
   Interface Function Prototypes. Implemented in Q931.c
 
 *****************************************************************************/
-void    Q931TimeTick(Q931_TrunkInfo_t *pTrunk, L3ULONG ms);
-L3INT   Q931Rx23(Q931_TrunkInfo_t *pTrunk, L3UCHAR * Mes, L3INT Size);
-L3INT   Q931Tx32(Q931_TrunkInfo_t *pTrunk, L3UCHAR * Mes, L3INT Size);
+void    Q931TimerTick(Q931_TrunkInfo_t *pTrunk);
+L3INT   Q931Rx23(Q931_TrunkInfo_t *pTrunk, L3INT ind, L3UCHAR tei, L3UCHAR * Mes, L3INT Size);
+L3INT   Q931Tx32Data(Q931_TrunkInfo_t *pTrunk, L3UCHAR bcast, L3UCHAR * Mes, L3INT Size);
 L3INT   Q931Rx43(Q931_TrunkInfo_t *pTrunk, L3UCHAR * Mes, L3INT Size);
 L3INT   Q931Tx34(Q931_TrunkInfo_t *pTrunk, L3UCHAR * Mes, L3INT Size);
 void    Q931SetError(Q931_TrunkInfo_t *pTrunk,L3INT ErrID, L3INT ErrPar1, L3INT ErrPar2);
@@ -910,6 +1090,8 @@ void    Q931SetHeaderSpace(L3INT space);
 
 void Q931SetMesProc(L3UCHAR mes, L3UCHAR dialect, q931proc_func_t *Q931ProcFunc, q931umes_func_t *Q931UmesFunc, q931pmes_func_t *Q931PmesFunc);
 void Q931SetIEProc(L3UCHAR iec, L3UCHAR dialect, q931pie_func_t *Q931PieProc, q931uie_func_t *Q931UieProc);
+void Q931SetTimeoutProc(L3UCHAR timer, L3UCHAR dialect, q931timeout_func_t *Q931TimeoutProc);
+void Q931SetTimerDefault(L3UCHAR timer, L3UCHAR dialect, q931timer_t timeout);
 
 void Q931Initialize(void);
 void Q931AddDialect(L3UCHAR iDialect, void (*Q931CreateDialectCB)(L3UCHAR iDialect));
@@ -926,7 +1108,7 @@ L3INT	Q931StartTimer(Q931_TrunkInfo_t *pTrunk, L3INT callIndex, L3USHORT iTimer)
 L3INT	Q931StopTimer(Q931_TrunkInfo_t *pTrunk, L3INT callindex, L3USHORT iTimer);
 L3INT	Q931SetState(Q931_TrunkInfo_t *pTrunk, L3INT callIndex, L3INT iState);
 L3ULONG Q931GetTime(void);
-void Q931SetGetTimeCB(L3ULONG (*callback)(void));
+void    Q931SetGetTimeCB(L3ULONG (*callback)(void));
 void	Q931AddStateEntry(L3UCHAR iD, L3INT iState, L3INT iMes, L3UCHAR cDir);
 L3BOOL	Q931IsEventLegal(L3UCHAR iD, L3INT iState, L3INT iMes, L3UCHAR cDir);
 
@@ -965,8 +1147,8 @@ L3INT Q931Api_InitTrunk(Q931_TrunkInfo_t *pTrunk,
 						Q931Dialect_t Dialect,
 						Q931NetUser_t NetUser,
 						Q931_TrunkType_t TrunkType,
-						Q931TxCB_t Q931Tx34CBProc,
-						Q931TxCB_t Q931Tx32CBProc,
+						Q931Tx34CB_t Q931Tx34CBProc,
+						Q931Tx32CB_t Q931Tx32CBProc,
 						Q931ErrorCB_t Q931ErrorCBProc,
 						void *PrivateData32,
 						void *PrivateData34);
@@ -974,7 +1156,9 @@ L3INT Q931Api_InitTrunk(Q931_TrunkInfo_t *pTrunk,
 L3INT Q931GetMesSize(Q931mes_Generic *pMes);
 L3INT Q931InitMesResume(Q931mes_Generic * pMes);
 
-
+L3INT Q931Log(Q931_TrunkInfo_t *trunk, Q931LogLevel_t level, const char *fmt, ...);
+void Q931SetLogCB(Q931_TrunkInfo_t *trunk, Q931LogCB_t func, void *priv);
+void Q931SetLogLevel(Q931_TrunkInfo_t *trunk, Q931LogLevel_t level);
 
 void Q931SetL4HeaderSpace(L3INT space);
 void Q931SetL2HeaderSpace(L3INT space);
@@ -985,7 +1169,8 @@ L3INT Q931PmesDummy(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize
 L3INT Q931PieDummy(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
 L3INT Q931TxDummy(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT n);
 L3INT Q931ErrorDummy(void *priv, L3INT a, L3INT b, L3INT c);
+L3INT Q931TimeoutDummy(Q931_TrunkInfo_t *pTrunk, L3INT callIndex);
 
-
+L3INT Q931MesgHeader(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *mes, L3UCHAR *OBuf, L3INT Size, L3INT *IOff);
 
 #endif /* _Q931_NL */

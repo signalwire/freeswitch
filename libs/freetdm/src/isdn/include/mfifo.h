@@ -58,15 +58,15 @@ typedef struct _mindex
 				queue.
 
 *****************************************************************************/
-typedef struct _mfifo
+typedef struct
 {
 	int first;                      /* first out                            */
 	int last;                       /* last in + 1                          */
 	int bsize;                      /* buffer size                          */
-	unsigned char *buf;                      /* ptr to start of buffer               */
-    int ixsize;                     /* index size                           */
-    MINDEX ix[1];                   /* message index                        */
-}MFIFO;
+	unsigned char *buf;             /* ptr to start of buffer               */
+	int ixsize;                     /* index size                           */
+	MINDEX ix[1];                   /* message index                        */
+} MFIFO;
 
 /*****************************************************************************
   Function prototypes.
@@ -79,5 +79,9 @@ void MFIFOWriteIX(unsigned char *buf, unsigned char *mes, int size, int ix, int 
 int MFIFOWriteMes(unsigned char *buf, unsigned char *mes, int size);
 unsigned char * MFIFOGetMesPtr(unsigned char *buf, int *size);
 void MFIFOKillNext(unsigned char *buf);
+
+unsigned char * MFIFOGetMesPtrOffset(unsigned char *buf, int *size, const int pos);
+int MFIFOGetMesCount(unsigned char *buf);
+int MFIFOWriteMesOverwrite(unsigned char *buf, unsigned char *mes, int size);
 
 #endif

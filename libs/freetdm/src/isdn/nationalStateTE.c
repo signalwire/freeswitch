@@ -127,6 +127,9 @@ void nationalCreateTE(L3UCHAR i)
     Q931SetIEProc(Q931ie_USER_USER,                        i,Q931Pie_UserUser,			Q931Uie_UserUser);
     Q931SetIEProc(Q931ie_GENERIC_DIGITS,				   i,Q931Pie_GenericDigits,		Q931Uie_GenericDigits);
 
+	Q931SetIEProc(Q931ie_CONNECTED_NUMBER, i, Q931Pie_Generic, Q931Uie_Generic);
+	Q931SetIEProc(Q931ie_FACILITY,         i, Q931Pie_Generic, Q931Uie_Generic);
+
 	/* The following define a state machine. The point is that the Message	*/
 	/* procs can when search this to find out if the message/state			*/
 	/* combination is legale. If not, the proc for unexpected message apply.*/

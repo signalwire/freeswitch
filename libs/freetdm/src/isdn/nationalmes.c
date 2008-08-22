@@ -155,12 +155,7 @@ L3INT nationalPmes_Setup(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT 
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
-
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb						*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 	
 	/* Sending Complete				*/
 	if(Q931IsIEPresent(pMes->SendComplete))

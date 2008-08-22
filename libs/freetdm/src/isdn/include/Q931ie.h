@@ -57,7 +57,7 @@ typedef enum {
 /* Single octet information elements                                */
 #define Q931ie_SHIFT                            0x90 /* 1001 ----       */
 #define Q931ie_MORE_DATA                        0xa0 /* 1010 ----       */
-#define Q931ie_SENDING_COMPLETE                 0xa1 /* 1010 0000       */
+#define Q931ie_SENDING_COMPLETE                 0xa1 /* 1010 0001       */
 #define Q931ie_CONGESTION_LEVEL                 0xb0 /* 1011 ----       */
 #define Q931ie_REPEAT_INDICATOR                 0xd0 /* 1101 ----       */
 
@@ -101,6 +101,9 @@ typedef enum {
 
 #define Q931ie_GENERIC_DIGITS					0x37 /* 0011 0111       */
 
+/* Variable Length Information Element to shut up BRI testing */
+#define Q931ie_CONNECTED_NUMBER			0x4c /* 0100 1101 */
+#define Q931ie_FACILITY				0x1c /* 0001 1101 */
 
 
 /*****************************************************************************
@@ -1168,5 +1171,7 @@ L3INT Q931Pie_CongLevel(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
 L3INT Q931Uie_RevChargeInd(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
 L3INT Q931Pie_RevChargeInd(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
 
+L3INT Q931Uie_Generic(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Pie_Generic(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
 
 #endif /* _Q931IE_NL */

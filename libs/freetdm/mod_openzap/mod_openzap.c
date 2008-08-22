@@ -673,6 +673,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 }
 
+
 static switch_status_t channel_receive_message_b(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
 	switch_channel_t *channel;
@@ -690,7 +691,7 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
 				zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_PROGRESS);
 			} else {
-				zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS);
+				zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS);
 			}
 		}
 		break;
@@ -700,7 +701,7 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 				zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_PROGRESS);
 				zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_MEDIA);
 			} else {
-				zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
+				zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
 			}
 		}
 		break;
@@ -709,7 +710,7 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
 				zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_ANSWERED);
 			} else {
-				zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_UP);
+				zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_UP);
 			}
 		}
 		break;

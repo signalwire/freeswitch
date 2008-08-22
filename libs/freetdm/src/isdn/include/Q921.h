@@ -31,7 +31,7 @@
 				NOTE: The following are not yet implemented
 
                 OnQ921Error         Function called every if an error is 
-                                    deteceted.
+                                    detected.
 
                 OnQ921Log           Function called if logging is active.
 
@@ -76,84 +76,149 @@
 
 *****************************************************************************/
 
+/****************************************************************************
+ * Changes:
+ *
+ * - June,July 2008: Stefan Knoblich <s.knoblich@axsentis.de>:
+ *     Add PTMP TEI management
+ *     Add timers
+ *     Add retransmit counters
+ *     Add logging
+ *     Various cleanups
+ *
+ ****************************************************************************/
+
 #ifndef _Q921
 #define _Q921
 
 #define Q921MAXHDLCSPACE 3000
-#define L2UCHAR		unsigned char		/* Min 8 bit						*/
-#define L2INT       int                 /* Min 16 bit signed                */
-#define L2ULONG		unsigned long		/* Min 32 bit						*/
+#define L2UCHAR		unsigned char		/* Min 8 bit			*/
+#define L2USHORT	unsigned short		/* 16 bit			*/
+#define L2INT		int			/* Min 16 bit signed		*/
+#define L2ULONG		unsigned long		/* Min 32 bit			*/
 #define L2TRUNK		Q921Data_t *
 
-typedef enum					/* Network/User Mode.                   */
+#define Q921_TEI_BCAST		127
+#define Q921_TEI_MAX		Q921_TEI_BCAST
+
+#define Q921_TEI_DYN_MIN	64
+#define Q921_TEI_DYN_MAX	126
+
+
+typedef enum			/* Network/User Mode		*/
 {
-	Q921_TE=0,                  /*  0 : User Mode                       */
-    Q921_NT=1                   /*  1 : Network Mode                    */
+	Q921_TE=0,		/*  0 : User Mode		*/
+	Q921_NT=1		/*  1 : Network Mode		*/
 } Q921NetUser_t;
 
-typedef struct Q921Data Q921Data_t;
-typedef int (*Q921TxCB_t) (void *, L2UCHAR *, L2INT);
-
-#define INITIALIZED_MAGIC 42
-struct Q921Data
+typedef enum			/* Type of connection		*/
 {
-    L2UCHAR HDLCInQueue[Q921MAXHDLCSPACE];
+	Q921_PTP=0,		/* 0 : Point-To-Point		*/
+	Q921_PTMP=1		/* 1 : Point-To-Multipoint	*/
+} Q921NetType_t;
+
+typedef enum
+{
+	Q921_LOG_NONE = 0,
+	Q921_LOG_ERROR,
+	Q921_LOG_WARNING,
+	Q921_LOG_NOTICE,
+	Q921_LOG_INFO,
+	Q921_LOG_DEBUG
+} Q921LogLevel_t;
+
+
+/*
+ * Messages for L2 <-> L3 communication
+ */
+typedef enum {
+	Q921_DL_ESTABLISH = 0,
+	Q921_DL_ESTABLISH_CONFIRM,
+	Q921_DL_RELEASE,
+	Q921_DL_RELEASE_CONFIRM,
+	Q921_DL_DATA,
+	Q921_DL_UNIT_DATA
+} Q921DLMsg_t;
+
+typedef int (*Q921Tx21CB_t) (void *, L2UCHAR *, L2INT);
+typedef int (*Q921Tx23CB_t) (void *, Q921DLMsg_t ind, L2UCHAR tei, L2UCHAR *, L2INT);
+typedef int (*Q921LogCB_t) (void *, Q921LogLevel_t, char *, L2INT);
+
+struct Q921_Link;
+
+typedef struct Q921Data
+{
 	L2INT initialized;
-	L2UCHAR va;
-    L2UCHAR vs;
-    L2UCHAR vr;
-    L2INT state;
-	L2UCHAR sapi;
-	L2UCHAR tei;
+
+	L2UCHAR sapi;			/*!< User assigned SAPI */
+	L2UCHAR tei;			/*!< User assigned TEI value */
+
+	L2INT Q921HeaderSpace;
 	Q921NetUser_t NetUser;
-	L2ULONG T200;
-	L2ULONG T203;
+	Q921NetType_t NetType;
+
+	struct Q921_Link *context;	/*!< per-TEI / link context space */
+
+	/* timers */
+	L2ULONG T202;			/*!< PTMP TE mode TEI retransmit timer */
 	L2ULONG T200Timeout;
+	L2ULONG T201Timeout;
+	L2ULONG T202Timeout;
 	L2ULONG T203Timeout;
-	Q921TxCB_t Q921Tx21Proc;
-	Q921TxCB_t Q921Tx23Proc;
+
+	L2ULONG TM01Timeout;
+
+	/* counters */
+	L2ULONG N200Limit;		/*!< max retransmit */
+
+	L2ULONG N202;			/*!< PTMP TE mode retransmit counter */
+	L2ULONG N202Limit;		/*!< PTMP TE mode max retransmit */
+
+	L2ULONG N201Limit;		/*!< max number of octets */
+	L2ULONG k;			/*!< max number of unacknowledged I frames */
+
+	/* callbacks and callback data pointers */
+	Q921Tx21CB_t Q921Tx21Proc;
+	Q921Tx23CB_t Q921Tx23Proc;
 	void *PrivateData21;
 	void *PrivateData23;
-	L2INT Q921HeaderSpace;
 
-};
+	/* logging */
+	Q921LogLevel_t	loglevel;	/*!< trunk loglevel */
+	Q921LogCB_t	Q921LogProc;	/*!< log callback procedure */
+	void *PrivateDataLog;		/*!< private data pointer for log proc */
 
-void Q921_InitTrunk(L2TRUNK trunk,
+	/* tei mgmt */
+	L2UCHAR tei_map[Q921_TEI_MAX];	/*!< */
+
+	L2UCHAR HDLCInQueue[Q921MAXHDLCSPACE];	/*!< HDLC input queue */
+} Q921Data_t;
+
+/*
+ * Public functions
+ */
+int Q921_InitTrunk(L2TRUNK trunk,
 					L2UCHAR sapi,
 					L2UCHAR tei,
 					Q921NetUser_t NetUser,
+					Q921NetType_t NetType,
 					L2INT hsize,
-					Q921TxCB_t cb21,
-					Q921TxCB_t cb23,
+					Q921Tx21CB_t cb21,
+					Q921Tx23CB_t cb23,
 					void *priv21,
 					void *priv23);
-int Q921QueueHDLCFrame(L2TRUNK trunk, L2UCHAR *b, L2INT size);
-int Q921Rx12(L2TRUNK trunk);
-int Q921Rx32(L2TRUNK trunk, L2UCHAR * Mes, L2INT Size);
 int Q921Start(L2TRUNK trunk);
+int Q921Stop(L2TRUNK trunk);
+
+void Q921SetLogCB(L2TRUNK trunk, Q921LogCB_t func, void *priv);
+void Q921SetLogLevel(L2TRUNK trunk, Q921LogLevel_t level);
+
+int Q921Rx12(L2TRUNK trunk);
+int Q921Rx32(L2TRUNK trunk, Q921DLMsg_t ind, L2UCHAR tei, L2UCHAR * Mes, L2INT Size);
+
+int Q921QueueHDLCFrame(L2TRUNK trunk, L2UCHAR *b, L2INT size);
+
 void Q921SetGetTimeCB(L2ULONG (*callback)(void));
 void Q921TimerTick(L2TRUNK trunk);
 
-int Q921Tx21Proc(L2TRUNK trunk, L2UCHAR *Msg, L2INT size);
-int Q921Tx23Proc(L2TRUNK trunk, L2UCHAR *Msg, L2INT size);
-extern L2ULONG tLast;
-L2ULONG Q921GetTime(void);
-void Q921T200TimerStart(L2TRUNK trunk);
-void Q921T200TimerStop(L2TRUNK trunk);
-void Q921T200TimerReset(L2TRUNK trunk);
-void Q921T203TimerStart(L2TRUNK trunk);
-void Q921T203TimerStop(L2TRUNK trunk);
-void Q921T203TimerReset(L2TRUNK trunk);
-void Q921T200TimerExpire(L2TRUNK trunk);
-void Q921T203TimerExpire(L2TRUNK trunk);
-int Q921SendI(L2TRUNK trunk, L2UCHAR Sapi, char cr, L2UCHAR Tei, char pf, L2UCHAR *mes, L2INT size);
-int Q921SendRNR(L2TRUNK trunk, int Sapi, int cr, int Tei, int pf);
-int Q921SendREJ(L2TRUNK trunk, int Sapi, int cr, int Tei, int pf);
-int Q921SendSABME(L2TRUNK trunk, int Sapi, int cr, int Tei, int pf);
-int Q921SendDM(L2TRUNK trunk, int Sapi, int cr, int Tei, int pf);
-int Q921SendDISC(L2TRUNK trunk, int Sapi, int cr, int Tei, int pf);
-int Q921SendUA(L2TRUNK trunk, int Sapi, int cr, int Tei, int pf);
-int Q921ProcSABME(L2TRUNK trunk, L2UCHAR *mes, L2INT size);
-
 #endif
-

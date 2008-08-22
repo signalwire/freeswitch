@@ -240,7 +240,7 @@ L3INT ATT5ESSProc0x0fTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -283,7 +283,7 @@ L3INT ATT5ESSProc0x07TE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{

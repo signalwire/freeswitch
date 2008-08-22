@@ -43,6 +43,34 @@
 
 #include "Q931.h"
 
+/**
+ * Q931MesgHeader
+ * \brief	Create Q.931 Message header
+ */
+L3INT Q931MesgHeader(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *mes, L3UCHAR *OBuf, L3INT Size, L3INT *IOff)
+{
+	L3INT Octet = *IOff;
+
+	Q931Log(pTrunk, Q931_LOG_DEBUG, "Creating Q.931 Message Header:\n    ProtDisc %d (%#x), CRV %d (%#x), CRVflag: %d (%#x), MesType: %d (%#x)\n",
+			 mes->ProtDisc, mes->ProtDisc, mes->CRV, mes->CRV, mes->CRVFlag, mes->CRVFlag, mes->MesType, mes->MesType);
+
+	OBuf[Octet++] = mes->ProtDisc;				/* Protocol discriminator		*/
+	if(!Q931_IS_BRI(pTrunk)) {
+		OBuf[Octet++] = 2;									/* length is 2 octets			*/
+		OBuf[Octet++] = (L3UCHAR)((mes->CRV >> 8) & 0x7f) | ((mes->CRVFlag << 7) & 0x80);	/* msb					*/
+		OBuf[Octet++] = (L3UCHAR) (mes->CRV & 0xff);						/* lsb					*/
+	} else {
+		OBuf[Octet++] = 1;									/* length is 1 octet			*/
+		OBuf[Octet++] = (L3UCHAR) (mes->CRV & 0x7f) | ((mes->CRVFlag << 7) & 0x80);		/* CRV & flag				*/
+	}
+	OBuf[Octet++] = mes->MesType;				/* message header			*/
+
+	*IOff = Octet;
+
+	return 0;
+}
+
+
 /*****************************************************************************
 
   Function:     Q931Umes_Alerting
@@ -84,17 +112,12 @@ L3INT Q931Umes_Alerting(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic
 *****************************************************************************/
 L3INT Q931Pmes_Alerting(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
-    L3INT rc = Q931E_NO_ERROR;
+	L3INT rc = Q931E_NO_ERROR;
 	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
-
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 	
 	/* Bearer capability */
 	if(Q931IsIEPresent(pMes->BearerCap))
@@ -177,12 +200,7 @@ L3INT Q931Pmes_CallProceeding(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
-
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 	
 	/* Bearer capability */
 	if(Q931IsIEPresent(pMes->BearerCap))
@@ -271,17 +289,23 @@ L3INT Q931Umes_Connect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic 
 		case Q931ie_SIGNAL:
 		case Q931ie_LOW_LAYER_COMPATIBILITY:
 		case Q931ie_HIGH_LAYER_COMPATIBILITY:
+		case Q931ie_CONNECTED_NUMBER:		/* not actually used, seen while testing BRI PTMP TE */
 			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
+
 		default:
+			Q931Log(pTrunk, Q931_LOG_ERROR, "Illegal IE %#hhx in Connect Message\n", IBuf[IOff]);
+
 			return Q931E_ILLEGAL_IE;
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
-    return Q931E_NO_ERROR;
+
+	mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
+
+	return Q931E_NO_ERROR;
 }
 
 /*****************************************************************************
@@ -296,12 +320,7 @@ L3INT Q931Pmes_Connect(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT IS
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
-
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 	
 	/* Bearer capability */
 	if(Q931IsIEPresent(pMes->BearerCap))
@@ -392,12 +411,7 @@ L3INT Q931Pmes_ConnectAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
-
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 	
 	/* Display */
 	if(Q931IsIEPresent(pMes->Display))
@@ -432,6 +446,7 @@ L3INT Q931Umes_Disconnect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Gener
 		case Q931ie_PROGRESS_INDICATOR:
 		case Q931ie_DISPLAY:
 		case Q931ie_SIGNAL:
+		case Q931ie_FACILITY:
 			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
@@ -457,12 +472,7 @@ L3INT Q931Pmes_Disconnect(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
-
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 	
 	/* Cause */
 	if(Q931IsIEPresent(pMes->Cause))
@@ -516,8 +526,10 @@ L3INT Q931Umes_Information(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Gene
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
-    return Q931E_NO_ERROR;
+
+	mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
+
+	return Q931E_NO_ERROR;
 }
 
 /*****************************************************************************
@@ -532,13 +544,8 @@ L3INT Q931Pmes_Information(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3IN
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
-	
 	/* Sending Complete				*/
 	if(Q931IsIEPresent(pMes->SendComplete))
 		OBuf[Octet++]	= (L3UCHAR)(pMes->SendComplete & 0x00ff);
@@ -607,12 +614,7 @@ L3INT Q931Pmes_Notify(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISi
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
-
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 	
 	/* Bearer capability */
 	if(Q931IsIEPresent(pMes->BearerCap))
@@ -675,12 +677,7 @@ L3INT Q931Pmes_Progress(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT I
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
-
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 	
 	/* Bearer capability */
 	if(Q931IsIEPresent(pMes->BearerCap))
@@ -753,12 +750,7 @@ L3INT Q931Pmes_Release(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT IS
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
-
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 	
 	/* Cause */
 	if(Q931IsIEPresent(pMes->Cause))
@@ -820,12 +812,7 @@ L3INT Q931Pmes_ReleaseComplete(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, 
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
-
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 	
 	/* Cause */
 	if(Q931IsIEPresent(pMes->Cause))
@@ -882,34 +869,29 @@ L3INT Q931Umes_Restart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic 
 *****************************************************************************/
 L3INT Q931Pmes_Restart(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
-    L3INT rc = Q931E_NO_ERROR;
-    Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
-    L3INT Octet = 0;
+	L3INT rc = Q931E_NO_ERROR;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
+	L3INT Octet = 0;
 
-    /* Q931 Message Header */
-
-    OBuf[Octet++]    = pMes->ProtDisc;        /* Protocol discriminator        */
-    OBuf[Octet++]    = 2;                    /* length is 2 octets            */
-    OBuf[Octet++]    = (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);    /* msb                            */
-    OBuf[Octet++]    = (L3UCHAR)(pMes->CRV);    /* lsb                            */
-    OBuf[Octet++]    = pMes->MesType;        /* message header                */
-    
-    /* ChanID */
-    if(Q931IsIEPresent(pMes->ChanID))
-        if((rc=Q931Pie[pTrunk->Dialect][Q931ie_CHANNEL_IDENTIFICATION](pTrunk, Q931GetIEPtr(pMes->ChanID,pMes->buf), OBuf, &Octet))!=0)
-            return rc;
-    /* Display */
-    if(Q931IsIEPresent(pMes->Display))
-        if((rc=Q931Pie[pTrunk->Dialect][Q931ie_DISPLAY](pTrunk, Q931GetIEPtr(pMes->Display,pMes->buf), OBuf, &Octet))!=0)
-            return rc;
-    /* RestartInd */
-    if(Q931IsIEPresent(pMes->RestartInd))
-        if((rc=Q931Pie[pTrunk->Dialect][Q931ie_RESTART_INDICATOR](pTrunk, Q931GetIEPtr(pMes->RestartInd,pMes->buf), OBuf, &Octet))!=0)
-            return rc;
+	/* Q931 Message Header */
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
+   
+	/* ChanID */
+	if(Q931IsIEPresent(pMes->ChanID))
+		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_CHANNEL_IDENTIFICATION](pTrunk, Q931GetIEPtr(pMes->ChanID,pMes->buf), OBuf, &Octet))!=0)
+			return rc;
+	/* Display */
+	if(Q931IsIEPresent(pMes->Display))
+		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_DISPLAY](pTrunk, Q931GetIEPtr(pMes->Display,pMes->buf), OBuf, &Octet))!=0)
+			return rc;
+	/* RestartInd */
+	if(Q931IsIEPresent(pMes->RestartInd))
+		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_RESTART_INDICATOR](pTrunk, Q931GetIEPtr(pMes->RestartInd,pMes->buf), OBuf, &Octet))!=0)
+			return rc;
 
 	*OSize = Octet;	
 
-    return rc;
+	return rc;
 }
 
 /*****************************************************************************
@@ -953,13 +935,8 @@ L3INT Q931Pmes_RestartAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT
     Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
     L3INT Octet = 0;
 
-    /* Q931 Message Header */
-
-    OBuf[Octet++]    = pMes->ProtDisc;        /* Protocol discriminator        */
-    OBuf[Octet++]    = 2;                    /* length is 2 octets            */
-    OBuf[Octet++]    = (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);    /* msb                            */
-    OBuf[Octet++]    = (L3UCHAR)(pMes->CRV);    /* lsb                            */
-    OBuf[Octet++]    = pMes->MesType;        /* message header                */
+	/* Q931 Message Header */
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
     
     /* ChanID */
     if(Q931IsIEPresent(pMes->ChanID))
@@ -1019,13 +996,8 @@ L3INT Q931Pmes_Resume(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISi
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
-	
 	/* Call Identity */
 	if(Q931IsIEPresent(pMes->CallID))
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_CALL_IDENTITY](pTrunk, Q931GetIEPtr(pMes->CallID,pMes->buf), OBuf, &Octet))!=0)
@@ -1061,8 +1033,10 @@ L3INT Q931Umes_ResumeAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generi
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
-    return Q931E_NO_ERROR;
+
+	mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
+
+	return Q931E_NO_ERROR;
 }
 
 
@@ -1073,17 +1047,12 @@ L3INT Q931Umes_ResumeAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generi
 *****************************************************************************/
 L3INT Q931Pmes_ResumeAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
-    L3INT rc = Q931E_NO_ERROR;
+	L3INT rc = Q931E_NO_ERROR;
 	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
-
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 	
 	/* Channel Identification */
 	if(Q931IsIEPresent(pMes->ChanID))
@@ -1096,7 +1065,7 @@ L3INT Q931Pmes_ResumeAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT 
 
 	*OSize = Octet;	
 
-    return rc;
+	return rc;
 }
 
 /*****************************************************************************
@@ -1124,8 +1093,10 @@ L3INT Q931Umes_ResumeReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Gen
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
-    return Q931E_NO_ERROR;
+
+	mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
+
+	return Q931E_NO_ERROR;
 }
 
 
@@ -1141,11 +1112,7 @@ L3INT Q931Pmes_ResumeReject(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3I
 	L3INT Octet = 0;
 
 	/* Q931 Message Header	*/
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb						*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 
 	/* Cause				*/
 	if(Q931IsIEPresent(pMes->Cause))
@@ -1159,23 +1126,23 @@ L3INT Q931Pmes_ResumeReject(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3I
 
 	*OSize = Octet;	
 
-    return rc;
+	return rc;
 }
 
 L3INT Q931Umes_Segment(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT OOff)
 {
-    L3INT i = IOff;
+	L3INT i = IOff;
 
-    return IOff - i;
+	return IOff - i;
 }
 
 L3INT Q931Pmes_Segment(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
-    L3BOOL RetCode = L3FALSE;
+	L3BOOL RetCode = L3FALSE;
 
 	*OSize = 0;	
 
-    return RetCode;
+	return RetCode;
 }
 
 /*****************************************************************************
@@ -1196,6 +1163,7 @@ L3INT Q931Umes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *m
 		case Q931ie_SENDING_COMPLETE:
 			IOff++;
 			break;
+
 		case Q931ie_BEARER_CAPABILITY:
 		case Q931ie_CHANNEL_IDENTIFICATION:
 		case Q931ie_PROGRESS_INDICATOR:
@@ -1215,6 +1183,7 @@ L3INT Q931Umes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *m
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
+
 		case Q931ie_REPEAT_INDICATOR:
 			if(ir < 2) {
 				rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
@@ -1223,13 +1192,16 @@ L3INT Q931Umes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *m
 				return Q931E_ILLEGAL_IE;
 			}
 			break;
+
 		default:
 			return Q931E_ILLEGAL_IE;
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
-    return Q931E_NO_ERROR;
+
+	mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
+
+	return Q931E_NO_ERROR;
 }
 
 /*****************************************************************************
@@ -1252,25 +1224,20 @@ L3INT Q931Umes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *m
 *****************************************************************************/
 L3INT Q931Pmes_Setup(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
-    L3INT rc = Q931E_NO_ERROR;
+	L3INT rc = Q931E_NO_ERROR;
 	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb						*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
-	
-	/* Sending Complete				*/
+	/* Sending Complete */
 	if(Q931IsIEPresent(pMes->SendComplete))
-		OBuf[Octet++]	= (L3UCHAR)(pMes->SendComplete & 0x00ff);
+		OBuf[Octet++] = (L3UCHAR)Q931ie_SENDING_COMPLETE & 0xff;
 
 	/* Repeat Indicator */
 	if(Q931IsIEPresent(pMes->RepeatInd))
-		OBuf[Octet++]	= (L3UCHAR)(pMes->RepeatInd & 0x00ff);		
+		OBuf[Octet++] = (L3UCHAR)Q931ie_REPEAT_INDICATOR & 0xff;		
 
 	/* Bearer capability */
 	if(Q931IsIEPresent(pMes->BearerCap))
@@ -1359,7 +1326,7 @@ L3INT Q931Pmes_Setup(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISiz
 
 	*OSize = Octet;	
 
-    return rc;
+	return rc;
 }
 
 /*****************************************************************************
@@ -1389,8 +1356,8 @@ L3INT Q931Umes_SetupAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
-    return Q931E_NO_ERROR;
+	mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
+	return Q931E_NO_ERROR;
 }
 
 /*****************************************************************************
@@ -1405,12 +1372,7 @@ L3INT Q931Pmes_SetupAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT I
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
-
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 	
 	/* Channel Identification */
 	if(Q931IsIEPresent(pMes->ChanID))
@@ -1480,12 +1442,7 @@ L3INT Q931Pmes_Status(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISi
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
-
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 	
 	/* Cause */
 	if(Q931IsIEPresent(pMes->Cause))
@@ -1545,12 +1502,7 @@ L3INT Q931Pmes_StatusEnquiry(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
-
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 	
 	/* Display */
 	if(Q931IsIEPresent(pMes->Display))
@@ -1602,12 +1554,7 @@ L3INT Q931Pmes_Suspend(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT IS
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
-
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 	
 	/* Call Identity */
 	if(Q931IsIEPresent(pMes->CallID))
@@ -1660,12 +1607,7 @@ L3INT Q931Pmes_SuspendAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
-
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 	
 	/* Display */
 	if(Q931IsIEPresent(pMes->Display))
@@ -1718,12 +1660,7 @@ L3INT Q931Pmes_SuspendReject(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
-
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 	
 	/* Cause */
 	if(Q931IsIEPresent(pMes->Cause))
@@ -1817,12 +1754,7 @@ L3INT Q931Pmes_Service(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT IS
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
-
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 	
 	/* Display */
 	if(Q931IsIEPresent(pMes->ChanID))
@@ -1883,12 +1815,7 @@ L3INT Q931Pmes_ServiceAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
-
-	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
-	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
-	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
+	Q931MesgHeader(pTrunk, pMes, OBuf, *OSize, &Octet);
 	
 	if(Q931IsIEPresent(pMes->ChangeStatus))
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_CHANGE_STATUS](pTrunk, Q931GetIEPtr(pMes->ChangeStatus,pMes->buf), OBuf, &Octet))!=0)

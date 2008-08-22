@@ -134,8 +134,8 @@
 #include "libteletone.h"
 #include "zap_buffer.h"
 #include "zap_threadmutex.h"
-#include "Q931.h"
 #include "Q921.h"
+#include "Q931.h"
 
 #define XX if (0)
 
@@ -231,6 +231,19 @@
 		if (obj->state == s) zap_log(ZAP_LOG_DEBUG, "Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(st), zap_channel_state2str(s)); \
 		else zap_log(ZAP_LOG_WARNING, "VETO Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(st), zap_channel_state2str(s)); \
 	}
+
+#define zap_set_state_locked_wait(obj, s) 						\
+	do {										\
+		int __safety = 100;							\
+		zap_set_state_locked(obj, s);						\
+		while(__safety-- && zap_test_flag(obj, ZAP_CHANNEL_STATE_CHANGE)) {	\
+			zap_sleep(10);							\
+		}									\
+		if(!__safety) {								\
+			zap_log(ZAP_LOG_CRIT, "State change not completed\n");		\
+		}									\
+	} while(0);
+
 
 typedef enum {
 	ZAP_STATE_CHANGE_FAIL,
