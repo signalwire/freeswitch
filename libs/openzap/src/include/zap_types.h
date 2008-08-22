@@ -117,11 +117,12 @@ typedef enum {
 	ZAP_TRUNK_T1,
 	ZAP_TRUNK_J1,
 	ZAP_TRUNK_BRI,
+	ZAP_TRUNK_BRI_PTMP,
 	ZAP_TRUNK_FXO,
 	ZAP_TRUNK_FXS,
 	ZAP_TRUNK_NONE
 } zap_trunk_type_t;
-#define TRUNK_STRINGS "E1", "T1", "J1", "BRI", "FXO", "FXS", "NONE"
+#define TRUNK_STRINGS "E1", "T1", "J1", "BRI", "BRI_PTMP", "FXO", "FXS", "NONE"
 ZAP_STR2ENUM_P(zap_str2zap_trunk_type, zap_trunk_type2str, zap_trunk_type_t)
 
 typedef enum {

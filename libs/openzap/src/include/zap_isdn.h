@@ -53,10 +53,11 @@ struct zap_isdn_data {
 	struct zap_sigmsg sigmsg;
 	zio_signal_cb_t sig_cb;
 	uint32_t flags;
+	int32_t mode;
+	zap_isdn_opts_t opts;
 	zap_caller_data_t *outbound_crv[32768];
 	zap_channel_t *channels_local_crv[32768];
 	zap_channel_t *channels_remote_crv[32768];
-	zap_isdn_opts_t opts;
 };
 
 

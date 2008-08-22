@@ -84,17 +84,16 @@
 *****************************************************************************/
 int MFIFOCreate(unsigned char *buf, int size, int index)
 {
-    MFIFO * mf;
-    mf = (MFIFO*)buf;
+    MFIFO *mf = (MFIFO *)buf;
     
     mf->first = mf->last = 0;
     mf->ixsize = index;
-    mf->buf = &buf[sizeof(MFIFO) + (sizeof(MINDEX) * (index-1))];
+    mf->buf = &buf[sizeof(MFIFO) + (sizeof(MINDEX) * index)];
 
-    if(mf->buf > & buf[size])
+    if(mf->buf > &buf[size])
         return 0;
 
-    mf->bsize = size - sizeof(MFIFO) - (sizeof(MINDEX) * (index-1));
+    mf->bsize = size - sizeof(MFIFO) - (sizeof(MINDEX) * index);
 
     return 1;
 }
@@ -112,9 +111,9 @@ int MFIFOCreate(unsigned char *buf, int size, int index)
 *****************************************************************************/
 void MFIFOClear(unsigned char * buf)
 {
-    MFIFO * mf;
-    mf = (MFIFO*)buf;
-    mf->first = mf->last = 0;
+	MFIFO *mf = (MFIFO *)buf;
+
+	mf->first = mf->last = 0;
 }
 
 /*****************************************************************************
@@ -130,8 +129,8 @@ void MFIFOClear(unsigned char * buf)
 *****************************************************************************/
 int MFIFOGetLBOffset(unsigned char *buf)
 {
-    MFIFO * mf;
-    mf = (MFIFO*)buf;
+    MFIFO *mf = (MFIFO *)buf;
+
     if(mf->last != mf->first)
         return mf->ix[mf->last].offset;
     
@@ -153,15 +152,17 @@ int MFIFOGetLBOffset(unsigned char *buf)
 *****************************************************************************/
 int MFIFOGetFBOffset(unsigned char *buf)
 {
+    MFIFO *mf = (MFIFO *)buf;
     int x;
-    MFIFO * mf;
-    mf = (MFIFO*)buf;
+
     if(mf->last == mf->first)
         return 0;
-    x=mf->first;
-    x--;
-    if(x<0)
-        x=mf->ixsize;
+
+    x = mf->first - 1;
+
+    if(x < 0)
+        x = mf->ixsize - 1;
+
     return mf->ix[x].offset + mf->ix[x].size;
 }
 
@@ -184,16 +185,19 @@ int MFIFOGetFBOffset(unsigned char *buf)
 *****************************************************************************/
 void MFIFOWriteIX(unsigned char *buf, unsigned char *mes, int size, int ix, int off)
 {
+    MFIFO *mf = (MFIFO *)buf;
     int x;
-    MFIFO * mf;
-    mf = (MFIFO*)buf;
-    memcpy(&mf->buf[off],mes,size);
-    mf->ix[ix].offset=off;
-    mf->ix[ix].size=size;
-    x = mf->first+1;
-    if(x > mf->ixsize)
-        x=0;
-    mf->first=x;
+
+    memcpy(&mf->buf[off], mes, size);
+    mf->ix[ix].offset = off;
+    mf->ix[ix].size = size;
+
+    x = mf->first + 1;
+
+    if(x >= mf->ixsize)
+        x = 0;
+
+    mf->first = x;
 }
 
 /*****************************************************************************
@@ -209,13 +213,14 @@ void MFIFOWriteIX(unsigned char *buf, unsigned char *mes, int size, int ix, int 
 *****************************************************************************/
 int MFIFOWriteMes(unsigned char *buf, unsigned char *mes, int size)
 {
-    int of,ol,x;
-    MFIFO * mf;
-    mf = (MFIFO*)buf;
+    MFIFO *mf = (MFIFO *)buf;
+    int of, ol, x;
 
-    x = mf->first+1;
-    if(x > mf->ixsize)
-        x=0;
+    x = mf->first + 1;
+
+    if(x >= mf->ixsize)
+        x = 0;
+
     if(x == mf->last)
         return 0; /* full queue */
 
@@ -224,6 +229,7 @@ int MFIFOWriteMes(unsigned char *buf, unsigned char *mes, int size)
     if(mf->last == mf->first) /* empty queue */
     {
         mf->first = mf->last = 0; /* optimize */
+
         MFIFOWriteIX(buf, mes, size, mf->first, 0);
         return 1;
     }
@@ -231,18 +237,18 @@ int MFIFOWriteMes(unsigned char *buf, unsigned char *mes, int size)
     {
         if(mf->bsize - of >= size)
         {
-            MFIFOWriteIX(buf,mes,size,mf->first,of);
+            MFIFOWriteIX(buf, mes, size, mf->first, of);
             return 1;
         }
         else if(ol > size)
         {
-            MFIFOWriteIX(buf,mes,size,mf->first,ol);
+            MFIFOWriteIX(buf, mes, size, mf->first, ol);
             return 1;
         }
     }
     else if(ol - of > size)
     {
-            MFIFOWriteIX(buf,mes,size,mf->first,of);
+            MFIFOWriteIX(buf, mes, size, mf->first, of);
             return 1;
     }
 
@@ -262,12 +268,14 @@ int MFIFOWriteMes(unsigned char *buf, unsigned char *mes, int size)
 *****************************************************************************/
 unsigned char * MFIFOGetMesPtr(unsigned char *buf, int *size)
 {
-    MFIFO * mf;
-    mf = (MFIFO*)buf;
-    if(mf->first==mf->last)
-        return NULL;
-    *size = mf->ix[mf->last].size;
-    return &mf->buf[mf->ix[mf->last].offset];
+	MFIFO *mf = (MFIFO *)buf;
+
+	if(mf->first == mf->last) {
+		return NULL;
+	}
+
+	*size = mf->ix[mf->last].size;
+	return &mf->buf[mf->ix[mf->last].offset];
 }
 
 /*****************************************************************************
@@ -283,14 +291,120 @@ unsigned char * MFIFOGetMesPtr(unsigned char *buf, int *size)
 *****************************************************************************/
 void MFIFOKillNext(unsigned char *buf)
 {
+    MFIFO *mf = (MFIFO *)buf;
     int x;
-    MFIFO * mf;
-    mf = (MFIFO*)buf;
-    if(mf->first!=mf->last)
+
+    if(mf->first != mf->last)
     {
-        x = mf->last+1;
-        if(x > mf->ixsize)
-            x=0;
-        mf->last=x;
+        x = mf->last + 1;
+        if(x >= mf->ixsize) {
+            x = 0;
+	}
+
+        mf->last = x;
     }
+}
+
+
+/*
+ * Queue-style accessor functions
+ */
+
+/**
+ * MFIFOGetMesPtrOffset
+ * \brief	Get pointer to and size of message at position x
+ */
+unsigned char * MFIFOGetMesPtrOffset(unsigned char *buf, int *size, const int pos)
+{
+	MFIFO *mf = (MFIFO *)buf;
+	int x;
+
+	if(mf->first == mf->last) {
+		return NULL;
+	}
+
+	if(pos < 0 || pos >= mf->ixsize) {
+		return NULL;
+	}
+
+	x = pos - mf->last;
+	if(x < 0) {
+		x += (mf->ixsize - 1);
+	}
+
+	*size = mf->ix[x].size;
+	return &mf->buf[mf->ix[x].offset];
+}
+
+
+/**
+ * MFIFOGetMesCount
+ * \brief	How many messages are currently in the buffer?
+ */
+int MFIFOGetMesCount(unsigned char *buf)
+{
+	MFIFO *mf = (MFIFO *)buf;
+
+	if(mf->first == mf->last) {
+		return 0;
+	}
+	else if(mf->first > mf->last) {
+		return mf->first - mf->last;
+	}
+	else {
+		return (mf->ixsize - mf->last) + mf->first;
+	}
+}
+
+/**
+ * MFIFOWriteMesOverwrite
+ * \brief	Same as MFIFOWriteMes but old frames will be overwritten if the fifo is full
+ */
+int MFIFOWriteMesOverwrite(unsigned char *buf, unsigned char *mes, int size)
+{
+	MFIFO *mf = (MFIFO *)buf;
+	int of, ol, x;
+
+	x = mf->first + 1;
+
+	if(x >= mf->ixsize)
+		x = 0;
+
+	if(x == mf->last) {
+		/* advance last pointer */
+		mf->last++;
+
+		if(mf->last >= mf->ixsize)
+			mf->last = 0;
+	}
+
+	of = MFIFOGetFBOffset(buf);
+	ol = MFIFOGetLBOffset(buf);
+
+	if(mf->last == mf->first)	/* empty queue */
+	{
+		mf->first = mf->last = 0;	/* optimize */
+
+		MFIFOWriteIX(buf, mes, size, mf->first, 0);
+		return 1;
+	}
+	else if(of > ol)
+	{
+		if(mf->bsize - of >= size)
+		{
+			MFIFOWriteIX(buf, mes, size, mf->first, of);
+			return 1;
+		}
+		else if(ol > size)
+		{
+			MFIFOWriteIX(buf, mes, size, mf->first, ol);
+			return 1;
+		}
+	}
+	else if(ol - of > size)
+	{
+		MFIFOWriteIX(buf, mes, size, mf->first, of);
+		return 1;
+	}
+	return 0;
 }

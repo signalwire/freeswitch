@@ -123,6 +123,9 @@ void Q931CreateTE(L3UCHAR i)
     Q931SetIEProc(Q931ie_HIGH_LAYER_COMPATIBILITY,         i,Q931Pie_HLComp,			Q931Uie_HLComp);
     Q931SetIEProc(Q931ie_USER_USER,                        i,Q931Pie_UserUser,			Q931Uie_UserUser);
 
+	Q931SetIEProc(Q931ie_CONNECTED_NUMBER, i, Q931Pie_Generic, Q931Uie_Generic);
+	Q931SetIEProc(Q931ie_FACILITY,         i, Q931Pie_Generic, Q931Uie_Generic);
+
 	/* The following define a state machine. The point is that the Message	*/
 	/* procs can when search this to find out if the message/state			*/
 	/* combination is legale. If not, the proc for unexpected message apply.*/
@@ -205,6 +208,24 @@ void Q931CreateTE(L3UCHAR i)
 	Q931AddStateEntry(i,Q931_U19,
 	Q931AddStateEntry(i,Q931_U25,
 */
+
+	/* Timer default values */
+	Q931SetTimerDefault(i, Q931_TIMER_T301, 180000);	/* T301: 180s */
+	Q931SetTimerDefault(i, Q931_TIMER_T302,  15000);	/* T302:  15s */
+	Q931SetTimerDefault(i, Q931_TIMER_T303,   4000);	/* T303:   4s */
+	Q931SetTimerDefault(i, Q931_TIMER_T304,  30000);	/* T304:  30s */
+	Q931SetTimerDefault(i, Q931_TIMER_T305,  30000);	/* T305:  30s */
+	Q931SetTimerDefault(i, Q931_TIMER_T308,   4000);	/* T308:   4s */
+	Q931SetTimerDefault(i, Q931_TIMER_T309,  60000);	/* T309:  60s */
+	Q931SetTimerDefault(i, Q931_TIMER_T310,  60000);	/* T310:  60s */
+	Q931SetTimerDefault(i, Q931_TIMER_T313,   4000);	/* T313:   4s */
+	Q931SetTimerDefault(i, Q931_TIMER_T314,   4000);	/* T314:   4s */
+	Q931SetTimerDefault(i, Q931_TIMER_T316, 120000);	/* T316: 120s */
+	Q931SetTimerDefault(i, Q931_TIMER_T317,  90000);	/* T317:  90s */
+	Q931SetTimerDefault(i, Q931_TIMER_T318,   4000);	/* T318:   4s */
+	Q931SetTimerDefault(i, Q931_TIMER_T319,   4000);	/* T319:   4s */
+	Q931SetTimerDefault(i, Q931_TIMER_T321,  30000);	/* T321:  30s */
+	Q931SetTimerDefault(i, Q931_TIMER_T322,   4000);	/* T322:   4s */
 }
 
 /*****************************************************************************
@@ -227,7 +248,7 @@ L3INT Q931ProcAlertingTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
     Q931StartTimer(pTrunk, callIndex, 303);
 	if(iFrom == 4)
 	{
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -259,7 +280,7 @@ L3INT Q931ProcCallProceedingTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iF
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -292,7 +313,7 @@ L3INT Q931ProcConnectTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -329,7 +350,7 @@ L3INT Q931ProcConnectAckTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -362,7 +383,7 @@ L3INT Q931ProcProgressTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -399,7 +420,7 @@ L3INT Q931ProcSetupTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
             return ret;
         pMes->CRV = pTrunk->call[callIndex].CRV;
 
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+	ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
         if(ret)
             return ret;
 
@@ -475,7 +496,7 @@ L3INT Q931ProcSetupAckTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
     Q931StartTimer(pTrunk, callIndex, 303);
 	if(iFrom == 4)
 	{
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -504,7 +525,7 @@ L3INT Q931ProcResumeTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
         pMes->CRV = pTrunk->call[callIndex].CRV;
 
         /* Send RESUME to network */
-        ret=Q931Tx32(pTrunk,buf, pMes->Size);
+        ret=Q931Tx32Data(pTrunk,0,buf, pMes->Size);
         if(ret != Q931E_NO_ERROR)
             return ret;
 
@@ -544,7 +565,7 @@ L3INT Q931ProcResumeAckTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -577,7 +598,7 @@ L3INT Q931ProcResumeRejectTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFro
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -610,7 +631,7 @@ L3INT Q931ProcSuspendTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -643,7 +664,7 @@ L3INT Q931ProcSuspendAckTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -676,7 +697,7 @@ L3INT Q931ProcSuspendRejectTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFr
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -709,7 +730,7 @@ L3INT Q931ProcUserInformationTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT i
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -730,6 +751,9 @@ L3INT Q931ProcDisconnectTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
     L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
 
+	Q931Log(pTrunk, Q931_LOG_DEBUG, "Processing DISCONNECT message from %s for CRV: %d (%#hx)\n",
+						 iFrom == 4 ? "Local" : "Remote", pMes->CRV, pMes->CRV);
+
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
 	if(ret != Q931E_NO_ERROR)
@@ -742,7 +766,7 @@ L3INT Q931ProcDisconnectTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -765,7 +789,7 @@ L3INT Q931ProcReleaseTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
     L3INT ret = Q931E_NO_ERROR;
     if(iFrom == 4) {
 		/* TODO Add proc here*/
-		ret = Q931Tx32(pTrunk,buf,pMes->Size);
+		ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	} else if(state == Q931_U0 && iFrom == 2) {
 		Q931Tx34(pTrunk,buf,pMes->Size);
         ret = Q931ReleaseComplete(pTrunk, buf);
@@ -805,6 +829,9 @@ L3INT Q931ProcReleaseCompleteTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT i
 			if(ret != Q931E_NO_ERROR)
 				return ret;
 			pTrunk->call[callIndex].InUse = 0;
+
+			/* TODO: experimental, send RELEASE_COMPLETE message */
+		        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 		}
 
 	}
@@ -838,7 +865,7 @@ L3INT Q931ProcRestartTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -877,7 +904,7 @@ L3INT Q931ProcRestartAckTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -910,7 +937,7 @@ L3INT Q931ProcCongestionControlTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -943,7 +970,7 @@ L3INT Q931ProcInformationTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -976,7 +1003,7 @@ L3INT Q931ProcNotifyTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -1009,7 +1036,7 @@ L3INT Q931ProcStatusTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -1042,7 +1069,7 @@ L3INT Q931ProcStatusEnquiryTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFr
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -1075,7 +1102,7 @@ L3INT Q931ProcSegmentTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -1112,7 +1139,7 @@ L3INT Q932ProcFacilityTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -1145,7 +1172,7 @@ L3INT Q932ProcHoldTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -1178,7 +1205,7 @@ L3INT Q932ProcHoldAckTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -1211,7 +1238,7 @@ L3INT Q932ProcHoldRejectTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -1244,7 +1271,7 @@ L3INT Q932ProcRegisterTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -1277,7 +1304,7 @@ L3INT Q932ProcRetrieveTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -1310,7 +1337,7 @@ L3INT Q932ProcRetrieveAckTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{
@@ -1343,7 +1370,7 @@ L3INT Q932ProcRetrieveRejectTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iF
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
-        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
 	}
 	else if (iFrom ==2)
 	{

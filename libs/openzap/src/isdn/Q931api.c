@@ -74,8 +74,8 @@ L3INT Q931Api_InitTrunk(Q931_TrunkInfo_t *pTrunk,
 						Q931Dialect_t Dialect,
 						Q931NetUser_t NetUser,
 						Q931_TrunkType_t TrunkType,
-						Q931TxCB_t Q931Tx34CBProc,
-						Q931TxCB_t Q931Tx32CBProc,
+						Q931Tx34CB_t Q931Tx34CBProc,
+						Q931Tx32CB_t Q931Tx32CBProc,
 						Q931ErrorCB_t Q931ErrorCBProc,
 						void *PrivateData32,
 						void *PrivateData34)
@@ -97,6 +97,7 @@ L3INT Q931Api_InitTrunk(Q931_TrunkInfo_t *pTrunk,
 		break;
 
 	case Q931_TrType_BRI:
+	case Q931_TrType_BRI_PTMP:
 		dchannel = 3;
 		maxchans = 3;
 		break;
@@ -166,6 +167,16 @@ void Q931SetIEProc(L3UCHAR iec, L3UCHAR dialect, q931pie_func_t *Q931PieProc, q9
         Q931Uie[dialect][iec] = Q931UieProc;
 }
 
+void Q931SetTimeoutProc(L3UCHAR timer, L3UCHAR dialect, q931timeout_func_t *Q931TimeoutProc)
+{
+	if(Q931Timeout != NULL)
+		Q931Timeout[dialect][timer] = Q931TimeoutProc;
+}
+
+void Q931SetTimerDefault(L3UCHAR timer, L3UCHAR dialect, q931timer_t timeout)
+{
+	Q931Timer[dialect][timer] = timeout;
+}
 
 L3INT Q931GetMesSize(Q931mes_Generic *pMes)
 {
@@ -212,8 +223,11 @@ static L3INT crv={1};
 
 L3INT Q931GetUniqueCRV(Q931_TrunkInfo_t *pTrunk)
 {
+	L3INT max = (Q931_IS_BRI(pTrunk)) ? Q931_BRI_MAX_CRV : Q931_PRI_MAX_CRV;
+
 	crv++;
-	if (crv > 32766) crv = 1;
+	crv = (crv <= max) ? crv : 1;
+
 	return crv;
 }
 
@@ -523,7 +537,7 @@ L3INT Q931ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf)
     Q931mes_Header *ptr = (Q931mes_Header*)&buf[Q931L4HeaderSpace];
 	ptr->MesType = Q931mes_RELEASE_COMPLETE;
 	ptr->CRVFlag = !(ptr->CRVFlag);
-	return Q931Tx32(pTrunk,buf,ptr->Size);
+	return Q931Tx32Data(pTrunk,0,buf,ptr->Size);
 }
 
 L3INT Q931AckRestart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf)
