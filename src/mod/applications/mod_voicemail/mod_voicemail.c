@@ -215,8 +215,8 @@ static char vm_pref_sql[] =
 	"   username        VARCHAR(255),\n"
 	"   domain          VARCHAR(255),\n" 
 	"   name_path       VARCHAR(255),\n" 
-	"   greeting_path VARCHAR(255),\n" 
-	"   password VARCHAR(255)\n" 
+	"   greeting_path   VARCHAR(255),\n" 
+	"   password        VARCHAR(255)\n" 
 	");\n";
 
 static switch_status_t load_config(void)
