@@ -394,7 +394,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_logfile_shutdown)
 		if ((profile = (logfile_profile_t *) val)) {
 			switch_file_close(profile->log_afd);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Closing %s\n", profile->logfile);
-			printf("WTF\n");
 		}
 	}
 
