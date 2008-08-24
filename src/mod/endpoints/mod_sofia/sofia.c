@@ -358,7 +358,6 @@ void sofia_event_callback(nua_event_t event,
 			nua_handle_bind(nh, NULL);
 		}
 		sofia_private->destroy_me = 12;
-
 		free(sofia_private);
 		sofia_private = NULL;
 	}
@@ -443,7 +442,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 
 	sofia_set_pflag_locked(profile, PFLAG_WORKER_RUNNING);
 
-	switch_queue_create(&profile->sql_queue, 500000, profile->pool);
+	switch_queue_create(&profile->sql_queue, SOFIA_QUEUE_SIZE, profile->pool);
 
 	qsize = switch_queue_size(profile->sql_queue);
 

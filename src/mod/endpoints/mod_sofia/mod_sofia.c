@@ -2226,8 +2226,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	mod_sofia_globals.running = 1;
 	switch_mutex_unlock(mod_sofia_globals.mutex);
 
-	switch_queue_create(&mod_sofia_globals.presence_queue, 500000, mod_sofia_globals.pool);
-	switch_queue_create(&mod_sofia_globals.mwi_queue, 500000, mod_sofia_globals.pool);
+	switch_queue_create(&mod_sofia_globals.presence_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);
+	switch_queue_create(&mod_sofia_globals.mwi_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);
 
 	if (config_sofia(0, NULL) != SWITCH_STATUS_SUCCESS) {
 		mod_sofia_globals.running = 0;

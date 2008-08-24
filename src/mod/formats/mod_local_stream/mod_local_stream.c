@@ -87,7 +87,8 @@ static int do_rand(void)
 {
 	double r;
 	int index;
-	srand(getpid() + ++S);
+	unsigned int seed = ++S + getpid();
+	srand(seed);
 	r = ((double) rand() / ((double) (RAND_MAX) + (double) (1)));
 	index = (int) (r * 9) + 1;
 	return index;
@@ -230,7 +231,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 			}
 
 			switch_core_timer_destroy(&timer);
-			if (source->shuffle) {
+			if (RUNNING && source->shuffle) {
 				skip = do_rand();
 			}
 		}
@@ -472,6 +473,11 @@ static void launch_threads(void)
 	switch_xml_free(xml);
 }
 
+static void event_handler(switch_event_t *event)
+{
+	RUNNING = 0;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load)
 {
 	switch_file_interface_t *file_interface;
@@ -484,6 +490,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load)
 	file_interface->file_open = local_stream_file_open;
 	file_interface->file_close = local_stream_file_close;
 	file_interface->file_read = local_stream_file_read;
+
+	if (switch_event_bind(modname, SWITCH_EVENT_SHUTDOWN, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind event handler!\n");
+	}
 
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, pool);

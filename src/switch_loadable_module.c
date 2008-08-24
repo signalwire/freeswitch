@@ -1149,6 +1149,8 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 		}
 	}
 
+	switch_yield(1000000);
+
 	for (hi = switch_hash_first(NULL, loadable_modules.module_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		module = (switch_loadable_module_t *) val;

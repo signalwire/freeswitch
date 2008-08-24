@@ -38,7 +38,7 @@
 /*************************************************************************************************************************************************************/
 #define IREG_SECONDS 30
 #define GATEWAY_SECONDS 1
-
+#define SOFIA_QUEUE_SIZE 50000
 #define HAVE_APR
 #include <switch.h>
 #include <switch_version.h>
