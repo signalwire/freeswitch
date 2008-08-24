@@ -986,7 +986,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 				if (channel) {
 					if (tech_media(tech_pvt, iaxevent) == SWITCH_STATUS_SUCCESS) {
 						if (switch_channel_test_flag(channel, CF_ANSWERED)) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "WTF Mutiple Answer %s?\n", switch_channel_get_name(channel));
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Mutiple Answer %s?\n", switch_channel_get_name(channel));
 
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Answer %s\n", switch_channel_get_name(channel));
