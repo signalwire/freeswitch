@@ -1154,11 +1154,9 @@ static void switch_load_core_config(const char *file)
 			for (param = switch_xml_child(settings, "variable"); param; param = param->next) {
 				const char *var = switch_xml_attr_soft(param, "name");
 				const char *val = switch_xml_attr_soft(param, "value");
-				char *varr = NULL, *vall = NULL;
-
-				varr = switch_core_strdup(runtime.memory_pool, var);
-				vall = switch_core_strdup(runtime.memory_pool, val);
-				switch_core_hash_insert(runtime.global_vars, varr, vall);
+				if (var && val) {
+					switch_core_set_variable(var, val);
+				}
 			}
 		}
 
