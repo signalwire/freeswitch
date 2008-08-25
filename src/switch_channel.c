@@ -389,14 +389,17 @@ SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel, s
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const char *rpid, const char *status)
+SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const char *rpid, const char *status, const char *id)
 {
-	const char *id = switch_channel_get_variable(channel, "presence_id");
 	switch_event_t *event;
 	switch_event_types_t type = SWITCH_EVENT_PRESENCE_IN;
 
 	if (!status) {
 		type = SWITCH_EVENT_PRESENCE_OUT;
+	}
+
+	if (!id) {
+		id = switch_channel_get_variable(channel, "presence_id");
 	}
 
 	if (!id) {
@@ -783,7 +786,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 
 	if (channel->state >= CS_ROUTING) {
 		switch_clear_flag(channel, CF_TRANSFER);
-		switch_channel_presence(channel, "unknown", (char *) state_names[state]);
+		switch_channel_presence(channel, "unknown", (char *) state_names[state], NULL);
 	}
 
 	if (state < CS_HANGUP) {
@@ -1360,7 +1363,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		}
 
 		switch_channel_set_variable(channel, "hangup_cause", switch_channel_cause2str(channel->hangup_cause));
-		switch_channel_presence(channel, "unavailable", switch_channel_cause2str(channel->hangup_cause));
+		switch_channel_presence(channel, "unavailable", switch_channel_cause2str(channel->hangup_cause), NULL);
 
 		switch_core_session_kill_channel(channel->session, SWITCH_SIG_KILL);
 		switch_core_session_signal_state_change(channel->session);

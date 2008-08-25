@@ -2087,7 +2087,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 			const char *stream;
 
 			switch_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
-			switch_channel_presence(tech_pvt->channel, "unknown", "hold");
+			switch_channel_presence(tech_pvt->channel, "unknown", "hold", NULL);
 
 			if (tech_pvt->max_missed_hold_packets) {
 				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_hold_packets);
@@ -2134,7 +2134,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 			}
 
 			switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
-			switch_channel_presence(tech_pvt->channel, "unknown", "unhold");
+			switch_channel_presence(tech_pvt->channel, "unknown", "unhold", NULL);
 		}
 	}
 

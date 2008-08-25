@@ -606,6 +606,26 @@ SWITCH_STANDARD_APP(answer_function)
 	switch_channel_answer(switch_core_session_get_channel(session));
 }
 
+SWITCH_STANDARD_APP(presence_function)
+{
+	char *argv[6] = { 0 };
+    int argc;
+    char *mydata = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (switch_strlen_zero(data) || !(mydata = switch_core_session_strdup(session, data))) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID ARGS!\n");
+        return;
+    }
+
+	if ((argc = switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0]))) < 2) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID ARGS!\n");
+		return;
+	}
+
+	switch_channel_presence(channel, argv[0], argv[1], argv[2]);	
+}
+
 SWITCH_STANDARD_APP(pre_answer_function)
 {
 	switch_channel_pre_answer(switch_core_session_get_channel(session));
@@ -2248,6 +2268,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "answer", "Answer the call", "Answer the call for a channel.", answer_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "hangup", "Hangup the call", "Hangup the call for a channel.", hangup_function, "[<cause>]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "set_name", "Name the channel", "Name the channel", set_name_function, "<name>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "presence", "Send Presence", "Send Presence.", presence_function, "<rpid> <status> [<id>]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "log", "Logs to the logger", LOG_LONG_DESC, log_function, "<log_level> <log_string>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "info", "Display Call Info", "Display Call Info", info_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "event", "Fire an event", "Fire an event", event_function, "", SAF_SUPPORT_NOMEDIA);

@@ -1028,6 +1028,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_c
 {
 	const switch_application_interface_t *application_interface;
 	char *expanded = NULL;
+	const char *var;
 
 	if ((application_interface = switch_loadable_module_get_application_interface(app)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application %s\n", app);
@@ -1058,7 +1059,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_c
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Expanded String %s(%s)\n", switch_channel_get_name(session->channel), app, expanded);
 	}
 
-	if (switch_channel_get_variable(session->channel, "presence_id")) {
+	if ((var = switch_channel_get_variable(session->channel, "verbose_presence")) && switch_true(var)) {
 		char *myarg = NULL;
 		if (expanded) {
 			myarg = switch_mprintf("%s(%s)", app, expanded);
@@ -1068,7 +1069,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_c
 			myarg = switch_mprintf("%s", app);
 		}
 		if (myarg) {
-			switch_channel_presence(session->channel, "unknown", myarg);
+			switch_channel_presence(session->channel, "unknown", myarg, NULL);
 			switch_safe_free(myarg);
 		}
 	}

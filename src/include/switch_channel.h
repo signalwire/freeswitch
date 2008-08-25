@@ -145,8 +145,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel, s
   \param channel the channel to initilize
   \param rpid the rpid if for the icon to use
   \param status the status message
+  \param id presence id
 */
-SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const char *rpid, const char *status);
+SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const char *rpid, const char *status, const char *id);
 
 /*!
   \brief Uninitalize a channel

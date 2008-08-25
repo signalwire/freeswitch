@@ -242,7 +242,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		if (tech_pvt->max_missed_packets) {
 			switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
 		}
-		switch_channel_presence(tech_pvt->channel, "unknown", "unhold");
+		switch_channel_presence(tech_pvt->channel, "unknown", "unhold", NULL);
 
 		if ((buuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 			if ((bsession = switch_core_session_locate(buuid))) {

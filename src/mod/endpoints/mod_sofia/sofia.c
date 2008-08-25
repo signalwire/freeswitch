@@ -2389,11 +2389,11 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						if (switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
 							if (!switch_stristr("sendonly", r_sdp)) {
 								switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
-								switch_channel_presence(tech_pvt->channel, "unknown", "unhold");
+								switch_channel_presence(tech_pvt->channel, "unknown", "unhold", NULL);
 							}
 						} else if (switch_stristr("sendonly", r_sdp)) {
 							switch_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
-							switch_channel_presence(tech_pvt->channel, "unknown", "hold");
+							switch_channel_presence(tech_pvt->channel, "unknown", "hold", NULL);
 						}
 					
 
