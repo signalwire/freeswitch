@@ -1867,9 +1867,11 @@ static void deliver_vm(vm_profile_t *profile,
 		} else if (!strcasecmp(var, "email-addr")) {
 			email_addr = switch_core_strdup(pool, val);
 		} else if (!strcasecmp(var, "vm-email-all-messages")) {
-			send_main = send_mail = switch_true(val);
+			send_main = switch_true(val);
+			send_mail++;
 		} else if (!strcasecmp(var, "vm-notify-email-all-messages")) {
-			send_notify = send_mail = switch_true(val);
+			send_notify = witch_true(val);
+			send_mail++;
 		} else if (!strcasecmp(var, "vm-keep-local-after-email")) {
 			insert_db = switch_true(val);
 		} else if (!strcasecmp(var, "vm-attach-file")) {
@@ -2310,9 +2312,11 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 					} else if (!strcasecmp(var, "email-addr")) {
 						email_addr = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-email-all-messages")) {
-						send_main = send_mail = switch_true(val);
+						send_main = switch_true(val);
+						send_mail++;
 					} else if (!strcasecmp(var, "vm-notify-email-all-messages")) {
-						send_notify = send_mail = switch_true(val);
+						send_notify = switch_true(val);
+						send_mail++;
 					} else if (!strcasecmp(var, "vm-keep-local-after-email")) {
 						insert_db = switch_true(val);
 					} else if (!strcasecmp(var, "vm-attach-file")) {
