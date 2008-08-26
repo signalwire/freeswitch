@@ -1870,7 +1870,7 @@ static void deliver_vm(vm_profile_t *profile,
 			send_main = switch_true(val);
 			send_mail++;
 		} else if (!strcasecmp(var, "vm-notify-email-all-messages")) {
-			send_notify = witch_true(val);
+			send_notify = switch_true(val);
 			send_mail++;
 		} else if (!strcasecmp(var, "vm-keep-local-after-email")) {
 			insert_db = switch_true(val);
