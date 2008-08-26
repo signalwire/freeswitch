@@ -159,7 +159,7 @@ static JSBool curl_run(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 
 	if (argc > 7) {
 		char *content_type = JS_GetStringBytes(JS_ValueToString(cx, argv[7]));
-		snprintf(ct, sizeof(ct), "Content-Type: %s", content_type);
+		switch_snprintf(ct, sizeof(ct), "Content-Type: %s", content_type);
 	}
 
 	headers = curl_slist_append(headers, ct);
