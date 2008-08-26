@@ -123,17 +123,12 @@ static JSBool curl_run(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 	method = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 	url = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 
-	if (argc > 2) {
-		char *content_type = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
-		snprintf(ct, sizeof(ct), "Content-Type: %s", content_type);
-	}
-
 	co->curl_handle = curl_easy_init();
 	if (!strncasecmp(url, "https", 5)) {
 		curl_easy_setopt(co->curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_easy_setopt(co->curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 	}
-	headers = curl_slist_append(headers, ct);
+	
 
 	if (argc > 2) {
 		data = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
@@ -162,7 +157,12 @@ static JSBool curl_run(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 		}
 	}
 
+	if (argc > 7) {
+		char *content_type = JS_GetStringBytes(JS_ValueToString(cx, argv[7]));
+		snprintf(ct, sizeof(ct), "Content-Type: %s", content_type);
+	}
 
+	headers = curl_slist_append(headers, ct);
 
 	curl_easy_setopt(co->curl_handle, CURLOPT_HTTPHEADER, headers);
 
