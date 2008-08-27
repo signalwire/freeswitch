@@ -266,6 +266,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 				if (globals.ring_stream) {
 					WriteAudioStream(globals.ring_stream, abuf, (long) olen, &globals.timer);
 				}
+			} else {
+				switch_yield(10000);
 			}
 		}
 		switch_clear_flag_locked((&globals), GFLAG_RING);
