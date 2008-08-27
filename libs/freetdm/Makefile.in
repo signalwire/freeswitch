@@ -46,6 +46,7 @@ $(SRC)/libteletone_detect.c \
 $(SRC)/libteletone_generate.c \
 $(SRC)/zap_buffer.c \
 $(SRC)/zap_threadmutex.c \
+$(SRC)/zap_dso.c \
 $(SRC)/isdn/EuroISDNStateNT.c \
 $(SRC)/isdn/EuroISDNStateTE.c \
 $(SRC)/isdn/mfifo.c \
@@ -86,6 +87,7 @@ $(SRC)/libteletone_detect.o \
 $(SRC)/libteletone_generate.o \
 $(SRC)/zap_buffer.o \
 $(SRC)/zap_threadmutex.o \
+$(SRC)/zap_dso.o \
 $(SRC)/isdn/EuroISDNStateNT.o \
 $(SRC)/isdn/EuroISDNStateTE.o \
 $(SRC)/isdn/mfifo.o \
@@ -129,6 +131,7 @@ $(SRC)/include/zap_config.h \
 $(SRC)/include/zap_isdn.h \
 $(SRC)/include/zap_skel.h \
 $(SRC)/include/zap_threadmutex.h \
+$(SRC)/include/zap_dso.h \
 $(SRC)/include/zap_types.h \
 $(SRC)/include/zap_wanpipe.h \
 $(SRC)/include/zap_ss7_boost.h \
