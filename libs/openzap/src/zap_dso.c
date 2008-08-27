@@ -17,6 +17,9 @@
  *
  */
 
+#include "zap_dso.h"
+#include <stdlib.h>
+#include <string.h>
 
 /*
 ** {========================================================================
@@ -26,6 +29,7 @@
 ** as an emulation layer on top of native functions.
 ** =========================================================================
 */
+
 
 #include <dlfcn.h>
 
