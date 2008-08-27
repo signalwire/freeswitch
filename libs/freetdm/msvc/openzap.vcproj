@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../src/include;../src/isdn/include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -110,7 +110,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="../src/include;../src/isdn/include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS"
 				RuntimeLibrary="2"
 				DisableLanguageExtensions="false"
 				RuntimeTypeInfo="false"
@@ -472,6 +472,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\src\zap_dso.c"
+					>
+				</File>
+				<File
 					RelativePath="..\src\zap_io.c"
 					>
 				</File>
@@ -531,6 +535,10 @@
 				</File>
 				<File
 					RelativePath="..\src\include\zap_config.h"
+					>
+				</File>
+				<File
+					RelativePath="..\src\include\zap_dso.h"
 					>
 				</File>
 				<File
