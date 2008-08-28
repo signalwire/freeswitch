@@ -48,8 +48,6 @@ opt/freeswitch/conf/dialplan/features.xml
 opt/freeswitch/conf/dialplan/extensions/00_pizza_demo.xml
 opt/freeswitch/conf/dialplan/extensions/99999_enum.xml
 opt/freeswitch/conf/sip_profiles/external.xml
-opt/freeswitch/conf/sip_profiles/nat.xml
-opt/freeswitch/conf/sip_profiles/nat/example.xml
 opt/freeswitch/conf/sip_profiles/internal/example.xml
 opt/freeswitch/conf/sip_profiles/internal.xml
 opt/freeswitch/conf/sip_profiles/external/example.xml
