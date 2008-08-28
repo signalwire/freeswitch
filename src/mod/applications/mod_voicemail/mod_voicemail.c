@@ -2141,6 +2141,7 @@ static switch_status_t voicemail_inject(const char *data)
 
 	if ((argc = switch_separate_string(dup, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "not enough args [%s]\n", data);
+		status = SWITCH_STATUS_FALSE;
 		goto end;
 	}
 
@@ -2166,6 +2167,7 @@ static switch_status_t voicemail_inject(const char *data)
 	
 	if (!(user && domain)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid syntax [%s][%s]\n", switch_str_nil(user), switch_str_nil(domain));
+		status = SWITCH_STATUS_FALSE;
 		goto end;
 	}
 
@@ -2175,6 +2177,7 @@ static switch_status_t voicemail_inject(const char *data)
 	
 	if (!profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find profile\n");
+		status = SWITCH_STATUS_FALSE;
 	} else {
 		switch_xml_t x_domain, xml_root;
 		switch_event_t *my_params = NULL;
@@ -2187,6 +2190,7 @@ static switch_status_t voicemail_inject(const char *data)
 		
 		if (switch_xml_locate_domain(domain, my_params, &xml_root, &x_domain) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate domain %s\n", domain);
+			status = SWITCH_STATUS_FALSE;
 			switch_event_destroy(&my_params);
 			goto end;
 		}
