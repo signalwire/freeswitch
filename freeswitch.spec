@@ -283,7 +283,6 @@ userdel freeswitch
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/mrcp_profiles
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/sip_profiles
-%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/sip_profiles/nat
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/dialplan/extensions
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/sip_profiles/internal
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/sip_profiles/external
@@ -342,7 +341,6 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/internal/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/external/*.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/nat/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/jingle_profiles/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/Makefile
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/model/communicator/*
