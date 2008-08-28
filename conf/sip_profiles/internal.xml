@@ -35,8 +35,8 @@
     <!-- ip address to bind to -->
     <param name="sip-ip" value="$${local_ip_v4}"/>
     <param name="hold-music" value="$${hold_music}"/>
-    <param name="apply-nat-acl" value="rfc1918"/>
-    <param name="aggressive-nat-detection" value="true"/>
+    <!--<param name="apply-nat-acl" value="rfc1918"/>-->
+    <!--<param name="aggressive-nat-detection" value="true"/>-->
     <!--<param name="enable-timer" value="false"/>-->
     <!--<param name="enable-100rel" value="false"/>-->
     <param name="apply-inbound-acl" value="domains"/>
