@@ -1212,7 +1212,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 					int total_saved_urgent_messages = 0;
 					int32_t message_len = 0;
 					char *p;
-					long l_duration = 0;
+					switch_time_t l_duration = 0;
 					switch_core_time_duration_t duration;
 					char duration_str[80];
 
@@ -1223,7 +1223,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 					message_count(profile, cbt->user, cbt->domain, cbt->in_folder, &total_new_messages, &total_saved_messages,
 								  &total_new_urgent_messages, &total_saved_urgent_messages);
 
-					switch_time_exp_lt(&tm, atoi(cbt->created_epoch) * 1000000);
+					switch_time_exp_lt(&tm, switch_time_make (atol(cbt->created_epoch), 0));
 					switch_strftime(date, &retsize, sizeof(date), profile->date_fmt, &tm);
 
 					switch_snprintf(tmp, sizeof(tmp), "%d", total_new_messages);
@@ -1246,7 +1246,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 					switch_channel_set_variable(channel, "voicemail_priority", tmp);
 					message_len = atoi(cbt->message_len);
 
-					l_duration = atol(cbt->message_len) * 1000000;
+					l_duration = switch_time_make (atol(cbt->message_len), 0);
 					switch_core_measure_time(l_duration, &duration);
 					duration.day += duration.yr * 365;
 					duration.hr += duration.day * 24;
@@ -1961,7 +1961,7 @@ static void deliver_vm(vm_profile_t *profile,
 		int total_new_urgent_messages = 0;
 		int total_saved_urgent_messages = 0;
 		char *p;
-		long l_duration = 0;
+		switch_time_t l_duration = 0;
 		switch_core_time_duration_t duration;
 		char duration_str[80];
 		switch_time_exp_t tm;
@@ -1998,7 +1998,7 @@ static void deliver_vm(vm_profile_t *profile,
 		if (vm_notify_email) {
 			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_notify_email", vm_notify_email);
 		}
-		l_duration = (long) message_len *1000000;
+		l_duration = switch_time_make (message_len, 0);
 		switch_core_measure_time(l_duration, &duration);
 		duration.day += duration.yr * 365;
 		duration.hr += duration.day * 24;
@@ -2865,7 +2865,7 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
 	switch_size_t retsize;
 	switch_time_t l_created = 0;
 	switch_time_t l_read = 0;
-	long l_duration = 0;
+	switch_time_t l_duration = 0;
 	switch_core_time_duration_t duration;
 	char duration_str[80];
 	const char *fmt = "%a, %e %b %Y %T %z";
@@ -2882,7 +2882,7 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
 	}
 
 	if (argc > 9) {
-		l_duration = atol(argv[9]) * 1000000;
+		l_duration = switch_time_make (atol(argv[9]), 0);
 	}
 
 	if ((fname = strrchr(argv[8], '/'))) {
@@ -2957,7 +2957,7 @@ static int rss_callback(void *pArg, int argc, char **argv, char **columnNames)
 	switch_file_t *fd;
 	switch_time_t l_created = 0;
 	switch_time_t l_read = 0;
-	long l_duration = 0;
+	switch_time_t l_duration = 0;
 	switch_core_time_duration_t duration;
 	char duration_str[80];
 	const char *fmt = "%a, %e %b %Y %T %z";
@@ -2972,7 +2972,7 @@ static int rss_callback(void *pArg, int argc, char **argv, char **columnNames)
 	}
 
 	if (argc > 9) {
-		l_duration = atol(argv[9]) * 1000000;
+		l_duration = switch_time_make (atol(argv[9]), 0);
 	}
 
 	switch_core_measure_time(l_duration, &duration);
