@@ -1288,28 +1288,26 @@ L3INT Q931Pie_ChanID(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
     {
 		OBuf[(*Octet)++] = 0x80 | (pIE->InterfaceID & 0x7f);
     }
-    else
+
+    /* Octet 3.2 & 3.3 - PRI */
+    if(pIE->IntType)
     {
-        /* Octet 3.2 & 3.3 - PRI */
-        if(pIE->IntType == 1)
-        {
-            OBuf[(*Octet)++]  = 0x80
-					| ((pIE->CodStand << 5) & 0x60)
-					| ((pIE->NumMap << 4) & 0x10)
-					|  (pIE->ChanMapType & 0x0f);		/* TODO: support all possible channel map types */
+	OBuf[(*Octet)++]  = 0x80
+			| ((pIE->CodStand << 5) & 0x60)
+			| ((pIE->NumMap << 4) & 0x10)
+			|  (pIE->ChanMapType & 0x0f);		/* TODO: support all possible channel map types */
 
-			/* Octet 3.3 Channel number */
-			switch(pIE->ChanMapType) {
-			case 0x6:	/* Slot map: H0 Channel Units */	/* unsupported, Octets 3.3.1 - 3.3.3 */
-				return Q931E_CHANID;
+	/* Octet 3.3 Channel number */
+	switch(pIE->ChanMapType) {
+	case 0x6:	/* Slot map: H0 Channel Units */	/* unsupported, Octets 3.3.1 - 3.3.3 */
+		return Q931E_CHANID;
 
-			case 0x8:	/* Slot map: H11 Channel Units */
-			case 0x9:	/* Slot map: H12 Channel Units */
-			default:	/* Channel number */
-				OBuf[(*Octet)++] = 0x80 | (pIE->ChanSlot & 0x7f);
-				break;
-			}
-        }
+	case 0x8:	/* Slot map: H11 Channel Units */
+	case 0x9:	/* Slot map: H12 Channel Units */
+	default:	/* Channel number */
+		OBuf[(*Octet)++] = 0x80 | (pIE->ChanSlot & 0x7f);
+		break;
+	}
     }
 
     OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
