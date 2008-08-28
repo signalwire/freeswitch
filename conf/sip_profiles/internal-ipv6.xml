@@ -73,8 +73,8 @@
     <!-- accept any authentication without actually checking (not a good feature for most people) -->
     <!-- <param name="accept-blind-auth" value="true"/> -->
     
-    <!-- supress CNG on this profile or per call with the 'supress_cng' variable -->
-    <!-- <param name="supress-cng" value="true"/> -->
+    <!-- suppress CNG on this profile or per call with the 'suppress_cng' variable -->
+    <!-- <param name="suppress-cng" value="true"/> -->
     
     <!--TTL for nonce in sip auth-->
     <param name="nonce-ttl" value="60"/>

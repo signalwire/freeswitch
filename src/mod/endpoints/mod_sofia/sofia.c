@@ -1155,11 +1155,11 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							profile->pflags &= ~PFLAG_MULTIREG;
 						}
-					} else if (!strcasecmp(var, "supress-cng")) {
+					} else if (!strcasecmp(var, "supress-cng") || !strcasecmp(var, "suppress-cng")) {
 						if (switch_true(val)) {
-							profile->pflags |= PFLAG_SUPRESS_CNG;
+							profile->pflags |= PFLAG_SUPPRESS_CNG;
 						} else {
-							profile->pflags &= ~PFLAG_SUPRESS_CNG;
+							profile->pflags &= ~PFLAG_SUPPRESS_CNG;
 						}
 					} else if (!strcasecmp(var, "NDLB-to-in-200-contact")) {
 						if (switch_true(val)) {
@@ -1585,9 +1585,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_MULTIREG;
 						}
-					} else if (!strcasecmp(var, "supress-cng")) {
+					} else if (!strcasecmp(var, "supress-cng") || !strcasecmp(var, "suppress-cng")) {
 						if (switch_true(val)) {
-							profile->pflags |= PFLAG_SUPRESS_CNG;
+							profile->pflags |= PFLAG_SUPPRESS_CNG;
 						}
 					} else if (!strcasecmp(var, "NDLB-to-in-200-contact")) {
 						if (switch_true(val)) {
@@ -1727,7 +1727,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					}
 				}
 
-				if ((!profile->cng_pt) && (!sofia_test_pflag(profile, PFLAG_SUPRESS_CNG))) {
+				if ((!profile->cng_pt) && (!sofia_test_pflag(profile, PFLAG_SUPPRESS_CNG))) {
 					profile->cng_pt = SWITCH_RTP_CNG_PAYLOAD;
 				}
 

@@ -145,7 +145,7 @@ typedef enum {
 	PFLAG_RESPAWN = (1 << 9),
 	PFLAG_GREEDY = (1 << 10),
 	PFLAG_MULTIREG = (1 << 11),
-	PFLAG_SUPRESS_CNG = (1 << 12),
+	PFLAG_SUPPRESS_CNG = (1 << 12),
 	PFLAG_TLS = (1 << 13),
 	PFLAG_CHECKUSER = (1 << 14),
 	PFLAG_SECURE = (1 << 15),

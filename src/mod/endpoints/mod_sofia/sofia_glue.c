@@ -48,8 +48,9 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	const char *pass_fmtp = switch_channel_get_variable(tech_pvt->channel, "sip_video_fmtp");
 	const char *ov_fmtp = switch_channel_get_variable(tech_pvt->channel, "sip_force_video_fmtp");
 
-	if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPRESS_CNG) ||
-		((val = switch_channel_get_variable(tech_pvt->channel, "supress_cng")) && switch_true(val))) {
+	if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) ||
+		((val = switch_channel_get_variable(tech_pvt->channel, "supress_cng")) && switch_true(val)) ||
+		((val = switch_channel_get_variable(tech_pvt->channel, "suppress_cng")) && switch_true(val))) {
 		use_cng = 0;
 	}
 
