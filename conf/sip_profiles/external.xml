@@ -7,6 +7,7 @@
 
   <aliases>
     <alias name="outbound"/>
+    <alias name="nat"/> <!-- for backwards compatibility --> 
   </aliases>
 
   <domains>
