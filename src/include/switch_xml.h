@@ -276,6 +276,9 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *n
 #define switch_xml_set_attr_d(xml, name, value) \
     switch_xml_set_attr(switch_xml_set_flag(xml, SWITCH_XML_DUP), strdup(name), strdup(switch_str_nil(value)))
 
+#define switch_xml_set_attr_d_buf(xml, name, value) \
+    switch_xml_set_attr(switch_xml_set_flag(xml, SWITCH_XML_DUP), strdup(name), strdup(value))
+
 ///\brief sets a flag for the given tag and returns the tag
 ///\param xml the xml node
 ///\param flag the flag to set

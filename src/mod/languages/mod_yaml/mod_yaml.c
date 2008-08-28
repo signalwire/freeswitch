@@ -154,7 +154,7 @@ static switch_xml_t parse_file(FILE *input, const char *file_name)
 						} else {
 							switch_set_string(value, scalar_data);
 							param = switch_xml_add_child_d(current, "param", p_off++);
-							switch_xml_set_attr_d(param, "name", name);
+							switch_xml_set_attr_d_buf(param, "name", name);
 							switch_xml_set_attr_d(param, "value", scalar_data);
 							nv = 0;
 						}
