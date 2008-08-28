@@ -1336,6 +1336,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 	int total_saved_urgent_messages = 0;
 	int heard_auto_saved = 0, heard_auto_new = 0;
 	char *vm_email = NULL;
+	char *vm_storage_dir = NULL;
 	char global_buf[2] = "";
 	switch_input_args_t args = { 0 };
 	const char *caller_id_name = NULL;
@@ -1739,6 +1740,8 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 						thepass = val;
 					} else if (!strcasecmp(var, "vm-mailto")) {
 						vm_email = switch_core_session_strdup(session, val);
+					} else if (!strcasecmp(var, "storage-dir")) {
+						vm_storage_dir = switch_core_session_strdup(session, val);
 					} else if (!switch_strlen_zero(cbt.password) && !thepass) {
 						thepass = cbt.password;
 					}
@@ -1749,13 +1752,15 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 				if (auth || !thepass || (thepass && mypass && !strcmp(thepass, mypass)) || 
 					(!switch_strlen_zero(cbt.password) && !strcmp(cbt.password, mypass))) {
 					if (!dir_path) {
-						if (switch_strlen_zero(profile->storage_dir)) {
+						if (!switch_strlen_zero(vm_storage_dir)) {
+							dir_path = switch_core_session_sprintf(session, "%s%s%s", vm_storage_dir, SWITCH_PATH_SEPARATOR, myid);
+						} else if ( !switch_strlen_zero(profile->storage_dir) ) {
+							dir_path = switch_core_session_sprintf(session, "%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, myid);
+						} else {
 							dir_path = switch_core_session_sprintf(session, "%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir,
 																   SWITCH_PATH_SEPARATOR,
 																   SWITCH_PATH_SEPARATOR,
 																   profile->name, SWITCH_PATH_SEPARATOR, domain_name, SWITCH_PATH_SEPARATOR, myid);
-						} else {
-							dir_path = switch_core_session_sprintf(session, "%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, myid);
 						}
 
 						if (switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
@@ -1824,6 +1829,7 @@ static void deliver_vm(vm_profile_t *profile,
 	int send_notify = 0;
 	int insert_db = 1;
 	int email_attach = 0;
+	char *vm_storage_dir = NULL;
 	char *myfolder = "inbox";
 	int priority = 3;
 	const char *tmp;
@@ -1879,13 +1885,14 @@ static void deliver_vm(vm_profile_t *profile,
 		}
 	}
 
-
-	if (switch_strlen_zero(profile->storage_dir)) {
+	if (!switch_strlen_zero(vm_storage_dir)) {
+		dir_path = switch_mprintf("%s%s%s", vm_storage_dir, SWITCH_PATH_SEPARATOR, myid);
+	} else if (!switch_strlen_zero(profile->storage_dir)) {
+		dir_path = switch_mprintf("%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, myid);
+	} else {
 		dir_path = switch_mprintf("%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir,
 								  SWITCH_PATH_SEPARATOR,
 								  SWITCH_PATH_SEPARATOR, profile->name, SWITCH_PATH_SEPARATOR, domain_name, SWITCH_PATH_SEPARATOR, myid);
-	} else {
-		dir_path = switch_mprintf("%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, myid);
 	}
 
 	if (switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, pool) != SWITCH_STATUS_SUCCESS) {
@@ -2257,6 +2264,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	switch_size_t retsize;
 	switch_time_t ts = switch_timestamp_now();
 	char *dbuf = NULL;
+	char *vm_storage_dir = NULL;
 	int send_main = 0;
 	int send_notify = 0;
 	int insert_db = 1;
@@ -2278,19 +2286,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error invalid profile %s\n", profile_name);
 		return SWITCH_STATUS_FALSE;
-	}
-
-	if (switch_strlen_zero(profile->storage_dir)) {
-		dir_path = switch_core_session_sprintf(session, "%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir,
-											   SWITCH_PATH_SEPARATOR,
-											   SWITCH_PATH_SEPARATOR, profile->name, SWITCH_PATH_SEPARATOR, domain_name, SWITCH_PATH_SEPARATOR, id);
-	} else {
-		dir_path = switch_core_session_sprintf(session, "%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, id);
-	}
-
-	if (switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", dir_path);
-		goto end;
 	}
 
 	if (id) {
@@ -2318,6 +2313,8 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 					} else if (!strcasecmp(var, "vm-email-all-messages")) {
 						send_main = switch_true(val);
 						send_mail++;
+					} else if (!strcasecmp(var, "storage-dir")) {
+						vm_storage_dir = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-notify-email-all-messages")) {
 						send_notify = switch_true(val);
 						send_mail++;
@@ -2365,6 +2362,21 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 		if (!ok) {
 			goto end;
 		}
+	}
+
+	if (!switch_strlen_zero(vm_storage_dir)) {
+		dir_path = switch_core_session_sprintf(session, "%s%s%s", vm_storage_dir, SWITCH_PATH_SEPARATOR, id);
+	} else if (!switch_strlen_zero(profile->storage_dir)) {
+		dir_path = switch_core_session_sprintf(session, "%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, id);
+	} else {
+		dir_path = switch_core_session_sprintf(session, "%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir,
+											   SWITCH_PATH_SEPARATOR,
+											   SWITCH_PATH_SEPARATOR, profile->name, SWITCH_PATH_SEPARATOR, domain_name, SWITCH_PATH_SEPARATOR, id);
+	}
+
+	if (switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", dir_path);
+		goto end;
 	}
 
 	switch_snprintf(sql, sizeof(sql), "select * from voicemail_prefs where username='%s' and domain='%s'", id, domain_name);
@@ -2523,12 +2535,6 @@ SWITCH_STANDARD_APP(voicemail_function)
 	const char *auth_var = NULL;
 	int x = 0, check = 0, auth = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-
-	if (switch_dir_make_recursive(SWITCH_GLOBAL_dirs.storage_dir, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) !=
-		SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", SWITCH_GLOBAL_dirs.storage_dir);
-		return;
-	}
 
 	if (!switch_strlen_zero(data)) {
 		mydata = switch_core_session_strdup(session, data);
