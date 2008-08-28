@@ -476,7 +476,7 @@ static switch_status_t do_config(void)
 					} else {
 						switch_set_string(value, scalar_data);
 						if (!strcasecmp(category, "settings")) {
-							if (!strcasecmp(name, "bind_config") && switch_true(value)) {
+							if (!strcasecmp(name, "bind_config") && switch_true_buf(value)) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Binding To XML Config\n");
 								switch_xml_bind_search_function(yaml_fetch, switch_xml_parse_section_string("config"), NULL);
 							}
