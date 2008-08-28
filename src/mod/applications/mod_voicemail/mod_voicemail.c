@@ -1105,7 +1105,7 @@ static int listen_callback(void *pArg, int argc, char **argv, char **columnNames
 }
 
 
-static void message_count(vm_profile_t *profile, const char *myid, const char *domain_name, char *myfolder,
+static void message_count(vm_profile_t *profile, const char *myid, const char *domain_name, const char *myfolder,
 						  int *total_new_messages, int *total_saved_messages, int *total_new_urgent_messages, int *total_saved_urgent_messages)
 {
 	char msg_count[80] = "";
@@ -1315,6 +1315,38 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 	return status;
 }
 
+
+static void
+update_mwi(vm_profile_t *profile, const char *id, const char *domain_name,
+           const char *myfolder)
+{
+	char *mwi_id;
+	const char *yn = "no";
+	int total_new_messages = 0;
+	int total_saved_messages = 0;
+	int total_new_urgent_messages = 0;
+	int total_saved_urgent_messages = 0;
+	switch_event_t *event;
+
+	message_count(profile, id, domain_name, myfolder, &total_new_messages, &total_saved_messages, &total_new_urgent_messages, &total_saved_urgent_messages);
+
+	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_WAITING) != SWITCH_STATUS_SUCCESS) {
+		return;
+	}
+
+	if (total_new_messages || total_new_urgent_messages) {
+		yn = "yes";
+	}
+	mwi_id = switch_mprintf("%s@%s", id, domain_name);
+	switch_assert(mwi_id);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", "%s", yn);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", mwi_id);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)", total_new_messages, total_saved_messages, total_new_urgent_messages, total_saved_urgent_messages);
+	switch_event_fire(&event);
+	switch_safe_free(mwi_id);
+}
+
+
 static void voicemail_check_main(switch_core_session_t *session, const char *profile_name, const char *domain_name, const char *id, int auth)
 {
 	vm_check_state_t vm_check_state = VM_CHECK_START;
@@ -1440,7 +1472,6 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 				listen_callback_t cbt;
 				char sql[256];
 				int cur_message, total_messages;
-				switch_event_t *event;
 
 				message_count(profile, myid, domain_name, myfolder, &total_new_messages, &total_saved_messages,
 							  &total_new_urgent_messages, &total_saved_urgent_messages);
@@ -1487,24 +1518,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 				vm_execute_sql(profile, sql, profile->mutex);
 				vm_check_state = VM_CHECK_FOLDER_SUMMARY;
 
-				message_count(profile, id, domain_name, myfolder, &total_new_messages, &total_saved_messages,
-							  &total_new_urgent_messages, &total_saved_urgent_messages);
-
-				if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) {
-					char *mwi_id;
-					const char *yn = "no";
-					if (total_new_messages || total_new_urgent_messages) {
-						yn = "yes";
-					}
-					mwi_id = switch_mprintf("%s@%s", myid, domain_name);
-					switch_assert(mwi_id);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", yn);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", mwi_id);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)",
-											total_new_messages, total_saved_messages, total_new_urgent_messages, total_saved_urgent_messages);
-					switch_event_fire(&event);
-					switch_safe_free(mwi_id);
-				}
+				update_mwi(profile, id, domain_name, myfolder);
 			}
 			break;
 		case VM_CHECK_CONFIG:
@@ -1918,12 +1932,6 @@ static void deliver_vm(vm_profile_t *profile,
 
 	if (insert_db && switch_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
 		char *usql;
-		switch_event_t *event;
-		char *mwi_id = NULL;
-		int total_new_messages = 0;
-		int total_saved_messages = 0;
-		int total_new_urgent_messages = 0;
-		int total_saved_urgent_messages = 0;
 		
 		usql = switch_mprintf("insert into voicemail_msgs values(%ld,0,'%q','%q','%q','%q','%q','%q','%q','%u','','%q')", (long) switch_timestamp(NULL),
 							  myid, domain_name, uuid_str, caller_id_name, caller_id_number,
@@ -1931,22 +1939,7 @@ static void deliver_vm(vm_profile_t *profile,
 		vm_execute_sql(profile, usql, profile->mutex);
 		switch_safe_free(usql);
 
-		message_count(profile, myid, domain_name, myfolder, &total_new_messages, &total_saved_messages,
-					  &total_new_urgent_messages, &total_saved_urgent_messages);
-
-		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) {
-			const char *yn = "no";
-			if (total_new_messages || total_new_urgent_messages) {
-				yn = "yes";
-			}
-			mwi_id = switch_mprintf("%s@%s", myid, domain_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", yn);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", mwi_id);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)",
-									total_new_messages, total_saved_messages, total_new_urgent_messages, total_saved_urgent_messages);
-			switch_event_fire(&event);
-			switch_safe_free(mwi_id);
-		}
+		update_mwi(profile, myid, domain_name, myfolder);
 	}
 
 	if (send_mail && !switch_strlen_zero(vm_email) && switch_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
@@ -2829,6 +2822,7 @@ static void do_play(vm_profile_t *profile, char *user, char *domain, char *file,
 
 static void do_del(vm_profile_t *profile, char *user, char *domain, char *file, switch_stream_handle_t *stream)
 {
+	char *myfolder = "inbox";
 	char *sql;
 	struct holder holder;
 	char *ref = NULL;
@@ -2847,6 +2841,8 @@ static void do_del(vm_profile_t *profile, char *user, char *domain, char *file, 
 	sql = switch_mprintf("delete from voicemail_msgs where username='%s' and domain='%s' and file_path like '%%%s'", user, domain, file);
 	vm_execute_sql(profile, sql, profile->mutex);
 	free(sql);
+
+	update_mwi(profile, user, domain, myfolder);
 
 	if (ref) {
 		stream->write_function(stream, "Content-type: text/html\n\n<h2>Message Deleted</h2>\n" "<META http-equiv=\"refresh\" content=\"1;URL=%s\">", ref);
