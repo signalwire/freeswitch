@@ -13,7 +13,7 @@ $(OZSO): $(OZ_DIR)/.update
 
 local_install:
 	cd $(OZ_DIR) && $(MAKE) install ZAP_CFLAGS="$(ALL_CXXFLAGS)"
-	[ ! -f $(DESTDIR)$(PREFIX)/conf/autoload_configs/openzap.conf.xml ] || cp -f $(OZ_DIR)/conf/openzap.conf.xml  $(DESTDIR)$(PREFIX)/conf/autoload_configs
+	[ -f $(DESTDIR)$(PREFIX)/conf/autoload_configs/openzap.conf.xml ] || cp -f $(OZ_DIR)/conf/openzap.conf.xml  $(DESTDIR)$(PREFIX)/conf/autoload_configs
 
 local_clean:
 	cd $(OZ_DIR) && $(MAKE) clean
