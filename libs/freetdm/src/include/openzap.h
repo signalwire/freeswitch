@@ -584,6 +584,8 @@ int zap_load_modules(void);
 zap_status_t zap_unload_modules(void);
 zap_status_t zap_configure_span(const char *type, zap_span_t *span, zio_signal_cb_t sig_cb, ...);
 zap_status_t zap_span_start(zap_span_t *span);
+int zap_load_module(const char *name);
+int zap_load_module_assume(const char *name);
 
 ZIO_CODEC_FUNCTION(zio_slin2ulaw);
 ZIO_CODEC_FUNCTION(zio_ulaw2slin);
