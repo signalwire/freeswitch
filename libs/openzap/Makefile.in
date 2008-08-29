@@ -35,8 +35,6 @@ SOURCES=\
 $(SRC)/hashtable.c \
 $(SRC)/hashtable_itr.c \
 $(SRC)/zap_io.c \
-$(SRC)/zap_isdn.c \
-$(SRC)/zap_analog.c \
 $(SRC)/zap_config.c \
 $(SRC)/zap_callerid.c \
 $(SRC)/fsk.c \
@@ -46,7 +44,14 @@ $(SRC)/libteletone_detect.c \
 $(SRC)/libteletone_generate.c \
 $(SRC)/zap_buffer.c \
 $(SRC)/zap_threadmutex.c \
-$(SRC)/zap_dso.c \
+$(SRC)/zap_dso.c
+
+BOOST_SOURCES=\
+$(SRC)/ozmod/ozmod_ss7_boost/ss7_boost_client.c \
+$(SRC)/ozmod/ozmod_ss7_boost/zap_ss7_boost.c
+
+
+ISDN_SOURCES=\
 $(SRC)/isdn/EuroISDNStateNT.c \
 $(SRC)/isdn/EuroISDNStateTE.c \
 $(SRC)/isdn/mfifo.c \
@@ -66,18 +71,13 @@ $(SRC)/isdn/DMSStateTE.c \
 $(SRC)/isdn/5ESSmes.c \
 $(SRC)/isdn/5ESSStateNT.c \
 $(SRC)/isdn/5ESSStateTE.c \
-$(SRC)/isdn/Q932mes.c \
-$(SRC)/zap_zt.c \
-$(SRC)/zap_wanpipe.c \
-$(SRC)/ss7_boost_client.c \
-$(SRC)/zap_ss7_boost.c
+$(SRC)/isdn/Q932mes.c
+
 
 OBJS=\
 $(SRC)/hashtable.o \
 $(SRC)/hashtable_itr.o \
 $(SRC)/zap_io.o \
-$(SRC)/zap_isdn.o \
-$(SRC)/zap_analog.o \
 $(SRC)/zap_config.o \
 $(SRC)/zap_callerid.o \
 $(SRC)/fsk.o \
@@ -87,7 +87,13 @@ $(SRC)/libteletone_detect.o \
 $(SRC)/libteletone_generate.o \
 $(SRC)/zap_buffer.o \
 $(SRC)/zap_threadmutex.o \
-$(SRC)/zap_dso.o \
+$(SRC)/zap_dso.o
+
+BOOST_OBJS=\
+$(SRC)/ozmod/ozmod_ss7_boost/ss7_boost_client.o
+
+
+ISDN_OBJS=\
 $(SRC)/isdn/EuroISDNStateNT.o \
 $(SRC)/isdn/EuroISDNStateTE.o \
 $(SRC)/isdn/mfifo.o \
@@ -107,11 +113,8 @@ $(SRC)/isdn/DMSStateTE.o \
 $(SRC)/isdn/5ESSmes.o \
 $(SRC)/isdn/5ESSStateNT.o \
 $(SRC)/isdn/5ESSStateTE.o \
-$(SRC)/isdn/Q932mes.o \
-$(SRC)/zap_zt.o \
-$(SRC)/zap_wanpipe.o \
-$(SRC)/ss7_boost_client.o \
-$(SRC)/zap_ss7_boost.o
+$(SRC)/isdn/Q932mes.o
+
 
 HEADERS= $(SRC)/include/fsk.h \
 $(SRC)/include/g711.h \
@@ -124,18 +127,14 @@ $(SRC)/include/libteletone.h \
 $(SRC)/include/openzap.h \
 $(SRC)/include/sangoma_tdm_api.h \
 $(SRC)/include/uart.h \
-$(SRC)/include/wanpipe_tdm_api_iface.h \
-$(SRC)/include/zap_analog.h \
 $(SRC)/include/zap_buffer.h \
 $(SRC)/include/zap_config.h \
-$(SRC)/include/zap_isdn.h \
-$(SRC)/include/zap_skel.h \
 $(SRC)/include/zap_threadmutex.h \
 $(SRC)/include/zap_dso.h \
-$(SRC)/include/zap_types.h \
-$(SRC)/include/zap_wanpipe.h \
-$(SRC)/include/zap_ss7_boost.h \
-$(SRC)/include/zap_zt.h \
+$(SRC)/include/zap_types.h 
+
+
+ISDN_HEADERS=\
 $(SRC)/isdn/include/mfifo.h \
 $(SRC)/isdn/include/national.h \
 $(SRC)/isdn/include/DMS.h \
@@ -145,30 +144,33 @@ $(SRC)/isdn/include/Q931.h \
 $(SRC)/isdn/include/Q931ie.h \
 $(SRC)/isdn/include/Q932.h 
 
+
 PWD=$(shell pwd)
-INCS=-I$(PWD)/$(SRC)/include -I$(PWD)/$(SRC)/isdn/include
-CFLAGS+= $(INCS) $(ZAP_CFLAGS)
-MYLIB=libopenzap.a
+INCS=-I$(PWD)/$(SRC)/include -I$(PWD)/$(SRC)/isdn/include -I$(PWD)/$(SRC)/ozmod/ozmod_ss7_boost
+CFLAGS+= $(INCS) $(ZAP_CFLAGS) -DZAP_CONFIG_DIR=\"@prefix@/conf\" -DZAP_MOD_DIR=\"@prefix@/mod\"
+MYLIB=libopenzap.so
 LIBPRIA=libpri.a
 LIBPRI=./libpri
 TMP=-I$(LIBPRI) -I$(SRC)/include -I./src -w
+PREFIX=@prefix@
 
 PIKA_DIR=$(shell ls -d /usr/include/pika 2>/dev/null)
 PIKA_LIB=$(shell ls /usr/lib/libpikahmpapi.so 2>/dev/null)
 
-ifneq ($(PIKA_DIR),)
-ifneq ($(PIKA_LIB),)
-OBJS += $(SRC)/zap_pika.o
-CFLAGS += -DZAP_PIKA_SUPPORT -I$(PIKA_DIR)
-ADD_OBJS = $(PIKA_LIB)
-endif
-endif
+#ifneq ($(PIKA_DIR),)
+#ifneq ($(PIKA_LIB),)
+#OBJS += $(SRC)/zap_pika.o
+#CFLAGS += -DZAP_PIKA_SUPPORT -I$(PIKA_DIR)
+#ADD_OBJS = $(PIKA_LIB)
+#endif
+#endif
 
-all: $(MYLIB)
+all: $(MYLIB) analogmod isdnmod boostmod ztmod wpmod
 
 $(MYLIB): $(OBJS) $(HEADERS) $(SOURCES)
-	ar rcs $(MYLIB) $(OBJS) $(ADD_OBJS)
-	ranlib $(MYLIB)
+	#ar rcs $(MYLIB) $(OBJS) $(ADD_OBJS)
+	#ranlib $(MYLIB)
+	$(CC) -shared -Wl,-x -o $(MYLIB) $(OBJS) $(ADD_OBJS) -ldl
 
 testapp: $(SRC)/testapp.c $(MYLIB)
 	$(CC) $(INCS) -L. $(SRC)/testapp.c -o testapp -lopenzap -lm -lpthread
@@ -226,6 +228,54 @@ mod_openzap-install: mod_openzap
 mod_openzap-clean:
 	@if [ -f mod_openzap/mod_openzap.so ] ; then cd mod_openzap && make clean ; fi
 
-clean: mod_openzap-clean
-	rm -f $(SRC)/*.o $(SRC)/isdn/*.o $(MYLIB) *~ \#* testapp testcid testtones detect_tones detect_dtmf priserver testisdn testboost testanalog
+clean: 
+	rm -f $(SRC)/*.o $(SRC)/isdn/*.o $(MYLIB) *~ \#* testapp testcid testtones detect_tones detect_dtmf priserver testisdn testboost testanalog src/ozmod/*/*.o src/ozmod/*/*.so src/ozmod/*/*.dylib src/ozmod/*/*.dll
 	@if [ -f $(LIBPRI)/$(LIBPRIA) ] ; then cd $(LIBPRI) && make clean ; fi
+
+install: all
+	@mkdir -p $(DESTDIR)$(PREFIX)
+	@[ -d "$(DESTDIR)$(PREFIX)/conf" ] || ( mkdir -p $(DESTDIR)$(PREFIX)/conf)
+	@[ -f "$(DESTDIR)$(PREFIX)/conf/openzap.conf" ] || ( cp conf/*.conf $(DESTDIR)$(PREFIX)/conf)
+	@mkdir -p $(DESTDIR)$(PREFIX)/lib
+	@[ ! -f $(MYLIB) ] || cp -f $(MYLIB) $(DESTDIR)$(PREFIX)/lib
+	@mkdir -p $(DESTDIR)$(PREFIX)/mod
+	@[ ! -f ozmod_* ] || cp -f ozmod_* $(DESTDIR)$(PREFIX)/mod
+	@cp -f src/ozmod/*/*.so $(DESTDIR)$(PREFIX)/mod
+	@echo OpenZAP Installed
+
+uninstall:
+	@rm -fr $(DESTDIR)$(PREFIX)
+
+$(SRC)/ozmod/ozmod_skel/ozmod_skel.so:
+	$(CC) $(INCS) $(ZAP_CFLAGS) -L. $(SRC)/ozmod/ozmod_skel/ozmod_skel.c -o $(SRC)/ozmod/ozmod_skel/ozmod_skel.so -shared -Wl,-x -lm -lpthread -ldl -Wl,--rpath -Wl,$(PREFIX)/lib
+skelmod: $(SRC)/ozmod/ozmod_skel/ozmod_skel.so
+
+
+$(SRC)/ozmod/ozmod_zt/ozmod_zt.so:
+	$(CC) $(INCS) $(ZAP_CFLAGS) -L. $(SRC)/ozmod/ozmod_zt/ozmod_zt.c -o $(SRC)/ozmod/ozmod_zt/ozmod_zt.so -shared -Wl,-x -lm -lpthread -ldl $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
+ztmod: $(SRC)/ozmod/ozmod_zt/ozmod_zt.so
+
+$(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.so:
+	$(CC) $(INCS) $(ZAP_CFLAGS) -L. $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.c -o $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.so -shared -Wl,-x -lm -lpthread -ldl $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
+wpmod: $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.so
+
+$(SRC)/ozmod/ozmod_pika/ozmod_pika.so:
+	$(CC) -I$(PIKA_DIR) $(INCS) $(ZAP_CFLAGS) -L. $(SRC)/ozmod/ozmod_pika/ozmod_pika.c -o $(SRC)/ozmod/ozmod_pika/ozmod_pika.so -shared -Wl,-x -lm -lpthread -ldl $(MYLIB) $(PIKA_LIB) -Wl,--rpath -Wl,$(PREFIX)/lib
+
+pikamod: $(SRC)/ozmod/ozmod_pika/ozmod_pika.so
+
+$(ISDN_OBJS): $(ISDN_HEADERS) $(ISDN_SOURCES) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.c
+
+$(SRC)/ozmod/ozmod_isdn/ozmod_isdn.so: $(MYLIB) $(ISDN_OBJS)
+	$(CC) -I$(SRC)/isdn/include/ $(INCS) $(ZAP_CFLAGS) -L. $(ISDN_OBJS) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.c -o $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.so -shared -Wl,-x -lm -lpthread -ldl $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
+isdnmod: $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.so
+
+$(SRC)/ozmod/ozmod_analog/ozmod_analog.so: $(MYLIB) $(ANALOG_OBJS)
+	$(CC) -I$(SRC)/analog/include/ $(INCS) $(ZAP_CFLAGS) -L. $(SRC)/ozmod/ozmod_analog/ozmod_analog.c -o $(SRC)/ozmod/ozmod_analog/ozmod_analog.so -shared -Wl,-x -lm -lpthread -ldl $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
+analogmod: $(SRC)/ozmod/ozmod_analog/ozmod_analog.so
+
+$(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.so: $(MYLIB) $(BOOST_OBJS)
+	$(CC) -I/ozmod/ozmod_ss7_boost $(INCS) $(ZAP_CFLAGS) -L. $(BOOST_OBJS) $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.c -o $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.so -shared -Wl,-x -lm -lpthread -ldl $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
+boostmod: $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.so
+
+

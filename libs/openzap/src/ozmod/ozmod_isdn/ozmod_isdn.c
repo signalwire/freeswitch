@@ -663,7 +663,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	zap_sigmsg_t sig;
 	zap_status_t status;
 
-	zap_log(ZAP_LOG_ERROR, "%d:%d STATE [%s]\n", 
+	zap_log(ZAP_LOG_DEBUG, "%d:%d STATE [%s]\n", 
 			zchan->span_id, zchan->chan_id, zap_channel_state2str(zchan->state));
 
 	memset(&sig, 0, sizeof(sig));
@@ -1134,7 +1134,7 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 	return NULL;
 }
 
-zap_status_t zap_isdn_init(void)
+static ZIO_SIG_LOAD_FUNCTION(zap_isdn_init)
 {
 	Q931Initialize();
 
@@ -1142,13 +1142,6 @@ zap_status_t zap_isdn_init(void)
 	Q931SetGetTimeCB(zap_time_now);
 
 	return ZAP_SUCCESS;
-}
-
-zap_status_t zap_isdn_start(zap_span_t *span)
-{
-	zap_isdn_data_t *isdn_data = span->signal_data;
-	zap_set_flag(isdn_data, ZAP_ISDN_RUNNING);
-	return zap_thread_create_detached(zap_isdn_run, span);
 }
 
 static int q931_rx_32(void *pvt, Q921DLMsg_t ind, L3UCHAR tei, L3UCHAR *msg, L3INT mlen)
@@ -1317,11 +1310,24 @@ static zap_state_map_t isdn_state_map = {
 	}
 };
 
-zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931Dialect_t dialect, zap_isdn_opts_t opts, zio_signal_cb_t sig_cb)
+static zap_status_t zap_isdn_start(zap_span_t *span)
+{
+	zap_isdn_data_t *isdn_data = span->signal_data;
+	zap_set_flag(isdn_data, ZAP_ISDN_RUNNING);
+	return zap_thread_create_detached(zap_isdn_run, span);
+}
+
+
+
+static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 {
 	uint32_t i, x = 0;
 	zap_channel_t *dchans[2] = {0};
 	zap_isdn_data_t *isdn_data;
+	char *var, *val;
+	Q931Dialect_t dialect = Q931_Dialect_National;
+	uint32_t opts = 0;
+
 	if (span->signal_type) {
 		snprintf(span->last_error, sizeof(span->last_error), "Span is already configured for signalling [%d].", span->signal_type);
 		return ZAP_FAIL;
@@ -1352,21 +1358,46 @@ zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931D
 		return ZAP_FAIL;
 	}
 
-	
 	isdn_data = malloc(sizeof(*isdn_data));
 	assert(isdn_data != NULL);
 	memset(isdn_data, 0, sizeof(*isdn_data));
 	
+	isdn_data->mode = Q931_TE;
+	dialect = Q931_Dialect_National;
+	
+	while(var = va_arg(ap, char *)) {
+		if (!strcasecmp(var, "mode")) {
+			if (!(val = va_arg(ap, char *))) {
+				break;
+			}
+			isdn_data->mode = strcasecmp(val, "net") ? Q931_TE : Q931_NT;
+		} else if (!strcasecmp(var, "dialect")) {
+			if (!(val = va_arg(ap, char *))) {
+				break;
+			}
+			dialect = q931_str2Q931Dialect_type(val);
+			if (dialect == Q931_Dialect_Count) {
+				dialect = Q931_Dialect_National;
+			}
+		} else if (!strcasecmp(var, "opts")) {
+			int *optp;
+			if (!(optp = va_arg(ap, int *))) {
+				break;
+			}
+			opts = isdn_data->opts = *optp;
+		}
+	}
+
+	span->start = zap_isdn_start;
 	isdn_data->sig_cb = sig_cb;
 	isdn_data->dchans[0] = dchans[0];
 	isdn_data->dchans[1] = dchans[1];
 	isdn_data->dchan = isdn_data->dchans[0];
-	isdn_data->mode  = mode;
 	
 	Q921_InitTrunk(&isdn_data->q921,
 				   0,
 				   0,
-				   mode,
+				   isdn_data->mode,
 				   span->trunk_type == ZAP_TRUNK_BRI_PTMP ? Q921_PTMP : Q921_PTP,
 				   0,
 				   zap_isdn_921_21,
@@ -1379,7 +1410,7 @@ zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931D
 	
 	Q931Api_InitTrunk(&isdn_data->q931,
 					  dialect,
-					  mode,
+					  isdn_data->mode,
 					  span->trunk_type,
 					  zap_isdn_931_34,
 					  (Q931Tx32CB_t)q931_rx_32,
@@ -1397,7 +1428,7 @@ zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931D
 	span->signal_data = isdn_data;
 	span->signal_type = ZAP_SIGTYPE_ISDN;
 	span->outgoing_call = isdn_outgoing_call;
-	isdn_data->opts = opts;
+
 
 	if ((opts & ZAP_ISDN_OPT_SUGGEST_CHANNEL)) {
 		span->channel_request = isdn_channel_request;
@@ -1407,6 +1438,17 @@ zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931D
 
 	return ZAP_SUCCESS;
 }
+
+
+zap_module_t zap_module = { 
+	"isdn",
+	NULL,
+	NULL,
+	zap_isdn_init,
+	zap_isdn_configure_span,
+	NULL
+};
+
 
 /* For Emacs:
  * Local Variables:

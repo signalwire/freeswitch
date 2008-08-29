@@ -52,6 +52,7 @@ typedef int zap_filehandle_t;
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
+#include <stdarg.h>
 typedef int zap_socket_t;
 typedef ssize_t zap_ssize_t;
 typedef int zap_filehandle_t;
@@ -383,6 +384,7 @@ typedef struct zap_event zap_event_t;
 typedef struct zap_sigmsg zap_sigmsg_t;
 typedef struct zap_span zap_span_t;
 typedef struct zap_caller_data zap_caller_data_t;
+typedef struct zap_io_interface zap_io_interface_t;
 
 #define ZIO_CHANNEL_REQUEST_ARGS (zap_span_t *span, uint32_t chan_id, zap_direction_t direction, zap_caller_data_t *caller_data, zap_channel_t **zchan)
 #define ZIO_CHANNEL_OUTGOING_CALL_ARGS (zap_channel_t *zchan)
@@ -402,6 +404,11 @@ typedef struct zap_caller_data zap_caller_data_t;
 #define ZIO_GET_ALARMS_ARGS (zap_channel_t *zchan)
 #define ZIO_READ_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
 #define ZIO_WRITE_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
+#define ZIO_IO_LOAD_ARGS (zap_io_interface_t **zio)
+#define ZIO_IO_UNLOAD_ARGS (void)
+#define ZIO_SIG_LOAD_ARGS (void)
+#define ZIO_SIG_CONFIGURE_ARGS (zap_span_t *span, zio_signal_cb_t sig_cb, va_list ap)
+#define ZIO_SIG_UNLOAD_ARGS (void)
 
 typedef zap_status_t (*zio_channel_request_t) ZIO_CHANNEL_REQUEST_ARGS ;
 typedef zap_status_t (*zio_channel_outgoing_call_t) ZIO_CHANNEL_OUTGOING_CALL_ARGS ;
@@ -421,6 +428,11 @@ typedef zap_status_t (*zio_command_t) ZIO_COMMAND_ARGS ;
 typedef zap_status_t (*zio_wait_t) ZIO_WAIT_ARGS ;
 typedef zap_status_t (*zio_read_t) ZIO_READ_ARGS ;
 typedef zap_status_t (*zio_write_t) ZIO_WRITE_ARGS ;
+typedef zap_status_t (*zio_io_load_t) ZIO_IO_LOAD_ARGS ;
+typedef zap_status_t (*zio_sig_load_t) ZIO_SIG_LOAD_ARGS ;
+typedef zap_status_t (*zio_sig_configure_t) ZIO_SIG_CONFIGURE_ARGS ;
+typedef zap_status_t (*zio_io_unload_t) ZIO_IO_UNLOAD_ARGS ;
+typedef zap_status_t (*zio_sig_unload_t) ZIO_SIG_UNLOAD_ARGS ;
 
 #define ZIO_CHANNEL_REQUEST_FUNCTION(name) zap_status_t name ZIO_CHANNEL_REQUEST_ARGS
 #define ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(name) zap_status_t name ZIO_CHANNEL_OUTGOING_CALL_ARGS
@@ -440,6 +452,24 @@ typedef zap_status_t (*zio_write_t) ZIO_WRITE_ARGS ;
 #define ZIO_WAIT_FUNCTION(name) zap_status_t name ZIO_WAIT_ARGS
 #define ZIO_READ_FUNCTION(name) zap_status_t name ZIO_READ_ARGS
 #define ZIO_WRITE_FUNCTION(name) zap_status_t name ZIO_WRITE_ARGS
+#define ZIO_IO_LOAD_FUNCTION(name) zap_status_t name ZIO_IO_LOAD_ARGS
+#define ZIO_SIG_LOAD_FUNCTION(name) zap_status_t name ZIO_SIG_LOAD_ARGS
+#define ZIO_SIG_CONFIGURE_FUNCTION(name) zap_status_t name ZIO_SIG_CONFIGURE_ARGS
+#define ZIO_IO_UNLOAD_FUNCTION(name) zap_status_t name ZIO_IO_UNLOAD_ARGS
+#define ZIO_SIG_UNLOAD_FUNCTION(name) zap_status_t name ZIO_SIG_UNLOAD_ARGS
+
+#include "zap_dso.h"
+
+typedef struct {
+	char name[256];
+	zio_io_load_t io_load;
+	zio_io_unload_t io_unload;
+	zio_sig_load_t sig_load;
+	zio_sig_configure_t sig_configure;
+	zio_sig_unload_t sig_unload;
+	zap_dso_lib_t lib;
+	char path[256];
+} zap_module_t;
 
 #ifndef __FUNCTION__
 #define __FUNCTION__ (const char *)__func__
@@ -468,13 +498,13 @@ typedef struct zap_fsk_data_state zap_fsk_data_state_t;
 typedef int (*zap_fsk_data_decoder_t)(zap_fsk_data_state_t *state);
 typedef zap_status_t (*zap_fsk_write_sample_t)(int16_t *buf, zap_size_t buflen, void *user_data);
 typedef void (*zap_logger_t)(const char *file, const char *func, int line, int level, const char *fmt, ...);
-typedef struct zap_io_interface zap_io_interface_t;
 typedef struct hashtable zap_hash_t;
-typedef struct hashtable_itr zap_hash_itr_t;
+typedef struct hashtable_iterator zap_hash_iterator_t;
 typedef struct key zap_hash_key_t;
 typedef struct value zap_hash_val_t;
 typedef struct zap_bitstream zap_bitstream_t;
 typedef struct zap_fsk_modulator zap_fsk_modulator_t;
+typedef zap_status_t (*zap_span_start_t)(zap_span_t *span);
 
 typedef enum {
 	ZAP_CAUSE_NONE = 0,

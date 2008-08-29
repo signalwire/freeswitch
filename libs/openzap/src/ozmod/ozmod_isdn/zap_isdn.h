@@ -31,19 +31,38 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ZAP_ANALOG_H
-#define ZAP_ANALOG_H
+#ifndef ZAP_ISDN_H
+#define ZAP_ISDN_H
 #include "openzap.h"
 
 typedef enum {
-	ZAP_ANALOG_RUNNING = (1 << 0)
-} zap_analog_flag_t;
+	ZAP_ISDN_OPT_NONE = 0,
+	ZAP_ISDN_OPT_SUGGEST_CHANNEL = (1 << 0)
+} zap_isdn_opts_t;
+
+typedef enum {
+	ZAP_ISDN_RUNNING = (1 << 0)
+} zap_isdn_flag_t;
 
 
-typedef struct zap_analog_data zap_analog_data_t;
+struct zap_isdn_data {
+	Q921Data_t q921;
+	Q931_TrunkInfo_t q931;
+	zap_channel_t *dchan;
+	zap_channel_t *dchans[2];
+	struct zap_sigmsg sigmsg;
+	zio_signal_cb_t sig_cb;
+	uint32_t flags;
+	int32_t mode;
+	zap_isdn_opts_t opts;
+	zap_caller_data_t *outbound_crv[32768];
+	zap_channel_t *channels_local_crv[32768];
+	zap_channel_t *channels_remote_crv[32768];
+};
 
-zap_status_t zap_analog_start(zap_span_t *span);
-zap_status_t zap_analog_configure_span(zap_span_t *span, char *tonemap, uint32_t digit_timeout, uint32_t max_dialstr, zio_signal_cb_t sig_cb);
+
+
+typedef struct zap_isdn_data zap_isdn_data_t;
 
 #endif
 
@@ -57,3 +76,4 @@ zap_status_t zap_analog_configure_span(zap_span_t *span, char *tonemap, uint32_t
  * For VIM:
  * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
  */
+

@@ -70,9 +70,24 @@ static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxs_outgoing_call)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_analog_configure_span(zap_span_t *span, char *tonemap, uint32_t digit_timeout, uint32_t max_dialstr, zio_signal_cb_t sig_cb)
+
+static zap_status_t zap_analog_start(zap_span_t *span)
+{
+	zap_analog_data_t *analog_data = span->signal_data;
+	zap_set_flag(analog_data, ZAP_ANALOG_RUNNING);
+	return zap_thread_create_detached(zap_analog_run, span);
+}
+
+static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
+//zap_status_t zap_analog_configure_span(zap_span_t *span, char *tonemap, uint32_t digit_timeout, uint32_t max_dialstr, zio_signal_cb_t sig_cb)
 {
 	zap_analog_data_t *analog_data;
+	char *tonemap = "us";
+	uint32_t digit_timeout = 10;
+	uint32_t max_dialstr = 11;
+	char *var, *val;
+	int *intval;
+
 	assert(sig_cb != NULL);
 
 	if (span->signal_type) {
@@ -92,6 +107,27 @@ zap_status_t zap_analog_configure_span(zap_span_t *span, char *tonemap, uint32_t
 	memset(analog_data, 0, sizeof(*analog_data));
 	assert(analog_data != NULL);
 
+
+	while(var = va_arg(ap, char *)) {
+		if (!strcasecmp(var, "tonemap")) {
+			if (!(val = va_arg(ap, char *))) {
+				break;
+			}
+			tonemap = val;
+		} else if (!strcasecmp(var, "digit_timeout")) {
+			if (!(intval = va_arg(ap, int *))) {
+				break;
+			}
+			digit_timeout = *intval;
+		} else if (!strcasecmp(var, "max_dialstr")) {
+			if (!(intval = va_arg(ap, int *))) {
+				break;
+			}
+			max_dialstr = *intval;
+		}
+	}
+
+	span->start = zap_analog_start;
 	analog_data->digit_timeout = digit_timeout;
 	analog_data->max_dialstr = max_dialstr;
 	analog_data->sig_cb = sig_cb;
@@ -793,12 +829,20 @@ static void *zap_analog_run(zap_thread_t *me, void *obj)
 }
 
 
-zap_status_t zap_analog_start(zap_span_t *span)
+static ZIO_SIG_LOAD_FUNCTION(zap_analog_init)
 {
-	zap_analog_data_t *analog_data = span->signal_data;
-	zap_set_flag(analog_data, ZAP_ANALOG_RUNNING);
-	return zap_thread_create_detached(zap_analog_run, span);
+	return ZAP_SUCCESS;
 }
+
+zap_module_t zap_module = { 
+	"analog",
+	NULL,
+	NULL,
+	zap_analog_init,
+	zap_analog_configure_span,
+	NULL
+};
+
 
 /* For Emacs:
  * Local Variables:

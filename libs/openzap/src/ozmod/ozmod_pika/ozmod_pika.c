@@ -1179,7 +1179,7 @@ static ZIO_GET_ALARMS_FUNCTION(pika_get_alarms)
 
 static zap_io_interface_t pika_interface;
 
-zap_status_t pika_init(zap_io_interface_t **zint)
+static ZIO_IO_LOAD_FUNCTION(pika_init)
 {
 
 	PK_STATUS status;
@@ -1189,7 +1189,7 @@ zap_status_t pika_init(zap_io_interface_t **zint)
 	PKH_TLogMasks m;
 	TPikaHandle tmpHandle;
 
-	assert(zint != NULL);
+	assert(zio != NULL);
 	memset(&pika_interface, 0, sizeof(pika_interface));
 	memset(&globals, 0, sizeof(globals));
 	globals.general_config.region = PKH_TRUNK_NA;
@@ -1271,7 +1271,7 @@ zap_status_t pika_init(zap_io_interface_t **zint)
 	pika_interface.channel_destroy = pika_channel_destroy;
 	pika_interface.span_destroy = pika_span_destroy;
 	pika_interface.get_alarms = pika_get_alarms;
-	*zint = &pika_interface;
+	*zio = &pika_interface;
 
 
 	zap_log(ZAP_LOG_INFO, "Dumping Default configs:\n");
@@ -1313,7 +1313,8 @@ zap_status_t pika_init(zap_io_interface_t **zint)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t pika_destroy(void)
+
+static ZIO_IO_UNLOAD_FUNCTION(pika_destroy)
 {
 	uint32_t x;
 	PK_STATUS status;
@@ -1338,6 +1339,12 @@ zap_status_t pika_destroy(void)
 
 	return ZAP_SUCCESS;
 }
+
+zap_module_t zap_module = { 
+	"pika",
+	pika_init,
+	pika_destroy,
+};
 
 /* For Emacs:
  * Local Variables:

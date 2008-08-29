@@ -974,15 +974,15 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 	return NULL;
 }
 
-zap_status_t zap_ss7_boost_init(void)
+static ZIO_SIG_LOAD_FUNCTION(zap_ss7_boost_init)
 {
 	zap_mutex_create(&request_mutex);
 	zap_mutex_create(&signal_mutex);
-
+	
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_ss7_boost_start(zap_span_t *span)
+static zap_status_t zap_ss7_boost_start(zap_span_t *span)
 {
 	zap_ss7_boost_data_t *ss7_boost_data = span->signal_data;
 	zap_set_flag(ss7_boost_data, ZAP_SS7_BOOST_RUNNING);
@@ -1088,13 +1088,39 @@ static zap_state_map_t boost_state_map = {
 	}
 };
 
-zap_status_t zap_ss7_boost_configure_span(zap_span_t *span,
-										  const char *local_ip, int local_port, 
-										  const char *remote_ip, int remote_port,
-										  zio_signal_cb_t sig_cb)
+static ZIO_SIG_CONFIGURE_FUNCTION(zap_ss7_boost_configure_span)
 {
 	zap_ss7_boost_data_t *ss7_boost_data = NULL;
-	
+	char *local_ip = "127.0.0.65", *remote_ip = "127.0.0.66";
+	int local_port = 5300, remote_port = 5300;
+	char *var, *val;
+	int *intval;
+
+	while(var = va_arg(ap, char *)) {
+		if (!strcasecmp(var, "local_ip")) {
+			if (!(val = va_arg(ap, char *))) {
+				break;
+			}
+			local_ip = val;
+		} else if (!strcasecmp(var, "remote_ip")) {
+			if (!(val = va_arg(ap, char *))) {
+				break;
+			}
+			remote_ip = val;
+		} else if (!strcasecmp(var, "local_port")) {
+			if (!(intval = va_arg(ap, int *))) {
+				break;
+			}
+			local_port = *intval;
+		} else if (!strcasecmp(var, "remote_port")) {
+			if (!(intval = va_arg(ap, int *))) {
+				break;
+			}
+			remote_port = *intval;
+		}
+	}
+
+
 	if (!local_ip && local_port && remote_ip && remote_port && sig_cb) {
 		return ZAP_FAIL;
 	}
@@ -1108,7 +1134,7 @@ zap_status_t zap_ss7_boost_configure_span(zap_span_t *span,
 	zap_set_string(ss7_boost_data->mcon.cfg.remote_ip, remote_ip);
 	ss7_boost_data->mcon.cfg.remote_port = remote_port;
 	ss7_boost_data->signal_cb = sig_cb;
-	
+	span->start = zap_ss7_boost_start;
 	span->signal_data = ss7_boost_data;
     span->signal_type = ZAP_SIGTYPE_SS7BOOST;
     span->outgoing_call = ss7_boost_outgoing_call;
@@ -1118,6 +1144,16 @@ zap_status_t zap_ss7_boost_configure_span(zap_span_t *span,
 
 	return ZAP_SUCCESS;
 }
+
+
+zap_module_t zap_module = { 
+	"analog",
+	NULL,
+	NULL,
+	zap_ss7_boost_init,
+	zap_ss7_boost_configure_span,
+	NULL
+};
 
 /* For Emacs:
  * Local Variables:

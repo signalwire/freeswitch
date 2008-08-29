@@ -34,13 +34,13 @@
 #include <dlfcn.h>
 
 void zap_dso_destroy(zap_dso_lib_t *lib) {
-	if (lib) {
-		dlclose(lib);
-		lib = NULL;
+	if (lib && *lib) {
+		dlclose(*lib);
+		*lib = NULL;
 	}
 }
 
-zap_dso_lib_t zap_dso_open(const char *path, const char **err) {
+zap_dso_lib_t zap_dso_open(const char *path, char **err) {
 	void *lib = dlopen(path, RTLD_NOW | RTLD_LOCAL);
 	if (lib == NULL) {
 		*err = strdup(dlerror());
@@ -48,8 +48,8 @@ zap_dso_lib_t zap_dso_open(const char *path, const char **err) {
 	return lib;
 }
 
-zap_func_ptr_t zap_dso_func_sym(zap_dso_lib_t lib, const char *sym, const char **err) {
-	zap_dso_lib_t func = (zap_dso_lib_t)dlsym(lib, sym);
+void *zap_dso_func_sym(zap_dso_lib_t lib, const char *sym, char **err) {
+	void *func = dlsym(lib, sym);
 	if (!func) {
 		*err = strdup(dlerror());
 	}

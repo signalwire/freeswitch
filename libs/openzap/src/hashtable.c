@@ -230,6 +230,68 @@ hashtable_destroy(struct hashtable *h, int free_keys, int free_values)
     free(h);
 }
 
+struct hashtable_iterator *hashtable_next(struct hashtable_iterator *i)
+{
+
+	if (i->e) {
+		if ((i->e = i->e->next)) {
+			return i;
+		} else {
+			i->pos++;
+		}
+	}
+	
+	while(i->pos < i->h->tablelength && !i->h->table[i->pos]) {
+		i->pos++;
+	}
+	
+	if (i->pos >= i->h->tablelength) {
+		return NULL;
+	}
+	
+	if ((i->e = i->h->table[i->pos])) {
+		return i;
+	}
+
+	return NULL;
+}
+
+struct hashtable_iterator *hashtable_first(struct hashtable *h)
+{
+	h->iterator.pos = 0;
+	h->iterator.e = NULL;
+	h->iterator.h = h;
+	return hashtable_next(&h->iterator);
+}
+
+
+
+void hashtable_this(struct hashtable_iterator *i, const void **key, int *klen, void **val)
+{
+	if (i->e) {
+		if (key) {
+			*key = i->e->k;
+		}
+		if (klen) {
+			*klen = strlen(i->e->k);
+		}
+		if (val) {
+			*val = i->e->v;
+		}
+	} else {
+		if (key) {
+			*key = NULL;
+		}
+		if (klen) {
+			*klen = 0;
+		}
+		if (val) {
+			*val = NULL;
+		}
+	}
+}
+
+
 /*
  * Copyright (c) 2002, Christopher Clark
  * All rights reserved.

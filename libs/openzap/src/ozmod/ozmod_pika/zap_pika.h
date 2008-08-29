@@ -94,11 +94,6 @@ typedef enum {
 #define PIKA_SPAN_COMPAND_MODE_STRINGS "MU_LAW", "A_LAW"
 ZAP_STR2ENUM_P(pika_str2compand_mode, pika_compand_mode2str, PIKA_TSpanCompandMode)
 
-
-/* Openzap PIKA hardware interface functions */
-zap_status_t pika_init(zap_io_interface_t **zint);
-zap_status_t pika_destroy(void);
-
 #endif
 
 /* For Emacs:

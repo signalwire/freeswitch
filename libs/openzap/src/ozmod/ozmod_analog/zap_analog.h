@@ -31,12 +31,16 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ZAP_WANPIPE_H
-#define ZAP_WANPIPE_H
+#ifndef ZAP_ANALOG_H
+#define ZAP_ANALOG_H
 #include "openzap.h"
 
-zap_status_t wanpipe_init(zap_io_interface_t **zint);
-zap_status_t wanpipe_destroy(void);
+typedef enum {
+	ZAP_ANALOG_RUNNING = (1 << 0)
+} zap_analog_flag_t;
+
+static void *zap_analog_run(zap_thread_t *me, void *obj);
+typedef struct zap_analog_data zap_analog_data_t;
 
 #endif
 
@@ -50,4 +54,3 @@ zap_status_t wanpipe_destroy(void);
  * For VIM:
  * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
  */
-
