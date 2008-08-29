@@ -73,7 +73,7 @@ void ATT5ESSCreateTE(L3UCHAR i)
     Q931SetMesProc(Q931mes_CONNECT,             i,ATT5ESSProc0x07TE,           ATT5ESSUmes_0x07,           ATT5ESSPmes_0x07);
     Q931SetMesProc(Q931mes_CONNECT_ACKNOWLEDGE, i,ATT5ESSProc0x0fTE,           ATT5ESSUmes_0x0f,           ATT5ESSPmes_0x0f);
     Q931SetMesProc(Q931mes_PROGRESS,            i,Q931ProcProgressTE,          Q931Umes_Progress,          Q931Pmes_Progress);
-    Q931SetMesProc(Q931mes_SETUP,               i,Q931ProcSetupTE,             Q931Umes_Setup,             Q931Pmes_Setup);
+    Q931SetMesProc(Q931mes_SETUP,               i,Q931ProcSetupTE,             ATT5ESSUmes_Setup,          ATT5ESSPmes_Setup);
     Q931SetMesProc(Q931mes_SETUP_ACKNOWLEDGE,   i,Q931ProcSetupAckTE,          Q931Umes_SetupAck,          Q931Pmes_SetupAck);
     Q931SetMesProc(Q931mes_RESUME,              i,Q931ProcResumeTE,            Q931Umes_Resume,            Q931Pmes_Resume);
     Q931SetMesProc(Q931mes_RESUME_ACKNOWLEDGE,  i,Q931ProcResumeAckTE,         Q931Umes_ResumeAck,         Q931Pmes_ResumeAck);
