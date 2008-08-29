@@ -58,6 +58,8 @@ typedef ssize_t zap_ssize_t;
 typedef int zap_filehandle_t;
 #endif
 
+#define TAG_END NULL
+
 typedef size_t zap_size_t;
 struct zap_io_interface;
 

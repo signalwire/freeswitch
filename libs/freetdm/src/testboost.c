@@ -43,8 +43,8 @@ int main(int argc, char *argv[])
 						   "local_ip", "127.0.0.65",
 						   "local_port", &local_port,
 						   "remote_ip", "127.0.0.66",
-						   "remote_port", &remote_port
-						   ) == ZAP_SUCCESS) {
+						   "remote_port", &remote_port,
+						   TAG_END) == ZAP_SUCCESS) {
 		zap_span_start(span);
 	} else {
 		fprintf(stderr, "Error starting SS7_BOOST\n");

@@ -107,7 +107,6 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 	memset(analog_data, 0, sizeof(*analog_data));
 	assert(analog_data != NULL);
 
-
 	while(var = va_arg(ap, char *)) {
 		if (!strcasecmp(var, "tonemap")) {
 			if (!(val = va_arg(ap, char *))) {

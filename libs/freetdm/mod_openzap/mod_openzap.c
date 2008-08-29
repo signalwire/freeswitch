@@ -1538,6 +1538,7 @@ static switch_status_t load_config(void)
 				
 			if (!id) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param 'id'\n");
+				continue;
 			}
 
 			span_id = atoi(id);
@@ -1562,8 +1563,8 @@ static switch_status_t load_config(void)
 			if (zap_configure_span("analog", span, on_analog_signal, 
 								   "tonemap", tonegroup, 
 								   "digit_timeout", &to,
-								   "max_dialstr", &max
-								   ) != ZAP_SUCCESS) {
+								   "max_dialstr", &max,
+								   TAG_END) != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d\n", span_id);
 				continue;
 			}
@@ -1640,8 +1641,8 @@ static switch_status_t load_config(void)
 			
 			if (zap_configure_span("isdn", span, on_clear_channel_signal, 
 								   "mode", mode, 
-								   "dialect", dialect
-								   ) != ZAP_SUCCESS) {
+								   "dialect", dialect,
+								   TAG_END) != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d mode: %d dialect: %d error: %s\n", span_id, mode, dialect, span->last_error);
 				continue;
 			}
@@ -1689,7 +1690,7 @@ static switch_status_t load_config(void)
 				} 
 			}
 				
-			if (!(id && local_ip && local_port && remote_ip && remote_port) ) {
+			if (!id) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param\n");
 				continue;
 			}
@@ -1709,8 +1710,8 @@ static switch_status_t load_config(void)
 								   "local_ip", local_ip,
 								   "local_port", &local_port,
 								   "remote_ip", remote_ip,
-								   "remote_port", &remote_port
-								   ) != ZAP_SUCCESS) {
+								   "remote_port", &remote_port,
+								   TAG_END) != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d error: %s\n", span_id, span->last_error);
 				continue;
 			}

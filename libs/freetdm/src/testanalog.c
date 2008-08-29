@@ -98,7 +98,8 @@ int main(int argc, char *argv[])
 	if (zap_configure_span("analog", span, on_signal, 
 						   "tonemap", "te", 
 						   "digit_timeout", &digit_timeout,
-						   "max_dialstr", &max_dialstr
+						   "max_dialstr", &max_dialstr,
+						   TAG_END
 						   ) == ZAP_SUCCESS) {
 		zap_log(ZAP_LOG_ERROR, "Error configuring OpenZAP span\n");
 		goto done;

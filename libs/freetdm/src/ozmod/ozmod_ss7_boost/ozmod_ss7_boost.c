@@ -1122,6 +1122,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_ss7_boost_configure_span)
 
 
 	if (!local_ip && local_port && remote_ip && remote_port && sig_cb) {
+		zap_set_string(span->last_error, "missing params");
 		return ZAP_FAIL;
 	}
 
@@ -1147,7 +1148,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_ss7_boost_configure_span)
 
 
 zap_module_t zap_module = { 
-	"analog",
+	"ss7_boost",
 	NULL,
 	NULL,
 	zap_ss7_boost_init,
