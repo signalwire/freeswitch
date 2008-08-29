@@ -1,15 +1,24 @@
 #include "openzap.h"
-#include "zap_ss7_boost.h"
 
 static ZIO_SIGNAL_CB_FUNCTION(on_signal)
 {
 	return ZAP_FAIL;
 }
 
+static int R = 0;
+static void handle_SIGINT(int sig)
+{
+	if (sig);
+	R = 0;
+	return;
+}
+
 int main(int argc, char *argv[])
 {
 	zap_span_t *span;
-	zap_ss7_boost_data_t *data;
+	int local_port, remote_port;
+
+	local_port = remote_port = 53000;
 
 	zap_global_set_default_logger(ZAP_LOG_LEVEL_DEBUG);
 
@@ -30,16 +39,19 @@ int main(int argc, char *argv[])
 		goto done;
 	}
 	
-
-	if (zap_ss7_boost_configure_span(span, "127.0.0.65", 53000, "127.0.0.66", 53000, on_signal) == ZAP_SUCCESS) {
-		data = span->signal_data;
-		zap_ss7_boost_start(span);
+	if (zap_configure_span("ss7_boost", span, on_signal, 
+						   "local_ip", "127.0.0.65",
+						   "local_port", &local_port,
+						   "remote_ip", "127.0.0.66",
+						   "remote_port", &remote_port
+						   ) == ZAP_SUCCESS) {
+		zap_span_start(span);
 	} else {
 		fprintf(stderr, "Error starting SS7_BOOST\n");
 		goto done;
 	}
 
-	while(zap_test_flag(data, ZAP_SS7_BOOST_RUNNING)) {
+	while(zap_running() && R) {
 		zap_sleep(1 * 1000);
 	}
 

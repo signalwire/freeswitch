@@ -33,7 +33,7 @@
 
 
 #include "openzap.h"
-#include "zap_zt.h"
+#include "ozmod_zt.h"
 
 
 static struct {
@@ -737,7 +737,7 @@ static ZIO_CHANNEL_DESTROY_FUNCTION(zt_channel_destroy)
 
 static zap_io_interface_t zt_interface;
 
-zap_status_t zt_init(zap_io_interface_t **zio)
+static ZIO_IO_LOAD_FUNCTION(zt_init)
 {
 	assert(zio != NULL);
 	memset(&zt_interface, 0, sizeof(zt_interface));
@@ -772,12 +772,19 @@ zap_status_t zt_init(zap_io_interface_t **zio)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zt_destroy(void)
+static ZIO_IO_UNLOAD_FUNCTION(zt_destroy)
 {
 	close(CONTROL_FD);
 	memset(&zt_interface, 0, sizeof(zt_interface));
 	return ZAP_SUCCESS;
 }
+
+
+zap_module_t zap_module = { 
+	"zt",
+	zt_init,
+	zt_destroy,
+};
 
 /* For Emacs:
  * Local Variables:

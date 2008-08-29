@@ -31,12 +31,22 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ZAP_SKEL_H
-#define ZAP_SKEL_H
+#ifndef ZAP_SS7_BOOST_H
+#define ZAP_SS7_BOOST_H
+#include "ss7_boost_client.h"
 #include "openzap.h"
 
-zap_status_t skel_init(zap_software_interface_t **zint);
-zap_status_t skel_destroy(void);
+typedef enum {
+	ZAP_SS7_BOOST_RUNNING = (1 << 0),
+	ZAP_SS7_BOOST_RESTARTING = (1 << 1)
+} zap_ss7_boost_flag_t;
+
+typedef struct zap_ss7_boost_data {
+	ss7bc_connection_t mcon;
+	ss7bc_connection_t pcon;
+	zio_signal_cb_t signal_cb;
+	uint32_t flags;
+} zap_ss7_boost_data_t;
 
 #endif
 
@@ -50,3 +60,4 @@ zap_status_t skel_destroy(void);
  * For VIM:
  * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
  */
+

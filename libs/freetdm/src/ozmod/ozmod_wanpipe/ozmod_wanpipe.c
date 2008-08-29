@@ -36,10 +36,9 @@
 #include <stropts.h>
 #endif
 #include "openzap.h"
-#include "zap_wanpipe.h"
 #include <poll.h>
 #include <sys/socket.h>
-#include <wanpipe_tdm_api_iface.h>
+#include "wanpipe_tdm_api_iface.h"
 
 typedef enum {
 	WP_RINGING = (1 << 0)
@@ -935,7 +934,7 @@ static ZIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t wanpipe_init(zap_io_interface_t **zio)
+static ZIO_IO_LOAD_FUNCTION(wanpipe_init)
 {
 	assert(zio != NULL);
 	memset(&wanpipe_interface, 0, sizeof(wanpipe_interface));
@@ -964,11 +963,18 @@ zap_status_t wanpipe_init(zap_io_interface_t **zio)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t wanpipe_destroy(void)
+static ZIO_IO_UNLOAD_FUNCTION(wanpipe_destroy)
 {
 	memset(&wanpipe_interface, 0, sizeof(wanpipe_interface));
 	return ZAP_SUCCESS;
 }
+
+
+zap_module_t zap_module = { 
+	"wanpipe",
+	wanpipe_init,
+	wanpipe_destroy,
+};
 
 /* For Emacs:
  * Local Variables:

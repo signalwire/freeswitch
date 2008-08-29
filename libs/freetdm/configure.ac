@@ -10,6 +10,9 @@ AC_PROG_CC
 AC_PROG_MAKE_SET
 AC_PROG_RANLIB
 
+
+AC_PREFIX_DEFAULT(/usr/local/openzap)
+
 # Check for com;iler type
 AC_DEFUN([AX_COMPILER_VENDOR],
 [

@@ -31,9 +31,6 @@
  */
 #include <switch.h>
 #include "openzap.h"
-#include "zap_analog.h"
-#include "zap_isdn.h"
-#include "zap_ss7_boost.h"
 
 #ifndef __FUNCTION__
 #define __FUNCTION__ __SWITCH_FUNC__
@@ -1562,7 +1559,11 @@ static switch_status_t load_config(void)
 				continue;
 			}
 
-			if (zap_analog_configure_span(span, tonegroup, to, max, on_analog_signal) != ZAP_SUCCESS) {
+			if (zap_configure_span("analog", span, on_analog_signal, 
+								   "tonemap", tonegroup, 
+								   "digit_timeout", &to,
+								   "max_dialstr", &max
+								   ) != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d\n", span_id);
 				continue;
 			}
@@ -1584,7 +1585,7 @@ static switch_status_t load_config(void)
 				switch_set_string(SPAN_CONFIG[span->span_id].hold_music, hold_music);
 			}
 			switch_copy_string(SPAN_CONFIG[span->span_id].type, "analog", sizeof(SPAN_CONFIG[span->span_id].type));
-			zap_analog_start(span);
+			zap_span_start(span);
 		}
 	}
 
@@ -1593,12 +1594,14 @@ static switch_status_t load_config(void)
 			char *id = (char *) switch_xml_attr_soft(myspan, "id");
 			char *context = "default";
 			char *dialplan = "XML";
-			Q921NetUser_t mode = Q931_TE;
-			Q931Dialect_t dialect = Q931_Dialect_National;
+			//Q921NetUser_t mode = Q931_TE;
+			//Q931Dialect_t dialect = Q931_Dialect_National;
+			char *mode = NULL;
+			char *dialect = NULL;
 			uint32_t span_id = 0;
 			zap_span_t *span = NULL;
 			char *tonegroup = NULL;
-			zap_isdn_opts_t opts = ZAP_ISDN_OPT_NONE;
+			uint32_t opts = 0;
 			
 			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -1607,16 +1610,13 @@ static switch_status_t load_config(void)
 				if (!strcasecmp(var, "tonegroup")) {
 					tonegroup = val;
 				} else if (!strcasecmp(var, "mode")) {
-					mode = strcasecmp(val, "net") ? Q931_TE : Q931_NT;
+					mode = val;
 				} else if (!strcasecmp(var, "dialect")) {
-					dialect = q931_str2Q931Dialect_type(val);
-					if (dialect == Q931_Dialect_Count) {
-						dialect = Q931_Dialect_National;
-					}
+					dialect = val;
 				} else if (!strcasecmp(var, "context")) {
 					context = val;
 				} else if (!strcasecmp(var, "suggest-channel") && switch_true(val)) {
-					opts |= ZAP_ISDN_OPT_SUGGEST_CHANNEL;
+					opts |= 1;
 				} else if (!strcasecmp(var, "dialplan")) {
 					dialplan = val;
 				} 
@@ -1637,8 +1637,11 @@ static switch_status_t load_config(void)
 				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span %d\n", span_id);
 				continue;
 			}
-
-			if (zap_isdn_configure_span(span, mode, dialect, opts, on_clear_channel_signal) != ZAP_SUCCESS) {
+			
+			if (zap_configure_span("isdn", span, on_clear_channel_signal, 
+								   "mode", mode, 
+								   "dialect", dialect
+								   ) != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d mode: %d dialect: %d error: %s\n", span_id, mode, dialect, span->last_error);
 				continue;
 			}
@@ -1648,7 +1651,7 @@ static switch_status_t load_config(void)
 			switch_copy_string(SPAN_CONFIG[span->span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span->span_id].dialplan));
 			switch_copy_string(SPAN_CONFIG[span->span_id].type, "isdn", sizeof(SPAN_CONFIG[span->span_id].type));
 
-			zap_isdn_start(span);
+			zap_span_start(span);
 		}
 	}
 
@@ -1702,7 +1705,12 @@ static switch_status_t load_config(void)
 				continue;
 			}
 
-			if (zap_ss7_boost_configure_span(span, local_ip, local_port, remote_ip, remote_port, on_clear_channel_signal) != ZAP_SUCCESS) {
+			if (zap_configure_span("ss7_boost", span, on_clear_channel_signal, 
+								   "local_ip", local_ip,
+								   "local_port", &local_port,
+								   "remote_ip", remote_ip,
+								   "remote_port", &remote_port
+								   ) != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d error: %s\n", span_id, span->last_error);
 				continue;
 			}
@@ -1711,7 +1719,7 @@ static switch_status_t load_config(void)
 			switch_copy_string(SPAN_CONFIG[span->span_id].context, context, sizeof(SPAN_CONFIG[span->span_id].context));
 			switch_copy_string(SPAN_CONFIG[span->span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span->span_id].dialplan));
 
-			zap_ss7_boost_start(span);
+			zap_span_start(span);
 			switch_copy_string(SPAN_CONFIG[span->span_id].type, "ss7 (boost)", sizeof(SPAN_CONFIG[span->span_id].type));
 		}
 	}

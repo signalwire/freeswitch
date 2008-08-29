@@ -479,6 +479,7 @@ struct zap_span {
 	zap_channel_t channels[ZAP_MAX_CHANNELS_SPAN];
 	zio_channel_outgoing_call_t outgoing_call;
 	zio_channel_request_t channel_request;
+	zap_span_start_t start;
 	void *mod_data;
 	char *type;
 	int suggest_chan_id;
@@ -579,6 +580,10 @@ uint32_t zap_hash_hashfromstring(void *ky);
 uint32_t zap_running(void);
 zap_status_t zap_channel_complete_state(zap_channel_t *zchan);
 zap_status_t zap_channel_init(zap_channel_t *zchan);
+int zap_load_modules(void);
+zap_status_t zap_unload_modules(void);
+zap_status_t zap_configure_span(const char *type, zap_span_t *span, zio_signal_cb_t sig_cb, ...);
+zap_status_t zap_span_start(zap_span_t *span);
 
 ZIO_CODEC_FUNCTION(zio_slin2ulaw);
 ZIO_CODEC_FUNCTION(zio_ulaw2slin);

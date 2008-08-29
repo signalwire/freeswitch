@@ -7,11 +7,18 @@
 
 
 /*****************************************************************************/
+
 struct entry
 {
     void *k, *v;
     unsigned int h;
     struct entry *next;
+};
+
+struct hashtable_iterator {
+	int pos;
+	struct entry *e;
+	struct hashtable *h;
 };
 
 struct hashtable {
@@ -22,6 +29,7 @@ struct hashtable {
     unsigned int primeindex;
     unsigned int (*hashfn) (void *k);
     int (*eqfn) (void *k1, void *k2);
+	struct hashtable_iterator iterator;
 };
 
 /*****************************************************************************/

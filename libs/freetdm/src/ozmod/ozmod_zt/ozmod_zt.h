@@ -280,10 +280,6 @@ ZT_SIG_HDLCFCS				= ((1 << 9)  | ZT_SIG_HDLCRAW)
 #define		ZT_ECHOTRAIN		_IOW  (ZT_CODE, 50, int)				/* Control Echo Trainer */
 
 
-/* Openzap ZT hardware interface functions */
-zap_status_t zt_init(zap_io_interface_t **zint);
-zap_status_t zt_destroy(void);
-
 #endif
 
 /* For Emacs:

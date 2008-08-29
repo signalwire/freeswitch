@@ -32,21 +32,13 @@
  */
 
 #ifndef WIN32
-#define ZAP_ZT_SUPPORT
-#define ZAP_WANPIPE_SUPPORT
 #endif
 #include "openzap.h"
-#include "zap_isdn.h"
-#include "zap_ss7_boost.h"
+//#include "zap_isdn.h"
+//#include "zap_ss7_boost.h"
 #include <stdarg.h>
 #ifdef WIN32
 #include <io.h>
-#endif
-#ifdef ZAP_WANPIPE_SUPPORT
-#include "zap_wanpipe.h"
-#endif
-#ifdef ZAP_ZT_SUPPORT
-#include "zap_zt.h"
 #endif
 #ifdef ZAP_PIKA_SUPPORT
 #include "zap_pika.h"
@@ -83,6 +75,7 @@ zap_time_t zap_current_time_in_ms(void)
 
 static struct {
 	zap_hash_t *interface_hash;
+	zap_hash_t *module_hash;
 	zap_mutex_t *mutex;
 	struct zap_span spans[ZAP_MAX_SPANS_INTERFACE];
 	uint32_t span_index;
@@ -1929,8 +1922,6 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t data
 }
 
 static struct {
-	zap_io_interface_t *wanpipe_interface;
-	zap_io_interface_t *zt_interface;
 	zap_io_interface_t *pika_interface;
 } interfaces;
 
@@ -2104,6 +2095,173 @@ static zap_status_t process_module_config(zap_io_interface_t *zio)
 	return ZAP_SUCCESS;
 }
 
+int zap_load_modules(void)
+{
+	char cfg_name[] = "modules.conf";
+	char path[128] = "";
+	zap_config_t cfg;
+	char *err;
+	char *var, *val;
+	zap_module_t *mod;
+	int count = 0;
+
+#ifdef WIN32
+    const char *ext = ".dll";
+    //const char *EXT = ".DLL";
+#elif defined (MACOSX) || defined (DARWIN)
+    const char *ext = ".dylib";
+    //const char *EXT = ".DYLIB";
+#else
+    const char *ext = ".so";
+    //const char *EXT = ".SO";
+#endif
+
+	
+	if (!zap_config_open_file(&cfg, cfg_name)) {
+        return ZAP_FAIL;
+    }
+
+	while (zap_config_next_pair(&cfg, &var, &val)) {
+        if (!strcasecmp(cfg.category, "modules")) {
+			if (!strcasecmp(var, "load")) {
+				zap_dso_lib_t lib;
+				int x = 0;
+
+				if (*val == *ZAP_PATH_SEPARATOR) {
+					snprintf(path, sizeof(path), "%s%s", val, ext);
+				} else {
+					snprintf(path, sizeof(path), "%s%s%s%s", ZAP_MOD_DIR, ZAP_PATH_SEPARATOR, val, ext);
+				}
+				
+				if (!(lib = zap_dso_open(path, &err))) {
+					zap_log(ZAP_LOG_ERROR, "Error loading %s [%s]\n", path, err);
+					free(err);
+					continue;
+				}
+				
+				if (!(mod = (zap_module_t *) zap_dso_func_sym(lib, "zap_module", &err))) {
+					zap_log(ZAP_LOG_ERROR, "Error loading %s [%s]\n", path, err);
+					free(err);
+					continue;
+				}
+
+				if (mod->io_load) {
+					zap_io_interface_t *interface;
+
+					if (mod->io_load(&interface) != ZAP_SUCCESS || !interface) {
+						zap_log(ZAP_LOG_ERROR, "Error loading %s [%s]\n", path, err);
+					} else {
+						zap_log(ZAP_LOG_INFO, "Loading IO from %s\n", path);
+						zap_mutex_lock(globals.mutex);
+						hashtable_insert(globals.interface_hash, (void *)interface->name, interface);
+						process_module_config(interface);
+						zap_mutex_unlock(globals.mutex);
+						x++;
+					}
+				}
+
+				if (mod->sig_load) {
+					if (mod->sig_load() != ZAP_SUCCESS) {
+						zap_log(ZAP_LOG_ERROR, "Error loading %s [%s]\n", path, err);
+					} else {
+						zap_log(ZAP_LOG_INFO, "Loading SIG from %s\n", path);
+						x++;
+					}
+				}
+
+				if (x) {
+					char *p;
+					mod->lib = lib;
+					zap_set_string(mod->path, path);
+					if (mod->name[0] == '\0') {
+						if (!(p = strrchr(path, *ZAP_PATH_SEPARATOR))) {
+							p = path;
+						}
+						zap_set_string(mod->name, p);
+					}
+
+					hashtable_insert(globals.module_hash, (void *)mod->name, mod);
+					count++;
+				} else {
+					zap_log(ZAP_LOG_ERROR, "Unloading %s\n", path);
+					zap_dso_destroy(&lib);
+				}
+			}
+		}
+	}
+			
+	return count;
+}
+
+zap_status_t zap_unload_modules(void)
+{
+	zap_hash_iterator_t *i;
+	zap_dso_lib_t lib;
+
+	for (i = hashtable_first(globals.module_hash); i; i = hashtable_next(i)) {
+		const void *key;
+		void *val;
+
+		hashtable_this(i, &key, NULL, &val);
+		
+		if (key && val) {
+			zap_module_t *mod = (zap_module_t *) val;
+
+			if (!mod) {
+				continue;
+			}
+
+			if (mod->io_unload) {
+				if (mod->io_unload() == ZAP_SUCCESS) {
+					zap_log(ZAP_LOG_INFO, "Unloading IO %s\n", mod->name);
+				} else {
+					zap_log(ZAP_LOG_ERROR, "Error unloading IO %s\n", mod->name);
+				}
+			} 
+
+			if (mod->sig_unload) {
+				if (mod->sig_unload() == ZAP_SUCCESS) {
+					zap_log(ZAP_LOG_INFO, "Unloading SIG %s\n", mod->name);
+				} else {
+					zap_log(ZAP_LOG_ERROR, "Error unloading SIG %s\n", mod->name);
+				}
+			} 
+			
+
+			zap_log(ZAP_LOG_INFO, "Unloading %s\n", mod->path);
+			lib = mod->lib;
+			zap_dso_destroy(&lib);
+			
+		}
+	}
+
+	return ZAP_SUCCESS;
+}
+
+zap_status_t zap_configure_span(const char *type, zap_span_t *span, zio_signal_cb_t sig_cb, ...)
+{
+	zap_module_t *mod = (zap_module_t *) hashtable_search(globals.module_hash, (void *)type);
+	zap_status_t status = ZAP_FAIL;
+
+	if (mod && mod->sig_configure) {
+		va_list ap;
+		va_start(ap, sig_cb);
+		status = mod->sig_configure(span, sig_cb, ap);
+		va_end(ap);
+	}
+	return status;
+}
+
+zap_status_t zap_span_start(zap_span_t *span)
+{
+	if (span->start) {
+		return span->start(span);
+	}
+
+	return ZAP_FAIL;
+}
+
+
 zap_status_t zap_global_init(void)
 {
 	int modcount;
@@ -2111,50 +2269,17 @@ zap_status_t zap_global_init(void)
 	memset(&globals, 0, sizeof(globals));
 
 	time_init();
-	zap_isdn_init();
-	zap_ss7_boost_init();
+	//zap_isdn_init();
+	//zap_ss7_boost_init();
 	
 	memset(&interfaces, 0, sizeof(interfaces));
 	globals.interface_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
+	globals.module_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
 	modcount = 0;
 	zap_mutex_create(&globals.mutex);
 	
-#ifdef ZAP_WANPIPE_SUPPORT
-	if (wanpipe_init(&interfaces.wanpipe_interface) == ZAP_SUCCESS) {
-		zap_mutex_lock(globals.mutex);
-		hashtable_insert(globals.interface_hash, (void *)interfaces.wanpipe_interface->name, interfaces.wanpipe_interface);
-		process_module_config(interfaces.wanpipe_interface);
-		zap_mutex_unlock(globals.mutex);
-		modcount++;
-	} else {
-		zap_log(ZAP_LOG_ERROR, "Error initilizing wanpipe.\n");	
-	}
-#endif
 
-#ifdef ZAP_ZT_SUPPORT
-	if (zt_init(&interfaces.zt_interface) == ZAP_SUCCESS) {
-		zap_mutex_lock(globals.mutex);
-		hashtable_insert(globals.interface_hash, (void *)interfaces.zt_interface->name, interfaces.zt_interface);
-		process_module_config(interfaces.zt_interface);
-		zap_mutex_unlock(globals.mutex);
-		modcount++;
-	} else {
-		zap_log(ZAP_LOG_ERROR, "Error initilizing zt.\n");	
-	}
-#endif
-
-#ifdef ZAP_PIKA_SUPPORT
-    if (pika_init(&interfaces.pika_interface) == ZAP_SUCCESS) {
-        zap_mutex_lock(globals.mutex);
-        hashtable_insert(globals.interface_hash, (void *)interfaces.pika_interface->name, interfaces.pika_interface);
-        process_module_config(interfaces.pika_interface);
-        zap_mutex_unlock(globals.mutex);
-        modcount++;
-    } else {
-        zap_log(ZAP_LOG_ERROR, "Error initilizing pika.\n");
-    }
-#endif
-
+	modcount = zap_load_modules();
 
 	if (!modcount) {
 		zap_log(ZAP_LOG_ERROR, "Error initilizing anything.\n");	
@@ -2209,27 +2334,11 @@ zap_status_t zap_global_destroy(void)
 		}
 	}
 
-
-#ifdef ZAP_ZT_SUPPORT
-	if (interfaces.zt_interface) {
-		zt_destroy();		
-	}
-#endif
-
-#ifdef ZAP_PIKA_SUPPORT
-	if (interfaces.pika_interface) {
-		pika_destroy();		
-	}
-#endif
-
-#ifdef ZAP_WANPIPE_SUPPORT
-	if (interfaces.wanpipe_interface) {
-		wanpipe_destroy();
-	}
-#endif
+	zap_unload_modules();
 
 	zap_mutex_lock(globals.mutex);
 	hashtable_destroy(globals.interface_hash, 0, 0);
+	hashtable_destroy(globals.module_hash, 0, 0);
 	zap_mutex_unlock(globals.mutex);
 	zap_mutex_destroy(&globals.mutex);
 
@@ -2408,7 +2517,6 @@ void print_bits(uint8_t *b, int bl, char *buf, int blen, zap_endian_t e, uint8_t
 	}
 
 }
-
 
 /* For Emacs:
  * Local Variables:

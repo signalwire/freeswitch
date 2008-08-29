@@ -1,16 +1,24 @@
 #include "openzap.h"
-#include "zap_isdn.h"
+#include <signal.h>
+
 
 static ZIO_SIGNAL_CB_FUNCTION(on_signal)
 {
 	return ZAP_FAIL;
 }
 
+static int R = 0;
+static void handle_SIGINT(int sig)
+{
+	if (sig);
+	R = 0;
+	return;
+}
+
 int main(int argc, char *argv[])
 {
 	zap_span_t *span;
-	zap_isdn_data_t *data;
-
+	
 	zap_global_set_default_logger(ZAP_LOG_LEVEL_DEBUG);
 
 	if (argc < 2) {
@@ -31,15 +39,30 @@ int main(int argc, char *argv[])
 	}
 	
 	
+#if 1
+
+	if (zap_configure_span("isdn", span, on_signal, 
+						   "mode", "te", 
+						   "dialect", "national"
+						   ) == ZAP_SUCCESS) {
+		zap_span_start(span);
+	} else {
+		fprintf(stderr, "Error starting ISDN D-Channel\n");
+		goto done;
+	}
+#else 
 	if (zap_isdn_configure_span(span, Q931_TE, Q931_Dialect_National, 0, on_signal) == ZAP_SUCCESS) {
-		data = span->signal_data;
 		zap_isdn_start(span);
 	} else {
 		fprintf(stderr, "Error starting ISDN D-Channel\n");
 		goto done;
 	}
 
-	while(zap_test_flag(data, ZAP_ISDN_RUNNING)) {
+#endif
+
+	signal(SIGINT, handle_SIGINT);
+	R = 1;
+	while(R) {
 		zap_sleep(1 * 1000);
 	}
 

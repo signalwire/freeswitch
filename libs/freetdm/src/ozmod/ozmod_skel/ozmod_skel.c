@@ -33,52 +33,40 @@
 
 
 #include "openzap.h"
-#include "zap_skel.h"
+//#include "zap_skel.h"
 
 static ZIO_CONFIGURE_FUNCTION(skel_configure)
 {
-	ZIO_CONFIGURE_MUZZLE;
 	return ZAP_FAIL;
 }
 
 static ZIO_CONFIGURE_SPAN_FUNCTION(skel_configure_span)
 {
-
+	return ZAP_FAIL;
 }
 
 static ZIO_OPEN_FUNCTION(skel_open) 
 {
-	ZIO_OPEN_MUZZLE;
 	return ZAP_FAIL;
 }
 
 static ZIO_CLOSE_FUNCTION(skel_close)
 {
-	ZIO_CLOSE_MUZZLE;
-	return ZAP_FAIL;
-}
-
-static ZIO_SET_INTERVAL_FUNCTION(skel_set_interval)
-{
-	ZIO_SET_INTERVAL_MUZZLE;
 	return ZAP_FAIL;
 }
 
 static ZIO_WAIT_FUNCTION(skel_wait)
 {
-	ZIO_WAIT_MUZZLE;
 	return ZAP_FAIL;
 }
 
 static ZIO_READ_FUNCTION(skel_read)
 {
-	ZIO_READ_MUZZLE;
 	return ZAP_FAIL;
 }
 
 static ZIO_WRITE_FUNCTION(skel_write)
 {
-	ZIO_WRITE_MUZZLE;
 	return ZAP_FAIL;
 }
 
@@ -102,21 +90,21 @@ static ZIO_CHANNEL_DESTROY_FUNCTION(skel_channel_destroy)
 	return ZAP_FAIL;
 }
 
-static ZIO_CHANNEL_DESTROY_FUNCTION(skel_span_destroy)
+static ZIO_SPAN_DESTROY_FUNCTION(skel_span_destroy)
 {
 	return ZAP_FAIL;
 }
 
 static ZIO_GET_ALARMS_FUNCTION(skel_get_alarms)
 {
-	return zap_fail;
+	return ZAP_FAIL;
 }
 
 static zap_io_interface_t skel_interface;
 
-zap_status_t skel_init(zap_io_interface_t **zint)
+static ZIO_IO_LOAD_FUNCTION(skel_init)
 {
-	assert(zint != NULL);
+	assert(zio != NULL);
 	memset(&skel_interface, 0, sizeof(skel_interface));
 
 	skel_interface.name = "skel";
@@ -133,15 +121,23 @@ zap_status_t skel_init(zap_io_interface_t **zint)
 	skel_interface.channel_destroy = skel_channel_destroy;
 	skel_interface.span_destroy = skel_span_destroy;
 	skel_interface.get_alarms = skel_get_alarms;
-	*zint = &skel_interface;
+	*zio = &skel_interface;
 
-	return ZAP_FAIL;
+	return ZAP_SUCCESS;
 }
 
-zap_status_t skel_destroy(void)
+static ZIO_IO_UNLOAD_FUNCTION(skel_destroy)
 {
-	return ZAP_FAIL;
+	return ZAP_SUCCESS;
 }
+
+
+zap_module_t zap_module = { 
+	"skel",
+	skel_init,
+	skel_destroy,
+};
+
 
 /* For Emacs:
  * Local Variables:

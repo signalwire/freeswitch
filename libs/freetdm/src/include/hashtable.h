@@ -9,6 +9,7 @@
 #endif
 
 struct hashtable;
+struct hashtable_iterator;
 
 /* Example of use:
  *
@@ -167,6 +168,10 @@ hashtable_count(struct hashtable *h);
 
 void
 hashtable_destroy(struct hashtable *h, int free_keys, int free_values);
+
+struct hashtable_iterator *hashtable_first(struct hashtable *h);
+struct hashtable_iterator *hashtable_next(struct hashtable_iterator *i);
+void hashtable_this(struct hashtable_iterator *i, const void **key, int *klen, void **val);
 
 #endif /* __HASHTABLE_CWC22_H__ */
 
