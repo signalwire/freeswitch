@@ -95,6 +95,7 @@ L3INT ATT5ESSUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic
             case Q931ie_TRANSIT_NETWORK_SELECTION:
             case Q931ie_LOW_LAYER_COMPATIBILITY:
             case Q931ie_HIGH_LAYER_COMPATIBILITY:
+            case Q931ie_FACILITY:
                 rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
                 if(rc != Q931E_NO_ERROR) 
                     return rc;
