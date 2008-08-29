@@ -38,27 +38,15 @@ int main(int argc, char *argv[])
 		goto done;
 	}
 	
-	
-#if 1
-
 	if (zap_configure_span("isdn", span, on_signal, 
 						   "mode", "te", 
-						   "dialect", "national"
-						   ) == ZAP_SUCCESS) {
+						   "dialect", "national",
+						   TAG_END) == ZAP_SUCCESS) {
 		zap_span_start(span);
 	} else {
 		fprintf(stderr, "Error starting ISDN D-Channel\n");
 		goto done;
 	}
-#else 
-	if (zap_isdn_configure_span(span, Q931_TE, Q931_Dialect_National, 0, on_signal) == ZAP_SUCCESS) {
-		zap_isdn_start(span);
-	} else {
-		fprintf(stderr, "Error starting ISDN D-Channel\n");
-		goto done;
-	}
-
-#endif
 
 	signal(SIGINT, handle_SIGINT);
 	R = 1;

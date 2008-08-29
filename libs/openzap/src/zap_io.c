@@ -2135,13 +2135,13 @@ int zap_load_modules(void)
 				
 				if (!(lib = zap_dso_open(path, &err))) {
 					zap_log(ZAP_LOG_ERROR, "Error loading %s [%s]\n", path, err);
-					free(err);
+					zap_safe_free(err);
 					continue;
 				}
 				
 				if (!(mod = (zap_module_t *) zap_dso_func_sym(lib, "zap_module", &err))) {
 					zap_log(ZAP_LOG_ERROR, "Error loading %s [%s]\n", path, err);
-					free(err);
+					zap_safe_free(err);
 					continue;
 				}
 
@@ -2149,20 +2149,24 @@ int zap_load_modules(void)
 					zap_io_interface_t *interface;
 
 					if (mod->io_load(&interface) != ZAP_SUCCESS || !interface) {
-						zap_log(ZAP_LOG_ERROR, "Error loading %s [%s]\n", path, err);
+						zap_log(ZAP_LOG_ERROR, "Error loading %s\n", path);
 					} else {
 						zap_log(ZAP_LOG_INFO, "Loading IO from %s\n", path);
 						zap_mutex_lock(globals.mutex);
-						hashtable_insert(globals.interface_hash, (void *)interface->name, interface);
-						process_module_config(interface);
+						if (hashtable_search(globals.interface_hash, (void *)interface->name)) {
+							zap_log(ZAP_LOG_ERROR, "Interface %s already loaded!\n", interface->name);
+						} else {
+							hashtable_insert(globals.interface_hash, (void *)interface->name, interface);
+							process_module_config(interface);
+							x++;
+						}
 						zap_mutex_unlock(globals.mutex);
-						x++;
 					}
 				}
 
 				if (mod->sig_load) {
 					if (mod->sig_load() != ZAP_SUCCESS) {
-						zap_log(ZAP_LOG_ERROR, "Error loading %s [%s]\n", path, err);
+						zap_log(ZAP_LOG_ERROR, "Error loading %s\n", path);
 					} else {
 						zap_log(ZAP_LOG_INFO, "Loading SIG from %s\n", path);
 						x++;
@@ -2180,8 +2184,15 @@ int zap_load_modules(void)
 						zap_set_string(mod->name, p);
 					}
 
-					hashtable_insert(globals.module_hash, (void *)mod->name, mod);
-					count++;
+					zap_mutex_lock(globals.mutex);
+					if (hashtable_search(globals.module_hash, (void *)mod->name)) {
+						zap_log(ZAP_LOG_ERROR, "Module %s already loaded!\n", mod->name);
+						zap_dso_destroy(&lib);
+					} else {
+						hashtable_insert(globals.module_hash, (void *)mod->name, mod);
+						count++;
+					}
+					zap_mutex_unlock(globals.mutex);
 				} else {
 					zap_log(ZAP_LOG_ERROR, "Unloading %s\n", path);
 					zap_dso_destroy(&lib);
