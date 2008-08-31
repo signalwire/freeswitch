@@ -293,6 +293,39 @@
       </condition>
     </extension>
 
+    <!--
+       This extension is used with linksys phones.
+
+       Set a Phone tab option Call Park Serv to yes. You can park and
+       pickup using soft keys "park" and "unpark" found during
+       active call when moving navigation button. The other option
+       is to use phone's star codes (defaults to *38 and *39).
+    -->
+    <extension name="park">
+     <condition field="source" expression="mod_sofia"/>
+      <condition field="destination_number" expression="callpark"/>
+       <condition field="${sip_refer_to}">
+        <expression><![CDATA[<sip:callpark@${domain};orbit=(\d+)>]]></expression>
+         <action application="fifo" data="$1@${domain} in undef $${hold_music}"/>
+       </condition>
+    </extension>
+
+    <!--
+       This extension is used with linksys phones.
+
+       The extension is parking pickup with a to param of the fifo
+       we are calling. Linksys sends orbit=<parkingslotnumber>
+       and we extract that info.
+    -->
+    <extension name="unpark">
+     <condition field="source" expression="mod_sofia"/>
+      <condition field="destination_number" expression="pickup"/>
+       <condition field="${sip_to_params}" expression="orbit\=(\d+)">
+        <action application="answer"/>
+        <action application="fifo" data="$1@${domain} out nowait"/>
+       </condition>
+    </extension>
+
     <extension name="show_info">
       <condition field="destination_number" expression="^9992$">
 	<action application="answer"/>
