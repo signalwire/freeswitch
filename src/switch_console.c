@@ -222,7 +222,7 @@ static int switch_console_process(char *cmd, int rec)
 		return 0;
 	}
 	if (!strcmp(cmd, "version")) {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "FreeSwitch Version %s\n", SWITCH_VERSION_FULL);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "FreeSWITCH Version %s\n", SWITCH_VERSION_FULL);
 		return 1;
 	}
 	if ((arg = strchr(cmd, '\r')) != 0 || (arg = strchr(cmd, '\n')) != 0) {
