@@ -817,6 +817,8 @@ static int Q921LogMesg(L2TRUNK trunk, Q921LogLevel_t level, L2UCHAR received, L2
 	}
 
 out:
+	buf[sizeof(buf) - 1] = '\0';
+
 	return trunk->Q921LogProc(trunk->PrivateDataLog, level, buf, strlen(buf));
 }
 
