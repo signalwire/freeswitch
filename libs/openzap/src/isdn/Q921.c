@@ -576,6 +576,7 @@ static int Q921LogMesg(L2TRUNK trunk, Q921LogLevel_t level, L2UCHAR received, L2
 	if(!mes)
 		return 0;
 
+	memset(buf, 0, sizeof(buf));
 
 	left = sizeof(buf) - 1;
 
@@ -597,6 +598,8 @@ static int Q921LogMesg(L2TRUNK trunk, Q921LogLevel_t level, L2UCHAR received, L2
 		L2UCHAR sapi, tei, cr;
 		L2UCHAR *pmes = mes + trunk->Q921HeaderSpace;
 		struct Q921_Link *link;
+
+		memset(pbuf, 0, sizeof(pbuf));
 
 		pleft   = sizeof(pbuf);
 		poffset = 0;
