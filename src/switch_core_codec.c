@@ -55,7 +55,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 	char tmp[30];
 
 	if (codec && !codec->implementation) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set ININITILIZED codec!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set INITIALIZED codec!\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -363,7 +363,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode(switch_codec_t *codec,
 	}
 
 	if (!switch_test_flag(codec, SWITCH_CODEC_FLAG_ENCODE)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec's encoder is not initialized!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec encoder is not initialized!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -388,7 +388,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 	}
 
 	if (!switch_test_flag(codec, SWITCH_CODEC_FLAG_DECODE)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec's decoder is not initialized!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec decoder is not initialized!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
