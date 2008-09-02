@@ -1422,11 +1422,11 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 			{
 				int informed = 0;
 				char msg_count[80] = "";
-				switch_input_args_t args = { 0 };
+				switch_input_args_t folder_args = { 0 };
 
-				args.input_callback = cancel_on_dtmf;
-				args.buf = &global_buf;
-				args.buflen = sizeof(global_buf);
+				folder_args.input_callback = cancel_on_dtmf;
+				folder_args.buf = &global_buf;
+				folder_args.buflen = sizeof(global_buf);
 
 				switch_channel_set_variable(channel, "voicemail_current_folder", myfolder);
 				message_count(profile, myid, domain_name, myfolder, &total_new_messages, &total_saved_messages,
@@ -1434,7 +1434,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 
 				if (total_new_urgent_messages > 0) {
 					switch_snprintf(msg_count, sizeof(msg_count), "%d:urgent-new", total_new_urgent_messages);
-					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, &args));
+					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, &folder_args));
 					informed++;
 					if (!switch_strlen_zero_buf(global_buf)) {
 						vm_check_state = VM_CHECK_MENU;
@@ -1443,7 +1443,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 				}
 				if (total_new_messages > 0 && total_new_messages != total_new_urgent_messages) {
 					switch_snprintf(msg_count, sizeof(msg_count), "%d:new", total_new_messages);
-					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, &args));
+					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, &folder_args));
 					informed++;
 					if (!switch_strlen_zero_buf(global_buf)) {
 						vm_check_state = VM_CHECK_MENU;
@@ -1460,7 +1460,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 
 				if (!informed) {
 					switch_snprintf(msg_count, sizeof(msg_count), "0:new");
-					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, &args));
+					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, &folder_args));
 					informed++;
 				}
 
