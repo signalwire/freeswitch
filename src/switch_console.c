@@ -73,7 +73,7 @@ static switch_status_t console_xml_config(void)
 			if ((i < 1) || (i > 12)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "keybind %s is invalid, range is from 1 to 12\n", var);
 			} else {
-				// Add the command to the fnkey array
+				/* Add the command to the fnkey array */
 				console_fnkeys[i - 1] = switch_core_permanent_strdup(val);
 			}
 		}
@@ -323,7 +323,7 @@ static unsigned char console_fnkey_pressed(int i)
 
 	c = console_fnkeys[i - 1];
 
-	// This new line is necessary to avoid output to begin after the ">" of the CLI's prompt
+	/* This new line is necessary to avoid output to begin after the ">" of the CLI's prompt */
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "\n");
 
 	if (c == NULL) {

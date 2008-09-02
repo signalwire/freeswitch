@@ -684,8 +684,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			switch_copy_string(file, var, sizeof(file));
 		}
 	}
-	// When using the AND operator, the fail_on_single_reject flag may be set in order to indicate that a single
-	// rejections should terminate the attempt rather than a timeout, answer, or rejection by all.
+	/* When using the AND operator, the fail_on_single_reject flag may be set in order to indicate that a single
+	   rejections should terminate the attempt rather than a timeout, answer, or rejection by all. */
 	if ((var = switch_event_get_header(var_event, "fail_on_single_reject")) && switch_true(var)) {
 		fail_on_single_reject = 1;
 	}
@@ -1011,10 +1011,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 
 				if (!switch_core_session_running(peer_sessions[i])) {
-					//if (!(flags & SOF_NOBLOCK)) {
-					//switch_channel_set_state(peer_channels[i], CS_ROUTING);
-					//}
-					//} else {
+					/*if (!(flags & SOF_NOBLOCK)) {
+					  switch_channel_set_state(peer_channels[i], CS_ROUTING);
+					  }
+					  } else {
+					*/
 					switch_core_session_thread_launch(peer_sessions[i]);
 				}
 			}
@@ -1143,8 +1144,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								teletone_init_session(&ringback.ts, 0, teletone_handler, &ringback);
 								ringback.ts.rate = read_codec->implementation->actual_samples_per_second;
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play Ringback Tone [%s]\n", ringback_data);
-								//ringback.ts.debug = 1;
-								//ringback.ts.debug_stream = switch_core_get_console();
+								/* ringback.ts.debug = 1;
+								   ringback.ts.debug_stream = switch_core_get_console();
+								*/
 								if (teletone_run(&ringback.ts, ringback_data)) {
 									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing Tone\n");
 									teletone_destroy_session(&ringback.ts);
@@ -1173,7 +1175,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_channel_ring_ready(caller_channel);
 					sent_ring = 1;
 				}
-				// When the AND operator is being used, and fail_on_single_reject is set, a hangup indicates that the call should fail.
+				/* When the AND operator is being used, and fail_on_single_reject is set, a hangup indicates that the call should fail. */
 				if ((to = (uint8_t) ((switch_timestamp(NULL) - start) >= (time_t) timelimit_sec))
 					|| (fail_on_single_reject && hups)) {
 					idx = IDX_TIMEOUT;

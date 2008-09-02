@@ -163,33 +163,33 @@ SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_c
 
 SWITCH_DECLARE(switch_status_t) switch_regex_match(const char *target, const char *expression)
 {
-	const char *error = NULL;	//Used to hold any errors
-	int error_offset = 0;		//Holds the offset of an error
-	pcre *pcre_prepared = NULL;	//Holds the compiled regex
-	int match_count = 0;		//Number of times the regex was matched
-	int offset_vectors[2];		//not used, but has to exist or pcre won't even try to find a match
+	const char *error = NULL;	/* Used to hold any errors                                           */
+	int error_offset = 0;		/* Holds the offset of an error                                      */
+	pcre *pcre_prepared = NULL;	/* Holds the compiled regex                                          */
+	int match_count = 0;		/* Number of times the regex was matched                             */
+	int offset_vectors[2];		/* not used, but has to exist or pcre won't even try to find a match */
 
-	//Compile the expression
+	/* Compile the expression */
 	pcre_prepared = pcre_compile(expression, 0, &error, &error_offset, NULL);
 
-	//See if there was an error in the expression
+	/* See if there was an error in the expression */
 	if (error != NULL) {
-		//Clean up after ourselves
+		/* Clean up after ourselves */
 		if (pcre_prepared) {
 			pcre_free(pcre_prepared);
 			pcre_prepared = NULL;
 		}
-		//Note our error    
+		/* Note our error */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 						  "Regular Expression Error expression[%s] error[%s] location[%d]\n", expression, error, error_offset);
 
-		//We definitely didn't match anything
+		/* We definitely didn't match anything */
 		return SWITCH_STATUS_FALSE;
 	}
-	//So far so good, run the regex
+	/* So far so good, run the regex */
 	match_count = pcre_exec(pcre_prepared, NULL, target, (int) strlen(target), 0, 0, offset_vectors, sizeof(offset_vectors) / sizeof(offset_vectors[0]));
 
-	//Clean up
+	/* Clean up */
 	if (pcre_prepared) {
 		pcre_free(pcre_prepared);
 		pcre_prepared = NULL;
@@ -197,7 +197,7 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match(const char *target, const cha
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "number of matches: %d\n", match_count);
 
-	//Was it a match made in heaven?
+	/* Was it a match made in heaven? */
 	if (match_count > 0) {
 		return SWITCH_STATUS_SUCCESS;
 	} else {
