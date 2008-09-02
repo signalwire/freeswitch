@@ -413,7 +413,7 @@ static switch_status_t openmrcp_asr_feed(switch_asr_handle_t *ah, void *data, un
 		media_frame.codec_frame.buffer = (char *) media_frame.codec_frame.buffer + media_frame.codec_frame.size;
 	}
 	if (len > 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "None frame alligned data len [%d]\n", len);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "None frame aligned data len [%d]\n", len);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }

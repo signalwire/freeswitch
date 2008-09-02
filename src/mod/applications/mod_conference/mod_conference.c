@@ -233,7 +233,7 @@ typedef struct conference_obj {
 	char *auto_record;
 	uint32_t max_members;
 	char *maxmember_sound;
-	uint32_t anounce_count;
+	uint32_t announce_count;
 	switch_ivr_digit_stream_parser_t *dtmf_parser;
 	char *pin;
 	char *pin_sound;
@@ -556,7 +556,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *event;
-	char msg[512];				/* conference count anouncement */
+	char msg[512];				/* conference count announcement */
 	call_list_t *call_list = NULL;
 	switch_channel_t *channel;
 
@@ -613,8 +613,8 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 			conference_member_say(member, saymsg, 0);
 		} else {
 			if (switch_strlen_zero(conference->special_announce)) {
-				/* anounce the total number of members in the conference */
-				if (conference->count >= conference->anounce_count && conference->anounce_count > 1) {
+				/* announce the total number of members in the conference */
+				if (conference->count >= conference->announce_count && conference->announce_count > 1) {
 					switch_snprintf(msg, sizeof(msg), "There are %d callers", conference->count);
 					conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
 				} else if (conference->count == 1 && !conference->perpetual_sound) {
@@ -749,7 +749,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 			}
 		}
 
-		if (conference->anounce_count == 1) {
+		if (conference->announce_count == 1) {
 			conference->floor_holder = conference->members;
 		}
 
@@ -3983,7 +3983,7 @@ static switch_status_t conference_outcall_bg(conference_obj_t *conference,
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, conference_outcall_run, call, conference->pool);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Lanuching BG Thread for outcall\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Launching BG Thread for outcall\n");
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -4845,7 +4845,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	char *perpetual_sound = NULL;
 	char *moh_sound = NULL;
 	uint32_t max_members = 0;
-	uint32_t anounce_count = 0;
+	uint32_t announce_count = 0;
 	char *maxmember_sound = NULL;
 	uint32_t rate = 8000, interval = 20;
 	switch_status_t status;
@@ -4960,12 +4960,12 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 			}
 		} else if (!strcasecmp(var, "max-members-sound") && !switch_strlen_zero(val)) {
 			maxmember_sound = val;
-		} else if (!strcasecmp(var, "anounce-count") && !switch_strlen_zero(val)) {
+		} else if (!strcasecmp(var, "announce-count") && !switch_strlen_zero(val)) {
 			errno = 0;			// safety first
-			anounce_count = strtol(val, NULL, 0);
+			announce_count = strtol(val, NULL, 0);
 			if (errno == ERANGE || errno == EINVAL) {
-				anounce_count = 0;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "anounce-count is invalid, not anouncing member counts\n");
+				announce_count = 0;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "announce-count is invalid, not anouncing member counts\n");
 			}
 		} else if (!strcasecmp(var, "suppress-events") && !switch_strlen_zero(val)) {
 			suppress_events = val;
@@ -5108,7 +5108,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	}
 	// its going to be 0 by default, set to a value otherwise so this should be safe
 	conference->max_members = max_members;
-	conference->anounce_count = anounce_count;
+	conference->announce_count = announce_count;
 
 	conference->name = switch_core_strdup(conference->pool, name);
 	if (domain) {
@@ -5144,7 +5144,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to install caller controls group '%s'\n", caller_controls);
 			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "no caller controls intalled.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "no caller controls installed.\n");
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to allocate caller control digit parser.\n");

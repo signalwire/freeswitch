@@ -1559,7 +1559,7 @@ SWITCH_STANDARD_APP(read_function)
 	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No arguements specified.\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No arguments specified.\n");
 		return;
 	}
 

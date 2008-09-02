@@ -442,7 +442,7 @@ char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const c
 }
 
 
-void sofia_reg_auth_challange(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_regtype_t regtype, const char *realm, int stale)
+void sofia_reg_auth_challenge(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_regtype_t regtype, const char *realm, int stale)
 {
 	switch_uuid_t uuid;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
@@ -702,7 +702,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 
 		if (auth_res != AUTH_OK && !stale) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "send %s for [%s@%s]\n", forbidden ? "forbidden" : "challange", to_user, to_host);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "send %s for [%s@%s]\n", forbidden ? "forbidden" : "challenge", to_user, to_host);
 			if (auth_res == AUTH_FORBIDDEN) {
 				nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
 			} else {
@@ -713,7 +713,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	}
 
 	if (!authorization || stale) {
-		sofia_reg_auth_challange(nua, profile, nh, regtype, to_host, stale);
+		sofia_reg_auth_challenge(nua, profile, nh, regtype, to_host, stale);
 		if (regtype == REG_REGISTER && profile->debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Requesting Registration from: [%s@%s]\n", to_user, to_host);
 		}
