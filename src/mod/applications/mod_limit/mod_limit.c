@@ -80,7 +80,9 @@ static switch_status_t limit_execute_sql(char *sql, switch_mutex_t *mutex)
 		if (switch_odbc_handle_exec(globals.master_odbc, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
 			char *err_str;
 			err_str = switch_odbc_handle_get_error(globals.master_odbc, stmt);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
+			if ( err_str && strlen(err_str) ) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
+			}
 			switch_safe_free(err_str);
 			status = SWITCH_STATUS_FALSE;
 		}
