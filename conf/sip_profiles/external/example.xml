@@ -30,5 +30,7 @@
   <!--<param name="contact-params" value="tport=tcp"/>-->
   <!--/// ping gateway to see if it is alive: *optional* /// -->
   <!--<param name="ping" value="15"/>-->
+  <!--send an options ping every x seconds, failure will unregister and/or mark it down-->
+  <!--<param name="ping" value="25"/>-->
   <!--</gateway>-->
 </include>
