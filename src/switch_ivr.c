@@ -1794,6 +1794,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 		switch_channel_set_variable(channel, "mailbox", mailbox);
 	}
 
+	if ((x_params = switch_xml_child(x_domain, "variables"))) {
+		for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
+			const char *var = switch_xml_attr(x_param, "name");
+			const char *val = switch_xml_attr(x_param, "value");
+
+			if (var && val) {
+				switch_channel_set_variable(channel, var, val);
+			}
+		}
+	}
+
 	if ((x_params = switch_xml_child(x_user, "variables"))) {
 		for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
 			const char *var = switch_xml_attr(x_param, "name");
