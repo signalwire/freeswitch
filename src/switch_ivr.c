@@ -1160,7 +1160,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory
 	if (parser != NULL) {
 		int pool_auto_created = 0;
 
-		// if the caller didn't provide a pool, make one
+		/* if the caller didn't provide a pool, make one */
 		if (pool == NULL) {
 			switch_core_new_memory_pool(&pool);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "created a memory pool\n");
@@ -1168,11 +1168,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory
 				pool_auto_created = 1;
 			}
 		}
-		// if we have a pool, make a parser object
+		/* if we have a pool, make a parser object */
 		if (pool != NULL) {
 			*parser = (switch_ivr_digit_stream_parser_t *) switch_core_alloc(pool, sizeof(switch_ivr_digit_stream_parser_t));
 		}
-		// if we have parser object, initialize it for the caller
+		/* if we have parser object, initialize it for the caller */
 		if (pool && *parser != NULL) {
 			memset(*parser, 0, sizeof(switch_ivr_digit_stream_parser_t));
 			(*parser)->pool_auto_created = pool_auto_created;
@@ -1183,7 +1183,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory
 			status = SWITCH_STATUS_SUCCESS;
 		} else {
 			status = SWITCH_STATUS_MEMERR;
-			// if we can't create a parser object,clean up the pool if we created it
+			/* if we can't create a parser object,clean up the pool if we created it */
 			if (pool != NULL && pool_auto_created) {
 				switch_core_destroy_memory_pool(&pool);
 			}
@@ -1202,7 +1202,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_destroy(switch_iv
 			switch_core_hash_destroy(&parser->hash);
 			parser->hash = NULL;
 		}
-		// free the memory pool if we created it
+		/* free the memory pool if we created it */
 		if (parser->pool_auto_created && parser->pool != NULL) {
 			status = switch_core_destroy_memory_pool(&parser->pool);
 		}
@@ -1215,7 +1215,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_new(switch_ivr_digit_str
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	// if we have a paser object memory pool and a stream object pointer that is null
+	/* if we have a paser object memory pool and a stream object pointer that is null */
 	if (parser != NULL && parser->pool && stream != NULL && *stream == NULL) {
 		*stream = (switch_ivr_digit_stream_t *) switch_core_alloc(parser->pool, sizeof(switch_ivr_digit_stream_t));
 		if (*stream != NULL) {
@@ -1250,9 +1250,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_event(switch_
 		if (status == SWITCH_STATUS_SUCCESS) {
 			switch_size_t len = strlen(digits);
 
-			// if we don't have a terminator, then we have to try and
-			// figure out when a digit set is completed, therefore we
-			// keep track of the min and max digit lengths
+			/* if we don't have a terminator, then we have to try and
+			 * figure out when a digit set is completed, therefore we
+			 * keep track of the min and max digit lengths
+			 */
 			if (parser->terminator == '\0') {
 				if (len > parser->maxlen) {
 					parser->maxlen = len;
@@ -1263,7 +1264,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_event(switch_
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "min len %u\n", (uint32_t) parser->minlen);
 				}
 			} else {
-				// since we have a terminator, reset min and max
+				/* since we have a terminator, reset min and max */
 				parser->minlen = 0;
 				parser->maxlen = 0;
 			}
@@ -1298,13 +1299,14 @@ SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stre
 	if (parser != NULL && stream != NULL) {
 		switch_size_t len = (stream->digits != NULL ? strlen(stream->digits) : 0);
 
-		// handle new digit arrivals
+		/* handle new digit arrivals */
 		if (digit != '\0') {
 
-			// if it's not a terminator digit, add it to the collected digits
+			/* if it's not a terminator digit, add it to the collected digits */
 			if (digit != parser->terminator) {
-				// if collected digits length >= the max length of the keys
-				// in the hash table, then left shift the digit string
+				/* if collected digits length >= the max length of the keys
+				 * in the hash table, then left shift the digit string
+				 */
 				if (len > 0 && parser->maxlen != 0 && len >= parser->maxlen) {
 					char *src = stream->digits + 1;
 					char *dst = stream->digits;
@@ -1323,15 +1325,16 @@ SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stre
 				}
 			}
 		}
-		// don't allow collected digit string testing if there are varying sized keys until timeout
+		/* don't allow collected digit string testing if there are varying sized keys until timeout */
 		if (parser->maxlen - parser->minlen > 0 && (switch_timestamp_now() / 1000) - stream->last_digit_time < parser->digit_timeout_ms) {
 			len = 0;
 		}
-		// if we have digits to test
+		/* if we have digits to test */
 		if (len) {
 			result = switch_core_hash_find(parser->hash, stream->digits);
-			// if we matched the digit string, or this digit is the terminator
-			// reset the collected digits for next digit string
+			/* if we matched the digit string, or this digit is the terminator
+			 * reset the collected digits for next digit string
+			 */
 			if (result != NULL || parser->terminator == digit) {
 				free(stream->digits);
 				stream->digits = NULL;
@@ -1362,7 +1365,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
 
 	if (parser != NULL) {
 		parser->terminator = digit;
-		// since we have a terminator, reset min and max
+		/* since we have a terminator, reset min and max */
 		parser->minlen = 0;
 		parser->maxlen = 0;
 		status = SWITCH_STATUS_SUCCESS;
@@ -1750,7 +1753,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, c
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if ((si = switch_loadable_module_get_say_interface(module_name))) {
-		// should go back and proto all the say mods to const....
+		/* should go back and proto all the say mods to const.... */
 		status = si->say_function(session, (char *) tosay, switch_ivr_get_say_type_by_name(say_type), switch_ivr_get_say_method_by_name(say_method), args);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", module_name);
@@ -1817,7 +1820,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 
 	return status;
 }
-
 
 /* For Emacs:
  * Local Variables:
