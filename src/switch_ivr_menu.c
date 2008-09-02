@@ -481,8 +481,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 				}
 			}
 
-			if (switch_test_flag(menu, SWITCH_IVR_MENU_FLAG_STACK)) {	// top level
-				if (switch_test_flag(stack, SWITCH_IVR_MENU_FLAG_FALLTOMAIN)) {	// catch the fallback and recover
+			if (switch_test_flag(menu, SWITCH_IVR_MENU_FLAG_STACK)) {	        /* top level */
+				if (switch_test_flag(stack, SWITCH_IVR_MENU_FLAG_FALLTOMAIN)) {	/* catch the fallback and recover */
 					switch_clear_flag(stack, SWITCH_IVR_MENU_FLAG_FALLTOMAIN);
 					status = SWITCH_STATUS_SUCCESS;
 					running = 1;
@@ -552,7 +552,7 @@ static switch_status_t switch_ivr_menu_stack_xml_add(switch_ivr_menu_xml_ctx_t *
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	// if this action/function does not exist yet
+	/* if this action/function does not exist yet */
 	if (xml_ctx != NULL && name != NULL && xml_ctx->pool != NULL && switch_ivr_menu_stack_xml_find(xml_ctx, name) == NULL) {
 		switch_ivr_menu_xml_map_t *map = switch_core_alloc(xml_ctx->pool, sizeof(switch_ivr_menu_xml_map_t));
 
@@ -562,7 +562,7 @@ static switch_status_t switch_ivr_menu_stack_xml_add(switch_ivr_menu_xml_ctx_t *
 			map->function = function;
 
 			if (map->name != NULL) {
-				// insert map item at top of list
+				/* insert map item at top of list */
 				map->next = xml_ctx->map;
 				xml_ctx->map = map;
 				status = SWITCH_STATUS_SUCCESS;
@@ -581,7 +581,6 @@ static switch_status_t switch_ivr_menu_stack_xml_add(switch_ivr_menu_xml_ctx_t *
 	return status;
 }
 
-
 static struct iam_s {
 	const char *name;
 	switch_ivr_action_t action;
@@ -594,7 +593,6 @@ static struct iam_s {
 	{ "menu-top", SWITCH_IVR_ACTION_TOMAIN}, 
 	{ NULL, 0}
 };
-
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_str2action(const char *action_name, switch_ivr_action_t *action)
 {
@@ -615,7 +613,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_str2action(const char *action_na
 
 	return SWITCH_STATUS_FALSE;
 }
-
 
 static switch_bool_t is_valid_action(const char *action)
 {
@@ -642,12 +639,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_x
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int autocreated = 0;
 
-	// build a memory pool ?
+	/* build a memory pool ? */
 	if (pool == NULL) {
 		status = switch_core_new_memory_pool(&pool);
 		autocreated = 1;
 	}
-	// allocate the xml context
+	/* allocate the xml context */
 	if (xml_menu_ctx != NULL && pool != NULL) {
 		*xml_menu_ctx = switch_core_alloc(pool, sizeof(switch_ivr_menu_xml_ctx_t));
 		if (*xml_menu_ctx != NULL) {
@@ -660,7 +657,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_x
 			status = SWITCH_STATUS_FALSE;
 		}
 	}
-	// build the standard/default xml menu handler mappings
+	/* build the standard/default xml menu handler mappings */
 	if (status == SWITCH_STATUS_SUCCESS && xml_menu_ctx != NULL && *xml_menu_ctx != NULL) {
 		int i;
 
@@ -684,13 +681,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (xml_menu_ctx != NULL && menu_stack != NULL && xml_menu != NULL) {
-		const char *menu_name = switch_xml_attr_soft(xml_menu, "name");	// if the attr doesn't exist, return ""
-		const char *greet_long = switch_xml_attr(xml_menu, "greet-long");	// if the attr doesn't exist, return NULL
-		const char *greet_short = switch_xml_attr(xml_menu, "greet-short");	// if the attr doesn't exist, return NULL
-		const char *invalid_sound = switch_xml_attr(xml_menu, "invalid-sound");	// if the attr doesn't exist, return NULL
-		const char *exit_sound = switch_xml_attr(xml_menu, "exit-sound");	// if the attr doesn't exist, return NULL
-		const char *timeout = switch_xml_attr_soft(xml_menu, "timeout");	// if the attr doesn't exist, return ""
-		const char *max_failures = switch_xml_attr_soft(xml_menu, "max-failures");	// if the attr doesn't exist, return ""
+		const char *menu_name = switch_xml_attr_soft(xml_menu, "name");	            /* if the attr doesn't exist, return "" */
+		const char *greet_long = switch_xml_attr(xml_menu, "greet-long");	        /* if the attr doesn't exist, return NULL */
+		const char *greet_short = switch_xml_attr(xml_menu, "greet-short");	        /* if the attr doesn't exist, return NULL */
+		const char *invalid_sound = switch_xml_attr(xml_menu, "invalid-sound");	    /* if the attr doesn't exist, return NULL */
+		const char *exit_sound = switch_xml_attr(xml_menu, "exit-sound");	        /* if the attr doesn't exist, return NULL */
+		const char *timeout = switch_xml_attr_soft(xml_menu, "timeout");	        /* if the attr doesn't exist, return "" */
+		const char *max_failures = switch_xml_attr_soft(xml_menu, "max-failures");	/* if the attr doesn't exist, return "" */
 		const char *confirm_macro= switch_xml_attr(xml_menu, "confirm-macro");
 		const char *confirm_key= switch_xml_attr(xml_menu, "confirm-key");
 		const char *confirm_attempts = switch_xml_attr_soft(xml_menu, "confirm-attempts");
@@ -716,7 +713,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 									  atoi(timeout), 
 									  atoi(max_failures), 
 									  xml_menu_ctx->pool);
-		// set the menu_stack for the caller
+		/* set the menu_stack for the caller */
 		if (status == SWITCH_STATUS_SUCCESS && *menu_stack == NULL) {
 			*menu_stack = menu;
 		}
@@ -724,7 +721,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 		if (status == SWITCH_STATUS_SUCCESS && menu != NULL) {
 			switch_xml_t xml_kvp;
 
-			// build menu entries
+			/* build menu entries */
 			for (xml_kvp = switch_xml_child(xml_menu, "entry"); xml_kvp != NULL && status == SWITCH_STATUS_SUCCESS; xml_kvp = xml_kvp->next) {
 				const char *action = switch_xml_attr(xml_kvp, "action");
 				const char *digits = switch_xml_attr(xml_kvp, "digits");
@@ -734,7 +731,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 					switch_ivr_menu_xml_map_t *xml_map = xml_menu_ctx->map;
 					int found = 0;
 
-					// find and appropriate xml handler
+					/* find and appropriate xml handler */
 					while (xml_map != NULL && !found) {
 						if (!(found = (strcasecmp(xml_map->name, action) == 0))) {
 							xml_map = xml_map->next;
@@ -742,13 +739,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 					}
 
 					if (found && xml_map != NULL) {
-						// do we need to build a new sub-menu ?
+						/* do we need to build a new sub-menu ? */
 						if (xml_map->action == SWITCH_IVR_ACTION_EXECMENU && switch_ivr_menu_find(*menu_stack, param) == NULL) {
 							if ((xml_menu = switch_xml_find_child(xml_menus, "menu", "name", param)) != NULL) {
 								status = switch_ivr_menu_stack_xml_build(xml_menu_ctx, menu_stack, xml_menus, xml_menu);
 							}
 						}
-						// finally bind the menu entry
+						/* finally bind the menu entry */
 						if (status == SWITCH_STATUS_SUCCESS) {
 							if (xml_map->function != NULL) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,

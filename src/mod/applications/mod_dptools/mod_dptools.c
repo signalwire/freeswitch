@@ -1110,7 +1110,7 @@ SWITCH_STANDARD_APP(ivr_application_function)
 	if (channel) {
 		switch_xml_t cxml = NULL, cfg = NULL, xml_menus = NULL, xml_menu = NULL;
 
-		// Open the config from the xml registry
+		/* Open the config from the xml registry */
 		switch_event_create(&params, SWITCH_EVENT_MESSAGE);
 		switch_assert(params);
 		switch_channel_event_set_data(channel, params);
@@ -1119,12 +1119,12 @@ SWITCH_STANDARD_APP(ivr_application_function)
 			if ((xml_menus = switch_xml_child(cfg, "menus"))) {
 				xml_menu = switch_xml_find_child(xml_menus, "menu", "name", (char *) data);
 
-				// if the menu was found
+				/* if the menu was found */
 				if (xml_menu != NULL) {
 					switch_ivr_menu_xml_ctx_t *xml_ctx = NULL;
 					switch_ivr_menu_t *menu_stack = NULL;
 
-					// build a menu tree and execute it
+					/* build a menu tree and execute it */
 					if (switch_ivr_menu_stack_xml_init(&xml_ctx, NULL) == SWITCH_STATUS_SUCCESS
 #ifdef _TEST_CALLBACK_
 						&& switch_ivr_menu_stack_xml_add_custom(xml_ctx, "custom", &menu_handler) == SWITCH_STATUS_SUCCESS
