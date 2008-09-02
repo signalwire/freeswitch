@@ -963,7 +963,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 	new_dtmf = *dtmf;
 
 	if (new_dtmf.duration > switch_core_max_dtmf_duration(0)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXECSSIVE DTMF DIGIT [%c] LEN [%d]\n",
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
 						  switch_channel_get_name(session->channel), new_dtmf.digit, new_dtmf.duration);
 		new_dtmf.duration = switch_core_max_dtmf_duration(0);
 	} else if (!new_dtmf.duration) {
@@ -993,7 +993,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 	new_dtmf = *dtmf;
 
 	if (new_dtmf.duration > switch_core_max_dtmf_duration(0)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXECSSIVE DTMF DIGIT [%c] LEN [%d]\n",
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
 						  switch_channel_get_name(session->channel), new_dtmf.digit, new_dtmf.duration);
 		new_dtmf.duration = switch_core_max_dtmf_duration(0);
 	} else if (!new_dtmf.duration) {
@@ -1063,7 +1063,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 
 
 		if (dtmf.duration > switch_core_max_dtmf_duration(0)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXECSSIVE DTMF DIGIT [%c] LEN [%d]\n",
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
 							  switch_channel_get_name(session->channel), dtmf.digit, dtmf.duration);
 			dtmf.duration = switch_core_max_dtmf_duration(0);
 		} else if (!dtmf.duration) {

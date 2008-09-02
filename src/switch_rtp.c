@@ -1386,7 +1386,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (stat && rtp_session->recv_msg.header.pt != rtp_session->te && rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
 				if (++rtp_session->srtp_errs >= MAX_SRTP_ERRS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-									  "error: srtp unprotection failed with code %d%s\n", stat,
+									  "error: srtp unprotect failed with code %d%s\n", stat,
 									  stat == err_status_replay_fail ? " (replay check failed)" : stat ==
 									  err_status_auth_fail ? " (auth check failed)" : "");
 					ret = -1;
@@ -1403,7 +1403,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 
 
-		/* RFC2833 ... like all RFC RE: VoIP, guarenteed to drive you to insanity! 
+		/* RFC2833 ... like all RFC RE: VoIP, guaranteed to drive you to insanity! 
 		   We know the real rules here, but if we enforce them, it's an interop nightmare so,
 		   we put up with as much as we can so we don't have to deal with being punished for
 		   doing it right. Nice guys finish last!

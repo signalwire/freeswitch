@@ -226,7 +226,7 @@ static void print_trace(void)
 #else
 static void print_trace(void)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Trace not avaliable =(\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Trace not available =(\n");
 }
 #endif
 

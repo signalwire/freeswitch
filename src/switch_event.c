@@ -803,7 +803,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "hit serialze!.\n"); */
+	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "hit serialzed!.\n"); */
 	for (hp = event->headers; hp; hp = hp->next) {
 		/*
 		 * grab enough memory to store 3x the string (url encode takes one char and turns it into %XX)
