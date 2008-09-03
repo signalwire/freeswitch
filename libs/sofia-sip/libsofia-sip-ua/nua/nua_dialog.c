@@ -354,12 +354,12 @@ void nua_dialog_usage_remove(nua_owner_t *own,
  *
  * Zap dialog state (leg, tag and route) if no usages remain. 
 */
-static 
-void nua_dialog_usage_remove_at(nua_owner_t *own, 
-				nua_dialog_state_t *ds,
-				nua_dialog_usage_t **at,
-				nua_client_request_t *cr0,
-				nua_server_request_t *sr0)
+static void
+nua_dialog_usage_remove_at(nua_owner_t *own,
+			   nua_dialog_state_t *ds,
+			   nua_dialog_usage_t **at,
+			   nua_client_request_t *cr0,
+			   nua_server_request_t *sr0)
 {
   if (*at) {
     nua_dialog_usage_t *du = *at;
@@ -376,17 +376,9 @@ void nua_dialog_usage_remove_at(nua_owner_t *own,
 		o ? " with event " : "", o ? o->o_type :""));
     du->du_class->usage_remove(own, ds, du, cr0, sr0);
 
-    /* Destroy saved client request */
-    if (cr0 != du->du_cr && nua_client_is_bound(du->du_cr)) {
-      nua_client_bind(cr = du->du_cr, NULL);
-
-      if (nua_client_is_queued(cr))
-	nua_client_request_complete(cr);
-      else if (nua_client_is_reporting(cr))
-	;
-      else
-	nua_client_request_destroy(cr);
-    }
+    /* Clean reference to saved client request */
+    if (du->du_cr)
+      nua_client_bind(du->du_cr, NULL);
 
     /* Clean references from queued client requests */
     for (cr = ds->ds_cr; cr; cr = cr_next) {
@@ -395,6 +387,7 @@ void nua_dialog_usage_remove_at(nua_owner_t *own,
 	cr->cr_usage = NULL;
     }
 
+    /* Clean references from queued server requests */
     for (sr = ds->ds_sr; sr; sr = sr_next) {
       sr_next = sr->sr_next;
       if (sr->sr_usage == du) {

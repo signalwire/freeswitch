@@ -276,6 +276,8 @@ struct nua_client_request
   unsigned short      cr_retry_count;   /**< Retry count for this request */
 
   uint32_t            cr_seq;
+
+  unsigned            cr_refs;	 /**< References to client request */
   
   /* Flags used with offer-answer */
   unsigned short      cr_answer_recv;   /**< Recv answer in response 
@@ -300,7 +302,6 @@ struct nua_client_request
   unsigned cr_waiting:1;	/**< Request is waiting */
   unsigned cr_challenged:1;	/**< Request was challenged */
   unsigned cr_wait_for_cred:1;	/**< Request is pending authentication */
-  unsigned cr_wait_for_timer:1;	/**< Request is waiting for a timer to expire  */
   unsigned cr_restarting:1;	/**< Request is being restarted */
   unsigned cr_reporting:1;	/**< Reporting in progress */
   unsigned cr_terminating:1;	/**< Request terminates the usage */
@@ -523,8 +524,23 @@ void *nua_private_client_request(nua_client_request_t const *cr)
   return (void *)(cr + 1);
 }
 
-void nua_client_request_complete(nua_client_request_t *);
-void nua_client_request_destroy(nua_client_request_t *);
+nua_client_request_t *nua_client_request_ref(nua_client_request_t *);
+int nua_client_request_unref(nua_client_request_t *);
+
+#if HAVE_MEMLEAK_LOG
+
+#define nua_client_request_ref(cr) \
+  nua_client_request_ref_by((cr), __FILE__, __LINE__, __func__)
+#define nua_client_request_unref(cr) \
+  nua_client_request_unref_by((cr), __FILE__, __LINE__, __func__)
+
+nua_client_request_t *nua_client_request_ref_by(nua_client_request_t *,
+						char const *file, unsigned line,
+						char const *who);
+int nua_client_request_unref_by(nua_client_request_t *,
+				char const *file, unsigned line, char const *who);
+
+#endif
 
 int nua_client_request_queue(nua_client_request_t *cr);
 
@@ -533,8 +549,8 @@ su_inline int nua_client_is_queued(nua_client_request_t const *cr)
   return cr && cr->cr_prev;
 }
 
-void nua_client_request_remove(nua_client_request_t *cr);
-void nua_client_request_clean(nua_client_request_t *cr);
+int nua_client_request_remove(nua_client_request_t *cr);
+int nua_client_request_clean(nua_client_request_t *cr);
 int nua_client_bind(nua_client_request_t *cr, nua_dialog_usage_t *du);
 
 su_inline int nua_client_is_bound(nua_client_request_t const *cr)

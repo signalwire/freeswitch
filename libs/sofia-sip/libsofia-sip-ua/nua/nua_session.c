@@ -276,7 +276,7 @@ void nua_session_usage_remove(nua_handle_t *nh,
 		      NULL);
     }
 
-    nua_client_request_destroy(cr);
+    nua_client_request_remove(cr);
 
     cr_next = ds->ds_cr;
   }
@@ -1177,9 +1177,9 @@ int nua_stack_ack(nua_t *nua, nua_handle_t *nh, nua_event_t e,
       soa_set_params(nh->nh_soa, TAG_NEXT(tags));
   }
 
-  error = nua_invite_client_ack(cr, tags);
+  nua_client_request_ref(cr);
 
-  nua_client_request_clean(cr);
+  error = nua_invite_client_ack(cr, tags);
 
   if (error < 0) {
     if (ss->ss_reason == NULL)
@@ -1195,8 +1195,7 @@ int nua_stack_ack(nua_t *nua, nua_handle_t *nh, nua_event_t e,
   else if (ss)
     signal_call_state_change(nh, ss, 200, "ACK sent", nua_callstate_ready);
 
-  if (!nua_client_is_queued(cr) && !nua_client_is_bound(cr))
-    nua_client_request_destroy(cr);
+  nua_client_request_unref(cr);
 
   nua_client_next_request(nh->nh_ds->ds_cr, 1);
 
@@ -1233,7 +1232,8 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
 
   if (!ds->ds_leg) {
     /* XXX - fix nua_dialog_usage_remove_at() instead! */
-    nta_outgoing_destroy(cr->cr_orq);
+    nua_client_request_clean(cr);
+    nua_client_request_remove(cr);
     return -1;
   }
 
@@ -1366,9 +1366,11 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
   if (error == -1)
     msg_destroy(msg);
 
-  nua_client_request_remove(cr);
   cr->cr_acked = 1;		/* ... or we have at least tried */
-  
+
+  nua_client_request_clean(cr);
+  nua_client_request_remove(cr);
+
   return error;
 }
 
@@ -1452,11 +1454,19 @@ static int nua_cancel_client_request(nua_client_request_t *cr,
     return nua_client_return(cr, 481, "No transaction to CANCEL", msg);
   }
 
+  assert(cr->cr_orq == NULL);
+
   cr->cr_orq = nta_outgoing_tcancel(du->du_cr->cr_orq,
-				    nua_client_orq_response, cr,
+				    nua_client_orq_response,
+				    nua_client_request_ref(cr),
 				    TAG_NEXT(tags));
 
-  return cr->cr_orq ? 0 : -1;
+  if (cr->cr_orq == NULL) {
+    nua_client_request_unref(cr);
+    return -1;
+  }
+
+  return 0;
 }
 
 /** @NUA_EVENT nua_r_cancel
@@ -3630,7 +3640,6 @@ static int nua_bye_client_init(nua_client_request_t *cr,
   if (nh->nh_soa)
     soa_terminate(nh->nh_soa, 0);
 
-  du->du_cr = NULL;
   nua_client_bind(cr, du);
 
   return 0;

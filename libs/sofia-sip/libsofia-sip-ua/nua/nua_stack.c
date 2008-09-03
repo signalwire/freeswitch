@@ -114,6 +114,8 @@ static int nh_authorize(nua_handle_t *nh,
 
 static void nua_stack_timer(nua_t *nua, su_timer_t *t, su_timer_arg_t *a);
 
+static int nua_client_request_complete(nua_client_request_t *cr);
+
 /* ---------------------------------------------------------------------- */
 /* Constant data */
 
@@ -963,7 +965,7 @@ void nh_destroy(nua_t *nua, nua_handle_t *nh)
     nea_server_destroy(nh->nh_notifier), nh->nh_notifier = NULL;
 
   while (nh->nh_ds->ds_cr)
-    nua_client_request_destroy(nh->nh_ds->ds_cr);
+    nua_client_request_complete(nh->nh_ds->ds_cr);
 
   while (nh->nh_ds->ds_sr)
     nua_server_request_destroy(nh->nh_ds->ds_sr);
@@ -1956,8 +1958,8 @@ int nua_base_server_report(nua_server_request_t *sr, tagi_t const *tags)
  * crm_report().
  *
  * The final responses are processed by crm_recv() and and preliminary ones
- * by crm_preliminary(). Both functions call nua_base_client_response() after
- * method-specific processing.
+ * by crm_preliminary(). All virtual functions should call
+ * nua_base_client_response() beside method-specific processing.
  *
  * The nua_base_client_response() relays the response to the application with
  * nua_client_restart() and crm_report().
@@ -1968,6 +1970,8 @@ int nua_base_server_report(nua_server_request_t *sr, tagi_t const *tags)
  * When a terminating request completes the dialog usage is removed and the
  * dialog is destroyed (unless there is an another active usage).
  */
+static void nua_client_request_destroy(nua_client_request_t *cr);
+static int nua_client_init_request0(nua_client_request_t *cr);
 static int nua_client_request_try(nua_client_request_t *cr);
 static int nua_client_request_sendmsg(nua_client_request_t *cr,
   				      msg_t *msg, sip_t *sip);
@@ -2038,6 +2042,10 @@ int nua_client_create(nua_handle_t *nh,
   if (tags && cr->cr_tags == NULL)
     cr->cr_tags = tl_tlist(nh->nh_home, TAG_NEXT(tags));
 
+#if HAVE_MEMLEAK_LOG
+  SU_DEBUG_0(("%p %s() for %s\n", cr, __func__, cr->cr_methods->crm_method_name));
+#endif
+
   if (nua_client_request_queue(cr))
     return 0;
 
@@ -2057,6 +2065,55 @@ int nua_client_tcreate(nua_handle_t *nh,
   return retval;
 }
 
+#if HAVE_MEMLEAK_LOG
+nua_client_request_t *
+nua_client_request_ref_by(nua_client_request_t *cr,
+			  char const *where, unsigned line, char const *who)
+{
+  SU_DEBUG_0(("%p ref %s to %u by %s:%u: %s()\n",
+	      cr, cr->cr_methods->crm_method_name,
+	      ++(cr->cr_refs), where, line, who));
+  return cr;
+}
+
+int nua_client_request_unref_by(nua_client_request_t *cr,
+				char const *where, unsigned line, char const *who)
+{
+  SU_DEBUG_0(("%p unref %s to %u by %s:%u: %s()\n",
+	      cr, cr->cr_methods->crm_method_name,
+	      cr->cr_refs - 1, where, line, who));
+
+  if (cr->cr_refs > 1) {
+    cr->cr_refs--;
+    return 0;
+  }
+  else {
+    cr->cr_refs = 0;
+    nua_client_request_destroy(cr);
+    return 1;
+  }
+}
+#else
+nua_client_request_t *nua_client_request_ref(nua_client_request_t *cr)
+{
+  cr->cr_refs++;
+  return cr;
+}
+
+int nua_client_request_unref(nua_client_request_t *cr)
+{
+  if (cr->cr_refs > 1) {
+    cr->cr_refs--;
+    return 0;
+  }
+  else {
+    cr->cr_refs = 0;
+    nua_client_request_destroy(cr);
+    return 1;
+  }
+}
+#endif
+
 int nua_client_request_queue(nua_client_request_t *cr)
 {
   int queued = 0;
@@ -2065,6 +2122,8 @@ int nua_client_request_queue(nua_client_request_t *cr)
   assert(cr->cr_prev == NULL && cr->cr_next == NULL);
 
   cr->cr_status = 0;
+
+  nua_client_request_ref(cr);
 
   if (cr->cr_method != sip_method_invite &&
       cr->cr_method != sip_method_cancel) {
@@ -2092,41 +2151,68 @@ int nua_client_request_queue(nua_client_request_t *cr)
   return queued;
 }
 
-void nua_client_request_remove(nua_client_request_t *cr)
+int
+nua_client_request_remove(nua_client_request_t *cr)
 {
   if (cr->cr_prev)
     if ((*cr->cr_prev = cr->cr_next))
       cr->cr_next->cr_prev = cr->cr_prev;
   cr->cr_prev = NULL, cr->cr_next = NULL;
+
+  if (cr->cr_timer) {
+    su_timer_destroy(cr->cr_timer), cr->cr_timer = NULL;
+    nua_client_request_unref(cr);
+  }
+
+  return nua_client_request_unref(cr);
 }
 
-void nua_client_request_clean(nua_client_request_t *cr)
+int
+nua_client_request_clean(nua_client_request_t *cr)
 {
-  nta_outgoing_destroy(cr->cr_orq), cr->cr_orq = NULL, cr->cr_acked = 0;
+  if (cr->cr_orq) {
+    nta_outgoing_destroy(cr->cr_orq), cr->cr_orq = NULL, cr->cr_acked = 0;
+    return nua_client_request_unref(cr);
+  }
+  return 0;
 }
 
-void nua_client_request_complete(nua_client_request_t *cr)
+static int
+nua_client_request_complete(nua_client_request_t *cr)
 {
-  nua_client_request_remove(cr);
-  if (cr && cr->cr_methods->crm_complete)
-    cr->cr_methods->crm_complete(cr);
+  if (cr->cr_orq) {
+    if (cr && cr->cr_methods->crm_complete)
+      cr->cr_methods->crm_complete(cr);
+    nta_outgoing_destroy(cr->cr_orq), cr->cr_orq = NULL, cr->cr_acked = 0;
+    nua_client_request_unref(cr);
+  }
+
+  return nua_client_request_remove(cr);
 }
 
-void nua_client_request_destroy(nua_client_request_t *cr)
+static void
+nua_client_request_destroy(nua_client_request_t *cr)
 {
   nua_handle_t *nh;
   
   if (cr == NULL)
     return;
 
-  nua_client_request_complete(cr);
+  /* Possible references: */
+  assert(cr->cr_prev == NULL);	/* queue */
+  assert(cr->cr_orq == NULL);	/* transaction callback */
+  assert(cr->cr_timer == NULL);	/* timer callback */
 
   nh = cr->cr_owner;
 
   nua_destroy_signal(cr->cr_signal);
 
   nua_client_bind(cr, NULL);
-  
+
+#if HAVE_MEMLEAK_LOG
+  SU_DEBUG_0(("%p %s for %s\n", cr, __func__, cr->cr_methods->crm_method_name));
+#endif
+
   if (cr->cr_msg)
     msg_destroy(cr->cr_msg);
   cr->cr_msg = NULL, cr->cr_sip = NULL;
@@ -2134,9 +2220,6 @@ void nua_client_request_destroy(nua_client_request_t *cr)
   if (cr->cr_orq)
     nta_outgoing_destroy(cr->cr_orq);
   cr->cr_orq = NULL;
-
-  if (cr->cr_timer)
-    su_timer_destroy(cr->cr_timer), cr->cr_timer = NULL;
 
   if (cr->cr_target)
     su_free(nh->nh_home, cr->cr_target);
@@ -2154,39 +2237,52 @@ int nua_client_bind(nua_client_request_t *cr, nua_dialog_usage_t *du)
     return -1;
 
   if (du == NULL) {
-    if (cr->cr_usage && cr->cr_usage->du_cr == cr)
-      cr->cr_usage->du_cr = NULL;
+    du = cr->cr_usage;
     cr->cr_usage = NULL;
+    if (du && du->du_cr == cr) {
+      du->du_cr = NULL;
+      nua_client_request_unref(cr);
+    }
     return 0;
   }
 
-  if (du->du_cr && cr != du->du_cr) {
-    /* This should never happen (but it does):
-       assert(!nua_client_is_queued(du->du_cr)); 
-    */
-    if (nua_client_is_queued(du->du_cr))
-      return -1;
-    if (nua_client_is_reporting(du->du_cr)) {
-      du->du_cr->cr_usage = NULL;
-      du->du_cr = NULL;
-    }
-    else
-      nua_client_request_destroy(du->du_cr);
+  if (du->du_cr && cr == du->du_cr)
+    return 0;
+
+  if (du->du_cr) {
+    nua_client_bind(du->du_cr, NULL);
   }
 
-  du->du_cr = cr, cr->cr_usage = du;
+  du->du_cr = nua_client_request_ref(cr), cr->cr_usage = du;
 
   return 0;
 }
 
 /**Initialize client request for sending.
  *
- * This function is called only first time the request is sent.
+ * This function is called when the request is taken from queue and sent.
  *
  * @retval 0 if request is pending
  * @retval >=1 if error event has been sent
  */
 int nua_client_init_request(nua_client_request_t *cr)
+{
+  int retval;
+  nua_client_request_ref(cr);
+  retval = nua_client_init_request0(cr);
+  nua_client_request_unref(cr);
+  return retval;
+}
+
+/**Initialize client request for sending.
+ *
+ * This function is called when the request is taken from queue and sent.
+ *
+ * @retval 0 if request is pending
+ * @retval >=1 if error event has been sent
+ */
+static
+int nua_client_init_request0(nua_client_request_t *cr)
 {
   nua_handle_t *nh = cr->cr_owner;
   nua_t *nua = nh->nh_nua;
@@ -2354,7 +2450,6 @@ int nua_client_init_request(nua_client_request_t *cr)
   cr->cr_sip = sip;
 
   return nua_client_request_try(cr);
-
 }
 
 msg_t *nua_client_request_template(nua_client_request_t *cr)
@@ -2373,7 +2468,7 @@ msg_t *nua_client_request_template(nua_client_request_t *cr)
     tagi_t const *t = nh->nh_tags;
 
     /* Use the From header from the dialog. 
-       From is always first tag in the handle */
+       If From is set, it is always first tag in the handle */
     if (ds->ds_leg && t->t_tag == siptag_from)
       t++;
 
@@ -2670,15 +2765,23 @@ int nua_base_client_request(nua_client_request_t *cr, msg_t *msg, sip_t *sip,
 
   cr->cr_seq = sip->sip_cseq->cs_seq; /* Save last sequence number */
 
+  assert(cr->cr_orq == NULL);
+
   cr->cr_orq = nta_outgoing_mcreate(nh->nh_nua->nua_nta,
-				    nua_client_orq_response, cr,
-				    NULL, 
+				    nua_client_orq_response,
+				    nua_client_request_ref(cr),
+				    NULL,
 				    msg,
 				    TAG_IF(proxy_is_set,
 					   NTATAG_DEFAULT_PROXY(proxy)),
 				    TAG_NEXT(tags));
 
-  return cr->cr_orq ? 0 : -1;
+  if (cr->cr_orq == NULL) {
+    nua_client_request_unref(cr);
+    return -1;
+  }
+
+  return 0;
 }
 
 /** Callback for nta client transaction */
@@ -2741,9 +2844,12 @@ int nua_client_response(nua_client_request_t *cr,
 {
   nua_handle_t *nh = cr->cr_owner;
   nua_dialog_usage_t *du = cr->cr_usage;
+  int retval = 0;
 
   if (cr->cr_restarting)
     return 0;
+
+  nua_client_request_ref(cr);
 
   cr->cr_status = status;
   cr->cr_phrase = phrase;
@@ -2752,6 +2858,7 @@ int nua_client_response(nua_client_request_t *cr,
     /* Xyzzy */
   }
   else if (sip && nua_client_check_restart(cr, status, phrase, sip)) {
+    nua_client_request_unref(cr);
     return 0;
   }
   else if (status < 300) {
@@ -2786,20 +2893,24 @@ int nua_client_response(nua_client_request_t *cr,
     else if (graceful)
       cr->cr_graceful = 1;
   }
-  
+
   if (status < 200) {
     if (cr->cr_methods->crm_preliminary)
       cr->cr_methods->crm_preliminary(cr, status, phrase, sip);
     else
       nua_base_client_response(cr, status, phrase, sip, NULL);
     cr->cr_phrase = NULL;
-    return 0;
   }  
+  else {
+    if (cr->cr_methods->crm_recv)
+      retval = cr->cr_methods->crm_recv(cr, status, phrase, sip);
+    else
+      retval = nua_base_client_response(cr, status, phrase, sip, NULL);
+  }
 
-  if (cr->cr_methods->crm_recv)
-    return cr->cr_methods->crm_recv(cr, status, phrase, sip);
-  else
-    return nua_base_client_response(cr, status, phrase, sip, NULL);
+  nua_client_request_unref(cr);
+
+  return retval;
 }
 
 /** Check if request should be restarted.
@@ -2914,6 +3025,7 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
       nua_client_report(cr, status, phrase, NULL, orq, NULL);
       nta_outgoing_destroy(orq);
       cr->cr_status = 0, cr->cr_phrase = NULL;
+      nua_client_request_unref(cr);
 
       return 1;
     }
@@ -2922,20 +3034,24 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
   if (500 <= status && status < 600 && 
       sip->sip_retry_after && 
       sip->sip_retry_after->af_delta < 32) {
+    su_timer_t *timer;
     char phrase[18];		/* Retry After XXXX\0 */
 
-    if (cr->cr_timer == NULL)
-      cr->cr_timer = su_timer_create(su_root_task(nh->nh_nua->nua_root), 0);
+    timer = su_timer_create(su_root_task(nh->nh_nua->nua_root), 0);
 
-    if (su_timer_set_interval(cr->cr_timer, nua_client_restart_after, cr,
-			      sip->sip_retry_after->af_delta * 1000) < 0)
+    if (su_timer_set_interval(timer, nua_client_restart_after, cr,
+			      sip->sip_retry_after->af_delta * 1000) < 0) {
+      su_timer_destroy(timer);
       return 0; /* Too bad */
+    }
+
+    cr->cr_timer = timer;	/* This takes over reference from orq */
 
     snprintf(phrase, sizeof phrase, "Retry After %u", 
 	     (unsigned)sip->sip_retry_after->af_delta);
 
     orq = cr->cr_orq, cr->cr_orq = NULL;
-    cr->cr_waiting = cr->cr_wait_for_timer = 1;
+    cr->cr_waiting = 1;
     nua_client_report(cr, 100, phrase, NULL, orq, NULL);
     nta_outgoing_destroy(orq);
     cr->cr_status = 0, cr->cr_phrase = NULL;
@@ -2951,11 +3067,10 @@ void nua_client_restart_after(su_root_magic_t *magic,
 			      su_timer_t *timer,
 			      nua_client_request_t *cr) 
 {
-  if (!cr->cr_wait_for_timer)
-    return;
-
-  cr->cr_waiting = cr->cr_wait_for_timer = 0;
+  cr->cr_waiting = 0;
+  su_timer_destroy(cr->cr_timer), cr->cr_timer = NULL;
   nua_client_restart_request(cr, cr->cr_terminating, NULL);
+  nua_client_request_unref(cr);
 }
 
 /** Restart request.
@@ -3017,6 +3132,7 @@ int nua_client_restart(nua_client_request_t *cr,
   nua_client_report(cr, status, phrase, NULL, orq, NULL);
 
   nta_outgoing_destroy(orq);
+  nua_client_request_unref(cr);	/* ... reference used by old orq */
 
   return 1;
 }
@@ -3086,7 +3202,6 @@ int nua_base_client_response(nua_client_request_t *cr,
   nua_handle_t *nh = cr->cr_owner;
   sip_method_t method = cr->cr_method;
   nua_dialog_usage_t *du;
-  nua_client_request_t *cr_next;
 
   cr->cr_reporting = 1, nh->nh_ds->ds_reporting = 1;
 
@@ -3115,8 +3230,7 @@ int nua_base_client_response(nua_client_request_t *cr,
     return 1;
   }
 
-  if (cr->cr_orq)
-    nta_outgoing_destroy(cr->cr_orq), cr->cr_orq = NULL, cr->cr_acked = 0;
+  nua_client_request_clean(cr);
 
   du = cr->cr_usage;
 
@@ -3144,15 +3258,10 @@ int nua_base_client_response(nua_client_request_t *cr,
   cr->cr_phrase = NULL;
   cr->cr_reporting = 0, nh->nh_ds->ds_reporting = 0;
 
-  cr_next = nh->nh_ds->ds_cr;
-
-  if (!nua_client_is_queued(cr) && !nua_client_is_bound(cr))
-    nua_client_request_destroy(cr);
-
   if (method == sip_method_cancel)
     return 1;
 
-  return nua_client_next_request(cr_next, method == sip_method_invite);
+  return nua_client_next_request(nh->nh_ds->ds_cr, method == sip_method_invite);
 }
 
 /** Send event, zap transaction but leave cr in list */
@@ -3206,8 +3315,9 @@ int nua_client_next_request(nua_client_request_t *cr, int invite)
       break;
   }
 
-  if (cr && cr->cr_orq == NULL) 
+  if (cr && cr->cr_orq == NULL) {
     nua_client_init_request(cr);
+  }
 
   return 1;
 }
