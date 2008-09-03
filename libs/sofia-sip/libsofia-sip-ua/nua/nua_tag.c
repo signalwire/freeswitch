@@ -299,7 +299,7 @@ tag_typedef_t nutag_any = NSTAG_TYPEDEF(*);
  *
  * @par Values
  *    #url_string_t, which is either a pointer to #url_t or NULL terminated
- *    character string representing URL \n
+ *    character string representing URL
  *
  * For normal nua calls, this tag is used as request target, which is usually
  * stored as request-URI.
@@ -445,9 +445,9 @@ tag_typedef_t nutag_early_media = BOOLTAG_TYPEDEF(early_media);
  *
  * Require 100rel extension and PRACK only with 183 response.
  *
- * If this parameter is set, stack includes feature tag "100rel" in the
- * @Require header only with 183: otherwise, all 1XX responses (except
- * <i>100 Trying</i>) require 100rel.
+ * When NUTAG_EARLY_MEDIA() is set, and if this parameter is set, stack
+ * includes feature tag "100rel" in the @Require header only with 183:
+ * otherwise, all 1XX responses (except <i>100 Trying</i>) require 100rel.
  *
  * @par Used with
  *    nua_set_params() \n
@@ -474,7 +474,7 @@ tag_typedef_t nutag_early_media = BOOLTAG_TYPEDEF(early_media);
  */
 tag_typedef_t nutag_only183_100rel = BOOLTAG_TYPEDEF(only183_100rel);
 
-/**@def NUTAG_ONLY183_100REL_REF(x) 
+/**@def NUTAG_ONLY183_100REL_REF(x)
  * Reference tag for NUTAG_ONLY183_100REL().
  */
 
@@ -487,11 +487,11 @@ tag_typedef_t nutag_only183_100rel = BOOLTAG_TYPEDEF(only183_100rel);
  *    nua_respond(), nua_set_params(), nua_set_hparams()
  *
  * @par Parameter type
- *    int (boolean)
+ *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
- *    @c 0   False \n
- *    @c !=0 True
+ *    - 0 (false) - do not include SDP in non-100rel 1XX responses
+ *    - 1 (true) - try to include SDP in preliminary responses
  *
  * Corresponding tag taking reference parameter is NUTAG_EARLY_ANSWER_REF().
  *
@@ -503,7 +503,7 @@ tag_typedef_t nutag_only183_100rel = BOOLTAG_TYPEDEF(only183_100rel);
  */
 tag_typedef_t nutag_early_answer = BOOLTAG_TYPEDEF(early_answer);
 
-/**@def NUTAG_EARLY_ANSWER_REF(x) 
+/**@def NUTAG_EARLY_ANSWER_REF(x)
  * Reference tag for NUTAG_EARLY_ANSWER().
  */
 
@@ -523,11 +523,12 @@ tag_typedef_t nutag_early_answer = BOOLTAG_TYPEDEF(early_answer);
  *    nua_respond()
  *
  * @par Parameter type
- *    int (boolean)
+ *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
- *    @c 0   False \n
- *    @c !=0 True
+ *    - 0 (false) - do not include extra SDP on 200 OK
+ *    - 1 (true) - include SDP in 200 OK even if it has been sent 
+ *                 a 100rel response, too
  *
  * Corresponding tag taking reference parameter is
  * NUTAG_INCLUDE_EXTRA_SDP_REF().
@@ -536,12 +537,12 @@ tag_typedef_t nutag_early_answer = BOOLTAG_TYPEDEF(early_answer);
  *
  * @sa NUTAG_EARLY_ANSWER(), NUTAG_EARLY_MEDIA(), NUTAG_AUTOALERT(),
  * NUTAG_MEDIA_ENABLE(), @RFC3264, @RFC3264
- * 
+ *
  * @since New in @VERSION_1_12_4.
  */
 tag_typedef_t nutag_include_extra_sdp = BOOLTAG_TYPEDEF(include_extra_sdp);
 
-/**@def NUTAG_INCLUDE_EXTRA_SDP_REF(x) 
+/**@def NUTAG_INCLUDE_EXTRA_SDP_REF(x)
  * Reference tag for NUTAG_INCLUDE_EXTRA_SDP().
  */
 
@@ -551,7 +552,7 @@ tag_typedef_t nutag_include_extra_sdp = BOOLTAG_TYPEDEF(include_extra_sdp);
  * Enable built-in media session handling
  *
  * The built-in media session object @soa takes care of most details
- * of offer-answer negotiation. 
+ * of offer-answer negotiation.
  *
  * @par Used with
  *    nua_create()
@@ -560,14 +561,14 @@ tag_typedef_t nutag_include_extra_sdp = BOOLTAG_TYPEDEF(include_extra_sdp);
  *    int
  *
  * @par Values
- *    @c 0   False \n
- *    @c !=0 True
+ *    - 0 (false) - do not use soa
+ *    - 1 (true) - use soa with SDP O/A
  *
  * Corresponding tag taking reference parameter is NUTAG_MEDIA_ENABLE_REF()
  */
 tag_typedef_t nutag_media_enable = BOOLTAG_TYPEDEF(media_enable);
 
-/**@def NUTAG_MEDIA_ENABLE_REF(x) 
+/**@def NUTAG_MEDIA_ENABLE_REF(x)
  * Reference tag for NUTAG_MEDIA_ENABLE().
  */
 
@@ -597,7 +598,7 @@ tag_typedef_t nutag_soa_name = STRTAG_TYPEDEF(soa_name);
 
 
 /**@def NUTAG_RETRY_COUNT(x)
- * 
+ *
  * Set request retry count.
  *
  * Retry count determines how many times stack will automatically retry
@@ -612,7 +613,7 @@ tag_typedef_t nutag_soa_name = STRTAG_TYPEDEF(soa_name);
  *    nua_options(), nua_invite(), nua_ack(), nua_cancel(), nua_bye(),
  *    nua_prack(), nua_update(), nua_info(),
  *    nua_message(), nua_publish(), nua_unpublish(), nua_notifier(),
- *    nua_subscribe(), nua_unsubscribe(), nua_notify(), nua_refer(), 
+ *    nua_subscribe(), nua_unsubscribe(), nua_notify(), nua_refer(),
  *    nua_method(), nua_respond()
  *    nua_authenticate().
  *
@@ -620,7 +621,7 @@ tag_typedef_t nutag_soa_name = STRTAG_TYPEDEF(soa_name);
  *    unsigned
  *
  * @par Values
- * - 0 - Never retry automatically \n
+ * - 0 - Never retry automatically
  * - Otherwise, number of extra transactions initiated after initial
  *   transaction failed with recoverable error response
  *
@@ -630,7 +631,7 @@ tag_typedef_t nutag_soa_name = STRTAG_TYPEDEF(soa_name);
  */
 tag_typedef_t nutag_retry_count = UINTTAG_TYPEDEF(retry_count);
 
-/**@def NUTAG_RETRY_COUNT_REF(x) 
+/**@def NUTAG_RETRY_COUNT_REF(x)
  *
  * Reference tag for NUTAG_RETRY_COUNT().
  */
@@ -648,19 +649,19 @@ tag_typedef_t nutag_retry_count = UINTTAG_TYPEDEF(retry_count);
  *    nua_get_params()
  *
  * @par Parameter type
- *    unsigned
+ *    unsigned int
  *
  * @par Values
- *    @c 0   Do not allow any subscriptions \n
+ *    - 0 (zero) - do not allow any subscriptions
  *
  * @sa nua_notifier(), nua_authorize()
  *
- * Corresponding tag taking reference parameter is 
+ * Corresponding tag taking reference parameter is
  * NUTAG_MAX_SUBSCRIPTIONS_REF().
  */
 tag_typedef_t nutag_max_subscriptions = UINTTAG_TYPEDEF(max_subscriptions);
 
-/**@def NUTAG_MAX_SUBSCRIPTIONS_REF(x) 
+/**@def NUTAG_MAX_SUBSCRIPTIONS_REF(x)
  * Reference tag for NUTAG_MAX_SUBSCRIPTIONS().
  */
 
@@ -692,7 +693,7 @@ tag_typedef_t nutag_max_subscriptions = UINTTAG_TYPEDEF(max_subscriptions);
  */
 tag_typedef_t nutag_callstate = INTTAG_TYPEDEF(callstate);
 
-/**@def NUTAG_CALLSTATE_REF(x) 
+/**@def NUTAG_CALLSTATE_REF(x)
  * Reference tag for NUTAG_CALLSTATE().
  */
 
@@ -711,7 +712,7 @@ tag_typedef_t nutag_callstate = INTTAG_TYPEDEF(callstate);
  */
 tag_typedef_t nutag_offer_recv = BOOLTAG_TYPEDEF(offer_recv);
 
-/**@def NUTAG_OFFER_RECV_REF(x) 
+/**@def NUTAG_OFFER_RECV_REF(x)
  * Reference tag for NUTAG_OFFER_RECV().
  */
 
@@ -730,7 +731,7 @@ tag_typedef_t nutag_offer_recv = BOOLTAG_TYPEDEF(offer_recv);
  */
 tag_typedef_t nutag_answer_recv = BOOLTAG_TYPEDEF(answer_recv);
 
-/**@def NUTAG_ANSWER_RECV_REF(x) 
+/**@def NUTAG_ANSWER_RECV_REF(x)
  * Reference tag for NUTAG_ANSWER_RECV().
  */
 
@@ -749,7 +750,7 @@ tag_typedef_t nutag_answer_recv = BOOLTAG_TYPEDEF(answer_recv);
  */
 tag_typedef_t nutag_offer_sent = BOOLTAG_TYPEDEF(offer_sent);
 
-/**@def NUTAG_OFFER_SENT_REF(x) 
+/**@def NUTAG_OFFER_SENT_REF(x)
  * Reference tag for NUTAG_OFFER_SENT().
  */
 
@@ -768,7 +769,7 @@ tag_typedef_t nutag_offer_sent = BOOLTAG_TYPEDEF(offer_sent);
  */
 tag_typedef_t nutag_answer_sent = BOOLTAG_TYPEDEF(answer_sent);
 
-/**@def NUTAG_ANSWER_SENT_REF(x) 
+/**@def NUTAG_ANSWER_SENT_REF(x)
  * Reference tag for NUTAG_ANSWER_SENT().
  */
 
@@ -799,7 +800,7 @@ tag_typedef_t nutag_answer_sent = BOOLTAG_TYPEDEF(answer_sent);
  *
  * Note that the @SubscriptionState or @Expires headers specified by
  * application with the nua_notify() or nua_respond() to SUBSCRIBE overrides
- * the subscription state specified by NUTAG_SUBSTATE(). 
+ * the subscription state specified by NUTAG_SUBSTATE().
  * Application can terminate subscription by including
  * NUTAG_SUBSTATE(nua_substate_terminated), @SubscriptionState with value
  * "terminated" or @Expires header with value 0 in the NOTIFY request sent
@@ -813,7 +814,7 @@ tag_typedef_t nutag_answer_sent = BOOLTAG_TYPEDEF(answer_sent);
  */
 tag_typedef_t nutag_substate = INTTAG_TYPEDEF(substate);
 
-/**@def NUTAG_SUBSTATE_REF(x) 
+/**@def NUTAG_SUBSTATE_REF(x)
  * Reference tag for NUTAG_SUBSTATE().
  */
 
@@ -848,7 +849,7 @@ tag_typedef_t nutag_substate = INTTAG_TYPEDEF(substate);
  */
 tag_typedef_t nutag_sub_expires = UINTTAG_TYPEDEF(substate);
 
-/**@def NUTAG_SUB_EXPIRES_REF(x) 
+/**@def NUTAG_SUB_EXPIRES_REF(x)
  * Reference tag for NUTAG_SUB_EXPIRES().
  */
 
@@ -858,7 +859,7 @@ tag_typedef_t nutag_sub_expires = UINTTAG_TYPEDEF(substate);
  * Send unsolicited NOTIFY request.
  *
  * Some applications may require sending unsolicited NOTIFY requests, that
- * is, NOTIFY without SUBSCRIBE or REFER request sent by event watcher. 
+ * is, NOTIFY without SUBSCRIBE or REFER request sent by event watcher.
  * However, sending NOTIFY request requires an existing dialog usage by
  * default. If the nua_notify() tags include NUTAG_NEWSUB(1), the usage
  * is created by nua_notify() itself.
@@ -871,12 +872,12 @@ tag_typedef_t nutag_sub_expires = UINTTAG_TYPEDEF(substate);
  *    nua_notify()
  *
  * @par Parameter type
- *    int (boolean)
+ *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
- *   - 0 - false (default) - do not create new subscription 
- *         but reject NOTIFY with 481 locally \n
- *   - 1 - true - create a subscription if it does not exist \n
+ *   - 0 - false (default) - do not create new subscription
+ *         but reject NOTIFY with 481 locally
+ *   - 1 - true - create a subscription if it does not exist
  *
  * Corresponding tag taking reference parameter is NUTAG_NEWSUB_REF().
  *
@@ -884,7 +885,7 @@ tag_typedef_t nutag_sub_expires = UINTTAG_TYPEDEF(substate);
  */
 tag_typedef_t nutag_newsub = BOOLTAG_TYPEDEF(newsub);
 
-/**@def NUTAG_NEWSUB_REF(x) 
+/**@def NUTAG_NEWSUB_REF(x)
  * Reference tag for NUTAG_NEWSUB().
  */
 
@@ -904,14 +905,14 @@ tag_typedef_t nutag_newsub = BOOLTAG_TYPEDEF(newsub);
  *    int (enum nua_af)
  *
  * @par Values
- *    @c 0  no timer \n
- *    @c >0 timer in seconds
+ *    - 0  no timer
+ *    - >0 timer in seconds
  *
  * Corresponding tag taking reference parameter is NUTAG_INVITE_TIMER_REF().
  */
 tag_typedef_t nutag_invite_timer = UINTTAG_TYPEDEF(invite_timer);
 
-/**@def NUTAG_INVITE_TIMER_REF(x) 
+/**@def NUTAG_INVITE_TIMER_REF(x)
  * Reference tag for NUTAG_INVITE_TIMER().
  */
 
@@ -924,17 +925,17 @@ tag_typedef_t nutag_invite_timer = UINTTAG_TYPEDEF(invite_timer);
  * extension is used. The tag value is the proposed session expiration time
  * in seconds, the session is refreshed twice during the expiration time.
  *
- * @par Sending INVITE and UPDATE Requests 
+ * @par Sending INVITE and UPDATE Requests
  *
  * If NUTAG_SESSION_TIMER() is used with non-zero value, the value is used
- * in the @SessionExpires header included in the INVITE or UPDATE requests. 
+ * in the @SessionExpires header included in the INVITE or UPDATE requests.
  * The intermediate proxies or the ultimate destination can lower the
  * interval in @SessionExpires header. If the value is too low, they can
  * reject the request with the status code <i>422 Session Timer Too
  * Small</i>. In that case, @b nua increases the value of @SessionExpires
  * header and retries the request automatically.
  *
- * @par Returning a Response to the INVITE and UPDATE Requests 
+ * @par Returning a Response to the INVITE and UPDATE Requests
  *
  * The NUTAG_SESSION_TIMER() value is also used when sending the final
  * response to the INVITE or UPDATE requests. If the NUTAG_SESSION_TIMER()
@@ -952,7 +953,7 @@ tag_typedef_t nutag_invite_timer = UINTTAG_TYPEDEF(invite_timer);
  * response. The party indicated with the "refresher" parameter of the
  * @SessionExpires header sends a re-INVITE requests (or an UPDATE
  * request if NUTAG_UPDATE_REFRESH(1) parameter tag has been set).
- * 
+ *
  * @par When to Use NUTAG_SESSION_TIMER()?
  *
  * The session time extension is enabled ("timer" feature tag is included in
@@ -997,7 +998,7 @@ tag_typedef_t nutag_invite_timer = UINTTAG_TYPEDEF(invite_timer);
  */
 tag_typedef_t nutag_session_timer = UINTTAG_TYPEDEF(session_timer);
 
-/**@def NUTAG_SESSION_TIMER_REF(x) 
+/**@def NUTAG_SESSION_TIMER_REF(x)
  * Reference tag for NUTAG_SESSION_TIMER().
  */
 
@@ -1031,7 +1032,7 @@ tag_typedef_t nutag_session_timer = UINTTAG_TYPEDEF(session_timer);
  */
 tag_typedef_t nutag_min_se = UINTTAG_TYPEDEF(min_se);
 
-/**@def NUTAG_MIN_SE_REF(x) 
+/**@def NUTAG_MIN_SE_REF(x)
  * Reference tag for NUTAG_MIN_SE().
  */
 
@@ -1055,10 +1056,10 @@ tag_typedef_t nutag_min_se = UINTTAG_TYPEDEF(min_se);
  *          #nua_any_refresher }
  *
  * @par Values
- *    @c nua_no_refresher (session timers are disabled) \n
- *    @c nua_local_refresher \n
- *    @c nua_remote_refresher \n
- *    @c nua_any_refresher (default) \n
+ *    - nua_no_refresher (session timers are disabled)
+ *    - nua_local_refresher
+ *    - nua_remote_refresher
+ *    - nua_any_refresher (default)
  *
  * Corresponding tag taking reference parameter is
  * NUTAG_SESSION_REFRESHER_REF().
@@ -1068,7 +1069,7 @@ tag_typedef_t nutag_min_se = UINTTAG_TYPEDEF(min_se);
  */
 tag_typedef_t nutag_session_refresher = INTTAG_TYPEDEF(session_refresher);
 
-/**@def NUTAG_SESSION_REFRESHER_REF(x) 
+/**@def NUTAG_SESSION_REFRESHER_REF(x)
  * Reference tag for NUTAG_SESSION_REFRESHER().
  */
 
@@ -1080,7 +1081,7 @@ tag_typedef_t nutag_session_refresher = INTTAG_TYPEDEF(session_refresher);
  * Use UPDATE as refresh method.
  *
  * If this parameter is true and the remote endpoint has included UPDATE in
- * Allow header, the nua stack uses UPDATE instead of INVITE to refresh the 
+ * Allow header, the nua stack uses UPDATE instead of INVITE to refresh the
  * session when using the session timer extension.
  *
  * Note that the session timer headers @SessionExpires and @MinSE are always
@@ -1096,11 +1097,11 @@ tag_typedef_t nutag_session_refresher = INTTAG_TYPEDEF(session_refresher);
  * accept this tag.
  *
  * @par Parameter type
- *    boolean
+ *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
- *    @c 1 Use UPDATE \n
- *    @c 0 Use INVITE
+ *    - 1 (true, use UPDATE)
+ *    - 0 (false, use INVITE)
  *
  * Corresponding tag taking reference parameter is NUTAG_UPDATE_REFRESH_REF().
  *
@@ -1109,7 +1110,7 @@ tag_typedef_t nutag_session_refresher = INTTAG_TYPEDEF(session_refresher);
  */
 tag_typedef_t nutag_update_refresh = BOOLTAG_TYPEDEF(update_refresh);
 
-/**@def NUTAG_UPDATE_REFRESH_REF(x) 
+/**@def NUTAG_UPDATE_REFRESH_REF(x)
  * Reference tag for NUTAG_UPDATE_REFRESH().
  */
 
@@ -1138,7 +1139,7 @@ tag_typedef_t nutag_update_refresh = BOOLTAG_TYPEDEF(update_refresh);
  */
 tag_typedef_t nutag_refer_expires = UINTTAG_TYPEDEF(refer_expires);
 
-/**@def NUTAG_REFER_EXPIRES_REF(x) 
+/**@def NUTAG_REFER_EXPIRES_REF(x)
  * Reference tag for NUTAG_REFER_EXPIRES().
  */
 
@@ -1162,11 +1163,11 @@ tag_typedef_t nutag_refer_expires = UINTTAG_TYPEDEF(refer_expires);
  *    nua_update()).
  *
  * @par Parameter type
- *    int (boolean)
+ *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
- *   0 (false, do not use id with subscription created with first REFER request) \n
- *   1 (true, use id with all subscriptions created with REFER request) \n
+ *   - 0 (false, do not use id with subscription created with first REFER request)
+ *   - 1 (true, use id with all subscriptions created with REFER request)
  *
  * Corresponding tag taking reference parameter is NUTAG_REFER_WITH_ID_REF().
  *
@@ -1180,24 +1181,26 @@ tag_typedef_t nutag_refer_with_id = BOOLTAG_TYPEDEF(refer_with_id);
 
 /**@def NUTAG_AUTOALERT(x)
  *
- * Send alerting (180 Ringing) automatically
+ * Send alerting (180 Ringing) automatically (instead of 100 Trying). If the
+ * early media has been enabled with NUTAG_EARLY_MEDIA(1), the stack will
+ * send 183, wait for PRACK and then return 180 Ringing.
  *
  * @par Used with
  *    nua_set_params() \n
  *    nua_get_params()
  *
  * @par Parameter type
- *    int
+ *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
- *    @c 0   No automatic sending of "180 Ringing" \n
- *    @c !=0 "180 Ringing" sent automatically
+ *    - 0 (false) - no automatic sending of "180 Ringing"
+ *    - 1 (true) - "180 Ringing" sent automatically
  *
  * Corresponding tag taking reference parameter is NUTAG_AUTOALERT_REF().
  */
 tag_typedef_t nutag_autoalert = BOOLTAG_TYPEDEF(autoAlert);
 
-/**@def NUTAG_AUTOALERT_REF(x) 
+/**@def NUTAG_AUTOALERT_REF(x)
  * Reference tag for NUTAG_AUTOALERT().
  */
 
@@ -1213,7 +1216,7 @@ tag_typedef_t nutag_autoalert = BOOLTAG_TYPEDEF(autoAlert);
  *    nua_respond()
  *
  * @par Parameter type
- *    int (boolean)
+ *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
  *    - 0 (false) - No automatic sending of "200 Ok"
@@ -1222,7 +1225,7 @@ tag_typedef_t nutag_autoalert = BOOLTAG_TYPEDEF(autoAlert);
  * Corresponding tag taking reference parameter is NUTAG_AUTOANSWER_REF().
  *
  * @note Requires that @soa is enabled with NUTAG_MEDIA_ENABLE(1).
- * 
+ *
  * @par Auto-Answer to Re-INVITE requests
  * By default, NUA tries to auto answer the re-INVITEs used to refresh the
  * session when the media is enabled. Set NUTAG_AUTOANSWER(0) on the call
@@ -1240,7 +1243,7 @@ tag_typedef_t nutag_autoalert = BOOLTAG_TYPEDEF(autoAlert);
  */
 tag_typedef_t nutag_autoanswer = BOOLTAG_TYPEDEF(autoAnswer);
 
-/**@def NUTAG_AUTOANSWER_REF(x) 
+/**@def NUTAG_AUTOANSWER_REF(x)
  * Reference tag for NUTAG_AUTOANSWER().
  */
 
@@ -1261,19 +1264,19 @@ tag_typedef_t nutag_autoanswer = BOOLTAG_TYPEDEF(autoAnswer);
  *    nua_respond()
  *
  * @par Parameter type
- *    int
+ *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
- *    @c 0    No automatic sending of ACK \n
- *    @c !=0 ACK sent automatically
+ *    - 0 (false) - No automatic sending of ACK
+ *    - 1 (true) - ACK sent automatically
  *
  * Default value is NUTAG_AUTOACK(1).
- * 
+ *
  * Corresponding tag taking reference parameter is NUTAG_AUTOACK_REF().
  */
 tag_typedef_t nutag_autoack = BOOLTAG_TYPEDEF(autoACK);
 
-/**@def NUTAG_AUTOACK_REF(x) 
+/**@def NUTAG_AUTOACK_REF(x)
  * Reference tag for NUTAG_AUTOACK().
  */
 
@@ -1288,17 +1291,17 @@ tag_typedef_t nutag_autoack = BOOLTAG_TYPEDEF(autoACK);
  *    nua_get_params()
  *
  * @par Parameter type
- *    int
+ *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
- *    @c 0   Incoming INVITE not enabled. NUA answers 403 Forbidden \n
- *    @c !=0 Incoming INVITE enabled
+ *    - 0 (false) - Incoming INVITE not enabled. NUA answers 403 Forbidden
+ *    - 1 (true) - Incoming INVITE enabled
  *
  * Corresponding tag taking reference parameter is NUTAG_ENABLEINVITE_REF().
  */
 tag_typedef_t nutag_enableinvite = BOOLTAG_TYPEDEF(enableInvite);
 
-/**@def NUTAG_ENABLEINVITE_REF(x) 
+/**@def NUTAG_ENABLEINVITE_REF(x)
  * Reference tag for NUTAG_ENABLEINVITE().
  */
 
@@ -1313,17 +1316,17 @@ tag_typedef_t nutag_enableinvite = BOOLTAG_TYPEDEF(enableInvite);
  *    nua_get_params()
  *
  * @par Parameter type
- *    int
+ *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
- *    @c 0   Incoming MESSAGE not enabled. NUA answers 403 Forbidden \n
- *    @c !=0 Incoming MESSAGE enabled
+ *    - 0 (false) - Incoming MESSAGE not enabled. NUA answers 403 Forbidden
+ *    - 1 (true) - Incoming MESSAGE enabled
  *
  * Corresponding tag taking reference parameter is NUTAG_ENABLEMESSAGE_REF().
  */
 tag_typedef_t nutag_enablemessage = BOOLTAG_TYPEDEF(enableMessage);
 
-/**@def NUTAG_ENABLEMESSAGE_REF(x) 
+/**@def NUTAG_ENABLEMESSAGE_REF(x)
  * Reference tag for NUTAG_ENABLEMESSAGE().
  */
 
@@ -1333,24 +1336,26 @@ tag_typedef_t nutag_enablemessage = BOOLTAG_TYPEDEF(enableMessage);
  *
  * Enable incoming MESSAGE with To tag.
  *
- * Set this parameter if you want to chat with Windows Messenger.
+ * Set this parameter true if you want to chat with Windows Messenger. When
+ * it is set, stack will accept MESSAGE requests with To tag outside
+ * existing dialogs.
  *
  * @par Used with
  *    nua_set_params() \n
  *    nua_get_params()
  *
  * @par Parameter type
- *    int
+ *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
- *    @c 0   False \n
- *    @c !=0 True
+ *    - 0 (false) - disable Windows-Messenger-specific features
+ *    - 1 (true) - enable Windows-Messenger-specific features
  *
  * Corresponding tag taking reference parameter is NUTAG_ENABLEMESSENGER_REF().
  */
 tag_typedef_t nutag_enablemessenger = BOOLTAG_TYPEDEF(enableMessenger);
 
-/**@def NUTAG_ENABLEMESSENGER_REF(x) 
+/**@def NUTAG_ENABLEMESSENGER_REF(x)
  * Reference tag for NUTAG_ENABLEMESSENGER().
  */
 
@@ -1365,17 +1370,17 @@ tag_typedef_t nutag_enablemessenger = BOOLTAG_TYPEDEF(enableMessenger);
  *    nua_get_params()
  *
  * @par Parameter type
- *    boolean
+ *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
- *    @c 0   S/MIME is Disabled \n
- *    @c !=0 S/MIME is Enabled
+ *    - 0 (false) - S/MIME is Disabled
+ *    - 1 (true) - S/MIME is Enabled
  *
  * Corresponding tag taking reference parameter is NUTAG_SMIME_ENABLE_REF().
  */
 tag_typedef_t nutag_smime_enable = BOOLTAG_TYPEDEF(smime_enable);
 
-/**@def NUTAG_SMIME_ENABLE_REF(x) 
+/**@def NUTAG_SMIME_ENABLE_REF(x)
  * Reference tag for NUTAG_SMIME_ENABLE().
  */
 
@@ -1396,16 +1401,16 @@ tag_typedef_t nutag_smime_enable = BOOLTAG_TYPEDEF(smime_enable);
  *   int
  *
  * @par Values
- *   @c -1 (SM_ID_NULL) No security service needed \n
- *   @c  0 (SM_ID_CLEAR_SIGN) Clear signing \n
- *   @c  1 (SM_ID_SIGN) S/MIME signing \n
- *   @c  2 (SM_ID_ENCRYPT) S/MIME encryption
+ *   - -1 (SM_ID_NULL) No security service needed
+ *   -  0 (SM_ID_CLEAR_SIGN) Clear signing
+ *   -  1 (SM_ID_SIGN) S/MIME signing
+ *   -  2 (SM_ID_ENCRYPT) S/MIME encryption
  *
  * Corresponding tag taking reference parameter is NUTAG_SMIME_OPT_REF().
  */
 tag_typedef_t nutag_smime_opt = INTTAG_TYPEDEF(smime_opt);
 
-/**@def NUTAG_SMIME_OPT_REF(x) 
+/**@def NUTAG_SMIME_OPT_REF(x)
  * Reference tag for NUTAG_SMIME_OPT().
  */
 
@@ -1425,17 +1430,17 @@ tag_typedef_t nutag_smime_opt = INTTAG_TYPEDEF(smime_opt);
  *   unsigned int
  *
  * @par Values
- *   @c -1 (SM_MODE_NULL) Unspecified \n
- *   @c  0 (SM_MODE_PAYLOAD_ONLY) SIP payload only \n
- *   @c  1 (SM_MODE_TUNNEL) SIP tunneling mode \n
- *   @c  2 (SM_MODE_SIPFRAG) SIPfrag protection
+ *   - -1 (SM_MODE_NULL) Unspecified
+ *   -  0 (SM_MODE_PAYLOAD_ONLY) SIP payload only
+ *   -  1 (SM_MODE_TUNNEL) SIP tunneling mode
+ *   -  2 (SM_MODE_SIPFRAG) SIPfrag protection
  *
  * Corresponding tag taking reference parameter is NUTAG_SMIME_PROTECTION_MODE_REF().
  */
-tag_typedef_t nutag_smime_protection_mode = 
+tag_typedef_t nutag_smime_protection_mode =
   INTTAG_TYPEDEF(smime_protection_mode);
 
-/**@def NUTAG_SMIME_PROTECTION_MODE_REF(x) 
+/**@def NUTAG_SMIME_PROTECTION_MODE_REF(x)
  * Reference tag for NUTAG_SMIME_PROTECTION_MODE().
  */
 
@@ -1456,10 +1461,10 @@ tag_typedef_t nutag_smime_protection_mode =
  *
  * Corresponding tag taking reference parameter is NUTAG_SMIME_MESSAGE_DIGEST_REF().
  */
-tag_typedef_t nutag_smime_message_digest = 
+tag_typedef_t nutag_smime_message_digest =
   STRTAG_TYPEDEF(smime_message_digest);
 
-/**@def NUTAG_SMIME_MESSAGE_DIGEST_REF(x) 
+/**@def NUTAG_SMIME_MESSAGE_DIGEST_REF(x)
  * Reference tag for NUTAG_SMIME_MESSAGE_DIGEST().
  */
 
@@ -1480,10 +1485,10 @@ tag_typedef_t nutag_smime_message_digest =
  *
  * Corresponding tag taking reference parameter is NUTAG_SMIME_SIGNATURE_REF().
  */
-tag_typedef_t nutag_smime_signature = 
+tag_typedef_t nutag_smime_signature =
   STRTAG_TYPEDEF(smime_signature);
 
-/**@def NUTAG_SMIME_SIGNATURE_REF(x) 
+/**@def NUTAG_SMIME_SIGNATURE_REF(x)
  * Reference tag for NUTAG_SMIME_SIGNATURE().
  */
 
@@ -1504,10 +1509,10 @@ tag_typedef_t nutag_smime_signature =
  *
  * Corresponding tag taking reference parameter is NUTAG_SMIME_KEY_ENCRYPTION_REF().
  */
-tag_typedef_t nutag_smime_key_encryption = 
+tag_typedef_t nutag_smime_key_encryption =
   STRTAG_TYPEDEF(smime_key_encryption);
 
-/**@def NUTAG_SMIME_KEY_ENCRYPTION_REF(x) 
+/**@def NUTAG_SMIME_KEY_ENCRYPTION_REF(x)
  * Reference tag for NUTAG_SMIME_KEY_ENCRYPTION().
  */
 
@@ -1528,10 +1533,10 @@ tag_typedef_t nutag_smime_key_encryption =
  *
  * Corresponding tag taking reference parameter is NUTAG_SMIME_MESSAGE_ENCRYPTION_REF().
  */
-tag_typedef_t nutag_smime_message_encryption = 
+tag_typedef_t nutag_smime_message_encryption =
   STRTAG_TYPEDEF(smime_message_encryption);
 
-/**@def NUTAG_SMIME_MESSAGE_ENCRYPTION_REF(x) 
+/**@def NUTAG_SMIME_MESSAGE_ENCRYPTION_REF(x)
  * Reference tag for NUTAG_SMIME_MESSAGE_ENCRYPTION().
  */
 
@@ -1556,7 +1561,7 @@ tag_typedef_t nutag_smime_message_encryption =
  */
 tag_typedef_t nutag_sips_url = URLTAG_TYPEDEF(sips_url);
 
-/**@def NUTAG_SIPS_URL_REF(x) 
+/**@def NUTAG_SIPS_URL_REF(x)
  * Reference tag for NUTAG_SIPS_URL().
  */
 
@@ -1578,7 +1583,7 @@ tag_typedef_t nutag_sips_url = URLTAG_TYPEDEF(sips_url);
  */
 tag_typedef_t nutag_certificate_dir = STRTAG_TYPEDEF(certificate_dir);
 
-/**@def NUTAG_CERTIFICATE_DIR_REF(x) 
+/**@def NUTAG_CERTIFICATE_DIR_REF(x)
  * Reference tag for NUTAG_CERTIFICATE_DIR().
  */
 
@@ -1599,7 +1604,7 @@ tag_typedef_t nutag_certificate_dir = STRTAG_TYPEDEF(certificate_dir);
  */
 tag_typedef_t nutag_certificate_phrase = STRTAG_TYPEDEF(certificate_phrase);
 
-/**@def NUTAG_CERTIFICATE_PHRASE_REF(x) 
+/**@def NUTAG_CERTIFICATE_PHRASE_REF(x)
  * Reference tag for NUTAG_CERTIFICATE_PHRASE().
  */
 
@@ -1612,8 +1617,8 @@ extern msg_hclass_t sip_route_class[];
  * The initial route set is used instead or or in addition to the outbound
  * proxy URL given by NUTAG_PROXY(). The NUTAG_INITIAL_ROUTE() accepts a
  * list of parsed @Route header structures, NUTAG_INITIAL_ROUTE_STR() an
- * unparsed string. 
- * 
+ * unparsed string.
+ *
  * If a tag list contains multiple NUTAG_INITIAL_ROUTE() or
  * NUTAG_INITIAL_ROUTE_STR() tags, the route set is constructed from them
  * all.
@@ -1638,7 +1643,7 @@ extern msg_hclass_t sip_route_class[];
  */
 tag_typedef_t nutag_initial_route = SIPEXTHDRTAG_TYPEDEF(initial_route, route);
 
-/**@def NUTAG_INITIAL_ROUTE_REF(x) 
+/**@def NUTAG_INITIAL_ROUTE_REF(x)
  * Reference tag for NUTAG_INITIAL_ROUTE().
  */
 
@@ -1654,11 +1659,11 @@ tag_typedef_t nutag_initial_route = SIPEXTHDRTAG_TYPEDEF(initial_route, route);
  * commas.
  *
  * Please note that the syntax requires <> around the @Route URIs if they
- * contain parameters, e.g., "lr". 
+ * contain parameters, e.g., "lr".
  *
  * If a tag list contains multiple NUTAG_INITIAL_ROUTE() or
  * NUTAG_INITIAL_ROUTE_STR() tags, the route set is constructed from them
- * all. 
+ * all.
  *
  * The initial route set can be reset with NUTAG_INITIAL_ROUTE(NULL).
  *
@@ -1684,7 +1689,7 @@ tag_typedef_t nutag_initial_route = SIPEXTHDRTAG_TYPEDEF(initial_route, route);
  */
 tag_typedef_t nutag_initial_route_str = STRTAG_TYPEDEF(inital_route_str);
 
-/**@def NUTAG_INITIAL_ROUTE_STR_REF(x) 
+/**@def NUTAG_INITIAL_ROUTE_STR_REF(x)
  * Reference tag for NUTAG_INITIAL_ROUTE_STR().
  */
 
@@ -1707,7 +1712,7 @@ tag_typedef_t nutag_initial_route_str = STRTAG_TYPEDEF(inital_route_str);
  */
 tag_typedef_t nutag_registrar = URLTAG_TYPEDEF(registrar);
 
-/**@def NUTAG_REGISTRAR_REF(x) 
+/**@def NUTAG_REGISTRAR_REF(x)
  * Reference tag for NUTAG_REGISTRAR().
  */
 
@@ -1734,7 +1739,7 @@ tag_typedef_t nutag_registrar = URLTAG_TYPEDEF(registrar);
  */
 tag_typedef_t nutag_identity = PTRTAG_TYPEDEF(identity);
 
-/**@def NUTAG_IDENTITY_REF(x) 
+/**@def NUTAG_IDENTITY_REF(x)
  * Reference tag for NUTAG_IDENTITY().
  */
 
@@ -1768,7 +1773,7 @@ tag_typedef_t nutag_identity = PTRTAG_TYPEDEF(identity);
  */
 tag_typedef_t nutag_m_display = STRTAG_TYPEDEF(m_display);
 
-/**@def NUTAG_M_DISPLAY_REF(x) 
+/**@def NUTAG_M_DISPLAY_REF(x)
  * Reference tag for NUTAG_M_DISPLAY().
  */
 
@@ -1803,7 +1808,7 @@ tag_typedef_t nutag_m_display = STRTAG_TYPEDEF(m_display);
  */
 tag_typedef_t nutag_m_username = STRTAG_TYPEDEF(m_username);
 
-/**@def NUTAG_M_USERNAME_REF(x) 
+/**@def NUTAG_M_USERNAME_REF(x)
  * Reference tag for NUTAG_M_USERNAME().
  */
 
@@ -1820,7 +1825,7 @@ tag_typedef_t nutag_m_username = STRTAG_TYPEDEF(m_username);
  * user-agent.
  *
  * @par Used with
- *    nua_register(), nua_set_hparams(), nua_set_params(), 
+ *    nua_register(), nua_set_hparams(), nua_set_params(),
  *    nua_invite(), nua_respond(), nua_subscribe(), nua_notify()
  *
  * @par Parameter type
@@ -1838,7 +1843,7 @@ tag_typedef_t nutag_m_username = STRTAG_TYPEDEF(m_username);
  */
 tag_typedef_t nutag_m_params = STRTAG_TYPEDEF(m_params);
 
-/**@def NUTAG_M_PARAMS_REF(x) 
+/**@def NUTAG_M_PARAMS_REF(x)
  * Reference tag for NUTAG_M_PARAMS().
  */
 
@@ -1877,7 +1882,7 @@ tag_typedef_t nutag_m_params = STRTAG_TYPEDEF(m_params);
  */
 tag_typedef_t nutag_m_features = STRTAG_TYPEDEF(m_features);
 
-/**@def NUTAG_M_FEATURES_REF(x) 
+/**@def NUTAG_M_FEATURES_REF(x)
  * Reference tag for NUTAG_M_FEATURES().
  */
 
@@ -1887,7 +1892,7 @@ tag_typedef_t nutag_m_features = STRTAG_TYPEDEF(m_features);
  * Intance identifier.
  *
  * @par Used with
- *    nua_create(), nua_set_params(), nua_get_params(), 
+ *    nua_create(), nua_set_params(), nua_get_params(),
  *    nua_register()
  *
  * @par Parameter type
@@ -1901,7 +1906,7 @@ tag_typedef_t nutag_m_features = STRTAG_TYPEDEF(m_features);
  */
 tag_typedef_t nutag_instance = STRTAG_TYPEDEF(instance);
 
-/**@def NUTAG_INSTANCE_REF(x) 
+/**@def NUTAG_INSTANCE_REF(x)
  * Reference tag for NUTAG_INSTANCE().
  */
 
@@ -1922,7 +1927,7 @@ tag_typedef_t nutag_instance = STRTAG_TYPEDEF(instance);
  * An option token with "no-" or "not-" prefix turns the option off. For
  * example, if you want to try to traverse NATs but not to use OPTIONS
  * keepalive, use NUTAG_OUTBOUND("natify no-options-keepalive").
- * 
+ *
  * An empty string can be passed to let the stack choose the
  * default values for outbound usage (in the 1.12.5 release, the
  * defaults are: "gruuize no-outbound validate use-port options-keepalive").
@@ -1947,7 +1952,7 @@ tag_typedef_t nutag_instance = STRTAG_TYPEDEF(instance);
  */
 tag_typedef_t nutag_outbound = STRTAG_TYPEDEF(outbound);
 
-/**@def NUTAG_OUTBOUND_REF(x) 
+/**@def NUTAG_OUTBOUND_REF(x)
  * Reference tag for NUTAG_OUTBOUND().
  */
 
@@ -1972,7 +1977,7 @@ tag_typedef_t nutag_outbound = STRTAG_TYPEDEF(outbound);
  */
 tag_typedef_t nutag_outbound_set1 = STRTAG_TYPEDEF(outbound_set1);
 
-/*#@def NUTAG_OUTBOUND_SET1_REF(x) 
+/*#@def NUTAG_OUTBOUND_SET1_REF(x)
  * Reference tag for NUTAG_OUTBOUND_SET1().
  */
 
@@ -1997,7 +2002,7 @@ tag_typedef_t nutag_outbound_set1 = STRTAG_TYPEDEF(outbound_set1);
  */
 tag_typedef_t nutag_outbound_set2 = STRTAG_TYPEDEF(outbound_set2);
 
-/*#@def NUTAG_OUTBOUND_SET2_REF(x) 
+/*#@def NUTAG_OUTBOUND_SET2_REF(x)
  * Reference tag for NUTAG_OUTBOUND_SET2().
  */
 
@@ -2022,7 +2027,7 @@ tag_typedef_t nutag_outbound_set2 = STRTAG_TYPEDEF(outbound_set2);
  */
 tag_typedef_t nutag_outbound_set3 = STRTAG_TYPEDEF(outbound_set3);
 
-/*#@def NUTAG_OUTBOUND_SET3_REF(x) 
+/*#@def NUTAG_OUTBOUND_SET3_REF(x)
  * Reference tag for NUTAG_OUTBOUND_SET3().
  */
 
@@ -2047,7 +2052,7 @@ tag_typedef_t nutag_outbound_set3 = STRTAG_TYPEDEF(outbound_set3);
  */
 tag_typedef_t nutag_outbound_set4 = STRTAG_TYPEDEF(outbound_set4);
 
-/*#@def NUTAG_OUTBOUND_SET4_REF(x) 
+/*#@def NUTAG_OUTBOUND_SET4_REF(x)
  * Reference tag for NUTAG_OUTBOUND_SET4().
  */
 
@@ -2057,7 +2062,7 @@ tag_typedef_t nutag_outbound_set4 = STRTAG_TYPEDEF(outbound_set4);
  *
  * Keepalive interval in milliseconds.
  *
- * This setting applies to OPTIONS/STUN keepalives. See documentation 
+ * This setting applies to OPTIONS/STUN keepalives. See documentation
  * for nua_register() for more detailed information.
  *
  * @par Used with
@@ -2070,7 +2075,7 @@ tag_typedef_t nutag_outbound_set4 = STRTAG_TYPEDEF(outbound_set4);
  * @par Parameter type
  *    unsigned int
  *
- * @par Values 
+ * @par Values
  *   - 0 - disable keepalives
  *   - 120000 - default value (120000 milliseconds, 120 seconds)
  *
@@ -2079,7 +2084,7 @@ tag_typedef_t nutag_outbound_set4 = STRTAG_TYPEDEF(outbound_set4);
  */
 tag_typedef_t nutag_keepalive = UINTTAG_TYPEDEF(keepalive);
 
-/**@def NUTAG_KEEPALIVE_REF(x) 
+/**@def NUTAG_KEEPALIVE_REF(x)
  * Reference tag for NUTAG_KEEPALIVE().
  */
 
@@ -2100,7 +2105,7 @@ tag_typedef_t nutag_keepalive = UINTTAG_TYPEDEF(keepalive);
  * @par Parameter type
  *    unsigned int
  *
- * @par Values 
+ * @par Values
  *
  * Transport-level keepalive interval for streams in milliseconds. If this
  * parameter specified, it takes presedence over value given in
@@ -2113,7 +2118,7 @@ tag_typedef_t nutag_keepalive = UINTTAG_TYPEDEF(keepalive);
  */
 tag_typedef_t nutag_keepalive_stream = UINTTAG_TYPEDEF(keepalive_stream);
 
-/**@def NUTAG_KEEPALIVE_STREAM_REF(x) 
+/**@def NUTAG_KEEPALIVE_STREAM_REF(x)
  * Reference tag for NUTAG_KEEPALIVE_STREAM().
  */
 
@@ -2126,17 +2131,17 @@ tag_typedef_t nutag_keepalive_stream = UINTTAG_TYPEDEF(keepalive_stream);
  * @par Used with nua calls that send a SIP request
  *
  * @par Parameter type
- *   int
+ *   int (boolean: nonzero is true, zero is false)
  *
  * @par Values
- *    @c False (zero) \n
- *    @c True (nonzero)
+ *    - 0 (false) - do not create a dialog
+ *    - 1 (true) - store dialog info
  *
  * Corresponding tag taking reference parameter is NUTAG_USE_DIALOG_REF().
  */
 tag_typedef_t nutag_use_dialog = BOOLTAG_TYPEDEF(use_dialog);
 
-/**@def NUTAG_USE_DIALOG_REF(x) 
+/**@def NUTAG_USE_DIALOG_REF(x)
  * Reference tag for NUTAG_USE_DIALOG().
  */
 
@@ -2162,7 +2167,7 @@ tag_typedef_t nutag_use_dialog = BOOLTAG_TYPEDEF(use_dialog);
  */
 tag_typedef_t nutag_auth = STRTAG_TYPEDEF(auth);
 
-/**@def NUTAG_AUTH_REF(x) 
+/**@def NUTAG_AUTH_REF(x)
  * Reference tag for NUTAG_AUTH().
  */
 
@@ -2178,8 +2183,8 @@ tag_typedef_t nutag_auth = STRTAG_TYPEDEF(auth);
  *    unsigned int
  *
  * @par Values
- *    @c 0   Use authentication data only for this handle \n
- *    @c !=0 Lifetime in seconds
+ *    - 0 (zero) - Use authentication data only for this handle
+ *    - nonzero - Lifetime of authentication data in seconds
  *
  * @todo
  *
@@ -2187,7 +2192,7 @@ tag_typedef_t nutag_auth = STRTAG_TYPEDEF(auth);
  */
 tag_typedef_t nutag_authtime = INTTAG_TYPEDEF(authtime);
 
-/**@def NUTAG_AUTHTIME_REF(x) 
+/**@def NUTAG_AUTHTIME_REF(x)
  * Reference tag for NUTAG_AUTHTIME().
  */
 
@@ -2208,7 +2213,7 @@ tag_typedef_t nutag_authtime = INTTAG_TYPEDEF(authtime);
  */
 tag_typedef_t nutag_event = INTTAG_TYPEDEF(event);
 
-/**@def NUTAG_EVENT_REF(x) 
+/**@def NUTAG_EVENT_REF(x)
  * Reference tag for NUTAG_EVENT().
  */
 
@@ -2223,19 +2228,19 @@ tag_typedef_t nutag_event = INTTAG_TYPEDEF(event);
  *    unsigned int
  *
  * @par Values
- * 100 - preliminary response, request is being processed by next hop \n
- * 1XX - preliminary response, request is being processed by UAS \n
- * 2XX - successful final response \n
- * 3XX - redirection error response \n
- * 4XX - client error response \n
- * 5XX - server error response \n
- * 6XX - global error response \n
+ * - 100 - preliminary response, request is being processed by next hop
+ * - 1XX - preliminary response, request is being processed by UAS
+ * - 2XX - successful final response
+ * - 3XX - redirection error response
+ * - 4XX - client error response
+ * - 5XX - server error response
+ * - 6XX - global error response
  *
  * Corresponding tag taking reference parameter is NUTAG_STATUS_REF().
  */
 tag_typedef_t nutag_status = INTTAG_TYPEDEF(status);
 
-/**@def NUTAG_STATUS_REF(x) 
+/**@def NUTAG_STATUS_REF(x)
  * Reference tag for NUTAG_STATUS().
  */
 
@@ -2255,7 +2260,7 @@ tag_typedef_t nutag_status = INTTAG_TYPEDEF(status);
  */
 tag_typedef_t nutag_phrase = STRTAG_TYPEDEF(phrase);
 
-/**@def NUTAG_PHRASE_REF(x) 
+/**@def NUTAG_PHRASE_REF(x)
  * Reference tag for NUTAG_PHRASE().
  */
 
@@ -2275,7 +2280,7 @@ tag_typedef_t nutag_phrase = STRTAG_TYPEDEF(phrase);
  */
 tag_typedef_t nutag_handle = PTRTAG_TYPEDEF(handle);
 
-/**@def NUTAG_HANDLE_REF(x) 
+/**@def NUTAG_HANDLE_REF(x)
  * Reference tag for NUTAG_HANDLE().
  */
 
@@ -2303,7 +2308,7 @@ tag_typedef_t nutag_handle = PTRTAG_TYPEDEF(handle);
  */
 tag_typedef_t nutag_notify_refer = PTRTAG_TYPEDEF(notify_refer);
 
-/**@def NUTAG_NOTIFY_REFER_REF(x) 
+/**@def NUTAG_NOTIFY_REFER_REF(x)
  * Reference tag for NUTAG_NOTIFY_REFER().
  */
 
@@ -2330,7 +2335,7 @@ tag_typedef_t nutag_notify_refer = PTRTAG_TYPEDEF(notify_refer);
  */
 tag_typedef_t nutag_refer_event = SIPHDRTAG_NAMED_TYPEDEF(refer_event, event);
 
-/**@def NUTAG_REFER_EVENT_REF(x) 
+/**@def NUTAG_REFER_EVENT_REF(x)
  * Reference tag for NUTAG_REFER_EVENT().
  */
 
@@ -2348,11 +2353,11 @@ tag_typedef_t nutag_refer_event = SIPHDRTAG_NAMED_TYPEDEF(refer_event, event);
  *    nua_invite()
  *
  * @par Parameter type
- *    int
+ *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
- *    @c 0   False \n
- *    @c !=0 True
+ *    - 0 (false) - do not pause referring call
+ *    - 1 (true) - pause referring call
  *
  * Corresponding tag taking reference parameter is NUTAG_REFER_PAUSE_REF().
  *
@@ -2360,7 +2365,7 @@ tag_typedef_t nutag_refer_event = SIPHDRTAG_NAMED_TYPEDEF(refer_event, event);
  */
 tag_typedef_t nutag_refer_pause = BOOLTAG_TYPEDEF(refer_pause);
 
-/**@def NUTAG_REFER_PAUSE_REF(x) 
+/**@def NUTAG_REFER_PAUSE_REF(x)
  * Reference tag for NUTAG_REFER_PAUSE().
  */
 
@@ -2395,7 +2400,7 @@ tag_typedef_t nutag_refer_pause = BOOLTAG_TYPEDEF(refer_pause);
  */
 tag_typedef_t nutag_user_agent = STRTAG_TYPEDEF(user_agent);
 
-/**@def NUTAG_USER_AGENT_REF(x) 
+/**@def NUTAG_USER_AGENT_REF(x)
  * Reference tag for NUTAG_USER_AGENT().
  */
 
@@ -2428,7 +2433,7 @@ tag_typedef_t nutag_user_agent = STRTAG_TYPEDEF(user_agent);
  */
 tag_typedef_t nutag_allow = STRTAG_TYPEDEF(allow);
 
-/**@def NUTAG_ALLOW_REF(x) 
+/**@def NUTAG_ALLOW_REF(x)
  * Reference tag for NUTAG_ALLOW().
  */
 
@@ -2468,7 +2473,7 @@ tag_typedef_t nutag_allow = STRTAG_TYPEDEF(allow);
  */
 tag_typedef_t nutag_allow_events = STRTAG_TYPEDEF(allow_events);
 
-/**@def NUTAG_ALLOW_EVENTS_REF(x) 
+/**@def NUTAG_ALLOW_EVENTS_REF(x)
  * Reference tag for NUTAG_ALLOW_EVENTS().
  */
 
@@ -2510,7 +2515,7 @@ tag_typedef_t nutag_allow_events = STRTAG_TYPEDEF(allow_events);
  */
 tag_typedef_t nutag_appl_method = STRTAG_TYPEDEF(appl_method);
 
-/**@def NUTAG_APPL_METHOD_REF(x) 
+/**@def NUTAG_APPL_METHOD_REF(x)
  * Reference tag for NUTAG_APPL_METHOD().
  */
 
@@ -2545,13 +2550,13 @@ tag_typedef_t nutag_appl_method = STRTAG_TYPEDEF(appl_method);
  */
 tag_typedef_t nutag_supported = STRTAG_TYPEDEF(supported);
 
-/**@def NUTAG_SUPPORTED_REF(x) 
+/**@def NUTAG_SUPPORTED_REF(x)
  * Reference tag for NUTAG_SUPPORTED().
  */
 
 
-/**@def NUTAG_PATH_ENABLE(x) 
- * 
+/**@def NUTAG_PATH_ENABLE(x)
+ *
  * If true, add "path" to @Supported in REGISTER.
  *
  * @par Used with
@@ -2560,11 +2565,11 @@ tag_typedef_t nutag_supported = STRTAG_TYPEDEF(supported);
  * - nua_register()
  *
  * @par Parameter type
- *    int
+ *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
- *    @c 0   Do not include "path" to @Supported header
- *    @c !=0 Include "path" to @Supported header
+ *    - 0 (false) - Do not include "path" to @Supported header
+ *    - 1 (true) - Include "path" to @Supported header
  *
  * @sa NUTAG_SERVICE_ROUTE_ENABLE(), NUTAG_SUPPORTED(),
  * NUTAG_INITIAL_ROUTE(), NUTAG_INITIAL_ROUTE_STR(), @RFC3327
@@ -2580,7 +2585,7 @@ tag_typedef_t nutag_path_enable = BOOLTAG_TYPEDEF(path_enable);
 
 
 
-/**@def NUTAG_SERVICE_ROUTE_ENABLE(x) 
+/**@def NUTAG_SERVICE_ROUTE_ENABLE(x)
  *
  * Use route taken from the @ServiceRoute header in the 200 class response
  * to REGISTER.
@@ -2591,22 +2596,22 @@ tag_typedef_t nutag_path_enable = BOOLTAG_TYPEDEF(path_enable);
  * - nua_register()
  *
  * @par Parameter type
- *    int
+ *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
- *    @c 0   Do not use @ServiceRoute
- *    @c !=0 Use @ServiceRoute
+ *    - 0 (false) - Do not use @ServiceRoute
+ *    - 1 (true) - Use @ServiceRoute
  *
  * Corresponding tag taking reference parameter is NUTAG_SERVICE_ROUTE_ENABLE_REF().
  *
  * @sa NUTAG_INITIAL_ROUTE(), NUTAG_INITIAL_ROUTE_STR(), @RFC3608
  *
- * @todo 
+ * @todo
  */
-tag_typedef_t nutag_service_route_enable = 
+tag_typedef_t nutag_service_route_enable =
   BOOLTAG_TYPEDEF(service_route_enable);
 
-/**@def NUTAG_SERVICE_ROUTE_ENABLE_REF(x) 
+/**@def NUTAG_SERVICE_ROUTE_ENABLE_REF(x)
  * Reference tag for NUTAG_SERVICE_ROUTE_ENABLE().
  */
 
@@ -2618,23 +2623,23 @@ tag_typedef_t nutag_service_route_enable =
  * @par Used with
  *    nua_set_params(), nua_set_hparams() \n
  *    nua_get_params(), nua_get_hparams() \n
- *    @NUA_HPARAM_CALLS 
+ *    @NUA_HPARAM_CALLS
  *
  * @par Parameter type
  *    enum nua_auth_cache
  *
  * @par Values
  *    - nua_auth_cache_dialog (0) - include credentials within dialog
- *    - nua_auth_cache_challenged (1) - include credentials only when 
+ *    - nua_auth_cache_challenged (1) - include credentials only when
  *                                      challenged
- *    
+ *
  * Corresponding tag taking reference parameter is NUTAG_AUTH_CACHE_REF().
  *
  * @NEW_1_12_6.
  */
 tag_typedef_t nutag_auth_cache = INTTAG_TYPEDEF(auth_cache);
 
-/**@def NUTAG_AUTH_CACHE_REF(x) 
+/**@def NUTAG_AUTH_CACHE_REF(x)
  * Reference tag for NUTAG_AUTH_CACHE().
  */
 
@@ -2660,7 +2665,7 @@ tag_typedef_t nutag_auth_cache = INTTAG_TYPEDEF(auth_cache);
  */
 tag_typedef_t nutag_detect_network_updates = UINTTAG_TYPEDEF(detect_network_updates);
 
-/**@def NUTAG_DETECT_NETWORK_UPDATES_REF(x) 
+/**@def NUTAG_DETECT_NETWORK_UPDATES_REF(x)
  * Reference tag for NUTAG_DETECT_NETWORK_UPDATES().
  */
 
@@ -2721,6 +2726,7 @@ tag_typedef_t nutag_detect_network_updates = UINTTAG_TYPEDEF(detect_network_upda
 
 tag_typedef_t nutag_with = PTRTAG_TYPEDEF(with);
 
+
 /**@def NUTAG_DIALOG(x)
  *
  * An (extension) method is used to create dialog or refresh target.
@@ -2729,12 +2735,12 @@ tag_typedef_t nutag_with = PTRTAG_TYPEDEF(with);
  *    nua_method()
  *
  * @par Parameter type
- *    unsigned int (0, 1, 2) 
+ *    unsigned int (0, 1, 2)
  *
  * @par Values
  *   - 0 if dialog target is not refreshed
  *   - 1 if dialog target is refreshed
- *   - > 1 if dialog is to be created 
+ *   - > 1 if dialog is to be created
  *
  * @NEW_1_12_6.
  *
@@ -2774,7 +2780,7 @@ tag_typedef_t nutag_dialog = UINTTAG_TYPEDEF(dialog);
  * Corresponding tag taking reference parameter is NUTAG_PROXY_REF().
  */
 
-/**@def NUTAG_PROXY_REF(x) 
+/**@def NUTAG_PROXY_REF(x)
  * Reference tag for NUTAG_PROXY().
  */
 
@@ -2796,7 +2802,7 @@ tag_typedef_t nutag_dialog = UINTTAG_TYPEDEF(dialog);
  * Corresponding tag taking reference parameter is NUTAG_SIP_PARSER_REF().
  */
 
-/**@def NUTAG_SIP_PARSER_REF(x) 
+/**@def NUTAG_SIP_PARSER_REF(x)
  * Reference tag for NUTAG_SIP_PARSER().
  */
 
@@ -2814,7 +2820,7 @@ tag_typedef_t nutag_dialog = UINTTAG_TYPEDEF(dialog);
  *    nua_create(), nua_set_params().
  *
  * @par Parameter type
- *    int (boolean)
+ *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
  *    - 0 (false) - pass only #nua_r_shutdown events to application during shutdown
@@ -2823,12 +2829,12 @@ tag_typedef_t nutag_dialog = UINTTAG_TYPEDEF(dialog);
  * Corresponding tag taking reference parameter is NUTAG_SHUTDOWN_EVENTS_REF().
  *
  * @sa nua_shutdown(), nua_destroy().
- * 
+ *
  * @NEW_1_12_9.
  */
 tag_typedef_t nutag_shutdown_events = BOOLTAG_TYPEDEF(shutdown_events);
 
-/**@def NUTAG_SHUTDOWN_EVENTS_REF(x) 
+/**@def NUTAG_SHUTDOWN_EVENTS_REF(x)
  * Reference tag for NUTAG_SHUTDOWN_EVENTS().
  */
 
