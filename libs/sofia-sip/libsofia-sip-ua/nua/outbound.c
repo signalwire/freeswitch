@@ -77,7 +77,7 @@ struct outbound {
     unsigned gruuize:1;		/**< Establish a GRUU */
     unsigned outbound:1;	/**< Try to use outbound */
     unsigned natify:1;		/**< Try to detect NAT */
-    unsigned okeepalive:1;	/**< Connection keepalive with OPTIONS */
+    signed okeepalive:2;	/**< Connection keepalive with OPTIONS */
     unsigned validate:1;	/**< Validate registration with OPTIONS */
     /* How to detect NAT binding or connect to outbound: */
     unsigned use_connect:1;	/**< Use HTTP connect */
@@ -270,7 +270,7 @@ int outbound_set_options(outbound_t *ob,
   prefs->gruuize = 1;
   prefs->outbound = 0;
   prefs->natify = 1;
-  prefs->okeepalive = 1;
+  prefs->okeepalive = -1;
   prefs->validate = 1;
   prefs->use_rport = 1;
 
@@ -662,12 +662,18 @@ void outbound_start_keepalive(outbound_t *ob,
 			      nta_outgoing_t *register_transaction)
 {
   unsigned interval = 0;
-  int need_to_validate;
+  int need_to_validate, udp;
 
   if (!ob)
     return;
 
-  if (ob->ob_prefs.natify && ob->ob_prefs.okeepalive)
+  udp = ob->ob_via && ob->ob_via->v_protocol == sip_transport_udp;
+
+  if (ob->ob_prefs.natify &&
+      /* On UDP, use OPTIONS keepalive by default */
+      (udp ? ob->ob_prefs.okeepalive != 0
+       /* Otherwise, only if requested */
+       : ob->ob_prefs.okeepalive > 0))
     interval = ob->ob_prefs.interval;
   need_to_validate = ob->ob_prefs.validate && !ob->ob_validated;
 
