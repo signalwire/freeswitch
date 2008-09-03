@@ -23,7 +23,8 @@
  *
  * Contributor(s):
  * 
- * Brian West <brian.west@mac.com>
+ * Brian West <brian@freeswitch.org>
+ * Antonio Gallo <agx@linux.it>
  *
  * mod_fax.c -- Fax Module
  *
