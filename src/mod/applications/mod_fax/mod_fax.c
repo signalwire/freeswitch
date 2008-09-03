@@ -40,14 +40,20 @@ SWITCH_MODULE_DEFINITION(mod_fax, mod_fax_load, NULL, NULL);
 static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 {
     t30_stats_t t;
-    char local_ident[21];
-    char far_ident[21];
+    const char *local_ident = NULL;
+    const char *far_ident = NULL;
     
     if (result == T30_ERR_OK)
         {
             t30_get_transfer_statistics(s, &t);
-            t30_get_far_ident(s, far_ident);
-            t30_get_local_ident(s, local_ident);
+            far_ident = t30_get_tx_ident(s);
+            if (!switch_strlen_zero(far_ident)) {
+                far_ident = "";
+            }
+            local_ident = t30_get_rx_ident(s);
+            if (!switch_strlen_zero(local_ident)) {
+                local_ident = "";
+            }
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax successfully received.\n");
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote station id: %s\n", far_ident);
@@ -65,7 +71,7 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
         }
 }
 
-static void phase_d_handler(t30_state_t *s, void *user_data, int result)
+static int phase_d_handler(t30_state_t *s, void *user_data, int result)
 {
     t30_stats_t t;
 
@@ -83,6 +89,7 @@ static void phase_d_handler(t30_state_t *s, void *user_data, int result)
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image size (bytes)  %i\n", t.image_size);
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
         }
+    return T30_ERR_OK;
 }
 
 SWITCH_STANDARD_APP(rxfax_function)
@@ -140,8 +147,8 @@ SWITCH_STANDARD_APP(rxfax_function)
     }
 
     fax_init(&fax, calling_party);
-    t30_set_local_ident(&fax.t30_state, "test");
-    t30_set_header_info(&fax.t30_state, "test");
+    t30_set_tx_ident(&fax.t30_state, "test");
+    t30_set_tx_page_header_info(&fax.t30_state, "test");
     t30_set_rx_file(&fax.t30_state, file_name, -1);
 
     t30_set_phase_d_handler(&fax.t30_state, phase_d_handler, NULL);
@@ -202,15 +209,14 @@ SWITCH_STANDARD_APP(rxfax_function)
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_fax_load)
-
 {
     switch_application_interface_t *app_interface;
-
+    
 	/* connect my internal structure to the blank pointer passed to me */
     *module_interface = switch_loadable_module_create_module_interface(pool, modname);
-
+    
     SWITCH_ADD_APP(app_interface, "rxfax", "Trivial FAX Receive Application", "Trivial FAX Receive Application", rxfax_function, "", SAF_NONE);
-
+    
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
