@@ -3,7 +3,7 @@ BASE=../../../..
 SPANDSP_DIR=$(BASE)/libs/spandsp
 SPANDSP_LA=$(SPANDSP_DIR)/src/libspandsp.la
 
-LOCAL_CFLAGS=-I$(SPANDSP_DIR)/src
+LOCAL_CFLAGS=-I$(SPANDSP_DIR)/src -w
 LOCAL_LIBADD=$(SPANDSP_LA)
 
 include $(BASE)/build/modmake.rules

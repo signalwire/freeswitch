@@ -148,19 +148,19 @@ SWITCH_STANDARD_APP(rxfax_function)
     }
 
     fax_init(&fax, calling_party);
-    t30_set_tx_ident(&fax.t30_state, "test");
-    t30_set_tx_page_header_info(&fax.t30_state, "test");
-    t30_set_rx_file(&fax.t30_state, file_name, -1);
+    t30_set_tx_ident(&fax.t30, "test");
+    t30_set_tx_page_header_info(&fax.t30, "test");
+    t30_set_rx_file(&fax.t30, file_name, -1);
 
-    t30_set_phase_d_handler(&fax.t30_state, phase_d_handler, NULL);
-    t30_set_phase_e_handler(&fax.t30_state, phase_e_handler, NULL);
+    t30_set_phase_d_handler(&fax.t30, phase_d_handler, NULL);
+    t30_set_phase_e_handler(&fax.t30, phase_e_handler, NULL);
 
-    t30_set_ecm_capability(&fax.t30_state, TRUE);
-    t30_set_supported_compressions(&fax.t30_state, T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION | T30_SUPPORT_T6_COMPRESSION);
+    t30_set_ecm_capability(&fax.t30, TRUE);
+    t30_set_supported_compressions(&fax.t30, T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION | T30_SUPPORT_T6_COMPRESSION);
 
-    t30_set_supported_image_sizes(&fax.t30_state, T30_SUPPORT_US_LETTER_LENGTH | T30_SUPPORT_US_LEGAL_LENGTH | T30_SUPPORT_UNLIMITED_LENGTH
+    t30_set_supported_image_sizes(&fax.t30, T30_SUPPORT_US_LETTER_LENGTH | T30_SUPPORT_US_LEGAL_LENGTH | T30_SUPPORT_UNLIMITED_LENGTH
                                   | T30_SUPPORT_215MM_WIDTH | T30_SUPPORT_255MM_WIDTH | T30_SUPPORT_303MM_WIDTH);
-    t30_set_supported_resolutions(&fax.t30_state, T30_SUPPORT_STANDARD_RESOLUTION | T30_SUPPORT_FINE_RESOLUTION | T30_SUPPORT_SUPERFINE_RESOLUTION
+    t30_set_supported_resolutions(&fax.t30, T30_SUPPORT_STANDARD_RESOLUTION | T30_SUPPORT_FINE_RESOLUTION | T30_SUPPORT_SUPERFINE_RESOLUTION
                                   | T30_SUPPORT_R8_RESOLUTION | T30_SUPPORT_R16_RESOLUTION);
 
     write_frame.codec = &write_codec;
@@ -192,7 +192,7 @@ SWITCH_STANDARD_APP(rxfax_function)
 
  done:
 
-    t30_terminate(&fax.t30_state);
+    t30_terminate(&fax.t30);
     fax_release(&fax);
     
     if (read_codec.implementation) {
