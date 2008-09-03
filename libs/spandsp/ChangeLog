@@ -1,0 +1,47 @@
+07.08.29 - 0.0.4 - Steve Underwood <steveu@coppice.org>
+    - 
+
+06.05.23 - 0.0.3 - Steve Underwood <steveu@coppice.org>
+    - T.38 now implemented, though it needs further polishing.
+    - G.726 and G.722 now implemented.
+
+04.08.29 - 0.0.2 - Steve Underwood <steveu@coppice.org>
+    - T.4 no longer uses libtiff for compresion and decompression on the line side
+      (it is still used to handle the TIFF files). Spandsp no longer depends on
+      accessing the "internals" of libtiff. New 1D and 2D compression and
+      decompression code now handles the line side. This should be more robust than
+      using libtiff, and handles the fudging of bad scan lines rather better.
+    - T.30 line turn-around timing corrected.
+    - T.30 DCS header contents corrected.
+    - T.30 provision for V.17 added, as an option.
+    - T.30 now has a statistics interface, for applications to find details about
+      image transfers.
+    - T.30 processing now correctly closes TIFF files are they have been sent.
+    - FAX header line insertion is now supported for transmitted FAXes.
+    - asynchronous serial processing now has a V.14 compatible rate adaption option.
+    - V.8 modem negotiation module added.
+    - OKI ADPCM now supports Dialogic compatible operation at 6k samples/second, as
+      well as 8k samples/second, using its own sample rate converter.
+    - message queuing added to ease things like T.31 handling
+    - incomplete skeleton (still rather nasty, to be honest) T.31 processing.
+    - incomplete skeleton of V.22bis added. There is probably quite a bit to do
+      to get this complete and robust. It probably requires the T.31 processing
+      be expanded to something more like V.250, so it doesn't just handle FAX.
+    - Incomplete V.17 added (there could be an IBM patent related to the TCM part of
+      V.17, but I think it has expired. Don't distribute binaries of spandsp built
+      with V.17 enabled until this is resolved - and the modem is completed, of
+      course :-) ). The current version transmits OK. It receives OK with the
+      long training sequence, but the symbol and carrier syncing isn't good enough
+      for robust receiving with the short training sequence.
+    - A basic BER tester has been added.
+    - The faster modems now have proper shutdown procedures, whether one is defined in
+      the spec. or not.
+    - The modems (except simple FSK) now have APIs to access performance information.
+    - A common GUI (using FLTK) added for the modem tests.
+    - A bit more documentation added.
+    - Some API inconsistencies cleaned up.
+    - The usual bundle of assorted buglet fixes and polishing.
+
+04.04.29 - 0.0.1k - Steve Underwood <steveu@coppice.org>
+    - The first version which gives solid faxing for a large number of people.
+

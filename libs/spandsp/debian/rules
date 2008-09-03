@@ -1,0 +1,106 @@
+#!/usr/bin/make -f
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+
+DEBVERSION:=$(shell head -n 1 debian/changelog \
+		    | sed -e 's/^[^(]*(\([^)]*\)).*/\1/')
+ORIGTARVER:=$(shell echo $(DEBVERSION) | sed -e 's/^.*://' -e 's/-[0-9.]*$$//')# -e 's/.dfsg$$//' -e 's/~//')
+
+UPVERSION:=$(shell echo $(ORIGTARVER) | tr -d '~')
+
+FILENAME := spandsp_$(ORIGTARVER).orig.tar.gz
+FULLNAME := spandsp-$(UPVERSION)
+URL := http://soft-switch.org/downloads/spandsp/spandsp-$(UPVERSION).tgz
+
+CFLAGS = -Wall -g
+
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+	CFLAGS += -O0
+else
+	CFLAGS += -O2
+endif
+
+include /usr/share/dpatch/dpatch.make
+
+
+autotools: patch-stamp
+	ln -s /usr/share/misc/config.sub config.sub
+	ln -s /usr/share/misc/config.guess config.guess
+	touch autotools
+
+config.status: autotools configure
+	dh_testdir
+	CFLAGS="$(CFLAGS)" ./configure \
+	  --host=$(DEB_HOST_GNU_TYPE) \
+	  --build=$(DEB_BUILD_GNU_TYPE) \
+	  --prefix=/usr \
+	  --mandir=\$${prefix}/share/man \
+	  --infodir=\$${prefix}/share/info \
+	  --enable-doc
+
+build: build-stamp
+
+build-stamp:  config.status
+	dh_testdir
+	$(MAKE)
+	touch build-stamp
+
+clean: clean-patched unpatch
+clean-patched:
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp autotools
+	-$(MAKE) distclean
+
+	-$(RM) -f config.sub
+	-$(RM) -f config.guess
+
+	dh_clean 
+
+install: build-stamp
+	dh_testdir
+	dh_testroot
+	dh_clean -k 
+	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp
+
+binary-indep: build-stamp install
+	dh_testdir -i
+	dh_testroot -i
+	dh_installchangelogs -i ChangeLog
+	dh_installdocs -i DueDiligence
+	dh_install -i
+	dh_compress -i
+	dh_fixperms -i
+	dh_installdeb -i
+	dh_gencontrol -i
+	dh_md5sums -i
+	dh_builddeb -i
+
+binary-arch: build-stamp install
+	dh_testdir -a
+	dh_testroot -a
+	dh_installchangelogs -a ChangeLog
+	dh_installdocs -a DueDiligence
+	dh_install -a
+	dh_strip -a
+	dh_compress -a
+	dh_fixperms -a
+	dh_makeshlibs -a
+	dh_installdeb -a
+	dh_shlibdeps -a
+	dh_gencontrol -a
+	dh_md5sums -a
+	dh_builddeb -a
+
+get-orig-source:
+	-@@dh_testdir
+	@@[ -d ../tarballs/. ]||mkdir -p ../tarballs
+	@@echo Downloading $(FILENAME) from $(URL) ...
+	@@wget -N -nv -T10 -t3 -O ../tarballs/$(FILENAME) $(URL)
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install patch unpatch
