@@ -198,6 +198,15 @@ SWITCH_DECLARE(const char *) switch_caller_get_field_by_name(switch_caller_profi
 	if (!strcasecmp(name, "rdnis_numplan")) {
 		return switch_core_sprintf(caller_profile->pool, "%u", caller_profile->rdnis_numplan);
 	}
+	if (!strcasecmp(name, "screen_bit")) {
+		return switch_test_flag(caller_profile, SWITCH_CPF_SCREEN) ? "true" : "false";
+	}
+	if (!strcasecmp(name, "privacy_hide_name")) {
+		return switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME) ? "true" : "false";
+	}
+	if (!strcasecmp(name, "privacy_hide_number")) {
+		return switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER) ? "true" : "false";
+	}
 	return NULL;
 }
 
@@ -273,13 +282,13 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 	}
 
 	switch_snprintf(header_name, sizeof(header_name), "%s-Screen-Bit", prefix);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_SCREEN) ? "yes" : "no");
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_SCREEN) ? "true" : "false");
 
 	switch_snprintf(header_name, sizeof(header_name), "%s-Privacy-Hide-Name", prefix);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME) ? "yes" : "no");
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME) ? "true" : "false");
 
 	switch_snprintf(header_name, sizeof(header_name), "%s-Privacy-Hide-Number", prefix);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER) ? "yes" : "no");
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER) ? "true" : "false");
 }
 
 SWITCH_DECLARE(switch_status_t) switch_caller_extension_clone(switch_caller_extension_t **new_ext, switch_caller_extension_t *orig, 
