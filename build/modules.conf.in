@@ -7,6 +7,7 @@ applications/mod_conference
 applications/mod_dptools
 applications/mod_enum
 applications/mod_fifo
+#applications/mod_fax
 applications/mod_voicemail
 applications/mod_limit
 applications/mod_expr

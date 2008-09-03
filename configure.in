@@ -659,6 +659,7 @@ AC_CONFIG_SUBDIRS(libs/libresample)
 if test "$enable_core_libedit_support" = "yes" ; then
     AC_CONFIG_SUBDIRS(libs/libedit)
 fi
+AC_CONFIG_SUBDIRS(libs/spandsp)
 AC_CONFIG_SUBDIRS(libs/pcre)
 AC_CONFIG_SUBDIRS(libs/apr)
 AC_CONFIG_SUBDIRS(libs/apr-util)

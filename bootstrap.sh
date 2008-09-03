@@ -5,7 +5,7 @@ BASEDIR=`pwd`;
 LIBDIR=${BASEDIR}/libs;
 SUBDIRS="codec/ilbc curl iksemel voipcodecs \
         js js/nsprpub libdingaling libedit libresample libsndfile pcre sofia-sip \
-        speex sqlite srtp openzap";
+        speex sqlite srtp openzap spandsp";
 
 
 if [ ! -f modules.conf ]; then 
