@@ -338,7 +338,7 @@ int nua_publish_client_request(nua_client_request_t *cr,
     cr->cr_event != nua_r_publish ||
     (du && du->du_shutdown) ||
     (sip->sip_expires && sip->sip_expires->ex_delta == 0);
-  cr->cr_terminating = un;
+  nua_client_set_terminating(cr, un);
   done = un;
 
   if (du) {

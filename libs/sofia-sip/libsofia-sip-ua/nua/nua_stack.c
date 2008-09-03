@@ -1966,7 +1966,7 @@ int nua_base_server_report(nua_server_request_t *sr, tagi_t const *tags)
  *
  * @par Terminating Dialog Usages and Dialogs
  *
- * The response can be marked as terminating with nua_client_terminating(). 
+ * The response is marked as terminating with nua_client_set_terminating(). 
  * When a terminating request completes the dialog usage is removed and the
  * dialog is destroyed (unless there is an another active usage).
  */
@@ -2499,7 +2499,7 @@ int nua_client_restart_request(nua_client_request_t *cr,
       if (sip_add_tagis(cr->cr_msg, NULL, &tags) < 0)
 	/* XXX */;
 
-    cr->cr_terminating = terminating;
+    nua_client_set_terminating(cr, terminating);
 
     return nua_client_request_try(cr);
   }
@@ -2528,7 +2528,7 @@ int nua_client_resend_request(nua_client_request_t *cr,
     }
 
     if (terminating)
-      cr->cr_terminating = terminating;
+      nua_client_set_terminating(cr, terminating);
 
     if (nua_client_request_queue(cr))
       return 0;

@@ -645,7 +645,7 @@ static int nua_register_client_init(nua_client_request_t *cr,
   unreg = cr->cr_event != nua_r_register ||
     (sip->sip_expires && sip->sip_expires->ex_delta == 0);
   if (unreg)
-    nua_client_terminating(cr);
+    nua_client_set_terminating(cr, 1);
 
   du = nua_dialog_usage_add(nh, nh->nh_ds, nua_register_usage, NULL);
   if (du == NULL)
@@ -725,7 +725,7 @@ int nua_register_client_request(nua_client_request_t *cr,
 
   if ((du && du->du_shutdown) ||
       (sip->sip_expires && sip->sip_expires->ex_delta == 0))
-    nua_client_terminating(cr);
+    nua_client_set_terminating(cr, 1);
 
   if (contacts) {
     if (!cr->cr_terminating) {
@@ -734,7 +734,7 @@ int nua_register_client_request(nua_client_request_t *cr,
 	  break;
       /* All contacts have expires=0 */
       if (m == NULL)
-	nua_client_terminating(cr);
+	nua_client_set_terminating(cr, 1);
     }
   }
 

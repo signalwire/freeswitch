@@ -250,7 +250,7 @@ static int nua_subscribe_client_request(nua_client_request_t *cr,
   sip_time_t expires = 0;
 
   if (cr->cr_event == nua_r_destroy || !du || du->du_shutdown)
-    cr->cr_terminating = 1;
+    nua_client_set_terminating(cr, 1);
 
   if (du) {
     struct event_usage *eu = nua_dialog_usage_private(du);
@@ -353,7 +353,7 @@ static int nua_subscribe_client_response(nua_client_request_t *cr,
 					 sip_t const *sip)
 {
   nua_handle_t *nh = cr->cr_owner;
-  nua_dialog_usage_t *du = cr->cr_usage; 
+  nua_dialog_usage_t *du = cr->cr_usage;
   struct event_usage *eu = nua_dialog_usage_private(du);
   enum nua_substate substate;
 
@@ -415,7 +415,7 @@ static int nua_subscribe_client_response(nua_client_request_t *cr,
 
     if (substate == nua_substate_terminated)
       /* let nua_base_client_tresponse to remove usage */
-      cr->cr_terminated = 1;	
+      cr->cr_terminated = 1;
   }
 
   return nua_base_client_tresponse(cr, status, phrase, sip, 

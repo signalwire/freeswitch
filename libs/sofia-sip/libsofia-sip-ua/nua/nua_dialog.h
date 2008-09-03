@@ -564,9 +564,9 @@ su_inline int nua_client_is_reporting(nua_client_request_t const *cr)
 }
 
 /** Mark client request as a terminating one */
-su_inline void nua_client_terminating(nua_client_request_t *cr)
+su_inline void nua_client_set_terminating(nua_client_request_t *cr, int value)
 {
-  cr->cr_terminating = 1;
+  cr->cr_terminating = value != 0;
 }
 
 int nua_client_init_request(nua_client_request_t *cr);
