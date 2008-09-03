@@ -103,37 +103,6 @@ typedef struct register_usage nua_registration_t;
   TAG_IF((include) && (soa) && soa_is_remote_chat_active(soa) >= 0,	\
 	 SOATAG_ACTIVE_CHAT(soa_is_remote_chat_active(soa)))
 
-#if HAVE_NUA_HANDLE_DEBUG
-
-#define nua_handle_ref(nh) nua_handle_ref_by((nh), __func__)
-#define nua_handle_unref(nh) nua_handle_unref_by((nh), __func__)
-
-su_inline nua_handle_t *nua_handle_ref_by(nua_handle_t *nh,
-					  char const *by)
-{
-  if (nh)
-    SU_DEBUG_0(("nua_handle_ref(%p) => "MOD_ZU" by %s\n", nh, 
-		su_home_refcount((su_home_t *)nh) + 1,
-		by));
-  return (nua_handle_t *)su_home_ref((su_home_t *)nh);
-}
-
-su_inline int nua_handle_unref_by(nua_handle_t *nh, char const *by)
-{
-  if (nh) {
-    size_t refcount = su_home_refcount((su_home_t *)nh) - 1;
-    int freed =  su_home_unref((su_home_t *)nh);
-    if (freed) refcount = 0;
-    SU_DEBUG_0(("nua_handle_unref(%p) => "MOD_ZU" by %s\n",
-		nh, refcount, by));
-    return freed;
-  }
-
-  return 0; 
-}
-
-#endif
-
 /** @internal @brief NUA handle. 
  *
  */
@@ -275,6 +244,20 @@ struct nua_s {
 #define enter ((void)0)
 #define nh_enter ((void)0)
 #define __func__ "nua"
+#endif
+
+#if HAVE_MEMLEAK_LOG
+
+#define nua_handle_ref(nh) \
+  _nua_handle_ref_by((nh), __FILE__, __LINE__, __func__)
+#define nua_handle_unref(nh) \
+  _nua_handle_unref_by((nh), __FILE__, __LINE__, __func__)
+
+nua_handle_t *_nua_handle_ref_by(
+  nua_handle_t *nh, char const *file, unsigned line, char const *by);
+int _nua_handle_unref_by(
+  nua_handle_t *nh, char const *file, unsigned line, char const *by);
+
 #endif
 
 su_inline nua_t *nua_stack_ref(nua_t *nua)

@@ -163,8 +163,47 @@ static void nh_destructor(void *arg)
   SU_DEBUG_0(("nh_destructor(%p)\n", (void *)nh));
 }
 
-#undef nua_handle_ref
-#undef nua_handle_unref
+#if HAVE_MEMLEAK_LOG
+
+nua_handle_t *
+_nua_handle_ref_by(nua_handle_t *nh,
+		   char const *file, unsigned line,
+		   char const *function)
+{
+  if (nh)
+    SU_DEBUG_0(("%p - nua_handle_ref() => "MOD_ZU" by %s:%u: %s()\n",
+		nh, su_home_refcount((su_home_t *)nh) + 1, file, line, by));
+  return (nua_handle_t *)su_home_ref((su_home_t *)nh);
+}
+
+int
+_nua_handle_unref_by(nua_handle_t *nh,
+		    char const *file, unsigned line,
+		    char const *function)
+{
+  if (nh) {
+    size_t refcount = su_home_refcount((su_home_t *)nh) - 1;
+    int freed =  su_home_unref((su_home_t *)nh);
+    if (freed) refcount = 0;
+    SU_DEBUG_0(("%p - nua_handle_unref() => "MOD_ZU" by %s:%u: %s()\n",
+		nh, refcount, file, line, by));
+    return freed;
+  }
+
+  return 0;
+}
+
+nua_handle_t *nua_handle_ref(nua_handle_t *nh)
+{
+  return _nua_handle_ref_by(nh, "<app>", 0, "<app>")
+}
+
+int nua_handle_unref(nua_handle_t *nh)
+{
+  return _nua_handle_unref_by(nh, "<app>", 0, "<app>")
+}
+
+#else
 
 /** Make a new reference to handle.
  *
@@ -197,6 +236,8 @@ int nua_handle_unref(nua_handle_t *nh)
 {
   return su_home_unref(nh->nh_home);
 }
+
+#endif
 
 /** Generate an instance identifier. */
 char const *nua_generate_instance_identifier(su_home_t *home)
