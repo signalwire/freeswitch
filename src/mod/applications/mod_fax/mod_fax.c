@@ -30,7 +30,6 @@
  *
  */
 
-
 #include <switch.h>
 #include <spandsp.h>
 
