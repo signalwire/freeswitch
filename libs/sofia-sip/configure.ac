@@ -151,6 +151,15 @@ AM_CONDITIONAL([HAVE_NTLM], [test "x$enable_ntlm" = xyes])
 AC_DEFINE([HAVE_SRTP], 0, [Define to 1 if we use SRTP])
 AC_DEFINE([HAVE_UPNP], 0, [Define to 1 if we use UPnP])
 
+
+AC_ARG_ENABLE(memleak_log,
+[  --enable-memleak-log    enable logging of possible memory leaks [[disabled]]],
+ , enable_memleak_log=no)
+
+if test x$enable_memleak_log = xyes ; then
+  AC_DEFINE([HAVE_MEMLEAK_LOG], 1, [Define to 1 for memory-leak-related logging])
+fi
+
 ### checks for header files
 ### -----------------------
 AC_HEADER_STDC
