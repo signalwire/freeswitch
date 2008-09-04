@@ -220,14 +220,14 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
 {
     switch_channel_t *channel;
     switch_codec_t *orig_read_codec = NULL;
-    switch_codec_t *orig_write_codec = NULL;
     switch_codec_t read_codec = {0};
     switch_codec_t write_codec = {0};
     switch_frame_t *read_frame = {0};
     switch_frame_t write_frame = {0};
     switch_status_t status;
     fax_state_t fax;
-    int16_t buf[512];
+	#define FAX_BUFFER_SIZE		4096
+    int16_t buf[FAX_BUFFER_SIZE];		//TODO original value: 512
     int tx = 0;
     /*TODO: int calling_party = FALSE; DEPRECATED */
     /* Channels variable parsing */
@@ -378,14 +378,11 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
         goto done;
     }
 
-	// NEW
-    orig_write_codec = switch_core_session_get_write_codec(session);
-
     if (switch_core_codec_init(&write_codec, 
                                "L16", 
                                NULL, 
-                               orig_write_codec->implementation->samples_per_second, 
-                               orig_write_codec->implementation->microseconds_per_frame / 1000, 
+                               orig_read_codec->implementation->samples_per_second, 
+                               orig_read_codec->implementation->microseconds_per_frame / 1000, 
                                1, 
                                SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, 
                                NULL, 
@@ -412,14 +409,24 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
             goto done;
         }
 
+		//DEBUG switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Frame Read: %d\n" , read_frame->samples);
+
         /* pass the new incoming audio frame to the fax_rx application */
-        fax_rx(&fax, (int16_t *)read_frame->data, read_frame->samples);
+        if( fax_rx(&fax, (int16_t *)read_frame->data, read_frame->samples) ) {
+			//TODO
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "FAX_RX error\n" );
+		}
+		//TODO
+		if (read_frame->samples > 256 ) 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SAMPLES TOO BIG\n" );
+
         if ((tx = fax_tx(&fax, (int16_t *) &buf, write_codec.implementation->samples_per_frame)) < 0) {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fax Error\n");
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fax_Tx Error\n");
             goto done;
         }
+		//DEBUG switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax   Tx  : %d %d\n" , tx, write_codec.implementation->samples_per_frame);
         
-        if (tx) {
+        if (tx!=0) {
             write_frame.datalen = tx * sizeof(int16_t);
             write_frame.samples = tx;
         
@@ -430,7 +437,11 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
 				);
                 goto done;
             }
-        }
+			//DEBUG switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Frame TX  : %d %d\n" , write_frame.datalen, write_frame.samples);
+        } else {
+			// TODO
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "non trasmitting\n" );
+		}
     }
 
  done:
@@ -454,10 +465,6 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
 
     if (orig_read_codec) {
         switch_core_session_set_read_codec(session, orig_read_codec);
-    }
-
-    if (orig_write_codec) {
-        switch_core_session_set_write_codec(session, orig_write_codec);
     }
 
 }
