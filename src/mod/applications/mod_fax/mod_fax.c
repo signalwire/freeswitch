@@ -41,23 +41,40 @@ SWITCH_MODULE_DEFINITION(mod_fax, mod_fax_load, NULL, NULL);
 /*
  * output spandsp lowlevel messages
  */
+
 static void span_message(int level, const char *msg)
 {
-	int fs_log_level = SWITCH_LOG_NOTICE;
+	int fs_log_level;
 
+	// TODO: maybe is better to use switch_assert here?
 	if (msg==NULL) {
         return;
     }
 
-    // TODO: verify all the span_log_levels available
-	if (level == SPAN_LOG_ERROR) {
-		fs_log_level = SWITCH_LOG_ERROR;
-	} else if (level == SPAN_LOG_WARNING) {
-		fs_log_level = SWITCH_LOG_WARNING;
-	} else {
-		fs_log_level = SWITCH_LOG_DEBUG;
+	switch (level) 
+	{
+		/* TODO: i need to ask Coppice what SPAN_LOG_NONE and SPA_LOG_FLOW are exactly for
+		SPAN_LOG_NONE:
+			return;
+		SPAN_LOG_FLOW:
+		SPAN_LOG_FLOW_2:
+		SPAN_LOG_FLOW_3:
+			if (!debug) 
+				return;
+			 fs_log_level = SWITCH_LOG_DEBUG;
+			 break;
+		*/
+		SPAN_LOG_ERROR:
+		SPAN_LOG_PROTOCOL_ERROR:
+			fs_log_level = SWITCH_LOG_ERROR;
+			break;
+		SPAN_LOG_WARNING:
+		SPAN_LOG_PROTOCOL_WARNING:
+			fs_log_level = SWITCH_LOG_WARNING;
+			break;
+		default: /* SPAN_LOG_DEBUG, SPAN_LOG_DEBUG_2, SPAN_LOG_DEBUG_3 */
+			fs_log_level = SWITCH_LOG_DEBUG;
     }
-
     switch_log_printf(SWITCH_CHANNEL_LOG, fs_log_level, "%s", msg );
 }
 
@@ -67,9 +84,68 @@ static void span_message(int level, const char *msg)
 
 static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 {
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MARK: Entering phase D\n");
+	int session;
+	switch_assert(user_data != NULL);
+	session = (intptr_t) user_data;
+	/* TODO */
+	#if TODO
+	if ((u = t30_get_rx_ident(s)))
+	printf("%d: Phase B: remote ident '%s'\n", i, u);
+	if ((u = t30_get_rx_sub_address(s)))
+	printf("%d: Phase B: remote sub-address '%s'\n", i, u);
+	if ((u = t30_get_rx_polled_sub_address(s)))
+	printf("%d: Phase B: remote polled sub-address '%s'\n", i, u);
+	if ((u = t30_get_rx_selective_polling_address(s)))
+	printf("%d: Phase B: remote selective polling address '%s'\n", i, u);
+	if ((u = t30_get_rx_sender_ident(s)))
+	printf("%d: Phase B: remote sender ident '%s'\n", i, u);
+	if ((u = t30_get_rx_password(s)))
+	printf("%d: Phase B: remote password '%s'\n", i, u);
+	printf("%d: Phase B handler on channel %d - (0x%X) %s\n", i, i, result, t30_frametype(result));
+	#endif
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Phase B handler on session %d - (0x%X) %s\n", session, result, t30_frametype(result));
+    return T30_ERR_OK;
+};
+
+
+/*
+ * This function is called whenever a single new page has been received
+ */
+
+static int phase_d_handler(t30_state_t *s, void *user_data, int result)
+{
+    t30_stats_t t;
+
+    if (result) {
+        t30_get_transfer_statistics(s, &t);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pages transferred:  %i\n", t.pages_transferred);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image size:         %i x %i\n", t.width, t.length);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image resolution    %i x %i\n", t.x_resolution, t.y_resolution);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Transfer Rate:      %i\n", t.bit_rate);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Bad rows            %i\n", t.bad_rows);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Longest bad row run %i\n", t.longest_bad_row_run);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Compression type    %i %s\n", t.encoding, t4_encoding_to_str(t.encoding));
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image size (bytes)  %i\n", t.image_size);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ECM                 %s\n", (t.error_correcting_mode)  ?  "on"  :  "off");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+    }
+
+	/* TODO */
+	#ifdef TODO
+	printf("%d: Phase D handler on channel %d - (0x%X) %s\n", i, i, result, t30_frametype(result));
+	printf("%d: Phase D: pages in the file %d\n", i, t.pages_in_file);
+	printf("%d: Phase D: image size %d x %d\n", i, t.width, t.length);
+	printf("%d: Phase D: image size %d bytes\n", i, t.image_size);
+	if ((u = t30_get_tx_ident(s)))
+		printf("%d: Phase D: local ident '%s'\n", i, u);
+	if ((u = t30_get_rx_ident(s)))
+		printf("%d: Phase D: remote ident '%s'\n", i, u);
+	printf("%d: Phase D: bits per row - min %d, max %d\n", i, s->t4.min_row_bits, s->t4.max_row_bits);
+	#endif
     return T30_ERR_OK;
 }
+
 
 /*
  * This function is called when the fax has finished his job
@@ -116,41 +192,41 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
     //TODO: is the buffer too little?
     switch_channel_set_variable(chan, "FAX_REMOTESTATIONID", far_ident);
 
-    snprintf(buf, sizeof(buf), "%d", t.pages_transferred);
+    switch_snprintf(buf, sizeof(buf), "%d", t.pages_transferred);
     switch_channel_set_variable(chan, "FAX_PAGES", buf);
-    snprintf(buf, sizeof(buf), "%dx%d", t.x_resolution, t.y_resolution);
+    switch_snprintf(buf, sizeof(buf), "%dx%d", t.x_resolution, t.y_resolution);
     switch_channel_set_variable(chan, "FAX_SIZE", buf);
-    snprintf(buf, sizeof(buf), "%d", t.bit_rate);
+    switch_snprintf(buf, sizeof(buf), "%d", t.bit_rate);
     switch_channel_set_variable(chan, "FAX_SPEED", buf);
-    snprintf(buf, sizeof(buf), "%d", result);
+    switch_snprintf(buf, sizeof(buf), "%d", result);
     switch_channel_set_variable(chan, "FAX_RESULT", buf);
-    snprintf(buf, sizeof(buf), "%s", t30_completion_code_to_str(result));
+    switch_snprintf(buf, sizeof(buf), "%s", t30_completion_code_to_str(result));
     switch_channel_set_variable(chan, "FAX_ERROR", buf);
+
+	/* TODO */
+	#ifdef TODO
+	printf("%d: Phase E: local ident '%s'\n", i, info->ident);
+	if ((u = t30_get_rx_ident(s)))
+	printf("%d: Phase E: remote ident '%s'\n", i, u);
+	if ((u = t30_get_rx_country(s)))
+	printf("%d: Phase E: Remote was made in '%s'\n", i, u);
+	if ((u = t30_get_rx_vendor(s)))
+	printf("%d: Phase E: Remote was made by '%s'\n", i, u);
+	if ((u = t30_get_rx_model(s)))
+	printf("%d: Phase E: Remote is model '%s'\n", i, u);
+	#endif
 }
 
-
 /*
- * This function is called whenever a single new page has been received
+ * Document Handler - callback function for T.30 end of document handling. 
  */
 
-static int phase_d_handler(t30_state_t *s, void *user_data, int result)
+static int document_handler(t30_state_t *s, void *user_data, int event)
 {
-    t30_stats_t t;
-
-    if (result) {
-        t30_get_transfer_statistics(s, &t);
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pages transferred:  %i\n", t.pages_transferred);
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image size:         %i x %i\n", t.width, t.length);
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image resolution    %i x %i\n", t.x_resolution, t.y_resolution);
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Transfer Rate:      %i\n", t.bit_rate);
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Bad rows            %i\n", t.bad_rows);
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Longest bad row run %i\n", t.longest_bad_row_run);
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Compression type    %i %s\n", t.encoding, t4_encoding_to_str(t.encoding));
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image size (bytes)  %i\n", t.image_size);
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
-    }
-    return T30_ERR_OK;
+	int i;
+	i = (intptr_t) user_data;
+	printf("%d: Document handler on channel %d - event %d\n", i, i, event);
+	return FALSE;
 }
 
 SWITCH_STANDARD_APP(rxfax_function)
@@ -236,7 +312,7 @@ SWITCH_STANDARD_APP(rxfax_function)
     fax_init(&fax, calling_party);
     //TODO: fax_init return NULL in case of failed initialization
 
-    //TODO: did i ported this from app_TXfax.c and it has no use there?
+	// Select whether silent audio will be sent when FAX transmit is idle. 
     fax_set_transmit_on_idle(&fax, TRUE);
 
     //TODO: set spanlog debug to be outputted somewhere 
@@ -250,40 +326,27 @@ SWITCH_STANDARD_APP(rxfax_function)
     /* file_name - Sets the TIFF filename where do you want to save the fax */
     file_name = switch_core_session_strdup(session, data);
     //TODO: check file_name is not NULL ?
+	switch_assert(file_name != NULL);
     t30_set_rx_file(&fax.t30, file_name, -1);
 
     /* FAX_DEBUG - enable extra debugging if defined */
-    fax_local_debug = switch_channel_get_variable(channel, "FAX_DEBUG");
-    debug = (fax_local_debug == NULL) ? FALSE : TRUE;
+    debug = ( NULL != switch_channel_get_variable(channel, "FAX_DEBUG") );
     if (debug) {
         span_log_set_level(&fax.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
         span_log_set_level(&fax.t30.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     }
 
     /* FAX_LOCAL_NUMBER - Set the receiving station phone number */
-    fax_local_number = switch_channel_get_variable(channel, "FAX_LOCAL_NUMBER");
-    if (fax_local_number==NULL) {
-        fax_local_number="";
-    }
-    t30_set_tx_ident(&fax.t30, fax_local_number);
+	t30_set_tx_ident(&fax.t30, switch_str_nil(switch_channel_get_variable(channel, "FAX_LOCAL_NUMBER")));
 
     /* FAX_LOCAL_NAME - Set the receiving station ID name (string) */
-    fax_local_name = switch_channel_get_variable(channel, "FAX_LOCAL_NAME");
-    if (fax_local_name==NULL) {
-        fax_local_name="";
-    }
-    t30_set_tx_page_header_info(&fax.t30, fax_local_name);
+    t30_set_tx_page_header_info(&fax.t30, switch_str_nil(switch_channel_get_variable(channel, "FAX_LOCAL_NAME")));
 
     /* FAX_LOCAL_SUBNAME - Set the receiving station ID sub name */
-    fax_local_subname = switch_channel_get_variable(channel, "FAX_LOCAL_SUBNAME");
-    if (fax_local_subname==NULL) {
-        fax_local_subname="";
-    }
-	t30_set_tx_sub_address(&fax.t30, fax_local_subname);
+	t30_set_tx_sub_address(&fax.t30, switch_str_nil(switch_channel_get_variable(channel, "FAX_LOCAL_SUBNAME")));
 
     /* FAX_DISABLE_ECM - Set if you want ECM on or OFF */
-    fax_local_ecm = switch_channel_get_variable(channel, "FAX_DISABLE_ECM");
-    if (fax_local_ecm == NULL ) {
+    if (NULL != switch_channel_get_variable(channel, "FAX_DISABLE_ECM")) {
         t30_set_ecm_capability(&fax.t30, TRUE);
 		t30_set_supported_compressions(&fax.t30, T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION | T30_SUPPORT_T6_COMPRESSION);
     } else {
@@ -291,12 +354,15 @@ SWITCH_STANDARD_APP(rxfax_function)
 	}
 
     /* FAX_DISABLE_V17 - set if you want 9600 or V17 (14.400) */
-    fax_local_v17 = switch_channel_get_variable(channel, "FAX_DISABLE_V17");
-    if (fax_local_v17 == NULL) {
+    if (NULL != switch_channel_get_variable(channel, "FAX_DISABLE_V17")) {
 		t30_set_supported_modems(&fax.t30, T30_SUPPORT_V29 | T30_SUPPORT_V27TER | T30_SUPPORT_V17 );
     } else {
 		t30_set_supported_modems(&fax.t30, T30_SUPPORT_V29 | T30_SUPPORT_V27TER);
     }
+
+	/* TODO
+	 * t30_set_tx_password(&mc->fax.t30_state, "Password");
+	 */
 
 	/* Support for different image sizes && resolutions */
 	t30_set_supported_image_sizes(&fax.t30, T30_SUPPORT_US_LETTER_LENGTH | T30_SUPPORT_US_LEGAL_LENGTH | T30_SUPPORT_UNLIMITED_LENGTH
@@ -305,18 +371,22 @@ SWITCH_STANDARD_APP(rxfax_function)
 			| T30_SUPPORT_R8_RESOLUTION | T30_SUPPORT_R16_RESOLUTION);
 
     /* set phase handlers callbaks */
-	t30_set_phase_b_handler(&fax.t30, phase_b_handler, NULL);
     t30_set_phase_d_handler(&fax.t30, phase_d_handler, NULL);
     t30_set_phase_e_handler(&fax.t30, phase_e_handler, channel);
+	if (debug) {
+		t30_set_phase_b_handler(&fax.t30, phase_b_handler, session);
+		t30_set_document_handler(&fax.t30, document_handler, NULL );
+	}
 
-    // TODO: ?? what this does ??
-    write_frame.codec = &write_codec;
-    write_frame.data = buf;
 
     /*
      * now we enter a loop where we read audio frames to the channels and will pass it to spandsp
      * and if there is some outgoing frame we'll send it back to the calling fax machine
      */
+
+    write_frame.codec = &write_codec;
+    write_frame.data = buf;
+
     while(switch_channel_ready(channel)) {
 
         // read new audio frame from the channel
@@ -344,6 +414,10 @@ SWITCH_STANDARD_APP(rxfax_function)
     }
 
  done:
+
+	// TODO: this is here to see if it gets called "pre" or "post" the document handler
+	if (debug)
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FAX transmission has terminated.\n");
 
     // shutdown spandsp so it can create our tiff
     t30_terminate(&fax.t30);
