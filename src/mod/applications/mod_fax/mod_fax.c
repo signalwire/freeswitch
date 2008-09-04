@@ -52,32 +52,32 @@ static void span_message(int level, const char *msg)
 	   return;
 	   }
 	*/
-	switch_assert(msg!=NULL);
+	switch_assert(msg);
 
-	switch (level) 
-	    {
-	        /* TODO: i need to ask Coppice what SPAN_LOG_NONE and SPA_LOG_FLOW are exactly for
-	           SPAN_LOG_NONE:
-	           return;
-	           SPAN_LOG_FLOW:
-	           SPAN_LOG_FLOW_2:
-	           SPAN_LOG_FLOW_3:
-	           if (!debug) 
-	           return;
-	           fs_log_level = SWITCH_LOG_DEBUG;
-	           break;
-	        */
-		SPAN_LOG_ERROR:
-		SPAN_LOG_PROTOCOL_ERROR:
-			fs_log_level = SWITCH_LOG_ERROR;
-			break;
-		SPAN_LOG_WARNING:
-		SPAN_LOG_PROTOCOL_WARNING:
-			fs_log_level = SWITCH_LOG_WARNING;
-			break;
-		default: /* SPAN_LOG_DEBUG, SPAN_LOG_DEBUG_2, SPAN_LOG_DEBUG_3 */
-			fs_log_level = SWITCH_LOG_DEBUG;
-	    }
+	switch (level) {
+/* TODO: i need to ask Coppice what SPAN_LOG_NONE and SPA_LOG_FLOW are exactly for
+	case SPAN_LOG_NONE:
+		return;
+	case SPAN_LOG_FLOW:
+	case SPAN_LOG_FLOW_2:
+	case SPAN_LOG_FLOW_3:
+		if (!debug) 
+			return;
+		fs_log_level = SWITCH_LOG_DEBUG;
+		break;
+*/
+	case SPAN_LOG_ERROR:
+	case SPAN_LOG_PROTOCOL_ERROR:
+		fs_log_level = SWITCH_LOG_ERROR;
+		break;
+	case SPAN_LOG_WARNING:
+	case SPAN_LOG_PROTOCOL_WARNING:
+		fs_log_level = SWITCH_LOG_WARNING;
+		break;
+	default: /* SPAN_LOG_DEBUG, SPAN_LOG_DEBUG_2, SPAN_LOG_DEBUG_3 */
+		fs_log_level = SWITCH_LOG_DEBUG;
+		break;
+    }
 	switch_log_printf(SWITCH_CHANNEL_LOG, fs_log_level, "%s", msg );
 }
 
@@ -111,29 +111,29 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 static int phase_d_handler(t30_state_t *s, void *user_data, int result)
 {
 	t30_stats_t t;
-	int session;
-	switch_assert(user_data != NULL);
-	session = (intptr_t) user_data;
+	int session = (intptr_t) user_data;
+	switch_assert(user_data);
 
-	if (result) {
-	    t30_get_transfer_statistics(s, &t);
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Phase D handler on channel %d - (0x%X) %s\n", session, session, result, t30_frametype(result));
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pages transferred:  %i\n", t.pages_transferred);
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pages in the file:  %i\n", t.pages_in_file);
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image size:         %i x %i\n", t.width, t.length);
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image resolution    %i x %i\n", t.x_resolution, t.y_resolution);
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Transfer Rate:      %i\n", t.bit_rate);
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Bad rows            %i\n", t.bad_rows);
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Longest bad row run %i\n", t.longest_bad_row_run);
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Compression type    %i %s\n", t.encoding, t4_encoding_to_str(t.encoding));
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image size (bytes)  %i\n", t.image_size);
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ECM                 %s\n", (t.error_correcting_mode)  ?  "on"  :  "off");
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "local ident:        %s\n", t30_get_tx_ident(s));
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "remote ident:       %s\n", t30_get_rx_ident(s));
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "bits per row - min %d, max %d\n", s->t4.min_row_bits, s->t4.max_row_bits);
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
-	}
+	if (!result) return T30_ERR_OK;
+
+	t30_get_transfer_statistics(s, &t);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Phase D handler on channel %d - (0x%X) %s\n", session, session, result, t30_frametype(result));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pages transferred:  %i\n", t.pages_transferred);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pages in the file:  %i\n", t.pages_in_file);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image size:         %i x %i\n", t.width, t.length);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image resolution    %i x %i\n", t.x_resolution, t.y_resolution);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Transfer Rate:      %i\n", t.bit_rate);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Bad rows            %i\n", t.bad_rows);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Longest bad row run %i\n", t.longest_bad_row_run);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Compression type    %i %s\n", t.encoding, t4_encoding_to_str(t.encoding));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image size (bytes)  %i\n", t.image_size);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ECM                 %s\n", (t.error_correcting_mode)  ?  "on"  :  "off");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "local ident:        %s\n", t30_get_tx_ident(s));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "remote ident:       %s\n", t30_get_rx_ident(s));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "bits per row - min %d, max %d\n", s->t4.min_row_bits, s->t4.max_row_bits);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+
 	return T30_ERR_OK;
 }
 
@@ -148,28 +148,28 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 	const char *far_ident = NULL;
 	switch_channel_t *chan = (switch_channel_t *) user_data;
 	char buf[128];
-	
-	switch_assert(user_data != NULL);
+
+	switch_assert(chan);
 
 	if (result == T30_ERR_OK) {
-	    t30_get_transfer_statistics(s, &t);
+		t30_get_transfer_statistics(s, &t);
 
-	    far_ident = switch_str_nil( t30_get_tx_ident(s) );
-	    
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+		far_ident = switch_str_nil( t30_get_tx_ident(s) );
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
 		//TODO: add received/transmitted ?
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax successfully processed.\n");
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote station id: %s\n", far_ident);
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local station id:  %s\n", switch_str_nil( t30_get_rx_ident(s)) );
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pages transferred: %i\n", t.pages_transferred);
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image resolution:  %i x %i\n", t.x_resolution, t.y_resolution);
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Transfer Rate:     %i\n", t.bit_rate);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax successfully processed.\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote station id: %s\n", far_ident);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local station id:  %s\n", switch_str_nil( t30_get_rx_ident(s)) );
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pages transferred: %i\n", t.pages_transferred);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image resolution:  %i x %i\n", t.x_resolution, t.y_resolution);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Transfer Rate:     %i\n", t.bit_rate);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "local ident:       %s\n", t30_get_tx_ident(s));
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "remote ident:      %s\n", t30_get_rx_ident(s));
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "station country:   %s\n", t30_get_rx_country(s));
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "station vendor:    %s\n", t30_get_rx_vendor(s));
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "station model:     %s\n", t30_get_rx_model(s));
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
 
 		//TODO: is the buffer too little? anyway <MikeJ> is going to write a new set_variable function that will allow a printf like syntax very soon
 		switch_snprintf(buf, sizeof(buf), "%d", t.pages_transferred);
@@ -180,18 +180,17 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 		switch_channel_set_variable(chan, "FAX_SPEED", buf);
 
 	} else {
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
 		//TODO: add received/transmitted ?
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax processing not successful - result (%d) %s.\n", result, t30_completion_code_to_str(result));
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax processing not successful - result (%d) %s.\n", result, t30_completion_code_to_str(result));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
 	}
 
 	//TODO: remove the assert once this has been tested
 	switch_channel_set_variable(chan, "FAX_REMOTESTATIONID", far_ident);
 	switch_snprintf(buf, sizeof(buf), "%d", result);
 	switch_channel_set_variable(chan, "FAX_RESULT", buf);
-	switch_snprintf(buf, sizeof(buf), "%s", t30_completion_code_to_str(result));
-	switch_channel_set_variable(chan, "FAX_ERROR", buf);
+	switch_channel_set_variable(chan, "FAX_ERROR", t30_completion_code_to_str(result));
 
 	/*
 	 * TODO
@@ -205,9 +204,8 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 
 static int document_handler(t30_state_t *s, void *user_data, int event)
 {
-	int i;
-	i = (intptr_t) user_data;
-	printf("%d: Document handler on channel %d - event %d\n", i, i, event);
+	int i = (intptr_t) user_data;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%d: Document handler on channel %d - event %d\n", i, i, event);
 	return FALSE;
 }
 
@@ -403,16 +401,16 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
 
 	while(switch_channel_ready(channel)) {
 
-	    /* read new audio frame from the channel */
-	    status = switch_core_session_read_frame(session, &read_frame, -1, 0);
-	    if (!SWITCH_READ_ACCEPTABLE(status)) {
-	        goto done;
-	    }
+		/* read new audio frame from the channel */
+		status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			goto done;
+		}
 
 		//DEBUG switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Frame Read: %d\n" , read_frame->samples);
 
-	    /* pass the new incoming audio frame to the fax_rx application */
-	    if( fax_rx(&fax, (int16_t *)read_frame->data, read_frame->samples) ) {
+		/* pass the new incoming audio frame to the fax_rx application */
+		if( fax_rx(&fax, (int16_t *)read_frame->data, read_frame->samples) ) {
 			//TODO
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "FAX_RX error\n" );
 		}
@@ -420,25 +418,25 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
 		if (read_frame->samples > 256 ) 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SAMPLES TOO BIG\n" );
 
-	    if ((tx = fax_tx(&fax, (int16_t *) &buf, write_codec.implementation->samples_per_frame)) < 0) {
-	        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fax_Tx Error\n");
-	        goto done;
-	    }
+		if ((tx = fax_tx(&fax, (int16_t *) &buf, write_codec.implementation->samples_per_frame)) < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fax_Tx Error\n");
+			goto done;
+		}
 		//DEBUG switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax   Tx  : %d %d\n" , tx, write_codec.implementation->samples_per_frame);
-	    
-	    if (tx!=0) {
-	        write_frame.datalen = tx * sizeof(int16_t);
-	        write_frame.samples = tx;
-	    
-	        if (switch_core_session_write_frame(session, &write_frame, -1, 0) != SWITCH_STATUS_SUCCESS) {
-	            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad Write, datalen: %d, samples: %d\n", 
-	                              write_frame.datalen,
-	                              write_frame.samples
-	                              );
-	            goto done;
-	        }
+
+		if (tx!=0) {
+			write_frame.datalen = tx * sizeof(int16_t);
+			write_frame.samples = tx;
+
+			if (switch_core_session_write_frame(session, &write_frame, -1, 0) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad Write, datalen: %d, samples: %d\n", 
+					write_frame.datalen,
+					write_frame.samples
+					);
+				goto done;
+			}
 			//DEBUG switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Frame TX  : %d %d\n" , write_frame.datalen, write_frame.samples);
-	    } else {
+		} else {
 			// TODO
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "non trasmitting\n" );
 		}
