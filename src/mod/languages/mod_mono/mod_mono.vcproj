@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;C:\Program Files\Mono-1.9.1\lib\glib-2.0\include&quot;;&quot;C:\Program Files\Mono-1.9.1\include\glib-2.0&quot;;&quot;C:\Program Files\Mono-1.9.1\include\mono-1.0&quot;"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\Mono\lib\glib-2.0\include&quot;;&quot;C:\Program Files\Mono\include\glib-2.0&quot;;&quot;C:\Program Files\Mono\include\mono-1.0&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_MONO_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -64,7 +64,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(ProjectDir)mono.lib &quot;C:\program Files\Mono-1.9.1\lib\glib-2.0.lib&quot; shlwapi.lib"
+				AdditionalDependencies="$(ProjectDir)mono.lib &#x0A;&quot;C:\program Files\Mono\lib\glib-2.0.lib&quot; shlwapi.lib"
 				LinkIncremental="2"
 				ModuleDefinitionFile=""
 				GenerateDebugInformation="true"

@@ -15347,15 +15347,17 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_init(void * jarg1, void * jarg2
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_presence(void * jarg1, char * jarg2, char * jarg3) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_presence(void * jarg1, char * jarg2, char * jarg3, char * jarg4) {
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
   
   arg1 = (switch_channel_t *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
-  switch_channel_presence(arg1,(char const *)arg2,(char const *)arg3);
+  arg4 = (char *)jarg4; 
+  switch_channel_presence(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4);
 }
 
 
@@ -21233,24 +21235,6 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_bind_search_function(void * jarg1, 
   arg2 = (switch_xml_section_t)jarg2; 
   arg3 = (void *)jarg3; 
   result = (switch_status_t)switch_xml_bind_search_function(arg1,arg2,arg3);
-  jresult = result; 
-  return jresult;
-}
-
-
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_bind_search_function_removable(void * jarg1, unsigned long jarg2, void * jarg3, void * jarg4) {
-  int jresult ;
-  switch_xml_search_function_t arg1 = (switch_xml_search_function_t) 0 ;
-  switch_xml_section_t arg2 ;
-  void *arg3 = (void *) 0 ;
-  switch_xml_binding_t **arg4 = (switch_xml_binding_t **) 0 ;
-  switch_status_t result;
-  
-  arg1 = (switch_xml_search_function_t)jarg1; 
-  arg2 = (switch_xml_section_t)jarg2; 
-  arg3 = (void *)jarg3; 
-  arg4 = (switch_xml_binding_t **)jarg4; 
-  result = (switch_status_t)switch_xml_bind_search_function_removable(arg1,arg2,arg3,arg4);
   jresult = result; 
   return jresult;
 }
