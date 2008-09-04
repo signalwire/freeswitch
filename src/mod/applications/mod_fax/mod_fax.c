@@ -193,6 +193,10 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
     switch_snprintf(buf, sizeof(buf), "%s", t30_completion_code_to_str(result));
     switch_channel_set_variable(chan, "FAX_ERROR", buf);
 
+	/*
+	 * TODO
+	 * Fire here an EVENT about the result of the fax call
+	 */
 }
 
 /*
