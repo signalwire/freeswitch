@@ -85,6 +85,7 @@ L3INT ATT5ESSUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic
             case Q931ie_CHANNEL_IDENTIFICATION:
             case Q931ie_PROGRESS_INDICATOR:
             case Q931ie_NETWORK_SPECIFIC_FACILITIES:
+            case Q931ie_DISPLAY:
             case Q931ie_DATETIME:
             case Q931ie_KEYPAD_FACILITY:
             case Q931ie_SIGNAL:
@@ -192,6 +193,11 @@ L3INT ATT5ESSPmes_Setup(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT I
     /* Network specific facilities */
     if(Q931IsIEPresent(pMes->NetFac))
         if((rc=Q931Pie[pTrunk->Dialect][Q931ie_NETWORK_SPECIFIC_FACILITIES](pTrunk, Q931GetIEPtr(pMes->NetFac,pMes->buf), OBuf, &Octet))!=0)
+            return rc;
+
+    /* Display */
+    if(Q931IsIEPresent(pMes->Display))
+        if((rc=Q931Pie[pTrunk->Dialect][Q931ie_DISPLAY](pTrunk, Q931GetIEPtr(pMes->Display,pMes->buf), OBuf, &Octet))!=0)
             return rc;
 
     /* Date/Time */
