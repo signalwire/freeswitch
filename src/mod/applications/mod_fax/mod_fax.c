@@ -74,7 +74,7 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
     t30_stats_t t;
     const char *local_ident = NULL;
     const char *far_ident = NULL;
-    switch_channel_t *chan = (struct switch_channel_t *) user_data;
+    switch_channel_t *chan = (switch_channel_t *) user_data;
     
     if (result == T30_ERR_OK)
         {
@@ -170,7 +170,6 @@ SWITCH_STANDARD_APP(rxfax_function)
     const char *fax_local_name = NULL;
     const char *fax_local_subname = NULL;
     const char *fax_local_ecm = NULL;
-    int fax_local_disable_ecm;
     const char *fax_local_v17 = NULL;
 
     // make sure we have a valid channel when starting the FAX application
