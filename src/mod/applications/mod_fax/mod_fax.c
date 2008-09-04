@@ -105,7 +105,7 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 
 
 /*
- * This function is called whenever a single new page has been received
+ * This function is called whenever a single new page has been received/transmitted
  */
 
 static int phase_d_handler(t30_state_t *s, void *user_data, int result)
@@ -165,7 +165,8 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
         }
         
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax successfully received.\n");
+		//TODO: add received/transmitted ?
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax successfully processed.\n");
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote station id: %s\n", far_ident);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local station id:  %s\n", local_ident);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pages transferred: %i\n", t.pages_transferred);
@@ -180,7 +181,8 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 
     } else {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax receive not successful - result (%d) %s.\n", result, t30_completion_code_to_str(result));
+		//TODO: add received/transmitted ?
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax processing not successful - result (%d) %s.\n", result, t30_completion_code_to_str(result));
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
     }
 
@@ -213,7 +215,11 @@ static int document_handler(t30_state_t *s, void *user_data, int event)
 	return FALSE;
 }
 
-//OLD: SWITCH_STANDARD_APP(rxfax_function)
+/*
+ * Main fax processing function:
+ * - calling_party is boolean: TRUE = TxFax and FALSE = RxFax
+ */
+
 void process_fax(switch_core_session_t *session, char *data, int calling_party)
 {
     switch_channel_t *channel;
@@ -226,7 +232,7 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
     fax_state_t fax;
     int16_t buf[512];
     int tx = 0;
-    //int calling_party = FALSE;		// FALSE = RxFax, TRUE = TxFax
+    /*TODO: int calling_party = FALSE; DEPRECATED */
     /* Channels variable parsing */
     char *file_name = NULL;
     const char *fax_local_debug = NULL;
@@ -243,7 +249,8 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
     switch_channel_set_variable(channel, "FAX_SIZE",    "0");
     switch_channel_set_variable(channel, "FAX_SPEED",   "0");
     switch_channel_set_variable(channel, "FAX_RESULT",  "1");
-    switch_channel_set_variable(channel, "FAX_ERROR",   "fax not received yet");
+	//TODO: add received/transmitted ?
+    switch_channel_set_variable(channel, "FAX_ERROR",   "fax not processed yet");
 
     /*
 	 * SpanDSP initialization 
@@ -275,13 +282,13 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
     /* FAX_DEBUG - enable extra debugging if defined */
     debug = ( NULL != switch_channel_get_variable(channel, "FAX_DEBUG") );
 
-    /* FAX_LOCAL_NUMBER - Set the receiving station phone number */
+    /* FAX_LOCAL_NUMBER - Set your station phone number */
 	t30_set_tx_ident(&fax.t30, switch_str_nil(switch_channel_get_variable(channel, "FAX_LOCAL_NUMBER")));
 
-    /* FAX_LOCAL_NAME - Set the receiving station ID name (string) */
+    /* FAX_LOCAL_NAME - Set your station ID name (string) */
     t30_set_tx_page_header_info(&fax.t30, switch_str_nil(switch_channel_get_variable(channel, "FAX_LOCAL_NAME")));
 
-    /* FAX_LOCAL_SUBNAME - Set the receiving station ID sub name */
+    /* FAX_LOCAL_SUBNAME - Set your station ID sub name */
 	t30_set_tx_sub_address(&fax.t30, switch_str_nil(switch_channel_get_variable(channel, "FAX_LOCAL_SUBNAME")));
 
     /* FAX_DISABLE_ECM - Set if you want ECM on or OFF */
@@ -305,7 +312,7 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
 
 	/* Configure more spanDSP internal options */
 
-	// Select whether silent audio will be sent when FAX transmit is idle. 
+	/* Select whether silent audio will be sent when FAX transmit is idle. */
     fax_set_transmit_on_idle(&fax, TRUE);
 
 	/* Support for different image sizes && resolutions */
@@ -332,11 +339,11 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
 
 	/* We're now ready to answer the channel and process the audio of the call */
 
-    // make sure we have a valid channel when starting the FAX application
+    /* make sure we have a valid channel when starting the FAX application */
     channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);	
 
-    // Answer the call, otherwise we're not getting incoming audio
+    /* Answer the call, otherwise we're not getting incoming audio */
 	switch_channel_answer(channel);
 
     /* TODO:
@@ -392,13 +399,13 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
 
     while(switch_channel_ready(channel)) {
 
-        // read new audio frame from the channel
+        /* read new audio frame from the channel */
         status = switch_core_session_read_frame(session, &read_frame, -1, 0);
         if (!SWITCH_READ_ACCEPTABLE(status)) {
             goto done;
         }
 
-        // pass the new incoming audio frame to the fax_rx application
+        /* pass the new incoming audio frame to the fax_rx application */
         fax_rx(&fax, (int16_t *)read_frame->data, read_frame->samples);
         if ((tx = fax_tx(&fax, (int16_t *) &buf, write_codec.implementation->samples_per_frame)) < 0) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fax Error\n");
@@ -422,11 +429,11 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
 	if (debug)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FAX transmission has terminated.\n");
 
-    // shutdown spandsp so it can create our tiff
+    /* shutdown spandsp so it can create our tiff */
     t30_terminate(&fax.t30);
     fax_release(&fax);
     
-    // restore the original codecs over the channels
+    /* restore the original codecs over the channels */
     if (read_codec.implementation) {
         switch_core_codec_destroy(&read_codec);
     }
