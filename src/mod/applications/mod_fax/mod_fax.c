@@ -145,22 +145,22 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
 static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 {
     t30_stats_t t;
-    const char *local_ident = NULL;
     const char *far_ident = NULL;
     switch_channel_t *chan = (switch_channel_t *) user_data;
     char buf[128];
     
+    switch_assert(user_data != NULL);
+
     if (result == T30_ERR_OK) {
         t30_get_transfer_statistics(s, &t);
 
         far_ident = switch_str_nil( t30_get_tx_ident(s) );
-        local_ident = switch_str_nil( t30_get_rx_ident(s) );
         
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
 		//TODO: add received/transmitted ?
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax successfully processed.\n");
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote station id: %s\n", far_ident);
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local station id:  %s\n", local_ident);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local station id:  %s\n", switch_str_nil( t30_get_rx_ident(s)) );
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pages transferred: %i\n", t.pages_transferred);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image resolution:  %i x %i\n", t.x_resolution, t.y_resolution);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Transfer Rate:     %i\n", t.bit_rate);
@@ -171,6 +171,14 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "station model:     %s\n", t30_get_rx_model(s));
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
 
+		//TODO: is the buffer too little? anyway <MikeJ> is going to write a new set_variable function that will allow a printf like syntax very soon
+		switch_snprintf(buf, sizeof(buf), "%d", t.pages_transferred);
+		switch_channel_set_variable(chan, "FAX_PAGES", buf);
+		switch_snprintf(buf, sizeof(buf), "%dx%d", t.x_resolution, t.y_resolution);
+		switch_channel_set_variable(chan, "FAX_SIZE", buf);
+		switch_snprintf(buf, sizeof(buf), "%d", t.bit_rate);
+		switch_channel_set_variable(chan, "FAX_SPEED", buf);
+
     } else {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
 		//TODO: add received/transmitted ?
@@ -179,15 +187,7 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
     }
 
     //TODO: remove the assert once this has been tested
-    switch_assert(user_data != NULL);
     switch_channel_set_variable(chan, "FAX_REMOTESTATIONID", far_ident);
-    //TODO: is the buffer too little? anyway <MikeJ> is going to write a new set_variable function that will allow a printf like syntax very soon
-    switch_snprintf(buf, sizeof(buf), "%d", t.pages_transferred);
-    switch_channel_set_variable(chan, "FAX_PAGES", buf);
-    switch_snprintf(buf, sizeof(buf), "%dx%d", t.x_resolution, t.y_resolution);
-    switch_channel_set_variable(chan, "FAX_SIZE", buf);
-    switch_snprintf(buf, sizeof(buf), "%d", t.bit_rate);
-    switch_channel_set_variable(chan, "FAX_SPEED", buf);
     switch_snprintf(buf, sizeof(buf), "%d", result);
     switch_channel_set_variable(chan, "FAX_RESULT", buf);
     switch_snprintf(buf, sizeof(buf), "%s", t30_completion_code_to_str(result));
@@ -216,6 +216,7 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
 {
     switch_channel_t *channel;
     switch_codec_t *orig_read_codec = NULL;
+    switch_codec_t *orig_write_codec = NULL;
     switch_codec_t read_codec = {0};
     switch_codec_t write_codec = {0};
     switch_frame_t *read_frame = {0};
@@ -329,9 +330,16 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
     span_log_set_message_handler(&fax.logging, span_message);
     span_log_set_message_handler(&fax.t30.logging, span_message);
     if (debug) {
+		/* TODO: original
 		span_log_set_level(&fax.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 		span_log_set_level(&fax.t30.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    }
+		*/
+		span_log_set_level(&fax.logging, SPAN_LOG_NONE|SPAN_LOG_FLOW|SPAN_LOG_FLOW_2|SPAN_LOG_FLOW_3|SPAN_LOG_ERROR|SPAN_LOG_PROTOCOL_ERROR|SPAN_LOG_WARNING|SPAN_LOG_PROTOCOL_WARNING|SPAN_LOG_DEBUG|SPAN_LOG_DEBUG_2|SPAN_LOG_DEBUG_3 );
+		span_log_set_level(&fax.t30.logging, SPAN_LOG_NONE|SPAN_LOG_FLOW|SPAN_LOG_FLOW_2|SPAN_LOG_FLOW_3|SPAN_LOG_ERROR|SPAN_LOG_PROTOCOL_ERROR|SPAN_LOG_WARNING|SPAN_LOG_PROTOCOL_WARNING|SPAN_LOG_DEBUG|SPAN_LOG_DEBUG_2|SPAN_LOG_DEBUG_3 );
+    } else {
+		span_log_set_level(&fax.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL );
+		span_log_set_level(&fax.t30.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL );
+	}
 
 	/* We're now ready to answer the channel and process the audio of the call */
 
@@ -360,24 +368,27 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
                                SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, 
                                NULL, 
                                switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Success L16\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Success L16 on Leg-A\n");
     } else {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16 on Leg-A");
         goto done;
     }
+
+	// NEW
+    orig_write_codec = switch_core_session_get_write_codec(session);
 
     if (switch_core_codec_init(&write_codec, 
                                "L16", 
                                NULL, 
-                               orig_read_codec->implementation->samples_per_second, 
-                               orig_read_codec->implementation->microseconds_per_frame / 1000, 
+                               orig_write_codec->implementation->samples_per_second, 
+                               orig_write_codec->implementation->microseconds_per_frame / 1000, 
                                1, 
                                SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, 
                                NULL, 
                                switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Success L16\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Success L16 on Leg-B\n");
     } else {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16 on Leg-B");
         goto done;
     }
 
@@ -409,7 +420,10 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
             write_frame.samples = tx;
         
             if (switch_core_session_write_frame(session, &write_frame, -1, 0) != SWITCH_STATUS_SUCCESS) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad Write\n");
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad Write, datalen: %d, samples: %d\n", 
+					write_frame.datalen,
+					write_frame.samples
+				);
                 goto done;
             }
         }
@@ -436,6 +450,10 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
 
     if (orig_read_codec) {
         switch_core_session_set_read_codec(session, orig_read_codec);
+    }
+
+    if (orig_write_codec) {
+        switch_core_session_set_write_codec(session, orig_write_codec);
     }
 
 }
