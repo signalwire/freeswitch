@@ -32,6 +32,7 @@
 
 #include <switch.h>
 #include <spandsp.h>
+#include <spandsp/version.h>
 
 #define MAX_BLOCK_SIZE 240
 
@@ -212,7 +213,8 @@ static int document_handler(t30_state_t *s, void *user_data, int event)
 	return FALSE;
 }
 
-SWITCH_STANDARD_APP(rxfax_function)
+//OLD: SWITCH_STANDARD_APP(rxfax_function)
+void process_fax(switch_core_session_t *session, char *data, int calling_party)
 {
     switch_channel_t *channel;
     switch_codec_t *orig_read_codec = NULL;
@@ -224,7 +226,7 @@ SWITCH_STANDARD_APP(rxfax_function)
     fax_state_t fax;
     int16_t buf[512];
     int tx = 0;
-    int calling_party = FALSE;
+    //int calling_party = FALSE;		// FALSE = RxFax, TRUE = TxFax
     /* Channels variable parsing */
     char *file_name = NULL;
     const char *fax_local_debug = NULL;
@@ -265,7 +267,10 @@ SWITCH_STANDARD_APP(rxfax_function)
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fax filename is NULL or empty string\n");
 		return;
 	}
-    t30_set_rx_file(&fax.t30, file_name, -1);
+	if (calling_party)
+		t30_set_tx_file(&fax.t30, file_name, -1, -1);
+	else
+		t30_set_rx_file(&fax.t30, file_name, -1);
 
     /* FAX_DEBUG - enable extra debugging if defined */
     debug = ( NULL != switch_channel_get_variable(channel, "FAX_DEBUG") );
@@ -337,6 +342,7 @@ SWITCH_STANDARD_APP(rxfax_function)
     /* TODO:
 	 * it could be a good idea to disable ECHOCAN on ZAP channels and to reset volumes too
 	 * anyone know how to do this if one of the channell is OpenZap isntead of Sofia?
+	 * TIPS: perhaps "disable_ec" apps ?
 	 */
 
     /* We store the original channel codec before switching both
@@ -435,6 +441,16 @@ SWITCH_STANDARD_APP(rxfax_function)
 
 }
 
+SWITCH_STANDARD_APP(txfax_function)
+{
+	process_fax(session, data, TRUE);
+}
+
+SWITCH_STANDARD_APP(rxfax_function)
+{
+	process_fax(session, data, FALSE);
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_fax_load)
 {
     switch_application_interface_t *app_interface;
@@ -442,11 +458,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fax_load)
 	/* connect my internal structure to the blank pointer passed to me */
     *module_interface = switch_loadable_module_create_module_interface(pool, modname);
     
-    SWITCH_ADD_APP(app_interface, "rxfax", "Trivial FAX Receive Application", "Trivial FAX Receive Application", rxfax_function, "", SAF_NONE);
+    SWITCH_ADD_APP(app_interface, "rxfax", "FAX Receive Application",  "FAX Receive Application",  rxfax_function, "", SAF_NONE);
+    SWITCH_ADD_APP(app_interface, "txfax", "FAX Transmit Application", "FAX Transmit Application", txfax_function, "", SAF_NONE);
 
-    /* TODO: its important to debug the exact spandsp used
-	"RxFax using spandsp %i %i\n", SPANDSP_RELEASE_DATE, SPANDSP_RELEASE_TIME 
-    */
+	// TODO: ask if i can use LOG functions inside this macro
+    /* its important to debug the exact spandsp used */
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "using spandsp %i %i\n", SPANDSP_RELEASE_DATE, SPANDSP_RELEASE_TIME );
     
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
