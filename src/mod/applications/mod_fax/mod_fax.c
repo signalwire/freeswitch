@@ -48,25 +48,25 @@ static void span_message(int level, const char *msg)
 	int fs_log_level;
 
 	/* TODO: maybe is better to use switch_assert here?
-	if (msg==NULL) {
-	    return;
-	}
+	   if (msg==NULL) {
+	   return;
+	   }
 	*/
 	switch_assert(msg!=NULL);
 
 	switch (level) 
-	{
-		/* TODO: i need to ask Coppice what SPAN_LOG_NONE and SPA_LOG_FLOW are exactly for
-		SPAN_LOG_NONE:
-			return;
-		SPAN_LOG_FLOW:
-		SPAN_LOG_FLOW_2:
-		SPAN_LOG_FLOW_3:
-			if (!debug) 
-				return;
-			 fs_log_level = SWITCH_LOG_DEBUG;
-			 break;
-		*/
+	    {
+	        /* TODO: i need to ask Coppice what SPAN_LOG_NONE and SPA_LOG_FLOW are exactly for
+	           SPAN_LOG_NONE:
+	           return;
+	           SPAN_LOG_FLOW:
+	           SPAN_LOG_FLOW_2:
+	           SPAN_LOG_FLOW_3:
+	           if (!debug) 
+	           return;
+	           fs_log_level = SWITCH_LOG_DEBUG;
+	           break;
+	        */
 		SPAN_LOG_ERROR:
 		SPAN_LOG_PROTOCOL_ERROR:
 			fs_log_level = SWITCH_LOG_ERROR;
@@ -77,7 +77,7 @@ static void span_message(int level, const char *msg)
 			break;
 		default: /* SPAN_LOG_DEBUG, SPAN_LOG_DEBUG_2, SPAN_LOG_DEBUG_3 */
 			fs_log_level = SWITCH_LOG_DEBUG;
-	}
+	    }
 	switch_log_printf(SWITCH_CHANNEL_LOG, fs_log_level, "%s", msg );
 }
 
@@ -226,7 +226,7 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
 	switch_frame_t write_frame = {0};
 	switch_status_t status;
 	fax_state_t fax;
-	#define FAX_BUFFER_SIZE		4096
+#define FAX_BUFFER_SIZE		4096
 	int16_t buf[FAX_BUFFER_SIZE];		//TODO original value: 512
 	int tx = 0;
 	/*TODO: int calling_party = FALSE; DEPRECATED */
@@ -318,9 +318,9 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
 
 	/* Support for different image sizes && resolutions */
 	t30_set_supported_image_sizes(&fax.t30, T30_SUPPORT_US_LETTER_LENGTH | T30_SUPPORT_US_LEGAL_LENGTH | T30_SUPPORT_UNLIMITED_LENGTH
-			| T30_SUPPORT_215MM_WIDTH | T30_SUPPORT_255MM_WIDTH | T30_SUPPORT_303MM_WIDTH);
+	                              | T30_SUPPORT_215MM_WIDTH | T30_SUPPORT_255MM_WIDTH | T30_SUPPORT_303MM_WIDTH);
 	t30_set_supported_resolutions(&fax.t30, T30_SUPPORT_STANDARD_RESOLUTION | T30_SUPPORT_FINE_RESOLUTION | T30_SUPPORT_SUPERFINE_RESOLUTION
-			| T30_SUPPORT_R8_RESOLUTION | T30_SUPPORT_R16_RESOLUTION);
+	                              | T30_SUPPORT_R8_RESOLUTION | T30_SUPPORT_R16_RESOLUTION);
 
 	/* set phase handlers callbaks */
 	t30_set_phase_d_handler(&fax.t30, phase_d_handler, session);
@@ -335,8 +335,8 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
 	span_log_set_message_handler(&fax.t30.logging, span_message);
 	if (debug) {
 		/* TODO: original
-		span_log_set_level(&fax.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-		span_log_set_level(&fax.t30.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+	       span_log_set_level(&fax.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+	       span_log_set_level(&fax.t30.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 		*/
 		span_log_set_level(&fax.logging, SPAN_LOG_NONE|SPAN_LOG_FLOW|SPAN_LOG_FLOW_2|SPAN_LOG_FLOW_3|SPAN_LOG_ERROR|SPAN_LOG_PROTOCOL_ERROR|SPAN_LOG_WARNING|SPAN_LOG_PROTOCOL_WARNING|SPAN_LOG_DEBUG|SPAN_LOG_DEBUG_2|SPAN_LOG_DEBUG_3 );
 		span_log_set_level(&fax.t30.logging, SPAN_LOG_NONE|SPAN_LOG_FLOW|SPAN_LOG_FLOW_2|SPAN_LOG_FLOW_3|SPAN_LOG_ERROR|SPAN_LOG_PROTOCOL_ERROR|SPAN_LOG_WARNING|SPAN_LOG_PROTOCOL_WARNING|SPAN_LOG_DEBUG|SPAN_LOG_DEBUG_2|SPAN_LOG_DEBUG_3 );
@@ -432,9 +432,9 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
 	    
 	        if (switch_core_session_write_frame(session, &write_frame, -1, 0) != SWITCH_STATUS_SUCCESS) {
 	            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad Write, datalen: %d, samples: %d\n", 
-					write_frame.datalen,
-					write_frame.samples
-				);
+	                              write_frame.datalen,
+	                              write_frame.samples
+	                              );
 	            goto done;
 	        }
 			//DEBUG switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Frame TX  : %d %d\n" , write_frame.datalen, write_frame.samples);
