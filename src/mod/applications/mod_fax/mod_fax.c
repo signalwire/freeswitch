@@ -43,15 +43,21 @@ SWITCH_MODULE_DEFINITION(mod_fax, mod_fax_load, NULL, NULL);
  */
 static void span_message(int level, const char *msg)
 {
-	if (msg==NULL) return;
 	int fs_log_level = SWITCH_LOG_NOTICE;
+
+	if (msg==NULL) {
+        return;
+    }
+
     // TODO: verify all the span_log_levels available
-	if (level == SPAN_LOG_ERROR)
+	if (level == SPAN_LOG_ERROR) {
 		fs_log_level = SWITCH_LOG_ERROR;
-	else if (level == SPAN_LOG_WARNING)
+	} else if (level == SPAN_LOG_WARNING) {
 		fs_log_level = SWITCH_LOG_WARNING;
-	else
+	} else {
 		fs_log_level = SWITCH_LOG_DEBUG;
+    }
+
     switch_log_printf(SWITCH_CHANNEL_LOG, fs_log_level, "%s", msg );
 }
 
@@ -62,7 +68,7 @@ static void span_message(int level, const char *msg)
 static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 {
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MARK: Entering phase D\n");
-	return T30_ERR_OK;
+    return T30_ERR_OK;
 }
 
 /*
@@ -75,41 +81,41 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
     const char *local_ident = NULL;
     const char *far_ident = NULL;
     switch_channel_t *chan = (switch_channel_t *) user_data;
+    char buf[128];
     
-    if (result == T30_ERR_OK)
-        {
-            t30_get_transfer_statistics(s, &t);
-            far_ident = t30_get_tx_ident(s);
-            if (!switch_strlen_zero(far_ident)) {
-                far_ident = "";
-            }
-            local_ident = t30_get_rx_ident(s);
-            if (!switch_strlen_zero(local_ident)) {
-                local_ident = "";
-            }
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax successfully received.\n");
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote station id: %s\n", far_ident);
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local station id:  %s\n", local_ident);
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pages transferred: %i\n", t.pages_transferred);
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image resolution:  %i x %i\n", t.x_resolution, t.y_resolution);
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Transfer Rate:     %i\n", t.bit_rate);
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
-
+    if (result == T30_ERR_OK) {
+        t30_get_transfer_statistics(s, &t);
+        far_ident = t30_get_tx_ident(s);
+        
+        if (!switch_strlen_zero(far_ident)) {
+            far_ident = "";
         }
-    else
-        {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax receive not successful - result (%d) %s.\n", result, t30_completion_code_to_str(result));
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
-
+        
+        local_ident = t30_get_rx_ident(s);
+        
+        if (!switch_strlen_zero(local_ident)) {
+            local_ident = "";
         }
+        
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax successfully received.\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote station id: %s\n", far_ident);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local station id:  %s\n", local_ident);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pages transferred: %i\n", t.pages_transferred);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image resolution:  %i x %i\n", t.x_resolution, t.y_resolution);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Transfer Rate:     %i\n", t.bit_rate);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+    } else {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax receive not successful - result (%d) %s.\n", result, t30_completion_code_to_str(result));
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+    }
 
     //TODO: remove the assert once this has been tested
-    assert(user_data != NULL);
+    switch_assert(user_data != NULL);
     //TODO: is the buffer too little?
     switch_channel_set_variable(chan, "FAX_REMOTESTATIONID", far_ident);
-    char buf[128];
+
     snprintf(buf, sizeof(buf), "%d", t.pages_transferred);
     switch_channel_set_variable(chan, "FAX_PAGES", buf);
     snprintf(buf, sizeof(buf), "%dx%d", t.x_resolution, t.y_resolution);
@@ -131,21 +137,19 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
 {
     t30_stats_t t;
 
-    if (result)
-        {
-            t30_get_transfer_statistics(s, &t);
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pages transferred:  %i\n", t.pages_transferred);
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image size:         %i x %i\n", t.width, t.length);
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image resolution    %i x %i\n", t.x_resolution, t.y_resolution);
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Transfer Rate:      %i\n", t.bit_rate);
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Bad rows            %i\n", t.bad_rows);
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Longest bad row run %i\n", t.longest_bad_row_run);
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Compression type    %i %s\n", t.encoding,
-                t4_encoding_to_str(t.encoding));
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image size (bytes)  %i\n", t.image_size);
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
-        }
+    if (result) {
+        t30_get_transfer_statistics(s, &t);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pages transferred:  %i\n", t.pages_transferred);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image size:         %i x %i\n", t.width, t.length);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image resolution    %i x %i\n", t.x_resolution, t.y_resolution);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Transfer Rate:      %i\n", t.bit_rate);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Bad rows            %i\n", t.bad_rows);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Longest bad row run %i\n", t.longest_bad_row_run);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Compression type    %i %s\n", t.encoding, t4_encoding_to_str(t.encoding));
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image size (bytes)  %i\n", t.image_size);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+    }
     return T30_ERR_OK;
 }
 
@@ -174,7 +178,7 @@ SWITCH_STANDARD_APP(rxfax_function)
 
     // make sure we have a valid channel when starting the FAX application
     channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);	
+	switch_assert(channel != NULL);	
 
 	/* reset output variables */
     switch_channel_set_variable(channel, "FAX_REMOTESTATIONID", "unknown");
@@ -337,7 +341,6 @@ SWITCH_STANDARD_APP(rxfax_function)
                 goto done;
             }
         }
-
     }
 
  done:
@@ -386,5 +389,5 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fax_load)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */
