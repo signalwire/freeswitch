@@ -1406,7 +1406,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 				   &isdn_data->q931);
 
 	Q921SetLogCB(&isdn_data->q921, &zap_isdn_q921_log, isdn_data);
-	Q921SetLogLevel(&isdn_data->q921, Q921_LOG_DEBUG);
+	Q921SetLogLevel(&isdn_data->q921, Q921_LOG_NONE);
 	
 	Q931Api_InitTrunk(&isdn_data->q931,
 					  dialect,
