@@ -42,6 +42,8 @@ namespace FreeSWITCH
     {
         // Stores a list of the loaded function types so we can instantiate them as needed
         static readonly Dictionary<string, Type> functions = new Dictionary<string, Type>(StringComparer.InvariantCultureIgnoreCase);
+        // Only class name. Last in wins.
+        static readonly Dictionary<string, Type> shortFunctions = new Dictionary<string, Type>(StringComparer.InvariantCultureIgnoreCase);
 
         #region Load/Unload
 
@@ -86,6 +88,7 @@ namespace FreeSWITCH
                     if (shouldLoad) {
                         Log.WriteLine(LogLevel.Notice, "Function {0} loaded.", t.FullName);
                         functions.Add(t.FullName, t);
+                        shortFunctions[t.Name] = t;
                     }
                     else {
                         Log.WriteLine(LogLevel.Notice, "Function {0} requested not to be loaded.", t.FullName);
@@ -137,8 +140,10 @@ namespace FreeSWITCH
         {
             Type t;
             if (!functions.TryGetValue(fullName, out t) || !t.IsSubclassOf(typeof(TFunction))) {
-                Log.WriteLine(LogLevel.Error, "Could not find function {0}.", fullName);
-                return null;
+                if (!shortFunctions.TryGetValue(fullName, out t) || !t.IsSubclassOf(typeof(TFunction))) {
+                    Log.WriteLine(LogLevel.Error, "Could not find function {0}.", fullName);
+                    return null;
+                }
             }
             return t;
         }
