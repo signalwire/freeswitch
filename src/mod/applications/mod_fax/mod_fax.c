@@ -185,9 +185,8 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 
     //TODO: remove the assert once this has been tested
     switch_assert(user_data != NULL);
-    //TODO: is the buffer too little? anyway <MikeJ> is going to write a new set_variable function that will allow a printf like syntax very soon
     switch_channel_set_variable(chan, "FAX_REMOTESTATIONID", far_ident);
-
+    //TODO: is the buffer too little? anyway <MikeJ> is going to write a new set_variable function that will allow a printf like syntax very soon
     switch_snprintf(buf, sizeof(buf), "%d", t.pages_transferred);
     switch_channel_set_variable(chan, "FAX_PAGES", buf);
     switch_snprintf(buf, sizeof(buf), "%dx%d", t.x_resolution, t.y_resolution);
@@ -236,11 +235,7 @@ SWITCH_STANDARD_APP(rxfax_function)
     const char *fax_local_ecm = NULL;
     const char *fax_local_v17 = NULL;
 
-    // make sure we have a valid channel when starting the FAX application
-    channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);	
-
-	/* reset output variables */
+	/* set output varialbles to a reasonable result */
     switch_channel_set_variable(channel, "FAX_REMOTESTATIONID", "unknown");
     switch_channel_set_variable(channel, "FAX_PAGES",   "0");
     switch_channel_set_variable(channel, "FAX_SIZE",    "0");
@@ -248,10 +243,101 @@ SWITCH_STANDARD_APP(rxfax_function)
     switch_channel_set_variable(channel, "FAX_RESULT",  "1");
     switch_channel_set_variable(channel, "FAX_ERROR",   "fax not received yet");
 
+    /*
+	 * SpanDSP initialization 
+	 * if fax_init by any chance fails to start we return quickly  without touching anything else 
+	 */
+    //TODO: ask Coppice to see if we need to clear the fax structure before fax_init is invoked
+    memset(&fax, 0, sizeof(fax));
+    if (NULL == fax_init(&fax, calling_party)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fax_init failed\n");
+		return;
+	}
+
+    /*
+     * Enable options based on channel variables and input parameters
+     */
+
+    /* file_name - Sets the TIFF filename where do you want to save the fax */
+    file_name = switch_core_session_strdup(session, data);
+    /* it is important that file_name is not NULL or an empty string */
+    if (!switch_strlen_zero(file_name)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fax filename is NULL or empty string\n");
+		return;
+	}
+    t30_set_rx_file(&fax.t30, file_name, -1);
+
+    /* FAX_DEBUG - enable extra debugging if defined */
+    debug = ( NULL != switch_channel_get_variable(channel, "FAX_DEBUG") );
+
+    /* FAX_LOCAL_NUMBER - Set the receiving station phone number */
+	t30_set_tx_ident(&fax.t30, switch_str_nil(switch_channel_get_variable(channel, "FAX_LOCAL_NUMBER")));
+
+    /* FAX_LOCAL_NAME - Set the receiving station ID name (string) */
+    t30_set_tx_page_header_info(&fax.t30, switch_str_nil(switch_channel_get_variable(channel, "FAX_LOCAL_NAME")));
+
+    /* FAX_LOCAL_SUBNAME - Set the receiving station ID sub name */
+	t30_set_tx_sub_address(&fax.t30, switch_str_nil(switch_channel_get_variable(channel, "FAX_LOCAL_SUBNAME")));
+
+    /* FAX_DISABLE_ECM - Set if you want ECM on or OFF */
+    if (NULL != switch_channel_get_variable(channel, "FAX_DISABLE_ECM")) {
+        t30_set_ecm_capability(&fax.t30, TRUE);
+		t30_set_supported_compressions(&fax.t30, T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION | T30_SUPPORT_T6_COMPRESSION);
+    } else {
+        t30_set_ecm_capability(&fax.t30, FALSE);
+	}
+
+    /* FAX_DISABLE_V17 - set if you want 9600 or V17 (14.400) */
+    if (NULL != switch_channel_get_variable(channel, "FAX_DISABLE_V17")) {
+		t30_set_supported_modems(&fax.t30, T30_SUPPORT_V29 | T30_SUPPORT_V27TER | T30_SUPPORT_V17 );
+    } else {
+		t30_set_supported_modems(&fax.t30, T30_SUPPORT_V29 | T30_SUPPORT_V27TER);
+    }
+
+	/* TODO, ask Coppice if this is really working or not and then add FAX_PASSWORD channel variable (don't forget the wiki part too)
+	 * t30_set_tx_password(&mc->fax.t30_state, "Password");
+	 */
+
+	/* Configure more spanDSP internal options */
+
+	// Select whether silent audio will be sent when FAX transmit is idle. 
+    fax_set_transmit_on_idle(&fax, TRUE);
+
+	/* Support for different image sizes && resolutions */
+	t30_set_supported_image_sizes(&fax.t30, T30_SUPPORT_US_LETTER_LENGTH | T30_SUPPORT_US_LEGAL_LENGTH | T30_SUPPORT_UNLIMITED_LENGTH
+			| T30_SUPPORT_215MM_WIDTH | T30_SUPPORT_255MM_WIDTH | T30_SUPPORT_303MM_WIDTH);
+	t30_set_supported_resolutions(&fax.t30, T30_SUPPORT_STANDARD_RESOLUTION | T30_SUPPORT_FINE_RESOLUTION | T30_SUPPORT_SUPERFINE_RESOLUTION
+			| T30_SUPPORT_R8_RESOLUTION | T30_SUPPORT_R16_RESOLUTION);
+
+    /* set phase handlers callbaks */
+    t30_set_phase_d_handler(&fax.t30, phase_d_handler, session);
+    t30_set_phase_e_handler(&fax.t30, phase_e_handler, channel);
+	if (debug) {
+		t30_set_phase_b_handler(&fax.t30, phase_b_handler, session);
+		t30_set_document_handler(&fax.t30, document_handler, session);
+	}
+
+    /* set spanDSP logging functions - set spanlog debug messages to be outputted somewhere */
+    span_log_set_message_handler(&fax.logging, span_message);
+    span_log_set_message_handler(&fax.t30.logging, span_message);
+    if (debug) {
+		span_log_set_level(&fax.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+		span_log_set_level(&fax.t30.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    }
+
+	/* We're now ready to answer the channel and process the audio of the call */
+
+    // make sure we have a valid channel when starting the FAX application
+    channel = switch_core_session_get_channel(session);
+	switch_assert(channel != NULL);	
+
     // Answer the call, otherwise we're not getting incoming audio
 	switch_channel_answer(channel);
 
-    // TODO: could be a good idea to disable ECHOCAN on ZAP channels and to reset volumes too
+    /* TODO:
+	 * it could be a good idea to disable ECHOCAN on ZAP channels and to reset volumes too
+	 * anyone know how to do this if one of the channell is OpenZap isntead of Sofia?
+	 */
 
     /* We store the original channel codec before switching both
      * legs of the calls to a linear 16 bit codec that is the one
@@ -290,86 +376,13 @@ SWITCH_STANDARD_APP(rxfax_function)
         goto done;
     }
 
-    /* SpanDSP initialization */
-    //TODO: check spandsp code to see if we need to clear the fax structure
-    memset(&fax, 0, sizeof(fax));
-    fax_init(&fax, calling_party);
-    //TODO: fax_init return NULL in case of failed initialization
-
-	// Select whether silent audio will be sent when FAX transmit is idle. 
-    fax_set_transmit_on_idle(&fax, TRUE);
-
-    //TODO: set spanlog debug to be outputted somewhere 
-    span_log_set_message_handler(&fax.logging, span_message);
-    span_log_set_message_handler(&fax.t30.logging, span_message);
-
-    /*
-     * Enable options based on channel variables and input parameters
-     */
-
-    /* file_name - Sets the TIFF filename where do you want to save the fax */
-    file_name = switch_core_session_strdup(session, data);
-    //TODO: check file_name is not NULL ?
-	switch_assert(file_name != NULL);
-    t30_set_rx_file(&fax.t30, file_name, -1);
-
-    /* FAX_DEBUG - enable extra debugging if defined */
-    debug = ( NULL != switch_channel_get_variable(channel, "FAX_DEBUG") );
-    if (debug) {
-        span_log_set_level(&fax.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-        span_log_set_level(&fax.t30.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    }
-
-    /* FAX_LOCAL_NUMBER - Set the receiving station phone number */
-	t30_set_tx_ident(&fax.t30, switch_str_nil(switch_channel_get_variable(channel, "FAX_LOCAL_NUMBER")));
-
-    /* FAX_LOCAL_NAME - Set the receiving station ID name (string) */
-    t30_set_tx_page_header_info(&fax.t30, switch_str_nil(switch_channel_get_variable(channel, "FAX_LOCAL_NAME")));
-
-    /* FAX_LOCAL_SUBNAME - Set the receiving station ID sub name */
-	t30_set_tx_sub_address(&fax.t30, switch_str_nil(switch_channel_get_variable(channel, "FAX_LOCAL_SUBNAME")));
-
-    /* FAX_DISABLE_ECM - Set if you want ECM on or OFF */
-    if (NULL != switch_channel_get_variable(channel, "FAX_DISABLE_ECM")) {
-        t30_set_ecm_capability(&fax.t30, TRUE);
-		t30_set_supported_compressions(&fax.t30, T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION | T30_SUPPORT_T6_COMPRESSION);
-    } else {
-        t30_set_ecm_capability(&fax.t30, FALSE);
-	}
-
-    /* FAX_DISABLE_V17 - set if you want 9600 or V17 (14.400) */
-    if (NULL != switch_channel_get_variable(channel, "FAX_DISABLE_V17")) {
-		t30_set_supported_modems(&fax.t30, T30_SUPPORT_V29 | T30_SUPPORT_V27TER | T30_SUPPORT_V17 );
-    } else {
-		t30_set_supported_modems(&fax.t30, T30_SUPPORT_V29 | T30_SUPPORT_V27TER);
-    }
-
-	/* TODO
-	 * t30_set_tx_password(&mc->fax.t30_state, "Password");
-	 */
-
-	/* Support for different image sizes && resolutions */
-	t30_set_supported_image_sizes(&fax.t30, T30_SUPPORT_US_LETTER_LENGTH | T30_SUPPORT_US_LEGAL_LENGTH | T30_SUPPORT_UNLIMITED_LENGTH
-			| T30_SUPPORT_215MM_WIDTH | T30_SUPPORT_255MM_WIDTH | T30_SUPPORT_303MM_WIDTH);
-	t30_set_supported_resolutions(&fax.t30, T30_SUPPORT_STANDARD_RESOLUTION | T30_SUPPORT_FINE_RESOLUTION | T30_SUPPORT_SUPERFINE_RESOLUTION
-			| T30_SUPPORT_R8_RESOLUTION | T30_SUPPORT_R16_RESOLUTION);
-
-    /* set phase handlers callbaks */
-    t30_set_phase_d_handler(&fax.t30, phase_d_handler, session);
-    t30_set_phase_e_handler(&fax.t30, phase_e_handler, channel);
-	if (debug) {
-		t30_set_phase_b_handler(&fax.t30, phase_b_handler, session);
-		t30_set_document_handler(&fax.t30, document_handler, session);
-	}
-
+    write_frame.codec = &write_codec;
+    write_frame.data = buf;
 
     /*
      * now we enter a loop where we read audio frames to the channels and will pass it to spandsp
      * and if there is some outgoing frame we'll send it back to the calling fax machine
      */
-
-    write_frame.codec = &write_codec;
-    write_frame.data = buf;
 
     while(switch_channel_ready(channel)) {
 
