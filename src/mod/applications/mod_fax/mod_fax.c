@@ -170,7 +170,13 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pages transferred: %i\n", t.pages_transferred);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image resolution:  %i x %i\n", t.x_resolution, t.y_resolution);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Transfer Rate:     %i\n", t.bit_rate);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "local ident:       %s\n", t30_get_tx_ident(s));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "remote ident:      %s\n", t30_get_rx_ident(s));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "station country:   %s\n", t30_get_rx_country(s));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "station vendor:    %s\n", t30_get_rx_vendor(s));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "station model:     %s\n", t30_get_rx_model(s));
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+
     } else {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax receive not successful - result (%d) %s.\n", result, t30_completion_code_to_str(result));
@@ -179,7 +185,7 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 
     //TODO: remove the assert once this has been tested
     switch_assert(user_data != NULL);
-    //TODO: is the buffer too little?
+    //TODO: is the buffer too little? anyway <MikeJ> is going to write a new set_variable function that will allow a printf like syntax very soon
     switch_channel_set_variable(chan, "FAX_REMOTESTATIONID", far_ident);
 
     switch_snprintf(buf, sizeof(buf), "%d", t.pages_transferred);
@@ -193,18 +199,6 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
     switch_snprintf(buf, sizeof(buf), "%s", t30_completion_code_to_str(result));
     switch_channel_set_variable(chan, "FAX_ERROR", buf);
 
-	/* TODO */
-	#ifdef TODO
-	printf("%d: Phase E: local ident '%s'\n", i, info->ident);
-	if ((u = t30_get_rx_ident(s)))
-	printf("%d: Phase E: remote ident '%s'\n", i, u);
-	if ((u = t30_get_rx_country(s)))
-	printf("%d: Phase E: Remote was made in '%s'\n", i, u);
-	if ((u = t30_get_rx_vendor(s)))
-	printf("%d: Phase E: Remote was made by '%s'\n", i, u);
-	if ((u = t30_get_rx_model(s)))
-	printf("%d: Phase E: Remote is model '%s'\n", i, u);
-	#endif
 }
 
 /*
