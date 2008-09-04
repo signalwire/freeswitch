@@ -110,11 +110,16 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 static int phase_d_handler(t30_state_t *s, void *user_data, int result)
 {
     t30_stats_t t;
+	int session;
+	switch_assert(user_data != NULL);
+	session = (intptr_t) user_data;
 
     if (result) {
         t30_get_transfer_statistics(s, &t);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Phase D handler on channel %d - (0x%X) %s\n", session, session, result, t30_frametype(result));
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pages transferred:  %i\n", t.pages_transferred);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pages in the file:  %i\n", t.pages_in_file);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image size:         %i x %i\n", t.width, t.length);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image resolution    %i x %i\n", t.x_resolution, t.y_resolution);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Transfer Rate:      %i\n", t.bit_rate);
@@ -123,21 +128,11 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Compression type    %i %s\n", t.encoding, t4_encoding_to_str(t.encoding));
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image size (bytes)  %i\n", t.image_size);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ECM                 %s\n", (t.error_correcting_mode)  ?  "on"  :  "off");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "local ident:        %s\n", t30_get_tx_ident(s));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "remote ident:       %s\n", t30_get_rx_ident(s));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "bits per row - min %d, max %d\n", s->t4.min_row_bits, s->t4.max_row_bits);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
     }
-
-	/* TODO */
-	#ifdef TODO
-	printf("%d: Phase D handler on channel %d - (0x%X) %s\n", i, i, result, t30_frametype(result));
-	printf("%d: Phase D: pages in the file %d\n", i, t.pages_in_file);
-	printf("%d: Phase D: image size %d x %d\n", i, t.width, t.length);
-	printf("%d: Phase D: image size %d bytes\n", i, t.image_size);
-	if ((u = t30_get_tx_ident(s)))
-		printf("%d: Phase D: local ident '%s'\n", i, u);
-	if ((u = t30_get_rx_ident(s)))
-		printf("%d: Phase D: remote ident '%s'\n", i, u);
-	printf("%d: Phase D: bits per row - min %d, max %d\n", i, s->t4.min_row_bits, s->t4.max_row_bits);
-	#endif
     return T30_ERR_OK;
 }
 
@@ -366,11 +361,11 @@ SWITCH_STANDARD_APP(rxfax_function)
 			| T30_SUPPORT_R8_RESOLUTION | T30_SUPPORT_R16_RESOLUTION);
 
     /* set phase handlers callbaks */
-    t30_set_phase_d_handler(&fax.t30, phase_d_handler, NULL);
+    t30_set_phase_d_handler(&fax.t30, phase_d_handler, session);
     t30_set_phase_e_handler(&fax.t30, phase_e_handler, channel);
 	if (debug) {
 		t30_set_phase_b_handler(&fax.t30, phase_b_handler, session);
-		t30_set_document_handler(&fax.t30, document_handler, NULL );
+		t30_set_document_handler(&fax.t30, document_handler, session);
 	}
 
 
