@@ -152,17 +152,9 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
     
     if (result == T30_ERR_OK) {
         t30_get_transfer_statistics(s, &t);
-        far_ident = t30_get_tx_ident(s);
-        
-        if (!switch_strlen_zero(far_ident)) {
-            far_ident = "";
-        }
-        
-        local_ident = t30_get_rx_ident(s);
-        
-        if (!switch_strlen_zero(local_ident)) {
-            local_ident = "";
-        }
+
+        far_ident = switch_str_nil( t30_get_tx_ident(s) );
+        local_ident = switch_str_nil( t30_get_rx_ident(s) );
         
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
 		//TODO: add received/transmitted ?
@@ -243,6 +235,10 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
     const char *fax_local_ecm = NULL;
     const char *fax_local_v17 = NULL;
 
+    /* make sure we have a valid channel when starting the FAX application */
+    channel = switch_core_session_get_channel(session);
+	switch_assert(channel != NULL);	
+
 	/* set output varialbles to a reasonable result */
     switch_channel_set_variable(channel, "FAX_REMOTESTATIONID", "unknown");
     switch_channel_set_variable(channel, "FAX_PAGES",   "0");
@@ -270,7 +266,7 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
     /* file_name - Sets the TIFF filename where do you want to save the fax */
     file_name = switch_core_session_strdup(session, data);
     /* it is important that file_name is not NULL or an empty string */
-    if (!switch_strlen_zero(file_name)) {
+    if (switch_strlen_zero(file_name)) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fax filename is NULL or empty string\n");
 		return;
 	}
@@ -338,10 +334,6 @@ void process_fax(switch_core_session_t *session, char *data, int calling_party)
     }
 
 	/* We're now ready to answer the channel and process the audio of the call */
-
-    /* make sure we have a valid channel when starting the FAX application */
-    channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);	
 
     /* Answer the call, otherwise we're not getting incoming audio */
 	switch_channel_answer(channel);
