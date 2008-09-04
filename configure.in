@@ -659,7 +659,7 @@ AC_CONFIG_SUBDIRS(libs/libresample)
 if test "$enable_core_libedit_support" = "yes" ; then
     AC_CONFIG_SUBDIRS(libs/libedit)
 fi
-AC_CONFIG_SUBDIRS(libs/spandsp)
+
 AC_CONFIG_SUBDIRS(libs/pcre)
 AC_CONFIG_SUBDIRS(libs/apr)
 AC_CONFIG_SUBDIRS(libs/apr-util)
@@ -676,5 +676,6 @@ AC_CONFIG_SUBDIRS(libs/speex)
 AC_CONFIG_SUBDIRS(libs/portaudio)
 AC_CONFIG_SUBDIRS(libs/openmrcp)
 AC_CONFIG_SUBDIRS(libs/openzap)
+AC_CHECK_LIB([tiff], [TIFFOpen], AC_CONFIG_SUBDIRS(libs/spandsp), , -lm)
 
 AC_OUTPUT
