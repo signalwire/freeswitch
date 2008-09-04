@@ -395,6 +395,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 			goto done;
 		}
 
+
 		if (switch_core_session_dequeue_message(peer_session, &message) == SWITCH_STATUS_SUCCESS) {
 			if (switch_test_flag(message, SCSMF_DYNAMIC)) {
 				switch_safe_free(message);
@@ -402,17 +403,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 				message = NULL;
 			}
 		}
-		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-		if (!SWITCH_READ_ACCEPTABLE(status)) {
-			break;
-		}
 
+		if (switch_channel_media_ready(caller_channel)) {
+			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+			if (!SWITCH_READ_ACCEPTABLE(status)) {
+				break;
+			}
+		} else {
+			read_frame = NULL;
+		}
 
 		if (read_frame && !pass) {
 			if (ringback.fh) {
 				switch_size_t mlen, olen;
 				unsigned int pos = 0;
-
+				
 				if (ringback.asis) {
 					mlen = write_frame.codec->implementation->encoded_bytes_per_frame;
 				} else {
@@ -443,8 +448,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 				}
 			}
 
-			if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
-				break;
+			if ((ringback.fh || ringback.audio_buffer) && write_frame.codec && write_frame.datalen) {
+				if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+					break;
+				}
 			}
 		} else {
 			switch_yield(1000);
@@ -1202,10 +1209,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					(ringback_data
 					 || (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)))) {
 
-					switch_status_t tstatus = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+					switch_status_t tstatus = SWITCH_STATUS_SUCCESS;
 
-					if (!SWITCH_READ_ACCEPTABLE(tstatus)) {
-						break;
+					if (switch_channel_media_ready(caller_channel)) {
+						tstatus = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+
+						if (!SWITCH_READ_ACCEPTABLE(tstatus)) {
+							break;
+						}
+					} else {
+						read_frame = NULL;
 					}
 
 					if (ring_ready && read_frame && !pass) {
