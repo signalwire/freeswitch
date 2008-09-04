@@ -355,16 +355,6 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_x
 ///\note gateway functions will be executed in the order they were binded until a success is found else the root registry will be used
 SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_search_function_t function, switch_xml_section_t sections, void *user_data);
 
-///\brief bind a search function to an external gateway
-///\param function the search function to bind
-///\param sections a bitmask of sections you wil service
-///\param user_data a pointer to private data to be used during the callback
-///\param binding a handle to use to later unbind.
-///\return SWITCH_STATUS_SUCCESS if successful
-///\note gateway functions will be executed in the order they were binded until a success is found else the root registry will be used
-SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function_removable(switch_xml_search_function_t function, 
-																		  switch_xml_section_t sections, void *user_data, switch_xml_binding_t **binding);
-
 SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function(switch_xml_binding_t **binding);
 SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function_ptr(switch_xml_search_function_t function);
 
