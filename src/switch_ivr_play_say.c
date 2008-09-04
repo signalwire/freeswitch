@@ -1354,6 +1354,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 
 	if (abuf) {
 		switch_core_file_close(&fh);
+		free(abuf);
 	}
 
 	return status;
