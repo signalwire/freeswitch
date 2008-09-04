@@ -46,10 +46,12 @@ static void span_message(int level, const char *msg)
 {
 	int fs_log_level;
 
-	// TODO: maybe is better to use switch_assert here?
+	/* TODO: maybe is better to use switch_assert here?
 	if (msg==NULL) {
         return;
     }
+	*/
+	switch_assert(msg!=NULL);
 
 	switch (level) 
 	{
@@ -85,25 +87,18 @@ static void span_message(int level, const char *msg)
 static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 {
 	int session;
+	const char *u = NULL;
 	switch_assert(user_data != NULL);
 	session = (intptr_t) user_data;
-	/* TODO */
-	#if TODO
-	if ((u = t30_get_rx_ident(s)))
-	printf("%d: Phase B: remote ident '%s'\n", i, u);
-	if ((u = t30_get_rx_sub_address(s)))
-	printf("%d: Phase B: remote sub-address '%s'\n", i, u);
-	if ((u = t30_get_rx_polled_sub_address(s)))
-	printf("%d: Phase B: remote polled sub-address '%s'\n", i, u);
-	if ((u = t30_get_rx_selective_polling_address(s)))
-	printf("%d: Phase B: remote selective polling address '%s'\n", i, u);
-	if ((u = t30_get_rx_sender_ident(s)))
-	printf("%d: Phase B: remote sender ident '%s'\n", i, u);
-	if ((u = t30_get_rx_password(s)))
-	printf("%d: Phase B: remote password '%s'\n", i, u);
-	printf("%d: Phase B handler on channel %d - (0x%X) %s\n", i, i, result, t30_frametype(result));
-	#endif
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Phase B handler on session %d - (0x%X) %s\n", session, result, t30_frametype(result));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Phase B: handler on session %d - (0x%X) %s\n", session, result, t30_frametype(result));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "remote ident:              %s\n", t30_get_rx_ident(s));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "remote sub-address:        %s\n", t30_get_rx_sub_address(s));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "remote polled sub-address: %s\n", t30_get_rx_polled_sub_address(s));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "remote sel. polling addr.: %s\n", t30_get_rx_selective_polling_address(s));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "remote sender ident:       %s\n", t30_get_rx_sender_ident(s));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "remote password:           %s\n", t30_get_rx_password(s));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
     return T30_ERR_OK;
 };
 
