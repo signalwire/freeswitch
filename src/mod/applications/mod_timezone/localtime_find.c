@@ -832,7 +832,7 @@ static void timesub(const time_t * const timep, const long offset, register cons
 
 	tmp->tm_mday = (int) (days + 1);
 	tmp->tm_isdst = 0;
-#ifndef WIN32
+#if !defined(WIN32) && !defined(__SVR4) && !defined(__sun)
 	tmp->tm_gmtoff = offset;
 #endif
 }
@@ -888,7 +888,7 @@ void tztime(const time_t * const timep, const char *tzstring, struct tm * const 
 		{
 	    		timesub( &t, ttisp->tt_gmtoff, sp, tmp);
 			tmp->tm_isdst = ttisp->tt_isdst;
-#ifndef WIN32
+#if !defined(WIN32) && !defined(__SVR4) && !defined(__sun)
 			tmp->tm_zone = &sp->chars[ttisp->tt_abbrind];
 #endif
 		}

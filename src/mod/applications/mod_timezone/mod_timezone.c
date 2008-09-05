@@ -51,7 +51,8 @@ static void tm2switchtime(struct tm * tm, switch_time_exp_t *xt )
 	xt->tm_wday 	= tm->tm_wday;
 	xt->tm_yday 	= tm->tm_yday;
 	xt->tm_isdst 	= tm->tm_isdst;
-#ifndef WIN32
+#if !defined(WIN32) && !defined(__SVR4) && !defined(__sun)
+
 	xt->tm_gmtoff 	= tm->tm_gmtoff;
 #endif
 
