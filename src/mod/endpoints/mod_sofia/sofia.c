@@ -1524,7 +1524,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 						switch_copy_string(stun_ip, ip, sizeof(stun_ip));
 
-						if (!strcasecmp(val, "0.0.0.0")) {
+						if (!switch_strlen_zero(val)) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid IP replaced with %s\n", mod_sofia_globals.guess_ip);
+						} else if (!strcasecmp(val, "0.0.0.0")) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invald IP 0.0.0.0 replaced with %s\n", mod_sofia_globals.guess_ip);
 						} else if (strcasecmp(val, "auto")) {
 							switch_port_t port = 0;
