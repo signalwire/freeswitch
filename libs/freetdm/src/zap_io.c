@@ -349,7 +349,7 @@ zap_status_t zap_span_close_all(void)
 	return i ? ZAP_SUCCESS : ZAP_FAIL;
 }
 
-zap_status_t zap_span_load_tones(zap_span_t *span, char *mapname)
+zap_status_t zap_span_load_tones(zap_span_t *span, const char *mapname)
 {
 	zap_config_t cfg;
 	char *var, *val;

@@ -545,7 +545,7 @@ zap_status_t zap_channel_send_fsk_data(zap_channel_t *zchan, zap_fsk_data_state_
 zap_status_t zap_channel_clear_token(zap_channel_t *zchan, const char *token);
 zap_status_t zap_channel_add_token(zap_channel_t *zchan, char *token, int end);
 zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state, int lock);
-zap_status_t zap_span_load_tones(zap_span_t *span, char *mapname);
+zap_status_t zap_span_load_tones(zap_span_t *span, const char *mapname);
 zap_size_t zap_channel_dequeue_dtmf(zap_channel_t *zchan, char *dtmf, zap_size_t len);
 zap_status_t zap_channel_queue_dtmf(zap_channel_t *zchan, const char *dtmf);
 void zap_channel_flush_dtmf(zap_channel_t *zchan);
