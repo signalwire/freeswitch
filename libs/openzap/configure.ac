@@ -48,6 +48,10 @@ sun)
     ;;
 esac
 
+AC_CHECK_LIB([dl], [dlopen])
+AC_CHECK_LIB([pthread], [pthread_create])
+AC_CHECK_LIB([m], [cos])
+
 AC_CHECK_HEADERS([netinet/sctp.h netdb.h sys/select.h])
 AC_CHECK_FUNC([gethostbyname_r],
 	[], [AC_CHECK_LIB([nsl], [gethostbyname_r])]

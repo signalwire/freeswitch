@@ -38,6 +38,7 @@ CXXFLAGS = @CXXFLAGS@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 CFLAGS=@CFLAGS@ @COMP_VENDOR_CFLAGS@ @DEFS@
+LIBS = @LIBS@
 SRC=src
 SOURCES=\
 $(SRC)/hashtable.c \
@@ -176,31 +177,31 @@ PIKA_LIB=$(shell ls /usr/lib/libpikahmpapi.so 2>/dev/null)
 all: $(MYLIB) analogmod isdnmod boostmod ztmod wpmod
 
 $(MYLIB): $(OBJS) $(HEADERS) $(SOURCES)
-	$(CC) -shared -Wl,-x -o $(MYLIB) $(OBJS) $(ADD_OBJS) -ldl
+	$(CC) -shared -Wl,-x -o $(MYLIB) $(OBJS) $(ADD_OBJS) $(LIBS)
 
 testapp: $(SRC)/testapp.c $(MYLIB)
-	$(CC) $(INCS) -L. $(SRC)/testapp.c -o testapp -lopenzap -lm -lpthread
+	$(CC) $(INCS) -L. $(SRC)/testapp.c -o testapp -lopenzap $(LIBS)
 
 testcid: $(SRC)/testcid.c $(MYLIB)
-	$(CC) $(INCS) -L. -g -ggdb $(SRC)/testcid.c -o testcid -lopenzap -lm -lpthread
+	$(CC) $(INCS) -L. -g -ggdb $(SRC)/testcid.c -o testcid -lopenzap $(LIBS)
 
 testtones: $(SRC)/testtones.c $(MYLIB)
-	$(CC) $(INCS) -L. $(SRC)/testtones.c -o testtones -lopenzap -lm
+	$(CC) $(INCS) -L. $(SRC)/testtones.c -o testtones -lopenzap
 
 detect_tones: $(SRC)/detect_tones.c $(MYLIB)
-	$(CC) $(INCS) -L. $(SRC)/detect_tones.c -o detect_tones -lopenzap -lm
+	$(CC) $(INCS) -L. $(SRC)/detect_tones.c -o detect_tones -lopenzap
 
 detect_dtmf: $(SRC)/detect_dtmf.c $(MYLIB)
-	$(CC) $(INCS) -L. $(SRC)/detect_dtmf.c -o detect_dtmf -lopenzap -lm
+	$(CC) $(INCS) -L. $(SRC)/detect_dtmf.c -o detect_dtmf -lopenzap
 
 testisdn: $(SRC)/testisdn.c $(MYLIB)
-	$(CC) $(INCS) $(ZAP_CFLAGS) -L. $(SRC)/testisdn.c -o testisdn -lopenzap -lm -lpthread
+	$(CC) $(INCS) $(ZAP_CFLAGS) -L. $(SRC)/testisdn.c -o testisdn -lopenzap $(LIBS)
 
 testboost: $(SRC)/testboost.c $(MYLIB)
-	$(CC) $(INCS) $(ZAP_CFLAGS) -L. $(SRC)/testboost.c -o testboost -lopenzap -lm -lpthread
+	$(CC) $(INCS) $(ZAP_CFLAGS) -L. $(SRC)/testboost.c -o testboost -lopenzap $(LIBS)
 
 testanalog: $(SRC)/testanalog.c $(MYLIB)
-	$(CC) $(INCS) -L. $(SRC)/testanalog.c -o testanalog -lopenzap -lm -lpthread 
+	$(CC) $(INCS) -L. $(SRC)/testanalog.c -o testanalog -lopenzap $(LIBS)
 
 $(SRC)/priserver.o: $(SRC)/priserver.c
 	$(CC) $(INCS) $(TMP) -c $(SRC)/priserver.c -o $(SRC)/priserver.o 
@@ -212,7 +213,7 @@ $(LIBPRI)/$(LIBPRIA):
 	cd libpri && make
 
 priserver: $(MYLIB) $(SRC)/priserver.o $(SRC)/sangoma_pri.o $(LIBPRI)/$(LIBPRIA)
-	$(CC) $(SRC)/sangoma_pri.o $(SRC)/priserver.o -L. -o priserver -lopenzap -lm -lpthread $(LIBPRI)/$(LIBPRIA)
+	$(CC) $(SRC)/sangoma_pri.o $(SRC)/priserver.o -L. -o priserver -lopenzap $(LIBS) $(LIBPRI)/$(LIBPRIA)
 
 $(SRC)/zap_io.o: $(SRC)/zap_io.c
 	$(CC) $(MOD_CFLAGS) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
@@ -253,35 +254,35 @@ uninstall:
 	@rm -fr $(DESTDIR)$(PREFIX)
 
 $(SRC)/ozmod/ozmod_skel/ozmod_skel.so: $(SRC)/ozmod/ozmod_skel/ozmod_skel.c
-	$(CC) $(INCS) $(CFLAGS) -L. $(SRC)/ozmod/ozmod_skel/ozmod_skel.c -o $(SRC)/ozmod/ozmod_skel/ozmod_skel.so -shared -Wl,-x -lm -lpthread -ldl -Wl,--rpath -Wl,$(PREFIX)/lib
+	$(CC) $(INCS) $(CFLAGS) -L. $(SRC)/ozmod/ozmod_skel/ozmod_skel.c -o $(SRC)/ozmod/ozmod_skel/ozmod_skel.so -shared -Wl,-x $(LIBS) -Wl,--rpath -Wl,$(PREFIX)/lib
 skelmod: $(SRC)/ozmod/ozmod_skel/ozmod_skel.so
 
 
 $(SRC)/ozmod/ozmod_zt/ozmod_zt.so: $(SRC)/ozmod/ozmod_zt/ozmod_zt.c
-	$(CC) $(INCS) $(CFLAGS) -L. $(SRC)/ozmod/ozmod_zt/ozmod_zt.c -o $(SRC)/ozmod/ozmod_zt/ozmod_zt.so -shared -Wl,-x -lm -lpthread -ldl $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
+	$(CC) $(INCS) $(CFLAGS) -L. $(SRC)/ozmod/ozmod_zt/ozmod_zt.c -o $(SRC)/ozmod/ozmod_zt/ozmod_zt.so -shared -Wl,-x $(LIBS) $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
 ztmod: $(SRC)/ozmod/ozmod_zt/ozmod_zt.so
 
 $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.so: $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.c
-	$(CC) $(INCS) $(CFLAGS) -L. $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.c -o $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.so -shared -Wl,-x -lm -lpthread -ldl $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
+	$(CC) $(INCS) $(CFLAGS) -L. $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.c -o $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.so -shared -Wl,-x  $(LIBS) $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
 wpmod: $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.so
 
 $(SRC)/ozmod/ozmod_pika/ozmod_pika.so: $(SRC)/ozmod/ozmod_pika/ozmod_pika.c
-	$(CC) -I$(PIKA_DIR) $(INCS) $(CFLAGS) -L. $(SRC)/ozmod/ozmod_pika/ozmod_pika.c -o $(SRC)/ozmod/ozmod_pika/ozmod_pika.so -shared -Wl,-x -lm -lpthread -ldl $(MYLIB) $(PIKA_LIB) -Wl,--rpath -Wl,$(PREFIX)/lib
+	$(CC) -I$(PIKA_DIR) $(INCS) $(CFLAGS) -L. $(SRC)/ozmod/ozmod_pika/ozmod_pika.c -o $(SRC)/ozmod/ozmod_pika/ozmod_pika.so -shared -Wl,-x $(LIBS) $(MYLIB) $(PIKA_LIB) -Wl,--rpath -Wl,$(PREFIX)/lib
 
 pikamod: $(SRC)/ozmod/ozmod_pika/ozmod_pika.so
 
 $(ISDN_OBJS): $(ISDN_HEADERS) $(ISDN_SOURCES) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.c
 
 $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.so: $(MYLIB) $(ISDN_OBJS)
-	$(CC) -I$(SRC)/isdn/include/ $(INCS) $(CFLAGS) -L. $(ISDN_OBJS) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.c -o $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.so -shared -Wl,-x -lm -lpthread -ldl $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
+	$(CC) -I$(SRC)/isdn/include/ $(INCS) $(CFLAGS) -L. $(ISDN_OBJS) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.c -o $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.so -shared -Wl,-x  $(LIBS) $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
 isdnmod: $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.so
 
 $(SRC)/ozmod/ozmod_analog/ozmod_analog.so: $(MYLIB) $(ANALOG_OBJS) $(SRC)/ozmod/ozmod_analog/ozmod_analog.c
-	$(CC) -I$(SRC)/analog/include/ $(INCS) $(CFLAGS) -L. $(SRC)/ozmod/ozmod_analog/ozmod_analog.c -o $(SRC)/ozmod/ozmod_analog/ozmod_analog.so -shared -Wl,-x -lm -lpthread -ldl $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
+	$(CC) -I$(SRC)/analog/include/ $(INCS) $(CFLAGS) -L. $(SRC)/ozmod/ozmod_analog/ozmod_analog.c -o $(SRC)/ozmod/ozmod_analog/ozmod_analog.so -shared -Wl,-x  $(LIBS) $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
 analogmod: $(SRC)/ozmod/ozmod_analog/ozmod_analog.so
 
 $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.so: $(MYLIB) $(BOOST_OBJS) $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.c
-	$(CC) -I/ozmod/ozmod_ss7_boost $(INCS) $(CFLAGS) -L. $(BOOST_OBJS) $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.c -o $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.so -shared -Wl,-x -lm -lpthread -ldl $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
+	$(CC) -I/ozmod/ozmod_ss7_boost $(INCS) $(CFLAGS) -L. $(BOOST_OBJS) $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.c -o $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.so -shared -Wl,-x  $(LIBS) $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
 boostmod: $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.so
 
 
