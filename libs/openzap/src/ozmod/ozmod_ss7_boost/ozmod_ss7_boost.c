@@ -1091,12 +1091,12 @@ static zap_state_map_t boost_state_map = {
 static ZIO_SIG_CONFIGURE_FUNCTION(zap_ss7_boost_configure_span)
 {
 	zap_ss7_boost_data_t *ss7_boost_data = NULL;
-	char *local_ip = "127.0.0.65", *remote_ip = "127.0.0.66";
+	const char *local_ip = "127.0.0.65", *remote_ip = "127.0.0.66";
 	int local_port = 5300, remote_port = 5300;
 	char *var, *val;
 	int *intval;
 
-	while(var = va_arg(ap, char *)) {
+	while((var = va_arg(ap, char *))) {
 		if (!strcasecmp(var, "local_ip")) {
 			if (!(val = va_arg(ap, char *))) {
 				break;

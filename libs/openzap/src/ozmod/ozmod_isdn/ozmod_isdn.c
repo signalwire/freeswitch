@@ -1365,7 +1365,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 	isdn_data->mode = Q931_TE;
 	dialect = Q931_Dialect_National;
 	
-	while(var = va_arg(ap, char *)) {
+	while((var = va_arg(ap, char *))) {
 		if (!strcasecmp(var, "mode")) {
 			if (!(val = va_arg(ap, char *))) {
 				break;
