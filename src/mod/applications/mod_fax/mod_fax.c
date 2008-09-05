@@ -439,36 +439,42 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 	/* Retrieving our settings from the channel variables */
 
 	if ((tmp = switch_channel_get_variable(channel, "fax_use_ecm"))) {
-        pvt->use_ecm = switch_true(tmp);
+		pvt->use_ecm = switch_true(tmp);
 	} else {
 		pvt->use_ecm = globals.use_ecm;
-    }
+	}
 
 	if ((tmp = switch_channel_get_variable(channel, "fax_disable_v17"))) {
-        pvt->disable_v17 = switch_true(tmp);
+		pvt->disable_v17 = switch_true(tmp);
 	} else {
 		pvt->disable_v17 = globals.disable_v17;
-    }
+	}
 
 	if ((tmp = switch_channel_get_variable(channel, "fax_verbose"))) {
-        pvt->verbose = switch_true(tmp);
+		pvt->verbose = switch_true(tmp);
 	} else {
 		pvt->verbose = globals.verbose;
-    }
+	}
 
-    pvt->caller = switch_true(switch_channel_get_variable(channel, "fax_force_caller"));
+	if ( (tmp=switch_channel_get_variable(channel, "fax_force_caller")) ) {
+		if ( switch_true(tmp) ) {
+			pvt->caller = 1;
+		} else {
+			pvt->caller = 0;
+		}
+	}
 
 	if ((tmp = switch_channel_get_variable(channel, "fax_ident"))) {
 		pvt->ident = switch_core_session_strdup(session, tmp);
 	} else {
 		pvt->ident = switch_core_session_strdup(session, globals.ident);
-    }
+	}
 
 	if ((tmp = switch_channel_get_variable(channel, "fax_header"))) {
 		pvt->header = switch_core_session_strdup(session, tmp);
 	} else {
 		pvt->header = switch_core_session_strdup(session, globals.header);
-    }
+	}
 
 	if (pvt->app_mode == FUNCTION_TX) {
 
@@ -482,15 +488,15 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 
 		if (pvt->tx_page_end < -1) {
 			pvt->tx_page_end = -1;
-        }
+		}
 
 		if (pvt->tx_page_start < -1) {
 			pvt->tx_page_start = -1;
-        }
+		}
 
 		if ((pvt->tx_page_end < pvt->tx_page_start) && (pvt->tx_page_end != -1)) {
 			pvt->tx_page_end = pvt->tx_page_start;
-        }
+		}
 	}
 
 	if (!switch_strlen_zero(data)) {
