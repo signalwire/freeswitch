@@ -1497,12 +1497,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							if (!strcmp(val, "0.0.0.0")) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid IP 0.0.0.0 replaced with %s\n", mod_sofia_globals.guess_ip);
 							} else {
-								if (!switch_strlen_zero(val)) {
-									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid ext-rtp-ip replaced with %s\n", mod_sofia_globals.guess_ip);
-									ip = "auto";
-								} else {
 									ip = strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip;
-								}
 							}
 							profile->extrtpip = switch_core_strdup(profile->pool, ip);
 						} else {
