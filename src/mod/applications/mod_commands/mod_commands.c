@@ -2505,6 +2505,23 @@ SWITCH_STANDARD_API(global_getvar_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define SYSTEM_SYNTAX "<command>"
+SWITCH_STANDARD_API(system_function)
+{
+    if (switch_strlen_zero(cmd)) {
+        stream->write_function(stream, "-USAGE: %s\n", SYSTEM_SYNTAX);
+        return SWITCH_STATUS_SUCCESS;
+    } 
+
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Executing command: %s\n", cmd);
+    if (system(cmd) < 0) {
+       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Failed to execute command: %s\n", cmd);
+    }
+    stream->write_function(stream, "+OK\n");
+    return SWITCH_STATUS_SUCCESS;
+}
+
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 {
 	switch_api_interface_t *commands_api_interface;
@@ -2589,6 +2606,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "module_exists", "check if module exists", module_exists_function, "<module>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_dtmf", "send dtmf digits", uuid_send_dtmf_function, UUID_SEND_DTMF_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "eval", "eval (noop)", eval_function, "<expression>");
+	SWITCH_ADD_API(commands_api_interface, "system", "Execute a system command", system_function, SYSTEM_SYNTAX);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
