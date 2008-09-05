@@ -1409,8 +1409,6 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 					if (!strcasecmp(var, "debug")) {
 						profile->debug = atoi(val);
-					} else if (!strcasecmp(var, "use-rtp-timer") && switch_true(val)) {
-						switch_set_flag(profile, TFLAG_TIMER);
 					} else if (!strcasecmp(var, "sip-trace") && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_TPORT_LOG);
 					} else if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
@@ -1750,10 +1748,6 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				if (profile->nonce_ttl < 60) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting nonce TTL to 60 seconds\n");
 					profile->nonce_ttl = 60;
-				}
-
-				if (switch_test_flag(profile, TFLAG_TIMER) && !profile->timer_name) {
-					profile->timer_name = switch_core_strdup(profile->pool, "soft");
 				}
 
 				if (!profile->username) {
@@ -2381,7 +2375,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		if (tech_pvt && r_sdp) {
 			sdp_parser_t *parser;
 			sdp_session_t *sdp;
-			uint8_t match = 0;
+			uint8_t match = 0, is_ok = 1;
 
 			if (r_sdp) {
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
@@ -2412,6 +2406,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						switch_core_session_rwunlock(other_session);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Re-INVITE to a no-media channel that is not in a bridge.\n");
+						is_ok = 0;
 						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					}
 					goto done;
@@ -2432,21 +2427,25 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						switch_set_flag_locked(tech_pvt, TFLAG_REINVITE);
 						if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Reinvite RTP Error!\n");
+							is_ok = 0;
 							switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 						}
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Processing Reinvite\n");
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Reinvite Codec Error!\n");
-						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+						is_ok = 0;
 					}
 				}
-
-
-				nua_respond(tech_pvt->nh, SIP_200_OK,
-							SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-							SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-							SOATAG_REUSE_REJECTED(1),
-							SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
+				
+				if (is_ok) {
+					nua_respond(tech_pvt->nh, SIP_200_OK,
+								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+								SOATAG_REUSE_REJECTED(1),
+								SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
+				} else {
+					nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+				}
 			}
 		}
 		break;

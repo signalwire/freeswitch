@@ -190,7 +190,7 @@ typedef enum {
 	TFLAG_VAD_IN = (1 << 11),
 	TFLAG_VAD_OUT = (1 << 12),
 	TFLAG_VAD = (1 << 13),
-	TFLAG_TIMER = (1 << 14),
+	TFLAG_USE_ME = (1 << 14),
 	TFLAG_READY = (1 << 15),
 	TFLAG_REINVITE = (1 << 16),
 	TFLAG_REFER = (1 << 17),

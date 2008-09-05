@@ -797,11 +797,16 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->payload = payload;
 	rtp_session->ms_per_packet = ms_per_packet;
 	rtp_session->samples_per_interval = rtp_session->conf_samples_per_interval = samples_per_interval;
-	rtp_session->timer_name = switch_core_strdup(pool, timer_name);
 
+	if (!strcasecmp(timer_name, "none")) {
+		timer_name = NULL;
+	}
 
 	if (!switch_strlen_zero(timer_name)) {
+		rtp_session->timer_name = switch_core_strdup(pool, timer_name);
 		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+		switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+		switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 	}
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) && switch_strlen_zero(timer_name)) {
@@ -1236,6 +1241,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (bytes < 0) {
 			ret = (int) bytes;
 			goto end;
+		}
+
+		if (bytes == 1) {
+			continue;
 		}
 
 		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && switch_sockaddr_get_port(rtp_session->from_addr)) {

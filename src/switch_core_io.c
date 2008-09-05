@@ -256,6 +256,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				session->raw_read_frame.ssrc = read_frame->ssrc;
 				session->raw_read_frame.seq = read_frame->seq;
 				session->raw_read_frame.m = read_frame->m;
+				session->raw_read_frame.flags = read_frame->flags;
 				session->raw_read_frame.payload = read_frame->payload;
 				read_frame = &session->raw_read_frame;
 				break;
@@ -278,6 +279,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				session->raw_read_frame.ssrc = read_frame->ssrc;
 				session->raw_read_frame.seq = read_frame->seq;
 				session->raw_read_frame.m = read_frame->m;
+				session->raw_read_frame.flags = read_frame->flags;
 				session->raw_read_frame.payload = read_frame->payload;
 				read_frame = &session->raw_read_frame;
 				status = SWITCH_STATUS_SUCCESS;
@@ -357,12 +359,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 			}
 
-			if ((*frame)->datalen == session->read_codec->implementation->bytes_per_frame) {
+			if (read_frame->datalen == session->read_codec->implementation->bytes_per_frame) {
 				perfect = TRUE;
 			} else {
 				if (!session->raw_read_buffer) {
 					switch_size_t bytes = session->read_codec->implementation->bytes_per_frame;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Engaging Read Buffer at %u bytes\n", (uint32_t) bytes);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Engaging Read Buffer at %u bytes vs %u\n", 
+									  (uint32_t) bytes, (uint32_t) (*frame)->datalen);
 					switch_buffer_create_dynamic(&session->raw_read_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES, bytes * SWITCH_BUFFER_START_FRAMES, 0);
 				}
 				if (!switch_buffer_write(session->raw_read_buffer, read_frame->data, read_frame->datalen)) {
@@ -408,6 +411,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 						session->enc_read_frame.ssrc = read_frame->ssrc;
 						session->enc_read_frame.seq = read_frame->seq;
 						session->enc_read_frame.m = read_frame->m;
+						session->enc_read_frame.flags = read_frame->flags;
 						session->enc_read_frame.payload = session->read_codec->implementation->ianacode;
 					}
 					*frame = &session->enc_read_frame;
@@ -417,6 +421,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					session->raw_read_frame.timestamp = read_frame->timestamp;
 					session->raw_read_frame.payload = enc_frame->codec->implementation->ianacode;
 					session->raw_read_frame.m = read_frame->m;
+					session->enc_read_frame.flags = read_frame->flags;
 					session->raw_read_frame.ssrc = read_frame->ssrc;
 					session->raw_read_frame.seq = read_frame->seq;
 					*frame = &session->raw_read_frame;
@@ -616,6 +621,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				session->raw_write_frame.timestamp = frame->timestamp;
 				session->raw_write_frame.rate = frame->rate;
 				session->raw_write_frame.m = frame->m;
+				session->raw_write_frame.flags = frame->flags;
 				session->raw_write_frame.ssrc = frame->ssrc;
 				session->raw_write_frame.seq = frame->seq;
 				session->raw_write_frame.payload = frame->payload;
@@ -768,6 +774,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					session->enc_write_frame.timestamp = frame->timestamp;
 					session->enc_write_frame.payload = session->write_codec->implementation->ianacode;
 					session->enc_write_frame.m = frame->m;
+					session->enc_write_frame.flags = frame->flags;
 					session->enc_write_frame.ssrc = frame->ssrc;
 					session->enc_write_frame.seq = frame->seq;
 					write_frame = &session->enc_write_frame;
@@ -777,6 +784,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					enc_frame->samples = enc_frame->datalen / sizeof(int16_t);
 					enc_frame->timestamp = frame->timestamp;
 					enc_frame->m = frame->m;
+					enc_frame->flags = frame->flags;
 					enc_frame->seq = frame->seq;
 					enc_frame->ssrc = frame->ssrc;
 					enc_frame->payload = enc_frame->codec->implementation->ianacode;
@@ -830,6 +838,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								session->enc_write_frame.codec = session->write_codec;
 								session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t);
 								session->enc_write_frame.m = frame->m;
+								session->enc_write_frame.flags = frame->flags;
 								session->enc_write_frame.ssrc = frame->ssrc;
 								session->enc_write_frame.payload = session->write_codec->implementation->ianacode;
 								write_frame = &session->enc_write_frame;
@@ -851,6 +860,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								session->enc_write_frame.codec = session->write_codec;
 								session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t);
 								session->enc_write_frame.m = frame->m;
+								session->enc_write_frame.flags = frame->flags;
 								session->enc_write_frame.ssrc = frame->ssrc;
 								session->enc_write_frame.payload = session->write_codec->implementation->ianacode;
 								write_frame = &session->enc_write_frame;
@@ -865,6 +875,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								enc_frame->codec = session->write_codec;
 								enc_frame->samples = enc_frame->datalen / sizeof(int16_t);
 								enc_frame->m = frame->m;
+								enc_frame->flags = frame->flags;
 								enc_frame->ssrc = frame->ssrc;
 								enc_frame->payload = enc_frame->codec->implementation->ianacode;
 								write_frame = enc_frame;

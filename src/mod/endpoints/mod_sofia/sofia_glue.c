@@ -1676,7 +1676,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	char tmp[50];
 	uint32_t rtp_timeout_sec = tech_pvt->profile->rtp_timeout_sec;
 	uint32_t rtp_hold_timeout_sec = tech_pvt->profile->rtp_hold_timeout_sec;
-	char *timer_name;
+	char *timer_name = NULL;
 	const char *var;
 
 	switch_assert(tech_pvt != NULL);
@@ -1805,6 +1805,10 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 	} else {
 		timer_name = tech_pvt->profile->timer_name;
+	}
+
+	if ((var = switch_channel_get_variable(tech_pvt->channel, "rtp_timer_name"))) {
+		timer_name = (char *) var;
 	}
 
 	tech_pvt->rtp_session = switch_rtp_new(tech_pvt->local_sdp_audio_ip,
