@@ -34,8 +34,9 @@
 #define DEFAULT_PREBUFFER_SIZE 1024 * 16
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load);
-SWITCH_MODULE_DEFINITION(mod_local_stream, mod_local_stream_load, NULL, NULL);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_local_stream_shutdown);
+SWITCH_MODULE_DEFINITION(mod_local_stream, mod_local_stream_load, mod_local_stream_shutdown, NULL);
+
 
 struct local_stream_source;
 
@@ -45,6 +46,7 @@ static struct {
 } globals;
 
 static int RUNNING = 1;
+static int THREADS = 0;
 
 struct local_stream_context {
 	struct local_stream_source *source;
@@ -106,6 +108,10 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	switch_byte_t *dist_buf;
 	switch_size_t used;
 	int skip = 0;
+
+	switch_mutex_lock(globals.mutex);
+	THREADS++;
+	switch_mutex_unlock(globals.mutex);
 
 	if (!source->prebuf) {
 		source->prebuf = DEFAULT_PREBUFFER_SIZE;
@@ -256,6 +262,10 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	}
 
 	switch_core_destroy_memory_pool(&source->pool);
+
+	switch_mutex_lock(globals.mutex);
+	THREADS--;
+	switch_mutex_unlock(globals.mutex);
 
 	return NULL;
 }
@@ -507,7 +517,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_local_stream_shutdown)
 {
 	RUNNING = 0;
-	switch_yield(500000);
+	switch_event_unbind_callback(event_handler);
+
+	while(THREADS > 0) {
+		switch_yield(100000);
+	}
+
 	switch_core_hash_destroy(&globals.source_hash);
 	return SWITCH_STATUS_SUCCESS;
 }
