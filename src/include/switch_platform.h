@@ -214,7 +214,7 @@ typedef intptr_t switch_ssize_t;
 #define SWITCH_UINT64_T_FMT         "I64u"
 
 #ifndef TIME_T_FMT
-#define TIME_T_FMT "ld"
+#define TIME_T_FMT SWITCH_INT64_T_FMT
 #endif
 
 #else
