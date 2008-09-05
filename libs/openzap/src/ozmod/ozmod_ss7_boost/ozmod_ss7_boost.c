@@ -1095,7 +1095,9 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_ss7_boost_configure_span)
 	int local_port = 5300, remote_port = 5300;
 	char *var, *val;
 	int *intval;
+	va_list ap;
 
+	va_start(ap, sig_cb);
 	while((var = va_arg(ap, char *))) {
 		if (!strcasecmp(var, "local_ip")) {
 			if (!(val = va_arg(ap, char *))) {
@@ -1119,6 +1121,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_ss7_boost_configure_span)
 			remote_port = *intval;
 		}
 	}
+	va_end(ap);
 
 
 	if (!local_ip && local_port && remote_ip && remote_port && sig_cb) {
