@@ -72,7 +72,6 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
 	Q931ie_CalledNum *ptrCalledNum;
 	Q931ie_Display Display, *ptrDisplay;
 	Q931ie_HLComp HLComp;			/* High-Layer Compatibility IE */
-	Q931ie_SendComplete SComplete;		/* Sending Complete IE */
 	Q931ie_ProgInd Progress;		/* Progress Indicator IE */
 	zap_status_t status = ZAP_FAIL;
 	zap_isdn_data_t *isdn_data = span->signal_data;
@@ -176,12 +175,6 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
 	HLComp.PresMeth  = 1;   /* High-layer protocol profile */
 	HLComp.HLCharID  = 1;	/* Telephony = 1, Fax G2+3 = 4, Fax G4 = 65 (Class I)/ 68 (Class II or III) */
 	gen->HLComp = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &HLComp);
-
-	/*
-	 * Sending complete IE (or some NT stuff waits forever in Q.931 overlap dial state...)
-	 */
-	SComplete.IEId = Q931ie_SENDING_COMPLETE;
-//	gen->SendComplete = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &SComplete);
 
 	caller_data->call_state = ZAP_CALLER_STATE_DIALING;
 	Q931Rx43(&isdn_data->q931, (L3UCHAR *) gen, gen->Size);
@@ -769,7 +762,6 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			Q931ie_CalledNum *ptrCalledNum;
 			Q931ie_Display Display, *ptrDisplay;
 			Q931ie_HLComp HLComp;			/* High-Layer Compatibility IE */
-			Q931ie_SendComplete SComplete;		/* Sending Complete IE */
 			Q931ie_ProgInd Progress;		/* Progress Indicator IE */
 			int codec  = 0;
 
@@ -863,12 +855,6 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			HLComp.PresMeth  = 1;   /* High-layer protocol profile */
 			HLComp.HLCharID  = Q931_HLCHAR_TELEPHONY;	/* Telephony = 1, Fax G2+3 = 4, Fax G4 = 65 (Class I)/ 68 (Class II or III) */   /* TODO: make accessible from user layer */
 			gen->HLComp = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &HLComp);
-
-			/*
-			 * Sending complete IE (or some NT stuff waits forever in Q.931 overlap dial state...)
-			 */
-			SComplete.IEId = Q931ie_SENDING_COMPLETE;
-//			gen->SendComplete = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &SComplete);
 
 			Q931Rx43(&isdn_data->q931, (L3UCHAR *) gen, gen->Size);
 			isdn_data->channels_local_crv[gen->CRV] = zchan;
