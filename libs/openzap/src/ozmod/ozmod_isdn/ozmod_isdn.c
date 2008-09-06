@@ -1327,7 +1327,6 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 	char *var, *val;
 	Q931Dialect_t dialect = Q931_Dialect_National;
 	uint32_t opts = 0;
-	va_list ap;
 
 	if (span->signal_type) {
 		snprintf(span->last_error, sizeof(span->last_error), "Span is already configured for signalling [%d].", span->signal_type);
@@ -1366,7 +1365,6 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 	isdn_data->mode = Q931_TE;
 	dialect = Q931_Dialect_National;
 	
-	va_start(ap, sig_cb);
 	while((var = va_arg(ap, char *))) {
 		if (!strcasecmp(var, "mode")) {
 			if (!(val = va_arg(ap, char *))) {
@@ -1389,7 +1387,6 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 			opts = isdn_data->opts = *optp;
 		}
 	}
-	va_end(ap);
 
 	span->start = zap_isdn_start;
 	isdn_data->sig_cb = sig_cb;
