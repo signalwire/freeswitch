@@ -542,14 +542,14 @@ enum {
   Description:  Used to read the header & message code.
 
 *****************************************************************************/
-typedef struct
-{
-    L3UINT			Size;           /* Size of message in bytes             */
-    L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
-    L3UCHAR         MesType;        /* Message type                         */
-    L3UCHAR         CRVFlag;        /* Call reference value flag            */
-    L3INT           CRV;            /* Call reference value                 */
-}Q931mes_Header;
+typedef struct {
+	L3UINT	Size;           /* Size of message in bytes             */
+	L3UCHAR	ProtDisc;       /* Protocol Discriminator               */
+	L3UCHAR	MesType;        /* Message type                         */
+	L3UCHAR	CRVFlag;        /* Call reference value flag            */
+	L3INT	CRV;            /* Call reference value                 */
+
+} Q931mes_Header;
 
 /*****************************************************************************
 
@@ -633,8 +633,7 @@ typedef struct
 *****************************************************************************/
 typedef struct Q931_TrunkInfo Q931_TrunkInfo_t;
 
-typedef enum
-{
+typedef enum {
 	Q931_LOG_NONE = 0,
 	Q931_LOG_ERROR,
 	Q931_LOG_WARNING,
@@ -648,14 +647,12 @@ typedef L3INT (*Q931Tx32CB_t) (void *, L3INT, L3UCHAR, L3UCHAR *, L3INT);
 typedef L3INT (*Q931ErrorCB_t) (void *,L3INT,L3INT,L3INT);
 typedef L3INT (*Q931LogCB_t) (void *, Q931LogLevel_t, char *, L3INT);
 
-typedef enum					/* Network/User Mode.			*/
-{
+typedef enum {					/* Network/User Mode.			*/
 	Q931_TE=0,				/*  0 : User Mode			*/
 	Q931_NT=1				/*  1 : Network Mode			*/
 } Q931NetUser_t;
 
-typedef enum					/* Dialect enum                         */
-{
+typedef enum {					/* Dialect enum                         */
 	Q931_Dialect_Q931     = 0,
 	Q931_Dialect_National = 2,
 	Q931_Dialect_DMS      = 4,
@@ -666,8 +663,7 @@ typedef enum					/* Dialect enum                         */
 #define DIALECT_STRINGS "q931", "", "national", "", "dms", "", "5ess", ""
 Q931_STR2ENUM_P(q931_str2Q931Dialect_type, q931_Q931Dialect_type2str, Q931Dialect_t)
 
-typedef enum					/* Trunk Line Type.			*/
-{
+typedef enum {					/* Trunk Line Type.			*/
 	Q931_TrType_E1 = 0,			/*  0 : E1 Trunk			*/
 	Q931_TrType_T1 = 1,			/*  1 : T1 Trunk			*/
 	Q931_TrType_J1 = 2,			/*  2 : J1 Trunk			*/
@@ -675,18 +671,17 @@ typedef enum					/* Trunk Line Type.			*/
 	Q931_TrType_BRI_PTMP = 4		/*  4 : BRI PTMP Trunk			*/
 } Q931_TrunkType_t;
 
-typedef enum						/* Trunk State							*/
-{
-	Q931_TrState_NoAlignment=0,		/* Trunk not aligned					*/
-	Q931_TrState_Aligning=1,		/* Aligning in progress					*/
-	Q931_TrState_Aligned=2			/* Trunk Aligned						*/
+typedef enum {					/* Trunk State			*/
+	Q931_TrState_NoAlignment=0,		/* Trunk not aligned		*/
+	Q931_TrState_Aligning=1,		/* Aligning in progress		*/
+	Q931_TrState_Aligned=2			/* Trunk Aligned		*/
 } Q931_TrunkState_t;
 
 typedef enum {
 	Q931_ChType_NotUsed=0,			/* Unused Channel						*/
-	Q931_ChType_B=1,				/* B Channel (Voice)					*/
-	Q931_ChType_D=2,				/* D Channel (Signalling)				*/
-	Q931_ChType_Sync=3				/* Sync Channel							*/
+	Q931_ChType_B=1,			/* B Channel (Voice)					*/
+	Q931_ChType_D=2,			/* D Channel (Signalling)				*/
+	Q931_ChType_Sync=3			/* Sync Channel							*/
 } Q931_ChanType_t;
 
 struct Q931_Call
