@@ -157,7 +157,6 @@
 
 *****************************************************************************/
 typedef enum {
-
 	Q931E_NO_ERROR				=	0,
 
 	Q931E_UNKNOWN_MESSAGE		=	-3001,
@@ -190,7 +189,6 @@ typedef enum {
 	Q931E_SEGMENT               =	-3028,
 	Q931E_SIGNAL                =	-3029,
 	Q931E_GENERIC_DIGITS		=	-3030
-
 } q931_error_t;
 
 /* The q931_error_t enum should be kept in sync with the q931_error_names array in Q931.c */ 
@@ -563,61 +561,61 @@ typedef struct
 *****************************************************************************/
 typedef struct
 {
-    L3UINT			Size;           /* Size of message in bytes             */
-    L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
-    L3UCHAR         MesType;        /* Message type                         */
-    L3UCHAR         CRVFlag;        /* Call reference value flag            */
-    L3INT           CRV;            /* Call reference value                 */
+	L3UINT		Size;           /* Size of message in bytes             */
+	L3UCHAR		ProtDisc;       /* Protocol Discriminator               */
+	L3UCHAR		MesType;        /* Message type                         */
+	L3UCHAR		CRVFlag;        /* Call reference value flag            */
+	L3INT		CRV;            /* Call reference value                 */
 
-    ie              Shift;
-    ie              MoreData;
-    ie              SendComplete;
-    ie              CongestionLevel;
-    ie              RepeatInd;
+	ie		Shift;
+	ie		MoreData;
+	ie		SendComplete;
+	ie		CongestionLevel;
+	ie		RepeatInd;
 
-    ie              Segment;        /* Segmented message                    */
-    ie              BearerCap;      /* Bearer Capability                    */
-    ie              Cause;          /* Cause                                */
-    ie              CallState;      /* Call State                           */
-    ie              CallID;			/* Call Identity                        */
-    ie              ChanID;         /* Channel Identification               */
-    ie              ChangeStatus;   /* Change Staus                         */
-    ie              ProgInd;        /* Progress Indicator                   */
-    ie              NetFac;         /* Network Spesific Facilities          */
-    ie              NotifInd;       /* Notification Indicator               */
-    ie              Display;        /* Display                              */
-    ie              DateTime;       /* Date/Time                            */
-    ie              KeypadFac;      /* Keypad Facility                      */
-    ie              Signal;         /* Signal                               */
-    ie              InfoRate;       /* Information rate                     */
-    ie              EndEndTxDelay;  /* End to End Transmit Delay            */
-    ie              TransDelSelInd; /* Transmit Delay Sel. and Ind.         */
-    ie              PackParam;      /* Packed Layer Binary parameters       */
-    ie              PackWinSize;    /* Packet Layer Window Size             */
-    ie              PackSize;       /* Packed Size                          */
-    ie              ClosedUserGrp;  /* Closed User Group                    */
-    ie              RevChargeInd;   /* Reverse Charging Indicator           */
-    ie              CalledNum;      /* Called Party Number                  */
-    ie              CalledSub;      /* Called Party subaddress              */
-    ie              CallingNum;     /* Calling Party Number                 */
-    ie              CallingSub;     /* Calling Party Subaddress             */
-    ie              RedirNum;       /* Redirection Number                   */
-    ie              TransNetSel;    /* Transmit Network Selection           */
-    ie              LLRepeatInd;    /* Repeat Indicator 2 LLComp            */
-    ie              RestartWin;     /* Restart Window                       */
-    ie              RestartInd;     /* Restart Indicator                    */
-    ie              LLComp;         /* Low Layer Compatibility              */
-    ie              HLComp;         /* High Layer Compatibility             */
-    ie              UserUser;       /* User-user                            */
-    ie              Escape;         /* Escape for extension                 */
-	ie				Switchhook;
-	ie				FeatAct;
-	ie				FeatInd;
-	ie				GenericDigits;
+	ie		Segment;        /* Segmented message                    */
+	ie		BearerCap;      /* Bearer Capability                    */
+	ie		Cause;          /* Cause                                */
+	ie		CallState;      /* Call State                           */
+	ie		CallID;			/* Call Identity                        */
+	ie		ChanID;         /* Channel Identification               */
+	ie		ChangeStatus;   /* Change Staus                         */
+	ie		ProgInd;        /* Progress Indicator                   */
+	ie		NetFac;         /* Network Spesific Facilities          */
+	ie		NotifInd;       /* Notification Indicator               */
+	ie		Display;        /* Display                              */
+	ie		DateTime;       /* Date/Time                            */
+	ie		KeypadFac;      /* Keypad Facility                      */
+	ie		Signal;         /* Signal                               */
+	ie		InfoRate;       /* Information rate                     */
+	ie		EndEndTxDelay;  /* End to End Transmit Delay            */
+	ie		TransDelSelInd; /* Transmit Delay Sel. and Ind.         */
+	ie		PackParam;      /* Packed Layer Binary parameters       */
+	ie		PackWinSize;    /* Packet Layer Window Size             */
+	ie		PackSize;       /* Packed Size                          */
+	ie		ClosedUserGrp;  /* Closed User Group                    */
+	ie		RevChargeInd;   /* Reverse Charging Indicator           */
+	ie		CalledNum;      /* Called Party Number                  */
+	ie		CalledSub;      /* Called Party subaddress              */
+	ie		CallingNum;     /* Calling Party Number                 */
+	ie		CallingSub;     /* Calling Party Subaddress             */
+	ie		RedirNum;       /* Redirection Number                   */
+	ie		TransNetSel;    /* Transmit Network Selection           */
+	ie		LLRepeatInd;    /* Repeat Indicator 2 LLComp            */
+	ie		RestartWin;     /* Restart Window                       */
+	ie		RestartInd;     /* Restart Indicator                    */
+	ie		LLComp;         /* Low Layer Compatibility              */
+	ie		HLComp;         /* High Layer Compatibility             */
+	ie		UserUser;       /* User-user                            */
+	ie		Escape;         /* Escape for extension                 */
+	ie		Switchhook;
+	ie		FeatAct;
+	ie		FeatInd;
+	ie		GenericDigits;
 
-	L3UCHAR			buf[1];			/* Buffer for IE's						*/
+	L3UCHAR		buf[1];			/* Buffer for IE's						*/
 
-}Q931mes_Generic;
+} Q931mes_Generic;
 
 
 /*****************************************************************************
@@ -723,19 +721,19 @@ struct Q931_Call
 
 struct Q931_TrunkInfo
 {
-	Q931NetUser_t NetUser;			/* Network/User Mode.                   */
+	Q931NetUser_t    NetUser;		/* Network/User Mode.                   */
 	Q931_TrunkType_t TrunkType;		/* Trunk Line Type.                     */
-	Q931Dialect_t Dialect;			/* Q.931 Based dialect index.           */
+	Q931Dialect_t    Dialect;		/* Q.931 Based dialect index.           */
 
-	Q931Tx34CB_t	Q931Tx34CBProc;
-	Q931Tx32CB_t	Q931Tx32CBProc;
-	Q931ErrorCB_t Q931ErrorCBProc;
-	Q931LogCB_t	Q931LogCBProc;
+	Q931Tx34CB_t     Q931Tx34CBProc;
+	Q931Tx32CB_t     Q931Tx32CBProc;
+	Q931ErrorCB_t    Q931ErrorCBProc;
+	Q931LogCB_t      Q931LogCBProc;
 	void *PrivateData32;
 	void *PrivateData34;
 	void *PrivateDataLog;
 
-	Q931LogLevel_t	loglevel;
+	Q931LogLevel_t   loglevel;
 
 	L3UCHAR     Enabled;            /* Enabled/Disabled                     */
                                     /*  0 = Disabled                        */
@@ -779,7 +777,7 @@ struct Q931_TrunkInfo
 
         L3INT   CRV;                /* Associated CRV                       */
 
-    }ch[Q931MAXCHPERTRUNK];
+    } ch[Q931MAXCHPERTRUNK];
 
 	/* Active Call information indentified by CRV. See Q931AllocateCRV for  */
 	/* initialization of call table.					*/
@@ -802,7 +800,7 @@ typedef struct
 	L3INT		State;
 	L3INT		Message;
 	L3UCHAR		Direction;
-}Q931State;
+} Q931State;
 
 /*****************************************************************************
 
@@ -844,7 +842,7 @@ extern q931timer_t         Q931Timer[Q931MAXDLCT][Q931MAXTIMER];
                 size of 'header'.    
 
 *****************************************************************************/
-#define Q931GetIETotSize(ie)    (((ie.InfoID & 0x80) !=0) ? 1:ie.LenIE)+2)
+#define Q931GetIETotSize(ie) (((ie.InfoID & 0x80) != 0) ? 1 : ie.LenIE) + 2)
 
 /*****************************************************************************
 
@@ -855,7 +853,7 @@ extern q931timer_t         Q931Timer[Q931MAXDLCT][Q931MAXTIMER];
   Description:  Return TRUE if the Information Element is included.
 
 *****************************************************************************/
-#define Q931IsIEPresent(x)    ((x & 0x8000) != 0)
+#define Q931IsIEPresent(x) ((x & 0x8000) != 0)
 
 /*****************************************************************************
 
@@ -872,7 +870,7 @@ extern q931timer_t         Q931Timer[Q931MAXDLCT][Q931MAXTIMER];
 
 *****************************************************************************/
 #define Q931GetIEOffset(x) (x & 0x7fff)
-#define Q931GetIEValue(x) (x & 0x7fff)
+#define Q931GetIEValue(x)  (x & 0x7fff)
 
 /*****************************************************************************
 
@@ -894,7 +892,7 @@ extern q931timer_t         Q931Timer[Q931MAXDLCT][Q931MAXTIMER];
   Description:  Set an information element.
 
 *****************************************************************************/
-#define Q931SetIE(x,o) {x = (ie)(o) | 0x8000;}
+#define Q931SetIE(x,o) { x = (ie)(o) | 0x8000; }
 
 /*****************************************************************************
 
@@ -906,7 +904,7 @@ extern q931timer_t         Q931Timer[Q931MAXDLCT][Q931MAXTIMER];
                 that the octet is extended.
 
 *****************************************************************************/
-#define IsQ931Ext(x) ((x&0x80)==0)
+#define IsQ931Ext(x) ((x & 0x80) == 0)
 
 /*****************************************************************************
 
@@ -933,7 +931,7 @@ extern q931timer_t         Q931Timer[Q931MAXDLCT][Q931MAXTIMER];
                 warning for the initial empty functions.
 
 *****************************************************************************/
-#define NoWarning(x) (x=x)
+#define NoWarning(x) (x = x)
 
 /*****************************************************************************
 

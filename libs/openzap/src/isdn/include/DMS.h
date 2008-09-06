@@ -4,18 +4,17 @@
 
   Contents:         Header and definition for the National ISDN dialect. The 
 										header contents the following parts:
-
-					- Definition of codes
+                    - Definition of codes
                     - Definition of information elements (nationalie_).
                     - Definition of messages (nationalmes_).
-					- Function prototypes.
+                    - Function prototypes.
 
   Description:		The National ISDN dialect here covers ????
 
-  Related Files:	national.h				National ISDN Definitions
-					nationalie.c			National ISDN IE encoders/coders
-					nationalStateTE.c		National ISDN TE State Engine
-					nationalStateNT.c		National ISDN NT State Engine
+  Related Files:	national.h			National ISDN Definitions
+			nationalie.c			National ISDN IE encoders/coders
+			nationalStateTE.c		National ISDN TE State Engine
+			nationalStateNT.c		National ISDN NT State Engine
 
   License/Copyright:
 
@@ -77,8 +76,6 @@ L3INT DMSPmes_0x07(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize,
 L3INT DMSUmes_0x0f(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT Size);
 L3INT DMSPmes_0x0f(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
 
-
-
 /*****************************************************************************
 
   Q.931 Process Function Prototyping. Implemented in nationalStateTE.c
@@ -87,7 +84,6 @@ L3INT DMSPmes_0x0f(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize,
 
 L3INT DMSProc0x0fTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom);
 L3INT DMSProc0x07TE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom);
-
 
 void DMSCreateTE(L3UCHAR i);
 void DMSCreateNT(L3UCHAR i);

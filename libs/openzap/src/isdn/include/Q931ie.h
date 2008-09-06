@@ -54,7 +54,7 @@ typedef enum {
 
 } q931_codeset_t;
 
-/* Single octet information elements                                */
+/* Single octet information elements */
 #define Q931ie_SHIFT                            0x90 /* 1001 ----       */
 #define Q931ie_MORE_DATA                        0xa0 /* 1010 ----       */
 #define Q931ie_SENDING_COMPLETE                 0xa1 /* 1010 0001       */
@@ -98,12 +98,11 @@ typedef enum {
 #define Q931ie_ESCAPE_FOR_EX                    0x7f /* 0111 1111       */
 
 /* Variable Length Codeset 6 Information Elements */
-
-#define Q931ie_GENERIC_DIGITS					0x37 /* 0011 0111       */
+#define Q931ie_GENERIC_DIGITS                   0x37 /* 0011 0111       */
 
 /* Variable Length Information Element to shut up BRI testing */
-#define Q931ie_CONNECTED_NUMBER			0x4c /* 0100 1101 */
-#define Q931ie_FACILITY				0x1c /* 0001 1101 */
+#define Q931ie_CONNECTED_NUMBER                 0x4c /* 0100 1101 */
+#define Q931ie_FACILITY                         0x1c /* 0001 1101 */
 
 
 /*****************************************************************************
@@ -114,10 +113,9 @@ typedef enum {
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 00000100 for Bearer Capability       */
- 
     L3UCHAR Size;                   /* Length of Information Element        */
 
     L3UCHAR CodStand;               /* Coding Standard.                     */
@@ -286,7 +284,8 @@ typedef struct
     L3UCHAR AL3Info1;				/* additional layer 3 info 1			*/
 
     L3UCHAR AL3Info2;				/* additional layer 3 info 2			*/
-}Q931ie_BearerCap;
+
+} Q931ie_BearerCap;
 
 /*****************************************************************************
 
@@ -295,12 +294,13 @@ typedef struct
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 00010000                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR CallId[1];				/* Call identity                        */
-}Q931ie_CallID;
+
+} Q931ie_CallID;
 
 /*****************************************************************************
 
@@ -309,13 +309,14 @@ typedef struct
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 00010100                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR CodStand;               /* Coding Standard                      */
     L3UCHAR CallState;              /* Call State Value                     */
-}Q931ie_CallState;
+
+} Q931ie_CallState;
 
 /*****************************************************************************
 
@@ -324,8 +325,8 @@ typedef struct
   Description:	Cause IE as described in Q.850
 
 *****************************************************************************/
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 00010100                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR CodStand;               /* Coding Standard                      */
@@ -333,21 +334,23 @@ typedef struct
 	L3UCHAR Recom;					/* Recommendation						*/
 	L3UCHAR Value;					/* Cause Value							*/
 	L3UCHAR	Diag[1];				/* Optional Diagnostics Field			*/
-}Q931ie_Cause;
+
+} Q931ie_Cause;
 
 /*****************************************************************************
 
   Struct:        Q931ie_CalledNum
 
 *****************************************************************************/
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 01110000                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR TypNum;                 /* Type of Number                       */
     L3UCHAR NumPlanID;              /* Numbering plan identification        */
     L3UCHAR Digit[1];				/* Digit (IA5)                          */
-}Q931ie_CalledNum;
+
+} Q931ie_CalledNum;
 
 /*****************************************************************************
 
@@ -357,14 +360,15 @@ typedef struct
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 01110001                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR TypNum;                 /* Type of subaddress                   */
     L3UCHAR OddEvenInd;             /* Odd/Even indicator                   */
     L3UCHAR Digit[1];				/* digits                               */
-}Q931ie_CalledSub;
+
+} Q931ie_CalledSub;
 
 /*****************************************************************************
 
@@ -374,8 +378,8 @@ typedef struct
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 01101100                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR TypNum;                 /* Type of number                       */
@@ -383,7 +387,8 @@ typedef struct
     L3UCHAR PresInd;                /* Presentation indicator               */
     L3UCHAR ScreenInd;              /* Screening indicator                  */
     L3UCHAR Digit[1];				/* Number digits (IA5)                  */
-}Q931ie_CallingNum;
+
+} Q931ie_CallingNum;
 
 /*****************************************************************************
 
@@ -393,14 +398,15 @@ typedef struct
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 01101101                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR TypNum;                 /* Type of subaddress                   */
     L3UCHAR OddEvenInd;             /* Odd/Even indicator                   */
     L3UCHAR Digit[1];				/* digits                               */
-}Q931ie_CallingSub;
+
+} Q931ie_CallingSub;
 
 /*****************************************************************************
 
@@ -418,8 +424,8 @@ typedef struct
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 00011000                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR IntIDPresent;           /* Int. id. present                     */
@@ -460,7 +466,8 @@ typedef struct
 									/*  1001 : H12 channel units			*/
 
     L3UCHAR ChanSlot;               /* Channel number						*/
-}Q931ie_ChanID;
+
+} Q931ie_ChanID;
 
 /*****************************************************************************
 
@@ -470,8 +477,8 @@ typedef struct
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 00101001                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR Year;                   /* Year                                 */
@@ -485,7 +492,7 @@ typedef struct
 									/*  1 : Hour present					*/
 									/*  2 : Hour and Minute present			*/
 									/*  3 : Hour, Minute and Second present	*/
-}Q931ie_DateTime;
+} Q931ie_DateTime;
 
 /*****************************************************************************
 
@@ -495,12 +502,13 @@ typedef struct
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 00101000                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR Display[1];             /* Display information (IA5)            */
-}Q931ie_Display;
+
+} Q931ie_Display;
 
 /*****************************************************************************
 
@@ -510,8 +518,8 @@ typedef struct
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 01111101                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR CodStand;               /* Coding standard                      */
@@ -520,7 +528,8 @@ typedef struct
     L3UCHAR HLCharID;               /* High layer characteristics id.       */
     L3UCHAR EHLCharID;              /* Extended high layer character. id.   */
     L3UCHAR EVideoTlfCharID;        /* Ext. videotelephony char. id.        */
-}Q931ie_HLComp;
+
+} Q931ie_HLComp;
 
 /*****************************************************************************
 
@@ -530,12 +539,12 @@ typedef struct
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
     L3UCHAR IEId;                   /* 00101100                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR KeypadFac[1];           /* dynamic buffer                       */
-}Q931ie_KeypadFac;
+
+} Q931ie_KeypadFac;
 
 /*****************************************************************************
 
@@ -545,8 +554,8 @@ typedef struct
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 01111100                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR CodStand;               /* Coding standard                      */
@@ -750,7 +759,8 @@ typedef struct
     L3UCHAR PackWinSize;            /* Packet window size                   */
 
     L3UCHAR AddL3Info;              /* Additional Layer 3 protocol info     */
-}Q931ie_LLComp;
+
+} Q931ie_LLComp;
 
 /*****************************************************************************
 
@@ -760,8 +770,8 @@ typedef struct
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 00100000                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR LenNetID;               /* Length of network facilities id.     */
@@ -769,7 +779,8 @@ typedef struct
     L3UCHAR NetIDPlan;              /* Network identification plan.         */
     L3UCHAR NetFac;                 /* Network specific facility spec.      */
     L3UCHAR NetID[1];               /* Network id. (IA5)                    */
-}Q931ie_NetFac;
+
+} Q931ie_NetFac;
 
 /*****************************************************************************
 
@@ -779,12 +790,13 @@ typedef struct
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 00100000                             */
     L3UCHAR Size;                   /* Length of Information Element        */
 	L3UCHAR Notification;			/* Notification descriptor				*/
-}Q931ie_NotifInd;
+
+} Q931ie_NotifInd;
 
 /*****************************************************************************
 
@@ -794,14 +806,15 @@ typedef struct
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 00011110                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR CodStand;               /* Coding standard                      */
     L3UCHAR Location;               /* Location                             */
     L3UCHAR ProgDesc;               /* Progress description                 */
-}Q931ie_ProgInd;
+
+} Q931ie_ProgInd;
 
 /*****************************************************************************
 
@@ -811,20 +824,23 @@ typedef struct
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 00000000                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR FSI;                    /* First segment indicator              */
     L3UCHAR NumSegRem;              /* Number of segments remaining         */
     L3UCHAR SegType;                /* Segment message type                 */
-}Q931ie_Segment;
 
-typedef struct
-{
+} Q931ie_Segment;
+
+
+typedef struct {
+
     L3UCHAR IEId;                   /* 00000000                             */
     L3UCHAR Size;                   /* Length of Information Element        */
-}Q931ie_SendComplete;
+
+} Q931ie_SendComplete;
 
 /*****************************************************************************
 
@@ -834,8 +850,8 @@ typedef struct
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 00000000                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR Signal;                 /* Signal value                         */
@@ -859,7 +875,7 @@ typedef struct
                                     /*  01000110    Alerting on - pattern 6 */
                                     /*  01000111    Alerting on - pattern 7 */
                                     /*  01001111    Alerting off            */
-}Q931ie_Signal;
+} Q931ie_Signal;
 
 /*****************************************************************************
 
@@ -869,12 +885,13 @@ typedef struct
 
 *****************************************************************************/
 #ifdef Q931_X25_SUPPORT
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 00000000                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3ULONG TxDSIValue;             /* Trans. delay sel. & ind. value       */ 
-}Q931ie_TransDelSelInd;
+
+} Q931ie_TransDelSelInd;
 #endif
 
 /*****************************************************************************
@@ -885,14 +902,15 @@ typedef struct
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 01111000                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR Type;                   /* Type of network identifier           */
     L3UCHAR NetIDPlan;              /* Network idetification plan           */
     L3UCHAR NetID[1];               /* Network identification(IA5)          */
-}Q931ie_TransNetSel;
+
+} Q931ie_TransNetSel;
 
 /*****************************************************************************
 
@@ -902,13 +920,14 @@ typedef struct
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 01111110                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR ProtDisc;               /* Protocol discriminator               */
     L3UCHAR User[1];                /* User information                     */
-}Q931ie_UserUser;
+
+} Q931ie_UserUser;
 
 /*****************************************************************************
 
@@ -918,13 +937,14 @@ typedef struct
 
 *****************************************************************************/
 #ifdef Q931_X25_SUPPORT
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 01000111                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR CUGInd;                 /* CUG indication                       */
     L3UCHAR CUG[1];                 /* CUG index code (IA5)                 */
-}Q931ie_ClosedUserGrp;
+
+} Q931ie_ClosedUserGrp;
 #endif
 
 /*****************************************************************************
@@ -934,12 +954,13 @@ typedef struct
   Description:	Congestion Level
 
 *****************************************************************************/
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 01000111                             */
     L3UCHAR Size;                   /* Length of Information Element        */
 	L3UCHAR CongLevel;				/* Conguestion Level					*/
-}Q931ie_CongLevel;
+
+} Q931ie_CongLevel;
 
 /*****************************************************************************
 
@@ -949,14 +970,15 @@ typedef struct
 
 *****************************************************************************/
 #ifdef Q931_X25_SUPPORT
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 01000010                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3ULONG CumTxDelay;             /* Cumulative transit delay value       */
     L3ULONG ReqTxDelay;             /* Requested end to end transit delay   */
     L3ULONG MaxTxDelay;             /* Maximum transit delay                */
-}Q931ie_EndEndTxDelay;
+
+} Q931ie_EndEndTxDelay;
 #endif
 
 /*****************************************************************************
@@ -967,15 +989,16 @@ typedef struct
 
 *****************************************************************************/
 #ifdef Q931_X25_SUPPORT
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 01100000                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR InInfoRate;             /* Incoming information rate            */
     L3UCHAR OutInfoRate;            /* Outgoing information rate            */
     L3UCHAR MinInInfoRate;          /* Minimum incoming information rate    */
     L3UCHAR MinOutInfoRate;         /* Minimum outgoing information rate    */
-}Q931ie_InfoRate;
+
+} Q931ie_InfoRate;
 #endif
 
 /*****************************************************************************
@@ -986,15 +1009,16 @@ typedef struct
 
 *****************************************************************************/
 #ifdef Q931_X25_SUPPORT
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 01000100                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR FastSel;                /* Fast selected                        */
     L3UCHAR ExpData;                /* Exp. data                            */
     L3UCHAR DelConf;                /* Delivery conf                        */
     L3UCHAR Modulus;                /* Modulus                              */
-}Q931ie_PackParam;
+
+} Q931ie_PackParam;
 #endif
 
 /*****************************************************************************
@@ -1005,13 +1029,14 @@ typedef struct
 
 *****************************************************************************/
 #ifdef Q931_X25_SUPPORT
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 01000101                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR ForwardValue;           /* Forward value                        */
     L3UCHAR BackwardValue;          /* Backward value                       */
-}Q931ie_PackWinSize;
+
+} Q931ie_PackWinSize;
 #endif
 
 /*****************************************************************************
@@ -1022,13 +1047,14 @@ typedef struct
 
 *****************************************************************************/
 #ifdef Q931_X25_SUPPORT
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 01000110                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR ForwardValue;           /* Forward value                        */
     L3UCHAR BackwardValue;          /* Backward value                       */
-}Q931ie_PackSize;
+
+} Q931ie_PackSize;
 #endif
 
 /*****************************************************************************
@@ -1039,8 +1065,8 @@ typedef struct
 
 *****************************************************************************/
 #ifdef Q931_X25_SUPPORT
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 01110100                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR TypeNum;                /* Type of number                       */
@@ -1049,19 +1075,20 @@ typedef struct
     L3UCHAR ScreenInd;              /* Screening indicator                  */
     L3UCHAR Reason;                 /* Reason for redirection               */
     L3UCHAR Digit[1];               /* Number digits (IA5)                  */
-}Q931ie_RedirNum;
+
+} Q931ie_RedirNum;
 #endif
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 01110100                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR RepeatInd;              /* 0010 Prioritized list for selecting  */
                                     /* one possible.                        */
-}Q931ie_RepeatInd;
+} Q931ie_RepeatInd;
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 01110100                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR Spare;                  /* Spare                                */
@@ -1069,10 +1096,10 @@ typedef struct
                                     /*  000 Indicate channels               */
                                     /*  110 Single interface                */
                                     /*  111 All interfaces                  */
-}Q931ie_RestartInd;
+} Q931ie_RestartInd;
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 01110100                             */
     L3UCHAR Size;                   /* Length of Information Element        */
 	L3UCHAR Preference;             /* Preference 0 = reserved, 1 = channel */
@@ -1081,7 +1108,7 @@ typedef struct
                                     /*  000 In service                      */
                                     /*  001 Maintenance                     */
                                     /*  010 Out of service                  */
-}Q931ie_ChangeStatus;
+} Q931ie_ChangeStatus;
 
 /*****************************************************************************
 
@@ -1090,13 +1117,14 @@ typedef struct
 
 *****************************************************************************/
 
-typedef struct
-{
+typedef struct {
+
     L3UCHAR IEId;                   /* 00110111                             */
     L3UCHAR Size;                   /* Length of Information Element        */
     L3UCHAR Type;					/* Type of number                       */
     L3UCHAR Encoding;				/* Encoding of number                   */
     L3UCHAR Digit[1];				/* Number digits (IA5)                  */
+
 } Q931ie_GenericDigits;
 
 
