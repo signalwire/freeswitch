@@ -122,6 +122,13 @@ void zap_buffer_zero(zap_buffer_t *buffer);
  */
 void zap_buffer_destroy(zap_buffer_t **buffer);
 
+/*! \brief Seek to offset from the beginning of the buffer
+ * \param buffer buffer to seek
+ * \param datalen offset in bytes
+ * \return new position
+ */
+zap_size_t zap_buffer_seek(zap_buffer_t *buffer, zap_size_t datalen);
+
 /** @} */
 
 zap_size_t zap_buffer_zwrite(zap_buffer_t *buffer, const void *data, zap_size_t datalen);
