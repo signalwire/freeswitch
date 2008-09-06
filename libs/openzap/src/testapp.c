@@ -67,10 +67,8 @@ int main(int argc, char *argv[])
 		goto top;
 	}
 
- end:
-
 	zap_global_destroy();
-
+	return 0;
 }
 
 /* For Emacs:

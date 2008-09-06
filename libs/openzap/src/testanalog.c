@@ -6,14 +6,14 @@ static void *test_call(zap_thread_t *me, void *obj)
 	zap_channel_t *chan = (zap_channel_t *) obj;
 	uint8_t frame[1024];
 	zap_size_t len;
-
+	char *number = strdup("5551212");
 
 	zap_sleep(10 * 1000);
 	
 	zap_log(ZAP_LOG_DEBUG, "answer call and start echo test\n");
 
 	zap_set_state_locked(chan, ZAP_CHANNEL_STATE_UP);
-	zap_channel_command(chan, ZAP_COMMAND_SEND_DTMF, "5551212");
+	zap_channel_command(chan, ZAP_COMMAND_SEND_DTMF, number);
 
 	while (chan->state == ZAP_CHANNEL_STATE_UP) {
 		zap_wait_flag_t flags = ZAP_READ;
@@ -37,8 +37,8 @@ static void *test_call(zap_thread_t *me, void *obj)
 	}
 
 	zap_log(ZAP_LOG_DEBUG, "call over\n");
-
-	return 0;
+	free(number);
+	return NULL;
 }
 
 static ZIO_SIGNAL_CB_FUNCTION(on_signal)
@@ -59,12 +59,14 @@ static ZIO_SIGNAL_CB_FUNCTION(on_signal)
 }
 
 static int R = 0;
+#if 0
 static void handle_SIGINT(int sig)
 {
 	if (sig);
 	R = 0;
 	return;
 }
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -113,7 +115,7 @@ int main(int argc, char *argv[])
 done:
 
 	zap_global_destroy();
-
+	return 0;
 }
 
 /* For Emacs:

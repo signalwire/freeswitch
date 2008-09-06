@@ -47,7 +47,7 @@ zap_status_t zap_fsk_data_init(zap_fsk_data_state_t *state, uint8_t *data, uint3
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_fsk_data_add_sdmf(zap_fsk_data_state_t *state, char *date, char *number)
+zap_status_t zap_fsk_data_add_sdmf(zap_fsk_data_state_t *state, const char *date, char *number)
 {
 	size_t dlen = strlen(date);
 	size_t nlen = strlen(number);
@@ -61,7 +61,7 @@ zap_status_t zap_fsk_data_add_sdmf(zap_fsk_data_state_t *state, char *date, char
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_fsk_data_add_mdmf(zap_fsk_data_state_t *state, zap_mdmf_type_t type, uint8_t *data, uint32_t datalen)
+zap_status_t zap_fsk_data_add_mdmf(zap_fsk_data_state_t *state, zap_mdmf_type_t type, const uint8_t *data, uint32_t datalen)
 {
 	state->buf[0] = ZAP_CID_TYPE_MDMF;
 	state->buf[state->bpos++] = type;

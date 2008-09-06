@@ -5,13 +5,22 @@ AC_PREREQ(2.59)
 AC_INIT([openzap],[pre-alpha],[bugs@freeswitch.org])
 AC_CONFIG_SRCDIR([src/libteletone_detect.c])
 
+AC_CONFIG_AUX_DIR(build)
+#AM_INIT_AUTOMAKE(libopenzap,0.1)
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_MAKE_SET
-AC_PROG_RANLIB
-
 
 AC_PREFIX_DEFAULT(/usr/local/openzap)
+
+#override some default libtool behavior and invoke AC_PROG_LIBTOOL (see http://lists.gnu.org/archive/html/libtool/2007-03/msg00000.html)
+m4_defun([_LT_AC_LANG_F77_CONFIG], [:])
+m4_defun([_LT_AC_LANG_GCJ_CONFIG], [:])
+m4_defun([_LT_AC_LANG_RC_CONFIG], [:])
+#AM_PROG_CC_C_O
+AC_PROG_LIBTOOL
+AC_PROG_INSTALL
 
 # Check for com;iler type
 AC_DEFUN([AX_COMPILER_VENDOR],
@@ -47,6 +56,40 @@ sun)
     COMP_VENDOR_CFLAGS="-std=c99 -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes"
     ;;
 esac
+
+
+#set SOLINK variable based on compiler and host
+if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
+    SOLINK="-Bdynamic -dy -G"
+elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
+    case "$host" in
+        *darwin*)
+            SOLINK="-dynamic -bundle -force-flat-namespace"
+        ;;
+        *-solaris2*)
+            SOLINK="-shared -Xlinker"
+        ;;
+        *)
+            SOLINK="-shared -Xlinker -x"
+        ;;
+    esac
+else
+    AC_ERROR([Please update configure.in with SOLINK values for your compiler])
+fi
+
+# set DYNAMIC_LIB_EXTEN
+# we should really be using libtool so we don't need to do this
+case "$host" in
+    *cygwin* | *mingw*)
+        DYNAMIC_LIB_EXTEN="dll"
+    ;;
+    *)
+        DYNAMIC_LIB_EXTEN="so"
+    ;;
+esac
+
+AC_SUBST(SOLINK)
+AC_SUBST(DYNAMIC_LIB_EXTEN)
 
 AC_CHECK_LIB([dl], [dlopen])
 AC_CHECK_LIB([pthread], [pthread_create])

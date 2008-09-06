@@ -26,11 +26,9 @@ int main(int argc, char *argv[])
 	}
 
 	if ((tmp.fd = open(argv[1], O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR)) < 0) {
-		fprintf(stderr, "File Error!\n", strerror(errno));
+		fprintf(stderr, "File Error! [%s]\n", strerror(errno));
 		exit(-1);
 	}
-
-	
 
 	teletone_init_session(&ts, 0, teletone_handler, &tmp);
 	ts.rate = 8000;
@@ -38,6 +36,8 @@ int main(int argc, char *argv[])
 	ts.debug_stream = stdout;
 	teletone_run(&ts, argv[2]);
 	close(tmp.fd);
+
+	return 0;
 }
 #else 
 int32_t main(int argc, char *argv[])

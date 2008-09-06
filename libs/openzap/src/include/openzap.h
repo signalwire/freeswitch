@@ -533,9 +533,9 @@ zap_status_t zap_fsk_demod_feed(zap_fsk_data_state_t *state, int16_t *data, size
 zap_status_t zap_fsk_demod_destroy(zap_fsk_data_state_t *state);
 int zap_fsk_demod_init(zap_fsk_data_state_t *state, int rate, uint8_t *buf, size_t bufsize);
 zap_status_t zap_fsk_data_init(zap_fsk_data_state_t *state, uint8_t *data, uint32_t datalen);
-zap_status_t zap_fsk_data_add_mdmf(zap_fsk_data_state_t *state, zap_mdmf_type_t type, uint8_t *data, uint32_t datalen);
+zap_status_t zap_fsk_data_add_mdmf(zap_fsk_data_state_t *state, zap_mdmf_type_t type, const uint8_t *data, uint32_t datalen);
 zap_status_t zap_fsk_data_add_checksum(zap_fsk_data_state_t *state);
-zap_status_t zap_fsk_data_add_sdmf(zap_fsk_data_state_t *state, char *date, char *number);
+zap_status_t zap_fsk_data_add_sdmf(zap_fsk_data_state_t *state, const char *date, char *number);
 zap_status_t zap_channel_outgoing_call(zap_channel_t *zchan);
 void zap_channel_rotate_tokens(zap_channel_t *zchan);
 void zap_channel_clear_detected_tones(zap_channel_t *zchan);
