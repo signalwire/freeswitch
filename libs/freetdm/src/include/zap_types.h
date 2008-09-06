@@ -163,7 +163,7 @@ typedef enum {
 	ZAP_ALARM_NOTOPEN = ( 1 << 6),
 	ZAP_ALARM_AIS = ( 1 << 7),
 	ZAP_ALARM_RAI = ( 1 << 8),
-	ZAP_ALARM_GENERAL = ( 1 << 31)
+	ZAP_ALARM_GENERAL = ( 1 << 30)
 } zap_alarm_flag_t;
 
 typedef enum {
@@ -232,7 +232,7 @@ typedef enum {
 	ZAP_CODEC_ULAW = 0,
 	ZAP_CODEC_ALAW = 8,
 	ZAP_CODEC_SLIN = 10,
-	ZAP_CODEC_NONE = (1 << 31)
+	ZAP_CODEC_NONE = (1 << 30)
 } zap_codec_t;
 
 typedef enum {
