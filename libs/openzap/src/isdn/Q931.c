@@ -368,6 +368,9 @@ L3INT Q931Rx23(Q931_TrunkInfo_t *pTrunk, L3INT ind, L3UCHAR tei, L3UCHAR * buf, 
 		/* Message Type */
 		m->MesType = Mes[IOff++];
 
+		/* Store tei */
+		m->Tei = tei;
+
 		/* d'oh a little ugly but this saves us from:
 		 *	a) doing Q.921 work in the lower levels (extracting the TEI ourselves)
 		 *	b) adding a tei parameter to _all_ Proc functions
@@ -382,7 +385,7 @@ L3INT Q931Rx23(Q931_TrunkInfo_t *pTrunk, L3INT ind, L3UCHAR tei, L3UCHAR * buf, 
 			}
 		}
 
-		Q931Log(pTrunk, Q931_LOG_DEBUG, "Received message from Q.921 (ind %d, tei %d, size %d)\nMesType: %d, CRVFlag %d (%s), CRV %d (Dialect: %d)\n", ind, tei, Size,
+		Q931Log(pTrunk, Q931_LOG_DEBUG, "Received message from Q.921 (ind %d, tei %d, size %d)\nMesType: %d, CRVFlag %d (%s), CRV %d (Dialect: %d)\n", ind, m->Tei, Size,
 						 m->MesType, m->CRVFlag, m->CRVFlag ? "Terminator" : "Originator", m->CRV, pTrunk->Dialect);
 
 		RetCode = Q931Umes[pTrunk->Dialect][m->MesType](pTrunk, Mes, (Q931mes_Generic *)pTrunk->L3Buf, IOff, Size - L2HSize);

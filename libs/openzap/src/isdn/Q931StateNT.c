@@ -345,6 +345,9 @@ L3INT Q931ProcSetupNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 			return ret;
 		}
 
+		/* store TEI in call */
+		pTrunk->call[callIndex].Tei = pMes->Tei;
+
 		/* Send setup indication to user */
 		ret = Q931Tx34(pTrunk, (L3UCHAR*)pMes, pMes->Size);
 		if (ret != Q931E_NO_ERROR) {
