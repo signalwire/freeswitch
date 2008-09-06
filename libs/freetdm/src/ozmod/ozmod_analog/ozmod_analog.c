@@ -87,7 +87,6 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 	uint32_t max_dialstr = 11;
 	const char *var, *val;
 	int *intval;
-	va_list ap;
 
 	assert(sig_cb != NULL);
 
@@ -105,10 +104,9 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 	}
 
 	analog_data = malloc(sizeof(*analog_data));
-	assert(analog_data != NULL);
 	memset(analog_data, 0, sizeof(*analog_data));
+	assert(analog_data != NULL);
 
-	va_start(ap, sig_cb);
 	while ((var = va_arg(ap, char *))) {
 		if (!strcasecmp(var, "tonemap")) {
 			if (!(val = va_arg(ap, char *))) {
@@ -127,7 +125,6 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 			max_dialstr = *intval;
 		}
 	}
-	va_end(ap);
 
 	span->start = zap_analog_start;
 	analog_data->digit_timeout = digit_timeout;

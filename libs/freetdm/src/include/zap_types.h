@@ -409,7 +409,7 @@ typedef struct zap_io_interface zap_io_interface_t;
 #define ZIO_IO_LOAD_ARGS (zap_io_interface_t **zio)
 #define ZIO_IO_UNLOAD_ARGS (void)
 #define ZIO_SIG_LOAD_ARGS (void)
-#define ZIO_SIG_CONFIGURE_ARGS (zap_span_t *span, zio_signal_cb_t sig_cb, ...)
+#define ZIO_SIG_CONFIGURE_ARGS (zap_span_t *span, zio_signal_cb_t sig_cb, va_list ap)
 #define ZIO_SIG_UNLOAD_ARGS (void)
 
 typedef zap_status_t (*zio_channel_request_t) ZIO_CHANNEL_REQUEST_ARGS ;
