@@ -4,11 +4,11 @@
 
   Contents:		Q.931 State Engine for NT (Network Mode).
 
-				The controlling state engine for Q.931 is the state engine
-				on the NT side. The state engine on the TE side is a slave 
-				of this. The TE side maintain it's own states as described in
-				ITU-T Q931, but will in	raise conditions be overridden by 
-				the NT side.
+			The controlling state engine for Q.931 is the state engine
+			on the NT side. The state engine on the TE side is a slave 
+			of this. The TE side maintain it's own states as described in
+			ITU-T Q931, but will in	raise conditions be overridden by 
+			the NT side.
 
   License/Copyright:
 
@@ -19,12 +19,12 @@
   modification, are permitted provided that the following conditions are 
   met:
 
-    * Redistributions of source code must retain the above copyright notice, 
+	* Redistributions of source code must retain the above copyright notice, 
 	  this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright notice, 
+	* Redistributions in binary form must reproduce the above copyright notice, 
 	  this list of conditions and the following disclaimer in the documentation 
 	  and/or other materials provided with the distribution.
-    * Neither the name of the Case Labs, Ltd nor the names of its contributors 
+	* Neither the name of the Case Labs, Ltd nor the names of its contributors 
 	  may be used to endorse or promote products derived from this software 
 	  without specific prior written permission.
 
@@ -56,75 +56,75 @@ extern L3INT Q931L4HeaderSpace;
 *****************************************************************************/
 void Q931CreateNT(L3UCHAR i)
 {
-    Q931SetMesProc(Q931mes_ALERTING,            i,Q931ProcAlertingNT,          Q931Umes_Alerting,          Q931Pmes_Alerting);
-    Q931SetMesProc(Q931mes_CALL_PROCEEDING,     i,Q931ProcCallProceedingNT,    Q931Umes_CallProceeding,    Q931Pmes_CallProceeding);
-    Q931SetMesProc(Q931mes_CONNECT,             i,Q931ProcConnectNT,           Q931Umes_Connect,           Q931Pmes_Connect);
-    Q931SetMesProc(Q931mes_CONNECT_ACKNOWLEDGE, i,Q931ProcConnectAckNT,        Q931Umes_ConnectAck,        Q931Pmes_ConnectAck);
-    Q931SetMesProc(Q931mes_PROGRESS,            i,Q931ProcProgressNT,          Q931Umes_Progress,          Q931Pmes_Progress);
-    Q931SetMesProc(Q931mes_SETUP,               i,Q931ProcSetupNT,             Q931Umes_Setup,             Q931Pmes_Setup);
-    Q931SetMesProc(Q931mes_SETUP_ACKNOWLEDGE,   i,Q931ProcSetupAckNT,          Q931Umes_SetupAck,          Q931Pmes_SetupAck);
-    Q931SetMesProc(Q931mes_RESUME,              i,Q931ProcResumeNT,            Q931Umes_Resume,            Q931Pmes_Resume);
-    Q931SetMesProc(Q931mes_RESUME_ACKNOWLEDGE,  i,Q931ProcResumeAckNT,         Q931Umes_ResumeAck,         Q931Pmes_ResumeAck);
-    Q931SetMesProc(Q931mes_RESUME_REJECT,       i,Q931ProcResumeRejectNT,      Q931Umes_ResumeReject,      Q931Pmes_ResumeReject);
-    Q931SetMesProc(Q931mes_SUSPEND,             i,Q931ProcSuspendNT,           Q931Umes_Suspend,           Q931Pmes_Suspend);
-    Q931SetMesProc(Q931mes_SUSPEND_ACKNOWLEDGE, i,Q931ProcSuspendAckNT,        Q931Umes_SuspendAck,        Q931Pmes_SuspendAck);
-    Q931SetMesProc(Q931mes_SUSPEND_REJECT,      i,Q931ProcSuspendRejectNT,     Q931Umes_SuspendReject,     Q931Pmes_SuspendReject);
-    Q931SetMesProc(Q931mes_USER_INFORMATION,    i,Q931ProcUserInformationNT,   Q931Umes_UserInformation,   Q931Pmes_UserInformation);
-    Q931SetMesProc(Q931mes_DISCONNECT,          i,Q931ProcDisconnectNT,        Q931Umes_Disconnect,        Q931Pmes_Disconnect);
-    Q931SetMesProc(Q931mes_RELEASE,             i,Q931ProcReleaseNT,           Q931Umes_Release,           Q931Pmes_Release);
-    Q931SetMesProc(Q931mes_RELEASE_COMPLETE,    i,Q931ProcReleaseCompleteNT,   Q931Umes_ReleaseComplete,   Q931Pmes_ReleaseComplete);
-    Q931SetMesProc(Q931mes_RESTART,             i,Q931ProcRestartNT,           Q931Umes_Restart,           Q931Pmes_Restart);
-    Q931SetMesProc(Q931mes_RESTART_ACKNOWLEDGE, i,Q931ProcRestartAckNT,        Q931Umes_RestartAck,        Q931Pmes_RestartAck);
-    Q931SetMesProc(Q931mes_CONGESTION_CONTROL,  i,Q931ProcCongestionControlNT, Q931Umes_CongestionControl, Q931Pmes_CongestionControl);
-    Q931SetMesProc(Q931mes_INFORMATION,         i,Q931ProcInformationNT,       Q931Umes_Information,       Q931Pmes_Information);
-    Q931SetMesProc(Q931mes_NOTIFY,              i,Q931ProcNotifyNT,            Q931Umes_Notify,            Q931Pmes_Notify);
-    Q931SetMesProc(Q931mes_STATUS,              i,Q931ProcStatusNT,            Q931Umes_Status,            Q931Pmes_Status);
-    Q931SetMesProc(Q931mes_STATUS_ENQUIRY,      i,Q931ProcStatusEnquiryNT,     Q931Umes_StatusEnquiry,     Q931Pmes_StatusEnquiry);
-    Q931SetMesProc(Q931mes_SEGMENT,             i,Q931ProcSegmentNT,           Q931Umes_Segment,           Q931Pmes_Segment);
+	Q931SetMesProc(Q931mes_ALERTING,             i, Q931ProcAlertingNT,          Q931Umes_Alerting,          Q931Pmes_Alerting);
+	Q931SetMesProc(Q931mes_CALL_PROCEEDING,      i, Q931ProcCallProceedingNT,    Q931Umes_CallProceeding,    Q931Pmes_CallProceeding);
+	Q931SetMesProc(Q931mes_CONNECT,              i, Q931ProcConnectNT,           Q931Umes_Connect,           Q931Pmes_Connect);
+	Q931SetMesProc(Q931mes_CONNECT_ACKNOWLEDGE,  i, Q931ProcConnectAckNT,        Q931Umes_ConnectAck,        Q931Pmes_ConnectAck);
+	Q931SetMesProc(Q931mes_PROGRESS,             i, Q931ProcProgressNT,          Q931Umes_Progress,          Q931Pmes_Progress);
+	Q931SetMesProc(Q931mes_SETUP,                i, Q931ProcSetupNT,             Q931Umes_Setup,             Q931Pmes_Setup);
+	Q931SetMesProc(Q931mes_SETUP_ACKNOWLEDGE,    i, Q931ProcSetupAckNT,          Q931Umes_SetupAck,          Q931Pmes_SetupAck);
+	Q931SetMesProc(Q931mes_RESUME,               i, Q931ProcResumeNT,            Q931Umes_Resume,            Q931Pmes_Resume);
+	Q931SetMesProc(Q931mes_RESUME_ACKNOWLEDGE,   i, Q931ProcResumeAckNT,         Q931Umes_ResumeAck,         Q931Pmes_ResumeAck);
+	Q931SetMesProc(Q931mes_RESUME_REJECT,        i, Q931ProcResumeRejectNT,      Q931Umes_ResumeReject,      Q931Pmes_ResumeReject);
+	Q931SetMesProc(Q931mes_SUSPEND,              i, Q931ProcSuspendNT,           Q931Umes_Suspend,           Q931Pmes_Suspend);
+	Q931SetMesProc(Q931mes_SUSPEND_ACKNOWLEDGE,  i, Q931ProcSuspendAckNT,        Q931Umes_SuspendAck,        Q931Pmes_SuspendAck);
+	Q931SetMesProc(Q931mes_SUSPEND_REJECT,       i, Q931ProcSuspendRejectNT,     Q931Umes_SuspendReject,     Q931Pmes_SuspendReject);
+	Q931SetMesProc(Q931mes_USER_INFORMATION,     i, Q931ProcUserInformationNT,   Q931Umes_UserInformation,   Q931Pmes_UserInformation);
+	Q931SetMesProc(Q931mes_DISCONNECT,           i, Q931ProcDisconnectNT,        Q931Umes_Disconnect,        Q931Pmes_Disconnect);
+	Q931SetMesProc(Q931mes_RELEASE,              i, Q931ProcReleaseNT,           Q931Umes_Release,           Q931Pmes_Release);
+	Q931SetMesProc(Q931mes_RELEASE_COMPLETE,     i, Q931ProcReleaseCompleteNT,   Q931Umes_ReleaseComplete,   Q931Pmes_ReleaseComplete);
+	Q931SetMesProc(Q931mes_RESTART,              i, Q931ProcRestartNT,           Q931Umes_Restart,           Q931Pmes_Restart);
+	Q931SetMesProc(Q931mes_RESTART_ACKNOWLEDGE,  i, Q931ProcRestartAckNT,        Q931Umes_RestartAck,        Q931Pmes_RestartAck);
+	Q931SetMesProc(Q931mes_CONGESTION_CONTROL,   i, Q931ProcCongestionControlNT, Q931Umes_CongestionControl, Q931Pmes_CongestionControl);
+	Q931SetMesProc(Q931mes_INFORMATION,          i, Q931ProcInformationNT,       Q931Umes_Information,       Q931Pmes_Information);
+	Q931SetMesProc(Q931mes_NOTIFY,               i, Q931ProcNotifyNT,            Q931Umes_Notify,            Q931Pmes_Notify);
+	Q931SetMesProc(Q931mes_STATUS,               i, Q931ProcStatusNT,            Q931Umes_Status,            Q931Pmes_Status);
+	Q931SetMesProc(Q931mes_STATUS_ENQUIRY,       i, Q931ProcStatusEnquiryNT,     Q931Umes_StatusEnquiry,     Q931Pmes_StatusEnquiry);
+	Q931SetMesProc(Q931mes_SEGMENT,              i, Q931ProcSegmentNT,           Q931Umes_Segment,           Q931Pmes_Segment);
 
-    Q931SetMesProc(Q932mes_FACILITY,            i,Q932ProcFacilityNT,          Q932Umes_Facility,          Q932Pmes_Facility);
-    Q931SetMesProc(Q932mes_HOLD,                i,Q932ProcHoldNT,		       Q932Umes_Hold,              Q932Pmes_Hold);
-    Q931SetMesProc(Q932mes_HOLD_ACKNOWLEDGE,    i,Q932ProcHoldAckNT,           Q932Umes_HoldAck,           Q932Pmes_HoldAck);
-    Q931SetMesProc(Q932mes_HOLD_REJECT,         i,Q932ProcHoldRejectNT,        Q932Umes_HoldReject,        Q932Pmes_HoldReject);
-    Q931SetMesProc(Q932mes_REGISTER,            i,Q932ProcRegisterNT,          Q932Umes_Register,          Q932Pmes_Register);
-    Q931SetMesProc(Q932mes_RETRIEVE,            i,Q932ProcRetrieveNT,          Q932Umes_Retrieve,          Q932Pmes_Retrieve);
-    Q931SetMesProc(Q932mes_RETRIEVE_ACKNOWLEDGE,i,Q932ProcRetrieveAckNT,       Q932Umes_RetrieveAck,       Q932Pmes_RetrieveAck);
-    Q931SetMesProc(Q932mes_RETRIEVE_REJECT,     i,Q932ProcRetrieveRejectNT,    Q932Umes_RetrieveReject,    Q932Pmes_RetrieveReject);
+	Q931SetMesProc(Q932mes_FACILITY,             i, Q932ProcFacilityNT,          Q932Umes_Facility,          Q932Pmes_Facility);
+	Q931SetMesProc(Q932mes_HOLD,                 i, Q932ProcHoldNT,              Q932Umes_Hold,              Q932Pmes_Hold);
+	Q931SetMesProc(Q932mes_HOLD_ACKNOWLEDGE,     i, Q932ProcHoldAckNT,           Q932Umes_HoldAck,           Q932Pmes_HoldAck);
+	Q931SetMesProc(Q932mes_HOLD_REJECT,          i, Q932ProcHoldRejectNT,        Q932Umes_HoldReject,        Q932Pmes_HoldReject);
+	Q931SetMesProc(Q932mes_REGISTER,             i, Q932ProcRegisterNT,          Q932Umes_Register,          Q932Pmes_Register);
+	Q931SetMesProc(Q932mes_RETRIEVE,             i, Q932ProcRetrieveNT,          Q932Umes_Retrieve,          Q932Pmes_Retrieve);
+	Q931SetMesProc(Q932mes_RETRIEVE_ACKNOWLEDGE, i, Q932ProcRetrieveAckNT,       Q932Umes_RetrieveAck,       Q932Pmes_RetrieveAck);
+	Q931SetMesProc(Q932mes_RETRIEVE_REJECT,      i, Q932ProcRetrieveRejectNT,    Q932Umes_RetrieveReject,    Q932Pmes_RetrieveReject);
 
 	/* Set up the IE encoder/decoder handle table.*/ 
-    Q931SetIEProc(Q931ie_SEGMENTED_MESSAGE,                i,Q931Pie_Segment,			Q931Uie_Segment);
-    Q931SetIEProc(Q931ie_BEARER_CAPABILITY,                i,Q931Pie_BearerCap,			Q931Uie_BearerCap);
-    Q931SetIEProc(Q931ie_CAUSE,                            i,Q931Pie_Cause,				Q931Uie_Cause);
-    Q931SetIEProc(Q931ie_CALL_IDENTITY,                    i,Q931Pie_CallID,			Q931Uie_CallID);
-    Q931SetIEProc(Q931ie_CALL_STATE,                       i,Q931Pie_CallState,			Q931Uie_CallState);
-    Q931SetIEProc(Q931ie_CHANNEL_IDENTIFICATION,           i,Q931Pie_ChanID,			Q931Uie_ChanID);
-    Q931SetIEProc(Q931ie_PROGRESS_INDICATOR,               i,Q931Pie_ProgInd,			Q931Uie_ProgInd);
-    Q931SetIEProc(Q931ie_NETWORK_SPECIFIC_FACILITIES,      i,Q931Pie_NetFac,			Q931Uie_NetFac);
-    Q931SetIEProc(Q931ie_NOTIFICATION_INDICATOR,           i,Q931Pie_NotifInd,			Q931Uie_NotifInd);
-    Q931SetIEProc(Q931ie_DISPLAY,                          i,Q931Pie_Display,			Q931Uie_Display);
-    Q931SetIEProc(Q931ie_DATETIME,                         i,Q931Pie_DateTime,			Q931Uie_DateTime);
-    Q931SetIEProc(Q931ie_KEYPAD_FACILITY,                  i,Q931Pie_KeypadFac,			Q931Uie_KeypadFac);
-    Q931SetIEProc(Q931ie_SIGNAL,                           i,Q931Pie_Signal,			Q931Uie_Signal);
-    Q931SetIEProc(Q931ie_TRANSIT_DELAY_SELECTION_AND_IND,  i,Q931Pie_TransNetSel,		Q931Uie_TransNetSel);
-    Q931SetIEProc(Q931ie_CALLING_PARTY_NUMBER,             i,Q931Pie_CallingNum,		Q931Uie_CallingNum);
-    Q931SetIEProc(Q931ie_CALLING_PARTY_SUBADDRESS,         i,Q931Pie_CallingSub,		Q931Uie_CallingSub);
-    Q931SetIEProc(Q931ie_CALLED_PARTY_NUMBER,              i,Q931Pie_CalledNum,			Q931Uie_CalledNum);
-    Q931SetIEProc(Q931ie_CALLED_PARTY_SUBADDRESS,          i,Q931Pie_CalledSub,			Q931Uie_CalledSub);
-    Q931SetIEProc(Q931ie_TRANSIT_NETWORK_SELECTION,        i,Q931Pie_TransNetSel,		Q931Uie_TransNetSel);
-    Q931SetIEProc(Q931ie_RESTART_INDICATOR,                i,Q931Pie_RestartInd,		Q931Uie_RestartInd);
-    Q931SetIEProc(Q931ie_LOW_LAYER_COMPATIBILITY,          i,Q931Pie_LLComp,			Q931Uie_LLComp);
-    Q931SetIEProc(Q931ie_HIGH_LAYER_COMPATIBILITY,         i,Q931Pie_HLComp,			Q931Uie_HLComp);
-    Q931SetIEProc(Q931ie_USER_USER,                        i,Q931Pie_UserUser,			Q931Uie_UserUser);
+	Q931SetIEProc(Q931ie_SEGMENTED_MESSAGE,                i, Q931Pie_Segment,     Q931Uie_Segment);
+	Q931SetIEProc(Q931ie_BEARER_CAPABILITY,                i, Q931Pie_BearerCap,   Q931Uie_BearerCap);
+	Q931SetIEProc(Q931ie_CAUSE,                            i, Q931Pie_Cause,       Q931Uie_Cause);
+	Q931SetIEProc(Q931ie_CALL_IDENTITY,                    i, Q931Pie_CallID,      Q931Uie_CallID);
+	Q931SetIEProc(Q931ie_CALL_STATE,                       i, Q931Pie_CallState,   Q931Uie_CallState);
+	Q931SetIEProc(Q931ie_CHANNEL_IDENTIFICATION,           i, Q931Pie_ChanID,      Q931Uie_ChanID);
+	Q931SetIEProc(Q931ie_PROGRESS_INDICATOR,               i, Q931Pie_ProgInd,     Q931Uie_ProgInd);
+	Q931SetIEProc(Q931ie_NETWORK_SPECIFIC_FACILITIES,      i, Q931Pie_NetFac,      Q931Uie_NetFac);
+	Q931SetIEProc(Q931ie_NOTIFICATION_INDICATOR,           i, Q931Pie_NotifInd,    Q931Uie_NotifInd);
+	Q931SetIEProc(Q931ie_DISPLAY,                          i, Q931Pie_Display,     Q931Uie_Display);
+	Q931SetIEProc(Q931ie_DATETIME,                         i, Q931Pie_DateTime,    Q931Uie_DateTime);
+	Q931SetIEProc(Q931ie_KEYPAD_FACILITY,                  i, Q931Pie_KeypadFac,   Q931Uie_KeypadFac);
+	Q931SetIEProc(Q931ie_SIGNAL,                           i, Q931Pie_Signal,      Q931Uie_Signal);
+	Q931SetIEProc(Q931ie_TRANSIT_DELAY_SELECTION_AND_IND,  i, Q931Pie_TransNetSel, Q931Uie_TransNetSel);
+	Q931SetIEProc(Q931ie_CALLING_PARTY_NUMBER,             i, Q931Pie_CallingNum,  Q931Uie_CallingNum);
+	Q931SetIEProc(Q931ie_CALLING_PARTY_SUBADDRESS,         i, Q931Pie_CallingSub,  Q931Uie_CallingSub);
+	Q931SetIEProc(Q931ie_CALLED_PARTY_NUMBER,              i, Q931Pie_CalledNum,   Q931Uie_CalledNum);
+	Q931SetIEProc(Q931ie_CALLED_PARTY_SUBADDRESS,          i, Q931Pie_CalledSub,   Q931Uie_CalledSub);
+	Q931SetIEProc(Q931ie_TRANSIT_NETWORK_SELECTION,        i, Q931Pie_TransNetSel, Q931Uie_TransNetSel);
+	Q931SetIEProc(Q931ie_RESTART_INDICATOR,                i, Q931Pie_RestartInd,  Q931Uie_RestartInd);
+	Q931SetIEProc(Q931ie_LOW_LAYER_COMPATIBILITY,          i, Q931Pie_LLComp,      Q931Uie_LLComp);
+	Q931SetIEProc(Q931ie_HIGH_LAYER_COMPATIBILITY,         i, Q931Pie_HLComp,      Q931Uie_HLComp);
+	Q931SetIEProc(Q931ie_USER_USER,                        i, Q931Pie_UserUser,    Q931Uie_UserUser);
 
 	Q931SetIEProc(Q931ie_CONNECTED_NUMBER, i, Q931Pie_Generic, Q931Uie_Generic);
 	Q931SetIEProc(Q931ie_FACILITY,         i, Q931Pie_Generic, Q931Uie_Generic);
 
-	/* The following define a state machine. The point is that the Message	*/
-	/* procs can when search this to find out if the message/state			*/
-	/* combination is legale. If not, the proc for unexpected message apply.*/
+	/* The following define a state machine. The point is that the Message
+	 * procs can when search this to find out if the message/state
+	 * combination is legale. If not, the proc for unexpected message apply.
+	 */
 
 	/* TODO define state table here */
-
 
 	/* Timer default values */
 	Q931SetTimerDefault(i, Q931_TIMER_T301, 180000);	/* T301: 180s */
@@ -153,24 +153,22 @@ void Q931CreateNT(L3UCHAR i)
 *****************************************************************************/
 L3INT Q931ProcAlertingNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* Reset 4 sec timer. */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -182,28 +180,26 @@ L3INT Q931ProcAlertingNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcCallProceedingNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -215,28 +211,26 @@ L3INT Q931ProcCallProceedingNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iF
 *****************************************************************************/
 L3INT Q931ProcConnectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -248,28 +242,26 @@ L3INT Q931ProcConnectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcConnectAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -281,28 +273,26 @@ L3INT Q931ProcConnectAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcProgressNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -316,71 +306,61 @@ L3INT Q931ProcProgressNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
  *****************************************************************************/
 L3INT Q931ProcSetupNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT rc=0;
 	Q931mes_Generic *pMes = (Q931mes_Generic *)&buf[Q931L4HeaderSpace];
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
+	L3INT rc = 0;
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
-    /* Reject SETUP on existing calls */
-    if(Q931GetCallState(pTrunk, pMes->CRV) != Q931_U0)
-    {
-        Q931Disconnect(pTrunk, iFrom, pMes->CRV, 81);
-        return Q931E_UNEXPECTED_MESSAGE;
-    }
+	/* Reject SETUP on existing calls */
+	if (Q931GetCallState(pTrunk, pMes->CRV) != Q931_U0) {
+		Q931Disconnect(pTrunk, iFrom, pMes->CRV, 81);
+		return Q931E_UNEXPECTED_MESSAGE;
+	}
 
 	/* outgoing call */
-    if(iFrom == 4)
-    {
-        ret = Q931CreateCRV(pTrunk, &callIndex);
-        if(ret)
-            return ret;
-        pMes->CRV = pTrunk->call[callIndex].CRV;
+	if (iFrom == 4) {
+		ret = Q931CreateCRV(pTrunk, &callIndex);
+		if (ret)
+		        return ret;
 
-	/*
-	 * Outgoing SETUP message will be broadcasted in PTMP mode
-	 */
-        ret = Q931Tx32Data(pTrunk, Q931_IS_PTP(pTrunk) ? 0 : 1, buf, pMes->Size);
-        if(ret)
-            return ret;
+		pMes->CRV = pTrunk->call[callIndex].CRV;
 
-        Q931StartTimer(pTrunk, callIndex, 303);
+		/*
+		 * Outgoing SETUP message will be broadcasted in PTMP mode
+		 */
+		ret = Q931Tx32Data(pTrunk, Q931_IS_PTP(pTrunk) ? 0 : 1, buf, pMes->Size);
+		if (ret)
+	        	return ret;
 
-        Q931SetState(pTrunk, callIndex, Q931_U1);
-    }
+		Q931StartTimer(pTrunk, callIndex, 303);
+		Q931SetState(pTrunk, callIndex, Q931_U1);
+	}
 	/* incoming call */
-    else 
-    {
-        /* Locate free CRV entry and store info */
-        ret = Q931AllocateCRV(pTrunk, pMes->CRV, &callIndex);
-        if(ret != Q931E_NO_ERROR)
-        {
-            /* Not possible to allocate CRV entry, so must reject call */
-
-            Q931Disconnect(pTrunk, iFrom, pMes->CRV, 42);
-
-            return ret;
-        }
-
-        /* Send setup indication to user */
-        ret = Q931Tx34(pTrunk,(L3UCHAR*)pMes,pMes->Size);
-        if(ret != Q931E_NO_ERROR)
-            return ret;
-		else
-		{
-			/* Must be full queue, meaning we can't process the call */
-			/* so we must disconnect */
-	        Q931Disconnect(pTrunk, iFrom, pMes->CRV, 81);
-	        return ret;
+	else {
+		/* Locate free CRV entry and store info */
+		ret = Q931AllocateCRV(pTrunk, pMes->CRV, &callIndex);
+		if (ret != Q931E_NO_ERROR) {
+			/* Not possible to allocate CRV entry, so must reject call */
+			Q931Disconnect(pTrunk, iFrom, pMes->CRV, 42);
+			return ret;
 		}
 
+		/* Send setup indication to user */
+		ret = Q931Tx34(pTrunk, (L3UCHAR*)pMes, pMes->Size);
+		if (ret != Q931E_NO_ERROR) {
+			return ret;
+		} else {
+			/* Must be full queue, meaning we can't process the call */
+			/* so we must disconnect */
+			Q931Disconnect(pTrunk, iFrom, pMes->CRV, 81);
+			return ret;
+		}
 #if 0
 		/* TODO: Unreachable code??? */
-        /* Set state U6 */
-        Q931SetState(pTrunk, callIndex, Q931_U6);
-
-        Q931StartTimer(pTrunk, callIndex, 303);
+		/* Set state U6 */
+		Q931SetState(pTrunk, callIndex, Q931_U6);
+		Q931StartTimer(pTrunk, callIndex, 303);
 #endif
-
 	}
 
 	return rc;
@@ -399,28 +379,26 @@ L3INT Q931ProcSetupNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcSetupAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -432,28 +410,26 @@ L3INT Q931ProcSetupAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcResumeNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
-	/* TODO chack against state table for illegal or unexpected message here*/
+	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -465,28 +441,26 @@ L3INT Q931ProcResumeNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcResumeAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -498,28 +472,26 @@ L3INT Q931ProcResumeAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcResumeRejectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -531,28 +503,26 @@ L3INT Q931ProcResumeRejectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFro
 *****************************************************************************/
 L3INT Q931ProcSuspendNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -564,28 +534,26 @@ L3INT Q931ProcSuspendNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcSuspendAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -597,28 +565,26 @@ L3INT Q931ProcSuspendAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcSuspendRejectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -630,28 +596,26 @@ L3INT Q931ProcSuspendRejectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFr
 *****************************************************************************/
 L3INT Q931ProcUserInformationNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -663,28 +627,26 @@ L3INT Q931ProcUserInformationNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT i
 *****************************************************************************/
 L3INT Q931ProcDisconnectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -696,28 +658,26 @@ L3INT Q931ProcDisconnectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcReleaseNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -729,28 +689,26 @@ L3INT Q931ProcReleaseNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcReleaseCompleteNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -762,28 +720,26 @@ L3INT Q931ProcReleaseCompleteNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT i
 *****************************************************************************/
 L3INT Q931ProcRestartNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -795,28 +751,26 @@ L3INT Q931ProcRestartNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcRestartAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -828,28 +782,26 @@ L3INT Q931ProcRestartAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcCongestionControlNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -861,28 +813,26 @@ L3INT Q931ProcCongestionControlNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT
 *****************************************************************************/
 L3INT Q931ProcInformationNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -894,28 +844,26 @@ L3INT Q931ProcInformationNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom
 *****************************************************************************/
 L3INT Q931ProcNotifyNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -927,28 +875,26 @@ L3INT Q931ProcNotifyNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcStatusNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -960,28 +906,26 @@ L3INT Q931ProcStatusNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcStatusEnquiryNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -993,28 +937,26 @@ L3INT Q931ProcStatusEnquiryNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFr
 *****************************************************************************/
 L3INT Q931ProcSegmentNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -1030,28 +972,26 @@ L3INT Q931ProcSegmentNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q932ProcFacilityNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -1063,28 +1003,26 @@ L3INT Q932ProcFacilityNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q932ProcHoldNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -1096,28 +1034,26 @@ L3INT Q932ProcHoldNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q932ProcHoldAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -1129,28 +1065,26 @@ L3INT Q932ProcHoldAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q932ProcHoldRejectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -1162,28 +1096,26 @@ L3INT Q932ProcHoldRejectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q932ProcRegisterNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -1195,28 +1127,26 @@ L3INT Q932ProcRegisterNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q932ProcRetrieveNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -1228,28 +1158,26 @@ L3INT Q932ProcRetrieveNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q932ProcRetrieveAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
@@ -1261,29 +1189,26 @@ L3INT Q932ProcRetrieveAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom
 *****************************************************************************/
 L3INT Q932ProcRetrieveRejectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    L3INT callIndex;
-    L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+	L3INT callIndex;
+	L3INT ret = Q931E_NO_ERROR;
 
 	/* Find the call using CRV */
 	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
+	if (ret != Q931E_NO_ERROR)
 		return ret;
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
 	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
-	if(iFrom == 4)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx32Data(pTrunk,0,buf,pMes->Size);
+	Q931StartTimer(pTrunk, callIndex, 303);
+	if (iFrom == 4) {
+		/* TODO Add proc here */
+		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
-	else if (iFrom ==2)
-	{
-		/* TODO Add proc here*/
-        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	else if (iFrom == 2) {
+		/* TODO Add proc here */
+		ret = Q931Tx34(pTrunk, buf, pMes->Size);
 	}
 	return ret;
 }
-

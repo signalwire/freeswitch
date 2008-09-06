@@ -44,11 +44,10 @@
   Description:	Message Index used to index a dynamic size Message FIFO.
 
 *****************************************************************************/
-typedef struct _mindex
-{
+typedef struct _mindex {
     int offset;                     /* offset to message in buf             */
     int size;                       /* size of message in bytes             */
-}MINDEX;
+} MINDEX;
 
 /*****************************************************************************
 
@@ -58,8 +57,7 @@ typedef struct _mindex
 				queue.
 
 *****************************************************************************/
-typedef struct
-{
+typedef struct {
 	int first;                      /* first out                            */
 	int last;                       /* last in + 1                          */
 	int bsize;                      /* buffer size                          */

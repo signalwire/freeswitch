@@ -3,19 +3,18 @@
   FileName:         national.h
 
   Contents:         Header and definition for the National ISDN dialect. The 
-										header contents the following parts:
-
-					- Definition of codes
+                    header contents the following parts:
+                    - Definition of codes
                     - Definition of information elements (nationalie_).
                     - Definition of messages (nationalmes_).
-					- Function prototypes.
+                    - Function prototypes.
 
-  Description:		The National ISDN dialect here covers ????
+  Description:      The National ISDN dialect here covers ????
 
-  Related Files:	national.h				National ISDN Definitions
-					nationalie.c			National ISDN IE encoders/coders
-					nationalStateTE.c		National ISDN TE State Engine
-					nationalStateNT.c		National ISDN NT State Engine
+  Related Files:	national.h			National ISDN Definitions
+			nationalie.c			National ISDN IE encoders/coders
+			nationalStateTE.c		National ISDN TE State Engine
+			nationalStateNT.c		National ISDN NT State Engine
 
   License/Copyright:
 
@@ -75,14 +74,11 @@ L3INT nationalPmes_Setup(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT 
 
 #include "DMS.h"
 
-
 /*****************************************************************************
 
   Q.931 Process Function Prototyping. Implemented in nationalStateTE.c
 
 *****************************************************************************/
-
-
 
 void nationalCreateTE(L3UCHAR i);
 void nationalCreateNT(L3UCHAR i);

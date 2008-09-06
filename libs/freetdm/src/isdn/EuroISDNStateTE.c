@@ -4,11 +4,11 @@
 
   Contents:		EuroISDN State Engine for TE (User Mode).
 
-				The controlling state engine for Q.931 is the state engine
-				on the NT side. The state engine on the TE side is a slave 
-				of this. The TE side maintain it's own states as described in
-				ITU-T Q931, but will in	raise conditions be overridden by 
-				the NT side.
+			The controlling state engine for Q.931 is the state engine
+			on the NT side. The state engine on the TE side is a slave 
+			of this. The TE side maintain it's own states as described in
+			ITU-T Q931, but will in	raise conditions be overridden by 
+			the NT side.
 
   License/Copyright:
 
@@ -19,12 +19,12 @@
   modification, are permitted provided that the following conditions are 
   met:
 
-    * Redistributions of source code must retain the above copyright notice, 
+	* Redistributions of source code must retain the above copyright notice, 
 	  this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright notice, 
+	* Redistributions in binary form must reproduce the above copyright notice, 
 	  this list of conditions and the following disclaimer in the documentation 
 	  and/or other materials provided with the distribution.
-    * Neither the name of the Case Labs, Ltd nor the names of its contributors 
+	* Neither the name of the Case Labs, Ltd nor the names of its contributors 
 	  may be used to endorse or promote products derived from this software 
 	  without specific prior written permission.
 
