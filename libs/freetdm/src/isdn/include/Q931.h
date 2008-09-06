@@ -559,11 +559,11 @@ typedef struct {
 				provided in case a proprietary variant needs it.
 
 *****************************************************************************/
-typedef struct
-{
+typedef struct {
 	L3UINT		Size;           /* Size of message in bytes             */
 	L3UCHAR		ProtDisc;       /* Protocol Discriminator               */
 	L3UCHAR		MesType;        /* Message type                         */
+	L3UCHAR		Tei;            /* TEI                                  */
 	L3UCHAR		CRVFlag;        /* Call reference value flag            */
 	L3INT		CRV;            /* Call reference value                 */
 
