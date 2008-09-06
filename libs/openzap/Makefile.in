@@ -210,10 +210,10 @@ testanalog: $(SRC)/testanalog.o $(MYLIB)
 	$(LINK) $(SRC)/testanalog.o ./$(MYLIB) $(LIBS)
 
 $(SRC)/zap_io.o: $(SRC)/zap_io.c
-	$(COMPILE) $(MOD_CFLAGS) -c $< -o $@
+	$(LTCOMPILE) $(MOD_CFLAGS) -c $< -o $@
 
 %.o: %.c $(HEADERS)
-	$(COMPILE) -c $< -o $@
+	$(LTCOMPILE) -c $< -o $@
 
 dox:
 	cd docs && doxygen $(PWD)/docs/Doxygen.conf
