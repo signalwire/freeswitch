@@ -6,13 +6,14 @@ static ZIO_SIGNAL_CB_FUNCTION(on_signal)
 }
 
 static int R = 0;
+#if 0
 static void handle_SIGINT(int sig)
 {
 	if (sig);
 	R = 0;
 	return;
 }
-
+#endif
 int main(int argc, char *argv[])
 {
 	zap_span_t *span;
@@ -59,6 +60,7 @@ int main(int argc, char *argv[])
 
 	zap_global_destroy();
 
+	return 0;
 }
 
 /* For Emacs:

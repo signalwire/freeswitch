@@ -58,6 +58,8 @@ int main(int argc, char *argv[])
 
 	zap_global_destroy();
 
+	return 1;
+
 }
 
 /* For Emacs:

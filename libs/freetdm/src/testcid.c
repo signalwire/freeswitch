@@ -1,4 +1,5 @@
 #include "openzap.h"
+zap_status_t my_write_sample(int16_t *buf, zap_size_t buflen, void *user_data);
 
 struct helper {
 	int fd;
@@ -7,8 +8,6 @@ struct helper {
 
 zap_status_t my_write_sample(int16_t *buf, zap_size_t buflen, void *user_data)
 {
-	int x ;
-
 	struct helper *foo = (struct helper *) user_data;
 	write(foo->fd, buf, buflen * 2);
 	foo->wrote += buflen * 2;
@@ -28,17 +27,17 @@ int main(int argc, char *argv[])
 	char fbuf[256];
 	uint8_t databuf[1024] = "";
 	struct helper foo = {0};
-	int x, bytes, start_bits = 180, stop_bits = 5, sbits = 300;
+	//	int x, bytes, start_bits = 180, stop_bits = 5, sbits = 300;
 	char time_str[9];
 	struct tm tm;
 	time_t now;
 	
 	if (argc < 2) {
 		int x;
-		char *url = "sip:cool@rad.com";
+		const char *url = "sip:cool@rad.com";
 
 		if ((fd = open("tone.raw", O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR)) < 0) {
-			fprintf(stderr, "File Error!\n", strerror(errno));
+			fprintf(stderr, "File Error! [%s]\n", strerror(errno));
 			exit(-1);
 		}
 
@@ -103,4 +102,5 @@ int main(int argc, char *argv[])
 	zap_fsk_demod_destroy(&fsk_data);
 
 	close(fd);
+	return 0;
 }
