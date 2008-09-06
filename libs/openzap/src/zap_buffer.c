@@ -108,6 +108,27 @@ zap_size_t zap_buffer_inuse(zap_buffer_t *buffer)
 	return buffer->used;
 }
 
+zap_size_t zap_buffer_seek(zap_buffer_t *buffer, zap_size_t datalen)
+{
+	zap_size_t reading = 0;
+
+	assert(buffer != NULL);
+
+	if (buffer->used < 1) {
+		buffer->used = 0;
+		return 0;
+	} else if (buffer->used >= datalen) {
+		reading = datalen;
+	} else {
+		reading = buffer->used;
+	}
+
+	buffer->used = buffer->actually_used - reading;
+	buffer->head = buffer->data + reading;
+
+	return reading;
+}
+
 zap_size_t zap_buffer_toss(zap_buffer_t *buffer, zap_size_t datalen)
 {
 	zap_size_t reading = 0;
@@ -137,13 +158,13 @@ void zap_buffer_set_loops(zap_buffer_t *buffer, int loops)
 zap_size_t zap_buffer_read_loop(zap_buffer_t *buffer, void *data, zap_size_t datalen)
 {
 	zap_size_t len;
-	if ((len = zap_buffer_read(buffer, data, datalen)) == 0) {
+	if ((len = zap_buffer_read(buffer, data, datalen)) < datalen) {
 		if (buffer->loops == 0) {
-			return 0;
+			return len;
 		}
 		buffer->head = buffer->data;
 		buffer->used = buffer->actually_used;
-		len = zap_buffer_read(buffer, data, datalen);
+		len = zap_buffer_read(buffer, data + len, datalen - len);
 		buffer->loops--;
 	}
 	return len;
