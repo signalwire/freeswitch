@@ -698,6 +698,13 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 				zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_PROGRESS);
 				zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_MEDIA);
 			} else {
+				/* Don't skip messages in the ISDN call setup
+				 * TODO: make the isdn stack smart enough to handle that itself
+				 *       until then, this is here for safety...
+				 */
+				if (tech_pvt->zchan->state < ZAP_CHANNEL_STATE_PROGRESS) {
+					zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS);
+				}
 				zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
 			}
 		}
@@ -707,6 +714,16 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
 				zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_ANSWERED);
 			} else {
+				/* Don't skip messages in the ISDN call setup
+				 * TODO: make the isdn stack smart enough to handle that itself
+				 *       until then, this is here for safety...
+				 */
+				if (tech_pvt->zchan->state < ZAP_CHANNEL_STATE_PROGRESS) {
+					zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS);
+				}
+				if (tech_pvt->zchan->state < ZAP_CHANNEL_STATE_PROGRESS_MEDIA) {
+					zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
+				}
 				zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_UP);
 			}
 		}
