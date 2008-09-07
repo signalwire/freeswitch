@@ -1058,8 +1058,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_destroy(switch_timer_t *timer)
   \return SWITCH_STATUS_SUCCESS if the handle is allocated
 */
 SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec,
-													   char *codec_name,
-													   char *fmtp,
+													   const char *codec_name,
+													   const char *fmtp,
 													   uint32_t rate,
 													   int ms,
 													   int channels,

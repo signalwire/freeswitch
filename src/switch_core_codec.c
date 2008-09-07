@@ -260,13 +260,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, sw
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, char *codec_name, char *fmtp,
+SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, const char *codec_name, const char *fmtp,
 													   uint32_t rate, int ms, int channels, uint32_t flags,
 													   const switch_codec_settings_t *codec_settings, switch_memory_pool_t *pool)
 {
 	const switch_codec_interface_t *codec_interface;
 	const switch_codec_implementation_t *iptr, *implementation = NULL;
-	char *mode = fmtp;
+	const char *mode = fmtp;
 
 	switch_assert(codec != NULL);
 	switch_assert(codec_name != NULL);
