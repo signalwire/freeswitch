@@ -37,6 +37,8 @@ CFLAGS=@CFLAGS@ @COMP_VENDOR_CFLAGS@ @DEFS@
 LIBS = @LIBS@
 DYNAMIC_LIB_EXTEN = @DYNAMIC_LIB_EXTEN@
 SOLINK = @SOLINK@
+OZ_SRCDIR=@oz_srcdir@
+oz_builddir=@oz_builddir@
 SRC=src
 top_builddir=@top_builddir@
 INSTALL=@INSTALL@
@@ -44,11 +46,10 @@ LIBTOOL=@LIBTOOL@
 LTINSTALL=$(LIBTOOL) --mode=install $(INSTALL)
 LTUNINSTALL=$(LIBTOOL) --mode=uninstall rm -f 
 CCLD = $(CC)
-PWD=$(shell pwd)
-INCS=-I$(PWD)/$(SRC)/include -I$(PWD)/$(SRC)/isdn/include -I$(PWD)/$(SRC)/ozmod/ozmod_ss7_boost
+INCS=-I$(OZ_SRCDIR)/$(SRC)/include -I$(OZ_SRCDIR)/$(SRC)/isdn/include -I$(OZ_SRCDIR)/$(SRC)/ozmod/ozmod_ss7_boost
 CFLAGS+= $(INCS) $(ZAP_CFLAGS) -DZAP_CONFIG_DIR=\"@prefix@/conf\" -DZAP_MOD_DIR=\"@prefix@/mod\"
 
-COMPILE      = $(CC) $(CFLAGS) $(DEFS) $(INCS)
+COMPILE      = $(CC) $(CFLAGS) $(INCS)
 LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(COMPILE)
 LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
@@ -216,7 +217,7 @@ $(SRC)/zap_io.o: $(SRC)/zap_io.c
 	$(LTCOMPILE) -c $< -o $@
 
 dox:
-	cd docs && doxygen $(PWD)/docs/Doxygen.conf
+	cd docs && doxygen $(OZ_SRCDIR)/docs/Doxygen.conf
 
 mod_openzap/mod_openzap.$(DYNAMIC_LIB_EXTEN): $(MYLIB) mod_openzap/mod_openzap.c
 	cd mod_openzap && make
