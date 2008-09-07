@@ -2918,9 +2918,11 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 			if (!strncasecmp(sip->sip_content_type->c_type, "application", 11) && !strcasecmp(sip->sip_content_type->c_subtype, "dtmf-relay")) {
 				/* Try and find signal information in the payload */
 				if ((signal_ptr = switch_stristr("Signal=", sip->sip_payload->pl_data))) {
+					int tmp;
 					/* move signal_ptr where we need it (right past Signal=) */
 					signal_ptr = signal_ptr + 7;
-					dtmf.digit = *signal_ptr;
+					tmp = atoi(signal_ptr);
+					dtmf.digit = switch_rfc2833_to_char(tmp);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Bad signal\n");
 					goto fail;
@@ -2935,7 +2937,8 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 					dtmf.duration = tmp * 8;
 				}
 			} else if (!strncasecmp(sip->sip_content_type->c_type, "application", 11) && !strcasecmp(sip->sip_content_type->c_subtype, "dtmf")) {
-				dtmf.digit = *sip->sip_payload->pl_data;
+				int tmp = atoi(sip->sip_payload->pl_data);
+				dtmf.digit = switch_rfc2833_to_char(tmp);
 			} else {
 				goto fail;
 			}
