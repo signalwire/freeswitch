@@ -35,7 +35,7 @@
 #define OPENZAP_H
 
 
-#ifndef _XOPEN_SOURCE
+#if !defined(_XOPEN_SOURCE) && !defined(__FreeBSD__)
 #define _XOPEN_SOURCE 600
 #endif
 
