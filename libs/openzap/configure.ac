@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.59)
 AC_INIT([openzap],[pre-alpha],[bugs@freeswitch.org])
-AC_CONFIG_SRCDIR([src/libteletone_detect.c])
+AC_CONFIG_SRCDIR([src/zap_io.c])
 
 AC_CONFIG_AUX_DIR(build)
 #AM_INIT_AUTOMAKE(libopenzap,0.1)
@@ -13,6 +13,13 @@ AC_PROG_CC
 AC_PROG_MAKE_SET
 
 AC_PREFIX_DEFAULT(/usr/local/openzap)
+
+
+# Absolute source/build directory
+oz_srcdir=`(cd $srcdir && pwd)`
+oz_builddir=`pwd`
+AC_SUBST(oz_srcdir)
+AC_SUBST(oz_builddir)
 
 #override some default libtool behavior and invoke AC_PROG_LIBTOOL (see http://lists.gnu.org/archive/html/libtool/2007-03/msg00000.html)
 m4_defun([_LT_AC_LANG_F77_CONFIG], [:])
