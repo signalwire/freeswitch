@@ -292,6 +292,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 	zap_isdn_data_t *isdn_data = span->signal_data;
 	Q931mes_Generic *gen = (Q931mes_Generic *) msg;
 	int chan_id = 0;
+	int chan_hunt = 0;
 	zap_channel_t *zchan = NULL;
 	zap_caller_data_t *caller_data = NULL;
 
@@ -302,6 +303,14 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 			chan_id = chanid->ChanSlot;
 		else
 			chan_id = chanid->InfoChanSel;
+
+		/* "any" channel specified */
+		if(chanid->InfoChanSel == 3) {
+			chan_hunt++;
+		}
+	} else if (ZAP_SPAN_IS_NT(span)) {
+		/* no channel ie */
+		chan_hunt++;
 	}
 
 	assert(span != NULL);
@@ -339,7 +348,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 		zchan = isdn_data->channels_remote_crv[gen->CRV];
 	}
 
-	zap_log(ZAP_LOG_DEBUG, "zchan %x source isdn_data->channels_%s_crv[%#hx]\n", zchan, gen->CRVFlag ? "local" : "remote", gen->CRV);
+	zap_log(ZAP_LOG_DEBUG, "zchan %x (%d:%d) source isdn_data->channels_%s_crv[%#hx]\n", zchan, zchan ? zchan->span_id : -1, zchan ? zchan->chan_id : -1, gen->CRVFlag ? "local" : "remote", gen->CRV);
 
 
 	if (gen->ProtDisc == 3) {
@@ -484,6 +493,8 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 				Q931ie_CallingNum *callingnum = Q931GetIEPtr(gen->CallingNum, gen->buf);
 				Q931ie_CalledNum *callednum = Q931GetIEPtr(gen->CalledNum, gen->buf);
 				int fail = 1;
+				int fail_cause = 0;
+				int overlap_dial = 0;
 				uint32_t cplen = mlen;
 
 				if(zchan && zchan == isdn_data->channels_remote_crv[gen->CRV]) {
@@ -497,8 +508,60 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 				}
 				
 				zchan = NULL;
-				if (chan_id < ZAP_MAX_CHANNELS_SPAN && chan_id <= span->chan_count) {
-					zchan = &span->channels[chan_id];
+				/*
+				 * Channel selection for incoming calls:
+				 */
+				if (ZAP_SPAN_IS_NT(span) && chan_hunt) {
+					int x;
+
+					/*
+					 * In NT-mode with channel selection "any",
+					 * try to find a free channel
+					 */
+					for (x = 1; x <= span->chan_count; x++) {
+						zap_channel_t *zc = &span->channels[x];
+
+						if (!zap_test_flag(zc, ZAP_CHANNEL_INUSE) && zc->state == ZAP_CHANNEL_STATE_DOWN) {
+							zchan = zc;
+							break;
+						}
+					}
+				}
+				else if (!ZAP_SPAN_IS_NT(span) && chan_hunt) {
+					/*
+					 * In TE-mode this ("any") is invalid
+					 */
+					fail_cause = ZAP_CAUSE_CHANNEL_UNACCEPTABLE;
+
+					zap_log(ZAP_LOG_ERROR, "Invalid channel selection in incoming call (network side didn't specify a channel)\n");
+				}
+				else {
+					/*
+					 * Otherwise simply try to select the channel we've been told
+					 *
+					 * TODO: NT mode is abled to select a different channel if the one chosen
+					 *       by the TE side is already in use
+					 */
+					if (chan_id > 0 && chan_id < ZAP_MAX_CHANNELS_SPAN && chan_id <= span->chan_count) {
+						zchan = &span->channels[chan_id];
+					}
+					else {
+						/* invalid channel id */
+						fail_cause = ZAP_CAUSE_CHANNEL_UNACCEPTABLE;
+
+						zap_log(ZAP_LOG_ERROR, "Invalid channel selection in incoming call (none selected or out of bounds)\n");
+					}
+				}
+
+				if (!callednum || !strlen((char *)callednum->Digit)) {
+					if (ZAP_SPAN_IS_NT(span)) {
+						zap_log(ZAP_LOG_NOTICE, "No destination number found, assuming overlap dial\n");
+						overlap_dial++;
+					}
+					else {
+						zap_log(ZAP_LOG_ERROR, "No destination number found\n");
+						zchan = NULL;
+					}
 				}
 
 				if (zchan) {
@@ -545,7 +608,6 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 						gen->CRVFlag = !(gen->CRVFlag);
 						memcpy(zchan->caller_data.raw_data, msg, cplen);
 						zchan->caller_data.raw_data_len = cplen;
-						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RING);
 						fail = 0;
 					} 
 				} 
@@ -560,7 +622,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 					cause.Location = 1;
 					cause.Recom = 1;
 					//should we be casting here.. or do we need to translate value?
-					cause.Value = (unsigned char) ZAP_CAUSE_WRONG_CALL_STATE;
+					cause.Value = (unsigned char)((fail_cause) ? fail_cause : ZAP_CAUSE_WRONG_CALL_STATE);
 					*cause.Diag = '\0';
 					gen->Cause = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &cause);
 					Q931Rx43(&isdn_data->q931, (L3UCHAR *) gen, gen->Size);
@@ -576,17 +638,50 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 					}
 					
 				} else {
-					Q931ie_ProgInd progress;
+					Q931ie_ChanID ChanID;
 
 					/*
-					 * Setup Progress indicator
+					 * Update Channel ID IE
 					 */
-					progress.IEId = Q931ie_PROGRESS_INDICATOR;
-					progress.Size = sizeof(Q931ie_ProgInd);
-					progress.CodStand = Q931_CODING_ITU;	/* ITU */ 
-					progress.Location = 1;	/* private network serving the local user */
-					progress.ProgDesc = 1;	/* call is not end-to-end isdn = 1, in-band information available = 8 */
-					gen->ProgInd = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &progress);
+					Q931InitIEChanID(&ChanID);
+					ChanID.IntType = ZAP_SPAN_IS_BRI(zchan->span) ? 0 : 1;	/* PRI = 1, BRI = 0 */
+					ChanID.PrefExcl = ZAP_SPAN_IS_NT(zchan->span) ? 1 : 0;  /* Exclusive in NT-mode = 1, Preferred otherwise = 0 */
+					if(ChanID.IntType) {
+						ChanID.InfoChanSel = 1;		/* None = 0, See Slot = 1, Any = 3 */
+						ChanID.ChanMapType = 3;		/* B-Chan */
+						ChanID.ChanSlot = (unsigned char)zchan->chan_id;
+					} else {
+						ChanID.InfoChanSel = (unsigned char)zchan->chan_id & 0x03;	/* None = 0, B1 = 1, B2 = 2, Any = 3 */
+					}
+					gen->ChanID = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &ChanID);
+
+					if (overlap_dial) {
+						Q931ie_ProgInd progress;
+
+						/*
+						 * Setup Progress indicator
+						 */
+						progress.IEId = Q931ie_PROGRESS_INDICATOR;
+						progress.Size = sizeof(Q931ie_ProgInd);
+						progress.CodStand = Q931_CODING_ITU;	/* ITU */ 
+						progress.Location = 1;	/* private network serving the local user */
+						progress.ProgDesc = 8;	/* call is not end-to-end isdn = 1, in-band information available = 8 */
+						gen->ProgInd = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &progress);
+
+						/*
+						 * Send SETUP ACK
+						 */
+						gen->MesType = Q931mes_SETUP_ACKNOWLEDGE;
+						gen->CRVFlag = 1;	/* inbound call */
+						Q931Rx43(&isdn_data->q931, (L3UCHAR *) gen, gen->Size);
+
+						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DIALTONE);
+					} else {
+						/*
+						 * Advance to RING state
+						 */
+						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RING);
+					}
 				}
 			}
 			break;
@@ -598,6 +693,48 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_PROGRESS);
 				} else {
 					zap_log(ZAP_LOG_CRIT, "Received CALL PROCEEDING with no matching channel %d\n", chan_id);
+				}
+			}
+			break;
+
+		case Q931mes_INFORMATION:
+			{
+				if (zchan) {
+					zap_log(ZAP_LOG_CRIT, "Received INFORMATION message for channel %d\n", zchan->chan_id);
+
+					if (zchan->state == ZAP_CHANNEL_STATE_DIALTONE) {
+						char digit = '\0';
+
+						/*
+						 * overlap dial digit indication
+						 */
+						if (Q931IsIEPresent(gen->CalledNum)) {
+							Q931ie_CalledNum *callednum = Q931GetIEPtr(gen->CalledNum, gen->buf);
+							int pos;
+
+							digit = callednum->Digit[strlen((char *)callednum->Digit) - 1];
+							if (digit == '#') {
+								callednum->Digit[strlen((char *)callednum->Digit) - 1] = '\0';
+							}
+
+							/* TODO: make this more safe with strncat() */
+							pos = strlen(zchan->caller_data.cid_num.digits);
+							strcat(&zchan->caller_data.cid_num.digits[pos], (char *)callednum->Digit);
+							strcat(&zchan->caller_data.cid_name[pos],       (char *)callednum->Digit);
+							strcat(&zchan->caller_data.ani.digits[pos],     (char *)callednum->Digit);
+							strcat(&zchan->caller_data.dnis.digits[pos],    (char *)callednum->Digit);
+
+							zap_log(ZAP_LOG_DEBUG, "Received new overlap digit (%s), destination number: %s\n", callednum->Digit, zchan->caller_data.cid_num.digits);
+						}
+
+						if (Q931IsIEPresent(gen->SendComplete) || digit == '#') {
+							zap_log(ZAP_LOG_DEBUG, "Leaving overlap dial mode\n");
+
+							zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RING);
+						}
+					}
+				} else {
+					zap_log(ZAP_LOG_CRIT, "Received INFORMATION message with no matching channel\n");
 				}
 			}
 			break;
@@ -689,8 +826,42 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 				gen->MesType = Q931mes_CALL_PROCEEDING;
 				gen->CRVFlag = 1;	/* inbound */
 
+				if (ZAP_SPAN_IS_NT(zchan->span)) {
+					Q931ie_ChanID ChanID;
+
+					/*
+					 * Set new Channel ID
+					 */
+					Q931InitIEChanID(&ChanID);
+					ChanID.IntType = ZAP_SPAN_IS_BRI(zchan->span) ? 0 : 1;		/* PRI = 1, BRI = 0 */
+					ChanID.PrefExcl = 1;	/* always exclusive in NT-mode */
+
+					if(ChanID.IntType) {
+						ChanID.InfoChanSel = 1;		/* None = 0, See Slot = 1, Any = 3 */
+						ChanID.ChanMapType = 3; 	/* B-Chan */
+						ChanID.ChanSlot = (unsigned char)zchan->chan_id;
+					} else {
+						ChanID.InfoChanSel = (unsigned char)zchan->chan_id & 0x03;	/* None = 0, B1 = 1, B2 = 2, Any = 3 */
+					}
+					gen->ChanID = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &ChanID);
+				}
+
 				Q931Rx43(&isdn_data->q931, (void *)gen, gen->Size);
 			}
+		}
+		break;
+	case ZAP_CHANNEL_STATE_DIALTONE:
+		{
+/*
+			if (!zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
+				if (!zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
+					if (zap_channel_open_chan(zchan) != ZAP_SUCCESS) {
+						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
+						return;
+					}
+				}
+			}
+*/
 		}
 		break;
 	case ZAP_CHANNEL_STATE_RING:
@@ -1039,12 +1210,194 @@ static __inline__ void check_events(zap_span_t *span)
 	}
 }
 
+
+static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map_t *map)
+{
+	zap_buffer_t *dt_buffer = ts->user_data;
+	int wrote;
+
+	if (!dt_buffer) {
+		return -1;
+	}
+	wrote = teletone_mux_tones(ts, map);
+	zap_buffer_write(dt_buffer, ts->buffer, wrote * 2);
+	return 0;
+}
+
+static void *zap_isdn_tones_run(zap_thread_t *me, void *obj)
+{
+	zap_span_t *span = (zap_span_t *) obj;
+	zap_isdn_data_t *isdn_data = span->signal_data;
+	zap_buffer_t *dt_buffer = NULL;
+	teletone_generation_session_t ts;
+	unsigned char frame[1024];
+	int x, interval;
+	int offset = 0;
+
+	zap_log(ZAP_LOG_DEBUG, "ISDN tones thread starting.\n");
+
+	if (zap_buffer_create(&dt_buffer, 1024, 1024, 0) != ZAP_SUCCESS) {
+		snprintf(isdn_data->dchan->last_error, sizeof(isdn_data->dchan->last_error), "memory error!");
+		zap_log(ZAP_LOG_ERROR, "MEM ERROR\n");
+		goto done;
+	}
+	zap_buffer_set_loops(dt_buffer, -1);
+
+	/* get a tone generation friendly interval to avoid distortions */
+	for (x = 1; x <= span->chan_count; x++) {
+		if (span->channels[x].type != ZAP_CHAN_TYPE_DQ921) {
+			zap_channel_command(&span->channels[x], ZAP_COMMAND_GET_INTERVAL, &interval);
+			break;
+		}
+	}
+	zap_log(ZAP_LOG_NOTICE, "Tone generating interval %d\n", interval);
+
+	assert(interval != 0);
+
+	/* init teletone */
+	teletone_init_session(&ts, 0, teletone_handler, dt_buffer);
+	ts.rate     = 8000;
+	ts.duration = ts.rate;
+
+	/* main loop */
+	while(zap_running() && zap_test_flag(isdn_data, ZAP_ISDN_RUNNING)) {
+		zap_wait_flag_t flags;
+		zap_status_t status;
+		int last_chan_state = 0;
+		int gated = 0;
+
+		/*
+		 * check b-channel states and generate & send tones if neccessary
+		 */
+		for (x = 1; x <= span->chan_count; x++) {
+			zap_channel_t *zchan = &span->channels[x];
+			zap_size_t len = sizeof(frame), rlen;
+
+			if (zchan->type == ZAP_CHAN_TYPE_DQ921) {
+				continue;
+			}
+
+			/*
+			 * Generate tones based on current bchan state
+			 * (Recycle buffer content if succeeding channels share the
+			 *  same state, this saves some cpu cycles)
+			 */
+			switch (zchan->state) {
+			case ZAP_CHANNEL_STATE_DIALTONE:
+				{
+					if (last_chan_state != zchan->state) {
+						zap_buffer_zero(dt_buffer);
+						teletone_run(&ts, zchan->span->tone_map[ZAP_TONEMAP_DIAL]);
+						last_chan_state = zchan->state;
+					}
+				}
+				break;
+
+			case ZAP_CHANNEL_STATE_RING:
+				{
+					if (last_chan_state != zchan->state) {
+						zap_buffer_zero(dt_buffer);
+						teletone_run(&ts, zchan->span->tone_map[ZAP_TONEMAP_RING]);
+						last_chan_state = zchan->state;
+					}
+				}
+				break;
+
+			default:	/* Not in a tone generating state, go to next round */
+				continue;
+			}
+
+			if (!zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
+				if (zap_channel_open_chan(zchan) != ZAP_SUCCESS) {
+					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
+					continue;
+				}
+				zap_log(ZAP_LOG_NOTICE, "Successfully opened channel %d:%d\n", zchan->span_id, zchan->chan_id);
+			}
+
+			flags = ZAP_READ;
+
+			status = zap_channel_wait(zchan, &flags, (gated) ? 0 : interval);
+			switch(status) {
+			case ZAP_FAIL:
+				continue;
+
+			case ZAP_TIMEOUT:
+				gated = 1;
+				continue;
+
+			default:
+				if (!(flags & ZAP_READ)) {
+					continue;
+				}
+			}
+			gated = 1;
+
+			status = zap_channel_read(zchan, frame, &len);
+			if (status != ZAP_SUCCESS || len <= 0) {
+				continue;
+			}
+
+			if (zchan->effective_codec != ZAP_CODEC_SLIN) {
+				len *= 2;
+			}
+
+			/* seek to current offset */
+			zap_buffer_seek(dt_buffer, offset);
+
+			rlen = zap_buffer_read_loop(dt_buffer, frame, len);
+
+			if (zchan->effective_codec != ZAP_CODEC_SLIN) {
+				zio_codec_t codec_func = NULL;
+
+				if (zchan->native_codec == ZAP_CODEC_ULAW) {
+					codec_func = zio_slin2ulaw;
+				} else if (zchan->native_codec == ZAP_CODEC_ALAW) {
+					codec_func = zio_slin2alaw;
+				}
+
+				if (codec_func) {
+					status = codec_func(frame, sizeof(frame), &rlen);
+				} else {
+					snprintf(zchan->last_error, sizeof(zchan->last_error), "codec error!");
+					goto done;
+				}
+			}
+			zap_channel_write(zchan, frame, sizeof(frame), &rlen);
+		}
+
+		/*
+		 * sleep a bit if there was nothing to do
+		 */
+		if (!gated) {
+			zap_sleep(interval);
+		}
+
+		offset += (ts.rate / (1000 / interval)) << 1;
+		if (offset >= ts.rate) {
+			offset = 0;
+		}
+	}
+
+done:
+	if (ts.buffer) {
+		teletone_destroy_session(&ts);
+	}
+
+	if (dt_buffer) {
+		zap_buffer_destroy(&dt_buffer);
+	}
+
+	zap_log(ZAP_LOG_DEBUG, "ISDN tone thread ended.\n");
+	return NULL;
+}
+
 static void *zap_isdn_run(zap_thread_t *me, void *obj)
 {
 	zap_span_t *span = (zap_span_t *) obj;
 	zap_isdn_data_t *isdn_data = span->signal_data;
-	unsigned char buf[1024];
-	zap_size_t len = sizeof(buf);
+	unsigned char frame[1024];
+	zap_size_t len = sizeof(frame);
 	int errs = 0;
 
 #ifdef WIN32
@@ -1064,6 +1417,9 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 		check_state(span);
 		check_events(span);
 
+		/*
+		 *
+		 */
 		switch(status) {
 		case ZAP_FAIL:
 			{
@@ -1084,17 +1440,17 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 			{
 				errs = 0;
 				if (flags & ZAP_READ) {
-					len = sizeof(buf);
-					if (zap_channel_read(isdn_data->dchan, buf, &len) == ZAP_SUCCESS) {
+					len = sizeof(frame);
+					if (zap_channel_read(isdn_data->dchan, frame, &len) == ZAP_SUCCESS) {
 #ifdef IODEBUG
 						char bb[4096] = "";
-						print_hex_bytes(buf, len, bb, sizeof(bb));
+						print_hex_bytes(frame, len, bb, sizeof(bb));
 
-						print_bits(buf, (int)len, bb, sizeof(bb), ZAP_ENDIAN_LITTLE, 0);
+						print_bits(frame, (int)len, bb, sizeof(bb), ZAP_ENDIAN_LITTLE, 0);
 						zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)len, LINE, bb);
 #endif
 						
-						Q921QueueHDLCFrame(&isdn_data->q921, buf, (int)len);
+						Q921QueueHDLCFrame(&isdn_data->q921, frame, (int)len);
 						Q921Rx12(&isdn_data->q921);
 					}
 				} else {
@@ -1103,11 +1459,9 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 			}
 			break;
 		}
-
 	}
 	
  done:
-
 	zap_channel_close(&isdn_data->dchans[0]);
 	zap_channel_close(&isdn_data->dchans[1]);
 	zap_clear_flag(isdn_data, ZAP_ISDN_RUNNING);
@@ -1259,7 +1613,13 @@ static zap_state_map_t isdn_state_map = {
 			ZSD_INBOUND,
 			ZSM_UNACCEPTABLE,
 			{ZAP_CHANNEL_STATE_DOWN, ZAP_END},
-			{ZAP_CHANNEL_STATE_RING, ZAP_END}
+			{ZAP_CHANNEL_STATE_DIALTONE, ZAP_CHANNEL_STATE_RING, ZAP_END}
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{ZAP_CHANNEL_STATE_DIALTONE, ZAP_END},
+			{ZAP_CHANNEL_STATE_RING, ZAP_CHANNEL_STATE_HANGUP, ZAP_CHANNEL_STATE_TERMINATING, ZAP_END}
 		},
 		{
 			ZSD_INBOUND,
@@ -1298,9 +1658,20 @@ static zap_state_map_t isdn_state_map = {
 
 static zap_status_t zap_isdn_start(zap_span_t *span)
 {
+	zap_status_t ret;
+
 	zap_isdn_data_t *isdn_data = span->signal_data;
 	zap_set_flag(isdn_data, ZAP_ISDN_RUNNING);
-	return zap_thread_create_detached(zap_isdn_run, span);
+
+	ret = zap_thread_create_detached(zap_isdn_run, span);
+	if (ret != ZAP_SUCCESS) {
+		return ret;
+	}
+
+	if(ZAP_SPAN_IS_NT(span)) {
+		ret = zap_thread_create_detached(zap_isdn_tones_run, span);
+	}
+	return ret;
 }
 
 
@@ -1310,6 +1681,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 	uint32_t i, x = 0;
 	zap_channel_t *dchans[2] = {0};
 	zap_isdn_data_t *isdn_data;
+	const char *tonemap = "us";
 	char *var, *val;
 	Q931Dialect_t dialect = Q931_Dialect_National;
 	uint32_t opts = 0;
@@ -1371,6 +1743,11 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 				break;
 			}
 			opts = isdn_data->opts = *optp;
+		} else if (!strcasecmp(var, "tonemap")) {
+			if (!(val = va_arg(ap, char *))) {
+				break;
+			}
+			tonemap = (const char *)val;
 		}
 	}
 
@@ -1408,19 +1785,19 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 	Q931SetLogLevel(&isdn_data->q931, Q931_LOG_DEBUG);
 
 	isdn_data->q931.autoRestartAck = 1;
-//	isdn_data->q931.autoConnectAck = 1;
 	isdn_data->q931.autoConnectAck = 0;
 	isdn_data->q931.autoServiceAck = 1;
 	span->signal_data = isdn_data;
 	span->signal_type = ZAP_SIGTYPE_ISDN;
 	span->outgoing_call = isdn_outgoing_call;
 
-
 	if ((opts & ZAP_ISDN_OPT_SUGGEST_CHANNEL)) {
 		span->channel_request = isdn_channel_request;
 		span->suggest_chan_id = 1;
 	}
 	span->state_map = &isdn_state_map;
+
+	zap_span_load_tones(span, tonemap);
 
 	return ZAP_SUCCESS;
 }
