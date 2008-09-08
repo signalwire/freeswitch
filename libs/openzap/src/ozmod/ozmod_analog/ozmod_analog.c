@@ -95,14 +95,6 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 		return ZAP_FAIL;
 	}
 	
-	if (digit_timeout < 2000 || digit_timeout > 10000) {
-		digit_timeout = 2000;
-	}
-
-	if (max_dialstr < 2 || max_dialstr > 20) {
-		max_dialstr = 11;
-	}
-
 	analog_data = malloc(sizeof(*analog_data));
 	memset(analog_data, 0, sizeof(*analog_data));
 	assert(analog_data != NULL);
@@ -126,6 +118,15 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 		}
 	}
 
+
+	if (digit_timeout < 2000 || digit_timeout > 10000) {
+		digit_timeout = 2000;
+	}
+
+	if (max_dialstr < 2 || max_dialstr > 20) {
+		max_dialstr = 11;
+	}
+	
 	span->start = zap_analog_start;
 	analog_data->digit_timeout = digit_timeout;
 	analog_data->max_dialstr = max_dialstr;

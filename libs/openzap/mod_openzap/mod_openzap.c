@@ -1547,7 +1547,7 @@ static switch_status_t load_config(void)
 				} else if (!strcasecmp(var, "hold-music")) {
 					hold_music = val;
 				} else if (!strcasecmp(var, "max_digits") || !strcasecmp(var, "max-digits")) {
-					digit_timeout = val;
+					max_digits = val;
 				} else if (!strcasecmp(var, "enable-analog-option")) {
 					analog_options = enable_analog_option(val, analog_options);
 				}
