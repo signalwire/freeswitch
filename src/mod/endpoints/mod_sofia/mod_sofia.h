@@ -318,6 +318,7 @@ struct sofia_profile {
 	char *tls_bind_params;
 	char *tls_cert_dir;
 	char *reg_domain;
+	char *reg_db_domain;
 	char *user_agent;
 	char *record_template;
 	sofia_dtmf_t dtmf_type;
