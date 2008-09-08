@@ -430,9 +430,9 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 			");\n";
 		char create_calls_sql[] =
 			"CREATE TABLE calls (\n"
-			"   function  VARCHAR(255),\n"
 			"   created  VARCHAR(255),\n"
 			"   created_epoch  INTEGER,\n"
+			"   function  VARCHAR(255),\n"
 			"   caller_cid_name  VARCHAR(255),\n"
 			"   caller_cid_num   VARCHAR(255),\n"
 			"   caller_dest_num  VARCHAR(255),\n"
