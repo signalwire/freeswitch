@@ -375,8 +375,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 			if (perfect || switch_buffer_inuse(session->raw_read_buffer) >= session->read_codec->implementation->bytes_per_frame) {
 				if (perfect) {
-					enc_frame = *frame;
-					session->raw_read_frame.rate = (*frame)->rate;
+					enc_frame = read_frame;
+					session->raw_read_frame.rate = read_frame->rate;
 				} else {
 					session->raw_read_frame.datalen = (uint32_t) switch_buffer_read(session->raw_read_buffer,
 																					session->raw_read_frame.data,
