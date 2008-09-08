@@ -1378,7 +1378,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 	channel = switch_core_session_get_channel(session);
 	switch_channel_set_variable(channel, SWITCH_READ_RESULT_VARIABLE, NULL);
 
-	if (digit_buffer_length < min_digits || digit_buffer_length < max_digits) {
+	if ((min_digits && digit_buffer_length < min_digits) || digit_buffer_length < max_digits) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Buffer too small!\n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1400,7 +1400,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 	len = strlen(digit_buffer);
 
 
-	if (len < min_digits && len < max_digits) {
+	if ((min_digits && len < min_digits) || len < max_digits) {
 		args.buf = digit_buffer + len;
 		args.buflen = (uint32_t) (digit_buffer_length - len);
 		status = switch_ivr_collect_digits_count(session, digit_buffer, digit_buffer_length, max_digits, valid_terminators, &terminator, timeout, 0, 0);
