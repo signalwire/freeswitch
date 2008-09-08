@@ -357,6 +357,12 @@ pa-reconf:
 	cd libs/portaudio && sh ./configure.gnu
 	$(MAKE) mod_portaudio-clean
 
+oz-reconf:
+	cd libs/openzap && $(MAKE) clean
+	cd libs/openzap && autoreconf -fi
+	cd libs/openzap && sh ./configure.gnu --prefix=$(PREFIX)
+	$(MAKE) mod_openzap-clean
+
 sofia-reconf:
 	cd libs/sofia-sip && sh ./autogen.sh
 	cd libs/sofia-sip && $(MAKE) clean
