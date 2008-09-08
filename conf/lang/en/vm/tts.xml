@@ -107,11 +107,35 @@
     </input>
   </macro>
 
+  <macro name="voicemail_invalid_extension">
+    <input pattern="^([0-9#*])$">
+      <match>
+	<action function="speak-text" data="$1 is not a valid extension."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_forward_message_enter_extension">
+    <input pattern="^([0-9#*])$">
+      <match>
+	<action function="speak-text" data="enter the extension you wish to forward to, then press $1"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_forward_prepend">
+    <input pattern="^([0-9#*])$">
+      <match>
+	<action function="speak-text" data="To record an announcement, press $1."/>
+      </match>
+    </input>
+  </macro>
+
   <macro name="voicemail_listen_file_check">
-    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
+    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="To listen to the recording again, press $1, To save the recording, press $2,  To delete the recording, press $3, to forward the recording to your email, press $4, to call the caller now, press $5."/>
+		data="To listen to the recording again, press $1, To save the recording, press $2,  To delete the recording, press $3, to forward the recording to your email, press $4, to call the caller now, press $5, To forward this message to another extension, press $6."/>
       </match>
     </input>
   </macro>
