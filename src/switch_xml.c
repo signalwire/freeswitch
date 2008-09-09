@@ -139,8 +139,8 @@ struct switch_xml_binding {
 static switch_xml_binding_t *BINDINGS = NULL;
 static switch_xml_t MAIN_XML_ROOT = NULL;
 static switch_memory_pool_t *XML_MEMORY_POOL;
-static switch_mutex_t *XML_LOCK;
 static switch_thread_rwlock_t *RWLOCK;
+static switch_thread_rwlock_t *B_RWLOCK;
 static uint32_t lock_count = 0;
 
 struct xml_section_t {
@@ -186,7 +186,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function(switch_xml_bin
 	switch_xml_binding_t *ptr, *last = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	switch_mutex_lock(XML_LOCK);
+
+	switch_thread_rwlock_wrlock(B_RWLOCK);
 	for (ptr = BINDINGS; ptr; ptr = ptr->next) {
 		if (ptr == *binding) {
 			if (last) {
@@ -199,7 +200,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function(switch_xml_bin
 		}
 		last = ptr;
 	}
-	switch_mutex_unlock(XML_LOCK);
+	switch_thread_rwlock_unlock(B_RWLOCK);
 
 	return status;
 }
@@ -209,7 +210,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function_ptr(switch_xml
 	switch_xml_binding_t *ptr, *last = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	switch_mutex_lock(XML_LOCK);
+	switch_thread_rwlock_wrlock(B_RWLOCK);
 	for (ptr = BINDINGS; ptr; ptr = ptr->next) {
 		if (ptr->function == function) {
 			if (last) {
@@ -221,7 +222,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function_ptr(switch_xml
 		}
 		last = ptr;
 	}
-	switch_mutex_unlock(XML_LOCK);
+	switch_thread_rwlock_unlock(B_RWLOCK);
 
 	return status;
 }
@@ -239,7 +240,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_searc
 	binding->sections = sections;
 	binding->user_data = user_data;
 
-	switch_mutex_lock(XML_LOCK);
+	switch_thread_rwlock_wrlock(B_RWLOCK);
 	for (ptr = BINDINGS; ptr && ptr->next; ptr = ptr->next);
 
 	if (ptr) {
@@ -247,7 +248,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_searc
 	} else {
 		BINDINGS = binding;
 	}
-	switch_mutex_unlock(XML_LOCK);
+	switch_thread_rwlock_unlock(B_RWLOCK);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1363,7 +1364,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 	switch_xml_binding_t *binding;
 	uint8_t loops = 0;
 
-	switch_mutex_lock(XML_LOCK);
+	switch_thread_rwlock_rdlock(B_RWLOCK);
 
 	for (binding = BINDINGS; binding; binding = binding->next) {
 		switch_xml_section_t sections = switch_xml_parse_section_string(section);
@@ -1398,7 +1399,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 			}
 		}
 	}
-	switch_mutex_unlock(XML_LOCK);
+	switch_thread_rwlock_unlock(B_RWLOCK);
 
 	for (;;) {
 		if (!xml) {
@@ -1571,13 +1572,13 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 	uint8_t hasmain = 0, errcnt = 0;
 	switch_xml_t new_main;
 
-	switch_mutex_lock(XML_LOCK);
+	//switch_mutex_lock(XML_LOCK);
 
 	if (MAIN_XML_ROOT) {
 		hasmain++;
 
 		if (!reload) {
-			switch_mutex_unlock(XML_LOCK);
+			//switch_mutex_unlock(XML_LOCK);
 			return switch_xml_root();
 		}
 		switch_thread_rwlock_wrlock(RWLOCK);
@@ -1609,7 +1610,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 	if (hasmain) {
 		switch_thread_rwlock_unlock(RWLOCK);
 	}
-	switch_mutex_unlock(XML_LOCK);
+	//switch_mutex_unlock(XML_LOCK);
 
 	if (errcnt == 0) {
 		switch_event_t *event;
@@ -1630,8 +1631,9 @@ SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, cons
 	XML_MEMORY_POOL = pool;
 	*err = "Success";
 
-	switch_mutex_init(&XML_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
+	//switch_mutex_init(&XML_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_thread_rwlock_create(&RWLOCK, XML_MEMORY_POOL);
+	switch_thread_rwlock_create(&B_RWLOCK, XML_MEMORY_POOL);
 
 	assert(pool != NULL);
 
