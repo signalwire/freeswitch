@@ -765,7 +765,7 @@ L3INT Q931Uie_CallingNum(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHA
 	/* Octet 3 */
 	pie->TypNum    = (IBuf[Octet + Off] >> 4) & 0x07;
 	pie->NumPlanID =  IBuf[Octet + Off] & 0x0f;
-	
+
 	/* Octet 3a */
 	if ((IBuf[Octet + Off] & 0x80) == 0) {
 		Off++;
@@ -774,14 +774,16 @@ L3INT Q931Uie_CallingNum(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHA
 	}
 	Octet++;
 
-	/* Octet 4*/
+	/* Octet 4 */
 	x = 0;
-	do {
-		pie->Digit[x] = IBuf[Octet + Off] & 0x7f;
-		Off++;
-		x++;
-	} while ((IBuf[Octet + Off]&0x80) == 0 && Q931MoreIE());
+	while (Q931MoreIE()) {
+		pie->Digit[x++] = IBuf[Octet + Off] & 0x7f;
 
+		if ((IBuf[Octet + Off] & 0x80) != 0) {
+			break;
+		}
+		Off++;
+	}
 	pie->Digit[x] = '\0';
 
 	Q931IESizeTest(Q931E_CALLINGNUM);
