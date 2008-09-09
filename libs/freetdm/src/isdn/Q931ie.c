@@ -767,7 +767,7 @@ L3INT Q931Uie_CallingNum(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHA
 	pie->NumPlanID =  IBuf[Octet + Off] & 0x0f;
 	
 	/* Octet 3a */
-	if ((IBuf[Octet + Off] & 0x80) != 0) {
+	if ((IBuf[Octet + Off] & 0x80) == 0) {
 		Off++;
 		pie->PresInd   = (IBuf[Octet + Off] >> 5) & 0x03;
 		pie->ScreenInd =  IBuf[Octet + Off] & 0x03;
