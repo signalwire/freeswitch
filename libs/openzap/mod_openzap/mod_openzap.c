@@ -163,7 +163,7 @@ static void stop_hold(switch_core_session_t *session_a, const char *uuid)
 			switch_channel_clear_flag(channel_a, CF_HOLD);
 		} else {
 			switch_channel_stop_broadcast(channel);
-			switch_channel_wait_for_flag(channel, CF_BROADCAST, SWITCH_FALSE, 2000);
+			switch_channel_wait_for_flag(channel, CF_BROADCAST, SWITCH_FALSE, 2000, NULL);
 		}
 
 		switch_core_session_rwunlock(session);
