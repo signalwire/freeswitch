@@ -650,7 +650,11 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, sw
 	}
 }
 
-SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *channel, switch_channel_flag_t want_flag, switch_bool_t pres, uint32_t to)
+SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *channel, 
+															 switch_channel_flag_t want_flag, 
+															 switch_bool_t pres, 
+															 uint32_t to,
+															 switch_channel_t *super_channel)
 {
 
 	if (to) {
@@ -669,6 +673,15 @@ SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *c
 		}
 
 		switch_yield(1000);
+
+		if (super_channel && !switch_channel_ready(super_channel)) {
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if (!switch_channel_ready(channel)) {
+			return SWITCH_STATUS_FALSE;
+		}
+
 		if (to && !--to) {
 			return SWITCH_STATUS_TIMEOUT;
 		}

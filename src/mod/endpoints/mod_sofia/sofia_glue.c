@@ -2133,7 +2133,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					switch_channel_clear_flag(tech_pvt->channel, CF_HOLD);
 				} else {
 					switch_channel_stop_broadcast(b_channel);
-					switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000);
+					switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000, NULL);
 				}
 				switch_core_session_rwunlock(b_session);
 			}

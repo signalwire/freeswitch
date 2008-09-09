@@ -368,7 +368,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 								if ((b_session = switch_core_session_locate(b_uuid))) {
 									switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 									switch_ivr_broadcast(b_uuid, stream, SMF_ECHO_ALEG | SMF_LOOP);
-									switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_TRUE, 5000);
+									switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_TRUE, 5000, NULL);
 									switch_core_session_rwunlock(b_session);
 								}
 							} else {
@@ -393,7 +393,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 						if ((b_session = switch_core_session_locate(b_uuid))) {
 							switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 							switch_channel_stop_broadcast(b_channel);
-							switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000);
+							switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000, NULL);
 							switch_core_session_rwunlock(b_session);
 						}
 					}
@@ -863,7 +863,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unhold(switch_core_session_t *session
 	if ((other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (b_session = switch_core_session_locate(other_uuid))) {
 		switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 		switch_channel_stop_broadcast(b_channel);
-		switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000);
+		switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000, NULL);
 		switch_core_session_rwunlock(b_session);
 	}
 
@@ -907,7 +907,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 			status = SWITCH_STATUS_SUCCESS;
 			switch_core_session_receive_message(session, &msg);
 
-			switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000);
+			switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
 			switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 			if ((flags & SMF_REBRIDGE)
@@ -916,7 +916,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 				other_channel = switch_core_session_get_channel(other_session);
 				switch_assert(other_channel != NULL);
 				switch_core_session_receive_message(other_session, &msg);
-				switch_channel_wait_for_flag(other_channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000);
+				switch_channel_wait_for_flag(other_channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
 				switch_core_session_read_frame(other_session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 				switch_channel_clear_state_handler(other_channel, NULL);
 				switch_core_session_rwunlock(other_session);
@@ -934,8 +934,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 			} else {
 				switch_ivr_uuid_bridge(uuid, other_uuid);
 			}
-			switch_channel_wait_for_flag(channel, CF_BRIDGED, SWITCH_TRUE, 1000);
-			switch_channel_wait_for_flag(other_channel, CF_BRIDGED, SWITCH_TRUE, 1000);
+			switch_channel_wait_for_flag(channel, CF_BRIDGED, SWITCH_TRUE, 1000, NULL);
+			switch_channel_wait_for_flag(other_channel, CF_BRIDGED, SWITCH_TRUE, 1000, NULL);
 		}
 	}
 
@@ -980,8 +980,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 				} else {
 					switch_ivr_signal_bridge(session, other_session);
 				}
-				switch_channel_wait_for_flag(channel, CF_BRIDGED, SWITCH_TRUE, 1000);
-				switch_channel_wait_for_flag(other_channel, CF_BRIDGED, SWITCH_TRUE, 1000);
+				switch_channel_wait_for_flag(channel, CF_BRIDGED, SWITCH_TRUE, 1000, NULL);
+				switch_channel_wait_for_flag(other_channel, CF_BRIDGED, SWITCH_TRUE, 1000, NULL);
 				switch_core_session_rwunlock(other_session);
 			}
 		}

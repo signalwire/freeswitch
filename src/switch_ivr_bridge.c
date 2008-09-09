@@ -129,7 +129,13 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	switch_channel_set_flag(chan_a, CF_BRIDGED);
 
 
-	switch_channel_wait_for_flag(chan_b, CF_BRIDGED, SWITCH_TRUE, 1000000);
+	switch_channel_wait_for_flag(chan_b, CF_BRIDGED, SWITCH_TRUE, 10000, chan_a);
+
+	if (!switch_channel_test_flag(chan_b, CF_BRIDGED)) {
+		switch_channel_hangup(chan_b, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		goto end_of_bridge_loop;
+	}
+
 
 	for (;;) {
 		switch_channel_state_t b_state;
@@ -782,7 +788,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 				data = switch_channel_get_variable(caller_channel, "bridge_pre_execute_bleg_data");
 				switch_core_session_execute_application(peer_session, app, data);
 			}
-
+			
 			switch_channel_set_private(peer_channel, "_bridge_", b_leg);
 			switch_channel_set_state(peer_channel, CS_EXCHANGE_MEDIA);
 			audio_bridge_thread(NULL, (void *) a_leg);

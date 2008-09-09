@@ -802,18 +802,15 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		timer_name = NULL;
 	}
 
-	if (!switch_strlen_zero(timer_name)) {
-		rtp_session->timer_name = switch_core_strdup(pool, timer_name);
-		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
-		switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
-		switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
-	}
-
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) && switch_strlen_zero(timer_name)) {
 		timer_name = "soft";
 	}
 
 	if (!switch_strlen_zero(timer_name)) {
+		rtp_session->timer_name = switch_core_strdup(pool, timer_name);
+		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
+
 		if (switch_core_timer_init(&rtp_session->timer, timer_name, ms_per_packet / 1000, samples_per_interval, pool) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 							  "Starting timer [%s] %d bytes per %dms\n", timer_name, samples_per_interval, ms_per_packet);
@@ -822,6 +819,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error starting timer [%s], async RTP disabled\n", timer_name);
 			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
 		}
+	} else {
+		switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+		switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 	}
 
 	rtp_session->ready = 1;
@@ -1241,10 +1241,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (bytes < 0) {
 			ret = (int) bytes;
 			goto end;
-		}
-
-		if (bytes == 1) {
-			continue;
 		}
 
 		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && switch_sockaddr_get_port(rtp_session->from_addr)) {
