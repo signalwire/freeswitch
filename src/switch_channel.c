@@ -1482,6 +1482,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		switch_channel_perform_mark_pre_answered(channel, file, func, line);
+		status = switch_ivr_sleep(channel->session, 250, NULL);
 	} else {
 		switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 	}
@@ -1598,10 +1599,13 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		switch_channel_perform_mark_answered(channel, file, func, line);
+		status = switch_ivr_sleep(channel->session, 250, NULL);
 	} else {
 		switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 	}
 
+
+	
 	return status;
 }
 

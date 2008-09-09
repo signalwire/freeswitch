@@ -101,6 +101,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	uint8_t done = 0;
 	int matches = 0;
+	const char *pause_val;
+	int pause = 100;
 
 	if (!macro_name) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No phrase macro specified.\n");
@@ -182,7 +184,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 		old_sound_prefix = p;
 		switch_channel_set_variable(channel, "sound_prefix", sound_path);
 	}
-
+	
 	if (!(macro = switch_xml_child(language, "macro"))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "can't find any macro tags.\n");
 		goto done;
@@ -198,6 +200,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	if (!macro) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "can't find macro %s.\n", macro_name);
 		goto done;
+	}
+
+	if ((pause_val = switch_xml_attr(macro, "pause"))) {
+		int tmp = atoi(pause_val);
+		if (tmp >= 0) {
+			pause = tmp;
+		}
 	}
 
 	if (!(input = switch_xml_child(macro, "input"))) {
@@ -316,6 +325,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 							status = switch_ivr_speak_text(session, my_tts_engine, my_tts_voice, odata, args);
 						}
 					}
+
+					switch_ivr_sleep(session, pause, NULL);
 				}
 			}
 
@@ -1497,7 +1508,10 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 
 		/* Try to grab some more digits for the timeout period */
 		status = switch_ivr_collect_digits_count(session, digit_buffer, digit_buffer_length, max_digits, valid_terminators, &terminator, timeout, 0, 0);
-
+		if (status == SWITCH_STATUS_TIMEOUT) {
+			status = SWITCH_STATUS_SUCCESS;
+		}
+		
 		/* Make sure we made it out alive */
 		if (status != SWITCH_STATUS_SUCCESS) {
 			/* Bail */

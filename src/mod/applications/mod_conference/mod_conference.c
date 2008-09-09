@@ -4372,6 +4372,9 @@ SWITCH_STANDARD_APP(conference_function)
 															 buf,
 															 sizeof(pin_buf) - strlen(pin_buf),
 															 strlen(conference->pin) - strlen(pin_buf), "#", &term, 10000, 0, 0);
+					if (status == SWITCH_STATUS_TIMEOUT) {
+						status = SWITCH_STATUS_SUCCESS;
+					}
 				}
 
 				pin_valid = (status == SWITCH_STATUS_SUCCESS && strcmp(pin_buf, conference->pin) == 0);

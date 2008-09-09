@@ -929,8 +929,12 @@ static switch_status_t vm_macro_get(switch_core_session_t *session,
 	if (maxlen == 0 || maxlen > buflen - 1) {
 		maxlen = buflen - 1;
 	}
+
 	if (bslen < maxlen) {
 		status = switch_ivr_collect_digits_count(session, buf + bslen, buflen, maxlen - bslen, term_chars, terminator_key, timeout, 0, 0);
+		if (status == SWITCH_STATUS_TIMEOUT) {
+			status = SWITCH_STATUS_SUCCESS;
+		}
 	}
 
 	return status;
