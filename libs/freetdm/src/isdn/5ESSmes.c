@@ -60,17 +60,17 @@ L3INT ATT5ESSUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic
 	L3INT OOff = 0;
 	L3INT rc = Q931E_NO_ERROR;
 	L3UCHAR last_codeset = 0, codeset = 0;
-	L3UCHAR shift_lock = 1;
+	L3UCHAR shift_nolock = 1;
 
-	while (IOff < Size)
-	{
-		if (!shift_lock) {
+	while (IOff < Size) {
+
+		if (shift_nolock) {
 			codeset = last_codeset;
 		}
 
-		if ((IBuf[IOff] & 0xF0) == Q931ie_SHIFT ) {
-			shift_lock = (IBuf[IOff] & 0x08);
-			if (shift_lock) {
+		if ((IBuf[IOff] & 0xF0) == Q931ie_SHIFT) {
+			shift_nolock = (IBuf[IOff] & 0x08);
+			if (shift_nolock) {
 				last_codeset = codeset;
 			}
 			codeset = ((IBuf[IOff] & 0x07));
@@ -125,7 +125,18 @@ L3INT ATT5ESSUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic
 				return Q931E_ILLEGAL_IE;
 				break;
 			}
-
+		} else if (codeset == 7) {
+			switch (IBuf[IOff])
+			{
+			case Q931ie_DISPLAY:
+				rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+				if (rc != Q931E_NO_ERROR) 
+					return rc;
+				break;
+			default:
+				return Q931E_ILLEGAL_IE;
+				break;
+			}
 		} else {
 			return Q931E_ILLEGAL_IE;
 		}
