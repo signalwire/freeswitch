@@ -170,6 +170,22 @@ SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_trywrlock(switch_thread_rwl
 	return apr_thread_rwlock_trywrlock(rwlock);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_trywrlock_timeout(switch_thread_rwlock_t *rwlock, int timeout)
+{
+	int sanity = timeout * 2;
+
+	while (sanity) {
+		if (switch_thread_rwlock_trywrlock(rwlock) == SWITCH_STATUS_SUCCESS) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+		sanity--;
+		switch_yield(500000);
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_unlock(switch_thread_rwlock_t *rwlock)
 {
 	return apr_thread_rwlock_unlock(rwlock);

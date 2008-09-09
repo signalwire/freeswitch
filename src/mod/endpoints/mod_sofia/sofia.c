@@ -510,6 +510,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	int use_100rel = !sofia_test_pflag(profile, PFLAG_DISABLE_100REL);
 	int use_timer = !sofia_test_pflag(profile, PFLAG_DISABLE_TIMER);
 	const char *supported = NULL;
+	int sanity = 4;
 
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.threads++;
@@ -658,8 +659,11 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	}
 
 	while (profile->inuse) {
-		switch_yield(100000);
+		switch_yield(5000000);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "waiting for %d session(s)\n", profile->inuse);
+		if (!sanity--) {
+			break;
+		}
 	}
 	nua_destroy(profile->nua);
 

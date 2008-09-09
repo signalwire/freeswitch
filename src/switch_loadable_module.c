@@ -424,9 +424,11 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 				switch_core_session_hupall_endpoint(ptr, SWITCH_CAUSE_SYSTEM_SHUTDOWN);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
-				switch_thread_rwlock_wrlock(ptr->rwlock);
-				switch_thread_rwlock_unlock(ptr->rwlock);
-			
+				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
+                    switch_thread_rwlock_unlock(ptr->rwlock);
+                } else {
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up waiting for existing references.\n");
+                }
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Endpoint '%s'\n", ptr->interface_name);
 				switch_core_hash_delete(loadable_modules.endpoint_hash, ptr->interface_name);
@@ -505,9 +507,12 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Application '%s'\n", ptr->interface_name);
 				switch_core_session_hupall_matching_var(SWITCH_CURRENT_APPLICATION_VARIABLE, ptr->interface_name, SWITCH_CAUSE_SYSTEM_SHUTDOWN);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
-				switch_thread_rwlock_wrlock(ptr->rwlock);
-				switch_thread_rwlock_unlock(ptr->rwlock);
-
+				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
+					switch_thread_rwlock_unlock(ptr->rwlock);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up waiting for existing references.\n");
+				}
+				
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "application");
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
@@ -528,8 +533,13 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting API Function '%s'\n", ptr->interface_name);
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
-				switch_thread_rwlock_wrlock(ptr->rwlock);
-				switch_thread_rwlock_unlock(ptr->rwlock);
+				
+				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
+					switch_thread_rwlock_unlock(ptr->rwlock);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up waiting for existing references.\n");
+				}
+
 
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "api");
