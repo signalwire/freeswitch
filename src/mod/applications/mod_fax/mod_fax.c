@@ -513,7 +513,7 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 			goto done;
 		} else if (pvt->app_mode == FUNCTION_RX) {
 			char *fname;
-			char *prefix;
+			const char *prefix;
 			switch_time_t time;
 
 			time = switch_time_now();
