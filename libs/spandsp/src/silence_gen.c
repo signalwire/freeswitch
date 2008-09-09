@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: silence_gen.c,v 1.14 2008/07/26 04:53:00 steveu Exp $
+ * $Id: silence_gen.c,v 1.16 2008/09/07 12:45:16 steveu Exp $
  */
 
 /*! \file */
@@ -59,7 +59,7 @@ int silence_gen(silence_gen_state_t *s, int16_t *amp, int max_len)
         {
             max_len = s->remaining_samples;
             if (max_len  &&  s->status_handler)
-                s->status_handler(s->status_user_data, MODEM_TX_STATUS_SHUTDOWN_COMPLETE);
+                s->status_handler(s->status_user_data, SIG_STATUS_SHUTDOWN_COMPLETE);
         }
         s->remaining_samples -= max_len;
     }

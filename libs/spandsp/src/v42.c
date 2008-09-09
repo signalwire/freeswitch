@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v42.c,v 1.42 2008/05/13 13:17:25 steveu Exp $
+ * $Id: v42.c,v 1.43 2008/09/07 12:45:17 steveu Exp $
  */
 
 /* THIS IS A WORK IN PROGRESS. IT IS NOT FINISHED. */
@@ -721,31 +721,7 @@ fprintf(stderr, "LAPM receive %d %d\n", ok, len);
     if (len < 0)
     {
         /* Special conditions */
-        switch (len)
-        {
-        case PUTBIT_TRAINING_FAILED:
-            span_log(&s->logging, SPAN_LOG_DEBUG, "Training failed\n");
-            break;
-        case PUTBIT_TRAINING_SUCCEEDED:
-            span_log(&s->logging, SPAN_LOG_DEBUG, "Training succeeded\n");
-            break;
-        case PUTBIT_CARRIER_UP:
-            span_log(&s->logging, SPAN_LOG_DEBUG, "Carrier up\n");
-            break;
-        case PUTBIT_CARRIER_DOWN:
-            span_log(&s->logging, SPAN_LOG_DEBUG, "Carrier down\n");
-            break;
-        case PUTBIT_FRAMING_OK:
-            span_log(&s->logging, SPAN_LOG_DEBUG, "Framing OK\n");
-            break;
-        case PUTBIT_ABORT:
-            span_log(&s->logging, SPAN_LOG_DEBUG, "Abort\n");
-            break;
-        default:
-            span_log(&s->logging, SPAN_LOG_DEBUG, "Eh!\n");
-            break;
-        }
-        /*endswitch*/
+        span_log(&s->logging, SPAN_LOG_DEBUG, "V.42 rx status is %s (%d)\n", signal_status_to_str(len), len);
         return;
     }
     /*endif*/
@@ -1133,19 +1109,7 @@ static void negotiation_rx_bit(v42_state_t *s, int new_bit)
     if (new_bit < 0)
     {
         /* Special conditions */
-        switch (new_bit)
-        {
-        case PUTBIT_CARRIER_UP:
-            break;
-        case PUTBIT_CARRIER_DOWN:
-        case PUTBIT_TRAINING_SUCCEEDED:
-        case PUTBIT_TRAINING_FAILED:
-            break;
-        default:
-            span_log(&s->logging, SPAN_LOG_WARNING, "Unexpected special 'bit' code %d\n", new_bit);
-            break;
-        }
-        /*endswitch*/
+        span_log(&s->logging, SPAN_LOG_DEBUG, "V.42 rx status is %s (%d)\n", signal_status_to_str(new_bit), new_bit);
         return;
     }
     /*endif*/

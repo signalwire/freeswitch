@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: dds_int.c,v 1.9 2008/07/02 14:48:25 steveu Exp $
+ * $Id: dds_int.c,v 1.10 2008/09/01 16:07:33 steveu Exp $
  */
 
 /*! \file */
@@ -284,6 +284,60 @@ complexi_t dds_complexi_mod(uint32_t *phase_acc, int32_t phase_rate, int scale, 
 
     amp = complex_seti((dds_lookup(*phase_acc + phase + (1 << 30))*scale) >> 15,
                        (dds_lookup(*phase_acc + phase)*scale) >> 15);
+    *phase_acc += phase_rate;
+    return amp;
+}
+/*- End of function --------------------------------------------------------*/
+
+complexi16_t dds_lookup_complexi16(uint32_t phase)
+{
+    return complex_seti16(dds_lookup(phase + (1 << 30)), dds_lookup(phase));
+}
+/*- End of function --------------------------------------------------------*/
+
+complexi16_t dds_complexi16(uint32_t *phase_acc, int32_t phase_rate)
+{
+    complexi16_t amp;
+
+    amp = complex_seti16(dds_lookup(*phase_acc + (1 << 30)), dds_lookup(*phase_acc));
+    *phase_acc += phase_rate;
+    return amp;
+}
+/*- End of function --------------------------------------------------------*/
+
+complexi16_t dds_complexi16_mod(uint32_t *phase_acc, int32_t phase_rate, int scale, int32_t phase)
+{
+    complexi16_t amp;
+
+    amp = complex_seti16((dds_lookup(*phase_acc + phase + (1 << 30))*scale) >> 15,
+                         (dds_lookup(*phase_acc + phase)*scale) >> 15);
+    *phase_acc += phase_rate;
+    return amp;
+}
+/*- End of function --------------------------------------------------------*/
+
+complexi32_t dds_lookup_complexi32(uint32_t phase)
+{
+    return complex_seti32(dds_lookup(phase + (1 << 30)), dds_lookup(phase));
+}
+/*- End of function --------------------------------------------------------*/
+
+complexi32_t dds_complexi32(uint32_t *phase_acc, int32_t phase_rate)
+{
+    complexi32_t amp;
+
+    amp = complex_seti32(dds_lookup(*phase_acc + (1 << 30)), dds_lookup(*phase_acc));
+    *phase_acc += phase_rate;
+    return amp;
+}
+/*- End of function --------------------------------------------------------*/
+
+complexi32_t dds_complexi32_mod(uint32_t *phase_acc, int32_t phase_rate, int scale, int32_t phase)
+{
+    complexi32_t amp;
+
+    amp = complex_seti32((dds_lookup(*phase_acc + phase + (1 << 30))*scale) >> 15,
+                         (dds_lookup(*phase_acc + phase)*scale) >> 15);
     *phase_acc += phase_rate;
     return amp;
 }

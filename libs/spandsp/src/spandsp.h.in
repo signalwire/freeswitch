@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: spandsp.h.in,v 1.9 2008/08/14 14:06:05 steveu Exp $
+ * $Id: spandsp.h.in,v 1.10 2008/09/01 16:07:34 steveu Exp $
  */
 
 /*! \file */
@@ -53,6 +53,7 @@
 #include <spandsp/vector_float.h>
 #include <spandsp/complex_vector_float.h>
 #include <spandsp/vector_int.h>
+#include <spandsp/complex_vector_int.h>
 #include <spandsp/arctan2.h>
 #include <spandsp/biquad.h>
 #include <spandsp/fir.h>

@@ -15,7 +15,7 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# $Id: tsb85_tests.sh,v 1.3 2008/08/04 14:03:17 steveu Exp $
+# $Id: tsb85_tests.sh,v 1.4 2008/09/09 15:30:43 steveu Exp $
 #
 
 run_tsb85_test()
@@ -36,7 +36,7 @@ for TEST in MRGN01 MRGN02 MRGN03 MRGN04 MRGN05 MRGN06a MRGN06b MRGN07 MRGN08 ; d
 done
 
 #for TEST in MRGN09 MRGN10 MRGN11 MRGN12 MRGN13 MRGN14 MRGN15 MRGN16 MRGN17 ; do
-for TEST in MRGN09 MRGN10 MRGN11 MRGN12 MRGN13 MRGN15 MRGN17 ; do
+for TEST in MRGN09 MRGN10 MRGN11 MRGN12 MRGN13 MRGN15 ; do
     run_tsb85_test
 done
 
@@ -54,7 +54,7 @@ for TEST in MRGX02 MRGX04 MRGX06 MRGX07 MRGX08 ; do
 done
 
 #for TEST in MRGX09 MRGX10 MRGX11 MRGX12 MRGX13 MRGX14 MRGX15 ; do
-for TEST in MRGX09 MRGX10 MRGX11 ; do
+for TEST in MRGX09 MRGX11 ; do
     run_tsb85_test
 done
 
@@ -91,14 +91,14 @@ done
 #done
 
 #for TEST in MTGX17 MTGX18 MTGX19 MTGX20 MTGX21 MTGX22 MTGX23 ; do
-#    run_tsb85_test
-#done
-
-#for TEST in MRGP01 MRGP02 MRGP03 MRGP04 MRGP05 MRGP06 MRGP07 MRGP08 ; do
-for TEST in MRGP03 MRGP04 MRGP05 ; do
+for TEST in MTGX18 MTGX19 MTGX20 MTGX21 MTGX22 MTGX23 ; do
     run_tsb85_test
 done
 
-#for TEST in ORGP09 ORGP10 ; do
-#    run_tsb85_test
-#done
+for TEST in MRGP01 MRGP02 MRGP03 MRGP04 MRGP05 MRGP06 MRGP07 MRGP08 ; do
+    run_tsb85_test
+done
+
+for TEST in ORGP09 ORGP10 ; do
+    run_tsb85_test
+done

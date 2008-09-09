@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g168_tests.c,v 1.16 2008/08/29 09:28:13 steveu Exp $
+ * $Id: g168_tests.c,v 1.18 2008/09/04 14:40:05 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -55,7 +55,7 @@ typedef struct
 signal_source_t local_css;
 signal_source_t far_css;
 
-AFfilehandle afOpenFile_telephony_read(const char *name, int channels)
+static AFfilehandle afOpenFile_telephony_read(const char *name, int channels)
 {
     float x;
     AFfilehandle handle;
@@ -85,7 +85,8 @@ AFfilehandle afOpenFile_telephony_read(const char *name, int channels)
 }
 /*- End of function --------------------------------------------------------*/
 
-AFfilehandle afOpenFile_telephony_write(const char *name, int channels)
+#if 0
+static AFfilehandle afOpenFile_telephony_write(const char *name, int channels)
 {
     AFfilesetup setup;
     AFfilehandle handle;
@@ -110,6 +111,7 @@ AFfilehandle afOpenFile_telephony_write(const char *name, int channels)
     return handle;
 }
 /*- End of function --------------------------------------------------------*/
+#endif
 
 static void signal_load(signal_source_t *sig, const char *name)
 {
@@ -367,6 +369,8 @@ int main(int argc, char *argv[])
     printf("\n");
     for (i = 0;  i < (int) (sizeof(css_c1)/sizeof(css_c3[0]));  i++)
         printf("%d\n", css_c3[i]);
+    signal_free(&local_css);
+    signal_free(&far_css);
     return  0;
 }
 /*- End of function --------------------------------------------------------*/

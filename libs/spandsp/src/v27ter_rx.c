@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_rx.c,v 1.97 2008/08/04 14:03:17 steveu Exp $
+ * $Id: v27ter_rx.c,v 1.101 2008/09/08 13:13:29 steveu Exp $
  */
 
 /*! \file */
@@ -48,6 +48,8 @@
 #include "spandsp/complex.h"
 #include "spandsp/vector_float.h"
 #include "spandsp/complex_vector_float.h"
+#include "spandsp/vector_int.h"
+#include "spandsp/complex_vector_int.h"
 #include "spandsp/async.h"
 #include "spandsp/power_meter.h"
 #include "spandsp/arctan2.h"
@@ -72,6 +74,11 @@
 #define CARRIER_NOMINAL_FREQ        1800.0f
 #define EQUALIZER_DELTA             0.25f
 
+#if defined(SPANDSP_USE_FIXED_POINT)
+#define FP_FACTOR                   4096
+#define FP_SHIFT_FACTOR             12
+#endif
+
 /* Segments of the training sequence */
 /* V.27ter defines a long and a short sequence. FAX doesn't use the
    short sequence, so it is not implemented here. */
@@ -90,17 +97,31 @@ enum
     TRAINING_STAGE_PARKED
 };
 
+#if defined(SPANDSP_USE_FIXED_POINTx)
+static const complexi16_t v27ter_constellation[8] =
+{
+    {((int)(FP_FACTOR* 1.414f), ((int)(FP_FACTOR* 0.0f)},       /*   0deg */
+    {((int)(FP_FACTOR* 1.0f),   ((int)(FP_FACTOR* 1.0f)},       /*  45deg */
+    {((int)(FP_FACTOR* 0.0f),   ((int)(FP_FACTOR* 1.414f)},     /*  90deg */
+    {((int)(FP_FACTOR*-1.0f),   ((int)(FP_FACTOR* 1.0f)},       /* 135deg */
+    {((int)(FP_FACTOR*-1.414f), ((int)(FP_FACTOR* 0.0f)},       /* 180deg */
+    {((int)(FP_FACTOR*-1.0f),   ((int)(FP_FACTOR*-1.0f)},       /* 225deg */
+    {((int)(FP_FACTOR* 0.0f),   ((int)(FP_FACTOR*-1.414f)},     /* 270deg */
+    {((int)(FP_FACTOR* 1.0f),   ((int)(FP_FACTOR*-1.0f)}        /* 315deg */
+};
+#else
 static const complexf_t v27ter_constellation[8] =
 {
-    { 1.414f,  0.0f},       /*   0deg */
-    { 1.0f,    1.0f},       /*  45deg */
-    { 0.0f,    1.414f},     /*  90deg */
-    {-1.0f,    1.0f},       /* 135deg */
-    {-1.414f,  0.0f},       /* 180deg */
-    {-1.0f,   -1.0f},       /* 225deg */
-    { 0.0f,   -1.414f},     /* 270deg */
-    { 1.0f,   -1.0f}        /* 315deg */
+    { 1.414f,  0.0f},                                           /*   0deg */
+    { 1.0f,    1.0f},                                           /*  45deg */
+    { 0.0f,    1.414f},                                         /*  90deg */
+    {-1.0f,    1.0f},                                           /* 135deg */
+    {-1.414f,  0.0f},                                           /* 180deg */
+    {-1.0f,   -1.0f},                                           /* 225deg */
+    { 0.0f,   -1.414f},                                         /* 270deg */
+    { 1.0f,   -1.0f}                                            /* 315deg */
 };
+#endif
 
 float v27ter_rx_carrier_frequency(v27ter_rx_state_t *s)
 {
@@ -149,14 +170,23 @@ static void report_status_change(v27ter_rx_state_t *s, int status)
 
 static void equalizer_save(v27ter_rx_state_t *s)
 {
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    cvec_copyi16(s->eq_coeff_save, s->eq_coeff, V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN);
+#else
     cvec_copyf(s->eq_coeff_save, s->eq_coeff, V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN);
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
 static void equalizer_restore(v27ter_rx_state_t *s)
 {
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    cvec_copyi16(s->eq_coeff, s->eq_coeff_save, V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN);
+    cvec_zeroi16(s->eq_buf, V27TER_EQUALIZER_MASK);
+#else
     cvec_copyf(s->eq_coeff, s->eq_coeff_save, V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN);
     cvec_zerof(s->eq_buf, V27TER_EQUALIZER_MASK);
+#endif
 
     s->eq_put_step = (s->bit_rate == 4800)  ?  RX_PULSESHAPER_4800_COEFF_SETS*5/2  :  RX_PULSESHAPER_2400_COEFF_SETS*20/(3*2);
     s->eq_step = 0;
@@ -166,10 +196,16 @@ static void equalizer_restore(v27ter_rx_state_t *s)
 
 static void equalizer_reset(v27ter_rx_state_t *s)
 {
-    /* Start with an equalizer based on everything being perfect */
+    /* Start with an equalizer based on everything being perfect. */
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    cvec_zeroi16(s->eq_coeff, V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN);
+    s->eq_coeff[V27TER_EQUALIZER_PRE_LEN] = complex_seti16(1.414f*FP_FACTOR, 0);
+    cvec_zeroi16(s->eq_buf, V27TER_EQUALIZER_MASK);
+#else
     cvec_zerof(s->eq_coeff, V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN);
     s->eq_coeff[V27TER_EQUALIZER_PRE_LEN] = complex_setf(1.414f, 0.0f);
     cvec_zerof(s->eq_buf, V27TER_EQUALIZER_MASK);
+#endif
 
     s->eq_put_step = (s->bit_rate == 4800)  ?  RX_PULSESHAPER_4800_COEFF_SETS*5/2  :  RX_PULSESHAPER_2400_COEFF_SETS*20/(3*2);
     s->eq_step = 0;
@@ -177,60 +213,122 @@ static void equalizer_reset(v27ter_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_USE_FIXED_POINTx)
+static __inline__ complexi16_t complex_mul_q4_12(const complexi16_t *x, const complexi16_t *y)
+{
+    complexi16_t z;
+
+    z.re = ((int32_t) x->re*(int32_t) y->re - (int32_t) x->im*(int32_t) y->im) >> 12;
+    z.im = ((int32_t) x->re*(int32_t) y->im + (int32_t) x->im*(int32_t) y->re) >> 12;
+    return z;
+}
+/*- End of function --------------------------------------------------------*/
+#endif
+
+#if defined(SPANDSP_USE_FIXED_POINTx)
+static __inline__ complexi16_t equalizer_get(v27ter_rx_state_t *s)
+#else
 static __inline__ complexf_t equalizer_get(v27ter_rx_state_t *s)
+#endif
 {
     int i;
     int p;
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    complexi16_t z;
+    complexi16_t z1;
+#else
     complexf_t z;
     complexf_t z1;
+#endif
 
     /* Get the next equalized value. */
-    z = complex_setf(0.0f, 0.0f);
     p = s->eq_step - 1;
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    z = complex_seti16(0, 0);
+    for (i = 0;  i < V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN;  i++)
+    {
+        p = (p - 1) & V27TER_EQUALIZER_MASK;
+        z1 = complex_mul_q4_12(&s->eq_coeff[i], &s->eq_buf[p]);
+        z = complex_addi16(&z, &z1);
+    }
+#else
+    z = complex_setf(0.0f, 0.0f);
     for (i = 0;  i < V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN;  i++)
     {
         p = (p - 1) & V27TER_EQUALIZER_MASK;
         z1 = complex_mulf(&s->eq_coeff[i], &s->eq_buf[p]);
         z = complex_addf(&z, &z1);
     }
+#endif
     return z;
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_USE_FIXED_POINTx)
+static void tune_equalizer(v27ter_rx_state_t *s, const complexi16_t *z, const complexi16_t *target)
+#else
 static void tune_equalizer(v27ter_rx_state_t *s, const complexf_t *z, const complexf_t *target)
+#endif
 {
     int i;
     int p;
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    complexi16_t ez;
+    complexi16_t z1;
+#else
     complexf_t ez;
     complexf_t z1;
+#endif
 
     /* Find the x and y mismatch from the exact constellation position. */
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    ez.re = target->re*FP_FACTOR - z->re;
+    ez.im = target->im*FP_FACTOR - z->im;
+    ez.re = ((int32_t) ez.re*(int32_t) s->eq_delta) >> 15;
+    ez.im = ((int32_t) ez.im*(int32_t) s->eq_delta) >> 15;
+#else
     ez = complex_subf(target, z);
     ez.re *= s->eq_delta;
     ez.im *= s->eq_delta;
+#endif
 
     p = s->eq_step - 1;
     for (i = 0;  i < V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN;  i++)
     {
         p = (p - 1) & V27TER_EQUALIZER_MASK;
+#if defined(SPANDSP_USE_FIXED_POINTx)
+        z1 = complex_conji16(&s->eq_buf[p]);
+        z1 = complex_mul_q4_12(&ez, &z1);
+        s->eq_coeff[i] = complex_addi16(&s->eq_coeff[i], &z1);
+#else
         z1 = complex_conjf(&s->eq_buf[p]);
         z1 = complex_mulf(&ez, &z1);
         s->eq_coeff[i] = complex_addf(&s->eq_coeff[i], &z1);
         /* Leak a little to tame uncontrolled wandering */
         s->eq_coeff[i].re *= 0.9999f;
         s->eq_coeff[i].im *= 0.9999f;
+#endif
     }
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_USE_FIXED_POINTx)
+static __inline__ void track_carrier(v27ter_rx_state_t *s, const complexi16_t *z, const complexi16_t *target)
+#else
 static __inline__ void track_carrier(v27ter_rx_state_t *s, const complexf_t *z, const complexf_t *target)
+#endif
 {
     float error;
 
     /* For small errors the imaginary part of the difference between the actual and the target
        positions is proportional to the phase error, for any particular target. However, the
        different amplitudes of the various target positions scale things. */
+#if defined(SPANDSP_USE_FIXED_POINTx)
     error = z->im*target->re - z->re*target->im;
+    error /= (float) FP_FACTOR;
+#else
+    error = z->im*target->re - z->re*target->im;
+#endif
     
     s->carrier_phase_rate += (int32_t) (s->carrier_track_i*error);
     s->carrier_phase += (int32_t) (s->carrier_track_p*error);
@@ -295,7 +393,11 @@ static __inline__ void put_bit(v27ter_rx_state_t *s, int bit)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_USE_FIXED_POINTx)
+static __inline__ int find_quadrant(const complexi16_t *z)
+#else
 static __inline__ int find_quadrant(const complexf_t *z)
+#endif
 {
     int b1;
     int b2;
@@ -307,7 +409,11 @@ static __inline__ int find_quadrant(const complexf_t *z)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_USE_FIXED_POINTx)
+static __inline__ int find_octant(complexi16_t *z)
+#else
 static __inline__ int find_octant(complexf_t *z)
+#endif
 {
     float abs_re;
     float abs_im;
@@ -336,7 +442,11 @@ static __inline__ int find_octant(complexf_t *z)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_USE_FIXED_POINTx)
+static void decode_baud(v27ter_rx_state_t *s, complexi16_t *z)
+#else
 static void decode_baud(v27ter_rx_state_t *s, complexf_t *z)
+#endif
 {
     static const uint8_t phase_steps_4800[8] =
     {
@@ -381,33 +491,12 @@ static void decode_baud(v27ter_rx_state_t *s, complexf_t *z)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t *sample)
+static __inline__ void symbol_sync(v27ter_rx_state_t *s)
 {
-    static const int abab_pos[2] =
-    {
-        0, 4
-    };
-    complexf_t z;
-    complexf_t zz;
     float p;
     float q;
-    int i;
-    int j;
-    int32_t angle;
-    int32_t ang;
 
-    /* Add a sample to the equalizer's circular buffer, but don't calculate anything
-       at this time. */
-    s->eq_buf[s->eq_step] = *sample;
-    s->eq_step = (s->eq_step + 1) & V27TER_EQUALIZER_MASK;
-        
-    /* On alternate insertions we have a whole baud, and must process it. */
-    if ((s->baud_phase ^= 1))
-    {
-        //span_log(&s->logging, SPAN_LOG_FLOW, "Samp, %f, %f, %f, -1, 0x%X\n", z.re, z.im, sqrtf(z.re*z.re + z.im*z.im), s->eq_put_step);
-        return;
-    }
-    //span_log(&s->logging, SPAN_LOG_FLOW, "Samp, %f, %f, %f, 1, 0x%X\n", z.re, z.im, sqrtf(z.re*z.re + z.im*z.im), s->eq_put_step);
+    /* This routine adapts the position of the half baud samples entering the equalizer. */
 
     /* Perform a Gardner test for baud alignment */
     p = s->eq_buf[(s->eq_step - 3) & V27TER_EQUALIZER_MASK].re
@@ -433,6 +522,37 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
         s->gardner_integrate = 0;
     }
     //span_log(&s->logging, SPAN_LOG_FLOW, "Gardner=%10.5f 0x%X\n", p, s->eq_put_step);
+}
+/*- End of function --------------------------------------------------------*/
+
+#if defined(SPANDSP_USE_FIXED_POINTx)
+static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexi16_t *sample)
+#else
+static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t *sample)
+#endif
+{
+    static const int abab_pos[2] =
+    {
+        0, 4
+    };
+    complexf_t z;
+    complexf_t zz;
+    float p;
+    int i;
+    int j;
+    int32_t angle;
+    int32_t ang;
+
+    /* Add a sample to the equalizer's circular buffer, but don't calculate anything
+       at this time. */
+    s->eq_buf[s->eq_step] = *sample;
+    s->eq_step = (s->eq_step + 1) & V27TER_EQUALIZER_MASK;
+        
+    /* On alternate insertions we have a whole baud, and must process it. */
+    if ((s->baud_half ^= 1))
+        return;
+
+    symbol_sync(s);
 
     z = equalizer_get(s);
 
@@ -498,7 +618,7 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
                span_log(&s->logging, SPAN_LOG_FLOW, "Training failed (sequence failed)\n");
                /* Park this modem */
                s->training_stage = TRAINING_STAGE_PARKED;
-               report_status_change(s, PUTBIT_TRAINING_FAILED);
+               report_status_change(s, SIG_STATUS_TRAINING_FAILED);
                break;
             }
 
@@ -506,9 +626,20 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
                buffer, as well as the carrier phase, for this to play out nicely. */
             angle += 0x80000000;
             p = angle*2.0f*3.14159f/(65536.0f*65536.0f);
+#if defined(SPANDSP_USE_FIXED_POINTx)
+            zz = complex_setf(cosf(p), -sinf(p));
+            for (i = 0;  i <= V27TER_EQUALIZER_MASK;  i++)
+            {
+                z1 = complex_setf(s->eq_buf[i].re, s->eq_buf[i].im);
+                z1 = complex_mulf(&z1, &zz);
+                s->eq_buf[i].re = z1.re;
+                s->eq_buf[i].im = z1.im;
+            }
+#else
             zz = complex_setf(cosf(p), -sinf(p));
             for (i = 0;  i <= V27TER_EQUALIZER_MASK;  i++)
                 s->eq_buf[i] = complex_mulf(&s->eq_buf[i], &zz);
+#endif
             s->carrier_phase += angle;
 
             s->gardner_step = 2;
@@ -519,7 +650,7 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
             descramble(s, 1);
             s->training_count = 1;
             s->training_stage = TRAINING_STAGE_TRAIN_ON_ABAB;
-            report_status_change(s, PUTBIT_TRAINING_IN_PROGRESS);
+            report_status_change(s, SIG_STATUS_TRAINING_IN_PROGRESS);
         }
         else if (++s->training_count > V27TER_TRAINING_SEG_3_LEN)
         {
@@ -528,7 +659,7 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
             span_log(&s->logging, SPAN_LOG_FLOW, "Training failed (sequence failed)\n");
             /* Park this modem */
             s->training_stage = TRAINING_STAGE_PARKED;
-            report_status_change(s, PUTBIT_TRAINING_FAILED);
+            report_status_change(s, SIG_STATUS_TRAINING_FAILED);
         }
         break;
     case TRAINING_STAGE_TRAIN_ON_ABAB:
@@ -552,11 +683,22 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
     case TRAINING_STAGE_TEST_ONES:
         decode_baud(s, &z);
         /* Measure the training error */
+#if defined(SPANDSP_USE_FIXED_POINTx)
+        z1.re = z.re/(float) FP_FACTOR;
+        z1.im = z.im/(float) FP_FACTOR;
+        if (s->bit_rate == 4800)
+            zz = complex_subf(&z, &v27ter_constellation[s->constellation_state]);
+        else
+            zz = complex_subf(&z, &v27ter_constellation[s->constellation_state << 1]);
+        zz = complex_subf(&z1, &zz);
+        s->training_error += powerf(&zz);
+#else
         if (s->bit_rate == 4800)
             zz = complex_subf(&z, &v27ter_constellation[s->constellation_state]);
         else
             zz = complex_subf(&z, &v27ter_constellation[s->constellation_state << 1]);
         s->training_error += powerf(&zz);
+#endif
         if (++s->training_count >= V27TER_TRAINING_SEG_6_LEN)
         {
             if ((s->bit_rate == 4800  &&  s->training_error < 0.5f)
@@ -565,7 +707,7 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
             {
                 /* We are up and running */
                 span_log(&s->logging, SPAN_LOG_FLOW, "Training succeeded (constellation mismatch %f)\n", s->training_error);
-                report_status_change(s, PUTBIT_TRAINING_SUCCEEDED);
+                report_status_change(s, SIG_STATUS_TRAINING_SUCCEEDED);
                 /* Apply some lag to the carrier off condition, to ensure the last few bits get pushed through
                    the processing. */
                 s->signal_present = (s->bit_rate == 4800)  ?  90  :  120;
@@ -580,7 +722,7 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
                 span_log(&s->logging, SPAN_LOG_FLOW, "Training failed (constellation mismatch %f)\n", s->training_error);
                 /* Park this modem */
                 s->training_stage = TRAINING_STAGE_PARKED;
-                report_status_change(s, PUTBIT_TRAINING_FAILED);
+                report_status_change(s, SIG_STATUS_TRAINING_FAILED);
             }
         }
         break;
@@ -591,10 +733,21 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
     }
     if (s->qam_report)
     {
+#if defined(SPANDSP_USE_FIXED_POINTx)
+        z1.re = z.re/(float) FP_FACTOR;
+        z1.im = z.im/(float) FP_FACTOR;
+        zz.re = v27ter_constellation[s->constellation_state].re;
+        zz.im = v27ter_constellation[s->constellation_state].im;
+        s->qam_report(s->qam_user_data,
+                      &z1,
+                      &zz,
+                      s->constellation_state);
+#else
         s->qam_report(s->qam_user_data,
                       &z,
                       &v27ter_constellation[s->constellation_state],
                       s->constellation_state);
+#endif
     }
 }
 /*- End of function --------------------------------------------------------*/
@@ -607,10 +760,15 @@ int v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], int len)
     int16_t x;
     int32_t diff;
     complexf_t z;
-    complexf_t zz;
-    complexf_t sample;
 #if defined(SPANDSP_USE_FIXED_POINT)
     complexi_t zi;
+#endif
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    complexi16_t sample;
+    complexi16_t zz;
+#else
+    complexf_t sample;
+    complexf_t zz;
 #endif
     int32_t power;
 
@@ -664,7 +822,7 @@ int v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], int len)
                         /* Count down a short delay, to ensure we push the last
                            few bits through the filters before stopping. */
                         v27ter_rx_restart(s, s->bit_rate, FALSE);
-                        report_status_change(s, PUTBIT_CARRIER_DOWN);
+                        report_status_change(s, SIG_STATUS_CARRIER_DOWN);
                         continue;
                     }
 #if defined(IAXMODEM_STUFF)
@@ -683,7 +841,7 @@ int v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], int len)
 #if defined(IAXMODEM_STUFF)
                 s->carrier_drop_pending = FALSE;
 #endif
-                report_status_change(s, PUTBIT_CARRIER_UP);
+                report_status_change(s, SIG_STATUS_CARRIER_UP);
             }
             /* Only spend effort processing this data if the modem is not
                parked, after training failure. */
@@ -697,7 +855,11 @@ int v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], int len)
                 if (s->training_stage == TRAINING_STAGE_SYMBOL_ACQUISITION)
                 {
                     /* Only AGC during the initial training */
+#if defined(SPANDSP_USE_FIXED_POINTx)
+                    s->agc_scaling = (float) FP_FACTOR*(1.0f/RX_PULSESHAPER_4800_GAIN)*1.414f/sqrtf(power);
+#else
                     s->agc_scaling = (1.0f/RX_PULSESHAPER_4800_GAIN)*1.414f/sqrtf(power);
+#endif
                 }
                 /* Pulse shape while still at the carrier frequency, using a quadrature
                    pair of filters. This results in a properly bandpass filtered complex
@@ -789,7 +951,7 @@ int v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], int len)
                         /* Count down a short delay, to ensure we push the last
                            few bits through the filters before stopping. */
                         v27ter_rx_restart(s, s->bit_rate, FALSE);
-                        report_status_change(s, PUTBIT_CARRIER_DOWN);
+                        report_status_change(s, SIG_STATUS_CARRIER_DOWN);
                         continue;
                     }
 #if defined(IAXMODEM_STUFF)
@@ -808,7 +970,7 @@ int v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], int len)
 #if defined(IAXMODEM_STUFF)
                 s->carrier_drop_pending = FALSE;
 #endif
-                report_status_change(s, PUTBIT_CARRIER_UP);
+                report_status_change(s, SIG_STATUS_CARRIER_UP);
             }
             /* Only spend effort processing this data if the modem is not
                parked, after training failure. */
@@ -822,7 +984,11 @@ int v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], int len)
                 if (s->training_stage == TRAINING_STAGE_SYMBOL_ACQUISITION)
                 {
                     /* Only AGC during the initial training */
+#if defined(SPANDSP_USE_FIXED_POINTx)
+                    s->agc_scaling = (float) FP_FACTOR*(1.0f/RX_PULSESHAPER_2400_GAIN)*1.414f/sqrtf(power);
+#else
                     s->agc_scaling = (1.0f/RX_PULSESHAPER_2400_GAIN)*1.414f/sqrtf(power);
+#endif
                 }
                 /* Pulse shape while still at the carrier frequency, using a quadrature
                    pair of filters. This results in a properly bandpass filtered complex
@@ -890,7 +1056,7 @@ int v27ter_rx_restart(v27ter_rx_state_t *s, int bit_rate, int old_train)
     s->bit_rate = bit_rate;
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-    memset(s->rrc_filter, 0, sizeof(s->rrc_filter));
+    vec_zeroi16(s->rrc_filter, sizeof(s->rrc_filter)/sizeof(s->rrc_filter[0]));
 #else
     vec_zerof(s->rrc_filter, sizeof(s->rrc_filter)/sizeof(s->rrc_filter[0]));
 #endif
@@ -925,7 +1091,11 @@ int v27ter_rx_restart(v27ter_rx_state_t *s, int bit_rate, int old_train)
     else
     {
         s->carrier_phase_rate = dds_phase_ratef(CARRIER_NOMINAL_FREQ);
+#if defined(SPANDSP_USE_FIXED_POINTx)
+        s->agc_scaling = (float) FP_FACTOR*0.005f/RX_PULSESHAPER_4800_GAIN;
+#else
         s->agc_scaling = 0.005f/RX_PULSESHAPER_4800_GAIN;
+#endif
         equalizer_reset(s);
     }
     s->eq_skip = 0;
@@ -934,7 +1104,7 @@ int v27ter_rx_restart(v27ter_rx_state_t *s, int bit_rate, int old_train)
     s->gardner_integrate = 0;
     s->total_baud_timing_correction = 0;
     s->gardner_step = 512;
-    s->baud_phase = 0;
+    s->baud_half = 0;
 
     return 0;
 }

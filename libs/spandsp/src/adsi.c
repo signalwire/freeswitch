@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: adsi.c,v 1.59 2008/07/02 14:48:25 steveu Exp $
+ * $Id: adsi.c,v 1.60 2008/09/07 12:45:16 steveu Exp $
  */
 
 /*! \file */
@@ -134,7 +134,7 @@ static int adsi_tx_get_bit(void *user_data)
     }
     else
     {
-        bit = PUTBIT_END_OF_DATA;
+        bit = SIG_STATUS_END_OF_DATA;
         if (s->tx_signal_on)
         {
             /* The FSK should now be switched off. */
@@ -176,7 +176,7 @@ static void adsi_rx_put_bit(void *user_data, int bit)
         /* Special conditions */
         switch (bit)
         {
-        case PUTBIT_CARRIER_UP:
+        case SIG_STATUS_CARRIER_UP:
             span_log(&s->logging, SPAN_LOG_FLOW, "Carrier up.\n");
             s->consecutive_ones = 0;
             s->bit_pos = 0;
@@ -184,7 +184,7 @@ static void adsi_rx_put_bit(void *user_data, int bit)
             s->msg_len = 0;
             s->baudot_shift = 0;
             break;
-        case PUTBIT_CARRIER_DOWN:
+        case SIG_STATUS_CARRIER_DOWN:
             span_log(&s->logging, SPAN_LOG_FLOW, "Carrier down.\n");
             break;
         default:
@@ -297,18 +297,17 @@ static void adsi_tdd_put_async_byte(void *user_data, int byte)
     if (byte < 0)
     {
         /* Special conditions */
+        printf("Status is %s (%d)\n", signal_status_to_str(byte), byte);
         switch (byte)
         {
-        case PUTBIT_CARRIER_UP:
-            span_log(&s->logging, SPAN_LOG_FLOW, "Carrier up.\n");
+        case SIG_STATUS_CARRIER_UP:
             s->consecutive_ones = 0;
             s->bit_pos = 0;
             s->in_progress = 0;
             s->msg_len = 0;
             s->baudot_shift = 0;
             break;
-        case PUTBIT_CARRIER_DOWN:
-            span_log(&s->logging, SPAN_LOG_FLOW, "Carrier down.\n");
+        case SIG_STATUS_CARRIER_DOWN:
             if (s->msg_len > 0)
             {
                 /* Whatever we have to date constitutes the message */

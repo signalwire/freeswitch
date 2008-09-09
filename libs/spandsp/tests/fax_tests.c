@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_tests.c,v 1.95 2008/08/29 09:28:13 steveu Exp $
+ * $Id: fax_tests.c,v 1.96 2008/09/09 14:05:55 steveu Exp $
  */
 
 /*! \page fax_tests_page FAX tests
@@ -167,7 +167,8 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
     printf("%d: Phase E: longest bad row run %d\n", i, t.longest_bad_row_run);
     printf("%d: Phase E: coding method %s\n", i, t4_encoding_to_str(t.encoding));
     printf("%d: Phase E: image size %d bytes\n", i, t.image_size);
-    //printf("%d: Phase E: local ident '%s'\n", i, info->ident);
+    if ((u = t30_get_tx_ident(s)))
+        printf("%d: Phase E: local ident '%s'\n", i, u);
     if ((u = t30_get_rx_ident(s)))
         printf("%d: Phase E: remote ident '%s'\n", i, u);
     if ((u = t30_get_rx_country(s)))

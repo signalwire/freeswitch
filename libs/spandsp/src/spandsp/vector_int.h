@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: vector_int.h,v 1.10 2008/04/17 14:27:01 steveu Exp $
+ * $Id: vector_int.h,v 1.11 2008/09/01 16:07:34 steveu Exp $
  */
 
 #if !defined(_SPANDSP_VECTOR_INT_H_)
@@ -33,11 +33,79 @@ extern "C"
 {
 #endif
 
+static __inline__ void vec_copyi(int z[], const int x[], int n)
+{
+    memcpy(z, x, n*sizeof(z[0]));
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ void vec_copyi16(int16_t z[], const int16_t x[], int n)
+{
+    memcpy(z, x, n*sizeof(z[0]));
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ void vec_copyi32(int32_t z[], const int32_t x[], int n)
+{
+    memcpy(z, x, n*sizeof(z[0]));
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ void vec_zeroi(int z[], int n)
+{
+    memset(z, 0, n*sizeof(z[0]));
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ void vec_zeroi16(int16_t z[], int n)
+{
+    memset(z, 0, n*sizeof(z[0]));
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ void vec_zeroi32(int32_t z[], int n)
+{
+    memset(z, 0, n*sizeof(z[0]));
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ void vec_seti(int z[], int x, int n)
+{
+    int i;
+    
+    for (i = 0;  i < n;  i++)
+        z[i] = x;
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ void vec_seti16(int16_t z[], int16_t x, int n)
+{
+    int i;
+    
+    for (i = 0;  i < n;  i++)
+        z[i] = x;
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ void vec_seti32(int32_t z[], int32_t x, int n)
+{
+    int i;
+    
+    for (i = 0;  i < n;  i++)
+        z[i] = x;
+}
+/*- End of function --------------------------------------------------------*/
+
+/*! \brief Find the dot product of two int16_t vectors.
+    \param x The first vector.
+    \param y The first vector.
+    \param n The number of elements in the vectors.
+    \return The dot product of the two vectors. */
 int32_t vec_dot_prodi16(const int16_t x[], const int16_t y[], int n);
 
-/*! \brief Find the minimum and maximum values in a vector.
+/*! \brief Find the minimum and maximum values in an int16_t vector.
     \param x The vector to be searched.
-    \param n The number of elements in the vetor.
+    \param n The number of elements in the vector.
     \param out A two element vector. The first will receive the 
            maximum. The second will receive the minimum. This parameter
            may be set to NULL.

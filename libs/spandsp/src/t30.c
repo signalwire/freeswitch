@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.c,v 1.262 2008/08/17 16:25:52 steveu Exp $
+ * $Id: t30.c,v 1.264 2008/09/09 15:30:43 steveu Exp $
  */
 
 /*! \file */
@@ -1831,7 +1831,6 @@ static int start_receiving_document(t30_state_t *s)
     }
     span_log(&s->logging, SPAN_LOG_FLOW, "Start receiving document\n");
     queue_phase(s, T30_PHASE_B_TX);
-    s->dis_received = FALSE;
     s->ecm_block = 0;
     send_dis_or_dtc_sequence(s, TRUE);
     return 0;
@@ -2006,7 +2005,6 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
             send_dcn(s);
             return -1;
         }
-        s->dis_received = TRUE;
         if (set_dis_or_dtc(s))
         {
             s->current_status = T30_ERR_INCOMPATIBLE;
@@ -4823,13 +4821,13 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
     s = (t30_state_t *) user_data;
     switch (status)
     {
-    case PUTBIT_TRAINING_IN_PROGRESS:
+    case SIG_STATUS_TRAINING_IN_PROGRESS:
         break;
-    case PUTBIT_TRAINING_FAILED:
+    case SIG_STATUS_TRAINING_FAILED:
         span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM carrier training failed in state %d\n", s->state);
         s->rx_trained = FALSE;
         break;
-    case PUTBIT_TRAINING_SUCCEEDED:
+    case SIG_STATUS_TRAINING_SUCCEEDED:
         /* The modem is now trained */
         span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM carrier trained in state %d\n", s->state);
         /* In case we are in trainability test mode... */
@@ -4840,10 +4838,10 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
         s->rx_trained = TRUE;
         s->timer_t2_t4 = 0;
         break;
-    case PUTBIT_CARRIER_UP:
+    case SIG_STATUS_CARRIER_UP:
         span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM carrier up in state %d\n", s->state);
         break;
-    case PUTBIT_CARRIER_DOWN:
+    case SIG_STATUS_CARRIER_DOWN:
         span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM carrier down in state %d\n", s->state);
         was_trained = s->rx_trained;
         s->rx_signal_present = FALSE;
@@ -5052,7 +5050,7 @@ int t30_non_ecm_get_bit(void *user_data)
         if (s->tcf_test_bits-- < 0)
         {
             /* Finished sending training test. */
-            bit = PUTBIT_END_OF_DATA;
+            bit = SIG_STATUS_END_OF_DATA;
         }
         break;
     case T30_STATE_I:
@@ -5066,7 +5064,7 @@ int t30_non_ecm_get_bit(void *user_data)
         break;
     default:
         span_log(&s->logging, SPAN_LOG_WARNING, "t30_non_ecm_get_bit in bad state %d\n", s->state);
-        bit = PUTBIT_END_OF_DATA;
+        bit = SIG_STATUS_END_OF_DATA;
         break;
     }
     return bit;
@@ -5150,19 +5148,19 @@ static void t30_hdlc_rx_status(void *user_data, int status)
     s = (t30_state_t *) user_data;
     switch (status)
     {
-    case PUTBIT_TRAINING_IN_PROGRESS:
+    case SIG_STATUS_TRAINING_IN_PROGRESS:
         break;
-    case PUTBIT_TRAINING_FAILED:
+    case SIG_STATUS_TRAINING_FAILED:
         span_log(&s->logging, SPAN_LOG_FLOW, "HDLC carrier training failed in state %d\n", s->state);
         s->rx_trained = FALSE;
         break;
-    case PUTBIT_TRAINING_SUCCEEDED:
+    case SIG_STATUS_TRAINING_SUCCEEDED:
         /* The modem is now trained */
         span_log(&s->logging, SPAN_LOG_FLOW, "HDLC carrier trained in state %d\n", s->state);
         s->rx_signal_present = TRUE;
         s->rx_trained = TRUE;
         break;
-    case PUTBIT_CARRIER_UP:
+    case SIG_STATUS_CARRIER_UP:
         span_log(&s->logging, SPAN_LOG_FLOW, "HDLC carrier up in state %d\n", s->state);
         s->rx_signal_present = TRUE;
         switch (s->timer_t2_t4_is)
@@ -5177,7 +5175,7 @@ static void t30_hdlc_rx_status(void *user_data, int status)
             break;
         }
         break;
-    case PUTBIT_CARRIER_DOWN:
+    case SIG_STATUS_CARRIER_DOWN:
         span_log(&s->logging, SPAN_LOG_FLOW, "HDLC carrier down in state %d\n", s->state);
         s->rx_signal_present = FALSE;
         s->rx_trained = FALSE;
@@ -5206,7 +5204,7 @@ static void t30_hdlc_rx_status(void *user_data, int status)
             }
         }
         break;
-    case PUTBIT_FRAMING_OK:
+    case SIG_STATUS_FRAMING_OK:
         span_log(&s->logging, SPAN_LOG_FLOW, "HDLC framing OK in state %d\n", s->state);
         if (!s->far_end_detected  &&  s->timer_t0_t1 > 0)
         {
@@ -5232,7 +5230,7 @@ static void t30_hdlc_rx_status(void *user_data, int status)
             }
         }
         break;
-    case PUTBIT_ABORT:
+    case SIG_STATUS_ABORT:
         /* Just ignore these */
         break;
     default:
@@ -5559,10 +5557,10 @@ void t30_front_end_status(void *user_data, int status)
         switch (s->phase)
         {
         case T30_PHASE_C_NON_ECM_RX:
-            t30_non_ecm_rx_status(s, PUTBIT_CARRIER_DOWN);
+            t30_non_ecm_rx_status(s, SIG_STATUS_CARRIER_DOWN);
             break;
         default:
-            t30_hdlc_rx_status(s, PUTBIT_CARRIER_DOWN);
+            t30_hdlc_rx_status(s, SIG_STATUS_CARRIER_DOWN);
             break;
         }
         break;
@@ -5584,8 +5582,8 @@ void t30_front_end_status(void *user_data, int status)
         case T30_PHASE_D_RX:
             /* We are running a V.21 receive modem, where an explicit training indication
                will not occur. */
-            t30_hdlc_rx_status(s, PUTBIT_CARRIER_UP);
-            t30_hdlc_rx_status(s, PUTBIT_FRAMING_OK);
+            t30_hdlc_rx_status(s, SIG_STATUS_CARRIER_UP);
+            t30_hdlc_rx_status(s, SIG_STATUS_FRAMING_OK);
             break;
         default:
             /* Cancel any receive timeout, and declare that a receive signal is present,

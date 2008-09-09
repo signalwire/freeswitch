@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17rx.c,v 1.112 2008/07/17 19:12:27 steveu Exp $
+ * $Id: v17rx.c,v 1.116 2008/09/07 12:45:17 steveu Exp $
  */
 
 /*! \file */
@@ -471,44 +471,14 @@ static int decode_baud(v17_rx_state_t *s, complexf_t *z)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
+static __inline__ void symbol_sync(v17_rx_state_t *s)
 {
-    static const complexf_t cdba[4] =
-    {
-        { 6.0f,  2.0f},
-        {-2.0f,  6.0f},
-        { 2.0f, -6.0f},
-        {-6.0f, -2.0f}
-    };
-    complexf_t z;
-    complexf_t zz;
-#if defined(SPANDSP_USE_FIXED_POINTx)
-    const complexi_t *target;
-#else
-    const complexf_t *target;
-#endif
+    int i;
     float v;
     float p;
-    int bit;
-    int i;
-    int j;
-    int32_t angle;
-    int32_t ang;
-    int constellation_state;
 
-    /* This routine processes every half a baud, as we put things into the equalizer at the T/2 rate.
-       This routine adapts the position of the half baud samples, which the caller takes. */
+    /* This routine adapts the position of the half baud samples entering the equalizer. */
 
-    /* Add a sample to the equalizer's circular buffer, but don't calculate anything
-       at this time. */
-    s->eq_buf[s->eq_step] = *sample;
-    s->eq_step = (s->eq_step + 1) & V17_EQUALIZER_MASK;
-
-    /* On alternate insertions we have a whole baud and must process it. */
-    if ((s->baud_half ^= 1))
-        return;
-
-    /* Symbol timing synchronisation */
     /* Cross correlate */
     v = s->symbol_sync_low[1]*s->symbol_sync_high[1]*SYNC_CROSS_CORR_COEFF_A
       + s->symbol_sync_low[0]*s->symbol_sync_high[1]*SYNC_CROSS_CORR_COEFF_B
@@ -532,6 +502,48 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
         s->eq_put_step += i;
         s->total_baud_timing_correction += i;
     }
+}
+/*- End of function --------------------------------------------------------*/
+
+static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
+{
+    static const complexf_t cdba[4] =
+    {
+        { 6.0f,  2.0f},
+        {-2.0f,  6.0f},
+        { 2.0f, -6.0f},
+        {-6.0f, -2.0f}
+    };
+    complexf_t z;
+    complexf_t zz;
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    const complexi_t *target;
+    static const complexi16_t zero = {0, 0};
+#else
+    const complexf_t *target;
+    static const complexf_t zero = {0, 0};
+#endif
+    float p;
+    int bit;
+    int i;
+    int j;
+    int32_t angle;
+    int32_t ang;
+    int constellation_state;
+
+    /* This routine processes every half a baud, as we put things into the equalizer at the T/2 rate. */
+
+    /* Add a sample to the equalizer's circular buffer, but don't calculate anything
+       at this time. */
+    s->eq_buf[s->eq_step] = *sample;
+    s->eq_step = (s->eq_step + 1) & V17_EQUALIZER_MASK;
+
+    /* On alternate insertions we have a whole baud and must process it. */
+    if ((s->baud_half ^= 1))
+        return;
+
+    /* Symbol timing synchronisation */
+    symbol_sync(s);
 
     z = equalizer_get(s);
 
@@ -545,7 +557,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
         break;
     case TRAINING_STAGE_SYMBOL_ACQUISITION:
         /* Allow time for the symbol synchronisation to settle the symbol timing. */
-        target = &z;
+        target = &zero;
 #if defined(IAXMODEM_STUFF)
         if (++s->training_count >= 100)
 #else
@@ -562,7 +574,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
         break;
     case TRAINING_STAGE_LOG_PHASE:
         /* Record the current alternate phase angle */
-        target = &z;
+        target = &zero;
         angle = arctan2(z.im, z.re);
         s->training_count = 1;
         if (s->short_train)
@@ -603,7 +615,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
         }
         break;
     case TRAINING_STAGE_WAIT_FOR_CDBA:
-        target = &z;
+        target = &zero;
         angle = arctan2(z.im, z.re);
         /* Look for the initial ABAB sequence to display a phase reversal, which will
            signal the start of the scrambled CDBA segment */
@@ -665,7 +677,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
                 /* Park this modem */
                 s->agc_scaling_save = 0.0f;
                 s->training_stage = TRAINING_STAGE_PARKED;
-                report_status_change(s, PUTBIT_TRAINING_FAILED);
+                report_status_change(s, SIG_STATUS_TRAINING_FAILED);
                 break;
             }
 
@@ -684,7 +696,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             descramble(s, 1);
             s->training_count = 1;
             s->training_stage = TRAINING_STAGE_COARSE_TRAIN_ON_CDBA;
-            report_status_change(s, PUTBIT_TRAINING_IN_PROGRESS);
+            report_status_change(s, SIG_STATUS_TRAINING_IN_PROGRESS);
             break;
         }
         if (++s->training_count > V17_TRAINING_SEG_1_LEN)
@@ -695,7 +707,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             /* Park this modem */
             s->agc_scaling_save = 0.0f;
             s->training_stage = TRAINING_STAGE_PARKED;
-            report_status_change(s, PUTBIT_TRAINING_FAILED);
+            report_status_change(s, SIG_STATUS_TRAINING_FAILED);
         }
         break;
     case TRAINING_STAGE_COARSE_TRAIN_ON_CDBA:
@@ -767,7 +779,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
                 /* Park this modem */
                 s->agc_scaling_save = 0.0f;
                 s->training_stage = TRAINING_STAGE_PARKED;
-                report_status_change(s, PUTBIT_TRAINING_FAILED);
+                report_status_change(s, SIG_STATUS_TRAINING_FAILED);
             }
         }
         break;
@@ -806,8 +818,8 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
                of a real training sequence. Note that this might be TEP. */
             span_log(&s->logging, SPAN_LOG_FLOW, "Training failed (sequence failed)\n");
             /* Park this modem */
-            report_status_change(s, PUTBIT_TRAINING_FAILED);
             s->training_stage = TRAINING_STAGE_PARKED;
+            report_status_change(s, SIG_STATUS_TRAINING_FAILED);
         }
         break;
     case TRAINING_STAGE_SHORT_TRAIN_ON_CDBA_AND_TEST:
@@ -836,14 +848,14 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             {
                 s->training_count = 0;
                 s->training_stage = TRAINING_STAGE_TCM_WINDUP;
-                report_status_change(s, PUTBIT_TRAINING_IN_PROGRESS);
+                report_status_change(s, SIG_STATUS_TRAINING_IN_PROGRESS);
             }
             else
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Short training failed (convergence failed)\n");
                 /* Park this modem */
-                report_status_change(s, PUTBIT_TRAINING_FAILED);
                 s->training_stage = TRAINING_STAGE_PARKED;
+                report_status_change(s, SIG_STATUS_TRAINING_FAILED);
             }
         }
         break;
@@ -883,7 +895,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             {
                 /* We are up and running */
                 span_log(&s->logging, SPAN_LOG_FLOW, "Training succeeded (constellation mismatch %f)\n", s->training_error);
-                report_status_change(s, PUTBIT_TRAINING_SUCCEEDED);
+                report_status_change(s, SIG_STATUS_TRAINING_SUCCEEDED);
                 /* Apply some lag to the carrier off condition, to ensure the last few bits get pushed through
                    the processing. */
                 s->signal_present = 60;
@@ -899,8 +911,8 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
                 /* Park this modem */
                 if (!s->short_train)
                     s->agc_scaling_save = 0.0f;
-                report_status_change(s, PUTBIT_TRAINING_FAILED);
                 s->training_stage = TRAINING_STAGE_PARKED;
+                report_status_change(s, SIG_STATUS_TRAINING_FAILED);
             }
         }
         break;
@@ -908,7 +920,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
     default:
         /* We failed to train! */
         /* Park here until the carrier drops. */
-        target = &z;
+        target = &zero;
         break;
     }
     if (s->qam_report)
@@ -979,7 +991,7 @@ int v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
                     /* Count down a short delay, to ensure we push the last
                        few bits through the filters before stopping. */
                     v17_rx_restart(s, s->bit_rate, s->short_train);
-                    report_status_change(s, PUTBIT_CARRIER_DOWN);
+                    report_status_change(s, SIG_STATUS_CARRIER_DOWN);
                     continue;
                 }
 #if defined(IAXMODEM_STUFF)
@@ -998,7 +1010,7 @@ int v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
 #if defined(IAXMODEM_STUFF)
             s->carrier_drop_pending = FALSE;
 #endif
-            report_status_change(s, PUTBIT_CARRIER_UP);
+            report_status_change(s, SIG_STATUS_CARRIER_UP);
         }
         if (s->training_stage == TRAINING_STAGE_PARKED)
             continue;
@@ -1051,20 +1063,22 @@ int v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
             for (j = 1;  j < V17_RX_FILTER_STEPS;  j++)
                 zi.im += (int32_t) rx_pulseshaper[step][j].im*(int32_t) s->rrc_filter[j + s->rrc_filter_step];
             sample.im = zi.im*s->agc_scaling;
+            s->eq_put_step += RX_PULSESHAPER_COEFF_SETS*10/(3*2);
+            z = dds_lookup_complexf(s->carrier_phase);
+            zz.re = sample.re*z.re - sample.im*z.im;
+            zz.im = -sample.re*z.im - sample.im*z.re;
+            process_half_baud(s, &zz);
 #else
             zz.im = rx_pulseshaper[step][0].im*s->rrc_filter[s->rrc_filter_step];
             for (j = 1;  j < V17_RX_FILTER_STEPS;  j++)
                 zz.im += rx_pulseshaper[step][j].im*s->rrc_filter[j + s->rrc_filter_step];
             sample.im = zz.im*s->agc_scaling;
-#endif
             s->eq_put_step += RX_PULSESHAPER_COEFF_SETS*10/(3*2);
-            /* Shift to baseband - since this is done in a full complex form, the
-               result is clean, and requires no further filtering, apart from the
-               equalizer. */
             z = dds_lookup_complexf(s->carrier_phase);
             zz.re = sample.re*z.re - sample.im*z.im;
             zz.im = -sample.re*z.im - sample.im*z.re;
             process_half_baud(s, &zz);
+#endif
         }
         dds_advancef(&(s->carrier_phase), s->carrier_phase_rate);
     }

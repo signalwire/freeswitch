@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tsb85_tests.c,v 1.19 2008/08/13 00:11:30 steveu Exp $
+ * $Id: tsb85_tests.c,v 1.22 2008/09/09 15:30:43 steveu Exp $
  */
 
 /*! \file */
@@ -60,6 +60,7 @@
 #endif
 
 #include "spandsp.h"
+#include "spandsp-sim.h"
 #include "fax_tester.h"
 
 #define OUTPUT_TIFF_FILE_NAME   "tsb85.tif"
@@ -69,7 +70,6 @@
 #define SAMPLES_PER_CHUNK       160
 
 AFfilehandle out_handle;
-AFfilesetup filesetup;
 
 int use_receiver_not_ready = FALSE;
 int test_local_interrupt = FALSE;
@@ -84,28 +84,122 @@ uint8_t image[1000000];
 uint8_t awaited[1000];
 int awaited_len = 0;
 
+t30_exchanged_info_t expected_rx_info;
+
 static int next_step(faxtester_state_t *s);
 
 static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 {
     int i;
+    int status;
     const char *u;
     
     i = (intptr_t) user_data;
+    status = T30_ERR_OK;
     if ((u = t30_get_rx_ident(s)))
+    {
         printf("%d: Phase B: remote ident '%s'\n", i, u);
+        if (expected_rx_info.ident[0]  &&  strcmp(expected_rx_info.ident, u))
+        {
+            printf("%d: Phase B: remote ident incorrect! - expected '%s'\n", i, expected_rx_info.ident);
+            status = T30_ERR_IDENT_UNACCEPTABLE;
+        }
+    }
+    else
+    {
+        if (expected_rx_info.ident[0])
+        {
+            printf("%d: Phase B: remote ident missing!\n", i);
+            status = T30_ERR_IDENT_UNACCEPTABLE;
+        }
+    }
     if ((u = t30_get_rx_sub_address(s)))
+    {
         printf("%d: Phase B: remote sub-address '%s'\n", i, u);
+        if (expected_rx_info.sub_address[0]  &&  strcmp(expected_rx_info.sub_address, u))
+        {
+            printf("%d: Phase B: remote sub-address incorrect! - expected '%s'\n", i, expected_rx_info.sub_address);
+            status = T30_ERR_SUB_UNACCEPTABLE;
+        }
+    }
+    else
+    {
+        if (expected_rx_info.sub_address[0])
+        {
+            printf("%d: Phase B: remote sub-address missing!\n", i);
+            status = T30_ERR_SUB_UNACCEPTABLE;
+        }
+    }
     if ((u = t30_get_rx_polled_sub_address(s)))
+    {
         printf("%d: Phase B: remote polled sub-address '%s'\n", i, u);
+        if (expected_rx_info.polled_sub_address[0]  &&  strcmp(expected_rx_info.polled_sub_address, u))
+        {
+            printf("%d: Phase B: remote polled sub-address incorrect! - expected '%s'\n", i, expected_rx_info.polled_sub_address);
+            status = T30_ERR_PSA_UNACCEPTABLE;
+        }
+    }
+    else
+    {
+        if (expected_rx_info.polled_sub_address[0])
+        {
+            printf("%d: Phase B: remote polled sub-address missing!\n", i);
+            status = T30_ERR_PSA_UNACCEPTABLE;
+        }
+    }
     if ((u = t30_get_rx_selective_polling_address(s)))
+    {
         printf("%d: Phase B: remote selective polling address '%s'\n", i, u);
+        if (expected_rx_info.selective_polling_address[0]  &&  strcmp(expected_rx_info.selective_polling_address, u))
+        {
+            printf("%d: Phase B: remote selective polling address incorrect! - expected '%s'\n", i, expected_rx_info.selective_polling_address);
+            status = T30_ERR_SEP_UNACCEPTABLE;
+        }
+    }
+    else
+    {
+        if (expected_rx_info.selective_polling_address[0])
+        {
+            printf("%d: Phase B: remote selective polling address missing!\n", i);
+            status = T30_ERR_SEP_UNACCEPTABLE;
+        }
+    }
     if ((u = t30_get_rx_sender_ident(s)))
+    {
         printf("%d: Phase B: remote sender ident '%s'\n", i, u);
+        if (expected_rx_info.sender_ident[0]  &&  strcmp(expected_rx_info.sender_ident, u))
+        {
+            printf("%d: Phase B: remote sender ident incorrect! - expected '%s'\n", i, expected_rx_info.sender_ident);
+            status = T30_ERR_SID_UNACCEPTABLE;
+        }
+    }
+    else
+    {
+        if (expected_rx_info.sender_ident[0])
+        {
+            printf("%d: Phase B: remote sender ident missing!\n", i);
+            status = T30_ERR_SID_UNACCEPTABLE;
+        }
+    }
     if ((u = t30_get_rx_password(s)))
+    {
         printf("%d: Phase B: remote password '%s'\n", i, u);
+        if (expected_rx_info.password[0]  &&  strcmp(expected_rx_info.password, u))
+        {
+            printf("%d: Phase B: remote password incorrect! - expected '%s'\n", i, expected_rx_info.password);
+            status = T30_ERR_PWD_UNACCEPTABLE;
+        }
+    }
+    else
+    {
+        if (expected_rx_info.password[0])
+        {
+            printf("%d: Phase B: remote password missing!\n", i);
+            status = T30_ERR_PWD_UNACCEPTABLE;
+        }
+    }
     printf("%d: Phase B handler on channel %d - (0x%X) %s\n", i, i, result, t30_frametype(result));
-    return T30_ERR_OK;
+    return status;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -184,7 +278,8 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
     printf("%d: Phase E: longest bad row run %d\n", i, t.longest_bad_row_run);
     printf("%d: Phase E: coding method %s\n", i, t4_encoding_to_str(t.encoding));
     printf("%d: Phase E: image size %d bytes\n", i, t.image_size);
-    //printf("%d: Phase E: local ident '%s'\n", i, info->ident);
+    if ((u = t30_get_tx_ident(s)))
+        printf("%d: Phase E: local ident '%s'\n", i, u);
     if ((u = t30_get_rx_ident(s)))
         printf("%d: Phase E: remote ident '%s'\n", i, u);
     if ((u = t30_get_rx_country(s)))
@@ -207,10 +302,11 @@ static void t30_real_time_frame_handler(t30_state_t *s,
     }
     else
     {
-        printf("T.30: Real time frame handler - %s, %s, length = %d\n",
-               (direction)  ?  "line->T.30"  : "T.30->line",
-               t30_frametype(msg[2]),
-               len);
+        fprintf(stderr,
+                "T.30: Real time frame handler - %s, %s, length = %d\n",
+                (direction)  ?  "line->T.30"  : "T.30->line",
+                t30_frametype(msg[2]),
+                len);
     }
 }
 /*- End of function --------------------------------------------------------*/
@@ -220,7 +316,7 @@ static int document_handler(t30_state_t *s, void *user_data, int event)
     int i;
     
     i = (intptr_t) user_data;
-    printf("%d: Document handler on channel %d - event %d\n", i, i, event);
+    fprintf(stderr, "%d: Document handler on channel %d - event %d\n", i, i, event);
     return FALSE;
 }
 /*- End of function --------------------------------------------------------*/
@@ -237,11 +333,12 @@ static void faxtester_real_time_frame_handler(faxtester_state_t *s,
     }
     else
     {
-        printf("Real time frame handler - %s, %s, length = %d\n",
-               (direction)  ?  "line->tester"  : "tester->line",
-               t30_frametype(msg[2]),
-               len);
-        if (direction  &&  msg[1] == 0x13)
+        fprintf(stderr,
+                "TST: Real time frame handler - %s, %s, length = %d\n",
+                (direction)  ?  "line->tester"  : "tester->line",
+                t30_frametype(msg[2]),
+                len);
+        if (direction  &&  msg[1] == awaited[1])
         {
             if ((awaited_len >= 0  &&  len != abs(awaited_len))
                 ||
@@ -249,12 +346,12 @@ static void faxtester_real_time_frame_handler(faxtester_state_t *s,
                 ||
                 memcmp(msg, awaited, abs(awaited_len)) != 0)
             {
-                span_log_buf(&s->logging, SPAN_LOG_FLOW, "Expected", awaited, awaited_len);
+                span_log_buf(&s->logging, SPAN_LOG_FLOW, "Expected", awaited, abs(awaited_len));
                 span_log_buf(&s->logging, SPAN_LOG_FLOW, "Received", msg, len);
                 exit(2);
             }
         }
-        if (msg[1] == 0x13)
+        if (msg[1] == awaited[1])
             next_step(s);
     }
 }
@@ -280,13 +377,17 @@ static void fax_prepare(void)
     t30 = fax_get_t30_state(&fax);
     fax_set_transmit_on_idle(&fax, TRUE);
     fax_set_tep_mode(&fax, TRUE);
+#if 0
     t30_set_tx_ident(t30, "1234567890");
     t30_set_tx_sub_address(t30, "Sub-address");
     t30_set_tx_sender_ident(t30, "Sender ID");
     t30_set_tx_password(t30, "Password");
     t30_set_tx_polled_sub_address(t30, "Polled sub-address");
     t30_set_tx_selective_polling_address(t30, "Sel polling address");
-    t30_set_tx_nsf(t30, (const uint8_t *) "\x50\x00\x00\x00Spandsp\x00", 12);
+#endif
+    t30_set_tx_nsf(t30, (const uint8_t *) "\x50\x00\x00\x00Spandsp NSF\x00", 16);
+    //t30_set_tx_nss(t30, (const uint8_t *) "\x50\x00\x00\x00Spandsp NSS\x00", 16);
+    t30_set_tx_nsc(t30, (const uint8_t *) "\x50\x00\x00\x00Spandsp NSC\x00", 16);
     t30_set_ecm_capability(t30, TRUE);
     t30_set_supported_t30_features(t30,
                                    T30_SUPPORT_IDENTIFICATION
@@ -531,6 +632,7 @@ static int next_step(faxtester_state_t *s)
         {
             /* Add a bit of waiting at the end, to ensure everything gets flushed through,
                any timers can expire, etc. */
+            faxtester_set_timeout(s, -1);
             faxtester_set_rx_type(s, T30_MODEM_NONE, 0, FALSE, FALSE);
             faxtester_set_tx_type(s, T30_MODEM_PAUSE, 0, 120000, FALSE);
             s->final_delayed = TRUE;
@@ -628,7 +730,24 @@ static int next_step(faxtester_state_t *s)
                 span_log(&s->logging, SPAN_LOG_FLOW, "Unrecognised modem\n");
             }
         }
-        if (strcasecmp((const char *) type, "CNG") == 0)
+
+        if (strcasecmp((const char *) type, "SET") == 0)
+        {
+            if (strcasecmp((const char *) tag, "IDENT") == 0)
+                strcpy(expected_rx_info.ident, (const char *) value);
+            else if (strcasecmp((const char *) tag, "SUB") == 0)
+                strcpy(expected_rx_info.sub_address, (const char *) value);
+            else if (strcasecmp((const char *) tag, "SEP") == 0)
+                strcpy(expected_rx_info.selective_polling_address, (const char *) value);
+            else if (strcasecmp((const char *) tag, "PSA") == 0)
+                strcpy(expected_rx_info.polled_sub_address, (const char *) value);
+            else if (strcasecmp((const char *) tag, "SID") == 0)
+                strcpy(expected_rx_info.sender_ident, (const char *) value);
+            else if (strcasecmp((const char *) tag, "PWD") == 0)
+                strcpy(expected_rx_info.password, (const char *) value);
+            return 0;
+        }
+        else if (strcasecmp((const char *) type, "CNG") == 0)
         {
             /* Look for CNG */
             faxtester_set_rx_type(s, T30_MODEM_CNG, 0, FALSE, FALSE);
@@ -715,7 +834,33 @@ static int next_step(faxtester_state_t *s)
             }
         }
 
-        if (strcasecmp((const char *) type, "CALL") == 0)
+        if (strcasecmp((const char *) type, "SET") == 0)
+        {
+            t30 = fax_get_t30_state(&fax);
+            if (strcasecmp((const char *) tag, "IDENT") == 0)
+                t30_set_tx_ident(t30, (const char *) value);
+            else if (strcasecmp((const char *) tag, "SUB") == 0)
+                t30_set_tx_sub_address(t30, (const char *) value);
+            else if (strcasecmp((const char *) tag, "SEP") == 0)
+                t30_set_tx_selective_polling_address(t30, (const char *) value);
+            else if (strcasecmp((const char *) tag, "PSA") == 0)
+                t30_set_tx_polled_sub_address(t30, (const char *) value);
+            else if (strcasecmp((const char *) tag, "SID") == 0)
+                t30_set_tx_sender_ident(t30, (const char *) value);
+            else if (strcasecmp((const char *) tag, "PWD") == 0)
+                t30_set_tx_password(t30, (const char *) value);
+            else if (strcasecmp((const char *) tag, "RXFILE") == 0)
+            {
+                if (value)
+                    t30_set_rx_file(t30, (const char *) value, -1);
+                else
+                    t30_set_rx_file(t30, output_tiff_file_name, -1);
+            }
+            else if (strcasecmp((const char *) tag, "TXFILE") == 0)
+                t30_set_tx_file(t30, (const char *) value, -1, -1);
+            return 0;
+        }
+        else if (strcasecmp((const char *) type, "CALL") == 0)
         {
             fax_init(&fax, FALSE);
             fax_prepare();
@@ -898,18 +1043,7 @@ static void exchange(faxtester_state_t *s)
 
     if (log_audio)
     {
-        if ((filesetup = afNewFileSetup()) == AF_NULL_FILESETUP)
-        {
-            fprintf(stderr, "    Failed to create file setup\n");
-            exit(2);
-        }
-        /*endif*/
-        afInitSampleFormat(filesetup, AF_DEFAULT_TRACK, AF_SAMPFMT_TWOSCOMP, 16);
-        afInitRate(filesetup, AF_DEFAULT_TRACK, (float) SAMPLE_RATE);
-        afInitFileFormat(filesetup, AF_FILE_WAVE);
-        afInitChannels(filesetup, AF_DEFAULT_TRACK, 2);
-
-        if ((out_handle = afOpenFile(OUTPUT_FILE_NAME_WAVE, "w", filesetup)) == AF_NULL_FILEHANDLE)
+        if ((out_handle = afOpenFile_telephony_write(OUTPUT_FILE_NAME_WAVE, 2)) == AF_NULL_FILEHANDLE)
         {
             fprintf(stderr, "    Cannot create wave file '%s'\n", OUTPUT_FILE_NAME_WAVE);
             exit(2);
@@ -975,7 +1109,6 @@ static void exchange(faxtester_state_t *s)
             exit(2);
         }
         /*endif*/
-        afFreeFileSetup(filesetup);
     }
     /*endif*/
 }
@@ -1014,22 +1147,21 @@ static int get_test_set(faxtester_state_t *s, const char *test_file, const char 
     xmlDocPtr doc;
     xmlNsPtr ns;
     xmlNodePtr cur;
-#if 0
+#if 1
     xmlValidCtxt valid;
 #endif
 
     ns = NULL;    
     xmlKeepBlanksDefault(0);
     xmlCleanupParser();
-    doc = xmlParseFile(test_file);
-    if (doc == NULL)
+    if ((doc = xmlParseFile(test_file)) == NULL)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "No document\n");
         exit(2);
     }
     /*endif*/
     xmlXIncludeProcess(doc);
-#if 0
+#if 1
     if (!xmlValidateDocument(&valid, doc))
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Invalid document\n");
@@ -1091,6 +1223,7 @@ int main(int argc, char *argv[])
         test_name = argv[1];
 
     faxtester_init(&state, TRUE);
+    memset(&expected_rx_info, 0, sizeof(expected_rx_info));
     span_log_set_level(&state.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
     span_log_set_tag(&state.logging, "B");
     get_test_set(&state, "../spandsp/tsb85.xml", test_name);

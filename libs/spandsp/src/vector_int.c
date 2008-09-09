@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: vector_int.c,v 1.11 2008/07/02 14:48:26 steveu Exp $
+ * $Id: vector_int.c,v 1.12 2008/09/01 16:07:34 steveu Exp $
  */
 
 /*! \file */
@@ -87,7 +87,7 @@ int32_t vec_dot_prodi16(const int16_t x[], const int16_t y[], int n)
 
         " .p2align 2;\n"
         "1:\n"
-        " addl $24,%%edx;\n"                  /* now edx = top - 8 */
+        " addl $24,%%edx;\n"                  /* Now edx = top - 8 */
         " cmpl %%edx,%%esi;\n"
         " ja 3f;\n"
 
@@ -106,7 +106,7 @@ int32_t vec_dot_prodi16(const int16_t x[], const int16_t y[], int n)
 
         " .p2align 2;\n"
         "3:\n"
-        " addl $4,%%edx;\n"                  /* now edx = top - 4 */
+        " addl $4,%%edx;\n"                  /* Now edx = top - 4 */
         " cmpl %%edx,%%esi;\n"
         " ja 5f;\n"
 
@@ -121,7 +121,7 @@ int32_t vec_dot_prodi16(const int16_t x[], const int16_t y[], int n)
 
         " .p2align 2;\n"
         "5:\n"
-        " addl $2,%%edx;\n"                  /* now edx = top - 2 */
+        " addl $2,%%edx;\n"                  /* Now edx = top - 2 */
         " cmpl %%edx,%%esi;\n"
         " ja 6f;\n"
 
@@ -141,7 +141,7 @@ int32_t vec_dot_prodi16(const int16_t x[], const int16_t y[], int n)
         " movq %%mm0,%%mm1;\n"
         " punpckhdq %%mm0,%%mm1;\n"
         " paddd %%mm1,%%mm0;\n"
-        /* et voila, eax has the final result */
+        /* Et voila, eax has the final result */
         " movd %%mm0,%%eax;\n"
 
         " emms;\n"

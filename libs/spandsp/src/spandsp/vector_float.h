@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: vector_float.h,v 1.10 2008/04/17 14:27:01 steveu Exp $
+ * $Id: vector_float.h,v 1.11 2008/09/01 16:07:34 steveu Exp $
  */
 
 #if !defined(_SPANDSP_VECTOR_FLOAT_H_)
@@ -105,11 +105,26 @@ void vec_mul(double z[], const double x[], const double y[], int n);
 void vec_mull(long double z[], const long double x[], const long double y[], int n);
 #endif
 
+/*! \brief Find the dot product of two float vectors.
+    \param x The first vector.
+    \param y The first vector.
+    \param n The number of elements in the vectors.
+    \return The dot product of the two vectors. */
 float vec_dot_prodf(const float x[], const float y[], int n);
 
+/*! \brief Find the dot product of two double vectors.
+    \param x The first vector.
+    \param y The first vector.
+    \param n The number of elements in the vectors.
+    \return The dot product of the two vectors. */
 double vec_dot_prod(const double x[], const double y[], int n);
 
 #if defined(HAVE_LONG_DOUBLE)
+/*! \brief Find the dot product of two long double vectors.
+    \param x The first vector.
+    \param y The first vector.
+    \param n The number of elements in the vectors.
+    \return The dot product of the two vectors. */
 long double vec_dot_prodl(const long double x[], const long double y[], int n);
 #endif
 

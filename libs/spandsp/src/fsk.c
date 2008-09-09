@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk.c,v 1.44 2008/07/16 17:01:49 steveu Exp $
+ * $Id: fsk.c,v 1.46 2008/09/07 12:45:16 steveu Exp $
  */
 
 /*! \file */
@@ -163,12 +163,12 @@ int fsk_tx(fsk_tx_state_t *s, int16_t *amp, int len)
         if ((s->baud_frac += s->baud_inc) >= SAMPLE_RATE*100)
         {
             s->baud_frac -= SAMPLE_RATE*100;
-            if ((bit = s->get_bit(s->get_bit_user_data)) == PUTBIT_END_OF_DATA)
+            if ((bit = s->get_bit(s->get_bit_user_data)) == SIG_STATUS_END_OF_DATA)
             {
                 if (s->status_handler)
-                    s->status_handler(s->status_user_data, MODEM_TX_STATUS_DATA_EXHAUSTED);
+                    s->status_handler(s->status_user_data, SIG_STATUS_END_OF_DATA);
                 if (s->status_handler)
-                    s->status_handler(s->status_user_data, MODEM_TX_STATUS_SHUTDOWN_COMPLETE);
+                    s->status_handler(s->status_user_data, SIG_STATUS_SHUTDOWN_COMPLETE);
                 s->shutdown = TRUE;
                 break;
             }
@@ -329,7 +329,7 @@ int fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
                 {
                     /* Count down a short delay, to ensure we push the last
                        few bits through the filters before stopping. */
-                    report_status_change(s, PUTBIT_CARRIER_DOWN);
+                    report_status_change(s, SIG_STATUS_CARRIER_DOWN);
                     continue;
                 }
             }
@@ -340,7 +340,7 @@ int fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
             if (power < s->carrier_on_power)
                 continue;
             s->signal_present = 1;
-            report_status_change(s, PUTBIT_CARRIER_UP);
+            report_status_change(s, SIG_STATUS_CARRIER_UP);
         }
         /* Non-coherent FSK demodulation by correlation with the target tones
            over a one baud interval. The slow V.xx specs. are too open ended

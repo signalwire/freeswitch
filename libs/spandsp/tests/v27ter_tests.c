@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_tests.c,v 1.91 2008/08/29 09:28:13 steveu Exp $
+ * $Id: v27ter_tests.c,v 1.93 2008/09/07 06:39:52 steveu Exp $
  */
 
 /*! \page v27ter_tests_page V.27ter modem tests
@@ -132,28 +132,7 @@ static void reporter(void *user_data, int reason, bert_results_t *results)
 
 static int v27ter_rx_status(void *user_data, int status)
 {
-    printf("V.27ter rx status is %d\n", status);
-    switch (status)
-    {
-    case PUTBIT_TRAINING_FAILED:
-        printf("Training failed\n");
-        break;
-    case PUTBIT_TRAINING_IN_PROGRESS:
-        printf("Training in progress\n");
-        break;
-    case PUTBIT_TRAINING_SUCCEEDED:
-        printf("Training succeeded\n");
-        break;
-    case PUTBIT_CARRIER_UP:
-        printf("Carrier up\n");
-        break;
-    case PUTBIT_CARRIER_DOWN:
-        printf("Carrier down\n");
-        break;
-    default:
-        printf("Eh! - %d\n", status);
-        break;
-    }
+    printf("V.27ter rx status is %s (%d)\n", signal_status_to_str(status), status);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -174,18 +153,7 @@ static void v27terputbit(void *user_data, int bit)
 
 static int v27ter_tx_status(void *user_data, int status)
 {
-    switch (status)
-    {
-    case MODEM_TX_STATUS_DATA_EXHAUSTED:
-        printf("V.27ter tx data exhausted\n");
-        break;
-    case MODEM_TX_STATUS_SHUTDOWN_COMPLETE:
-        printf("V.27ter tx shutdown complete\n");
-        break;
-    default:
-        printf("V.27ter tx status is %d\n", status);
-        break;
-    }
+    printf("V.27ter tx status is %s (%d)\n", signal_status_to_str(status), status);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -457,8 +425,8 @@ int main(int argc, char *argv[])
 
                 /* Note that we might get a few bad bits as the carrier shuts down. */
                 bert_result(&bert, &bert_results);
-                fprintf(stderr, "Final result %ddBm0, %d bits, %d bad bits, %d resyncs\n", signal_level, bert_results.total_bits, bert_results.bad_bits, bert_results.resyncs);
-                fprintf(stderr, "Last report  %ddBm0, %d bits, %d bad bits, %d resyncs\n", signal_level, latest_results.total_bits, latest_results.bad_bits, latest_results.resyncs);
+                fprintf(stderr, "Final result %ddBm0/%ddBm0, %d bits, %d bad bits, %d resyncs\n", signal_level, noise_level, bert_results.total_bits, bert_results.bad_bits, bert_results.resyncs);
+                fprintf(stderr, "Last report  %ddBm0/%ddBm0, %d bits, %d bad bits, %d resyncs\n", signal_level, noise_level, latest_results.total_bits, latest_results.bad_bits, latest_results.resyncs);
                 /* See if bit errors are appearing yet. Also check we are getting enough bits out of the receiver. The last regular report
                    should be error free, though the final report will generally contain bits errors as the carrier was dying. The total
                    number of bits out of the receiver should be at least the number we sent. Also, since BERT sync should have occurred
@@ -506,15 +474,13 @@ int main(int argc, char *argv[])
             line_model_monitor_line_spectrum_update(amp, samples);
 #endif
         v27ter_rx(&rx, amp, samples);
-        if (decode_test_file == NULL  &&  block%500 == 0)
-            printf("Noise level is %d\n", noise_level);
     }
     if (!decode_test_file)
     {
         bert_result(&bert, &bert_results);
         fprintf(stderr, "At completion:\n");
-        fprintf(stderr, "Final result %ddBm0, %d bits, %d bad bits, %d resyncs\n", signal_level, bert_results.total_bits, bert_results.bad_bits, bert_results.resyncs);
-        fprintf(stderr, "Last report  %ddBm0, %d bits, %d bad bits, %d resyncs\n", signal_level, latest_results.total_bits, latest_results.bad_bits, latest_results.resyncs);
+        fprintf(stderr, "Final result %ddBm0/%ddBm0, %d bits, %d bad bits, %d resyncs\n", signal_level, noise_level, bert_results.total_bits, bert_results.bad_bits, bert_results.resyncs);
+        fprintf(stderr, "Last report  %ddBm0/%ddBm0, %d bits, %d bad bits, %d resyncs\n", signal_level, noise_level, latest_results.total_bits, latest_results.bad_bits, latest_results.resyncs);
         one_way_line_model_release(line_model);
         if (signal_level > -43)
         {

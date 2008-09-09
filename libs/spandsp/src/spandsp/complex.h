@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: complex.h,v 1.16 2008/04/17 14:27:00 steveu Exp $
+ * $Id: complex.h,v 1.18 2008/09/03 13:41:42 steveu Exp $
  */
 
 /*! \file */
@@ -329,6 +329,56 @@ static __inline__ complexl_t complex_mull(const complexl_t *x, const complexl_t 
 /*- End of function --------------------------------------------------------*/
 #endif
 
+static __inline__ complexi_t complex_muli(const complexi_t *x, const complexi_t *y)
+{
+    complexi_t z;
+
+    z.re = x->re*y->re - x->im*y->im;
+    z.im = x->re*y->im + x->im*y->re;
+    return z;
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ complexi16_t complex_muli16(const complexi16_t *x, const complexi16_t *y)
+{
+    complexi16_t z;
+
+    z.re = (int32_t) x->re*(int32_t) y->re - (int32_t) x->im*(int32_t) y->im;
+    z.im = (int32_t) x->re*(int32_t) y->im + (int32_t) x->im*(int32_t) y->re;
+    return z;
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ complexi16_t complex_mul_q1_15(const complexi16_t *x, const complexi16_t *y)
+{
+    complexi16_t z;
+
+    z.re = ((int32_t) x->re*(int32_t) y->re - (int32_t) x->im*(int32_t) y->im) >> 15;
+    z.im = ((int32_t) x->re*(int32_t) y->im + (int32_t) x->im*(int32_t) y->re) >> 15;
+    return z;
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ complexi32_t complex_muli32i16(const complexi32_t *x, const complexi16_t *y)
+{
+    complexi32_t z;
+
+    z.re = x->re*(int32_t) y->re - x->im*(int32_t) y->im;
+    z.im = x->re*(int32_t) y->im + x->im*(int32_t) y->re;
+    return z;
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ complexi32_t complex_muli32(const complexi32_t *x, const complexi32_t *y)
+{
+    complexi32_t z;
+
+    z.re = x->re*y->re - x->im*y->im;
+    z.im = x->re*y->im + x->im*y->re;
+    return z;
+}
+/*- End of function --------------------------------------------------------*/
+
 static __inline__ complexf_t complex_divf(const complexf_t *x, const complexf_t *y)
 {
     complexf_t z;
@@ -399,9 +449,29 @@ static __inline__ complexl_t complex_conjl(const complexl_t *x)
 /*- End of function --------------------------------------------------------*/
 #endif
 
-static __inline__ complexi_t complexi_conj(const complexi_t *x)
+static __inline__ complexi_t complex_conji(const complexi_t *x)
 {
     complexi_t z;
+
+    z.re = x->re;
+    z.im = -x->im;
+    return z;
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ complexi16_t complex_conji16(const complexi16_t *x)
+{
+    complexi16_t z;
+
+    z.re = x->re;
+    z.im = -x->im;
+    return z;
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ complexi32_t complex_conji32(const complexi32_t *x)
+{
+    complexi32_t z;
 
     z.re = x->re;
     z.im = -x->im;

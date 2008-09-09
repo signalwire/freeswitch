@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: queue.c,v 1.22 2008/05/15 14:26:30 steveu Exp $
+ * $Id: queue.c,v 1.23 2008/09/09 16:25:51 steveu Exp $
  */
 
 /*! \file */
@@ -39,6 +39,7 @@
 #include <inttypes.h>
 #include <sys/types.h>
 
+#define FULLY_DEFINE_QUEUE_STATE_T
 #include "spandsp/queue.h"
 
 int queue_empty(queue_state_t *s)

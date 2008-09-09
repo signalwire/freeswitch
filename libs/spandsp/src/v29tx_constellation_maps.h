@@ -23,10 +23,10 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29tx_constellation_maps.h,v 1.1 2008/07/10 13:34:01 steveu Exp $
+ * $Id: v29tx_constellation_maps.h,v 1.2 2008/09/04 14:40:05 steveu Exp $
  */
 
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
 static const complexi16_t v29_abab_constellation[6] =
 #else
 static const complexf_t v29_abab_constellation[6] =
@@ -40,7 +40,7 @@ static const complexf_t v29_abab_constellation[6] =
     {-3,  0}            /* 180deg low       */
 };
 
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
 static const complexi16_t v29_cdcd_constellation[6] =
 #else
 static const complexf_t v29_cdcd_constellation[6] =
@@ -54,7 +54,7 @@ static const complexf_t v29_cdcd_constellation[6] =
     { 0,  3}            /*  90deg low       */
 };
 
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
 static const complexi16_t v29_9600_constellation[16] =
 #else
 static const complexf_t v29_9600_constellation[16] =

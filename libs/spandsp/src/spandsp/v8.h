@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v8.h,v 1.22 2008/05/14 15:41:25 steveu Exp $
+ * $Id: v8.h,v 1.23 2008/09/04 14:40:05 steveu Exp $
  */
  
 /*! \file */
@@ -76,7 +76,7 @@ enum v8_modulation_e
     V8_MOD_V90          = (1 << 12),    /* V.90 duplex */
     V8_MOD_V92          = (1 << 13),    /* V.92 duplex */
 
-    V8_MOD_FAILED       = (1 << 15),    /* Indicates failure to negotiate */
+    V8_MOD_FAILED       = (1 << 15)     /* Indicates failure to negotiate */
 };
 
 enum v8_protocol_e

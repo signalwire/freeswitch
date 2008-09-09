@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_gateway.h,v 1.56 2008/08/14 14:06:05 steveu Exp $
+ * $Id: t38_gateway.h,v 1.57 2008/09/02 13:56:10 steveu Exp $
  */
 
 /*! \file */
@@ -126,6 +126,21 @@ typedef struct
 typedef struct
 {
     /*! \brief HDLC message buffers. */
+    uint8_t buf[T38_MAX_HDLC_LEN];
+    /*! \brief HDLC message lengths. */
+    int len;
+    /*! \brief HDLC message status flags. */
+    int flags;
+    /*! \brief HDLC buffer contents. */
+    int contents;
+} t38_gateway_hdlc_buf_t;
+
+typedef struct
+{
+    /*! \brief HDLC message buffers. */
+    t38_gateway_hdlc_buf_t buf[T38_TX_HDLC_BUFS];
+#if 0
+    /*! \brief HDLC message buffers. */
     uint8_t buf[T38_TX_HDLC_BUFS][T38_MAX_HDLC_LEN];
     /*! \brief HDLC message lengths. */
     int len[T38_TX_HDLC_BUFS];
@@ -133,6 +148,7 @@ typedef struct
     int flags[T38_TX_HDLC_BUFS];
     /*! \brief HDLC buffer contents. */
     int contents[T38_TX_HDLC_BUFS];
+#endif
     /*! \brief HDLC buffer number for input. */
     int in;
     /*! \brief HDLC buffer number for output. */

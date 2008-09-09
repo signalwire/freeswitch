@@ -25,7 +25,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t31.c,v 1.119 2008/08/09 05:09:56 steveu Exp $
+ * $Id: t31.c,v 1.120 2008/09/07 12:45:17 steveu Exp $
  */
 
 /*! \file */
@@ -341,7 +341,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
                packets, when they have sent no data for the body of the frame. */
             if (s->tx.out_bytes > 0)
                 hdlc_accept((void *) s, fe->hdlc_rx.buf, fe->hdlc_rx.len, TRUE);
-            hdlc_accept((void *) s, NULL, PUTBIT_CARRIER_DOWN, TRUE);
+            hdlc_accept((void *) s, NULL, SIG_STATUS_CARRIER_DOWN, TRUE);
         }
         s->tx.out_bytes = 0;
         fe->missing_data = FALSE;
@@ -352,7 +352,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             span_log(&s->logging, SPAN_LOG_WARNING, "There is data in a T38_FIELD_HDLC_FCS_BAD_SIG_END!\n");
         span_log(&s->logging, SPAN_LOG_FLOW, "Type %s - CRC bad, sig end (%s)\n", t30_frametype(s->tx.data[2]), (fe->missing_data)  ?  "missing octets"  :  "clean");
         if (fe->current_rx_type == T31_V21_RX)
-            hdlc_accept((void *) s, NULL, PUTBIT_CARRIER_DOWN, TRUE);
+            hdlc_accept((void *) s, NULL, SIG_STATUS_CARRIER_DOWN, TRUE);
         fe->hdlc_rx.len = 0;
         fe->missing_data = FALSE;
         break;
@@ -363,7 +363,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
            i.e. they send T38_FIELD_HDLC_FCS_OK, and then T38_FIELD_HDLC_SIG_END when the carrier actually drops.
            The other is because the HDLC signal drops unexpectedly - i.e. not just after a final frame. */
         if (fe->current_rx_type == T31_V21_RX)
-            hdlc_accept((void *) s, NULL, PUTBIT_CARRIER_DOWN, TRUE);
+            hdlc_accept((void *) s, NULL, SIG_STATUS_CARRIER_DOWN, TRUE);
         fe->hdlc_rx.len = 0;
         fe->missing_data = FALSE;
         break;
@@ -709,20 +709,20 @@ static void non_ecm_rx_status(void *user_data, int status)
     s = (t31_state_t *) user_data;
     switch (status)
     {
-    case PUTBIT_TRAINING_IN_PROGRESS:
+    case SIG_STATUS_TRAINING_IN_PROGRESS:
         break;
-    case PUTBIT_TRAINING_FAILED:
+    case SIG_STATUS_TRAINING_FAILED:
         s->at_state.rx_trained = FALSE;
         break;
-    case PUTBIT_TRAINING_SUCCEEDED:
+    case SIG_STATUS_TRAINING_SUCCEEDED:
         /* The modem is now trained */
         at_put_response_code(&s->at_state, AT_RESPONSE_CODE_CONNECT);
         s->at_state.rx_signal_present = TRUE;
         s->at_state.rx_trained = TRUE;
         break;
-    case PUTBIT_CARRIER_UP:
+    case SIG_STATUS_CARRIER_UP:
         break;
-    case PUTBIT_CARRIER_DOWN:
+    case SIG_STATUS_CARRIER_DOWN:
         if (s->at_state.rx_signal_present)
         {
             s->at_state.rx_data[s->at_state.rx_data_bytes++] = DLE;
@@ -806,7 +806,7 @@ static int non_ecm_get_bit(void *user_data)
                 s->tx.final = FALSE;
                 /* This will put the modem into its shutdown sequence. When
                    it has finally shut down, an OK response will be sent. */
-                return PUTBIT_END_OF_DATA;
+                return SIG_STATUS_END_OF_DATA;
             }
             /* Fill with 0xFF bytes at the start of transmission, or 0x00 if we are in
                the middle of transmission. This follows T.31 and T.30 practice. */
@@ -856,24 +856,24 @@ static void hdlc_rx_status(void *user_data, int status)
     s = (t31_state_t *) user_data;
     switch (status)
     {
-    case PUTBIT_TRAINING_IN_PROGRESS:
+    case SIG_STATUS_TRAINING_IN_PROGRESS:
         break;
-    case PUTBIT_TRAINING_FAILED:
+    case SIG_STATUS_TRAINING_FAILED:
         s->at_state.rx_trained = FALSE;
         break;
-    case PUTBIT_TRAINING_SUCCEEDED:
+    case SIG_STATUS_TRAINING_SUCCEEDED:
         /* The modem is now trained */
         s->at_state.rx_signal_present = TRUE;
         s->at_state.rx_trained = TRUE;
         break;
-    case PUTBIT_CARRIER_UP:
+    case SIG_STATUS_CARRIER_UP:
         if (s->modem == T31_CNG_TONE  ||  s->modem == T31_NOCNG_TONE  ||  s->modem == T31_V21_RX)
         {
             s->at_state.rx_signal_present = TRUE;
             s->rx_frame_received = FALSE;
         }
         break;
-    case PUTBIT_CARRIER_DOWN:
+    case SIG_STATUS_CARRIER_DOWN:
         if (s->rx_frame_received)
         {
             if (s->at_state.dte_is_waiting)
@@ -899,7 +899,7 @@ static void hdlc_rx_status(void *user_data, int status)
         s->at_state.rx_signal_present = FALSE;
         s->at_state.rx_trained = FALSE;
         break;
-    case PUTBIT_FRAMING_OK:
+    case SIG_STATUS_FRAMING_OK:
         if (s->modem == T31_CNG_TONE  ||  s->modem == T31_NOCNG_TONE)
         {
             /* Once we get any valid HDLC the CNG tone stops, and we drop
@@ -949,7 +949,7 @@ static void hdlc_rx_status(void *user_data, int status)
             }
         }
         break;
-    case PUTBIT_ABORT:
+    case SIG_STATUS_ABORT:
         /* Just ignore these */
         break;
     default:

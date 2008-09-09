@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_gateway.c,v 1.139 2008/08/17 16:25:52 steveu Exp $
+ * $Id: t38_gateway.c,v 1.142 2008/09/07 12:45:17 steveu Exp $
  */
 
 /*! \file */
@@ -308,31 +308,31 @@ static void hdlc_underflow_handler(void *user_data)
     span_log(&s->logging, SPAN_LOG_FLOW, "HDLC underflow at %d\n", t->out);
     /* If the current HDLC buffer is not at the HDLC_FLAG_PROCEED_WITH_OUTPUT stage, this
        underflow must be an end of preamble condition. */
-    if ((t->flags[t->out] & HDLC_FLAG_PROCEED_WITH_OUTPUT))
+    if ((t->buf[t->out].flags & HDLC_FLAG_PROCEED_WITH_OUTPUT))
     {
-        old_data_type = t->contents[t->out];
-        t->len[t->out] = 0;
-        t->flags[t->out] = 0;
-        t->contents[t->out] = 0;
+        old_data_type = t->buf[t->out].contents;
+        t->buf[t->out].len = 0;
+        t->buf[t->out].flags = 0;
+        t->buf[t->out].contents = 0;
         if (++t->out >= T38_TX_HDLC_BUFS)
             t->out = 0;
-        span_log(&s->logging, SPAN_LOG_FLOW, "HDLC next is 0x%X\n", t->contents[t->out]);
-        if ((t->contents[t->out] & FLAG_INDICATOR))
+        span_log(&s->logging, SPAN_LOG_FLOW, "HDLC next is 0x%X\n", t->buf[t->out].contents);
+        if ((t->buf[t->out].contents & FLAG_INDICATOR))
         {
             /* The next thing in the queue is an indicator, so we need to stop this modem. */
             span_log(&s->logging, SPAN_LOG_FLOW, "HDLC shutdown\n");
             hdlc_tx_frame(&s->audio.modems.hdlc_tx, NULL, 0);
         }
-        else if ((t->contents[t->out] & FLAG_DATA))
+        else if ((t->buf[t->out].contents & FLAG_DATA))
         {
             /* Check if we should start sending the next frame */
-            if ((t->flags[t->out] & HDLC_FLAG_PROCEED_WITH_OUTPUT))
+            if ((t->buf[t->out].flags & HDLC_FLAG_PROCEED_WITH_OUTPUT))
             {
                 /* This frame is ready to go, and uses the same modem we are running now. So, send
                    whatever we have. This might or might not be an entire frame. */
                 span_log(&s->logging, SPAN_LOG_FLOW, "HDLC start next frame\n");
-                hdlc_tx_frame(&s->audio.modems.hdlc_tx, t->buf[t->out], t->len[t->out]);
-                if ((t->flags[t->out] & HDLC_FLAG_CORRUPT_CRC))
+                hdlc_tx_frame(&s->audio.modems.hdlc_tx, t->buf[t->out].buf, t->buf[t->out].len);
+                if ((t->buf[t->out].flags & HDLC_FLAG_CORRUPT_CRC))
                     hdlc_tx_corrupt_frame(&s->audio.modems.hdlc_tx);
                 /*endif*/
             }
@@ -355,9 +355,10 @@ static int set_next_tx_type(t38_gateway_state_t *s)
 
     t = &s->audio.modems;
     u = &s->core.hdlc_to_modem;
+    t38_non_ecm_buffer_report_output_status(&s->core.non_ecm_to_modem, &s->logging);
     if (t->next_tx_handler)
     {
-        /* There is a handler queued, so that is the next one */
+        /* There is a handler queued, so that is the next one. */
         t->tx_handler = t->next_tx_handler;
         t->tx_user_data = t->next_tx_user_data;
         t->next_tx_handler = NULL;
@@ -378,13 +379,13 @@ static int set_next_tx_type(t38_gateway_state_t *s)
     if (u->in == u->out)
         return FALSE;
     /*endif*/
-    if ((u->contents[u->out] & FLAG_INDICATOR) == 0)
+    if ((u->buf[u->out].contents & FLAG_INDICATOR) == 0)
         return FALSE;
     /*endif*/
-    indicator = (u->contents[u->out] & 0xFF);
-    u->len[u->out] = 0;
-    u->flags[u->out] = 0;
-    u->contents[u->out] = 0;
+    indicator = (u->buf[u->out].contents & 0xFF);
+    u->buf[u->out].len = 0;
+    u->buf[u->out].flags = 0;
+    u->buf[u->out].contents = 0;
     if (++u->out >= T38_TX_HDLC_BUFS)
         u->out = 0;
     /*endif*/
@@ -437,7 +438,7 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         hdlc_tx_init(&t->hdlc_tx, FALSE, 2, TRUE, hdlc_underflow_handler, s);
         hdlc_tx_flags(&t->hdlc_tx, 32);
         silence_gen_alter(&t->silence_gen, ms_to_samples(75));
-        u->len[u->in] = 0;
+        u->buf[u->in].len = 0;
         fsk_tx_init(&t->v21_tx, &preset_fsk_specs[FSK_V21CH2], (get_bit_func_t) hdlc_tx_get_bit, &t->hdlc_tx);
         t->tx_handler = (span_tx_handler_t *) &(silence_gen);
         t->tx_user_data = &t->silence_gen;
@@ -456,6 +457,7 @@ static int set_next_tx_type(t38_gateway_state_t *s)
             t->tx_bit_rate = 2400;
             break;
         }
+        /*endswitch*/
         silence_gen_alter(&t->silence_gen, ms_to_samples(75));
         v27ter_tx_restart(&t->v27ter_tx, t->tx_bit_rate, t->use_tep);
         v27ter_tx_set_get_bit(&t->v27ter_tx, get_bit_func, get_bit_user_data);
@@ -476,6 +478,7 @@ static int set_next_tx_type(t38_gateway_state_t *s)
             t->tx_bit_rate = 9600;
             break;
         }
+        /*endswitch*/
         silence_gen_alter(&t->silence_gen, ms_to_samples(75));
         v29_tx_restart(&t->v29_tx, t->tx_bit_rate, t->use_tep);
         v29_tx_set_get_bit(&t->v29_tx, get_bit_func, get_bit_user_data);
@@ -525,6 +528,7 @@ static int set_next_tx_type(t38_gateway_state_t *s)
             t->tx_bit_rate = 14400;
             break;
         }
+        /*endswitch*/
         silence_gen_alter(&t->silence_gen, ms_to_samples(75));
         v17_tx_restart(&t->v17_tx, t->tx_bit_rate, t->use_tep, short_train);
         v17_tx_set_get_bit(&t->v17_tx, get_bit_func, get_bit_user_data);
@@ -563,36 +567,41 @@ static int set_next_tx_type(t38_gateway_state_t *s)
     if (t->tx_bit_rate > 300)
         hdlc_tx_flags(&t->hdlc_tx, t->tx_bit_rate/(8*5));
     /*endif*/
-    t38_non_ecm_buffer_report_status(&s->core.non_ecm_to_modem, &s->logging);
-    t38_non_ecm_buffer_init(&s->core.non_ecm_to_modem, s->core.image_data_mode, s->core.min_row_bits);
     s->t38x.in_progress_rx_indicator = indicator;
     return TRUE;
 }
 /*- End of function --------------------------------------------------------*/
 
-static void pump_out_final_hdlc(t38_gateway_state_t *s, int good_fcs)
+static void finalise_hdlc_frame(t38_gateway_state_t *s, int good_fcs)
 {
-    if (!good_fcs)
-        s->core.hdlc_to_modem.flags[s->core.hdlc_to_modem.in] |= HDLC_FLAG_CORRUPT_CRC;
+    t38_gateway_hdlc_buf_t *hdlc_buf;
+
+    hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
+    if (!good_fcs  ||  (hdlc_buf->flags & HDLC_FLAG_MISSING_DATA))
+        hdlc_buf->flags |= HDLC_FLAG_CORRUPT_CRC;
     /*endif*/
     if (s->core.hdlc_to_modem.in == s->core.hdlc_to_modem.out)
     {
         /* This is the frame in progress at the output. */
-        if ((s->core.hdlc_to_modem.flags[s->core.hdlc_to_modem.out] & HDLC_FLAG_PROCEED_WITH_OUTPUT) == 0)
+        if ((hdlc_buf->flags & HDLC_FLAG_PROCEED_WITH_OUTPUT) == 0)
         {
             /* Output of this frame has not yet begun. Throw it all out now. */
-            hdlc_tx_frame(&s->audio.modems.hdlc_tx, s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.out], s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.out]);
+            hdlc_tx_frame(&s->audio.modems.hdlc_tx, hdlc_buf->buf, hdlc_buf->len);
         }
         /*endif*/
-        if ((s->core.hdlc_to_modem.flags[s->core.hdlc_to_modem.out] & HDLC_FLAG_CORRUPT_CRC))
+        if ((hdlc_buf->flags & HDLC_FLAG_CORRUPT_CRC))
             hdlc_tx_corrupt_frame(&s->audio.modems.hdlc_tx);
         /*endif*/
     }
     /*endif*/
-    s->core.hdlc_to_modem.flags[s->core.hdlc_to_modem.in] |= (HDLC_FLAG_PROCEED_WITH_OUTPUT | HDLC_FLAG_FINISHED);
+    hdlc_buf->flags |= (HDLC_FLAG_PROCEED_WITH_OUTPUT | HDLC_FLAG_FINISHED);
     if (++s->core.hdlc_to_modem.in >= T38_TX_HDLC_BUFS)
         s->core.hdlc_to_modem.in = 0;
     /*endif*/
+    hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
+    hdlc_buf->len = 0;
+    hdlc_buf->flags = 0;
+    hdlc_buf->contents = 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -853,53 +862,53 @@ static void monitor_control_messages(t38_gateway_state_t *s, int from_modem, uin
 static void queue_missing_indicator(t38_gateway_state_t *s, int data_type)
 {
     t38_core_state_t *t;
+    int expected;
+    int expected_alt;
     
     t = &s->t38x.t38;
+    expected = -1;
+    expected_alt = -1;
     /* Missing packets might have lost us the indicator that should have put us in
        the required mode of operation. It might be a bit late to fill in such a gap
        now, but we should try. We may also want to force indicators into the queue,
        such as when the data says 'end of signal'. */
+    /* We have an expectation of whether long or short training should occur, but be
+       tolerant of either kind of indicator being present. */
     switch (data_type)
     {
     case T38_DATA_NONE:
-        if (t->current_rx_indicator != T38_IND_NO_SIGNAL)
-            process_rx_indicator(t, (void *) s, T38_IND_NO_SIGNAL);
+        expected = T38_IND_NO_SIGNAL;
         break;
     case T38_DATA_V21:
-        if (t->current_rx_indicator != T38_IND_V21_PREAMBLE)
-            process_rx_indicator(t, (void *) s, T38_IND_V21_PREAMBLE);
+        expected = T38_IND_V21_PREAMBLE;
         break;
     case T38_DATA_V27TER_2400:
-        if (t->current_rx_indicator != T38_IND_V27TER_2400_TRAINING)
-            process_rx_indicator(t, (void *) s, T38_IND_V27TER_2400_TRAINING);
+        expected = T38_IND_V27TER_2400_TRAINING;
         break;
     case T38_DATA_V27TER_4800:
-        if (t->current_rx_indicator != T38_IND_V27TER_4800_TRAINING)
-            process_rx_indicator(t, (void *) s, T38_IND_V27TER_4800_TRAINING);
+        expected = T38_IND_V27TER_4800_TRAINING;
         break;
     case T38_DATA_V29_7200:
-        if (t->current_rx_indicator != T38_IND_V29_7200_TRAINING)
-            process_rx_indicator(t, (void *) s, T38_IND_V29_7200_TRAINING);
+        expected = T38_IND_V29_7200_TRAINING;
         break;
     case T38_DATA_V29_9600:
-        if (t->current_rx_indicator != T38_IND_V29_9600_TRAINING)
-            process_rx_indicator(t, (void *) s, T38_IND_V29_9600_TRAINING);
+        expected = T38_IND_V29_9600_TRAINING;
         break;
     case T38_DATA_V17_7200:
-        if (t->current_rx_indicator != T38_IND_V17_7200_SHORT_TRAINING  &&  t->current_rx_indicator != T38_IND_V17_7200_LONG_TRAINING)
-            process_rx_indicator(t, (void *) s, T38_IND_V17_7200_LONG_TRAINING);
+        expected = (s->core.short_train)  ?  T38_IND_V17_7200_SHORT_TRAINING  :  T38_IND_V17_7200_LONG_TRAINING;
+        expected_alt = (s->core.short_train)  ?  T38_IND_V17_7200_LONG_TRAINING  :  T38_IND_V17_7200_SHORT_TRAINING;
         break;
     case T38_DATA_V17_9600:
-        if (t->current_rx_indicator != T38_IND_V17_9600_SHORT_TRAINING  &&  t->current_rx_indicator != T38_IND_V17_9600_LONG_TRAINING)
-            process_rx_indicator(t, (void *) s, T38_IND_V17_9600_LONG_TRAINING);
+        expected = (s->core.short_train)  ?  T38_IND_V17_9600_SHORT_TRAINING  :  T38_IND_V17_9600_LONG_TRAINING;
+        expected_alt = (s->core.short_train)  ?  T38_IND_V17_9600_LONG_TRAINING  :  T38_IND_V17_9600_SHORT_TRAINING;
         break;
     case T38_DATA_V17_12000:
-        if (t->current_rx_indicator != T38_IND_V17_12000_SHORT_TRAINING  &&  t->current_rx_indicator != T38_IND_V17_12000_LONG_TRAINING)
-            process_rx_indicator(t, (void *) s, T38_IND_V17_12000_LONG_TRAINING);
+        expected = (s->core.short_train)  ?  T38_IND_V17_12000_SHORT_TRAINING  :  T38_IND_V17_12000_LONG_TRAINING;
+        expected_alt = (s->core.short_train)  ?  T38_IND_V17_12000_LONG_TRAINING  :  T38_IND_V17_12000_SHORT_TRAINING;
         break;
     case T38_DATA_V17_14400:
-        if (t->current_rx_indicator != T38_IND_V17_14400_SHORT_TRAINING  &&  t->current_rx_indicator != T38_IND_V17_14400_LONG_TRAINING)
-            process_rx_indicator(t, (void *) s, T38_IND_V17_14400_LONG_TRAINING);
+        expected = (s->core.short_train)  ?  T38_IND_V17_14400_SHORT_TRAINING  :  T38_IND_V17_14400_LONG_TRAINING;
+        expected_alt = (s->core.short_train)  ?  T38_IND_V17_14400_LONG_TRAINING  :  T38_IND_V17_14400_SHORT_TRAINING;
         break;
     case T38_DATA_V8:
         break;
@@ -914,6 +923,20 @@ static void queue_missing_indicator(t38_gateway_state_t *s, int data_type)
     case T38_DATA_V33_14400:
         break;
     }
+    /*endswitch*/
+    if (expected < 0)
+        return;
+    if (t->current_rx_indicator == expected)
+        return;
+    if (expected_alt >= 0  &&  t->current_rx_indicator == expected_alt)
+        return;
+    span_log(&s->logging,
+             SPAN_LOG_FLOW,
+             "Queuing missing indicator - %s\n",
+             t38_indicator_to_str(expected));
+    process_rx_indicator(t, (void *) s, expected);
+    /* Force the indicator setting here, as the core won't set in when its missing. */
+    t->current_rx_indicator = expected;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -922,7 +945,7 @@ static int process_rx_missing(t38_core_state_t *t, void *user_data, int rx_seq_n
     t38_gateway_state_t *s;
     
     s = (t38_gateway_state_t *) user_data;
-    s->core.hdlc_to_modem.flags[s->core.hdlc_to_modem.in] |= HDLC_FLAG_MISSING_DATA;
+    s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in].flags |= HDLC_FLAG_MISSING_DATA;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -933,23 +956,26 @@ static int process_rx_indicator(t38_core_state_t *t, void *user_data, int indica
     
     s = (t38_gateway_state_t *) user_data;
 
+    t38_non_ecm_buffer_report_input_status(&s->core.non_ecm_to_modem, &s->logging);
     if (t->current_rx_indicator == indicator)
     {
         /* This is probably due to the far end repeating itself. Ignore it. Its harmless */
         return 0;
     }
     /*endif*/
-    if (s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in])
+    if (s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in].contents)
     {
         if (++s->core.hdlc_to_modem.in >= T38_TX_HDLC_BUFS)
             s->core.hdlc_to_modem.in = 0;
         /*endif*/
     }
     /*endif*/
-    s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] = (indicator | FLAG_INDICATOR);
+    s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in].contents = (indicator | FLAG_INDICATOR);
     if (++s->core.hdlc_to_modem.in >= T38_TX_HDLC_BUFS)
         s->core.hdlc_to_modem.in = 0;
     /*endif*/
+    t38_non_ecm_buffer_set_mode(&s->core.non_ecm_to_modem, s->core.image_data_mode, s->core.min_row_bits);
+
     span_log(&s->logging,
              SPAN_LOG_FLOW,
              "Queued change - (%d) %s -> %s\n",
@@ -967,9 +993,9 @@ static int process_rx_indicator(t38_core_state_t *t, void *user_data, int indica
 static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, int field_type, const uint8_t *buf, int len)
 {
     int i;
-    int previous;
     t38_gateway_state_t *s;
     t38_gateway_t38_state_t *xx;
+    t38_gateway_hdlc_buf_t *hdlc_buf;
 
     s = (t38_gateway_state_t *) user_data;
     xx = &s->t38x;
@@ -977,46 +1003,52 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
     {
     case T38_FIELD_HDLC_DATA:
         xx->current_rx_field_class = T38_FIELD_CLASS_HDLC;
-        if (s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] != (data_type | FLAG_DATA))
+        hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
+        if (hdlc_buf->contents != (data_type | FLAG_DATA))
+        {
             queue_missing_indicator(s, data_type);
+            hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
+        }
         /*endif*/
-        previous = s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.in];
         /* Check if this data would overflow the buffer. */
-        if (s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.in] + len > T38_MAX_HDLC_LEN)
+        if (hdlc_buf->len + len > T38_MAX_HDLC_LEN)
             break;
         /*endif*/
-        s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] = (data_type | FLAG_DATA);
-        bit_reverse(&s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in][s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.in]], buf, len);
+        hdlc_buf->contents = (data_type | FLAG_DATA);
+        bit_reverse(&hdlc_buf->buf[hdlc_buf->len], buf, len);
         /* We need to send out the control messages as they are arriving. They are
-           too slow to capture a whole frame, and then pass it on.
+           too slow to capture a whole frame before starting to pass it on.
            For the faster frames, take in the whole frame before sending it out. Also, there
            is no need to monitor, or modify, the contents of the faster frames. */
         if (data_type == T38_DATA_V21)
         {
             for (i = 1;  i <= len;  i++)
-                edit_control_messages(s, 0, s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in], s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.in] + i);
+                edit_control_messages(s, 0, hdlc_buf->buf, hdlc_buf->len + i);
             /*endfor*/
             /* Don't start pumping data into the actual output stream until there is
                enough backlog to create some elasticity for jitter tolerance. */
-            if (s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.in] + len >= HDLC_START_BUFFER_LEVEL)
+            if (hdlc_buf->len + len >= HDLC_START_BUFFER_LEVEL)
             {
                 if (s->core.hdlc_to_modem.in == s->core.hdlc_to_modem.out)
                 {
-                    if ((s->core.hdlc_to_modem.flags[s->core.hdlc_to_modem.in] & HDLC_FLAG_PROCEED_WITH_OUTPUT) == 0)
-                        previous = 0;
+                    /* Output is not running, so kick it into life. */
+                    if ((hdlc_buf->flags & HDLC_FLAG_PROCEED_WITH_OUTPUT) == 0)
+                        hdlc_tx_frame(&s->audio.modems.hdlc_tx, hdlc_buf->buf, hdlc_buf->len + len);
+                    else
+                        hdlc_tx_frame(&s->audio.modems.hdlc_tx, hdlc_buf->buf + hdlc_buf->len, len);
                     /*endif*/
-                    hdlc_tx_frame(&s->audio.modems.hdlc_tx, s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.out] + previous, s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.out] - previous + len);
                 }
                 /*endif*/
-                s->core.hdlc_to_modem.flags[s->core.hdlc_to_modem.in] |= HDLC_FLAG_PROCEED_WITH_OUTPUT;
+                hdlc_buf->flags |= HDLC_FLAG_PROCEED_WITH_OUTPUT;
             }
             /*endif*/
         }
         /*endif*/
-        s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.in] += len;
+        s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in].len += len;
         break;
     case T38_FIELD_HDLC_FCS_OK:
         xx->current_rx_field_class = T38_FIELD_CLASS_HDLC;
+        hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
         if (len > 0)
         {
             span_log(&s->logging, SPAN_LOG_WARNING, "There is data in a T38_FIELD_HDLC_FCS_OK!\n");
@@ -1027,22 +1059,22 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         /* Some T.38 implementations send multiple T38_FIELD_HDLC_FCS_OK messages, in IFP packets with
            incrementing sequence numbers, which are actually repeats. They get through to this point because
            of the incrementing sequence numbers. We need to filter them here in a context sensitive manner. */
-        if (t->current_rx_data_type != data_type
-            ||
-            t->current_rx_field_type != field_type)
+        if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
         {
-            span_log(&s->logging, SPAN_LOG_FLOW, "HDLC frame type %s - CRC good\n", t30_frametype(s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in][2]));
-            if (s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] != (data_type | FLAG_DATA))
+            span_log(&s->logging, SPAN_LOG_FLOW, "HDLC frame type %s - CRC good\n", t30_frametype(hdlc_buf->buf[2]));
+            if (hdlc_buf->contents != (data_type | FLAG_DATA))
+            {
                 queue_missing_indicator(s, data_type);
+                hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
+            }
             /*endif*/
-            s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] = (data_type | FLAG_DATA);
             if (data_type == T38_DATA_V21)
             {
-                if ((s->core.hdlc_to_modem.flags[s->core.hdlc_to_modem.in] & HDLC_FLAG_MISSING_DATA) == 0)
+                if ((hdlc_buf->flags & HDLC_FLAG_MISSING_DATA) == 0)
                 {
-                    monitor_control_messages(s, FALSE, s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in], s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.in]);
+                    monitor_control_messages(s, FALSE, hdlc_buf->buf, hdlc_buf->len);
                     if (s->core.real_time_frame_handler)
-                        s->core.real_time_frame_handler(s, s->core.real_time_frame_user_data, FALSE, s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in], s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.in]);
+                        s->core.real_time_frame_handler(s, s->core.real_time_frame_user_data, FALSE, hdlc_buf->buf, hdlc_buf->len);
                     /*endif*/
                 }
                 /*endif*/
@@ -1050,21 +1082,21 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             else
             {
                 /* Make sure we go back to short training if CTC/CTR has kicked us into
-                   long training. Theer has to be more than one value HDLC frame in a
-                   chunk of image data, so just setting short training mode heer should
+                   long training. There has to be more than one value HDLC frame in a
+                   chunk of image data, so just setting short training mode here should
                    be enough. */
                 s->core.short_train = TRUE;
             }
             /*endif*/
-            pump_out_final_hdlc(s, (s->core.hdlc_to_modem.flags[s->core.hdlc_to_modem.in] & HDLC_FLAG_MISSING_DATA) == 0);
+            hdlc_buf->contents = (data_type | FLAG_DATA);
+            finalise_hdlc_frame(s, TRUE);
         }
         /*endif*/
-        s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.in] = 0;
-        s->core.hdlc_to_modem.flags[s->core.hdlc_to_modem.in] = 0;
         xx->corrupt_current_frame[0] = FALSE;
         break;
     case T38_FIELD_HDLC_FCS_BAD:
         xx->current_rx_field_class = T38_FIELD_CLASS_HDLC;
+        hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
         if (len > 0)
         {
             span_log(&s->logging, SPAN_LOG_WARNING, "There is data in a T38_FIELD_HDLC_FCS_BAD!\n");
@@ -1077,24 +1109,32 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
            of the incrementing sequence numbers. We need to filter them here in a context sensitive manner. */
         if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
         {
-            span_log(&s->logging, SPAN_LOG_FLOW, "HDLC frame type %s - CRC bad\n", t30_frametype(s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in][2]));
-            if (s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] != (data_type | FLAG_DATA))
-                queue_missing_indicator(s, data_type);
-            /*endif*/
-            if (s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.in] > 0)
+            span_log(&s->logging, SPAN_LOG_FLOW, "HDLC frame type %s - CRC bad\n", t30_frametype(hdlc_buf->buf[2]));
+            /* Only bother with frames that have a bad CRC, if they also have some content. */
+            if (hdlc_buf->len > 0)
             {
-                s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] = (data_type | FLAG_DATA);
-                pump_out_final_hdlc(s, FALSE);
+                if (hdlc_buf->contents != (data_type | FLAG_DATA))
+                {
+                    queue_missing_indicator(s, data_type);
+                    hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
+                }
+                /*endif*/
+                hdlc_buf->contents = (data_type | FLAG_DATA);
+                finalise_hdlc_frame(s, FALSE);
+            }
+            else
+            {
+                /* Just restart using the current frame buffer */
+                hdlc_buf->contents = 0;
             }
             /*endif*/
         }
         /*endif*/
-        s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.in] = 0;
-        s->core.hdlc_to_modem.flags[s->core.hdlc_to_modem.in] = 0;
         xx->corrupt_current_frame[0] = FALSE;
         break;
     case T38_FIELD_HDLC_FCS_OK_SIG_END:
         xx->current_rx_field_class = T38_FIELD_CLASS_HDLC;
+        hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
         if (len > 0)
         {
             span_log(&s->logging, SPAN_LOG_WARNING, "There is data in a T38_FIELD_HDLC_FCS_OK_SIG_END!\n");
@@ -1107,23 +1147,35 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
            of the incrementing sequence numbers. We need to filter them here in a context sensitive manner. */
         if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
         {
-            span_log(&s->logging, SPAN_LOG_FLOW, "HDLC frame type %s - CRC OK, sig end\n", t30_frametype(s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in][2]));
-            if (s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] != (data_type | FLAG_DATA))
-                queue_missing_indicator(s, data_type);
-            /*endif*/
-            s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] = (data_type | FLAG_DATA);
-            if (data_type == T38_DATA_V21  &&  (s->core.hdlc_to_modem.flags[s->core.hdlc_to_modem.in] & HDLC_FLAG_MISSING_DATA) == 0)
+            span_log(&s->logging, SPAN_LOG_FLOW, "HDLC frame type %s - CRC OK, sig end\n", t30_frametype(hdlc_buf->buf[2]));
+            if (hdlc_buf->contents != (data_type | FLAG_DATA))
             {
-                monitor_control_messages(s, FALSE, s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in], s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.in]);
-                if (s->core.real_time_frame_handler)
-                    s->core.real_time_frame_handler(s, s->core.real_time_frame_user_data, FALSE, s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in], s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.in]);
-                /*endif*/
+                queue_missing_indicator(s, data_type);
+                hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
             }
             /*endif*/
-            pump_out_final_hdlc(s, (s->core.hdlc_to_modem.flags[s->core.hdlc_to_modem.in] & HDLC_FLAG_MISSING_DATA) == 0);
-            s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.in] = 0;
-            s->core.hdlc_to_modem.flags[s->core.hdlc_to_modem.in] = 0;
-            s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] = 0;
+            if (data_type == T38_DATA_V21)
+            {
+                if ((hdlc_buf->flags & HDLC_FLAG_MISSING_DATA) == 0)
+                {
+                    monitor_control_messages(s, FALSE, hdlc_buf->buf, hdlc_buf->len);
+                    if (s->core.real_time_frame_handler)
+                        s->core.real_time_frame_handler(s, s->core.real_time_frame_user_data, FALSE, hdlc_buf->buf, hdlc_buf->len);
+                    /*endif*/
+                }
+                /*endif*/
+            }
+            else
+            {
+                /* Make sure we go back to short training if CTC/CTR has kicked us into
+                   long training. There has to be more than one value HDLC frame in a
+                   chunk of image data, so just setting short training mode here should
+                   be enough. */
+                s->core.short_train = TRUE;
+            }
+            /*endif*/
+            hdlc_buf->contents = (data_type | FLAG_DATA);
+            finalise_hdlc_frame(s, TRUE);
             queue_missing_indicator(s, T38_DATA_NONE);
             xx->current_rx_field_class = T38_FIELD_CLASS_NONE;
         }
@@ -1132,6 +1184,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         break;
     case T38_FIELD_HDLC_FCS_BAD_SIG_END:
         xx->current_rx_field_class = T38_FIELD_CLASS_HDLC;
+        hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
         if (len > 0)
         {
             span_log(&s->logging, SPAN_LOG_WARNING, "There is data in a T38_FIELD_HDLC_FCS_BAD_SIG_END!\n");
@@ -1144,19 +1197,25 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
            of the incrementing sequence numbers. We need to filter them here in a context sensitive manner. */
         if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
         {
-            span_log(&s->logging, SPAN_LOG_FLOW, "HDLC frame type %s - CRC bad, sig end\n", t30_frametype(s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in][2]));
-            if (s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] != (data_type | FLAG_DATA))
-                queue_missing_indicator(s, data_type);
-            /*endif*/
-            if (s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.in] > 0)
+            span_log(&s->logging, SPAN_LOG_FLOW, "HDLC frame type %s - CRC bad, sig end\n", t30_frametype(hdlc_buf->buf[2]));
+            if (hdlc_buf->contents != (data_type | FLAG_DATA))
             {
-                s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] = (data_type | FLAG_DATA);
-                pump_out_final_hdlc(s, FALSE);
+                queue_missing_indicator(s, data_type);
+                hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
             }
             /*endif*/
-            s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.in] = 0;
-            s->core.hdlc_to_modem.flags[s->core.hdlc_to_modem.in] = 0;
-            s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] = 0;
+            /* Only bother with frames that have a bad CRC, if they also have some content. */
+            if (hdlc_buf->len > 0)
+            {
+                hdlc_buf->contents = (data_type | FLAG_DATA);
+                finalise_hdlc_frame(s, FALSE);
+            }
+            else
+            {
+                /* Just restart using the current frame buffer */
+                hdlc_buf->contents = 0;
+            }
+            /*endif*/
             queue_missing_indicator(s, T38_DATA_NONE);
             xx->current_rx_field_class = T38_FIELD_CLASS_NONE;
         }
@@ -1164,6 +1223,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         xx->corrupt_current_frame[0] = FALSE;
         break;
     case T38_FIELD_HDLC_SIG_END:
+        hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
         if (len > 0)
         {
             span_log(&s->logging, SPAN_LOG_WARNING, "There is data in a T38_FIELD_HDLC_SIG_END!\n");
@@ -1176,8 +1236,11 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
            of the incrementing sequence numbers. We need to filter them here in a context sensitive manner. */
         if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
         {
-            if (s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] != (data_type | FLAG_DATA))
+            if (hdlc_buf->contents != (data_type | FLAG_DATA))
+            {
                 queue_missing_indicator(s, data_type);
+                hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
+            }
             /* WORKAROUND: At least some Mediatrix boxes have a bug, where they can send this message at the
                            end of non-ECM data. We need to tolerate this. */
             if (xx->current_rx_field_class == T38_FIELD_CLASS_NON_ECM)
@@ -1190,10 +1253,12 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             {
                 /* This message is expected under 2 circumstances. One is as an alternative to T38_FIELD_HDLC_FCS_OK_SIG_END - 
                    i.e. they send T38_FIELD_HDLC_FCS_OK, and then T38_FIELD_HDLC_SIG_END when the carrier actually drops.
-                   The other is because the HDLC signal drops unexpectedly - i.e. not just after a final frame. */
-                s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.in] = 0;
-                s->core.hdlc_to_modem.flags[s->core.hdlc_to_modem.in] = 0;
-                s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] = 0;
+                   The other is because the HDLC signal drops unexpectedly - i.e. not just after a final frame. In
+                   this case we just clear out any partial frame data that might be in the buffer. */
+                /* TODO: what if any junk in the buffer has reached the HDLC_FLAG_PROCEED_WITH_OUTPUT stage? */
+                hdlc_buf->len = 0;
+                hdlc_buf->flags = 0;
+                hdlc_buf->contents = 0;
             }
             /*endif*/
             queue_missing_indicator(s, T38_DATA_NONE);
@@ -1204,12 +1269,17 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         break;
     case T38_FIELD_T4_NON_ECM_DATA:
         xx->current_rx_field_class = T38_FIELD_CLASS_NON_ECM;
-        if (s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] != (data_type | FLAG_DATA))
+        hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
+        if (hdlc_buf->contents != (data_type | FLAG_DATA))
+        {
             queue_missing_indicator(s, data_type);
+            hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
+        }
         t38_non_ecm_buffer_inject(&s->core.non_ecm_to_modem, buf, len);
         xx->corrupt_current_frame[0] = FALSE;
         break;
     case T38_FIELD_T4_NON_ECM_SIG_END:
+        hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
         /* Some T.38 implementations send multiple T38_FIELD_T4_NON_ECM_SIG_END messages, in IFP packets with
            incrementing sequence numbers, which are actually repeats. They get through to this point because
            of the incrementing sequence numbers. We need to filter them here in a context sensitive manner. */
@@ -1222,14 +1292,20 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             {
                 if (len > 0)
                 {
-                    if (s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] != (data_type | FLAG_DATA))
+                    if (hdlc_buf->contents != (data_type | FLAG_DATA))
+                    {
                         queue_missing_indicator(s, data_type);
+                        hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
+                    }
                     /*endif*/
                     t38_non_ecm_buffer_inject(&s->core.non_ecm_to_modem, buf, len);
                 }
                 /*endif*/
-                if (s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] != (data_type | FLAG_DATA))
+                if (hdlc_buf->contents != (data_type | FLAG_DATA))
+                {
                     queue_missing_indicator(s, data_type);
+                    hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
+                }
                 /*endif*/
                 /* Don't flow control the data any more. Just pump out the remainder as fast as we can. */
                 t38_non_ecm_buffer_push(&s->core.non_ecm_to_modem);
@@ -1237,12 +1313,16 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             else
             {
                 span_log(&s->logging, SPAN_LOG_WARNING, "T38_FIELD_NON_ECM_SIG_END received at the end of HDLC data!\n");
-                if (s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] != (data_type | FLAG_DATA))
+                if (s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in].contents != (data_type | FLAG_DATA))
+                {
                     queue_missing_indicator(s, data_type);
+                    hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
+                }
                 /*endif*/
-                s->core.hdlc_to_modem.len[s->core.hdlc_to_modem.in] = 0;
-                s->core.hdlc_to_modem.flags[s->core.hdlc_to_modem.in] = 0;
-                s->core.hdlc_to_modem.contents[s->core.hdlc_to_modem.in] = 0;
+                /* TODO: what if any junk in the buffer has reached the HDLC_FLAG_PROCEED_WITH_OUTPUT stage? */
+                hdlc_buf->len = 0;
+                hdlc_buf->flags = 0;
+                hdlc_buf->contents = 0;
             }
             /*endif*/
             queue_missing_indicator(s, T38_DATA_NONE);
@@ -1408,27 +1488,27 @@ static void non_ecm_rx_status(void *user_data, int status)
     s = (t38_gateway_state_t *) user_data;
     switch (status)
     {
-    case PUTBIT_TRAINING_IN_PROGRESS:
+    case SIG_STATUS_TRAINING_IN_PROGRESS:
         span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM carrier training in progress\n");
         if (s->core.tcf_mode_predictable_modem_start)
             s->core.tcf_mode_predictable_modem_start = 0;
         else
             announce_training(s);
         break;
-    case PUTBIT_TRAINING_FAILED:
+    case SIG_STATUS_TRAINING_FAILED:
         span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM carrier training failed\n");
         break;
-    case PUTBIT_TRAINING_SUCCEEDED:
+    case SIG_STATUS_TRAINING_SUCCEEDED:
         /* The modem is now trained */
         span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM carrier trained\n");
         s->audio.modems.rx_signal_present = TRUE;
         s->audio.modems.rx_trained = TRUE;
         to_t38_buffer_init(&s->core.to_t38);
         break;
-    case PUTBIT_CARRIER_UP:
+    case SIG_STATUS_CARRIER_UP:
         span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM carrier up\n");
         break;
-    case PUTBIT_CARRIER_DOWN:
+    case SIG_STATUS_CARRIER_DOWN:
         span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM carrier down\n");
         s->core.tcf_mode_predictable_modem_start = 0;
         switch (s->t38x.current_tx_data_type)
@@ -1573,26 +1653,23 @@ static void hdlc_rx_status(hdlc_rx_state_t *t, int status)
     t38_gateway_state_t *s;
 
     s = (t38_gateway_state_t *) t->user_data;
+    span_log(&s->logging, SPAN_LOG_FLOW, "HDLC carrier status is %s (%d)\n", signal_status_to_str(status), status);
     switch (status)
     {
-    case PUTBIT_TRAINING_IN_PROGRESS:
-        span_log(&s->logging, SPAN_LOG_FLOW, "HDLC carrier training in progress\n");
+    case SIG_STATUS_TRAINING_IN_PROGRESS:
         announce_training(s);
         break;
-    case PUTBIT_TRAINING_FAILED:
-        span_log(&s->logging, SPAN_LOG_FLOW, "HDLC carrier training failed\n");
+    case SIG_STATUS_TRAINING_FAILED:
         break;
-    case PUTBIT_TRAINING_SUCCEEDED:
+    case SIG_STATUS_TRAINING_SUCCEEDED:
         /* The modem is now trained. */
-        span_log(&s->logging, SPAN_LOG_FLOW, "HDLC carrier trained\n");
         s->audio.modems.rx_signal_present = TRUE;
         s->audio.modems.rx_trained = TRUE;
         /* Behave like HDLC preamble has been announced. */
         t->framing_ok_announced = TRUE;
         to_t38_buffer_init(&s->core.to_t38);
         break;
-    case PUTBIT_CARRIER_UP:
-        span_log(&s->logging, SPAN_LOG_FLOW, "HDLC carrier up\n");
+    case SIG_STATUS_CARRIER_UP:
         /* Reset the HDLC receiver. */
         t->raw_bit_stream = 0;
         t->len = 0;
@@ -1601,8 +1678,7 @@ static void hdlc_rx_status(hdlc_rx_state_t *t, int status)
         t->framing_ok_announced = FALSE;
         to_t38_buffer_init(&s->core.to_t38);
         break;
-    case PUTBIT_CARRIER_DOWN:
-        span_log(&s->logging, SPAN_LOG_FLOW, "HDLC carrier down\n");
+    case SIG_STATUS_CARRIER_DOWN:
         if (t->framing_ok_announced)
         {
             t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_SIG_END, NULL, 0, s->t38x.t38.data_end_tx_count);

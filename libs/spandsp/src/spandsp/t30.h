@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.h,v 1.114 2008/08/13 00:11:30 steveu Exp $
+ * $Id: t30.h,v 1.115 2008/09/04 14:40:05 steveu Exp $
  */
 
 /*! \file */
@@ -338,7 +338,7 @@ enum
     T30_SUPPORT_V29 = 0x02,
     T30_SUPPORT_V17 = 0x04,
     T30_SUPPORT_V34 = 0x08,
-    T30_SUPPORT_IAF = 0x10,
+    T30_SUPPORT_IAF = 0x10
 };
 
 enum

@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_decode.c,v 1.45 2008/08/13 00:11:30 steveu Exp $
+ * $Id: fax_decode.c,v 1.48 2008/09/07 12:45:17 steveu Exp $
  */
 
 /*! \page fax_decode_page FAX decoder
@@ -219,16 +219,16 @@ static void hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
         /* Special conditions */
         switch (len)
         {
-        case PUTBIT_CARRIER_UP:
+        case SIG_STATUS_CARRIER_UP:
             fprintf(stderr, "HDLC carrier up\n");
             break;
-        case PUTBIT_CARRIER_DOWN:
+        case SIG_STATUS_CARRIER_DOWN:
             fprintf(stderr, "HDLC carrier down\n");
             break;
-        case PUTBIT_FRAMING_OK:
+        case SIG_STATUS_FRAMING_OK:
             fprintf(stderr, "HDLC framing OK\n");
             break;
-        case PUTBIT_ABORT:
+        case SIG_STATUS_ABORT:
             /* Just ignore these */
             break;
         default:
@@ -331,19 +331,22 @@ static void v21_put_bit(void *user_data, int bit)
         /* Special conditions */
         switch (bit)
         {
-        case PUTBIT_TRAINING_FAILED:
+        case SIG_STATUS_TRAINING_FAILED:
             fprintf(stderr, "V.21 Training failed\n");
             break;
-        case PUTBIT_TRAINING_SUCCEEDED:
+        case SIG_STATUS_TRAINING_IN_PROGRESS:
+            fprintf(stderr, "V.21 Training in progress\n");
+            break;
+        case SIG_STATUS_TRAINING_SUCCEEDED:
             fprintf(stderr, "V.21 Training succeeded\n");
             t4_begin();
             break;
-        case PUTBIT_CARRIER_UP:
+        case SIG_STATUS_CARRIER_UP:
             fprintf(stderr, "V.21 Carrier up\n");
             break;
-        case PUTBIT_CARRIER_DOWN:
+        case SIG_STATUS_CARRIER_DOWN:
             fprintf(stderr, "V.21 Carrier down\n");
-            t4_end();
+            //t4_end();
             break;
         default:
             fprintf(stderr, "V.21 Eh!\n");
@@ -364,18 +367,21 @@ static void v17_put_bit(void *user_data, int bit)
         /* Special conditions */
         switch (bit)
         {
-        case PUTBIT_TRAINING_FAILED:
+        case SIG_STATUS_TRAINING_FAILED:
             fprintf(stderr, "V.17 Training failed\n");
             break;
-        case PUTBIT_TRAINING_SUCCEEDED:
+        case SIG_STATUS_TRAINING_IN_PROGRESS:
+            fprintf(stderr, "V.17 Training in progress\n");
+            break;
+        case SIG_STATUS_TRAINING_SUCCEEDED:
             fprintf(stderr, "V.17 Training succeeded\n");
             fast_trained = FAX_V17_RX;
             t4_begin();
             break;
-        case PUTBIT_CARRIER_UP:
+        case SIG_STATUS_CARRIER_UP:
             fprintf(stderr, "V.17 Carrier up\n");
             break;
-        case PUTBIT_CARRIER_DOWN:
+        case SIG_STATUS_CARRIER_DOWN:
             fprintf(stderr, "V.17 Carrier down\n");
             t4_end();
             if (fast_trained == FAX_V17_RX)
@@ -410,18 +416,21 @@ static void v29_put_bit(void *user_data, int bit)
         /* Special conditions */
         switch (bit)
         {
-        case PUTBIT_TRAINING_FAILED:
+        case SIG_STATUS_TRAINING_FAILED:
             //fprintf(stderr, "V.29 Training failed\n");
             break;
-        case PUTBIT_TRAINING_SUCCEEDED:
+        case SIG_STATUS_TRAINING_IN_PROGRESS:
+            fprintf(stderr, "V.29 Training in progress\n");
+            break;
+        case SIG_STATUS_TRAINING_SUCCEEDED:
             fprintf(stderr, "V.29 Training succeeded\n");
             fast_trained = FAX_V29_RX;
             t4_begin();
             break;
-        case PUTBIT_CARRIER_UP:
+        case SIG_STATUS_CARRIER_UP:
             //fprintf(stderr, "V.29 Carrier up\n");
             break;
-        case PUTBIT_CARRIER_DOWN:
+        case SIG_STATUS_CARRIER_DOWN:
             //fprintf(stderr, "V.29 Carrier down\n");
             t4_end();
             if (fast_trained == FAX_V29_RX)
@@ -456,19 +465,23 @@ static void v27ter_put_bit(void *user_data, int bit)
         /* Special conditions */
         switch (bit)
         {
-        case PUTBIT_TRAINING_FAILED:
+        case SIG_STATUS_TRAINING_FAILED:
             //fprintf(stderr, "V.27ter Training failed\n");
             break;
-        case PUTBIT_TRAINING_SUCCEEDED:
+        case SIG_STATUS_TRAINING_IN_PROGRESS:
+            fprintf(stderr, "V.27ter Training in progress\n");
+            break;
+        case SIG_STATUS_TRAINING_SUCCEEDED:
             fprintf(stderr, "V.27ter Training succeeded\n");
             fast_trained = FAX_V27TER_RX;
             t4_begin();
             break;
-        case PUTBIT_CARRIER_UP:
+        case SIG_STATUS_CARRIER_UP:
             //fprintf(stderr, "V.27ter Carrier up\n");
             break;
-        case PUTBIT_CARRIER_DOWN:
+        case SIG_STATUS_CARRIER_DOWN:
             //fprintf(stderr, "V.27ter Carrier down\n");
+            t4_end();
             if (fast_trained == FAX_V27TER_RX)
                 fast_trained = FAX_NONE;
             break;

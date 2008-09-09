@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bert.c,v 1.27 2008/05/13 13:17:22 steveu Exp $
+ * $Id: bert.c,v 1.28 2008/09/07 12:45:16 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -78,7 +78,7 @@ int bert_get_bit(bert_state_t *s)
     int bit;
 
     if (s->limit  &&  s->tx_bits >= s->limit)
-        return PUTBIT_END_OF_DATA;
+        return SIG_STATUS_END_OF_DATA;
     bit = 0;
     switch (s->pattern_class)
     {
@@ -185,27 +185,7 @@ void bert_put_bit(bert_state_t *s, int bit)
     if (bit < 0)
     {
         /* Special conditions */
-        switch (bit)
-        {
-        case PUTBIT_TRAINING_IN_PROGRESS:
-            span_log(&s->logging, SPAN_LOG_FLOW, "Training in progress\n");
-            break;
-        case PUTBIT_TRAINING_FAILED:
-            span_log(&s->logging, SPAN_LOG_FLOW, "Training failed\n");
-            break;
-        case PUTBIT_TRAINING_SUCCEEDED:
-            span_log(&s->logging, SPAN_LOG_FLOW, "Training succeeded\n");
-            break;
-        case PUTBIT_CARRIER_UP:
-            span_log(&s->logging, SPAN_LOG_FLOW, "Carrier up\n");
-            break;
-        case PUTBIT_CARRIER_DOWN:
-            span_log(&s->logging, SPAN_LOG_FLOW, "Carrier down\n");
-            break;
-        default:
-            span_log(&s->logging, SPAN_LOG_FLOW, "Eh!\n");
-            break;
-        }
+        printf("Status is %s (%d)\n", signal_status_to_str(bit), bit);
         return;
     }
     bit = (bit & 1) ^ s->invert;

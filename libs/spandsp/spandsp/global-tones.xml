@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE global-tones SYSTEM "../tones.dtd">
+<!DOCTYPE global-tones SYSTEM "./tones.dtd">
 <global-tones>
   <tone-set country="Albania" uncode="al">
     <dial-tone>

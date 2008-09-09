@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4_tests.c,v 1.58 2008/08/17 16:25:52 steveu Exp $
+ * $Id: t4_tests.c,v 1.60 2008/09/07 12:45:17 steveu Exp $
  */
 
 /*! \file */
@@ -297,23 +297,23 @@ int main(int argc, char *argv[])
         t4_rx_start_page(&receive_state);
         while (fgets(buf, 1024, stdin))
         {
-            if (sscanf(buf, "HDLC:  FCD: 06 %x", &bit) == 1)
+            if (sscanf(buf, "HDLC:  FCD: 06 %x", (unsigned int *) &bit) == 1)
             {
                 /* Useful for breaking up T.38 ECM logs */
                 for (i = 0;  i < 256;  i++)
                 {
-                    if (sscanf(&buf[18 + 3*i], "%x", &bit) != 1)
+                    if (sscanf(&buf[18 + 3*i], "%x", (unsigned int *) &bit) != 1)
                         break;
                     if ((end_of_page = t4_rx_put_byte(&receive_state, bit)))
                         break;
                 }
             }
-            else if (strlen(buf) > 62  &&  sscanf(buf + 62, "Rx %d: IFP %x %x", &bit, &bit, &bit) == 3)
+            else if (strlen(buf) > 62  &&  sscanf(buf + 62, "Rx %*d: IFP %*x %*x") == 3)
             {
                 /* Useful for breaking up T.38 non-ECM logs */
                 for (i = 0;  i < 256;  i++)
                 {
-                    if (sscanf(&buf[62 + 29 + 3*i], "%x", &bit) != 1)
+                    if (sscanf(&buf[62 + 29 + 3*i], "%x", (unsigned int *) &bit) != 1)
                         break;
                     bit = bit_reverse8(bit);
                     if ((end_of_page = t4_rx_put_byte(&receive_state, bit)))
@@ -405,7 +405,7 @@ int main(int argc, char *argv[])
                 do
                 {
                     bit = t4_tx_get_bit(&send_state);
-                    if (bit == PUTBIT_END_OF_DATA)
+                    if (bit == SIG_STATUS_END_OF_DATA)
                     {
                         /* T.6 data does not contain an image termination sequence.
                            T.4 1D and 2D do, and should locate that sequence. */
@@ -547,7 +547,7 @@ int main(int argc, char *argv[])
             do
             {
                 bit = t4_tx_get_bit(&send_state);
-                if (bit == PUTBIT_END_OF_DATA)
+                if (bit == SIG_STATUS_END_OF_DATA)
                 {
                     /* T.6 data does not contain an image termination sequence.
                        T.4 1D and 2D do, and should locate that sequence. */

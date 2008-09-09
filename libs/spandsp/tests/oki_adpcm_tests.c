@@ -23,7 +23,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: oki_adpcm_tests.c,v 1.34 2008/08/29 09:28:13 steveu Exp $
+ * $Id: oki_adpcm_tests.c,v 1.35 2008/09/04 14:40:05 steveu Exp $
  */
 
 /*! \file */
@@ -70,7 +70,6 @@ int main(int argc, char *argv[])
     int outframes;
     int oki_bytes;
     int bit_rate;
-    float x;
     double pre_energy;
     double post_energy;
     double diff_energy;

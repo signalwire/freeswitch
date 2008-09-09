@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v8.c,v 1.30 2008/07/02 14:48:26 steveu Exp $
+ * $Id: v8.c,v 1.31 2008/09/07 12:45:17 steveu Exp $
  */
  
 /*! \file */
@@ -396,10 +396,10 @@ static void put_bit(void *user_data, int bit)
         /* Special conditions */
         switch (bit)
         {
-        case PUTBIT_CARRIER_UP:
-        case PUTBIT_CARRIER_DOWN:
-        case PUTBIT_TRAINING_SUCCEEDED:
-        case PUTBIT_TRAINING_FAILED:
+        case SIG_STATUS_CARRIER_UP:
+        case SIG_STATUS_CARRIER_DOWN:
+        case SIG_STATUS_TRAINING_SUCCEEDED:
+        case SIG_STATUS_TRAINING_FAILED:
             break;
         default:
             break;

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis_tx.c,v 1.43 2008/07/02 14:48:26 steveu Exp $
+ * $Id: v22bis_tx.c,v 1.44 2008/09/07 12:45:17 steveu Exp $
  */
 
 /*! \file */
@@ -302,7 +302,7 @@ static __inline__ int get_scrambled_bit(v22bis_state_t *s)
 {
     int bit;
 
-    if ((bit = s->tx.current_get_bit(s->user_data)) == PUTBIT_END_OF_DATA)
+    if ((bit = s->tx.current_get_bit(s->user_data)) == SIG_STATUS_END_OF_DATA)
     {
         /* Fill out this symbol with ones, and prepare to send
            the rest of the shutdown sequence. */

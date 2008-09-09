@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_non_ecm_buffer.c,v 1.1 2008/08/14 14:06:05 steveu Exp $
+ * $Id: t38_non_ecm_buffer.c,v 1.3 2008/09/07 12:45:17 steveu Exp $
  */
 
 /*! \file */
@@ -59,6 +59,21 @@
 
 #include "spandsp/t38_non_ecm_buffer.h"
 
+static void restart_buffer(t38_non_ecm_buffer_state_t *s)
+{
+    /* This should be called when draining the buffer is complete, which should
+       occur before any fresh data can possibly arrive to begin refilling it. */
+    s->octet = 0xFF;
+    s->flow_control_fill_octet = 0xFF;
+    s->at_initial_all_ones = TRUE;
+    s->bit_stream = 0xFFFF;
+    s->out_ptr = 0;
+    s->in_ptr = 0;
+    s->latest_eol_ptr = 0;
+    s->data_finished = FALSE;
+}
+/*- End of function --------------------------------------------------------*/
+
 int t38_non_ecm_buffer_get_bit(void *user_data)
 {
     t38_non_ecm_buffer_state_t *s;
@@ -80,12 +95,8 @@ int t38_non_ecm_buffer_get_bit(void *user_data)
             {
                 /* The queue is empty, and we have received the end of data signal. This must
                    really be the end to transmission. */
-                s->data_finished = FALSE;
-                /* Reset the data pointers for next time. */
-                s->out_ptr = 0;
-                s->in_ptr = 0;
-                s->latest_eol_ptr = 0;
-                return PUTBIT_END_OF_DATA;
+                restart_buffer(s);
+                return SIG_STATUS_END_OF_DATA;
             }
             /* The queue is blocked, but this does not appear to be the end of the data. Idle with
                fill octets, which should be safe at this point. */
@@ -160,10 +171,11 @@ void t38_non_ecm_buffer_inject(t38_non_ecm_buffer_state_t *s, const uint8_t *buf
                              rough approach. */
                     while (s->row_bits < s->min_row_bits)
                     {
+                        s->min_row_bits_fill_octets++;
                         s->data[s->in_ptr] = 0;
                         s->row_bits += 8;
-                        /* TODO: We can't buffer overflow, since we wrap around. However, the tail could overwrite
-                                 itself if things fall badly behind. */
+                        /* TODO: We can't buffer overflow, since we wrap around. However, the tail could
+                                 overwrite itself if things fall badly behind. */
                         s->in_ptr = (s->in_ptr + 1) & (T38_NON_ECM_TX_BUF_LEN - 1);
                     }
                     /* Start a new row */
@@ -205,25 +217,44 @@ void t38_non_ecm_buffer_inject(t38_non_ecm_buffer_state_t *s, const uint8_t *buf
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_non_ecm_buffer_report_status(t38_non_ecm_buffer_state_t *s, logging_state_t *logging)
+void t38_non_ecm_buffer_report_input_status(t38_non_ecm_buffer_state_t *s, logging_state_t *logging)
 {
-    if (s->in_octets  ||  s->out_octets)
+    if (s->in_octets  ||  s->min_row_bits_fill_octets)
     {
         span_log(logging,
                  SPAN_LOG_FLOW,
-                 "%d incoming non-ECM octets, %d rows.  %d outgoing non-ECM octets, %d rows\n",
+                 "%d+%d incoming non-ECM octets, %d rows.\n",
                  s->in_octets,
-                 s->in_rows,
-                 s->out_octets,
-                 s->out_rows);
+                 s->min_row_bits_fill_octets,
+                 s->in_rows);
+        s->in_octets = 0;
+        s->in_rows = 0;
+        s->min_row_bits_fill_octets = 0;
     }
-    if (s->flow_control_fill_octets)
+}
+/*- End of function --------------------------------------------------------*/
+
+void t38_non_ecm_buffer_report_output_status(t38_non_ecm_buffer_state_t *s, logging_state_t *logging)
+{
+    if (s->out_octets  ||  s->flow_control_fill_octets)
     {
         span_log(logging,
                  SPAN_LOG_FLOW,
-                 "Non-ECM flow control generated %d octets\n",
-                 s->flow_control_fill_octets);
+                 "%d+%d outgoing non-ECM octets, %d rows.\n",
+                 s->out_octets - s->flow_control_fill_octets,
+                 s->flow_control_fill_octets,
+                 s->out_rows);
+        s->out_octets = 0;
+        s->out_rows = 0;
+        s->flow_control_fill_octets = 0;
     }
+}
+/*- End of function --------------------------------------------------------*/
+
+void t38_non_ecm_buffer_set_mode(t38_non_ecm_buffer_state_t *s, int mode, int min_row_bits)
+{
+    s->image_data_mode = mode;
+    s->min_row_bits = min_row_bits;
 }
 /*- End of function --------------------------------------------------------*/
 

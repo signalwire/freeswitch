@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis_tests.c,v 1.51 2008/08/16 14:59:50 steveu Exp $
+ * $Id: v22bis_tests.c,v 1.52 2008/09/07 12:45:17 steveu Exp $
  */
 
 /*! \page v22bis_tests_page V.22bis modem tests
@@ -108,29 +108,14 @@ static void v22bis_putbit(void *user_data, int bit)
     if (bit < 0)
     {
         /* Special conditions */
+        printf("V.22bis rx status is %s (%d)\n", signal_status_to_str(bit), bit);
         switch (bit)
         {
-        case PUTBIT_TRAINING_FAILED:
-            printf("Training failed\n");
-            break;
-        case PUTBIT_TRAINING_IN_PROGRESS:
-            printf("Training in progress\n");
-            break;
-        case PUTBIT_TRAINING_SUCCEEDED:
-            printf("Training succeeded\n");
+        case SIG_STATUS_TRAINING_SUCCEEDED:
             len = v22bis_equalizer_state(s, &coeffs);
             printf("Equalizer:\n");
             for (i = 0;  i < len;  i++)
                 printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
-            break;
-        case PUTBIT_CARRIER_UP:
-            printf("Carrier up\n");
-            break;
-        case PUTBIT_CARRIER_DOWN:
-            printf("Carrier down\n");
-            break;
-        default:
-            printf("Eh! - %d\n", bit);
             break;
         }
         return;

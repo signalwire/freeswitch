@@ -16,7 +16,7 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.100 2008/08/14 14:06:05 steveu Exp $
+## $Id: Makefile.am,v 1.101 2008/09/08 12:45:02 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -120,6 +120,7 @@ nobase_include_HEADERS = spandsp/adsi.h \
                          spandsp/complex.h \
                          spandsp/complex_filters.h \
                          spandsp/complex_vector_float.h \
+                         spandsp/complex_vector_int.h \
                          spandsp/dc_restore.h \
                          spandsp/dds.h \
                          spandsp/dtmf.h \

@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bert_tests.c,v 1.24 2008/05/13 13:17:25 steveu Exp $
+ * $Id: bert_tests.c,v 1.25 2008/09/07 12:45:17 steveu Exp $
  */
 
 /*! \file */
@@ -423,7 +423,7 @@ int main(int argc, char *argv[])
     bert_set_report(&bert, 100000, reporter, (intptr_t) 0);
     for (;;)
     {
-        if ((bit = bert_get_bit(&bert)) == PUTBIT_END_OF_DATA)
+        if ((bit = bert_get_bit(&bert)) == SIG_STATUS_END_OF_DATA)
         {
             bert_result(&bert, &bert_results);
             printf("Rate test: %d bits, %d bad bits, %d resyncs\n", bert_results.total_bits, bert_results.bad_bits, bert_results.resyncs);

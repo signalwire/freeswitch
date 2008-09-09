@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk_tests.c,v 1.48 2008/08/29 09:28:13 steveu Exp $
+ * $Id: fsk_tests.c,v 1.50 2008/09/07 12:45:17 steveu Exp $
  */
 
 /*! \page fsk_tests_page FSK modem tests
@@ -67,43 +67,14 @@ int cutoff_test_carrier = FALSE;
 
 static int rx_status(void *user_data, int status)
 {
-    printf("FSK rx status is %d\n", status);
-    switch (status)
-    {
-    case PUTBIT_TRAINING_FAILED:
-        printf("Training failed\n");
-        break;
-    case PUTBIT_TRAINING_SUCCEEDED:
-        printf("Training succeeded\n");
-        break;
-    case PUTBIT_CARRIER_UP:
-        printf("Carrier up\n");
-        break;
-    case PUTBIT_CARRIER_DOWN:
-        printf("Carrier down\n");
-        break;
-    default:
-        printf("Eh! - %d\n", status);
-        break;
-    }
+    printf("FSK rx status is %s (%d)\n", signal_status_to_str(status), status);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
 static int tx_status(void *user_data, int status)
 {
-    switch (status)
-    {
-    case MODEM_TX_STATUS_DATA_EXHAUSTED:
-        printf("FSK tx data exhausted\n");
-        break;
-    case MODEM_TX_STATUS_SHUTDOWN_COMPLETE:
-        printf("FSK tx shutdown complete\n");
-        break;
-    default:
-        printf("FSK tx status is %d\n", status);
-        break;
-    }
+    printf("FSK tx status is %s (%d)\n", signal_status_to_str(status), status);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -122,25 +93,14 @@ static void put_bit(void *user_data, int bit)
 
 static int cutoff_test_rx_status(void *user_data, int status)
 {
-    printf("FSK rx status is %d\n", status);
+    printf("FSK rx status is %s (%d)\n", signal_status_to_str(status), status);
     switch (status)
     {
-    case PUTBIT_TRAINING_FAILED:
-        printf("Training failed\n");
-        break;
-    case PUTBIT_TRAINING_SUCCEEDED:
-        printf("Training succeeded\n");
-        break;
-    case PUTBIT_CARRIER_UP:
-        //printf("Carrier up\n");
+    case SIG_STATUS_CARRIER_UP:
         cutoff_test_carrier = TRUE;
         break;
-    case PUTBIT_CARRIER_DOWN:
-        //printf("Carrier down\n");
+    case SIG_STATUS_CARRIER_DOWN:
         cutoff_test_carrier = FALSE;
-        break;
-    default:
-        printf("Eh! - %d\n", status);
         break;
     }
     return 0;

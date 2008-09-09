@@ -459,6 +459,10 @@ SOURCE=.\spandsp/complex_vector_float.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\spandsp/complex_vector_int.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\spandsp/dc_restore.h
 # End Source File
 # Begin Source File

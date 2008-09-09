@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: async.h,v 1.16 2008/07/17 14:27:11 steveu Exp $
+ * $Id: async.h,v 1.18 2008/09/07 12:45:17 steveu Exp $
  */
 
 /*! \file */
@@ -49,42 +49,36 @@ and decoding must occur before data is fed to this module.
 #if !defined(_SPANDSP_ASYNC_H_)
 #define _SPANDSP_ASYNC_H_
 
-/*! Special "bit" values for the put and get bit functions */
+/*! Special "bit" values for the bitstream put and get functions, and the signal status functions. */
 enum
 {
     /*! \brief The carrier signal has dropped. */
-    PUTBIT_CARRIER_DOWN = -1,
+    SIG_STATUS_CARRIER_DOWN = -1,
     /*! \brief The carrier signal is up. This merely indicates that carrier
          energy has been seen. It is not an indication that the carrier is either
          valid, or of the expected type. */
-    PUTBIT_CARRIER_UP = -2,
+    SIG_STATUS_CARRIER_UP = -2,
     /*! \brief The modem is training. This is an early indication that the
         signal seems to be of the right type. This may be needed in time critical
         applications, like T.38, to forward an early indication of what is happening
         on the wire. */
-    PUTBIT_TRAINING_IN_PROGRESS = -3,
+    SIG_STATUS_TRAINING_IN_PROGRESS = -3,
     /*! \brief The modem has trained, and is ready for data exchange. */
-    PUTBIT_TRAINING_SUCCEEDED = -4,
+    SIG_STATUS_TRAINING_SUCCEEDED = -4,
     /*! \brief The modem has failed to train. */
-    PUTBIT_TRAINING_FAILED = -5,
+    SIG_STATUS_TRAINING_FAILED = -5,
     /*! \brief Packet framing (e.g. HDLC framing) is OK. */
-    PUTBIT_FRAMING_OK = -6,
+    SIG_STATUS_FRAMING_OK = -6,
     /*! \brief The data stream has ended. */
-    PUTBIT_END_OF_DATA = -7,
+    SIG_STATUS_END_OF_DATA = -7,
     /*! \brief An abort signal (e.g. an HDLC abort) has been received. */
-    PUTBIT_ABORT = -8,
+    SIG_STATUS_ABORT = -8,
     /*! \brief A break signal (e.g. an async break) has been received. */
-    PUTBIT_BREAK = -9,
+    SIG_STATUS_BREAK = -9,
+    /*! \brief A modem has completed its task, and shut down. */
+    SIG_STATUS_SHUTDOWN_COMPLETE = -10,
     /*! \brief Regular octet report for things like HDLC to the MTP standards. */
-    PUTBIT_OCTET_REPORT = -10
-};
-
-enum
-{
-    /*! \brief The data source for a transmitter is exhausted. */
-    MODEM_TX_STATUS_DATA_EXHAUSTED = -1,
-    /*! \brief The transmitter has completed its task, and shut down. */
-    MODEM_TX_STATUS_SHUTDOWN_COMPLETE = -2
+    SIG_STATUS_OCTET_REPORT = -11
 };
 
 /*! Message put function for data pumps */
@@ -185,6 +179,12 @@ extern "C"
 {
 #endif
 
+/*! Convert a signal status to a short text description.
+    \brief Convert a signal status to a short text description.
+    \param status The modem signal status.
+    \return A pointer to the description. */
+const char *signal_status_to_str(int status);
+
 /*! Initialise an asynchronous data transmit context.
     \brief Initialise an asynchronous data transmit context.
     \param s The transmitter context.
@@ -231,11 +231,11 @@ async_rx_state_t *async_rx_init(async_rx_state_t *s,
     \brief Accept a bit from a received serial bit stream
     \param user_data An opaque point which must point to a receiver context.
     \param bit The new bit. Some special values are supported for this field.
-        - PUTBIT_CARRIER_UP
-        - PUTBIT_CARRIER_DOWN
-        - PUTBIT_TRAINING_SUCCEEDED
-        - PUTBIT_TRAINING_FAILED
-        - PUTBIT_END_OF_DATA */
+        - SIG_STATUS_CARRIER_UP
+        - SIG_STATUS_CARRIER_DOWN
+        - SIG_STATUS_TRAINING_SUCCEEDED
+        - SIG_STATUS_TRAINING_FAILED
+        - SIG_STATUS_END_OF_DATA */
 void async_rx_put_bit(void *user_data, int bit);
 
 #if defined(__cplusplus)

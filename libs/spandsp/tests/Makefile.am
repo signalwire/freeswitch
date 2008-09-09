@@ -16,7 +16,7 @@
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.105 2008/08/16 15:45:45 steveu Exp $
+## $Id: Makefile.am,v 1.106 2008/09/09 14:05:55 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -274,7 +274,7 @@ tone_generate_tests_SOURCES = tone_generate_tests.c
 tone_generate_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 tsb85_tests_SOURCES = tsb85_tests.c fax_tester.c
-tsb85_tests_LDADD = $(LIBDIR) -lspandsp
+tsb85_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 v17_tests_SOURCES = v17_tests.c line_model_monitor.cpp modem_monitor.cpp
 v17_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp

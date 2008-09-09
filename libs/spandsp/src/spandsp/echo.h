@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: echo.h,v 1.15 2008/08/29 10:02:47 steveu Exp $
+ * $Id: echo.h,v 1.16 2008/09/04 14:40:05 steveu Exp $
  */
 
 /*! \file */
@@ -126,7 +126,7 @@ enum
     ECHO_CAN_USE_SUPPRESSOR = 0x10,
     ECHO_CAN_USE_TX_HPF = 0x20,
     ECHO_CAN_USE_RX_HPF = 0x40,
-    ECHO_CAN_DISABLE = 0x80,
+    ECHO_CAN_DISABLE = 0x80
 };
 
 /*!

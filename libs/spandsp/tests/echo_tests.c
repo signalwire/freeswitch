@@ -25,7 +25,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: echo_tests.c,v 1.35 2008/08/29 09:28:13 steveu Exp $
+ * $Id: echo_tests.c,v 1.36 2008/09/04 14:40:05 steveu Exp $
  */
 
 /*! \page echo_can_tests_page Line echo cancellation for voice tests
@@ -259,6 +259,7 @@ static level_measurement_device_t *level_measurement_device_create(int type)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if 0
 static void level_measurement_device_reset(level_measurement_device_t *dev)
 {
     int i;
@@ -279,6 +280,7 @@ static int level_measurement_device_release(level_measurement_device_t *s)
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
+#endif
 
 static float level_measurement_device_get_peak(level_measurement_device_t *dev)
 {
@@ -534,6 +536,7 @@ static int16_t far_noise_signal(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if 0
 static int16_t local_hoth_noise_signal(void)
 {
     static float hoth_noise = 0.0;
@@ -542,6 +545,7 @@ static int16_t local_hoth_noise_signal(void)
     return (int16_t) hoth_noise;
 }
 /*- End of function --------------------------------------------------------*/
+#endif
 
 static int16_t far_hoth_noise_signal(void)
 {
@@ -1483,7 +1487,7 @@ static int match_test_name(const char *name)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void simulate_ec(const char *argv[], int two_channel_file, int mode)
+static void simulate_ec(char *argv[], int two_channel_file, int mode)
 {
     echo_can_state_t *ctx;
     AFfilehandle txfile;

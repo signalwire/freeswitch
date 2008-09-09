@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: super_tone_rx_tests.c,v 1.28 2008/05/13 13:17:26 steveu Exp $
+ * $Id: super_tone_rx_tests.c,v 1.29 2008/08/30 16:47:35 steveu Exp $
  */
 
 /*! \file */
@@ -264,7 +264,7 @@ static void get_tone_set(super_tone_rx_descriptor_t *desc, const char *tone_file
     xmlDocPtr doc;
     xmlNsPtr ns;
     xmlNodePtr cur;
-#if 0
+#if 1
     xmlValidCtxt valid;
 #endif
     xmlChar *x;
@@ -272,15 +272,14 @@ static void get_tone_set(super_tone_rx_descriptor_t *desc, const char *tone_file
     ns = NULL;
     xmlKeepBlanksDefault(0);
     xmlCleanupParser();
-    doc = xmlParseFile(tone_file);
-    if (doc == NULL)
+    if ((doc = xmlParseFile(tone_file)) == NULL)
     {
         fprintf(stderr, "No document\n");
         exit(2);
     }
     /*endif*/
     xmlXIncludeProcess(doc);
-#if 0
+#if 1
     if (!xmlValidateDocument(&valid, doc))
     {
         fprintf(stderr, "Invalid document\n");

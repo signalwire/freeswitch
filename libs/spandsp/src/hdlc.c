@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: hdlc.c,v 1.60 2008/05/13 13:17:22 steveu Exp $
+ * $Id: hdlc.c,v 1.61 2008/09/07 12:45:16 steveu Exp $
  */
 
 /*! \file */
@@ -47,8 +47,8 @@ static void rx_special_condition(hdlc_rx_state_t *s, int condition)
     /* Special conditions */
     switch (condition)
     {
-    case PUTBIT_CARRIER_UP:
-    case PUTBIT_TRAINING_SUCCEEDED:
+    case SIG_STATUS_CARRIER_UP:
+    case SIG_STATUS_TRAINING_SUCCEEDED:
         /* Reset the HDLC receiver. */
         s->raw_bit_stream = 0;
         s->len = 0;
@@ -56,10 +56,10 @@ static void rx_special_condition(hdlc_rx_state_t *s, int condition)
         s->flags_seen = 0;
         s->framing_ok_announced = FALSE;
         /* Fall through */
-    case PUTBIT_TRAINING_IN_PROGRESS:
-    case PUTBIT_TRAINING_FAILED:
-    case PUTBIT_CARRIER_DOWN:
-    case PUTBIT_END_OF_DATA:
+    case SIG_STATUS_TRAINING_IN_PROGRESS:
+    case SIG_STATUS_TRAINING_FAILED:
+    case SIG_STATUS_CARRIER_DOWN:
+    case SIG_STATUS_END_OF_DATA:
         s->frame_handler(s->user_data, NULL, condition, TRUE);
         break;
     default:
@@ -81,7 +81,7 @@ static __inline__ void octet_set_and_count(hdlc_rx_state_t *s)
         if (--s->octet_count <= 0)
         {
             s->octet_count = s->octet_count_report_interval;
-            s->frame_handler(s->user_data, NULL, PUTBIT_OCTET_REPORT, TRUE);
+            s->frame_handler(s->user_data, NULL, SIG_STATUS_OCTET_REPORT, TRUE);
         }
     }
     else
@@ -104,7 +104,7 @@ static __inline__ void octet_count(hdlc_rx_state_t *s)
         if (--s->octet_count <= 0)
         {
             s->octet_count = s->octet_count_report_interval;
-            s->frame_handler(s->user_data, NULL, PUTBIT_OCTET_REPORT, TRUE);
+            s->frame_handler(s->user_data, NULL, SIG_STATUS_OCTET_REPORT, TRUE);
         }
     }
 }
@@ -116,7 +116,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
     {
         /* Hit HDLC abort */
         s->rx_aborts++;
-        s->frame_handler(s->user_data, NULL, PUTBIT_ABORT, TRUE);
+        s->frame_handler(s->user_data, NULL, SIG_STATUS_ABORT, TRUE);
         /* If we have not yet seen enough flags, restart the count. If we
            are beyond that point, just back off one step, so we need to see
            another flag before proceeding to collect frame octets. */
@@ -184,7 +184,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
                 s->flags_seen = 0;
             if (++s->flags_seen >= s->framing_ok_threshold  &&  !s->framing_ok_announced)
             {
-                s->frame_handler(s->user_data, NULL, PUTBIT_FRAMING_OK, TRUE);
+                s->frame_handler(s->user_data, NULL, SIG_STATUS_FRAMING_OK, TRUE);
                 s->framing_ok_announced = TRUE;
             }
         }
@@ -493,7 +493,7 @@ int hdlc_tx_get_byte(hdlc_tx_state_t *s)
     if (s->tx_end)
     {
         s->tx_end = FALSE;
-        return PUTBIT_END_OF_DATA;
+        return SIG_STATUS_END_OF_DATA;
     }
     return s->idle_octet;
 }
@@ -522,7 +522,7 @@ int hdlc_tx_get(hdlc_tx_state_t *s, uint8_t buf[], size_t max_len)
 
     for (i = 0;  i < max_len;  i++)
     {
-        if ((x = hdlc_tx_get_byte(s)) == PUTBIT_END_OF_DATA)
+        if ((x = hdlc_tx_get_byte(s)) == SIG_STATUS_END_OF_DATA)
             return i;
         buf[i] = x;
     }

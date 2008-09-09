@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: dds.h,v 1.18 2008/04/17 14:27:00 steveu Exp $
+ * $Id: dds.h,v 1.20 2008/09/04 14:40:05 steveu Exp $
  */
 
 /*! \file */
@@ -100,18 +100,18 @@ int16_t dds_lookup(uint32_t phase);
 */
 int16_t dds_mod(uint32_t *phase_acc, int32_t phase_rate, int scale, int32_t phase);
 
+/*! \brief Lookup the complex integer value of a specified phase.
+    \param phase The phase accumulator value to be looked up.
+    \return The complex signal amplitude, between (-32767, -32767) and (32767, 32767).
+*/
+complexi_t dds_lookup_complexi(uint32_t phase);
+
 /*! \brief Generate a complex integer tone sample.
     \param phase_acc A pointer to a phase accumulator value.
     \param phase_rate The phase increment to be applied.
     \return The complex signal amplitude, between (-32767, -32767) and (32767, 32767).
 */
 complexi_t dds_complexi(uint32_t *phase_acc, int32_t phase_rate);
-
-/*! \brief Lookup the complex integer value of a specified phase.
-    \param phase The phase accumulator value to be looked up.
-    \return The complex signal amplitude, between (-32767, -32767) and (32767, 32767).
-*/
-complexi_t dds_lookup_complexi(uint32_t phase);
 
 /*! \brief Generate a complex integer tone sample, with modulation.
     \param phase_acc A pointer to a phase accumulator value.
@@ -121,6 +121,61 @@ complexi_t dds_lookup_complexi(uint32_t phase);
     \return The complex signal amplitude, between (-32767, -32767) and (32767, 32767).
 */
 complexi_t dds_complexi_mod(uint32_t *phase_acc, int32_t phase_rate, int scale, int32_t phase);
+
+/*! \brief Generate a complex 16 bit integer tone sample.
+    \param phase_acc A pointer to a phase accumulator value.
+    \param phase_rate The phase increment to be applied.
+    \return The complex signal amplitude, between (-32767, -32767) and (32767, 32767).
+*/
+complexi16_t dds_lookup_complexi16(uint32_t phase);
+
+/*! \brief Generate a complex 16 bit integer tone sample.
+    \param phase_acc A pointer to a phase accumulator value.
+    \param phase_rate The phase increment to be applied.
+    \return The complex signal amplitude, between (-32767, -32767) and (32767, 32767).
+*/
+complexi16_t dds_complexi16(uint32_t *phase_acc, int32_t phase_rate);
+
+/*! \brief Generate a complex 16bit integer tone sample, with modulation.
+    \param phase_acc A pointer to a phase accumulator value.
+    \param phase_rate The phase increment to be applied.
+    \param scale The scaling factor.
+    \param phase The phase offset.
+    \return The complex signal amplitude, between (-32767, -32767) and (32767, 32767).
+*/
+complexi16_t dds_complexi16_mod(uint32_t *phase_acc, int32_t phase_rate, int scale, int32_t phase);
+
+/*! \brief Generate a complex 32 bit integer tone sample, with modulation.
+    \param phase_acc A pointer to a phase accumulator value.
+    \param phase_rate The phase increment to be applied.
+    \param scale The scaling factor.
+    \param phase The phase offset.
+    \return The complex signal amplitude, between (-32767, -32767) and (32767, 32767).
+*/
+complexi32_t dds_complexi32_mod(uint32_t *phase_acc, int32_t phase_rate, int scale, int32_t phase);
+
+/*! \brief Generate a complex 32 bit integer tone sample.
+    \param phase_acc A pointer to a phase accumulator value.
+    \param phase_rate The phase increment to be applied.
+    \return The complex signal amplitude, between (-32767, -32767) and (32767, 32767).
+*/
+complexi32_t dds_lookup_complexi32(uint32_t phase);
+
+/*! \brief Generate a complex 32 bit integer tone sample.
+    \param phase_acc A pointer to a phase accumulator value.
+    \param phase_rate The phase increment to be applied.
+    \return The complex signal amplitude, between (-32767, -32767) and (32767, 32767).
+*/
+complexi32_t dds_complexi32(uint32_t *phase_acc, int32_t phase_rate);
+
+/*! \brief Generate a complex 32 bit integer tone sample, with modulation.
+    \param phase_acc A pointer to a phase accumulator value.
+    \param phase_rate The phase increment to be applied.
+    \param scale The scaling factor.
+    \param phase The phase offset.
+    \return The complex signal amplitude, between (-32767, -32767) and (32767, 32767).
+*/
+complexi32_t dds_complexi32_mod(uint32_t *phase_acc, int32_t phase_rate, int scale, int32_t phase);
 
 /*! \brief Find the phase rate equivalent to a frequency, in Hz.
     \param frequency The frequency, in Hz.

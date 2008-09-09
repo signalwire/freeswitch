@@ -35,6 +35,7 @@
 <!ELEMENT call-waiting-tone (step)* >
 <!ATTLIST call-waiting-tone
   domain    CDATA   #IMPLIED
+  type      CDATA   #IMPLIED
   >
 <!ELEMENT pay-tone (step)* >
 <!ATTLIST pay-tone
@@ -190,4 +191,5 @@
   level                 CDATA   #IMPLIED
   length                CDATA   #IMPLIED
   recorded-announcement CDATA   #IMPLIED
+  recognition-length    CDATA   #IMPLIED
   >

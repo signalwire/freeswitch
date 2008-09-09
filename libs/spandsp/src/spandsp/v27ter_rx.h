@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_rx.h,v 1.47 2008/07/16 14:23:48 steveu Exp $
+ * $Id: v27ter_rx.h,v 1.48 2008/09/08 12:54:32 steveu Exp $
  */
 
 /*! \file */
@@ -144,28 +144,39 @@ typedef struct
     /*! \brief The previous value of agc_scaling, needed to reuse old training. */
     float agc_scaling_save;
 
+    /*! \brief The position of the current symbol in the constellation, used for
+               differential decoding. */
     int constellation_state;
 
-    /*! \brief The current delta factor for updating the equalizer coefficients. */
-    float eq_delta;
-#if defined(SPANDSP_USE_FIXED_POINTx)
-    /*! \brief The adaptive equalizer coefficients. */
-    complexi_t eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
-    /*! \brief A saved set of adaptive equalizer coefficients for use after restarts. */
-    complexi_t eq_coeff_save[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
-    /*! \brief The equalizer signal buffer. */
-    complexi_t eq_buf[V27TER_EQUALIZER_MASK + 1];
-#else
-    complexf_t eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
-    complexf_t eq_coeff_save[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
-    complexf_t eq_buf[V27TER_EQUALIZER_MASK + 1];
-#endif
     /*! \brief Current offset into the equalizer buffer. */
     int eq_step;
     /*! \brief Current write offset into the equalizer buffer. */
     int eq_put_step;
     /*! \brief Symbol counter to the next equalizer update. */
     int eq_skip;
+
+    /*! \brief The current half of the baud. */
+    int baud_half;
+
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    /*! \brief The current delta factor for updating the equalizer coefficients. */
+    float eq_delta;
+    /*! \brief The adaptive equalizer coefficients. */
+    complexi16_t eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
+    /*! \brief A saved set of adaptive equalizer coefficients for use after restarts. */
+    complexi16_t eq_coeff_save[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
+    /*! \brief The equalizer signal buffer. */
+    complexi16_t eq_buf[V27TER_EQUALIZER_MASK + 1];
+#else
+    /*! \brief The current delta factor for updating the equalizer coefficients. */
+    float eq_delta;
+    /*! \brief The adaptive equalizer coefficients. */
+    complexf_t eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
+    /*! \brief A saved set of adaptive equalizer coefficients for use after restarts. */
+    complexf_t eq_coeff_save[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
+    /*! \brief The equalizer signal buffer. */
+    complexf_t eq_buf[V27TER_EQUALIZER_MASK + 1];
+#endif
 
     /*! \brief Integration variable for damping the Gardner algorithm tests. */
     int gardner_integrate;
@@ -174,8 +185,6 @@ typedef struct
     /*! \brief The total symbol timing correction since the carrier came up.
                This is only for performance analysis purposes. */
     int total_baud_timing_correction;
-    /*! \brief The current fractional phase of the baud timing. */
-    int baud_phase;
 
     /*! \brief Starting phase angles for the coarse carrier aquisition step. */
     int32_t start_angles[2];

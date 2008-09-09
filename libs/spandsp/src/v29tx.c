@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29tx.c,v 1.76 2008/07/16 14:23:47 steveu Exp $
+ * $Id: v29tx.c,v 1.79 2008/09/07 12:45:17 steveu Exp $
  */
 
 /*! \file */
@@ -54,10 +54,6 @@
 
 #include "spandsp/v29tx.h"
 
-#if defined(SPANDSP_USE_FIXED_POINT)
-#define SPANDSP_USE_FIXED_POINTx
-#endif
-
 #include "v29tx_constellation_maps.h"
 #if defined(SPANDSP_USE_FIXED_POINT)
 #include "v29tx_fixed_rrc.h"
@@ -87,12 +83,12 @@ static __inline__ int get_scrambled_bit(v29_tx_state_t *s)
     int bit;
     int out_bit;
 
-    if ((bit = s->current_get_bit(s->get_bit_user_data)) == PUTBIT_END_OF_DATA)
+    if ((bit = s->current_get_bit(s->get_bit_user_data)) == SIG_STATUS_END_OF_DATA)
     {
         /* End of real data. Switch to the fake get_bit routine, until we
            have shut down completely. */
         if (s->status_handler)
-            s->status_handler(s->status_user_data, MODEM_TX_STATUS_DATA_EXHAUSTED);
+            s->status_handler(s->status_user_data, SIG_STATUS_END_OF_DATA);
         s->current_get_bit = fake_get_bit;
         s->in_training = TRUE;
         bit = 1;
@@ -166,7 +162,7 @@ static __inline__ complexf_t getbaud(v29_tx_state_t *s)
         if (s->training_step == V29_TRAINING_SHUTDOWN_END)
         {
             if (s->status_handler)
-                s->status_handler(s->status_user_data, MODEM_TX_STATUS_SHUTDOWN_COMPLETE);
+                s->status_handler(s->status_user_data, SIG_STATUS_SHUTDOWN_COMPLETE);
         }
     }
     /* 9600bps uses the full constellation.

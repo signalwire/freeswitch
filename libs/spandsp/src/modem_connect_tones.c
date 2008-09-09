@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: modem_connect_tones.c,v 1.27 2008/08/13 14:55:51 steveu Exp $
+ * $Id: modem_connect_tones.c,v 1.28 2008/09/07 12:45:16 steveu Exp $
  */
  
 /*! \file */
@@ -284,12 +284,12 @@ static void v21_put_bit(void *user_data, int bit)
         /* Special conditions. */
         switch (bit)
         {
-        case PUTBIT_CARRIER_DOWN:
+        case SIG_STATUS_CARRIER_DOWN:
             /* Only declare tone off, if we were the one to declare tone on. */
             if (s->tone_present == MODEM_CONNECT_TONES_FAX_PREAMBLE)
                 report_tone_state(s, MODEM_CONNECT_TONES_NONE, -99);
             /* Fall through */
-        case PUTBIT_CARRIER_UP:
+        case SIG_STATUS_CARRIER_UP:
             s->raw_bit_stream = 0;
             s->num_bits = 0;
             s->flags_seen = 0;

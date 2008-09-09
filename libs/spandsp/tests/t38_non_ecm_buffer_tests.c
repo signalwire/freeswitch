@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_non_ecm_buffer_tests.c,v 1.1 2008/08/14 14:06:06 steveu Exp $
+ * $Id: t38_non_ecm_buffer_tests.c,v 1.2 2008/09/02 13:56:10 steveu Exp $
  */
 
 /*! \file */
@@ -64,7 +64,10 @@ int main(int argc, char *argv[])
     uint8_t buf[1024];
     int bit;
     int n;
+    int log_bits;
+    int i;
 
+    log_bits = FALSE;
     span_log_init(&logging, SPAN_LOG_FLOW, NULL);
     span_log_set_protocol(&logging, "Buffer");
 
@@ -79,10 +82,12 @@ int main(int argc, char *argv[])
     do
     {
         bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
-        printf("Rx bit %d - %d\n", n++, bit);
+        if (log_bits)
+            printf("Rx bit %d - %d\n", n++, bit);
     }
     while (bit >= 0);
-    t38_non_ecm_buffer_report_status(&buffer, &logging);
+    t38_non_ecm_buffer_report_input_status(&buffer, &logging);
+    t38_non_ecm_buffer_report_output_status(&buffer, &logging);
 
     t38_non_ecm_buffer_init(&buffer, TRUE, 0);
     memset(buf, 0, sizeof(buf));
@@ -95,10 +100,12 @@ int main(int argc, char *argv[])
     do
     {
         bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
-        printf("Rx bit %d - %d\n", n++, bit);
+        if (log_bits)
+            printf("Rx bit %d - %d\n", n++, bit);
     }
     while (bit >= 0);
-    t38_non_ecm_buffer_report_status(&buffer, &logging);
+    t38_non_ecm_buffer_report_input_status(&buffer, &logging);
+    t38_non_ecm_buffer_report_output_status(&buffer, &logging);
 
     t38_non_ecm_buffer_init(&buffer, TRUE, 400);
     memset(buf, 0, sizeof(buf));
@@ -111,10 +118,73 @@ int main(int argc, char *argv[])
     do
     {
         bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
-        printf("Rx bit %d - %d\n", n++, bit);
+        if (log_bits)
+            printf("Rx bit %d - %d\n", n++, bit);
     }
     while (bit >= 0);
-    t38_non_ecm_buffer_report_status(&buffer, &logging);
+    t38_non_ecm_buffer_report_input_status(&buffer, &logging);
+    t38_non_ecm_buffer_report_output_status(&buffer, &logging);
+
+    t38_non_ecm_buffer_init(&buffer, TRUE, 400);
+    /* Get some initial bits from an empty buffer. These should be ones */
+    for (i = 0;  i < 1000;  i++)
+    {
+        bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
+        if (log_bits)
+            printf("Rx bit %d - %d\n", n++, bit);
+        if (bit != 1)
+        {
+            printf("Tests failed\n");
+            exit(2);
+        }
+    }
+    /* Now put some zeros into the buffer, but no EOL. We should continue
+       getting ones out. */
+    memset(buf, 0, sizeof(buf));
+    t38_non_ecm_buffer_inject(&buffer, buf, 20);
+    for (i = 0;  i < 1000;  i++)
+    {
+        bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
+        if (log_bits)
+            printf("Rx bit %d - %d\n", n++, bit);
+        if (bit != 1)
+        {
+            printf("Tests failed\n");
+            exit(2);
+        }
+    }
+    /* Now add a one, to make an EOL. We should see the zeros come out. */
+    buf[0] = 0x01;
+    t38_non_ecm_buffer_inject(&buffer, buf, 1);
+    for (i = 0;  i < 1000;  i++)
+    {
+        bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
+        if (log_bits)
+            printf("Rx bit %d - %d\n", n++, bit);
+        if (bit != 0)
+        {
+            printf("Tests failed\n");
+            exit(2);
+        }
+    }
+    /* Now add another line. We should see the first line come out. This means just the
+       eighth bit from now will be a one. */
+    buf[0] = 0x00;
+    buf[4] = 0x01;
+    t38_non_ecm_buffer_inject(&buffer, buf, 5);
+    for (i = 0;  i < 1000;  i++)
+    {
+        bit = t38_non_ecm_buffer_get_bit((void *) &buffer);
+        if (log_bits)
+            printf("Rx bit %d - %d\n", n++, bit);
+        if (i != 7  &&  bit != 0)
+        {
+            printf("Tests failed (%d)\n", i);
+            exit(2);
+        }
+    }
+    t38_non_ecm_buffer_report_input_status(&buffer, &logging);
+    t38_non_ecm_buffer_report_output_status(&buffer, &logging);
 
     printf("Tests passed\n");
     return  0;

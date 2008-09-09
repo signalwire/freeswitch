@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
+<!DOCTYPE fax-tests SYSTEM "./fax-tests.dtd">
 <fax-tests>
-<!-- $Id: tsb85.xml,v 1.15 2008/08/05 16:01:13 steveu Exp $ -->
+<!-- $Id: tsb85.xml,v 1.18 2008/09/09 15:30:43 steveu Exp $ -->
 <messages>
     <!-- TCF = 2700 bytes at 14400, 2250 at 12000, 1800 at 9600, 1350 at 7200, 900 at 4800 or 450 at 2400 -->
     <!-- Bad TCF == 10101010.... -->
@@ -963,6 +964,7 @@
         <step dir="T" type="POSTAMBLE"/>
     </test>
     <test name="MRGN17">
+        <!-- Tester called DUT, and sends 2 WHITE pages -->
         <step type="CALL"/>
 
         <!--<step dir="T" type="CNG"/>-->
@@ -2508,6 +2510,7 @@
         <step dir="T" type="POSTAMBLE"/>
     </test>
     <test name="MRGX10">
+        <!-- Tester calls DUT -->
         <step type="CALL"/>
 
         <step dir="R" type="CED"/>
@@ -2550,6 +2553,7 @@
         <step dir="T" type="POSTAMBLE"/>
     </test>
     <test name="MRGX11">
+        <!-- Tester calls DUT -->
         <step type="CALL"/>
 
         <step dir="R" type="CED"/>
@@ -2589,6 +2593,7 @@
         <step dir="T" type="POSTAMBLE"/>
     </test>
     <test name="MRGX12">
+        <!-- Tester calls DUT -->
         <step type="CALL"/>
 
         <step dir="R" type="CED"/>
@@ -2634,6 +2639,7 @@
         <step dir="T" type="POSTAMBLE"/>
     </test>
     <test name="MRGX13">
+        <!-- Tester calls DUT -->
         <step type="CALL"/>
 
         <step dir="R" type="CED"/>
@@ -2668,6 +2674,7 @@
         <step dir="T" type="POSTAMBLE"/>
     </test>
     <test name="MRGX14">
+        <!-- Tester calls DUT -->
         <step type="CALL"/>
 
         <step dir="R" type="CED"/>
@@ -2701,6 +2708,7 @@
         <step dir="T" type="POSTAMBLE"/>
     </test>
     <test name="MRGX15">
+        <!-- Tester calls DUT, and sends 1 WHITE page -->
         <step type="CALL"/>
 
         <step dir="R" type="CED"/>
@@ -2734,7 +2742,9 @@
 </test-group>
 <test-group name="Annex E - Polling receive test procedures">
     <test name="MTGP01">
+        <!-- DUT is set up for polling reception. DUT calls tester. -->
         <step type="ANSWER"/>
+        <step dir="T" type="SET" tag="RXFILE"/>
 
         <step dir="R" type="CNG"/>
 
@@ -2744,11 +2754,14 @@
         <step dir="T" type="HDLC" tag="DIS" value="FF C8 01 00 40 10"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="DCN" value="FF C8 5F"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
         <step dir="R" type="SILENCE"/>
     </test>
     <test name="MTGP02">
+        <!-- DUT is set up for polling reception. DUT calls tester. Tester sends 2 WHITE pages. -->
         <step type="ANSWER"/>
+        <step dir="T" type="SET" tag="RXFILE"/>
+        <step dir="T" type="SET" tag="IDENT" value="+0123456789"/>
 
         <step dir="R" type="CNG"/>
 
@@ -2758,7 +2771,8 @@
         <step dir="T" type="HDLC" tag="DIS" value="FF C8 01 00 80 10"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="CIG" fif="30 31 32 33 34 35 36 37 38 39 2B 20 20 20 20 20 20 20 20 20"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="NSC" value="FF C0 84 ..."/>
+        <step dir="R" type="HDLC" modem="V.21" tag="CIG" value="FF C0 82 9C 1C EC 6C AC 2C CC 4C 8C 0C D4 04 04 04 04 04 04 04 04 04"/>
         <step dir="R" type="HDLC" modem="V.21" tag="DTC" value="FF C8 81 ..."/>
         <step dir="R" type="SILENCE"/>
 
@@ -2767,19 +2781,19 @@
         <step dir="T" type="HDLC" tag="DCS" value="FF C8 41 00 00 00"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
-        <step dir="T" type="TCF" modem="V.27ter/4800" value="900"/>
+        <step dir="T" type="TCF" modem="V.27ter/2400" value="900"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="CFR" value="FF C8 21"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="CFR+" value="FF C8 A1"/>
         <step dir="R" type="SILENCE"/>
 
         <step type="WAIT" value="75"/>
-        <step dir="T" type="MSG" modem="V.27ter/4800" value="a4-white.tif"/>
+        <step dir="T" type="MSG" modem="V.27ter/2400" value="a4-white.tif"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="MPS" value="FF C8 72"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="MCF" value="FF C8 31"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="MCF+" value="FF C8 B1"/>
         <step dir="R" type="SILENCE"/>
 
         <step type="WAIT" value="75"/>
@@ -2789,7 +2803,7 @@
         <step dir="T" type="HDLC" tag="EOP" value="FF C8 74"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="MCF" value="FF C8 31"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="MCF+" value="FF C8 B1"/>
         <step dir="R" type="SILENCE"/>
 
         <step type="WAIT" value="75"/>
@@ -2798,7 +2812,11 @@
         <step dir="T" type="POSTAMBLE"/>
     </test>
     <test name="OTGP03">
+        <!-- DUT is set up for polling reception using a correct password. DUT calls tester. Tester sends 2 WHITE pages. -->
         <step type="ANSWER"/>
+        <step dir="T" type="SET" tag="RXFILE"/>
+        <step dir="T" type="SET" tag="IDENT" value="+0123456789"/>
+        <step dir="T" type="SET" tag="PWD" value="+9876543210"/>
 
         <step dir="R" type="CNG"/>
 
@@ -2847,7 +2865,9 @@
 </test-group>
 <test-group name="Annex F - Transmit test procedures">
     <test name="MTGN01">
-        <step type="ANSWER"/>
+        <!-- DUT calls tester and sends 1 IMPRESS and 1 WHITE page. DUT should send CNG and TSI. -->
+        <step type="ANSWER" value="a4-impress-white.tif"/>
+        <step dir="T" type="SET" tag="IDENT" value="+0123456789"/>
 
         <step dir="R" type="CNG"/>
 
@@ -2857,8 +2877,8 @@
         <step dir="T" type="HDLC" tag="DIS" value="FF C8 01 00 50 00"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" tag="TSI" value="FF C8 42 ..."/>
-        <step dir="R" type="HDLC" modem="V.21" tag="DCS" value="FF C8 41 ..."/>
+        <step dir="R" type="HDLC" modem="V.21" tag="TSI+" value="FF C0 C2 ..."/>
+        <step dir="R" type="HDLC" tag="DCS+" value="FF C8 C1 ..."/>
         <step dir="R" type="TCF" modem="V.27ter/4800" timeout="60000"/>
 
         <step type="WAIT" value="75"/>
@@ -2895,8 +2915,8 @@
         <step dir="T" type="HDLC" tag="DIS" value="FF C8 01 00 50 00"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" tag="TSI" value="FF C8 42 ..."/>
-        <step dir="R" type="HDLC" modem="V.21" tag="DCS" value="FF C8 41 00 50 00"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="TSI" value="FF C0 42 ..."/>
+        <step dir="R" type="HDLC" tag="DCS" value="FF C8 41 00 50 00"/>
         <step dir="R" type="TCF" modem="V.27ter/4800" timeout="60000"/>
 
         <step type="WAIT" value="75"/>
@@ -5222,7 +5242,10 @@
         <step dir="R" type="HDLC" modem="V.21" tag="DCN" value="FF C8 5F"/>
     </test>
     <test name="MTGX17">
-        <step type="ANSWER"/>
+        <!-- DUT calls tester, and is configured to send 1 WHITE page. Tester responds with an unknown frame instead of
+             the first and second DIS. This is because some DUTs ignore the first frame coming after CED, and wait for
+             the second one to continue the call. -->
+        <step type="ANSWER" value="a4-white.tif"/>
 
         <step dir="R" type="CNG"/>
 
@@ -5255,7 +5278,8 @@
         <step dir="T" type="POSTAMBLE"/>
     </test>
     <test name="MTGX18">
-        <step type="ANSWER"/>
+        <!-- DUT calls tester, and sends 1 WHITE page -->
+        <step type="ANSWER" value="a4-white.tif"/>
 
         <step dir="R" type="CNG"/>
 
@@ -5278,7 +5302,7 @@
         </step>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="DCS" value="FF C8 41 00 50 00"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="DCS+" value="FF C8 C1 00 50 00"/>
         <step dir="R" type="TCF" modem="V.27ter/4800" timeout="60000"/>
 
         <step type="WAIT" value="75"/>
@@ -5287,17 +5311,18 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="MSG" modem="V.27ter/4800" timeout="60000"/>
-        <step dir="R" type="HDLC" modem="V.21" tag="EOP" value="FF C8 74"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="EOP+" value="FF C8 F4"/>
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="MCF" value="FF C8 31"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="DCN" value="FF C8 5F"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
     </test>
     <test name="MTGX19">
-        <step type="ANSWER"/>
+        <!-- DUT calls tester, and sends 1 WHITE page -->
+        <step type="ANSWER" value="a4-white.tif"/>
 
         <step dir="R" type="CNG"/>
 
@@ -5311,7 +5336,7 @@
         <step dir="T" type="HDLC" tag="DIS" value="FF C8 01 00 50 00"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="DCS" value="FF C8 41 00 50 00">
+        <step dir="R" type="HDLC" modem="V.21" tag="DCS+" value="FF C8 C1 00 50 00">
             <check name="MTGX19M01" desc="Unknown frame for command received"/>
         </step>
         <step dir="R" type="TCF" modem="V.27ter/4800" timeout="60000"/>
@@ -5322,17 +5347,18 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="MSG" modem="V.27ter/4800"  timeout="60000"/>
-        <step dir="R" type="HDLC" modem="V.21" tag="EOP" value="FF C8 74"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="EOP+" value="FF C8 F4"/>
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="MCF" value="FF C8 31"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="DCN" value="FF C8 5F"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
     </test>
     <test name="MTGX20">
-        <step type="ANSWER"/>
+        <!-- DUT calls tester, and attempts to send 1 WHITE page -->
+        <step type="ANSWER" value="a4-white.tif"/>
 
         <step dir="R" type="CNG"/>
  
@@ -5342,7 +5368,7 @@
         <step dir="T" type="HDLC" tag="DIS" value="FF C8 01 00 50 00"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="DCS" value="FF C8 41 00 50 00"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="DCS+" value="FF C8 C1 00 50 00"/>
         <step dir="R" type="TCF" modem="V.27ter/4800" timeout="60000"/>
 
         <step type="WAIT" value="75"/>
@@ -5351,7 +5377,7 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="MSG" modem="V.27ter/4800" timeout="60000"/>
-        <step dir="R" type="HDLC" modem="V.21" tag="EOP" value="FF C8 74"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="EOP+" value="FF C8 F4"/>
 
         <step type="WAIT" value="75"/>
         <!-- UNKNOWN_BCS_2 -->
@@ -5359,12 +5385,13 @@
         <step dir="T" type="HDLC" tag="GARBAGE" value="FF C8 00"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="DCN" value="FF C8 5F">
+        <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF">
             <check name="MTGX20M01" desc="Unknown frame for response received"/>
         </step>
     </test>
     <test name="MTGX21">
-        <step type="ANSWER"/>
+        <!-- DUT calls tester, and sends 2 WHITE pages -->
+        <step type="ANSWER" value="a4-white-2p.tif"/>
 
         <step dir="R" type="CNG"/>
 
@@ -5374,7 +5401,7 @@
         <step dir="T" type="HDLC" tag="DIS" value="FF C8 01 00 50 00"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="DCS" value="FF C8 41 00 50 00"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="DCS+" value="FF C8 C1 00 50 00"/>
         <step dir="R" type="TCF" modem="V.27ter/4800" timeout="60000"/>
 
         <step type="WAIT" value="75"/>
@@ -5383,14 +5410,14 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="MSG" modem="V.27ter/4800" timeout="60000"/>
-        <step dir="R" type="HDLC" modem="V.21" tag="MPS" value="FF C8 72"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="MPS+" value="FF C8 F2"/>
 
         <step type="WAIT" value="75"/>
         <!-- UNKNOWN_BCS_3 -->
         <step dir="T" type="PREAMBLE" modem="V.21" value="37"/>
         <step dir="T" type="HDLC" tag="GARBAGE" value="A2 02 B5 C9 7E 67"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="MPS" value="FF C8 72">
+        <step dir="R" type="HDLC" modem="V.21" tag="MPS+" value="FF C8 F2">
             <check name="MTGX21M01" desc="Unknown frame for response received"/>
         </step>
 
@@ -5400,17 +5427,18 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="MSG" modem="V.27ter/4800"  timeout="60000"/>
-        <step dir="R" type="HDLC" modem="V.21" tag="EOP" value="FF C8 74"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="EOP+" value="FF C8 F4"/>
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="MCF" value="FF C8 31"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="DCN" value="FF C8 5F"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
     </test>
     <test name="MTGX22">
-        <step type="ANSWER" value="a4-white.tif"/>
+        <!-- DUT calls tester, and sends 2 WHITE pages -->
+        <step type="ANSWER" value="a4-white-2p.tif"/>
 
         <step dir="R" type="CNG"/>
 
@@ -5429,13 +5457,13 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="MSG" modem="V.27ter/4800" timeout="60000"/>
-        <step dir="R" type="HDLC" modem="V.21" tag="MPS" value="FF C8 72"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="MPS+" value="FF C8 F2"/>
 
         <step type="WAIT" value="75"/>
         <!-- UNKNOWN_BCS_4 -->
         <step dir="T" type="PREAMBLE" modem="V.21" value="43"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="MPS" value="FF C8 72">
+        <step dir="R" type="HDLC" modem="V.21" tag="MPS+" value="FF C8 F2">
             <check name="MTGX22M01" desc="Unknown frame for response received"/>
         </step>
 
@@ -5445,23 +5473,24 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="MSG" modem="V.27ter/4800" timeout="60000"/>
-        <step dir="R" type="HDLC" modem="V.21" tag="EOP" value="FF C8 74"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="EOP+" value="FF C8 F4"/>
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="MCF" value="FF C8 31"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="DCN" value="FF C8 5F"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
     </test>
     <test name="MTGX23">
+        <!-- DUT calls tester, and sends 1 WHITE page -->
         <step type="ANSWER" value="a4-white.tif"/>
 
         <step dir="R" type="CNG"/>
 
         <step dir="T" type="CED"/>
         <step type="WAIT" value="75"/>
-        <!-- CALLED-CAP-GROUP -->
+        <!-- CALLED-CAP-GROUP (TSB85 6.5.2.2) -->
         <step dir="T" type="PREAMBLE" modem="V.21" value="43"/>
         <step dir="T" type="HDLC" tag="NSF" value="FF C0 04 B5 FF FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00"/>
         <step dir="T" type="POSTAMBLE"/>
@@ -5481,19 +5510,22 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="MSG" modem="V.27ter/4800" timeout="60000"/>
-        <step dir="R" type="HDLC" modem="V.21" tag="EOP+" value="FF C8 74"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="EOP+" value="FF C8 F4"/>
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="MCF" value="FF C8 31"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="DCN" value="FF C8 5F"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
     </test>
 </test-group>
 <test-group name="Annex J - Polling transmit test procedures">
     <test name="MRGP01">
-        <step type="CALL"/>
+        <!-- DUT has been prepared with 2 WHITE pages, which are available for polling without a password. Tester calls DUT.
+             DUT should send TSI for this test procedure. -->
+        <step type="CALL" value="a4-white-2p.tif"/>
+        <step dir="T" type="SET" tag="IDENT" value="1234567890"/>
 
         <!--<step dir="T" type="CNG"/>-->
 
@@ -5508,18 +5540,18 @@
         <step dir="T" type="HDLC" tag="DTC" value="FF C8 81 00 50 10"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" tag="TSI" value="FF C8 42 ...">
+        <step dir="R" type="HDLC" modem="V.21" tag="TSI" value="FF C0 42 ...">
             <check name="MRGP01M04" desc="Polled, TSI prescence"/>
             <check name="MRGP01M05" desc="Polled, TSI framing"/>
             <check name="MRGP01M06" desc="Polled, TSI FIF content"/>
         </step>
-        <step dir="R" type="HDLC" modem="V.21" tag="DCS" value="FF C8 41 00 50 00">
+        <step dir="R" type="HDLC" tag="DCS" value="FF C8 41 00 50 10">
             <check name="MRGP01M02" desc="Polled, trasnmit DCS"/>
             <check name="MRGP01M03" desc="Polled, DCS preamble"/>
             <check name="MRGP01M07" desc="Polled, DCS framing"/>
             <check name="MRGP01M08" desc="Polled, DCS FIF content"/>
         </step>
-        <step dir="R" type="TCF">
+        <step dir="R" type="TCF" modem="V.27ter/4800">
             <check name="MRGP01M09" desc="Polled, DCS TCF"/>
         </step>
         <step dir="R" type="SILENCE"/>
@@ -5568,7 +5600,10 @@
         <step dir="R" type="SILENCE"/>
     </test>
     <test name="MRGP02">
-        <step type="CALL" value="a4-white.tif"/>
+        <!-- DUT has been prepared with 2 WHITE pages, which are available for polling using a password. Tester calls DUT -->
+        <step type="CALL" value="a4-white-2p.tif"/>
+        <step dir="T" type="SET" tag="IDENT" value="1234567890"/>
+        <step dir="R" type="SET" tag="PWD" value="+9876543210"/>
 
         <!--<step dir="T" type="CNG"/>-->
 
@@ -5584,7 +5619,7 @@
         <step dir="T" type="HDLC" tag="DTC" value="FF C8 81 00 50 11 01 01 01 40"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="TSI" value="FF C8 42 ..."/>
+        <step dir="R" type="HDLC" modem="V.21" tag="TSI" value="FF C0 42 ..."/>
         <step dir="R" type="HDLC" tag="DCS" value="FF C8 41 ...">
             <check name="MRGP02M02" desc="Polled, DUT accepts tester's password"/>
         </step>
@@ -5619,7 +5654,9 @@
         <step dir="R" type="SILENCE"/>
     </test>
     <test name="MRGP03">
+        <!-- DUT has been prepared with 2 WHITE pages, which are available for polling using a password. Tester calls DUT -->
         <step type="CALL"/>
+        <step dir="R" type="SET" tag="PWD" value="+0123456789"/>
 
         <!--<step dir="T" type="CNG"/>-->
 
@@ -5639,7 +5676,9 @@
         <step dir="R" type="SILENCE"/>
     </test>
     <test name="MRGP04">
-        <step type="CALL"/>
+        <!-- DUT has been prepared with 2 WHITE pages, which are available for polling using a password. Tester calls DUT -->
+        <step type="CALL" value="a4-white-2p.tif"/>
+        <step dir="R" type="SET" tag="PWD" value="+0123456789"/>
 
         <!--<step dir="T" type="CNG"/>-->
 
@@ -5658,6 +5697,7 @@
         <step dir="R" type="SILENCE"/>
     </test>
     <test name="MRGP05">
+        <!-- DUT has no document available for polling. Tester calls DUT -->
         <step type="CALL"/>
 
         <!--<step dir="T" type="CNG"/>-->
@@ -5679,7 +5719,8 @@
         <step dir="R" type="SILENCE"/>
     </test>
     <test name="MRGP06">
-        <step type="CALL" value="a4-white.tif"/>
+        <!-- DUT has been prepared with 2 WHITE pages, which are available for polling without a password. Tester calls DUT -->
+        <step type="CALL" value="a4-white-2p.tif"/>
 
         <!--<step dir="T" type="CNG"/>-->
 
@@ -5704,7 +5745,7 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="MSG" modem="V.27ter/4800" timeout="60000"/>
-        <step dir="R" type="HDLC" modem="V.21" tag="MPS" value="FF C8 72"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="MPS+" value="FF C8 F2"/>
         <step dir="R" type="SILENCE"/>
 
         <step type="WAIT" value="75"/>
@@ -5713,7 +5754,7 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="MSG" modem="V.27ter/4800" timeout="60000"/>
-        <step dir="R" type="HDLC" modem="V.21" tag="EOP" value="FF C8 74"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="EOP+" value="FF C8 F4"/>
         <step dir="R" type="SILENCE"/>
 
         <step type="WAIT" value="75"/>
@@ -5721,11 +5762,13 @@
         <step dir="T" type="HDLC" tag="MCF" value="FF C8 31"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="DCN" value="FF C8 5F"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
         <step dir="R" type="SILENCE"/>
     </test>
     <test name="MRGP07">
-        <step type="CALL"/>
+        <!-- DUT has been prepared with 2 WHITE pages, which are available for polling using a password. Tester calls DUT -->
+        <step type="CALL" value="a4-white-2p.tif"/>
+        <step dir="R" type="SET" tag="PWD" value="+9876543210"/>
 
         <!--<step dir="T" type="CNG"/>-->
 
@@ -5738,12 +5781,13 @@
         <step dir="T" type="HDLC" tag="DIS" value="FF C8 01 00 50 00"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="DCN" value="FF C8 5F">
+        <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF">
             <check name="MRGP07M01" desc="Polled, DUT rejects DIS in place of DTC for lackof password"/>
         </step>
         <step dir="R" type="SILENCE"/>
     </test>
     <test name="MRGP08">
+        <!-- DUT has no document available for polling. Tester calls DUT -->
         <step type="CALL"/>
 
         <!--<step dir="T" type="CNG"/>-->
@@ -5757,12 +5801,14 @@
         <step dir="T" type="HDLC" tag="DIS" value="FF C8 01 00 50 00"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="DCN" value="FF C8 5F">
+        <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF">
             <check name="MRGP08M01" desc="Polled, DUT rejects DIS in place of DTC for no document available"/>
         </step>
         <step dir="R" type="SILENCE"/>
     </test>
     <test name="ORGP09">
+        <!-- DUT has been prepared with 1 WHITE page, which is available for polling without password. Tester calls DUT
+             Tester sends 1 WHITE page -->
         <step type="CALL" value="a4-white.tif"/>
 
         <!--<step dir="T" type="CNG"/>-->
@@ -5821,6 +5867,8 @@
         <step dir="R" type="SILENCE"/>
     </test>
     <test name="ORGP10">
+        <!-- DUT has been prepared with 1 WHITE page, which is available for polling without password. Tester calls DUT
+             Tester sends 1 WHITE page -->
         <step type="CALL" value="a4-white.tif"/>
 
         <!--<step dir="T" type="CNG"/>-->

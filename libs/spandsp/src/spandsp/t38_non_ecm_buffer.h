@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_non_ecm_buffer.h,v 1.1 2008/08/14 14:06:05 steveu Exp $
+ * $Id: t38_non_ecm_buffer.h,v 1.2 2008/09/02 13:56:10 steveu Exp $
  */
 
 /*! \file */
@@ -83,10 +83,13 @@ typedef struct
 
     /*! \brief The number of octets input to the buffer. */
     int in_octets;
-    /*! \brief The number of octets output from the buffer. */
-    int out_octets;
     /*! \brief The number of rows input to the buffer. */
     int in_rows;
+    /*! \brief The number of non-ECM fill octets generated for minimum row bits
+               purposes. */
+    int min_row_bits_fill_octets;
+    /*! \brief The number of octets output from the buffer. */
+    int out_octets;
     /*! \brief The number of rows output from the buffer. */
     int out_rows;
     /*! \brief The number of non-ECM fill octets generated for flow control
@@ -106,6 +109,12 @@ extern "C"
     \return A pointer to the buffer context, or NULL if there was a problem. */
 t38_non_ecm_buffer_state_t *t38_non_ecm_buffer_init(t38_non_ecm_buffer_state_t *s, int mode, int min_row_bits);
 
+/*! \brief Set the mode of a T.38 rate adapting non-ECM buffer context.
+    \param s The buffer context.
+    \param mode TRUE for image data mode, or FALSE for TCF mode.
+    \param bits The minimum number of bits per FAX image row. */
+void t38_non_ecm_buffer_set_mode(t38_non_ecm_buffer_state_t *s, int mode, int min_row_bits);
+
 /*! \brief Inject data to T.38 rate adapting non-ECM buffer context.
     \param s The buffer context.
     \param buf The data buffer to be injected.
@@ -117,11 +126,17 @@ void t38_non_ecm_buffer_inject(t38_non_ecm_buffer_state_t *s, const uint8_t *buf
     \param s The buffer context. */
 void t38_non_ecm_buffer_push(t38_non_ecm_buffer_state_t *s);
 
-/*! \brief Report the status of a T.38 rate adapting non-ECM buffer context to the specified
+/*! \brief Report the input status of a T.38 rate adapting non-ECM buffer context to the specified
            logging context.
     \param s The buffer context.
     \param logging The logging context. */
-void t38_non_ecm_buffer_report_status(t38_non_ecm_buffer_state_t *s, logging_state_t *logging);
+void t38_non_ecm_buffer_report_input_status(t38_non_ecm_buffer_state_t *s, logging_state_t *logging);
+
+/*! \brief Report the output status of a T.38 rate adapting non-ECM buffer context to the specified
+           logging context.
+    \param s The buffer context.
+    \param logging The logging context. */
+void t38_non_ecm_buffer_report_output_status(t38_non_ecm_buffer_state_t *s, logging_state_t *logging);
 
 /*! \brief Get the next bit of data from a T.38 rate adapting non-ECM buffer context.
     \param user_data The buffer context, cast to a void pointer.

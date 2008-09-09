@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_core.h,v 1.28 2008/06/19 13:27:45 steveu Exp $
+ * $Id: t38_core.h,v 1.29 2008/09/04 14:40:05 steveu Exp $
  */
 
 /*! \file */
@@ -142,7 +142,7 @@ enum t38_field_classes_e
 {
     T38_FIELD_CLASS_NONE = 0,
     T38_FIELD_CLASS_HDLC,
-    T38_FIELD_CLASS_NON_ECM,
+    T38_FIELD_CLASS_NON_ECM
 };
 
 /*! T.38 message types */

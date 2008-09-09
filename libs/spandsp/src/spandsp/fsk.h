@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk.h,v 1.30 2008/07/16 14:23:48 steveu Exp $
+ * $Id: fsk.h,v 1.31 2008/09/04 14:40:05 steveu Exp $
  */
 
 /*! \file */
@@ -111,7 +111,7 @@ enum
     FSK_BELL103CH1,
     FSK_BELL103CH2,
     FSK_BELL202,
-    FSK_WEITBRECHT,     /* Used for TDD (Telecom Device for the Deaf) */
+    FSK_WEITBRECHT      /* Used for TDD (Telecom Device for the Deaf) */
 };
 
 extern const fsk_spec_t preset_fsk_specs[];

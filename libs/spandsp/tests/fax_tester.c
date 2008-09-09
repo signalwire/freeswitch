@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_tester.c,v 1.13 2008/08/13 00:11:30 steveu Exp $
+ * $Id: fax_tester.c,v 1.16 2008/09/09 14:05:55 steveu Exp $
  */
 
 /*! \file */
@@ -146,17 +146,11 @@ static int modem_tx_status(void *user_data, int status)
     faxtester_state_t *s;
 
     s = (faxtester_state_t *) user_data;
+    printf("Tx status is %s (%d)\n", signal_status_to_str(status), status);
     switch (status)
     {
-    case MODEM_TX_STATUS_DATA_EXHAUSTED:
-        span_log(&s->logging, SPAN_LOG_FLOW, "Tx data exhausted\n");
-        break;
-    case MODEM_TX_STATUS_SHUTDOWN_COMPLETE:
-        span_log(&s->logging, SPAN_LOG_FLOW, "Tx shutdown complete\n");
+    case SIG_STATUS_SHUTDOWN_COMPLETE:
         front_end_step_complete(s);
-        break;
-    default:
-        span_log(&s->logging, SPAN_LOG_FLOW, "Tx status is %d\n", status);
         break;
     }
     return 0;
@@ -202,7 +196,7 @@ static int non_ecm_get_bit(void *user_data)
         if (s->image_ptr >= s->image_len)
         {
             s->image_buffer = NULL;
-            return PUTBIT_END_OF_DATA;
+            return SIG_STATUS_END_OF_DATA;
         }
         s->image_bit_ptr = 8;
         s->image_ptr++;
@@ -241,25 +235,20 @@ static void non_ecm_rx_status(void *user_data, int status)
     faxtester_state_t *s;
 
     s = (faxtester_state_t *) user_data;
+    span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM carrier status is %s (%d)\n", signal_status_to_str(status), status);
     switch (status)
     {
-    case PUTBIT_TRAINING_IN_PROGRESS:
-        break;
-    case PUTBIT_TRAINING_FAILED:
-        span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM carrier training failed\n");
+    case SIG_STATUS_TRAINING_FAILED:
         s->modems.rx_trained = FALSE;
         break;
-    case PUTBIT_TRAINING_SUCCEEDED:
+    case SIG_STATUS_TRAINING_SUCCEEDED:
         /* The modem is now trained */
-        span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM carrier trained\n");
         s->modems.rx_trained = TRUE;
         break;
-    case PUTBIT_CARRIER_UP:
-        span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM carrier up\n");
+    case SIG_STATUS_CARRIER_UP:
         s->modems.rx_signal_present = TRUE;
         break;
-    case PUTBIT_CARRIER_DOWN:
-        span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM carrier down\n");
+    case SIG_STATUS_CARRIER_DOWN:
         if (s->modems.rx_trained)
         {
             if (s->real_time_frame_handler)
@@ -267,9 +256,6 @@ static void non_ecm_rx_status(void *user_data, int status)
         }
         s->modems.rx_signal_present = FALSE;
         s->modems.rx_trained = FALSE;
-        break;
-    default:
-        span_log(&s->logging, SPAN_LOG_WARNING, "Unexpected non-ECM rx status - %d!\n", status);
         break;
     }
 }
@@ -293,36 +279,22 @@ static void hdlc_rx_status(void *user_data, int status)
     faxtester_state_t *s;
 
     s = (faxtester_state_t *) user_data;
+    fprintf(stderr, "HDLC carrier status is %s (%d)\n", signal_status_to_str(status), status);
     switch (status)
     {
-    case PUTBIT_TRAINING_IN_PROGRESS:
-        break;
-    case PUTBIT_TRAINING_FAILED:
-        span_log(&s->logging, SPAN_LOG_FLOW, "HDLC carrier training failed\n");
+    case SIG_STATUS_TRAINING_FAILED:
         s->modems.rx_trained = FALSE;
         break;
-    case PUTBIT_TRAINING_SUCCEEDED:
+    case SIG_STATUS_TRAINING_SUCCEEDED:
         /* The modem is now trained */
-        span_log(&s->logging, SPAN_LOG_FLOW, "HDLC carrier trained\n");
         s->modems.rx_trained = TRUE;
         break;
-    case PUTBIT_CARRIER_UP:
-        span_log(&s->logging, SPAN_LOG_FLOW, "HDLC carrier up\n");
+    case SIG_STATUS_CARRIER_UP:
         s->modems.rx_signal_present = TRUE;
         break;
-    case PUTBIT_CARRIER_DOWN:
-        span_log(&s->logging, SPAN_LOG_FLOW, "HDLC carrier down\n");
+    case SIG_STATUS_CARRIER_DOWN:
         s->modems.rx_signal_present = FALSE;
         s->modems.rx_trained = FALSE;
-        break;
-    case PUTBIT_FRAMING_OK:
-        span_log(&s->logging, SPAN_LOG_FLOW, "HDLC framing OK\n");
-        break;
-    case PUTBIT_ABORT:
-        /* Just ignore these */
-        break;
-    default:
-        span_log(&s->logging, SPAN_LOG_FLOW, "Unexpected HDLC special length - %d!\n", status);
         break;
     }
 }

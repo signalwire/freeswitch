@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_terminal.c,v 1.100 2008/08/13 14:55:51 steveu Exp $
+ * $Id: t38_terminal.c,v 1.101 2008/09/07 12:45:17 steveu Exp $
  */
 
 /*! \file */
@@ -192,7 +192,7 @@ static int process_rx_indicator(t38_core_state_t *t, void *user_data, int indica
             &&
             (fe->current_rx_type == T30_MODEM_V21  ||  fe->current_rx_type == T30_MODEM_CNG))
         {
-            t30_hdlc_accept(&s->t30, NULL, PUTBIT_CARRIER_DOWN, TRUE);
+            t30_hdlc_accept(&s->t30, NULL, SIG_STATUS_CARRIER_DOWN, TRUE);
         }
         fe->timeout_rx_samples = 0;
         t30_front_end_status(&s->t30, T30_FRONT_END_SIGNAL_ABSENT);
@@ -357,7 +357,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Type %s - CRC OK, sig end (%s)\n", (fe->hdlc_rx.len >= 3)  ?  t30_frametype(fe->hdlc_rx.buf[2])  :  "???", (fe->rx_data_missing)  ?  "missing octets"  :  "clean");
             t30_hdlc_accept(&s->t30, fe->hdlc_rx.buf, fe->hdlc_rx.len, !fe->rx_data_missing);
-            t30_hdlc_accept(&s->t30, NULL, PUTBIT_CARRIER_DOWN, TRUE);
+            t30_hdlc_accept(&s->t30, NULL, SIG_STATUS_CARRIER_DOWN, TRUE);
         }
         fe->hdlc_rx.len = 0;
         fe->rx_data_missing = FALSE;
@@ -377,7 +377,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Type %s - CRC bad, sig end (%s)\n", (fe->hdlc_rx.len >= 3)  ?  t30_frametype(fe->hdlc_rx.buf[2])  :  "???", (fe->rx_data_missing)  ?  "missing octets"  :  "clean");
             t30_hdlc_accept(&s->t30, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
-            t30_hdlc_accept(&s->t30, NULL, PUTBIT_CARRIER_DOWN, TRUE);
+            t30_hdlc_accept(&s->t30, NULL, SIG_STATUS_CARRIER_DOWN, TRUE);
         }
         fe->hdlc_rx.len = 0;
         fe->rx_data_missing = FALSE;
@@ -410,7 +410,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
     case T38_FIELD_T4_NON_ECM_DATA:
         if (!fe->rx_signal_present)
         {
-            t30_non_ecm_put_bit(&s->t30, PUTBIT_TRAINING_SUCCEEDED);
+            t30_non_ecm_put_bit(&s->t30, SIG_STATUS_TRAINING_SUCCEEDED);
             fe->rx_signal_present = TRUE;
         }
         bit_reverse(buf2, buf, len);
@@ -427,7 +427,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             {
                 if (!fe->rx_signal_present)
                 {
-                    t30_non_ecm_put_bit(&s->t30, PUTBIT_TRAINING_SUCCEEDED);
+                    t30_non_ecm_put_bit(&s->t30, SIG_STATUS_TRAINING_SUCCEEDED);
                     fe->rx_signal_present = TRUE;
                 }
                 bit_reverse(buf2, buf, len);

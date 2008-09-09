@@ -17,7 +17,7 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# $Id: regression_tests.sh,v 1.51 2008/05/03 07:37:06 steveu Exp $
+# $Id: regression_tests.sh,v 1.52 2008/09/02 13:56:10 steveu Exp $
 #
 
 ITUTESTS_TIF=../test-data/itu/fax/itutests.tif
@@ -516,6 +516,15 @@ then
     exit $RETVAL
 fi
 echo t38_gateway_to_terminal_tests completed OK
+
+./t38_non_ecm_buffer_tests >$STDOUT_DEST 2>$STDERR_DEST
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo t38_non_ecm_buffer_tests failed!
+    exit $RETVAL
+fi
+echo t38_non_ecm_buffer_tests completed OK
 
 rm -f t38.tif
 ./t38_terminal_to_gateway_tests >$STDOUT_DEST 2>$STDERR_DEST

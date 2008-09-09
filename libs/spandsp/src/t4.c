@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4.c,v 1.112 2008/07/22 13:48:15 steveu Exp $
+ * $Id: t4.c,v 1.113 2008/09/07 12:45:17 steveu Exp $
  */
 
 /*
@@ -1963,7 +1963,7 @@ int t4_tx_get_bit(t4_state_t *s)
     int bit;
 
     if (s->bit_ptr >= s->image_size)
-        return PUTBIT_END_OF_DATA;
+        return SIG_STATUS_END_OF_DATA;
     bit = (s->image_buffer[s->bit_ptr] >> (7 - s->bit_pos)) & 1;
     if (--s->bit_pos < 0)
     {
@@ -1999,7 +1999,7 @@ int t4_tx_check_bit(t4_state_t *s)
     int bit;
 
     if (s->bit_ptr >= s->image_size)
-        return PUTBIT_END_OF_DATA;
+        return SIG_STATUS_END_OF_DATA;
     bit = (s->image_buffer[s->bit_ptr] >> s->bit_pos) & 1;
     return bit;
 }

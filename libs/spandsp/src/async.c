@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: async.c,v 1.11 2008/05/13 13:17:21 steveu Exp $
+ * $Id: async.c,v 1.13 2008/09/07 12:45:16 steveu Exp $
  */
 
 /*! \file */
@@ -38,6 +38,37 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/async.h"
+
+const char *signal_status_to_str(int status)
+{
+    switch (status)
+    {
+    case SIG_STATUS_CARRIER_DOWN:
+        return "Carrier down";
+    case SIG_STATUS_CARRIER_UP:
+        return "Carrier up";
+    case SIG_STATUS_TRAINING_IN_PROGRESS:
+        return "Training in progress";
+    case SIG_STATUS_TRAINING_SUCCEEDED:
+        return "Training succeeded";
+    case SIG_STATUS_TRAINING_FAILED:
+        return "Training failed";
+    case SIG_STATUS_FRAMING_OK:
+        return "Framing OK";
+    case SIG_STATUS_END_OF_DATA:
+        return "End of data";
+    case SIG_STATUS_ABORT:
+        return "Abort";
+    case SIG_STATUS_BREAK:
+        return "Break";
+    case SIG_STATUS_SHUTDOWN_COMPLETE:
+        return "Shutdown complete";
+    case SIG_STATUS_OCTET_REPORT:
+        return "Octet report";
+    }
+    return "???";
+}
+/*- End of function --------------------------------------------------------*/
 
 async_rx_state_t *async_rx_init(async_rx_state_t *s,
                                 int data_bits,
@@ -80,12 +111,12 @@ void async_rx_put_bit(void *user_data, int bit)
         /* Special conditions */
         switch (bit)
         {
-        case PUTBIT_CARRIER_UP:
-        case PUTBIT_CARRIER_DOWN:
-        case PUTBIT_TRAINING_IN_PROGRESS:
-        case PUTBIT_TRAINING_SUCCEEDED:
-        case PUTBIT_TRAINING_FAILED:
-        case PUTBIT_END_OF_DATA:
+        case SIG_STATUS_CARRIER_UP:
+        case SIG_STATUS_CARRIER_DOWN:
+        case SIG_STATUS_TRAINING_IN_PROGRESS:
+        case SIG_STATUS_TRAINING_SUCCEEDED:
+        case SIG_STATUS_TRAINING_FAILED:
+        case SIG_STATUS_END_OF_DATA:
             s->put_byte(s->user_data, bit);
             s->bitpos = 0;
             s->byte_in_progress = 0;
@@ -194,7 +225,7 @@ int async_tx_get_bit(void *user_data)
         if ((s->byte_in_progress = s->get_byte(s->user_data)) < 0)
         {
             /* No more data */
-            bit = PUTBIT_END_OF_DATA;
+            bit = SIG_STATUS_END_OF_DATA;
         }
         else
         {

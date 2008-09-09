@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: rfc2198_sim.h,v 1.3 2008/04/17 18:03:23 steveu Exp $
+ * $Id: rfc2198_sim.h,v 1.4 2008/09/09 16:13:12 steveu Exp $
  */
 
 /*! \file */
@@ -43,7 +43,7 @@ typedef struct rfc2198_sim_queue_element_s
     double departure_time;
     double arrival_time;
     int len;
-    uint8_t pkt[0];
+    uint8_t pkt[];
 } rfc2198_sim_queue_element_t;
 
 /*! The model definition for a complete end-to-end path */

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis_rx.c,v 1.40 2008/07/25 13:56:54 steveu Exp $
+ * $Id: v22bis_rx.c,v 1.41 2008/09/07 12:45:17 steveu Exp $
  */
 
 /*! \file */
@@ -607,7 +607,7 @@ int v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
             if (power < s->rx.carrier_off_power)
             {
                 v22bis_rx_restart(s, s->bit_rate);
-                s->put_bit(s->user_data, PUTBIT_CARRIER_DOWN);
+                s->put_bit(s->user_data, SIG_STATUS_CARRIER_DOWN);
                 continue;
             }
         }
@@ -617,7 +617,7 @@ int v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
             if (power < s->rx.carrier_on_power)
                 continue;
             s->rx.signal_present = TRUE;
-            s->put_bit(s->user_data, PUTBIT_CARRIER_UP);
+            s->put_bit(s->user_data, SIG_STATUS_CARRIER_UP);
         }
         if (s->rx.training != V22BIS_TRAINING_STAGE_PARKED)
         {
