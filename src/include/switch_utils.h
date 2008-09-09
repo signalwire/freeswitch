@@ -285,6 +285,15 @@ switch_mutex_unlock(obj->flag_mutex);
 */
 #define switch_safe_free(it) if (it) {free(it);it=NULL;}
 
+static inline char *switch_safe_strdup(const char *it) 
+{
+	if (it) {
+		return strdup(it);
+	}
+
+	return NULL;
+}
+
 
 /*!
   \brief Test if one string is inside another with extra case checking
