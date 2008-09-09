@@ -494,12 +494,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 			if (*menu->buf) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IVR menu '%s' caught invalid input '%s'\n", menu->name, menu->buf);
 				if (menu->invalid_sound) {
-					play_and_collect(session, menu, menu->invalid_sound, 0);
+					status = play_and_collect(session, menu, menu->invalid_sound, 0);
 				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IVR menu '%s' no input detected\n", menu->name);
 			}
 			errs++;
+
+			if (status == SWITCH_STATUS_TIMEOUT) {
+				status = SWITCH_STATUS_SUCCESS;
+			}
+
 			if (status == SWITCH_STATUS_SUCCESS) {
 				status = switch_ivr_sleep(session, 1000, NULL);
 			}
@@ -512,7 +517,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "exit-sound '%s'\n", menu->exit_sound);
 	if (!switch_strlen_zero(menu->exit_sound)) {
-		play_and_collect(session, menu, menu->exit_sound, 0);
+		status = play_and_collect(session, menu, menu->exit_sound, 0);
 	}
 
 	switch_safe_free(menu->buf);
