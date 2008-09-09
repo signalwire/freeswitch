@@ -1341,6 +1341,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 					forward_file_path = switch_core_session_sprintf(session, "%s%smsg_%s.wav", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, uuid_str);
 					TRY_CODE(create_file(session, profile, VM_RECORD_MESSAGE_MACRO, forward_file_path, &message_len, SWITCH_TRUE));
 					if ((new_path = vm_merge_file(session, profile, forward_file_path, cbt->file_path))) {
+						switch_ivr_sleep(session, 1500, NULL);
 						forward_file_path = new_path;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error merging files\n");
