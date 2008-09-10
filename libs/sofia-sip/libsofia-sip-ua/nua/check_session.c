@@ -2034,6 +2034,43 @@ START_TEST(bye_4_1_10)
 }
 END_TEST
 
+START_TEST(bye_4_1_11)
+{
+  nua_handle_t *nh;
+  struct message *invite, *ack;
+  struct event *i_bye;
+
+  s2_case("4.1.11", "Receive BYE in completing state",
+	  "NUA sends INVITE, receives 200, receives BYE.");
+
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+
+  invite = invite_sent_by_nua(nh, NUTAG_AUTOACK(0), TAG_END());
+  process_offer(invite);
+  s2_respond_to(invite, dialog, SIP_180_RINGING, TAG_END());
+  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless(s2_check_callstate(nua_callstate_proceeding));
+
+  respond_with_sdp(invite, dialog, SIP_200_OK, TAG_END());
+  s2_free_message(invite);
+  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless(s2_check_callstate(nua_callstate_completing));
+
+  s2_request_to(dialog, SIP_METHOD_BYE, NULL, TAG_END());
+  i_bye = s2_wait_for_event(nua_i_bye, 200);
+  fail_if(!i_bye);
+  s2_free_event(i_bye), i_bye = NULL;
+  fail_unless(s2_check_callstate(nua_callstate_terminated));
+  fail_unless(s2_check_response(200, SIP_METHOD_BYE));
+
+  ack = s2_wait_for_request(SIP_METHOD_ACK);
+  fail_if(!ack);
+  s2_free_message(ack);
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
 START_TEST(bye_4_2_1)
 {
   nua_handle_t *nh;
@@ -2139,6 +2176,7 @@ TCase *termination_tcase(void)
     tcase_add_test(tc, bye_4_1_8);
     tcase_add_test(tc, bye_4_1_9);
     tcase_add_test(tc, bye_4_1_10);
+    tcase_add_test(tc, bye_4_1_11);
     tcase_add_test(tc, bye_4_2_1);
     tcase_add_test(tc, bye_4_2_2);
     tcase_set_timeout(tc, 5);
