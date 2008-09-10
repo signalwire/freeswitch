@@ -420,11 +420,11 @@ START_TEST(call_2_1_1)
 END_TEST
 
 
-START_TEST(call_2_1_2)
+START_TEST(call_2_1_2_1)
 {
   nua_handle_t *nh;
 
-  s2_case("2.1.2", "Basic call",
+  s2_case("2.1.2.1", "Basic call",
 	  "NUA sends INVITE, NUA receives BYE");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
@@ -437,13 +437,51 @@ START_TEST(call_2_1_2)
 }
 END_TEST
 
-
-START_TEST(call_2_1_3)
+START_TEST(call_2_1_2_2)
 {
   nua_handle_t *nh;
 
-  s2_case("2.1.3", "Incoming call",
+  s2_case("2.1.2.2", "Basic call over TCP",
+	  "NUA sends INVITE, NUA receives BYE");
+
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local),
+		  TAG_END());
+
+  invite_by_nua(nh,
+		NUTAG_PROXY(s2->tcp.contact->m_url),
+		TAG_END());
+
+  bye_to_nua(nh, TAG_END());
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
+
+START_TEST(call_2_1_3_1)
+{
+  nua_handle_t *nh;
+
+  s2_case("2.1.3.1", "Incoming call",
 	  "NUA receives INVITE and BYE");
+
+  nh = invite_to_nua(TAG_END());
+
+  bye_to_nua(nh, TAG_END());
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
+
+START_TEST(call_2_1_3_2)
+{
+  nua_handle_t *nh;
+
+  s2_case("2.1.3.2", "Incoming call over TCP",
+	  "NUA receives INVITE and BYE");
+
+  dialog->tport = s2->tcp.tport;
 
   nh = invite_to_nua(TAG_END());
 
@@ -632,8 +670,10 @@ TCase *invite_tcase(void)
   tcase_add_checked_fixture(tc, call_setup, call_teardown);
   {
     tcase_add_test(tc, call_2_1_1);
-    tcase_add_test(tc, call_2_1_2);
-    tcase_add_test(tc, call_2_1_3);
+    tcase_add_test(tc, call_2_1_2_1);
+    tcase_add_test(tc, call_2_1_2_2);
+    tcase_add_test(tc, call_2_1_3_1);
+    tcase_add_test(tc, call_2_1_3_2);
     tcase_add_test(tc, call_2_1_4);
     tcase_add_test(tc, call_2_1_5);
     tcase_add_test(tc, call_2_1_6);
