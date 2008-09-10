@@ -1200,8 +1200,6 @@ int nua_stack_ack(nua_t *nua, nua_handle_t *nh, nua_event_t e,
 
   nua_client_request_unref(cr);
 
-  nua_client_next_request(nh->nh_ds->ds_cr, 1);
-
   return 0;
 }
 
@@ -1750,7 +1748,8 @@ static int nua_prack_client_request(nua_client_request_t *cr,
     offer_sent = session_get_description(sip, NULL, NULL);
   }
   /* When 100rel response status was 183 do support for preconditions */
-  else if (cri->cr_status == 183 && ss->ss_precondition) {
+  else if (ss->ss_precondition && cri->cr_status == 183 &&
+	   cri->cr_offer_sent && cri->cr_answer_recv) {
     if (soa_generate_offer(nh->nh_soa, 0, NULL) < 0 ||
 	session_include_description(nh->nh_soa, 1, msg, sip) < 0) {
       status = soa_error_as_sip_response(nh->nh_soa, &phrase);
@@ -1805,6 +1804,7 @@ static int nua_prack_client_report(nua_client_request_t *cr,
   nua_handle_t *nh = cr->cr_owner;
   nua_dialog_usage_t *du = cr->cr_usage;
   nua_session_usage_t *ss = nua_dialog_usage_private(du);
+  int acked = 0;
 
   nua_stack_event(nh->nh_nua, nh, 
 		  nta_outgoing_getresponse(orq),
@@ -1826,19 +1826,26 @@ static int nua_prack_client_report(nua_client_request_t *cr,
       if (NH_PGET(nh, auto_ack) || 
 	  /* Auto-ACK response to re-INVITE unless auto_ack is set to 0 */
 	  (ss->ss_state == nua_callstate_ready && !NH_PISSET(nh, auto_ack))) {
-	/* No UPDATE with offer/answer if PRACK with offer/answer was ongoing! */
+	/* There should be no UPDATE with offer/answer
+	   if PRACK with offer/answer was ongoing! */
 	if (nua_invite_client_ack(du->du_cr, NULL) > 0)
 	  next_state = nua_callstate_ready;
 	else
 	  next_state = nua_callstate_terminating;
-	nua_client_request_clean(du->du_cr);
+
+	acked = 1;
       }
     }
 
     signal_call_state_change(nh, ss, status, phrase, next_state);
   }
 
-  if (ss->ss_update_needed && 200 <= status && status < 300 &&
+  if (acked &&
+      du->du_cr->cr_method == sip_method_invite &&
+      nua_client_is_queued(du->du_cr)) {
+    /* New INVITE was queued - do not send UPDATE */
+  }
+  else if (ss->ss_update_needed && 200 <= status && status < 300 &&
       !SIP_IS_ALLOWED(NH_PGET(nh, appl_method), sip_method_update))
     nua_client_create(nh, nua_r_update, &nua_update_client_methods, NULL);
   
@@ -3942,6 +3949,7 @@ static void signal_call_state_change(nua_handle_t *nh,
 				     enum nua_callstate next_state)
 {
   enum nua_callstate ss_state = nua_callstate_init;
+  enum nua_callstate invite_state = next_state;
 
   char const *oa_recv = NULL;
   char const *oa_sent = NULL;
@@ -4064,6 +4072,11 @@ static void signal_call_state_change(nua_handle_t *nh,
     nua_stack_event(nh->nh_nua, nh, NULL,
 		    nua_i_terminated, status, phrase,
 		    NULL);
+  }
+
+  if (invite_state == nua_callstate_ready) {
+    /* Start next INVITE request, if queued */
+    nua_client_next_request(nh->nh_ds->ds_cr, 1);
   }
 }
 
