@@ -1923,10 +1923,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 					}
 				}
 
-				if (!(x_params = switch_xml_child(x_user, "params"))) {
-					auth++;
-					mypass = "OK";
-				}
+				x_params = switch_xml_child(x_user, "params");
 
 				thepass = NULL;
 				switch_snprintf(sql, sizeof(sql), "select * from voicemail_prefs where username='%s' and domain='%s'", myid, domain_name);
@@ -1950,8 +1947,20 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 				switch_xml_free(x_domain_root);
 				x_domain_root = NULL;
 
-				if (auth || !thepass || (thepass && mypass && !strcmp(thepass, mypass)) || 
-					(!switch_strlen_zero(cbt.password) && !strcmp(cbt.password, mypass))) {
+				if (!auth) {
+					if (switch_strlen_zero(cbt.password) && !strcmp(cbt.password, mypass)) {
+						auth++;
+					} else if (!thepass) {
+						auth++;
+					}
+
+					if (!auth && (thepass && mypass && !strcmp(thepass, mypass))) {
+						auth++;
+					}
+				}
+
+				
+				if (auth) {
 					if (!dir_path) {
 						if (!switch_strlen_zero(vm_storage_dir)) {
 							dir_path = switch_core_session_sprintf(session, "%s%s%s", vm_storage_dir, SWITCH_PATH_SEPARATOR, myid);
