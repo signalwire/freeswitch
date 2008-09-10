@@ -399,7 +399,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RESTART);
 				} else {
 					uint32_t i;
-					for (i = 0; i < span->chan_count; i++) {
+					for (i = 1; i < span->chan_count; i++) {
 						zap_set_state_locked((span->channels[i]), ZAP_CHANNEL_STATE_RESTART);
 					}
 				}
