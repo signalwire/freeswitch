@@ -265,7 +265,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 					} else {
 						odata = expanded;
 					}
-
+					
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Handle %s:[%s] (%s:%s)\n", func, odata, chan_lang, module_name);
 
 					if (!strcasecmp(func, "play-file")) {
@@ -1234,7 +1234,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
   end:
 	switch_safe_free(abuf);
 
-	switch_core_session_reset(session, SWITCH_TRUE);
+	switch_core_session_reset(session, SWITCH_FALSE);
 	return status;
 }
 
@@ -1881,7 +1881,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 
 	timer_name = switch_channel_get_variable(channel, "timer_name");
 
-	switch_core_session_reset(session, SWITCH_TRUE);
+	switch_core_session_reset(session, SWITCH_FALSE);
 	read_codec = switch_core_session_get_read_codec(session);
 
 	rate = read_codec->implementation->actual_samples_per_second;
@@ -1964,7 +1964,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 		}
 	}
 
-	switch_core_session_reset(session, SWITCH_TRUE);
+	switch_core_session_reset(session, SWITCH_FALSE);
 	return status;
 }
 

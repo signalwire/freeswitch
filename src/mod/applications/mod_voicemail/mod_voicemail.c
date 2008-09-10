@@ -1576,8 +1576,6 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 
 	timeout = profile->digit_timeout;
 	attempts = profile->max_login_attempts;
-	args.buf = &global_buf;
-	args.buflen = sizeof(global_buf);
 	status = switch_ivr_phrase_macro(session, VM_HELLO_MACRO, NULL, NULL, &args);
 	*global_buf = '\0';
 
