@@ -143,8 +143,8 @@ static zap_channel_t *find_zchan(zap_span_t *span, ss7bc_short_event_t *event, i
 
 	zap_mutex_lock(signal_mutex);
 	for(i = 0; i <= span->chan_count; i++) {
-		if (span->channels[i].physical_span_id == event->span+1 && span->channels[i].physical_chan_id == event->chan+1) {
-			zchan = &span->channels[i];
+		if (span->channels[i]->physical_span_id == event->span+1 && span->channels[i]->physical_chan_id == event->chan+1) {
+			zchan = span->channels[i];
 			if (force) {
 				break;
 			}
@@ -152,10 +152,10 @@ static zap_channel_t *find_zchan(zap_span_t *span, ss7bc_short_event_t *event, i
 				if (zchan->state == ZAP_CHANNEL_STATE_DOWN || zchan->state >= ZAP_CHANNEL_STATE_TERMINATING) {
 					int x = 0;
 					zap_log(ZAP_LOG_WARNING, "Channel %d:%d ~ %d:%d is already in use waiting for it to become available.\n",
-							span->channels[i].span_id,
-							span->channels[i].chan_id,
-							span->channels[i].physical_span_id,
-							span->channels[i].physical_chan_id);
+							span->channels[i]->span_id,
+							span->channels[i]->chan_id,
+							span->channels[i]->physical_span_id,
+							span->channels[i]->physical_chan_id);
 
 					zap_mutex_unlock(signal_mutex);
 					for (x = 0; x < 200; x++) {
@@ -169,10 +169,10 @@ static zap_channel_t *find_zchan(zap_span_t *span, ss7bc_short_event_t *event, i
 				if (zap_test_flag(zchan, ZAP_CHANNEL_INUSE)) {
 					zchan = NULL;
 					zap_log(ZAP_LOG_ERROR, "Channel %d:%d ~ %d:%d is already in use.\n",
-							span->channels[i].span_id,
-							span->channels[i].chan_id,
-							span->channels[i].physical_span_id,
-							span->channels[i].physical_chan_id
+							span->channels[i]->span_id,
+							span->channels[i]->chan_id,
+							span->channels[i]->physical_span_id,
+							span->channels[i]->physical_chan_id
 							);
 				}
 			}
@@ -811,15 +811,15 @@ static __inline__ void check_state(zap_span_t *span)
         uint32_t j;
         zap_clear_flag_locked(span, ZAP_SPAN_STATE_CHANGE);
         for(j = 1; j <= span->chan_count; j++) {
-            if (zap_test_flag((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE) || susp) {
-				zap_mutex_lock(span->channels[j].mutex);
-                zap_clear_flag((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE);
-				if (susp && span->channels[j].state != ZAP_CHANNEL_STATE_DOWN) {
-					zap_channel_set_state(&span->channels[j], ZAP_CHANNEL_STATE_RESTART, 0);
+            if (zap_test_flag((span->channels[j]), ZAP_CHANNEL_STATE_CHANGE) || susp) {
+				zap_mutex_lock(span->channels[j]->mutex);
+                zap_clear_flag((span->channels[j]), ZAP_CHANNEL_STATE_CHANGE);
+				if (susp && span->channels[j]->state != ZAP_CHANNEL_STATE_DOWN) {
+					zap_channel_set_state(span->channels[j], ZAP_CHANNEL_STATE_RESTART, 0);
 				}
-                state_advance(&span->channels[j]);
-                zap_channel_complete_state(&span->channels[j]);
-				zap_mutex_unlock(span->channels[j].mutex);
+                state_advance(span->channels[j]);
+                zap_channel_complete_state(span->channels[j]);
+				zap_mutex_unlock(span->channels[j]->mutex);
             }
         }
     }

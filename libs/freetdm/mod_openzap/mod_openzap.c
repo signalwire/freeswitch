@@ -1768,21 +1768,21 @@ void dump_chan(zap_span_t *span, uint32_t chan_id, switch_stream_handle_t *strea
 						   "dnis: %s\n"
 						   "rdnis: %s\n"
 						   "cause: %s\n\n",
-						   span->channels[chan_id].span_id,
-						   span->channels[chan_id].chan_id,
-						   span->channels[chan_id].physical_span_id,
-						   span->channels[chan_id].physical_chan_id,
-						   zap_chan_type2str(span->channels[chan_id].type),
-						   zap_channel_state2str(span->channels[chan_id].state),
-						   zap_channel_state2str(span->channels[chan_id].last_state),
-						   span->channels[chan_id].caller_data.cid_date,
-						   span->channels[chan_id].caller_data.cid_name,
-						   span->channels[chan_id].caller_data.cid_num.digits,
-						   span->channels[chan_id].caller_data.ani.digits,
-						   span->channels[chan_id].caller_data.aniII,
-						   span->channels[chan_id].caller_data.dnis.digits,
-						   span->channels[chan_id].caller_data.rdnis.digits,
-						   switch_channel_cause2str(span->channels[chan_id].caller_data.hangup_cause)
+						   span->channels[chan_id]->span_id,
+						   span->channels[chan_id]->chan_id,
+						   span->channels[chan_id]->physical_span_id,
+						   span->channels[chan_id]->physical_chan_id,
+						   zap_chan_type2str(span->channels[chan_id]->type),
+						   zap_channel_state2str(span->channels[chan_id]->state),
+						   zap_channel_state2str(span->channels[chan_id]->last_state),
+						   span->channels[chan_id]->caller_data.cid_date,
+						   span->channels[chan_id]->caller_data.cid_name,
+						   span->channels[chan_id]->caller_data.cid_num.digits,
+						   span->channels[chan_id]->caller_data.ani.digits,
+						   span->channels[chan_id]->caller_data.aniII,
+						   span->channels[chan_id]->caller_data.dnis.digits,
+						   span->channels[chan_id]->caller_data.rdnis.digits,
+						   switch_channel_cause2str(span->channels[chan_id]->caller_data.hangup_cause)
 						   );
 }
 

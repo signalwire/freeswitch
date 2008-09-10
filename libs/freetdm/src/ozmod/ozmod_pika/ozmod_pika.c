@@ -945,7 +945,7 @@ static ZIO_SPAN_POLL_EVENT_FUNCTION(pika_poll_event)
 				zap_channel_t *zchan;
 				pika_chan_data_t *chan_data;
 				for(x = 1; x <= span->chan_count; x++) {
-					zchan = &span->channels[x];
+					zchan = span->channels[x];
 					assert(zchan != NULL);
 					chan_data = (pika_chan_data_t *) zchan->mod_data;
 					assert(chan_data != NULL);
@@ -983,11 +983,11 @@ static ZIO_SPAN_NEXT_EVENT_FUNCTION(pika_next_event)
 	uint32_t i, event_id = 0;
 	
 	for(i = 1; i <= span->chan_count; i++) {
-		if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_EVENT)) {
-			pika_chan_data_t *chan_data = (pika_chan_data_t *) span->channels[i].mod_data;
+		if (zap_test_flag(span->channels[i], ZAP_CHANNEL_EVENT)) {
+			pika_chan_data_t *chan_data = (pika_chan_data_t *) span->channels[i]->mod_data;
 			PK_CHAR event_text[PKH_EVENT_MAX_NAME_LENGTH];
 			
-			zap_clear_flag((&span->channels[i]), ZAP_CHANNEL_EVENT);
+			zap_clear_flag(span->channels[i], ZAP_CHANNEL_EVENT);
 			
 			PKH_EVENT_GetText(chan_data->last_oob_event.id, event_text, sizeof(event_text));
 
@@ -1006,47 +1006,47 @@ static ZIO_SPAN_NEXT_EVENT_FUNCTION(pika_next_event)
 				break;
 
 			case PKH_EVENT_PHONE_OFFHOOK:
-				zap_set_flag_locked((&span->channels[i]), ZAP_CHANNEL_OFFHOOK);
+				zap_set_flag_locked(span->channels[i], ZAP_CHANNEL_OFFHOOK);
 				event_id = ZAP_OOB_OFFHOOK;
 				break;
 
 			case PKH_EVENT_TRUNK_BELOW_THRESHOLD:
 			case PKH_EVENT_TRUNK_ABOVE_THRESHOLD:
 			case PKH_EVENT_PHONE_ONHOOK:
-				zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_OFFHOOK);
+				zap_clear_flag_locked(span->channels[i], ZAP_CHANNEL_OFFHOOK);
 				event_id = ZAP_OOB_ONHOOK;
 				break;
 
 
 
 			case PKH_EVENT_SPAN_ALARM_T1_RED:
-				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_RED);
-				snprintf(span->channels[i].last_error, sizeof(span->channels[i].last_error), "RED ALARM");
+				zap_set_alarm_flag(span->channels[i], ZAP_ALARM_RED);
+				snprintf(span->channels[i]->last_error, sizeof(span->channels[i]->last_error), "RED ALARM");
 				event_id = ZAP_OOB_ALARM_TRAP;
 				break;
 			case PKH_EVENT_SPAN_ALARM_T1_YELLOW:
-				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_YELLOW);
-				snprintf(span->channels[i].last_error, sizeof(span->channels[i].last_error), "YELLOW ALARM");
+				zap_set_alarm_flag(span->channels[i], ZAP_ALARM_YELLOW);
+				snprintf(span->channels[i]->last_error, sizeof(span->channels[i]->last_error), "YELLOW ALARM");
 				event_id = ZAP_OOB_ALARM_TRAP;
 				break;
 			case PKH_EVENT_SPAN_ALARM_T1_AIS:
-				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_AIS);
-				snprintf(span->channels[i].last_error, sizeof(span->channels[i].last_error), "AIS ALARM");
+				zap_set_alarm_flag(span->channels[i], ZAP_ALARM_AIS);
+				snprintf(span->channels[i]->last_error, sizeof(span->channels[i]->last_error), "AIS ALARM");
 				event_id = ZAP_OOB_ALARM_TRAP;
 				break;
 			case PKH_EVENT_SPAN_ALARM_E1_RED:
-				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_RED);
-				snprintf(span->channels[i].last_error, sizeof(span->channels[i].last_error), "RED ALARM");
+				zap_set_alarm_flag(span->channels[i], ZAP_ALARM_RED);
+				snprintf(span->channels[i]->last_error, sizeof(span->channels[i]->last_error), "RED ALARM");
 				event_id = ZAP_OOB_ALARM_TRAP;
 				break;
 			case PKH_EVENT_SPAN_ALARM_E1_RAI:
-				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_RAI);
-				snprintf(span->channels[i].last_error, sizeof(span->channels[i].last_error), "RAI ALARM");
+				zap_set_alarm_flag(span->channels[i], ZAP_ALARM_RAI);
+				snprintf(span->channels[i]->last_error, sizeof(span->channels[i]->last_error), "RAI ALARM");
 				event_id = ZAP_OOB_ALARM_TRAP;
 				break;
 			case PKH_EVENT_SPAN_ALARM_E1_AIS:
-				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_AIS);
-				snprintf(span->channels[i].last_error, sizeof(span->channels[i].last_error), "AIS ALARM");
+				zap_set_alarm_flag(span->channels[i], ZAP_ALARM_AIS);
+				snprintf(span->channels[i]->last_error, sizeof(span->channels[i]->last_error), "AIS ALARM");
 				event_id = ZAP_OOB_ALARM_TRAP;
 				break;
 			case PKH_EVENT_SPAN_ALARM_E1_RMAI:
@@ -1057,22 +1057,22 @@ static ZIO_SPAN_NEXT_EVENT_FUNCTION(pika_next_event)
 			case PKH_EVENT_SPAN_LOSS_OF_SIGNAL:
 			case PKH_EVENT_SPAN_OUT_OF_CRC_MF_SYNC:
 			case PKH_EVENT_SPAN_OUT_OF_CAS_MF_SYNC:
-				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_GENERAL);
-				snprintf(span->channels[i].last_error, sizeof(span->channels[i].last_error), "GENERAL ALARM");
+				zap_set_alarm_flag(span->channels[i], ZAP_ALARM_GENERAL);
+				snprintf(span->channels[i]->last_error, sizeof(span->channels[i]->last_error), "GENERAL ALARM");
 				event_id = ZAP_OOB_ALARM_TRAP;
 				break;
 			case PKH_EVENT_SPAN_ALARM_T1_RED_CLEAR:
-				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_RED);
+				zap_set_alarm_flag(span->channels[i], ZAP_ALARM_RED);
 			case PKH_EVENT_SPAN_ALARM_T1_YELLOW_CLEAR:
-				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_YELLOW);
+				zap_set_alarm_flag(span->channels[i], ZAP_ALARM_YELLOW);
 			case PKH_EVENT_SPAN_ALARM_T1_AIS_CLEAR:
-				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_AIS);
+				zap_set_alarm_flag(span->channels[i], ZAP_ALARM_AIS);
 			case PKH_EVENT_SPAN_ALARM_E1_RED_CLEAR:
-				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_RED);
+				zap_set_alarm_flag(span->channels[i], ZAP_ALARM_RED);
 			case PKH_EVENT_SPAN_ALARM_E1_RAI_CLEAR:
-				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_RAI);
+				zap_set_alarm_flag(span->channels[i], ZAP_ALARM_RAI);
 			case PKH_EVENT_SPAN_ALARM_E1_AIS_CLEAR:
-				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_AIS);
+				zap_set_alarm_flag(span->channels[i], ZAP_ALARM_AIS);
 			case PKH_EVENT_SPAN_ALARM_E1_RMAI_CLEAR:
 			case PKH_EVENT_SPAN_ALARM_E1_TS16AIS_CLEAR:
 			case PKH_EVENT_SPAN_ALARM_E1_TS16LOS_CLEAR:
@@ -1080,7 +1080,7 @@ static ZIO_SPAN_NEXT_EVENT_FUNCTION(pika_next_event)
 			case PKH_EVENT_SPAN_LOSS_OF_SIGNAL_CLEAR:
 			case PKH_EVENT_SPAN_IN_CRC_MF_SYNC:
 			case PKH_EVENT_SPAN_IN_CAS_MF_SYNC:
-				zap_clear_alarm_flag((&span->channels[i]), ZAP_ALARM_GENERAL);
+				zap_clear_alarm_flag(span->channels[i], ZAP_ALARM_GENERAL);
 				event_id = ZAP_OOB_ALARM_CLEAR;
 				break;
 			case PKH_EVENT_SPAN_MESSAGE:
@@ -1104,10 +1104,10 @@ static ZIO_SPAN_NEXT_EVENT_FUNCTION(pika_next_event)
 				break;
 			}
 
-			span->channels[i].last_event_time = 0;
+			span->channels[i]->last_event_time = 0;
 			span->event_header.e_type = ZAP_EVENT_OOB;
 			span->event_header.enum_id = event_id;
-			span->event_header.channel = &span->channels[i];
+			span->event_header.channel = span->channels[i];
 			*event = &span->event_header;
 			return ZAP_SUCCESS;
 		}

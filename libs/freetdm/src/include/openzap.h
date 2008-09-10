@@ -153,7 +153,7 @@
 #define ZAP_MAX_CHANNELS_PHYSICAL_SPAN 32
 #define ZAP_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN 16
 #define ZAP_MAX_CHANNELS_SPAN ZAP_MAX_CHANNELS_PHYSICAL_SPAN * ZAP_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN
-#define ZAP_MAX_SPANS_INTERFACE 33
+#define ZAP_MAX_SPANS_INTERFACE 128
 
 #define GOTO_STATUS(label,st) status = st; goto label ;
 
@@ -476,7 +476,7 @@ struct zap_span {
 	char tone_map[ZAP_TONEMAP_INVALID+1][ZAP_TONEMAP_LEN];
 	teletone_tone_map_t tone_detect_map[ZAP_TONEMAP_INVALID+1];
 	teletone_multi_tone_t tone_finder[ZAP_TONEMAP_INVALID+1];
-	zap_channel_t channels[ZAP_MAX_CHANNELS_SPAN];
+	zap_channel_t *channels[ZAP_MAX_CHANNELS_SPAN+1];
 	zio_channel_outgoing_call_t outgoing_call;
 	zio_channel_request_t channel_request;
 	zap_span_start_t start;
@@ -610,7 +610,7 @@ static __inline__ void zap_set_state_all(zap_span_t *span, zap_channel_state_t s
 	uint32_t j;
 	zap_mutex_lock(span->mutex);
 	for(j = 1; j <= span->chan_count; j++) {
-		zap_set_state_locked((&span->channels[j]), state);
+		zap_set_state_locked((span->channels[j]), state);
 	}
 	zap_mutex_unlock(span->mutex);
 }
@@ -619,7 +619,7 @@ static __inline__ int zap_check_state_all(zap_span_t *span, zap_channel_state_t 
 {
 	uint32_t j;
 	for(j = 1; j <= span->chan_count; j++) {
-		if (span->channels[j].state != state || zap_test_flag((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE)) {
+		if (span->channels[j]->state != state || zap_test_flag(span->channels[j], ZAP_CHANNEL_STATE_CHANGE)) {
 			return 0;
 		}
 	}
@@ -632,7 +632,7 @@ static __inline__ void zap_set_flag_all(zap_span_t *span, uint32_t flag)
 	uint32_t j;
 	zap_mutex_lock(span->mutex);
 	for(j = 1; j <= span->chan_count; j++) {
-		zap_set_flag_locked((&span->channels[j]), flag);
+		zap_set_flag_locked((span->channels[j]), flag);
 	}
 	zap_mutex_unlock(span->mutex);
 }

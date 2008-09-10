@@ -98,16 +98,18 @@ int main(int argc, char *argv[])
 	
 
 	if (zap_configure_span("analog", span, on_signal, 
-						   "tonemap", "te", 
+						   "tonemap", "us", 
 						   "digit_timeout", &digit_timeout,
 						   "max_dialstr", &max_dialstr,
 						   TAG_END
-						   ) == ZAP_SUCCESS) {
+						   ) != ZAP_SUCCESS) {
 		zap_log(ZAP_LOG_ERROR, "Error configuring OpenZAP span\n");
 		goto done;
 	}
 	zap_span_start(span);
 	
+	R = 1;
+
 	while(zap_running() && R) {
 		zap_sleep(1 * 1000);
 	}

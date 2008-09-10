@@ -728,9 +728,9 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 	int r;
 	
 	for(i = 1; i <= span->chan_count; i++) {
-		zap_channel_t *zchan = &span->channels[i];
+		zap_channel_t *zchan = span->channels[i];
 		memset(&pfds[j], 0, sizeof(pfds[j]));
-		pfds[j].fd = span->channels[i].sockfd;
+		pfds[j].fd = span->channels[i]->sockfd;
 		pfds[j].events = POLLPRI;
 
 		/* The driver probably should be able to do this wink/flash/ringing by itself this is sort of a hack to make it work! */
@@ -787,7 +787,7 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 	}
 	
 	for(i = 1; i <= span->chan_count; i++) {
-		zap_channel_t *zchan = &span->channels[i];
+		zap_channel_t *zchan = span->channels[i];
 
 		if (pfds[i-1].revents & POLLPRI) {
 			zap_set_flag(zchan, ZAP_CHANNEL_EVENT);
@@ -809,45 +809,45 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 	zap_oob_event_t event_id;
 	
 	for(i = 1; i <= span->chan_count; i++) {
-		if (span->channels[i].last_event_time && !zap_test_flag((&span->channels[i]), ZAP_CHANNEL_EVENT)) {
-			uint32_t diff = (uint32_t)(zap_current_time_in_ms() - span->channels[i].last_event_time);
-			/* XX printf("%u %u %u\n", diff, (unsigned)zap_current_time_in_ms(), (unsigned)span->channels[i].last_event_time); */
-			if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_WINK)) {
+		if (span->channels[i]->last_event_time && !zap_test_flag(span->channels[i], ZAP_CHANNEL_EVENT)) {
+			uint32_t diff = (uint32_t)(zap_current_time_in_ms() - span->channels[i]->last_event_time);
+			/* XX printf("%u %u %u\n", diff, (unsigned)zap_current_time_in_ms(), (unsigned)span->channels[i]->last_event_time); */
+			if (zap_test_flag(span->channels[i], ZAP_CHANNEL_WINK)) {
 				if (diff > wp_globals.wink_ms) {
-					zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
-					zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_FLASH);
-					zap_set_flag_locked((&span->channels[i]), ZAP_CHANNEL_OFFHOOK);
+					zap_clear_flag_locked(span->channels[i], ZAP_CHANNEL_WINK);
+					zap_clear_flag_locked(span->channels[i], ZAP_CHANNEL_FLASH);
+					zap_set_flag_locked(span->channels[i], ZAP_CHANNEL_OFFHOOK);
 					event_id = ZAP_OOB_OFFHOOK;
 					goto event;
 				}
 			}
 
-			if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_FLASH)) {
+			if (zap_test_flag(span->channels[i], ZAP_CHANNEL_FLASH)) {
 				if (diff > wp_globals.flash_ms) {
-					zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_FLASH);
-					zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
-					zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_OFFHOOK);
+					zap_clear_flag_locked(span->channels[i], ZAP_CHANNEL_FLASH);
+					zap_clear_flag_locked(span->channels[i], ZAP_CHANNEL_WINK);
+					zap_clear_flag_locked(span->channels[i], ZAP_CHANNEL_OFFHOOK);
 					event_id = ZAP_OOB_ONHOOK;
 
-					if (span->channels[i].type == ZAP_CHAN_TYPE_FXO) {
+					if (span->channels[i]->type == ZAP_CHAN_TYPE_FXO) {
 						wanpipe_tdm_api_t tdm_api;
 						memset(&tdm_api, 0, sizeof(tdm_api));
 						tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
 						tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_ONHOOK;
 						tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
-						wp_tdm_cmd_exec(&span->channels[i], &tdm_api);
+						wp_tdm_cmd_exec(span->channels[i], &tdm_api);
 					}
 					goto event;
 				}
 			}
 		}
-		if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_EVENT)) {
+		if (zap_test_flag(span->channels[i], ZAP_CHANNEL_EVENT)) {
 			wanpipe_tdm_api_t tdm_api;
 			memset(&tdm_api, 0, sizeof(tdm_api));
-			zap_clear_flag((&span->channels[i]), ZAP_CHANNEL_EVENT);
+			zap_clear_flag(span->channels[i], ZAP_CHANNEL_EVENT);
 
 			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_READ_EVENT;
-			if (wp_tdm_cmd_exec(&span->channels[i], &tdm_api) != ZAP_SUCCESS) {
+			if (wp_tdm_cmd_exec(span->channels[i], &tdm_api) != ZAP_SUCCESS) {
 				snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
 				return ZAP_FAIL;
 			}
@@ -855,25 +855,25 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 			switch(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type) {
 			case WP_TDMAPI_EVENT_RXHOOK:
 				{
-					if (span->channels[i].type == ZAP_CHAN_TYPE_FXS) {
+					if (span->channels[i]->type == ZAP_CHAN_TYPE_FXS) {
 						event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_hook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? ZAP_OOB_OFFHOOK : ZAP_OOB_ONHOOK;
 						if (event_id == ZAP_OOB_OFFHOOK) {
-							if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_FLASH)) {
-								zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_FLASH);
-								zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
+							if (zap_test_flag(span->channels[i], ZAP_CHANNEL_FLASH)) {
+								zap_clear_flag_locked(span->channels[i], ZAP_CHANNEL_FLASH);
+								zap_clear_flag_locked(span->channels[i], ZAP_CHANNEL_WINK);
 								event_id = ZAP_OOB_FLASH;
 								goto event;
 							} else {
-								zap_set_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
+								zap_set_flag_locked(span->channels[i], ZAP_CHANNEL_WINK);
 							}
 						} else {
-							if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_WINK)) {
-								zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
-								zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_FLASH);
+							if (zap_test_flag(span->channels[i], ZAP_CHANNEL_WINK)) {
+								zap_clear_flag_locked(span->channels[i], ZAP_CHANNEL_WINK);
+								zap_clear_flag_locked(span->channels[i], ZAP_CHANNEL_FLASH);
 								event_id = ZAP_OOB_WINK;
 								goto event;
 							} else {
-								zap_set_flag_locked((&span->channels[i]), ZAP_CHANNEL_FLASH);
+								zap_set_flag_locked(span->channels[i], ZAP_CHANNEL_FLASH);
 							}
 						}					
 						continue;
@@ -883,8 +883,8 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 						tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
 						tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_ONHOOK;
 						tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
-						if ((err = wp_tdm_cmd_exec(&span->channels[i], &tdm_api))) {
-							snprintf(span->channels[i].last_error, sizeof(span->channels[i].last_error), "ONHOOK Failed");
+						if ((err = wp_tdm_cmd_exec(span->channels[i], &tdm_api))) {
+							snprintf(span->channels[i]->last_error, sizeof(span->channels[i]->last_error), "ONHOOK Failed");
 							return ZAP_FAIL;
 						}
 						event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_hook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? ZAP_OOB_ONHOOK : ZAP_OOB_NOOP;	
@@ -911,10 +911,10 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 
 		event:
 
-			span->channels[i].last_event_time = 0;
+			span->channels[i]->last_event_time = 0;
 			span->event_header.e_type = ZAP_EVENT_OOB;
 			span->event_header.enum_id = event_id;
-			span->event_header.channel = &span->channels[i];
+			span->event_header.channel = span->channels[i];
 			*event = &span->event_header;
 			return ZAP_SUCCESS;
 		}
