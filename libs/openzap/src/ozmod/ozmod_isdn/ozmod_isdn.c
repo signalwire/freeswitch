@@ -81,7 +81,7 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
 	/*
 	 * get codec type
 	 */
-	zap_channel_command(&span->channels[chan_id], ZAP_COMMAND_GET_NATIVE_CODEC, &codec);
+	zap_channel_command(span->channels[chan_id], ZAP_COMMAND_GET_NATIVE_CODEC, &codec);
 
 	/*
 	 * Q.931 Setup Message
@@ -198,7 +198,7 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
 		
 		new_chan = NULL;
 		if (caller_data->chan_id < ZAP_MAX_CHANNELS_SPAN && caller_data->chan_id <= span->chan_count) {
-			new_chan = &span->channels[caller_data->chan_id];
+			new_chan = span->channels[caller_data->chan_id];
 		}
 
 		if (new_chan && (status = zap_channel_open_chan(new_chan) == ZAP_SUCCESS)) {
@@ -393,14 +393,14 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 		case Q931mes_RESTART:
 			{
 				if (chan_id) {
-					zchan = &span->channels[chan_id];
+					zchan = span->channels[chan_id];
 				}
 				if (zchan) {
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RESTART);
 				} else {
 					uint32_t i;
 					for (i = 0; i < span->chan_count; i++) {
-						zap_set_state_locked((&span->channels[i]), ZAP_CHANNEL_STATE_RESTART);
+						zap_set_state_locked((span->channels[i]), ZAP_CHANNEL_STATE_RESTART);
 					}
 				}
 			}
@@ -519,7 +519,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 					 * try to find a free channel
 					 */
 					for (x = 1; x <= span->chan_count; x++) {
-						zap_channel_t *zc = &span->channels[x];
+						zap_channel_t *zc = span->channels[x];
 
 						if (!zap_test_flag(zc, ZAP_CHANNEL_INUSE) && zc->state == ZAP_CHANNEL_STATE_DOWN) {
 							zchan = zc;
@@ -543,7 +543,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 					 *       by the TE side is already in use
 					 */
 					if (chan_id > 0 && chan_id < ZAP_MAX_CHANNELS_SPAN && chan_id <= span->chan_count) {
-						zchan = &span->channels[chan_id];
+						zchan = span->channels[chan_id];
 					}
 					else {
 						/* invalid channel id */
@@ -939,7 +939,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			/*
 			 * get codec type
 			 */
-			zap_channel_command(&zchan->span->channels[zchan->chan_id], ZAP_COMMAND_GET_NATIVE_CODEC, &codec);
+			zap_channel_command(zchan->span->channels[zchan->chan_id], ZAP_COMMAND_GET_NATIVE_CODEC, &codec);
 
 			/*
 			 * Q.931 Setup Message
@@ -1125,12 +1125,12 @@ static __inline__ void check_state(zap_span_t *span)
         uint32_t j;
         zap_clear_flag_locked(span, ZAP_SPAN_STATE_CHANGE);
         for(j = 1; j <= span->chan_count; j++) {
-            if (zap_test_flag((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE)) {
-				zap_mutex_lock(span->channels[j].mutex);
-                zap_clear_flag((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE);
-                state_advance(&span->channels[j]);
-                zap_channel_complete_state(&span->channels[j]);
-				zap_mutex_unlock(span->channels[j].mutex);
+            if (zap_test_flag((span->channels[j]), ZAP_CHANNEL_STATE_CHANGE)) {
+				zap_mutex_lock(span->channels[j]->mutex);
+                zap_clear_flag((span->channels[j]), ZAP_CHANNEL_STATE_CHANGE);
+                state_advance(span->channels[j]);
+                zap_channel_complete_state(span->channels[j]);
+				zap_mutex_unlock(span->channels[j]->mutex);
             }
         }
     }
@@ -1245,8 +1245,8 @@ static void *zap_isdn_tones_run(zap_thread_t *me, void *obj)
 
 	/* get a tone generation friendly interval to avoid distortions */
 	for (x = 1; x <= span->chan_count; x++) {
-		if (span->channels[x].type != ZAP_CHAN_TYPE_DQ921) {
-			zap_channel_command(&span->channels[x], ZAP_COMMAND_GET_INTERVAL, &interval);
+		if (span->channels[x]->type != ZAP_CHAN_TYPE_DQ921) {
+			zap_channel_command(span->channels[x], ZAP_COMMAND_GET_INTERVAL, &interval);
 			break;
 		}
 	}
@@ -1270,7 +1270,7 @@ static void *zap_isdn_tones_run(zap_thread_t *me, void *obj)
 		 * check b-channel states and generate & send tones if neccessary
 		 */
 		for (x = 1; x <= span->chan_count; x++) {
-			zap_channel_t *zchan = &span->channels[x];
+			zap_channel_t *zchan = span->channels[x];
 			zap_size_t len = sizeof(frame), rlen;
 
 			if (zchan->type == ZAP_CHAN_TYPE_DQ921) {
@@ -1389,6 +1389,7 @@ done:
 	}
 
 	zap_log(ZAP_LOG_DEBUG, "ISDN tone thread ended.\n");
+
 	return NULL;
 }
 
@@ -1697,7 +1698,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 	}
 	
 	for(i = 1; i <= span->chan_count; i++) {
-		if (span->channels[i].type == ZAP_CHAN_TYPE_DQ921) {
+		if (span->channels[i]->type == ZAP_CHAN_TYPE_DQ921) {
 			if (x > 1) {
 				snprintf(span->last_error, sizeof(span->last_error), "Span has more than 2 D-Channels!");
 				return ZAP_FAIL;

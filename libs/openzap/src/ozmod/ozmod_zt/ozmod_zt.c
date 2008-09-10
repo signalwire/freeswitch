@@ -571,7 +571,7 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
 	
 	for(i = 1; i <= span->chan_count; i++) {
 		memset(&pfds[j], 0, sizeof(pfds[j]));
-		pfds[j].fd = span->channels[i].sockfd;
+		pfds[j].fd = span->channels[i]->sockfd;
 		pfds[j].events = POLLPRI;
 		j++;
 	}
@@ -587,8 +587,8 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
 	
 	for(i = 1; i <= span->chan_count; i++) {
 		if (pfds[i-1].revents & POLLPRI) {
-			zap_set_flag((&span->channels[i]), ZAP_CHANNEL_EVENT);
-			span->channels[i].last_event_time = zap_current_time_in_ms();
+			zap_set_flag(span->channels[i], ZAP_CHANNEL_EVENT);
+			span->channels[i]->last_event_time = zap_current_time_in_ms();
 			k++;
 		}
 	}
@@ -606,9 +606,9 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 	zap_oob_event_t zt_event_id = 0;
 
 	for(i = 1; i <= span->chan_count; i++) {
-		if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_EVENT)) {
-			zap_clear_flag((&span->channels[i]), ZAP_CHANNEL_EVENT);
-			if (ioctl(span->channels[i].sockfd, ZT_GETEVENT, &zt_event_id) == -1) {
+		if (zap_test_flag(span->channels[i], ZAP_CHANNEL_EVENT)) {
+			zap_clear_flag(span->channels[i], ZAP_CHANNEL_EVENT);
+			if (ioctl(span->channels[i]->sockfd, ZT_GETEVENT, &zt_event_id) == -1) {
 				snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
 				return ZAP_FAIL;
 			}
@@ -636,7 +636,7 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 				break;
 			case ZT_EVENT_WINKFLASH:
 				{
-					if (span->channels[i].state == ZAP_CHANNEL_STATE_DOWN) {
+					if (span->channels[i]->state == ZAP_CHANNEL_STATE_DOWN) {
 						event_id = ZAP_OOB_WINK;
 					} else {
 						event_id = ZAP_OOB_FLASH;
@@ -645,10 +645,10 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 				break;
 			case ZT_EVENT_RINGOFFHOOK:
 				{
-					if (span->channels[i].type == ZAP_CHAN_TYPE_FXS) {
-						zap_set_flag_locked((&span->channels[i]), ZAP_CHANNEL_OFFHOOK);
+					if (span->channels[i]->type == ZAP_CHAN_TYPE_FXS) {
+						zap_set_flag_locked(span->channels[i], ZAP_CHANNEL_OFFHOOK);
 						event_id = ZAP_OOB_OFFHOOK;
-					} else if (span->channels[i].type == ZAP_CHAN_TYPE_FXO) {
+					} else if (span->channels[i]->type == ZAP_CHAN_TYPE_FXO) {
 						event_id = ZAP_OOB_RING_START;
 					}
 				}
@@ -671,10 +671,10 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 				break;
 			}
 
-			span->channels[i].last_event_time = 0;
+			span->channels[i]->last_event_time = 0;
 			span->event_header.e_type = ZAP_EVENT_OOB;
 			span->event_header.enum_id = event_id;
-			span->event_header.channel = &span->channels[i];
+			span->event_header.channel = span->channels[i];
 			*event = &span->event_header;
 			return ZAP_SUCCESS;
 		}
