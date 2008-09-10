@@ -91,6 +91,11 @@ static inline void free_context(shout_context_t *context)
 			int len;
 			int16_t blank[2048] = {0}, *r = NULL;
 			
+			
+			if (context->channels == 2) {
+				r = blank;
+			}
+			
 			len = lame_encode_buffer(context->gfp, blank, r, sizeof(blank) / 2, mp3buffer, sizeof(mp3buffer));
 
 			if (len) {
