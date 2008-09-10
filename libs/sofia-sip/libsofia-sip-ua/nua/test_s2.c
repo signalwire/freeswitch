@@ -230,6 +230,8 @@ s2_nua_callback(nua_event_t event,
   *prev = e, e->prev = prev;
 }
 
+/* ---------------------------------------------------------------------- */
+/* SIP messages sent by nua */
 
 struct message *
 s2_remove_message(struct message *m)
@@ -515,6 +517,7 @@ s2_request_to(struct dialog *d,
   sip_content_length_t l[1];
   tp_name_t tpn[1];
   tp_magic_t *magic;
+  int user_via = 0;
 
   ta_start(ta, tag, value);
   tags = ta_args(ta);
@@ -598,7 +601,7 @@ s2_request_to(struct dialog *d,
   sip_cseq_init(cseq);
   cseq->cs_method = method;
   cseq->cs_method_name = name;
-  
+
   if (d->invite && (method == sip_method_ack || method == sip_method_cancel)) {
     cseq->cs_seq = sip_object(d->invite)->sip_cseq->cs_seq;
   }
@@ -606,7 +609,10 @@ s2_request_to(struct dialog *d,
     cseq->cs_seq = ++d->lseq;
   }
 
-  if (d->invite && method == sip_method_cancel) {
+  if (sip->sip_via) {
+    user_via = 1;
+  }
+  else if (d->invite && method == sip_method_cancel) {
     *via = *sip_object(d->invite)->sip_via;
   }
   else {
@@ -626,7 +632,7 @@ s2_request_to(struct dialog *d,
 	     TAG_IF(!sip->sip_to, SIPTAG_TO(d->remote)),
 	     TAG_IF(!sip->sip_call_id, SIPTAG_CALL_ID(d->call_id)),
 	     TAG_IF(!sip->sip_cseq, SIPTAG_CSEQ(cseq)),
-	     SIPTAG_VIA(via),
+	     TAG_IF(!user_via, SIPTAG_VIA(via)),
 	     TAG_IF(!sip->sip_content_length, SIPTAG_CONTENT_LENGTH(l)),
 	     TAG_IF(!sip->sip_separator, SIPTAG_SEPARATOR_STR("\r\n")),
 	     TAG_END());
