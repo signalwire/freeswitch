@@ -785,7 +785,7 @@ s2_generate_tag(su_home_t *home)
 
 void s2_case(char const *number,
 	     char const *title,
-	     char const *desciption)
+	     char const *description)
 {
   _s2case = number;
 }
@@ -917,7 +917,9 @@ s2_setup_tport(char const * const *protocols,
   ta_start(ta, tag, value);
 
   if (s2->master == NULL) {
-    s2->master = tport_tcreate(s2, s2_stack, s2->root, ta_tags(ta));
+    s2->master = tport_tcreate(s2, s2_stack, s2->root,
+			       TPTAG_LOG(getenv("S2_TPORT_LOG") != NULL),
+			       ta_tags(ta));
 
     if (s2->master == NULL) {
       assert(s2->master);
@@ -1488,7 +1490,7 @@ nua_t *s2_nua_setup(tag_type_t tag, tag_value_t value, ...)
   s2_setup_dns();
 
   s2_setup_logs(0);
-  s2_setup_tport(NULL, TPTAG_LOG(0), TAG_END());
+  s2_setup_tport(NULL, TAG_END());
   assert(s2->contact);
 
   /* enable/disable multithreading */
