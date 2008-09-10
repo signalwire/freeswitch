@@ -345,7 +345,7 @@ zap_status_t zap_span_close_all(void)
 	for(i = 1; i <= globals.span_index; i++) {
 		span = globals.spans[i];
 		if (zap_test_flag(span, ZAP_SPAN_CONFIGURED)) {
-			for(j = 0; j <= span->chan_count && span->channels[j]; j++) {
+			for(j = 1; j <= span->chan_count && span->channels[j]; j++) {
 				zap_channel_destroy(span->channels[j]);
 			}
 		} 
@@ -429,6 +429,7 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 				return ZAP_FAIL;
 			}
 			span->channels[span->chan_count] = new_chan;
+			memset(new_chan, 0, sizeof(*new_chan));
 		}
 
 		new_chan->type = type;
@@ -869,7 +870,11 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, z
 				}
 			}
 			
-			check = span->channels[i];
+			if (!(check = span->channels[i])) {
+				status = ZAP_FAIL;
+				zap_mutex_unlock(span->mutex);
+				goto done;
+			}
 			
 			if (zap_test_flag(check, ZAP_CHANNEL_READY) && 
 				!zap_test_flag(check, ZAP_CHANNEL_INUSE) && 

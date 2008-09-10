@@ -1824,7 +1824,7 @@ SWITCH_STANDARD_API(oz_function)
 					int j;
 					
 					stream->write_function(stream, "+OK\n");
-					for(j = 0; j <= span->chan_count; j++) {
+					for(j = 1; j <= span->chan_count; j++) {
 						dump_chan(span, j, stream);
 					}
 
