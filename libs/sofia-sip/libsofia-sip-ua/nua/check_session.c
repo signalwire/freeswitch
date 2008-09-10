@@ -1437,6 +1437,120 @@ TCase *invite_precondition_tcase(void)
 }
 
 /* ====================================================================== */
+/* 2.6 - Re-INVITEs */
+
+START_TEST(call_2_6_1)
+{
+  nua_handle_t *nh;
+  struct message *invite, *ack;
+  int i;
+
+  s2_case("2.6.1", "Queued re-INVITEs",
+	  "NUA receives INVITE, "
+	  "sends re-INVITE twice, "
+	  "sends BYE.");
+
+  nh = invite_to_nua(TAG_END());
+
+  nua_invite(nh, TAG_END());
+  nua_invite(nh, TAG_END());
+
+  for (i = 0; i < 2; i++) {
+    fail_unless(s2_check_callstate(nua_callstate_calling));
+
+    invite = s2_wait_for_request(SIP_METHOD_INVITE);
+    fail_if(!invite);
+    process_offer(invite);
+    respond_with_sdp(invite, dialog, SIP_200_OK, TAG_END());
+    s2_free_message(invite);
+
+    ack = s2_wait_for_request(SIP_METHOD_ACK);
+    fail_if(!ack);
+    s2_free_message(ack);
+
+    fail_unless(s2_check_event(nua_r_invite, 200));
+    fail_unless(s2_check_callstate(nua_callstate_ready));
+  }
+
+  bye_by_nua(nh, TAG_END());
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
+START_TEST(call_2_6_2)
+{
+  nua_handle_t *nh;
+  struct message *invite, *ack, *response;
+
+  s2_case("2.6.2", "Re-INVITE glare",
+	  "NUA sends re-INVITE and then receives re-INVITE, "
+	  "sends BYE.");
+
+  nh = invite_to_nua(TAG_END());
+
+  nua_invite(nh, TAG_END());
+  fail_unless(s2_check_callstate(nua_callstate_calling));
+
+  soa_generate_offer(soa, 1, NULL);
+  request_with_sdp(dialog, SIP_METHOD_INVITE, NULL, TAG_END());
+
+  invite = s2_wait_for_request(SIP_METHOD_INVITE);
+  fail_if(!invite);
+  respond_with_sdp(invite, dialog, SIP_500_INTERNAL_SERVER_ERROR, 
+		   SIPTAG_RETRY_AFTER_STR("8"),
+		   TAG_END());
+  s2_free_message(invite);
+  ack = s2_wait_for_request(SIP_METHOD_ACK);
+  fail_if(!ack);
+  s2_free_message(ack);
+
+  response = s2_wait_for_response(491, SIP_METHOD_INVITE);
+  fail_if(!response);
+  fail_if(s2_request_to(dialog, SIP_METHOD_ACK, NULL,
+			SIPTAG_VIA(sip_object(dialog->invite)->sip_via),
+			TAG_END()));
+  s2_free_message(response);
+  fail_if(soa_process_reject(soa, NULL) < 0);
+
+  /* We get nua_r_invite with 100 trying (and 500 in sip->sip_status) */
+  fail_unless(s2_check_event(nua_r_invite, 100));
+
+  s2_fast_forward(10);
+
+  fail_unless(s2_check_callstate(nua_callstate_calling));
+
+  invite = s2_wait_for_request(SIP_METHOD_INVITE);
+  process_offer(invite);
+
+  respond_with_sdp(invite, dialog, SIP_200_OK, TAG_END());
+  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless(s2_check_callstate(nua_callstate_ready));
+  ack = s2_wait_for_request(SIP_METHOD_ACK);
+  fail_if(!ack);
+  s2_free_message(ack);
+
+  bye_by_nua(nh, TAG_END());
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
+
+TCase *invite_glare_tcase(void)
+{
+  TCase *tc = tcase_create("2.6 - INVITE glare");
+
+  tcase_add_checked_fixture(tc, call_setup, call_teardown);
+  {
+    tcase_add_test(tc, call_2_6_1);
+    tcase_add_test(tc, call_2_6_2);
+  }
+  return tc;
+}
+
+
+/* ====================================================================== */
 /* 3.1 - Call error cases */
 
 START_TEST(call_3_1_1)
@@ -2859,6 +2973,7 @@ void check_session_cases(Suite *suite)
   suite_add_tcase(suite, session_timer_tcase());
   suite_add_tcase(suite, invite_100rel_tcase());
   suite_add_tcase(suite, invite_precondition_tcase());
+  suite_add_tcase(suite, invite_glare_tcase());
   suite_add_tcase(suite, invite_error_tcase());
   suite_add_tcase(suite, termination_tcase());
   suite_add_tcase(suite, destroy_tcase());
