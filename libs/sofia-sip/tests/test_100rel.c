@@ -553,7 +553,7 @@ int ringing_pracked(CONDITION_PARAMS)
 }
 
 int respond_483_to_prack(CONDITION_PARAMS);
-static int prack_100rel(CONDITION_PARAMS);
+static int prack_until_terminated(CONDITION_PARAMS);
 
 int test_183rel(struct context *ctx)
 {
@@ -692,7 +692,7 @@ int test_183rel(struct context *ctx)
 
   INVITE(a, a_call, a_call->nh, TAG_END());
 
-  run_ab_until(ctx, -1, prack_100rel, -1, respond_483_to_prack);
+  run_ab_until(ctx, -1, prack_until_terminated, -1, respond_483_to_prack);
 
   /* Client transitions:
      INIT -(C1)-> CALLING: nua_invite(), nua_i_state
@@ -797,8 +797,10 @@ int test_183rel(struct context *ctx)
   END();
 }
 
-static int prack_100rel(CONDITION_PARAMS)
+static int prack_until_terminated(CONDITION_PARAMS)
 {
+  static int terminated, bye_responded;
+
   if (!check_handle(ep, call, nh, SIP_500_INTERNAL_SERVER_ERROR))
     return 0;
 
@@ -817,7 +819,13 @@ static int prack_100rel(CONDITION_PARAMS)
     nua_prack(nh, SIPTAG_RACK(rack), TAG_END());
   }
 
-  return event == nua_i_state && callstate(tags) == nua_callstate_terminated;
+  if (event == nua_i_state && callstate(tags) == nua_callstate_terminated)
+    terminated = 1;
+
+  if (event == nua_r_bye && status >= 200)
+    bye_responded = 1;
+
+  return terminated && bye_responded;
 }
 
 int respond_483_to_prack(CONDITION_PARAMS)
