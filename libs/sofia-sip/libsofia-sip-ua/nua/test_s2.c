@@ -629,6 +629,20 @@ s2_request_to(struct dialog *d,
   if (sip->sip_payload)
     l->l_length = sip->sip_payload->pl_len;
 
+  if (d->local->a_tag == NULL) {
+    char const *ltag = s2_generate_tag(d->home);
+
+    if (sip_from_tag(d->home, d->local, ltag) < 0) {
+      assert(!"add To tag");
+    }
+
+    if (sip->sip_from && sip->sip_from->a_tag == NULL) {
+      if (sip_from_tag(msg_home(msg), sip->sip_from, ltag) < 0) {
+	assert(!"add To tag");
+      }
+    }
+  }
+
   sip_add_tl(msg, sip, 
 	     TAG_IF(!sip->sip_from, SIPTAG_FROM(d->local)),
 	     TAG_IF(!sip->sip_contact, SIPTAG_CONTACT(d->contact)),
