@@ -255,7 +255,9 @@ soa_session_t *soa_create(char const *name,
     ss->ss_actions = actions;
     ss->ss_name = strcpy((char *)ss + actions->sizeof_soa_session, name);
 
+    /* Calls soa_static_init by default */
     if (ss->ss_actions->soa_init(name, ss, NULL) < 0)
+      /* Calls soa_static_deinit by default */
       ss->ss_actions->soa_deinit(ss), ss = NULL;
   }
 
@@ -287,7 +289,9 @@ soa_session_t *soa_clone(soa_session_t *parent_ss,
     ss->ss_name = strcpy((char *)ss + ss->ss_actions->sizeof_soa_session,
 			 parent_ss->ss_name);
 
+    /* Calls soa_static_init by default */
     if (ss->ss_actions->soa_init(NULL, ss, parent_ss) < 0)
+      /* Calls soa_static_deinit by default */
       ss->ss_actions->soa_deinit(ss), ss = NULL;
   }
 
@@ -351,6 +355,7 @@ void soa_destroy(soa_session_t *ss)
   if (ss) {
     ss->ss_active = 0;
     ss->ss_terminated++;
+    /* Calls soa_static_deinit() by default. */
     ss->ss_actions->soa_deinit(ss);
     su_home_unref(ss->ss_home);
   }
@@ -399,6 +404,7 @@ int soa_set_params(soa_session_t *ss, tag_type_t tag, tag_value_t value, ...)
 
   ta_start(ta, tag, value);
 
+  /* Calls soa_static_set_params() by default. */
   n = ss->ss_actions->soa_set_params(ss, ta_args(ta));
 
   ta_end(ta);
@@ -609,6 +615,7 @@ int soa_get_params(soa_session_t const *ss,
 
   ta_start(ta, tag, value);
 
+  /* Calls soa_static_get_params() by default. */
   n = ss->ss_actions->soa_get_params(ss, ta_args(ta));
 
   ta_end(ta);
@@ -688,6 +695,7 @@ tagi_t *soa_get_paramlist(soa_session_t const *ss,
 
   if (ss) {
     ta_start(ta, tag, value);
+    /* Calls soa_static_get_paramlist() by default. */
     params = ss->ss_actions->soa_get_paramlist(ss, ta_tags(ta));
     ta_end(ta);
   }
@@ -1311,6 +1319,7 @@ char **soa_media_features(soa_session_t *ss, int live, su_home_t *home)
 	      ss ? ss->ss_actions->soa_name : "", (void *)ss, live, (void *)home));
 
   if (ss)
+    /* Calls soa_base_media_features() by default. */
     return ss->ss_actions->soa_media_features(ss, live, home);
   else
     return (void)su_seterrno(EFAULT), NULL;
@@ -1327,6 +1336,7 @@ char const * const * soa_sip_require(soa_session_t const *ss)
 	      ss ? ss->ss_actions->soa_name : "", (void *)ss));
 
   if (ss)
+    /* Calls soa_base_sip_require() by default */
     return ss->ss_actions->soa_sip_require(ss);
   else
     return (void)su_seterrno(EFAULT), NULL;
@@ -1344,6 +1354,7 @@ char const * const * soa_sip_supported(soa_session_t const *ss)
 	      ss ? ss->ss_actions->soa_name : "", (void *)ss));
 
   if (ss)
+    /* Calls soa_base_sip_supported() by default */
     return ss->ss_actions->soa_sip_supported(ss);
   else
     return (void)su_seterrno(EFAULT), NULL;
@@ -1363,6 +1374,7 @@ int soa_remote_sip_features(soa_session_t *ss,
 	      ss ? ss->ss_actions->soa_name : "", (void *)ss, (void *)supported, (void *)require));
 
   if (ss)
+    /* Calls soa_base_remote_sip_features() by default */
     return ss->ss_actions->soa_remote_sip_features(ss, supported, require);
   else
     return (void)su_seterrno(EFAULT), -1;
@@ -1435,7 +1447,9 @@ int soa_generate_offer(soa_session_t *ss,
   /* We should avoid actual operation unless always is true */
   (void)always;  /* We always regenerate offer */
 
+  /* Calls soa_static_generate_offer() by default. */
   return ss->ss_actions->soa_generate_offer(ss, completed);
+
   /** @sa soa_init_offer_answer(), soa_set_user_sdp(), soa_get_local_sdp(),
    * soa_set_remote_sdp(), soa_process_answer(), soa_process_reject(),
    * soa_generate_answer(), soa_set_params(), soa_get_params(),
@@ -1511,6 +1525,7 @@ int soa_generate_answer(soa_session_t *ss,
   if (!ss->ss_unprocessed_remote)
     return su_seterrno(EPROTO), -1;
 
+  /* Calls soa_static_generate_answer() by default. */
   return ss->ss_actions->soa_generate_answer(ss, completed);
 
   /**@sa soa_init_offer_answer(), soa_set_user_sdp(), soa_set_remote_sdp(),
@@ -1598,6 +1613,7 @@ int soa_process_answer(soa_session_t *ss,
    * SOATAG_REMOTE_SDP(), SOATAG_REMOTE_SDP_STR().
    */
 
+  /* Calls soa_static_process_answer() by default. */
   return ss->ss_actions->soa_process_answer(ss, completed);
 }
 
@@ -1674,6 +1690,7 @@ int soa_process_reject(soa_session_t *ss,
    * SOATAG_REMOTE_SDP(), SOATAG_REMOTE_SDP_STR().
    */
 
+  /* Calls soa_static_process_reject() by default. */
   return ss->ss_actions->soa_process_reject(ss, completed);
 }
 
@@ -1716,6 +1733,7 @@ int soa_activate(soa_session_t *ss, char const *option)
 
   ss->ss_active = 1;
 
+  /* Calls soa_static_activate() by default. */
   return ss->ss_actions->soa_activate_session(ss, option);
 }
 
@@ -1746,6 +1764,7 @@ int soa_deactivate(soa_session_t *ss, char const *option)
 
   ss->ss_active = 0;
 
+  /* Calls soa_static_deactivate() by default. */
   return ss->ss_actions->soa_deactivate_session(ss, option);
 }
 
@@ -1769,6 +1788,7 @@ void soa_terminate(soa_session_t *ss, char const *option)
   ss->ss_active = 0;
   ss->ss_terminated++;
 
+  /* Calls soa_static_terminate() by default. */
   ss->ss_actions->soa_terminate_session(ss, option);
 }
 
@@ -2016,9 +2036,10 @@ int soa_set_sdp(soa_session_t *ss,
   if (!new_version) {
     if (what == soa_remote_sdp_kind) {
       *sdp = *ssd->ssd_sdp;
-      /* XXX - should check changes by soa_set_remote_sdp */
+      /* Calls soa_static_set_remote_sdp() by default */
       return ss->ss_actions->soa_set_remote_sdp(ss, new_version, 
 						sdp, sdp_str, str_len);
+      /* XXX - should check changes by soa_set_remote_sdp */
     }
     return 0;
   } 
@@ -2041,12 +2062,15 @@ int soa_set_sdp(soa_session_t *ss,
  
   switch (what) {
   case soa_capability_sdp_kind:
+    /* Calls soa_static_set_capability_sdp() by default */
     retval = ss->ss_actions->soa_set_capability_sdp(ss, sdp, sdp_str, str_len);
     break;
   case soa_user_sdp_kind:
+    /* Calls soa_static_set_user_sdp() by default */
     retval =  ss->ss_actions->soa_set_user_sdp(ss, sdp, sdp_str, str_len);
     break;
   case soa_remote_sdp_kind:
+    /* Calls soa_static_set_remote_sdp() by default */
     retval = ss->ss_actions->soa_set_remote_sdp(ss, 1, sdp, sdp_str, str_len);
     break;
   default:
