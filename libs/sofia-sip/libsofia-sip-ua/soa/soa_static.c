@@ -1473,13 +1473,17 @@ static int soa_static_process_reject(soa_session_t *ss,
 {
   struct soa_description d[1];
 
-  *d = *ss->ss_local;
-  *ss->ss_local = *ss->ss_previous;
-  ss->ss_local_user_version = ss->ss_previous_user_version;
-  ss->ss_local_remote_version = ss->ss_previous_remote_version;
+  if (ss->ss_previous_user_version) {
+    *d = *ss->ss_local;
+    *ss->ss_local = *ss->ss_previous;
+    ss->ss_local_user_version = ss->ss_previous_user_version;
+    ss->ss_local_remote_version = ss->ss_previous_remote_version;
 
-  memset(ss->ss_previous, 0, (sizeof *ss->ss_previous));
-  soa_description_free(ss, d);
+    memset(ss->ss_previous, 0, (sizeof *ss->ss_previous));
+    soa_description_free(ss, d);
+    ss->ss_previous_user_version = 0;
+    ss->ss_previous_remote_version = 0;
+  }
 
   return soa_base_process_reject(ss, NULL);
 }
