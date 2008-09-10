@@ -142,7 +142,7 @@ static zap_channel_t *find_zchan(zap_span_t *span, ss7bc_short_event_t *event, i
 	zap_channel_t *zchan = NULL;
 
 	zap_mutex_lock(signal_mutex);
-	for(i = 0; i <= span->chan_count; i++) {
+	for(i = 1; i <= span->chan_count; i++) {
 		if (span->channels[i]->physical_span_id == event->span+1 && span->channels[i]->physical_chan_id == event->chan+1) {
 			zchan = span->channels[i];
 			if (force) {
