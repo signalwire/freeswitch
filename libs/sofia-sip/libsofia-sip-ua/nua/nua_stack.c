@@ -2154,15 +2154,22 @@ int nua_client_request_queue(nua_client_request_t *cr)
 int
 nua_client_request_remove(nua_client_request_t *cr)
 {
-  if (cr->cr_prev)
+  int retval = 0;
+  int in_queue = cr->cr_prev != NULL;
+
+  if (in_queue) {
     if ((*cr->cr_prev = cr->cr_next))
       cr->cr_next->cr_prev = cr->cr_prev;
+  }
   cr->cr_prev = NULL, cr->cr_next = NULL;
 
   if (cr->cr_timer) {
     su_timer_destroy(cr->cr_timer), cr->cr_timer = NULL;
-    nua_client_request_unref(cr);
+    retval = nua_client_request_unref(cr);
   }
+
+  if (!in_queue)
+    return retval;
 
   return nua_client_request_unref(cr);
 }

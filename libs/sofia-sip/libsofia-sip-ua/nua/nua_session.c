@@ -258,11 +258,12 @@ void nua_session_usage_remove(nua_handle_t *nh,
     if (cr == cr0)
       continue;
 
+    nua_client_request_ref(cr);
+
     if (nua_invite_client_should_ack(cr)) {
       ss->ss_reporting = 1;
       nua_invite_client_ack(cr, NULL);
       ss->ss_reporting = 0;
-      nua_client_request_clean(cr);
     }
 
     if (cr == du->du_cr && cr->cr_orq)
@@ -277,6 +278,8 @@ void nua_session_usage_remove(nua_handle_t *nh,
     }
 
     nua_client_request_remove(cr);
+
+    nua_client_request_unref(cr);
 
     cr_next = ds->ds_cr;
   }
