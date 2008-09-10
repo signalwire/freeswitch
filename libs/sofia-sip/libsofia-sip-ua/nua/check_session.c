@@ -182,26 +182,26 @@ invite_sent_by_nua(nua_handle_t *nh,
   return s2_wait_for_request(SIP_METHOD_INVITE);
 }
 
+static uint32_t s2_rseq;
+
 static struct message *
 respond_with_100rel(struct message *invite,
 		    struct dialog *d,
-		    int sdp,
+		    int with_sdp,
 		    int status, char const *phrase,
 		    tag_type_t tag, tag_value_t value, ...)
 {
-  struct message *prack;
   ta_list ta;
-  static uint32_t rseq;
   sip_rseq_t rs[1];
 
   assert(100 < status && status < 200);
 
   sip_rseq_init(rs);
-  rs->rs_response = ++rseq;
+  rs->rs_response = ++s2_rseq;
 
   ta_start(ta, tag, value);
 
-  if (sdp) {
+  if (with_sdp) {
     respond_with_sdp(
       invite, dialog, status, phrase,
       SIPTAG_REQUIRE_STR("100rel"),
@@ -219,11 +219,7 @@ respond_with_100rel(struct message *invite,
 
   fail_unless(s2_check_event(nua_r_invite, status));
 
-  prack = s2_wait_for_request(SIP_METHOD_PRACK);
-  /* Assumes auto-prack, so there is no offer in prack */
-  s2_respond_to(prack, dialog, SIP_200_OK, TAG_END());
-
-  return prack;
+  return s2_wait_for_request(SIP_METHOD_PRACK);
 }
 
 static void
@@ -262,7 +258,6 @@ invite_to_nua(tag_type_t tag, tag_value_t value, ...)
   struct event *invite;
   struct message *response;
   nua_handle_t *nh;
-  sip_cseq_t cseq[1];
 
   soa_generate_offer(soa, 1, NULL);
 
@@ -275,11 +270,6 @@ invite_to_nua(tag_type_t tag, tag_value_t value, ...)
 
   nh = invite->nh;
   fail_if(!nh);
-
-  sip_cseq_init(cseq);
-  cseq->cs_method = sip_method_ack;
-  cseq->cs_method_name = "ACK";
-  cseq->cs_seq = sip_object(invite->data->e_msg)->sip_cseq->cs_seq;
 
   s2_free_event(invite);
 
@@ -307,8 +297,7 @@ invite_to_nua(tag_type_t tag, tag_value_t value, ...)
   s2_update_dialog(dialog, response);
   s2_free_message(response);
 
-  fail_if(s2_request_to(dialog, SIP_METHOD_ACK, NULL,
-			SIPTAG_CSEQ(cseq), TAG_END()));
+  fail_if(s2_request_to(dialog, SIP_METHOD_ACK, NULL, TAG_END()));
 
   fail_unless(s2_check_event(nua_i_ack, 200));
   fail_unless(s2_check_callstate(nua_callstate_ready));
@@ -502,7 +491,6 @@ START_TEST(call_2_1_6)
   struct message *bye;
   struct event *invite;
   struct message *response;
-  sip_cseq_t cseq[1];
 
   s2_case("2.1.6", "Basic call",
 	  "NUA received INVITE, "
@@ -518,11 +506,6 @@ START_TEST(call_2_1_6)
 
   nh = invite->nh;
   fail_if(!nh);
-
-  sip_cseq_init(cseq);
-  cseq->cs_method = sip_method_ack;
-  cseq->cs_method_name = "ACK";
-  cseq->cs_seq = sip_object(invite->data->e_msg)->sip_cseq->cs_seq;
 
   s2_free_event(invite);
 
@@ -552,8 +535,7 @@ START_TEST(call_2_1_6)
   s2_update_dialog(dialog, response);
   s2_free_message(response);
 
-  fail_if(s2_request_to(dialog, SIP_METHOD_ACK, NULL,
-			SIPTAG_CSEQ(cseq), TAG_END()));
+  fail_if(s2_request_to(dialog, SIP_METHOD_ACK, NULL, TAG_END()));
 
   fail_unless(s2_check_event(nua_i_ack, 200));
   fail_unless(s2_check_callstate(nua_callstate_ready));
@@ -868,10 +850,11 @@ TCase *session_timer_tcase(void)
 /* ====================================================================== */
 /* 2.4 - 100rel */
 
-START_TEST(call_with_prack_by_nua)
+START_TEST(call_2_4_1)
 {
   nua_handle_t *nh;
   struct message *invite, *prack;
+  int with_sdp;
 
   s2_case("2.4.1", "Call with 100rel",
 	  "NUA sends INVITE, "
@@ -886,16 +869,18 @@ START_TEST(call_with_prack_by_nua)
     TAG_END());
   process_offer(invite);
 
-  prack = respond_with_100rel(invite, dialog, 1,
+  prack = respond_with_100rel(invite, dialog, with_sdp = 1,
 			      SIP_183_SESSION_PROGRESS,
 			      TAG_END());
+  s2_respond_to(prack, dialog, SIP_200_OK, TAG_END());
   s2_free_message(prack), prack = NULL;
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
   fail_unless(s2_check_event(nua_r_prack, 200));
 
-  prack = respond_with_100rel(invite, dialog, 0,
+  prack = respond_with_100rel(invite, dialog, with_sdp = 0,
 			      SIP_180_RINGING,
 			      TAG_END());
+  s2_respond_to(prack, dialog, SIP_200_OK, TAG_END());
   s2_free_message(prack), prack = NULL;
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
   fail_unless(s2_check_event(nua_r_prack, 200));
@@ -912,12 +897,13 @@ START_TEST(call_with_prack_by_nua)
 }
 END_TEST
 
-START_TEST(call_with_prack_sans_soa)
+START_TEST(call_2_4_2)
 {
   nua_handle_t *nh;
   struct message *invite, *prack;
+  int with_sdp;
 
-  s2_case("2.4.1", "Call with 100rel",
+  s2_case("2.4.2", "Call with 100rel",
 	  "NUA sends INVITE, "
 	  "receives 183, sends PRACK, receives 200 for it, "
 	  "receives 180, sends PRACK, receives 200 for it, "
@@ -937,16 +923,18 @@ START_TEST(call_with_prack_sans_soa)
       "m=audio 5004 RTP/AVP 0 8" CRLF),
     TAG_END());
 
-  prack = respond_with_100rel(invite, dialog, 0,
+  prack = respond_with_100rel(invite, dialog, with_sdp = 0,
 			      SIP_183_SESSION_PROGRESS,
 			      TAG_END());
+  s2_respond_to(prack, dialog, SIP_200_OK, TAG_END());
   s2_free_message(prack), prack = NULL;
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
   fail_unless(s2_check_event(nua_r_prack, 200));
 
-  prack = respond_with_100rel(invite, dialog, 0,
+  prack = respond_with_100rel(invite, dialog, with_sdp = 0,
 			      SIP_180_RINGING,
 			      TAG_END());
+  s2_respond_to(prack, dialog, SIP_200_OK, TAG_END());
   s2_free_message(prack), prack = NULL;
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
   fail_unless(s2_check_event(nua_r_prack, 200));
@@ -968,8 +956,241 @@ TCase *invite_100rel_tcase(void)
   TCase *tc = tcase_create("2.4 - INVITE with 100rel");
   tcase_add_checked_fixture(tc, call_setup, call_teardown);
   {
-    tcase_add_test(tc, call_with_prack_by_nua);
-    tcase_add_test(tc, call_with_prack_sans_soa);
+    tcase_add_test(tc, call_2_4_1);
+    tcase_add_test(tc, call_2_4_2);
+  }
+  return tc;
+}
+
+/* ====================================================================== */
+/* 2.5 - Call with preconditions */
+
+START_TEST(call_2_5_1)
+{
+  nua_handle_t *nh;
+  struct message *invite, *prack, *update;
+  int with_sdp;
+
+  s2_case("2.5.1", "Call with preconditions",
+	  "NUA sends INVITE, "
+	  "receives 183, sends PRACK, receives 200 for it, "
+	  "sends UPDATE, receives 200 for it, "
+	  "receives 180, sends PRACK, receives 200 for it, "
+          "receives 200, send ACK.");
+
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+
+  invite = invite_sent_by_nua(
+    nh, SOATAG_USER_SDP_STR("m=audio 5004 RTP/AVP 0 8"),
+    SIPTAG_REQUIRE_STR("precondition"),
+    TAG_END());
+  process_offer(invite);
+
+  prack = respond_with_100rel(invite, dialog, with_sdp = 1,
+			      SIP_183_SESSION_PROGRESS,
+			      TAG_END());
+  fail_unless(s2_check_callstate(nua_callstate_proceeding));
+  process_offer(prack);
+  respond_with_sdp(
+    prack, dialog, SIP_200_OK,
+    SIPTAG_REQUIRE_STR("100rel"),
+    TAG_END());
+  s2_free_message(prack), prack = NULL;
+  fail_unless(s2_check_event(nua_r_prack, 200));
+  fail_unless(s2_check_callstate(nua_callstate_proceeding));
+
+  update = s2_wait_for_request(SIP_METHOD_UPDATE);
+  /* UPDATE sent by stack, stack sends event for it */
+  fail_unless(s2_check_callstate(nua_callstate_proceeding));
+
+  process_offer(update);
+  respond_with_sdp(
+    update, dialog, SIP_200_OK,
+    TAG_END());
+  s2_free_message(update), update = NULL;
+
+  fail_unless(s2_check_event(nua_r_update, 200));
+  fail_unless(s2_check_callstate(nua_callstate_proceeding));
+
+  prack = respond_with_100rel(invite, dialog, with_sdp = 0,
+			      SIP_180_RINGING,
+			      TAG_END());
+  s2_respond_to(prack, dialog, SIP_200_OK, TAG_END());
+  s2_free_message(prack), prack = NULL;
+  fail_unless(s2_check_callstate(nua_callstate_proceeding));
+  fail_unless(s2_check_event(nua_r_prack, 200));
+
+  s2_respond_to(invite, dialog, SIP_200_OK, TAG_END());
+  s2_free_message(invite);
+  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless(s2_check_callstate(nua_callstate_ready));
+  fail_unless(s2_check_request(SIP_METHOD_ACK));
+
+  bye_to_nua(nh, TAG_END());
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
+START_TEST(call_2_5_2)
+{
+  nua_handle_t *nh;
+  struct message *invite, *prack, *update;
+  sip_rseq_t rs[1];
+  sip_rack_t rack[1];
+
+  s2_case("2.5.2", "Call with preconditions - send 200 w/ ongoing PRACK ",
+	  "NUA sends INVITE, "
+	  "receives 183, sends PRACK, "
+          "receives 200 to INVITE, "
+	  "receives 200 to PRACK, "
+	  "sends ACK, "
+	  "sends UPDATE, "
+	  "receives 200 to UPDATE.");
+
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+
+  invite = invite_sent_by_nua(
+    nh,
+    SOATAG_USER_SDP_STR("m=audio 5004 RTP/AVP 0 8"),
+    SIPTAG_REQUIRE_STR("precondition"),
+    NUTAG_APPL_METHOD("PRACK"),
+    TAG_END());
+  process_offer(invite);
+
+  sip_rseq_init(rs)->rs_response = ++s2_rseq;
+  respond_with_sdp(
+    invite, dialog, SIP_183_SESSION_PROGRESS,
+    SIPTAG_REQUIRE_STR("100rel"),
+    SIPTAG_RSEQ(rs),
+    TAG_END());
+  fail_unless(s2_check_event(nua_r_invite, 183));
+  fail_unless(s2_check_callstate(nua_callstate_proceeding));
+
+  sip_rack_init(rack)->ra_response = s2_rseq;
+  rack->ra_cseq = invite->sip->sip_cseq->cs_seq;
+  rack->ra_method = invite->sip->sip_cseq->cs_method;
+  rack->ra_method_name = invite->sip->sip_cseq->cs_method_name;
+
+  nua_prack(nh, SIPTAG_RACK(rack), TAG_END());
+  prack = s2_wait_for_request(SIP_METHOD_PRACK);
+  process_offer(prack);
+
+  s2_respond_to(invite, dialog, SIP_200_OK, TAG_END());
+  s2_free_message(invite);
+  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless(s2_check_callstate(nua_callstate_completing));
+
+  respond_with_sdp(
+    prack, dialog, SIP_200_OK,
+    TAG_END());
+  s2_free_message(prack), prack = NULL;
+  fail_unless(s2_check_event(nua_r_prack, 200));
+  fail_unless(s2_check_callstate(nua_callstate_ready));
+
+  fail_unless(s2_check_request(SIP_METHOD_ACK));
+
+  update = s2_wait_for_request(SIP_METHOD_UPDATE);
+  /* UPDATE sent by stack, stack sends event for it */
+  fail_unless(s2_check_callstate(nua_callstate_calling));
+
+  process_offer(update);
+  respond_with_sdp(
+    update, dialog, SIP_200_OK,
+    TAG_END());
+  s2_free_message(update), update = NULL;
+
+  fail_unless(s2_check_event(nua_r_update, 200));
+  fail_unless(s2_check_callstate(nua_callstate_ready));
+
+  bye_to_nua(nh, TAG_END());
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
+START_TEST(call_2_5_3)
+{
+  nua_handle_t *nh;
+  struct message *invite, *prack, *update;
+  sip_rseq_t rs[1];
+  sip_rack_t rack[1];
+
+  s2_case("2.5.3", "Call with preconditions - send 200 w/ ongoing UPDATE ",
+	  "NUA sends INVITE, "
+	  "receives 183, sends PRACK, receives 200 to PRACK, "
+	  "sends UPDATE, "
+          "receives 200 to INVITE, "
+	  "receives 200 to UPDATE, "
+	  "sends ACK.");
+
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+
+  invite = invite_sent_by_nua(
+    nh,
+    SOATAG_USER_SDP_STR("m=audio 5004 RTP/AVP 0 8"),
+    SIPTAG_REQUIRE_STR("precondition"),
+    NUTAG_APPL_METHOD("PRACK"),
+    TAG_END());
+  process_offer(invite);
+
+  sip_rseq_init(rs)->rs_response = ++s2_rseq;
+  respond_with_sdp(
+    invite, dialog, SIP_183_SESSION_PROGRESS,
+    SIPTAG_REQUIRE_STR("100rel"),
+    SIPTAG_RSEQ(rs),
+    TAG_END());
+  fail_unless(s2_check_event(nua_r_invite, 183));
+  fail_unless(s2_check_callstate(nua_callstate_proceeding));
+
+  sip_rack_init(rack)->ra_response = s2_rseq;
+  rack->ra_cseq = invite->sip->sip_cseq->cs_seq;
+  rack->ra_method = invite->sip->sip_cseq->cs_method;
+  rack->ra_method_name = invite->sip->sip_cseq->cs_method_name;
+
+  nua_prack(nh, SIPTAG_RACK(rack), TAG_END());
+  prack = s2_wait_for_request(SIP_METHOD_PRACK);
+  process_offer(prack);
+  respond_with_sdp(
+    prack, dialog, SIP_200_OK,
+    TAG_END());
+  s2_free_message(prack), prack = NULL;
+  fail_unless(s2_check_event(nua_r_prack, 200));
+  fail_unless(s2_check_callstate(nua_callstate_proceeding));
+
+  update = s2_wait_for_request(SIP_METHOD_UPDATE);
+  /* UPDATE sent by stack, stack sends event for it */
+  fail_unless(s2_check_callstate(nua_callstate_proceeding));
+
+  s2_respond_to(invite, dialog, SIP_200_OK, TAG_END());
+  s2_free_message(invite);
+  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless(s2_check_callstate(nua_callstate_completing));
+
+  process_offer(update);
+  respond_with_sdp(
+    update, dialog, SIP_200_OK,
+    TAG_END());
+  s2_free_message(update), update = NULL;
+
+  fail_unless(s2_check_event(nua_r_update, 200));
+  fail_unless(s2_check_callstate(nua_callstate_ready));
+  fail_unless(s2_check_request(SIP_METHOD_ACK));
+
+  bye_to_nua(nh, TAG_END());
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
+TCase *invite_precondition_tcase(void)
+{
+  TCase *tc = tcase_create("2.5 - Call with preconditions");
+  tcase_add_checked_fixture(tc, call_setup, call_teardown);
+  {
+    tcase_add_test(tc, call_2_5_1);
+    tcase_add_test(tc, call_2_5_2);
+    tcase_add_test(tc, call_2_5_3);
   }
   return tc;
 }
@@ -1717,6 +1938,7 @@ void check_session_cases(Suite *suite)
   suite_add_tcase(suite, cancel_tcase());
   suite_add_tcase(suite, session_timer_tcase());
   suite_add_tcase(suite, invite_100rel_tcase());
+  suite_add_tcase(suite, invite_precondition_tcase());
   suite_add_tcase(suite, invite_error_tcase());
   suite_add_tcase(suite, termination_tcase());
 
