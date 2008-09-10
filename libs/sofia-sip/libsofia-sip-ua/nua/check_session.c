@@ -1024,7 +1024,7 @@ static void invite_timer_round(nua_handle_t *nh,
   s2_free_message(ack);
 }
 
-START_TEST(call_to_nua_with_timer)
+START_TEST(call_2_3_1)
 {
   nua_handle_t *nh;
 
@@ -1050,7 +1050,7 @@ START_TEST(call_to_nua_with_timer)
 }
 END_TEST
 
-START_TEST(call_to_nua_with_timer_2)
+START_TEST(call_2_3_2)
 {
   nua_handle_t *nh;
 
@@ -1082,8 +1082,8 @@ TCase *session_timer_tcase(void)
   TCase *tc = tcase_create("2.3 - Session timers");
   tcase_add_checked_fixture(tc, call_setup, call_teardown);
   {
-    tcase_add_test(tc, call_to_nua_with_timer);
-    tcase_add_test(tc, call_to_nua_with_timer_2);
+    tcase_add_test(tc, call_2_3_1);
+    tcase_add_test(tc, call_2_3_2);
   }
   return tc;
 }
@@ -1439,7 +1439,7 @@ TCase *invite_precondition_tcase(void)
 /* ====================================================================== */
 /* 3.1 - Call error cases */
 
-START_TEST(call_forbidden)
+START_TEST(call_3_1_1)
 {
   nua_handle_t *nh;
   struct message *invite;
@@ -1467,7 +1467,7 @@ START_TEST(call_forbidden)
 END_TEST
 
 
-START_TEST(too_many_retrys)
+START_TEST(call_3_1_2)
 {
   nua_handle_t *nh;
   struct message *invite;
@@ -1505,7 +1505,7 @@ START_TEST(too_many_retrys)
 }
 END_TEST
 
-START_TEST(reinvite_forbidden)
+START_TEST(call_3_2_1)
 {
   nua_handle_t *nh;
   struct message *invite;
@@ -1535,7 +1535,7 @@ START_TEST(reinvite_forbidden)
 END_TEST
 
 
-START_TEST(reinvite_too_many_retrys)
+START_TEST(call_3_2_2)
 {
   nua_handle_t *nh;
   struct message *invite, *bye;
@@ -1583,7 +1583,7 @@ START_TEST(reinvite_too_many_retrys)
 END_TEST
 
 
-START_TEST(call_error_3_2_3)
+START_TEST(call_3_2_3)
 {
   nua_handle_t *nh;
   struct message *invite;
@@ -1611,16 +1611,17 @@ START_TEST(call_error_3_2_3)
 }
 END_TEST
 
+
 TCase *invite_error_tcase(void)
 {
   TCase *tc = tcase_create("3 - Call Errors");
   tcase_add_checked_fixture(tc, call_setup, call_teardown);
   {
-    tcase_add_test(tc, call_forbidden);
-    tcase_add_test(tc, too_many_retrys);
-    tcase_add_test(tc, reinvite_forbidden);
-    tcase_add_test(tc, reinvite_too_many_retrys);
-    tcase_add_test(tc, call_error_3_2_3);
+    tcase_add_test(tc, call_3_1_1);
+    tcase_add_test(tc, call_3_1_2);
+    tcase_add_test(tc, call_3_2_1);
+    tcase_add_test(tc, call_3_2_2);
+    tcase_add_test(tc, call_3_2_3);
     tcase_set_timeout(tc, 5);
   }
   return tc;
