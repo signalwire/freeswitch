@@ -47,6 +47,9 @@
 #include <string.h>
 #include <assert.h>
 
+/* define XXX as 1 in order to see all failing test cases */
+#define XXX (0)
+
 /* ====================================================================== */
 /* Call cases */
 
@@ -230,9 +233,7 @@ invite_by_nua(nua_handle_t *nh,
   ta_list ta;
 
   ta_start(ta, tag, value);
-  invite = invite_sent_by_nua(
-    nh, SOATAG_USER_SDP_STR("m=audio 5004 RTP/AVP 0 8"),
-    ta_tags(ta));
+  invite = invite_sent_by_nua(nh, ta_tags(ta));
   ta_end(ta);
 
   process_offer(invite);
@@ -588,6 +589,43 @@ START_TEST(call_2_1_7)
 END_TEST
 
 
+START_TEST(call_2_1_8)
+{
+  nua_handle_t *nh;
+  struct message *invite, *ack;
+
+  s2_case("2.1.8", "Call using NUTAG_PROXY()",
+	  "Test handle-specific NUTAG_PROXY().");
+
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+
+  invite = invite_sent_by_nua(
+    nh, SOATAG_USER_SDP_STR("m=audio 5004 RTP/AVP 0 8"),
+    NUTAG_PROXY(s2->tcp.contact->m_url), TAG_END());
+
+  process_offer(invite);
+  respond_with_sdp(
+    invite, dialog, SIP_180_RINGING,
+    SIPTAG_CONTENT_DISPOSITION_STR("session;handling=optional"),
+    TAG_END());
+
+  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless(s2_check_callstate(nua_callstate_proceeding));
+
+  respond_with_sdp(invite, dialog, SIP_200_OK, TAG_END());
+  s2_free_message(invite);
+  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless(s2_check_callstate(nua_callstate_ready));
+  ack = s2_wait_for_request(SIP_METHOD_ACK);
+  fail_unless(ack && tport_is_tcp(ack->tport));
+
+  bye_by_nua(nh, TAG_END());
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
+
 TCase *invite_tcase(void)
 {
   TCase *tc = tcase_create("2.1 - Basic INVITE");
@@ -600,6 +638,7 @@ TCase *invite_tcase(void)
     tcase_add_test(tc, call_2_1_5);
     tcase_add_test(tc, call_2_1_6);
     tcase_add_test(tc, call_2_1_7);
+    tcase_add_test(tc, call_2_1_8);
   }
   return tc;
 }
