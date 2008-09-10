@@ -686,13 +686,13 @@ TCase *invite_tcase(void)
 /* ---------------------------------------------------------------------- */
 /* 2.2 - Call CANCEL cases */
 
-START_TEST(cancel_outgoing)
+START_TEST(cancel_2_2_1)
 {
   nua_handle_t *nh;
   struct message *invite, *cancel;
 
   s2_case("2.2.1", "Cancel call",
-	  "NUA is callee, NUA sends CANCEL immediately");
+	  "NUA is caller, NUA sends CANCEL immediately");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
 
@@ -722,13 +722,13 @@ START_TEST(cancel_outgoing)
 END_TEST
 
 
-START_TEST(cancel_outgoing_after_100)
+START_TEST(cancel_2_2_2)
 {
   nua_handle_t *nh;
   struct message *invite;
 
   s2_case("2.2.2", "Canceled call",
-	  "NUA is callee, NUA sends CANCEL after receiving 100");
+	  "NUA is caller, NUA sends CANCEL after receiving 100");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
 
@@ -749,13 +749,13 @@ START_TEST(cancel_outgoing_after_100)
 END_TEST
 
 
-START_TEST(cancel_outgoing_after_180)
+START_TEST(cancel_2_2_3)
 {
   nua_handle_t *nh;
   struct message *invite;
 
   s2_case("2.2.3", "Canceled call",
-	  "NUA is callee, NUA sends CANCEL after receiving 180");
+	  "NUA is caller, NUA sends CANCEL after receiving 180");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
 
@@ -780,13 +780,13 @@ START_TEST(cancel_outgoing_after_180)
 END_TEST
 
 
-START_TEST(cancel_outgoing_glare)
+START_TEST(cancel_2_2_4)
 {
   nua_handle_t *nh;
   struct message *invite, *cancel;
 
   s2_case("2.2.4", "Cancel and 200 OK glare",
-	  "NUA is callee, NUA sends CANCEL after receiving 180 "
+	  "NUA is caller, NUA sends CANCEL after receiving 180 "
 	  "but UAS already sent 200 OK.");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
@@ -825,15 +825,177 @@ START_TEST(cancel_outgoing_glare)
 END_TEST
 
 
+START_TEST(cancel_2_2_5)
+{
+  nua_handle_t *nh;
+  struct message *invite, *cancel, *bye;
+
+  s2_case(
+    "2.2.5", "Cancel and 200 OK glare",
+    "NUA is caller, "
+    "NUA uses nua_bye() to send CANCEL after receiving 180\n"
+    "but UAS already sent 200 OK.\n"
+    "Test case checks that NUA really sends BYE after nua_bye() is called\n");
+
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+
+  nua_invite(nh, SOATAG_USER_SDP_STR("m=audio 5004 RTP/AVP 0 8"),
+	     NUTAG_AUTOACK(0),
+	     TAG_END());
+  fail_unless(s2_check_callstate(nua_callstate_calling));
+
+  invite = s2_wait_for_request(SIP_METHOD_INVITE);
+  process_offer(invite);
+  respond_with_sdp(
+    invite, dialog, SIP_180_RINGING,
+    SIPTAG_CONTENT_DISPOSITION_STR("session;handling=optional"),
+    TAG_END());
+  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless(s2_check_callstate(nua_callstate_proceeding));
+
+  nua_bye(nh, TAG_END());
+  cancel = s2_wait_for_request(SIP_METHOD_CANCEL);
+  fail_if(!cancel);
+
+  respond_with_sdp(invite, dialog, SIP_200_OK, TAG_END());
+
+  s2_respond_to(cancel, dialog, SIP_481_NO_TRANSACTION, TAG_END());
+  s2_free_message(cancel);
+  fail_unless(s2_check_event(nua_r_cancel, 481));
+
+  fail_unless(s2_check_request(SIP_METHOD_ACK));
+
+  fail_unless(s2_check_callstate(nua_callstate_terminating));
+
+  bye = s2_wait_for_request(SIP_METHOD_BYE);
+  fail_if(!bye);
+  s2_respond_to(bye, dialog, SIP_200_OK, TAG_END());
+  s2_free_message(bye);
+  fail_unless(s2_check_event(nua_r_bye, 200));
+  fail_unless(s2_check_callstate(nua_callstate_terminated));
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
+
+START_TEST(cancel_2_2_6)
+{
+  nua_handle_t *nh;
+  struct event *invite;
+  struct message *response;
+
+  s2_case("2.2.6", "Cancel call",
+	  "NUA is callee, sends 100, 180, INVITE gets canceled");
+
+  soa_generate_offer(soa, 1, NULL);
+  request_with_sdp(dialog, SIP_METHOD_INVITE, NULL, TAG_END());
+
+  invite = s2_wait_for_event(nua_i_invite, 100); fail_unless(invite != NULL);
+  fail_unless(s2_check_callstate(nua_callstate_received));
+
+  nh = invite->nh; fail_if(!nh);
+
+  s2_free_event(invite);
+
+  response = s2_wait_for_response(100, SIP_METHOD_INVITE);
+  fail_if(!response);
+
+  nua_respond(nh, SIP_180_RINGING,
+	      SOATAG_USER_SDP_STR("m=audio 5004 RTP/AVP 0 8"),
+	      TAG_END());
+  fail_unless(s2_check_callstate(nua_callstate_early));
+
+  response = s2_wait_for_response(180, SIP_METHOD_INVITE);
+  fail_if(!response);
+  s2_update_dialog(dialog, response);
+  process_answer(response);
+  s2_free_message(response);
+
+  fail_if(s2_request_to(dialog, SIP_METHOD_CANCEL, NULL, TAG_END()));
+  fail_unless(s2_check_event(nua_i_cancel, 200));
+  fail_unless(s2_check_callstate(nua_callstate_terminated));
+
+  response = s2_wait_for_response(200, SIP_METHOD_CANCEL);
+  fail_if(!response);
+  s2_free_message(response);
+
+  response = s2_wait_for_response(487, SIP_METHOD_INVITE);
+  fail_if(s2_request_to(dialog, SIP_METHOD_ACK, NULL,
+			SIPTAG_VIA(sip_object(dialog->invite)->sip_via),
+			TAG_END()));
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
+
+START_TEST(cancel_2_2_7)
+{
+  nua_handle_t *nh;
+  struct event *invite;
+  struct message *response;
+  char const *via = "SIP/2.0/UDP host.in.invalid;rport";
+
+  s2_case("2.2.7", "Call gets canceled",
+	  "NUA is callee, sends 100, 180, INVITE gets canceled. "
+	  "Using RFC 2543 dialog and transaction matching.");
+
+  soa_generate_offer(soa, 1, NULL);
+  request_with_sdp(dialog, SIP_METHOD_INVITE, NULL,
+		   SIPTAG_VIA_STR(via),
+		   TAG_END());
+
+  invite = s2_wait_for_event(nua_i_invite, 100); fail_unless(invite != NULL);
+  fail_unless(s2_check_callstate(nua_callstate_received));
+
+  nh = invite->nh; fail_if(!nh);
+
+  s2_free_event(invite);
+
+  response = s2_wait_for_response(100, SIP_METHOD_INVITE);
+  fail_if(!response);
+
+  nua_respond(nh, SIP_180_RINGING,
+	      SOATAG_USER_SDP_STR("m=audio 5004 RTP/AVP 0 8"),
+	      TAG_END());
+  fail_unless(s2_check_callstate(nua_callstate_early));
+
+  response = s2_wait_for_response(180, SIP_METHOD_INVITE);
+  fail_if(!response);
+  s2_update_dialog(dialog, response);
+  process_answer(response);
+  s2_free_message(response);
+
+  fail_if(s2_request_to(dialog, SIP_METHOD_CANCEL, NULL, TAG_END()));
+  fail_unless(s2_check_event(nua_i_cancel, 200));
+  fail_unless(s2_check_callstate(nua_callstate_terminated));
+
+  response = s2_wait_for_response(200, SIP_METHOD_CANCEL);
+  fail_if(!response);
+  s2_free_message(response);
+
+  response = s2_wait_for_response(487, SIP_METHOD_INVITE);
+  fail_if(s2_request_to(dialog, SIP_METHOD_ACK, NULL,
+			SIPTAG_VIA(sip_object(dialog->invite)->sip_via),
+			TAG_END()));
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
 TCase *cancel_tcase(void)
 {
   TCase *tc = tcase_create("2.2 - CANCEL");
   tcase_add_checked_fixture(tc, call_setup, call_teardown);
 
-  tcase_add_test(tc, cancel_outgoing);
-  tcase_add_test(tc, cancel_outgoing_after_100);
-  tcase_add_test(tc, cancel_outgoing_after_180);
-  tcase_add_test(tc, cancel_outgoing_glare);
+  tcase_add_test(tc, cancel_2_2_1);
+  tcase_add_test(tc, cancel_2_2_2);
+  tcase_add_test(tc, cancel_2_2_3);
+  tcase_add_test(tc, cancel_2_2_4);
+  if (XXX) tcase_add_test(tc, cancel_2_2_5);
+  tcase_add_test(tc, cancel_2_2_6);
+  tcase_add_test(tc, cancel_2_2_7);
 
   return tc;
 }
