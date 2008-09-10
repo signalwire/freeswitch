@@ -174,10 +174,13 @@ static sdp_media_t *media_dup_all(char **pp,
 /**Duplicate an SDP origin description.
  *
  * The function sdp_origin_dup() duplicates (deeply copies) an SDP origin
- * description @a o allocating memory using memory @a home.
+ * description @a o allocating memory using memory @a home.
  *
  * @param h     Memory home
  * @param o     SDP origin description to be duplicated
+ *
+ * @note The duplicated structure is allocated using a single call to
+ * su_alloc() and it can be freed with su_free().
  *
  * @return 
  * If successful, a pointer to newly allocated sdp_origin_t structure is
@@ -190,11 +193,14 @@ sdp_origin_t *sdp_origin_dup(su_home_t *h, sdp_origin_t const *o)
 
 /**Duplicate an SDP connection description.
  *
- * The function sdp_connection_dup() duplicates (deeply copies) an SDP
- * connection description @a c allocating memory using memory @a home.
+ * The function sdp_connection_dup() duplicates (deeply copies) a list of
+ * SDP connection description @a c allocating memory using memory @a home.
  *
  * @param h     Memory home
  * @param c     SDP connection description to be duplicated
+ *
+ * @note The duplicated list is allocated using a single call to
+ * su_alloc() and it can be freed with su_free().
  *
  * @return 
  * If successful, a pointer to newly allocated sdp_connection_t structure is
@@ -207,11 +213,14 @@ sdp_connection_t *sdp_connection_dup(su_home_t *h, sdp_connection_t const *c)
 
 /**Duplicate an SDP bandwidth description.
  *
- * The function sdp_bandwidth_dup() duplicates (deeply copies) an SDP
- * bandwidth description @a b allocating memory using memory @a home.
+ * The function sdp_bandwidth_dup() duplicates (deeply copies) a list of SDP
+ * bandwidth descriptions @a b allocating memory using memory @a home.
  *
  * @param h     Memory home
  * @param b     SDP bandwidth description to be duplicated
+ *
+ * @note The duplicated list is allocated using a single call to
+ * su_alloc() and it can be freed with su_free().
  *
  * @return 
  * If successful, a pointer to newly allocated sdp_bandwidth_t structure is
@@ -224,11 +233,14 @@ sdp_bandwidth_t *sdp_bandwidth_dup(su_home_t *h, sdp_bandwidth_t const *b)
 
 /**Duplicate an SDP time description.
  *
- * The function sdp_time_dup() duplicates (deeply copies) an SDP time
- * description @a t allocating memory using memory @a home.
+ * The function sdp_time_dup() duplicates (deeply copies) a list of SDP time
+ * descriptions @a t allocating memory using memory @a home.
  *
  * @param h  Memory home
  * @param t  SDP time description to be duplicated
+ *
+ * @note The duplicated list is allocated using a single call to
+ * su_alloc() and it can be freed with su_free().
  *
  * @return 
  * If successful, a pointer to newly allocated sdp_time_t structure is
@@ -242,10 +254,13 @@ sdp_time_t *sdp_time_dup(su_home_t *h, sdp_time_t const *t)
 /**Duplicate an SDP repeat description.
  *
  * The function sdp_repeat_dup() duplicates (deeply copies) an SDP repeat
- * description @a r allocating memory using memory @a home.
+ * description @a r allocating memory using memory @a home.
  *
  * @param h  Memory home
  * @param r  SDP repeat description to be duplicated
+ *
+ * @note The duplicated structure is allocated using a single call to
+ * su_alloc() and it can be freed with su_free().
  *
  * @return 
  * If successful, a pointer to newly allocated sdp_repeat_t structure is
@@ -259,10 +274,13 @@ sdp_repeat_t *sdp_repeat_dup(su_home_t *h, sdp_repeat_t const *r)
 /**Duplicate an SDP zone description.
  *
  * The function sdp_zone_dup() duplicates (deeply copies) an SDP zone
- * description @a z allocating memory using memory @a home.
+ * description @a z allocating memory using memory @a home.
  *
  * @param h  Memory home
  * @param z  SDP zone description to be duplicated
+ *
+ * @note The duplicated structure is allocated using a single call to
+ * su_alloc() and it can be freed with su_free().
  *
  * @return 
  * If successful, a pointer to newly allocated sdp_zone_t structure is
@@ -276,10 +294,13 @@ sdp_zone_t *sdp_zone_dup(su_home_t *h, sdp_zone_t const *z)
 /**Duplicate an SDP key description.
  *
  * The function sdp_key_dup() duplicates (deeply copies) an SDP key
- * description @a k allocating memory using memory @a home.
+ * description @a k allocating memory using memory @a home.
  *
  * @param h  Memory home
  * @param k  SDP key description to be duplicated
+ *
+ * @note The duplicated structure is allocated using a single call to
+ * su_alloc() and it can be freed with su_free().
  *
  * @return 
  * If successful, a pointer to newly allocated sdp_key_t structure is
@@ -298,6 +319,9 @@ sdp_key_t *sdp_key_dup(su_home_t *h, sdp_key_t const *k)
  * @param h  Memory home
  * @param a  SDP attribute description to be duplicated
  *
+ * @note The duplicated structure is allocated using a single call to
+ * su_alloc() and it can be freed with su_free().
+ *
  * @return 
  * If successful, a pointer to newly allocated sdp_attribute_t structure is
  * returned, otherwise NULL is returned.
@@ -314,6 +338,9 @@ sdp_attribute_t *sdp_attribute_dup(su_home_t *h, sdp_attribute_t const *a)
  *
  * @param h  Memory home
  * @param l  SDP list description to be duplicated
+ *
+ * @note The duplicated structure is allocated using a single call to
+ * su_alloc() and it can be freed with su_free().
  *
  * @return 
  * If successful, a pointer to newly allocated sdp_list_t structure is
@@ -332,6 +359,9 @@ sdp_list_t *sdp_list_dup(su_home_t *h, sdp_list_t const *l)
  * @param h  Memory home
  * @param rm SDP rtpmap description to be duplicated
  *
+ * @note The duplicated structure is allocated using a single call to
+ * su_alloc() and it can be freed with su_free().
+ *
  * @return 
  * If successful, a pointer to newly allocated sdp_rtpmap_t structure is
  * returned, otherwise NULL is returned.
@@ -344,12 +374,15 @@ sdp_rtpmap_t *sdp_rtpmap_dup(su_home_t *h, sdp_rtpmap_t const *rm)
 /**Duplicate an SDP media description.
  *
  * The function sdp_media_dup() duplicates (deeply copies) an SDP media
- * description @a m allocating memory using memory @a home.
+ * description @a m allocating memory using memory @a home.
  *
  * @param h   Memory home
  * @param m   SDP media description to be duplicated
  * @param sdp SDP session description to which the newly allocated
  *            media description is linked
+ *
+ * @note The duplicated structure is allocated using a single call to
+ * su_alloc() and it can be freed with su_free().
  *
  * @return 
  * If successful, a pointer to newly allocated sdp_media_t structure is
@@ -369,12 +402,15 @@ sdp_media_t *sdp_media_dup(su_home_t *h, sdp_media_t const *m,
 /**Duplicate an SDP media description.
  *
  * The function sdp_media_dup_all() duplicates (deeply copies) a list of SDP
- * media descriptions @a m allocating memory using memory @a home.
+ * media descriptions @a m allocating memory using memory @a home.
  *
  * @param h     Memory home
  * @param m     list of SDP media descriptions to be duplicated
  * @param sdp   SDP session description to which the newly allocated
  *              media descriptions are linked
+ *
+ * @note The duplicated list is allocated using a single call to
+ * su_alloc() and it can be freed with su_free().
  *
  * @return 
  * If successful, a pointer to a newly allocated list of sdp_media_t
@@ -944,10 +980,13 @@ sdp_session_t *session_dup(char **pp, sdp_session_t const *src)
 /**Duplicate an SDP session description.
  *
  * The function sdp_session_dup() duplicates (deeply copies) an SDP
- * session description @a sdp allocating memory using memory @a home.
+ * session description @a sdp allocating memory using memory @a home.
  *
  * @param h   Memory home
  * @param sdp SDP session description to be duplicated
+ *
+ * @note The duplicated structure is allocated using a single call to
+ * su_alloc() and it can be freed with su_free().
  *
  * @return 
  * If successful, a pointer to newly allocated sdp_session_t structure is
@@ -1017,11 +1056,14 @@ typedef sdp_session_t sdp_session_without_media_t;
 /**Duplicate an SDP session description without media descriptions.
  *
  * The function sdp_session_dup() duplicates (deeply copies) an SDP session
- * description @a sdp allocating memory using memory @a home. It does not
+ * description @a sdp allocating memory using memory @a home. It does not
  * copy the media descriptions, however.
  *
  * @param h     memory h
  * @param sdp   SDP session description to be duplicated
+ *
+ * @note The duplicated structure is allocated using a single call to
+ * su_alloc() and it can be freed with su_free().
  *
  * @return 
  * If successful, a pointer to newly allocated sdp_session_t structure is

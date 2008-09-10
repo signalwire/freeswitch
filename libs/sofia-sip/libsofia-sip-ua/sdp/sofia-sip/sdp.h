@@ -229,7 +229,8 @@ typedef enum
   sdp_media_data,			/**< Bulk data transfer */
   sdp_media_control,			/**< Additional conference control */
   sdp_media_message,			/**< Messaging sessions*/
-  sdp_media_image,			/**< Image browsing sessions for JPIP, and T.38 */
+  sdp_media_image,			/**< Image browsing sessions,
+					 *   e.g., JPIP or T.38. */
   sdp_media_red				/**< Redundancy. @NEW_1_12_4. */
 } sdp_media_e;
 
@@ -334,31 +335,31 @@ sdp_origin_t    *sdp_origin_dup(su_home_t *, sdp_origin_t const *);
 
 /** Duplicate an SDP connection structure. */
 SOFIAPUBFUN
-sdp_connection_t *sdp_connection_dup(su_home_t *home, sdp_connection_t const *);
+sdp_connection_t *sdp_connection_dup(su_home_t *, sdp_connection_t const *);
 
 /** Duplicate an SDP bandwidth structure. */
 SOFIAPUBFUN
-sdp_bandwidth_t  *sdp_bandwidth_dup(su_home_t *home, sdp_bandwidth_t const *);
+sdp_bandwidth_t  *sdp_bandwidth_dup(su_home_t *, sdp_bandwidth_t const *);
 
 /** Duplicate an SDP time structure. */
 SOFIAPUBFUN
-sdp_time_t       *sdp_time_dup(su_home_t *home, sdp_time_t const *);
+sdp_time_t       *sdp_time_dup(su_home_t *, sdp_time_t const *);
 
 /** Duplicate an SDP repeat structure. */
 SOFIAPUBFUN
-sdp_repeat_t     *sdp_repeat_dup(su_home_t *home, sdp_repeat_t const *);
+sdp_repeat_t     *sdp_repeat_dup(su_home_t *, sdp_repeat_t const *);
 
 /** Duplicate an SDP timezone structure. */
 SOFIAPUBFUN
-sdp_zone_t       *sdp_zone_dup(su_home_t *home, sdp_zone_t const *);
+sdp_zone_t       *sdp_zone_dup(su_home_t *, sdp_zone_t const *);
 
 /** Duplicate an SDP key structure. */
 SOFIAPUBFUN
-sdp_key_t        *sdp_key_dup(su_home_t *home, sdp_key_t const *);
+sdp_key_t        *sdp_key_dup(su_home_t *, sdp_key_t const *);
 
 /** Duplicate an SDP attribute structure. */
 SOFIAPUBFUN
-sdp_attribute_t  *sdp_attribute_dup(su_home_t *home, sdp_attribute_t const *);
+sdp_attribute_t  *sdp_attribute_dup(su_home_t *, sdp_attribute_t const *);
 
 /** Duplicate an SDP media description structure. */
 SOFIAPUBFUN
@@ -372,11 +373,11 @@ sdp_media_t *sdp_media_dup_all(su_home_t *, sdp_media_t const *,
 
 /** Duplicate a list structure. */
 SOFIAPUBFUN
-sdp_list_t       *sdp_list_dup(su_home_t *home, sdp_list_t const *);
+sdp_list_t       *sdp_list_dup(su_home_t *, sdp_list_t const *);
 
 /** Duplicate an rtpmap structure. */
 SOFIAPUBFUN
-sdp_rtpmap_t     *sdp_rtpmap_dup(su_home_t *home, sdp_rtpmap_t const *);
+sdp_rtpmap_t     *sdp_rtpmap_dup(su_home_t *, sdp_rtpmap_t const *);
 
 /** Compare two session descriptions. */
 SOFIAPUBFUN int sdp_session_cmp(sdp_session_t const *a,
@@ -450,13 +451,13 @@ SOFIAPUBFUN sdp_attribute_t *sdp_attribute_by_mode(su_home_t *,
 
 /** Find a mapped attribute. */
 SOFIAPUBFUN 
-sdp_attribute_t *sdp_attribute_mapped_find(sdp_attribute_t const *a, 
-					   char const *name, 
+sdp_attribute_t *sdp_attribute_mapped_find(sdp_attribute_t const *a,
+					   char const *name,
 					   int pt, char **return_result);
 
 /** Append a attribute to a list of attributes. */
 SOFIAPUBFUN void sdp_attribute_append(sdp_attribute_t **list, 
-			  sdp_attribute_t const *a);
+				      sdp_attribute_t const *a);
 
 /** Replace a attribute within a list of attributes. */
 SOFIAPUBFUN int sdp_attribute_replace(sdp_attribute_t **list, 
@@ -546,8 +547,9 @@ SOFIAPUBFUN su_home_t *sdp_parser_home(sdp_parser_t *);
 typedef struct sdp_printer_s sdp_printer_t;
 typedef sdp_printer_t *sdp_printer;
 
-SOFIAPUBFUN sdp_printer_t *sdp_print(su_home_t *, sdp_session_t const *session, 
-				     char msgbuf[], isize_t maxmsgsize, int flags);
+SOFIAPUBFUN sdp_printer_t *sdp_print(su_home_t *, sdp_session_t const *,
+				     char msgbuf[], isize_t maxmsgsize,
+				     int flags);
 SOFIAPUBFUN char const *sdp_printing_error(sdp_printer_t *p);
 SOFIAPUBFUN char const *sdp_message(sdp_printer_t *p);
 SOFIAPUBFUN isize_t sdp_message_size(sdp_printer_t *p);
