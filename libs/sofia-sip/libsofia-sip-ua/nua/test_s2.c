@@ -511,7 +511,7 @@ s2_request_to(struct dialog *d,
 
   msg_t *msg = s2_msg(0);
   sip_t *sip = sip_object(msg);
-  url_string_t *target = NULL;
+  url_t const *target = NULL;
   sip_cseq_t cseq[1];
   sip_via_t via[1]; char const *v_params[8];
   sip_content_length_t l[1];
@@ -525,20 +525,22 @@ s2_request_to(struct dialog *d,
   if (sip_add_tagis(msg, sip, &tags) < 0)
     goto error;
 
+  if (sip->sip_request)
+    target = sip->sip_request->rq_url;
+  else if (d->target)
+    target = d->target->m_url;
+  else if (s2->registration->contact)
+    target = s2->registration->contact->m_url;
+  else
+    target = NULL;
+
+  if (target == NULL)
+    goto error;
+
   if (!sip->sip_request) {
     sip_request_t *rq;
-
-    if (d->target)
-      target = (url_string_t *)d->target->m_url;
-    else if (s2->registration->contact)
-      target = (url_string_t *)s2->registration->contact->m_url;
-    else
-      target = NULL;
-
-    if (target == NULL)
-      goto error;
-
-    rq = sip_request_create(msg_home(msg), method, name, target, NULL);
+    rq = sip_request_create(msg_home(msg), method, name,
+			    (url_string_t *)target, NULL);
     sip_header_insert(msg, sip, (sip_header_t *)rq);
   }
 
@@ -588,11 +590,12 @@ s2_request_to(struct dialog *d,
   assert(tport);
 
   *tpn = *tport_name(tport);
-  if (tport_is_udp(tport)) {
-    tpn->tpn_host = d->target->m_url->url_host;
-    tpn->tpn_port = url_port(d->target->m_url);
+
+  if (tport_is_primary(tport)) {
+    tpn->tpn_host = target->url_host;
+    tpn->tpn_port = url_port(target);
     if (!tpn->tpn_port || !tpn->tpn_port[0])
-      tpn->tpn_port = url_port_default(d->target->m_url->url_type);
+      tpn->tpn_port = url_port_default(target->url_type);
   }
 
   magic = tport_magic(tport);
