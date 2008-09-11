@@ -2607,6 +2607,76 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	return;
 }
 
+
+typedef struct {
+	char *exten;
+	char *event;
+	char *reply_uuid;
+	char *bridge_to_uuid;
+	switch_memory_pool_t *pool;
+} nightmare_xfer_helper_t;
+
+
+void *SWITCH_THREAD_FUNC nightmare_xfer_thread_run(switch_thread_t *thread, void *obj)
+{
+	nightmare_xfer_helper_t *nhelper = (nightmare_xfer_helper_t *) obj;
+	switch_memory_pool_t *pool;
+	switch_status_t status;
+	switch_core_session_t *session, *a_session;
+	
+	if ((a_session = switch_core_session_locate(nhelper->bridge_to_uuid))) {
+		switch_core_session_t *tsession;
+		switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
+		uint32_t timeout = 60;
+		char *tuuid_str;
+
+		if ((session = switch_core_session_locate(nhelper->reply_uuid))) {
+			private_object_t *tech_pvt = switch_core_session_get_private(session);
+			switch_channel_t *channel_a = switch_core_session_get_channel(session);
+
+			status = switch_ivr_originate(a_session, &tsession, &cause, nhelper->exten, timeout, NULL, NULL, NULL, NULL, SOF_NONE);
+							
+			if (status != SWITCH_STATUS_SUCCESS || cause != SWITCH_CAUSE_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! [%s]\n", nhelper->exten);
+				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("messsage/sipfrag"),
+						   NUTAG_SUBSTATE(nua_substate_terminated),
+						   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(nhelper->event), TAG_END());
+				status = SWITCH_STATUS_FALSE;
+			} else {
+
+				tuuid_str = switch_core_session_get_uuid(tsession);
+				switch_ivr_uuid_bridge(nhelper->bridge_to_uuid, tuuid_str);
+				switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
+				switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+						   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(nhelper->event), TAG_END());
+				switch_core_session_rwunlock(tsession);
+			}
+			switch_core_session_rwunlock(session);
+		}
+
+		switch_core_session_rwunlock(a_session);
+	}
+
+	pool = nhelper->pool;
+	switch_core_destroy_memory_pool(&pool);
+
+	return NULL;
+}
+
+static void launch_nightmare_xfer(nightmare_xfer_helper_t *nhelper)
+{
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+
+	switch_threadattr_create(&thd_attr, nhelper->pool);
+	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_priority_increase(thd_attr);
+	switch_thread_create(&thread, thd_attr, nightmare_xfer_thread_run, nhelper, nhelper->pool);
+}
+
+
 /*---------------------------------------*/
 void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[])
 {
@@ -2621,6 +2691,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	su_home_t *home = NULL;
 	char *full_ref_by = NULL;
 	char *full_ref_to = NULL;
+	nightmare_xfer_helper_t *nightmare_xfer_helper;
+	switch_memory_pool_t *npool;
 
 	if (!(profile->mflags & MFLAG_REFER)) {
 		nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
@@ -2646,7 +2718,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 		full_ref_to = sip_header_as_string(home, (void *) sip->sip_refer_to);
 
 		if (profile->pflags & PFLAG_FULL_ID) {
-			exten = switch_mprintf("%s@%s", (char *) refer_to->r_url->url_user, (char *) refer_to->r_url->url_host);
+			exten = switch_core_session_sprintf(session, "%s@%s", (char *) refer_to->r_url->url_user, (char *) refer_to->r_url->url_host);
 		} else {
 			exten = (char *) refer_to->r_url->url_user;
 		}
@@ -2788,12 +2860,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						switch_channel_t *channel = switch_core_session_get_channel(session);
 
 						if ((a_session = switch_core_session_locate(br_a))) {
-							switch_core_session_t *tsession;
-							switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
-							uint32_t timeout = 60;
-							char *tuuid_str;
 							const char *port = NULL;
-							switch_status_t status;
+							char *glued;
+							int count = 0, bytes = 0;
 
 							if (refer_to && refer_to->r_url && refer_to->r_url->url_port) {
 								port = refer_to->r_url->url_port;
@@ -2802,37 +2871,50 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							if (switch_strlen_zero(port)) {
 								port = "5060";
 							}
-							channel = switch_core_session_get_channel(a_session);
 
-							exten = switch_mprintf("sofia/%s/%s@%s:%s", profile->name, refer_to->r_url->url_user, refer_to->r_url->url_host, port);
+							channel = switch_core_session_get_channel(a_session);
+							
+							for (count = 0; refer_to->r_params[count] ; count++) {
+								bytes += strlen(refer_to->r_params[count]) + 1;
+							}
+							bytes++;
+								
+							glued = switch_core_session_alloc(session, bytes);
+							for (count = 0; refer_to->r_params[count] ; count++) {
+								switch_snprintf(glued + strlen(glued), bytes - strlen(glued), "%s;", refer_to->r_params[count]);
+							}
+								
+							if (end_of(glued) == ';') {
+								end_of(glued) = '\0';
+							}
+								
+							exten = switch_core_session_sprintf(session, "sofia/%s/sip:%s@%s:%s;%s?%s", 
+																profile->name, refer_to->r_url->url_user, 
+																refer_to->r_url->url_host, port, glued, refer_to->r_url->url_headers);
+							
+							switch_core_new_memory_pool(&npool);
+							nightmare_xfer_helper = switch_core_alloc(npool, sizeof(*nightmare_xfer_helper));
+							nightmare_xfer_helper->exten = switch_core_strdup(npool, exten);
+							nightmare_xfer_helper->event = switch_core_strdup(npool, etmp);
+							nightmare_xfer_helper->reply_uuid = switch_core_strdup(npool, switch_core_session_get_uuid(session));
+							nightmare_xfer_helper->bridge_to_uuid = switch_core_strdup(npool, br_a);
+							nightmare_xfer_helper->pool = npool;
 
 							switch_channel_set_variable(channel, SOFIA_REPLACES_HEADER, rep);
+
 							if (!switch_strlen_zero(full_ref_by)) {
 								switch_channel_set_variable(channel, SOFIA_SIP_HEADER_PREFIX "Referred-By", full_ref_by);
 							}
+
 							if (!switch_strlen_zero(full_ref_to)) {
 								switch_channel_set_variable(channel, SOFIA_REFER_TO_VARIABLE, full_ref_to);
 							}
-							status = switch_ivr_originate(a_session, &tsession, &cause, exten, timeout, &noop_state_handler, NULL, NULL, NULL, SOF_NONE);
 
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! [%s]\n", exten);
-							nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("messsage/sipfrag"),
-									   NUTAG_SUBSTATE(nua_substate_terminated),
-									   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
-
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Good Luck, you'll need it......\n");
+							launch_nightmare_xfer(nightmare_xfer_helper);
+							
 							switch_core_session_rwunlock(a_session);
 
-							if (status != SWITCH_STATUS_SUCCESS) {
-								goto done;
-							}
-
-							tuuid_str = switch_core_session_get_uuid(tsession);
-							switch_ivr_uuid_bridge(br_a, tuuid_str);
-							switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
-							switch_set_flag_locked(tech_pvt, TFLAG_BYE);
-							nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
-									   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(etmp), TAG_END());
-							switch_core_session_rwunlock(tsession);
 						} else {
 							goto error;
 						}
@@ -2898,9 +2980,6 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 		home = NULL;
 	}
 
-	if (exten && strchr(exten, '@')) {
-		switch_safe_free(exten);
-	}
 	if (etmp) {
 		switch_safe_free(etmp);
 	}
