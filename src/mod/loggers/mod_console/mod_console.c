@@ -342,7 +342,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_console_shutdown)
 {
 
 	switch_log_unbind_logger(switch_console_logger);
-	switch_core_hash_destroy(&log_hash);
+	if (log_hash) {
+		switch_core_hash_destroy(&log_hash);
+	}
 
 	RUNNING = 0;
 	return SWITCH_STATUS_UNLOAD;
