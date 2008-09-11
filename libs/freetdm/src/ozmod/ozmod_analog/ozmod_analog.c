@@ -477,8 +477,18 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				break;
 			case ZAP_CHANNEL_STATE_GENRING:
 				{
+					zap_sigmsg_t sig;
+
 					send_caller_id(zchan);
 					zap_channel_command(zchan, ZAP_COMMAND_GENERATE_RING_ON, NULL);
+
+					memset(&sig, 0, sizeof(sig));
+					sig.chan_id = zchan->chan_id;
+					sig.span_id = zchan->span_id;
+					sig.channel = zchan;
+					sig.event_id = ZAP_SIGEVENT_PROGRESS;
+					analog_data->sig_cb(&sig);
+					
 				}
 				break;
 			case ZAP_CHANNEL_STATE_GET_CALLERID:

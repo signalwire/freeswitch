@@ -1158,6 +1158,15 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			}
 		}
 		break;
+    case ZAP_SIGEVENT_PROGRESS:
+		{
+			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				channel = switch_core_session_get_channel(session);
+				switch_channel_mark_ring_ready(channel);
+				switch_core_session_rwunlock(session);
+			}
+		}
+		break;
     case ZAP_SIGEVENT_START:
 		{
 			zap_clear_flag_locked(sigmsg->channel, ZAP_CHANNEL_HOLD);
