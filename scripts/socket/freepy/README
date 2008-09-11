@@ -9,6 +9,12 @@ Install
 
 See INSTALL
 
+Using/Examples
+==============
+
+The WikiPBX project uses this lib heavily, so looking at that code (wikipbx.org) is a good example until more docs are added.
+
+
 Debugging
 =========
 
