@@ -1028,6 +1028,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 	char *string;
 	int i, argc;
 	char *argv[256];
+	int dur_total = 0;
 
 	switch_assert(session != NULL);
 
@@ -1078,8 +1079,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s send dtmf\ndigit=%c ms=%u samples=%u\n",
 									  switch_channel_get_name(session->channel), dtmf.digit, dur, dtmf.duration);
 					sent++;
+					dur_total += dtmf.duration + 2000; /* account for 250ms pause */
 				}
 			}
+		}
+
+		if (dur_total) {
+			char tmp[32] = "";
+			switch_snprintf(tmp, sizeof(tmp), "%d", dur_total / 8);
+			switch_channel_set_variable(session->channel, "last_dtmf_duration", tmp);
 		}
 
 	}
