@@ -140,7 +140,7 @@ class FreeswitchEventListener(LineReceiver):
 
     def eventReceived(self, event_xml_str):
         """
-        should be overridden by subclasses
+        should be overridden by subclasses.
         """
         raise Exception("This is an abstract class, should be overridden "
                         "in a subclass")
@@ -153,6 +153,9 @@ class FreeswitchEventListenerFactory(ClientFactory):
                             should be a subclass of a FreeswitchEventListener
         """
 
+        # dictionary of observers.  key: event name, value: list of observers
+        self.event2observer = {}
+        
         self.protoclass=protoclass
         
         if host:
@@ -166,12 +169,33 @@ class FreeswitchEventListenerFactory(ClientFactory):
         self.connection_deferred = None
         self.num_attempts = 0
 
+    def addobserver(self, event_name, observer):
+        """
+        @param event_name, eg "CHANNEL_ANSWER"
+        @param observer (instance of object that has an eventReceived() method
+        """
+        observers = self.event2observer.get(event_name, [])
+        observers.append(observer)
+        self.event2observer[event_name] = observers
+
+    def dispatch2observers(self, event_name, event_xml_str, event_dom):
+        """
+        called back by the underlying protocol upon receiving an
+        event from freeswitch.  Currently subclasses must explicitly
+        call this method from their eventReceived method for observers
+        to get the message.  TODO: move this call to FreeswitchEventListener
+        and use observer pattern instead of any subclassing.
+        """
+        observers = self.event2observer.get(event_name, [])
+        for observer in observers:
+            observer.eventReceived(event_name, event_xml_str, event_dom)
+        
     def reset(self):
         self.protocol = None
         self.connection_deferred = None
         
     def connect(self):
-            
+
         if self.protocol:
             # if we have a protocol object, we are connected (since we always
             # null it upon any disconnection)
@@ -191,6 +215,7 @@ class FreeswitchEventListenerFactory(ClientFactory):
 
     def conncb(self, protocol):
         self.protocol = protocol
+        self.protocol.__dict__["factory"] = self
         deferred2callback = self.connection_deferred
         self.connection_deferred = None
         deferred2callback.callback(self.protocol)
