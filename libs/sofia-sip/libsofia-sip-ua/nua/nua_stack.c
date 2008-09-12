@@ -2188,9 +2188,12 @@ static int
 nua_client_request_complete(nua_client_request_t *cr)
 {
   if (cr->cr_orq) {
+    nua_client_request_ref(cr);
     if (cr && cr->cr_methods->crm_complete)
       cr->cr_methods->crm_complete(cr);
     nua_client_request_clean(cr);
+    if (nua_client_request_unref(cr))
+      return 1;
   }
 
   return nua_client_request_remove(cr);
@@ -2224,8 +2227,7 @@ nua_client_request_destroy(nua_client_request_t *cr)
   cr->cr_msg = NULL, cr->cr_sip = NULL;
 
   if (cr->cr_orq)
-    nta_outgoing_destroy(cr->cr_orq);
-  cr->cr_orq = NULL;
+    nta_outgoing_destroy(cr->cr_orq), cr->cr_orq = NULL;
 
   if (cr->cr_target)
     su_free(nh->nh_home, cr->cr_target);
