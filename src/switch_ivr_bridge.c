@@ -585,7 +585,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 		switch_ivr_multi_threaded_bridge(session, other_session, NULL, NULL, NULL);
 
 		state = switch_channel_get_state(channel);
-		if (state < CS_HANGUP && state != CS_ROUTING && state != CS_PARK) {
+		if (!switch_channel_test_flag(channel, CF_TRANSFER) && state < CS_HANGUP && state != CS_ROUTING && state != CS_PARK) {
 			switch_channel_set_state(channel, CS_EXECUTE);
 		}
 		switch_core_session_rwunlock(other_session);
