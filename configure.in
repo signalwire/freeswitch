@@ -42,6 +42,7 @@ AC_DEFINE_UNQUOTED([SWITCH_MOD_DIR],"${modinstdir}",[where to install the module
 AC_LANG_C
 # Checks for programs.
 AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_AWK
 AC_PROG_MAKE_SET
 AC_PROG_INSTALL
