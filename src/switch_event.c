@@ -83,7 +83,7 @@ static int THREAD_COUNT = 0;
 static int SYSTEM_RUNNING = 0;
 static switch_queue_t *EVENT_RECYCLE_QUEUE = NULL;
 static switch_queue_t *EVENT_HEADER_RECYCLE_QUEUE = NULL;
-static void launch_dispatch_threads(int max, int len, switch_memory_pool_t *pool);
+static void launch_dispatch_threads(uint32_t max, int len, switch_memory_pool_t *pool);
 
 static char *my_dup(const char *s)
 {
@@ -245,7 +245,7 @@ static void *SWITCH_THREAD_FUNC switch_event_dispatch_thread(switch_thread_t *th
 static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, void *obj)
 {
 	switch_queue_t *queue = (switch_queue_t *) obj;
-	int index = 0;
+	uint32_t index = 0;
 	int my_id = 0;
 
 	switch_mutex_lock(EVENT_QUEUE_MUTEX);
@@ -462,7 +462,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void launch_dispatch_threads(int max, int len, switch_memory_pool_t *pool)
+static void launch_dispatch_threads(uint32_t max, int len, switch_memory_pool_t *pool)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;
