@@ -719,9 +719,9 @@ int test_183rel(struct context *ctx)
   TEST(callstate(e->data->e_tags), nua_callstate_terminating);
 
   {
-    int bye = 1, cancel = 1, invite = 1;
+    int bye = 1, cancel = 1, invite = 1, state = 1;
 
-    while (bye || cancel || invite) {
+    while (bye || cancel || invite || state) {
       TEST_1(e = e->next); 
       if (e->data->e_event == nua_r_bye) {
 	TEST_E(e->data->e_event, nua_r_bye);
@@ -739,9 +739,18 @@ int test_183rel(struct context *ctx)
 	TEST_1(e->data->e_status == 200 || e->data->e_status == 481);
 	cancel = 0;
       }
+      else if (e->data->e_event == nua_i_state) {
+	TEST_E(e->data->e_event, nua_i_state);
+	TEST(callstate(e->data->e_tags), nua_callstate_terminated);
+	state  = 0;
+      }
     }
-    TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-    TEST(callstate(e->data->e_tags), nua_callstate_terminated);
+    if (e->next) {
+      /* 2nd terminated? */
+      TEST_1(e = e->next);
+      TEST_E(e->data->e_event, nua_i_state);
+      TEST(callstate(e->data->e_tags), nua_callstate_terminated);
+    }
   }
 
   TEST_1(!e->next);
@@ -799,7 +808,7 @@ int test_183rel(struct context *ctx)
 
 static int prack_until_terminated(CONDITION_PARAMS)
 {
-  static int terminated, bye_responded;
+  static int terminated, bye_responded, invite_responded, cancel_responded;
 
   if (!check_handle(ep, call, nh, SIP_500_INTERNAL_SERVER_ERROR))
     return 0;
@@ -825,7 +834,13 @@ static int prack_until_terminated(CONDITION_PARAMS)
   if (event == nua_r_bye && status >= 200)
     bye_responded = 1;
 
-  return terminated && bye_responded;
+  if (event == nua_r_invite && status >= 200)
+    invite_responded = 1;
+
+  if (event == nua_r_cancel && status >= 200)
+    cancel_responded = 1;
+
+  return terminated && bye_responded && invite_responded && cancel_responded;
 }
 
 int respond_483_to_prack(CONDITION_PARAMS)
