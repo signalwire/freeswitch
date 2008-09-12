@@ -100,6 +100,11 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	const char *app_name = NULL, *app_arg = NULL;
 	const char *hook_var = NULL;
 	int inner_bridge = 0;
+	switch_codec_t silence_codec = { 0 };
+	switch_frame_t silence_frame = { 0 };
+	int16_t silence_data[SWITCH_RECOMMENDED_BUFFER_SIZE/2] = { 0 };
+	const char *silence_var;
+	int silence_val = 0;
 #ifdef SWITCH_VIDEO_IN_THREADS
 	struct vid_helper vh = { 0 };
 	uint32_t vid_launch = 0;
@@ -136,7 +141,45 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		goto end_of_bridge_loop;
 	}
 
+	if ((silence_var = switch_channel_get_variable(chan_a, "bridge_generate_comfort_noise"))) {
+		switch_codec_t *read_codec = NULL;
+		
+		if (!(read_codec = switch_core_session_get_read_codec(session_a))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Channel has no media!\n");
+			goto end_of_bridge_loop;
+		}
 
+		if (switch_true(silence_var)) {
+			silence_val = 1400;
+		} else {
+			if ((silence_val = atoi(silence_var)) < 0) {
+				silence_val = 0;
+			}
+		}
+
+		if (silence_val) {
+			if (switch_core_codec_init(&silence_codec,
+									   "L16",
+									   NULL, 
+									   read_codec->implementation->actual_samples_per_second, 
+									   read_codec->implementation->microseconds_per_frame / 1000,
+									   1,
+									   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, 
+									   NULL, 
+									   switch_core_session_get_pool(session_a)) != SWITCH_STATUS_SUCCESS) {
+				
+				silence_val = 0;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setup generated silence at %d\n", silence_val);
+				silence_frame.codec = &silence_codec;
+				silence_frame.data = silence_data;
+				silence_frame.buflen = sizeof(silence_data);
+				silence_frame.datalen = read_codec->implementation->bytes_per_frame;
+				silence_frame.samples = silence_frame.datalen / sizeof(int16_t);
+			}
+		}
+	}
+	
 	for (;;) {
 		switch_channel_state_t b_state;
 		switch_status_t status;
@@ -273,9 +316,14 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 		if (SWITCH_READ_ACCEPTABLE(status)) {
 			if (switch_test_flag(read_frame, SFF_CNG)) {
-				continue;
+				if (silence_val) {
+					switch_generate_sln_silence((int16_t *) silence_frame.data, silence_frame.samples, silence_val);
+					read_frame = &silence_frame;
+				} else {
+					continue;
+				}
 			}
-
+			
 			if (status != SWITCH_STATUS_BREAK && !switch_channel_test_flag(chan_a, CF_HOLD)) {
 				if (switch_core_session_write_frame(session_b, read_frame, SWITCH_IO_FLAG_NONE, stream_id) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
@@ -291,7 +339,11 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		}
 	}
 
-  end_of_bridge_loop:
+ end_of_bridge_loop:
+
+	if (silence_val) {
+		switch_core_codec_destroy(&silence_codec);
+	}
 
 
 #ifdef SWITCH_VIDEO_IN_THREADS
