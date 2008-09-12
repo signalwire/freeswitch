@@ -2864,7 +2864,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 						if ((a_session = switch_core_session_locate(br_a))) {
 							const char *port = NULL;
-							char *glued;
+							char *param_string = "", *headers = "";
 							int count = 0, bytes = 0;
 
 							if (refer_to && refer_to->r_url && refer_to->r_url->url_port) {
@@ -2874,27 +2874,39 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							if (switch_strlen_zero(port)) {
 								port = "5060";
 							}
-
+							
 							channel = switch_core_session_get_channel(a_session);
 							
-							for (count = 0; refer_to->r_params[count] ; count++) {
-								bytes += strlen(refer_to->r_params[count]) + 1;
-							}
-							bytes++;
+							if (refer_to->r_params) {
+								for (count = 0; refer_to->r_params[count] ; count++) {
+									bytes += strlen(refer_to->r_params[count]) + 1;
+								}
+
+								if (bytes) {
+									bytes += 2;
+
+									param_string = switch_core_session_alloc(session, bytes);
+									*param_string = ';';
+									for (count = 0; refer_to->r_params[count] ; count++) {
+										switch_snprintf(param_string + strlen(param_string), bytes - strlen(param_string), "%s;", refer_to->r_params[count]);
+									}
 								
-							glued = switch_core_session_alloc(session, bytes);
-							for (count = 0; refer_to->r_params[count] ; count++) {
-								switch_snprintf(glued + strlen(glued), bytes - strlen(glued), "%s;", refer_to->r_params[count]);
+									if (end_of(param_string) == ';') {
+										end_of(param_string) = '\0';
+									}
+								}
 							}
-								
-							if (end_of(glued) == ';') {
-								end_of(glued) = '\0';
+
+							if (refer_to->r_url && refer_to->r_url->url_headers) {
+								headers = switch_core_session_sprintf(session, "?%s", refer_to->r_url->url_headers);
 							}
-								
-							exten = switch_core_session_sprintf(session, "sofia/%s/sip:%s@%s:%s;%s?%s", 
-																profile->name, refer_to->r_url->url_user, 
-																refer_to->r_url->url_host, port, glued, refer_to->r_url->url_headers);
+
 							
+							exten = switch_core_session_sprintf(session, "sofia/%s/sip:%s@%s:%s%s%s", 
+																profile->name, refer_to->r_url->url_user, 
+																refer_to->r_url->url_host, port, param_string, headers);
+							
+
 							switch_core_new_memory_pool(&npool);
 							nightmare_xfer_helper = switch_core_alloc(npool, sizeof(*nightmare_xfer_helper));
 							nightmare_xfer_helper->exten = switch_core_strdup(npool, exten);
