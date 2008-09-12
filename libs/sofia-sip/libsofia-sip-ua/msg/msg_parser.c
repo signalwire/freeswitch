@@ -2732,6 +2732,44 @@ int msg_header_add_make(msg_t *msg,
   return msg_header_add(msg, pub, hh, h);
 }
 
+/** Add formatting result to message.
+ *
+ * Parse result from printf-formatted params as a given header field and add
+ * result to the message.
+ */
+int msg_header_add_format(msg_t *msg,
+			  msg_pub_t *pub,
+			  msg_hclass_t *hc,
+			  char const *fmt,
+			  ...)
+{
+  msg_header_t *h, **hh;
+  va_list va;
+
+  if (msg == NULL)
+    return -1;
+  if (pub == NULL)
+    pub = msg->m_object;
+
+  hh = msg_hclass_offset(msg->m_class, pub, hc);
+
+  if (hh == NULL)
+    return -1;
+
+  if (!fmt)
+    return 0;
+
+  va_start(va, fmt);
+  h = msg_header_vformat(msg_home(msg), hc, fmt, va);
+  va_end(va);
+
+  if (!h)
+    return -1;
+
+  return msg_header_add(msg, pub, hh, h);
+}
+
+
 /**Add string contents to message.
  *
  * Duplicate a string containing headers (or a message body, if the string

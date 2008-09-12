@@ -142,6 +142,12 @@ SOFIAPUBFUN int msg_header_add_make(msg_t *msg,
 				    msg_hclass_t *hc,
 				    char const *s);
 
+SOFIAPUBFUN int msg_header_add_format(msg_t *msg,
+				      msg_pub_t *pub,
+				      msg_hclass_t *hc,
+				      char const *fmt,
+				      ...);
+
 SOFIAPUBFUN int msg_header_prepend(msg_t *msg,
 				   msg_pub_t *pub,
 				   msg_header_t **hh,
