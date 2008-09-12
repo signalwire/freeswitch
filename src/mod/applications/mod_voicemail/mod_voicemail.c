@@ -1253,7 +1253,9 @@ static char *vm_merge_file(switch_core_session_t *session, vm_profile_t *profile
 
 	}
 
-	unlink(announce);
+	if (unlink(announce) != 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "failed to delete file [%s]\n", announce);
+	}
 	ret = tmp_path;
 	
  end:
@@ -1496,7 +1498,9 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
   end:
 
 	if (forward_file_path) {
-		unlink(forward_file_path);
+		if (unlink(forward_file_path) != 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "failed to delete file [%s]\n", forward_file_path);
+		}
 	}
 
 	return status;
