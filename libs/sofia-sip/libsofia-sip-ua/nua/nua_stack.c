@@ -2190,8 +2190,7 @@ nua_client_request_complete(nua_client_request_t *cr)
   if (cr->cr_orq) {
     if (cr && cr->cr_methods->crm_complete)
       cr->cr_methods->crm_complete(cr);
-    nta_outgoing_destroy(cr->cr_orq), cr->cr_orq = NULL, cr->cr_acked = 0;
-    nua_client_request_unref(cr);
+    nua_client_request_clean(cr);
   }
 
   return nua_client_request_remove(cr);
