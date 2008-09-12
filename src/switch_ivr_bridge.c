@@ -170,7 +170,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				
 				silence_val = 0;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setup generated silence at %d\n", silence_val);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setup generated silence from %s to %s at %d\n", switch_channel_get_name(chan_a), switch_channel_get_name(chan_b), silence_val);
 				silence_frame.codec = &silence_codec;
 				silence_frame.data = silence_data;
 				silence_frame.buflen = sizeof(silence_data);
