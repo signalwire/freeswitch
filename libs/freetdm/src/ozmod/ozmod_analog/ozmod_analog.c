@@ -719,6 +719,11 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 	switch(event->enum_id) {
 	case ZAP_OOB_RING_START:
 		{
+			if (event->channel->type != ZAP_CHAN_TYPE_FXO) {
+				zap_log(ZAP_LOG_ERROR, "Cannot get a RING_START event on a non-fxo channel, please check your config.\n");
+				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_DOWN);
+				goto end;
+			}
 			if (!event->channel->ring_count && (event->channel->state == ZAP_CHANNEL_STATE_DOWN && !zap_test_flag(event->channel, ZAP_CHANNEL_INTHREAD))) {
 				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_GET_CALLERID);
 				event->channel->ring_count = 1;
@@ -785,6 +790,9 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 			}
 		}
 	}
+
+ end:
+
 	if (locked) {
 		zap_mutex_unlock(event->channel->mutex);
 	}
