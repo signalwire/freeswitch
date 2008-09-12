@@ -2636,21 +2636,24 @@ void *SWITCH_THREAD_FUNC nightmare_xfer_thread_run(switch_thread_t *thread, void
 
 			status = switch_ivr_originate(a_session, &tsession, &cause, nhelper->exten, timeout, NULL, NULL, NULL, NULL, SOF_NONE);
 							
-			if (status != SWITCH_STATUS_SUCCESS || cause != SWITCH_CAUSE_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! [%s]\n", nhelper->exten);
-				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("messsage/sipfrag"),
-						   NUTAG_SUBSTATE(nua_substate_terminated),
-						   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(nhelper->event), TAG_END());
-				status = SWITCH_STATUS_FALSE;
-			} else {
+			if ((switch_channel_get_state(channel_a) < CS_HANGUP)) {
+				
+				if (status != SWITCH_STATUS_SUCCESS || cause != SWITCH_CAUSE_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! [%s]\n", nhelper->exten);
+					nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("messsage/sipfrag"),
+							   NUTAG_SUBSTATE(nua_substate_terminated),
+							   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(nhelper->event), TAG_END());
+					status = SWITCH_STATUS_FALSE;
+				} else {
 
-				tuuid_str = switch_core_session_get_uuid(tsession);
-				switch_ivr_uuid_bridge(nhelper->bridge_to_uuid, tuuid_str);
-				switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
-				switch_set_flag_locked(tech_pvt, TFLAG_BYE);
-				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
-						   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(nhelper->event), TAG_END());
-				switch_core_session_rwunlock(tsession);
+					tuuid_str = switch_core_session_get_uuid(tsession);
+					switch_ivr_uuid_bridge(nhelper->bridge_to_uuid, tuuid_str);
+					switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
+					switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+					nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+							   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(nhelper->event), TAG_END());
+					switch_core_session_rwunlock(tsession);
+				}
 			}
 			switch_core_session_rwunlock(session);
 		}
