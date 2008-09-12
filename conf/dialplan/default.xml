@@ -230,6 +230,25 @@
       </condition>
     </extension>
 
+    <!--This extension will start a conference and invite several people upon entering -->
+    <extension name="0911">
+      <condition field="destination_number" expression="0911">
+
+	<!--These params effect the outcalls made once you join-->
+	<action application="set" data="conference_auto_outcall_caller_id_name=Mad Boss"/>
+	<action application="set" data="conference_auto_outcall_caller_id_number=0911"/>
+	<action application="set" data="conference_auto_outcall_timeout=60"/>
+	<action application="set" data="conference_auto_outcall_flags=none"/>
+	<!--<action application="set" data="conference_auto_outcall_announce=say:You have been called into an emergency conference"/>-->
+
+	<!--Add as many of these as you need, These are the people you are going to call-->
+	<action application="conference_set_auto_outcall" data="sofia/gateway/asterlink.com/19184238080"/>
+	<action application="conference_set_auto_outcall" data="sofia/default/42@conference.freeswitch.org"/>
+
+	<action application="conference" data="cool@default"/>
+      </condition>
+    </extension>
+
     <!-- a sample IVR  -->
     <extension name="ivr_demo">
       <condition field="destination_number" expression="^5000$">
