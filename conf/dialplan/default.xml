@@ -258,6 +258,13 @@
       </condition>
     </extension>
 
+    <!-- Create a conference on the fly and pull someone in at the same time. --> 
+    <extension name="dyanmic conference">
+      <condition field="destination_number" expression="^5001$">
+	<action application="conference" data="bridge:mydynaconf:sofia/${use_profile}/1234@conference.freeswitch.org"/>
+      </condition>
+    </extension>
+
     <extension name="rtp_multicast_page">
       <condition field="destination_number" expression="^pagegroup$|^7243">
 	<action application="answer"/>
