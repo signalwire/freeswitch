@@ -65,7 +65,7 @@
        This determines an ip address available on this host to bind.
        If you are separating RTP and SIP traffic, you will want to have
        use different addresses where this variable appears.
-       Used by: sofia.conf.xml dingaling.conf.xml
+       Used by: dingaling.conf.xml
   -->
   <X-PRE-PROCESS cmd="set" data="bind_server_ip=auto"/>
   <!-- external_rtp_ip
