@@ -104,7 +104,7 @@
 	<action function="play-file" data="voicemail/vm-record_name2.wav"/>
 	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$4" method="pronounced" type="name_spelled"/>
-	<action function="play-file" data="voicemail/vm-change_pass.wav"/>
+	<action function="play-file" data="voicemail/vm-change_password.wav"/>
 	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$5" method="pronounced" type="name_spelled"/>
 	<action function="play-file" data="voicemail/vm-main_menu.wav"/>
