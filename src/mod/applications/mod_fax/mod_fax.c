@@ -247,7 +247,6 @@ static void phase_e_handler(t30_state_t * s, void *user_data, int result)
 	/*
       TODO Fire events
     */
-
 }
 
 static switch_status_t spanfax_init(pvt_t * pvt, transport_mode_t trans_mode)
@@ -256,6 +255,7 @@ static switch_status_t spanfax_init(pvt_t * pvt, transport_mode_t trans_mode)
 	switch_core_session_t *session;
 	switch_channel_t *chan;
 	fax_state_t *fax;
+	t30_state_t *t30;
 
 	session = (switch_core_session_t *) pvt->session;
 	switch_assert(session);
@@ -273,6 +273,7 @@ static switch_status_t spanfax_init(pvt_t * pvt, transport_mode_t trans_mode)
         }
 
 		fax = pvt->fax_state;
+        t30 = fax_get_t30_state(fax);
 
 		memset(fax, 0, sizeof(fax_state_t));
 		if (fax_init(fax, pvt->caller) == NULL) {
@@ -283,54 +284,54 @@ static switch_status_t spanfax_init(pvt_t * pvt, transport_mode_t trans_mode)
 		fax_set_transmit_on_idle(fax, TRUE);
 
 		span_log_set_message_handler(&fax->logging, spanfax_log_message);
-		span_log_set_message_handler(&fax->t30.logging, spanfax_log_message);
+		span_log_set_message_handler(&t30->logging, spanfax_log_message);
 
 		if (pvt->verbose) {
 			span_log_set_level(&fax->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-			span_log_set_level(&fax->t30.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+			span_log_set_level(&t30->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 		}
 
-		t30_set_tx_ident(&fax->t30, pvt->ident);
-		t30_set_tx_page_header_info(&fax->t30, pvt->header);
+		t30_set_tx_ident(t30, pvt->ident);
+		t30_set_tx_page_header_info(t30, pvt->header);
 
-		t30_set_phase_e_handler(&fax->t30, phase_e_handler, pvt);
+		t30_set_phase_e_handler(t30, phase_e_handler, pvt);
 
-		t30_set_supported_image_sizes(&fax->t30,
+		t30_set_supported_image_sizes(t30,
 									  T30_SUPPORT_US_LETTER_LENGTH | T30_SUPPORT_US_LEGAL_LENGTH | T30_SUPPORT_UNLIMITED_LENGTH
 									  | T30_SUPPORT_215MM_WIDTH | T30_SUPPORT_255MM_WIDTH | T30_SUPPORT_303MM_WIDTH);
-		t30_set_supported_resolutions(&fax->t30,
+		t30_set_supported_resolutions(t30,
 									  T30_SUPPORT_STANDARD_RESOLUTION | T30_SUPPORT_FINE_RESOLUTION | T30_SUPPORT_SUPERFINE_RESOLUTION
 									  | T30_SUPPORT_R8_RESOLUTION | T30_SUPPORT_R16_RESOLUTION);
 
 
 		if (pvt->disable_v17) {
-			t30_set_supported_modems(&fax->t30, T30_SUPPORT_V29 | T30_SUPPORT_V27TER);
+			t30_set_supported_modems(t30, T30_SUPPORT_V29 | T30_SUPPORT_V27TER);
 			switch_channel_set_variable(chan, "fax_v17_disabled", "1");
 		} else {
-			t30_set_supported_modems(&fax->t30, T30_SUPPORT_V29 | T30_SUPPORT_V27TER | T30_SUPPORT_V17);
+			t30_set_supported_modems(t30, T30_SUPPORT_V29 | T30_SUPPORT_V27TER | T30_SUPPORT_V17);
 			switch_channel_set_variable(chan, "fax_v17_disabled", "0");
 		}
 
 		if (pvt->use_ecm) {
-			t30_set_supported_compressions(&fax->t30, T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION | T30_SUPPORT_T6_COMPRESSION);
-			t30_set_ecm_capability(&fax->t30, TRUE);
+			t30_set_supported_compressions(t30, T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION | T30_SUPPORT_T6_COMPRESSION);
+			t30_set_ecm_capability(t30, TRUE);
 			switch_channel_set_variable(chan, "fax_ecm_requested", "1");
 		} else {
-			t30_set_supported_compressions(&fax->t30, T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION);
+			t30_set_supported_compressions(t30, T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION);
 			switch_channel_set_variable(chan, "fax_ecm_requested", "0");
 		}
 
 		if (pvt->app_mode == FUNCTION_TX) {
-			t30_set_tx_file(&fax->t30, pvt->filename, pvt->tx_page_start, pvt->tx_page_end);
+			t30_set_tx_file(t30, pvt->filename, pvt->tx_page_start, pvt->tx_page_end);
 		} else {
-			t30_set_rx_file(&fax->t30, pvt->filename, -1);
+			t30_set_rx_file(t30, pvt->filename, -1);
 		}
 		switch_channel_set_variable(chan, "fax_filename", pvt->filename);
 		break;
 	case T38_MODE:
 		/* 
 		   Here goes the T.38 SpanDSP initializing functions 
-		   T.38 will require a big effort as it needs a different approac
+		   T.38 will require a big effort as it needs a different approach
 		   but the pieces are already in place
         */
 	default:
@@ -344,6 +345,7 @@ static switch_status_t spanfax_init(pvt_t * pvt, transport_mode_t trans_mode)
 static switch_status_t spanfax_destroy(pvt_t * pvt)
 {
 	int terminate;
+	t30_state_t *t30;
 
 	if (pvt->fax_state) {
 		if (pvt->t38_state) {
@@ -352,8 +354,9 @@ static switch_status_t spanfax_destroy(pvt_t * pvt)
 			terminate = 1;
         }
 
-		if (terminate && &pvt->fax_state->t30) {
-			t30_terminate(&pvt->fax_state->t30);
+        t30 = fax_get_t30_state(pvt->fax_state);
+		if (terminate && t30) {
+			t30_terminate(t30);
         }
 
 		fax_release(pvt->fax_state);
@@ -366,8 +369,9 @@ static switch_status_t spanfax_destroy(pvt_t * pvt)
 			terminate = 0;
         }
 
-		if (terminate && &pvt->t38_state->t30) {
-			t30_terminate(&pvt->t38_state->t30);
+        t30 = t38_terminal_get_t30_state(pvt->t38_state);
+		if (terminate && t30) {
+			t30_terminate(t30);
         }
 
 		t38_terminal_release(pvt->t38_state);
