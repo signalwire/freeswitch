@@ -207,6 +207,29 @@ SWITCH_DECLARE(const char *) switch_caller_get_field_by_name(switch_caller_profi
 	if (!strcasecmp(name, "privacy_hide_number")) {
 		return switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER) ? "true" : "false";
 	}
+	if (!strcasecmp(name, "profile_created_time")) {
+		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->profile_created);		
+	}
+	if (!strcasecmp(name, "created_time")) {
+		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->created);		
+	}
+	if (!strcasecmp(name, "answered_time")) {
+		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);		
+	}
+	if (!strcasecmp(name, "progress_time")) {
+		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->progress);		
+	}
+	if (!strcasecmp(name, "progress_media_time")) {
+		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->progress_media);		
+	}
+	if (!strcasecmp(name, "hungup_time")) {
+		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->hungup);		
+	}
+	if (!strcasecmp(name, "transferred_time")) {
+		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->transferred);		
+	}
+	
+
 	return NULL;
 }
 
@@ -271,10 +294,16 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->profile_index);
 	}
 	if (caller_profile->times) {
+		switch_snprintf(header_name, sizeof(header_name), "%s-Profile-Created-Time", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->profile_created);
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Created-Time", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->created);
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Answered-Time", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Progress-Time", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->progress);		
+		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Progress-Media-Time", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->progress_media);
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Hangup-Time", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->hungup);
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Transfer-Time", prefix);
