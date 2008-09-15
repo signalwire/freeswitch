@@ -1538,6 +1538,9 @@ update_mwi(vm_profile_t *profile, const char *id, const char *domain_name,
 }
 
 
+#define FREE_DOMAIN_ROOT() if (x_domain_root) switch_xml_free(x_domain_root); x_user = x_domain = x_domain_root = NULL
+
+
 static void voicemail_check_main(switch_core_session_t *session, const char *profile_name, const char *domain_name, const char *id, int auth)
 {
 	vm_check_state_t vm_check_state = VM_CHECK_START;
@@ -1601,10 +1604,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 				mypass = NULL;
 				myfolder = "inbox";
 				vm_check_state = VM_CHECK_AUTH;
-				if (x_domain_root) {
-					switch_xml_free(x_domain_root);
-				}
-				x_user = x_domain = x_domain_root = NULL;
+				FREE_DOMAIN_ROOT();
 			}
 			break;
 		case VM_CHECK_FOLDER_SUMMARY:
@@ -1893,8 +1893,8 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "mailbox", myid);
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "destination_number", caller_profile->destination_number);
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "caller_id_number", caller_id_number);
-
-
+					
+					
 					if (switch_xml_locate_user("id", myid, domain_name, switch_channel_get_variable(channel, "network_addr"),
 											   &x_domain_root, &x_domain, &x_user, params) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", myid, domain_name);
@@ -1946,8 +1946,6 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 						thepass = cbt.password;
 					}
 				}
-				switch_xml_free(x_domain_root);
-				x_domain_root = NULL;
 
 				if (!auth) {
 					if (switch_strlen_zero(cbt.password) && !strcmp(cbt.password, mypass)) {
@@ -1961,6 +1959,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 					}
 				}
 
+				FREE_DOMAIN_ROOT();
 				
 				if (auth) {
 					if (!dir_path) {
@@ -1977,7 +1976,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 
 						if (switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", dir_path);
-							return;
+							goto end;
 						}
 					}
 
@@ -1985,10 +1984,13 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 				} else {
 					goto failed;
 				}
-
+				
 				continue;
 
 			  failed:
+				
+				FREE_DOMAIN_ROOT();
+
 				status = switch_ivr_phrase_macro(session, VM_FAIL_AUTH_MACRO, NULL, NULL, NULL);
 				myid = id;
 				mypass = NULL;
@@ -2011,6 +2013,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 
 	if (x_domain_root) {
 		switch_xml_free(x_domain_root);
+		x_domain_root = NULL;
 	}
 }
 
@@ -2711,6 +2714,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 
 	if (x_domain_root) {
 		switch_xml_free(x_domain_root);
+		x_domain_root = NULL;
 	}
 
 	switch_safe_free(file_path);
