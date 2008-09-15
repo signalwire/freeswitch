@@ -7131,6 +7131,27 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_CoreSession_destroy(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:CoreSession_destroy",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_destroy" "', argument " "1"" of type '" "CoreSession *""'"); 
+  }
+  arg1 = reinterpret_cast< CoreSession * >(argp1);
+  (arg1)->destroy();
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_CoreSession_setDTMFCallback(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -9639,6 +9660,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"CoreSession_recordFile", _wrap_CoreSession_recordFile, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_setCallerData", _wrap_CoreSession_setCallerData, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_originate", _wrap_CoreSession_originate, METH_VARARGS, NULL},
+	 { (char *)"CoreSession_destroy", _wrap_CoreSession_destroy, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_setDTMFCallback", _wrap_CoreSession_setDTMFCallback, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_speak", _wrap_CoreSession_speak, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_set_tts_parms", _wrap_CoreSession_set_tts_parms, METH_VARARGS, NULL},

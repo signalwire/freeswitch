@@ -7030,6 +7030,33 @@ XS(_wrap_CoreSession_originate) {
 }
 
 
+XS(_wrap_CoreSession_destroy) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: CoreSession_destroy(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_destroy" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    (arg1)->destroy();
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_CoreSession_setDTMFCallback) {
   {
     CoreSession *arg1 = (CoreSession *) 0 ;
@@ -10588,6 +10615,7 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::CoreSession_recordFile", _wrap_CoreSession_recordFile},
 {"freeswitchc::CoreSession_setCallerData", _wrap_CoreSession_setCallerData},
 {"freeswitchc::CoreSession_originate", _wrap_CoreSession_originate},
+{"freeswitchc::CoreSession_destroy", _wrap_CoreSession_destroy},
 {"freeswitchc::CoreSession_setDTMFCallback", _wrap_CoreSession_setDTMFCallback},
 {"freeswitchc::CoreSession_speak", _wrap_CoreSession_speak},
 {"freeswitchc::CoreSession_set_tts_parms", _wrap_CoreSession_set_tts_parms},

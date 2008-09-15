@@ -189,6 +189,10 @@ public class CoreSession {
     return freeswitchJNI.CoreSession_originate__SWIG_1(swigCPtr, this, CoreSession.getCPtr(a_leg_session), a_leg_session, dest);
   }
 
+  public void destroy() {
+    freeswitchJNI.CoreSession_destroy(swigCPtr, this);
+  }
+
   public void setDTMFCallback(SWIGTYPE_p_void cbfunc, String funcargs) {
     freeswitchJNI.CoreSession_setDTMFCallback(swigCPtr, this, SWIGTYPE_p_void.getCPtr(cbfunc), funcargs);
   }

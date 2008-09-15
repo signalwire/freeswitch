@@ -459,22 +459,8 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession(switch_core_session_t *new_s
 
 SWITCH_DECLARE_CONSTRUCTOR CoreSession::~CoreSession()
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::~CoreSession desctructor\n");
-	switch_channel_t *channel = NULL;
-	
 	this_check_void();
-	switch_safe_free(xml_cdr_text);
-	switch_safe_free(uuid);	
-	switch_safe_free(tts_name);
-	switch_safe_free(voice_name);
-
-	if (session) {
-		channel = switch_core_session_get_channel(session);
-		if (switch_test_flag(this, S_HUP) && !switch_channel_test_flag(channel, CF_TRANSFER)) {
-			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-		}
-		switch_core_session_rwunlock(session);
-	}
+	destroy();
 }
 
 SWITCH_DECLARE(char *) CoreSession::getXMLCDR()
@@ -848,6 +834,28 @@ SWITCH_DECLARE(bool) CoreSession::answered() {
 	this_check(false);
 	sanity_check(false);	
 	return switch_channel_test_flag(channel, CF_ANSWERED) != 0;
+}
+
+SWITCH_DECLARE(void) CoreSession::destroy(void)
+{
+	this_check_void();
+
+	switch_safe_free(xml_cdr_text);
+	switch_safe_free(uuid);	
+	switch_safe_free(tts_name);
+	switch_safe_free(voice_name);
+
+	if (session) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "destroy/unlink session from object\n");
+        if (switch_test_flag(this, S_HUP) && !switch_channel_test_flag(channel, CF_TRANSFER)) {
+            switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+        }
+        switch_core_session_rwunlock(session);
+		session = NULL;
+    }
+
+	allocated = 0;
+	
 }
 
 SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, char *dest, int timeout)

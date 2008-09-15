@@ -2304,6 +2304,17 @@ SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1orig
 }
 
 
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1destroy(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(CoreSession **)&jarg1; 
+  (arg1)->destroy();
+}
+
+
 SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1setDTMFCallback(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jstring jarg3) {
   CoreSession *arg1 = (CoreSession *) 0 ;
   void *arg2 = (void *) 0 ;

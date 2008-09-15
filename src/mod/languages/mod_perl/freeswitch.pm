@@ -410,6 +410,7 @@ sub DESTROY {
 *recordFile = *freeswitchc::CoreSession_recordFile;
 *setCallerData = *freeswitchc::CoreSession_setCallerData;
 *originate = *freeswitchc::CoreSession_originate;
+*destroy = *freeswitchc::CoreSession_destroy;
 *setDTMFCallback = *freeswitchc::CoreSession_setDTMFCallback;
 *speak = *freeswitchc::CoreSession_speak;
 *set_tts_parms = *freeswitchc::CoreSession_set_tts_parms;

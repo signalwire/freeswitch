@@ -122,6 +122,7 @@ class freeswitchJNI {
   public final static native void CoreSession_setCallerData(long jarg1, CoreSession jarg1_, String jarg2, String jarg3);
   public final static native int CoreSession_originate__SWIG_0(long jarg1, CoreSession jarg1_, long jarg2, CoreSession jarg2_, String jarg3, int jarg4);
   public final static native int CoreSession_originate__SWIG_1(long jarg1, CoreSession jarg1_, long jarg2, CoreSession jarg2_, String jarg3);
+  public final static native void CoreSession_destroy(long jarg1, CoreSession jarg1_);
   public final static native void CoreSession_setDTMFCallback(long jarg1, CoreSession jarg1_, long jarg2, String jarg3);
   public final static native int CoreSession_speak(long jarg1, CoreSession jarg1_, String jarg2);
   public final static native void CoreSession_set_tts_parms(long jarg1, CoreSession jarg1_, String jarg2, String jarg3);

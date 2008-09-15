@@ -268,6 +268,7 @@ class CoreSession(_object):
     def recordFile(*args): return _freeswitch.CoreSession_recordFile(*args)
     def setCallerData(*args): return _freeswitch.CoreSession_setCallerData(*args)
     def originate(*args): return _freeswitch.CoreSession_originate(*args)
+    def destroy(*args): return _freeswitch.CoreSession_destroy(*args)
     def setDTMFCallback(*args): return _freeswitch.CoreSession_setDTMFCallback(*args)
     def speak(*args): return _freeswitch.CoreSession_speak(*args)
     def set_tts_parms(*args): return _freeswitch.CoreSession_set_tts_parms(*args)

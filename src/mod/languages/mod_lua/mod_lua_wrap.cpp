@@ -5405,6 +5405,30 @@ static int _wrap_CoreSession_originate(lua_State* L) {
 }
 
 
+static int _wrap_CoreSession_destroy(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  
+  SWIG_check_num_args("destroy",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("destroy",1,"CoreSession *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_destroy",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  (arg1)->destroy();
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_CoreSession_setDTMFCallback(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -6674,6 +6698,7 @@ static swig_lua_method swig_CoreSession_methods[] = {
     {"recordFile", _wrap_CoreSession_recordFile}, 
     {"setCallerData", _wrap_CoreSession_setCallerData}, 
     {"originate", _wrap_CoreSession_originate}, 
+    {"destroy", _wrap_CoreSession_destroy}, 
     {"setDTMFCallback", _wrap_CoreSession_setDTMFCallback}, 
     {"speak", _wrap_CoreSession_speak}, 
     {"set_tts_parms", _wrap_CoreSession_set_tts_parms}, 
