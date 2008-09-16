@@ -1450,7 +1450,7 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 						print_bits(frame, (int)len, bb, sizeof(bb), ZAP_ENDIAN_LITTLE, 0);
 						zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)len, LINE, bb);
 #endif
-						
+
 						Q921QueueHDLCFrame(&isdn_data->q921, frame, (int)len);
 						Q921Rx12(&isdn_data->q921);
 					}
@@ -1508,6 +1508,7 @@ static int q931_rx_32(void *pvt, Q921DLMsg_t ind, L3UCHAR tei, L3UCHAR *msg, L3I
 
 static int zap_isdn_q921_log(void *pvt, Q921LogLevel_t level, char *msg, L2INT size)
 {
+	zap_span_t *span = (zap_span_t *) pvt;
 	int loglevel = ZAP_LOG_LEVEL_DEBUG;
 
 	switch(level) {
@@ -1535,14 +1536,15 @@ static int zap_isdn_q921_log(void *pvt, Q921LogLevel_t level, char *msg, L2INT s
 		return 0;
 	}
 
-	zap_log(__FILE__, "Q.921", __LINE__, loglevel, "%s", msg);
-
+	zap_log("Span", "Q.921", span->span_id, loglevel, "%s", msg);
 	return 0;
 }
 
 static L3INT zap_isdn_q931_log(void *pvt, Q931LogLevel_t level, char *msg, L3INT size)
 {
-	zap_log(__FILE__, "Q.931", __LINE__, ZAP_LOG_LEVEL_DEBUG, "%s", msg);
+	zap_span_t *span = (zap_span_t *) pvt;
+
+	zap_log("Span", "Q.931", span->span_id, ZAP_LOG_LEVEL_DEBUG, "%s", msg);
 	return 0;
 }
 
