@@ -163,15 +163,46 @@ SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel)
 	return handle;
 }
 
-SWITCH_DECLARE(int) switch_core_add_state_handler(const switch_state_handler_table_t *state_handler)
+SWITCH_DECLARE(void) switch_core_remove_state_handler(const switch_state_handler_table_t *state_handler)
 {
-	int index = runtime.state_handler_index++;
+	int index, total = 0;
+	const switch_state_handler_table_t *tmp[SWITCH_MAX_STATE_HANDLERS+1] = { 0 };
+	
+	switch_mutex_lock(runtime.global_mutex);
 
-	if (runtime.state_handler_index >= SWITCH_MAX_STATE_HANDLERS) {
-		return -1;
+	for (index = 0; index < runtime.state_handler_index; index++) {
+		const switch_state_handler_table_t *cur = runtime.state_handlers[index];
+		runtime.state_handlers[index] = NULL;
+		if (cur == state_handler) {
+			continue;
+		}
+		tmp[index] = runtime.state_handlers[index];
+		total++;
 	}
 
-	runtime.state_handlers[index] = state_handler;
+	runtime.state_handler_index = 0;
+
+	for (index = 0; index < total; index++) {
+		runtime.state_handlers[runtime.state_handler_index++] = tmp[index];
+	}
+	switch_mutex_unlock(runtime.global_mutex);
+}
+
+
+SWITCH_DECLARE(int) switch_core_add_state_handler(const switch_state_handler_table_t *state_handler)
+{
+	int index;
+
+	switch_mutex_lock(runtime.global_mutex);
+	index = runtime.state_handler_index++;
+
+	if (runtime.state_handler_index >= SWITCH_MAX_STATE_HANDLERS) {
+		index = -1;
+	} else {
+		runtime.state_handlers[index] = state_handler;
+	}
+
+	switch_mutex_unlock(runtime.global_mutex);
 	return index;
 }
 

@@ -60,7 +60,7 @@ static struct {
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_csv_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cdr_csv_shutdown);
-SWITCH_MODULE_DEFINITION(mod_cdr_csv, mod_cdr_csv_load, NULL, NULL);
+SWITCH_MODULE_DEFINITION(mod_cdr_csv, mod_cdr_csv_load, mod_cdr_csv_shutdown, NULL);
 
 static off_t fd_size(int fd)
 {
@@ -172,6 +172,10 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	const char *log_dir = NULL, *accountcode = NULL, *a_template_str = NULL, *g_template_str = NULL;
 	char *log_line, *path = NULL;
 
+	if (globals.shutdown) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if (!((globals.legs & CDR_LEG_A) && (globals.legs & CDR_LEG_B))) {
 		if ((globals.legs & CDR_LEG_A)) {
 			if (switch_channel_get_originator_caller_profile(channel)) {
@@ -257,6 +261,10 @@ static void event_handler(switch_event_t *event)
 	switch_hash_index_t *hi;
 	void *val;
 	cdr_fd_t *fd;
+
+	if (globals.shutdown) {
+		return;
+	}
 
 	if (sig && !strcmp(sig, "HUP")) {
 		for (hi = switch_hash_first(NULL, globals.fd_hash); hi; hi = switch_hash_next(hi)) {
@@ -384,7 +392,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_csv_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cdr_csv_shutdown)
 {
 
-	globals.shutdown = 1;
+	globals.shutdown = 1;	
+	switch_event_unbind_callback(event_handler);
+	switch_core_remove_state_handler(&state_handlers);
+
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

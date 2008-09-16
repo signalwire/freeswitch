@@ -78,6 +78,10 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
+	if (globals.shutdown) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if (!globals.log_b && channel && switch_channel_get_originator_caller_profile(channel)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -344,6 +348,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_cdr_shutdown)
 {
 
 	globals.shutdown = 1;
+	
+	switch_core_remove_state_handler(&state_handlers);
 	return SWITCH_STATUS_SUCCESS;
 }
 

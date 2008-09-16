@@ -350,6 +350,8 @@ SWITCH_DECLARE(void) switch_core_session_rwunlock(_In_ switch_core_session_t *se
 */
 SWITCH_DECLARE(int) switch_core_add_state_handler(_In_ const switch_state_handler_table_t *state_handler);
 
+SWITCH_DECLARE(void) switch_core_remove_state_handler(_In_ const switch_state_handler_table_t *state_handler);
+
 /*! 
   \brief Access a state handler
   \param index the desired index to access
