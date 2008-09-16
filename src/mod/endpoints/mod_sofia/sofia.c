@@ -2181,8 +2181,12 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 	if (status == 183 && !r_sdp) {
 		status = 180;
+	} 
+	
+	if (status == 180 && r_sdp) {
+		status = 183;
 	}
-
+	
 	if (channel && (status == 180 || status == 183) && switch_channel_test_flag(channel, CF_OUTBOUND)) {
 		const char *val;
 		if ((val = switch_channel_get_variable(channel, "sip_auto_answer")) && switch_true(val)) {
@@ -2219,7 +2223,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					}
 				}
 			}
-
+			
 			if (r_sdp) {
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 					switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
@@ -2474,24 +2478,27 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			}
 			goto done;
 		}
-
+		
 		if (channel) {
-			if (switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
-				switch_set_flag_locked(tech_pvt, TFLAG_ANS);
-				switch_set_flag(tech_pvt, TFLAG_SDP);
-				switch_channel_mark_answered(channel);
-				if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
-					&& (other_session = switch_core_session_locate(uuid))) {
-					other_channel = switch_core_session_get_channel(other_session);
-					switch_channel_answer(other_channel);
-					switch_core_session_rwunlock(other_session);
+            if (switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
+                switch_set_flag_locked(tech_pvt, TFLAG_ANS);
+                switch_set_flag(tech_pvt, TFLAG_SDP);
+                switch_channel_mark_answered(channel);
+				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
+						&& (other_session = switch_core_session_locate(uuid))) {
+						other_channel = switch_core_session_get_channel(other_session);
+						switch_channel_answer(other_channel);
+						switch_core_session_rwunlock(other_session);
+					}
 				}
-				goto done;
-			}
-
+                goto done;
+            }
+			
 			if (!r_sdp && !switch_test_flag(tech_pvt, TFLAG_SDP)) {
 				r_sdp = (const char *) switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 			}
+
 			if (r_sdp && !switch_test_flag(tech_pvt, TFLAG_SDP)) {
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 					switch_set_flag_locked(tech_pvt, TFLAG_ANS);
