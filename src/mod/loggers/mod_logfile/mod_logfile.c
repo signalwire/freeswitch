@@ -113,10 +113,10 @@ static switch_status_t mod_logfile_openlogfile(logfile_profile_t *profile, switc
 static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 {
 	unsigned int i = 0;
-	char *p = NULL;
+	char *filename = NULL;
 	switch_status_t stat = 0;
 	int64_t offset = 0;
-	switch_memory_pool_t *pool;
+	switch_memory_pool_t *pool = NULL;
 	switch_time_exp_t tm;
 	char date[80] = "";
 	switch_size_t retsize;
@@ -136,36 +136,31 @@ static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 		goto end;
 	}
 
-
-	p = malloc(strlen(profile->logfile) + WARM_FUZZY_OFFSET);
-	switch_assert(p);
-
-	memset(p, '\0', strlen(profile->logfile) + WARM_FUZZY_OFFSET);
-
 	switch_core_new_memory_pool(&pool);
+	filename = switch_core_alloc(pool, strlen(profile->logfile) + WARM_FUZZY_OFFSET);
 
 	for (i = 1; i < MAX_ROT; i++) {
-		sprintf((char *) p, "%s.%s.%i", profile->logfile, date, i);
-		if (switch_file_exists(p, pool) == SWITCH_STATUS_SUCCESS) {
+		sprintf((char *) filename, "%s.%s.%i", profile->logfile, date, i);
+		if (switch_file_exists(filename, pool) == SWITCH_STATUS_SUCCESS) {
 			continue;
 		}
 
 		switch_file_close(profile->log_afd);
-		switch_file_rename(profile->logfile, p, pool);
+		switch_file_rename(profile->logfile, filename, pool);
 		if ((status = mod_logfile_openlogfile(profile, SWITCH_FALSE)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Rotating Log!\n");
 			goto end;
 		}
 		break;
 	}
-
-	free(p);
-
-	switch_core_destroy_memory_pool(&pool);
-
+	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New log started.\n");
 
   end:
+	
+	if (pool) {
+		switch_core_destroy_memory_pool(&pool);
+	}
 
 	switch_mutex_unlock(globals.mutex);
 
