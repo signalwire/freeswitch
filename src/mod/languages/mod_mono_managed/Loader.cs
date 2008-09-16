@@ -100,22 +100,22 @@ namespace FreeSWITCH
             } 
         }
 
-        static List<Assembly> loadAssemblies(string managedDir)
+        static Assembly[] loadAssemblies(string managedDir)
         {
-            return Directory.GetFiles(managedDir, "*.dll", SearchOption.AllDirectories)
-                  .Select(f => Path.Combine(managedDir, f))
-                  .Select(f => {
-                      try {
-                          return System.Reflection.Assembly.LoadFile(f);
-                      }
-                      catch (Exception ex) {
-                          Log.WriteLine(LogLevel.Notice, "Assembly.LoadFile failed; skipping {0} ({1})", f, ex.Message);
-                          return null;
-                      }
-                  })
-                  .Where(a => a != null)
-                  .Concat(new[] { System.Reflection.Assembly.GetExecutingAssembly() }) // Add in our own to load Demo or built-in things if added
-                  .ToList();
+            // load the modules in the mod/mono directory
+            Log.WriteLine(LogLevel.Notice, "loadAssemblies: {0}", managedDir);
+            foreach (string s in Directory.GetFiles(managedDir, "*.dll", SearchOption.AllDirectories))
+            {
+                string f = Path.Combine(managedDir, s);
+                try {
+                    System.Reflection.Assembly.LoadFile(f);
+                }
+                catch (Exception ex) {
+                    Log.WriteLine(LogLevel.Notice, "Assembly.LoadFile failed; skipping {0} ({1})", f, ex.Message);
+                }
+            }
+
+            return AppDomain.CurrentDomain.GetAssemblies();  // Includes anything else already loaded
         }
 
         public static void Unload()

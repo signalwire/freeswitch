@@ -14,6 +14,20 @@ typedef unsigned long in_addr_t;
 //		we define char as byte.
 // TODO: Possible? It'd be nice to do the whole char*->IntPtr->Marshal/Free thing here instead of swigStringFix
 
+%typemap(imtype, out="string") char **   "ref string"
+%typemap(cstype, out="string") char **   "ref string"
+%typemap(csin) char **     "ref $csinput"
+%typemap(csvarin) char **
+%{
+  set { $imcall; }
+%}
+%typemap(csvarout) char **
+%{
+  get {
+    return $imcall;
+  }
+%}
+
 #define SWITCH_DECLARE(type) type
 #define SWITCH_DECLARE_NONSTD(type) type
 #define SWITCH_MOD_DECLARE(type) type

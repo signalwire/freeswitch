@@ -47,12 +47,18 @@ SWITCH_BEGIN_EXTERN_C
 #ifdef WIN32
 #include <shlobj.h>
 #define EXPORT __declspec(dllexport)
-#elif
+#else
 #define EXPORT 
 #endif	
 
 #define MOD_MONO_MANAGED_DLL "mod_mono_managed.dll"
-	
+
+#define MOD_MONO_MANAGED_ASM_NAME "mod_mono_managed"
+#define MOD_MONO_MANAGED_ASM_V1 1
+#define MOD_MONO_MANAGED_ASM_V2 0
+#define MOD_MONO_MANAGED_ASM_V3 0
+#define MOD_MONO_MANAGED_ASM_V4 0
+
 mod_mono_globals globals = 
 { 0 };
 
@@ -120,7 +126,7 @@ switch_status_t setMonoDirs()
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-#elif
+#else
 	// On other platforms, it should just work if it hasn't been relocated
 	mono_set_dirs(NULL, NULL);
 	return SWITCH_STATUS_SUCCESS;
@@ -137,20 +143,41 @@ switch_status_t loadModMonoManaged()
 	switch_snprintf(filename, 256, "%s%s%s", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR, MOD_MONO_MANAGED_DLL);
 	globals.domain = mono_jit_init(filename);
 
-	if (!globals.domain) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mono_jit_init failed.\n");
-		return SWITCH_STATUS_FALSE;
+	/* Already got a Mono domain? */
+	if ((globals.domain = mono_get_root_domain())) {
+		mono_thread_attach(globals.domain);
+		globals.embedded = SWITCH_TRUE;
+	} else {
+		if (!(globals.domain = mono_jit_init(filename))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mono_jit_init failed.\n");
+			return SWITCH_STATUS_FALSE;
+		}
 	}
 
-	/* Open the assembly */ 
-	globals.mod_mono_asm = mono_domain_assembly_open(globals.domain, filename);
+	/* Already loaded? */
+	MonoAssemblyName name;
+	name.name = MOD_MONO_MANAGED_ASM_NAME;
+	name.major = MOD_MONO_MANAGED_ASM_V1;
+	name.minor = MOD_MONO_MANAGED_ASM_V2;
+	name.revision = MOD_MONO_MANAGED_ASM_V3;
+	name.build = MOD_MONO_MANAGED_ASM_V4;
+	name.culture = "";
+	name.hash_value = "";
 
-	if (!globals.mod_mono_asm) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mono_domain_assembly_open failed.\n");
-		return SWITCH_STATUS_FALSE;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Calling mono_assembly_loaded");
+
+	if (!(globals.mod_mono_asm = mono_assembly_loaded(&name))) {
+		/* Open the assembly */ 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Calling mono_domain_assembly_open");
+		globals.mod_mono_asm = mono_domain_assembly_open(globals.domain, filename);
+		if (!globals.mod_mono_asm) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mono_domain_assembly_open failed.\n");
+			return SWITCH_STATUS_FALSE;
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
+
 }
 
 MonoMethod * getMethod(const char *name, MonoClass * klass) 
@@ -226,7 +253,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_mono_load)
 	/* Not sure if this is necesary on the loading thread */ 
 	mono_thread_attach(globals.domain);
 
-	mono_add_internal_call("FreeSWITCH.Native.MonoSession::InitMonoSession", InitMonoSession);
+	mono_add_internal_call("FreeSWITCH.Native.MonoSession::InitMonoSession", (void *)InitMonoSession);
 
 	/* Run loader */ 
 	MonoObject * objResult;
@@ -360,9 +387,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_mono_shutdown)
 		mono_print_unhandled_exception(ex);
 	}
 
-	mono_runtime_set_shutting_down();
-	mono_runtime_cleanup(globals.domain);
-	mono_runtime_quit();
+	if (!globals.embedded) {
+		mono_jit_cleanup(globals.domain);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }

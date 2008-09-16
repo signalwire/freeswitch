@@ -44,6 +44,7 @@ struct mod_mono_globals {
 	MonoDomain *domain;
 	MonoAssembly *mod_mono_asm;
 	switch_memory_pool_t *pool;
+	switch_bool_t embedded;
 
 	MonoMethod *loadMethod;
 	MonoMethod *unloadMethod;

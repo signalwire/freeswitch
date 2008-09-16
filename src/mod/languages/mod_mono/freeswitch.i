@@ -107,6 +107,7 @@
 %ignore switch_core_session_get_event_hooks;
 %ignore switch_inet_pton;
 %ignore switch_xml_idx;
+%ignore switch_xml_pi;
 
 // Real header includes now
 %import switch_platform.i // This will give us all the macros we need to compile the other stuff
