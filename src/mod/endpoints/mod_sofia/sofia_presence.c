@@ -1724,10 +1724,11 @@ void sofia_presence_set_chat_hash(private_object_t *tech_pvt, sip_t const *sip)
 	} else {
 		return;
 	}
-
+	
+	switch_mutex_lock(tech_pvt->profile->flag_mutex);
 	tech_pvt->hash_key = switch_core_session_strdup(tech_pvt->session, hash_key);
 	switch_core_hash_insert(tech_pvt->profile->chat_hash, tech_pvt->hash_key, tech_pvt);
-
+	switch_mutex_unlock(tech_pvt->profile->flag_mutex);
 }
 
 /* For Emacs:

@@ -1231,8 +1231,12 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		tech_pvt->chat_from = tech_pvt->from_str;
 		tech_pvt->chat_to = tech_pvt->dest;
-		tech_pvt->hash_key = switch_core_session_strdup(tech_pvt->session, hash_key);
-		switch_core_hash_insert(tech_pvt->profile->chat_hash, tech_pvt->hash_key, tech_pvt);
+		if (tech_pvt->profile->pflags & PFLAG_PRESENCE) {
+			tech_pvt->hash_key = switch_core_session_strdup(tech_pvt->session, hash_key);
+			switch_mutex_lock(tech_pvt->profile->flag_mutex);
+			switch_core_hash_insert(tech_pvt->profile->chat_hash, tech_pvt->hash_key, tech_pvt);
+			switch_mutex_unlock(tech_pvt->profile->flag_mutex);
+		}
 		free(e_dest);
 	}
 

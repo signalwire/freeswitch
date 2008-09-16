@@ -3782,7 +3782,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	}
 
 	if (tech_pvt->hash_key) {
+		switch_mutex_lock(tech_pvt->profile->flag_mutex);
 		switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->hash_key);
+		switch_mutex_unlock(tech_pvt->profile->flag_mutex);
 	}
 
 	nua_handle_bind(nh, NULL);
