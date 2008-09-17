@@ -69,6 +69,8 @@
 /opt/freeswitch/conf/autoload_configs/cdr_csv.conf.xml
 /opt/freeswitch/conf/autoload_configs/dialplan_directory.conf.xml
 /opt/freeswitch/conf/autoload_configs/console.conf.xml
+/opt/freeswitch/conf/autoload_configs/timezones.conf.xml
+/opt/freeswitch/conf/autoload_configs/fax.conf.xml
 /opt/freeswitch/conf/jingle_profiles/server.xml
 /opt/freeswitch/conf/jingle_profiles/client.xml
 /opt/freeswitch/conf/mrcp_profiles/openmrcp-v2.xml

@@ -2,12 +2,12 @@ Source: freeswitch
 Maintainer: Michal Bielicki <michal.bielicki@voiceworks.pl>
 Section: net
 Priority: extra
-Build-Depends: debhelper (>= 5), fakeroot, automake1.9, autoconf, libtool, unixodbc-dev, libasound2-dev, libcurl3-openssl-dev|libcurl4-openssl-dev, libssl-dev, ncurses-dev, libogg-dev, libvorbis-dev, libperl-dev, libgdbm-dev, libdb-dev, libgnutls-dev
+Build-Depends: debhelper (>= 5), fakeroot, automake1.9, autoconf, libtool, unixodbc-dev, libasound2-dev, libcurl3-openssl-dev|libcurl4-openssl-dev, libssl-dev, ncurses-dev, libogg-dev, libvorbis-dev, libperl-dev, libgdbm-dev, libdb-dev, libgnutls-dev, libtiff4-dev
 Standards-Version: 3.7.3
 
 Package: freeswitch
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, unixodbc, libasound2, libcurl3, openssl, libncurses5
+Depends: ${shlibs:Depends}, ${misc:Depends}, unixodbc, libasound2, libcurl3, openssl, libncurses5, libvorbis0a
 Recommends: freeswitch-lang-en
 Suggests: freeswitch-spidermonkey, freeswitch-lua, freeswitch-perl, freeswitch-sounds-music-8000, monit 
 Description: The FreeSWITCH open source telephony platform
@@ -16,6 +16,18 @@ Description: The FreeSWITCH open source telephony platform
  a soft-switch.  It can be used as a simple switching engine, a media gateway
  or a media server to host IVR applications using simple scripts or XML to
  control the callflow.
+
+Package: freeswitch-dbg
+Section: devel
+Architecture: any
+Depends: freeswitch (= ${Source-Version})
+Description: The FreeSWITCH open source telephony platform with Debug symbols
+ FreeSWITCH is an open source telephony platform designed to facilitate the
+ creation of voice and chat driven products scaling from a soft-phone up to
+ a soft-switch.  It can be used as a simple switching engine, a media gateway
+ or a media server to host IVR applications using simple scripts or XML to
+ control the callflow.
+
 
 Package: freeswitch-dev
 Architecture: any

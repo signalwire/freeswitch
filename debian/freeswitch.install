@@ -37,6 +37,8 @@ opt/freeswitch/mod/mod_local_stream.so*
 opt/freeswitch/mod/mod_xml_*.so*
 opt/freeswitch/mod/mod_fsv.so*
 opt/freeswitch/mod/mod_tone_stream.so*
+opt/freeswitch/mod/mod_fax.so*
+opt/freeswitch/mod/mod_timezone.so*
 opt/freeswitch/conf/vars.xml
 opt/freeswitch/conf/mime.types
 opt/freeswitch/conf/web-vm.tpl
@@ -108,6 +110,8 @@ opt/freeswitch/conf/autoload_configs/xml_cdr.conf.xml
 opt/freeswitch/conf/autoload_configs/cdr_csv.conf.xml
 opt/freeswitch/conf/autoload_configs/dialplan_directory.conf.xml
 opt/freeswitch/conf/autoload_configs/console.conf.xml
+opt/freeswitch/conf/autoload_configs/timezones.conf.xml
+opt/freeswitch/conf/autoload_configs/fax.conf.xml
 opt/freeswitch/conf/jingle_profiles/server.xml
 opt/freeswitch/conf/jingle_profiles/client.xml
 opt/freeswitch/conf/mrcp_profiles/openmrcp-v2.xml
