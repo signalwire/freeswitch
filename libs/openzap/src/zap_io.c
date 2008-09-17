@@ -2032,7 +2032,7 @@ static zap_status_t load_config(void)
 					zap_copy_string(number, val, sizeof(number));
 				}
 			} else if (!strcasecmp(var, "analog-start-type")) {
-				if (span->trunk_type == ZAP_TRUNK_FXS || span->trunk_type == ZAP_TRUNK_FXO) {
+				if (span->trunk_type == ZAP_TRUNK_FXS || span->trunk_type == ZAP_TRUNK_FXO || span->trunk_type == ZAP_TRUNK_EM) {
 					if ((tmp = zap_str2zap_analog_start_type(val)) != ZAP_ANALOG_START_NA) {
 						span->start_type = tmp;
 						zap_log(ZAP_LOG_DEBUG, "changing start type to '%s'\n", zap_analog_start_type2str(span->start_type)); 
@@ -2061,6 +2061,17 @@ static zap_status_t load_config(void)
 					configured += zio->configure_span(span, val, ZAP_CHAN_TYPE_FXS, name, number);
 				} else {
 					zap_log(ZAP_LOG_WARNING, "Cannot add FXS channels to an FXO trunk!\n");
+				}
+			} else if (!strcasecmp(var, "em-channel")) {
+				if (span->trunk_type == ZAP_TRUNK_NONE) {
+					span->trunk_type = ZAP_TRUNK_EM;
+					zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s' start(%s)\n", zap_trunk_type2str(span->trunk_type), 
+							zap_analog_start_type2str(span->start_type));
+				}
+				if (span->trunk_type == ZAP_TRUNK_EM) {
+					configured += zio->configure_span(span, val, ZAP_CHAN_TYPE_EM, name, number);
+				} else {
+					zap_log(ZAP_LOG_WARNING, "Cannot add EM channels to a non-EM trunk!\n");
 				}
 			} else if (!strcasecmp(var, "b-channel")) {
 				configured += zio->configure_span(span, val, ZAP_CHAN_TYPE_B, name, number);
