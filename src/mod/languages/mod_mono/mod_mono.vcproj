@@ -96,10 +96,11 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			CharacterSet="1"
+			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
+			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -121,12 +122,14 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\Mono\lib\glib-2.0\include&quot;;&quot;C:\Program Files\Mono\include\glib-2.0&quot;;&quot;C:\Program Files\Mono\include\mono-1.0&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_MONO_EXPORTS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="4"
 				DebugInformationFormat="3"
+				DisableSpecificWarnings="4505"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -139,6 +142,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="$(ProjectDir)mono.lib &#x0A;&quot;C:\program Files\Mono\lib\glib-2.0.lib&quot; shlwapi.lib"
 				LinkIncremental="1"
 				ModuleDefinitionFile="mono.def"
 				GenerateDebugInformation="true"
