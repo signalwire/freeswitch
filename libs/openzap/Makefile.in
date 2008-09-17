@@ -46,12 +46,13 @@ LIBTOOL=@LIBTOOL@
 LTINSTALL=$(LIBTOOL) --mode=install $(INSTALL)
 LTUNINSTALL=$(LIBTOOL) --mode=uninstall rm -f 
 CCLD = $(CC)
-INCS=-I$(OZ_SRCDIR)/$(SRC)/include -I$(OZ_SRCDIR)/$(SRC)/isdn/include -I$(OZ_SRCDIR)/$(SRC)/ozmod/ozmod_ss7_boost
+INCS=-I$(OZ_SRCDIR)/$(SRC)/include -I$(OZ_SRCDIR)/$(SRC)/isdn/include -I$(OZ_SRCDIR)/$(SRC)/ozmod/ozmod_ss7_boost 
 CFLAGS+= $(INCS) $(ZAP_CFLAGS) -DZAP_CONFIG_DIR=\"@prefix@/conf\" -DZAP_MOD_DIR=\"@prefix@/mod\"
 
 COMPILE      = $(CC) $(CFLAGS) $(INCS)
 LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(COMPILE)
 LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
+libdir = $(PREFIX)/lib/
 
 SOURCES=\
 $(SRC)/hashtable.c \
@@ -70,8 +71,7 @@ $(SRC)/zap_dso.c
 
 BOOST_SOURCES=\
 $(SRC)/ozmod/ozmod_ss7_boost/ss7_boost_client.c \
-$(SRC)/ozmod/ozmod_ss7_boost/zap_ss7_boost.c
-
+$(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.c
 
 ISDN_SOURCES=\
 $(SRC)/isdn/EuroISDNStateNT.c \
@@ -112,8 +112,8 @@ $(SRC)/zap_threadmutex.o \
 $(SRC)/zap_dso.o
 
 BOOST_OBJS=\
-$(SRC)/ozmod/ozmod_ss7_boost/ss7_boost_client.o
-
+$(SRC)/ozmod/ozmod_ss7_boost/ss7_boost_client.o \
+$(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.o
 
 ISDN_OBJS=\
 $(SRC)/isdn/EuroISDNStateNT.o \
@@ -247,36 +247,35 @@ install: all
 uninstall:
 	@rm -fr $(DESTDIR)$(PREFIX)
 
-$(SRC)/ozmod/ozmod_skel/ozmod_skel.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_skel/ozmod_skel.o
-	$(CC) $(INCS) $(CFLAGS) -L. $(SRC)/ozmod/ozmod_skel/ozmod_skel.c -o $(SRC)/ozmod/ozmod_skel/ozmod_skel.$(DYNAMIC_LIB_EXTEN) -shared -Wl,-x $(LIBS) -Wl,--rpath -Wl,$(PREFIX)/lib
+$(SRC)/ozmod/ozmod_skel/ozmod_skel.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_skel/ozmod_skel.o $(MYLIB)
+	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_skel/ozmod_skel.o $(MYLIB) -rpath $(libdir)
 skelmod: $(SRC)/ozmod/ozmod_skel/ozmod_skel.$(DYNAMIC_LIB_EXTEN)
 
 
-$(SRC)/ozmod/ozmod_zt/ozmod_zt.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_zt/ozmod_zt.c
-	$(CC) $(INCS) $(CFLAGS) -L. $(SRC)/ozmod/ozmod_zt/ozmod_zt.c -o $(SRC)/ozmod/ozmod_zt/ozmod_zt.$(DYNAMIC_LIB_EXTEN) -shared -Wl,-x $(LIBS) $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
+$(SRC)/ozmod/ozmod_zt/ozmod_zt.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_zt/ozmod_zt.o $(MYLIB)
+	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_zt/ozmod_zt.o $(MYLIB) -rpath $(libdir)
 ztmod: $(SRC)/ozmod/ozmod_zt/ozmod_zt.$(DYNAMIC_LIB_EXTEN)
 
-$(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.c
-	$(CC) $(INCS) $(CFLAGS) -L. $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.c -o $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.$(DYNAMIC_LIB_EXTEN) -shared -Wl,-x  $(LIBS) $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
+$(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.o $(MYLIB)
+	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.o $(MYLIB) -rpath $(libdir)
 wpmod: $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.$(DYNAMIC_LIB_EXTEN)
 
-$(SRC)/ozmod/ozmod_pika/ozmod_pika.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_pika/ozmod_pika.c
-	$(CC) -I$(PIKA_DIR) $(INCS) $(CFLAGS) -L. $(SRC)/ozmod/ozmod_pika/ozmod_pika.c -o $(SRC)/ozmod/ozmod_pika/ozmod_pika.$(DYNAMIC_LIB_EXTEN) -shared -Wl,-x $(LIBS) $(MYLIB) $(PIKA_LIB) -Wl,--rpath -Wl,$(PREFIX)/lib
-
+$(SRC)/ozmod/ozmod_pika/ozmod_pika.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_pika/ozmod_pika.o $(MYLIB)
+	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_pika/ozmod_pika.o  $(MYLIB) -rpath $(libdir)
 pikamod: $(SRC)/ozmod/ozmod_pika/ozmod_pika.$(DYNAMIC_LIB_EXTEN)
 
 $(ISDN_OBJS): $(ISDN_HEADERS) $(ISDN_SOURCES) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.c
 
-$(SRC)/ozmod/ozmod_isdn/ozmod_isdn.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(ISDN_OBJS)
-	$(CC) -I$(SRC)/isdn/include/ $(INCS) $(CFLAGS) -L. $(ISDN_OBJS) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.c -o $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.$(DYNAMIC_LIB_EXTEN) -shared -Wl,-x  $(LIBS) $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
+$(SRC)/ozmod/ozmod_isdn/ozmod_isdn.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(ISDN_OBJS) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.o
+	$(LINK) $(SOLINK) $(ISDN_OBJS) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.o $(MYLIB) -rpath $(libdir)
 isdnmod: $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.$(DYNAMIC_LIB_EXTEN)
 
-$(SRC)/ozmod/ozmod_analog/ozmod_analog.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(ANALOG_OBJS) $(SRC)/ozmod/ozmod_analog/ozmod_analog.c
-	$(CC) -I$(SRC)/analog/include/ $(INCS) $(CFLAGS) -L. $(SRC)/ozmod/ozmod_analog/ozmod_analog.c -o $(SRC)/ozmod/ozmod_analog/ozmod_analog.$(DYNAMIC_LIB_EXTEN) -shared -Wl,-x  $(LIBS) $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
+$(SRC)/ozmod/ozmod_analog/ozmod_analog.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(SRC)/ozmod/ozmod_analog/ozmod_analog.o
+	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_analog/ozmod_analog.o $(MYLIB) -rpath $(libdir)
 analogmod: $(SRC)/ozmod/ozmod_analog/ozmod_analog.$(DYNAMIC_LIB_EXTEN)
 
-$(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(BOOST_OBJS) $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.c
-	$(CC) -I/ozmod/ozmod_ss7_boost $(INCS) $(CFLAGS) -L. $(BOOST_OBJS) $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.c -o $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.$(DYNAMIC_LIB_EXTEN) -shared -Wl,-x  $(LIBS) $(MYLIB) -Wl,--rpath -Wl,$(PREFIX)/lib
+$(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(BOOST_OBJS)
+	$(LINK) $(SOLINK) $(BOOST_OBJS) $(MYLIB) -rpath $(libdir)
 boostmod: $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.$(DYNAMIC_LIB_EXTEN)
 
 
