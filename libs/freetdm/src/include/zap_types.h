@@ -123,18 +123,20 @@ typedef enum {
 	ZAP_TRUNK_BRI_PTMP,
 	ZAP_TRUNK_FXO,
 	ZAP_TRUNK_FXS,
+	ZAP_TRUNK_EM,
 	ZAP_TRUNK_NONE
 } zap_trunk_type_t;
-#define TRUNK_STRINGS "E1", "T1", "J1", "BRI", "BRI_PTMP", "FXO", "FXS", "NONE"
+#define TRUNK_STRINGS "E1", "T1", "J1", "BRI", "BRI_PTMP", "FXO", "FXS", "EM", "NONE"
 ZAP_STR2ENUM_P(zap_str2zap_trunk_type, zap_trunk_type2str, zap_trunk_type_t)
 
 typedef enum {
 	ZAP_ANALOG_START_KEWL,
 	ZAP_ANALOG_START_LOOP,
 	ZAP_ANALOG_START_GROUND,
+	ZAP_ANALOG_START_WINK,
 	ZAP_ANALOG_START_NA
 } zap_analog_start_type_t;
-#define START_TYPE_STRINGS "KEWL", "LOOP", "GROUND", "NA"
+#define START_TYPE_STRINGS "KEWL", "LOOP", "GROUND", "WINK", "NA"
 ZAP_STR2ENUM_P(zap_str2zap_analog_start_type, zap_analog_start_type2str, zap_analog_start_type_t)
 
 typedef enum {
@@ -284,10 +286,11 @@ typedef enum {
 	ZAP_CHAN_TYPE_DQ931,
 	ZAP_CHAN_TYPE_FXS,
 	ZAP_CHAN_TYPE_FXO,
+	ZAP_CHAN_TYPE_EM,
 	ZAP_CHAN_TYPE_COUNT
 } zap_chan_type_t;
 
-#define CHAN_TYPE_STRINGS "B", "DQ921", "DQ931", "FXS", "FXO", "INVALID"
+#define CHAN_TYPE_STRINGS "B", "DQ921", "DQ931", "FXS", "FXO", "EM", "INVALID"
 ZAP_STR2ENUM_P(zap_str2zap_chan_type, zap_chan_type2str, zap_chan_type_t)
 
 typedef enum {

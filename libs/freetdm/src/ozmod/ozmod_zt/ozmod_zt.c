@@ -173,7 +173,7 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 			zchan->physical_span_id = ztp.span_no;
 			zchan->physical_chan_id = ztp.chan_no;
 			
-			if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO || type == ZAP_CHAN_TYPE_B) {
+			if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO || type == ZAP_CHAN_TYPE_EM || type == ZAP_CHAN_TYPE_B) {
 				if (ztp.g711_type == ZT_G711_ALAW) {
 					zchan->native_codec = zchan->effective_codec = ZAP_CODEC_ALAW;
 				} else if (ztp.g711_type == ZT_G711_MULAW) {
@@ -343,7 +343,7 @@ static ZIO_OPEN_FUNCTION(zt_open)
 				zap_log(ZAP_LOG_ERROR, "%s\n", zchan->last_error);
 				return ZAP_FAIL;
 			}
-		} else if (zchan->type == ZAP_CHAN_TYPE_FXS || zchan->type == ZAP_CHAN_TYPE_FXO) {
+		} else if (zchan->type == ZAP_CHAN_TYPE_FXS || zchan->type == ZAP_CHAN_TYPE_FXO || zchan->type == ZAP_CHAN_TYPE_EM) {
 			int len = zt_globals.eclevel;
 			if (ioctl(zchan->sockfd, ZT_ECHOCANCEL, &len)) {
 				zap_log(ZAP_LOG_WARNING, "Echo cancel not available for %d:%d\n", zchan->span_id, zchan->chan_id);
@@ -636,7 +636,7 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 				break;
 			case ZT_EVENT_WINKFLASH:
 				{
-					if (span->channels[i]->state == ZAP_CHANNEL_STATE_DOWN) {
+					if (span->channels[i]->state == ZAP_CHANNEL_STATE_DOWN || span->channels[i]->state == ZAP_CHANNEL_STATE_DIALING) {
 						event_id = ZAP_OOB_WINK;
 					} else {
 						event_id = ZAP_OOB_FLASH;
@@ -645,7 +645,7 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 				break;
 			case ZT_EVENT_RINGOFFHOOK:
 				{
-					if (span->channels[i]->type == ZAP_CHAN_TYPE_FXS) {
+					if (span->channels[i]->type == ZAP_CHAN_TYPE_FXS || (span->channels[i]->type == ZAP_CHAN_TYPE_EM && span->channels[i]->state != ZAP_CHANNEL_STATE_UP)) {
 						zap_set_flag_locked(span->channels[i], ZAP_CHANNEL_OFFHOOK);
 						event_id = ZAP_OOB_OFFHOOK;
 					} else if (span->channels[i]->type == ZAP_CHAN_TYPE_FXO) {

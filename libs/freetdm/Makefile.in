@@ -181,7 +181,7 @@ PIKA_LIB=$(shell ls /usr/lib/libpikahmpapi.so 2>/dev/null)
 #endif
 #endif
 
-all: $(MYLIB) analogmod isdnmod boostmod ztmod wpmod
+all: $(MYLIB) analogmod analog_emmod isdnmod boostmod ztmod wpmod
 
 $(MYLIB): $(OBJS) $(HEADERS) $(SOURCES)
 	$(LINK) $(SOLINK) -o $(MYLIB) $(OBJS) $(ADD_OBJS) $(LIBS)
@@ -273,6 +273,10 @@ isdnmod: $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.$(DYNAMIC_LIB_EXTEN)
 $(SRC)/ozmod/ozmod_analog/ozmod_analog.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(SRC)/ozmod/ozmod_analog/ozmod_analog.o
 	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_analog/ozmod_analog.o $(MYLIB) -rpath $(libdir)
 analogmod: $(SRC)/ozmod/ozmod_analog/ozmod_analog.$(DYNAMIC_LIB_EXTEN)
+
+$(SRC)/ozmod/ozmod_analog_em/ozmod_analog_em.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(ANALOG_EM_OBJS) $(SRC)/ozmod/ozmod_analog_em/ozmod_analog_em.o
+	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_analog_em/ozmod_analog_em.o $(MYLIB) -rpath $(libdir)
+analog_emmod: $(SRC)/ozmod/ozmod_analog_em/ozmod_analog_em.$(DYNAMIC_LIB_EXTEN)
 
 $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(BOOST_OBJS)
 	$(LINK) $(SOLINK) $(BOOST_OBJS) $(MYLIB) -rpath $(libdir)

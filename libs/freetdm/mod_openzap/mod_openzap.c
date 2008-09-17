@@ -417,6 +417,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	
 	switch (tech_pvt->zchan->type) {
 	case ZAP_CHAN_TYPE_FXO:
+	case ZAP_CHAN_TYPE_EM:
 		{
 
 			zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_HANGUP);
@@ -806,6 +807,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 
 	switch (tech_pvt->zchan->type) {
 	case ZAP_CHAN_TYPE_FXS:
+	case ZAP_CHAN_TYPE_EM:
 		status = channel_receive_message_fxs(session, msg);
 		break;
 	case ZAP_CHAN_TYPE_FXO:
@@ -1445,6 +1447,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_analog_signal)
 	
 	switch (sigmsg->channel->type) {
 	case ZAP_CHAN_TYPE_FXO:
+	case ZAP_CHAN_TYPE_EM:
 		{
 			status = on_fxo_signal(sigmsg);
 		}
@@ -1612,6 +1615,100 @@ static switch_status_t load_config(void)
 				switch_set_string(SPAN_CONFIG[span->span_id].hold_music, hold_music);
 			}
 			switch_copy_string(SPAN_CONFIG[span->span_id].type, "analog", sizeof(SPAN_CONFIG[span->span_id].type));
+			zap_span_start(span);
+		}
+	}
+
+	if ((spans = switch_xml_child(cfg, "analog_em_spans"))) {
+		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
+			char *id = (char *) switch_xml_attr_soft(myspan, "id");
+			char *context = "default";
+			char *dialplan = "XML";
+			char *tonegroup = NULL;
+			char *digit_timeout = NULL;
+			char *max_digits = NULL;
+			char *dial_regex = NULL;
+			char *hold_music = NULL;
+			char *fail_dial_regex = NULL;
+			uint32_t span_id = 0, to = 0, max = 0;
+			zap_span_t *span = NULL;
+			analog_option_t analog_options = ANALOG_OPTION_NONE;
+
+			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				char *val = (char *) switch_xml_attr_soft(param, "value");
+
+				if (!strcasecmp(var, "tonegroup")) {
+					tonegroup = val;
+				} else if (!strcasecmp(var, "digit_timeout") || !strcasecmp(var, "digit-timeout")) {
+					digit_timeout = val;
+				} else if (!strcasecmp(var, "context")) {
+					context = val;
+				} else if (!strcasecmp(var, "dialplan")) {
+					dialplan = val;
+				} else if (!strcasecmp(var, "dial-regex")) {
+					dial_regex = val;
+				} else if (!strcasecmp(var, "fail-dial-regex")) {
+					fail_dial_regex = val;
+				} else if (!strcasecmp(var, "hold-music")) {
+					hold_music = val;
+				} else if (!strcasecmp(var, "max_digits") || !strcasecmp(var, "max-digits")) {
+					max_digits = val;
+				} else if (!strcasecmp(var, "enable-analog-option")) {
+					analog_options = enable_analog_option(val, analog_options);
+				}
+			}
+				
+			if (!id) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param 'id'\n");
+				continue;
+			}
+
+			span_id = atoi(id);
+			
+			if (!tonegroup) {
+				tonegroup = "us";
+			}
+			
+			if (digit_timeout) {
+				to = atoi(digit_timeout);
+			}
+
+			if (max_digits) {
+				max = atoi(max_digits);
+			}
+
+			if (zap_span_find(span_id, &span) != ZAP_SUCCESS) {
+				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span %d\n", span_id);
+				continue;
+			}
+
+			if (zap_configure_span("analog_em", span, on_analog_signal, 
+								   "tonemap", tonegroup, 
+								   "digit_timeout", &to,
+								   "max_dialstr", &max,
+								   TAG_END) != ZAP_SUCCESS) {
+				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d\n", span_id);
+				continue;
+			}
+
+			SPAN_CONFIG[span->span_id].span = span;
+			switch_set_string(SPAN_CONFIG[span->span_id].context, context);
+			switch_set_string(SPAN_CONFIG[span->span_id].dialplan, dialplan);
+			SPAN_CONFIG[span->span_id].analog_options = analog_options | globals.analog_options;
+			
+			if (dial_regex) {
+				switch_set_string(SPAN_CONFIG[span->span_id].dial_regex, dial_regex);
+			}
+
+			if (fail_dial_regex) {
+				switch_set_string(SPAN_CONFIG[span->span_id].fail_dial_regex, fail_dial_regex);
+			}
+
+			if (hold_music) {
+				switch_set_string(SPAN_CONFIG[span->span_id].hold_music, hold_music);
+			}
+			switch_copy_string(SPAN_CONFIG[span->span_id].type, "analog_em", sizeof(SPAN_CONFIG[span->span_id].type));
 			zap_span_start(span);
 		}
 	}
