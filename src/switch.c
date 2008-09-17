@@ -194,6 +194,58 @@ void WINAPI service_main(DWORD numArgs, char **args)
 	SetServiceStatus(hStatus, &status);
 }
 
+#else
+
+void daemonize(void) {
+	int fd;
+	pid_t pid;
+
+	switch (fork()) {
+		case 0:
+			break;
+		case -1:
+			fprintf(stderr, "Error Backgrounding (fork)! %d - %s\n", errno, strerror(errno));
+			exit(0);
+			break;
+		default:
+			exit(0);
+	}
+
+	if (setsid() < 0) {
+		fprintf(stderr, "Error Backgrounding (setsid)! %d - %s\n", errno, strerror(errno));
+		exit(0);
+	}
+	pid = fork();
+	switch (pid) {
+		case 0:
+			break;
+		case -1:
+			fprintf(stderr, "Error Backgrounding (fork2)! %d - %s\n", errno, strerror(errno));
+			exit(0);
+			break;
+		default:
+			fprintf(stderr, "%d Backgrounding.\n", (int) pid);
+			exit(0);
+	}
+
+	/* redirect std* to null */
+	fd = open("/dev/null", O_RDONLY);
+	if (fd != 0) {
+		dup2(fd, 0);
+		close(fd);
+	}
+	fd = open("/dev/null", O_WRONLY);
+	if (fd != 1) {
+		dup2(fd, 1);
+		close(fd);
+	}
+	fd = open("/dev/null", O_WRONLY);
+	if (fd != 2) {
+		dup2(fd, 2);
+		close(fd);
+	}
+}
+
 #endif
 
 /* the main application entry point */
@@ -501,9 +553,8 @@ int main(int argc, char *argv[])
 #ifdef WIN32
 		FreeConsole();
 #else
-		if (!nf && (pid = fork())) {
-			fprintf(stderr, "%d Backgrounding.\n", (int) pid);
-			exit(0);
+		if (!nf) {
+			daemonize();
 		}
 #endif
 	}
@@ -530,12 +581,12 @@ int main(int argc, char *argv[])
 	memset(pid_buffer, 0, sizeof(pid_buffer));
 	switch_snprintf(pid_path, sizeof(pid_path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
 	switch_snprintf(pid_buffer, sizeof(pid_buffer), "%d", pid);
-	pid_len = sizeof(pid_buffer);
+	pid_len = strlen(pid_buffer);
 
 	apr_pool_create(&pool, NULL);
 	if (switch_file_open(&fd,
 		pid_path,
-		SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE,
+		SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE | SWITCH_FOPEN_TRUNCATE,
 		SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE,
 		pool) != SWITCH_STATUS_SUCCESS) {
 			fprintf(stderr, "Cannot open pid file %s.\n", pid_path);
