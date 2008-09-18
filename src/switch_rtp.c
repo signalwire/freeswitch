@@ -903,6 +903,7 @@ SWITCH_DECLARE(void) switch_rtp_set_telephony_event(switch_rtp_t *rtp_session, s
 SWITCH_DECLARE(void) switch_rtp_set_cng_pt(switch_rtp_t *rtp_session, switch_payload_t pt)
 {
 	rtp_session->cng_pt = pt;
+	switch_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTO_CNG);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_activate_stun_ping(switch_rtp_t *rtp_session, const char *stun_ip, switch_port_t stun_port,

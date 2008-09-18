@@ -52,6 +52,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 		((val = switch_channel_get_variable(tech_pvt->channel, "supress_cng")) && switch_true(val)) ||
 		((val = switch_channel_get_variable(tech_pvt->channel, "suppress_cng")) && switch_true(val))) {
 		use_cng = 0;
+		tech_pvt->cng_pt = 0;
 	}
 
 	if (!force && !ip && !sr
@@ -1921,6 +1922,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);
 		}
 		if (tech_pvt->cng_pt) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set comfort noise payload to %u\n", tech_pvt->cng_pt);
 			switch_rtp_set_cng_pt(tech_pvt->rtp_session, tech_pvt->cng_pt);
 		}
 
@@ -2275,10 +2277,9 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 
 				if (!cng_pt && !strcasecmp(rm_encoding, "CN")) {
 					cng_pt = tech_pvt->cng_pt = (switch_payload_t) map->rm_pt;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set comfort noise payload to %u\n", cng_pt);
 					if (tech_pvt->rtp_session) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set comfort noise payload to %u\n", cng_pt);
 						switch_rtp_set_cng_pt(tech_pvt->rtp_session, tech_pvt->cng_pt);
-						switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_AUTO_CNG);
 					}
 				}
 
