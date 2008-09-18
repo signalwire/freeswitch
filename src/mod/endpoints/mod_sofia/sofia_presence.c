@@ -435,13 +435,15 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			}
 
 			if (probe_euser && probe_host && (profile = sofia_glue_find_profile(probe_host))) {
-				sql = switch_mprintf("select sip_registrations.sip_user, sip_registrations.sip_host, sip_registrations.status, "
+				sql = switch_mprintf("select sip_registrations.sip_user, '%q', sip_registrations.status, "
 									 "sip_registrations.rpid,'', sip_dialogs.uuid, sip_dialogs.state, sip_dialogs.direction, "
 									 "sip_dialogs.sip_to_user, sip_dialogs.sip_to_host "
 									 "from sip_registrations left join sip_dialogs on "
 									 "(sip_dialogs.sip_from_user = sip_registrations.sip_user) "
 									 "and sip_dialogs.sip_from_host = sip_registrations.sip_host "
-									 "where sip_registrations.sip_user='%q' and sip_registrations.sip_host='%q'", probe_euser, probe_host);
+									 "where sip_registrations.sip_user='%q' and "
+									 "(sip_registrations.sip_host='%q' or sip_registrations.presence_hosts like '%%%q%%')", 
+									 probe_host, probe_euser, probe_host, probe_host);
 				switch_assert(sql);
 				sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, sofia_presence_resub_callback, profile);
 
@@ -1507,11 +1509,12 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		switch_safe_free(sstr);
 
 		if ((sql = switch_mprintf(
-								  "select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
+								  "select proto,sip_user,'%q',sub_to_user,sub_to_host,event,contact,call_id,full_from,"
 								  "full_via,expires,user_agent,accept,profile_name"
-								  " from sip_subscriptions where sip_user='%q' and sip_host='%q'", to_user, to_host))) {
+								  " from sip_subscriptions where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')", 
+								  to_host, to_user, to_host, to_host))) {
 			sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, sofia_presence_sub_reg_callback, profile);
-
+			
 			switch_safe_free(sql);
 		}
 	  end:
