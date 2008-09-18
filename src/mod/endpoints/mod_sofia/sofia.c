@@ -1591,6 +1591,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->mflags &= ~MFLAG_REFER;
 					} else if (!strcasecmp(var, "disable-register") && switch_true(val)) {
 						profile->mflags &= ~MFLAG_REGISTER;
+					} else if (!strcasecmp(var, "media-option")) {
+						if (!strcasecmp(val, "resume-media-on-hold")) {
+							profile->media_options |= MEDIA_OPT_MEDIA_ON_HOLD;
+						} else if (!strcasecmp(val, "bypass-media-after-att-xfer")) {
+							profile->media_options |= MEDIA_OPT_BYPASS_AFTER_ATT_XFER;
+						}
 					} else if (!strcasecmp(var, "manage-presence")) {
 						if (!strcasecmp(val, "passive")) {
 							profile->pres_type = PRES_TYPE_PASSIVE;
@@ -2144,6 +2150,50 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 	}
 }
 
+
+/* Pure black magic, if you can't understand this code you are lucky.........*/
+void *SWITCH_THREAD_FUNC media_on_hold_thread_run(switch_thread_t *thread, void *obj)
+{
+	switch_core_session_t *other_session = NULL, *session = (switch_core_session_t *) obj;
+	const char *uuid;
+	
+	if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		private_object_t *tech_pvt = switch_core_session_get_private(session);
+		
+		if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+			if (switch_core_session_compare(session, other_session)) {
+				switch_set_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
+				switch_ivr_media(switch_core_session_get_uuid(other_session), SMF_REBRIDGE);
+			
+				if (tech_pvt->rtp_session) {
+					switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+				}
+
+				sofia_glue_toggle_hold(tech_pvt, 1);
+				switch_core_session_rwunlock(other_session);
+			}
+		}
+
+		switch_core_session_rwunlock(session);
+	}
+	
+	return NULL;
+}
+
+static void launch_media_on_hold(switch_core_session_t *session)
+{
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+
+	switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
+	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_priority_increase(thd_attr);
+	switch_thread_create(&thread, thd_attr, media_on_hold_thread_run, session, switch_core_session_get_pool(session));
+}
+
+
 static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									 char const *phrase,
 									 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
@@ -2348,6 +2398,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 										switch_ivr_uuid_bridge(br_a, br_b);
 										switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
 										switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+										switch_clear_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
 										switch_channel_hangup(channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
 									} else {
 										switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
@@ -2377,6 +2428,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_NOSDP");
 						sofia_glue_tech_choose_port(tech_pvt, 0);
 						sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
+						switch_set_flag_locked(tech_pvt, TFLAG_3PCC);
 						switch_channel_set_state(channel, CS_HIBERNATE);
 						nua_respond(tech_pvt->nh, SIP_200_OK,
 									SIPTAG_CONTACT_STR(tech_pvt->profile->url),
@@ -2404,13 +2456,55 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			sdp_parser_t *parser;
 			sdp_session_t *sdp;
 			uint8_t match = 0, is_ok = 1;
+			tech_pvt->hold_laps = 0;
 
 			if (r_sdp) {
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+					
 					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
 						&& (other_session = switch_core_session_locate(uuid))) {
 						switch_core_session_message_t msg = { 0 };
 
+						if (profile->media_options & MEDIA_OPT_MEDIA_ON_HOLD) {
+							tech_pvt->hold_laps = 1;
+							switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
+							switch_channel_clear_flag(channel, CF_PROXY_MODE);
+							tech_pvt->local_sdp_str = NULL;
+
+							if (!switch_channel_media_ready(channel)) {
+								if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
+									//const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
+
+									tech_pvt->num_codecs = 0;
+									sofia_glue_tech_prepare_codecs(tech_pvt);
+									if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
+										switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
+										status = SWITCH_STATUS_FALSE;
+										goto done;
+									}
+								}
+							}
+
+							if (!switch_rtp_ready(tech_pvt->rtp_session)) {
+								sofia_glue_tech_prepare_codecs(tech_pvt);
+								if ((status = sofia_glue_tech_choose_port(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
+									switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+									goto done;
+								}
+							}
+							sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
+							
+							nua_respond(tech_pvt->nh, SIP_200_OK,
+										SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+										SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+										SOATAG_REUSE_REJECTED(1),
+										SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
+							launch_media_on_hold(session);
+
+							switch_core_session_rwunlock(other_session);
+							goto done;
+						}
+						
 						msg.message_id = SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT;
 						msg.from = __FILE__;
 						msg.string_arg = (char *) r_sdp;
@@ -2559,7 +2653,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP Error!\n");
 								switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 							}
-							if (switch_channel_get_state(channel) == CS_HIBERNATE) {
+							if (switch_channel_get_state(channel) == CS_HIBERNATE && switch_test_flag(tech_pvt, TFLAG_3PCC)) {
 								switch_set_flag_locked(tech_pvt, TFLAG_READY);
 								switch_channel_set_state(channel, CS_INIT);
 								switch_set_flag(tech_pvt, TFLAG_SDP);
@@ -2800,25 +2894,33 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 										  switch_str_nil(br_b));
 
 						if (br_a && br_b) {
-							switch_core_session_t *new_b_session = NULL, *a_session = NULL;
-
+							switch_core_session_t *new_b_session = NULL, *a_session = NULL, *tmp = NULL;
+							
+							if ((profile->media_options & MEDIA_OPT_BYPASS_AFTER_ATT_XFER) && (tmp = switch_core_session_locate(br_b))) {
+								switch_channel_t *tchannel = switch_core_session_get_channel(tmp);
+								switch_channel_set_variable(tchannel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE, "true");
+								switch_core_session_rwunlock(tmp);
+							}
+							
 							switch_ivr_uuid_bridge(br_b, br_a);
 							switch_channel_set_variable(channel_b, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
 							nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 									   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(etmp), TAG_END());
 
 							switch_clear_flag_locked(b_tech_pvt, TFLAG_SIP_HOLD);
+							switch_clear_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
 							switch_ivr_park_session(b_session);
 							new_b_session = switch_core_session_locate(br_b);
 							a_session = switch_core_session_locate(br_a);
 							sofia_info_send_sipfrag(a_session, new_b_session);
+
 							if (new_b_session) {
 								switch_core_session_rwunlock(new_b_session);
 							}
+
 							if (a_session) {
 								switch_core_session_rwunlock(a_session);
 							}
-							//switch_channel_hangup(channel_b, SWITCH_CAUSE_ATTENDED_TRANSFER);
 						} else {
 							if (!br_a && !br_b) {
 								switch_set_flag_locked(tech_pvt, TFLAG_NOHUP);

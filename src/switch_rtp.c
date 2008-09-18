@@ -166,6 +166,7 @@ struct switch_rtp {
 	char *ice_user;
 	char *user_ice;
 	char *timer_name;
+	char *remote_host_str;
 	switch_time_t last_stun;
 	uint32_t samples_per_interval;
 	uint32_t conf_samples_per_interval;
@@ -597,6 +598,17 @@ SWITCH_DECLARE(void) switch_rtp_set_max_missed_packets(switch_rtp_t *rtp_session
 	rtp_session->max_missed_packets = max;
 }
 
+SWITCH_DECLARE(char *) switch_rtp_get_remote_host(switch_rtp_t *rtp_session)
+{
+	return switch_strlen_zero(rtp_session->remote_host_str) ? "0.0.0.0" : rtp_session->remote_host_str;
+}
+
+SWITCH_DECLARE(switch_port_t) switch_rtp_get_remote_port(switch_rtp_t *rtp_session)
+{
+	return rtp_session->remote_port;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, const char **err)
 {
 	switch_sockaddr_t *remote_addr;
@@ -611,6 +623,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 	switch_mutex_lock(rtp_session->write_mutex);
 
 	rtp_session->remote_addr = remote_addr;
+	rtp_session->remote_host_str = switch_core_strdup(rtp_session->pool, host);
 	rtp_session->remote_port = port;
 
 	if (rtp_session->sock_input &&

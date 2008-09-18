@@ -190,7 +190,7 @@ typedef enum {
 	TFLAG_VAD_IN = (1 << 11),
 	TFLAG_VAD_OUT = (1 << 12),
 	TFLAG_VAD = (1 << 13),
-	TFLAG_USE_ME = (1 << 14),
+	TFLAG_3PCC = (1 << 14),
 	TFLAG_READY = (1 << 15),
 	TFLAG_REINVITE = (1 << 16),
 	TFLAG_REFER = (1 << 17),
@@ -205,7 +205,8 @@ typedef enum {
 	TFLAG_VIDEO = (1 << 26),
 	TFLAG_TPORT_LOG = (1 << 27),
 	TFLAG_SENT_UPDATE = (1 << 28),
-	TFLAG_PROXY_MEDIA = (1 << 29)
+	TFLAG_PROXY_MEDIA = (1 << 29),
+	TFLAG_HOLD_LOCK = (1 << 30)
 } TFLAGS;
 
 struct mod_sofia_globals {
@@ -302,6 +303,12 @@ typedef enum {
 	PRES_TYPE_PASSIVE = 2
 } sofia_presence_type_t;
 
+typedef enum {
+	MEDIA_OPT_NONE = 0,
+	MEDIA_OPT_MEDIA_ON_HOLD = (1 << 0),
+	MEDIA_OPT_BYPASS_AFTER_ATT_XFER = (1 << 1)
+} sofia_media_options_t;
+
 struct sofia_profile {
 	int debug;
 	char *name;
@@ -376,6 +383,7 @@ struct sofia_profile {
 	uint32_t nat_acl_count;
 	int rport_level;
 	sofia_presence_type_t pres_type;
+	sofia_media_options_t media_options;
 };
 
 struct private_object {
@@ -487,6 +495,7 @@ struct private_object {
 	char *remote_ip;
 	int remote_port;
 	int got_bye;
+	int hold_laps;
 };
 
 struct callback_t {
@@ -687,3 +696,4 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile);
 void sofia_glue_del_gateway(sofia_gateway_t *gp);
 void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const char *host, const char *contact, const char *user_agent);
 void sofia_glue_restart_all_profiles(void);
+void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly);

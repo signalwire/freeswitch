@@ -858,7 +858,7 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt)
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VIDEO RTP CHANGING DEST TO: [%s:%d]\n",
 									  tech_pvt->remote_sdp_video_ip, tech_pvt->remote_sdp_video_port);
-					if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) &&
+					if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) &&
 						!((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
 						/* Reactivate the NAT buster flag. */
 						switch_rtp_set_flag(tech_pvt->video_rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
@@ -1749,12 +1749,18 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	}
 
 	if (tech_pvt->rtp_session && switch_test_flag(tech_pvt, TFLAG_REINVITE)) {
-		const char *ip = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE);
-		const char *port = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);
-
-		if (ip && port && !strcmp(ip, tech_pvt->adv_sdp_audio_ip) && atoi(port) == tech_pvt->remote_sdp_audio_port) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Audio params are unchanged.\n");
+		//const char *ip = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE);
+		//const char *port = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);
+		char *remote_host = switch_rtp_get_remote_host(tech_pvt->rtp_session);
+		switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->rtp_session);
+		
+		if (remote_host && remote_port && !strcmp(remote_host, tech_pvt->remote_sdp_audio_ip) && remote_port == tech_pvt->remote_sdp_audio_port) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Audio params are unchanged for %s.\n", switch_channel_get_name(tech_pvt->channel));
 			goto video;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Audio params changed for %s from %s:%d to %s:%d\n", 
+							  switch_channel_get_name(tech_pvt->channel),
+							  remote_host, remote_port, tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
 		}
 	}
 
@@ -1773,7 +1779,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 	if (tech_pvt->rtp_session && switch_test_flag(tech_pvt, TFLAG_REINVITE)) {
 		switch_clear_flag_locked(tech_pvt, TFLAG_REINVITE);
-
+		
 		if (switch_rtp_set_remote_address(tech_pvt->rtp_session, tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port, &err) !=
 			SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AUDIO RTP REPORTS ERROR: [%s]\n", err);
@@ -1944,7 +1950,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 				sofia_glue_tech_choose_video_port(tech_pvt, 1);
 			}
 
-			if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) &&
+			if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) &&
 				!((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
 				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_AUTOADJ |
 		 									 SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_NOBLOCK | SWITCH_RTP_FLAG_RAW_WRITE);
@@ -2042,6 +2048,71 @@ switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, const char *r_
 	return SWITCH_STATUS_FALSE;
 }
 
+void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
+{
+	if (sendonly && switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED)) {
+		if (!switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
+			const char *stream;
+
+			switch_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+			switch_channel_presence(tech_pvt->channel, "unknown", "hold", NULL);
+
+			if (tech_pvt->max_missed_hold_packets) {
+				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_hold_packets);
+			}
+
+			if (!(stream = switch_channel_get_variable(tech_pvt->channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
+				stream = tech_pvt->profile->hold_music;
+			}
+
+			if (stream && switch_is_moh(stream)) {
+				if (!strcasecmp(stream, "indicate_hold")) {
+					switch_channel_set_flag(tech_pvt->channel, CF_SUSPEND);
+					switch_channel_set_flag(tech_pvt->channel, CF_HOLD);
+					switch_ivr_hold_uuid(switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE), NULL, 0);
+				} else {
+					switch_ivr_broadcast(switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE), stream, SMF_ECHO_ALEG | SMF_LOOP);
+					switch_yield(250000);
+				}
+			}
+		}
+	} else {
+		if (switch_test_flag(tech_pvt, TFLAG_HOLD_LOCK)) {
+			switch_set_flag(tech_pvt, TFLAG_SIP_HOLD);
+		}
+
+		switch_clear_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
+		
+		if (switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
+			const char *uuid;
+			switch_core_session_t *b_session;
+
+			switch_yield(250000);
+
+			if (tech_pvt->max_missed_packets) {
+				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
+			}
+
+			if ((uuid = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (b_session = switch_core_session_locate(uuid))) {
+				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
+
+				if (switch_channel_test_flag(tech_pvt->channel, CF_HOLD)) {
+					switch_ivr_unhold(b_session);
+					switch_channel_clear_flag(tech_pvt->channel, CF_SUSPEND);
+					switch_channel_clear_flag(tech_pvt->channel, CF_HOLD);
+				} else {
+					switch_channel_stop_broadcast(b_channel);
+					switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000, NULL);
+				}
+				switch_core_session_rwunlock(b_session);
+			}
+
+			switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+			switch_channel_presence(tech_pvt->channel, "unknown", "unhold", NULL);
+		}
+	}
+}
+
 uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 {
 	uint8_t match = 0;
@@ -2093,60 +2164,9 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 		}
 	}
 
-	if (sendonly && switch_channel_test_flag(channel, CF_ANSWERED)) {
-		if (!switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
-			const char *stream;
-
-			switch_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
-			switch_channel_presence(tech_pvt->channel, "unknown", "hold", NULL);
-
-			if (tech_pvt->max_missed_hold_packets) {
-				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_hold_packets);
-			}
-
-			if (!(stream = switch_channel_get_variable(tech_pvt->channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
-				stream = tech_pvt->profile->hold_music;
-			}
-
-			if (stream && switch_is_moh(stream)) {
-				if (!strcasecmp(stream, "indicate_hold")) {
-					switch_channel_set_flag(tech_pvt->channel, CF_SUSPEND);
-					switch_channel_set_flag(tech_pvt->channel, CF_HOLD);
-					switch_ivr_hold_uuid(switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE), NULL, 0);
-				} else {
-					switch_ivr_broadcast(switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE), stream, SMF_ECHO_ALEG | SMF_LOOP);
-					switch_yield(250000);
-				}
-			}
-		}
-	} else {
-		if (switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
-			const char *uuid;
-			switch_core_session_t *b_session;
-
-			switch_yield(250000);
-
-			if (tech_pvt->max_missed_packets) {
-				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
-			}
-
-			if ((uuid = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (b_session = switch_core_session_locate(uuid))) {
-				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
-
-				if (switch_channel_test_flag(tech_pvt->channel, CF_HOLD)) {
-					switch_ivr_unhold(b_session);
-					switch_channel_clear_flag(tech_pvt->channel, CF_SUSPEND);
-					switch_channel_clear_flag(tech_pvt->channel, CF_HOLD);
-				} else {
-					switch_channel_stop_broadcast(b_channel);
-					switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000, NULL);
-				}
-				switch_core_session_rwunlock(b_session);
-			}
-
-			switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
-			switch_channel_presence(tech_pvt->channel, "unknown", "unhold", NULL);
-		}
+	if (!tech_pvt->hold_laps) {
+		tech_pvt->hold_laps++;
+		sofia_glue_toggle_hold(tech_pvt, sendonly);
 	}
 
 	for (m = sdp->sdp_media; m; m = m->m_next) {

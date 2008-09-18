@@ -110,6 +110,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_PATH_SEPARATOR "/"
 #endif
 #define SWITCH_URL_SEPARATOR "://"
+#define SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE "bypass_media_after_bridge"
 #define SWITCH_READ_RESULT_VARIABLE "read_result"
 #define SWITCH_COPY_XML_CDR_VARIABLE "copy_xml_cdr"
 #define SWITCH_CURRENT_APPLICATION_VARIABLE "current_application"

@@ -103,8 +103,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	switch_codec_t silence_codec = { 0 };
 	switch_frame_t silence_frame = { 0 };
 	int16_t silence_data[SWITCH_RECOMMENDED_BUFFER_SIZE/2] = { 0 };
-	const char *silence_var;
-	int silence_val = 0;
+	const char *silence_var, *var;
+	int silence_val = 0, bypass_media_after_bridge = 0;
 #ifdef SWITCH_VIDEO_IN_THREADS
 	struct vid_helper vh = { 0 };
 	uint32_t vid_launch = 0;
@@ -114,7 +114,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	if (!(session_b = switch_core_session_locate(data->b_uuid))) {
 		return NULL;
 	}
-
+	
 	input_callback = data->input_callback;
 	user_data = data->session_data;
 	stream_id = data->stream_id;
@@ -139,6 +139,11 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	if (!switch_channel_test_flag(chan_b, CF_BRIDGED)) {
 		switch_channel_hangup(chan_b, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		goto end_of_bridge_loop;
+	}
+
+	if ((var = switch_channel_get_variable(chan_a, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE)) && switch_true(var)) {
+		bypass_media_after_bridge = 1;
+		switch_channel_set_variable(chan_a, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE, NULL);
 	}
 
 	if ((silence_var = switch_channel_get_variable(chan_a, "bridge_generate_comfort_noise"))) {
@@ -234,6 +239,11 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		}
 #endif
 
+		if (loop_count > 50 && bypass_media_after_bridge) {
+			switch_ivr_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);
+			bypass_media_after_bridge = 0;
+		}
+		
 		/* if 1 channel has DTMF pass it to the other */
 		while (switch_channel_has_dtmf(chan_a)) {
 			switch_dtmf_t dtmf = { 0, 0 };

@@ -114,7 +114,9 @@ static switch_status_t sofia_on_routing(switch_core_session_t *session)
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
-	switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+	if (!switch_test_flag(tech_pvt, TFLAG_HOLD_LOCK)) {
+		switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SOFIA ROUTING\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 
@@ -127,7 +129,9 @@ static switch_status_t sofia_on_reset(switch_core_session_t *session)
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
-	switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+	if (!switch_test_flag(tech_pvt, TFLAG_HOLD_LOCK)) {
+		switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SOFIA RESET\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 
@@ -140,7 +144,9 @@ static switch_status_t sofia_on_hibernate(switch_core_session_t *session)
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
-	switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+	if (!switch_test_flag(tech_pvt, TFLAG_HOLD_LOCK)) {
+		switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SOFIA HIBERNATE\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 
@@ -152,7 +158,9 @@ static switch_status_t sofia_on_execute(switch_core_session_t *session)
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
-	switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+	if (!switch_test_flag(tech_pvt, TFLAG_HOLD_LOCK)) {
+		switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SOFIA EXECUTE\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 
 	return SWITCH_STATUS_SUCCESS;
