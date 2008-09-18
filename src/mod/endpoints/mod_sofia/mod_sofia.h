@@ -137,7 +137,7 @@ typedef enum {
 	PFLAG_BLIND_REG = (1 << 1),
 	PFLAG_AUTH_ALL = (1 << 2),
 	PFLAG_FULL_ID = (1 << 3),
-	PFLAG_PRESENCE = (1 << 4),
+	PFLAG_USE_ME = (1 << 4),
 	PFLAG_PASS_RFC2833 = (1 << 5),
 	PFLAG_DISABLE_TRANSCODING = (1 << 6),
 	PFLAG_REWRITE_TIMESTAMPS = (1 << 7),
@@ -218,6 +218,7 @@ struct mod_sofia_globals {
 	int32_t threads;
 	switch_mutex_t *mutex;
 	char guess_ip[80];
+	char hostname[512];
 	switch_queue_t *presence_queue;
 	switch_queue_t *mwi_queue;
 	struct sofia_private destroy_private;
@@ -295,6 +296,12 @@ struct sofia_gateway {
 	struct sofia_gateway *next;
 };
 
+typedef enum {
+	PRES_TYPE_NONE = 0,
+	PRES_TYPE_FULL = 1,
+	PRES_TYPE_PASSIVE = 2
+} sofia_presence_type_t;
+
 struct sofia_profile {
 	int debug;
 	char *name;
@@ -321,6 +328,7 @@ struct sofia_profile {
 	char *reg_db_domain;
 	char *user_agent;
 	char *record_template;
+	char *presence_hosts;
 	sofia_dtmf_t dtmf_type;
 	int sip_port;
 	int tls_sip_port;
@@ -367,6 +375,7 @@ struct sofia_profile {
 	char *nat_acl[SOFIA_MAX_ACL];
 	uint32_t nat_acl_count;
 	int rport_level;
+	sofia_presence_type_t pres_type;
 };
 
 struct private_object {

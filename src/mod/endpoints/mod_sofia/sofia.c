@@ -72,7 +72,7 @@ void sofia_handle_sip_r_notify(switch_core_session_t *session, int status,
 {
 	if (status >= 300 && sip && sip->sip_call_id) {
 		char *sql;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "delete subscriptions for failed notify\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "delete subscriptions for failed notify\n");
 		sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", sip->sip_call_id->i_id);
 		switch_assert(sql != NULL);
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
@@ -387,6 +387,7 @@ void event_handler(switch_event_t *event)
 		long expires = (long) switch_timestamp(NULL);
 		char *profile_name = switch_event_get_header(event, "orig-profile-name");
 		char *to_user = switch_event_get_header(event, "orig-to-user");
+		char *presence_hosts = switch_event_get_header(event, "presence-hosts");
 		sofia_profile_t *profile = NULL;
 
 		char guess_ip4[256];
@@ -413,8 +414,11 @@ void event_handler(switch_event_t *event)
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		
 		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), AF_INET);
-		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','Registered', '%q', %ld, '%q', '%q', '%q')",
-							 call_id, from_user, from_host, contact_str, rpid, expires, user_agent, to_user, guess_ip4);
+		sql = switch_mprintf("insert into sip_registrations "
+							 "(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,user_agent,server_user,server_host,profile_name,hostname) "
+							 "values ('%q', '%q','%q','%q','Registered', '%q', %ld, '%q', '%q', '%q','%q','%q')",
+							 call_id, from_user, from_host, presence_hosts, contact_str, rpid, expires, user_agent, to_user, guess_ip4, 
+							 profile_name,mod_sofia_globals.hostname);
 
 		if (sql) {
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
@@ -572,16 +576,16 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   NUTAG_ALLOW_EVENTS("talk"),
 				   NUTAG_SESSION_TIMER(profile->session_timeout),
 				   NTATAG_MAX_PROCEEDING(profile->max_proceeding),
-				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("PUBLISH")),
-				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("SUBSCRIBE")),
-				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ENABLEMESSAGE(1)),
-				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence")),
-				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("dialog")),
-				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("call-info")),
-				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("sla")),
-				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("include-session-description")),
-				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence.winfo")),
-				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("message-summary")),
+				   TAG_IF(profile->pres_type, NUTAG_ALLOW("PUBLISH")),
+				   TAG_IF(profile->pres_type, NUTAG_ALLOW("SUBSCRIBE")),
+				   TAG_IF(profile->pres_type, NUTAG_ENABLEMESSAGE(1)),
+				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("presence")),
+				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("dialog")),
+				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("call-info")),
+				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("sla")),
+				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("include-session-description")),
+				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("presence.winfo")),
+				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("message-summary")),
 				   SIPTAG_SUPPORTED_STR(supported), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set params for %s\n", profile->name);
@@ -600,8 +604,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 					   TAG_IF((profile->mflags & MFLAG_REGISTER), NUTAG_ALLOW("REGISTER")),
 					   TAG_IF((profile->mflags & MFLAG_REFER), NUTAG_ALLOW("REFER")),
 					   NUTAG_ALLOW("INFO"),
-					   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("PUBLISH")),
-					   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ENABLEMESSAGE(1)),
+					   TAG_IF(profile->pres_type, NUTAG_ALLOW("PUBLISH")),
+					   TAG_IF(profile->pres_type, NUTAG_ENABLEMESSAGE(1)),
 					   SIPTAG_SUPPORTED_STR(supported), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
 	}
 
@@ -628,7 +632,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	sofia_glue_add_profile(profile->name, profile);
 
-	if (profile->pflags & PFLAG_PRESENCE) {
+	if (profile->pres_type) {
 		sofia_presence_establish_presence(profile);
 	}
 
@@ -1443,8 +1447,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (switch_true(val)) {
 							profile->rport_level = 2;
 						}
+					} else if (!strcasecmp(var, "dbname")) {
+						profile->dbname = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "presence-hosts")) {
+						profile->presence_hosts = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "record-template")) {
-						profile->record_template = switch_core_strdup(profile->pool, val);;
+						profile->record_template = switch_core_strdup(profile->pool, val);
 					} else if ((!strcasecmp(var, "inbound-no-media") || !strcasecmp(var, "inbound-bypass-media")) && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_INB_NOMEDIA);
 					} else if (!strcasecmp(var, "inbound-late-negotiation") && switch_true(val)) {
@@ -1584,9 +1592,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "disable-register") && switch_true(val)) {
 						profile->mflags &= ~MFLAG_REGISTER;
 					} else if (!strcasecmp(var, "manage-presence")) {
-						if (switch_true(val)) {
-							profile->pflags |= PFLAG_PRESENCE;
-						}
+						if (!strcasecmp(val, "passive")) {
+							profile->pres_type = PRES_TYPE_PASSIVE;
+						
+						} else if (switch_true(val)) {
+							profile->pres_type = PRES_TYPE_FULL;
+						} 
 					} else if (!strcasecmp(var, "unregister-on-options-fail")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_UNREG_OPTIONS_FAIL;
@@ -2086,17 +2097,22 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					contact_host = switch_str_nil(contact->url_host);
 				}
 
-				if (profile->pflags & PFLAG_PRESENCE) {
-					sql = switch_mprintf("insert into sip_dialogs values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
+				if (profile->pres_type) {
+					sql = switch_mprintf("insert into sip_dialogs "
+										 "(call_id,uuid,sip_to_user,sip_to_host,sip_from_user,sip_from_host,contact_user,"
+										 "contact_host,state,direction,user_agent,profile_name,hostname) "
+										 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
 										 call_id,
 										 switch_core_session_get_uuid(session),
-										 to_user, to_host, from_user, from_host, contact_user, contact_host, astate, "outbound", user_agent);
+										 to_user, to_host, from_user, from_host, contact_user, 
+										 contact_host, astate, "outbound", user_agent,
+										 profile->name, mod_sofia_globals.hostname);
 
 					switch_assert(sql);
 
 					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 				}
-			} else if (status == 200 && (profile->pflags & PFLAG_PRESENCE)) {
+			} else if (status == 200 && (profile->pres_type)) {
 				char *sql = NULL;
 				sql = switch_mprintf("update sip_dialogs set state='%s' where uuid='%s';\n", astate, switch_core_session_get_uuid(session));
 				switch_assert(sql);
@@ -3636,7 +3652,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		su_free(profile->home, tmp);
 	}
 
-	if (sofia_test_pflag(profile, PFLAG_PRESENCE)) {
+	if (profile->pres_type) {
 		const char *user = switch_str_nil(sip->sip_from->a_url->url_user);
 		const char *host = switch_str_nil(sip->sip_from->a_url->url_host);
 
@@ -3709,7 +3725,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	sofia_private->is_call++;
 	tech_pvt->sofia_private = sofia_private;
 
-	if ((profile->pflags & PFLAG_PRESENCE)) {
+	if ((profile->pres_type)) {
 		sofia_presence_set_chat_hash(tech_pvt, sip);
 	}
 	switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));
@@ -3756,12 +3772,17 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		}
 
 
-		if (profile->pflags & PFLAG_PRESENCE) {
+		if (profile->pres_type) {
 
-			sql = switch_mprintf("insert into sip_dialogs values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
+			sql = switch_mprintf("insert into sip_dialogs "
+								 "(call_id,uuid,sip_to_user,sip_to_host,sip_from_user,sip_from_host,contact_user,"
+								 "contact_host,state,direction,user_agent,profile_name,hostname) "
+								 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
 								 call_id,
 								 tech_pvt->sofia_private->uuid,
-								 to_user, to_host, dialog_from_user, dialog_from_host, contact_user, contact_host, "confirmed", "inbound", user_agent);
+								 to_user, to_host, dialog_from_user, dialog_from_host, 
+								 contact_user, contact_host, "confirmed", "inbound", user_agent,
+								 profile->name, mod_sofia_globals.hostname);
 
 			switch_assert(sql);
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);

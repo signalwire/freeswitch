@@ -1231,7 +1231,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		tech_pvt->chat_from = tech_pvt->from_str;
 		tech_pvt->chat_to = tech_pvt->dest;
-		if (tech_pvt->profile->pflags & PFLAG_PRESENCE) {
+		if (tech_pvt->profile->pres_type) {
 			tech_pvt->hash_key = switch_core_session_strdup(tech_pvt->session, hash_key);
 			switch_mutex_lock(tech_pvt->profile->flag_mutex);
 			switch_core_hash_insert(tech_pvt->profile->chat_hash, tech_pvt->hash_key, tech_pvt);
@@ -2715,18 +2715,24 @@ void sofia_glue_del_profile(sofia_profile_t *profile)
 
 int sofia_glue_init_sql(sofia_profile_t *profile)
 {
+	char *test_sql = NULL;
+
 	char reg_sql[] =
 		"CREATE TABLE sip_registrations (\n"
 		"   call_id         VARCHAR(255),\n"
 		"   sip_user        VARCHAR(255),\n"
 		"   sip_host        VARCHAR(255),\n"
+		"   presence_hosts  VARCHAR(255),\n"
 		"   contact         VARCHAR(1024),\n"
 		"   status          VARCHAR(255),\n"
 		"   rpid            VARCHAR(255),\n" 
 		"   expires         INTEGER,\n" 
 		"   user_agent      VARCHAR(255),\n" 
-		"   server_user        VARCHAR(255),\n"
-		"   server_host        VARCHAR(255)\n" ");\n";
+		"   server_user     VARCHAR(255),\n"
+		"   server_host     VARCHAR(255),\n" 
+		"   profile_name    VARCHAR(255),\n" 
+		"   hostname        VARCHAR(255)\n" 
+		");\n";
 
 	char dialog_sql[] =
 		"CREATE TABLE sip_dialogs (\n"
@@ -2740,7 +2746,9 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   contact_host    VARCHAR(255),\n"
 		"   state           VARCHAR(255),\n" 
 		"   direction       VARCHAR(255),\n" 
-		"   user_agent      VARCHAR(255)\n" 
+		"   user_agent      VARCHAR(255),\n" 
+		"   profile_name    VARCHAR(255),\n"
+        "   hostname        VARCHAR(255)\n"
 		");\n";
 
 	char sub_sql[] =
@@ -2750,6 +2758,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   sip_host        VARCHAR(255),\n"
 		"   sub_to_user     VARCHAR(255),\n"
 		"   sub_to_host     VARCHAR(255),\n"
+		"   presence_hosts  VARCHAR(255),\n"
 		"   event           VARCHAR(255),\n"
 		"   contact         VARCHAR(1024),\n"
 		"   call_id         VARCHAR(255),\n"
@@ -2757,13 +2766,18 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   full_via        VARCHAR(255),\n"
 		"   expires         INTEGER,\n" 
 		"   user_agent      VARCHAR(255),\n" 
-		"   accept          VARCHAR(255)\n" 
+		"   accept          VARCHAR(255),\n"
+		"   profile_name    VARCHAR(255),\n"
+		"   hostname        VARCHAR(255)\n"
 		");\n";
 
 	char auth_sql[] = 
 		"CREATE TABLE sip_authentication (\n" 
 		"   nonce           VARCHAR(255),\n" 
-		"   expires         INTEGER" ");\n";
+		"   expires         INTEGER," 
+		"   profile_name    VARCHAR(255),\n"
+		"   hostname        VARCHAR(255)\n"
+		");\n";
 
 	if (profile->odbc_dsn) {
 #ifdef SWITCH_HAVE_ODBC
@@ -2776,27 +2790,37 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
-
-		if (switch_odbc_handle_exec(profile->master_odbc, "select sip_user,user_agent,server_host from sip_registrations", NULL) != SWITCH_ODBC_SUCCESS) {
+		
+		if (switch_odbc_handle_exec(profile->master_odbc, "select hostname from sip_registrations", NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_registrations", NULL);
 			switch_odbc_handle_exec(profile->master_odbc, reg_sql, NULL);
 		}
 
-		if (switch_odbc_handle_exec(profile->master_odbc, "delete from sip_subscriptions where sip_user != '' or accept != ''", NULL) !=
-			SWITCH_ODBC_SUCCESS) {
+
+		test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q'", mod_sofia_globals.hostname);
+
+		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_subscriptions", NULL);
 			switch_odbc_handle_exec(profile->master_odbc, sub_sql, NULL);
 		}
 
-		if (switch_odbc_handle_exec(profile->master_odbc, "delete from sip_dialogs", NULL) != SWITCH_ODBC_SUCCESS) {
+		free(test_sql);
+		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q'", mod_sofia_globals.hostname);
+
+		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_dialogs", NULL);
 			switch_odbc_handle_exec(profile->master_odbc, dialog_sql, NULL);
 		}
 
-		if (switch_odbc_handle_exec(profile->master_odbc, "select nonce from sip_authentication", NULL) != SWITCH_ODBC_SUCCESS) {
+		free(test_sql);
+		test_sql = switch_mprintf("delete from sip_authentication where hostname='%q'", mod_sofia_globals.hostname);
+
+		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_authentication", NULL);
 			switch_odbc_handle_exec(profile->master_odbc, auth_sql, NULL);
 		}
+		free(test_sql);
+
 #else
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 #endif
@@ -2805,12 +2829,18 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 			return 0;
 		}
 
-		switch_core_db_test_reactive(profile->master_db, "select sip_user,user_agent,server_host from sip_registrations", "DROP TABLE sip_registrations", reg_sql);
-		switch_core_db_test_reactive(profile->master_db, "delete from sip_subscriptions where sip_user != '' or accept != ''",
-									 "DROP TABLE sip_subscriptions", sub_sql);
-		switch_core_db_test_reactive(profile->master_db, "delete from sip_dialogs", "DROP TABLE sip_dialogs", dialog_sql);
-		switch_core_db_test_reactive(profile->master_db, "select * from sip_authentication", "DROP TABLE sip_authentication", auth_sql);
-
+		switch_core_db_test_reactive(profile->master_db, "select hostname from sip_registrations", "DROP TABLE sip_registrations", reg_sql);
+		
+		test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q'", mod_sofia_globals.hostname);
+		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_subscriptions", sub_sql);
+		free(test_sql);
+		
+		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q'", mod_sofia_globals.hostname);
+		switch_core_db_test_reactive(profile->master_db, "delete from sip_dialogs", test_sql, dialog_sql);
+		free(test_sql);
+		test_sql = switch_mprintf("delete from sip_authentication where hostname='%q'", mod_sofia_globals.hostname);
+		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_authentication", auth_sql);
+		free(test_sql);
 	}
 
 #ifdef SWITCH_HAVE_ODBC

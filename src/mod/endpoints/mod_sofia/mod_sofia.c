@@ -268,7 +268,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->hash_key);
 	}
 
-	if (session && (tech_pvt->profile->pflags & PFLAG_PRESENCE)) {
+	if (session && tech_pvt->profile->pres_type) {
 		char *sql = switch_mprintf("delete from sip_dialogs where call_id='%q'", tech_pvt->call_id);
 		switch_assert(sql);
 		sofia_glue_execute_sql(tech_pvt->profile, &sql, SWITCH_TRUE);
@@ -1214,13 +1214,14 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 	}
 
 	cb->stream->write_function(cb->stream,
-							   "Call-ID \t%s\n"
-							   "User    \t%s@%s\n"
-							   "Contact \t%s\n"
-							   "Agent   \t%s\n"
-							   "Status  \t%s(%s) EXP(%s)\n\n",
+							   "Call-ID: \t%s\n"
+							   "User:    \t%s@%s\n"
+							   "Contact: \t%s\n"
+							   "Agent:   \t%s\n"
+							   "Status:  \t%s(%s) EXP(%s)\n"
+							   "Host:    \t%s\n\n",
 							   switch_str_nil(argv[0]), switch_str_nil(argv[1]), switch_str_nil(argv[2]), switch_str_nil(argv[3]),
-							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf);
+							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, switch_str_nil(argv[11]));
 	return 0;
 }
 
@@ -1279,6 +1280,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					stream->write_function(stream, "Alias Of      \t\t%s\n", switch_str_nil(profile->name));
 				}
 				stream->write_function(stream, "DBName        \t\t%s\n", switch_str_nil(profile->dbname));
+				stream->write_function(stream, "Pres Hosts    \t\t%s\n", switch_str_nil(profile->presence_hosts));
 				stream->write_function(stream, "Dialplan      \t\t%s\n", switch_str_nil(profile->dialplan));
 				stream->write_function(stream, "Context       \t\t%s\n", switch_str_nil(profile->context));
 				stream->write_function(stream, "RTP-IP        \t\t%s\n", switch_str_nil(profile->rtpip));
@@ -1320,7 +1322,10 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				cb.profile = profile;
 				cb.stream = stream;
 
-				sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, "select * from sip_registrations", show_reg_callback, &cb);
+				sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, 
+												"select call_id,sip_user,sip_host,contact,status,"
+												"rpid,expires,user_agent,server_user,server_host,profile_name,hostname"
+												" from sip_registrations", show_reg_callback, &cb);
 
 				stream->write_function(stream, "%s\n", line);
 
@@ -1599,7 +1604,7 @@ static int contact_callback(void *pArg, int argc, char **argv, char **columnName
 	char *contact;
 
 	if (!switch_strlen_zero(argv[0]) && (contact = sofia_glue_get_url_from_contact(argv[0], 1)) ) {
-		cb->stream->write_function(cb->stream, "%ssofia/%s/%s,", argv[1], cb->profile->name, sofia_glue_strip_proto(contact));
+		cb->stream->write_function(cb->stream, "%ssofia/%s/%s,", argv[2], argv[1], sofia_glue_strip_proto(contact));
 		free(contact);
 	}
 
@@ -1682,11 +1687,14 @@ SWITCH_STANDARD_API(sofia_contact_function)
 			cb.stream = &mystream;
 
 			if (exclude_contact) {
-				sql = switch_mprintf("select contact, '%q' from sip_registrations where sip_user='%q' and sip_host='%q' and contact not like '%%%s%%'",
-									 ( concat != NULL ) ? concat : "", user, domain, exclude_contact);
+				sql = switch_mprintf("select contact, profile_name, '%q' "
+									 "from sip_registrations where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%') "
+									 "and contact not like '%%%s%%'",
+									 ( concat != NULL ) ? concat : "", user, domain, domain, exclude_contact);
 			} else {
-				sql = switch_mprintf("select contact, '%q' from sip_registrations where sip_user='%q' and sip_host='%q'", 
-									 ( concat != NULL ) ? concat : "", user, domain);
+				sql = switch_mprintf("select contact, profile_name, '%q' "
+									 "from sip_registrations where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')", 
+									 ( concat != NULL ) ? concat : "", user, domain, domain);
 			}
 
 			switch_assert(sql);
@@ -2006,7 +2014,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 	if (tech_pvt->local_url) {
 		switch_channel_set_variable(nchannel, "sip_local_url", tech_pvt->local_url);
-		if (sofia_test_pflag(profile, PFLAG_PRESENCE)) {
+		if (profile->pres_type) {
 			switch_channel_set_variable(nchannel, "presence_id", tech_pvt->local_url);
 		}
 	}
@@ -2219,6 +2227,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_mutex_init(&mod_sofia_globals.mutex, SWITCH_MUTEX_NESTED, mod_sofia_globals.pool);
 
 	switch_find_local_ip(mod_sofia_globals.guess_ip, sizeof(mod_sofia_globals.guess_ip), AF_INET);
+	gethostname(mod_sofia_globals.hostname, sizeof(mod_sofia_globals.hostname));
+
 
 	switch_core_hash_init(&mod_sofia_globals.profile_hash, mod_sofia_globals.pool);
 	switch_core_hash_init(&mod_sofia_globals.gateway_hash, mod_sofia_globals.pool);
