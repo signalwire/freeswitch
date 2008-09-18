@@ -37,6 +37,7 @@ from Queue import Queue
 
 from freepy import models
 import freepy.globals
+from freepy.globals import debug
 
 """
 These are response handlers for different types of requests.
@@ -61,6 +62,8 @@ class FreepyRequest(object):
         return self.finished
 
     def setRequestFinished(self):
+        debug("setRequestFinished called.  response_content: %s " %
+              self.response_content)
         self.finished = True
         
     def getDeferred(self):
@@ -104,6 +107,7 @@ class FreepyRequest(object):
         matchstr = re.compile("Reply-Text", re.I)
         result = matchstr.search(line)
         if (result != None):
+            debug("FREEPY: got Reply-Text")
             fields = line.split(":") # eg, ['Reply-Text','+OK Job-UUID', '882']
             endfields = fields[1:]
             self.response_content = "".join(endfields)
