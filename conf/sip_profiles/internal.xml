@@ -45,6 +45,13 @@
     <param name="record-template" value="$${base_dir}/recordings/${caller_id_number}.${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
     <!--enable to use presence and mwi -->
     <param name="manage-presence" value="true"/>
+
+    <!-- used to share presence info across sofia profiles -->
+    <!-- Name of the db to use for this profile -->
+    <!--<param name="dbname" value="share_presence"/>-->
+    <!--<param name="presence-hosts" value="$${domain}"/>-->
+    <!-- ************************************************* -->
+    
     <!-- This setting is for AAL2 bitpacking on G726 -->
     <!-- <param name="bitpacking" value="aal2"/> -->
     <!--max number of open dialogs in proceeding -->
