@@ -24,7 +24,8 @@
  * Contributor(s):
  * 
  * Michael Giagnocavo <mgg@packetrino.com>
- * 
+ * David Brazier <David.Brazier@360crm.co.uk>
+ *
  * mod_mono.cpp -- FreeSWITCH mod_mono main class
  *
  * Most of mod_mono is implmented in the mod_mono_managed Loader class. 
@@ -88,43 +89,68 @@ SWITCH_MOD_DECLARE(void) InitMonoSession(MonoSession * session, MonoObject * dtm
 switch_status_t setMonoDirs() 
 {
 #ifdef WIN32	
-	/* Win32 Mono installs can't figure out their own path
+	// Win32 Mono installs can't figure out their own path
 	// Guys in #mono say we should just deploy all the libs we need
-	// I think it's much nicer to let the user deal with installing Mono
-	// and we'll just look for it in program files. */ 
-	HANDLE hFind;
-	WIN32_FIND_DATA findData;
+	// We'll first check for Program Files\Mono to allow people to use the symlink dir for a specific version.
+	// Then we'll check HKEY_LOCAL_MACHINE\SOFTWARE\Novell\Mono\2.0\FrameworkAssemblyDirectory and MonoConfigDir
+	// After that, we'll scan program files for a Mono-* dir.
 	char progFilesPath[MAX_PATH];
+	char libPath[MAX_PATH];
+	char etcPath[MAX_PATH];
 	char findPath[MAX_PATH];
+	bool found = false;
 
 	SHGetFolderPath(NULL, CSIDL_PROGRAM_FILES, NULL, SHGFP_TYPE_CURRENT, progFilesPath);
-	switch_snprintf(findPath, MAX_PATH, "%s\\Mono-*", progFilesPath);
-	hFind = FindFirstFile(findPath, &findData);
-	if (hFind == INVALID_HANDLE_VALUE) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error looking for Mono in Program Files.\n");
-		return SWITCH_STATUS_FALSE;
-	}
 
-	while ((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != FILE_ATTRIBUTE_DIRECTORY) {
-		if (FindNextFile(hFind, &findData) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not find Mono directory in Program Files.\n");
-			FindClose(hFind);
-			return SWITCH_STATUS_FALSE;
+	{ // Check PF\Mono directly
+		DWORD attr;
+		switch_snprintf(findPath, MAX_PATH, "%s\\Mono", progFilesPath);
+		attr = GetFileAttributes(findPath);
+		found = (attr != INVALID_FILE_ATTRIBUTES && ((attr & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY));
+		if (found) {
+			switch_snprintf(libPath, MAX_PATH, "%s\\lib", findPath);
+			switch_snprintf(etcPath, MAX_PATH, "%s\\etc", findPath);
 		}
 	}
 
-	/* Got it */ 
-	{
-		char libPath[MAX_PATH];
-		char etcPath[MAX_PATH];
+	if(!found) 
+	{   // Check registry
+		DWORD size = MAX_PATH;
+		if (ERROR_SUCCESS == RegGetValue(HKEY_LOCAL_MACHINE, "SOFTWARE\\Novell\\Mono\\2.0", "FrameworkAssemblyDirectory", RRF_RT_REG_SZ, NULL, &libPath, &size)) {
+			size = MAX_PATH;
+			if (ERROR_SUCCESS == RegGetValue(HKEY_LOCAL_MACHINE, "SOFTWARE\\Novell\\Mono\\2.0", "MonoConfigDir", RRF_RT_REG_SZ, NULL, &etcPath, &size)) {
+				found = true;
+			}
+		}
+	}
 
+	if (!found)
+	{ // Scan program files for Mono-2something
+		HANDLE hFind;
+		WIN32_FIND_DATA findData;
+		switch_snprintf(findPath, MAX_PATH, "%s\\Mono-2*", progFilesPath);
+		hFind = FindFirstFile(findPath, &findData);
+		if (hFind == INVALID_HANDLE_VALUE) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error looking for Mono in Program Files.\n");
+			return SWITCH_STATUS_FALSE;
+		}
+
+		while ((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != FILE_ATTRIBUTE_DIRECTORY) {
+			if (FindNextFile(hFind, &findData) == 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not find Mono directory in Program Files.\n");
+				FindClose(hFind);
+				return SWITCH_STATUS_FALSE;
+			}
+		}
 		switch_snprintf(libPath, MAX_PATH, "%s\\%s\\lib", progFilesPath, findData.cFileName);
 		switch_snprintf(etcPath, MAX_PATH, "%s\\%s\\etc", progFilesPath, findData.cFileName);
 		FindClose(hFind);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Using Mono paths '%s' and '%s'.\n", libPath, etcPath);
-		mono_set_dirs(libPath, etcPath);
-		return SWITCH_STATUS_SUCCESS;
 	}
+
+	/* Got it */ 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Using Mono paths '%s' and '%s'.\n", libPath, etcPath);
+	mono_set_dirs(libPath, etcPath);
+	return SWITCH_STATUS_SUCCESS;
 
 #else
 	// On other platforms, it should just work if it hasn't been relocated

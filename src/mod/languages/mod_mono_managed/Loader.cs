@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Michael Giagnocavo <mgg@packetrino.com>
+ * David Brazier <David.Brazier@360crm.co.uk>
  * 
  * Loader.cs -- mod_mono managed loader
  *
