@@ -48,9 +48,13 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 {
 	switch_xml_t xcond, xaction, xexpression;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	char *exten_name = (char *) switch_xml_attr_soft(xexten, "name");
+	char *exten_name = (char *) switch_xml_attr(xexten, "name");
 	int proceed = 0;
 	char *expression_expanded = NULL, *field_expanded = NULL;
+
+	if (!exten_name) {
+		exten_name = "_anon_";
+	}
 
 	for (xcond = switch_xml_child(xexten, "condition"); xcond; xcond = xcond->next) {
 		char *field = NULL;
@@ -110,7 +114,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 			if (!field_data) {
 				field_data = "";
 			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "test conditions %s(%s) =~ /%s/\n", field, field_data, expression);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Regex: [%s] %s(%s) =~ /%s/\n", exten_name, field, field_data, expression);
 			if (!(proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Regex mismatch\n");
 
