@@ -2098,7 +2098,7 @@ static void general_event_handler(switch_event_t *event)
 			sofia_profile_t *profile;
 			nua_handle_t *nh;
 
-			if (profile_name && ct && es && body && user && host && (profile = sofia_glue_find_profile(profile_name))) {
+			if (profile_name && ct && es && user && host && (profile = sofia_glue_find_profile(profile_name))) {
 				char *id = NULL;
 				char *contact, *p;
 				char buf[512] = "";
@@ -2129,7 +2129,7 @@ static void general_event_handler(switch_event_t *event)
 						   NUTAG_NEWSUB(1),
 						   SIPTAG_EVENT_STR(es), 
 						   SIPTAG_CONTENT_TYPE_STR(ct), 
-						   SIPTAG_PAYLOAD_STR(body), 
+						   TAG_IF(!switch_strlen_zero(body), SIPTAG_PAYLOAD_STR(body)),
 						   TAG_END());
 
 				
@@ -2149,7 +2149,7 @@ static void general_event_handler(switch_event_t *event)
 			sofia_profile_t *profile;
 			nua_handle_t *nh;
 
-			if (profile_name && ct && body && user && host) {
+			if (profile_name && ct && user && host) {
 				char *id = NULL;
 				char *contact, *p;
 				char buf[512] = "";
@@ -2185,7 +2185,7 @@ static void general_event_handler(switch_event_t *event)
 				nua_message(nh,
 							NUTAG_NEWSUB(1),
  							SIPTAG_CONTENT_TYPE_STR(ct), 
-							SIPTAG_PAYLOAD_STR(body), 
+							TAG_IF(!switch_strlen_zero(body), SIPTAG_PAYLOAD_STR(body)),
 							TAG_END());
 
 				
