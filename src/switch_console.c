@@ -87,18 +87,26 @@ static switch_status_t console_xml_config(void)
 
 SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_raw_write(switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen)
 {
-	switch_size_t nwrite;
-	FILE *out = switch_core_get_console();
+	switch_size_t need = handle->data_len + datalen;
+	
+	if (need >= handle->data_size) {
+		void *new_data;
+		need += handle->alloc_chunk;
 
-	if (out) {
-		nwrite = fwrite(data, datalen, 1, out);
-		if (nwrite != datalen) {
-			return SWITCH_STATUS_FALSE;
+		if (!(new_data = realloc(handle->data, need))) {
+			return SWITCH_STATUS_MEMERR;
 		}
-		return SWITCH_STATUS_SUCCESS;
+
+		handle->data = new_data;
+		handle->data_size = need;
 	}
 
-	return SWITCH_STATUS_FALSE;
+	memcpy((uint8_t *) (handle->data) + handle->data_len, data, datalen);
+	handle->data_len += datalen;
+	handle->end = (uint8_t *) (handle->data) + handle->data_len;
+	handle->end = NULL;
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_write(switch_stream_handle_t *handle, const char *fmt, ...)
