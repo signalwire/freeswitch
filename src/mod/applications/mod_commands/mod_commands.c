@@ -2417,6 +2417,10 @@ SWITCH_STANDARD_API(uuid_dump_function)
 			char *uuid = argv[0];
 			char *format = argv[1];
 
+			if (!format) {
+				format = "txt";
+			}
+
 			if ((psession = switch_core_session_locate(uuid))) {
 				switch_channel_t *channel;
 				switch_event_t *event;
@@ -2427,7 +2431,7 @@ SWITCH_STANDARD_API(uuid_dump_function)
 				if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 					switch_xml_t xml;
 					switch_channel_event_set_data(channel, event);
-					if (format && !strcasecmp(format, "xml")) {
+					if (!strcasecmp(format, "xml")) {
 						if ((xml = switch_event_xmlize(event, "%s", ""))) {
 							buf = switch_xml_toxml(xml, SWITCH_FALSE);
 							switch_xml_free(xml);
@@ -2438,7 +2442,7 @@ SWITCH_STANDARD_API(uuid_dump_function)
 							goto done;
 						}
 					} else {
-						switch_event_serialize(event, &buf, SWITCH_TRUE);
+						switch_event_serialize(event, &buf, strcasecmp(format, "plain"));
 					}
 
 					switch_assert(buf);
