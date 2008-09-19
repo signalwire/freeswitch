@@ -104,7 +104,7 @@ SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_raw_write(switch_st
 	memcpy((uint8_t *) (handle->data) + handle->data_len, data, datalen);
 	handle->data_len += datalen;
 	handle->end = (uint8_t *) (handle->data) + handle->data_len;
-	handle->end = NULL;
+	*(uint8_t *)handle->end = '\0';
 
 	return SWITCH_STATUS_SUCCESS;
 }
