@@ -920,7 +920,7 @@ static void cleanup_proxy_mode(switch_core_session_t *session)
 	if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 		const char *sbv = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
 		
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Restore media to %s\n", switch_channel_get_name(channel));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Restore media to %s\n", switch_channel_get_name(channel));
 		switch_ivr_media(switch_core_session_get_uuid(session), SMF_IMMEDIATE);
 
 		if (!switch_strlen_zero(sbv) && (sbsession = switch_core_session_locate(sbv))) {
