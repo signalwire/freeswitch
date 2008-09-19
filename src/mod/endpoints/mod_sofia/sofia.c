@@ -550,6 +550,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), NUTAG_CERTIFICATE_DIR(profile->tls_cert_dir)), 
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), TPTAG_TLS_VERSION(profile->tls_version)), 
 							  TAG_IF(!strchr(profile->sipip, ':'), NTATAG_UDP_MTU(65535)), 
+							  SOATAG_ADDRESS(!switch_strlen_zero(profile->extrtpip) ? profile->extrtpip : profile->rtpip),
 							  NTATAG_SERVER_RPORT(profile->rport_level), 
 							  TAG_IF(tportlog, TPTAG_LOG(1)), 
 							  TAG_END());	/* Last tag should always finish the sequence */
