@@ -310,6 +310,7 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/event_multicast.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/event_socket.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cdr_csv.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/fax.con.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/iax.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/ivr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/java.conf.xml
@@ -396,6 +397,12 @@ userdel freeswitch
 %{prefix}/mod/mod_xml_cdr.so* 
 %{prefix}/mod/mod_fsv.so
 %{prefix}/mod/mod_tone_stream.so
+%{prefix}/mod/ozmod_analog.so
+%{prefix}/mod/ozmod_analog_em.so
+%{prefix}/mod/ozmod_isdn.so
+%{prefix}/mod/ozmod_ss7_boost.so
+%{prefix}/mod/ozmod_wanpipe.so
+%{prefix}/mod/ozmod_zt.so
 
 %files codec-passthru-amr
 %defattr(-,freeswitch,daemon)
