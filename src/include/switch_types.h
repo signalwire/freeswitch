@@ -291,7 +291,8 @@ typedef enum {
 	SMF_ECHO_BLEG = (1 << 2),
 	SMF_FORCE = (1 << 3),
 	SMF_LOOP = (1 << 4),
-	SMF_HOLD_BLEG = (1 << 5)
+	SMF_HOLD_BLEG = (1 << 5),
+	SMF_IMMEDIATE = (1 << 6)
 } switch_media_flag_enum_t;
 typedef uint32_t switch_media_flag_t;
 

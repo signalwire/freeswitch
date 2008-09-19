@@ -498,6 +498,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 		}
 	}
 
+	if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
 	read_codec = switch_core_session_get_read_codec(session);
 
 	if (!read_codec || !read_codec->implementation) {
@@ -906,9 +910,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 		if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 			status = SWITCH_STATUS_SUCCESS;
 			switch_core_session_receive_message(session, &msg);
-
-			switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
-			switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+			
+			if (!(flags & SMF_IMMEDIATE)) {
+				switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
+				switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+			}
 
 			if ((flags & SMF_REBRIDGE)
 				&& (other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE))

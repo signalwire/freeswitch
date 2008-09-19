@@ -651,16 +651,21 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE))
 		&& (other_session = switch_core_session_locate(uuid))) {
 		switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
+		const char *sbv = switch_channel_get_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE);
+		
+		if (!switch_strlen_zero(sbv) && !strcmp(sbv, switch_core_session_get_uuid(session))) {
+			
+			switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
 
-		switch_channel_set_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
-		switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
+			switch_channel_set_variable(channel, SWITCH_BRIDGE_VARIABLE, NULL);
+			switch_channel_set_variable(other_channel, SWITCH_BRIDGE_VARIABLE, NULL);
 
-		switch_channel_set_variable(channel, SWITCH_BRIDGE_VARIABLE, NULL);
-		switch_channel_set_variable(other_channel, SWITCH_BRIDGE_VARIABLE, NULL);
-
-		if (switch_channel_get_state(other_channel) < CS_HANGUP) {
-			switch_channel_hangup(other_channel, switch_channel_get_cause(channel));
+			if (switch_channel_get_state(other_channel) < CS_HANGUP) {
+				switch_channel_hangup(other_channel, switch_channel_get_cause(channel));
+			}
 		}
+		
+		switch_channel_set_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
 
 		switch_core_session_rwunlock(other_session);
 	}
@@ -725,13 +730,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 		switch_channel_event_set_data(caller_channel, event);
 		switch_event_fire(&event);
 	}
-
+	
 	switch_channel_set_state_flag(caller_channel, CF_TRANSFER);
 	switch_channel_set_state_flag(peer_channel, CF_TRANSFER);
 
-
 	switch_channel_set_state(caller_channel, CS_HIBERNATE);
 	switch_channel_set_state(peer_channel, CS_HIBERNATE);
+	
+	if (switch_channel_test_flag(caller_channel, CF_BRIDGED)) {
+		switch_channel_set_flag(caller_channel, CF_TRANSFER);
+		switch_channel_set_flag(peer_channel, CF_TRANSFER);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -901,6 +910,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	return status;
 }
 
+static void cleanup_proxy_mode(switch_core_session_t *session)
+{
+	switch_core_session_t *sbsession;
+
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+
+	if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+		const char *sbv = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Restore media to %s\n", switch_channel_get_name(channel));
+		switch_ivr_media(switch_core_session_get_uuid(session), SMF_IMMEDIATE);
+
+		if (!switch_strlen_zero(sbv) && (sbsession = switch_core_session_locate(sbv))) {
+			switch_channel_t *sbchannel = switch_core_session_get_channel(sbsession);
+			switch_channel_hangup(sbchannel, SWITCH_CAUSE_ATTENDED_TRANSFER);
+			switch_core_session_rwunlock(sbsession);
+		}
+	}
+
+	switch_channel_set_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
+	switch_channel_set_variable(channel, SWITCH_BRIDGE_VARIABLE, NULL);
+	switch_channel_set_variable(channel, SWITCH_BRIDGE_UUID_VARIABLE, NULL);
+
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uuid, const char *originatee_uuid)
 {
 	switch_core_session_t *originator_session, *originatee_session, *swap_session;
@@ -939,6 +975,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 				}
 			}
 
+			cleanup_proxy_mode(originator_session);
+			cleanup_proxy_mode(originatee_session);
+			
 			/* override transmit state for originator_channel to bridge to originatee_channel 
 			 * install pointer to originatee_session into originator_channel
 			 * set CF_TRANSFER on both channels and change state to CS_SOFT_EXECUTE to
@@ -961,7 +1000,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			switch_channel_set_variable(originatee_channel, SWITCH_BRIDGE_UUID_VARIABLE, switch_core_session_get_uuid(originator_session));
 			switch_channel_set_variable(originatee_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(originator_session));
 
-
+			
 			originator_cp = switch_channel_get_caller_profile(originator_channel);
 			originatee_cp = switch_channel_get_caller_profile(originatee_channel);
 
