@@ -120,10 +120,10 @@ APR_DECLARE(apr_status_t) apr_dso_load(apr_dso_handle_t **res_handle,
 #if defined(OSF1) || defined(SEQUENT) || defined(SNI) ||\
     (defined(__FreeBSD_version) && (__FreeBSD_version >= 220000)) ||\
     defined(__DragonFly__)
-    void *os_handle = dlopen((char *)path, RTLD_NOW | RTLD_GLOBAL);
+    void *os_handle = dlopen((char *)path, RTLD_NOW | RTLD_LOCAL);
 
 #else
-    int flags = RTLD_NOW | RTLD_GLOBAL;
+    int flags = RTLD_NOW | RTLD_LOCAL;
     void *os_handle;
 #ifdef _AIX
     if (strchr(path + 1, '(') && path[strlen(path) - 1] == ')')
