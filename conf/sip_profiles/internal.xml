@@ -18,6 +18,14 @@
   </domains>
   
   <settings>
+    <!-- When calls are in no media this will bring them back to media
+	 when you press the hold button.
+    -->
+    <!--<param name="media-option" value="resume-media-on-hold"/> -->
+    <!-- This will allow a call after an attended transfer go back to 
+	 bypass media after an attended transfer.
+    -->
+    <!--<param name="media-option" value="bypass-media-after-att-xfer"/>-->
     <!-- <param name="user-agent-string" value="FreeSWITCH Rocks!"/> -->
     <param name="debug" value="0"/>
     <param name="sip-trace" value="no"/>
