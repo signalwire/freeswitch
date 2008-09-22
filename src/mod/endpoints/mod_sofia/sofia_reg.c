@@ -728,9 +728,13 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	}
 
 	if (!authorization || stale) {
-		sofia_reg_auth_challenge(nua, profile, nh, regtype, to_host, stale);
-		if (regtype == REG_REGISTER && profile->debug) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Requesting Registration from: [%s@%s]\n", to_user, to_host);
+		if (regtype == REG_REGISTER) {
+			sofia_reg_auth_challenge(nua, profile, nh, regtype, to_host, stale);
+			if (profile->debug) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Requesting Registration from: [%s@%s]\n", to_user, to_host);
+			}
+		} else {
+			sofia_reg_auth_challenge(nua, profile, nh, regtype, from_host, stale);
 		}
 		return 1;
 	}
