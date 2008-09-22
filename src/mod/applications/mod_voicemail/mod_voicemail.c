@@ -1039,7 +1039,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 				TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "deleted", NULL, NULL));
 				goto record_file;
 			} else {
-				status = SWITCH_STATUS_BREAK;
+				status = SWITCH_STATUS_FALSE;
 				goto end;
 			}
 		} else {
@@ -2690,6 +2690,8 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 		} else {
 			TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL));
 		}
+	} else {
+		goto end;
 	}
 	
 	switch_channel_get_variables(channel, &vars);
