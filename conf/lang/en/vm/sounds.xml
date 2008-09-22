@@ -292,6 +292,11 @@
   </macro>
   <!-- Note: Update this to marked-urgent,emailed and saved once new sound files are recorded -->
   <macro name="voicemail_ack"> 
+    <input pattern="^(too-small)$">
+      <match>
+	<action function="play-file" data="voicemail/vm-too-small.wav"/>
+      </match>
+    </input>
     <input pattern="^(deleted)$">
       <match>
 	<action function="play-file" data="voicemail/vm-message.wav"/>

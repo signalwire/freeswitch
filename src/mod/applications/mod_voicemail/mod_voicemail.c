@@ -1035,8 +1035,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "failed to delete file [%s]\n", file_path);
 			}
 			if (switch_channel_ready(channel)) {
-				/* TODO Rel 1.0 : Add Playback of Prompt <message is too short, please rerecord your message>, then go back at record_file */
-				TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "deleted", NULL, NULL));
+				TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "too-small", NULL, NULL));
 				goto record_file;
 			} else {
 				status = SWITCH_STATUS_FALSE;

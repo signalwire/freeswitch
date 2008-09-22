@@ -213,6 +213,7 @@
       <prompt phrase="is not available" filename="vm-not_available.wav"/>
       <prompt phrase="message number" filename="vm-message_number.wav"/>
       <prompt phrase="deleted" filename="vm-deleted.wav"/>
+      <prompt phrase="Your recording is below the minimum acceptable length, please try again" filename="vm-too-small.wav"/>
       <prompt phrase="in folder inbox" filename="vm-in_folder.wav"/>
       <prompt phrase="to return the call now" filename="vm-return_call.wav"/>
       <prompt phrase="urgent" filename="vm-urgent.wav"/>
