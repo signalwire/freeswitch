@@ -218,20 +218,20 @@
       <prompt phrase="urgent" filename="vm-urgent.wav"/>
     </voicemail>
     <conference>
-      <prompt phrase="NULL" filename="ack.wav" type="tone"/>
-      <prompt phrase="NULL" filename="nack.wav" type="tone"/>
-      <prompt phrase="You are now muted." filename="mute.wav"/>
-      <prompt phrase="You are now unmuted." filename="unmuted.wav"/>
-      <prompt phrase="You are currently the only person in this conference." filename="alone.wav"/>
-      <prompt phrase="NULL" filename="perpetual.wav" type="music"/>
-      <prompt phrase="NULL" filename="enter.wav" type="tone"/>
-      <prompt phrase="NULL" filename="exit.wav" type="tone"/>
-      <prompt phrase="You have been kicked from this conference." filename="kicked.wav"/>
-      <prompt phrase="This conference is locked." filename="locked.wav"/>
-      <prompt phrase="The conference is now locked." filename="is-locked.wav"/>
-      <prompt phrase="The conference is now unlocked." filename="is-unlocked.wav"/>
-      <prompt phrase="Please enter the conference pin number." filename="pin.wav"/>
-      <prompt phrase="Invalid pin number, try again." filename="bad-pin.wav"/>
+      <prompt phrase="NULL" filename="conf-ack.wav" type="tone"/>
+      <prompt phrase="NULL" filename="conf-nack.wav" type="tone"/>
+      <prompt phrase="You are now muted." filename="conf-mute.wav"/>
+      <prompt phrase="You are now unmuted." filename="conf0unmuted.wav"/>
+      <prompt phrase="You are currently the only person in this conference." filename="conf-alone.wav"/>
+      <prompt phrase="NULL" filename="conf-perpetual.wav" type="music"/>
+      <prompt phrase="NULL" filename="conf-enter.wav" type="tone"/>
+      <prompt phrase="NULL" filename="conf-exit.wav" type="tone"/>
+      <prompt phrase="You have been kicked from this conference." filename="conf-kicked.wav"/>
+      <prompt phrase="This conference is locked." filename="conf-locked.wav"/>
+      <prompt phrase="The conference is now locked." filename="conf-is-locked.wav"/>
+      <prompt phrase="The conference is now unlocked." filename="conf-is-unlocked.wav"/>
+      <prompt phrase="Please enter the conference pin number." filename="conf-pin.wav"/>
+      <prompt phrase="Invalid pin number, try again." filename="conf-bad-pin.wav"/>
     </conference>
     <ivr>
       <prompt phrase="Account number" filename="ivr-account_number.wav"/>
