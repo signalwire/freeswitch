@@ -142,6 +142,8 @@
     <!-- use stun when specified (default is true) -->
     <!-- set to true to have the profile determine stun is not useful and turn it off globally-->
     <!--<param name="stun-auto-disable" value="true"/>-->
+    <!-- Choose the realm challenge key. Default is auto_to -->
+    <!--<param name="challenge-realm" value="auto_from|auto_to|<hardcoded_val>"/>-->
   </settings>
 </profile>
 
