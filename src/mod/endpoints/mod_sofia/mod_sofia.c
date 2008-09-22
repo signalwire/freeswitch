@@ -1376,7 +1376,12 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					switch_assert(gp->state < REG_STATE_LAST);
 					stream->write_function(stream, "%25s\t%s\t  %32s\t%s", gp->name, "gateway", gp->register_to, sofia_state_names[gp->state]);
 					if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
-						stream->write_function(stream, " (retry: %ds)", gp->retry - switch_timestamp(NULL));
+						time_t now = switch_timestamp(NULL);
+						if (gp->retry > now) {
+							stream->write_function(stream, " (retry: %ds)", gp->retry - now);
+						} else {
+							stream->write_function(stream, " (retry: NEVER)");
+						}
 					}
 					stream->write_function(stream, "\n");
 				}
