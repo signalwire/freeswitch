@@ -172,7 +172,7 @@ struct switch_rtp {
 	uint32_t conf_samples_per_interval;
 	uint32_t rsamples_per_interval;
 	uint32_t ms_per_packet;
-	uint32_t remote_port;
+	switch_port_t remote_port;
 	uint32_t stuncount;
 	uint32_t funny_stun;
 	uint32_t default_stuncount;
