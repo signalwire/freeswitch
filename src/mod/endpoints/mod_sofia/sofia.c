@@ -1240,6 +1240,8 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						profile->max_calls = atoi(val);
 					} else if (!strcasecmp(var, "codec-prefs")) {
 						profile->codec_string = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "challenge-realm")) {
+						profile->challenge_realm = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "dtmf-duration")) {
 						int dur = atoi(val);
 						if (dur > 10 && dur < 8000) {
@@ -1726,13 +1728,16 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->max_calls = atoi(val);
 					} else if (!strcasecmp(var, "codec-prefs")) {
 						profile->codec_string = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "challenge-realm")) {
+						profile->challenge_realm = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "dtmf-duration")) {
 						int dur = atoi(val);
 						if (dur > 10 && dur < 8000) {
 							profile->dtmf_duration = dur;
 						} else {
 							profile->dtmf_duration = SWITCH_DEFAULT_DTMF_DURATION;
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Duration out of bounds, using default of %d!\n", SWITCH_DEFAULT_DTMF_DURATION);
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Duration out of bounds, using default of %d!\n", 
+											  SWITCH_DEFAULT_DTMF_DURATION);
 						}
 
 						/*

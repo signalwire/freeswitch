@@ -336,6 +336,7 @@ struct sofia_profile {
 	char *user_agent;
 	char *record_template;
 	char *presence_hosts;
+	char *challenge_realm;
 	sofia_dtmf_t dtmf_type;
 	int sip_port;
 	int tls_sip_port;

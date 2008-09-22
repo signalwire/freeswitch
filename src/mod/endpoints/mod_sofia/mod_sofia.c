@@ -1291,6 +1291,8 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				stream->write_function(stream, "Pres Hosts    \t\t%s\n", switch_str_nil(profile->presence_hosts));
 				stream->write_function(stream, "Dialplan      \t\t%s\n", switch_str_nil(profile->dialplan));
 				stream->write_function(stream, "Context       \t\t%s\n", switch_str_nil(profile->context));
+				stream->write_function(stream, "Challenge Realm\t\t%s\n", 
+									   switch_strlen_zero(profile->challenge_realm) ? "auto_to" : profile->challenge_realm);
 				stream->write_function(stream, "RTP-IP        \t\t%s\n", switch_str_nil(profile->rtpip));
 				if (profile->extrtpip) {
 					stream->write_function(stream, "Ext-RTP-IP    \t\t%s\n", profile->extrtpip);

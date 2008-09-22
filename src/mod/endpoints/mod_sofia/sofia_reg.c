@@ -734,7 +734,14 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Requesting Registration from: [%s@%s]\n", to_user, to_host);
 			}
 		} else {
-			sofia_reg_auth_challenge(nua, profile, nh, regtype, from_host, stale);
+			const char *realm = profile->challenge_realm;
+
+			if (switch_strlen_zero(realm) || !strcasecmp(realm, "auto_to")) {
+				realm = to_host;
+			} else if (!strcasecmp(realm, "auto_from")) {
+				realm = from_host;
+			}
+			sofia_reg_auth_challenge(nua, profile, nh, regtype, realm, stale);
 		}
 		return 1;
 	}
