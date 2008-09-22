@@ -2024,6 +2024,11 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			}
 		}
 
+		/* dirty hack to avoid race condition in the library */
+		if (status == 200 || status == 183) {
+			switch_yield(1);// printf("Avoiding Segfault!!!\n");
+		}
+
 		if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 
 			if (!switch_test_flag(tech_pvt, TFLAG_SENT_UPDATE)) {
