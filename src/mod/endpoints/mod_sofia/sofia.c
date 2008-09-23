@@ -1132,7 +1132,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						}
 					} else if (!strcasecmp(var, "rfc2833-pt")) {
 						profile->te = (switch_payload_t) atoi(val);
-					} else if (!strcasecmp(var, "cng-pt")) {
+					} else if (!strcasecmp(var, "cng-pt") && !(profile->pflags & PFLAG_SUPPRESS_CNG)) {
 						profile->cng_pt = (switch_payload_t) atoi(val);
 					} else if (!strcasecmp(var, "vad")) {
 						if (!strcasecmp(val, "in")) {
@@ -1166,6 +1166,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 					} else if (!strcasecmp(var, "supress-cng") || !strcasecmp(var, "suppress-cng")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_SUPPRESS_CNG;
+							profile->cng_pt = 0;
 						} else {
 							profile->pflags &= ~PFLAG_SUPPRESS_CNG;
 						}
@@ -1489,7 +1490,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "rfc2833-pt")) {
 						profile->te = (switch_payload_t) atoi(val);
-					} else if (!strcasecmp(var, "cng-pt")) {
+					} else if (!strcasecmp(var, "cng-pt") && !(profile->pflags & PFLAG_SUPPRESS_CNG)) {
 						profile->cng_pt = (switch_payload_t) atoi(val);
 					} else if (!strcasecmp(var, "sip-port")) {
 						profile->sip_port = atoi(val);
@@ -1621,6 +1622,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "supress-cng") || !strcasecmp(var, "suppress-cng")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_SUPPRESS_CNG;
+							profile->cng_pt = 0;
 						}
 					} else if (!strcasecmp(var, "NDLB-to-in-200-contact")) {
 						if (switch_true(val)) {

@@ -127,7 +127,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->te);
 	}
 
-	if (tech_pvt->cng_pt && use_cng) {
+	if (!(tech_pvt->profile->pflags & PFLAG_SUPPRESS_CNG) && tech_pvt->cng_pt && use_cng) {
 		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->cng_pt);
 	}
 
@@ -174,7 +174,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	if (tech_pvt->dtmf_type == DTMF_2833 && tech_pvt->te > 95) {
 		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
 	}
-	if (tech_pvt->cng_pt && use_cng) {
+	if (!(tech_pvt->profile->pflags & PFLAG_SUPPRESS_CNG) && tech_pvt->cng_pt && use_cng) {
 		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d CN/8000\n", tech_pvt->cng_pt);
 		if (!tech_pvt->rm_encoding) {
 			tech_pvt->cng_pt = 0;
@@ -413,10 +413,12 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 
 	tech_pvt->dtmf_type = profile->dtmf_type;
 
-	if (tech_pvt->bcng_pt) {
-		tech_pvt->cng_pt = tech_pvt->bcng_pt;
-	} else if (!tech_pvt->cng_pt) {
-		tech_pvt->cng_pt = profile->cng_pt;
+	if (!(tech_pvt->profile->pflags & PFLAG_SUPPRESS_CNG)) {
+		if (tech_pvt->bcng_pt) {
+			tech_pvt->cng_pt = tech_pvt->bcng_pt;
+		} else if (!tech_pvt->cng_pt) {
+			tech_pvt->cng_pt = profile->cng_pt;
+		}
 	}
 
 	tech_pvt->session = session;
@@ -1744,7 +1746,9 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		flags |= SWITCH_RTP_FLAG_RAW_WRITE;
 	}
 
-	if (tech_pvt->cng_pt) {
+	if (tech_pvt->profile->pflags & PFLAG_SUPPRESS_CNG) {
+		tech_pvt->cng_pt = 0;
+	} else if (tech_pvt->cng_pt) {
 		flags |= SWITCH_RTP_FLAG_AUTO_CNG;
 	}
 
@@ -1927,7 +1931,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		if (tech_pvt->te) {
 			switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);
 		}
-		if (tech_pvt->cng_pt) {
+		if (tech_pvt->cng_pt && !(tech_pvt->profile->pflags & PFLAG_SUPPRESS_CNG)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set comfort noise payload to %u\n", tech_pvt->cng_pt);
 			switch_rtp_set_cng_pt(tech_pvt->rtp_session, tech_pvt->cng_pt);
 		}
@@ -2295,7 +2299,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					}
 				}
 
-				if (!cng_pt && !strcasecmp(rm_encoding, "CN")) {
+				if (!(tech_pvt->profile->pflags & PFLAG_SUPPRESS_CNG) && !cng_pt && !strcasecmp(rm_encoding, "CN")) {
 					cng_pt = tech_pvt->cng_pt = (switch_payload_t) map->rm_pt;
 					if (tech_pvt->rtp_session) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set comfort noise payload to %u\n", cng_pt);
