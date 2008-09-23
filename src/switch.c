@@ -65,7 +65,7 @@ static HANDLE shutdown_event;
 /* signal handler for when freeswitch is running in background mode.
  * signal triggers the shutdown of freeswitch
 # */
-static void handle_SIGTERM(int sig)
+static void handle_SIGILL(int sig)
 {
 	int32_t arg = 0;
 	if (sig);
@@ -123,7 +123,7 @@ static int freeswitch_kill_background()
 		}
 #else
 		/* for unix, send the signal to kill. */
-		kill(pid, SIGTERM);
+		kill(pid, SIGILL);
 #endif
 	}
 
@@ -547,7 +547,7 @@ int main(int argc, char *argv[])
 		return 255;
 	}
 
-	signal(SIGTERM, handle_SIGTERM);
+	signal(SIGILL, handle_SIGILL);
 
 	if (nc) {
 #ifdef WIN32
