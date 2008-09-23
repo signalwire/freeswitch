@@ -1038,7 +1038,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 				TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "too-small", NULL, NULL));
 				goto record_file;
 			} else {
-				status = SWITCH_STATUS_BREAK;
+				status = SWITCH_STATUS_NOTFOUND;
 				goto end;
 			}
 		} else {
@@ -2675,6 +2675,10 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	switch_channel_set_variable(channel, "RECORD_COPYRIGHT", profile->record_copyright);
 
 	status = create_file(session, profile, VM_RECORD_MESSAGE_MACRO, file_path, &message_len, SWITCH_TRUE);
+
+	if ((status == SWITCH_STATUS_NOTFOUND)) {
+		goto end;
+	}
 
 	if ((status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) && switch_channel_ready(channel)) {
 		char input[10] = "", key_buf[80] = "", term = 0;
