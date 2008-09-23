@@ -133,7 +133,6 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 	switch_channel_set_flag(chan_a, CF_BRIDGED);
 
-
 	switch_channel_wait_for_flag(chan_b, CF_BRIDGED, SWITCH_TRUE, 10000, chan_a);
 
 	if (!switch_channel_test_flag(chan_b, CF_BRIDGED)) {
@@ -329,7 +328,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				if (silence_val) {
 					switch_generate_sln_silence((int16_t *) silence_frame.data, silence_frame.samples, silence_val);
 					read_frame = &silence_frame;
-				} else {
+				} else if (!switch_channel_test_flag(chan_b, CF_ACCEPT_CNG)) {
 					continue;
 				}
 			}
