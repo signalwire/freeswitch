@@ -2473,6 +2473,14 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			tech_pvt->hold_laps = 0;
 
 			if (r_sdp) {
+				const char *var;
+				
+				if ((var = switch_channel_get_variable(channel, "sip_ignore_reinvites")) && switch_true(var)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ignoring Re-invite\n");
+					nua_respond(tech_pvt->nh, SIP_200_OK, TAG_END());
+					goto done;
+				}
+
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 					
 					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
