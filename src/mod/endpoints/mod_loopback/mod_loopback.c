@@ -105,8 +105,6 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 		interval = codec->implementation->microseconds_per_frame / 1000;
 	}
 	
-	printf("WTF %s\n", iananame);
-
 	status = switch_core_codec_init(&tech_pvt->read_codec,
 									iananame,
 									NULL,
@@ -478,18 +476,19 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
 {
+	if (session) {
+		switch_channel_pre_answer(switch_core_session_get_channel(session));
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You can only use this channel as a B leg\n");
+		return SWITCH_CAUSE_FACILITY_REJECTED;
+	}
+
 	if ((*new_session = switch_core_session_request(loopback_endpoint_interface, pool)) != 0) {
 		private_t *tech_pvt;
 		switch_channel_t *channel;
 		switch_caller_profile_t *caller_profile;
 		
 		switch_core_session_add_stream(*new_session, NULL);
-		
-		if (session) {
-			channel = switch_core_session_get_channel(session);
-			switch_channel_pre_answer(channel);
-			channel = NULL;
-		}
 
 		if ((tech_pvt = (private_t *) switch_core_session_alloc(*new_session, sizeof(private_t))) != 0) {
 			channel = switch_core_session_get_channel(*new_session);
@@ -505,11 +504,27 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		
 		if (outbound_profile) {
 			char name[128];
+			char *dialplan = NULL, *context = NULL;
 
-			switch_snprintf(name, sizeof(name), "Loopback/%s-a", outbound_profile->destination_number);
-			switch_channel_set_name(channel, name);
-			
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
+			if ((context = strchr(caller_profile->destination_number, '/'))) {
+				*context++ = '\0';
+				
+				if ((dialplan = strchr(context, '/'))) {
+					*dialplan++ = '\0';
+				}
+
+				if (!switch_strlen_zero(context)) {
+					caller_profile->context = switch_core_strdup(caller_profile->pool, context);
+				}
+
+				if (!switch_strlen_zero(dialplan)) {
+					caller_profile->dialplan = switch_core_strdup(caller_profile->pool, dialplan);
+				}
+			}
+			
+			switch_snprintf(name, sizeof(name), "Loopback/%s-a", caller_profile->destination_number);
+			switch_channel_set_name(channel, name);
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
 		} else {
