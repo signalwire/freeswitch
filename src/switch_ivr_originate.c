@@ -620,6 +620,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "return_ring_ready")) {
 					ok = 1;
+				} else if (!strcasecmp((char *) hi->name, "ring_ready")) {
+					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "originate_retries")) {
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "originate_timeout")) {
@@ -707,6 +709,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	if ((var_val = switch_event_get_header(var_event, "return_ring_ready")) && switch_true(var_val)) {
 		return_ring_ready = 1;
+	}
+
+	if ((var_val = switch_event_get_header(var_event, "ring_ready")) && switch_true(var_val)) {
+		ring_ready = 1;
 	}
 
 	if ((var_val = switch_event_get_header(var_event, "originate_timeout"))) {
