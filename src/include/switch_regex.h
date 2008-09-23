@@ -61,10 +61,21 @@ SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_c
 */
 SWITCH_DECLARE(switch_status_t) switch_regex_match(const char *target, const char *expression);
 
+/*!
+ \brief Function to evaluate an expression against a string
+ \param target The string to find a match in
+ \param expression The regular expression to run against the string
+ \param partial If non-zero returns SUCCESS if the target is a partial match, on successful return, this is set to non-zero if the match was partial and zero if it was a full match
+ \return Boolean if a match was found or not
+*/
+SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, const char *expression, int * partial_match);
+
+
 #define switch_regex_safe_free(re)	if (re) {\
 				switch_regex_free(re);\
 				re = NULL;\
 			}
+
 
 /** @} */
 

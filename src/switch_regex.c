@@ -161,14 +161,15 @@ SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_c
 	substituted[y++] = '\0';
 }
 
-SWITCH_DECLARE(switch_status_t) switch_regex_match(const char *target, const char *expression)
+SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, const char *expression, int * partial)
 {
 	const char *error = NULL;	/* Used to hold any errors                                           */
 	int error_offset = 0;		/* Holds the offset of an error                                      */
 	pcre *pcre_prepared = NULL;	/* Holds the compiled regex                                          */
 	int match_count = 0;		/* Number of times the regex was matched                             */
 	int offset_vectors[2];		/* not used, but has to exist or pcre won't even try to find a match */
-
+	int pcre_flags = 0;
+	
 	/* Compile the expression */
 	pcre_prepared = pcre_compile(expression, 0, &error, &error_offset, NULL);
 
@@ -186,8 +187,13 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match(const char *target, const cha
 		/* We definitely didn't match anything */
 		return SWITCH_STATUS_FALSE;
 	}
+	
+	if (*partial) {
+		pcre_flags = PCRE_PARTIAL;
+	}
+	
 	/* So far so good, run the regex */
-	match_count = pcre_exec(pcre_prepared, NULL, target, (int) strlen(target), 0, 0, offset_vectors, sizeof(offset_vectors) / sizeof(offset_vectors[0]));
+	match_count = pcre_exec(pcre_prepared, NULL, target, (int) strlen(target), 0, pcre_flags, offset_vectors, sizeof(offset_vectors) / sizeof(offset_vectors[0]));
 
 	/* Clean up */
 	if (pcre_prepared) {
@@ -199,10 +205,21 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match(const char *target, const cha
 
 	/* Was it a match made in heaven? */
 	if (match_count > 0) {
+		*partial = 0;
+		return SWITCH_STATUS_SUCCESS;
+	} else if (match_count == PCRE_ERROR_PARTIAL) {
+		/* yes it is already set, but the code is clearer this way */
+		*partial = 1;
 		return SWITCH_STATUS_SUCCESS;
 	} else {
 		return SWITCH_STATUS_FALSE;
 	}
+}
+
+SWITCH_DECLARE(switch_status_t) switch_regex_match(const char *target, const char *expression)
+{
+	int partial = 0;
+	return switch_regex_match_partial(target, expression, &partial);
 }
 
 /* For Emacs:
