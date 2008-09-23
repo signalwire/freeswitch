@@ -2148,10 +2148,12 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					if (p_contact->m_url->url_user) {
 						switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_user_%d", i);
 						switch_channel_set_variable_partner(channel, var_name, p_contact->m_url->url_user);
+						switch_channel_set_variable(channel, var_name, p_contact->m_url->url_user);
 					}
 					if (p_contact->m_url->url_host) {
 						switch_snprintf(var_name, sizeof(var_name), "sip_redirect_contact_host_%d", i);
 						switch_channel_set_variable_partner(channel, var_name, p_contact->m_url->url_host);
+						switch_channel_set_variable(channel, var_name, p_contact->m_url->url_host);
 					}
 					p_contact = p_contact->m_next;
 					i++;
