@@ -73,6 +73,12 @@
 #ifndef snprintf
 #define snprintf _snprintf
 #endif
+#ifndef S_IRUSR
+#define S_IRUSR _S_IREAD
+#endif
+#ifndef S_IWUSR
+#define S_IWUSR _S_IWRITE
+#endif
 #undef HAVE_STRINGS_H
 #undef HAVE_SYS_SOCKET_H
 /* disable warning for zero length array in a struct */

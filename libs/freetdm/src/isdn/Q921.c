@@ -564,7 +564,7 @@ static int print_hex(char *buf, int bsize, const unsigned char *in, const int le
 static int Q921LogMesg(L2TRUNK trunk, Q921LogLevel_t level, L2UCHAR received, L2UCHAR *mes, L2INT size, const char *fmt, ...)
 {
 	char  buf[Q921_LOGBUFSIZE];
-	L2INT len, left;
+	size_t len, left;
 	va_list ap;
 
 	if(!trunk->Q921LogProc)
@@ -594,7 +594,7 @@ static int Q921LogMesg(L2TRUNK trunk, Q921LogLevel_t level, L2UCHAR received, L2
 
 	if(trunk->loglevel == Q921_LOG_DEBUG) {
 		char pbuf[1024];
-		L2INT pleft, poffset;
+		size_t pleft, poffset;
 		L2UCHAR sapi, tei, cr;
 		L2UCHAR *pmes = mes + trunk->Q921HeaderSpace;
 		struct Q921_Link *link;
