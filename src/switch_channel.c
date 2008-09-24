@@ -165,6 +165,20 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(switch_channel_t *c
 	return channel->hangup_cause;
 }
 
+SWITCH_DECLARE(switch_call_cause_t) switch_channel_cause_q850(switch_call_cause_t cause)
+{
+	if (cause <= SWITCH_CAUSE_INTERWORKING) {
+		return cause;
+	} else {
+		return SWITCH_CAUSE_NORMAL_CLEARING;
+	}
+}
+
+SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause_q850(switch_channel_t *channel)
+{
+	return switch_channel_cause_q850(channel->hangup_cause);
+}
+
 SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch_channel_t *channel)
 {
 	switch_channel_timetable_t *times = NULL;
