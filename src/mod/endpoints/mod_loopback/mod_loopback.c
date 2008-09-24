@@ -98,13 +98,23 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	int rate = 8000;
 	int interval = 20;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	if (codec) {
 		iananame = codec->implementation->iananame;
 		rate = codec->implementation->actual_samples_per_second;
 		interval = codec->implementation->microseconds_per_frame / 1000;
 	}
+	
+	if (tech_pvt->read_codec.implementation) {
+		switch_core_codec_destroy(&tech_pvt->read_codec);
+	}
+
+	if (tech_pvt->write_codec.implementation) {
+		switch_core_codec_destroy(&tech_pvt->write_codec);
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s setup codec %s/%d/%d\n", switch_channel_get_name(channel), iananame, rate, interval);
 	
 	status = switch_core_codec_init(&tech_pvt->read_codec,
 									iananame,
@@ -155,10 +165,11 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
 	
 
-
-	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
-	switch_core_session_set_private(session, tech_pvt);
-	tech_pvt->session = session;
+	if (!tech_pvt->flag_mutex) {
+		switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+		switch_core_session_set_private(session, tech_pvt);
+		tech_pvt->session = session;
+	}
 
  end:
 
@@ -198,14 +209,16 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		switch_core_session_add_stream(b_session, NULL);
 		b_channel = switch_core_session_get_channel(b_session);
 		b_tech_pvt = (private_t *) switch_core_session_alloc(b_session, sizeof(*b_tech_pvt));
+
+		switch_snprintf(name, sizeof(name), "Loopback/%s-b", tech_pvt->caller_profile->destination_number);
+		switch_channel_set_name(b_channel, name);
 		if (tech_init(b_tech_pvt, b_session, switch_core_session_get_read_codec(session)) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			switch_core_session_destroy(&b_session);
 			goto end;
 		}
 
-		switch_snprintf(name, sizeof(name), "Loopback/%s-b", tech_pvt->caller_profile->destination_number);
-		switch_channel_set_name(b_channel, name);
+		
 		caller_profile = switch_caller_profile_clone(b_session, tech_pvt->caller_profile);
 		switch_channel_set_caller_profile(b_channel, caller_profile);
 		b_tech_pvt->caller_profile = caller_profile;
@@ -253,6 +266,17 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 }
 
+static void do_reset(private_t *tech_pvt)
+{
+	switch_clear_flag_locked(tech_pvt, TFLAG_WRITE);
+	switch_set_flag_locked(tech_pvt, TFLAG_CNG);
+	
+	if (tech_pvt->other_tech_pvt) {
+		switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
+		switch_set_flag_locked(tech_pvt->other_tech_pvt, TFLAG_CNG);
+	}
+}
+
 static switch_status_t channel_on_routing(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
@@ -264,8 +288,10 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL ROUTING\n", switch_channel_get_name(channel));
+	do_reset(tech_pvt);
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL ROUTING\n", switch_channel_get_name(channel));
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -367,6 +393,29 @@ static switch_status_t channel_on_exchange_media(switch_core_session_t *session)
 }
 
 
+static switch_status_t channel_on_reset(switch_core_session_t *session)
+{
+	private_t *tech_pvt = (private_t *) switch_core_session_get_private(session);
+	switch_assert(tech_pvt != NULL);
+
+	do_reset(tech_pvt);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s RESET\n", switch_channel_get_name(switch_core_session_get_channel(session)));
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static switch_status_t channel_on_hibernate(switch_core_session_t *session)
+{
+	private_t *tech_pvt = switch_core_session_get_private(session);
+	switch_assert(tech_pvt != NULL);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s HIBERNATE\n", switch_channel_get_name(switch_core_session_get_channel(session)));
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 
 static switch_status_t channel_on_consume_media(switch_core_session_t *session)
 {
@@ -411,20 +460,20 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		goto end;
 	}
 
-	while(tech_pvt->other_tech_pvt && !switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_WRITE)) {
+	while(switch_test_flag(tech_pvt, TFLAG_LINKED) && tech_pvt->other_tech_pvt && !switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_WRITE)) {
 		if (!switch_channel_ready(channel)) {
 			goto end;
 		}
 		if (switch_test_flag(tech_pvt, TFLAG_CNG)) {
-			*frame = &tech_pvt->cng_frame;
-			status = SWITCH_STATUS_SUCCESS;
-			switch_clear_flag_locked(tech_pvt, TFLAG_CNG);
-			goto end;
+			break;
 		}
 		switch_yield(1000);
 	}
 	
-	if (tech_pvt->other_tech_pvt && switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_WRITE)) {
+	if (switch_test_flag(tech_pvt, TFLAG_CNG)) {
+		*frame = &tech_pvt->cng_frame;
+		switch_clear_flag_locked(tech_pvt, TFLAG_CNG);
+	} else if (tech_pvt->other_tech_pvt && switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_WRITE)) {
 		*frame = &tech_pvt->other_tech_pvt->write_frame;
 		switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
 	}
@@ -450,11 +499,21 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	if (switch_test_flag(tech_pvt, TFLAG_CNG)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
 	if (switch_test_flag(tech_pvt, TFLAG_LINKED)) {
+		if (frame->codec->implementation != tech_pvt->write_codec.implementation) {
+			/* change codecs to match */
+			tech_init(tech_pvt, session, frame->codec);
+			tech_init(tech_pvt->other_tech_pvt, tech_pvt->other_session, frame->codec);
+		}
+		
 		memcpy(&tech_pvt->write_frame, frame, sizeof(*frame));
 		tech_pvt->write_frame.data = tech_pvt->write_databuf;
 		tech_pvt->write_frame.buflen = sizeof(tech_pvt->write_databuf);
-		tech_pvt->write_frame.codec = frame->codec;
+		tech_pvt->write_frame.codec = &tech_pvt->write_codec;
 		memcpy(tech_pvt->write_frame.data, frame->data, frame->datalen);
 		switch_set_flag_locked(tech_pvt, TFLAG_WRITE);
 		status = SWITCH_STATUS_SUCCESS;
@@ -497,11 +556,11 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
 {
+	char name[128];
+
+
 	if (session) {
 		switch_channel_pre_answer(switch_core_session_get_channel(session));
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You can only use this channel as a B leg\n");
-		return SWITCH_CAUSE_FACILITY_REJECTED;
 	}
 
 	if ((*new_session = switch_core_session_request(loopback_endpoint_interface, pool)) != 0) {
@@ -513,6 +572,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		if ((tech_pvt = (private_t *) switch_core_session_alloc(*new_session, sizeof(private_t))) != 0) {
 			channel = switch_core_session_get_channel(*new_session);
+			switch_snprintf(name, sizeof(name), "Loopback/%s-a", outbound_profile->destination_number);
+			switch_channel_set_name(channel, name);
 			if (tech_init(tech_pvt, *new_session, session ? switch_core_session_get_read_codec(session) : NULL) != SWITCH_STATUS_SUCCESS) {
 				switch_core_session_destroy(new_session);
 				return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -524,7 +585,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		}
 		
 		if (outbound_profile) {
-			char name[128];
 			char *dialplan = NULL, *context = NULL;
 
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
@@ -544,8 +604,17 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				}
 			}
 			
+			if (switch_strlen_zero(caller_profile->context)) {
+				caller_profile->context = switch_core_strdup(caller_profile->pool, "default");
+			}
+
+			if (switch_strlen_zero(caller_profile->dialplan)) {
+				caller_profile->dialplan = switch_core_strdup(caller_profile->pool, "xml");
+			}
+
 			switch_snprintf(name, sizeof(name), "Loopback/%s-a", caller_profile->destination_number);
 			switch_channel_set_name(channel, name);
+
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
 		} else {
@@ -570,7 +639,9 @@ static switch_state_handler_table_t channel_event_handlers = {
 	/*.on_hangup */ channel_on_hangup,
 	/*.on_exchange_media */ channel_on_exchange_media,
 	/*.on_soft_execute */ channel_on_soft_execute,
-	/*.on_consume_media */ channel_on_consume_media
+	/*.on_consume_media */ channel_on_consume_media,
+	/*.on_hibernate */ channel_on_hibernate,
+	/*.on_reset */ channel_on_reset
 };
 
 static switch_io_routines_t channel_io_routines = {
