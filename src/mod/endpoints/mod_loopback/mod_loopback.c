@@ -220,6 +220,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 		
 		caller_profile = switch_caller_profile_clone(b_session, tech_pvt->caller_profile);
+		caller_profile->source = switch_core_strdup(caller_profile->pool, modname);
 		switch_channel_set_caller_profile(b_channel, caller_profile);
 		b_tech_pvt->caller_profile = caller_profile;
 		switch_channel_set_state(b_channel, CS_INIT);
@@ -252,13 +253,9 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		goto end;
 	}
 
-	
-	
-	//switch_channel_set_flag(tech_pvt->other_channel, CF_ACCEPT_CNG);
 
+	switch_channel_set_variable(channel, "loopback_leg", switch_test_flag(tech_pvt, TFLAG_OUTBOUND) ? "B" : "A");
 	switch_channel_set_state(channel, CS_ROUTING);
-	
-
 
  end:
 
@@ -588,6 +585,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			char *dialplan = NULL, *context = NULL;
 
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
+			caller_profile->source = switch_core_strdup(caller_profile->pool, modname);
 			if ((context = strchr(caller_profile->destination_number, '/'))) {
 				*context++ = '\0';
 				
