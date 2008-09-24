@@ -48,7 +48,8 @@ static switch_memory_pool_t *module_pool = NULL;
 typedef enum {
 	TFLAG_LINKED = (1 << 0),
 	TFLAG_OUTBOUND = (1 << 1),
-	TFLAG_WRITE = (1 << 2)
+	TFLAG_WRITE = (1 << 2),
+	TFLAG_CNG = (1 << 3)
 } TFLAGS;
 
 struct private_object {
@@ -299,7 +300,9 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n", switch_channel_get_name(channel));
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_LINKED);
-	switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_LINKED);
+	if (tech_pvt->other_tech_pvt) {
+		switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_LINKED);
+	}
 	
 	switch_channel_hangup(tech_pvt->other_channel, switch_channel_get_cause(channel));
 	switch_core_session_rwunlock(tech_pvt->other_session);
@@ -319,8 +322,18 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	assert(tech_pvt != NULL);
 
 	switch (sig) {
+	case SWITCH_SIG_BREAK:
+		switch_set_flag_locked(tech_pvt, TFLAG_CNG);
+		if (tech_pvt->other_tech_pvt) {
+			switch_set_flag_locked(tech_pvt->other_tech_pvt, TFLAG_CNG);
+		}
+		break;
 	case SWITCH_SIG_KILL:
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+		switch_clear_flag_locked(tech_pvt, TFLAG_LINKED);
+		if (tech_pvt->other_tech_pvt) {
+			switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_LINKED);
+		}
 		break;
 	default:
 		break;
@@ -398,15 +411,23 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		goto end;
 	}
 
-	while(!switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_WRITE)) {
+	while(tech_pvt->other_tech_pvt && !switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_WRITE)) {
 		if (!switch_channel_ready(channel)) {
+			goto end;
+		}
+		if (switch_test_flag(tech_pvt, TFLAG_CNG)) {
+			*frame = &tech_pvt->cng_frame;
+			status = SWITCH_STATUS_SUCCESS;
+			switch_clear_flag_locked(tech_pvt, TFLAG_CNG);
 			goto end;
 		}
 		switch_yield(1000);
 	}
 	
-	*frame = &tech_pvt->other_tech_pvt->write_frame;
-	switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
+	if (tech_pvt->other_tech_pvt && switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_WRITE)) {
+		*frame = &tech_pvt->other_tech_pvt->write_frame;
+		switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
+	}
 	
 	//printf("READ %s %d\n", switch_channel_get_name(channel), (*frame)->datalen);
 	status = SWITCH_STATUS_SUCCESS;
