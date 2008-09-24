@@ -1055,8 +1055,15 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 
 		while (switch_channel_ready(channel)) {
 			*input = '\0';
-			status = vm_macro_get(session, VM_RECORD_FILE_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
 
+			if (*cc.buf && *cc.buf != *profile->terminator_key) {
+				*input = *cc.buf;
+				*(input + 1) = '\0';
+				status = SWITCH_STATUS_SUCCESS;
+				*cc.buf = '\0';
+			} else {
+				status = vm_macro_get(session, VM_RECORD_FILE_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
+			}
 
 			if (!strcmp(input, profile->listen_file_key)) {
 				goto play_file;
@@ -1318,8 +1325,14 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 		}
 
 		if (switch_channel_ready(channel)) {
-
-			TRY_CODE(vm_macro_get(session, VM_LISTEN_FILE_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout));
+			if (*cc.buf && *cc.buf != *profile->terminator_key) {
+				*input = *cc.buf;
+				*(input + 1) = '\0';
+				status = SWITCH_STATUS_SUCCESS;
+				*cc.buf = '\0';
+			} else {
+				TRY_CODE(vm_macro_get(session, VM_LISTEN_FILE_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout));
+			}
 
 			if (!strcmp(input, profile->listen_file_key)) {
 				goto play_file;
