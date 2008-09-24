@@ -1563,7 +1563,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 
 	switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Channel [%s] has been answered\n", channel->name);
-	if ((var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE))) {
+	if ((var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE)) && !switch_strlen_zero(var)) {
 		char *arg = NULL;
 
 		app = switch_core_session_strdup(channel->session, var);
@@ -1571,7 +1571,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 		if ((arg = strchr(app, ' '))) {
 			*arg++ = '\0';
 		}
-
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s execute on answer: %s(%s)", channel->name, app, switch_str_nil(arg));
 		switch_core_session_execute_application(channel->session, app, arg);
 	}
 	return SWITCH_STATUS_SUCCESS;
