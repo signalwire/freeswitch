@@ -137,20 +137,23 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 	}
 
 	while (switch_channel_get_state(session->channel) == CS_EXECUTE && extension->current_application) {
+		switch_caller_application_t *current_application = extension->current_application;
+
+		extension->current_application = extension->current_application->next;
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Execute %s(%s)\n", switch_channel_get_name(session->channel),
-						  extension->current_application->application_name, switch_str_nil(extension->current_application->application_data));
+						  current_application->application_name, switch_str_nil(current_application->application_data));
 
 		if (switch_core_session_execute_application(session,
-													extension->current_application->application_name,
-													extension->current_application->application_data) != SWITCH_STATUS_SUCCESS) {
+													current_application->application_name,
+													current_application->application_data) != SWITCH_STATUS_SUCCESS) {
 			return;
 		}
 
 		if (switch_channel_test_flag(session->channel, CF_RESET)) {
 			goto top;
 		}
-
-		extension->current_application = extension->current_application->next;
+		
 	}
 
 	if (switch_channel_get_state(session->channel) == CS_EXECUTE) {

@@ -136,7 +136,9 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	switch_channel_wait_for_flag(chan_b, CF_BRIDGED, SWITCH_TRUE, 10000, chan_a);
 
 	if (!switch_channel_test_flag(chan_b, CF_BRIDGED)) {
-		switch_channel_hangup(chan_b, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		if (!(switch_channel_test_flag(chan_b, CF_TRANSFER) || switch_channel_get_state(chan_b) == CS_RESET)) {
+			switch_channel_hangup(chan_b, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		}
 		goto end_of_bridge_loop;
 	}
 
