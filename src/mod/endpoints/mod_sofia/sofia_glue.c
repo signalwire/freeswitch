@@ -806,6 +806,10 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt)
 		port_ptr = p + 8;
 	}
 
+	if ((p = (char *) switch_stristr("m=image ", tech_pvt->remote_sdp_str))) {
+		port_ptr = p + 8;
+	}
+
 	if ((p = (char *) switch_stristr("m=video ", tech_pvt->remote_sdp_str))) {
 		vid_port_ptr = p + 8;
 	}
@@ -945,7 +949,7 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 
 	    	has_ip++;
 
-		} else if (!strncmp("m=audio ", p, 8)) {
+		} else if (!strncmp("m=audio ", p, 8) || (!strncmp("m=image ", p, 8))) {
 			strncpy(q,p,8);
 			p += 8;
 			q += 8;
