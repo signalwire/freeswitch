@@ -67,7 +67,7 @@ static void *SWITCH_THREAD_FUNC echo_video_thread(switch_thread_t *thread, void 
 }
 #endif
 
-SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session)
+SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session, switch_input_args_t *args)
 {
 	switch_status_t status;
 	switch_frame_t *read_frame;
@@ -95,6 +95,47 @@ SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session)
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
 		}
+
+		if (switch_core_session_private_event_count(session)) {
+            switch_ivr_parse_all_events(session);
+        }
+
+		if (args && (args->input_callback || args->buf || args->buflen)) {
+			switch_dtmf_t dtmf;
+			
+			/*
+			   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
+			   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
+			 */
+			if (switch_channel_has_dtmf(channel)) {
+				if (!args->input_callback && !args->buf) {
+					status = SWITCH_STATUS_BREAK;
+					break;
+				}
+				switch_channel_dequeue_dtmf(channel, &dtmf);
+				if (args->input_callback) {
+					status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
+				} else {
+					switch_copy_string((char *) args->buf, (void *) &dtmf, args->buflen);
+					status = SWITCH_STATUS_BREAK;
+				}
+			}
+			
+			if (args->input_callback) {
+				switch_event_t *event = NULL;
+
+				if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+					status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+					switch_event_destroy(&event);
+				}
+			}
+
+			if (status != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
+		}
+
+
 		switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 #ifndef SWITCH_VIDEO_IN_THREADS

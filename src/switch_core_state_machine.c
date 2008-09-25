@@ -37,20 +37,20 @@
 
 static void switch_core_standard_on_init(switch_core_session_t *session)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard INIT %s\n", switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard INIT\n", switch_channel_get_name(session->channel));
 }
 
 static void switch_core_standard_on_hangup(switch_core_session_t *session)
 {
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard HANGUP %s, cause: %s\n",
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard HANGUP, cause: %s\n",
 					  switch_channel_get_name(session->channel), switch_channel_cause2str(switch_channel_get_cause(session->channel)));
 }
 
 static void switch_core_standard_on_reset(switch_core_session_t *session)
 {
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard RESET %s\n", switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard RESET\n", switch_channel_get_name(session->channel));
 }
 
 static void switch_core_standard_on_routing(switch_core_session_t *session)
@@ -61,7 +61,7 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 	char *expanded = NULL;
 	char *dpstr = NULL;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard ROUTING %s\n", switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard ROUTING\n", switch_channel_get_name(session->channel));
 
 	if ((caller_profile = switch_channel_get_caller_profile(session->channel)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't get profile!\n");
@@ -126,7 +126,7 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 {
 	switch_caller_extension_t *extension;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard EXECUTE\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard EXECUTE\n", switch_channel_get_name(session->channel));
 
   top:
 	switch_channel_clear_flag(session->channel, CF_RESET);
@@ -164,20 +164,19 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 static void switch_core_standard_on_exchange_media(switch_core_session_t *session)
 {
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard LOOPBACK\n");
-	switch_ivr_session_echo(session);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard EXCHANGE_MEDIA\n", switch_channel_get_name(session->channel));
 }
 
 static void switch_core_standard_on_soft_execute(switch_core_session_t *session)
 {
 	switch_assert(session != NULL);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard TRANSMIT\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard SOFT_EXECUTE\n", switch_channel_get_name(session->channel));
 }
 
 static void switch_core_standard_on_park(switch_core_session_t *session)
 {
 	switch_assert(session != NULL);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard PARK\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard PARK\n", switch_channel_get_name(session->channel));
 	switch_channel_clear_flag(session->channel, CF_TRANSFER);
 	switch_core_session_reset(session, SWITCH_TRUE);
 	switch_ivr_park(session, NULL);
@@ -186,13 +185,13 @@ static void switch_core_standard_on_park(switch_core_session_t *session)
 static void switch_core_standard_on_consume_media(switch_core_session_t *session)
 {
 	switch_assert(session != NULL);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard HOLD\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard CONSUME_MEDIA\n", switch_channel_get_name(session->channel));
 }
 
 static void switch_core_standard_on_hibernate(switch_core_session_t *session)
 {
 	switch_assert(session != NULL);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard HIBERNATE\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard HIBERNATE\n", switch_channel_get_name(session->channel));
 }
 
 #include <sqlite3.h>

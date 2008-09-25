@@ -1238,7 +1238,7 @@ SWITCH_STANDARD_APP(stop_fax_detect_session_function)
 
 SWITCH_STANDARD_APP(echo_function)
 {
-	switch_ivr_session_echo(session);
+	switch_ivr_session_echo(session, NULL);
 }
 
 SWITCH_STANDARD_APP(park_function)
