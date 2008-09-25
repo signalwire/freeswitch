@@ -39,6 +39,35 @@ SWITCH_BEGIN_EXTERN_C
 #include <switch_cpp.h>
 
 #ifdef _MANAGED
+// this section remove linker error LNK4248 for these opaque structures
+	struct switch_core_session {char foo[];};
+	struct apr_pool_t {char foo[];};
+	struct switch_channel {char foo[];};
+	struct apr_thread_t {char foo[];};
+	struct switch_hash {char foo[];};
+	struct apr_thread_mutex_t {char foo[];};
+	struct switch_network_list {char foo[];};
+	struct switch_xml_binding {char foo[];};
+	struct apr_sockaddr_t {char foo[];};
+	struct switch_core_port_allocator {char foo[];};
+	struct switch_media_bug {char foo[];};
+	struct switch_rtp {char foo[];};
+	struct sqlite3_stmt {char foo[];};
+	struct switch_buffer {char foo[];};
+	struct switch_ivr_menu {char foo[];};
+	struct switch_event_node {char foo[];};
+	struct switch_ivr_digit_stream_parser {char foo[];};
+	struct sqlite3 {char foo[];};
+	struct switch_ivr_digit_stream {char foo[];};
+	struct real_pcre {char foo[];};
+	struct HashElem {char foo[];};
+	struct switch_ivr_menu_xml_ctx {char foo[];};
+	struct apr_file_t {char foo[];};
+	struct apr_thread_rwlock_t {char foo[];};
+	struct apr_pollfd_t {char foo[];};
+	struct apr_queue_t {char foo[];};
+	struct apr_socket_t {char foo[];};
+// LNK Error
 
 typedef char* (CALLBACK* inputtype)(void * input, switch_input_type_t type);
 typedef void (CALLBACK* hanguptype)();
