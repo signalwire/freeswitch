@@ -1931,6 +1931,13 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		if (tech_pvt->te) {
 			switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);
 		}
+
+		if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) ||
+			((val = switch_channel_get_variable(tech_pvt->channel, "supress_cng")) && switch_true(val)) ||
+			((val = switch_channel_get_variable(tech_pvt->channel, "suppress_cng")) && switch_true(val))) {
+			tech_pvt->cng_pt = 0;
+		}
+
 		if (tech_pvt->cng_pt && !(tech_pvt->profile->pflags & PFLAG_SUPPRESS_CNG)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set comfort noise payload to %u\n", tech_pvt->cng_pt);
 			switch_rtp_set_cng_pt(tech_pvt->rtp_session, tech_pvt->cng_pt);
