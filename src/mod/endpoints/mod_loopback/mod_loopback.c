@@ -49,13 +49,16 @@ typedef enum {
 	TFLAG_LINKED = (1 << 0),
 	TFLAG_OUTBOUND = (1 << 1),
 	TFLAG_WRITE = (1 << 2),
-	TFLAG_CNG = (1 << 3)
+	TFLAG_CNG = (1 << 3),
+	TFLAG_BRIDGE = (1 << 4),
+	TFLAG_BOWOUT = (1 << 5)
 } TFLAGS;
 
 struct private_object {
 	unsigned int flags;
 	switch_mutex_t *flag_mutex;
 	switch_core_session_t *session;
+	switch_channel_t *channel;
 	switch_core_session_t *other_session;
 	struct private_object *other_tech_pvt;
 	switch_channel_t *other_channel;
@@ -169,6 +172,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 		switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 		switch_core_session_set_private(session, tech_pvt);
 		tech_pvt->session = session;
+		tech_pvt->channel = switch_core_session_get_channel(session);
 	}
 
  end:
@@ -500,10 +504,38 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	if (switch_test_flag(tech_pvt, TFLAG_CNG)) {
+	if (switch_test_flag(tech_pvt, TFLAG_CNG) || switch_test_flag(tech_pvt, TFLAG_BOWOUT)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 	
+
+	if (!switch_test_flag(tech_pvt, TFLAG_BOWOUT) && 
+		tech_pvt->other_tech_pvt && 
+		switch_test_flag(tech_pvt, TFLAG_BRIDGE) && 
+		switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_BRIDGE) && 
+		switch_channel_test_flag(tech_pvt->channel, CF_BRIDGED) &&
+		switch_channel_test_flag(tech_pvt->other_channel, CF_BRIDGED) 
+		) {
+		const char *a_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+		const char *b_uuid = switch_channel_get_variable(tech_pvt->other_channel, SWITCH_SIGNAL_BOND_VARIABLE);
+				
+		switch_set_flag_locked(tech_pvt, TFLAG_BOWOUT);
+		switch_set_flag_locked(tech_pvt->other_tech_pvt, TFLAG_BOWOUT);
+				
+		switch_clear_flag_locked(tech_pvt, TFLAG_WRITE);
+		switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
+				
+		if (a_uuid && b_uuid) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+							  "%s detected bridge on both ends, attempting direct connection.\n", switch_channel_get_name(channel));
+
+			/* channel_masquerade eat your heart out....... */
+			switch_ivr_uuid_bridge(a_uuid, b_uuid);
+
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+
 	if (switch_test_flag(tech_pvt, TFLAG_LINKED)) {
 		if (frame->codec->implementation != tech_pvt->write_codec.implementation) {
 			/* change codecs to match */
@@ -544,6 +576,16 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 			switch_channel_pre_answer(tech_pvt->other_channel);
+		}
+		break;
+	case SWITCH_MESSAGE_INDICATE_BRIDGE:
+		{
+			switch_set_flag_locked(tech_pvt, TFLAG_BRIDGE);			
+		}
+		break;
+	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
+		{
+			switch_clear_flag_locked(tech_pvt, TFLAG_BRIDGE);
 		}
 		break;
 	default:
