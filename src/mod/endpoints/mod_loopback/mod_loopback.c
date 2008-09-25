@@ -438,6 +438,10 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	if (tech_pvt->other_channel) {
+		switch_channel_queue_dtmf(tech_pvt->other_channel, dtmf);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
