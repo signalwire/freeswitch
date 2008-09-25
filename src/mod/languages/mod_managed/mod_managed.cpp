@@ -33,12 +33,28 @@
  * The native code just handles getting the Mono runtime up and down
  * and passing pointers into managed code.
  */  
-#ifndef _MANAGED	
+
 #include <switch.h>
+
+SWITCH_BEGIN_EXTERN_C 
+#include "freeswitch_managed.h" 
+
+SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_managed_shutdown);
+SWITCH_MODULE_DEFINITION(mod_managed, mod_managed_load, mod_managed_shutdown, NULL);
+
+SWITCH_STANDARD_API(managedrun_api_function);	/* ExecuteBackground */
+SWITCH_STANDARD_API(managed_api_function);	/* Execute */
+SWITCH_STANDARD_APP(managed_app_function);	/* Run */
+
+SWITCH_END_EXTERN_C
+
+#define MOD_MANAGED_DLL "mod_managed_lib.dll"
+
+#ifndef _MANAGED	
 	
 SWITCH_BEGIN_EXTERN_C 
- 
-#include "freeswitch_managed.h" 
+
 #include <glib.h>
 #include <mono/jit/jit.h>
 #include <mono/metadata/assembly.h>
@@ -53,8 +69,6 @@ SWITCH_BEGIN_EXTERN_C
 #define EXPORT 
 #endif	
 
-#define MOD_MONO_MANAGED_DLL "mod_managed_lib.dll"
-
 #define MOD_MONO_MANAGED_ASM_NAME "mod_managed_lib"
 #define MOD_MONO_MANAGED_ASM_V1 1
 #define MOD_MONO_MANAGED_ASM_V2 0
@@ -63,15 +77,6 @@ SWITCH_BEGIN_EXTERN_C
 
 mod_mono_globals globals = 
 { 0 };
-
-SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load);
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_managed_shutdown);
-SWITCH_MODULE_DEFINITION(mod_managed, mod_managed_load, mod_managed_shutdown, NULL);
-
-SWITCH_STANDARD_API(monorun_api_function);	/* ExecuteBackground */
-SWITCH_STANDARD_API(mono_api_function);	/* Execute */
-SWITCH_STANDARD_APP(mono_app_function);	/* Run */
-
 
 // Sets up delegates (and anything else needed) on the ManagedSession object
 // Called via internalcall
@@ -158,8 +163,7 @@ switch_status_t setMonoDirs()
 	mono_set_dirs(NULL, NULL);
 	return SWITCH_STATUS_SUCCESS;
 
-#endif	/* 
-	*/
+#endif	
 }
 
 switch_status_t loadModMonoManaged() 
@@ -167,7 +171,7 @@ switch_status_t loadModMonoManaged()
 	/* Find and load mod_mono_managed.exe */ 
 	char filename[256];
 
-	switch_snprintf(filename, 256, "%s%s%s", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR, MOD_MONO_MANAGED_DLL);
+	switch_snprintf(filename, 256, "%s%s%s", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR, MOD_MANAGED_DLL);
 	globals.domain = mono_jit_init(filename);
 
 	/* Already got a Mono domain? */
@@ -204,7 +208,6 @@ switch_status_t loadModMonoManaged()
 	}
 
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 MonoMethod * getMethod(const char *name, MonoClass * klass) 
@@ -305,14 +308,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
 
-	SWITCH_ADD_API(api_interface, "managedrun", "Run a module (ExecuteBackground)", monorun_api_function, "<module> [<args>]");
-	SWITCH_ADD_API(api_interface, "managed", "Run a module as an API function (Execute)", mono_api_function, "<module> [<args>]");
-	SWITCH_ADD_APP(app_interface, "managed", "Run Mono IVR", "Run a Mono IVR on a channel", mono_app_function, "<modulename> [<args>]", SAF_NONE);
+	SWITCH_ADD_API(api_interface, "managedrun", "Run a module (ExecuteBackground)", managedrun_api_function, "<module> [<args>]");
+	SWITCH_ADD_API(api_interface, "managed", "Run a module as an API function (Execute)", managed_api_function, "<module> [<args>]");
+	SWITCH_ADD_APP(app_interface, "managed", "Run Mono IVR", "Run a Mono IVR on a channel", managed_app_function, "<modulename> [<args>]", SAF_NONE);
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_STANDARD_API(monorun_api_function) 
+SWITCH_STANDARD_API(managedrun_api_function) 
 {
 	// TODO: Should we be detaching after all this?
 	mono_thread_attach(globals.domain);
@@ -344,7 +347,7 @@ SWITCH_STANDARD_API(monorun_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_STANDARD_API(mono_api_function) 
+SWITCH_STANDARD_API(managed_api_function) 
 {
 	mono_thread_attach(globals.domain);
 
@@ -375,7 +378,7 @@ SWITCH_STANDARD_API(mono_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_STANDARD_APP(mono_app_function) 
+SWITCH_STANDARD_APP(managed_app_function) 
 {
 	mono_thread_attach(globals.domain);
 
@@ -430,17 +433,12 @@ SWITCH_END_EXTERN_C
 
 #ifdef _MANAGED
 
-#include <switch.h>
 #include <mscoree.h>
 
 using namespace System;
 using namespace System::Runtime::InteropServices;
 
 SWITCH_BEGIN_EXTERN_C 
-
-#include "freeswitch_managed.h"
-
-#define MOD_DOTNET_MANAGED_DLL "mod_managed_lib.dll"
 
 struct dotnet_conf_t {
     switch_memory_pool_t *pool;
@@ -449,13 +447,6 @@ struct dotnet_conf_t {
 	//OSVERSIONINFO osver;
     //char *cor_version;
 } globals;
-
-SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load);
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_managed_shutdown);
-SWITCH_MODULE_DEFINITION(mod_managed, mod_managed_load, mod_managed_shutdown, NULL);
-SWITCH_STANDARD_API(dotnetrun_api_function);	/* ExecuteBackground */
-SWITCH_STANDARD_API(dotnet_api_function);	/* Execute */
-SWITCH_STANDARD_APP(dotnet_app_function);	/* Run */
 
 // Sets up delegates (and anything else needed) on the ManagedSession object
 // Called from ManagedSession.Initialize Managed -> this is Unmanaged code so all pointers are marshalled and prevented from GC
@@ -476,7 +467,7 @@ switch_status_t loadModDotnetManaged()
 {
 	/* Find and load mod_dotnet_managed.dll */ 
 	char filename[256];
-	switch_snprintf(filename, 256, "%s%s%s", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR, MOD_DOTNET_MANAGED_DLL);
+	switch_snprintf(filename, 256, "%s%s%s", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR, MOD_MANAGED_DLL);
 
 	//HRESULT hr;
 	//wchar_t wCORVersion[256];
@@ -592,14 +583,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
 
-	SWITCH_ADD_API(api_interface, "managedrun", "Run a module (ExecuteBackground)", dotnetrun_api_function, "<module> [<args>]");
-	SWITCH_ADD_API(api_interface, "managed", "Run a module as an API function (Execute)", dotnet_api_function, "<module> [<args>]");
-	SWITCH_ADD_APP(app_interface, "managed", "Run CLI App", "Run an App on a channel", dotnet_app_function, "<modulename> [<args>]", SAF_NONE);
+	SWITCH_ADD_API(api_interface, "managedrun", "Run a module (ExecuteBackground)", managedrun_api_function, "<module> [<args>]");
+	SWITCH_ADD_API(api_interface, "managed", "Run a module as an API function (Execute)", managed_api_function, "<module> [<args>]");
+	SWITCH_ADD_APP(app_interface, "managed", "Run CLI App", "Run an App on a channel", managed_app_function, "<modulename> [<args>]", SAF_NONE);
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
-SWITCH_STANDARD_API(dotnetrun_api_function) 
+SWITCH_STANDARD_API(managedrun_api_function) 
 {
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "-ERR no args specified!\n");	
@@ -626,7 +617,7 @@ SWITCH_STANDARD_API(dotnetrun_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_STANDARD_API(dotnet_api_function) 
+SWITCH_STANDARD_API(managed_api_function) 
 {
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "-ERR no args specified!\n");	
@@ -651,7 +642,7 @@ SWITCH_STANDARD_API(dotnet_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_STANDARD_APP(dotnet_app_function) 
+SWITCH_STANDARD_APP(managed_app_function) 
 {
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No args specified!\n");
