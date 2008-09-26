@@ -779,19 +779,24 @@ static switch_status_t channel_receive_message_fxs(switch_core_session_t *sessio
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
-		if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
 			zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_ANSWERED);
 			zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_PROGRESS);
 			zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_MEDIA);
-		} else {
 			zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_UP);
+			switch_channel_mark_answered(channel);
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_RINGING:
-		if (!(switch_channel_test_flag(channel, CF_OUTBOUND) || 
-			  switch_channel_test_flag(channel, CF_ANSWERED) || 
-			  switch_channel_test_flag(channel, CF_EARLY_MEDIA))) {
-			zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_RING);
+		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			
+			if (!switch_channel_test_flag(channel, CF_ANSWERED) && 
+				!switch_channel_test_flag(channel, CF_EARLY_MEDIA) &&
+				!switch_channel_test_flag(channel, CF_RING_READY)
+				) {
+				zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_RING);
+				switch_channel_mark_ring_ready(channel);
+			}
 		}
 		break;
 	default:
