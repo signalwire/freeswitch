@@ -1459,7 +1459,7 @@ static void *SWITCH_THREAD_FUNC system_thread(switch_thread_t *thread, void *obj
 	return NULL;
 }
 
-SWITCH_DECLARE(int) switch_system(char *cmd, switch_bool_t wait)
+SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;

@@ -1654,7 +1654,7 @@ SWITCH_DECLARE(uint32_t) switch_core_default_dtmf_duration(uint32_t duration);
 SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string);
 SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string);
 
-SWITCH_DECLARE(int) switch_system(char *cmd, switch_bool_t wait);
+SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait);
 
 ///\}
 
