@@ -12,6 +12,7 @@ struct entry
 {
     void *k, *v;
     unsigned int h;
+	hashtable_flag_t flags;
     struct entry *next;
 };
 

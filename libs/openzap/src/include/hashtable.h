@@ -101,8 +101,15 @@ create_hashtable(unsigned int minsize,
  * If in doubt, remove before insert.
  */
 
+
+typedef enum {
+	HASHTABLE_FLAG_NONE = 0,
+	HASHTABLE_FLAG_FREE_KEY = (1 << 0),
+	HASHTABLE_FLAG_FREE_VALUE = (1 << 1)
+} hashtable_flag_t;
+
 int 
-hashtable_insert(struct hashtable *h, void *k, void *v);
+hashtable_insert(struct hashtable *h, void *k, void *v, hashtable_flag_t flags);
 
 #define DEFINE_HASHTABLE_INSERT(fnname, keytype, valuetype)		\
 	int fnname (struct hashtable *h, keytype *k, valuetype *v)	\
@@ -167,7 +174,7 @@ hashtable_count(struct hashtable *h);
  */
 
 void
-hashtable_destroy(struct hashtable *h, int free_keys, int free_values);
+hashtable_destroy(struct hashtable *h);
 
 struct hashtable_iterator *hashtable_first(struct hashtable *h);
 struct hashtable_iterator *hashtable_next(struct hashtable_iterator *i);

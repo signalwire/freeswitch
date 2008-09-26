@@ -2033,7 +2033,7 @@ static zap_status_t load_config(void)
 						name = buf;
 					}
 					span->name = strdup(name);
-					hashtable_insert(globals.span_hash, (void *)span->name, span);
+					hashtable_insert(globals.span_hash, (void *)span->name, span, HASHTABLE_FLAG_NONE);
 					zap_mutex_unlock(globals.mutex);
 
 					zap_log(ZAP_LOG_DEBUG, "created span %d (%s) of type %s\n", span->span_id, span->name, type);
@@ -2212,7 +2212,7 @@ int zap_load_module(const char *name)
 			if (hashtable_search(globals.interface_hash, (void *)interface->name)) {
 				zap_log(ZAP_LOG_ERROR, "Interface %s already loaded!\n", interface->name);
 			} else {
-				hashtable_insert(globals.interface_hash, (void *)interface->name, interface);
+				hashtable_insert(globals.interface_hash, (void *)interface->name, interface, HASHTABLE_FLAG_NONE);
 				process_module_config(interface);
 				x++;
 			}
@@ -2245,7 +2245,7 @@ int zap_load_module(const char *name)
 			zap_log(ZAP_LOG_ERROR, "Module %s already loaded!\n", mod->name);
 			zap_dso_destroy(&lib);
 		} else {
-			hashtable_insert(globals.module_hash, (void *)mod->name, mod);
+			hashtable_insert(globals.module_hash, (void *)mod->name, mod, HASHTABLE_FLAG_NONE);
 			count++;
 		}
 		zap_mutex_unlock(globals.mutex);
@@ -2447,9 +2447,9 @@ zap_status_t zap_global_destroy(void)
 	zap_unload_modules();
 
 	zap_mutex_lock(globals.mutex);
-	hashtable_destroy(globals.interface_hash, 0, 0);
-	hashtable_destroy(globals.module_hash, 0, 0);
-	hashtable_destroy(globals.span_hash, 0, 0);
+	hashtable_destroy(globals.interface_hash);
+	hashtable_destroy(globals.module_hash);
+	hashtable_destroy(globals.span_hash);
 	zap_mutex_unlock(globals.mutex);
 	zap_mutex_destroy(&globals.mutex);
 
