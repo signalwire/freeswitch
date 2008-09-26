@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * John Wehle (john@feith.com)
+ * Raymond Chandler <intralanman@gmail.com>
  *
  * mod_voicemail.c -- Voicemail Module
  *
@@ -2052,6 +2053,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	char *vm_email = NULL;
 	char *vm_notify_email = NULL;
 	char *email_addr = NULL;
+	char *vm_timezone = NULL;
 	int send_mail = 0;
 	int send_main = 0;
 	int send_notify = 0;
@@ -2112,9 +2114,12 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 			insert_db = switch_true(val);
 		} else if (!strcasecmp(var, "vm-attach-file")) {
 			email_attach = switch_true(val);
+		} else if (!strcasecmp(var, "timezone")) {
+			vm_timezone = switch_core_strdup(pool, val);
 		}
+		/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "send mail is %d, var is %s\n", send_mail, var);*/
 	}
-
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "send mail is %d and that's my final answer\n", send_mail);
 	if (!switch_strlen_zero(vm_storage_dir)) {
 		dir_path = switch_mprintf("%s%s%s", vm_storage_dir, SWITCH_PATH_SEPARATOR, myid);
 	} else if (!switch_strlen_zero(profile->storage_dir)) {
@@ -2199,7 +2204,38 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_caller_id_name", caller_id_name);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_file_path", file_path);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_read_flags", read_flags);
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_time", date);
+		
+		if(switch_loadable_module_exists("mod_timezone") == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mod_timezone is loaded... let's try to convert\n");
+			if(!switch_strlen_zero(vm_timezone)) {
+				switch_status_t status;
+				switch_stream_handle_t time_stream = { 0 };
+				char *reply;
+				char *args = switch_mprintf("%s %s", vm_timezone, profile->date_fmt);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "User's timezone is %s\n", vm_timezone);
+				SWITCH_STANDARD_STREAM(time_stream);
+				if ((status = switch_api_execute("strftime_tz", args, NULL, &time_stream)) == SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Successfully Converted Timezone\n");
+					reply = time_stream.data;
+					if(strncasecmp(reply, "-ERR", 4)) {
+						if(strlen(reply)) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "old time was: %s, new time is: %s\n", date, reply);
+							switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_time", reply);
+						} else {
+							switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_time", date);
+						}
+						switch_safe_free(reply);
+					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed To Successfully Convert Timezone\n");
+					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_time", date);
+				}
+				switch_safe_free(args);
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mod_timezone isn't loaded... we'll only be using system time\n");
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_time", date);
+		}
 		switch_snprintf(tmpvar, sizeof(tmpvar), "%d", priority);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_priority", tmpvar);
 		if (vm_email) {
