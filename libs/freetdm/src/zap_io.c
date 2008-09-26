@@ -222,6 +222,7 @@ static zap_status_t zap_span_destroy(zap_span_t *span)
 		zap_log(ZAP_LOG_INFO, "Destroying span %u type (%s)\n", span->span_id, span->type);
 		status = span->zio->span_destroy(span);
 		zap_safe_free(span->type);
+		zap_safe_free(span->dtmf_hangup);
 	}
 
 	return status;
@@ -240,6 +241,8 @@ static zap_status_t zap_channel_destroy(zap_channel_t *zchan)
 		zap_buffer_destroy(&zchan->digit_buffer);
 		zap_buffer_destroy(&zchan->dtmf_buffer);
 		zap_buffer_destroy(&zchan->fsk_buffer);
+
+		zap_safe_free(zchan->dtmf_hangup_buf);
 
 		if (zchan->tone_session.buffer) {
 			teletone_destroy_session(&zchan->tone_session);
@@ -452,6 +455,8 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 
 		zap_mutex_create(&new_chan->mutex);
 		zap_buffer_create(&new_chan->digit_buffer, 128, 128, 0);
+
+		new_chan->dtmf_hangup_buf = calloc (span->dtmf_hangup_len + 1, sizeof (char));
 
 		zap_set_flag(new_chan, ZAP_CHANNEL_CONFIGURED | ZAP_CHANNEL_READY);
 		*chan = new_chan;
@@ -965,6 +970,8 @@ static zap_status_t zap_channel_reset(zap_channel_t *zchan)
 		zchan->dtmf_off = ZAP_DEFAULT_DTMF_OFF;
 	}
 	
+	memset(zchan->dtmf_hangup_buf, '\0', zchan->span->dtmf_hangup_len);
+
 	if (zap_test_flag(zchan, ZAP_CHANNEL_TRANSCODE)) {
 		zchan->effective_codec = zchan->native_codec;
 		zchan->packet_len = zchan->native_interval * (zchan->effective_codec == ZAP_CODEC_SLIN ? 16 : 8);
@@ -1656,6 +1663,18 @@ zap_status_t zap_channel_queue_dtmf(zap_channel_t *zchan, const char *dtmf)
 		zap_buffer_toss(zchan->digit_buffer, strlen(dtmf));
 	}
 
+	if (zchan->span->dtmf_hangup_len) {
+		for (p = dtmf; zap_is_dtmf(*p); p++) {
+			memmove (zchan->dtmf_hangup_buf, zchan->dtmf_hangup_buf + 1, zchan->span->dtmf_hangup_len - 1);
+			zchan->dtmf_hangup_buf[zchan->span->dtmf_hangup_len - 1] = *p;
+			if (!strcmp(zchan->dtmf_hangup_buf, zchan->span->dtmf_hangup)) {
+				zap_log(ZAP_LOG_DEBUG, "DTMF hangup detected.\n");
+				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
+				break;
+			}
+		}
+	}
+
 	p = dtmf;
 	while (wr < len && p) {
 		if (zap_is_dtmf(*p)) {
@@ -2127,6 +2146,9 @@ static zap_status_t load_config(void)
 					configured += zio->configure_span(span, val, qtype, name, number);
 					d++;
 				}
+			} else if (!strcasecmp(var, "dtmf_hangup")) {
+				span->dtmf_hangup = strdup(val);
+				span->dtmf_hangup_len = strlen(val);
 			}
 		} else {
 			zap_log(ZAP_LOG_ERROR, "unknown param [%s] '%s' / '%s'\n", cfg.category, var, val);
