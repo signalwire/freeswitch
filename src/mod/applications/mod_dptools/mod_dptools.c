@@ -1775,7 +1775,7 @@ SWITCH_STANDARD_APP(record_session_function)
 	   path and right side as a time limit on the recording
 	*/
 
-	/* if we find a + and the charecter before it is a space */
+	/* if we find a + and the character before it is a space */
 	if ((path_end = strrchr(path, '+')) && path_end > path && *(path_end - 1) == ' ') {
 		char *limit_start = path_end + 1;
 
