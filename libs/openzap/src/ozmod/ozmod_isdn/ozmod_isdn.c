@@ -696,6 +696,15 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 				}
 			}
 			break;
+		case Q931mes_CONNECT_ACKNOWLEDGE:
+			{
+				if (zchan) {
+					zap_log(ZAP_LOG_DEBUG, "Received CONNECT_ACK message for channel %d\n", chan_id);
+				} else {
+					zap_log(ZAP_LOG_DEBUG, "Received CONNECT_ACK with no matching channel %d\n", chan_id);
+				}
+			}
+			break;
 
 		case Q931mes_INFORMATION:
 			{
