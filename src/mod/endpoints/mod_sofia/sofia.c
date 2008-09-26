@@ -575,6 +575,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   NUTAG_ALLOW("NOTIFY"),
 				   NUTAG_ALLOW_EVENTS("talk"),
 				   NUTAG_SESSION_TIMER(profile->session_timeout),
+				   TAG_IF(profile->minimum_session_expires, NUTAG_MIN_SE(profile->minimum_session_expires)),
 				   NTATAG_MAX_PROCEEDING(profile->max_proceeding),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW("PUBLISH")),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW("SUBSCRIBE")),
@@ -1681,6 +1682,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "enable-timer")) {
 						if (!switch_true(val)) {
 							profile->pflags |= PFLAG_DISABLE_TIMER;
+						}
+					} else if (!strcasecmp(var, "minimum-session-expires")) {
+						profile->minimum_session_expires = atoi(val);
+						/* per RFC 4028: minimum_session_expires must be > 90 */
+						if (profile->minimum_session_expires < 90) {
+							profile->minimum_session_expires = 90;
 						}
 					} else if (!strcasecmp(var, "enable-100rel")) {
 						if (!switch_true(val)) {

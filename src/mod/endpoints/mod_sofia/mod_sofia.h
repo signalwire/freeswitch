@@ -368,6 +368,7 @@ struct sofia_profile {
 	uint32_t inuse;
 	time_t started;
 	uint32_t session_timeout;
+	uint32_t minimum_session_expires;
 	uint32_t max_proceeding;
 	uint32_t rtp_timeout_sec;
 	uint32_t rtp_hold_timeout_sec;
