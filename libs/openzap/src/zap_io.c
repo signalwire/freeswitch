@@ -1994,7 +1994,9 @@ static zap_status_t load_config(void)
 					continue;
 				}
 
-				name = strchr(type, ' ');
+				if ((name = strchr(type, ' '))) {
+					*name++ = '\0';
+				}
 
 				zap_mutex_lock(globals.mutex);
 				if (!(zio = (zap_io_interface_t *) hashtable_search(globals.interface_hash, type))) {
