@@ -2099,6 +2099,63 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	return cause;
 }
 
+
+static int notify_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+
+	nua_handle_t *nh;
+	sofia_profile_t *ext_profile = NULL, *profile = (sofia_profile_t *) pArg;
+	char *user = argv[0];
+	char *host = argv[1];
+	char *contact_in = argv[2];
+	char *profile_name = argv[3];
+	char *ct = argv[4];
+	char *es = argv[5];
+	char *body = argv[6];
+	char *id = NULL;
+	char *p , *contact;
+
+	
+	if (profile_name && strcasecmp(profile_name, profile->name)) {
+        if ((ext_profile = sofia_glue_find_profile(profile_name))) {
+            profile = ext_profile;
+        }
+    }
+
+	id = switch_mprintf("sip:%s@%s", user, host);
+	switch_assert(id);
+	contact = sofia_glue_get_url_from_contact(contact_in, 1);
+				
+	if ((p = strstr(contact, ";fs_"))) {
+		*p = '\0';
+	}
+
+	nh = nua_handle(profile->nua, 
+					NULL, 
+					NUTAG_URL(contact), 
+					SIPTAG_FROM_STR(id), 
+					SIPTAG_TO_STR(id), 
+					SIPTAG_CONTACT_STR(profile->url), 
+					TAG_END());
+				
+	nua_notify(nh,
+			   NUTAG_NEWSUB(1),
+			   SIPTAG_EVENT_STR(es), 
+			   SIPTAG_CONTENT_TYPE_STR(ct), 
+			   TAG_IF(!switch_strlen_zero(body), SIPTAG_PAYLOAD_STR(body)),
+			   TAG_END());
+
+				
+	free(id);
+	free(contact);
+
+	if (ext_profile) {
+		sofia_glue_release_profile(ext_profile);
+	}	
+
+	return 0;
+}
+
 static void general_event_handler(switch_event_t *event)
 {
 	switch (event->event_id) {
@@ -2111,47 +2168,20 @@ static void general_event_handler(switch_event_t *event)
 			const char *host = switch_event_get_header(event, "host");
 			const char *body = switch_event_get_body(event);
 			sofia_profile_t *profile;
-			nua_handle_t *nh;
 
 			if (profile_name && ct && es && user && host && (profile = sofia_glue_find_profile(profile_name))) {
-				char *id = NULL;
-				char *contact, *p;
-				char buf[512] = "";
-
-				if (!sofia_reg_find_reg_url(profile, user, host, buf, sizeof(buf))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find user %s@%s\n", user, host);
-					return;
-				}
-
-				id = switch_mprintf("sip:%s@%s", user, host);
-
-				switch_assert(id);
-				contact = sofia_glue_get_url_from_contact(buf, 0);
+				char *sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,'%q','%q','%q' "
+										   "from sip_registrations where sip_user='%s' and sip_host='%q'",
+										   ct, es, body, user, host
+										   );
 				
-				if ((p = strstr(contact, ";fs_"))) {
-					*p = '\0';
-				}
 
-				nh = nua_handle(profile->nua, 
-								NULL, 
-								NUTAG_URL(contact), 
-								SIPTAG_FROM_STR(id), 
-								SIPTAG_TO_STR(id), 
-								SIPTAG_CONTACT_STR(profile->url), 
-								TAG_END());
-				
-				nua_notify(nh,
-						   NUTAG_NEWSUB(1),
-						   SIPTAG_EVENT_STR(es), 
-						   SIPTAG_CONTENT_TYPE_STR(ct), 
-						   TAG_IF(!switch_strlen_zero(body), SIPTAG_PAYLOAD_STR(body)),
-						   TAG_END());
-
-				
-				free(id);
+				switch_mutex_lock(profile->ireg_mutex);
+				sofia_glue_execute_sql_callback(profile, SWITCH_TRUE, NULL, sql, notify_callback, profile);
+				switch_mutex_unlock(profile->ireg_mutex);
 				sofia_glue_release_profile(profile);
 			}
-
+			
 		}
 		break;
 	case SWITCH_EVENT_SEND_MESSAGE:
