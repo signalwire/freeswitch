@@ -47,6 +47,7 @@
     <!--<param name="aggressive-nat-detection" value="true"/>-->
     <!--<param name="enable-timer" value="false"/>-->
     <!--<param name="enable-100rel" value="false"/>-->
+    <!--<param name="minimum-session-expires" value="120"/>-->
     <param name="apply-inbound-acl" value="domains"/>
     <!--<param name="apply-register-acl" value="domains"/>-->
     <!--<param name="dtmf-type" value="info"/>-->
