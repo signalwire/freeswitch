@@ -3427,7 +3427,7 @@ static JSBool js_system(JSContext * cx, JSObject * obj, uintN argc, jsval * argv
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 
 	if (argc > 0 && (cmd = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
-		*rval = INT_TO_JSVAL(system(cmd));
+		*rval = INT_TO_JSVAL(switch_system(cmd, SWITCH_TRUE));
 		return JS_TRUE;
 	}
 

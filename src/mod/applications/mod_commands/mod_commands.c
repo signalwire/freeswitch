@@ -2518,7 +2518,7 @@ SWITCH_STANDARD_API(system_function)
     } 
 
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Executing command: %s\n", cmd);
-    if (system(cmd) < 0) {
+    if (switch_system(cmd, SWITCH_TRUE) < 0) {
        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Failed to execute command: %s\n", cmd);
     }
     stream->write_function(stream, "+OK\n");

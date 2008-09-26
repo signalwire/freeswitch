@@ -40,6 +40,8 @@
 #include <switch_private.h>
 #endif
 
+#include <sys/resource.h>
+
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs = { 0 };
 
 /* The main runtime obj we keep this hidden for ourselves */
@@ -1430,6 +1432,82 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim_all(void)
 	switch_core_memory_reclaim_logger();
 	switch_core_memory_reclaim_events();
 	switch_core_memory_reclaim();
+}
+
+
+struct system_thread_handle {
+	const char * cmd;
+	switch_thread_cond_t *cond;
+	switch_mutex_t *mutex;
+	switch_memory_pool_t *pool;
+	int ret;
+};
+
+static void *SWITCH_THREAD_FUNC system_thread(switch_thread_t *thread, void *obj) 
+{
+	struct system_thread_handle *sth = (struct system_thread_handle *)obj;
+
+/*	struct rlimit rlim;
+
+	getrlimit(RLIMIT_STACK, &rlim);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "rlim_cur: %d rlim_max: %d\n", (int)rlim.rlim_cur, (int)rlim.rlim_max);
+*/
+
+	sth->ret = system(sth->cmd);
+
+	switch_mutex_lock(sth->mutex);
+	switch_thread_cond_signal(sth->cond);
+	switch_mutex_unlock(sth->mutex);
+
+	switch_core_destroy_memory_pool(&sth->pool);
+
+	return NULL;
+}
+
+SWITCH_DECLARE(int) switch_system(char *cmd, switch_bool_t wait)
+{
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr;
+	int ret = 0;
+	struct system_thread_handle *sth;
+	switch_memory_pool_t *pool;
+#ifndef __FreeBSD__
+	struct rlimit rlim;
+
+	rlim.rlim_cur = SWITCH_SYSTEM_THREAD_STACKSIZE;
+	rlim.rlim_max = SWITCH_SYSTEM_THREAD_STACKSIZE;;
+	setrlimit(RLIMIT_STACK, &rlim);
+#endif
+
+	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
+		return 1;
+	}
+
+	if (!(sth = switch_core_alloc(pool, sizeof(struct system_thread_handle)))) {
+		switch_core_destroy_memory_pool(&pool);
+		return 1;
+	}
+
+	sth->pool = pool;
+	sth->cmd = switch_core_strdup(pool, cmd);
+
+	switch_thread_cond_create(&sth->cond, sth->pool);
+	switch_mutex_init(&sth->mutex, SWITCH_MUTEX_NESTED, sth->pool);
+	switch_mutex_lock(sth->mutex);
+
+	switch_threadattr_create(&thd_attr, sth->pool);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_SYSTEM_THREAD_STACKSIZE);
+//	switch_threadattr_priority_increase(thd_attr);
+	switch_thread_create(&thread, thd_attr, system_thread, sth, sth->pool);
+
+	if (wait) {
+		switch_thread_cond_wait(sth->cond, sth->mutex);
+		ret = sth->ret;
+	}
+	switch_mutex_unlock(sth->mutex);
+
+	return ret;
 }
 
 /* For Emacs:
