@@ -733,6 +733,7 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 			switch(state) {
 			case ZAP_CHANNEL_STATE_PROGRESS:
 			case ZAP_CHANNEL_STATE_PROGRESS_MEDIA:
+			case ZAP_CHANNEL_STATE_RING:
 				ok = 0;
 				break;
 			default:
