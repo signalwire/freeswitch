@@ -466,6 +466,7 @@ struct zap_analog_data {
 
 struct zap_span {
 	zap_data_type_t data_type;
+	char *name;
 	uint32_t span_id;
 	uint32_t chan_count;
 	uint32_t active_count;
@@ -592,6 +593,7 @@ zap_status_t zap_configure_span(const char *type, zap_span_t *span, zio_signal_c
 zap_status_t zap_span_start(zap_span_t *span);
 int zap_load_module(const char *name);
 int zap_load_module_assume(const char *name);
+zap_status_t zap_span_find_by_name(const char *name, zap_span_t **span);
 
 ZIO_CODEC_FUNCTION(zio_slin2ulaw);
 ZIO_CODEC_FUNCTION(zio_ulaw2slin);

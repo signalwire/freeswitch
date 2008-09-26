@@ -76,6 +76,7 @@ zap_time_t zap_current_time_in_ms(void)
 static struct {
 	zap_hash_t *interface_hash;
 	zap_hash_t *module_hash;
+	zap_hash_t *span_hash;
 	zap_mutex_t *mutex;
 	struct zap_span *spans[ZAP_MAX_SPANS_INTERFACE+1];
 	uint32_t span_index;
@@ -458,6 +459,19 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 	}
 
 	return ZAP_FAIL;
+}
+
+zap_status_t zap_span_find_by_name(const char *name, zap_span_t **span)
+{
+	zap_status_t status = ZAP_FAIL;
+
+	zap_mutex_lock(globals.mutex);
+	if (!zap_strlen_zero(name) && (*span = hashtable_search(globals.span_hash, (void *)name))) {
+		status = ZAP_SUCCESS;
+	}
+	zap_mutex_unlock(globals.mutex);
+
+	return status;
 }
 
 zap_status_t zap_span_find(uint32_t id, zap_span_t **span)
@@ -1965,10 +1979,12 @@ static zap_status_t load_config(void)
 		if (!strncasecmp(cfg.category, "span", 4)) {
 			if (cfg.catno != catno) {
 				char *type = cfg.category + 4;
+				char *name;
+				
 				if (*type == ' ') {
 					type++;
 				}
-
+				
 				zap_log(ZAP_LOG_DEBUG, "found config for span\n");
 				catno = cfg.catno;
 				
@@ -1977,7 +1993,9 @@ static zap_status_t load_config(void)
 					span = NULL;
 					continue;
 				}
-				
+
+				name = strchr(type, ' ');
+
 				zap_mutex_lock(globals.mutex);
 				if (!(zio = (zap_io_interface_t *) hashtable_search(globals.interface_hash, type))) {
 					zap_load_module_assume(type);
@@ -2001,8 +2019,25 @@ static zap_status_t load_config(void)
 
 				if (zap_span_create(zio, &span) == ZAP_SUCCESS) {
 					span->type = strdup(type);
-					zap_log(ZAP_LOG_DEBUG, "created span %d of type %s\n", span->span_id, type);
 					d = 0;
+
+					zap_mutex_lock(globals.mutex);
+					if (!zap_strlen_zero(name) && hashtable_search(globals.span_hash, (void *)name)) {
+						zap_log(ZAP_LOG_WARNING, "name %s is already used, substituting 'span%d' as the name\n", span->span_id);
+						name = NULL;
+					}
+
+					if (!name) {
+						char buf[128] = "";
+						snprintf(buf, sizeof(buf), "span%d", span->span_id);
+						name = buf;
+					}
+					span->name = strdup(name);
+					hashtable_insert(globals.span_hash, (void *)span->name, span);
+					zap_mutex_unlock(globals.mutex);
+
+					zap_log(ZAP_LOG_DEBUG, "created span %d (%s) of type %s\n", span->span_id, span->name, type);
+					
 				} else {
 					zap_log(ZAP_LOG_CRIT, "failure creating span of type %s\n", type);
 					span = NULL;
@@ -2342,6 +2377,7 @@ zap_status_t zap_global_init(void)
 	memset(&interfaces, 0, sizeof(interfaces));
 	globals.interface_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
 	globals.module_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
+	globals.span_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
 	modcount = 0;
 	zap_mutex_create(&globals.mutex);
 	
@@ -2397,7 +2433,11 @@ zap_status_t zap_global_destroy(void)
 				zap_safe_free(cur_span->signal_data);
 				zap_span_destroy(cur_span);
 			}
+			zap_mutex_lock(globals.mutex);
+			hashtable_remove(globals.span_hash, (void *)cur_span->name);
+			zap_mutex_unlock(globals.mutex);
 			zap_safe_free(cur_span->type);
+			zap_safe_free(cur_span->name);
 			free(cur_span);
 			cur_span = NULL;
 		}
@@ -2409,6 +2449,7 @@ zap_status_t zap_global_destroy(void)
 	zap_mutex_lock(globals.mutex);
 	hashtable_destroy(globals.interface_hash, 0, 0);
 	hashtable_destroy(globals.module_hash, 0, 0);
+	hashtable_destroy(globals.span_hash, 0, 0);
 	zap_mutex_unlock(globals.mutex);
 	zap_mutex_destroy(&globals.mutex);
 
