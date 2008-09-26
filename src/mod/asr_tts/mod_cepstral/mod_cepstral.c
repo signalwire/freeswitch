@@ -150,7 +150,7 @@ static switch_status_t cepstral_speech_open(switch_speech_handle_t *sh, const ch
 		voice_name = NULL;
 	}
 
-	if (!voice_name) {
+	if (switch_strlen_zero(voice_name)) {
 		/* Find the first voice on the system */
 		if ((cepstral->voice = swift_port_find_first_voice(cepstral->port, NULL, NULL)) == NULL) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to find any voices!\n");
@@ -219,6 +219,9 @@ static switch_status_t cepstral_speech_feed_tts(switch_speech_handle_t *sh, char
 
 	cepstral->tts_stream = NULL;
 
+	if (switch_strlen_zero(text)) {
+		return SWITCH_STATUS_FALSE;
+	}
 	if (!strncasecmp(text, fp, len)) {
 		text += len;
 		if (switch_strlen_zero(text)) {
