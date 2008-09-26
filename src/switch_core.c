@@ -38,9 +38,10 @@
 #include "private/switch_core_pvt.h"
 #ifndef WIN32
 #include <switch_private.h>
-#endif
-
+#ifdef HAVE_SETRLIMIT
 #include <sys/resource.h>
+#endif
+#endif
 
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs = { 0 };
 
@@ -1447,12 +1448,6 @@ static void *SWITCH_THREAD_FUNC system_thread(switch_thread_t *thread, void *obj
 {
 	struct system_thread_handle *sth = (struct system_thread_handle *)obj;
 
-/*	struct rlimit rlim;
-
-	getrlimit(RLIMIT_STACK, &rlim);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "rlim_cur: %d rlim_max: %d\n", (int)rlim.rlim_cur, (int)rlim.rlim_max);
-*/
-
 	sth->ret = system(sth->cmd);
 
 	switch_mutex_lock(sth->mutex);
@@ -1471,7 +1466,7 @@ SWITCH_DECLARE(int) switch_system(char *cmd, switch_bool_t wait)
 	int ret = 0;
 	struct system_thread_handle *sth;
 	switch_memory_pool_t *pool;
-#ifndef __FreeBSD__
+#ifdef HAVE_SETRLIMIT
 	struct rlimit rlim;
 
 	rlim.rlim_cur = SWITCH_SYSTEM_THREAD_STACKSIZE;
@@ -1498,7 +1493,6 @@ SWITCH_DECLARE(int) switch_system(char *cmd, switch_bool_t wait)
 
 	switch_threadattr_create(&thd_attr, sth->pool);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_SYSTEM_THREAD_STACKSIZE);
-//	switch_threadattr_priority_increase(thd_attr);
 	switch_thread_create(&thread, thd_attr, system_thread, sth, sth->pool);
 
 	if (wait) {
