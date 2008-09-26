@@ -1780,7 +1780,8 @@ SWITCH_STANDARD_API(sofia_function)
 		"--------------------------------------------------------------------------------\n"
 		"sofia help\n"
 		"sofia profile <profile_name> [[start|stop|restart|rescan] [reloadxml]|flush_inbound_reg [<call_id>] [reboot]|[register|unregister] [<gateway name>|all]|killgw <gateway name>|[stun-auto-disable|stun-enabled] [true|false]]\n"
-		"sofia status [[profile | gateway] <name>]\n"
+		"sofia status profile <name> [ reg <contact str> ] | [ pres <pres str> ]\n"
+		"sofia status gateway <name>\n"
 		"sofia loglevel [0-9]\n" "--------------------------------------------------------------------------------\n";
 
 	if (session) {
