@@ -1274,6 +1274,8 @@ static switch_status_t bridge_on_dtmf(switch_core_session_t *session, void *inpu
 
 static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
+	char sbuf[3];
+
 	switch (itype) {
 	case SWITCH_INPUT_TYPE_DTMF:
 		{
@@ -1292,6 +1294,8 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 
 			for (p = terminators; p && *p; p++) {
 				if (*p == dtmf->digit) {
+					switch_snprintf(sbuf, sizeof(sbuf), "%c", *p);
+					switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, sbuf );
 					return SWITCH_STATUS_BREAK;
 				}
 			}
@@ -1318,6 +1322,9 @@ SWITCH_STANDARD_APP(sleep_function)
 		args.buf = buf;
 		args.buflen = sizeof(buf);
 		
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "" );
+
 		switch_ivr_sleep(session, ms, &args);
 	}
 }
@@ -1389,6 +1396,9 @@ SWITCH_STANDARD_APP(speak_function)
 	args.input_callback = on_dtmf;
 	args.buf = buf;
 	args.buflen = sizeof(buf);
+
+	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "" );
+
 	switch_ivr_speak_text(session, engine, voice, text, &args);
 }
 
@@ -1613,6 +1623,10 @@ SWITCH_STANDARD_APP(playback_function)
 	switch_channel_pre_answer(switch_core_session_get_channel(session));
 
 	args.input_callback = on_dtmf;
+
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "" );
+
 	switch_ivr_play_file(session, NULL, data, &args);
 }
 
@@ -1640,6 +1654,10 @@ SWITCH_STANDARD_APP(gentones_function)
 	}
 
 	args.input_callback = on_dtmf;
+
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "" );
+
 	switch_ivr_gentones(session, tone_script, loops, &args);
 }
 
@@ -1729,6 +1747,9 @@ SWITCH_STANDARD_APP(record_function)
 	}
 
 	args.input_callback = on_dtmf;
+
+	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "" );
+
 	status = switch_ivr_record_file(session, &fh, path, &args, limit);
 
 	if (!switch_channel_ready(channel) || (status != SWITCH_STATUS_SUCCESS && !SWITCH_STATUS_IS_BREAK(status))) {
