@@ -281,6 +281,7 @@
       <prompt phrase="Please enter extension you want to transfer to" filename="transfer1.wav"/>
       <prompt phrase="Transfer" filename="transfer2.wav"/>
       <prompt phrase="We are trying to reach" filename="we_are_trying_to_reach.wav"/>
+      <prompt phrase="An error has occurred please contact the administrator" filename="error.wav"/>
     </misc>
   </en>
 </language>
