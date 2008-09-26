@@ -426,6 +426,7 @@ struct zap_channel {
 	zap_buffer_t *fsk_buffer;
 	uint32_t dtmf_on;
 	uint32_t dtmf_off;
+	char *dtmf_hangup_buf;
 	teletone_generation_session_t tone_session;
 	zap_time_t last_event_time;
 	zap_time_t ring_time;
@@ -489,6 +490,8 @@ struct zap_span {
 	zap_span_start_t start;
 	void *mod_data;
 	char *type;
+	char *dtmf_hangup;
+	size_t dtmf_hangup_len;
 	int suggest_chan_id;
 	zap_state_map_t *state_map;
 };
