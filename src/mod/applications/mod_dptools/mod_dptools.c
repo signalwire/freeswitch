@@ -1310,7 +1310,9 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 
 
 SWITCH_STANDARD_APP(sleep_function)
-{	
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No timeout specified.\n");
 	} else {
@@ -1322,7 +1324,6 @@ SWITCH_STANDARD_APP(sleep_function)
 		args.buf = buf;
 		args.buflen = sizeof(buf);
 		
-		switch_channel_t *channel = switch_core_session_get_channel(session);
 		switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "" );
 
 		switch_ivr_sleep(session, ms, &args);
@@ -1619,12 +1620,12 @@ SWITCH_STANDARD_APP(read_function)
 SWITCH_STANDARD_APP(playback_function)
 {
 	switch_input_args_t args = { 0 };
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	switch_channel_pre_answer(switch_core_session_get_channel(session));
 
 	args.input_callback = on_dtmf;
 
-	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "" );
 
 	switch_ivr_play_file(session, NULL, data, &args);
@@ -1636,6 +1637,7 @@ SWITCH_STANDARD_APP(gentones_function)
 	switch_input_args_t args = { 0 };
 	char *l;
 	int32_t loops = 0;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	if (switch_strlen_zero(data) || !(tone_script = switch_core_session_strdup(session, data))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Params!\n");
@@ -1655,7 +1657,6 @@ SWITCH_STANDARD_APP(gentones_function)
 
 	args.input_callback = on_dtmf;
 
-	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "" );
 
 	switch_ivr_gentones(session, tone_script, loops, &args);
@@ -1759,7 +1760,8 @@ SWITCH_STANDARD_APP(record_function)
 
 SWITCH_STANDARD_APP(record_session_function)
 {
-	char *p, *path = NULL;
+	char *path = NULL;
+	char *path_end;
 	uint32_t limit = 0;
 
 	if (switch_strlen_zero(data)) {
@@ -1768,17 +1770,28 @@ SWITCH_STANDARD_APP(record_session_function)
 
 	path = switch_core_session_strdup(session, data);
 
-	if (!path)
-		return;
+	/* Search for a space then a plus followed by only numbers at the end of the path, 
+	   if found trim any spaces to the left/right of the plus use the left side as the
+	   path and right side as a time limit on the recording
+	*/
 
-	if ((p = strchr(path, '+'))) {
-		char *q = p - 1;
-		while (q && *q == ' ') {
-			*q = '\0';
-			q--;
+	/* if we find a + and the charecter before it is a space */
+	if ((path_end = strrchr(path, '+')) && path_end > path && *(path_end - 1) == ' ') {
+		char *limit_start = path_end + 1;
+
+		/* not at the end and the rest is numbers lets parse out the limit and fix up the path */
+		if (*limit_start != '\0' && switch_is_number(limit_start) == SWITCH_TRUE) {
+			limit = atoi(limit_start);
+			/* back it off by one charecter to the char before the + */
+			path_end--;
+
+			/* trim spaces to the left of the plus */
+			while(path_end > path && *path_end == ' ') {
+				path_end--;
+			}
+
+			*(path_end + 1) = '\0';
 		}
-		*p++ = '\0';
-		limit = atoi(p);
 	}
 	switch_ivr_record_session(session, path, limit, NULL);
 }
@@ -2349,7 +2362,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "att_xfer", "Attended Transfer", "Attended Transfer", att_xfer_function, "<channel_url>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "read", "Read Digits", "Read Digits", read_function, "<min> <max> <file> <var name> <timeout> <terminators>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "stop_record_session", "Stop Record Session", STOP_SESS_REC_DESC, stop_record_session_function, "<path>", SAF_NONE);
-	SWITCH_ADD_APP(app_interface, "record_session", "Record Session", SESS_REC_DESC, record_session_function, "<path>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "record_session", "Record Session", SESS_REC_DESC, record_session_function, "<path> [+<timeout>]", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "record", "Record File", "Record a file from the channels input", record_function,
 				   "<path> [<time_limit_secs>] [<silence_thresh>] [<silence_hits>]", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "stop_displace_session", "Stop Displace File", "Stop Displacing to a file", stop_displace_session_function, "<path>",
