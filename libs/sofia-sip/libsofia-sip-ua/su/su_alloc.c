@@ -1019,8 +1019,9 @@ void _su_home_deinit(su_home_t *home)
 
     home->suh_blocks = NULL;
 
-    if (home->suh_lock)
+	if (home->suh_lock) {
       _su_home_destroy_mutexes(home->suh_lock);
+	  UNLOCK(home);
   }
 
   home->suh_lock = NULL;
