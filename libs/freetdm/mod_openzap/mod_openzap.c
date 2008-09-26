@@ -788,7 +788,11 @@ static switch_status_t channel_receive_message_fxs(switch_core_session_t *sessio
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_RINGING:
-		zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_RING);
+		if (!(switch_channel_test_flag(channel, CF_OUTBOUND) || 
+			  switch_channel_test_flag(channel, CF_ANSWERED) || 
+			  switch_channel_test_flag(channel, CF_EARLY_MEDIA))) {
+			zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_RING);
+		}
 		break;
 	default:
 		break;
@@ -1527,8 +1531,9 @@ static switch_status_t load_config(void)
 
 	if ((spans = switch_xml_child(cfg, "analog_spans"))) {
 		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
-			char *id = (char *) switch_xml_attr_soft(myspan, "id");
+			char *id = (char *) switch_xml_attr(myspan, "id");
 			char *name = (char *) switch_xml_attr(myspan, "name");
+			zap_status_t zstatus = ZAP_FAIL;
 			char *context = "default";
 			char *dialplan = "XML";
 			char *tonegroup = NULL;
@@ -1540,7 +1545,6 @@ static switch_status_t load_config(void)
 			uint32_t span_id = 0, to = 0, max = 0;
 			zap_span_t *span = NULL;
 			analog_option_t analog_options = ANALOG_OPTION_NONE;
-			zap_status_t zstatus = ZAP_FAIL;
 			
 			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -1567,7 +1571,7 @@ static switch_status_t load_config(void)
 				}
 			}
 				
-			if (!id) {
+			if (!id && !name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param 'id'\n");
 				continue;
 			}
@@ -1640,7 +1644,9 @@ static switch_status_t load_config(void)
 
 	if ((spans = switch_xml_child(cfg, "analog_em_spans"))) {
 		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
-			char *id = (char *) switch_xml_attr_soft(myspan, "id");
+			char *id = (char *) switch_xml_attr(myspan, "id");
+			char *name = (char *) switch_xml_attr(myspan, "name");
+			zap_status_t zstatus = ZAP_FAIL;
 			char *context = "default";
 			char *dialplan = "XML";
 			char *tonegroup = NULL;
@@ -1678,12 +1684,11 @@ static switch_status_t load_config(void)
 				}
 			}
 				
-			if (!id) {
+			if (!id && !name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param 'id'\n");
 				continue;
 			}
 
-			span_id = atoi(id);
 			
 			if (!tonegroup) {
 				tonegroup = "us";
@@ -1697,10 +1702,29 @@ static switch_status_t load_config(void)
 				max = atoi(max_digits);
 			}
 
-			if (zap_span_find(span_id, &span) != ZAP_SUCCESS) {
+
+			if (name) {
+				zstatus = zap_span_find_by_name(name, &span);
+			} else {
+				if (switch_is_number(id)) {
+					span_id = atoi(id);
+					zstatus = zap_span_find(span_id, &span);
+				}
+
+				if (zstatus != ZAP_SUCCESS) {
+					zstatus = zap_span_find_by_name(id, &span);
+				}
+			}
+
+			if (zstatus != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span %d\n", span_id);
 				continue;
 			}
+			
+			if (!span_id) {
+				span_id = span->span_id;
+			}
+
 
 			if (zap_configure_span("analog_em", span, on_analog_signal, 
 								   "tonemap", tonegroup, 
@@ -1734,7 +1758,9 @@ static switch_status_t load_config(void)
 
 	if ((spans = switch_xml_child(cfg, "pri_spans"))) {
 		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
-			char *id = (char *) switch_xml_attr_soft(myspan, "id");
+			char *id = (char *) switch_xml_attr(myspan, "id");
+			char *name = (char *) switch_xml_attr(myspan, "name");
+			zap_status_t zstatus = ZAP_FAIL;
 			char *context = "default";
 			char *dialplan = "XML";
 			//Q921NetUser_t mode = Q931_TE;
@@ -1764,21 +1790,37 @@ static switch_status_t load_config(void)
 					dialplan = val;
 				} 
 			}
+
 				
-			if (!id) {
+			if (!id && !name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param 'id'\n");
 				continue;
 			}
 
-			span_id = atoi(id);
+			if (name) {
+				zstatus = zap_span_find_by_name(name, &span);
+			} else {
+				if (switch_is_number(id)) {
+					span_id = atoi(id);
+					zstatus = zap_span_find(span_id, &span);
+				}
+
+				if (zstatus != ZAP_SUCCESS) {
+					zstatus = zap_span_find_by_name(id, &span);
+				}
+			}
+
+			if (zstatus != ZAP_SUCCESS) {
+				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span %d\n", span_id);
+				continue;
+			}
+			
+			if (!span_id) {
+				span_id = span->span_id;
+			}
 			
 			if (!tonegroup) {
 				tonegroup = "us";
-			}
-			
-			if (zap_span_find(span_id, &span) != ZAP_SUCCESS) {
-				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span %d\n", span_id);
-				continue;
 			}
 			
 			if (zap_configure_span("isdn", span, on_clear_channel_signal, 
@@ -1800,7 +1842,9 @@ static switch_status_t load_config(void)
 
 	if ((spans = switch_xml_child(cfg, "boost_spans"))) {
 		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
-			char *id = (char *) switch_xml_attr_soft(myspan, "id");
+			char *id = (char *) switch_xml_attr(myspan, "id");
+			char *name = (char *) switch_xml_attr(myspan, "name");
+			zap_status_t zstatus = ZAP_FAIL;
 			char *context = "default";
 			char *dialplan = "XML";
 			uint32_t span_id = 0;
@@ -1832,20 +1876,35 @@ static switch_status_t load_config(void)
 				} 
 			}
 				
-			if (!id) {
+			if (!id && !name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param\n");
 				continue;
 			}
 
-			span_id = atoi(id);
-			
 			if (!tonegroup) {
 				tonegroup = "us";
 			}
 			
-			if (zap_span_find(span_id, &span) != ZAP_SUCCESS) {
+			if (name) {
+				zstatus = zap_span_find_by_name(name, &span);
+			} else {
+				if (switch_is_number(id)) {
+					span_id = atoi(id);
+					zstatus = zap_span_find(span_id, &span);
+				}
+
+				if (zstatus != ZAP_SUCCESS) {
+					zstatus = zap_span_find_by_name(id, &span);
+				}
+			}
+
+			if (zstatus != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span %d\n", span_id);
 				continue;
+			}
+			
+			if (!span_id) {
+				span_id = span->span_id;
 			}
 
 			if (zap_configure_span("ss7_boost", span, on_clear_channel_signal, 
