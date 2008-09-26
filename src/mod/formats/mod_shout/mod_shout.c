@@ -30,8 +30,7 @@
  * example filename: shout://user:pass@host.com/mount.mp3
  *
  */
-#include "mpg123.h"
-#include "mpglib.h"
+#include "libmpg123/mpg123.h"
 #include <switch.h>
 #include <shout/shout.h>
 #include <lame.h>
@@ -40,6 +39,7 @@
 #define OUTSCALE 8192 * 2
 #define MP3_SCACHE 16384 * 2
 #define MP3_DCACHE 8192 *2
+#define MP3_TOOSMALL -1234
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_shout_shutdown);
@@ -54,8 +54,10 @@ struct shout_context {
 	switch_mutex_t *audio_mutex;
 	switch_buffer_t *audio_buffer;
 	switch_memory_pool_t *memory_pool;
-	char decode_buf[MP3_DCACHE];
-	struct mpstr mp;
+	unsigned char decode_buf[MP3_DCACHE];
+	//struct mpstr mp;
+	switch_file_handle_t *handle;
+	mpg123_handle *mh;
 	int err;
 	int mp3err;
 	int dlen;
@@ -141,7 +143,12 @@ static inline void free_context(shout_context_t *context)
 				}
 			}
 
-			ExitMP3(&context->mp);
+			
+		}
+
+		if (context->mh) {
+			mpg123_close(context->mh);
+			mpg123_delete(context->mh);
 		}
 	}
 }
@@ -227,24 +234,24 @@ static void log_msg(char const *fmt, va_list ap)
 static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 {
 	int decode_status = 0;
-	int dlen = 0;
+	size_t dlen = 0;
 	int x = 0;
-	char *in;
+	unsigned char *in;
 	int inlen = 0;
-	char *out;
+	unsigned char *out;
 	int outlen;
 	int usedlen;
-	char inbuf[MP3_SCACHE];
+	unsigned char inbuf[MP3_SCACHE];
 	int done = 0;
 	size_t used;
 	size_t lp;
 	size_t rb = 0;
 	
-	while (!context->eof && switch_buffer_inuse(context->audio_buffer) < bytes) {
+	while (context->eof < 2 && switch_buffer_inuse(context->audio_buffer) < bytes) {
 		lp = sizeof(inbuf);
-		if ((switch_file_read(context->fd, inbuf, &lp) != SWITCH_STATUS_SUCCESS) || lp == 0) {
+		if (!context->eof && ((switch_file_read(context->fd, inbuf, &lp) != SWITCH_STATUS_SUCCESS) || lp == 0)) {
 			context->eof++;
-			goto end;
+			//goto end;
 		}
 
 		inlen = (int) lp;
@@ -260,8 +267,13 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 		}
 		
 		do {
-			decode_status = decodeMP3(&context->mp, in, inlen, out, outlen, &dlen);
-			
+			if (context->eof) {
+				decode_status = mpg123_read(context->mh, out, outlen, &dlen);
+			} else {
+				decode_status = mpg123_decode(context->mh, in, inlen, out, outlen, &dlen);
+			}
+
+
 			if (context->err) {
 				goto error;
 			}
@@ -272,7 +284,11 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 				x++;
 			}
 
-			if (decode_status == MP3_TOOSMALL) {
+			if (decode_status == MPG123_NEW_FORMAT) {
+				continue;
+			} else if (decode_status == MPG123_OK) {
+				usedlen = dlen;
+				break;
 				if (context->audio_buffer) {
 					switch_buffer_write(context->audio_buffer, context->decode_buf, usedlen);
 				} else {
@@ -285,7 +301,10 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 				
 				continue;
 				
-			} else if (decode_status == MP3_ERR) {
+			} else if (decode_status == MPG123_DONE) {
+				context->eof++;
+				goto end;
+			} else if (decode_status == MPG123_ERR || decode_status > 0) {
 				if (++context->mp3err >= 5) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decoder Error!\n");
 					context->eof++;
@@ -302,7 +321,7 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 			dlen = 0;
 
 
-		} while (decode_status != MP3_NEED_MORE);
+		} while (decode_status != MPG123_NEED_MORE);
 
 		if (context->audio_buffer) {
 			switch_buffer_write(context->audio_buffer, context->decode_buf, usedlen);
@@ -318,7 +337,7 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
  end:
 	
 	used = switch_buffer_inuse(context->audio_buffer);
-	
+
 	if (context->eof || done || used >= bytes) {
 		if (!(rb = switch_buffer_read(context->audio_buffer, data, bytes))) {
 			goto error;
@@ -342,15 +361,15 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	register unsigned int realsize = (unsigned int) (size * nmemb);
 	shout_context_t *context = data;
 	int decode_status = 0;
-	int dlen = 0;
+	size_t dlen = 0;
 	int x = 0;
-	char *in;
+	unsigned char *in;
 	int inlen;
-	char *out;
+	unsigned char *out;
 	int outlen;
 	int usedlen;
 	uint32_t used, buf_size = 1024 * 64;
-
+	
 	in = ptr;
 	inlen = realsize;
 	out = context->decode_buf;
@@ -387,7 +406,7 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	error_check();
 
 	do {
-		decode_status = decodeMP3(&context->mp, in, inlen, out, outlen, &dlen);
+		decode_status = mpg123_decode(context->mh, in, inlen, out, outlen, &dlen);
 
 		error_check();
 
@@ -409,16 +428,19 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 			usedlen = 0;
 			switch_mutex_unlock(context->audio_mutex);
 
-		} else if (decode_status == MP3_ERR) {
+		} else if (decode_status == MPG123_ERR) {
 
 			if (++context->mp3err >= 20) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decoder Error!\n");
 				goto error;
 			}
 
-			ExitMP3(&context->mp);
-			InitMP3(&context->mp, OUTSCALE, context->samplerate);
-
+			mpg123_close(context->mh);
+			//InitMP3(context->mh, OUTSCALE, context->samplerate);
+			context->mh = mpg123_new(NULL, NULL);
+			mpg123_open_feed(context->mh);
+			mpg123_format(context->mh, context->samplerate, MPG123_MONO, 0);
+			
 			return realsize;
 		}
 
@@ -427,7 +449,7 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 		out += dlen;
 		outlen -= dlen;
 		dlen = 0;
-	} while (decode_status != MP3_NEED_MORE);
+	} while (decode_status != MPG123_NEED_MORE);
 
 
 	switch_mutex_lock(context->audio_mutex);
@@ -598,6 +620,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 
 	context->memory_pool = handle->memory_pool;
 	context->samplerate = handle->samplerate;
+	context->handle = handle;
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_READ)) {
 		if (switch_buffer_create_dynamic(&context->audio_buffer, TC_BUFFER_SIZE, TC_BUFFER_SIZE * 2, 0) != SWITCH_STATUS_SUCCESS) {
@@ -606,17 +629,23 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 		}
 
 		switch_mutex_init(&context->audio_mutex, SWITCH_MUTEX_NESTED, context->memory_pool);
-		InitMP3(&context->mp, OUTSCALE, context->samplerate);
+		//InitMP3(context->mh, OUTSCALE, context->samplerate);
+		context->mh = mpg123_new(NULL, NULL);
+		mpg123_open_feed(context->mh);
+		mpg123_param(context->mh, MPG123_FORCE_RATE, context->samplerate, 0);
+		
+
 		if (handle->handler) {
 			context->stream_url = switch_core_sprintf(context->memory_pool, "http://%s", path);
 			context->prebuf = handle->prebuf;
 			launch_read_stream_thread(context);
 		} else {
-			if (switch_file_open(&context->fd, path, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, handle->memory_pool) !=
+			if (switch_file_open(&context->fd, path, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, handle->memory_pool) != 
 				SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
 				goto error;
 			}
+			
 		}
 	} else if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		if (!(context->gfp = lame_init())) {
@@ -794,8 +823,11 @@ static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned in
 				*cur_sample = fseek(context->fp, *cur_sample, whence);
 			}
 
-			ExitMP3(&context->mp);
-			InitMP3(&context->mp, OUTSCALE, context->samplerate);
+			mpg123_close(context->mh);
+			//InitMP3(context->mh, OUTSCALE, context->samplerate);
+			context->mh = mpg123_new(NULL, NULL);
+			mpg123_open_feed(context->mh);
+			mpg123_format(context->mh, context->samplerate, MPG123_MONO, 0);
 			switch_buffer_zero(context->audio_buffer);
 
 		} else {
@@ -1385,7 +1417,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 	//*module_interface = &shout_module_interface;
 
 	shout_init();
-	InitMP3Constants();
+	//InitMP3Constants();
+	mpg123_init();
 
 	SWITCH_ADD_API(shout_api_interface, "telecast", "telecast", telecast_api_function, TELECAST_SYNTAX);
 
