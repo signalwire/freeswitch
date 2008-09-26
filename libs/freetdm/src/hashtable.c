@@ -134,7 +134,7 @@ hashtable_count(struct hashtable *h)
 
 /*****************************************************************************/
 int
-hashtable_insert(struct hashtable *h, void *k, void *v)
+hashtable_insert(struct hashtable *h, void *k, void *v, hashtable_flag_t flags)
 {
     /* This method allows duplicate keys - but they shouldn't be used */
     unsigned int index;
@@ -153,6 +153,7 @@ hashtable_insert(struct hashtable *h, void *k, void *v)
     index = indexFor(h->tablelength,e->h);
     e->k = k;
     e->v = v;
+	e->flags = flags;
     e->next = h->table[index];
     h->table[index] = e;
     return -1;
@@ -200,7 +201,9 @@ hashtable_remove(struct hashtable *h, void *k)
 					*pE = e->next;
 					h->entrycount--;
 					v = e->v;
-					freekey(e->k);
+					if (e->flags & HASHTABLE_FLAG_FREE_KEY) {
+						freekey(e->k);
+					}
 					free(e);
 					return v;
 				}
@@ -213,7 +216,7 @@ hashtable_remove(struct hashtable *h, void *k)
 /*****************************************************************************/
 /* destroy */
 void
-hashtable_destroy(struct hashtable *h, int free_keys, int free_values)
+hashtable_destroy(struct hashtable *h)
 {
     unsigned int i;
     struct entry *e, *f;
@@ -223,7 +226,7 @@ hashtable_destroy(struct hashtable *h, int free_keys, int free_values)
         {
             e = table[i];
             while (NULL != e)
-				{ f = e; e = e->next; if (free_keys) freekey(f->k); if (free_values) free(f->v); free(f); }
+				{ f = e; e = e->next; if (f->flags & HASHTABLE_FLAG_FREE_KEY) freekey(f->k); if (f->flags & HASHTABLE_FLAG_FREE_VALUE) free(f->v); free(f); }
         }
     
     free(h->table);
