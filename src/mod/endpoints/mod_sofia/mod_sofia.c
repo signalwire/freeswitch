@@ -2166,20 +2166,31 @@ static void general_event_handler(switch_event_t *event)
 			const char *es = switch_event_get_header(event, "event-string");
 			const char *user = switch_event_get_header(event, "user");
 			const char *host = switch_event_get_header(event, "host");
+			const char *call_id = switch_event_get_header(event, "call-id");
 			const char *body = switch_event_get_body(event);
 			sofia_profile_t *profile;
 
 			if (profile_name && ct && es && user && host && (profile = sofia_glue_find_profile(profile_name))) {
-				char *sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,'%q','%q','%q' "
-										   "from sip_registrations where sip_user='%s' and sip_host='%q'",
-										   ct, es, body, user, host
-										   );
+				char *sql;
+
+				if (call_id) {
+					sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,'%q','%q','%q' "
+										 "from sip_registrations where call_id='%q'", ct, es, body, call_id
+										 );
+				} else {
+					sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,'%q','%q','%q' "
+										 "from sip_registrations where sip_user='%s' and sip_host='%q'",
+										 ct, es, body, user, host
+										 );
+				}
 				
 
 				switch_mutex_lock(profile->ireg_mutex);
 				sofia_glue_execute_sql_callback(profile, SWITCH_TRUE, NULL, sql, notify_callback, profile);
 				switch_mutex_unlock(profile->ireg_mutex);
 				sofia_glue_release_profile(profile);
+
+				free(sql);
 			}
 			
 		}
