@@ -1421,9 +1421,17 @@ SWITCH_STANDARD_API(session_record_function)
 	}
 
 	if (!strcasecmp(action, "start")) {
-		switch_ivr_record_session(rsession, path, limit, NULL);
+		if (switch_ivr_record_session(rsession, path, limit, NULL)!= SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "-ERR Cannot record session!\n"); 
+		} else {
+			stream->write_function(stream, "+OK Success\n");
+		}
 	} else if (!strcasecmp(action, "stop")) {
-		switch_ivr_stop_record_session(rsession, path);
+		if (switch_ivr_stop_record_session(rsession, path) != SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "-ERR Cannot stop record session!\n");
+		} else {
+			stream->write_function(stream, "+OK Success\n");
+		}
 	} else {
 		goto usage;
 	}
@@ -1481,9 +1489,17 @@ SWITCH_STANDARD_API(session_displace_function)
 	}
 
 	if (!strcasecmp(action, "start")) {
-		switch_ivr_displace_session(rsession, path, limit, flags);
+		if (switch_ivr_displace_session(rsession, path, limit, flags) != SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "-ERR Cannot displace session!\n");
+		} else {
+			stream->write_function(stream, "+OK Success\n");
+		}
 	} else if (!strcasecmp(action, "stop")) {
-		switch_ivr_stop_displace_session(rsession, path);
+		if (switch_ivr_stop_displace_session(rsession, path) != SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "-ERR Cannot stop displace session!\n");
+		} else {
+			stream->write_function(stream, "+OK Success\n"); 
+		}
 	} else {
 		goto usage;
 	}

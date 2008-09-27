@@ -345,7 +345,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 
 	if (!switch_channel_media_ready(channel) || !switch_core_session_get_read_codec(session)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can not displace session.  Media not enabled on channel\n");
-		return status;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if ((bug = switch_channel_get_private(channel, file))) {
@@ -816,7 +816,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 
 	if (!switch_channel_media_ready(channel) || !switch_core_session_get_read_codec(session)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can not record session.  Media not enabled on channel\n");
-		return status;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	channels = read_codec->implementation->number_of_channels;
