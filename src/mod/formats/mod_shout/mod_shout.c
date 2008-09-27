@@ -289,18 +289,6 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 			} else if (decode_status == MPG123_OK) {
 				usedlen = dlen;
 				break;
-				if (context->audio_buffer) {
-					switch_buffer_write(context->audio_buffer, context->decode_buf, usedlen);
-				} else {
-					goto error;
-				}
-
-				out = context->decode_buf;
-				outlen = sizeof(context->decode_buf);
-				usedlen = 0;
-				
-				continue;
-				
 			} else if (decode_status == MPG123_DONE) {
 				context->eof++;
 				goto end;
