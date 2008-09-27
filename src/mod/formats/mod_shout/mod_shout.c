@@ -55,7 +55,6 @@ struct shout_context {
 	switch_buffer_t *audio_buffer;
 	switch_memory_pool_t *memory_pool;
 	unsigned char decode_buf[MP3_DCACHE];
-	//struct mpstr mp;
 	switch_file_handle_t *handle;
 	mpg123_handle *mh;
 	int err;
@@ -251,7 +250,6 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 		lp = sizeof(inbuf);
 		if (!context->eof && ((switch_file_read(context->fd, inbuf, &lp) != SWITCH_STATUS_SUCCESS) || lp == 0)) {
 			context->eof++;
-			//goto end;
 		}
 
 		inlen = (int) lp;
@@ -404,18 +402,11 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 			x++;
 		}
 
-		if (decode_status == MP3_TOOSMALL) {
-			switch_mutex_lock(context->audio_mutex);
-			if (context->audio_buffer) {
-				switch_buffer_write(context->audio_buffer, context->decode_buf, usedlen);
-			} else {
-				goto error;
-			}
-			out = context->decode_buf;
-			outlen = sizeof(context->decode_buf);
-			usedlen = 0;
-			switch_mutex_unlock(context->audio_mutex);
-
+		if (decode_status == MPG123_NEW_FORMAT) {
+			continue;
+		} else if (decode_status == MPG123_OK) {
+			usedlen = dlen;
+			break;
 		} else if (decode_status == MPG123_ERR) {
 
 			if (++context->mp3err >= 20) {
@@ -424,11 +415,11 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 			}
 
 			mpg123_close(context->mh);
-			//InitMP3(context->mh, OUTSCALE, context->samplerate);
 			context->mh = mpg123_new(NULL, NULL);
 			mpg123_open_feed(context->mh);
-			mpg123_format(context->mh, context->samplerate, MPG123_MONO, 0);
-			
+			mpg123_param(context->mh, MPG123_FORCE_RATE, context->samplerate, 0);
+			mpg123_param(context->mh, MPG123_FLAGS, MPG123_MONO_MIX, 0);
+			mpg123_param(context->mh, MPG123_FLAGS, MPG123_SEEKBUFFER|MPG123_MONO_MIX, 0);
 			return realsize;
 		}
 
@@ -617,17 +608,18 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 		}
 
 		switch_mutex_init(&context->audio_mutex, SWITCH_MUTEX_NESTED, context->memory_pool);
-		//InitMP3(context->mh, OUTSCALE, context->samplerate);
 		context->mh = mpg123_new(NULL, NULL);
 		mpg123_open_feed(context->mh);
+		mpg123_format_all(context->mh);
 		mpg123_param(context->mh, MPG123_FORCE_RATE, context->samplerate, 0);
-		
 
 		if (handle->handler) {
+			mpg123_param(context->mh, MPG123_FLAGS, MPG123_SEEKBUFFER|MPG123_MONO_MIX, 0);
 			context->stream_url = switch_core_sprintf(context->memory_pool, "http://%s", path);
 			context->prebuf = handle->prebuf;
 			launch_read_stream_thread(context);
 		} else {
+			mpg123_param(context->mh, MPG123_FLAGS, MPG123_MONO_MIX, 0);
 			if (switch_file_open(&context->fd, path, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, handle->memory_pool) != 
 				SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
@@ -800,7 +792,6 @@ static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned in
 	shout_context_t *context = handle->private_info;
 
 	if (handle->handler) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot seek on a stream.\n");
 		return SWITCH_STATUS_FALSE;
 	} else {
 		switch_mutex_lock(context->audio_mutex);
@@ -812,10 +803,10 @@ static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned in
 			}
 
 			mpg123_close(context->mh);
-			//InitMP3(context->mh, OUTSCALE, context->samplerate);
 			context->mh = mpg123_new(NULL, NULL);
 			mpg123_open_feed(context->mh);
-			mpg123_format(context->mh, context->samplerate, MPG123_MONO, 0);
+			mpg123_param(context->mh, MPG123_FORCE_RATE, context->samplerate, 0);
+			mpg123_param(context->mh, MPG123_FLAGS, MPG123_MONO_MIX, 0);
 			switch_buffer_zero(context->audio_buffer);
 
 		} else {
@@ -1405,7 +1396,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 	//*module_interface = &shout_module_interface;
 
 	shout_init();
-	//InitMP3Constants();
 	mpg123_init();
 
 	SWITCH_ADD_API(shout_api_interface, "telecast", "telecast", telecast_api_function, TELECAST_SYNTAX);
@@ -1417,6 +1407,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_shout_shutdown)
 {
 	curl_global_cleanup();
+	mpg123_exit();
 	return SWITCH_STATUS_SUCCESS;
 }
 
