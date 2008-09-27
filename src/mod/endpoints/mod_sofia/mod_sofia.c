@@ -395,7 +395,6 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_set_flag_locked(tech_pvt, TFLAG_ANS);
 
 	b_sdp = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE);
 	is_proxy = (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA));
@@ -473,6 +472,8 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 				SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 				SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 				SOATAG_REUSE_REJECTED(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
+
+	switch_set_flag_locked(tech_pvt, TFLAG_ANS);
 
 	return SWITCH_STATUS_SUCCESS;
 }

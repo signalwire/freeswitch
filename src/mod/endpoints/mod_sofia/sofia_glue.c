@@ -2207,7 +2207,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					if (m->m_proto != sdp_proto_srtp) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "a=crypto in RTP/AVP\n");
 						match = 0;
-						break;
+						goto done;
 					}
 
 					crypto = attr->a_value;
@@ -2506,7 +2506,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 			}
 		}
 	}
-
+	
+ done:
 
 	switch_set_flag_locked(tech_pvt, TFLAG_SDP);
 
