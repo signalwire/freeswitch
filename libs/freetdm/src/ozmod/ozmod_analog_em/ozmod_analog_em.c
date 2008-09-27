@@ -361,7 +361,6 @@ static void *zap_analog_em_channel_run(zap_thread_t *me, void *obj)
 					zap_channel_command(zchan, ZAP_COMMAND_OFFHOOK, NULL);
 					zap_sleep(200);
 					zap_channel_command(zchan, ZAP_COMMAND_ONHOOK, NULL);
-					zap_sleep(50);
 				}
 				break;
 			case ZAP_CHANNEL_STATE_RING:
