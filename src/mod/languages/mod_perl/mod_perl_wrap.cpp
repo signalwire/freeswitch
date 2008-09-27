@@ -1995,6 +1995,7 @@ XS(_wrap_new_IVRMenu) {
     int arg11 ;
     int arg12 ;
     int arg13 ;
+    int arg14 ;
     IVRMenu *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -2029,11 +2030,13 @@ XS(_wrap_new_IVRMenu) {
     int ecode12 = 0 ;
     int val13 ;
     int ecode13 = 0 ;
+    int val14 ;
+    int ecode14 = 0 ;
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 13) || (items > 13)) {
-      SWIG_croak("Usage: new_IVRMenu(main,name,greeting_sound,short_greeting_sound,invalid_sound,exit_sound,confirm_macro,confirm_key,confirm_attempts,inter_timeout,digit_len,timeout,max_failures);");
+    if ((items < 14) || (items > 14)) {
+      SWIG_croak("Usage: new_IVRMenu(main,name,greeting_sound,short_greeting_sound,invalid_sound,exit_sound,confirm_macro,confirm_key,confirm_attempts,inter_timeout,digit_len,timeout,max_failures,max_timeouts);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_IVRMenu, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -2100,7 +2103,12 @@ XS(_wrap_new_IVRMenu) {
       SWIG_exception_fail(SWIG_ArgError(ecode13), "in method '" "new_IVRMenu" "', argument " "13"" of type '" "int""'");
     } 
     arg13 = static_cast< int >(val13);
-    result = (IVRMenu *)new IVRMenu(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,arg9,arg10,arg11,arg12,arg13);
+    ecode14 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(13), &val14);
+    if (!SWIG_IsOK(ecode14)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode14), "in method '" "new_IVRMenu" "', argument " "14"" of type '" "int""'");
+    } 
+    arg14 = static_cast< int >(val14);
+    result = (IVRMenu *)new IVRMenu(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,arg9,arg10,arg11,arg12,arg13,arg14);
     ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_IVRMenu, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -2110,6 +2118,7 @@ XS(_wrap_new_IVRMenu) {
     if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
     if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
     if (alloc8 == SWIG_NEWOBJ) delete[] buf8;
+    
     
     
     
@@ -2125,6 +2134,7 @@ XS(_wrap_new_IVRMenu) {
     if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
     if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
     if (alloc8 == SWIG_NEWOBJ) delete[] buf8;
+    
     
     
     
