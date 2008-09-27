@@ -2203,6 +2203,13 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					ptime = atoi(attr->a_value);
 				} else if (!got_crypto && !strcasecmp(attr->a_name, "crypto") && !switch_strlen_zero(attr->a_value)) {
 					int crypto_tag;
+
+					if (m->m_proto != sdp_proto_srtp) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "a=crypto in RTP/AVP\n");
+						match = 0;
+						break;
+					}
+
 					crypto = attr->a_value;
 					crypto_tag = atoi(crypto);
 
