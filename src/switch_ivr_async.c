@@ -340,6 +340,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	switch_status_t status;
 	time_t to = 0;
 	displace_helper_t *dh;
+	
+	status = switch_channel_pre_answer(channel);
+
+	if (!switch_channel_media_ready(channel) || !switch_core_session_get_read_codec(session)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can not displace session.  Media not enabled on channel\n");
+		return status;
+	}
 
 	if ((bug = switch_channel_get_private(channel, file))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Only 1 of the same file per channel please!\n");
@@ -803,7 +810,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	switch_status_t status;
 	time_t to = 0;
 	switch_media_bug_flag_t flags = SMBF_READ_STREAM | SMBF_WRITE_STREAM;
-	uint8_t channels = read_codec->implementation->number_of_channels;
+	uint8_t channels;
+
+	status = switch_channel_pre_answer(channel);
+
+	if (!switch_channel_media_ready(channel) || !switch_core_session_get_read_codec(session)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can not record session.  Media not enabled on channel\n");
+		return status;
+	}
+
+	channels = read_codec->implementation->number_of_channels;
 
 	if ((bug = switch_channel_get_private(channel, file))) {
 		return switch_ivr_stop_record_session(session, file);
@@ -837,8 +853,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		switch_core_session_reset(session, SWITCH_TRUE);
 		return SWITCH_STATUS_GENERR;
 	}
-
-	switch_channel_pre_answer(channel);
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_TITLE"))) {
 		vval = (const char *) switch_core_session_strdup(session, p);
