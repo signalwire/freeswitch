@@ -145,6 +145,7 @@
     <!--<param name="stun-auto-disable" value="true"/>-->
     <!-- Choose the realm challenge key. Default is auto_to -->
     <!--<param name="challenge-realm" value="auto_from|auto_to|<hardcoded_val>"/>-->
+    <!--<param name="disable-rtp-auto-adjust" value="true"/>-->
   </settings>
 </profile>
 
