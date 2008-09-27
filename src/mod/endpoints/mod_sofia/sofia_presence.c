@@ -52,11 +52,12 @@ struct presence_helper {
 switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint)
 {
 	char buf[256];
-	char *user = NULL, *host = NULL;
+	char *prof = NULL, *user = NULL, *host = NULL;
 	sofia_profile_t *profile = NULL;
 	char *ffrom = NULL;
 	nua_handle_t *msg_nh;
 	char *contact;
+	char *dup = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	const char *ct = "text/html";
 
@@ -69,17 +70,27 @@ switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char
 		goto end;
 	}
 
-	user = strdup(to);
-	switch_assert(user);
+	dup = strdup(to);
+	switch_assert(dup);
+	prof = dup;
+
+	// Do we have a user of the form profile/user[@host]?
+	if ((user = strchr(prof, '/'))) {
+		*user++ = '\0';
+	} else {
+		user = prof;
+		prof = NULL;
+	}  
 
 	if ((host = strchr(user, '@'))) {
 		*host++ = '\0';
+		if (!prof) prof = host;
 	}
 
-	if (!host || !(profile = sofia_glue_find_profile(host))) {
+	if (!host || !(profile = sofia_glue_find_profile(prof))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 						  "Chat proto [%s]\nfrom [%s]\nto [%s]\n%s\nInvalid Profile %s\n", proto, from, to,
-						  body ? body : "[no body]", host ? host : "NULL");
+						  body ? body : "[no body]", prof ? prof : "NULL");
 		goto end;
 	}
 
@@ -123,7 +134,7 @@ switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char
  end:
 
 	switch_safe_free(ffrom);
-	switch_safe_free(user);
+	switch_safe_free(dup);
 
 
 	if (profile) {
