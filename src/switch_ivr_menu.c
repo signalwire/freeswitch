@@ -47,6 +47,7 @@ struct switch_ivr_menu {
 	int confirm_attempts;
 	int digit_len;
 	int max_failures;
+	int max_timeouts;
 	int timeout;
 	int inter_timeout;
 	switch_size_t inlen;
@@ -102,6 +103,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 													 int inter_timeout,
 													 int digit_len,
 													 int timeout, int max_failures,
+													 int max_timeouts,
 													 switch_memory_pool_t *pool)
 {
 	switch_ivr_menu_t *menu;
@@ -166,6 +168,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 	menu->inlen = digit_len;
 
 	menu->max_failures = max_failures;
+
+	menu->max_timeouts = max_timeouts;
 
 	menu->timeout = timeout;
 
@@ -345,7 +349,7 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *session, switch_ivr_menu_t * stack, char *name, void *obj)
 {
-	int reps = 0, errs = 0, match = 0, running = 1;
+	int reps = 0, errs = 0, timeouts = 0, match = 0, running = 1;
 	char *greeting_sound = NULL, *aptr = NULL;
 	char arg[512];
 	switch_ivr_action_t todo = SWITCH_IVR_ACTION_DIE;
@@ -372,9 +376,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Executing IVR menu %s\n", menu->name);
+	switch_channel_set_variable(channel, "ivr_menu_status", "success");
 
-	for (reps = 0; (running && status == SWITCH_STATUS_SUCCESS && errs < menu->max_failures); reps++) {
+	for (reps = 0; running && status == SWITCH_STATUS_SUCCESS; reps++) {
 		if (!switch_channel_ready(channel)) {
+			break;
+		}
+		if (errs == menu->max_failures) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Maximum failures\n");
+			switch_channel_set_variable(channel, "ivr_menu_status", "failure");
+			break;
+		}
+		if (timeouts == menu->max_timeouts) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Maximum timeouts\n");
+			switch_channel_set_variable(channel, "ivr_menu_status", "timeout");
 			break;
 		}
 
@@ -390,7 +405,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 		memset(arg, 0, sizeof(arg));
 
 		memset(menu->buf, 0, menu->inlen + 1);
-		status = play_and_collect(session, menu, greeting_sound, menu->inlen);
+
+		if (play_and_collect(session, menu, greeting_sound, menu->inlen) == SWITCH_STATUS_TIMEOUT) {
+			timeouts++;
+			continue;
+		}
 
 		if (*menu->buf != '\0') {
 
@@ -494,17 +513,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 			if (*menu->buf) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IVR menu '%s' caught invalid input '%s'\n", menu->name, menu->buf);
 				if (menu->invalid_sound) {
-					status = play_and_collect(session, menu, menu->invalid_sound, 0);
+					play_and_collect(session, menu, menu->invalid_sound, 0);
 				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IVR menu '%s' no input detected\n", menu->name);
 			}
 			errs++;
-
-			if (status == SWITCH_STATUS_TIMEOUT) {
-				status = SWITCH_STATUS_SUCCESS;
-			}
-
 			if (status == SWITCH_STATUS_SUCCESS) {
 				status = switch_ivr_sleep(session, 1000, NULL);
 			}
@@ -693,6 +707,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 		const char *exit_sound = switch_xml_attr(xml_menu, "exit-sound");	        /* if the attr doesn't exist, return NULL */
 		const char *timeout = switch_xml_attr_soft(xml_menu, "timeout");	        /* if the attr doesn't exist, return "" */
 		const char *max_failures = switch_xml_attr_soft(xml_menu, "max-failures");	/* if the attr doesn't exist, return "" */
+		const char *max_timeouts = switch_xml_attr_soft(xml_menu, "max-timeouts");
 		const char *confirm_macro= switch_xml_attr(xml_menu, "confirm-macro");
 		const char *confirm_key= switch_xml_attr(xml_menu, "confirm-key");
 		const char *confirm_attempts = switch_xml_attr_soft(xml_menu, "confirm-attempts");
@@ -700,6 +715,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 		const char *inter_timeout = switch_xml_attr_soft(xml_menu, "inter-digit-timeout");
 
 		switch_ivr_menu_t *menu = NULL;
+
+		if (switch_strlen_zero(max_timeouts)) {
+			max_timeouts = max_failures;
+		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "building menu '%s'\n", menu_name);
 
@@ -716,7 +735,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 									  atoi(inter_timeout),
 									  atoi(digit_len),
 									  atoi(timeout), 
-									  atoi(max_failures), 
+									  strlen(max_failures)? atoi(max_failures): 1, 
+									  strlen(max_timeouts)? atoi(max_timeouts): 1, 
 									  xml_menu_ctx->pool);
 		/* set the menu_stack for the caller */
 		if (status == SWITCH_STATUS_SUCCESS && *menu_stack == NULL) {
