@@ -56,6 +56,12 @@ static struct {
 	switch_memory_pool_t *pool;
 } globals;
 
+typedef enum {
+	VM_DATE_FIRST,
+	VM_DATE_LAST,
+	VM_DATE_NEVER
+} date_location_t;
+
 struct vm_profile {
 	char *name;
 	char *dbname;
@@ -107,6 +113,7 @@ struct vm_profile {
 	char *web_tail;
 	char *email_from;
 	char *date_fmt;
+	date_location_t play_date_announcement;
 	uint32_t digit_timeout;
 	uint32_t max_login_attempts;
 	uint32_t min_record_len;
@@ -296,6 +303,7 @@ static switch_status_t load_config(void)
 		char *notify_email_headers = NULL;
 		char *email_from = "";
 		char *date_fmt = "%A, %B %d %Y, %I %M %p";
+		date_location_t play_date_announcement = VM_DATE_FIRST;
 		char *web_head = NULL;
 		char *web_tail = NULL;
 		uint32_t record_threshold = 200;
@@ -490,6 +498,12 @@ static switch_status_t load_config(void)
 				callback_context = val;
 			} else if (!strcasecmp(var, "file-extension") && !switch_strlen_zero(val)) {
 				file_ext = val;
+			} else if (!strcasecmp(var, "play-date-announcement") && !switch_strlen_zero(val)) {
+				if (!strcmp("last", val)) {
+					play_date_announcement = VM_DATE_LAST;
+				} else if (!strcmp("never", val)) {
+					play_date_announcement = VM_DATE_NEVER;
+				}
 			} else if (!strcasecmp(var, "record-title") && !switch_strlen_zero(val)) {
 				record_title = val;
 			} else if (!strcasecmp(var, "record-comment") && !switch_strlen_zero(val)) {
@@ -687,6 +701,7 @@ static switch_status_t load_config(void)
 			}
 			profile->email_from = switch_core_strdup(globals.pool, email_from);
 			profile->date_fmt = switch_core_strdup(globals.pool, date_fmt);
+			profile->play_date_announcement = play_date_announcement;
 
 			profile->digit_timeout = timeout;
 			profile->max_login_attempts = max_login_attempts;
@@ -1310,19 +1325,22 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 		args.buf = &cc;
 		args.input_callback = control_playback;
 		TRY_CODE(switch_ivr_phrase_macro(session, VM_SAY_MESSAGE_NUMBER_MACRO, input, NULL, &args));
-		if (!*cc.buf) {
+
+	  play_file:
+		if (!*cc.buf && (profile->play_date_announcement == VM_DATE_FIRST)) {
+			cc.fh = NULL;
 			TRY_CODE(switch_ivr_phrase_macro(session, VM_SAY_DATE_MACRO, cbt->created_epoch, NULL, &args));
 		}
-	  play_file:
 
 		if (!*cc.buf) {
 			memset(&fh, 0, sizeof(fh));
-			args.input_callback = control_playback;
-			memset(&cc, 0, sizeof(cc));
-			cc.profile = profile;
 			cc.fh = &fh;
-			args.buf = &cc;
 			TRY_CODE(switch_ivr_play_file(session, NULL, cbt->file_path, &args));
+		}
+
+		if (!*cc.buf && (profile->play_date_announcement == VM_DATE_LAST)) {
+			cc.fh = NULL;
+			TRY_CODE(switch_ivr_phrase_macro(session, VM_SAY_DATE_MACRO, cbt->created_epoch, NULL, &args));
 		}
 
 		if (switch_channel_ready(channel)) {
