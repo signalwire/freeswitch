@@ -1,4 +1,5 @@
-opt/freeswitch/conf/dialplan/extensions
+opt/freeswitch/conf/dialplan/default
+opt/freeswitch/conf/dialplan/public
 opt/freeswitch/conf/sip_profiles/nat
 opt/freeswitch/conf/sip_profiles/default
 opt/freeswitch/conf/sip_profiles/outbound
