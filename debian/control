@@ -2,12 +2,12 @@ Source: freeswitch
 Maintainer: Michal Bielicki <michal.bielicki@voiceworks.pl>
 Section: net
 Priority: extra
-Build-Depends: debhelper (>= 5), adduser, libc6, fakeroot, wget, automake1.9, autoconf, libtool, unixodbc-dev, libasound2-dev, libcurl3-openssl-dev|libcurl4-openssl-dev, libssl-dev, ncurses-dev, libogg-dev, libvorbis-dev, libperl-dev, libgdbm-dev, libdb-dev, libgnutls-dev, libtiff4-dev
+Build-Depends: debhelper (>= 5), fakeroot, wget, automake1.9, autoconf, libtool, unixodbc-dev, libasound2-dev, libcurl3-openssl-dev|libcurl4-openssl-dev, libssl-dev, ncurses-dev, libogg-dev, libvorbis-dev, libperl-dev, libgdbm-dev, libdb-dev, libgnutls-dev, libtiff4-dev
 Standards-Version: 3.7.3
 
 Package: freeswitch
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, unixodbc, libasound2, libcurl3, openssl, libncurses5, libvorbis0a
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, libc6, unixodbc, libasound2, libcurl3, openssl, libncurses5, libvorbis0a
 Recommends: freeswitch-lang-en
 Suggests: freeswitch-spidermonkey, freeswitch-lua, freeswitch-perl, freeswitch-sounds-music-8000, monit 
 Description: The FreeSWITCH open source telephony platform
