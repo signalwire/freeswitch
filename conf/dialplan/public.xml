@@ -9,6 +9,22 @@
       </condition>
     </extension>
 
+    <!-- Try to get target_domain from the sip_req_params variable -->
+    <extension name="set_domain" continue="true">
+      <condition field="${target_domain}" expression="^$" break="never"/>
+      <condition field="source" expression="mod_sofia" break="never"/>
+      <condition field="${sip_req_params}" expression="target_domain=([A-Z-a-z0-9.]+)" break="never">
+	<action application="set" data="target_domain=$1"/>
+	<anti-action application="set" data="target_domain=$${domain}"/>
+      </condition>
+    </extension>
+
+    <extension name="call_debug">
+      <condition field="${call_debug}" expression="^true$" break="never">
+	<action application="info"/>
+      </condition>
+    </extension>
+
     <extension name="public_extensions">
       <condition field="destination_number" expression="^(10[01][0-9])$">
 	<action application="transfer" data="$1 XML default"/>

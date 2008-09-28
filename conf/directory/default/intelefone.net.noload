@@ -12,7 +12,7 @@
 	<param name="register" value="true"/>
 	<param name="proxy" value="sip.intelefone.net"/>
 	<param name="register-proxy" value="sip.intelefone.net"/>
-	<param name="retry_seconds" value="30"/>
+	<param name="retry-seconds" value="30"/>
 	<param name="extension" value="%%USERNAME%%"/>
 	<param name="context" value="public"/>
       </gateway>
