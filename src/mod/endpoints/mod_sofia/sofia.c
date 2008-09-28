@@ -3836,10 +3836,22 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				}
 			} else if (!strncasecmp(un->un_name, "X-", 2) || !strncasecmp(un->un_name, "P-", 2)) {
 				if (!switch_strlen_zero(un->un_value)) {
-					char *new_name;
-					if ((new_name = switch_mprintf("%s%s", SOFIA_SIP_HEADER_PREFIX, un->un_name))) {
+					char new_name[512] = "";
+					int reps  = 0;
+					for(;;) {
+						char postfix[25] = "";
+						if (reps > 0) {
+							switch_snprintf(postfix, sizeof(postfix), "-%d", reps);
+						}
+						reps++;
+						switch_snprintf(new_name, sizeof(new_name), "%s%s%s", SOFIA_SIP_HEADER_PREFIX, un->un_name, postfix);
+
+						if (switch_channel_get_variable(channel, new_name)) {
+							continue;
+						}
+
 						switch_channel_set_variable(channel, new_name, un->un_value);
-						free(new_name);
+						break;
 					}
 				}
 			}
