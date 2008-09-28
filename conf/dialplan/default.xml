@@ -9,7 +9,12 @@
 	<action application="deflect" data="${destination_number}"/>
       </condition>
     </extension>
+    
+    <!--
+	Try to get the domain from the sip_auth_realm otherwise it will
+	default domain in vars.xml for cases it can't figure it out.
 
+    -->
     <extension name="set_domain" continue="true">
       <condition field="${target_domain}" expression="^$" break="never"/>
       <condition field="source" expression="mod_sofia" break="never">
