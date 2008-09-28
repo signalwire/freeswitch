@@ -163,13 +163,13 @@
     <extension name="extension-intercom">
       <!-- <condition field="${sip_to_params}" expression="intercom\=true"/> -->
       <condition field="destination_number" expression="^8(10[01][0-9])$">
-	<action application="set" data="dialed_ext=$1"/>
+	<action application="set" data="dialed_extension=$1"/>
 	<!-- This Alert-Info seems to be a case for Intercom for Polycom which sip_auto_answer=true covers already. -->
 	<!--<action application="export"><![CDATA[alert_info=<sip:${target_domain}>;Ring;Answer]]></action>-->
 	<action application="export"><![CDATA[sip_h_Call-Info=<sip:${target_domain}>;answer-after=0]]></action>
 	<action application="export" data="sip_invite_params=intercom=true"/>
 	<action application="export" data="sip_auto_answer=true"/>
-	<action application="bridge" data="user/${dialed_ext}@${target_domain}"/>
+	<action application="bridge" data="user/${dialed_extension}@${target_domain}"/>
       </condition>
     </extension>
 
@@ -182,14 +182,14 @@
     -->
     <extension name="Local_Extension">
       <condition field="destination_number" expression="^(10[01][0-9])$">
-	<action application="set" data="dialed_ext=$1"/>
-	<action application="export" data="dialed_ext=$1"/>
+	<action application="set" data="dialed_extension=$1"/>
+	<action application="export" data="dialed_extension=$1"/>
       </condition>
       <condition field="destination_number" expression="^${caller_id_number}$">
 	<action application="set" data="voicemail_authorized=${sip_authorized}"/>
 	<action application="answer"/>
 	<action application="sleep" data="1000"/>
-	<action application="voicemail" data="check default ${target_domain} ${dialed_ext}"/>
+	<action application="voicemail" data="check default ${target_domain} ${dialed_extension}"/>
 	<!-- bind_meta_app can have these args <key> [a|b|ab] [a|b|o|s] <app> -->
 	<anti-action application="bind_meta_app" data="1 b s execute_extension::dx XML features"/>
 	<anti-action application="bind_meta_app" data="2 b s record_session::$${base_dir}/recordings/${caller_id_number}.${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
@@ -200,13 +200,13 @@
 	<anti-action application="set" data="hangup_after_bridge=true"/>
 	<!--<anti-action application="set" data="continue_on_fail=NORMAL_TEMPORARY_FAILURE,USER_BUSY,NO_ANSWER,TIMEOUT,NO_ROUTE_DESTINATION"/> -->
 	<anti-action application="set" data="continue_on_fail=true"/>
-	<anti-action application="db" data="insert/${target_domain}-call_return/${dialed_ext}/${caller_id_number}"/>
-	<anti-action application="db" data="insert/${target_domain}-last_dial_ext/${dialed_ext}/${uuid}"/>
-	<anti-action application="bridge" data="user/${dialed_ext}@${target_domain}"/>
+	<anti-action application="db" data="insert/${target_domain}-call_return/${dialed_extension}/${caller_id_number}"/>
+	<anti-action application="db" data="insert/${target_domain}-last_dial_ext/${dialed_extension}/${uuid}"/>
+	<anti-action application="bridge" data="user/${dialed_extension}@${target_domain}"/>
 	<anti-action application="answer"/>
-	<!--<anti-action application="send_display" data="Voicemail for ${dialed_ext}"/>-->
+	<!--<anti-action application="send_display" data="Voicemail for ${dialed_extension}"/>-->
 	<anti-action application="sleep" data="1000"/>
-	<anti-action application="voicemail" data="default ${target_domain} ${dialed_ext}"/>
+	<anti-action application="voicemail" data="default ${target_domain} ${dialed_extension}"/>
       </condition>
     </extension>
 
@@ -224,7 +224,7 @@
       <condition field="destination_number" expression="^(30\d{2})$">
 	<action application="answer"/>
 	<!--<action application="send_display" data="8k Conference $1"/>-->
-	<action application="conference" data="$1@default"/>
+	<action application="conference" data="$1-${target_domain}@default"/>
       </condition>
     </extension>
 
@@ -232,7 +232,7 @@
       <condition field="destination_number" expression="^(31\d{2})$">
 	<action application="answer"/>
 	<!--<action application="send_display" data="16k Conference $1"/>-->
-	<action application="conference" data="$1@wideband"/>
+	<action application="conference" data="$1-${target_domain}@wideband"/>
       </condition>
     </extension>
 
@@ -240,7 +240,7 @@
       <condition field="destination_number" expression="^(32\d{2})$">
 	<action application="answer"/>
 	<!--<action application="send_display" data="32k Conference $1"/>-->
-	<action application="conference" data="$1@ultrawideband"/>
+	<action application="conference" data="$1-${target_domain}@ultrawideband"/>
       </condition>
     </extension>
     
