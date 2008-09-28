@@ -9,6 +9,15 @@
 	<action application="deflect" data="${destination_number}"/>
       </condition>
     </extension>
+
+    <extension name="set_domain" continue="true">
+      <condition field="${target_domain}" expression="^$" break="never"/>
+      <condition field="source" expression="mod_sofia" break="never">
+	<action application="set" data="target_domain=${sip_auth_realm}"/>
+	<anti-action application="set" data="target_domain=$${domain}"/>
+      </condition>
+    </extension>
+
     <!-- Example of doing things based on time of day. -->
     <extension name="tod_example" continue="true">
       <condition field="${strftime(%H%M)}" expression="^((09|1[0-7])[0-5][0-9]|1800)$">
@@ -19,7 +28,7 @@
     <extension name="intercept">
       <condition field="destination_number" expression="^886$">
 	<action application="answer"/>
-	<action application="intercept" data="${db(select/last_dial/global)}"/>
+	<action application="intercept" data="${db(select/${target_domain}-last_dial/global)}"/>
 	<action application="sleep" data="2000"/>
       </condition>
     </extension>
@@ -27,14 +36,14 @@
     <extension name="intercept-ext">
       <condition field="destination_number" expression="^\*\*(\d+)$">
 	<action application="answer"/>
-	<action application="intercept" data="${db(select/last_dial_ext/$1)}"/>
+	<action application="intercept" data="${db(select/${target_domain}-last_dial_ext/$1)}"/>
 	<action application="sleep" data="2000"/>
       </condition>
     </extension>
 
     <extension name="redial">
       <condition field="destination_number" expression="^870$">
-	<action application="transfer" data="${db(select/last_dial/${caller_id_number})}"/>
+	<action application="transfer" data="${db(select/${target_domain}-last_dial/${caller_id_number})}"/>
       </condition>
     </extension>
 
@@ -58,9 +67,9 @@
 	<!-- <action application="export" data="sip_secure_media=true"/> -->
       </condition>
       <condition>
-	<action application="db" data="insert/spymap/${caller_id_number}/${uuid}"/>
-	<action application="db" data="insert/last_dial/${caller_id_number}/${destination_number}"/>
-	<action application="db" data="insert/last_dial/global/${uuid}"/>
+	<action application="db" data="insert/${target_domain}-spymap/${caller_id_number}/${uuid}"/>
+	<action application="db" data="insert/${target_domain}-last_dial/${caller_id_number}/${destination_number}"/>
+	<action application="db" data="insert/${target_domain}-last_dial/global/${uuid}"/>
       </condition>
     </extension>
 
@@ -97,7 +106,7 @@
     <extension name="eavesdrop">
       <condition field="destination_number" expression="^88(.*)$|^\*0(.*)$">
 	<action application="answer"/>
-	<action application="eavesdrop" data="${db(select/spymap/$1)}"/>
+	<action application="eavesdrop" data="${db(select/${target_domain}-spymap/$1)}"/>
       </condition>
     </extension>
 
@@ -113,14 +122,14 @@
 
     <extension name="call_return">
       <condition field="destination_number" expression="^\*69$|^869$">
-	<action application="transfer" data="${db(select/call_return/${caller_id_number})}"/>
+	<action application="transfer" data="${db(select/${target_domain}-call_return/${caller_id_number})}"/>
       </condition>
     </extension>
 
     <extension name="del-group">
       <condition field="destination_number" expression="^80(\d{2})$">
 	<action application="answer"/>
-	<action application="group" data="delete:$1:${sofia_contact(${sip_from_user}@${domain})}"/>
+	<action application="group" data="delete:$1@${target_domain}:${sofia_contact(${sip_from_user}@${target_domain})}"/>
 	<action application="gentones" data="%(1000, 0, 320)"/>
       </condition>
     </extension>
@@ -128,21 +137,21 @@
     <extension name="add-group">
       <condition field="destination_number" expression="^81(\d{2})$">
 	<action application="answer"/>
-	<action application="group" data="insert:$1:${sofia_contact(${sip_from_user}@${domain})}"/>
+	<action application="group" data="insert:$1@${target_domain}:${sofia_contact(${sip_from_user}@${target_domain})}"/>
 	<action application="gentones" data="%(1000, 0, 640)"/>
       </condition>
     </extension>
 
     <extension name="call-group-simo">
       <condition field="destination_number" expression="^82(\d{2})$">
-	<action application="bridge" data="{ignore_early_media=true}${group(call:$1)}"/>
+	<action application="bridge" data="{ignore_early_media=true}${group(call:$1@${target_domain})}"/>
       </condition>
     </extension>
 
     <extension name="call-group-order">
       <condition field="destination_number" expression="^83(\d{2})$">
 	<action application="set" data="call_timeout=10"/>
-	<action application="bridge" data="{ignore_early_media=true}${group(call:$1:order)}"/>
+	<action application="bridge" data="{ignore_early_media=true}${group(call:$1@${target_domain}:order)}"/>
       </condition>
     </extension>
 
@@ -151,11 +160,11 @@
       <condition field="destination_number" expression="^8(10[01][0-9])$">
 	<action application="set" data="dialed_ext=$1"/>
 	<!-- This Alert-Info seems to be a case for Intercom for Polycom which sip_auto_answer=true covers already. -->
-	<!--<action application="export"><![CDATA[alert_info=<sip:$${domain}>;Ring;Answer]]></action>-->
-	<action application="export"><![CDATA[sip_h_Call-Info=<sip:$${domain}>;answer-after=0]]></action>
+	<!--<action application="export"><![CDATA[alert_info=<sip:${target_domain}>;Ring;Answer]]></action>-->
+	<action application="export"><![CDATA[sip_h_Call-Info=<sip:${target_domain}>;answer-after=0]]></action>
 	<action application="export" data="sip_invite_params=intercom=true"/>
 	<action application="export" data="sip_auto_answer=true"/>
-	<action application="bridge" data="user/${dialed_ext}@$${domain}"/>
+	<action application="bridge" data="user/${dialed_ext}@${target_domain}"/>
       </condition>
     </extension>
 
@@ -175,7 +184,7 @@
 	<action application="set" data="voicemail_authorized=${sip_authorized}"/>
 	<action application="answer"/>
 	<action application="sleep" data="1000"/>
-	<action application="voicemail" data="check default $${domain} ${dialed_ext}"/>
+	<action application="voicemail" data="check default ${target_domain} ${dialed_ext}"/>
 	<!-- bind_meta_app can have these args <key> [a|b|ab] [a|b|o|s] <app> -->
 	<anti-action application="bind_meta_app" data="1 b s execute_extension::dx XML features"/>
 	<anti-action application="bind_meta_app" data="2 b s record_session::$${base_dir}/recordings/${caller_id_number}.${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
@@ -186,13 +195,13 @@
 	<anti-action application="set" data="hangup_after_bridge=true"/>
 	<!--<anti-action application="set" data="continue_on_fail=NORMAL_TEMPORARY_FAILURE,USER_BUSY,NO_ANSWER,TIMEOUT,NO_ROUTE_DESTINATION"/> -->
 	<anti-action application="set" data="continue_on_fail=true"/>
-	<anti-action application="db" data="insert/call_return/${dialed_ext}/${caller_id_number}"/>
-	<anti-action application="db" data="insert/last_dial_ext/${dialed_ext}/${uuid}"/>
-	<anti-action application="bridge" data="user/${dialed_ext}@$${domain}"/>
+	<anti-action application="db" data="insert/${target_domain}-call_return/${dialed_ext}/${caller_id_number}"/>
+	<anti-action application="db" data="insert/${target_domain}-last_dial_ext/${dialed_ext}/${uuid}"/>
+	<anti-action application="bridge" data="user/${dialed_ext}@${target_domain}"/>
 	<anti-action application="answer"/>
 	<!--<anti-action application="send_display" data="Voicemail for ${dialed_ext}"/>-->
 	<anti-action application="sleep" data="1000"/>
-	<anti-action application="voicemail" data="default $${domain} ${dialed_ext}"/>
+	<anti-action application="voicemail" data="default ${target_domain} ${dialed_ext}"/>
       </condition>
     </extension>
 
@@ -286,7 +295,7 @@
     <extension name="park">
       <condition field="destination_number" expression="^5900$">
 	<action application="set" data="fifo_music=$${hold_music}"/>
-	<action application="fifo" data="5900@$${domain} in"/>
+	<action application="fifo" data="5900@${target_domain} in"/>
       </condition>
     </extension>
 
@@ -296,7 +305,7 @@
     <extension name="unpark">
       <condition field="destination_number" expression="^5901$">
 	<action application="answer"/>
-	<action application="fifo" data="5900@$${domain} out nowait"/>
+	<action application="fifo" data="5900@${target_domain} out nowait"/>
       </condition>
     </extension>
 
@@ -310,7 +319,7 @@
     <extension name="park">
       <condition field="source" expression="mod_sofia"/>
       <condition field="destination_number" expression="park\+(\d+)">
-	<action application="fifo" data="$1@$${domain} in undef $${hold_music}"/>
+	<action application="fifo" data="$1@${target_domain} in undef $${hold_music}"/>
       </condition>
     </extension> 
     <!--
@@ -322,7 +331,7 @@
       <condition field="destination_number" expression="^parking$"/>
       <condition field="${sip_to_params}" expression="fifo\=(\d+)">
 	<action application="answer"/>
-	<action application="fifo" data="$1@$${domain} out nowait"/>
+	<action application="fifo" data="$1@${target_domain} out nowait"/>
       </condition>
     </extension>
 
@@ -429,7 +438,7 @@
     <!--
     <extension name="refer">
       <condition field="${sip_refer_to}">
-	<expression><![CDATA[<sip:${destination_number}@$${domain}>]]></expression>
+	<expression><![CDATA[<sip:${destination_number}@${target_domain}>]]></expression>
       </condition>
       <condition field="${sip_refer_to}">
 	<expression><![CDATA[<sip:(.*)@(.*)>]]></expression>
@@ -454,7 +463,7 @@
       <condition field="destination_number" expression="^7004$">
 	<action application="set" data="ruri_profile=default"/>
 	<action application="set" data="ruri_user=2000"/>
-	<action application="set" data="ruri_contact=1001@$${domain}"/>
+	<action application="set" data="ruri_contact=1001@${target_domain}"/>
 	<action application="execute_extension" data="ruri"/>
       </condition>
     </extension>
