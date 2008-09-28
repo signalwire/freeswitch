@@ -105,7 +105,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 
 	if (codec) {
 		iananame = codec->implementation->iananame;
-		rate = codec->implementation->actual_samples_per_second;
+		rate = codec->implementation->samples_per_second;
 		interval = codec->implementation->microseconds_per_frame / 1000;
 	}
 	
