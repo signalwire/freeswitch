@@ -112,8 +112,7 @@ SWITCH_DECLARE_CONSTRUCTOR IVRMenu::IVRMenu(IVRMenu *main,
 											int inter_timeout,
 											int digit_len,
 											int timeout,
-											int max_failures,
-											int max_timeouts)
+											int max_failures)
 {
 	menu = NULL;
 	switch_core_new_memory_pool(&pool);
@@ -123,7 +122,7 @@ SWITCH_DECLARE_CONSTRUCTOR IVRMenu::IVRMenu(IVRMenu *main,
 	}
 
 	switch_ivr_menu_init(&menu, main ? main->menu : NULL, name, greeting_sound, short_greeting_sound, invalid_sound, 
-						 exit_sound, confirm_macro, confirm_key, confirm_attempts, inter_timeout, digit_len, timeout, max_failures, max_timeouts, pool);
+						 exit_sound, confirm_macro, confirm_key, confirm_attempts, inter_timeout, digit_len, timeout, max_failures, pool);
 	
 
 }

@@ -10,7 +10,6 @@
           timeout ="10000"
 	  inter-digit-timeout="2000"
 	  max-failures="3"
-	  max-timeouts="3"
 	  digit-len="4">
       <entry action="menu-exec-app" digits="1" param="bridge sofia/$${domain}/888@conference.freeswitch.org"/>
       <entry action="menu-exec-app" digits="2" param="transfer 9996 XML default"/>    <!-- FS echo -->
@@ -27,8 +26,7 @@
         invalid-sound="ivr/ivr-that_was_an_invalid_entry.wav"
         exit-sound="voicemail/vm-goodbye.wav"
         timeout="15000"
-        max-failures="3"
-        max-timeouts="3">
+        max-failures="3">
       <entry action="menu-top" digits="*"/>
      </menu>
 

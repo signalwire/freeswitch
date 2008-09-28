@@ -92,8 +92,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 											const char *exit_sound,
 											const char *confirm_macro,
 											const char *confirm_key,
-											int confirm_attempts, int inter_timeout, int digit_len, 
-											int timeout, int max_failures, int max_timeouts);
+											int confirm_attempts, int inter_timeout, int digit_len, int timeout, int max_failures);
 		 virtual SWITCH_DECLARE_CONSTRUCTOR ~ IVRMenu();
 		 SWITCH_DECLARE(void) bindAction(char *action, const char *arg, const char *bind);
 		 SWITCH_DECLARE(void) execute(CoreSession * session, const char *name);

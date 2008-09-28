@@ -3084,7 +3084,6 @@ SWIGINTERN PyObject *_wrap_new_IVRMenu(PyObject *SWIGUNUSEDPARM(self), PyObject 
   int arg11 ;
   int arg12 ;
   int arg13 ;
-  int arg14 ;
   IVRMenu *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -3119,8 +3118,6 @@ SWIGINTERN PyObject *_wrap_new_IVRMenu(PyObject *SWIGUNUSEDPARM(self), PyObject 
   int ecode12 = 0 ;
   int val13 ;
   int ecode13 = 0 ;
-  int val14 ;
-  int ecode14 = 0 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -3134,9 +3131,8 @@ SWIGINTERN PyObject *_wrap_new_IVRMenu(PyObject *SWIGUNUSEDPARM(self), PyObject 
   PyObject * obj10 = 0 ;
   PyObject * obj11 = 0 ;
   PyObject * obj12 = 0 ;
-  PyObject * obj13 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOOOOO:new_IVRMenu",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10,&obj11,&obj12,&obj13)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOOOO:new_IVRMenu",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10,&obj11,&obj12)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_IVRMenu, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_IVRMenu" "', argument " "1"" of type '" "IVRMenu *""'"); 
@@ -3202,12 +3198,7 @@ SWIGINTERN PyObject *_wrap_new_IVRMenu(PyObject *SWIGUNUSEDPARM(self), PyObject 
     SWIG_exception_fail(SWIG_ArgError(ecode13), "in method '" "new_IVRMenu" "', argument " "13"" of type '" "int""'");
   } 
   arg13 = static_cast< int >(val13);
-  ecode14 = SWIG_AsVal_int(obj13, &val14);
-  if (!SWIG_IsOK(ecode14)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode14), "in method '" "new_IVRMenu" "', argument " "14"" of type '" "int""'");
-  } 
-  arg14 = static_cast< int >(val14);
-  result = (IVRMenu *)new IVRMenu(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,arg9,arg10,arg11,arg12,arg13,arg14);
+  result = (IVRMenu *)new IVRMenu(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,arg9,arg10,arg11,arg12,arg13);
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_IVRMenu, SWIG_POINTER_NEW |  0 );
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
