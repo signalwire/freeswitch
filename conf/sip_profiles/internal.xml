@@ -1,5 +1,5 @@
 <!-- http://wiki.freeswitch.org/wiki/Sofia_Configuration_Files -->
-<profile name="internal" domain="$${domain}">
+<profile name="internal">
   <!--aliases are other names that will work as a valid profile name for this profile-->
   <aliases>
     <alias name="$${domain}"/>
