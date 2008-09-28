@@ -14,12 +14,13 @@
       <condition field="${target_domain}" expression="^$" break="never"/>
       <condition field="source" expression="mod_sofia" break="never"/>
       <condition field="${sip_req_params}" expression="target_domain=([A-Z-a-z0-9.]+)" break="never">
-	<action application="set" data="target_domain=$1"/>
-	<anti-action application="set" data="target_domain=$${domain}"/>
+	<!-- We need to export this so the B-Leg will have it after transfer too. -->
+	<action application="export" data="target_domain=$1"/>
+	<anti-action application="export" data="target_domain=$${domain}"/>
       </condition>
     </extension>
 
-    <extension name="call_debug">
+    <extension name="call_debug" continue="true">
       <condition field="${call_debug}" expression="^true$" break="never">
 	<action application="info"/>
       </condition>

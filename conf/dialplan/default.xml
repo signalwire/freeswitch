@@ -17,9 +17,10 @@
     -->
     <extension name="set_domain" continue="true">
       <condition field="${target_domain}" expression="^$" break="never"/>
-      <condition field="source" expression="mod_sofia" break="never">
-	<action application="set" data="target_domain=${sip_auth_realm}"/>
-	<anti-action application="set" data="target_domain=$${domain}"/>
+      <condition field="source" expression="mod_sofia" break="never"/>
+      <condition field="${sip_auth_realm}" expression="^$" break="never">
+	<action application="set" data="target_domain=$${domain}"/>
+	<anti-action application="set" data="target_domain=${sip_auth_realm}"/>
       </condition>
     </extension>
 
@@ -79,13 +80,14 @@
     </extension>
 
     <!-- If to_host and from_host differ this is an external sip URI so lets send it out. -->
+    <!--
     <extension name="external_sip_uri" continue="true">
       <condition field="source" expression="mod_sofia"/>
       <condition field="${sip_from_host}" expression="${sip_to_host}">
 	<anti-action application="bridge" data="sofia/${use_profile}/${sip_to_uri}"/>
       </condition>
     </extension>
-
+    -->
     <!--
 	snom button demo, call 9000 to make button 2 mapped to transfer the current call to a conference
     -->
