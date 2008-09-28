@@ -425,7 +425,7 @@
       </condition>
     </extension>
 
-    <X-PRE-PROCESS cmd="include" data="extensions/*.xml"/>
+    <X-PRE-PROCESS cmd="include" data="default/*.xml"/>
     <!--
     <extension name="refer">
       <condition field="${sip_refer_to}">

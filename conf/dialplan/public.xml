@@ -15,11 +15,7 @@
       </condition>
     </extension>
 
-    <extension name="public_did">
-      <condition field="destination_number" expression="^(5551212)$">
-	<action application="transfer" data="$1 XML default"/>
-      </condition>
-    </extension>
+    <X-PRE-PROCESS cmd="include" data="public/*.xml"/>
 
   </context>
 </include>
