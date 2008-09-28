@@ -35,6 +35,7 @@ dialplans/mod_dialplan_asterisk
 endpoints/mod_iax
 #endpoints/mod_portaudio
 endpoints/mod_sofia
+endpoints/mod_loopback
 #endpoints/mod_wanpipe
 #endpoints/mod_woomera
 #endpoints/mod_alsa

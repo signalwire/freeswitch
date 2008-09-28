@@ -32,6 +32,7 @@
     <!-- <load module="mod_portaudio"/> -->
     <!-- <load module="mod_alsa"/> -->
     <load module="mod_sofia"/>
+    <load module="mod_loopback"/>
     <!-- <load module="mod_wanpipe"/> -->
     <!-- <load module="mod_woomera"/> -->
     <!-- <load module="mod_openzap"/> -->
