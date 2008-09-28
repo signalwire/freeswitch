@@ -30,7 +30,7 @@ $(MPG123_DIR):
 	$(GETLIB) $(MPG123).tar.gz
 
 $(MPG123_DIR)/Makefile: $(MPG123_DIR)
-	cd $(MPG123_DIR) && ./configure $(DEFAULT_ARGS) --disable-shared
+	cd $(MPG123_DIR) && ./configure --disable-shared --with-pic
 	$(TOUCH_TARGET)
 
 $(MPG123LA): $(MPG123_DIR)/Makefile
