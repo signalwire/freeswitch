@@ -161,7 +161,8 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
   \param port the remote port
   \param err pointer for error messages
 */
-SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, const char **err);
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, 
+															  switch_bool_t change_adv_addr, const char **err);
 
 SWITCH_DECLARE(char *) switch_rtp_get_remote_host(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(switch_port_t) switch_rtp_get_remote_port(switch_rtp_t *rtp_session);
@@ -173,10 +174,12 @@ SWITCH_DECLARE(void) switch_rtp_set_max_missed_packets(switch_rtp_t *rtp_session
   \param rtp_session an RTP session to assign the local address to
   \param host the ip or fqhn of the local address
   \param port the local port
+  \param change_adv_addr change the advertised address for doing compare
   \param err pointer for error messages
   \note this call also binds the RTP session's socket to the new address
 */
-SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, const char **err);
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_session, const char *host, 
+															 switch_port_t port, const char **err);
 
 /*! 
   \brief Kill the socket on an existing RTP session

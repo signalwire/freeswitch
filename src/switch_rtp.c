@@ -196,6 +196,7 @@ struct switch_rtp {
 	int writing;
 	char *stun_ip;
 	switch_port_t stun_port;
+	int from_auto;
 };
 
 static int global_init = 0;
@@ -609,7 +610,8 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_get_remote_port(switch_rtp_t *rtp_sessi
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, const char **err)
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, 
+															  switch_bool_t change_adv_addr, const char **err)
 {
 	switch_sockaddr_t *remote_addr;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -623,8 +625,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 	switch_mutex_lock(rtp_session->write_mutex);
 
 	rtp_session->remote_addr = remote_addr;
-	rtp_session->remote_host_str = switch_core_strdup(rtp_session->pool, host);
-	rtp_session->remote_port = port;
+
+	if (change_adv_addr) {
+		rtp_session->remote_host_str = switch_core_strdup(rtp_session->pool, host);
+		rtp_session->remote_port = port;
+	}
 
 	if (rtp_session->sock_input &&
 		switch_sockaddr_get_family(rtp_session->remote_addr) ==
@@ -886,7 +891,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 		goto end;
 	}
 
-	if (switch_rtp_set_remote_address(rtp_session, tx_host, tx_port, err) != SWITCH_STATUS_SUCCESS) {
+	if (switch_rtp_set_remote_address(rtp_session, tx_host, tx_port, SWITCH_TRUE, err) != SWITCH_STATUS_SUCCESS) {
 		switch_mutex_unlock(rtp_session->flag_mutex);
 		rtp_session = NULL;
 		goto end;
@@ -1235,12 +1240,15 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	uint8_t check = 0;
 	stfu_frame_t *jb_frame;
 	int ret = -1;
-
+	int sleep_mss = 1000;
+	
 	if (!switch_rtp_ready(rtp_session)) {
 		return -1;
 	}
 
-	if (!rtp_session->timer.interval) {
+	if (rtp_session->timer.interval) {
+		sleep_mss = 1000;//rtp_session->timer.interval * 1000;
+	} else {
 		rtp_session->last_time = switch_time_now();
 	}
 
@@ -1272,7 +1280,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 										  "Auto Changing port from %s:%u to %s:%u\n", old_host, old, tx_host,
 										  switch_sockaddr_get_port(rtp_session->from_addr));
-						switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(rtp_session->from_addr), &err);
+						switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(rtp_session->from_addr), SWITCH_FALSE, &err);
 						switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 					}
 				}
@@ -1544,8 +1552,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		break;
 
 	  do_continue:
-
-		switch_yield(1000);
+		
+		if (sleep_mss) {
+			switch_yield(sleep_mss);
+		} else {
+			switch_yield(1000);
+		}
 	}
 
 	if (switch_rtp_ready(rtp_session)) {
