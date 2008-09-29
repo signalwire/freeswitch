@@ -1,3 +1,14 @@
+<!--
+    NOTICE:
+    
+    This context is usually accessed via authenticated or transfered callers from the public context
+    from the sip profile sitting on port 5060.
+    
+    Authenitcated users will use the user_context variable on the user to determin what context
+    they can access.  You can also add a user in the directory with the cidr= attribute acl.conf.xml
+    will build the domains acl using this value.
+-->
+
 <?xml version="1.0" encoding="utf-8"?>
 <!-- http://wiki.freeswitch.org/wiki/Dialplan_XML -->
 <include>
@@ -82,7 +93,7 @@
     <!-- If to_host and from_host differ this is an external sip URI so lets send it out. -->
     <extension name="external_sip_uri" continue="true">
       <condition field="source" expression="mod_sofia"/>
-      <condition field="${outside_call}" expression="^$"/>
+      <condition field="${outside_call}"a expression="^$"/>
       <condition field="${sip_req_host}" expression="${sip_from_host}">
 	<anti-action application="bridge" data="sofia/${use_profile}/${sip_to_uri}"/>
       </condition>
@@ -105,9 +116,6 @@
 	<action application="playback" data="$${hold_music}"/>
       </condition>
     </extension>
-
-
-
 
     <extension name="eavesdrop">
       <condition field="destination_number" expression="^88(.*)$|^\*0(.*)$">
@@ -350,14 +358,14 @@
        is to use phone's star codes (defaults to *38 and *39).
     -->
     <extension name="park">
-     <condition field="source" expression="mod_sofia"/>
+      <condition field="source" expression="mod_sofia"/>
       <condition field="destination_number" expression="callpark"/>
-       <condition field="${sip_refer_to}">
-        <expression><![CDATA[<sip:callpark@${domain};orbit=(\d+)>]]></expression>
-         <action application="fifo" data="$1@${domain} in undef $${hold_music}"/>
-       </condition>
+      <condition field="${sip_refer_to}">
+	<expression><![CDATA[<sip:callpark@${domain};orbit=(\d+)>]]></expression>
+	<action application="fifo" data="$1@${domain} in undef $${hold_music}"/>
+      </condition>
     </extension>
-
+    
     <!--
        This extension is used with linksys phones.
 
@@ -366,11 +374,11 @@
        and we extract that info.
     -->
     <extension name="unpark">
-     <condition field="source" expression="mod_sofia"/>
+      <condition field="source" expression="mod_sofia"/>
       <condition field="destination_number" expression="pickup"/>
-       <condition field="${sip_to_params}" expression="orbit\=(\d+)">
-        <action application="answer"/>
-        <action application="fifo" data="$1@${domain} out nowait"/>
+      <condition field="${sip_to_params}" expression="orbit\=(\d+)">
+	<action application="answer"/>
+	<action application="fifo" data="$1@${domain} out nowait"/>
        </condition>
     </extension>
 
@@ -428,6 +436,11 @@
       </condition>
     </extension>
 
+    <!--
+	You will no longer hear the bong tone.  The wav file is playing stating the call is secure.
+	The file will not play unless you have both TLS and SRTP active.
+    -->
+
     <extension name="hold_music">
       <condition field="destination_number" expression="^9999$"/>
       <condition field="${sip_has_crypto}" expression="^(AES_CM_128_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_80)$">
@@ -440,7 +453,23 @@
       </condition>
     </extension>
 
+    <!--
+	You can place files in the default directory to get included.
+    -->
     <X-PRE-PROCESS cmd="include" data="default/*.xml"/>
+    
+    <!--
+	WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+	
+	Anything you put below this line will usually get ignored to to the file in 
+	default/99999_enum.xml as it will transfer the call to the enum dialplan.
+
+	WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+    -->
+
+    <!--
+	This is an example of how to overide the RURI on an outgoing invite to a registered contact.
+    -->
     <!--
     <extension name="refer">
       <condition field="${sip_refer_to}">
@@ -454,11 +483,7 @@
 	<action application="bridge" data="sofia/${use_profile}/${refer_user}@${refer_domain}"/>
       </condition>
     </extension>
-    -->
-    <!--
-	This is an example of how to overide the RURI on an outgoing invite to a registered contact.
-    -->
-    <!--
+
     <extension name="ruri">
       <condition field="destination_number" expression="^ruri$">
 	<action application="bridge" data="sofia/${ruri_profile}/${ruri_user}${regex(${sofia_contact(${ruri_contact})}|^[^\@]+(.*)|%1)}"/>
@@ -474,6 +499,8 @@
       </condition>
     </extension>
     -->
+
+    <!-- SEE WARNING ABOVE IF YOU ARE TRYING TO ADD EXTENSIONS HERE! -->
 
   </context>
 </include>
