@@ -2,6 +2,12 @@
 <include>
   <context name="public">
 
+    <extension name="outside_call" continue="true">
+      <condition break="never">
+	<action application="set" data="outside_call=true"/>
+      </condition>
+    </extension>
+
     <extension name="unloop">
       <condition field="${unroll_loops}" expression="^true$"/>
       <condition field="${sip_looped_call}" expression="^true$">

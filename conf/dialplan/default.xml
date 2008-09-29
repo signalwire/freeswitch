@@ -80,14 +80,13 @@
     </extension>
 
     <!-- If to_host and from_host differ this is an external sip URI so lets send it out. -->
-    <!--
     <extension name="external_sip_uri" continue="true">
       <condition field="source" expression="mod_sofia"/>
-      <condition field="${sip_from_host}" expression="${sip_to_host}">
+      <condition field="${outside_call}" expression="^$"/>
+      <condition field="${sip_req_host}" expression="${sip_from_host}">
 	<anti-action application="bridge" data="sofia/${use_profile}/${sip_to_uri}"/>
       </condition>
     </extension>
-    -->
     <!--
 	snom button demo, call 9000 to make button 2 mapped to transfer the current call to a conference
     -->
