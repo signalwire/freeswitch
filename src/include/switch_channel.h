@@ -220,6 +220,7 @@ SWITCH_DECLARE(char *) switch_channel_get_uuid(switch_channel_t *channel);
   \returns SWITCH_STATUS_SUCCESS if successful
 */
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *channel, const char *varname, const char *value);
+SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_printf(switch_channel_t *channel, const char *varname,  const char *fmt, ...);
 
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_partner(switch_channel_t *channel, const char *varname, const char *value);
 SWITCH_DECLARE(const char *) switch_channel_get_variable_partner(switch_channel_t *channel, const char *varname);

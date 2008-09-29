@@ -578,6 +578,37 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *ch
 	return SWITCH_STATUS_FALSE;
 }
 
+switch_status_t switch_event_base_add_header(switch_event_t *event, switch_stack_t stack, const char *header_name, char *data);
+
+SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_printf(switch_channel_t *channel, const char *varname,  const char *fmt, ...)
+{
+	int ret = 0;
+	char *data;
+	va_list ap;
+	switch_assert(channel != NULL);
+
+	if (!switch_strlen_zero(varname)) {
+		switch_mutex_lock(channel->profile_mutex);
+		switch_event_del_header(channel->variables, varname);
+
+		va_start(ap, fmt);
+		ret = switch_vasprintf(&data, fmt, ap);
+		va_end(ap);
+
+		if (ret == -1) {
+			switch_mutex_unlock(channel->profile_mutex);
+			return SWITCH_STATUS_MEMERR;
+		}
+
+		switch_event_base_add_header(channel->variables, SWITCH_STACK_BOTTOM, varname, data);
+
+		switch_mutex_unlock(channel->profile_mutex);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
 
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_partner(switch_channel_t *channel, const char *varname, const char *value)
 {

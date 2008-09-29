@@ -625,7 +625,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, c
 	return status;
 }
 
-static switch_status_t switch_event_base_add_header(switch_event_t *event, switch_stack_t stack, const char *header_name, char *data)
+switch_status_t switch_event_base_add_header(switch_event_t *event, switch_stack_t stack, const char *header_name, char *data)
 {
 	switch_event_header_t *header;
 	void *pop;
