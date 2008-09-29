@@ -976,7 +976,8 @@ static void parse_domain_tag(sofia_profile_t *profile, switch_xml_t x_domain_tag
 		if (sofia_glue_add_profile(switch_core_strdup(profile->pool, dname), profile) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Alias [%s] for profile [%s]\n", dname, profile->name);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Adding Alias [%s] for profile [%s] (name in use)\n", dname, profile->name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Alias [%s] for profile [%s] (already exists)\n",                         
+							  dname, profile->name);
 		}
 	}
 
