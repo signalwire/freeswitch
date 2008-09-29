@@ -458,13 +458,6 @@ struct zap_sigmsg {
 };
 
 
-struct zap_analog_data {
-	uint32_t flags;
-	uint32_t max_dialstr;
-	uint32_t digit_timeout;
-	zio_signal_cb_t sig_cb;
-};
-
 struct zap_span {
 	zap_data_type_t data_type;
 	char *name;
