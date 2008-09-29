@@ -51,6 +51,6 @@
   <settings>
     <!-- comment or set to false for no color logging -->
     <param name="colorize" value="true"/>
-    <param name="loglevel" value="info"/>
+    <param name="loglevel" value="$${console_loglevel}"/>
   </settings>
 </configuration>
