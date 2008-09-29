@@ -251,6 +251,7 @@
   <macro name="voicemail_play_greeting">
     <input pattern="^(.*)$">
       <match>
+	<action function="play-file" data="voicemail/vm-person.wav"/>
 	<action function="say" data="$1" method="pronounced" type="name_spelled"/>
 	<action function="play-file" data="voicemail/vm-not_available.wav"/>
       </match>
