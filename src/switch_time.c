@@ -542,7 +542,7 @@ SWITCH_DECLARE(switch_status_t) switch_strftime_tz(const char *tz, const char *f
 
 	switch_size_t retsize;
 
-	struct tm tm;
+	struct tm tm = { 0 };
 	switch_time_exp_t stm;
 
 	thetime = switch_timestamp_now();
