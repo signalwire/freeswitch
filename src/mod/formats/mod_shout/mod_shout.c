@@ -271,7 +271,6 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 				decode_status = mpg123_decode(context->mh, in, inlen, out, outlen, &dlen);
 			}
 
-
 			if (context->err) {
 				goto error;
 			}
@@ -287,7 +286,7 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 			} else if (decode_status == MPG123_OK) {
 				usedlen = dlen;
 				break;
-			} else if (decode_status == MPG123_DONE) {
+			} else if (decode_status == MPG123_DONE || (context->eof && decode_status == MPG123_NEED_MORE)) {
 				context->eof++;
 				goto end;
 			} else if (decode_status == MPG123_ERR || decode_status > 0) {
