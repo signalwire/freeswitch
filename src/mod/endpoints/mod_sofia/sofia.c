@@ -2920,12 +2920,15 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						br_a = switch_channel_get_variable(channel_a, SWITCH_SIGNAL_BOND_VARIABLE);
 						br_b = switch_channel_get_variable(channel_b, SWITCH_SIGNAL_BOND_VARIABLE);
 
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Attended Transfer [%s][%s]\n", switch_str_nil(br_a),
-										  switch_str_nil(br_b));
-
+						
 						if (br_a && br_b) {
 							switch_core_session_t *new_b_session = NULL, *a_session = NULL, *tmp = NULL;
-							
+						
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Attended Transfer [%s][%s]\n", 
+											  switch_str_nil(br_a),
+											  switch_str_nil(br_b));
+
+	
 							if ((profile->media_options & MEDIA_OPT_BYPASS_AFTER_ATT_XFER) && (tmp = switch_core_session_locate(br_b))) {
 								switch_channel_t *tchannel = switch_core_session_get_channel(tmp);
 								switch_channel_set_variable(tchannel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE, "true");
@@ -2953,6 +2956,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							}
 						} else {
 							if (!br_a && !br_b) {
+#if 0
 								switch_set_flag_locked(tech_pvt, TFLAG_NOHUP);
 								switch_set_flag_locked(b_tech_pvt, TFLAG_XFER);
 								b_tech_pvt->xferto = switch_core_session_strdup(b_session, switch_core_session_get_uuid(session));
@@ -2962,6 +2966,14 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 										   SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 										   NUTAG_SUBSTATE(nua_substate_terminated),
 										   SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"), SIPTAG_EVENT_STR(etmp), TAG_END());
+#endif
+
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot transfer channels that are not in a bridge.\n");
+								nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+										   NUTAG_SUBSTATE(nua_substate_terminated),
+										   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
+
+								
 							} else {
 								switch_core_session_t *t_session;
 								switch_channel_t *hup_channel;

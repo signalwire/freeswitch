@@ -926,7 +926,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
-
+#if 0
 		if (switch_test_flag(tech_pvt, TFLAG_XFER)) {
 			switch_clear_flag_locked(tech_pvt, TFLAG_XFER);
 			if (msg->pointer_arg) {
@@ -935,7 +935,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				if ((a_session = switch_core_session_locate(tech_pvt->xferto))) {
 					private_object_t *a_tech_pvt = switch_core_session_get_private(a_session);
 					private_object_t *b_tech_pvt = switch_core_session_get_private(b_session);
-
 					switch_set_flag_locked(a_tech_pvt, TFLAG_REINVITE);
 					a_tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(a_session, b_tech_pvt->remote_sdp_audio_ip);
 					a_tech_pvt->remote_sdp_audio_port = b_tech_pvt->remote_sdp_audio_port;
@@ -953,6 +952,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				goto end;
 			}
 		}
+#endif
+
 		/*
 		   if (tech_pvt->rtp_session && switch_test_flag(tech_pvt, TFLAG_TIMER)) {
 		   switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
