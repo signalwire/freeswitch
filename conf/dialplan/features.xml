@@ -39,7 +39,7 @@
 
     <extension name="is_secure">
       <!-- Only Truly consider it secure if its TLS and SRTP --> 
-      <condition field="${sip_req_params}" expression="tls"/>
+      <condition field="${sip_req_params}" expression="transport=tls"/>
       <condition field="${sip_secure_media_confirmed}" expression="^true$">
 	<action application="sleep" data="1000"/>
 	<!--<action application="send_display" data="Secure Music On Hold "/>-->
