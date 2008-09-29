@@ -229,7 +229,7 @@
 
     <!-- voicemail main extension -->
     <extension name="vmain">
-      <condition field="destination_number" expression="^vmain$">
+      <condition field="destination_number" expression="^vmain|4000$">
 	<action application="voicemail" data="check default ${target_domain}"/>  
       </condition>
     </extension>
