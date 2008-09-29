@@ -1645,7 +1645,7 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim_all(void);
 SWITCH_DECLARE(void) switch_core_setrlimits(void);
 SWITCH_DECLARE(void) switch_time_sync(void);
 SWITCH_DECLARE(time_t) switch_timestamp(time_t *t);
-SWITCH_DECLARE(void) switch_tztime(const time_t * const timep, const char *tzstring, struct tm * const tmp );
+SWITCH_DECLARE(switch_status_t) switch_strftime_tz(const char *tz, const char *format, char *date, size_t len);
 SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload);
 SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_token(const char *ip_str, const char *list_name, const char **token);
 #define switch_check_network_list_ip(_ip_str, _list_name) switch_check_network_list_ip_token(_ip_str, _list_name, NULL)

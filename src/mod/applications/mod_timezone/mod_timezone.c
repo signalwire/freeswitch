@@ -27,103 +27,6 @@
 
 #include <switch.h>
 
-/* 
-   This converts a struct tm to a switch_time_exp_t
-   We have to use UNIX structures to do our exams
-   and use switch_* functions for the output.
-*/
-
-static void tm2switchtime(struct tm * tm, switch_time_exp_t *xt ) 
-{
-
-	if (!xt || !tm) {
-	    return;
-	}
-	memset( xt, 0, sizeof(xt) );
-
-	xt->tm_sec  	= tm->tm_sec;
-	xt->tm_min  	= tm->tm_min;
-	xt->tm_hour 	= tm->tm_hour;
-	xt->tm_mday 	= tm->tm_mday;
-	xt->tm_mon  	= tm->tm_mon;
-	xt->tm_year 	= tm->tm_year;
-	xt->tm_wday 	= tm->tm_wday;
-	xt->tm_yday 	= tm->tm_yday;
-	xt->tm_isdst 	= tm->tm_isdst;
-#if !defined(WIN32) && !defined(__SVR4) && !defined(__sun)
-
-	xt->tm_gmtoff 	= tm->tm_gmtoff;
-#endif
-
-	return;
-}
-
-/* **************************************************************************
-   LOADING OF THE XML DATA - HASH TABLE & MEMORY POOL MANAGEMENT
-   ************************************************************************** */
-
-typedef struct {
-	switch_memory_pool_t *pool;
-	switch_hash_t *hash;
-} switch_timezones_list_t;
-
-static switch_timezones_list_t TIMEZONES_LIST = { 0 };
-static switch_event_node_t *NODE = NULL;
-
-const char *switch_lookup_timezone( const char *tz_name )
-{
-	char *value = NULL;
-
-	if ( tz_name && (value = switch_core_hash_find(TIMEZONES_LIST.hash, tz_name))==NULL ) {
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timezone '%s' not found!\n", tz_name);
-	}
-	
-	return value;
-}
-
-void switch_load_timezones(switch_bool_t reload)
-{
-	switch_xml_t xml = NULL, x_lists = NULL, x_list = NULL, cfg = NULL;
-	unsigned total = 0;
-
-	if (TIMEZONES_LIST.hash) {
-		switch_core_hash_destroy(&TIMEZONES_LIST.hash);
-	}
-
-	if (TIMEZONES_LIST.pool) {
-		switch_core_destroy_memory_pool(&TIMEZONES_LIST.pool);
-	}
-
-	memset(&TIMEZONES_LIST, 0, sizeof(TIMEZONES_LIST));
-	switch_core_new_memory_pool(&TIMEZONES_LIST.pool);
-	switch_core_hash_init(&TIMEZONES_LIST.hash, TIMEZONES_LIST.pool);
-
-	if ((xml = switch_xml_open_cfg("timezones.conf", &cfg, NULL))) {
-		if ((x_lists = switch_xml_child(cfg, "timezones"))) {
-			for (x_list = switch_xml_child(x_lists, "zone"); x_list; x_list = x_list->next) {
-				const char *name = switch_xml_attr(x_list, "name");
-				const char *value= switch_xml_attr(x_list, "value");
-
-				if (switch_strlen_zero(name)) {
-					continue;
-				}
-
-				if (switch_strlen_zero(value)) {
-					continue;
-				}
-
-				switch_core_hash_insert(TIMEZONES_LIST.hash, 
-										name, 
-										switch_core_strdup(TIMEZONES_LIST.pool, value) );
-				total++;
-			}
-		}
-		
-		switch_xml_free(xml);
-	}
-	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Timezone %sloaded %d definitions\n", reload ? "re" : "", total);
-}
 
 /* **************************************************************************
    API FUNCTIONS AND COMMANDS
@@ -131,22 +34,9 @@ void switch_load_timezones(switch_bool_t reload)
 
 SWITCH_STANDARD_API(strftime_tz_api_function)
 {
-	switch_time_t thetime;
-	time_t timep;
-
 	char *format = NULL;
-	const char *tz_name;
-	const char *tzdef;
-
-	switch_size_t retsize;
+	const char *tz_name = NULL;
 	char date[80] = "";
-
-	struct tm tm;
-	switch_time_exp_t stm;
-
-	thetime = switch_timestamp_now();
-
-	timep =  (thetime) / (int64_t) (1000000);
 
 	if (!switch_strlen_zero(cmd)) {
 		format = strchr(cmd, ' ');
@@ -154,18 +44,9 @@ SWITCH_STANDARD_API(strftime_tz_api_function)
 		if (format) {
 			*format++ = '\0';
 		}
-
-		tzdef = switch_lookup_timezone( tz_name );
-	} else {
-		/* We set the default timezone to GMT. */
-		tz_name="GMT";
-		tzdef="GMT";
 	}
 	
-	if (tzdef) { /* The lookup of the zone may fail. */
-		switch_tztime( &timep, tzdef, &tm );
-		tm2switchtime( &tm, &stm );
-		switch_strftime(date, &retsize, sizeof(date), switch_strlen_zero(format) ? "%Y-%m-%d %T" : format, &stm);
+	if (switch_strftime_tz(tz_name, format, date, sizeof(date)) == SWITCH_STATUS_SUCCESS) { /* The lookup of the zone may fail. */
 		stream->write_function(stream, "%s", date);
 	} else {
 		stream->write_function(stream, "-ERR Invalid Timezone\n");
@@ -173,6 +54,7 @@ SWITCH_STANDARD_API(strftime_tz_api_function)
 	
 	return SWITCH_STATUS_SUCCESS;
 }
+
 
 /* **************************************************************************
 
@@ -183,20 +65,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_timezone_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_timezone_shutdown);
 SWITCH_MODULE_DEFINITION(mod_timezone, mod_timezone_load, mod_timezone_shutdown, NULL);
 
-static void event_handler(switch_event_t *event)
-{
-	switch_load_timezones(1);
-}
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_timezone_load)
 {
 	switch_api_interface_t *api_interface;
 	
-	if ((switch_event_bind_removable(modname, SWITCH_EVENT_RELOADXML, NULL, event_handler, NULL, &NODE) != SWITCH_STATUS_SUCCESS)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
-	}
-	switch_load_timezones(0);
-
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_API(api_interface, "strftime_tz", "strftime_tz", strftime_tz_api_function, "<Timezone name>,<format string>");
@@ -206,14 +78,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_timezone_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_timezone_shutdown)
 {
-
-	if (TIMEZONES_LIST.hash) {
-		switch_core_hash_destroy(&TIMEZONES_LIST.hash);
-	}
-
-	if (TIMEZONES_LIST.pool) {
-		switch_core_destroy_memory_pool(&TIMEZONES_LIST.pool);
-	}
 
 	return SWITCH_STATUS_UNLOAD;
 }
