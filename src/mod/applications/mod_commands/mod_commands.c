@@ -691,17 +691,22 @@ SWITCH_STANDARD_API(ctl_function)
 		if (!strcasecmp(argv[0], "hupall")) {
 			arg = 1;
 			switch_core_session_ctl(SCSC_HUPALL, &arg);
+			stream->write_function(stream, "+OK\n");
 		} else if (!strcasecmp(argv[0], "pause")) {
 			arg = 1;
 			switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
+			stream->write_function(stream, "+OK\n");
 		} else if (!strcasecmp(argv[0], "resume")) {
 			arg = 0;
 			switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
+			stream->write_function(stream, "+OK\n");
 		} else if (!strcasecmp(argv[0], "shutdown")) {
 			arg = 0;
 			switch_core_session_ctl(SCSC_SHUTDOWN, &arg);
+			stream->write_function(stream, "+OK\n");
 		} else if (!strcasecmp(argv[0], "reclaim_mem")) {
 			switch_core_session_ctl(SCSC_RECLAIM, &arg);
+			stream->write_function(stream, "+OK\n");
 		} else if (!strcasecmp(argv[0], "max_sessions")) {
 			if (argc > 1) {
 				arg = atoi(argv[1]);
@@ -731,7 +736,7 @@ SWITCH_STANDARD_API(ctl_function)
 				arg = -1;
 			}
 
-			if (arg == -1 || arg == SWITCH_LOG_INVALID) {
+			if (arg == SWITCH_LOG_INVALID) {
 				stream->write_function(stream, "-ERR syntax error, log level not set!\n");
 			} else {
 				switch_core_session_ctl(SCSC_LOGLEVEL, &arg);
@@ -757,7 +762,6 @@ SWITCH_STANDARD_API(ctl_function)
 			goto end;
 		}
 
-		stream->write_function(stream, "+OK\n");
 	  end:
 		free(mydata);
 	} else {
