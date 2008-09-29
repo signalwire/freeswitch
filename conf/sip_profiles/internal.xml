@@ -143,8 +143,18 @@
     <!-- use stun when specified (default is true) -->
     <!-- set to true to have the profile determine stun is not useful and turn it off globally-->
     <!--<param name="stun-auto-disable" value="true"/>-->
-    <!-- Choose the realm challenge key. Default is auto_to -->
-    <!--<param name="challenge-realm" value="auto_from|auto_to|<hardcoded_val>"/>-->
+    <!--
+	Choose the realm challenge key. Default is auto_to if not set. 
+	
+	auto_from - uses the from field as the value for the sip realm.
+	auto_to   - uses the to field as the value for the sip realm.
+	
+	If you want URL dialing to work you'll want to set this to auto_from.
+	
+	Note: comment out to restore the behavior before 2008-09-29
+
+    -->
+    <param name="challenge-realm" value="auto_from"/>
     <!--<param name="disable-rtp-auto-adjust" value="true"/>-->
   </settings>
 </profile>
