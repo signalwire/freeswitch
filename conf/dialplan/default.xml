@@ -476,7 +476,7 @@
     <!--
 	WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 	
-	Anything you put below this line will usually get ignored to to the file in 
+	Anything you put below this line will usually get ignored due to the file in 
 	default/99999_enum.xml as it will transfer the call to the enum dialplan.
 
 	WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
