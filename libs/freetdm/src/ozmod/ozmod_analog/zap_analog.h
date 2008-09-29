@@ -36,8 +36,19 @@
 #include "openzap.h"
 
 typedef enum {
-	ZAP_ANALOG_RUNNING = (1 << 0)
+	ZAP_ANALOG_RUNNING = (1 << 0),
+	ZAP_ANALOG_CALLERID = (1 << 1)
 } zap_analog_flag_t;
+
+
+struct zap_analog_data {
+	uint32_t flags;
+	uint32_t max_dialstr;
+	uint32_t digit_timeout;
+	zio_signal_cb_t sig_cb;
+};
+
+
 
 static void *zap_analog_run(zap_thread_t *me, void *obj);
 typedef struct zap_analog_data zap_analog_data_t;

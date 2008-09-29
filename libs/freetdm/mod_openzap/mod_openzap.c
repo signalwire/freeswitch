@@ -1547,6 +1547,8 @@ static switch_status_t load_config(void)
 			char *dial_regex = NULL;
 			char *hold_music = NULL;
 			char *fail_dial_regex = NULL;
+			char *enable_callerid = "true";
+
 			uint32_t span_id = 0, to = 0, max = 0;
 			zap_span_t *span = NULL;
 			analog_option_t analog_options = ANALOG_OPTION_NONE;
@@ -1565,6 +1567,8 @@ static switch_status_t load_config(void)
 					dialplan = val;
 				} else if (!strcasecmp(var, "dial-regex")) {
 					dial_regex = val;
+				} else if (!strcasecmp(var, "enable-callerid")) {
+					enable_callerid = val;
 				} else if (!strcasecmp(var, "fail-dial-regex")) {
 					fail_dial_regex = val;
 				} else if (!strcasecmp(var, "hold-music")) {
@@ -1621,6 +1625,7 @@ static switch_status_t load_config(void)
 								   "tonemap", tonegroup, 
 								   "digit_timeout", &to,
 								   "max_dialstr", &max,
+								   "enable_callerid", enable_callerid,
 								   TAG_END) != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d\n", span_id);
 				continue;

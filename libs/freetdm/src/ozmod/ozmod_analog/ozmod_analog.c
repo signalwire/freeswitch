@@ -87,6 +87,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 	uint32_t max_dialstr = 11;
 	const char *var, *val;
 	int *intval;
+	uint32_t flags = ZAP_ANALOG_CALLERID;
 
 	assert(sig_cb != NULL);
 
@@ -110,6 +111,16 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 				break;
 			}
 			digit_timeout = *intval;
+		} else if (!strcasecmp(var, "enable_callerid")) {
+			if (!(val = va_arg(ap, char *))) {
+                break;
+            }
+			
+			if (zap_true(val)) {
+				flags |= ZAP_ANALOG_CALLERID;
+			} else {
+				flags &= ~ZAP_ANALOG_CALLERID;
+			}
 		} else if (!strcasecmp(var, "max_dialstr")) {
 			if (!(intval = va_arg(ap, int *))) {
 				break;
@@ -128,6 +139,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 	}
 	
 	span->start = zap_analog_start;
+	analog_data->flags = flags;
 	analog_data->digit_timeout = digit_timeout;
 	analog_data->max_dialstr = max_dialstr;
 	analog_data->sig_cb = sig_cb;
@@ -691,9 +703,12 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 		zap_buffer_destroy(&dt_buffer);
 	}
 
-	zap_clear_flag(closed_chan, ZAP_CHANNEL_INTHREAD);
+	if (zchan->state != ZAP_CHANNEL_STATE_DOWN) {
+		zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+	}
 
-	zap_log(ZAP_LOG_DEBUG, "ANALOG CHANNEL thread ended.\n");
+	zap_log(ZAP_LOG_DEBUG, "ANALOG CHANNEL %d:%d thread ended.\n", zchan->span_id, zchan->chan_id);
+	zap_clear_flag(closed_chan, ZAP_CHANNEL_INTHREAD);
 
 	return NULL;
 }
@@ -725,7 +740,11 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 				goto end;
 			}
 			if (!event->channel->ring_count && (event->channel->state == ZAP_CHANNEL_STATE_DOWN && !zap_test_flag(event->channel, ZAP_CHANNEL_INTHREAD))) {
-				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_GET_CALLERID);
+				if (zap_test_flag(analog_data, ZAP_ANALOG_CALLERID)) {
+					zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_GET_CALLERID);
+				} else {
+					zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_IDLE);
+				}
 				event->channel->ring_count = 1;
 				zap_mutex_unlock(event->channel->mutex);
 				locked = 0;
