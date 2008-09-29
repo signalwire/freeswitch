@@ -30,6 +30,7 @@
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Cesar Cepeda <cesar@auronix.com>
+ * Massimo Cetra <devel@navynet.it>
  *
  * 
  * mod_commands.c -- Misc. Command Module
@@ -2541,12 +2542,35 @@ SWITCH_STANDARD_API(system_function)
     return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(strftime_tz_api_function)
+{
+	char *format = NULL;
+	const char *tz_name = NULL;
+	char date[80] = "";
+
+	if (!switch_strlen_zero(cmd)) {
+		format = strchr(cmd, ' ');
+		tz_name = cmd;
+		if (format) {
+			*format++ = '\0';
+		}
+	}
+	
+	if (switch_strftime_tz(tz_name, format, date, sizeof(date)) == SWITCH_STATUS_SUCCESS) { /* The lookup of the zone may fail. */
+		stream->write_function(stream, "%s", date);
+	} else {
+		stream->write_function(stream, "-ERR Invalid Timezone\n");
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 {
 	switch_api_interface_t *commands_api_interface;
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
+	SWITCH_ADD_API(api_interface, "strftime_tz", "strftime_tz", strftime_tz_api_function, "<Timezone_name> [format string]");
 	SWITCH_ADD_API(commands_api_interface, "originate", "Originate a Call", originate_function, ORIGINATE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "tone_detect", "Start Tone Detection on a channel", tone_detect_session_function, TONE_DETECT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_kill", "Kill Channel", kill_function, KILL_SYNTAX);

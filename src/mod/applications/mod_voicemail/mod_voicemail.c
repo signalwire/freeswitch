@@ -2223,37 +2223,15 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_file_path", file_path);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_read_flags", read_flags);
 		
-		if(switch_loadable_module_exists("mod_timezone") == SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mod_timezone is loaded... let's try to convert\n");
-			if(!switch_strlen_zero(vm_timezone)) {
-				switch_status_t status;
-				switch_stream_handle_t time_stream = { 0 };
-				char *reply;
-				char *args = switch_mprintf("%s %s", vm_timezone, profile->date_fmt);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "User's timezone is %s\n", vm_timezone);
-				SWITCH_STANDARD_STREAM(time_stream);
-				if ((status = switch_api_execute("strftime_tz", args, NULL, &time_stream)) == SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Successfully Converted Timezone\n");
-					reply = time_stream.data;
-					if(strncasecmp(reply, "-ERR", 4)) {
-						if(strlen(reply)) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "old time was: %s, new time is: %s\n", date, reply);
-							switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_time", reply);
-						} else {
-							switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_time", date);
-						}
-						switch_safe_free(reply);
-					}
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed To Successfully Convert Timezone\n");
-					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_time", date);
-				}
-				switch_safe_free(args);
+		if(!switch_strlen_zero(vm_timezone)) {
+			char tz_date[80] = "";
+			if ((switch_strftime_tz(vm_timezone, profile->date_fmt, tz_date, sizeof(tz_date)) == SWITCH_STATUS_SUCCESS) && !switch_strlen_zero(tz_date)) {
+				switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_time", tz_date);
+			} else {
+				switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_time", date);
 			}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mod_timezone isn't loaded... we'll only be using system time\n");
-			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_time", date);
 		}
+
 		switch_snprintf(tmpvar, sizeof(tmpvar), "%d", priority);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_priority", tmpvar);
 		if (vm_email) {

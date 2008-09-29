@@ -2,7 +2,6 @@ loggers/mod_console
 loggers/mod_logfile
 loggers/mod_syslog
 applications/mod_commands
-applications/mod_timezone
 applications/mod_conference
 applications/mod_dptools
 applications/mod_enum

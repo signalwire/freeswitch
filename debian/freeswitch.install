@@ -38,7 +38,6 @@ opt/freeswitch/mod/mod_xml_*.so*
 opt/freeswitch/mod/mod_fsv.so*
 opt/freeswitch/mod/mod_tone_stream.so*
 opt/freeswitch/mod/mod_fax.so*
-opt/freeswitch/mod/mod_timezone.so*
 opt/freeswitch/mod/mod_loopback.so*
 opt/freeswitch/conf/vars.xml
 opt/freeswitch/conf/mime.types
