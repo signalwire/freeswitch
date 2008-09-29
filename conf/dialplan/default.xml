@@ -203,7 +203,7 @@
 	<anti-action application="bind_meta_app" data="1 b s execute_extension::dx XML features"/>
 	<anti-action application="bind_meta_app" data="2 b s record_session::$${base_dir}/recordings/${caller_id_number}.${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
 	<anti-action application="bind_meta_app" data="3 b s execute_extension::cf XML features"/>
-	<anti-action application="set" data="transfer_ringback=${us-ring}"/>
+	<anti-action application="set" data="transfer_ringback=$${hold_music}"/>
 	<anti-action application="set" data="call_timeout=30"/>
 	<!-- <anti-action application="set" data="sip_exclude_contact=${network_addr}"/> -->
 	<anti-action application="set" data="hangup_after_bridge=true"/>

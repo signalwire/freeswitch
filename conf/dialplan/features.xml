@@ -29,6 +29,14 @@
       </condition>
     </extension>
 
+    <extension name="please_hold">
+      <condition field="destination_number" expression="^(10[01][0-9])$">
+	<action application="answer"/>
+	<action application="playback" data="ivr/ivr-hold_connect_call.wav"/>
+	<action application="transfer" data="$1 XML default"/>
+      </condition>
+    </extension>
+
     <extension name="is_secure">
       <!-- Only Truly consider it secure if its TLS and SRTP --> 
       <condition field="${sip_req_params}" expression="tls"/>
