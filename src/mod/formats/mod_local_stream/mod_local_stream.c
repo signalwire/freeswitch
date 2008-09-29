@@ -589,7 +589,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 
 		for (directory = switch_xml_child(cfg, "directory"); directory; directory = directory->next) {
 			char *name = (char *) switch_xml_attr(directory, "name");
-			if (strcasecmp(name, local_stream_name)){
+			if (!name || !local_stream_name || strcasecmp(name, local_stream_name)){
 				continue;
 			}
 			else {
@@ -629,7 +629,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 											  "Interval must be multipe of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL);
 						}
 					} else if (!strcasecmp(var, "timer-name")) {
-						timer_name = switch_core_strdup(source->pool, val);
+						timer_name = strdup(val);
 					}
 				}
 				break;
@@ -667,7 +667,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 	source->rate = rate;
 	source->interval = interval;
 	source->channels = channels;
-	source->timer_name = switch_core_strdup(source->pool,timer_name);
+	source->timer_name = switch_core_strdup(source->pool, timer_name);
 	source->prebuf = prebuf;
 	source->stopped = 0;
 
@@ -685,10 +685,10 @@ SWITCH_STANDARD_API(start_local_stream_function)
 
  usage:
 	stream->write_function(stream, "-USAGE: %s\n", START_LOCAL_STREAM_SYNTAX);
-	switch_safe_free(mycmd);
 
  done:
 
+	switch_safe_free(timer_name);
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
