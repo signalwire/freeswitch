@@ -24,6 +24,8 @@
         <!-- note that you can do more than just play files, e.g. have pauses and do TTS -->
         <action function="execute" data="sleep(250)"/>
         <!-- Menu option 1: Call FreeSWITCH conference-->
+        <action function="play-file" data="ivr/ivr-enter_ext_pound.wav"/>
+        <action function="execute" data="sleep(250)"/>
         <action function="play-file" data="ivr/ivr-to_call_the_freeswitch_conference.wav"/>
         <action function="execute" data="sleep(250)"/>
         <action function="play-file" data="ivr/ivr-please.wav"/>
