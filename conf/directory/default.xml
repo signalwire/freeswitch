@@ -26,6 +26,8 @@
 
     <variables>
       <variable name="record_stereo" value="true"/>
+      <variable name="default_gateway" value="asterlink.com"/>
+      <variable name="default_areacode" value="918"/>
     </variables>
 
     <X-PRE-PROCESS cmd="include" data="default/*.xml"/>

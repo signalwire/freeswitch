@@ -5,7 +5,7 @@
       <!-- set these to take advantage of a dialplan localized to this user -->
       <variable name="numbering_plan" value="US"/>
       <variable name="default_gateway" value="asterlink.com"/>
-      <variable name="default_area_code" value="918"/>
+      <variable name="default_areacode" value="918"/>
     </variables>
   </user>
 </include>

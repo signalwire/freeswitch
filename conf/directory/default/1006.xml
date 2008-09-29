@@ -5,10 +5,13 @@
       <param name="vm-password" value="1006"/>
     </params>
     <variables>
+      <variable name="toll_allow" value="domestic,international,local"/>
       <variable name="accountcode" value="1006"/>
       <variable name="user_context" value="default"/>
       <variable name="effective_caller_id_name" value="Extension 1006"/>
       <variable name="effective_caller_id_number" value="1006"/>
+      <variable name="external_caller_id_name" value="Acme Corporation"/>
+      <variable name="external_caller_id_number" value="5552566639"/>
     </variables>
   </user>
 </include>
