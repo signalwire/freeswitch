@@ -95,14 +95,35 @@
   <X-PRE-PROCESS cmd="set" data="unroll_loops=true"/>
   <!-- outbound_caller_id and outbound_caller_name
        The caller ID telephone number we should use when calling out.
-       Used by: conference.conf.xml
+       Used by: conference.conf.xml and user directory for default
+       outbound callerid name and number.
   -->
   <X-PRE-PROCESS cmd="set" data="outbound_caller_name=FreeSWITCH"/>
   <X-PRE-PROCESS cmd="set" data="outbound_caller_id=0000000000"/>
+
+  <!-- various debug and defaults -->
   <X-PRE-PROCESS cmd="set" data="call_debug=false"/>
   <X-PRE-PROCESS cmd="set" data="console_loglevel=info"/>
+  <X-PRE-PROCESS cmd="set" data="default_areacode=918"/>
 
   <X-PRE-PROCESS cmd="set" data="uk-ring=%(400,200,400,450);%(400,2200,400,450)"/>
   <X-PRE-PROCESS cmd="set" data="us-ring=%(2000, 4000, 440.0, 480.0)"/>
   <X-PRE-PROCESS cmd="set" data="fr-ring=%(1500, 3500, 440.0, 0.0)"/>
   <X-PRE-PROCESS cmd="set" data="bong-ring=v=-7;%(100,0,941.0,1477.0);v=-7;>=2;+=.1;%(1400,0,350,440)"/>
+  <!--
+      Setting up your default sip provider is easy.
+      Below are some values that should work in most cases.
+      
+      These are for conf/directory/default/provider.com.xml
+
+  -->
+  <X-PRE-PROCESS cmd="set" data="default_provider=provider.com"/>
+  <X-PRE-PROCESS cmd="set" data="default_provider_username=joeuser"/>
+  <X-PRE-PROCESS cmd="set" data="default_provider_password=password"/>
+  <X-PRE-PROCESS cmd="set" data="default_provider_from_domain=provider.com"/>
+  <!-- true or false -->
+  <X-PRE-PROCESS cmd="set" data="default_provider_register=false"/>
+  <X-PRE-PROCESS cmd="set" data="default_provider_contact=5000"/>
+
+  <X-PRE-PROCESS cmd="include" data="../local_vars.xml"/>
+  
