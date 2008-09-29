@@ -1,3 +1,6 @@
+<!--
+    This is an example of a sofia profile setup to listen on IPv6.
+-->
 <!-- http://wiki.freeswitch.org/wiki/Sofia_Configuration_Files -->
 <profile name="internal-ipv6">
   <!--aliases are other names that will work as a valid profile name for this profile-->

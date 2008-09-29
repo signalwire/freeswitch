@@ -1,3 +1,10 @@
+<!--
+    This is a sofia sip profile/user agent.  This will service exactly one ip and port.
+    In FreeSWITCH you can run multiple sip user agents on their own ip and port.
+    
+    When you hear someone say "sofia profile" this is what they are talking about.
+-->
+
 <!-- http://wiki.freeswitch.org/wiki/Sofia_Configuration_Files -->
 <profile name="internal">
   <!--aliases are other names that will work as a valid profile name for this profile-->
@@ -18,11 +25,13 @@
   </domains>
   
   <settings>
-    <!-- When calls are in no media this will bring them back to media
-	 when you press the hold button.
+    <!--
+	When calls are in no media this will bring them back to media
+	when you press the hold button.
     -->
     <!--<param name="media-option" value="resume-media-on-hold"/> -->
-    <!-- This will allow a call after an attended transfer go back to 
+    <!--
+	This will allow a call after an attended transfer go back to 
 	 bypass media after an attended transfer.
     -->
     <!--<param name="media-option" value="bypass-media-after-att-xfer"/>-->
