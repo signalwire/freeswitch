@@ -214,7 +214,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		b_channel = switch_core_session_get_channel(b_session);
 		b_tech_pvt = (private_t *) switch_core_session_alloc(b_session, sizeof(*b_tech_pvt));
 
-		switch_snprintf(name, sizeof(name), "Loopback/%s-b", tech_pvt->caller_profile->destination_number);
+		switch_snprintf(name, sizeof(name), "loopback/%s-b", tech_pvt->caller_profile->destination_number);
 		switch_channel_set_name(b_channel, name);
 		if (tech_init(b_tech_pvt, b_session, switch_core_session_get_read_codec(session)) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
