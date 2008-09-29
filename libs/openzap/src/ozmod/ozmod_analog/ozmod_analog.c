@@ -703,11 +703,11 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 		zap_buffer_destroy(&dt_buffer);
 	}
 
-	if (zchan->state != ZAP_CHANNEL_STATE_DOWN) {
-		zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+	if (closed_chan->state != ZAP_CHANNEL_STATE_DOWN) {
+		zap_set_state_locked(closed_chan, ZAP_CHANNEL_STATE_DOWN);
 	}
 
-	zap_log(ZAP_LOG_DEBUG, "ANALOG CHANNEL %d:%d thread ended.\n", zchan->span_id, zchan->chan_id);
+	zap_log(ZAP_LOG_DEBUG, "ANALOG CHANNEL %d:%d thread ended.\n", closed_chan->span_id, closed_chan->chan_id);
 	zap_clear_flag(closed_chan, ZAP_CHANNEL_INTHREAD);
 
 	return NULL;
