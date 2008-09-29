@@ -145,26 +145,6 @@
 	</References>
 	<Files>
 		<File
-			RelativePath=".\localtime_find.c"
-			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					DisableSpecificWarnings="6385"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					DisableSpecificWarnings="6385"
-				/>
-			</FileConfiguration>
-		</File>
-		<File
 			RelativePath=".\mod_timezone.c"
 			>
 		</File>

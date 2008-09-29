@@ -26,7 +26,6 @@
  */
 
 #include <switch.h>
-#include "mod_timezone.h"
 
 /* 
    This converts a struct tm to a switch_time_exp_t
@@ -164,7 +163,7 @@ SWITCH_STANDARD_API(strftime_tz_api_function)
 	}
 	
 	if (tzdef) { /* The lookup of the zone may fail. */
-		tztime( &timep, tzdef, &tm );
+		switch_tztime( &timep, tzdef, &tm );
 		tm2switchtime( &tm, &stm );
 		switch_strftime(date, &retsize, sizeof(date), switch_strlen_zero(format) ? "%Y-%m-%d %T" : format, &stm);
 		stream->write_function(stream, "%s", date);
