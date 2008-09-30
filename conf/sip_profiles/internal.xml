@@ -152,6 +152,8 @@
     <!-- use stun when specified (default is true) -->
     <!-- set to true to have the profile determine stun is not useful and turn it off globally-->
     <!--<param name="stun-auto-disable" value="true"/>-->
+    <!-- use at your own risk or if you know what this does.-->
+    <!--<param name="NDLB-force-rport" value="true"/>-->
     <!--
 	Choose the realm challenge key. Default is auto_to if not set. 
 	
