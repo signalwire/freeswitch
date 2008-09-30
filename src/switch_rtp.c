@@ -760,7 +760,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 												  switch_rtp_flag_t flags, char *timer_name, const char **err, switch_memory_pool_t *pool)
 {
 	switch_rtp_t *rtp_session = NULL;
-	uint32_t ssrc = rand() & 0xffffffff;
 
 	*new_rtp_session = NULL;
 
@@ -792,7 +791,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 
 
 	rtp_session->seq = (uint16_t) rand();
-	rtp_session->ssrc = ssrc;
+	rtp_session->ssrc = (uint32_t) ((intptr_t) &rtp_session + (uint32_t) switch_timestamp(NULL));
 	rtp_session->send_msg.header.ssrc = htonl(rtp_session->ssrc);
 	rtp_session->send_msg.header.ts = 0;
 	rtp_session->send_msg.header.m = 0;
@@ -1247,7 +1246,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	}
 
 	if (rtp_session->timer.interval) {
-		sleep_mss = 1000;//rtp_session->timer.interval * 1000;
+		sleep_mss = rtp_session->timer.interval * 1000;
 	} else {
 		rtp_session->last_time = switch_time_now();
 	}

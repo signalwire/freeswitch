@@ -139,6 +139,15 @@ SWITCH_DECLARE(void) switch_time_sync(void)
 SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 {
 
+#if defined(HAVE_USLEEP)
+	usleep(t);
+#elif defined(WIN32)
+	Sleep((DWORD) ((t) / 1000));
+#else
+	apr_sleep(t);
+#endif
+
+#if 0
 #if defined(HAVE_CLOCK_NANOSLEEP) && defined(SWITCH_USE_CLOCK_FUNCS)
 	struct timespec ts;
 	ts.tv_sec = t / APR_USEC_PER_SEC;
@@ -153,7 +162,7 @@ SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 #else
 	apr_sleep(t);
 #endif
-
+#endif
 
 }
 
