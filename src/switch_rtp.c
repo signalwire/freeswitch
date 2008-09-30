@@ -760,7 +760,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 												  switch_rtp_flag_t flags, char *timer_name, const char **err, switch_memory_pool_t *pool)
 {
 	switch_rtp_t *rtp_session = NULL;
-	uint32_t ssrc = rand() & 0xffff;
+	uint32_t ssrc = rand() & 0xffffffff;
 
 	*new_rtp_session = NULL;
 
