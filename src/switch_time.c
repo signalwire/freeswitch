@@ -1207,7 +1207,7 @@ static int tzparse(const char *name, register struct state * const sp, const int
 
 			sp->ttis[0].tt_gmtoff = -dstoffset;
 			sp->ttis[0].tt_isdst = 1;
-			sp->ttis[0].tt_abbrind = stdlen + 1;
+			sp->ttis[0].tt_abbrind = (int)(stdlen + 1);
 			sp->ttis[1].tt_gmtoff = -stdoffset;
 			sp->ttis[1].tt_isdst = 0;
 			sp->ttis[1].tt_abbrind = 0;
@@ -1318,7 +1318,7 @@ static int tzparse(const char *name, register struct state * const sp, const int
 			sp->ttis[0].tt_abbrind = 0;
 			sp->ttis[1].tt_gmtoff = -dstoffset;
 			sp->ttis[1].tt_isdst = TRUE;
-			sp->ttis[1].tt_abbrind = stdlen + 1;
+			sp->ttis[1].tt_abbrind = (int)(stdlen + 1);
 			sp->typecnt = 2;
 		}
 	} else {
@@ -1330,9 +1330,9 @@ static int tzparse(const char *name, register struct state * const sp, const int
 		sp->ttis[0].tt_abbrind = 0;
 	}
 
-	sp->charcnt = stdlen + 1;
+	sp->charcnt = (int)(stdlen + 1);
 	if (dstlen != 0)
-		sp->charcnt += dstlen + 1;
+		sp->charcnt += (int)(dstlen + 1);
 	if ((size_t) sp->charcnt > sizeof sp->chars)
 		return -1;
 	cp = sp->chars;
@@ -1359,7 +1359,7 @@ static void timesub(const time_t * const timep, const long offset, register cons
 {
 	register const struct lsinfo *	lp;
 	register long			days;
-	register long			rem;
+	register time_t			rem;
 	register int			y;
 	register int			yleap;
 	register const int *		ip;
