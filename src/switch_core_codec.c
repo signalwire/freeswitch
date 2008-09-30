@@ -183,6 +183,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_read_codec(switch_
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char tmp[30];
 
+	if (!codec || !codec->implementation) {
+		if (session->video_read_codec) {
+			session->video_read_codec = NULL;
+        	return SWITCH_STATUS_SUCCESS;
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set NULL codec!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-video-read-codec-name", codec->implementation->iananame);
@@ -210,7 +219,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_write_codec(switch
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char tmp[30];
 
-	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
+	if (!codec || !codec->implementation) {
+		if (session->video_write_codec) {
+			session->video_write_codec = NULL;
+        	return SWITCH_STATUS_SUCCESS;
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set NULL codec!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+    if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-video-write-codec-name", codec->implementation->iananame);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-video-write-codec-rate", "%d", codec->implementation->actual_samples_per_second);
