@@ -215,6 +215,10 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	if ((accountcode = switch_channel_get_variable(channel, "ACCOUNTCODE"))) {
 		a_template_str = (const char *) switch_core_hash_find(globals.template_hash, accountcode);
 	}
+	
+	if (!g_template_str) {
+		g_template_str = "\"${accountcode}\",\"${caller_id_number}\",\"${destination_number}\",\"${context}\",\"${caller_id}\",\"${channel_name}\",\"${bridge_channel}\",\"${last_app}\",\"${last_arg}\",\"${start_stamp}\",\"${answer_stamp}\",\"${end_stamp}\",\"${duration}\",\"${billsec}\",\"${hangup_cause}\",\"${amaflags}\",\"${uuid}\",\"${userfield}\";";
+	}
 
 	if (!a_template_str) {
 		a_template_str = g_template_str;
