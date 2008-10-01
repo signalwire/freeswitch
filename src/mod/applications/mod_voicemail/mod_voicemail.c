@@ -123,6 +123,7 @@ struct vm_profile {
 	uint32_t record_silence_hits;
 	uint32_t record_sample_rate;
 	switch_odbc_handle_t *master_odbc;
+	switch_bool_t auto_playback_recordings;
 };
 typedef struct vm_profile vm_profile_t;
 
@@ -313,6 +314,8 @@ static switch_status_t load_config(void)
 		char *record_title = "FreeSWITCH Voicemail";
 		char *record_comment = "FreeSWITCH Voicemail";
 		char *record_copyright = "http://www.freeswitch.org";
+
+		switch_bool_t auto_playback_recordings = SWITCH_TRUE;
 
 		switch_core_db_t *db;
 		uint32_t timeout = 10000, max_login_attempts = 3, max_record_len = 300, min_record_len = 3;
@@ -570,7 +573,7 @@ static switch_status_t load_config(void)
 				if (tmp > 0 && tmp < 10000) {
 					min_record_len = tmp;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid attempts [%s] must be between 1 and 10000s\n", val);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid record length [%s] must be between 1 and 10000s\n", val);
 				}
 			} else if (!strcasecmp(var, "max-record-len")) {
 				int tmp = 0;
@@ -580,7 +583,7 @@ static switch_status_t load_config(void)
 				if (tmp > 0 && tmp < 10000) {
 					max_record_len = tmp;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid attempts [%s] must be between 1 and 10000s\n", val);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid record length [%s] must be between 1 and 10000s\n", val);
 				}
 			} else if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
 #ifdef SWITCH_HAVE_ODBC
@@ -594,6 +597,8 @@ static switch_status_t load_config(void)
 #else
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 #endif
+			} else if (!strcasecmp(var, "auto-playback-recordings")){
+				auto_playback_recordings = switch_true(val);
 			}
 		}
 
@@ -736,6 +741,7 @@ static switch_status_t load_config(void)
 			profile->record_silence_hits = record_silence_hits;
 			profile->record_sample_rate = record_sample_rate;
 
+			profile->auto_playback_recordings = auto_playback_recordings;
 			profile->operator_ext = switch_core_strdup(globals.pool, operator_ext);
 			profile->vmain_ext = switch_core_strdup(globals.pool, vmain_ext);
 			profile->storage_dir = switch_core_strdup(globals.pool, storage_dir);
@@ -1061,14 +1067,15 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 			status = SWITCH_STATUS_SUCCESS;
 		}
 	  play_file:
-		memset(&fh, 0, sizeof(fh));
-		args.input_callback = control_playback;
-		memset(&cc, 0, sizeof(cc));
-		cc.profile = profile;
-		cc.fh = &fh;
-		args.buf = &cc;
-		switch_ivr_play_file(session, &fh, file_path, &args);
-
+		if (profile->auto_playback_recordings) {
+			memset(&fh, 0, sizeof(fh));
+			args.input_callback = control_playback;
+			memset(&cc, 0, sizeof(cc));
+			cc.profile = profile;
+			cc.fh = &fh;
+			args.buf = &cc;
+			switch_ivr_play_file(session, &fh, file_path, &args);
+		}
 		while (switch_channel_ready(channel)) {
 			*input = '\0';
 

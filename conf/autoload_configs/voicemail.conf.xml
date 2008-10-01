@@ -42,6 +42,8 @@
       <param name="operator-key" value="9"/>
       <param name="vmain-extension" value="vmain XML default"/>
       <param name="vmain-key" value="*"/>
+      <!-- playback created files as soon as they were recorded by default -->
+      <!--<param name="auto-playback-recordings" value="true"/>-->
       <email>
 	<param name="template-file" value="voicemail.tpl"/>
 	<param name="notify-template-file" value="notify-voicemail.tpl"/>
