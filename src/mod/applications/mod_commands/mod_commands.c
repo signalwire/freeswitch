@@ -2569,11 +2569,50 @@ SWITCH_STANDARD_API(strftime_tz_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(hupall_api_function)
+{
+	char *mycmd = NULL, *argv[3] = { 0 };
+	int argc = 0;
+	char *var = NULL;
+	char *val = NULL;
+	switch_call_cause_t cause = SWITCH_CAUSE_MANAGER_REQUEST;
+
+	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		if ((cause = switch_channel_str2cause(argv[0])) == SWITCH_CAUSE_NONE) {
+			cause = SWITCH_CAUSE_MANAGER_REQUEST;
+		}
+		var = argv[1];
+		val = argv[2];
+	}
+
+	if (!val) {
+		var = NULL;
+	}
+
+	if (switch_strlen_zero(var)) {
+		switch_core_session_hupall(cause);
+	} else {
+		switch_core_session_hupall_matching_var(var, val, cause);
+	}
+	
+	if (switch_strlen_zero(var)) {
+		stream->write_function(stream, "+OK hangup all channels with cause %s\n", switch_channel_cause2str(cause));
+	} else {
+		stream->write_function(stream, "+OK hangup all channels matching [%s]=[%s] with cause: %s\n", var, val, switch_channel_cause2str(cause));
+	}
+	
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+	
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 {
 	switch_api_interface_t *commands_api_interface;
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
+	SWITCH_ADD_API(commands_api_interface, "hupall", "hupall", hupall_api_function, "<cause> [<var> <value>]");
 	SWITCH_ADD_API(commands_api_interface, "strftime_tz", "strftime_tz", strftime_tz_api_function, "<Timezone_name> [format string]");
 	SWITCH_ADD_API(commands_api_interface, "originate", "Originate a Call", originate_function, ORIGINATE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "tone_detect", "Start Tone Detection on a channel", tone_detect_session_function, TONE_DETECT_SYNTAX);
