@@ -16,7 +16,7 @@
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.1 2008/07/10 12:44:54 steveu Exp $
+## $Id: Makefile.am,v 1.2 2008/09/10 16:55:15 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 
@@ -25,13 +25,17 @@ FAX2TIFF = fax2tiff
 
 EXTRA_DIST = 
 
-nobase_data_DATA = etsi_300_242_white.tif \
-                   etsi_300_242_stairstep.tif \
-                   etsi_300_242_diago1.tif \
-                   etsi_300_242_diago2.tif \
-                   etsi_300_242_impress.tif \
-                   etsi_300_242_error.tif
-
+nobase_data_DATA = etsi_300_242_a4_diago1.tif \
+                   etsi_300_242_a4_diago2.tif \
+                   etsi_300_242_a4_duration1.tif \
+                   etsi_300_242_a4_duration2.tif \
+                   etsi_300_242_a4_error.tif \
+                   etsi_300_242_a4_impress.tif \
+                   etsi_300_242_a4_impress_white.tif \
+                   etsi_300_242_a4_stairstep.tif \
+                   etsi_300_242_a4_white.tif \
+                   etsi_300_242_a4_white_2p.tif
+                   
 noinst_PROGRAMS =   generate_etsi_300_242_pages
 
 generate_etsi_300_242_pages_SOURCES = generate_etsi_300_242_pages.c
@@ -46,10 +50,14 @@ clean:
 .pbm.g3:
 	${PBM2G3} $*.pbm >$*.g3
 
-etsi_300_242_white.tif \
-etsi_300_242_stairstep.tif \
-etsi_300_242_diago1.tif \
-etsi_300_242_diago2.tif \
-etsi_300_242_impress.tif \
-etsi_300_242_error.tif: generate_etsi_300_242_pages$(EXEEXT)
+etsi_300_242_a4_diago1.tif \
+etsi_300_242_a4_diago2.tif \
+etsi_300_242_a4_duration1.tif \
+etsi_300_242_a4_duration2.tif \
+etsi_300_242_a4_error.tif \
+etsi_300_242_a4_impress.tif \
+etsi_300_242_a4_impress_white.tif \
+etsi_300_242_a4_stairstep.tif \
+etsi_300_242_a4_white.tif \
+etsi_300_242_a4_white_2p.tif: generate_etsi_300_242_pages$(EXEEXT)
 	./generate_etsi_300_242_pages$(EXEEXT)

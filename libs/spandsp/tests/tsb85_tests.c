@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tsb85_tests.c,v 1.22 2008/09/09 15:30:43 steveu Exp $
+ * $Id: tsb85_tests.c,v 1.23 2008/09/10 16:55:15 steveu Exp $
  */
 
 /*! \file */
@@ -85,6 +85,8 @@ uint8_t awaited[1000];
 int awaited_len = 0;
 
 t30_exchanged_info_t expected_rx_info;
+
+char next_tx_file[1000];
 
 static int next_step(faxtester_state_t *s);
 
@@ -317,6 +319,12 @@ static int document_handler(t30_state_t *s, void *user_data, int event)
     
     i = (intptr_t) user_data;
     fprintf(stderr, "%d: Document handler on channel %d - event %d\n", i, i, event);
+    if (next_tx_file[0])
+    {
+        t30_set_tx_file(s, next_tx_file, -1, -1);
+        next_tx_file[0] = '\0';
+        return TRUE;
+    }
     return FALSE;
 }
 /*- End of function --------------------------------------------------------*/
@@ -329,7 +337,9 @@ static void faxtester_real_time_frame_handler(faxtester_state_t *s,
 {
     if (msg == NULL)
     {
-        next_step(s);
+        while (next_step(s) == 0)
+            ;
+        /*endwhile*/
     }
     else
     {
@@ -352,14 +362,20 @@ static void faxtester_real_time_frame_handler(faxtester_state_t *s,
             }
         }
         if (msg[1] == awaited[1])
-            next_step(s);
+        {
+            while (next_step(s) == 0)
+                ;
+            /*endwhile*/
+        }
     }
 }
 /*- End of function --------------------------------------------------------*/
 
 static void faxtester_front_end_step_complete_handler(faxtester_state_t *s, void *user_data)
 {
-    next_step(s);
+    while (next_step(s) == 0)
+        ;
+    /*endwhile*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -611,7 +627,9 @@ static int next_step(faxtester_state_t *s)
     xmlChar *crc_error;
     xmlChar *pattern;
     xmlChar *timeout;
-    xmlChar *min_time;
+    xmlChar *min_bits;
+    xmlChar *frame_size;
+    xmlChar *compression;
     uint8_t buf[1000];
     uint8_t mask[1000];
     int i;
@@ -619,8 +637,8 @@ static int next_step(faxtester_state_t *s)
     int hdlc;
     int short_train;
     int min_row_bits;
-    int compression;
-    int compression_step;
+    int ecm_frame_size;
+    int compression_type;
     int timer;
     int len;
     t4_state_t t4_state;
@@ -658,7 +676,9 @@ static int next_step(faxtester_state_t *s)
     crc_error = xmlGetProp(s->cur, (const xmlChar *) "crc_error");
     pattern = xmlGetProp(s->cur, (const xmlChar *) "pattern");
     timeout = xmlGetProp(s->cur, (const xmlChar *) "timeout");
-    min_time = xmlGetProp(s->cur, (const xmlChar *) "min_time");
+    min_bits = xmlGetProp(s->cur, (const xmlChar *) "min_bits");
+    frame_size = xmlGetProp(s->cur, (const xmlChar *) "frame_size");
+    compression = xmlGetProp(s->cur, (const xmlChar *) "compression");
 
     s->cur = s->cur->next;
 
@@ -857,15 +877,21 @@ static int next_step(faxtester_state_t *s)
                     t30_set_rx_file(t30, output_tiff_file_name, -1);
             }
             else if (strcasecmp((const char *) tag, "TXFILE") == 0)
-                t30_set_tx_file(t30, (const char *) value, -1, -1);
+            {
+                strcpy(next_tx_file, (const char *) value);
+printf("Push '%s'\n", next_tx_file);
+            }
             return 0;
         }
         else if (strcasecmp((const char *) type, "CALL") == 0)
         {
             fax_init(&fax, FALSE);
             fax_prepare();
+            next_tx_file[0] = '\0';
             t30 = fax_get_t30_state(&fax);
             t30_set_rx_file(t30, output_tiff_file_name, -1);
+            /* Avoid libtiff 3.8.2 and earlier bug on complex 2D lines. */
+            t30_set_rx_encoding(t30, T4_COMPRESSION_ITU_T4_1D);
             if (value)
                 t30_set_tx_file(t30, (const char *) value, -1, -1);
             return 0;
@@ -874,7 +900,10 @@ static int next_step(faxtester_state_t *s)
         {
             fax_init(&fax, TRUE);
             fax_prepare();
+            next_tx_file[0] = '\0';
             t30 = fax_get_t30_state(&fax);
+            /* Avoid libtiff 3.8.2 and earlier bug on complex 2D lines. */
+            t30_set_rx_encoding(t30, T4_COMPRESSION_ITU_T4_1D);
             if (value)
                 t30_set_tx_file(t30, (const char *) value, -1, -1);
             return 0;
@@ -937,8 +966,10 @@ static int next_step(faxtester_state_t *s)
         else if (strcasecmp((const char *) type, "MSG") == 0)
         {
             /* A non-ECM page */
-            min_row_bits = 0;
-            compression_step = 0;
+            if (min_bits)
+                min_row_bits = atoi((const char *) min_bits);
+            else
+                min_row_bits = 0;
             if (t4_tx_init(&t4_state, (const char *) value, -1, -1) == NULL)
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Failed to init T.4 send\n");
@@ -946,19 +977,15 @@ static int next_step(faxtester_state_t *s)
             }
             t4_tx_set_min_row_bits(&t4_state, min_row_bits);
             t4_tx_set_header_info(&t4_state, NULL);
-            switch (compression_step)
+            compression_type = T4_COMPRESSION_ITU_T4_1D;
+            if (compression)
             {
-            case 0:
-                compression = T4_COMPRESSION_ITU_T4_1D;
-                break;
-            case 1:
-                compression = T4_COMPRESSION_ITU_T4_2D;
-                break;
-            case 2:
-                compression = T4_COMPRESSION_ITU_T6;
-                break;
+                if (strcasecmp((const char *) compression, "T.4 2D") == 0)
+                    compression_type = T4_COMPRESSION_ITU_T4_2D;
+                else if (strcasecmp((const char *) compression, "T.6") == 0)
+                    compression_type = T4_COMPRESSION_ITU_T6;
             }
-            t4_tx_set_tx_encoding(&t4_state, compression);
+            t4_tx_set_tx_encoding(&t4_state, compression_type);
             if (t4_tx_start_page(&t4_state))
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Failed to start T.4 send\n");
@@ -971,51 +998,58 @@ static int next_step(faxtester_state_t *s)
                 corrupt_image(s, image, len, (const char *) bad_rows);
             }
             t4_tx_end(&t4_state);
+            span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM image is %d bytes\n", len);
             faxtester_set_non_ecm_image_buffer(s, image, len);
         }
         else if (strcasecmp((const char *) type, "PP") == 0)
         {
-            compression_step = 0;
-            if (t4_tx_init(&t4_state, (const char *) value, -1, -1) == NULL)
-            {
-                span_log(&s->logging, SPAN_LOG_FLOW, "Failed to init T.4 send\n");
-                exit(2);
-            }
-            t4_tx_set_min_row_bits(&t4_state, 0);
-            t4_tx_set_header_info(&t4_state, NULL);
-            switch (compression_step)
-            {
-            case 0:
-                compression = T4_COMPRESSION_ITU_T4_1D;
-                break;
-            case 1:
-                compression = T4_COMPRESSION_ITU_T4_2D;
-                break;
-            case 2:
-                compression = T4_COMPRESSION_ITU_T6;
-                break;
-            }
-            t4_tx_set_tx_encoding(&t4_state, compression);
-            if (t4_tx_start_page(&t4_state))
-            {
-                span_log(&s->logging, SPAN_LOG_FLOW, "Failed to start T.4 send\n");
-                exit(2);
-            }
+            if (min_bits)
+                min_row_bits = atoi((const char *) min_bits);
+            else
+                min_row_bits = 0;
             /*endif*/
-            len = t4_tx_get_chunk(&t4_state, image, sizeof(image));
-            if (bad_rows)
-            {
-                span_log(&s->logging, SPAN_LOG_FLOW, "We need to corrupt the image\n");
-                corrupt_image(s, image, len, (const char *) bad_rows);
-            }
+            if (frame_size)
+                ecm_frame_size = atoi((const char *) frame_size);
+            else
+                ecm_frame_size = 64;
             /*endif*/
-            t4_tx_end(&t4_state);
             if (crc_error)
                 i = atoi((const char *) crc_error);
             else
                 i = -1;
             /*endif*/
-            faxtester_set_ecm_image_buffer(s, image, len, 64, i);
+            if (t4_tx_init(&t4_state, (const char *) value, -1, -1) == NULL)
+            {
+                span_log(&s->logging, SPAN_LOG_FLOW, "Failed to init T.4 send\n");
+                exit(2);
+            }
+            t4_tx_set_min_row_bits(&t4_state, min_row_bits);
+            t4_tx_set_header_info(&t4_state, NULL);
+            compression_type = T4_COMPRESSION_ITU_T4_1D;
+            if (compression)
+            {
+                if (strcasecmp((const char *) compression, "T.4 2D") == 0)
+                    compression_type = T4_COMPRESSION_ITU_T4_2D;
+                else if (strcasecmp((const char *) compression, "T.6") == 0)
+                    compression_type = T4_COMPRESSION_ITU_T6;
+            }
+            t4_tx_set_tx_encoding(&t4_state, compression_type);
+            if (t4_tx_start_page(&t4_state))
+            {
+                span_log(&s->logging, SPAN_LOG_FLOW, "Failed to start T.4 send\n");
+                exit(2);
+            }
+            /*endif*/
+            len = t4_tx_get_chunk(&t4_state, image, sizeof(image));
+            if (bad_rows)
+            {
+                span_log(&s->logging, SPAN_LOG_FLOW, "We need to corrupt the image\n");
+                corrupt_image(s, image, len, (const char *) bad_rows);
+            }
+            /*endif*/
+            t4_tx_end(&t4_state);
+            span_log(&s->logging, SPAN_LOG_FLOW, "ECM image is %d bytes\n", len);
+            faxtester_set_ecm_image_buffer(s, image, len, ecm_frame_size, i);
         }
         else
         {
@@ -1061,6 +1095,7 @@ static void exchange(faxtester_state_t *s)
 
     fax_init(&fax, FALSE);
     fax_prepare();
+    next_tx_file[0] = '\0';
 
     while (next_step(s) == 0)
         ;
@@ -1147,39 +1182,36 @@ static int get_test_set(faxtester_state_t *s, const char *test_file, const char 
     xmlDocPtr doc;
     xmlNsPtr ns;
     xmlNodePtr cur;
-#if 1
     xmlValidCtxt valid;
-#endif
 
     ns = NULL;    
     xmlKeepBlanksDefault(0);
     xmlCleanupParser();
     if ((doc = xmlParseFile(test_file)) == NULL)
     {
-        span_log(&s->logging, SPAN_LOG_FLOW, "No document\n");
+        fprintf(stderr, "No document\n");
         exit(2);
     }
     /*endif*/
     xmlXIncludeProcess(doc);
-#if 1
     if (!xmlValidateDocument(&valid, doc))
     {
-        span_log(&s->logging, SPAN_LOG_FLOW, "Invalid document\n");
+        fprintf(stderr, "Invalid document\n");
         exit(2);
     }
     /*endif*/
-#endif
+
     /* Check the document is of the right kind */
     if ((cur = xmlDocGetRootElement(doc)) == NULL)
     {
-        span_log(&s->logging, SPAN_LOG_FLOW, "Empty document\n");
+        fprintf(stderr, "Empty document\n");
         xmlFreeDoc(doc);
         exit(2);
     }
     /*endif*/
     if (xmlStrcmp(cur->name, (const xmlChar *) "fax-tests"))
     {
-        span_log(&s->logging, SPAN_LOG_FLOW, "Document of the wrong type, root node != fax-tests");
+        fprintf(stderr, "Document of the wrong type, root node != fax-tests");
         xmlFreeDoc(doc);
         exit(2);
     }

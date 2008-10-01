@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: dds.h,v 1.20 2008/09/04 14:40:05 steveu Exp $
+ * $Id: dds.h,v 1.21 2008/09/11 15:13:42 steveu Exp $
  */
 
 /*! \file */
@@ -98,7 +98,7 @@ int16_t dds_lookup(uint32_t phase);
     \param phase The phase offset.
     \return The signal amplitude, between -32767 and 32767.
 */
-int16_t dds_mod(uint32_t *phase_acc, int32_t phase_rate, int scale, int32_t phase);
+int16_t dds_mod(uint32_t *phase_acc, int32_t phase_rate, int16_t scale, int32_t phase);
 
 /*! \brief Lookup the complex integer value of a specified phase.
     \param phase The phase accumulator value to be looked up.
@@ -120,7 +120,7 @@ complexi_t dds_complexi(uint32_t *phase_acc, int32_t phase_rate);
     \param phase The phase offset.
     \return The complex signal amplitude, between (-32767, -32767) and (32767, 32767).
 */
-complexi_t dds_complexi_mod(uint32_t *phase_acc, int32_t phase_rate, int scale, int32_t phase);
+complexi_t dds_complexi_mod(uint32_t *phase_acc, int32_t phase_rate, int16_t scale, int32_t phase);
 
 /*! \brief Generate a complex 16 bit integer tone sample.
     \param phase_acc A pointer to a phase accumulator value.
@@ -143,7 +143,7 @@ complexi16_t dds_complexi16(uint32_t *phase_acc, int32_t phase_rate);
     \param phase The phase offset.
     \return The complex signal amplitude, between (-32767, -32767) and (32767, 32767).
 */
-complexi16_t dds_complexi16_mod(uint32_t *phase_acc, int32_t phase_rate, int scale, int32_t phase);
+complexi16_t dds_complexi16_mod(uint32_t *phase_acc, int32_t phase_rate, int16_t scale, int32_t phase);
 
 /*! \brief Generate a complex 32 bit integer tone sample, with modulation.
     \param phase_acc A pointer to a phase accumulator value.
@@ -152,7 +152,7 @@ complexi16_t dds_complexi16_mod(uint32_t *phase_acc, int32_t phase_rate, int sca
     \param phase The phase offset.
     \return The complex signal amplitude, between (-32767, -32767) and (32767, 32767).
 */
-complexi32_t dds_complexi32_mod(uint32_t *phase_acc, int32_t phase_rate, int scale, int32_t phase);
+complexi32_t dds_complexi32_mod(uint32_t *phase_acc, int32_t phase_rate, int16_t scale, int32_t phase);
 
 /*! \brief Generate a complex 32 bit integer tone sample.
     \param phase_acc A pointer to a phase accumulator value.
@@ -175,7 +175,7 @@ complexi32_t dds_complexi32(uint32_t *phase_acc, int32_t phase_rate);
     \param phase The phase offset.
     \return The complex signal amplitude, between (-32767, -32767) and (32767, 32767).
 */
-complexi32_t dds_complexi32_mod(uint32_t *phase_acc, int32_t phase_rate, int scale, int32_t phase);
+complexi32_t dds_complexi32_mod(uint32_t *phase_acc, int32_t phase_rate, int16_t scale, int32_t phase);
 
 /*! \brief Find the phase rate equivalent to a frequency, in Hz.
     \param frequency The frequency, in Hz.

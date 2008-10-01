@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tone_generate_tests.c,v 1.19 2008/08/16 15:24:16 steveu Exp $
+ * $Id: tone_generate_tests.c,v 1.20 2008/09/11 15:13:42 steveu Exp $
  */
 
 /*! \page tone_generate_tests_page Tone generation tests
@@ -60,7 +60,8 @@ int main(int argc, char *argv[])
         fprintf(stderr, "    Cannot open wave file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
     }
-    
+
+    /* Try a tone pair */
     make_tone_gen_descriptor(&tone_desc,
                              440,
                              -10,
@@ -85,15 +86,16 @@ int main(int argc, char *argv[])
                                   len);
     }
     
+    /* Try a different tone pair */
     make_tone_gen_descriptor(&tone_desc,
                              350,
                              -10,
                              440,
                              -15,
-                             100,
-                             200,
-                             300,
                              400,
+                             300,
+                             200,
+                             100,
                              TRUE);
     tone_gen_init(&tone_state, &tone_desc);
 
@@ -108,7 +110,8 @@ int main(int argc, char *argv[])
                                   amp,
                                   len);
     }
-    
+
+    /* Try a different tone pair */
     make_tone_gen_descriptor(&tone_desc,
                              400,
                              -10,
@@ -132,7 +135,108 @@ int main(int argc, char *argv[])
                                   amp,
                                   len);
     }
+
+    /* Try a single tone */
+    make_tone_gen_descriptor(&tone_desc,
+                             400,
+                             -10,
+                             0,
+                             0,
+                             100,
+                             200,
+                             300,
+                             400,
+                             TRUE);
+    tone_gen_init(&tone_state, &tone_desc);
+
+    for (i = 0;  i < 1000;  i++)
+    {
+        len = tone_gen(&tone_state, amp, 160);
+        printf("Generated %d samples\n", len);
+        if (len <= 0)
+            break;
+        outframes = afWriteFrames(outhandle,
+                                  AF_DEFAULT_TRACK,
+                                  amp,
+                                  len);
+    }
+
+    /* Try a single non-repeating tone */
+    make_tone_gen_descriptor(&tone_desc,
+                             820,
+                             -10,
+                             0,
+                             0,
+                             2000,
+                             0,
+                             0,
+                             0,
+                             FALSE);
+    tone_gen_init(&tone_state, &tone_desc);
+
+    for (i = 0;  i < 1000;  i++)
+    {
+        len = tone_gen(&tone_state, amp, 160);
+        printf("Generated %d samples\n", len);
+        if (len <= 0)
+            break;
+        outframes = afWriteFrames(outhandle,
+                                  AF_DEFAULT_TRACK,
+                                  amp,
+                                  len);
+    }
+
+    /* Try a single non-repeating tone at 0dBm0 */
+    make_tone_gen_descriptor(&tone_desc,
+                             820,
+                             0,
+                             0,
+                             0,
+                             2000,
+                             0,
+                             0,
+                             0,
+                             FALSE);
+    tone_gen_init(&tone_state, &tone_desc);
+
+    for (i = 0;  i < 1000;  i++)
+    {
+        len = tone_gen(&tone_state, amp, 160);
+        printf("Generated %d samples\n", len);
+        if (len <= 0)
+            break;
+        outframes = afWriteFrames(outhandle,
+                                  AF_DEFAULT_TRACK,
+                                  amp,
+                                  len);
+    }
+
+    /* Try an AM modulated tone at a modest modulation level (25%) */
+    make_tone_gen_descriptor(&tone_desc,
+                             425,
+                             -10,
+                             -50,
+                             25,
+                             100,
+                             200,
+                             300,
+                             400,
+                             TRUE);
+    tone_gen_init(&tone_state, &tone_desc);
+
+    for (i = 0;  i < 1000;  i++)
+    {
+        len = tone_gen(&tone_state, amp, 160);
+        printf("Generated %d samples\n", len);
+        if (len <= 0)
+            break;
+        outframes = afWriteFrames(outhandle,
+                                  AF_DEFAULT_TRACK,
+                                  amp,
+                                  len);
+    }
     
+    /* Try an AM modulated tone at maximum modulation level (100%) */
     make_tone_gen_descriptor(&tone_desc,
                              425,
                              -10,

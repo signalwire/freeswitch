@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tone_generate.h,v 1.33 2008/04/17 14:27:01 steveu Exp $
+ * $Id: tone_generate.h,v 1.34 2008/09/11 15:13:42 steveu Exp $
  */
 
 /*! \file */
@@ -48,7 +48,11 @@ conditions in which we will use it.
 typedef struct
 {
     int32_t phase_rate;
+#if defined(SPANDSP_USE_FIXED_POINT)
+    int16_t gain;
+#else
     float gain;
+#endif
 } tone_gen_tone_descriptor_t;
 
 /*!

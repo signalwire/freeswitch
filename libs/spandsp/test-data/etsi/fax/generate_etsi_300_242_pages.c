@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: generate_etsi_300_242_pages.c,v 1.1 2008/07/10 12:44:54 steveu Exp $
+ * $Id: generate_etsi_300_242_pages.c,v 1.2 2008/09/10 16:55:15 steveu Exp $
  */
 
 /*! \file */
@@ -61,7 +61,7 @@ struct
 } sequence[] =
 {
     {
-        "etsi_300_242_white.tif",
+        "etsi_300_242_a4_diago1.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_STANDARD,
         T4_WIDTH_R8_A4,
@@ -70,7 +70,7 @@ struct
         0
     },
     {
-        "etsi_300_242_stairstep.tif",
+        "etsi_300_242_a4_diago2.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_STANDARD,
         T4_WIDTH_R8_A4,
@@ -79,7 +79,7 @@ struct
         1
     },
     {
-        "etsi_300_242_diago1.tif",
+        "etsi_300_242_a4_duration1.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_STANDARD,
         T4_WIDTH_R8_A4,
@@ -88,7 +88,7 @@ struct
         2
     },
     {
-        "etsi_300_242_diago2.tif",
+        "etsi_300_242_a4_duration2.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_STANDARD,
         T4_WIDTH_R8_A4,
@@ -97,7 +97,7 @@ struct
         3
     },
     {
-        "etsi_300_242_impress.tif",
+        "etsi_300_242_a4_error.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_STANDARD,
         T4_WIDTH_R8_A4,
@@ -106,7 +106,7 @@ struct
         4
     },
     {
-        "etsi_300_242_duration1.tif",
+        "etsi_300_242_a4_impress.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_STANDARD,
         T4_WIDTH_R8_A4,
@@ -115,7 +115,7 @@ struct
         5
     },
     {
-        "etsi_300_242_duration2.tif",
+        "etsi_300_242_a4_stairstep.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_STANDARD,
         T4_WIDTH_R8_A4,
@@ -124,7 +124,43 @@ struct
         6
     },
     {
-        "etsi_300_242_error.tif",
+        "etsi_300_242_a4_white.tif",
+        T4_X_RESOLUTION_R8,
+        T4_Y_RESOLUTION_STANDARD,
+        T4_WIDTH_R8_A4,
+        1100,
+        COMPRESSION_CCITT_T4,
+        7
+    },
+    {
+        "etsi_300_242_a4_white_2p.tif",
+        T4_X_RESOLUTION_R8,
+        T4_Y_RESOLUTION_STANDARD,
+        T4_WIDTH_R8_A4,
+        1100,
+        COMPRESSION_CCITT_T4,
+        7
+    },
+    {   /* Second page of the above file */
+        "",
+        T4_X_RESOLUTION_R8,
+        T4_Y_RESOLUTION_STANDARD,
+        T4_WIDTH_R8_A4,
+        1100,
+        COMPRESSION_CCITT_T4,
+        7
+    },
+    {
+        "etsi_300_242_a4_impress_white.tif",
+        T4_X_RESOLUTION_R8,
+        T4_Y_RESOLUTION_STANDARD,
+        T4_WIDTH_R8_A4,
+        1100,
+        COMPRESSION_CCITT_T4,
+        5
+    },
+    {   /* Second page of the above file */
+        "",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_STANDARD,
         T4_WIDTH_R8_A4,
@@ -512,11 +548,16 @@ int main(int argc, char *argv[])
     int i;
     int image_length;
 
+    tiff_file = NULL;
     for (i = 0;  sequence[i].name;  i++)
     {
-        if ((tiff_file = TIFFOpen(sequence[i].name, "w")) == NULL)
-            exit(2);
-
+        if (sequence[i].name[0])
+        {
+            if (tiff_file)
+                TIFFClose(tiff_file);
+            if ((tiff_file = TIFFOpen(sequence[i].name, "w")) == NULL)
+                exit(2);
+        }
         /* Prepare the directory entry fully before writing the image, or libtiff complains */
         TIFFSetField(tiff_file, TIFFTAG_COMPRESSION, sequence[i].compression);
         if (sequence[i].compression == COMPRESSION_CCITT_T4)
@@ -565,36 +606,36 @@ int main(int argc, char *argv[])
         switch (sequence[i].type)
         {
         case 0:
-            /* A white A4 page */
-            image_length = create_white_page(tiff_file);
-            break;
-        case 1:
-            /* A stairstep of 64 pixel dashes */
-            image_length = create_stairstep_page(tiff_file);
-            break;
-        case 2:
             /* The DIAGO1 page */
             image_length = create_diago1_page(tiff_file);
             break;
-        case 3:
+        case 1:
             /* The DIAGO2 page */
             image_length = create_diago2_page(tiff_file);
             break;
-        case 4:
-            /* The IMPRESS page */
-            image_length = create_impress_page(tiff_file);
-            break;
-        case 5:
+        case 2:
             /* The DURATION1 page */
             image_length = create_duration1_page(tiff_file);
             break;
-        case 6:
+        case 3:
             /* The DURATION2 page */
             image_length = create_duration2_page(tiff_file);
             break;
-        case 7:
+        case 4:
             /* The ERROR page */
             image_length = create_error_page(tiff_file);
+            break;
+        case 5:
+            /* The IMPRESS page */
+            image_length = create_impress_page(tiff_file);
+            break;
+        case 6:
+            /* A stairstep of 64 pixel dashes */
+            image_length = create_stairstep_page(tiff_file);
+            break;
+        case 7:
+            /* A white A4 page */
+            image_length = create_white_page(tiff_file);
             break;
         }
         /* ....then the directory entry, and libtiff is happy. */
@@ -603,8 +644,9 @@ int main(int argc, char *argv[])
         TIFFSetField(tiff_file, TIFFTAG_CLEANFAXDATA, CLEANFAXDATA_CLEAN);
 
         TIFFWriteDirectory(tiff_file);
-        TIFFClose(tiff_file);
     }
+    if (tiff_file)
+        TIFFClose(tiff_file);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
