@@ -1298,7 +1298,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (bytes) {
 			rtp_session->missed_count = 0;
 
-			if ((rtp_session->recv_msg.header.pt == rtp_session->cng_pt || rtp_session->recv_msg.header.pt == 13)) {
+			if (rtp_session->recv_msg.header.pt && (rtp_session->recv_msg.header.pt == rtp_session->cng_pt || rtp_session->recv_msg.header.pt == 13)) {
 				if (++rtp_session->cng_count == 1) {
 					return_cng_frame();
 				} 
