@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.c,v 1.266 2008/09/11 15:13:42 steveu Exp $
+ * $Id: t30.c,v 1.267 2008/09/16 12:45:01 steveu Exp $
  */
 
 /*! \file */
@@ -682,7 +682,7 @@ static int send_next_ecm_frame(t30_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int send_rr(t30_state_t *s)
+static void send_rr(t30_state_t *s)
 {
     if (s->current_status != T30_ERR_TX_T5EXP)
         send_simple_frame(s, T30_RR);

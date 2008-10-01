@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: vector_int.c,v 1.12 2008/09/01 16:07:34 steveu Exp $
+ * $Id: vector_int.c,v 1.13 2008/09/16 15:21:52 steveu Exp $
  */
 
 /*! \file */
@@ -51,7 +51,7 @@ int32_t vec_dot_prodi16(const int16_t x[], const int16_t y[], int n)
 {
     int32_t z;
 
-#if defined(__GNUC__)  &&  defined(__i386__)
+#if defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)
     __asm__ __volatile__(
         " emms;\n"
         " pxor %%mm0,%%mm0;\n"
@@ -162,7 +162,7 @@ int32_t vec_dot_prodi16(const int16_t x[], const int16_t y[], int n)
 
 int32_t vec_min_maxi16(const int16_t x[], int n, int16_t out[])
 {
-#if defined(__GNUC__)  &&  defined(__i386__)
+#if defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)
     static const int32_t lower_bound = 0x80008000;
     static const int32_t upper_bound = 0x7FFF7FFF;
     int32_t max;

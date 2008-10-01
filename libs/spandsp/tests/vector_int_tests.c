@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: vector_int_tests.c,v 1.8 2008/05/13 13:17:27 steveu Exp $
+ * $Id: vector_int_tests.c,v 1.9 2008/09/16 15:21:52 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -44,8 +44,36 @@ static int32_t vec_dot_prodi16_dumb(const int16_t x[], const int16_t y[], int n)
 
     z = 0;
     for (i = 0;  i < n;  i++)
-        z += x[i]*y[i];
-    return  z;
+        z += (int32_t) x[i]*(int32_t) y[i];
+    return z;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int test_vec_dot_prodi16(void)
+{
+    int i;
+    int32_t za;
+    int32_t zb;
+    int16_t x[99];
+    int16_t y[99];
+
+    for (i = 0;  i < 99;  i++)
+    {
+        x[i] = rand();
+        y[i] = rand();
+    }
+
+    for (i = 1;  i < 99;  i++)
+    {
+        za = vec_dot_prodi16(x, y, i);
+        zb = vec_dot_prodi16_dumb(x, y, i);
+        if (za != zb)
+        {
+            printf("Tests failed\n");
+            exit(2);
+        }
+    }
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -79,7 +107,7 @@ static int32_t vec_min_maxi16_dumb(const int16_t x[], int n, int16_t out[])
 }
 /*- End of function --------------------------------------------------------*/
     
-int main(int argc, char *argv[])
+static int test_vec_min_maxi16(void)
 {
     int i;
     int32_t za;
@@ -95,14 +123,6 @@ int main(int argc, char *argv[])
         y[i] = rand();
     }
 
-    za = vec_dot_prodi16(x, y, 99);
-    zb = vec_dot_prodi16_dumb(x, y, 99);
-    if (za != zb)
-    {
-        printf("Tests failed\n");
-        exit(2);
-    }
-
     x[42] = -32768;
     za = vec_min_maxi16_dumb(x, 99, outa);
     zb = vec_min_maxi16(x, 99, outb);
@@ -115,6 +135,15 @@ int main(int argc, char *argv[])
         printf("Tests failed\n");
         exit(2);
     }
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+int main(int argc, char *argv[])
+{
+    test_vec_dot_prodi16();
+    test_vec_min_maxi16();
+
     printf("Tests passed.\n");
     return 0;
 }

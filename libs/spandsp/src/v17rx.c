@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17rx.c,v 1.116 2008/09/07 12:45:17 steveu Exp $
+ * $Id: v17rx.c,v 1.118 2008/09/16 14:12:23 steveu Exp $
  */
 
 /*! \file */
@@ -133,13 +133,6 @@ void v17_rx_signal_cutoff(v17_rx_state_t *s, float cutoff)
 }
 /*- End of function --------------------------------------------------------*/
 
-int v17_rx_equalizer_state(v17_rx_state_t *s, complexf_t **coeffs)
-{
-    *coeffs = s->eq_coeff;
-    return V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN;
-}
-/*- End of function --------------------------------------------------------*/
-
 static void report_status_change(v17_rx_state_t *s, int status)
 {
     if (s->status_handler)
@@ -149,37 +142,69 @@ static void report_status_change(v17_rx_state_t *s, int status)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_USE_FIXED_POINTx)
+int v17_rx_equalizer_state(v17_rx_state_t *s, complexi16_t **coeffs)
+#else
+int v17_rx_equalizer_state(v17_rx_state_t *s, complexf_t **coeffs)
+#endif
+{
+    *coeffs = s->eq_coeff;
+    return V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN;
+}
+/*- End of function --------------------------------------------------------*/
+
 static void equalizer_save(v17_rx_state_t *s)
 {
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    cvec_copyi16(s->eq_coeff_save, s->eq_coeff, V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN);
+#else
     cvec_copyf(s->eq_coeff_save, s->eq_coeff, V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN);
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
 static void equalizer_restore(v17_rx_state_t *s)
 {
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    cvec_copyi16(s->eq_coeff, s->eq_coeff_save, V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN);
+    cvec_zeroi16(s->eq_buf, V17_EQUALIZER_MASK);
+    s->eq_delta = 32768.0f*EQUALIZER_SLOW_ADAPT_RATIO*EQUALIZER_DELTA/(V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN);
+#else
     cvec_copyf(s->eq_coeff, s->eq_coeff_save, V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN);
     cvec_zerof(s->eq_buf, V17_EQUALIZER_MASK);
+    s->eq_delta = EQUALIZER_SLOW_ADAPT_RATIO*EQUALIZER_DELTA/(V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN);
+#endif
 
     s->eq_put_step = RX_PULSESHAPER_COEFF_SETS*10/(3*2) - 1;
     s->eq_step = 0;
-    s->eq_delta = EQUALIZER_SLOW_ADAPT_RATIO*EQUALIZER_DELTA/(V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN);
 }
 /*- End of function --------------------------------------------------------*/
 
 static void equalizer_reset(v17_rx_state_t *s)
 {
     /* Start with an equalizer based on everything being perfect */
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    cvec_zeroi16(s->eq_coeff, V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN);
+    s->eq_coeff[V17_EQUALIZER_PRE_LEN] = complex_seti16(3*FP_FACTOR, 0);
+    cvec_zeroi16(s->eq_buf, V17_EQUALIZER_MASK);
+    s->eq_delta = 32768.0f*EQUALIZER_DELTA/(V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN);
+#else
     cvec_zerof(s->eq_coeff, V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN);
     s->eq_coeff[V17_EQUALIZER_PRE_LEN] = complex_setf(3.0f, 0.0f);
     cvec_zerof(s->eq_buf, V17_EQUALIZER_MASK);
+    s->eq_delta = EQUALIZER_DELTA/(V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN);
+#endif
 
     s->eq_put_step = RX_PULSESHAPER_COEFF_SETS*10/(3*2) - 1;
     s->eq_step = 0;
-    s->eq_delta = EQUALIZER_DELTA/(V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN);
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_USE_FIXED_POINTx)
+static __inline__ complexi16_t equalizer_get(v17_rx_state_t *s)
+#else
 static __inline__ complexf_t equalizer_get(v17_rx_state_t *s)
+#endif
 {
     int i;
     int p;
@@ -199,7 +224,11 @@ static __inline__ complexf_t equalizer_get(v17_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_USE_FIXED_POINTx)
+static void tune_equalizer(v17_rx_state_t *s, const complexi16_t *z, const complexi16_t *target)
+#else
 static void tune_equalizer(v17_rx_state_t *s, const complexf_t *z, const complexf_t *target)
+#endif
 {
     int i;
     int p;
@@ -1080,7 +1109,11 @@ int v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
             process_half_baud(s, &zz);
 #endif
         }
-        dds_advancef(&(s->carrier_phase), s->carrier_phase_rate);
+#if defined(SPANDSP_USE_FIXED_POINT)
+        dds_advance(&s->carrier_phase, s->carrier_phase_rate);
+#else
+        dds_advancef(&s->carrier_phase, s->carrier_phase_rate);
+#endif
     }
     return 0;
 }

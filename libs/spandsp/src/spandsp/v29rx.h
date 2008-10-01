@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29rx.h,v 1.60 2008/09/13 14:10:31 steveu Exp $
+ * $Id: v29rx.h,v 1.62 2008/09/16 14:12:23 steveu Exp $
  */
 
 /*! \file */
@@ -168,10 +168,12 @@ typedef struct
     unsigned int scramble_reg;
     /*! \brief The register for the training scrambler. */
     uint8_t training_scramble_reg;
-    /*! \brief The section of the training data we are currently in. */
-    int training_stage;
     /*! \brief The current step in the table of CD constellation positions. */
     int training_cd;
+    /*! \brief TRUE if the previous trained values are to be reused. */
+    int old_train;
+    /*! \brief The section of the training data we are currently in. */
+    int training_stage;
     /*! \brief A count of how far through the current training step we are. */
     int training_count;
     /*! \brief A measure of how much mismatch there is between the real constellation,
@@ -187,8 +189,10 @@ typedef struct
     int low_samples;
     /*! \brief A highest magnitude sample seen. */
     int16_t high_sample;
-    /*! \brief TRUE if the previous trained values are to be reused. */
-    int old_train;
+
+    /*! \brief The position of the current symbol in the constellation, used for
+               differential decoding. */
+    int constellation_state;
 
     /*! \brief The current phase of the carrier (i.e. the DDS parameter). */
     uint32_t carrier_phase;
@@ -215,11 +219,7 @@ typedef struct
     /*! \brief The power meter level at which carrier off is declared. */
     int32_t carrier_off_power;
 
-    /*! \brief The position of the current symbol in the constellation, used for
-               differential decoding. */
-    int constellation_state;
-
-    /*! \brief Current offset into the equalizer buffer. */
+    /*! \brief Current read offset into the equalizer buffer. */
     int eq_step;
     /*! \brief Current write offset into the equalizer buffer. */
     int eq_put_step;
@@ -231,9 +231,9 @@ typedef struct
 
 #if defined(SPANDSP_USE_FIXED_POINT)
     /*! \brief The scaling factor accessed by the AGC algorithm. */
-    int32_t agc_scaling;
+    int16_t agc_scaling;
     /*! \brief The previous value of agc_scaling, needed to reuse old training. */
-    int32_t agc_scaling_save;
+    int16_t agc_scaling_save;
 
     /*! \brief The current delta factor for updating the equalizer coefficients. */
     int16_t eq_delta;

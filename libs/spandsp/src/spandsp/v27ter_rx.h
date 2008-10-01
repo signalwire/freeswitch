@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_rx.h,v 1.49 2008/09/13 14:59:31 steveu Exp $
+ * $Id: v27ter_rx.h,v 1.51 2008/09/16 14:12:23 steveu Exp $
  */
 
 /*! \file */
@@ -100,10 +100,12 @@ typedef struct
     /*! \brief A counter for the number of consecutive bits of repeating pattern through
                the scrambler. */
     int scrambler_pattern_count;
-    /*! \brief The section of the training data we are currently in. */
-    int training_stage;
     /*! \brief The current step in the table of BC constellation positions. */
     int training_bc;
+    /*! \brief TRUE if the previous trained values are to be reused. */
+    int old_train;
+    /*! \brief The section of the training data we are currently in. */
+    int training_stage;
     /*! \brief A count of how far through the current training step we are. */
     int training_count;
     /*! \brief A measure of how much mismatch there is between the real constellation,
@@ -119,8 +121,10 @@ typedef struct
     int low_samples;
     /*! \brief A highest magnitude sample seen. */
     int16_t high_sample;
-    /*! \brief TRUE if the previous trained values are to be reused. */
-    int old_train;
+
+    /*! \brief The position of the current symbol in the constellation, used for
+               differential decoding. */
+    int constellation_state;
 
     /*! \brief The current phase of the carrier (i.e. the DDS parameter). */
     uint32_t carrier_phase;
@@ -147,11 +151,7 @@ typedef struct
     /*! \brief The power meter level at which carrier off is declared. */
     int32_t carrier_off_power;
 
-    /*! \brief The position of the current symbol in the constellation, used for
-               differential decoding. */
-    int constellation_state;
-
-    /*! \brief Current offset into the equalizer buffer. */
+    /*! \brief Current read offset into the equalizer buffer. */
     int eq_step;
     /*! \brief Current write offset into the equalizer buffer. */
     int eq_put_step;
@@ -161,20 +161,20 @@ typedef struct
     /*! \brief The current half of the baud. */
     int baud_half;
 
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
     /*! \brief The scaling factor accessed by the AGC algorithm. */
-    float agc_scaling;
+    int16_t agc_scaling;
     /*! \brief The previous value of agc_scaling, needed to reuse old training. */
-    float agc_scaling_save;
+    int16_t agc_scaling_save;
 
     /*! \brief The current delta factor for updating the equalizer coefficients. */
     float eq_delta;
     /*! \brief The adaptive equalizer coefficients. */
-    complexi16_t eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
+    /*complexi16_t*/ complexf_t  eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
     /*! \brief A saved set of adaptive equalizer coefficients for use after restarts. */
-    complexi16_t eq_coeff_save[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
+    /*complexi16_t*/ complexf_t  eq_coeff_save[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
     /*! \brief The equalizer signal buffer. */
-    complexi16_t eq_buf[V27TER_EQUALIZER_MASK + 1];
+    /*complexi16_t*/ complexf_t eq_buf[V27TER_EQUALIZER_MASK + 1];
 #else
     /*! \brief The scaling factor accessed by the AGC algorithm. */
     float agc_scaling;

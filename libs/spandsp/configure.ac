@@ -16,7 +16,7 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# $Id: configure.ac,v 1.57 2008/09/12 14:41:55 steveu Exp $
+# $Id: configure.ac,v 1.59 2008/09/16 15:21:52 steveu Exp $
 
 # @start 1
 
@@ -121,6 +121,13 @@ AC_ARG_ENABLE(tests,        [  --enable-tests       Build the test programs])
 AC_ARG_ENABLE(test_data,    [  --enable-test-data   Build TIFF test files for some ITU test images])
 AC_ARG_ENABLE(mmx,          [  --enable-mmx         Enable MMX support])
 AC_ARG_ENABLE(sse,          [  --enable-sse         Enable SSE support])
+AC_ARG_ENABLE(sse2,         [  --enable-sse2        Enable SSE2 support])
+AC_ARG_ENABLE(sse3,         [  --enable-sse3        Enable SSE3 support])
+AC_ARG_ENABLE(sse3,         [  --enable-sse3        Enable SSE3 support])
+AC_ARG_ENABLE(sse4_1,       [  --enable-sse4-1      Enable SSE4.1 support])
+AC_ARG_ENABLE(sse4_2,       [  --enable-sse4-2      Enable SSE4.2 support])
+AC_ARG_ENABLE(sse4a,        [  --enable-sse4a       Enable SSE4A support])
+AC_ARG_ENABLE(sse5,         [  --enable-sse5        Enable SSE5 support])
 AC_ARG_ENABLE(fixed_point,  [  --enable-fixed-point Enable fixed point support])
 
 AC_FUNC_ERROR_AT_LINE
@@ -285,6 +292,24 @@ fi
 case "${ax_cv_c_compiler_vendor}" in
 gnu)
     COMP_VENDOR_CFLAGS="-std=gnu99 -ffast-math -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes"
+    if test "$enable_sse5" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-msse5 $COMP_VENDOR_CFLAGS"
+    fi
+    if test "$enable_sse4a" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-msse4a $COMP_VENDOR_CFLAGS"
+    fi
+    if test "$enable_sse4_2" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-msse42 $COMP_VENDOR_CFLAGS"
+    fi
+    if test "$enable_sse4_1" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-msse41 $COMP_VENDOR_CFLAGS"
+    fi
+    if test "$enable_sse3" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-msse3 $COMP_VENDOR_CFLAGS"
+    fi
+    if test "$enable_sse2" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-msse2 $COMP_VENDOR_CFLAGS"
+    fi
     if test "$enable_sse" = "yes" ; then
         COMP_VENDOR_CFLAGS="-msse $COMP_VENDOR_CFLAGS"
     fi
@@ -302,6 +327,12 @@ gnu)
     ;;
 sun)
     COMP_VENDOR_CFLAGS="-xc99=all -mt -xCC -errwarn=%all -xvpara"
+    if test "$enable_sse3" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-native -fast $COMP_VENDOR_CFLAGS"
+    fi
+    if test "$enable_sse2" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-native -fast $COMP_VENDOR_CFLAGS"
+    fi
     if test "$enable_sse" = "yes" ; then
         COMP_VENDOR_CFLAGS="-native -fast $COMP_VENDOR_CFLAGS"
     fi
@@ -323,6 +354,12 @@ AM_CONDITIONAL([COND_TESTS], [test "$enable_tests" = yes])
 AM_CONDITIONAL([COND_TESTDATA], [test "$enable_test_data" = yes])
 AM_CONDITIONAL([COND_MMX], [test "$enable_mmx" = yes])
 AM_CONDITIONAL([COND_SSE], [test "$enable_sse" = yes])
+AM_CONDITIONAL([COND_SSE2], [test "$enable_sse2" = yes])
+AM_CONDITIONAL([COND_SSE3], [test "$enable_sse3" = yes])
+AM_CONDITIONAL([COND_SSE4_1], [test "$enable_sse4_1" = yes])
+AM_CONDITIONAL([COND_SSE4_2], [test "$enable_sse4_2" = yes])
+AM_CONDITIONAL([COND_SSE4A], [test "$enable_sse4a" = yes])
+AM_CONDITIONAL([COND_SSE5], [test "$enable_sse5" = yes])
 if test "$enable_fixed_point" = "yes" ; then
     AC_DEFINE([SPANDSP_USE_FIXED_POINT], [1], [Enable fixed point processing, where possible, instead of floating point])
     SPANDSP_USE_FIXED_POINT="#define SPANDSP_USE_FIXED_POINT 1"
@@ -336,6 +373,58 @@ AX_MISALIGNED_ACCESS_FAILS([$host],
     [AC_DEFINE([SPANDSP_MISALIGNED_ACCESS_FAILS], [1], [Do not expect a misaligned memory access to work correctly])
     SPANDSP_MISALIGNED_ACCESS_FAILS="#define SPANDSP_MISALIGNED_ACCESS_FAILS 1"],
     [SPANDSP_MISALIGNED_ACCESS_FAILS="#undef SPANDSP_MISALIGNED_ACCESS_FAILS"])
+if test "$enable_mmx" = "yes" ; then
+    AC_DEFINE([SPANDSP_USE_MMX], [1], [Use the MMX instruction set (i386 and x86_64 only).])
+fi
+if test "$enable_sse" = "yes" ; then
+    AC_DEFINE([SPANDSP_USE_MMX], [1], [Use the MMX instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE], [1], [Use the SSE instruction set (i386 and x86_64 only).])
+fi
+if test "$enable_sse2" = "yes" ; then
+    AC_DEFINE([SPANDSP_USE_MMX], [1], [Use the MMX instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE], [1], [Use the SSE instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE2], [1], [Use the SSE2 instruction set (i386 and x86_64 only).])
+fi
+if test "$enable_sse3" = "yes" ; then
+    AC_DEFINE([SPANDSP_USE_MMX], [1], [Use the MMX instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE], [1], [Use the SSE instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE2], [1], [Use the SSE2 instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE3], [1], [Use the SSE3 instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE4_1], [1], [Use the SSE4.1 instruction set (i386 and x86_64 only).])
+fi
+if test "$enable_sse4_1" = "yes" ; then
+    AC_DEFINE([SPANDSP_USE_MMX], [1], [Use the MMX instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE], [1], [Use the SSE instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE2], [1], [Use the SSE2 instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE3], [1], [Use the SSE3 instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE4_1], [1], [Use the SSE4.1 instruction set (i386 and x86_64 only).])
+fi
+if test "$enable_sse4_2" = "yes" ; then
+    AC_DEFINE([SPANDSP_USE_MMX], [1], [Use the MMX instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE], [1], [Use the SSE instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE2], [1], [Use the SSE2 instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE3], [1], [Use the SSE3 instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE4_1], [1], [Use the SSE4.1 instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE4_2], [1], [Use the SSE4.2 instruction set (i386 and x86_64 only).])
+fi
+if test "$enable_sse4a" = "yes" ; then
+    AC_DEFINE([SPANDSP_USE_MMX], [1], [Use the MMX instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE], [1], [Use the SSE instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE2], [1], [Use the SSE2 instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE3], [1], [Use the SSE3 instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE4_1], [1], [Use the SSE4.1 instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE4_2], [1], [Use the SSE4.2 instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE4A], [1], [Use the SSE4A instruction set (i386 and x86_64 only).])
+fi
+if test "$enable_sse5" = "yes" ; then
+    AC_DEFINE([SPANDSP_USE_MMX], [1], [Use the MMX instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE], [1], [Use the SSE instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE2], [1], [Use the SSE2 instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE3], [1], [Use the SSE3 instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE4_1], [1], [Use the SSE4.1 instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE4_2], [1], [Use the SSE4.2 instruction set (i386 and x86_64 only).])
+    AC_DEFINE([SPANDSP_USE_SSE5], [1], [Use the SSE5 instruction set (i386 and x86_64 only).])
+fi
 
 AC_SUBST(CC_FOR_BUILD)
 AC_SUBST(CPPFLAGS_FOR_BUILD)

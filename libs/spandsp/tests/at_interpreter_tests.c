@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: at_interpreter_tests.c,v 1.18 2008/08/17 16:25:52 steveu Exp $
+ * $Id: at_interpreter_tests.c,v 1.19 2008/09/16 12:45:25 steveu Exp $
  */
 
 /*! \file */
@@ -350,7 +350,7 @@ static const struct command_response_s general_test_seq[] =
     {"AT+VTX\r", "\r\nOK\r\n"},                                     /* V.253 10.1.6 - Transmit data state */
     {"AT+WS46\r", "\r\nOK\r\n"},                                    /* 3GPP TS 27.007 5.9 - PCCA STD-101 [17] select wireless network */
     {"ATA\r", "\r\nERROR\r\n"},                                     /* V.250 6.3.5 - Answer */ 
-    {"ATDT -1234567890ABCDPSTW*#+,!@\r", ""},                       /* V.250 6.3.1 - Dial */ 
+    {"ATDT -1234567890ABCDPSTW*#+,!@\r;", ""},                      /* V.250 6.3.1 - Dial */ 
     {"ATE1\r", "\r\nOK\r\n"},                                       /* V.250 6.2.4 - Command echo */ 
     {"ATE0\r", "ATE0\r\r\nOK\r\n"},                                 /* V.250 6.2.4 - Command echo */ 
     {"ATH\r", "\r\nOK\r\n"},                                        /* V.250 6.3.6 - Hook control */ 

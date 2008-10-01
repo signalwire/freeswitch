@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: vector_float.c,v 1.11 2008/07/02 14:48:26 steveu Exp $
+ * $Id: vector_float.c,v 1.12 2008/09/16 15:21:52 steveu Exp $
  */
 
 /*! \file */
@@ -43,6 +43,32 @@
 #include <math.h>
 #endif
 #include <assert.h>
+
+#if defined(SPANDSP_USE_MMX)
+#include <mmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE)
+#include <xmmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE2)
+#include <emmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE3)
+#include <pmmintrin.h>
+#include <tmmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE4_1)
+#include <smmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE4_2)
+#include <nmmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE4A)
+#include <ammintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE5)
+#include <bmmintrin.h>
+#endif
 
 #include "spandsp/telephony.h"
 #include "spandsp/vector_float.h"
@@ -100,7 +126,7 @@ void vec_zerol(long double z[], int n)
     int i;
     
     for (i = 0;  i < n;  i++)
-        z[i] = 0.0;
+        z[i] = 0.0L;
 }
 /*- End of function --------------------------------------------------------*/
 #endif
@@ -306,6 +332,41 @@ void vec_mull(long double z[], const long double x[], const long double y[], int
 /*- End of function --------------------------------------------------------*/
 #endif
 
+#if defined(__GNUC__)  &&  defined(SPANDSP_USE_SSE2)
+float vec_dot_prodf(const float x[], const float y[], int n)
+{
+    int i;
+    float z;
+    __m128 num1, num2, num3, num4;
+ 
+    z = 0.0f;
+    if ((i = n & ~3))
+    {    
+        num4 = _mm_setzero_ps();  //sets sum to zero
+        for (i -= 4;  i >= 0;  i -= 4)
+        {
+            num1 = _mm_loadu_ps(x + i);
+            num2 = _mm_loadu_ps(y + i);
+            num3 = _mm_mul_ps(num1, num2);
+            num4 = _mm_add_ps(num4, num3);
+        }
+        num4 = _mm_add_ps(_mm_movehl_ps(num4, num4), num4);
+        num4 = _mm_add_ss(_mm_shuffle_ps(num4, num4, 1), num4);
+        _mm_store_ss(&z, num4);
+    }
+    /* Now deal with the last 1 to 3 elements, which don't fill in an SSE2 register */
+    switch (n & 3)
+    {
+    case 3:
+        z += x[n - 3]*y[n - 3];
+    case 2:
+        z += x[n - 2]*y[n - 2];
+    case 1:
+        z += x[n - 1]*y[n - 1];
+    }
+    return z;
+}
+#else
 float vec_dot_prodf(const float x[], const float y[], int n)
 {
     int i;
@@ -317,6 +378,7 @@ float vec_dot_prodf(const float x[], const float y[], int n)
     return z;
 }
 /*- End of function --------------------------------------------------------*/
+#endif
 
 double vec_dot_prod(const double x[], const double y[], int n)
 {
@@ -336,7 +398,7 @@ long double vec_dot_prodl(const long double x[], const long double y[], int n)
     int i;
     long double z;
 
-    z = 0.0;
+    z = 0.0L;
     for (i = 0;  i < n;  i++)
         z += x[i]*y[i];
     return z;

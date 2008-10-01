@@ -257,6 +257,30 @@
 /* Enable fixed point processing, where possible, instead of floating point */
 #undef SPANDSP_USE_FIXED_POINT
 
+/* Use the MMX instruction set (i386 and x86_64 only). */
+#undef SPANDSP_USE_MMX
+
+/* Use the SSE instruction set (i386 and x86_64 only). */
+#undef SPANDSP_USE_SSE
+
+/* Use the SSE2 instruction set (i386 and x86_64 only). */
+#undef SPANDSP_USE_SSE2
+
+/* Use the SSE3 instruction set (i386 and x86_64 only). */
+#undef SPANDSP_USE_SSE3
+
+/* Use the SSE4A instruction set (i386 and x86_64 only). */
+#undef SPANDSP_USE_SSE4A
+
+/* Use the SSE4.1 instruction set (i386 and x86_64 only). */
+#undef SPANDSP_USE_SSE4_1
+
+/* Use the SSE4.2 instruction set (i386 and x86_64 only). */
+#undef SPANDSP_USE_SSE4_2
+
+/* Use the SSE5 instruction set (i386 and x86_64 only). */
+#undef SPANDSP_USE_SSE5
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 

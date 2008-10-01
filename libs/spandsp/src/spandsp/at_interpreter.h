@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: at_interpreter.h,v 1.18 2008/06/11 17:52:30 steveu Exp $
+ * $Id: at_interpreter.h,v 1.19 2008/09/16 12:45:50 steveu Exp $
  */
 
 /*! \file */
@@ -204,6 +204,7 @@ struct at_state_s
     int rings_indicated;
     int do_hangup;
     int silent_dial;
+    int command_dial;
     int ok_is_pending;
     int dte_is_waiting;
     /*! \brief TRUE if a carrier is presnt. Otherwise FALSE. */

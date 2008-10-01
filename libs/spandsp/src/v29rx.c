@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29rx.c,v 1.138 2008/09/13 15:48:04 steveu Exp $
+ * $Id: v29rx.c,v 1.140 2008/09/16 14:12:23 steveu Exp $
  */
 
 /*! \file */
@@ -65,19 +65,19 @@
 #include "v29rx_floating_rrc.h"
 #endif
 
-#define CARRIER_NOMINAL_FREQ        1700.0f
-#define BAUD_RATE                   2400
-#define EQUALIZER_DELTA             0.21f
+#define CARRIER_NOMINAL_FREQ            1700.0f
+#define BAUD_RATE                       2400
+#define EQUALIZER_DELTA                 0.21f
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-#define FP_FACTOR                   4096
-#define FP_SHIFT_FACTOR             12
+#define FP_FACTOR                       4096
+#define FP_SHIFT_FACTOR                 12
 #endif
 
 /* Segments of the training sequence */
-#define V29_TRAINING_SEG_2_LEN      128
-#define V29_TRAINING_SEG_3_LEN      384
-#define V29_TRAINING_SEG_4_LEN      48
+#define V29_TRAINING_SEG_2_LEN          128
+#define V29_TRAINING_SEG_3_LEN          384
+#define V29_TRAINING_SEG_4_LEN          48
 
 enum
 {
@@ -146,6 +146,12 @@ float v29_rx_symbol_timing_correction(v29_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+float v29_rx_signal_power(v29_rx_state_t *s)
+{
+    return power_meter_current_dbm0(&s->power);
+}
+/*- End of function --------------------------------------------------------*/
+
 void v29_rx_signal_cutoff(v29_rx_state_t *s, float cutoff)
 {
     /* The 0.4 factor allows for the gain of the DC blocker */
@@ -154,9 +160,12 @@ void v29_rx_signal_cutoff(v29_rx_state_t *s, float cutoff)
 }
 /*- End of function --------------------------------------------------------*/
 
-float v29_rx_signal_power(v29_rx_state_t *s)
+static void report_status_change(v29_rx_state_t *s, int status)
 {
-    return power_meter_current_dbm0(&s->power);
+    if (s->status_handler)
+        s->status_handler(s->status_user_data, status);
+    else if (s->put_bit)
+        s->put_bit(s->put_bit_user_data, status);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -168,15 +177,6 @@ int v29_rx_equalizer_state(v29_rx_state_t *s, complexf_t **coeffs)
 {
     *coeffs = s->eq_coeff;
     return V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN;
-}
-/*- End of function --------------------------------------------------------*/
-
-static void report_status_change(v29_rx_state_t *s, int status)
-{
-    if (s->status_handler)
-        s->status_handler(s->status_user_data, status);
-    else if (s->put_bit)
-        s->put_bit(s->put_bit_user_data, status);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -519,7 +519,7 @@ static __inline__ void symbol_sync(v29_rx_state_t *s)
     v = (((s->symbol_sync_low[1] >> 5)*(s->symbol_sync_high[1] >> 4)) >> 15)*SYNC_CROSS_CORR_COEFF_A
       + (((s->symbol_sync_low[0] >> 5)*(s->symbol_sync_high[1] >> 4)) >> 15)*SYNC_CROSS_CORR_COEFF_B
       + (((s->symbol_sync_low[1] >> 5)*(s->symbol_sync_high[0] >> 4)) >> 15)*SYNC_CROSS_CORR_COEFF_C;
-    /* Filter away any DC component  */
+    /* Filter away any DC component */
     p = v - s->symbol_sync_dc_filter[1];
     s->symbol_sync_dc_filter[1] = s->symbol_sync_dc_filter[0];
     s->symbol_sync_dc_filter[0] = v;
@@ -541,7 +541,7 @@ static __inline__ void symbol_sync(v29_rx_state_t *s)
     v = s->symbol_sync_low[1]*s->symbol_sync_high[1]*SYNC_CROSS_CORR_COEFF_A
       + s->symbol_sync_low[0]*s->symbol_sync_high[1]*SYNC_CROSS_CORR_COEFF_B
       + s->symbol_sync_low[1]*s->symbol_sync_high[0]*SYNC_CROSS_CORR_COEFF_C;
-    /* Filter away any DC component  */
+    /* Filter away any DC component */
     p = v - s->symbol_sync_dc_filter[1];
     s->symbol_sync_dc_filter[1] = s->symbol_sync_dc_filter[0];
     s->symbol_sync_dc_filter[0] = v;
@@ -1026,7 +1026,11 @@ int v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
 #endif
             process_half_baud(s, &zz);
         }
-        dds_advancef(&(s->carrier_phase), s->carrier_phase_rate);
+#if defined(SPANDSP_USE_FIXED_POINT)
+        dds_advance(&s->carrier_phase, s->carrier_phase_rate);
+#else
+        dds_advancef(&s->carrier_phase, s->carrier_phase_rate);
+#endif
     }
     return 0;
 }
