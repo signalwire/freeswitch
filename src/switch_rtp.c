@@ -197,6 +197,7 @@ struct switch_rtp {
 	char *stun_ip;
 	switch_port_t stun_port;
 	int from_auto;
+	uint32_t cng_count;
 };
 
 static int global_init = 0;
@@ -1232,6 +1233,8 @@ static void do_2833(switch_rtp_t *rtp_session)
 	}
 }
 
+#define return_cng_frame() do_cng = 1; goto timer_check
+
 static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_type, switch_frame_flag_t *flags, switch_io_flag_t io_flags)
 {
 	switch_size_t bytes = 0;
@@ -1240,7 +1243,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	stfu_frame_t *jb_frame;
 	int ret = -1;
 	int sleep_mss = 1000;
-	
+
 	if (!switch_rtp_ready(rtp_session)) {
 		return -1;
 	}
@@ -1294,14 +1297,22 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (bytes) {
 			rtp_session->missed_count = 0;
+
+			if ((rtp_session->recv_msg.header.pt == rtp_session->cng_pt || rtp_session->recv_msg.header.pt == 13)) {
+				if (++rtp_session->cng_count == 1) {
+					return_cng_frame();
+				} 
+				continue;
+			} else {
+				rtp_session->cng_count = 0;
+			}
 		}
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
 			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
 			do_2833(rtp_session);
 			bytes = 0;
-			do_cng = 1;
-			goto cng;
+			return_cng_frame();
 		}
 
 		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
@@ -1312,8 +1323,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 		if (!bytes && (io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
-			do_cng = 1;
-			goto cng;
+			return_cng_frame();
 		}
 
 
@@ -1363,8 +1373,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			goto end;
 		}
 
-
-
 		if (rtp_session->jb && ((bytes && rtp_session->recv_msg.header.pt == rtp_session->payload) || check)) {
 			if (bytes) {
 				if (rtp_session->recv_msg.header.m) {
@@ -1384,7 +1392,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				rtp_session->recv_msg.header.ts = htonl(jb_frame->ts);
 				rtp_session->recv_msg.header.pt = rtp_session->payload;
 			} else {
-				goto cng;
+				goto timer_check;
 			}
 		}
 
@@ -1484,14 +1492,15 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			do_cng = 1;
 		}
 
-	  cng:
+	  timer_check:
+
 		if (do_cng) {
-			memset(&rtp_session->recv_msg.body, 0, 2);
-			rtp_session->recv_msg.body[0] = 127;
-			rtp_session->recv_msg.header.pt = SWITCH_RTP_CNG_PAYLOAD;
+			uint8_t *data = (uint8_t *) rtp_session->recv_msg.body;
+			memset(data, 0, 2);
+			data[0] = 65;
+			rtp_session->recv_msg.header.pt = (uint32_t) rtp_session->cng_pt ? rtp_session->cng_pt : SWITCH_RTP_CNG_PAYLOAD;
 			*flags |= SFF_CNG;
-			/* Return a CNG frame */
-			*payload_type = SWITCH_RTP_CNG_PAYLOAD;
+			*payload_type = (switch_payload_t) rtp_session->recv_msg.header.pt;
 			ret = 2 + rtp_header_len;
 			goto end;
 		}
@@ -1512,21 +1521,14 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				bytes = jb_frame->dlen + rtp_header_len;
 				rtp_session->recv_msg.header.ts = htonl(jb_frame->ts);
 			} else if (!bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {	/* We're late! We're Late! */
-				uint8_t *data = (uint8_t *) rtp_session->recv_msg.body;
-
+				
+				
 				if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK) && status == SWITCH_STATUS_BREAK) {
 					switch_yield(1000);
 					continue;
 				}
-
-				memset(data, 0, 2);
-				data[0] = 65;
-
-				rtp_session->recv_msg.header.pt = (uint32_t) rtp_session->cng_pt ? rtp_session->cng_pt : SWITCH_RTP_CNG_PAYLOAD;
-				*flags |= SFF_CNG;
-				*payload_type = (switch_payload_t) rtp_session->recv_msg.header.pt;
-				ret = 2 + rtp_header_len;
-				goto end;
+				
+				return_cng_frame();
 			}
 		}
 
@@ -1536,10 +1538,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 			ret = 0;
 			goto end;
-		}
-
-		if (bytes && rtp_session->cng_pt && rtp_session->recv_msg.header.pt == rtp_session->cng_pt) {
-			goto do_continue;
 		}
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_GOOGLEHACK) && rtp_session->recv_msg.header.pt == 102) {
@@ -1552,11 +1550,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 	  do_continue:
 		
-		if (sleep_mss) {
-			switch_yield(sleep_mss);
-		} else {
-			switch_yield(1000);
-		}
+		switch_yield(sleep_mss);
+
 	}
 
 	if (switch_rtp_ready(rtp_session)) {
