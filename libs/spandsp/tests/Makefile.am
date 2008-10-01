@@ -16,7 +16,7 @@
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.106 2008/09/09 14:05:55 steveu Exp $
+## $Id: Makefile.am,v 1.107 2008/09/18 12:05:35 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -41,6 +41,9 @@ noinst_PROGRAMS =   adsi_tests \
                     bell_mf_tx_tests \
                     bert_tests \
                     bit_operations_tests \
+                    complex_tests \
+                    complex_vector_float_tests \
+                    complex_vector_int_tests \
                     crc_tests \
                     dc_restore_tests \
                     dds_tests \
@@ -131,6 +134,15 @@ bert_tests_LDADD = $(LIBDIR) -lspandsp
 
 bit_operations_tests_SOURCES = bit_operations_tests.c
 bit_operations_tests_LDADD = $(LIBDIR) -lspandsp
+
+complex_tests_SOURCES = complex_tests.c
+complex_tests_LDADD = $(LIBDIR) -lspandsp
+
+complex_vector_float_tests_SOURCES = complex_vector_float_tests.c
+complex_vector_float_tests_LDADD = $(LIBDIR) -lspandsp
+
+complex_vector_int_tests_SOURCES = complex_vector_int_tests.c
+complex_vector_int_tests_LDADD = $(LIBDIR) -lspandsp
 
 crc_tests_SOURCES = crc_tests.c
 crc_tests_LDADD = $(LIBDIR) -lspandsp

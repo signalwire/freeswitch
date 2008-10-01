@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: vector_int.h,v 1.11 2008/09/01 16:07:34 steveu Exp $
+ * $Id: vector_int.h,v 1.13 2008/09/18 13:54:32 steveu Exp $
  */
 
 #if !defined(_SPANDSP_VECTOR_INT_H_)
@@ -102,6 +102,19 @@ static __inline__ void vec_seti32(int32_t z[], int32_t x, int n)
     \param n The number of elements in the vectors.
     \return The dot product of the two vectors. */
 int32_t vec_dot_prodi16(const int16_t x[], const int16_t y[], int n);
+
+/*! \brief Find the dot product of two int16_t vectors, where the first is a circular buffer
+           with an offset for the starting position.
+    \param x The first vector.
+    \param y The first vector.
+    \param n The number of elements in the vectors.
+    \param pos The starting position in the x vector.
+    \return The dot product of the two vectors. */
+int32_t vec_circular_dot_prodi16(const int16_t x[], const int16_t y[], int n, int pos);
+
+void vec_lmsi16(const int16_t x[], int16_t y[], int n, int16_t error);
+
+void vec_circular_lmsi16(const int16_t x[], int16_t y[], int n, int pos, int16_t error);
 
 /*! \brief Find the minimum and maximum values in an int16_t vector.
     \param x The vector to be searched.

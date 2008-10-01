@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: plc.c,v 1.22 2008/07/02 14:48:25 steveu Exp $
+ * $Id: plc.c,v 1.23 2008/09/19 14:02:05 steveu Exp $
  */
 
 /*! \file */
@@ -45,7 +45,7 @@
 #include <limits.h>
 
 #include "spandsp/telephony.h"
-#include "spandsp/dc_restore.h"
+#include "spandsp/saturated.h"
 #include "spandsp/plc.h"
 
 /* We do a straight line fade to zero volume in 50ms when we are filling in for missing data. */

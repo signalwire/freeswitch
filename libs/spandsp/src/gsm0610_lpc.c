@@ -25,7 +25,7 @@
  * This code is based on the widely used GSM 06.10 code available from
  * http://kbs.cs.tu-berlin.de/~jutta/toast.html
  *
- * $Id: gsm0610_lpc.c,v 1.21 2008/09/04 14:40:05 steveu Exp $
+ * $Id: gsm0610_lpc.c,v 1.22 2008/09/19 14:02:05 steveu Exp $
  */
 
 /*! \file */
@@ -49,7 +49,7 @@
 #include "spandsp/telephony.h"
 #include "spandsp/bitstream.h"
 #include "spandsp/bit_operations.h"
-#include "spandsp/dc_restore.h"
+#include "spandsp/saturated.h"
 #include "spandsp/vector_int.h"
 #include "spandsp/gsm0610.h"
 
@@ -230,7 +230,7 @@ static void autocorrelation(int16_t amp[GSM0610_FRAME_LEN], int32_t L_ACF[9])
 #else
     for (smax = 0, k = 0;  k < GSM0610_FRAME_LEN;  k++)
     {
-        temp = gsm_abs(amp[k]);
+        temp = saturated_abs16(amp[k]);
         if (temp > smax)
             smax = (int16_t) temp;
         /*endif*/
@@ -398,7 +398,7 @@ static void reflection_coefficients(int32_t L_ACF[9], int16_t r[8])
     for (n = 1;  n <= 8;  n++, r++)
     {
         temp = P[1];
-        temp = gsm_abs (temp);
+        temp = saturated_abs16(temp);
         if (P[0] < temp)
         {
             for (i = n;  i <= 8;  i++)
@@ -421,15 +421,15 @@ static void reflection_coefficients(int32_t L_ACF[9], int16_t r[8])
 
         /* Schur recursion */
         temp = gsm_mult_r(P[1], *r);
-        P[0] = gsm_add(P[0], temp);
+        P[0] = saturated_add16(P[0], temp);
 
         for (m = 1;  m <= 8 - n;  m++)
         {
             temp = gsm_mult_r(K[m], *r);
-            P[m] = gsm_add(P[m + 1], temp);
+            P[m] = saturated_add16(P[m + 1], temp);
 
             temp = gsm_mult_r(P[m + 1], *r);
-            K[m] = gsm_add(K[m], temp);
+            K[m] = saturated_add16(K[m], temp);
         }
         /*endfor*/
     }
@@ -453,8 +453,7 @@ static void transform_to_log_area_ratios(int16_t r[8])
     /* Computation of the LAR[0..7] from the r[0..7] */
     for (i = 1;  i <= 8;  i++, r++)
     {
-        temp = *r;
-        temp = gsm_abs(temp);
+        temp = saturated_abs16(*r);
         assert(temp >= 0);
 
         if (temp < 22118)
@@ -496,9 +495,9 @@ static void quantization_and_coding(int16_t LAR[8])
 
 #undef STEP
 #define STEP(A,B,MAC,MIC)                                       \
-        temp = gsm_mult(A, *LAR);                               \
-        temp = gsm_add(temp, B);                                \
-        temp = gsm_add(temp, 256);                              \
+        temp = saturated_mul16(A, *LAR);                        \
+        temp = saturated_add16(temp, B);                        \
+        temp = saturated_add16(temp, 256);                      \
         temp >>= 9;                                             \
         *LAR  = (int16_t) ((temp > MAC)                         \
                          ?                                      \

@@ -133,6 +133,10 @@ SOURCE=.\complex_vector_float.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\complex_vector_int.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\crc.c
 # End Source File
 # Begin Source File
@@ -165,11 +169,7 @@ SOURCE=.\g711.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\g722_encode.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\g722_decode.c
+SOURCE=.\g722.c
 # End Source File
 # Begin Source File
 

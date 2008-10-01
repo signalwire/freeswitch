@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17rx.h,v 1.54 2008/09/16 13:02:05 steveu Exp $
+ * $Id: v17rx.h,v 1.57 2008/09/18 14:59:30 steveu Exp $
  */
 
 /*! \file */
@@ -213,9 +213,8 @@ TCM absolutely transformed the phone line modem business.
 
 /* Target length for the equalizer is about 63 taps, to deal with the worst stuff
    in V.56bis. */
-#define V17_EQUALIZER_PRE_LEN       7  /* this much before the real event */
-#define V17_EQUALIZER_POST_LEN      7  /* this much after the real event */
-#define V17_EQUALIZER_MASK          63 /* one less than a power of 2 >= (V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN) */
+#define V17_EQUALIZER_PRE_LEN       8  /* This much before the real event */
+#define V17_EQUALIZER_POST_LEN      8  /* This much after the real event (must be even) */
 
 #define V17_RX_FILTER_STEPS         27
 
@@ -253,9 +252,9 @@ typedef struct
 
     /*! \brief The route raised cosine (RRC) pulse shaping filter buffer. */
 #if defined(SPANDSP_USE_FIXED_POINT)
-    int16_t rrc_filter[2*V17_RX_FILTER_STEPS];
+    int16_t rrc_filter[V17_RX_FILTER_STEPS];
 #else
-    float rrc_filter[2*V17_RX_FILTER_STEPS];
+    float rrc_filter[V17_RX_FILTER_STEPS];
 #endif
     /*! \brief Current offset into the RRC pulse shaping filter buffer. */
     int rrc_filter_step;
@@ -332,7 +331,7 @@ typedef struct
     /*! \brief A saved set of adaptive equalizer coefficients for use after restarts. */
     complexi16_t eq_coeff_save[V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN];
     /*! \brief The equalizer signal buffer. */
-    complexi16_t eq_buf[V17_EQUALIZER_MASK + 1];
+    complexi16_t eq_buf[V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN];
 
     /*! Low band edge filter for symbol sync. */
     int32_t symbol_sync_low[2];
@@ -355,7 +354,7 @@ typedef struct
     /*! \brief A saved set of adaptive equalizer coefficients for use after restarts. */
     complexf_t eq_coeff_save[V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN];
     /*! \brief The equalizer signal buffer. */
-    complexf_t eq_buf[V17_EQUALIZER_MASK + 1];
+    complexf_t eq_buf[V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN];
 
     /*! Low band edge filter for symbol sync. */
     float symbol_sync_low[2];

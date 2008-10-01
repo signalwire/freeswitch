@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: vector_float.c,v 1.12 2008/09/16 15:21:52 steveu Exp $
+ * $Id: vector_float.c,v 1.14 2008/09/18 13:54:32 steveu Exp $
  */
 
 /*! \file */
@@ -337,22 +337,25 @@ float vec_dot_prodf(const float x[], const float y[], int n)
 {
     int i;
     float z;
-    __m128 num1, num2, num3, num4;
+    __m128 n1;
+    __m128 n2;
+    __m128 n3;
+    __m128 n4;
  
     z = 0.0f;
     if ((i = n & ~3))
     {    
-        num4 = _mm_setzero_ps();  //sets sum to zero
+        n4 = _mm_setzero_ps();  //sets sum to zero
         for (i -= 4;  i >= 0;  i -= 4)
         {
-            num1 = _mm_loadu_ps(x + i);
-            num2 = _mm_loadu_ps(y + i);
-            num3 = _mm_mul_ps(num1, num2);
-            num4 = _mm_add_ps(num4, num3);
+            n1 = _mm_loadu_ps(x + i);
+            n2 = _mm_loadu_ps(y + i);
+            n3 = _mm_mul_ps(n1, n2);
+            n4 = _mm_add_ps(n4, n3);
         }
-        num4 = _mm_add_ps(_mm_movehl_ps(num4, num4), num4);
-        num4 = _mm_add_ss(_mm_shuffle_ps(num4, num4, 1), num4);
-        _mm_store_ss(&z, num4);
+        n4 = _mm_add_ps(_mm_movehl_ps(n4, n4), n4);
+        n4 = _mm_add_ss(_mm_shuffle_ps(n4, n4, 1), n4);
+        _mm_store_ss(&z, n4);
     }
     /* Now deal with the last 1 to 3 elements, which don't fill in an SSE2 register */
     switch (n & 3)
@@ -405,4 +408,34 @@ long double vec_dot_prodl(const long double x[], const long double y[], int n)
 }
 /*- End of function --------------------------------------------------------*/
 #endif
+
+float vec_circular_dot_prodf(const float x[], const float y[], int n, int pos)
+{
+    float z;
+
+    z = vec_dot_prodf(&x[pos], &y[0], n - pos);
+    z += vec_dot_prodf(&x[0], &y[n - pos], pos);
+    return z;
+}
+/*- End of function --------------------------------------------------------*/
+
+void vec_lmsf(const float x[], float y[], int n, float error)
+{
+    int i;
+
+    for (i = 0;  i < n;  i++)
+    {
+        y[i] += x[i]*error;
+        /* Leak a little to tame uncontrolled wandering */
+        y[i] *= 0.9999f;
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
+void vec_circular_lmsf(const float x[], float y[], int n, int pos, float error)
+{
+    vec_lmsf(&x[pos], &y[0], n - pos, error);
+    vec_lmsf(&x[0], &y[n - pos], pos, error);
+}
+/*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

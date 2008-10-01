@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: spandsp.h.in,v 1.10 2008/09/01 16:07:34 steveu Exp $
+ * $Id: spandsp.h.in,v 1.11 2008/09/19 14:02:05 steveu Exp $
  */
 
 /*! \file */
@@ -69,6 +69,7 @@
 #include <spandsp/hdlc.h>
 #include <spandsp/async.h>
 #include <spandsp/noise.h>
+#include <spandsp/saturated.h>
 #include <spandsp/time_scale.h>
 #include <spandsp/tone_detect.h>
 #include <spandsp/tone_generate.h>

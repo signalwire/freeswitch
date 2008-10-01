@@ -16,7 +16,7 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.101 2008/09/08 12:45:02 steveu Exp $
+## $Id: Makefile.am,v 1.103 2008/09/19 14:02:05 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -37,6 +37,7 @@ libspandsp_la_SOURCES = adsi.c \
                         bitstream.c \
                         complex_filters.c \
                         complex_vector_float.c \
+                        complex_vector_int.c \
                         crc.c \
                         dds_float.c \
                         dds_int.c \
@@ -45,8 +46,7 @@ libspandsp_la_SOURCES = adsi.c \
                         fax.c \
                         fsk.c \
                         g711.c \
-                        g722_encode.c \
-                        g722_decode.c \
+                        g722.c \
                         g726.c \
                         gsm0610_decode.c \
                         gsm0610_encode.c \

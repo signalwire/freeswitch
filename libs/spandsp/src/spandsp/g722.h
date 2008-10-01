@@ -28,7 +28,7 @@
  * Computer Science, Speech Group
  * Chengxiang Lu and Alex Hauptmann
  *
- * $Id: g722.h,v 1.19 2008/04/17 14:27:00 steveu Exp $
+ * $Id: g722.h,v 1.20 2008/09/19 14:02:05 steveu Exp $
  */
 
 
@@ -56,6 +56,20 @@ enum
     G722_PACKED = 0x0002
 };
 
+/*! The per band parameters for both encoding and decoding G.722 */
+typedef struct
+{
+    int16_t s;
+    int16_t sz;
+    int16_t r[3];
+    int16_t a[3];
+    int16_t p[3];
+    int16_t d[7];
+    int16_t b[7];
+    int16_t nb;
+    int16_t det;
+} g722_band_t;
+
 typedef struct
 {
     /*! TRUE if the operating in the special ITU test mode, with the band split filters
@@ -69,28 +83,15 @@ typedef struct
     int bits_per_sample;
 
     /*! Signal history for the QMF */
-    int x[24];
+    int16_t x[12];
+    int16_t y[12];
+    int ptr;
 
-    struct
-    {
-        int s;
-        int sp;
-        int sz;
-        int r[3];
-        int a[3];
-        int ap[3];
-        int p[3];
-        int d[7];
-        int b[7];
-        int bp[7];
-        int sg[7];
-        int nb;
-        int det;
-    } band[2];
+    g722_band_t band[2];
 
-    unsigned int in_buffer;
+    uint32_t in_buffer;
     int in_bits;
-    unsigned int out_buffer;
+    uint32_t out_buffer;
     int out_bits;
 } g722_encode_state_t;
 
@@ -107,28 +108,15 @@ typedef struct
     int bits_per_sample;
 
     /*! Signal history for the QMF */
-    int x[24];
+    int16_t x[12];
+    int16_t y[12];
+    int ptr;
 
-    struct
-    {
-        int s;
-        int sp;
-        int sz;
-        int r[3];
-        int a[3];
-        int ap[3];
-        int p[3];
-        int d[7];
-        int b[7];
-        int bp[7];
-        int sg[7];
-        int nb;
-        int det;
-    } band[2];
+    g722_band_t band[2];
     
-    unsigned int in_buffer;
+    uint32_t in_buffer;
     int in_bits;
-    unsigned int out_buffer;
+    uint32_t out_buffer;
     int out_bits;
 } g722_decode_state_t;
 

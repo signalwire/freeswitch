@@ -25,7 +25,7 @@
  * This code is based on the widely used GSM 06.10 code available from
  * http://kbs.cs.tu-berlin.de/~jutta/toast.html
  *
- * $Id: gsm0610_encode.c,v 1.25 2008/07/02 14:48:25 steveu Exp $
+ * $Id: gsm0610_encode.c,v 1.26 2008/09/19 14:02:05 steveu Exp $
  */
 
 /*! \file */
@@ -48,7 +48,7 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/bitstream.h"
-#include "spandsp/dc_restore.h"
+#include "spandsp/saturated.h"
 #include "spandsp/gsm0610.h"
 
 #include "gsm0610_local.h"
@@ -93,7 +93,7 @@ static void encode_a_frame(gsm0610_state_t *s, gsm0610_frame_t *f, const int16_t
         gsm0610_rpe_encoding(s, s->e + 5, &f->xmaxc[k], &f->Mc[k], f->xMc[k]);
 
         for (i = 0;  i < 40;  i++)
-            dp[i] = gsm_add(s->e[5 + i], dpp[i]);
+            dp[i] = saturated_add16(s->e[5 + i], dpp[i]);
         /*endfor*/
         dp += 40;
         dpp += 40;

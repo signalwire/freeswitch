@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis_rx.c,v 1.41 2008/09/07 12:45:17 steveu Exp $
+ * $Id: v22bis_rx.c,v 1.42 2008/09/18 14:59:30 steveu Exp $
  */
 
 /*! \file */
@@ -590,15 +590,15 @@ int v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
         /* TODO: get rid of this */
         if (s->caller)
         {
-            ii = rx_pulseshaper_2400[6][0].re*s->rx.rrc_filter[s->rx.rrc_filter_step];
+            ii = rx_pulseshaper_2400_re[6][0]*s->rx.rrc_filter[s->rx.rrc_filter_step];
             for (j = 1;  j < V22BIS_RX_FILTER_STEPS;  j++)
-                ii += rx_pulseshaper_2400[6][j].re*s->rx.rrc_filter[j + s->rx.rrc_filter_step];
+                ii += rx_pulseshaper_2400_re[6][j]*s->rx.rrc_filter[j + s->rx.rrc_filter_step];
         }
         else
         {
-            ii = rx_pulseshaper_1200[6][0].re*s->rx.rrc_filter[s->rx.rrc_filter_step];
+            ii = rx_pulseshaper_1200_re[6][0]*s->rx.rrc_filter[s->rx.rrc_filter_step];
             for (j = 1;  j < V22BIS_RX_FILTER_STEPS;  j++)
-                ii += rx_pulseshaper_1200[6][j].re*s->rx.rrc_filter[j + s->rx.rrc_filter_step];
+                ii += rx_pulseshaper_1200_re[6][j]*s->rx.rrc_filter[j + s->rx.rrc_filter_step];
         }
         power = power_meter_update(&(s->rx.rx_power), (int16_t) (ii/10.0f));
         if (s->rx.signal_present)
@@ -643,22 +643,22 @@ int v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
                 s->rx.eq_put_step += PULSESHAPER_COEFF_SETS*40/(3*2);
                 if (s->caller)
                 {
-                    ii = rx_pulseshaper_2400[step][0].re*s->rx.rrc_filter[s->rx.rrc_filter_step];
-                    qq = rx_pulseshaper_2400[step][0].im*s->rx.rrc_filter[s->rx.rrc_filter_step];
+                    ii = rx_pulseshaper_2400_re[step][0]*s->rx.rrc_filter[s->rx.rrc_filter_step];
+                    qq = rx_pulseshaper_2400_im[step][0]*s->rx.rrc_filter[s->rx.rrc_filter_step];
                     for (j = 1;  j < V22BIS_RX_FILTER_STEPS;  j++)
                     {
-                        ii += rx_pulseshaper_2400[step][j].re*s->rx.rrc_filter[j + s->rx.rrc_filter_step];
-                        qq += rx_pulseshaper_2400[step][j].im*s->rx.rrc_filter[j + s->rx.rrc_filter_step];
+                        ii += rx_pulseshaper_2400_re[step][j]*s->rx.rrc_filter[j + s->rx.rrc_filter_step];
+                        qq += rx_pulseshaper_2400_im[step][j]*s->rx.rrc_filter[j + s->rx.rrc_filter_step];
                     }
                 }
                 else
                 {
-                    ii = rx_pulseshaper_1200[step][0].re*s->rx.rrc_filter[s->rx.rrc_filter_step];
-                    qq = rx_pulseshaper_1200[step][0].im*s->rx.rrc_filter[s->rx.rrc_filter_step];
+                    ii = rx_pulseshaper_1200_re[step][0]*s->rx.rrc_filter[s->rx.rrc_filter_step];
+                    qq = rx_pulseshaper_1200_im[step][0]*s->rx.rrc_filter[s->rx.rrc_filter_step];
                     for (j = 1;  j < V22BIS_RX_FILTER_STEPS;  j++)
                     {
-                        ii += rx_pulseshaper_1200[step][j].re*s->rx.rrc_filter[j + s->rx.rrc_filter_step];
-                        qq += rx_pulseshaper_1200[step][j].im*s->rx.rrc_filter[j + s->rx.rrc_filter_step];
+                        ii += rx_pulseshaper_1200_re[step][j]*s->rx.rrc_filter[j + s->rx.rrc_filter_step];
+                        qq += rx_pulseshaper_1200_im[step][j]*s->rx.rrc_filter[j + s->rx.rrc_filter_step];
                     }
                 }
                 sample.re = ii*s->rx.agc_scaling;

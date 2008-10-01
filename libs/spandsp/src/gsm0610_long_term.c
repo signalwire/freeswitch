@@ -25,7 +25,7 @@
  * This code is based on the widely used GSM 06.10 code available from
  * http://kbs.cs.tu-berlin.de/~jutta/toast.html
  *
- * $Id: gsm0610_long_term.c,v 1.16 2008/07/02 14:48:25 steveu Exp $
+ * $Id: gsm0610_long_term.c,v 1.17 2008/09/19 14:02:05 steveu Exp $
  */
 
 /*! \file */
@@ -47,7 +47,7 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/bitstream.h"
-#include "spandsp/dc_restore.h"
+#include "spandsp/saturated.h"
 #include "spandsp/gsm0610.h"
 
 #include "gsm0610_local.h"
@@ -185,7 +185,7 @@ static int16_t evaluate_ltp_parameters(int16_t d[40],
     for (k = 0;  k < 40;  k++)
     {
         temp = d[k];
-        temp = gsm_abs(temp);
+        temp = saturated_abs16(temp);
         if (temp > dmax)
             dmax = temp;
         /*endif*/
@@ -314,12 +314,12 @@ static int16_t evaluate_ltp_parameters(int16_t d[40],
        quantization of the LTP gain b to get the coded version bc. */
     for (bc = 0;  bc <= 2;  bc++)
     {
-        if (R <= gsm_mult(S, gsm_DLB[bc]))
+        if (R <= saturated_mul16(S, gsm_DLB[bc]))
             break;
         /*endif*/
     }
     /*endfor*/
-    return  bc;
+    return bc;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -340,7 +340,7 @@ static void long_term_analysis_filtering(int16_t bc,
     for (k = 0;  k < 40;  k++)
     {
         dpp[k] = gsm_mult_r(gsm_QLB[bc], dp[k - Nc]);
-        e[k] = gsm_sub(d[k], dpp[k]);
+        e[k] = saturated_sub16(d[k], dpp[k]);
     }
     /*endfor*/
 }
@@ -398,7 +398,7 @@ void gsm0610_long_term_synthesis_filtering(gsm0610_state_t *s,
     for (k = 0;  k < 40;  k++)
     {
         drpp = gsm_mult_r(brp, drp[k - Nr]);
-        drp[k] = gsm_add(erp[k], drpp);
+        drp[k] = saturated_add16(erp[k], drpp);
     }
     /*endfor*/
 

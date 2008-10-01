@@ -1,7 +1,7 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * vector_int_tests.c
+ * complex_vector_int_tests.c
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: vector_int_tests.c,v 1.9 2008/09/16 15:21:52 steveu Exp $
+ * $Id: vector_int_tests.c,v 1.10 2008/09/18 12:05:35 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -139,10 +139,51 @@ static int test_vec_min_maxi16(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static int test_vec_circular_dot_prodi16(void)
+{
+    int i;
+    int j;
+    int pos;
+    int len;
+    int32_t za;
+    int32_t zb;
+    int16_t x[99];
+    int16_t y[99];
+
+    /* Verify that we can do circular sample buffer "dot" linear coefficient buffer
+       operations properly, by doing two sub-dot products. */
+    for (i = 0;  i < 99;  i++)
+    {
+        x[i] = rand();
+        y[i] = rand();
+    }
+
+    len = 95;
+    for (pos = 0;  pos < len;  pos++)
+    {
+        za = vec_circular_dot_prodi16(x, y, len, pos);
+        zb = 0;
+        for (i = 0;  i < len;  i++)
+        {
+            j = (pos + i) % len;
+            zb += (int32_t) x[j]*(int32_t) y[i];
+        }
+
+        if (za != zb)
+        {
+            printf("Tests failed\n");
+            exit(2);
+        }
+    }
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 int main(int argc, char *argv[])
 {
     test_vec_dot_prodi16();
     test_vec_min_maxi16();
+    test_vec_circular_dot_prodi16();
 
     printf("Tests passed.\n");
     return 0;

@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: sig_tone.c,v 1.24 2008/08/17 16:25:52 steveu Exp $
+ * $Id: sig_tone.c,v 1.25 2008/09/19 14:02:05 steveu Exp $
  */
 
 /*! \file */
@@ -48,6 +48,7 @@
 #undef SPANDSP_USE_FIXED_POINT
 #include "spandsp/telephony.h"
 #include "spandsp/dc_restore.h"
+#include "spandsp/saturated.h"
 #include "spandsp/complex.h"
 #include "spandsp/dds.h"
 #include "spandsp/sig_tone.h"

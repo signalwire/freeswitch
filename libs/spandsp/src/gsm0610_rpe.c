@@ -25,7 +25,7 @@
  * This code is based on the widely used GSM 06.10 code available from
  * http://kbs.cs.tu-berlin.de/~jutta/toast.html
  *
- * $Id: gsm0610_rpe.c,v 1.21 2008/07/02 14:48:25 steveu Exp $
+ * $Id: gsm0610_rpe.c,v 1.22 2008/09/19 14:02:05 steveu Exp $
  */
 
 /*! \file */
@@ -47,7 +47,7 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/bitstream.h"
-#include "spandsp/dc_restore.h"
+#include "spandsp/saturated.h"
 #include "spandsp/gsm0610.h"
 
 #include "gsm0610_local.h"
@@ -139,8 +139,8 @@ static void weighting_filter(const int16_t *e,     // signal [-5..0.39.44] IN
 
         /* for (i = 0; i <= 10; i++)
          * {
-         *      L_temp   = gsm_l_mult(wt[k + i], gsm_H[i]);
-         *      L_result = gsm_l_add(L_result, L_temp);
+         *      L_temp   = saturated_mul_16_32(wt[k + i], gsm_H[i]);
+         *      L_result = saturated_add32(L_result, L_temp);
          * }
          */
 
@@ -351,7 +351,7 @@ static void apcm_quantization(int16_t xM[13],
     for (i = 0;  i < 13;  i++)
     {
         temp = xM[i];
-        temp = gsm_abs(temp);
+        temp = saturated_abs16(temp);
         if (temp > xmax)
             xmax = temp;
         /*endif*/
@@ -379,7 +379,7 @@ static void apcm_quantization(int16_t xM[13],
     temp = (int16_t) (exp + 5);
 
     assert(temp <= 11  &&  temp >= 0);
-    xmaxc = gsm_add((xmax >> temp), exp << 3);
+    xmaxc = saturated_add16((xmax >> temp), exp << 3);
 
     /* Quantizing and coding of the xM[0..12] RPE sequence
        to get the xMc[0..12] */
@@ -406,7 +406,7 @@ static void apcm_quantization(int16_t xM[13],
         assert(temp1 >= 0  &&  temp1 < 16);
 
         temp = xM[i] << temp1;
-        temp = gsm_mult(temp, temp2);
+        temp = saturated_mul16(temp, temp2);
         temp >>= 12;
         xMc[i] = (int16_t) (temp + 4);      /* See note below */
     }
@@ -444,9 +444,9 @@ static void apcm_inverse_quantization(int16_t xMc[13],
     assert(mant >= 0  &&  mant <= 7);
 #endif
 
-    temp1 = gsm_FAC[mant];          /* See 4.2-15 for mant */
-    temp2 = gsm_sub(6, exp);        /* See 4.2-15 for exp */
-    temp3 = gsm_asl(1, gsm_sub (temp2, 1));
+    temp1 = gsm_FAC[mant];                  /* See 4.2-15 for mant */
+    temp2 = saturated_sub16(6, exp);        /* See 4.2-15 for exp */
+    temp3 = gsm_asl(1, saturated_sub16(temp2, 1));
 
     for (i = 0;  i < 13;  i++)
     {
@@ -457,7 +457,7 @@ static void apcm_inverse_quantization(int16_t xMc[13],
 
         temp <<= 12;                            /* 16 bit signed */
         temp = gsm_mult_r(temp1, temp);
-        temp = gsm_add(temp, temp3);
+        temp = saturated_add16(temp, temp3);
         xMp[i] = gsm_asr(temp, temp2);
     }
     /*endfor*/

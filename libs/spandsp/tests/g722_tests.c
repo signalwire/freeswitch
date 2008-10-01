@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g722_tests.c,v 1.26 2008/05/13 13:17:25 steveu Exp $
+ * $Id: g722_tests.c,v 1.27 2008/09/19 14:02:05 steveu Exp $
  */
 
 /*! \file */
@@ -109,8 +109,10 @@ static const char *itu_test_files[] =
 
 static const char *encode_test_files[] =
 {
-    TESTDATA_DIR "T1C1.XMT",    TESTDATA_DIR "T2R1.COD",
-    TESTDATA_DIR "T1C2.XMT",    TESTDATA_DIR "T2R2.COD",
+    TESTDATA_DIR "T1C1.XMT",
+    TESTDATA_DIR "T2R1.COD",
+    TESTDATA_DIR "T1C2.XMT",
+    TESTDATA_DIR "T2R2.COD",
     NULL
 };
 
@@ -295,6 +297,7 @@ int main(int argc, char *argv[])
 
     if (itutests)
     {
+#if 1
         /* ITU G.722 encode tests, using configuration 1. The QMF is bypassed */
         for (file = 0;  encode_test_files[file];  file += 2)
         {
@@ -341,7 +344,8 @@ int main(int argc, char *argv[])
             }
             printf("Test passed\n");
         }
-
+#endif
+#if 1
         /* ITU G.722 decode tests, using configuration 2. The QMF is bypassed */
         /* Run each of the tests for each of the modes - 48kbps, 56kbps and 64kbps. */
         for (mode = 1;  mode <= 3;  mode++)
@@ -404,7 +408,7 @@ int main(int argc, char *argv[])
                 printf("Test passed\n");
             }
         }
-
+#endif
         printf("Tests passed.\n");
     }
     else

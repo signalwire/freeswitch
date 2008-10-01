@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: vector_int.c,v 1.13 2008/09/16 15:21:52 steveu Exp $
+ * $Id: vector_int.c,v 1.15 2008/09/18 13:54:32 steveu Exp $
  */
 
 /*! \file */
@@ -156,7 +156,33 @@ int32_t vec_dot_prodi16(const int16_t x[], const int16_t y[], int n)
     for (i = 0;  i < n;  i++)
         z += (int32_t) x[i]*(int32_t) y[i];
 #endif
-    return  z;
+    return z;
+}
+/*- End of function --------------------------------------------------------*/
+
+int32_t vec_circular_dot_prodi16(const int16_t x[], const int16_t y[], int n, int pos)
+{
+    int32_t z;
+
+    z = vec_dot_prodi16(&x[pos], &y[0], n - pos);
+    z += vec_dot_prodi16(&x[0], &y[n - pos], pos);
+    return z;
+}
+/*- End of function --------------------------------------------------------*/
+
+void vec_lmsi16(const int16_t x[], int16_t y[], int n, int16_t error)
+{
+    int i;
+
+    for (i = 0;  i < n;  i++)
+        y[i] += ((int32_t) x[i]*(int32_t) error) >> 15;
+}
+/*- End of function --------------------------------------------------------*/
+
+void vec_circular_lmsi16(const int16_t x[], int16_t y[], int n, int pos, int16_t error)
+{
+    vec_lmsi16(&x[pos], &y[0], n - pos, error);
+    vec_lmsi16(&x[0], &y[n - pos], pos, error);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -315,7 +341,7 @@ int32_t vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         : "S" (x), "a" (n), "d" (out), [lower] "m" (lower_bound), [upper] "m" (upper_bound)
         : "ecx"
     );
-    return  max;
+    return max;
 #else
     int i;
     int16_t min;

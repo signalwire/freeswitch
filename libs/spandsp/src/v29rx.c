@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29rx.c,v 1.140 2008/09/16 14:12:23 steveu Exp $
+ * $Id: v29rx.c,v 1.144 2008/09/18 14:59:30 steveu Exp $
  */
 
 /*! \file */
@@ -78,6 +78,8 @@
 #define V29_TRAINING_SEG_2_LEN          128
 #define V29_TRAINING_SEG_3_LEN          384
 #define V29_TRAINING_SEG_4_LEN          48
+
+#define V29_EQUALIZER_LEN    (V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN)
 
 enum
 {
@@ -176,16 +178,16 @@ int v29_rx_equalizer_state(v29_rx_state_t *s, complexf_t **coeffs)
 #endif
 {
     *coeffs = s->eq_coeff;
-    return V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN;
+    return V29_EQUALIZER_LEN;
 }
 /*- End of function --------------------------------------------------------*/
 
 static void equalizer_save(v29_rx_state_t *s)
 {
 #if defined(SPANDSP_USE_FIXED_POINT)
-    cvec_copyi16(s->eq_coeff_save, s->eq_coeff, V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN);
+    cvec_copyi16(s->eq_coeff_save, s->eq_coeff, V29_EQUALIZER_LEN);
 #else
-    cvec_copyf(s->eq_coeff_save, s->eq_coeff, V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN);
+    cvec_copyf(s->eq_coeff_save, s->eq_coeff, V29_EQUALIZER_LEN);
 #endif
 }
 /*- End of function --------------------------------------------------------*/
@@ -193,13 +195,13 @@ static void equalizer_save(v29_rx_state_t *s)
 static void equalizer_restore(v29_rx_state_t *s)
 {
 #if defined(SPANDSP_USE_FIXED_POINT)
-    cvec_copyi16(s->eq_coeff, s->eq_coeff_save, V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN);
-    cvec_zeroi16(s->eq_buf, V29_EQUALIZER_MASK);
-    s->eq_delta = 32768.0f*EQUALIZER_DELTA/(V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN);
+    cvec_copyi16(s->eq_coeff, s->eq_coeff_save, V29_EQUALIZER_LEN);
+    cvec_zeroi16(s->eq_buf, V29_EQUALIZER_LEN);
+    s->eq_delta = 32768.0f*EQUALIZER_DELTA/V29_EQUALIZER_LEN;
 #else
-    cvec_copyf(s->eq_coeff, s->eq_coeff_save, V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN);
-    cvec_zerof(s->eq_buf, V29_EQUALIZER_MASK);
-    s->eq_delta = EQUALIZER_DELTA/(V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN);
+    cvec_copyf(s->eq_coeff, s->eq_coeff_save, V29_EQUALIZER_LEN);
+    cvec_zerof(s->eq_buf, V29_EQUALIZER_LEN);
+    s->eq_delta = EQUALIZER_DELTA/V29_EQUALIZER_LEN;
 #endif
 
     s->eq_put_step = RX_PULSESHAPER_COEFF_SETS*10/(3*2) - 1;
@@ -211,15 +213,15 @@ static void equalizer_reset(v29_rx_state_t *s)
 {
     /* Start with an equalizer based on everything being perfect */
 #if defined(SPANDSP_USE_FIXED_POINT)
-    cvec_zeroi16(s->eq_coeff, V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN);
-    s->eq_coeff[V29_EQUALIZER_PRE_LEN] = complex_seti16(3*FP_FACTOR, 0*FP_FACTOR);
-    cvec_zeroi16(s->eq_buf, V29_EQUALIZER_MASK);
-    s->eq_delta = 32768.0f*EQUALIZER_DELTA/(V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN);
+    cvec_zeroi16(s->eq_coeff, V29_EQUALIZER_LEN);
+    s->eq_coeff[V29_EQUALIZER_POST_LEN] = complex_seti16(3*FP_FACTOR, 0*FP_FACTOR);
+    cvec_zeroi16(s->eq_buf, V29_EQUALIZER_LEN);
+    s->eq_delta = 32768.0f*EQUALIZER_DELTA/V29_EQUALIZER_LEN;
 #else
-    cvec_zerof(s->eq_coeff, V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN);
-    s->eq_coeff[V29_EQUALIZER_PRE_LEN] = complex_setf(3.0f, 0.0f);
-    cvec_zerof(s->eq_buf, V29_EQUALIZER_MASK);
-    s->eq_delta = EQUALIZER_DELTA/(V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN);
+    cvec_zerof(s->eq_coeff, V29_EQUALIZER_LEN);
+    s->eq_coeff[V29_EQUALIZER_POST_LEN] = complex_setf(3.0f, 0.0f);
+    cvec_zerof(s->eq_buf, V29_EQUALIZER_LEN);
+    s->eq_delta = EQUALIZER_DELTA/V29_EQUALIZER_LEN;
 #endif
 
     s->eq_put_step = RX_PULSESHAPER_COEFF_SETS*10/(3*2) - 1;
@@ -232,8 +234,8 @@ static __inline__ complexi16_t complex_mul_q4_12(const complexi16_t *x, const co
 {
     complexi16_t z;
 
-    z.re = ((int32_t) x->re*(int32_t) y->re - (int32_t) x->im*(int32_t) y->im) >> 12;
-    z.im = ((int32_t) x->re*(int32_t) y->im + (int32_t) x->im*(int32_t) y->re) >> 12;
+    z.re = ((int32_t) x->re*(int32_t) y->re - (int32_t) x->im*(int32_t) y->im) >> FP_SHIFT_FACTOR;
+    z.im = ((int32_t) x->re*(int32_t) y->im + (int32_t) x->im*(int32_t) y->re) >> FP_SHIFT_FACTOR;
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -245,36 +247,19 @@ static __inline__ complexi16_t equalizer_get(v29_rx_state_t *s)
 static __inline__ complexf_t equalizer_get(v29_rx_state_t *s)
 #endif
 {
-    int i;
-    int p;
 #if defined(SPANDSP_USE_FIXED_POINT)
+    complexi32_t zz;
     complexi16_t z;
-    complexi16_t z1;
-#else
-    complexf_t z;
-    complexf_t z1;
-#endif
 
     /* Get the next equalized value. */
-    p = s->eq_step - 1;
-#if defined(SPANDSP_USE_FIXED_POINT)
-    z = complex_seti16(0, 0);
-    for (i = 0;  i < V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN;  i++)
-    {
-        p = (p - 1) & V29_EQUALIZER_MASK;
-        z1 = complex_mul_q4_12(&s->eq_coeff[i], &s->eq_buf[p]);
-        z = complex_addi16(&z, &z1);
-    }
-#else
-    z = complex_setf(0.0f, 0.0f);
-    for (i = 0;  i < V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN;  i++)
-    {
-        p = (p - 1) & V29_EQUALIZER_MASK;
-        z1 = complex_mulf(&s->eq_coeff[i], &s->eq_buf[p]);
-        z = complex_addf(&z, &z1);
-    }
-#endif
+    zz = cvec_circular_dot_prodi16(s->eq_buf, s->eq_coeff, V29_EQUALIZER_LEN, s->eq_step);
+    z.re = zz.re >> FP_SHIFT_FACTOR;
+    z.im = zz.im >> FP_SHIFT_FACTOR;
     return z;
+#else
+    /* Get the next equalized value. */
+    return cvec_circular_dot_prodf(s->eq_buf, s->eq_coeff, V29_EQUALIZER_LEN, s->eq_step);
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -284,45 +269,24 @@ static void tune_equalizer(v29_rx_state_t *s, const complexi16_t *z, const compl
 static void tune_equalizer(v29_rx_state_t *s, const complexf_t *z, const complexf_t *target)
 #endif
 {
-    int i;
-    int p;
 #if defined(SPANDSP_USE_FIXED_POINT)
-    complexi16_t ez;
-    complexi16_t z1;
-#else
-    complexf_t ez;
-    complexf_t z1;
-#endif
+    complexi16_t err;
 
     /* Find the x and y mismatch from the exact constellation position. */
-#if defined(SPANDSP_USE_FIXED_POINT)
-    ez.re = target->re*FP_FACTOR - z->re;
-    ez.im = target->im*FP_FACTOR - z->im;
-    ez.re = ((int32_t) ez.re*(int32_t) s->eq_delta) >> 15;
-    ez.im = ((int32_t) ez.im*(int32_t) s->eq_delta) >> 15;
+    err.re = target->re*FP_FACTOR - z->re;
+    err.im = target->im*FP_FACTOR - z->im;
+    err.re = ((int32_t) err.re*(int32_t) s->eq_delta) >> 15;
+    err.im = ((int32_t) err.im*(int32_t) s->eq_delta) >> 15;
+    cvec_circular_lmsi16(s->eq_buf, s->eq_coeff, V29_EQUALIZER_LEN, s->eq_step, &err);
 #else
-    ez = complex_subf(target, z);
-    ez.re *= s->eq_delta;
-    ez.im *= s->eq_delta;
-#endif
+    complexf_t err;
 
-    p = s->eq_step - 1;
-    for (i = 0;  i < V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN;  i++)
-    {
-        p = (p - 1) & V29_EQUALIZER_MASK;
-#if defined(SPANDSP_USE_FIXED_POINT)
-        z1 = complex_conji16(&s->eq_buf[p]);
-        z1 = complex_mul_q4_12(&ez, &z1);
-        s->eq_coeff[i] = complex_addi16(&s->eq_coeff[i], &z1);
-#else
-        z1 = complex_conjf(&s->eq_buf[p]);
-        z1 = complex_mulf(&ez, &z1);
-        s->eq_coeff[i] = complex_addf(&s->eq_coeff[i], &z1);
-        /* Leak a little to tame uncontrolled wandering */
-        s->eq_coeff[i].re *= 0.9999f;
-        s->eq_coeff[i].im *= 0.9999f;
+    /* Find the x and y mismatch from the exact constellation position. */
+    err = complex_subf(target, z);
+    err.re *= s->eq_delta;
+    err.im *= s->eq_delta;
+    cvec_circular_lmsf(s->eq_buf, s->eq_coeff, V29_EQUALIZER_LEN, s->eq_step, &err);
 #endif
-    }
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -597,7 +561,8 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
     /* Add a sample to the equalizer's circular buffer, but don't calculate anything
        at this time. */
     s->eq_buf[s->eq_step] = *sample;
-    s->eq_step = (s->eq_step + 1) & V29_EQUALIZER_MASK;
+    if (++s->eq_step >= V29_EQUALIZER_LEN)
+        s->eq_step = 0;
 
     /* On alternate insertions we have a whole baud, and must process it. */
     if ((s->baud_half ^= 1))
@@ -687,7 +652,7 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
             p = angle*2.0f*3.14159f/(65536.0f*65536.0f);
 #if defined(SPANDSP_USE_FIXED_POINT)
             zz = complex_setf(cosf(p), -sinf(p));
-            for (i = 0;  i <= V29_EQUALIZER_MASK;  i++)
+            for (i = 0;  i < V29_EQUALIZER_LEN;  i++)
             {
                 z1 = complex_setf(s->eq_buf[i].re, s->eq_buf[i].im);
                 z1 = complex_mulf(&z1, &zz);
@@ -696,7 +661,7 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
             }
 #else
             zz = complex_setf(cosf(p), -sinf(p));
-            for (i = 0;  i <= V29_EQUALIZER_MASK;  i++)
+            for (i = 0;  i < V29_EQUALIZER_LEN;  i++)
                 s->eq_buf[i] = complex_mulf(&s->eq_buf[i], &zz);
 #endif
             s->carrier_phase += angle;
@@ -860,7 +825,6 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
 int v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
 {
     int i;
-    int j;
     int step;
     int16_t x;
     int32_t diff;
@@ -879,8 +843,7 @@ int v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
 
     for (i = 0;  i < len;  i++)
     {
-        s->rrc_filter[s->rrc_filter_step] =
-        s->rrc_filter[s->rrc_filter_step + V29_RX_FILTER_STEPS] = amp[i];
+        s->rrc_filter[s->rrc_filter_step] = amp[i];
         if (++s->rrc_filter_step >= V29_RX_FILTER_STEPS)
             s->rrc_filter_step = 0;
 
@@ -956,25 +919,21 @@ int v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
         if (step < 0)
             step += RX_PULSESHAPER_COEFF_SETS;
 #if defined(SPANDSP_USE_FIXED_POINT)
-        v = (int32_t) rx_pulseshaper[step][0].re*(int32_t) s->rrc_filter[s->rrc_filter_step];
-        for (j = 1;  j < V29_RX_FILTER_STEPS;  j++)
-            v += (int32_t) rx_pulseshaper[step][j].re*(int32_t) s->rrc_filter[j + s->rrc_filter_step];
+        v = vec_circular_dot_prodi16(s->rrc_filter, rx_pulseshaper_re[step], V29_RX_FILTER_STEPS, s->rrc_filter_step);
         sample.re = (v*s->agc_scaling) >> 15;
 #else
-        v = rx_pulseshaper[step][0].re*s->rrc_filter[s->rrc_filter_step];
-        for (j = 1;  j < V29_RX_FILTER_STEPS;  j++)
-            v += rx_pulseshaper[step][j].re*s->rrc_filter[j + s->rrc_filter_step];
+        v = vec_circular_dot_prodf(s->rrc_filter, rx_pulseshaper_re[step], V29_RX_FILTER_STEPS, s->rrc_filter_step);
         sample.re = v*s->agc_scaling;
 #endif
 
         /* Symbol timing synchronisation band edge filters */
 #if defined(SPANDSP_USE_FIXED_POINT)
         /* Low Nyquist band edge filter */
-        v = ((s->symbol_sync_low[0]*SYNC_LOW_BAND_EDGE_COEFF_0) >> 12) + ((s->symbol_sync_low[1]*SYNC_LOW_BAND_EDGE_COEFF_1) >> 12) + sample.re;
+        v = ((s->symbol_sync_low[0]*SYNC_LOW_BAND_EDGE_COEFF_0) >> FP_SHIFT_FACTOR) + ((s->symbol_sync_low[1]*SYNC_LOW_BAND_EDGE_COEFF_1) >> FP_SHIFT_FACTOR) + sample.re;
         s->symbol_sync_low[1] = s->symbol_sync_low[0];
         s->symbol_sync_low[0] = v;
         /* High Nyquist band edge filter */
-        v = ((s->symbol_sync_high[0]*SYNC_HIGH_BAND_EDGE_COEFF_0) >> 12) + ((s->symbol_sync_high[1]*SYNC_HIGH_BAND_EDGE_COEFF_1) >> 12) + sample.re;
+        v = ((s->symbol_sync_high[0]*SYNC_HIGH_BAND_EDGE_COEFF_0) >> FP_SHIFT_FACTOR) + ((s->symbol_sync_high[1]*SYNC_HIGH_BAND_EDGE_COEFF_1) >> FP_SHIFT_FACTOR) + sample.re;
         s->symbol_sync_high[1] = s->symbol_sync_high[0];
         s->symbol_sync_high[0] = v;
 #else
@@ -1008,17 +967,13 @@ int v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
                 step = RX_PULSESHAPER_COEFF_SETS - 1;
             s->eq_put_step += RX_PULSESHAPER_COEFF_SETS*10/(3*2);
 #if defined(SPANDSP_USE_FIXED_POINT)
-            v = (int32_t) rx_pulseshaper[step][0].im*(int32_t) s->rrc_filter[s->rrc_filter_step];
-            for (j = 1;  j < V29_RX_FILTER_STEPS;  j++)
-                v += (int32_t) rx_pulseshaper[step][j].im*(int32_t) s->rrc_filter[j + s->rrc_filter_step];
+            v = vec_circular_dot_prodi16(s->rrc_filter, rx_pulseshaper_im[step], V29_RX_FILTER_STEPS, s->rrc_filter_step);
             sample.im = (v*s->agc_scaling) >> 15;
             z = dds_lookup_complexi16(s->carrier_phase);
             zz.re = ((int32_t) sample.re*(int32_t) z.re - (int32_t) sample.im*(int32_t) z.im) >> 15;
             zz.im = ((int32_t) -sample.re*(int32_t) z.im - (int32_t) sample.im*(int32_t) z.re) >> 15;
 #else
-            v = rx_pulseshaper[step][0].im*s->rrc_filter[s->rrc_filter_step];
-            for (j = 1;  j < V29_RX_FILTER_STEPS;  j++)
-                v += rx_pulseshaper[step][j].im*s->rrc_filter[j + s->rrc_filter_step];
+            v = vec_circular_dot_prodf(s->rrc_filter, rx_pulseshaper_im[step], V29_RX_FILTER_STEPS, s->rrc_filter_step);
             sample.im = v*s->agc_scaling;
             z = dds_lookup_complexf(s->carrier_phase);
             zz.re = sample.re*z.re - sample.im*z.im;

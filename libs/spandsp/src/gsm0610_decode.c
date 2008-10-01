@@ -25,7 +25,7 @@
  * This code is based on the widely used GSM 06.10 code available from
  * http://kbs.cs.tu-berlin.de/~jutta/toast.html
  *
- * $Id: gsm0610_decode.c,v 1.21 2008/07/02 14:48:25 steveu Exp $
+ * $Id: gsm0610_decode.c,v 1.22 2008/09/19 14:02:05 steveu Exp $
  */
 
 /*! \file */
@@ -48,7 +48,7 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/bitstream.h"
-#include "spandsp/dc_restore.h"
+#include "spandsp/saturated.h"
 #include "spandsp/gsm0610.h"
 
 #include "gsm0610_local.h"
@@ -66,9 +66,9 @@ static void postprocessing(gsm0610_state_t *s, int16_t amp[])
     {
         tmp = gsm_mult_r(msr, 28180);
         /* De-emphasis */
-        msr = gsm_add(amp[k], tmp);
+        msr = saturated_add16(amp[k], tmp);
         /* Truncation & upscaling */
-        amp[k] = (int16_t) (gsm_add(msr, msr) & 0xFFF8);
+        amp[k] = (int16_t) (saturated_add16(msr, msr) & 0xFFF8);
     }
     /*endfor*/
     s->msr = msr;

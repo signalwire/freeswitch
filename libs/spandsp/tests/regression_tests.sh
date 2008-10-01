@@ -17,7 +17,7 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# $Id: regression_tests.sh,v 1.52 2008/09/02 13:56:10 steveu Exp $
+# $Id: regression_tests.sh,v 1.53 2008/09/18 12:09:51 steveu Exp $
 #
 
 ITUTESTS_TIF=../test-data/itu/fax/itutests.tif
@@ -98,6 +98,33 @@ then
     exit $RETVAL
 fi
 echo bit_operations_tests completed OK
+
+./complex_tests >$STDOUT_DEST 2>$STDERR_DEST
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo complex_tests failed!
+    exit $RETVAL
+fi
+echo complex_tests completed OK
+
+./complex_vector_float_tests >$STDOUT_DEST 2>$STDERR_DEST
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo complex_vector_float_tests failed!
+    exit $RETVAL
+fi
+echo complex_vector_float_tests completed OK
+
+./complex_vector_int_tests >$STDOUT_DEST 2>$STDERR_DEST
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo complex_vector_int_tests failed!
+    exit $RETVAL
+fi
+echo complex_vector_int_tests completed OK
 
 ./crc_tests >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?

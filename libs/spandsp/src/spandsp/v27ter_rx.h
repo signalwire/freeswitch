@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_rx.h,v 1.51 2008/09/16 14:12:23 steveu Exp $
+ * $Id: v27ter_rx.h,v 1.53 2008/09/18 14:59:30 steveu Exp $
  */
 
 /*! \file */
@@ -48,9 +48,8 @@ straightforward.
 
 /* Target length for the equalizer is about 43 taps for 4800bps and 32 taps for 2400bps
    to deal with the worst stuff in V.56bis. */
-#define V27TER_EQUALIZER_PRE_LEN        15  /* this much before the real event */
-#define V27TER_EQUALIZER_POST_LEN       15  /* this much after the real event */
-#define V27TER_EQUALIZER_MASK           63  /* one less than a power of 2 >= (V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN) */
+#define V27TER_EQUALIZER_PRE_LEN        16  /* This much before the real event */
+#define V27TER_EQUALIZER_POST_LEN       14  /* This much after the real event (must be even) */
 
 #define V27TER_RX_4800_FILTER_STEPS     27
 #define V27TER_RX_2400_FILTER_STEPS     27
@@ -88,9 +87,9 @@ typedef struct
 
     /*! \brief The route raised cosine (RRC) pulse shaping filter buffer. */
 #if defined(SPANDSP_USE_FIXED_POINT)
-    int16_t rrc_filter[2*V27TER_RX_FILTER_STEPS];
+    int16_t rrc_filter[V27TER_RX_FILTER_STEPS];
 #else
-    float rrc_filter[2*V27TER_RX_FILTER_STEPS];
+    float rrc_filter[V27TER_RX_FILTER_STEPS];
 #endif
     /*! \brief Current offset into the RRC pulse shaping filter buffer. */
     int rrc_filter_step;
@@ -174,7 +173,7 @@ typedef struct
     /*! \brief A saved set of adaptive equalizer coefficients for use after restarts. */
     /*complexi16_t*/ complexf_t  eq_coeff_save[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
     /*! \brief The equalizer signal buffer. */
-    /*complexi16_t*/ complexf_t eq_buf[V27TER_EQUALIZER_MASK + 1];
+    /*complexi16_t*/ complexf_t eq_buf[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
 #else
     /*! \brief The scaling factor accessed by the AGC algorithm. */
     float agc_scaling;
@@ -188,7 +187,7 @@ typedef struct
     /*! \brief A saved set of adaptive equalizer coefficients for use after restarts. */
     complexf_t eq_coeff_save[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
     /*! \brief The equalizer signal buffer. */
-    complexf_t eq_buf[V27TER_EQUALIZER_MASK + 1];
+    complexf_t eq_buf[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
 #endif
 
     /*! \brief Integration variable for damping the Gardner algorithm tests. */
