@@ -16,7 +16,7 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.43 2008/09/20 15:44:40 steveu Exp $
+## $Id: Makefile.am,v 1.44 2008/09/28 14:36:25 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -73,7 +73,7 @@ rpm-build:
 	rm -f rpm/SOURCES/*
 	rm -f rpm/SPECS/*
 	rm -f rpm/SRPMS/*
-	rpm -ta --sign @PACKAGE@-@VERSION@.tar.gz
+	rpmbuild -ta --sign @PACKAGE@-@VERSION@.tar.gz
 
 bump.rpm.release: spandsp.spec
 	VERSION="x"; \

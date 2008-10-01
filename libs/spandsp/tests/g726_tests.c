@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g726_tests.c,v 1.27 2008/08/29 09:28:13 steveu Exp $
+ * $Id: g726_tests.c,v 1.28 2008/09/28 14:36:25 steveu Exp $
  */
 
 /*! \file */
@@ -1279,6 +1279,8 @@ int main(int argc, char *argv[])
         }
 
         printf("ADPCM packing is %d\n", packing);
+        //g726_init(&enc_state, bit_rate, G726_ENCODING_LINEAR, G726_PACKING_LEFT);
+        //g726_init(&dec_state, bit_rate, G726_ENCODING_LINEAR, G726_PACKING_RIGHT);
         g726_init(&enc_state, bit_rate, G726_ENCODING_LINEAR, packing);
         g726_init(&dec_state, bit_rate, G726_ENCODING_LINEAR, packing);
             
