@@ -1466,12 +1466,14 @@ SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait)
 	int ret = 0;
 	struct system_thread_handle *sth;
 	switch_memory_pool_t *pool;
+#ifndef __FreeBSD__
 #ifdef HAVE_SETRLIMIT
 	struct rlimit rlim;
 
 	rlim.rlim_cur = SWITCH_SYSTEM_THREAD_STACKSIZE;
 	rlim.rlim_max = SWITCH_SYSTEM_THREAD_STACKSIZE;;
 	setrlimit(RLIMIT_STACK, &rlim);
+#endif
 #endif
 
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
