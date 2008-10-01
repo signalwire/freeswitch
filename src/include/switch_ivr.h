@@ -680,7 +680,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
 														  const char *confirm_macro,
 														  const char *confirm_key,
 														  int confirm_attempts,
-														  int inter_timeout, int digit_len, int timeout, int max_failures, switch_memory_pool_t *pool);
+														  int inter_timeout, int digit_len, int timeout, int max_failures, 
+														  int max_timeouts, switch_memory_pool_t *pool);
 
 /*!
  *\brief switch_ivr_menu_bind_action: Bind a keystroke to an action.
