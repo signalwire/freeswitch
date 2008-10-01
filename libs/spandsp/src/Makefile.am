@@ -16,7 +16,7 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.104 2008/09/20 15:44:40 steveu Exp $
+## $Id: Makefile.am,v 1.105 2008/09/30 18:12:42 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -162,6 +162,7 @@ nobase_include_HEADERS = spandsp/adsi.h \
                          spandsp/plc.h \
                          spandsp/power_meter.h \
                          spandsp/queue.h \
+                         spandsp/saturated.h \
                          spandsp/schedule.h \
                          spandsp/sig_tone.h \
                          spandsp/silence_gen.h \

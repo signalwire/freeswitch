@@ -563,6 +563,10 @@ SOURCE=.\spandsp/queue.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\spandsp/saturated.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\spandsp/schedule.h
 # End Source File
 # Begin Source File

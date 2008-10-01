@@ -296,6 +296,7 @@
 <File RelativePath="spandsp/plc.h"></File>
 <File RelativePath="spandsp/power_meter.h"></File>
 <File RelativePath="spandsp/queue.h"></File>
+<File RelativePath="spandsp/saturated.h"></File>
 <File RelativePath="spandsp/schedule.h"></File>
 <File RelativePath="spandsp/sig_tone.h"></File>
 <File RelativePath="spandsp/silence_gen.h"></File>
