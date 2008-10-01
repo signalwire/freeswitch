@@ -1,11 +1,11 @@
 /*****************************************************************************
-* wanpipe_tdm_api.h 
+* wanpipe_tdm_api_iface.h 
 * 		
 * 		WANPIPE(tm) AFT TE1 Hardware Support
 *
 * Authors: 	Nenad Corbic <ncorbic@sangoma.com>
 *
-* Copyright (c) 2007, Sangoma Technologies
+* Copyright (c) 2007 - 08, Sangoma Technologies
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -46,6 +46,12 @@ typedef HANDLE sng_fd_t;
 typedef int sng_fd_t;
 #endif
 
+/* Indicate to library that new features exist */
+#define WP_TDM_FEATURE_DTMF_EVENTS	1
+#define WP_TDM_FEATURE_FE_ALARM		1
+#define WP_TDM_FEATURE_EVENTS		1
+#define WP_TDM_FEATURE_LINK_STATUS	1
+
 enum wanpipe_tdm_api_cmds {
 
 	SIOC_WP_TDM_GET_USR_MTU_MRU,	/* 0x00 */
@@ -82,22 +88,28 @@ enum wanpipe_tdm_api_cmds {
 	
 	SIOC_WP_TDM_READ_EVENT,		/* 0x15 */
 	
-	SIOC_WP_TDM_SET_EVENT,
+	SIOC_WP_TDM_SET_EVENT,		/* 0x16 */
 
-	SIOC_WP_TDM_SET_RX_GAINS,
-	SIOC_WP_TDM_SET_TX_GAINS,
-	SIOC_WP_TDM_CLEAR_RX_GAINS,
-	SIOC_WP_TDM_CLEAR_TX_GAINS,
+	SIOC_WP_TDM_SET_RX_GAINS,	/* 0x17 */
+	SIOC_WP_TDM_SET_TX_GAINS,	/* 0x18 */
+	SIOC_WP_TDM_CLEAR_RX_GAINS,	/* 0x19 */
+	SIOC_WP_TDM_CLEAR_TX_GAINS,	/* 0x1A */
 
-	SIOC_WP_TDM_GET_FE_ALARMS,
+	SIOC_WP_TDM_GET_FE_ALARMS,	/* 0x1B */
 
-	SIOC_WP_TDM_ENABLE_HWEC,
-	SIOC_WP_TDM_DISABLE_HWEC,
+	SIOC_WP_TDM_ENABLE_HWEC,	/* 0x1C */
+	SIOC_WP_TDM_DISABLE_HWEC,	/* 0x1D */
 	
+	SIOC_WP_TDM_SET_FE_STATUS,	/* 0x1E */
+	SIOC_WP_TDM_GET_FE_STATUS,	/* 0x1F */
+
+	SIOC_WP_TDM_GET_HW_DTMF,	/* 0x20 */
+
 	SIOC_WP_TDM_NOTSUPP		/*  */
 
-
 };
+
+#define SIOC_WP_TDM_GET_LINK_STATUS SIOC_WP_TDM_GET_FE_STATUS
 
 enum wanpipe_tdm_api_events {
 	WP_TDMAPI_EVENT_NONE,
@@ -115,8 +127,13 @@ enum wanpipe_tdm_api_events {
 	WP_TDMAPI_EVENT_TXSIG_OFFHOOK,
 	WP_TDMAPI_EVENT_TXSIG_ONHOOK,
 	WP_TDMAPI_EVENT_ONHOOKTRANSFER,
-	WP_TDMAPI_EVENT_SETPOLARITY
+	WP_TDMAPI_EVENT_SETPOLARITY,
+	WP_TDMAPI_EVENT_BRI_CHAN_LOOPBACK,
+	WP_TDMAPI_EVENT_LINK_STATUS
 };
+
+#define WP_TDMAPI_EVENT_FE_ALARM WP_TDMAPI_EVENT_ALARM
+
 
 #define WP_TDMAPI_EVENT_ENABLE		0x01
 #define WP_TDMAPI_EVENT_DISABLE		0x02
@@ -150,45 +167,61 @@ enum wanpipe_tdm_api_events {
 		((state) == WP_TDMAPI_EVENT_RING_TRIP_PRESENT) ? "Ring Present" :	\
 		((state) == WP_TDMAPI_EVENT_RING_TRIP_STOP) ? "Ring Stop" :	\
 						"(Unknown state)"
-
+/*Link Status */
+#define WP_TDMAPI_EVENT_LINK_STATUS_CONNECTED		0x01
+#define WP_TDMAPI_EVENT_LINK_STATUS_DISCONNECTED	0x02
+#define WP_TDMAPI_EVENT_LINK_STATUS_DECODE(status)					\
+		((status) == WP_TDMAPI_EVENT_LINK_STATUS_CONNECTED) ? "Connected" :		\
+		((status) == WP_TDMAPI_EVENT_LINK_STATUS_DISCONNECTED)  ? "Disconnected" :		\
+							"Unknown"
 #define	WP_TDMAPI_EVENT_TONE_DIAL	0x01
 #define	WP_TDMAPI_EVENT_TONE_BUSY	0x02
 #define	WP_TDMAPI_EVENT_TONE_RING	0x03
 #define	WP_TDMAPI_EVENT_TONE_CONGESTION	0x04
 
+/* BRI channels list */						
+#define	WAN_BRI_BCHAN1		0x01
+#define	WAN_BRI_BCHAN2		0x02
+#define	WAN_BRI_DCHAN		0x03
+
+
 typedef struct {
 
-	uint8_t	type;
-	uint8_t	mode;
-	uint32_t	time_stamp;
-	uint16_t	channel;
-	uint32_t	chan_map;
+	u_int8_t	type;
+	u_int8_t	mode;
+	u_int32_t	time_stamp;
+	u_int8_t	channel;
+	u_int32_t	chan_map;
+	u_int8_t	span;
 	union {
 		struct {
-			uint8_t	alarm;
+			u_int8_t	alarm;
 		} te1_alarm;
 		struct {
-			uint8_t	rbs_bits;
+			u_int8_t	rbs_bits;
 		} te1_rbs;
 		struct {
-			uint8_t	state;
-			uint8_t	sig;
+			u_int8_t	state;
+			u_int8_t	sig;
 		} rm_hook;
 		struct {
-			uint8_t	state;
+			u_int8_t	state;
 		} rm_ring;
 		struct {
-			uint8_t	type;
+			u_int8_t	type;
 		} rm_tone;
 		struct {
-			uint8_t	digit;	/* DTMF: digit  */
-			uint8_t	port;	/* DTMF: SOUT/ROUT */
-			uint8_t	type;	/* DTMF: PRESET/STOP */
+			u_int8_t	digit;	/* DTMF: digit  */
+			u_int8_t	port;	/* DTMF: SOUT/ROUT */
+			u_int8_t	type;	/* DTMF: PRESET/STOP */
 		} dtmf;
 		struct {
-			uint16_t	polarity;
-			uint16_t	ohttimer;
+			u_int16_t	polarity;
+			u_int16_t	ohttimer;
 		} rm_common;
+		struct{
+			u_int16_t status;
+		} linkstatus;
 	} wp_tdm_api_event_u;
 #define wp_tdm_api_event_type 		type
 #define wp_tdm_api_event_mode 		mode
@@ -204,6 +237,7 @@ typedef struct {
 #define wp_tdm_api_event_dtmf_port 	wp_tdm_api_event_u.dtmf.port
 #define wp_tdm_api_event_ohttimer 	wp_tdm_api_event_u.rm_common.ohttimer
 #define wp_tdm_api_event_polarity 	wp_tdm_api_event_u.rm_common.polarity
+#define wp_tdm_api_event_link_status	wp_tdm_api_event_u.linkstatus.status
 } wp_tdm_api_event_t;
 
 typedef struct {
@@ -286,13 +320,16 @@ typedef struct wanpipe_tdm_api_cmd{
 	unsigned int rbs_poll;		/* Enable/Disable RBS Polling */
 	unsigned int rbs_rx_bits;	/* Rx RBS Bits */
 	unsigned int rbs_tx_bits;	/* Tx RBS Bits */
-	unsigned int hdlc;		/* HDLC based device */
+	unsigned int hdlc;			/* HDLC based device */
 	unsigned int idle_flag;		/* IDLE flag to Tx */
 	unsigned int fe_alarms;		/* FE Alarms detected */
 	wp_tdm_chan_stats_t stats;	/* TDM Statistics */
+	/* Do NOT add anything above this! Important for binary backward compatibility. */
 	wp_tdm_api_event_t event;	/* TDM Event */
 	unsigned int data_len;
         void *data;	
+	unsigned char fe_status;	/* FE status - Connected or Disconnected */
+	unsigned int hw_dtmf;		/* HW DTMF enabled */
 }wanpipe_tdm_api_cmd_t;
 
 typedef struct wanpipe_tdm_api_event{
@@ -302,6 +339,7 @@ typedef struct wanpipe_tdm_api_event{
 	int (*wp_ring_detect_event)(sng_fd_t fd, unsigned char ring_state);
 	int (*wp_ring_trip_detect_event)(sng_fd_t fd, unsigned char ring_state);
 	int (*wp_fe_alarm_event)(sng_fd_t fd, unsigned char fe_alarm_event);
+	int (*wp_link_status_event)(sng_fd_t fd, unsigned char link_status_event);
 }wanpipe_tdm_api_event_t; 
 
 typedef struct wanpipe_tdm_api{

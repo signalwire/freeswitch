@@ -525,7 +525,16 @@ static ZIO_OPEN_FUNCTION(wanpipe_open)
 		zchan->native_codec = zchan->effective_codec = ZAP_CODEC_NONE;
 	} else {
 		tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_CODEC;
-		tdm_api.wp_tdm_cmd.tdm_codec = 0;
+
+		if (zchan->native_codec == ZAP_CODEC_ULAW) {
+			tdm_api.wp_tdm_cmd.tdm_codec = 0;
+		} else if (zchan->native_codec == ZAP_CODEC_ALAW) {
+			tdm_api.wp_tdm_cmd.tdm_codec = 1;
+		} else {
+			tdm_api.wp_tdm_cmd.tdm_codec = 2;
+		}
+		zchan->effective_codec = zchan->native_codec;
+
 		wp_tdm_cmd_exec(zchan, &tdm_api);
 
 		tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_USR_PERIOD;
@@ -534,8 +543,6 @@ static ZIO_OPEN_FUNCTION(wanpipe_open)
 		zap_channel_set_feature(zchan, ZAP_CHANNEL_FEATURE_INTERVAL);
 		zchan->effective_interval = zchan->native_interval = wp_globals.codec_ms;
 		zchan->packet_len = zchan->native_interval * 8;
-		zchan->native_codec = zchan->effective_codec;
-
 	}
 
 	return ZAP_SUCCESS;
