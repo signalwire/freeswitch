@@ -1066,8 +1066,9 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 		} else {
 			status = SWITCH_STATUS_SUCCESS;
 		}
-	  play_file:
+
 		if (profile->auto_playback_recordings) {
+		play_file:
 			memset(&fh, 0, sizeof(fh));
 			args.input_callback = control_playback;
 			memset(&cc, 0, sizeof(cc));
