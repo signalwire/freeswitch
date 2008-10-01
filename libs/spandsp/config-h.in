@@ -212,9 +212,6 @@
 /* Define to 1 if you have the <tiffio.h> header file. */
 #undef HAVE_TIFFIO_H
 
-/* Define to 1 if you have the <unicall.h> header file. */
-#undef HAVE_UNICALL_H
-
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29rx.c,v 1.135 2008/09/09 16:13:12 steveu Exp $
+ * $Id: v29rx.c,v 1.138 2008/09/13 15:48:04 steveu Exp $
  */
 
 /*! \file */
@@ -362,7 +362,11 @@ static __inline__ void track_carrier(v29_rx_state_t *s, const complexi16_t *z, c
 static __inline__ void track_carrier(v29_rx_state_t *s, const complexf_t *z, const complexf_t *target)
 #endif
 {
+#if defined(SPANDSP_USE_FIXED_POINT)
+    int32_t error;
+#else
     float error;
+#endif
 
     /* The initial coarse carrier frequency and phase estimation should have
        got us in the right ballpark. Now we need to fine tune fairly quickly,
@@ -377,19 +381,19 @@ static __inline__ void track_carrier(v29_rx_state_t *s, const complexf_t *z, con
        different amplitudes of the various target positions scale things. This isn't all bad,
        as the angular error for the larger amplitude constellation points is probably
        a more reliable indicator, and we are weighting it as such. */
-#if defined(SPANDSP_USE_FIXED_POINT)
     error = z->im*target->re - z->re*target->im;
-    error /= (float) FP_FACTOR;
-#else
-    error = z->im*target->re - z->re*target->im;
-#endif
 
     /* Use a proportional-integral approach to tracking the carrier. The PI
        parameters are coarser at first, until we get precisely on target. Then,
        the filter will be damped more to keep us on target. */
+#if defined(SPANDSP_USE_FIXED_POINT)
+    s->carrier_phase_rate += ((s->carrier_track_i*error) >> FP_SHIFT_FACTOR);
+    s->carrier_phase += ((s->carrier_track_p*error) >> FP_SHIFT_FACTOR);
+#else
     s->carrier_phase_rate += (int32_t) (s->carrier_track_i*error);
     s->carrier_phase += (int32_t) (s->carrier_track_p*error);
     //span_log(&s->logging, SPAN_LOG_FLOW, "Im = %15.5f   f = %15.5f\n", error, dds_frequencyf(s->carrier_phase_rate));
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -521,7 +525,7 @@ static __inline__ void symbol_sync(v29_rx_state_t *s)
     s->symbol_sync_dc_filter[0] = v;
     /* A little integration will now filter away much of the noise */
     s->baud_phase -= p;
-    if (abs(s->baud_phase) > 50*FP_FACTOR)
+    if (abs(s->baud_phase) > 100*FP_FACTOR)
     {
         if (s->baud_phase > 0)
             i = (s->baud_phase > 1000*FP_FACTOR)  ?  5  :  1;
@@ -543,7 +547,7 @@ static __inline__ void symbol_sync(v29_rx_state_t *s)
     s->symbol_sync_dc_filter[0] = v;
     /* A little integration will now filter away much of the noise */
     s->baud_phase -= p;
-    if (fabsf(s->baud_phase) > 50.0f)
+    if (fabsf(s->baud_phase) > 100.0f)
     {
         if (s->baud_phase > 0.0f)
             i = (s->baud_phase > 1000.0f)  ?  5  :  1;
@@ -620,8 +624,13 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
             s->training_stage = TRAINING_STAGE_LOG_PHASE;
             s->angles[0] =
             s->start_angles[0] = arctan2(z.im, z.re);
+#if defined(SPANDSP_USE_FIXED_POINT)
+            if (s->agc_scaling_save == 0)
+                s->agc_scaling_save = s->agc_scaling;
+#else
             if (s->agc_scaling_save == 0.0f)
                 s->agc_scaling_save = s->agc_scaling;
+#endif
         }
         break;
     case TRAINING_STAGE_LOG_PHASE:
@@ -664,7 +673,11 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Training failed (sequence failed)\n");
                 /* Park this modem */
+#if defined(SPANDSP_USE_FIXED_POINT)
+                s->agc_scaling_save = 0;
+#else
                 s->agc_scaling_save = 0.0f;
+#endif
                 s->training_stage = TRAINING_STAGE_PARKED;
                 report_status_change(s, SIG_STATUS_TRAINING_FAILED);
                 break;
@@ -700,7 +713,11 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
                of a real training sequence. */
             span_log(&s->logging, SPAN_LOG_FLOW, "Training failed (sequence failed)\n");
             /* Park this modem */
+#if defined(SPANDSP_USE_FIXED_POINT)
+            s->agc_scaling_save = 0;
+#else
             s->agc_scaling_save = 0.0f;
+#endif
             s->training_stage = TRAINING_STAGE_PARKED;
             report_status_change(s, SIG_STATUS_TRAINING_FAILED);
         }
@@ -717,8 +734,13 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
         {
             s->training_stage = TRAINING_STAGE_TRAIN_ON_CDCD_AND_TEST;
             s->training_error = 0.0f;
+#if defined(SPANDSP_USE_FIXED_POINT)
+            s->carrier_track_i = 200;
+            s->carrier_track_p = 1000000;
+#else
             s->carrier_track_i = 200.0f;
             s->carrier_track_p = 1000000.0f;
+#endif
         }
         break;
     case TRAINING_STAGE_TRAIN_ON_CDCD_AND_TEST:
@@ -755,7 +777,11 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Training failed (convergence failed)\n");
                 /* Park this modem */
+#if defined(SPANDSP_USE_FIXED_POINT)
+                s->agc_scaling_save = 0;
+#else
                 s->agc_scaling_save = 0.0f;
+#endif
                 s->training_stage = TRAINING_STAGE_PARKED;
                 report_status_change(s, SIG_STATUS_TRAINING_FAILED);
             }
@@ -799,7 +825,11 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
                 /* Training has failed */
                 span_log(&s->logging, SPAN_LOG_FLOW, "Training failed (constellation mismatch %f)\n", s->training_error);
                 /* Park this modem */
+#if defined(SPANDSP_USE_FIXED_POINT)
+                s->agc_scaling_save = 0;
+#else
                 s->agc_scaling_save = 0.0f;
+#endif
                 s->training_stage = TRAINING_STAGE_PARKED;
                 report_status_change(s, SIG_STATUS_TRAINING_FAILED);
             }
@@ -839,7 +869,6 @@ int v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
     complexi16_t zz;
     complexi16_t sample;
     int32_t v;
-    float y;
 #else
     complexf_t z;
     complexf_t zz;
@@ -930,8 +959,7 @@ int v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
         v = (int32_t) rx_pulseshaper[step][0].re*(int32_t) s->rrc_filter[s->rrc_filter_step];
         for (j = 1;  j < V29_RX_FILTER_STEPS;  j++)
             v += (int32_t) rx_pulseshaper[step][j].re*(int32_t) s->rrc_filter[j + s->rrc_filter_step];
-        y = v*s->agc_scaling;
-        sample.re = y;
+        sample.re = (v*s->agc_scaling) >> 15;
 #else
         v = rx_pulseshaper[step][0].re*s->rrc_filter[s->rrc_filter_step];
         for (j = 1;  j < V29_RX_FILTER_STEPS;  j++)
@@ -965,8 +993,8 @@ int v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
         {
             /* Only AGC until we have locked down the setting. */
 #if defined(SPANDSP_USE_FIXED_POINT)
-            if (s->agc_scaling_save == 0.0f)
-                s->agc_scaling = (float) FP_FACTOR*(1.0f/RX_PULSESHAPER_GAIN)*5.0f*0.25f/sqrtf(power);
+            if (s->agc_scaling_save == 0)
+                s->agc_scaling = (float) FP_FACTOR*32768.0f*(1.0f/RX_PULSESHAPER_GAIN)*5.0f*0.25f/sqrtf(power);
 #else
             if (s->agc_scaling_save == 0.0f)
                 s->agc_scaling = (1.0f/RX_PULSESHAPER_GAIN)*5.0f*0.25f/sqrtf(power);
@@ -983,7 +1011,7 @@ int v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
             v = (int32_t) rx_pulseshaper[step][0].im*(int32_t) s->rrc_filter[s->rrc_filter_step];
             for (j = 1;  j < V29_RX_FILTER_STEPS;  j++)
                 v += (int32_t) rx_pulseshaper[step][j].im*(int32_t) s->rrc_filter[j + s->rrc_filter_step];
-            sample.im = v*s->agc_scaling;
+            sample.im = (v*s->agc_scaling) >> 15;
             z = dds_lookup_complexi16(s->carrier_phase);
             zz.re = ((int32_t) sample.re*(int32_t) z.re - (int32_t) sample.im*(int32_t) z.im) >> 15;
             zz.im = ((int32_t) -sample.re*(int32_t) z.im - (int32_t) sample.im*(int32_t) z.re) >> 15;
@@ -1070,16 +1098,22 @@ int v29_rx_restart(v29_rx_state_t *s, int bit_rate, int old_train)
     else
     {
         s->carrier_phase_rate = dds_phase_ratef(CARRIER_NOMINAL_FREQ);
-        s->agc_scaling_save = 0.0f;
 #if defined(SPANDSP_USE_FIXED_POINT)
-        s->agc_scaling = (float) FP_FACTOR*0.0017f/RX_PULSESHAPER_GAIN;
+        s->agc_scaling_save = 0;
+        s->agc_scaling = (float) FP_FACTOR*32768.0f*0.0017f/RX_PULSESHAPER_GAIN;
 #else
+        s->agc_scaling_save = 0.0f;
         s->agc_scaling = 0.0017f/RX_PULSESHAPER_GAIN;
 #endif
         equalizer_reset(s);
     }
+#if defined(SPANDSP_USE_FIXED_POINT)
+    s->carrier_track_i = 8000;
+    s->carrier_track_p = 8000000;
+#else
     s->carrier_track_i = 8000.0f;
     s->carrier_track_p = 8000000.0f;
+#endif
     s->last_sample = 0;
     s->eq_skip = 0;
 

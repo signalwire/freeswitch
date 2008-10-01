@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_tester.h,v 1.8 2008/08/13 00:11:30 steveu Exp $
+ * $Id: fax_tester.h,v 1.9 2008/09/12 14:41:55 steveu Exp $
  */
 
 /*! \file */
@@ -179,7 +179,7 @@ void faxtester_set_timeout(faxtester_state_t *s, int timeout);
 
 void faxtester_set_non_ecm_image_buffer(faxtester_state_t *s, const uint8_t *buf, int len);
 
-void faxtester_set_ecm_image_buffer(faxtester_state_t *s, const uint8_t *buf, int len, int frame_size, int crc_hit);
+void faxtester_set_ecm_image_buffer(faxtester_state_t *s, const uint8_t *buf, int len, int block, int frame_size, int crc_hit);
 
 /*! Initialise a FAX context.
     \brief Initialise a FAX context.

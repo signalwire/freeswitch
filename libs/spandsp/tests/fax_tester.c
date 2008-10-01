@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_tester.c,v 1.16 2008/09/09 14:05:55 steveu Exp $
+ * $Id: fax_tester.c,v 1.17 2008/09/12 14:41:55 steveu Exp $
  */
 
 /*! \file */
@@ -217,10 +217,16 @@ void faxtester_set_non_ecm_image_buffer(faxtester_state_t *s, const uint8_t *buf
 }
 /*- End of function --------------------------------------------------------*/
 
-void faxtester_set_ecm_image_buffer(faxtester_state_t *s, const uint8_t *buf, int len, int frame_size, int crc_hit)
+void faxtester_set_ecm_image_buffer(faxtester_state_t *s, const uint8_t *buf, int len, int block, int frame_size, int crc_hit)
 {
+    int start;
+
+    start = 256*frame_size*block;
+    if (len > start + 256*frame_size)
+        len = start + 256*frame_size;
+
     s->ecm_frame_size = frame_size;
-    s->image_ptr = 0;
+    s->image_ptr = start;
     s->image_bit_ptr = 8;
     s->image_len = len;
     s->image_buffer = buf;

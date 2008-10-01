@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29rx.h,v 1.59 2008/09/08 12:45:02 steveu Exp $
+ * $Id: v29rx.h,v 1.60 2008/09/13 14:10:31 steveu Exp $
  */
 
 /*! \file */
@@ -196,10 +196,17 @@ typedef struct
     int32_t carrier_phase_rate;
     /*! \brief The carrier update rate saved for reuse when using short training. */
     int32_t carrier_phase_rate_save;
+#if defined(SPANDSP_USE_FIXED_POINT)
+    /*! \brief The proportional part of the carrier tracking filter. */
+    int32_t carrier_track_p;
+    /*! \brief The integral part of the carrier tracking filter. */
+    int32_t carrier_track_i;
+#else
     /*! \brief The proportional part of the carrier tracking filter. */
     float carrier_track_p;
     /*! \brief The integral part of the carrier tracking filter. */
     float carrier_track_i;
+#endif
 
     /*! \brief A power meter, to measure the HPF'ed signal power in the channel. */    
     power_meter_t power;
@@ -207,10 +214,6 @@ typedef struct
     int32_t carrier_on_power;
     /*! \brief The power meter level at which carrier off is declared. */
     int32_t carrier_off_power;
-    /*! \brief The scaling factor accessed by the AGC algorithm. */
-    float agc_scaling;
-    /*! \brief The previous value of agc_scaling, needed to reuse old training. */
-    float agc_scaling_save;
 
     /*! \brief The position of the current symbol in the constellation, used for
                differential decoding. */
@@ -227,6 +230,11 @@ typedef struct
     int baud_half;
 
 #if defined(SPANDSP_USE_FIXED_POINT)
+    /*! \brief The scaling factor accessed by the AGC algorithm. */
+    int32_t agc_scaling;
+    /*! \brief The previous value of agc_scaling, needed to reuse old training. */
+    int32_t agc_scaling_save;
+
     /*! \brief The current delta factor for updating the equalizer coefficients. */
     int16_t eq_delta;
     /*! \brief The adaptive equalizer coefficients. */
@@ -245,6 +253,11 @@ typedef struct
     /*! Baud phase for symbol sync. */
     int32_t baud_phase;
 #else
+    /*! \brief The scaling factor accessed by the AGC algorithm. */
+    float agc_scaling;
+    /*! \brief The previous value of agc_scaling, needed to reuse old training. */
+    float agc_scaling_save;
+
     /*! \brief The current delta factor for updating the equalizer coefficients. */
     float eq_delta;
     /*! \brief The adaptive equalizer coefficients. */

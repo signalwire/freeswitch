@@ -16,7 +16,7 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# $Id: configure.ac,v 1.56 2008/07/10 12:44:54 steveu Exp $
+# $Id: configure.ac,v 1.57 2008/09/12 14:41:55 steveu Exp $
 
 # @start 1
 
@@ -180,7 +180,6 @@ AC_CHECK_HEADERS([audiofile.h])
 AC_CHECK_HEADERS([fftw3.h], , [AC_CHECK_HEADERS([fftw.h])])
 AC_CHECK_HEADERS([tiffio.h])
 AC_CHECK_HEADERS([pthread.h])
-AC_CHECK_HEADERS([unicall.h])
 if test "${build}" == "${host}"
 then
   AC_CHECK_HEADERS([X11/X.h])
@@ -273,7 +272,6 @@ if test -n "$enable_tests" ; then
     AC_CHECK_LIB([fftw3], [fftw_plan_dft_1d], TESTLIBS="$TESTLIBS -lfftw3", [AC_CHECK_LIB([fftw], [fftw_create_plan], TESTLIBS="$TESTLIBS -lfftw")])
     AC_CHECK_LIB([pthread], [pthread_attr_init], TESTLIBS="$TESTLIBS -lpthread")
     AC_CHECK_LIB([dl], [dlopen], TESTLIBS="$TESTLIBS -ldl")
-    AC_CHECK_LIB([unicall], [uc_start], TESTLIBS="$TESTLIBS -lunicall",, -ltiff -ldl)
     AC_CHECK_LIB([Xft], [XftFontOpen], TESTLIBS="$TESTLIBS -lXft",, $TESTLIBS)
     AC_CHECK_LIB([Xext], [XextCreateExtension], TESTLIBS="$TESTLIBS -lXext",, $TESTLIBS)
     AC_CHECK_LIB([X11], [XOpenDisplay], TESTLIBS="$TESTLIBS -lX11",, $TESTLIBS)

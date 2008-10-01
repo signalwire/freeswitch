@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t31_tests.c,v 1.62 2008/08/29 09:28:13 steveu Exp $
+ * $Id: t31_tests.c,v 1.63 2008/09/13 14:32:53 steveu Exp $
  */
 
 /*! \file */
@@ -33,6 +33,10 @@
 
 #if defined(HAVE_CONFIG_H)
 #include "config.h"
+#endif
+
+#if defined(HAVE_FL_FL_H)  &&  defined(HAVE_FL_FL_CARTESIAN_H)  &&  defined(HAVE_FL_FL_AUDIO_METER_H)
+#define ENABLE_GUI
 #endif
 
 #include <stdlib.h>

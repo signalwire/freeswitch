@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_rx.c,v 1.101 2008/09/08 13:13:29 steveu Exp $
+ * $Id: v27ter_rx.c,v 1.102 2008/09/13 14:59:30 steveu Exp $
  */
 
 /*! \file */
@@ -323,16 +323,17 @@ static __inline__ void track_carrier(v27ter_rx_state_t *s, const complexf_t *z, 
     /* For small errors the imaginary part of the difference between the actual and the target
        positions is proportional to the phase error, for any particular target. However, the
        different amplitudes of the various target positions scale things. */
+    error = z->im*target->re - z->re*target->im;
+
 #if defined(SPANDSP_USE_FIXED_POINTx)
-    error = z->im*target->re - z->re*target->im;
     error /= (float) FP_FACTOR;
+    s->carrier_phase_rate += (int32_t) (s->carrier_track_i*error);
+    s->carrier_phase += (int32_t) (s->carrier_track_p*error);
 #else
-    error = z->im*target->re - z->re*target->im;
-#endif
-    
     s->carrier_phase_rate += (int32_t) (s->carrier_track_i*error);
     s->carrier_phase += (int32_t) (s->carrier_track_p*error);
     //span_log(&s->logging, SPAN_LOG_FLOW, "Im = %15.5f   f = %15.5f\n", error, dds_frequencyf(s->carrier_phase_rate));
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -676,8 +677,13 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
             s->constellation_state = (s->bit_rate == 4800)  ?  4  :  2;
             s->training_count = 0;
             s->training_stage = TRAINING_STAGE_TEST_ONES;
+#if defined(SPANDSP_USE_FIXED_POINTx)
+            s->carrier_track_i = 400;
+            s->carrier_track_p = 1000000;
+#else
             s->carrier_track_i = 400.0f;
             s->carrier_track_p = 1000000.0f;
+#endif
         }
         break;
     case TRAINING_STAGE_TEST_ONES:
@@ -1076,8 +1082,13 @@ int v27ter_rx_restart(v27ter_rx_state_t *s, int bit_rate, int old_train)
 #endif
 
     s->carrier_phase = 0;
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    s->carrier_track_i = 200000;
+    s->carrier_track_p = 10000000;
+#else
     s->carrier_track_i = 200000.0f;
     s->carrier_track_p = 10000000.0f;
+#endif
     power_meter_init(&(s->power), 4);
 
     s->constellation_state = 0;
