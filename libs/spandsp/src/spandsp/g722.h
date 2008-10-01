@@ -28,7 +28,7 @@
  * Computer Science, Speech Group
  * Chengxiang Lu and Alex Hauptmann
  *
- * $Id: g722.h,v 1.20 2008/09/19 14:02:05 steveu Exp $
+ * $Id: g722.h,v 1.21 2008/09/19 16:24:25 steveu Exp $
  */
 
 
@@ -59,15 +59,15 @@ enum
 /*! The per band parameters for both encoding and decoding G.722 */
 typedef struct
 {
-    int16_t s;
-    int16_t sz;
-    int16_t r[3];
-    int16_t a[3];
-    int16_t p[3];
-    int16_t d[7];
-    int16_t b[7];
     int16_t nb;
     int16_t det;
+    int16_t s;
+    int16_t sz;
+    int16_t r;
+    int16_t p[2];
+    int16_t a[2];
+    int16_t b[6];
+    int16_t d[7];
 } g722_band_t;
 
 typedef struct

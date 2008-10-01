@@ -16,7 +16,7 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.40 2008/07/15 14:28:20 steveu Exp $
+## $Id: Makefile.am,v 1.43 2008/09/20 15:44:40 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -30,26 +30,10 @@ EXTRA_DIST = autogen.sh \
              README.testdata \
              spandsp.spec \
              wrapper.xsl \
-             libspandsp.vcproj \
              unpack_g722_data.sh \
              unpack_g726_data.sh \
              unpack_gsm0610_data.sh \
              unpack_v56ter_data.sh \
-             doc/doxygen.in \
-             src/floating_fudge.h \
-             src/spandsp/version.h.in \
-             src/libspandsp.dsp \
-             src/libspandsp.sln \
-             src/msvc/gettimeofday.c \
-             src/msvc/inttypes.h \
-             src/msvc/tgmath.h \
-             src/msvc/unistd.h \
-             src/msvc/sys/time.h \
-             src/msvc/spandsp.def \
-             src/msvc/msvcproj.head \
-             src/msvc/msvcproj.foot \
-             src/msvc/vc8proj.head \
-             src/msvc/vc8proj.foot \
              spandsp/global-tones.xml \
              spandsp/tones.dtd \
              spandsp/tsb85.xml \

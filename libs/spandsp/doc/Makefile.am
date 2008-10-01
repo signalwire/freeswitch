@@ -16,11 +16,12 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.11 2008/06/21 10:28:34 steveu Exp $
+## $Id: Makefile.am,v 1.12 2008/09/20 15:44:40 steveu Exp $
 
 MAINTAINERCLEANFILES = Makefile.in
 
 EXTRA_DIST = css.css \
+             doxygen.in \
              t38-gateway.dia \
              t38-terminal.dia \
              t38_manual.xml \

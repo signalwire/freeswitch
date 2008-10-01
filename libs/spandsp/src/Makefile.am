@@ -16,12 +16,28 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.103 2008/09/19 14:02:05 steveu Exp $
+## $Id: Makefile.am,v 1.104 2008/09/20 15:44:40 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
 
 MAINTAINERCLEANFILES = Makefile.in
+
+EXTRA_DIST = floating_fudge.h \
+             spandsp/version.h.in \
+             libspandsp.dsp \
+             libspandsp.sln \
+             libspandsp.vcproj \
+             msvc/gettimeofday.c \
+             msvc/inttypes.h \
+             msvc/tgmath.h \
+             msvc/unistd.h \
+             msvc/sys/time.h \
+             msvc/spandsp.def \
+             msvc/msvcproj.head \
+             msvc/msvcproj.foot \
+             msvc/vc8proj.head \
+             msvc/vc8proj.foot
 
 INCLUDES = -I$(top_builddir)
 
