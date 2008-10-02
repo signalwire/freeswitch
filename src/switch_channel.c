@@ -1129,41 +1129,51 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Rate", "%u", codec->implementation->actual_samples_per_second);
 	}
 
-	/* Index Caller's Profile */
-	if (caller_profile) {
-		switch_caller_profile_event_set_data(caller_profile, "Caller", event);
-	}
+	if (switch_test_flag(channel, CF_VERBOSE_EVENTS) || 
+		event->event_id == SWITCH_EVENT_CHANNEL_ORIGINATE ||
+		event->event_id == SWITCH_EVENT_CHANNEL_ANSWER ||
+		event->event_id == SWITCH_EVENT_CHANNEL_PROGRESS ||
+		event->event_id == SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA ||
+		event->event_id == SWITCH_EVENT_CHANNEL_HANGUP
+		) {
 
-	if (originator_caller_profile && originatee_caller_profile) {
-		/* Index Originator's Profile */
-		switch_caller_profile_event_set_data(originator_caller_profile, "Originator", event);
+		/* Index Caller's Profile */
+		if (caller_profile) {
+			switch_caller_profile_event_set_data(caller_profile, "Caller", event);
+		}
 
-		/* Index Originatee's Profile */
-		switch_caller_profile_event_set_data(originatee_caller_profile, "Originatee", event);
-	} else {
-		/* Index Originator's Profile */
-		if (originator_caller_profile) {
-			switch_caller_profile_event_set_data(originator_caller_profile, "Other-Leg", event);
-		} else if (originatee_caller_profile) {	/* Index Originatee's Profile */
-			switch_caller_profile_event_set_data(originatee_caller_profile, "Other-Leg", event);
+		if (originator_caller_profile && originatee_caller_profile) {
+			/* Index Originator's Profile */
+			switch_caller_profile_event_set_data(originator_caller_profile, "Originator", event);
+
+			/* Index Originatee's Profile */
+			switch_caller_profile_event_set_data(originatee_caller_profile, "Originatee", event);
+		} else {
+			/* Index Originator's Profile */
+			if (originator_caller_profile) {
+				switch_caller_profile_event_set_data(originator_caller_profile, "Other-Leg", event);
+			} else if (originatee_caller_profile) {	/* Index Originatee's Profile */
+				switch_caller_profile_event_set_data(originatee_caller_profile, "Other-Leg", event);
+			}
+		}
+		x = 0;
+		/* Index Variables */
+		if (channel->variables) {
+			for (hi = channel->variables->headers; hi; hi = hi->next) {
+				char buf[1024];
+				char *vvar = NULL, *vval = NULL;
+				
+				vvar = (char *) hi->name;
+				vval = (char *) hi->value;
+				x++;
+
+				switch_assert(vvar && vval);
+				switch_snprintf(buf, sizeof(buf), "variable_%s", vvar);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, buf, vval);
+			}
 		}
 	}
-	x = 0;
-	/* Index Variables */
-	if (channel->variables) {
-		for (hi = channel->variables->headers; hi; hi = hi->next) {
-			char buf[1024];
-			char *vvar = NULL, *vval = NULL;
 
-			vvar = (char *) hi->name;
-			vval = (char *) hi->value;
-			x++;
-
-			switch_assert(vvar && vval);
-			switch_snprintf(buf, sizeof(buf), "variable_%s", vvar);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, buf, vval);
-		}
-	}
 	switch_mutex_unlock(channel->profile_mutex);
 }
 
@@ -1414,12 +1424,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		channel->hangup_cause = hangup_cause;
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n",
 						  channel->name, state_names[last_state], switch_channel_cause2str(channel->hangup_cause));
-		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_HANGUP) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Hangup-Cause", switch_channel_cause2str(channel->hangup_cause));
-			switch_channel_event_set_data(channel, event);
-			switch_event_fire(&event);
-		}
-
+		
 		switch_channel_set_variable(channel, "hangup_cause", switch_channel_cause2str(channel->hangup_cause));
 		switch_channel_presence(channel, "unavailable", switch_channel_cause2str(channel->hangup_cause), NULL);
 
@@ -1427,6 +1432,13 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		switch_core_session_signal_state_change(channel->session);
 
 		switch_channel_set_timestamps(channel);
+
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_HANGUP) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Hangup-Cause", switch_channel_cause2str(channel->hangup_cause));
+			switch_channel_event_set_data(channel, event);
+			switch_event_fire(&event);
+		}
+
 	}
 
 	switch_mutex_unlock(channel->flag_mutex);
@@ -1437,6 +1449,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_ch
 {
 	const char *var;
 	char *app;
+	switch_event_t *event;
 
 	if (!switch_channel_test_flag(channel, CF_RING_READY)) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Ring-Ready %s!\n", channel->name);
@@ -1445,6 +1458,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_ch
 			switch_mutex_lock(channel->profile_mutex);
 			channel->caller_profile->times->progress = switch_timestamp_now();
 			switch_mutex_unlock(channel->profile_mutex);
+		}
+
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PROGRESS) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(channel, event);
+			switch_event_fire(&event);
 		}
 
 		var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE);
@@ -1477,7 +1495,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Pre-Answer %s!\n", channel->name);
 		switch_channel_set_flag(channel, CF_EARLY_MEDIA);
 		switch_channel_set_variable(channel, "endpoint_disposition", "EARLY MEDIA");
-		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PROGRESS) == SWITCH_STATUS_SUCCESS) {
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
 			switch_event_fire(&event);
 		}

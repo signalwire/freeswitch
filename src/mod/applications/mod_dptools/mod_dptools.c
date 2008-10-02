@@ -2144,6 +2144,11 @@ SWITCH_STANDARD_APP(unhold_function)
 	switch_ivr_unhold_uuid(switch_core_session_get_uuid(session));
 }
 
+SWITCH_STANDARD_APP(verbose_events_function)
+{
+	switch_channel_set_flag(switch_core_session_get_channel(session), CF_VERBOSE_EVENTS);
+}
+
 #define WAIT_FOR_SILENCE_SYNTAX "<silence_thresh> <silence_hits> <listen_hits> <timeout_ms> [<file>]"
 SWITCH_STANDARD_APP(wait_for_silence_function)
 {
@@ -2279,7 +2284,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 
 	SWITCH_ADD_CHAT(chat_interface, "event", event_chat_send);
 	SWITCH_ADD_CHAT(chat_interface, "api", api_chat_send);
-
+	
 	SWITCH_ADD_API(api_interface, "strepoch", "Convert a date string into epoch time", strepoch_api_function, "<string>");
 	SWITCH_ADD_API(api_interface, "chat", "chat", chat_api_function, "<proto>|<from>|<to>|<message>");
 	SWITCH_ADD_API(api_interface, "strftime", "strftime", strftime_api_function, "<format_string>");
@@ -2293,6 +2298,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "check_acl", "Check an ip against an ACL list", "Check an ip against an ACL list", check_acl_function,
 				   "<ip> <acl | cidr> [<hangup_cause>]", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "verbose_events", "Make ALL Events verbose.", "Make ALL Events verbose.", verbose_events_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "sleep", "Pause a channel", SLEEP_LONG_DESC, sleep_function, "<pausemilliseconds>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "delay_echo", "echo audio at a specified delay", "Delay n ms", delay_function, "<delay ms>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "strftime", "strftime", "strftime", strftime_function, "[<epoch>|]<format string>", SAF_SUPPORT_NOMEDIA);

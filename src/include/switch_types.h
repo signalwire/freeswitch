@@ -776,7 +776,8 @@ typedef enum {
 	CF_STOP_BROADCAST = (1 << 26),
 	CF_PROXY_MEDIA = (1 << 27),
 	CF_INNER_BRIDGE = (1 << 28),
-	CF_REQ_MEDIA = (1 << 29)
+	CF_REQ_MEDIA = (1 << 29),
+	CF_VERBOSE_EVENTS = (1 << 30)
 } switch_channel_flag_enum_t;
 typedef uint32_t switch_channel_flag_t;
 
@@ -1026,7 +1027,8 @@ typedef uint32_t switch_io_flag_t;
     SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE	- A channel has finshed executing a module's application
 	SWITCH_EVENT_CHANNEL_BRIDGE     - A channel has bridged to another channel
 	SWITCH_EVENT_CHANNEL_UNBRIDGE   - A channel has unbridged from another channel
-    SWITCH_EVENT_CHANNEL_PROGRESS	- A channel has been parked
+    SWITCH_EVENT_CHANNEL_PROGRESS	- A channel has started ringing
+    SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA	- A channel has started early media
     SWITCH_EVENT_CHANNEL_OUTGOING	- A channel has been unparked
 	SWITCH_EVENT_CHANNEL_PARK 		- A channel has been parked
 	SWITCH_EVENT_CHANNEL_UNPARK 	- A channel has been unparked
@@ -1083,6 +1085,7 @@ typedef enum {
 	SWITCH_EVENT_CHANNEL_BRIDGE,
 	SWITCH_EVENT_CHANNEL_UNBRIDGE,
 	SWITCH_EVENT_CHANNEL_PROGRESS,
+	SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA,
 	SWITCH_EVENT_CHANNEL_OUTGOING,
 	SWITCH_EVENT_CHANNEL_PARK,
 	SWITCH_EVENT_CHANNEL_UNPARK,
