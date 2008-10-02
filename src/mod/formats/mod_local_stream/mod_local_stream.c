@@ -584,7 +584,14 @@ SWITCH_STANDARD_API(start_local_stream_function)
 
 	shuffle = argv[3] ? switch_true(argv[3]) : 1;
 	prebuf = argv[4] ? atoi(argv[4]) : DEFAULT_PREBUFFER_SIZE;
-	channels = argv[5] ? (uint8_t)atoi(argv[5]) : 1;
+
+	if (argv[5]) {
+		tmp = atoi(argv[5]);
+		if (tmp == 1 || tmp == 2) {
+			channels = tmp;
+		}
+	}
+
 	interval = argv[6] ? atoi(argv[6]) : 20;
 	
 	if (!SWITCH_ACCEPTABLE_INTERVAL(interval)){
