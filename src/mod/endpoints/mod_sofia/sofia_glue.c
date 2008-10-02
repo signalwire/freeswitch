@@ -2881,7 +2881,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		free(test_sql);
 		
 		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q'", mod_sofia_globals.hostname);
-		switch_core_db_test_reactive(profile->master_db, "delete from sip_dialogs", test_sql, dialog_sql);
+		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_dialogs", dialog_sql);
 		free(test_sql);
 		test_sql = switch_mprintf("delete from sip_authentication where hostname='%q'", mod_sofia_globals.hostname);
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_authentication", auth_sql);
