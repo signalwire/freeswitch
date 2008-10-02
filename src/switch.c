@@ -617,7 +617,6 @@ int main(int argc, char *argv[])
 	}
 
 	if (destroy_status == SWITCH_STATUS_RESTART) {
-		printf("WTF\n");
 		execv(argv[0], argv);
 		ret = 0;
 	}
