@@ -270,6 +270,7 @@ int main(int argc, char *argv[])
 	int high_prio = 0;
 	switch_core_flag_t flags = SCF_USE_SQL;
 	int ret;
+	switch_status_t destroy_status;
 	switch_file_t *fd;
 	switch_memory_pool_t *pool = NULL;
 
@@ -607,12 +608,18 @@ int main(int argc, char *argv[])
 
 	switch_core_runtime_loop(nc);
 
-	ret = switch_core_destroy();
-
+	destroy_status = switch_core_destroy();
+	
 	switch_file_close(fd);
 
 	if (unlink(pid_path) != 0) {
 		fprintf(stderr, "Failed to delete pid file [%s]\n", pid_path);
+	}
+
+	if (destroy_status == SWITCH_STATUS_RESTART) {
+		printf("WTF\n");
+		execv(argv[0], argv);
+		ret = 0;
 	}
 
 	return ret;

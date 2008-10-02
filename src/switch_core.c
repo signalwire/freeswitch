@@ -1304,8 +1304,28 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 	case SCSC_HUPALL:
 		switch_core_session_hupall(SWITCH_CAUSE_MANAGER_REQUEST);
 		break;
+	case SCSC_SHUTDOWN_ELEGANT:
+		{
+			int x = 19;
+			if (*val) {
+				switch_set_flag((&runtime), SCF_RESTART);
+			}
+			switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
+			while(runtime.running && switch_core_session_count()) {
+				switch_yield(500000);
+				if (++x == 20) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Shutdown in progress.....\n");
+					x = 0;
+				}
+			}
+			runtime.running = 0;
+		}
+		break;
 	case SCSC_SHUTDOWN:
 		runtime.running = 0;
+		if (*val) {
+			switch_set_flag((&runtime), SCF_RESTART);
+		}
 		break;
 	case SCSC_CHECK_RUNNING:
 		*val = runtime.running;
@@ -1346,6 +1366,7 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 		*val = 0;
 		break;
 	}
+
 
 	return 0;
 }
@@ -1412,8 +1433,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 		apr_pool_destroy(runtime.memory_pool);
 		/* apr_terminate(); */
 	}
-
-	return SWITCH_STATUS_SUCCESS;
+	
+	return switch_test_flag((&runtime), SCF_RESTART) ? SWITCH_STATUS_RESTART : SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_management_exec(char *relative_oid, switch_management_action_t action, char *data, switch_size_t datalen)
