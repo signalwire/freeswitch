@@ -504,7 +504,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	if (switch_test_flag(tech_pvt, TFLAG_CNG) || switch_test_flag(tech_pvt, TFLAG_BOWOUT)) {
+	if (switch_test_flag(frame, SFF_CNG) || switch_test_flag(tech_pvt, TFLAG_CNG) || switch_test_flag(tech_pvt, TFLAG_BOWOUT)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 	
