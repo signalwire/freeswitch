@@ -4,7 +4,7 @@
     <param name="shuffle" value="true"/>
     <param name="channels" value="1"/>
     <param name="interval" value="20"/>
-    <param name="timer_name" value="soft"/>
+    <param name="timer-name" value="soft"/>
   </directory>
 
   <directory name="moh/16000" path="$${base_dir}/sounds/music/16000">
@@ -12,7 +12,7 @@
     <param name="shuffle" value="true"/>
     <param name="channels" value="1"/>
     <param name="interval" value="20"/>
-    <param name="timer_name" value="soft"/>
+    <param name="timer-name" value="soft"/>
   </directory>
   <!-- 
   <directory name="moh/32000" path="$${base_dir}/sounds/music/32000">
@@ -20,7 +20,7 @@
     <param name="shuffle" value="true"/>
     <param name="channels" value="1"/>
     <param name="interval" value="20"/>
-    <param name="timer_name" value="soft"/>
+    <param name="timer-name" value="soft"/>
   </directory>
   -->
 </configuration>
