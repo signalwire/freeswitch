@@ -578,7 +578,6 @@ SWITCH_STANDARD_API(start_local_stream_function)
 	if (!SWITCH_ACCEPTABLE_INTERVAL(interval)){
 		interval = 20;
 	}
-	timer_name = argv[7] ? argv[7] : "soft";
 
 	if (!path){
 		if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -667,7 +666,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 	source->rate = rate;
 	source->interval = interval;
 	source->channels = channels;
-	source->timer_name = switch_core_strdup(source->pool, timer_name);
+	source->timer_name = switch_core_strdup(source->pool, timer_name ? timer_name : (argv[7] ? argv[7] : "soft"));
 	source->prebuf = prebuf;
 	source->stopped = 0;
 
