@@ -38,6 +38,9 @@ SWITCH_BEGIN_EXTERN_C
 #include <switch.h>
 #include <switch_cpp.h>
 
+typedef void (*hangupFunction)(void);
+typedef char* (*inputFunction)(void*, switch_input_type_t);
+
 #ifndef _MANAGED
 // this section remove linker error LNK4248 for these opaque structures
 	struct switch_core_session {char foo[];};
@@ -99,9 +102,6 @@ using namespace System;
 using namespace System::Reflection;
 using namespace System::Runtime::InteropServices;
 
-typedef void (*hangupFunction)(void);
-typedef char* (*inputFunction)(void*, switch_input_type_t);
-
 public ref class FreeSwitchManaged
 {
 public:
@@ -129,15 +129,9 @@ public:
 
 	virtual switch_status_t run_dtmf_callback(void *input, switch_input_type_t itype);
 
-#ifdef _MANAGED
 	// P/Invoke function pointer to delegates
 	inputFunction dtmfDelegate; 
 	hangupFunction hangupDelegate; 
-#else
-	guint32 dtmfDelegateHandle; // GCHandle to the input delegate 
-	guint32 hangupDelegateHandle; // GCHandle to the hangup delegate
-#endif
-
 };
 
 #endif

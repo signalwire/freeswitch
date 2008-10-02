@@ -128,14 +128,6 @@ ManagedSession::ManagedSession(switch_core_session_t *session):CoreSession(sessi
 ManagedSession::~ManagedSession() 
 {
 	mono_thread_attach(globals.domain);
-		
-	if (dtmfDelegateHandle) {
-		mono_gchandle_free(dtmfDelegateHandle);
-	}
-		
-	if (hangupDelegateHandle) {
-		mono_gchandle_free(hangupDelegateHandle);
-	}
 
 	// Do auto-hangup ourselves because CoreSession can't call check_hangup_hook 
 	// after ManagedSession destruction (cause at point it's pure virtual)
@@ -163,46 +155,19 @@ bool ManagedSession::end_allow_threads()
 void ManagedSession::check_hangup_hook() 
 {
 	mono_thread_attach(globals.domain);
-	if (!hangupDelegateHandle) {
-		return;
-	}
-		
-	MonoObject * hangupDelegate = mono_gchandle_get_target(hangupDelegateHandle);
 	if (!hangupDelegate) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hangupDelegateHandle didn't get an object.");
 		return;
 	}
-		
-	MonoObject * ex = NULL;
-	mono_runtime_delegate_invoke(hangupDelegate, NULL, &ex);
-	if (ex) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hangupDelegate threw an exception.");
-	}
+	hangupDelegate();
 }
 
 switch_status_t ManagedSession::run_dtmf_callback(void *input, switch_input_type_t itype) 
 {
 	mono_thread_attach(globals.domain);
-	if (!dtmfDelegateHandle) {
-		return SWITCH_STATUS_SUCCESS;
-	}
-	MonoObject * dtmfDelegate = mono_gchandle_get_target(dtmfDelegateHandle);
 	if (!dtmfDelegate) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "dtmfDelegateHandle didn't get an object.");
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
-	void *args[2];
-	args[0] = &input;
-	args[1] = &itype;
-	MonoObject * ex = NULL;
-	MonoObject * res = mono_runtime_delegate_invoke(dtmfDelegate, args, &ex);
-	if (ex) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "dtmfDelegate threw an exception.");
-		return SWITCH_STATUS_FALSE;
-	}
-
-	char *resPtr = mono_string_to_utf8((MonoString *) res);
+	char *resPtr = dtmfDelegate(input, itype);
 	switch_status_t status = process_callback_result(resPtr);
 	g_free(resPtr);
 	return status;

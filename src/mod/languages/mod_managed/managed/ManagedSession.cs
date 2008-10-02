@@ -32,16 +32,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Runtime.InteropServices;
 
 namespace FreeSWITCH.Native
 {
     // switch_status_t ManagedSession::run_dtmf_callback(void *input, switch_input_type_t itype)
     // But, process_callback_result is used to turn a string into a switch_status_t
-    using DtmfCallback = Func<IntPtr, Native.switch_input_type_t, string>;
+    //using DtmfCallback = Func<IntPtr, Native.switch_input_type_t, string>;
+    delegate string DtmfCallback(IntPtr input, Native.switch_input_type_t itype);
     public partial class ManagedSession
     {
         // SWITCH_DECLARE(void) InitManagedSession(ManagedSession *session, MonoObject *dtmfDelegate, MonoObject *hangupDelegate)
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.InternalCall)]
+        [DllImport("mod_managed.dll", CharSet = CharSet.Ansi)]
         static extern void InitManagedSession(IntPtr sessionPtr, DtmfCallback dtmfDelegate, Action hangupDelegate);
 
         /// <summary>Initializes the native ManagedSession. Must be called after Originate.</summary>

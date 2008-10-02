@@ -80,7 +80,7 @@ mod_mono_globals globals =
 
 // Sets up delegates (and anything else needed) on the ManagedSession object
 // Called via internalcall
-SWITCH_MOD_DECLARE(void) InitManagedSession(ManagedSession * session, MonoObject * dtmfDelegate, MonoObject * hangupDelegate) 
+SWITCH_MOD_DECLARE(void) InitManagedSession(ManagedSession * session, inputFunction dtmfDelegate, hangupFunction hangupDelegate) 
 {
 	switch_assert(session);
 	if (!session) {
@@ -88,8 +88,8 @@ SWITCH_MOD_DECLARE(void) InitManagedSession(ManagedSession * session, MonoObject
 	}
 	session->setDTMFCallback(NULL, "");
 	session->setHangupHook(NULL);
-	session->dtmfDelegateHandle = mono_gchandle_new(dtmfDelegate, FALSE);
-	session->hangupDelegateHandle = mono_gchandle_new(hangupDelegate, FALSE);
+	session->dtmfDelegate = dtmfDelegate;
+	session->hangupDelegate = hangupDelegate;
 }
 
 switch_status_t setMonoDirs() 
@@ -282,8 +282,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 
 	/* Not sure if this is necesary on the loading thread */ 
 	mono_thread_attach(globals.domain);
-
-	mono_add_internal_call("FreeSWITCH.Native.ManagedSession::InitManagedSession", (void *)InitManagedSession);
 
 	/* Run loader */ 
 	MonoObject * objResult;
