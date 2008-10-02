@@ -1136,7 +1136,8 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 		event->event_id == SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA ||
 		event->event_id == SWITCH_EVENT_CHANNEL_HANGUP ||
 		event->event_id == SWITCH_EVENT_REQUEST_PARAMS ||
-		event->event_id == SWITCH_EVENT_CHANNEL_DATA
+		event->event_id == SWITCH_EVENT_CHANNEL_DATA ||
+		event->event_id == SWITCH_EVENT_CUSTOM
 		) {
 
 		/* Index Caller's Profile */
