@@ -2666,8 +2666,12 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 			TRY_CODE(switch_ivr_play_file(session, NULL, cbt.name_path, &args));
 		}
 		if (*buf == '\0') {
+			const char *read_id;
+			if (!(read_id = switch_channel_get_variable(channel, "voicemail_alternate_greet_id"))) {
+				read_id = id;
+			}
 			memset(buf, 0, sizeof(buf));
-			TRY_CODE(switch_ivr_phrase_macro(session, VM_PLAY_GREETING_MACRO, id, NULL, &args));
+			TRY_CODE(switch_ivr_phrase_macro(session, VM_PLAY_GREETING_MACRO, read_id, NULL, &args));
 		}
 	}
 
