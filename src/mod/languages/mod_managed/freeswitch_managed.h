@@ -99,8 +99,8 @@ using namespace System;
 using namespace System::Reflection;
 using namespace System::Runtime::InteropServices;
 
-delegate void HangupDelegate(void);
-delegate char* InputDelegate(void* input, switch_input_type_t type);
+typedef void (*hangupFunction)(void);
+typedef char* (*inputFunction)(void*, switch_input_type_t);
 
 public ref class FreeSwitchManaged
 {
@@ -130,8 +130,9 @@ public:
 	virtual switch_status_t run_dtmf_callback(void *input, switch_input_type_t itype);
 
 #ifdef _MANAGED
-	GCHandle dtmfDelegateHandle; // GCHandle to the input delegate 
-	GCHandle hangupDelegateHandle; // GCHandle to the hangup delegate
+	// P/Invoke function pointer to delegates
+	inputFunction dtmfDelegate; 
+	hangupFunction hangupDelegate; 
 #else
 	guint32 dtmfDelegateHandle; // GCHandle to the input delegate 
 	guint32 hangupDelegateHandle; // GCHandle to the hangup delegate

@@ -47,8 +47,16 @@ namespace FreeSWITCH.Native
         /// <summary>Initializes the native ManagedSession. Must be called after Originate.</summary>
         public void Initialize()
         {
+            // P/Invoke generated function pointers stick around until the delegate is collected
+            // By sticking the delegates in fields, their lifetime won't be less than the session
+            // So we don't need to worry about GCHandles and all that....
+            // Info here: http://blogs.msdn.com/cbrumme/archive/2003/05/06/51385.aspx
+            this._inputCallbackRef = inputCallback;
+            this._hangupCallback = hangupCallback;
             InitManagedSession(ManagedSession.getCPtr(this).Handle, inputCallback, hangupCallback);
         }
+        DtmfCallback _inputCallbackRef;
+        Action _hangupCallback;
 
         /// <summary>Function to execute when this session hangs up.</summary>
         public Action HangupFunction { get; set; }

@@ -452,8 +452,7 @@ struct dotnet_conf_t {
 // Sets up delegates (and anything else needed) on the ManagedSession object
 // Called from ManagedSession.Initialize Managed -> this is Unmanaged code so all pointers are marshalled and prevented from GC
 // Exported method.
-
-SWITCH_MOD_DECLARE(void) InitManagedSession(ManagedSession *session, void *dtmfDelegate, void *hangupDelegate) 
+SWITCH_MOD_DECLARE(void) InitManagedSession(ManagedSession *session, inputFunction dtmfDelegate, hangupFunction hangupDelegate) 
 {
 	switch_assert(session);
 	if (!session) {
@@ -461,8 +460,8 @@ SWITCH_MOD_DECLARE(void) InitManagedSession(ManagedSession *session, void *dtmfD
 	}
 	session->setDTMFCallback(NULL, "");
 	session->setHangupHook(NULL);
-	session->dtmfDelegateHandle = GCHandle::Alloc(Marshal::GetDelegateForFunctionPointer(IntPtr(dtmfDelegate), InputDelegate::typeid));
-	session->hangupDelegateHandle = GCHandle::Alloc(Marshal::GetDelegateForFunctionPointer(IntPtr(hangupDelegate), HangupDelegate::typeid));
+	session->dtmfDelegate = dtmfDelegate;
+	session->hangupDelegate = hangupDelegate;
 }
 
 switch_status_t loadModDotnetManaged() 
