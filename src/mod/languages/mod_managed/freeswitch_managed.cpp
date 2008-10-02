@@ -74,6 +74,9 @@ ManagedSession::~ManagedSession()
 		// Don't let any callbacks use this CoreSession anymore
 		switch_channel_set_private(channel, "CoreSession", NULL);
 	}
+	// Free delegates
+	hangupDelegateHandle.Free();
+	dtmfDelegateHandle.Free();
 }
 
 bool ManagedSession::begin_allow_threads() 
@@ -88,20 +91,20 @@ bool ManagedSession::end_allow_threads()
 
 void ManagedSession::check_hangup_hook() 
 {
-	if (!hangupDelegateHandle) {
+	if (!hangupDelegateHandle.IsAllocated) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hangupDelegateHandle didn't get an object.");
 		return;
 	}
-	hangupDelegateHandle();
+	((HangupDelegate^)hangupDelegateHandle.Target)();
 }
 
 switch_status_t ManagedSession::run_dtmf_callback(void *input, switch_input_type_t itype) 
 {
-	if (!dtmfDelegateHandle) {
+	if (!dtmfDelegateHandle.IsAllocated) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "dtmfDelegateHandle didn't get an object.");
 		return SWITCH_STATUS_FALSE;;
 	}
-	char* result = dtmfDelegateHandle(input, itype);
+	char *result = ((InputDelegate^)dtmfDelegateHandle.Target)(input, itype);
 
 	switch_status_t status = process_callback_result(result);
 	return status;

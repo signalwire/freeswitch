@@ -448,10 +448,12 @@ struct dotnet_conf_t {
     //char *cor_version;
 } globals;
 
+
 // Sets up delegates (and anything else needed) on the ManagedSession object
 // Called from ManagedSession.Initialize Managed -> this is Unmanaged code so all pointers are marshalled and prevented from GC
 // Exported method.
-SWITCH_MOD_DECLARE(void) InitManagedSession(ManagedSession * session, inputtype dtmfDelegate, hanguptype hangupDelegate) 
+
+SWITCH_MOD_DECLARE(void) InitManagedSession(ManagedSession *session, void *dtmfDelegate, void *hangupDelegate) 
 {
 	switch_assert(session);
 	if (!session) {
@@ -459,8 +461,8 @@ SWITCH_MOD_DECLARE(void) InitManagedSession(ManagedSession * session, inputtype 
 	}
 	session->setDTMFCallback(NULL, "");
 	session->setHangupHook(NULL);
-	session->dtmfDelegateHandle = dtmfDelegate;
-	session->hangupDelegateHandle = hangupDelegate;
+	session->dtmfDelegateHandle = GCHandle::Alloc(Marshal::GetDelegateForFunctionPointer(IntPtr(dtmfDelegate), InputDelegate::typeid));
+	session->hangupDelegateHandle = GCHandle::Alloc(Marshal::GetDelegateForFunctionPointer(IntPtr(hangupDelegate), HangupDelegate::typeid));
 }
 
 switch_status_t loadModDotnetManaged() 
@@ -469,50 +471,6 @@ switch_status_t loadModDotnetManaged()
 	char filename[256];
 	switch_snprintf(filename, 256, "%s%s%s", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR, MOD_MANAGED_DLL);
 
-	//HRESULT hr;
-	//wchar_t wCORVersion[256];
-	//if (globals.cor_version) {
-	//  MultiByteToWideChar(CP_UTF8, 0, globals.cor_version, -1,
-	//							 wCORVersion, sizeof(wCORVersion) / sizeof(wchar_t));
-	//}
-	//else {
-	//  DWORD bytes;
-	//  hr = GetCORVersion(wCORVersion, sizeof(wCORVersion) 
-	//												/ sizeof(wchar_t) - 1, &bytes);
-	//  if (FAILED(hr)) {
-	//		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-	//						"mod_dotnet: GetCORVersion failed to return "
-	//						"the .NET CLR engine version.");
-	//		return SWITCH_STATUS_FALSE;
-	//  }
-	//  int len = WideCharToMultiByte(CP_UTF8, 0, wCORVersion, -1, 
-	//										  NULL, 0, NULL, NULL);
-	//  globals.cor_version = (char *)apr_palloc(globals.pool, len);
-	//  len = WideCharToMultiByte(CP_UTF8, 0, wCORVersion, -1, 
-	//									 globals.cor_version, len, NULL, NULL);
-	//}
-
-	////verify that the clr is already loaded - because this dll is a clr enabled dll it will be loaded but lets get its info anyway
-	//hr = CorBindToRuntimeEx(wCORVersion, 
-	//							 L"wks",  // Or "svr" 
-	//							 STARTUP_LOADER_OPTIMIZATION_MULTI_DOMAIN_HOST | 
-	//							 STARTUP_CONCURRENT_GC, 
-	//							 CLSID_CorRuntimeHost, 
-	//							 IID_ICorRuntimeHost, 
-	//							 (void **)&globals.pCorRuntime);
-	//if (FAILED(hr)) {
-	//  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-	//					"mod_dotnet: Could not CorBindToRuntimeEx version "
-	//					"%s for the .NET CLR engine.", globals.cor_version);
-	//  return SWITCH_STATUS_FALSE;
-	//}
-
-	//if (FAILED(hr)) { // a value of one here means that the specified clr is already loaded and good.
-	//	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-	//					"mod_dotnet: Could not start the "
-	//					".NET CLR engine.");
-	//	return SWITCH_STATUS_FALSE;
-	//}
 	wchar_t modpath[256];
 	mbstowcs(modpath, filename, 255);
 	try {

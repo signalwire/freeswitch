@@ -38,7 +38,7 @@ SWITCH_BEGIN_EXTERN_C
 #include <switch.h>
 #include <switch_cpp.h>
 
-#ifdef _MANAGED
+#ifndef _MANAGED
 // this section remove linker error LNK4248 for these opaque structures
 	struct switch_core_session {char foo[];};
 	struct apr_pool_t {char foo[];};
@@ -68,11 +68,6 @@ SWITCH_BEGIN_EXTERN_C
 	struct apr_queue_t {char foo[];};
 	struct apr_socket_t {char foo[];};
 // LNK Error
-
-typedef char* (CALLBACK* inputtype)(void * input, switch_input_type_t type);
-typedef void (CALLBACK* hanguptype)();
-
-#else
 
 #include <mono/jit/jit.h>
 #include <mono/metadata/assembly.h>
@@ -104,7 +99,8 @@ using namespace System;
 using namespace System::Reflection;
 using namespace System::Runtime::InteropServices;
 
-delegate void HangupMethod();
+delegate void HangupDelegate(void);
+delegate char* InputDelegate(void* input, switch_input_type_t type);
 
 public ref class FreeSwitchManaged
 {
@@ -134,8 +130,8 @@ public:
 	virtual switch_status_t run_dtmf_callback(void *input, switch_input_type_t itype);
 
 #ifdef _MANAGED
-	inputtype dtmfDelegateHandle; // GCHandle to the input delegate 
-	hanguptype hangupDelegateHandle; // GCHandle to the hangup delegate
+	GCHandle dtmfDelegateHandle; // GCHandle to the input delegate 
+	GCHandle hangupDelegateHandle; // GCHandle to the hangup delegate
 #else
 	guint32 dtmfDelegateHandle; // GCHandle to the input delegate 
 	guint32 hangupDelegateHandle; // GCHandle to the hangup delegate
