@@ -242,6 +242,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		switch_set_flag_locked(b_tech_pvt, TFLAG_OUTBOUND);
 	
 		switch_channel_set_flag(channel, CF_ACCEPT_CNG);	
+		switch_ivr_transfer_variable(session, tech_pvt->other_session, "process_cdr");
 
 		if (switch_core_session_thread_launch(b_session) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
