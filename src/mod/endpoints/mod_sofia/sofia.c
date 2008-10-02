@@ -999,7 +999,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 	switch_event_t *params = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile", profile->name);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "reconfig", "true");
@@ -1346,7 +1346,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 		return status;
 	}
 
-	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile", profile_name);
 

@@ -1437,7 +1437,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name
 	*domain = NULL;
 
 	if (!params) {
-		switch_event_create(&my_params, SWITCH_EVENT_MESSAGE);
+		switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_assert(my_params);
 		switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "domain", domain_name);
 		params = my_params;
@@ -1467,7 +1467,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 	*domain = NULL;
 
 	if (!params) {
-		switch_event_create(&my_params, SWITCH_EVENT_MESSAGE);
+		switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_assert(my_params);
 		params = my_params;
 	}

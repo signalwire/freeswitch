@@ -1504,7 +1504,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 
 					header_string = switch_core_session_sprintf(session, "%s\nX-Voicemail-Length: %u", headers, message_len);
 
-					if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+					if (switch_event_create(&event, SWITCH_EVENT_GENERAL) == SWITCH_STATUS_SUCCESS) {
 						/* this isnt done?  it was in the other place
 						 * switch_channel_event_set_data(channel, event);
 						 */
@@ -1927,7 +1927,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 					int ok = 1;
 
 
-					switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+					switch_event_create(&params, SWITCH_EVENT_GENERAL);
 					switch_assert(params);
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "mailbox", myid);
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "destination_number", caller_profile->destination_number);
@@ -2097,7 +2097,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	}
 	
 	if (params) {
-		switch_event_create(&local_event, SWITCH_EVENT_MESSAGE);
+		switch_event_create(&local_event, SWITCH_EVENT_REQUEST_PARAMS);
 		params = local_event;
 	}
 	
@@ -2440,7 +2440,7 @@ static switch_status_t voicemail_inject(const char *data)
 		switch_event_t *my_params = NULL;
 		switch_xml_t ut;
 
-		switch_event_create(&my_params, SWITCH_EVENT_MESSAGE);
+		switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_assert(my_params);
 		switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "domain", domain);
 		switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "purpose", "publish-vm");
@@ -2458,7 +2458,7 @@ static switch_status_t voicemail_inject(const char *data)
 		
 		if (!isall && !istag) {
 			if ((ut = switch_xml_find_child(x_domain, "user", "id", user))) {
-				switch_event_create(&my_params, SWITCH_EVENT_MESSAGE);
+				switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 				status = deliver_vm(profile, ut, domain, path, 0, "B", my_params, pool, cid_name, cid_num, SWITCH_TRUE);
 				switch_event_destroy(&my_params);
 			} else {
@@ -2469,7 +2469,7 @@ static switch_status_t voicemail_inject(const char *data)
 				const char *tag;
 
 				if (isall || (istag && (tag=switch_xml_attr(ut, "vm-tag")) && !strcasecmp(tag, user))) {
-					switch_event_create(&my_params, SWITCH_EVENT_MESSAGE);
+					switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 					status = deliver_vm(profile, ut, domain, path, 0, "B", my_params, pool, cid_name, cid_num, SWITCH_TRUE);
 					switch_event_destroy(&my_params);
 				}
@@ -2546,7 +2546,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 		switch_event_t *params = NULL;
 		const char *email_addr = NULL;
 
-		switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+		switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_assert(params);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "mailbox", id);
 

@@ -876,7 +876,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 						switch_xml_t x_domain, xml_root;
 						switch_xml_t ut;
 
-						switch_event_create(&my_params, SWITCH_EVENT_MESSAGE);
+						switch_event_create(&my_params, SWITCH_EVENT_GENERAL);
 						switch_assert(my_params);
 						switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "domain", domain);
 						switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "purpose", "network-list");

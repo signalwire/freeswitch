@@ -202,7 +202,7 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 					goto authed;
 				}
 
-				switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+				switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 				switch_assert(params);
 				switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "mailbox", "check");
 

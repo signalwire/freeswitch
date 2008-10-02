@@ -467,7 +467,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 					}
 					count++;
 					if (count == 1) {
-						switch_event_create(event, SWITCH_EVENT_MESSAGE);
+						switch_event_create(event, SWITCH_EVENT_COMMAND);
 						switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Command", "%s", mbuf);
 					} else if (cur) {
 						char *var, *val;
@@ -1177,7 +1177,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 			goto done;
 		}
 
-		if (switch_event_create(&call_event, SWITCH_EVENT_MESSAGE) != SWITCH_STATUS_SUCCESS) {
+		if (switch_event_create(&call_event, SWITCH_EVENT_COMMAND) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			goto done;

@@ -199,7 +199,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 
 	if (globals.debug) {
 		switch_event_t *event;
-		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+		if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
 			char *buf;
 			switch_channel_event_set_data(channel, event);
 			switch_event_serialize(event, &buf, SWITCH_FALSE);

@@ -797,7 +797,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thre
 	switch_set_flag(session, SSF_DESTROYED);
 
 	if ((val = switch_channel_get_variable(session->channel, "memory_debug")) && switch_true(val)) {
-		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+		if (switch_event_create(&event, SWITCH_EVENT_GENERAL) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(session->channel, event);
 			switch_event_serialize(event, &event_str, SWITCH_FALSE);
 			switch_assert(event_str);

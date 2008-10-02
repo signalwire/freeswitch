@@ -1232,7 +1232,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 					cont->list[i].up = 0;
 
 					if (cont->list[i].app) {
-						if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+						if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
 							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
 							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", cont->list[i].app);
 							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", cont->list[i].data);
@@ -2068,7 +2068,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 
 	if ((flags & SMF_ECHO_BLEG) && (other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
 		&& (other_session = switch_core_session_locate(other_uuid))) {
-		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+		if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", path);
@@ -2090,7 +2090,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 	}
 
 	if ((flags & SMF_ECHO_ALEG)) {
-		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+		if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", path);
@@ -2109,7 +2109,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 	}
 
 	if (nomedia) {
-		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+		if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "nomedia");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "nomedia-uuid", uuid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event-lock", "true");
@@ -2118,7 +2118,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 	}
 
 	if (cause) {
-		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+		if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", "hangup");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", cause);

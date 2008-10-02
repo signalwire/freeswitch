@@ -161,6 +161,10 @@ static char *EVENT_NAMES[] = {
 	"NOTIFY",
 	"SEND_MESSAGE",
 	"RECV_MESSAGE",
+	"REQUEST_PARAMS",
+	"CHANNEL_DATA",
+	"GENERAL",
+	"COMMAND",
 	"ALL"
 };
 

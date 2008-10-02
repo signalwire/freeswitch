@@ -2267,7 +2267,7 @@ static void do_vcard(ldl_handle_t *handle, char *to, char *from, char *id)
 		goto end;
 	}
 
-	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
 	switch_event_add_header(params, SWITCH_STACK_BOTTOM, "to", "%s@%s", to_user, to_host);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "from", from);

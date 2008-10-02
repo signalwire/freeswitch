@@ -3390,7 +3390,7 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 					goto done;
 				}
 
-				switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+				switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 				switch_assert(params);
 				switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "conf_name", conf_name);
 				switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile_name", profile_name);
@@ -4248,7 +4248,7 @@ SWITCH_STANDARD_APP(conference_function)
 	}
 #endif
 
-	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+	switch_event_create(&params, SWITCH_EVENT_COMMAND);
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "conf_name", conf_name);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile_name", profile_name);
@@ -5221,7 +5221,7 @@ static void send_presence(switch_event_types_t id)
 	switch_xml_t cxml, cfg, advertise, room;
 	switch_event_t *params = NULL;
 
-	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+	switch_event_create(&params, SWITCH_EVENT_COMMAND);
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "presence", "true");
 

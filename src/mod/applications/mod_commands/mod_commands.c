@@ -70,7 +70,7 @@ SWITCH_STANDARD_API(user_data_function)
 		domain = "cluecon.com";
 	}
 
-	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "user", user);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "type", type);
@@ -224,7 +224,7 @@ SWITCH_STANDARD_API(eval_function)
 	}
 
 	
-	switch_event_create(&event, SWITCH_EVENT_MESSAGE);
+	switch_event_create(&event, SWITCH_EVENT_CHANNEL_DATA);
 	if (*uuid) {
 		if ((session = switch_core_session_locate(uuid))) {
 			switch_channel_event_set_data(switch_core_session_get_channel(session), event);
@@ -337,7 +337,7 @@ SWITCH_STANDARD_API(xml_locate_function)
 	tag_attr_name = argv[2];
 	tag_attr_val = argv[3];
 
-	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "section", section);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "tag", tag);
@@ -1051,7 +1051,7 @@ SWITCH_STANDARD_API(uuid_chat)
 	} else {
 		if ((tsession = switch_core_session_locate(uuid))) {
 			switch_event_t *event;
-			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+			if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_body(event, "%s", text);
 				if (switch_core_session_receive_event(tsession, &event) != SWITCH_STATUS_SUCCESS) {
 					switch_event_destroy(&event);
@@ -2462,7 +2462,7 @@ SWITCH_STANDARD_API(uuid_dump_function)
 
 				channel = switch_core_session_get_channel(psession);
 
-				if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+				if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
 					switch_xml_t xml;
 					switch_channel_event_set_data(channel, event);
 					if (!strcasecmp(format, "xml")) {

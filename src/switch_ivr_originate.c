@@ -596,7 +596,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	   so we will normalize dialstring params and channel variables (when there is an originator) into an event that we 
 	   will use as a pseudo hash to consult for params as needed.
 	 */
-	if (switch_event_create(&var_event, SWITCH_EVENT_MESSAGE) != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_create(&var_event, SWITCH_EVENT_GENERAL) != SWITCH_STATUS_SUCCESS) {
 		abort();
 	}
 

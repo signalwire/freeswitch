@@ -201,7 +201,7 @@ static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switc
 	switch_status_t status = SWITCH_STATUS_GENERR;
 	switch_event_t *params = NULL;
 
-	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
 
 	switch_channel_event_set_data(channel, params);

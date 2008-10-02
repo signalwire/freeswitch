@@ -894,7 +894,7 @@ SWITCH_STANDARD_APP(info_function)
 	switch_event_t *event;
 	char *buf;
 
-	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(switch_core_session_get_channel(session), event);
 		switch_event_serialize(event, &buf, SWITCH_FALSE);
 		switch_assert(buf);
@@ -1111,7 +1111,7 @@ SWITCH_STANDARD_APP(ivr_application_function)
 		switch_xml_t cxml = NULL, cfg = NULL, xml_menus = NULL, xml_menu = NULL;
 
 		/* Open the config from the xml registry */
-		switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+		switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_assert(params);
 		switch_channel_event_set_data(channel, params);
 
@@ -1998,7 +1998,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 	*domain++ = '\0';
 
-	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "as_channel", "true");
 
@@ -2062,7 +2062,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		} else {
 			switch_event_t *event = var_event;
 			if (!event) {
-				switch_event_create(&event, SWITCH_EVENT_MESSAGE);
+				switch_event_create(&event, SWITCH_EVENT_REQUEST_PARAMS);
 				switch_assert(event);
 			}
 

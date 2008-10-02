@@ -200,7 +200,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	switch_event_create(&(*channel)->variables, SWITCH_EVENT_MESSAGE);
+	switch_event_create(&(*channel)->variables, SWITCH_EVENT_GENERAL);
 
 	switch_core_hash_init(&(*channel)->private_hash, pool);
 	switch_queue_create(&(*channel)->dtmf_queue, 128, pool);
@@ -1134,7 +1134,9 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 		event->event_id == SWITCH_EVENT_CHANNEL_ANSWER ||
 		event->event_id == SWITCH_EVENT_CHANNEL_PROGRESS ||
 		event->event_id == SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA ||
-		event->event_id == SWITCH_EVENT_CHANNEL_HANGUP
+		event->event_id == SWITCH_EVENT_CHANNEL_HANGUP ||
+		event->event_id == SWITCH_EVENT_REQUEST_PARAMS ||
+		event->event_id == SWITCH_EVENT_CHANNEL_DATA
 		) {
 
 		/* Index Caller's Profile */
