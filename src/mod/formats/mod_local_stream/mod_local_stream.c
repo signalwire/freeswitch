@@ -555,6 +555,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 	int argc = 0;
 	char *cf = "local_stream.conf";
 	switch_xml_t cfg, xml, directory, param;
+	int tmp;
 
 	if (switch_strlen_zero(cmd)) {
 		goto usage;
@@ -569,12 +570,23 @@ SWITCH_STANDARD_API(start_local_stream_function)
 	}
 
 	local_stream_name = argv[0];
-	path = argv[1] ? argv[1] : NULL;
-	rate = argv[2] ? atoi(argv[2]) : 8000;
+
+	if (argv[1]) {
+		path = strdup(argv[1]);
+	}
+
+	if (argv[2]) {
+		tmp = atoi(argv[2]);
+		if (tmp == 8000 || tmp == 16000 || tmp == 32000) {
+			rate = tmp;
+		}
+	}
+
 	shuffle = argv[3] ? switch_true(argv[3]) : 1;
 	prebuf = argv[4] ? atoi(argv[4]) : DEFAULT_PREBUFFER_SIZE;
 	channels = argv[5] ? (uint8_t)atoi(argv[5]) : 1;
 	interval = argv[6] ? atoi(argv[6]) : 20;
+	
 	if (!SWITCH_ACCEPTABLE_INTERVAL(interval)){
 		interval = 20;
 	}
@@ -635,6 +647,10 @@ SWITCH_STANDARD_API(start_local_stream_function)
 			}
 
 		}
+
+		if (path) {
+			path = strdup(path);
+		}
 		switch_xml_free(xml);
 	}
 	
@@ -687,6 +703,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 
  done:
 
+	switch_safe_free(path);
 	switch_safe_free(timer_name);
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
