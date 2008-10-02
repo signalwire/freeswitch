@@ -838,6 +838,7 @@ bindSocketToPort(SOCKET           const winsock,
     
     struct sockaddr_in name;
     int rc;
+	int one = 1;
 
     ZeroMemory(&name, sizeof(name));
     name.sin_family = AF_INET;
@@ -845,6 +846,7 @@ bindSocketToPort(SOCKET           const winsock,
     if (addrP)
         name.sin_addr = *addrP;
 
+	setsockopt(winsock, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(int));
     rc = bind(winsock, (struct sockaddr *)&name, sizeof(name));
 
     if (rc != 0) {

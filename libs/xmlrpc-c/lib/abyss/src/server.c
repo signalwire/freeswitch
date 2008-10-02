@@ -42,11 +42,11 @@ ServerTerminate(TServer * const serverP) {
 
     srvP->terminationRequested = true;
 
-    if (srvP->chanSwitchP)
+    if (srvP->chanSwitchP) {
         ChanSwitchInterrupt(srvP->chanSwitchP);
+        ChanSwitchDestroy(srvP->chanSwitchP);
+	}
 }
-
-
 
 void
 ServerResetTerminate(TServer * const serverP) {
@@ -651,7 +651,7 @@ createChanSwitch(struct _TServer * const srvP,
 
 
 
-void
+int
 ServerInit(TServer * const serverP) {
 /*----------------------------------------------------------------------------
    Initialize a server to accept connections.
@@ -700,9 +700,11 @@ ServerInit(TServer * const serverP) {
     }
     if (retError) {
         TraceMsg("ServerInit() failed.  %s", retError);
-        exit(1);
+		return 0;
         xmlrpc_strfree(retError);
     }
+
+	return 1;
 }
 
 

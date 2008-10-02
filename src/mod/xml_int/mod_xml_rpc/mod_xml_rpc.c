@@ -809,21 +809,19 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 	ServerCreate(&globals.abyssServer, "XmlRpcServer", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir, logfile);
 
 	xmlrpc_server_abyss_set_handler(&env, &globals.abyssServer, "/RPC2", registryP);
-	ServerInit(&globals.abyssServer);
 
-#if 0
 	if (ServerInit(&globals.abyssServer) != TRUE) {
 		globals.running = 0;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to start HTTP Port %d\n", globals.port);
 		return SWITCH_STATUS_TERM;
 	}
-#endif
 
 	ServerAddHandler(&globals.abyssServer, handler_hook);
 	ServerAddHandler(&globals.abyssServer, auth_hook);
 	ServerSetKeepaliveTimeout(&globals.abyssServer, 1);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Starting HTTP Port %d, DocRoot [%s]\n", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir);
 	ServerRun(&globals.abyssServer);
+	switch_yield(1000000);
 	globals.running = 0;
 
 	return SWITCH_STATUS_TERM;
@@ -834,9 +832,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown)
 	//globals.abyssServer.running = 0;
 	//shutdown(globals.abyssServer.listensock, 2);
 	ServerTerminate(&globals.abyssServer);
-	while (globals.running) {
+	
+	do {
 		switch_yield(100000);
-	}
+	} while (globals.running);
 
 	return SWITCH_STATUS_SUCCESS;
 }

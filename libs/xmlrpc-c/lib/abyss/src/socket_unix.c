@@ -40,7 +40,7 @@
 
 #include "socket_unix.h"
 
-#define sane_close(_it) if (_it > -1) {close(_it) ; _it = -1; }
+#define sane_close(_it) do {if (_it > -1) { close(_it) ; _it = -1; }} while (_it > -1)
 
 typedef struct {
     int interruptorFd;
@@ -849,6 +849,7 @@ bindSocketToPort(int              const fd,
 
     struct sockaddr_in name;
     int rc;
+	int one = 1;
 
     name.sin_family = AF_INET;
     name.sin_port   = htons(portNumber);
@@ -857,6 +858,7 @@ bindSocketToPort(int              const fd,
     else
         name.sin_addr.s_addr = INADDR_ANY;
 
+	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(int));
     rc = bind(fd, (struct sockaddr *)&name, sizeof(name));
 
     if (rc == -1)

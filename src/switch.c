@@ -617,6 +617,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (destroy_status == SWITCH_STATUS_RESTART) {
+		sleep(1);
 		ret = execv(argv[0], argv);
 	}
 

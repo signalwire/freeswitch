@@ -191,7 +191,7 @@ void
 ServerSetMimeType(TServer *  const serverP,
                   MIMEType * const MIMETypeP);
 
-void
+int
 ServerInit(TServer * const serverP);
 
 void
