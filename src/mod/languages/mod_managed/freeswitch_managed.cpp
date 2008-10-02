@@ -104,7 +104,7 @@ switch_status_t ManagedSession::run_dtmf_callback(void *input, switch_input_type
 	char *result = dtmfDelegate(input, itype);
 
 	switch_status_t status = process_callback_result(result);
-	Marshal::FreeHGlobal(IntPtr(result)); // I think this is right
+	Marshal::FreeCoTaskMem(IntPtr(result)); // I think this is right
 	return status;
 }
 
