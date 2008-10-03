@@ -42,6 +42,32 @@ typedef void (*hangupFunction)(void);
 typedef char* (*inputFunction)(void*, switch_input_type_t);
 
 #ifndef _MANAGED
+
+#include <mono/jit/jit.h>
+#include <mono/metadata/assembly.h>
+
+#ifndef SWIG
+struct mod_mono_globals {
+	MonoDomain *domain;
+	MonoAssembly *mod_mono_asm;
+	switch_memory_pool_t *pool;
+	switch_bool_t embedded;
+
+	MonoMethod *loadMethod;
+	MonoMethod *unloadMethod;
+	MonoMethod *runMethod;
+	MonoMethod *executeMethod;
+	MonoMethod *executeBackgroundMethod;
+};
+
+typedef struct mod_mono_globals mod_mono_globals;
+extern mod_mono_globals globals;
+#endif
+#endif
+
+SWITCH_END_EXTERN_C
+
+#ifdef _MANAGED
 // this section remove linker error LNK4248 for these opaque structures
 	struct switch_core_session {char foo[];};
 	struct apr_pool_t {char foo[];};
@@ -71,32 +97,6 @@ typedef char* (*inputFunction)(void*, switch_input_type_t);
 	struct apr_queue_t {char foo[];};
 	struct apr_socket_t {char foo[];};
 // LNK Error
-
-#include <mono/jit/jit.h>
-#include <mono/metadata/assembly.h>
-
-#ifndef SWIG
-struct mod_mono_globals {
-	MonoDomain *domain;
-	MonoAssembly *mod_mono_asm;
-	switch_memory_pool_t *pool;
-	switch_bool_t embedded;
-
-	MonoMethod *loadMethod;
-	MonoMethod *unloadMethod;
-	MonoMethod *runMethod;
-	MonoMethod *executeMethod;
-	MonoMethod *executeBackgroundMethod;
-};
-
-typedef struct mod_mono_globals mod_mono_globals;
-extern mod_mono_globals globals;
-#endif
-#endif
-
-SWITCH_END_EXTERN_C
-
-#ifdef _MANAGED
 
 using namespace System;
 using namespace System::Reflection;
