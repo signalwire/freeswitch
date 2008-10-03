@@ -364,7 +364,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 	zap_channel_init(tech_pvt->zchan);
 
-	switch_channel_set_flag(channel, CF_ACCEPT_CNG);
+	//switch_channel_set_flag(channel, CF_ACCEPT_CNG);
 
 	return SWITCH_STATUS_SUCCESS;
 }

@@ -239,6 +239,7 @@ static zap_status_t zap_channel_destroy(zap_channel_t *zchan)
 		}
 
 		zap_buffer_destroy(&zchan->digit_buffer);
+		zap_buffer_destroy(&zchan->gen_dtmf_buffer);
 		zap_buffer_destroy(&zchan->dtmf_buffer);
 		zap_buffer_destroy(&zchan->fsk_buffer);
 
@@ -455,7 +456,8 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 
 		zap_mutex_create(&new_chan->mutex);
 		zap_buffer_create(&new_chan->digit_buffer, 128, 128, 0);
-
+		zap_buffer_create(&new_chan->gen_dtmf_buffer, 128, 128, 0);
+		
 		new_chan->dtmf_hangup_buf = calloc (span->dtmf_hangup_len + 1, sizeof (char));
 
 		zap_set_flag(new_chan, ZAP_CHANNEL_CONFIGURED | ZAP_CHANNEL_READY);
@@ -958,6 +960,10 @@ static zap_status_t zap_channel_reset(zap_channel_t *zchan)
 		zap_buffer_zero(zchan->dtmf_buffer);
 	}
 
+	if (zchan->gen_dtmf_buffer) {
+		zap_buffer_zero(zchan->gen_dtmf_buffer);
+	}
+
 	if (zchan->digit_buffer) {
 		zap_buffer_zero(zchan->digit_buffer);
 	}
@@ -1410,28 +1416,16 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 	case ZAP_COMMAND_SEND_DTMF:
 		{
 			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF_GENERATE)) {
-				char *cur;
 				char *digits = ZAP_COMMAND_OBJ_CHAR_P;
-				int x = 0;
+				
 
 				if ((status = zchan_activate_dtmf_buffer(zchan)) != ZAP_SUCCESS) {
 					GOTO_STATUS(done, status);
 				}
 				
 				zap_log(ZAP_LOG_DEBUG, "Adding DTMF SEQ [%s]\n", digits);	
+				zap_buffer_write(zchan->gen_dtmf_buffer, digits, strlen(digits));
 				
-				for (cur = digits; *cur; cur++) {
-					int wrote = 0;
-					if ((wrote = teletone_mux_tones(&zchan->tone_session, &zchan->tone_session.TONES[(int)*cur]))) {
-						zap_buffer_write(zchan->dtmf_buffer, zchan->tone_session.buffer, wrote * 2);
-						x++;
-					} else {
-						zap_log(ZAP_LOG_ERROR, "Problem Adding DTMF SEQ [%s]\n", digits);	
-						GOTO_STATUS(done, ZAP_FAIL);
-					}
-				}
-				
-				zchan->skip_read_frames = 200 * x;
 				GOTO_STATUS(done, ZAP_SUCCESS);
 			}
 		}
@@ -1691,6 +1685,81 @@ zap_status_t zap_channel_queue_dtmf(zap_channel_t *zchan, const char *dtmf)
 	return status;
 }
 
+
+static zap_status_t handle_dtmf(zap_channel_t *zchan, zap_size_t datalen)
+{
+	zap_buffer_t *buffer = NULL;
+	zap_size_t dblen;
+
+	if (zchan->gen_dtmf_buffer && (dblen = zap_buffer_inuse(zchan->gen_dtmf_buffer))) {
+		char digits[128] = "";
+		char *cur;
+		int x = 0;				 
+		
+		if (dblen > sizeof(digits) - 1) {
+			dblen = sizeof(digits) - 1;
+		}
+
+		if (zap_buffer_read(zchan->gen_dtmf_buffer, digits, dblen) && !zap_strlen_zero(digits)) {
+			zap_log(ZAP_LOG_DEBUG, "GENERATE DTMF [%s]\n", digits);	
+		
+			for (cur = digits; *cur; cur++) {
+				int wrote = 0;
+				if ((wrote = teletone_mux_tones(&zchan->tone_session, &zchan->tone_session.TONES[(int)*cur]))) {
+					zap_buffer_write(zchan->dtmf_buffer, zchan->tone_session.buffer, wrote * 2);
+					x++;
+				} else {
+					zap_log(ZAP_LOG_ERROR, "Problem Adding DTMF SEQ [%s]\n", digits);
+					return ZAP_FAIL;
+				}
+			}
+		
+			zchan->skip_read_frames = 200 * x;
+		}
+	}
+	
+
+	if (!zchan->buffer_delay || --zchan->buffer_delay == 0) {
+		if (zchan->dtmf_buffer && (dblen = zap_buffer_inuse(zchan->dtmf_buffer))) {
+			buffer = zchan->dtmf_buffer;
+		} else if (zchan->fsk_buffer && (dblen = zap_buffer_inuse(zchan->fsk_buffer))) {
+			buffer = zchan->fsk_buffer;			
+		}
+	}
+
+	if (buffer) {
+		zap_size_t dlen = datalen;
+		uint8_t auxbuf[1024];
+		zap_size_t len, br, max = sizeof(auxbuf);
+		
+		if (zchan->native_codec != ZAP_CODEC_SLIN) {
+			dlen *= 2;
+		}
+		
+		len = dblen > dlen ? dlen : dblen;
+
+		br = zap_buffer_read(buffer, auxbuf, len);		
+		if (br < dlen) {
+			memset(auxbuf + br, 0, dlen - br);
+		}
+
+		if (zchan->native_codec != ZAP_CODEC_SLIN) {
+			if (zchan->native_codec == ZAP_CODEC_ULAW) {
+				zio_slin2ulaw(auxbuf, max, &dlen);
+			} else if (zchan->native_codec == ZAP_CODEC_ALAW) {
+				zio_slin2alaw(auxbuf, max, &dlen);
+			}
+		}
+		
+		return zchan->zio->write(zchan, auxbuf, &dlen);
+	} 
+
+	return ZAP_SUCCESS;
+
+}
+
+
+
 zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *datalen)
 {
 	zap_status_t status = ZAP_FAIL;
@@ -1718,6 +1787,10 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 			snprintf(zchan->last_error, sizeof(zchan->last_error), "file write error!");
 			return ZAP_FAIL;
 		}
+	}
+
+	if (status == ZAP_SUCCESS) {
+		handle_dtmf(zchan, *datalen);
 	}
 
 	if (status == ZAP_SUCCESS && zap_test_flag(zchan, ZAP_CHANNEL_TRANSCODE) && zchan->effective_codec != zchan->native_codec) {
@@ -1880,6 +1953,7 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 			}
 		}
 	}
+
 	return status;
 }
 
@@ -1888,11 +1962,18 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t data
 {
 	zap_status_t status = ZAP_FAIL;
 	zio_codec_t codec_func = NULL;
-	zap_size_t blen = 0, max = datasize;
-	zap_buffer_t *buffer = NULL;
+	zap_size_t max = datasize;
 
 	assert(zchan != NULL);
 	assert(zchan->zio != NULL);
+
+	if (!zchan->buffer_delay && 
+		((zchan->dtmf_buffer && zap_buffer_inuse(zchan->dtmf_buffer)) ||
+		 (zchan->fsk_buffer && zap_buffer_inuse(zchan->fsk_buffer)))) {
+		/* read size writing DTMF ATM */
+		return ZAP_SUCCESS;
+	}
+
 
     if (!zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
 		snprintf(zchan->last_error, sizeof(zchan->last_error), "channel not open");
@@ -1921,45 +2002,8 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t data
 			snprintf(zchan->last_error, sizeof(zchan->last_error), "codec error!");
 			status = ZAP_FAIL;
 		}
-	}
-
-	if (!zchan->buffer_delay || --zchan->buffer_delay == 0) {
-		if (zchan->dtmf_buffer && (blen = zap_buffer_inuse(zchan->dtmf_buffer))) {
-			buffer = zchan->dtmf_buffer;
-		} else if (zchan->fsk_buffer && (blen = zap_buffer_inuse(zchan->fsk_buffer))) {
-			buffer = zchan->fsk_buffer;			
-		}
-	}
-
-	if (buffer) {
-		zap_size_t dlen = *datalen;
-		uint8_t auxbuf[1024];
-		zap_size_t len, br;
-		
-		if (zchan->native_codec != ZAP_CODEC_SLIN) {
-			dlen *= 2;
-		}
-		
-		len = blen > dlen ? dlen : blen;
-
-		br = zap_buffer_read(buffer, auxbuf, len);		
-		if (br < dlen) {
-			memset(auxbuf + br, 0, dlen - br);
-		}
-
-		memcpy(data, auxbuf, dlen);
-
-		if (zchan->native_codec != ZAP_CODEC_SLIN) {
-			if (zchan->native_codec == ZAP_CODEC_ULAW) {
-				*datalen = dlen;
-				zio_slin2ulaw(data, max, datalen);
-			} else if (zchan->native_codec == ZAP_CODEC_ALAW) {
-				*datalen = dlen;
-				zio_slin2alaw(data, max, datalen);
-			}
-		}
-		
-	} 
+	}	
+	
 	if (zchan->fds[1] > -1) {
 		int dlen = (int) *datalen;
 		if ((write(zchan->fds[1], data, dlen)) != dlen) {
