@@ -216,6 +216,8 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 	ss7bc_call_init(&event, caller_data->cid_num.digits, caller_data->ani.digits, r);
 	zap_set_string(event.calling_name, caller_data->cid_name);
 	zap_set_string(event.redirection_string, caller_data->rdnis.digits);
+	event.calling_number_screening_ind = caller_data->screen;
+	event.calling_number_presentation = caller_data->pres;
 
 	OUTBOUND_REQUESTS[r].status = BST_WAITING;
 	OUTBOUND_REQUESTS[r].span = span;
