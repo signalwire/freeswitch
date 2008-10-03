@@ -1418,12 +1418,10 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF_GENERATE)) {
 				char *digits = ZAP_COMMAND_OBJ_CHAR_P;
 				
-
 				if ((status = zchan_activate_dtmf_buffer(zchan)) != ZAP_SUCCESS) {
 					GOTO_STATUS(done, status);
 				}
 				
-				zap_log(ZAP_LOG_DEBUG, "Adding DTMF SEQ [%s]\n", digits);	
 				zap_buffer_write(zchan->gen_dtmf_buffer, digits, strlen(digits));
 				
 				GOTO_STATUS(done, ZAP_SUCCESS);
@@ -1701,7 +1699,7 @@ static zap_status_t handle_dtmf(zap_channel_t *zchan, zap_size_t datalen)
 		}
 
 		if (zap_buffer_read(zchan->gen_dtmf_buffer, digits, dblen) && !zap_strlen_zero(digits)) {
-			zap_log(ZAP_LOG_DEBUG, "GENERATE DTMF [%s]\n", digits);	
+			zap_log(ZAP_LOG_DEBUG, "%d:%d GENERATE DTMF [%s]\n", zchan->span_id, zchan->chan_id, digits);	
 		
 			for (cur = digits; *cur; cur++) {
 				int wrote = 0;
@@ -1709,7 +1707,7 @@ static zap_status_t handle_dtmf(zap_channel_t *zchan, zap_size_t datalen)
 					zap_buffer_write(zchan->dtmf_buffer, zchan->tone_session.buffer, wrote * 2);
 					x++;
 				} else {
-					zap_log(ZAP_LOG_ERROR, "Problem Adding DTMF SEQ [%s]\n", digits);
+					zap_log(ZAP_LOG_ERROR, "%d:%d Problem Adding DTMF SEQ [%s]\n", zchan->span_id, zchan->chan_id, digits);
 					return ZAP_FAIL;
 				}
 			}
