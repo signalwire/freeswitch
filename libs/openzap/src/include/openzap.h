@@ -422,6 +422,7 @@ struct zap_channel {
 	zio_event_cb_t event_callback;
 	uint32_t skip_read_frames;
 	zap_buffer_t *dtmf_buffer;
+	zap_buffer_t *gen_dtmf_buffer;
 	zap_buffer_t *digit_buffer;
 	zap_buffer_t *fsk_buffer;
 	uint32_t dtmf_on;
