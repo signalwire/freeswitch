@@ -673,7 +673,7 @@ SWITCH_STANDARD_API(status_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define CTL_SYNTAX "[hupall|pause|resume|shutdown [elegant|restart]|sps|sync_clock|reclaim_mem|max_sessions|max_dtmf_duration [num]|loglevel [level]]"
+#define CTL_SYNTAX "[hupall|pause|resume|shutdown [cancel|elegant|restart]|sps|sync_clock|reclaim_mem|max_sessions|max_dtmf_duration [num]|loglevel [level]]"
 SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
@@ -706,7 +706,11 @@ SWITCH_STANDARD_API(ctl_function)
 			arg = 0;
 			for (x = 1; x < 5; x++) {
 				if (argv[x]) {
-					if (!strcasecmp(argv[x], "elegant")) {
+					if (!strcasecmp(argv[x], "cancel")) {
+						arg = 0;
+						cmd = SCSC_CANCEL_SHUTDOWN;
+						break;
+					} else if (!strcasecmp(argv[x], "elegant")) {
 						cmd = SCSC_SHUTDOWN_ELEGANT;
 					} else if (!strcasecmp(argv[x], "restart")) {
 						arg = 1;
@@ -2679,6 +2683,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl shutdown elegant");
 	switch_console_set_complete("add fsctl shutdown elegant restart");
 	switch_console_set_complete("add fsctl shutdown restart elegant");
+	switch_console_set_complete("add fsctl shutdown cancel");
 	switch_console_set_complete("add fsctl sps");
  	switch_console_set_complete("add fsctl sync_clock");
 	switch_console_set_complete("add fsctl reclaim_mem");

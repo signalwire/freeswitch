@@ -1304,28 +1304,46 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 	case SCSC_HUPALL:
 		switch_core_session_hupall(SWITCH_CAUSE_MANAGER_REQUEST);
 		break;
+	case SCSC_CANCEL_SHUTDOWN:
+		switch_clear_flag((&runtime), SCF_SHUTDOWN_REQUESTED);
+		break;
 	case SCSC_SHUTDOWN_ELEGANT:
 		{
 			int x = 19;
-			if (*val) {
-				switch_set_flag((&runtime), SCF_RESTART);
-			}
+			
+			switch_set_flag((&runtime), SCF_SHUTDOWN_REQUESTED);
 			switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
-			while(runtime.running && switch_core_session_count()) {
+
+			while(runtime.running && switch_test_flag((&runtime), SCF_SHUTDOWN_REQUESTED) && switch_core_session_count()) {
 				switch_yield(500000);
 				if (++x == 20) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Shutdown in progress.....\n");
 					x = 0;
 				}
 			}
-			runtime.running = 0;
+			
+			if (switch_test_flag((&runtime), SCF_SHUTDOWN_REQUESTED)) {
+				if (*val) {
+					switch_set_flag((&runtime), SCF_RESTART);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Restarting\n");
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Shutting down\n");
+				}
+				runtime.running = 0;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Shutdown Cancelled\n");
+				switch_clear_flag((&runtime), SCF_NO_NEW_SESSIONS);
+			}
 		}
 		break;
 	case SCSC_SHUTDOWN:
-		runtime.running = 0;
 		if (*val) {
 			switch_set_flag((&runtime), SCF_RESTART);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Restarting\n");
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Shutting down\n");
 		}
+		runtime.running = 0;
 		break;
 	case SCSC_CHECK_RUNNING:
 		*val = runtime.running;
@@ -1431,7 +1449,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 
 	if (runtime.memory_pool) {
 		apr_pool_destroy(runtime.memory_pool);
-		/* apr_terminate(); */
+		if (switch_test_flag((&runtime), SCF_RESTART)) {
+			apr_terminate();
+		}
 	}
 	
 	return switch_test_flag((&runtime), SCF_RESTART) ? SWITCH_STATUS_RESTART : SWITCH_STATUS_SUCCESS;

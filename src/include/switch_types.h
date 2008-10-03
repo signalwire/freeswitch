@@ -211,7 +211,8 @@ typedef enum {
 	SCF_SHUTTING_DOWN = (1 << 2),
 	SCF_CRASH_PROT = (1 << 3),
 	SCF_VG = (1 << 4),
-	SCF_RESTART = (1 << 5)
+	SCF_RESTART = (1 << 5),
+	SCF_SHUTDOWN_REQUESTED = (1 << 6)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
@@ -1219,7 +1220,8 @@ typedef enum {
 	SCSC_SYNC_CLOCK,
 	SCSC_MAX_DTMF_DURATION,
 	SCSC_DEFAULT_DTMF_DURATION,
-	SCSC_SHUTDOWN_ELEGANT
+	SCSC_SHUTDOWN_ELEGANT,
+	SCSC_CANCEL_SHUTDOWN
 } switch_session_ctl_t;
 
 typedef struct apr_pool_t switch_memory_pool_t;
