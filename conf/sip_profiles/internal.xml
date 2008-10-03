@@ -47,9 +47,9 @@
     <param name="codec-prefs" value="$${global_codec_prefs}"/>
     <param name="use-rtp-timer" value="true"/>
     <param name="rtp-timer-name" value="soft"/>
-    <!-- ip address to use for rtp -->
+    <!-- ip address to use for rtp, DO NOT USE HOSTNAMES ONLY IP ADDRESSES -->
     <param name="rtp-ip" value="$${local_ip_v4}"/>
-    <!-- ip address to bind to -->
+    <!-- ip address to bind to, DO NOT USE HOSTNAMES ONLY IP ADDRESSES -->
     <param name="sip-ip" value="$${local_ip_v4}"/>
     <param name="hold-music" value="$${hold_music}"/>
     <!--<param name="apply-nat-acl" value="rfc1918"/>-->
