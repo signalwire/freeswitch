@@ -634,12 +634,15 @@ typedef struct {
 typedef struct Q931_TrunkInfo Q931_TrunkInfo_t;
 
 typedef enum {
-	Q931_LOG_NONE = 0,
-	Q931_LOG_ERROR,
-	Q931_LOG_WARNING,
-	Q931_LOG_NOTICE,
-	Q931_LOG_INFO,
-	Q931_LOG_DEBUG
+    Q931_LOG_NONE = -1,
+    Q931_LOG_EMERG,
+    Q931_LOG_ALERT,
+    Q931_LOG_CRIT,
+    Q931_LOG_ERROR,
+    Q931_LOG_WARNING,
+    Q931_LOG_NOTICE,
+    Q931_LOG_INFO,
+    Q931_LOG_DEBUG
 } Q931LogLevel_t;
 
 typedef L3INT (*Q931Tx34CB_t) (void *,L3UCHAR *, L3INT);

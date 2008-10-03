@@ -1518,34 +1518,8 @@ static int q931_rx_32(void *pvt, Q921DLMsg_t ind, L3UCHAR tei, L3UCHAR *msg, L3I
 static int zap_isdn_q921_log(void *pvt, Q921LogLevel_t level, char *msg, L2INT size)
 {
 	zap_span_t *span = (zap_span_t *) pvt;
-	int loglevel = ZAP_LOG_LEVEL_DEBUG;
 
-	switch(level) {
-	case Q921_LOG_DEBUG:
-		loglevel = ZAP_LOG_LEVEL_DEBUG;
-		break;
-
-	case Q921_LOG_INFO:
-		loglevel = ZAP_LOG_LEVEL_INFO;
-		break;
-
-	case Q921_LOG_NOTICE:
-		loglevel = ZAP_LOG_LEVEL_NOTICE;
-		break;
-
-	case Q921_LOG_WARNING:
-		loglevel = ZAP_LOG_LEVEL_WARNING;
-		break;
-
-	case Q921_LOG_ERROR:
-		loglevel = ZAP_LOG_LEVEL_ERROR;
-		break;
-
-	default:
-		return 0;
-	}
-
-	zap_log("Span", "Q.921", span->span_id, loglevel, "%s", msg);
+	zap_log("Span", "Q.921", span->span_id, (int)level, "%s", msg);
 	return 0;
 }
 
@@ -1553,7 +1527,7 @@ static L3INT zap_isdn_q931_log(void *pvt, Q931LogLevel_t level, char *msg, L3INT
 {
 	zap_span_t *span = (zap_span_t *) pvt;
 
-	zap_log("Span", "Q.931", span->span_id, ZAP_LOG_LEVEL_DEBUG, "%s", msg);
+	zap_log("Span", "Q.931", span->span_id, (int)level, "%s", msg);
 	return 0;
 }
 
@@ -1697,6 +1671,8 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 	char *var, *val;
 	Q931Dialect_t dialect = Q931_Dialect_National;
 	uint32_t opts = 0;
+    int q921loglevel = 0;
+    int q931loglevel = 0;
 
 	if (span->signal_type) {
 		snprintf(span->last_error, sizeof(span->last_error), "Span is already configured for signalling [%d].", span->signal_type);
@@ -1760,9 +1736,23 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 				break;
 			}
 			tonemap = (const char *)val;
+		} else if (!strcasecmp(var, "q921loglevel")) {
+			q921loglevel = va_arg(ap, int);
+            if (q921loglevel < Q921_LOG_NONE) {
+                q921loglevel = Q921_LOG_NONE;
+            } else if (q921loglevel > Q921_LOG_DEBUG) {
+                q921loglevel = Q921_LOG_DEBUG;
+            }
+		} else if (!strcasecmp(var, "q931loglevel")) {
+			q931loglevel = va_arg(ap, int);
+            if (q931loglevel < Q931_LOG_NONE) {
+                q931loglevel = Q931_LOG_NONE;
+            } else if (q931loglevel > Q931_LOG_DEBUG) {
+                q931loglevel = Q931_LOG_DEBUG;
+            }
 		}
 	}
-
+					
 	span->start = zap_isdn_start;
 	isdn_data->sig_cb = sig_cb;
 	isdn_data->dchans[0] = dchans[0];
@@ -1781,7 +1771,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 				   &isdn_data->q931);
 
 	Q921SetLogCB(&isdn_data->q921, &zap_isdn_q921_log, isdn_data);
-	Q921SetLogLevel(&isdn_data->q921, Q921_LOG_NONE);
+	Q921SetLogLevel(&isdn_data->q921, (Q921LogLevel_t)q921loglevel);
 	
 	Q931Api_InitTrunk(&isdn_data->q931,
 					  dialect,
@@ -1794,7 +1784,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 					  span);
 
 	Q931SetLogCB(&isdn_data->q931, &zap_isdn_q931_log, isdn_data);
-	Q931SetLogLevel(&isdn_data->q931, Q931_LOG_DEBUG);
+	Q931SetLogLevel(&isdn_data->q931, (Q931LogLevel_t)q931loglevel);
 
 	isdn_data->q931.autoRestartAck = 1;
 	isdn_data->q931.autoConnectAck = 0;

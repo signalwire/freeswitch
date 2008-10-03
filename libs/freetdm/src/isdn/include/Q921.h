@@ -119,7 +119,10 @@ typedef enum			/* Type of connection		*/
 
 typedef enum
 {
-	Q921_LOG_NONE = 0,
+	Q921_LOG_NONE = -1,
+	Q921_LOG_EMERG = 0,
+	Q921_LOG_ALERT,
+	Q921_LOG_CRIT,
 	Q921_LOG_ERROR,
 	Q921_LOG_WARNING,
 	Q921_LOG_NOTICE,

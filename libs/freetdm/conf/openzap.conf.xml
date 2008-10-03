@@ -5,6 +5,25 @@
     <!--<param name="enable-analog-option" value="call-swap"/>-->
     <!--<param name="enable-analog-option" value="3-way"/>-->
   </settings>
+   <pri_spans>
+     <span name="PRI_1">
+       <!-- Log Levels: none, alert, crit, err, warning, notice, info, debug -->
+       <param name="q921loglevel" value="alert"/>
+       <param name="q931loglevel" value="alert"/>
+       <param name="mode" value="user"/>
+       <param name="dialect" value="5ess"/>
+       <param name="dialplan" value="XML"/>
+       <param name="context" value="default"/>
+     </span>
+     <span name="PRI_2">
+       <param name="q921loglevel" value="alert"/>
+       <param name="q931loglevel" value="alert"/>
+       <param name="mode" value="user"/>
+       <param name="dialect" value="5ess"/>
+       <param name="dialplan" value="XML"/>
+       <param name="context" value="default"/>
+     </span>
+   </pri_spans>
   <!-- one entry here per openzap span -->
   <analog_spans>
     <span id="1">
