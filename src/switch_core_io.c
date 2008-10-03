@@ -514,8 +514,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_frame_t *enc_frame = NULL, *write_frame = frame;
-	unsigned int flag = 0, need_codec = 0, perfect = 0, do_bugs = 0, do_write = 0, do_resample = 0, ptime_mismatch = 0;
-
+	unsigned int flag = 0, need_codec = 0, perfect = 0, do_bugs = 0, do_write = 0, do_resample = 0, ptime_mismatch = 0, pass_cng = 0;
+	
 	switch_assert(session != NULL);
 	switch_assert(frame != NULL);
 
@@ -523,7 +523,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!(session->write_codec && session->write_codec->implementation)) {
+	if (switch_test_flag(frame, SFF_CNG)) {
+		if (switch_channel_test_flag(session->channel, CF_ACCEPT_CNG)) {
+			pass_cng = 1;
+		}
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	if (!(session->write_codec && session->write_codec->implementation) && !pass_cng) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s has no write codec.\n", switch_channel_get_name(session->channel));
 		return SWITCH_STATUS_FALSE;
 	}
@@ -532,16 +539,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (switch_test_flag(frame, SFF_PROXY_PACKET)) {
+	if (switch_test_flag(frame, SFF_PROXY_PACKET) || pass_cng) {
 		/* Fast PASS! */
 		return perform_write(session, frame, flag, stream_id);
-	}
-
-	if (switch_test_flag(frame, SFF_CNG)) {
-		if (switch_channel_test_flag(session->channel, CF_ACCEPT_CNG)) {
-			return perform_write(session, frame, flag, stream_id);
-		}
-		return SWITCH_STATUS_SUCCESS;
 	}
 
 	switch_assert(frame->codec != NULL);
