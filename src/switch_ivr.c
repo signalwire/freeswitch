@@ -43,8 +43,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_time_t start = switch_timestamp_now(), now, done = switch_timestamp_now() + (ms * 1000);
-	switch_frame_t *read_frame;
+	switch_frame_t *read_frame, cng_frame = { 0 };
 	int32_t left, elapsed;
+	char data[2] = "";
+
+	cng_frame.data = data;
+	cng_frame.datalen = 2;
+	cng_frame.buflen = 2;
+	cng_frame.flags = SFF_CNG;
 
 	for (;;) {
 		now = switch_timestamp_now();
@@ -119,6 +125,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 				break;
 			}
 		}
+
+		switch_core_session_write_frame(session, &cng_frame, SWITCH_IO_FLAG_NONE, 0);
+
 	}
 
 	return status;

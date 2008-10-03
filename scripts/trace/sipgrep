@@ -17,8 +17,8 @@ $COLORS{'totag'} = 'bold green';
 $COLORS{'viabranch'} = 'bold cyan';
 
 $limit=2000;
-$ngrep="/usr/local/bin/ngrep"; #path to NGREP
-$ngrep_flags="-l"; # Flag for Ngrep
+$ngrep="/usr/bin/ngrep"; #path to NGREP
+$ngrep_flags="-l -d eth1"; # Flag for Ngrep
 
 $colorsmethods="INVITE|REGISTER|BYE|ACK|CANCEL|OPTIONS|REFER|NOTIFY|MESSAGE|INFO|PRACK|UPDATE";
 
