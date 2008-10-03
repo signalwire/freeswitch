@@ -364,6 +364,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 	zap_channel_init(tech_pvt->zchan);
 
+	switch_channel_set_flag(channel, CF_ACCEPT_CNG);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -636,7 +638,8 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 	zap_size_t len;
-
+	unsigned char data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
+	
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -653,6 +656,16 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		goto fail;
 	}
 	
+	if (switch_test_flag(frame, SFF_CNG)) {
+		frame->data = data;
+		frame->buflen = sizeof(data);
+		if ((frame->datalen = tech_pvt->write_codec.implementation->encoded_bytes_per_frame) > frame->buflen) {
+			goto fail;
+		}
+		memset(data, 255, frame->datalen);
+	}
+
+
 	len = frame->datalen;
 	if (zap_channel_write(tech_pvt->zchan, frame->data, frame->buflen, &len) != ZAP_SUCCESS) {
 		if (++tech_pvt->wr_error > 10) {
