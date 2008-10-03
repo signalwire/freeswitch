@@ -1794,7 +1794,9 @@ static switch_status_t load_config(void)
 			zap_span_t *span = NULL;
 			char *tonegroup = NULL;
 			uint32_t opts = 0;
-			
+			int q921loglevel = -1;
+			int q931loglevel = -1;
+
 			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
@@ -1805,6 +1807,14 @@ static switch_status_t load_config(void)
 					mode = val;
 				} else if (!strcasecmp(var, "dialect")) {
 					dialect = val;
+				} else if (!strcasecmp(var, "q921loglevel")) {
+                    if ((q921loglevel = switch_log_str2level(val)) == SWITCH_LOG_INVALID) {
+                        q921loglevel = -1;
+                    }
+				} else if (!strcasecmp(var, "q931loglevel")) {
+                    if ((q931loglevel = switch_log_str2level(val)) == SWITCH_LOG_INVALID) {
+                        q931loglevel = -1;
+                    }
 				} else if (!strcasecmp(var, "context")) {
 					context = val;
 				} else if (!strcasecmp(var, "suggest-channel") && switch_true(val)) {
@@ -1813,8 +1823,7 @@ static switch_status_t load_config(void)
 					dialplan = val;
 				} 
 			}
-
-				
+	
 			if (!id && !name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param 'id'\n");
 				continue;
@@ -1849,6 +1858,8 @@ static switch_status_t load_config(void)
 			if (zap_configure_span("isdn", span, on_clear_channel_signal, 
 								   "mode", mode, 
 								   "dialect", dialect,
+								   "q921loglevel", q921loglevel,
+								   "q931loglevel", q931loglevel,
 								   TAG_END) != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d mode: %d dialect: %d error: %s\n", span_id, mode, dialect, span->last_error);
 				continue;

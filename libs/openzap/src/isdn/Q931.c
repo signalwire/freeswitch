@@ -860,6 +860,15 @@ void Q931SetLogCB(Q931_TrunkInfo_t *trunk, Q931LogCB_t func, void *priv)
  */
 void Q931SetLogLevel(Q931_TrunkInfo_t *trunk, Q931LogLevel_t level)
 {
+    if(!trunk)
+        return;
+
+    if (level < Q931_LOG_NONE) {
+        level = Q931_LOG_NONE;
+    } else if (level > Q931_LOG_DEBUG) {
+        level = Q931_LOG_DEBUG;
+    }
+
 	trunk->loglevel = level;
 }
 

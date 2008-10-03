@@ -2993,6 +2993,12 @@ void Q921SetLogLevel(L2TRUNK trunk, Q921LogLevel_t level)
 	if(!trunk)
 		return;
 
+    if (level < Q921_LOG_NONE) {
+        level = Q921_LOG_NONE;
+    } else if (level > Q921_LOG_DEBUG) {
+        level = Q921_LOG_DEBUG;
+    }
+
 	trunk->loglevel = level;
 }
 
