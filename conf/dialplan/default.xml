@@ -44,10 +44,18 @@
       </condition>
     </extension>
 
-    <extension name="intercept">
+    <extension name="global-intercept">
       <condition field="destination_number" expression="^886$">
 	<action application="answer"/>
 	<action application="intercept" data="${db(select/${domain_name}-last_dial/global)}"/>
+	<action application="sleep" data="2000"/>
+      </condition>
+    </extension>
+
+    <extension name="group-intercept">
+      <condition field="destination_number" expression="^\*8$">
+	<action application="answer"/>
+	<action application="intercept" data="${db(select/${domain_name}-last_dial/${callgroup})}"/>
 	<action application="sleep" data="2000"/>
       </condition>
     </extension>
@@ -215,6 +223,8 @@
 	<anti-action application="set" data="continue_on_fail=true"/>
 	<anti-action application="db" data="insert/${domain_name}-call_return/${dialed_extension}/${caller_id_number}"/>
 	<anti-action application="db" data="insert/${domain_name}-last_dial_ext/${dialed_extension}/${uuid}"/>
+	<anti-action application="set" data="called_party_callgroup=${user_data(${dialed_extension}@${domain_name} var callgroup)}"/>
+	<anti-action application="db" data="insert/${domain_name}-last_dial/${called_party_callgroup}/${uuid}"/>
 	<anti-action application="bridge" data="user/${dialed_extension}@${domain_name}"/>
 	<anti-action application="answer"/>
 	<!--<anti-action application="send_display" data="Voicemail for ${dialed_extension}"/>-->
