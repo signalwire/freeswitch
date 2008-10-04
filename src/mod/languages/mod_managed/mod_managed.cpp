@@ -157,10 +157,14 @@ switch_status_t setMonoDirs()
 #endif	
 }
 
-switch_status_t loadModMonoManaged() 
+switch_status_t loadRuntime() 
 {
 	/* Find and load mod_mono_managed.exe */ 
 	char filename[256];
+
+	if (setMonoDirs() != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	switch_snprintf(filename, 256, "%s%s%s", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR, MOD_MANAGED_DLL);
 	globals.domain = mono_jit_init(filename);
@@ -251,59 +255,6 @@ switch_status_t findLoader()
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found all loader functions.\n");
 	return SWITCH_STATUS_SUCCESS;
 }
-
-SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load) 
-{
-	/* connect my internal structure to the blank pointer passed to me */ 
-	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loading mod_managed (Common Language Infrastructure), Mono Version\n");
-	globals.pool = pool;
-
-	if (setMonoDirs() != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (loadModMonoManaged() != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (findLoader() != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	/* Not sure if this is necesary on the loading thread */ 
-	mono_thread_attach(globals.domain);
-
-	/* Run loader */ 
-	MonoObject * objResult;
-	MonoObject * exception = NULL;
-
-	objResult = mono_runtime_invoke(globals.loadMethod, NULL, NULL, &exception);
-
-	if (exception) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Load threw an exception.\n");
-		mono_print_unhandled_exception(exception);
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (*(int *) mono_object_unbox(objResult)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Load completed successfully.\n");
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Load did not return true.\n");
-		return SWITCH_STATUS_FALSE;
-	}
-
-	/* We're good to register */ 
-	switch_api_interface_t *api_interface;
-	switch_application_interface_t *app_interface;
-
-	SWITCH_ADD_API(api_interface, "managedrun", "Run a module (ExecuteBackground)", managedrun_api_function, "<module> [<args>]");
-	SWITCH_ADD_API(api_interface, "managed", "Run a module as an API function (Execute)", managed_api_function, "<module> [<args>]");
-	SWITCH_ADD_APP(app_interface, "managed", "Run Mono IVR", "Run a Mono IVR on a channel", managed_app_function, "<modulename> [<args>]", SAF_NONE);
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
 #endif
 
 /**********************************************************
@@ -326,7 +277,7 @@ SWITCH_MOD_DECLARE(void) InitManagedSession(ManagedSession *session, inputFuncti
 	session->hangupDelegate = hangupDelegate;
 }
 
-switch_status_t loadModDotnetManaged() 
+switch_status_t loadRuntime() 
 {
 	/* Find and load mod_dotnet_managed.dll */ 
 	char filename[256];
@@ -362,26 +313,29 @@ switch_status_t findLoader()
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found all FreeSWITCH.Loader functions.\n");
 	return SWITCH_STATUS_SUCCESS;
 }
+#endif
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load) 
 {
+	int success;
 	/* connect my internal structure to the blank pointer passed to me */ 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loading mod_managed (Common Language Infrastructure), Microsoft CLR Version\n");
 	
 	globals.pool = pool;
 	
-	if (loadModDotnetManaged() != SWITCH_STATUS_SUCCESS) {			
+	if (loadRuntime() != SWITCH_STATUS_SUCCESS) {			
 		return SWITCH_STATUS_FALSE;
 	}
 	
 	if (findLoader() != SWITCH_STATUS_SUCCESS) {		
 		return SWITCH_STATUS_FALSE;
 	}
-
+#ifdef _MANAGED
 	Object ^objResult;
 	try {
 		objResult = FreeSwitchManaged::loadMethod->Invoke(nullptr, nullptr);
+		success = *reinterpret_cast<bool^>(objResult);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Load completed successfully.\n");
 	}
 	catch(Exception^ ex)	{
@@ -390,8 +344,24 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 		Marshal::FreeHGlobal(msg);
 		return SWITCH_STATUS_FALSE;
 	}
+#else
+	/* Not sure if this is necesary on the loading thread */ 
+	mono_thread_attach(globals.domain);
 
-	if (*reinterpret_cast<bool^>(objResult)) {
+	/* Run loader */ 
+	MonoObject * objResult;
+	MonoObject * exception = NULL;
+
+	objResult = mono_runtime_invoke(globals.loadMethod, NULL, NULL, &exception);
+	success = *(int *) mono_object_unbox(objResult);
+
+	if (exception) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Load threw an exception.\n");
+		mono_print_unhandled_exception(exception);
+		return SWITCH_STATUS_FALSE;
+	}
+#endif
+	if (success) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Load completed successfully.\n");
 	} else {		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Load did not return true.\n");
@@ -407,7 +377,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 	SWITCH_ADD_APP(app_interface, "managed", "Run CLI App", "Run an App on a channel", managed_app_function, "<modulename> [<args>]", SAF_NONE);
 	return SWITCH_STATUS_SUCCESS;
 }
-#endif
 
 SWITCH_STANDARD_API(managedrun_api_function) 
 {
@@ -420,6 +389,7 @@ SWITCH_STANDARD_API(managedrun_api_function)
 	Object ^objResult;
 	try {
 		objResult = FreeSwitchManaged::executeBackgroundMethod->Invoke(nullptr, gcnew array<Object^> { gcnew String(cmd) } );
+		success = *reinterpret_cast<bool^>(objResult);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Load completed successfully.\n");
 	} catch(Exception^ ex)	{
 		IntPtr msg = Marshal::StringToHGlobalAnsi(ex->ToString());
@@ -428,7 +398,6 @@ SWITCH_STANDARD_API(managedrun_api_function)
 		Marshal::FreeHGlobal(msg);
 		return SWITCH_STATUS_FALSE;
 	}
-	success = *reinterpret_cast<bool^>(objResult);
 #else
 	mono_thread_attach(globals.domain);
 	void *args[1];
@@ -436,13 +405,13 @@ SWITCH_STANDARD_API(managedrun_api_function)
 	args[0] = mono_string_new(globals.domain, cmd);
 	MonoObject * exception = NULL;
 	MonoObject * objResult = mono_runtime_invoke(globals.executeBackgroundMethod, NULL, args, &exception);
+	success = *(int *) mono_object_unbox(objResult);
 
 	if (exception) {
 		stream->write_function(stream, "-ERR FreeSWITCH.Loader.ExecuteBackground threw an exception.\n");
 		mono_print_unhandled_exception(exception);
 		return SWITCH_STATUS_SUCCESS;
 	}
-	success = *(int *) mono_object_unbox(objResult);
 #endif
 	if (success) {
 		stream->write_function(stream, "+OK\n");
@@ -466,13 +435,13 @@ SWITCH_STANDARD_API(managed_api_function)
 	try {
 		objResult = FreeSwitchManaged::executeMethod->Invoke(nullptr, gcnew array<Object^>{gcnew String(cmd),gcnew IntPtr(stream), gcnew IntPtr(stream->param_event)});
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute completed successfully.\n");
+		success = *reinterpret_cast<bool^>(objResult);
 	} catch(Exception ^ex)	{
 		IntPtr msg = Marshal::StringToHGlobalAnsi(ex->ToString());
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Exception trying to execute cli %s: %s\n", cmd, static_cast<const char*>(msg.ToPointer()));
 		Marshal::FreeHGlobal(msg);
 		return SWITCH_STATUS_FALSE;
 	}
-	success = *reinterpret_cast<bool^>(objResult);
 #else
 	mono_thread_attach(globals.domain);
 	void *args[3];
@@ -483,12 +452,12 @@ SWITCH_STANDARD_API(managed_api_function)
 
 	MonoObject * exception = NULL;
 	MonoObject * objResult = mono_runtime_invoke(globals.executeMethod, NULL, args, &exception);
+	success = *(int *) mono_object_unbox(objResult);
 
 	if (exception) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Exception trying to execute mono %s.\n", cmd);
 		mono_print_unhandled_exception(exception);
 	}
-	success = *(int *) mono_object_unbox(objResult);
 #endif
 	if (!success) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Execute failed for %s (unknown module?).\n", cmd);
@@ -508,6 +477,7 @@ SWITCH_STANDARD_APP(managed_app_function)
 	try {
 		objResult = FreeSwitchManaged::runMethod->Invoke(nullptr, gcnew array<Object^>{gcnew String(data),gcnew IntPtr(session)});
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RunMethod completed successfully.\n");
+		success = *reinterpret_cast<bool^>(objResult);
 	}
 	catch(Exception ^ex)	{
 		IntPtr msg = Marshal::StringToHGlobalAnsi(ex->ToString());
@@ -515,7 +485,6 @@ SWITCH_STANDARD_APP(managed_app_function)
 		Marshal::FreeHGlobal(msg);
 		return;
 	}
-	success = *reinterpret_cast<bool^>(objResult);
 #else
 	mono_thread_attach(globals.domain);
 	void *args[2];
@@ -525,12 +494,12 @@ SWITCH_STANDARD_APP(managed_app_function)
 
 	MonoObject * exception = NULL;
 	MonoObject * objResult = mono_runtime_invoke(globals.runMethod, NULL, args, &exception);
+	success = *(int *) mono_object_unbox(objResult);
 
 	if (exception) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Exception trying to execute application mono %s.\n", data);
 		mono_print_unhandled_exception(exception);
 	}
-	success = *(int *) mono_object_unbox(objResult);
 #endif
 	if (!success) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Application run failed for %s (unknown module?).\n", data);
