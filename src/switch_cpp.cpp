@@ -1238,7 +1238,7 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *resul
 		return SWITCH_STATUS_SUCCESS;
     }
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no match, return false\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no callback result match for '%s', return false\n", result);
 
     return SWITCH_STATUS_FALSE;
 }
