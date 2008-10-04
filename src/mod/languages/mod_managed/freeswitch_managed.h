@@ -41,19 +41,21 @@ SWITCH_BEGIN_EXTERN_C
 typedef void (*hangupFunction)(void);
 typedef char* (*inputFunction)(void*, switch_input_type_t);
 
-#ifdef _MANAGED
-#define ATTACH_THREADS
-#else
+#ifndef _MANAGED
 #include <glib.h>
 #include <mono/jit/jit.h>
 #include <mono/metadata/assembly.h>
+#include <mono/metadata/environment.h>
 #include <mono/metadata/threads.h>
+#include <mono/metadata/debug-helpers.h>
+#endif
 
 #ifndef SWIG
-struct mod_mono_globals {
+struct mod_managed_globals {
+	switch_memory_pool_t *pool;
+#ifndef _MANAGED
 	MonoDomain *domain;
 	MonoAssembly *mod_mono_asm;
-	switch_memory_pool_t *pool;
 	switch_bool_t embedded;
 
 	MonoMethod *loadMethod;
@@ -61,11 +63,15 @@ struct mod_mono_globals {
 	MonoMethod *runMethod;
 	MonoMethod *executeMethod;
 	MonoMethod *executeBackgroundMethod;
-};
-
-typedef struct mod_mono_globals mod_mono_globals;
-extern mod_mono_globals globals;
 #endif
+};
+typedef struct mod_managed_globals mod_managed_globals;
+extern mod_managed_globals globals;
+#endif
+
+#ifdef _MANAGED
+#define ATTACH_THREADS
+#else
 #define ATTACH_THREADS mono_thread_attach(globals.domain);
 #endif
 
