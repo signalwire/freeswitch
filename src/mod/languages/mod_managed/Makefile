@@ -21,11 +21,11 @@ local_depend:
 	cd managed && $(MAKE)
 
 local_install: $(MODINSTDIR)/mod_managed.so 
-	cd managed && $(MAKE) MODINSTDIR=$(MODINSTDIR) install
+	cd managed && $(MAKE) INSTALL="$(LTINSTALL)" MODINSTDIR=$(MODINSTDIR) install
 
 local_uninstall:
 	rm -fr $(MODINSTDIR)/mod_managed.so
-	cd managed && $(MAKE) MODINSTDIR=$(MODINSTDIR) uninstall
+	cd managed && $(MAKE) UNINSTALL="$(LTUNINSTALL)" MODINSTDIR=$(MODINSTDIR) uninstall
 
 local_clean:
 	cd managed && $(MAKE) clean

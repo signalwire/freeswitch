@@ -7,8 +7,8 @@ mod_managed_lib.dll: Loader.cs ManagedSession.cs ApiFunction.cs AppFunction.cs E
 	gmcs -target:library -out:mod_managed_lib.dll -d:DEBUG Loader.cs ManagedSession.cs ApiFunction.cs AppFunction.cs Extensions.cs Log.cs Demo.cs swig.cs
 
 install: mod_managed_lib.dll
-	install mod_managed_lib.dll $(MODINSTDIR)
+	$(INSTALL) mod_managed_lib.dll $(MODINSTDIR)
 
 uninstall:
-	rm -f $(MODINSTDIR)/mod_managed_lib.dll
+	$(UNINSTALL) $(MODINSTDIR)/mod_managed_lib.dll
 
