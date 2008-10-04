@@ -32,21 +32,6 @@
 
 #include <switch.h>
 #include <switch_cpp.h>
-
-#ifdef _MANAGED
-#define ATTACH_THREADS
-#else
-#include <glib.h>
-#include <mono/metadata/threads.h>
-#define ATTACH_THREADS mono_thread_attach(globals.domain);
-#endif
-
-#ifdef WIN32
-#define RESULT_FREE(x) CoTaskMemFree(x)
-#else
-#define RESULT_FREE(x) g_free(x)
-#endif
-
 #include "freeswitch_managed.h"
 
 ManagedSession::ManagedSession():CoreSession() 

@@ -26,12 +26,12 @@
  * Michael Giagnocavo <mgg@packetrino.com>
  * Jeff Lenk <jlenk@frontiernet.net> - Modified class to support Dotnet
  * 
- * freeswitch_mono.h -- Header for MonoSession and globals
+ * freeswitch_managed.h -- Header for ManagedSession and globals
  *
  */
 
-#ifndef FREESWITCH_MONO_H
-#define FREESWITCH_MONO_H
+#ifndef FREESWITCH_MANAGED_H
+#define FREESWITCH_MANAGED_H
 
 SWITCH_BEGIN_EXTERN_C
 
@@ -41,10 +41,13 @@ SWITCH_BEGIN_EXTERN_C
 typedef void (*hangupFunction)(void);
 typedef char* (*inputFunction)(void*, switch_input_type_t);
 
-#ifndef _MANAGED
-
+#ifdef _MANAGED
+#define ATTACH_THREADS
+#else
+#include <glib.h>
 #include <mono/jit/jit.h>
 #include <mono/metadata/assembly.h>
+#include <mono/metadata/threads.h>
 
 #ifndef SWIG
 struct mod_mono_globals {
@@ -63,6 +66,13 @@ struct mod_mono_globals {
 typedef struct mod_mono_globals mod_mono_globals;
 extern mod_mono_globals globals;
 #endif
+#define ATTACH_THREADS mono_thread_attach(globals.domain);
+#endif
+
+#ifdef WIN32
+#define RESULT_FREE(x) CoTaskMemFree(x)
+#else
+#define RESULT_FREE(x) g_free(x)
 #endif
 
 SWITCH_END_EXTERN_C
