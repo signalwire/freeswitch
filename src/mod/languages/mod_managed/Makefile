@@ -1,4 +1,6 @@
-MOD_CFLAGS=-D_REENTRANT -pthread -I/opt/mono-1.9/lib/pkgconfig/../../include/mono-1.0 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -lmono
+LOCAL_INSERT_CFLAGS= /usr/bin/pkg-config mono --cflags
+LOCAL_INSERT_LDFLAGS= /usr/bin/pkg-config mono --libs
+#MOD_CFLAGS=-D_REENTRANT -pthread -I/opt/mono-1.9/lib/pkgconfig/../../include/mono-1.0 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -lmono
 BASE=../../../..
 VERBOSE=1
 include $(BASE)/build/modmake.rules
