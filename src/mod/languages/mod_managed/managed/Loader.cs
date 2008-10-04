@@ -57,6 +57,14 @@ namespace FreeSWITCH
                 return false;
             }
 
+            AppDomain.CurrentDomain.AssemblyResolve += (_, rargs) => {
+                Log.WriteLine(LogLevel.Debug, "Trying to resolve assembly '{0}'.", rargs.Name);
+                if (rargs.Name == Assembly.GetExecutingAssembly().FullName) return Assembly.GetExecutingAssembly();
+                var path = Path.Combine(managedDir, rargs.Name + ".dll");
+                Log.WriteLine(LogLevel.Debug, "Resolving to: '" + path + "'.");
+                return File.Exists(path) ? Assembly.LoadFile(path) : null;
+            };
+
             // This is a simple one-time loader to get things in memory
             // Some day we should allow reloading of modules or something
             loadAssemblies(managedDir)
@@ -109,6 +117,7 @@ namespace FreeSWITCH
             {
                 string f = Path.Combine(managedDir, s);
                 try {
+                    Log.WriteLine(LogLevel.Debug, "Loading '{0}'.", f);
                     System.Reflection.Assembly.LoadFile(f);
                 }
                 catch (Exception ex) {

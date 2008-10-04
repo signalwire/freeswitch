@@ -2758,7 +2758,7 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_ivr_detect_speech(SWIGTYPE_p_switch_core_session session, string mod_name, string grammar, string path, string dest, switch_asr_handle ah) {
+  public static switch_status_t oh(SWIGTYPE_p_switch_core_session session, string mod_name, string grammar, string path, string dest, switch_asr_handle ah) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_detect_speech(SWIGTYPE_p_switch_core_session.getCPtr(session), mod_name, grammar, path, dest, switch_asr_handle.getCPtr(ah));
     return ret;
   }

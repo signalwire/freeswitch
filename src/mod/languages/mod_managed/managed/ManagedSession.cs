@@ -76,7 +76,6 @@ namespace FreeSWITCH.Native
             }
             catch (Exception ex) {
                 Log.WriteLine(LogLevel.Warning, "Exception in hangupCallback: {0}", ex.ToString());
-                throw;
             }
         }
 
@@ -86,35 +85,36 @@ namespace FreeSWITCH.Native
 
         string inputCallback(IntPtr input, Native.switch_input_type_t inputType)
         {
-            switch (inputType) {
-                case FreeSWITCH.Native.switch_input_type_t.SWITCH_INPUT_TYPE_DTMF:
-                    using (var dtmf = new Native.switch_dtmf_t(input, false)) {
-                        return dtmfCallback(dtmf);
-                    }
-                case FreeSWITCH.Native.switch_input_type_t.SWITCH_INPUT_TYPE_EVENT:
-                    using (var swevt = new Native.switch_event(input, false)) {
-                        return eventCallback(swevt);
-                    }
-                default:
-                    return "";
+            try {
+                switch (inputType) {
+                    case FreeSWITCH.Native.switch_input_type_t.SWITCH_INPUT_TYPE_DTMF:
+                        using (var dtmf = new Native.switch_dtmf_t(input, false)) {
+                            return dtmfCallback(dtmf);
+                        }
+                    case FreeSWITCH.Native.switch_input_type_t.SWITCH_INPUT_TYPE_EVENT:
+                        using (var swevt = new Native.switch_event(input, false)) {
+                            return eventCallback(swevt);
+                        }
+                    default:
+                        return "";
+                }
+            } catch (Exception ex) {
+                Log.WriteLine(LogLevel.Error, "InputCallback threw exception: " + ex.ToString());
+                return "-ERR InputCallback Exception: " + ex.Message;
             }
         }
 
-        string dtmfCallback(Native.switch_dtmf_t dtmf)
-        {
+        string dtmfCallback(Native.switch_dtmf_t dtmf) {
             var f = DtmfReceivedFunction;
-            return f == null ?
-                "-ERR No DtmfReceivedFunction set." :
-                f(((char)(byte)dtmf.digit), TimeSpan.FromMilliseconds(dtmf.duration));
+            return f == null ? "" 
+                : f(((char)(byte)dtmf.digit), TimeSpan.FromMilliseconds(dtmf.duration));
         }
 
-        string eventCallback(Native.switch_event swevt)
-        {
+        string eventCallback(Native.switch_event swevt) {
             using (var evt = new FreeSWITCH.Native.Event(swevt, 0)) {
                 var f = EventReceivedFunction;
-                return f == null ?
-                    "-ERR No EventReceivedFunction set." :
-                    f(evt);
+                return f == null ? "" 
+                    : f(evt);
             }
         }
 
