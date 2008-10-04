@@ -41,6 +41,7 @@ SWITCH_BEGIN_EXTERN_C
 typedef void (*hangupFunction)(void);
 typedef char* (*inputFunction)(void*, switch_input_type_t);
 
+
 #ifndef _MANAGED
 #include <glib.h>
 #include <mono/jit/jit.h>
@@ -60,9 +61,6 @@ struct mod_managed_globals {
 
 	MonoMethod *loadMethod;
 	MonoMethod *unloadMethod;
-	MonoMethod *runMethod;
-	MonoMethod *executeMethod;
-	MonoMethod *executeBackgroundMethod;
 #endif
 };
 typedef struct mod_managed_globals mod_managed_globals;
@@ -124,9 +122,6 @@ public:
 	static Assembly^ mod_dotnet_managed;
 	static MethodInfo^ loadMethod;
 	static MethodInfo^ unloadMethod;
-	static MethodInfo^ runMethod;
-	static MethodInfo^ executeMethod;
-	static MethodInfo^ executeBackgroundMethod;
 };
 
 #endif

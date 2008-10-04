@@ -36,6 +36,7 @@ using System.Text;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace FreeSWITCH
 {
@@ -65,6 +66,8 @@ namespace FreeSWITCH
                 return File.Exists(path) ? Assembly.LoadFile(path) : null;
             };
 
+            InitManagedDelegates(_run, _execute, _executeBackground);
+
             // This is a simple one-time loader to get things in memory
             // Some day we should allow reloading of modules or something
             loadAssemblies(managedDir)
@@ -76,6 +79,16 @@ namespace FreeSWITCH
 
             return true;
         }
+
+        delegate bool ExecuteDelegate(string cmd, IntPtr streamH, IntPtr eventH);
+        delegate bool ExecuteBackgroundDelegate(string cmd);
+        delegate bool RunDelegate(string cmd, IntPtr session);
+        static readonly ExecuteDelegate _execute = Execute;
+        static readonly ExecuteBackgroundDelegate _executeBackground = ExecuteBackground;
+        static readonly RunDelegate _run = Run;
+        //SWITCH_MOD_DECLARE(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground) 
+        [DllImport("mod_managed")]
+        static extern void InitManagedDelegates(RunDelegate run, ExecuteDelegate execute, ExecuteBackgroundDelegate executeBackground);
 
         // Be rather lenient in finding the Load and Unload methods
         static readonly BindingFlags methodBindingFlags =
@@ -181,25 +194,29 @@ namespace FreeSWITCH
 
         public static bool ExecuteBackground(string command)
         {
-            var parsed = parseCommand(command);
-            if (parsed == null) return false;
-            var fullName = parsed[0];
-            var args = parsed[1];
+            try {
+                var parsed = parseCommand(command);
+                if (parsed == null) return false;
+                var fullName = parsed[0];
+                var args = parsed[1];
 
-            var fType = getFunctionType<ApiFunction>(fullName);
-            if (fType == null) return false;
+                var fType = getFunctionType<ApiFunction>(fullName);
+                if (fType == null) return false;
 
-            new System.Threading.Thread(() => {
-                try {
-                    var f = (ApiFunction)Activator.CreateInstance(fType);
-                    f.ExecuteBackground(args);
-                    Log.WriteLine(LogLevel.Debug, "ExecuteBackground in {0} completed.", fullName);
-                }
-                catch (Exception ex) {
-                    logException("ExecuteBackground", fullName, ex);
-                }
-            }).Start();
-            return true;
+                new System.Threading.Thread(() => {
+                    try {
+                        var f = (ApiFunction)Activator.CreateInstance(fType);
+                        f.ExecuteBackground(args);
+                        Log.WriteLine(LogLevel.Debug, "ExecuteBackground in {0} completed.", fullName);
+                    } catch (Exception ex) {
+                        logException("ExecuteBackground", fullName, ex);
+                    }
+                }).Start();
+                return true;
+            } catch (Exception ex) {
+                Log.WriteLine(LogLevel.Error, "Exception in ExecuteBackground({0}): {1}", command, ex.ToString());
+                return false;
+            }
         }
 
         public static bool Execute(string command, IntPtr streamHandle, IntPtr eventHandle)

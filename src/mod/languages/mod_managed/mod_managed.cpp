@@ -63,6 +63,21 @@ SWITCH_STANDARD_APP(managed_app_function);	/* Run */
 
 mod_managed_globals globals = { 0 };
 
+// Global delegates to call managed functions
+typedef int (*runFunction)(const char *data, void *sessionPtr);
+typedef int (*executeFunction)(const char *cmd, void *stream, void *Event);
+typedef int (*executeBackgroundFunction)(const char* cmd);
+static runFunction runDelegate;
+static executeFunction executeDelegate;
+static executeBackgroundFunction executeBackgroundDelegate;
+
+SWITCH_MOD_DECLARE(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground) 
+{
+	runDelegate = run;
+	executeDelegate = execute;
+	executeBackgroundDelegate = executeBackground;
+}
+
 // Sets up delegates (and anything else needed) on the ManagedSession object
 // Called from ManagedSession.Initialize Managed -> this is Unmanaged code so all pointers are marshalled and prevented from GC
 // Exported method.
@@ -222,6 +237,7 @@ MonoMethod * getMethod(const char *name, MonoClass * klass)
 	return method;
 }
 
+
 switch_status_t findLoader() 
 {
 	/* Find loader class and methods */ 
@@ -238,18 +254,6 @@ switch_status_t findLoader()
 	}
 
 	if (!(globals.unloadMethod = getMethod("FreeSWITCH.Loader:Unload()", loaderClass))) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (!(globals.runMethod = getMethod("FreeSWITCH.Loader:Run(string,intptr)", loaderClass))) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (!(globals.executeMethod = getMethod("FreeSWITCH.Loader:Execute(string,intptr,intptr)", loaderClass))) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (!(globals.executeBackgroundMethod = getMethod("FreeSWITCH.Loader:ExecuteBackground(string)", loaderClass))) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -288,9 +292,6 @@ switch_status_t findLoader()
 	try {
 		FreeSwitchManaged::loadMethod = FreeSwitchManaged::mod_dotnet_managed->GetType("FreeSWITCH.Loader")->GetMethod("Load");
 		FreeSwitchManaged::unloadMethod = FreeSwitchManaged::mod_dotnet_managed->GetType("FreeSWITCH.Loader")->GetMethod("Unload");
-		FreeSwitchManaged::runMethod = FreeSwitchManaged::mod_dotnet_managed->GetType("FreeSWITCH.Loader")->GetMethod("Run");
-		FreeSwitchManaged::executeMethod = FreeSwitchManaged::mod_dotnet_managed->GetType("FreeSWITCH.Loader")->GetMethod("Execute");
-		FreeSwitchManaged::executeBackgroundMethod = FreeSwitchManaged::mod_dotnet_managed->GetType("FreeSWITCH.Loader")->GetMethod("ExecuteBackground");
 	} catch(Exception^ ex) {
 		IntPtr msg = Marshal::StringToHGlobalAnsi(ex->ToString());
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not load FreeSWITCH.Loader class: %s\n", static_cast<const char*>(msg.ToPointer()));
@@ -372,40 +373,12 @@ SWITCH_STANDARD_API(managedrun_api_function)
 		stream->write_function(stream, "-ERR no args specified!\n");	
 		return SWITCH_STATUS_SUCCESS;
 	}
-#ifdef _MANAGED
-	Object ^objResult;
-	try {
-		objResult = FreeSwitchManaged::executeBackgroundMethod->Invoke(nullptr, gcnew array<Object^> { gcnew String(cmd) } );
-		success = *reinterpret_cast<bool^>(objResult);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Load completed successfully.\n");
-	} catch(Exception^ ex)	{
-		IntPtr msg = Marshal::StringToHGlobalAnsi(ex->ToString());
-		stream->write_function(stream, "-ERR FreeSWITCH.Loader.ExecuteBackground threw an exception: %s\n", static_cast<const char*>(msg.ToPointer()));
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Load did not return true: %s\n", static_cast<const char*>(msg.ToPointer()));
-		Marshal::FreeHGlobal(msg);
-		return SWITCH_STATUS_FALSE;
-	}
-#else
-	mono_thread_attach(globals.domain);
-	void *args[1];
-
-	args[0] = mono_string_new(globals.domain, cmd);
-	MonoObject * exception = NULL;
-	MonoObject * objResult = mono_runtime_invoke(globals.executeBackgroundMethod, NULL, args, &exception);
-	success = *(int *) mono_object_unbox(objResult);
-
-	if (exception) {
-		stream->write_function(stream, "-ERR FreeSWITCH.Loader.ExecuteBackground threw an exception.\n");
-		mono_print_unhandled_exception(exception);
-		return SWITCH_STATUS_SUCCESS;
-	}
-#endif
+	success = executeBackgroundDelegate(cmd);
 	if (success) {
 		stream->write_function(stream, "+OK\n");
 	} else {	
-		stream->write_function(stream, "-ERR ExecuteBackground returned false (unknown module?).\n");
+		stream->write_function(stream, "-ERR ExecuteBackground returned false (unknown module or exception?).\n");
 	}
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -417,37 +390,9 @@ SWITCH_STANDARD_API(managed_api_function)
 		stream->write_function(stream, "-ERR no args specified!\n");	
 		return SWITCH_STATUS_SUCCESS;
 	}
-#ifdef _MANAGED
-	Object ^objResult;
-	try {
-		objResult = FreeSwitchManaged::executeMethod->Invoke(nullptr, gcnew array<Object^>{gcnew String(cmd),gcnew IntPtr(stream), gcnew IntPtr(stream->param_event)});
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute completed successfully.\n");
-		success = *reinterpret_cast<bool^>(objResult);
-	} catch(Exception ^ex)	{
-		IntPtr msg = Marshal::StringToHGlobalAnsi(ex->ToString());
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Exception trying to execute cli %s: %s\n", cmd, static_cast<const char*>(msg.ToPointer()));
-		Marshal::FreeHGlobal(msg);
-		return SWITCH_STATUS_FALSE;
-	}
-#else
-	mono_thread_attach(globals.domain);
-	void *args[3];
-
-	args[0] = mono_string_new(globals.domain, cmd);
-	args[1] = &stream;			// Address of the arguments
-	args[2] = &(stream->param_event);
-
-	MonoObject * exception = NULL;
-	MonoObject * objResult = mono_runtime_invoke(globals.executeMethod, NULL, args, &exception);
-	success = *(int *) mono_object_unbox(objResult);
-
-	if (exception) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Exception trying to execute mono %s.\n", cmd);
-		mono_print_unhandled_exception(exception);
-	}
-#endif
+	success = executeDelegate(cmd, stream, stream->param_event);
 	if (!success) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Execute failed for %s (unknown module?).\n", cmd);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Execute failed for %s (unknown module or exception).\n", cmd); 
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -458,40 +403,14 @@ SWITCH_STANDARD_APP(managed_app_function)
 	int success;
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No args specified!\n");
-	}
-#ifdef _MANAGED
-	Object ^objResult;
-	try {
-		objResult = FreeSwitchManaged::runMethod->Invoke(nullptr, gcnew array<Object^>{gcnew String(data),gcnew IntPtr(session)});
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RunMethod completed successfully.\n");
-		success = *reinterpret_cast<bool^>(objResult);
-	}
-	catch(Exception ^ex)	{
-		IntPtr msg = Marshal::StringToHGlobalAnsi(ex->ToString());
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Exception trying to execute application mono %s %s.\n", data, static_cast<const char*>(msg.ToPointer()));
-		Marshal::FreeHGlobal(msg);
 		return;
 	}
-#else
-	mono_thread_attach(globals.domain);
-	void *args[2];
-
-	args[0] = mono_string_new(globals.domain, data);
-	args[1] = &session;
-
-	MonoObject * exception = NULL;
-	MonoObject * objResult = mono_runtime_invoke(globals.runMethod, NULL, args, &exception);
-	success = *(int *) mono_object_unbox(objResult);
-
-	if (exception) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Exception trying to execute application mono %s.\n", data);
-		mono_print_unhandled_exception(exception);
-	}
-#endif
+	success = runDelegate(data, session);
 	if (!success) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Application run failed for %s (unknown module?).\n", data);
 	}
 }
+
 
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_managed_shutdown) 
