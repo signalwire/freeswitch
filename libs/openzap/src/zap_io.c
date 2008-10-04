@@ -1698,7 +1698,7 @@ static zap_status_t handle_dtmf(zap_channel_t *zchan, zap_size_t datalen)
 			dblen = sizeof(digits) - 1;
 		}
 
-		if (zap_buffer_read(zchan->gen_dtmf_buffer, digits, dblen) && !zap_strlen_zero(digits)) {
+		if (zap_buffer_read(zchan->gen_dtmf_buffer, digits, dblen) && !zap_strlen_zero_buf(digits)) {
 			zap_log(ZAP_LOG_DEBUG, "%d:%d GENERATE DTMF [%s]\n", zchan->span_id, zchan->chan_id, digits);	
 		
 			for (cur = digits; *cur; cur++) {
