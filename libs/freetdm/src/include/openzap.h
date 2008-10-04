@@ -166,6 +166,7 @@
 #define zap_copy_string(x,y,z) strncpy(x, y, z - 1) 
 #define zap_set_string(x,y) strncpy(x, y, sizeof(x)-1) 
 #define zap_strlen_zero(s) (!s || *s == '\0')
+#define zap_strlen_zero_buf(s) (*s == '\0')
 
 
 #define zap_channel_test_feature(obj, flag) ((obj)->features & flag)
