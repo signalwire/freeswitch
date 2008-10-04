@@ -39,11 +39,10 @@
 %typemap(csclassmodifiers) switch_xml_flag_t  "[System.Flags] public enum"
 %typemap(csclassmodifiers) switch_xml_section_enum_t  "[System.Flags] public enum"
 
-
 // Some things we dont want exposed to managed users directly, since 
 // we're gonna handle them with our own internalcall methods
-%ignore dtmfDelegateHandle;
-%ignore hangupDelegateHandle;
+%ignore dtmfDelegate;
+%ignore hangupDelegate;
 %ignore setHangupHook;
 %ignore beginAllowThreads;
 %ignore endAllowThreads;
@@ -114,6 +113,7 @@
 
 %include switch.h
 %include switch_types.h
+//%include switch_apr.h
 
 %include switch_core_db.h
 %include switch_regex.h
