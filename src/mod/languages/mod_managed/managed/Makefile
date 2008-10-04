@@ -1,13 +1,14 @@
-all: Debug Debug/mod_managed_lib.dll
+all: mod_managed_lib.dll
 
 clean:
-       rm -fr Debug
+       rm -fr mod_managed_lib.dll
 
-Debug:
-       mkdir Debug
+mod_managed_lib.dll: Loader.cs ManagedSession.cs ApiFunction.cs AppFunction.cs Extensions.cs Log.cs Demo.cs swig.cs
+       gmcs -target:library -out:mod_managed_lib.dll -d:DEBUG Loader.cs ManagedSession.cs ApiFunction.cs AppFunction.cs Extensions.cs Log.cs Demo.cs swig.cs
 
-Debug/mod_managed_lib.dll: Loader.cs ManagedSession.cs ApiFunction.cs AppFunction.cs Extensions.cs Log.cs Demo.cs swig.cs
-       gmcs -target:library -out:Debug/mod_managed_lib.dll -d:DEBUG Loader.cs ManagedSession.cs ApiFunction.cs AppFunction.cs Extensions.cs Log.cs Demo.cs swig.cs
+install: mod_managed_lib.dll
+       install mod_managed_lib.dll $(MODINSTDIR)
 
-install: Debug/mod_managed_lib.dll
-       install Debug/mod_managed_lib.dll /usr/local/freeswitch/mod
+uninstall:
+	rm -f $(MODINSTDIR)/mod_managed_lib.dll
+

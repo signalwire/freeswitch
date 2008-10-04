@@ -1,10 +1,9 @@
-#MOD_CFLAGS=`pkg-config --cflags --libs mono`
 MOD_CFLAGS=-D_REENTRANT -pthread -I/opt/mono-1.9/lib/pkgconfig/../../include/mono-1.0 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -lmono
-#LDFLAGS=`pkg-config --libs mono`
 BASE=../../../..
 VERBOSE=1
 include $(BASE)/build/modmake.rules
 LOCAL_OBJS=freeswitch_managed.o freeswitch_wrap.o
+
 local_depend: $(LOCAL_OBJS)
 
 freeswitch_managed.o: freeswitch_managed.h freeswitch_managed.cpp
@@ -16,6 +15,19 @@ freeswitch_wrap.cpp: freeswitch_wrap.cxx
 
 reswig: swigclean freeswitch_wrap.cxx
 
+local_depend:
+	cd managed && $(MAKE)
+
+local_install: $(MODINSTDIR)/mod_managed.so 
+	cd managed && $(MAKE) MODINSTDIR=$(MODINSTDIR) install
+
+local_uninstall:
+	rm -fr $(MODINSTDIR)/mod_managed.so
+	cd managed && $(MAKE) MODINSTDIR=$(MODINSTDIR) uninstall
+
+local_clean:
+	cd managed && $(MAKE) clean
+
 swigclean: clean
 	rm -f freeswitch_wrap.cxx freeswitch_wrap.cpp managed/swig.cs
 
@@ -24,3 +36,6 @@ freeswitch_wrap.cxx:
 	rm -f ./managed/swig.cs
 	cat *.cs > ./managed/swig.cs
 	rm -f *.cs
+
+depend_install:
+	mkdir -p $(DESTDIR)$(PREFIX)/mod/managed
