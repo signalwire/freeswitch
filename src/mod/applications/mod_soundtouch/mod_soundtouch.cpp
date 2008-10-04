@@ -42,100 +42,111 @@ using namespace std;
 SWITCH_MODULE_LOAD_FUNCTION(mod_soundtouch_load);
 SWITCH_MODULE_DEFINITION(mod_soundtouch, mod_soundtouch_load, NULL, NULL);
 
+static const float ADJUST_AMOUNT = 0.05f;
 struct soundtouch_helper {
 	SoundTouch *st;
 	switch_core_session_t *session;
-	int send;
-	int read;
+	bool send_not_recv;
+	bool hook_dtmf;
 	float pitch;
-	float octaves;
-	float semi;
 	float rate;
 	float tempo;
-	int literal;
+	bool literal;
 };
+
+/* type is p=>pitch,r=>rate,t=>tempo */
+static float normalize_soundtouch_value(char type, float value)
+{
+	float min,max;
+	switch(type)
+	{
+		case 'p':
+			min = 0.01f;
+			max = 1000.0f;
+			break;
+		case 'r':
+			min = 0.01f;
+			max = 1000.0f;
+			break;
+		case 't':
+			min = 0.01f;
+			max = 1000.0f;
+			break;
+	}
+	if (value < min)
+		value = min;
+	if (value > max)
+		value = max;
+	return value;
+}
+
+/*Computation taken from SoundTouch library for conversion*/
+static float compute_pitch_from_octaves(float octaves)
+{
+	return (float)exp(0.69314718056f * octaves);
+}
 
 static switch_status_t on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction)
 {
 
 	switch_media_bug_t *bug;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-
 	if ((bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_soundtouch_"))) {
 		struct soundtouch_helper *sth = (struct soundtouch_helper *) switch_core_media_bug_get_user_data(bug);
 
 		if (sth) {
 			if (sth->literal) {
-				sth->literal = 0;
+				sth->literal = false;
 				return SWITCH_STATUS_SUCCESS;
 			}
 
 
 			switch (dtmf->digit) {
 			case '*':
-				sth->literal++;
+				sth->literal=true;
 				break;
-			case '3':
-				sth->semi += .5;
-				sth->st->setPitchSemiTones(sth->semi);
-				sth->st->flush();
+
+			case '1':
+				sth->pitch = normalize_soundtouch_value('p',sth->pitch - ADJUST_AMOUNT);
+				sth->st->setPitch(sth->pitch);
 				break;
 			case '2':
-				sth->semi = 0;
-				sth->st->setPitchSemiTones(sth->semi);
-				sth->st->flush();
+				sth->pitch = 1.0f;
+				sth->st->setPitch(sth->pitch);
 				break;
-			case '1':
-				sth->semi -= .5;
-				sth->st->setPitchSemiTones(sth->semi);
-				sth->st->flush();
+			case '3':
+				sth->pitch = normalize_soundtouch_value('p',sth->pitch + ADJUST_AMOUNT);
+				sth->st->setPitch(sth->pitch);
 				break;
 
-			case '6':
-				sth->pitch += .2;
-				sth->st->setPitch(sth->pitch);
-				sth->st->flush();
+			case '4':
+				sth->rate = normalize_soundtouch_value('r',sth->rate - ADJUST_AMOUNT);
+				sth->st->setRate(sth->rate);
 				break;
 			case '5':
-				sth->pitch = 1;
-				sth->st->setPitch(sth->pitch);
-				sth->st->flush();
+				sth->rate = 1.0f;
+				sth->st->setRate(sth->rate);
 				break;
-			case '4':
-				sth->pitch -= .2;
-				if (sth->pitch <= 0) {
-					sth->pitch = .2;
-				}
-				sth->st->setPitch(sth->pitch);
-				sth->st->flush();
+			case '6':
+				sth->rate = normalize_soundtouch_value('r',sth->rate + ADJUST_AMOUNT);
+				sth->st->setRate(sth->rate);
 				break;
 
-			case '9':
-				sth->octaves += .2;
-				sth->st->setPitchOctaves(sth->octaves);
-				sth->st->flush();
+			case '7':
+				sth->tempo = normalize_soundtouch_value('t',sth->tempo - ADJUST_AMOUNT);
+				sth->st->setTempo(sth->tempo);
 				break;
 			case '8':
-				sth->octaves = 0;
-				sth->st->setPitchOctaves(sth->octaves);
-				sth->st->flush();
+				sth->tempo = 1.0f;
+				sth->st->setTempo(sth->tempo);
 				break;
-			case '7':
-				sth->octaves -= .2;
-				sth->st->setPitchOctaves(sth->octaves);
-				sth->st->flush();
+			case '9':
+				sth->tempo = normalize_soundtouch_value('t',sth->tempo + ADJUST_AMOUNT);
+				sth->st->setTempo(sth->tempo);
 				break;
-
 
 			case '0':
-				sth->octaves = 0;
-				sth->st->setPitchOctaves(sth->octaves);
-				sth->pitch = 1;
-				sth->st->setPitch(sth->pitch);
-				sth->semi = 0;
-				sth->st->setPitchSemiTones(sth->semi);
-				sth->st->flush();
-
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "pitch: %f tempo: %f rate: %f\n",sth->pitch,sth->tempo,sth->rate);
 			}
 
 		}
@@ -145,8 +156,6 @@ static switch_status_t on_dtmf(switch_core_session_t *session, const switch_dtmf
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
-
-
 static switch_bool_t soundtouch_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
 	struct soundtouch_helper *sth = (struct soundtouch_helper *) user_data;
@@ -162,16 +171,8 @@ static switch_bool_t soundtouch_callback(switch_media_bug_t *bug, void *user_dat
 			sth->st->setSetting(SETTING_USE_QUICKSEEK, 1);
 			sth->st->setSetting(SETTING_USE_AA_FILTER, 1);
 
-			if (sth->semi) {
-				sth->st->setPitchSemiTones(sth->semi);
-			}
-
 			if (sth->pitch) {
 				sth->st->setPitch(sth->pitch);
-			}
-
-			if (sth->octaves) {
-				sth->st->setPitchOctaves(sth->octaves);
 			}
 
 			if (sth->rate) {
@@ -179,20 +180,23 @@ static switch_bool_t soundtouch_callback(switch_media_bug_t *bug, void *user_dat
 			}
 
 			if (sth->tempo) {
-				sth->st->setRate(sth->tempo);
+				sth->st->setTempo(sth->tempo);
 			}
 
-			if (sth->send) {
-				switch_core_event_hook_add_send_dtmf(sth->session, on_dtmf);
-			} else {
-				switch_core_event_hook_add_recv_dtmf(sth->session, on_dtmf);
+			if (sth->hook_dtmf)
+			{
+				if (sth->send_not_recv) {
+					switch_core_event_hook_add_send_dtmf(sth->session, on_dtmf);
+				} else {
+					switch_core_event_hook_add_recv_dtmf(sth->session, on_dtmf);
+				}
 			}
 		}
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
 		{
 			delete sth->st;
-			if (sth->send) {
+			if (sth->send_not_recv) {
 				switch_core_event_hook_remove_send_dtmf(sth->session, on_dtmf);
 			} else {
 				switch_core_event_hook_remove_recv_dtmf(sth->session, on_dtmf);
@@ -210,7 +214,7 @@ static switch_bool_t soundtouch_callback(switch_media_bug_t *bug, void *user_dat
 			assert(sth != NULL);
 			assert(sth->st != NULL);
 
-			if (sth->read) {
+			if (! sth->send_not_recv) {
 				frame = switch_core_media_bug_get_read_replace_frame(bug);
 			} else {
 				frame = switch_core_media_bug_get_write_replace_frame(bug);
@@ -225,7 +229,7 @@ static switch_bool_t soundtouch_callback(switch_media_bug_t *bug, void *user_dat
 				memset(frame->data, 0, frame->datalen);
 			}
 
-			if (sth->read) {
+			if (! sth->send_not_recv) {
 				switch_core_media_bug_set_read_replace_frame(bug, frame);
 			} else {
 				switch_core_media_bug_set_write_replace_frame(bug, frame);
@@ -266,28 +270,27 @@ SWITCH_STANDARD_APP(soundtouch_start_function)
 
 	if (data && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-		sth->send = 0;
-		sth->read = 0;
 		sth->pitch = 1;
+		sth->rate = 1;
+		sth->tempo = 1;
+		sth->hook_dtmf = false;
+		sth->send_not_recv = false;
 		for (x = 0; x < argc; x++) {
-			if (!strncasecmp(argv[x], "send", 4)) {
-				sth->send = 1;
-			} else if (!strncasecmp(argv[x], "read", 4)) {
-				sth->read = 1;
+			if (!strncasecmp(argv[x], "send_leg", 8)) {
+				sth->send_not_recv = true;
+			}else if(!strncasecmp(argv[x], "hook_dtmf", 9)) {
+				sth->hook_dtmf = true;
 			} else if (strchr(argv[x], 'p')) {
-				if ((sth->pitch = atof(argv[x]) < 0)) {
-					sth->pitch = 0;
-				}
+				sth->pitch = normalize_soundtouch_value('p',atof(argv[x]));
 			} else if (strchr(argv[x], 'r')) {
-				sth->rate = atof(argv[x]);
+				sth->rate = normalize_soundtouch_value('r',atof(argv[x]));
 			} else if (strchr(argv[x], 'o')) {
-				sth->octaves = atof(argv[x]);
+				sth->pitch = normalize_soundtouch_value('p', compute_pitch_from_octaves(atof(argv[x])) );
 			} else if (strchr(argv[x], 's')) {
-				sth->semi = atof(argv[x]);
+				/*12.0f taken from soundtouch conversion to octaves*/
+				sth->pitch = normalize_soundtouch_value('p', compute_pitch_from_octaves(atof(argv[x]) / 12.0f) ); 
 			} else if (strchr(argv[x], 't')) {
-				if ((sth->tempo = atof(argv[x]) < 0)) {
-					sth->tempo = 0;
-				}
+				sth->tempo = normalize_soundtouch_value('t',atof(argv[x]));
 			}
 		}
 	}
@@ -296,7 +299,7 @@ SWITCH_STANDARD_APP(soundtouch_start_function)
 	sth->session = session;
 
 	if ((status = switch_core_media_bug_add(session, soundtouch_callback, sth, 0,
-											sth->read ? SMBF_READ_REPLACE : SMBF_WRITE_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
+											sth->send_not_recv ? SMBF_WRITE_REPLACE : SMBF_READ_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failure!\n");
 		return;
 	}
@@ -312,8 +315,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_soundtouch_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname); 
 
-	SWITCH_ADD_APP(app_interface, "soundtouch", "Alter the audio stream", "Alter the audio stream", 
-                   soundtouch_start_function, "[send|recv] [-]<X>s [.]<X>p", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "soundtouch", "Alter the audio stream", "Alter the audio stream pitch/rate/tempo", 
+                   soundtouch_start_function, "[send_leg] [hook_dtmf] [-]<X>s [-]<X>o <X>p <X>r <X>t", SAF_NONE);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
