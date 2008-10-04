@@ -25598,52 +25598,6 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_ManagedSession(void * jarg1) {
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_ManagedSession_dtmfDelegate_set(void * jarg1, void * jarg2) {
-  ManagedSession *arg1 = (ManagedSession *) 0 ;
-  inputFunction arg2 = (inputFunction) 0 ;
-  
-  arg1 = (ManagedSession *)jarg1; 
-  arg2 = (inputFunction)jarg2; 
-  if (arg1) (arg1)->dtmfDelegate = arg2;
-  
-}
-
-
-SWIGEXPORT void * SWIGSTDCALL CSharp_ManagedSession_dtmfDelegate_get(void * jarg1) {
-  void * jresult ;
-  ManagedSession *arg1 = (ManagedSession *) 0 ;
-  inputFunction result;
-  
-  arg1 = (ManagedSession *)jarg1; 
-  result = (inputFunction) ((arg1)->dtmfDelegate);
-  jresult = (void *)result; 
-  return jresult;
-}
-
-
-SWIGEXPORT void SWIGSTDCALL CSharp_ManagedSession_hangupDelegate_set(void * jarg1, void * jarg2) {
-  ManagedSession *arg1 = (ManagedSession *) 0 ;
-  hangupFunction arg2 = (hangupFunction) 0 ;
-  
-  arg1 = (ManagedSession *)jarg1; 
-  arg2 = (hangupFunction)jarg2; 
-  if (arg1) (arg1)->hangupDelegate = arg2;
-  
-}
-
-
-SWIGEXPORT void * SWIGSTDCALL CSharp_ManagedSession_hangupDelegate_get(void * jarg1) {
-  void * jresult ;
-  ManagedSession *arg1 = (ManagedSession *) 0 ;
-  hangupFunction result;
-  
-  arg1 = (ManagedSession *)jarg1; 
-  result = (hangupFunction) ((arg1)->hangupDelegate);
-  jresult = (void *)result; 
-  return jresult;
-}
-
-
 SWIGEXPORT CoreSession * SWIGSTDCALL CSharp_ManagedSessionUpcast(ManagedSession *objectRef) {
     return (CoreSession *)objectRef;
 }
