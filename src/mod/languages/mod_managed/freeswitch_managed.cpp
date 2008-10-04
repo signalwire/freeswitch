@@ -26,29 +26,28 @@
  * Michael Giagnocavo <mgg@packetrino.com>
  * Jeff Lenk <jlenk@frontiernet.net> - Modified class to support Dotnet
  * 
- * freeswitch_cli.cpp -- CLI CoreSession subclasses
+ * freeswitch_managed.cpp -- Managed CoreSession subclasses
  *
  */  
 
-
 #include <switch.h>
 #include <switch_cpp.h>
-#ifndef _MANAGED
-#include <glib.h>
-#include <mono/jit/jit.h>
-#include <mono/metadata/assembly.h>
-#include <mono/metadata/environment.h>
-#include <mono/metadata/threads.h>
-#include <mono/metadata/metadata.h>
-#endif
-
-#include "freeswitch_managed.h"
 
 #ifdef _MANAGED
 #define ATTACH_THREADS
 #else
+#include <glib.h>
+#include <mono/metadata/threads.h>
 #define ATTACH_THREADS mono_thread_attach(globals.domain);
 #endif
+
+#ifdef WIN32
+#define RESULT_FREE(x) CoTaskMemFree(x)
+#else
+#define RESULT_FREE(x) g_free(x)
+#endif
+
+#include "freeswitch_managed.h"
 
 ManagedSession::ManagedSession():CoreSession() 
 {
@@ -74,7 +73,6 @@ bool ManagedSession::end_allow_threads()
 {
 	return true;
 }
-
 
 ManagedSession::~ManagedSession() 
 {
@@ -112,11 +110,8 @@ switch_status_t ManagedSession::run_dtmf_callback(void *input, switch_input_type
 	char *result = dtmfDelegate(input, itype);
 	switch_status_t status = process_callback_result(result);
 
-#if WIN32
-	CoTaskMemFree(result); 
-#else
-	g_free(result)
-#endif
+	RESULT_FREE(result); 
+
 	return status;
 }
 
