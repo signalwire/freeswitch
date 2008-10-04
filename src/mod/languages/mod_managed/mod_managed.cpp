@@ -63,11 +63,10 @@ SWITCH_STANDARD_APP(managed_app_function);	/* Run */
 
 mod_managed_globals globals = { 0 };
 
-#ifndef _MANAGED	
-
 // Sets up delegates (and anything else needed) on the ManagedSession object
-// Called via internalcall
-SWITCH_MOD_DECLARE(void) InitManagedSession(ManagedSession * session, inputFunction dtmfDelegate, hangupFunction hangupDelegate) 
+// Called from ManagedSession.Initialize Managed -> this is Unmanaged code so all pointers are marshalled and prevented from GC
+// Exported method.
+SWITCH_MOD_DECLARE(void) InitManagedSession(ManagedSession *session, inputFunction dtmfDelegate, hangupFunction hangupDelegate) 
 {
 	switch_assert(session);
 	if (!session) {
@@ -78,6 +77,8 @@ SWITCH_MOD_DECLARE(void) InitManagedSession(ManagedSession * session, inputFunct
 	session->dtmfDelegate = dtmfDelegate;
 	session->hangupDelegate = hangupDelegate;
 }
+
+#ifndef _MANAGED	
 
 #ifdef WIN32
 #include <shlobj.h>
@@ -262,20 +263,6 @@ switch_status_t findLoader()
 **********************************************************/
 
 #ifdef _MANAGED
-// Sets up delegates (and anything else needed) on the ManagedSession object
-// Called from ManagedSession.Initialize Managed -> this is Unmanaged code so all pointers are marshalled and prevented from GC
-// Exported method.
-SWITCH_MOD_DECLARE(void) InitManagedSession(ManagedSession *session, inputFunction dtmfDelegate, hangupFunction hangupDelegate) 
-{
-	switch_assert(session);
-	if (!session) {
-		return;
-	}
-	session->setDTMFCallback(NULL, "");
-	session->setHangupHook(NULL);
-	session->dtmfDelegate = dtmfDelegate;
-	session->hangupDelegate = hangupDelegate;
-}
 
 switch_status_t loadRuntime() 
 {
