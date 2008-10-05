@@ -35,13 +35,15 @@
  */  
 
 #include <switch.h>
-
 #include "freeswitch_managed.h" 
 
 #ifdef _MANAGED
 #include <mscoree.h>
 using namespace System;
 using namespace System::Runtime::InteropServices;
+#define MOD_MANAGED_VERSION "Microsoft CLR Version"
+#else
+#define MOD_MANAGED_VERSION "Mono Version"
 #endif
 
 SWITCH_BEGIN_EXTERN_C 
@@ -60,6 +62,8 @@ SWITCH_STANDARD_API(managed_loadassembly); /* Load assembly */
 #define MOD_MANAGED_ASM_V3 2
 #define MOD_MANAGED_ASM_V4 0
 #define MOD_MANAGED_DLL MOD_MANAGED_ASM_NAME ".dll"
+#define MOD_MANAGED_IMAGE_NAME "FreeSWITCH"
+#define MOD_MANAGED_CLASS_NAME "Loader"
 
 mod_managed_globals globals = { 0 };
 
@@ -129,8 +133,7 @@ switch_status_t setMonoDirs()
 		}
 	}
 
-	if(!found) 
-	{   // Check registry
+	if (!found) {   // Check registry
 		DWORD size = MAX_PATH;
 		if (ERROR_SUCCESS == RegGetValue(HKEY_LOCAL_MACHINE, "SOFTWARE\\Novell\\Mono\\2.0", "FrameworkAssemblyDirectory", RRF_RT_REG_SZ, NULL, &libPath, &size)) {
 			size = MAX_PATH;
@@ -140,8 +143,7 @@ switch_status_t setMonoDirs()
 		}
 	}
 
-	if (!found)
-	{ // Scan program files for Mono-2something
+	if (!found) { // Scan program files for Mono-2something
 		HANDLE hFind;
 		WIN32_FIND_DATA findData;
 		switch_snprintf(findPath, MAX_PATH, "%s\\Mono-2*", progFilesPath);
@@ -172,7 +174,6 @@ switch_status_t setMonoDirs()
 	// On other platforms, it should just work if it hasn't been relocated
 	mono_set_dirs(NULL, NULL);
 	return SWITCH_STATUS_SUCCESS;
-
 #endif	
 }
 
@@ -240,19 +241,18 @@ MonoMethod * getMethod(const char *name, MonoClass * klass)
 	return method;
 }
 
-
 switch_status_t findLoader() 
 {
 	/* Find loader class and methods */ 
 	MonoClass * loaderClass;
 	MonoImage * img = mono_assembly_get_image(globals.mod_mono_asm);
 
-	if (!(loaderClass = mono_class_from_name(img, "FreeSWITCH", "Loader"))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not find FreeSWITCH.Loader class.\n");
+	if (!(loaderClass = mono_class_from_name(img, MOD_MANAGED_IMAGE_NAME, MOD_MANAGED_CLASS_NAME))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not find " MOD_MANAGED_IMAGE_NAME "." MOD_MANAGED_CLASS_NAME " class.\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!(globals.loadMethod = getMethod("FreeSWITCH.Loader:Load()", loaderClass))) {
+	if (!(globals.loadMethod = getMethod(MOD_MANAGED_IMAGE_NAME "." MOD_MANAGED_CLASS_NAME ":Load()", loaderClass))) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -289,14 +289,14 @@ switch_status_t loadRuntime()
 switch_status_t findLoader() 
 {
 	try {
-		FreeSwitchManaged::loadMethod = FreeSwitchManaged::mod_dotnet_managed->GetType("FreeSWITCH.Loader")->GetMethod("Load");
+		FreeSwitchManaged::loadMethod = FreeSwitchManaged::mod_dotnet_managed->GetType(MOD_MANAGED_IMAGE_NAME "." MOD_MANAGED_CLASS_NAME)->GetMethod("Load");
 	} catch(Exception^ ex) {
 		IntPtr msg = Marshal::StringToHGlobalAnsi(ex->ToString());
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not load FreeSWITCH.Loader class: %s\n", static_cast<const char*>(msg.ToPointer()));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not load " MOD_MANAGED_IMAGE_NAME "." MOD_MANAGED_CLASS_NAME " class: %s\n", static_cast<const char*>(msg.ToPointer()));
 		Marshal::FreeHGlobal(msg);
 		return SWITCH_STATUS_FALSE;
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found all FreeSWITCH.Loader functions.\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found all " MOD_MANAGED_IMAGE_NAME "." MOD_MANAGED_CLASS_NAME " functions.\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 #endif
@@ -306,11 +306,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 	int success;
 	/* connect my internal structure to the blank pointer passed to me */ 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-#ifdef _MANAGED
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loading mod_managed (Common Language Infrastructure), Microsoft CLR Version\n");
-#else
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loading mod_managed (Common Language Infrastructure), Mono Version\n");
-#endif
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loading mod_managed (Common Language Infrastructure), " MOD_MANAGED_VERSION "\n");
+
 	globals.pool = pool;
 	
 	if (loadRuntime() != SWITCH_STATUS_SUCCESS) {			
@@ -321,13 +318,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 		return SWITCH_STATUS_FALSE;
 	}
 #ifdef _MANAGED
-	Object ^objResult;
 	try {
-		objResult = FreeSwitchManaged::loadMethod->Invoke(nullptr, nullptr);
+		Object ^objResult = FreeSwitchManaged::loadMethod->Invoke(nullptr, nullptr);
 		success = *reinterpret_cast<bool^>(objResult);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Load completed successfully.\n");
 	}
-	catch(Exception^ ex)	{
+	catch(Exception^ ex) {
 		IntPtr msg = Marshal::StringToHGlobalAnsi(ex->ToString());
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Load did not return true. %s\n", static_cast<const char*>(msg.ToPointer()));
 		Marshal::FreeHGlobal(msg);
@@ -338,10 +334,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 	mono_thread_attach(globals.domain);
 
 	/* Run loader */ 
-	MonoObject * objResult;
 	MonoObject * exception = NULL;
-
-	objResult = mono_runtime_invoke(globals.loadMethod, NULL, NULL, &exception);
+	MonoObject * objResult = mono_runtime_invoke(globals.loadMethod, NULL, NULL, &exception);
 	success = *(int *) mono_object_unbox(objResult);
 
 	if (exception) {
@@ -370,13 +364,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 
 SWITCH_STANDARD_API(managedrun_api_function) 
 {
-	int success;
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "-ERR no args specified!\n");	
 		return SWITCH_STATUS_SUCCESS;
 	}
-	success = executeBackgroundDelegate(cmd);
-	if (success) {
+	if (executeBackgroundDelegate(cmd)) {
 		stream->write_function(stream, "+OK\n");
 	} else {	
 		stream->write_function(stream, "-ERR ExecuteBackground returned false (unknown module or exception?).\n");
@@ -384,44 +376,36 @@ SWITCH_STANDARD_API(managedrun_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 SWITCH_STANDARD_API(managed_api_function) 
 {
-	int success;
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "-ERR no args specified!\n");	
 		return SWITCH_STATUS_SUCCESS;
 	}
-	success = executeDelegate(cmd, stream, stream->param_event);
-	if (!success) {
+	if (!(executeDelegate(cmd, stream, stream->param_event))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Execute failed for %s (unknown module or exception).\n", cmd); 
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 SWITCH_STANDARD_APP(managed_app_function) 
 {
-	int success;
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No args specified!\n");
 		return;
 	}
-	success = runDelegate(data, session);
-	if (!success) {
+	if (!(runDelegate(data, session))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Application run failed for %s (unknown module or exception).\n", data);
 	}
 }
 
 SWITCH_STANDARD_API(managed_loadassembly)
 {
-	int success;
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "-ERR no args specified!\n");	
 		return SWITCH_STATUS_SUCCESS;
 	}
-	success = loadAssemblyDelegate(cmd);
-	if (success) {
+	if (loadAssemblyDelegate(cmd)) {
 		stream->write_function(stream, "+OK\n");
 	} else {	
 		stream->write_function(stream, "-ERR LoadAssembly returned false (invalid file or exception).\n");
