@@ -306,8 +306,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 	int success;
 	/* connect my internal structure to the blank pointer passed to me */ 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+#ifdef _MANAGED
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loading mod_managed (Common Language Infrastructure), Microsoft CLR Version\n");
-	
+#else
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loading mod_managed (Common Language Infrastructure), Mono Version\n");
+#endif
 	globals.pool = pool;
 	
 	if (loadRuntime() != SWITCH_STATUS_SUCCESS) {			
