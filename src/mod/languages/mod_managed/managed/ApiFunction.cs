@@ -40,8 +40,6 @@ namespace FreeSWITCH
     {
         protected static bool Load() { return true; }
 
-        protected static void Unload() { }
-
         public abstract void ExecuteBackground(string args);
 
         public abstract void Execute(FreeSWITCH.Native.Stream stream, FreeSWITCH.Native.Event evt, string args);

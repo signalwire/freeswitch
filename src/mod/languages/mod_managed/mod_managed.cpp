@@ -47,17 +47,17 @@ using namespace System::Runtime::InteropServices;
 SWITCH_BEGIN_EXTERN_C 
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load);
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_managed_shutdown);
-SWITCH_MODULE_DEFINITION(mod_managed, mod_managed_load, mod_managed_shutdown, NULL);
+SWITCH_MODULE_DEFINITION(mod_managed, mod_managed_load, NULL, NULL);
 
 SWITCH_STANDARD_API(managedrun_api_function);	/* ExecuteBackground */
 SWITCH_STANDARD_API(managed_api_function);	/* Execute */
 SWITCH_STANDARD_APP(managed_app_function);	/* Run */
+SWITCH_STANDARD_API(managed_loadassembly); /* Load assembly */
 
 #define MOD_MANAGED_ASM_NAME "mod_managed_lib"
 #define MOD_MANAGED_ASM_V1 1
 #define MOD_MANAGED_ASM_V2 0
-#define MOD_MANAGED_ASM_V3 0
+#define MOD_MANAGED_ASM_V3 2
 #define MOD_MANAGED_ASM_V4 0
 #define MOD_MANAGED_DLL MOD_MANAGED_ASM_NAME ".dll"
 
@@ -67,15 +67,18 @@ mod_managed_globals globals = { 0 };
 typedef int (*runFunction)(const char *data, void *sessionPtr);
 typedef int (*executeFunction)(const char *cmd, void *stream, void *Event);
 typedef int (*executeBackgroundFunction)(const char* cmd);
+typedef int (*loadAssemblyFunction)(const char* filename);
 static runFunction runDelegate;
 static executeFunction executeDelegate;
 static executeBackgroundFunction executeBackgroundDelegate;
+static loadAssemblyFunction loadAssemblyDelegate;
 
-SWITCH_MOD_DECLARE(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground) 
+SWITCH_MOD_DECLARE(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground, loadAssemblyFunction loadAssembly) 
 {
 	runDelegate = run;
 	executeDelegate = execute;
 	executeBackgroundDelegate = executeBackground;
+	loadAssemblyDelegate = loadAssembly;
 }
 
 // Sets up delegates (and anything else needed) on the ManagedSession object
@@ -253,10 +256,6 @@ switch_status_t findLoader()
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!(globals.unloadMethod = getMethod("FreeSWITCH.Loader:Unload()", loaderClass))) {
-		return SWITCH_STATUS_FALSE;
-	}
-
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found all loader functions.\n");
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -291,7 +290,6 @@ switch_status_t findLoader()
 {
 	try {
 		FreeSwitchManaged::loadMethod = FreeSwitchManaged::mod_dotnet_managed->GetType("FreeSWITCH.Loader")->GetMethod("Load");
-		FreeSwitchManaged::unloadMethod = FreeSwitchManaged::mod_dotnet_managed->GetType("FreeSWITCH.Loader")->GetMethod("Unload");
 	} catch(Exception^ ex) {
 		IntPtr msg = Marshal::StringToHGlobalAnsi(ex->ToString());
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not load FreeSWITCH.Loader class: %s\n", static_cast<const char*>(msg.ToPointer()));
@@ -363,6 +361,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 	SWITCH_ADD_API(api_interface, "managedrun", "Run a module (ExecuteBackground)", managedrun_api_function, "<module> [<args>]");
 	SWITCH_ADD_API(api_interface, "managed", "Run a module as an API function (Execute)", managed_api_function, "<module> [<args>]");
 	SWITCH_ADD_APP(app_interface, "managed", "Run CLI App", "Run an App on a channel", managed_app_function, "<modulename> [<args>]", SAF_NONE);
+	SWITCH_ADD_API(api_interface, "managedload", "Load assembly", managed_loadassembly, "<filename>");
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -407,41 +406,23 @@ SWITCH_STANDARD_APP(managed_app_function)
 	}
 	success = runDelegate(data, session);
 	if (!success) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Application run failed for %s (unknown module?).\n", data);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Application run failed for %s (unknown module or exception).\n", data);
 	}
 }
 
-
-
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_managed_shutdown) 
+SWITCH_STANDARD_API(managed_loadassembly)
 {
-#ifdef _MANAGED
-	Object ^objResult;
-	try {
-		objResult = FreeSwitchManaged::unloadMethod->Invoke(nullptr, nullptr);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "UnloadMethod completed successfully.\n");
+	int success;
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "-ERR no args specified!\n");	
+		return SWITCH_STATUS_SUCCESS;
 	}
-	catch(Exception^ ex) {
-		IntPtr msg = Marshal::StringToHGlobalAnsi(ex->ToString());
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Exception occurred in Loader::Unload: %s\n", static_cast<const char*>(msg.ToPointer()));
-		Marshal::FreeHGlobal(msg);
-		return SWITCH_STATUS_FALSE;;
+	success = loadAssemblyDelegate(cmd);
+	if (success) {
+		stream->write_function(stream, "+OK\n");
+	} else {	
+		stream->write_function(stream, "-ERR LoadAssembly returned false (invalid file or exception).\n");
 	}
-#else
-	MonoObject * ex;
-
-	mono_thread_attach(globals.domain);
-	mono_runtime_invoke(globals.unloadMethod, NULL, NULL, &ex);
-
-	if (ex) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Exception occurred in Loader::Unload.\n");
-		mono_print_unhandled_exception(ex);
-	}
-
-	if (!globals.embedded) {
-		mono_jit_cleanup(globals.domain);
-	}
-#endif
 	return SWITCH_STATUS_SUCCESS;
 }
 

@@ -60,7 +60,6 @@ struct mod_managed_globals {
 	switch_bool_t embedded;
 
 	MonoMethod *loadMethod;
-	MonoMethod *unloadMethod;
 #endif
 };
 typedef struct mod_managed_globals mod_managed_globals;
@@ -121,7 +120,6 @@ public ref class FreeSwitchManaged
 public:
 	static Assembly^ mod_dotnet_managed;
 	static MethodInfo^ loadMethod;
-	static MethodInfo^ unloadMethod;
 };
 
 #endif

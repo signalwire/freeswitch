@@ -46,11 +46,6 @@ namespace FreeSWITCH.Demo
             return true;
         }
 
-        new protected static void Unload()
-        {
-            Log.WriteLine(LogLevel.Info, "Inside AppDemo::Unload.");
-        }
-
         protected override void Run()
         {
             Session.Answer();
@@ -78,11 +73,6 @@ namespace FreeSWITCH.Demo
         {
             Log.WriteLine(LogLevel.Debug, "Inside ApiDemo::Load.");
             return true;
-        }
-
-        new protected static void Unload()
-        {
-            Log.WriteLine(LogLevel.Debug, "Inside ApiDemo::Unload.");
         }
 
         public override void ExecuteBackground(string args)

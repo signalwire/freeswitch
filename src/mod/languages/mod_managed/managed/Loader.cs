@@ -43,15 +43,17 @@ namespace FreeSWITCH
     internal static class Loader
     {
         // Stores a list of the loaded function types so we can instantiate them as needed
-        static readonly Dictionary<string, Type> functions = new Dictionary<string, Type>(StringComparer.InvariantCultureIgnoreCase);
+        static Dictionary<string, Type> functions = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
         // Only class name. Last in wins.
-        static readonly Dictionary<string, Type> shortFunctions = new Dictionary<string, Type>(StringComparer.InvariantCultureIgnoreCase);
+        static Dictionary<string, Type> shortFunctions = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
 
         #region Load/Unload
 
+        static string managedDir;
+
         public static bool Load()
         {
-            string managedDir = Path.Combine(Native.freeswitch.SWITCH_GLOBAL_dirs.mod_dir, "managed");
+            managedDir = Path.Combine(Native.freeswitch.SWITCH_GLOBAL_dirs.mod_dir, "managed");
             Log.WriteLine(LogLevel.Debug, "mod_managed_lib loader is starting with directory '{0}'.", managedDir);
             if (!Directory.Exists(managedDir)) {
                 Log.WriteLine(LogLevel.Error, "Managed directory not found: {0}", managedDir);
@@ -66,29 +68,43 @@ namespace FreeSWITCH
                 return File.Exists(path) ? Assembly.LoadFile(path) : null;
             };
 
-            InitManagedDelegates(_run, _execute, _executeBackground);
+            InitManagedDelegates(_run, _execute, _executeBackground, _loadAssembly);
 
             // This is a simple one-time loader to get things in memory
             // Some day we should allow reloading of modules or something
-            loadAssemblies(managedDir)
-                .SelectMany(a => a.GetExportedTypes())
-                .Where(t => !t.IsAbstract)
-                .Where(t => t.IsSubclassOf(typeof(AppFunction)) || t.IsSubclassOf(typeof(ApiFunction)))
-                .ToList()
-                .loadFunctions();
+            var allTypes = loadAssemblies(managedDir).SelectMany(a => a.GetExportedTypes());
+            loadFunctions(allTypes);
 
             return true;
+        }
+
+        public static bool LoadAssembly(string filename) {
+            try {
+                string path = Path.Combine(managedDir, filename);
+                if (!File.Exists(path)) {
+                    Log.WriteLine(LogLevel.Error, "File not found: '{0}'.", path);
+                    return false;
+                }
+                var asm = Assembly.LoadFile(path);
+                loadFunctions(asm.GetExportedTypes());
+                return true;
+            } catch (Exception ex) {
+                Log.WriteLine(LogLevel.Error, "Exception in LoadAssembly('{0}'): {1}", filename, ex.ToString());
+                return false;
+            }
         }
 
         delegate bool ExecuteDelegate(string cmd, IntPtr streamH, IntPtr eventH);
         delegate bool ExecuteBackgroundDelegate(string cmd);
         delegate bool RunDelegate(string cmd, IntPtr session);
+        delegate bool LoadAssemblyDelegate(string filename);
         static readonly ExecuteDelegate _execute = Execute;
         static readonly ExecuteBackgroundDelegate _executeBackground = ExecuteBackground;
         static readonly RunDelegate _run = Run;
-        //SWITCH_MOD_DECLARE(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground) 
-        [DllImport("mod_managed")]
-        static extern void InitManagedDelegates(RunDelegate run, ExecuteDelegate execute, ExecuteBackgroundDelegate executeBackground);
+        static readonly LoadAssemblyDelegate _loadAssembly = LoadAssembly;
+        //SWITCH_MOD_DECLARE(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground, loadAssemblyFunction loadAssembly)  
+        [DllImport("mod_managed", CharSet = CharSet.Ansi)]
+        static extern void InitManagedDelegates(RunDelegate run, ExecuteDelegate execute, ExecuteBackgroundDelegate executeBackground, LoadAssemblyDelegate loadAssembly);
 
         // Be rather lenient in finding the Load and Unload methods
         static readonly BindingFlags methodBindingFlags =
@@ -97,13 +113,18 @@ namespace FreeSWITCH
             BindingFlags.IgnoreCase | // Some case insensitive languages?
             BindingFlags.FlattenHierarchy; // Allow inherited methods for hierarchies
 
-        static void loadFunctions(this List<Type> allTypes)
+        static void loadFunctions(IEnumerable<Type> allTypes)
         {
-            foreach (var t in allTypes) {
+            var functions = new Dictionary<string, Type>(Loader.functions, StringComparer.OrdinalIgnoreCase);
+            var shortFunctions = new Dictionary<string, Type>(Loader.shortFunctions, StringComparer.OrdinalIgnoreCase);
+            var filteredTypes = allTypes
+                .Where(t => !t.IsAbstract)
+                .Where(t => t.IsSubclassOf(typeof(AppFunction)) || t.IsSubclassOf(typeof(ApiFunction)));
+            foreach (var t in filteredTypes) {
                 try {
                     if (functions.ContainsKey(t.FullName)) {
-                        Log.WriteLine(LogLevel.Error, "Duplicate function {0}. Skipping.", t.FullName);
-                        continue;
+                        functions.Remove(t.FullName);
+                        Log.WriteLine(LogLevel.Warning, "Replacing function {0}.", t.FullName);
                     }
                     var loadMethod = t.GetMethod("Load", methodBindingFlags, null, Type.EmptyTypes, null);
                     var shouldLoad = Convert.ToBoolean(loadMethod.Invoke(null, null)); // We don't require the Load method to return a bool exactly
@@ -120,6 +141,8 @@ namespace FreeSWITCH
                     logException("Load", t.FullName, ex);
                 }
             } 
+            Loader.functions = functions;
+            Loader.shortFunctions = shortFunctions;
         }
 
         static Assembly[] loadAssemblies(string managedDir)
@@ -248,7 +271,7 @@ namespace FreeSWITCH
         /// <summary>Runs an application function.</summary>
         public static bool Run(string command, IntPtr sessionHandle)
         {
-            Log.WriteLine(LogLevel.Debug, "mod_mono attempting to run application '{0}'.", command);
+            Log.WriteLine(LogLevel.Debug, "mod_managed_lib: attempting to run application '{0}'.", command);
             System.Diagnostics.Debug.Assert(sessionHandle != IntPtr.Zero, "sessionHandle is null.");
             var parsed = parseCommand(command);
             if (parsed == null) return false;

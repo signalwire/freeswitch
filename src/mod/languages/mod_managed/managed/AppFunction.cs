@@ -41,8 +41,6 @@ namespace FreeSWITCH
     {
         protected static bool Load() { return true; }
 
-        protected static void Unload() { }
-
         protected Native.ManagedSession Session { get; private set; }
 
         protected string Arguments { get; private set; }
