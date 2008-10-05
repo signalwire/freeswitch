@@ -701,17 +701,17 @@ SWITCH_STANDARD_API(ctl_function)
 			switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
 			stream->write_function(stream, "+OK\n");
 		} else if (!strcasecmp(argv[0], "shutdown")) {
-			switch_session_ctl_t cmd = SCSC_SHUTDOWN;
+			switch_session_ctl_t command = SCSC_SHUTDOWN;
 			int x = 0;
 			arg = 0;
 			for (x = 1; x < 5; x++) {
 				if (argv[x]) {
 					if (!strcasecmp(argv[x], "cancel")) {
 						arg = 0;
-						cmd = SCSC_CANCEL_SHUTDOWN;
+						command = SCSC_CANCEL_SHUTDOWN;
 						break;
 					} else if (!strcasecmp(argv[x], "elegant")) {
-						cmd = SCSC_SHUTDOWN_ELEGANT;
+						command = SCSC_SHUTDOWN_ELEGANT;
 					} else if (!strcasecmp(argv[x], "restart")) {
 						arg = 1;
 					}
@@ -719,7 +719,7 @@ SWITCH_STANDARD_API(ctl_function)
 					break;
 				}
 			}
-			switch_core_session_ctl(cmd, &arg);
+			switch_core_session_ctl(command, &arg);
 			stream->write_function(stream, "+OK\n");
 		} else if (!strcasecmp(argv[0], "reclaim_mem")) {
 			switch_core_session_ctl(SCSC_RECLAIM, &arg);
@@ -2596,6 +2596,7 @@ SWITCH_STANDARD_API(hupall_api_function)
 
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_assert(argv[0]);
 		if ((cause = switch_channel_str2cause(argv[0])) == SWITCH_CAUSE_NONE) {
 			cause = SWITCH_CAUSE_MANAGER_REQUEST;
 		}

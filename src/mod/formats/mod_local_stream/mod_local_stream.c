@@ -588,7 +588,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 	if (argv[5]) {
 		tmp = atoi(argv[5]);
 		if (tmp == 1 || tmp == 2) {
-			channels = tmp;
+			channels = (uint8_t)tmp;
 		}
 	}
 
@@ -622,24 +622,24 @@ SWITCH_STANDARD_API(start_local_stream_function)
 					char *val = (char *) switch_xml_attr_soft(param, "value");
 
 					if (!strcasecmp(var, "rate")) {
-						int tmp = atoi(val);
+						tmp = atoi(val);
 						if (tmp == 8000 || tmp == 16000 || tmp == 32000) {
 							rate = tmp;
 						}
 					} else if (!strcasecmp(var, "shuffle")) {
 						shuffle = switch_true(val);
 					} else if (!strcasecmp(var, "prebuf")) {
-						int tmp = atoi(val);
+						tmp = atoi(val);
 						if (tmp > 0) {
 							prebuf = (uint32_t) tmp;
 						}
 					} else if (!strcasecmp(var, "channels")) {
-						int tmp = atoi(val);
+						tmp = atoi(val);
 						if (tmp == 1 || tmp == 2) {
 							channels = (uint8_t) tmp;
 						}
 					} else if (!strcasecmp(var, "interval")) {
-						int tmp = atoi(val);
+						tmp = atoi(val);
 						if (SWITCH_ACCEPTABLE_INTERVAL(tmp)) {
 							interval = tmp;
 						} else {
