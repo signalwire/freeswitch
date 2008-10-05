@@ -3075,12 +3075,12 @@ static switch_status_t conf_api_sub_say(conference_obj_t *conference, switch_str
 	switch_event_t *event;
 
 	if (switch_strlen_zero(text)) {
-		stream->write_function(stream, "(say) Error! No text.");
+		stream->write_function(stream, "(say) Error! No text.\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (conference_say(conference, text, 0) != SWITCH_STATUS_SUCCESS) {
-		stream->write_function(stream, "(say) Error!");
+		stream->write_function(stream, "(say) Error!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -3127,7 +3127,7 @@ static switch_status_t conf_api_sub_saymember(conference_obj_t *conference, swit
 	}
 
 	if (!(member = conference_member_get(conference, id))) {
-		stream->write_function(stream, "(saymember) Unknown Member %u!", id);
+		stream->write_function(stream, "(saymember) Unknown Member %u!\n", id);
 		goto done;
 	}
 
@@ -3138,7 +3138,7 @@ static switch_status_t conf_api_sub_saymember(conference_obj_t *conference, swit
 	}
 
 	if (!text || conference_member_say(member, (char *) text, 0) != SWITCH_STATUS_SUCCESS) {
-		stream->write_function(stream, "(saymember) Error!");
+		stream->write_function(stream, "(saymember) Error!\n");
 		goto done;
 	}
 
@@ -3220,9 +3220,9 @@ static switch_status_t conf_api_sub_relate(conference_obj_t *conference, switch_
 
 		if ((member = conference_member_get(conference, id))) {
 			member_del_relationship(member, oid);
-			stream->write_function(stream, "relationship %u->%u cleared.", id, oid);
+			stream->write_function(stream, "relationship %u->%u cleared.\n", id, oid);
 		} else {
-			stream->write_function(stream, "relationship %u->%u not found", id, oid);
+			stream->write_function(stream, "relationship %u->%u not found.\n", id, oid);
 		}
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -3254,7 +3254,7 @@ static switch_status_t conf_api_sub_relate(conference_obj_t *conference, switch_
 				stream->write_function(stream, "error!\n");
 			}
 		} else {
-			stream->write_function(stream, "relationship %u->%u not found", id, oid);
+			stream->write_function(stream, "relationship %u->%u not found.\n", id, oid);
 		}
 	}
 
