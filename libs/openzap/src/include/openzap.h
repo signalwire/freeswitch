@@ -447,6 +447,7 @@ struct zap_channel {
 	struct zap_caller_data caller_data;
 	struct zap_span *span;
 	struct zap_io_interface *zio;
+	zap_hash_t *variable_hash;
 };
 
 
@@ -573,6 +574,9 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t *flags, int32_t to);
 zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *datalen);
 zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t datasize, zap_size_t *datalen);
+zap_status_t zap_channel_add_var(zap_channel_t *zchan, const char *var_name, const char *value);
+const char * zap_channel_get_var(zap_channel_t *zchan, const char *var_name);
+zap_status_t zap_channel_clear_vars(zap_channel_t *zchan);
 zap_status_t zap_global_init(void);
 zap_status_t zap_global_destroy(void);
 void zap_global_set_logger(zap_logger_t logger);

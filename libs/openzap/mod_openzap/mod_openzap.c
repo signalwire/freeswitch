@@ -36,6 +36,9 @@
 #define __FUNCTION__ __SWITCH_FUNC__
 #endif
 
+#define OPENZAP_VAR_PREFIX "openzap_"
+#define OPENZAP_VAR_PREFIX_LEN 8
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_openzap_shutdown);
 SWITCH_MODULE_DEFINITION(mod_openzap, mod_openzap_load, mod_openzap_shutdown, NULL);
@@ -883,6 +886,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	int direction = ZAP_TOP_DOWN;
 	zap_caller_data_t caller_data = {{ 0 }};
 	char *span_name = NULL;
+	switch_event_header_t *h;
 
 	if (!outbound_profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing caller profile\n");
@@ -968,6 +972,16 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
 
+	zap_channel_clear_vars(zchan);
+	for (h = var_event->headers; h; h = h->next) {
+		if (!strncasecmp(h->name, OPENZAP_VAR_PREFIX, OPENZAP_VAR_PREFIX_LEN)) {
+			char *v = h->name + OPENZAP_VAR_PREFIX_LEN;
+			if (!switch_strlen_zero(v)) {
+				zap_channel_add_var(zchan, v, h->value);
+			}
+		}
+	}
+	
 	if ((*new_session = switch_core_session_request(openzap_endpoint_interface, pool)) != 0) {
 		private_t *tech_pvt;
 		switch_channel_t *channel;

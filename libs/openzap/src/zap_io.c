@@ -242,6 +242,7 @@ static zap_status_t zap_channel_destroy(zap_channel_t *zchan)
 		zap_buffer_destroy(&zchan->gen_dtmf_buffer);
 		zap_buffer_destroy(&zchan->dtmf_buffer);
 		zap_buffer_destroy(&zchan->fsk_buffer);
+		hashtable_destroy(zchan->variable_hash);
 
 		zap_safe_free(zchan->dtmf_hangup_buf);
 
@@ -457,7 +458,8 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 		zap_mutex_create(&new_chan->mutex);
 		zap_buffer_create(&new_chan->digit_buffer, 128, 128, 0);
 		zap_buffer_create(&new_chan->gen_dtmf_buffer, 128, 128, 0);
-		
+		new_chan->variable_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
+
 		new_chan->dtmf_hangup_buf = calloc (span->dtmf_hangup_len + 1, sizeof (char));
 
 		zap_set_flag(new_chan, ZAP_CHANNEL_CONFIGURED | ZAP_CHANNEL_READY);
@@ -2013,6 +2015,46 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t data
     status = zchan->zio->write(zchan, data, datalen);
 
 	return status;
+}
+
+zap_status_t zap_channel_clear_vars(zap_channel_t *zchan)
+{
+	if(zchan->variable_hash) {
+		hashtable_destroy(zchan->variable_hash);
+	}
+	zchan->variable_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
+
+	if(!zchan->variable_hash)
+		return ZAP_FAIL;
+	
+	return ZAP_SUCCESS;
+}
+
+zap_status_t zap_channel_add_var(zap_channel_t *zchan, const char *var_name, const char *value)
+{
+	char *t_name = 0, *t_val = 0;
+
+	if(!zchan->variable_hash || !var_name || !value)
+	{
+		return ZAP_FAIL;
+	}
+
+	t_name = strdup(var_name);
+	t_val = strdup(value);
+
+	if(hashtable_insert(zchan->variable_hash, t_name, t_val, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_FLAG_FREE_VALUE)) {
+		return ZAP_SUCCESS;
+	}
+	return ZAP_FAIL;
+}
+
+const char * zap_channel_get_var(zap_channel_t *zchan, const char *var_name)
+{
+	if(!zchan->variable_hash || !var_name)
+	{
+		return NULL;
+	}
+	return (const char *) hashtable_search(zchan->variable_hash, (void *)var_name);
 }
 
 static struct {
