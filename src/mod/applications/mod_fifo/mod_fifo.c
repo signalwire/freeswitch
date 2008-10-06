@@ -668,6 +668,9 @@ SWITCH_STANDARD_APP(fifo_function)
 		char *pop_list[MAX_PRI] = { 0 };
 		const char *fifo_consumer_wrapup_sound = NULL;
 		const char *fifo_consumer_wrapup_key = NULL;
+		const char *sfifo_consumer_wrapup_time = NULL;
+		uint32_t fifo_consumer_wrapup_time = 0;
+		switch_time_t wrapup_time_elapsed = 0, wrapup_time_started = 0, wrapup_time_remaining = 0;
 		const char *my_id;
 		char buf[5] = "";
 		const char *strat_str = switch_channel_get_variable(channel, "fifo_strategy");
@@ -912,7 +915,6 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				send_presence(node);
 
-
 				if (record_template) {
 					expanded = switch_channel_expand_variables(other_channel, record_template);
 					switch_ivr_record_session(session, expanded, 0, NULL);
@@ -950,7 +952,21 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				fifo_consumer_wrapup_sound = switch_channel_get_variable(channel, "fifo_consumer_wrapup_sound");
 				fifo_consumer_wrapup_key = switch_channel_get_variable(channel, "fifo_consumer_wrapup_key");
+				sfifo_consumer_wrapup_time = switch_channel_get_variable(channel, "fifo_consumer_wrapup_time");
+				if (!switch_strlen_zero(sfifo_consumer_wrapup_time)){
+					fifo_consumer_wrapup_time = atoi(sfifo_consumer_wrapup_time);
+				}
 				memset(buf, 0, sizeof(buf));
+
+				if (fifo_consumer_wrapup_time || !switch_strlen_zero(fifo_consumer_wrapup_key)) {
+					switch_channel_set_variable(channel, "fifo_status", "WRAPUP");
+					if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
+						switch_channel_event_set_data(channel, event);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "consumer_wrapup");
+						switch_event_fire(&event);
+					}
+				}
 
 				if (!switch_strlen_zero(fifo_consumer_wrapup_sound)) {
 					memset(&args, 0, sizeof(args));
@@ -958,22 +974,55 @@ SWITCH_STANDARD_APP(fifo_function)
 					args.buflen = sizeof(buf);
 					switch_ivr_play_file(session, NULL, fifo_consumer_wrapup_sound, &args);
 				}
+				
+				if (fifo_consumer_wrapup_time) {
+					wrapup_time_started = switch_timestamp_now();
+				}
 
 				if (!switch_strlen_zero(fifo_consumer_wrapup_key) && strcmp(buf, fifo_consumer_wrapup_key)) {
-					for (;;) {
+					while(switch_channel_ready(channel)) {
 						char terminator = 0;
-						switch_ivr_collect_digits_count(session, buf, sizeof(buf) - 1, 1, fifo_consumer_wrapup_key, &terminator, 0, 0, 0);
-						if (terminator == *fifo_consumer_wrapup_key) {
+
+						if (fifo_consumer_wrapup_time) {
+							wrapup_time_elapsed = (switch_timestamp_now() - wrapup_time_started) / 1000;
+							if (wrapup_time_elapsed > fifo_consumer_wrapup_time) {
+								break;
+							} else {
+								wrapup_time_remaining = fifo_consumer_wrapup_time - wrapup_time_elapsed + 100;
+							}
+						}
+
+						switch_ivr_collect_digits_count(session, buf, sizeof(buf) - 1, 1, fifo_consumer_wrapup_key, &terminator, 0, 0, (uint32_t) wrapup_time_remaining);
+						if ((terminator == *fifo_consumer_wrapup_key) || !(switch_channel_ready(channel))) {
 							break;
 						}
+
+					}
+				} else if (fifo_consumer_wrapup_time && !strcmp(buf, fifo_consumer_wrapup_key)) {
+					while(switch_channel_ready(channel)) {
+						wrapup_time_elapsed = (switch_timestamp_now() - wrapup_time_started) / 1000;
+						if (wrapup_time_elapsed > fifo_consumer_wrapup_time) {
+							break;
+						}
+						switch_yield(500);
 					}
 				}
+				switch_channel_set_variable(channel, "fifo_status", "WAITING");
 			}
 
 			switch_safe_free(uuid);
 
 			if (done) {
 				break;
+			}
+
+			if (do_wait && switch_channel_ready(channel)) {
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_event_set_data(channel, event);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "consumer_reentrance");
+					switch_event_fire(&event);
+				}
 			}
 		}
 
