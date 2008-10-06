@@ -2006,7 +2006,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Expire registration '%s@%s' due to options failure\n",
 						  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
 
-		sql = switch_mprintf("update sip_registrations set expired=%ld where sip_user='%s' and sip_host='%s'",
+		sql = switch_mprintf("update sip_registrations set expires=%ld where sip_user='%s' and sip_host='%s'",
 							 (long) now, sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 	}
