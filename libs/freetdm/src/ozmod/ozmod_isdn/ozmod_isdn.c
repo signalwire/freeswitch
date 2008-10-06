@@ -1671,8 +1671,8 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 	char *var, *val;
 	Q931Dialect_t dialect = Q931_Dialect_National;
 	uint32_t opts = 0;
-    int q921loglevel = 0;
-    int q931loglevel = 0;
+    int q921loglevel = -1;
+    int q931loglevel = -1;
 
 	if (span->signal_type) {
 		snprintf(span->last_error, sizeof(span->last_error), "Span is already configured for signalling [%d].", span->signal_type);
