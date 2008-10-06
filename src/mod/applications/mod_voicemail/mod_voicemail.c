@@ -1505,7 +1505,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 					header_string = switch_core_session_sprintf(session, "%s\nX-Voicemail-Length: %u", headers, message_len);
 
 					if (switch_event_create(&event, SWITCH_EVENT_GENERAL) == SWITCH_STATUS_SUCCESS) {
-						/* this isnt done?  it was in the other place
+						/* this isn't done?  it was in the other place
 						 * switch_channel_event_set_data(channel, event);
 						 */
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Message-Type", "forwarded-voicemail");
@@ -2596,7 +2596,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 			}
 			
 			if (send_mail && (!(send_main || send_notify))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Falling back to leaving message locally due to too many misconfigurations.\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Falling back to leaving message locally due to too many misconfiguration.\n");
 				send_mail = 0;
 				insert_db = 1;
 			}
@@ -2687,7 +2687,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 				argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 				if (argc >= 1 && argc <= 4) {
 					switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
-					/* the application still runs after we leave it so we need to make sure that we dont do anything evil */
+					/* the application still runs after we leave it so we need to make sure that we don't do anything evil */
 					send_mail = 0;
 					goto end;
 				}
@@ -2701,7 +2701,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 				argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 				if (argc >= 1 && argc <= 4) {
 					switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
-					/* the application still runs after we leave it so we need to make sure that we dont do anything evil */
+					/* the application still runs after we leave it so we need to make sure that we don't do anything evil */
 					send_mail = 0;
 					goto end;
 				}

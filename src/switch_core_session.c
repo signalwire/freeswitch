@@ -680,7 +680,7 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, s
 	switch_mutex_unlock(session->resample_mutex);
 	/* clear indications */
 	switch_core_session_flush_message(session);
-	/* wipe theese, they will be recreated if need be */
+	/* wipe these, they will be recreated if need be */
 	switch_buffer_destroy(&session->raw_read_buffer);
 	switch_buffer_destroy(&session->raw_write_buffer);
 

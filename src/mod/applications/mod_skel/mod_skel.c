@@ -59,7 +59,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skel_shutdown);
 
 /*
   If it exists, this is called in it's own thread when the module-load completes
-  If it returns anything but SWITCH_STATUS_TERM it will be called again automaticly
+  If it returns anything but SWITCH_STATUS_TERM it will be called again automatically
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_skel_runtime);
 {
 	while(looping)

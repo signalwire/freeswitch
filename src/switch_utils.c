@@ -27,7 +27,7 @@
  * Juan Jose Comellas <juanjo@comellas.org>
  *
  *
- * switch_utils.c -- Compatability and Helper Code
+ * switch_utils.c -- Compatibility and Helper Code
  *
  */
 

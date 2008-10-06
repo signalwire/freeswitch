@@ -444,7 +444,7 @@ static conference_relationship_t *member_get_relationship(conference_member_t *m
 			break;
 		}
 
-		/* 0 matches everyone. (We will still test the others brcause a real match carries more clout) */
+		/* 0 matches everyone. (We will still test the others because a real match carries more clout) */
 		if (rel->id == 0) {
 			global = rel;
 		}
@@ -1031,7 +1031,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 					int16_t *bptr, *muxed;
 
 					if (imember == omember || !imember->read) {
-						/* Don't add audio from yourself or if you didnt read any */
+						/* Don't add audio from yourself or if you didn't read any */
 						continue;
 					}
 
@@ -1802,7 +1802,7 @@ static void conference_loop_output(conference_member_t *member)
 			conference_outcall_bg(member->conference, NULL, NULL, cp->string, to, switch_str_nil(flags), cid_name, cid_num);
 		}
 	}
-	/* Fair WARNING, If you expect the caller to hear anything or for digit handling to be proccessed,      */
+	/* Fair WARNING, If you expect the caller to hear anything or for digit handling to be processed,      */
 	/* you better not block this thread loop for more than the duration of member->conference->timer_name!  */
 	while (switch_test_flag(member, MFLAG_RUNNING) && switch_test_flag(member, MFLAG_ITHREAD)
 		   && switch_channel_ready(channel)) {
@@ -2035,7 +2035,7 @@ static void conference_loop_output(conference_member_t *member)
 		member->conference->bridge_hangup_cause = switch_channel_get_cause(channel);
 	}
 
-	/* Wait for the input thead to end */
+	/* Wait for the input thread to end */
 	while (switch_test_flag(member, MFLAG_ITHREAD)) {
 		switch_yield(1000);
 	}

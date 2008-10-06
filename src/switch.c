@@ -105,13 +105,13 @@ static int freeswitch_kill_background()
 		/* kill the freeswitch running at the pid we found */
 		fprintf(stderr, "Killing: %d\n", (int) pid);
 #ifdef WIN32
-		/* for windows we need the event to signal for shutting down a background freewitch */
+		/* for windows we need the event to signal for shutting down a background FreeSWITCH */
 		snprintf(path, sizeof(path), "Global\\Freeswitch.%d", pid);
 
 		/* open the event so we can signal it */
 		shutdown_event = OpenEvent(EVENT_MODIFY_STATE, FALSE, path);
 
-		/* did we sucessfully open the event */
+		/* did we successfully open the event */
 		if (!shutdown_event) {
 			/* we can't get the event, so we can't signal the process to shutdown */
 			fprintf(stderr, "ERROR: Can't Shutdown: %d\n", (int) pid);
@@ -147,7 +147,7 @@ void WINAPI ServiceCtrlHandler(DWORD control)
 	case SERVICE_CONTROL_STOP:
 		/* Shutdown freeswitch */
 		switch_core_destroy();
-		/* set service status valuse */
+		/* set service status values */
 		status.dwCurrentState = SERVICE_STOPPED;
 		status.dwWin32ExitCode = 0;
 		status.dwCheckPoint = 0;
@@ -183,7 +183,7 @@ void WINAPI service_main(DWORD numArgs, char **args)
 
 	/* attempt to initialize freeswitch and load modules */
 	if (switch_core_init_and_modload(flags, SWITCH_FALSE, &err) != SWITCH_STATUS_SUCCESS) {
-		/* freeswitch did not start sucessfully */
+		/* freeswitch did not start successfully */
 		status.dwCurrentState = SERVICE_STOPPED;
 	} else {
 		/* freeswitch started */

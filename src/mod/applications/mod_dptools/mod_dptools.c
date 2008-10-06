@@ -1782,7 +1782,7 @@ SWITCH_STANDARD_APP(record_session_function)
 		/* not at the end and the rest is numbers lets parse out the limit and fix up the path */
 		if (*limit_start != '\0' && switch_is_number(limit_start) == SWITCH_TRUE) {
 			limit = atoi(limit_start);
-			/* back it off by one charecter to the char before the + */
+			/* back it off by one character to the char before the + */
 			path_end--;
 
 			/* trim spaces to the left of the plus */
@@ -2261,7 +2261,7 @@ static switch_status_t api_chat_send(char *proto, char *from, char *to, char *su
 #define SET_PROFILE_VAR_LONG_DESC "Set a caller profile variable for the channel calling the application."
 #define EXPORT_LONG_DESC "Set and export a channel variable for the channel calling the application."
 #define LOG_LONG_DESC "Logs a channel variable for the channel calling the application."
-#define TRANSFER_LONG_DESC "Immediatly transfer the calling channel to a new extension"
+#define TRANSFER_LONG_DESC "Immediately transfer the calling channel to a new extension"
 #define SLEEP_LONG_DESC "Pause the channel for a given number of milliseconds, consuming the audio for that period of time."
 SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 {

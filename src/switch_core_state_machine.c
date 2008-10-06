@@ -331,13 +331,13 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 	   everywhere you go you use the session to malloc with
 	   switch_core_session_alloc(session, <size>)
 
-	   The enpoint module gets the first crack at implementing the state
-	   if it wants to, it can cancel the default behaviour by returning SWITCH_STATUS_FALSE
+	   The endpoint module gets the first crack at implementing the state
+	   if it wants to, it can cancel the default behavior by returning SWITCH_STATUS_FALSE
 
 	   Next comes the channel's event handler table that can be set by an application
-	   which also can veto the next behaviour in line by returning SWITCH_STATUS_FALSE
+	   which also can veto the next behavior in line by returning SWITCH_STATUS_FALSE
 
-	   Finally the default state behaviour is called.
+	   Finally the default state behavior is called.
 
 
 	 */

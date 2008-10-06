@@ -466,7 +466,7 @@ static void launch_threads(void)
 					source->interval = tmp;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-									  "Interval must be multipe of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL);
+									  "Interval must be multiple of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL);
 				}
 			} else if (!strcasecmp(var, "timer-name")) {
 				source->timer_name = switch_core_strdup(source->pool, val);
@@ -644,7 +644,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 							interval = tmp;
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-											  "Interval must be multipe of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL);
+											  "Interval must be multiple of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL);
 						}
 					} else if (!strcasecmp(var, "timer-name")) {
 						timer_name = strdup(val);

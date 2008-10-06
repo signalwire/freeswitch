@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  *
  *
- * mod_event_socket.c -- Socket Controled Event Handler
+ * mod_event_socket.c -- Socket Controlled Event Handler
  *
  */
 #include <switch.h>

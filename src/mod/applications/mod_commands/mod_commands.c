@@ -774,7 +774,7 @@ SWITCH_STANDARD_API(ctl_function)
 		} else if (!strcasecmp(argv[0], "sync_clock")) {
 			arg = 0;
 			switch_core_session_ctl(SCSC_SYNC_CLOCK, &arg);
-			stream->write_function(stream, "+OK clock syncronized\n");
+			stream->write_function(stream, "+OK clock synchronize\n");
 		} else {
 			stream->write_function(stream, "-ERR INVALID COMMAND\nUSAGE: fsctl %s", CTL_SYNTAX);
 			goto end;
@@ -2128,7 +2128,7 @@ SWITCH_STANDARD_API(show_function)
 
 
 	/* If you change the field qty or order of any of these select */
-	/* statmements, you must also change show_callback and friends to match! */
+	/* statements, you must also change show_callback and friends to match! */
 	if (!command) {
 		stream->write_function(stream, "-USAGE: %s\n", SHOW_SYNTAX);
 		goto end;

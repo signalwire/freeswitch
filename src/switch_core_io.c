@@ -733,7 +733,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				if (!session->raw_write_buffer) {
 					switch_size_t bytes = session->write_codec->implementation->bytes_per_frame;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-									  "Engaging Write Buffer at %u bytes to accomodate %u->%u\n",
+									  "Engaging Write Buffer at %u bytes to accommodate %u->%u\n",
 									  (uint32_t) bytes, write_frame->datalen, session->write_codec->implementation->bytes_per_frame);
 					if ((status = switch_buffer_create_dynamic(&session->raw_write_buffer,
 															   bytes * SWITCH_BUFFER_BLOCK_FRAMES,

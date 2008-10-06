@@ -795,7 +795,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 	switch_event_header_t *hp;
 	switch_size_t llen = 0, dlen = 0, blocksize = 512, encode_len = 1536, new_len = 0;
 	char *buf;
-	char *encode_buf = NULL;	/* used for url encoding of variables to make sure unsafe things stay out of the serialzed copy */
+	char *encode_buf = NULL;	/* used for url encoding of variables to make sure unsafe things stay out of the serialized copy */
 
 	*str = NULL;
 
@@ -811,11 +811,11 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "hit serialzed!.\n"); */
+	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "hit serialized!.\n"); */
 	for (hp = event->headers; hp; hp = hp->next) {
 		/*
 		 * grab enough memory to store 3x the string (url encode takes one char and turns it into %XX)
-		 * so we could end up with a string that is 3 times the original's length, unlikely but rather
+		 * so we could end up with a string that is 3 times the originals length, unlikely but rather
 		 * be safe than destroy the string, also add one for the null.  And try to be smart about using 
 		 * the memory, allocate and only reallocate if we need more.  This avoids an alloc, free CPU
 		 * destroying loop.

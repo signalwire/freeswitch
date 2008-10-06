@@ -285,7 +285,7 @@ static switch_status_t pocketsphinx_asr_feed(switch_asr_handle_t *ah, void *data
 					switch_clear_flag(ps, PSFLAG_READY);
 					if ((hyp = ps_get_hyp(ps->ps, &ps->score, &ps->uttid))) {
 						if (switch_strlen_zero(hyp)) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Lost the text, nevermind....\n");   
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Lost the text, never mind....\n");   
 							ps_start_utt(ps->ps, NULL);
 							switch_set_flag(ps, PSFLAG_READY);
 						} else {
@@ -313,7 +313,7 @@ static switch_status_t pocketsphinx_asr_feed(switch_asr_handle_t *ah, void *data
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/*! funciton to pause recognizer */
+/*! function to pause recognizer */
 static switch_status_t pocketsphinx_asr_pause(switch_asr_handle_t *ah)
 {
 	pocketsphinx_t *ps = (pocketsphinx_t *) ah->private_info;

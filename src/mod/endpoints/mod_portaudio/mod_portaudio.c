@@ -805,7 +805,7 @@ static switch_status_t load_config(void)
 					globals.codec_ms = tmp;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-									  "codec-ms must be multipe of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL);
+									  "codec-ms must be multiple of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL);
 				}
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);

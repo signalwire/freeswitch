@@ -52,7 +52,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_cdr_shutdown);
 SWITCH_MODULE_DEFINITION(mod_xml_cdr, mod_xml_cdr_load, mod_xml_cdr_shutdown, NULL);
 
-/* this function would have access to the HTML returned by the webserver, we dont need it 
+/* this function would have access to the HTML returned by the webserver, we don't need it 
  * and the default curl activity is to print to stdout, something not as desirable
  * so we have a dummy function here
  */

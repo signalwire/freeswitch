@@ -982,7 +982,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			/* override transmit state for originator_channel to bridge to originatee_channel 
 			 * install pointer to originatee_session into originator_channel
 			 * set CF_TRANSFER on both channels and change state to CS_SOFT_EXECUTE to
-			 * inturrupt anything they are already doing.
+			 * interrupt anything they are already doing.
 			 * originatee_session will fall asleep and originator_session will bridge to it
 			 */
 

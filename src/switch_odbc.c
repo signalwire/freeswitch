@@ -94,7 +94,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_disconnect(switch_odbc_h
 		if (result == SWITCH_ODBC_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Disconnected %d from [%s]\n", result, handle->dsn);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Disconnectiong [%s]\n", handle->dsn);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Disconnecting [%s]\n", handle->dsn);
 		}
 	}
 

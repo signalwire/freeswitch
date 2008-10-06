@@ -1233,7 +1233,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_new(switch_ivr_digit_str
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	/* if we have a paser object memory pool and a stream object pointer that is null */
+	/* if we have a parser object memory pool and a stream object pointer that is null */
 	if (parser != NULL && parser->pool && stream != NULL && *stream == NULL) {
 		*stream = (switch_ivr_digit_stream_t *) switch_core_alloc(parser->pool, sizeof(switch_ivr_digit_stream_t));
 		if (*stream != NULL) {
