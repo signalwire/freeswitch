@@ -538,8 +538,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 		switch (attr->type) {
 		case SWITCH_STUN_ATTR_MAPPED_ADDRESS:
 			if (attr->type) {
-				if(funny)
-				{
+				if (funny) {
 					((switch_stun_ip_t *) attr->value)->address ^= ntohl(0xabcdabcd);
 				}
 				switch_stun_packet_attribute_get_mapped_address(attr, rip, &rport);

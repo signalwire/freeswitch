@@ -306,12 +306,12 @@ static switch_status_t do_config(void)
 
 		binding->vars_map = vars_map;
 		
-		if(vars_map) {
+		if (vars_map) {
 		    switch_zmalloc(hash_node,sizeof(hash_node_t));
 		    hash_node->hash = vars_map;
 		    hash_node->next = NULL;
 		    
-		    if(!globals.hash_root) {
+		    if (!globals.hash_root) {
 			globals.hash_root = hash_node;
 			globals.hash_tail = globals.hash_root;
 		    }

@@ -266,7 +266,7 @@ static mrcp_status_t openmrcp_recog_start(mrcp_client_context_t *context, openmr
 
 	recognizer_header = mrcp_resource_header_prepare(mrcp_message);
 
-	if(!recognizer_header) {
+	if (!recognizer_header) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not prepare resource_header\n");
 		return MRCP_STATUS_FAILURE;
 	}

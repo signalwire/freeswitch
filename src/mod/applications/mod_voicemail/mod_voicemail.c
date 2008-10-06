@@ -2231,7 +2231,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_file_path", file_path);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_read_flags", read_flags);
 		
-		if(!switch_strlen_zero(vm_timezone)) {
+		if (!switch_strlen_zero(vm_timezone)) {
 			char tz_date[80] = "";
 			if ((switch_strftime_tz(vm_timezone, profile->date_fmt, tz_date, sizeof(tz_date)) == SWITCH_STATUS_SUCCESS) && !switch_strlen_zero_buf(tz_date)) {
 				switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_time", tz_date);

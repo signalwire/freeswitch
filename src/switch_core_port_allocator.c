@@ -131,7 +131,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 		while (alloc->track[index] && tries < alloc->track_len)
 		{
 			tries++;
-			if(++index >= alloc->track_len) index = 0;
+			if (++index >= alloc->track_len) { 
+				index = 0;
+			}
 		}
 
 		if (tries < alloc->track_len) {

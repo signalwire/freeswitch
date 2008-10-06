@@ -389,7 +389,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 	//switch_xml_toxml_buf(xml,buf,0,0,1);
 	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "providing:\n%s\n", buf);
 
-	if(ret) {
+	if (ret) {
 		switch_xml_free(xml);
 		return NULL;
 	}

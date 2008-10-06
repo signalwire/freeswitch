@@ -247,7 +247,7 @@ SWITCH_STANDARD_API(eval_function)
 SWITCH_STANDARD_API(module_exists_function)
 {
 	if (!switch_strlen_zero(cmd)) {
-		if(switch_loadable_module_exists(cmd) == SWITCH_STATUS_SUCCESS) {
+		if (switch_loadable_module_exists(cmd) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "true");
 		} else {
 			stream->write_function(stream, "false");

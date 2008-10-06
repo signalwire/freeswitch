@@ -616,6 +616,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 			mpg123_param(context->mh, MPG123_FLAGS, MPG123_SEEKBUFFER|MPG123_MONO_MIX, 0);
 			context->stream_url = switch_core_sprintf(context->memory_pool, "http://%s", path);
 			context->prebuf = handle->prebuf;
+			handle->vol = -4;
 			launch_read_stream_thread(context);
 		} else {
 			mpg123_param(context->mh, MPG123_FLAGS, MPG123_MONO_MIX, 0);

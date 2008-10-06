@@ -1082,7 +1082,7 @@ static int preprocess_glob(const char *cwd, const char *pattern, int write_fd, i
 		pattern = full_path;
 	}
 	
-    if(glob(pattern, GLOB_NOCHECK, NULL, &glob_data) != 0) {
+    if (glob(pattern, GLOB_NOCHECK, NULL, &glob_data) != 0) {
 		if (stderr) {
 			fprintf(stderr, "Error including %s\n", pattern);
 		}
@@ -1154,7 +1154,7 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 			if ((e = strstr(tcmd, "/>"))) {
 				*e += 2;
 				*e = '\0';
-				if(write(write_fd, e, (unsigned) strlen(e)) != (int) strlen(e)) {
+				if (write(write_fd, e, (unsigned) strlen(e)) != (int) strlen(e)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write!\n");
 				}
 			}
@@ -1223,13 +1223,13 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 		}
 		
 		if ((cmd = strstr(bp, "<!--#"))) {
-			if(write(write_fd, bp, (unsigned) (cmd - bp)) != (cmd - bp)) {
+			if (write(write_fd, bp, (unsigned) (cmd - bp)) != (cmd - bp)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write!\n");
 			}
 			if ((e = strstr(cmd, "-->"))) {
 				*e = '\0';
 				e += 3;
-				if(write(write_fd, e, (unsigned) strlen(e)) != (int) strlen(e)) {
+				if (write(write_fd, e, (unsigned) strlen(e)) != (int) strlen(e)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write!\n");
 				}
 			} else {
@@ -1279,7 +1279,7 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 			continue;
 		}
 
-		if(write(write_fd, bp, (unsigned) cur) != (int) cur) {
+		if (write(write_fd, bp, (unsigned) cur) != (int) cur) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write!\n");
 		}
 	}
@@ -2490,7 +2490,7 @@ static int glob3(char *pathbuf, char *pathend, char *pathend_last, char *pattern
 	*pathend = EOS;
 	errno = 0;
 	
-	if(apr_dir_open (&dirp, pathbuf, pool) != APR_SUCCESS) {
+	if (apr_dir_open (&dirp, pathbuf, pool) != APR_SUCCESS) {
 		/* TODO: don't call for ENOENT or ENOTDIR? */
 		apr_pool_destroy(pool);
 		if (pglob->gl_errfunc) {
@@ -2510,9 +2510,9 @@ static int glob3(char *pathbuf, char *pathend, char *pathend_last, char *pattern
 		unsigned char *sc;
 		char *dc;
 		
-		if(apr_dir_read(&dp, APR_FINFO_NAME, dirp) != APR_SUCCESS)
+		if (apr_dir_read(&dp, APR_FINFO_NAME, dirp) != APR_SUCCESS)
 			break;
-		if(!(dp.valid & APR_FINFO_NAME) || !(dp.name) || !strlen(dp.name))
+		if (!(dp.valid & APR_FINFO_NAME) || !(dp.name) || !strlen(dp.name))
 			break;
 		
 		/* Initial DOT must be matched literally. */
@@ -2533,7 +2533,7 @@ static int glob3(char *pathbuf, char *pathend, char *pathend_last, char *pattern
 			break;
 	}
 	
-	if(dirp) 
+	if (dirp) 
 		apr_dir_close (dirp);
 	apr_pool_destroy(pool);
 	return(err);
