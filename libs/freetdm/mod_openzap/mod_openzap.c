@@ -882,6 +882,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	zap_status_t status;
 	int direction = ZAP_TOP_DOWN;
 	zap_caller_data_t caller_data = {{ 0 }};
+	char *span_name = NULL;
 
 	if (!outbound_profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing caller profile\n");
@@ -894,8 +895,14 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 
 	dest = outbound_profile->destination_number;
-	span_id = atoi(dest);
 
+	if (switch_is_number(dest)) {
+		span_id = atoi(dest);
+	} else {
+		span_name = dest;
+	}
+
+	
 	if ((p = strchr(dest, '/'))) {
 		if (*p++) {
 			if (*p == 'A') {
@@ -908,6 +915,14 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			if ((p = strchr(p, '/')) && *++p) {
 				dest = p;
 			}
+		}
+	}
+
+	if (!span_id && !switch_strlen_zero(span_name)) {
+		zap_span_t *span;
+		zap_status_t zstatus = zap_span_find_by_name(span_name, &span);
+		if (zstatus == ZAP_SUCCESS && span) {
+			span_id = span->span_id;
 		}
 	}
 
