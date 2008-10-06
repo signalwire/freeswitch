@@ -617,7 +617,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (destroy_status == SWITCH_STATUS_RESTART) {
-        switch_sleep(1);
+        switch_sleep(1000000);
 		ret = (int)execv(argv[0], argv);
 	}
 
