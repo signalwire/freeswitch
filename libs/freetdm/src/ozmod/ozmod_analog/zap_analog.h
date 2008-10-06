@@ -40,11 +40,13 @@ typedef enum {
 	ZAP_ANALOG_CALLERID = (1 << 1)
 } zap_analog_flag_t;
 
+#define ZAP_MAX_HOTLINE_STR		20
 
 struct zap_analog_data {
 	uint32_t flags;
 	uint32_t max_dialstr;
 	uint32_t digit_timeout;
+	char hotline[ZAP_MAX_HOTLINE_STR];
 	zio_signal_cb_t sig_cb;
 };
 

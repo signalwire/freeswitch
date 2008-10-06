@@ -553,7 +553,10 @@ zap_status_t zap_channel_send_fsk_data(zap_channel_t *zchan, zap_fsk_data_state_
 
 	if (!zchan->fsk_buffer) {
 		zap_buffer_create(&zchan->fsk_buffer, 128, 128, 0);
+	} else {
+		zap_buffer_zero(zchan->fsk_buffer);
 	}
+
 	if (zchan->token_count > 1) {
 		zap_fsk_modulator_init(&fsk_trans, FSK_BELL202, zchan->rate, fsk_data, db_level, 80, 5, 0, zchan_fsk_write_sample, zchan);
 		zap_fsk_modulator_send_all((&fsk_trans));
@@ -562,6 +565,7 @@ zap_status_t zap_channel_send_fsk_data(zap_channel_t *zchan, zap_fsk_data_state_
 		zap_fsk_modulator_send_all((&fsk_trans));
 		zchan->buffer_delay = 3500 / zchan->effective_interval;
 	}
+
 	return ZAP_SUCCESS;
 }
 
@@ -756,6 +760,7 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 			
 			switch(state) {
 			case ZAP_CHANNEL_STATE_DIALTONE:
+			case ZAP_CHANNEL_STATE_COLLECT:
 			case ZAP_CHANNEL_STATE_DIALING:
 			case ZAP_CHANNEL_STATE_RING:
 			case ZAP_CHANNEL_STATE_PROGRESS_MEDIA:
@@ -1321,22 +1326,26 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 		break;
 	case ZAP_COMMAND_ENABLE_PROGRESS_DETECT:
 		{
-			/* if they don't have thier own, use ours */
-			zap_channel_clear_detected_tones(zchan);
-			zap_channel_clear_needed_tones(zchan);
-			teletone_multi_tone_init(&zchan->span->tone_finder[ZAP_TONEMAP_DIAL], &zchan->span->tone_detect_map[ZAP_TONEMAP_DIAL]);
-			teletone_multi_tone_init(&zchan->span->tone_finder[ZAP_TONEMAP_RING], &zchan->span->tone_detect_map[ZAP_TONEMAP_RING]);
-			teletone_multi_tone_init(&zchan->span->tone_finder[ZAP_TONEMAP_BUSY], &zchan->span->tone_detect_map[ZAP_TONEMAP_BUSY]);
-			zap_set_flag(zchan, ZAP_CHANNEL_PROGRESS_DETECT);
-			GOTO_STATUS(done, ZAP_SUCCESS);
+			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_PROGRESS)) {
+				/* if they don't have thier own, use ours */
+				zap_channel_clear_detected_tones(zchan);
+				zap_channel_clear_needed_tones(zchan);
+				teletone_multi_tone_init(&zchan->span->tone_finder[ZAP_TONEMAP_DIAL], &zchan->span->tone_detect_map[ZAP_TONEMAP_DIAL]);
+				teletone_multi_tone_init(&zchan->span->tone_finder[ZAP_TONEMAP_RING], &zchan->span->tone_detect_map[ZAP_TONEMAP_RING]);
+				teletone_multi_tone_init(&zchan->span->tone_finder[ZAP_TONEMAP_BUSY], &zchan->span->tone_detect_map[ZAP_TONEMAP_BUSY]);
+				zap_set_flag(zchan, ZAP_CHANNEL_PROGRESS_DETECT);
+				GOTO_STATUS(done, ZAP_SUCCESS);
+			}
 		}
 		break;
 	case ZAP_COMMAND_DISABLE_PROGRESS_DETECT:
 		{
-			zap_clear_flag_locked(zchan, ZAP_CHANNEL_PROGRESS_DETECT);
-			zap_channel_clear_detected_tones(zchan);
-			zap_channel_clear_needed_tones(zchan);
-			GOTO_STATUS(done, ZAP_SUCCESS);
+			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_PROGRESS)) {
+				zap_clear_flag_locked(zchan, ZAP_CHANNEL_PROGRESS_DETECT);
+				zap_channel_clear_detected_tones(zchan);
+				zap_channel_clear_needed_tones(zchan);
+				GOTO_STATUS(done, ZAP_SUCCESS);
+			}
 		}
 		break;
 	case ZAP_COMMAND_ENABLE_DTMF_DETECT:
@@ -1901,7 +1910,7 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 			}
 		}
 
-		if (zap_test_flag(zchan, ZAP_CHANNEL_PROGRESS_DETECT)) {
+		if (zap_test_flag(zchan, ZAP_CHANNEL_PROGRESS_DETECT) && !zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_PROGRESS)) {
 			uint32_t i;
 
 			for (i = 1; i < ZAP_TONEMAP_INVALID; i++) {
@@ -1916,7 +1925,7 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 			}
 		}
 
-		if (zap_test_flag(zchan, ZAP_CHANNEL_DTMF_DETECT)) {
+		if (zap_test_flag(zchan, ZAP_CHANNEL_DTMF_DETECT) && !zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF_DETECT)) {
 			teletone_dtmf_detect(&zchan->dtmf_detect, sln, (int)slen);
 			teletone_dtmf_get(&zchan->dtmf_detect, digit_str, sizeof(digit_str));
 

@@ -83,6 +83,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 {
 	zap_analog_data_t *analog_data;
 	const char *tonemap = "us";
+	const char *hotline = "";
 	uint32_t digit_timeout = 10;
 	uint32_t max_dialstr = 11;
 	const char *var, *val;
@@ -126,7 +127,12 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 				break;
 			}
 			max_dialstr = *intval;
-		}
+		} else if (!strcasecmp(var, "hotline")) {
+			if (!(val = va_arg(ap, char *))) {
+				break;
+			}
+			hotline = val;
+		}			
 	}
 
 
@@ -134,7 +140,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 		digit_timeout = 2000;
 	}
 
-	if (max_dialstr < 2 || max_dialstr > 20) {
+	if ((max_dialstr < 2 && !strlen(hotline)) || max_dialstr > 20) {
 		max_dialstr = 11;
 	}
 	
@@ -143,6 +149,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 	analog_data->digit_timeout = digit_timeout;
 	analog_data->max_dialstr = max_dialstr;
 	analog_data->sig_cb = sig_cb;
+	strncpy(analog_data->hotline, hotline, sizeof(analog_data->hotline));
 	span->signal_type = ZAP_SIGTYPE_ANALOG;
 	span->signal_data = analog_data;
 	span->outgoing_call = span->trunk_type == ZAP_TRUNK_FXS ? analog_fxs_outgoing_call : analog_fxo_outgoing_call;
@@ -562,10 +569,16 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 					collecting = 0;
 				}
 			}
+			else if(!analog_data->max_dialstr)
+			{
+				last_digit = elapsed;
+				collecting = 0;
+				strcpy(dtmf, analog_data->hotline);
+			}
 		}
 
 
-		if (last_digit && (!collecting || ((elapsed - last_digit > analog_data->digit_timeout) || strlen(dtmf) > analog_data->max_dialstr))) {
+		if (last_digit && (!collecting || ((elapsed - last_digit > analog_data->digit_timeout) || strlen(dtmf) >= analog_data->max_dialstr))) {
 			zap_log(ZAP_LOG_DEBUG, "Number obtained [%s]\n", dtmf);
 			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_IDLE);
 			last_digit = 0;
@@ -794,7 +807,11 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 					}
 					zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_UP);
 				} else {
-					zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_DIALTONE);
+					if(!analog_data->max_dialstr) {
+						zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_COLLECT);
+					} else {
+						zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_DIALTONE);
+					}						
 					zap_mutex_unlock(event->channel->mutex);
 					locked = 0;
 					zap_thread_create_detached(zap_analog_channel_run, event->channel);
@@ -806,6 +823,35 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 					}
 				}
 				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_DOWN);
+			}
+		}
+	case ZAP_OOB_DTMF:
+		{
+			const char * digit_str = (const char *)event->data;
+			if(digit_str) {
+				if (event->channel->state == ZAP_CHANNEL_STATE_CALLWAITING && (*digit_str == 'D' || *digit_str == 'A')) {
+					event->channel->detected_tones[ZAP_TONEMAP_CALLWAITING_ACK]++;
+				} else {
+					zio_event_cb_t event_callback = NULL;
+					
+					zap_channel_queue_dtmf(event->channel, digit_str);
+					if (span->event_callback) {
+						event_callback = span->event_callback;
+					} else if (event->channel->event_callback) {
+						event_callback = event->channel->event_callback;
+					}
+					
+					if (event_callback) {
+						event->channel->event_header.channel = event->channel;
+						event->channel->event_header.e_type = ZAP_EVENT_DTMF;
+						event->channel->event_header.data = (void *)digit_str;
+						event_callback(event->channel, &event->channel->event_header);
+						event->channel->event_header.e_type = ZAP_EVENT_NONE;
+						event->channel->event_header.data = NULL;
+					}
+					
+				}
+				zap_safe_free(event->data);
 			}
 		}
 	}
@@ -826,7 +872,7 @@ static void *zap_analog_run(zap_thread_t *me, void *obj)
 	zap_log(ZAP_LOG_DEBUG, "ANALOG thread starting.\n");
 
 	while(zap_running() && zap_test_flag(analog_data, ZAP_ANALOG_RUNNING)) {
-		int waitms = 10;
+		int waitms = 1000;
 		zap_status_t status;
 
 		status = zap_span_poll_event(span, waitms);
