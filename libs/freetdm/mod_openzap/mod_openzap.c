@@ -877,7 +877,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_originate_flag_t flags)
 {
 
-	char *p, *dest = NULL;
+	char *dest = NULL, *data = NULL;
 	int span_id = 0, chan_id = 0;
 	zap_channel_t *zchan = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -887,6 +887,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	zap_caller_data_t caller_data = {{ 0 }};
 	char *span_name = NULL;
 	switch_event_header_t *h;
+	char *argv[3];
+	int argc = 0;
 
 	if (!outbound_profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing caller profile\n");
@@ -898,29 +900,29 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
 
-	dest = outbound_profile->destination_number;
 
-	if (switch_is_number(dest)) {
-		span_id = atoi(dest);
-	} else {
-		span_name = dest;
+	data = switch_core_strdup(outbound_profile->pool, outbound_profile->destination_number);
+
+	if ((argc = switch_separate_string(data, '/', argv, (sizeof(argv) / sizeof(argv[0])))) != 3) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid dial string\n");
+        return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
-
 	
-	if ((p = strchr(dest, '/'))) {
-		if (*p++) {
-			if (*p == 'A') {
-				direction = ZAP_BOTTOM_UP;
-			} else if (*p == 'a') {
-				direction =  ZAP_TOP_DOWN;
-			} else {
-				chan_id = atoi(p);
-			}
-			if ((p = strchr(p, '/')) && *++p) {
-				dest = p;
-			}
-		}
+	if (switch_is_number(argv[0])) {
+		span_id = atoi(argv[0]);
+	} else {
+		span_name = argv[0];
+	}	
+
+	if (*argv[1] == 'A') {
+		direction = ZAP_BOTTOM_UP;
+	} else if (*argv[1] == 'a') {
+		direction =  ZAP_TOP_DOWN;
+	} else {
+		chan_id = atoi(argv[1]);
 	}
+
+	dest = argv[2];
 
 	if (!span_id && !switch_strlen_zero(span_name)) {
 		zap_span_t *span;
