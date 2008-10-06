@@ -56,7 +56,6 @@ Path = sip_mask_registrar
 #
 # Headers that must be valid in UA, proxy or registrar
 #
-Supported = sip_mask_ua | sip_mask_proxy | sip_mask_registrar
 Contact = sip_mask_ua | sip_mask_proxy | sip_mask_registrar
 Require = sip_mask_ua | sip_mask_registrar | sip_mask_timer
 Record-Route = sip_mask_ua | sip_mask_proxy
