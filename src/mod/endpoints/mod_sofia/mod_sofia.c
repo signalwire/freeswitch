@@ -1152,7 +1152,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
 							SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 							SOATAG_REUSE_REJECTED(1),
-							SOATAG_ORDERED_USER(1), SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), SOATAG_AUDIO_AUX("cn telephone-event"), TAG_END());
+							SOATAG_ORDERED_USER(1),
+							SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip),
+							SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), SOATAG_AUDIO_AUX("cn telephone-event"), TAG_END());
 			}
 		}
 		break;
