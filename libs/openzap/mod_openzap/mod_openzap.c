@@ -1586,6 +1586,7 @@ static switch_status_t load_config(void)
 			char *tonegroup = NULL;
 			char *digit_timeout = NULL;
 			char *max_digits = NULL;
+			char *hotline = NULL;
 			char *dial_regex = NULL;
 			char *hold_music = NULL;
 			char *fail_dial_regex = NULL;
@@ -1617,6 +1618,8 @@ static switch_status_t load_config(void)
 					hold_music = val;
 				} else if (!strcasecmp(var, "max_digits") || !strcasecmp(var, "max-digits")) {
 					max_digits = val;
+				} else if (!strcasecmp(var, "hotline")) {
+					hotline = val;
 				} else if (!strcasecmp(var, "enable-analog-option")) {
 					analog_options = enable_analog_option(val, analog_options);
 				}
@@ -1667,6 +1670,7 @@ static switch_status_t load_config(void)
 								   "tonemap", tonegroup, 
 								   "digit_timeout", &to,
 								   "max_dialstr", &max,
+								   "hotline", hotline,
 								   "enable_callerid", enable_callerid,
 								   TAG_END) != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d\n", span_id);
