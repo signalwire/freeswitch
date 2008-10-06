@@ -10,7 +10,7 @@
 	  to any domain you have setup in your user directory.
 
       --> 
-      <action application="set" data="target_domain=$${domain}"/>
+      <action application="set" data="domain_name=$${domain}"/>
       <!-- This example maps the DID 5551212 to ring 1000 in the default context -->
       <action application="transfer" data="1000 XML default"/>
     </condition>
