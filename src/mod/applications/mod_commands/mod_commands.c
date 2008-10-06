@@ -774,7 +774,7 @@ SWITCH_STANDARD_API(ctl_function)
 		} else if (!strcasecmp(argv[0], "sync_clock")) {
 			arg = 0;
 			switch_core_session_ctl(SCSC_SYNC_CLOCK, &arg);
-			stream->write_function(stream, "+OK clock synchronize\n");
+			stream->write_function(stream, "+OK clock synchronized\n");
 		} else {
 			stream->write_function(stream, "-ERR INVALID COMMAND\nUSAGE: fsctl %s", CTL_SYNTAX);
 			goto end;
