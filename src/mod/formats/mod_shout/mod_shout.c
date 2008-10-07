@@ -47,6 +47,28 @@ SWITCH_MODULE_DEFINITION(mod_shout, mod_shout_load, mod_shout_shutdown, NULL);
 
 static char *supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
+mpg123_handle *our_mpg123_new(const char* decoder, int *error) 
+{
+	mpg123_handle *mh;
+	const char *arch = "auto";
+	int x64 = 0;
+
+	if (sizeof(void *) == 4) {
+		arch = "i586";
+	} else {
+		x64++;
+	}
+
+	if ((mh = mpg123_new(arch, NULL))) {
+		if (x64) {
+			mpg123_param(mh, MPG123_OUTSCALE, 8192, 0);
+		}
+	}
+
+	return mh;
+}
+
+
 struct shout_context {
 	shout_t *shout;
 	lame_global_flags *gfp;
@@ -414,7 +436,7 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 			}
 
 			mpg123_close(context->mh);
-			context->mh = mpg123_new(NULL, NULL);
+			context->mh = our_mpg123_new(NULL, NULL);
 			mpg123_open_feed(context->mh);
 			mpg123_param(context->mh, MPG123_FORCE_RATE, context->samplerate, 0);
 			mpg123_param(context->mh, MPG123_FLAGS, MPG123_MONO_MIX, 0);
@@ -607,16 +629,10 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 		}
 
 		switch_mutex_init(&context->audio_mutex, SWITCH_MUTEX_NESTED, context->memory_pool);
-		context->mh = mpg123_new(NULL, NULL);
+		context->mh = our_mpg123_new(NULL, NULL);
 		mpg123_open_feed(context->mh);
 		mpg123_format_all(context->mh);
-		mpg123_param(context->mh, MPG123_FORCE_RATE, context->samplerate, 0);
-		//mpg123_param(context->mh, MPG123_DOWN_SAMPLE, 1, 0);
-		if (sizeof(void *) == 4) {
-			mpg123_param(context->mh, MPG123_OUTSCALE, 8, 0);
-		} else {
-			mpg123_param(context->mh, MPG123_OUTSCALE, 8192, 0);
-		}
+		mpg123_param(context->mh, MPG123_FORCE_RATE, context->samplerate, 0);		
 
 		if (handle->handler) {
 			mpg123_param(context->mh, MPG123_FLAGS, MPG123_SEEKBUFFER|MPG123_MONO_MIX, 0);
@@ -808,7 +824,7 @@ static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned in
 			}
 
 			mpg123_close(context->mh);
-			context->mh = mpg123_new(NULL, NULL);
+			context->mh = our_mpg123_new(NULL, NULL);
 			mpg123_open_feed(context->mh);
 			mpg123_param(context->mh, MPG123_FORCE_RATE, context->samplerate, 0);
 			mpg123_param(context->mh, MPG123_FLAGS, MPG123_MONO_MIX, 0);
