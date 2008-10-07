@@ -909,7 +909,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 
 			gateway->retry_seconds = atoi(retry_seconds);
 			if (gateway->retry_seconds < 10) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "INVALID: retry-seconds of %d on gateway %s correcting the value to 30\n",
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid retry-seconds of %d on gateway %s, using the value of 30 instead.\n",
 								  gateway->retry_seconds, name);
 				gateway->retry_seconds = 30;
 			}
@@ -954,7 +954,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->expires_str = switch_core_strdup(gateway->pool, expire_seconds);
 
 			if ((gateway->freq = atoi(gateway->expires_str)) < 5) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "INVALID: register-frequency of %d on gateway %s to 3600\n",
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid register-frequency of %d on gateway %s, using the value of 3600 instead\n",
 								  gateway->freq, name);
 				gateway->freq = 3600;
 			}
@@ -4046,7 +4046,7 @@ static void set_variable_sip_param(switch_channel_t *channel, char *header_type,
 
 	/* Build the static part of the sip_header_name variable from   */
 	/* the header_type. If the header type is "referred_by" then    */
-	/* sip_header_name = "sip_referred_by_".            */
+	/* sip_header_name = "sip_referred_by_".                        */
 	sh = sip_header_name;
 	sh_end = sh + sizeof(sip_header_name) - 1;
 	for (cp = var1; *cp; cp++, sh++) {
@@ -4056,7 +4056,7 @@ static void set_variable_sip_param(switch_channel_t *channel, char *header_type,
 
 	/* Copy the header_type to the sip_header_name. Before copying  */
 	/* each character, check that we aren't going to overflow the   */
-	/* the sip_header_name buffer.  We have to account for the  */
+	/* the sip_header_name buffer.  We have to account for the      */
 	/* trailing underscore and NULL that will be added to the end.  */
 	for (cp = header_type; (*cp && (sh < (sh_end - 1))); cp++, sh++) {
 		*sh = *cp;
@@ -4067,26 +4067,26 @@ static void set_variable_sip_param(switch_channel_t *channel, char *header_type,
 	/* sh now points to the NULL at the end of the partially built  */
 	/* sip_header_name variable.  This is also the start of the     */
 	/* variable part of the sip_header_name built from the lvalue   */
-	/* of the parms data.                                           */
+	/* of the params data.                                          */
 	sh_save = sh;
 
 	while (params && params[0]) {
 
 		/* Copy the params data to the sip_header_name variable until   */
 		/* the end of the params string is reached, an '=' is detected  */
-		/* or until the sip_header_name buffer has been exhausted.  */
+		/* or until the sip_header_name buffer has been exhausted.      */
 		for (cp = (char *) (*params); ((*cp != '=') && *cp && (sh < sh_end)); cp++, sh++) {
 			*sh = *cp;
 		}
 
-		/* cp now points to either the end of the parms data or the */
-		/* equal (=) sign spearating the lvalue and rvalue.     */
+		/* cp now points to either the end of the params data or the */
+		/* equal (=) sign separating the lvalue and rvalue.          */
 		if (*cp == '=')
 			cp++;
 		*sh = '\0';
 		switch_channel_set_variable(channel, sip_header_name, cp);
 
-		/* Bump pointer to next param in the list.  Also reset the  */
+		/* Bump pointer to next param in the list.  Also reset the      */
 		/* sip_header_name pointer to the beginning of the dynamic area */
 		params++;
 		sh = sh_save;
