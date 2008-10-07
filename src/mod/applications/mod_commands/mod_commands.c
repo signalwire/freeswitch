@@ -834,7 +834,36 @@ SWITCH_STANDARD_API(unload_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
 SWITCH_STANDARD_API(reload_function)
+{
+	const char *err;
+
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "-USAGE: %s\n", LOAD_SYNTAX);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (switch_loadable_module_unload_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) cmd, &err) == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK module unloaded\n");
+	} else {
+		stream->write_function(stream, "-ERR unloading module [%s]\n", err);
+	}
+
+	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) cmd, SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK module loaded\n");
+	} else {
+		stream->write_function(stream, "-ERR loading module [%s]\n", err);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(reload_xml_function)
 {
 	const char *err;
 	switch_xml_t xml_root;
@@ -2639,8 +2668,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_park", "Park Channel", park_function, PARK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "reloadacl", "Reload ACL", reload_acl_function, "[reloadxml]");
 	switch_console_set_complete("add reloadacl reloadxml");
-	SWITCH_ADD_API(commands_api_interface, "reloadxml", "Reload XML", reload_function, "");
+	SWITCH_ADD_API(commands_api_interface, "reloadxml", "Reload XML", reload_xml_function, "");
 	SWITCH_ADD_API(commands_api_interface, "unload", "Unload Module", unload_function, LOAD_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "reload", "Reload Module", reload_function, LOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "load", "Load Module", load_function, LOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_transfer", "Transfer a session", transfer_function, TRANSFER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "pause", "Pause", pause_function, PAUSE_SYNTAX);
