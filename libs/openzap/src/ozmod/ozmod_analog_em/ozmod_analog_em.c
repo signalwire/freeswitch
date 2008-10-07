@@ -108,6 +108,9 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_em_configure_span)
 				break;
 			}
 			max_dialstr = *intval;
+		} else {
+			snprintf(span->last_error, sizeof(span->last_error), "Unknown parameter [%s]", var);
+			return ZAP_FAIL;
 		}
 	}
 

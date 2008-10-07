@@ -132,6 +132,9 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 				break;
 			}
 			hotline = val;
+		} else {
+			snprintf(span->last_error, sizeof(span->last_error), "Unknown parameter [%s]", var);
+			return ZAP_FAIL;
 		}			
 	}
 

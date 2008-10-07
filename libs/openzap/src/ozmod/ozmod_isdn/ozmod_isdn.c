@@ -1750,6 +1750,9 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
             } else if (q931loglevel > Q931_LOG_DEBUG) {
                 q931loglevel = Q931_LOG_DEBUG;
             }
+		} else {
+			snprintf(span->last_error, sizeof(span->last_error), "Unknown parameter [%s]", var);
+			return ZAP_FAIL;
 		}
 	}
 					
