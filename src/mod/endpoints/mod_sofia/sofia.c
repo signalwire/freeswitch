@@ -909,7 +909,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 
 			gateway->retry_seconds = atoi(retry_seconds);
 			if (gateway->retry_seconds < 10) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "INVALID: retry_seconds correcting the value to 30\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "INVALID: retry-seconds of %d on gateway %s correcting the value to 30\n",
+								  gateway->retry_seconds, name);
 				gateway->retry_seconds = 30;
 			}
 			gateway->register_scheme = switch_core_strdup(gateway->pool, scheme);
@@ -953,7 +954,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->expires_str = switch_core_strdup(gateway->pool, expire_seconds);
 
 			if ((gateway->freq = atoi(gateway->expires_str)) < 5) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid Freq: %d.  Setting Register-Frequency to 3600\n", gateway->freq);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "INVALID: register-frequency of %d on gateway %s to 3600\n",
+								  gateway->freq, name);
 				gateway->freq = 3600;
 			}
 			gateway->freq -= 2;
