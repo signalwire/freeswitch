@@ -1726,11 +1726,11 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 				dialect = Q931_Dialect_National;
 			}
 		} else if (!strcasecmp(var, "opts")) {
-			int *optp;
-			if (!(optp = va_arg(ap, int *))) {
-				break;
-			}
-			opts = isdn_data->opts = *optp;
+			opts = va_arg(ap, uint32_t);
+            if  (opts >= ZAP_ISDN_OPT_MAX) {
+                return ZAP_FAIL;
+            }
+			isdn_data->opts = opts;
 		} else if (!strcasecmp(var, "tonemap")) {
 			if (!(val = va_arg(ap, char *))) {
 				break;

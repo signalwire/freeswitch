@@ -37,7 +37,9 @@
 
 typedef enum {
 	ZAP_ISDN_OPT_NONE = 0,
-	ZAP_ISDN_OPT_SUGGEST_CHANNEL = (1 << 0)
+	ZAP_ISDN_OPT_SUGGEST_CHANNEL = (1 << 0),
+
+	ZAP_ISDN_OPT_MAX = (2 << 0)
 } zap_isdn_opts_t;
 
 typedef enum {
