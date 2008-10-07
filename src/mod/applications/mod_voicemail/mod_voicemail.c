@@ -1944,7 +1944,14 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 
 					if (!ok) {
 						goto end;
+					} else {
+						const char *x_box = switch_xml_attr(x_user, "mailbox");
+						
+						if (x_box) {
+							myid = switch_core_session_strdup(session, x_box);
+						}
 					}
+
 				}
 
 				if (!mypass) {
