@@ -1020,16 +1020,24 @@ void sofia_reg_handle_sip_r_register(int status,
 	if (sofia_private && sofia_private->gateway) {
 		switch (status) {
 		case 200:
-			if (sip && sip->sip_contact && sip->sip_contact->m_expires) {
-				char *new_expires = (char *) sip->sip_contact->m_expires;
-				uint32_t expi = (uint32_t) atoi(new_expires);
-
-				if (expi != sofia_private->gateway->freq) {
-					sofia_private->gateway->freq = expi;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-									  "Changing expire time to %d by request of proxy %s\n", expi, sofia_private->gateway->register_proxy);
+			if (sip && sip->sip_contact) { // && sip->sip_contact->m_expires
+				sip_contact_t *contact = sip->sip_contact;
+				const char *new_expires;
+				uint32_t expi;
+				if (contact->m_next) {
+					//const char *sipip = profile->extsipip ?  profile->extsipip : profile->sipip;
+					//find the contact
 				}
-
+				if (contact->m_expires) {
+					new_expires = contact->m_expires;
+					expi = (uint32_t) atoi(new_expires);
+	
+					if (expi != sofia_private->gateway->freq) {
+						sofia_private->gateway->freq = expi;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+										  "Changing expire time to %d by request of proxy %s\n", expi, sofia_private->gateway->register_proxy);
+					}
+				}
 			}
 			sofia_private->gateway->state = REG_STATE_REGISTER;
 			break;
