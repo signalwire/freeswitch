@@ -1994,7 +1994,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 				}
 
 				if (!auth) {
-					if (switch_strlen_zero(cbt.password) && !strcmp(cbt.password, mypass)) {
+					if (!switch_strlen_zero(cbt.password) && !strcmp(cbt.password, mypass)) {
 						auth++;
 					} else if (!thepass) {
 						auth++;
