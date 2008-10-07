@@ -78,7 +78,7 @@ SWITCH_DECLARE(const char *) switch_core_db_errmsg(switch_core_db_t *db)
 SWITCH_DECLARE(int) switch_core_db_exec(switch_core_db_t *db, const char *sql, switch_core_db_callback_func_t callback, void *data, char **errmsg)
 {
 	int ret = 0;
-	int sane = 100;
+	int sane = 500;
 	char *err = NULL;
 
 	while (--sane > 0) {
@@ -86,7 +86,7 @@ SWITCH_DECLARE(int) switch_core_db_exec(switch_core_db_t *db, const char *sql, s
 		if (ret == SQLITE_BUSY || ret == SQLITE_LOCKED) {
 			if (sane > 1) {
 				switch_safe_free(err);
-				switch_yield(1000);
+				switch_yield(20000);
 				continue;
 			}
 		} else {

@@ -128,7 +128,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute(switch_core_db
 	while (retries > 0) {
 		switch_core_db_exec(db, sql, NULL, NULL, &errmsg);
 		if (errmsg) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n", errmsg);
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n", errmsg);
 			switch_core_db_free(errmsg);
 			switch_yield(100000);
 			retries--;
