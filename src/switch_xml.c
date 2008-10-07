@@ -1680,7 +1680,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_x
 }
 
 // Encodes ampersand sequences appending the results to *dst, reallocating *dst
-// if length excedes max. a is non-zero for attribute encoding. Returns *dst
+// if length exceeds max. a is non-zero for attribute encoding. Returns *dst
 static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, switch_size_t *dlen, switch_size_t *max, short a)
 {
 	const char *e = NULL;
@@ -1744,7 +1744,7 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 
 #define XML_INDENT "  "
 // Recursively converts each tag to xml appending it to *s. Reallocates *s if
-// its length excedes max. start is the location of the previous tag in the
+// its length exceeds max. start is the location of the previous tag in the
 // parent tag's character content. Returns *s.
 static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, switch_size_t *max, switch_size_t start, char ***attr, uint32_t * count)
 {
@@ -1955,7 +1955,7 @@ SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 	switch_xml_free(xml->ordered);
 
 	if (!xml->parent) {			// free root tag allocations
-		for (i = 10; root->ent[i]; i += 2)	// 0 - 9 are default entites (<>&"')
+		for (i = 10; root->ent[i]; i += 2)	// 0 - 9 are default entities (<>&"')
 			if ((s = root->ent[i + 1]) < root->s || s > root->e)
 				free(s);
 		free(root->ent);		// free list of general entities
@@ -2541,7 +2541,7 @@ static int glob3(char *pathbuf, char *pathend, char *pathend_last, char *pattern
 
 
 /*
- * Extend the gl_pathv member of a glob_t structure to accomodate a new item,
+ * Extend the gl_pathv member of a glob_t structure to accommodate a new item,
  * add the new item, and update gl_pathc.
  *
  * This assumes the BSD realloc, which only copies the block when its size
