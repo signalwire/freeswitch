@@ -119,7 +119,12 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			break;
 		case REG_STATE_REGISTER:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "registered %s\n", gateway_ptr->name);
-			gateway_ptr->expires = now + gateway_ptr->freq;
+			if (gateway_ptr->expires > 60) {
+				gateway_ptr->expires = now + (gateway_ptr->freq - 15);
+			} else {
+				gateway_ptr->expires = now + (gateway_ptr->freq - 2);
+			}
+
 			gateway_ptr->state = REG_STATE_REGED;
 			gateway_ptr->status = SOFIA_GATEWAY_UP;
 			break;
@@ -1025,9 +1030,14 @@ void sofia_reg_handle_sip_r_register(int status,
 				const char *new_expires;
 				uint32_t expi;
 				if (contact->m_next) {
-					//const char *sipip = profile->extsipip ?  profile->extsipip : profile->sipip;
-					//find the contact
+					const char *sipip = profile->extsipip ?  profile->extsipip : profile->sipip;
+					for ( ; contact && strcasecmp(contact->m_url->url_host, sipip); contact = contact->m_next);
 				}
+
+				if (!contact) {
+					contact = sip->sip_contact;
+				}
+
 				if (contact->m_expires) {
 					new_expires = contact->m_expires;
 					expi = (uint32_t) atoi(new_expires);
