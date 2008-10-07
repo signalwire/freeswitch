@@ -548,11 +548,13 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass(switch_event_t **ev
 {
 	void *pop;
 
+	*event = NULL;
+
 	if (event_id != SWITCH_EVENT_CUSTOM && subclass_name) {
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_queue_trypop(EVENT_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
+	if (switch_queue_trypop(EVENT_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 		*event = (switch_event_t *) pop;
 	} else {
 		*event = ALLOC(sizeof(switch_event_t));
@@ -1013,10 +1015,6 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, con
 	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Calling-File", switch_cut_path(file));
 	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Calling-Function", func);
 	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Calling-Line-Number", "%d", line);
-
-	if ((*event)->subclass_name) {
-		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Subclass", (*event)->subclass_name);
-	}
 
 	if (user_data) {
 		(*event)->event_user_data = user_data;

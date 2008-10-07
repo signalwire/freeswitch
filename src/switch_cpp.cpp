@@ -208,7 +208,16 @@ SWITCH_DECLARE_CONSTRUCTOR Event::Event(const char *type, const char *subclass_n
 		event_id = SWITCH_EVENT_MESSAGE;
 	}
 
-	switch_event_create_subclass(&event, event_id, subclass_name);
+	if (!switch_strlen_zero(subclass_name) && event_id != SWITCH_EVENT_CUSTOM) {
+		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_WARNING, "Changing event type to custom because you specified a subclass name!\n");
+		event_id = SWITCH_EVENT_CUSTOM;
+	}
+
+	if (switch_event_create_subclass(&event, event_id, subclass_name) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Failed to create event!\n");
+		event = NULL;
+	}
+
 	serialized_string = NULL;
 	mine = 1;
 }
@@ -283,9 +292,17 @@ SWITCH_DECLARE(bool) Event::fire(void)
 	if (event) {
 		switch_event_t *new_event;
 		if (switch_event_dup(&new_event, event) == SWITCH_STATUS_SUCCESS) {
-			switch_event_fire(&new_event);
+			if (switch_event_fire(&new_event) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Failed to fire the event!\n");
+				switch_event_destroy(&new_event);
+				return false;
+			}
 			return true;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Failed to dup the event!\n");
 		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Trying to fire an event that does not exist!\n");
 	}
 	return false;
 }
@@ -297,6 +314,8 @@ SWITCH_DECLARE(bool) Event::setPriority(switch_priority_t priority)
 	if (event) {
         switch_event_set_priority(event, priority);
 		return true;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Trying to setPriority an event that does not exist!\n");
     }
 	return false;
 }
@@ -307,6 +326,8 @@ SWITCH_DECLARE(const char *)Event::getHeader(char *header_name)
 
 	if (event) {
 		return switch_event_get_header(event, header_name);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Trying to getHeader an event that does not exist!\n");
 	}
 	return NULL;
 }
@@ -317,6 +338,8 @@ SWITCH_DECLARE(bool) Event::addHeader(const char *header_name, const char *value
 
 	if (event) {
 		return switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, value) == SWITCH_STATUS_SUCCESS ? true : false;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Trying to addHeader an event that does not exist!\n");
 	}
 
 	return false;
@@ -328,6 +351,8 @@ SWITCH_DECLARE(bool) Event::delHeader(const char *header_name)
 
 	if (event) {
 		return switch_event_del_header(event, header_name) == SWITCH_STATUS_SUCCESS ? true : false;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Trying to delHeader an event that does not exist!\n");
 	}
 
 	return false;
@@ -340,6 +365,8 @@ SWITCH_DECLARE(bool) Event::addBody(const char *value)
 
 	if (event) {
 		return switch_event_add_body(event, "%s", value) == SWITCH_STATUS_SUCCESS ? true : false;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Trying to addBody an event that does not exist!\n");
 	}
 	
 	return false;
@@ -352,6 +379,8 @@ SWITCH_DECLARE(char *)Event::getBody(void)
 
 	if (event) {
 		return switch_event_get_body(event);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Trying to getBody an event that does not exist!\n");
 	}
 	
 	return NULL;
@@ -363,6 +392,8 @@ SWITCH_DECLARE(const char *)Event::getType(void)
 
 	if (event) {
 		return switch_event_name(event->event_id);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Trying to getType an event that does not exist!\n");
 	}
 	
 	return (char *) "invalid";
