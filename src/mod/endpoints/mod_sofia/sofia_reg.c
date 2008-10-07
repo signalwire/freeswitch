@@ -470,7 +470,6 @@ void sofia_reg_auth_challenge(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	switch_assert(sql != NULL);
 	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 	switch_safe_free(sql);
-	//sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 
 	auth_str = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", realm, uuid_str, stale ? " stale=\"true\"," : "");
 
@@ -501,7 +500,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	char contact_str[1024] = "";
 	int nat_hack = 0;
 	uint8_t multi_reg = 0, avoid_multi_reg = 0;
-	//char buf[512];
 	uint8_t stale = 0, forbidden = 0;
 	auth_res_t auth_res;
 	long exptime = 60;
@@ -756,7 +754,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		return 0;
 	}
 
-	call_id = sip->sip_call_id->i_id;	//sip_header_as_string(profile->home, (void *) sip->sip_call_id);
+	call_id = sip->sip_call_id->i_id;
 	switch_assert(call_id);
 
 	/* Does this profile supports multiple registrations ? */
@@ -1025,7 +1023,7 @@ void sofia_reg_handle_sip_r_register(int status,
 	if (sofia_private && sofia_private->gateway) {
 		switch (status) {
 		case 200:
-			if (sip && sip->sip_contact) { // && sip->sip_contact->m_expires
+			if (sip && sip->sip_contact) {
 				sip_contact_t *contact = sip->sip_contact;
 				const char *new_expires;
 				uint32_t expi;
