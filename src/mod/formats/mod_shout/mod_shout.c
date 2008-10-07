@@ -611,9 +611,9 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 		mpg123_open_feed(context->mh);
 		mpg123_format_all(context->mh);
 		mpg123_param(context->mh, MPG123_FORCE_RATE, context->samplerate, 0);
-		mpg123_param(context->mh, MPG123_DOWN_SAMPLE, 1, 0);
+		//mpg123_param(context->mh, MPG123_DOWN_SAMPLE, 1, 0);
 		if (sizeof(void *) == 4) {
-			mpg123_param(context->mh, MPG123_OUTSCALE, 65536, 0);
+			mpg123_param(context->mh, MPG123_OUTSCALE, 8, 0);
 		} else {
 			mpg123_param(context->mh, MPG123_OUTSCALE, 8192, 0);
 		}
