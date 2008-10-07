@@ -1627,6 +1627,24 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 		switch_core_session_rwunlock(other_session);
 	}
 
+	if ((var = switch_channel_get_variable(channel, SWITCH_ENABLE_HEARTBEAT_EVENTS_VARIABLE))) {
+		uint32_t seconds = 60;
+		int tmp;
+
+		if (switch_is_number(var)) {
+			tmp = atoi(var);
+			if (tmp > 10) {
+				seconds = tmp;
+			}
+		} else if (!switch_true(var)) {
+			seconds = 0;
+		}
+
+		if (seconds) {
+			switch_core_session_enable_heartbeat(channel->session, seconds);
+		}
+	}
+
 	switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Channel [%s] has been answered\n", channel->name);
 	if ((var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE)) && !switch_strlen_zero(var)) {

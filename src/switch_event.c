@@ -165,6 +165,7 @@ static char *EVENT_NAMES[] = {
 	"CHANNEL_DATA",
 	"GENERAL",
 	"COMMAND",
+	"SESSION_HEARTBEAT",
 	"ALL"
 };
 
