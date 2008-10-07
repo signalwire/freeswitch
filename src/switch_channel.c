@@ -1633,7 +1633,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 
 		if (switch_is_number(var)) {
 			tmp = atoi(var);
-			if (tmp > 10) {
+			if (tmp > 0) {
 				seconds = tmp;
 			}
 		} else if (!switch_true(var)) {

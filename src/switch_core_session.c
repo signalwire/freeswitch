@@ -783,14 +783,21 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 SWITCH_DECLARE(void) switch_core_session_enable_heartbeat(switch_core_session_t *session, uint32_t seconds)
 {
 	switch_assert(session != NULL);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s setting session heartbeat to %u second(s).", 
+
+	if (seconds < 10) {
+		seconds = 60;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s setting session heartbeat to %u second(s).\n", 
 					  switch_channel_get_name(session->channel), seconds);
 	session->track_duration = seconds;
+	session->read_frame_count = 0;
 }
 
 SWITCH_DECLARE(void) switch_core_session_disable_heartbeat(switch_core_session_t *session)
 {
 	switch_assert(session != NULL);
+	session->read_frame_count = 0;
 	session->track_duration = 0;
 }
 

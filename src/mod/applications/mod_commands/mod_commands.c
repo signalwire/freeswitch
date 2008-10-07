@@ -2321,6 +2321,57 @@ SWITCH_STANDARD_API(help_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define HEARTBEAT_SYNTAX "<uuid> <on|off|<seconds>>"
+SWITCH_STANDARD_API(uuid_session_heartbeat_function)
+{
+	char *mycmd = NULL, *argv[2] = { 0 };
+	uint32_t seconds = 60;
+	int argc, tmp;
+	switch_core_session_t *l_session = NULL;
+
+	if (switch_strlen_zero(cmd) || !(mycmd = strdup(cmd))) {
+		goto error;
+	}
+
+	argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc != 2) {
+		goto error;
+	}
+
+	if (!(l_session = switch_core_session_locate(argv[0]))) {
+		stream->write_function(stream, "-ERR Usage: cannot locate session.\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (switch_is_number(argv[1])) {
+		tmp = atoi(argv[1]);
+		if (tmp > 0) {
+			seconds = tmp;
+		}
+	} else if (!switch_true(argv[1])) {
+		seconds = 0;
+	}
+	
+	if (seconds) {
+		switch_core_session_enable_heartbeat(l_session, seconds);
+	} else {
+		switch_core_session_disable_heartbeat(l_session);
+	}
+	
+	switch_core_session_rwunlock(l_session);
+	
+	switch_safe_free(mycmd);	
+	stream->write_function(stream, "+OK\n");
+	return SWITCH_STATUS_SUCCESS;
+	
+ error:
+	switch_safe_free(mycmd);
+	stream->write_function(stream, "-ERR Usage: uuid_session_heartbeat %s", HEARTBEAT_SYNTAX);
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
 #define SETVAR_SYNTAX "<uuid> <var> <value>"
 SWITCH_STANDARD_API(uuid_setvar_function)
 {
@@ -2694,6 +2745,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add alias add");
 	switch_console_set_complete("add alias del");
 	SWITCH_ADD_API(commands_api_interface, "status", "status", status_function, "");
+	SWITCH_ADD_API(commands_api_interface, "uuid_session_heartbeat", "uuid_session_heartbeat", uuid_session_heartbeat_function, HEARTBEAT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_bridge", "uuid_bridge", uuid_bridge_function, "");
 	SWITCH_ADD_API(commands_api_interface, "uuid_setvar", "uuid_setvar", uuid_setvar_function, SETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_getvar", "uuid_getvar", uuid_getvar_function, GETVAR_SYNTAX);
