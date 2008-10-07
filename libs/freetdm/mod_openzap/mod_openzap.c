@@ -1893,6 +1893,7 @@ static switch_status_t load_config(void)
 			if (zap_configure_span("isdn", span, on_clear_channel_signal, 
 								   "mode", mode, 
 								   "dialect", dialect,
+								   "opts", opts,
 								   "q921loglevel", q921loglevel,
 								   "q931loglevel", q931loglevel,
 								   TAG_END) != ZAP_SUCCESS) {
