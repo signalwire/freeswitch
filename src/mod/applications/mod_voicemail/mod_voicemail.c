@@ -1546,9 +1546,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 }
 
 
-static void
-update_mwi(vm_profile_t *profile, const char *id, const char *domain_name,
-           const char *myfolder)
+static void update_mwi(vm_profile_t *profile, const char *id, const char *domain_name, const char *myfolder)
 {
 	char *mwi_id;
 	const char *yn = "no";
@@ -1589,7 +1587,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 	switch_xml_t x_domain = NULL, x_domain_root = NULL, x_user = NULL, x_params, x_param;
 	switch_status_t status;
 	char pass_buf[80] = "", *mypass = NULL, id_buf[80] = "", *myfolder = NULL;
-	const char *thepass = NULL, *myid = id;
+	const char *thepass = NULL, *myid = id, *actual_id = NULL;
 	char term = 0;
 	uint32_t timeout, attempts = 0;
 	int failed = 0;
@@ -1640,6 +1638,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 				play_msg_type = MSG_NONE;
 				attempts = profile->max_login_attempts;
 				myid = id;
+				actual_id = NULL;
 				mypass = NULL;
 				myfolder = "inbox";
 				vm_check_state = VM_CHECK_AUTH;
@@ -1746,7 +1745,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 				vm_execute_sql(profile, sql, profile->mutex);
 				vm_check_state = VM_CHECK_FOLDER_SUMMARY;
 
-				update_mwi(profile, id, domain_name, myfolder);
+				update_mwi(profile, actual_id, domain_name, myfolder);
 			}
 			break;
 		case VM_CHECK_CONFIG:
@@ -1949,6 +1948,10 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 						
 						if (x_box) {
 							myid = switch_core_session_strdup(session, x_box);
+						}
+
+						if (!(actual_id = switch_xml_attr(x_user, "id"))) {
+							actual_id = id;
 						}
 					}
 
