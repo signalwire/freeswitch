@@ -564,6 +564,11 @@ SWITCH_DECLARE(int32_t) change_user_group(const char *user, const char *group)
 		runas_gid = gr->gr_gid;
 	}
 
+	if (runas_uid && getuid() == runas_uid && (!runas_gid || runas_gid == getgid())) {
+		/* already running as the right user and group, nothing to do! */
+		return 0;
+	}
+
 	if (runas_uid) {
 #ifdef HAVE_SETGROUPS
 		/*
