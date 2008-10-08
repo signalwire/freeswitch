@@ -232,7 +232,7 @@ SWITCH_STANDARD_API(eval_function)
 			switch_core_session_rwunlock(session);
 		}
 	}
-
+	printf("WTF [%s\n", input);
 	expanded = switch_event_expand_headers(event, input);
 	
 	stream->write_function(stream, "%s", expanded);

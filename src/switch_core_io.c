@@ -126,7 +126,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	if (session->read_codec && session->track_duration) {
 		if (session->read_frame_count == 0) {
 			switch_event_t *event;
-			session->read_frame_count = (session->read_codec->implementation->samples_per_second / 
+			session->read_frame_count = (session->read_codec->implementation->actual_samples_per_second / 
 										 session->read_codec->implementation->samples_per_frame) * session->track_duration;
 
 			switch_event_create(&event, SWITCH_EVENT_SESSION_HEARTBEAT);
