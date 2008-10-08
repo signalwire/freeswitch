@@ -685,6 +685,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 
 		switch_channel_set_variable(caller_channel, "originate_disposition", "failure");
+
+		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) || switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)) {
+			ringback_data = NULL;
+		}
+	}
+
+	if (ringback_data) {
+		early_ok = 0;
 	}
 
 	if ((var = switch_event_get_header(var_event, "group_confirm_key"))) {
@@ -957,6 +965,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					myflags |= SOF_NO_EFFECTIVE_CID_NAME;
 				}
 
+				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "originate_early_media", early_ok ? "true" : "false");
+				
 
 				if ((reason =
 					 switch_core_session_outgoing_channel(session, var_event, chan_type, new_profile, &new_session, &pool,

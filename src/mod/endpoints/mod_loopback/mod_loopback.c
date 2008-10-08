@@ -51,7 +51,8 @@ typedef enum {
 	TFLAG_WRITE = (1 << 2),
 	TFLAG_CNG = (1 << 3),
 	TFLAG_BRIDGE = (1 << 4),
-	TFLAG_BOWOUT = (1 << 5)
+	TFLAG_BOWOUT = (1 << 5),
+	TFLAG_NO_EARLY = (1 << 6)
 } TFLAGS;
 
 struct private_object {
@@ -241,6 +242,11 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		switch_set_flag_locked(b_tech_pvt, TFLAG_LINKED);
 		switch_set_flag_locked(b_tech_pvt, TFLAG_OUTBOUND);
 	
+		if (switch_test_flag(tech_pvt, TFLAG_NO_EARLY)) {
+			switch_set_flag_locked(b_tech_pvt, TFLAG_NO_EARLY);
+			switch_clear_flag_locked(tech_pvt, TFLAG_NO_EARLY);
+		}
+
 		switch_channel_set_flag(channel, CF_ACCEPT_CNG);	
 		switch_ivr_transfer_variable(session, tech_pvt->other_session, "process_cdr");
 
@@ -328,13 +334,17 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n", switch_channel_get_name(channel));
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_LINKED);
+
 	if (tech_pvt->other_tech_pvt) {
 		switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_LINKED);
+		tech_pvt->other_tech_pvt = NULL;
 	}
 	
 	if (tech_pvt->other_session) {
 		switch_channel_hangup(tech_pvt->other_channel, switch_channel_get_cause(channel));
 		switch_core_session_rwunlock(tech_pvt->other_session);
+		tech_pvt->other_channel = NULL;
+		tech_pvt->other_session = NULL;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -467,6 +477,10 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	if (!switch_test_flag(tech_pvt, TFLAG_LINKED)) {
 		goto end;
 	}
+	
+	if (switch_test_flag(tech_pvt, TFLAG_NO_EARLY)) {
+		switch_set_flag(tech_pvt, TFLAG_CNG);
+	}
 
 	*frame = NULL;
 
@@ -582,13 +596,18 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
-		if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-			switch_channel_answer(tech_pvt->other_channel);
+		if (tech_pvt->other_channel) {
+			if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+				switch_channel_answer(tech_pvt->other_channel);
+				switch_clear_flag(tech_pvt, TFLAG_NO_EARLY);
+			}
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
-		if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-			switch_channel_pre_answer(tech_pvt->other_channel);
+		if (tech_pvt->other_channel) {
+			if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+				switch_channel_pre_answer(tech_pvt->other_channel);
+			}
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
@@ -623,12 +642,13 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		private_t *tech_pvt;
 		switch_channel_t *channel;
 		switch_caller_profile_t *caller_profile;
-		
+		const char *var;
+
 		switch_core_session_add_stream(*new_session, NULL);
 
 		if ((tech_pvt = (private_t *) switch_core_session_alloc(*new_session, sizeof(private_t))) != 0) {
 			channel = switch_core_session_get_channel(*new_session);
-			switch_snprintf(name, sizeof(name), "Loopback/%s-a", outbound_profile->destination_number);
+			switch_snprintf(name, sizeof(name), "loopback/%s-a", outbound_profile->destination_number);
 			switch_channel_set_name(channel, name);
 			if (tech_init(tech_pvt, *new_session, session ? switch_core_session_get_read_codec(session) : NULL) != SWITCH_STATUS_SUCCESS) {
 				switch_core_session_destroy(new_session);
@@ -640,6 +660,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		}
 		
+		if ((var = switch_event_get_header(var_event, "originate_early_media")) && !switch_true(var)) {
+			switch_set_flag(tech_pvt, TFLAG_NO_EARLY);
+		}
+
 		if (outbound_profile) {
 			char *dialplan = NULL, *context = NULL;
 
