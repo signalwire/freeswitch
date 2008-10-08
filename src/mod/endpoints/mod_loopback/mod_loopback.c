@@ -468,6 +468,8 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		goto end;
 	}
 
+	*frame = NULL;
+
 	while(switch_test_flag(tech_pvt, TFLAG_LINKED) && tech_pvt->other_tech_pvt && !switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_WRITE)) {
 		if (!switch_channel_ready(channel)) {
 			goto end;
@@ -478,17 +480,23 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		switch_yield(1000);
 	}
 	
-	if (switch_test_flag(tech_pvt, TFLAG_CNG)) {
-		*frame = &tech_pvt->cng_frame;
-		switch_clear_flag_locked(tech_pvt, TFLAG_CNG);
-	} else if (tech_pvt->other_tech_pvt && switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_WRITE)) {
-		*frame = &tech_pvt->other_tech_pvt->write_frame;
-		switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
+	if (switch_test_flag(tech_pvt, TFLAG_LINKED)) {
+		if (switch_test_flag(tech_pvt, TFLAG_CNG)) {
+			*frame = &tech_pvt->cng_frame;
+			tech_pvt->cng_frame.codec = &tech_pvt->read_codec;
+			switch_set_flag((&tech_pvt->cng_frame), SFF_CNG);
+			switch_clear_flag_locked(tech_pvt, TFLAG_CNG);
+		} else if (tech_pvt->other_tech_pvt && switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_WRITE)) {
+			*frame = &tech_pvt->other_tech_pvt->write_frame;
+			switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
+		}
 	}
 	
-	//printf("READ %s %d\n", switch_channel_get_name(channel), (*frame)->datalen);
-	status = SWITCH_STATUS_SUCCESS;
-	
+	if (*frame) {
+		status = SWITCH_STATUS_SUCCESS;
+	} else {
+		status = SWITCH_STATUS_FALSE;
+	}	
 
  end:
 
