@@ -693,7 +693,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				caller_profile->dialplan = switch_core_strdup(caller_profile->pool, "xml");
 			}
 
-			switch_snprintf(name, sizeof(name), "Loopback/%s-a", caller_profile->destination_number);
+			switch_snprintf(name, sizeof(name), "loopback/%s-a", caller_profile->destination_number);
 			switch_channel_set_name(channel, name);
 
 			switch_channel_set_caller_profile(channel, caller_profile);
