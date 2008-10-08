@@ -332,8 +332,10 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_LINKED);
 	}
 	
-	switch_channel_hangup(tech_pvt->other_channel, switch_channel_get_cause(channel));
-	switch_core_session_rwunlock(tech_pvt->other_session);
+	if (tech_pvt->other_session) {
+		switch_channel_hangup(tech_pvt->other_channel, switch_channel_get_cause(channel));
+		switch_core_session_rwunlock(tech_pvt->other_session);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
