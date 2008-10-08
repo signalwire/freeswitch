@@ -1199,6 +1199,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					sent_ring = 1;
 				}
 				/* When the AND operator is being used, and fail_on_single_reject is set, a hangup indicates that the call should fail. */
+				
 				if ((to = (uint8_t) ((switch_timestamp(NULL) - start) >= (time_t) timelimit_sec))
 					|| (fail_on_single_reject && hups)) {
 					idx = IDX_TIMEOUT;
@@ -1282,9 +1283,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 
 				} else {
-					switch_yield(1000);
+					switch_yield(10000);
 				}
-
+				
 			}
 
 		  notready:

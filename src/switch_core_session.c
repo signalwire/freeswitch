@@ -964,6 +964,11 @@ SWITCH_DECLARE(uint32_t) switch_core_session_count(void)
 	return session_manager.session_count;
 }
 
+SWITCH_DECLARE(uint32_t) switch_core_session_get_id(switch_core_session_t *session)
+{
+	return session->id;
+}
+
 SWITCH_DECLARE(switch_size_t) switch_core_session_id(void)
 {
 	return session_manager.session_id;
