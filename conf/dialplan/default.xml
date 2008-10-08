@@ -413,6 +413,72 @@
        </condition>
     </extension>
 
+    <!--
+	Here are some examples of how to override the ringback heard by the
+	far end.  You have two variables that you can use to override this.
+	
+	ringback          - used when a call isn't answered. (early media)
+	transfer_ringback - used when the call is already answered. (post answer)
+    -->
+
+    <!-- Demonstration of how to override the ringback in various situations -->
+    <extension name="wait">
+      <condition field="destination_number" expression="^wait$">
+	<action application="pre_answer"/>
+	<action application="sleep" data="20000"/>
+	<action application="answer"/>
+	<action application="sleep" data="1000"/>
+	<action application="playback" data="voicemail/vm-goodbye.wav"/>
+	<action application="hangup"/>
+      </condition>
+    </extension>
+    
+    <!-- Send a 180 and let the far end generate ringback. -->
+    <extension name="ringback_180">
+      <condition field="destination_number" expression="^9980$">
+	<action application="ring_ready"/>
+	<action application="sleep" data="20000"/>
+	<action application="answer"/>
+	<action application="sleep" data="1000"/>
+	<action application="playback" data="voicemail/vm-goodbye.wav"/>
+	<action application="hangup"/>
+      </condition>
+    </extension>
+
+    <!-- Send a 183 and send uk-ring as the ringtone. (early media) -->
+    <extension name="ringback_183_uk_ring">
+      <condition field="destination_number" expression="^9981$">
+	<action application="set" data="ringback=$${uk-ring}"/>
+	<action application="bridge" data="loopback/wait"/>
+      </condition>
+    </extension>
+
+    <!-- Send a 183 and use music as the ringtone. (early media) -->
+    <extension name="ringback_183_music_ring">
+      <condition field="destination_number" expression="^9982$">
+	<action application="set" data="ringback=$${hold_music}"/>
+	<action application="bridge" data="loopback/wait"/>
+      </condition>
+    </extension>
+
+    <!-- Answer the call and use music as the ringtone. (post answer) -->
+    <extension name="ringback_post_answer_uk_ring">
+      <condition field="destination_number" expression="^9983$">
+	<action application="set" data="transfer_ringback=$${uk-ring}"/>
+	<action application="answer"/>
+	<action application="bridge" data="loopback/wait"/>
+      </condition>
+    </extension>
+
+    <!-- Answer the call and use music as the ringtone. (post answer) -->
+    <extension name="ringback_post_answer_music">
+      <condition field="destination_number" expression="^9984$">
+	<action application="set" data="transfer_ringback=$${hold_music}"/>
+	<action application="answer"/>
+	<action application="bridge" data="loopback/wait"/>
+      </condition>
+    </extension>
+
     <extension name="show_info">
       <condition field="destination_number" expression="^9992$">
 	<action application="answer"/>
