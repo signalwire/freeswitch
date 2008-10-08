@@ -106,7 +106,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	switch_status_t status;
 	int need_codec, perfect, do_bugs = 0, do_resample = 0, is_cng = 0;
 	unsigned int flag = 0;
-	switch_event_header_t *hi;
 
 	switch_assert(session != NULL);
 
@@ -131,26 +130,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 			switch_event_create(&event, SWITCH_EVENT_SESSION_HEARTBEAT);
 			switch_channel_event_set_data(session->channel, event);
-			if (!switch_channel_test_flag(session->channel, CF_VERBOSE_EVENTS)) {
-				if ((hi = switch_channel_variable_first(session->channel))) {
-					for (; hi; hi = hi->next) {
-						char buf[1024] = "";
-						char *vvar = NULL, *vval = NULL;
-						
-						if (strncasecmp(hi->name, "hb_", 3)) {
-							continue;
-						}
-						
-						vvar = (char *) hi->name;
-						vval = (char *) hi->value;
-						
-						switch_assert(vvar && vval);
-						switch_snprintf(buf, sizeof(buf), "variable_%s", vvar);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, buf, vval);
-					}
-					switch_channel_variable_last(session->channel);
-				}
-			}
 			switch_event_fire(&event);
 		} else {
 			session->read_frame_count--;

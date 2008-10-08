@@ -1128,6 +1128,27 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Name", switch_str_nil(codec->implementation->iananame));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Rate", "%u", codec->implementation->actual_samples_per_second);
 	}
+	
+	/* Index Caller's Profile */
+	if (caller_profile) {
+		switch_caller_profile_event_set_data(caller_profile, "Caller", event);
+	}
+	
+	if (originator_caller_profile && originatee_caller_profile) {
+		/* Index Originator's Profile */
+		switch_caller_profile_event_set_data(originator_caller_profile, "Originator", event);
+		
+		/* Index Originatee's Profile */
+		switch_caller_profile_event_set_data(originatee_caller_profile, "Originatee", event);
+	} else {
+		/* Index Originator's Profile */
+		if (originator_caller_profile) {
+			switch_caller_profile_event_set_data(originator_caller_profile, "Other-Leg", event);
+		} else if (originatee_caller_profile) {	/* Index Originatee's Profile */
+			switch_caller_profile_event_set_data(originatee_caller_profile, "Other-Leg", event);
+		}
+	}
+
 
 	if (switch_test_flag(channel, CF_VERBOSE_EVENTS) || 
 		event->event_id == SWITCH_EVENT_CHANNEL_ORIGINATE ||
@@ -1137,28 +1158,10 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 		event->event_id == SWITCH_EVENT_CHANNEL_HANGUP ||
 		event->event_id == SWITCH_EVENT_REQUEST_PARAMS ||
 		event->event_id == SWITCH_EVENT_CHANNEL_DATA ||
+		event->event_id == SWITCH_EVENT_SESSION_HEARTBEAT ||
 		event->event_id == SWITCH_EVENT_CUSTOM
 		) {
 
-		/* Index Caller's Profile */
-		if (caller_profile) {
-			switch_caller_profile_event_set_data(caller_profile, "Caller", event);
-		}
-
-		if (originator_caller_profile && originatee_caller_profile) {
-			/* Index Originator's Profile */
-			switch_caller_profile_event_set_data(originator_caller_profile, "Originator", event);
-
-			/* Index Originatee's Profile */
-			switch_caller_profile_event_set_data(originatee_caller_profile, "Originatee", event);
-		} else {
-			/* Index Originator's Profile */
-			if (originator_caller_profile) {
-				switch_caller_profile_event_set_data(originator_caller_profile, "Other-Leg", event);
-			} else if (originatee_caller_profile) {	/* Index Originatee's Profile */
-				switch_caller_profile_event_set_data(originatee_caller_profile, "Other-Leg", event);
-			}
-		}
 		x = 0;
 		/* Index Variables */
 		if (channel->variables) {
