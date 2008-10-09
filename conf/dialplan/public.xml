@@ -38,7 +38,7 @@
       <condition field="${sip_req_params}" expression="domain_name=([A-Z-a-z0-9.]+)" break="never">
 	<!-- We need to export this so the B-Leg will have it after transfer too. -->
 	<action application="export" data="domain_name=$1"/>
-	<anti-action application="export" data="domain_name=$${domain}"/>
+	<anti-action application="export" data="domain_name=${sip_req_host}"/>
       </condition>
     </extension>
 
