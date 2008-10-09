@@ -187,40 +187,40 @@ enum wanpipe_tdm_api_events {
 
 typedef struct {
 
-	u_int8_t	type;
-	u_int8_t	mode;
-	u_int32_t	time_stamp;
-	u_int8_t	channel;
-	u_int32_t	chan_map;
-	u_int8_t	span;
+	uint8_t	type;
+	uint8_t	mode;
+	uint32_t	time_stamp;
+	uint8_t	channel;
+	uint32_t	chan_map;
+	uint8_t	span;
 	union {
 		struct {
-			u_int8_t	alarm;
+			uint8_t	alarm;
 		} te1_alarm;
 		struct {
-			u_int8_t	rbs_bits;
+			uint8_t	rbs_bits;
 		} te1_rbs;
 		struct {
-			u_int8_t	state;
-			u_int8_t	sig;
+			uint8_t	state;
+			uint8_t	sig;
 		} rm_hook;
 		struct {
-			u_int8_t	state;
+			uint8_t	state;
 		} rm_ring;
 		struct {
-			u_int8_t	type;
+			uint8_t	type;
 		} rm_tone;
 		struct {
-			u_int8_t	digit;	/* DTMF: digit  */
-			u_int8_t	port;	/* DTMF: SOUT/ROUT */
-			u_int8_t	type;	/* DTMF: PRESET/STOP */
+			uint8_t	digit;	/* DTMF: digit  */
+			uint8_t	port;	/* DTMF: SOUT/ROUT */
+			uint8_t	type;	/* DTMF: PRESET/STOP */
 		} dtmf;
 		struct {
-			u_int16_t	polarity;
-			u_int16_t	ohttimer;
+			uint16_t	polarity;
+			uint16_t	ohttimer;
 		} rm_common;
 		struct{
-			u_int16_t status;
+			uint16_t status;
 		} linkstatus;
 	} wp_tdm_api_event_u;
 #define wp_tdm_api_event_type 		type
