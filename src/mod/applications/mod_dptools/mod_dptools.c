@@ -603,7 +603,10 @@ SWITCH_STANDARD_APP(set_name_function)
 
 SWITCH_STANDARD_APP(answer_function)
 {
-	switch_channel_answer(switch_core_session_get_channel(session));
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_clear_flag(channel, CF_PROXY_MEDIA);
+	switch_channel_clear_flag(channel, CF_PROXY_MODE);
+	switch_channel_answer(channel);
 }
 
 SWITCH_STANDARD_APP(presence_function)
@@ -628,7 +631,10 @@ SWITCH_STANDARD_APP(presence_function)
 
 SWITCH_STANDARD_APP(pre_answer_function)
 {
-	switch_channel_pre_answer(switch_core_session_get_channel(session));
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_clear_flag(channel, CF_PROXY_MEDIA);
+	switch_channel_clear_flag(channel, CF_PROXY_MODE);
+	switch_channel_pre_answer(channel);
 }
 
 SWITCH_STANDARD_APP(redirect_function)
