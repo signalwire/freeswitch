@@ -56,7 +56,7 @@ SWITCH_STANDARD_API(managed_api_function);	/* Execute */
 SWITCH_STANDARD_APP(managed_app_function);	/* Run */
 SWITCH_STANDARD_API(managed_loadassembly); /* Load assembly */
 
-#define MOD_MANAGED_ASM_NAME "mod_managed_lib"
+#define MOD_MANAGED_ASM_NAME "FreeSWITCH.Managed"
 #define MOD_MANAGED_ASM_V1 1
 #define MOD_MANAGED_ASM_V2 0
 #define MOD_MANAGED_ASM_V3 2

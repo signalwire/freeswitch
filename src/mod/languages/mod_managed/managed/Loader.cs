@@ -54,7 +54,7 @@ namespace FreeSWITCH
         public static bool Load()
         {
             managedDir = Path.Combine(Native.freeswitch.SWITCH_GLOBAL_dirs.mod_dir, "managed");
-            Log.WriteLine(LogLevel.Debug, "mod_managed_lib loader is starting with directory '{0}'.", managedDir);
+            Log.WriteLine(LogLevel.Debug, "FreeSWITCH.Managed loader is starting with directory '{0}'.", managedDir);
             if (!Directory.Exists(managedDir)) {
                 Log.WriteLine(LogLevel.Error, "Managed directory not found: {0}", managedDir);
                 return false;
@@ -166,7 +166,7 @@ namespace FreeSWITCH
 
         public static void Unload()
         {
-            Log.WriteLine(LogLevel.Debug, "mod_managed_lib Loader is unloading.");
+            Log.WriteLine(LogLevel.Debug, "FreeSWITCH.Managed Loader is unloading.");
             foreach (var t in functions.Values) {
                 try {
                     var unloadMethod = t.GetMethod("Unload", methodBindingFlags, null, Type.EmptyTypes, null);
@@ -271,7 +271,7 @@ namespace FreeSWITCH
         /// <summary>Runs an application function.</summary>
         public static bool Run(string command, IntPtr sessionHandle)
         {
-            Log.WriteLine(LogLevel.Debug, "mod_managed_lib: attempting to run application '{0}'.", command);
+            Log.WriteLine(LogLevel.Debug, "FreeSWITCH.Managed: attempting to run application '{0}'.", command);
             System.Diagnostics.Debug.Assert(sessionHandle != IntPtr.Zero, "sessionHandle is null.");
             var parsed = parseCommand(command);
             if (parsed == null) return false;
