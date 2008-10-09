@@ -33,6 +33,7 @@ extern "C" {
 	caller_profile.aniii = "";							\
 	caller_profile.rdnis = "";							\
 	caller_profile.username = "";						\
+	flags = 0;											\
 	on_hangup = NULL;									\
 	memset(&cb_state, 0, sizeof(cb_state));				\
 	hook_state = CS_NEW;								\
