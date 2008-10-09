@@ -18,7 +18,7 @@
     <param name="debug" value="0"/>
     <param name="sip-trace" value="no"/>
     <param name="rfc2833-pt" value="101"/>
-    <param name="sip-port" value="5080"/>
+    <param name="sip-port" value="$${external_sip_port}"/>
     <param name="dialplan" value="XML"/>
     <param name="context" value="public"/>
     <param name="dtmf-duration" value="100"/>
@@ -60,8 +60,8 @@
     <param name="tls" value="$${external_ssl_enable}"/>
     <!-- additional bind parameters for TLS -->
     <param name="tls-bind-params" value="transport=tls"/>
-    <!-- Port to listen on for TLS requests. (5061 will be used if unspecified) -->
-    <param name="tls-sip-port" value="5081"/>
+    <!-- Port to listen on for TLS requests. (5081 will be used if unspecified) -->
+    <param name="tls-sip-port" value="$${external_tls_port}"/>
     <!-- Location of the agent.pem and cafile.pem ssl certificates (needed for TLS server) -->
     <param name="tls-cert-dir" value="$${external_ssl_dir}"/>
     <!-- TLS version ("sslv23" (default), "tlsv1"). NOTE: Phones may not work with TLSv1 -->

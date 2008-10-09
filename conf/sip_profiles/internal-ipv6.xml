@@ -11,7 +11,7 @@
     <param name="context" value="public"/>
     <param name="rfc2833-pt" value="101"/>
     <!-- port to bind to for sip traffic -->
-    <param name="sip-port" value="5060"/>
+    <param name="sip-port" value="$${internal_sip_port}"/>
     <param name="dialplan" value="XML"/>
     <param name="dtmf-duration" value="100"/>
     <param name="codec-prefs" value="$${global_codec_prefs}"/>
@@ -44,15 +44,15 @@
     <!--<param name="unregister-on-options-fail" value="true"/>-->
 
     <!-- TLS: disabled by default, set to "true" to enable -->
-    <param name="tls" value="false"/>
+    <param name="tls" value="$${internal_ssl_enable}"/>
     <!-- additional bind parameters for TLS -->
     <param name="tls-bind-params" value="transport=tls"/>
     <!-- Port to listen on for TLS requests. (5061 will be used if unspecified) -->
-    <param name="tls-sip-port" value="5061"/>
+    <param name="tls-sip-port" value="$${internal_tls_port}"/>
     <!-- Location of the agent.pem and cafile.pem ssl certificates (needed for TLS server) -->
-    <param name="tls-cert-dir" value="$${base_dir}/conf/ssl"/>
+    <param name="tls-cert-dir" value="$${internal_ssl_dir}"/>
     <!-- TLS version ("sslv23" (default), "tlsv1"). NOTE: Phones may not work with TLSv1 -->
-    <param name="tls-version" value="tlsv1"/>
+    <param name="tls-version" value="$${sip_tls_version}"/>
     
     <!--If you don't want to pass through timestampes from 1 RTP call to another (on a per call basis with rtp_rewrite_timestamps chanvar)-->
     <!--<param name="rtp-rewrite-timestamps" value="true"/>-->
@@ -88,7 +88,7 @@
     <!--<param name="NDLB-broken-auth-hash" value="true"/>-->
     <!-- add a ;received="<ip>:<port>" to the contact when replying to register for nat handling -->
     <!--<param name="NDLB-received-in-nat-reg-contact" value="true"/>-->
-    <param name="auth-calls" value="true"/>
+    <param name="auth-calls" value="$${internal_auth_calls}"/>
     <!-- on authed calls, authenticate *all* the packets not just invite -->
     <param name="auth-all-packets" value="false"/>
     <!-- <param name="ext-rtp-ip" value="$${external_rtp_ip}"/> -->
@@ -114,13 +114,13 @@
     <!--<param name="stun-auto-disable" value="true"/>-->
 
     <!-- TLS: disabled by default, set to "true" to enable -->
-    <param name="tls" value="$${internal_ip6_ssl_enable}"/>
+    <param name="tls" value="$${internal_ssl_enable}"/>
     <!-- additional bind parameters for TLS -->
     <param name="tls-bind-params" value="transport=tls"/>
     <!-- Port to listen on for TLS requests. (5061 will be used if unspecified) -->
-    <param name="tls-sip-port" value="5061"/>
+    <param name="tls-sip-port" value="$${internal_tls_port}"/>
     <!-- Location of the agent.pem and cafile.pem ssl certificates (needed for TLS server) -->
-    <param name="tls-cert-dir" value="$${internal_ip6_ssl_dir}"/>
+    <param name="tls-cert-dir" value="$${internal_ssl_dir}"/>
     <!-- TLS version ("sslv23" (default), "tlsv1"). NOTE: Phones may not work with TLSv1 -->
     <param name="tls-version" value="$${sip_tls_version}"/>
 
