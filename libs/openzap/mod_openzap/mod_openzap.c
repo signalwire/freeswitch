@@ -903,7 +903,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 	data = switch_core_strdup(outbound_profile->pool, outbound_profile->destination_number);
 
-	if ((argc = switch_separate_string(data, '/', argv, (sizeof(argv) / sizeof(argv[0])))) != 3) {
+	if ((argc = switch_separate_string(data, '/', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid dial string\n");
         return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
@@ -922,7 +922,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		chan_id = atoi(argv[1]);
 	}
 
-	dest = argv[2];
+	if (!(dest = argv[2])) {
+		dest = "";
+	}
 
 	if (!span_id && !switch_strlen_zero(span_name)) {
 		zap_span_t *span;
