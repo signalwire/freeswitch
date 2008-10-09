@@ -124,3 +124,14 @@
   <!-- true or false -->
   <X-PRE-PROCESS cmd="set" data="default_provider_register=false"/>
   <X-PRE-PROCESS cmd="set" data="default_provider_contact=5000"/>
+
+  <!--
+      TLS default settings
+  -->
+  <X-PRE-PROCESS cmd="set" data="sip_tls_version=tlsv1"/>
+  <!-- Internal SIP Profile -->
+  <X-PRE-PROCESS cmd="set" data="internal_ssl_enable=false"/>
+  <X-PRE-PROCESS cmd="set" data="internal_ssl_dir=$${base_dir}/conf/ssl"/>
+  <!-- External SIP Profile -->
+  <X-PRE-PROCESS cmd="set" data="external_ssl_enable=false"/>
+  <X-PRE-PROCESS cmd="set" data="external_ssl_dir=$${base_dir}/conf/ssl"/>

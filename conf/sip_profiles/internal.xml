@@ -84,15 +84,15 @@
     <!--<param name="unregister-on-options-fail" value="true"/>-->
 
     <!-- TLS: disabled by default, set to "true" to enable -->
-    <param name="tls" value="false"/>
+    <param name="tls" value="$${internal_ssl_enable}"/>
     <!-- additional bind parameters for TLS -->
     <param name="tls-bind-params" value="transport=tls"/>
     <!-- Port to listen on for TLS requests. (5061 will be used if unspecified) -->
     <param name="tls-sip-port" value="5061"/>
     <!-- Location of the agent.pem and cafile.pem ssl certificates (needed for TLS server) -->
-    <param name="tls-cert-dir" value="$${base_dir}/conf/ssl"/>
+    <param name="tls-cert-dir" value="$${internal_ssl_dir}"/>
     <!-- TLS version ("sslv23" (default), "tlsv1"). NOTE: Phones may not work with TLSv1 -->
-    <param name="tls-version" value="tlsv1"/>
+    <param name="tls-version" value="$${sip_tls_version}"/>
     
     <!--If you don't want to pass through timestampes from 1 RTP call to another (on a per call basis with rtp_rewrite_timestamps chanvar)-->
     <!--<param name="rtp-rewrite-timestamps" value="true"/>-->
