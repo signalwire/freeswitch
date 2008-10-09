@@ -112,6 +112,18 @@
     <!-- use stun when specified (default is true) -->
     <!-- set to true to have the profile determine stun is not useful and turn it off globally-->
     <!--<param name="stun-auto-disable" value="true"/>-->
+
+    <!-- TLS: disabled by default, set to "true" to enable -->
+    <param name="tls" value="$${internal_ip6_ssl_enable}"/>
+    <!-- additional bind parameters for TLS -->
+    <param name="tls-bind-params" value="transport=tls"/>
+    <!-- Port to listen on for TLS requests. (5061 will be used if unspecified) -->
+    <param name="tls-sip-port" value="5061"/>
+    <!-- Location of the agent.pem and cafile.pem ssl certificates (needed for TLS server) -->
+    <param name="tls-cert-dir" value="$${internal_ip6_ssl_dir}"/>
+    <!-- TLS version ("sslv23" (default), "tlsv1"). NOTE: Phones may not work with TLSv1 -->
+    <param name="tls-version" value="$${sip_tls_version}"/>
+
   </settings>
 </profile>
 
