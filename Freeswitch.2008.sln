@@ -966,10 +966,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_say_zh", "src\mod\say\m
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_managed", "src\mod\languages\mod_managed\mod_managed.vcproj", "{7B42BDA1-72C0-4378-A9B6-5C530F8CD61E}"
 	ProjectSection(ProjectDependencies) = postProject
+		{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0} = {834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mod_managed_lib", "src\mod\languages\mod_managed\managed\mod_managed_lib.csproj", "{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreeSWITCH.Managed", "src\mod\languages\mod_managed\managed\FreeSWITCH.Managed.csproj", "{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1688,10 +1689,12 @@ Global
 		{B6A9FB7A-1CC4-442B-812D-EC33E4E4A36E}.Release|Win32.Build.0 = Release|Win32
 		{B6A9FB7A-1CC4-442B-812D-EC33E4E4A36E}.Release|x64.ActiveCfg = Release|Win32
 		{7B42BDA1-72C0-4378-A9B6-5C530F8CD61E}.Debug|Win32.ActiveCfg = Debug_CLR|Win32
+		{7B42BDA1-72C0-4378-A9B6-5C530F8CD61E}.Debug|Win32.Build.0 = Debug_CLR|Win32
 		{7B42BDA1-72C0-4378-A9B6-5C530F8CD61E}.Debug|x64.ActiveCfg = Debug_Mono|Win32
 		{7B42BDA1-72C0-4378-A9B6-5C530F8CD61E}.Release|Win32.ActiveCfg = Release_CLR|Win32
 		{7B42BDA1-72C0-4378-A9B6-5C530F8CD61E}.Release|x64.ActiveCfg = Release_Mono|Win32
 		{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}.Debug|Win32.Build.0 = Debug|Any CPU
 		{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}.Release|Win32.ActiveCfg = Release|Any CPU
 		{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}.Release|x64.ActiveCfg = Release|Any CPU
