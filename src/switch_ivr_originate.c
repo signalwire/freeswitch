@@ -1349,7 +1349,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							}
 
 							olen = mlen;
-							if (ringback.fh->resampler) {
+							if (ringback.fh->resampler && ringback.fh->resampler->rfactor > 1) {
 								olen = (switch_size_t) (olen * ringback.fh->resampler->rfactor);
 							}
 							
