@@ -456,7 +456,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 				}
 
 				olen = mlen;
-				if (ringback.fh->resampler) {
+				if (ringback.fh->resampler && ringback.fh->resampler->rfactor > 1) {
 					olen = (switch_size_t) (olen * ringback.fh->resampler->rfactor);
 				}
 				switch_core_file_read(ringback.fh, write_frame.data, &olen);

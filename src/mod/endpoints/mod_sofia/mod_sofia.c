@@ -409,7 +409,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			}
 		}
 	} else {
-		if ((is_proxy && !b_sdp) || switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
+		if ((is_proxy && !b_sdp) || switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) || !tech_pvt->iananame) {
 			switch_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);
 
 			if (is_proxy) {

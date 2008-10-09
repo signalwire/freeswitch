@@ -1459,7 +1459,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_ch
 	switch_event_t *event;
 
 	if (!switch_channel_test_flag(channel, CF_RING_READY)) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Pre-Answer %s!\n", channel->name);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Ring-Ready %s!\n", channel->name);
 		switch_channel_set_flag(channel, CF_RING_READY);
 		if (channel->caller_profile && channel->caller_profile->times) {
 			switch_mutex_lock(channel->profile_mutex);
@@ -1493,7 +1493,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 {
 	switch_event_t *event;
 
-	switch_channel_mark_ring_ready(channel);
+	switch_channel_perform_mark_ring_ready(channel, file, func, line);
 
 	if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
 		const char *uuid;

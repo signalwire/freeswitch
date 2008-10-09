@@ -706,7 +706,7 @@ SWITCH_STANDARD_APP(set_function)
 			expanded = switch_channel_expand_variables(channel, val);
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SET [%s]=[%s]\n", var, expanded ? expanded : "UNDEF");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SET [%s]=[%s]\n", switch_channel_get_name(channel), var, expanded ? expanded : "UNDEF");
 		switch_channel_set_variable(channel, var, expanded);
 
 		if (expanded && expanded != val) {
