@@ -975,7 +975,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 
 SWITCH_DECLARE(void) switch_rtp_break(switch_rtp_t *rtp_session)
 {
-	char o = 42;
+	int o = 42;
 	switch_size_t len = sizeof(o);
 
 	switch_assert(rtp_session != NULL);
@@ -1267,7 +1267,14 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			goto end;
 		}
 		
-		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && switch_sockaddr_get_port(rtp_session->from_addr)) {
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
+			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
+			do_2833(rtp_session);
+			bytes = 0;
+			return_cng_frame();
+		}
+
+		if (bytes > 12 && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && switch_sockaddr_get_port(rtp_session->from_addr)) {
 			const char *tx_host;
 			const char *old_host;
 			char bufa[30], bufb[30];
@@ -1306,13 +1313,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			} else {
 				rtp_session->cng_count = 0;
 			}
-		}
-
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
-			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
-			do_2833(rtp_session);
-			bytes = 0;
-			return_cng_frame();
 		}
 
 		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
