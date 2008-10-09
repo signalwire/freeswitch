@@ -72,7 +72,6 @@ void sofia_handle_sip_r_notify(switch_core_session_t *session, int status,
 {
 	if (status >= 300 && sip && sip->sip_call_id) {
 		char *sql;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "delete subscriptions for failed notify\n");
 		sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", sip->sip_call_id->i_id);
 		switch_assert(sql != NULL);
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
@@ -195,12 +194,12 @@ void sofia_event_callback(nua_event_t event,
 			}
 		}
 	}
-
+#if 0
 	if (status != 100 && status != 200) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "event [%s] status [%d][%s] session: %s\n",
 						  nua_event_name(event), status, phrase, session ? switch_channel_get_name(channel) : "n/a");
 	}
-
+#endif
 	if (session) {
 		switch_core_session_signal_lock(session);
 
