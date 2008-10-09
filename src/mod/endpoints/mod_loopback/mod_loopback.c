@@ -51,8 +51,7 @@ typedef enum {
 	TFLAG_WRITE = (1 << 2),
 	TFLAG_CNG = (1 << 3),
 	TFLAG_BRIDGE = (1 << 4),
-	TFLAG_BOWOUT = (1 << 5),
-	TFLAG_NO_EARLY = (1 << 6)
+	TFLAG_BOWOUT = (1 << 5)
 } TFLAGS;
 
 struct private_object {
@@ -74,7 +73,7 @@ struct private_object {
 
 	switch_frame_t cng_frame;
 	unsigned char cng_databuf[10];
-
+	switch_timer_t timer;
 	switch_caller_profile_t *caller_profile;
 };
 typedef struct private_object private_t;
@@ -103,6 +102,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	int interval = 20;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const switch_codec_implementation_t *read_impl;
 
 	if (codec) {
 		iananame = codec->implementation->iananame;
@@ -150,7 +150,6 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 		goto end;
 	}
 
-	
 	tech_pvt->read_frame.data = tech_pvt->databuf;
 	tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
@@ -167,6 +166,17 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 
 	switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
 	switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
+	
+	if (tech_pvt->flag_mutex) {
+		switch_core_timer_destroy(&tech_pvt->timer);
+	}
+
+	read_impl = tech_pvt->read_codec.implementation;
+
+	switch_core_timer_init(&tech_pvt->timer, "soft", 
+						   read_impl->microseconds_per_frame / 1000, 
+						   read_impl->samples_per_frame *4,
+						   switch_core_session_get_pool(session));
 	
 
 	if (!tech_pvt->flag_mutex) {
@@ -242,11 +252,6 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		switch_set_flag_locked(b_tech_pvt, TFLAG_LINKED);
 		switch_set_flag_locked(b_tech_pvt, TFLAG_OUTBOUND);
 	
-		if (switch_test_flag(tech_pvt, TFLAG_NO_EARLY)) {
-			switch_set_flag_locked(b_tech_pvt, TFLAG_NO_EARLY);
-			switch_clear_flag_locked(tech_pvt, TFLAG_NO_EARLY);
-		}
-
 		switch_channel_set_flag(channel, CF_ACCEPT_CNG);	
 		switch_ivr_transfer_variable(session, tech_pvt->other_session, "process_cdr");
 
@@ -347,6 +352,8 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		tech_pvt->other_session = NULL;
 	}
 
+	switch_core_timer_destroy(&tech_pvt->timer);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -378,6 +385,7 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	default:
 		break;
 	}
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
 
 
@@ -467,7 +475,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	
+
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -478,35 +486,46 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		goto end;
 	}
 	
-	if (switch_test_flag(tech_pvt, TFLAG_NO_EARLY)) {
-		switch_set_flag(tech_pvt, TFLAG_CNG);
-	}
-
 	*frame = NULL;
-
-	while(switch_test_flag(tech_pvt, TFLAG_LINKED) && tech_pvt->other_tech_pvt && !switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_WRITE)) {
+	
+	while(switch_test_flag(tech_pvt, TFLAG_LINKED) && tech_pvt->other_tech_pvt) {
 		if (!switch_channel_ready(channel)) {
 			goto end;
 		}
 		if (switch_test_flag(tech_pvt, TFLAG_CNG)) {
 			break;
 		}
+		
+		if (tech_pvt->other_tech_pvt && switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_WRITE)) {
+			break;
+		}
+
+		if (switch_core_timer_check(&tech_pvt->timer, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+			switch_set_flag(tech_pvt, TFLAG_CNG);
+			break;
+		}
+
 		switch_yield(1000);
 	}
-	
+
 	if (switch_test_flag(tech_pvt, TFLAG_LINKED)) {
-		if (switch_test_flag(tech_pvt, TFLAG_CNG)) {
-			*frame = &tech_pvt->cng_frame;
-			tech_pvt->cng_frame.codec = &tech_pvt->read_codec;
-			switch_set_flag((&tech_pvt->cng_frame), SFF_CNG);
-			switch_clear_flag_locked(tech_pvt, TFLAG_CNG);
-		} else if (tech_pvt->other_tech_pvt && switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_WRITE)) {
+		if (tech_pvt->other_tech_pvt && switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_WRITE)) {
+			switch_core_timer_sync(&tech_pvt->timer);
 			*frame = &tech_pvt->other_tech_pvt->write_frame;
 			switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
+			switch_clear_flag_locked(tech_pvt, TFLAG_CNG);
 		}
 	}
-	
-	if (*frame) {
+
+	if (switch_test_flag(tech_pvt, TFLAG_CNG)) {
+		*frame = &tech_pvt->cng_frame;
+		tech_pvt->cng_frame.codec = &tech_pvt->read_codec;
+		switch_set_flag((&tech_pvt->cng_frame), SFF_CNG);
+		switch_clear_flag_locked(tech_pvt, TFLAG_CNG);
+	}
+
+
+	if (*frame && switch_test_flag(tech_pvt, TFLAG_LINKED)) {
 		status = SWITCH_STATUS_SUCCESS;
 	} else {
 		status = SWITCH_STATUS_FALSE;
@@ -599,7 +618,6 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		if (tech_pvt->other_channel) {
 			if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 				switch_channel_answer(tech_pvt->other_channel);
-				switch_clear_flag(tech_pvt, TFLAG_NO_EARLY);
 			}
 		}
 		break;
@@ -635,14 +653,16 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 
 	if (session) {
-		switch_channel_pre_answer(switch_core_session_get_channel(session));
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		switch_channel_clear_flag(channel, CF_PROXY_MEDIA);
+		switch_channel_clear_flag(channel, CF_PROXY_MODE);
+		switch_channel_pre_answer(channel);
 	}
 
 	if ((*new_session = switch_core_session_request(loopback_endpoint_interface, pool)) != 0) {
 		private_t *tech_pvt;
 		switch_channel_t *channel;
 		switch_caller_profile_t *caller_profile;
-		const char *var;
 
 		switch_core_session_add_stream(*new_session, NULL);
 
@@ -660,10 +680,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		}
 		
-		if ((var = switch_event_get_header(var_event, "originate_early_media")) && !switch_true(var)) {
-			switch_set_flag(tech_pvt, TFLAG_NO_EARLY);
-		}
-
 		if (outbound_profile) {
 			char *dialplan = NULL, *context = NULL;
 
