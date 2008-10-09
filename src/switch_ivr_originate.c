@@ -163,6 +163,37 @@ static void launch_collect_thread(struct key_collect *collect)
 	switch_thread_create(&thread, thd_attr, collect_thread_run, collect, switch_core_session_get_pool(collect->session));
 }
 
+static int check_per_channel_timeouts(switch_channel_t **peer_channels, 
+									  uint32_t *per_channel_timelimit_sec, 
+									  uint32_t *per_channel_progress_timelimit_sec,
+									  int max,
+									  time_t start)
+{
+	int x = 0,i;
+	time_t elapsed = switch_timestamp(NULL) - start;
+
+	for (i = 0; i < max; i++) {
+		if (peer_channels[i] && switch_channel_get_state(peer_channels[i]) < CS_HANGUP) {
+			if (per_channel_progress_timelimit_sec[i] && elapsed > per_channel_progress_timelimit_sec[i] &&
+				!(
+				  switch_channel_test_flag(peer_channels[i], CF_RING_READY) ||
+				  switch_channel_test_flag(peer_channels[i], CF_ANSWERED) ||
+				  switch_channel_test_flag(peer_channels[i], CF_EARLY_MEDIA)
+				  )
+				) {
+				switch_channel_hangup(peer_channels[i], SWITCH_CAUSE_PROGRESS_TIMEOUT);
+				x++;
+			}
+			if (per_channel_timelimit_sec[i] && elapsed > per_channel_timelimit_sec[i]) {
+				switch_channel_hangup(peer_channels[i], SWITCH_CAUSE_ALLOTTED_TIMEOUT);
+				x++;
+			}
+		}
+	}
+
+	return x;
+}
+
 static uint8_t check_channel_status(switch_channel_t **peer_channels,
 									switch_core_session_t **peer_sessions,
 									uint32_t len, int32_t *idx, uint32_t *hups, char *file, char *key, uint8_t early_ok, 
@@ -542,9 +573,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_core_session_message_t *message = NULL;
 	switch_event_t *var_event = NULL;
 	uint8_t fail_on_single_reject = 0;
+	char *fail_on_single_reject_var = NULL;
 	uint8_t ring_ready = 0;
 	char *loop_data = NULL;
 	uint32_t progress_timelimit_sec = 0;
+	uint32_t per_channel_timelimit_sec[MAX_PEERS] = { 0 };
+	uint32_t per_channel_progress_timelimit_sec[MAX_PEERS] = { 0 };
 	const char *cid_tmp;
 
 	*bleg = NULL;
@@ -702,8 +736,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 	}
 	/* When using the AND operator, the fail_on_single_reject flag may be set in order to indicate that a single
-	   rejections should terminate the attempt rather than a timeout, answer, or rejection by all. */
+	   rejections should terminate the attempt rather than a timeout, answer, or rejection by all. 
+	   If the value is set to 'true' any fail cause will end the attempt otherwise it can contain a comma (,) separated
+	   list of cause names which should be considered fatal
+	*/
 	if ((var = switch_event_get_header(var_event, "fail_on_single_reject")) && switch_true(var)) {
+		fail_on_single_reject_var = strdup(var);
 		fail_on_single_reject = 1;
 	}
 
@@ -968,11 +1006,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "originate_early_media", early_ok ? "true" : "false");
 				
 
-				if ((reason =
-					 switch_core_session_outgoing_channel(session, var_event, chan_type, new_profile, &new_session, &pool,
-														  myflags)) != SWITCH_CAUSE_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot create outgoing channel of type [%s] cause: [%s]\n", chan_type,
-									  switch_channel_cause2str(reason));
+				if ((reason = switch_core_session_outgoing_channel(session, var_event, chan_type, 
+																   new_profile, &new_session, &pool, myflags)) != SWITCH_CAUSE_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot create outgoing channel of type [%s] cause: [%s]\n", 
+									  chan_type, switch_channel_cause2str(reason));
+					
 					if (pool) {
 						switch_core_destroy_memory_pool(&pool);
 					}
@@ -1018,6 +1056,28 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_event_fire(&event);
 				}
 
+				if (peer_channels[i]) {
+					const char *vvar;
+
+					if ((vvar = switch_channel_get_variable(peer_channels[i], "leg_timeout"))) {
+						int val = atoi(vvar);
+						if (val > 0) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Setting leg timeout to %d\n", 
+											  switch_channel_get_name(peer_channels[0]), val);
+							per_channel_timelimit_sec[i] = (uint32_t) val;
+						}
+					}
+					
+					if ((vvar = switch_channel_get_variable(peer_channels[i], "leg_progress_timeout"))) {
+						int val = atoi(vvar);
+						if (val > 0) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Setting leg progress timeout to %d\n", 
+											  switch_channel_get_name(peer_channels[0]), val);
+							per_channel_progress_timelimit_sec[i] = (uint32_t) val;
+						}
+					}
+				}
+
 				if (!table) {
 					table = &originate_state_handlers;
 				}
@@ -1049,6 +1109,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				uint32_t valid_channels = 0;
 				for (i = 0; i < and_argc; i++) {
 					int state;
+					time_t elapsed;
 
 					if (!peer_channels[i]) {
 						continue;
@@ -1069,21 +1130,26 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					if (caller_channel && !switch_channel_ready(caller_channel)) {
 						goto notready;
 					}
-
-					if ((switch_timestamp(NULL) - start) > (time_t) timelimit_sec) {
+					
+					elapsed = switch_timestamp(NULL) - start;
+				
+					if (elapsed > (time_t) timelimit_sec) {
 						to++;
 						idx = IDX_TIMEOUT;
 						goto notready;
 					}
 
-					if (!sent_ring && !progress && progress_timelimit_sec && (switch_timestamp(NULL) - start) > (time_t) progress_timelimit_sec) {
+					if (!sent_ring && !progress && (progress_timelimit_sec && elapsed > (time_t) progress_timelimit_sec)) {
 						to++;
 						idx = IDX_TIMEOUT;
 						goto notready;
 					}
-
+					
 					switch_yield(10000);
 				}
+
+				check_per_channel_timeouts(peer_channels, per_channel_timelimit_sec, per_channel_progress_timelimit_sec, and_argc, start);
+
 
 				if (valid_channels == 0) {
 					status = SWITCH_STATUS_GENERR;
@@ -1193,17 +1259,49 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			while ((!caller_channel || switch_channel_ready(caller_channel)) &&
 				   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, &hups, file, key, early_ok, &ring_ready, &progress, return_ring_ready)) {
-				
+				time_t elapsed = switch_timestamp(NULL) - start;
 				if (caller_channel && !sent_ring && ring_ready && !return_ring_ready) {
 					switch_channel_ring_ready(caller_channel);
 					sent_ring = 1;
 				}
 				/* When the AND operator is being used, and fail_on_single_reject is set, a hangup indicates that the call should fail. */
 				
-				if ((to = (uint8_t) ((switch_timestamp(NULL) - start) >= (time_t) timelimit_sec))
-					|| (fail_on_single_reject && hups)) {
+				check_per_channel_timeouts(peer_channels, per_channel_timelimit_sec, per_channel_progress_timelimit_sec, and_argc, start);
+
+				if (!sent_ring && !progress && (progress_timelimit_sec && elapsed > (time_t) progress_timelimit_sec)) {
 					idx = IDX_TIMEOUT;
 					goto notready;
+				}
+
+				if ((to = (uint8_t) (elapsed >= (time_t) timelimit_sec)) || (fail_on_single_reject && hups)) {
+					int ok = 0;
+					
+					if (fail_on_single_reject_var && !switch_true(fail_on_single_reject_var)) {
+						ok = 1;
+						for (i = 0; i < and_argc; i++) {
+							switch_channel_t *pchannel;
+							switch_call_cause_t cause;
+							const char *cause_str;
+							
+							if (!peer_sessions[i]) {
+								continue;
+							}
+							pchannel = switch_core_session_get_channel(peer_sessions[i]);
+
+							if (switch_channel_get_state(pchannel) >= CS_HANGUP) {
+								cause = switch_channel_get_cause(pchannel);
+								cause_str = switch_channel_cause2str(cause);
+								if (switch_stristr(cause_str, fail_on_single_reject_var)) {
+									ok = 0;
+									break;
+								}
+							}
+						}
+					}
+					if (!ok) {
+						idx = IDX_TIMEOUT;
+						goto notready;
+					}
 				}
 
 				if (peer_sessions[0]
@@ -1381,6 +1479,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		  done:
 			
+			switch_safe_free(fail_on_single_reject_var);
+
 			*cause = SWITCH_CAUSE_NONE;
 
 			if (caller_channel && !switch_channel_ready(caller_channel)) {
