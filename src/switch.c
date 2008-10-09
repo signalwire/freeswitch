@@ -297,6 +297,7 @@ int main(int argc, char *argv[])
 		"\t-conf [confdir]  -- specify an alternate config dir\n"
 		"\t-log [logdir]    -- specify an alternate log dir\n"
 		"\t-db [dbdir]      -- specify an alternate db dir\n"
+		"\t-mod [moddir]    -- specify an alternate mod dir\n"
 		"\t-scripts [scriptsdir]      -- specify an alternate scripts dir\n";
 
 	for (x = 1; x < argc; x++) {
@@ -478,6 +479,22 @@ int main(int argc, char *argv[])
 			known_opt++;
 		}
 
+		if (argv[x] && !strcmp(argv[x], "-mod")) {
+			x++;
+			if (argv[x] && strlen(argv[x])) {
+				SWITCH_GLOBAL_dirs.mod_dir = (char *) malloc(strlen(argv[x]) + 1);
+				if (!SWITCH_GLOBAL_dirs.mod_dir) {
+					fprintf(stderr, "Allocation error\n");
+					return 255;
+				}
+				strcpy(SWITCH_GLOBAL_dirs.mod_dir, argv[x]);
+			} else {
+				fprintf(stderr, "When using -mod you must specify a module directory\n");
+				return 255;
+			}
+			known_opt++;
+		}
+				
 		if (argv[x] && !strcmp(argv[x], "-log")) {
 			x++;
 			if (argv[x] && strlen(argv[x])) {
