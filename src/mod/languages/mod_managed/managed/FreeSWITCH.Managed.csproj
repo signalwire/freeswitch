@@ -8,8 +8,8 @@
     <ProjectGuid>{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>mod_managed_lib</RootNamespace>
-    <AssemblyName>mod_managed_lib</AssemblyName>
+    <RootNamespace>FreeSWITCH.Managed</RootNamespace>
+    <AssemblyName>FreeSWITCH.Managed</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <StartupObject>
