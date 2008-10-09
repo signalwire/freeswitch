@@ -58,6 +58,23 @@
 	You can place files in the public directory to get included.
     -->
     <X-PRE-PROCESS cmd="include" data="public/*.xml"/>
+    
+    <!--
+	If you have made it this far lets challenge the caller and if they authenticate
+	lets try what they dialed in the default context.
+    -->
+    <extension name="check_auth" continue="true">
+      <condition field="${sip_authorized}" expression="^true$" break="never">
+	<anti-action application="respond" data="407"/>
+      </condition>
+    </extension>
+    
+    <!-- You can only make it here if you auth via the previous extension. --> 
+    <extension name="transfer_to_default">
+      <condition>
+	<action application="transfer" data="${destination_number} XML default"/>
+      </condition>
+    </extension>
 
   </context>
 </include>
