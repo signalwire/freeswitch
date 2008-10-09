@@ -303,7 +303,7 @@
 	<!--<action application="set" data="conference_auto_outcall_announce=say:You have been called into an emergency conference"/>-->
 
 	<!--Add as many of these as you need, These are the people you are going to call-->
-	<action application="conference_set_auto_outcall" data="sofia/gateway/asterlink.com/19184238080"/>
+	<action application="conference_set_auto_outcall" data="sofia/gateway/$${default_provider}/19184238080"/>
 	<action application="conference_set_auto_outcall" data="sofia/default/888@conference.freeswitch.org"/>
 
 	<action application="conference" data="cool@default"/>

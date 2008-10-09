@@ -75,6 +75,7 @@
        Used by: dingaling.conf.xml
   -->
   <X-PRE-PROCESS cmd="set" data="bind_server_ip=auto"/>
+
   <!-- external_rtp_ip
        Used as the public IP address for SDP.
        Can be an ip address or a string like "stun:stun.server.com" 
@@ -82,6 +83,7 @@
        Used by: sofia.conf.xml dingaling.conf.xml
   -->
   <X-PRE-PROCESS cmd="set" data="external_rtp_ip=stun:stun.freeswitch.org"/>
+
   <!-- external_sip_ip
        Used as the public IP address for SDP.
        Can be an ip address or a string like "stun:stun.server.com" 
@@ -89,10 +91,12 @@
        Used by: sofia.conf.xml dingaling.conf.xml
   -->
   <X-PRE-PROCESS cmd="set" data="external_sip_ip=stun:stun.freeswitch.org"/>
+
   <!-- unroll-loops
        Used to turn on sip loopback unrolling.
   --> 
   <X-PRE-PROCESS cmd="set" data="unroll_loops=true"/>
+
   <!-- outbound_caller_id and outbound_caller_name
        The caller ID telephone number we should use when calling out.
        Used by: conference.conf.xml and user directory for default
