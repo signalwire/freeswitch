@@ -2228,7 +2228,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		channel = switch_core_session_get_channel(session);
 		tech_pvt = switch_core_session_get_private(session);
 		switch_assert(tech_pvt != NULL);
-		switch_assert(tech_pvt->nh != NULL);
+		if (!tech_pvt->nh) {
+			goto done;
+		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel %s entering state [%s]\n",
 						  switch_channel_get_name(channel), nua_callstate_name(ss_state));
