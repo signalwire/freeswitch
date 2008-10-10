@@ -379,7 +379,9 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				switch_time_sync();
 			} else {
 				switch_time_t diff = ts - runtime.reference - STEP_MIC;
+#ifndef WIN32
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Forward Clock Skew Detected!\n");
+#endif
 				fwd_errs++;
 				runtime.reference = switch_time_now();
 				current_ms = 0;
