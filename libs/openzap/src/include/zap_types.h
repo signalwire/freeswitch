@@ -150,9 +150,10 @@ typedef enum {
 	ZAP_OOB_ALARM_TRAP,
 	ZAP_OOB_ALARM_CLEAR,
 	ZAP_OOB_NOOP,
+	ZAP_OOB_CAS_BITS_CHANGE,
 	ZAP_OOB_INVALID
 } zap_oob_event_t;
-#define OOB_STRINGS "DTMF", "ONHOOK", "OFFHOOK", "WINK", "FLASH", "RING_START", "RING_STOP", "ALARM_TRAP", "ALARM_CLEAR", "NOOP", "INVALID"
+#define OOB_STRINGS "DTMF", "ONHOOK", "OFFHOOK", "WINK", "FLASH", "RING_START", "RING_STOP", "ALARM_TRAP", "ALARM_CLEAR", "NOOP", "CAS_BITS_CHANGE", "INVALID"
 ZAP_STR2ENUM_P(zap_str2zap_oob_event, zap_oob_event2str, zap_oob_event_t)
 
 typedef enum {
@@ -270,6 +271,8 @@ typedef enum {
 	ZAP_COMMAND_DISABLE_ECHOCANCEL,
 	ZAP_COMMAND_ENABLE_ECHOTRAIN,
 	ZAP_COMMAND_DISABLE_ECHOTRAIN,
+	ZAP_COMMAND_SET_CAS_BITS,
+	ZAP_COMMAND_GET_CAS_BITS,
 	ZAP_COMMAND_COUNT
 } zap_command_t;
 
@@ -287,10 +290,11 @@ typedef enum {
 	ZAP_CHAN_TYPE_FXS,
 	ZAP_CHAN_TYPE_FXO,
 	ZAP_CHAN_TYPE_EM,
+	ZAP_CHAN_TYPE_CAS,
 	ZAP_CHAN_TYPE_COUNT
 } zap_chan_type_t;
 
-#define CHAN_TYPE_STRINGS "B", "DQ921", "DQ931", "FXS", "FXO", "EM", "INVALID"
+#define CHAN_TYPE_STRINGS "B", "DQ921", "DQ931", "FXS", "FXO", "EM", "CAS", "INVALID"
 ZAP_STR2ENUM_P(zap_str2zap_chan_type, zap_chan_type2str, zap_chan_type_t)
 
 typedef enum {

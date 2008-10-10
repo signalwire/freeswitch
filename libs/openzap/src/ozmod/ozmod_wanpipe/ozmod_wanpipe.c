@@ -346,10 +346,31 @@ static zap_status_t wp_tdm_cmd_exec(zap_channel_t *zchan, wanpipe_tdm_api_t *tdm
 	return ZAP_SUCCESS;
 }
 
-static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start, unsigned end, zap_chan_type_t type, char *name, char *number)
+static unsigned char wanpipe_swap_bits(unsigned char cas_bits)
+{
+	unsigned char swapped_bits = 0x0;
+	if (cas_bits & 0x8) {
+		swapped_bits |= 0x1;
+	}
+	if (cas_bits & 0x4) {
+		swapped_bits |= 0x2;
+	}
+	if (cas_bits & 0x2) {
+		swapped_bits |= 0x4;
+	}
+	if (cas_bits & 0x1) {
+		swapped_bits |= 0x8;
+	}
+	return swapped_bits;
+}
+
+static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start, unsigned end, zap_chan_type_t type, char *name, char *number, unsigned char cas_bits)
 {
 	unsigned configured = 0, x;
 
+	if (type == ZAP_CHAN_TYPE_CAS) {
+		zap_log(ZAP_LOG_DEBUG, "Configuring CAS channels with abcd == 0x%X\n", cas_bits);
+	}	
 	for(x = start; x < end; x++) {
 		zap_channel_t *chan;
 		zap_socket_t sockfd = WP_INVALID_SOCKET;
@@ -400,6 +421,12 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 				} else {
 					chan->native_codec = chan->effective_codec = ZAP_CODEC_ULAW;
 				}
+			}
+
+			if (type == ZAP_CHAN_TYPE_CAS) {
+				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_WRITE_RBS_BITS;
+				tdm_api.wp_tdm_cmd.rbs_tx_bits = wanpipe_swap_bits(cas_bits);
+				wp_tdm_cmd_exec(chan, &tdm_api);
 			}
 			
 			if (!zap_strlen_zero(name)) {
@@ -452,8 +479,9 @@ static ZIO_CONFIGURE_FUNCTION(wanpipe_configure)
 static ZIO_CONFIGURE_SPAN_FUNCTION(wanpipe_configure_span)
 {
 	int items, i;
-    char *mydata, *item_list[10];
+	char *mydata, *item_list[10];
 	char *sp, *ch, *mx;
+	unsigned char cas_bits = 0;
 	int channo;
 	int spanno;
 	int top = 0;
@@ -506,8 +534,11 @@ static ZIO_CONFIGURE_SPAN_FUNCTION(wanpipe_configure_span)
 			zap_log(ZAP_LOG_ERROR, "Invalid range number %d\n", top);
 			continue;
 		}
-
-		configured += wp_open_range(span, spanno, channo, top, type, name, number);
+		if (ZAP_CHAN_TYPE_CAS == type && zap_config_get_cas_bits(ch, &cas_bits)) {
+			zap_log(ZAP_LOG_ERROR, "Failed to get CAS bits in CAS channel\n");
+			continue;
+		}
+		configured += wp_open_range(span, spanno, channo, top, type, name, number, cas_bits);
 
 	}
 	
@@ -620,6 +651,19 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 			tdm_api.wp_tdm_cmd.usr_period = ZAP_COMMAND_OBJ_INT;
 			err = wp_tdm_cmd_exec(zchan, &tdm_api);
 			zchan->packet_len = zchan->native_interval * (zchan->effective_codec == ZAP_CODEC_SLIN ? 16 : 8);
+		}
+		break;
+	case ZAP_COMMAND_SET_CAS_BITS:
+		{
+			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_WRITE_RBS_BITS;
+			tdm_api.wp_tdm_cmd.rbs_tx_bits = wanpipe_swap_bits(ZAP_COMMAND_OBJ_INT);
+			err = wp_tdm_cmd_exec(zchan, &tdm_api);
+		}
+		break;
+	case ZAP_COMMAND_GET_CAS_BITS:
+		{
+			/* wanpipe does not has a command to get the CAS bits so we emulate it */
+			ZAP_COMMAND_OBJ_INT = zchan->cas_bits;
 		}
 		break;
 	default:
@@ -897,6 +941,14 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 			case WP_TDMAPI_EVENT_RING_TRIP_DETECT:
 				{
 					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state == WP_TDMAPI_EVENT_RING_PRESENT ? ZAP_OOB_ONHOOK : ZAP_OOB_OFFHOOK;
+				}
+				break;
+			case WP_TDMAPI_EVENT_RBS:
+				{
+					event_id = ZAP_OOB_CAS_BITS_CHANGE;
+					/* save the CAS bits, user should retrieve it with ZAP_COMMAND_GET_CAS_BITS 
+					   is there a best play to store this? instead of adding cas_bits member to zap_chan? */
+					span->channels[i]->cas_bits = wanpipe_swap_bits(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_rbs_bits);
 				}
 				break;
 			default:

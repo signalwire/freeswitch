@@ -116,6 +116,13 @@ void zap_config_close_file(zap_config_t * cfg);
 */
 int zap_config_next_pair(zap_config_t * cfg, char **var, char **val);
 
+/*!
+  \brief Retrieve the CAS bits from a configuration string value
+  \param strvalue pointer to the configuration string value (expected to be in format whatever:xxxx)
+  \param outbits pointer to aim at the CAS bits
+*/
+int zap_config_get_cas_bits(char *strvalue, unsigned char *outbits);
+
 
 /** @} */
 #endif
