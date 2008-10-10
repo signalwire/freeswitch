@@ -1675,7 +1675,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (outbound_profile) {
 			char name[128];
 
-			switch_snprintf(name, sizeof(name), "DingaLing/%s", outbound_profile->destination_number);
+			switch_snprintf(name, sizeof(name), "dingaling/%s", outbound_profile->destination_number);
 			switch_channel_set_name(channel, name);
 
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
@@ -2645,7 +2645,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 																			  ldl_session_get_value(dlsession, "aniii"),
 																			  ldl_session_get_value(dlsession, "rdnis"), modname, context, exten)) != 0) {
 						char name[128];
-						switch_snprintf(name, sizeof(name), "DingaLing/%s", tech_pvt->caller_profile->destination_number);
+						switch_snprintf(name, sizeof(name), "dingaling/%s", tech_pvt->caller_profile->destination_number);
 						switch_channel_set_name(channel, name);
 						switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 					}
