@@ -56,6 +56,15 @@ static void sofia_reg_kill_reg(sofia_gateway_t *gateway_ptr, int unreg)
 
 }
 
+static void sofia_reg_fire_custom_gateway_state_event(sofia_gateway_t *gateway) {
+	switch_event_t *s_event;
+	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_GATEWAY_STATE) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "Gateway", "%s", gateway->name);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "State", "%s", sofia_state_string(gateway->state));
+		switch_event_fire(&s_event);
+	}
+}
+
 void sofia_reg_unregister(sofia_profile_t *profile)
 {
 	sofia_gateway_t *gateway_ptr;
@@ -196,6 +205,9 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 				gateway_ptr->state = REG_STATE_UNREGED;
 			}
 			break;
+		}
+		if (ostate != gateway_ptr->state) {
+			sofia_reg_fire_custom_gateway_state_event(gateway_ptr);
 		}
 	}
 }
@@ -1021,6 +1033,7 @@ void sofia_reg_handle_sip_r_register(int status,
 									 tagi_t tags[])
 {
 	if (sofia_private && sofia_private->gateway) {
+		reg_state_t ostate = sofia_private->gateway->state;
 		switch (status) {
 		case 200:
 			if (sip && sip->sip_contact) {
@@ -1055,6 +1068,9 @@ void sofia_reg_handle_sip_r_register(int status,
 			sofia_private->gateway->state = REG_STATE_FAILED;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Registration Failed with status %d\n", status);
 			break;
+		}
+		if (ostate != sofia_private->gateway->state) {
+			sofia_reg_fire_custom_gateway_state_event(sofia_private->gateway);
 		}
 	}
 }
@@ -1480,11 +1496,15 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 											}
 
 											if ((gateway_ptr = sofia_reg_find_gateway(name))) {
+												reg_state_t ostate = gateway_ptr->state;
 												gateway_ptr->retry = 0;
 												if (exptime) {
 													gateway_ptr->state = REG_STATE_UNREGED;
 												} else {
 													gateway_ptr->state = REG_STATE_UNREGISTER;
+												}
+												if (ostate != gateway_ptr->state) {
+													sofia_reg_fire_custom_gateway_state_event(gateway_ptr);
 												}
 												sofia_reg_release_gateway(gateway_ptr);
 											}
@@ -1502,11 +1522,15 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 
 									for (x = 0; x < argc; x++) {
 										if ((gateway_ptr = sofia_reg_find_gateway((char *) argv[x]))) {
+											reg_state_t ostate = gateway_ptr->state;
 											gateway_ptr->retry = 0;
 											if (exptime) {
 												gateway_ptr->state = REG_STATE_UNREGED;
 											} else {
 												gateway_ptr->state = REG_STATE_UNREGISTER;
+											}
+											if (ostate != gateway_ptr->state) {
+												sofia_reg_fire_custom_gateway_state_event(gateway_ptr);
 											}
 											sofia_reg_release_gateway(gateway_ptr);
 										} else {

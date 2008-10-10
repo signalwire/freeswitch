@@ -1193,7 +1193,8 @@ static switch_status_t sofia_receive_event(switch_core_session_t *session, switc
 
 typedef switch_status_t (*sofia_command_t) (char **argv, int argc, switch_stream_handle_t *stream);
 
-static const char *sofia_state_names[] = { "UNREGED",
+static const char *sofia_state_names[] = { 
+	"UNREGED",
 	"TRYING",
 	"REGISTER",
 	"REGED",
@@ -1203,6 +1204,11 @@ static const char *sofia_state_names[] = { "UNREGED",
 	"NOREG",
 	NULL
 };
+
+const char * sofia_state_string(int state) 
+{
+	return sofia_state_names[state];
+}
 
 struct cb_helper {
 	sofia_profile_t *profile;

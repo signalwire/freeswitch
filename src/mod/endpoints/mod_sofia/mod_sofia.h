@@ -72,6 +72,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_REGISTER "sofia::register"
 #define MY_EVENT_UNREGISTER "sofia::unregister"
 #define MY_EVENT_EXPIRE "sofia::expire"
+#define MY_EVENT_GATEWAY_STATE "sofia::gateway_state"
 
 #define MULTICAST_EVENT "multicast::event"
 #define SOFIA_REPLACES_HEADER "_sofia_replaces_"
@@ -699,3 +700,4 @@ void sofia_glue_del_gateway(sofia_gateway_t *gp);
 void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const char *host, const char *contact, const char *user_agent);
 void sofia_glue_restart_all_profiles(void);
 void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly);
+const char * sofia_state_string(int state);
