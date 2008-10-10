@@ -833,7 +833,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Module %s Already Loaded!\n", file);
 		*err = "Module already loaded";
 		status = SWITCH_STATUS_FALSE;
-	} else if ((status = switch_loadable_module_load_file(path, file, &new_module) == SWITCH_STATUS_SUCCESS)) {
+	} else if ((status = switch_loadable_module_load_file(path, file, &new_module)) == SWITCH_STATUS_SUCCESS) {
 		if ((status = switch_loadable_module_process(file, new_module)) == SWITCH_STATUS_SUCCESS && runtime) {
 			if (new_module->switch_module_runtime) {
 				switch_core_launch_thread(switch_loadable_module_exec, new_module, new_module->pool);
