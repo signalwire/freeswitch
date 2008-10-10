@@ -1274,22 +1274,23 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			return_cng_frame();
 		}
 
-		if (bytes <= rtp_header_len) {
+		if (bytes && bytes <= 12) {
 			continue;
 		}
 
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && switch_sockaddr_get_port(rtp_session->from_addr)) {
-			const char *tx_host;
-			const char *old_host;
-			char bufa[30], bufb[30];
-			tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->from_addr);
-			old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
-			if ((switch_sockaddr_get_port(rtp_session->from_addr) != rtp_session->remote_port) || strcmp(tx_host, old_host)) {
-				const char *err;
-				uint32_t old = rtp_session->remote_port;
+		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && switch_sockaddr_get_port(rtp_session->from_addr)) {
+			if (++rtp_session->autoadj_tally >= 10) {
+				const char *tx_host;
+				const char *old_host;
+				char bufa[30], bufb[30];
 
-				if (!switch_strlen_zero(tx_host) && switch_sockaddr_get_port(rtp_session->from_addr) > 0) {
-					if (++rtp_session->autoadj_tally >= 10) {
+				tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->from_addr);
+				old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
+				if ((switch_sockaddr_get_port(rtp_session->from_addr) != rtp_session->remote_port) || strcmp(tx_host, old_host)) {
+					const char *err;
+					uint32_t old = rtp_session->remote_port;
+					
+					if (!switch_strlen_zero(tx_host) && switch_sockaddr_get_port(rtp_session->from_addr) > 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 										  "Auto Changing port from %s:%u to %s:%u\n", old_host, old, tx_host,
 										  switch_sockaddr_get_port(rtp_session->from_addr));
@@ -1299,7 +1300,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				}
 			}
 		}
-
+		
 		if (bytes && rtp_session->autoadj_window) {
 			if (--rtp_session->autoadj_window == 0) {
 				switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
