@@ -572,10 +572,11 @@ SWITCH_DECLARE(switch_status_t) switch_strftime_tz(const char *tz, const char *f
 		tztime( &timep, tzdef, &tm );
 		tm2switchtime( &tm, &stm );
 		switch_strftime(date, &retsize, len, switch_strlen_zero(format) ? "%Y-%m-%d %T" : format, &stm);
-		return SWITCH_STATUS_SUCCESS;
-	} else {
-		return SWITCH_STATUS_FALSE;
+		if (!switch_strlen_zero_buf(date)) {
+			return SWITCH_STATUS_SUCCESS;
+		}
 	}
+	return SWITCH_STATUS_FALSE;
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)

@@ -2222,8 +2222,10 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		message_count(profile, myid, domain_name, myfolder, &total_new_messages, &total_saved_messages,
 					  &total_new_urgent_messages, &total_saved_urgent_messages);
 
-		switch_time_exp_lt(&tm, switch_timestamp_now());
-		switch_strftime(date, &retsize, sizeof(date), profile->date_fmt, &tm);
+		if (switch_strlen_zero(vm_timezone) || (switch_strftime_tz(vm_timezone, profile->date_fmt, date, sizeof(date)) != SWITCH_STATUS_SUCCESS)) {
+			switch_time_exp_lt(&tm, switch_timestamp_now());
+			switch_strftime(date, &retsize, sizeof(date), profile->date_fmt, &tm);
+		}
 
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_current_folder", myfolder);
 		switch_snprintf(tmpvar, sizeof(tmpvar), "%d", total_new_messages);
@@ -2240,15 +2242,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_caller_id_name", caller_id_name);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_file_path", file_path);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_read_flags", read_flags);
-		
-		if (!switch_strlen_zero(vm_timezone)) {
-			char tz_date[80] = "";
-			if ((switch_strftime_tz(vm_timezone, profile->date_fmt, tz_date, sizeof(tz_date)) == SWITCH_STATUS_SUCCESS) && !switch_strlen_zero_buf(tz_date)) {
-				switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_time", tz_date);
-			} else {
-				switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_time", date);
-			}
-		}
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_time", date);
 
 		switch_snprintf(tmpvar, sizeof(tmpvar), "%d", priority);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_priority", tmpvar);
