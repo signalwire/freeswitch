@@ -676,14 +676,9 @@ sofia_transport_t sofia_glue_url2transport(const url_t *url)
 sofia_transport_t sofia_glue_via2transport(const sip_via_t *via)
 {
 	char *ptr = NULL;
-	int tls = 0;
 
 	if (!via || !via->v_protocol)
 		return SOFIA_TRANSPORT_UNKNOWN;
-
-	if (!strncasecmp(via->v_protocol, "sips", 4)) {
-		tls++;
-	}
 
 	if ((ptr = strrchr(via->v_protocol, '/'))) {
 		ptr++;

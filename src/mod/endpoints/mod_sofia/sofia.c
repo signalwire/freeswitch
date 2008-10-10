@@ -3519,6 +3519,10 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		switch_channel_set_variable(channel, "sip_received_port", tmp);
 	}
 
+	if (sip->sip_via) {
+		switch_channel_set_variable(channel, "sip_via_protocol", sofia_glue_transport2str(sofia_glue_via2transport(sip->sip_via)));
+	}
+
 	if (*key != '\0') {
 		tech_pvt->key = switch_core_session_strdup(session, key);
 	}
