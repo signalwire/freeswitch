@@ -2166,11 +2166,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending CANCEL to orphan call.\n");
 				nua_cancel(nh, TAG_END());
 			}
-
-			nua_handle_bind(nh, NULL);
-			nua_handle_destroy(nh);
 		}
-
 	}
 }
 
