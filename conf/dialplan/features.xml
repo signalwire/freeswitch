@@ -33,6 +33,7 @@
       <condition field="destination_number" expression="^(10[01][0-9])$">
 	<action application="set" data="transfer_ringback=$${hold_music}"/>
 	<action application="answer"/>
+	<action application="sleep" data="1500"/>
 	<action application="playback" data="ivr/ivr-hold_connect_call.wav"/>
 	<action application="transfer" data="$1 XML default"/>
       </condition>

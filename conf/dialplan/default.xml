@@ -236,7 +236,7 @@
 
     <!-- voicemail operator extension -->
     <extension name="operator">
-      <condition field="destination_number" expression="^operator$">
+      <condition field="destination_number" expression="^operator|0$">
 	<action application="set" data="transfer_ringback=$${hold_music}"/>
 	<action application="transfer" data="1000 XML features"/>
       </condition>
