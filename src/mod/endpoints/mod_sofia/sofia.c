@@ -304,6 +304,7 @@ void sofia_event_callback(nua_event_t event,
 		sofia_reg_handle_sip_i_register(nua, profile, nh, sofia_private, sip, tags);
 		break;
 	case nua_i_prack:
+	case nua_r_prack:
 		break;
 	case nua_i_state:
 		sofia_handle_sip_i_state(session, status, phrase, nua, profile, nh, sofia_private, sip, tags);
