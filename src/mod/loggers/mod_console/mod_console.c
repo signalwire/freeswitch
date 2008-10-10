@@ -234,8 +234,10 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 
 			if (COLORIZE) {
 #ifdef WIN32
+				DWORD len = (DWORD) strlen(node->data);
+				DWORD outbytes = 0;
 				SetConsoleTextAttribute(hStdout, COLORS[node->level]);
-				WriteFile(hStdout, node->data, (DWORD) strlen(node->data), NULL, NULL);
+				WriteFile(hStdout, node->data, len, &outbytes, NULL);
 				SetConsoleTextAttribute(hStdout, wOldColorAttrs);
 #else
 				fprintf(handle, "%s%s%s", COLORS[node->level], node->data, SWITCH_SEQ_DEFAULT_COLOR);
