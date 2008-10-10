@@ -2335,7 +2335,7 @@ SWITCH_STANDARD_API(uuid_session_heartbeat_function)
 
 	argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
-	if (argc != 2) {
+	if (argc != 2 || !argv[0]) {
 		goto error;
 	}
 

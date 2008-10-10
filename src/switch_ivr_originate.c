@@ -1280,7 +1280,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						ok = 1;
 						for (i = 0; i < and_argc; i++) {
 							switch_channel_t *pchannel;
-							switch_call_cause_t cause;
 							const char *cause_str;
 							
 							if (!peer_sessions[i]) {
@@ -1289,8 +1288,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							pchannel = switch_core_session_get_channel(peer_sessions[i]);
 
 							if (switch_channel_get_state(pchannel) >= CS_HANGUP) {
-								cause = switch_channel_get_cause(pchannel);
-								cause_str = switch_channel_cause2str(cause);
+								cause_str = switch_channel_cause2str(switch_channel_get_cause(pchannel));
 								if (switch_stristr(cause_str, fail_on_single_reject_var)) {
 									ok = 0;
 									break;
