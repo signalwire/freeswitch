@@ -975,14 +975,15 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 
 SWITCH_DECLARE(void) switch_rtp_break(switch_rtp_t *rtp_session)
 {
-	int o = 42;
-	switch_size_t len = sizeof(o);
-
 	switch_assert(rtp_session != NULL);
 	switch_mutex_lock(rtp_session->flag_mutex);
+	switch_set_flag(rtp_session, SWITCH_RTP_FLAG_BREAK);
+
 	if (rtp_session->sock_input) {
-		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
-		switch_socket_sendto(rtp_session->sock_input, rtp_session->local_addr, 0, (void *) &o, &len);
+		char o[8] = "PING...";
+		switch_size_t len = sizeof(o);
+		
+		switch_socket_sendto(rtp_session->sock_input, rtp_session->local_addr, 0, (void *) o, &len);
 	}
 	switch_mutex_unlock(rtp_session->flag_mutex);
 }
