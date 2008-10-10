@@ -1274,7 +1274,11 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			return_cng_frame();
 		}
 
-		if (bytes > 12 && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && switch_sockaddr_get_port(rtp_session->from_addr)) {
+		if (bytes <= rtp_header_len) {
+			continue;
+		}
+
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && switch_sockaddr_get_port(rtp_session->from_addr)) {
 			const char *tx_host;
 			const char *old_host;
 			char bufa[30], bufb[30];
