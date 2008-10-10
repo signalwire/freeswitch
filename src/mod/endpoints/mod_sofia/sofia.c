@@ -1643,6 +1643,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_3PCC;
 						}
+						else if(!strcasecmp(val, "proxy")){
+							profile->pflags |= PFLAG_3PCC_PROXY;
+						}
 					} else if (!strcasecmp(var, "accept-blind-auth")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_BLIND_AUTH;
@@ -2432,6 +2435,15 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 									SOATAG_REUSE_REJECTED(1),
 									SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
+					} else if(profile->pflags & PFLAG_3PCC_PROXY){
+						//3PCC proxy mode delays the 200 OK until the call is answered
+						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_NOSDP");
+						switch_set_flag_locked(tech_pvt, TFLAG_3PCC);
+						sofia_glue_tech_choose_port(tech_pvt, 0);
+						sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
+						switch_channel_set_flag(channel, TFLAG_LATE_NEGOTIATION);
+						//Moves into CS_INIT so call moves forward into the dialplan
+						switch_channel_set_state(channel, CS_INIT);
 					} else {
 						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "3PCC DISABLED");
 						switch_channel_hangup(channel, SWITCH_CAUSE_MANDATORY_IE_MISSING);
@@ -2658,10 +2670,17 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP Error!\n");
 								switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 							}
-							if (switch_channel_get_state(channel) == CS_HIBERNATE && switch_test_flag(tech_pvt, TFLAG_3PCC)) {
-								switch_set_flag_locked(tech_pvt, TFLAG_READY);
-								switch_channel_set_state(channel, CS_INIT);
-								switch_set_flag(tech_pvt, TFLAG_SDP);
+
+							if (switch_test_flag(tech_pvt, TFLAG_3PCC)) {
+								/* Check if we are in 3PCC proxy mode, if so then set the flag to indicate we received the ack */
+								if (profile->pflags & PFLAG_3PCC_PROXY ) {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "3PCC-PROXY, Got my ACK\n");
+									switch_set_flag(tech_pvt, TFLAG_3PCC_HAS_ACK);
+								} else if (switch_channel_get_state(channel) == CS_HIBERNATE) {
+									switch_set_flag_locked(tech_pvt, TFLAG_READY);
+									switch_channel_set_state(channel, CS_INIT);
+									switch_set_flag(tech_pvt, TFLAG_SDP);
+								}
 							}
 							goto done;
 						}

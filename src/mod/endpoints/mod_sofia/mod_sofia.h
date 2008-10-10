@@ -162,7 +162,8 @@ typedef enum {
 	PFLAG_DISABLE_SRTP_AUTH = (1 << 25),
 	PFLAG_FUNNY_STUN = (1 << 26),
 	PFLAG_STUN_ENABLED = (1 << 27),
-	PFLAG_STUN_AUTO_DISABLE = (1 << 28)
+	PFLAG_STUN_AUTO_DISABLE = (1 << 28),
+	PFLAG_3PCC_PROXY = (1 << 29)
 } PFLAGS;
 
 typedef enum {
@@ -207,7 +208,8 @@ typedef enum {
 	TFLAG_TPORT_LOG = (1 << 27),
 	TFLAG_SENT_UPDATE = (1 << 28),
 	TFLAG_PROXY_MEDIA = (1 << 29),
-	TFLAG_HOLD_LOCK = (1 << 30)
+	TFLAG_HOLD_LOCK = (1 << 30),
+	TFLAG_3PCC_HAS_ACK = (1 << 31)
 } TFLAGS;
 
 struct mod_sofia_globals {

@@ -409,6 +409,29 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			}
 		}
 	} else {
+		/* This if statement check and handles the 3pcc proxy mode */
+		if ((tech_pvt->profile->pflags & PFLAG_3PCC_PROXY) && switch_test_flag(tech_pvt, TFLAG_3PCC)) {
+			/* Send the 200 OK */
+			nua_respond(tech_pvt->nh, SIP_200_OK,
+				SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+				SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+				SOATAG_REUSE_REJECTED(1),
+				SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "3PCC-PROXY, Sent a 200 OK, waiting for ACK\n");
+			
+			/* Unlock the session signal to allow the ack to make it in */
+			// Maybe we should timeout?
+			switch_core_session_signal_unlock(session);
+			while(switch_channel_ready(channel) && !switch_test_flag(tech_pvt, TFLAG_3PCC_HAS_ACK)) {
+				switch_yield(1000);
+			}
+			// if we never got the ack should we PUNT?
+			/* Get the lock back before we continue */
+			switch_core_session_signal_lock(session);
+			
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "3PCC-PROXY, Done waiting for ACK\n");
+		}
+
 		if ((is_proxy && !b_sdp) || switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) || !tech_pvt->iananame) {
 			switch_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);
 
