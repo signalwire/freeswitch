@@ -779,7 +779,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (outbound_profile) {
 			char name[128];
 			const char *id = !switch_strlen_zero(outbound_profile->caller_id_number) ? outbound_profile->caller_id_number : "na";
-			snprintf(name, sizeof(name), "Alsa/%s", id);
+			snprintf(name, sizeof(name), "alsa/%s", id);
 
 			switch_channel_set_name(channel, name);
 
@@ -1461,7 +1461,7 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 																  NULL,
 																  dialplan, cid_name, cid_num, ip, NULL, NULL, NULL, (char *) modname, NULL, dest)) != 0) {
 			char name[128];
-			snprintf(name, sizeof(name), "Alsa/%s", tech_pvt->caller_profile->destination_number ? tech_pvt->caller_profile->destination_number : modname);
+			snprintf(name, sizeof(name), "alsa/%s", tech_pvt->caller_profile->destination_number ? tech_pvt->caller_profile->destination_number : modname);
 			switch_channel_set_name(channel, name);
 
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
