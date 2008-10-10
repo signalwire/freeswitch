@@ -448,6 +448,7 @@ struct zap_channel {
 	struct zap_span *span;
 	struct zap_io_interface *zio;
 	zap_hash_t *variable_hash;
+	unsigned char cas_bits;
 };
 
 

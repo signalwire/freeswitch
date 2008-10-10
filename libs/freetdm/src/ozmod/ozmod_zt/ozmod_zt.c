@@ -51,7 +51,7 @@ static zap_socket_t CONTROL_FD = ZT_INVALID_SOCKET;
 ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event);
 ZIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event);
 
-static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, zap_chan_type_t type, char *name, char *number)
+static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, zap_chan_type_t type, char *name, char *number, unsigned char cas_bits)
 {
 	unsigned configured = 0, x;
 	char path[] = "/dev/zap/channel";
@@ -59,6 +59,9 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 
 	memset(&ztp, 0, sizeof(ztp));
 
+	if (type == ZAP_CHAN_TYPE_CAS) {
+		zap_log(ZAP_LOG_DEBUG, "Configuring CAS channels with abcd == 0x%X\n", cas_bits);
+	}	
 	for(x = start; x < end; x++) {
 		zap_channel_t *zchan;
 		zap_socket_t sockfd = ZT_INVALID_SOCKET;
@@ -133,6 +136,19 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 				
 				if (ioctl(CONTROL_FD, ZT_CHANCONFIG, &cc)) {
 					zap_log(ZAP_LOG_WARNING, "this ioctl fails on older zaptel but is harmless if you used ztcfg\n[device %s chan %d fd %d (%s)]\n", path, x, CONTROL_FD, strerror(errno));
+				}
+			}
+
+			if (type == ZAP_CHAN_TYPE_CAS) {
+				struct zt_chanconfig cc;
+				memset(&cc, 0, sizeof(cc));
+				cc.chan = cc.master = x;
+				cc.sigtype = ZT_SIG_CAS;
+				cc.idlebits = cas_bits;
+				if (ioctl(CONTROL_FD, ZT_CHANCONFIG, &cc)) {
+					zap_log(ZAP_LOG_ERROR, "failure configuring device %s as OpenZAP device %d:%d fd:%d err:%s", path, zchan->span_id, zchan->chan_id, sockfd, strerror(errno));
+					close(sockfd);
+					continue;
 				}
 			}
 
@@ -224,8 +240,9 @@ static ZIO_CONFIGURE_SPAN_FUNCTION(zt_configure_span)
 {
 
 	int items, i;
-    char *mydata, *item_list[10];
+        char *mydata, *item_list[10];
 	char *ch, *mx;
+	unsigned char cas_bits = 0;
 	int channo;
 	int top = 0;
 	unsigned configured = 0;
@@ -266,8 +283,11 @@ static ZIO_CONFIGURE_SPAN_FUNCTION(zt_configure_span)
 			zap_log(ZAP_LOG_ERROR, "Invalid range number %d\n", top);
 			continue;
 		}
-
-		configured += zt_open_range(span, channo, top, type, name, number);
+		if (ZAP_CHAN_TYPE_CAS == type && zap_config_get_cas_bits(ch, &cas_bits)) {
+			zap_log(ZAP_LOG_ERROR, "Failed to get CAS bits in CAS channel\n");
+			continue;
+		}
+		configured += zt_open_range(span, channo, top, type, name, number, cas_bits);
 
 	}
 	
@@ -471,6 +491,18 @@ static ZIO_COMMAND_FUNCTION(zt_command)
 			}
 		}
 		break;
+	case ZAP_COMMAND_SET_CAS_BITS:
+		{
+			int bits = ZAP_COMMAND_OBJ_INT;
+			err = ioctl(zchan->sockfd, ZT_SETTXBITS, &bits);
+		}
+		break;
+	case ZAP_COMMAND_GET_CAS_BITS:
+		{
+			/* probably we should call ZT_GETRXBITS instead? */
+			ZAP_COMMAND_OBJ_INT = zchan->cas_bits;
+		}
+		break;
 	default:
 		break;
 	};
@@ -661,6 +693,17 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 			case ZT_EVENT_NOALARM:
 				{
 					event_id = ZAP_OOB_ALARM_CLEAR;
+				}
+				break;
+			case ZT_EVENT_BITSCHANGED:
+				{
+					event_id = ZAP_OOB_CAS_BITS_CHANGE;
+					int bits = 0;
+					int err = ioctl(span->channels[i]->sockfd, ZT_GETRXBITS, &bits);
+					if (err) {
+						return ZAP_FAIL;
+					}
+					span->channels[i]->cas_bits = bits;
 				}
 				break;
 			default:

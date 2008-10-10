@@ -226,9 +226,16 @@ ZT_SIG_FXOKS				= ((1 << 5) | (1 << 12)),	/* FXO, Kewlstart */
 ZT_SIG_EM					= (1 << 6),					/* E&M */
 ZT_SIG_CLEAR				= (1 << 7),
 ZT_SIG_HDLCRAW				= ((1 << 8)  | ZT_SIG_CLEAR),
-ZT_SIG_HDLCFCS				= ((1 << 9)  | ZT_SIG_HDLCRAW)
+ZT_SIG_HDLCFCS				= ((1 << 9)  | ZT_SIG_HDLCRAW),
+ZT_SIG_CAS                              = (1 << 15)
 } zt_sigtype_t;
 
+typedef enum {
+ZT_DBIT = 1,
+ZT_CBIT = 2,
+ZT_BBIT = 4,
+ZT_ABIT = 8
+} zt_cas_bit_t;
 
 /* Defines */
 
@@ -278,6 +285,10 @@ ZT_SIG_HDLCFCS				= ((1 << 9)  | ZT_SIG_HDLCRAW)
 
 #define		ZT_GETCONFMUTE		_IOR  (ZT_CODE, 49, int)				/* Get Conference to mute mode */
 #define		ZT_ECHOTRAIN		_IOW  (ZT_CODE, 50, int)				/* Control Echo Trainer */
+
+/* Set/Get CAS bits */
+#define ZT_SETTXBITS _IOW (ZT_CODE, 43, int)
+#define ZT_GETRXBITS _IOR (ZT_CODE, 45, int)
 
 
 #endif

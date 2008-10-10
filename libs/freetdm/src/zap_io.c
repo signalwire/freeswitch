@@ -2239,9 +2239,13 @@ static zap_status_t load_config(void)
 					configured += zio->configure_span(span, val, qtype, name, number);
 					d++;
 				}
+			} else if (!strcasecmp(var, "cas-channel")) {
+				configured += zio->configure_span(span, val, ZAP_CHAN_TYPE_CAS, name, number);	
 			} else if (!strcasecmp(var, "dtmf_hangup")) {
 				span->dtmf_hangup = strdup(val);
 				span->dtmf_hangup_len = strlen(val);
+			} else {
+				zap_log(ZAP_LOG_ERROR, "unknown span variable '%s'\n", var);
 			}
 		} else {
 			zap_log(ZAP_LOG_ERROR, "unknown param [%s] '%s' / '%s'\n", cfg.category, var, val);
@@ -2500,6 +2504,7 @@ zap_status_t zap_global_init(void)
 	zap_mutex_create(&globals.mutex);
 	
 	modcount = zap_load_modules();
+	zap_log(ZAP_LOG_NOTICE, "Modules configured: %d \n", modcount);
 
 	if (load_config() == ZAP_SUCCESS) {
 		globals.running = 1;
