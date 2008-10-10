@@ -26,16 +26,16 @@
 	the outside of the switch.  
     -->
     <extension name="outside_call" continue="true">
-      <condition break="never">
+      <condition>
 	<action application="set" data="outside_call=true"/>
       </condition>
     </extension>
 
     <!-- Try to get domain_name from the sip_req_params variable -->
     <extension name="set_domain" continue="true">
-      <condition field="${domain_name}" expression="^$" break="never"/>
-      <condition field="source" expression="mod_sofia" break="never"/>
-      <condition field="${sip_req_params}" expression="domain_name=([A-Z-a-z0-9.]+)" break="never">
+      <condition field="${domain_name}" expression="^$"/>
+      <condition field="source" expression="mod_sofia"/>
+      <condition field="${sip_req_params}" expression="domain_name=([A-Z-a-z0-9.]+)">
 	<!-- We need to export this so the B-Leg will have it after transfer too. -->
 	<action application="export" data="domain_name=$1"/>
 	<anti-action application="export" data="domain_name=${sip_req_host}"/>
