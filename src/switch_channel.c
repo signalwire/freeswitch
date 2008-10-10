@@ -833,7 +833,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 																				const char *file, const char *func, int line)
 {
 	switch_mutex_lock(channel->flag_mutex);
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "%s Running State Change %s\n", channel->name, state_names[state]);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "(%s) Running State Change %s\n", channel->name, state_names[state]);
 	channel->running_state = state;
 
 	if (channel->state_flags) {
@@ -1065,7 +1065,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 	}
 
 	if (ok) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "%s State Change %s -> %s\n",
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "(%s) State Change %s -> %s\n",
 						  channel->name, state_names[last_state], state_names[state]);
 		switch_mutex_lock(channel->flag_mutex);
 		channel->state = state;
@@ -1080,7 +1080,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_WARNING,
-						  "%s Invalid State Change %s -> %s\n", channel->name, state_names[last_state], state_names[state]);
+						  "(%s) Invalid State Change %s -> %s\n", channel->name, state_names[last_state], state_names[state]);
 		/* we won't tolerate an invalid state change so we can make sure we are as robust as a nice cup of dark coffee! */
 		/* not cool lets crash this bad boy and figure out wtf is going on */
 		switch_assert(channel->state >= CS_HANGUP);
