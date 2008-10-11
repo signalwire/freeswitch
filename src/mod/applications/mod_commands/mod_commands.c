@@ -42,7 +42,6 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load);
 SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, NULL, NULL);
 
-
 SWITCH_STANDARD_API(user_data_function)
 {
 	switch_xml_t x_domain, xml = NULL, x_user = NULL, x_param, x_params;
@@ -196,9 +195,7 @@ SWITCH_STANDARD_API(url_decode_function)
 
 	switch_safe_free(data);
     return SWITCH_STATUS_SUCCESS;
-	
 }
-
 
 SWITCH_STANDARD_API(eval_function)
 {
@@ -242,7 +239,6 @@ SWITCH_STANDARD_API(eval_function)
 	}
 
     return SWITCH_STATUS_SUCCESS;
-	
 }
 
 SWITCH_STANDARD_API(module_exists_function)
@@ -258,7 +254,6 @@ SWITCH_STANDARD_API(module_exists_function)
 
     return SWITCH_STATUS_SUCCESS;
 }
-
 
 SWITCH_STANDARD_API(url_encode_function)
 {
@@ -279,7 +274,6 @@ SWITCH_STANDARD_API(url_encode_function)
     return SWITCH_STATUS_SUCCESS;
 
 }
-
 
 SWITCH_STANDARD_API(user_exists_function)
 {
@@ -427,9 +421,7 @@ SWITCH_STANDARD_API(acl_function)
 	switch_safe_free(mydata);
 
 	return SWITCH_STATUS_SUCCESS;
-
 }
-
 
 SWITCH_STANDARD_API(regex_function)
 {
@@ -833,7 +825,6 @@ SWITCH_STANDARD_API(unload_function)
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 SWITCH_STANDARD_API(reload_function)
 {
@@ -1349,7 +1340,6 @@ SWITCH_STANDARD_API(uuid_hold_function)
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 #define DISPLAY_SYNTAX "<uuid> <display>"
 SWITCH_STANDARD_API(uuid_display_function)
@@ -2087,7 +2077,6 @@ SWITCH_STANDARD_API(complete_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 #define ALIAS_SYNTAX "add <alias> <command> | del [<alias>|*]"
 SWITCH_STANDARD_API(alias_function)
 {
@@ -2154,7 +2143,6 @@ SWITCH_STANDARD_API(show_function)
 		stream->write_function(stream, "-ERR SQL DISABLED NO CHANNEL DATA AVAILABLE!\n");
 		goto end;
 	}
-
 
 	/* If you change the field qty or order of any of these select */
 	/* statements, you must also change show_callback and friends to match! */
@@ -2703,7 +2691,6 @@ SWITCH_STANDARD_API(hupall_api_function)
 	
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
-	
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)

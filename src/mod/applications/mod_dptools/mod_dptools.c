@@ -81,9 +81,7 @@ SWITCH_STANDARD_DIALPLAN(inline_dialplan_hunt)
 		switch_caller_extension_add_application(session, extension, app, data);
 	}
 
-
 	return extension;
-
 }
 
 #define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR pause OR resume"
@@ -127,7 +125,6 @@ SWITCH_STANDARD_APP(exe_function)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", EXE_SYNTAX);
 	}
 }
-
 
 #define SAY_SYNTAX "<module_name> <say_type> <say_method> <text>"
 SWITCH_STANDARD_APP(say_function)
@@ -350,7 +347,6 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 		}
 	}
 }
-
 
 #define threeway_SYNTAX "<uuid>"
 SWITCH_STANDARD_APP(three_way_function)
@@ -680,7 +676,6 @@ SWITCH_STANDARD_APP(deflect_function)
 	msg.message_id = SWITCH_MESSAGE_INDICATE_DEFLECT;
 	switch_core_session_receive_message(session, &msg);
 }
-
 
 SWITCH_STANDARD_APP(set_function)
 {
@@ -1314,7 +1309,6 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 SWITCH_STANDARD_APP(sleep_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -1335,8 +1329,6 @@ SWITCH_STANDARD_APP(sleep_function)
 		switch_ivr_sleep(session, ms, &args);
 	}
 }
-
-
 
 SWITCH_STANDARD_APP(clear_speech_cache_function)
 {
@@ -1464,8 +1456,6 @@ static switch_status_t xfer_on_dtmf(switch_core_session_t *session, void *input,
 	}
 
 	return SWITCH_STATUS_SUCCESS;
-
-
 }
 
 static switch_status_t hanguphook(switch_core_session_t *session)
@@ -1497,7 +1487,6 @@ SWITCH_STANDARD_APP(att_xfer_function)
 	const char *bond = NULL;
 	int timelimit = 60;
 	switch_core_session_t *b_session = NULL;
-
 
 	channel = switch_core_session_get_channel(session);
 
@@ -1558,8 +1547,6 @@ SWITCH_STANDARD_APP(att_xfer_function)
 	switch_channel_set_variable(channel, SWITCH_HOLDING_UUID_VARIABLE, NULL);
 }
 
-
-
 SWITCH_STANDARD_APP(read_function)
 {
 	char *mydata;
@@ -1619,9 +1606,7 @@ SWITCH_STANDARD_APP(read_function)
 	}
 
 	switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, var_name, digit_buffer, sizeof(digit_buffer), timeout, valid_terminators);
-
 }
-
 
 SWITCH_STANDARD_APP(playback_function)
 {
@@ -1942,7 +1927,6 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	}
 }
 
-
 /* fake chan_error */
 switch_endpoint_interface_t *error_endpoint_interface;
 static switch_call_cause_t error_outgoing_channel(switch_core_session_t *session,
@@ -1965,7 +1949,6 @@ static switch_call_cause_t error_outgoing_channel(switch_core_session_t *session
 
 	return cause;
 }
-
 
 /* fake chan_user */
 switch_endpoint_interface_t *user_endpoint_interface;
@@ -2137,7 +2120,6 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	return cause;
 }
 
-
 #define HOLD_SYNTAX "[<display message>]"
 SWITCH_STANDARD_APP(hold_function)
 {
@@ -2183,7 +2165,6 @@ SWITCH_STANDARD_APP(wait_for_silence_function)
 	} 
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", WAIT_FOR_SILENCE_SYNTAX);
-
 }
 
 static switch_status_t event_chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint)
@@ -2214,10 +2195,8 @@ static switch_status_t event_chat_send(char *proto, char *from, char *to, char *
 	return SWITCH_STATUS_MEMERR;
 }
 
-
 static switch_status_t api_chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint)
 {
-
 	if (to) { 
 		const char *v;
 		switch_stream_handle_t stream = { 0 };
@@ -2253,7 +2232,6 @@ static switch_status_t api_chat_send(char *proto, char *from, char *to, char *su
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
 #define DISPLACE_DESC "Displace audio from a file to the channels input"
 #define SESS_REC_DESC "Starts a background recording of the entire session"
@@ -2286,7 +2264,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	user_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	user_endpoint_interface->interface_name = "USER";
 	user_endpoint_interface->io_routines = &user_io_routines;
-
 
 	SWITCH_ADD_CHAT(chat_interface, "event", event_chat_send);
 	SWITCH_ADD_CHAT(chat_interface, "api", api_chat_send);
@@ -2397,7 +2374,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 /* For Emacs:
  * Local Variables:
