@@ -877,7 +877,7 @@ static switch_status_t load_config(void)
 
 	if (globals.ringdev < 0) {
 		if (globals.outdev > -1) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ring device configured using output device!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid ring device configured using output device!\n");
 			globals.ringdev = globals.outdev;
 		}
 	}
