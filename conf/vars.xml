@@ -109,6 +109,7 @@
   <X-PRE-PROCESS cmd="set" data="call_debug=false"/>
   <X-PRE-PROCESS cmd="set" data="console_loglevel=info"/>
   <X-PRE-PROCESS cmd="set" data="default_areacode=918"/>
+  <X-PRE-PROCESS cmd="set" data="default_country=US"/>
 
   <X-PRE-PROCESS cmd="set" data="uk-ring=%(400,200,400,450);%(400,2200,400,450)"/>
   <X-PRE-PROCESS cmd="set" data="us-ring=%(2000, 4000, 440.0, 480.0)"/>

@@ -3,9 +3,8 @@
     <variables>
       <!--all variables here will be set on all inbound calls that originate from this user -->
       <!-- set these to take advantage of a dialplan localized to this user -->
-      <variable name="numbering_plan" value="US"/>
-      <variable name="default_gateway" value="asterlink.com"/>
-      <variable name="default_areacode" value="918"/>
+      <variable name="numbering_plan" value="$${default_country}"/>
+      <variable name="default_areacode" value="$${default_areacode}"/>
     </variables>
   </user>
 </include>
