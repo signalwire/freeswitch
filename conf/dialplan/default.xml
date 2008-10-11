@@ -102,7 +102,7 @@
     <extension name="external_sip_uri" continue="true">
       <condition field="source" expression="mod_sofia"/>
       <condition field="${outside_call}" expression="^$"/>
-      <condition field="${domain_exists(${sip_req_host})}" expression="false">
+      <condition field="${domain_exists(${sip_req_host})}" expression="true">
 	<anti-action application="bridge" data="sofia/${use_profile}/${sip_to_uri}"/>
       </condition>
     </extension>
