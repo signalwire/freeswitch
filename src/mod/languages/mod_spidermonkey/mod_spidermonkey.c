@@ -1023,7 +1023,7 @@ static switch_status_t load_modules(void)
 		switch_xml_free(xml);
 
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Open of %s failed\n", cf);
 	}
 
 	return SWITCH_STATUS_SUCCESS;

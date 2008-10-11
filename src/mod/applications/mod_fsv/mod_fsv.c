@@ -237,12 +237,12 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	}
 
 	if (read(fd, &h, sizeof(h)) != sizeof(h)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "error reading file header\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error reading file header\n");
 		goto end;
 	}
 
 	if (h.version != VERSION) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "file version does not match!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "File version does not match!\n");
 		goto end;
 	}
 
@@ -267,7 +267,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 
 	if (switch_core_timer_init(&timer, "soft", read_codec->implementation->microseconds_per_frame / 1000,
 							   read_codec->implementation->samples_per_frame, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "timer Activation Fail\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer Activation Fail\n");
 		goto end;
 	}
 

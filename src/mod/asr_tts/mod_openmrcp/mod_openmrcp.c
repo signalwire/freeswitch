@@ -114,12 +114,12 @@ static openmrcp_session_t *openmrcp_session_create(openmrcp_profile_t *profile)
 	apr_pool_t *session_pool;
 
 	if (!profile) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no profile specified\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No profile specified\n");
 		return NULL;
 	}
 
 	if (apr_pool_create(&session_pool, NULL) != APR_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to create session_pool\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create session_pool\n");
 		return NULL;
 	}
 
@@ -134,12 +134,12 @@ static openmrcp_session_t *openmrcp_session_create(openmrcp_profile_t *profile)
 	switch_mutex_init(&openmrcp_session->flag_mutex, SWITCH_MUTEX_NESTED, openmrcp_session->pool);
 
 	if (switch_thread_cond_create(&openmrcp_session->wait_object, openmrcp_session->pool)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "wait object creation failed\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Wait object creation failed\n");
 	}
 
 	openmrcp_session->client_session = mrcp_client_context_session_create(openmrcp_session->profile->mrcp_context, openmrcp_session);
 	if (!openmrcp_session->client_session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "session creation FAILED\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session creation FAILED\n");
 		apr_pool_destroy(session_pool);
 		return NULL;
 	}
@@ -172,7 +172,7 @@ static mrcp_status_t openmrcp_on_session_terminate(mrcp_client_context_t *contex
 	if (switch_test_flag(openmrcp_session, FLAG_TERMINATING)) {
 		openmrcp_session_destroy(openmrcp_session);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "abnormal session terminate\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Abnormal session terminate\n");
 	}
 	return MRCP_STATUS_SUCCESS;
 }
@@ -215,16 +215,16 @@ static mrcp_status_t openmrcp_on_channel_modify(mrcp_client_context_t *context, 
 	}
 
 	if (mrcp_message->start_line.message_type == MRCP_MESSAGE_TYPE_RESPONSE && mrcp_message->start_line.request_state == MRCP_REQUEST_STATE_INPROGRESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ignoring mrcp response\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ignoring mrcp response\n");
 		return MRCP_STATUS_SUCCESS;
 	}
 
 	if (switch_test_flag(openmrcp_session, FLAG_HAS_MESSAGE)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "already has message\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Already has message\n");
 		return MRCP_STATUS_SUCCESS;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setting FLAG_HAS_MESSAGE\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting FLAG_HAS_MESSAGE\n");
 	openmrcp_session->mrcp_message_last_rcvd = mrcp_message;
 	switch_set_flag_locked(openmrcp_session, FLAG_HAS_MESSAGE);
 	return MRCP_STATUS_SUCCESS;
@@ -500,7 +500,7 @@ static switch_status_t openmrcp_asr_get_results(switch_asr_handle_t *ah, char **
 
 	if (message->start_line.message_type == MRCP_MESSAGE_TYPE_RESPONSE) {
 		if (message->start_line.status_code != MRCP_STATUS_CODE_SUCCESS && message->start_line.status_code != MRCP_STATUS_CODE_SUCCESS_WITH_IGNORE) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "error code received [%d]\n", message->start_line.status_code);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error code received [%d]\n", message->start_line.status_code);
 			ret = SWITCH_STATUS_FALSE;
 		}
 	} else if (message->start_line.message_type == MRCP_MESSAGE_TYPE_EVENT) {
@@ -659,7 +659,7 @@ static switch_status_t openmrcp_tts_close(switch_speech_handle_t *sh, switch_spe
 	mrcp_client_context_t *context = tts_session->profile->mrcp_context;
 
 	/* terminate tts session */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "terminate tts_session\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Terminate tts_session\n");
 	switch_set_flag_locked(tts_session, FLAG_TERMINATING);
 	mrcp_client_context_session_terminate(context, tts_session->client_session);
 	return SWITCH_STATUS_SUCCESS;
@@ -671,7 +671,7 @@ static switch_status_t openmrcp_feed_tts(switch_speech_handle_t *sh, char *text,
 	mrcp_client_context_t *context = tts_session->profile->mrcp_context;
 
 	if (!tts_session->control_channel) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no synthesizer channel too feed tts\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No synthesizer channel too feed tts\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -701,7 +701,7 @@ static switch_status_t openmrcp_read_tts(switch_speech_handle_t *sh, void *data,
 
 		if (message->start_line.message_type == MRCP_MESSAGE_TYPE_RESPONSE) {
 			if (message->start_line.status_code != MRCP_STATUS_CODE_SUCCESS && message->start_line.status_code != MRCP_STATUS_CODE_SUCCESS_WITH_IGNORE) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "error code received [%d]\n", message->start_line.status_code);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error code received [%d]\n", message->start_line.status_code);
 				return SWITCH_STATUS_BREAK;
 			}
 		} else if (message->start_line.message_type == MRCP_MESSAGE_TYPE_EVENT) {
@@ -774,7 +774,7 @@ static switch_status_t do_config()
 	openmrcp_client_options_t *mrcp_options;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -835,7 +835,7 @@ static switch_status_t do_config()
 					switch_core_hash_insert(openmrcp_module.profile_hash, mrcp_profile->name, mrcp_profile);
 				}
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "profile with the name [%s] already exists\n", mrcp_profile->name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Profile with the name [%s] already exists\n", mrcp_profile->name);
 			}
 		}
 	} else {

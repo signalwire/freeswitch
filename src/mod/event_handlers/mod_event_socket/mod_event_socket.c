@@ -1325,7 +1325,7 @@ static int config(void)
 	memset(&prefs, 0, sizeof(prefs));
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 	} else {
 		if ((settings = switch_xml_child(cfg, "settings"))) {
 			for (param = switch_xml_child(settings, "param"); param; param = param->next) {

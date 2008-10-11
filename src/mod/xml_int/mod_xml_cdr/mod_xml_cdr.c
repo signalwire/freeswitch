@@ -268,7 +268,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 
 	/* parse the config */
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -329,12 +329,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 		}
 	}
 	if (globals.retries < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "retries is negative, setting to 0\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Retries is negative, setting to 0\n");
 		globals.retries = 0;
 	}
 
 	if (globals.retries && globals.delay <= 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "retries set but delay 0 setting to 5000ms\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Retries set but delay 0 setting to 5000ms\n");
 		globals.delay = 5000;
 	}
 

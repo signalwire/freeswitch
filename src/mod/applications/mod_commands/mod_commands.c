@@ -783,7 +783,7 @@ SWITCH_STANDARD_API(ctl_function)
 	  end:
 		free(mydata);
 	} else {
-		stream->write_function(stream, "-ERR Memory error\n");
+		stream->write_function(stream, "-ERR Memory Error\n");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1721,7 +1721,7 @@ SWITCH_STANDARD_API(originate_function)
 		}
 
 		if ((extension = switch_caller_extension_new(caller_session, app_name, arg)) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 			abort();
 		}
 		switch_caller_extension_add_application(caller_session, extension, app_name, arg);

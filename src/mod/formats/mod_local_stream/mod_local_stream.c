@@ -300,7 +300,7 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 	switch_mutex_unlock(globals.mutex);
 
 	if (!source) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unknown source %s\n", path);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown source %s\n", path);
 		status = SWITCH_STATUS_FALSE;
 		goto end;
 	}
@@ -408,7 +408,7 @@ static void launch_threads(void)
 	switch_threadattr_t *thd_attr = NULL;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		return;
 	}
 
@@ -417,7 +417,7 @@ static void launch_threads(void)
 		char *name = (char *) switch_xml_attr(directory, "name");
 
 		if (!(name && path)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid config!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid config!\n");
 			continue;
 		}
 
@@ -600,7 +600,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 
 	if (!path){
 		if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 			stream->write_function(stream, "-ERR unable to open file %s!\n",cf);
 			goto done;
 		}
@@ -613,7 +613,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 			else {
 				path = (char *) switch_xml_attr(directory, "path");
 				if (!(name && path)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid config!\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid config!\n");
 					continue;
 				}
 

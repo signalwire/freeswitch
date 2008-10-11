@@ -1150,7 +1150,7 @@ SWITCH_STANDARD_APP(ivr_application_function)
 			}
 			switch_xml_free(cxml);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", ivr_cf_name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", ivr_cf_name);
 		}
 		switch_event_destroy(&params);
 	}
@@ -1444,7 +1444,7 @@ static switch_status_t xfer_on_dtmf(switch_core_session_t *session, void *input,
 				}
 
 				if ((extension = switch_caller_extension_new(peer_session, app, app_arg)) == 0) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 					abort();
 				}
 
@@ -2009,7 +2009,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "as_channel", "true");
 
 	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, params) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", user, domain);
 		cause = SWITCH_CAUSE_SUBSCRIBER_ABSENT;
 		goto done;
 	}

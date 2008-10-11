@@ -264,7 +264,7 @@ static switch_status_t do_config(void)
 				if (!vars_map && need_vars_map == 0) {
 					if (switch_core_hash_init(&vars_map, globals.pool) != SWITCH_STATUS_SUCCESS) {
 						need_vars_map = -1;
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cant init params hash!\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't init params hash!\n");
 						continue;
 					}
 					need_vars_map = 1;
@@ -272,7 +272,7 @@ static switch_status_t do_config(void)
 
 				if (vars_map && val)
 					if (switch_core_hash_insert(vars_map, val, ENABLE_PARAM_VALUE) != SWITCH_STATUS_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cant add %s to params hash!\n", val);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't add %s to params hash!\n", val);
 					}
 			}
 		}

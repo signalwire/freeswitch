@@ -147,7 +147,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 	context = caller_profile->context ? caller_profile->context : "default";
 
 	if (!switch_config_open_file(&cfg, cf)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return NULL;
 	}
@@ -177,7 +177,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 
 				argc = switch_separate_string(val, ',', argv, (sizeof(argv) / sizeof(argv[0])));
 				if (argc < 3) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "parse error line %d!\n", cfg.lineno);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse error line %d!\n", cfg.lineno);
 					continue;
 				}
 
@@ -207,7 +207,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 					if (*pattern == '_') {
 						pattern++;
 						if (switch_ast2regex(pattern, expression_buf, sizeof(expression_buf))) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "converting [%s] to real regex [%s] you should try them!\n",
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Converting [%s] to real regex [%s] you should try them!\n",
 											  pattern, expression_buf);
 						}
 					} else {
@@ -274,7 +274,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 						break;
 					}
 					if ((extension = switch_caller_extension_new(session, field_data, field_data)) == 0) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 						break;
 					}
 				}

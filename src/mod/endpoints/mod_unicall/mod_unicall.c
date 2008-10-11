@@ -1739,7 +1739,7 @@ static switch_status_t config_unicall(int reload)
 
     if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL)))
     {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "opening %s failed\n", cf);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Opening of %s failed\n", cf);
         return SWITCH_STATUS_TERM;
     }
 

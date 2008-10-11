@@ -216,7 +216,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 		
 		if (!(b_session = switch_core_session_request(loopback_endpoint_interface, NULL))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "failure.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failure.\n");
 			goto end;
 		}
 	

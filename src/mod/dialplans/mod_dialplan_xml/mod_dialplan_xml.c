@@ -124,7 +124,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 
 					if (!*extension) {
 						if ((*extension = switch_caller_extension_new(session, exten_name, caller_profile->destination_number)) == 0) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 							proceed = 0;
 							goto done;
 						}
@@ -159,7 +159,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 			if (field && strchr(expression, '(')) {
 				len = (uint32_t) (strlen(data) + strlen(field_data) + 10) * proceed;
 				if (!(substituted = malloc(len))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 					proceed = 0;
 					goto done;
 				}
@@ -172,7 +172,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 
 			if (!*extension) {
 				if ((*extension = switch_caller_extension_new(session, exten_name, caller_profile->destination_number)) == 0) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 					proceed = 0;
 					goto done;
 				}
@@ -237,7 +237,7 @@ SWITCH_STANDARD_DIALPLAN(dialplan_hunt)
 	if (!switch_strlen_zero(alt_path)) {
 		switch_xml_t conf = NULL, tag = NULL;
 		if (!(alt_root = switch_xml_parse_file_simple(alt_path))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of [%s] failed\n", alt_path);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of [%s] failed\n", alt_path);
 			goto done;
 		}
 
@@ -246,12 +246,12 @@ SWITCH_STANDARD_DIALPLAN(dialplan_hunt)
 			xml = alt_root;
 			cfg = tag;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of dialplan failed\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of dialplan failed\n");
 			goto done;
 		}
 	} else {
 		if (dialplan_xml_locate(session, caller_profile, &xml, &cfg) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of dialplan failed\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of dialplan failed\n");
 			goto done;
 		}
 	}
@@ -259,7 +259,7 @@ SWITCH_STANDARD_DIALPLAN(dialplan_hunt)
 	/* get a handle to the context tag */
 	if (!(xcontext = switch_xml_find_child(cfg, "context", "name", caller_profile->context))) {
 		if (!(xcontext = switch_xml_find_child(cfg, "context", "name", "global"))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "context %s not found\n", caller_profile->context);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Context %s not found\n", caller_profile->context);
 			goto done;
 		}
 	}

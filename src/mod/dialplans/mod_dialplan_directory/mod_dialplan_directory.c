@@ -58,7 +58,7 @@ static void load_config(void)
 
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		return;
 	}
 
@@ -122,7 +122,7 @@ SWITCH_STANDARD_DIALPLAN(directory_dialplan_hunt)
 			if (!strcasecmp(var, "callflow")) {
 				if (!extension) {
 					if ((extension = switch_caller_extension_new(session, caller_profile->destination_number, caller_profile->destination_number)) == 0) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 						goto out;
 					}
 				}

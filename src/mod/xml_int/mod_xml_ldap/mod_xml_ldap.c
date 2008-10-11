@@ -176,7 +176,7 @@ static switch_status_t xml_ldap_directory_result(void *ldap_connection, xml_bind
 									ldap_value_free(ldap->valvals);
 								}
 							} else {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "seems the values %d and %d are not the same??\n",
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Seems the values %d and %d are not the same??\n",
 												  ldap_count_values(ldap->valvals), ldap_count_values(ldap->keyvals));
 							}
 						}
@@ -234,7 +234,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 
 
 	if (!binding) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no bindings...sorry bud returning now\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No bindings...sorry bud returning now\n");
 		return NULL;
 	}
 
@@ -247,7 +247,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 	} else if (!strcmp(section, "phrases")) {
 		query_type = XML_LDAP_PHRASE;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid section\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid section\n");
 		return NULL;
 	}
 
@@ -305,7 +305,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-									  "something bad happened during the query construction phase likely exten(%s) or domain(%s) is null\n", dir_exten,
+									  "Something bad happened during the query construction phase likely exten(%s) or domain(%s) is null\n", dir_exten,
 									  dir_domain);
 					goto cleanup;
 				}
@@ -387,7 +387,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 	switch_safe_free(search_base);
 
 	//switch_xml_toxml_buf(xml,buf,0,0,1);
-	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "providing:\n%s\n", buf);
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Providing:\n%s\n", buf);
 
 	if (ret) {
 		switch_xml_free(xml);
@@ -406,7 +406,7 @@ static switch_status_t do_config(void)
 	int x = 0;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 

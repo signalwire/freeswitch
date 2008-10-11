@@ -872,7 +872,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	async_file_frame = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
 
 	if (switch_core_timer_init(&timer, conference->timer_name, conference->interval, samples, conference->pool) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer success interval: %u  samples: %u\n", conference->interval, samples);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setup timer success interval: %u  samples: %u\n", conference->interval, samples);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer Setup Failed.  Conference Cannot Start\n");
 		return NULL;
@@ -1757,7 +1757,7 @@ static void conference_loop_output(conference_member_t *member)
 		return;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer %s success interval: %u  samples: %u\n",
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setup timer %s success interval: %u  samples: %u\n",
 					  member->conference->timer_name, interval, tsamples);
 
 	write_frame.data = data = switch_core_session_alloc(member->session, SWITCH_RECOMMENDED_BUFFER_SIZE);
@@ -2111,7 +2111,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 
 
 	if (switch_core_timer_init(&timer, conference->timer_name, conference->interval, samples, rec->pool) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer success interval: %u  samples: %u\n", conference->interval, samples);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setup timer success interval: %u  samples: %u\n", conference->interval, samples);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer Setup Failed.  Conference Cannot Start\n");
 		goto end;
@@ -2425,7 +2425,7 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 	}
 	fnode->pool = pool;
 	/* Queue the node */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "queueing file '%s' for play\n", file);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queueing file '%s' for play\n", file);
 	switch_mutex_lock(member->flag_mutex);
 	for (nptr = member->fnode; nptr && nptr->next; nptr = nptr->next);
 	if (nptr) {
@@ -3398,7 +3398,7 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 
 				/* Open the config from the xml registry  */
 				if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, params))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf_name);
 					goto done;
 				}
 
@@ -3873,7 +3873,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 
 		/* build an extension name object */
 		if ((extension = switch_caller_extension_new(peer_session, conference_name, conference_name)) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 			status = SWITCH_STATUS_MEMERR;
 			goto done;
 		}
@@ -4255,7 +4255,7 @@ SWITCH_STANDARD_APP(conference_function)
 
 	/* Open the config from the xml registry */
 	if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, params))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf_name);
 		goto done;
 	}
 
@@ -5147,7 +5147,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to install caller controls group '%s'\n", caller_controls);
 			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "no caller controls installed.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No caller controls installed.\n");
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to allocate caller control digit parser.\n");
@@ -5228,7 +5228,7 @@ static void send_presence(switch_event_types_t id)
 
 	/* Open the config from the xml registry */
 	if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, params))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf_name);
 		goto done;
 	}
 

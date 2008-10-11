@@ -242,7 +242,7 @@ static switch_status_t load_config(void)
 	switch_core_hash_init(&globals.profile_hash, globals.pool);
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -521,7 +521,7 @@ static switch_status_t load_config(void)
 				if (tmp >= 0 && tmp <= 10000) {
 					record_threshold = tmp;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid threshold value [%s] must be between 0 and 10000 ms\n", val);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid threshold value [%s] must be between 0 and 10000 ms\n", val);
 				}
 			} else if (!strcasecmp(var, "record-sample-rate")) {
 				int tmp = 0;
@@ -531,7 +531,7 @@ static switch_status_t load_config(void)
 				if (tmp == 8000 || tmp == 16000 || tmp == 32000 || tmp == 11025 || tmp == 22050 || tmp == 44100) {
 					record_sample_rate = tmp;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid samplerate %s\n", val);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid samplerate %s\n", val);
 				}
 			} else if (!strcasecmp(var, "record-silence-hits")) {
 				int tmp = 0;
@@ -541,7 +541,7 @@ static switch_status_t load_config(void)
 				if (tmp >= 0 && tmp <= 1000) {
 					record_silence_hits = tmp;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid threshold value [%s] must be between 0 and 1000 ms\n", val);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid threshold value [%s] must be between 0 and 1000 ms\n", val);
 				}
 			} else if (!strcasecmp(var, "tone-spec") && !switch_strlen_zero(val)) {
 				tone_spec = val;
@@ -553,7 +553,7 @@ static switch_status_t load_config(void)
 				if (tmp >= 1000 && tmp <= 30000) {
 					timeout = tmp;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid timeout value [%s] must be between 1000 and 30000 ms\n", val);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid timeout value [%s] must be between 1000 and 30000 ms\n", val);
 				}
 			} else if (!strcasecmp(var, "max-login-attempts")) {
 				int tmp = 0;
@@ -563,7 +563,7 @@ static switch_status_t load_config(void)
 				if (tmp > 0 && tmp < 11) {
 					max_login_attempts = tmp;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid attempts [%s] must be between 1 and 10 ms\n", val);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid attempts [%s] must be between 1 and 10 ms\n", val);
 				}
 			} else if (!strcasecmp(var, "min-record-len")) {
 				int tmp = 0;
@@ -573,7 +573,7 @@ static switch_status_t load_config(void)
 				if (tmp > 0 && tmp < 10000) {
 					min_record_len = tmp;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid record length [%s] must be between 1 and 10000s\n", val);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid record length [%s] must be between 1 and 10000s\n", val);
 				}
 			} else if (!strcasecmp(var, "max-record-len")) {
 				int tmp = 0;
@@ -583,7 +583,7 @@ static switch_status_t load_config(void)
 				if (tmp > 0 && tmp < 10000) {
 					max_record_len = tmp;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid record length [%s] must be between 1 and 10000s\n", val);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid record length [%s] must be between 1 and 10000s\n", val);
 				}
 			} else if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
 #ifdef SWITCH_HAVE_ODBC
@@ -983,7 +983,7 @@ static int unlink_callback(void *pArg, int argc, char **argv, char **columnNames
 {
 	if (argv[0]) {
 		if (unlink(argv[0]) != 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "failed to delete file [%s]\n", argv[0]);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", argv[0]);
 		}
 	}
 	return 0;
@@ -1054,7 +1054,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Message is less than minimum record length: %d, discarding it.\n",
 							  profile->min_record_len);
 			if (unlink(file_path) != 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "failed to delete file [%s]\n", file_path);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
 			}
 			if (switch_channel_ready(channel)) {
 				TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "too-small", NULL, NULL));
@@ -1284,7 +1284,7 @@ static char *vm_merge_file(switch_core_session_t *session, vm_profile_t *profile
 	}
 
 	if (unlink(announce) != 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "failed to delete file [%s]\n", announce);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", announce);
 	}
 	ret = tmp_path;
 	
@@ -1538,7 +1538,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 
 	if (forward_file_path) {
 		if (unlink(forward_file_path) != 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "failed to delete file [%s]\n", forward_file_path);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", forward_file_path);
 		}
 	}
 
@@ -1935,7 +1935,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 					
 					if (switch_xml_locate_user("id", myid, domain_name, switch_channel_get_variable(channel, "network_addr"),
 											   &x_domain_root, &x_domain, &x_user, params) != SWITCH_STATUS_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", myid, domain_name);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", myid, domain_name);
 						ok = 0;
 					}
 					
@@ -2153,9 +2153,9 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		} else if (!strcasecmp(var, "timezone")) {
 			vm_timezone = switch_core_strdup(pool, val);
 		}
-		/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "send mail is %d, var is %s\n", send_mail, var);*/
+		/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send mail is %d, var is %s\n", send_mail, var);*/
 	}
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "send mail is %d and that's my final answer\n", send_mail);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send mail is %d and that's my final answer\n", send_mail);
 	if (!switch_strlen_zero(vm_storage_dir)) {
 		dir_path = switch_mprintf("%s%s%s", vm_storage_dir, SWITCH_PATH_SEPARATOR, myid);
 	} else if (!switch_strlen_zero(profile->storage_dir)) {
@@ -2362,7 +2362,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 
 		if (!insert_db) {
 			if (unlink(file_path) != 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "failed to delete file [%s]\n", file_path);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
 			}
 		}
 	}
@@ -2401,7 +2401,7 @@ static switch_status_t voicemail_inject(const char *data)
 	switch_assert(dup);
 
 	if ((argc = switch_separate_string(dup, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "not enough args [%s]\n", data);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not enough args [%s]\n", data);
 		status = SWITCH_STATUS_FALSE;
 		goto end;
 	}
@@ -2427,7 +2427,7 @@ static switch_status_t voicemail_inject(const char *data)
 	}
 	
 	if (!(user && domain)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid syntax [%s][%s]\n", switch_str_nil(user), switch_str_nil(domain));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid syntax [%s][%s]\n", switch_str_nil(user), switch_str_nil(domain));
 		status = SWITCH_STATUS_FALSE;
 		goto end;
 	}
@@ -2610,7 +2610,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 			}
 			
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", id, domain_name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", id, domain_name);
 			ok = 0;
 		}
 
@@ -3027,7 +3027,7 @@ static int del_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	if (argc > 8) {
 		if (unlink(argv[8]) != 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "failed to delete file [%s]\n", argv[8]);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", argv[8]);
 		}
 	}
 	return 0;

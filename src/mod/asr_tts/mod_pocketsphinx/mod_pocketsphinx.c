@@ -94,7 +94,7 @@ static switch_status_t pocketsphinx_asr_open(switch_asr_handle_t *ah, const char
 	} else if (rate == 16000) {
 		ah->rate = 16000;
 	} else {  
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid rate %d. Only 8000 and 16000 are supported.\n", rate);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid rate %d. Only 8000 and 16000 are supported.\n", rate);
 	}
 
 	codec = "L16";
@@ -423,7 +423,7 @@ static switch_status_t load_config(void)
 	globals.auto_reload = 1;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}

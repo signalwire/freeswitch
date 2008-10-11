@@ -827,7 +827,7 @@ static switch_status_t load_config(void)
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 

@@ -153,7 +153,7 @@ static switch_status_t tone_stream_file_open(switch_file_handle_t *handle, const
 	if (!strncasecmp(tonespec, "path=", 5)) {
 		tmp = tonespec + 5;
 		if ((fd = open(tmp, O_RDONLY)) < 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "failed to open [%s]\n", tmp);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to open [%s]\n", tmp);
 			return SWITCH_STATUS_FALSE;
 		}
 

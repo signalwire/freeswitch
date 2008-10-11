@@ -116,7 +116,7 @@ static switch_status_t load_config(void)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -205,7 +205,7 @@ static char *reverse_number(char *in, char *root)
 static void dnserror(enum_query_t *q, int errnum)
 {
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "unable to lookup %s record for %s: %s\n",
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unable to lookup %s record for %s: %s\n",
 					  dns_typename(q->qtyp), dns_dntosp(q->dn), dns_strerror(errnum));
 	q->errs++;
 }
@@ -583,7 +583,7 @@ SWITCH_STANDARD_DIALPLAN(enum_dialplan_hunt)
 
 	if (enum_lookup(dp, caller_profile->destination_number, &results) == SWITCH_STATUS_SUCCESS) {
 		if ((extension = switch_caller_extension_new(session, caller_profile->destination_number, caller_profile->destination_number)) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 			free_results(&results);
 			return NULL;
 		}
