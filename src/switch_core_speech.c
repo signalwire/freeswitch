@@ -57,7 +57,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 	}
 
 	if ((sh->speech_interface = switch_loadable_module_get_speech_interface(module_name)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid speech module [%s]!\n", module_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid speech module [%s]!\n", module_name);
 		return SWITCH_STATUS_GENERR;
 	}
 

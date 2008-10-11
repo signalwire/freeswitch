@@ -61,7 +61,7 @@ static switch_status_t console_xml_config(void)
 	}
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -71,7 +71,7 @@ static switch_status_t console_xml_config(void)
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 			int i = atoi(var);
 			if ((i < 1) || (i > 12)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "keybind %s is invalid, range is from 1 to 12\n", var);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Keybind %s is invalid, range is from 1 to 12\n", var);
 			} else {
 				/* Add the command to the fnkey array */
 				console_fnkeys[i - 1] = switch_core_permanent_strdup(val);

@@ -54,7 +54,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
 	switch_assert(ah != NULL);
 
 	if ((ah->asr_interface = switch_loadable_module_get_asr_interface(module_name)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid asr module [%s]!\n", module_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ASR module [%s]!\n", module_name);
 		return SWITCH_STATUS_GENERR;
 	}
 

@@ -740,7 +740,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activating Secure RTP SEND\n");
 				switch_set_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error allocating srtp [%d]\n", stat);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error allocating SRTP [%d]\n", stat);
 				return status;
 			}
 		}
@@ -1426,7 +1426,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (stat && rtp_session->recv_msg.header.pt != rtp_session->te && rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
 				if (++rtp_session->srtp_errs >= MAX_SRTP_ERRS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-									  "error: srtp unprotect failed with code %d%s\n", stat,
+									  "Error: SRTP unprotect failed with code %d%s\n", stat,
 									  stat == err_status_replay_fail ? " (replay check failed)" : stat ==
 									  err_status_auth_fail ? " (auth check failed)" : "");
 					ret = -1;
@@ -1948,7 +1948,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 			stat = srtp_protect(rtp_session->send_ctx, &send_msg->header, &sbytes);
 			if (stat) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error: srtp protection failed with code %d\n", stat);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: SRTP protection failed with code %d\n", stat);
 			}
 
 			bytes = sbytes;
@@ -2141,7 +2141,7 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 
 		stat = srtp_protect(rtp_session->send_ctx, &rtp_session->write_msg.header, &sbytes);
 		if (stat) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error: srtp protection failed with code %d\n", stat);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: SRTP protection failed with code %d\n", stat);
 		}
 		bytes = sbytes;
 	}

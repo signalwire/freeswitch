@@ -309,7 +309,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 	}
 
 	if (!*new_session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "outgoing method for endpoint: [%s] returned: [%s] but there is no new session!\n",
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Outgoing method for endpoint: [%s] returned: [%s] but there is no new session!\n",
 						  endpoint_name, switch_channel_cause2str(cause));
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	} else {

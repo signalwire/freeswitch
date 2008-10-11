@@ -415,7 +415,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 				switch (status) {
 				case SWITCH_STATUS_RESAMPLE:
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "fixme 1\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fixme 1\n");
 				case SWITCH_STATUS_SUCCESS:
 					session->enc_read_frame.samples = session->read_codec->implementation->bytes_per_frame / sizeof(int16_t);
 					if (perfect) {
@@ -777,7 +777,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 				switch (status) {
 				case SWITCH_STATUS_RESAMPLE:
-					/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "fixme 2\n"); */
+					/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fixme 2\n"); */
 				case SWITCH_STATUS_SUCCESS:
 					session->enc_write_frame.codec = session->write_codec;
 					session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t);

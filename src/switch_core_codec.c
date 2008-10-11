@@ -297,7 +297,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, co
 	}
 
 	if ((codec_interface = switch_loadable_module_get_codec_interface(codec_name)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid codec %s!\n", codec_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid codec %s!\n", codec_name);
 		return SWITCH_STATUS_GENERR;
 	}
 

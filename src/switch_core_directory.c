@@ -41,7 +41,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_directory_open(switch_directory_hand
 	switch_status_t status;
 
 	if ((dh->directory_interface = switch_loadable_module_get_directory_interface(module_name)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid directory module [%s]!\n", module_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid directory module [%s]!\n", module_name);
 		return SWITCH_STATUS_GENERR;
 	}
 

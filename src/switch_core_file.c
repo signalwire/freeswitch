@@ -63,7 +63,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	}
 
 	if ((fh->file_interface = switch_loadable_module_get_file_interface(ext)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid file format [%s] for [%s]!\n", ext, file_path);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid file format [%s] for [%s]!\n", ext, file_path);
 		return SWITCH_STATUS_GENERR;
 	}
 
