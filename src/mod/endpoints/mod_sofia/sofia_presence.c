@@ -250,7 +250,7 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 
 	if ((pname = switch_event_get_header(event, "sofia-profile"))) {
 		if (!(profile = sofia_glue_find_profile(pname))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no profile %s\n", pname);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No profile %s\n", pname);
 		}
 	}
 

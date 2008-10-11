@@ -595,7 +595,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 					   SIPTAG_SUPPORTED_STR(supported), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "activated db for %s\n", profile->name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Activated db for %s\n", profile->name);
 
 	switch_mutex_init(&profile->ireg_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 	switch_mutex_init(&profile->gateway_mutex, SWITCH_MUTEX_NESTED, profile->pool);
@@ -642,7 +642,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	su_root_run(profile->s_root);
 
 	sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "waiting for worker thread\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Waiting for worker thread\n");
 
 	while (sofia_test_pflag(profile, PFLAG_WORKER_RUNNING)) {
 		switch_yield(100000);
@@ -650,7 +650,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	while (profile->inuse) {
 		switch_yield(5000000);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "waiting for %d session(s)\n", profile->inuse);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Waiting for %d session(s)\n", profile->inuse);
 		if (!sanity--) {
 			break;
 		}
@@ -892,7 +892,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 
 			gateway->retry_seconds = atoi(retry_seconds);
 			if (gateway->retry_seconds < 10) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid retry-seconds of %d on gateway %s, using the value of 30 instead.\n",
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid retry-seconds of %d on gateway %s, using the value of 30 instead.\n",
 								  gateway->retry_seconds, name);
 				gateway->retry_seconds = 30;
 			}
@@ -986,7 +986,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "reconfig", "true");
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, params))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -1330,7 +1330,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile", profile_name);
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, params))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -1972,10 +1972,10 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 			}
 			gateway->status = SOFIA_GATEWAY_UP;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ping failed %s\n", gateway->name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ping failed %s\n", gateway->name);
 			gateway->status = SOFIA_GATEWAY_DOWN;
 			if (gateway->state == REG_STATE_REGED) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "unregister %s\n", gateway->name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unregister %s\n", gateway->name);
 				gateway->state = REG_STATE_FAILED;
 			}
 		}
@@ -2156,7 +2156,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 		if (sip && sip->sip_call_id && sip->sip_call_id->i_id) callid = sip->sip_call_id->i_id;
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "received response to invite with no matching session, destroying callid [%s]!\n", callid);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received response to invite with no matching session, destroying callid [%s]!\n", callid);
 
 		if (nh) {
 			if (status == 200) {

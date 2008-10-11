@@ -464,7 +464,7 @@ switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_
 		}
 
 		if (switch_strlen_zero(stun_ip)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! NO STUN SERVER\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "STUN Failed! NO STUN SERVER\n");
 			goto out;
 		}
 
@@ -481,21 +481,21 @@ switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_
 			}
 		}
 		if (status != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! %s:%d [%s]\n", stun_ip, stun_port, error);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "STUN Failed! %s:%d [%s]\n", stun_ip, stun_port, error);
 			goto out;
 		}
 		if (!*ip) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! No IP returned\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "STUN Failed! No IP returned\n");
 			goto out;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Success [%s]:[%d]\n", *ip, *port);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "STUN Success [%s]:[%d]\n", *ip, *port);
 		status = SWITCH_STATUS_SUCCESS;
 		if (tech_pvt) {
 			if (myport == *port && !strcmp(*ip, tech_pvt->profile->rtpip)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Not Required ip and port match. [%s]:[%d]\n", *ip, *port);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "STUN Not Required ip and port match. [%s]:[%d]\n", *ip, *port);
 				if (profile->pflags & PFLAG_STUN_AUTO_DISABLE) {
 					profile->pflags &= ~PFLAG_STUN_ENABLED;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun completely disabled.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "STUN completely disabled.\n");
 				}
 			} else {
 				tech_pvt->stun_ip = switch_core_session_strdup(tech_pvt->session, stun_ip);
@@ -2203,7 +2203,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					int crypto_tag;
 
 					if (m->m_proto != sdp_proto_srtp) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "a=crypto in RTP/AVP\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "a=crypto in RTP/AVP, refer to rfc3711\n");
 						match = 0;
 						goto done;
 					}

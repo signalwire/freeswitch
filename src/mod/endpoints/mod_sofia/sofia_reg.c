@@ -92,7 +92,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->name);
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->register_from);
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->register_contact);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "deleted gateway %s\n", gateway_ptr->name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleted gateway %s\n", gateway_ptr->name);
 		} else {
 			last = gateway_ptr;
 		}
@@ -127,7 +127,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			gateway_ptr->status = SOFIA_GATEWAY_UP;
 			break;
 		case REG_STATE_REGISTER:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "registered %s\n", gateway_ptr->name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Registered %s\n", gateway_ptr->name);
 			if (gateway_ptr->expires > 60) {
 				gateway_ptr->expires = now + (gateway_ptr->freq - 15);
 			} else {
@@ -150,7 +150,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 											  NUTAG_URL(gateway_ptr->register_proxy),
 											  SIPTAG_TO_STR(gateway_ptr->register_to),
 											  NUTAG_CALLSTATE_REF(ss_state), SIPTAG_FROM_STR(gateway_ptr->register_from), TAG_END()))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "registering %s\n", gateway_ptr->name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Registering %s\n", gateway_ptr->name);
 
 				if (!gateway_ptr->sofia_private) {
 					gateway_ptr->sofia_private = malloc(sizeof(*gateway_ptr->sofia_private));
@@ -732,7 +732,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 
 		if (auth_res != AUTH_OK && !stale) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "send %s for [%s@%s]\n", forbidden ? "forbidden" : "challenge", to_user, to_host);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s for [%s@%s]\n", forbidden ? "forbidden" : "challenge", to_user, to_host);
 			if (auth_res == AUTH_FORBIDDEN) {
 				nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
 			} else {
@@ -1095,7 +1095,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 
 		if ((tech_pvt = switch_core_session_get_private(session)) && switch_test_flag(tech_pvt, TFLAG_REFER)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "received reply from refer\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Received reply from REFER\n");
 			goto end;
 		}
 
@@ -1315,7 +1315,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 
 	if (switch_xml_locate_user("id", switch_strlen_zero(username) ? "nobody" : username, 
 							   domain_name, ip, &xml, &domain, &user, params) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n"
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n"
 						  "You must define a domain called '%s' in your directory and add a user with the id=\"%s\" attribute\n"
 						  "and you must configure your device to use the proper domain in it's authentication credentials.\n"
 						  , username, domain_name, domain_name, username);
