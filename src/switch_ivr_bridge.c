@@ -455,7 +455,7 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 
 	state = switch_channel_get_state(channel);
 
-	if (!switch_channel_test_flag(channel, CF_TRANSFER) && !bd->clean_exit && state != CS_PARK && 
+	if (!switch_channel_test_flag(channel, CF_TRANSFER) && bd && !bd->clean_exit && state != CS_PARK && 
 		state != CS_ROUTING && !switch_channel_test_flag(channel, CF_INNER_BRIDGE)) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 	}
