@@ -21,15 +21,17 @@
   <!--the domain or ip (the right hand side of the @ in the addr-->
   <domain name="$${domain}">
     <params>
-      <param name="dial-string" value="{presence_id=${dialed_user}@${dialed_domain},transfer_fallback_extension=${dialed_user}}${sofia_contact(${dialed_user}@${dialed_domain})}"/>
+      <param name="dial-string" value="{presence_id=${dialed_user}@${dialed_domain}}${sofia_contact(${dialed_user}@${dialed_domain})}"/>
     </params>
 
     <variables>
       <variable name="record_stereo" value="true"/>
       <variable name="default_gateway" value="$${default_provider}"/>
       <variable name="default_areacode" value="$${default_areacode}"/>
+      <variable name="transfer_fallback_extension" value="operator"/>
     </variables>
 
     <X-PRE-PROCESS cmd="include" data="default/*.xml"/>
+
   </domain>
 </include>
