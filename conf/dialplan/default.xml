@@ -98,7 +98,7 @@
       </condition>
     </extension>
 
-    <!-- If sip_req_host is not a local domain them this has to be an external sip uri -->
+    <!-- If sip_req_host is not a local domain then this has to be an external sip uri -->
     <extension name="external_sip_uri" continue="true">
       <condition field="source" expression="mod_sofia"/>
       <condition field="${outside_call}" expression="^$"/>
