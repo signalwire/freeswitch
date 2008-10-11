@@ -334,7 +334,6 @@ typedef struct api_command {
 	char *psyntax;
 } api_command_t;
 
-
 /* Function Prototypes */
 static uint32_t next_member_id(void);
 static conference_relationship_t *member_get_relationship(conference_member_t *member, conference_member_t *other_member);
@@ -394,6 +393,7 @@ static switch_status_t conference_add_event_data(conference_obj_t *conference, s
 
 	return status;
 }
+
 static switch_status_t conference_add_event_member_data(conference_member_t *member, switch_event_t *event)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -414,7 +414,6 @@ static switch_status_t conference_add_event_member_data(conference_member_t *mem
 
 	return status;
 }
-
 
 /* Return a Distinct ID # */
 static uint32_t next_member_id(void)
@@ -652,7 +651,6 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	switch_mutex_unlock(conference->mutex);
 	status = SWITCH_STATUS_SUCCESS;
 
-
 	return status;
 }
 
@@ -767,7 +765,6 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 	switch_mutex_unlock(member->audio_in_mutex);
 	switch_mutex_unlock(conference->mutex);
 	status = SWITCH_STATUS_SUCCESS;
-
 
 	return status;
 }
@@ -1004,7 +1001,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		}
 
 		if (ready || has_file_data) {
-			//int nt = 0;
 			/* Build a muxed frame for every member that contains the mixed audio of everyone else */
 
 			for (omember = conference->members; omember; omember = omember->next) {
@@ -1815,9 +1811,7 @@ static void conference_loop_output(conference_member_t *member)
 		switch_size_t file_sample_len = csamples;
 		switch_size_t file_data_len = file_sample_len * 2;
 
-
 		switch_mutex_lock(member->flag_mutex);
-
 
 		if (switch_core_session_dequeue_event(member->session, &event) == SWITCH_STATUS_SUCCESS) {
 			if (event->event_id == SWITCH_EVENT_MESSAGE) {
@@ -2607,7 +2601,6 @@ static switch_status_t conference_say(conference_obj_t *conference, const char *
 	switch_sleep(200000);
 	switch_core_speech_feed_tts(fnode->sh, (char *) text, &flags);
 	switch_mutex_unlock(conference->mutex);
-
 	status = SWITCH_STATUS_SUCCESS;
 
 	return status;
@@ -2627,7 +2620,6 @@ static void conference_member_itterator(conference_obj_t *conference, switch_str
 		pfncallback(member, stream, data);
 	}
 	switch_mutex_unlock(conference->member_mutex);
-
 }
 
 static void conference_list_pretty(conference_obj_t *conference, switch_stream_handle_t *stream)
@@ -3326,7 +3318,6 @@ static switch_status_t conf_api_sub_dial(conference_obj_t *conference, switch_st
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 static switch_status_t conf_api_sub_bgdial(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	switch_assert(stream != NULL);
@@ -3802,7 +3793,6 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 	int rdlock = 0;
 
 	*cause = SWITCH_CAUSE_NORMAL_CLEARING;
-
 
 	if (conference == NULL) {
 		char *dialstr = switch_mprintf("{ignore_early_media=true}%s", bridgeto);
@@ -4453,7 +4443,6 @@ SWITCH_STANDARD_APP(conference_function)
 	if (switch_core_codec_init(&member.read_codec,
 							   "L16",
 							   NULL, read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_frame / 1000,
-							   //conference->interval,
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member.pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 						  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
@@ -4728,7 +4717,6 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 	switch_safe_free(lbuf);
 	
 	ci->chat_send(CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", stream.data, NULL);
-	//ci->chat_send(CONF_CHAT_PROTO, to, from, "", stream.data, NULL);
 	switch_safe_free(stream.data);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -4953,18 +4941,19 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 		} else if (!strcasecmp(var, "sound-prefix") && !switch_strlen_zero(val)) {
 			sound_prefix = val;
 		} else if (!strcasecmp(var, "max-members") && !switch_strlen_zero(val)) {
-			errno = 0;			// sanity first
-			max_members = strtol(val, NULL, 0);	// base 0 lets 0x... for hex 0... for octal and base 10 otherwise through
+			errno = 0;			/* sanity first */
+			max_members = strtol(val, NULL, 0);	/* base 0 lets 0x... for hex 0... for octal and base 10 otherwise through */
 			if (errno == ERANGE || errno == EINVAL || max_members < 0 || max_members == 1) {
-				// a negative wont work well, and its foolish to have a conference limited to 1 person unless the outbound 
-				// stuff is added, see comments above
-				max_members = 0;	// set to 0 to disable max counts
+				/* a negative wont work well, and its foolish to have a conference limited to 1 person unless the outbound 
+				 * stuff is added, see comments above
+				 */
+				max_members = 0;	/* set to 0 to disable max counts */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "max-members %s is invalid, not setting a limit\n", val);
 			}
 		} else if (!strcasecmp(var, "max-members-sound") && !switch_strlen_zero(val)) {
 			maxmember_sound = val;
 		} else if (!strcasecmp(var, "announce-count") && !switch_strlen_zero(val)) {
-			errno = 0;			// safety first
+			errno = 0;			/* safety first */
 			announce_count = strtol(val, NULL, 0);
 			if (errno == ERANGE || errno == EINVAL) {
 				announce_count = 0;
@@ -5109,7 +5098,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	if (!switch_strlen_zero(maxmember_sound)) {
 		conference->maxmember_sound = switch_core_strdup(conference->pool, maxmember_sound);
 	}
-	// its going to be 0 by default, set to a value otherwise so this should be safe
+	/* its going to be 0 by default, set to a value otherwise so this should be safe */
 	conference->max_members = max_members;
 	conference->announce_count = announce_count;
 
