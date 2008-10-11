@@ -264,8 +264,8 @@ SWITCH_STANDARD_API(domain_exists_function)
 		} else {
 			stream->write_function(stream, "false");
 		}
+		switch_xml_free(root); 
 	}
-	switch_xml_free(root); 
 	
 	return SWITCH_STATUS_SUCCESS;
 }
