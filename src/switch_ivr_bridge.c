@@ -83,6 +83,7 @@ struct switch_ivr_bridge_data {
 	int stream_id;
 	switch_input_callback_function_t input_callback;
 	void *session_data;
+	int clean_exit;
 };
 typedef struct switch_ivr_bridge_data switch_ivr_bridge_data_t;
 
@@ -109,6 +110,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	struct vid_helper vh = { 0 };
 	uint32_t vid_launch = 0;
 #endif
+	data->clean_exit = 0;
 
 	session_a = data->session;
 	if (!(session_b = switch_core_session_locate(data->b_uuid))) {
@@ -204,7 +206,11 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			goto end_of_bridge_loop;
 		}
 
-		if (switch_channel_test_flag(chan_a, CF_TRANSFER) || switch_channel_test_flag(chan_b, CF_TRANSFER)) {
+		if (switch_channel_test_flag(chan_a, CF_TRANSFER)) {
+			data->clean_exit = 1;
+		}
+
+		if (data->clean_exit || switch_channel_test_flag(chan_b, CF_TRANSFER)) {
 			switch_channel_clear_flag(chan_a, CF_HOLD);
 			switch_channel_clear_flag(chan_a, CF_SUSPEND);
 			goto end_of_bridge_loop;
@@ -449,7 +455,8 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 
 	state = switch_channel_get_state(channel);
 
-	if (!switch_channel_test_flag(channel, CF_TRANSFER) && state != CS_PARK && state != CS_ROUTING && !switch_channel_test_flag(channel, CF_INNER_BRIDGE)) {
+	if (!switch_channel_test_flag(channel, CF_TRANSFER) && !bd->clean_exit && state != CS_PARK && 
+		state != CS_ROUTING && !switch_channel_test_flag(channel, CF_INNER_BRIDGE)) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 	}
 
@@ -771,12 +778,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	b_leg->stream_id = stream_id;
 	b_leg->input_callback = input_callback;
 	b_leg->session_data = peer_session_data;
+	b_leg->clean_exit = 0;
 
 	a_leg->session = session;
 	switch_copy_string(a_leg->b_uuid, switch_core_session_get_uuid(peer_session), sizeof(a_leg->b_uuid));
 	a_leg->stream_id = stream_id;
 	a_leg->input_callback = input_callback;
 	a_leg->session_data = session_data;
+	a_leg->clean_exit = 0;
 
 	switch_channel_add_state_handler(peer_channel, &audio_bridge_peer_state_handlers);
 
@@ -900,7 +909,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 	state = switch_channel_get_state(caller_channel);
 
-	if (!switch_channel_test_flag(caller_channel, CF_TRANSFER) && !inner_bridge) {
+	if (!switch_channel_test_flag(caller_channel, CF_TRANSFER) && !a_leg->clean_exit && !inner_bridge) {
 		if ((state != CS_EXECUTE && state != CS_SOFT_EXECUTE && state != CS_PARK && state != CS_ROUTING) ||
 			(switch_channel_test_flag(peer_channel, CF_ANSWERED) && state < CS_HANGUP &&
 			 switch_true(switch_channel_get_variable(caller_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE)))) {
