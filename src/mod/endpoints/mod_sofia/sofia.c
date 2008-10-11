@@ -1876,10 +1876,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 			if (profile) {
 				switch_xml_t aliases_tag, alias_tag;
 
-				if ((gateways_tag = switch_xml_child(xprofile, "registrations"))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
-									  "The <registrations> syntax has been discontinued, please see the new syntax in the default configuration examples\n");
-				} else if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
+				if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
 					parse_gateways(profile, gateways_tag);
 				}
 
