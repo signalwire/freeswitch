@@ -75,6 +75,7 @@ struct private_object {
 	unsigned char cng_databuf[10];
 	switch_timer_t timer;
 	switch_caller_profile_t *caller_profile;
+	int32_t bowout_frame_count;
 };
 typedef struct private_object private_t;
 
@@ -163,6 +164,8 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	switch_set_flag((&tech_pvt->cng_frame), SFF_CNG);
 	tech_pvt->cng_frame.datalen = 2;
 
+	tech_pvt->bowout_frame_count = (tech_pvt->read_codec.implementation->actual_samples_per_second / 
+							 tech_pvt->read_codec.implementation->samples_per_frame) * 3;
 
 	switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
 	switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
@@ -560,7 +563,8 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		switch_channel_test_flag(tech_pvt->channel, CF_BRIDGED) &&
 		switch_channel_test_flag(tech_pvt->other_channel, CF_BRIDGED) &&
 		switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED) &&
-		switch_channel_test_flag(tech_pvt->other_channel, CF_ANSWERED) 
+		switch_channel_test_flag(tech_pvt->other_channel, CF_ANSWERED) &&
+		!--tech_pvt->bowout_frame_count <= 0
 		) {
 		const char *a_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
 		const char *b_uuid = switch_channel_get_variable(tech_pvt->other_channel, SWITCH_SIGNAL_BOND_VARIABLE);
