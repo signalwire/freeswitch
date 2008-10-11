@@ -223,6 +223,7 @@
 	<anti-action application="db" data="insert/${domain_name}-call_return/${dialed_extension}/${caller_id_number}"/>
 	<anti-action application="db" data="insert/${domain_name}-last_dial_ext/${dialed_extension}/${uuid}"/>
 	<anti-action application="set" data="called_party_callgroup=${user_data(${dialed_extension}@${domain_name} var callgroup)}"/>
+	<anti-action application="export" data="nolocal:sip_secure_media=${user_data(${dialed_extension}@${domain_name} var sip_secure_media)}"/>
 	<anti-action application="db" data="insert/${domain_name}-last_dial/${called_party_callgroup}/${uuid}"/>
 	<anti-action application="bridge" data="user/${dialed_extension}@${domain_name}"/>
 	<anti-action application="answer"/>
