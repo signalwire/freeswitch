@@ -44,7 +44,6 @@ static switch_endpoint_interface_t *loopback_endpoint_interface = NULL;
 
 static switch_memory_pool_t *module_pool = NULL;
 
-
 typedef enum {
 	TFLAG_LINKED = (1 << 0),
 	TFLAG_OUTBOUND = (1 << 1),
@@ -77,12 +76,12 @@ struct private_object {
 	switch_caller_profile_t *caller_profile;
 	int32_t bowout_frame_count;
 };
+
 typedef struct private_object private_t;
 
 static struct {
 	int debug;
 } globals;
-
 
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
@@ -155,7 +154,6 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 
-
 	tech_pvt->write_frame.data = tech_pvt->write_databuf;
 	tech_pvt->write_frame.buflen = sizeof(tech_pvt->write_databuf);
 	
@@ -193,9 +191,6 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 
 	return status;
 }
-
-
-
 
 /* 
    State methods they get called when the state changes to the specific state 
@@ -235,7 +230,6 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 			switch_core_session_destroy(&b_session);
 			goto end;
 		}
-
 		
 		caller_profile = switch_caller_profile_clone(b_session, tech_pvt->caller_profile);
 		caller_profile->source = switch_core_strdup(caller_profile->pool, modname);
@@ -272,14 +266,12 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		goto end;
 	}
 
-
 	switch_channel_set_variable(channel, "loopback_leg", switch_test_flag(tech_pvt, TFLAG_OUTBOUND) ? "B" : "A");
 	switch_channel_set_state(channel, CS_ROUTING);
 
  end:
 
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 static void do_reset(private_t *tech_pvt)
@@ -313,7 +305,6 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 
 static switch_status_t channel_on_execute(switch_core_session_t *session)
 {
-
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 
@@ -324,7 +315,6 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 	assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL EXECUTE\n", switch_channel_get_name(channel));
-
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -391,7 +381,6 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
 
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -417,7 +406,6 @@ static switch_status_t channel_on_exchange_media(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 static switch_status_t channel_on_reset(switch_core_session_t *session)
 {
 	private_t *tech_pvt = (private_t *) switch_core_session_get_private(session);
@@ -429,7 +417,6 @@ static switch_status_t channel_on_reset(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 static switch_status_t channel_on_hibernate(switch_core_session_t *session)
 {
 	private_t *tech_pvt = switch_core_session_get_private(session);
@@ -439,8 +426,6 @@ static switch_status_t channel_on_hibernate(switch_core_session_t *session)
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
-
 
 static switch_status_t channel_on_consume_media(switch_core_session_t *session)
 {
@@ -457,7 +442,6 @@ static switch_status_t channel_on_consume_media(switch_core_session_t *session)
 
 	return SWITCH_STATUS_FALSE;
 }
-
 
 static switch_status_t channel_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
@@ -554,7 +538,6 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	if (switch_test_flag(frame, SFF_CNG) || switch_test_flag(tech_pvt, TFLAG_CNG) || switch_test_flag(tech_pvt, TFLAG_BOWOUT)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
 
 	if (!switch_test_flag(tech_pvt, TFLAG_BOWOUT) && 
 		tech_pvt->other_tech_pvt && 
@@ -615,7 +598,6 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
-
 	
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
@@ -648,13 +630,11 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
 {
 	char name[128];
-
 
 	if (session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -730,7 +710,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 
 	return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-
 }
 
 static switch_state_handler_table_t channel_event_handlers = {
@@ -754,13 +733,8 @@ static switch_io_routines_t channel_io_routines = {
 	/*.receive_message */ channel_receive_message
 };
 
-
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_loopback_load)
 {
-
-	//switch_status_t status;
-
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
 		return SWITCH_STATUS_TERM;
@@ -775,18 +749,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_loopback_load)
 	loopback_endpoint_interface->io_routines = &channel_io_routines;
 	loopback_endpoint_interface->state_handler = &channel_event_handlers;
 
-
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_loopback_shutdown)
 {
 	return SWITCH_STATUS_SUCCESS;
 }
-
-
 
 /* For Emacs:
  * Local Variables:
