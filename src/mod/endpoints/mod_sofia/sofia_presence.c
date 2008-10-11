@@ -40,8 +40,6 @@ static int sofia_presence_sub_reg_callback(void *pArg, int argc, char **argv, ch
 static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char **columnNames);
 static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char **columnNames);
 
-
-
 struct presence_helper {
 	sofia_profile_t *profile;
 	switch_event_t *event;
@@ -74,7 +72,7 @@ switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char
 	switch_assert(dup);
 	prof = dup;
 
-	// Do we have a user of the form profile/user[@host]?
+	/* Do we have a user of the form profile/user[@host]? */
 	if ((user = strchr(prof, '/'))) {
 		*user++ = '\0';
 	} else {
@@ -123,19 +121,17 @@ switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char
 
 	status = SWITCH_STATUS_SUCCESS;
 	contact = sofia_glue_get_url_from_contact(buf, 1);
-	// if this cries, add contact here too, change the 1 to 0 and omit the safe_free
+	/* if this cries, add contact here too, change the 1 to 0 and omit the safe_free */
 	msg_nh = nua_handle(profile->nua, NULL, SIPTAG_FROM_STR(from), NUTAG_URL(contact), SIPTAG_TO_STR(buf),	
 						SIPTAG_CONTACT_STR(profile->url), TAG_END());
 
 	switch_safe_free(contact);
 	nua_message(msg_nh, SIPTAG_CONTENT_TYPE_STR(ct), SIPTAG_PAYLOAD_STR(body), TAG_END());
 
-
  end:
 
 	switch_safe_free(ffrom);
 	switch_safe_free(dup);
-
 
 	if (profile) {
 		switch_thread_rwlock_unlock(profile->rwlock);
@@ -269,7 +265,6 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 	h.profile = profile;
 	h.total = 0;
 
-
 	SWITCH_STANDARD_STREAM(stream);
 
 	for (hp = event->headers; hp; hp = hp->next) {
@@ -329,7 +324,6 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 	char *alt_event_type = switch_event_get_header(event, "alt_event_type");
 	char *sql = NULL;
 	char *euser = NULL, *user = NULL, *host = NULL;
-
 
 	if (!mod_sofia_globals.running) {
 		return;
@@ -503,7 +497,6 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			switch_assert(helper.stream.data);
 
 			sofia_glue_execute_sql_callback(profile, SWITCH_FALSE,
-											//profile->ireg_mutex,
 											NULL, sql, sofia_presence_sub_callback, &helper);
 
 			if (!switch_strlen_zero((char *) helper.stream.data)) {
@@ -838,7 +831,6 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 	}
 }
 
-
 static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	struct presence_helper *helper = (struct presence_helper *) pArg;
@@ -1057,7 +1049,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			switch_copy_string(helper->last_uuid, uuid, sizeof(helper->last_uuid));
 		}
 
-
 		if (!is_dialog) {
 			char status_line[256] = "";
 			if (in) {
@@ -1133,35 +1124,25 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
-	//char *proto = argv[0];
-	//char *user = argv[1];
-	//char *host = argv[2];
 	char *sub_to_user = argv[3];
 	char *sub_to_host = argv[15];
 	char *event = argv[5];
-	//char *contact = argv[6];
 	char *call_id = argv[7];
-	//char *full_from = argv[8];
-	//char *full_via = argv[9];
 	char *expires = argv[10];
 	char *profile_name = argv[13];
 	char *body = argv[14];
 	char *exp;
-	//sofia_profile_t *profile = NULL;
 	char *id = NULL;
 	nua_handle_t *nh;
 	int expire_sec = atoi(expires);
-	//int *total = (int *) pArg;
 	struct mwi_helper *h = (struct mwi_helper *) pArg;
 	sofia_profile_t *ext_profile = NULL, *profile = h->profile;
-	
 
 	if (profile_name && strcasecmp(profile_name, h->profile->name)) {
 		if ((ext_profile = sofia_glue_find_profile(profile_name))) {
 			profile = ext_profile;
 		}
 	}
-
 	
 	if (!(nh = nua_handle_by_call_id(h->profile->nua, call_id))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot find handle for %s\n", call_id);
@@ -1192,9 +1173,6 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 
 	return 0;
 }
-
-
-
 
 static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char **columnNames)
 {
@@ -1336,7 +1314,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 		}
 
-
 		if (is_nat) {
 			contact_host = network_ip;
 			switch_snprintf(new_port, sizeof(new_port), ":%d", network_port);
@@ -1369,9 +1346,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 										is_nat ?  ";nat" : "");
 		}
 
-
 		if (to) {
-			to_str = switch_mprintf("sip:%s@%s", to->a_url->url_user, to->a_url->url_host);	//, to->a_url->url_port);
+			to_str = switch_mprintf("sip:%s@%s", to->a_url->url_user, to->a_url->url_host);
 		}
 
 		if (to) {
@@ -1450,7 +1426,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 								 proto, from_user, from_host, to_user, to_host, event, mod_sofia_globals.hostname);
 		}
 
-
 		switch_mutex_lock(profile->ireg_mutex);
 		switch_assert(sql != NULL);
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
@@ -1481,7 +1456,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		switch_mutex_unlock(profile->ireg_mutex);
 
-
 		if (status < 200) {
 			char *sticky = NULL;
 
@@ -1496,9 +1470,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 
 			nua_respond(nh, SIP_202_ACCEPTED, NUTAG_WITH_THIS(nua), SIPTAG_SUBSCRIPTION_STATE_STR(sstr), TAG_IF(sticky, NUTAG_PROXY(sticky)),
-						//SIPTAG_FROM(sip->sip_to),
-						//SIPTAG_TO(sip->sip_from),
-						//SIPTAG_CONTACT_STR(contact_str),
 						TAG_END());
 
 			switch_safe_free(sticky);
@@ -1508,7 +1479,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		sent_reply++;
 
 #if 0
-
 		nua_notify(nh,
 				   NUTAG_NEWSUB(1),
 				   SIPTAG_SUBSCRIPTION_STATE_STR(sstr), SIPTAG_EVENT_STR(event),
@@ -1551,7 +1521,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			nua_respond(nh, 481, "INVALID SUBSCRIPTION", TAG_END());
 		}
 	}
-
 }
 
 void sofia_presence_handle_sip_r_subscribe(int status,
@@ -1736,7 +1705,6 @@ void sofia_presence_handle_sip_i_message(int status,
 			}
 
 			from_addr = switch_mprintf("%s@%s", from_user, from_host);
-
 
 			sofia_presence_set_hash_key(hash_key, sizeof(hash_key), sip);
 			if ((tech_pvt = (private_object_t *) switch_core_hash_find(profile->chat_hash, hash_key))) {
