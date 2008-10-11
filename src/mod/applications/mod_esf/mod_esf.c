@@ -40,6 +40,7 @@ struct ls_control_packet {
 	uint32_t ip;
 	uint32_t port;
 };
+
 typedef struct ls_control_packet ls_control_packet_t;
 
 typedef enum {
@@ -78,7 +79,6 @@ SWITCH_STANDARD_APP(bcast_function)
 	char *mcast_port_str = "34567";
 	const char *esf_broadcast_ip = NULL, *var;
 
-
 	if (!switch_strlen_zero((char *) data)) {
 		mydata = switch_core_session_strdup(session, data);
 		assert(mydata != NULL);
@@ -102,7 +102,6 @@ SWITCH_STANDARD_APP(bcast_function)
 			mcast_control_port = (switch_port_t) atoi(argv[2]);
 		}
 	}
-
 
 	if (switch_true(switch_channel_get_variable(channel, SWITCH_BYPASS_MEDIA_VARIABLE))) {
 		switch_core_session_message_t msg = { 0 };
@@ -258,7 +257,6 @@ SWITCH_STANDARD_APP(bcast_function)
 
 	return;
 }
-
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_esf_load)
 {

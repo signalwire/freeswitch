@@ -42,7 +42,6 @@ SWITCH_MODULE_DEFINITION(mod_enum, mod_enum_load, mod_enum_shutdown, NULL);
 
 static switch_mutex_t *MUTEX = NULL;
 
-
 struct enum_record {
 	int order;
 	int preference;
@@ -108,7 +107,6 @@ static void add_route(char *service, char *regex, char *replace)
 	switch_mutex_unlock(MUTEX);
 }
 
-
 static switch_status_t load_config(void)
 {
 	char *cf = "enum.conf";
@@ -168,9 +166,7 @@ static switch_status_t load_config(void)
 	}
 
 	return status;
-
 }
-
 
 static char *reverse_number(char *in, char *root)
 {
@@ -209,7 +205,6 @@ static void dnserror(enum_query_t *q, int errnum)
 					  dns_typename(q->qtyp), dns_dntosp(q->dn), dns_strerror(errnum));
 	q->errs++;
 }
-
 
 static void add_result(enum_query_t *q, int order, int preference, char *service, char *route, int supported)
 {
@@ -255,7 +250,6 @@ static void add_result(enum_query_t *q, int order, int preference, char *service
 		q->results = new_result;
 	}
 }
-
 
 static void free_results(enum_record_t **results)
 {
@@ -395,7 +389,7 @@ static void parse_rr(const struct dns_parse *p, enum_query_t *q, struct dns_rr *
 	return;
 
   xperr:
-	//printf("<parse error>\n");
+
 	return;
 }
 
@@ -452,7 +446,6 @@ static void dnscb(struct dns_ctx *ctx, void *result, void *data)
 
 	free(result);
 }
-
 
 static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results)
 {
@@ -567,7 +560,6 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results
 	return sstatus;
 }
 
-
 SWITCH_STANDARD_DIALPLAN(enum_dialplan_hunt)
 {
 	switch_caller_extension_t *extension = NULL;
@@ -603,7 +595,6 @@ SWITCH_STANDARD_DIALPLAN(enum_dialplan_hunt)
 	}
 
 	return extension;
-
 }
 
 SWITCH_STANDARD_APP(enum_app_function)
@@ -666,9 +657,7 @@ SWITCH_STANDARD_APP(enum_app_function)
 			free_results(&results);
 		}
 	}
-
 }
-
 
 SWITCH_STANDARD_API(enum_api)
 {
@@ -729,7 +718,6 @@ SWITCH_STANDARD_API(enum_api)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 static void do_load(void)
 {
 	switch_mutex_lock(MUTEX);
@@ -744,8 +732,6 @@ static void do_load(void)
 	switch_mutex_unlock(MUTEX);
 
 }
-
-
 
 SWITCH_STANDARD_API(enum_function)
 {
@@ -854,7 +840,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_enum_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_enum_shutdown)
 {
-
 	switch_event_unbind(&NODE);
 
 	if (globals.pool) {

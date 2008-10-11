@@ -55,16 +55,12 @@ static char limit_sql[] =
 	"CREATE TABLE limit_data (\n"
 	"   hostname   VARCHAR(255),\n" "   realm      VARCHAR(255),\n" "   id         VARCHAR(255),\n" "   uuid       VARCHAR(255)\n" ");\n";
 
-
 static char db_sql[] =
 	"CREATE TABLE db_data (\n"
 	"   hostname   VARCHAR(255),\n" "   realm      VARCHAR(255),\n" "   data_key   VARCHAR(255),\n" "   data       VARCHAR(255)\n" ");\n";
 
-
 static char group_sql[] =
 	"CREATE TABLE group_data (\n" "   hostname   VARCHAR(255),\n" "   groupname  VARCHAR(255),\n" "   url        VARCHAR(255)\n" ");\n";
-
-
 
 static switch_status_t limit_execute_sql(char *sql, switch_mutex_t *mutex)
 {
@@ -102,7 +98,6 @@ static switch_status_t limit_execute_sql(char *sql, switch_mutex_t *mutex)
 	}
 #endif
 
-
   end:
 	if (mutex) {
 		switch_mutex_unlock(mutex);
@@ -110,7 +105,6 @@ static switch_status_t limit_execute_sql(char *sql, switch_mutex_t *mutex)
 
 	return status;
 }
-
 
 static switch_bool_t limit_execute_sql_callback(switch_mutex_t *mutex, char *sql, switch_core_db_callback_func_t callback, void *pdata)
 {
@@ -152,9 +146,7 @@ static switch_bool_t limit_execute_sql_callback(switch_mutex_t *mutex, char *sql
 	}
 
 	return ret;
-
 }
-
 
 static switch_status_t do_config()
 {
@@ -191,7 +183,6 @@ static switch_status_t do_config()
 #else
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 #endif
-
 			}
 		}
 	}
@@ -254,7 +245,6 @@ static switch_status_t do_config()
 	switch_xml_free(xml);
 
 	return status;
-
 }
 
 static switch_status_t hanguphook(switch_core_session_t *session)
@@ -282,7 +272,9 @@ struct callback {
 	size_t len;
 	int matches;
 };
+
 typedef struct callback callback_t;
+
 static int sql2str_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	callback_t *cbt = (callback_t *) pArg;
@@ -292,7 +284,6 @@ static int sql2str_callback(void *pArg, int argc, char **argv, char **columnName
 	return 0;
 }
 
-
 static int group_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	callback_t *cbt = (callback_t *) pArg;
@@ -300,7 +291,6 @@ static int group_callback(void *pArg, int argc, char **argv, char **columnNames)
 	cbt->matches++;
 	return 0;
 }
-
 
 SWITCH_STANDARD_API(db_api_function)
 {
@@ -360,7 +350,6 @@ SWITCH_STANDARD_API(db_api_function)
 		goto done;
 	}
 
-
   error:
 	stream->write_function(stream, "!err!");
 
@@ -369,9 +358,7 @@ SWITCH_STANDARD_API(db_api_function)
 	switch_mutex_unlock(globals.mutex);
 	switch_safe_free(mydata);
 	return SWITCH_STATUS_SUCCESS;
-
 }
-
 
 #define DB_USAGE "[insert|delete]/<realm>/<key>/<val>"
 #define DB_DESC "save data"
@@ -413,8 +400,6 @@ SWITCH_STANDARD_APP(db_function)
   error:
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: db %s\n", DB_USAGE);
 }
-
-
 
 SWITCH_STANDARD_API(group_api_function)
 {
@@ -493,7 +478,6 @@ SWITCH_STANDARD_API(group_api_function)
 	switch_mutex_unlock(globals.mutex);
 	switch_safe_free(mydata);
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 #define GROUP_USAGE "[insert|delete]:<group name>:<val>"
@@ -527,7 +511,6 @@ SWITCH_STANDARD_APP(group_function)
 		limit_execute_sql(sql, globals.mutex);
 		switch_safe_free(sql);
 	}
-
 }
 
 #define LIMIT_USAGE "<realm> <id> <max> [transfer_destination_number]"
@@ -600,7 +583,6 @@ SWITCH_STANDARD_APP(limit_function)
 	switch_mutex_unlock(globals.mutex);
 }
 
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 {
 	switch_status_t status;
@@ -636,8 +618,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
-
-
 
 /* For Emacs:
  * Local Variables:

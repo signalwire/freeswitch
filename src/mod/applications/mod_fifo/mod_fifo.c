@@ -52,9 +52,6 @@ struct fifo_node {
 
 typedef struct fifo_node fifo_node_t;
 
-
-
-
 static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
 	switch_core_session_t *bleg = (switch_core_session_t *) buf;
@@ -102,10 +99,8 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 static switch_status_t moh_on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
-
 	switch (itype) {
 	case SWITCH_INPUT_TYPE_DTMF:
 		{
@@ -181,9 +176,8 @@ struct fifo_chime_data {
 	int do_orbit;
 	char *orbit_exten;
 };
+
 typedef struct fifo_chime_data fifo_chime_data_t;
-
-
 
 static switch_status_t caller_read_frame_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
 {
@@ -222,7 +216,6 @@ static switch_status_t caller_read_frame_callback(switch_core_session_t *session
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 static switch_status_t consumer_read_frame_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
 {
 	fifo_node_t *node, **node_list = (fifo_node_t **) user_data;
@@ -251,7 +244,6 @@ static struct {
 	int running;
 	switch_event_node_t *node;
 } globals;
-
 
 static fifo_node_t *create_node(const char *name, uint32_t importance)
 {
@@ -309,7 +301,6 @@ static void send_presence(fifo_node_t *node)
 		switch_event_fire(&event);
 	}
 }
-
 
 static void pres_event_handler(switch_event_t *event)
 {
@@ -443,7 +434,6 @@ SWITCH_STANDARD_APP(fifo_function)
 		if (argc > 4) {
 			moh = argv[4];
 		}
-
 	} else {
 		if (argc > 2) {
 			announce = argv[2];
@@ -493,7 +483,6 @@ SWITCH_STANDARD_APP(fifo_function)
 			}
 		}
 
-
 		if (chime_freq) {
 			ftmp = atoi(chime_freq);
 			if (ftmp > 0) {
@@ -501,15 +490,12 @@ SWITCH_STANDARD_APP(fifo_function)
 			}
 		}
 
-
-
 		switch_channel_answer(channel);
 
 		switch_mutex_lock(node->mutex);
 		node->caller_count++;
 
 		switch_core_hash_insert(node->caller_hash, uuid, session);
-
 
 		if ((pri = switch_channel_get_variable(channel, "fifo_priority"))) {
 			p = atoi(pri);
@@ -688,7 +674,6 @@ SWITCH_STANDARD_APP(fifo_function)
 			}
 		}
 
-
 		if (argc > 2) {
 			if (!strcasecmp(argv[2], "nowait")) {
 				do_wait = 0;
@@ -698,11 +683,9 @@ SWITCH_STANDARD_APP(fifo_function)
 			}
 		}
 
-
 		if (!(my_id = switch_channel_get_variable(channel, "fifo_consumer_id"))) {
 			my_id = switch_core_session_get_uuid(session);
 		}
-
 
 		if (do_wait) {
 			for (i = 0; i < node_count; i++) {
@@ -792,7 +775,6 @@ SWITCH_STANDARD_APP(fifo_function)
 						importance = node->importance;
 					}
 				}
-
 			}
 
 			if (winner > -1) {
@@ -822,7 +804,6 @@ SWITCH_STANDARD_APP(fifo_function)
 					switch_mutex_unlock(node->mutex);
 				}
 			}
-
 
 			if (!pop) {
 				if (!do_wait) {
@@ -872,7 +853,6 @@ SWITCH_STANDARD_APP(fifo_function)
 					switch_ivr_sleep(session, 500, NULL);
 				}
 
-
 				switch_channel_set_variable(other_channel, "fifo_serviced_by", my_id);
 				switch_channel_set_variable(other_channel, "fifo_serviced_uuid", switch_core_session_get_uuid(session));
 
@@ -890,7 +870,6 @@ SWITCH_STANDARD_APP(fifo_function)
 					switch_core_session_rwunlock(other_session);
 					break;
 				}
-
 
 				switch_channel_answer(channel);
 				cloned_profile = switch_caller_profile_clone(other_session, switch_channel_get_caller_profile(channel));
@@ -944,7 +923,6 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_mutex_unlock(node->mutex);
 				send_presence(node);
 				switch_core_session_rwunlock(other_session);
-
 
 				if (!do_wait) {
 					done = 1;
@@ -1044,7 +1022,6 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_mutex_unlock(node->mutex);
 			}
 		}
-
 	}
 }
 
@@ -1097,7 +1074,6 @@ static int xml_hash(switch_xml_t xml, switch_hash_t *hash, char *container, char
 
 			switch_ivr_set_xml_chan_vars(variables, channel, c_off);
 		}
-
 	}
 
 	return cc_off;
@@ -1105,7 +1081,6 @@ static int xml_hash(switch_xml_t xml, switch_hash_t *hash, char *container, char
 
 static void list_node(fifo_node_t *node, switch_xml_t x_report, int *off, int verbose)
 {
-
 	switch_xml_t x_fifo;
 	int cc_off = 0;
 	char buffer[35];
@@ -1126,7 +1101,6 @@ static void list_node(fifo_node_t *node, switch_xml_t x_report, int *off, int ve
 
 	cc_off = xml_hash(x_fifo, node->caller_hash, "callers", "caller", cc_off, verbose);
 	cc_off = xml_hash(x_fifo, node->consumer_hash, "consumers", "consumer", cc_off, verbose);
-
 }
 
 #define FIFO_API_SYNTAX "list|list_verbose|count|importance [<fifo name>]"
@@ -1141,7 +1115,6 @@ SWITCH_STANDARD_API(fifo_api_function)
 	void *val;
 	const void *var;
 	int x = 0, verbose = 0;
-
 
 	if (!globals.running) {
 		return SWITCH_STATUS_FALSE;
@@ -1229,12 +1202,10 @@ SWITCH_STANDARD_API(fifo_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load)
 {
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *commands_api_interface;
-
 
 	/* create/register custom event message type */
 	if (switch_event_reserve_subclass(FIFO_EVENT) != SWITCH_STATUS_SUCCESS) {
@@ -1304,7 +1275,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fifo_shutdown)
 	switch_core_destroy_memory_pool(&pool);
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 /* For Emacs:
  * Local Variables:
