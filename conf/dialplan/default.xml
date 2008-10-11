@@ -243,7 +243,7 @@
     <!-- voicemail main extension -->
     <extension name="vmain">
       <condition field="destination_number" expression="^vmain|4000$">
-	<action application="aswer"/>
+	<action application="answer"/>
 	<action application="sleep" data="1000"/>
 	<action application="voicemail" data="check default ${domain_name}"/>  
       </condition>
