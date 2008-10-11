@@ -256,15 +256,15 @@ SWITCH_STANDARD_API(module_exists_function)
 
 SWITCH_STANDARD_API(domain_exists_function)
 {
-	switch_xml_t root, domain;
+	switch_xml_t root = NULL, domain = NULL;
 	
 	if (!switch_strlen_zero(cmd)) {	
 		if (switch_xml_locate_domain(cmd, NULL, &root, &domain) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "true");
+			switch_xml_free(root); 
 		} else {
 			stream->write_function(stream, "false");
 		}
-		switch_xml_free(root); 
 	}
 	
 	return SWITCH_STATUS_SUCCESS;
