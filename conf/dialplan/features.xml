@@ -7,7 +7,6 @@
       <condition field="destination_number" expression="^dx$">
 	<action application="answer"/>
 	<action application="read" data="11 11 'tone_stream://%(10000,0,350,440)' digits 5000 #"/>
-	<!--<action application="transfer" data="-bleg ${digits}"/>-->
 	<action application="execute_extension" data="is_transfer XML features"/>
       </condition>
     </extension>
@@ -16,10 +15,9 @@
       <condition field="destination_number" expression="^is_transfer$"/>
       <condition field="${digits}" expression="^(\d+)$">
 	<action application="transfer" data="-bleg ${digits} XML default"/>
-	<anti-action application="eval" data="w00t"/>
+	<anti-action application="eval" data="cancel transfer"/>
       </condition>
     </extension>
-
 
     <!-- Used to transfer both legs into a conference -->
     <extension name="cf">
@@ -44,7 +42,6 @@
       <condition field="${sip_via_protocol}" expression="tls"/>
       <condition field="${sip_secure_media_confirmed}" expression="^true$">
 	<action application="sleep" data="1000"/>
-	<!--<action application="send_display" data="Secure Music On Hold "/>-->
 	<action application="playback" data="misc/call_secured.wav"/>
 	<anti-action application="eval" data="not_secure"/>
       </condition>
