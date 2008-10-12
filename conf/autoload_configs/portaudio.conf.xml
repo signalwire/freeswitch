@@ -23,8 +23,8 @@
 
     <!--Default dialplan and caller-id info -->
     <param name="dialplan" value="XML"/>
-    <param name="cid-name" value="FreeSwitch"/>
-    <param name="cid-num" value="5555551212"/>
+    <param name="cid-name" value="$${outbound_caller_name}"/>
+    <param name="cid-num" value="$${outbound_caller_id}"/>
 
     <!--audio sample rate and interval -->
     <param name="sample-rate" value="8000"/>
