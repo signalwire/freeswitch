@@ -287,8 +287,8 @@
     </extension>
 
     <!--This extension will start a conference and invite several people upon entering -->
-    <extension name="0911">
-      <condition field="destination_number" expression="0911">
+    <extension name="mad_boss">
+      <condition field="destination_number" expression="^0911$">
 
 	<!--These params effect the outcalls made once you join-->
 	<action application="set" data="conference_auto_outcall_caller_id_name=Mad Boss"/>
