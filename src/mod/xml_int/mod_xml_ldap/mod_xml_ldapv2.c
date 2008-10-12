@@ -20,6 +20,7 @@ typedef struct xml_binding {
 	xml_ldap_query_type_t bt;
 	char *url;
 	char *basedn;
+	char *h350base;
 	char *binddn;
 	char *bindpass;
 	char *filter;
@@ -34,6 +35,7 @@ SWITCH_MODULE_DEFINITION(mod_xml_ldap, mod_xml_ldap_load, mod_xml_ldap_shutdown,
 static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,
                                     void *user_data);
 
+static switch_status_t tryh350(switch_xml_t *, int *, LDAP *, char *, char *, char *);
 static switch_status_t do_config(void);
 static switch_status_t trysearch( switch_xml_t *pxml, int *xoff, LDAP *ld, char *basedn, char *filter);
 void rec( switch_xml_t *, int*, LDAP *ld, char *);
@@ -106,6 +108,7 @@ static switch_status_t do_config(void) {
 					binding->bt = XML_LDAP_CONFIG;
 				} else if (!strncmp(binding->bindings, "directory",strlen(binding->bindings))) {
 					binding->bt = XML_LDAP_DIRECTORY;
+					binding->h350base = strdup("dc=example");
 				} else if (!strncmp(binding->bindings, "dialplain",strlen(binding->bindings))) {
 					binding->bt = XML_LDAP_DIALPLAN;
 				} else if (!strncmp(binding->bindings, "phrases",strlen(binding->bindings))) {
@@ -150,6 +153,87 @@ static switch_status_t do_config(void) {
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t tryh350(switch_xml_t *pxml, int *xoff, LDAP *ld, char *basedn, char *dir_domain, char *dir_exten) {
+	switch_status_t ret = SWITCH_STATUS_FALSE;
+	int off = *xoff;
+    char *key = NULL;
+    char **val = NULL;
+	char *filter = NULL;
+    BerElement *ber = NULL;
+    switch_xml_t xml = *pxml, save;
+    LDAPMessage *msg, *entry;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "trying h350search in base %s with filter SIPIdentityUserName=%s\n", basedn, dir_exten);
+
+	filter = switch_mprintf("(SIPIdentityUserName=%s)",dir_exten);	
+	
+	if ( (ldap_search_s(ld, basedn,  LDAP_SCOPE_SUB, filter, NULL, 0, &msg) != LDAP_SUCCESS) ) goto cleanup;
+
+	if ( ldap_count_entries(ld, msg) > 0 ) {
+		ret = SWITCH_STATUS_SUCCESS;
+		xml = switch_xml_add_child_d(xml, "section", off++);
+		switch_xml_set_attr_d(xml, "name", "directory");
+
+		xml = switch_xml_add_child_d(xml, "domain", off++);
+		switch_xml_set_attr_d(xml, "name", dir_domain);
+
+		xml = switch_xml_add_child_d(xml, "user", off++);
+		switch_xml_set_attr_d(xml, "id", dir_exten);
+		switch_xml_set_attr_d(xml, "mailbox", dir_exten);
+
+		save = switch_xml_add_child_d(xml, "variables", off++);
+		xml = switch_xml_add_child_d(save, "variable", off++);
+		switch_xml_set_attr_d(xml, "name", "accountcode");
+		switch_xml_set_attr_d(xml, "value", dir_exten);
+
+		xml = save;
+
+		save = switch_xml_add_child_d(xml, "params", off++);
+		xml = switch_xml_add_child_d(save, "param", off++);
+        for (
+            entry = ldap_first_entry(ld, msg);
+            entry != NULL;
+            entry = ldap_next_entry(ld, entry) ) {
+
+
+            for (
+                key = ldap_first_attribute(ld, entry, &ber);
+                key != NULL;
+                key = ldap_next_attribute(ld, entry, ber) ) {
+
+                if ( !strncasecmp(key,"SIPIdentityPassword",strlen(key)) ) {
+					val = ldap_get_values(ld,entry,key);
+					switch_xml_set_attr_d(xml, "name", "password");
+					switch_xml_set_attr_d(xml, "value", val[0]);
+					xml = switch_xml_add_child_d(save, "param", off++);
+					switch_xml_set_attr_d(xml, "name", "vm-password");
+					switch_xml_set_attr_d(xml, "value", val[0]);
+                    ldap_memfree(key);
+					ldap_value_free(val);
+                } else {
+					ldap_memfree(key);
+					continue;
+				}
+
+            }
+            ber_free(ber,0);
+        }
+
+        ldap_msgfree(entry);
+        ldap_msgfree(msg);
+    } else {
+        ret = SWITCH_STATUS_FALSE;
+    }
+
+    cleanup:
+    switch_safe_free(filter);
+    switch_safe_free(key);
+
+    return ret;
+}
+		
+
+
+
 static switch_status_t trysearch ( switch_xml_t *pxml, int *xoff, LDAP *ld, char *basedn, char *filter) {
 	switch_status_t ret;
 	int off = *xoff;
@@ -162,7 +246,8 @@ static switch_status_t trysearch ( switch_xml_t *pxml, int *xoff, LDAP *ld, char
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "trying search in base %s with filter %s\n", basedn, filter);
 
-	ldap_search_s(ld, basedn,  LDAP_SCOPE_ONE, filter, NULL, 0, &msg);
+	if ( (ldap_search_s(ld, basedn,  LDAP_SCOPE_ONE, filter, NULL, 0, &msg) != LDAP_SUCCESS) ) goto cleanup;
+
 
 	if ( ldap_count_entries(ld, msg) > 0 ) {
 		ret = SWITCH_STATUS_SUCCESS;
@@ -206,6 +291,8 @@ static switch_status_t trysearch ( switch_xml_t *pxml, int *xoff, LDAP *ld, char
 		ret = SWITCH_STATUS_FALSE;
 	}
 
+	cleanup:
+	switch_safe_free(basedn);
 	switch_safe_free(filter);
 	switch_safe_free(key);
 
@@ -294,6 +381,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 					break;
 
 				case XML_LDAP_DIRECTORY:
+				switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "from cb got %s=%s\n", hi->name, hi->value);
 					if (!strncmp(hi->name, "user", strlen(hi->name))) {
 						dir_exten = strdup(hi->value);
 					} else if (!strncmp(hi->name, "domain", strlen(hi->name))) {
@@ -319,9 +407,11 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 			if(!dir_exten) {
 				filter = switch_mprintf(binding->filter,"objectclass","*","(!(objectclass=fsuser))");
 				basedn = switch_mprintf(binding->basedn,dir_domain);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setting filter %s and basedn %s\n", filter, basedn);
 			} else {
-				filter = switch_mprintf(binding->filter,key_name,key_value,"object_class=*");
+				filter = switch_mprintf(binding->filter,"id",dir_exten,"(objectclass=*)");
 				basedn = switch_mprintf(binding->basedn,dir_domain);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setting filter %s and basedn %s\n", filter, basedn);
 			}
 			break;
 
@@ -343,6 +433,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 
 	
 	trysearch(&xml,&xoff,ld, basedn, filter);
+	if(binding->bt == XML_LDAP_DIRECTORY ) tryh350(&xml,&xoff,ld,binding->h350base, dir_domain, dir_exten);
 
 	ldap_unbind_s(ld);
 
