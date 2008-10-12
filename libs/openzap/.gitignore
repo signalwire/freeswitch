@@ -9,4 +9,5 @@
 Makefile
 config.*
 configure
-
+libtool
+aclocal.m4
