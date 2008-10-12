@@ -127,7 +127,9 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			gateway_ptr->status = SOFIA_GATEWAY_UP;
 			break;
 		case REG_STATE_REGISTER:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Registered %s\n", gateway_ptr->name);
+			if (profile->debug) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Registered %s\n", gateway_ptr->name);
+			}
 			if (gateway_ptr->expires > 60) {
 				gateway_ptr->expires = now + (gateway_ptr->freq - 15);
 			} else {
@@ -1163,8 +1165,9 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 	switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->auth_username, gateway->register_password);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n", profile->username, authentication);
-
+	if (profile->debug) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n", profile->username, authentication);
+	}
 
 	ss_state = nua_callstate_authenticating;
 
