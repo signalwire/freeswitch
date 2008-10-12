@@ -38,7 +38,7 @@
     <!-- Example of doing things based on time of day. -->
     <extension name="tod_example" continue="true">
       <!-- man strftime - M-F, 9AM to 6PM -->
-      <condition field="${strftime(%u)}" expression="^([1-5])$"/>
+      <condition field="${strftime(%w)}" expression="^([1-5])$"/>
       <condition field="${strftime(%H%M)}" expression="^((09|1[0-7])[0-5][0-9]|1800)$">
 	<action application="set" data="open=true"/>
       </condition>
