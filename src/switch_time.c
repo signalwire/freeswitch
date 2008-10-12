@@ -571,7 +571,7 @@ SWITCH_DECLARE(switch_status_t) switch_strftime_tz(const char *tz, const char *f
 	if (tzdef) { /* The lookup of the zone may fail. */
 		tztime( &timep, tzdef, &tm );
 		tm2switchtime( &tm, &stm );
-		switch_strftime(date, &retsize, len, switch_strlen_zero(format) ? "%Y-%m-%d %T" : format, &stm);
+		switch_strftime_nocheck(date, &retsize, len, switch_strlen_zero(format) ? "%Y-%m-%d %T" : format, &stm);
 		if (!switch_strlen_zero_buf(date)) {
 			return SWITCH_STATUS_SUCCESS;
 		}

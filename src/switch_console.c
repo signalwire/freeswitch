@@ -289,7 +289,7 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const 
 	}
 
 	switch_time_exp_lt(&tm, switch_timestamp_now());
-	switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
+	switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 
 	if (channel == SWITCH_CHANNEL_ID_LOG) {
 		fprintf(handle, "[%d] %s %s:%d %s() %s", (int) getpid(), date, filep, line, func, data);

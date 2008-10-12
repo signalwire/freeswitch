@@ -104,6 +104,57 @@ SWITCH_DECLARE(const char *) switch_dso_error(switch_dso_handle_t *dso, char *bu
 
 SWITCH_DECLARE(switch_status_t) switch_strftime(char *s, switch_size_t *retsize, switch_size_t max, const char *format, switch_time_exp_t *tm)
 {
+	const char *p = format;
+	
+	if (!p) return SWITCH_STATUS_FALSE;
+
+	while (*p) {
+		if (*p == '%') {
+			switch (*(++p)) {
+            case 'C':
+            case 'D':
+            case 'r':
+            case 'R':
+            case 'T':
+            case 'e':
+            case 'a':
+            case 'A':
+            case 'b':
+            case 'B':
+            case 'c':
+            case 'd':
+            case 'H':
+            case 'I':
+            case 'j':
+            case 'm':
+            case 'M':
+            case 'p':
+            case 'S':
+            case 'U':
+            case 'w':
+            case 'W':
+            case 'x':
+            case 'X':
+            case 'y':
+            case 'Y':
+            case 'z':
+            case 'Z':
+            case '%':
+				p++;
+				continue;
+            case '\0':
+			default:
+				return SWITCH_STATUS_FALSE;
+			}
+		}
+		p++;
+	}
+
+	return apr_strftime(s, retsize, max, format, (apr_time_exp_t *) tm);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_strftime_nocheck(char *s, switch_size_t *retsize, switch_size_t max, const char *format, switch_time_exp_t *tm)
+{
 	return apr_strftime(s, retsize, max, format, (apr_time_exp_t *) tm);
 }
 

@@ -2728,7 +2728,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	free(dbuf);
 
 	switch_time_exp_lt(&tm, ts);
-	switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
+	switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 	switch_channel_set_variable(channel, "RECORD_DATE", date);
 	switch_channel_set_variable(channel, "RECORD_SOFTWARE", "FreeSWITCH");
 	switch_channel_set_variable(channel, "RECORD_TITLE", profile->record_title);
@@ -3176,13 +3176,13 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
 
 	if (l_created) {
 		switch_time_exp_lt(&tm, l_created);
-		switch_strftime(create_date, &retsize, sizeof(create_date), fmt, &tm);
-		switch_strftime(rss_date, &retsize, sizeof(create_date), "%D %T", &tm);
+		switch_strftime_nocheck(create_date, &retsize, sizeof(create_date), fmt, &tm);
+		switch_strftime_nocheck(rss_date, &retsize, sizeof(create_date), "%D %T", &tm);
 	}
 
 	if (l_read) {
 		switch_time_exp_lt(&tm, l_read);
-		switch_strftime(read_date, &retsize, sizeof(read_date), fmt, &tm);
+		switch_strftime_nocheck(read_date, &retsize, sizeof(read_date), fmt, &tm);
 	}
 
 	switch_snprintf(heard, sizeof(heard), *read_date == '\0' ? "never" : read_date);
@@ -3256,13 +3256,13 @@ static int rss_callback(void *pArg, int argc, char **argv, char **columnNames)
 
 	if (l_created) {
 		switch_time_exp_lt(&tm, l_created);
-		switch_strftime(create_date, &retsize, sizeof(create_date), fmt, &tm);
-		switch_strftime(rss_date, &retsize, sizeof(create_date), fmt, &tm);
+		switch_strftime_nocheck(create_date, &retsize, sizeof(create_date), fmt, &tm);
+		switch_strftime_nocheck(rss_date, &retsize, sizeof(create_date), fmt, &tm);
 	}
 
 	if (l_read) {
 		switch_time_exp_lt(&tm, l_read);
-		switch_strftime(read_date, &retsize, sizeof(read_date), fmt, &tm);
+		switch_strftime_nocheck(read_date, &retsize, sizeof(read_date), fmt, &tm);
 	}
 
 	holder->x_item = switch_xml_add_child_d(holder->x_channel, "item", holder->items++);

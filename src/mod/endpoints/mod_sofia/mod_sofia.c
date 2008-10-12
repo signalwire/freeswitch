@@ -1251,7 +1251,7 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 		switch_size_t retsize;
 
 		switch_time_exp_lt(&tm, switch_time_from_sec(etime));
-		switch_strftime(exp_buf, &retsize, sizeof(exp_buf), "%Y-%m-%d %T", &tm);
+		switch_strftime_nocheck(exp_buf, &retsize, sizeof(exp_buf), "%Y-%m-%d %T", &tm);
 	}
 
 	cb->stream->write_function(cb->stream,

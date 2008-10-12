@@ -271,6 +271,16 @@ SWITCH_DECLARE(switch_status_t) switch_time_exp_gmt_get(switch_time_t *result, s
 SWITCH_DECLARE(switch_status_t) switch_strftime(char *s, switch_size_t *retsize, switch_size_t max, const char *format, switch_time_exp_t *tm);
 
 /**
+ * formats the exploded time according to the format specified (does not validate format string)
+ * @param s string to write to
+ * @param retsize The length of the returned string
+ * @param max The maximum length of the string
+ * @param format The format for the time string
+ * @param tm The time to convert
+ */
+SWITCH_DECLARE(switch_status_t) switch_strftime_nocheck(char *s, switch_size_t *retsize, switch_size_t max, const char *format, switch_time_exp_t *tm);
+
+/**
  * switch_rfc822_date formats dates in the RFC822
  * format in an efficient manner.  It is a fixed length
  * format which requires the indicated amount of storage,

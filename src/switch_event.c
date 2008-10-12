@@ -1008,7 +1008,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, con
 	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv6", guess_ip_v6);
 
 	switch_time_exp_lt(&tm, ts);
-	switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
+	switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Date-Local", date);
 	switch_rfc822_date(date, ts);
 	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Date-GMT", date);

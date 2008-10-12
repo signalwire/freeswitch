@@ -265,7 +265,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 		switch_time_exp_t tm;
 
 		switch_time_exp_lt(&tm, now);
-		switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
+		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 
 		len = (uint32_t) (strlen(extra_fmt) + strlen(date) + strlen(filep) + 32 + strlen(funcp) + strlen(fmt));
 		new_fmt = malloc(len + 1);

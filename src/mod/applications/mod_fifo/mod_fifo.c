@@ -520,7 +520,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 		ts = switch_timestamp_now();
 		switch_time_exp_lt(&tm, ts);
-		switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
+		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 		switch_channel_set_variable(channel, "fifo_status", "WAITING");
 		switch_channel_set_variable(channel, "fifo_timestamp", date);
 
@@ -613,7 +613,7 @@ SWITCH_STANDARD_APP(fifo_function)
 		} else {
 			ts = switch_timestamp_now();
 			switch_time_exp_lt(&tm, ts);
-			switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
+			switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 			switch_channel_set_variable(channel, "fifo_status", cd.do_orbit ? "TIMEOUT" : "ABORTED");
 			switch_channel_set_variable(channel, "fifo_timestamp", date);
 
@@ -709,7 +709,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 		ts = switch_timestamp_now();
 		switch_time_exp_lt(&tm, ts);
-		switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
+		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 		switch_channel_set_variable(channel, "fifo_status", "WAITING");
 		switch_channel_set_variable(channel, "fifo_timestamp", date);
 
@@ -883,7 +883,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				ts = switch_timestamp_now();
 				switch_time_exp_lt(&tm, ts);
-				switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
+				switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 				switch_channel_set_variable(channel, "fifo_status", "TALKING");
 				switch_channel_set_variable(channel, "fifo_target", uuid);
 				switch_channel_set_variable(channel, "fifo_timestamp", date);
@@ -910,7 +910,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				ts = switch_timestamp_now();
 				switch_time_exp_lt(&tm, ts);
-				switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
+				switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 				switch_channel_set_variable(channel, "fifo_status", "WAITING");
 				switch_channel_set_variable(channel, "fifo_timestamp", date);
 

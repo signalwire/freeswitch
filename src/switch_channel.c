@@ -2105,40 +2105,39 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		cid_buf = caller_profile->caller_id_number;
 	}
 
-
 	if (caller_profile->times) {
 		switch_time_exp_t tm;
 		switch_size_t retsize;
 		const char *fmt = "%Y-%m-%d %T";
 
 		switch_time_exp_lt(&tm, caller_profile->times->created);
-		switch_strftime(start, &retsize, sizeof(start), fmt, &tm);
+		switch_strftime_nocheck(start, &retsize, sizeof(start), fmt, &tm);
 		switch_channel_set_variable(channel, "start_stamp", start);
 
 		switch_time_exp_lt(&tm, caller_profile->times->profile_created);
-		switch_strftime(profile_start, &retsize, sizeof(profile_start), fmt, &tm);
+		switch_strftime_nocheck(profile_start, &retsize, sizeof(profile_start), fmt, &tm);
 		switch_channel_set_variable(channel, "profile_start_stamp", profile_start);
 
 		if (caller_profile->times->answered) {
 			switch_time_exp_lt(&tm, caller_profile->times->answered);
-			switch_strftime(answer, &retsize, sizeof(answer), fmt, &tm);
+			switch_strftime_nocheck(answer, &retsize, sizeof(answer), fmt, &tm);
 			switch_channel_set_variable(channel, "answer_stamp", answer);
 		}
 
 		if (caller_profile->times->progress) {
 			switch_time_exp_lt(&tm, caller_profile->times->progress);
-			switch_strftime(progress, &retsize, sizeof(progress), fmt, &tm);
+			switch_strftime_nocheck(progress, &retsize, sizeof(progress), fmt, &tm);
 			switch_channel_set_variable(channel, "progress_stamp", progress);
 		}
 
 		if (caller_profile->times->progress_media) {
 			switch_time_exp_lt(&tm, caller_profile->times->progress_media);
-			switch_strftime(progress_media, &retsize, sizeof(progress_media), fmt, &tm);
+			switch_strftime_nocheck(progress_media, &retsize, sizeof(progress_media), fmt, &tm);
 			switch_channel_set_variable(channel, "progress_media_stamp", progress_media);
 		}
 
 		switch_time_exp_lt(&tm, caller_profile->times->hungup);
-		switch_strftime(end, &retsize, sizeof(end), fmt, &tm);
+		switch_strftime_nocheck(end, &retsize, sizeof(end), fmt, &tm);
 		switch_channel_set_variable(channel, "end_stamp", end);
 
 		tt_created = (time_t) (caller_profile->times->created / 1000000);

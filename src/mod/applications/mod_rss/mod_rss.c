@@ -480,7 +480,7 @@ SWITCH_STANDARD_APP(rss_function)
 			char dtmf[5] = "";
 
 			switch_time_exp_lt(&tm, switch_timestamp_now());
-			switch_strftime(date, &retsize, sizeof(date), "%I:%M %p", &tm);
+			switch_strftime_nocheck(date, &retsize, sizeof(date), "%I:%M %p", &tm);
 
 
 			switch_snprintf(buf, sizeof(buf),

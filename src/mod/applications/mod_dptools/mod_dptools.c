@@ -1022,7 +1022,11 @@ SWITCH_STANDARD_API(strftime_api_function)
 		thetime = switch_timestamp_now();
 	}
 	switch_time_exp_lt(&tm, thetime);
-	switch_strftime(date, &retsize, sizeof(date), switch_strlen_zero(cmd) ? "%Y-%m-%d %T" : cmd, &tm);
+	if (switch_strlen_zero(cmd)) {
+		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
+	} else {
+		switch_strftime(date, &retsize, sizeof(date), cmd, &tm);
+	}
 	stream->write_function(stream, "%s", date);
 
 	return SWITCH_STATUS_SUCCESS;
