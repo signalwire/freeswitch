@@ -35,6 +35,9 @@
 #define ZAP_ISDN_H
 #include "openzap.h"
 
+#define DEFAULT_DIGIT_TIMEOUT	10000		/* default overlap timeout: 10 seconds */
+
+
 typedef enum {
 	ZAP_ISDN_OPT_NONE = 0,
 	ZAP_ISDN_OPT_SUGGEST_CHANNEL = (1 << 0),
@@ -56,15 +59,24 @@ struct zap_isdn_data {
 	zio_signal_cb_t sig_cb;
 	uint32_t flags;
 	int32_t mode;
+	int32_t digit_timeout;
 	zap_isdn_opts_t opts;
 	zap_caller_data_t *outbound_crv[32768];
 	zap_channel_t *channels_local_crv[32768];
 	zap_channel_t *channels_remote_crv[32768];
 };
 
-
-
 typedef struct zap_isdn_data zap_isdn_data_t;
+
+
+/* b-channel private data */
+struct zap_isdn_bchan_data
+{
+	int32_t digit_timeout;
+};
+
+typedef struct zap_isdn_bchan_data zap_isdn_bchan_data_t;
+
 
 #endif
 

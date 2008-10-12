@@ -48,6 +48,7 @@
 #define ZAP_SPAN_IS_BRI(x)	((x)->trunk_type == ZAP_TRUNK_BRI || (x)->trunk_type == ZAP_TRUNK_BRI_PTMP)
 #define ZAP_SPAN_IS_NT(x)	(((zap_isdn_data_t *)(x)->signal_data)->mode == Q921_NT)
 
+
 static L2ULONG zap_time_now(void)
 {
 	return (L2ULONG)zap_current_time_in_ms();
@@ -596,10 +597,16 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 						isdn_data->channels_remote_crv[gen->CRV] = zchan;
 						memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
 
+						if (zchan->mod_data) {
+							memset(zchan->mod_data, 0, sizeof(zap_isdn_bchan_data_t));
+						}
+
 						zap_set_string(zchan->caller_data.cid_num.digits, (char *)callingnum->Digit);
 						zap_set_string(zchan->caller_data.cid_name, (char *)callingnum->Digit);
 						zap_set_string(zchan->caller_data.ani.digits, (char *)callingnum->Digit);
-						zap_set_string(zchan->caller_data.dnis.digits, (char *)callednum->Digit);
+						if (!overlap_dial) {
+							zap_set_string(zchan->caller_data.dnis.digits, (char *)callednum->Digit);
+						}
 
 						zchan->caller_data.CRV = gen->CRV;
 						if (cplen > sizeof(zchan->caller_data.raw_data)) {
@@ -718,6 +725,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 						 * overlap dial digit indication
 						 */
 						if (Q931IsIEPresent(gen->CalledNum)) {
+							zap_isdn_bchan_data_t *data = (zap_isdn_bchan_data_t *)zchan->mod_data;
 							Q931ie_CalledNum *callednum = Q931GetIEPtr(gen->CalledNum, gen->buf);
 							int pos;
 
@@ -727,13 +735,13 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 							}
 
 							/* TODO: make this more safe with strncat() */
-							pos = strlen(zchan->caller_data.cid_num.digits);
-							strcat(&zchan->caller_data.cid_num.digits[pos], (char *)callednum->Digit);
-							strcat(&zchan->caller_data.cid_name[pos],       (char *)callednum->Digit);
-							strcat(&zchan->caller_data.ani.digits[pos],     (char *)callednum->Digit);
+							pos = strlen(zchan->caller_data.dnis.digits);
 							strcat(&zchan->caller_data.dnis.digits[pos],    (char *)callednum->Digit);
 
-							zap_log(ZAP_LOG_DEBUG, "Received new overlap digit (%s), destination number: %s\n", callednum->Digit, zchan->caller_data.cid_num.digits);
+							/* update timer */
+							data->digit_timeout = zap_time_now() + isdn_data->digit_timeout;
+
+							zap_log(ZAP_LOG_DEBUG, "Received new overlap digit (%s), destination number: %s\n", callednum->Digit, zchan->caller_data.dnis.digits);
 						}
 
 						if (Q931IsIEPresent(gen->SendComplete) || digit == '#') {
@@ -861,16 +869,11 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		break;
 	case ZAP_CHANNEL_STATE_DIALTONE:
 		{
-/*
-			if (!zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
-				if (!zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
-					if (zap_channel_open_chan(zchan) != ZAP_SUCCESS) {
-						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
-						return;
-					}
-				}
+			zap_isdn_bchan_data_t *data = (zap_isdn_bchan_data_t *)zchan->mod_data;
+
+			if (data) {
+				data->digit_timeout = zap_time_now() + isdn_data->digit_timeout;
 			}
-*/
 		}
 		break;
 	case ZAP_CHANNEL_STATE_RING:
@@ -1274,6 +1277,7 @@ static void *zap_isdn_tones_run(zap_thread_t *me, void *obj)
 		zap_status_t status;
 		int last_chan_state = 0;
 		int gated = 0;
+		L2ULONG now = zap_time_now();
 
 		/*
 		 * check b-channel states and generate & send tones if neccessary
@@ -1294,6 +1298,23 @@ static void *zap_isdn_tones_run(zap_thread_t *me, void *obj)
 			switch (zchan->state) {
 			case ZAP_CHANNEL_STATE_DIALTONE:
 				{
+					zap_isdn_bchan_data_t *data = (zap_isdn_bchan_data_t *)zchan->mod_data;
+
+					/* check overlap dial timeout first before generating tone */
+					if (data && data->digit_timeout && data->digit_timeout <= now) {
+						if (strlen(zchan->caller_data.dnis.digits) > 0) {
+							zap_log(ZAP_LOG_DEBUG, "Overlap dial timeout, advancing to RING state\n");
+							zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RING);
+						} else {
+							/* no digits received, hangup */
+							zap_log(ZAP_LOG_DEBUG, "Overlap dial timeout, no digits received, going to HANGUP state\n");
+							zchan->caller_data.hangup_cause = ZAP_CAUSE_RECOVERY_ON_TIMER_EXPIRE;	/* TODO: probably wrong cause value */
+							zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
+						}
+						data->digit_timeout = 0;
+						continue;
+					}
+
 					if (last_chan_state != zchan->state) {
 						zap_buffer_zero(dt_buffer);
 						teletone_run(&ts, zchan->span->tone_map[ZAP_TONEMAP_DIAL]);
@@ -1671,8 +1692,9 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 	char *var, *val;
 	Q931Dialect_t dialect = Q931_Dialect_National;
 	uint32_t opts = 0;
-    int q921loglevel = -1;
-    int q931loglevel = -1;
+	int32_t digit_timeout = 0;
+	int q921loglevel = -1;
+	int q931loglevel = -1;
 
 	if (span->signal_type) {
 		snprintf(span->last_error, sizeof(span->last_error), "Span is already configured for signalling [%d].", span->signal_type);
@@ -1727,32 +1749,64 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 			}
 		} else if (!strcasecmp(var, "opts")) {
 			opts = va_arg(ap, uint32_t);
-            if  (opts >= ZAP_ISDN_OPT_MAX) {
-                return ZAP_FAIL;
-            }
+			if  (opts >= ZAP_ISDN_OPT_MAX) {
+				return ZAP_FAIL;
+			}
 			isdn_data->opts = opts;
 		} else if (!strcasecmp(var, "tonemap")) {
 			if (!(val = va_arg(ap, char *))) {
 				break;
 			}
 			tonemap = (const char *)val;
+		} else if (!strcasecmp(var, "digit_timeout")) {
+			int *optp;
+			if (!(optp = va_arg(ap, int *))) {
+				break;
+			}
+			digit_timeout = *optp;
+		}
 		} else if (!strcasecmp(var, "q921loglevel")) {
 			q921loglevel = va_arg(ap, int);
-            if (q921loglevel < Q921_LOG_NONE) {
-                q921loglevel = Q921_LOG_NONE;
-            } else if (q921loglevel > Q921_LOG_DEBUG) {
-                q921loglevel = Q921_LOG_DEBUG;
-            }
+			if (q921loglevel < Q921_LOG_NONE) {
+				q921loglevel = Q921_LOG_NONE;
+			} else if (q921loglevel > Q921_LOG_DEBUG) {
+				q921loglevel = Q921_LOG_DEBUG;
+			}
 		} else if (!strcasecmp(var, "q931loglevel")) {
 			q931loglevel = va_arg(ap, int);
-            if (q931loglevel < Q931_LOG_NONE) {
-                q931loglevel = Q931_LOG_NONE;
-            } else if (q931loglevel > Q931_LOG_DEBUG) {
-                q931loglevel = Q931_LOG_DEBUG;
-            }
+			if (q931loglevel < Q931_LOG_NONE) {
+				q931loglevel = Q931_LOG_NONE;
+			} else if (q931loglevel > Q931_LOG_DEBUG) {
+				q931loglevel = Q931_LOG_DEBUG;
+			}
 		} else {
 			snprintf(span->last_error, sizeof(span->last_error), "Unknown parameter [%s]", var);
 			return ZAP_FAIL;
+		}
+	}
+
+	if (!digit_timeout) {
+		digit_timeout = DEFAULT_DIGIT_TIMEOUT;
+	}
+	else if (digit_timeout < 3000 || digit_timeout > 30000) {
+		zap_log(ZAP_LOG_WARNING, "Digit timeout %d ms outside of range (3000 - 30000 ms), using default (10000 ms)\n", digit_timeout);
+		digit_timeout = DEFAULT_DIGIT_TIMEOUT;
+	}
+
+	/* allocate per b-chan data */
+	if (isdn_data->mode == Q931_NT) {
+		zap_isdn_bchan_data_t *data;
+
+		data = malloc((span->chan_count - 1) * sizeof(zap_isdn_bchan_data_t));
+		if (!data) {
+			return ZAP_FAIL;
+		}
+
+		for (i = 1; i <= span->chan_count; i++, data++) {
+			if (span->channels[i]->type == ZAP_CHAN_TYPE_B) {
+				span->channels[i]->mod_data = data;
+				memset(data, 0, sizeof(zap_isdn_bchan_data_t));
+			}
 		}
 	}
 					
@@ -1761,6 +1815,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 	isdn_data->dchans[0] = dchans[0];
 	isdn_data->dchans[1] = dchans[1];
 	isdn_data->dchan = isdn_data->dchans[0];
+	isdn_data->digit_timeout = digit_timeout;
 	
 	Q921_InitTrunk(&isdn_data->q921,
 				   0,

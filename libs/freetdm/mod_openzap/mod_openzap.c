@@ -1830,6 +1830,8 @@ static switch_status_t load_config(void)
 			uint32_t span_id = 0;
 			zap_span_t *span = NULL;
 			char *tonegroup = NULL;
+			char *digit_timeout = NULL;
+			uint32_t to = 0;
 			uint32_t opts = 0;
 			int q921loglevel = -1;
 			int q931loglevel = -1;
@@ -1858,7 +1860,9 @@ static switch_status_t load_config(void)
 					opts |= 1;
 				} else if (!strcasecmp(var, "dialplan")) {
 					dialplan = val;
-				} 
+				} else if (!strcasecmp(var, "digit_timeout") || !strcasecmp(var, "digit-timeout")) {
+					digit_timeout = val;
+				}
 			}
 	
 			if (!id && !name) {
@@ -1879,6 +1883,10 @@ static switch_status_t load_config(void)
 				}
 			}
 
+			if (digit_timeout) {
+				to = atoi(digit_timeout);
+			}
+			
 			if (zstatus != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span %d\n", span_id);
 				continue;
@@ -1893,8 +1901,9 @@ static switch_status_t load_config(void)
 			}
 			
 			if (zap_configure_span("isdn", span, on_clear_channel_signal, 
-								   "mode", mode, 
+								   "mode", mode,
 								   "dialect", dialect,
+								   "digit_timeout", &to,
 								   "opts", opts,
 								   "q921loglevel", q921loglevel,
 								   "q931loglevel", q931loglevel,
