@@ -1764,7 +1764,6 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 				break;
 			}
 			digit_timeout = *optp;
-		}
 		} else if (!strcasecmp(var, "q921loglevel")) {
 			q921loglevel = va_arg(ap, int);
 			if (q921loglevel < Q921_LOG_NONE) {
