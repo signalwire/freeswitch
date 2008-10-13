@@ -142,8 +142,7 @@ static switch_memory_pool_t *XML_MEMORY_POOL = NULL;
 static switch_thread_rwlock_t *RWLOCK = NULL;
 static switch_thread_rwlock_t *B_RWLOCK = NULL;
 static switch_mutex_t *XML_LOCK = NULL;
-static switch_mutex_t *XML_COUNT_LOCK = NULL;
-static uint32_t lock_count = 0;
+
 
 struct xml_section_t {
 	const char *name;
@@ -1524,9 +1523,6 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 
 SWITCH_DECLARE(switch_xml_t) switch_xml_root(void)
 {
-	switch_mutex_lock(XML_COUNT_LOCK);
-	lock_count++;
-	switch_mutex_unlock(XML_COUNT_LOCK);
 	switch_thread_rwlock_rdlock(RWLOCK);
 	return MAIN_XML_ROOT;
 }
@@ -1637,7 +1633,6 @@ SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, cons
 	*err = "Success";
 
 	switch_mutex_init(&XML_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
-	switch_mutex_init(&XML_COUNT_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_thread_rwlock_create(&RWLOCK, XML_MEMORY_POOL);
 	switch_thread_rwlock_create(&B_RWLOCK, XML_MEMORY_POOL);
 
@@ -1926,19 +1921,12 @@ SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 	char **a, *s;
 
 
-	if (!xml)
+	if (!xml) {
 		return;
-
-	if (switch_test_flag(xml, SWITCH_XML_ROOT)) {
-		switch_mutex_lock(XML_COUNT_LOCK);
-		if (lock_count > 0) {
-			switch_thread_rwlock_unlock(RWLOCK);
-			lock_count--;
-		}
-		switch_mutex_unlock(XML_COUNT_LOCK);
 	}
 
 	if (xml == MAIN_XML_ROOT) {
+		switch_thread_rwlock_unlock(RWLOCK);
 		return;
 	}
 
