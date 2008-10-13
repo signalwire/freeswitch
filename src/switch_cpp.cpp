@@ -893,7 +893,6 @@ SWITCH_DECLARE(void) CoreSession::destroy(void)
 SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, char *dest, int timeout)
 {
 
-	switch_memory_pool_t *pool = NULL;
 	switch_core_session_t *aleg_core_session = NULL;
 	switch_call_cause_t cause;
 
@@ -910,11 +909,6 @@ SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, char *des
 	// is none, if we try to call begin_alllow_threads it will fail miserably.
 	// use the 'a leg session' to do the thread swapping stuff.
     if (a_leg_session) a_leg_session->begin_allow_threads();
-
-	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
-		goto failed;
-	}
 
 	if (switch_ivr_originate(aleg_core_session, 
 							 &session, 
