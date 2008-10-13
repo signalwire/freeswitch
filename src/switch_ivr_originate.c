@@ -868,7 +868,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			
 			if (try > 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Originate attempt %d/%d in %d ms\n", try + 1, retries, sleep_ms);
-				switch_yield(sleep_ms * 1000);
+				if (caller_channel) {
+					switch_ivr_sleep(session, sleep_ms, NULL);
+				} else {
+					switch_yield(sleep_ms * 1000);
+				}
 			}
 			
 			p = pipe_names[r];
@@ -1338,7 +1342,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						if (ringback.fh) {
 							switch_size_t mlen, olen;
 							unsigned int pos = 0;
-
 
 							if (ringback.asis) {
 								mlen = write_frame.codec->implementation->encoded_bytes_per_frame;
