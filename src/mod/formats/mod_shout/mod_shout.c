@@ -47,21 +47,42 @@ SWITCH_MODULE_DEFINITION(mod_shout, mod_shout_load, mod_shout_shutdown, NULL);
 
 static char *supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
+static struct {
+	char decoder[256];
+	float vol;
+	uint32_t outscale;
+} globals;
+
 mpg123_handle *our_mpg123_new(const char* decoder, int *error) 
 {
 	mpg123_handle *mh;
 	const char *arch = "auto";
 	int x64 = 0;
-
-	if (sizeof(void *) == 4) {
-		arch = "i586";
+	
+	if (*globals.decoder || globals.outscale || globals.vol) {
+		if (*globals.decoder) {
+			arch = globals.decoder;
+		}
+		if ((mh = mpg123_new(arch, NULL))) {
+			if (globals.outscale) {
+				mpg123_param(mh, MPG123_OUTSCALE, globals.outscale, 0);
+			}
+			if (globals.vol) {
+				mpg123_volume(mh, globals.vol);
+			}
+		}
 	} else {
-		x64++;
-	}
 
-	if ((mh = mpg123_new(arch, NULL))) {
-		if (x64) {
-			mpg123_param(mh, MPG123_OUTSCALE, 8192, 0);
+		if (sizeof(void *) == 4) {
+			arch = "i586";
+		} else {
+			x64++;
+		}
+
+		if ((mh = mpg123_new(arch, NULL))) {
+			if (x64) {
+				mpg123_param(mh, MPG123_OUTSCALE, 8192, 0);
+			}
 		}
 	}
 
@@ -1391,6 +1412,42 @@ SWITCH_STANDARD_API(telecast_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t load_config(void)
+{
+	char *cf = "shout.conf";
+	switch_xml_t cfg, xml, settings, param;
+
+	memset(&globals, 0, sizeof(globals));
+	
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if ((settings = switch_xml_child(cfg, "settings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+
+			if (!strcmp(var, "decoder")) {
+				switch_set_string(globals.decoder, val);
+			} else if (!strcmp(var, "volume")) {
+				globals.vol = atof(val);
+			} else if (!strcmp(var, "outscale")) {
+				int tmp = atoi(val);
+				if (tmp > 0) {
+					globals.outscale = tmp;
+				}
+			}
+		}
+	}
+	
+
+	switch_xml_free(xml);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 {
 	switch_api_interface_t *shout_api_interface;
@@ -1420,6 +1477,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 	mpg123_init();
 
 	SWITCH_ADD_API(shout_api_interface, "telecast", "telecast", telecast_api_function, TELECAST_SYNTAX);
+
+	load_config();
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
