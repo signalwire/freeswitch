@@ -1633,7 +1633,7 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 	}
 
 	if (!strcasecmp(argv[1], "stop") || !strcasecmp(argv[1], "restart")) {
-		int rsec = 3;
+		int rsec = 10;
 		int diff = (int) (switch_timestamp(NULL) - profile->started);
 		int remain = rsec - diff;
 		if (diff < rsec) {

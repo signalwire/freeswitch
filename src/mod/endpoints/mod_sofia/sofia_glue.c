@@ -2708,6 +2708,19 @@ void sofia_glue_restart_all_profiles(void)
         for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, &var, NULL, &val);
             if ((pptr = (sofia_profile_t *) val)) {
+				int rsec = 10;
+				int diff = (int) (switch_timestamp(NULL) - pptr->started);
+				int remain = rsec - diff;
+				if (sofia_test_pflag(pptr, PFLAG_RESPAWN) || !sofia_test_pflag(pptr, PFLAG_RUNNING)) {
+					continue;
+				}
+
+				if (diff < rsec) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+									  "Profile %s must be up for at least %d seconds to stop/restart.\nPlease wait %d second%s\n",
+									  pptr->name, rsec, remain, remain == 1 ? "" : "s");
+					continue;
+				}
 				sofia_set_pflag_locked(pptr, PFLAG_RESPAWN);
 				sofia_clear_pflag_locked(pptr, PFLAG_RUNNING);
 			}
