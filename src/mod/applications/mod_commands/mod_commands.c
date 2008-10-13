@@ -89,9 +89,21 @@ SWITCH_STANDARD_API(user_data_function)
 
 				if (var && val && !strcasecmp(var, key)) {
 					stream->write_function(stream, "%s", val);
-					break;
+					goto end;
 				}
 
+			}
+		}
+		
+		if ((x_params = switch_xml_child(x_domain, container))) {
+			for (x_param = switch_xml_child(x_params, elem); x_param; x_param = x_param->next) {
+				const char *var = switch_xml_attr(x_param, "name");
+				const char *val = switch_xml_attr(x_param, "value");
+
+				if (var && val && !strcasecmp(var, key)) {
+					stream->write_function(stream, "%s", val);
+					goto end;
+				}
 			}
 		}
 	}
