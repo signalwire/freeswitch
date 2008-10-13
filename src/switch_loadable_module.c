@@ -815,11 +815,11 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
 		path = switch_core_strdup(loadable_modules.pool, file);
 		file = (char *) switch_cut_path(file);
 		if ((dot = strchr(file, '.'))) {
-			dot = '\0';
+			*dot = '\0';
 		}
 	} else {
 		if ((dot = strchr(file, '.'))) {
-			dot = '\0';
+			*dot = '\0';
 		}
 		len = strlen(dir);
 		len += strlen(file);
