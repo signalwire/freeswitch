@@ -376,7 +376,7 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in);
   \param fname the function name to declare
   \param vname the name of the global pointer to modify with the new function
 */
-#define SWITCH_DECLARE_GLOBAL_STRING_FUNC(fname, vname) static void fname(char *string) { if (!string) return;\
+#define SWITCH_DECLARE_GLOBAL_STRING_FUNC(fname, vname) static void fname(const char *string) { if (!string) return;\
 		if (vname) {free(vname); vname = NULL;}vname = strdup(string);} static void fname(char *string)
 
 /*!
