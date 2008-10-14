@@ -1,5 +1,20 @@
 <configuration name="lua.conf" description="LUA Configuration">
   <settings>
+
+    <!-- 
+    Specify local directories that will be searched for LUA modules
+    These entries will be pre-pended to the LUA_CPATH environment variable
+    -->
+    <!-- <param name="module-directory" value="/usr/lib/lua/5.1/?.so"/> -->
+    <!-- <param name="module-directory" value="/usr/local/lib/lua/5.1/?.so"/> -->
+
+    <!-- 
+    Specify local directories that will be searched for LUA scripts
+    These entries will be pre-pended to the LUA_PATH environment variable
+    -->
+    <!-- <param name="script-directory" value="/usr/local/lua/?.lua"/> -->
+    <!-- <param name="script-directory" value="/usr/local/freeswitch/scripts/?.lua"/> -->
+
     <!--<param name="xml-handler-script" value="/dp.lua"/>-->
     <!--<param name="xml-handler-bindings" value="dialplan"/>-->
 

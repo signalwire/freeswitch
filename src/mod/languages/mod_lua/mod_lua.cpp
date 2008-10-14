@@ -257,12 +257,16 @@ static switch_status_t do_config(void)
 {
 	const char *cf = "lua.conf";
 	switch_xml_t cfg, xml, settings, param;
-
-	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+	switch_stream_handle_t path_stream = {0};
+	switch_stream_handle_t cpath_stream = {0};
+	
+    if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 
+	SWITCH_STANDARD_STREAM(path_stream);
+	SWITCH_STANDARD_STREAM(cpath_stream);
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -279,10 +283,58 @@ static switch_status_t do_config(void)
 				if (val) {
 					lua_thread(val);
 				}
+			} else if (!strcmp(var, "module-directory") && !switch_strlen_zero(val)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "lua: appending module directory: '%s'\n", val);
+				if(cpath_stream.data_len) {
+					cpath_stream.write_function(&cpath_stream, ";");
+				}
+				cpath_stream.write_function(&cpath_stream, "%s", val);
+			} else if (!strcmp(var, "script-directory") && !switch_strlen_zero(val)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "lua: appending script directory: '%s'\n", val);
+				if(path_stream.data_len) {
+					path_stream.write_function(&path_stream, ";");
+				}
+				path_stream.write_function(&path_stream, "%s", val);
 			}
 		}
 	}
 
+	if (cpath_stream.data_len) {
+		char *lua_cpath = NULL;
+		if (lua_cpath = getenv("LUA_CPATH")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "lua: appending LUA_CPATH: '%s'\n", lua_cpath);
+			cpath_stream.write_function(&cpath_stream, ";%s", lua_cpath);
+		}
+#ifdef WIN32
+		if (_putenv_s("LUA_CPATH", (char *)cpath_stream.data) != 0) {
+#else
+		if (setenv("LUA_CPATH", (char *)cpath_stream.data, 1) == ENOMEM) {
+#endif
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "lua: LUA_CPATH unable to be set, out of memory: '%s'\n", (char *)cpath_stream.data);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "lua: LUA_CPATH set to: '%s'\n", (char *)cpath_stream.data);
+		}
+	}
+	switch_safe_free(cpath_stream.data);
+
+	if (path_stream.data_len) {
+		char *lua_path = NULL;
+		if (lua_path = getenv("LUA_PATH")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "lua: appending LUA_PATH: '%s'\n", lua_path);
+			path_stream.write_function(&path_stream, ";%s", lua_path);
+		}
+#ifdef WIN32
+		if (_putenv_s("LUA_PATH", (char *)path_stream.data) != 0) {
+#else
+		if (setenv("LUA_PATH", (char *)path_stream.data, 1) == ENOMEM) {
+#endif
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "lua: LUA_PATH unable to be set, out of memory: '%s'\n", (char *)path_stream.data);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "lua: LUA_PATH set to: '%s'\n", (char *)path_stream.data);
+		}
+	}
+	switch_safe_free(path_stream.data);
+    
 	switch_xml_free(xml);
 
 	return SWITCH_STATUS_SUCCESS;
