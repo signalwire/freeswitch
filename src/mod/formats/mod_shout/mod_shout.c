@@ -189,7 +189,6 @@ static inline void free_context(shout_context_t *context)
 		}
 
 		if (context->mh) {
-			mpg123_close(context->mh);
 			mpg123_delete(context->mh);
 		}
 	}
@@ -456,7 +455,7 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 				goto error;
 			}
 
-			mpg123_close(context->mh);
+			mpg123_delete(context->mh);
 			context->mh = our_mpg123_new(NULL, NULL);
 			mpg123_open_feed(context->mh);
 			mpg123_param(context->mh, MPG123_FORCE_RATE, context->samplerate, 0);
@@ -844,7 +843,7 @@ static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned in
 				*cur_sample = fseek(context->fp, *cur_sample, whence);
 			}
 
-			mpg123_close(context->mh);
+			mpg123_delete(context->mh);
 			context->mh = our_mpg123_new(NULL, NULL);
 			mpg123_open_feed(context->mh);
 			mpg123_param(context->mh, MPG123_FORCE_RATE, context->samplerate, 0);
