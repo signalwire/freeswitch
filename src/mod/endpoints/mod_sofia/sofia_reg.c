@@ -1296,6 +1296,36 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_realm", realm);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_nonce", nonce);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_uri", uri);
+
+	if (sip->sip_contact) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_contact_user", sip->sip_contact->m_url->url_user);
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_contact_host", sip->sip_contact->m_url->url_host);
+	}
+
+	if (sip->sip_to) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_to_user", sip->sip_to->a_url->url_user);
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_to_host", sip->sip_to->a_url->url_host);
+		if (sip->sip_to->a_url->url_port) {
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_to_port", sip->sip_to->a_url->url_port);
+		}
+	}
+
+	if (sip->sip_from) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_from_user", sip->sip_from->a_url->url_user);
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_from_host", sip->sip_from->a_url->url_host);
+		if (sip->sip_from->a_url->url_port) {
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_from_port", sip->sip_from->a_url->url_port);
+		}
+	}
+
+	if (sip->sip_request) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_request_user", sip->sip_request->rq_url->url_user);
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_request_host", sip->sip_request->rq_url->url_host);
+		if (sip->sip_request->rq_url->url_port) {
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_request_port", sip->sip_request->rq_url->url_port);
+		}
+	}
+
 	if (qop) {
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_qop", qop);
 	}
