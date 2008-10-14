@@ -88,6 +88,14 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 	char buf[10] = SWITCH_BLANK_STRING;
 	char *p, term;
 
+	if (collect->session) {
+		if (switch_core_session_read_lock(collect->session) != SWITCH_STATUS_SUCCESS) {
+			return NULL;
+		}
+	} else {
+		return NULL;
+	}
+	
 	if (!strcasecmp(collect->key, "exec")) {
 		char *data;
 		const switch_application_interface_t *application_interface;
@@ -147,7 +155,9 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 			}
 		}
 	}
-  wbreak:
+ wbreak:
+
+	switch_core_session_rwunlock(collect->session);
 
 	return NULL;
 }

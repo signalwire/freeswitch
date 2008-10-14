@@ -180,7 +180,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 	if (!(session->read_codec && session->read_codec->implementation)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s has no read codec.\n", switch_channel_get_name(session->channel));
-		abort();
 		return SWITCH_STATUS_FALSE;
 	}
 

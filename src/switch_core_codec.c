@@ -47,6 +47,11 @@ SWITCH_DECLARE(void) switch_core_session_unset_read_codec(switch_core_session_t 
 	session->real_read_codec = session->read_codec = NULL;
 }
 
+SWITCH_DECLARE(void) switch_core_session_unset_write_codec(switch_core_session_t *session)
+{
+	session->real_write_codec = session->write_codec = NULL;
+}
+
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_session_t *session, switch_codec_t *codec)
 {
@@ -55,16 +60,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 	char tmp[30];
 
 	if (codec && !codec->implementation) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set INITIALIZED codec!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set UNINITIALIZED codec!\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (!codec || codec == session->real_read_codec) {
+
 		if (session->real_read_codec) {
-			session->read_codec = session->real_read_codec;
+			if (session->real_read_codec->implementation) {
+				session->read_codec = session->real_read_codec;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "resetting to uninitilized codec, setting to NULL\n");
+				session->read_codec = session->real_read_codec = NULL;
+				return SWITCH_STATUS_FALSE;
+			}
 		} else {
 			return SWITCH_STATUS_FALSE;
 		}
+		
 	} else if (codec) {
 		if (session->read_codec != session->real_read_codec) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot double-set codec!\n");
