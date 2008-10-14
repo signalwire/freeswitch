@@ -618,8 +618,8 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 					conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
 				} else if (conference->count == 1 && !conference->perpetual_sound) {
 					if (conference->alone_sound) {
-						conference_play_file(conference, conference->alone_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session),
-											 0);
+						conference_stop_file(conference, FILE_STOP_ASYNC);
+						conference_play_file(conference, conference->alone_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 1);
 					} else {
 						switch_snprintf(msg, sizeof(msg), "You are currently the only person in this conference.");
 						conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
@@ -743,7 +743,8 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 				conference_play_file(conference, conference->exit_sound, 0, switch_core_session_get_channel(member->session), 0);
 			}
 			if (conference->count == 1 && conference->alone_sound) {
-				conference_play_file(conference, conference->alone_sound, 0, switch_core_session_get_channel(member->session), 0);
+				conference_stop_file(conference, FILE_STOP_ASYNC);
+				conference_play_file(conference, conference->alone_sound, 0, switch_core_session_get_channel(member->session), 1);
 			}
 		}
 
