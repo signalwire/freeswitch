@@ -4548,7 +4548,7 @@ SWITCH_STANDARD_APP(conference_function)
 	conference_del_member(member.conference, &member);
 
 	/* Put the original codec back */
-	switch_core_session_set_read_codec(member.session, read_codec);
+	switch_core_session_set_read_codec(member.session, NULL);
 
 	/* Clean Up.  codec_done(X): is for error situations after the codecs were setup and done: is for situations before */
   codec_done1:
