@@ -121,8 +121,8 @@ static switch_status_t load_config(void)
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
-			char *var = (char *) switch_xml_attr_soft(param, "name");
-			char *val = (char *) switch_xml_attr_soft(param, "value");
+			const char *var = switch_xml_attr_soft(param, "name");
+			const char *val = switch_xml_attr_soft(param, "value");
 			if (!strcasecmp(var, "default-root")) {
 				set_global_root(val);
 			} else if (!strcasecmp(var, "auto-reload")) {
