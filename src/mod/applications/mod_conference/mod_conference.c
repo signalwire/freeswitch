@@ -3152,7 +3152,7 @@ static switch_status_t conf_api_sub_saymember(conference_obj_t *conference, swit
 
 static switch_status_t conf_api_sub_stop(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
-	uint8_t current = 0, all = 0;
+	uint8_t current = 0, all = 0, async = 0;
 
 	switch_assert(conference != NULL);
 	switch_assert(stream != NULL);
@@ -3160,11 +3160,12 @@ static switch_status_t conf_api_sub_stop(conference_obj_t *conference, switch_st
 	if (argc > 2) {
 		current = strcasecmp(argv[2], "current") ? 0 : 1;
 		all = strcasecmp(argv[2], "all") ? 0 : 1;
+		async = strcasecmp(argv[2], "async") ? 0 : 1;
 	} else {
 		all = 1;
 	}
 
-	if (!(current || all))
+	if (!(current || all || async))
 		return SWITCH_STATUS_GENERR;
 
 	if (argc == 4) {
@@ -3172,13 +3173,13 @@ static switch_status_t conf_api_sub_stop(conference_obj_t *conference, switch_st
 		conference_member_t *member;
 
 		if ((member = conference_member_get(conference, id))) {
-			uint32_t stopped = conference_member_stop_file(member, current ? FILE_STOP_CURRENT : FILE_STOP_ALL);
+			uint32_t stopped = conference_member_stop_file(member, async ? FILE_STOP_ASYNC : current ? FILE_STOP_CURRENT : FILE_STOP_ALL);
 			stream->write_function(stream, "Stopped %u files.\n", stopped);
 		} else {
 			stream->write_function(stream, "Member: %u not found.\n", id);
 		}
 	} else {
-		uint32_t stopped = conference_stop_file(conference, current ? FILE_STOP_CURRENT : FILE_STOP_ALL);
+		uint32_t stopped = conference_stop_file(conference, async ? FILE_STOP_ASYNC : current ? FILE_STOP_CURRENT : FILE_STOP_ALL);
 		stream->write_function(stream, "Stopped %u files.\n", stopped);
 	}
 	return SWITCH_STATUS_SUCCESS;
@@ -3553,12 +3554,12 @@ static api_command_t conf_api_sub_commands[] = {
 	 "<confname> volume_in <member_id|all|last> [<newval>]"},
 	{"volume_out", (void_fn_t) &conf_api_sub_volume_out, CONF_API_SUB_MEMBER_TARGET,
 	 "<confname> volume_out <member_id|all|last> [<newval>]"},
-	{"play", (void_fn_t) &conf_api_sub_play, CONF_API_SUB_ARGS_SPLIT, "<confname> play <file_path> [<member_id>]"},
+	{"play", (void_fn_t) &conf_api_sub_play, CONF_API_SUB_ARGS_SPLIT, "<confname> play <file_path> [async|<member_id>]"},
 	{"say", (void_fn_t) &conf_api_sub_say, CONF_API_SUB_ARGS_AS_ONE, "<confname> say <text>"},
 	{"saymember", (void_fn_t) &conf_api_sub_saymember, CONF_API_SUB_ARGS_AS_ONE,
 	 "<confname> saymember <member_id> <text>"},
 	{"stop", (void_fn_t) &conf_api_sub_stop, CONF_API_SUB_ARGS_SPLIT,
-	 "<confname> stop <[current|all|last]> [<member_id>]"},
+	 "<confname> stop <[current|all|async|last]> [<member_id>]"},
 	{"dtmf", (void_fn_t) &conf_api_sub_dtmf, CONF_API_SUB_MEMBER_TARGET,
 	 "<confname> dtmf <[member_id|all|last]> <digits>"},
 	{"kick", (void_fn_t) &conf_api_sub_kick, CONF_API_SUB_MEMBER_TARGET, "<confname> kick <[member_id|all|last]>"},
