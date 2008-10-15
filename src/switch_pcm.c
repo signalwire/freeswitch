@@ -275,7 +275,7 @@ static void mod_g711_load(switch_loadable_module_interface_t **module_interface,
 	for (count = 12; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 0, "PCMU", NULL, 8000, 8000, 64000,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 1,
 											 switch_g711u_init, switch_g711u_encode, switch_g711u_decode, switch_g711u_destroy);
 	}
 
@@ -283,7 +283,7 @@ static void mod_g711_load(switch_loadable_module_interface_t **module_interface,
 	for (count = 12; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 8, "PCMA", NULL, 8000, 8000, 64000,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 1,
 											 switch_g711a_init, switch_g711a_encode, switch_g711a_decode, switch_g711a_destroy);
 	}
 
@@ -316,7 +316,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 		for (countb = 12; countb > 0; countb--) {
 			switch_core_codec_add_implementation(pool, codec_interface,
 												 SWITCH_CODEC_TYPE_AUDIO, ianacode[counta], "L16", NULL, rate, rate, bps,
-												 mpf * countb, spf * countb, bpf * countb, ebpf * countb, 1, 1, 12,
+												 mpf * countb, spf * countb, bpf * countb, ebpf * countb, 1, 1, 1,
 												 switch_raw_init, switch_raw_encode, switch_raw_decode, switch_raw_destroy);
 		}
 		rate = rate * 2;
