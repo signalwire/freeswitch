@@ -1541,6 +1541,7 @@ SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait)
 
 	switch_threadattr_create(&thd_attr, sth->pool);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_SYSTEM_THREAD_STACKSIZE);
+	switch_threadattr_detach_set(thd_attr, 1);
 	switch_thread_create(&thread, thd_attr, system_thread, sth, sth->pool);
 
 	if (wait) {
