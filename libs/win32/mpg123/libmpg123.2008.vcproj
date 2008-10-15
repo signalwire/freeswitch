@@ -1,11 +1,12 @@
-<?xml version="1.0" encoding="windows-1255"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="mod_shout"
-	ProjectGUID="{38FE0559-9910-43A8-9E45-3E5004C27692}"
-	RootNamespace="mod_shout"
-	TargetFrameworkVersion="196613"
+	Name="libmpg123"
+	ProjectGUID="{419C8F80-D858-4B48-A25C-AF4007608137}"
+	RootNamespace="libmpg123"
+	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -17,11 +18,10 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)Debug"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
-			CharacterSet="2"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -41,14 +41,15 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../../libs/curl/include;&quot;../../../../libs/lame-3.97/include&quot;;..\..\..\..\libs\win32\libshout;&quot;..\..\..\..\libs\libshout-2.2.2\include&quot;;..\..\..\..\libs\mpg123\src;..\..\..\..\libs\win32\mpg123"
-				PreprocessorDefinitions="CURL_STATICLIB"
+				AdditionalIncludeDirectories="src;&quot;$(ProjectDir)libmpg123&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				WarningLevel="3"
-				WarnAsError="false"
-				DebugInformationFormat="3"
+				UsePrecompiledHeader="0"
+				WarningLevel="4"
+				DebugInformationFormat="4"
+				DisableSpecificWarnings="4100;4018;4244;4127;4189;4389;4702"
 				EnablePREfast="false"
 			/>
 			<Tool
@@ -62,9 +63,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				IgnoreDefaultLibraryNames="LIBCMTD.LIB;LIBCMT.LIB"
-				GenerateDebugInformation="true"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -90,11 +88,10 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)Release"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
-			CharacterSet="2"
+			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -114,15 +111,14 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="../../../../libs/curl/include;&quot;../../../../libs/lame-3.97/include&quot;;..\..\..\..\libs\win32\libshout;&quot;..\..\..\..\libs\libshout-2.2.2\include&quot;;..\..\..\..\libs\mpg123\src;..\..\..\..\libs\win32\mpg123"
-				PreprocessorDefinitions="CURL_STATICLIB"
+				AdditionalIncludeDirectories="src;&quot;$(ProjectDir)libmpg123&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				WarningLevel="3"
-				WarnAsError="false"
+				UsePrecompiledHeader="0"
+				WarningLevel="4"
 				DebugInformationFormat="3"
+				DisableSpecificWarnings="4100;4018;4244;4127;4189;4389;4702"
+				EnablePREfast="false"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -135,12 +131,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				IgnoreDefaultLibraryNames="LIBCMTD.LIB;LIBCMT.LIB"
-				GenerateDebugInformation="false"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				LinkTimeCodeGeneration="1"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -174,7 +164,87 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\mod_shout.c"
+				RelativePath="..\..\mpg123\src\libmpg123\compat.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\dct64.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\decode.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\decode_2to1.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\decode_4to1.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\decode_ntom.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\equalizer.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\format.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\frame.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\icy.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\icy2utf8.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\id3.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\layer1.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\layer2.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\layer3.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\libmpg123.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\optimize.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\parse.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\readers.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\stringbuf.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\mpg123\src\libmpg123\tabinit.c"
 				>
 			</File>
 		</Filter>
@@ -183,18 +253,6 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File
-				RelativePath=".\huffman.h"
-				>
-			</File>
-			<File
-				RelativePath=".\mpg123.h"
-				>
-			</File>
-			<File
-				RelativePath=".\mpglib.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
