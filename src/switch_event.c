@@ -490,6 +490,7 @@ static void launch_dispatch_threads(uint32_t max, int len, switch_memory_pool_t 
 		switch_threadattr_create(&thd_attr, pool);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 		switch_threadattr_priority_increase(thd_attr);
+		switch_threadattr_detach_set(thd_attr, 1);
 		switch_thread_create(&thread, thd_attr, switch_event_dispatch_thread, EVENT_DISPATCH_QUEUE[index], pool);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Create event dispatch thread %d\n", index);
 	}
@@ -527,6 +528,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	switch_core_hash_init(&CUSTOM_HASH, RUNTIME_POOL);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_threadattr_priority_increase(thd_attr);
+	switch_threadattr_detach_set(thd_attr, 1);
 
 	launch_dispatch_threads(1, DISPATCH_QUEUE_LEN, RUNTIME_POOL);
 	switch_thread_create(&thread, thd_attr, switch_event_thread, EVENT_QUEUE[0], RUNTIME_POOL);
