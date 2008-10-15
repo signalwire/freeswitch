@@ -565,7 +565,8 @@ static void *SWITCH_THREAD_FUNC write_stream_thread(switch_thread_t *thread, voi
 		if (context->channels == 2) {
 			int16_t l[4800] = { 0 };
 			int16_t r[4800] = { 0 };
-			int i, j = 0;
+			int j = 0;
+			switch_size_t i;
 
 			for (i = 0; i < audio_read / 4; i++) {
 				l[i] = audio[j++];
@@ -1431,7 +1432,7 @@ static switch_status_t load_config(void)
 			if (!strcmp(var, "decoder")) {
 				switch_set_string(globals.decoder, val);
 			} else if (!strcmp(var, "volume")) {
-				globals.vol = atof(val);
+				globals.vol = (float)atof(val);
 			} else if (!strcmp(var, "outscale")) {
 				int tmp = atoi(val);
 				if (tmp > 0) {
